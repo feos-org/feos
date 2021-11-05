@@ -1,0 +1,34 @@
+[
+    {
+        "identifier": {
+            "cas": "74-98-6",
+            "name": "propane",
+            "iupac_name": "propane",
+            "smiles": "CCC",
+            "inchi": "InChI=1/C3H8/c1-3-2/h3H2,1-2H3",
+            "formula": "C3H8"
+        },
+        "model_record": {
+            "tc": 369.96,
+            "pc": 4250000.0,
+            "acentric_factor": 0.153
+        },
+        "molarweight": 44.0962
+    },
+    {
+        "identifier": {
+            "cas": "106-97-8",
+            "name": "butane",
+            "iupac_name": "butane",
+            "smiles": "CCCC",
+            "inchi": "InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3",
+            "formula": "C4H10"
+        },
+        "model_record": {
+            "tc": 425.2,
+            "pc": 3800000.0,
+            "acentric_factor": 0.199
+        },
+        "molarweight": 58.123
+    }
+]
