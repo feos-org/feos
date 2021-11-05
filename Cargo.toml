@@ -1,8 +1,17 @@
 [package]
 name = "feos"
 version = "0.1.0"
+authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <rehner@itt.uni-stuttgart.de>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["cdylib"]
 
 [dependencies]
+quantity = "0.3"
+feos-core = { git = "https://github.com/feos-org/feos-core", branch = "main" }
+feos-dft = { git = "https://github.com/feos-org/feos-dft", branch = "main", features = ["python", "openblas-system"] }
+
+[dependencies.pyo3]
+version = "0.14"
+features = ["extension-module", "abi3", "abi3-py36"]
