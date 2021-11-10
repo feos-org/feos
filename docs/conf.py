@@ -46,11 +46,7 @@ html_theme_options = {
     'source_link_position': "",
     'bootswatch_theme': "paper",
     'bootstrap_version': "3",
-<<<<<<< HEAD
     'navbar_links': [("Python API", "api/index"), ("Python Examples", "examples/index"), ("Rust Developer Guide", "devguide/index"), ],
-=======
-    'navbar_links': [("Python API", "api"), ("Python Examples", "examples/index"), ("Rust Developer Guide", "devguide/index"), ],
->>>>>>> c620e4f73ec00c6947bbcdb54d63c0c10cf38461
 }
 html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 html_static_path = ['_static']
