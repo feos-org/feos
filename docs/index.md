@@ -1,4 +1,4 @@
-# Welcome to `FeOs`!
+# Welcome to `feos`!
 
 `FeOs` is a framework for thermodynamic equations of state and classical density functional theory.
 It is written in Rust with a Python interface.
