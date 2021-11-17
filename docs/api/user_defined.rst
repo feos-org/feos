@@ -2,6 +2,12 @@
 
 .. currentmodule:: feos.user_defined
 
+User defined equation of state
+------------------------------
+
+A :class:`UserDefinedEos` can be used to implement an equation of state as Python class object.
+See :doc:`this example notebook </examples/user_defined_eos>` to learn more.
+
 Utility
 ~~~~~~~
 
@@ -11,8 +17,8 @@ Utility
     Contributions
     Verbosity
 
-User defined equation of state
-------------------------------
+Equation of state
+~~~~~~~~~~~~~~~~~
 
 .. autosummary::
     :toctree: generated/

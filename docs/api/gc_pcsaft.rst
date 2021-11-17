@@ -29,7 +29,7 @@ Parameter and utility
 Equation of state
 ~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: feos.pcsaft.eos
+.. currentmodule:: feos.gc_pcsaft.eos
 
 .. autosummary::
     :toctree: generated/
@@ -41,17 +41,3 @@ Equation of state
     PhaseDiagramBinary
     PhaseDiagramHetero
 
-Density functional theory
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. currentmodule:: feos.pcsaft.dft
-
-.. autosummary::
-    :toctree: generated/
-
-    PcSaftFunctional
-    State
-    PhaseEquilibrium
-    PhaseDiagramPure
-    PhaseDiagramBinary
-    PhaseDiagramHetero

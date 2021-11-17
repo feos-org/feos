@@ -37,7 +37,7 @@ source_suffix = {
 # -- Options for HTML output -------------------------------------------------
 html_theme = 'bootstrap'
 html_theme_options = {
-    'navbar_sidebarrel': False,
+    'navbar_sidebarrel': True,
     'navbar_pagenav': True,
     'navbar_pagenav_name': "Page",
     'globaltoc_includehidden': "true",
@@ -46,7 +46,7 @@ html_theme_options = {
     'source_link_position': "",
     'bootswatch_theme': "paper",
     'bootstrap_version': "3",
-    'navbar_links': [("Python API", "api/index"), ("Python Examples", "examples/index"), ("Rust Developer Guide", "devguide/index"), ],
+    'navbar_links': [("Python API", "api/index"), ("Python Examples", "examples/index"), ("Rust Guide", "rustguide/index"), ],
 }
 html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 html_static_path = ['_static']

@@ -1,9 +1,14 @@
-Peng-Robinson
--------------
-
 .. _peng_robinson_api:
 
 .. currentmodule:: feos.cubic
+
+Peng-Robinson
+-------------
+
+.. important::
+    This implementation of the Peng-Robinson equation of state is intended to be used
+    as simple example when considering implementing an equation of state. It is not
+    a sophisticated implementation and should probably not be used to do research.
 
 Parameter and utility
 ~~~~~~~~~~~~~~~~~~~~~
@@ -21,8 +26,8 @@ Parameter and utility
     Contributions
     Verbosity
 
-Peng-Robinson equation of state
--------------------------------
+Equation of state
+~~~~~~~~~~~~~~~~~
 
 .. autosummary::
     :toctree: generated/

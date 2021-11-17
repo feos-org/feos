@@ -8,7 +8,7 @@ Implementation of the PC SAFT equation of state.
 Parameter and utility
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: feos.gc_pcsaft
+.. currentmodule:: feos.pcsaft
 
 .. autosummary::
     :toctree: generated/
@@ -55,3 +55,17 @@ Density functional theory
     PhaseDiagramPure
     PhaseDiagramBinary
     PhaseDiagramHetero
+
+External potential, pores and adsorption
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+    :toctree: generated/
+
+    ExternalPotential
+    Geometry
+    Pore1D
+    Pore3D
+    PairCorrelation
+    Adsorption1D
+    Adsorption3D

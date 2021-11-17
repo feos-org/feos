@@ -5,6 +5,9 @@
 SI units
 --------
 
+In `feos` dimensioned quantities are used in various interfaces.
+You can learn more about dimensioned quantities :doc:`in this notebook</examples/si>`.
+
 .. autosummary::
     :toctree: generated/
 
