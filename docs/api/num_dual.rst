@@ -17,6 +17,9 @@ If you are interested in using dual numbers in other projects, you can find the 
     derive2
     derive3
     Dual64
-    HyperDual64
     Dual2_64
+    Dual2Dual64
     Dual3_64
+    Dual3Dual64
+    HyperDual64
+    HyperDualDual64

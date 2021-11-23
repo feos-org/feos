@@ -1,3 +1,5 @@
+:orphan:
+
 The Rust Guide to ``FeOs``
 ==========================
 
@@ -25,12 +27,3 @@ We will learn how equations of state are abstracted using traits, how generalize
    core/equation_of_state
    core/state
 
-Thermodynamic States and Properties
------------------------------------
-
-In this chapter, we will look at the way thermodynamic states are defined and how properties for a given state can be computed.
-
-.. toctree::
-   :maxdepth: 2
-
-   state
