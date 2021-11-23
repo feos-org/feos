@@ -16,8 +16,8 @@ Functional
     FMTVersion
     State
 
-External potential, pores and adsorption
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Adsorption
+~~~~~~~~~~
 
 .. autosummary::
     :toctree: generated/
@@ -26,6 +26,13 @@ External potential, pores and adsorption
     Geometry
     Pore1D
     Pore3D
-    PairCorrelation
     Adsorption1D
     Adsorption3D
+
+Solvation
+~~~~~~~~~
+
+.. autosummary::
+    :toctree: generated/
+
+    PairCorrelation
