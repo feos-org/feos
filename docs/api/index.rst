@@ -27,7 +27,6 @@ Implementations of equations of state and possibly classical density functional 
    user_defined
    peng_robinson
    pcsaft
-   gc_pcsaft
 
 Density functional theory
 -------------------------
