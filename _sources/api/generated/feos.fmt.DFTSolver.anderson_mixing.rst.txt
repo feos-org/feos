@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.fmt.DFTSolver.anderson\_mixing
+===================================
+
+.. currentmodule:: feos.fmt
+
+.. automethod:: DFTSolver.anderson_mixing

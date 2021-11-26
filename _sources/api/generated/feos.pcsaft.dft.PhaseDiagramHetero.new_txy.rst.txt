@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.dft.PhaseDiagramHetero.new\_txy
+===========================================
+
+.. currentmodule:: feos.pcsaft.dft
+
+.. automethod:: PhaseDiagramHetero.new_txy

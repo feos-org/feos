@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>The Rust Guide to FeOs &#8212; feos 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/style.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          feos</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../api/index.html">Python API</a></li>
+                <li><a href="../examples/index.html">Python Examples</a></li>
+                <li><a href="#">Rust Guide</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">The Rust Guide to <code class="docutils literal notranslate"><span class="pre">FeOs</span></code></a><ul>
+<li><a class="reference internal" href="#getting-started">Getting Started</a></li>
+<li><a class="reference internal" href="#feos-core"><code class="docutils literal notranslate"><span class="pre">feos-core</span></code></a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="the-rust-guide-to-feos">
+<h1>The Rust Guide to <code class="docutils literal notranslate"><span class="pre">FeOs</span></code><a class="headerlink" href="#the-rust-guide-to-feos" title="Permalink to this headline">¶</a></h1>
+<p>Welcome to the <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> Rust guide.
+On the following pages we discuss the structure of the <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> project and how to use, compile and extend it.</p>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html#rust-prerequisites">Rust Prerequisites</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html#project-structure">Project Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html#where-to-get-help">Where to Get Help</a></li>
+</ul>
+</div>
+</section>
+<section id="feos-core">
+<h2><code class="docutils literal notranslate"><span class="pre">feos-core</span></code><a class="headerlink" href="#feos-core" title="Permalink to this headline">¶</a></h2>
+<p>In this section, we discuss the <code class="docutils literal notranslate"><span class="pre">core</span></code> crate.
+We will learn how equations of state are abstracted using traits, how generalized (hyper-) dual numbers are utilized and how thermodynamic states and phase equilibria are defined.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="core/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core/index.html#important-crates">Important crates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core/equation_of_state.html">The <code class="docutils literal notranslate"><span class="pre">EquationOfState</span></code> Trait</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="core/equation_of_state.html#the-helmholtzenergydual-and-helmholtzenergy-traits">The <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergyDual</span></code> and <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergy</span></code> Traits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core/equation_of_state.html#residual-helmholtz-energy">Residual Helmholtz Energy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core/equation_of_state.html#the-ideal-gas-contribution">The Ideal Gas Contribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core/equation_of_state.html#additional-traits">Additional Traits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core/equation_of_state.html#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="core/state.html">Thermodynamic States</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="core/state.html#the-natural-variables-of-state">The natural variables of <code class="docutils literal notranslate"><span class="pre">State</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="core/state.html#computing-thermodynamic-properties">Computing Thermodynamic Properties</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core/state.html#how-to-add-a-new-property">How to Add a New Property</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core/state.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2021, Gernot Bauer, Philipp Rehner.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

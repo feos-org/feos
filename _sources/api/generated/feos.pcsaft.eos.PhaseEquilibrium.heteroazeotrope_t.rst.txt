@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.eos.PhaseEquilibrium.heteroazeotrope\_t
+===================================================
+
+.. currentmodule:: feos.pcsaft.eos
+
+.. automethod:: PhaseEquilibrium.heteroazeotrope_t

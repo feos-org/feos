@@ -1,0 +1,29 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.PcSaftRecord
+========================
+
+.. currentmodule:: feos.pcsaft
+
+.. autoclass:: PcSaftRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PcSaftRecord.__init__
+      ~PcSaftRecord.from_json_str
+      ~PcSaftRecord.to_json_str
+   
+   
+
+   
+   
+   

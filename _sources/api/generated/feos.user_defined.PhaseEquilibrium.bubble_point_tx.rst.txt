@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.PhaseEquilibrium.bubble\_point\_tx
+=====================================================
+
+.. currentmodule:: feos.user_defined
+
+.. automethod:: PhaseEquilibrium.bubble_point_tx

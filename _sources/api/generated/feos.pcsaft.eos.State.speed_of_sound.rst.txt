@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.eos.State.speed\_of\_sound
+======================================
+
+.. currentmodule:: feos.pcsaft.eos
+
+.. automethod:: State.speed_of_sound

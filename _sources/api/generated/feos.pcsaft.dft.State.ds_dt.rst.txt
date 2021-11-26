@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.dft.State.ds\_dt
+============================
+
+.. currentmodule:: feos.pcsaft.dft
+
+.. automethod:: State.ds_dt

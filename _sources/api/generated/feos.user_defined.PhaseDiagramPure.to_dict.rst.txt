@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.PhaseDiagramPure.to\_dict
+============================================
+
+.. currentmodule:: feos.user_defined
+
+.. automethod:: PhaseDiagramPure.to_dict

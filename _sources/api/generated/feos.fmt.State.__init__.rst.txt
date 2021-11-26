@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.fmt.State.\_\_init\_\_
+===========================
+
+.. currentmodule:: feos.fmt
+
+.. automethod:: State.__init__

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.dft.PairCorrelation.solve
+=====================================
+
+.. currentmodule:: feos.pcsaft.dft
+
+.. automethod:: PairCorrelation.solve

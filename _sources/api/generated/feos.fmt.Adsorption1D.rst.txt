@@ -1,0 +1,42 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.fmt.Adsorption1D
+=====================
+
+.. currentmodule:: feos.fmt
+
+.. autoclass:: Adsorption1D
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Adsorption1D.__init__
+      ~Adsorption1D.adsorption_isotherm
+      ~Adsorption1D.desorption_isotherm
+      ~Adsorption1D.equilibrium_isotherm
+      ~Adsorption1D.phase_equilibrium
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Adsorption1D.adsorption
+      ~Adsorption1D.grand_potential
+      ~Adsorption1D.molar_gibbs_energy
+      ~Adsorption1D.pressure
+      ~Adsorption1D.profiles
+      ~Adsorption1D.total_adsorption
+   
+   

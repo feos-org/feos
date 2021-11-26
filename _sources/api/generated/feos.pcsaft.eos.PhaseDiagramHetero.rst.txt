@@ -1,0 +1,38 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.eos.PhaseDiagramHetero
+==================================
+
+.. currentmodule:: feos.pcsaft.eos
+
+.. autoclass:: PhaseDiagramHetero
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PhaseDiagramHetero.__init__
+      ~PhaseDiagramHetero.new_pxy
+      ~PhaseDiagramHetero.new_txy
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PhaseDiagramHetero.lle
+      ~PhaseDiagramHetero.vle
+      ~PhaseDiagramHetero.vle1
+      ~PhaseDiagramHetero.vle2
+   
+   

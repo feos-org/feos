@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.State.critical\_point
+================================
+
+.. currentmodule:: feos.cubic
+
+.. automethod:: State.critical_point

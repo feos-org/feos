@@ -1,0 +1,28 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.fmt.Pore1D
+===============
+
+.. currentmodule:: feos.fmt
+
+.. autoclass:: Pore1D
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Pore1D.__init__
+      ~Pore1D.initialize
+   
+   
+
+   
+   
+   

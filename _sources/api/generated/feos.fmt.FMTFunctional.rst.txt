@@ -1,0 +1,28 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.fmt.FMTFunctional
+======================
+
+.. currentmodule:: feos.fmt
+
+.. autoclass:: FMTFunctional
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~FMTFunctional.__init__
+      ~FMTFunctional.max_density
+   
+   
+
+   
+   
+   

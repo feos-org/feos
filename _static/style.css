@@ -1,0 +1,359 @@
+body {
+  color: #444444 !important;
+}
+
+h1 {
+  font-size: 40px !important;
+}
+h2 {
+  font-size: 32px !important;
+}
+h3 {
+  font-size: 24px !important;
+}
+h4 {
+  font-size: 18px !important;
+}
+h5 {
+  font-size: 14px !important;
+}
+h6 {
+  font-size: 10px !important;
+}
+
+footer a {
+  color: #4c72b0 !important;
+}
+a.reference {
+  color: #4c72b0 !important;
+}
+
+blockquote p {
+  font-size: 14px !important;
+}
+
+blockquote {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+  margin: 0 0 0px !important;
+}
+
+dl span.classifier {
+  font-weight: normal;
+  font-style: normal;
+}
+
+dd p.last {
+  padding-left: 20px;
+  border-left: 5px solid #ededed;
+}
+
+pre {
+  background-color: #f6f6f9 !important;
+}
+
+code {
+  color: #49759c !important;
+  background-color: #ffffff !important;
+}
+
+code.descclassname {
+  padding-right: 0px !important;
+}
+
+code.descname {
+  padding-left: 0px !important;
+}
+
+dt:target,
+span.highlighted {
+  background-color: #ffffff !important;
+}
+
+td {
+  text-align: left;
+}
+
+ul {
+  padding-left: 20px !important;
+}
+ul.dropdown-menu {
+  padding-left: 0px !important;
+}
+
+.alert-info {
+  background-color: #adb8cb !important;
+  border-color: #adb8cb !important;
+  color: #2c3e50 !important;
+}
+
+/******************************/
+/* CSS for nbsphinx extension */
+/******************************/
+/* remove conflicting styling from Sphinx themes */
+div.nbinput,
+div.nbinput div.prompt,
+div.nbinput div.input_area,
+div.nbinput div[class*="highlight"],
+div.nbinput div[class*="highlight"] pre,
+div.nboutput,
+div.nbinput div.prompt,
+div.nbinput div.output_area,
+div.nboutput div[class*="highlight"],
+div.nboutput div[class*="highlight"] pre {
+  background: none;
+  border: none;
+  padding: 0 0;
+  margin: 0;
+  box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput div[class*="highlight"] pre {
+  line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput,
+div.nboutput {
+  display: -webkit-flex;
+  display: flex;
+  align-items: flex-start;
+  margin: 0;
+  width: 100%;
+}
+@media (max-width: 540px) {
+  div.nbinput,
+  div.nboutput {
+    flex-direction: column;
+  }
+}
+
+/* input container */
+div.nbinput {
+  padding-top: 5px;
+}
+
+/* last container */
+div.nblast {
+  padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput div.prompt pre {
+  color: #307fc1;
+}
+
+/* output prompt */
+div.nboutput div.prompt pre {
+  color: #bf5b3d;
+}
+
+/* all prompts */
+div.nbinput div.prompt,
+div.nboutput div.prompt {
+  min-width: 0;
+  padding-top: 0.4em;
+  padding-right: 0.4em;
+  text-align: right;
+  flex: 0;
+}
+@media (max-width: 540px) {
+  div.nbinput div.prompt,
+  div.nboutput div.prompt {
+    text-align: left;
+    padding: 0.4em;
+  }
+  div.nboutput div.prompt.empty {
+    padding: 0;
+  }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput div.prompt pre,
+div.nboutput div.prompt pre {
+  overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput div.input_area,
+div.nboutput div.output_area {
+  padding: 0.4em;
+  -webkit-flex: 1;
+  flex: 1;
+  overflow: auto;
+}
+@media (max-width: 540px) {
+  div.nbinput div.input_area,
+  div.nboutput div.output_area {
+    width: 100%;
+  }
+}
+
+/* input area */
+div.nbinput div.input_area {
+  border: 1px solid #e0e0e0;
+  border-radius: 2px;
+  background: #f5f5f5;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput div[class*="MathJax"] {
+  text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput div.math p {
+  text-align: left;
+}
+
+/* standard error */
+div.nboutput div.output_area.stderr {
+  background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg {
+  color: #3e424d;
+}
+.ansi-black-bg {
+  background-color: #3e424d;
+}
+.ansi-black-intense-fg {
+  color: #282c36;
+}
+.ansi-black-intense-bg {
+  background-color: #282c36;
+}
+.ansi-red-fg {
+  color: #e75c58;
+}
+.ansi-red-bg {
+  background-color: #e75c58;
+}
+.ansi-red-intense-fg {
+  color: #b22b31;
+}
+.ansi-red-intense-bg {
+  background-color: #b22b31;
+}
+.ansi-green-fg {
+  color: #00a250;
+}
+.ansi-green-bg {
+  background-color: #00a250;
+}
+.ansi-green-intense-fg {
+  color: #007427;
+}
+.ansi-green-intense-bg {
+  background-color: #007427;
+}
+.ansi-yellow-fg {
+  color: #ddb62b;
+}
+.ansi-yellow-bg {
+  background-color: #ddb62b;
+}
+.ansi-yellow-intense-fg {
+  color: #b27d12;
+}
+.ansi-yellow-intense-bg {
+  background-color: #b27d12;
+}
+.ansi-blue-fg {
+  color: #208ffb;
+}
+.ansi-blue-bg {
+  background-color: #208ffb;
+}
+.ansi-blue-intense-fg {
+  color: #0065ca;
+}
+.ansi-blue-intense-bg {
+  background-color: #0065ca;
+}
+.ansi-magenta-fg {
+  color: #d160c4;
+}
+.ansi-magenta-bg {
+  background-color: #d160c4;
+}
+.ansi-magenta-intense-fg {
+  color: #a03196;
+}
+.ansi-magenta-intense-bg {
+  background-color: #a03196;
+}
+.ansi-cyan-fg {
+  color: #60c6c8;
+}
+.ansi-cyan-bg {
+  background-color: #60c6c8;
+}
+.ansi-cyan-intense-fg {
+  color: #258f8f;
+}
+.ansi-cyan-intense-bg {
+  background-color: #258f8f;
+}
+.ansi-white-fg {
+  color: #c5c1b4;
+}
+.ansi-white-bg {
+  background-color: #c5c1b4;
+}
+.ansi-white-intense-fg {
+  color: #a1a6b2;
+}
+.ansi-white-intense-bg {
+  background-color: #a1a6b2;
+}
+
+.ansi-default-inverse-fg {
+  color: #ffffff;
+}
+.ansi-default-inverse-bg {
+  background-color: #000000;
+}
+
+.ansi-bold {
+  font-weight: bold;
+}
+.ansi-underline {
+  text-decoration: underline;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}

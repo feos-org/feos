@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.fmt.Adsorption1D.equilibrium\_isotherm
+===========================================
+
+.. currentmodule:: feos.fmt
+
+.. automethod:: Adsorption1D.equilibrium_isotherm

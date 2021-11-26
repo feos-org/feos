@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.UserDefinedEos.second\_virial\_coefficient\_temperature\_derivative
+======================================================================================
+
+.. currentmodule:: feos.user_defined
+
+.. automethod:: UserDefinedEos.second_virial_coefficient_temperature_derivative

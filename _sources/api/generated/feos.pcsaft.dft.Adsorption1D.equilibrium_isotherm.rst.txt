@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.dft.Adsorption1D.equilibrium\_isotherm
+==================================================
+
+.. currentmodule:: feos.pcsaft.dft
+
+.. automethod:: Adsorption1D.equilibrium_isotherm

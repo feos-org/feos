@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.num\_dual.Dual2\_64.arccos
+=============================================
+
+.. currentmodule:: feos.user_defined
+
+.. automethod:: num_dual.Dual2_64.arccos

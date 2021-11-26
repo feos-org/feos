@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.State.dc\_v\_dt
+==========================
+
+.. currentmodule:: feos.cubic
+
+.. automethod:: State.dc_v_dt

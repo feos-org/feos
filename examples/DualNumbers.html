@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>On Dual Numbers in FeOs &#8212; feos 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/style.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          feos</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../api/index.html">Python API</a></li>
+                <li><a href="index.html">Python Examples</a></li>
+                <li><a href="../rustguide/index.html">Rust Guide</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">On Dual Numbers in <code class="docutils literal notranslate"><span class="pre">FeOs</span></code></a><ul>
+<li><a class="reference internal" href="#Dual-Numbers">Dual Numbers</a></li>
+<li><a class="reference internal" href="#Do-we-need-to-create-dual-numbers-by-hand?">Do we need to create dual numbers by hand?</a></li>
+<li><a class="reference internal" href="#Properties-and-dual-numbers">Properties and dual numbers</a></li>
+<li><a class="reference internal" href="#Summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+</style>
+<section id="On-Dual-Numbers-in-FeOs">
+<h1>On Dual Numbers in <code class="docutils literal notranslate"><span class="pre">FeOs</span></code><a class="headerlink" href="#On-Dual-Numbers-in-FeOs" title="Permalink to this headline">¶</a></h1>
+<p>In <code class="docutils literal notranslate"><span class="pre">FeOs</span></code>, we use <a class="reference external" href="https://www.frontiersin.org/articles/10.3389/fceng.2021.758090/full">generalized dual numbers</a> to compute partial derivatives of the Helmholtz energy. In this notebook, we take a closer look at how that works.</p>
+<p>We will make use of the <code class="docutils literal notranslate"><span class="pre">UserDefinedEos</span></code> feature: we use a simple version of the Peng-Robinson equation of state implemented as Python class which is registered in <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> as equation of state. If you want to learn how to implement an equation of state as Python class in conjunction with <code class="docutils literal notranslate"><span class="pre">FeOs</span></code>, take a look at the example implementation in the examples section. In short - a class that implements a <code class="docutils literal notranslate"><span class="pre">helmholtz_energy</span></code> function that takes a <code class="docutils literal notranslate"><span class="pre">StateD</span></code> (or <em>any</em> state object, where the
+internal data types can be any generalized dual number) and returns the Helmholtz energy (plus some minor functions), can be used with <code class="docutils literal notranslate"><span class="pre">FeOs</span></code>. We use the equation of state implemented in Python simply because we can add <code class="docutils literal notranslate"><span class="pre">print</span></code> statements and inspect the data types at runtime.</p>
+<section id="Dual-Numbers">
+<h2>Dual Numbers<a class="headerlink" href="#Dual-Numbers" title="Permalink to this headline">¶</a></h2>
+<p>We won’t go into much detail regarding the theory of generalized dual numbers. Suffice it to say that generalized dual numbers are mathematical constructs consisting of one real value and one or more non-real values (just like complex numbers) that enable evaluation of arithmetic operations such that the operation <em>and</em> the derivative(s) can simultaneously be computed. We call these <em>generalized</em> dual numbers because they can have a different number of <em>non-real</em> values. For example a <em>dual
+number</em> has a real and a single non-real value and can be used to compute first (partial) derivatives, while a <em>hyper-dual number</em> has a real and three non-real values and can be used to compute first and second (partial) derivatives. We can - in principle - create numbers that allow computation of an arbitrarily high derivative at the cost of execution speed.</p>
+<p>Similar to numerical differentiation and complex step differentiation, a derivative is computed by defining a “step size”. For complex step and dual number differentiation this step is introduced in the non-real part. Derivatives of dual numbers, however, are exact (to machine precision) and independent of the step size used. Hence, we use unity as step size.</p>
+<p>For example, when we feed a temperature as <code class="docutils literal notranslate"><span class="pre">Dual64</span></code> data type</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span>
+<span class="mi">300</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="n">ε</span>
+</pre></div>
+</div>
+<p>into a function, its return value will be a <code class="docutils literal notranslate"><span class="pre">Dual64</span></code> as well. The non-real part of the function result <em>is</em> the derivative with respect to temperature.</p>
+</section>
+<section id="Do-we-need-to-create-dual-numbers-by-hand?">
+<h2>Do we need to create dual numbers by hand?<a class="headerlink" href="#Do-we-need-to-create-dual-numbers-by-hand?" title="Permalink to this headline">¶</a></h2>
+<p>No. If you use already implemented equations of state, you will not even recognize that dual numbers are used. However, if you use Python or Rust to implement you own equation of state, it is useful to know how <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> creates and uses dual numbers. It’s easier to look at an example than to talk about it. Below, you find the implementation of the Peng-Robinson equation of state where we added some <code class="docutils literal notranslate"><span class="pre">print</span></code> statement to the <code class="docutils literal notranslate"><span class="pre">helmholtz_energy</span></code> function to keep track of the values and data
+types of the thermodynamic state that enters the Helmholtz energy computation.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">feos.user_defined</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">feos.si</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">SQRT2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">PyPengRobinson</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">critical_temperature</span><span class="p">,</span> <span class="n">critical_pressure</span><span class="p">,</span> <span class="n">acentric_factor</span><span class="p">,</span> <span class="n">molar_weight</span><span class="p">,</span> <span class="n">delta_ij</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Peng-Robinson Equation of State</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        critical_temperature : SIArray1</span>
+<span class="sd">            critical temperature of each component.</span>
+<span class="sd">        critical_pressure : SIArray1</span>
+<span class="sd">            critical pressure of each component.</span>
+<span class="sd">        acentric_factor : np.array[float]</span>
+<span class="sd">            acentric factor of each component (dimensionless).</span>
+<span class="sd">        molar_weight: SIArray1</span>
+<span class="sd">            molar weight of each component.</span>
+<span class="sd">        delta_ij : np.array[[float]], optional</span>
+<span class="sd">            binary parameters. Shape=[n, n], n = number of components.</span>
+<span class="sd">            defaults to zero for all binary interactions.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError: if the input values have incompatible sizes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">critical_temperature</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">critical_temperature</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">critical_pressure</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">acentric_factor</span><span class="p">))))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input parameters must all have the same lenght.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tc</span> <span class="o">=</span> <span class="p">(</span><span class="n">critical_temperature</span> <span class="o">/</span> <span class="n">KELVIN</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="p">(</span><span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">PASCAL</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">omega</span> <span class="o">=</span> <span class="n">acentric_factor</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mw</span> <span class="o">=</span> <span class="p">(</span><span class="n">molar_weight</span> <span class="o">/</span> <span class="n">GRAM</span> <span class="o">*</span> <span class="n">MOL</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tc</span> <span class="o">=</span> <span class="n">critical_temperature</span> <span class="o">/</span> <span class="n">KELVIN</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">PASCAL</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">omega</span> <span class="o">=</span> <span class="n">acentric_factor</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mw</span> <span class="o">=</span> <span class="n">molar_weight</span> <span class="o">/</span> <span class="n">GRAM</span> <span class="o">*</span> <span class="n">MOL</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">a_r</span> <span class="o">=</span> <span class="mf">0.45724</span> <span class="o">*</span> <span class="n">critical_temperature</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">RGAS</span> <span class="o">/</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">ANGSTROM</span><span class="o">**</span><span class="mi">3</span> <span class="o">/</span> <span class="n">NAV</span> <span class="o">/</span> <span class="n">KELVIN</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mf">0.07780</span> <span class="o">*</span> <span class="n">critical_temperature</span> <span class="o">*</span> <span class="n">RGAS</span> <span class="o">/</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">ANGSTROM</span><span class="o">**</span><span class="mi">3</span> <span class="o">/</span> <span class="n">NAV</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kappa</span> <span class="o">=</span> <span class="mf">0.37464</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.54226</span> <span class="o">-</span> <span class="mf">0.26992</span> <span class="o">*</span> <span class="n">acentric_factor</span><span class="p">)</span> <span class="o">*</span> <span class="n">acentric_factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta_ij</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">))</span> <span class="k">if</span> <span class="n">delta_ij</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">delta_ij</span>
+
+    <span class="k">def</span> <span class="nf">helmholtz_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return Helmholtz energy.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        state : StateHD</span>
+<span class="sd">            The thermodynamic state.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        helmholtz_energy: float | any dual number</span>
+<span class="sd">            The return type depends on the input types.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">moles</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">molefracs</span>
+        <span class="n">tr</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">tc</span> <span class="o">*</span> <span class="n">state</span><span class="o">.</span><span class="n">temperature</span>
+        <span class="n">ak</span> <span class="o">=</span> <span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">tr</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">kappa</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_r</span>
+        <span class="n">ak_mix</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">):</span>
+                    <span class="n">ak_mix</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ak</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">ak</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_ij</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ak_mix</span> <span class="o">=</span> <span class="n">ak</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">)</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">state</span><span class="o">.</span><span class="n">density</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">v</span> <span class="o">/</span> <span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">b</span><span class="p">))</span> <span class="o">-</span> <span class="n">ak_mix</span> <span class="o">/</span> <span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">SQRT2</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">state</span><span class="o">.</span><span class="n">temperature</span><span class="p">)</span>
+            <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">v</span> <span class="o">*</span> <span class="p">(</span><span class="n">SQRT2</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">v</span> <span class="o">*</span> <span class="p">(</span><span class="n">SQRT2</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-</span> <span class="n">b</span><span class="p">)))</span>
+
+        <span class="c1"># some print statements to inspect data types</span>
+        <span class="nb">print</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;data type  : &quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">temperature</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;temperature: &quot;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">temperature</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;volume     : &quot;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">volume</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;moles      : &quot;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">moles</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;density    : &quot;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;A/kT       : &quot;</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">a</span>
+
+    <span class="k">def</span> <span class="nf">components</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Number of components.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+
+    <span class="k">def</span> <span class="nf">subset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+        <span class="sd">&quot;&quot;&quot;Return new equation of state containing a subset of all components.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">pc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">mw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mw</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">PyPengRobinson</span><span class="p">(</span><span class="n">tc</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span> <span class="n">pc</span><span class="o">*</span><span class="n">PASCAL</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">mw</span><span class="o">*</span><span class="n">GRAM</span><span class="o">/</span><span class="n">MOL</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">molar_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SIArray1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mw</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">mw</span><span class="p">])</span> <span class="o">*</span> <span class="n">GRAM</span> <span class="o">/</span> <span class="n">MOL</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mw</span> <span class="o">*</span> <span class="n">GRAM</span> <span class="o">/</span> <span class="n">MOL</span>
+
+    <span class="k">def</span> <span class="nf">max_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">moles</span><span class="p">:[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">moles</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">moles</span><span class="p">);</span>
+        <span class="k">return</span> <span class="mf">0.9</span> <span class="o">/</span> <span class="n">b</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># parameters for propane</span>
+<span class="n">tc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">369.96</span><span class="p">])</span> <span class="o">*</span> <span class="n">KELVIN</span>
+<span class="n">pc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">4250000.0</span><span class="p">])</span> <span class="o">*</span> <span class="n">PASCAL</span>
+<span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.153</span><span class="p">])</span>
+<span class="n">molar_weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">44.0962</span><span class="p">])</span> <span class="o">*</span> <span class="n">GRAM</span> <span class="o">/</span> <span class="n">MOL</span>
+
+<span class="c1"># create an instance of our python class and hand it over to rust</span>
+<span class="n">eos</span> <span class="o">=</span> <span class="n">UserDefinedEos</span><span class="p">(</span><span class="n">PyPengRobinson</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">pc</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">molar_weight</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Properties-and-dual-numbers">
+<h2>Properties and dual numbers<a class="headerlink" href="#Properties-and-dual-numbers" title="Permalink to this headline">¶</a></h2>
+<p>After initializing the equation of state for a single substance (in the above cell), let us now build a thermodynamic state. For the sake of this example, we use the natural variables of the Helmholtz energy (<span class="math notranslate nohighlight">\(\mathbf{N}\)</span>, <span class="math notranslate nohighlight">\(V\)</span>, <span class="math notranslate nohighlight">\(T\)</span>) as input so that no volume or temperature has to be iterated (we can omit the amount of substance for a pure substance. <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> will set the total amount of substance to the inverse Avogradro’s number).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">300</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span> <span class="n">volume</span><span class="o">=</span><span class="mi">40744</span><span class="o">*</span><span class="n">ANGSTROM</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>When computing a thermodynamic property for a <code class="docutils literal notranslate"><span class="pre">State</span></code>, <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> internally generates a new object which contains the same information as <code class="docutils literal notranslate"><span class="pre">State</span></code> but with dual numbers as data types. Which dual numbers (dual, hyper-dual, etc.) are used depends on the property to compute or rather which partial derivatives are needed. <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> then modifies the non-real parts of those properties (temperature, volume or amount of substance) so that the correct derivatives are computed and feeds this
+“generalized dual state” object into the function that computes the Helmholtz energy. The result will have the same data type as the state’s variables and the needed derivative(s) are extracted and returned.</p>
+<p><code class="docutils literal notranslate"><span class="pre">FeOs</span></code> does all of that independent from the implementation of the equation of state. All you have to do - if you implement a Helmholtz energy function - is to write your code knowing that the state’s properties are generalized dual numbers. In Python, your can write code just like “regular” Python because dual numbers implement all arithmetic opartions you’d typically use.</p>
+<p>Let’s take a look at an example. First, we compute the <code class="docutils literal notranslate"><span class="pre">molar_helmholtz_energy</span></code>. Since <em>no derivatives</em> are needed to compute the Helmholtz energy, the data types of the <code class="docutils literal notranslate"><span class="pre">State</span></code>’s properties are regular floating point numbers (<code class="docutils literal notranslate"><span class="pre">float</span></code>).</p>
+<p>If you are in a running noteboook, execute the cell below and check the output. If you run the cell a second time, you will notice that the information about data types and values aren’t printed to the screen anymore. That’s because we <em>cache</em> already computed derivatives for a given state. A second call to <code class="docutils literal notranslate"><span class="pre">molar_helmholtz_energy</span></code> simply pulls the already computed value from cache and returns it without entering the <code class="docutils literal notranslate"><span class="pre">helmholtz_energy</span></code> function.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">state</span><span class="o">.</span><span class="n">helmholtz_energy</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">KB</span> <span class="o">*</span> <span class="mi">300</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+data type  :  &lt;class &#39;float&#39;&gt;
+temperature:  300.0
+volume     :  40744.0
+moles      :  [1.0]
+density    :  2.4543491066169253e-05
+A/kT       :  [5.06008546]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+-6.554978406564657
+</pre></div></div>
+</div>
+<p>Next, we compute the <code class="docutils literal notranslate"><span class="pre">pressure</span></code>, for which we compute the first partial derivative of the Helmholtz energy with respect to the volume.</p>
+<p><span class="math notranslate nohighlight">\(p = -\left(\frac{\partial A}{\partial V}\right)_{\mathbf{n}, T}\)</span></p>
+<p>If you execute the cell below, you’ll notice that the data types are now dual numbers (<code class="docutils literal notranslate"><span class="pre">Dual64</span></code>, a dual number with 64bit floating point numbers) with <em>a single</em> non-real part. This non-real or <em>dual</em> part of the volume is unity while all other non-real parts are zero, which means that the first partial derivative with respect to volume will be computed.</p>
+<p><code class="docutils literal notranslate"><span class="pre">FeOs</span></code> modifies the dual parts of the temperature, volume or amount of substance (for a component) when computing derivatives. Note that the <code class="docutils literal notranslate"><span class="pre">density</span></code> is calculated as <span class="math notranslate nohighlight">\(\rho = \frac{\sum n_i}{V}\)</span> (where <span class="math notranslate nohighlight">\(n_i\)</span> is the amount of substance of component <span class="math notranslate nohighlight">\(i\)</span>) and hence also has a dual part which is different from zero. It is also different from unity - the value is calculated according to the artihmetic operation of division between two dual numbers.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">state</span><span class="o">.</span><span class="n">pressure</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+data type  :  &lt;class &#39;builtins.Dual64&#39;&gt;
+temperature:  300 + [0]ε
+volume     :  40744 + [1]ε
+moles      :  [1 + [0]ε]
+density    :  0.000024543491066169253 + [-0.00000000060238295371513]ε
+A/kT       :  5.060085461999783 + [0.00000040024326944247174]ε
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="math notranslate nohighlight">
+$100\,\mathrm{kPa}$</div></div>
+</div>
+<p>Similar to the <code class="docutils literal notranslate"><span class="pre">pressure</span></code>, the <code class="docutils literal notranslate"><span class="pre">entropy</span></code> is computed by taking the first partial derivative with respect to temperature. Here, the dual part of the density is zero because both dual parts of the volume and the amount of substance are zero, too.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">state</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+data type  :  &lt;class &#39;builtins.Dual64&#39;&gt;
+temperature:  300 + [1]ε
+volume     :  40744 + [0]ε
+moles      :  [1 + [0]ε]
+density    :  0.000024543491066169253 + [0]ε
+A/kT       :  5.060085461999783 + [-0.025513116823522065]ε
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="math notranslate nohighlight">
+$118.14\,\mathrm{\frac{ J}{molK}}$</div></div>
+</div>
+<p>Let’s take a look at a more involved property. For the Joule-Thomson coefficient, we need multiple second partial derivatives:</p>
+<p><span class="math notranslate nohighlight">\(\mu_{JT}=\left(\frac{\partial T}{\partial p}\right)_{H,N_i} = -\frac{1}{C_p} \left(V + T \left(\frac{\partial p}{\partial T}\right)_{\mathbf{n}, V} \left(\frac{\partial p}{\partial V}\right)_{\mathbf{n}, T}^{-1} \right)\)</span></p>
+<p>We need three evaluations of the Helmholtz energy (that are actually occuring in the computation of <span class="math notranslate nohighlight">\(C_p\)</span>):</p>
+<ol class="arabic simple">
+<li><p><span class="math notranslate nohighlight">\(\left(\frac{\partial p}{\partial T}\right)_{\mathbf{n}, V} \rightarrow -\left(\frac{\partial A}{\partial T \partial V}\right)_\mathbf{n}\)</span>: second partial derivative w.r.t volume and temperature,</p></li>
+<li><p><span class="math notranslate nohighlight">\(\left(\frac{\partial p}{\partial V}\right)_{\mathbf{n}, T} \rightarrow -\left(\frac{\partial^2 A}{\partial V^2}\right)_{\mathbf{n}, T}\)</span>: second derivative w.r.t volume,</p></li>
+<li><p><span class="math notranslate nohighlight">\(\left(\frac{\partial^2 A}{\partial T^2}\right)_{\mathbf{n}, V}\)</span>: 2nd partial derivative w.r.t temperature.</p></li>
+</ol>
+<p>Since we compute second partial derivatives, the data type is now <code class="docutils literal notranslate"><span class="pre">HyperDual64</span></code> (one real, 3 non-real values).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">state</span><span class="o">.</span><span class="n">joule_thomson</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+data type  :  &lt;class &#39;builtins.HyperDual64&#39;&gt;
+temperature:  300 + [0]ε1 + [1]ε2 + [0]ε1ε2
+volume     :  40744 + [1]ε1 + [0]ε2 + [0]ε1ε2
+moles      :  [1 + [0]ε1 + [0]ε2 + [0]ε1ε2]
+density    :  0.000024543491066169253 + [-0.00000000060238295371513]ε1 + [0]ε2 + [0]ε1ε2
+A/kT       :  5.060085461999783 + [0.00000040024326944247174]ε1 + [-0.025513116823522065]ε2 + [-0.0000000023037315630585307]ε1ε2
+
+data type  :  &lt;class &#39;builtins.HyperDual64&#39;&gt;
+temperature:  300 + [0]ε1 + [0]ε2 + [0]ε1ε2
+volume     :  40744 + [1]ε1 + [1]ε2 + [0]ε1ε2
+moles      :  [1 + [0]ε1 + [0]ε2 + [0]ε1ε2]
+density    :  0.000024543491066169253 + [-0.00000000060238295371513]ε1 + [-0.00000000060238295371513]ε2 + [0.00000000000002956916128583988]ε1ε2
+A/kT       :  5.060085461999783 + [0.00000040024326944247174]ε1 + [0.00000040024326944247174]ε2 + [-0.000000000019592452372041545]ε1ε2
+
+data type  :  &lt;class &#39;builtins.HyperDual64&#39;&gt;
+temperature:  300 + [1]ε1 + [1]ε2 + [0]ε1ε2
+volume     :  40744 + [0]ε1 + [0]ε2 + [0]ε1ε2
+moles      :  [1 + [0]ε1 + [0]ε2 + [0]ε1ε2]
+density    :  0.000024543491066169253 + [0]ε1 + [0]ε2 + [0]ε1ε2
+A/kT       :  5.060085461999783 + [-0.025513116823522065]ε1 + [-0.025513116823522065]ε2 + [0.0001919137873859282]ε1ε2
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="math notranslate nohighlight">
+$-1.4939\times10^{-4}\,\mathrm{\frac{ms^{2}K}{kg}}$</div></div>
+</div>
+</section>
+<section id="Summary">
+<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FeOs</span></code> uses generalized dual numbers which enable the computation of higher order partial derivatives of the Helmholtz energy without the need of implementing these derivatives analytically.</p></li>
+<li><p>When a property is computed, <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> creates a new thermodynamic state with the correct data types according to the partial derivatives needed.</p></li>
+<li><p>If a property was computed before, it is pulled from the state’s cache instead of re-evaluating the Helmholtz energy.</p></li>
+</ul>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2021, Gernot Bauer, Philipp Rehner.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

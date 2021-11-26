@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.State.helmholtz\_energy\_contributions
+=========================================================
+
+.. currentmodule:: feos.user_defined
+
+.. automethod:: State.helmholtz_energy_contributions

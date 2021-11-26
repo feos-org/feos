@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.fmt.State.entropy
+======================
+
+.. currentmodule:: feos.fmt
+
+.. automethod:: State.entropy

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.dft.PcSaftFunctional.\_\_init\_\_
+=============================================
+
+.. currentmodule:: feos.pcsaft.dft
+
+.. automethod:: PcSaftFunctional.__init__

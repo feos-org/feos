@@ -1,0 +1,32 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.eos.PcSaft
+======================
+
+.. currentmodule:: feos.pcsaft.eos
+
+.. autoclass:: PcSaft
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PcSaft.__init__
+      ~PcSaft.max_density
+      ~PcSaft.second_virial_coefficient
+      ~PcSaft.second_virial_coefficient_temperature_derivative
+      ~PcSaft.third_virial_coefficient
+      ~PcSaft.third_virial_coefficient_temperature_derivative
+   
+   
+
+   
+   
+   

@@ -1,0 +1,11 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.num\_dual.derive3
+====================================
+
+.. currentmodule:: feos.user_defined
+
+.. autofunction:: num_dual.derive3

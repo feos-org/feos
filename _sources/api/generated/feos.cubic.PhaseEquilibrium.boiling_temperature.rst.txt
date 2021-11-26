@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.PhaseEquilibrium.boiling\_temperature
+================================================
+
+.. currentmodule:: feos.cubic
+
+.. automethod:: PhaseEquilibrium.boiling_temperature

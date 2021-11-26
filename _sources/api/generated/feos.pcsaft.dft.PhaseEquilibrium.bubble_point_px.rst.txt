@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.dft.PhaseEquilibrium.bubble\_point\_px
+==================================================
+
+.. currentmodule:: feos.pcsaft.dft
+
+.. automethod:: PhaseEquilibrium.bubble_point_px

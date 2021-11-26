@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.fmt.FMTFunctional.\_\_init\_\_
+===================================
+
+.. currentmodule:: feos.fmt
+
+.. automethod:: FMTFunctional.__init__

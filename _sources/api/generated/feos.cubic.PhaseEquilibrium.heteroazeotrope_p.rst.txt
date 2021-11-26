@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.PhaseEquilibrium.heteroazeotrope\_p
+==============================================
+
+.. currentmodule:: feos.cubic
+
+.. automethod:: PhaseEquilibrium.heteroazeotrope_p

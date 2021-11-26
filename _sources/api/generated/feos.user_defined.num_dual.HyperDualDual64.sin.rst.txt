@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.num\_dual.HyperDualDual64.sin
+================================================
+
+.. currentmodule:: feos.user_defined
+
+.. automethod:: num_dual.HyperDualDual64.sin

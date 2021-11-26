@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.fmt.ExternalPotential.Steele
+=================================
+
+.. currentmodule:: feos.fmt
+
+.. automethod:: ExternalPotential.Steele

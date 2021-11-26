@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.dft.PlanarInterface.internal\_energy
+================================================
+
+.. currentmodule:: feos.pcsaft.dft
+
+.. automethod:: PlanarInterface.internal_energy

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.dft.State.specific\_entropy
+=======================================
+
+.. currentmodule:: feos.pcsaft.dft
+
+.. automethod:: State.specific_entropy

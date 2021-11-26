@@ -1,0 +1,29 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.PengRobinsonParameters
+=================================
+
+.. currentmodule:: feos.cubic
+
+.. autoclass:: PengRobinsonParameters
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PengRobinsonParameters.__init__
+      ~PengRobinsonParameters.from_json
+      ~PengRobinsonParameters.from_records
+   
+   
+
+   
+   
+   

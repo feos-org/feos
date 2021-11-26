@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.eos.PhaseEquilibrium.\_\_init\_\_
+=============================================
+
+.. currentmodule:: feos.pcsaft.eos
+
+.. automethod:: PhaseEquilibrium.__init__

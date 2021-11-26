@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.PengRobinsonRecord.\_\_init\_\_
+==========================================
+
+.. currentmodule:: feos.cubic
+
+.. automethod:: PengRobinsonRecord.__init__

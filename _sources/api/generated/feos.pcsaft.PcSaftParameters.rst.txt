@@ -1,0 +1,31 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.PcSaftParameters
+============================
+
+.. currentmodule:: feos.pcsaft
+
+.. autoclass:: PcSaftParameters
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PcSaftParameters.__init__
+      ~PcSaftParameters.from_json
+      ~PcSaftParameters.from_json_segments
+      ~PcSaftParameters.from_records
+      ~PcSaftParameters.from_segments
+   
+   
+
+   
+   
+   

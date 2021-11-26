@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.PhaseDiagramBinary.new\_pxy\_lle
+===================================================
+
+.. currentmodule:: feos.user_defined
+
+.. automethod:: PhaseDiagramBinary.new_pxy_lle

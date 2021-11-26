@@ -1,0 +1,32 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.PengRobinson
+=======================
+
+.. currentmodule:: feos.cubic
+
+.. autoclass:: PengRobinson
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PengRobinson.__init__
+      ~PengRobinson.max_density
+      ~PengRobinson.second_virial_coefficient
+      ~PengRobinson.second_virial_coefficient_temperature_derivative
+      ~PengRobinson.third_virial_coefficient
+      ~PengRobinson.third_virial_coefficient_temperature_derivative
+   
+   
+
+   
+   
+   

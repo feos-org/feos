@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.dft.State.stability\_analysis
+=========================================
+
+.. currentmodule:: feos.pcsaft.dft
+
+.. automethod:: State.stability_analysis

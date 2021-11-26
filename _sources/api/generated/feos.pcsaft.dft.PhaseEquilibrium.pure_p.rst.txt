@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.dft.PhaseEquilibrium.pure\_p
+========================================
+
+.. currentmodule:: feos.pcsaft.dft
+
+.. automethod:: PhaseEquilibrium.pure_p

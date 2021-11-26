@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.eos.State.dln\_phi\_dt
+==================================
+
+.. currentmodule:: feos.pcsaft.eos
+
+.. automethod:: State.dln_phi_dt

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.State.specific\_internal\_energy
+===================================================
+
+.. currentmodule:: feos.user_defined
+
+.. automethod:: State.specific_internal_energy

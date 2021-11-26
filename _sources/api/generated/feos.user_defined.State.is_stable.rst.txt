@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.State.is\_stable
+===================================
+
+.. currentmodule:: feos.user_defined
+
+.. automethod:: State.is_stable

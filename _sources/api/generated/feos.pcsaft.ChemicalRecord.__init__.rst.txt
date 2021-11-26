@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.ChemicalRecord.\_\_init\_\_
+=======================================
+
+.. currentmodule:: feos.pcsaft
+
+.. automethod:: ChemicalRecord.__init__

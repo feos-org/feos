@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.dft.PlanarInterface.from\_density\_profile
+======================================================
+
+.. currentmodule:: feos.pcsaft.dft
+
+.. automethod:: PlanarInterface.from_density_profile

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.eos.PhaseDiagramBinary.new\_pxy\_lle
+================================================
+
+.. currentmodule:: feos.pcsaft.eos
+
+.. automethod:: PhaseDiagramBinary.new_pxy_lle

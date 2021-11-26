@@ -1,0 +1,68 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.num\_dual.Dual3Dual64
+========================================
+
+.. currentmodule:: feos.user_defined
+
+.. autoclass:: num_dual.Dual3Dual64
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~num_dual.Dual3Dual64.__init__
+      ~num_dual.Dual3Dual64.arccos
+      ~num_dual.Dual3Dual64.arccosh
+      ~num_dual.Dual3Dual64.arcsin
+      ~num_dual.Dual3Dual64.arcsinh
+      ~num_dual.Dual3Dual64.arctan
+      ~num_dual.Dual3Dual64.arctanh
+      ~num_dual.Dual3Dual64.cbrt
+      ~num_dual.Dual3Dual64.cos
+      ~num_dual.Dual3Dual64.cosh
+      ~num_dual.Dual3Dual64.exp
+      ~num_dual.Dual3Dual64.exp2
+      ~num_dual.Dual3Dual64.expm1
+      ~num_dual.Dual3Dual64.from_re
+      ~num_dual.Dual3Dual64.log
+      ~num_dual.Dual3Dual64.log10
+      ~num_dual.Dual3Dual64.log1p
+      ~num_dual.Dual3Dual64.log2
+      ~num_dual.Dual3Dual64.log_base
+      ~num_dual.Dual3Dual64.mul_add
+      ~num_dual.Dual3Dual64.powd
+      ~num_dual.Dual3Dual64.powf
+      ~num_dual.Dual3Dual64.powi
+      ~num_dual.Dual3Dual64.recip
+      ~num_dual.Dual3Dual64.sin
+      ~num_dual.Dual3Dual64.sin_cos
+      ~num_dual.Dual3Dual64.sinh
+      ~num_dual.Dual3Dual64.sph_j0
+      ~num_dual.Dual3Dual64.sph_j1
+      ~num_dual.Dual3Dual64.sph_j2
+      ~num_dual.Dual3Dual64.sqrt
+      ~num_dual.Dual3Dual64.tan
+      ~num_dual.Dual3Dual64.tanh
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~num_dual.Dual3Dual64.first_derivative
+      ~num_dual.Dual3Dual64.second_derivative
+      ~num_dual.Dual3Dual64.third_derivative
+      ~num_dual.Dual3Dual64.value
+   
+   

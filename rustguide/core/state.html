@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Thermodynamic States &#8212; feos 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/style.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../index.html">
+          feos</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../../api/index.html">Python API</a></li>
+                <li><a href="../../examples/index.html">Python Examples</a></li>
+                <li><a href="../index.html">Rust Guide</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Thermodynamic States</a><ul>
+<li><a class="reference internal" href="#the-natural-variables-of-state">The natural variables of <code class="docutils literal notranslate"><span class="pre">State</span></code></a></li>
+<li><a class="reference internal" href="#computing-thermodynamic-properties">Computing Thermodynamic Properties</a><ul>
+<li><a class="reference internal" href="#generalized-hyper-dual-numbers">Generalized (Hyper-) Dual Numbers</a></li>
+<li><a class="reference internal" href="#the-statehd-struct">The <code class="docutils literal notranslate"><span class="pre">StateHD</span></code> Struct</a></li>
+<li><a class="reference internal" href="#helmholtz-energy-contributions">Helmholtz Energy Contributions</a></li>
+<li><a class="reference internal" href="#entropy-again">Entropy, again!</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-to-add-a-new-property">How to Add a New Property</a><ul>
+<li><a class="reference internal" href="#array-valued-properties">Array Valued Properties</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="thermodynamic-states">
+<h1>Thermodynamic States<a class="headerlink" href="#thermodynamic-states" title="Permalink to this headline">¶</a></h1>
+<p>One of the most important data type of <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> is the <code class="docutils literal notranslate"><span class="pre">State</span></code> struct.</p>
+<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/mod.rs</span>
+
+<span class="c1">// Documentation omitted</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">State</span><span class="o">&lt;</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">E</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// Equation of state</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">eos</span>: <span class="nc">Rc</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// Temperature $T$</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">temperature</span>: <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// Volume $V$</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">volume</span>: <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// Mole numbers $N_i$</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">moles</span>: <span class="nc">QuantityArray1</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// Total number of moles $N=\sum_iN_i$</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">total_moles</span>: <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// Partial densities $\rho_i=\frac{N_i}{V}$</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">partial_density</span>: <span class="nc">QuantityArray1</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// Total density $\rho=\frac{N}{V}=\sum_i\rho_i$</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">density</span>: <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// Mole fractions $x_i=\frac{N_i}{N}=\frac{\rho_i}{\rho}$</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">molefracs</span>: <span class="nc">Array1</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// Reduced temperature</span>
+<span class="w">    </span><span class="n">reduced_temperature</span>: <span class="kt">f64</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// Reduced volume,</span>
+<span class="w">    </span><span class="n">reduced_volume</span>: <span class="kt">f64</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// Reduced moles</span>
+<span class="w">    </span><span class="n">reduced_moles</span>: <span class="nc">Array1</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// Cache</span>
+<span class="w">    </span><span class="n">cache</span>: <span class="nc">RefCell</span><span class="o">&lt;</span><span class="n">Cache</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>A <code class="docutils literal notranslate"><span class="pre">State</span></code> hase two parameters, <code class="docutils literal notranslate"><span class="pre">U</span></code>, which specifies the physical units to use, and <code class="docutils literal notranslate"><span class="pre">E</span></code> which specifies which equation of state to use.
+A <code class="docutils literal notranslate"><span class="pre">State</span></code></p>
+<ul class="simple">
+<li><p>stores (a pointer to) the equation of state,</p></li>
+<li><p>is used to store temperature, volume, and amount of substance per species as dimensioned quantities,</p></li>
+<li><p>defines constructors for different combination of inputs, e.g. <span class="math notranslate nohighlight">\((T, p)\)</span>, <span class="math notranslate nohighlight">\((h, p)\)</span>, <span class="math notranslate nohighlight">\((T, s)\)</span> or <span class="math notranslate nohighlight">\((T, p, \mathbf{x})\)</span>,</p></li>
+<li><p>defines constructors for critical point calculations,</p></li>
+<li><p>and provides methods to compute thermodynamic properties such as pressure, chemical potential or fugacity.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">State</span></code> is the object users interact with the most.
+In what follows we will take a closer look at the specific procedures to compute a property for a given <code class="docutils literal notranslate"><span class="pre">State</span></code>.</p>
+<section id="the-natural-variables-of-state">
+<h2>The natural variables of <code class="docutils literal notranslate"><span class="pre">State</span></code><a class="headerlink" href="#the-natural-variables-of-state" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">FeOs</span></code> is build around equations of state that are formulated in terms of <strong>residual Helmholtz energies</strong>.
+We harness the fact that all thermodynamic properties of a system can be computed from (partial) derivatives of the Helmholtz energy.
+As a consequence, we store the natural variables of the Helmholtz energy, <span class="math notranslate nohighlight">\((\mathbf{N}, V, T)\)</span>, in our <code class="docutils literal notranslate"><span class="pre">State</span></code> object together with some other variables for convenience, such as the density or the mole fractions.</p>
+<p>The most straight forward way to construct a <code class="docutils literal notranslate"><span class="pre">State</span></code> is by providing <span class="math notranslate nohighlight">\((\mathbf{N}, V, T)\)</span>.
+Using other constructors, e.g. for given pressure, entropy or enthalpy, is more expensive since we have to perform an iteration of volume (density) and/or temperature.</p>
+</section>
+<section id="computing-thermodynamic-properties">
+<h2>Computing Thermodynamic Properties<a class="headerlink" href="#computing-thermodynamic-properties" title="Permalink to this headline">¶</a></h2>
+<section id="generalized-hyper-dual-numbers">
+<h3>Generalized (Hyper-) Dual Numbers<a class="headerlink" href="#generalized-hyper-dual-numbers" title="Permalink to this headline">¶</a></h3>
+<p>As mentioned above, thermodynamic properties can readily be computed via (partial) derivatives once the Helmholtz energy function is known.
+In our code, these derivatives are <strong>not implemented analytically</strong>, instead we use <strong>generalized dual numbers</strong> (in what follows only referred to as dual numbers).</p>
+<p>Dual numbers, by construction, enable the simultaneous evaluation of a function and its partial derivatives.
+Which derivatives of a function can be determined depends on the concrete dual number.
+For example, for the first derivative a dual number consisting of a real and <em>one non-real part</em> is sufficient while for second partial derivatives we need a dual number consisting of a real and <em>three non-real parts</em> (this number is referred to as hyper-dual number).</p>
+<p>Our implementation of dual numbers provides multiple data types that can be used depending on the derivative that is needed.
+Consequently, computation of partial derivatives comes down to <strong>writing the Helmholtz energy function in terms of generalized dual numbers</strong>.
+Technically, this is achieved by parameterization of the Helmholtz energy function over the <code class="docutils literal notranslate"><span class="pre">DualNum</span></code> trait, a trait all dual numbers implement, and which provides operator overloading and a wide range of commonly used mathematical functions.</p>
+<p>At the point of this writing, rust is still missing some features that enable us to write our implementation as if we were using floating point numbers.
+For example, since <em>specialization</em> is not yet implemented, in some situations we have to change the order in which arithmetic operations are performed when working with arrays, because the leftmost argument defines the data type of the output.
+This is a minor inconvenience though and something you’ll get quickly used to.</p>
+<p>If you are interested in the inner workings of generalized dual numbers, check out these sources:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/itt-ustutt/num-dual">The num-dual crate</a></p></li>
+<li><p><a class="reference external" href="http://adl.stanford.edu/hyperdual/Fike_AIAA-2011-886.pdf">Paper of Fike and Alonso on hyper-dual numbers</a></p></li>
+<li><p><a class="reference external" href="http://adl.stanford.edu/hyperdual/">Jeffrey Fike’s website about hyper-dual numbers</a></p></li>
+<li><p><a class="reference external" href="https://www.frontiersin.org/articles/10.3389/fceng.2021.758090">Our paper about generalized (hyper-) dual numbers in the context of equations of state modeling</a></p></li>
+</ul>
+</section>
+<section id="the-statehd-struct">
+<h3>The <code class="docutils literal notranslate"><span class="pre">StateHD</span></code> Struct<a class="headerlink" href="#the-statehd-struct" title="Permalink to this headline">¶</a></h3>
+<p>So, how can we compute a property for a given <code class="docutils literal notranslate"><span class="pre">State</span></code> using dual numbers?
+Let’s run through a small example.
+Note thought, that the way properties are actually calculated is a bit more involved - we will talk about that in more detail below.</p>
+<p>Let us assume we already created a <code class="docutils literal notranslate"><span class="pre">State</span></code> e.g. for a given temperature and partial density and now we want to compute the residual entropy at this condition.
+The residual entropy is defined as</p>
+<div class="math notranslate nohighlight">
+\[S^\text{res} = -\left(\frac{\partial A^\text{res}}{\partial T}\right)_{\mathbf{N}, V}\]</div>
+<p>We need the first derivative of the residual Helmholtz energy with respect to temperature.
+The first derivative can be computed using a dual number consisting of a real part and <em>one non-real part</em> which is a <code class="docutils literal notranslate"><span class="pre">Dual64</span></code> struct.
+Looking at the signature of the Helmholtz energy function, we see that it takes a <code class="docutils literal notranslate"><span class="pre">StateHD&lt;D&gt;</span></code> as input (not a <code class="docutils literal notranslate"><span class="pre">State</span></code>), where <code class="docutils literal notranslate"><span class="pre">D</span></code> is a generalized dual number (<code class="docutils literal notranslate"><span class="pre">D:</span> <span class="pre">DualNum&lt;f64&gt;</span></code>):</p>
+<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="sd">/// The Helmholtz energy contribution $\beta A$ of a given state in reduced units.</span>
+<span class="k">fn</span> <span class="nf">helmholtz_energy</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">state</span>: <span class="kp">&amp;</span><span class="nc">StateHD</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">D</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">StateHD</span></code> contains the same state variables as the <code class="docutils literal notranslate"><span class="pre">State</span></code> object, but instead of dimensioned quantities, properties are stored as generalized dual numbers:</p>
+<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/mod.rs</span>
+
+<span class="sd">/// Thermodynamic state of the system in reduced variables</span>
+<span class="sd">/// including their derivatives.</span>
+<span class="sd">///</span>
+<span class="sd">/// Properties are stored as generalized (hyper) dual numbers which allows</span>
+<span class="sd">/// for automatic differentiation.</span>
+<span class="cp">#[derive(Clone, Debug)]</span><span class="w"></span>
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">StateHD</span><span class="o">&lt;</span><span class="n">D</span>: <span class="nc">DualNum</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// temperature in Kelvin</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">temperature</span>: <span class="nc">D</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// volume in Angstrom^3</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">volume</span>: <span class="nc">D</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// number of particles</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">moles</span>: <span class="nc">Array1</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// mole fractions</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">molefracs</span>: <span class="nc">Array1</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="sd">/// partial number densities in Angstrom^-3</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">partial_density</span>: <span class="nc">Array1</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>To compute the first derivative, we have to create a <code class="docutils literal notranslate"><span class="pre">StateHD&lt;Dual64&gt;</span></code>.</p>
+<p>This can be done “by hand”, placing the state variables of <code class="docutils literal notranslate"><span class="pre">State</span></code> as real parts of our dual numbers in <code class="docutils literal notranslate"><span class="pre">StateHD</span></code>.
+This can conveniently be done using <em>reduced</em> variables.
+Next, we have to modify the non-real part of the temperature dual number since we want to compute the partial derivative with respect to temperature which is done by setting the dual part of the temperature to unity.</p>
+<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// &quot;state&quot; is our State struct we already constructed.</span>
+
+<span class="c1">// create an array of dual numbers from array of f64</span>
+<span class="kd">let</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">state</span><span class="p">.</span><span class="n">reduced_moles</span><span class="p">.</span><span class="n">mapv</span><span class="p">(</span><span class="n">Dual64</span>::<span class="n">from</span><span class="p">);</span><span class="w"></span>
+<span class="kd">let</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Dual64</span>::<span class="n">from</span><span class="p">(</span><span class="n">state</span><span class="p">.</span><span class="n">reduced_volume</span><span class="p">);</span><span class="w"></span>
+<span class="c1">// .derive() sets the dual part to unity</span>
+<span class="kd">let</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Dual64</span>::<span class="n">from</span><span class="p">(</span><span class="n">state</span><span class="p">.</span><span class="n">reduced_temperature</span><span class="p">).</span><span class="n">derive</span><span class="p">();</span><span class="w"></span>
+<span class="kd">let</span><span class="w"> </span><span class="n">state_hd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">StateHD</span><span class="o">&lt;</span><span class="n">Dual64</span><span class="o">&gt;</span>::<span class="n">new</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The result of the <code class="docutils literal notranslate"><span class="pre">helmholtz_energy</span></code> function using this <code class="docutils literal notranslate"><span class="pre">StateHD</span></code> is also a <code class="docutils literal notranslate"><span class="pre">Dual64</span></code> where the dual part contains the temperature derivative of the residual Helmholtz energy.</p>
+<p>In our code, you won’t construct <code class="docutils literal notranslate"><span class="pre">StateHD</span></code> objects “by hand” as we just did in our example.
+There are methods that produce the correct dual number types and set the correct non-real parts according to the partial derivative you want to compute.</p>
+</section>
+<section id="helmholtz-energy-contributions">
+<h3>Helmholtz Energy Contributions<a class="headerlink" href="#helmholtz-energy-contributions" title="Permalink to this headline">¶</a></h3>
+<p>The above example is a bit simplified and in our real code we have to do some additional legwork, mainly concerning the <em>contributions</em> to the Helmholtz energy that are computed.</p>
+<p>We differentiate between the following contributions to a property:</p>
+<ul class="simple">
+<li><p><strong>Total</strong>: ideal gas contribution plus contribution to the property from the residual Helmholtz energy,</p></li>
+<li><p><strong>Residual</strong>: residual property, with respect to the ideal gas at given temperature and <strong>volume</strong>,</p></li>
+<li><p><strong>ResidualP</strong>: residual property, with respect to the ideal gas at given temperature and <strong>pressure</strong>,</p></li>
+<li><p><strong>IdealGas</strong>: ideal gas part of the property.</p></li>
+</ul>
+<p>These variants are encoded in the <code class="docutils literal notranslate"><span class="pre">Contributions</span></code> enum.
+Furthermore, computation of a property (for given contributions) is different for additive and non-additive properties, so we have to take this into account as well.</p>
+</section>
+<section id="entropy-again">
+<h3>Entropy, again!<a class="headerlink" href="#entropy-again" title="Permalink to this headline">¶</a></h3>
+<p>Let’s look at the actual implementation of the entropy, the <code class="docutils literal notranslate"><span class="pre">entropy</span></code> method of <code class="docutils literal notranslate"><span class="pre">State</span></code>.
+There are multiple layers we have to dig through, but hopefully everything makes sense to you in the end.
+You can think of each layer as an answer to a question:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Which contributions should be computed and is the property additive?</dt><dd><ul>
+<li><p>Define how the property is computed.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>What partial derivatives are needed?</dt><dd><ul>
+<li><p>Construct <code class="docutils literal notranslate"><span class="pre">StateHD</span></code> object with correct dual number types.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Was this property computed before?</dt><dd><ul>
+<li><p>Yes: retrieve value from the cache.</p></li>
+<li><p>No: perform computation and update cache.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>What’s the proper unit?</dt><dd><ul>
+<li><p>Multiply the respective reference values.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">entropy</span></code> method is defined in the <code class="docutils literal notranslate"><span class="pre">impl</span></code> block of <code class="docutils literal notranslate"><span class="pre">State</span></code> and looks like so:</p>
+<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/properties.rs</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">entropy</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span>: <span class="nc">Contributions</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="bp">self</span><span class="p">.</span><span class="n">evaluate_property</span><span class="p">(</span><span class="bp">Self</span>::<span class="n">entropy_</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Most of the properties defined for a <code class="docutils literal notranslate"><span class="pre">State</span></code> will look similar to the above method:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Self::entropy_</span></code> defines the actual computation (we will look at this function below),</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">contributions</span></code> will inform if and how the ideal gas and residual contributions will be included, and</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">true</span></code> signals that entropy is an additive property.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">evaluate_property</span></code> then simply calls the function (here <code class="docutils literal notranslate"><span class="pre">entropy_</span></code>) and handles the ideal gas contribution:</p>
+<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/properties.rs</span>
+<span class="k">fn</span> <span class="nf">evaluate_property</span><span class="o">&lt;</span><span class="n">R</span><span class="p">,</span><span class="w"> </span><span class="n">F</span><span class="o">&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">f</span>: <span class="nc">F</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span>: <span class="nc">Contributions</span><span class="p">,</span><span class="w"> </span><span class="n">additive</span>: <span class="kt">bool</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">R</span><span class="w"></span>
+<span class="k">where</span><span class="w"></span>
+<span class="w">    </span><span class="n">R</span>: <span class="nc">Sub</span><span class="o">&lt;</span><span class="n">Output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">R</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">F</span>: <span class="nb">Fn</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">Self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">R</span><span class="p">,</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">match</span><span class="w"> </span><span class="n">contributions</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">Contributions</span>::<span class="n">IdealGas</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span>::<span class="n">IdealGas</span><span class="p">),</span><span class="w"></span>
+<span class="w">        </span><span class="n">Contributions</span>::<span class="n">Total</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span>::<span class="n">Total</span><span class="p">),</span><span class="w"></span>
+<span class="w">        </span><span class="n">Contributions</span>::<span class="n">Residual</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="n">additive</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span>::<span class="n">Residual</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span>::<span class="n">Total</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span>::<span class="n">IdealGas</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="n">Contributions</span>::<span class="n">ResidualP</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">pressure_</span><span class="p">(</span><span class="n">Evaluate</span>::<span class="n">Total</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">state_p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">Self</span>::<span class="n">new_nvt</span><span class="p">(</span><span class="w"></span>
+<span class="w">                </span><span class="o">&amp;</span><span class="bp">self</span><span class="p">.</span><span class="n">eos</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="bp">self</span><span class="p">.</span><span class="n">temperature</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="bp">self</span><span class="p">.</span><span class="n">total_moles</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">U</span>::<span class="n">gas_constant</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">temperature</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">p</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="o">&amp;</span><span class="bp">self</span><span class="p">.</span><span class="n">moles</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="p">.</span><span class="n">unwrap</span><span class="p">();</span><span class="w"></span>
+<span class="w">            </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span>::<span class="n">Total</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="o">&amp;</span><span class="n">state_p</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span>::<span class="n">IdealGas</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>For example, the residual value of the additive property entropy can be computed by evaluating the partial derivative of the residual Helmholtz energy while a non-additive property (e.g. the heat capacity) is computed by taking the difference between the total property and the ideal gas property.</p>
+<p>Let’s look at the <code class="docutils literal notranslate"><span class="pre">entropy_</span></code> method:</p>
+<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/properties.rs</span>
+<span class="k">fn</span> <span class="nf">entropy_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span>: <span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="o">-</span><span class="bp">self</span><span class="p">.</span><span class="n">get_or_compute_derivative</span><span class="p">(</span><span class="n">PartialDerivative</span>::<span class="n">First</span><span class="p">(</span><span class="n">DT</span><span class="p">),</span><span class="w"> </span><span class="n">evaluate</span><span class="p">)</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>That might be a bit confusing: we used a <code class="docutils literal notranslate"><span class="pre">Contribution</span></code> in <code class="docutils literal notranslate"><span class="pre">entropy</span></code> and now we use an <code class="docutils literal notranslate"><span class="pre">Evaluate</span></code> enum in <code class="docutils literal notranslate"><span class="pre">entropy_</span></code>.
+Why is that?
+<code class="docutils literal notranslate"><span class="pre">Evaluate</span></code> is a subset of <code class="docutils literal notranslate"><span class="pre">Contribution</span></code> (containing <code class="docutils literal notranslate"><span class="pre">Total</span></code>, <code class="docutils literal notranslate"><span class="pre">IdealGas</span></code>, and <code class="docutils literal notranslate"><span class="pre">Residual</span></code>) and simply introduced to make <code class="docutils literal notranslate"><span class="pre">evaluate_property</span></code> and <code class="docutils literal notranslate"><span class="pre">get_or_compute_derivative</span></code> more readable.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">get_or_compute_derivative</span></code> method does multiple things in the following order:</p>
+<ol class="arabic simple">
+<li><p>Given <code class="docutils literal notranslate"><span class="pre">Evaluate</span></code>, decide what Helmholtz energy contributions to compute: ideal gas, residual or the sum of both.</p></li>
+<li><p>Given the <code class="docutils literal notranslate"><span class="pre">PartialDerivative</span></code>, the the correct <code class="docutils literal notranslate"><span class="pre">StateHD</span></code> object is built by choosing what dual number type to use and which dual parts to modify. In our example, it is a <code class="docutils literal notranslate"><span class="pre">StateHD&lt;Dual64&gt;</span></code> where the dual part of the temperature is unity.</p></li>
+<li><p>Check if the derivative is already cached.</p></li>
+<li><p>Either return the cached value or compute the derivative and add it to the cache.</p></li>
+<li><p>Given the <code class="docutils literal notranslate"><span class="pre">PartialDerivative</span></code>, multiply the result with dimensioned reference quantities, e.g. for entropy, we multiply with the reference energy and divide by the reference temperature.</p></li>
+</ol>
+</section>
+</section>
+<section id="how-to-add-a-new-property">
+<h2>How to Add a New Property<a class="headerlink" href="#how-to-add-a-new-property" title="Permalink to this headline">¶</a></h2>
+<p>Now that we discussed how properties are computed, let’s talk about the two possible ways to add new properties to a state.
+The first and easiest way is to use a combination of existing properties.
+As example, consider the Joule Thomson coefficient, defined as</p>
+<div class="math notranslate nohighlight">
+\[\mu_{JT}=\left(\frac{\partial T}{\partial p}\right)_{H,N_i} = -\frac{1}{C_p} \left(V + T \left(\frac{\partial p}{\partial T}\right) \bigg/ \left(\frac{\partial p}{\partial V}\right)\right) \,\]</div>
+<p>which is implemented as</p>
+<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/properties.rs</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">joule_thomson</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Contributions</span>::<span class="n">Total</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">volume</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">temperature</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">dp_dt</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">dp_dv</span><span class="p">(</span><span class="n">c</span><span class="p">))</span><span class="w"></span>
+<span class="w">        </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">total_moles</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">c_p</span><span class="p">(</span><span class="n">c</span><span class="p">))</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Here, we don’t use <code class="docutils literal notranslate"><span class="pre">Contributions</span></code> as argument because it’s nonsensical for this property, and since we already have functions for the terms needed within the calculation, we don’t construct the partial derivatives by hand.
+Note that all properties here are dimensioned quantities and so is the result.</p>
+<p>In contrast to the Joule Thomson coefficient, properties such as partial derivatives of pressure are implemented similar to what we saw before for the entropy:</p>
+<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/properties.rs</span>
+
+<span class="k">fn</span> <span class="nf">dp_dv_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span>: <span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="o">-</span><span class="bp">self</span><span class="p">.</span><span class="n">get_or_compute_derivative</span><span class="p">(</span><span class="n">PartialDerivative</span>::<span class="n">Second</span><span class="p">(</span><span class="n">DV</span><span class="p">,</span><span class="w"> </span><span class="n">DV</span><span class="p">),</span><span class="w"> </span><span class="n">evaluate</span><span class="p">)</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="k">fn</span> <span class="nf">dp_dt_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span>: <span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="o">-</span><span class="bp">self</span><span class="p">.</span><span class="n">get_or_compute_derivative</span><span class="p">(</span><span class="n">PartialDerivative</span>::<span class="n">Second</span><span class="p">(</span><span class="n">DV</span><span class="p">,</span><span class="w"> </span><span class="n">DT</span><span class="p">),</span><span class="w"> </span><span class="n">evaluate</span><span class="p">)</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<section id="array-valued-properties">
+<h3>Array Valued Properties<a class="headerlink" href="#array-valued-properties" title="Permalink to this headline">¶</a></h3>
+<p>Note that the return types for all given examples were scalar dimensioned values (<code class="docutils literal notranslate"><span class="pre">QuantityScalar</span></code>).
+For partial derivatives w.r.t. the amount of substance of a species, you need an array as return type.
+For example, take a look at the chemical potential:</p>
+<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/properties.rs</span>
+
+<span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">chemical_potential</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span>: <span class="nc">Contributions</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityArray1</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="bp">self</span><span class="p">.</span><span class="n">evaluate_property</span><span class="p">(</span><span class="bp">Self</span>::<span class="n">chemical_potential_</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="k">fn</span> <span class="nf">chemical_potential_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span>: <span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityArray1</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">QuantityArray</span>::<span class="n">from_shape_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">eos</span><span class="p">.</span><span class="n">components</span><span class="p">(),</span><span class="w"> </span><span class="o">|</span><span class="n">i</span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="bp">self</span><span class="p">.</span><span class="n">get_or_compute_derivative</span><span class="p">(</span><span class="n">PartialDerivative</span>::<span class="n">First</span><span class="p">(</span><span class="n">DN</span><span class="p">(</span><span class="n">i</span><span class="p">)),</span><span class="w"> </span><span class="n">evaluate</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">})</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Here, <code class="docutils literal notranslate"><span class="pre">QuantityArray::from_shape:fn</span></code> will create an array given a shape (here one-dimension: the number of components of the equation of state, <code class="docutils literal notranslate"><span class="pre">self.eos.components()</span></code>) and a function that returns a scalar value.
+This is not limited to one-dimensional arrays, of course, as can be seen in the implementation of the partial derivative of the chemical potential:</p>
+<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/properties.rs</span>
+<span class="k">fn</span> <span class="nf">dmu_dni_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span>: <span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityArray2</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">eos</span><span class="p">.</span><span class="n">components</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="n">QuantityArray</span>::<span class="n">from_shape_fn</span><span class="p">((</span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">),</span><span class="w"> </span><span class="o">|</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">)</span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="bp">self</span><span class="p">.</span><span class="n">get_or_compute_derivative</span><span class="p">(</span><span class="w"></span>
+<span class="w">            </span><span class="n">PartialDerivative</span>::<span class="n">Second</span><span class="p">(</span><span class="n">DN</span><span class="p">(</span><span class="n">i</span><span class="p">),</span><span class="w"> </span><span class="n">DN</span><span class="p">(</span><span class="n">j</span><span class="p">)),</span><span class="w"></span>
+<span class="w">            </span><span class="n">evaluate</span><span class="w"></span>
+<span class="w">        </span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">})</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>which returns a matrix (two-dimensional array of dimensioned values, <code class="docutils literal notranslate"><span class="pre">QuantityArray2</span></code>).</p>
+</section>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">State</span></code> stores state variables as dimensioned quantities.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">StateHD</span></code> stores state variables as generalized dual numbers.</p></li>
+<li><p>Properties are computed by evaluating the Helmholtz energy using a <code class="docutils literal notranslate"><span class="pre">StateHD</span></code> as input.</p></li>
+<li><p>Properties can be computed including or excluding the ideal gas contributions, which is controlled using the <code class="docutils literal notranslate"><span class="pre">Contributions</span></code> enum.</p></li>
+<li><p>New properties are implemented either by calling <code class="docutils literal notranslate"><span class="pre">get_or_compute_derivative</span></code> or by combining existing properties.</p></li>
+</ul>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2021, Gernot Bauer, Philipp Rehner.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

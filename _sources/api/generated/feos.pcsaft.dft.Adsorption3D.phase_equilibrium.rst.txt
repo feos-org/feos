@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.dft.Adsorption3D.phase\_equilibrium
+===============================================
+
+.. currentmodule:: feos.pcsaft.dft
+
+.. automethod:: Adsorption3D.phase_equilibrium

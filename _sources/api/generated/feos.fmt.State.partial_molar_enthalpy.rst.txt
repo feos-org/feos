@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.fmt.State.partial\_molar\_enthalpy
+=======================================
+
+.. currentmodule:: feos.fmt
+
+.. automethod:: State.partial_molar_enthalpy

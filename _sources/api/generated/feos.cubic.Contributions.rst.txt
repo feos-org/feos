@@ -1,0 +1,36 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.Contributions
+========================
+
+.. currentmodule:: feos.cubic
+
+.. autoclass:: Contributions
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Contributions.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Contributions.IdealGas
+      ~Contributions.Residual
+      ~Contributions.ResidualP
+      ~Contributions.Total
+   
+   

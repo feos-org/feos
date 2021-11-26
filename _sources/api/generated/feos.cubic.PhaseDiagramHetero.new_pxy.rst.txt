@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.PhaseDiagramHetero.new\_pxy
+======================================
+
+.. currentmodule:: feos.cubic
+
+.. automethod:: PhaseDiagramHetero.new_pxy

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.PhaseDiagramHetero.new\_pxy
+==============================================
+
+.. currentmodule:: feos.user_defined
+
+.. automethod:: PhaseDiagramHetero.new_pxy

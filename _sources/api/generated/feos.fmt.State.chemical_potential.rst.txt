@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.fmt.State.chemical\_potential
+==================================
+
+.. currentmodule:: feos.fmt
+
+.. automethod:: State.chemical_potential

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.dft.PhaseEquilibrium.dew\_point\_px
+===============================================
+
+.. currentmodule:: feos.pcsaft.dft
+
+.. automethod:: PhaseEquilibrium.dew_point_px

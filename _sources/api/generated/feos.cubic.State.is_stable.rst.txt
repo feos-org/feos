@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.State.is\_stable
+===========================
+
+.. currentmodule:: feos.cubic
+
+.. automethod:: State.is_stable

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.dft.SolvationProfile.internal\_energy
+=================================================
+
+.. currentmodule:: feos.pcsaft.dft
+
+.. automethod:: SolvationProfile.internal_energy

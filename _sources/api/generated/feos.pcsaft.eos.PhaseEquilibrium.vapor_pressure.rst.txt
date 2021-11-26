@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.eos.PhaseEquilibrium.vapor\_pressure
+================================================
+
+.. currentmodule:: feos.pcsaft.eos
+
+.. automethod:: PhaseEquilibrium.vapor_pressure

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.State.stability\_analysis
+====================================
+
+.. currentmodule:: feos.cubic
+
+.. automethod:: State.stability_analysis

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.fmt.PairCorrelation.entropy\_density
+=========================================
+
+.. currentmodule:: feos.fmt
+
+.. automethod:: PairCorrelation.entropy_density

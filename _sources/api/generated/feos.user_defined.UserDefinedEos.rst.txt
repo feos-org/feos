@@ -1,0 +1,32 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.UserDefinedEos
+=================================
+
+.. currentmodule:: feos.user_defined
+
+.. autoclass:: UserDefinedEos
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~UserDefinedEos.__init__
+      ~UserDefinedEos.max_density
+      ~UserDefinedEos.second_virial_coefficient
+      ~UserDefinedEos.second_virial_coefficient_temperature_derivative
+      ~UserDefinedEos.third_virial_coefficient
+      ~UserDefinedEos.third_virial_coefficient_temperature_derivative
+   
+   
+
+   
+   
+   

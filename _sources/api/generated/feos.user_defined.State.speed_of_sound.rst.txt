@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.State.speed\_of\_sound
+=========================================
+
+.. currentmodule:: feos.user_defined
+
+.. automethod:: State.speed_of_sound

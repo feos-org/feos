@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.PengRobinson.max\_density
+====================================
+
+.. currentmodule:: feos.cubic
+
+.. automethod:: PengRobinson.max_density

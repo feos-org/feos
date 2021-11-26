@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.user\_defined.num\_dual.Dual3\_64.log1p
+============================================
+
+.. currentmodule:: feos.user_defined
+
+.. automethod:: num_dual.Dual3_64.log1p

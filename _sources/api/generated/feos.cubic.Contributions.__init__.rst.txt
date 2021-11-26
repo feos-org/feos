@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.Contributions.\_\_init\_\_
+=====================================
+
+.. currentmodule:: feos.cubic
+
+.. automethod:: Contributions.__init__
