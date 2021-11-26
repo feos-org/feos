@@ -28,7 +28,7 @@ napoleon_numpy_docstring = True
 autodoc_typehints = "both"
 autosummary_generate = True
 templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '**.ipynb_checkpoints']
 source_suffix = {
     '.rst': 'restructuredtext',
 }
