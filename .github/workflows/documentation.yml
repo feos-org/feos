@@ -15,7 +15,9 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.9    
+          python-version: 3.9
+      - name: Install pandoc
+        run: sudo apt-get install -y pandoc
       - name: Install python dependencies
         run: |
           pip install sphinx sphinx-bootstrap-theme nbsphinx ipython pygments
