@@ -15,9 +15,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.9
-      - name: Install openBLAS
-        run: sudo apt-get install -y libopenblas-dev    
+          python-version: 3.9    
       - name: Install python dependencies
         run: |
           pip install sphinx sphinx-bootstrap-theme nbsphinx ipython pygments
@@ -29,7 +27,7 @@ jobs:
           args: --release --out dist --no-sdist 
       - name: Install module
         run: |
-          pip install feos --no-index --find-links dist --force-reinstall
+          pip install feos --no-index --find-links dist --force-reinstall --cargo-extra-args="--no-default-features --features openblas-static"
       - name: Build documentation
         run: sphinx-build docs/ public/ -b html
       - name: Upload artifacts
