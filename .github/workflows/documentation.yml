@@ -3,14 +3,12 @@ name: Deploy Documentation
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build-documentation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -39,3 +37,18 @@ jobs:
         with:
           name: documentation
           path: public
+
+  release-documentation:
+    needs: [build-documentation]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v1
+        with:
+          name: documentation
+          path: public
+      - name: Deploy documentation to gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
