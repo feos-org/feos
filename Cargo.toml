@@ -11,9 +11,17 @@ crate-type = ["cdylib"]
 quantity = "0.3"
 feos-core = { git = "https://github.com/feos-org/feos-core", branch = "main" }
 feos-dft = { git = "https://github.com/feos-org/feos-dft", branch = "main" }
-feos-gc-pcsaft = { git = "https://github.com/feos-org/feos-gc-pcsaft", branch = "main", features = ["python", "openblas-system"] }
-feos-pcsaft = { git = "https://github.com/feos-org/feos-pcsaft", branch = "main", features = ["python", "openblas-system"] }
+feos-pcsaft = { git = "https://github.com/feos-org/feos-pcsaft", branch = "main", features = ["python"] }
 
 [dependencies.pyo3]
 version = "0.14"
 features = ["extension-module", "abi3", "abi3-py36"]
+
+[features]
+default = ["openblas-system"]
+openblas-system = ["feos-pcsaft/openblas-system"]
+openblas-static = ["feos-pcsaft/openblas-static"]
+intel-mkl-system = ["feos-pcsaft/intel-mkl-system"]
+intel-mkl-static = ["feos-pcsaft/intel-mkl-static"]
+netlib-system = ["feos-pcsaft/netlib-system"]
+netlib-static = ["feos-pcsaft/netlib-static"]

@@ -1,0 +1,41 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install openBLAS
+        run: sudo apt-get install -y libopenblas-dev    
+      - name: Install python dependencies
+        run: |
+          pip install sphinx sphinx-bootstrap-theme nbsphinx
+      - name: Build Wheels
+        uses: messense/maturin-action@v1
+        with:
+          manylinux: auto
+          command: build
+          args: --release --out dist --no-sdist 
+      - name: Install module
+        run: |
+          pip install feos --no-index --find-links dist --force-reinstall
+      - name: Build documentation
+        run: sphinx-build docs/ public/ -b html
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: documentation
+          path: public
