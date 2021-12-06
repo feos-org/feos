@@ -3,6 +3,7 @@ name = "feos"
 version = "0.1.0"
 authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <rehner@itt.uni-stuttgart.de>"]
 edition = "2018"
+rust-version = "1.53"
 
 [lib]
 crate-type = ["cdylib"]
