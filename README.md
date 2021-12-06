@@ -15,7 +15,7 @@ pip install feos
 
 ## Building from source
 
-To compile the code you need the Rust compiler (`rustc >= 1.51`) and `maturin` installed.
+To compile the code you need the Rust compiler (`rustc >= 1.53`) and `maturin` installed.
 For development, use
 
 ```
