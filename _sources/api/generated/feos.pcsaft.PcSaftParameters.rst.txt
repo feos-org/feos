@@ -23,6 +23,8 @@ feos.pcsaft.PcSaftParameters
       ~PcSaftParameters.from_json_segments
       ~PcSaftParameters.from_records
       ~PcSaftParameters.from_segments
+      ~PcSaftParameters.new_binary
+      ~PcSaftParameters.new_pure
    
    
 

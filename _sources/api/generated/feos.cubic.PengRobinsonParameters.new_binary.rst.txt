@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.PengRobinsonParameters.new\_binary
+=============================================
+
+.. currentmodule:: feos.cubic
+
+.. automethod:: PengRobinsonParameters.new_binary

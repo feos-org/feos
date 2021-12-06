@@ -114,12 +114,18 @@
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>pure_records</strong> (<em>List</em><em>[</em><a class="reference internal" href="feos.cubic.PureRecord.html#feos.cubic.PureRecord" title="feos.cubic.PureRecord"><em>PureRecord</em></a><em>]</em>) – pure substance records.</p></li>
-<li><p><strong>binary_records</strong> (<em>List</em><em>[</em><em>BinarySubstanceRecord</em><em>]</em><em>, </em><em>optional</em>) – binary parameter records</p></li>
+<li><p><strong>binary_records</strong> (<em>List</em><em>[</em><a class="reference internal" href="feos.cubic.BinaryRecord.html#feos.cubic.BinaryRecord" title="feos.cubic.BinaryRecord"><em>BinaryRecord</em></a><em>]</em><em>, </em><em>optional</em>) – binary parameter records</p></li>
 <li><p><strong>substances</strong> (<em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The substances to use. Filters substances from <cite>pure_records</cite> according to
 <cite>search_option</cite>.
 When not provided, all entries of <cite>pure_records</cite> are used.</p></li>
 <li><p><strong>search_option</strong> (<em>{'Name'</em><em>, </em><em>'Cas'</em><em>, </em><em>'Inchi'</em><em>, </em><em>'IupacName'</em><em>, </em><em>'Formula'</em><em>, </em><em>'Smiles'}</em><em>, </em><em>optional</em><em>, </em><em>defaults to 'Name'.</em>) – Identifier that is used to search substance.</p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#feos.cubic.PengRobinsonParameters" title="feos.cubic.PengRobinsonParameters">PengRobinsonParameters</a></p>
 </dd>
 </dl>
 <p class="rubric">Methods</p>
@@ -135,8 +141,14 @@ When not provided, all entries of <cite>pure_records</cite> are used.</p></li>
 <tr class="row-even"><td><p><a class="reference internal" href="feos.cubic.PengRobinsonParameters.from_json.html#feos.cubic.PengRobinsonParameters.from_json" title="feos.cubic.PengRobinsonParameters.from_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_json</span></code></a>(substances, pure_path[, ...])</p></td>
 <td><p>Creates parameters from json files.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.cubic.PengRobinsonParameters.from_records.html#feos.cubic.PengRobinsonParameters.from_records" title="feos.cubic.PengRobinsonParameters.from_records"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_records</span></code></a>(pure_records[, binary_records])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.cubic.PengRobinsonParameters.from_records.html#feos.cubic.PengRobinsonParameters.from_records" title="feos.cubic.PengRobinsonParameters.from_records"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_records</span></code></a>(pure_records, binary_records)</p></td>
 <td><p>Creates parameters from records.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.cubic.PengRobinsonParameters.new_binary.html#feos.cubic.PengRobinsonParameters.new_binary" title="feos.cubic.PengRobinsonParameters.new_binary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">new_binary</span></code></a>(pure_records, binary_record)</p></td>
+<td><p>Creates parameters for a binary system from pure records and an optional binary interaction parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.cubic.PengRobinsonParameters.new_pure.html#feos.cubic.PengRobinsonParameters.new_pure" title="feos.cubic.PengRobinsonParameters.new_pure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">new_pure</span></code></a>(pure_record)</p></td>
+<td><p>Creates parameters for a pure component from a pure record.</p></td>
 </tr>
 </tbody>
 </table>
@@ -157,7 +169,7 @@ When not provided, all entries of <cite>pure_records</cite> are used.</p></li>
     </p>
     <p>
         &copy; Copyright 2021, Gernot Bauer, Philipp Rehner.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.1.<br/>
     </p>
   </div>
 </footer>

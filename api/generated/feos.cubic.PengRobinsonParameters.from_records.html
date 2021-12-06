@@ -108,13 +108,13 @@
 <h1>feos.cubic.PengRobinsonParameters.from_records<a class="headerlink" href="#feos-cubic-pengrobinsonparameters-from-records" title="Permalink to this headline">¶</a></h1>
 <dl class="py method">
 <dt class="sig sig-object py" id="feos.cubic.PengRobinsonParameters.from_records">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">PengRobinsonParameters.</span></span><span class="sig-name descname"><span class="pre">from_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pure_records</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binary_records</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#feos.cubic.PengRobinsonParameters.from_records" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">PengRobinsonParameters.</span></span><span class="sig-name descname"><span class="pre">from_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pure_records</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binary_records</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#feos.cubic.PengRobinsonParameters.from_records" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates parameters from records.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>pure_records</strong> (<em>[</em><a class="reference internal" href="feos.cubic.PureRecord.html#feos.cubic.PureRecord" title="feos.cubic.PureRecord"><em>PureRecord</em></a><em>]</em>) – A list of pure component parameters.</p></li>
-<li><p><strong>binary_records</strong> (<em>[</em><a class="reference internal" href="feos.cubic.BinaryRecord.html#feos.cubic.BinaryRecord" title="feos.cubic.BinaryRecord"><em>BinaryRecord</em></a><em>]</em><em>, </em><em>optional</em>) – A list of binary interaction parameters.</p></li>
+<li><p><strong>binary_records</strong> (<em>numpy.ndarray</em><em>[</em><em>float</em><em>]</em>) – A matrix of binary interaction parameters.</p></li>
 </ul>
 </dd>
 </dl>
@@ -135,7 +135,7 @@
     </p>
     <p>
         &copy; Copyright 2021, Gernot Bauer, Philipp Rehner.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.1.<br/>
     </p>
   </div>
 </footer>

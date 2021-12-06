@@ -144,11 +144,17 @@ When not provided, all entries of <cite>pure_records</cite> are used.</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="feos.pcsaft.PcSaftParameters.from_json_segments.html#feos.pcsaft.PcSaftParameters.from_json_segments" title="feos.pcsaft.PcSaftParameters.from_json_segments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_json_segments</span></code></a>(substances, pure_path, ...)</p></td>
 <td><p>Creates parameters using segments from json file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.pcsaft.PcSaftParameters.from_records.html#feos.pcsaft.PcSaftParameters.from_records" title="feos.pcsaft.PcSaftParameters.from_records"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_records</span></code></a>(pure_records[, binary_records])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.pcsaft.PcSaftParameters.from_records.html#feos.pcsaft.PcSaftParameters.from_records" title="feos.pcsaft.PcSaftParameters.from_records"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_records</span></code></a>(pure_records, binary_records)</p></td>
 <td><p>Creates parameters from records.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="feos.pcsaft.PcSaftParameters.from_segments.html#feos.pcsaft.PcSaftParameters.from_segments" title="feos.pcsaft.PcSaftParameters.from_segments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_segments</span></code></a>(pure_records, segment_records)</p></td>
 <td><p>Creates parameters from segment records.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.pcsaft.PcSaftParameters.new_binary.html#feos.pcsaft.PcSaftParameters.new_binary" title="feos.pcsaft.PcSaftParameters.new_binary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">new_binary</span></code></a>(pure_records, binary_record)</p></td>
+<td><p>Creates parameters for a binary system from pure records and an optional binary interaction parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.pcsaft.PcSaftParameters.new_pure.html#feos.pcsaft.PcSaftParameters.new_pure" title="feos.pcsaft.PcSaftParameters.new_pure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">new_pure</span></code></a>(pure_record)</p></td>
+<td><p>Creates parameters for a pure component from a pure record.</p></td>
 </tr>
 </tbody>
 </table>
@@ -169,7 +175,7 @@ When not provided, all entries of <cite>pure_records</cite> are used.</p></li>
     </p>
     <p>
         &copy; Copyright 2021, Gernot Bauer, Philipp Rehner.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.1.<br/>
     </p>
   </div>
 </footer>

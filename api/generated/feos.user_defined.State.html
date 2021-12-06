@@ -123,17 +123,17 @@
 <li><p><strong>molefracs</strong> (<em>numpy.ndarray</em><em>[</em><em>float</em><em>]</em>) – Molar fraction of each component.</p></li>
 <li><p><strong>pressure</strong> (<a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a><em>, </em><em>optional</em>) – System pressure.</p></li>
 <li><p><strong>enthalpy</strong> (<a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a><em>, </em><em>optional</em>) – System enthalpy.</p></li>
-<li><p><strong>entropy</strong> (<em>SInumber</em><em>, </em><em>optional</em>) – System entropy.</p></li>
+<li><p><strong>entropy</strong> (<a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a><em>, </em><em>optional</em>) – System entropy.</p></li>
 <li><p><strong>density_initialization</strong> (<em>{'vapor'</em><em>, </em><em>'liquid'</em><em>, </em><a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a><em>, </em><em>None}</em><em>, </em><em>optional</em>) – Method used to initialize density for density iteration.
 ‘vapor’ and ‘liquid’ are inferred from the maximum density of the equation of state.
 If no density or keyword is provided, the vapor and liquid phase is tested and, if
-different, the Pyresult with the lower free energy is returned.</p></li>
+different, the result with the lower free energy is returned.</p></li>
 <li><p><strong>initial_temperature</strong> (<a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a><em>, </em><em>optional</em>) – Initial temperature for temperature iteration. Can improve convergence
 when the state is specified with pressure and entropy or enthalpy.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
+<dd class="field-even"><p><strong>State</strong></p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>state at given conditions</p>
@@ -314,7 +314,7 @@ when the state is specified with pressure and entropy or enthalpy.</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="feos.user_defined.State.total_molar_weight.html#feos.user_defined.State.total_molar_weight" title="feos.user_defined.State.total_molar_weight"><code class="xref py py-obj docutils literal notranslate"><span class="pre">total_molar_weight</span></code></a>()</p></td>
 <td><p>Return total molar weight.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.user_defined.State.tp_flash.html#feos.user_defined.State.tp_flash" title="feos.user_defined.State.tp_flash"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tp_flash</span></code></a>([max_iter, tol, verbosity, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.user_defined.State.tp_flash.html#feos.user_defined.State.tp_flash" title="feos.user_defined.State.tp_flash"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tp_flash</span></code></a>([initial_vle_state, max_iter, tol, ...])</p></td>
 <td><p>Calculates a two phase Tp-flash with the state as feed.</p></td>
 </tr>
 </tbody>
@@ -366,7 +366,7 @@ when the state is specified with pressure and entropy or enthalpy.</p></li>
     </p>
     <p>
         &copy; Copyright 2021, Gernot Bauer, Philipp Rehner.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.1.<br/>
     </p>
   </div>
 </footer>

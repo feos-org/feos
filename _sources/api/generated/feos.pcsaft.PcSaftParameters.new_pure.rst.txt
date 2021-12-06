@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.PcSaftParameters.new\_pure
+======================================
+
+.. currentmodule:: feos.pcsaft
+
+.. automethod:: PcSaftParameters.new_pure
