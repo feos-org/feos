@@ -12,7 +12,7 @@ crate-type = ["cdylib"]
 quantity = { version = "0.4", features = ["python"] }
 feos-core = { version = "0.1", features = ["python"] }
 feos-dft = { version = "0.1", features = ["python"] }
-feos-pcsaft = { git = "https://github.com/feos-org/feos-pcsaft", branch = "build_wheel", features = ["python"] }
+feos-pcsaft = { version = "0.1", features = ["python"] }
 
 [dependencies.pyo3]
 version = "0.15"
