@@ -8,9 +8,9 @@ The `FeOs` package conveniently provides bindings to the Rust implementations of
 ## Models
 The following models are currently published as part of the `FeOs` framework
 
-|name|description|eos|dft||
-|-|-|:-:|:-:|-|
-|[`feos-pcsaft`](https://github.com/feos-org/feos-pcsaft)|perturbed-chain (polar) statistical associating fluid theory|&#128504;|&#128504;|[![crate](https://img.shields.io/crates/v/feos-pcsaft.svg?style=flat-square)](https://crates.io/crates/feos-pcsaft) [![documentation](https://img.shields.io/docsrs/feos-pcsaft?style=flat-square)](https://docs.rs/feos-pcsaft)
+|name|description|eos|dft|
+|-|-|:-:|:-:|
+|[`feos-pcsaft`](https://github.com/feos-org/feos-pcsaft)|perturbed-chain (polar) statistical associating fluid theory|&#128504;|&#128504;|
 
 The list is being expanded continuously. Currently under development are implementations of ePC-SAFT, (heterosegmented) group contribution PC-SAFT and equations of state/Helmholtz energy functionals for model fluids like LJ and Mie fluids.
 
