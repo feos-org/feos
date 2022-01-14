@@ -40,6 +40,9 @@ These crates offer abstractions for tasks that are common for all equations of s
 Using ``core`` and ``dft``, the following *implementations* of equations of state and functionals are currently available:
 
 * ``feos-pcsaft``: the `PC-SAFT equation of state <https://pubs.acs.org/doi/abs/10.1021/ie0003887>`_.
+
+The following crates are actively worked on and will be released in the near future:
+
 * ``feos-gc-pcsaft``: the `hetero-segmented group contribution <https://aip.scitation.org/doi/full/10.1063/1.4945000>`_ method of the PC-SAFT equation of state.
 * ``feos-uv-theory``: the equation of state based on UV-Theory.
 * ``feos-thol``: the `Thol equation of state <https://aip.scitation.org/doi/full/10.1063/1.4945000>`_ for pure Lennard-Jones fluids.
