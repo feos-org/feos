@@ -1,13 +1,28 @@
 # FeOs - A Framework for Equations of State and Classical Density Functional Theory
 
 [![documentation](https://img.shields.io/badge/docs-github--pages-blue)](https://feos-org.github.io/feos/)
+[![repository](https://img.shields.io/pypi/v/feos)](https://pypi.org/project/feos/)
 
-This is the repository of the `FeOs` Python package.
+The `FeOs` package conveniently provides bindings to the Rust implementations of different equation of state and Helmholtz energy functional models in a single Python package.
+
+## Models
+The following models are currently published as part of the `FeOs` framework
+
+|name|description|eos|dft|
+|-|-|:-:|:-:|
+|[`feos-pcsaft`](https://github.com/feos-org/feos-pcsaft)|perturbed-chain (polar) statistical associating fluid theory|&#128504;|&#128504;|
+
+The list is being expanded continuously. Currently under development are implementations of ePC-SAFT, (heterosegmented) group contribution PC-SAFT and equations of state/Helmholtz energy functionals for model fluids like LJ and Mie fluids.
+
+Other public repositories that implement models within the `FeOs` framework, but are currently not part of the `feos` Python package, are
+
+|name|description|eos|dft|
+|-|-|:-:|:-:|
+|[`feos-fused-chains`](https://github.com/feos-org/feos-fused-chains)|heterosegmented fused-sphere chain functional||&#128504;|
 
 ## Installation
 
-Currently, `FeOs` is not hosted on pypi because we still work on the interfaces.
-Once it is on pypi, you will be able to install it via `pip`:
+`FeOs` can be installed via `pip` and runs on Windows, Linux and macOS:
 
 ```
 pip install feos
@@ -16,19 +31,30 @@ pip install feos
 ## Building from source
 
 To compile the code you need the Rust compiler (`rustc >= 1.53`) and `maturin` installed.
-For development, use
+To install the package directly into the active environment, use
 
 ```
 maturin develop --release
 ```
 
-For `develop` to work you need openBLAS installed and in your PATH.
-
 To build wheels, use
 
 ```
-maturin build --release --out dist --no-sdist --cargo-extra-args="--no-default-features --features openblas-static"
+maturin build --release --out dist --no-sdist
 ```
 
-which statically links to openBLAS so that the wheel is manylinux compatible.
+## Documentation
 
+For a documentation of the Python API, Python examples, and a guide to the underlying Rust framework check out the [documentation](https://feos-org.github.io/feos/).
+
+## Developers
+
+This software is currently maintained by members of the groups of
+- Prof. Joachim Gross, [Institute of Thermodynamics and Thermal Process Engineering (ITT), University of Stuttgart](https://www.itt.uni-stuttgart.de/)
+- Prof. André Bardow, [Energy and Process Systems Engineering (EPSE), ETH Zurich](https://epse.ethz.ch/)
+
+## Contributing
+
+`FeOs` grew from the need to maintain a common codebase used within the scientific work done in our groups. We share the code publicly as a platform to publish our own research but also encourage other researchers and developers to contribute their own models or implementations of existing equations of state.
+
+If you want to contribute to ``FeOs``, there are several ways to go: improving the documentation and helping with language issues, testing the code on your systems to find bugs, adding new models or algorithms, or providing feature requests. Feel free to message us if you have questions or open an issue in this or the model-specific repositories to discuss improvements.

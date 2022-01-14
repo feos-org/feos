@@ -1,28 +1,26 @@
 [package]
 name = "feos"
 version = "0.1.0"
-authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <rehner@itt.uni-stuttgart.de>"]
+authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <prehner@ethz.ch>"]
 edition = "2018"
 rust-version = "1.53"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+description = "FeOs - A framework for equations of state and classical density functional theory."
+homepage = "https://github.com/feos-org"
+repository = "https://github.com/feos-org/feos"
+keywords = ["physics", "thermodynamics", "equations_of_state", "phase_equilibria", "density_functional_theory"]
+categories = ["science"]
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-quantity = "0.3"
-feos-core = "0.1"
-feos-dft = { git = "https://github.com/feos-org/feos-dft", branch = "main" }
-feos-pcsaft = { git = "https://github.com/feos-org/feos-pcsaft", branch = "main", features = ["python"] }
+quantity = { version = "0.4", features = ["python"] }
+feos-core = { version = "0.1", features = ["python"] }
+feos-dft = { version = "0.1", features = ["python"] }
+feos-pcsaft = { version = "0.1", features = ["python"] }
 
 [dependencies.pyo3]
-version = "0.14"
-features = ["extension-module", "abi3", "abi3-py36"]
-
-[features]
-default = ["openblas-system"]
-openblas-system = ["feos-pcsaft/openblas-system"]
-openblas-static = ["feos-pcsaft/openblas-static"]
-intel-mkl-system = ["feos-pcsaft/intel-mkl-system"]
-intel-mkl-static = ["feos-pcsaft/intel-mkl-static"]
-netlib-system = ["feos-pcsaft/netlib-system"]
-netlib-static = ["feos-pcsaft/netlib-static"]
+version = "0.15"
+features = ["extension-module", "abi3", "abi3-py37"]

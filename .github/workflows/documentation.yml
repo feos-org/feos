@@ -26,7 +26,7 @@ jobs:
         with:
           manylinux: auto
           command: build
-          args: --release --out dist --no-sdist --cargo-extra-args="--no-default-features --features openblas-static"
+          args: --release --out dist --no-sdist
       - name: Install module
         run: |
           pip install feos --no-index --find-links dist --force-reinstall
