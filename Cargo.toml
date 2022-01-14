@@ -4,6 +4,13 @@ version = "0.1.0"
 authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <prehner@ethz.ch>"]
 edition = "2018"
 rust-version = "1.53"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+description = "FeOs - A framework for equations of state and classical density functional theory."
+homepage = "https://github.com/feos-org"
+repository = "https://github.com/feos-org/feos"
+keywords = ["physics", "thermodynamics", "equations_of_state", "phase_equilibria", "density_functional_theory"]
+categories = ["science"]
 
 [lib]
 crate-type = ["cdylib"]
