@@ -26,4 +26,21 @@ feos.pcsaft.PcSaftRecord
 
    
    
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PcSaftRecord.diffusion
+      ~PcSaftRecord.epsilon_k
+      ~PcSaftRecord.epsilon_k_ab
+      ~PcSaftRecord.kappa_ab
+      ~PcSaftRecord.m
+      ~PcSaftRecord.mu
+      ~PcSaftRecord.na
+      ~PcSaftRecord.nb
+      ~PcSaftRecord.q
+      ~PcSaftRecord.sigma
+      ~PcSaftRecord.thermal_conductivity
+      ~PcSaftRecord.viscosity
+   
    

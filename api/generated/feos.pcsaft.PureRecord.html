@@ -115,9 +115,8 @@
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>identifier</strong> (<a class="reference internal" href="feos.pcsaft.Identifier.html#feos.pcsaft.Identifier" title="feos.pcsaft.Identifier"><em>Identifier</em></a>) – The identifier of the pure component.</p></li>
 <li><p><strong>molarweight</strong> (<em>float</em>) – The molar weight (in g/mol) of the pure component.</p></li>
-<li><p><strong>model_record</strong> (<em>ModelRecord</em><em>, </em><em>optional</em>) – The pure component model parameters.</p></li>
+<li><p><strong>model_record</strong> (<em>ModelRecord</em>) – The pure component model parameters.</p></li>
 <li><p><strong>ideal_gas_record</strong> (<em>IdealGasRecord</em><em>, </em><em>optional</em>) – The pure component parameters for the ideal gas model.</p></li>
-<li><p><strong>chemical_record</strong> (<a class="reference internal" href="feos.pcsaft.ChemicalRecord.html#feos.pcsaft.ChemicalRecord" title="feos.pcsaft.ChemicalRecord"><em>ChemicalRecord</em></a><em>, </em><em>optional</em>) – The chemical record of the pure component.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -152,19 +151,16 @@
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">chemical_record</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ideal_gas_record</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ideal_gas_record</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">identifier</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">identifier</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_record</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_record</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">molarweight</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">molarweight</span></code></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -186,7 +182,7 @@
     </p>
     <p>
         &copy; Copyright 2021, Gernot Bauer, Philipp Rehner.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.1.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.2.<br/>
     </p>
   </div>
 </footer>

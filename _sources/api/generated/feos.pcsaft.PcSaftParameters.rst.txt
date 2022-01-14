@@ -21,6 +21,7 @@ feos.pcsaft.PcSaftParameters
       ~PcSaftParameters.__init__
       ~PcSaftParameters.from_json
       ~PcSaftParameters.from_json_segments
+      ~PcSaftParameters.from_multiple_json
       ~PcSaftParameters.from_records
       ~PcSaftParameters.from_segments
       ~PcSaftParameters.new_binary
@@ -29,5 +30,12 @@ feos.pcsaft.PcSaftParameters
    
 
    
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PcSaftParameters.k_ij
+      ~PcSaftParameters.pure_records
    
    

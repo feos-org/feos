@@ -30,7 +30,6 @@ feos.pcsaft.PureRecord
 
    .. autosummary::
    
-      ~PureRecord.chemical_record
       ~PureRecord.ideal_gas_record
       ~PureRecord.identifier
       ~PureRecord.model_record
