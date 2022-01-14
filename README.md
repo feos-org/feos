@@ -46,3 +46,15 @@ maturin build --release --out dist --no-sdist
 ## Documentation
 
 For a documentation of the Python API, Python examples, and a guide to the underlying Rust framework check out the [documentation](https://feos-org.github.io/feos/).
+
+## Developers
+
+This software is currently maintained by members of the groups of
+- Prof. Joachim Gross, [Institute of Thermodynamics and Thermal Process Engineering (ITT), University of Stuttgart](https://www.itt.uni-stuttgart.de/)
+- Prof. André Bardow, [Energy and Process Systems Engineering (EPSE), ETH Zurich](https://epse.ethz.ch/)
+
+## Contributing
+
+`FeOs` grew from the need to maintain a common codebase used within the scientific work done in our groups. We share the code publicly as a platform to publish our own research but also encourage other researchers and developers to contribute their own models or implementations of existing equations of state.
+
+If you want to contribute to ``FeOs``, there are several ways to go: improving the documentation and helping with language issues, testing the code on your systems to find bugs, adding new models or algorithms, or providing feature requests. Feel free to message us if you have questions or open an issue in this or the model-specific repositories to discuss improvements.
