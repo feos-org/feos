@@ -1,7 +1,7 @@
 [package]
 name = "feos"
 version = "0.1.0"
-authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <rehner@itt.uni-stuttgart.de>"]
+authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <prehner@ethz.chprehner@ethz.ch>"]
 edition = "2018"
 rust-version = "1.53"
 
