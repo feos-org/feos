@@ -1,9 +1,9 @@
 name: Build Wheels
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
 jobs:
   linux:
     runs-on: ubuntu-latest
