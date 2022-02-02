@@ -1,0 +1,2690 @@
+[
+    {
+        "identifier": {
+            "cas": "67-56-1",
+            "name": "methanol",
+            "iupac_name": "methanol",
+            "smiles": "CO",
+            "inchi": "InChI=1/CH4O/c1-2/h2H,1H3",
+            "formula": "CH4O"
+        },
+        "segments": [
+            "CH3",
+            "OH"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "64-17-5",
+            "name": "ethanol",
+            "iupac_name": "ethanol",
+            "smiles": "CCO",
+            "inchi": "InChI=1/C2H6O/c1-2-3/h3H,2H2,1H3",
+            "formula": "C2H6O"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "OH"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "71-23-8",
+            "name": "1-propanol",
+            "iupac_name": "propan-1-ol",
+            "smiles": "CCCO",
+            "inchi": "InChI=1/C3H8O/c1-2-3-4/h4H,2-3H2,1H3",
+            "formula": "C3H8O"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "OH"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "71-36-3",
+            "name": "1-butanol",
+            "iupac_name": "butan-1-ol",
+            "smiles": "CCCCO",
+            "inchi": "InChI=1/C4H10O/c1-2-3-4-5/h5H,2-4H2,1H3",
+            "formula": "C4H10O"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "OH"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "71-41-0",
+            "name": "1-pentanol",
+            "iupac_name": "pentan-1-ol",
+            "smiles": "CCCCCO",
+            "inchi": "InChI=1/C5H12O/c1-2-3-4-5-6/h6H,2-5H2,1H3",
+            "formula": "C5H12O"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "OH"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "111-27-3",
+            "name": "1-hexanol",
+            "iupac_name": "hexan-1-ol",
+            "smiles": "CCCCCCO",
+            "inchi": "InChI=1/C6H14O/c1-2-3-4-5-6-7/h7H,2-6H2,1H3",
+            "formula": "C6H14O"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "OH"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "111-70-6",
+            "name": "1-heptanol",
+            "iupac_name": "heptan-1-ol",
+            "smiles": "CCCCCCCO",
+            "inchi": "InChI=1/C7H16O/c1-2-3-4-5-6-7-8/h8H,2-7H2,1H3",
+            "formula": "C7H16O"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "OH"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "111-87-5",
+            "name": "1-octanol",
+            "iupac_name": "octan-1-ol",
+            "smiles": "CCCCCCCCO",
+            "inchi": "InChI=1/C8H18O/c1-2-3-4-5-6-7-8-9/h9H,2-8H2,1H3",
+            "formula": "C8H18O"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "OH"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "143-08-8",
+            "name": "1-nonanol",
+            "iupac_name": "nonan-1-ol",
+            "smiles": "CCCCCCCCCO",
+            "inchi": "InChI=1/C9H20O/c1-2-3-4-5-6-7-8-9-10/h10H,2-9H2,1H3",
+            "formula": "C9H20O"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "OH"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "67-63-0",
+            "name": "2-propanol",
+            "iupac_name": "propan-2-ol",
+            "smiles": "CC(C)O",
+            "inchi": "InChI=1/C3H8O/c1-3(2)4/h3-4H,1-2H3",
+            "formula": "C3H8O"
+        },
+        "segments": [
+            "CH3",
+            ">CH",
+            "OH",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                2,
+                4
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "75-85-4",
+            "name": "2-methyl-2-butanol",
+            "iupac_name": "2-methylbutan-2-ol",
+            "smiles": "CCC(C)(C)O",
+            "inchi": "InChI=1/C5H12O/c1-4-5(2,3)6/h6H,4H2,1-3H3",
+            "formula": "C5H12O"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            ">C<",
+            "CH3",
+            "CH3",
+            "OH"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                3,
+                5
+            ],
+            [
+                3,
+                6
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "74-89-5",
+            "name": "methylamine",
+            "iupac_name": "methanamine",
+            "smiles": "CN",
+            "inchi": "InChI=1/CH5N/c1-2/h2H2,1H3",
+            "formula": "CH5N"
+        },
+        "segments": [
+            "CH3",
+            "NH2"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "75-04-7",
+            "name": "ethylamine",
+            "iupac_name": "ethanamine",
+            "smiles": "CCN",
+            "inchi": "InChI=1/C2H7N/c1-2-3/h2-3H2,1H3",
+            "formula": "C2H7N"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "NH2"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "107-10-8",
+            "name": "1-propylamine",
+            "iupac_name": "propan-1-amine",
+            "smiles": "CCCN",
+            "inchi": "InChI=1/C3H9N/c1-2-3-4/h2-4H2,1H3",
+            "formula": "C3H9N"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "NH2"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "75-31-0",
+            "name": "2-propylamine",
+            "iupac_name": "propan-2-amine",
+            "smiles": "CC(C)N",
+            "inchi": "InChI=1/C3H9N/c1-3(2)4/h3H,4H2,1-2H3",
+            "formula": "C3H9N"
+        },
+        "segments": [
+            "CH3",
+            ">CH",
+            "CH3",
+            "NH2"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                2,
+                4
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "62-53-3",
+            "name": "aniline",
+            "iupac_name": "aniline",
+            "smiles": "Nc1ccccc1",
+            "inchi": "InChI=1/C6H7N/c7-6-4-2-1-3-5-6/h1-5H,7H2",
+            "formula": "C6H7N"
+        },
+        "segments": [
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "C_arom",
+            "NH2"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                1,
+                6
+            ],
+            [
+                6,
+                7
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "64-19-7",
+            "name": "acetic acid",
+            "iupac_name": "acetic acid",
+            "smiles": "CC(O)=O",
+            "inchi": "InChI=1/C2H4O2/c1-2(3)4/h1H3,(H,3,4)/f/h3H",
+            "formula": "C2H4O2"
+        },
+        "segments": [
+            "HCOO",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "74-84-0",
+            "name": "ethane",
+            "iupac_name": "ethane",
+            "smiles": "CC",
+            "inchi": "InChI=1/C2H6/c1-2/h1-2H3",
+            "formula": "C2H6"
+        },
+        "segments": [
+            "CH3",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "74-98-6",
+            "name": "propane",
+            "iupac_name": "propane",
+            "smiles": "CCC",
+            "inchi": "InChI=1/C3H8/c1-3-2/h3H2,1-2H3",
+            "formula": "C3H8"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "106-97-8",
+            "name": "butane",
+            "iupac_name": "butane",
+            "smiles": "CCCC",
+            "inchi": "InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3",
+            "formula": "C4H10"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "109-66-0",
+            "name": "pentane",
+            "iupac_name": "pentane",
+            "smiles": "CCCCC",
+            "inchi": "InChI=1/C5H12/c1-3-5-4-2/h3-5H2,1-2H3",
+            "formula": "C5H12"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "110-54-3",
+            "name": "hexane",
+            "iupac_name": "hexane",
+            "smiles": "CCCCCC",
+            "inchi": "InChI=1/C6H14/c1-3-5-6-4-2/h3-6H2,1-2H3",
+            "formula": "C6H14"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "142-82-5",
+            "name": "heptane",
+            "iupac_name": "heptane",
+            "smiles": "CCCCCCC",
+            "inchi": "InChI=1/C7H16/c1-3-5-7-6-4-2/h3-7H2,1-2H3",
+            "formula": "C7H16"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "111-65-9",
+            "name": "octane",
+            "iupac_name": "octane",
+            "smiles": "CCCCCCCC",
+            "inchi": "InChI=1/C8H18/c1-3-5-7-8-6-4-2/h3-8H2,1-2H3",
+            "formula": "C8H18"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "111-84-2",
+            "name": "nonane",
+            "iupac_name": "nonane",
+            "smiles": "CCCCCCCCC",
+            "inchi": "InChI=1/C9H20/c1-3-5-7-9-8-6-4-2/h3-9H2,1-2H3",
+            "formula": "C9H20"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "124-18-5",
+            "name": "decane",
+            "iupac_name": "decane",
+            "smiles": "CCCCCCCCCC",
+            "inchi": "InChI=1/C10H22/c1-3-5-7-9-10-8-6-4-2/h3-10H2,1-2H3",
+            "formula": "C10H22"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "1120-21-4",
+            "name": "undecane",
+            "iupac_name": "undecane",
+            "smiles": "CCCCCCCCCCC",
+            "inchi": "InChI=1/C11H24/c1-3-5-7-9-11-10-8-6-4-2/h3-11H2,1-2H3",
+            "formula": "C11H24"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "112-40-3",
+            "name": "dodecane",
+            "iupac_name": "dodecane",
+            "smiles": "CCCCCCCCCCCC",
+            "inchi": "InChI=1/C12H26/c1-3-5-7-9-11-12-10-8-6-4-2/h3-12H2,1-2H3",
+            "formula": "C12H26"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "629-50-5",
+            "name": "tridecane",
+            "iupac_name": "tridecane",
+            "smiles": "CCCCCCCCCCCCC",
+            "inchi": "InChI=1/C13H28/c1-3-5-7-9-11-13-12-10-8-6-4-2/h3-13H2,1-2H3",
+            "formula": "C13H28"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "629-59-4",
+            "name": "tetradecane",
+            "iupac_name": "tetradecane",
+            "smiles": "CCCCCCCCCCCCCC",
+            "inchi": "InChI=1/C14H30/c1-3-5-7-9-11-13-14-12-10-8-6-4-2/h3-14H2,1-2H3",
+            "formula": "C14H30"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "629-62-9",
+            "name": "pentadecane",
+            "iupac_name": "pentadecane",
+            "smiles": "CCCCCCCCCCCCCCC",
+            "inchi": "InChI=1/C15H32/c1-3-5-7-9-11-13-15-14-12-10-8-6-4-2/h3-15H2,1-2H3",
+            "formula": "C15H32"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "544-76-3",
+            "name": "hexadecane",
+            "iupac_name": "hexadecane",
+            "smiles": "CCCCCCCCCCCCCCCC",
+            "inchi": "InChI=1/C16H34/c1-3-5-7-9-11-13-15-16-14-12-10-8-6-4-2/h3-16H2,1-2H3",
+            "formula": "C16H34"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "629-78-7",
+            "name": "heptadecane",
+            "iupac_name": "heptadecane",
+            "smiles": "CCCCCCCCCCCCCCCCC",
+            "inchi": "InChI=1/C17H36/c1-3-5-7-9-11-13-15-17-16-14-12-10-8-6-4-2/h3-17H2,1-2H3",
+            "formula": "C17H36"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "593-45-3",
+            "name": "octadecane",
+            "iupac_name": "octadecane",
+            "smiles": "CCCCCCCCCCCCCCCCCC",
+            "inchi": "InChI=1/C18H38/c1-3-5-7-9-11-13-15-17-18-16-14-12-10-8-6-4-2/h3-18H2,1-2H3",
+            "formula": "C18H38"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "629-92-5",
+            "name": "nonadecane",
+            "iupac_name": "nonadecane",
+            "smiles": "CCCCCCCCCCCCCCCCCCC",
+            "inchi": "InChI=1/C19H40/c1-3-5-7-9-11-13-15-17-19-18-16-14-12-10-8-6-4-2/h3-19H2,1-2H3",
+            "formula": "C19H40"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "112-95-8",
+            "name": "eicosane",
+            "iupac_name": "icosane",
+            "smiles": "CCCCCCCCCCCCCCCCCCCC",
+            "inchi": "InChI=1/C20H42/c1-3-5-7-9-11-13-15-17-19-20-18-16-14-12-10-8-6-4-2/h3-20H2,1-2H3",
+            "formula": "C20H42"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "75-28-5",
+            "name": "isobutane",
+            "iupac_name": "2-methylpropane",
+            "smiles": "CC(C)C",
+            "inchi": "InChI=1/C4H10/c1-4(2)3/h4H,1-3H3",
+            "formula": "C4H10"
+        },
+        "segments": [
+            ">CH",
+            "CH3",
+            "CH3",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                1,
+                3
+            ],
+            [
+                1,
+                4
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "78-78-4",
+            "name": "isopentane",
+            "iupac_name": "2-methylbutane",
+            "smiles": "CCC(C)C",
+            "inchi": "InChI=1/C5H12/c1-4-5(2)3/h5H,4H2,1-3H3",
+            "formula": "C5H12"
+        },
+        "segments": [
+            "CH3",
+            ">CH",
+            "CH2",
+            "CH3",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                2,
+                5
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "463-82-1",
+            "name": "neopentane",
+            "iupac_name": "2,2-dimethylpropane",
+            "smiles": "CC(C)(C)C",
+            "inchi": "InChI=1/C5H12/c1-5(2,3)4/h1-4H3",
+            "formula": "C5H12"
+        },
+        "segments": [
+            ">C<",
+            "CH3",
+            "CH3",
+            "CH3",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                1,
+                3
+            ],
+            [
+                1,
+                4
+            ],
+            [
+                1,
+                5
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "107-83-5",
+            "name": "2-methylpentane",
+            "iupac_name": "2-methylpentane",
+            "smiles": "CCCC(C)C",
+            "inchi": "InChI=1/C6H14/c1-4-5-6(2)3/h6H,4-5H2,1-3H3",
+            "formula": "C6H14"
+        },
+        "segments": [
+            "CH3",
+            ">CH",
+            "CH2",
+            "CH2",
+            "CH3",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                2,
+                6
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "75-83-2",
+            "name": "2,2-dimethylbutane",
+            "iupac_name": "2,2-dimethylbutane",
+            "smiles": "CCC(C)(C)C",
+            "inchi": "InChI=1/C6H14/c1-5-6(2,3)4/h5H2,1-4H3",
+            "formula": "C6H14"
+        },
+        "segments": [
+            "CH3",
+            ">C<",
+            "CH2",
+            "CH3",
+            "CH3",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                2,
+                5
+            ],
+            [
+                2,
+                6
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "79-29-8",
+            "name": "2,3-dimethylbutane",
+            "iupac_name": "2,3-dimethylbutane",
+            "smiles": "CC(C)C(C)C",
+            "inchi": "InChI=1/C6H14/c1-5(2)6(3)4/h5-6H,1-4H3",
+            "formula": "C6H14"
+        },
+        "segments": [
+            "CH3",
+            ">CH",
+            ">CH",
+            "CH3",
+            "CH3",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                2,
+                5
+            ],
+            [
+                3,
+                6
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "96-14-0",
+            "name": "3-methylpentane",
+            "iupac_name": "3-methylpentane",
+            "smiles": "CCC(C)CC",
+            "inchi": "InChI=1/C6H14/c1-4-6(3)5-2/h6H,4-5H2,1-3H3",
+            "formula": "C6H14"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            ">CH",
+            "CH2",
+            "CH3",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                3,
+                6
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "591-76-4",
+            "name": "2-methylhexane",
+            "iupac_name": "2-methylhexane",
+            "smiles": "CCCCC(C)C",
+            "inchi": "InChI=1/C7H16/c1-4-5-6-7(2)3/h7H,4-6H2,1-3H3",
+            "formula": "C7H16"
+        },
+        "segments": [
+            "CH3",
+            ">CH",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                2,
+                7
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "287-92-3",
+            "name": "cyclopentane",
+            "iupac_name": "cyclopentane",
+            "smiles": "C1CCCC1",
+            "inchi": "InChI=1/C5H10/c1-2-4-5-3-1/h1-5H2",
+            "formula": "C5H10"
+        },
+        "segments": [
+            "CH2_pent",
+            "CH2_pent",
+            "CH2_pent",
+            "CH2_pent",
+            "CH2_pent"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                1
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "110-82-7",
+            "name": "cyclohexane",
+            "iupac_name": "cyclohexane",
+            "smiles": "C1CCCCC1",
+            "inchi": "InChI=1/C6H12/c1-2-4-6-5-3-1/h1-6H2",
+            "formula": "C6H12"
+        },
+        "segments": [
+            "CH2_hex",
+            "CH2_hex",
+            "CH2_hex",
+            "CH2_hex",
+            "CH2_hex",
+            "CH2_hex"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                1
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "96-37-7",
+            "name": "methylcyclopentane",
+            "iupac_name": "methylcyclopentane",
+            "smiles": "CC1CCCC1",
+            "inchi": "InChI=1/C6H12/c1-6-4-2-3-5-6/h6H,2-5H2,1H3",
+            "formula": "C6H12"
+        },
+        "segments": [
+            "CH2_pent",
+            "CH2_pent",
+            "CH2_pent",
+            "CH2_pent",
+            "CH_pent",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                1
+            ],
+            [
+                5,
+                6
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "108-87-2",
+            "name": "methylcyclohexane",
+            "iupac_name": "methylcyclohexane",
+            "smiles": "CC1CCCCC1",
+            "inchi": "InChI=1/C7H14/c1-7-5-3-2-4-6-7/h7H,2-6H2,1H3",
+            "formula": "C7H14"
+        },
+        "segments": [
+            "CH2_hex",
+            "CH2_hex",
+            "CH2_hex",
+            "CH2_hex",
+            "CH2_hex",
+            "CH_hex",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                1
+            ],
+            [
+                6,
+                7
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "1640-89-7",
+            "name": "ethylcyclopentane",
+            "iupac_name": "ethylcyclopentane",
+            "smiles": "CCC1CCCC1",
+            "inchi": "InChI=1/C7H14/c1-2-7-5-3-4-6-7/h7H,2-6H2,1H3",
+            "formula": "C7H14"
+        },
+        "segments": [
+            "CH2_pent",
+            "CH2_pent",
+            "CH2_pent",
+            "CH2_pent",
+            "CH_pent",
+            "CH2",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                1
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                7
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "1678-91-7",
+            "name": "ethylcyclohexane",
+            "iupac_name": "ethylcyclohexane",
+            "smiles": "CCC1CCCCC1",
+            "inchi": "InChI=1/C8H16/c1-2-8-6-4-3-5-7-8/h8H,2-7H2,1H3",
+            "formula": "C8H16"
+        },
+        "segments": [
+            "CH2_hex",
+            "CH2_hex",
+            "CH2_hex",
+            "CH2_hex",
+            "CH2_hex",
+            "CH_hex",
+            "CH2",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                1
+            ],
+            [
+                6,
+                7
+            ],
+            [
+                7,
+                8
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "74-85-1",
+            "name": "ethylene",
+            "iupac_name": "ethene",
+            "smiles": "C=C",
+            "inchi": "InChI=1/C2H4/c1-2/h1-2H2",
+            "formula": "C2H4"
+        },
+        "segments": [
+            "=CH2",
+            "=CH2"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "115-07-1",
+            "name": "propylene",
+            "iupac_name": "prop-1-ene",
+            "smiles": "CC=C",
+            "inchi": "InChI=1/C3H6/c1-3-2/h3H,1H2,2H3",
+            "formula": "C3H6"
+        },
+        "segments": [
+            "=CH2",
+            "=CH",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "106-98-9",
+            "name": "1-butene",
+            "iupac_name": "but-1-ene",
+            "smiles": "CCC=C",
+            "inchi": "InChI=1/C4H8/c1-3-4-2/h3H,1,4H2,2H3",
+            "formula": "C4H8"
+        },
+        "segments": [
+            "=CH2",
+            "=CH",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "109-67-1",
+            "name": "1-pentene",
+            "iupac_name": "pent-1-ene",
+            "smiles": "CCCC=C",
+            "inchi": "InChI=1/C5H10/c1-3-5-4-2/h3H,1,4-5H2,2H3",
+            "formula": "C5H10"
+        },
+        "segments": [
+            "=CH2",
+            "=CH",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "592-41-6",
+            "name": "1-hexene",
+            "iupac_name": "hex-1-ene",
+            "smiles": "CCCCC=C",
+            "inchi": "InChI=1/C6H12/c1-3-5-6-4-2/h3H,1,4-6H2,2H3",
+            "formula": "C6H12"
+        },
+        "segments": [
+            "=CH2",
+            "=CH",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "111-66-0",
+            "name": "1-octene",
+            "iupac_name": "oct-1-ene",
+            "smiles": "CCCCCCC=C",
+            "inchi": "InChI=1/C8H16/c1-3-5-7-8-6-4-2/h3H,1,4-8H2,2H3",
+            "formula": "C8H16"
+        },
+        "segments": [
+            "=CH2",
+            "=CH",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "142-29-0",
+            "name": "cyclopentene",
+            "iupac_name": "cyclopentene",
+            "smiles": "C1CC=CC1",
+            "inchi": "InChI=1/C5H8/c1-2-4-5-3-1/h1-2H,3-5H2",
+            "formula": "C5H8"
+        },
+        "segments": [
+            "CH2_pent",
+            "CH2_pent",
+            "CH2_pent",
+            "CH_pent",
+            "CH_pent"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                1
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "71-43-2",
+            "name": "benzene",
+            "iupac_name": "benzene",
+            "smiles": "c1ccccc1",
+            "inchi": "InChI=1/C6H6/c1-2-4-6-5-3-1/h1-6H",
+            "formula": "C6H6"
+        },
+        "segments": [
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                1
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "108-88-3",
+            "name": "toluene",
+            "iupac_name": "methylbenzene",
+            "smiles": "Cc1ccccc1",
+            "inchi": "InChI=1/C7H8/c1-7-5-3-2-4-6-7/h2-6H,1H3",
+            "formula": "C7H8"
+        },
+        "segments": [
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "C_arom",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                1
+            ],
+            [
+                6,
+                7
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "100-41-4",
+            "name": "ethylbenzene",
+            "iupac_name": "ethylbenzene",
+            "smiles": "CCc1ccccc1",
+            "inchi": "InChI=1/C8H10/c1-2-8-6-4-3-5-7-8/h3-7H,2H2,1H3",
+            "formula": "C8H10"
+        },
+        "segments": [
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "C_arom",
+            "CH2",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                1
+            ],
+            [
+                6,
+                7
+            ],
+            [
+                7,
+                8
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "108-38-3",
+            "name": "m-xylene",
+            "iupac_name": "1,3-xylene",
+            "smiles": "CC1=CC(=CC=C1)C",
+            "inchi": "InChI=1S/C8H10/c1-7-4-3-5-8(2)6-7/h3-6H,1-2H3",
+            "formula": "C8H10"
+        },
+        "segments": [
+            "CH_arom",
+            "C_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "C_arom",
+            "CH3",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                1
+            ],
+            [
+                2,
+                7
+            ],
+            [
+                6,
+                8
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "95-47-6",
+            "name": "o-xylene",
+            "iupac_name": "1,2-xylene",
+            "smiles": "CC1=CC=CC=C1C",
+            "inchi": "InChI=1S/C8H10/c1-7-5-3-4-6-8(7)2/h3-6H,1-2H3",
+            "formula": "C8H10"
+        },
+        "segments": [
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "C_arom",
+            "C_arom",
+            "CH3",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                1
+            ],
+            [
+                5,
+                7
+            ],
+            [
+                6,
+                8
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "106-42-3",
+            "name": "p-xylene",
+            "iupac_name": "1,4-xylene",
+            "smiles": "CC1=CC=C(C=C1)C",
+            "inchi": "InChI=1S/C8H10/c1-7-3-5-8(2)6-4-7/h3-6H,1-2H3",
+            "formula": "C8H10"
+        },
+        "segments": [
+            "C_arom",
+            "CH_arom",
+            "CH_arom",
+            "C_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH3",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                1
+            ],
+            [
+                1,
+                7
+            ],
+            [
+                4,
+                8
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "103-65-1",
+            "name": "n-propylbenzene",
+            "iupac_name": "propylbenzene",
+            "smiles": "CCCc1ccccc1",
+            "inchi": "InChI=1/C9H12/c1-2-6-9-7-4-3-5-8-9/h3-5,7-8H,2,6H2,1H3",
+            "formula": "C9H12"
+        },
+        "segments": [
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "C_arom",
+            "CH2",
+            "CH2",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                1
+            ],
+            [
+                6,
+                7
+            ],
+            [
+                7,
+                8
+            ],
+            [
+                8,
+                9
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "119-64-2",
+            "name": "tetralin",
+            "iupac_name": "1,2,3,4-tetrahydronaphthalene",
+            "smiles": "C1CCc2ccccc2C1",
+            "inchi": "InChI=1/C10H12/c1-2-6-10-8-4-3-7-9(10)5-1/h1-2,5-6H,3-4,7-8H2",
+            "formula": "C10H12"
+        },
+        "segments": [
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "C_arom",
+            "C_arom",
+            "CH2_hex",
+            "CH2_hex",
+            "CH2_hex",
+            "CH2_hex"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                1
+            ],
+            [
+                6,
+                7
+            ],
+            [
+                7,
+                8
+            ],
+            [
+                8,
+                9
+            ],
+            [
+                9,
+                10
+            ],
+            [
+                10,
+                5
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "104-51-8",
+            "name": "n-butylbenzene",
+            "iupac_name": "butylbenzene",
+            "smiles": "CCCCc1ccccc1",
+            "inchi": "InChI=1/C10H14/c1-2-3-7-10-8-5-4-6-9-10/h4-6,8-9H,2-3,7H2,1H3",
+            "formula": "C10H14"
+        },
+        "segments": [
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "C_arom",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                1
+            ],
+            [
+                6,
+                7
+            ],
+            [
+                7,
+                8
+            ],
+            [
+                8,
+                9
+            ],
+            [
+                9,
+                10
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "92-52-4",
+            "name": "biphenyl",
+            "iupac_name": "phenylbenzene",
+            "smiles": "c1ccc(cc1)c2ccccc2",
+            "inchi": "InChI=1/C12H10/c1-3-7-11(8-4-1)12-9-5-2-6-10-12/h1-10H",
+            "formula": "C12H10"
+        },
+        "segments": [
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "C_arom",
+            "C_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom",
+            "CH_arom"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                4,
+                5
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                6,
+                1
+            ],
+            [
+                6,
+                7
+            ],
+            [
+                7,
+                8
+            ],
+            [
+                8,
+                9
+            ],
+            [
+                9,
+                10
+            ],
+            [
+                10,
+                11
+            ],
+            [
+                11,
+                12
+            ],
+            [
+                12,
+                7
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "115-10-6",
+            "name": "dimethyl ether",
+            "iupac_name": "methoxymethane",
+            "smiles": "COC",
+            "inchi": "InChI=1/C2H6O/c1-3-2/h1-2H3",
+            "formula": "C2H6O"
+        },
+        "segments": [
+            "CH3",
+            "OCH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "60-29-7",
+            "name": "diethyl ether",
+            "iupac_name": "ethoxyethane",
+            "smiles": "CCOCC",
+            "inchi": "InChI=1/C4H10O/c1-3-5-4-2/h3-4H2,1-2H3",
+            "formula": "C4H10O"
+        },
+        "segments": [
+            "CH3",
+            "OCH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "557-17-5",
+            "name": "methyl n-propyl ether",
+            "iupac_name": "1-methoxypropane",
+            "smiles": "CCCOC",
+            "inchi": "InChI=1/C4H10O/c1-3-4-5-2/h3-4H2,1-2H3",
+            "formula": "C4H10O"
+        },
+        "segments": [
+            "OCH3",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "107-31-3",
+            "name": "methyl methanoate",
+            "iupac_name": "methyl formate",
+            "smiles": "COC=O",
+            "inchi": "InChI=1/C2H4O2/c1-4-2-3/h2H,1H3",
+            "formula": "C2H4O2"
+        },
+        "segments": [
+            "HCOO",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "109-94-4",
+            "name": "ethyl methanoate",
+            "iupac_name": "ethyl formate",
+            "smiles": "CCOC=O",
+            "inchi": "InChI=1/C3H6O2/c1-2-5-3-4/h3H,2H2,1H3",
+            "formula": "C3H6O2"
+        },
+        "segments": [
+            "HCOO",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "110-74-7",
+            "name": "propyl methanoate",
+            "iupac_name": "propyl formate",
+            "smiles": "CCCOC=O",
+            "inchi": "InChI=1/C4H8O2/c1-2-3-6-4-5/h4H,2-3H2,1H3",
+            "formula": "C4H8O2"
+        },
+        "segments": [
+            "HCOO",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "141-78-6",
+            "name": "ethyl ethanoate",
+            "iupac_name": "ethyl acetate",
+            "smiles": "CCOC(C)=O",
+            "inchi": "InChI=1/C4H8O2/c1-3-6-4(2)5/h3H2,1-2H3",
+            "formula": "C4H8O2"
+        },
+        "segments": [
+            "CH3",
+            "COO",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "109-60-4",
+            "name": "propyl ethanoate",
+            "iupac_name": "propyl acetate",
+            "smiles": "CCCOC(C)=O",
+            "inchi": "InChI=1/C5H10O2/c1-3-4-7-5(2)6/h3-4H2,1-2H3",
+            "formula": "C5H10O2"
+        },
+        "segments": [
+            "CH3",
+            "COO",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "123-86-4",
+            "name": "n-butyl ethanoate",
+            "iupac_name": "butyl acetate",
+            "smiles": "CCCCOC(C)=O",
+            "inchi": "InChI=1/C6H12O2/c1-3-4-5-8-6(2)7/h3-5H2,1-2H3",
+            "formula": "C6H12O2"
+        },
+        "segments": [
+            "CH3",
+            "COO",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "108-21-4",
+            "name": "isopropyl ethanoate",
+            "iupac_name": "isopropyl acetate",
+            "smiles": "CC(C)OC(C)=O",
+            "inchi": "InChI=1/C5H10O2/c1-4(2)7-5(3)6/h4H,1-3H3",
+            "formula": "C5H10O2"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "COO",
+            "CH3",
+            "CH3"
+        ],
+        "bonds": [
+            [
+                1,
+                2
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                4
+            ],
+            [
+                2,
+                5
+            ]
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "554-12-1",
+            "name": "methyl propanoate",
+            "iupac_name": "methyl propanoate",
+            "smiles": "CCC(=O)OC",
+            "inchi": "InChI=1/C4H8O2/c1-3-4(5)6-2/h3H2,1-2H3",
+            "formula": "C4H8O2"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "COO",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "105-37-3",
+            "name": "ethyl propanoate",
+            "iupac_name": "ethyl propanoate",
+            "smiles": "CCOC(=O)CC",
+            "inchi": "InChI=1/C5H10O2/c1-3-5(6)7-4-2/h3-4H2,1-2H3",
+            "formula": "C5H10O2"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "COO",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "106-36-5",
+            "name": "propyl propanoate",
+            "iupac_name": "propyl propanoate",
+            "smiles": "CCCOC(=O)CC",
+            "inchi": "InChI=1/C6H12O2/c1-3-5-8-6(7)4-2/h3-5H2,1-2H3",
+            "formula": "C6H12O2"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "COO",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "623-42-7",
+            "name": "methyl butanoate",
+            "iupac_name": "methyl butanoate",
+            "smiles": "CCCC(=O)OC",
+            "inchi": "InChI=1/C5H10O2/c1-3-4-5(6)7-2/h3-4H2,1-2H3",
+            "formula": "C5H10O2"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "COO",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "67-64-1",
+            "name": "acetone",
+            "iupac_name": "propan-2-one",
+            "smiles": "CC(C)=O",
+            "inchi": "InChI=1/C3H6O/c1-3(2)4/h1-2H3",
+            "formula": "C3H6O"
+        },
+        "segments": [
+            "CH3",
+            ">C=O",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "78-93-3",
+            "name": "butanone",
+            "iupac_name": "butan-2-one",
+            "smiles": "CCC(C)=O",
+            "inchi": "InChI=1/C4H8O/c1-3-4(2)5/h3H2,1-2H3",
+            "formula": "C4H8O"
+        },
+        "segments": [
+            "CH3",
+            ">C=O",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "107-87-9",
+            "name": "2-pentanone",
+            "iupac_name": "pentan-2-one",
+            "smiles": "CCCC(C)=O",
+            "inchi": "InChI=1/C5H10O/c1-3-4-5(2)6/h3-4H2,1-2H3",
+            "formula": "C5H10O"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            ">C=O",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "96-22-0",
+            "name": "3-pentanone",
+            "iupac_name": "pentan-3-one",
+            "smiles": "CCC(=O)CC",
+            "inchi": "InChI=1/C5H10O/c1-3-5(6)4-2/h3-4H2,1-2H3",
+            "formula": "C5H10O"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            ">C=O",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "123-38-6",
+            "name": "propanal",
+            "iupac_name": "propanal",
+            "smiles": "CCC=O",
+            "inchi": "InChI=1/C3H6O/c1-2-3-4/h3H,2H2,1H3",
+            "formula": "C3H6O"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH=O"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "123-72-8",
+            "name": "butanal",
+            "iupac_name": "butanal",
+            "smiles": "CCCC=O",
+            "inchi": "InChI=1/C4H8O/c1-2-3-4-5/h4H,2-3H2,1H3",
+            "formula": "C4H8O"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "CH=O"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "107-31-3",
+            "name": "methyl methanoate",
+            "iupac_name": "methyl formate",
+            "smiles": "COC=O",
+            "inchi": "InChI=1/C2H4O2/c1-4-2-3/h2H,1H3",
+            "formula": "C2H4O2"
+        },
+        "segments": [
+            "HCOO",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "109-94-4",
+            "name": "ethyl methanoate",
+            "iupac_name": "ethyl formate",
+            "smiles": "CCOC=O",
+            "inchi": "InChI=1/C3H6O2/c1-2-5-3-4/h3H,2H2,1H3",
+            "formula": "C3H6O2"
+        },
+        "segments": [
+            "HCOO",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "110-74-7",
+            "name": "propyl methanoate",
+            "iupac_name": "propyl formate",
+            "smiles": "CCCOC=O",
+            "inchi": "InChI=1/C4H8O2/c1-2-3-6-4-5/h4H,2-3H2,1H3",
+            "formula": "C4H8O2"
+        },
+        "segments": [
+            "HCOO",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "141-78-6",
+            "name": "ethyl ethanoate",
+            "iupac_name": "ethyl acetate",
+            "smiles": "CCOC(C)=O",
+            "inchi": "InChI=1/C4H8O2/c1-3-6-4(2)5/h3H2,1-2H3",
+            "formula": "C4H8O2"
+        },
+        "segments": [
+            "CH3",
+            "COO",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "109-60-4",
+            "name": "propyl ethanoate",
+            "iupac_name": "propyl acetate",
+            "smiles": "CCCOC(C)=O",
+            "inchi": "InChI=1/C5H10O2/c1-3-4-7-5(2)6/h3-4H2,1-2H3",
+            "formula": "C5H10O2"
+        },
+        "segments": [
+            "CH3",
+            "COO",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "123-86-4",
+            "name": "n-butyl ethanoate",
+            "iupac_name": "butyl acetate",
+            "smiles": "CCCCOC(C)=O",
+            "inchi": "InChI=1/C6H12O2/c1-3-4-5-8-6(2)7/h3-5H2,1-2H3",
+            "formula": "C6H12O2"
+        },
+        "segments": [
+            "CH3",
+            "COO",
+            "CH2",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "554-12-1",
+            "name": "methyl propanoate",
+            "iupac_name": "methyl propanoate",
+            "smiles": "CCC(=O)OC",
+            "inchi": "InChI=1/C4H8O2/c1-3-4(5)6-2/h3H2,1-2H3",
+            "formula": "C4H8O2"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "COO",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "105-37-3",
+            "name": "ethyl propanoate",
+            "iupac_name": "ethyl propanoate",
+            "smiles": "CCOC(=O)CC",
+            "inchi": "InChI=1/C5H10O2/c1-3-5(6)7-4-2/h3-4H2,1-2H3",
+            "formula": "C5H10O2"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "COO",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "106-36-5",
+            "name": "propyl propanoate",
+            "iupac_name": "propyl propanoate",
+            "smiles": "CCCOC(=O)CC",
+            "inchi": "InChI=1/C6H12O2/c1-3-5-8-6(7)4-2/h3-5H2,1-2H3",
+            "formula": "C6H12O2"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "COO",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "623-42-7",
+            "name": "methyl butanoate",
+            "iupac_name": "methyl butanoate",
+            "smiles": "CCCC(=O)OC",
+            "inchi": "InChI=1/C5H10O2/c1-3-4-5(6)7-2/h3-4H2,1-2H3",
+            "formula": "C5H10O2"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "CH2",
+            "COO",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "115-10-6",
+            "name": "dimethyl ether",
+            "iupac_name": "methoxymethane",
+            "smiles": "COC",
+            "inchi": "InChI=1/C2H6O/c1-3-2/h1-2H3",
+            "formula": "C2H6O"
+        },
+        "segments": [
+            "CH3",
+            "OCH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "540-67-0",
+            "name": "methyl ethyl ether",
+            "iupac_name": "methoxyethane",
+            "smiles": "CCOC",
+            "inchi": "InChI=1/C3H8O/c1-3-4-2/h3H2,1-2H3",
+            "formula": "C3H8O"
+        },
+        "segments": [
+            "CH3",
+            "CH2",
+            "OCH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "557-17-5",
+            "name": "methyl n-propyl ether",
+            "iupac_name": "1-methoxypropane",
+            "smiles": "CCCOC",
+            "inchi": "InChI=1/C4H10O/c1-3-4-5-2/h3-4H2,1-2H3",
+            "formula": "C4H10O"
+        },
+        "segments": [
+            "OCH3",
+            "CH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "60-29-7",
+            "name": "diethyl ether",
+            "iupac_name": "ethoxyethane",
+            "smiles": "CCOCC",
+            "inchi": "InChI=1/C4H10O/c1-3-5-4-2/h3-4H2,1-2H3",
+            "formula": "C4H10O"
+        },
+        "segments": [
+            "CH3",
+            "OCH2",
+            "CH2",
+            "CH3"
+        ]
+    },
+    {
+        "identifier": {
+            "cas": "74-85-1",
+            "name": "ethylene",
+            "iupac_name": "ethene",
+            "smiles": "C=C",
+            "inchi": "InChI=1/C2H4/c1-2/h1-2H2",
+            "formula": "C2H4"
+        },
+        "segments": [
+            "=CH2",
+            "=CH2"
+        ]
+    }
+]
