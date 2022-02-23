@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath('.'))
 project = 'feos'
 copyright = '2021, Gernot Bauer, Philipp Rehner'
 author = 'Gernot Bauer, Philipp Rehner'
-release = '0.1.0'
+release = '0.1.1'
 
 extensions = [
     'sphinx.ext.autodoc',
