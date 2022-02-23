@@ -20,10 +20,10 @@
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script type="text/javascript" src="../../_static/js/jquery-1.12.4.min.js "></script>
-<script type="text/javascript" src="../../_static/js/jquery-fix.js "></script>
-<script type="text/javascript" src="../../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
-<script type="text/javascript" src="../../_static/bootstrap-sphinx.js "></script>
+<script type="text/javascript" src="../../_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="../../_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="../../_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../_static/bootstrap-sphinx.js"></script>
 
   </head><body>
 
@@ -113,19 +113,16 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>functional</strong> (<em>HelmholtzEnergyFunctional</em>) – The Helmholtz energy functional.</p></li>
 <li><p><strong>geometry</strong> (<a class="reference internal" href="feos.pcsaft.dft.Geometry.html#feos.pcsaft.dft.Geometry" title="feos.pcsaft.dft.Geometry"><em>Geometry</em></a>) – The pore geometry.</p></li>
-<li><p><strong>pore_size</strong> (<a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a>) – The width of the slit pore.</p></li>
+<li><p><strong>pore_size</strong> (<a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a>) – The width of the slit pore in cartesian coordinates,
+or the pore radius in spherical and cylindrical coordinates.</p></li>
 <li><p><strong>potential</strong> (<a class="reference internal" href="feos.pcsaft.dft.ExternalPotential.html#feos.pcsaft.dft.ExternalPotential" title="feos.pcsaft.dft.ExternalPotential"><em>ExternalPotential</em></a>) – The potential used to model wall-fluid interactions.</p></li>
 <li><p><strong>n_grid</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of grid points.</p></li>
 <li><p><strong>potential_cutoff</strong> (<em>float</em><em>, </em><em>optional</em>) – Maximum value for the external potential.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#feos.pcsaft.dft.Pore1D" title="feos.pcsaft.dft.Pore1D">Pore1D</a></p>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#feos.pcsaft.dft.Pore1D" title="feos.pcsaft.dft.Pore1D">Pore1D</a></p>
 </dd>
 </dl>
 <p class="rubric">Methods</p>
@@ -140,6 +137,18 @@
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="feos.pcsaft.dft.Pore1D.initialize.html#feos.pcsaft.dft.Pore1D.initialize" title="feos.pcsaft.dft.Pore1D.initialize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initialize</span></code></a>(bulk[, external_potential])</p></td>
 <td><p>Initialize the pore for the given bulk state.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pore_volume</span></code></p></td>
+<td><p>The pore volume using Helium at 298 K as reference.</p></td>
 </tr>
 </tbody>
 </table>
@@ -160,7 +169,7 @@
     </p>
     <p>
         &copy; Copyright 2021, Gernot Bauer, Philipp Rehner.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.3.2.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br/>
     </p>
   </div>
 </footer>

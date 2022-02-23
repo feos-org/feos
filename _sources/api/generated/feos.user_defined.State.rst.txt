@@ -28,6 +28,7 @@ feos.user\_defined.State
       ~State.critical_point_binary_p
       ~State.critical_point_binary_t
       ~State.critical_point_pure
+      ~State.d2p_drho2
       ~State.d2p_dv2
       ~State.dc_v_dt
       ~State.dln_phi_dnj
@@ -36,6 +37,7 @@ feos.user\_defined.State
       ~State.dmu_dni
       ~State.dmu_dt
       ~State.dp_dni
+      ~State.dp_drho
       ~State.dp_dt
       ~State.dp_dv
       ~State.ds_dt
@@ -47,6 +49,7 @@ feos.user\_defined.State
       ~State.internal_energy
       ~State.is_stable
       ~State.isentropic_compressibility
+      ~State.isothermal_compressibility
       ~State.joule_thomson
       ~State.ln_phi
       ~State.mass

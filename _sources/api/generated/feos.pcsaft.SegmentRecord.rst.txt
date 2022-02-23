@@ -19,6 +19,7 @@ feos.pcsaft.SegmentRecord
       :toctree: ./
    
       ~SegmentRecord.__init__
+      ~SegmentRecord.from_json
       ~SegmentRecord.from_json_str
       ~SegmentRecord.to_json_str
    

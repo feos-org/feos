@@ -25,4 +25,10 @@ feos.fmt.Pore1D
 
    
    
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Pore1D.pore_volume
+   
    

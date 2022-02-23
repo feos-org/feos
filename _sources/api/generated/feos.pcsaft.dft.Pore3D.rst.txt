@@ -25,4 +25,10 @@ feos.pcsaft.dft.Pore3D
 
    
    
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Pore3D.pore_volume
+   
    

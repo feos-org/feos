@@ -12,7 +12,6 @@ Functionalities that make working with the code easier.
    :maxdepth: 1
 
    si
-   num_dual
 
 .. _equations_of_state:
 

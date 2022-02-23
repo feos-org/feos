@@ -25,4 +25,10 @@ feos.pcsaft.dft.Pore1D
 
    
    
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Pore1D.pore_volume
+   
    

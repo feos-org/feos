@@ -25,4 +25,10 @@ feos.fmt.Pore3D
 
    
    
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Pore3D.pore_volume
+   
    
