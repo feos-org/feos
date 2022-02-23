@@ -19,6 +19,11 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     py.run(
         "\
 import sys
+quantity.SINumber.__module__ = 'feos.si'
+quantity.SIArray1.__module__ = 'feos.si'
+quantity.SIArray2.__module__ = 'feos.si'
+quantity.SIArray3.__module__ = 'feos.si'
+quantity.SIArray4.__module__ = 'feos.si'
 sys.modules['feos.si'] = quantity
 
 sys.modules['feos.user_defined'] = user_defined
