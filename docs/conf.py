@@ -1,6 +1,5 @@
 import os
 import sys
-import sphinx_bootstrap_theme
 import feos
 
 sys.path.append(os.path.abspath(os.path.join(__file__, "../..")))
