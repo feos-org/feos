@@ -1,5 +1,3 @@
-.. _pcsaft_api:
-
 PC-SAFT
 -------
 
