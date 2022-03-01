@@ -20,7 +20,7 @@ jobs:
         run: sudo apt-get install -y pandoc
       - name: Install python dependencies
         run: |
-          pip install sphinx sphinx-bootstrap-theme nbsphinx ipython pygments
+          pip install sphinx nbsphinx ipython pygments sphinx_inline_tabs sphinx_design sphinx_copybutton myst_parser furo
       - name: Build Wheels
         uses: messense/maturin-action@v1
         with:
@@ -52,3 +52,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
+
