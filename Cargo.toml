@@ -16,11 +16,13 @@ categories = ["science"]
 crate-type = ["cdylib"]
 
 [dependencies]
-quantity = { version = "0.4", features = ["python"] }
-feos-core = { version = "0.1", features = ["python"] }
-feos-dft = { version = "0.1", features = ["python"] }
-feos-pcsaft = { version = "0.1", features = ["python"] }
+quantity = { version = "0.5", features = ["python"] }
+feos-core = { git = "https://github.com/feos-org/feos-core", features = ["python"] }
+feos-dft = { git = "https://github.com/feos-org/feos-dft", features = ["python"], branch = "v0.2.0" }
+feos-pcsaft = { git = "https://github.com/feos-org/feos-pcsaft", features = ["python"] }
+numpy = { version = "0.16" }
+ndarray = { version = "0.15", features=["approx"] }
 
 [dependencies.pyo3]
-version = "0.15"
+version = "0.16"
 features = ["extension-module", "abi3", "abi3-py37"]
