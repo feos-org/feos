@@ -1,10 +1,4 @@
 use feos_core::cubic::PengRobinson;
-// use feos_core::{
-//     impl_equation_of_state, impl_estimator, impl_state, impl_state_entropy_scaling,
-//     impl_state_molarweight, impl_virial_coefficients, impl_vle_state,
-// };
-// use feos_core::{DensityInitialization, State};
-// use feos_core::{EquationOfState, HelmholtzEnergy};
 use feos_core::python::cubic::PyPengRobinsonParameters;
 use feos_core::python::user_defined::PyEoSObj;
 use feos_core::*;
