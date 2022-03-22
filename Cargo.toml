@@ -20,6 +20,7 @@ quantity = { version = "0.5", features = ["python"] }
 feos-core = { git = "https://github.com/feos-org/feos-core", features = ["python"] }
 feos-dft = { git = "https://github.com/feos-org/feos-dft", features = ["python"], branch = "v0.2.0" }
 feos-pcsaft = { git = "https://github.com/feos-org/feos-pcsaft", features = ["python"] }
+feos-pets = { git = "https://github.com/feos-org/feos-pets", features = ["python"] }
 numpy = { version = "0.16" }
 ndarray = { version = "0.15", features=["approx"] }
 

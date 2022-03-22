@@ -4,6 +4,8 @@ use feos_core::python::user_defined::PyEoSObj;
 use feos_core::*;
 use feos_pcsaft::python::PyPcSaftParameters;
 use feos_pcsaft::{PcSaft, PcSaftOptions};
+use feos_pets::python::PyPetsParameters;
+use feos_pets::{Pets, PetsOptions};
 use ndarray::Array1;
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2};
@@ -18,6 +20,7 @@ pub enum Eos {
     PcSaft(PcSaft),
     PengRobinson(PengRobinson),
     Python(PyEoSObj),
+    Pets(Pets),
 }
 
 impl EquationOfState for Eos {
@@ -26,6 +29,7 @@ impl EquationOfState for Eos {
             Eos::PcSaft(eos) => eos.components(),
             Eos::PengRobinson(eos) => eos.components(),
             Eos::Python(eos) => eos.components(),
+            Eos::Pets(eos) => eos.components(),
         }
     }
 
@@ -34,6 +38,7 @@ impl EquationOfState for Eos {
             Eos::PcSaft(eos) => eos.compute_max_density(moles),
             Eos::PengRobinson(eos) => eos.compute_max_density(moles),
             Eos::Python(eos) => eos.compute_max_density(moles),
+            Eos::Pets(eos) => eos.compute_max_density(moles),
         }
     }
 
@@ -42,6 +47,7 @@ impl EquationOfState for Eos {
             Eos::PcSaft(eos) => Self::PcSaft(eos.subset(component_list)),
             Eos::PengRobinson(eos) => Self::PengRobinson(eos.subset(component_list)),
             Eos::Python(eos) => Self::Python(eos.subset(component_list)),
+            Eos::Pets(eos) => Self::Pets(eos.subset(component_list)),
         }
     }
 
@@ -50,6 +56,7 @@ impl EquationOfState for Eos {
             Eos::PcSaft(eos) => eos.residual(),
             Eos::PengRobinson(eos) => eos.residual(),
             Eos::Python(eos) => eos.residual(),
+            Eos::Pets(eos) => eos.residual(),
         }
     }
 }
@@ -60,6 +67,7 @@ impl MolarWeight<SIUnit> for Eos {
             Eos::PcSaft(eos) => eos.molar_weight(),
             Eos::PengRobinson(eos) => eos.molar_weight(),
             Eos::Python(eos) => eos.molar_weight(),
+            Eos::Pets(eos) => eos.molar_weight(),
         }
     }
 }
@@ -129,7 +137,26 @@ pub struct PyEos(pub Rc<Eos>);
 
 #[pymethods]
 impl PyEos {
-    /// PCP-SAFT equation of state.
+    /// Initialize PC-SAFT equation of state.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters : PcSaftParameters
+    ///     The parameters of the PC-Saft equation of state to use.
+    /// max_eta : float, optional
+    ///     Maximum packing fraction. Defaults to 0.5.
+    /// max_iter_cross_assoc : unsigned integer, optional
+    ///     Maximum number of iterations for cross association. Defaults to 50.
+    /// tol_cross_assoc : float
+    ///     Tolerance for convergence of cross association. Defaults to 1e-10.
+    /// dq_variant : {'dq35', 'dq44'}, optional
+    ///     Combination rule used in the dipole/quadrupole term. Defaults to 'dq35'
+    ///
+    /// Returns
+    /// -------
+    /// PcSaft
+    ///     The PC-SAFT equation of state that can be used to compute thermodynamic
+    ///     states.
     #[args(
         max_eta = "0.5",
         max_iter_cross_assoc = "50",
@@ -168,6 +195,27 @@ impl PyEos {
     #[staticmethod]
     fn python(obj: Py<PyAny>) -> PyResult<Self> {
         Ok(Self(Rc::new(Eos::Python(PyEoSObj::new(obj)?))))
+    }
+
+    /// Initialize PeTS equation of state.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters : PetsParameters
+    ///     The parameters of the PeTS equation of state to use.
+    /// max_eta : float, optional
+    ///     Maximum packing fraction. Defaults to 0.5.
+    ///
+    /// Returns
+    /// -------
+    /// Pets
+    ///     The PeTS equation of state that can be used to compute thermodynamic
+    ///     states.
+    #[args(max_eta = "0.5")]
+    #[staticmethod]
+    fn pets(parameters: PyPetsParameters, max_eta: f64) -> Self {
+        let options = PetsOptions { max_eta };
+        Self(Rc::new(Eos::Pets(Pets::with_options(parameters.0.clone(), options))))
     }
 }
 

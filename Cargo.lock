@@ -139,6 +139,7 @@ dependencies = [
  "feos-core",
  "feos-dft",
  "feos-pcsaft",
+ "feos-pets",
  "ndarray",
  "numpy",
  "pyo3",
@@ -189,6 +190,25 @@ dependencies = [
 name = "feos-pcsaft"
 version = "0.1.0"
 source = "git+https://github.com/feos-org/feos-pcsaft#0c90a9438fa4be89d09e360d909b07623b3a0de7"
+dependencies = [
+ "feos-core",
+ "feos-dft",
+ "indexmap",
+ "lazy_static",
+ "ndarray",
+ "num-dual",
+ "num-traits",
+ "numpy",
+ "pyo3",
+ "quantity",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "feos-pets"
+version = "0.1.0"
+source = "git+https://github.com/feos-org/feos-pets#82895eea1c20ea3f59a6137bf19ec38ddb04114a"
 dependencies = [
  "feos-core",
  "feos-dft",
