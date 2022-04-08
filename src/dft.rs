@@ -1,6 +1,6 @@
 use feos_core::*;
 use feos_dft::adsorption::*;
-use feos_dft::fundamental_measure_theory::FMTVersion;
+use feos_dft::fundamental_measure_theory::{FMTFunctional, FMTVersion};
 use feos_dft::interface::*;
 use feos_dft::python::*;
 use feos_dft::solvation::*;
@@ -22,6 +22,7 @@ use std::rc::Rc;
 pub enum FunctionalVariant {
     PcSaftFunctional(PcSaftFunctional),
     PetsFunctional(PetsFunctional),
+    FMTFunctional(FMTFunctional),
 }
 
 impl From<PcSaftFunctional> for FunctionalVariant {
@@ -36,6 +37,12 @@ impl From<PetsFunctional> for FunctionalVariant {
     }
 }
 
+impl From<FMTFunctional> for FunctionalVariant {
+    fn from(f: FMTFunctional) -> Self {
+        Self::FMTFunctional(f)
+    }
+}
+
 impl HelmholtzEnergyFunctional for FunctionalVariant {
     fn subset(&self, component_list: &[usize]) -> DFT<Self> {
         match self {
@@ -45,6 +52,9 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
             FunctionalVariant::PetsFunctional(functional) => {
                 functional.subset(component_list).into()
             }
+            FunctionalVariant::FMTFunctional(functional) => {
+                functional.subset(component_list).into()
+            }
         }
     }
 
@@ -52,6 +62,7 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
         match self {
             FunctionalVariant::PcSaftFunctional(functional) => functional.molecule_shape(),
             FunctionalVariant::PetsFunctional(functional) => functional.molecule_shape(),
+            FunctionalVariant::FMTFunctional(functional) => functional.molecule_shape(),
         }
     }
 
@@ -61,6 +72,7 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
                 functional.compute_max_density(moles)
             }
             FunctionalVariant::PetsFunctional(functional) => functional.compute_max_density(moles),
+            FunctionalVariant::FMTFunctional(functional) => functional.compute_max_density(moles),
         }
     }
 
@@ -68,6 +80,7 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
         match self {
             FunctionalVariant::PcSaftFunctional(functional) => functional.contributions(),
             FunctionalVariant::PetsFunctional(functional) => functional.contributions(),
+            FunctionalVariant::FMTFunctional(functional) => functional.contributions(),
         }
     }
 
@@ -75,6 +88,7 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
         match self {
             FunctionalVariant::PcSaftFunctional(functional) => functional.ideal_gas(),
             FunctionalVariant::PetsFunctional(functional) => functional.ideal_gas(),
+            FunctionalVariant::FMTFunctional(functional) => functional.ideal_gas(),
         }
     }
 }
@@ -84,6 +98,7 @@ impl MolarWeight<SIUnit> for FunctionalVariant {
         match self {
             FunctionalVariant::PcSaftFunctional(functional) => functional.molar_weight(),
             FunctionalVariant::PetsFunctional(functional) => functional.molar_weight(),
+            _ => unimplemented!(),
         }
     }
 }
@@ -93,6 +108,7 @@ impl FluidParameters for FunctionalVariant {
         match self {
             FunctionalVariant::PcSaftFunctional(functional) => functional.epsilon_k_ff(),
             FunctionalVariant::PetsFunctional(functional) => functional.epsilon_k_ff(),
+            FunctionalVariant::FMTFunctional(functional) => functional.epsilon_k_ff(),
         }
     }
 
@@ -100,6 +116,7 @@ impl FluidParameters for FunctionalVariant {
         match self {
             FunctionalVariant::PcSaftFunctional(functional) => functional.sigma_ff(),
             FunctionalVariant::PetsFunctional(functional) => functional.sigma_ff(),
+            FunctionalVariant::FMTFunctional(functional) => functional.sigma_ff(),
         }
     }
 }
@@ -109,6 +126,7 @@ impl PairPotential for FunctionalVariant {
         match self {
             FunctionalVariant::PcSaftFunctional(functional) => functional.pair_potential(r),
             FunctionalVariant::PetsFunctional(functional) => functional.pair_potential(r),
+            FunctionalVariant::FMTFunctional(functional) => functional.pair_potential(r),
         }
     }
 }
@@ -138,7 +156,7 @@ impl PyFunctional {
     ///
     /// Returns
     /// -------
-    /// PcSaftFunctional
+    /// Functional
     #[args(
         fmt_version = "FMTVersion::WhiteBear",
         max_eta = "0.5",
@@ -183,7 +201,7 @@ impl PyFunctional {
     ///
     /// Returns
     /// -------
-    /// PetsFunctional
+    /// Functional
     #[args(fmt_version = "FMTVersion::WhiteBear", max_eta = "0.5")]
     #[staticmethod]
     #[pyo3(text_signature = "(parameters, fmt_version, max_eta)")]
@@ -191,6 +209,26 @@ impl PyFunctional {
         let options = PetsOptions { max_eta };
         Self(Rc::new(
             PetsFunctional::with_options(parameters.0, fmt_version, options).into(),
+        ))
+    }
+
+    /// Helmholtz energy functional for hard sphere systems.
+    ///
+    /// Parameters
+    /// ----------
+    /// sigma : numpy.ndarray[float]
+    ///     The diameters of the hard spheres in Angstrom.
+    /// fmt_version : FMTVersion
+    ///     The specific variant of the FMT term.
+    ///
+    /// Returns
+    /// -------
+    /// Functional
+    #[staticmethod]
+    #[pyo3(text_signature = "(sigma, version)")]
+    fn fmt(sigma: &PyArray1<f64>, fmt_version: FMTVersion) -> Self {
+        Self(Rc::new(
+            FMTFunctional::new(&sigma.to_owned_array(), fmt_version).into(),
         ))
     }
 }
