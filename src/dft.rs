@@ -191,7 +191,7 @@ impl PyFunctional {
     #[args(fmt_version = "FMTVersion::WhiteBear", max_eta = "0.5")]
     #[staticmethod]
     #[pyo3(text_signature = "(parameters, fmt_version, max_eta)")]
-    fn new_full(parameters: PyPetsParameters, fmt_version: FMTVersion, max_eta: f64) -> Self {
+    fn pets(parameters: PyPetsParameters, fmt_version: FMTVersion, max_eta: f64) -> Self {
         let options = PetsOptions { max_eta };
         let m = Array1::<f64>::ones(parameters.0.sigma.len());
         Self(Rc::new(DFT::new_homosegmented(
