@@ -24,29 +24,34 @@ pub enum FunctionalVariant {
     PetsFunctional(PetsFunctional),
 }
 
-impl From<DFT<PcSaftFunctional>> for FunctionalVariant {
-    fn from(f: DFT<PcSaftFunctional>) -> Self {
-        Self::PcSaftFunctional(f.functional)
+impl From<PcSaftFunctional> for FunctionalVariant {
+    fn from(f: PcSaftFunctional) -> Self {
+        Self::PcSaftFunctional(f)
     }
 }
 
-impl From<DFT<PetsFunctional>> for FunctionalVariant {
-    fn from(f: DFT<PetsFunctional>) -> Self {
-        Self::PetsFunctional(f.functional)
+impl From<PetsFunctional> for FunctionalVariant {
+    fn from(f: PetsFunctional) -> Self {
+        Self::PetsFunctional(f)
     }
 }
 
 impl HelmholtzEnergyFunctional for FunctionalVariant {
     fn subset(&self, component_list: &[usize]) -> DFT<Self> {
         match self {
-            FunctionalVariant::PcSaftFunctional(functional) => DFT::new_homosegmented(
-                functional.subset(component_list).into(),
-                &functional.parameters.m,
-            ),
-            FunctionalVariant::PetsFunctional(functional) => DFT::new_homosegmented(
-                functional.subset(component_list).into(),
-                &Array1::<f64>::ones(functional.parameters.sigma.len()),
-            ),
+            FunctionalVariant::PcSaftFunctional(functional) => {
+                functional.subset(component_list).into()
+            }
+            FunctionalVariant::PetsFunctional(functional) => {
+                functional.subset(component_list).into()
+            }
+        }
+    }
+
+    fn molecule_shape(&self) -> MoleculeShape {
+        match self {
+            FunctionalVariant::PcSaftFunctional(functional) => functional.molecule_shape(),
+            FunctionalVariant::PetsFunctional(functional) => functional.molecule_shape(),
         }
     }
 
@@ -100,8 +105,8 @@ impl FluidParameters for FunctionalVariant {
 
     fn m(&self) -> Array1<f64> {
         match self {
-            FunctionalVariant::PcSaftFunctional(functional) => functional.m(),
-            FunctionalVariant::PetsFunctional(functional) => functional.m(),
+            FunctionalVariant::PcSaftFunctional(functional) => FluidParameters::m(functional),
+            FunctionalVariant::PetsFunctional(functional) => FluidParameters::m(functional),
         }
     }
 }
@@ -166,11 +171,9 @@ impl PyFunctional {
             tol_cross_assoc,
             dq_variant: dq_variant.into(),
         };
-        let m = parameters.0.m.clone();
-        Self(Rc::new(DFT::new_homosegmented(
+        Self(Rc::new(
             PcSaftFunctional::with_options(parameters.0, fmt_version, options).into(),
-            &m,
-        )))
+        ))
     }
 
     /// PeTS Helmholtz energy functional without simplifications
@@ -193,11 +196,9 @@ impl PyFunctional {
     #[pyo3(text_signature = "(parameters, fmt_version, max_eta)")]
     fn pets(parameters: PyPetsParameters, fmt_version: FMTVersion, max_eta: f64) -> Self {
         let options = PetsOptions { max_eta };
-        let m = Array1::<f64>::ones(parameters.0.sigma.len());
-        Self(Rc::new(DFT::new_homosegmented(
+        Self(Rc::new(
             PetsFunctional::with_options(parameters.0, fmt_version, options).into(),
-            &m,
-        )))
+        ))
     }
 }
 
