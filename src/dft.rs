@@ -102,13 +102,6 @@ impl FluidParameters for FunctionalVariant {
             FunctionalVariant::PetsFunctional(functional) => functional.sigma_ff(),
         }
     }
-
-    fn m(&self) -> Array1<f64> {
-        match self {
-            FunctionalVariant::PcSaftFunctional(functional) => FluidParameters::m(functional),
-            FunctionalVariant::PetsFunctional(functional) => FluidParameters::m(functional),
-        }
-    }
 }
 
 impl PairPotential for FunctionalVariant {

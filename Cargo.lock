@@ -169,7 +169,7 @@ dependencies = [
 [[package]]
 name = "feos-dft"
 version = "0.1.3"
-source = "git+https://github.com/feos-org/feos-dft?branch=new_dft_struct#513efd6b3e92a457f2460c8c2e927f8fad0d9c30"
+source = "git+https://github.com/feos-org/feos-dft?branch=new_dft_struct#4c0853179ad421ef9bbbbfaabe45990641626560"
 dependencies = [
  "ang",
  "feos-core",
@@ -190,7 +190,7 @@ dependencies = [
 [[package]]
 name = "feos-pcsaft"
 version = "0.1.0"
-source = "git+https://github.com/feos-org/feos-pcsaft?branch=new_dft_struct#f015c43325b7a73201b1d73aceea56729006cc0a"
+source = "git+https://github.com/feos-org/feos-pcsaft?branch=new_dft_struct#b9614a39c64c2bb77c41705db69eee3ddf349c76"
 dependencies = [
  "feos-core",
  "feos-dft",
