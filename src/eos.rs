@@ -16,63 +16,63 @@ use quantity::si::*;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-pub enum Eos {
+pub enum EosVariant {
     PcSaft(PcSaft),
     PengRobinson(PengRobinson),
     Python(PyEoSObj),
     Pets(Pets),
 }
 
-impl EquationOfState for Eos {
+impl EquationOfState for EosVariant {
     fn components(&self) -> usize {
         match self {
-            Eos::PcSaft(eos) => eos.components(),
-            Eos::PengRobinson(eos) => eos.components(),
-            Eos::Python(eos) => eos.components(),
-            Eos::Pets(eos) => eos.components(),
+            EosVariant::PcSaft(eos) => eos.components(),
+            EosVariant::PengRobinson(eos) => eos.components(),
+            EosVariant::Python(eos) => eos.components(),
+            EosVariant::Pets(eos) => eos.components(),
         }
     }
 
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         match self {
-            Eos::PcSaft(eos) => eos.compute_max_density(moles),
-            Eos::PengRobinson(eos) => eos.compute_max_density(moles),
-            Eos::Python(eos) => eos.compute_max_density(moles),
-            Eos::Pets(eos) => eos.compute_max_density(moles),
+            EosVariant::PcSaft(eos) => eos.compute_max_density(moles),
+            EosVariant::PengRobinson(eos) => eos.compute_max_density(moles),
+            EosVariant::Python(eos) => eos.compute_max_density(moles),
+            EosVariant::Pets(eos) => eos.compute_max_density(moles),
         }
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
         match self {
-            Eos::PcSaft(eos) => Self::PcSaft(eos.subset(component_list)),
-            Eos::PengRobinson(eos) => Self::PengRobinson(eos.subset(component_list)),
-            Eos::Python(eos) => Self::Python(eos.subset(component_list)),
-            Eos::Pets(eos) => Self::Pets(eos.subset(component_list)),
+            EosVariant::PcSaft(eos) => Self::PcSaft(eos.subset(component_list)),
+            EosVariant::PengRobinson(eos) => Self::PengRobinson(eos.subset(component_list)),
+            EosVariant::Python(eos) => Self::Python(eos.subset(component_list)),
+            EosVariant::Pets(eos) => Self::Pets(eos.subset(component_list)),
         }
     }
 
     fn residual(&self) -> &[Box<dyn HelmholtzEnergy>] {
         match self {
-            Eos::PcSaft(eos) => eos.residual(),
-            Eos::PengRobinson(eos) => eos.residual(),
-            Eos::Python(eos) => eos.residual(),
-            Eos::Pets(eos) => eos.residual(),
+            EosVariant::PcSaft(eos) => eos.residual(),
+            EosVariant::PengRobinson(eos) => eos.residual(),
+            EosVariant::Python(eos) => eos.residual(),
+            EosVariant::Pets(eos) => eos.residual(),
         }
     }
 }
 
-impl MolarWeight<SIUnit> for Eos {
+impl MolarWeight<SIUnit> for EosVariant {
     fn molar_weight(&self) -> SIArray1 {
         match self {
-            Eos::PcSaft(eos) => eos.molar_weight(),
-            Eos::PengRobinson(eos) => eos.molar_weight(),
-            Eos::Python(eos) => eos.molar_weight(),
-            Eos::Pets(eos) => eos.molar_weight(),
+            EosVariant::PcSaft(eos) => eos.molar_weight(),
+            EosVariant::PengRobinson(eos) => eos.molar_weight(),
+            EosVariant::Python(eos) => eos.molar_weight(),
+            EosVariant::Pets(eos) => eos.molar_weight(),
         }
     }
 }
 
-impl EntropyScaling<SIUnit> for Eos {
+impl EntropyScaling<SIUnit> for EosVariant {
     fn viscosity_reference(
         &self,
         temperature: SINumber,
@@ -80,14 +80,14 @@ impl EntropyScaling<SIUnit> for Eos {
         moles: &SIArray1,
     ) -> EosResult<SINumber> {
         match self {
-            Eos::PcSaft(eos) => eos.viscosity_reference(temperature, volume, moles),
+            EosVariant::PcSaft(eos) => eos.viscosity_reference(temperature, volume, moles),
             _ => unimplemented!(),
         }
     }
 
     fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
         match self {
-            Eos::PcSaft(eos) => eos.viscosity_correlation(s_res, x),
+            EosVariant::PcSaft(eos) => eos.viscosity_correlation(s_res, x),
             _ => unimplemented!(),
         }
     }
@@ -99,14 +99,14 @@ impl EntropyScaling<SIUnit> for Eos {
         moles: &SIArray1,
     ) -> EosResult<SINumber> {
         match self {
-            Eos::PcSaft(eos) => eos.diffusion_reference(temperature, volume, moles),
+            EosVariant::PcSaft(eos) => eos.diffusion_reference(temperature, volume, moles),
             _ => unimplemented!(),
         }
     }
 
     fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
         match self {
-            Eos::PcSaft(eos) => eos.diffusion_correlation(s_res, x),
+            EosVariant::PcSaft(eos) => eos.diffusion_correlation(s_res, x),
             _ => unimplemented!(),
         }
     }
@@ -118,14 +118,14 @@ impl EntropyScaling<SIUnit> for Eos {
         moles: &SIArray1,
     ) -> EosResult<SINumber> {
         match self {
-            Eos::PcSaft(eos) => eos.thermal_conductivity_reference(temperature, volume, moles),
+            EosVariant::PcSaft(eos) => eos.thermal_conductivity_reference(temperature, volume, moles),
             _ => unimplemented!(),
         }
     }
 
     fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
         match self {
-            Eos::PcSaft(eos) => eos.thermal_conductivity_correlation(s_res, x),
+            EosVariant::PcSaft(eos) => eos.thermal_conductivity_correlation(s_res, x),
             _ => unimplemented!(),
         }
     }
@@ -133,10 +133,10 @@ impl EntropyScaling<SIUnit> for Eos {
 
 #[pyclass(name = "EquationOfState", unsendable)]
 #[derive(Clone)]
-pub struct PyEos(pub Rc<Eos>);
+pub struct PyEosVariant(pub Rc<EosVariant>);
 
 #[pymethods]
-impl PyEos {
+impl PyEosVariant {
     /// Initialize PC-SAFT equation of state.
     ///
     /// Parameters
@@ -154,7 +154,7 @@ impl PyEos {
     ///
     /// Returns
     /// -------
-    /// PcSaft
+    /// EquationOfState
     ///     The PC-SAFT equation of state that can be used to compute thermodynamic
     ///     states.
     #[args(
@@ -164,6 +164,7 @@ impl PyEos {
         dq_variant = "\"dq35\""
     )]
     #[staticmethod]
+    #[pyo3(text_signature = "(parameters, max_eta, max_iter_cross_assoc, tol_cross_assoc, dq_variant)")]
     pub fn pcsaft(
         parameters: PyPcSaftParameters,
         max_eta: f64,
@@ -177,27 +178,50 @@ impl PyEos {
             tol_cross_assoc,
             dq_variant: dq_variant.into(),
         };
-        Self(Rc::new(Eos::PcSaft(PcSaft::with_options(
+        Self(Rc::new(EosVariant::PcSaft(PcSaft::with_options(
             parameters.0.clone(),
             options,
         ))))
     }
 
     /// Peng-Robinson equation of state.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters : PengRobinsonParameters
+    ///     The parameters of the PR equation of state to use.
+    ///
+    /// Returns
+    /// -------
+    /// EquationOfState
+    ///     The PR equation of state that can be used to compute thermodynamic
+    ///     states.
     #[staticmethod]
+    #[pyo3(text_signature = "(parameters)")]
     pub fn peng_robinson(parameters: PyPengRobinsonParameters) -> Self {
-        Self(Rc::new(Eos::PengRobinson(PengRobinson::new(
+        Self(Rc::new(EosVariant::PengRobinson(PengRobinson::new(
             parameters.0.clone(),
         ))))
     }
 
-    /// Generate equation of state from Python class.
+    /// Equation of state from a Python class.
+    /// 
+    /// Parameters
+    /// ----------
+    /// obj : Class
+    ///     A python class implementing the necessary methods
+    ///     to be used as equation of state.
+    /// 
+    /// Returns
+    /// -------
+    /// EquationOfState
     #[staticmethod]
+    #[pyo3(text_signature = "(obj)")]
     fn python(obj: Py<PyAny>) -> PyResult<Self> {
-        Ok(Self(Rc::new(Eos::Python(PyEoSObj::new(obj)?))))
+        Ok(Self(Rc::new(EosVariant::Python(PyEoSObj::new(obj)?))))
     }
 
-    /// Initialize PeTS equation of state.
+    /// PeTS equation of state.
     ///
     /// Parameters
     /// ----------
@@ -208,35 +232,35 @@ impl PyEos {
     ///
     /// Returns
     /// -------
-    /// Pets
+    /// EquationOfState
     ///     The PeTS equation of state that can be used to compute thermodynamic
     ///     states.
     #[args(max_eta = "0.5")]
     #[staticmethod]
+    #[pyo3(text_signature = "(parameters, max_eta)")]
     fn pets(parameters: PyPetsParameters, max_eta: f64) -> Self {
         let options = PetsOptions { max_eta };
-        Self(Rc::new(Eos::Pets(Pets::with_options(parameters.0.clone(), options))))
+        Self(Rc::new(EosVariant::Pets(Pets::with_options(
+            parameters.0.clone(),
+            options,
+        ))))
     }
 }
 
-impl_equation_of_state!(PyEos);
-impl_virial_coefficients!(PyEos);
-impl_state!(Eos, PyEos);
-impl_state_molarweight!(Eos, PyEos);
-impl_state_entropy_scaling!(Eos, PyEos);
-impl_vle_state!(Eos, PyEos);
+impl_equation_of_state!(PyEosVariant);
+impl_virial_coefficients!(PyEosVariant);
+impl_state!(EosVariant, PyEosVariant);
+impl_state_molarweight!(EosVariant, PyEosVariant);
+impl_state_entropy_scaling!(EosVariant, PyEosVariant);
+impl_phase_equilibrium!(EosVariant, PyEosVariant);
 
 #[pymodule]
 pub fn eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<Contributions>()?;
     m.add_class::<Verbosity>()?;
 
-    m.add_class::<PyEos>()?;
-    m.add_class::<PyPengRobinsonParameters>()?;
+    m.add_class::<PyEosVariant>()?;
     m.add_class::<PyState>()?;
-    m.add_class::<PyPhaseDiagramPure>()?;
-    m.add_class::<PyPhaseDiagramBinary>()?;
-    m.add_class::<PyPhaseDiagramHetero>()?;
-    m.add_class::<PyPhaseEquilibrium>()?;
-    Ok(())
+    m.add_class::<PyPhaseDiagram>()?;
+    m.add_class::<PyPhaseEquilibrium>()
 }
