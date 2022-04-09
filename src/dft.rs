@@ -131,12 +131,12 @@ impl PairPotential for FunctionalVariant {
     }
 }
 
-#[pyclass(name = "Functional", unsendable)]
+#[pyclass(name = "HelmholtzEnergyFunctional", unsendable)]
 #[derive(Clone)]
-pub struct PyFunctional(pub Rc<DFT<FunctionalVariant>>);
+pub struct PyFunctionalVariant(pub Rc<DFT<FunctionalVariant>>);
 
 #[pymethods]
-impl PyFunctional {
+impl PyFunctionalVariant {
     /// PC-SAFT Helmholtz energy functional.
     ///
     /// Parameters
@@ -233,17 +233,17 @@ impl PyFunctional {
     }
 }
 
-impl_equation_of_state!(PyFunctional);
+impl_equation_of_state!(PyFunctionalVariant);
 
-impl_state!(DFT<FunctionalVariant>, PyFunctional);
-impl_state_molarweight!(DFT<FunctionalVariant>, PyFunctional);
-impl_phase_equilibrium!(DFT<FunctionalVariant>, PyFunctional);
+impl_state!(DFT<FunctionalVariant>, PyFunctionalVariant);
+impl_state_molarweight!(DFT<FunctionalVariant>, PyFunctionalVariant);
+impl_phase_equilibrium!(DFT<FunctionalVariant>, PyFunctionalVariant);
 
 impl_planar_interface!(FunctionalVariant);
 impl_surface_tension_diagram!(FunctionalVariant);
 
-impl_pore!(FunctionalVariant, PyFunctional);
-impl_adsorption!(FunctionalVariant, PyFunctional);
+impl_pore!(FunctionalVariant, PyFunctionalVariant);
+impl_adsorption!(FunctionalVariant, PyFunctionalVariant);
 
 impl_pair_correlation!(FunctionalVariant);
 impl_solvation_profile!(FunctionalVariant);
@@ -253,7 +253,7 @@ pub fn dft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<Contributions>()?;
     m.add_class::<Verbosity>()?;
 
-    m.add_class::<PyFunctional>()?;
+    m.add_class::<PyFunctionalVariant>()?;
     m.add_class::<PyState>()?;
     m.add_class::<PyPhaseDiagram>()?;
     m.add_class::<PyPhaseEquilibrium>()?;
