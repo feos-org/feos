@@ -2,6 +2,8 @@ use feos_core::cubic::PengRobinson;
 use feos_core::python::cubic::PyPengRobinsonParameters;
 use feos_core::python::user_defined::PyEoSObj;
 use feos_core::*;
+use feos_gc_pcsaft::python::PyGcPcSaftEosParameters;
+use feos_gc_pcsaft::{GcPcSaft, GcPcSaftOptions};
 use feos_pcsaft::python::PyPcSaftParameters;
 use feos_pcsaft::{PcSaft, PcSaftOptions};
 use feos_pets::python::PyPetsParameters;
@@ -18,6 +20,7 @@ use std::rc::Rc;
 
 pub enum EosVariant {
     PcSaft(PcSaft),
+    GcPcSaft(GcPcSaft),
     PengRobinson(PengRobinson),
     Python(PyEoSObj),
     Pets(Pets),
@@ -27,6 +30,7 @@ impl EquationOfState for EosVariant {
     fn components(&self) -> usize {
         match self {
             EosVariant::PcSaft(eos) => eos.components(),
+            EosVariant::GcPcSaft(eos) => eos.components(),
             EosVariant::PengRobinson(eos) => eos.components(),
             EosVariant::Python(eos) => eos.components(),
             EosVariant::Pets(eos) => eos.components(),
@@ -36,6 +40,7 @@ impl EquationOfState for EosVariant {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         match self {
             EosVariant::PcSaft(eos) => eos.compute_max_density(moles),
+            EosVariant::GcPcSaft(eos) => eos.compute_max_density(moles),
             EosVariant::PengRobinson(eos) => eos.compute_max_density(moles),
             EosVariant::Python(eos) => eos.compute_max_density(moles),
             EosVariant::Pets(eos) => eos.compute_max_density(moles),
@@ -45,6 +50,7 @@ impl EquationOfState for EosVariant {
     fn subset(&self, component_list: &[usize]) -> Self {
         match self {
             EosVariant::PcSaft(eos) => Self::PcSaft(eos.subset(component_list)),
+            EosVariant::GcPcSaft(eos) => Self::GcPcSaft(eos.subset(component_list)),
             EosVariant::PengRobinson(eos) => Self::PengRobinson(eos.subset(component_list)),
             EosVariant::Python(eos) => Self::Python(eos.subset(component_list)),
             EosVariant::Pets(eos) => Self::Pets(eos.subset(component_list)),
@@ -54,6 +60,7 @@ impl EquationOfState for EosVariant {
     fn residual(&self) -> &[Box<dyn HelmholtzEnergy>] {
         match self {
             EosVariant::PcSaft(eos) => eos.residual(),
+            EosVariant::GcPcSaft(eos) => eos.residual(),
             EosVariant::PengRobinson(eos) => eos.residual(),
             EosVariant::Python(eos) => eos.residual(),
             EosVariant::Pets(eos) => eos.residual(),
@@ -65,6 +72,7 @@ impl MolarWeight<SIUnit> for EosVariant {
     fn molar_weight(&self) -> SIArray1 {
         match self {
             EosVariant::PcSaft(eos) => eos.molar_weight(),
+            EosVariant::GcPcSaft(eos) => eos.molar_weight(),
             EosVariant::PengRobinson(eos) => eos.molar_weight(),
             EosVariant::Python(eos) => eos.molar_weight(),
             EosVariant::Pets(eos) => eos.molar_weight(),
@@ -118,7 +126,9 @@ impl EntropyScaling<SIUnit> for EosVariant {
         moles: &SIArray1,
     ) -> EosResult<SINumber> {
         match self {
-            EosVariant::PcSaft(eos) => eos.thermal_conductivity_reference(temperature, volume, moles),
+            EosVariant::PcSaft(eos) => {
+                eos.thermal_conductivity_reference(temperature, volume, moles)
+            }
             _ => unimplemented!(),
         }
     }
@@ -164,7 +174,9 @@ impl PyEosVariant {
         dq_variant = "\"dq35\""
     )]
     #[staticmethod]
-    #[pyo3(text_signature = "(parameters, max_eta, max_iter_cross_assoc, tol_cross_assoc, dq_variant)")]
+    #[pyo3(
+        text_signature = "(parameters, max_eta, max_iter_cross_assoc, tol_cross_assoc, dq_variant)"
+    )]
     pub fn pcsaft(
         parameters: PyPcSaftParameters,
         max_eta: f64,
@@ -179,7 +191,49 @@ impl PyEosVariant {
             dq_variant: dq_variant.into(),
         };
         Self(Rc::new(EosVariant::PcSaft(PcSaft::with_options(
-            parameters.0.clone(),
+            parameters.0,
+            options,
+        ))))
+    }
+
+    /// Initialize the (heterosegmented) group contribution PC-SAFT equation of state.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters : GcPcSaftEosParameters
+    ///     The parameters of the PC-Saft equation of state to use.
+    /// max_eta : float, optional
+    ///     Maximum packing fraction. Defaults to 0.5.
+    /// max_iter_cross_assoc : unsigned integer, optional
+    ///     Maximum number of iterations for cross association. Defaults to 50.
+    /// tol_cross_assoc : float
+    ///     Tolerance for convergence of cross association. Defaults to 1e-10.
+    ///
+    /// Returns
+    /// -------
+    /// EquationOfState
+    ///     The gc-PC-SAFT equation of state that can be used to compute thermodynamic
+    ///     states.
+    #[args(
+        max_eta = "0.5",
+        max_iter_cross_assoc = "50",
+        tol_cross_assoc = "1e-10"
+    )]
+    #[staticmethod]
+    #[pyo3(text_signature = "(parameters, max_eta, max_iter_cross_assoc, tol_cross_assoc)")]
+    pub fn gc_pcsaft(
+        parameters: PyGcPcSaftEosParameters,
+        max_eta: f64,
+        max_iter_cross_assoc: usize,
+        tol_cross_assoc: f64,
+    ) -> Self {
+        let options = GcPcSaftOptions {
+            max_eta,
+            max_iter_cross_assoc,
+            tol_cross_assoc,
+        };
+        Self(Rc::new(EosVariant::GcPcSaft(GcPcSaft::with_options(
+            parameters.0,
             options,
         ))))
     }
@@ -200,18 +254,18 @@ impl PyEosVariant {
     #[pyo3(text_signature = "(parameters)")]
     pub fn peng_robinson(parameters: PyPengRobinsonParameters) -> Self {
         Self(Rc::new(EosVariant::PengRobinson(PengRobinson::new(
-            parameters.0.clone(),
+            parameters.0,
         ))))
     }
 
     /// Equation of state from a Python class.
-    /// 
+    ///
     /// Parameters
     /// ----------
     /// obj : Class
     ///     A python class implementing the necessary methods
     ///     to be used as equation of state.
-    /// 
+    ///
     /// Returns
     /// -------
     /// EquationOfState
@@ -241,7 +295,7 @@ impl PyEosVariant {
     fn pets(parameters: PyPetsParameters, max_eta: f64) -> Self {
         let options = PetsOptions { max_eta };
         Self(Rc::new(EosVariant::Pets(Pets::with_options(
-            parameters.0.clone(),
+            parameters.0,
             options,
         ))))
     }
