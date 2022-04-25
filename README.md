@@ -11,8 +11,9 @@ The following models are currently published as part of the `FeOs` framework
 |name|description|eos|dft|
 |-|-|:-:|:-:|
 |[`feos-pcsaft`](https://github.com/feos-org/feos-pcsaft)|perturbed-chain (polar) statistical associating fluid theory|&#128504;|&#128504;|
+|[`feos-gc-pcsaft`](https://github.com/feos-org/feos-gc-pcsaft)|(heterosegmented) group contribution PC-SAFT|&#128504;|&#128504;|
 
-The list is being expanded continuously. Currently under development are implementations of ePC-SAFT, (heterosegmented) group contribution PC-SAFT and equations of state/Helmholtz energy functionals for model fluids like LJ and Mie fluids.
+The list is being expanded continuously. Currently under development are implementations of ePC-SAFT and equations of state/Helmholtz energy functionals for model fluids like LJ and Mie fluids.
 
 Other public repositories that implement models within the `FeOs` framework, but are currently not part of the `feos` Python package, are
 
