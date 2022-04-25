@@ -14,6 +14,7 @@ use feos_pets::{PetsFunctional, PetsOptions};
 use ndarray::{Array1, Array2};
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2, PyArray4};
+use petgraph::graph::{Graph, UnGraph};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use quantity::python::*;
@@ -95,6 +96,13 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
             FunctionalVariant::GcPcSaft(functional) => functional.ideal_gas(),
             FunctionalVariant::Pets(functional) => functional.ideal_gas(),
             FunctionalVariant::Fmt(functional) => functional.ideal_gas(),
+        }
+    }
+
+    fn bond_lengths(&self, temperature: f64) -> UnGraph<(), f64> {
+        match self {
+            FunctionalVariant::GcPcSaft(functional) => functional.bond_lengths(temperature),
+            _ => Graph::with_capacity(0, 0),
         }
     }
 }
@@ -225,7 +233,7 @@ impl PyFunctionalVariant {
     #[pyo3(
         text_signature = "(parameters, fmt_version, max_eta, max_iter_cross_assoc, tol_cross_assoc)"
     )]
-    fn gc_csaft(
+    fn gc_pcsaft(
         parameters: PyGcPcSaftFunctionalParameters,
         fmt_version: FMTVersion,
         max_eta: f64,

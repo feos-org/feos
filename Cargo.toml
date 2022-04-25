@@ -19,11 +19,12 @@ crate-type = ["cdylib"]
 quantity = "0.5"
 feos-core = "0.2"
 feos-dft = "0.2"
-feos-pcsaft = { git = "https://github.com/feos-org/feos-pcsaft", features = ["python"] }
+feos-pcsaft = { version = "0.2", features = ["python"] }
 feos-gc-pcsaft = { version = "0.1", features = ["python"] }
 feos-pets = { git = "https://github.com/feos-org/feos-pets", features = ["python"] }
-numpy = { version = "0.16" }
+numpy = "0.16"
 ndarray = { version = "0.15", features=["approx"] }
+petgraph = "0.6"
 
 [dependencies.pyo3]
 version = "0.16"
