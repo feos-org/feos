@@ -139,6 +139,7 @@ version = "0.1.1"
 dependencies = [
  "feos-core",
  "feos-dft",
+ "feos-estimator",
  "feos-gc-pcsaft",
  "feos-pcsaft",
  "feos-pets",
@@ -189,6 +190,18 @@ dependencies = [
  "quantity",
  "rustdct",
  "rustfft",
+]
+
+[[package]]
+name = "feos-estimator"
+version = "0.1.0"
+dependencies = [
+ "feos-core",
+ "ndarray",
+ "numpy",
+ "pyo3",
+ "quantity",
+ "thiserror",
 ]
 
 [[package]]

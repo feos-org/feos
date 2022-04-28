@@ -1,38 +1,26 @@
 # API
 
-## Utility
-
-Functionalities that make working with the code easier.
+## Modules
 
 ```{eval-rst}
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
-   utility/index
+   si
+   eos
+   dft
 ```
 
-## Equations of state
+## Model specific modules
 
-Implementations of equations of state and possibly classical density functional theory.
+These modules contain the objects to e.g. read parameters from files or build parameters from records in Python.
 
 ```{eval-rst}
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
-   eos/index
+   pcsaft
+   gc_pcsaft
+   peng_robinson
+   pets
 ```
-
-
-
-## Density functional theory
-
-Implementation of Helmholtz energy functionals.
-
-```{eval-rst}
-.. toctree::
-   :maxdepth: 2
-
-   dft/index
-```
-
-

@@ -15,6 +15,8 @@ mod gc_pcsaft;
 use gc_pcsaft::__PYO3_PYMODULE_DEF_GC_PCSAFT;
 mod pets;
 use pets::__PYO3_PYMODULE_DEF_PETS;
+mod estimator;
+use estimator::__PYO3_PYMODULE_DEF_ESTIMATOR;
 
 #[pymodule]
 pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
@@ -25,6 +27,7 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(pcsaft))?;
     m.add_wrapped(wrap_pymodule!(gc_pcsaft))?;
     m.add_wrapped(wrap_pymodule!(pets))?;
+    m.add_wrapped(wrap_pymodule!(estimator))?;
     py.run(
         "\
 import sys
@@ -40,6 +43,7 @@ sys.modules['feos.cubic'] = cubic
 sys.modules['feos.pcsaft'] = pcsaft
 sys.modules['feos.gc_pcsaft'] = gc_pcsaft
 sys.modules['feos.pets'] = pets
+sys.modules['feos.estimator'] = estimator
     ",
         None,
         Some(m.dict()),
