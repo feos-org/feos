@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 impl_estimator!(EosVariant, PyEosVariant);
+impl_estimator_entropy_scaling!(EosVariant, PyEosVariant);
 
 #[pymodule]
 pub fn estimator(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
