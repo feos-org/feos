@@ -30,10 +30,10 @@ The following models are currently published as part of the `FeOs` framework
 
 |name|description|eos|dft|
 |-|-|:-:|:-:|
-|[`feos-pcsaft`](https://github.com/feos-org/feos-pcsaft)|perturbed-chain (polar) statistical associating fluid theory|🗸|🗸|
-|[`feos-gc-pcsaft`](https://github.com/feos-org/feos-gc-pcsaft)|(heterosegmented) group contribution PC-SAFT|🗸|🗸|
-|[`feos-pets`](https://github.com/feos-org/feos-pets)|perturbed truncated and shifted Lennard-Jones fluid|🗸|🗸|
-|[`feos-uvtheory`](https://github.com/feos-org/feos-uvtheory)|accurate description of Mie fluids and mixtures|🗸||
+|[`feos-pcsaft`](https://github.com/feos-org/feos-pcsaft)|perturbed-chain (polar) statistical associating fluid theory|✓|✓|
+|[`feos-gc-pcsaft`](https://github.com/feos-org/feos-gc-pcsaft)|(heterosegmented) group contribution PC-SAFT|✓|✓|
+|[`feos-pets`](https://github.com/feos-org/feos-pets)|perturbed truncated and shifted Lennard-Jones fluid|✓|✓|
+|[`feos-uvtheory`](https://github.com/feos-org/feos-uvtheory)|accurate description of Mie fluids and mixtures|✓||
 
 The list is being expanded continuously. Currently under development are implementations of ePC-SAFT and equations of state/Helmholtz energy functionals for model fluids like LJ and Mie fluids.
 
@@ -41,7 +41,7 @@ Other public repositories that implement models within the `FeOs` framework, but
 
 |name|description|eos|dft|
 |-|-|:-:|:-:|
-|[`feos-fused-chains`](https://github.com/feos-org/feos-fused-chains)|heterosegmented fused-sphere chain functional||🗸|
+|[`feos-fused-chains`](https://github.com/feos-org/feos-fused-chains)|heterosegmented fused-sphere chain functional||✓|
 
 ## Installation
 
