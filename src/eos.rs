@@ -360,11 +360,11 @@ pub fn eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyPhaseDiagram>()?;
     m.add_class::<PyPhaseEquilibrium>()?;
 
-    m.add_wrapped(wrap_pymodule!(estimator))
+    m.add_wrapped(wrap_pymodule!(estimator_eos))
 }
 
 #[pymodule]
-pub fn estimator(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+pub fn estimator_eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyDataSet>()?;
     m.add_class::<PyEstimator>()?;
     m.add_class::<PyLoss>()
