@@ -2,6 +2,7 @@ use feos_core::cubic::PengRobinson;
 use feos_core::python::cubic::PyPengRobinsonParameters;
 use feos_core::python::user_defined::PyEoSObj;
 use feos_core::*;
+use feos_estimator::*;
 use feos_gc_pcsaft::python::PyGcPcSaftEosParameters;
 use feos_gc_pcsaft::{GcPcSaft, GcPcSaftOptions};
 use feos_pcsaft::python::PyPcSaftParameters;
@@ -15,6 +16,7 @@ use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+use pyo3::wrap_pymodule;
 use quantity::python::*;
 use quantity::si::*;
 use std::collections::HashMap;
@@ -345,6 +347,9 @@ impl_state_molarweight!(EosVariant, PyEosVariant);
 impl_state_entropy_scaling!(EosVariant, PyEosVariant);
 impl_phase_equilibrium!(EosVariant, PyEosVariant);
 
+impl_estimator!(EosVariant, PyEosVariant);
+impl_estimator_entropy_scaling!(EosVariant, PyEosVariant);
+
 #[pymodule]
 pub fn eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<Contributions>()?;
@@ -353,5 +358,14 @@ pub fn eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyEosVariant>()?;
     m.add_class::<PyState>()?;
     m.add_class::<PyPhaseDiagram>()?;
-    m.add_class::<PyPhaseEquilibrium>()
+    m.add_class::<PyPhaseEquilibrium>()?;
+
+    m.add_wrapped(wrap_pymodule!(estimator))
+}
+
+#[pymodule]
+pub fn estimator(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_class::<PyDataSet>()?;
+    m.add_class::<PyEstimator>()?;
+    m.add_class::<PyLoss>()
 }

@@ -17,8 +17,8 @@ mod pets;
 use pets::__PYO3_PYMODULE_DEF_PETS;
 mod uvtheory;
 use uvtheory::__PYO3_PYMODULE_DEF_UVTHEORY;
-mod estimator;
-use estimator::__PYO3_PYMODULE_DEF_ESTIMATOR;
+// mod estimator;
+// use estimator::__PYO3_PYMODULE_DEF_ESTIMATOR;
 
 #[pymodule]
 pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
@@ -31,7 +31,7 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(gc_pcsaft))?;
     m.add_wrapped(wrap_pymodule!(pets))?;
     m.add_wrapped(wrap_pymodule!(uvtheory))?;
-    m.add_wrapped(wrap_pymodule!(estimator))?;
+    // m.add_wrapped(wrap_pymodule!(estimator))?;
     py.run(
         "\
 import sys
@@ -42,13 +42,13 @@ quantity.SIArray3.__module__ = 'feos.si'
 quantity.SIArray4.__module__ = 'feos.si'
 sys.modules['feos.si'] = quantity
 sys.modules['feos.eos'] = eos
+sys.modules['feos.eos.estimator'] = eos.estimator
 sys.modules['feos.dft'] = dft
 sys.modules['feos.cubic'] = cubic
 sys.modules['feos.pcsaft'] = pcsaft
 sys.modules['feos.gc_pcsaft'] = gc_pcsaft
 sys.modules['feos.pets'] = pets
 sys.modules['feos.uvtheory'] = uvtheory
-sys.modules['feos.estimator'] = estimator
     ",
         None,
         Some(m.dict()),
