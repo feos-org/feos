@@ -16,11 +16,18 @@ categories = ["science"]
 crate-type = ["cdylib"]
 
 [dependencies]
-quantity = { version = "0.4", features = ["python"] }
-feos-core = { version = "0.1", features = ["python"] }
-feos-dft = { version = "0.1", features = ["python"] }
-feos-pcsaft = { version = "0.1", features = ["python"] }
+quantity = "0.5"
+feos-core = "0.2"
+feos-dft = "0.2"
+feos-pcsaft = { version = "0.2", features = ["python"] }
+feos-gc-pcsaft = { version = "0.1", features = ["python"] }
+feos-pets = { version = "0.1", features = ["python"] }
+feos-uvtheory = { git = "https://github.com/feos-org/feos-uvtheory", features = ["python"], tag = "v0.1.0" }
+feos-estimator = { git = "https://github.com/feos-org/feos-estimator", features = ["python"], tag = "v0.1.0" }
+numpy = "0.16"
+ndarray = { version = "0.15", features=["approx"] }
+petgraph = "0.6"
 
 [dependencies.pyo3]
-version = "0.15"
+version = "0.16"
 features = ["extension-module", "abi3", "abi3-py37"]

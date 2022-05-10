@@ -1,17 +1,16 @@
-.. _peng_robinson_api:
+# `feos.cubic`
 
-.. currentmodule:: feos.cubic
-
-Peng-Robinson
--------------
-
+```{eval-rst}
 .. important::
     This implementation of the Peng-Robinson equation of state is intended to be used
     as simple example when considering implementing an equation of state. It is not
     a sophisticated implementation and should probably not be used to do research.
+```
 
-Parameter and utility
-~~~~~~~~~~~~~~~~~~~~~
+## Data types
+
+```{eval-rst}
+.. currentmodule:: feos.cubic
 
 .. autosummary::
     :toctree: generated/
@@ -19,22 +18,8 @@ Parameter and utility
     Identifier
     ChemicalRecord
     JobackRecord
-    PengRobinsonRecord
     PureRecord
     BinaryRecord
+    PengRobinsonRecord
     PengRobinsonParameters
-    Contributions
-    Verbosity
-
-Equation of state
-~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-    :toctree: generated/
-
-    PengRobinson
-    State
-    PhaseEquilibrium
-    PhaseDiagramPure
-    PhaseDiagramBinary
-    PhaseDiagramHetero
+```
