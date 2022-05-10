@@ -21,8 +21,9 @@ feos-core = "0.2"
 feos-dft = "0.2"
 feos-pcsaft = { version = "0.2", features = ["python"] }
 feos-gc-pcsaft = { version = "0.1", features = ["python"] }
-feos-pets = { git = "https://github.com/feos-org/feos-pets", features = ["python"] }
-feos-estimator = { path = "../feos-estimator", features = ["python"] }
+feos-pets = { version = "0.1", features = ["python"] }
+feos-uvtheory = { git = "https://github.com/feos-org/feos-uvtheory", features = ["python"], tag = "v0.1.0" }
+feos-estimator = { git = "https://github.com/feos-org/feos-estimator", features = ["python"], tag = "v0.1.0" }
 numpy = "0.16"
 ndarray = { version = "0.15", features=["approx"] }
 petgraph = "0.6"

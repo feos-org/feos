@@ -143,6 +143,7 @@ dependencies = [
  "feos-gc-pcsaft",
  "feos-pcsaft",
  "feos-pets",
+ "feos-uvtheory",
  "ndarray",
  "numpy",
  "petgraph",
@@ -195,6 +196,7 @@ dependencies = [
 [[package]]
 name = "feos-estimator"
 version = "0.1.0"
+source = "git+https://github.com/feos-org/feos-estimator?tag=v0.1.0#db0d45050854e9014fbc984667c1fc6a6b54f6bb"
 dependencies = [
  "feos-core",
  "ndarray",
@@ -249,7 +251,8 @@ dependencies = [
 [[package]]
 name = "feos-pets"
 version = "0.1.0"
-source = "git+https://github.com/feos-org/feos-pets#e71705b9d855d6ce0f1bc15eac1ec7e2bf3eceda"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a7b24101875461f33c562687721e254a4b01fe4b9f3ab90eaf86f1fb27d0d10"
 dependencies = [
  "feos-core",
  "feos-dft",
@@ -258,6 +261,24 @@ dependencies = [
  "ndarray",
  "num-dual",
  "num-traits",
+ "numpy",
+ "pyo3",
+ "quantity",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "feos-uvtheory"
+version = "0.1.0"
+source = "git+https://github.com/feos-org/feos-uvtheory?tag=v0.1.0#9faa0aec40b9d44d902497437da47d3aef94e0bd"
+dependencies = [
+ "approx 0.5.1",
+ "feos-core",
+ "itertools",
+ "lazy_static",
+ "ndarray",
+ "num-dual",
  "numpy",
  "pyo3",
  "quantity",
