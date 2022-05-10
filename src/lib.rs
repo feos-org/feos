@@ -22,6 +22,7 @@ use estimator::__PYO3_PYMODULE_DEF_ESTIMATOR;
 
 #[pymodule]
 pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add("version", env!("CARGO_PKG_VERSION"))?;
     m.add_wrapped(wrap_pymodule!(quantity))?;
     m.add_wrapped(wrap_pymodule!(eos))?;
     m.add_wrapped(wrap_pymodule!(dft))?;
