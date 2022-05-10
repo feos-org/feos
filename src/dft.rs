@@ -5,6 +5,7 @@ use feos_dft::interface::*;
 use feos_dft::python::*;
 use feos_dft::solvation::*;
 use feos_dft::*;
+use feos_estimator::*;
 use feos_gc_pcsaft::python::PyGcPcSaftFunctionalParameters;
 use feos_gc_pcsaft::{GcPcSaftFunctional, GcPcSaftOptions};
 use feos_pcsaft::python::PyPcSaftParameters;
@@ -17,6 +18,7 @@ use numpy::{PyArray1, PyArray2, PyArray4};
 use petgraph::graph::{Graph, UnGraph};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+use pyo3::wrap_pymodule;
 use quantity::python::*;
 use quantity::si::*;
 use std::collections::HashMap;
@@ -311,6 +313,8 @@ impl_adsorption!(FunctionalVariant, PyFunctionalVariant);
 impl_pair_correlation!(FunctionalVariant);
 impl_solvation_profile!(FunctionalVariant);
 
+impl_estimator!(DFT<FunctionalVariant>, PyFunctionalVariant);
+
 #[pymodule]
 pub fn dft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<Contributions>()?;
@@ -332,5 +336,14 @@ pub fn dft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyAdsorption3D>()?;
     m.add_class::<PySurfaceTensionDiagram>()?;
     m.add_class::<PyDFTSolver>()?;
-    m.add_class::<PySolvationProfile>()
+    m.add_class::<PySolvationProfile>()?;
+
+    m.add_wrapped(wrap_pymodule!(estimator_dft))
+}
+
+#[pymodule]
+pub fn estimator_dft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_class::<PyDataSet>()?;
+    m.add_class::<PyEstimator>()?;
+    m.add_class::<PyLoss>()
 }

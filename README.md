@@ -30,16 +30,18 @@ The following models are currently published as part of the `FeOs` framework
 
 |name|description|eos|dft|
 |-|-|:-:|:-:|
-|[`feos-pcsaft`](https://github.com/feos-org/feos-pcsaft)|perturbed-chain (polar) statistical associating fluid theory|&#128504;|&#128504;|
-|[`feos-gc-pcsaft`](https://github.com/feos-org/feos-gc-pcsaft)|(heterosegmented) group contribution PC-SAFT|&#128504;|&#128504;|
+|[`feos-pcsaft`](https://github.com/feos-org/feos-pcsaft)|perturbed-chain (polar) statistical associating fluid theory|✓|✓|
+|[`feos-gc-pcsaft`](https://github.com/feos-org/feos-gc-pcsaft)|(heterosegmented) group contribution PC-SAFT|✓|✓|
+|[`feos-pets`](https://github.com/feos-org/feos-pets)|perturbed truncated and shifted Lennard-Jones mixtures|✓|✓|
+|[`feos-uvtheory`](https://github.com/feos-org/feos-uvtheory)|equation of state for Mie fluids and mixtures|✓||
 
-The list is being expanded continuously. Currently under development are implementations of ePC-SAFT and equations of state/Helmholtz energy functionals for model fluids like LJ and Mie fluids.
+The list is being expanded continuously. Currently under development are implementations of ePC-SAFT, a Helmholtz energy functional for the UV theory, SAFT-VRQ-Mie.
 
 Other public repositories that implement models within the `FeOs` framework, but are currently not part of the `feos` Python package, are
 
 |name|description|eos|dft|
 |-|-|:-:|:-:|
-|[`feos-fused-chains`](https://github.com/feos-org/feos-fused-chains)|heterosegmented fused-sphere chain functional||&#128504;|
+|[`feos-fused-chains`](https://github.com/feos-org/feos-fused-chains)|heterosegmented fused-sphere chain functional||✓|
 
 ## Installation
 
