@@ -1,0 +1,41 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pets.PetsParameters
+========================
+
+.. currentmodule:: feos.pets
+
+.. autoclass:: PetsParameters
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PetsParameters.__init__
+      ~PetsParameters.from_json
+      ~PetsParameters.from_lists
+      ~PetsParameters.from_multiple_json
+      ~PetsParameters.from_records
+      ~PetsParameters.from_values
+      ~PetsParameters.new_binary
+      ~PetsParameters.new_pure
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PetsParameters.k_ij
+      ~PetsParameters.pure_records
+   
+   

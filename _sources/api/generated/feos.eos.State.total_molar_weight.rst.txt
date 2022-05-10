@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.State.total\_molar\_weight
+===================================
+
+.. currentmodule:: feos.eos
+
+.. automethod:: State.total_molar_weight

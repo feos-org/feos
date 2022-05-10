@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.gc\_pcsaft.GcPcSaftFunctionalParameters.\_\_init\_\_
+=========================================================
+
+.. currentmodule:: feos.gc_pcsaft
+
+.. automethod:: GcPcSaftFunctionalParameters.__init__

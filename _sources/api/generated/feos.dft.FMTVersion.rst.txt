@@ -1,0 +1,35 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.FMTVersion
+===================
+
+.. currentmodule:: feos.dft
+
+.. autoclass:: FMTVersion
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~FMTVersion.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~FMTVersion.AntiSymWhiteBear
+      ~FMTVersion.KierlikRosinberg
+      ~FMTVersion.WhiteBear
+   
+   

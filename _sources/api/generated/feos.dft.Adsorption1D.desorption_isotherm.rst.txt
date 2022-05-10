@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.Adsorption1D.desorption\_isotherm
+==========================================
+
+.. currentmodule:: feos.dft
+
+.. automethod:: Adsorption1D.desorption_isotherm

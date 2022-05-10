@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.State.thermodynamic\_factor
+====================================
+
+.. currentmodule:: feos.dft
+
+.. automethod:: State.thermodynamic_factor

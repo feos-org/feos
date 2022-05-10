@@ -1,0 +1,36 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.SurfaceTensionDiagram
+==============================
+
+.. currentmodule:: feos.dft
+
+.. autoclass:: SurfaceTensionDiagram
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~SurfaceTensionDiagram.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SurfaceTensionDiagram.liquid
+      ~SurfaceTensionDiagram.profiles
+      ~SurfaceTensionDiagram.surface_tension
+      ~SurfaceTensionDiagram.vapor
+   
+   

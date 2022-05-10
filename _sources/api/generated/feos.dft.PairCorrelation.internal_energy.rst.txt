@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.PairCorrelation.internal\_energy
+=========================================
+
+.. currentmodule:: feos.dft
+
+.. automethod:: PairCorrelation.internal_energy

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.PhaseEquilibrium.vapor\_pressure
+=========================================
+
+.. currentmodule:: feos.eos
+
+.. automethod:: PhaseEquilibrium.vapor_pressure

@@ -1,0 +1,39 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pets.PetsRecord
+====================
+
+.. currentmodule:: feos.pets
+
+.. autoclass:: PetsRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PetsRecord.__init__
+      ~PetsRecord.from_json_str
+      ~PetsRecord.to_json_str
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PetsRecord.diffusion
+      ~PetsRecord.epsilon_k
+      ~PetsRecord.sigma
+      ~PetsRecord.thermal_conductivity
+      ~PetsRecord.viscosity
+   
+   

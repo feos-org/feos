@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.State.molar\_gibbs\_energy
+===================================
+
+.. currentmodule:: feos.eos
+
+.. automethod:: State.molar_gibbs_energy

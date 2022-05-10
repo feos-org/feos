@@ -1,0 +1,34 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.Pore3D
+===============
+
+.. currentmodule:: feos.dft
+
+.. autoclass:: Pore3D
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Pore3D.__init__
+      ~Pore3D.initialize
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Pore3D.pore_volume
+   
+   

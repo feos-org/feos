@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pets.Identifier.from\_json\_str
+====================================
+
+.. currentmodule:: feos.pets
+
+.. automethod:: Identifier.from_json_str

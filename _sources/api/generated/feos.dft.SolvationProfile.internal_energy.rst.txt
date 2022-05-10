@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.SolvationProfile.internal\_energy
+==========================================
+
+.. currentmodule:: feos.dft
+
+.. automethod:: SolvationProfile.internal_energy

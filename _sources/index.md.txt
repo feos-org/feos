@@ -4,7 +4,7 @@ hide-toc: true
 
 # Welcome to {math}`\text{FeO}_\text{s}`
 
-{math}`\text{FeO}_\text{s}` is a **framework** for **thermodynamic equations of state** and **classical functional theory**.
+{math}`\text{FeO}_\text{s}` is a **framework** for **thermodynamic equations of state** (EoS) and **classical density functional theory** (DFT).
 It is written in **Rust** with a **Python** interface.
 
 ## Usage
@@ -12,13 +12,17 @@ It is written in **Rust** with a **Python** interface.
 `````{tab-set}
 ````{tab-item} Python
 ```python
-from feos.si import *
-from feos.pcsaft import *
-from feos.pcsaft.eos import *
+from feos.eos import EquationOfState, State
+from feos.pcsaft import PcSaftParameters
 
+# Build an equation of state
 parameters = PcSaftParameters.from_json(['methanol'], 'parameters.json')
-eos = PcSaft(parameters)
+eos = EquationOfState.pcsaft(parameters)
+
+# Define thermodynamic conditions
 critical_point = State.critical_point(eos)
+
+# Compute properties
 p = critical_point.pressure()
 t = critical_point.temperature
 print(f'Critical point for methanol: T={t}, p={p}.')
@@ -34,9 +38,14 @@ Critical point for methanol: T=531.5 K, p=10.7 MPa.
 use feos_core::{State, Contributions};
 use feos_pcsaft::{PcSaft, PcSaftParameters};
 
+// Build an equation of state
 let parameters = PcSaftParameters.from_json(vec!["methanol"], "parameters.json")?;
 let eos = Rc::new(PcSaft::new(Rc::new(parameters)));
+
+// Define thermodynamic conditions
 let critical_point = State::critical_point(&eos, None, None, Default::default())?;
+
+// Compute properties
 let p = critical_point.pressure(Contributions::Total);
 let t = critical_point.temperature;
 println!("Critical point for methanol: T={}, p={}.", t, p);
@@ -104,6 +113,7 @@ help_and_feedback
 
 api/index
 examples/index
+recipes/index
 ```
 
 ```{toctree}

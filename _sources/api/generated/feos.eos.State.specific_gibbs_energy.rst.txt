@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.State.specific\_gibbs\_energy
+======================================
+
+.. currentmodule:: feos.eos
+
+.. automethod:: State.specific_gibbs_energy

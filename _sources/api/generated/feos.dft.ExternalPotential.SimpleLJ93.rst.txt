@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.ExternalPotential.SimpleLJ93
+=====================================
+
+.. currentmodule:: feos.dft
+
+.. automethod:: ExternalPotential.SimpleLJ93

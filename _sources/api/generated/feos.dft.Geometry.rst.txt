@@ -1,0 +1,35 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.Geometry
+=================
+
+.. currentmodule:: feos.dft
+
+.. autoclass:: Geometry
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Geometry.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Geometry.Cartesian
+      ~Geometry.Cylindrical
+      ~Geometry.Spherical
+   
+   

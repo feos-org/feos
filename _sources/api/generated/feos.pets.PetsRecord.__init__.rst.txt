@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pets.PetsRecord.\_\_init\_\_
+=================================
+
+.. currentmodule:: feos.pets
+
+.. automethod:: PetsRecord.__init__

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.State.structure\_factor
+================================
+
+.. currentmodule:: feos.eos
+
+.. automethod:: State.structure_factor
