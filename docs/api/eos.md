@@ -11,11 +11,11 @@ The `State` and `PhaseEquilibrium` objects are used to define thermodynamic cond
 .. autosummary::
     :toctree: generated/
 
-    EquationOfState
     EquationOfState.pcsaft
     EquationOfState.gc_pcsaft
     EquationOfState.peng_robinson
     EquationOfState.pets
+    EquationOfState.uvtheory
     EquationOfState.python
 ```
 
