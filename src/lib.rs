@@ -11,6 +11,8 @@ mod cubic;
 use cubic::__PYO3_PYMODULE_DEF_CUBIC;
 mod pcsaft;
 use pcsaft::__PYO3_PYMODULE_DEF_PCSAFT;
+mod fcsaft;
+use fcsaft::__PYO3_PYMODULE_DEF_FCSAFT;
 mod gc_pcsaft;
 use gc_pcsaft::__PYO3_PYMODULE_DEF_GC_PCSAFT;
 mod pets;
@@ -27,6 +29,7 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(cubic))?;
     m.add_wrapped(wrap_pymodule!(pcsaft))?;
     m.add_wrapped(wrap_pymodule!(gc_pcsaft))?;
+    m.add_wrapped(wrap_pymodule!(fcsaft))?;
     m.add_wrapped(wrap_pymodule!(pets))?;
     m.add_wrapped(wrap_pymodule!(uvtheory))?;
     py.run(
@@ -45,6 +48,7 @@ sys.modules['feos.dft.estimator'] = dft.estimator_dft
 sys.modules['feos.cubic'] = cubic
 sys.modules['feos.pcsaft'] = pcsaft
 sys.modules['feos.gc_pcsaft'] = gc_pcsaft
+sys.modules['feos.fcsaft'] = fcsaft
 sys.modules['feos.pets'] = pets
 sys.modules['feos.uvtheory'] = uvtheory
     ",

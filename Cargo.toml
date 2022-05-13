@@ -21,6 +21,7 @@ feos-core = "0.2"
 feos-dft = "0.2"
 feos-pcsaft = { version = "0.2", features = ["python"] }
 feos-gc-pcsaft = { version = "0.1", features = ["python"] }
+feos-fcsaft = { path = "../feos-fcsaft", features = ["python"] }
 feos-pets = { version = "0.1", features = ["python"] }
 feos-uvtheory = { git = "https://github.com/feos-org/feos-uvtheory", features = ["python"], tag = "v0.1.0" }
 feos-estimator = { git = "https://github.com/feos-org/feos-estimator", features = ["python"], tag = "v0.1.0" }

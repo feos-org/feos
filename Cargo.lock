@@ -139,7 +139,8 @@ version = "0.2.1"
 dependencies = [
  "feos-core",
  "feos-dft",
- "feos-estimator",
+ "feos-estimator 0.1.0 (git+https://github.com/feos-org/feos-estimator?tag=v0.1.0)",
+ "feos-fcsaft",
  "feos-gc-pcsaft",
  "feos-pcsaft",
  "feos-pets",
@@ -196,6 +197,18 @@ dependencies = [
 [[package]]
 name = "feos-estimator"
 version = "0.1.0"
+dependencies = [
+ "feos-core",
+ "ndarray",
+ "numpy",
+ "pyo3",
+ "quantity",
+ "thiserror",
+]
+
+[[package]]
+name = "feos-estimator"
+version = "0.1.0"
 source = "git+https://github.com/feos-org/feos-estimator?tag=v0.1.0#db0d45050854e9014fbc984667c1fc6a6b54f6bb"
 dependencies = [
  "feos-core",
@@ -204,6 +217,23 @@ dependencies = [
  "pyo3",
  "quantity",
  "thiserror",
+]
+
+[[package]]
+name = "feos-fcsaft"
+version = "0.1.0"
+dependencies = [
+ "feos-core",
+ "feos-estimator 0.1.0",
+ "indexmap",
+ "ndarray",
+ "num-dual",
+ "numpy",
+ "petgraph",
+ "pyo3",
+ "quantity",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
