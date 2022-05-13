@@ -35,7 +35,7 @@ The following models are currently published as part of the `FeOs` framework
 |[`feos-pets`](https://github.com/feos-org/feos-pets)|perturbed truncated and shifted Lennard-Jones mixtures|✓|✓|
 |[`feos-uvtheory`](https://github.com/feos-org/feos-uvtheory)|equation of state for Mie fluids and mixtures|✓||
 
-The list is being expanded continuously. Currently under development are implementations of ePC-SAFT, a Helmholtz energy functional for the UV theory, SAFT-VRQ-Mie.
+The list is being expanded continuously. Currently under development are implementations of ePC-SAFT, a Helmholtz energy functional for the UV theory, and SAFT-VRQ-Mie.
 
 Other public repositories that implement models within the `FeOs` framework, but are currently not part of the `feos` Python package, are
 
