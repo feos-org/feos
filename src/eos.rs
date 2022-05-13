@@ -75,6 +75,17 @@ impl EquationOfState for EosVariant {
             EosVariant::UVTheory(eos) => eos.residual(),
         }
     }
+
+    fn ideal_gas(&self) -> &dyn IdealGasContribution {
+        match self {
+            EosVariant::PcSaft(eos) => eos.ideal_gas(),
+            EosVariant::GcPcSaft(eos) => eos.ideal_gas(),
+            EosVariant::PengRobinson(eos) => eos.ideal_gas(),
+            EosVariant::Python(eos) => eos.ideal_gas(),
+            EosVariant::Pets(eos) => eos.ideal_gas(),
+            EosVariant::UVTheory(eos) => eos.ideal_gas(),
+        }
+    }
 }
 
 impl MolarWeight<SIUnit> for EosVariant {
