@@ -8,8 +8,6 @@ use feos_core::cubic::PengRobinson;
 use feos_core::python::cubic::PyPengRobinsonParameters;
 use feos_core::python::user_defined::PyEoSObj;
 use feos_core::*;
-// use feos_fcsaft::python::PyFcSaftParameters;
-// use feos_fcsaft::{FcSaft, FcSaftOptions};
 // use feos_gc_pcsaft::python::PyGcPcSaftEosParameters;
 // use feos_gc_pcsaft::{GcPcSaft, GcPcSaftOptions};
 #[cfg(feature = "pcsaft")]
@@ -36,7 +34,6 @@ pub enum EosVariant {
     #[cfg(feature = "pcsaft")]
     PcSaft(PcSaft),
     // GcPcSaft(GcPcSaft),
-    // FcSaft(FcSaft),
     PengRobinson(PengRobinson),
     Python(PyEoSObj),
     // Pets(Pets),
@@ -49,7 +46,6 @@ impl EquationOfState for EosVariant {
             #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.components(),
             // EosVariant::GcPcSaft(eos) => eos.components(),
-            // EosVariant::FcSaft(eos) => eos.components(),
             EosVariant::PengRobinson(eos) => eos.components(),
             EosVariant::Python(eos) => eos.components(),
             // EosVariant::Pets(eos) => eos.components(),
@@ -62,7 +58,6 @@ impl EquationOfState for EosVariant {
             #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.compute_max_density(moles),
             // EosVariant::GcPcSaft(eos) => eos.compute_max_density(moles),
-            // EosVariant::FcSaft(eos) => eos.compute_max_density(moles),
             EosVariant::PengRobinson(eos) => eos.compute_max_density(moles),
             EosVariant::Python(eos) => eos.compute_max_density(moles),
             // EosVariant::Pets(eos) => eos.compute_max_density(moles),
@@ -75,7 +70,6 @@ impl EquationOfState for EosVariant {
             #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => Self::PcSaft(eos.subset(component_list)),
             // EosVariant::GcPcSaft(eos) => Self::GcPcSaft(eos.subset(component_list)),
-            // EosVariant::FcSaft(eos) => Self::FcSaft(eos.subset(component_list)),
             EosVariant::PengRobinson(eos) => Self::PengRobinson(eos.subset(component_list)),
             EosVariant::Python(eos) => Self::Python(eos.subset(component_list)),
             // EosVariant::Pets(eos) => Self::Pets(eos.subset(component_list)),
@@ -88,7 +82,6 @@ impl EquationOfState for EosVariant {
             #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.residual(),
             //     EosVariant::GcPcSaft(eos) => eos.residual(),
-            //     EosVariant::FcSaft(eos) => eos.residual(),
             EosVariant::PengRobinson(eos) => eos.residual(),
             EosVariant::Python(eos) => eos.residual(),
             //     EosVariant::Pets(eos) => eos.residual(),
@@ -101,7 +94,6 @@ impl EquationOfState for EosVariant {
             #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.ideal_gas(),
             // EosVariant::GcPcSaft(eos) => eos.ideal_gas(),
-            // EosVariant::FcSaft(eos) => eos.ideal_gas(),
             EosVariant::PengRobinson(eos) => eos.ideal_gas(),
             EosVariant::Python(eos) => eos.ideal_gas(),
             // EosVariant::Pets(eos) => eos.ideal_gas(),
@@ -116,7 +108,6 @@ impl MolarWeight<SIUnit> for EosVariant {
             #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.molar_weight(),
             // EosVariant::GcPcSaft(eos) => eos.molar_weight(),
-            // EosVariant::FcSaft(eos) => eos.molar_weight(),
             EosVariant::PengRobinson(eos) => eos.molar_weight(),
             EosVariant::Python(eos) => eos.molar_weight(),
             // EosVariant::Pets(eos) => eos.molar_weight(),
@@ -287,34 +278,6 @@ impl PyEosVariant {
     //     Self(Rc::new(EosVariant::GcPcSaft(GcPcSaft::with_options(
     //         parameters.0,
     //         options,
-    //     ))))
-    // }
-
-    // #[args(
-    //     max_eta = "0.5",
-    //     max_iter_cross_assoc = "50",
-    //     tol_cross_assoc = "1e-10"
-    // )]
-    // #[staticmethod]
-    // #[pyo3(
-    //     text_signature = "(parameters, max_eta, max_iter_cross_assoc, tol_cross_assoc, model_params=None)"
-    // )]
-    // fn fcsaft(
-    //     parameters: PyFcSaftParameters,
-    //     max_eta: f64,
-    //     max_iter_cross_assoc: usize,
-    //     tol_cross_assoc: f64,
-    //     model_params: Option<[[f64; 7]; 4]>,
-    // ) -> Self {
-    //     let options = FcSaftOptions {
-    //         max_eta,
-    //         max_iter_cross_assoc,
-    //         tol_cross_assoc,
-    //     };
-    //     Self(Rc::new(EosVariant::FcSaft(FcSaft::with_options(
-    //         parameters.0,
-    //         options,
-    //         model_params,
     //     ))))
     // }
 

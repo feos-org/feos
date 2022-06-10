@@ -9,7 +9,6 @@ use feos_dft::interface::*;
 use feos_dft::python::*;
 use feos_dft::solvation::*;
 use feos_dft::*;
-// use feos_fcsaft::FcSaftFunctional;
 // use feos_gc_pcsaft::python::PyGcPcSaftFunctionalParameters;
 // use feos_gc_pcsaft::{GcPcSaftFunctional, GcPcSaftOptions};
 #[cfg(feature = "pcsaft")]
@@ -35,7 +34,6 @@ pub enum FunctionalVariant {
     #[cfg(feature = "pcsaft")]
     PcSaft(PcSaftFunctional),
     // GcPcSaft(GcPcSaftFunctional),
-    // FcSaft(FcSaftFunctional),
     // Pets(PetsFunctional),
     Fmt(FMTFunctional),
 }
@@ -71,7 +69,6 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.subset(component_list).into(),
             // FunctionalVariant::GcPcSaft(functional) => functional.subset(component_list).into(),
-            // FunctionalVariant::FcSaft(functional) => functional.subset(component_list).into(),
             // FunctionalVariant::Pets(functional) => functional.subset(component_list).into(),
             FunctionalVariant::Fmt(functional) => functional.subset(component_list).into(),
         }
@@ -82,7 +79,6 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.molecule_shape(),
             // FunctionalVariant::GcPcSaft(functional) => functional.molecule_shape(),
-            // FunctionalVariant::FcSaft(functional) => functional.molecule_shape(),
             // FunctionalVariant::Pets(functional) => functional.molecule_shape(),
             FunctionalVariant::Fmt(functional) => functional.molecule_shape(),
         }
@@ -93,7 +89,6 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.compute_max_density(moles),
             // FunctionalVariant::GcPcSaft(functional) => functional.compute_max_density(moles),
-            // FunctionalVariant::FcSaft(functional) => functional.compute_max_density(moles),
             // FunctionalVariant::Pets(functional) => functional.compute_max_density(moles),
             FunctionalVariant::Fmt(functional) => functional.compute_max_density(moles),
         }
@@ -104,7 +99,6 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.contributions(),
             // FunctionalVariant::GcPcSaft(functional) => functional.contributions(),
-            // FunctionalVariant::FcSaft(functional) => functional.contributions(),
             // FunctionalVariant::Pets(functional) => functional.contributions(),
             FunctionalVariant::Fmt(functional) => functional.contributions(),
         }
@@ -115,7 +109,6 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.ideal_gas(),
             // FunctionalVariant::GcPcSaft(functional) => functional.ideal_gas(),
-            // FunctionalVariant::FcSaft(functional) => functional.ideal_gas(),
             // FunctionalVariant::Pets(functional) => functional.ideal_gas(),
             FunctionalVariant::Fmt(functional) => functional.ideal_gas(),
         }
@@ -124,7 +117,6 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
     // fn bond_lengths(&self, temperature: f64) -> UnGraph<(), f64> {
     //     match self {
     //         // FunctionalVariant::GcPcSaft(functional) => functional.bond_lengths(temperature),
-    //         // FunctionalVariant::FcSaft(functional) => functional.bond_lengths(temperature),
     //         _ => Graph::with_capacity(0, 0),
     //     }
     // }
@@ -136,7 +128,6 @@ impl MolarWeight<SIUnit> for FunctionalVariant {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.molar_weight(),
             // FunctionalVariant::GcPcSaft(functional) => functional.molar_weight(),
-            // FunctionalVariant::FcSaft(functional) => functional.molar_weight(),
             // FunctionalVariant::Pets(functional) => functional.molar_weight(),
             _ => unimplemented!(),
         }
@@ -149,7 +140,6 @@ impl FluidParameters for FunctionalVariant {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.epsilon_k_ff(),
             // FunctionalVariant::GcPcSaft(functional) => functional.epsilon_k_ff(),
-            // FunctionalVariant::FcSaft(functional) => functional.epsilon_k_ff(),
             // FunctionalVariant::Pets(functional) => functional.epsilon_k_ff(),
             FunctionalVariant::Fmt(functional) => functional.epsilon_k_ff(),
         }
@@ -160,7 +150,6 @@ impl FluidParameters for FunctionalVariant {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.sigma_ff(),
             // FunctionalVariant::GcPcSaft(functional) => functional.sigma_ff(),
-            // FunctionalVariant::FcSaft(functional) => functional.sigma_ff(),
             // FunctionalVariant::Pets(functional) => functional.sigma_ff(),
             FunctionalVariant::Fmt(functional) => functional.sigma_ff(),
         }

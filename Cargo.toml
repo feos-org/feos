@@ -24,7 +24,6 @@ num-dual = "0.5"
 feos-core = { version = "0.2", path = "feos-core" }
 feos-dft = { version = "0.2", path = "feos-dft", optional = true }
 #feos-gc-pcsaft = { version = "0.1", features = ["python"] }
-#feos-fcsaft = { path = "../feos-fcsaft", features = ["python"] }
 #feos-pets = { version = "0.1", features = ["python"] }
 #feos-uvtheory = { git = "https://github.com/feos-org/feos-uvtheory", features = ["python"], tag = "v0.1.0" }
 numpy = { version = "0.16", optional = true }

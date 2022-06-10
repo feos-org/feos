@@ -24,7 +24,6 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     #[cfg(feature = "pcsaft")]
     m.add_wrapped(wrap_pymodule!(pcsaft))?;
     // m.add_wrapped(wrap_pymodule!(gc_pcsaft))?;
-    // m.add_wrapped(wrap_pymodule!(fcsaft))?;
     // m.add_wrapped(wrap_pymodule!(pets))?;
     // m.add_wrapped(wrap_pymodule!(uvtheory))?;
 
@@ -40,7 +39,6 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     #[cfg(feature = "pcsaft")]
     set_path(py, m, "feos.pcsaft", "pcsaft")?;
     // set_path(py, m, "feos.gc_pcsaft", "gc_pcsaft")?;
-    // set_path(py, m, "feos.fcsaft", "fcsaft")?;
     // set_path(py, m, "feos.pets", "pets")?;
     // set_path(py, m, "feos.uvtheory", "uvtheory")?;
 

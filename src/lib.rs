@@ -7,8 +7,6 @@ pub mod fit;
 pub mod pcsaft;
 #[cfg(feature = "python")]
 mod python;
-// mod fcsaft;
-// use fcsaft::__PYO3_PYMODULE_DEF_FCSAFT;
 // mod gc_pcsaft;
 // use gc_pcsaft::__PYO3_PYMODULE_DEF_GC_PCSAFT;
 // mod pets;
