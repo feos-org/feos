@@ -1,7 +1,9 @@
-use feos_pcsaft::python::{PyPcSaftParameters, PyPcSaftRecord, PyPureRecord, PySegmentRecord};
-use pyo3::prelude::*;
-use feos_core::python::parameter::*;
 use feos_core::python::joback::PyJobackRecord;
+use feos_core::python::parameter::*;
+use feos_pcsaft::python::{
+    PyBinaryRecord, PyPcSaftParameters, PyPcSaftRecord, PyPureRecord, PySegmentRecord,
+};
+use pyo3::prelude::*;
 
 #[pymodule]
 pub fn pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {

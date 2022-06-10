@@ -1,6 +1,6 @@
+use feos_core::python::cubic::*;
 use feos_core::python::joback::PyJobackRecord;
 use feos_core::python::parameter::*;
-use feos_core::python::cubic::*;
 use pyo3::prelude::*;
 
 #[pymodule]

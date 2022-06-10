@@ -1,23 +1,31 @@
+#[cfg(feature = "fit")]
+use crate::fit::*;
+#[cfg(feature = "fit")]
+use crate::impl_estimator;
+#[cfg(all(feature = "fit", feature = "pcsaft"))]
+use crate::impl_estimator_entropy_scaling;
 use feos_core::cubic::PengRobinson;
 use feos_core::python::cubic::PyPengRobinsonParameters;
 use feos_core::python::user_defined::PyEoSObj;
 use feos_core::*;
-use feos_estimator::*;
-use feos_fcsaft::python::PyFcSaftParameters;
-use feos_fcsaft::{FcSaft, FcSaftOptions};
-use feos_gc_pcsaft::python::PyGcPcSaftEosParameters;
-use feos_gc_pcsaft::{GcPcSaft, GcPcSaftOptions};
-use feos_pcsaft::python::PyPcSaftParameters;
-use feos_pcsaft::{PcSaft, PcSaftOptions};
-use feos_pets::python::PyPetsParameters;
-use feos_pets::{Pets, PetsOptions};
-use feos_uvtheory::python::PyUVParameters;
-use feos_uvtheory::{Perturbation, UVTheory, UVTheoryOptions};
+// use feos_fcsaft::python::PyFcSaftParameters;
+// use feos_fcsaft::{FcSaft, FcSaftOptions};
+// use feos_gc_pcsaft::python::PyGcPcSaftEosParameters;
+// use feos_gc_pcsaft::{GcPcSaft, GcPcSaftOptions};
+#[cfg(feature = "pcsaft")]
+use crate::pcsaft::python::PyPcSaftParameters;
+#[cfg(feature = "pcsaft")]
+use crate::pcsaft::{PcSaft, PcSaftOptions};
+// use feos_pets::python::PyPetsParameters;
+// use feos_pets::{Pets, PetsOptions};
+// use feos_uvtheory::python::PyUVParameters;
+// use feos_uvtheory::{Perturbation, UVTheory, UVTheoryOptions};
 use ndarray::Array1;
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2};
-use pyo3::exceptions::PyValueError;
+use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
+#[cfg(feature = "fit")]
 use pyo3::wrap_pymodule;
 use quantity::python::*;
 use quantity::si::*;
@@ -25,72 +33,79 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 pub enum EosVariant {
+    #[cfg(feature = "pcsaft")]
     PcSaft(PcSaft),
-    GcPcSaft(GcPcSaft),
-    FcSaft(FcSaft),
+    // GcPcSaft(GcPcSaft),
+    // FcSaft(FcSaft),
     PengRobinson(PengRobinson),
     Python(PyEoSObj),
-    Pets(Pets),
-    UVTheory(UVTheory),
+    // Pets(Pets),
+    // UVTheory(UVTheory),
 }
 
 impl EquationOfState for EosVariant {
     fn components(&self) -> usize {
         match self {
+            #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.components(),
-            EosVariant::GcPcSaft(eos) => eos.components(),
-            EosVariant::FcSaft(eos) => eos.components(),
+            // EosVariant::GcPcSaft(eos) => eos.components(),
+            // EosVariant::FcSaft(eos) => eos.components(),
             EosVariant::PengRobinson(eos) => eos.components(),
             EosVariant::Python(eos) => eos.components(),
-            EosVariant::Pets(eos) => eos.components(),
-            EosVariant::UVTheory(eos) => eos.components(),
+            // EosVariant::Pets(eos) => eos.components(),
+            // EosVariant::UVTheory(eos) => eos.components(),
         }
     }
 
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         match self {
+            #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.compute_max_density(moles),
-            EosVariant::GcPcSaft(eos) => eos.compute_max_density(moles),
-            EosVariant::FcSaft(eos) => eos.compute_max_density(moles),
+            // EosVariant::GcPcSaft(eos) => eos.compute_max_density(moles),
+            // EosVariant::FcSaft(eos) => eos.compute_max_density(moles),
             EosVariant::PengRobinson(eos) => eos.compute_max_density(moles),
             EosVariant::Python(eos) => eos.compute_max_density(moles),
-            EosVariant::Pets(eos) => eos.compute_max_density(moles),
-            EosVariant::UVTheory(eos) => eos.compute_max_density(moles),
+            // EosVariant::Pets(eos) => eos.compute_max_density(moles),
+            // EosVariant::UVTheory(eos) => eos.compute_max_density(moles),
         }
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
         match self {
+            #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => Self::PcSaft(eos.subset(component_list)),
-            EosVariant::GcPcSaft(eos) => Self::GcPcSaft(eos.subset(component_list)),
-            EosVariant::FcSaft(eos) => Self::FcSaft(eos.subset(component_list)),
+            // EosVariant::GcPcSaft(eos) => Self::GcPcSaft(eos.subset(component_list)),
+            // EosVariant::FcSaft(eos) => Self::FcSaft(eos.subset(component_list)),
             EosVariant::PengRobinson(eos) => Self::PengRobinson(eos.subset(component_list)),
             EosVariant::Python(eos) => Self::Python(eos.subset(component_list)),
-            EosVariant::Pets(eos) => Self::Pets(eos.subset(component_list)),
-            EosVariant::UVTheory(eos) => Self::UVTheory(eos.subset(component_list)),
+            // EosVariant::Pets(eos) => Self::Pets(eos.subset(component_list)),
+            // EosVariant::UVTheory(eos) => Self::UVTheory(eos.subset(component_list)),
         }
     }
 
     fn residual(&self) -> &[Box<dyn HelmholtzEnergy>] {
         match self {
+            #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.residual(),
-            EosVariant::GcPcSaft(eos) => eos.residual(),
-            EosVariant::FcSaft(eos) => eos.residual(),
+            //     EosVariant::GcPcSaft(eos) => eos.residual(),
+            //     EosVariant::FcSaft(eos) => eos.residual(),
             EosVariant::PengRobinson(eos) => eos.residual(),
             EosVariant::Python(eos) => eos.residual(),
-            EosVariant::Pets(eos) => eos.residual(),
-            EosVariant::UVTheory(eos) => eos.residual(),
+            //     EosVariant::Pets(eos) => eos.residual(),
+            //     EosVariant::UVTheory(eos) => eos.residual(),
         }
     }
 
     fn ideal_gas(&self) -> &dyn IdealGasContribution {
         match self {
+            #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.ideal_gas(),
-            EosVariant::GcPcSaft(eos) => eos.ideal_gas(),
+            // EosVariant::GcPcSaft(eos) => eos.ideal_gas(),
+            // EosVariant::FcSaft(eos) => eos.ideal_gas(),
             EosVariant::PengRobinson(eos) => eos.ideal_gas(),
             EosVariant::Python(eos) => eos.ideal_gas(),
-            EosVariant::Pets(eos) => eos.ideal_gas(),
-            EosVariant::UVTheory(eos) => eos.ideal_gas(),
+            // EosVariant::Pets(eos) => eos.ideal_gas(),
+            // EosVariant::UVTheory(eos) => eos.ideal_gas(),
         }
     }
 }
@@ -98,17 +113,18 @@ impl EquationOfState for EosVariant {
 impl MolarWeight<SIUnit> for EosVariant {
     fn molar_weight(&self) -> SIArray1 {
         match self {
+            #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.molar_weight(),
-            EosVariant::GcPcSaft(eos) => eos.molar_weight(),
-            EosVariant::FcSaft(eos) => eos.molar_weight(),
+            // EosVariant::GcPcSaft(eos) => eos.molar_weight(),
+            // EosVariant::FcSaft(eos) => eos.molar_weight(),
             EosVariant::PengRobinson(eos) => eos.molar_weight(),
             EosVariant::Python(eos) => eos.molar_weight(),
-            EosVariant::Pets(eos) => eos.molar_weight(),
-            _ => unimplemented!(),
+            // EosVariant::Pets(eos) => eos.molar_weight(),
         }
     }
 }
 
+#[cfg(feature = "pcsaft")]
 impl EntropyScaling<SIUnit> for EosVariant {
     fn viscosity_reference(
         &self,
@@ -117,6 +133,7 @@ impl EntropyScaling<SIUnit> for EosVariant {
         moles: &SIArray1,
     ) -> EosResult<SINumber> {
         match self {
+            #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.viscosity_reference(temperature, volume, moles),
             _ => unimplemented!(),
         }
@@ -124,6 +141,7 @@ impl EntropyScaling<SIUnit> for EosVariant {
 
     fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
         match self {
+            #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.viscosity_correlation(s_res, x),
             _ => unimplemented!(),
         }
@@ -136,6 +154,7 @@ impl EntropyScaling<SIUnit> for EosVariant {
         moles: &SIArray1,
     ) -> EosResult<SINumber> {
         match self {
+            #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.diffusion_reference(temperature, volume, moles),
             _ => unimplemented!(),
         }
@@ -143,6 +162,7 @@ impl EntropyScaling<SIUnit> for EosVariant {
 
     fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
         match self {
+            #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.diffusion_correlation(s_res, x),
             _ => unimplemented!(),
         }
@@ -155,6 +175,7 @@ impl EntropyScaling<SIUnit> for EosVariant {
         moles: &SIArray1,
     ) -> EosResult<SINumber> {
         match self {
+            #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => {
                 eos.thermal_conductivity_reference(temperature, volume, moles)
             }
@@ -164,6 +185,7 @@ impl EntropyScaling<SIUnit> for EosVariant {
 
     fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
         match self {
+            #[cfg(feature = "pcsaft")]
             EosVariant::PcSaft(eos) => eos.thermal_conductivity_correlation(s_res, x),
             _ => unimplemented!(),
         }
@@ -196,6 +218,7 @@ impl PyEosVariant {
     /// EquationOfState
     ///     The PC-SAFT equation of state that can be used to compute thermodynamic
     ///     states.
+    #[cfg(feature = "pcsaft")]
     #[args(
         max_eta = "0.5",
         max_iter_cross_assoc = "50",
@@ -225,75 +248,75 @@ impl PyEosVariant {
         ))))
     }
 
-    /// Initialize the (heterosegmented) group contribution PC-SAFT equation of state.
-    ///
-    /// Parameters
-    /// ----------
-    /// parameters : GcPcSaftEosParameters
-    ///     The parameters of the PC-Saft equation of state to use.
-    /// max_eta : float, optional
-    ///     Maximum packing fraction. Defaults to 0.5.
-    /// max_iter_cross_assoc : unsigned integer, optional
-    ///     Maximum number of iterations for cross association. Defaults to 50.
-    /// tol_cross_assoc : float
-    ///     Tolerance for convergence of cross association. Defaults to 1e-10.
-    ///
-    /// Returns
-    /// -------
-    /// EquationOfState
-    ///     The gc-PC-SAFT equation of state that can be used to compute thermodynamic
-    ///     states.
-    #[args(
-        max_eta = "0.5",
-        max_iter_cross_assoc = "50",
-        tol_cross_assoc = "1e-10"
-    )]
-    #[staticmethod]
-    #[pyo3(text_signature = "(parameters, max_eta, max_iter_cross_assoc, tol_cross_assoc)")]
-    pub fn gc_pcsaft(
-        parameters: PyGcPcSaftEosParameters,
-        max_eta: f64,
-        max_iter_cross_assoc: usize,
-        tol_cross_assoc: f64,
-    ) -> Self {
-        let options = GcPcSaftOptions {
-            max_eta,
-            max_iter_cross_assoc,
-            tol_cross_assoc,
-        };
-        Self(Rc::new(EosVariant::GcPcSaft(GcPcSaft::with_options(
-            parameters.0,
-            options,
-        ))))
-    }
+    // /// Initialize the (heterosegmented) group contribution PC-SAFT equation of state.
+    // ///
+    // /// Parameters
+    // /// ----------
+    // /// parameters : GcPcSaftEosParameters
+    // ///     The parameters of the PC-Saft equation of state to use.
+    // /// max_eta : float, optional
+    // ///     Maximum packing fraction. Defaults to 0.5.
+    // /// max_iter_cross_assoc : unsigned integer, optional
+    // ///     Maximum number of iterations for cross association. Defaults to 50.
+    // /// tol_cross_assoc : float
+    // ///     Tolerance for convergence of cross association. Defaults to 1e-10.
+    // ///
+    // /// Returns
+    // /// -------
+    // /// EquationOfState
+    // ///     The gc-PC-SAFT equation of state that can be used to compute thermodynamic
+    // ///     states.
+    // #[args(
+    //     max_eta = "0.5",
+    //     max_iter_cross_assoc = "50",
+    //     tol_cross_assoc = "1e-10"
+    // )]
+    // #[staticmethod]
+    // #[pyo3(text_signature = "(parameters, max_eta, max_iter_cross_assoc, tol_cross_assoc)")]
+    // pub fn gc_pcsaft(
+    //     parameters: PyGcPcSaftEosParameters,
+    //     max_eta: f64,
+    //     max_iter_cross_assoc: usize,
+    //     tol_cross_assoc: f64,
+    // ) -> Self {
+    //     let options = GcPcSaftOptions {
+    //         max_eta,
+    //         max_iter_cross_assoc,
+    //         tol_cross_assoc,
+    //     };
+    //     Self(Rc::new(EosVariant::GcPcSaft(GcPcSaft::with_options(
+    //         parameters.0,
+    //         options,
+    //     ))))
+    // }
 
-    #[args(
-        max_eta = "0.5",
-        max_iter_cross_assoc = "50",
-        tol_cross_assoc = "1e-10"
-    )]
-    #[staticmethod]
-    #[pyo3(
-        text_signature = "(parameters, max_eta, max_iter_cross_assoc, tol_cross_assoc, model_params=None)"
-    )]
-    fn fcsaft(
-        parameters: PyFcSaftParameters,
-        max_eta: f64,
-        max_iter_cross_assoc: usize,
-        tol_cross_assoc: f64,
-        model_params: Option<[[f64; 7]; 4]>,
-    ) -> Self {
-        let options = FcSaftOptions {
-            max_eta,
-            max_iter_cross_assoc,
-            tol_cross_assoc,
-        };
-        Self(Rc::new(EosVariant::FcSaft(FcSaft::with_options(
-            parameters.0,
-            options,
-            model_params,
-        ))))
-    }
+    // #[args(
+    //     max_eta = "0.5",
+    //     max_iter_cross_assoc = "50",
+    //     tol_cross_assoc = "1e-10"
+    // )]
+    // #[staticmethod]
+    // #[pyo3(
+    //     text_signature = "(parameters, max_eta, max_iter_cross_assoc, tol_cross_assoc, model_params=None)"
+    // )]
+    // fn fcsaft(
+    //     parameters: PyFcSaftParameters,
+    //     max_eta: f64,
+    //     max_iter_cross_assoc: usize,
+    //     tol_cross_assoc: f64,
+    //     model_params: Option<[[f64; 7]; 4]>,
+    // ) -> Self {
+    //     let options = FcSaftOptions {
+    //         max_eta,
+    //         max_iter_cross_assoc,
+    //         tol_cross_assoc,
+    //     };
+    //     Self(Rc::new(EosVariant::FcSaft(FcSaft::with_options(
+    //         parameters.0,
+    //         options,
+    //         model_params,
+    //     ))))
+    // }
 
     /// Peng-Robinson equation of state.
     ///
@@ -332,69 +355,72 @@ impl PyEosVariant {
         Ok(Self(Rc::new(EosVariant::Python(PyEoSObj::new(obj)?))))
     }
 
-    /// PeTS equation of state.
-    ///
-    /// Parameters
-    /// ----------
-    /// parameters : PetsParameters
-    ///     The parameters of the PeTS equation of state to use.
-    /// max_eta : float, optional
-    ///     Maximum packing fraction. Defaults to 0.5.
-    ///
-    /// Returns
-    /// -------
-    /// EquationOfState
-    ///     The PeTS equation of state that can be used to compute thermodynamic
-    ///     states.
-    #[args(max_eta = "0.5")]
-    #[staticmethod]
-    #[pyo3(text_signature = "(parameters, max_eta)")]
-    fn pets(parameters: PyPetsParameters, max_eta: f64) -> Self {
-        let options = PetsOptions { max_eta };
-        Self(Rc::new(EosVariant::Pets(Pets::with_options(
-            parameters.0,
-            options,
-        ))))
-    }
+    // /// PeTS equation of state.
+    // ///
+    // /// Parameters
+    // /// ----------
+    // /// parameters : PetsParameters
+    // ///     The parameters of the PeTS equation of state to use.
+    // /// max_eta : float, optional
+    // ///     Maximum packing fraction. Defaults to 0.5.
+    // ///
+    // /// Returns
+    // /// -------
+    // /// EquationOfState
+    // ///     The PeTS equation of state that can be used to compute thermodynamic
+    // ///     states.
+    // #[args(max_eta = "0.5")]
+    // #[staticmethod]
+    // #[pyo3(text_signature = "(parameters, max_eta)")]
+    // fn pets(parameters: PyPetsParameters, max_eta: f64) -> Self {
+    //     let options = PetsOptions { max_eta };
+    //     Self(Rc::new(EosVariant::Pets(Pets::with_options(
+    //         parameters.0,
+    //         options,
+    //     ))))
+    // }
 
-    /// UV-Theory equation of state.
-    ///
-    /// Parameters
-    /// ----------
-    /// parameters : PetsParameters
-    ///     The parameters of the PeTS equation of state to use.
-    /// max_eta : float, optional
-    ///     Maximum packing fraction. Defaults to 0.5.
-    /// perturbation : Perturbation, optional
-    ///
-    /// Returns
-    /// -------
-    /// EquationOfState
-    ///     The UV-Theory equation of state that can be used to compute thermodynamic
-    ///     states.
-    #[args(max_eta = "0.5", perturbation = "Perturbation::WeeksChandlerAndersen")]
-    #[staticmethod]
-    #[pyo3(text_signature = "(parameters, max_eta, perturbation)")]
-    fn uvtheory(parameters: PyUVParameters, max_eta: f64, perturbation: Perturbation) -> Self {
-        let options = UVTheoryOptions {
-            max_eta,
-            perturbation,
-        };
-        Self(Rc::new(EosVariant::UVTheory(UVTheory::with_options(
-            parameters.0,
-            options,
-        ))))
-    }
+    // /// UV-Theory equation of state.
+    // ///
+    // /// Parameters
+    // /// ----------
+    // /// parameters : PetsParameters
+    // ///     The parameters of the PeTS equation of state to use.
+    // /// max_eta : float, optional
+    // ///     Maximum packing fraction. Defaults to 0.5.
+    // /// perturbation : Perturbation, optional
+    // ///
+    // /// Returns
+    // /// -------
+    // /// EquationOfState
+    // ///     The UV-Theory equation of state that can be used to compute thermodynamic
+    // ///     states.
+    // #[args(max_eta = "0.5", perturbation = "Perturbation::WeeksChandlerAndersen")]
+    // #[staticmethod]
+    // #[pyo3(text_signature = "(parameters, max_eta, perturbation)")]
+    // fn uvtheory(parameters: PyUVParameters, max_eta: f64, perturbation: Perturbation) -> Self {
+    //     let options = UVTheoryOptions {
+    //         max_eta,
+    //         perturbation,
+    //     };
+    //     Self(Rc::new(EosVariant::UVTheory(UVTheory::with_options(
+    //         parameters.0,
+    //         options,
+    //     ))))
+    // }
 }
 
 impl_equation_of_state!(PyEosVariant);
 impl_virial_coefficients!(PyEosVariant);
 impl_state!(EosVariant, PyEosVariant);
 impl_state_molarweight!(EosVariant, PyEosVariant);
+#[cfg(feature = "pcsaft")]
 impl_state_entropy_scaling!(EosVariant, PyEosVariant);
 impl_phase_equilibrium!(EosVariant, PyEosVariant);
 
+#[cfg(feature = "fit")]
 impl_estimator!(EosVariant, PyEosVariant);
+#[cfg(all(feature = "fit", feature = "pcsaft"))]
 impl_estimator_entropy_scaling!(EosVariant, PyEosVariant);
 
 #[pymodule]
@@ -407,9 +433,13 @@ pub fn eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyPhaseDiagram>()?;
     m.add_class::<PyPhaseEquilibrium>()?;
 
-    m.add_wrapped(wrap_pymodule!(estimator_eos))
+    #[cfg(feature = "fit")]
+    m.add_wrapped(wrap_pymodule!(estimator_eos))?;
+
+    Ok(())
 }
 
+#[cfg(feature = "fit")]
 #[pymodule]
 pub fn estimator_eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyDataSet>()?;
