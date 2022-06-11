@@ -156,6 +156,7 @@ dependencies = [
  "conv",
  "feos-core",
  "feos-dft",
+ "lazy_static",
  "ndarray",
  "num-dual",
  "num-traits",

@@ -1,4 +1,5 @@
 use crate::pcsaft::python::__PYO3_PYMODULE_DEF_PCSAFT;
+use crate::uvtheory::python::__PYO3_PYMODULE_DEF_UVTHEORY;
 use pyo3::prelude::*;
 use pyo3::wrap_pymodule;
 use quantity::python::__PYO3_PYMODULE_DEF_QUANTITY;
@@ -25,7 +26,8 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(pcsaft))?;
     // m.add_wrapped(wrap_pymodule!(gc_pcsaft))?;
     // m.add_wrapped(wrap_pymodule!(pets))?;
-    // m.add_wrapped(wrap_pymodule!(uvtheory))?;
+    #[cfg(feature = "uvtheory")]
+    m.add_wrapped(wrap_pymodule!(uvtheory))?;
 
     set_path(py, m, "feos.si", "quantity")?;
     set_path(py, m, "feos.eos", "eos")?;
@@ -40,7 +42,8 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     set_path(py, m, "feos.pcsaft", "pcsaft")?;
     // set_path(py, m, "feos.gc_pcsaft", "gc_pcsaft")?;
     // set_path(py, m, "feos.pets", "pets")?;
-    // set_path(py, m, "feos.uvtheory", "uvtheory")?;
+    #[cfg(feature = "uvtheory")]
+    set_path(py, m, "feos.uvtheory", "uvtheory")?;
 
     py.run(
         "\

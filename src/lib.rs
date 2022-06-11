@@ -3,8 +3,13 @@
 
 #[cfg(feature = "fit")]
 pub mod fit;
+
+// models
 #[cfg(feature = "pcsaft")]
 pub mod pcsaft;
+#[cfg(feature = "uvtheory")]
+pub mod uvtheory;
+
 #[cfg(feature = "python")]
 mod python;
 // mod gc_pcsaft;

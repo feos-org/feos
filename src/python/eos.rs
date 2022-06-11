@@ -16,8 +16,10 @@ use crate::pcsaft::python::PyPcSaftParameters;
 use crate::pcsaft::{PcSaft, PcSaftOptions};
 // use feos_pets::python::PyPetsParameters;
 // use feos_pets::{Pets, PetsOptions};
-// use feos_uvtheory::python::PyUVParameters;
-// use feos_uvtheory::{Perturbation, UVTheory, UVTheoryOptions};
+#[cfg(feature = "uvtheory")]
+use crate::uvtheory::python::PyUVParameters;
+#[cfg(feature = "uvtheory")]
+use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions};
 use ndarray::Array1;
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2};
@@ -37,7 +39,8 @@ pub enum EosVariant {
     PengRobinson(PengRobinson),
     Python(PyEoSObj),
     // Pets(Pets),
-    // UVTheory(UVTheory),
+    #[cfg(feature = "uvtheory")]
+    UVTheory(UVTheory),
 }
 
 impl EquationOfState for EosVariant {
@@ -49,7 +52,8 @@ impl EquationOfState for EosVariant {
             EosVariant::PengRobinson(eos) => eos.components(),
             EosVariant::Python(eos) => eos.components(),
             // EosVariant::Pets(eos) => eos.components(),
-            // EosVariant::UVTheory(eos) => eos.components(),
+            #[cfg(feature = "uvtheory")]
+            EosVariant::UVTheory(eos) => eos.components(),
         }
     }
 
@@ -61,7 +65,8 @@ impl EquationOfState for EosVariant {
             EosVariant::PengRobinson(eos) => eos.compute_max_density(moles),
             EosVariant::Python(eos) => eos.compute_max_density(moles),
             // EosVariant::Pets(eos) => eos.compute_max_density(moles),
-            // EosVariant::UVTheory(eos) => eos.compute_max_density(moles),
+            #[cfg(feature = "uvtheory")]
+            EosVariant::UVTheory(eos) => eos.compute_max_density(moles),
         }
     }
 
@@ -73,7 +78,8 @@ impl EquationOfState for EosVariant {
             EosVariant::PengRobinson(eos) => Self::PengRobinson(eos.subset(component_list)),
             EosVariant::Python(eos) => Self::Python(eos.subset(component_list)),
             // EosVariant::Pets(eos) => Self::Pets(eos.subset(component_list)),
-            // EosVariant::UVTheory(eos) => Self::UVTheory(eos.subset(component_list)),
+            #[cfg(feature = "uvtheory")]
+            EosVariant::UVTheory(eos) => Self::UVTheory(eos.subset(component_list)),
         }
     }
 
@@ -85,7 +91,8 @@ impl EquationOfState for EosVariant {
             EosVariant::PengRobinson(eos) => eos.residual(),
             EosVariant::Python(eos) => eos.residual(),
             //     EosVariant::Pets(eos) => eos.residual(),
-            //     EosVariant::UVTheory(eos) => eos.residual(),
+            #[cfg(feature = "uvtheory")]
+            EosVariant::UVTheory(eos) => eos.residual(),
         }
     }
 
@@ -97,7 +104,8 @@ impl EquationOfState for EosVariant {
             EosVariant::PengRobinson(eos) => eos.ideal_gas(),
             EosVariant::Python(eos) => eos.ideal_gas(),
             // EosVariant::Pets(eos) => eos.ideal_gas(),
-            // EosVariant::UVTheory(eos) => eos.ideal_gas(),
+            #[cfg(feature = "uvtheory")]
+            EosVariant::UVTheory(eos) => eos.ideal_gas(),
         }
     }
 }
@@ -111,6 +119,7 @@ impl MolarWeight<SIUnit> for EosVariant {
             EosVariant::PengRobinson(eos) => eos.molar_weight(),
             EosVariant::Python(eos) => eos.molar_weight(),
             // EosVariant::Pets(eos) => eos.molar_weight(),
+            _ => unimplemented!(),
         }
     }
 }
@@ -343,34 +352,35 @@ impl PyEosVariant {
     //     ))))
     // }
 
-    // /// UV-Theory equation of state.
-    // ///
-    // /// Parameters
-    // /// ----------
-    // /// parameters : PetsParameters
-    // ///     The parameters of the PeTS equation of state to use.
-    // /// max_eta : float, optional
-    // ///     Maximum packing fraction. Defaults to 0.5.
-    // /// perturbation : Perturbation, optional
-    // ///
-    // /// Returns
-    // /// -------
-    // /// EquationOfState
-    // ///     The UV-Theory equation of state that can be used to compute thermodynamic
-    // ///     states.
-    // #[args(max_eta = "0.5", perturbation = "Perturbation::WeeksChandlerAndersen")]
-    // #[staticmethod]
-    // #[pyo3(text_signature = "(parameters, max_eta, perturbation)")]
-    // fn uvtheory(parameters: PyUVParameters, max_eta: f64, perturbation: Perturbation) -> Self {
-    //     let options = UVTheoryOptions {
-    //         max_eta,
-    //         perturbation,
-    //     };
-    //     Self(Rc::new(EosVariant::UVTheory(UVTheory::with_options(
-    //         parameters.0,
-    //         options,
-    //     ))))
-    // }
+    /// UV-Theory equation of state.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters : UVParameters
+    ///     The parameters of the UV-theory equation of state to use.
+    /// max_eta : float, optional
+    ///     Maximum packing fraction. Defaults to 0.5.
+    /// perturbation : Perturbation, optional
+    ///     Division type of the Mie potential. Defaults to WCA division.
+    ///
+    /// Returns
+    /// -------
+    /// EquationOfState
+    ///     The UV-Theory equation of state that can be used to compute thermodynamic
+    ///     states.
+    #[args(max_eta = "0.5", perturbation = "Perturbation::WeeksChandlerAndersen")]
+    #[staticmethod]
+    #[pyo3(text_signature = "(parameters, max_eta, perturbation)")]
+    fn uvtheory(parameters: PyUVParameters, max_eta: f64, perturbation: Perturbation) -> Self {
+        let options = UVTheoryOptions {
+            max_eta,
+            perturbation,
+        };
+        Self(Rc::new(EosVariant::UVTheory(UVTheory::with_options(
+            parameters.0,
+            options,
+        ))))
+    }
 }
 
 impl_equation_of_state!(PyEosVariant);
