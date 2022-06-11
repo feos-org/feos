@@ -1,3 +1,6 @@
+#![allow(clippy::excessive_precision)]
+#![allow(clippy::needless_range_loop)]
+
 use super::parameters::UVParameters;
 use feos_core::{parameter::Parameter, EquationOfState, HelmholtzEnergy};
 use ndarray::Array1;
@@ -81,7 +84,7 @@ impl UVTheory {
         }
 
         Self {
-            parameters: parameters.clone(),
+            parameters,
             options,
             contributions,
         }
@@ -138,7 +141,7 @@ mod test {
         let reduced_density = 1.0;
         //let reduced_density = 0.9;
         let temperature = reduced_temperature * eps_k * KELVIN;
-        let moles = arr1(&vec![2.0]) * MOL;
+        let moles = arr1(&[2.0]) * MOL;
         let volume = (sig * ANGSTROM).powi(3) / reduced_density * NAV * 2.0 * MOL;
         let s = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
         let a = s
@@ -166,7 +169,7 @@ mod test {
         let reduced_temperature = 4.0;
         let reduced_density = 1.0;
         let temperature = reduced_temperature * eps_k * KELVIN;
-        let moles = arr1(&vec![2.0]) * MOL;
+        let moles = arr1(&[2.0]) * MOL;
         let volume = (sig * ANGSTROM).powi(3) / reduced_density * NAV * 2.0 * MOL;
         let s = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
         let a = s
@@ -204,7 +207,7 @@ mod test {
         let t_x = reduced_temperature * eps_k_x * KELVIN;
         let sig_x = (sig1 + sig2) / 2.0; // Check rule!!
         let reduced_density = 1.0;
-        let moles = arr1(&vec![1.7, 0.3]) * MOL;
+        let moles = arr1(&[1.7, 0.3]) * MOL;
         let total_moles = moles.sum();
         let volume = (sig_x * ANGSTROM).powi(3) / reduced_density * NAV * total_moles;
 
@@ -237,7 +240,7 @@ mod test {
         let reduced_temperature = 1.0;
         let t_x = reduced_temperature * p.epsilon_k[0] * KELVIN;
         let reduced_density = 0.9;
-        let moles = arr1(&vec![0.4, 0.6]) * MOL;
+        let moles = arr1(&[0.4, 0.6]) * MOL;
         let total_moles = moles.sum();
         let volume = (p.sigma[0] * ANGSTROM).powi(3) / reduced_density * NAV * total_moles;
 
@@ -266,7 +269,7 @@ mod test {
         let t_x = reduced_temperature * p.epsilon_k[0] * KELVIN;
         let sigma_x_3 = (0.4 + 0.6 * 8.0) * ANGSTROM.powi(3);
         let density = 0.52000000000000002 / sigma_x_3;
-        let moles = arr1(&vec![0.4, 0.6]) * MOL;
+        let moles = arr1(&[0.4, 0.6]) * MOL;
         let total_moles = moles.sum();
         let volume = NAV * total_moles / density;
 

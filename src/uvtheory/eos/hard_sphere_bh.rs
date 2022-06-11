@@ -32,11 +32,10 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardSphere {
         let zeta = zeta(&state.partial_density, &d);
         let frac_1mz3 = -(zeta[3] - 1.0).recip();
         let zeta_23 = zeta_23(&state.molefracs, &d);
-        let a_hs = state.volume * 6.0 / std::f64::consts::PI
+        state.volume * 6.0 / std::f64::consts::PI
             * (zeta[1] * zeta[2] * frac_1mz3 * 3.0
                 + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
-                + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (zeta[3] * (-1.0)).ln_1p());
-        a_hs
+                + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (zeta[3] * (-1.0)).ln_1p())
     }
 }
 
@@ -68,8 +67,8 @@ pub fn zeta<D: DualNum<f64>>(partial_density: &Array1<D>, diameter: &Array1<D>) 
     let mut zeta: [D; 4] = [D::zero(), D::zero(), D::zero(), D::zero()];
     for i in 0..partial_density.len() {
         for k in 0..4 {
-            zeta[k] = zeta[k]
-                + partial_density[i] * diameter[i].powi(k as i32) * (std::f64::consts::PI / 6.0);
+            zeta[k] +=
+                partial_density[i] * diameter[i].powi(k as i32) * (std::f64::consts::PI / 6.0);
         }
     }
     zeta
@@ -85,7 +84,7 @@ pub fn zeta_23<D: DualNum<f64>>(molefracs: &Array1<D>, diameter: &Array1<D>) -> 
     let mut zeta: [D; 2] = [D::zero(), D::zero()];
     for i in 0..molefracs.len() {
         for k in 0..2 {
-            zeta[k] = zeta[k] + molefracs[i] * diameter[i].powi((k + 2) as i32);
+            zeta[k] += molefracs[i] * diameter[i].powi((k + 2) as i32);
         }
     }
     zeta[0] / zeta[1]

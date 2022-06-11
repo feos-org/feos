@@ -5,6 +5,8 @@
 pub mod fit;
 
 // models
+#[cfg(feature = "gc_pcsaft")]
+pub mod gc_pcsaft;
 #[cfg(feature = "pcsaft")]
 pub mod pcsaft;
 #[cfg(feature = "uvtheory")]
@@ -12,9 +14,5 @@ pub mod uvtheory;
 
 #[cfg(feature = "python")]
 mod python;
-// mod gc_pcsaft;
-// use gc_pcsaft::__PYO3_PYMODULE_DEF_GC_PCSAFT;
 // mod pets;
 // use pets::__PYO3_PYMODULE_DEF_PETS;
-// mod uvtheory;
-// use uvtheory::__PYO3_PYMODULE_DEF_UVTHEORY;

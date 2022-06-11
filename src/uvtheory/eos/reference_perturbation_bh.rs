@@ -24,7 +24,7 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for ReferencePerturbationBH {
         let p = &self.parameters;
         let n = p.sigma.len();
         let x = &state.molefracs;
-        let d = diameter_bh(&p, state.temperature);
+        let d = diameter_bh(p, state.temperature);
         let eta = packing_fraction(&state.partial_density, &d);
         let eta_a = packing_fraction_a(p, &d, eta);
         let eta_b = packing_fraction_b(p, &d, eta);

@@ -1,7 +1,15 @@
 #[cfg(feature = "fit")]
 use crate::fit::*;
+#[cfg(feature = "gc_pcsaft")]
+use crate::gc_pcsaft::python::PyGcPcSaftFunctionalParameters;
+#[cfg(feature = "gc_pcsaft")]
+use crate::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftOptions};
 #[cfg(feature = "fit")]
 use crate::impl_estimator;
+#[cfg(feature = "pcsaft")]
+use crate::pcsaft::python::PyPcSaftParameters;
+#[cfg(feature = "pcsaft")]
+use crate::pcsaft::{PcSaftFunctional, PcSaftOptions};
 use feos_core::*;
 use feos_dft::adsorption::*;
 use feos_dft::fundamental_measure_theory::{FMTFunctional, FMTVersion};
@@ -9,17 +17,15 @@ use feos_dft::interface::*;
 use feos_dft::python::*;
 use feos_dft::solvation::*;
 use feos_dft::*;
-// use feos_gc_pcsaft::python::PyGcPcSaftFunctionalParameters;
-// use feos_gc_pcsaft::{GcPcSaftFunctional, GcPcSaftOptions};
-#[cfg(feature = "pcsaft")]
-use crate::pcsaft::python::PyPcSaftParameters;
-#[cfg(feature = "pcsaft")]
-use crate::pcsaft::{PcSaftFunctional, PcSaftOptions};
 // use feos_pets::python::PyPetsParameters;
 // use feos_pets::{PetsFunctional, PetsOptions};
 use ndarray::{Array1, Array2};
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2, PyArray4};
+#[cfg(feature = "gc_pcsaft")]
+use petgraph::graph::UnGraph;
+#[cfg(feature = "gc_pcsaft")]
+use petgraph::Graph;
 // use petgraph::graph::{Graph, UnGraph};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
@@ -33,7 +39,8 @@ use std::rc::Rc;
 pub enum FunctionalVariant {
     #[cfg(feature = "pcsaft")]
     PcSaft(PcSaftFunctional),
-    // GcPcSaft(GcPcSaftFunctional),
+    #[cfg(feature = "gc_pcsaft")]
+    GcPcSaft(GcPcSaftFunctional),
     // Pets(PetsFunctional),
     Fmt(FMTFunctional),
 }
@@ -45,11 +52,12 @@ impl From<PcSaftFunctional> for FunctionalVariant {
     }
 }
 
-// impl From<GcPcSaftFunctional> for FunctionalVariant {
-//     fn from(f: GcPcSaftFunctional) -> Self {
-//         Self::GcPcSaft(f)
-//     }
-// }
+#[cfg(feature = "gc_pcsaft")]
+impl From<GcPcSaftFunctional> for FunctionalVariant {
+    fn from(f: GcPcSaftFunctional) -> Self {
+        Self::GcPcSaft(f)
+    }
+}
 
 // impl From<PetsFunctional> for FunctionalVariant {
 //     fn from(f: PetsFunctional) -> Self {
@@ -68,7 +76,8 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
         match self {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.subset(component_list).into(),
-            // FunctionalVariant::GcPcSaft(functional) => functional.subset(component_list).into(),
+            #[cfg(feature = "gc_pcsaft")]
+            FunctionalVariant::GcPcSaft(functional) => functional.subset(component_list).into(),
             // FunctionalVariant::Pets(functional) => functional.subset(component_list).into(),
             FunctionalVariant::Fmt(functional) => functional.subset(component_list).into(),
         }
@@ -78,7 +87,8 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
         match self {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.molecule_shape(),
-            // FunctionalVariant::GcPcSaft(functional) => functional.molecule_shape(),
+            #[cfg(feature = "gc_pcsaft")]
+            FunctionalVariant::GcPcSaft(functional) => functional.molecule_shape(),
             // FunctionalVariant::Pets(functional) => functional.molecule_shape(),
             FunctionalVariant::Fmt(functional) => functional.molecule_shape(),
         }
@@ -88,7 +98,8 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
         match self {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.compute_max_density(moles),
-            // FunctionalVariant::GcPcSaft(functional) => functional.compute_max_density(moles),
+            #[cfg(feature = "gc_pcsaft")]
+            FunctionalVariant::GcPcSaft(functional) => functional.compute_max_density(moles),
             // FunctionalVariant::Pets(functional) => functional.compute_max_density(moles),
             FunctionalVariant::Fmt(functional) => functional.compute_max_density(moles),
         }
@@ -98,7 +109,8 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
         match self {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.contributions(),
-            // FunctionalVariant::GcPcSaft(functional) => functional.contributions(),
+            #[cfg(feature = "gc_pcsaft")]
+            FunctionalVariant::GcPcSaft(functional) => functional.contributions(),
             // FunctionalVariant::Pets(functional) => functional.contributions(),
             FunctionalVariant::Fmt(functional) => functional.contributions(),
         }
@@ -108,18 +120,20 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
         match self {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.ideal_gas(),
-            // FunctionalVariant::GcPcSaft(functional) => functional.ideal_gas(),
+            #[cfg(feature = "gc_pcsaft")]
+            FunctionalVariant::GcPcSaft(functional) => functional.ideal_gas(),
             // FunctionalVariant::Pets(functional) => functional.ideal_gas(),
             FunctionalVariant::Fmt(functional) => functional.ideal_gas(),
         }
     }
 
-    // fn bond_lengths(&self, temperature: f64) -> UnGraph<(), f64> {
-    //     match self {
-    //         // FunctionalVariant::GcPcSaft(functional) => functional.bond_lengths(temperature),
-    //         _ => Graph::with_capacity(0, 0),
-    //     }
-    // }
+    #[cfg(feature = "gc_pcsaft")]
+    fn bond_lengths(&self, temperature: f64) -> UnGraph<(), f64> {
+        match self {
+            FunctionalVariant::GcPcSaft(functional) => functional.bond_lengths(temperature),
+            _ => Graph::with_capacity(0, 0),
+        }
+    }
 }
 
 impl MolarWeight<SIUnit> for FunctionalVariant {
@@ -127,7 +141,8 @@ impl MolarWeight<SIUnit> for FunctionalVariant {
         match self {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.molar_weight(),
-            // FunctionalVariant::GcPcSaft(functional) => functional.molar_weight(),
+            #[cfg(feature = "gc_pcsaft")]
+            FunctionalVariant::GcPcSaft(functional) => functional.molar_weight(),
             // FunctionalVariant::Pets(functional) => functional.molar_weight(),
             _ => unimplemented!(),
         }
@@ -139,7 +154,8 @@ impl FluidParameters for FunctionalVariant {
         match self {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.epsilon_k_ff(),
-            // FunctionalVariant::GcPcSaft(functional) => functional.epsilon_k_ff(),
+            #[cfg(feature = "gc_pcsaft")]
+            FunctionalVariant::GcPcSaft(functional) => functional.epsilon_k_ff(),
             // FunctionalVariant::Pets(functional) => functional.epsilon_k_ff(),
             FunctionalVariant::Fmt(functional) => functional.epsilon_k_ff(),
         }
@@ -149,7 +165,8 @@ impl FluidParameters for FunctionalVariant {
         match self {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.sigma_ff(),
-            // FunctionalVariant::GcPcSaft(functional) => functional.sigma_ff(),
+            #[cfg(feature = "gc_pcsaft")]
+            FunctionalVariant::GcPcSaft(functional) => functional.sigma_ff(),
             // FunctionalVariant::Pets(functional) => functional.sigma_ff(),
             FunctionalVariant::Fmt(functional) => functional.sigma_ff(),
         }
@@ -161,6 +178,8 @@ impl PairPotential for FunctionalVariant {
         match self {
             #[cfg(feature = "pcsaft")]
             FunctionalVariant::PcSaft(functional) => functional.pair_potential(i, r, temperature),
+            #[cfg(feature = "gc_pcsaft")]
+            FunctionalVariant::GcPcSaft(_) => unimplemented!(),
             // FunctionalVariant::Pets(functional) => functional.pair_potential(i, r, temperature),
             FunctionalVariant::Fmt(functional) => functional.pair_potential(i, r, temperature),
         }
@@ -224,50 +243,51 @@ impl PyFunctionalVariant {
         ))
     }
 
-    // /// (heterosegmented) group contribution PC-SAFT Helmholtz energy functional.
-    // ///
-    // /// Parameters
-    // /// ----------
-    // /// parameters: GcPcSaftFunctionalParameters
-    // ///     The set of PC-SAFT parameters.
-    // /// fmt_version: FMTVersion, optional
-    // ///     The specific variant of the FMT term. Defaults to FMTVersion.WhiteBear
-    // /// max_eta : float, optional
-    // ///     Maximum packing fraction. Defaults to 0.5.
-    // /// max_iter_cross_assoc : unsigned integer, optional
-    // ///     Maximum number of iterations for cross association. Defaults to 50.
-    // /// tol_cross_assoc : float
-    // ///     Tolerance for convergence of cross association. Defaults to 1e-10.
-    // ///
-    // /// Returns
-    // /// -------
-    // /// Functional
-    // #[args(
-    //     fmt_version = "FMTVersion::WhiteBear",
-    //     max_eta = "0.5",
-    //     max_iter_cross_assoc = "50",
-    //     tol_cross_assoc = "1e-10"
-    // )]
-    // #[staticmethod]
-    // #[pyo3(
-    //     text_signature = "(parameters, fmt_version, max_eta, max_iter_cross_assoc, tol_cross_assoc)"
-    // )]
-    // fn gc_pcsaft(
-    //     parameters: PyGcPcSaftFunctionalParameters,
-    //     fmt_version: FMTVersion,
-    //     max_eta: f64,
-    //     max_iter_cross_assoc: usize,
-    //     tol_cross_assoc: f64,
-    // ) -> Self {
-    //     let options = GcPcSaftOptions {
-    //         max_eta,
-    //         max_iter_cross_assoc,
-    //         tol_cross_assoc,
-    //     };
-    //     Self(Rc::new(
-    //         GcPcSaftFunctional::with_options(parameters.0, fmt_version, options).into(),
-    //     ))
-    // }
+    /// (heterosegmented) group contribution PC-SAFT Helmholtz energy functional.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters: GcPcSaftFunctionalParameters
+    ///     The set of PC-SAFT parameters.
+    /// fmt_version: FMTVersion, optional
+    ///     The specific variant of the FMT term. Defaults to FMTVersion.WhiteBear
+    /// max_eta : float, optional
+    ///     Maximum packing fraction. Defaults to 0.5.
+    /// max_iter_cross_assoc : unsigned integer, optional
+    ///     Maximum number of iterations for cross association. Defaults to 50.
+    /// tol_cross_assoc : float
+    ///     Tolerance for convergence of cross association. Defaults to 1e-10.
+    ///
+    /// Returns
+    /// -------
+    /// Functional
+    #[cfg(feature = "gc_pcsaft")]
+    #[args(
+        fmt_version = "FMTVersion::WhiteBear",
+        max_eta = "0.5",
+        max_iter_cross_assoc = "50",
+        tol_cross_assoc = "1e-10"
+    )]
+    #[staticmethod]
+    #[pyo3(
+        text_signature = "(parameters, fmt_version, max_eta, max_iter_cross_assoc, tol_cross_assoc)"
+    )]
+    fn gc_pcsaft(
+        parameters: PyGcPcSaftFunctionalParameters,
+        fmt_version: FMTVersion,
+        max_eta: f64,
+        max_iter_cross_assoc: usize,
+        tol_cross_assoc: f64,
+    ) -> Self {
+        let options = GcPcSaftOptions {
+            max_eta,
+            max_iter_cross_assoc,
+            tol_cross_assoc,
+        };
+        Self(Rc::new(
+            GcPcSaftFunctional::with_options(parameters.0, fmt_version, options).into(),
+        ))
+    }
 
     // /// PeTS Helmholtz energy functional without simplifications
     // /// for pure components.

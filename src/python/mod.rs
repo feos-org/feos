@@ -1,4 +1,6 @@
+#[cfg(feature = "pcsaft")]
 use crate::pcsaft::python::__PYO3_PYMODULE_DEF_PCSAFT;
+#[cfg(feature = "uvtheory")]
 use crate::uvtheory::python::__PYO3_PYMODULE_DEF_UVTHEORY;
 use pyo3::prelude::*;
 use pyo3::wrap_pymodule;
