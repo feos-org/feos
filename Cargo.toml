@@ -44,10 +44,12 @@ optional = true
 approx = "0.4"
 
 [features]
-default = ["python", "fit", "uvtheory"]
+default = []
 dft = ["feos-dft", "petgraph"]
 fit = []
 pcsaft = []
 gc_pcsaft = []
 uvtheory = ["lazy_static"]
+pets = []
 python = ["pyo3", "numpy", "feos-core/python", "feos-dft?/python"]
+full = ["dft", "fit", "pcsaft", "gc_pcsaft", "uvtheory", "pets", "python"]

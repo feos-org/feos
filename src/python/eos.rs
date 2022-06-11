@@ -12,16 +12,18 @@ use crate::impl_estimator_entropy_scaling;
 use crate::pcsaft::python::PyPcSaftParameters;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::{PcSaft, PcSaftOptions};
-use feos_core::cubic::PengRobinson;
-use feos_core::python::cubic::PyPengRobinsonParameters;
-use feos_core::python::user_defined::PyEoSObj;
-use feos_core::*;
-// use feos_pets::python::PyPetsParameters;
-// use feos_pets::{Pets, PetsOptions};
+#[cfg(feature = "pets")]
+use crate::pets::python::PyPetsParameters;
+#[cfg(feature = "pets")]
+use crate::pets::{Pets, PetsOptions};
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::python::PyUVParameters;
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions};
+use feos_core::cubic::PengRobinson;
+use feos_core::python::cubic::PyPengRobinsonParameters;
+use feos_core::python::user_defined::PyEoSObj;
+use feos_core::*;
 use ndarray::Array1;
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2};
@@ -41,7 +43,8 @@ pub enum EosVariant {
     GcPcSaft(GcPcSaft),
     PengRobinson(PengRobinson),
     Python(PyEoSObj),
-    // Pets(Pets),
+    #[cfg(feature = "pets")]
+    Pets(Pets),
     #[cfg(feature = "uvtheory")]
     UVTheory(UVTheory),
 }
@@ -55,7 +58,8 @@ impl EquationOfState for EosVariant {
             EosVariant::GcPcSaft(eos) => eos.components(),
             EosVariant::PengRobinson(eos) => eos.components(),
             EosVariant::Python(eos) => eos.components(),
-            // EosVariant::Pets(eos) => eos.components(),
+            #[cfg(feature = "pets")]
+            EosVariant::Pets(eos) => eos.components(),
             #[cfg(feature = "uvtheory")]
             EosVariant::UVTheory(eos) => eos.components(),
         }
@@ -69,7 +73,8 @@ impl EquationOfState for EosVariant {
             EosVariant::GcPcSaft(eos) => eos.compute_max_density(moles),
             EosVariant::PengRobinson(eos) => eos.compute_max_density(moles),
             EosVariant::Python(eos) => eos.compute_max_density(moles),
-            // EosVariant::Pets(eos) => eos.compute_max_density(moles),
+            #[cfg(feature = "pets")]
+            EosVariant::Pets(eos) => eos.compute_max_density(moles),
             #[cfg(feature = "uvtheory")]
             EosVariant::UVTheory(eos) => eos.compute_max_density(moles),
         }
@@ -83,7 +88,8 @@ impl EquationOfState for EosVariant {
             EosVariant::GcPcSaft(eos) => Self::GcPcSaft(eos.subset(component_list)),
             EosVariant::PengRobinson(eos) => Self::PengRobinson(eos.subset(component_list)),
             EosVariant::Python(eos) => Self::Python(eos.subset(component_list)),
-            // EosVariant::Pets(eos) => Self::Pets(eos.subset(component_list)),
+            #[cfg(feature = "pets")]
+            EosVariant::Pets(eos) => Self::Pets(eos.subset(component_list)),
             #[cfg(feature = "uvtheory")]
             EosVariant::UVTheory(eos) => Self::UVTheory(eos.subset(component_list)),
         }
@@ -97,7 +103,8 @@ impl EquationOfState for EosVariant {
             EosVariant::GcPcSaft(eos) => eos.residual(),
             EosVariant::PengRobinson(eos) => eos.residual(),
             EosVariant::Python(eos) => eos.residual(),
-            //     EosVariant::Pets(eos) => eos.residual(),
+            #[cfg(feature = "pets")]
+            EosVariant::Pets(eos) => eos.residual(),
             #[cfg(feature = "uvtheory")]
             EosVariant::UVTheory(eos) => eos.residual(),
         }
@@ -111,7 +118,8 @@ impl EquationOfState for EosVariant {
             EosVariant::GcPcSaft(eos) => eos.ideal_gas(),
             EosVariant::PengRobinson(eos) => eos.ideal_gas(),
             EosVariant::Python(eos) => eos.ideal_gas(),
-            // EosVariant::Pets(eos) => eos.ideal_gas(),
+            #[cfg(feature = "pets")]
+            EosVariant::Pets(eos) => eos.ideal_gas(),
             #[cfg(feature = "uvtheory")]
             EosVariant::UVTheory(eos) => eos.ideal_gas(),
         }
@@ -127,7 +135,8 @@ impl MolarWeight<SIUnit> for EosVariant {
             EosVariant::GcPcSaft(eos) => eos.molar_weight(),
             EosVariant::PengRobinson(eos) => eos.molar_weight(),
             EosVariant::Python(eos) => eos.molar_weight(),
-            // EosVariant::Pets(eos) => eos.molar_weight(),
+            #[cfg(feature = "pets")]
+            EosVariant::Pets(eos) => eos.molar_weight(),
             #[cfg(feature = "uvtheory")]
             EosVariant::UVTheory(_) => unimplemented!(),
         }
@@ -338,30 +347,31 @@ impl PyEosVariant {
         Ok(Self(Rc::new(EosVariant::Python(PyEoSObj::new(obj)?))))
     }
 
-    // /// PeTS equation of state.
-    // ///
-    // /// Parameters
-    // /// ----------
-    // /// parameters : PetsParameters
-    // ///     The parameters of the PeTS equation of state to use.
-    // /// max_eta : float, optional
-    // ///     Maximum packing fraction. Defaults to 0.5.
-    // ///
-    // /// Returns
-    // /// -------
-    // /// EquationOfState
-    // ///     The PeTS equation of state that can be used to compute thermodynamic
-    // ///     states.
-    // #[args(max_eta = "0.5")]
-    // #[staticmethod]
-    // #[pyo3(text_signature = "(parameters, max_eta)")]
-    // fn pets(parameters: PyPetsParameters, max_eta: f64) -> Self {
-    //     let options = PetsOptions { max_eta };
-    //     Self(Rc::new(EosVariant::Pets(Pets::with_options(
-    //         parameters.0,
-    //         options,
-    //     ))))
-    // }
+    /// PeTS equation of state.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters : PetsParameters
+    ///     The parameters of the PeTS equation of state to use.
+    /// max_eta : float, optional
+    ///     Maximum packing fraction. Defaults to 0.5.
+    ///
+    /// Returns
+    /// -------
+    /// EquationOfState
+    ///     The PeTS equation of state that can be used to compute thermodynamic
+    ///     states.
+    #[cfg(feature = "pets")]
+    #[args(max_eta = "0.5")]
+    #[staticmethod]
+    #[pyo3(text_signature = "(parameters, max_eta)")]
+    fn pets(parameters: PyPetsParameters, max_eta: f64) -> Self {
+        let options = PetsOptions { max_eta };
+        Self(Rc::new(EosVariant::Pets(Pets::with_options(
+            parameters.0,
+            options,
+        ))))
+    }
 
     /// UV-Theory equation of state.
     ///

@@ -1,5 +1,9 @@
+#[cfg(feature = "gc_pcsaft")]
+use crate::gc_pcsaft::python::__PYO3_PYMODULE_DEF_GC_PCSAFT;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::python::__PYO3_PYMODULE_DEF_PCSAFT;
+#[cfg(feature = "pets")]
+use crate::pets::python::__PYO3_PYMODULE_DEF_PETS;
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::python::__PYO3_PYMODULE_DEF_UVTHEORY;
 use pyo3::prelude::*;
@@ -26,8 +30,10 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(cubic))?;
     #[cfg(feature = "pcsaft")]
     m.add_wrapped(wrap_pymodule!(pcsaft))?;
-    // m.add_wrapped(wrap_pymodule!(gc_pcsaft))?;
-    // m.add_wrapped(wrap_pymodule!(pets))?;
+    #[cfg(feature = "gc_pcsaft")]
+    m.add_wrapped(wrap_pymodule!(gc_pcsaft))?;
+    #[cfg(feature = "pets")]
+    m.add_wrapped(wrap_pymodule!(pets))?;
     #[cfg(feature = "uvtheory")]
     m.add_wrapped(wrap_pymodule!(uvtheory))?;
 
@@ -42,8 +48,10 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     set_path(py, m, "feos.cubic", "cubic")?;
     #[cfg(feature = "pcsaft")]
     set_path(py, m, "feos.pcsaft", "pcsaft")?;
-    // set_path(py, m, "feos.gc_pcsaft", "gc_pcsaft")?;
-    // set_path(py, m, "feos.pets", "pets")?;
+    #[cfg(feature = "gc_pcsaft")]
+    set_path(py, m, "feos.gc_pcsaft", "gc_pcsaft")?;
+    #[cfg(feature = "pets")]
+    set_path(py, m, "feos.pets", "pets")?;
     #[cfg(feature = "uvtheory")]
     set_path(py, m, "feos.uvtheory", "uvtheory")?;
 

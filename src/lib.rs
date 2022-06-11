@@ -9,10 +9,10 @@ pub mod fit;
 pub mod gc_pcsaft;
 #[cfg(feature = "pcsaft")]
 pub mod pcsaft;
+#[cfg(feature = "pets")]
+pub mod pets;
 #[cfg(feature = "uvtheory")]
 pub mod uvtheory;
 
 #[cfg(feature = "python")]
 mod python;
-// mod pets;
-// use pets::__PYO3_PYMODULE_DEF_PETS;

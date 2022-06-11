@@ -10,6 +10,10 @@ use crate::impl_estimator;
 use crate::pcsaft::python::PyPcSaftParameters;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::{PcSaftFunctional, PcSaftOptions};
+#[cfg(feature = "pets")]
+use crate::pets::python::PyPetsParameters;
+#[cfg(feature = "pets")]
+use crate::pets::{PetsFunctional, PetsOptions};
 use feos_core::*;
 use feos_dft::adsorption::*;
 use feos_dft::fundamental_measure_theory::{FMTFunctional, FMTVersion};
@@ -17,8 +21,6 @@ use feos_dft::interface::*;
 use feos_dft::python::*;
 use feos_dft::solvation::*;
 use feos_dft::*;
-// use feos_pets::python::PyPetsParameters;
-// use feos_pets::{PetsFunctional, PetsOptions};
 use ndarray::{Array1, Array2};
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2, PyArray4};
@@ -26,7 +28,6 @@ use numpy::{PyArray1, PyArray2, PyArray4};
 use petgraph::graph::UnGraph;
 #[cfg(feature = "gc_pcsaft")]
 use petgraph::Graph;
-// use petgraph::graph::{Graph, UnGraph};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
 #[cfg(feature = "fit")]
@@ -41,7 +42,8 @@ pub enum FunctionalVariant {
     PcSaft(PcSaftFunctional),
     #[cfg(feature = "gc_pcsaft")]
     GcPcSaft(GcPcSaftFunctional),
-    // Pets(PetsFunctional),
+    #[cfg(feature = "pets")]
+    Pets(PetsFunctional),
     Fmt(FMTFunctional),
 }
 
@@ -59,11 +61,12 @@ impl From<GcPcSaftFunctional> for FunctionalVariant {
     }
 }
 
-// impl From<PetsFunctional> for FunctionalVariant {
-//     fn from(f: PetsFunctional) -> Self {
-//         Self::Pets(f)
-//     }
-// }
+#[cfg(feature = "pets")]
+impl From<PetsFunctional> for FunctionalVariant {
+    fn from(f: PetsFunctional) -> Self {
+        Self::Pets(f)
+    }
+}
 
 impl From<FMTFunctional> for FunctionalVariant {
     fn from(f: FMTFunctional) -> Self {
@@ -78,7 +81,8 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
             FunctionalVariant::PcSaft(functional) => functional.subset(component_list).into(),
             #[cfg(feature = "gc_pcsaft")]
             FunctionalVariant::GcPcSaft(functional) => functional.subset(component_list).into(),
-            // FunctionalVariant::Pets(functional) => functional.subset(component_list).into(),
+            #[cfg(feature = "pets")]
+            FunctionalVariant::Pets(functional) => functional.subset(component_list).into(),
             FunctionalVariant::Fmt(functional) => functional.subset(component_list).into(),
         }
     }
@@ -89,7 +93,8 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
             FunctionalVariant::PcSaft(functional) => functional.molecule_shape(),
             #[cfg(feature = "gc_pcsaft")]
             FunctionalVariant::GcPcSaft(functional) => functional.molecule_shape(),
-            // FunctionalVariant::Pets(functional) => functional.molecule_shape(),
+            #[cfg(feature = "pets")]
+            FunctionalVariant::Pets(functional) => functional.molecule_shape(),
             FunctionalVariant::Fmt(functional) => functional.molecule_shape(),
         }
     }
@@ -100,7 +105,8 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
             FunctionalVariant::PcSaft(functional) => functional.compute_max_density(moles),
             #[cfg(feature = "gc_pcsaft")]
             FunctionalVariant::GcPcSaft(functional) => functional.compute_max_density(moles),
-            // FunctionalVariant::Pets(functional) => functional.compute_max_density(moles),
+            #[cfg(feature = "pets")]
+            FunctionalVariant::Pets(functional) => functional.compute_max_density(moles),
             FunctionalVariant::Fmt(functional) => functional.compute_max_density(moles),
         }
     }
@@ -111,7 +117,8 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
             FunctionalVariant::PcSaft(functional) => functional.contributions(),
             #[cfg(feature = "gc_pcsaft")]
             FunctionalVariant::GcPcSaft(functional) => functional.contributions(),
-            // FunctionalVariant::Pets(functional) => functional.contributions(),
+            #[cfg(feature = "pets")]
+            FunctionalVariant::Pets(functional) => functional.contributions(),
             FunctionalVariant::Fmt(functional) => functional.contributions(),
         }
     }
@@ -122,7 +129,8 @@ impl HelmholtzEnergyFunctional for FunctionalVariant {
             FunctionalVariant::PcSaft(functional) => functional.ideal_gas(),
             #[cfg(feature = "gc_pcsaft")]
             FunctionalVariant::GcPcSaft(functional) => functional.ideal_gas(),
-            // FunctionalVariant::Pets(functional) => functional.ideal_gas(),
+            #[cfg(feature = "pets")]
+            FunctionalVariant::Pets(functional) => functional.ideal_gas(),
             FunctionalVariant::Fmt(functional) => functional.ideal_gas(),
         }
     }
@@ -143,7 +151,8 @@ impl MolarWeight<SIUnit> for FunctionalVariant {
             FunctionalVariant::PcSaft(functional) => functional.molar_weight(),
             #[cfg(feature = "gc_pcsaft")]
             FunctionalVariant::GcPcSaft(functional) => functional.molar_weight(),
-            // FunctionalVariant::Pets(functional) => functional.molar_weight(),
+            #[cfg(feature = "pets")]
+            FunctionalVariant::Pets(functional) => functional.molar_weight(),
             _ => unimplemented!(),
         }
     }
@@ -156,7 +165,8 @@ impl FluidParameters for FunctionalVariant {
             FunctionalVariant::PcSaft(functional) => functional.epsilon_k_ff(),
             #[cfg(feature = "gc_pcsaft")]
             FunctionalVariant::GcPcSaft(functional) => functional.epsilon_k_ff(),
-            // FunctionalVariant::Pets(functional) => functional.epsilon_k_ff(),
+            #[cfg(feature = "pets")]
+            FunctionalVariant::Pets(functional) => functional.epsilon_k_ff(),
             FunctionalVariant::Fmt(functional) => functional.epsilon_k_ff(),
         }
     }
@@ -167,7 +177,8 @@ impl FluidParameters for FunctionalVariant {
             FunctionalVariant::PcSaft(functional) => functional.sigma_ff(),
             #[cfg(feature = "gc_pcsaft")]
             FunctionalVariant::GcPcSaft(functional) => functional.sigma_ff(),
-            // FunctionalVariant::Pets(functional) => functional.sigma_ff(),
+            #[cfg(feature = "pets")]
+            FunctionalVariant::Pets(functional) => functional.sigma_ff(),
             FunctionalVariant::Fmt(functional) => functional.sigma_ff(),
         }
     }
@@ -180,7 +191,8 @@ impl PairPotential for FunctionalVariant {
             FunctionalVariant::PcSaft(functional) => functional.pair_potential(i, r, temperature),
             #[cfg(feature = "gc_pcsaft")]
             FunctionalVariant::GcPcSaft(_) => unimplemented!(),
-            // FunctionalVariant::Pets(functional) => functional.pair_potential(i, r, temperature),
+            #[cfg(feature = "pets")]
+            FunctionalVariant::Pets(functional) => functional.pair_potential(i, r, temperature),
             FunctionalVariant::Fmt(functional) => functional.pair_potential(i, r, temperature),
         }
     }
@@ -289,30 +301,31 @@ impl PyFunctionalVariant {
         ))
     }
 
-    // /// PeTS Helmholtz energy functional without simplifications
-    // /// for pure components.
-    // ///
-    // /// Parameters
-    // /// ----------
-    // /// parameters: PetsParameters
-    // ///     The set of PeTS parameters.
-    // /// fmt_version: FMTVersion, optional
-    // ///     The specific variant of the FMT term. Defaults to FMTVersion.WhiteBear
-    // /// max_eta : float, optional
-    // ///     Maximum packing fraction. Defaults to 0.5.
-    // ///
-    // /// Returns
-    // /// -------
-    // /// Functional
-    // #[args(fmt_version = "FMTVersion::WhiteBear", max_eta = "0.5")]
-    // #[staticmethod]
-    // #[pyo3(text_signature = "(parameters, fmt_version, max_eta)")]
-    // fn pets(parameters: PyPetsParameters, fmt_version: FMTVersion, max_eta: f64) -> Self {
-    //     let options = PetsOptions { max_eta };
-    //     Self(Rc::new(
-    //         PetsFunctional::with_options(parameters.0, fmt_version, options).into(),
-    //     ))
-    // }
+    /// PeTS Helmholtz energy functional without simplifications
+    /// for pure components.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters: PetsParameters
+    ///     The set of PeTS parameters.
+    /// fmt_version: FMTVersion, optional
+    ///     The specific variant of the FMT term. Defaults to FMTVersion.WhiteBear
+    /// max_eta : float, optional
+    ///     Maximum packing fraction. Defaults to 0.5.
+    ///
+    /// Returns
+    /// -------
+    /// Functional
+    #[cfg(feature = "pets")]
+    #[args(fmt_version = "FMTVersion::WhiteBear", max_eta = "0.5")]
+    #[staticmethod]
+    #[pyo3(text_signature = "(parameters, fmt_version, max_eta)")]
+    fn pets(parameters: PyPetsParameters, fmt_version: FMTVersion, max_eta: f64) -> Self {
+        let options = PetsOptions { max_eta };
+        Self(Rc::new(
+            PetsFunctional::with_options(parameters.0, fmt_version, options).into(),
+        ))
+    }
 
     /// Helmholtz energy functional for hard sphere systems.
     ///

@@ -7,7 +7,7 @@ use feos_core::parameter::{
     BinaryRecord, IdentifierOption, ParameterError, ParameterHetero, SegmentRecord,
 };
 use feos_core::python::joback::PyJobackRecord;
-use feos_core::python::parameter::{PyBinarySegmentRecord, PyChemicalRecord};
+use feos_core::python::parameter::{PyBinarySegmentRecord, PyChemicalRecord, PyIdentifier};
 use feos_core::{impl_json_handling, impl_parameter_from_segments, impl_segment_record};
 #[cfg(feature = "dft")]
 use numpy::{PyArray2, ToPyArray};
@@ -126,4 +126,18 @@ impl PyGcPcSaftFunctionalParameters {
     fn __repr__(&self) -> PyResult<String> {
         Ok(self.0.to_string())
     }
+}
+
+#[pymodule]
+pub fn gc_pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_class::<PyIdentifier>()?;
+    m.add_class::<PyChemicalRecord>()?;
+    m.add_class::<PyJobackRecord>()?;
+
+    m.add_class::<PyGcPcSaftRecord>()?;
+    m.add_class::<PySegmentRecord>()?;
+    m.add_class::<PyBinarySegmentRecord>()?;
+    m.add_class::<PyGcPcSaftEosParameters>()?;
+    m.add_class::<PyGcPcSaftFunctionalParameters>()?;
+    Ok(())
 }
