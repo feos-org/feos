@@ -1,9 +1,11 @@
 # FeOs - A Framework for Equations of State and Classical Density Functional Theory
 
+[![crate](https://img.shields.io/crates/v/feos.svg)](https://crates.io/crates/feos)
+[![documentation](https://docs.rs/feos/badge.svg)](https://docs.rs/feos)
 [![documentation](https://img.shields.io/badge/docs-github--pages-blue)](https://feos-org.github.io/feos/)
 [![repository](https://img.shields.io/pypi/v/feos)](https://pypi.org/project/feos/)
 
-The `FeOs` package conveniently provides bindings to the Rust implementations of different equation of state and Helmholtz energy functional models in a single Python package.
+The `FeOs` package provides Rust implementations of different equation of state and Helmholtz energy functional models and corresponding Python bindings.
 
 ```python
 from feos.eos import EquationOfState, State
@@ -30,10 +32,10 @@ The following models are currently published as part of the `FeOs` framework
 
 |name|description|eos|dft|
 |-|-|:-:|:-:|
-|[`feos-pcsaft`](https://github.com/feos-org/feos-pcsaft)|perturbed-chain (polar) statistical associating fluid theory|✓|✓|
-|[`feos-gc-pcsaft`](https://github.com/feos-org/feos-gc-pcsaft)|(heterosegmented) group contribution PC-SAFT|✓|✓|
-|[`feos-pets`](https://github.com/feos-org/feos-pets)|perturbed truncated and shifted Lennard-Jones mixtures|✓|✓|
-|[`feos-uvtheory`](https://github.com/feos-org/feos-uvtheory)|equation of state for Mie fluids and mixtures|✓||
+|[`feos-pcsaft`](https://github.com/feos-org/feos/src/pcsaft)|perturbed-chain (polar) statistical associating fluid theory|✓|✓|
+|[`feos-gc-pcsaft`](https://github.com/feos-org/feos/src/gc_pcsaft)|(heterosegmented) group contribution PC-SAFT|✓|✓|
+|[`feos-pets`](https://github.com/feos-org/feos/src/pets)|perturbed truncated and shifted Lennard-Jones mixtures|✓|✓|
+|[`feos-uvtheory`](https://github.com/feos-org/feos/src/uvtheory)|equation of state for Mie fluids and mixtures|✓||
 
 The list is being expanded continuously. Currently under development are implementations of ePC-SAFT, a Helmholtz energy functional for the UV theory, and SAFT-VRQ-Mie.
 
@@ -42,6 +44,9 @@ Other public repositories that implement models within the `FeOs` framework, but
 |name|description|eos|dft|
 |-|-|:-:|:-:|
 |[`feos-fused-chains`](https://github.com/feos-org/feos-fused-chains)|heterosegmented fused-sphere chain functional||✓|
+
+## Parameters
+In addition to the source code for the Rust and Python packages, this repository contains JSON files with previously published parameters for the different models including group contribution methods. The parameter files can be read directly from Rust or Python.
 
 ## Installation
 
@@ -80,4 +85,4 @@ This software is currently maintained by members of the groups of
 
 `FeOs` grew from the need to maintain a common codebase used within the scientific work done in our groups. We share the code publicly as a platform to publish our own research but also encourage other researchers and developers to contribute their own models or implementations of existing equations of state.
 
-If you want to contribute to ``FeOs``, there are several ways to go: improving the documentation and helping with language issues, testing the code on your systems to find bugs, adding new models or algorithms, or providing feature requests. Feel free to message us if you have questions or open an issue in this or the model-specific repositories to discuss improvements.
+If you want to contribute to ``FeOs``, there are several ways to go: improving the documentation and helping with language issues, testing the code on your systems to find bugs, adding new models or algorithms, or providing feature requests. Feel free to message us if you have questions or open an issue to discuss improvements.
