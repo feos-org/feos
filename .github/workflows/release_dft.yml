@@ -18,10 +18,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: actions-rs/cargo@v1
+      - uses: katyo/publish-crates@v1
         with:
-          command: login
-          args: ${{ secrets.CRATES_IO_TOKEN }}
-      - uses: actions-rs/cargo@v1
-        with:
-          command: publish
+          registry-token: ${{ secrets.CRATES_IO_TOKEN }}
+          path: './feos-dft'
