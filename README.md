@@ -56,19 +56,37 @@ In addition to the source code for the Rust and Python packages, this repository
 pip install feos
 ```
 
+If there is no compiled package for your system available from PyPI and you have a Rust compiler installed, you can instead build the python package from source using
+
+```
+pip install git+https://github.com/feos-org/feos
+```
+
 ## Building from source
 
 To compile the code you need the Rust compiler (`rustc >= 1.53`) and `maturin` installed.
 To install the package directly into the active environment, use
 
 ```
-maturin develop --release
+maturin develop --release --cargo-extra-args="--features python"
+```
+
+and specify the models that you want to include in the python package as additional features, e.g.
+
+```
+maturin develop --release --cargo-extra-args="--features python --features pcsaft --features dft"
+```
+
+for the PC-SAFT equation of state and Helmholtz energy functional. If you want to include all available models, us
+
+```
+maturin develop --release --cargo-extra-args="--features python --features all_models"
 ```
 
 To build wheels, use
 
 ```
-maturin build --release --out dist --no-sdist
+maturin build --release --out dist --no-sdist --cargo-extra-args="--features python ..."
 ```
 
 ## Documentation
