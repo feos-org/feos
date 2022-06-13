@@ -10,9 +10,23 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  test:
+  test_crates:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
+      matrix:
+        crate: [feos-core, feos-dft]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build --release -p ${{ matrix.crate }}
+      - name: Run tests
+        run: cargo test --release -p ${{ matrix.crate }}
+
+  test_models:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
       matrix:
         model: [pcsaft, gc_pcsaft, pets, uvtheory]
 
@@ -22,3 +36,17 @@ jobs:
         run: cargo build --release --features ${{ matrix.model }}
       - name: Run tests
         run: cargo test --release --features ${{ matrix.model }}
+
+  test_models_dft:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [pcsaft, gc_pcsaft]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build --release --features "${{ matrix.model }} dft"
+      - name: Run tests
+        run: cargo test --release --features "${{ matrix.model }} dft"
