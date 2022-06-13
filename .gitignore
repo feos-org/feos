@@ -1,1 +1,4 @@
-/target
+target
+docs/_build
+docs/api/generated
+.ipynb_checkpoints

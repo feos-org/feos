@@ -12,22 +12,47 @@ repository = "https://github.com/feos-org/feos"
 keywords = ["physics", "thermodynamics", "equations_of_state", "phase_equilibria", "density_functional_theory"]
 categories = ["science"]
 
+[package.metadata.docs.rs]
+features = ["all_models"]
+
+[workspace]
+members = ["feos-core", "feos-dft"]
+
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["rlib", "cdylib"]
 
 [dependencies]
 quantity = "0.5"
-feos-core = "0.2"
-feos-dft = "0.2"
-feos-pcsaft = { version = "0.2", features = ["python"] }
-feos-gc-pcsaft = { version = "0.1", features = ["python"] }
-feos-pets = { version = "0.1", features = ["python"] }
-feos-uvtheory = { git = "https://github.com/feos-org/feos-uvtheory", features = ["python"], tag = "v0.1.0" }
-feos-estimator = { git = "https://github.com/feos-org/feos-estimator", features = ["python"], tag = "v0.1.0" }
-numpy = "0.16"
-ndarray = { version = "0.15", features=["approx"] }
-petgraph = "0.6"
+num-dual = "0.5"
+feos-core = { version = "0.2", path = "feos-core" }
+feos-dft = { version = "0.2", path = "feos-dft", optional = true }
+#feos-pets = { version = "0.1", features = ["python"] }
+numpy = { version = "0.16", optional = true }
+ndarray = { version = "0.15", features = ["approx"] }
+petgraph = { version = "0.6", optional = true }
+thiserror = "1.0"
+conv = "0.3"
+num-traits = "0.2"
+serde = "1.0"
+serde_json = "1.0"
+lazy_static = { version = "1.4", optional = true }
+indexmap = "1.8"
 
 [dependencies.pyo3]
 version = "0.16"
 features = ["extension-module", "abi3", "abi3-py37"]
+optional = true
+
+[dev-dependencies]
+approx = "0.4"
+
+[features]
+default = []
+dft = ["feos-dft", "petgraph"]
+estimator = []
+pcsaft = []
+gc_pcsaft = []
+uvtheory = ["lazy_static"]
+pets = []
+python = ["pyo3", "numpy", "feos-core/python", "feos-dft?/python"]
+all_models = ["dft", "estimator", "pcsaft", "gc_pcsaft", "uvtheory", "pets"]

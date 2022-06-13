@@ -1,0 +1,42 @@
+[
+    {
+        "Name": "Dha",
+        "N_atom": 1760,
+        "Dimensions": {
+            "Lx": 32.0,
+            "Ly": 40.0276,
+            "Lz": 32.5903
+        },
+        "Forcefield": "DREIDING"
+    },
+    {
+        "Name": "TpPA",
+        "N_atom": 2592,
+        "Dimensions": {
+            "Lx": 45.11200,
+            "Ly": 39.06794,
+            "Lz": 30.60000
+        },
+        "Forcefield": "DREIDING"
+    },
+    {
+        "Name": "MFI",
+        "N_atom": 3456,
+        "Dimensions": {
+            "Lx": 40.18000,
+            "Ly": 39.47600,
+            "Lz": 39.42600
+        },
+        "Forcefield": "PASCUAL"
+    },
+        {
+        "Name": "LTA",
+        "N_atom": 4608,
+        "Dimensions": {
+            "Lx": 47.67600,
+            "Ly": 47.67600,
+            "Lz": 47.67600
+        },
+        "Forcefield": "PASCUAL"
+    }
+]

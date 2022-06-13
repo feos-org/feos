@@ -1,0 +1,50 @@
+[
+    {
+        "identifier": {
+            "cas": "7440-37-1",
+            "name": "argon",
+            "iupac_name": "argon",
+            "smiles": "[Ar]",
+            "inchi": "InChI=1/Ar",
+            "formula": "Ar"
+        },
+        "model_record": {
+            "m": 1.0,
+            "sigma": 3.4050,
+            "epsilon_k": 119.8
+        },
+        "molarweight": 39.948
+    },
+    {
+        "identifier": {
+            "cas": "7439-90-9",
+            "name": "krypton",
+            "iupac_name": "krypton",
+            "smiles": "[Kr]",
+            "inchi": "InChI=1S/Kr",
+            "formula": "Kr"
+        },
+        "model_record": {
+            "m": 1.0,
+            "sigma": 3.6300,
+            "epsilon_k": 163.10
+        },
+        "molarweight": 83.798
+    },
+    {
+        "identifier": {
+            "cas": "7440-63-3",
+            "name": "xenon",
+            "iupac_name": "xenon",
+            "smiles": "[Xe]",
+            "inchi": "InChI=1/Xe",
+            "formula": "Xe"
+        },
+        "model_record": {
+            "m": 1.0,
+            "sigma": 3.93143,
+            "epsilon_k": 227.749
+        },
+        "molarweight": 131.3
+    }
+]

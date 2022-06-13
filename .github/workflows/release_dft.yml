@@ -1,0 +1,27 @@
+name: Release feos-dft
+
+on:
+  push:
+    tags: ["feos-dft-v*"]
+
+jobs:
+  release-crates-io:
+    name: Release crates.io
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./feos-dft
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: login
+          args: ${{ secrets.CRATES_IO_TOKEN }}
+      - uses: actions-rs/cargo@v1
+        with:
+          command: publish

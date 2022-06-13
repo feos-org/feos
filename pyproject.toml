@@ -4,3 +4,4 @@ build-backend = "maturin"
 
 [tool.maturin]
 bindings = "pyo3"
+cargo-extra-args = "--features python --features all_models"

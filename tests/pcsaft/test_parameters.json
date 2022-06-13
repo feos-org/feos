@@ -1,0 +1,126 @@
+[
+    {
+        "identifier": {
+            "cas": "74-98-6",
+            "name": "propane",
+            "iupac_name": "propane",
+            "smiles": "CCC",
+            "inchi": "InChI=1/C3H8/c1-3-2/h3H2,1-2H3",
+            "formula": "C3H8"
+        },
+        "model_record": {
+            "m": 2.0018290000000003,
+            "sigma": 3.618353,
+            "epsilon_k": 208.1101
+        },
+        "molarweight": 44.0962,
+        "chemical_record": {
+            "segments": [
+                "CH3",
+                "CH2",
+                "CH3"
+            ]
+        }
+    },
+    {
+        "identifier": {
+            "cas": "106-97-8",
+            "name": "butane",
+            "iupac_name": "butane",
+            "smiles": "CCCC",
+            "inchi": "InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3",
+            "formula": "C4H10"
+        },
+        "model_record": {
+            "m": 2.331586,
+            "sigma": 3.7086010000000003,
+            "epsilon_k": 222.8774
+        },
+        "molarweight": 58.123,
+        "chemical_record": {
+            "segments": [
+                "CH3",
+                "CH2",
+                "CH2",
+                "CH3"
+            ]
+        }
+    },
+    {
+        "identifier": {
+            "cas": "74-82-8",
+            "name": "methane",
+            "iupac_name": "methane",
+            "smiles": "C",
+            "inchi": "InChI=1/CH4/h1H4",
+            "formula": "CH4"
+        },
+        "model_record": {
+            "m": 1.0,
+            "sigma": 3.7039,
+            "epsilon_k": 150.034
+        },
+        "molarweight": 16.0426
+    },
+    {
+        "identifier": {
+            "cas": "124-38-9",
+            "name": "carbon-dioxide",
+            "iupac_name": "carbon dioxide",
+            "smiles": "O=C=O",
+            "inchi": "InChI=1/CO2/c2-1-3",
+            "formula": "CO2"
+        },
+        "molarweight": 44.0098,
+        "model_record": {
+            "m": 1.5131,
+            "sigma": 3.1869,
+            "epsilon_k": 163.333,
+            "q": 4.4
+        }
+    },
+    {
+        "identifier": {
+            "cas": "7732-18-5",
+            "name": "water_np",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "model_record": {
+            "m": 1.065587,
+            "sigma": 3.000683,
+            "epsilon_k": 366.5121,
+            "kappa_ab": 0.034867983,
+            "epsilon_k_ab": 2500.6706
+        },
+        "molarweight": 18.0152
+    },
+    {
+        "identifier": {
+            "cas": "110-54-3",
+            "name": "hexane",
+            "iupac_name": "hexane",
+            "smiles": "CCCCCC",
+            "inchi": "InChI=1/C6H14/c1-3-5-6-4-2/h3-6H2,1-2H3",
+            "formula": "C6H14"
+        },
+        "model_record": {
+            "m": 3.0576,
+            "sigma": 3.7983,
+            "epsilon_k": 236.77
+        },
+        "chemical_record": {
+            "segments": [
+                "CH3",
+                "CH2",
+                "CH2",
+                "CH2",
+                "CH2",
+                "CH3"
+            ]
+        },
+        "molarweight": 86.177
+    }
+]

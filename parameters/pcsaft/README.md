@@ -1,6 +1,6 @@
 # Parameters
 
-This directory contains files with parameters for PC-SAFT.
+This directory contains files with parameters for PC-SAFT (including gc-PC-SAFT).
 The files named according to the pattern `NameYear.json` correspond to published parameters. The corresponding publication is provided in the [`literature.bib`](literature.bib) file.
 
 - We provide *regular* PC-SAFT parameters, i.e. parameters for substances that are *not* described via group contribution (GC) methods.
@@ -23,6 +23,7 @@ The files named according to the pattern `NameYear.json` correspond to published
 [`gross2005_fit.json`](gross2005_fit.json) | quadrupolar substances, quadrupole adjusted in regression | [&#128279;](https://doi.org/10.1002/aic.10502)
 [`gross2005_literature.json`](gross2005_literature.json) | quadrupolar substances, quadrupole moment taken from literature | [&#128279;](https://doi.org/10.1002/aic.10502)
 [`gross2006.json`](gross2006.json) | dipolar substances | [&#128279;](https://doi.org/10.1002/aic.10683)
+[`loetgeringlin2018.json`](loetgeringlin2018.json) | 146 components including viscosity parameters | [&#128279;](https://doi.org/10.1021/acs.iecr.7b04871)
 [`rehner2020.json`](rehner2020.json) | water and alcohols with surface tension data included in the regression | [&#128279;](https://doi.org/10.1021/acs.jced.0c00684)
 
 ## Group-Contribution Parameters
@@ -31,4 +32,5 @@ The files named according to the pattern `NameYear.json` correspond to published
 |-|-|:-:|
 [`sauer2014_homo.json`](sauer2014_homo.json) | GC segment parameters for homo segmented PC-SAFT | [&#128279;](https://doi.org/10.1021/ie502203w) |
 [`sauer2014_hetero.json`](sauer2014_hetero.json) | GC segment parameters for hetero segmented PC-SAFT | [&#128279;](https://doi.org/10.1021/ie502203w)
+[`loetgeringlin2015_homo.json`](loetgeringlin2018.json) | GC segment parameters including for homo segmented PC-SAFT including viscosity parameter | [&#128279;](https://doi.org/10.1021/acs.iecr.5b01698)
 
