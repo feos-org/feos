@@ -288,7 +288,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         self.evaluate_property(Self::dmu_dt_, contributions, true)
     }
 
-    /// Partial derivative of chemical potential w.r.t. moles: $\left(\frac{\partial\mu_i}{\partial \mu_j}\right)_{T,V,N_k}$
+    /// Partial derivative of chemical potential w.r.t. moles: $\left(\frac{\partial\mu_i}{\partial N_j}\right)_{T,V,N_k}$
     pub fn dmu_dni(&self, contributions: Contributions) -> QuantityArray2<U> {
         self.evaluate_property(Self::dmu_dni_, contributions, true)
     }
