@@ -1,5 +1,5 @@
 #[cfg(feature = "estimator")]
-use crate::fit::*;
+use crate::estimator::*;
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::python::PyGcPcSaftEosParameters;
 #[cfg(feature = "gc_pcsaft")]
