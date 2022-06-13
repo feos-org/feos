@@ -1,8 +1,8 @@
 #![warn(clippy::all)]
 #![allow(clippy::too_many_arguments)]
 
-#[cfg(feature = "fit")]
-pub mod fit;
+#[cfg(feature = "estimator")]
+pub mod estimator;
 
 // models
 #[cfg(feature = "gc_pcsaft")]

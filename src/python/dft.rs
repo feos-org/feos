@@ -1,10 +1,10 @@
-#[cfg(feature = "fit")]
+#[cfg(feature = "estimator")]
 use crate::fit::*;
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::python::PyGcPcSaftFunctionalParameters;
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftOptions};
-#[cfg(feature = "fit")]
+#[cfg(feature = "estimator")]
 use crate::impl_estimator;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::python::PyPcSaftParameters;
@@ -30,7 +30,7 @@ use petgraph::graph::UnGraph;
 use petgraph::Graph;
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
-#[cfg(feature = "fit")]
+#[cfg(feature = "estimator")]
 use pyo3::wrap_pymodule;
 use quantity::python::*;
 use quantity::si::*;
@@ -363,7 +363,7 @@ impl_adsorption!(FunctionalVariant, PyFunctionalVariant);
 impl_pair_correlation!(FunctionalVariant);
 impl_solvation_profile!(FunctionalVariant);
 
-#[cfg(feature = "fit")]
+#[cfg(feature = "estimator")]
 impl_estimator!(DFT<FunctionalVariant>, PyFunctionalVariant);
 
 #[pymodule]
@@ -389,13 +389,13 @@ pub fn dft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyDFTSolver>()?;
     m.add_class::<PySolvationProfile>()?;
 
-    #[cfg(feature = "fit")]
+    #[cfg(feature = "estimator")]
     m.add_wrapped(wrap_pymodule!(estimator_dft))?;
 
     Ok(())
 }
 
-#[cfg(feature = "fit")]
+#[cfg(feature = "estimator")]
 #[pymodule]
 pub fn estimator_dft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyDataSet>()?;

@@ -1,12 +1,12 @@
-#[cfg(feature = "fit")]
+#[cfg(feature = "estimator")]
 use crate::fit::*;
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::python::PyGcPcSaftEosParameters;
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::{GcPcSaft, GcPcSaftOptions};
-#[cfg(feature = "fit")]
+#[cfg(feature = "estimator")]
 use crate::impl_estimator;
-#[cfg(all(feature = "fit", feature = "pcsaft"))]
+#[cfg(all(feature = "estimator", feature = "pcsaft"))]
 use crate::impl_estimator_entropy_scaling;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::python::PyPcSaftParameters;
@@ -29,7 +29,7 @@ use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
-#[cfg(feature = "fit")]
+#[cfg(feature = "estimator")]
 use pyo3::wrap_pymodule;
 use quantity::python::*;
 use quantity::si::*;
@@ -413,9 +413,9 @@ impl_state_molarweight!(EosVariant, PyEosVariant);
 impl_state_entropy_scaling!(EosVariant, PyEosVariant);
 impl_phase_equilibrium!(EosVariant, PyEosVariant);
 
-#[cfg(feature = "fit")]
+#[cfg(feature = "estimator")]
 impl_estimator!(EosVariant, PyEosVariant);
-#[cfg(all(feature = "fit", feature = "pcsaft"))]
+#[cfg(all(feature = "estimator", feature = "pcsaft"))]
 impl_estimator_entropy_scaling!(EosVariant, PyEosVariant);
 
 #[pymodule]
@@ -428,13 +428,13 @@ pub fn eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyPhaseDiagram>()?;
     m.add_class::<PyPhaseEquilibrium>()?;
 
-    #[cfg(feature = "fit")]
+    #[cfg(feature = "estimator")]
     m.add_wrapped(wrap_pymodule!(estimator_eos))?;
 
     Ok(())
 }
 
-#[cfg(feature = "fit")]
+#[cfg(feature = "estimator")]
 #[pymodule]
 pub fn estimator_eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyDataSet>()?;
