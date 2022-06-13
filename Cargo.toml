@@ -16,7 +16,7 @@ categories = ["science"]
 members = ["feos-core", "feos-dft"]
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["rlib", "cdylib"]
 
 [dependencies]
 quantity = "0.5"
