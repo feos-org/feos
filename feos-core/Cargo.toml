@@ -1,6 +1,6 @@
 [package]
 name = "feos-core"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>",
            "Philipp Rehner <prehner@ethz.ch"]
 edition = "2018"
@@ -8,10 +8,9 @@ license = "MIT OR Apache-2.0"
 description = "Core traits and functionalities for the `feos` project."
 homepage = "https://github.com/feos-org"
 readme = "README.md"
-repository = "https://github.com/feos-org/feos-core"
+repository = "https://github.com/feos-org/feos"
 keywords = ["physics", "thermodynamics", "equations_of_state", "phase_equilibria"]
 categories = ["science"]
-exclude = ["/.github/*", "*.ipynb", "/docs"]
 workspace = ".."
 
 [package.metadata.docs.rs]
@@ -19,7 +18,6 @@ rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 
 [dependencies]
 quantity = "0.5"
-approx = "0.4"
 num-dual = { version = "0.5", features = ["linalg"] }
 ndarray = { version = "0.15", features = ["serde"] }
 num-traits = "0.2"
@@ -30,6 +28,9 @@ indexmap = "1.8"
 conv = "0.3"
 numpy = { version = "0.16", optional = true }
 pyo3 = { version = "0.16", optional = true }
+
+[dev-dependencies]
+approx = "0.4"
 
 [features]
 default = []

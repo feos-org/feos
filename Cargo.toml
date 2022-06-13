@@ -24,7 +24,7 @@ crate-type = ["rlib", "cdylib"]
 [dependencies]
 quantity = "0.5"
 num-dual = "0.5"
-feos-core = { version = "0.2", path = "feos-core" }
+feos-core = { version = "0.3", path = "feos-core" }
 feos-dft = { version = "0.2", path = "feos-dft", optional = true }
 #feos-pets = { version = "0.1", features = ["python"] }
 numpy = { version = "0.16", optional = true }
