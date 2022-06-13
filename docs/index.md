@@ -36,10 +36,16 @@ Critical point for methanol: T=531.5 K, p=10.7 MPa.
 ```rust
 // some imports omitted
 use feos_core::{State, Contributions};
-use feos_pcsaft::{PcSaft, PcSaftParameters};
+use feos_core::parameter::{IdentifierOption, Parameter};
+use feos::pcsaft::{PcSaft, PcSaftParameters};
 
 // Build an equation of state
-let parameters = PcSaftParameters.from_json(vec!["methanol"], "parameters.json")?;
+let parameters = PcSaftParameters.from_json(
+    vec!["methanol"], 
+    "parameters.json",
+    None,
+    IdentifierOption::Name
+)?;
 let eos = Rc::new(PcSaft::new(Rc::new(parameters)));
 
 // Define thermodynamic conditions
@@ -55,6 +61,17 @@ Critical point for methanol: T=531.5 K, p=10.7 MPa.
 ```
 ````
 `````
+
+## Getting started
+
+- Learn how to [install the code](installation).
+- Browse the [python tutorials](tutorials/index).
+- Need something specific? May we have a [recipe](recipes/index) for that.
+- Questions or comments? [We are happy to hear from you](help_and_feedback)!
+
+## Want to learn more?
+- Delve into the [python API](api/index).
+- Interested in extending the library? Check out our [Rust guide](rustguide/index)!
 
 ## Features
 
@@ -91,14 +108,6 @@ Critical point for methanol: T=531.5 K, p=10.7 MPa.
 - Python bindings are written in Rust - **robust type checking** and **error handling**.
 ```
 
-
-## Getting started
-
-- Learn how to [install the code](installation).
-- Browse the [python examples](examples/index).
-- Delve into the [python API](api/index).
-- Interested in extending the library? Check out our [Rust guide](rustguide/index)!
-
 ```{toctree}
 :hidden:
 
@@ -112,7 +121,7 @@ help_and_feedback
 :hidden:
 
 api/index
-examples/index
+tutorials/index
 recipes/index
 ```
 
