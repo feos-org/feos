@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.uvtheory.UVParameters.from\_records
+========================================
+
+.. currentmodule:: feos.uvtheory
+
+.. automethod:: UVParameters.from_records

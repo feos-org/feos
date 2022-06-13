@@ -29,4 +29,10 @@ feos.cubic.PengRobinsonParameters
 
    
    
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PengRobinsonParameters.pure_records
+   
    

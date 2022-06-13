@@ -17,6 +17,7 @@ The `State` and `PhaseEquilibrium` objects are used to define thermodynamic cond
     EquationOfState.peng_robinson
     EquationOfState.pets
     EquationOfState.python
+    EquationOfState.uvtheory
 ```
 
 ## Other data types

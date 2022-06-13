@@ -16,15 +16,21 @@ pip install git+https://github.com/feos-org/feos
 ````
 
 ````{tab-item} Rust
-In Rust, each equation of state or DFT functional is a separate crate and is hosted on [crates.io](https://crates.io).
-For example, if you want to use the PC-SAFT equation of state, add this to your `Cargo.toml`:
+In Rust, the `feos-dft` crate and each equation of state or DFT functional is a separate, optional module behind a feature flag.
+To use {math}`\text{FeO}_\text{s}` with all models (including Python bindings), use the `all` feature:
 
 ```toml
 [dependencies]
-feos-core = "0.1"
-feos-dft = "0.1"
-feos-pcsaft = "0.1"
-quantity = "0.4"
+feos = { version="0.2", features = ["all"] }
+quantity = "0.5"
+```
+
+In the following example we use only the PC-SAFT equation of state and Helmholtz energy functionals (without Python bindings):
+
+```toml
+[dependencies]
+feos = { version="0.2", features = ["dft", "pcsaft"] }
+quantity = "0.5"
 ```
 ````
 `````

@@ -1,0 +1,37 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.uvtheory.ChemicalRecord
+============================
+
+.. currentmodule:: feos.uvtheory
+
+.. autoclass:: ChemicalRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~ChemicalRecord.__init__
+      ~ChemicalRecord.from_json_str
+      ~ChemicalRecord.to_json_str
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ChemicalRecord.bonds
+      ~ChemicalRecord.identifier
+      ~ChemicalRecord.segments
+   
+   

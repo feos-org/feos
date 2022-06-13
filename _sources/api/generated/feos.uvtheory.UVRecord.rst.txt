@@ -1,0 +1,29 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.uvtheory.UVRecord
+======================
+
+.. currentmodule:: feos.uvtheory
+
+.. autoclass:: UVRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~UVRecord.__init__
+      ~UVRecord.from_json_str
+      ~UVRecord.to_json_str
+   
+   
+
+   
+   
+   

@@ -22,6 +22,7 @@ feos.dft.PhaseDiagram
       ~PhaseDiagram.binary_vle
       ~PhaseDiagram.binary_vlle
       ~PhaseDiagram.lle
+      ~PhaseDiagram.mix
       ~PhaseDiagram.pure
       ~PhaseDiagram.to_dict
    

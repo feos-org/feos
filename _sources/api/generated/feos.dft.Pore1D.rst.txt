@@ -29,6 +29,11 @@ feos.dft.Pore1D
 
    .. autosummary::
    
+      ~Pore1D.geometry
+      ~Pore1D.n_grid
+      ~Pore1D.pore_size
       ~Pore1D.pore_volume
+      ~Pore1D.potential
+      ~Pore1D.potential_cutoff
    
    

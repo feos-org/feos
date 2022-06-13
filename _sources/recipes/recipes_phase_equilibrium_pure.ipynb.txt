@@ -1,0 +1,109 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "2f323a90-1e4f-4a27-a495-38dbf8dad3e3",
+   "metadata": {},
+   "source": [
+    "# Phase equilibrium of a pure substance "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "06f40029-24e4-4f91-b502-6b9265818ed8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from feos.si import BAR, KELVIN\n",
+    "from feos.eos import EquationOfState, PhaseEquilibrium\n",
+    "from feos.pcsaft import PcSaftParameters\n",
+    "\n",
+    "parameters = PcSaftParameters.from_json(\n",
+    "    substances=['methanol'], \n",
+    "    pure_path='../parameters/pcsaft/gross2002.json'\n",
+    ")\n",
+    "eos = EquationOfState.pcsaft(parameters)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "38b998ad-4fd0-4a1e-8fa3-991a13fc0860",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/markdown": [
+       "||temperature|density|\n",
+       "|-|-|-|\n",
+       "|phase 1|350.00000 K|62.68366  mol/m³|\n",
+       "|phase 2|350.00000 K|23.13883 kmol/m³|\n"
+      ],
+      "text/plain": [
+       "phase 0: T = 350.00000 K, ρ = 62.68366  mol/m³\n",
+       "phase 1: T = 350.00000 K, ρ = 23.13883 kmol/m³"
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "vle_t = PhaseEquilibrium.pure(eos, 350 * KELVIN)\n",
+    "vle_t"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "7e22455b-7f69-4745-9d92-8e991f45ba81",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/markdown": [
+       "||temperature|density|\n",
+       "|-|-|-|\n",
+       "|phase 1|426.13707 K|575.28700  mol/m³|\n",
+       "|phase 2|426.13707 K|20.09406 kmol/m³|\n"
+      ],
+      "text/plain": [
+       "phase 0: T = 426.13707 K, ρ = 575.28700  mol/m³\n",
+       "phase 1: T = 426.13707 K, ρ = 20.09406 kmol/m³"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "vle_p = PhaseEquilibrium.pure(eos, 15 * BAR)\n",
+    "vle_p"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

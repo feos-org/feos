@@ -1,0 +1,34 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.uvtheory.Perturbation
+==========================
+
+.. currentmodule:: feos.uvtheory
+
+.. autoclass:: Perturbation
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Perturbation.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Perturbation.BarkerHenderson
+      ~Perturbation.WeeksChandlerAndersen
+   
+   

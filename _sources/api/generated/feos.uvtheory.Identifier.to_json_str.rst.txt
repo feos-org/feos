@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.uvtheory.Identifier.to\_json\_str
+======================================
+
+.. currentmodule:: feos.uvtheory
+
+.. automethod:: Identifier.to_json_str

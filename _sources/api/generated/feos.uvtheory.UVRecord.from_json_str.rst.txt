@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.uvtheory.UVRecord.from\_json\_str
+======================================
+
+.. currentmodule:: feos.uvtheory
+
+.. automethod:: UVRecord.from_json_str
