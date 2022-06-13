@@ -12,6 +12,9 @@ repository = "https://github.com/feos-org/feos"
 keywords = ["physics", "thermodynamics", "equations_of_state", "phase_equilibria", "density_functional_theory"]
 categories = ["science"]
 
+[package.metadata.docs.rs]
+features = ["all_models"]
+
 [workspace]
 members = ["feos-core", "feos-dft"]
 
@@ -52,4 +55,4 @@ gc_pcsaft = []
 uvtheory = ["lazy_static"]
 pets = []
 python = ["pyo3", "numpy", "feos-core/python", "feos-dft?/python"]
-full = ["dft", "fit", "pcsaft", "gc_pcsaft", "uvtheory", "pets", "python"]
+all_models = ["dft", "fit", "pcsaft", "gc_pcsaft", "uvtheory", "pets"]
