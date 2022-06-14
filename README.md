@@ -32,10 +32,10 @@ The following models are currently published as part of the `FeOs` framework
 
 |name|description|eos|dft|
 |-|-|:-:|:-:|
-|[`feos-pcsaft`](https://github.com/feos-org/feos/src/pcsaft)|perturbed-chain (polar) statistical associating fluid theory|✓|✓|
-|[`feos-gc-pcsaft`](https://github.com/feos-org/feos/src/gc_pcsaft)|(heterosegmented) group contribution PC-SAFT|✓|✓|
-|[`feos-pets`](https://github.com/feos-org/feos/src/pets)|perturbed truncated and shifted Lennard-Jones mixtures|✓|✓|
-|[`feos-uvtheory`](https://github.com/feos-org/feos/src/uvtheory)|equation of state for Mie fluids and mixtures|✓||
+|`pcsaft`|perturbed-chain (polar) statistical associating fluid theory|✓|✓|
+|`gc-pcsaft`|(heterosegmented) group contribution PC-SAFT|✓|✓|
+|`pets`|perturbed truncated and shifted Lennard-Jones mixtures|✓|✓|
+|`uvtheory`|equation of state for Mie fluids and mixtures|✓||
 
 The list is being expanded continuously. Currently under development are implementations of ePC-SAFT, a Helmholtz energy functional for the UV theory, and SAFT-VRQ-Mie.
 
