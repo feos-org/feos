@@ -10,6 +10,7 @@ use std::rc::Rc;
 mod bubble_dew;
 mod phase_diagram_binary;
 mod phase_diagram_pure;
+mod phase_envelope;
 mod stability_analysis;
 mod tp_flash;
 mod vle_pure;

@@ -1,11 +1,10 @@
 use super::{PhaseEquilibrium, SolverOptions, Verbosity};
-use crate::density_iteration::pressure_spinodal;
 use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use crate::state::{Contributions, DensityInitialization, State, TPSpec};
 use crate::EosUnit;
 use ndarray::{arr1, Array1};
-use quantity::{QuantityArray1, QuantityScalar};
+use quantity::QuantityScalar;
 use std::convert::TryFrom;
 use std::rc::Rc;
 
@@ -62,7 +61,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         // Finally use the spinodal to initialize the calculation
         vle.map_or_else(
             || {
-                Self::init_pure_spinodal(eos, temperature)
+                Self::init_spinodal(eos, temperature)
                     .and_then(|vle| vle.iterate_pure_t(max_iter, tol, verbosity))
             },
             Ok,
@@ -274,37 +273,17 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 
     fn init_pure_ideal_gas(eos: &Rc<E>, temperature: QuantityScalar<U>) -> EosResult<Self> {
         let m = arr1(&[1.0]) * U::reference_moles();
-        let density = 0.75 * eos.max_density(None)?;
-        let liquid = State::new_nvt(eos, temperature, U::reference_moles() / density, &m)?;
-        let z = liquid.compressibility(Contributions::Total);
-        let mu = liquid.chemical_potential(Contributions::ResidualNvt);
-        let p = temperature
-            * density
-            * U::gas_constant()
-            * (mu.get(0).to_reduced(U::gas_constant() * temperature)? - z).exp();
+        let p = Self::starting_pressure_ideal_gas_bubble(eos, temperature, &arr1(&[1.0]))?.0;
         PhaseEquilibrium::new_npt(eos, temperature, p, &m, &m)?.check_trivial_solution()
     }
 
-    fn init_pure_spinodal(eos: &Rc<E>, temperature: QuantityScalar<U>) -> EosResult<Self> {
+    fn init_spinodal(eos: &Rc<E>, temperature: QuantityScalar<U>) -> EosResult<Self>
+    where
+        QuantityScalar<U>: std::fmt::Display,
+    {
+        let p = Self::starting_pressure_spinodal(eos, temperature, &arr1(&[1.0]))?;
         let m = arr1(&[1.0]) * U::reference_moles();
-        let spinodal = Self::spinodal(eos, temperature, &m)?;
-        let pv = spinodal.vapor().pressure(Contributions::Total);
-        let pl = spinodal.liquid().pressure(Contributions::Total);
-        let p = 0.5 * ((0.0 * U::reference_pressure()).max(pl)? + pv);
         PhaseEquilibrium::new_npt(eos, temperature, p, &m, &m)
-    }
-
-    fn spinodal(
-        eos: &Rc<E>,
-        temperature: QuantityScalar<U>,
-        moles: &QuantityArray1<U>,
-    ) -> EosResult<Self> {
-        let max_density = eos.max_density(Some(moles))?;
-        let sp = pressure_spinodal(eos, temperature, max_density * 1e-5, moles)?;
-        let vapor = State::new_nvt(eos, temperature, moles.get(0) / sp.rho, moles)?;
-        let sp = pressure_spinodal(eos, temperature, max_density, moles)?;
-        let liquid = State::new_nvt(eos, temperature, moles.get(0) / sp.rho, moles)?;
-        Ok(PhaseEquilibrium([vapor, liquid]))
     }
 
     /// Initialize a new VLE for a pure substance for a given pressure.

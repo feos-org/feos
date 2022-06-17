@@ -224,6 +224,46 @@ macro_rules! impl_state {
                 )?))
             }
 
+            /// Calculate spinodal states for a given temperature and composition.
+            ///
+            /// Parameters
+            /// ----------
+            /// eos: EquationOfState
+            ///     The equation of state to use.
+            /// temperature: SINumber
+            ///     The temperature.
+            /// moles: SIArray1, optional
+            ///     Amount of substance of each component.
+            ///     Only optional for a pure component.
+            /// max_iter : int, optional
+            ///     The maximum number of iterations.
+            /// tol: float, optional
+            ///     The solution tolerance.
+            /// verbosity : Verbosity, optional
+            ///     The verbosity.
+            ///
+            /// Returns
+            /// -------
+            /// State : State at critical conditions.
+            #[staticmethod]
+            #[pyo3(text_signature = "(eos, temperature, moles=None, max_iter=None, tol=None, verbosity=None)")]
+            fn spinodal(
+                eos: $py_eos,
+                temperature: PySINumber,
+                moles: Option<PySIArray1>,
+                max_iter: Option<usize>,
+                tol: Option<f64>,
+                verbosity: Option<Verbosity>,
+            ) -> PyResult<(Self, Self)> {
+                let [state1, state2] = State::spinodal(
+                    &eos.0,
+                    temperature.into(),
+                    moles.as_deref(),
+                    (max_iter, tol, verbosity).into(),
+                )?;
+                Ok((PyState(state1), PyState(state2)))
+            }
+
             /// Performs a stability analysis and returns a list of stable
             /// candidate states.
             ///

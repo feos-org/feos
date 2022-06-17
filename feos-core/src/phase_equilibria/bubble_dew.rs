@@ -20,18 +20,9 @@ const TOL_OUTER: f64 = 1e-10;
 const MAX_TSTEP: f64 = 20.0;
 const MAX_LNPSTEP: f64 = 0.1;
 const PROMISING_F: f64 = 1.0;
-const P_START: f64 = 1.0 / 138.0649; // equivalent to 1 bar in SI units
-const T_START: f64 = 400.0;
 const NEWTON_TOL: f64 = 1e-3;
 
 impl<U: EosUnit> TPSpec<U> {
-    fn starting_value(&self) -> QuantityScalar<U> {
-        match self {
-            Self::Temperature(_) => P_START * U::reference_pressure(),
-            Self::Pressure(_) => T_START * U::reference_temperature(),
-        }
-    }
-
     pub(super) fn temperature_pressure(
         &self,
         tp_init: QuantityScalar<U>,
@@ -81,7 +72,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     where
         QuantityScalar<U>: std::fmt::Display,
     {
-        Self::bubble_dew_point_with_options(
+        Self::bubble_dew_point(
             eos,
             TPSpec::try_from(temperature_or_pressure)?,
             tp_init,
@@ -105,7 +96,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     where
         QuantityScalar<U>: std::fmt::Display,
     {
-        Self::bubble_dew_point_with_options(
+        Self::bubble_dew_point(
             eos,
             TPSpec::try_from(temperature_or_pressure)?,
             tp_init,
@@ -116,7 +107,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         )
     }
 
-    pub(super) fn bubble_dew_point_with_options(
+    pub(super) fn bubble_dew_point(
         eos: &Rc<E>,
         tp_spec: TPSpec<U>,
         tp_init: Option<QuantityScalar<U>>,
@@ -128,25 +119,188 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     where
         QuantityScalar<U>: std::fmt::Display,
     {
-        let tp_init = tp_init.unwrap_or_else(|| tp_spec.starting_value());
+        match tp_spec {
+            TPSpec::Temperature(t) => {
+                // First use given initial pressure if applicable
+                let mut vle = tp_init
+                    .map(|p| {
+                        Self::iterate_bubble_dew(
+                            eos,
+                            tp_spec,
+                            p,
+                            molefracs_spec,
+                            molefracs_init,
+                            bubble,
+                            options,
+                        )
+                    })
+                    .and_then(Result::ok);
+
+                // Next try to initialize with an ideal gas assumption
+                vle = vle.or_else(|| {
+                    let (p, x) =
+                        Self::starting_pressure_ideal_gas(eos, t, molefracs_spec, bubble).ok()?;
+                    Self::iterate_bubble_dew(
+                        eos,
+                        tp_spec,
+                        p,
+                        molefracs_spec,
+                        Some(&x),
+                        bubble,
+                        options,
+                    )
+                    .ok()
+                });
+
+                // Finally use the spinodal to initialize the calculation
+                vle.map_or_else(
+                    || {
+                        Self::iterate_bubble_dew(
+                            eos,
+                            tp_spec,
+                            Self::starting_pressure_spinodal(eos, t, molefracs_spec)?,
+                            molefracs_spec,
+                            molefracs_init,
+                            bubble,
+                            options,
+                        )
+                    },
+                    Ok,
+                )
+            }
+            TPSpec::Pressure(_) => {
+                let solve = |temperature| {
+                    Self::iterate_bubble_dew(
+                        eos,
+                        tp_spec,
+                        temperature,
+                        molefracs_spec,
+                        molefracs_init,
+                        bubble,
+                        options,
+                    )
+                };
+                // First use given initial temperature if applicable
+                tp_init.map(solve).unwrap()
+            }
+        }
+    }
+
+    fn iterate_bubble_dew(
+        eos: &Rc<E>,
+        tp_spec: TPSpec<U>,
+        tp_init: QuantityScalar<U>,
+        molefracs_spec: &Array1<f64>,
+        molefracs_init: Option<&Array1<f64>>,
+        bubble: bool,
+        options: (SolverOptions, SolverOptions),
+    ) -> EosResult<Self>
+    where
+        QuantityScalar<U>: std::fmt::Display,
+    {
         let (var, t, p) = tp_spec.temperature_pressure(tp_init);
-        let (state1, state2) = if bubble {
+        let [state1, state2] = if bubble {
             starting_x2_bubble(eos, t, p, molefracs_spec, molefracs_init)
         } else {
             starting_x2_dew(eos, t, p, molefracs_spec, molefracs_init)
         }?;
         bubble_dew(tp_spec, var, state1, state2, options)
     }
+
+    fn starting_pressure_ideal_gas(
+        eos: &Rc<E>,
+        temperature: QuantityScalar<U>,
+        molefracs_spec: &Array1<f64>,
+        bubble: bool,
+    ) -> EosResult<(QuantityScalar<U>, Array1<f64>)>
+    where
+        QuantityScalar<U>: std::fmt::Display,
+    {
+        if bubble {
+            Self::starting_pressure_ideal_gas_bubble(eos, temperature, molefracs_spec)
+        } else {
+            Self::starting_pressure_ideal_gas_dew(eos, temperature, molefracs_spec)
+        }
+    }
+
+    pub(super) fn starting_pressure_ideal_gas_bubble(
+        eos: &Rc<E>,
+        temperature: QuantityScalar<U>,
+        liquid_molefracs: &Array1<f64>,
+    ) -> EosResult<(QuantityScalar<U>, Array1<f64>)> {
+        let m = liquid_molefracs * U::reference_moles();
+        let density = 0.75 * eos.max_density(Some(&m))?;
+        let liquid = State::new_nvt(eos, temperature, m.sum() / density, &m)?;
+        let v_l = liquid.molar_volume(Contributions::Total);
+        let p_l = liquid.pressure(Contributions::Total);
+        let mu_l = liquid.chemical_potential(Contributions::ResidualNvt);
+        let p_i = (temperature * density * U::gas_constant() * liquid_molefracs)
+            * (mu_l - p_l * v_l)
+                .to_reduced(U::gas_constant() * temperature)?
+                .mapv(f64::exp);
+        let y = p_i.to_reduced(p_i.sum())?;
+        Ok((p_i.sum(), y))
+    }
+
+    fn starting_pressure_ideal_gas_dew(
+        eos: &Rc<E>,
+        temperature: QuantityScalar<U>,
+        vapor_molefracs: &Array1<f64>,
+    ) -> EosResult<(QuantityScalar<U>, Array1<f64>)>
+    where
+        QuantityScalar<U>: std::fmt::Display,
+    {
+        let mut p: Option<QuantityScalar<U>> = None;
+
+        let mut x = vapor_molefracs.clone();
+        for _ in 0..5 {
+            let m = x * U::reference_moles();
+            let density = 0.75 * eos.max_density(Some(&m))?;
+            let liquid = State::new_nvt(eos, temperature, m.sum() / density, &m)?;
+            let v_l = liquid.molar_volume(Contributions::Total);
+            let p_l = liquid.pressure(Contributions::Total);
+            let mu_l = liquid.chemical_potential(Contributions::ResidualNvt);
+            let k = vapor_molefracs
+                / (mu_l - p_l * v_l)
+                    .to_reduced(U::gas_constant() * temperature)?
+                    .mapv(f64::exp);
+            let p_new = U::gas_constant() * temperature * density / k.sum();
+            x = &k / k.sum();
+            println!("{p_new} {x}");
+            if let Some(p_old) = p {
+                if (p_new - p_old).to_reduced(p_old)?.abs() < 1e-5 {
+                    p = Some(p_new);
+                    break;
+                }
+            }
+            p = Some(p_new);
+        }
+        Ok((p.unwrap(), x))
+    }
+
+    pub(super) fn starting_pressure_spinodal(
+        eos: &Rc<E>,
+        temperature: QuantityScalar<U>,
+        molefracs: &Array1<f64>,
+    ) -> EosResult<QuantityScalar<U>>
+    where
+        QuantityScalar<U>: std::fmt::Display,
+    {
+        let moles = molefracs * U::reference_moles();
+        let [sp_v, sp_l] = State::spinodal(eos, temperature, Some(&moles), Default::default())?;
+        let pv = sp_v.pressure(Contributions::Total);
+        let pl = sp_l.pressure(Contributions::Total);
+        Ok(0.5 * ((0.0 * U::reference_pressure()).max(pl)? + pv))
+    }
 }
 
-#[allow(clippy::type_complexity)]
 fn starting_x2_bubble<U: EosUnit, E: EquationOfState>(
     eos: &Rc<E>,
     temperature: QuantityScalar<U>,
     pressure: QuantityScalar<U>,
     liquid_molefracs: &Array1<f64>,
     vapor_molefracs: Option<&Array1<f64>>,
-) -> EosResult<(State<U, E>, State<U, E>)> {
+) -> EosResult<[State<U, E>; 2]> {
     let liquid_state = State::new_npt(
         eos,
         temperature,
@@ -165,17 +319,16 @@ fn starting_x2_bubble<U: EosUnit, E: EquationOfState>(
         &(xv * U::reference_moles()),
         Vapor,
     )?;
-    Ok((liquid_state, vapor_state))
+    Ok([liquid_state, vapor_state])
 }
 
-#[allow(clippy::type_complexity)]
 fn starting_x2_dew<U: EosUnit, E: EquationOfState>(
     eos: &Rc<E>,
     temperature: QuantityScalar<U>,
     pressure: QuantityScalar<U>,
     vapor_molefracs: &Array1<f64>,
     liquid_molefracs: Option<&Array1<f64>>,
-) -> EosResult<(State<U, E>, State<U, E>)> {
+) -> EosResult<[State<U, E>; 2]> {
     let vapor_state = State::new_npt(
         eos,
         temperature,
@@ -204,7 +357,7 @@ fn starting_x2_dew<U: EosUnit, E: EquationOfState>(
         &(xl * U::reference_moles()),
         Liquid,
     )?;
-    Ok((vapor_state, liquid_state))
+    Ok([vapor_state, liquid_state])
 }
 
 fn bubble_dew<U: EosUnit, E: EquationOfState>(
@@ -226,6 +379,7 @@ where
     // If the starting values are insufficient find better ones
     if !promising_values(&state1, &state2) {
         log_iter!(options_outer.verbosity, "Trivial solution encountered!");
+        return Err(EosError::TrivialSolution);
         // find_starting_values(&mut var_tp, &mut state1, bubble)?;
     }
 
@@ -235,6 +389,14 @@ where
         var_tp.identifier()
     );
     log_iter!(options_outer.verbosity, "{:-<85}", "");
+    log_iter!(
+        options_outer.verbosity,
+        "{:14} | {:14} | {:12.8} | {:.8}",
+        "",
+        "",
+        var_tp,
+        state2.molefracs
+    );
 
     // Outer loop for finding x2
     for ko in 0..options_outer.max_iter.unwrap_or(MAX_ITER_OUTER) {
@@ -267,6 +429,7 @@ where
         // if a trivial solution is encountered, reinitialize T or p
         if PhaseEquilibrium::is_trivial_solution(&state1, &state2) {
             log_iter!(options_outer.verbosity, "Trivial solution encountered!");
+            return Err(EosError::TrivialSolution);
             // find_starting_values(iterate_t, bubble, &mut itervars)?;
         }
 

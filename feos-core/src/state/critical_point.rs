@@ -2,7 +2,7 @@ use super::{State, StateHD, TPSpec};
 use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use crate::phase_equilibria::{SolverOptions, Verbosity};
-use crate::EosUnit;
+use crate::{DensityInitialization, EosUnit};
 use ndarray::{arr1, arr2, Array1, Array2};
 use num_dual::linalg::{norm, smallest_ev, LU};
 use num_dual::{Dual, Dual3, Dual64, DualNum, DualVec64, HyperDual, StaticVec};
@@ -359,9 +359,113 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         }
         Err(EosError::NotConverged(String::from("Critical point")))
     }
+
+    pub fn spinodal(
+        eos: &Rc<E>,
+        temperature: QuantityScalar<U>,
+        moles: Option<&QuantityArray1<U>>,
+        options: SolverOptions,
+    ) -> EosResult<[Self; 2]>
+    where
+        QuantityScalar<U>: std::fmt::Display,
+    {
+        let critical_point = Self::critical_point(eos, moles, None, options)?;
+        let moles = eos.validate_moles(moles)?;
+        let spinodal_vapor = Self::calculate_spinodal(
+            eos,
+            temperature,
+            &moles,
+            DensityInitialization::Vapor,
+            options,
+        )?;
+        let rho = 2.0 * critical_point.density - spinodal_vapor.density;
+        let spinodal_liquid = Self::calculate_spinodal(
+            eos,
+            temperature,
+            &moles,
+            DensityInitialization::InitialDensity(rho),
+            options,
+        )?;
+        Ok([spinodal_vapor, spinodal_liquid])
+    }
+
+    fn calculate_spinodal(
+        eos: &Rc<E>,
+        temperature: QuantityScalar<U>,
+        moles: &QuantityArray1<U>,
+        density_initialization: DensityInitialization<U>,
+        options: SolverOptions,
+    ) -> EosResult<Self>
+    where
+        QuantityScalar<U>: std::fmt::Display,
+    {
+        let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_CRIT_POINT, TOL_CRIT_POINT);
+
+        let max_density = eos
+            .max_density(Some(moles))?
+            .to_reduced(U::reference_density())?;
+        let t = temperature.to_reduced(U::reference_temperature())?;
+        let mut rho = match density_initialization {
+            DensityInitialization::Vapor => 1e-5 * max_density,
+            DensityInitialization::Liquid => max_density,
+            DensityInitialization::InitialDensity(rho) => rho.to_reduced(U::reference_density())?,
+            DensityInitialization::None => unreachable!(),
+        };
+        let n = moles.to_reduced(U::reference_moles())?;
+
+        log_iter!(verbosity, " iter |    residual    |       density        ");
+        log_iter!(verbosity, "{:-<46}", "");
+        log_iter!(
+            verbosity,
+            " {:4} |                | {:12.8}",
+            0,
+            rho * U::reference_density(),
+        );
+
+        for i in 1..=max_iter {
+            // calculate residuals and derivative w.r.t. density
+            let res = spinodal_objective(eos, Dual64::from(t), Dual64::from(rho).derive(), &n)?;
+
+            // calculate Newton step
+            let mut delta = res.re / res.eps[0];
+
+            // reduce step if necessary
+            if delta.abs() > 0.03 * max_density {
+                delta *= 0.03 * max_density / delta.abs()
+            }
+
+            // apply step
+            rho -= delta;
+            rho = f64::max(rho, 1e-4 * max_density);
+
+            log_iter!(
+                verbosity,
+                " {:4} | {:14.8e} | {:12.8}",
+                i,
+                res.re.abs(),
+                rho * U::reference_density(),
+            );
+
+            // check convergence
+            if res.re.abs() < tol {
+                log_result!(
+                    verbosity,
+                    "Spinodal calculation converged in {} step(s)\n",
+                    i
+                );
+                return State::new_nvt(
+                    eos,
+                    temperature,
+                    moles.sum() / (rho * U::reference_density()),
+                    moles,
+                );
+            }
+        }
+        Err(EosError::SuperCritical)
+    }
 }
 
-pub fn critical_point_objective<E: EquationOfState>(
+fn critical_point_objective<E: EquationOfState>(
     eos: &Rc<E>,
     temperature: Dual64,
     density: Dual64,
@@ -481,4 +585,29 @@ fn critical_point_objective_p<E: EquationOfState>(
         res.v3,
         p.eps[0] * temperature + pressure,
     ]))
+}
+
+fn spinodal_objective<E: EquationOfState>(
+    eos: &Rc<E>,
+    temperature: Dual64,
+    density: Dual64,
+    moles: &Array1<f64>,
+) -> EosResult<Dual64> {
+    // calculate second partial derivatives w.r.t. moles
+    let t = HyperDual::from_re(temperature);
+    let v = HyperDual::from_re(density.recip() * moles.sum());
+    let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
+        let mut m = moles.mapv(HyperDual::from);
+        m[i].eps1[0] = Dual64::one();
+        m[j].eps2[0] = Dual64::one();
+        let state = StateHD::new(t, v, m);
+        (eos.evaluate_residual(&state).eps1eps2[(0, 0)]
+            + eos.ideal_gas().evaluate(&state).eps1eps2[(0, 0)])
+            * (moles[i] * moles[j]).sqrt()
+    });
+
+    // calculate smallest eigenvalue of q
+    let (eval, _) = smallest_ev(qij);
+
+    Ok(eval)
 }
