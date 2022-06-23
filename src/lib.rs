@@ -2,7 +2,7 @@
 //!
 //! # Example: critical point of a pure substance
 //!
-//! ```rust
+//! ```no_run
 //! # use feos_core::EosError;
 //! use feos::pcsaft::{PcSaft, PcSaftParameters};
 //! use feos_core::parameter::{IdentifierOption, Parameter};
