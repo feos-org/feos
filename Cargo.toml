@@ -14,6 +14,7 @@ categories = ["science"]
 
 [package.metadata.docs.rs]
 features = ["all_models"]
+rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 
 [workspace]
 members = ["feos-core", "feos-dft"]

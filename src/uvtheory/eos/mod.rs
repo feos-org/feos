@@ -29,6 +29,7 @@ pub enum Perturbation {
     WeeksChandlerAndersen,
 }
 
+/// Configuration options for uv-theory
 #[derive(Clone)]
 pub struct UVTheoryOptions {
     pub max_eta: f64,
@@ -44,6 +45,7 @@ impl Default for UVTheoryOptions {
     }
 }
 
+/// uv-theory equation of state
 pub struct UVTheory {
     parameters: Rc<UVParameters>,
     options: UVTheoryOptions,
@@ -51,10 +53,12 @@ pub struct UVTheory {
 }
 
 impl UVTheory {
+    /// uv-theory with default options (WCA).
     pub fn new(parameters: Rc<UVParameters>) -> Self {
         Self::with_options(parameters, UVTheoryOptions::default())
     }
 
+    /// uv-theory with provided options.
     pub fn with_options(parameters: Rc<UVParameters>, options: UVTheoryOptions) -> Self {
         let mut contributions: Vec<Box<dyn HelmholtzEnergy>> = Vec::with_capacity(3);
 

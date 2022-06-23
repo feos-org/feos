@@ -1,11 +1,22 @@
 use ndarray::ArrayViewMut1;
 
+/// Functions to apply to residuals for robust regression.
+/// 
+/// These functions are applied to the resiudals as part of the `cost` function:
+/// $\text{cost}(r) = \sqrt{f^2 \rho(z)}$,
+/// where $r$ is the residual, $\rho$ is the loss function, 
+/// $f$ is the scaling factor, and $z = \frac{r^2}{f^2}$.
 #[derive(Clone, Debug, Copy)]
 pub enum Loss {
+    /// Linear: $\rho(z) = z$
     Linear,
+    /// Soft L1: $\rho(z) = 2 (\sqrt{1 + z} - 1)$
     SoftL1(f64),
+    /// Huber: $\rho(z) = z$ if $z <= 1$, else $2 \sqrt{z} - 1$
     Huber(f64),
+    /// Cauchy: $\rho(z) = \ln(1 + z)$
     Cauchy(f64),
+    /// Arctan: $\rho(z) = \arctan(z)$
     Arctan(f64),
 }
 
@@ -23,6 +34,7 @@ impl Loss {
         Self::Arctan(scaling_factor)
     }
 
+    /// Apply function to array of residuals.
     pub fn apply(&self, res: &mut ArrayViewMut1<f64>) {
         match self {
             Self::Linear => (),
