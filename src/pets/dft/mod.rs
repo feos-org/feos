@@ -143,6 +143,16 @@ impl FluidParameters for PetsFunctional {
 
 impl PairPotential for PetsFunctional {
     fn pair_potential(&self, i: usize, r: &Array1<f64>, _: f64) -> Array2<f64> {
-        todo!()
+        let eps_ij_4 = 4.0 * self.epsilon_k_ij;
+        let shift_ij = eps_ij_4 * (2.5.powi(-12) - 2.5.powi(-6));
+        let rc_ij = 2.5 * self.parameters.sigma_ij;
+        Array::from_shape_fn((self.parameters.m.len(), r.len()), |(j, k)| {
+            if r[k] > rc_ij[[i, j]] {
+                0.0
+            } else {
+                let att = (self.parameters.sigma_ij[[i, j]] / r[k]).powi(6);
+                eps_ij_4[[i, j]] * att * (att - 1.0) - shift_ij[[i, j]]
+            }
+        })
     }
 }
