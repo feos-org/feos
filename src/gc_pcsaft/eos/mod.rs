@@ -7,12 +7,10 @@ use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
 use std::rc::Rc;
 
-// pub(crate) mod association;
 pub(crate) mod dispersion;
 mod hard_chain;
 pub(crate) mod parameter;
 mod polar;
-// use association::{Association, CrossAssociation};
 use dispersion::Dispersion;
 use hard_chain::HardChain;
 pub use parameter::{GcPcSaftChemicalRecord, GcPcSaftEosParameters};
