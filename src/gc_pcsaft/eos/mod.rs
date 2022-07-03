@@ -7,13 +7,11 @@ use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
 use std::rc::Rc;
 
-// pub(crate) mod association;
 pub(crate) mod dispersion;
 mod hard_chain;
 mod hard_sphere;
 pub(crate) mod parameter;
 mod polar;
-// use association::{Association, CrossAssociation};
 use dispersion::Dispersion;
 use hard_chain::HardChain;
 use hard_sphere::HardSphere;

@@ -125,7 +125,6 @@ impl ParameterHetero for GcPcSaftFunctionalParameters {
         // Association
         let sigma = Array1::from_vec(sigma);
         let component_index = Array1::from_vec(component_index);
-        println!("{}", component_index);
         let association =
             AssociationParameters::new(&association_records, &sigma, Some(&component_index));
 
