@@ -4,11 +4,11 @@
 #[cfg(feature = "dft")]
 mod dft;
 mod eos;
-mod parameters;
+pub(crate) mod parameters;
 
 #[cfg(feature = "dft")]
 pub use dft::PcSaftFunctional;
-pub use eos::{PcSaft, PcSaftOptions};
+pub use eos::{DQVariants, PcSaft, PcSaftOptions};
 pub use parameters::{PcSaftParameters, PcSaftRecord};
 
 #[cfg(feature = "python")]

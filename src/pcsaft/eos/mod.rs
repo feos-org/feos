@@ -5,21 +5,20 @@ use feos_core::{
     Contributions, EntropyScaling, EosError, EosResult, EquationOfState, HelmholtzEnergy,
     IdealGasContribution, MolarWeight, State,
 };
-use feos_saft::HardSphere;
+use feos_saft::{Association, HardSphere};
 use ndarray::Array1;
 use quantity::si::*;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::rc::Rc;
 
-pub(crate) mod association;
 pub(crate) mod dispersion;
 pub(crate) mod hard_chain;
 pub(crate) mod polar;
 mod qspr;
-use association::{Association, CrossAssociation};
 use dispersion::Dispersion;
 use hard_chain::HardChain;
-use polar::{DQVariants, Dipole, DipoleQuadrupole, Quadrupole};
+pub use polar::DQVariants;
+use polar::{Dipole, DipoleQuadrupole, Quadrupole};
 use qspr::QSPR;
 
 #[allow(clippy::upper_case_acronyms)]
@@ -88,16 +87,13 @@ impl PcSaft {
                 variant: options.dq_variant,
             }));
         };
-        match parameters.nassoc {
-            0 => (),
-            1 => contributions.push(Box::new(Association {
-                parameters: parameters.clone(),
-            })),
-            _ => contributions.push(Box::new(CrossAssociation {
-                parameters: parameters.clone(),
-                max_iter: options.max_iter_cross_assoc,
-                tol: options.tol_cross_assoc,
-            })),
+        if !parameters.association.assoc_comp.is_empty() {
+            contributions.push(Box::new(Association::new(
+                &parameters,
+                &parameters.association,
+                options.max_iter_cross_assoc,
+                options.tol_cross_assoc,
+            )));
         };
 
         let joback_records = parameters.joback_records.clone();

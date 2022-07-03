@@ -22,8 +22,10 @@ feos-core = { version = "0.3", path = "../feos-core" }
 feos-dft = { version = "0.2", path = "../feos-dft", optional = true }
 ndarray = { version = "0.15", features = ["serde"] }
 pyo3 = { version = "0.16", optional = true }
+serde = "1.0"
 
 [features]
-default = []
+default = ["association"]
+association = []
 dft = ["feos-dft"]
 python = ["pyo3"]

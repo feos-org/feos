@@ -3,7 +3,7 @@ use feos_core::parameter::ParameterHetero;
 use feos_core::MolarWeight;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
-use feos_saft::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
+use feos_saft::{Association, FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use ndarray::Array1;
 use num_dual::DualNum;
 use petgraph::graph::UnGraph;
@@ -11,11 +11,11 @@ use quantity::si::{SIArray1, SIUnit, GRAM, MOL};
 use std::f64::consts::FRAC_PI_6;
 use std::rc::Rc;
 
-mod association;
+// mod association;
 mod dispersion;
 mod hard_chain;
 mod parameter;
-use association::AssociationFunctional;
+// use association::AssociationFunctional;
 use dispersion::AttractiveFunctional;
 use hard_chain::ChainFunctional;
 pub use parameter::GcPcSaftFunctionalParameters;
@@ -57,9 +57,10 @@ impl GcPcSaftFunctional {
         contributions.push(Box::new(att));
 
         // Association
-        if !parameters.assoc_segment.is_empty() {
-            let assoc = AssociationFunctional::new(
+        if !parameters.association.assoc_comp.is_empty() {
+            let assoc = Association::new(
                 &parameters,
+                &parameters.association,
                 saft_options.max_iter_cross_assoc,
                 saft_options.tol_cross_assoc,
             );
@@ -129,7 +130,10 @@ impl HardSphereProperties for GcPcSaftFunctionalParameters {
     }
 
     fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
-        self.hs_diameter(temperature)
+        let ti = temperature.recip() * -3.0;
+        Array1::from_shape_fn(self.sigma.len(), |i| {
+            -((ti * self.epsilon_k[i]).exp() * 0.12 - 1.0) * self.sigma[i]
+        })
     }
 }
 

@@ -1,14 +1,13 @@
-use super::association::N0_CUTOFF;
 use super::polar::{pair_integral_ij, triplet_integral_ijk};
 use super::PcSaftParameters;
-use crate::pcsaft::eos::association::{assoc_site_frac_a, assoc_site_frac_ab};
+// use crate::association::dft::N0_CUTOFF;
 use crate::pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
 use crate::pcsaft::eos::polar::{AD, AQ, BD, BQ, CD, CQ, PI_SQ_43};
 use feos_core::{EosError, EosResult};
 use feos_dft::{
     FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
 };
-use feos_saft::{FMTVersion, HardSphereProperties};
+use feos_saft::{Association, FMTVersion, HardSphereProperties};
 use ndarray::*;
 use num_dual::*;
 use std::f64::consts::{FRAC_PI_6, PI};
@@ -17,6 +16,7 @@ use std::rc::Rc;
 
 const PI36M1: f64 = 1.0 / (36.0 * PI);
 const N3_CUTOFF: f64 = 1e-5;
+const N0_CUTOFF: f64 = 1e-9;
 
 #[derive(Clone)]
 pub struct PureFMTAssocFunctional {
@@ -112,7 +112,8 @@ impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for PureFMTA
         let mut phi = -(&n0 * &ln31) + n1n2 * &n3m1rec + n2n2 * n2 * PI36M1 * f3;
 
         // association
-        if p.nassoc == 1 {
+        let a = &p.association;
+        if a.assoc_comp.len() == 1 {
             let mut xi = -(&n2v * &n2v).sum_axis(Axis(0)) / (&n2 * &n2) + 1.0;
             xi.iter_mut().zip(&n2).for_each(|(xi, &n2)| {
                 if n2.re() < N0_CUTOFF * 4.0 * PI * p.m[0] * r.re().powi(2) {
@@ -122,19 +123,22 @@ impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for PureFMTA
 
             let k = &n2 * &n3m1rec * r;
             let deltarho = (((&k / 18.0 + 0.5) * &k * &xi + 1.0) * n3m1rec)
-                * ((temperature.recip() * p.epsilon_k_aibj[(0, 0)]).exp_m1()
-                    * (p.sigma[0].powi(3) * p.kappa_aibj[(0, 0)]))
+                * ((temperature.recip() * a.epsilon_k_aibj[(0, 0)]).exp_m1()
+                    * a.sigma3_kappa_aibj[(0, 0)])
                 * (&n0 / p.m[0] * &xi);
 
             let f = |x: N| x.ln() - x * 0.5 + 0.5;
             phi = phi
-                + if p.nb[0] > 0.0 {
-                    let xa = deltarho.mapv(|d| assoc_site_frac_ab(d, p.na[0], p.nb[0]));
-                    let xb = (xa.clone() - 1.0) * p.na[0] / p.nb[0] + 1.0;
-                    (n0 / p.m[0] * xi) * (xa.mapv(f) * p.na[0] + xb.mapv(f) * p.nb[0])
+                + if a.nb[0] > 0.0 {
+                    let xa = deltarho.mapv(|d| {
+                        Association::<PcSaftParameters>::assoc_site_frac_ab(d, a.na[0], a.nb[0])
+                    });
+                    let xb = (xa.clone() - 1.0) * a.na[0] / a.nb[0] + 1.0;
+                    (n0 / p.m[0] * xi) * (xa.mapv(f) * a.na[0] + xb.mapv(f) * a.nb[0])
                 } else {
-                    let xa = deltarho.mapv(|d| assoc_site_frac_a(d, p.na[0]));
-                    n0 / p.m[0] * xi * (xa.mapv(f) * p.na[0])
+                    let xa = deltarho
+                        .mapv(|d| Association::<PcSaftParameters>::assoc_site_frac_a(d, a.na[0]));
+                    n0 / p.m[0] * xi * (xa.mapv(f) * a.na[0])
                 };
         }
 

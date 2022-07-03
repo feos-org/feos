@@ -47,11 +47,11 @@ optional = true
 approx = "0.4"
 
 [features]
-default = []
+default = ["pcsaft", "dft", "gc_pcsaft"]
 dft = ["feos-dft", "petgraph", "feos-saft?/dft"]
 estimator = []
-pcsaft = ["feos-saft"]
-gc_pcsaft = ["feos-saft"]
+pcsaft = ["feos-saft/association"]
+gc_pcsaft = ["feos-saft/association"]
 uvtheory = ["lazy_static"]
 pets = []
 python = ["pyo3", "numpy", "feos-core/python", "feos-dft?/python", "feos-saft?/python"]

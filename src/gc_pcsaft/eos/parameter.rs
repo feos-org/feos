@@ -4,7 +4,7 @@ use feos_core::parameter::{
     BinaryRecord, ChemicalRecord, FromSegments, Identifier, ParameterError, ParameterHetero,
     SegmentCount, SegmentRecord,
 };
-use feos_saft::{HardSphereProperties, MonomerShape};
+use feos_saft::{AssociationParameters, HardSphereProperties, MonomerShape};
 use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
@@ -67,12 +67,7 @@ pub struct GcPcSaftEosParameters {
     pub epsilon_k: Array1<f64>,
     pub bonds: IndexMap<[usize; 2], f64>,
 
-    pub assoc_segment: Array1<usize>,
-    pub n: Array1<f64>,
-    kappa_ab: Array1<f64>,
-    epsilon_k_ab: Array1<f64>,
-    pub na: Array1<f64>,
-    pub nb: Array1<f64>,
+    pub association: AssociationParameters,
 
     pub dipole_comp: Array1<usize>,
     mu: Array1<f64>,
@@ -84,8 +79,6 @@ pub struct GcPcSaftEosParameters {
     pub k_ij: Array2<f64>,
     pub sigma_ij: Array2<f64>,
     pub epsilon_k_ij: Array2<f64>,
-    pub sigma3_kappa_aibj: Array2<f64>,
-    pub epsilon_k_aibj: Array2<f64>,
 
     pub chemical_records: Vec<GcPcSaftChemicalRecord>,
     segment_records: Vec<SegmentRecord<GcPcSaftRecord, JobackRecord>>,
@@ -113,12 +106,7 @@ impl ParameterHetero for GcPcSaftEosParameters {
         let mut sigma = Vec::new();
         let mut epsilon_k = Vec::new();
         let mut bonds = IndexMap::with_capacity(segment_records.len());
-        let mut assoc_segment = Vec::new();
-        let mut n = Vec::new();
-        let mut kappa_ab = Vec::new();
-        let mut epsilon_k_ab = Vec::new();
-        let mut na = Vec::new();
-        let mut nb = Vec::new();
+        let mut association_records = Vec::new();
 
         let mut dipole_comp = Vec::new();
         let mut mu = Vec::new();
@@ -132,16 +120,6 @@ impl ParameterHetero for GcPcSaftEosParameters {
         for (i, chemical_record) in chemical_records.iter().cloned().enumerate() {
             let mut segment_indices = IndexMap::with_capacity(segment_records.len());
             let segment_map = chemical_record.segment_map(&segment_records)?;
-            // let count: IndexMap<_, _> = chemical_record
-            //     .segments
-            //     .iter()
-            //     .map(|(id, &count)| {
-            //         let segment = segment_map
-            //             .get(id)
-            //             .ok_or_else(|| ParameterError::ComponentsNotFound(id.clone()))?;
-            //         Ok((segment, count))
-            //     })
-            //     .collect::<Result<_, ParameterError>>()?;
 
             let mut m_i = 0.0;
             let mut sigma_i = 0.0;
@@ -159,17 +137,12 @@ impl ParameterHetero for GcPcSaftEosParameters {
                 sigma.push(segment.model_record.sigma);
                 epsilon_k.push(segment.model_record.epsilon_k);
 
-                if let (Some(k), Some(e)) = (
-                    segment.model_record.kappa_ab,
-                    segment.model_record.epsilon_k_ab,
-                ) {
-                    assoc_segment.push(m.len() - 1);
-                    n.push(count);
-                    kappa_ab.push(k);
-                    epsilon_k_ab.push(e);
-                    na.push(segment.model_record.na.unwrap_or(1.0));
-                    nb.push(segment.model_record.nb.unwrap_or(1.0));
-                }
+                let mut assoc = segment.model_record.association_record.clone();
+                if let Some(mut assoc) = assoc.as_mut() {
+                    assoc.na *= count;
+                    assoc.nb *= count;
+                };
+                association_records.push(assoc);
 
                 m_i += segment.model_record.m * count;
                 sigma_i += segment.model_record.m * segment.model_record.sigma.powi(3) * count;
@@ -252,28 +225,20 @@ impl ParameterHetero for GcPcSaftEosParameters {
         });
 
         // Association
-        let sigma3_kappa_aibj = Array2::from_shape_fn([kappa_ab.len(); 2], |(i, j)| {
-            (sigma[assoc_segment[i]] * sigma[assoc_segment[j]]).powf(1.5)
-                * (kappa_ab[i] * kappa_ab[j]).sqrt()
-        });
-        let epsilon_k_aibj = Array2::from_shape_fn([epsilon_k_ab.len(); 2], |(i, j)| {
-            0.5 * (epsilon_k_ab[i] + epsilon_k_ab[j])
-        });
+        let sigma = Array1::from_vec(sigma);
+        let component_index = Array1::from_vec(component_index);
+        let association =
+            AssociationParameters::new(&association_records, &sigma, Some(&component_index));
 
         Ok(Self {
             molarweight,
-            component_index: Array1::from_vec(component_index),
+            component_index,
             identifiers,
-            n: Array1::from_vec(n),
             m: Array1::from_vec(m),
-            sigma: Array1::from_vec(sigma),
+            sigma,
             epsilon_k: Array1::from_vec(epsilon_k),
             bonds,
-            assoc_segment: Array1::from_vec(assoc_segment),
-            kappa_ab: Array1::from_vec(kappa_ab),
-            epsilon_k_ab: Array1::from_vec(epsilon_k_ab),
-            na: Array1::from_vec(na),
-            nb: Array1::from_vec(nb),
+            association,
             dipole_comp: Array1::from_vec(dipole_comp),
             mu: Array1::from_vec(mu),
             mu2: Array1::from_vec(mu2),
@@ -283,8 +248,6 @@ impl ParameterHetero for GcPcSaftEosParameters {
             k_ij,
             sigma_ij,
             epsilon_k_ij,
-            sigma3_kappa_aibj,
-            epsilon_k_aibj,
             chemical_records,
             segment_records,
             binary_segment_records,
@@ -327,7 +290,7 @@ impl GcPcSaftEosParameters {
         let o = &mut output;
         write!(
             o,
-            "|component|molarweight|dipole moment|segment|count|$m$|$\\sigma$|$\\varepsilon$|$\\kappa_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|$\\mu$|$Q$|\n|-|-|-|-|-|-|-|-|-|-|-|-|-|-|"
+            "|component|molarweight|dipole moment|group|$m$|$\\sigma$|$\\varepsilon$|$\\kappa_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|\n|-|-|-|-|-|-|-|-|-|-|-|"
         )
         .unwrap();
         for i in 0..self.m.len() {
@@ -339,7 +302,7 @@ impl GcPcSaftEosParameters {
                     "{}|{}|{}",
                     pure.name
                         .as_ref()
-                        .unwrap_or(&format!("Component {}", i + 1)),
+                        .unwrap_or(&format!("Component {}", self.component_index[i] + 1)),
                     self.molarweight[self.component_index[i]],
                     if let Some(d) = self.dipole_comp.iter().position(|&d| d == i) {
                         format!("{}", self.mu[d])
@@ -348,20 +311,23 @@ impl GcPcSaftEosParameters {
                     }
                 )
             };
-            let association = if let Some(a) = self.assoc_segment.iter().position(|&a| a == i) {
-                format!(
-                    "{}|{}|{}|{}",
-                    self.kappa_ab[a], self.epsilon_k_ab[a], self.na[a], self.nb[a]
-                )
-            } else {
-                "|||".to_string()
-            };
+            let association =
+                if let Some(a) = self.association.assoc_comp.iter().position(|&a| a == i) {
+                    format!(
+                        "{}|{}|{}|{}",
+                        self.association.kappa_ab[a],
+                        self.association.epsilon_k_ab[a],
+                        self.association.na[a],
+                        self.association.nb[a]
+                    )
+                } else {
+                    "|||".to_string()
+                };
             write!(
                 o,
-                "\n|{}|{}|{}|{}|{}|{}|{}|||",
+                "\n|{}|{}|{}|{}|{}|{}|",
                 component,
                 self.identifiers[i],
-                self.n[i],
                 self.m[i],
                 self.sigma[i],
                 self.epsilon_k[i],
@@ -369,7 +335,7 @@ impl GcPcSaftEosParameters {
             )
             .unwrap();
         }
-        write!(o, "\n\n|component|segment 1|segment 2|bonds|\n|-|-|-|-|").unwrap();
+        write!(o, "\n\n|component|group 1|group 2|bonds|\n|-|-|-|-|").unwrap();
 
         let mut last_component = None;
         for ([c1, c2], &c) in &self.bonds {
@@ -411,13 +377,13 @@ impl std::fmt::Display for GcPcSaftEosParameters {
         write!(f, "\n\tsigma={}", self.sigma)?;
         write!(f, "\n\tepsilon_k={}", self.epsilon_k)?;
         write!(f, "\n\tbonds={:?}", self.bonds)?;
-        if !self.assoc_segment.is_empty() {
-            write!(f, "\n\tassoc_segment={}", self.assoc_segment)?;
-            write!(f, "\n\tkappa_ab={}", self.kappa_ab)?;
-            write!(f, "\n\tepsilon_k_ab={}", self.epsilon_k_ab)?;
-            write!(f, "\n\tna={}", self.na)?;
-            write!(f, "\n\tnb={}", self.nb)?;
-        }
+        // if !self.assoc_segment.is_empty() {
+        //     write!(f, "\n\tassoc_segment={}", self.assoc_segment)?;
+        //     write!(f, "\n\tkappa_ab={}", self.kappa_ab)?;
+        //     write!(f, "\n\tepsilon_k_ab={}", self.epsilon_k_ab)?;
+        //     write!(f, "\n\tna={}", self.na)?;
+        //     write!(f, "\n\tnb={}", self.nb)?;
+        // }
         if !self.dipole_comp.is_empty() {
             write!(f, "\n\tdipole_comp={}", self.dipole_comp)?;
             write!(f, "\n\tmu={}", self.mu)?;
@@ -430,12 +396,13 @@ impl std::fmt::Display for GcPcSaftEosParameters {
 pub mod test {
     use super::*;
     use feos_core::parameter::{ChemicalRecord, Identifier};
+    use feos_saft::AssociationRecord;
 
     fn ch3() -> SegmentRecord<GcPcSaftRecord, JobackRecord> {
         SegmentRecord::new(
             "CH3".into(),
             15.0,
-            GcPcSaftRecord::new(0.77247, 3.6937, 181.49, None, None, None, None, None, None),
+            GcPcSaftRecord::new(0.77247, 3.6937, 181.49, None, None, None),
             None,
         )
     }
@@ -444,7 +411,7 @@ pub mod test {
         SegmentRecord::new(
             "CH2".into(),
             14.0,
-            GcPcSaftRecord::new(0.7912, 3.0207, 157.23, None, None, None, None, None, None),
+            GcPcSaftRecord::new(0.7912, 3.0207, 157.23, None, None, None),
             None,
         )
     }
@@ -458,10 +425,7 @@ pub mod test {
                 2.7702,
                 334.29,
                 None,
-                Some(0.009583),
-                Some(2575.9),
-                None,
-                None,
+                Some(AssociationRecord::new(0.009583, 2575.9, 1.0, 1.0)),
                 None,
             ),
             None,

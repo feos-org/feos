@@ -4,6 +4,7 @@ use feos_core::EosError;
 use feos_dft::{
     FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
 };
+use feos_saft::HardSphereProperties;
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_6, PI};

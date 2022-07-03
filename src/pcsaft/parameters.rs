@@ -3,7 +3,7 @@ use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     FromSegments, FromSegmentsBinary, Parameter, ParameterError, PureRecord,
 };
-use feos_saft::{HardSphereProperties, MonomerShape};
+use feos_saft::{AssociationParameters, AssociationRecord, HardSphereProperties, MonomerShape};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;
@@ -27,18 +27,9 @@ pub struct PcSaftRecord {
     /// Quadrupole moment in units of Debye
     #[serde(skip_serializing_if = "Option::is_none")]
     pub q: Option<f64>,
-    /// Association volume parameter
+    /// Association parameters
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub kappa_ab: Option<f64>,
-    /// Association energy parameter in units of Kelvin
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub epsilon_k_ab: Option<f64>,
-    /// \# of association sites of type A
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub na: Option<f64>,
-    /// \# of association sites of type B
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nb: Option<f64>,
+    pub association_record: Option<AssociationRecord>,
     /// Entropy scaling coefficients for the viscosity
     #[serde(skip_serializing_if = "Option::is_none")]
     pub viscosity: Option<[f64; 4]>,
@@ -70,22 +61,22 @@ impl FromSegments<f64> for PcSaftRecord {
             .iter()
             .filter_map(|(s, n)| s.mu.map(|mu| mu * n))
             .reduce(|a, b| a + b);
-        let kappa_ab = segments
+        let association_record = segments
             .iter()
-            .filter_map(|(s, n)| s.kappa_ab.map(|k| k * n))
-            .reduce(|a, b| a + b);
-        let epsilon_k_ab = segments
-            .iter()
-            .filter_map(|(s, n)| s.epsilon_k_ab.map(|e| e * n))
-            .reduce(|a, b| a + b);
-        let na = segments
-            .iter()
-            .filter_map(|(s, n)| s.na.map(|na| na * n))
-            .reduce(|a, b| a + b);
-        let nb = segments
-            .iter()
-            .filter_map(|(s, n)| s.nb.map(|nb| nb * n))
-            .reduce(|a, b| a + b);
+            .filter_map(|(s, n)| {
+                s.association_record.as_ref().map(|record| {
+                    [
+                        record.kappa_ab * n,
+                        record.epsilon_k_ab * n,
+                        record.na * n,
+                        record.nb * n,
+                    ]
+                })
+            })
+            .reduce(|a, b| [a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]])
+            .map(|[kappa_ab, epsilon_k_ab, na, nb]| {
+                AssociationRecord::new(kappa_ab, epsilon_k_ab, na, nb)
+            });
 
         // entropy scaling
         let mut viscosity = if segments
@@ -147,10 +138,7 @@ impl FromSegments<f64> for PcSaftRecord {
             epsilon_k: epsilon_k / m,
             mu,
             q,
-            kappa_ab,
-            epsilon_k_ab,
-            na,
-            nb,
+            association_record,
             viscosity,
             diffusion,
             thermal_conductivity,
@@ -173,18 +161,9 @@ impl FromSegments<usize> for PcSaftRecord {
                 "{dipole_comps} segment with dipole moment."
             )));
         };
-        let faulty_assoc_comps = segments
-            .iter()
-            .filter_map(|(s, _)| s.kappa_ab.xor(s.epsilon_k_ab))
-            .count();
-        if faulty_assoc_comps > 0 {
-            return Err(ParameterError::IncompatibleParameters(format!(
-                "Incorrectly specified association sites on {faulty_assoc_comps} segment(s)"
-            )));
-        }
         let assoc_comps = segments
             .iter()
-            .filter_map(|(s, _)| s.kappa_ab.and(s.epsilon_k_ab))
+            .filter_map(|(s, _)| s.association_record.as_ref())
             .count();
         if assoc_comps > 1 {
             return Err(ParameterError::IncompatibleParameters(format!(
@@ -211,17 +190,8 @@ impl std::fmt::Display for PcSaftRecord {
         if let Some(n) = &self.q {
             write!(f, ", q={}", n)?;
         }
-        if let Some(n) = &self.kappa_ab {
-            write!(f, ", kappa_ab={}", n)?;
-        }
-        if let Some(n) = &self.epsilon_k_ab {
-            write!(f, ", epsilon_k_ab={}", n)?;
-        }
-        if let Some(n) = &self.na {
-            write!(f, ", na={}", n)?;
-        }
-        if let Some(n) = &self.nb {
-            write!(f, ", nb={}", n)?;
+        if let Some(n) = &self.association_record {
+            write!(f, ", association_record={}", n)?;
         }
         if let Some(n) = &self.viscosity {
             write!(f, ", viscosity={:?}", n)?;
@@ -243,10 +213,7 @@ impl PcSaftRecord {
         epsilon_k: f64,
         mu: Option<f64>,
         q: Option<f64>,
-        kappa_ab: Option<f64>,
-        epsilon_k_ab: Option<f64>,
-        na: Option<f64>,
-        nb: Option<f64>,
+        association_record: Option<AssociationRecord>,
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
@@ -257,10 +224,7 @@ impl PcSaftRecord {
             epsilon_k,
             mu,
             q,
-            kappa_ab,
-            epsilon_k_ab,
-            na,
-            nb,
+            association_record,
             viscosity,
             diffusion,
             thermal_conductivity,
@@ -311,22 +275,15 @@ pub struct PcSaftParameters {
     pub q: Array1<f64>,
     pub mu2: Array1<f64>,
     pub q2: Array1<f64>,
-    pub kappa_ab: Array1<f64>,
-    pub epsilon_k_ab: Array1<f64>,
-    pub na: Array1<f64>,
-    pub nb: Array1<f64>,
-    pub kappa_aibj: Array2<f64>,
-    pub epsilon_k_aibj: Array2<f64>,
+    pub association: AssociationParameters,
     pub k_ij: Array2<f64>,
     pub sigma_ij: Array2<f64>,
     pub epsilon_k_ij: Array2<f64>,
     pub e_k_ij: Array2<f64>,
     pub ndipole: usize,
     pub nquadpole: usize,
-    pub nassoc: usize,
     pub dipole_comp: Array1<usize>,
     pub quadpole_comp: Array1<usize>,
-    pub assoc_comp: Array1<usize>,
     pub viscosity: Option<Array2<f64>>,
     pub diffusion: Option<Array2<f64>>,
     pub thermal_conductivity: Option<Array2<f64>>,
@@ -352,10 +309,7 @@ impl Parameter for PcSaftParameters {
         let mut epsilon_k = Array::zeros(n);
         let mut mu = Array::zeros(n);
         let mut q = Array::zeros(n);
-        let mut na = Array::zeros(n);
-        let mut nb = Array::zeros(n);
-        let mut kappa_ab = Array::zeros(n);
-        let mut epsilon_k_ab = Array::zeros(n);
+        let mut association_records = Vec::with_capacity(n);
         let mut viscosity = Vec::with_capacity(n);
         let mut diffusion = Vec::with_capacity(n);
         let mut thermal_conductivity = Vec::with_capacity(n);
@@ -370,10 +324,7 @@ impl Parameter for PcSaftParameters {
             epsilon_k[i] = r.epsilon_k;
             mu[i] = r.mu.unwrap_or(0.0);
             q[i] = r.q.unwrap_or(0.0);
-            na[i] = r.na.unwrap_or(1.0);
-            nb[i] = r.nb.unwrap_or(1.0);
-            kappa_ab[i] = r.kappa_ab.unwrap_or(0.0);
-            epsilon_k_ab[i] = r.epsilon_k_ab.unwrap_or(0.0);
+            association_records.push(r.association_record.clone());
             viscosity.push(r.viscosity);
             diffusion.push(r.diffusion);
             thermal_conductivity.push(r.thermal_conductivity);
@@ -398,24 +349,8 @@ impl Parameter for PcSaftParameters {
             .filter_map(|(i, &q2)| (q2.abs() > 0.0).then(|| i))
             .collect();
         let nquadpole = quadpole_comp.len();
-        let assoc_comp: Array1<usize> = kappa_ab
-            .iter()
-            .enumerate()
-            .filter_map(|(i, &k)| (k.abs() > 0.0).then(|| i))
-            .collect();
-        let nassoc = assoc_comp.len();
 
-        let mut kappa_aibj = Array::zeros([n, n]);
-        let mut epsilon_k_aibj = Array::zeros([n, n]);
-        for i in 0..nassoc {
-            for j in 0..nassoc {
-                let ai = assoc_comp[i];
-                let bj = assoc_comp[j];
-                kappa_aibj[[ai, bj]] = (kappa_ab[ai] * kappa_ab[bj]).sqrt()
-                    * (2.0 * (sigma[ai] * sigma[bj]).sqrt() / (sigma[ai] + sigma[bj])).powf(3.0);
-                epsilon_k_aibj[[ai, bj]] = 0.5 * (epsilon_k_ab[ai] + epsilon_k_ab[bj]);
-            }
-        }
+        let association = AssociationParameters::new(&association_records, &sigma, None);
 
         let k_ij = binary_records.map(|br| br.k_ij);
         let mut epsilon_k_ij = Array::zeros((n, n));
@@ -474,22 +409,15 @@ impl Parameter for PcSaftParameters {
             q,
             mu2,
             q2,
-            kappa_ab,
-            epsilon_k_ab,
-            na,
-            nb,
-            kappa_aibj,
-            epsilon_k_aibj,
+            association,
             k_ij,
             sigma_ij,
             epsilon_k_ij,
             e_k_ij,
             ndipole,
             nquadpole,
-            nassoc,
             dipole_comp,
             quadpole_comp,
-            assoc_comp,
             viscosity: viscosity_coefficients,
             diffusion: diffusion_coefficients,
             thermal_conductivity: thermal_conductivity_coefficients,
@@ -531,23 +459,28 @@ impl PcSaftParameters {
             "|component|molarweight|$m$|$\\sigma$|$\\varepsilon$|$\\mu$|$Q$|$\\kappa_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|\n|-|-|-|-|-|-|-|-|-|-|-|"
         )
         .unwrap();
-        for i in 0..self.m.len() {
-            let component = self.pure_records[i].identifier.name.clone();
+        for (i, record) in self.pure_records.iter().enumerate() {
+            let component = record.identifier.name.clone();
             let component = component.unwrap_or(format!("Component {}", i + 1));
+            let association = record
+                .model_record
+                .association_record
+                .clone()
+                .unwrap_or_else(|| AssociationRecord::new(0.0, 0.0, 0.0, 0.0));
             write!(
                 o,
                 "\n|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|",
                 component,
-                self.molarweight[i],
-                self.m[i],
-                self.sigma[i],
-                self.epsilon_k[i],
-                self.mu[i],
-                self.q[i],
-                self.kappa_ab[i],
-                self.epsilon_k_ab[i],
-                self.na[i],
-                self.nb[i]
+                record.molarweight,
+                record.model_record.m,
+                record.model_record.sigma,
+                record.model_record.epsilon_k,
+                record.model_record.mu.unwrap_or(0.0),
+                record.model_record.q.unwrap_or(0.0),
+                association.kappa_ab,
+                association.epsilon_k_ab,
+                association.na,
+                association.nb
             )
             .unwrap();
         }
@@ -569,12 +502,12 @@ impl std::fmt::Display for PcSaftParameters {
         if !self.quadpole_comp.is_empty() {
             write!(f, "\n\tq={}", self.q)?;
         }
-        if !self.assoc_comp.is_empty() {
-            write!(f, "\n\tkappa_ab={}", self.kappa_ab)?;
-            write!(f, "\n\tepsilon_k_ab={}", self.epsilon_k_ab)?;
-            write!(f, "\n\tna={}", self.na)?;
-            write!(f, "\n\tnb={}", self.nb)?;
-        }
+        // if !self.assoc_comp.is_empty() {
+        //     write!(f, "\n\tkappa_ab={}", self.kappa_ab)?;
+        //     write!(f, "\n\tepsilon_k_ab={}", self.epsilon_k_ab)?;
+        //     write!(f, "\n\tna={}", self.na)?;
+        //     write!(f, "\n\tnb={}", self.nb)?;
+        // }
         if !self.k_ij.iter().all(|k| k.is_zero()) {
             write!(f, "\n\tk_ij=\n{}", self.k_ij)?;
         }
@@ -909,8 +842,12 @@ pub mod utils {
                     "m": 1.065587,
                     "sigma": 3.000683,
                     "epsilon_k": 366.5121,
-                    "kappa_ab": 0.034867983,
-                    "epsilon_k_ab": 2500.6706
+                    "association_record": {
+                        "kappa_ab": 0.034867983,
+                        "epsilon_k_ab": 2500.6706,
+                        "na": 1.0,
+                        "nb": 1.0
+                    }
                 },
                 "molarweight": 18.0152
             }"#;
