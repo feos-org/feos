@@ -23,14 +23,11 @@ pub struct HardSphere {
 impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardSphere {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let diameter = self.parameters.hs_diameter(state.temperature);
-        let zeta = zeta(
-            &self.parameters,
-            &diameter,
-            &state.partial_density,
-            [0, 1, 2, 3],
-        );
+        let zeta = self
+            .parameters
+            .zeta(&diameter, &state.partial_density, [0, 1, 2, 3]);
         let frac_1mz3 = -(zeta[3] - 1.0).recip();
-        let zeta_23 = zeta_23(&self.parameters, &diameter, &state.molefracs);
+        let zeta_23 = self.parameters.zeta_23(&diameter, &state.molefracs);
         state.volume * 6.0 / std::f64::consts::PI
             * (zeta[1] * zeta[2] * frac_1mz3 * 3.0
                 + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
@@ -44,39 +41,37 @@ impl fmt::Display for HardSphere {
     }
 }
 
-pub(crate) fn zeta<D: DualNum<f64>, const N: usize>(
-    parameters: &GcPcSaftEosParameters,
-    diameter: &Array1<D>,
-    partial_density: &Array1<D>,
-    k: [i32; N],
-) -> [D; N] {
-    let mut zeta = [D::zero(); N];
-    for i in 0..parameters.m.len() {
-        for (z, &k) in zeta.iter_mut().zip(k.iter()) {
-            *z += partial_density[parameters.component_index[i]]
-                * diameter[i].powi(k)
-                * (FRAC_PI_6 * parameters.m[i]);
+impl GcPcSaftEosParameters {
+    pub(crate) fn zeta<D: DualNum<f64>, const N: usize>(
+        &self,
+        diameter: &Array1<D>,
+        partial_density: &Array1<D>,
+        k: [i32; N],
+    ) -> [D; N] {
+        let mut zeta = [D::zero(); N];
+        for i in 0..self.m.len() {
+            for (z, &k) in zeta.iter_mut().zip(k.iter()) {
+                *z += partial_density[self.component_index[i]]
+                    * diameter[i].powi(k)
+                    * (FRAC_PI_6 * self.m[i]);
+            }
         }
+
+        zeta
     }
 
-    zeta
-}
-
-fn zeta_23<D: DualNum<f64>>(
-    parameters: &GcPcSaftEosParameters,
-    diameter: &Array1<D>,
-    molefracs: &Array1<D>,
-) -> D {
-    let mut zeta: [D; 2] = [D::zero(); 2];
-    for i in 0..parameters.m.len() {
-        for (k, z) in zeta.iter_mut().enumerate() {
-            *z += molefracs[parameters.component_index[i]]
-                * diameter[i].powi((k + 2) as i32)
-                * (FRAC_PI_6 * parameters.m[i]);
+    fn zeta_23<D: DualNum<f64>>(&self, diameter: &Array1<D>, molefracs: &Array1<D>) -> D {
+        let mut zeta: [D; 2] = [D::zero(); 2];
+        for i in 0..self.m.len() {
+            for (k, z) in zeta.iter_mut().enumerate() {
+                *z += molefracs[self.component_index[i]]
+                    * diameter[i].powi((k + 2) as i32)
+                    * (FRAC_PI_6 * self.m[i]);
+            }
         }
-    }
 
-    zeta[0] / zeta[1]
+        zeta[0] / zeta[1]
+    }
 }
 
 #[cfg(test)]

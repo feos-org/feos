@@ -1,7 +1,8 @@
+use crate::association::AssociationRecord;
 use serde::{Deserialize, Serialize};
 
 /// gc-PC-SAFT pure-component parameters.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct GcPcSaftRecord {
     /// Segment shape factor
     pub m: f64,
@@ -10,27 +11,12 @@ pub struct GcPcSaftRecord {
     /// Energetic parameter in units of Kelvin
     pub epsilon_k: f64,
     /// Dipole moment in units of Debye
-    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mu: Option<f64>,
-    /// association volume parameter
-    #[serde(default)]
+    /// Association parameters
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub kappa_ab: Option<f64>,
-    /// association energy parameter
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub epsilon_k_ab: Option<f64>,
-    /// \# of association sites of type A
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub na: Option<f64>,
-    /// \# of association sites of type B
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nb: Option<f64>,
+    pub association_record: Option<AssociationRecord>,
     /// interaction range parameter for the dispersion functional
-    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub psi_dft: Option<f64>,
 }
@@ -41,10 +27,7 @@ impl GcPcSaftRecord {
         sigma: f64,
         epsilon_k: f64,
         mu: Option<f64>,
-        kappa_ab: Option<f64>,
-        epsilon_k_ab: Option<f64>,
-        na: Option<f64>,
-        nb: Option<f64>,
+        association_record: Option<AssociationRecord>,
         psi_dft: Option<f64>,
     ) -> Self {
         Self {
@@ -52,10 +35,7 @@ impl GcPcSaftRecord {
             sigma,
             epsilon_k,
             mu,
-            kappa_ab,
-            epsilon_k_ab,
-            na,
-            nb,
+            association_record,
             psi_dft,
         }
     }
@@ -69,17 +49,8 @@ impl std::fmt::Display for GcPcSaftRecord {
         if let Some(n) = &self.mu {
             write!(f, ", mu={}", n)?;
         }
-        if let Some(n) = &self.kappa_ab {
-            write!(f, ", kappa_ab={}", n)?;
-        }
-        if let Some(n) = &self.epsilon_k_ab {
-            write!(f, ", epsilon_k_ab={}", n)?;
-        }
-        if let Some(n) = &self.na {
-            write!(f, ", na={}", n)?;
-        }
-        if let Some(n) = &self.nb {
-            write!(f, ", nb={}", n)?;
+        if let Some(n) = &self.association_record {
+            write!(f, ", association_record={}", n)?;
         }
         write!(f, ")")
     }

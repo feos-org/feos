@@ -5,6 +5,8 @@
 pub mod estimator;
 
 // models
+#[cfg(feature = "association")]
+pub mod association;
 #[cfg(feature = "gc_pcsaft")]
 pub mod gc_pcsaft;
 #[cfg(feature = "pcsaft")]

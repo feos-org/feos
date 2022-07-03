@@ -1,4 +1,3 @@
-use super::hard_sphere::zeta;
 use super::GcPcSaftEosParameters;
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use num_dual::DualNum;
@@ -75,7 +74,7 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Dispersion {
 
         // packing fraction
         let diameter = p.hs_diameter(state.temperature);
-        let eta = zeta(p, &diameter, &state.partial_density, [3])[0];
+        let eta = p.zeta(&diameter, &state.partial_density, [3])[0];
 
         // mean segment number
         let m =

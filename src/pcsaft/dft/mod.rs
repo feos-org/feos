@@ -1,7 +1,6 @@
 use super::PcSaftParameters;
+use crate::association::Association;
 use crate::pcsaft::eos::PcSaftOptions;
-use association::AssociationFunctional;
-use dispersion::AttractiveFunctional;
 use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
 use feos_core::{IdealGasContribution, MolarWeight};
@@ -11,20 +10,20 @@ use feos_dft::fundamental_measure_theory::{
 };
 use feos_dft::solvation::PairPotential;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
-use hard_chain::ChainFunctional;
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::One;
-use pure_saft_functional::*;
 use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
 use std::rc::Rc;
 
-mod association;
 mod dispersion;
 mod hard_chain;
 mod polar;
 mod pure_saft_functional;
+use dispersion::AttractiveFunctional;
+use hard_chain::ChainFunctional;
+use pure_saft_functional::*;
 
 /// PC-SAFT Helmholtz energy functional.
 pub struct PcSaftFunctional {
@@ -80,9 +79,9 @@ impl PcSaftFunctional {
             contributions.push(Box::new(att));
 
             // Association
-            if parameters.nassoc > 0 {
-                let assoc = AssociationFunctional::new(
-                    parameters.clone(),
+            if !parameters.association.assoc_comp.is_empty() {
+                let assoc = Association::new(
+                    &parameters,
                     saft_options.max_iter_cross_assoc,
                     saft_options.tol_cross_assoc,
                 );

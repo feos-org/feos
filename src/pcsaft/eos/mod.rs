@@ -1,4 +1,5 @@
 use super::parameters::PcSaftParameters;
+use crate::association::Association;
 use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
 use feos_core::{
@@ -10,17 +11,16 @@ use quantity::si::*;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::rc::Rc;
 
-pub(crate) mod association;
 pub(crate) mod dispersion;
 pub(crate) mod hard_chain;
 pub(crate) mod hard_sphere;
 pub(crate) mod polar;
 mod qspr;
-use association::{Association, CrossAssociation};
 use dispersion::Dispersion;
 use hard_chain::HardChain;
 use hard_sphere::HardSphere;
-use polar::{DQVariants, Dipole, DipoleQuadrupole, Quadrupole};
+pub use polar::DQVariants;
+use polar::{Dipole, DipoleQuadrupole, Quadrupole};
 use qspr::QSPR;
 
 #[allow(clippy::upper_case_acronyms)]
@@ -89,16 +89,12 @@ impl PcSaft {
                 variant: options.dq_variant,
             }));
         };
-        match parameters.nassoc {
-            0 => (),
-            1 => contributions.push(Box::new(Association {
-                parameters: parameters.clone(),
-            })),
-            _ => contributions.push(Box::new(CrossAssociation {
-                parameters: parameters.clone(),
-                max_iter: options.max_iter_cross_assoc,
-                tol: options.tol_cross_assoc,
-            })),
+        if !parameters.association.assoc_comp.is_empty() {
+            contributions.push(Box::new(Association::new(
+                &parameters,
+                options.max_iter_cross_assoc,
+                options.tol_cross_assoc,
+            )));
         };
 
         let joback_records = parameters.joback_records.clone();

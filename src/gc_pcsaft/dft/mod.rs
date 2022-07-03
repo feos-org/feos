@@ -1,4 +1,5 @@
 use super::eos::GcPcSaftOptions;
+use crate::association::Association;
 use feos_core::parameter::ParameterHetero;
 use feos_core::MolarWeight;
 use feos_dft::adsorption::FluidParameters;
@@ -13,11 +14,11 @@ use quantity::si::{SIArray1, SIUnit, GRAM, MOL};
 use std::f64::consts::FRAC_PI_6;
 use std::rc::Rc;
 
-mod association;
+// mod association;
 mod dispersion;
 mod hard_chain;
 mod parameter;
-use association::AssociationFunctional;
+// use association::AssociationFunctional;
 use dispersion::AttractiveFunctional;
 use hard_chain::ChainFunctional;
 pub use parameter::GcPcSaftFunctionalParameters;
@@ -59,8 +60,8 @@ impl GcPcSaftFunctional {
         contributions.push(Box::new(att));
 
         // Association
-        if !parameters.assoc_segment.is_empty() {
-            let assoc = AssociationFunctional::new(
+        if !parameters.association.assoc_comp.is_empty() {
+            let assoc = Association::new(
                 &parameters,
                 saft_options.max_iter_cross_assoc,
                 saft_options.tol_cross_assoc,

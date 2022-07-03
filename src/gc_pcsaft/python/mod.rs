@@ -2,6 +2,7 @@
 use super::dft::GcPcSaftFunctionalParameters;
 use super::eos::GcPcSaftEosParameters;
 use super::record::GcPcSaftRecord;
+use crate::association::python::PyAssociationRecord;
 use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     BinaryRecord, IdentifierOption, ParameterError, ParameterHetero, SegmentRecord,
@@ -18,9 +19,7 @@ use std::rc::Rc;
 mod micelles;
 
 #[pyclass(name = "GcPcSaftRecord", unsendable)]
-#[pyo3(
-    text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None)"
-)]
+#[pyo3(text_signature = "(m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None)")]
 #[derive(Clone)]
 pub struct PyGcPcSaftRecord(GcPcSaftRecord);
 
@@ -32,10 +31,7 @@ impl PyGcPcSaftRecord {
         sigma: f64,
         epsilon_k: f64,
         mu: Option<f64>,
-        kappa_ab: Option<f64>,
-        epsilon_k_ab: Option<f64>,
-        na: Option<f64>,
-        nb: Option<f64>,
+        association_record: Option<PyAssociationRecord>,
         psi_dft: Option<f64>,
     ) -> Self {
         Self(GcPcSaftRecord::new(
@@ -43,12 +39,34 @@ impl PyGcPcSaftRecord {
             sigma,
             epsilon_k,
             mu,
-            kappa_ab,
-            epsilon_k_ab,
-            na,
-            nb,
+            association_record.map(|r| r.0),
             psi_dft,
         ))
+    }
+
+    #[getter]
+    fn get_m(&self) -> f64 {
+        self.0.m
+    }
+
+    #[getter]
+    fn get_sigma(&self) -> f64 {
+        self.0.sigma
+    }
+
+    #[getter]
+    fn get_epsilon_k(&self) -> f64 {
+        self.0.epsilon_k
+    }
+
+    #[getter]
+    fn get_mu(&self) -> Option<f64> {
+        self.0.mu
+    }
+
+    #[getter]
+    fn get_association_record(&self) -> Option<PyAssociationRecord> {
+        self.0.association_record.clone().map(PyAssociationRecord)
     }
 
     fn __repr__(&self) -> PyResult<String> {
@@ -99,9 +117,9 @@ impl_parameter_from_segments!(GcPcSaftFunctionalParameters, PyGcPcSaftFunctional
 #[cfg(feature = "dft")]
 #[pymethods]
 impl PyGcPcSaftFunctionalParameters {
-    fn _repr_markdown_(&self) -> String {
-        self.0.to_markdown()
-    }
+    // fn _repr_markdown_(&self) -> String {
+    //     self.0.to_markdown()
+    // }
 
     #[getter]
     fn get_graph(&self, py: Python) -> PyResult<PyObject> {
@@ -138,6 +156,7 @@ pub fn gc_pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PySegmentRecord>()?;
     m.add_class::<PyBinarySegmentRecord>()?;
     m.add_class::<PyGcPcSaftEosParameters>()?;
+    #[cfg(feature = "dft")]
     m.add_class::<PyGcPcSaftFunctionalParameters>()?;
     Ok(())
 }

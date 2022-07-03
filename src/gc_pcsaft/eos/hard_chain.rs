@@ -1,4 +1,3 @@
-use super::hard_sphere::zeta;
 use super::GcPcSaftEosParameters;
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use num_dual::*;
@@ -16,7 +15,9 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardChain {
         let diameter = self.parameters.hs_diameter(state.temperature);
 
         // Packing fractions
-        let [zeta2, zeta3] = zeta(&self.parameters, &diameter, &state.partial_density, [2, 3]);
+        let [zeta2, zeta3] = self
+            .parameters
+            .zeta(&diameter, &state.partial_density, [2, 3]);
 
         // Helmholtz energy
         let frac_1mz3 = -(zeta3 - 1.0).recip();

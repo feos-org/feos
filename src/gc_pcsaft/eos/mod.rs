@@ -1,3 +1,4 @@
+use crate::association::Association;
 use feos_core::joback::Joback;
 use feos_core::parameter::ParameterHetero;
 use feos_core::{EquationOfState, HelmholtzEnergy, IdealGasContribution, MolarWeight};
@@ -6,13 +7,13 @@ use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
 use std::rc::Rc;
 
-pub(crate) mod association;
+// pub(crate) mod association;
 pub(crate) mod dispersion;
 mod hard_chain;
 mod hard_sphere;
-mod parameter;
+pub(crate) mod parameter;
 mod polar;
-use association::{Association, CrossAssociation};
+// use association::{Association, CrossAssociation};
 use dispersion::Dispersion;
 use hard_chain::HardChain;
 use hard_sphere::HardSphere;
@@ -64,17 +65,13 @@ impl GcPcSaft {
         contributions.push(Box::new(Dispersion {
             parameters: parameters.clone(),
         }));
-        match parameters.assoc_segment.len() {
-            0 => (),
-            1 => contributions.push(Box::new(Association {
-                parameters: parameters.clone(),
-            })),
-            _ => contributions.push(Box::new(CrossAssociation {
-                parameters: parameters.clone(),
-                max_iter: options.max_iter_cross_assoc,
-                tol: options.tol_cross_assoc,
-            })),
-        };
+        if !parameters.association.assoc_comp.is_empty() {
+            contributions.push(Box::new(Association::new(
+                &parameters,
+                options.max_iter_cross_assoc,
+                options.tol_cross_assoc,
+            )));
+        }
         if !parameters.dipole_comp.is_empty() {
             contributions.push(Box::new(Dipole::new(&parameters)))
         }

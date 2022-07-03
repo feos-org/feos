@@ -70,7 +70,7 @@ pub struct QSPR {
 
 impl<D: DualNum<f64>> IdealGasContributionDual<D> for QSPR {
     fn de_broglie_wavelength(&self, temperature: D, components: usize) -> Array1<D> {
-        let (c_300, c_400) = match self.parameters.nassoc {
+        let (c_300, c_400) = match self.parameters.association.assoc_comp.len() {
             0 => match self.parameters.ndipole + self.parameters.nquadpole {
                 0 => (NA_NP_300, NA_NP_400),
                 _ => (NA_P_300, NA_P_400),
@@ -85,10 +85,13 @@ impl<D: DualNum<f64>> IdealGasContributionDual<D> for QSPR {
             let p1 = epsilon_kt * self.parameters.m[i];
             let p2 = sigma3 * self.parameters.m[i];
             let p3 = epsilon_kt * p2;
-            let p4 = (temperature.recip() * self.parameters.epsilon_k_ab[i]).exp_m1()
-                * p2
-                * sigma3
-                * self.parameters.kappa_ab[i];
+            let p4 = self.parameters.pure_records[i]
+                .model_record
+                .association_record
+                .as_ref()
+                .map_or(D::zero(), |a| {
+                    (temperature.recip() * a.epsilon_k_ab).exp_m1() * p2 * sigma3 * a.kappa_ab
+                });
             let p5 = p2 * self.parameters.q[i];
             let p6 = 1.0;
 
