@@ -1,6 +1,7 @@
 use feos_core::joback::Joback;
 use feos_core::parameter::ParameterHetero;
 use feos_core::{EquationOfState, HelmholtzEnergy, IdealGasContribution, MolarWeight};
+use feos_saft::HardSphere;
 use ndarray::Array1;
 use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
@@ -9,13 +10,11 @@ use std::rc::Rc;
 pub(crate) mod association;
 pub(crate) mod dispersion;
 mod hard_chain;
-mod hard_sphere;
 mod parameter;
 mod polar;
 use association::{Association, CrossAssociation};
 use dispersion::Dispersion;
 use hard_chain::HardChain;
-use hard_sphere::HardSphere;
 pub use parameter::{GcPcSaftChemicalRecord, GcPcSaftEosParameters};
 use polar::Dipole;
 

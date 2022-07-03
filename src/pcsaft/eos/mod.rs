@@ -5,6 +5,7 @@ use feos_core::{
     Contributions, EntropyScaling, EosError, EosResult, EquationOfState, HelmholtzEnergy,
     IdealGasContribution, MolarWeight, State,
 };
+use feos_saft::HardSphere;
 use ndarray::Array1;
 use quantity::si::*;
 use std::f64::consts::{FRAC_PI_6, PI};
@@ -13,13 +14,11 @@ use std::rc::Rc;
 pub(crate) mod association;
 pub(crate) mod dispersion;
 pub(crate) mod hard_chain;
-pub(crate) mod hard_sphere;
 pub(crate) mod polar;
 mod qspr;
 use association::{Association, CrossAssociation};
 use dispersion::Dispersion;
 use hard_chain::HardChain;
-use hard_sphere::HardSphere;
 use polar::{DQVariants, Dipole, DipoleQuadrupole, Quadrupole};
 use qspr::QSPR;
 

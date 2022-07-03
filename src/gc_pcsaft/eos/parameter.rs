@@ -4,8 +4,10 @@ use feos_core::parameter::{
     BinaryRecord, ChemicalRecord, FromSegments, Identifier, ParameterError, ParameterHetero,
     SegmentCount, SegmentRecord,
 };
+use feos_saft::{HardSphereProperties, MonomerShape};
 use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
+use num_dual::DualNum;
 use quantity::si::{JOULE, KB, KELVIN};
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -302,6 +304,20 @@ impl ParameterHetero for GcPcSaftEosParameters {
             &self.segment_records,
             &self.binary_segment_records,
         )
+    }
+}
+
+impl HardSphereProperties for GcPcSaftEosParameters {
+    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
+        let m = self.m.mapv(N::from);
+        MonomerShape::Heterosegmented([m.clone(), m.clone(), m.clone(), m], &self.component_index)
+    }
+
+    fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
+        let ti = temperature.recip() * -3.0;
+        Array1::from_shape_fn(self.sigma.len(), |i| {
+            -((ti * self.epsilon_k[i]).exp() * 0.12 - 1.0) * self.sigma[i]
+        })
     }
 }
 

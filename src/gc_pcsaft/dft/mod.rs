@@ -2,10 +2,8 @@ use super::eos::GcPcSaftOptions;
 use feos_core::parameter::ParameterHetero;
 use feos_core::MolarWeight;
 use feos_dft::adsorption::FluidParameters;
-use feos_dft::fundamental_measure_theory::{
-    FMTContribution, FMTProperties, FMTVersion, MonomerShape,
-};
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
+use feos_saft::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use ndarray::Array1;
 use num_dual::DualNum;
 use petgraph::graph::UnGraph;
@@ -124,14 +122,10 @@ impl MolarWeight<SIUnit> for GcPcSaftFunctional {
     }
 }
 
-impl FMTProperties for GcPcSaftFunctionalParameters {
-    fn component_index(&self) -> Array1<usize> {
-        self.component_index.clone()
-    }
-
+impl HardSphereProperties for GcPcSaftFunctionalParameters {
     fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
         let m = self.m.mapv(N::from);
-        MonomerShape::Heterosegmented([m.clone(), m.clone(), m.clone(), m])
+        MonomerShape::Heterosegmented([m.clone(), m.clone(), m.clone(), m], &self.component_index)
     }
 
     fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {

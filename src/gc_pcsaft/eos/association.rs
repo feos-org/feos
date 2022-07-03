@@ -1,6 +1,6 @@
-use super::hard_sphere::zeta;
 use super::GcPcSaftEosParameters;
 use feos_core::{EosError, HelmholtzEnergyDual, StateHD};
+use feos_saft::HardSphereProperties;
 use ndarray::*;
 use num_dual::linalg::{norm, LU};
 use num_dual::*;
@@ -48,8 +48,8 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Association {
         let diameter = p.hs_diameter(state.temperature);
 
         // Packing fractions
-        let n2 = zeta(p, &diameter, &state.partial_density, [2])[0] * 6.0;
-        let n3 = zeta(p, &diameter, &state.partial_density, [3])[0];
+        let [zeta2, n3] = p.zeta(state.temperature, &state.partial_density, [2, 3]);
+        let n2 = zeta2 * 6.0;
         let n3i = (-n3 + 1.0).recip();
 
         // association strength
@@ -116,8 +116,8 @@ impl<D: DualNum<f64> + ScalarOperand> HelmholtzEnergyDual<D> for CrossAssociatio
         let diameter = p.hs_diameter(state.temperature);
 
         // Packing fractions
-        let n2 = zeta(p, &diameter, &state.partial_density, [2])[0] * 6.0;
-        let n3 = zeta(p, &diameter, &state.partial_density, [3])[0];
+        let [zeta2, n3] = p.zeta(state.temperature, &state.partial_density, [2, 3]);
+        let n2 = zeta2 * 6.0;
         let n3i = (-n3 + 1.0).recip();
 
         // extract densities of associating segments

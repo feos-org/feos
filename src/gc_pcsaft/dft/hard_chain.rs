@@ -1,6 +1,5 @@
 use super::GcPcSaftFunctionalParameters;
 use feos_core::EosError;
-use feos_dft::fundamental_measure_theory::FMTProperties;
 use feos_dft::{
     FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
 };
@@ -27,7 +26,7 @@ impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for ChainFun
     fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
         let d = p.hs_diameter(temperature);
-        WeightFunctionInfo::new(p.component_index(), true)
+        WeightFunctionInfo::new(p.component_index.clone(), true)
             .add(
                 WeightFunction {
                     prefactor: p.m.mapv(|m| m.into()) / (&d * 8.0),

@@ -1,48 +1,21 @@
 //! Helmholtz energy functionals from fundamental measure theory.
-use crate::adsorption::FluidParameters;
-use crate::functional::{HelmholtzEnergyFunctional, MoleculeShape, DFT};
-use crate::functional_contribution::*;
-use crate::solvation::PairPotential;
-use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use feos_core::EosResult;
+use feos_dft::adsorption::FluidParameters;
+use feos_dft::solvation::PairPotential;
+use feos_dft::{
+    FunctionalContribution, FunctionalContributionDual, HelmholtzEnergyFunctional, MoleculeShape,
+    WeightFunction, WeightFunctionInfo, WeightFunctionShape, DFT,
+};
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::PI;
 use std::fmt;
 use std::rc::Rc;
 
+use crate::{HardSphereProperties, MonomerShape};
+
 const PI36M1: f64 = 1.0 / (36.0 * PI);
 const N3_CUTOFF: f64 = 1e-5;
-
-/// Different monomer shapes for FMT.
-pub enum MonomerShape<N> {
-    /// For spherical monomers, the number of components.
-    Spherical(usize),
-    /// For non-spherical molecules in a homosegmented approach, the
-    /// chain length parameter $m$.
-    NonSpherical(Array1<N>),
-    /// For non-spherical molecules in a heterosegmented approach,
-    /// the geometry factors for every segment.
-    Heterosegmented([Array1<N>; 4]),
-}
-
-/// Properties of (generalized) hard sphere systems.
-pub trait FMTProperties {
-    fn component_index(&self) -> Array1<usize>;
-    fn monomer_shape<N: DualNum<f64>>(&self, temperature: N) -> MonomerShape<N>;
-    fn hs_diameter<N: DualNum<f64>>(&self, temperature: N) -> Array1<N>;
-
-    fn geometry_coefficients<N: DualNum<f64>>(&self, temperature: N) -> [Array1<N>; 4] {
-        match self.monomer_shape(temperature) {
-            MonomerShape::Spherical(n) => {
-                let m = Array1::ones(n);
-                [m.clone(), m.clone(), m.clone(), m]
-            }
-            MonomerShape::NonSpherical(m) => [m.clone(), m.clone(), m.clone(), m],
-            MonomerShape::Heterosegmented(g) => g,
-        }
-    }
-}
 
 /// Different versions of fundamental measure theory
 #[derive(Clone, Copy)]
@@ -80,31 +53,34 @@ impl<P> FMTContribution<P> {
     }
 }
 
-impl<P: FMTProperties, N: DualNum<f64>> FunctionalContributionDual<N> for FMTContribution<P> {
+impl<P: HardSphereProperties, N: DualNum<f64>> FunctionalContributionDual<N>
+    for FMTContribution<P>
+{
     fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
         let r = self.properties.hs_diameter(temperature) * 0.5;
         let [c0, c1, c2, c3] = self.properties.geometry_coefficients(temperature);
         match (self.version, r.len()) {
             (FMTVersion::WhiteBear | FMTVersion::AntiSymWhiteBear, 1) => {
-                WeightFunctionInfo::new(self.properties.component_index(), false).extend(
-                    vec![
-                        WeightFunctionShape::Delta,
-                        WeightFunctionShape::Theta,
-                        WeightFunctionShape::DeltaVec,
-                    ]
-                    .into_iter()
-                    .zip([c2, c3.clone(), c3])
-                    .map(|(s, c)| WeightFunction {
-                        prefactor: c,
-                        kernel_radius: r.clone(),
-                        shape: s,
-                    })
-                    .collect(),
-                    false,
-                )
+                WeightFunctionInfo::new(self.properties.component_index().into_owned(), false)
+                    .extend(
+                        vec![
+                            WeightFunctionShape::Delta,
+                            WeightFunctionShape::Theta,
+                            WeightFunctionShape::DeltaVec,
+                        ]
+                        .into_iter()
+                        .zip([c2, c3.clone(), c3])
+                        .map(|(s, c)| WeightFunction {
+                            prefactor: c,
+                            kernel_radius: r.clone(),
+                            shape: s,
+                        })
+                        .collect(),
+                        false,
+                    )
             }
             (FMTVersion::WhiteBear | FMTVersion::AntiSymWhiteBear, _) => {
-                WeightFunctionInfo::new(self.properties.component_index(), false)
+                WeightFunctionInfo::new(self.properties.component_index().into_owned(), false)
                     .add(
                         WeightFunction {
                             prefactor: Zip::from(&c0)
@@ -161,23 +137,24 @@ impl<P: FMTProperties, N: DualNum<f64>> FunctionalContributionDual<N> for FMTCon
                     )
             }
             (FMTVersion::KierlikRosinberg, _) => {
-                WeightFunctionInfo::new(self.properties.component_index(), false).extend(
-                    vec![
-                        WeightFunctionShape::KR0,
-                        WeightFunctionShape::KR1,
-                        WeightFunctionShape::Delta,
-                        WeightFunctionShape::Theta,
-                    ]
-                    .into_iter()
-                    .zip(self.properties.geometry_coefficients(temperature))
-                    .map(|(s, c)| WeightFunction {
-                        prefactor: c,
-                        kernel_radius: r.clone(),
-                        shape: s,
-                    })
-                    .collect(),
-                    true,
-                )
+                WeightFunctionInfo::new(self.properties.component_index().into_owned(), false)
+                    .extend(
+                        vec![
+                            WeightFunctionShape::KR0,
+                            WeightFunctionShape::KR1,
+                            WeightFunctionShape::Delta,
+                            WeightFunctionShape::Theta,
+                        ]
+                        .into_iter()
+                        .zip(self.properties.geometry_coefficients(temperature))
+                        .map(|(s, c)| WeightFunction {
+                            prefactor: c,
+                            kernel_radius: r.clone(),
+                            shape: s,
+                        })
+                        .collect(),
+                        true,
+                    )
             }
         }
     }
@@ -275,7 +252,7 @@ impl<P: FMTProperties, N: DualNum<f64>> FunctionalContributionDual<N> for FMTCon
     }
 }
 
-impl<P: FMTProperties> fmt::Display for FMTContribution<P> {
+impl<P: HardSphereProperties> fmt::Display for FMTContribution<P> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let ver = match self.version {
             FMTVersion::WhiteBear => "WB",
@@ -286,15 +263,11 @@ impl<P: FMTProperties> fmt::Display for FMTContribution<P> {
     }
 }
 
-struct HardSphereProperties {
+struct HardSphereParameters {
     sigma: Array1<f64>,
 }
 
-impl FMTProperties for HardSphereProperties {
-    fn component_index(&self) -> Array1<usize> {
-        Array1::from_shape_fn(self.sigma.len(), |i| i)
-    }
-
+impl HardSphereProperties for HardSphereParameters {
     fn monomer_shape<N>(&self, _: N) -> MonomerShape<N> {
         MonomerShape::Spherical(self.sigma.len())
     }
@@ -306,14 +279,14 @@ impl FMTProperties for HardSphereProperties {
 
 /// [HelmholtzEnergyFunctional] for hard sphere systems.
 pub struct FMTFunctional {
-    properties: Rc<HardSphereProperties>,
+    properties: Rc<HardSphereParameters>,
     contributions: Vec<Box<dyn FunctionalContribution>>,
     version: FMTVersion,
 }
 
 impl FMTFunctional {
     pub fn new(sigma: &Array1<f64>, version: FMTVersion) -> DFT<Self> {
-        let properties = Rc::new(HardSphereProperties {
+        let properties = Rc::new(HardSphereParameters {
             sigma: sigma.clone(),
         });
         let contributions: Vec<Box<dyn FunctionalContribution>> =

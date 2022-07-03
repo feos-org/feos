@@ -5,10 +5,10 @@ use crate::pcsaft::eos::association::{assoc_site_frac_a, assoc_site_frac_ab};
 use crate::pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
 use crate::pcsaft::eos::polar::{AD, AQ, BD, BQ, CD, CQ, PI_SQ_43};
 use feos_core::{EosError, EosResult};
-use feos_dft::fundamental_measure_theory::FMTVersion;
 use feos_dft::{
     FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
 };
+use feos_saft::{FMTVersion, HardSphereProperties};
 use ndarray::*;
 use num_dual::*;
 use std::f64::consts::{FRAC_PI_6, PI};

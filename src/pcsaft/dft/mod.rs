@@ -6,14 +6,11 @@ use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
 use feos_core::{IdealGasContribution, MolarWeight};
 use feos_dft::adsorption::FluidParameters;
-use feos_dft::fundamental_measure_theory::{
-    FMTContribution, FMTProperties, FMTVersion, MonomerShape,
-};
 use feos_dft::solvation::PairPotential;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
+use feos_saft::{FMTContribution, FMTVersion};
 use hard_chain::ChainFunctional;
-use ndarray::{Array, Array1, Array2};
-use num_dual::DualNum;
+use ndarray::{Array1, Array2};
 use num_traits::One;
 use pure_saft_functional::*;
 use quantity::si::*;
@@ -137,20 +134,6 @@ impl HelmholtzEnergyFunctional for PcSaftFunctional {
 impl MolarWeight<SIUnit> for PcSaftFunctional {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
-    }
-}
-
-impl FMTProperties for PcSaftParameters {
-    fn component_index(&self) -> Array1<usize> {
-        Array::from_shape_fn(self.m.len(), |i| i)
-    }
-
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
-        MonomerShape::NonSpherical(self.m.mapv(N::from))
-    }
-
-    fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
-        self.hs_diameter(temperature)
     }
 }
 

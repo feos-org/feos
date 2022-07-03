@@ -3,7 +3,9 @@ use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     FromSegments, FromSegmentsBinary, Parameter, ParameterError, PureRecord,
 };
+use feos_saft::{HardSphereProperties, MonomerShape};
 use ndarray::{Array, Array1, Array2};
+use num_dual::DualNum;
 use num_traits::Zero;
 use quantity::si::{JOULE, KB, KELVIN};
 use serde::{Deserialize, Serialize};
@@ -504,6 +506,19 @@ impl Parameter for PcSaftParameters {
         &Array2<PcSaftBinaryRecord>,
     ) {
         (&self.pure_records, &self.binary_records)
+    }
+}
+
+impl HardSphereProperties for PcSaftParameters {
+    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
+        MonomerShape::NonSpherical(self.m.mapv(N::from))
+    }
+
+    fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
+        let ti = temperature.recip() * -3.0;
+        Array::from_shape_fn(self.sigma.len(), |i| {
+            -((ti * self.epsilon_k[i]).exp() * 0.12 - 1.0) * self.sigma[i]
+        })
     }
 }
 

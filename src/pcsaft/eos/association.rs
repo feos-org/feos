@@ -1,5 +1,6 @@
 use super::PcSaftParameters;
 use feos_core::{EosError, HelmholtzEnergyDual, StateHD};
+use feos_saft::HardSphereProperties;
 use ndarray::*;
 use num_dual::linalg::{norm, LU};
 use num_dual::*;
