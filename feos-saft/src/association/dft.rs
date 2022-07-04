@@ -16,7 +16,7 @@ where
     P: HardSphereProperties,
 {
     fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
-        let p: &P = &self.parameters;
+        let p = &self.parameters;
         let r = p.hs_diameter(temperature) * 0.5;
         let [_, _, _, c3] = p.geometry_coefficients(temperature);
         WeightFunctionInfo::new(p.component_index().into_owned(), false)
@@ -47,7 +47,7 @@ where
         temperature: N,
         weighted_densities: ArrayView2<N>,
     ) -> EosResult<Array1<N>> {
-        let p: &P = &self.parameters;
+        let p = &self.parameters;
 
         // number of segments
         let n = self.association_parameters.component_index.len();
@@ -97,7 +97,7 @@ where
         let n2 = n2i.sum_axis(Axis(0));
         let mut xi = n2v
             .iter()
-            .fold(Array::zeros(n2.raw_dim()), |acc, n2v| acc + n2v)
+            .fold(Array::zeros(n2.raw_dim()), |acc, n2v| acc + n2v * n2v)
             / -(&n2 * &n2)
             + 1.0;
         xi.iter_mut()
