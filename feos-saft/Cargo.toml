@@ -23,6 +23,7 @@ feos-dft = { version = "0.2", path = "../feos-dft", optional = true }
 ndarray = { version = "0.15", features = ["serde"] }
 pyo3 = { version = "0.16", optional = true }
 serde = "1.0"
+serde_json = "1.0"
 
 [features]
 default = []

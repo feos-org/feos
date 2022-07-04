@@ -3,10 +3,9 @@
 use approx::assert_relative_eq;
 use feos::gc_pcsaft::{
     GcPcSaft, GcPcSaftEosParameters, GcPcSaftFunctional, GcPcSaftFunctionalParameters,
-    GcPcSaftRecord,
 };
 use feos_core::parameter::{
-    self, ChemicalRecord, Identifier, IdentifierOption, ParameterHetero, SegmentRecord,
+    ChemicalRecord, Identifier, IdentifierOption, ParameterHetero, SegmentRecord,
 };
 use feos_core::{PhaseEquilibrium, State, StateBuilder, Verbosity};
 use feos_dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};

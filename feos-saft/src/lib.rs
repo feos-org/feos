@@ -5,5 +5,7 @@ pub use hard_sphere::{HardSphere, HardSphereProperties, MonomerShape};
 
 #[cfg(feature = "association")]
 mod association;
+#[cfg(all(feature = "association", feature = "python"))]
+pub use association::PyAssociationRecord;
 #[cfg(feature = "association")]
 pub use association::{Association, AssociationParameters, AssociationRecord};

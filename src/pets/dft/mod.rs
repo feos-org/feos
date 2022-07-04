@@ -5,12 +5,10 @@ use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
 use feos_core::{IdealGasContribution, MolarWeight};
 use feos_dft::adsorption::FluidParameters;
-use feos_dft::fundamental_measure_theory::{
-    FMTContribution, FMTProperties, FMTVersion, MonomerShape,
-};
 use feos_dft::solvation::PairPotential;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
-use ndarray::{Array, Array1, Array2};
+use feos_saft::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
+use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use pure_pets_functional::*;
 use quantity::si::*;
@@ -117,11 +115,7 @@ impl MolarWeight<SIUnit> for PetsFunctional {
     }
 }
 
-impl FMTProperties for PetsParameters {
-    fn component_index(&self) -> Array1<usize> {
-        Array::from_shape_fn(self.sigma.len(), |i| i)
-    }
-
+impl HardSphereProperties for PetsParameters {
     fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
         MonomerShape::Spherical(self.sigma.len())
     }

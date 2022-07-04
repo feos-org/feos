@@ -10,9 +10,11 @@ use std::fmt;
 use std::rc::Rc;
 
 #[cfg(feature = "dft")]
-pub(crate) mod dft;
+mod dft;
 #[cfg(feature = "python")]
-pub(crate) mod python;
+mod python;
+#[cfg(feature = "python")]
+pub use python::PyAssociationRecord;
 
 /// Pure component association parameters
 #[derive(Serialize, Deserialize, Clone, Default)]

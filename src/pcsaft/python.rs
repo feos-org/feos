@@ -1,5 +1,4 @@
 use super::parameters::{PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord};
-use crate::association::python::PyAssociationRecord;
 use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
@@ -8,6 +7,7 @@ use feos_core::parameter::{
 use feos_core::python::joback::PyJobackRecord;
 use feos_core::python::parameter::*;
 use feos_core::*;
+use feos_saft::PyAssociationRecord;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
@@ -161,6 +161,7 @@ pub fn pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<PyChemicalRecord>()?;
     m.add_class::<PyJobackRecord>()?;
+    m.add_class::<PyAssociationRecord>()?;
 
     m.add_class::<PyPcSaftRecord>()?;
     m.add_class::<PyPureRecord>()?;

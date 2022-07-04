@@ -1,10 +1,10 @@
 use crate::pets::eos::dispersion::{A, B};
 use crate::pets::parameters::PetsParameters;
 use feos_core::{EosError, EosResult};
-use feos_dft::fundamental_measure_theory::FMTVersion;
 use feos_dft::{
     FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
 };
+use feos_saft::FMTVersion;
 use ndarray::*;
 use num_dual::*;
 use std::f64::consts::{FRAC_PI_6, PI};
