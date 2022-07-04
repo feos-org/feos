@@ -62,9 +62,7 @@ impl PcSaft {
 
     pub fn with_options(parameters: Rc<PcSaftParameters>, options: PcSaftOptions) -> Self {
         let mut contributions: Vec<Box<dyn HelmholtzEnergy>> = Vec::with_capacity(7);
-        contributions.push(Box::new(HardSphere {
-            parameters: parameters.clone(),
-        }));
+        contributions.push(Box::new(HardSphere::new(&parameters)));
         contributions.push(Box::new(HardChain {
             parameters: parameters.clone(),
         }));
@@ -342,10 +340,10 @@ impl EntropyScaling<SIUnit> for PcSaft {
 mod tests {
     use super::*;
     use crate::pcsaft::parameters::utils::{
-        butane_parameters, propane_butane_parameters, propane_parameters,
+        butane_parameters, propane_butane_parameters, propane_parameters, water_parameters,
     };
     use approx::assert_relative_eq;
-    use feos_core::{Contributions, DensityInitialization, PhaseEquilibrium, State};
+    use feos_core::*;
     use ndarray::arr1;
     use quantity::si::{BAR, KELVIN, METER, PASCAL, RGAS, SECOND};
 
@@ -379,6 +377,61 @@ mod tests {
             s.pressure(Contributions::Total),
             epsilon = 1e-10
         );
+    }
+
+    #[test]
+    fn hard_sphere() {
+        let hs = HardSphere::new(&propane_parameters());
+        let t = 250.0;
+        let v = 1000.0;
+        let n = 1.0;
+        let s = StateHD::new(t, v, arr1(&[n]));
+        let a_rust = hs.helmholtz_energy(&s);
+        assert_relative_eq!(a_rust, 0.410610492598808, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn hard_sphere_mix() {
+        let c1 = HardSphere::new(&propane_parameters());
+        let c2 = HardSphere::new(&butane_parameters());
+        let c12 = HardSphere::new(&propane_butane_parameters());
+        let t = 250.0;
+        let v = 2.5e28;
+        let n = 1.0;
+        let s = StateHD::new(t, v, arr1(&[n]));
+        let a1 = c1.helmholtz_energy(&s);
+        let a2 = c2.helmholtz_energy(&s);
+        let s1m = StateHD::new(t, v, arr1(&[n, 0.0]));
+        let a1m = c12.helmholtz_energy(&s1m);
+        let s2m = StateHD::new(t, v, arr1(&[0.0, n]));
+        let a2m = c12.helmholtz_energy(&s2m);
+        assert_relative_eq!(a1, a1m, epsilon = 1e-14);
+        assert_relative_eq!(a2, a2m, epsilon = 1e-14);
+    }
+
+    #[test]
+    fn association() {
+        let parameters = Rc::new(water_parameters());
+        let assoc = Association::new(&parameters, &parameters.association, 50, 1e-10);
+        let t = 350.0;
+        let v = 41.248289328513216;
+        let n = 1.23;
+        let s = StateHD::new(t, v, arr1(&[n]));
+        let a_rust = assoc.helmholtz_energy(&s) / n;
+        assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn cross_association() {
+        let parameters = Rc::new(water_parameters());
+        let assoc =
+            Association::new_cross_association(&parameters, &parameters.association, 50, 1e-10);
+        let t = 350.0;
+        let v = 41.248289328513216;
+        let n = 1.23;
+        let s = StateHD::new(t, v, arr1(&[n]));
+        let a_rust = assoc.helmholtz_energy(&s) / n;
+        assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 
     #[test]

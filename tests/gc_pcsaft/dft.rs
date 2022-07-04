@@ -169,59 +169,6 @@ fn test_bulk_association() -> Result<(), Box<dyn Error>> {
         println!("{s:26}: {x:21.16}");
     }
     assert_relative_eq!(p_eos[4].1, p_func[4].1, max_relative = 1e-14);
-    // println!("{:29}: {}", p_eos[0].0, p_eos[0].1);
-    // println!("{:29}: {}", p_func[0].0, p_func[0].1);
-    // println!();
-    // println!("{:29}: {}", p_eos[1].0, p_eos[1].1);
-    // println!("{:29}: {}", p_func[1].0, p_func[1].1);
-    // println!();
-    // println!("{:29}: {}", p_eos[2].0, p_eos[2].1);
-    // println!("{:29}: {}", p_func[2].0, p_func[2].1);
-    // println!();
-    // println!("{:29}: {}", p_eos[3].0, p_eos[3].1);
-    // println!("{:29}: {}", p_func[3].0, p_func[3].1);
-
-    // assert_relative_eq!(
-    //     p_eos[0].1,
-    //     1.2471689792172869 * MEGA * PASCAL * KB / KB_old,
-    //     max_relative = 1e-14,
-    // );
-    // assert_relative_eq!(
-    //     p_eos[1].1,
-    //     280.0635060891395938 * KILO * PASCAL * KB / KB_old,
-    //     max_relative = 1e-14,
-    // );
-    // assert_relative_eq!(
-    //     p_eos[2].1,
-    //     -141.9023918353318550 * KILO * PASCAL * KB / KB_old,
-    //     max_relative = 1e-14,
-    // );
-    // assert_relative_eq!(
-    //     p_eos[3].1,
-    //     -763.2289230004602132 * KILO * PASCAL * KB / KB_old,
-    //     max_relative = 1e-14,
-    // );
-
-    // assert_relative_eq!(
-    //     p_func[0].1,
-    //     1.2471689792172869 * MEGA * PASCAL * KB / KB_old,
-    //     max_relative = 1e-14,
-    // );
-    // assert_relative_eq!(
-    //     p_func[1].1,
-    //     280.0635060891395938 * KILO * PASCAL * KB / KB_old,
-    //     max_relative = 1e-14,
-    // );
-    // assert_relative_eq!(
-    //     p_func[2].1,
-    //     -141.9023918353318550 * KILO * PASCAL * KB / KB_old,
-    //     max_relative = 1e-14,
-    // );
-    // assert_relative_eq!(
-    //     p_func[3].1,
-    //     -763.2289230004602132 * KILO * PASCAL * KB / KB_old,
-    //     max_relative = 1e-14,
-    // );
     Ok(())
 }
 
