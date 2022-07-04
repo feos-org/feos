@@ -25,7 +25,7 @@ pyo3 = { version = "0.16", optional = true }
 serde = "1.0"
 
 [features]
-default = ["association"]
+default = []
 association = []
 dft = ["feos-dft"]
 python = ["pyo3"]
