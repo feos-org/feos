@@ -166,6 +166,11 @@ impl FluidParameters for PcSaftFunctional {
 
 impl PairPotential for PcSaftFunctional {
     fn pair_potential(&self, i: usize, r: &Array1<f64>, _: f64) -> Array2<f64> {
-        unimplemented!()
+        let sigma_ij = &self.parameters.sigma_ij;
+        let eps_ij_4 = 4.0 * &self.parameters.epsilon_k_ij;
+        Array::from_shape_fn((self.parameters.m.len(), r.len()), |(j, k)| {
+            let att = (sigma_ij[[i, j]] / r[k]).powi(6);
+            eps_ij_4[[i, j]] * att * (att - 1.0)
+        })
     }
 }
