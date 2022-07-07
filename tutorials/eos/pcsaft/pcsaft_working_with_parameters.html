@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js">
+<html class="no-js" lang="en">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><link rel="next" title="Representation of thermodynamic states" href="pcsaft_state.html" /><link rel="prev" title="PC-SAFT" href="index.html" />
 
-    <meta name="generator" content="sphinx-4.5.0, furo 2022.06.04.1"/>
+    <meta name="generator" content="sphinx-5.0.2, furo 2022.06.21"/>
         <title>Working with parameters - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?digest=40978830699223671f4072448e654b5958f38b89" />
@@ -1115,9 +1115,9 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Working-with-parameters">
-<h1>Working with parameters<a class="headerlink" href="#Working-with-parameters" title="Permalink to this headline">#</a></h1>
+<h1>Working with parameters<a class="headerlink" href="#Working-with-parameters" title="Permalink to this heading">#</a></h1>
 <section id="Goal">
-<h2>Goal<a class="headerlink" href="#Goal" title="Permalink to this headline">#</a></h2>
+<h2>Goal<a class="headerlink" href="#Goal" title="Permalink to this heading">#</a></h2>
 <ul class="simple">
 <li><p>Read in parameters for pure substances and mixtures from json files, and</p></li>
 <li><p>create parameters for pure substances and mixtures within Python.</p></li>
@@ -1126,7 +1126,7 @@ div.rendered_html tbody tr:hover {
 </ul>
 </section>
 <section id="Parameters-and-the-equation-of-state">
-<h2>Parameters and the equation of state<a class="headerlink" href="#Parameters-and-the-equation-of-state" title="Permalink to this headline">#</a></h2>
+<h2>Parameters and the equation of state<a class="headerlink" href="#Parameters-and-the-equation-of-state" title="Permalink to this heading">#</a></h2>
 <p>Before we can start to compute physical properties, two steps are needed:</p>
 <ol class="arabic simple">
 <li><p>Build a parameter object.</p></li>
@@ -1145,16 +1145,16 @@ div.rendered_html tbody tr:hover {
 </section>
 <hr class="docutils" />
 <section id="Read-parameters-from-json-file(s)">
-<h2>Read parameters from json file(s)<a class="headerlink" href="#Read-parameters-from-json-file(s)" title="Permalink to this headline">#</a></h2>
+<h2>Read parameters from json file(s)<a class="headerlink" href="#Read-parameters-from-json-file(s)" title="Permalink to this heading">#</a></h2>
 <p>The easiest way to create the <code class="docutils literal notranslate"><span class="pre">PcSaftParameters</span></code> object is to read information from one or more json files.</p>
 <ul class="simple">
 <li><p>To read information from a single file, use <code class="docutils literal notranslate"><span class="pre">PcSaftParameters.from_json</span></code></p></li>
 <li><p>To read information from multiple files, use <code class="docutils literal notranslate"><span class="pre">PcSaftParameters.from_multiple_json</span></code></p></li>
 </ul>
 <section id="From-a-single-file">
-<h3>From a single file<a class="headerlink" href="#From-a-single-file" title="Permalink to this headline">#</a></h3>
+<h3>From a single file<a class="headerlink" href="#From-a-single-file" title="Permalink to this heading">#</a></h3>
 <section id="Pure-substance">
-<h4>Pure substance<a class="headerlink" href="#Pure-substance" title="Permalink to this headline">#</a></h4>
+<h4>Pure substance<a class="headerlink" href="#Pure-substance" title="Permalink to this heading">#</a></h4>
 <p>Querying a substance from a file requires an <em>identifier</em>. This identifier can be one of <code class="docutils literal notranslate"><span class="pre">Name</span></code>, <code class="docutils literal notranslate"><span class="pre">Cas</span></code>, <code class="docutils literal notranslate"><span class="pre">Inchi</span></code>, <code class="docutils literal notranslate"><span class="pre">IupacName</span></code>, <code class="docutils literal notranslate"><span class="pre">Formula</span></code>, or <code class="docutils literal notranslate"><span class="pre">Smiles</span></code> with <code class="docutils literal notranslate"><span class="pre">Name</span></code> (common english name) being the default. We can change the identifier type usig the <code class="docutils literal notranslate"><span class="pre">search_option</span></code> argument. Given a list of identifiers and a path to the parameter file, we can conveniently generate our object.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -1176,19 +1176,6 @@ div.rendered_html tbody tr:hover {
 <div class="output_area docutils container">
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>component</p></th>
 <th class="head"><p>molarweight</p></th>
@@ -1238,19 +1225,6 @@ div.rendered_html tbody tr:hover {
 <div class="output_area docutils container">
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>component</p></th>
 <th class="head"><p>molarweight</p></th>
@@ -1285,7 +1259,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Mixtures">
-<h4>Mixtures<a class="headerlink" href="#Mixtures" title="Permalink to this headline">#</a></h4>
+<h4>Mixtures<a class="headerlink" href="#Mixtures" title="Permalink to this heading">#</a></h4>
 <p>Reading parameters for more than one substance from a single file is very straight forward: simply add more identifiers to the list. Note that the <strong>order</strong> in which which identifiers are provided <strong>is important</strong>. When computing vector valued properties, <strong>the order of the physical properties matches the order of the substances within the parameter object</strong>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -1304,19 +1278,6 @@ div.rendered_html tbody tr:hover {
 <div class="output_area docutils container">
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>component</p></th>
 <th class="head"><p>molarweight</p></th>
@@ -1376,7 +1337,7 @@ div.rendered_html tbody tr:hover {
 </section>
 </section>
 <section id="From-multiple-files">
-<h3>From multiple files<a class="headerlink" href="#From-multiple-files" title="Permalink to this headline">#</a></h3>
+<h3>From multiple files<a class="headerlink" href="#From-multiple-files" title="Permalink to this heading">#</a></h3>
 <p>There may be cases where we have to split our parameter information across different files. For example, the <code class="docutils literal notranslate"><span class="pre">feos</span></code> repository has parameters stored in different files where each file corresponds to the parameter’s original publication. Constructing the parameter object using multiple different json files is a bit more complicated. We can provide a list tuples, each of which contains the list of substances and the file where parameters are stored.</p>
 <p>In the example below, we define a 4 component mixture from three input files:</p>
 <ul class="simple">
@@ -1413,19 +1374,6 @@ div.rendered_html tbody tr:hover {
 <div class="output_area docutils container">
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>component</p></th>
 <th class="head"><p>molarweight</p></th>
@@ -1496,7 +1444,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="With-binary-interaction-parameters">
-<h3>With binary interaction parameters<a class="headerlink" href="#With-binary-interaction-parameters" title="Permalink to this headline">#</a></h3>
+<h3>With binary interaction parameters<a class="headerlink" href="#With-binary-interaction-parameters" title="Permalink to this heading">#</a></h3>
 <p>Some mixtures cannot be adequately described with combination rules from pure substance parameters. In PC-SAFT, we can use a binary interaction parameter, <code class="docutils literal notranslate"><span class="pre">k_ij</span></code>, to enhance the description of mixture behavior. These interaction parameters can be supplied from a json file via the <code class="docutils literal notranslate"><span class="pre">binary_path</span></code> option.</p>
 <p>This parameter is not shown in the default representation of the parameter object. You can access the matrix of <code class="docutils literal notranslate"><span class="pre">k_ij</span></code> via the getter, <code class="docutils literal notranslate"><span class="pre">PcSaftParameters.k_ij</span></code>.</p>
 <div class="nbinput docutils container">
@@ -1526,19 +1474,6 @@ div.rendered_html tbody tr:hover {
 <div class="output_area docutils container">
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>component</p></th>
 <th class="head"><p>molarweight</p></th>
@@ -1605,7 +1540,7 @@ array([[0.   , 0.015],
 </section>
 <hr class="docutils" />
 <section id="Building-parameters-in-Python">
-<h2>Building parameters in Python<a class="headerlink" href="#Building-parameters-in-Python" title="Permalink to this headline">#</a></h2>
+<h2>Building parameters in Python<a class="headerlink" href="#Building-parameters-in-Python" title="Permalink to this heading">#</a></h2>
 <p>Building <code class="docutils literal notranslate"><span class="pre">PcSaftParameters</span></code> in Python is a bit more involved since the <code class="docutils literal notranslate"><span class="pre">PcSaftParameters</span></code> object is built from multiple intermediate objects. Let’s import these objects, i.e.</p>
 <ul class="simple">
 <li><p>the <code class="docutils literal notranslate"><span class="pre">Identifier</span></code> object that stores information about how a substance can be identified,</p></li>
@@ -1728,19 +1663,6 @@ PureRecord(
 <div class="output_area docutils container">
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>component</p></th>
 <th class="head"><p>molarweight</p></th>
@@ -1809,19 +1731,6 @@ PureRecord(
 <div class="output_area docutils container">
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>component</p></th>
 <th class="head"><p>molarweight</p></th>
@@ -1906,19 +1815,6 @@ array([[0.   , 0.015],
 <div class="output_area docutils container">
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>component</p></th>
 <th class="head"><p>molarweight</p></th>
@@ -1984,11 +1880,11 @@ array([[0.   , 0.015],
 </section>
 <hr class="docutils" />
 <section id="Parameters-from-homo-segmented-group-contribution-(homo-GC)">
-<h2>Parameters from homo-segmented group contribution (homo-GC)<a class="headerlink" href="#Parameters-from-homo-segmented-group-contribution-(homo-GC)" title="Permalink to this headline">#</a></h2>
+<h2>Parameters from homo-segmented group contribution (homo-GC)<a class="headerlink" href="#Parameters-from-homo-segmented-group-contribution-(homo-GC)" title="Permalink to this heading">#</a></h2>
 <p>An alternative to substance specific parameters are parameters that combine information from functional groups (molecule <em>segments</em>). A simple variant that only uses the <em>number of segments</em> (<em>not</em> how these segments are connected to form the molecule) is the so-called homo-segmented group contribution method (homo-GC).</p>
 <p>As with regular SAFT parameters, we can build a <code class="docutils literal notranslate"><span class="pre">PcSaftParameters</span></code> object from json or from Python - using segment information.</p>
 <section id="From-json-files">
-<h3>From json files<a class="headerlink" href="#From-json-files" title="Permalink to this headline">#</a></h3>
+<h3>From json files<a class="headerlink" href="#From-json-files" title="Permalink to this heading">#</a></h3>
 <p>We need at least two files:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">pure_path</span></code>: a file containing the substance identifiers <em>and</em> the segments that form the molecule</p></li>
@@ -2014,19 +1910,6 @@ array([[0.   , 0.015],
 <div class="output_area docutils container">
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>component</p></th>
 <th class="head"><p>molarweight</p></th>
@@ -2073,7 +1956,7 @@ array([[0.   , 0.015],
 </div>
 </section>
 <section id="From-Python">
-<h3>From Python<a class="headerlink" href="#From-Python" title="Permalink to this headline">#</a></h3>
+<h3>From Python<a class="headerlink" href="#From-Python" title="Permalink to this heading">#</a></h3>
 <p>Building parameters in Python follows a similar approach as for regular parameters. To build <code class="docutils literal notranslate"><span class="pre">PcSaftParameters</span></code> from segments, we need to specify:</p>
 <ul class="simple">
 <li><p>The <code class="docutils literal notranslate"><span class="pre">ChemicalRecord</span></code> which contains the <code class="docutils literal notranslate"><span class="pre">Identifier</span></code> and the segments (as list of <code class="docutils literal notranslate"><span class="pre">str</span></code>s),</p></li>
@@ -2139,19 +2022,6 @@ array([[0.   , 0.015],
 <div class="output_area docutils container">
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>component</p></th>
 <th class="head"><p>molarweight</p></th>
@@ -2199,7 +2069,7 @@ array([[0.   , 0.015],
 </section>
 </section>
 <section id="Accessing-information-from-parameter-objects">
-<h2>Accessing information from parameter objects<a class="headerlink" href="#Accessing-information-from-parameter-objects" title="Permalink to this headline">#</a></h2>
+<h2>Accessing information from parameter objects<a class="headerlink" href="#Accessing-information-from-parameter-objects" title="Permalink to this heading">#</a></h2>
 <p>Once the <code class="docutils literal notranslate"><span class="pre">PcSaftParameter</span></code> object is constructed, within a jupyter notebook, we get a nice representation in form of a markdown table. Sometimes, however you might want to access information not presented in this table or you might want to store information in a variable.</p>
 <p>Let’s build parameters for the four-component mixture we looked at earlier:</p>
 <div class="nbinput docutils container">
@@ -2229,19 +2099,6 @@ array([[0.   , 0.015],
 <div class="output_area docutils container">
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-<col style="width: 9%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>component</p></th>
 <th class="head"><p>molarweight</p></th>
@@ -2332,7 +2189,7 @@ array([[0., 0., 0., 0.],
 </pre></div></div>
 </div>
 <section id="Get-PureRecords-via-parameters.pure_records">
-<h3>Get <code class="docutils literal notranslate"><span class="pre">PureRecord</span></code>s via <code class="docutils literal notranslate"><span class="pre">parameters.pure_records</span></code><a class="headerlink" href="#Get-PureRecords-via-parameters.pure_records" title="Permalink to this headline">#</a></h3>
+<h3>Get <code class="docutils literal notranslate"><span class="pre">PureRecord</span></code>s via <code class="docutils literal notranslate"><span class="pre">parameters.pure_records</span></code><a class="headerlink" href="#Get-PureRecords-via-parameters.pure_records" title="Permalink to this heading">#</a></h3>
 <p>We have seen above that it is possible to generate parameters in Python using intermediate objects, such as <code class="docutils literal notranslate"><span class="pre">Identifier</span></code>, <code class="docutils literal notranslate"><span class="pre">PcSaftRecord</span></code> and <code class="docutils literal notranslate"><span class="pre">PureRecord</span></code>. You can generate these objects for all substances via the <code class="docutils literal notranslate"><span class="pre">pure_records</span></code> method (getter). This getter returns <code class="docutils literal notranslate"><span class="pre">PureRecord</span></code> objects which can be further deconstructed to yield the <code class="docutils literal notranslate"><span class="pre">Identifier</span></code> and <code class="docutils literal notranslate"><span class="pre">PcSaftRecord</span></code> objects and the molar weight.</p>
 <p>Note that the order in which substances are returned matches the order in which we specified the substances above.</p>
 <div class="nbinput docutils container">
@@ -2449,7 +2306,7 @@ Identifier(cas=74-82-8, name=methane, iupac_name=methane, smiles=C, inchi=InChI=
 </section>
 </section>
 <section id="Summary">
-<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this headline">#</a></h2>
+<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this heading">#</a></h2>
 <p>In <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span>, handling of parameters is not predefined within the underlying library. Each implementation of an equation of state has complete autonomy about the way parameters are handled. Howevery, we offer some convenient ways to automatize parameter handling which result in the methods presented in this example.</p>
 <p>We looked at different ways to get parameters for the <code class="docutils literal notranslate"><span class="pre">PcSaft</span></code> equation of state, i.e.</p>
 <ul class="simple">
@@ -2460,14 +2317,14 @@ Identifier(cas=74-82-8, name=methane, iupac_name=methane, smiles=C, inchi=InChI=
 <p>Once parameters are created, we can retrieve information by extracting the intermediate objects such as <code class="docutils literal notranslate"><span class="pre">PureRecord</span></code>, <code class="docutils literal notranslate"><span class="pre">Identifier</span></code> and <code class="docutils literal notranslate"><span class="pre">PcSaftRecord</span></code>.</p>
 </section>
 <section id="Further-reading">
-<h2>Further reading<a class="headerlink" href="#Further-reading" title="Permalink to this headline">#</a></h2>
+<h2>Further reading<a class="headerlink" href="#Further-reading" title="Permalink to this heading">#</a></h2>
 <ul class="simple">
 <li><p>For more information about group contribution methods, see <a class="reference external" href="https://pubs.acs.org/doi/abs/10.1021/ie502203w">this paper by Sauer et al.</a></p></li>
 <li><p>Files of published parameters can be found <cite>in the ``feos`</cite> github repositoy &lt;<a class="reference external" href="https://github.com/feos-org/feos/tree/main/parameters/pcsaft">https://github.com/feos-org/feos/tree/main/parameters/pcsaft</a>&gt;`__.</p></li>
 </ul>
 </section>
 <section id="Concluding-remkars">
-<h2>Concluding remkars<a class="headerlink" href="#Concluding-remkars" title="Permalink to this headline">#</a></h2>
+<h2>Concluding remkars<a class="headerlink" href="#Concluding-remkars" title="Permalink to this heading">#</a></h2>
 <p>Hopefully you found this example helpful. If you have comments, critique or feedback, please let us know and consider <a class="reference external" href="https://github.com/feos-org/feos/issues">opening an issue on github</a>.</p>
 </section>
 </section>
@@ -2569,6 +2426,7 @@ Identifier(cas=74-82-8, name=methane, iupac_name=methane, smiles=C, inchi=InChI=
 </div><script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script src="../../../_static/scripts/furo.js"></script>
     <script src="../../../_static/clipboard.min.js"></script>

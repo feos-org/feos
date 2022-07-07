@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js">
+<html class="no-js" lang="en">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Thermodynamic States" href="state.html" /><link rel="prev" title="feos-core" href="index.html" />
 
-    <meta name="generator" content="sphinx-4.5.0, furo 2022.06.04.1"/>
+    <meta name="generator" content="sphinx-5.0.2, furo 2022.06.21"/>
         <title>The EquationOfState Trait - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=40978830699223671f4072448e654b5958f38b89" />
@@ -859,7 +859,7 @@
         </div>
         <article role="main">
           <section id="the-equationofstate-trait">
-<h1>The <code class="docutils literal notranslate"><span class="pre">EquationOfState</span></code> Trait<a class="headerlink" href="#the-equationofstate-trait" title="Permalink to this headline">#</a></h1>
+<h1>The <code class="docutils literal notranslate"><span class="pre">EquationOfState</span></code> Trait<a class="headerlink" href="#the-equationofstate-trait" title="Permalink to this heading">#</a></h1>
 <p>In <code class="docutils literal notranslate"><span class="pre">FeOs</span></code>, an instance of an equation of state stores information of the chemical system (i.e. the model parameters) we are interested in.
 But we formally make no assumptions about these model parameters - this is entirely up to the respective implementation which gives a lot of flexibility with respect to parameter handling and storage.</p>
 <p>For example, we want to compute properties for a mixture containing water and acetone, so we create or read in the appropriate parameters and initialize an equation of state.
@@ -904,7 +904,7 @@ Shown below are the functions you have to implement when creating a new equation
 </ul>
 <p>Implementing <code class="docutils literal notranslate"><span class="pre">EquationOfState</span></code> comes down to defining one or more structs that all implement the <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergy</span></code> trait.</p>
 <section id="the-helmholtzenergydual-and-helmholtzenergy-traits">
-<h2>The <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergyDual</span></code> and <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergy</span></code> Traits<a class="headerlink" href="#the-helmholtzenergydual-and-helmholtzenergy-traits" title="Permalink to this headline">#</a></h2>
+<h2>The <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergyDual</span></code> and <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergy</span></code> Traits<a class="headerlink" href="#the-helmholtzenergydual-and-helmholtzenergy-traits" title="Permalink to this heading">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">residual</span></code> method returns a slice of trait objects, denoted by the <code class="docutils literal notranslate"><span class="pre">dyn</span></code> keyword.</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="k">fn</span> <span class="nf">residual</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="p">[</span><span class="nb">Box</span><span class="o">&lt;</span><span class="k">dyn</span><span class="w"> </span><span class="n">HelmholtzEnergy</span><span class="o">&gt;</span><span class="p">];</span><span class="w"></span>
 </pre></div>
@@ -939,7 +939,7 @@ This is a bit of an inconvenience but as long as we don’t need <code class="do
 <p>Note that <code class="docutils literal notranslate"><span class="pre">helmholtz_energy</span></code> method must return the <strong>reduced</strong> energy, i.e. <span class="math notranslate nohighlight">\(\frac{A^\text{res}}{k_B T}\)</span>.</p>
 </section>
 <section id="residual-helmholtz-energy">
-<h2>Residual Helmholtz Energy<a class="headerlink" href="#residual-helmholtz-energy" title="Permalink to this headline">#</a></h2>
+<h2>Residual Helmholtz Energy<a class="headerlink" href="#residual-helmholtz-energy" title="Permalink to this heading">#</a></h2>
 <p>The residual Helmholtz energy is then computed as sum of all contributions:</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="sd">/// Evaluate the residual reduced Helmholtz energy $\beta A^\mathrm{res}$.</span>
 <span class="sd">///</span>
@@ -960,7 +960,7 @@ This is a bit of an inconvenience but as long as we don’t need <code class="do
 If we implement an equation of state with a single contribution, it might be more convenient to overwrite the <code class="docutils literal notranslate"><span class="pre">evaluate_residual</span></code> function.</p>
 </section>
 <section id="the-ideal-gas-contribution">
-<h2>The Ideal Gas Contribution<a class="headerlink" href="#the-ideal-gas-contribution" title="Permalink to this headline">#</a></h2>
+<h2>The Ideal Gas Contribution<a class="headerlink" href="#the-ideal-gas-contribution" title="Permalink to this heading">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">EquationOfState</span></code> trait has an <code class="docutils literal notranslate"><span class="pre">ideal_gas</span></code> method that returns a <code class="docutils literal notranslate"><span class="pre">IdealGasContribution</span></code> trait object.
 If we don’t overwrite this method, it returns a default contribution in which the de Broglie wavelength is unity for each component.</p>
 <p>This contribution is important if you are interested in non-residual properties, e.g. total heat capacities and total enthalpies.
@@ -1023,9 +1023,9 @@ Note that the default implementation yields the correct results for properties t
 <p>where <span class="math notranslate nohighlight">\(i\)</span> is the substance index and <span class="math notranslate nohighlight">\(N_s\)</span> denotes the number of substances in the mixture.</p>
 </section>
 <section id="additional-traits">
-<h2>Additional Traits<a class="headerlink" href="#additional-traits" title="Permalink to this headline">#</a></h2>
+<h2>Additional Traits<a class="headerlink" href="#additional-traits" title="Permalink to this heading">#</a></h2>
 <section id="the-molarweight-trait">
-<h3>The <code class="docutils literal notranslate"><span class="pre">MolarWeight</span></code> Trait<a class="headerlink" href="#the-molarweight-trait" title="Permalink to this headline">#</a></h3>
+<h3>The <code class="docutils literal notranslate"><span class="pre">MolarWeight</span></code> Trait<a class="headerlink" href="#the-molarweight-trait" title="Permalink to this heading">#</a></h3>
 <p>If an equation of state implements this trait, a <code class="docutils literal notranslate"><span class="pre">State</span></code> created with the equation of state additionally provides mass specific variants of all properties.</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/equation_of_state.rs</span>
 <span class="sd">/// Molar weight of all components.</span>
@@ -1039,7 +1039,7 @@ Note that the default implementation yields the correct results for properties t
 </div>
 </section>
 <section id="the-entropyscaling-trait">
-<h3>The <code class="docutils literal notranslate"><span class="pre">EntropyScaling</span></code> Trait<a class="headerlink" href="#the-entropyscaling-trait" title="Permalink to this headline">#</a></h3>
+<h3>The <code class="docutils literal notranslate"><span class="pre">EntropyScaling</span></code> Trait<a class="headerlink" href="#the-entropyscaling-trait" title="Permalink to this heading">#</a></h3>
 <p>This trait provides methods to compute dynamic properties via <a class="reference external" href="https://journals.aps.org/pra/abstract/10.1103/PhysRevA.15.2545">entropy scaling</a>.
 We have to implement a <em>reference</em> to produce the reduced property and a <em>correlation function</em> that models the behavior of the logarithmic reduced property as a function of the reduced residual entropy.</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/equation_of_state.rs</span>
@@ -1064,7 +1064,7 @@ We have to implement a <em>reference</em> to produce the reduced property and a 
 </section>
 </section>
 <section id="summary">
-<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">#</a></h2>
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this heading">#</a></h2>
 <p>To implement an equation of state that consists of multiple contributions to the residual Helmholtz energy, we:</p>
 <ol class="arabic simple">
 <li><p>Create a struct for our model parameters.</p></li>
@@ -1157,6 +1157,7 @@ We have to implement a <em>reference</em> to produce the reduced property and a 
 </div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script src="../../_static/scripts/furo.js"></script>
     <script src="../../_static/clipboard.min.js"></script>

@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js">
+<html class="no-js" lang="en">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="feos.dft.State.__init__" href="feos.dft.State.__init__.html" /><link rel="prev" title="feos.dft.HelmholtzEnergyFunctional.pets" href="feos.dft.HelmholtzEnergyFunctional.pets.html" />
 
-    <meta name="generator" content="sphinx-4.5.0, furo 2022.06.04.1"/>
+    <meta name="generator" content="sphinx-5.0.2, furo 2022.06.21"/>
         <title>feos.dft.State - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=40978830699223671f4072448e654b5958f38b89" />
@@ -860,13 +860,13 @@
         <article role="main">
           </div>
 <div class=col-md-9 content><section id="feos-dft-state">
-<h1>feos.dft.State<a class="headerlink" href="#feos-dft-state" title="Permalink to this headline">#</a></h1>
+<h1>feos.dft.State<a class="headerlink" href="#feos-dft-state" title="Permalink to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="feos.dft.State">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">feos.dft.</span></span><span class="sig-name descname"><span class="pre">State</span></span><a class="headerlink" href="#feos.dft.State" title="Permalink to this definition">#</a></dt>
 <dd><p>A thermodynamic state at given conditions.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>eos</strong> (<em>Eos</em>) – The equation of state to use.</p></li>
 <li><p><strong>temperature</strong> (<a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a><em>, </em><em>optional</em>) – Temperature.</p></li>
@@ -888,23 +888,19 @@ different, the result with the lower free energy is returned.</p></li>
 when the state is specified with pressure and molar entropy or enthalpy.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>State</strong></p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>state at given conditions</p>
 </dd>
-<dt class="field-even">Raises</dt>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>Error</strong> – When the state cannot be created using the combination of input.</p>
 </dd>
 </dl>
 <p class="rubric">Methods</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="feos.dft.State.__init__.html#feos.dft.State.__init__" title="feos.dft.State.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>()</p></td>
 <td><p></p></td>
@@ -1092,10 +1088,6 @@ when the state is specified with pressure and molar entropy or enthalpy.</p></li
 <p class="rubric">Attributes</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
 <tbody>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">density</span></code></p></td>
 <td><p></p></td>
@@ -1179,6 +1171,7 @@ when the state is specified with pressure and molar entropy or enthalpy.</p></li
 </div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script src="../../_static/scripts/furo.js"></script>
     <script src="../../_static/clipboard.min.js"></script>
