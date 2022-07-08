@@ -137,6 +137,41 @@ impl PyExternalPotential {
         })
     }
 
+    /// Steele potential with custom combining rules
+    ///
+    /// .. math:: V_i^\mathrm{ext}(z)=2\pi m_i\xi\varepsilon_{si}\sigma_{si}^2\Delta\rho_s\left(0.4\left(\frac{\sigma_{si}}{z}\right)^{10}-\left(\frac{\sigma_{si}}{z}\right)^4-\frac{\sigma_{si}^4}{3\Delta\left(z+0.61\Delta\right)^3}\right),~~~~\Delta=3.35
+    ///
+    /// Parameters
+    /// ----------
+    /// sigma_sf : numpy.ndarray[float]
+    ///     Solid-fluid interaction diameters.
+    /// epsilon_k_sf : numpy.ndarray[float]
+    ///     Solid-fluid interaction energies.
+    /// rho_s : float
+    ///     Density of the solid.
+    /// xi : float, optional
+    ///     Binary wall-fluid interaction parameter.
+    ///
+    /// Returns
+    /// -------
+    /// ExternalPotential
+    ///
+    #[staticmethod]
+    #[pyo3(text_signature = "(sigma_sf, epsilon_k_sf, rho_s, xi=None)")]
+    pub fn CustomSteele(
+        sigma_sf: &PyArray1<f64>,
+        epsilon_k_sf: &PyArray1<f64>,
+        rho_s: f64,
+        xi: Option<f64>,
+    ) -> Self {
+        Self(ExternalPotential::CustomSteele {
+            sigma_sf: sigma_sf.to_owned_array(),
+            epsilon_k_sf: epsilon_k_sf.to_owned_array(),
+            rho_s,
+            xi,
+        })
+    }
+
     /// Double well potential
     ///
     /// .. math:: V_i^\mathrm{ext}(z)=\mathrm{min}\left(\frac{2\pi}{45} m_i\varepsilon_{2si}\sigma_{si}^3\rho_s\left(2\left(\frac{2\sigma_{si}}{z}\right)^9-15\left(\frac{2\sigma_{si}}{z}\right)^3\right),0\right)+\frac{2\pi}{45} m_i\varepsilon_{1si}\sigma_{si}^3\rho_s\left(2\left(\frac{\sigma_{si}}{z}\right)^9-15\left(\frac{\sigma_{si}}{z}\right)^3\right),~~~~\varepsilon_{1si}=\sqrt{\varepsilon_{1ss}\varepsilon_{ii}},~~~~\varepsilon_{2si}=\sqrt{\varepsilon_{2ss}\varepsilon_{ii}},~~~~\sigma_{si}=\frac{1}{2}\left(\sigma_{ss}+\sigma_{ii}\right)

@@ -34,6 +34,13 @@ pub enum ExternalPotential<U> {
         rho_s: f64,
         xi: Option<f64>,
     },
+    /// Steele potential with custom combining rules: $V_i^\mathrm{ext}(z)=2\pi m_i\xi\varepsilon_{si}\sigma_{si}^2\Delta\rho_s\left(0.4\left(\frac{\sigma_{si}}{z}\right)^{10}-\left(\frac{\sigma_{si}}{z}\right)^4-\frac{\sigma_{si}^4}{3\Delta\left(z+0.61\Delta\right)^3}\right),~~~~\Delta=3.35$
+    CustomSteele {
+        sigma_sf: Array1<f64>,
+        epsilon_k_sf: Array1<f64>,
+        rho_s: f64,
+        xi: Option<f64>,
+    },
     /// Double well potential: $V_i^\mathrm{ext}(z)=\mathrm{min}\left(\frac{2\pi}{45} m_i\varepsilon_{2si}\sigma_{si}^3\rho_s\left(2\left(\frac{2\sigma_{si}}{z}\right)^9-15\left(\frac{2\sigma_{si}}{z}\right)^3\right),0\right)+\frac{2\pi}{45} m_i\varepsilon_{1si}\sigma_{si}^3\rho_s\left(2\left(\frac{\sigma_{si}}{z}\right)^9-15\left(\frac{\sigma_{si}}{z}\right)^3\right),~~~~\varepsilon_{1si}=\sqrt{\varepsilon_{1ss}\varepsilon_{ii}},~~~~\varepsilon_{2si}=\sqrt{\varepsilon_{2ss}\varepsilon_{ii}},~~~~\sigma_{si}=\frac{1}{2}\left(\sigma_{ss}+\sigma_{ii}\right)$
     DoubleWell {
         sigma_ss: f64,
@@ -130,6 +137,20 @@ impl<U: EosUnit> ExternalPotential<U> {
                         (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).mapv(|e| e.sqrt());
                     let sigma_sf = (fluid_parameters.sigma_ff() + *sigma_ss) * 0.5;
 
+                    (2.0 * PI * mi * xi.unwrap_or(1.0) * epsilon_k_sf[i])
+                        * (sigma_sf[i].powi(2) * DELTA_STEELE * rho_s)
+                        * (0.4 * (sigma_sf[i] / z_grid).mapv(|x| x.powi(10))
+                            - (sigma_sf[i] / z_grid).mapv(|x| x.powi(4))
+                            - sigma_sf[i].powi(4)
+                                / ((3.0 * DELTA_STEELE)
+                                    * (z_grid + 0.61 * DELTA_STEELE).mapv(|x| x.powi(3))))
+                }
+                Self::CustomSteele {
+                    sigma_sf,
+                    epsilon_k_sf,
+                    rho_s,
+                    xi,
+                } => {
                     (2.0 * PI * mi * xi.unwrap_or(1.0) * epsilon_k_sf[i])
                         * (sigma_sf[i].powi(2) * DELTA_STEELE * rho_s)
                         * (0.4 * (sigma_sf[i] / z_grid).mapv(|x| x.powi(10))
@@ -266,6 +287,23 @@ impl<U: EosUnit> ExternalPotential<U> {
                         (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).mapv(|e| e.sqrt());
                     let sigma_sf = (fluid_parameters.sigma_ff() + *sigma_ss) * 0.5;
 
+                    (2.0 * PI * mi * xi.unwrap_or(1.0) * epsilon_k_sf[i])
+                        * (sigma_sf[i].powi(2) * DELTA_STEELE * rho_s)
+                        * (psi(6, &(r_grid / pore_size), sigma_sf[i] / pore_size)
+                            - psi(3, &(r_grid / pore_size), sigma_sf[i] / pore_size)
+                            - sigma_sf[i] / DELTA_STEELE
+                                * phi(
+                                    3,
+                                    &(r_grid / (pore_size + DELTA_STEELE * 0.61)),
+                                    sigma_sf[i] / (pore_size + DELTA_STEELE * 0.61),
+                                ))
+                }
+                Self::CustomSteele {
+                    sigma_sf,
+                    epsilon_k_sf,
+                    rho_s,
+                    xi,
+                } => {
                     (2.0 * PI * mi * xi.unwrap_or(1.0) * epsilon_k_sf[i])
                         * (sigma_sf[i].powi(2) * DELTA_STEELE * rho_s)
                         * (psi(6, &(r_grid / pore_size), sigma_sf[i] / pore_size)
@@ -420,6 +458,32 @@ impl<U: EosUnit> ExternalPotential<U> {
                         (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).mapv(|e| e.sqrt());
                     let sigma_sf = (fluid_parameters.sigma_ff() + *sigma_ss) * 0.5;
 
+                    (2.0 * PI * mi * xi.unwrap_or(1.0) * epsilon_k_sf[i])
+                        * (sigma_sf[i].powi(2) * DELTA_STEELE * rho_s)
+                        * (2.0 / 5.0 * sum_n(10, r_grid, sigma_sf[i], pore_size)
+                            - sum_n(4, r_grid, sigma_sf[i], pore_size)
+                            - sigma_sf[i] / (3.0 * DELTA_STEELE)
+                                * (sigma_sf[i].powi(3)
+                                    / r_grid
+                                        .mapv(|r| (pore_size + 0.61 * DELTA_STEELE - r).powi(3))
+                                    + sigma_sf[i].powi(3)
+                                        / r_grid.mapv(|r| {
+                                            (pore_size + 0.61 * DELTA_STEELE + r).powi(3)
+                                        })
+                                    + 1.5
+                                        * sum_n(
+                                            3,
+                                            r_grid,
+                                            sigma_sf[i],
+                                            pore_size + 0.61 * DELTA_STEELE,
+                                        )))
+                }
+                Self::CustomSteele {
+                    sigma_sf,
+                    epsilon_k_sf,
+                    rho_s,
+                    xi,
+                } => {
                     (2.0 * PI * mi * xi.unwrap_or(1.0) * epsilon_k_sf[i])
                         * (sigma_sf[i].powi(2) * DELTA_STEELE * rho_s)
                         * (2.0 / 5.0 * sum_n(10, r_grid, sigma_sf[i], pore_size)
