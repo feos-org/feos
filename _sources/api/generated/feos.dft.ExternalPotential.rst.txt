@@ -19,6 +19,7 @@ feos.dft.ExternalPotential
       :toctree: ./
    
       ~ExternalPotential.CustomLJ93
+      ~ExternalPotential.CustomSteele
       ~ExternalPotential.DoubleWell
       ~ExternalPotential.FreeEnergyAveraged
       ~ExternalPotential.HardWall
