@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Added getters for the fields of `Pore1D` in Python. [#30](https://github.com/feos-org/feos-dft/pull/30)
+- Added Steele potential with custom combining rules. [#29](https://github.com/feos-org/feos/pull/29)
 
 ### Changed
 - Made FMT functional more flexible w.r.t. the shape of the weight functions. [#31](https://github.com/feos-org/feos-dft/pull/31)
