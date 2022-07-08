@@ -17,7 +17,7 @@ pub use phase_diagram_binary::PhaseDiagramHetero;
 pub use phase_diagram_pure::PhaseDiagram;
 
 /// Level of detail in the iteration output.
-#[derive(Copy, Clone, PartialOrd, PartialEq)]
+#[derive(Copy, Clone, PartialOrd, PartialEq, Eq)]
 #[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum Verbosity {
     /// Do not print output.
@@ -37,7 +37,7 @@ impl Default for Verbosity {
 /// Options for the various phase equilibria solvers.
 ///
 /// If the values are [None], solver specific default
-///  values are used.
+/// values are used.
 #[derive(Copy, Clone, Default)]
 pub struct SolverOptions {
     /// Maximum number of iterations.

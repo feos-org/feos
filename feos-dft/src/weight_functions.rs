@@ -150,7 +150,7 @@ impl<T: DualNum<f64>> WeightFunction<T> {
 }
 
 /// Possible weight function shapes.
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum WeightFunctionShape {
     /// Heaviside step function
     Theta,
