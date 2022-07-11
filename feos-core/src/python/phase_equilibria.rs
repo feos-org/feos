@@ -508,7 +508,11 @@ macro_rules! impl_phase_equilibrium {
                 Ok(Self(dia))
             }
 
-            /// Calculate a phase diagram for a mixture with fixed composition.
+            /// Calculate the bubble point line of a mixture with given composition.
+            ///
+            /// In the resulting phase diagram, the liquid states correspond to the
+            /// bubble point line while the vapor states contain the corresponding
+            /// equilibrium states at different compositions.
             ///
             /// Parameters
             /// ----------
@@ -540,7 +544,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseDiagram
             #[staticmethod]
             #[pyo3(text_signature = "(eos, moles, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
-            pub fn mix(
+            pub fn bubble_point_line(
                 eos: &$py_eos,
                 moles: PySIArray1,
                 min_temperature: PySINumber,
@@ -552,7 +556,7 @@ macro_rules! impl_phase_equilibrium {
                 tol_outer: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
-                let dia = PhaseDiagram::mix(
+                let dia = PhaseDiagram::bubble_point_line(
                     &eos.0,
                     &moles,
                     min_temperature.into(),
@@ -562,6 +566,117 @@ macro_rules! impl_phase_equilibrium {
                         (max_iter_inner, tol_inner, verbosity).into(),
                         (max_iter_outer, tol_outer, verbosity).into(),
                     )
+                )?;
+                Ok(Self(dia))
+            }
+
+            /// Calculate the dew point line of a mixture with given composition.
+            ///
+            /// In the resulting phase diagram, the vapor states correspond to the
+            /// dew point line while the liquid states contain the corresponding
+            /// equilibrium states at different compositions.
+            ///
+            /// Parameters
+            /// ----------
+            /// eos: Eos
+            ///     The equation of state.
+            /// moles: SIArray1
+            ///     The moles of the individual components
+            /// min_temperature: SINumber
+            ///     The lower limit for the temperature.
+            /// npoints: int
+            ///     The number of points.
+            /// critical_temperature: SINumber, optional
+            ///     An estimate for the critical temperature to initialize
+            ///     the calculation if necessary. For most components not necessary.
+            ///     Defaults to `None`.
+            /// max_iter_inner : int, optional
+            ///     The maximum number of inner iterations in the bubble/dew point iteration.
+            /// max_iter_outer : int, optional
+            ///     The maximum number of outer iterations in the bubble/dew point iteration.
+            /// tol_inner : float, optional
+            ///     The solution tolerance in the inner loop of the bubble/dew point iteration.
+            /// tol_outer : float, optional
+            ///     The solution tolerance in the outer loop of the bubble/dew point iteration.
+            /// verbosity : Verbosity, optional
+            ///     The verbosity of the bubble/dew point iteration.
+            ///
+            /// Returns
+            /// -------
+            /// PhaseDiagram
+            #[staticmethod]
+            #[pyo3(text_signature = "(eos, moles, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
+            pub fn dew_point_line(
+                eos: &$py_eos,
+                moles: PySIArray1,
+                min_temperature: PySINumber,
+                npoints: usize,
+                critical_temperature: Option<PySINumber>,
+                max_iter_inner: Option<usize>,
+                max_iter_outer: Option<usize>,
+                tol_inner: Option<f64>,
+                tol_outer: Option<f64>,
+                verbosity: Option<Verbosity>,
+            ) -> PyResult<Self> {
+                let dia = PhaseDiagram::dew_point_line(
+                    &eos.0,
+                    &moles,
+                    min_temperature.into(),
+                    npoints,
+                    critical_temperature.map(|t| t.into()),
+                    (
+                        (max_iter_inner, tol_inner, verbosity).into(),
+                        (max_iter_outer, tol_outer, verbosity).into(),
+                    )
+                )?;
+                Ok(Self(dia))
+            }
+
+            /// Calculate the spinodal lines for a mixture with fixed composition.
+            ///
+            /// Parameters
+            /// ----------
+            /// eos: Eos
+            ///     The equation of state.
+            /// moles: SIArray1
+            ///     The moles of the individual components
+            /// min_temperature: SINumber
+            ///     The lower limit for the temperature.
+            /// npoints: int
+            ///     The number of points.
+            /// critical_temperature: SINumber, optional
+            ///     An estimate for the critical temperature to initialize
+            ///     the calculation if necessary. For most components not necessary.
+            ///     Defaults to `None`.
+            /// max_iter : int, optional
+            ///     The maximum number of iterations.
+            /// tol: float, optional
+            ///     The solution tolerance.
+            /// verbosity : Verbosity, optional
+            ///     The verbosity.
+            ///
+            /// Returns
+            /// -------
+            /// PhaseDiagram
+            #[staticmethod]
+            #[pyo3(text_signature = "(eos, moles, min_temperature, npoints, critical_temperature=None, max_iter=None, tol=None, verbosity=None)")]
+            pub fn spinodal(
+                eos: &$py_eos,
+                moles: PySIArray1,
+                min_temperature: PySINumber,
+                npoints: usize,
+                critical_temperature: Option<PySINumber>,
+                max_iter: Option<usize>,
+                tol: Option<f64>,
+                verbosity: Option<Verbosity>,
+            ) -> PyResult<Self> {
+                let dia = PhaseDiagram::spinodal(
+                    &eos.0,
+                    &moles,
+                    min_temperature.into(),
+                    npoints,
+                    critical_temperature.map(|t| t.into()),
+                    (max_iter, tol, verbosity).into(),
                 )?;
                 Ok(Self(dia))
             }

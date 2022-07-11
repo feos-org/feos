@@ -5,12 +5,6 @@ use crate::EosUnit;
 use quantity::{QuantityArray1, QuantityScalar};
 use std::rc::Rc;
 
-pub struct SpinodalPoint<U: EosUnit> {
-    pub p: QuantityScalar<U>,
-    pub dp_drho: QuantityScalar<U>,
-    pub rho: QuantityScalar<U>,
-}
-
 pub fn density_iteration<U: EosUnit, E: EquationOfState>(
     eos: &Rc<E>,
     temperature: QuantityScalar<U>,
@@ -64,9 +58,9 @@ pub fn density_iteration<U: EosUnit, E: EquationOfState>(
                 .2;
 
             if rho > 0.85 * maxdensity {
-                let sp = pressure_spinodal(eos, temperature, initial_density, moles)?;
-                rho = sp.rho;
-                error = sp.p - pressure;
+                let [sp_p, sp_rho] = pressure_spinodal(eos, temperature, initial_density, moles)?;
+                rho = sp_rho;
+                error = sp_p - pressure;
                 if rho > 0.85 * maxdensity {
                     if error.is_sign_negative() {
                         return Err(EosError::IterationFailed(String::from("density_iteration")));
@@ -79,29 +73,28 @@ pub fn density_iteration<U: EosUnit, E: EquationOfState>(
                     rho = (rho * 1.1).min(maxdensity)?
                 }
             } else if error.is_sign_positive() && d2pdrho2.is_sign_positive() {
-                let sp = pressure_spinodal(eos, temperature, initial_density, moles)?;
-                rho = sp.rho;
-                error = sp.p - pressure;
+                let [sp_p, sp_rho] = pressure_spinodal(eos, temperature, initial_density, moles)?;
+                rho = sp_rho;
+                error = sp_p - pressure;
                 if error.is_sign_positive() {
                     rho = 0.001 * maxdensity
                 } else {
                     rho = (rho * 1.1).min(maxdensity)?
                 }
             } else if error.is_sign_negative() && d2pdrho2.is_sign_negative() {
-                let sp = pressure_spinodal(eos, temperature, initial_density, moles)?;
-                rho = sp.rho;
-                error = sp.p - pressure;
+                let [sp_p, sp_rho] = pressure_spinodal(eos, temperature, initial_density, moles)?;
+                rho = sp_rho;
+                error = sp_p - pressure;
                 if error.is_sign_negative() {
                     rho = 0.8 * maxdensity
                 } else {
                     rho = rho * 0.8
                 }
             } else if error.is_sign_negative() && d2pdrho2.is_sign_positive() {
-                let sp_l = pressure_spinodal(eos, temperature, 0.8 * maxdensity, moles)?;
-                let rho_l = sp_l.rho;
-                let sp_v = pressure_spinodal(eos, temperature, 0.001 * maxdensity, moles)?;
-                let rho_v = sp_v.rho;
-                error = sp_v.p - pressure;
+                let [_, rho_l] = pressure_spinodal(eos, temperature, 0.8 * maxdensity, moles)?;
+                let [sp_v_p, rho_v] =
+                    pressure_spinodal(eos, temperature, 0.001 * maxdensity, moles)?;
+                error = sp_v_p - pressure;
                 if error.is_sign_positive()
                     && (initial_density - rho_v).abs() < (initial_density - rho_l).abs()
                 {
@@ -110,11 +103,10 @@ pub fn density_iteration<U: EosUnit, E: EquationOfState>(
                     rho = (rho_l * 1.1).min(maxdensity)?
                 }
             } else if error.is_sign_positive() && d2pdrho2.is_sign_negative() {
-                let sp_l = pressure_spinodal(eos, temperature, 0.8 * maxdensity, moles)?;
-                let rho_l = sp_l.rho;
-                let sp_v = pressure_spinodal(eos, temperature, 0.001 * maxdensity, moles)?;
-                let rho_v = sp_v.rho;
-                error = sp_v.p - pressure;
+                let [_, rho_l] = pressure_spinodal(eos, temperature, 0.8 * maxdensity, moles)?;
+                let [sp_v_p, rho_v] =
+                    pressure_spinodal(eos, temperature, 0.001 * maxdensity, moles)?;
+                error = sp_v_p - pressure;
                 if error.is_sign_negative()
                     && (initial_density - rho_v).abs() > (initial_density - rho_l).abs()
                 {
@@ -149,12 +141,12 @@ pub fn density_iteration<U: EosUnit, E: EquationOfState>(
     }
 }
 
-pub fn pressure_spinodal<U: EosUnit, E: EquationOfState>(
+fn pressure_spinodal<U: EosUnit, E: EquationOfState>(
     eos: &Rc<E>,
     temperature: QuantityScalar<U>,
     rho_init: QuantityScalar<U>,
     moles: &QuantityArray1<U>,
-) -> EosResult<SpinodalPoint<U>> {
+) -> EosResult<[QuantityScalar<U>; 2]> {
     let maxiter = 30;
     let abstol = 1e-8;
 
@@ -186,11 +178,7 @@ pub fn pressure_spinodal<U: EosUnit, E: EquationOfState>(
             .abs()
             < abstol
         {
-            return Ok(SpinodalPoint {
-                p,
-                dp_drho: dpdrho,
-                rho,
-            });
+            return Ok([p, rho]);
         }
     }
     Err(EosError::NotConverged("pressure_spinodal".to_owned()))

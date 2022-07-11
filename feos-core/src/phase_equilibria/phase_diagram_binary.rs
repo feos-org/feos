@@ -209,7 +209,7 @@ where
     let mut y_old = None;
     vle_vec.push(vle_0);
     for xi in x {
-        let vle = PhaseEquilibrium::bubble_dew_point_with_options(
+        let vle = PhaseEquilibrium::bubble_dew_point(
             eos,
             tp,
             tp_old,
