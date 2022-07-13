@@ -25,7 +25,7 @@ crate-type = ["rlib", "cdylib"]
 quantity = "0.5"
 num-dual = "0.5"
 feos-core = { version = "0.3", path = "feos-core" }
-feos-dft = { version = "0.2", path = "feos-dft", optional = true }
+feos-dft = { version = "0.3", path = "feos-dft", optional = true }
 feos-saft = { version = "0.1", path = "feos-saft", optional = true }
 numpy = { version = "0.16", optional = true }
 ndarray = { version = "0.15", features = ["approx"] }
