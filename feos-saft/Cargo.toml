@@ -19,7 +19,7 @@ rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 [dependencies]
 num-dual = { version = "0.5", features = ["linalg"] }
 feos-core = { version = "0.3", path = "../feos-core" }
-feos-dft = { version = "0.2", path = "../feos-dft", optional = true }
+feos-dft = { version = "0.3", path = "../feos-dft", optional = true }
 ndarray = { version = "0.15", features = ["serde"] }
 pyo3 = { version = "0.16", optional = true }
 serde = "1.0"
