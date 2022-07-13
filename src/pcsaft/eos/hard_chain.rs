@@ -1,6 +1,6 @@
-use super::hard_sphere::zeta;
 use super::PcSaftParameters;
 use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_saft::HardSphereProperties;
 use ndarray::Array;
 use num_dual::*;
 use std::fmt;
@@ -12,12 +12,13 @@ pub struct HardChain {
 
 impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardChain {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+        let p = &self.parameters;
         let d = self.parameters.hs_diameter(state.temperature);
-        let zeta = zeta(&self.parameters.m, &state.partial_density, &d);
-        let frac_1mz3 = -(zeta[3] - 1.0).recip();
-        let c = zeta[2] * frac_1mz3 * frac_1mz3;
+        let [zeta2, zeta3] = p.zeta(state.temperature, &state.partial_density, [2, 3]);
+        let frac_1mz3 = -(zeta3 - 1.0).recip();
+        let c = zeta2 * frac_1mz3 * frac_1mz3;
         let g_hs =
-            d.mapv(|d| frac_1mz3 + d * c * 1.5 - d.powi(2) * c.powi(2) * (zeta[3] - 1.0) * 0.5);
+            d.mapv(|d| frac_1mz3 + d * c * 1.5 - d.powi(2) * c.powi(2) * (zeta3 - 1.0) * 0.5);
         Array::from_shape_fn(self.parameters.m.len(), |i| {
             state.partial_density[i] * (1.0 - self.parameters.m[i]) * g_hs[i].ln()
         })

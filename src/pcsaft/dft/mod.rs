@@ -1,30 +1,25 @@
 use super::PcSaftParameters;
 use crate::pcsaft::eos::PcSaftOptions;
-use association::AssociationFunctional;
-use dispersion::AttractiveFunctional;
 use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
 use feos_core::{IdealGasContribution, MolarWeight};
 use feos_dft::adsorption::FluidParameters;
-use feos_dft::fundamental_measure_theory::{
-    FMTContribution, FMTProperties, FMTVersion, MonomerShape,
-};
 use feos_dft::solvation::PairPotential;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
-use hard_chain::ChainFunctional;
-use ndarray::{Array, Array1, Array2};
-use num_dual::DualNum;
+use feos_saft::{Association, FMTContribution, FMTVersion};
+use ndarray::{Array1, Array2};
 use num_traits::One;
-use pure_saft_functional::*;
 use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
 use std::rc::Rc;
 
-mod association;
 mod dispersion;
 mod hard_chain;
 mod polar;
 mod pure_saft_functional;
+use dispersion::AttractiveFunctional;
+use hard_chain::ChainFunctional;
+use pure_saft_functional::*;
 
 /// PC-SAFT Helmholtz energy functional.
 pub struct PcSaftFunctional {
@@ -80,9 +75,10 @@ impl PcSaftFunctional {
             contributions.push(Box::new(att));
 
             // Association
-            if parameters.nassoc > 0 {
-                let assoc = AssociationFunctional::new(
-                    parameters.clone(),
+            if !parameters.association.assoc_comp.is_empty() {
+                let assoc = Association::new(
+                    &parameters,
+                    &parameters.association,
                     saft_options.max_iter_cross_assoc,
                     saft_options.tol_cross_assoc,
                 );
@@ -140,20 +136,6 @@ impl MolarWeight<SIUnit> for PcSaftFunctional {
     }
 }
 
-impl FMTProperties for PcSaftParameters {
-    fn component_index(&self) -> Array1<usize> {
-        Array::from_shape_fn(self.m.len(), |i| i)
-    }
-
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
-        MonomerShape::NonSpherical(self.m.mapv(N::from))
-    }
-
-    fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
-        self.hs_diameter(temperature)
-    }
-}
-
 impl FluidParameters for PcSaftFunctional {
     fn epsilon_k_ff(&self) -> Array1<f64> {
         self.parameters.epsilon_k.clone()
@@ -168,7 +150,7 @@ impl PairPotential for PcSaftFunctional {
     fn pair_potential(&self, i: usize, r: &Array1<f64>, _: f64) -> Array2<f64> {
         let sigma_ij = &self.parameters.sigma_ij;
         let eps_ij_4 = 4.0 * &self.parameters.epsilon_k_ij;
-        Array::from_shape_fn((self.parameters.m.len(), r.len()), |(j, k)| {
+        Array2::from_shape_fn((self.parameters.m.len(), r.len()), |(j, k)| {
             let att = (sigma_ij[[i, j]] / r[k]).powi(6);
             eps_ij_4[[i, j]] * att * (att - 1.0)
         })

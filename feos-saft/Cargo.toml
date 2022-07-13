@@ -1,0 +1,32 @@
+[package]
+name = "feos-saft"
+version = "0.1.0"
+authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>",
+           "Philipp Rehner <prehner@ethz.ch"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Core traits and functionalities for the `feos` project."
+homepage = "https://github.com/feos-org"
+readme = "README.md"
+repository = "https://github.com/feos-org/feos"
+keywords = ["physics", "thermodynamics", "equations_of_state", "phase_equilibria"]
+categories = ["science"]
+workspace = ".."
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
+
+[dependencies]
+num-dual = { version = "0.5", features = ["linalg"] }
+feos-core = { version = "0.3", path = "../feos-core" }
+feos-dft = { version = "0.2", path = "../feos-dft", optional = true }
+ndarray = { version = "0.15", features = ["serde"] }
+pyo3 = { version = "0.16", optional = true }
+serde = "1.0"
+serde_json = "1.0"
+
+[features]
+default = []
+association = []
+dft = ["feos-dft"]
+python = ["pyo3"]

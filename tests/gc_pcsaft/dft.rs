@@ -4,7 +4,9 @@ use approx::assert_relative_eq;
 use feos::gc_pcsaft::{
     GcPcSaft, GcPcSaftEosParameters, GcPcSaftFunctional, GcPcSaftFunctionalParameters,
 };
-use feos_core::parameter::{IdentifierOption, ParameterHetero};
+use feos_core::parameter::{
+    ChemicalRecord, Identifier, IdentifierOption, ParameterHetero, SegmentRecord,
+};
 use feos_core::{PhaseEquilibrium, State, StateBuilder, Verbosity};
 use feos_dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
 use feos_dft::interface::PlanarInterface;
@@ -102,6 +104,70 @@ fn test_bulk_implementation() -> Result<(), Box<dyn Error>> {
         -763.2289230004602132 * KILO * PASCAL * KB / KB_old,
         max_relative = 1e-14,
     );
+    Ok(())
+}
+
+#[test]
+fn test_bulk_association() -> Result<(), Box<dyn Error>> {
+    let segment_records = SegmentRecord::from_json("parameters/pcsaft/sauer2014_hetero.json")?;
+    let ethylene_glycol = ChemicalRecord::new(
+        Identifier::default(),
+        vec!["OH".into(), "CH2".into(), "CH2".into(), "OH".into()],
+        None,
+    );
+    let eos_parameters = Rc::new(GcPcSaftEosParameters::from_segments(
+        vec![ethylene_glycol.clone()],
+        segment_records.clone(),
+        None,
+    )?);
+    let eos = Rc::new(GcPcSaft::new(eos_parameters.clone()));
+    let func_parameters = Rc::new(GcPcSaftFunctionalParameters::from_segments(
+        vec![ethylene_glycol],
+        segment_records,
+        None,
+    )?);
+    let func = Rc::new(GcPcSaftFunctional::new(func_parameters.clone()));
+
+    let t = 200.0 * KELVIN;
+    let v = 0.002 * METER.powi(3);
+    let n = arr1(&[1.5]) * MOL;
+    let state_eos = State::new_nvt(&eos, t, v, &n)?;
+    let state_func = State::new_nvt(&func, t, v, &n)?;
+    let p_eos = state_eos.pressure_contributions();
+    let p_func = state_func.pressure_contributions();
+    println!(
+        "Equation of state:
+        \tcomps:        {}
+        \tkappa_ab:     {}
+        \tepsilon_k_ab: {}
+        \tna:           {}
+        \tnb:           {}",
+        eos_parameters.association.assoc_comp,
+        eos_parameters.association.kappa_ab,
+        eos_parameters.association.epsilon_k_ab,
+        eos_parameters.association.na,
+        eos_parameters.association.nb,
+    );
+    for (s, x) in &p_eos {
+        println!("{s:18}: {x:21.16}");
+    }
+    println!(
+        "\nHelmholtz energy functional:
+        \tcomps:        {}
+        \tkappa_ab:     {}
+        \tepsilon_k_ab: {}
+        \tna:           {}
+        \tnb:           {}",
+        func_parameters.association.assoc_comp,
+        func_parameters.association.kappa_ab,
+        func_parameters.association.epsilon_k_ab,
+        func_parameters.association.na,
+        func_parameters.association.nb,
+    );
+    for (s, x) in &p_func {
+        println!("{s:26}: {x:21.16}");
+    }
+    assert_relative_eq!(p_eos[4].1, p_func[4].1, max_relative = 1e-14);
     Ok(())
 }
 

@@ -1,4 +1,3 @@
-use super::eos::polar::DQVariants;
 use super::parameters::{PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord};
 use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
@@ -8,26 +7,17 @@ use feos_core::parameter::{
 use feos_core::python::joback::PyJobackRecord;
 use feos_core::python::parameter::*;
 use feos_core::*;
+use feos_saft::PyAssociationRecord;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
 use std::rc::Rc;
 
-impl From<&str> for DQVariants {
-    fn from(str: &str) -> Self {
-        match str {
-            "dq35" => Self::DQ35,
-            "dq44" => Self::DQ44,
-            _ => panic!("dq_variant must be either \"dq35\" or \"dq44\""),
-        }
-    }
-}
-
 /// Create a set of PC-Saft parameters from records.
 #[pyclass(name = "PcSaftRecord", unsendable)]
 #[pyo3(
-    text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
+    text_signature = "(m, sigma, epsilon_k, mu=None, q=None, association_record=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
 )]
 #[derive(Clone)]
 pub struct PyPcSaftRecord(PcSaftRecord);
@@ -41,10 +31,7 @@ impl PyPcSaftRecord {
         epsilon_k: f64,
         mu: Option<f64>,
         q: Option<f64>,
-        kappa_ab: Option<f64>,
-        epsilon_k_ab: Option<f64>,
-        na: Option<f64>,
-        nb: Option<f64>,
+        association_record: Option<PyAssociationRecord>,
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
@@ -55,10 +42,7 @@ impl PyPcSaftRecord {
             epsilon_k,
             mu,
             q,
-            kappa_ab,
-            epsilon_k_ab,
-            na,
-            nb,
+            association_record.map(|r| r.0),
             viscosity,
             diffusion,
             thermal_conductivity,
@@ -91,23 +75,8 @@ impl PyPcSaftRecord {
     }
 
     #[getter]
-    fn get_kappa_ab(&self) -> Option<f64> {
-        self.0.kappa_ab
-    }
-
-    #[getter]
-    fn get_epsilon_k_ab(&self) -> Option<f64> {
-        self.0.epsilon_k_ab
-    }
-
-    #[getter]
-    fn get_na(&self) -> Option<f64> {
-        self.0.na
-    }
-
-    #[getter]
-    fn get_nb(&self) -> Option<f64> {
-        self.0.nb
+    fn get_association_record(&self) -> Option<PyAssociationRecord> {
+        self.0.association_record.clone().map(PyAssociationRecord)
     }
 
     #[getter]
@@ -192,6 +161,7 @@ pub fn pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<PyChemicalRecord>()?;
     m.add_class::<PyJobackRecord>()?;
+    m.add_class::<PyAssociationRecord>()?;
 
     m.add_class::<PyPcSaftRecord>()?;
     m.add_class::<PyPureRecord>()?;

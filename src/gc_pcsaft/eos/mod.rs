@@ -1,21 +1,18 @@
 use feos_core::joback::Joback;
 use feos_core::parameter::ParameterHetero;
 use feos_core::{EquationOfState, HelmholtzEnergy, IdealGasContribution, MolarWeight};
+use feos_saft::{Association, HardSphere};
 use ndarray::Array1;
 use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
 use std::rc::Rc;
 
-pub(crate) mod association;
 pub(crate) mod dispersion;
 mod hard_chain;
-mod hard_sphere;
-mod parameter;
+pub(crate) mod parameter;
 mod polar;
-use association::{Association, CrossAssociation};
 use dispersion::Dispersion;
 use hard_chain::HardChain;
-use hard_sphere::HardSphere;
 pub use parameter::{GcPcSaftChemicalRecord, GcPcSaftEosParameters};
 use polar::Dipole;
 
@@ -55,26 +52,21 @@ impl GcPcSaft {
 
     pub fn with_options(parameters: Rc<GcPcSaftEosParameters>, options: GcPcSaftOptions) -> Self {
         let mut contributions: Vec<Box<dyn HelmholtzEnergy>> = Vec::with_capacity(7);
-        contributions.push(Box::new(HardSphere {
-            parameters: parameters.clone(),
-        }));
+        contributions.push(Box::new(HardSphere::new(&parameters)));
         contributions.push(Box::new(HardChain {
             parameters: parameters.clone(),
         }));
         contributions.push(Box::new(Dispersion {
             parameters: parameters.clone(),
         }));
-        match parameters.assoc_segment.len() {
-            0 => (),
-            1 => contributions.push(Box::new(Association {
-                parameters: parameters.clone(),
-            })),
-            _ => contributions.push(Box::new(CrossAssociation {
-                parameters: parameters.clone(),
-                max_iter: options.max_iter_cross_assoc,
-                tol: options.tol_cross_assoc,
-            })),
-        };
+        if !parameters.association.assoc_comp.is_empty() {
+            contributions.push(Box::new(Association::new(
+                &parameters,
+                &parameters.association,
+                options.max_iter_cross_assoc,
+                options.tol_cross_assoc,
+            )));
+        }
         if !parameters.dipole_comp.is_empty() {
             contributions.push(Box::new(Dipole::new(&parameters)))
         }
@@ -121,5 +113,119 @@ impl EquationOfState for GcPcSaft {
 impl MolarWeight<SIUnit> for GcPcSaft {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::gc_pcsaft::eos::parameter::test::*;
+    use approx::assert_relative_eq;
+    use feos_core::{EosUnit, HelmholtzEnergyDual, StateHD};
+    use ndarray::arr1;
+    use num_dual::Dual64;
+    use quantity::si::{METER, MOL, PASCAL};
+
+    #[test]
+    fn hs_propane() {
+        let parameters = propane();
+        let contrib = HardSphere::new(&Rc::new(parameters));
+        let temperature = 300.0;
+        let volume = METER
+            .powi(3)
+            .to_reduced(EosUnit::reference_volume())
+            .unwrap();
+        let moles = (1.5 * MOL).to_reduced(EosUnit::reference_moles()).unwrap();
+        let state = StateHD::new(
+            Dual64::from_re(temperature),
+            Dual64::from_re(volume).derive(),
+            arr1(&[Dual64::from_re(moles)]),
+        );
+        let pressure =
+            -contrib.helmholtz_energy(&state).eps[0] * temperature * EosUnit::reference_pressure();
+        assert_relative_eq!(pressure, 1.5285037907989527 * PASCAL, max_relative = 1e-10);
+    }
+
+    #[test]
+    fn hs_propanol() {
+        let parameters = propanol();
+        let contrib = HardSphere::new(&Rc::new(parameters));
+        let temperature = 300.0;
+        let volume = METER
+            .powi(3)
+            .to_reduced(EosUnit::reference_volume())
+            .unwrap();
+        let moles = (1.5 * MOL).to_reduced(EosUnit::reference_moles()).unwrap();
+        let state = StateHD::new(
+            Dual64::from_re(temperature),
+            Dual64::from_re(volume).derive(),
+            arr1(&[Dual64::from_re(moles)]),
+        );
+        let pressure =
+            -contrib.helmholtz_energy(&state).eps[0] * temperature * EosUnit::reference_pressure();
+        assert_relative_eq!(pressure, 2.3168212018200243 * PASCAL, max_relative = 1e-10);
+    }
+
+    #[test]
+    fn assoc_propanol() {
+        let parameters = Rc::new(propanol());
+        let contrib = Association::new(&parameters, &parameters.association, 50, 1e-10);
+        let temperature = 300.0;
+        let volume = METER
+            .powi(3)
+            .to_reduced(EosUnit::reference_volume())
+            .unwrap();
+        let moles = (1.5 * MOL).to_reduced(EosUnit::reference_moles()).unwrap();
+        let state = StateHD::new(
+            Dual64::from_re(temperature),
+            Dual64::from_re(volume).derive(),
+            arr1(&[Dual64::from_re(moles)]),
+        );
+        let pressure =
+            -contrib.helmholtz_energy(&state).eps[0] * temperature * EosUnit::reference_pressure();
+        assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
+    }
+
+    #[test]
+    fn cross_assoc_propanol() {
+        let parameters = Rc::new(propanol());
+        let contrib =
+            Association::new_cross_association(&parameters, &parameters.association, 50, 1e-10);
+        let temperature = 300.0;
+        let volume = METER
+            .powi(3)
+            .to_reduced(EosUnit::reference_volume())
+            .unwrap();
+        let moles = (1.5 * MOL).to_reduced(EosUnit::reference_moles()).unwrap();
+        let state = StateHD::new(
+            Dual64::from_re(temperature),
+            Dual64::from_re(volume).derive(),
+            arr1(&[Dual64::from_re(moles)]),
+        );
+        let pressure =
+            -contrib.helmholtz_energy(&state).eps[0] * temperature * EosUnit::reference_pressure();
+        assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
+    }
+
+    #[test]
+    fn cross_assoc_ethanol_propanol() {
+        let parameters = Rc::new(ethanol_propanol(false));
+        let contrib = Association::new(&parameters, &parameters.association, 50, 1e-10);
+        let temperature = 300.0;
+        let volume = METER
+            .powi(3)
+            .to_reduced(EosUnit::reference_volume())
+            .unwrap();
+        let moles = (arr1(&[1.5, 2.5]) * MOL)
+            .to_reduced(EosUnit::reference_moles())
+            .unwrap();
+        let state = StateHD::new(
+            Dual64::from_re(temperature),
+            Dual64::from_re(volume).derive(),
+            moles.mapv(Dual64::from_re),
+        );
+        let pressure =
+            -contrib.helmholtz_energy(&state).eps[0] * temperature * EosUnit::reference_pressure();
+        assert_relative_eq!(pressure, -26.105606376765632 * PASCAL, max_relative = 1e-10);
     }
 }

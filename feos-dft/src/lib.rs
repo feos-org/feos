@@ -7,7 +7,6 @@ pub mod adsorption;
 mod convolver;
 mod functional;
 mod functional_contribution;
-pub mod fundamental_measure_theory;
 mod geometry;
 mod ideal_chain_contribution;
 pub mod interface;

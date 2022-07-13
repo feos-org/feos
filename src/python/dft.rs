@@ -9,18 +9,18 @@ use crate::impl_estimator;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::python::PyPcSaftParameters;
 #[cfg(feature = "pcsaft")]
-use crate::pcsaft::{PcSaftFunctional, PcSaftOptions};
+use crate::pcsaft::{DQVariants, PcSaftFunctional, PcSaftOptions};
 #[cfg(feature = "pets")]
 use crate::pets::python::PyPetsParameters;
 #[cfg(feature = "pets")]
 use crate::pets::{PetsFunctional, PetsOptions};
 use feos_core::*;
 use feos_dft::adsorption::*;
-use feos_dft::fundamental_measure_theory::{FMTFunctional, FMTVersion};
 use feos_dft::interface::*;
 use feos_dft::python::*;
 use feos_dft::solvation::*;
 use feos_dft::*;
+use feos_saft::{FMTFunctional, FMTVersion};
 use ndarray::{Array1, Array2};
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2, PyArray4};
@@ -218,8 +218,8 @@ impl PyFunctionalVariant {
     ///     Maximum number of iterations for cross association. Defaults to 50.
     /// tol_cross_assoc : float
     ///     Tolerance for convergence of cross association. Defaults to 1e-10.
-    /// dq_variant : {'dq35', 'dq44'}, optional
-    ///     Combination rule used in the dipole/quadrupole term. Defaults to 'dq35'
+    /// dq_variant : DQVariants, optional
+    ///     Combination rule used in the dipole/quadrupole term. Defaults to 'DQVariants.DQ35'
     ///
     /// Returns
     /// -------
@@ -230,7 +230,7 @@ impl PyFunctionalVariant {
         max_eta = "0.5",
         max_iter_cross_assoc = "50",
         tol_cross_assoc = "1e-10",
-        dq_variant = "\"dq35\""
+        dq_variant = "DQVariants::DQ35"
     )]
     #[staticmethod]
     #[pyo3(
@@ -242,13 +242,13 @@ impl PyFunctionalVariant {
         max_eta: f64,
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
-        dq_variant: &str,
+        dq_variant: DQVariants,
     ) -> Self {
         let options = PcSaftOptions {
             max_eta,
             max_iter_cross_assoc,
             tol_cross_assoc,
-            dq_variant: dq_variant.into(),
+            dq_variant,
         };
         Self(Rc::new(
             PcSaftFunctional::with_options(parameters.0, fmt_version, options).into(),

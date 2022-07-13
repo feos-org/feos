@@ -3,7 +3,7 @@
 
 #[cfg(feature = "dft")]
 mod dft;
-mod eos;
+pub(crate) mod eos;
 #[cfg(feature = "micelles")]
 pub mod micelles;
 mod record;

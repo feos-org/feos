@@ -5,12 +5,10 @@ use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
 use feos_core::{IdealGasContribution, MolarWeight};
 use feos_dft::adsorption::FluidParameters;
-use feos_dft::fundamental_measure_theory::{
-    FMTContribution, FMTProperties, FMTVersion, MonomerShape,
-};
 use feos_dft::solvation::PairPotential;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
-use ndarray::{Array, Array1, Array2};
+use feos_saft::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
+use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use pure_pets_functional::*;
 use quantity::si::*;
@@ -117,11 +115,7 @@ impl MolarWeight<SIUnit> for PetsFunctional {
     }
 }
 
-impl FMTProperties for PetsParameters {
-    fn component_index(&self) -> Array1<usize> {
-        Array::from_shape_fn(self.sigma.len(), |i| i)
-    }
-
+impl HardSphereProperties for PetsParameters {
     fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
         MonomerShape::Spherical(self.sigma.len())
     }
@@ -146,7 +140,7 @@ impl PairPotential for PetsFunctional {
         let eps_ij_4 = 4.0 * self.parameters.epsilon_k_ij.clone();
         let shift_ij = &eps_ij_4 * (2.5.powi(-12) - 2.5.powi(-6));
         let rc_ij = 2.5 * &self.parameters.sigma_ij;
-        Array::from_shape_fn((self.parameters.sigma.len(), r.len()), |(j, k)| {
+        Array2::from_shape_fn((self.parameters.sigma.len(), r.len()), |(j, k)| {
             if r[k] > rc_ij[[i, j]] {
                 0.0
             } else {
