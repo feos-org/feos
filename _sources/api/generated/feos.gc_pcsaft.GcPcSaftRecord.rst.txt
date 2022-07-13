@@ -26,4 +26,14 @@ feos.gc\_pcsaft.GcPcSaftRecord
 
    
    
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~GcPcSaftRecord.association_record
+      ~GcPcSaftRecord.epsilon_k
+      ~GcPcSaftRecord.m
+      ~GcPcSaftRecord.mu
+      ~GcPcSaftRecord.sigma
+   
    
