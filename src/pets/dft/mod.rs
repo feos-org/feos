@@ -140,7 +140,7 @@ impl PairPotential for PetsFunctional {
         let eps_ij_4 = 4.0 * self.parameters.epsilon_k_ij.clone();
         let shift_ij = &eps_ij_4 * (2.5.powi(-12) - 2.5.powi(-6));
         let rc_ij = 2.5 * &self.parameters.sigma_ij;
-        Array::from_shape_fn((self.parameters.sigma.len(), r.len()), |(j, k)| {
+        Array2::from_shape_fn((self.parameters.sigma.len(), r.len()), |(j, k)| {
             if r[k] > rc_ij[[i, j]] {
                 0.0
             } else {
