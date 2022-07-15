@@ -28,9 +28,11 @@ The files named according to the pattern `NameYear.json` correspond to published
 
 ## Group-Contribution Parameters
 
-|file|model|publication|
+|file|model|publication(s)|
 |-|-|:-:|
-[`sauer2014_homo.json`](sauer2014_homo.json) | GC segment parameters for homo segmented PC-SAFT | [&#128279;](https://doi.org/10.1021/ie502203w) |
-[`sauer2014_hetero.json`](sauer2014_hetero.json) | GC segment parameters for hetero segmented PC-SAFT | [&#128279;](https://doi.org/10.1021/ie502203w)
-[`loetgeringlin2015_homo.json`](loetgeringlin2018.json) | GC segment parameters including for homo segmented PC-SAFT including viscosity parameter | [&#128279;](https://doi.org/10.1021/acs.iecr.5b01698)
+[`sauer2014_homo.json`](sauer2014_homo.json) | GC segment parameters for homosegmented PC-SAFT | [&#128279;](https://doi.org/10.1021/ie502203w) |
+[`sauer2014_homo_joback.json`](sauer2014_homo.json) | GC segment parameters for homosegmented PC-SAFT including ideal gas parameters | [&#128279;](https://doi.org/10.1021/ie502203w) [&#128279;](https://doi.org/10.1080/00986448708960487)|
+[`sauer2014_hetero.json`](sauer2014_hetero.json) | GC segment parameters for heterosegmented PC-SAFT | [&#128279;](https://doi.org/10.1021/ie502203w)
+[`sauer2014_hetero_joback.json`](sauer2014_hetero.json) | GC segment parameters for heterosegmented PC-SAFT including ideal gas parameters | [&#128279;](https://doi.org/10.1021/ie502203w) [&#128279;](https://doi.org/10.1080/00986448708960487)
+[`loetgeringlin2015_homo.json`](loetgeringlin2018.json) | GC segment parameters including for homosegmented PC-SAFT including viscosity parameter | [&#128279;](https://doi.org/10.1021/acs.iecr.5b01698)
 
