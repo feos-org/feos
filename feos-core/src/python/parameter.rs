@@ -542,7 +542,7 @@ macro_rules! impl_parameter {
             /// ----------
             /// pure_records : [PureRecord]
             ///     A list of pure component parameters.
-            /// binary_records : numpy.ndarray[float] or List[BinaryRecord]
+            /// binary_records : numpy.ndarray[float] or List[BinaryRecord], optional
             ///     A matrix of binary interaction parameters or a list
             ///     containing records for binary interactions.
             /// search_option : IdentifierOption, optional, defaults to IdentifierOption.Name
@@ -551,25 +551,33 @@ macro_rules! impl_parameter {
             #[pyo3(text_signature = "(pure_records, binary_records, search_option)")]
             fn from_records(
                 pure_records: Vec<PyPureRecord>,
-                binary_records: &PyAny,
+                binary_records: Option<&PyAny>,
                 search_option: Option<IdentifierOption>,
             ) -> PyResult<Self> {
                 let prs = pure_records.into_iter().map(|pr| pr.0).collect();
-                let brs = if let Ok(br) = binary_records.extract::<PyReadonlyArray2<f64>>() {
-                    Ok(br.to_owned_array().mapv(|r| r.try_into().unwrap()))
-                } else if let Ok(br) = binary_records.extract::<Vec<PyBinaryRecord>>() {
-                    let brs: Vec<_> = br.into_iter().map(|br| br.0).collect();
-                    Ok(<$parameter>::binary_matrix_from_records(
-                        &prs,
-                        &brs,
-                        search_option.unwrap_or(IdentifierOption::Name),
-                    ))
+                if let Some(binary_records) = binary_records {
+                    let brs = if let Ok(br) = binary_records.extract::<PyReadonlyArray2<f64>>() {
+                        Ok(br.to_owned_array().mapv(|r| r.try_into().unwrap()))
+                    } else if let Ok(br) = binary_records.extract::<Vec<PyBinaryRecord>>() {
+                        let brs: Vec<_> = br.into_iter().map(|br| br.0).collect();
+                        Ok(<$parameter>::binary_matrix_from_records(
+                            &prs,
+                            &brs,
+                            search_option.unwrap_or(IdentifierOption::Name),
+                        ))
+                    } else {
+                        Err(PyErr::new::<PyTypeError, _>(format!(
+                            "Could not parse binary input!"
+                        )))
+                    };
+                    Ok(Self(Rc::new(<$parameter>::from_records(prs, brs.unwrap()))))
                 } else {
-                    Err(PyErr::new::<PyTypeError, _>(format!(
-                        "Could not parse binary input!"
-                    )))
-                };
-                Ok(Self(Rc::new(<$parameter>::from_records(prs, brs.unwrap()))))
+                    let n = prs.len();
+                    Ok(Self(Rc::new(<$parameter>::from_records(
+                        prs,
+                        Array2::from_elem([n, n], <$parameter as Parameter>::Binary::default()),
+                    ))))
+                }
             }
 
             /// Creates parameters for a pure component from a pure record.

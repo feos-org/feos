@@ -6,6 +6,7 @@ use crate::parameter::{
 use crate::python::joback::PyJobackRecord;
 use crate::python::parameter::PyIdentifier;
 use crate::*;
+use ndarray::Array2;
 use numpy::PyReadonlyArray2;
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;

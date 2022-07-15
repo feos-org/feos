@@ -92,8 +92,20 @@ where
         };
         let n = pure_records.len();
         Array2::from_shape_fn([n, n], |(i, j)| {
-            let id1 = pure_records[i].identifier.as_string(search_option).unwrap();
-            let id2 = pure_records[j].identifier.as_string(search_option).unwrap();
+            let id1 = pure_records[i]
+                .identifier
+                .as_string(search_option)
+                .expect(&format!(
+                    "No identifier for given search_option for pure record {}.",
+                    i
+                ));
+            let id2 = pure_records[j]
+                .identifier
+                .as_string(search_option)
+                .expect(&format!(
+                    "No identifier for given search_option for pure record {}.",
+                    j
+                ));
             binary_map
                 .get(&(id1.clone(), id2.clone()))
                 .or_else(|| binary_map.get(&(id2, id1)))
