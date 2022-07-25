@@ -11,7 +11,7 @@ mod dft;
 #[cfg(feature = "dft")]
 pub use dft::{FMTContribution, FMTFunctional, FMTVersion};
 
-/// Different monomer shapes for FMT.
+/// Different monomer shapes for FMT and BMCSL.
 pub enum MonomerShape<'a, D> {
     /// For spherical monomers, the number of components.
     Spherical(usize),
@@ -26,9 +26,13 @@ pub enum MonomerShape<'a, D> {
 
 /// Properties of (generalized) hard sphere systems.
 pub trait HardSphereProperties {
+    /// The [MonomerShape] used in the model.
     fn monomer_shape<D: DualNum<f64>>(&self, temperature: D) -> MonomerShape<D>;
+
+    /// The temperature dependent hard-sphere diameters of every segment.
     fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D>;
 
+    /// For every segment, the index of the component that it is on.
     fn component_index(&self) -> Cow<Array1<usize>> {
         match self.monomer_shape(1.0) {
             MonomerShape::Spherical(n) => Cow::Owned(Array1::from_shape_fn(n, |i| i)),
@@ -37,6 +41,7 @@ pub trait HardSphereProperties {
         }
     }
 
+    /// The geometry coefficients $C_{k,\alpha}$ for every segment.
     fn geometry_coefficients<D: DualNum<f64>>(&self, temperature: D) -> [Array1<D>; 4] {
         match self.monomer_shape(temperature) {
             MonomerShape::Spherical(n) => {
@@ -48,6 +53,7 @@ pub trait HardSphereProperties {
         }
     }
 
+    /// The packing fractions $\zeta_k$.
     fn zeta<D: DualNum<f64>, const N: usize>(
         &self,
         temperature: D,
@@ -69,6 +75,7 @@ pub trait HardSphereProperties {
         zeta
     }
 
+    /// The fraction $\frac{\zeta_2}{\zeta_3}$ evaluated in a way to avoid a division by 0 when the density is 0.
     fn zeta_23<D: DualNum<f64>>(&self, temperature: D, molefracs: &Array1<D>) -> D {
         let component_index = self.component_index();
         let geometry_coefficients = self.geometry_coefficients(temperature);
@@ -86,6 +93,16 @@ pub trait HardSphereProperties {
     }
 }
 
+/// Implementation of the BMCSL equation of state for hard-sphere mixtures.
+///
+/// This structure provides an implementation of the Boublík-Mansoori-Carnahan-Starling-Leland (BMCSL) equation of state ([Boublík, 1970](https://doi.org/10.1063/1.1673824), [Mansoori et al., 1971](https://doi.org/10.1063/1.1675048)) that is often used as reference contribution in SAFT equations of state. The implementation is generalized to allow the description of non-sperical or fused-sphere reference fluids.
+///
+/// The reduced Helmholtz energy is calculated according to
+/// $$\frac{\beta A}{V}=\frac{6}{\pi}\left(\frac{3\zeta_1\zeta_2}{1-\zeta_3}+\frac{\zeta_2^3}{\zeta_3\left(1-\zeta_3\right)^2}+\left(\frac{\zeta_2^3}{\zeta_3^2}-\zeta_0\right)\ln\left(1-\zeta_3\right)\right)$$
+/// with the packing fractions
+/// $$\zeta_k=\frac{\pi}{6}\sum_\alpha C_{k,\alpha}\rho_\alpha d_\alpha^k,~~~~~~~~k=0\ldots 3.$$
+///
+/// The geometry coefficients $C_{k,\alpha}$ and the segment diameters $d_\alpha$ are specified via the [HardSphereProperties] trait.
 pub struct HardSphere<P> {
     parameters: Rc<P>,
 }
@@ -116,51 +133,3 @@ impl<P> fmt::Display for HardSphere<P> {
         write!(f, "Hard Sphere")
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use crate::pcsaft::parameters::utils::{
-//         butane_parameters, propane_butane_parameters, propane_parameters,
-//     };
-//     use approx::assert_relative_eq;
-//     use ndarray::arr1;
-
-//     #[test]
-//     fn helmholtz_energy() {
-//         let hs = HardSphere {
-//             parameters: propane_parameters(),
-//         };
-//         let t = 250.0;
-//         let v = 1000.0;
-//         let n = 1.0;
-//         let s = StateHD::new(t, v, arr1(&[n]));
-//         let a_rust = hs.helmholtz_energy(&s);
-//         assert_relative_eq!(a_rust, 0.410610492598808, epsilon = 1e-10);
-//     }
-
-//     #[test]
-//     fn mix() {
-//         let c1 = HardSphere {
-//             parameters: propane_parameters(),
-//         };
-//         let c2 = HardSphere {
-//             parameters: butane_parameters(),
-//         };
-//         let c12 = HardSphere {
-//             parameters: propane_butane_parameters(),
-//         };
-//         let t = 250.0;
-//         let v = 2.5e28;
-//         let n = 1.0;
-//         let s = StateHD::new(t, v, arr1(&[n]));
-//         let a1 = c1.helmholtz_energy(&s);
-//         let a2 = c2.helmholtz_energy(&s);
-//         let s1m = StateHD::new(t, v, arr1(&[n, 0.0]));
-//         let a1m = c12.helmholtz_energy(&s1m);
-//         let s2m = StateHD::new(t, v, arr1(&[0.0, n]));
-//         let a2m = c12.helmholtz_energy(&s2m);
-//         assert_relative_eq!(a1, a1m, epsilon = 1e-14);
-//         assert_relative_eq!(a2, a2m, epsilon = 1e-14);
-//     }
-// }

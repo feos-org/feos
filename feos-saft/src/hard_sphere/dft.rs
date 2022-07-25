@@ -1,4 +1,3 @@
-//! Helmholtz energy functionals from fundamental measure theory.
 use feos_core::EosResult;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
@@ -30,6 +29,38 @@ pub enum FMTVersion {
 }
 
 /// The [FunctionalContribution] for the hard sphere functional.
+///
+/// The struct provides an implementation of different variants of fundamental measure theory ([Rosenfeld, 1989](https://doi.org/10.1103/PhysRevLett.63.980)). Currently, only variants that are consistent with the BMCSL equation of state for hard-sphere mixtures are considered (exluding, e.g., the original Rosenfeld and White-Bear II variants).
+///
+/// The Helmholtz energy density is calculated according to
+/// $$\beta f=-n_0\ln\left(1-n_3\right)+\frac{n_{12}}{1-n_3}+\frac{1}{36\pi}n_2n_{22}f_3(n_3)$$
+/// The expressions for $n_{12}$ and $n_{22}$ depend on the [FMTVersion].
+///
+/// |[FMTVersion]|$n_{12}$|$n_{22}$|
+/// |-|:-:|:-:|
+/// |WhiteBear|$n_1n_2-\vec n_1\cdot\vec n_2$|$n_2^2-3\vec n_2\cdot\vec n_2$|
+/// |KierlikRosinberg|$n_1n_2$|$n_2^2$|
+/// |AntiSymWhiteBear|$n_1n_2-\vec n_1\cdot\vec n_2$|$n_2^2\left(1-\frac{\vec n_2\cdot\vec n_2}{n_2^2}\right)^3$|
+///
+/// The value of $f(n_3)$ numerically diverges for small $n_3$. Therefore, it is approximated with a Taylor expansion.
+/// $$f_3=\begin{cases}\frac{n_3+\left(1-n_3\right)^2\ln\left(1-n_3\right)}{n_3^2\left(1-n_3\right)^2}&\text{if }n_3>10^{-5}\\\\
+/// \frac{3}{2}+\frac{8}{3}n_3+\frac{15}{4}n_3^2+\frac{24}{5}n_3^3+\frac{35}{6}n_3^4&\text{else}\end{cases}$$
+///
+/// The weighted densities $n_k(\mathbf{r})$ are calculated by concolving the density profiles $\rho_\alpha(\mathbf{r})$ with weight functions $\omega_k^\alpha(\mathbf{r})$
+/// $$n_k(\mathbf{r})=\sum_\alpha\int\rho_\alpha(\mathbf{r}\')\omega_k^\alpha(\mathbf{r}-\mathbf{r}\')\mathrm{d}\mathbf{r}\'$$
+///
+/// The weight functions differ between the different [FMTVersion]s.
+///
+/// ||WhiteBear/AntiSymWhiteBear|KierlikRosinberg|
+/// |-|:-:|:-:|
+/// |$\omega_0^\alpha(\mathbf{r})$|$\frac{C_{0,\alpha}}{\pi\sigma_\alpha^2}\\,\delta\\!\left(\frac{d_\alpha}{2}-\|\mathbf{r}\|\right)$|$C_{0,\alpha}\left(-\frac{1}{8\pi}\\,\delta\'\'\\!\left(\frac{d_\alpha}{2}-\|\mathbf{r}\|\right)+\frac{1}{2\pi\|\mathbf{r}\|}\\,\delta\'\\!\left(\frac{d_\alpha}{2}-\|\mathbf{r}\|\right)\right)$|
+/// |$\omega_1^\alpha(\mathbf{r})$|$\frac{C_{1,\alpha}}{2\pi\sigma_\alpha}\\,\delta\\!\left(\frac{d_\alpha}{2}-\|\mathbf{r}\|\right)$|$\frac{C_{1,\alpha}}{8\pi}\\,\delta\'\\!\left(\frac{d_\alpha}{2}-\|\mathbf{r}\|\right)$|
+/// |$\omega_2^\alpha(\mathbf{r})$|$C_{2,\alpha}\\,\delta\\!\left(\frac{d_\alpha}{2}-\|\mathbf{r}\|\right)$|$C_{2,\alpha}\\,\delta\\!\left(\frac{d_\alpha}{2}-\|\mathbf{r}\|\right)$|
+/// |$\omega_3^\alpha(\mathbf{r})$|$C_{3,\alpha}\\,\Theta\\!\left(\frac{d_\alpha}{2}-\|\mathbf{r}\|\right)$|$C_{3,\alpha}\\,\Theta\\!\left(\frac{d_\alpha}{2}-\|\mathbf{r}\|\right)$|
+/// |$\vec\omega_1^\alpha(\mathbf{r})$|$C_{3,\alpha}\frac{\mathbf{r}}{2\pi\sigma_\alpha\|\mathbf{r}\|}\\,\delta\\!\left(\frac{d_\alpha}{2}-\|\mathbf{r}\|\right)$|-|
+/// |$\vec\omega_2^\alpha(\mathbf{r})$|$C_{3,\alpha}\frac{\mathbf{r}}{\|\mathbf{r}\|}\\,\delta\\!\left(\frac{d_\alpha}{2}-\|\mathbf{r}\|\right)$|-|
+///
+/// The geometry coefficients $C_{k,\alpha}$ and the segment diameters $d_\alpha$ are specified via the [HardSphereProperties] trait.
 pub struct FMTContribution<P> {
     pub properties: Rc<P>,
     version: FMTVersion,
