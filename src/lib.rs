@@ -2,14 +2,15 @@
 //!
 //! # Example: critical point of a pure substance
 //!
-//! ```no_run
+#![cfg_attr(not(feature = "pcsaft"), doc = "```ignore")]
+#![cfg_attr(feature = "pcsaft", doc = "```")]
 //! # use feos_core::EosError;
 //! use feos::pcsaft::{PcSaft, PcSaftParameters};
 //! use feos_core::parameter::{IdentifierOption, Parameter};
 //! use feos_core::{Contributions, State};
 //! use quantity::si::KELVIN;
 //! use std::rc::Rc;
-//! 
+//!
 //! // Read parameters from json file.
 //! let parameters = PcSaftParameters::from_json(
 //!     vec!["propane"],
@@ -17,13 +18,13 @@
 //!     None,
 //!     IdentifierOption::Name,
 //! )?;
-//! 
+//!
 //! // Define equation of state.
 //! let saft = Rc::new(PcSaft::new(Rc::new(parameters)));
-//! 
+//!
 //! // Define thermodynamic conditions.
 //! let critical_point = State::critical_point(&saft, None, None, Default::default())?;
-//! 
+//!
 //! // Compute properties.
 //! let p = critical_point.pressure(Contributions::Total);
 //! let t = critical_point.temperature;
