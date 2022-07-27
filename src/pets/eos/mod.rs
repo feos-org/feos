@@ -23,8 +23,13 @@ enum IdealGasContributions {
     Joback(Joback),
 }
 
+/// Configuration options for the PeTS equation of state and Helmholtz energy functional.
+/// 
+/// The maximum packing fraction is used to infer initial values 
+/// for routines that depend on starting values for the system density.
 #[derive(Copy, Clone)]
 pub struct PetsOptions {
+    /// maximum packing fraction
     pub max_eta: f64,
 }
 
@@ -34,6 +39,7 @@ impl Default for PetsOptions {
     }
 }
 
+/// PeTS equation of state.
 pub struct Pets {
     parameters: Rc<PetsParameters>,
     options: PetsOptions,
@@ -42,10 +48,12 @@ pub struct Pets {
 }
 
 impl Pets {
+    /// PeTS equation of state with default options.
     pub fn new(parameters: Rc<PetsParameters>) -> Self {
         Self::with_options(parameters, PetsOptions::default())
     }
 
+    /// PeTS equation of state with provided options.
     pub fn with_options(parameters: Rc<PetsParameters>, options: PetsOptions) -> Self {
         let contributions: Vec<Box<dyn HelmholtzEnergy>> = vec![
             Box::new(HardSphere {

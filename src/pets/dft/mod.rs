@@ -18,7 +18,9 @@ use std::rc::Rc;
 mod dispersion;
 mod pure_pets_functional;
 
+/// PeTS Helmholtz energy functional.
 pub struct PetsFunctional {
+    /// PeTS parameters of all substances in the system
     pub parameters: Rc<PetsParameters>,
     fmt_version: FMTVersion,
     options: PetsOptions,
@@ -27,15 +29,21 @@ pub struct PetsFunctional {
 }
 
 impl PetsFunctional {
+    /// PeTS functional with default options.
+    /// 
+    /// # Defaults
+    /// `FMTVersion`: `FMTVersion::WhiteBear`
     pub fn new(parameters: Rc<PetsParameters>) -> DFT<Self> {
         Self::with_options(parameters, FMTVersion::WhiteBear, PetsOptions::default())
     }
 
+    /// PeTS functional with default options for and provided FMT version.
     #[allow(non_snake_case)]
     pub fn new_full(parameters: Rc<PetsParameters>, fmt_Version: FMTVersion) -> DFT<Self> {
         Self::with_options(parameters, fmt_Version, PetsOptions::default())
     }
 
+    /// PeTS functional with provided options for FMT and equation of state options.
     pub fn with_options(
         parameters: Rc<PetsParameters>,
         fmt_version: FMTVersion,

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Write;
 
-/// PeTS parameter set.
+/// PeTS parameters for a pure substance.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct PetsRecord {
     /// Segment diameter in units of Angstrom
@@ -42,6 +42,14 @@ impl std::fmt::Display for PetsRecord {
 }
 
 impl PetsRecord {
+    /// New PeTS parameters for a pure substance.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use feos::pets::PetsRecord;
+    /// let record = PetsRecord::new(3.7, 120.0, None, None, None);
+    /// ```
     pub fn new(
         sigma: f64,
         epsilon_k: f64,
@@ -59,6 +67,9 @@ impl PetsRecord {
     }
 }
 
+/// Parameters that modify binary interactions.
+/// 
+/// $\varepsilon_{k,ij} = (1 - k_{ij})\sqrt{\varepsilon_{k,i} \varepsilon_{k,j}}$
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct PetsBinaryRecord {
     k_ij: f64,
@@ -82,20 +93,34 @@ impl std::fmt::Display for PetsBinaryRecord {
     }
 }
 
+/// Parameter set for the PeTS equation of state and Helmholtz energy functional.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct PetsParameters {
+    /// molar weight in gram per mole
     pub molarweight: Array1<f64>,
+    /// Lennard-Jones diameter in Angstrom
     pub sigma: Array1<f64>,
+    /// Lennard-Jones energy parameter in Kelvin
     pub epsilon_k: Array1<f64>,
+    /// binary interaction parameter
     pub k_ij: Array2<f64>,
+    /// diameter matrix
     pub sigma_ij: Array2<f64>,
+    /// energy parameter matrix including k_ij
     pub epsilon_k_ij: Array2<f64>,
+    /// energy parameter matrix not including k_ij
     pub e_k_ij: Array2<f64>,
+    /// viscosity parameters for entropy scaling
     pub viscosity: Option<Array2<f64>>,
+    /// diffusion parameters for entropy scaling
     pub diffusion: Option<Array2<f64>>,
+    /// thermal conductivity parameters for entropy scaling
     pub thermal_conductivity: Option<Array2<f64>>,
+    /// records of all pure substances of the system
     pub pure_records: Vec<PureRecord<PetsRecord, JobackRecord>>,
+    /// records of parameters for Joback method
     pub joback_records: Option<Vec<JobackRecord>>,
+    /// records of all binary interaction parameters
     pub binary_records: Array2<PetsBinaryRecord>,
 }
 

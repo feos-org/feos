@@ -1,3 +1,4 @@
+//! Utilities for working with experimental data.
 use feos_core::EosError;
 use quantity::QuantityError;
 use std::num::ParseFloatError;

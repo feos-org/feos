@@ -18,6 +18,7 @@ impl fmt::Display for NoRecord {
     }
 }
 
+/// uv-theory parameters for a pure substance
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct UVRecord {
     rep: f64,
@@ -27,6 +28,7 @@ pub struct UVRecord {
 }
 
 impl UVRecord {
+    /// Single substance record for uv-theory
     pub fn new(rep: f64, att: f64, sigma: f64, epsilon_k: f64) -> Self {
         Self {
             rep,
@@ -47,6 +49,7 @@ impl std::fmt::Display for UVRecord {
     }
 }
 
+/// Binary interaction parameters
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct UVBinaryRecord {
     pub k_ij: f64,
@@ -98,6 +101,7 @@ pub fn mean_field_constant<D: DualNum<f64>>(rep: D, att: D, x: D) -> D {
     mie_prefactor(rep, att) * (x.powd(-att + 3.0) / (att - 3.0) - x.powd(-rep + 3.0) / (rep - 3.0))
 }
 
+/// Parameters for all substances for uv-theory equation of state and Helmholtz energy functional
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UVParameters {
     pub ncomponents: usize,
