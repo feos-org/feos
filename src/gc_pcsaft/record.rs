@@ -1,4 +1,4 @@
-use feos_saft::AssociationRecord;
+use crate::association::AssociationRecord;
 use serde::{Deserialize, Serialize};
 
 /// gc-PC-SAFT pure-component parameters.

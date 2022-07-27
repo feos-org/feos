@@ -1,5 +1,6 @@
 use super::eos::PetsOptions;
 use super::parameters::PetsParameters;
+use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use dispersion::AttractiveFunctional;
 use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
@@ -7,7 +8,6 @@ use feos_core::{IdealGasContribution, MolarWeight};
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
-use feos_saft::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use pure_pets_functional::*;

@@ -1,5 +1,5 @@
 use super::*;
-use crate::HardSphereProperties;
+use crate::hard_sphere::HardSphereProperties;
 use feos_core::EosResult;
 use feos_dft::{
     FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,

@@ -11,12 +11,12 @@ use std::f64::consts::PI;
 use std::fmt;
 use std::rc::Rc;
 
-use crate::{HardSphereProperties, MonomerShape};
+use super::{HardSphereProperties, MonomerShape};
 
 const PI36M1: f64 = 1.0 / (36.0 * PI);
 const N3_CUTOFF: f64 = 1e-5;
 
-/// Different versions of fundamental measure theory
+/// Different versions of fundamental measure theory.
 #[derive(Clone, Copy)]
 #[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum FMTVersion {
@@ -46,7 +46,7 @@ pub enum FMTVersion {
 /// $$f_3=\begin{cases}\frac{n_3+\left(1-n_3\right)^2\ln\left(1-n_3\right)}{n_3^2\left(1-n_3\right)^2}&\text{if }n_3>10^{-5}\\\\
 /// \frac{3}{2}+\frac{8}{3}n_3+\frac{15}{4}n_3^2+\frac{24}{5}n_3^3+\frac{35}{6}n_3^4&\text{else}\end{cases}$$
 ///
-/// The weighted densities $n_k(\mathbf{r})$ are calculated by concolving the density profiles $\rho_\alpha(\mathbf{r})$ with weight functions $\omega_k^\alpha(\mathbf{r})$
+/// The weighted densities $n_k(\mathbf{r})$ are calculated by convolving the density profiles $\rho_\alpha(\mathbf{r})$ with weight functions $\omega_k^\alpha(\mathbf{r})$
 /// $$n_k(\mathbf{r})=\sum_\alpha\int\rho_\alpha(\mathbf{r}\')\omega_k^\alpha(\mathbf{r}-\mathbf{r}\')\mathrm{d}\mathbf{r}\'$$
 ///
 /// The weight functions differ between the different [FMTVersion]s.

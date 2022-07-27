@@ -1,3 +1,5 @@
+//! Generic implementation of the hard-sphere contribution
+//! that can be used across models.
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use ndarray::*;
 use num_dual::DualNum;

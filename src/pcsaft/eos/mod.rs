@@ -1,11 +1,12 @@
 use super::parameters::PcSaftParameters;
+use crate::association::Association;
+use crate::hard_sphere::HardSphere;
 use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
 use feos_core::{
     Contributions, EntropyScaling, EosError, EosResult, EquationOfState, HelmholtzEnergy,
     IdealGasContribution, MolarWeight, State,
 };
-use feos_saft::{Association, HardSphere};
 use ndarray::Array1;
 use quantity::si::*;
 use std::f64::consts::{FRAC_PI_6, PI};

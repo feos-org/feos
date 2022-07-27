@@ -1,6 +1,6 @@
 use super::PcSaftParameters;
+use crate::hard_sphere::HardSphereProperties;
 use feos_core::{HelmholtzEnergyDual, StateHD};
-use feos_saft::HardSphereProperties;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 use std::fmt;

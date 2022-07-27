@@ -1,10 +1,11 @@
+use crate::association::AssociationParameters;
 use crate::gc_pcsaft::record::GcPcSaftRecord;
+use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     BinaryRecord, ChemicalRecord, FromSegments, Identifier, ParameterError, ParameterHetero,
     SegmentCount, SegmentRecord,
 };
-use feos_saft::{AssociationParameters, HardSphereProperties, MonomerShape};
 use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
@@ -395,8 +396,8 @@ impl std::fmt::Display for GcPcSaftEosParameters {
 #[cfg(test)]
 pub mod test {
     use super::*;
+    use crate::association::AssociationRecord;
     use feos_core::parameter::{ChemicalRecord, Identifier};
-    use feos_saft::AssociationRecord;
 
     fn ch3() -> SegmentRecord<GcPcSaftRecord, JobackRecord> {
         SegmentRecord::new(

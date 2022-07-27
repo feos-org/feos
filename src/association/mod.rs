@@ -1,6 +1,6 @@
 //! Generic implementation of the SAFT association contribution
 //! that can be used across models.
-use crate::HardSphereProperties;
+use crate::hard_sphere::HardSphereProperties;
 use feos_core::{EosError, HelmholtzEnergyDual, StateHD};
 use ndarray::*;
 use num_dual::linalg::{norm, LU};
@@ -385,7 +385,8 @@ mod tests_pcsaft {
 
     #[test]
     fn helmholtz_energy() {
-        let assoc = Association::new(&Rc::new(water_parameters()), 50, 1e-10);
+        let params = Rc::new(water_parameters());
+        let assoc = Association::new(&params, &params.association, 50, 1e-10);
         let t = 350.0;
         let v = 41.248289328513216;
         let n = 1.23;
@@ -396,7 +397,8 @@ mod tests_pcsaft {
 
     #[test]
     fn helmholtz_energy_cross() {
-        let assoc = Association::new_cross_association(&Rc::new(water_parameters()), 50, 1e-10);
+        let params = Rc::new(water_parameters());
+        let assoc = Association::new_cross_association(&params, &params.association, 50, 1e-10);
         let t = 350.0;
         let v = 41.248289328513216;
         let n = 1.23;
@@ -419,8 +421,8 @@ mod tests_gc_pcsaft {
 
     #[test]
     fn test_assoc_propanol() {
-        let parameters = propanol();
-        let contrib = Association::new(&Rc::new(parameters), 50, 1e-10);
+        let params = Rc::new(propanol());
+        let contrib = Association::new(&params, &params.association, 50, 1e-10);
         let temperature = 300.0;
         let volume = METER
             .powi(3)
@@ -439,8 +441,8 @@ mod tests_gc_pcsaft {
 
     #[test]
     fn test_cross_assoc_propanol() {
-        let parameters = propanol();
-        let contrib = Association::new_cross_association(&Rc::new(parameters), 50, 1e-10);
+        let params = Rc::new(propanol());
+        let contrib = Association::new_cross_association(&params, &params.association, 50, 1e-10);
         let temperature = 300.0;
         let volume = METER
             .powi(3)
@@ -459,8 +461,8 @@ mod tests_gc_pcsaft {
 
     #[test]
     fn test_cross_assoc_ethanol_propanol() {
-        let parameters = ethanol_propanol(false);
-        let contrib = Association::new(&Rc::new(parameters), 50, 1e-10);
+        let params = Rc::new(ethanol_propanol(false));
+        let contrib = Association::new(&params, &params.association, 50, 1e-10);
         let temperature = 300.0;
         let volume = METER
             .powi(3)

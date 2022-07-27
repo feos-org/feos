@@ -1,11 +1,11 @@
 use super::polar::calculate_helmholtz_energy_density_polar;
 use super::PcSaftParameters;
+use crate::hard_sphere::HardSphereProperties;
 use crate::pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
 use feos_core::EosError;
 use feos_dft::{
     FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
 };
-use feos_saft::HardSphereProperties;
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};

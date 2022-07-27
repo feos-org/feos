@@ -1,9 +1,9 @@
+use crate::association::AssociationParameters;
 use crate::gc_pcsaft::record::GcPcSaftRecord;
 use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     BinaryRecord, ChemicalRecord, ParameterError, ParameterHetero, SegmentRecord,
 };
-use feos_saft::AssociationParameters;
 use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
 use petgraph::dot::{Config, Dot};

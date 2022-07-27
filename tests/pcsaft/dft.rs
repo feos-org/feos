@@ -1,11 +1,11 @@
 #![allow(clippy::excessive_precision)]
 #![cfg(feature = "dft")]
 use approx::assert_relative_eq;
+use feos::hard_sphere::FMTVersion;
 use feos::pcsaft::{PcSaft, PcSaftFunctional, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter};
 use feos_core::{Contributions, PhaseEquilibrium, State};
 use feos_dft::interface::PlanarInterface;
-use feos_saft::FMTVersion;
 use ndarray::{arr1, Axis};
 use quantity::si::*;
 use std::error::Error;

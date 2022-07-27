@@ -1,4 +1,5 @@
 use super::parameters::{PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord};
+use crate::association::PyAssociationRecord;
 use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
@@ -7,7 +8,6 @@ use feos_core::parameter::{
 use feos_core::python::joback::PyJobackRecord;
 use feos_core::python::parameter::*;
 use feos_core::*;
-use feos_saft::PyAssociationRecord;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
