@@ -1,9 +1,9 @@
 use super::GcPcSaftFunctionalParameters;
+use crate::hard_sphere::HardSphereProperties;
 use feos_core::EosError;
 use feos_dft::{
     FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
 };
-use feos_saft::HardSphereProperties;
 use ndarray::*;
 use num_dual::DualNum;
 use petgraph::visit::EdgeRef;

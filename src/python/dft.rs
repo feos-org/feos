@@ -4,6 +4,7 @@ use crate::estimator::*;
 use crate::gc_pcsaft::python::PyGcPcSaftFunctionalParameters;
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftOptions};
+use crate::hard_sphere::{FMTFunctional, FMTVersion};
 #[cfg(feature = "estimator")]
 use crate::impl_estimator;
 #[cfg(feature = "pcsaft")]
@@ -20,7 +21,6 @@ use feos_dft::interface::*;
 use feos_dft::python::*;
 use feos_dft::solvation::*;
 use feos_dft::*;
-use feos_saft::{FMTFunctional, FMTVersion};
 use ndarray::{Array1, Array2};
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2, PyArray4};

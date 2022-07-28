@@ -1,9 +1,9 @@
 use super::PcSaftParameters;
+use crate::hard_sphere::HardSphereProperties;
 use crate::pcsaft::eos::polar::{
     MeanSegmentNumbers, Multipole, AD, ADQ, ALPHA, AQ, BD, BDQ, BQ, CD, CDQ, CQ, PI_SQ_43,
 };
 use feos_core::EosError;
-use feos_saft::HardSphereProperties;
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};

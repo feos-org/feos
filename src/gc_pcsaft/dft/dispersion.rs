@@ -1,10 +1,10 @@
 use super::parameter::GcPcSaftFunctionalParameters;
 use crate::gc_pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
+use crate::hard_sphere::HardSphereProperties;
 use feos_core::EosError;
 use feos_dft::{
     FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
 };
-use feos_saft::HardSphereProperties;
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_6, PI};

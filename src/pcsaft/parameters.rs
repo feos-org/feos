@@ -1,9 +1,10 @@
+use crate::association::{AssociationParameters, AssociationRecord};
+use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use conv::ValueInto;
 use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     FromSegments, FromSegmentsBinary, Parameter, ParameterError, PureRecord,
 };
-use feos_saft::{AssociationParameters, AssociationRecord, HardSphereProperties, MonomerShape};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;

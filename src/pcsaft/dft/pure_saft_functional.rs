@@ -1,13 +1,13 @@
 use super::polar::{pair_integral_ij, triplet_integral_ijk};
 use super::PcSaftParameters;
-// use crate::association::dft::N0_CUTOFF;
+use crate::association::Association;
+use crate::hard_sphere::{FMTVersion, HardSphereProperties};
 use crate::pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
 use crate::pcsaft::eos::polar::{AD, AQ, BD, BQ, CD, CQ, PI_SQ_43};
 use feos_core::{EosError, EosResult};
 use feos_dft::{
     FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
 };
-use feos_saft::{Association, FMTVersion, HardSphereProperties};
 use ndarray::*;
 use num_dual::*;
 use std::f64::consts::{FRAC_PI_6, PI};

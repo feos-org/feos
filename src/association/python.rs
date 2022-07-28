@@ -3,11 +3,9 @@ use feos_core::impl_json_handling;
 use feos_core::parameter::ParameterError;
 use pyo3::prelude::*;
 
-/// Create a set of PC-Saft parameters from records.
+/// Pure component association parameters
 #[pyclass(name = "AssociationRecord", unsendable)]
-#[pyo3(
-    text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
-)]
+#[pyo3(text_signature = "(kappa_ab, epsilon_k_ab, na, nb)")]
 #[derive(Clone)]
 pub struct PyAssociationRecord(pub AssociationRecord);
 

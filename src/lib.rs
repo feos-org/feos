@@ -38,6 +38,10 @@
 #[cfg(feature = "estimator")]
 pub mod estimator;
 
+#[cfg(feature = "association")]
+pub mod association;
+pub mod hard_sphere;
+
 // models
 #[cfg(feature = "gc_pcsaft")]
 pub mod gc_pcsaft;

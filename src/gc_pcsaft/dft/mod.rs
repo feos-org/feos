@@ -1,9 +1,10 @@
 use super::eos::GcPcSaftOptions;
+use crate::association::Association;
+use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use feos_core::parameter::ParameterHetero;
 use feos_core::MolarWeight;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
-use feos_saft::{Association, FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use ndarray::Array1;
 use num_dual::DualNum;
 use petgraph::graph::UnGraph;

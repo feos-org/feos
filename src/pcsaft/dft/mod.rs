@@ -1,4 +1,6 @@
 use super::PcSaftParameters;
+use crate::association::Association;
+use crate::hard_sphere::{FMTContribution, FMTVersion};
 use crate::pcsaft::eos::PcSaftOptions;
 use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
@@ -6,7 +8,6 @@ use feos_core::{IdealGasContribution, MolarWeight};
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
-use feos_saft::{Association, FMTContribution, FMTVersion};
 use ndarray::{Array1, Array2};
 use num_traits::One;
 use quantity::si::*;

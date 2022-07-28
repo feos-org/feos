@@ -1,6 +1,6 @@
 use super::GcPcSaftEosParameters;
+use crate::hard_sphere::HardSphereProperties;
 use feos_core::{HelmholtzEnergyDual, StateHD};
-use feos_saft::HardSphereProperties;
 use num_dual::*;
 use std::fmt;
 use std::rc::Rc;

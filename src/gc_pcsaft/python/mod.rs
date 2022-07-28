@@ -2,6 +2,7 @@
 use super::dft::GcPcSaftFunctionalParameters;
 use super::eos::GcPcSaftEosParameters;
 use super::record::GcPcSaftRecord;
+use crate::association::PyAssociationRecord;
 use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     BinaryRecord, IdentifierOption, ParameterError, ParameterHetero, SegmentRecord,
@@ -9,7 +10,6 @@ use feos_core::parameter::{
 use feos_core::python::joback::PyJobackRecord;
 use feos_core::python::parameter::{PyBinarySegmentRecord, PyChemicalRecord, PyIdentifier};
 use feos_core::{impl_json_handling, impl_parameter_from_segments, impl_segment_record};
-use feos_saft::PyAssociationRecord;
 #[cfg(feature = "dft")]
 use numpy::{PyArray2, ToPyArray};
 use pyo3::prelude::*;

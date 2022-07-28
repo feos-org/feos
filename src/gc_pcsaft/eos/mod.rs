@@ -1,7 +1,8 @@
+use crate::association::Association;
+use crate::hard_sphere::HardSphere;
 use feos_core::joback::Joback;
 use feos_core::parameter::ParameterHetero;
 use feos_core::{EquationOfState, HelmholtzEnergy, IdealGasContribution, MolarWeight};
-use feos_saft::{Association, HardSphere};
 use ndarray::Array1;
 use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
