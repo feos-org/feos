@@ -1,4 +1,4 @@
-use super::{DataSet, EstimatorError, Loss};
+use super::{DataSet, EstimatorError};
 use feos_core::{
     DensityInitialization, EosUnit, EquationOfState, MolarWeight, PhaseEquilibrium, SolverOptions,
     State,
@@ -49,8 +49,8 @@ impl<U: EosUnit> LiquidDensity<U> {
 }
 
 impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDensity<U> {
-    fn target(&self) -> QuantityArray1<U> {
-        self.target.clone()
+    fn target(&self) -> &QuantityArray1<U> {
+        &self.target
     }
 
     fn target_str(&self) -> &str {
@@ -80,15 +80,6 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDe
             }
         }
         Ok(prediction)
-    }
-
-    fn cost(&self, eos: &Rc<E>, loss: Loss) -> Result<Array1<f64>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        let mut cost = self.relative_difference(eos)?;
-        loss.apply(&mut cost.view_mut());
-        Ok(cost / self.datapoints as f64)
     }
 
     fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
@@ -133,8 +124,8 @@ impl<U: EosUnit> EquilibriumLiquidDensity<U> {
 impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
     for EquilibriumLiquidDensity<U>
 {
-    fn target(&self) -> QuantityArray1<U> {
-        self.target.clone()
+    fn target(&self) -> &QuantityArray1<U> {
+        &self.target
     }
 
     fn target_str(&self) -> &str {
@@ -161,15 +152,6 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
             }
         }
         Ok(prediction)
-    }
-
-    fn cost(&self, eos: &Rc<E>, loss: Loss) -> Result<Array1<f64>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        let mut cost = self.relative_difference(eos)?;
-        loss.apply(&mut cost.view_mut());
-        Ok(cost / self.datapoints as f64)
     }
 
     fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {

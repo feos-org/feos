@@ -439,5 +439,6 @@ pub fn eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 pub fn estimator_eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyDataSet>()?;
     m.add_class::<PyEstimator>()?;
-    m.add_class::<PyLoss>()
+    m.add_class::<PyLoss>()?;
+    m.add_class::<CostFunction>()
 }

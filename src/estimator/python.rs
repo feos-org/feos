@@ -318,6 +318,37 @@ macro_rules! impl_estimator {
                 )?)))
             }
 
+            /// Create a DataSet with experimental data for binary
+            /// phase equilibria
+            ///
+            /// Parameters
+            /// ----------
+            /// target : SIArray1
+            ///     Experimental data for liquid density.
+            /// temperature : SIArray1
+            ///     Temperature for experimental data points.
+            ///
+            /// Returns
+            /// -------
+            /// DataSet
+            #[staticmethod]
+            #[pyo3(text_signature = "(target, temperature)")]
+            fn binary_vle(
+                cost_function: CostFunction,
+                temperature: &PySIArray1,
+                pressure: &PySIArray1,
+                liquid_molefracs: Option<&PyArray1<f64>>,
+                vapor_molefracs: Option<&PyArray1<f64>>,
+            ) -> PyResult<Self> {
+                Ok(Self(Rc::new(BinaryVle::<SIUnit>::new(
+                    cost_function,
+                    temperature.clone().into(),
+                    pressure.clone().into(),
+                    liquid_molefracs.map(|x| x.to_owned_array()),
+                    vapor_molefracs.map(|x| x.to_owned_array()),
+                )?)))
+            }
+
             /// Return `input` as ``Dict[str, SIArray1]``.
             #[getter]
             fn get_input(&self) -> HashMap<String, PySIArray1> {
@@ -331,7 +362,7 @@ macro_rules! impl_estimator {
             /// Return `target` as ``SIArray1``.
             #[getter]
             fn get_target(&self) -> PySIArray1 {
-                PySIArray1::from(self.0.target())
+                PySIArray1::from(self.0.target().clone())
             }
 
             /// Return `target` as ``SIArray1``.

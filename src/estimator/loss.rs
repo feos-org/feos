@@ -1,10 +1,10 @@
-use ndarray::ArrayViewMut1;
+use ndarray::Array1;
 
 /// Functions to apply to residuals for robust regression.
-/// 
+///
 /// These functions are applied to the resiudals as part of the `cost` function:
 /// $\text{cost}(r) = \sqrt{f^2 \rho(z)}$,
-/// where $r$ is the residual, $\rho$ is the loss function, 
+/// where $r$ is the residual, $\rho$ is the loss function,
 /// $f$ is the scaling factor, and $z = \frac{r^2}{f^2}$.
 #[derive(Clone, Debug, Copy)]
 pub enum Loss {
@@ -35,7 +35,7 @@ impl Loss {
     }
 
     /// Apply function to array of residuals.
-    pub fn apply(&self, res: &mut ArrayViewMut1<f64>) {
+    pub fn apply(&self, res: &mut Array1<f64>) {
         match self {
             Self::Linear => (),
             Self::SoftL1(s) => {

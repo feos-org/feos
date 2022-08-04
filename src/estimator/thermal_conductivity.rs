@@ -1,4 +1,4 @@
-use super::{DataSet, EstimatorError, Loss};
+use super::{DataSet, EstimatorError};
 use feos_core::{DensityInitialization, EntropyScaling, EosUnit, EquationOfState, State};
 use ndarray::{arr1, Array1};
 use quantity::{QuantityArray1, QuantityScalar};
@@ -42,8 +42,8 @@ impl<U: EosUnit> ThermalConductivity<U> {
 }
 
 impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> DataSet<U, E> for ThermalConductivity<U> {
-    fn target(&self) -> QuantityArray1<U> {
-        self.target.clone()
+    fn target(&self) -> &QuantityArray1<U> {
+        &self.target
     }
 
     fn target_str(&self) -> &str {
@@ -68,15 +68,6 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> DataSet<U, E> for Therm
             prediction.try_set(i, state.thermal_conductivity()?)?;
         }
         Ok(prediction)
-    }
-
-    fn cost(&self, eos: &Rc<E>, loss: Loss) -> Result<Array1<f64>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        let mut cost = self.relative_difference(eos)?;
-        loss.apply(&mut cost.view_mut());
-        Ok(cost / self.datapoints as f64)
     }
 
     fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
