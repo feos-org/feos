@@ -97,7 +97,7 @@ impl AssociationParameters {
         Self {
             component_index: component_index
                 .cloned()
-                .unwrap_or_else(|| Array1::from_shape_fn(assoc_comp.len(), |i| i)),
+                .unwrap_or_else(|| Array1::from_shape_fn(records.len(), |i| i)),
             assoc_comp: Array1::from_vec(assoc_comp),
             kappa_ab: Array1::from_vec(kappa_ab),
             epsilon_k_ab: Array1::from_vec(epsilon_k_ab),
