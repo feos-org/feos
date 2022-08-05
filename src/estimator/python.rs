@@ -221,7 +221,16 @@ macro_rules! impl_estimator {
             ///     Use Antoine type equation to extrapolate vapor
             ///     pressure if experimental data is above critial
             ///     point of model. Defaults to False.
-            ///
+            /// max_iter : int, optional
+            ///     The maximum number of iterations for critical point
+            ///     and VLE algorithms.
+            /// tol: float, optional
+            ///     Solution tolerance for critical point
+            ///     and VLE algorithms.
+            /// verbosity : Verbosity, optional
+            ///     Verbosity for critical point
+            ///     and VLE algorithms.
+            /// 
             /// Returns
             /// -------
             /// ``DataSet``
@@ -231,11 +240,15 @@ macro_rules! impl_estimator {
                 target: &PySIArray1,
                 temperature: &PySIArray1,
                 extrapolate: Option<bool>,
+                max_iter: Option<usize>,
+                tol: Option<f64>,
+                verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 Ok(Self(Rc::new(VaporPressure::<SIUnit>::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     extrapolate.unwrap_or(false),
+                    Some((max_iter, tol, verbosity).into()),
                 )?)))
             }
 
@@ -276,6 +289,15 @@ macro_rules! impl_estimator {
             ///     Experimental data for liquid density.
             /// temperature : SIArray1
             ///     Temperature for experimental data points.
+            /// max_iter : int, optional
+            ///     The maximum number of iterations for critical point
+            ///     and VLE algorithms.
+            /// tol: float, optional
+            ///     Solution tolerance for critical point
+            ///     and VLE algorithms.
+            /// verbosity : Verbosity, optional
+            ///     Verbosity for critical point
+            ///     and VLE algorithms.
             ///
             /// Returns
             /// -------
@@ -285,10 +307,14 @@ macro_rules! impl_estimator {
             fn equilibrium_liquid_density(
                 target: &PySIArray1,
                 temperature: &PySIArray1,
+                max_iter: Option<usize>,
+                tol: Option<f64>,
+                verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 Ok(Self(Rc::new(EquilibriumLiquidDensity::<SIUnit>::new(
                     target.clone().into(),
                     temperature.clone().into(),
+                    Some((max_iter, tol, verbosity).into())
                 )?)))
             }
 

@@ -105,6 +105,7 @@ pub struct EquilibriumLiquidDensity<U: EosUnit> {
     pub target: QuantityArray1<U>,
     temperature: QuantityArray1<U>,
     datapoints: usize,
+    solver_options: SolverOptions,
 }
 
 impl<U: EosUnit> EquilibriumLiquidDensity<U> {
@@ -112,12 +113,14 @@ impl<U: EosUnit> EquilibriumLiquidDensity<U> {
     pub fn new(
         target: QuantityArray1<U>,
         temperature: QuantityArray1<U>,
+        vle_options: Option<SolverOptions>,
     ) -> Result<Self, EstimatorError> {
         let datapoints = target.len();
         Ok(Self {
             target,
             temperature,
             datapoints,
+            solver_options: vle_options.unwrap_or_default(),
         })
     }
 
@@ -151,7 +154,7 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
         let mut prediction = Array1::zeros(self.datapoints) * unit;
         for i in 0..self.datapoints {
             let t = self.temperature.get(i);
-            if let Ok(state) = PhaseEquilibrium::pure(eos, t, None, SolverOptions::default()) {
+            if let Ok(state) = PhaseEquilibrium::pure(eos, t, None, self.solver_options) {
                 prediction.try_set(i, state.liquid().mass_density())?;
             } else {
                 prediction.try_set(i, f64::NAN * U::reference_mass() / U::reference_volume())?

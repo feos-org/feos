@@ -13,6 +13,7 @@ pub struct VaporPressure<U: EosUnit> {
     max_temperature: QuantityScalar<U>,
     datapoints: usize,
     extrapolate: bool,
+    solver_options: SolverOptions,
 }
 
 impl<U: EosUnit> VaporPressure<U> {
@@ -28,6 +29,7 @@ impl<U: EosUnit> VaporPressure<U> {
         target: QuantityArray1<U>,
         temperature: QuantityArray1<U>,
         extrapolate: bool,
+        solver_options: Option<SolverOptions>,
     ) -> Result<Self, EstimatorError> {
         let datapoints = target.len();
         let max_temperature = temperature
@@ -42,6 +44,7 @@ impl<U: EosUnit> VaporPressure<U> {
             max_temperature,
             datapoints,
             extrapolate,
+            solver_options: solver_options.unwrap_or_default(),
         })
     }
 
@@ -68,17 +71,13 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
-        let critical_point = State::critical_point(
-            eos,
-            None,
-            Some(self.max_temperature),
-            SolverOptions::default(),
-        )?;
+        let critical_point =
+            State::critical_point(eos, None, Some(self.max_temperature), self.solver_options)?;
         let tc = critical_point.temperature;
         let pc = critical_point.pressure(Contributions::Total);
 
         let t0 = 0.9 * tc;
-        let p0 = PhaseEquilibrium::pure(eos, t0, None, SolverOptions::default())?
+        let p0 = PhaseEquilibrium::pure(eos, t0, None, self.solver_options)?
             .vapor()
             .pressure(Contributions::Total);
 
