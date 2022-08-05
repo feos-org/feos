@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Fixed
-- Avoid panicking when calculating `ResidualNpt` properties of states with negative pressures. [#42](https://github.com/feos-org/feos-core/pull/42)
+- Avoid panicking when calculating `ResidualNpt` properties of states with negative pressures. [#42](https://github.com/feos-org/feos/pull/42)
 
 ## [0.3.0] - 2022-06-13
 ### Added
