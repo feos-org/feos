@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `PhaseDiagram::bubble_point_line`, `PhaseDiagram::dew_point_line`, and `PhaseDiagram::spinodal` to calculate phase envelopes for mixtures with fixed compositions. [#23](https://github.com/feos-org/feos/pull/23)
 
 ### Changed
+- Made binary parameters in `from_records` Python routine an `Option`. [#35](https://github.com/feos-org/feos/pull/35)
+- Added panic with message when parsing missing Identifiers variants. [#35](https://github.com/feos-org/feos/pull/35)
 - Generalized the initialization routines for pure component VLEs at given temperature to multicomponent systems. [#23](https://github.com/feos-org/feos/pull/23)
 
 ### Removed

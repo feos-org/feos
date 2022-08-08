@@ -8,6 +8,7 @@ use feos_core::parameter::{
 use feos_core::python::joback::PyJobackRecord;
 use feos_core::python::parameter::*;
 use feos_core::*;
+use ndarray::Array2;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
