@@ -346,6 +346,9 @@ macro_rules! impl_phase_equilibrium {
             /// x_init : list[float]
             ///     Initial guesses for the liquid molefracs of component 1
             ///     at the heteroazeotropic point.
+            /// tp_init : SINumber, optional
+            ///     Initial guess for the temperature/pressure at the
+            ///     heteroszeotropic point.
             /// max_iter : int, optional
             ///     The maximum number of iterations.
             /// tol: float, optional
@@ -363,11 +366,12 @@ macro_rules! impl_phase_equilibrium {
             /// verbosity_bd : Verbosity, optional
             ///     The verbosity of the bubble/dew point iteration.
             #[staticmethod]
-            #[pyo3(text_signature = "(eos, temperature_or_pressure, x_init, max_iter=None, tol=None, verbosity=None, max_iter_bd_inner=None, max_iter_bd_outer=None, tol_bd_inner=None, tol_bd_outer=None, verbosity_bd=None)")]
+            #[pyo3(text_signature = "(eos, temperature_or_pressure, x_init, tp_init=None, max_iter=None, tol=None, verbosity=None, max_iter_bd_inner=None, max_iter_bd_outer=None, tol_bd_inner=None, tol_bd_outer=None, verbosity_bd=None)")]
             fn heteroazeotrope(
                 eos: $py_eos,
                 temperature_or_pressure: PySINumber,
                 x_init: (f64, f64),
+                tp_init: Option<PySINumber>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
@@ -381,6 +385,7 @@ macro_rules! impl_phase_equilibrium {
                     &eos.0,
                     temperature_or_pressure.into(),
                     x_init,
+                    tp_init.map(|t| t.into()),
                     (max_iter, tol, verbosity).into(),
                     (
                         (max_iter_bd_inner, tol_bd_inner, verbosity_bd).into(),
@@ -854,14 +859,16 @@ macro_rules! impl_phase_equilibrium {
             /// ----------
             /// eos: SaftFunctional
             ///     The SAFT Helmholtz energy functional.
-            /// pressure: SINumber
-            ///     The pressure.
+            /// temperature_or_pressure: SINumber
+            ///     The temperature_or_pressure.
             /// x_lle: SINumber
             ///     Initial values for the molefractions of component 1
             ///     at the heteroazeotrop.
-            /// min_temperature_lle: SINumber, optional
+            /// tp_lim_lle: SINumber, optional
             ///     The minimum temperature up to which the LLE is calculated.
             ///     If it is not provided, no LLE is calcualted.
+            /// tp_init_vlle: SINumber, optional
+            ///     Initial value for the calculation of the VLLE.
             /// npoints_vle: int, optional
             ///     The number of points for the VLE (default 51).
             /// npoints_lle: int, optional
@@ -881,12 +888,13 @@ macro_rules! impl_phase_equilibrium {
             /// -------
             /// PhaseDiagramHetero
             #[staticmethod]
-            #[pyo3(text_signature = "(eos, pressure, x_lle, min_temperature_lle=None, npoints_vle=None, npoints_lle=None, max_iter_bd_inner=None, max_iter_bd_outer=None, tol_bd_inner=None, tol_bd_outer=None, verbosity_bd=None)")]
+            #[pyo3(text_signature = "(eos, temperature_or_pressure, x_lle, tp_lim_lle=None, tp_init_vlle=None, npoints_vle=None, npoints_lle=None, max_iter_bd_inner=None, max_iter_bd_outer=None, tol_bd_inner=None, tol_bd_outer=None, verbosity_bd=None)")]
             pub fn binary_vlle(
                 eos: $py_eos,
-                pressure: PySINumber,
+                temperature_or_pressure: PySINumber,
                 x_lle: (f64, f64),
-                min_temperature_lle: Option<PySINumber>,
+                tp_lim_lle: Option<PySINumber>,
+                tp_init_vlle: Option<PySINumber>,
                 npoints_vle: Option<usize>,
                 npoints_lle: Option<usize>,
                 max_iter_inner: Option<usize>,
@@ -897,9 +905,10 @@ macro_rules! impl_phase_equilibrium {
             ) -> PyResult<PyPhaseDiagramHetero> {
                 let dia = PhaseDiagram::binary_vlle(
                     &eos.0,
-                    pressure.into(),
+                    temperature_or_pressure.into(),
                     x_lle,
-                    min_temperature_lle.map(|t| t.into()),
+                    tp_lim_lle.map(|t| t.into()),
+                    tp_init_vlle.map(|t| t.into()),
                     npoints_vle,
                     npoints_lle,
                     (
