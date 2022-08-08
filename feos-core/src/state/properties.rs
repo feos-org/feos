@@ -155,13 +155,12 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             }
             Contributions::ResidualNpt => {
                 let p = self.pressure_(Evaluate::Total);
-                let state_p = Self::new_nvt(
+                let state_p = Self::new_nvt_unchecked(
                     &self.eos,
                     self.temperature,
                     self.total_moles * U::gas_constant() * self.temperature / p,
                     &self.moles,
-                )
-                .unwrap();
+                );
                 if additive {
                     f(self, Evaluate::Residual) + f(self, Evaluate::IdealGasDelta)
                         - f(&state_p, Evaluate::IdealGasDelta)

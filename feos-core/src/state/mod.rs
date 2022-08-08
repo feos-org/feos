@@ -232,16 +232,25 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         eos.validate_moles(Some(moles))?;
         validate(temperature, volume, moles)?;
 
-        let t = temperature.to_reduced(U::reference_temperature())?;
-        let v = volume.to_reduced(U::reference_volume())?;
-        let m = moles.to_reduced(U::reference_moles())?;
+        Ok(Self::new_nvt_unchecked(eos, temperature, volume, moles))
+    }
+
+    pub(super) fn new_nvt_unchecked(
+        eos: &Rc<E>,
+        temperature: QuantityScalar<U>,
+        volume: QuantityScalar<U>,
+        moles: &QuantityArray1<U>,
+    ) -> Self {
+        let t = temperature.to_reduced(U::reference_temperature()).unwrap();
+        let v = volume.to_reduced(U::reference_volume()).unwrap();
+        let m = moles.to_reduced(U::reference_moles()).unwrap();
 
         let total_moles = moles.sum();
         let partial_density = moles / volume;
         let density = total_moles / volume;
-        let molefracs = &m / total_moles.to_reduced(U::reference_moles())?;
+        let molefracs = &m / total_moles.to_reduced(U::reference_moles()).unwrap();
 
-        Ok(State {
+        State {
             eos: eos.clone(),
             total_moles,
             temperature,
@@ -254,7 +263,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             reduced_volume: v,
             reduced_moles: m,
             cache: RefCell::new(Cache::with_capacity(eos.components())),
-        })
+        }
     }
 
     /// Return a new `State` for a pure component given a temperature and a density. The moles
