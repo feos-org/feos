@@ -61,7 +61,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         // Finally use the spinodal to initialize the calculation
         vle.map_or_else(
             || {
-                Self::init_spinodal(eos, temperature)
+                Self::init_pure_spinodal(eos, temperature)
                     .and_then(|vle| vle.iterate_pure_t(max_iter, tol, verbosity))
             },
             Ok,
@@ -277,7 +277,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         PhaseEquilibrium::new_npt(eos, temperature, p, &m, &m)?.check_trivial_solution()
     }
 
-    fn init_spinodal(eos: &Rc<E>, temperature: QuantityScalar<U>) -> EosResult<Self>
+    fn init_pure_spinodal(eos: &Rc<E>, temperature: QuantityScalar<U>) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display,
     {

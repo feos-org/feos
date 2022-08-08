@@ -19,7 +19,6 @@ const TOL_OUTER: f64 = 1e-10;
 
 const MAX_TSTEP: f64 = 20.0;
 const MAX_LNPSTEP: f64 = 0.1;
-const PROMISING_F: f64 = 1.0;
 const NEWTON_TOL: f64 = 1e-3;
 
 impl<U: EosUnit> TPSpec<U> {
@@ -169,19 +168,16 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
                 )
             }
             TPSpec::Pressure(_) => {
-                let solve = |temperature| {
-                    Self::iterate_bubble_dew(
-                        eos,
-                        tp_spec,
-                        temperature,
-                        molefracs_spec,
-                        molefracs_init,
-                        bubble,
-                        options,
-                    )
-                };
-                // First use given initial temperature if applicable
-                tp_init.map(solve).unwrap()
+                let temperature = tp_init.expect("An initial temperature is required for the calculation of bubble/dew points at given pressure!");
+                Self::iterate_bubble_dew(
+                    eos,
+                    tp_spec,
+                    temperature,
+                    molefracs_spec,
+                    molefracs_init,
+                    bubble,
+                    options,
+                )
             }
         }
     }
@@ -266,7 +262,6 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
                     .mapv(f64::exp);
             let p_new = U::gas_constant() * temperature * density / k.sum();
             x = &k / k.sum();
-            println!("{p_new} {x}");
             if let Some(p_old) = p {
                 if (p_new - p_old).to_reduced(p_old)?.abs() < 1e-5 {
                     p = Some(p_new);
@@ -376,11 +371,9 @@ where
     let mut err_out = 1.0;
     let mut k_out = 0;
 
-    // If the starting values are insufficient find better ones
-    if !promising_values(&state1, &state2) {
+    if PhaseEquilibrium::is_trivial_solution(&state1, &state2) {
         log_iter!(options_outer.verbosity, "Trivial solution encountered!");
         return Err(EosError::TrivialSolution);
-        // find_starting_values(&mut var_tp, &mut state1, bubble)?;
     }
 
     log_iter!(
@@ -426,11 +419,9 @@ where
             )
         }?;
 
-        // if a trivial solution is encountered, reinitialize T or p
         if PhaseEquilibrium::is_trivial_solution(&state1, &state2) {
             log_iter!(options_outer.verbosity, "Trivial solution encountered!");
             return Err(EosError::TrivialSolution);
-            // find_starting_values(iterate_t, bubble, &mut itervars)?;
         }
 
         if err_out < options_outer.tol.unwrap_or(TOL_OUTER) {
@@ -766,17 +757,4 @@ where
         state2.molefracs
     );
     Ok(error)
-}
-
-fn promising_values<U: EosUnit, E: EquationOfState>(
-    state1: &State<U, E>,
-    state2: &State<U, E>,
-) -> bool {
-    if PhaseEquilibrium::is_trivial_solution(state1, state2) {
-        return false;
-    }
-
-    let ln_phi_1 = state1.ln_phi();
-    let ln_phi_2 = state2.ln_phi();
-    ((&state1.molefracs * &(ln_phi_1 - ln_phi_2).mapv(f64::exp)).sum() - 1.0).abs() < PROMISING_F
 }
