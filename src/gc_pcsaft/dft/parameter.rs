@@ -8,7 +8,6 @@ use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{Graph, UnGraph};
-use std::fmt::Write;
 
 /// psi Parameter for heterosegmented DFT (Mairhofer2018)
 const PSI_GC_DFT: f64 = 1.5357;
