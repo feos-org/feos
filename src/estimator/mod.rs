@@ -7,7 +7,7 @@ use thiserror::Error;
 mod dataset;
 pub use dataset::DataSet;
 mod binary_vle;
-pub use binary_vle::{BinaryVle, CostFunction};
+pub use binary_vle::{BinaryPhaseDiagram, BinaryVleChemicalPotential, BinaryVlePressure, Phase};
 mod estimator;
 pub use estimator::Estimator;
 mod loss;

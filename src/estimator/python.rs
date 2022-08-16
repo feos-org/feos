@@ -230,7 +230,7 @@ macro_rules! impl_estimator {
             /// verbosity : Verbosity, optional
             ///     Verbosity for critical point
             ///     and VLE algorithms.
-            /// 
+            ///
             /// Returns
             /// -------
             /// ``DataSet``
@@ -314,7 +314,7 @@ macro_rules! impl_estimator {
                 Ok(Self(Rc::new(EquilibriumLiquidDensity::<SIUnit>::new(
                     target.clone().into(),
                     temperature.clone().into(),
-                    Some((max_iter, tol, verbosity).into())
+                    Some((max_iter, tol, verbosity).into()),
                 )?)))
             }
 
@@ -333,20 +333,78 @@ macro_rules! impl_estimator {
             /// DataSet
             #[staticmethod]
             #[pyo3(text_signature = "(target, temperature)")]
-            fn binary_vle(
-                cost_function: CostFunction,
+            fn binary_vle_chemical_potential(
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
-                liquid_molefracs: Option<&PyArray1<f64>>,
-                vapor_molefracs: Option<&PyArray1<f64>>,
-            ) -> PyResult<Self> {
-                Ok(Self(Rc::new(BinaryVle::<SIUnit>::new(
-                    cost_function,
+                liquid_molefracs: &PyArray1<f64>,
+                vapor_molefracs: &PyArray1<f64>,
+            ) -> Self {
+                Self(Rc::new(BinaryVleChemicalPotential::new(
                     temperature.clone().into(),
                     pressure.clone().into(),
+                    liquid_molefracs.to_owned_array(),
+                    vapor_molefracs.to_owned_array(),
+                )))
+            }
+
+            /// Create a DataSet with experimental data for binary
+            /// phase equilibria
+            ///
+            /// Parameters
+            /// ----------
+            /// target : SIArray1
+            ///     Experimental data for liquid density.
+            /// temperature : SIArray1
+            ///     Temperature for experimental data points.
+            ///
+            /// Returns
+            /// -------
+            /// DataSet
+            #[staticmethod]
+            #[pyo3(text_signature = "(target, temperature)")]
+            fn binary_vle_pressure(
+                temperature: &PySIArray1,
+                pressure: &PySIArray1,
+                molefracs: &PyArray1<f64>,
+                phase: Phase,
+            ) -> Self {
+                Self(Rc::new(BinaryVlePressure::new(
+                    temperature.clone().into(),
+                    pressure.clone().into(),
+                    molefracs.to_owned_array(),
+                    phase,
+                )))
+            }
+
+            /// Create a DataSet with experimental data for binary
+            /// phase equilibria
+            ///
+            /// Parameters
+            /// ----------
+            /// target : SIArray1
+            ///     Experimental data for liquid density.
+            /// temperature : SIArray1
+            ///     Temperature for experimental data points.
+            ///
+            /// Returns
+            /// -------
+            /// DataSet
+            #[staticmethod]
+            #[pyo3(text_signature = "(target, temperature)")]
+            fn binary_phase_diagram(
+                specification: PySINumber,
+                temperature_or_pressure: &PySIArray1,
+                liquid_molefracs: Option<&PyArray1<f64>>,
+                vapor_molefracs: Option<&PyArray1<f64>>,
+                npoints: Option<usize>,
+            ) -> Self {
+                Self(Rc::new(BinaryPhaseDiagram::new(
+                    specification.into(),
+                    temperature_or_pressure.clone().into(),
                     liquid_molefracs.map(|x| x.to_owned_array()),
                     vapor_molefracs.map(|x| x.to_owned_array()),
-                )?)))
+                    npoints,
+                )))
             }
 
             /// Return `input` as ``Dict[str, SIArray1]``.
