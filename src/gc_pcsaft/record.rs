@@ -14,6 +14,7 @@ pub struct GcPcSaftRecord {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mu: Option<f64>,
     /// Association parameters
+    #[serde(flatten)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub association_record: Option<AssociationRecord>,
     /// interaction range parameter for the dispersion functional
