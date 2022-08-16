@@ -16,7 +16,7 @@ use std::convert::{TryFrom, TryInto};
 use std::rc::Rc;
 
 /// Create a set of PC-Saft parameters from records.
-#[pyclass(name = "PcSaftRecord", unsendable)]
+#[pyclass(name = "PcSaftRecord")]
 #[pyo3(
     text_signature = "(m, sigma, epsilon_k, mu=None, q=None, association_record=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
 )]

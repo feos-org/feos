@@ -894,12 +894,8 @@
             "sigma": 4.7262,
             "epsilon_k": 295.2136,
             "mu": 0.9204,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1547.4422,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1547.4422,
             "viscosity": [
                 -0.6824,
                 -2.129,
@@ -923,12 +919,8 @@
             "sigma": 3.3738,
             "epsilon_k": 226.4848,
             "mu": 1.0313,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 959.5053,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 959.5053,
             "viscosity": [
                 -0.3807,
                 2.1585,
@@ -952,12 +944,8 @@
             "sigma": 3.6551,
             "epsilon_k": 240.4467,
             "mu": 1.07,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 39.2881,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 39.2881,
             "viscosity": [
                 -0.8987,
                 -2.1083,
@@ -1050,12 +1038,8 @@
             "sigma": 4.2631,
             "epsilon_k": 293.8144,
             "mu": 1.391,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1497.5173,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1497.5173,
             "viscosity": [
                 -0.8691,
                 -2.3216,
@@ -1079,12 +1063,8 @@
             "sigma": 3.0659,
             "epsilon_k": 217.7082,
             "mu": 1.6698,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1846.2029,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1846.2029,
             "viscosity": [
                 -1.0065,
                 -1.88906,
@@ -1108,12 +1088,8 @@
             "sigma": 3.0151,
             "epsilon_k": 205.1808,
             "mu": 1.6608,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1718.0488,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1718.0488,
             "viscosity": [
                 -0.9864,
                 -1.3818,
@@ -1385,12 +1361,8 @@
             "sigma": 4.9185,
             "epsilon_k": 313.772,
             "mu": 1.409,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 2644.5966,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 2644.5966,
             "viscosity": [
                 -1.3992,
                 -3.2065,
@@ -1414,12 +1386,8 @@
             "sigma": 3.596,
             "epsilon_k": 243.7089,
             "mu": 1.6189,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1967.8312,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1967.8312,
             "viscosity": [
                 -1.5371,
                 -2.97397,
@@ -1556,12 +1524,8 @@
             "sigma": 3.6999,
             "epsilon_k": 249.0952,
             "mu": 1.6908,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 2002.9613,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 2002.9613,
             "viscosity": [
                 -1.6684,
                 -3.9471,
@@ -1673,12 +1637,8 @@
             "sigma": 3.1536,
             "epsilon_k": 310.114,
             "mu": 2.4103,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 2711.6591,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 2711.6591,
             "viscosity": [
                 -0.7689,
                 -0.9258,
@@ -1702,12 +1662,8 @@
             "sigma": 3.1964,
             "epsilon_k": 203.8245,
             "mu": 1.6908,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 2514.0609,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 2514.0609,
             "viscosity": [
                 -1.08153,
                 -1.1998,
@@ -1912,12 +1868,8 @@
             "sigma": 5.0417,
             "epsilon_k": 328.7725,
             "mu": 1.6608,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 2220.2939,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 2220.2939,
             "viscosity": [
                 -1.1698,
                 -3.4917,
@@ -1941,12 +1893,8 @@
             "sigma": 3.461,
             "epsilon_k": 237.6069,
             "mu": 1.7388,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1956.8424,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1956.8424,
             "viscosity": [
                 -1.3075,
                 -2.24414,
@@ -1970,12 +1918,8 @@
             "sigma": 3.3462,
             "epsilon_k": 219.5951,
             "mu": 1.6488,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1878.5922,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1878.5922,
             "viscosity": [
                 -1.3001,
                 -1.7492,
@@ -2134,12 +2078,8 @@
             "sigma": 3.8845,
             "epsilon_k": 259.4044,
             "mu": 1.6698,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 2140.2545,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 2140.2545,
             "viscosity": [
                 -1.8993,
                 -3.0227,
@@ -2185,12 +2125,8 @@
             "sigma": 3.5463,
             "epsilon_k": 247.4674,
             "mu": 1.5889,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 82.5108,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 82.5108,
             "viscosity": [
                 -1.0803,
                 -2.3348,
@@ -2214,12 +2150,8 @@
             "sigma": 3.3897,
             "epsilon_k": 235.5309,
             "mu": 1.6488,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1930.6231,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1930.6231,
             "viscosity": [
                 -1.218,
                 -2.0634,
@@ -2243,12 +2175,8 @@
             "sigma": 3.2816,
             "epsilon_k": 217.9545,
             "mu": 1.6578,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1793.3615,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1793.3615,
             "viscosity": [
                 -1.2075,
                 -1.7111,
@@ -2361,12 +2289,8 @@
             "sigma": 3.337,
             "epsilon_k": 246.3797,
             "mu": 1.3101,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1103.6088,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1103.6088,
             "viscosity": [
                 -0.369,
                 -1.2753,
@@ -2412,12 +2336,8 @@
             "sigma": 3.3248,
             "epsilon_k": 211.5975,
             "mu": 1.6998,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 2519.7116,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 2519.7116,
             "viscosity": [
                 -0.577,
                 -0.44059,
@@ -2532,12 +2452,8 @@
             "sigma": 5.07,
             "epsilon_k": 314.0984,
             "mu": 0.8994,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 2731.5672,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 2731.5672,
             "viscosity": [
                 -1.3279,
                 -3.1517,
@@ -2561,12 +2477,8 @@
             "sigma": 3.729,
             "epsilon_k": 253.6291,
             "mu": 1.6099,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 2073.3555,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 2073.3555,
             "viscosity": [
                 -1.4657,
                 -2.71167,
@@ -2678,12 +2590,8 @@
             "sigma": 3.9962,
             "epsilon_k": 266.5143,
             "mu": 1.6608,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 2150.7482,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 2150.7482,
             "viscosity": [
                 -2.0036,
                 -3.7363,
@@ -2729,12 +2637,8 @@
             "sigma": 4.9721,
             "epsilon_k": 315.3046,
             "mu": 1.421,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 2476.9879,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 2476.9879,
             "viscosity": [
                 -1.2518,
                 -2.9995,
@@ -2758,12 +2662,8 @@
             "sigma": 3.3562,
             "epsilon_k": 228.8515,
             "mu": 1.6488,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1869.8446,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1869.8446,
             "viscosity": [
                 -1.3896,
                 -2.58867,
@@ -2787,12 +2687,8 @@
             "sigma": 3.3545,
             "epsilon_k": 220.9018,
             "mu": 1.6488,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1721.3869,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1721.3869,
             "viscosity": [
                 -1.3845,
                 -1.1782,
@@ -2883,12 +2779,8 @@
             "sigma": 4.656,
             "epsilon_k": 302.1019,
             "mu": 1.5499,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1923.3059,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1923.3059,
             "viscosity": [
                 -0.9812,
                 -2.6533,
@@ -2912,12 +2804,8 @@
             "sigma": 3.2421,
             "epsilon_k": 228.6214,
             "mu": 1.7,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1835.0315,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1835.0315,
             "viscosity": [
                 -1.1188,
                 -2.22062,
@@ -2941,12 +2829,8 @@
             "sigma": 3.0076,
             "epsilon_k": 200.0793,
             "mu": 1.6668,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1713.2429,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1713.2429,
             "viscosity": [
                 -1.1043,
                 -1.0389,
@@ -2970,12 +2854,8 @@
             "sigma": 3.0947,
             "epsilon_k": 203.9658,
             "mu": 1.6399,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1806.0011,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1806.0011,
             "viscosity": [
                 -1.1043,
                 -0.9823,
@@ -3089,12 +2969,8 @@
             "sigma": 3.1114,
             "epsilon_k": 217.4541,
             "mu": 1.1692,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 86.0572,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 86.0572,
             "viscosity": [
                 -0.7383,
                 -1.7723,
@@ -3118,12 +2994,8 @@
             "sigma": 3.0742,
             "epsilon_k": 217.3745,
             "mu": 1.6788,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 2044.5298,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 2044.5298,
             "viscosity": [
                 -0.8756,
                 -1.47721,
@@ -3147,12 +3019,8 @@
             "sigma": 2.918,
             "epsilon_k": 198.5953,
             "mu": 1.6608,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1871.8788,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1871.8788,
             "viscosity": [
                 -0.847,
                 -1.0735,
@@ -3311,12 +3179,8 @@
             "sigma": 3.9832,
             "epsilon_k": 266.3354,
             "mu": 1.55,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 2238.1838,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 2238.1838,
             "viscosity": [
                 -1.7882,
                 -2.8133,
@@ -3428,12 +3292,8 @@
             "sigma": 3.9862,
             "epsilon_k": 265.7028,
             "mu": 1.6488,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 2212.4364,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 2212.4364,
             "viscosity": [
                 -1.7295,
                 -2.8003,
@@ -3479,12 +3339,8 @@
             "sigma": 3.38,
             "epsilon_k": 225.1381,
             "mu": 1.6698,
-            "association_record": {
-                "kappa_ab": 0.03,
-                "epsilon_k_ab": 1888.8681,
-                "na": 1.0,
-                "nb": 1.0
-            },
+            "kappa_ab": 0.03,
+            "epsilon_k_ab": 1888.8681,
             "viscosity": [
                 -1.6044,
                 -3.44231,

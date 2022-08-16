@@ -24,13 +24,15 @@ pub struct AssociationRecord {
     /// Association energy parameter in units of Kelvin
     pub epsilon_k_ab: f64,
     /// \# of association sites of type A
-    pub na: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub na: Option<f64>,
     /// \# of association sites of type B
-    pub nb: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nb: Option<f64>,
 }
 
 impl AssociationRecord {
-    pub fn new(kappa_ab: f64, epsilon_k_ab: f64, na: f64, nb: f64) -> Self {
+    pub fn new(kappa_ab: f64, epsilon_k_ab: f64, na: Option<f64>, nb: Option<f64>) -> Self {
         Self {
             kappa_ab,
             epsilon_k_ab,
@@ -44,8 +46,8 @@ impl fmt::Display for AssociationRecord {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "AssociationRecord(kappa_ab={}", self.kappa_ab)?;
         write!(f, ", epsilon_k_ab={}", self.epsilon_k_ab)?;
-        write!(f, ", na={}", self.na)?;
-        write!(f, ", nb={})", self.nb)
+        write!(f, ", na={}", self.na.unwrap_or(1.0))?;
+        write!(f, ", nb={})", self.nb.unwrap_or(1.0))
     }
 }
 
@@ -82,8 +84,8 @@ impl AssociationParameters {
                 sigma_assoc.push(sigma[i]);
                 kappa_ab.push(record.kappa_ab);
                 epsilon_k_ab.push(record.epsilon_k_ab);
-                na.push(record.na);
-                nb.push(record.nb);
+                na.push(record.na.unwrap_or(1.0));
+                nb.push(record.nb.unwrap_or(1.0));
             }
         }
 
