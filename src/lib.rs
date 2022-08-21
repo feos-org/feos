@@ -1,9 +1,8 @@
 //! FeOs - An open-source framework for equations of state and classical functional density theory.
 //!
-//! # Example: critical point of a pure substance
+//! # Example: critical point of a pure substance using PC-SAFT
 //!
-#![cfg_attr(not(feature = "pcsaft"), doc = "```ignore")]
-#![cfg_attr(feature = "pcsaft", doc = "```")]
+//! ```ignore
 //! # use feos_core::EosError;
 //! use feos::pcsaft::{PcSaft, PcSaftParameters};
 //! use feos_core::parameter::{IdentifierOption, Parameter};
@@ -34,6 +33,8 @@
 
 #![warn(clippy::all)]
 #![allow(clippy::too_many_arguments)]
+pub mod eos;
+pub mod dft;
 
 #[cfg(feature = "estimator")]
 pub mod estimator;
