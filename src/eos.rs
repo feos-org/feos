@@ -1,32 +1,16 @@
-#[cfg(feature = "estimator")]
-use crate::estimator::*;
 #[cfg(feature = "gc_pcsaft")]
-use crate::gc_pcsaft::python::PyGcPcSaftEosParameters;
-#[cfg(feature = "gc_pcsaft")]
-use crate::gc_pcsaft::{GcPcSaft, GcPcSaftOptions};
-#[cfg(feature = "estimator")]
-use crate::impl_estimator;
-#[cfg(all(feature = "estimator", feature = "pcsaft"))]
-use crate::impl_estimator_entropy_scaling;
+use crate::gc_pcsaft::GcPcSaft;
 #[cfg(feature = "pcsaft")]
-use crate::pcsaft::python::PyPcSaftParameters;
-#[cfg(feature = "pcsaft")]
-use crate::pcsaft::{DQVariants, PcSaft, PcSaftOptions};
+use crate::pcsaft::PcSaft;
 #[cfg(feature = "pets")]
-use crate::pets::python::PyPetsParameters;
-#[cfg(feature = "pets")]
-use crate::pets::{Pets, PetsOptions};
+use crate::pets::Pets;
 #[cfg(feature = "uvtheory")]
-use crate::uvtheory::python::PyUVParameters;
-#[cfg(feature = "uvtheory")]
-use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions};
+use crate::uvtheory::UVTheory;
+use feos_core::cubic::PengRobinson;
 #[cfg(feature = "python")]
 use feos_core::python::user_defined::PyEoSObj;
-use feos_core::cubic::PengRobinson;
 use feos_core::*;
 use ndarray::Array1;
-#[cfg(feature = "estimator")]
-use pyo3::wrap_pymodule;
 use quantity::si::*;
 
 pub enum EosVariant {

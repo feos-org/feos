@@ -1,20 +1,11 @@
-#[cfg(feature = "estimator")]
-use crate::estimator::*;
+#[cfg(feature = "pcsaft")]
+use crate::gc_pcsaft::GcPcSaftFunctional;
 #[cfg(feature = "gc_pcsaft")]
-use crate::gc_pcsaft::python::PyGcPcSaftFunctionalParameters;
-#[cfg(feature = "gc_pcsaft")]
-use crate::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftOptions};
 use crate::hard_sphere::FMTFunctional;
-#[cfg(feature = "estimator")]
-use crate::impl_estimator;
 #[cfg(feature = "pcsaft")]
-use crate::pcsaft::python::PyPcSaftParameters;
-#[cfg(feature = "pcsaft")]
-use crate::pcsaft::{DQVariants, PcSaftFunctional, PcSaftOptions};
+use crate::pcsaft::PcSaftFunctional;
 #[cfg(feature = "pets")]
-use crate::pets::python::PyPetsParameters;
-#[cfg(feature = "pets")]
-use crate::pets::{PetsFunctional, PetsOptions};
+use crate::pets::PetsFunctional;
 use feos_core::*;
 use feos_dft::adsorption::*;
 use feos_dft::solvation::*;
@@ -25,7 +16,6 @@ use petgraph::graph::UnGraph;
 #[cfg(feature = "gc_pcsaft")]
 use petgraph::Graph;
 #[cfg(feature = "estimator")]
-use pyo3::wrap_pymodule;
 use quantity::si::*;
 
 pub enum FunctionalVariant {

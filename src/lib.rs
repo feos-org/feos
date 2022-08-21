@@ -34,6 +34,7 @@
 #![warn(clippy::all)]
 #![allow(clippy::too_many_arguments)]
 pub mod eos;
+#[cfg(feature = "dft")]
 pub mod dft;
 
 #[cfg(feature = "estimator")]
