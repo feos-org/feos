@@ -205,7 +205,8 @@ where
         x.slice(s![1..])
     };
 
-    let mut tp_old = Some(vle_0.vapor().tp(tp));
+    let tp_0 = Some(vle_0.vapor().tp(tp));
+    let mut tp_old = tp_0;
     let mut y_old = None;
     vle_vec.push(vle_0);
     for xi in x {
@@ -232,7 +233,7 @@ where
             vle_vec.push(vle.clone());
         } else {
             y_old = None;
-            tp_old = None;
+            tp_old = tp_0;
         }
     }
     if let Some(vle_1) = vle_1 {

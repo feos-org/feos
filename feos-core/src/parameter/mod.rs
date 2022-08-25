@@ -74,6 +74,7 @@ where
     ///
     /// If the identifiers in `binary_records` are not a subset of those in
     /// `pure_records`, the `Default` implementation of Self::Binary is used.
+    #[allow(clippy::expect_fun_call)]
     fn binary_matrix_from_records(
         pure_records: &Vec<PureRecord<Self::Pure, Self::IdealGas>>,
         binary_records: &[BinaryRecord<Identifier, Self::Binary>],
