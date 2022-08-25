@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Made binary parameters in `from_records` Python routine an `Option`. [#35](https://github.com/feos-org/feos/pull/35)
 - Added panic with message when parsing missing Identifiers variants. [#35](https://github.com/feos-org/feos/pull/35)
 - Generalized the initialization routines for pure component VLEs at given temperature to multicomponent systems. [#23](https://github.com/feos-org/feos/pull/23)
+- Increased the default number of maximum iterations for binary critical point calculations from 50 to 200. [#47](https://github.com/feos-org/feos/pull/47)
 
 ### Removed
 - Removed the (internal) `SpinodalPoint` struct that was used within density iterations in favor of a simpler interface. [#23](https://github.com/feos-org/feos/pull/23)

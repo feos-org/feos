@@ -12,6 +12,7 @@ use std::convert::TryFrom;
 use std::rc::Rc;
 
 const MAX_ITER_CRIT_POINT: usize = 50;
+const MAX_ITER_CRIT_POINT_BINARY: usize = 200;
 const TOL_CRIT_POINT: f64 = 1e-8;
 
 /// # Critical points
@@ -185,7 +186,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     where
         QuantityScalar<U>: std::fmt::Display,
     {
-        let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_CRIT_POINT, TOL_CRIT_POINT);
+        let (max_iter, tol, verbosity) =
+            options.unwrap_or(MAX_ITER_CRIT_POINT_BINARY, TOL_CRIT_POINT);
 
         let t = temperature.to_reduced(U::reference_temperature())?;
         let x = StaticVec::new_vec(initial_molefracs.unwrap_or([0.5, 0.5]));
@@ -271,7 +273,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     where
         QuantityScalar<U>: std::fmt::Display,
     {
-        let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_CRIT_POINT, TOL_CRIT_POINT);
+        let (max_iter, tol, verbosity) =
+            options.unwrap_or(MAX_ITER_CRIT_POINT_BINARY, TOL_CRIT_POINT);
 
         let p = pressure.to_reduced(U::reference_pressure())?;
         let mut t = initial_temperature
