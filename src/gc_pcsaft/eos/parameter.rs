@@ -140,8 +140,8 @@ impl ParameterHetero for GcPcSaftEosParameters {
 
                 let mut assoc = segment.model_record.association_record.clone();
                 if let Some(mut assoc) = assoc.as_mut() {
-                    assoc.na *= count;
-                    assoc.nb *= count;
+                    assoc.na = Some(assoc.na.unwrap_or(1.0) * count);
+                    assoc.nb = Some(assoc.nb.unwrap_or(1.0) * count);
                 };
                 association_records.push(assoc);
 
@@ -426,7 +426,7 @@ pub mod test {
                 2.7702,
                 334.29,
                 None,
-                Some(AssociationRecord::new(0.009583, 2575.9, 1.0, 1.0)),
+                Some(AssociationRecord::new(0.009583, 2575.9, None, None)),
                 None,
             ),
             None,

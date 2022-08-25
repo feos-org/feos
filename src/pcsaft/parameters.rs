@@ -29,6 +29,7 @@ pub struct PcSaftRecord {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub q: Option<f64>,
     /// Association parameters
+    #[serde(flatten)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub association_record: Option<AssociationRecord>,
     /// Entropy scaling coefficients for the viscosity
@@ -69,14 +70,14 @@ impl FromSegments<f64> for PcSaftRecord {
                     [
                         record.kappa_ab * n,
                         record.epsilon_k_ab * n,
-                        record.na * n,
-                        record.nb * n,
+                        record.na.unwrap_or(1.0) * n,
+                        record.nb.unwrap_or(1.0) * n,
                     ]
                 })
             })
             .reduce(|a, b| [a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]])
             .map(|[kappa_ab, epsilon_k_ab, na, nb]| {
-                AssociationRecord::new(kappa_ab, epsilon_k_ab, na, nb)
+                AssociationRecord::new(kappa_ab, epsilon_k_ab, Some(na), Some(nb))
             });
 
         // entropy scaling
@@ -467,7 +468,7 @@ impl PcSaftParameters {
                 .model_record
                 .association_record
                 .clone()
-                .unwrap_or_else(|| AssociationRecord::new(0.0, 0.0, 0.0, 0.0));
+                .unwrap_or_else(|| AssociationRecord::new(0.0, 0.0, None, None));
             write!(
                 o,
                 "\n|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|",
@@ -480,8 +481,8 @@ impl PcSaftParameters {
                 record.model_record.q.unwrap_or(0.0),
                 association.kappa_ab,
                 association.epsilon_k_ab,
-                association.na,
-                association.nb
+                association.na.unwrap_or(1.0),
+                association.nb.unwrap_or(1.0)
             )
             .unwrap();
         }
@@ -843,12 +844,8 @@ pub mod utils {
                     "m": 1.065587,
                     "sigma": 3.000683,
                     "epsilon_k": 366.5121,
-                    "association_record": {
-                        "kappa_ab": 0.034867983,
-                        "epsilon_k_ab": 2500.6706,
-                        "na": 1.0,
-                        "nb": 1.0
-                    }
+                    "kappa_ab": 0.034867983,
+                    "epsilon_k_ab": 2500.6706
                 },
                 "molarweight": 18.0152
             }"#;

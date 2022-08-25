@@ -331,12 +331,8 @@
             "m": 0.402,
             "sigma": 3.2859,
             "epsilon_k": 488.66,
-            "association_record": {
-                "epsilon_k_ab": 2517.0,
-                "kappa_ab": 0.006825,
-                "na": 1.0,
-                "nb": 1.0
-            }
+            "epsilon_k_ab": 2517.0,
+            "kappa_ab": 0.006825
         },
         "molarweight": 17.00734,
         "ideal_gas_record": {
@@ -353,12 +349,8 @@
             "m": 0.40558,
             "sigma": 3.6456,
             "epsilon_k": 467.59,
-            "association_record": {
-                "epsilon_k_ab": 1064.6,
-                "kappa_ab": 0.026662,
-                "na": 1.0,
-                "nb": 1.0
-            }
+            "epsilon_k_ab": 1064.6,
+            "kappa_ab": 0.026662
         },
         "molarweight": 16.02238,
         "ideal_gas_record": {
