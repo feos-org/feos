@@ -72,6 +72,7 @@ feos.dft.State
       ~State.specific_helmholtz_energy
       ~State.specific_internal_energy
       ~State.speed_of_sound
+      ~State.spinodal
       ~State.stability_analysis
       ~State.structure_factor
       ~State.thermodynamic_factor

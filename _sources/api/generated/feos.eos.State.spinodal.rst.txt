@@ -3,9 +3,9 @@
     </div>
     <div class=col-md-9 content>
 
-feos.eos.PhaseDiagram.mix
-=========================
+feos.eos.State.spinodal
+=======================
 
 .. currentmodule:: feos.eos
 
-.. automethod:: PhaseDiagram.mix
+.. automethod:: State.spinodal

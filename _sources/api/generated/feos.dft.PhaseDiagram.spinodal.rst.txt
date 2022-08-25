@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.PhaseDiagram.spinodal
+==============================
+
+.. currentmodule:: feos.dft
+
+.. automethod:: PhaseDiagram.spinodal

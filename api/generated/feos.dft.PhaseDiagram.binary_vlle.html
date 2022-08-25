@@ -3,7 +3,7 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="feos.dft.PhaseDiagram.lle" href="feos.dft.PhaseDiagram.lle.html" /><link rel="prev" title="feos.dft.PhaseDiagram.binary_vle" href="feos.dft.PhaseDiagram.binary_vle.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="feos.dft.PhaseDiagram.bubble_point_line" href="feos.dft.PhaseDiagram.bubble_point_line.html" /><link rel="prev" title="feos.dft.PhaseDiagram.binary_vle" href="feos.dft.PhaseDiagram.binary_vle.html" />
 
     <meta name="generator" content="sphinx-5.1.1, furo 2022.06.21"/>
         <title>feos.dft.PhaseDiagram.binary_vlle - FeOs</title>
@@ -11,7 +11,7 @@
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=40978830699223671f4072448e654b5958f38b89" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/tabs.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="../../_static/style.css" />
     
@@ -299,6 +299,7 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.specific_helmholtz_energy.html">feos.eos.State.specific_helmholtz_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.specific_internal_energy.html">feos.eos.State.specific_internal_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.speed_of_sound.html">feos.eos.State.speed_of_sound</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.State.spinodal.html">feos.eos.State.spinodal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.stability_analysis.html">feos.eos.State.stability_analysis</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.structure_factor.html">feos.eos.State.structure_factor</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.thermal_conductivity.html">feos.eos.State.thermal_conductivity</a></li>
@@ -328,9 +329,11 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.__init__.html">feos.eos.PhaseDiagram.__init__</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.binary_vle.html">feos.eos.PhaseDiagram.binary_vle</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.binary_vlle.html">feos.eos.PhaseDiagram.binary_vlle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.bubble_point_line.html">feos.eos.PhaseDiagram.bubble_point_line</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.dew_point_line.html">feos.eos.PhaseDiagram.dew_point_line</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.lle.html">feos.eos.PhaseDiagram.lle</a></li>
-<li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.mix.html">feos.eos.PhaseDiagram.mix</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.pure.html">feos.eos.PhaseDiagram.pure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.spinodal.html">feos.eos.PhaseDiagram.spinodal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.to_dict.html">feos.eos.PhaseDiagram.to_dict</a></li>
 </ul>
 </li>
@@ -404,6 +407,7 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.specific_helmholtz_energy.html">feos.dft.State.specific_helmholtz_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.specific_internal_energy.html">feos.dft.State.specific_internal_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.speed_of_sound.html">feos.dft.State.speed_of_sound</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.State.spinodal.html">feos.dft.State.spinodal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.stability_analysis.html">feos.dft.State.stability_analysis</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.structure_factor.html">feos.dft.State.structure_factor</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.thermodynamic_factor.html">feos.dft.State.thermodynamic_factor</a></li>
@@ -429,9 +433,11 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.__init__.html">feos.dft.PhaseDiagram.__init__</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.binary_vle.html">feos.dft.PhaseDiagram.binary_vle</a></li>
 <li class="toctree-l4 current current-page"><a class="current reference internal" href="#">feos.dft.PhaseDiagram.binary_vlle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.bubble_point_line.html">feos.dft.PhaseDiagram.bubble_point_line</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.dew_point_line.html">feos.dft.PhaseDiagram.dew_point_line</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.lle.html">feos.dft.PhaseDiagram.lle</a></li>
-<li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.mix.html">feos.dft.PhaseDiagram.mix</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.pure.html">feos.dft.PhaseDiagram.pure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.spinodal.html">feos.dft.PhaseDiagram.spinodal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.to_dict.html">feos.dft.PhaseDiagram.to_dict</a></li>
 </ul>
 </li>
@@ -864,17 +870,18 @@
 <h1>feos.dft.PhaseDiagram.binary_vlle<a class="headerlink" href="#feos-dft-phasediagram-binary-vlle" title="Permalink to this heading">#</a></h1>
 <dl class="py method">
 <dt class="sig sig-object py" id="feos.dft.PhaseDiagram.binary_vlle">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">PhaseDiagram.</span></span><span class="sig-name descname"><span class="pre">binary_vlle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_lle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_temperature_lle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">npoints_vle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">npoints_lle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter_bd_inner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter_bd_outer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol_bd_inner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol_bd_outer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbosity_bd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#feos.dft.PhaseDiagram.binary_vlle" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">PhaseDiagram.</span></span><span class="sig-name descname"><span class="pre">binary_vlle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature_or_pressure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_lle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tp_lim_lle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tp_init_vlle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">npoints_vle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">npoints_lle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter_bd_inner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter_bd_outer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol_bd_inner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol_bd_outer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbosity_bd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#feos.dft.PhaseDiagram.binary_vlle" title="Permalink to this definition">#</a></dt>
 <dd><p>Phase diagram for a binary mixture exhibiting a heteroazeotrope.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>eos</strong> (<em>SaftFunctional</em>) – The SAFT Helmholtz energy functional.</p></li>
-<li><p><strong>pressure</strong> (<a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a>) – The pressure.</p></li>
+<li><p><strong>temperature_or_pressure</strong> (<a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a>) – The temperature_or_pressure.</p></li>
 <li><p><strong>x_lle</strong> (<a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a>) – Initial values for the molefractions of component 1
 at the heteroazeotrop.</p></li>
-<li><p><strong>min_temperature_lle</strong> (<a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a><em>, </em><em>optional</em>) – The minimum temperature up to which the LLE is calculated.
+<li><p><strong>tp_lim_lle</strong> (<a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a><em>, </em><em>optional</em>) – The minimum temperature up to which the LLE is calculated.
 If it is not provided, no LLE is calcualted.</p></li>
+<li><p><strong>tp_init_vlle</strong> (<a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a><em>, </em><em>optional</em>) – Initial value for the calculation of the VLLE.</p></li>
 <li><p><strong>npoints_vle</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of points for the VLE (default 51).</p></li>
 <li><p><strong>npoints_lle</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of points for the LLE (default 51).</p></li>
 <li><p><strong>max_iter_inner</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of inner iterations in the bubble/dew point iteration.</p></li>
@@ -897,12 +904,12 @@ If it is not provided, no LLE is calcualted.</p></li>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="feos.dft.PhaseDiagram.lle.html">
+          <a class="next-page" href="feos.dft.PhaseDiagram.bubble_point_line.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">feos.dft.PhaseDiagram.lle</div>
+                <div class="title">feos.dft.PhaseDiagram.bubble_point_line</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>

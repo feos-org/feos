@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.PhaseDiagram.bubble\_point\_line
+=========================================
+
+.. currentmodule:: feos.dft
+
+.. automethod:: PhaseDiagram.bubble_point_line

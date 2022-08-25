@@ -21,9 +21,11 @@ feos.dft.PhaseDiagram
       ~PhaseDiagram.__init__
       ~PhaseDiagram.binary_vle
       ~PhaseDiagram.binary_vlle
+      ~PhaseDiagram.bubble_point_line
+      ~PhaseDiagram.dew_point_line
       ~PhaseDiagram.lle
-      ~PhaseDiagram.mix
       ~PhaseDiagram.pure
+      ~PhaseDiagram.spinodal
       ~PhaseDiagram.to_dict
    
    

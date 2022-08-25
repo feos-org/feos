@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.PhaseDiagram.dew\_point\_line
+======================================
+
+.. currentmodule:: feos.eos
+
+.. automethod:: PhaseDiagram.dew_point_line

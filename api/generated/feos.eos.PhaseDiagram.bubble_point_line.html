@@ -3,15 +3,15 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="feos.eos.PhaseDiagram.pure" href="feos.eos.PhaseDiagram.pure.html" /><link rel="prev" title="feos.eos.PhaseDiagram.lle" href="feos.eos.PhaseDiagram.lle.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="feos.eos.PhaseDiagram.dew_point_line" href="feos.eos.PhaseDiagram.dew_point_line.html" /><link rel="prev" title="feos.eos.PhaseDiagram.binary_vlle" href="feos.eos.PhaseDiagram.binary_vlle.html" />
 
     <meta name="generator" content="sphinx-5.1.1, furo 2022.06.21"/>
-        <title>feos.eos.PhaseDiagram.mix - FeOs</title>
+        <title>feos.eos.PhaseDiagram.bubble_point_line - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=40978830699223671f4072448e654b5958f38b89" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/tabs.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="../../_static/style.css" />
     
@@ -299,6 +299,7 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.specific_helmholtz_energy.html">feos.eos.State.specific_helmholtz_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.specific_internal_energy.html">feos.eos.State.specific_internal_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.speed_of_sound.html">feos.eos.State.speed_of_sound</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.State.spinodal.html">feos.eos.State.spinodal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.stability_analysis.html">feos.eos.State.stability_analysis</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.structure_factor.html">feos.eos.State.structure_factor</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.thermal_conductivity.html">feos.eos.State.thermal_conductivity</a></li>
@@ -328,9 +329,11 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.__init__.html">feos.eos.PhaseDiagram.__init__</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.binary_vle.html">feos.eos.PhaseDiagram.binary_vle</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.binary_vlle.html">feos.eos.PhaseDiagram.binary_vlle</a></li>
+<li class="toctree-l4 current current-page"><a class="current reference internal" href="#">feos.eos.PhaseDiagram.bubble_point_line</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.dew_point_line.html">feos.eos.PhaseDiagram.dew_point_line</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.lle.html">feos.eos.PhaseDiagram.lle</a></li>
-<li class="toctree-l4 current current-page"><a class="current reference internal" href="#">feos.eos.PhaseDiagram.mix</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.pure.html">feos.eos.PhaseDiagram.pure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.spinodal.html">feos.eos.PhaseDiagram.spinodal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.to_dict.html">feos.eos.PhaseDiagram.to_dict</a></li>
 </ul>
 </li>
@@ -404,6 +407,7 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.specific_helmholtz_energy.html">feos.dft.State.specific_helmholtz_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.specific_internal_energy.html">feos.dft.State.specific_internal_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.speed_of_sound.html">feos.dft.State.speed_of_sound</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.State.spinodal.html">feos.dft.State.spinodal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.stability_analysis.html">feos.dft.State.stability_analysis</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.structure_factor.html">feos.dft.State.structure_factor</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.thermodynamic_factor.html">feos.dft.State.thermodynamic_factor</a></li>
@@ -429,9 +433,11 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.__init__.html">feos.dft.PhaseDiagram.__init__</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.binary_vle.html">feos.dft.PhaseDiagram.binary_vle</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.binary_vlle.html">feos.dft.PhaseDiagram.binary_vlle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.bubble_point_line.html">feos.dft.PhaseDiagram.bubble_point_line</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.dew_point_line.html">feos.dft.PhaseDiagram.dew_point_line</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.lle.html">feos.dft.PhaseDiagram.lle</a></li>
-<li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.mix.html">feos.dft.PhaseDiagram.mix</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.pure.html">feos.dft.PhaseDiagram.pure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.spinodal.html">feos.dft.PhaseDiagram.spinodal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.to_dict.html">feos.dft.PhaseDiagram.to_dict</a></li>
 </ul>
 </li>
@@ -860,12 +866,15 @@
         </div>
         <article role="main">
           </div>
-<div class=col-md-9 content><section id="feos-eos-phasediagram-mix">
-<h1>feos.eos.PhaseDiagram.mix<a class="headerlink" href="#feos-eos-phasediagram-mix" title="Permalink to this heading">#</a></h1>
+<div class=col-md-9 content><section id="feos-eos-phasediagram-bubble-point-line">
+<h1>feos.eos.PhaseDiagram.bubble_point_line<a class="headerlink" href="#feos-eos-phasediagram-bubble-point-line" title="Permalink to this heading">#</a></h1>
 <dl class="py method">
-<dt class="sig sig-object py" id="feos.eos.PhaseDiagram.mix">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">PhaseDiagram.</span></span><span class="sig-name descname"><span class="pre">mix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_temperature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">npoints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">critical_temperature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter_inner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter_outer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol_inner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol_outer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbosity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#feos.eos.PhaseDiagram.mix" title="Permalink to this definition">#</a></dt>
-<dd><p>Calculate a phase diagram for a mixture with fixed composition.</p>
+<dt class="sig sig-object py" id="feos.eos.PhaseDiagram.bubble_point_line">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">PhaseDiagram.</span></span><span class="sig-name descname"><span class="pre">bubble_point_line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_temperature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">npoints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">critical_temperature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter_inner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter_outer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol_inner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol_outer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbosity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#feos.eos.PhaseDiagram.bubble_point_line" title="Permalink to this definition">#</a></dt>
+<dd><p>Calculate the bubble point line of a mixture with given composition.</p>
+<p>In the resulting phase diagram, the liquid states correspond to the
+bubble point line while the vapor states contain the corresponding
+equilibrium states at different compositions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -896,23 +905,23 @@ Defaults to <cite>None</cite>.</p></li>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="feos.eos.PhaseDiagram.pure.html">
+          <a class="next-page" href="feos.eos.PhaseDiagram.dew_point_line.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">feos.eos.PhaseDiagram.pure</div>
+                <div class="title">feos.eos.PhaseDiagram.dew_point_line</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="feos.eos.PhaseDiagram.lle.html">
+          <a class="prev-page" href="feos.eos.PhaseDiagram.binary_vlle.html">
               <svg><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">feos.eos.PhaseDiagram.lle</div>
+                <div class="title">feos.eos.PhaseDiagram.binary_vlle</div>
                 
               </div>
             </a>
