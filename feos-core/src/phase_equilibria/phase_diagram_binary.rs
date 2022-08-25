@@ -209,7 +209,7 @@ where
     let mut y_old = None;
     vle_vec.push(vle_0);
     for xi in x {
-        let vle = PhaseEquilibrium::bubble_dew_point_with_options(
+        let vle = PhaseEquilibrium::bubble_dew_point(
             eos,
             tp,
             tp_old,
@@ -269,6 +269,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
         temperature_or_pressure: QuantityScalar<U>,
         x_lle: (f64, f64),
         tp_lim_lle: Option<QuantityScalar<U>>,
+        tp_init_vlle: Option<QuantityScalar<U>>,
         npoints_vle: Option<usize>,
         npoints_lle: Option<usize>,
         bubble_dew_options: (SolverOptions, SolverOptions),
@@ -289,6 +290,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
                 eos,
                 t,
                 x_lle,
+                tp_init_vlle,
                 SolverOptions::default(),
                 bubble_dew_options,
             ),
@@ -296,6 +298,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
                 eos,
                 p,
                 x_lle,
+                tp_init_vlle,
                 SolverOptions::default(),
                 bubble_dew_options,
             ),
@@ -368,15 +371,16 @@ where
         eos: &Rc<E>,
         temperature_or_pressure: QuantityScalar<U>,
         x_init: (f64, f64),
+        tp_init: Option<QuantityScalar<U>>,
         options: SolverOptions,
         bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self> {
         match TPSpec::try_from(temperature_or_pressure)? {
             TPSpec::Temperature(t) => {
-                Self::heteroazeotrope_t(eos, t, x_init, options, bubble_dew_options)
+                Self::heteroazeotrope_t(eos, t, x_init, tp_init, options, bubble_dew_options)
             }
             TPSpec::Pressure(p) => {
-                Self::heteroazeotrope_p(eos, p, x_init, options, bubble_dew_options)
+                Self::heteroazeotrope_p(eos, p, x_init, tp_init, options, bubble_dew_options)
             }
         }
     }
@@ -387,16 +391,29 @@ where
         eos: &Rc<E>,
         temperature: QuantityScalar<U>,
         x_init: (f64, f64),
+        p_init: Option<QuantityScalar<U>>,
         options: SolverOptions,
         bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self> {
         // calculate initial values using bubble point
         let x1 = arr1(&[x_init.0, 1.0 - x_init.0]);
         let x2 = arr1(&[x_init.1, 1.0 - x_init.1]);
-        let vle1 =
-            PhaseEquilibrium::bubble_point(eos, temperature, &x1, None, None, bubble_dew_options)?;
-        let vle2 =
-            PhaseEquilibrium::bubble_point(eos, temperature, &x2, None, None, bubble_dew_options)?;
+        let vle1 = PhaseEquilibrium::bubble_point(
+            eos,
+            temperature,
+            &x1,
+            p_init,
+            None,
+            bubble_dew_options,
+        )?;
+        let vle2 = PhaseEquilibrium::bubble_point(
+            eos,
+            temperature,
+            &x2,
+            p_init,
+            None,
+            bubble_dew_options,
+        )?;
         let mut l1 = vle1.liquid().clone();
         let mut l2 = vle2.liquid().clone();
         let p0 = (vle1.vapor().pressure(Contributions::Total)
@@ -526,6 +543,7 @@ where
         eos: &Rc<E>,
         pressure: QuantityScalar<U>,
         x_init: (f64, f64),
+        t_init: Option<QuantityScalar<U>>,
         options: SolverOptions,
         bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self> {
@@ -535,9 +553,9 @@ where
         let x1 = arr1(&[x_init.0, 1.0 - x_init.0]);
         let x2 = arr1(&[x_init.1, 1.0 - x_init.1]);
         let vle1 =
-            PhaseEquilibrium::bubble_point(eos, pressure, &x1, None, None, bubble_dew_options)?;
+            PhaseEquilibrium::bubble_point(eos, pressure, &x1, t_init, None, bubble_dew_options)?;
         let vle2 =
-            PhaseEquilibrium::bubble_point(eos, pressure, &x2, None, None, bubble_dew_options)?;
+            PhaseEquilibrium::bubble_point(eos, pressure, &x2, t_init, None, bubble_dew_options)?;
         let mut l1 = vle1.liquid().clone();
         let mut l2 = vle2.liquid().clone();
         let t0 = (vle1.vapor().temperature + vle2.vapor().temperature) * 0.5;

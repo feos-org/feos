@@ -5,9 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- Added `State::spinodal` that calculates both spinodal points for a given temperature and composition using the same objective function that is also used in the critical point calculation. [#23](https://github.com/feos-org/feos/pull/23)
+- Added `PhaseDiagram::bubble_point_line`, `PhaseDiagram::dew_point_line`, and `PhaseDiagram::spinodal` to calculate phase envelopes for mixtures with fixed compositions. [#23](https://github.com/feos-org/feos/pull/23)
+
 ### Changed
 - Made binary parameters in `from_records` Python routine an `Option`. [#35](https://github.com/feos-org/feos/pull/35)
 - Added panic with message when parsing missing Identifiers variants. [#35](https://github.com/feos-org/feos/pull/35)
+- Generalized the initialization routines for pure component VLEs at given temperature to multicomponent systems. [#23](https://github.com/feos-org/feos/pull/23)
+
+### Removed
+- Removed the (internal) `SpinodalPoint` struct that was used within density iterations in favor of a simpler interface. [#23](https://github.com/feos-org/feos/pull/23)
 
 ### Fixed
 - Avoid panicking when calculating `ResidualNpt` properties of states with negative pressures. [#42](https://github.com/feos-org/feos/pull/42)
