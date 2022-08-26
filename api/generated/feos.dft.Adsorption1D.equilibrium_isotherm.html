@@ -882,9 +882,7 @@ stability of the profiles.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>functional</strong> (<a class="reference internal" href="feos.dft.HelmholtzEnergyFunctional.html#feos.dft.HelmholtzEnergyFunctional" title="feos.dft.HelmholtzEnergyFunctional"><em>HelmholtzEnergyFunctional</em></a>) – The Helmholtz energy functional.</p></li>
 <li><p><strong>temperature</strong> (<a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a>) – The temperature.</p></li>
-<li><p><strong>pressure</strong> (<em>{</em><em>(</em><a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a><em>, </em><a class="reference internal" href="feos.si.SINumber.html#feos.si.SINumber" title="feos.si.SINumber"><em>SINumber</em></a><em>, </em><em>int</em><em>)</em><em>, </em><em>SIArray1}</em>) – The pressures for which the profiles are calculated. Either
-a tuple containing the minimum pressure, the maximum pressure,
-and the number of points, or an array containing specific values.</p></li>
+<li><p><strong>pressure</strong> (<a class="reference internal" href="feos.si.SIArray1.html#feos.si.SIArray1" title="feos.si.SIArray1"><em>SIArray1</em></a>) – The pressures for which the profiles are calculated.</p></li>
 <li><p><strong>pore</strong> (<em>Pore</em>) – The pore parameters.</p></li>
 <li><p><strong>molefracs</strong> (<em>numpy.ndarray</em><em>[</em><em>float</em><em>]</em><em>, </em><em>optional</em>) – For a mixture, the molefracs of the bulk system.</p></li>
 <li><p><strong>solver</strong> (<em>DFTSolver</em><em>, </em><em>optional</em>) – Custom solver options.</p></li>
