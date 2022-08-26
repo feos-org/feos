@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2022-08-26
+### Changed
+- `Adsorption::equilibrium_isotherm`, `Adsorption::adsorption_isotherm`, and `Adsorption::desorption_isotherm` only accept `SIArray1`s as input for the pressure discretization. [#50](https://github.com/feos-org/feos/pull/50)
+- For the calculation of desorption isotherms and the filled branches of equilibrium isotherms, the density profiles are initialized using a liquid bulk density. [#50](https://github.com/feos-org/feos/pull/50)
+
 ## [0.3.0] - 2022-07-13
 ### Added
 - Added getters for the fields of `Pore1D` in Python. [#30](https://github.com/feos-org/feos-dft/pull/30)
@@ -16,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed interface of `PairCorrelationFunction` to facilitate the calculation of pair correlation functions in mixtures. [#29](https://github.com/feos-org/feos-dft/pull/29)
 
 ### Removed
-- Moved the implementation of fundamental measure theory to the new `feos-saft` crate. [#27](https://github.com/feos-org/feos/pull/27)
+- Moved the implementation of fundamental measure theory to the `feos` crate. [#27](https://github.com/feos-org/feos/pull/27)
 
 ## [0.2.0] - 2022-04-12
 ### Added

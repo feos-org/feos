@@ -16,22 +16,6 @@ macro_rules! impl_adsorption {
 
         impl_adsorption_isotherm!($func, $py_func, PyAdsorption1D, PyPore1D, PyPoreProfile1D);
         impl_adsorption_isotherm!($func, $py_func, PyAdsorption3D, PyPore3D, PyPoreProfile3D);
-
-        fn parse_pressure_specification(pressure: &PyAny) -> PyResult<PressureSpecification<SIUnit>> {
-            if let Ok((p_min, p_max, points)) = pressure.extract::<(PySINumber, PySINumber, usize)>() {
-                Ok(PressureSpecification::Plim {
-                    p_min: p_min.into(),
-                    p_max: p_max.into(),
-                    points,
-                })
-            } else if let Ok(pressure) = pressure.extract::<PySIArray1>() {
-                Ok(PressureSpecification::Pvec(pressure.into()))
-            } else {
-                Err(PyErr::new::<PyValueError, _>(format!(
-                    "`pressure` must be (p_min, p_max, points) or an SIArray1 containing specific values."
-                )))
-            }
-        }
     };
 }
 
@@ -50,10 +34,8 @@ macro_rules! impl_adsorption_isotherm {
             ///     The Helmholtz energy functional.
             /// temperature : SINumber
             ///     The temperature.
-            /// pressure : {(SINumber, SINumber, int), SIArray1}
-            ///     The pressures for which the profiles are calculated. Either
-            ///     a tuple containing the minimum pressure, the maximum pressure,
-            ///     and the number of points, or an array containing specific values.
+            /// pressure : SIArray1
+            ///     The pressures for which the profiles are calculated.
             /// pore : Pore
             ///     The pore parameters.
             /// molefracs: numpy.ndarray[float], optional
@@ -70,7 +52,7 @@ macro_rules! impl_adsorption_isotherm {
             pub fn adsorption_isotherm(
                 functional: &$py_func,
                 temperature: PySINumber,
-                pressure: &PyAny,
+                pressure: &PySIArray1,
                 pore: &$py_pore,
                 molefracs: Option<&PyArray1<f64>>,
                 solver: Option<PyDFTSolver>,
@@ -78,7 +60,7 @@ macro_rules! impl_adsorption_isotherm {
                 Ok(Self(Adsorption::adsorption_isotherm(
                     &functional.0,
                     temperature.into(),
-                    &parse_pressure_specification(pressure)?,
+                    pressure,
                     &pore.0,
                     molefracs.map(|x| x.to_owned_array()).as_ref(),
                     solver.map(|s| s.0).as_ref(),
@@ -95,10 +77,8 @@ macro_rules! impl_adsorption_isotherm {
             ///     The Helmholtz energy functional.
             /// temperature : SINumber
             ///     The temperature.
-            /// pressure : {(SINumber, SINumber, int), SIArray1}
-            ///     The pressures for which the profiles are calculated. Either
-            ///     a tuple containing the minimum pressure, the maximum pressure,
-            ///     and the number of points, or an array containing specific values.
+            /// pressure : SIArray1
+            ///     The pressures for which the profiles are calculated.
             /// pore : Pore
             ///     The pore parameters.
             /// molefracs: numpy.ndarray[float], optional
@@ -115,7 +95,7 @@ macro_rules! impl_adsorption_isotherm {
             pub fn desorption_isotherm(
                 functional: &$py_func,
                 temperature: PySINumber,
-                pressure: &PyAny,
+                pressure: &PySIArray1,
                 pore: &$py_pore,
                 molefracs: Option<&PyArray1<f64>>,
                 solver: Option<PyDFTSolver>,
@@ -123,7 +103,7 @@ macro_rules! impl_adsorption_isotherm {
                 Ok(Self(Adsorption::desorption_isotherm(
                     &functional.0,
                     temperature.into(),
-                    &parse_pressure_specification(pressure)?,
+                    pressure,
                     &pore.0,
                     molefracs.map(|x| x.to_owned_array()).as_ref(),
                     solver.map(|s| s.0).as_ref(),
@@ -143,10 +123,8 @@ macro_rules! impl_adsorption_isotherm {
             ///     The Helmholtz energy functional.
             /// temperature : SINumber
             ///     The temperature.
-            /// pressure : {(SINumber, SINumber, int), SIArray1}
-            ///     The pressures for which the profiles are calculated. Either
-            ///     a tuple containing the minimum pressure, the maximum pressure,
-            ///     and the number of points, or an array containing specific values.
+            /// pressure : SIArray1
+            ///     The pressures for which the profiles are calculated.
             /// pore : Pore
             ///     The pore parameters.
             /// molefracs: numpy.ndarray[float], optional
@@ -163,7 +141,7 @@ macro_rules! impl_adsorption_isotherm {
             pub fn equilibrium_isotherm(
                 functional: &$py_func,
                 temperature: PySINumber,
-                pressure: &PyAny,
+                pressure: &PySIArray1,
                 pore: &$py_pore,
                 molefracs: Option<&PyArray1<f64>>,
                 solver: Option<PyDFTSolver>,
@@ -171,7 +149,7 @@ macro_rules! impl_adsorption_isotherm {
                 Ok(Self(Adsorption::equilibrium_isotherm(
                     &functional.0,
                     temperature.into(),
-                    &parse_pressure_specification(pressure)?,
+                    pressure,
                     &pore.0,
                     molefracs.map(|x| x.to_owned_array()).as_ref(),
                     solver.map(|s| s.0).as_ref(),

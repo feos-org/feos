@@ -2,10 +2,12 @@
 use super::functional::{HelmholtzEnergyFunctional, DFT};
 use super::solver::DFTSolver;
 use feos_core::{
-    Contributions, EosError, EosResult, EosUnit, EquationOfState, SolverOptions, StateBuilder,
+    Contributions, DensityInitialization, EosError, EosResult, EosUnit, EquationOfState,
+    SolverOptions, State, StateBuilder,
 };
-use ndarray::{arr1, Array1, Dimension, Ix1, Ix3, RemoveAxis};
+use ndarray::{Array1, Dimension, Ix1, Ix3, RemoveAxis};
 use quantity::{QuantityArray1, QuantityArray2, QuantityScalar};
+use std::iter;
 use std::rc::Rc;
 
 mod external_potential;
@@ -16,93 +18,6 @@ pub use pore::{Pore1D, Pore3D, PoreProfile, PoreProfile1D, PoreProfile3D, PoreSp
 
 const MAX_ITER_ADSORPTION_EQUILIBRIUM: usize = 50;
 const TOL_ADSORPTION_EQUILIBRIUM: f64 = 1e-8;
-
-/// Possible inputs for the pressure grid of adsorption isotherms.
-pub enum PressureSpecification<U> {
-    /// Specify the minimal and maximal pressure, and the number of points
-    Plim {
-        p_min: QuantityScalar<U>,
-        p_max: QuantityScalar<U>,
-        points: usize,
-    },
-    /// Provide a custom array of pressure points.
-    Pvec(QuantityArray1<U>),
-}
-
-impl<U: EosUnit> PressureSpecification<U>
-where
-    QuantityScalar<U>: std::fmt::Display,
-{
-    fn p_min_max(&self) -> (QuantityScalar<U>, QuantityScalar<U>) {
-        match self {
-            Self::Plim {
-                p_min,
-                p_max,
-                points: _,
-            } => (*p_min, *p_max),
-            Self::Pvec(pressure) => (pressure.get(0), pressure.get(pressure.len() - 1)),
-        }
-    }
-
-    fn to_vec(&self) -> EosResult<QuantityArray1<U>> {
-        Ok(match self {
-            Self::Plim {
-                p_min,
-                p_max,
-                points,
-            } => QuantityArray1::linspace(*p_min, *p_max, *points)?,
-            Self::Pvec(pressure) => pressure.clone(),
-        })
-    }
-
-    fn equilibrium<
-        D: Dimension + RemoveAxis + 'static,
-        F: HelmholtzEnergyFunctional + FluidParameters,
-    >(
-        &self,
-        equilibrium: &Adsorption<U, D, F>,
-    ) -> EosResult<(QuantityArray1<U>, QuantityArray1<U>)>
-    where
-        D::Larger: Dimension<Smaller = D>,
-        D::Smaller: Dimension<Larger = D>,
-        <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
-    {
-        let p_eq = equilibrium.pressure().get(0);
-        match self {
-            Self::Plim {
-                p_min,
-                p_max,
-                points,
-            } => Ok((
-                QuantityArray1::linspace(*p_min, p_eq, points / 2)?,
-                QuantityArray1::linspace(*p_max, p_eq, points - points / 2)?,
-            )),
-            Self::Pvec(pressure) => {
-                let index = (0..pressure.len()).find(|&i| pressure.get(i) > p_eq);
-                Ok(if let Some(index) = index {
-                    (
-                        QuantityArray1::from_shape_fn(index + 1, |i| {
-                            if i == index {
-                                p_eq
-                            } else {
-                                pressure.get(i)
-                            }
-                        }),
-                        QuantityArray1::from_shape_fn(pressure.len() - index + 1, |i| {
-                            if i == pressure.len() - index {
-                                p_eq
-                            } else {
-                                pressure.get(pressure.len() - i - 1)
-                            }
-                        }),
-                    )
-                } else {
-                    (pressure.clone(), arr1(&[]) * U::reference_pressure())
-                })
-            }
-        }
-    }
-}
 
 /// Container structure for the calculation of adsorption isotherms.
 pub struct Adsorption<U, D: Dimension, F> {
@@ -143,28 +58,41 @@ where
     pub fn adsorption_isotherm<S: PoreSpecification<U, D>>(
         functional: &Rc<DFT<F>>,
         temperature: QuantityScalar<U>,
-        pressure: &PressureSpecification<U>,
+        pressure: &QuantityArray1<U>,
         pore: &S,
         molefracs: Option<&Array1<f64>>,
         solver: Option<&DFTSolver>,
     ) -> EosResult<Adsorption<U, D, F>> {
-        let pressure = pressure.to_vec()?;
-        Self::isotherm(functional, temperature, &pressure, pore, molefracs, solver)
+        Self::isotherm(
+            functional,
+            temperature,
+            pressure,
+            pore,
+            molefracs,
+            DensityInitialization::Vapor,
+            solver,
+        )
     }
 
     /// Calculate an desorption isotherm (starting at high pressure)
     pub fn desorption_isotherm<S: PoreSpecification<U, D>>(
         functional: &Rc<DFT<F>>,
         temperature: QuantityScalar<U>,
-        pressure: &PressureSpecification<U>,
+        pressure: &QuantityArray1<U>,
         pore: &S,
         molefracs: Option<&Array1<f64>>,
         solver: Option<&DFTSolver>,
     ) -> EosResult<Adsorption<U, D, F>> {
-        let pressure = pressure.to_vec()?;
-        let pressure =
-            QuantityArray1::from_shape_fn(pressure.len(), |i| pressure.get(pressure.len() - i - 1));
-        let isotherm = Self::isotherm(functional, temperature, &pressure, pore, molefracs, solver)?;
+        let pressure = pressure.into_iter().rev().collect();
+        let isotherm = Self::isotherm(
+            functional,
+            temperature,
+            &pressure,
+            pore,
+            molefracs,
+            DensityInitialization::Liquid,
+            solver,
+        )?;
         Ok(Adsorption::new(
             functional,
             pore,
@@ -176,12 +104,12 @@ where
     pub fn equilibrium_isotherm<S: PoreSpecification<U, D>>(
         functional: &Rc<DFT<F>>,
         temperature: QuantityScalar<U>,
-        pressure: &PressureSpecification<U>,
+        pressure: &QuantityArray1<U>,
         pore: &S,
         molefracs: Option<&Array1<f64>>,
         solver: Option<&DFTSolver>,
     ) -> EosResult<Adsorption<U, D, F>> {
-        let (p_min, p_max) = pressure.p_min_max();
+        let (p_min, p_max) = (pressure.get(0), pressure.get(pressure.len() - 1));
         let equilibrium = Self::phase_equilibrium(
             functional,
             temperature,
@@ -193,20 +121,28 @@ where
             SolverOptions::default(),
         );
         if let Ok(equilibrium) = equilibrium {
-            let pressure = pressure.equilibrium(&equilibrium)?;
-            let adsorption = Self::isotherm(
+            let p_eq = equilibrium.pressure().get(0);
+            let p_ads = pressure
+                .into_iter()
+                .filter(|&p| p <= p_eq)
+                .chain(iter::once(p_eq))
+                .collect();
+            let p_des = iter::once(p_eq)
+                .chain(pressure.into_iter().filter(|&p| p > p_eq))
+                .collect();
+            let adsorption = Self::adsorption_isotherm(
                 functional,
                 temperature,
-                &pressure.0,
+                &p_ads,
                 pore,
                 molefracs,
                 solver,
             )?
             .profiles;
-            let desorption = Self::isotherm(
+            let desorption = Self::desorption_isotherm(
                 functional,
                 temperature,
-                &pressure.1,
+                &p_des,
                 pore,
                 molefracs,
                 solver,
@@ -215,7 +151,7 @@ where
             Ok(Adsorption {
                 profiles: adsorption
                     .into_iter()
-                    .chain(desorption.into_iter().rev())
+                    .chain(desorption.into_iter())
                     .collect(),
                 components: functional.components(),
                 dimension: pore.dimension(),
@@ -258,28 +194,33 @@ where
         pressure: &QuantityArray1<U>,
         pore: &S,
         molefracs: Option<&Array1<f64>>,
+        density_initialization: DensityInitialization<U>,
         solver: Option<&DFTSolver>,
     ) -> EosResult<Adsorption<U, D, F>> {
         let moles =
             functional.validate_moles(molefracs.map(|x| x * U::reference_moles()).as_ref())?;
         let mut profiles: Vec<EosResult<PoreProfile<U, D, F>>> = Vec::with_capacity(pressure.len());
 
-        // Calculate the external potential once
-        let mut bulk = StateBuilder::new(functional)
-            .temperature(temperature)
-            .pressure(pressure.get(0))
-            .moles(&moles)
-            .build()?;
+        // On the first iteration, initialize the density profile according to the direction
+        // and calculate the external potential once.
+        let mut bulk = State::new_npt(
+            functional,
+            temperature,
+            pressure.get(0),
+            &moles,
+            density_initialization,
+        )?;
         if functional.components() > 1 && !bulk.is_stable(SolverOptions::default())? {
-            bulk = bulk
-                .tp_flash(None, SolverOptions::default(), None)?
-                .vapor()
-                .clone();
+            let vle = bulk.tp_flash(None, SolverOptions::default(), None)?;
+            bulk = match density_initialization {
+                DensityInitialization::Liquid => vle.liquid().clone(),
+                DensityInitialization::Vapor => vle.vapor().clone(),
+                _ => unreachable!(),
+            };
         }
-        let external_potential = pore
-            .initialize(&bulk, None, None)?
-            .profile
-            .external_potential;
+        let profile = pore.initialize(&bulk, None, None)?.solve(solver)?.profile;
+        let external_potential = Some(&profile.external_potential);
+        let mut old_density = Some(&profile.density);
 
         for i in 0..pressure.len() {
             let mut bulk = StateBuilder::new(functional)
@@ -293,15 +234,16 @@ where
                     .vapor()
                     .clone();
             }
-            let old_density = if let Some(Ok(l)) = profiles.last() {
+
+            let p = pore.initialize(&bulk, old_density, external_potential)?;
+            let p2 = pore.initialize(&bulk, None, external_potential)?;
+            profiles.push(p.solve(solver).or_else(|_| p2.solve(solver)));
+
+            old_density = if let Some(Ok(l)) = profiles.last() {
                 Some(&l.profile.density)
             } else {
                 None
             };
-
-            let p = pore.initialize(&bulk, old_density, Some(&external_potential))?;
-            let p2 = pore.initialize(&bulk, None, Some(&external_potential))?;
-            profiles.push(p.solve(solver).or_else(|_| p2.solve(solver)));
         }
 
         Ok(Adsorption::new(functional, pore, profiles))
@@ -344,11 +286,11 @@ where
         let nl = liquid.profile.bulk.density
             * (liquid.profile.moles() * liquid.profile.bulk.molar_volume(Contributions::Total))
                 .sum();
-        let f = |s: &mut PoreProfile<U, D, F>, n: QuantityScalar<U>| -> EosResult<_> {
+        let f = |s: &PoreProfile<U, D, F>, n: QuantityScalar<U>| -> EosResult<_> {
             Ok(s.grand_potential.unwrap()
                 + s.profile.bulk.molar_gibbs_energy(Contributions::Total) * n)
         };
-        let mut g = (f(&mut liquid, nl)? - f(&mut vapor, nv)?) / (nl - nv);
+        let mut g = (f(&liquid, nl)? - f(&vapor, nv)?) / (nl - nv);
 
         // update filled pore with limited step size
         let mut bulk = StateBuilder::new(functional)
