@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::fmt::LowerExp;
 use std::rc::Rc;
 
+/// Different phases of experimental data points in the `BinaryVlePressure` data set.
 #[derive(Clone, Copy)]
 #[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum Phase {
@@ -16,7 +17,7 @@ pub enum Phase {
     Liquid,
 }
 
-/// Store experimental binary VLE data.
+/// Store experimental binary VLE data for the calculation of chemical potential residuals.
 #[derive(Clone)]
 pub struct BinaryVleChemicalPotential<U> {
     temperature: QuantityArray1<U>,
@@ -108,7 +109,7 @@ where
     }
 }
 
-/// Store experimental binary VLE data.
+/// Store experimental binary VLE data for the calculation of pressure residuals.
 #[derive(Clone)]
 pub struct BinaryVlePressure<U> {
     temperature: QuantityArray1<U>,
@@ -131,93 +132,6 @@ impl<U: EosUnit> BinaryVlePressure<U> {
             phase,
         }
     }
-
-    // fn predict_distance<E: EquationOfState>(
-    //     &self,
-    //     eos: &Rc<E>,
-    // ) -> Result<QuantityArray1<U>, EstimatorError>
-    // where
-    //     Quantity<f64, U>: std::fmt::Display,
-    // {
-    //     unimplemented!()
-    // }
-
-    // fn distance_cost<E: EquationOfState>(&self, eos: &Rc<E>) -> Result<Array1<f64>, EstimatorError>
-    // where
-    //     Quantity<f64, U>: std::fmt::Display,
-    // {
-    //     unimplemented!()
-    //     // let dx = 1e-4;
-    //     // let tol = 1e-9;
-    //     // let max_iter = 60;
-    //     // let options = (SolverOptions::default(), SolverOptions::default());
-    //     // let mut cost = Array1::zeros(self.datapoints);
-
-    //     // for i in 0..self.datapoints {
-    //     //     let xi = self.liquid_molefracs[i];
-    //     //     let mut dxi = if xi < 0.5 { dx } else { -dx };
-    //     //     let temperature = self.temperature.get(i);
-    //     //     let pressure = self.pressure.get(i);
-    //     //     let mut shift = 0.0;
-    //     //     'iteration: for i in 0..max_iter {
-    //     //         let damping = match i {
-    //     //             i if i <= 2 => 0.75,
-    //     //             i if i > 8 && shift < 1e-5 => 0.5,
-    //     //             i if i > 25 => 0.25,
-    //     //             _ => 1.0,
-    //     //         };
-
-    //     //         let xi_f = xi + shift * damping;
-    //     //         let prediction = PhaseEquilibrium::bubble_point(
-    //     //             eos,
-    //     //             temperature,
-    //     //             &arr1(&vec![xi_f, 1.0 - xi_f]),
-    //     //             Some(pressure),
-    //     //             None,
-    //     //             options,
-    //     //         );
-    //     //         if prediction.is_err() {
-    //     //             cost[i] = 10.0;
-    //     //             break 'iteration;
-    //     //         }
-    //     //         let p1 = prediction.unwrap().vapor().pressure(Contributions::Total);
-
-    //     //         if xi_f > 1.0 - dxi {
-    //     //             dxi *= -1.0
-    //     //         };
-
-    //     //         let xi_b = xi_f + dxi;
-    //     //         let prediction = PhaseEquilibrium::bubble_point(
-    //     //             eos,
-    //     //             temperature,
-    //     //             &arr1(&vec![xi_b, 1.0 - xi_b]),
-    //     //             Some(pressure),
-    //     //             None,
-    //     //             options,
-    //     //         );
-    //     //         if prediction.is_err() {
-    //     //             cost[i] = 10.0;
-    //     //             break 'iteration;
-    //     //         }
-    //     //         let p2 = prediction.unwrap().vapor().pressure(Contributions::Total);
-    //     //         let mut line_vec = arr1(&[dxi, (p2 - p1).to_reduced(pressure)?]);
-    //     //         line_vec /= line_vec.mapv(|li| li * li).sum().sqrt();
-    //     //         let exp_vec = arr1(&[xi - xi_f, (pressure - p1).to_reduced(pressure)?]);
-    //     //         cost[i] = (&exp_vec * &exp_vec).sum().sqrt();
-    //     //         shift = line_vec[0] * (&line_vec * &exp_vec).sum().sqrt();
-    //     //         if shift > xi_f {
-    //     //             shift = xi_f
-    //     //         }
-    //     //         if shift < -xi_f {
-    //     //             shift = -xi_f
-    //     //         }
-    //     //         if shift.abs() <= tol {
-    //     //             break 'iteration;
-    //     //         }
-    //     //     }
-    //     // }
-    //     // Ok(cost)
-    // }
 }
 
 impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for BinaryVlePressure<U>
@@ -290,7 +204,7 @@ where
     }
 }
 
-/// Store experimental binary phase diagrams.
+/// Store experimental binary phase diagrams for the calculation of distance residuals.
 #[derive(Clone)]
 pub struct BinaryPhaseDiagram<U> {
     specification: QuantityScalar<U>,
