@@ -1,6 +1,5 @@
-#[cfg(feature = "pcsaft")]
-use crate::gc_pcsaft::GcPcSaftFunctional;
 #[cfg(feature = "gc_pcsaft")]
+use crate::gc_pcsaft::GcPcSaftFunctional;
 use crate::hard_sphere::FMTFunctional;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::PcSaftFunctional;
@@ -15,7 +14,6 @@ use ndarray::{Array1, Array2};
 use petgraph::graph::UnGraph;
 #[cfg(feature = "gc_pcsaft")]
 use petgraph::Graph;
-#[cfg(feature = "estimator")]
 use quantity::si::*;
 
 pub enum FunctionalVariant {
