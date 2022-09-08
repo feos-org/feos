@@ -19,18 +19,18 @@ rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 quantity = { version = "0.5", features = ["linalg"] }
 feos-core = { version = "0.3", path = "../feos-core" }
 num-dual = "0.5"
-ndarray = { version = "0.15", features = ["serde", "rayon"] }
-ndarray-stats = "0.5"
+ndarray = "0.15"
 rustdct = "0.7"
 rustfft = "6.0"
 ang = "0.6"
 num-traits = "0.2"
-libc = "0.2"
-gauss-quad = "0.1"
+libm = "0.2"
+gauss-quad = { version = "0.1", optional = true }
 petgraph = "0.6"
 numpy = { version = "0.16", optional = true }
 pyo3 = { version = "0.16", optional = true }
 
 [features]
 default = []
+3d_dft = ["gauss-quad", "ndarray/rayon"]
 python = ["pyo3", "numpy", "feos-core/python"]

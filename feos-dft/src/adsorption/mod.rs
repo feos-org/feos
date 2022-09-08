@@ -11,10 +11,16 @@ use std::iter;
 use std::rc::Rc;
 
 mod external_potential;
+#[cfg(feature = "3d_dft")]
 mod fea_potential;
 mod pore;
 pub use external_potential::{ExternalPotential, FluidParameters};
-pub use pore::{Pore1D, Pore3D, PoreProfile, PoreProfile1D, PoreProfile3D, PoreSpecification};
+pub use pore::{Pore1D, PoreProfile, PoreProfile1D, PoreSpecification};
+
+#[cfg(feature = "3d_dft")]
+mod pore3d;
+#[cfg(feature = "3d_dft")]
+pub use pore3d::{Pore3D, PoreProfile3D};
 
 const MAX_ITER_ADSORPTION_EQUILIBRIUM: usize = 50;
 const TOL_ADSORPTION_EQUILIBRIUM: f64 = 1e-8;

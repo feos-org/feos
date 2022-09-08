@@ -1,11 +1,14 @@
+#[cfg(feature = "3d_dft")]
 use crate::adsorption::fea_potential::calculate_fea_potential;
 use crate::functional::HelmholtzEnergyFunctional;
+#[cfg(feature = "3d_dft")]
 use crate::geometry::Geometry;
 use feos_core::EosUnit;
-use libc::c_double;
+use libm::tgamma;
 use ndarray::{Array1, Array2, Axis as Axis_nd};
+#[cfg(feature = "3d_dft")]
 use quantity::{QuantityArray2, QuantityScalar};
-use std::f64::consts::PI;
+use std::{f64::consts::PI, marker::PhantomData};
 
 const DELTA_STEELE: f64 = 3.35;
 
@@ -49,6 +52,7 @@ pub enum ExternalPotential<U> {
         rho_s: f64,
     },
     /// Free-energy averaged potential:
+    #[cfg(feature = "3d_dft")]
     FreeEnergyAveraged {
         coordinates: QuantityArray2<U>,
         sigma_ss: Array1<f64>,
@@ -61,6 +65,10 @@ pub enum ExternalPotential<U> {
 
     /// Custom potential
     Custom(Array2<f64>),
+
+    /// Needed to keep `FreeEnergyAveraged` optional
+    #[doc(hidden)]
+    Phantom(PhantomData<U>),
 }
 
 /// Parameters of the fluid required to evaluate the external potential.
@@ -69,6 +77,7 @@ pub trait FluidParameters: HelmholtzEnergyFunctional {
     fn sigma_ff(&self) -> &Array1<f64>;
 }
 
+#[allow(unused_variables)]
 impl<U: EosUnit> ExternalPotential<U> {
     // Evaluate the external potential in cartesian coordinates for a given grid and fluid parameters.
     pub fn calculate_cartesian_potential<P: FluidParameters>(
@@ -183,6 +192,7 @@ impl<U: EosUnit> ExternalPotential<U> {
                             * (2.0 * (sigma_sf[i] / z_grid).mapv(|x| x.powi(9))
                                 - 15.0 * (sigma_sf[i] / z_grid).mapv(|x| x.powi(3))))
                 }
+                #[cfg(feature = "3d_dft")]
                 Self::FreeEnergyAveraged {
                     coordinates,
                     sigma_ss,
@@ -211,7 +221,7 @@ impl<U: EosUnit> ExternalPotential<U> {
                         *cutoff_radius,
                     )
                 }
-                Self::Custom(_) => unreachable!(),
+                _ => unreachable!(),
             });
         }
         ext_pot
@@ -348,6 +358,7 @@ impl<U: EosUnit> ExternalPotential<U> {
                             * sigma_sf[i].powi(3)
                             * *rho_s)
                 }
+                #[cfg(feature = "3d_dft")]
                 Self::FreeEnergyAveraged {
                     coordinates,
                     sigma_ss,
@@ -376,7 +387,7 @@ impl<U: EosUnit> ExternalPotential<U> {
                         *cutoff_radius,
                     )
                 }
-                Self::Custom(_) => unreachable!(),
+                _ => unreachable!(),
             });
         }
         ext_pot
@@ -537,6 +548,7 @@ impl<U: EosUnit> ExternalPotential<U> {
                             * (2.0 / 5.0 * sum_n(10, r_grid, sigma_sf[i], pore_size)
                                 - sum_n(4, r_grid, sigma_sf[i], pore_size)))
                 }
+                #[cfg(feature = "3d_dft")]
                 Self::FreeEnergyAveraged {
                     coordinates,
                     sigma_ss,
@@ -565,7 +577,7 @@ impl<U: EosUnit> ExternalPotential<U> {
                         *cutoff_radius,
                     )
                 }
-                Self::Custom(_) => unreachable!(),
+                _ => unreachable!(),
             });
         }
         ext_pot
@@ -578,8 +590,8 @@ fn phi(n: i32, r_r: &Array1<f64>, sigma_r: f64) -> Array1<f64> {
 
     (1.0 - &r_r.mapv(|r| r.powi(2))).mapv(|r| r.powf(m3n2)) * 4.0 * PI.sqrt() / n2m3
         * sigma_r.powf(n2m3)
-        * gamma(n as f64 - 0.5)
-        / gamma(n as f64)
+        * tgamma(n as f64 - 0.5)
+        / tgamma(n as f64)
         * taylor_2f1_phi(r_r, n)
 }
 
@@ -587,8 +599,8 @@ fn psi(n: i32, r_r: &Array1<f64>, sigma_r: f64) -> Array1<f64> {
     (1.0 - &r_r.mapv(|r| r.powi(2))).mapv(|r| r.powf(2.0 - 2.0 * n as f64))
         * 4.0
         * PI.sqrt()
-        * gamma(n as f64 - 0.5)
-        / gamma(n as f64)
+        * tgamma(n as f64 - 0.5)
+        / tgamma(n as f64)
         * sigma_r.powf(2.0 * n as f64 - 2.0)
         * taylor_2f1_psi(r_r, n)
 }
@@ -636,12 +648,4 @@ fn taylor_2f1_psi(x: &Array1<f64>, n: i32) -> Array1<f64> {
         }
         _ => unreachable!(),
     }
-}
-
-extern "C" {
-    fn tgamma(x: c_double) -> c_double;
-}
-
-fn gamma(x: f64) -> f64 {
-    unsafe { tgamma(x) }
 }
