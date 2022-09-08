@@ -49,7 +49,6 @@ approx = "0.4"
 [features]
 default = []
 dft = ["feos-dft", "petgraph"]
-3d_dft = ["dft", "feos-dft/3d_dft"]
 estimator = []
 association = []
 pcsaft = ["association"]
