@@ -14,6 +14,7 @@ exclude = ["/.github/*", "*.ipynb"]
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
+features = [ "3d_dft" ]
 
 [dependencies]
 quantity = { version = "0.5", features = ["linalg"] }

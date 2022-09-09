@@ -1,3 +1,4 @@
+//! Solvation free energies and pair correlaion functions.
 mod pair_correlation;
 pub use pair_correlation::{PairCorrelation, PairPotential};
 

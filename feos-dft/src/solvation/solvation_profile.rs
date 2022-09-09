@@ -1,4 +1,3 @@
-//! Solvation free energies and pair correlaion functions.
 use crate::adsorption::FluidParameters;
 use crate::convolver::ConvolverFFT;
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
