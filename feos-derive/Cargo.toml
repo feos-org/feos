@@ -1,0 +1,15 @@
+[package]
+name = "feos-derive"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "1.0", features = ["extra-traits", "derive"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+
+[dev-dependencies]
+feos = { path = ".." }

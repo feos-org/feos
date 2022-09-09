@@ -10,9 +10,11 @@ use feos_core::cubic::PengRobinson;
 #[cfg(feature = "python")]
 use feos_core::python::user_defined::PyEoSObj;
 use feos_core::*;
+use feos_derive::EquationOfState;
 use ndarray::Array1;
 use quantity::si::*;
 
+#[derive(EquationOfState)]
 pub enum EosVariant {
     #[cfg(feature = "pcsaft")]
     PcSaft(PcSaft),
@@ -24,107 +26,8 @@ pub enum EosVariant {
     #[cfg(feature = "pets")]
     Pets(Pets),
     #[cfg(feature = "uvtheory")]
+    #[skip_impl(molar_weight)]
     UVTheory(UVTheory),
-}
-
-impl EquationOfState for EosVariant {
-    fn components(&self) -> usize {
-        match self {
-            #[cfg(feature = "pcsaft")]
-            EosVariant::PcSaft(eos) => eos.components(),
-            #[cfg(feature = "gc_pcsaft")]
-            EosVariant::GcPcSaft(eos) => eos.components(),
-            EosVariant::PengRobinson(eos) => eos.components(),
-            #[cfg(feature = "python")]
-            EosVariant::Python(eos) => eos.components(),
-            #[cfg(feature = "pets")]
-            EosVariant::Pets(eos) => eos.components(),
-            #[cfg(feature = "uvtheory")]
-            EosVariant::UVTheory(eos) => eos.components(),
-        }
-    }
-
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        match self {
-            #[cfg(feature = "pcsaft")]
-            EosVariant::PcSaft(eos) => eos.compute_max_density(moles),
-            #[cfg(feature = "gc_pcsaft")]
-            EosVariant::GcPcSaft(eos) => eos.compute_max_density(moles),
-            EosVariant::PengRobinson(eos) => eos.compute_max_density(moles),
-            #[cfg(feature = "python")]
-            EosVariant::Python(eos) => eos.compute_max_density(moles),
-            #[cfg(feature = "pets")]
-            EosVariant::Pets(eos) => eos.compute_max_density(moles),
-            #[cfg(feature = "uvtheory")]
-            EosVariant::UVTheory(eos) => eos.compute_max_density(moles),
-        }
-    }
-
-    fn subset(&self, component_list: &[usize]) -> Self {
-        match self {
-            #[cfg(feature = "pcsaft")]
-            EosVariant::PcSaft(eos) => Self::PcSaft(eos.subset(component_list)),
-            #[cfg(feature = "gc_pcsaft")]
-            EosVariant::GcPcSaft(eos) => Self::GcPcSaft(eos.subset(component_list)),
-            EosVariant::PengRobinson(eos) => Self::PengRobinson(eos.subset(component_list)),
-            #[cfg(feature = "python")]
-            EosVariant::Python(eos) => Self::Python(eos.subset(component_list)),
-            #[cfg(feature = "pets")]
-            EosVariant::Pets(eos) => Self::Pets(eos.subset(component_list)),
-            #[cfg(feature = "uvtheory")]
-            EosVariant::UVTheory(eos) => Self::UVTheory(eos.subset(component_list)),
-        }
-    }
-
-    fn residual(&self) -> &[Box<dyn HelmholtzEnergy>] {
-        match self {
-            #[cfg(feature = "pcsaft")]
-            EosVariant::PcSaft(eos) => eos.residual(),
-            #[cfg(feature = "gc_pcsaft")]
-            EosVariant::GcPcSaft(eos) => eos.residual(),
-            EosVariant::PengRobinson(eos) => eos.residual(),
-            #[cfg(feature = "python")]
-            EosVariant::Python(eos) => eos.residual(),
-            #[cfg(feature = "pets")]
-            EosVariant::Pets(eos) => eos.residual(),
-            #[cfg(feature = "uvtheory")]
-            EosVariant::UVTheory(eos) => eos.residual(),
-        }
-    }
-
-    fn ideal_gas(&self) -> &dyn IdealGasContribution {
-        match self {
-            #[cfg(feature = "pcsaft")]
-            EosVariant::PcSaft(eos) => eos.ideal_gas(),
-            #[cfg(feature = "gc_pcsaft")]
-            EosVariant::GcPcSaft(eos) => eos.ideal_gas(),
-            EosVariant::PengRobinson(eos) => eos.ideal_gas(),
-            #[cfg(feature = "python")]
-            EosVariant::Python(eos) => eos.ideal_gas(),
-            #[cfg(feature = "pets")]
-            EosVariant::Pets(eos) => eos.ideal_gas(),
-            #[cfg(feature = "uvtheory")]
-            EosVariant::UVTheory(eos) => eos.ideal_gas(),
-        }
-    }
-}
-
-impl MolarWeight<SIUnit> for EosVariant {
-    fn molar_weight(&self) -> SIArray1 {
-        match self {
-            #[cfg(feature = "pcsaft")]
-            EosVariant::PcSaft(eos) => eos.molar_weight(),
-            #[cfg(feature = "gc_pcsaft")]
-            EosVariant::GcPcSaft(eos) => eos.molar_weight(),
-            EosVariant::PengRobinson(eos) => eos.molar_weight(),
-            #[cfg(feature = "python")]
-            EosVariant::Python(eos) => eos.molar_weight(),
-            #[cfg(feature = "pets")]
-            EosVariant::Pets(eos) => eos.molar_weight(),
-            #[cfg(feature = "uvtheory")]
-            EosVariant::UVTheory(_) => unimplemented!(),
-        }
-    }
 }
 
 #[cfg(feature = "pcsaft")]
