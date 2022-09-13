@@ -17,7 +17,7 @@ use std::rc::Rc;
 /// parameters of equations of state.
 pub trait DataSet<U: EosUnit, E: EquationOfState> {
     /// Return target quantity.
-    fn target(&self) -> QuantityArray1<U>;
+    fn target(&self) -> &QuantityArray1<U>;
 
     /// Return the description of the target quantity.
     fn target_str(&self) -> &str;
@@ -33,7 +33,13 @@ pub trait DataSet<U: EosUnit, E: EquationOfState> {
     /// Evaluate the cost function.
     fn cost(&self, eos: &Rc<E>, loss: Loss) -> Result<Array1<f64>, EstimatorError>
     where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp;
+        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    {
+        let mut cost = self.relative_difference(eos)?;
+        loss.apply(&mut cost);
+        let datapoints = cost.len();
+        Ok(cost / datapoints as f64)
+    }
 
     /// Returns the input quantities as HashMap. The keys are the input's descriptions.
     fn get_input(&self) -> HashMap<String, QuantityArray1<U>>;
@@ -49,7 +55,7 @@ pub trait DataSet<U: EosUnit, E: EquationOfState> {
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
         let prediction = &self.predict(eos)?;
-        let target = &self.target();
+        let target = self.target();
         Ok(((prediction - target) / target).into_value()?)
     }
 

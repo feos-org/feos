@@ -1,4 +1,4 @@
-use super::{DataSet, EstimatorError, Loss};
+use super::{DataSet, EstimatorError};
 use feos_core::{Contributions, EosUnit, EquationOfState, PhaseEquilibrium, SolverOptions, State};
 use ndarray::Array1;
 use quantity::{QuantityArray1, QuantityScalar};
@@ -55,8 +55,8 @@ impl<U: EosUnit> VaporPressure<U> {
 }
 
 impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
-    fn target(&self) -> QuantityArray1<U> {
-        self.target.clone()
+    fn target(&self) -> &QuantityArray1<U> {
+        &self.target
     }
 
     fn target_str(&self) -> &str {
@@ -97,15 +97,6 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
             }
         }
         Ok(prediction)
-    }
-
-    fn cost(&self, eos: &Rc<E>, loss: Loss) -> Result<Array1<f64>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        let mut cost = self.relative_difference(eos)?;
-        loss.apply(&mut cost.view_mut());
-        Ok(cost / self.datapoints as f64)
     }
 
     fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {

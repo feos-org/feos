@@ -202,7 +202,7 @@ impl<D: DualNum<f64> + ScalarOperand, P: HardSphereProperties> HelmholtzEnergyDu
                 self.tol,
                 None,
             )
-            .unwrap()
+            .unwrap_or(D::from(std::f64::NAN))
                 * state.volume
         } else {
             // association strength
