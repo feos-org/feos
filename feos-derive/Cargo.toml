@@ -1,5 +1,10 @@
 [package]
 name = "feos-derive"
+authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <prehner@ethz.ch>"]
+description = "Macros for implementation of the EquationOfState and HelmholtzEnergyFunctional traits"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/feos-org"
+repository = "https://github.com/feos-org/feos"
 version = "0.1.0"
 edition = "2021"
 
