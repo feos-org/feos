@@ -1,9 +1,9 @@
 //! Functionalities for the calculation of pair correlation functions.
-use super::{Axis, DFTProfile, Grid};
 use crate::convolver::ConvolverFFT;
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::profile::MAX_POTENTIAL;
 use crate::solver::DFTSolver;
+use crate::{Axis, DFTProfile, Grid};
 use feos_core::{Contributions, EosResult, EosUnit, State};
 use ndarray::prelude::*;
 use quantity::QuantityScalar;
