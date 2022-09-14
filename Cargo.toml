@@ -17,7 +17,7 @@ features = ["all_models"]
 rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 
 [workspace]
-members = ["feos-core", "feos-dft"]
+members = ["feos-core", "feos-dft", "feos-derive"]
 
 [lib]
 crate-type = ["rlib", "cdylib"]
@@ -27,6 +27,7 @@ quantity = "0.5"
 num-dual = "0.5"
 feos-core = { version = "0.3", path = "feos-core" }
 feos-dft = { version = "0.3", path = "feos-dft", optional = true }
+feos-derive = { path = "feos-derive" }
 numpy = { version = "0.16", optional = true }
 ndarray = { version = "0.15", features = ["approx"] }
 petgraph = { version = "0.6", optional = true }
