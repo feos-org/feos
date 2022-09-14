@@ -872,7 +872,7 @@ On the following pages we discuss the structure of the <span class="math notrans
 <section id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">#</a></h2>
 <p><span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> is primarily developed on Linux but it is tested and runs on Linux, macOS and Windows.
-You need a <a class="reference external" href="https://www.rust-lang.org/tools/install">Rust compiler</a> to compile the code.
+You need a <a class="reference external" href="https://www.rust-lang.org/tools/install">Rust compiler</a> (version 1.51+) to compile the code.
 For development, <a class="reference external" href="https://code.visualstudio.com/">Visual Studio Code</a> with the <a class="reference external" href="https://rust-analyzer.github.io/">rust-analyzer</a> plugin works pretty well, but you should use what you are comfortable in.</p>
 </section>
 <section id="prerequisites">
@@ -896,7 +896,7 @@ Eventually you’ll need to learn and understand</p>
 </section>
 <section id="project-structure">
 <h2>Project Structure<a class="headerlink" href="#project-structure" title="Permalink to this heading">#</a></h2>
-<p>Some common functionalities of <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> are contained in separate workspace crates so that they can be used as standalone dependencies outside of <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span>.
+<p><span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> is split into multiple crates that build on each other.
 The most important ones are</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">feos-core</span></code> (<code class="docutils literal notranslate"><span class="pre">core</span></code> for short): defines traits and structs for equations of state and implements thermodynamic states, phase equilibria and critical point routines.</p></li>
@@ -905,14 +905,15 @@ The most important ones are</p>
 <p>These crates offer abstractions for tasks that are common for all equations of state and Helmholtz energy functionals.
 Using <code class="docutils literal notranslate"><span class="pre">core</span></code> and <code class="docutils literal notranslate"><span class="pre">dft</span></code>, the following <em>implementations</em> of equations of state and functionals are currently available:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">pcsaft</span></code>: the <a class="reference external" href="https://pubs.acs.org/doi/abs/10.1021/ie0003887">PC-SAFT</a> equation of state and Helmholtz energy functional.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">gc-pcsaft</span></code>: the <a class="reference external" href="https://aip.scitation.org/doi/full/10.1063/1.4945000">hetero-segmented group contribution</a> method of the PC-SAFT equation of state.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">uv-theory</span></code>: the equation of state based on <a class="reference external" href="https://aip.scitation.org/doi/full/10.1063/5.0073572">uv-Theory</a>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pets</span></code>: the <a class="reference external" href="https://www.tandfonline.com/doi/full/10.1080/00268976.2018.1447153">PeTS</a> equation of state and Helmholtz energy functional.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">feos-pcsaft</span></code>: the <a class="reference external" href="https://pubs.acs.org/doi/abs/10.1021/ie0003887">PC-SAFT equation of state</a>.</p></li>
 </ul>
-<p>In addition to that, the <code class="docutils literal notranslate"><span class="pre">hard_sphere</span></code> and <code class="docutils literal notranslate"><span class="pre">assocation</span></code> modules contain implementations of the corresponding Helmholtz energy contributions that are used across multiple models.</p>
-<p>To reduce compile times during development, every model is gated by its own <code class="docutils literal notranslate"><span class="pre">feature</span></code>. Specific parts of the library can be built and tested by passing the corresponding feature flags to the Rust compiler.</p>
-<p>Due to the particular treatment of procedural macros in Rust, an additional workspace crate <code class="docutils literal notranslate"><span class="pre">feos-derive</span></code> provides procedural macros for the implementation of the <code class="docutils literal notranslate"><span class="pre">EquationOfState</span></code> and <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergyFunctional</span></code> traits for <code class="docutils literal notranslate"><span class="pre">enum</span></code>s used in FFIs like <code class="docutils literal notranslate"><span class="pre">PyO3</span></code>.</p>
+<p>The following crates are actively worked on and will be released in the near future:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">feos-gc-pcsaft</span></code>: the <a class="reference external" href="https://aip.scitation.org/doi/full/10.1063/1.4945000">hetero-segmented group contribution</a> method of the PC-SAFT equation of state.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">feos-uv-theory</span></code>: the equation of state based on <a class="reference external" href="https://aip.scitation.org/doi/full/10.1063/5.0073572">uv-Theory</a>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">feos-thol</span></code>: the <a class="reference external" href="https://aip.scitation.org/doi/full/10.1063/1.4945000">Thol equation of state</a> for pure Lennard-Jones fluids.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">feos-pets</span></code>: the <a class="reference external" href="https://www.tandfonline.com/doi/full/10.1080/00268976.2018.1447153">PeTS equation of state</a>.</p></li>
+</ul>
 </section>
 <section id="where-to-get-help">
 <h2>Where to Get Help<a class="headerlink" href="#where-to-get-help" title="Permalink to this heading">#</a></h2>
