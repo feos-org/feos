@@ -50,6 +50,16 @@ In addition to the source code for the Rust and Python packages, this repository
 
 ## Installation
 
+### Rust
+
+Add this to your `Cargo.toml`
+```toml
+[dependencies]
+feos = "0.3"
+```
+
+### Python
+
 `FeOs` can be installed via `pip` and runs on Windows, Linux and macOS:
 
 ```
@@ -62,7 +72,22 @@ If there is no compiled package for your system available from PyPI and you have
 pip install git+https://github.com/feos-org/feos
 ```
 
-## Building from source
+### Tests
+
+Without additional features activated, the command
+```
+cargo test --release
+```
+will only build and test the core functionalities of the crate. To run unit and integration tests for specific models, run, e.g., 
+```
+cargo test --release --features pcsaft
+```
+or test all models with 
+```
+cargo test --release --features all_models
+```
+
+## Building the Python package from source
 
 To compile the code you need the Rust compiler (`rustc >= 1.53`) and `maturin` installed.
 To install the package directly into the active environment, use
@@ -77,7 +102,7 @@ and specify the models that you want to include in the python package as additio
 maturin develop --release --cargo-extra-args="--features python --features pcsaft --features dft"
 ```
 
-for the PC-SAFT equation of state and Helmholtz energy functional. If you want to include all available models, us
+for the PC-SAFT equation of state and Helmholtz energy functional. If you want to include all available models, use
 
 ```
 maturin develop --release --cargo-extra-args="--features python --features all_models"
