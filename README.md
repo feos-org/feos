@@ -46,7 +46,26 @@ Other public repositories that implement models within the `FeOs` framework, but
 |[`feos-fused-chains`](https://github.com/feos-org/feos-fused-chains)|heterosegmented fused-sphere chain functional||✓|
 
 ## Parameters
-In addition to the source code for the Rust and Python packages, this repository contains JSON files with previously published parameters for the different models including group contribution methods. The parameter files can be read directly from Rust or Python.
+In addition to the source code for the Rust and Python packages, this repository contains JSON files with previously published [parameters](https://github.com/feos-org/feos/tree/main/parameters) for the different models including group contribution methods. The parameter files can be read directly from Rust or Python.
+
+## Properties and phase equilibria
+
+The crate makes use of [generalized (hyper-) dual numbers](https://github.com/itt-ustutt/num-dual) to generically calculate exact partial derivatives from Helmholtz energy equations of state. The derivatives are used to calculate
+- **properties**,
+- **critical points**,
+- and **phase equilibria**.
+
+In addition to that, utilities are provided to assist in the handling of **parameters** for both molecular equations of state and (homosegmented) group contribution methods. Mainly as a simple test case, a **cubic** equation of state is published as part of this crate. Implementations of more sophisticated models can be found in the [feos](https://github.com/feos-org/feos) repository.
+
+For information on how to implement your own equation of state, check out the [documentation](https://feos-org.github.io/feos/rustguide/index.html).
+
+## Classical density functional theory
+
+`FeOs` uses efficient numerical methods to calculate density profiles in inhomogeneous systems. Highlights include:
+- Fast calculation of convolution integrals in cartesian (1D, 2D and 3D), polar, cylindrical, and spherical coordinate systems using FFT and related algorithms.
+- Automatic calculation of partial derivatives of Helmholtz energy densities (including temperature derivatives) using automatic differentiation with [generalized (hyper-) dual numbers](https://github.com/itt-ustutt/num-dual).
+- Modeling of heterosegmented molecules, including branched molecules.
+- Functionalities for calculating surface tensions, adsorption isotherms, pair correlation functions, and solvation free energies.
 
 ## Installation
 
@@ -89,7 +108,7 @@ cargo test --release --features all_models
 
 ## Building the Python package from source
 
-To compile the code you need the Rust compiler (`rustc >= 1.53`) and `maturin` installed.
+To compile the code you need the Rust compiler and `maturin` installed.
 To install the package directly into the active environment, use
 
 ```
