@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 description = "FeOs - A framework for equations of state and classical density functional theory."
 homepage = "https://github.com/feos-org"
 repository = "https://github.com/feos-org/feos"
-keywords = ["physics", "thermodynamics", "equations_of_state", "phase_equilibria", "density_functional_theory"]
+keywords = ["physics", "thermodynamics", "equations_of_state", "phase_equilibria"]
 categories = ["science"]
 
 [package.metadata.docs.rs]
