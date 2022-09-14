@@ -1,4 +1,4 @@
-use crate::hard_sphere::FMTVersion;
+use crate::hard_sphere::{FMTVersion, HardSphereProperties};
 use crate::pets::eos::dispersion::{A, B};
 use crate::pets::parameters::PetsParameters;
 use feos_core::{EosError, EosResult};

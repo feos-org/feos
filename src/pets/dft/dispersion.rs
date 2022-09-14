@@ -1,3 +1,4 @@
+use crate::hard_sphere::HardSphereProperties;
 use crate::pets::eos::dispersion::{A, B};
 use crate::pets::parameters::PetsParameters;
 use feos_core::EosError;

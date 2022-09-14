@@ -1,6 +1,6 @@
 use super::eos::PetsOptions;
 use super::parameters::PetsParameters;
-use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
+use crate::hard_sphere::{FMTContribution, FMTVersion};
 use dispersion::AttractiveFunctional;
 use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
@@ -30,7 +30,7 @@ pub struct PetsFunctional {
 
 impl PetsFunctional {
     /// PeTS functional with default options.
-    /// 
+    ///
     /// # Defaults
     /// `FMTVersion`: `FMTVersion::WhiteBear`
     pub fn new(parameters: Rc<PetsParameters>) -> DFT<Self> {
@@ -120,16 +120,6 @@ impl HelmholtzEnergyFunctional for PetsFunctional {
 impl MolarWeight<SIUnit> for PetsFunctional {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
-    }
-}
-
-impl HardSphereProperties for PetsParameters {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
-        MonomerShape::Spherical(self.sigma.len())
-    }
-
-    fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
-        self.hs_diameter(temperature)
     }
 }
 

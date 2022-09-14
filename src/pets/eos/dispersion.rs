@@ -1,3 +1,4 @@
+use crate::hard_sphere::HardSphereProperties;
 use crate::pets::parameters::PetsParameters;
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use num_dual::DualNum;
