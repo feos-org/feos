@@ -1,9 +1,9 @@
 [package]
 name = "feos"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <prehner@ethz.ch>"]
 edition = "2018"
-rust-version = "1.53"
+rust-version = "1.62"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 description = "FeOs - A framework for equations of state and classical density functional theory."
@@ -27,7 +27,7 @@ quantity = "0.5"
 num-dual = "0.5"
 feos-core = { version = "0.3", path = "feos-core" }
 feos-dft = { version = "0.3", path = "feos-dft", optional = true }
-feos-derive = { path = "feos-derive" }
+feos-derive = { version = "0.1", path = "feos-derive" }
 numpy = { version = "0.16", optional = true }
 ndarray = { version = "0.15", features = ["approx"] }
 petgraph = { version = "0.6", optional = true }

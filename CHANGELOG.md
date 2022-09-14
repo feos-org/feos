@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2022-09-14
+- Major restructuring of the entire `feos` project. All individual models are reunited in the `feos` crate. `feos-core` and `feos-dft` still live as individual crates within the `feos` workspace.
+
 ## [0.2.1] - 2022-05-13
 ### Fixed
 - Fixed a bug due to which the default ideal gas contribution was used for every equation of state. [#17](https://github.com/feos-org/feos/pull/17)

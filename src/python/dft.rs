@@ -24,10 +24,6 @@ use feos_dft::solvation::*;
 use feos_dft::*;
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2, PyArray4};
-#[cfg(feature = "gc_pcsaft")]
-use petgraph::graph::UnGraph;
-#[cfg(feature = "gc_pcsaft")]
-use petgraph::Graph;
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
 #[cfg(feature = "estimator")]
