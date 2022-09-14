@@ -8,6 +8,7 @@ description = "Macros for the EquationOfState and HelmholtzEnergyFunctional trai
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/feos-org"
 repository = "https://github.com/feos-org/feos"
+keywords = ["physics", "thermodynamics", "equations_of_state", "phase_equilibria", "density_functional_theory"]
 
 [lib]
 proc-macro = true

@@ -1,3 +1,6 @@
+//! This crate provides derive macros used for the EosVariant and
+//! FunctionalVariant enums in FeOs. The macros implement
+//! the boilerplate for the EquationOfState and HelmholtzEnergyFunctional traits.
 use dft::expand_helmholtz_energy_functional;
 use eos::expand_equation_of_state;
 use proc_macro::TokenStream;

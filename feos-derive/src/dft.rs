@@ -10,7 +10,7 @@ const OPT_IMPLS: [&'static str; 4] = [
     "pair_potential",
 ];
 
-pub fn expand_helmholtz_energy_functional(
+pub(crate) fn expand_helmholtz_energy_functional(
     input: DeriveInput,
 ) -> syn::Result<proc_macro2::TokenStream> {
     let variants = match input.data {

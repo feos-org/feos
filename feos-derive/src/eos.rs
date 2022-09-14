@@ -5,7 +5,7 @@ use syn::DeriveInput;
 // possible additional traits to implement
 const OPT_IMPLS: [&'static str; 2] = ["molar_weight", "entropy_scaling"];
 
-pub fn expand_equation_of_state(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
+pub(crate) fn expand_equation_of_state(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let variants = match input.data {
         syn::Data::Enum(syn::DataEnum { ref variants, .. }) => variants,
         _ => panic!("this derive macro only works on enums"),
