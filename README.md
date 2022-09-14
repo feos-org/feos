@@ -71,14 +71,15 @@ Without additional features activated, the command
 ```
 cargo test --release
 ```
-will only build and test the core functionalities of the crate. To run unit and integration tests for specific models, run, e.g., 
+will only build and test the core functionalities of the crate. To run unit and integration tests for specific models, run
 ```
 cargo test --release --features pcsaft
 ```
-or test all models with 
+to test, e.g., the implementation of PC-SAFT or
 ```
 cargo test --release --features all_models
 ```
+to run tests on all implemented models.
 
 ## Python package
 
