@@ -51,13 +51,11 @@ In addition to the source code for the Rust and Python packages, this repository
 ## Properties and phase equilibria
 
 The crate makes use of [generalized (hyper-) dual numbers](https://github.com/itt-ustutt/num-dual) to generically calculate exact partial derivatives from Helmholtz energy equations of state. The derivatives are used to calculate
-- **properties**,
-- **critical points**,
-- and **phase equilibria**.
+- **equilibrium properties** (pressure, heat capacity, fugacity, and *many* more),
+- **transport properties** (viscosity, thermal conductivity, diffusion coefficients) using the entropy scaling approach
+- **critical points** and **phase equilibria** for pure components and mixtures.
 
-In addition to that, utilities are provided to assist in the handling of **parameters** for both molecular equations of state and (homosegmented) group contribution methods. Mainly as a simple test case, a **cubic** equation of state is published as part of this crate. Implementations of more sophisticated models can be found in the [feos](https://github.com/feos-org/feos) repository.
-
-For information on how to implement your own equation of state, check out the [documentation](https://feos-org.github.io/feos/rustguide/index.html).
+In addition to that, utilities are provided to assist in the handling of **parameters** for both molecular equations of state and (homosegmented) group contribution methods and for the generation of phase diagrams for pure components and binary mixtures.
 
 ## Classical density functional theory
 
@@ -67,31 +65,7 @@ For information on how to implement your own equation of state, check out the [d
 - Modeling of heterosegmented molecules, including branched molecules.
 - Functionalities for calculating surface tensions, adsorption isotherms, pair correlation functions, and solvation free energies.
 
-## Installation
-
-### Rust
-
-Add this to your `Cargo.toml`
-```toml
-[dependencies]
-feos = "0.3"
-```
-
-### Python
-
-`FeOs` can be installed via `pip` and runs on Windows, Linux and macOS:
-
-```
-pip install feos
-```
-
-If there is no compiled package for your system available from PyPI and you have a Rust compiler installed, you can instead build the python package from source using
-
-```
-pip install git+https://github.com/feos-org/feos
-```
-
-### Tests
+## Features
 
 Without additional features activated, the command
 ```
@@ -106,7 +80,21 @@ or test all models with
 cargo test --release --features all_models
 ```
 
-## Building the Python package from source
+## Python package
+
+`FeOs` uses the [`PyO3`](https://github.com/PyO3/pyo3) framework to provide Python bindings. The Python package can be installed via `pip` and runs on Windows, Linux and macOS:
+
+```
+pip install feos
+```
+
+If there is no compiled package for your system available from PyPI and you have a Rust compiler installed, you can instead build the python package from source using
+
+```
+pip install git+https://github.com/feos-org/feos
+```
+
+### Building from source
 
 To compile the code you need the Rust compiler and `maturin` installed.
 To install the package directly into the active environment, use
