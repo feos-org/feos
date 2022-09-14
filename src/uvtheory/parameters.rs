@@ -121,16 +121,6 @@ pub struct UVParameters {
     pub binary_records: Array2<UVBinaryRecord>,
 }
 
-// impl UVParameters {
-//     pub fn subset(&self, component_list: &[usize]) -> Self {
-//         let pure_records: Vec<PureRecord<UVRecord, ()>> = component_list
-//             .iter()
-//             .map(|&i| self.pure_records[i].clone())
-//             .collect();
-//         Self::from_records(pure_records, self.binary_records.clone()).unwrap()
-//     }
-// }
-
 impl Parameter for UVParameters {
     type Pure = UVRecord;
     type IdealGas = NoRecord;

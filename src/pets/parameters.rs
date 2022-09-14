@@ -1,6 +1,8 @@
+use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use feos_core::joback::JobackRecord;
 use feos_core::parameter::{Parameter, PureRecord};
 use ndarray::{Array, Array1, Array2};
+use num_dual::DualNum;
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -68,7 +70,7 @@ impl PetsRecord {
 }
 
 /// Parameters that modify binary interactions.
-/// 
+///
 /// $\varepsilon_{k,ij} = (1 - k_{ij})\sqrt{\varepsilon_{k,i} \varepsilon_{k,j}}$
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct PetsBinaryRecord {
@@ -227,6 +229,19 @@ impl Parameter for PetsParameters {
         &Array2<PetsBinaryRecord>,
     ) {
         (&self.pure_records, &self.binary_records)
+    }
+}
+
+impl HardSphereProperties for PetsParameters {
+    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
+        MonomerShape::Spherical(self.sigma.len())
+    }
+
+    fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
+        let ti = temperature.recip() * -3.052785558;
+        Array::from_shape_fn(self.sigma.len(), |i| {
+            -((ti * self.epsilon_k[i]).exp() * 0.127112544 - 1.0) * self.sigma[i]
+        })
     }
 }
 
