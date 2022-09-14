@@ -46,11 +46,44 @@ Other public repositories that implement models within the `FeOs` framework, but
 |[`feos-fused-chains`](https://github.com/feos-org/feos-fused-chains)|heterosegmented fused-sphere chain functional||✓|
 
 ## Parameters
-In addition to the source code for the Rust and Python packages, this repository contains JSON files with previously published parameters for the different models including group contribution methods. The parameter files can be read directly from Rust or Python.
+In addition to the source code for the Rust and Python packages, this repository contains JSON files with previously published [parameters](https://github.com/feos-org/feos/tree/main/parameters) for the different models including group contribution methods. The parameter files can be read directly from Rust or Python.
 
-## Installation
+## Properties and phase equilibria
 
-`FeOs` can be installed via `pip` and runs on Windows, Linux and macOS:
+The crate makes use of [generalized (hyper-) dual numbers](https://github.com/itt-ustutt/num-dual) to generically calculate exact partial derivatives from Helmholtz energy equations of state. The derivatives are used to calculate
+- **equilibrium properties** (pressure, heat capacity, fugacity, and *many* more),
+- **transport properties** (viscosity, thermal conductivity, diffusion coefficients) using the entropy scaling approach
+- **critical points** and **phase equilibria** for pure components and mixtures.
+
+In addition to that, utilities are provided to assist in the handling of **parameters** for both molecular equations of state and (homosegmented) group contribution methods and for the generation of phase diagrams for pure components and binary mixtures.
+
+## Classical density functional theory
+
+`FeOs` uses efficient numerical methods to calculate density profiles in inhomogeneous systems. Highlights include:
+- Fast calculation of convolution integrals in cartesian (1D, 2D and 3D), polar, cylindrical, and spherical coordinate systems using FFT and related algorithms.
+- Automatic calculation of partial derivatives of Helmholtz energy densities (including temperature derivatives) using automatic differentiation with [generalized (hyper-) dual numbers](https://github.com/itt-ustutt/num-dual).
+- Modeling of heterosegmented molecules, including branched molecules.
+- Functionalities for calculating surface tensions, adsorption isotherms, pair correlation functions, and solvation free energies.
+
+## Features
+
+Without additional features activated, the command
+```
+cargo test --release
+```
+will only build and test the core functionalities of the crate. To run unit and integration tests for specific models, run
+```
+cargo test --release --features pcsaft
+```
+to test, e.g., the implementation of PC-SAFT or
+```
+cargo test --release --features all_models
+```
+to run tests on all implemented models.
+
+## Python package
+
+`FeOs` uses the [`PyO3`](https://github.com/PyO3/pyo3) framework to provide Python bindings. The Python package can be installed via `pip` and runs on Windows, Linux and macOS:
 
 ```
 pip install feos
@@ -62,9 +95,9 @@ If there is no compiled package for your system available from PyPI and you have
 pip install git+https://github.com/feos-org/feos
 ```
 
-## Building from source
+### Building from source
 
-To compile the code you need the Rust compiler (`rustc >= 1.53`) and `maturin` installed.
+To compile the code you need the Rust compiler and `maturin` installed.
 To install the package directly into the active environment, use
 
 ```
@@ -77,7 +110,7 @@ and specify the models that you want to include in the python package as additio
 maturin develop --release --cargo-extra-args="--features python --features pcsaft --features dft"
 ```
 
-for the PC-SAFT equation of state and Helmholtz energy functional. If you want to include all available models, us
+for the PC-SAFT equation of state and Helmholtz energy functional. If you want to include all available models, use
 
 ```
 maturin develop --release --cargo-extra-args="--features python --features all_models"
