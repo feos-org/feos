@@ -871,8 +871,12 @@
 We will learn how equations of state are abstracted using traits, how generalized (hyper-) dual numbers are utilized and how thermodynamic states and phase equilibria are defined.</p>
 <section id="setup">
 <h2>Setup<a class="headerlink" href="#setup" title="Permalink to this heading">#</a></h2>
-<p>To setup your workspace, <a class="reference external" href="https://docs.github.com/en/get-started/quickstart/fork-a-repo">fork</a> the <a class="reference external" href="https://github.com/feos-org/feos-core"><code class="docutils literal notranslate"><span class="pre">feos-core</span></code> github repository</a> and from that clone the fork.</p>
-<p>To build the Rust library, type:</p>
+<p>To setup your workspace, <a class="reference external" href="https://docs.github.com/en/get-started/quickstart/fork-a-repo">fork</a> the <a class="reference external" href="https://github.com/feos-org/feos"><code class="docutils literal notranslate"><span class="pre">feos</span></code> github repository</a> and from that clone the fork.</p>
+<p>To build the Rust library, switch to the <code class="docutils literal notranslate"><span class="pre">feos-core</span></code> crate</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">feos</span><span class="o">-</span><span class="n">core</span>
+</pre></div>
+</div>
+<p>and type:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cargo</span> <span class="n">build</span>
 </pre></div>
 </div>
@@ -884,7 +888,7 @@ We will learn how equations of state are abstracted using traits, how generalize
 <li><p><code class="docutils literal notranslate"><span class="pre">quantity</span></code>: for scalar and vector valued dimensioned quantities. Those are used in almost all user-facing interfaces.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">num-dual</span></code>: for generalized (hyper-) dual numbers. These data types are very important because we use them to be able to compute partial, higher-order derivatives of the Helmholtz energy without needing to implement them analytically.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ndarray</span></code>: for multidimensional arrays. We use these when mathematical operations are performed on arrays. They are a central data structure for <code class="docutils literal notranslate"><span class="pre">feos-dft</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pyO3</span></code>: for the Python interface. All interfaces to Python are written in pure Rust using <code class="docutils literal notranslate"><span class="pre">pyO3</span></code>. It’s awesome.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pyo3</span></code>: for the Python interface. All interfaces to Python are written in pure Rust using <code class="docutils literal notranslate"><span class="pre">PyO3</span></code>. It’s awesome.</p></li>
 </ul>
 <div class="toctree-wrapper compound">
 </div>
