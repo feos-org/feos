@@ -64,7 +64,7 @@ jobs:
       - name: Build wheels - universal2
         uses: messense/maturin-action@v1
         with:
-          args: --universal2 --out dist
+          args: --release --universal2 --out dist
       - name: Upload wheels
         uses: actions/upload-artifact@v2
         with:
