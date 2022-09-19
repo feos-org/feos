@@ -4,4 +4,4 @@ build-backend = "maturin"
 
 [tool.maturin]
 bindings = "pyo3"
-features = ["python all_models"]
+features = ["python", "all_models"]
