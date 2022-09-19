@@ -17,7 +17,7 @@ jobs:
         with:
           manylinux: auto
           command: build
-          args: --release --out dist --no-sdist --cargo-extra-args="--features python --features all_models"
+          args: --release --out dist --features "python all_models"
       - name: Upload wheels
         uses: actions/upload-artifact@v2
         with:
@@ -41,7 +41,7 @@ jobs:
         uses: messense/maturin-action@main
         with:
           target: x86_64
-          args: --release --out dist --no-sdist --cargo-extra-args="--features python --features all_models"
+          args: --release --out dist --features "python all_models"
       - name: Upload wheels
         uses: actions/upload-artifact@v2
         with:
@@ -64,7 +64,7 @@ jobs:
       - name: Build wheels - universal2
         uses: messense/maturin-action@main
         with:
-          args: --release --universal2 --out dist --no-sdist --cargo-extra-args="--features python --features all_models"
+          args: --release --universal2 --out dist --features "python all_models"
       - name: Upload wheels
         uses: actions/upload-artifact@v2
         with:
@@ -91,7 +91,7 @@ jobs:
         uses: messense/maturin-action@main
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist --no-sdist --cargo-extra-args="--features python --features all_models"
+          args: --release --out dist --features "python all_models"
       - name: Upload wheels
         uses: actions/upload-artifact@v2
         with:

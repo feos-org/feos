@@ -3,7 +3,7 @@ use syn::DeriveInput;
 
 use crate::implement;
 
-const OPT_IMPLS: [&'static str; 4] = [
+const OPT_IMPLS: [&str; 4] = [
     "bond_lengths",
     "molar_weight",
     "fluid_parameters",
@@ -34,7 +34,7 @@ pub(crate) fn expand_helmholtz_energy_functional(
 
 // extract the variant name and the name of the functional,
 // i.e. PcSaft(PcSaftFunctional) will return (PcSaft, PcSaftFunctional)
-fn extract_names<'a>(variant: &'a syn::Variant) -> syn::Result<(&'a syn::Ident, &'a syn::Ident)> {
+fn extract_names(variant: &syn::Variant) -> syn::Result<(&syn::Ident, &syn::Ident)> {
     let name = &variant.ident;
     let field = if let syn::Fields::Unnamed(syn::FieldsUnnamed { ref unnamed, .. }) = variant.fields
     {
@@ -57,10 +57,7 @@ fn extract_names<'a>(variant: &'a syn::Variant) -> syn::Result<(&'a syn::Ident, 
     } else {
         None
     }
-    .ok_or(syn::Error::new_spanned(
-        field,
-        "expected HelmholtzFunctional",
-    ))?;
+    .ok_or_else(|| syn::Error::new_spanned(field, "expected HelmholtzFunctional"))?;
     Ok((name, inner))
 }
 
