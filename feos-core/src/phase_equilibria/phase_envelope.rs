@@ -4,12 +4,12 @@ use crate::errors::EosResult;
 use crate::state::State;
 use crate::{Contributions, EosUnit};
 use quantity::{QuantityArray1, QuantityScalar};
-use std::rc::Rc;
+use std::sync::Arc;
 
 impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
     /// Calculate the bubble point line of a mixture with given composition.
     pub fn bubble_point_line(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         moles: &QuantityArray1<U>,
         min_temperature: QuantityScalar<U>,
         npoints: usize,
@@ -61,7 +61,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
 
     /// Calculate the dew point line of a mixture with given composition.
     pub fn dew_point_line(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         moles: &QuantityArray1<U>,
         min_temperature: QuantityScalar<U>,
         npoints: usize,
@@ -129,7 +129,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
 
     /// Calculate the spinodal lines for a mixture with fixed composition.
     pub fn spinodal(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         moles: &QuantityArray1<U>,
         min_temperature: QuantityScalar<U>,
         npoints: usize,

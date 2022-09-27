@@ -5,7 +5,7 @@ use crate::EosUnit;
 use quantity::{QuantityArray1, QuantityScalar};
 use std::fmt;
 use std::fmt::Write;
-use std::rc::Rc;
+use std::sync::Arc;
 
 mod bubble_dew;
 mod phase_diagram_binary;
@@ -196,7 +196,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     }
 
     pub(super) fn new_npt(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         pressure: QuantityScalar<U>,
         vapor_moles: &QuantityArray1<U>,

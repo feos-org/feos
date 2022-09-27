@@ -7,7 +7,7 @@ use ndarray::{arr1, arr2, concatenate, s, Array1, Array2, Axis};
 use num_dual::linalg::{norm, LU};
 use quantity::{QuantityArray1, QuantityScalar};
 use std::convert::{TryFrom, TryInto};
-use std::rc::Rc;
+use std::sync::Arc;
 
 const DEFAULT_POINTS: usize = 51;
 
@@ -19,7 +19,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
     /// phases are known, they can be passed as `x_lle` to avoid
     /// the calculation of unstable branches.
     pub fn binary_vle(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature_or_pressure: QuantityScalar<U>,
         npoints: Option<usize>,
         x_lle: Option<(f64, f64)>,
@@ -99,7 +99,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
 
     #[allow(clippy::type_complexity)]
     fn calculate_vlle(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         tp: TPSpec<U>,
         npoints: usize,
         x_lle: (f64, f64),
@@ -147,7 +147,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
     /// liquid diagrams as well, as long as the feed composition is
     /// in a two phase region.
     pub fn lle(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature_or_pressure: QuantityScalar<U>,
         feed: &QuantityArray1<U>,
         min_tp: QuantityScalar<U>,
@@ -184,7 +184,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
 }
 
 fn iterate_vle<U: EosUnit, E: EquationOfState>(
-    eos: &Rc<E>,
+    eos: &Arc<E>,
     tp: TPSpec<U>,
     x_lim: &[f64],
     vle_0: PhaseEquilibrium<U, E, 2>,
@@ -266,7 +266,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
     /// The `x_lle` parameter is used as initial values for the calculation
     /// of the heteroazeotrope.
     pub fn binary_vlle(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature_or_pressure: QuantityScalar<U>,
         x_lle: (f64, f64),
         tp_lim_lle: Option<QuantityScalar<U>>,
@@ -369,7 +369,7 @@ where
     /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
     /// system and given pressure.
     pub fn heteroazeotrope(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature_or_pressure: QuantityScalar<U>,
         x_init: (f64, f64),
         tp_init: Option<QuantityScalar<U>>,
@@ -389,7 +389,7 @@ where
     /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
     /// system and given temperature.
     fn heteroazeotrope_t(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         x_init: (f64, f64),
         p_init: Option<QuantityScalar<U>>,
@@ -541,7 +541,7 @@ where
     /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
     /// system and given pressure.
     fn heteroazeotrope_p(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         pressure: QuantityScalar<U>,
         x_init: (f64, f64),
         t_init: Option<QuantityScalar<U>>,

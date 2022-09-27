@@ -18,7 +18,7 @@ use quantity::si::{SIArray1, SIUnit};
 use serde::{Deserialize, Serialize};
 use std::f64::consts::SQRT_2;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 const KB_A3: f64 = 13806490.0;
 
@@ -167,7 +167,7 @@ impl Parameter for PengRobinsonParameters {
 }
 
 struct PengRobinsonContribution {
-    parameters: Rc<PengRobinsonParameters>,
+    parameters: Arc<PengRobinsonParameters>,
 }
 
 impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for PengRobinsonContribution {
@@ -206,7 +206,7 @@ impl fmt::Display for PengRobinsonContribution {
 /// A simple version of the Peng-Robinson equation of state.
 pub struct PengRobinson {
     /// Parameters
-    parameters: Rc<PengRobinsonParameters>,
+    parameters: Arc<PengRobinsonParameters>,
     /// Ideal gas contributions to the Helmholtz energy
     ideal_gas: Joback,
     /// Non-ideal contributions to the Helmholtz energy
@@ -215,7 +215,7 @@ pub struct PengRobinson {
 
 impl PengRobinson {
     /// Create a new equation of state from a set of parameters.
-    pub fn new(parameters: Rc<PengRobinsonParameters>) -> Self {
+    pub fn new(parameters: Arc<PengRobinsonParameters>) -> Self {
         let ideal_gas = parameters.joback_records.as_ref().map_or_else(
             || Joback::default(parameters.tc.len()),
             |j| Joback::new(j.clone()),
@@ -238,7 +238,7 @@ impl EquationOfState for PengRobinson {
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
-        Self::new(Rc::new(self.parameters.subset(component_list)))
+        Self::new(Arc::new(self.parameters.subset(component_list)))
     }
 
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
@@ -270,7 +270,7 @@ mod tests {
     use crate::{EosResult, Verbosity};
     use approx::*;
     use quantity::si::*;
-    use std::rc::Rc;
+    use std::sync::Arc;
 
     fn pure_record_vec() -> Vec<PureRecord<PengRobinsonRecord, JobackRecord>> {
         let records = r#"[
@@ -317,7 +317,7 @@ mod tests {
         let tc = propane.model_record.tc;
         let pc = propane.model_record.pc;
         let parameters = PengRobinsonParameters::from_records(vec![propane], Array2::zeros((1, 1)));
-        let pr = Rc::new(PengRobinson::new(Rc::new(parameters)));
+        let pr = Arc::new(PengRobinson::new(Arc::new(parameters)));
         let options = SolverOptions::new().verbosity(Verbosity::Iter);
         let cp = State::critical_point(&pr, None, None, options)?;
         println!("{} {}", cp.temperature, cp.pressure(Contributions::Total));

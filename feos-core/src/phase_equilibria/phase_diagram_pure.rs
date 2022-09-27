@@ -4,7 +4,7 @@ use crate::errors::EosResult;
 use crate::state::{State, StateVec};
 use crate::EosUnit;
 use quantity::{QuantityArray1, QuantityScalar};
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Pure component and binary mixture phase diagrams.
 pub struct PhaseDiagram<U, E> {
@@ -22,7 +22,7 @@ impl<U: Clone, E> Clone for PhaseDiagram<U, E> {
 impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
     /// Calculate a phase diagram for a pure component.
     pub fn pure(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         min_temperature: QuantityScalar<U>,
         npoints: usize,
         critical_temperature: Option<QuantityScalar<U>>,

@@ -6,7 +6,7 @@ use crate::EosUnit;
 use ndarray::*;
 use num_dual::linalg::norm;
 use quantity::{QuantityArray1, QuantityScalar};
-use std::rc::Rc;
+use std::sync::Arc;
 
 const MAX_ITER_TP: usize = 400;
 const TOL_TP: f64 = 1e-8;
@@ -19,7 +19,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     /// The algorithm can be use to calculate phase equilibria of systems
     /// containing non-volatile components (e.g. ions).
     pub fn tp_flash(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         pressure: QuantityScalar<U>,
         feed: &QuantityArray1<U>,

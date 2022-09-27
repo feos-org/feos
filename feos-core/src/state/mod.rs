@@ -18,7 +18,7 @@ use quantity::{QuantityArray1, QuantityScalar};
 use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 mod builder;
 mod cache;
@@ -123,7 +123,7 @@ impl<D: DualNum<f64>> StateHD<D> {
 #[derive(Debug)]
 pub struct State<U, E> {
     /// Equation of state
-    pub eos: Rc<E>,
+    pub eos: Arc<E>,
     /// Temperature $T$
     pub temperature: QuantityScalar<U>,
     /// Volume $V$
@@ -224,7 +224,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// and if values are finite. It will **not** validate physics, i.e. if the resulting
     /// densities are below the maximum packing fraction.
     pub fn new_nvt(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         volume: QuantityScalar<U>,
         moles: &QuantityArray1<U>,
@@ -236,7 +236,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     pub(super) fn new_nvt_unchecked(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         volume: QuantityScalar<U>,
         moles: &QuantityArray1<U>,
@@ -273,7 +273,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// and if values are finite. It will **not** validate physics, i.e. if the resulting
     /// densities are below the maximum packing fraction.
     pub fn new_pure(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         density: QuantityScalar<U>,
     ) -> EosResult<Self> {
@@ -296,7 +296,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     ///
     /// When the state cannot be created using the combination of inputs.
     pub fn new(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: Option<QuantityScalar<U>>,
         volume: Option<QuantityScalar<U>>,
         density: Option<QuantityScalar<U>>,
@@ -428,7 +428,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// Return a new `State` using a density iteration. [DensityInitialization] is used to
     /// influence the calculation with respect to the possible solutions.
     pub fn new_npt(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         pressure: QuantityScalar<U>,
         moles: &QuantityArray1<U>,
@@ -495,7 +495,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     /// Return a new `State` for given pressure $p$, volume $V$, temperature $T$ and composition $x_i$.
     pub fn new_npvx(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         pressure: QuantityScalar<U>,
         volume: QuantityScalar<U>,
@@ -510,7 +510,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     /// Return a new `State` for given pressure $p$ and molar enthalpy $h$.
     pub fn new_nph(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         pressure: QuantityScalar<U>,
         molar_enthalpy: QuantityScalar<U>,
         moles: &QuantityArray1<U>,
@@ -531,7 +531,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     /// Return a new `State` for given temperature $T$ and molar enthalpy $h$.
     pub fn new_nth(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         molar_enthalpy: QuantityScalar<U>,
         moles: &QuantityArray1<U>,
@@ -558,7 +558,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     /// Return a new `State` for given temperature $T$ and molar entropy $s$.
     pub fn new_nts(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         molar_entropy: QuantityScalar<U>,
         moles: &QuantityArray1<U>,
@@ -582,7 +582,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     /// Return a new `State` for given pressure $p$ and molar entropy $s$.
     pub fn new_nps(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         pressure: QuantityScalar<U>,
         molar_entropy: QuantityScalar<U>,
         moles: &QuantityArray1<U>,
@@ -603,7 +603,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     /// Return a new `State` for given volume $V$ and molar internal energy $u$.
     pub fn new_nvu(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         volume: QuantityScalar<U>,
         molar_internal_energy: QuantityScalar<U>,
         moles: &QuantityArray1<U>,
