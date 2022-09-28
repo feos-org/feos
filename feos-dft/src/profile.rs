@@ -14,6 +14,7 @@ use num_dual::Dual64;
 use quantity::{Quantity, QuantityArray, QuantityArray1, QuantityScalar};
 use std::ops::MulAssign;
 use std::rc::Rc;
+use std::sync::Arc;
 
 pub(crate) const MAX_POTENTIAL: f64 = 50.0;
 #[cfg(feature = "3d_dft")]
@@ -118,7 +119,7 @@ impl<U: EosUnit, D: Dimension, F: HelmholtzEnergyFunctional> DFTSpecification<U,
 pub struct DFTProfile<U, D: Dimension, F> {
     pub grid: Grid,
     pub convolver: Rc<dyn Convolver<f64, D>>,
-    pub dft: Rc<DFT<F>>,
+    pub dft: Arc<DFT<F>>,
     pub temperature: QuantityScalar<U>,
     pub density: QuantityArray<U, D::Larger>,
     pub specification: Rc<dyn DFTSpecification<U, D, F>>,

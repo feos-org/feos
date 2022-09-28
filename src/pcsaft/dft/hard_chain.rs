@@ -11,7 +11,7 @@ use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct ChainFunctional {
-    parameters: Rc<PcSaftParameters>,
+    parameters: Arc<PcSaftParameters>,
 }
 
 impl ChainFunctional {

@@ -4,7 +4,7 @@ use feos_core::{HelmholtzEnergyDual, StateHD};
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub const A0: [f64; 7] = [
     0.91056314451539,
@@ -62,7 +62,7 @@ pub const B2: [f64; 7] = [
 ];
 
 pub struct Dispersion {
-    pub parameters: Rc<PcSaftParameters>,
+    pub parameters: Arc<PcSaftParameters>,
 }
 
 impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Dispersion {

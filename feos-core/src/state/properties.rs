@@ -64,7 +64,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             };
         }
 
-        let mut cache = self.cache.borrow_mut();
+        let mut cache = self.cache.lock().unwrap();
 
         let residual = match evaluate {
             Evaluate::IdealGas => None,

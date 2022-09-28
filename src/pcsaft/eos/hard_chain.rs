@@ -4,10 +4,10 @@ use feos_core::{HelmholtzEnergyDual, StateHD};
 use ndarray::Array;
 use num_dual::*;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub struct HardChain {
-    pub parameters: Rc<PcSaftParameters>,
+    pub parameters: Arc<PcSaftParameters>,
 }
 
 impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardChain {

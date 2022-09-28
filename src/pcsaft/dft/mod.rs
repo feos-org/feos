@@ -24,7 +24,7 @@ use pure_saft_functional::*;
 
 /// PC-SAFT Helmholtz energy functional.
 pub struct PcSaftFunctional {
-    pub parameters: Rc<PcSaftParameters>,
+    pub parameters: Arc<PcSaftParameters>,
     fmt_version: FMTVersion,
     options: PcSaftOptions,
     contributions: Vec<Box<dyn FunctionalContribution>>,
@@ -36,12 +36,12 @@ impl PcSaftFunctional {
         Self::with_options(parameters, FMTVersion::WhiteBear, PcSaftOptions::default())
     }
 
-    pub fn new_full(parameters: Rc<PcSaftParameters>, fmt_version: FMTVersion) -> DFT<Self> {
+    pub fn new_full(parameters: Arc<PcSaftParameters>, fmt_version: FMTVersion) -> DFT<Self> {
         Self::with_options(parameters, fmt_version, PcSaftOptions::default())
     }
 
     pub fn with_options(
-        parameters: Rc<PcSaftParameters>,
+        parameters: Arc<PcSaftParameters>,
         fmt_version: FMTVersion,
         saft_options: PcSaftOptions,
     ) -> DFT<Self> {

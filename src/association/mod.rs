@@ -7,7 +7,7 @@ use num_dual::linalg::{norm, LU};
 use num_dual::*;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[cfg(feature = "dft")]
 mod dft;
@@ -114,7 +114,7 @@ impl AssociationParameters {
 /// Implementation of the SAFT association Helmholtz energy
 /// contribution and functional.
 pub struct Association<P> {
-    parameters: Rc<P>,
+    parameters: Arc<P>,
     association_parameters: AssociationParameters,
     max_iter: usize,
     tol: f64,
@@ -123,7 +123,7 @@ pub struct Association<P> {
 
 impl<P: HardSphereProperties> Association<P> {
     pub fn new(
-        parameters: &Rc<P>,
+        parameters: &Arc<P>,
         association_parameters: &AssociationParameters,
         max_iter: usize,
         tol: f64,
@@ -138,7 +138,7 @@ impl<P: HardSphereProperties> Association<P> {
     }
 
     pub fn new_cross_association(
-        parameters: &Rc<P>,
+        parameters: &Arc<P>,
         association_parameters: &AssociationParameters,
         max_iter: usize,
         tol: f64,
@@ -387,7 +387,7 @@ mod tests_pcsaft {
 
     #[test]
     fn helmholtz_energy() {
-        let params = Rc::new(water_parameters());
+        let params = Arc::new(water_parameters());
         let assoc = Association::new(&params, &params.association, 50, 1e-10);
         let t = 350.0;
         let v = 41.248289328513216;
@@ -399,7 +399,7 @@ mod tests_pcsaft {
 
     #[test]
     fn helmholtz_energy_cross() {
-        let params = Rc::new(water_parameters());
+        let params = Arc::new(water_parameters());
         let assoc = Association::new_cross_association(&params, &params.association, 50, 1e-10);
         let t = 350.0;
         let v = 41.248289328513216;
@@ -423,7 +423,7 @@ mod tests_gc_pcsaft {
 
     #[test]
     fn test_assoc_propanol() {
-        let params = Rc::new(propanol());
+        let params = Arc::new(propanol());
         let contrib = Association::new(&params, &params.association, 50, 1e-10);
         let temperature = 300.0;
         let volume = METER
@@ -443,7 +443,7 @@ mod tests_gc_pcsaft {
 
     #[test]
     fn test_cross_assoc_propanol() {
-        let params = Rc::new(propanol());
+        let params = Arc::new(propanol());
         let contrib = Association::new_cross_association(&params, &params.association, 50, 1e-10);
         let temperature = 300.0;
         let volume = METER
@@ -463,7 +463,7 @@ mod tests_gc_pcsaft {
 
     #[test]
     fn test_cross_assoc_ethanol_propanol() {
-        let params = Rc::new(ethanol_propanol(false));
+        let params = Arc::new(ethanol_propanol(false));
         let contrib = Association::new(&params, &params.association, 50, 1e-10);
         let temperature = 300.0;
         let volume = METER

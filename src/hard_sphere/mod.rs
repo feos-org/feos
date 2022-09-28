@@ -3,10 +3,9 @@
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use ndarray::*;
 use num_dual::DualNum;
-use std::borrow::Cow;
+use std::{borrow::Cow, sync::Arc};
 use std::f64::consts::FRAC_PI_6;
 use std::fmt;
-use std::rc::Rc;
 
 #[cfg(feature = "dft")]
 mod dft;
@@ -106,11 +105,11 @@ pub trait HardSphereProperties {
 ///
 /// The geometry coefficients $C_{k,\alpha}$ and the segment diameters $d_\alpha$ are specified via the [HardSphereProperties] trait.
 pub struct HardSphere<P> {
-    parameters: Rc<P>,
+    parameters: Arc<P>,
 }
 
 impl<P> HardSphere<P> {
-    pub fn new(parameters: &Rc<P>) -> Self {
+    pub fn new(parameters: &Arc<P>) -> Self {
         Self {
             parameters: parameters.clone(),
         }

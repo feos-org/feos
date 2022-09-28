@@ -10,7 +10,7 @@ use ndarray::prelude::*;
 use ndarray::Axis as Axis_nd;
 use ndarray::RemoveAxis;
 use quantity::{QuantityArray, QuantityArray2, QuantityScalar};
-use std::rc::Rc;
+use std::sync::Arc;
 
 const POTENTIAL_OFFSET: f64 = 2.0;
 const DEFAULT_GRID_POINTS: usize = 2048;
@@ -60,7 +60,7 @@ pub trait PoreSpecification<U: EosUnit, D: Dimension> {
     where
         D::Larger: Dimension<Smaller = D>,
     {
-        let bulk = StateBuilder::new(&Rc::new(Helium::new()))
+        let bulk = StateBuilder::new(&Arc::new(Helium::new()))
             .temperature(298.0 * U::reference_temperature())
             .density(U::reference_density())
             .build()?;

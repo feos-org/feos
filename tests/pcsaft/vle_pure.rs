@@ -4,7 +4,7 @@ use feos_core::parameter::{IdentifierOption, Parameter};
 use feos_core::{Contributions, PhaseEquilibrium};
 use quantity::si::*;
 use std::error::Error;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[test]
 fn vle_pure_temperature() -> Result<(), Box<dyn Error>> {
@@ -14,7 +14,7 @@ fn vle_pure_temperature() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let saft = Rc::new(PcSaft::new(Rc::new(params)));
+    let saft = Arc::new(PcSaft::new(Arc::new(params)));
     let temperatures = [
         170.0 * KELVIN,
         200.0 * KELVIN,
@@ -42,7 +42,7 @@ fn vle_pure_pressure() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let saft = Rc::new(PcSaft::new(Rc::new(params)));
+    let saft = Arc::new(PcSaft::new(Arc::new(params)));
     let pressures = [0.1 * BAR, 1.0 * BAR, 10.0 * BAR, 30.0 * BAR, 44.0 * BAR];
     for &p in pressures.iter() {
         let state = PhaseEquilibrium::pure(&saft, p, None, Default::default())?;

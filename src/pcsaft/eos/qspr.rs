@@ -3,7 +3,7 @@ use feos_core::IdealGasContributionDual;
 use ndarray::Array1;
 use num_dual::*;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 const RGAS: f64 = 6.022140857 * 1.38064852;
 const KB: f64 = 1.38064852e-23;
@@ -65,7 +65,7 @@ const AP_400: [f64; 6] = [
 
 #[allow(clippy::upper_case_acronyms)]
 pub struct QSPR {
-    pub parameters: Rc<PcSaftParameters>,
+    pub parameters: Arc<PcSaftParameters>,
 }
 
 impl<D: DualNum<f64>> IdealGasContributionDual<D> for QSPR {

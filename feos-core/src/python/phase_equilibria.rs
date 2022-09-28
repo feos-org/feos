@@ -513,6 +513,29 @@ macro_rules! impl_phase_equilibrium {
                 Ok(Self(dia))
             }
 
+            #[staticmethod]
+            #[pyo3(text_signature = "(eos, min_temperature, npoints, critical_temperature=None, max_iter=None, tol=None, verbosity=None)")]
+            pub fn pure_par(
+                eos: &$py_eos,
+                min_temperature: PySINumber,
+                npoints: usize,
+                chunksize: usize,
+                critical_temperature: Option<PySINumber>,
+                max_iter: Option<usize>,
+                tol: Option<f64>,
+                verbosity: Option<Verbosity>,
+            ) -> PyResult<Self> {
+                let dia = PhaseDiagram::pure_par(
+                    &eos.0,
+                    min_temperature.into(),
+                    npoints,
+                    critical_temperature.map(|t| t.into()),
+                    chunksize,
+                    (max_iter, tol, verbosity).into(),
+                )?;
+                Ok(Self(dia))
+            }
+
             /// Calculate the bubble point line of a mixture with given composition.
             ///
             /// In the resulting phase diagram, the liquid states correspond to the

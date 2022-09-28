@@ -5,7 +5,7 @@ use feos_core::{EquationOfState, StateBuilder};
 use ndarray::*;
 use quantity::si::*;
 use std::error::Error;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[test]
 fn test_dln_phi_dp() -> Result<(), Box<dyn Error>> {
@@ -15,7 +15,7 @@ fn test_dln_phi_dp() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let saft = Rc::new(PcSaft::new(Rc::new(params)));
+    let saft = Arc::new(PcSaft::new(Arc::new(params)));
     let t = 300.0 * KELVIN;
     let p = BAR;
     let h = 1e-1 * PASCAL;
@@ -48,7 +48,7 @@ fn test_virial_is_not_nan() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let saft = Rc::new(PcSaft::new(Rc::new(params)));
+    let saft = Arc::new(PcSaft::new(Arc::new(params)));
     let virial_b = saft.second_virial_coefficient(300.0 * KELVIN, None)?;
     assert!(!virial_b.is_nan());
     Ok(())

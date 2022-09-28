@@ -132,7 +132,7 @@ pub enum MoleculeShape<'a> {
 }
 
 /// A general Helmholtz energy functional.
-pub trait HelmholtzEnergyFunctional: Sized {
+pub trait HelmholtzEnergyFunctional: Sized + Sync + Send {
     /// Return a slice of [FunctionalContribution]s.
     fn contributions(&self) -> &[Box<dyn FunctionalContribution>];
 

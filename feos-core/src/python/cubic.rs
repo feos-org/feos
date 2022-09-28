@@ -11,7 +11,7 @@ use numpy::PyReadonlyArray2;
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// A pure substance parameter for the Peng-Robinson equation of state.
 #[pyclass(name = "PengRobinsonRecord", unsendable)]
@@ -61,7 +61,7 @@ impl_binary_record!();
 /// PengRobinsonParameters
 #[pyclass(name = "PengRobinsonParameters", unsendable)]
 #[derive(Clone)]
-pub struct PyPengRobinsonParameters(pub Rc<PengRobinsonParameters>);
+pub struct PyPengRobinsonParameters(pub Arc<PengRobinsonParameters>);
 
 impl_parameter!(PengRobinsonParameters, PyPengRobinsonParameters);
 

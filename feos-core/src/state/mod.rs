@@ -15,10 +15,9 @@ use ndarray::prelude::*;
 use num_dual::linalg::{norm, LU};
 use num_dual::*;
 use quantity::{QuantityArray1, QuantityScalar};
-use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::fmt;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 mod builder;
 mod cache;
@@ -145,7 +144,7 @@ pub struct State<U, E> {
     /// Reduced moles
     reduced_moles: Array1<f64>,
     /// Cache
-    cache: RefCell<Cache>,
+    cache: Mutex<Cache>,
 }
 
 impl<U: Clone, E> Clone for State<U, E> {
@@ -162,7 +161,7 @@ impl<U: Clone, E> Clone for State<U, E> {
             reduced_temperature: self.reduced_temperature,
             reduced_volume: self.reduced_volume,
             reduced_moles: self.reduced_moles.clone(),
-            cache: self.cache.clone(),
+            cache: Mutex::new(self.cache.lock().unwrap().clone()),
         }
     }
 }
@@ -262,7 +261,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             reduced_temperature: t,
             reduced_volume: v,
             reduced_moles: m,
-            cache: RefCell::new(Cache::with_capacity(eos.components())),
+            cache: Mutex::new(Cache::with_capacity(eos.components())),
         }
     }
 

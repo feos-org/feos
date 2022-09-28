@@ -570,10 +570,10 @@ macro_rules! impl_parameter {
                             "Could not parse binary input!"
                         )))
                     };
-                    Ok(Self(Rc::new(<$parameter>::from_records(prs, brs.unwrap()))))
+                    Ok(Self(Arc::new(<$parameter>::from_records(prs, brs.unwrap()))))
                 } else {
                     let n = prs.len();
-                    Ok(Self(Rc::new(<$parameter>::from_records(
+                    Ok(Self(Arc::new(<$parameter>::from_records(
                         prs,
                         Array2::from_elem([n, n], <$parameter as Parameter>::Binary::default()),
                     ))))
@@ -589,7 +589,7 @@ macro_rules! impl_parameter {
             #[staticmethod]
             #[pyo3(text_signature = "(pure_record)")]
             fn new_pure(pure_record: PyPureRecord) -> Self {
-                Self(Rc::new(<$parameter>::new_pure(pure_record.0)))
+                Self(Arc::new(<$parameter>::new_pure(pure_record.0)))
             }
 
             /// Creates parameters for a binary system from pure records and an optional
@@ -621,7 +621,7 @@ macro_rules! impl_parameter {
                         }
                     })
                     .transpose()?;
-                Ok(Self(Rc::new(<$parameter>::new_binary(prs, br))))
+                Ok(Self(Arc::new(<$parameter>::new_binary(prs, br))))
             }
 
             /// Creates parameters from json files.
@@ -644,7 +644,7 @@ macro_rules! impl_parameter {
                 binary_path: Option<String>,
                 search_option: Option<IdentifierOption>,
             ) -> Result<Self, ParameterError> {
-                Ok(Self(Rc::new(<$parameter>::from_json(
+                Ok(Self(Arc::new(<$parameter>::from_json(
                     substances,
                     pure_path,
                     binary_path,
@@ -670,7 +670,7 @@ macro_rules! impl_parameter {
                 binary_path: Option<&str>,
                 search_option: Option<IdentifierOption>,
             ) -> Result<Self, ParameterError> {
-                Ok(Self(Rc::new(<$parameter>::from_multiple_json(
+                Ok(Self(Arc::new(<$parameter>::from_multiple_json(
                     &input,
                     binary_path,
                     search_option.unwrap_or(IdentifierOption::Name),
@@ -713,7 +713,7 @@ macro_rules! impl_parameter_from_segments {
                 segment_records: Vec<PySegmentRecord>,
                 binary_segment_records: Option<Vec<PyBinarySegmentRecord>>,
             ) -> Result<Self, ParameterError> {
-                Ok(Self(Rc::new(<$parameter>::from_segments(
+                Ok(Self(Arc::new(<$parameter>::from_segments(
                     chemical_records.into_iter().map(|cr| cr.0).collect(),
                     segment_records.into_iter().map(|sr| sr.0).collect(),
                     binary_segment_records.map(|r| r.into_iter().map(|r| BinaryRecord{id1:r.0.id1,id2:r.0.id2,model_record:r.0.model_record.into()}).collect()),
@@ -745,7 +745,7 @@ macro_rules! impl_parameter_from_segments {
                 binary_path: Option<String>,
                 search_option: Option<IdentifierOption>,
             ) -> Result<Self, ParameterError> {
-                Ok(Self(Rc::new(<$parameter>::from_json_segments(
+                Ok(Self(Arc::new(<$parameter>::from_json_segments(
                     &substances,
                     pure_path,
                     segments_path,

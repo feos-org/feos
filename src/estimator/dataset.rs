@@ -9,7 +9,7 @@ use ndarray::Array1;
 use quantity::{QuantityArray1, QuantityScalar};
 use std::collections::HashMap;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Utilities for working with experimental data.
 ///
@@ -26,12 +26,16 @@ pub trait DataSet<U: EosUnit, E: EquationOfState> {
     fn input_str(&self) -> Vec<&str>;
 
     /// Evaluation of the equation of state for the target quantity.
-    fn predict(&self, eos: &Rc<E>) -> Result<QuantityArray1<U>, EstimatorError>
+    fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp;
 
+    fn par_predict(&self, eos: &Arc<E>, chunksize: usize) -> Result<QuantityArray1<U>, EstimatorError>
+        where
+            QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp;
+
     /// Evaluate the cost function.
-    fn cost(&self, eos: &Rc<E>, loss: Loss) -> Result<Array1<f64>, EstimatorError>
+    fn cost(&self, eos: &Arc<E>, loss: Loss) -> Result<Array1<f64>, EstimatorError>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
@@ -50,7 +54,7 @@ pub trait DataSet<U: EosUnit, E: EquationOfState> {
     }
 
     /// Returns the relative difference between the equation of state and the experimental values.
-    fn relative_difference(&self, eos: &Rc<E>) -> Result<Array1<f64>, EstimatorError>
+    fn relative_difference(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
@@ -60,7 +64,7 @@ pub trait DataSet<U: EosUnit, E: EquationOfState> {
     }
 
     /// Returns the mean of the absolute relative difference between the equation of state and the experimental values.
-    fn mean_absolute_relative_difference(&self, eos: &Rc<E>) -> Result<f64, EstimatorError>
+    fn mean_absolute_relative_difference(&self, eos: &Arc<E>) -> Result<f64, EstimatorError>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {

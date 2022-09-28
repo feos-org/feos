@@ -84,6 +84,8 @@ pub trait FunctionalContribution:
     + FunctionalContributionDual<Dual3<DualVec64<2>, f64>>
     + FunctionalContributionDual<Dual3<DualVec64<3>, f64>>
     + Display
+    + Sync
+    + Send
 {
     fn first_partial_derivatives(
         &self,
@@ -167,5 +169,7 @@ impl<T> FunctionalContribution for T where
         + FunctionalContributionDual<Dual3<DualVec64<2>, f64>>
         + FunctionalContributionDual<Dual3<DualVec64<3>, f64>>
         + Display
+        + Sync
+        + Send
 {
 }

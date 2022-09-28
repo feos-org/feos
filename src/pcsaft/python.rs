@@ -12,7 +12,7 @@ use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Create a set of PC-Saft parameters from records.
 #[pyclass(name = "PcSaftRecord")]
@@ -156,7 +156,7 @@ impl_binary_record!(PcSaftBinaryRecord, PyPcSaftBinaryRecord);
     text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
 )]
 #[derive(Clone)]
-pub struct PyPcSaftParameters(pub Rc<PcSaftParameters>);
+pub struct PyPcSaftParameters(pub Arc<PcSaftParameters>);
 
 impl_parameter!(PcSaftParameters, PyPcSaftParameters);
 impl_parameter_from_segments!(PcSaftParameters, PyPcSaftParameters);

@@ -4,7 +4,7 @@ use feos_core::{DensityInitialization, PhaseEquilibrium, State};
 use ndarray::arr1;
 use quantity::si::*;
 use std::error::Error;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[test]
 fn test_stability_analysis() -> Result<(), Box<dyn Error>> {
@@ -14,7 +14,7 @@ fn test_stability_analysis() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let mix = Rc::new(PcSaft::new(Rc::new(params)));
+    let mix = Arc::new(PcSaft::new(Arc::new(params)));
     let unstable = State::new_npt(
         &mix,
         300.0 * KELVIN,
@@ -31,7 +31,7 @@ fn test_stability_analysis() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let mix = Rc::new(PcSaft::new(Rc::new(params)));
+    let mix = Arc::new(PcSaft::new(Arc::new(params)));
     let vle = PhaseEquilibrium::bubble_point(
         &mix,
         300.0 * KELVIN,

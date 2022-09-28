@@ -34,11 +34,11 @@ use pyo3::wrap_pymodule;
 use quantity::python::*;
 use quantity::si::*;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[pyclass(name = "EquationOfState", unsendable)]
 #[derive(Clone)]
-pub struct PyEosVariant(pub Rc<EosVariant>);
+pub struct PyEosVariant(pub Arc<EosVariant>);
 
 #[pymethods]
 impl PyEosVariant {
@@ -86,7 +86,7 @@ impl PyEosVariant {
             tol_cross_assoc,
             dq_variant,
         };
-        Self(Rc::new(EosVariant::PcSaft(PcSaft::with_options(
+        Self(Arc::new(EosVariant::PcSaft(PcSaft::with_options(
             parameters.0,
             options,
         ))))
@@ -150,7 +150,7 @@ impl PyEosVariant {
     #[staticmethod]
     #[pyo3(text_signature = "(parameters)")]
     pub fn peng_robinson(parameters: PyPengRobinsonParameters) -> Self {
-        Self(Rc::new(EosVariant::PengRobinson(PengRobinson::new(
+        Self(Arc::new(EosVariant::PengRobinson(PengRobinson::new(
             parameters.0,
         ))))
     }
@@ -169,7 +169,7 @@ impl PyEosVariant {
     #[staticmethod]
     #[pyo3(text_signature = "(obj)")]
     fn python(obj: Py<PyAny>) -> PyResult<Self> {
-        Ok(Self(Rc::new(EosVariant::Python(PyEoSObj::new(obj)?))))
+        Ok(Self(Arc::new(EosVariant::Python(PyEoSObj::new(obj)?))))
     }
 
     /// PeTS equation of state.

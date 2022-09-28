@@ -19,7 +19,7 @@ const PSI_PDGT: f64 = 1.3286;
 
 #[derive(Clone)]
 pub struct AttractiveFunctional {
-    parameters: Rc<PcSaftParameters>,
+    parameters: Arc<PcSaftParameters>,
 }
 
 impl AttractiveFunctional {

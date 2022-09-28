@@ -48,7 +48,7 @@ pub use state::{Contributions, DensityInitialization, State, StateBuilder, State
 pub mod python;
 
 /// Consistent conversions between quantities and reduced properties.
-pub trait EosUnit: Unit {
+pub trait EosUnit: Unit + Sync + Send {
     fn reference_temperature() -> QuantityScalar<Self>;
     fn reference_length() -> QuantityScalar<Self>;
     fn reference_density() -> QuantityScalar<Self>;
