@@ -17,7 +17,7 @@ use std::rc::Rc;
 /// Create a set of PC-Saft parameters from records.
 #[pyclass(name = "PcSaftRecord")]
 #[pyo3(
-    text_signature = "(m, sigma, epsilon_k, mu=None, q=None, association_record=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
+    text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
 )]
 #[derive(Clone)]
 pub struct PyPcSaftRecord(PcSaftRecord);
