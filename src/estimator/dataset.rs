@@ -45,6 +45,16 @@ pub trait DataSet<U: EosUnit, E: EquationOfState> {
         Ok(cost / datapoints as f64)
     }
 
+    fn par_cost(&self, eos: &Arc<E>, loss: Loss, chunksize: usize) -> Result<Array1<f64>, EstimatorError>
+    where
+        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    {
+        let mut cost = self.par_relative_difference(eos, chunksize)?;
+        loss.apply(&mut cost);
+        let datapoints = cost.len();
+        Ok(cost / datapoints as f64)
+    }
+
     /// Returns the input quantities as HashMap. The keys are the input's descriptions.
     fn get_input(&self) -> HashMap<String, QuantityArray1<U>>;
 
@@ -59,6 +69,16 @@ pub trait DataSet<U: EosUnit, E: EquationOfState> {
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
         let prediction = &self.predict(eos)?;
+        let target = self.target();
+        Ok(((prediction - target) / target).into_value()?)
+    }
+
+    /// Returns the relative difference between the equation of state and the experimental values.
+    fn par_relative_difference(&self, eos: &Arc<E>, chunksize: usize) -> Result<Array1<f64>, EstimatorError>
+    where
+        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    {
+        let prediction = &self.par_predict(eos, chunksize)?;
         let target = self.target();
         Ok(((prediction - target) / target).into_value()?)
     }

@@ -3,8 +3,7 @@ use crate::equation_of_state::EquationOfState;
 use crate::errors::EosResult;
 use crate::state::{State, StateVec};
 use crate::EosUnit;
-use ndarray::{Array1, ArrayView1};
-use numpy::ndarray::Axis;
+use ndarray::{Array1, ArrayView1, Axis};
 use quantity::{QuantityArray1, QuantityScalar};
 use rayon::prelude::*;
 use std::sync::Arc;
@@ -65,7 +64,13 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
         let mut states = Vec::with_capacity(range.len());
         let mut vle = None;
         for ti in range {
-            vle = PhaseEquilibrium::pure(eos, *ti * U::reference_temperature(), vle.as_ref(), options).ok();
+            vle = PhaseEquilibrium::pure(
+                eos,
+                *ti * U::reference_temperature(),
+                vle.as_ref(),
+                options,
+            )
+            .ok();
             if let Some(vle) = vle.as_ref() {
                 states.push(vle.clone());
             }
@@ -97,9 +102,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
         let mut states: Vec<PhaseEquilibrium<U, E, 2>> = temperatures
             .axis_chunks_iter(Axis(0), chunksize)
             .into_par_iter()
-            .filter_map(|t| {
-                Self::solve_range(eos, t, options).ok()
-            })
+            .filter_map(|t| Self::solve_range(eos, t, options).ok())
             .flatten()
             .collect();
 

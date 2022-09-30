@@ -240,8 +240,8 @@ impl_phase_equilibrium!(EosVariant, PyEosVariant);
 
 #[cfg(feature = "estimator")]
 impl_estimator!(EosVariant, PyEosVariant);
-#[cfg(all(feature = "estimator", feature = "pcsaft"))]
-impl_estimator_entropy_scaling!(EosVariant, PyEosVariant);
+// #[cfg(all(feature = "estimator", feature = "pcsaft"))]
+// impl_estimator_entropy_scaling!(EosVariant, PyEosVariant);
 
 #[pymodule]
 pub fn eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
