@@ -30,10 +30,6 @@ pub trait DataSet<U: EosUnit, E: EquationOfState> {
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp;
 
-    fn par_predict(&self, eos: &Arc<E>, chunksize: usize) -> Result<QuantityArray1<U>, EstimatorError>
-        where
-            QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp;
-
     /// Evaluate the cost function.
     fn cost(&self, eos: &Arc<E>, loss: Loss) -> Result<Array1<f64>, EstimatorError>
     where
@@ -45,15 +41,7 @@ pub trait DataSet<U: EosUnit, E: EquationOfState> {
         Ok(cost / datapoints as f64)
     }
 
-    fn par_cost(&self, eos: &Arc<E>, loss: Loss, chunksize: usize) -> Result<Array1<f64>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        let mut cost = self.par_relative_difference(eos, chunksize)?;
-        loss.apply(&mut cost);
-        let datapoints = cost.len();
-        Ok(cost / datapoints as f64)
-    }
+    
 
     /// Returns the input quantities as HashMap. The keys are the input's descriptions.
     fn get_input(&self) -> HashMap<String, QuantityArray1<U>>;
@@ -73,16 +61,6 @@ pub trait DataSet<U: EosUnit, E: EquationOfState> {
         Ok(((prediction - target) / target).into_value()?)
     }
 
-    /// Returns the relative difference between the equation of state and the experimental values.
-    fn par_relative_difference(&self, eos: &Arc<E>, chunksize: usize) -> Result<Array1<f64>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        let prediction = &self.par_predict(eos, chunksize)?;
-        let target = self.target();
-        Ok(((prediction - target) / target).into_value()?)
-    }
-
     /// Returns the mean of the absolute relative difference between the equation of state and the experimental values.
     fn mean_absolute_relative_difference(&self, eos: &Arc<E>) -> Result<f64, EstimatorError>
     where
@@ -94,6 +72,42 @@ pub trait DataSet<U: EosUnit, E: EquationOfState> {
             .filter(|&x| x.is_finite())
             .enumerate()
             .fold(0.0, |mean, (i, x)| mean + (x.abs() - mean) / (i + 1) as f64))
+    }
+
+    /// Parallel evaluation of the equation of state for the target quantity for each data point.
+    fn par_predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
+    where
+        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    {
+        self.predict(eos)
+    }
+    
+    /// Parallel evaluation the cost function.
+    fn par_cost(
+        &self,
+        eos: &Arc<E>,
+        loss: Loss,
+    ) -> Result<Array1<f64>, EstimatorError>
+    where
+        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    {
+        let mut cost = self.par_relative_difference(eos)?;
+        loss.apply(&mut cost);
+        let datapoints = cost.len();
+        Ok(cost / datapoints as f64)
+    }
+
+    /// Returns the relative difference between the equation of state and the experimental values.
+    fn par_relative_difference(
+        &self,
+        eos: &Arc<E>,
+    ) -> Result<Array1<f64>, EstimatorError>
+    where
+        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    {
+        let prediction = &self.par_predict(eos)?;
+        let target = self.target();
+        Ok(((prediction - target) / target).into_value()?)
     }
 }
 

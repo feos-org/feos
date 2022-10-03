@@ -57,13 +57,13 @@ where
         Ok(concatenate(Axis(0), &aview)?)
     }
 
-    pub fn par_cost(&self, eos: &Arc<E>, chunksize: usize) -> Result<Array1<f64>, EstimatorError> {
+    pub fn par_cost(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
         let w = arr1(&self.weights) / self.weights.iter().sum::<f64>();
         let predictions = self
             .data
             .iter()
             .enumerate()
-            .flat_map(|(i, d)| d.par_cost(eos, self.losses[i], chunksize).unwrap() * w[i])
+            .flat_map(|(i, d)| d.par_cost(eos, self.losses[i]).unwrap() * w[i])
             .collect::<Array1<f64>>();
         Ok(predictions)
     }
@@ -74,8 +74,8 @@ where
     }
 
     /// Returns the properties as computed by the equation of state for each `DataSet`.
-    pub fn par_predict(&self, eos: &Arc<E>, chunksize: usize) -> Result<Vec<QuantityArray1<U>>, EstimatorError> {
-        self.data.iter().map(|d| d.par_predict(eos, chunksize)).collect()
+    pub fn par_predict(&self, eos: &Arc<E>) -> Result<Vec<QuantityArray1<U>>, EstimatorError> {
+        self.data.iter().map(|d| d.par_predict(eos)).collect()
     }
 
     /// Returns the relative difference for each `DataSet`.
@@ -87,10 +87,13 @@ where
     }
 
     /// Returns the relative difference for each `DataSet`.
-    pub fn par_relative_difference(&self, eos: &Arc<E>, chunksize: usize) -> Result<Vec<Array1<f64>>, EstimatorError> {
+    pub fn par_relative_difference(
+        &self,
+        eos: &Arc<E>,
+    ) -> Result<Vec<Array1<f64>>, EstimatorError> {
         self.data
             .iter()
-            .map(|d| d.par_relative_difference(eos, chunksize))
+            .map(|d| d.par_relative_difference(eos))
             .collect()
     }
 

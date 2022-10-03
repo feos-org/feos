@@ -1,25 +1,22 @@
 use super::{DataSet, EstimatorError};
 use feos_core::{Contributions, EosUnit, EquationOfState, PhaseEquilibrium, SolverOptions, State};
-use ndarray::{Array1, Axis};
+use ndarray::Array1;
 use quantity::{QuantityArray1, QuantityScalar};
 use rayon::prelude::*;
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 /// Store experimental vapor pressure data.
-pub struct VaporPressure<U: EosUnit, E: EquationOfState> {
+pub struct VaporPressure<U: EosUnit> {
     pub target: QuantityArray1<U>,
     temperature: QuantityArray1<U>,
     max_temperature: QuantityScalar<U>,
-    cached_states: RefCell<Vec<Option<PhaseEquilibrium<U, E, 2>>>>,
-    datapoints: usize,
     extrapolate: bool,
     solver_options: SolverOptions,
 }
 
-impl<U: EosUnit, E: EquationOfState> VaporPressure<U, E> {
-    /// Create a new data set for vapor pressure.
+impl<U: EosUnit> VaporPressure<U> {
+    /// Create a new data set for vapor pressure data.
     ///
     /// If the equation of state fails to compute the vapor pressure
     /// (e.g. when it underestimates the critical point) the vapor
@@ -33,7 +30,6 @@ impl<U: EosUnit, E: EquationOfState> VaporPressure<U, E> {
         extrapolate: bool,
         solver_options: Option<SolverOptions>,
     ) -> Result<Self, EstimatorError> {
-        let datapoints = target.len();
         let max_temperature = temperature
             .to_reduced(U::reference_temperature())?
             .into_iter()
@@ -44,8 +40,6 @@ impl<U: EosUnit, E: EquationOfState> VaporPressure<U, E> {
             target,
             temperature,
             max_temperature,
-            cached_states: RefCell::new(vec![None; datapoints]),
-            datapoints,
             extrapolate,
             solver_options: solver_options.unwrap_or_default(),
         })
@@ -57,7 +51,7 @@ impl<U: EosUnit, E: EquationOfState> VaporPressure<U, E> {
     }
 }
 
-impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U, E> {
+impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
     fn target(&self) -> &QuantityArray1<U> {
         &self.target
     }
@@ -87,96 +81,22 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U, E> {
         let b = pc.to_reduced(p0)?.ln() / (1.0 / tc - 1.0 / t0);
         let a = pc.to_reduced(U::reference_pressure())?.ln() - b.to_reduced(tc)?;
 
-        let unit = self.target.get(0);
-        let mut prediction = Array1::zeros(self.datapoints) * unit;
-        for i in 0..self.datapoints {
-            let t = self.temperature.get(i);
-            if let Some(pvap) = PhaseEquilibrium::vapor_pressure(eos, t)[0] {
-                prediction.try_set(i, pvap)?;
-            } else if self.extrapolate {
-                prediction.try_set(i, (a + b.to_reduced(t)?).exp() * U::reference_pressure())?;
-            } else {
-                prediction.try_set(i, f64::NAN * U::reference_pressure())?
-            }
-        }
-        Ok(prediction)
+        Ok(self
+            .temperature
+            .into_iter()
+            .map(|t| {
+                if let Some(pvap) = PhaseEquilibrium::vapor_pressure(eos, t)[0] {
+                    pvap
+                } else if self.extrapolate {
+                    (a + b.to_reduced(t).unwrap()).exp() * U::reference_pressure()
+                } else {
+                    f64::NAN * U::reference_pressure()
+                }
+            })
+            .collect::<QuantityArray1<U>>())
     }
 
-    // fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
-    // where
-    //     QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    // {
-    //     let critical_point =
-    //         State::critical_point(eos, None, Some(self.max_temperature), self.solver_options)?;
-    //     let tc = critical_point.temperature;
-    //     let pc = critical_point.pressure(Contributions::Total);
-
-    //     let t0 = 0.9 * tc;
-    //     let p0 = PhaseEquilibrium::pure(eos, t0, None, self.solver_options)?
-    //         .vapor()
-    //         .pressure(Contributions::Total);
-
-    //     let b = pc.to_reduced(p0)?.ln() / (1.0 / tc - 1.0 / t0);
-    //     let a = pc.to_reduced(U::reference_pressure())?.ln() - b.to_reduced(tc)?;
-    //     let ts = self
-    //         .temperature
-    //         .to_reduced(U::reference_temperature())
-    //         .unwrap();
-
-    //     let prediction: Array1<f64> = self
-    //         .cached_states
-    //         .borrow_mut()
-    //         .iter_mut()
-    //         .zip(ts.iter())
-    //         .map(|(si, &ti)| {
-    //             let vle = PhaseEquilibrium::pure(
-    //                 eos,
-    //                 ti * U::reference_temperature(),
-    //                 si.as_ref(),
-    //                 self.solver_options,
-    //             );
-
-    //             // try again without cached state if calculation failed with cached state
-    //             let vle = if vle.is_err() && si.is_some() {
-    //                 PhaseEquilibrium::pure(
-    //                     eos,
-    //                     ti * U::reference_temperature(),
-    //                     None,
-    //                     self.solver_options,
-    //                 )
-    //             } else {
-    //                 vle
-    //             };
-
-    //             match vle {
-    //                 Ok(vle) => {
-    //                     let p = vle
-    //                         .vapor()
-    //                         .pressure(Contributions::Total)
-    //                         .to_reduced(U::reference_pressure())
-    //                         .unwrap();
-    //                     *si = Some(vle);
-    //                     p
-    //                 }
-    //                 _ => {
-    //                     if self.extrapolate {
-    //                         (a + b.to_reduced(ti * U::reference_temperature()).unwrap()).exp()
-    //                     } else {
-    //                         f64::NAN
-    //                     }
-    //                 }
-    //             }
-    //         })
-    //         .collect();
-            
-    //     Ok(prediction * U::reference_pressure())
-    // }
-
-    fn par_predict(
-        &self,
-        eos: &Arc<E>,
-        chunksize: usize,
-    ) -> Result<QuantityArray1<U>, EstimatorError>
+    fn par_predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
@@ -198,29 +118,20 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U, E> {
             .to_reduced(U::reference_temperature())
             .unwrap();
 
-        let extrapolate = self.extrapolate;
-
         let res = ts
-            .axis_chunks_iter(Axis(0), chunksize)
             .into_par_iter()
-            .map(|t| {
-                t.iter()
-                    .map(|&ti| {
-                        if let Some(pvap) =
-                            PhaseEquilibrium::vapor_pressure(eos, ti * U::reference_temperature())
-                                [0]
-                        {
-                            pvap.to_reduced(U::reference_pressure()).unwrap()
-                        } else if extrapolate {
-                            (a + b.to_reduced(ti * U::reference_temperature()).unwrap()).exp()
-                        } else {
-                            f64::NAN
-                        }
-                    })
-                    .collect::<Vec<f64>>()
+            .map(|&t| {
+                if let Some(pvap) =
+                    PhaseEquilibrium::vapor_pressure(eos, t * U::reference_temperature())[0]
+                {
+                    pvap.to_reduced(U::reference_pressure()).unwrap()
+                } else if self.extrapolate {
+                    (a + b.to_reduced(t * U::reference_temperature()).unwrap()).exp()
+                } else {
+                    f64::NAN
+                }
             })
-            .flatten()
-            .collect::<Vec<f64>>();
+            .collect();
         Ok(Array1::from_vec(res) * U::reference_pressure())
     }
 

@@ -244,7 +244,7 @@ macro_rules! impl_estimator {
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
-                Ok(Self(Arc::new(VaporPressure::<SIUnit, $eos>::new(
+                Ok(Self(Arc::new(VaporPressure::<SIUnit>::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     extrapolate.unwrap_or(false),
@@ -318,110 +318,110 @@ macro_rules! impl_estimator {
                 )?)))
             }
 
-            // /// Create a DataSet with experimental data for binary
-            // /// phase equilibria using the chemical potential residual.
-            // ///
-            // /// Parameters
-            // /// ----------
-            // /// temperature : SIArray1
-            // ///     Temperature of the experimental data points.
-            // /// pressure : SIArray1
-            // ///     Pressure of the experimental data points.
-            // /// liquid_molefracs : np.array[float]
-            // ///     Molar composition of component 1 in the liquid phase.
-            // /// vapor_molefracs : np.array[float]
-            // ///     Molar composition of component 1 in the vapor phase.
-            // ///
-            // /// Returns
-            // /// -------
-            // /// DataSet
-            // #[staticmethod]
-            // #[pyo3(text_signature = "(temperature, pressure, liquid_molefracs, vapor_molefracs)")]
-            // fn binary_vle_chemical_potential(
-            //     temperature: &PySIArray1,
-            //     pressure: &PySIArray1,
-            //     liquid_molefracs: &PyArray1<f64>,
-            //     vapor_molefracs: &PyArray1<f64>,
-            // ) -> Self {
-            //     Self(Arc::new(BinaryVleChemicalPotential::new(
-            //         temperature.clone().into(),
-            //         pressure.clone().into(),
-            //         liquid_molefracs.to_owned_array(),
-            //         vapor_molefracs.to_owned_array(),
-            //     )))
-            // }
+            /// Create a DataSet with experimental data for binary
+            /// phase equilibria using the chemical potential residual.
+            ///
+            /// Parameters
+            /// ----------
+            /// temperature : SIArray1
+            ///     Temperature of the experimental data points.
+            /// pressure : SIArray1
+            ///     Pressure of the experimental data points.
+            /// liquid_molefracs : np.array[float]
+            ///     Molar composition of component 1 in the liquid phase.
+            /// vapor_molefracs : np.array[float]
+            ///     Molar composition of component 1 in the vapor phase.
+            ///
+            /// Returns
+            /// -------
+            /// DataSet
+            #[staticmethod]
+            #[pyo3(text_signature = "(temperature, pressure, liquid_molefracs, vapor_molefracs)")]
+            fn binary_vle_chemical_potential(
+                temperature: &PySIArray1,
+                pressure: &PySIArray1,
+                liquid_molefracs: &PyArray1<f64>,
+                vapor_molefracs: &PyArray1<f64>,
+            ) -> Self {
+                Self(Arc::new(BinaryVleChemicalPotential::new(
+                    temperature.clone().into(),
+                    pressure.clone().into(),
+                    liquid_molefracs.to_owned_array(),
+                    vapor_molefracs.to_owned_array(),
+                )))
+            }
 
-            // /// Create a DataSet with experimental data for binary
-            // /// phase equilibria using the pressure residual.
-            // ///
-            // /// Parameters
-            // /// ----------
-            // /// temperature : SIArray1
-            // ///     Temperature of the experimental data points.
-            // /// pressure : SIArray1
-            // ///     Pressure of the experimental data points.
-            // /// molefracs : np.array[float]
-            // ///     Molar composition of component 1 in the considered phase.
-            // /// phase : Phase
-            // ///     The phase of the experimental data points.
-            // ///
-            // /// Returns
-            // /// -------
-            // /// DataSet
-            // #[staticmethod]
-            // #[pyo3(text_signature = "(temperature, pressure, molefracs, phase)")]
-            // fn binary_vle_pressure(
-            //     temperature: &PySIArray1,
-            //     pressure: &PySIArray1,
-            //     molefracs: &PyArray1<f64>,
-            //     phase: Phase,
-            // ) -> Self {
-            //     Self(Arc::new(BinaryVlePressure::new(
-            //         temperature.clone().into(),
-            //         pressure.clone().into(),
-            //         molefracs.to_owned_array(),
-            //         phase,
-            //     )))
-            // }
+            /// Create a DataSet with experimental data for binary
+            /// phase equilibria using the pressure residual.
+            ///
+            /// Parameters
+            /// ----------
+            /// temperature : SIArray1
+            ///     Temperature of the experimental data points.
+            /// pressure : SIArray1
+            ///     Pressure of the experimental data points.
+            /// molefracs : np.array[float]
+            ///     Molar composition of component 1 in the considered phase.
+            /// phase : Phase
+            ///     The phase of the experimental data points.
+            ///
+            /// Returns
+            /// -------
+            /// DataSet
+            #[staticmethod]
+            #[pyo3(text_signature = "(temperature, pressure, molefracs, phase)")]
+            fn binary_vle_pressure(
+                temperature: &PySIArray1,
+                pressure: &PySIArray1,
+                molefracs: &PyArray1<f64>,
+                phase: Phase,
+            ) -> Self {
+                Self(Arc::new(BinaryVlePressure::new(
+                    temperature.clone().into(),
+                    pressure.clone().into(),
+                    molefracs.to_owned_array(),
+                    phase,
+                )))
+            }
 
-            // /// Create a DataSet with experimental data for binary
-            // /// phase diagrams using the distance residual.
-            // ///
-            // /// Parameters
-            // /// ----------
-            // /// specification : SINumber
-            // ///     The constant temperature/pressure of the isotherm/isobar.
-            // /// temperature_or_pressure : SIArray1
-            // ///     The temperature (isobar) or pressure (isotherm) of the
-            // ///     experimental data points.
-            // /// liquid_molefracs : np.array[float], optional
-            // ///     Molar composition of component 1 in the liquid phase.
-            // /// vapor_molefracs : np.array[float], optional
-            // ///     Molar composition of component 1 in the vapor phase.
-            // /// npoints : int, optional
-            // ///     The resolution of the phase diagram used to calculate
-            // ///     the distance residual.
-            // ///
-            // /// Returns
-            // /// -------
-            // /// DataSet
-            // #[staticmethod]
-            // #[pyo3(text_signature = "(specification, temperature_or_pressure, liquid_molefracs=None, vapor_molefracs=None, npoints=None)")]
-            // fn binary_phase_diagram(
-            //     specification: PySINumber,
-            //     temperature_or_pressure: &PySIArray1,
-            //     liquid_molefracs: Option<&PyArray1<f64>>,
-            //     vapor_molefracs: Option<&PyArray1<f64>>,
-            //     npoints: Option<usize>,
-            // ) -> Self {
-            //     Self(Arc::new(BinaryPhaseDiagram::new(
-            //         specification.into(),
-            //         temperature_or_pressure.clone().into(),
-            //         liquid_molefracs.map(|x| x.to_owned_array()),
-            //         vapor_molefracs.map(|x| x.to_owned_array()),
-            //         npoints,
-            //     )))
-            // }
+            /// Create a DataSet with experimental data for binary
+            /// phase diagrams using the distance residual.
+            ///
+            /// Parameters
+            /// ----------
+            /// specification : SINumber
+            ///     The constant temperature/pressure of the isotherm/isobar.
+            /// temperature_or_pressure : SIArray1
+            ///     The temperature (isobar) or pressure (isotherm) of the
+            ///     experimental data points.
+            /// liquid_molefracs : np.array[float], optional
+            ///     Molar composition of component 1 in the liquid phase.
+            /// vapor_molefracs : np.array[float], optional
+            ///     Molar composition of component 1 in the vapor phase.
+            /// npoints : int, optional
+            ///     The resolution of the phase diagram used to calculate
+            ///     the distance residual.
+            ///
+            /// Returns
+            /// -------
+            /// DataSet
+            #[staticmethod]
+            #[pyo3(text_signature = "(specification, temperature_or_pressure, liquid_molefracs=None, vapor_molefracs=None, npoints=None)")]
+            fn binary_phase_diagram(
+                specification: PySINumber,
+                temperature_or_pressure: &PySIArray1,
+                liquid_molefracs: Option<&PyArray1<f64>>,
+                vapor_molefracs: Option<&PyArray1<f64>>,
+                npoints: Option<usize>,
+            ) -> Self {
+                Self(Arc::new(BinaryPhaseDiagram::new(
+                    specification.into(),
+                    temperature_or_pressure.clone().into(),
+                    liquid_molefracs.map(|x| x.to_owned_array()),
+                    vapor_molefracs.map(|x| x.to_owned_array()),
+                    npoints,
+                )))
+            }
 
             /// Return `input` as ``Dict[str, SIArray1]``.
             #[getter]
@@ -516,17 +516,15 @@ macro_rules! impl_estimator {
             /// ----------
             /// eos : PyEos
             ///     The equation of state that is used.
-            /// chunksize : int
-            ///     The number of datapoints evaluated within one thread.
             ///
             /// Returns
             /// -------
             /// numpy.ndarray[Float]
             ///     The cost function evaluated for each experimental data point
             ///     of each ``DataSet``.
-            #[pyo3(text_signature = "($self, eos, chunksize)")]
-            fn par_cost<'py>(&self, eos: &$py_eos, chunksize: usize, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
-                Ok(self.0.par_cost(&eos.0, chunksize)?.view().to_pyarray(py))
+            #[pyo3(text_signature = "($self, eos)")]
+            fn par_cost<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
+                Ok(self.0.par_cost(&eos.0)?.view().to_pyarray(py))
             }
 
             /// Return the properties as computed by the
@@ -557,17 +555,15 @@ macro_rules! impl_estimator {
             /// ----------
             /// eos : PyEos
             ///     The equation of state that is used.
-            /// chunksize : int
-            ///     The number of datapoints evaluated within one thread.
             ///
             /// Returns
             /// -------
             /// List[SIArray1]
-            #[pyo3(text_signature = "($self, eos, chunksize)")]
-            fn par_predict(&self, eos: &$py_eos, chunksize: usize) -> PyResult<Vec<PySIArray1>> {
+            #[pyo3(text_signature = "($self, eos)")]
+            fn par_predict(&self, eos: &$py_eos) -> PyResult<Vec<PySIArray1>> {
                 Ok(self
                     .0
-                    .par_predict(&eos.0, chunksize)?
+                    .par_predict(&eos.0)?
                     .iter()
                     .map(|d| PySIArray1::from(d.clone()))
                     .collect())
@@ -613,8 +609,6 @@ macro_rules! impl_estimator {
             /// ----------
             /// eos : PyEos
             ///     The equation of state that is used.
-            /// chunksize : int
-            ///     The number of datapoints evaluated within one thread.
             ///
             /// Returns
             /// -------
@@ -623,12 +617,11 @@ macro_rules! impl_estimator {
             fn par_relative_difference<'py>(
                 &self,
                 eos: &$py_eos,
-                chunksize: usize,
                 py: Python<'py>,
             ) -> PyResult<Vec<&'py PyArray1<f64>>> {
                 Ok(self
                     .0
-                    .par_relative_difference(&eos.0, chunksize)?
+                    .par_relative_difference(&eos.0)?
                     .iter()
                     .map(|d| d.view().to_pyarray(py))
                     .collect())

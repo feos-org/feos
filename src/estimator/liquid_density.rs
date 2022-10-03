@@ -3,7 +3,7 @@ use feos_core::{
     DensityInitialization, EosUnit, EquationOfState, MolarWeight, PhaseEquilibrium, SolverOptions,
     State,
 };
-use ndarray::{arr1, Array1, Axis};
+use ndarray::{arr1, Array1};
 use quantity::{QuantityArray1, QuantityScalar};
 use rayon::prelude::*;
 use std::collections::HashMap;
@@ -18,8 +18,6 @@ pub struct LiquidDensity<U: EosUnit> {
     temperature: QuantityArray1<U>,
     /// pressure
     pressure: QuantityArray1<U>,
-    /// number of data points
-    datapoints: usize,
 }
 
 impl<U: EosUnit> LiquidDensity<U> {
@@ -29,12 +27,10 @@ impl<U: EosUnit> LiquidDensity<U> {
         temperature: QuantityArray1<U>,
         pressure: QuantityArray1<U>,
     ) -> Result<Self, EstimatorError> {
-        let datapoints = target.len();
         Ok(Self {
             target,
             temperature,
             pressure,
-            datapoints,
         })
     }
 
@@ -64,60 +60,47 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDe
 
     fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError> {
         let moles = arr1(&[1.0]) * U::reference_moles();
-        let unit = self.target.get(0);
-        let mut prediction = Array1::zeros(self.datapoints) * unit;
-        for i in 0..self.datapoints {
-            let state = State::new_npt(
-                eos,
-                self.temperature.get(i),
-                self.pressure.get(i),
-                &moles,
-                DensityInitialization::Liquid,
-            );
-            if let Ok(s) = state {
-                prediction.try_set(i, s.mass_density())?;
-            } else {
-                prediction.try_set(i, f64::NAN * unit)?;
-            }
-        }
-        Ok(prediction)
+        Ok(self
+            .temperature
+            .into_iter()
+            .zip(self.pressure.into_iter())
+            .map(|(t, p)| {
+                let state = State::new_npt(eos, t, p, &moles, DensityInitialization::Liquid);
+                if let Ok(s) = state {
+                    s.mass_density()
+                } else {
+                    f64::NAN * U::reference_mass() / U::reference_volume()
+                }
+            })
+            .collect())
     }
 
-    fn par_predict(
-        &self,
-        eos: &Arc<E>,
-        chunksize: usize,
-    ) -> Result<QuantityArray1<U>, EstimatorError> {
+    fn par_predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError> {
         let moles = arr1(&[1.0]) * U::reference_moles();
         let ts = self
             .temperature
             .to_reduced(U::reference_temperature())
             .unwrap();
-
         let ps = self.pressure.to_reduced(U::reference_pressure()).unwrap();
 
         let res = (ts.as_slice().unwrap(), ps.as_slice().unwrap())
             .into_par_iter()
-            .chunks(chunksize)
-            .map(|tp| {
-                tp.iter()
-                    .map(|(&ti, &pi)| {
-                        let state = State::new_npt(
-                            eos,
-                            ti * U::reference_temperature(),
-                            pi * U::reference_pressure(),
-                            &moles,
-                            DensityInitialization::Liquid,
-                        );
-                        if let Ok(s) = state {
-                            s.mass_density().to_reduced(U::reference_mass() / U::reference_volume()).unwrap()
-                        } else {
-                            f64::NAN
-                        }
-                    })
-                    .collect::<Vec<f64>>()
+            .map(|(&t, &p)| {
+                let state = State::new_npt(
+                    eos,
+                    t * U::reference_temperature(),
+                    p * U::reference_pressure(),
+                    &moles,
+                    DensityInitialization::Liquid,
+                );
+                if let Ok(s) = state {
+                    s.mass_density()
+                        .to_reduced(U::reference_mass() / U::reference_volume())
+                        .unwrap()
+                } else {
+                    f64::NAN
+                }
             })
-            .flatten()
             .collect::<Vec<f64>>();
         Ok(Array1::from_vec(res) * U::reference_mass() / U::reference_volume())
     }
@@ -135,7 +118,6 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDe
 pub struct EquilibriumLiquidDensity<U: EosUnit> {
     pub target: QuantityArray1<U>,
     temperature: QuantityArray1<U>,
-    datapoints: usize,
     solver_options: SolverOptions,
 }
 
@@ -146,11 +128,9 @@ impl<U: EosUnit> EquilibriumLiquidDensity<U> {
         temperature: QuantityArray1<U>,
         vle_options: Option<SolverOptions>,
     ) -> Result<Self, EstimatorError> {
-        let datapoints = target.len();
         Ok(Self {
             target,
             temperature,
-            datapoints,
             solver_options: vle_options.unwrap_or_default(),
         })
     }
@@ -180,25 +160,20 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
-        let unit = self.target.get(0);
-
-        let mut prediction = Array1::zeros(self.datapoints) * unit;
-        for i in 0..self.datapoints {
-            let t = self.temperature.get(i);
-            if let Ok(state) = PhaseEquilibrium::pure(eos, t, None, self.solver_options) {
-                prediction.try_set(i, state.liquid().mass_density())?;
-            } else {
-                prediction.try_set(i, f64::NAN * U::reference_mass() / U::reference_volume())?
-            }
-        }
-        Ok(prediction)
+        Ok(self
+            .temperature
+            .into_iter()
+            .map(|t| {
+                if let Ok(state) = PhaseEquilibrium::pure(eos, t, None, self.solver_options) {
+                    state.liquid().mass_density()
+                } else {
+                    f64::NAN * U::reference_mass() / U::reference_volume()
+                }
+            })
+            .collect())
     }
 
-    fn par_predict(
-        &self,
-        eos: &Arc<E>,
-        chunksize: usize,
-    ) -> Result<QuantityArray1<U>, EstimatorError>
+    fn par_predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
@@ -208,20 +183,23 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
             .unwrap();
 
         let res = ts
-            .axis_chunks_iter(Axis(0), chunksize)
             .into_par_iter()
-            .map(|t| {
-                t.iter()
-                    .map(|&ti| {
-                        if let Ok(state) = PhaseEquilibrium::pure(eos, ti * U::reference_temperature(), None, self.solver_options) {
-                            state.liquid().mass_density().to_reduced(U::reference_mass() / U::reference_volume()).unwrap()
-                        } else {
-                            f64::NAN
-                        }
-                    })
-                    .collect::<Vec<f64>>()
+            .map(|&t| {
+                if let Ok(state) = PhaseEquilibrium::pure(
+                    eos,
+                    t * U::reference_temperature(),
+                    None,
+                    self.solver_options,
+                ) {
+                    state
+                        .liquid()
+                        .mass_density()
+                        .to_reduced(U::reference_mass() / U::reference_volume())
+                        .unwrap()
+                } else {
+                    f64::NAN
+                }
             })
-            .flatten()
             .collect::<Vec<f64>>();
         Ok(Array1::from_vec(res) * U::reference_mass() / U::reference_volume())
     }

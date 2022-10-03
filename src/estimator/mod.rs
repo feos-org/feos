@@ -6,23 +6,24 @@ use thiserror::Error;
 
 mod dataset;
 pub use dataset::DataSet;
-mod binary_vle;
-// pub use binary_vle::{BinaryPhaseDiagram, BinaryVleChemicalPotential, BinaryVlePressure, Phase};
-pub use binary_vle::Phase;
 mod estimator;
 pub use estimator::Estimator;
 mod loss;
 pub use loss::Loss;
+
+// Properties
 mod vapor_pressure;
 pub use vapor_pressure::VaporPressure;
 mod liquid_density;
 pub use liquid_density::{EquilibriumLiquidDensity, LiquidDensity};
-// mod viscosity;
-// pub use viscosity::Viscosity;
-// mod thermal_conductivity;
-// pub use thermal_conductivity::ThermalConductivity;
-// mod diffusion;
-// pub use diffusion::Diffusion;
+mod binary_vle;
+pub use binary_vle::{BinaryPhaseDiagram, BinaryVleChemicalPotential, BinaryVlePressure, Phase};
+mod viscosity;
+pub use viscosity::Viscosity;
+mod thermal_conductivity;
+pub use thermal_conductivity::ThermalConductivity;
+mod diffusion;
+pub use diffusion::Diffusion;
 
 #[cfg(feature = "python")]
 pub mod python;
