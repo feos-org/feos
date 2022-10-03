@@ -12,7 +12,7 @@ use ndarray::*;
 use num_dual::*;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 const PI36M1: f64 = 1.0 / (36.0 * PI);
 const N3_CUTOFF: f64 = 1e-5;
@@ -158,7 +158,7 @@ pub struct PureChainFunctional {
 }
 
 impl PureChainFunctional {
-    pub fn new(parameters: Rc<PcSaftParameters>) -> Self {
+    pub fn new(parameters: Arc<PcSaftParameters>) -> Self {
         Self { parameters }
     }
 }
@@ -210,7 +210,7 @@ pub struct PureAttFunctional {
 }
 
 impl PureAttFunctional {
-    pub fn new(parameters: Rc<PcSaftParameters>) -> Self {
+    pub fn new(parameters: Arc<PcSaftParameters>) -> Self {
         Self { parameters }
     }
 }

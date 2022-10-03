@@ -7,7 +7,7 @@ use feos_dft::{
 use ndarray::*;
 use num_dual::DualNum;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct ChainFunctional {
@@ -15,7 +15,7 @@ pub struct ChainFunctional {
 }
 
 impl ChainFunctional {
-    pub fn new(parameters: Rc<PcSaftParameters>) -> Self {
+    pub fn new(parameters: Arc<PcSaftParameters>) -> Self {
         Self { parameters }
     }
 }

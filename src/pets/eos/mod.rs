@@ -9,7 +9,7 @@ use feos_core::{
 use ndarray::Array1;
 use quantity::si::*;
 use std::f64::consts::{FRAC_PI_6, PI};
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub(crate) mod dispersion;
 mod qspr;
@@ -40,7 +40,7 @@ impl Default for PetsOptions {
 
 /// PeTS equation of state.
 pub struct Pets {
-    parameters: Rc<PetsParameters>,
+    parameters: Arc<PetsParameters>,
     options: PetsOptions,
     contributions: Vec<Box<dyn HelmholtzEnergy>>,
     ideal_gas: IdealGasContributions,
@@ -48,12 +48,12 @@ pub struct Pets {
 
 impl Pets {
     /// PeTS equation of state with default options.
-    pub fn new(parameters: Rc<PetsParameters>) -> Self {
+    pub fn new(parameters: Arc<PetsParameters>) -> Self {
         Self::with_options(parameters, PetsOptions::default())
     }
 
     /// PeTS equation of state with provided options.
-    pub fn with_options(parameters: Rc<PetsParameters>, options: PetsOptions) -> Self {
+    pub fn with_options(parameters: Arc<PetsParameters>, options: PetsOptions) -> Self {
         let contributions: Vec<Box<dyn HelmholtzEnergy>> = vec![
             Box::new(HardSphere::new(&parameters)),
             Box::new(Dispersion {
@@ -82,7 +82,7 @@ impl EquationOfState for Pets {
 
     fn subset(&self, component_list: &[usize]) -> Self {
         Self::with_options(
-            Rc::new(self.parameters.subset(component_list)),
+            Arc::new(self.parameters.subset(component_list)),
             self.options,
         )
     }
@@ -270,7 +270,7 @@ impl EntropyScaling<SIUnit> for Pets {
         }
         let p = &self.parameters;
         let state = State::new_nvt(
-            &Rc::new(Self::new(self.parameters.clone())),
+            &Arc::new(Self::new(self.parameters.clone())),
             temperature,
             volume,
             moles,
@@ -337,7 +337,7 @@ mod tests {
 
     #[test]
     fn ideal_gas_pressure() {
-        let e = Rc::new(Pets::new(argon_parameters()));
+        let e = Arc::new(Pets::new(argon_parameters()));
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi(3);
         let n = arr1(&[1.0]) * MOL;
@@ -353,7 +353,7 @@ mod tests {
 
     #[test]
     fn ideal_gas_heat_capacity_joback() {
-        let e = Rc::new(Pets::new(argon_parameters()));
+        let e = Arc::new(Pets::new(argon_parameters()));
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi(3);
         let n = arr1(&[1.0]) * MOL;
@@ -388,7 +388,7 @@ mod tests {
 
     #[test]
     fn new_tpn() {
-        let e = Rc::new(Pets::new(argon_parameters()));
+        let e = Arc::new(Pets::new(argon_parameters()));
         let t = 300.0 * KELVIN;
         let p = BAR;
         let m = arr1(&[1.0]) * MOL;
@@ -403,7 +403,7 @@ mod tests {
 
     #[test]
     fn vle_pure_t() {
-        let e = Rc::new(Pets::new(argon_parameters()));
+        let e = Arc::new(Pets::new(argon_parameters()));
         let t = 300.0 * KELVIN;
         let vle = PhaseEquilibrium::pure(&e, t, None, Default::default());
         if let Ok(v) = vle {
@@ -417,7 +417,7 @@ mod tests {
 
     // #[test]
     // fn critical_point() {
-    //     let e = Rc::new(Pets::new(argon_parameters()));
+    //     let e = Arc::new(Pets::new(argon_parameters()));
     //     let t = 300.0 * KELVIN;
     //     let cp = State::critical_point(&e, None, Some(t), Default::default());
     //     if let Ok(v) = cp {
@@ -427,7 +427,7 @@ mod tests {
 
     // #[test]
     // fn speed_of_sound() {
-    //     let e = Rc::new(Pets::new(argon_parameters()));
+    //     let e = Arc::new(Pets::new(argon_parameters()));
     //     let t = 300.0 * KELVIN;
     //     let p = BAR;
     //     let m = arr1(&[1.0]) * MOL;
@@ -441,9 +441,9 @@ mod tests {
 
     #[test]
     fn mix_single() {
-        let e1 = Rc::new(Pets::new(argon_parameters()));
-        let e2 = Rc::new(Pets::new(krypton_parameters()));
-        let e12 = Rc::new(Pets::new(argon_krypton_parameters()));
+        let e1 = Arc::new(Pets::new(argon_parameters()));
+        let e2 = Arc::new(Pets::new(krypton_parameters()));
+        let e12 = Arc::new(Pets::new(argon_krypton_parameters()));
         let t = 300.0 * KELVIN;
         let v = 0.02456883872966545 * METER.powi(3);
         let m1 = arr1(&[2.0]) * MOL;
@@ -467,7 +467,7 @@ mod tests {
 
     // #[test]
     // fn viscosity() -> EosResult<()> {
-    //     let e = Rc::new(Pets::new(argon_parameters()));
+    //     let e = Arc::new(Pets::new(argon_parameters()));
     //     let t = 300.0 * KELVIN;
     //     let p = BAR;
     //     let n = arr1(&[1.0]) * MOL;
@@ -490,7 +490,7 @@ mod tests {
 
     // #[test]
     // fn diffusion() -> EosResult<()> {
-    //     let e = Rc::new(Pets::new(argon_parameters()));
+    //     let e = Arc::new(Pets::new(argon_parameters()));
     //     let t = 300.0 * KELVIN;
     //     let p = BAR;
     //     let n = arr1(&[1.0]) * MOL;

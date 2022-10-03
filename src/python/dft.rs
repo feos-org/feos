@@ -31,11 +31,11 @@ use pyo3::wrap_pymodule;
 use quantity::python::*;
 use quantity::si::*;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[pyclass(name = "HelmholtzEnergyFunctional", unsendable)]
 #[derive(Clone)]
-pub struct PyFunctionalVariant(pub Rc<DFT<FunctionalVariant>>);
+pub struct PyFunctionalVariant(pub Arc<DFT<FunctionalVariant>>);
 
 #[pymethods]
 impl PyFunctionalVariant {
@@ -85,7 +85,7 @@ impl PyFunctionalVariant {
             tol_cross_assoc,
             dq_variant,
         };
-        Self(Rc::new(
+        Self(Arc::new(
             PcSaftFunctional::with_options(parameters.0, fmt_version, options).into(),
         ))
     }
@@ -131,7 +131,7 @@ impl PyFunctionalVariant {
             max_iter_cross_assoc,
             tol_cross_assoc,
         };
-        Self(Rc::new(
+        Self(Arc::new(
             GcPcSaftFunctional::with_options(parameters.0, fmt_version, options).into(),
         ))
     }
@@ -157,7 +157,7 @@ impl PyFunctionalVariant {
     #[pyo3(text_signature = "(parameters, fmt_version, max_eta)")]
     fn pets(parameters: PyPetsParameters, fmt_version: FMTVersion, max_eta: f64) -> Self {
         let options = PetsOptions { max_eta };
-        Self(Rc::new(
+        Self(Arc::new(
             PetsFunctional::with_options(parameters.0, fmt_version, options).into(),
         ))
     }
@@ -177,7 +177,7 @@ impl PyFunctionalVariant {
     #[staticmethod]
     #[pyo3(text_signature = "(sigma, version)")]
     fn fmt(sigma: &PyArray1<f64>, fmt_version: FMTVersion) -> Self {
-        Self(Rc::new(
+        Self(Arc::new(
             FMTFunctional::new(&sigma.to_owned_array(), fmt_version).into(),
         ))
     }

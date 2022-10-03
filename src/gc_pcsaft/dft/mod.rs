@@ -10,7 +10,7 @@ use num_dual::DualNum;
 use petgraph::graph::UnGraph;
 use quantity::si::{SIArray1, SIUnit, GRAM, MOL};
 use std::f64::consts::FRAC_PI_6;
-use std::rc::Rc;
+use std::sync::Arc;
 
 mod dispersion;
 mod hard_chain;
@@ -21,14 +21,14 @@ pub use parameter::GcPcSaftFunctionalParameters;
 
 /// gc-PC-SAFT Helmholtz energy functional.
 pub struct GcPcSaftFunctional {
-    pub parameters: Rc<GcPcSaftFunctionalParameters>,
+    pub parameters: Arc<GcPcSaftFunctionalParameters>,
     fmt_version: FMTVersion,
     options: GcPcSaftOptions,
     contributions: Vec<Box<dyn FunctionalContribution>>,
 }
 
 impl GcPcSaftFunctional {
-    pub fn new(parameters: Rc<GcPcSaftFunctionalParameters>) -> DFT<Self> {
+    pub fn new(parameters: Arc<GcPcSaftFunctionalParameters>) -> DFT<Self> {
         Self::with_options(
             parameters,
             FMTVersion::WhiteBear,
@@ -37,7 +37,7 @@ impl GcPcSaftFunctional {
     }
 
     pub fn with_options(
-        parameters: Rc<GcPcSaftFunctionalParameters>,
+        parameters: Arc<GcPcSaftFunctionalParameters>,
         fmt_version: FMTVersion,
         saft_options: GcPcSaftOptions,
     ) -> DFT<Self> {
@@ -83,7 +83,7 @@ impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
 
     fn subset(&self, component_list: &[usize]) -> DFT<Self> {
         Self::with_options(
-            Rc::new(self.parameters.subset(component_list)),
+            Arc::new(self.parameters.subset(component_list)),
             self.fmt_version,
             self.options,
         )

@@ -5,7 +5,7 @@ use ndarray::prelude::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 // Dipole parameters
 pub const AD: [[f64; 3]; 5] = [
@@ -54,7 +54,7 @@ fn triplet_integral_ijk<D: DualNum<f64>>(mijk1: f64, mijk2: f64, eta: D) -> D {
 }
 
 pub struct Dipole {
-    parameters: Rc<GcPcSaftEosParameters>,
+    parameters: Arc<GcPcSaftEosParameters>,
     mij1: Array2<f64>,
     mij2: Array2<f64>,
     mijk1: Array3<f64>,
@@ -64,7 +64,7 @@ pub struct Dipole {
 }
 
 impl Dipole {
-    pub fn new(parameters: &Rc<GcPcSaftEosParameters>) -> Self {
+    pub fn new(parameters: &Arc<GcPcSaftEosParameters>) -> Self {
         let ndipole = parameters.dipole_comp.len();
 
         let f2_term = Array2::from_shape_fn([ndipole; 2], |(i, j)| {

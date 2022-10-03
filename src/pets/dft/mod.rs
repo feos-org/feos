@@ -13,7 +13,7 @@ use num_dual::DualNum;
 use pure_pets_functional::*;
 use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
-use std::rc::Rc;
+use std::sync::Arc;
 
 mod dispersion;
 mod pure_pets_functional;
@@ -21,7 +21,7 @@ mod pure_pets_functional;
 /// PeTS Helmholtz energy functional.
 pub struct PetsFunctional {
     /// PeTS parameters of all substances in the system
-    pub parameters: Rc<PetsParameters>,
+    pub parameters: Arc<PetsParameters>,
     fmt_version: FMTVersion,
     options: PetsOptions,
     contributions: Vec<Box<dyn FunctionalContribution>>,
@@ -33,19 +33,19 @@ impl PetsFunctional {
     ///
     /// # Defaults
     /// `FMTVersion`: `FMTVersion::WhiteBear`
-    pub fn new(parameters: Rc<PetsParameters>) -> DFT<Self> {
+    pub fn new(parameters: Arc<PetsParameters>) -> DFT<Self> {
         Self::with_options(parameters, FMTVersion::WhiteBear, PetsOptions::default())
     }
 
     /// PeTS functional with default options for and provided FMT version.
     #[allow(non_snake_case)]
-    pub fn new_full(parameters: Rc<PetsParameters>, fmt_Version: FMTVersion) -> DFT<Self> {
+    pub fn new_full(parameters: Arc<PetsParameters>, fmt_Version: FMTVersion) -> DFT<Self> {
         Self::with_options(parameters, fmt_Version, PetsOptions::default())
     }
 
     /// PeTS functional with provided options for FMT and equation of state options.
     pub fn with_options(
-        parameters: Rc<PetsParameters>,
+        parameters: Arc<PetsParameters>,
         fmt_version: FMTVersion,
         pets_options: PetsOptions,
     ) -> DFT<Self> {
@@ -93,7 +93,7 @@ impl PetsFunctional {
 impl HelmholtzEnergyFunctional for PetsFunctional {
     fn subset(&self, component_list: &[usize]) -> DFT<Self> {
         Self::with_options(
-            Rc::new(self.parameters.subset(component_list)),
+            Arc::new(self.parameters.subset(component_list)),
             self.fmt_version,
             self.options,
         )

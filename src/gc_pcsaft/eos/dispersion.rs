@@ -4,7 +4,7 @@ use feos_core::{HelmholtzEnergyDual, StateHD};
 use num_dual::DualNum;
 use std::f64::consts::PI;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub const A0: [f64; 7] = [
     0.91056314451539,
@@ -63,7 +63,7 @@ pub const B2: [f64; 7] = [
 
 #[derive(Clone)]
 pub struct Dispersion {
-    pub parameters: Rc<GcPcSaftEosParameters>,
+    pub parameters: Arc<GcPcSaftEosParameters>,
 }
 
 impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Dispersion {
@@ -141,7 +141,7 @@ mod test {
     fn test_dispersion_propane() {
         let parameters = propane();
         let contrib = Dispersion {
-            parameters: Rc::new(parameters),
+            parameters: Arc::new(parameters),
         };
         let temperature = 300.0;
         let volume = METER
@@ -163,7 +163,7 @@ mod test {
     fn test_dispersion_propanol() {
         let parameters = propanol();
         let contrib = Dispersion {
-            parameters: Rc::new(parameters),
+            parameters: Arc::new(parameters),
         };
         let temperature = 300.0;
         let volume = METER

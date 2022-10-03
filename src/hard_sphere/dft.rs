@@ -9,7 +9,7 @@ use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::PI;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use super::{HardSphereProperties, MonomerShape};
 
@@ -62,7 +62,7 @@ pub enum FMTVersion {
 ///
 /// The geometry coefficients $C_{k,\alpha}$ and the segment diameters $d_\alpha$ are specified via the [HardSphereProperties] trait.
 pub struct FMTContribution<P> {
-    pub properties: Rc<P>,
+    pub properties: Arc<P>,
     version: FMTVersion,
 }
 
@@ -76,7 +76,7 @@ impl<P> Clone for FMTContribution<P> {
 }
 
 impl<P> FMTContribution<P> {
-    pub fn new(properties: &Rc<P>, version: FMTVersion) -> Self {
+    pub fn new(properties: &Arc<P>, version: FMTVersion) -> Self {
         Self {
             properties: properties.clone(),
             version,
@@ -310,14 +310,14 @@ impl HardSphereProperties for HardSphereParameters {
 
 /// [HelmholtzEnergyFunctional] for hard sphere systems.
 pub struct FMTFunctional {
-    properties: Rc<HardSphereParameters>,
+    properties: Arc<HardSphereParameters>,
     contributions: Vec<Box<dyn FunctionalContribution>>,
     version: FMTVersion,
 }
 
 impl FMTFunctional {
     pub fn new(sigma: &Array1<f64>, version: FMTVersion) -> DFT<Self> {
-        let properties = Rc::new(HardSphereParameters {
+        let properties = Arc::new(HardSphereParameters {
             sigma: sigma.clone(),
         });
         let contributions: Vec<Box<dyn FunctionalContribution>> =

@@ -6,7 +6,7 @@ use num_dual::DualNum;
 use std::{
     f64::consts::{FRAC_PI_3, PI},
     fmt,
-    rc::Rc,
+    sync::Arc
 };
 
 const C_BH: [[f64; 4]; 2] = [
@@ -41,7 +41,7 @@ const C2: [[f64; 2]; 3] = [
 
 #[derive(Debug, Clone)]
 pub struct AttractivePerturbationBH {
-    pub parameters: Rc<UVParameters>,
+    pub parameters: Arc<UVParameters>,
 }
 
 impl fmt::Display for AttractivePerturbationBH {
@@ -260,7 +260,7 @@ mod test {
 
         let p = methane_parameters(24.0, 6.0);
         let pt = AttractivePerturbationBH {
-            parameters: Rc::new(p.clone()),
+            parameters: Arc::new(p.clone()),
         };
         let state = StateHD::new(
             reduced_temperature * p.epsilon_k[0],

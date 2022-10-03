@@ -9,7 +9,7 @@ use feos_dft::interface::PlanarInterface;
 use ndarray::{arr1, Axis};
 use quantity::si::*;
 use std::error::Error;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[test]
 #[allow(non_snake_case)]

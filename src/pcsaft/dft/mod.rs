@@ -12,7 +12,7 @@ use ndarray::{Array1, Array2};
 use num_traits::One;
 use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
-use std::rc::Rc;
+use std::sync::Arc;
 
 mod dispersion;
 mod hard_chain;
@@ -32,7 +32,7 @@ pub struct PcSaftFunctional {
 }
 
 impl PcSaftFunctional {
-    pub fn new(parameters: Rc<PcSaftParameters>) -> DFT<Self> {
+    pub fn new(parameters: Arc<PcSaftParameters>) -> DFT<Self> {
         Self::with_options(parameters, FMTVersion::WhiteBear, PcSaftOptions::default())
     }
 
@@ -106,7 +106,7 @@ impl PcSaftFunctional {
 impl HelmholtzEnergyFunctional for PcSaftFunctional {
     fn subset(&self, component_list: &[usize]) -> DFT<Self> {
         Self::with_options(
-            Rc::new(self.parameters.subset(component_list)),
+            Arc::new(self.parameters.subset(component_list)),
             self.fmt_version,
             self.options,
         )

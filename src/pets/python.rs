@@ -9,7 +9,7 @@ use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Create a set of PeTS parameters from records.
 #[pyclass(name = "PetsRecord", unsendable)]
@@ -98,7 +98,7 @@ impl_binary_record!(PetsBinaryRecord, PyPetsBinaryRecord);
     text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
 )]
 #[derive(Clone)]
-pub struct PyPetsParameters(pub Rc<PetsParameters>);
+pub struct PyPetsParameters(pub Arc<PetsParameters>);
 
 #[pymethods]
 impl PyPetsParameters {
@@ -191,7 +191,7 @@ impl PyPetsParameters {
             None => Array2::from_shape_fn((n, n), |(_, _)| PetsBinaryRecord::from(0.0)),
         };
 
-        Ok(Self(Rc::new(PetsParameters::from_records(
+        Ok(Self(Arc::new(PetsParameters::from_records(
             pure_records,
             binary,
         ))))
@@ -241,7 +241,7 @@ impl PyPetsParameters {
             PetsRecord::new(sigma, epsilon_k, viscosity, diffusion, thermal_conductivity),
             None,
         );
-        Self(Rc::new(PetsParameters::new_pure(pure_record)))
+        Self(Arc::new(PetsParameters::new_pure(pure_record)))
     }
 
     #[getter]

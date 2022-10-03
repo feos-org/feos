@@ -10,7 +10,7 @@ use numpy::PyReadonlyArray2;
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Create a set of UV Theory parameters from records.
 #[pyclass(name = "NoRecord", unsendable)]
@@ -59,7 +59,7 @@ impl_binary_record!(UVBinaryRecord, PyUVBinaryRecord);
 #[pyclass(name = "UVParameters", unsendable)]
 #[pyo3(text_signature = "(pure_records, binary_records, substances, search_option)")]
 #[derive(Clone)]
-pub struct PyUVParameters(pub Rc<UVParameters>);
+pub struct PyUVParameters(pub Arc<UVParameters>);
 
 #[pymethods]
 impl PyUVParameters {
@@ -98,7 +98,7 @@ impl PyUVParameters {
             })
             .collect();
         let binary = Array2::from_shape_fn((n, n), |(_, _)| UVBinaryRecord { k_ij: 0.0 });
-        Self(Rc::new(UVParameters::from_records(pure_records, binary)))
+        Self(Arc::new(UVParameters::from_records(pure_records, binary)))
     }
 }
 

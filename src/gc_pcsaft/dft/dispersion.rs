@@ -9,15 +9,15 @@ use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct AttractiveFunctional {
-    parameters: Rc<GcPcSaftFunctionalParameters>,
+    parameters: Arc<GcPcSaftFunctionalParameters>,
 }
 
 impl AttractiveFunctional {
-    pub fn new(parameters: &Rc<GcPcSaftFunctionalParameters>) -> Self {
+    pub fn new(parameters: &Arc<GcPcSaftFunctionalParameters>) -> Self {
         Self {
             parameters: parameters.clone(),
         }

@@ -9,19 +9,19 @@ use ndarray::*;
 use num_dual::*;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 const PI36M1: f64 = 1.0 / (36.0 * PI);
 const N3_CUTOFF: f64 = 1e-5;
 
 #[derive(Clone)]
 pub struct PureFMTFunctional {
-    parameters: Rc<PetsParameters>,
+    parameters: Arc<PetsParameters>,
     version: FMTVersion,
 }
 
 impl PureFMTFunctional {
-    pub fn new(parameters: Rc<PetsParameters>, version: FMTVersion) -> Self {
+    pub fn new(parameters: Arc<PetsParameters>, version: FMTVersion) -> Self {
         Self {
             parameters,
             version,
@@ -116,11 +116,11 @@ impl fmt::Display for PureFMTFunctional {
 
 #[derive(Clone)]
 pub struct PureAttFunctional {
-    parameters: Rc<PetsParameters>,
+    parameters: Arc<PetsParameters>,
 }
 
 impl PureAttFunctional {
-    pub fn new(parameters: Rc<PetsParameters>) -> Self {
+    pub fn new(parameters: Arc<PetsParameters>) -> Self {
         Self { parameters }
     }
 }

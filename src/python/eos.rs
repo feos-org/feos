@@ -129,7 +129,7 @@ impl PyEosVariant {
             max_iter_cross_assoc,
             tol_cross_assoc,
         };
-        Self(Rc::new(EosVariant::GcPcSaft(GcPcSaft::with_options(
+        Self(Arc::new(EosVariant::GcPcSaft(GcPcSaft::with_options(
             parameters.0,
             options,
         ))))
@@ -192,7 +192,7 @@ impl PyEosVariant {
     #[pyo3(text_signature = "(parameters, max_eta)")]
     fn pets(parameters: PyPetsParameters, max_eta: f64) -> Self {
         let options = PetsOptions { max_eta };
-        Self(Rc::new(EosVariant::Pets(Pets::with_options(
+        Self(Arc::new(EosVariant::Pets(Pets::with_options(
             parameters.0,
             options,
         ))))
@@ -223,7 +223,7 @@ impl PyEosVariant {
             max_eta,
             perturbation,
         };
-        Self(Rc::new(EosVariant::UVTheory(UVTheory::with_options(
+        Self(Arc::new(EosVariant::UVTheory(UVTheory::with_options(
             parameters.0,
             options,
         ))))

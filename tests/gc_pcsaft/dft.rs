@@ -14,7 +14,7 @@ use feos_dft::{DFTSolver, Geometry};
 use ndarray::arr1;
 use quantity::si::*;
 use std::error::Error;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[test]
 #[allow(non_snake_case)]
@@ -41,8 +41,8 @@ fn test_bulk_implementation() -> Result<(), Box<dyn Error>> {
     )
     .unwrap();
 
-    let eos = Rc::new(GcPcSaft::new(Rc::new(parameters)));
-    let func = Rc::new(GcPcSaftFunctional::new(Rc::new(parameters_func)));
+    let eos = Arc::new(GcPcSaft::new(Arc::new(parameters)));
+    let func = Arc::new(GcPcSaftFunctional::new(Arc::new(parameters_func)));
     let t = 200.0 * KELVIN;
     let v = 0.002 * METER.powi(3) * NAV / NAV_old;
     let n = arr1(&[1.5]) * MOL;
@@ -115,18 +115,18 @@ fn test_bulk_association() -> Result<(), Box<dyn Error>> {
         vec!["OH".into(), "CH2".into(), "CH2".into(), "OH".into()],
         None,
     );
-    let eos_parameters = Rc::new(GcPcSaftEosParameters::from_segments(
+    let eos_parameters = Arc::new(GcPcSaftEosParameters::from_segments(
         vec![ethylene_glycol.clone()],
         segment_records.clone(),
         None,
     )?);
-    let eos = Rc::new(GcPcSaft::new(eos_parameters.clone()));
-    let func_parameters = Rc::new(GcPcSaftFunctionalParameters::from_segments(
+    let eos = Arc::new(GcPcSaft::new(eos_parameters.clone()));
+    let func_parameters = Arc::new(GcPcSaftFunctionalParameters::from_segments(
         vec![ethylene_glycol],
         segment_records,
         None,
     )?);
-    let func = Rc::new(GcPcSaftFunctional::new(func_parameters.clone()));
+    let func = Arc::new(GcPcSaftFunctional::new(func_parameters.clone()));
 
     let t = 200.0 * KELVIN;
     let v = 0.002 * METER.powi(3);
@@ -187,7 +187,7 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
     )
     .unwrap();
 
-    let func = Rc::new(GcPcSaftFunctional::new(Rc::new(parameters)));
+    let func = Arc::new(GcPcSaftFunctional::new(Arc::new(parameters)));
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 2048;
@@ -233,7 +233,7 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
     )
     .unwrap();
 
-    let func = Rc::new(GcPcSaftFunctional::new(Rc::new(parameters)));
+    let func = Arc::new(GcPcSaftFunctional::new(Arc::new(parameters)));
     let t = 300.0 * KELVIN;
     let w = 100.0 * ANGSTROM;
     let points = 4096;

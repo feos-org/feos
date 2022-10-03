@@ -3,7 +3,7 @@ use crate::uvtheory::parameters::*;
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use ndarray::Array1;
 use num_dual::DualNum;
-use std::{f64::consts::PI, fmt, rc::Rc};
+use std::{f64::consts::PI, fmt, sync::Arc};
 
 const C_WCA: [[f64; 6]; 6] = [
     [
@@ -68,7 +68,7 @@ const C2: [[f64; 2]; 3] = [
 
 #[derive(Debug, Clone)]
 pub struct AttractivePerturbationWCA {
-    pub parameters: Rc<UVParameters>,
+    pub parameters: Arc<UVParameters>,
 }
 
 impl fmt::Display for AttractivePerturbationWCA {
@@ -306,7 +306,7 @@ mod test {
 
         let p = methane_parameters(24.0, 6.0);
         let pt = AttractivePerturbationWCA {
-            parameters: Rc::new(p.clone()),
+            parameters: Arc::new(p.clone()),
         };
         let state = StateHD::new(
             reduced_temperature * p.epsilon_k[0],
@@ -423,7 +423,7 @@ mod test {
         assert_relative_eq!(delta_b2, -4.7846399638747954, epsilon = 1e-6);
         // Full attractive contribution
         let pt = AttractivePerturbationWCA {
-            parameters: Rc::new(p),
+            parameters: Arc::new(p),
         };
 
         let a = pt.helmholtz_energy(&state) / (moles[0] + moles[1]);
@@ -489,7 +489,7 @@ mod test {
 
         // Full attractive contribution
         let pt = AttractivePerturbationWCA {
-            parameters: Rc::new(p),
+            parameters: Arc::new(p),
         };
         let a = pt.helmholtz_energy(&state) / (moles[0] + moles[1]);
         assert_relative_eq!(a, -1.3318659166866607, epsilon = 1e-5);

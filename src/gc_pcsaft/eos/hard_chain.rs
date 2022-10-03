@@ -3,11 +3,11 @@ use crate::hard_sphere::HardSphereProperties;
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use num_dual::*;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct HardChain {
-    pub parameters: Rc<GcPcSaftEosParameters>,
+    pub parameters: Arc<GcPcSaftEosParameters>,
 }
 
 impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardChain {
@@ -56,7 +56,7 @@ mod test {
     fn test_hc_propane() {
         let parameters = propane();
         let contrib = HardChain {
-            parameters: Rc::new(parameters),
+            parameters: Arc::new(parameters),
         };
         let temperature = 300.0;
         let volume = METER
@@ -82,7 +82,7 @@ mod test {
     fn test_hc_propanol() {
         let parameters = propanol();
         let contrib = HardChain {
-            parameters: Rc::new(parameters),
+            parameters: Arc::new(parameters),
         };
         let temperature = 300.0;
         let volume = METER
