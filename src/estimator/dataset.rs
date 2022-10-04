@@ -15,7 +15,7 @@ use std::sync::Arc;
 ///
 /// Functionalities in the context of optimizations of
 /// parameters of equations of state.
-pub trait DataSet<U: EosUnit, E: EquationOfState> {
+pub trait DataSet<U: EosUnit, E: EquationOfState>: Sync + Send {
     /// Return target quantity.
     fn target(&self) -> &QuantityArray1<U>;
 
@@ -40,8 +40,6 @@ pub trait DataSet<U: EosUnit, E: EquationOfState> {
         let datapoints = cost.len();
         Ok(cost / datapoints as f64)
     }
-
-    
 
     /// Returns the input quantities as HashMap. The keys are the input's descriptions.
     fn get_input(&self) -> HashMap<String, QuantityArray1<U>>;
@@ -81,13 +79,9 @@ pub trait DataSet<U: EosUnit, E: EquationOfState> {
     {
         self.predict(eos)
     }
-    
+
     /// Parallel evaluation the cost function.
-    fn par_cost(
-        &self,
-        eos: &Arc<E>,
-        loss: Loss,
-    ) -> Result<Array1<f64>, EstimatorError>
+    fn par_cost(&self, eos: &Arc<E>, loss: Loss) -> Result<Array1<f64>, EstimatorError>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
@@ -98,10 +92,7 @@ pub trait DataSet<U: EosUnit, E: EquationOfState> {
     }
 
     /// Returns the relative difference between the equation of state and the experimental values.
-    fn par_relative_difference(
-        &self,
-        eos: &Arc<E>,
-    ) -> Result<Array1<f64>, EstimatorError>
+    fn par_relative_difference(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {

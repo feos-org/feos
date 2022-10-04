@@ -7,11 +7,11 @@ pub use external_potential::PyExternalPotential;
 macro_rules! impl_adsorption {
     ($func:ty, $py_func:ty) => {
         /// Container structure for adsorption isotherms in 1D pores.
-        #[pyclass(name = "Adsorption1D", unsendable)]
+        #[pyclass(name = "Adsorption1D")]
         pub struct PyAdsorption1D(Adsorption1D<SIUnit, $func>);
 
         /// Container structure for adsorption isotherms in 3D pores.
-        #[pyclass(name = "Adsorption3D", unsendable)]
+        #[pyclass(name = "Adsorption3D")]
         pub struct PyAdsorption3D(Adsorption3D<SIUnit, $func>);
 
         impl_adsorption_isotherm!($func, $py_func, PyAdsorption1D, PyPore1D, PyPoreProfile1D);

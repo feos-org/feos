@@ -2,7 +2,7 @@
 macro_rules! impl_phase_equilibrium {
     ($eos:ty, $py_eos:ty) => {
         /// A thermodynamic two phase equilibrium state.
-        #[pyclass(name = "PhaseEquilibrium", unsendable)]
+        #[pyclass(name = "PhaseEquilibrium")]
         #[derive(Clone)]
         pub struct PyPhaseEquilibrium(PhaseEquilibrium<SIUnit, $eos, 2>);
 
@@ -328,7 +328,7 @@ macro_rules! impl_phase_equilibrium {
         }
 
         /// A thermodynamic three phase equilibrium state.
-        #[pyclass(name = "ThreePhaseEquilibrium", unsendable)]
+        #[pyclass(name = "ThreePhaseEquilibrium")]
         #[derive(Clone)]
         struct PyThreePhaseEquilibrium(PhaseEquilibrium<SIUnit, $eos, 3>);
 
@@ -463,7 +463,7 @@ macro_rules! impl_phase_equilibrium {
         }
 
         /// Phase diagram for a pure component or a binary mixture.
-        #[pyclass(name = "PhaseDiagram", unsendable)]
+        #[pyclass(name = "PhaseDiagram")]
         pub struct PyPhaseDiagram(PhaseDiagram<SIUnit, $eos>);
 
         #[pymethods]
@@ -871,7 +871,7 @@ macro_rules! impl_phase_equilibrium {
         }
 
         /// Phase diagram for a binary mixture exhibiting a heteroazeotrope.
-        #[pyclass(name = "PhaseDiagramHetero", unsendable)]
+        #[pyclass(name = "PhaseDiagramHetero")]
         pub struct PyPhaseDiagramHetero(PhaseDiagramHetero<SIUnit, $eos>);
 
         #[pymethods]

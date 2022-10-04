@@ -18,7 +18,7 @@ use std::sync::Arc;
 #[cfg(feature = "micelles")]
 mod micelles;
 
-#[pyclass(name = "GcPcSaftRecord", unsendable)]
+#[pyclass(name = "GcPcSaftRecord")]
 #[pyo3(text_signature = "(m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None)")]
 #[derive(Clone)]
 pub struct PyGcPcSaftRecord(GcPcSaftRecord);
@@ -83,7 +83,7 @@ impl_segment_record!(
     PyJobackRecord
 );
 
-#[pyclass(name = "GcPcSaftEosParameters", unsendable)]
+#[pyclass(name = "GcPcSaftEosParameters")]
 #[pyo3(
     text_signature = "(pure_records, segmentbinary_records=None, substances=None, search_option='Name')"
 )]
@@ -104,7 +104,7 @@ impl PyGcPcSaftEosParameters {
 }
 
 #[cfg(feature = "dft")]
-#[pyclass(name = "GcPcSaftFunctionalParameters", unsendable)]
+#[pyclass(name = "GcPcSaftFunctionalParameters")]
 #[pyo3(
     text_signature = "(pure_records, segmentbinary_records=None, substances=None, search_option='Name')"
 )]

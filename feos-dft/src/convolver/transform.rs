@@ -6,7 +6,6 @@ use rustdct::{DctNum, DctPlanner, TransformType2And3};
 use rustfft::{num_complex::Complex, Fft, FftPlanner};
 use std::f64::consts::PI;
 use std::ops::{DivAssign, SubAssign};
-use std::rc::Rc;
 use std::sync::Arc;
 
 #[derive(Clone, Copy)]
@@ -26,7 +25,7 @@ impl SinCosTransform {
     }
 }
 
-pub(super) trait FourierTransform<T: DualNum<f64>> {
+pub(super) trait FourierTransform<T: DualNum<f64>>: Sync + Send {
     fn forward_transform(&self, f_r: ArrayView1<T>, f_k: ArrayViewMut1<T>, scalar: bool);
 
     fn back_transform(&self, f_k: ArrayViewMut1<T>, f_r: ArrayViewMut1<T>, scalar: bool);
@@ -37,14 +36,14 @@ pub(super) struct CartesianTransform<T> {
 }
 
 impl<T: DualNum<f64> + DctNum + ScalarOperand> CartesianTransform<T> {
-    pub(super) fn new(axis: &Axis) -> (Rc<dyn FourierTransform<T>>, Array1<f64>) {
+    pub(super) fn new(axis: &Axis) -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
         let (s, k) = Self::init(axis);
-        (Rc::new(s), k)
+        (Arc::new(s), k)
     }
 
-    pub(super) fn new_cartesian(axis: &Axis) -> (Rc<Self>, Array1<f64>) {
+    pub(super) fn new_cartesian(axis: &Axis) -> (Arc<Self>, Array1<f64>) {
         let (s, k) = Self::init(axis);
-        (Rc::new(s), k)
+        (Arc::new(s), k)
     }
 
     fn init(axis: &Axis) -> (Self, Array1<f64>) {
@@ -130,12 +129,12 @@ pub(super) struct SphericalTransform<T> {
 }
 
 impl<T: DualNum<f64> + DctNum + ScalarOperand> SphericalTransform<T> {
-    pub(super) fn new(axis: &Axis) -> (Rc<dyn FourierTransform<T>>, Array1<f64>) {
+    pub(super) fn new(axis: &Axis) -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
         let points = axis.grid.len();
         let length = axis.length();
         let k_grid: Array1<_> = (0..=points).map(|v| PI * v as f64 / length).collect();
         (
-            Rc::new(Self {
+            Arc::new(Self {
                 r_grid: axis.grid.clone(),
                 k_grid: k_grid.clone(),
                 dct: DctPlanner::new().plan_dct2(points),
@@ -224,7 +223,7 @@ pub(super) struct PolarTransform<T: DctNum> {
 }
 
 impl<T: DualNum<f64> + DctNum + ScalarOperand> PolarTransform<T> {
-    pub(super) fn new(axis: &Axis) -> (Rc<dyn FourierTransform<T>>, Array1<f64>) {
+    pub(super) fn new(axis: &Axis) -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
         let points = axis.grid.len();
 
         let mut alpha = 0.002_f64;
@@ -263,7 +262,7 @@ impl<T: DualNum<f64> + DctNum + ScalarOperand> PolarTransform<T> {
         ifft.process(jv.as_slice_mut().unwrap());
 
         (
-            Rc::new(Self {
+            Arc::new(Self {
                 r_grid: axis.grid.clone(),
                 k_grid: k_grid.clone(),
                 fft,
@@ -329,8 +328,8 @@ impl<T: DualNum<f64> + DctNum + ScalarOperand> FourierTransform<T> for PolarTran
 pub(super) struct NoTransform();
 
 impl NoTransform {
-    pub(super) fn new<T: DualNum<f64>>() -> (Rc<dyn FourierTransform<T>>, Array1<f64>) {
-        (Rc::new(Self()), arr1(&[0.0]))
+    pub(super) fn new<T: DualNum<f64>>() -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
+        (Arc::new(Self()), arr1(&[0.0]))
     }
 }
 

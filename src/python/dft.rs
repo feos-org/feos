@@ -33,7 +33,7 @@ use quantity::si::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[pyclass(name = "HelmholtzEnergyFunctional", unsendable)]
+#[pyclass(name = "HelmholtzEnergyFunctional")]
 #[derive(Clone)]
 pub struct PyFunctionalVariant(pub Arc<DFT<FunctionalVariant>>);
 

@@ -15,7 +15,7 @@ use quantity::{QuantityArray, QuantityArray1, QuantityScalar};
 use std::borrow::Cow;
 use std::fmt;
 use std::ops::{AddAssign, Deref, MulAssign};
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Wrapper struct for the [HelmholtzEnergyFunctional] trait.
 ///
@@ -203,7 +203,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         &self,
         temperature: QuantityScalar<U>,
         density: &QuantityArray<U, D::Larger>,
-        convolver: &Rc<dyn Convolver<f64, D>>,
+        convolver: &Arc<dyn Convolver<f64, D>>,
     ) -> EosResult<QuantityArray<U, D>>
     where
         U: EosUnit,
@@ -275,7 +275,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         &self,
         temperature: N,
         density: &Array<f64, D::Larger>,
-        convolver: &Rc<dyn Convolver<N, D>>,
+        convolver: &Arc<dyn Convolver<N, D>>,
     ) -> EosResult<Array<N, D>>
     where
         N: DualNum<f64> + ScalarOperand,
@@ -311,7 +311,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         &self,
         temperature: f64,
         density: &Array<f64, D::Larger>,
-        convolver: &Rc<dyn Convolver<Dual64, D>>,
+        convolver: &Arc<dyn Convolver<Dual64, D>>,
         contributions: Contributions,
     ) -> EosResult<Array<f64, D>>
     where
@@ -338,7 +338,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         &self,
         temperature: f64,
         density: &Array<f64, D::Larger>,
-        convolver: &Rc<dyn Convolver<Dual64, D>>,
+        convolver: &Arc<dyn Convolver<Dual64, D>>,
     ) -> EosResult<Vec<Array<f64, D>>>
     where
         D: Dimension,
@@ -382,7 +382,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         temperature: f64,
         density: &Array<f64, D::Larger>,
         external_potential: &Array<f64, D::Larger>,
-        convolver: &Rc<dyn Convolver<Dual64, D>>,
+        convolver: &Arc<dyn Convolver<Dual64, D>>,
         contributions: Contributions,
     ) -> EosResult<Array<f64, D>>
     where
@@ -411,7 +411,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         &self,
         temperature: f64,
         density: &Array<f64, D::Larger>,
-        convolver: &Rc<dyn Convolver<f64, D>>,
+        convolver: &Arc<dyn Convolver<f64, D>>,
     ) -> EosResult<(Array<f64, D>, Array<f64, D::Larger>)>
     where
         D: Dimension,
@@ -446,7 +446,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         &self,
         temperature: f64,
         functional_derivative: &Array<f64, D::Larger>,
-        convolver: &Rc<dyn Convolver<f64, D>>,
+        convolver: &Arc<dyn Convolver<f64, D>>,
     ) -> Array<f64, D::Larger>
     where
         D: Dimension,

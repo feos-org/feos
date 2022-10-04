@@ -5,7 +5,7 @@ use ndarray::{Axis as Axis_nd, RemoveAxis, ScalarOperand, Slice};
 use num_dual::*;
 use rustdct::DctNum;
 use std::ops::{AddAssign, MulAssign, SubAssign};
-use std::rc::Rc;
+use std::sync::Arc;
 
 mod periodic_convolver;
 mod transform;
@@ -19,7 +19,7 @@ use transform::*;
 /// Helmholtz energy functional.
 ///
 /// Parametrized over data types `T` and dimension of the problem `D`.
-pub trait Convolver<T, D: Dimension> {
+pub trait Convolver<T, D: Dimension>: Sync + Send {
     /// Convolve the profile with the given weight function.
     fn convolve(&self, profile: Array<T, D>, weight_function: &WeightFunction<T>) -> Array<T, D>;
 
@@ -79,9 +79,9 @@ pub struct ConvolverFFT<T, D: Dimension> {
     /// Lanczos sigma factor
     lanczos_sigma: Option<Array<f64, D>>,
     /// Possibly curvilinear Fourier transform in the first dimension
-    transform: Rc<dyn FourierTransform<T>>,
+    transform: Arc<dyn FourierTransform<T>>,
     /// Vector of additional cartesian Fourier transforms in the other dimensions
-    cartesian_transforms: Vec<Rc<CartesianTransform<T>>>,
+    cartesian_transforms: Vec<Arc<CartesianTransform<T>>>,
 }
 
 impl<T, D: Dimension + RemoveAxis + 'static> ConvolverFFT<T, D>
@@ -96,7 +96,7 @@ where
         grid: &Grid,
         weight_functions: &[WeightFunctionInfo<T>],
         lanczos: Option<i32>,
-    ) -> Rc<dyn Convolver<T, D>> {
+    ) -> Arc<dyn Convolver<T, D>> {
         match grid {
             Grid::Polar(r) => CurvilinearConvolver::new(r, &[], weight_functions, lanczos),
             Grid::Spherical(r) => CurvilinearConvolver::new(r, &[], weight_functions, lanczos),
@@ -125,7 +125,7 @@ where
         cartesian_axes: &[&Axis],
         weight_functions: &[WeightFunctionInfo<T>],
         lanczos: Option<i32>,
-    ) -> Rc<dyn Convolver<T, D>> {
+    ) -> Arc<dyn Convolver<T, D>> {
         // initialize the Fourier transform
         let mut cartesian_transforms = Vec::with_capacity(cartesian_axes.len());
         let mut k_vec = Vec::with_capacity(cartesian_axes.len() + 1);
@@ -222,7 +222,7 @@ where
         }
 
         // Return `FFTConvolver<T, D>`
-        Rc::new(Self {
+        Arc::new(Self {
             k_abs,
             weight_functions: fft_weight_functions,
             lanczos_sigma,
@@ -506,8 +506,8 @@ where
 /// The curvilinear convolver accounts for the shift that has to be performed
 /// for spherical and polar transforms.
 struct CurvilinearConvolver<T, D> {
-    convolver: Rc<dyn Convolver<T, D>>,
-    convolver_boundary: Rc<dyn Convolver<T, D>>,
+    convolver: Arc<dyn Convolver<T, D>>,
+    convolver_boundary: Arc<dyn Convolver<T, D>>,
 }
 
 impl<T, D: Dimension + RemoveAxis + 'static> CurvilinearConvolver<T, D>
@@ -522,8 +522,8 @@ where
         z: &[&Axis],
         weight_functions: &[WeightFunctionInfo<T>],
         lanczos: Option<i32>,
-    ) -> Rc<dyn Convolver<T, D>> {
-        Rc::new(Self {
+    ) -> Arc<dyn Convolver<T, D>> {
+        Arc::new(Self {
             convolver: ConvolverFFT::new(Some(r), z, weight_functions, lanczos),
             convolver_boundary: ConvolverFFT::new(None, z, weight_functions, lanczos),
         })

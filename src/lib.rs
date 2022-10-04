@@ -8,7 +8,7 @@
 //! use feos_core::parameter::{IdentifierOption, Parameter};
 //! use feos_core::{Contributions, State};
 //! use quantity::si::KELVIN;
-//! use std::rc::Rc;
+//! use std::sync::Arc;
 //!
 //! // Read parameters from json file.
 //! let parameters = PcSaftParameters::from_json(
@@ -19,7 +19,7 @@
 //! )?;
 //!
 //! // Define equation of state.
-//! let saft = Rc::new(PcSaft::new(Rc::new(parameters)));
+//! let saft = Arc::new(PcSaft::new(Arc::new(parameters)));
 //!
 //! // Define thermodynamic conditions.
 //! let critical_point = State::critical_point(&saft, None, None, Default::default())?;
@@ -33,9 +33,9 @@
 
 #![warn(clippy::all)]
 #![allow(clippy::too_many_arguments)]
-pub mod eos;
 #[cfg(feature = "dft")]
 pub mod dft;
+pub mod eos;
 
 #[cfg(feature = "estimator")]
 pub mod estimator;

@@ -2,7 +2,7 @@
 macro_rules! impl_micelle_profile {
     ($func:ty) => {
         /// A one-dimensional profile of a spherical or cylindrical micelle.
-        #[pyclass(name = "MicelleProfile", unsendable)]
+        #[pyclass(name = "MicelleProfile")]
         pub struct PyMicelleProfile(MicelleProfile<SIUnit, $func>);
 
         impl_1d_profile!(PyMicelleProfile, [get_r]);

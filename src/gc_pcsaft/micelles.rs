@@ -5,7 +5,7 @@ use feos_dft::{
 };
 use ndarray::prelude::*;
 use quantity::{QuantityArray1, QuantityArray2, QuantityScalar};
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub enum MicelleInitialization<U> {
     ExternalPotential(f64, f64),
@@ -170,7 +170,7 @@ impl<U: EosUnit + 'static, F: HelmholtzEnergyFunctional> MicelleProfile<U, F> {
         )?;
 
         // specify specification
-        profile.specification = Rc::new(specification);
+        profile.specification = Arc::new(specification);
 
         Ok(Self {
             profile,
@@ -211,7 +211,7 @@ impl<U: EosUnit + 'static, F: HelmholtzEnergyFunctional> MicelleProfile<U, F> {
 
     pub fn update_specification(&self, specification: MicelleSpecification<U>) -> Self {
         let mut profile = self.clone();
-        profile.profile.specification = Rc::new(specification);
+        profile.profile.specification = Arc::new(specification);
         profile.delta_omega = None;
         profile.delta_n = None;
         profile
@@ -233,7 +233,7 @@ impl<U: EosUnit + 'static, F: HelmholtzEnergyFunctional> MicelleProfile<U, F> {
         let pressure = self.profile.bulk.pressure(Contributions::Total);
         let eos = self.profile.bulk.eos.clone();
         let indices = self.profile.bulk.eos.component_index().into_owned();
-        self.profile.specification = Rc::new(MicelleSpecification::ChemicalPotential);
+        self.profile.specification = Arc::new(MicelleSpecification::ChemicalPotential);
 
         for _ in 0..options.max_iter.unwrap_or(MAX_ITER_MICELLE) {
             // check for convergence

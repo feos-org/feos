@@ -14,7 +14,7 @@ use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
 /// A pure substance parameter for the Peng-Robinson equation of state.
-#[pyclass(name = "PengRobinsonRecord", unsendable)]
+#[pyclass(name = "PengRobinsonRecord")]
 #[derive(Clone)]
 pub struct PyPengRobinsonRecord(PengRobinsonRecord);
 
@@ -59,7 +59,7 @@ impl_binary_record!();
 /// Returns
 /// -------
 /// PengRobinsonParameters
-#[pyclass(name = "PengRobinsonParameters", unsendable)]
+#[pyclass(name = "PengRobinsonParameters")]
 #[derive(Clone)]
 pub struct PyPengRobinsonParameters(pub Arc<PengRobinsonParameters>);
 

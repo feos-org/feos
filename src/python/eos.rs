@@ -36,7 +36,7 @@ use quantity::si::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[pyclass(name = "EquationOfState", unsendable)]
+#[pyclass(name = "EquationOfState")]
 #[derive(Clone)]
 pub struct PyEosVariant(pub Arc<EosVariant>);
 

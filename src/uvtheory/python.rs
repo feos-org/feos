@@ -13,12 +13,12 @@ use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
 /// Create a set of UV Theory parameters from records.
-#[pyclass(name = "NoRecord", unsendable)]
+#[pyclass(name = "NoRecord")]
 #[derive(Clone)]
 struct PyNoRecord(NoRecord);
 
 /// Create a set of UV Theory parameters from records.
-#[pyclass(name = "UVRecord", unsendable)]
+#[pyclass(name = "UVRecord")]
 #[pyo3(text_signature = "(rep, att, sigma, epsilon_k)")]
 #[derive(Clone)]
 pub struct PyUVRecord(UVRecord);
@@ -37,7 +37,7 @@ impl PyUVRecord {
 
 impl_json_handling!(PyUVRecord);
 
-#[pyclass(name = "UVBinaryRecord", unsendable)]
+#[pyclass(name = "UVBinaryRecord")]
 #[derive(Clone)]
 pub struct PyUVBinaryRecord(UVBinaryRecord);
 impl_binary_record!(UVBinaryRecord, PyUVBinaryRecord);
@@ -56,7 +56,7 @@ impl_binary_record!(UVBinaryRecord, PyUVBinaryRecord);
 ///     When not provided, all entries of `pure_records` are used.
 /// search_option : IdentifierOption, optional, defaults to IdentifierOption.Name
 ///     Identifier that is used to search binary records.
-#[pyclass(name = "UVParameters", unsendable)]
+#[pyclass(name = "UVParameters")]
 #[pyo3(text_signature = "(pure_records, binary_records, substances, search_option)")]
 #[derive(Clone)]
 pub struct PyUVParameters(pub Arc<UVParameters>);

@@ -26,7 +26,7 @@ macro_rules! impl_surface_tension_diagram {
         /// -------
         /// SurfaceTensionDiagram
         ///
-        #[pyclass(name = "SurfaceTensionDiagram", unsendable)]
+        #[pyclass(name = "SurfaceTensionDiagram")]
         #[pyo3(text_signature = "(dia, init_densities=None, n_grid=None, l_grid=None, critical_temperature=None, solver=None)")]
         pub struct PySurfaceTensionDiagram(SurfaceTensionDiagram<SIUnit, $func>);
 

@@ -11,7 +11,7 @@ impl From<EstimatorError> for PyErr {
 #[macro_export]
 macro_rules! impl_estimator {
     ($eos:ty, $py_eos:ty) => {
-        #[pyclass(name = "Loss", unsendable)]
+        #[pyclass(name = "Loss")]
         #[derive(Clone)]
         pub struct PyLoss(Loss);
 
@@ -113,7 +113,7 @@ macro_rules! impl_estimator {
 
         /// A collection of experimental data that can be used to compute
         /// cost functions and make predictions using an equation of state.
-        #[pyclass(name = "DataSet", unsendable)]
+        #[pyclass(name = "DataSet")]
         #[derive(Clone)]
         pub struct PyDataSet(Arc<dyn DataSet<SIUnit, $eos>>);
 
@@ -466,7 +466,7 @@ macro_rules! impl_estimator {
         /// Returns
         /// -------
         /// Estimator
-        #[pyclass(name = "Estimator", unsendable)]
+        #[pyclass(name = "Estimator")]
         #[pyo3(text_signature = "(data, weights, losses)")]
         pub struct PyEstimator(Estimator<SIUnit, $eos>);
 
