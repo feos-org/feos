@@ -440,7 +440,13 @@ where
 
     pub fn solve(&mut self, solver: Option<&DFTSolver>, debug: bool) -> EosResult<()> {
         // unwrap solver
-        let solver = solver.cloned().unwrap_or_default();
+        let solver = solver.cloned().unwrap_or_else(|| {
+            if self.bulk.molefracs.iter().any(|x| x.is_zero()) {
+                DFTSolver::default_no_log()
+            } else {
+                DFTSolver::default()
+            }
+        });
 
         // Read from profile
         let component_index = self.dft.component_index();

@@ -24,24 +24,29 @@ macro_rules! impl_planar_interface {
             /// critical_temperature: SINumber
             ///     An estimate for the critical temperature of the system.
             ///     Used to guess the width of the interface.
+            /// fix_equimolar_surface: bool, optional
+            ///     If True use additional constraints to fix the
+            ///     equimolar surface of the system.
             ///
             /// Returns
             /// -------
             /// PlanarInterface
             ///
             #[staticmethod]
-            #[pyo3(text_signature = "(vle, n_grid, l_grid, critical_temperature)")]
+            #[pyo3(text_signature = "(vle, n_grid, l_grid, critical_temperature, fix_equimolar_surface=None)")]
             fn from_tanh(
                 vle: &PyPhaseEquilibrium,
                 n_grid: usize,
                 l_grid: PySINumber,
                 critical_temperature: PySINumber,
+                fix_equimolar_surface: Option<bool>,
             ) -> PyResult<Self> {
                 let profile = PlanarInterface::from_tanh(
                     &vle.0,
                     n_grid,
                     l_grid.into(),
                     critical_temperature.into(),
+                    fix_equimolar_surface.unwrap_or(false),
                 )?;
                 Ok(PyPlanarInterface(profile))
             }
@@ -54,15 +59,18 @@ macro_rules! impl_planar_interface {
             ///     The bulk phase equilibrium.
             /// n_grid : int
             ///     The number of grid points.
+            /// fix_equimolar_surface: bool, optional
+            ///     If True use additional constraints to fix the
+            ///     equimolar surface of the system.
             ///
             /// Returns
             /// -------
             /// PlanarInterface
             ///
             #[staticmethod]
-            #[pyo3(text_signature = "(vle, n_grid)")]
-            fn from_pdgt(vle: &PyPhaseEquilibrium, n_grid: usize) -> PyResult<Self> {
-                let profile = PlanarInterface::from_pdgt(&vle.0, n_grid)?;
+            #[pyo3(text_signature = "(vle, n_grid, fix_equimolar_surface=None)")]
+            fn from_pdgt(vle: &PyPhaseEquilibrium, n_grid: usize, fix_equimolar_surface: Option<bool>) -> PyResult<Self> {
+                let profile = PlanarInterface::from_pdgt(&vle.0, n_grid, fix_equimolar_surface.unwrap_or(false))?;
                 Ok(PyPlanarInterface(profile))
             }
 
