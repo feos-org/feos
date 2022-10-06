@@ -132,3 +132,10 @@ recipes/index
 rustguide/index
 rust_api
 ```
+
+```{toctree}
+:caption: Theory
+:hidden:
+
+theory
+```
