@@ -404,11 +404,7 @@ where
             .for_each(|(((mut res, df), &rho_b), rho)| {
                 res.assign(
                     &(if log {
-                        if rho_b.is_zero() {
-                            Array::zeros(res.raw_dim())
-                        } else {
-                            rho.mapv(f64::ln) - rho_b.ln() - df.mapv(f64::ln)
-                        }
+                        rho.mapv(f64::ln) - rho_b.ln() - df.mapv(f64::ln)
                     } else {
                         &rho - rho_b * &df
                     }),
@@ -433,14 +429,7 @@ where
 
         res_bulk.assign(
             &(if log {
-                println!("{bulk_density} {bulk_spec}");
-                (bulk_density.mapv(f64::ln) - bulk_spec.mapv(f64::ln)).mapv(|r| {
-                    if r.is_normal() {
-                        r
-                    } else {
-                        0.0
-                    }
-                })
+                bulk_density.mapv(f64::ln) - bulk_spec.mapv(f64::ln)
             } else {
                 bulk_density - &bulk_spec
             }),
