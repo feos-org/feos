@@ -445,7 +445,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
     pub fn bond_integrals<D>(
         &self,
         temperature: f64,
-        functional_derivative: &Array<f64, D::Larger>,
+        exponential: &Array<f64, D::Larger>,
         convolver: &Arc<dyn Convolver<f64, D>>,
     ) -> Array<f64, D::Larger>
     where
@@ -468,7 +468,6 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
             }
         }
 
-        let expdfdrho = functional_derivative.mapv(|x| (-x).exp());
         let mut i_graph: Graph<_, Option<Array<f64, D>>, Directed> =
             bond_weight_functions.map(|_, _| (), |_, _| None);
 
@@ -495,7 +494,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
                     if edges.clone().all(|e| e.weight().is_some()) {
                         edge_id = Some(edge.id());
                         let i0 = edges.fold(
-                            expdfdrho
+                            exponential
                                 .index_axis(Axis(0), edge.target().index())
                                 .to_owned(),
                             |acc: Array<f64, D>, e| acc * e.weight().as_ref().unwrap(),
@@ -514,7 +513,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
             }
         }
 
-        let mut i = Array::ones(functional_derivative.raw_dim());
+        let mut i = Array::ones(exponential.raw_dim());
         for node in i_graph.node_indices() {
             for edge in i_graph.edges(node) {
                 i.index_axis_mut(Axis(0), node.index())

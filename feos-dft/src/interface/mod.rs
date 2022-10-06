@@ -112,9 +112,9 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> PlanarInterface<U, F> {
                     + 0.5 * (rho_l + rho_v)
             });
 
-        // specify specification
-        profile.profile.specification =
-            DFTSpecifications::total_moles_from_profile(&profile.profile)?;
+        // // specify specification
+        // profile.profile.specification =
+        //     DFTSpecifications::total_moles_from_profile(&profile.profile)?;
 
         Ok(profile)
     }
@@ -160,9 +160,9 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> PlanarInterface<U, F> {
             r,
         )?;
 
-        // specify specification
-        profile.profile.specification =
-            DFTSpecifications::total_moles_from_profile(&profile.profile)?;
+        // // specify specification
+        // profile.profile.specification =
+        //     DFTSpecifications::total_moles_from_profile(&profile.profile)?;
 
         Ok(profile)
     }

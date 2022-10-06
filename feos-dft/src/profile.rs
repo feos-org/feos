@@ -1,4 +1,4 @@
-use crate::convolver::{Convolver, ConvolverFFT};
+use crate::convolver::{BulkConvolver, Convolver, ConvolverFFT};
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::Grid;
 use crate::solver::DFTSolver;
@@ -11,6 +11,7 @@ use ndarray::{
     Ix1, Ix2, Ix3, RemoveAxis,
 };
 use num_dual::Dual64;
+use num_traits::Zero;
 use quantity::{Quantity, QuantityArray, QuantityArray1, QuantityScalar};
 use std::ops::MulAssign;
 use std::sync::Arc;
@@ -25,12 +26,11 @@ pub(crate) const CUTOFF_RADIUS: f64 = 14.0;
 /// for more general systems, this trait provides the possibility to declare additional
 /// equations for the calculation of the chemical potential during the iteration.
 pub trait DFTSpecification<U, D: Dimension, F>: Send + Sync {
-    fn calculate_chemical_potential(
+    fn calculate_bulk_density(
         &self,
         profile: &DFTProfile<U, D, F>,
-        chemical_potential: &Array1<f64>,
+        bulk_density: &Array1<f64>,
         z: &Array1<f64>,
-        bulk: &State<U, DFT<F>>,
     ) -> EosResult<Array1<f64>>;
 }
 
@@ -44,11 +44,8 @@ pub enum DFTSpecifications {
     /// potentials are iterated together with the density profile to obtain a result
     /// with the specified number of particles.
     Moles { moles: Array1<f64> },
-    /// DFT with specified total number of moles and chemical potential differences.
-    TotalMoles {
-        total_moles: f64,
-        chemical_potential: Array1<f64>,
-    },
+    /// DFT with specified total number of moles.
+    TotalMoles { total_moles: f64 },
 }
 
 impl DFTSpecifications {
@@ -78,37 +75,26 @@ impl DFTSpecifications {
     where
         <D as Dimension>::Larger: Dimension<Smaller = D>,
     {
-        let rho = profile
-            .density
-            .to_reduced(U::reference_density())?
-            .sum_axis(Axis_nd(0));
-        Ok(Arc::new(Self::TotalMoles {
-            total_moles: profile.integrate_reduced(rho),
-            chemical_potential: profile.reduced_chemical_potential()?,
-        }))
+        let rho = profile.density.to_reduced(U::reference_density())?;
+        let moles = profile.integrate_reduced_comp(&rho).sum();
+        Ok(Arc::new(Self::TotalMoles { total_moles: moles }))
     }
 }
 
 impl<U: EosUnit, D: Dimension, F: HelmholtzEnergyFunctional> DFTSpecification<U, D, F>
     for DFTSpecifications
 {
-    fn calculate_chemical_potential(
+    fn calculate_bulk_density(
         &self,
-        profile: &DFTProfile<U, D, F>,
-        chemical_potential: &Array1<f64>,
+        _profile: &DFTProfile<U, D, F>,
+        bulk_density: &Array1<f64>,
         z: &Array1<f64>,
-        _: &State<U, DFT<F>>,
     ) -> EosResult<Array1<f64>> {
-        let m: &Array1<f64> = &profile.dft.m();
         Ok(match self {
-            Self::ChemicalPotential => chemical_potential.clone(),
-            Self::Moles { moles } => (moles / z).mapv(f64::ln) * m,
-            Self::TotalMoles {
-                total_moles,
-                chemical_potential,
-            } => {
-                let exp_mu = (chemical_potential / m).mapv(f64::exp);
-                ((&exp_mu * *total_moles) / (z * &exp_mu).sum()).mapv(f64::ln) * m
+            Self::ChemicalPotential => bulk_density.clone(),
+            Self::Moles { moles } => moles / z,
+            Self::TotalMoles { total_moles } => {
+                bulk_density * *total_moles / (bulk_density * z).sum()
             }
         })
     }
@@ -305,23 +291,6 @@ where
     pub fn chemical_potential(&self) -> QuantityArray1<U> {
         self.bulk.chemical_potential(Contributions::Total)
     }
-
-    fn reduced_chemical_potential(&self) -> EosResult<Array1<f64>> {
-        let temperature = self
-            .bulk
-            .temperature
-            .to_reduced(U::reference_temperature())?;
-        let lambda_de_broglie = self
-            .dft
-            .ideal_gas()
-            .de_broglie_wavelength(temperature, self.bulk.eos.components());
-        let mu_comp = self
-            .chemical_potential()
-            .to_reduced(U::reference_molar_energy())?
-            / temperature
-            - lambda_de_broglie;
-        Ok(self.dft.component_index().mapv(|c| mu_comp[c]))
-    }
 }
 
 impl<U: Clone, D: Dimension, F> Clone for DFTProfile<U, D, F> {
@@ -366,49 +335,37 @@ where
         // Read from profile
         let temperature = self.temperature.to_reduced(U::reference_temperature())?;
         let density = self.density.to_reduced(U::reference_density())?;
-        let chemical_potential = self.reduced_chemical_potential()?;
-        let mut bulk = self.bulk.clone();
+        let partial_density = self
+            .bulk
+            .partial_density
+            .to_reduced(U::reference_density())?;
+        let bulk_density = self.dft.component_index().mapv(|i| partial_density[i]);
 
         // Allocate residual vectors
         let mut res_rho = Array::zeros(density.raw_dim());
-        let mut res_mu = Array1::zeros(chemical_potential.len());
+        let mut res_bulk = Array1::zeros(bulk_density.len());
 
         self.calculate_residual(
             temperature,
             &density,
-            &chemical_potential,
-            &mut bulk,
+            &bulk_density,
             res_rho.view_mut(),
-            res_mu.view_mut(),
+            res_bulk.view_mut(),
             log,
         )?;
 
-        Ok((res_rho, res_mu))
+        Ok((res_rho, res_bulk))
     }
 
     fn calculate_residual(
         &self,
         temperature: f64,
         density: &Array<f64, D::Larger>,
-        chemical_potential: &Array1<f64>,
-        bulk: &mut State<U, DFT<F>>,
+        bulk_density: &Array1<f64>,
         mut res_rho: ArrayViewMut<f64, D::Larger>,
-        mut res_mu: ArrayViewMut1<f64>,
+        mut res_bulk: ArrayViewMut1<f64>,
         log: bool,
     ) -> EosResult<()> {
-        // Update bulk state
-        let lambda_de_broglie = self
-            .dft
-            .ideal_gas()
-            .de_broglie_wavelength(temperature, bulk.eos.components());
-        let mut mu_comp = Array::zeros(bulk.eos.components());
-        for (s, &c) in self.dft.component_index().iter().enumerate() {
-            mu_comp[c] = chemical_potential[s];
-        }
-        bulk.update_chemical_potential(
-            &((mu_comp + lambda_de_broglie) * temperature * U::reference_molar_energy()),
-        )?;
-
         // calculate intrinsic functional derivative
         let (_, mut dfdrho) =
             self.dft
@@ -417,26 +374,43 @@ where
         // calculate total functional derivative
         dfdrho += &self.external_potential;
 
+        // calculate bulk functional derivative
+        let bulk_convolver = BulkConvolver::new(self.dft.weight_functions(temperature));
+        let (_, dfdrho_bulk) =
+            self.dft
+                .functional_derivative(temperature, bulk_density, &bulk_convolver)?;
+        dfdrho
+            .outer_iter_mut()
+            .zip(dfdrho_bulk.into_iter())
+            .zip(self.dft.m().iter())
+            .for_each(|((mut df, df_b), &m)| {
+                df -= df_b;
+                df /= m
+            });
+
         // calculate bond integrals
+        let mut exp_dfdrho = dfdrho.mapv(|x| (-x).exp());
         let bonds = self
             .dft
-            .bond_integrals(temperature, &dfdrho, &self.convolver);
+            .bond_integrals(temperature, &exp_dfdrho, &self.convolver);
+        exp_dfdrho *= &bonds;
 
         // Euler-Lagrange equation
-        let m = &self.dft.m();
         res_rho
             .outer_iter_mut()
-            .zip(dfdrho.outer_iter())
-            .zip(chemical_potential.iter())
-            .zip(m.iter())
+            .zip(exp_dfdrho.outer_iter())
+            .zip(bulk_density.iter())
             .zip(density.outer_iter())
-            .zip(bonds.outer_iter())
-            .for_each(|(((((mut res, df), &mu), &m), rho), is)| {
+            .for_each(|(((mut res, df), &rho_b), rho)| {
                 res.assign(
                     &(if log {
-                        rho.mapv(f64::ln) - (mu - &df) / m - is.mapv(f64::ln)
+                        if rho_b.is_zero() {
+                            Array::zeros(res.raw_dim())
+                        } else {
+                            rho.mapv(f64::ln) - rho_b.ln() - df.mapv(f64::ln)
+                        }
                     } else {
-                        &rho - &(((mu - &df) / m).mapv(f64::exp) * is)
+                        &rho - rho_b * &df
                     }),
                 );
             });
@@ -451,22 +425,24 @@ where
                 }
             });
 
-        // Additional residuals for the calculation of the chemical potential
-        let z: Array1<_> = dfdrho
-            .outer_iter()
-            .zip(m.iter())
-            .zip(bonds.outer_iter())
-            .map(|((df, &m), is)| self.integrate_reduced((-&df / m).mapv(f64::exp) * is))
-            .collect();
-        let mu_spec =
-            self.specification
-                .calculate_chemical_potential(self, chemical_potential, &z, bulk)?;
+        // Additional residuals for the calculation of the bulk densitiess
+        let z = self.integrate_reduced_comp(&exp_dfdrho);
+        let bulk_spec = self
+            .specification
+            .calculate_bulk_density(self, bulk_density, &z)?;
 
-        res_mu.assign(
+        res_bulk.assign(
             &(if log {
-                chemical_potential - &mu_spec
+                println!("{bulk_density} {bulk_spec}");
+                (bulk_density.mapv(f64::ln) - bulk_spec.mapv(f64::ln)).mapv(|r| {
+                    if r.is_normal() {
+                        r
+                    } else {
+                        0.0
+                    }
+                })
             } else {
-                chemical_potential.mapv(f64::exp) - mu_spec.mapv(f64::exp)
+                bulk_density - &bulk_spec
             }),
         );
 
@@ -478,40 +454,35 @@ where
         let solver = solver.cloned().unwrap_or_default();
 
         // Read from profile
+        let component_index = self.dft.component_index();
         let temperature = self.temperature.to_reduced(U::reference_temperature())?;
         let mut density = self.density.to_reduced(U::reference_density())?;
-        let mut chemical_potential = self.reduced_chemical_potential()?;
-        let mut bulk = self.bulk.clone();
+        let partial_density = self
+            .bulk
+            .partial_density
+            .to_reduced(U::reference_density())?;
+        let mut bulk_density = component_index.mapv(|i| partial_density[i]);
 
         // initialize x-vector
         let n_rho = density.len();
-        let mut x = Array1::zeros(n_rho + density.shape()[0]);
+        let mut x = Array1::zeros(n_rho + bulk_density.len());
         x.slice_mut(s![..n_rho])
             .assign(&density.view().into_shape(n_rho).unwrap());
-        x.slice_mut(s![n_rho..])
-            .assign(&chemical_potential.mapv(f64::exp));
+        x.slice_mut(s![n_rho..]).assign(&bulk_density);
 
         // Residual function
         let mut residual =
             |x: &Array1<f64>, mut res: ArrayViewMut1<f64>, log: bool| -> EosResult<()> {
                 // Read density and chemical potential from solution vector
                 density.assign(&x.slice(s![..n_rho]).into_shape(density.shape()).unwrap());
-                chemical_potential.assign(&x.slice(s![n_rho..]).mapv(f64::ln));
+                bulk_density.assign(&x.slice(s![n_rho..]));
 
                 // Create views for different residuals
                 let (res_rho, res_mu) = res.multi_slice_mut((s![..n_rho], s![n_rho..]));
                 let res_rho = res_rho.into_shape(density.raw_dim()).unwrap();
 
                 // Calculate residual
-                self.calculate_residual(
-                    temperature,
-                    &density,
-                    &chemical_potential,
-                    &mut bulk,
-                    res_rho,
-                    res_mu,
-                    log,
-                )
+                self.calculate_residual(temperature, &density, &bulk_density, res_rho, res_mu, log)
             };
 
         // Call solver(s)
@@ -530,7 +501,15 @@ where
 
         // Update profile
         self.density = density * U::reference_density();
-        self.bulk = bulk;
+        let volume = U::reference_volume();
+        let mut moles = self.bulk.moles.clone();
+        bulk_density
+            .into_iter()
+            .enumerate()
+            .try_for_each(|(i, r)| {
+                moles.try_set(component_index[i], r * U::reference_density() * volume)
+            })?;
+        self.bulk = State::new_nvt(&self.bulk.eos, self.bulk.temperature, volume, &moles)?;
 
         Ok(())
     }

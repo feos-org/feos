@@ -1,8 +1,10 @@
 use crate::geometry::{Axis, Geometry, Grid};
 use crate::weight_functions::*;
+use ndarray::linalg::Dot;
 use ndarray::prelude::*;
 use ndarray::{Axis as Axis_nd, RemoveAxis, ScalarOperand, Slice};
 use num_dual::*;
+use num_traits::Zero;
 use rustdct::DctNum;
 use std::ops::{AddAssign, MulAssign, SubAssign};
 use std::sync::Arc;
@@ -32,6 +34,45 @@ pub trait Convolver<T, D: Dimension>: Send + Sync {
         &self,
         partial_derivatives: &[Array<T, D::Larger>],
     ) -> Array<T, D::Larger>;
+}
+
+pub(crate) struct BulkConvolver<T> {
+    weight_constants: Vec<Array2<T>>,
+}
+
+impl<T: DualNum<f64>> BulkConvolver<T> {
+    pub(crate) fn new(weight_functions: Vec<WeightFunctionInfo<T>>) -> Rc<dyn Convolver<T, Ix0>> {
+        let weight_constants = weight_functions
+            .into_iter()
+            .map(|w| w.weight_constants(Zero::zero(), 0))
+            .collect();
+        Rc::new(Self { weight_constants })
+    }
+}
+
+impl<T: DualNum<f64>> Convolver<T, Ix0> for BulkConvolver<T>
+where
+    Array2<T>: Dot<Array1<T>, Output = Array1<T>>,
+{
+    fn convolve(&self, _: Array0<T>, _: &WeightFunction<T>) -> Array0<T> {
+        unreachable!()
+    }
+
+    fn weighted_densities(&self, density: &Array1<T>) -> Vec<Array1<T>> {
+        self.weight_constants
+            .iter()
+            .map(|w| w.dot(density))
+            .collect()
+    }
+
+    fn functional_derivative(&self, partial_derivatives: &[Array1<T>]) -> Array1<T> {
+        self.weight_constants
+            .iter()
+            .zip(partial_derivatives.iter())
+            .map(|(w, pd)| pd.dot(w))
+            .reduce(|a, b| a + b)
+            .unwrap()
+    }
 }
 
 /// Base structure to hold either information about the weight function through
