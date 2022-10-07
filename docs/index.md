@@ -137,5 +137,5 @@ rust_api
 :caption: Theory
 :hidden:
 
-theory
+dft/index
 ```
