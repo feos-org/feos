@@ -1,5 +1,4 @@
 use super::parameters::{PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord};
-use crate::association::PyAssociationRecord;
 use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
@@ -18,7 +17,7 @@ use std::rc::Rc;
 /// Create a set of PC-Saft parameters from records.
 #[pyclass(name = "PcSaftRecord")]
 #[pyo3(
-    text_signature = "(m, sigma, epsilon_k, mu=None, q=None, association_record=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
+    text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
 )]
 #[derive(Clone)]
 pub struct PyPcSaftRecord(PcSaftRecord);
@@ -32,7 +31,10 @@ impl PyPcSaftRecord {
         epsilon_k: f64,
         mu: Option<f64>,
         q: Option<f64>,
-        association_record: Option<PyAssociationRecord>,
+        kappa_ab: Option<f64>,
+        epsilon_k_ab: Option<f64>,
+        na: Option<f64>,
+        nb: Option<f64>,
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
@@ -43,7 +45,10 @@ impl PyPcSaftRecord {
             epsilon_k,
             mu,
             q,
-            association_record.map(|r| r.0),
+            kappa_ab,
+            epsilon_k_ab,
+            na,
+            nb,
             viscosity,
             diffusion,
             thermal_conductivity,
@@ -76,8 +81,23 @@ impl PyPcSaftRecord {
     }
 
     #[getter]
-    fn get_association_record(&self) -> Option<PyAssociationRecord> {
-        self.0.association_record.clone().map(PyAssociationRecord)
+    fn get_kappa_ab(&self) -> Option<f64> {
+        self.0.association_record.map(|a| a.kappa_ab)
+    }
+
+    #[getter]
+    fn get_epsilon_k_ab(&self) -> Option<f64> {
+        self.0.association_record.map(|a| a.epsilon_k_ab)
+    }
+
+    #[getter]
+    fn get_na(&self) -> Option<f64> {
+        self.0.association_record.and_then(|a| a.na)
+    }
+
+    #[getter]
+    fn get_nb(&self) -> Option<f64> {
+        self.0.association_record.and_then(|a| a.nb)
     }
 
     #[getter]
@@ -163,7 +183,6 @@ pub fn pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<IdentifierOption>()?;
     m.add_class::<PyChemicalRecord>()?;
     m.add_class::<PyJobackRecord>()?;
-    m.add_class::<PyAssociationRecord>()?;
 
     m.add_class::<PyPcSaftRecord>()?;
     m.add_class::<PyPureRecord>()?;

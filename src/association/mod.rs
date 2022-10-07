@@ -17,7 +17,7 @@ mod python;
 pub use python::PyAssociationRecord;
 
 /// Pure component association parameters
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Copy, Default)]
 pub struct AssociationRecord {
     /// Association volume parameter
     pub kappa_ab: f64,

@@ -215,11 +215,23 @@ impl PcSaftRecord {
         epsilon_k: f64,
         mu: Option<f64>,
         q: Option<f64>,
-        association_record: Option<AssociationRecord>,
+        kappa_ab: Option<f64>,
+        epsilon_k_ab: Option<f64>,
+        na: Option<f64>,
+        nb: Option<f64>,
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
     ) -> PcSaftRecord {
+        let association_record = match (kappa_ab, epsilon_k_ab) {
+            (Some(kappa_ab), Some(epsilon_k_ab)) => {
+                Some(AssociationRecord::new(kappa_ab, epsilon_k_ab, na, nb))
+            }
+            (None, None) => None,
+            _ => {
+                panic!("To model association, both kappa_ab and epsilon_k_ab need to be specified.")
+            }
+        };
         PcSaftRecord {
             m,
             sigma,
@@ -326,7 +338,7 @@ impl Parameter for PcSaftParameters {
             epsilon_k[i] = r.epsilon_k;
             mu[i] = r.mu.unwrap_or(0.0);
             q[i] = r.q.unwrap_or(0.0);
-            association_records.push(r.association_record.clone());
+            association_records.push(r.association_record);
             viscosity.push(r.viscosity);
             diffusion.push(r.diffusion);
             thermal_conductivity.push(r.thermal_conductivity);
@@ -467,7 +479,6 @@ impl PcSaftParameters {
             let association = record
                 .model_record
                 .association_record
-                .clone()
                 .unwrap_or_else(|| AssociationRecord::new(0.0, 0.0, None, None));
             write!(
                 o,
