@@ -2,7 +2,8 @@ use super::{DataSet, EstimatorError};
 use feos_core::{DensityInitialization, EntropyScaling, EosUnit, EquationOfState, State};
 use ndarray::{arr1, Array1};
 use quantity::{QuantityArray1, QuantityScalar};
-use rayon::prelude::*;
+#[cfg(feature = "rayon")]
+use rayon_::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -57,22 +58,6 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> DataSet<U, E> for Therm
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
         let moles = arr1(&[1.0]) * U::reference_moles();
-        self.temperature
-            .into_iter()
-            .zip(self.pressure.into_iter())
-            .map(|(t, p)| {
-                State::new_npt(eos, t, p, &moles, DensityInitialization::None)?
-                    .thermal_conductivity()
-                    .map_err(EstimatorError::from)
-            })
-            .collect()
-    }
-
-    fn par_predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        let moles = arr1(&[1.0]) * U::reference_moles();
         let ts = self
             .temperature
             .to_reduced(U::reference_temperature())
@@ -83,8 +68,12 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> DataSet<U, E> for Therm
             / U::reference_temperature()
             / U::reference_length();
 
-        let res = (ts.as_slice().unwrap(), ps.as_slice().unwrap())
-            .into_par_iter()
+        #[cfg(not(feature = "rayon"))]
+        let tp_iter = ts.iter().zip(ps.iter());
+        #[cfg(feature = "rayon")]
+        let tp_iter = (ts.as_slice().unwrap(), ps.as_slice().unwrap()).into_par_iter();
+
+        let res = tp_iter
             .map(|(&t, &p)| {
                 State::new_npt(
                     eos,

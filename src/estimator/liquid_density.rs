@@ -5,7 +5,8 @@ use feos_core::{
 };
 use ndarray::{arr1, Array1};
 use quantity::{QuantityArray1, QuantityScalar};
-use rayon::prelude::*;
+#[cfg(feature = "rayon")]
+use rayon_::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -75,35 +76,35 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDe
             .collect())
     }
 
-    fn par_predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError> {
-        let moles = arr1(&[1.0]) * U::reference_moles();
-        let ts = self
-            .temperature
-            .to_reduced(U::reference_temperature())
-            .unwrap();
-        let ps = self.pressure.to_reduced(U::reference_pressure()).unwrap();
+    // fn par_predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError> {
+    //     let moles = arr1(&[1.0]) * U::reference_moles();
+    //     let ts = self
+    //         .temperature
+    //         .to_reduced(U::reference_temperature())
+    //         .unwrap();
+    //     let ps = self.pressure.to_reduced(U::reference_pressure()).unwrap();
 
-        let res = (ts.as_slice().unwrap(), ps.as_slice().unwrap())
-            .into_par_iter()
-            .map(|(&t, &p)| {
-                let state = State::new_npt(
-                    eos,
-                    t * U::reference_temperature(),
-                    p * U::reference_pressure(),
-                    &moles,
-                    DensityInitialization::Liquid,
-                );
-                if let Ok(s) = state {
-                    s.mass_density()
-                        .to_reduced(U::reference_mass() / U::reference_volume())
-                        .unwrap()
-                } else {
-                    f64::NAN
-                }
-            })
-            .collect::<Vec<f64>>();
-        Ok(Array1::from_vec(res) * U::reference_mass() / U::reference_volume())
-    }
+    //     let res = (ts.as_slice().unwrap(), ps.as_slice().unwrap())
+    //         .into_par_iter()
+    //         .map(|(&t, &p)| {
+    //             let state = State::new_npt(
+    //                 eos,
+    //                 t * U::reference_temperature(),
+    //                 p * U::reference_pressure(),
+    //                 &moles,
+    //                 DensityInitialization::Liquid,
+    //             );
+    //             if let Ok(s) = state {
+    //                 s.mass_density()
+    //                     .to_reduced(U::reference_mass() / U::reference_volume())
+    //                     .unwrap()
+    //             } else {
+    //                 f64::NAN
+    //             }
+    //         })
+    //         .collect::<Vec<f64>>();
+    //     Ok(Array1::from_vec(res) * U::reference_mass() / U::reference_volume())
+    // }
 
     fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
         let mut m = HashMap::with_capacity(2);
@@ -173,36 +174,36 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
             .collect())
     }
 
-    fn par_predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        let ts = self
-            .temperature
-            .to_reduced(U::reference_temperature())
-            .unwrap();
+    // fn par_predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
+    // where
+    //     QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    // {
+    //     let ts = self
+    //         .temperature
+    //         .to_reduced(U::reference_temperature())
+    //         .unwrap();
 
-        let res = ts
-            .into_par_iter()
-            .map(|&t| {
-                if let Ok(state) = PhaseEquilibrium::pure(
-                    eos,
-                    t * U::reference_temperature(),
-                    None,
-                    self.solver_options,
-                ) {
-                    state
-                        .liquid()
-                        .mass_density()
-                        .to_reduced(U::reference_mass() / U::reference_volume())
-                        .unwrap()
-                } else {
-                    f64::NAN
-                }
-            })
-            .collect::<Vec<f64>>();
-        Ok(Array1::from_vec(res) * U::reference_mass() / U::reference_volume())
-    }
+    //     let res = ts
+    //         .into_par_iter()
+    //         .map(|&t| {
+    //             if let Ok(state) = PhaseEquilibrium::pure(
+    //                 eos,
+    //                 t * U::reference_temperature(),
+    //                 None,
+    //                 self.solver_options,
+    //             ) {
+    //                 state
+    //                     .liquid()
+    //                     .mass_density()
+    //                     .to_reduced(U::reference_mass() / U::reference_volume())
+    //                     .unwrap()
+    //             } else {
+    //                 f64::NAN
+    //             }
+    //         })
+    //         .collect::<Vec<f64>>();
+    //     Ok(Array1::from_vec(res) * U::reference_mass() / U::reference_volume())
+    // }
 
     fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
         let mut m = HashMap::with_capacity(2);

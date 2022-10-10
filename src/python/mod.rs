@@ -24,6 +24,10 @@ use dft::__PYO3_PYMODULE_DEF_DFT;
 pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_wrapped(wrap_pymodule!(quantity))?;
+
+    #[cfg(feature = "rayon")]
+    m.add_wrapped(wrap_pyfunction!(feos_core::initialize_global_thread_pool_py))?;
+
     m.add_wrapped(wrap_pymodule!(eos))?;
     #[cfg(feature = "dft")]
     m.add_wrapped(wrap_pymodule!(dft))?;

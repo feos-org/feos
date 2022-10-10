@@ -513,9 +513,10 @@ macro_rules! impl_phase_equilibrium {
                 Ok(Self(dia))
             }
 
+            #[cfg(feature = "rayon")]
             #[staticmethod]
             #[pyo3(text_signature = "(eos, min_temperature, npoints, critical_temperature=None, max_iter=None, tol=None, verbosity=None)")]
-            pub fn pure_par(
+            pub fn par_pure(
                 eos: &$py_eos,
                 min_temperature: PySINumber,
                 npoints: usize,
@@ -525,7 +526,7 @@ macro_rules! impl_phase_equilibrium {
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
-                let dia = PhaseDiagram::pure_par(
+                let dia = PhaseDiagram::par_pure(
                     &eos.0,
                     min_temperature.into(),
                     npoints,

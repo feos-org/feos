@@ -504,28 +504,28 @@ macro_rules! impl_estimator {
                 Ok(self.0.cost(&eos.0)?.view().to_pyarray(py))
             }
 
-            /// Compute the cost function for each ``DataSet`` in parallel.
-            ///
-            /// The cost function is:
-            /// - The relative difference between prediction and target value,
-            /// - to which a loss function is applied,
-            /// - and which is weighted according to the number of datapoints,
-            /// - and the relative weights as defined in the Estimator object.
-            ///
-            /// Parameters
-            /// ----------
-            /// eos : PyEos
-            ///     The equation of state that is used.
-            ///
-            /// Returns
-            /// -------
-            /// numpy.ndarray[Float]
-            ///     The cost function evaluated for each experimental data point
-            ///     of each ``DataSet``.
-            #[pyo3(text_signature = "($self, eos)")]
-            fn par_cost<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
-                Ok(self.0.par_cost(&eos.0)?.view().to_pyarray(py))
-            }
+            // /// Compute the cost function for each ``DataSet`` in parallel.
+            // ///
+            // /// The cost function is:
+            // /// - The relative difference between prediction and target value,
+            // /// - to which a loss function is applied,
+            // /// - and which is weighted according to the number of datapoints,
+            // /// - and the relative weights as defined in the Estimator object.
+            // ///
+            // /// Parameters
+            // /// ----------
+            // /// eos : PyEos
+            // ///     The equation of state that is used.
+            // ///
+            // /// Returns
+            // /// -------
+            // /// numpy.ndarray[Float]
+            // ///     The cost function evaluated for each experimental data point
+            // ///     of each ``DataSet``.
+            // #[pyo3(text_signature = "($self, eos)")]
+            // fn par_cost<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
+            //     Ok(self.0.par_cost(&eos.0)?.view().to_pyarray(py))
+            // }
 
             /// Return the properties as computed by the
             /// equation of state for each `DataSet`.
@@ -548,26 +548,26 @@ macro_rules! impl_estimator {
                     .collect())
             }
 
-            /// Return the properties as computed by the
-            /// equation of state for each `DataSet` in parallel.
-            ///
-            /// Parameters
-            /// ----------
-            /// eos : PyEos
-            ///     The equation of state that is used.
-            ///
-            /// Returns
-            /// -------
-            /// List[SIArray1]
-            #[pyo3(text_signature = "($self, eos)")]
-            fn par_predict(&self, eos: &$py_eos) -> PyResult<Vec<PySIArray1>> {
-                Ok(self
-                    .0
-                    .par_predict(&eos.0)?
-                    .iter()
-                    .map(|d| PySIArray1::from(d.clone()))
-                    .collect())
-            }
+            // /// Return the properties as computed by the
+            // /// equation of state for each `DataSet` in parallel.
+            // ///
+            // /// Parameters
+            // /// ----------
+            // /// eos : PyEos
+            // ///     The equation of state that is used.
+            // ///
+            // /// Returns
+            // /// -------
+            // /// List[SIArray1]
+            // #[pyo3(text_signature = "($self, eos)")]
+            // fn par_predict(&self, eos: &$py_eos) -> PyResult<Vec<PySIArray1>> {
+            //     Ok(self
+            //         .0
+            //         .par_predict(&eos.0)?
+            //         .iter()
+            //         .map(|d| PySIArray1::from(d.clone()))
+            //         .collect())
+            // }
 
             /// Return the relative difference between experimental data
             /// and prediction of the equation of state for each ``DataSet``.
@@ -598,34 +598,34 @@ macro_rules! impl_estimator {
                     .collect())
             }
 
-            /// Return the relative difference between experimental data
-            /// and prediction of the equation of state for each ``DataSet``.
-            ///
-            /// The relative difference is computed as:
-            ///
-            /// .. math:: \text{Relative Difference} = \frac{x_i^\text{prediction} - x_i^\text{experiment}}{x_i^\text{experiment}}
-            ///
-            /// Parameters
-            /// ----------
-            /// eos : PyEos
-            ///     The equation of state that is used.
-            ///
-            /// Returns
-            /// -------
-            /// List[numpy.ndarray[Float]]
-            #[pyo3(text_signature = "($self, eos)")]
-            fn par_relative_difference<'py>(
-                &self,
-                eos: &$py_eos,
-                py: Python<'py>,
-            ) -> PyResult<Vec<&'py PyArray1<f64>>> {
-                Ok(self
-                    .0
-                    .par_relative_difference(&eos.0)?
-                    .iter()
-                    .map(|d| d.view().to_pyarray(py))
-                    .collect())
-            }
+            // /// Return the relative difference between experimental data
+            // /// and prediction of the equation of state for each ``DataSet``.
+            // ///
+            // /// The relative difference is computed as:
+            // ///
+            // /// .. math:: \text{Relative Difference} = \frac{x_i^\text{prediction} - x_i^\text{experiment}}{x_i^\text{experiment}}
+            // ///
+            // /// Parameters
+            // /// ----------
+            // /// eos : PyEos
+            // ///     The equation of state that is used.
+            // ///
+            // /// Returns
+            // /// -------
+            // /// List[numpy.ndarray[Float]]
+            // #[pyo3(text_signature = "($self, eos)")]
+            // fn par_relative_difference<'py>(
+            //     &self,
+            //     eos: &$py_eos,
+            //     py: Python<'py>,
+            // ) -> PyResult<Vec<&'py PyArray1<f64>>> {
+            //     Ok(self
+            //         .0
+            //         .par_relative_difference(&eos.0)?
+            //         .iter()
+            //         .map(|d| d.view().to_pyarray(py))
+            //         .collect())
+            // }
 
             /// Return the mean absolute relative difference for each ``DataSet``.
             ///

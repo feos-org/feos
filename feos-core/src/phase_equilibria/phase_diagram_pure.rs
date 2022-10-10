@@ -3,9 +3,11 @@ use crate::equation_of_state::EquationOfState;
 use crate::errors::EosResult;
 use crate::state::{State, StateVec};
 use crate::EosUnit;
-use ndarray::{Array1, ArrayView1, Axis};
 use quantity::{QuantityArray1, QuantityScalar};
-use rayon::prelude::*;
+#[cfg(feature = "rayon")]
+use rayon_::prelude::*;
+#[cfg(feature = "rayon")]
+use ndarray::{Array1, ArrayView1, Axis};
 use std::sync::Arc;
 
 /// Pure component and binary mixture phase diagrams.
@@ -53,6 +55,19 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
         Ok(PhaseDiagram { states })
     }
 
+    /// Return the vapor states of the diagram.
+    pub fn vapor(&self) -> StateVec<'_, U, E> {
+        self.states.iter().map(|s| s.vapor()).collect()
+    }
+
+    /// Return the liquid states of the diagram.
+    pub fn liquid(&self) -> StateVec<'_, U, E> {
+        self.states.iter().map(|s| s.liquid()).collect()
+    }
+}
+
+#[cfg(feature = "rayon")]
+impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
     fn solve_range(
         eos: &Arc<E>,
         range: ArrayView1<f64>,
@@ -78,7 +93,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
         Ok(states)
     }
 
-    pub fn pure_par(
+    pub fn par_pure(
         eos: &Arc<E>,
         min_temperature: QuantityScalar<U>,
         npoints: usize,
@@ -117,15 +132,5 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
         // states.push(PhaseEquilibrium::from_states(sc.clone(), sc));
 
         Ok(PhaseDiagram { states })
-    }
-
-    /// Return the vapor states of the diagram.
-    pub fn vapor(&self) -> StateVec<'_, U, E> {
-        self.states.iter().map(|s| s.vapor()).collect()
-    }
-
-    /// Return the liquid states of the diagram.
-    pub fn liquid(&self) -> StateVec<'_, U, E> {
-        self.states.iter().map(|s| s.liquid()).collect()
     }
 }

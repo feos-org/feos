@@ -2,7 +2,8 @@ use super::{DataSet, EstimatorError};
 use feos_core::{DensityInitialization, EntropyScaling, EosUnit, EquationOfState, State};
 use ndarray::{arr1, Array1};
 use quantity::{QuantityArray1, QuantityScalar};
-use rayon::prelude::*;
+#[cfg(feature = "rayon")]
+use rayon_::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -68,34 +69,34 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> DataSet<U, E> for Visco
             .collect()
     }
 
-    fn par_predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        let moles = arr1(&[1.0]) * U::reference_moles();
-        let ts = self
-            .temperature
-            .to_reduced(U::reference_temperature())
-            .unwrap();
-        let ps = self.pressure.to_reduced(U::reference_pressure()).unwrap();
+    // fn par_predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
+    // where
+    //     QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    // {
+    //     let moles = arr1(&[1.0]) * U::reference_moles();
+    //     let ts = self
+    //         .temperature
+    //         .to_reduced(U::reference_temperature())
+    //         .unwrap();
+    //     let ps = self.pressure.to_reduced(U::reference_pressure()).unwrap();
 
-        let res = (ts.as_slice().unwrap(), ps.as_slice().unwrap())
-            .into_par_iter()
-            .map(|(&t, &p)| {
-                State::new_npt(
-                    eos,
-                    t * U::reference_temperature(),
-                    p * U::reference_pressure(),
-                    &moles,
-                    DensityInitialization::None,
-                )?
-                .viscosity()?
-                .to_reduced(U::reference_viscosity())
-                .map_err(EstimatorError::from)
-            })
-            .collect::<Result<Vec<f64>, EstimatorError>>();
-        Ok(Array1::from_vec(res?) * U::reference_viscosity())
-    }
+    //     let res = (ts.as_slice().unwrap(), ps.as_slice().unwrap())
+    //         .into_par_iter()
+    //         .map(|(&t, &p)| {
+    //             State::new_npt(
+    //                 eos,
+    //                 t * U::reference_temperature(),
+    //                 p * U::reference_pressure(),
+    //                 &moles,
+    //                 DensityInitialization::None,
+    //             )?
+    //             .viscosity()?
+    //             .to_reduced(U::reference_viscosity())
+    //             .map_err(EstimatorError::from)
+    //         })
+    //         .collect::<Result<Vec<f64>, EstimatorError>>();
+    //     Ok(Array1::from_vec(res?) * U::reference_viscosity())
+    // }
 
     fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
         let mut m = HashMap::with_capacity(1);

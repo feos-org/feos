@@ -19,7 +19,7 @@ use transform::*;
 /// Helmholtz energy functional.
 ///
 /// Parametrized over data types `T` and dimension of the problem `D`.
-pub trait Convolver<T, D: Dimension>: Sync + Send {
+pub trait Convolver<T, D: Dimension>: Send {
     /// Convolve the profile with the given weight function.
     fn convolve(&self, profile: Array<T, D>, weight_function: &WeightFunction<T>) -> Array<T, D>;
 

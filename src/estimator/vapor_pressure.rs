@@ -1,8 +1,9 @@
 use super::{DataSet, EstimatorError};
 use feos_core::{Contributions, EosUnit, EquationOfState, PhaseEquilibrium, SolverOptions, State};
 use ndarray::Array1;
-use quantity::{QuantityArray1, QuantityScalar};
-use rayon::prelude::*;
+use quantity::{Quantity, QuantityArray1, QuantityScalar};
+#[cfg(feature = "rayon")]
+use rayon_::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -81,45 +82,20 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
         let b = pc.to_reduced(p0)?.ln() / (1.0 / tc - 1.0 / t0);
         let a = pc.to_reduced(U::reference_pressure())?.ln() - b.to_reduced(tc)?;
 
-        Ok(self
-            .temperature
-            .into_iter()
-            .map(|t| {
-                if let Some(pvap) = PhaseEquilibrium::vapor_pressure(eos, t)[0] {
-                    pvap
-                } else if self.extrapolate {
-                    (a + b.to_reduced(t).unwrap()).exp() * U::reference_pressure()
-                } else {
-                    f64::NAN * U::reference_pressure()
-                }
-            })
-            .collect::<QuantityArray1<U>>())
-    }
-
-    fn par_predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        let critical_point =
-            State::critical_point(eos, None, Some(self.max_temperature), self.solver_options)?;
-        let tc = critical_point.temperature;
-        let pc = critical_point.pressure(Contributions::Total);
-
-        let t0 = 0.9 * tc;
-        let p0 = PhaseEquilibrium::pure(eos, t0, None, self.solver_options)?
-            .vapor()
-            .pressure(Contributions::Total);
-
-        let b = pc.to_reduced(p0)?.ln() / (1.0 / tc - 1.0 / t0);
-        let a = pc.to_reduced(U::reference_pressure())?.ln() - b.to_reduced(tc)?;
-
         let ts = self
             .temperature
             .to_reduced(U::reference_temperature())
             .unwrap();
 
-        let res = ts
-            .into_par_iter()
+        // let res = ts
+        //     .iter()
+        //     .map(|&t| self.vapor_pressure(eos, a, b, t))
+        //     .collect();
+        #[cfg(feature = "rayon")]
+        let ts_iter = ts.par_iter();
+        #[cfg(not(feature = "rayon"))]
+        let ts_iter = ts.iter();
+        let res = ts_iter
             .map(|&t| {
                 if let Some(pvap) =
                     PhaseEquilibrium::vapor_pressure(eos, t * U::reference_temperature())[0]
@@ -134,6 +110,45 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
             .collect();
         Ok(Array1::from_vec(res) * U::reference_pressure())
     }
+
+    // fn par_predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
+    // where
+    //     QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    // {
+    //     let critical_point =
+    //         State::critical_point(eos, None, Some(self.max_temperature), self.solver_options)?;
+    //     let tc = critical_point.temperature;
+    //     let pc = critical_point.pressure(Contributions::Total);
+
+    //     let t0 = 0.9 * tc;
+    //     let p0 = PhaseEquilibrium::pure(eos, t0, None, self.solver_options)?
+    //         .vapor()
+    //         .pressure(Contributions::Total);
+
+    //     let b = pc.to_reduced(p0)?.ln() / (1.0 / tc - 1.0 / t0);
+    //     let a = pc.to_reduced(U::reference_pressure())?.ln() - b.to_reduced(tc)?;
+
+    //     let ts = self
+    //         .temperature
+    //         .to_reduced(U::reference_temperature())
+    //         .unwrap();
+
+    //     let res = ts
+    //         .into_par_iter()
+    //         .map(|&t| {
+    //             if let Some(pvap) =
+    //                 PhaseEquilibrium::vapor_pressure(eos, t * U::reference_temperature())[0]
+    //             {
+    //                 pvap.to_reduced(U::reference_pressure()).unwrap()
+    //             } else if self.extrapolate {
+    //                 (a + b.to_reduced(t * U::reference_temperature()).unwrap()).exp()
+    //             } else {
+    //                 f64::NAN
+    //             }
+    //         })
+    //         .collect();
+    //     Ok(Array1::from_vec(res) * U::reference_pressure())
+    // }
 
     fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
         let mut m = HashMap::with_capacity(1);

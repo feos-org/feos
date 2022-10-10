@@ -19,7 +19,7 @@ rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 [dependencies]
 quantity = "0.5"
 num-dual = { version = "0.5", features = ["linalg"] }
-ndarray = { version = "0.15", features = ["serde", "rayon"] }
+ndarray = { version = "0.15", features = ["serde"] }
 num-traits = "0.2"
 thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -28,11 +28,12 @@ indexmap = "1.8"
 conv = "0.3"
 numpy = { version = "0.16", optional = true }
 pyo3 = { version = "0.16", optional = true }
-rayon = "1.5"
+rayon_ = { version = "1.5", optional = true, package = "rayon" }
 
 [dev-dependencies]
 approx = "0.4"
 
 [features]
 default = []
-python = ["pyo3", "numpy", "quantity/python", "num-dual/python"]
+rayon = ["rayon_", "ndarray/rayon"]
+python = ["pyo3", "numpy", "quantity/python", "num-dual/python", "rayon"]
