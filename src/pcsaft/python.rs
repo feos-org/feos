@@ -16,6 +16,34 @@ use std::convert::{TryFrom, TryInto};
 use std::rc::Rc;
 
 /// Create a set of PC-Saft parameters from records.
+/// 
+/// Parameters
+/// ----------
+/// m : float
+///     Number of SAFT segments.
+/// sigma : float
+///     Segment diameter in units of Angstrom.
+/// epsilon_k : float
+///     Energetic parameter of segment in units of Kelvin.
+/// mu : float, optional
+///     Dipole moment. Defaults to None (mu = 0.0).
+/// q : float, optional
+///     Quadrupole moment. Defaults to None (q = 0.0).
+/// association_record : AssociationRecord, optional
+///     Parameters for association. Defaluts to None.
+/// viscosity : List[float], optional
+///     Parameters for entropy scaling of viscosity.
+///     Defaults to None (viscosity = [0.0]*4).
+/// diffusion : List[float], optional
+///     Parameters for entropy scaling of diffusion.
+///     Defaults to None (diffusion = [0.0]*5).
+/// thermal_conductivity : List[float], optional
+///     Parameters for entropy scaling of thermal_conductivity.
+///     Defaults to None (thermal_conductivity = [0.0]*4).
+/// 
+/// Returns
+/// -------
+/// PcSaftRecord
 #[pyclass(name = "PcSaftRecord")]
 #[pyo3(
     text_signature = "(m, sigma, epsilon_k, mu=None, q=None, association_record=None, viscosity=None, diffusion=None, thermal_conductivity=None)"

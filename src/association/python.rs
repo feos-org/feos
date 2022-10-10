@@ -4,6 +4,21 @@ use feos_core::parameter::ParameterError;
 use pyo3::prelude::*;
 
 /// Pure component association parameters
+/// 
+/// Parameters
+/// ----------
+/// kappa_ab : float
+///     Association volume parameter.
+/// epsilon_k_ab : float
+///     Association energy parameter in units of Kelvin.
+/// na : float, optional    
+///     \# of association sites of type A. Defaults to 1.0
+/// nb : float, optional
+///     \# of association sites of type B. Defaults to 1.0
+/// 
+/// Returns
+/// -------
+/// AssociationRecord
 #[pyclass(name = "AssociationRecord")]
 #[pyo3(text_signature = "(kappa_ab, epsilon_k_ab, na=None, nb=None)")]
 #[derive(Clone)]
