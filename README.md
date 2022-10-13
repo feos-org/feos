@@ -97,29 +97,29 @@ pip install git+https://github.com/feos-org/feos
 
 ### Building from source
 
-To compile the code you need the Rust compiler and `maturin` installed.
+To compile the code you need the Rust compiler and `maturin` (>=0.13,<0.14) installed.
 To install the package directly into the active environment, use
 
 ```
-maturin develop --release --cargo-extra-args="--features python"
+maturin develop --release --features python
 ```
 
 and specify the models that you want to include in the python package as additional features, e.g.
 
 ```
-maturin develop --release --cargo-extra-args="--features python --features pcsaft --features dft"
+maturin develop --release --features "python pcsaft dft"
 ```
 
 for the PC-SAFT equation of state and Helmholtz energy functional. If you want to include all available models, use
 
 ```
-maturin develop --release --cargo-extra-args="--features python --features all_models"
+maturin develop --release --features "python all_models"
 ```
 
 To build wheels, use
 
 ```
-maturin build --release --out dist --no-sdist --cargo-extra-args="--features python ..."
+maturin build --release --out dist --features "python ..."
 ```
 
 ## Documentation

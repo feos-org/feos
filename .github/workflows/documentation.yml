@@ -26,7 +26,7 @@ jobs:
         with:
           manylinux: auto
           command: build
-          args: --release --out dist --no-sdist
+          args: --release --out dist
       - name: Install module
         run: |
           pip install feos --no-index --find-links dist --force-reinstall
