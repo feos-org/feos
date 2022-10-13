@@ -3,7 +3,6 @@ name = "feos"
 version = "0.3.0"
 authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <prehner@ethz.ch>"]
 edition = "2018"
-rust-version = "1.62"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 description = "FeOs - A framework for equations of state and classical density functional theory."

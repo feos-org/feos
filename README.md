@@ -97,7 +97,7 @@ pip install git+https://github.com/feos-org/feos
 
 ### Building from source
 
-To compile the code you need the Rust compiler (`rustc >= 1.53`) and `maturin` (>=0.13,<0.14) installed.
+To compile the code you need the Rust compiler and `maturin` (>=0.13,<0.14) installed.
 To install the package directly into the active environment, use
 
 ```
