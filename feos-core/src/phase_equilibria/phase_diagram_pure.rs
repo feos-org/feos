@@ -3,11 +3,12 @@ use crate::equation_of_state::EquationOfState;
 use crate::errors::EosResult;
 use crate::state::{State, StateVec};
 use crate::EosUnit;
+#[cfg(feature = "rayon")]
+use ndarray::{Array1, ArrayView1, Axis};
 use quantity::{QuantityArray1, QuantityScalar};
 #[cfg(feature = "rayon")]
 use rayon_::prelude::*;
-#[cfg(feature = "rayon")]
-use ndarray::{Array1, ArrayView1, Axis};
+use rayon_::ThreadPool;
 use std::sync::Arc;
 
 /// Pure component and binary mixture phase diagrams.
@@ -68,17 +69,17 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
 
 #[cfg(feature = "rayon")]
 impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
-    fn solve_range(
+    fn solve_temperatures(
         eos: &Arc<E>,
-        range: ArrayView1<f64>,
+        temperatures: ArrayView1<f64>,
         options: SolverOptions,
     ) -> EosResult<Vec<PhaseEquilibrium<U, E, 2>>>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
-        let mut states = Vec::with_capacity(range.len());
+        let mut states = Vec::with_capacity(temperatures.len());
         let mut vle = None;
-        for ti in range {
+        for ti in temperatures {
             vle = PhaseEquilibrium::pure(
                 eos,
                 *ti * U::reference_temperature(),
@@ -97,8 +98,9 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
         eos: &Arc<E>,
         min_temperature: QuantityScalar<U>,
         npoints: usize,
-        critical_temperature: Option<QuantityScalar<U>>,
         chunksize: usize,
+        thread_pool: ThreadPool,
+        critical_temperature: Option<QuantityScalar<U>>,
         options: SolverOptions,
     ) -> EosResult<Self>
     where
@@ -114,23 +116,16 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
             npoints - 1,
         );
 
-        let mut states: Vec<PhaseEquilibrium<U, E, 2>> = temperatures
-            .axis_chunks_iter(Axis(0), chunksize)
-            .into_par_iter()
-            .filter_map(|t| Self::solve_range(eos, t, options).ok())
-            .flatten()
-            .collect();
+        let mut states: Vec<PhaseEquilibrium<U, E, 2>> = thread_pool.install(|| {
+            temperatures
+                .axis_chunks_iter(Axis(0), chunksize)
+                .into_par_iter()
+                .filter_map(|t| Self::solve_temperatures(eos, t, options).ok())
+                .flatten()
+                .collect()
+        });
 
         states.push(PhaseEquilibrium::from_states(sc.clone(), sc));
-        // let mut vle = None;
-        // for ti in temperatures.into_raw_vec().par_iter() {
-        //     vle = PhaseEquilibrium::pure(eos, ti, vle.as_ref(), options).ok();
-        //     if let Some(vle) = vle.as_ref() {
-        //         states.push(vle.clone());
-        //     }
-        // }
-        // states.push(PhaseEquilibrium::from_states(sc.clone(), sc));
-
         Ok(PhaseDiagram { states })
     }
 }

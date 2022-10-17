@@ -2,8 +2,6 @@ use super::{DataSet, EstimatorError};
 use feos_core::{DensityInitialization, EntropyScaling, EosUnit, EquationOfState, State};
 use ndarray::{arr1, Array1};
 use quantity::{QuantityArray1, QuantityScalar};
-#[cfg(feature = "rayon")]
-use rayon_::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 

@@ -55,24 +55,6 @@ pub fn initialize_global_thread_pool(num_threads: usize) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
-/// Initialize global thread pool.
-///
-/// Parameters
-/// ----------
-/// num_threads : int
-///     number of threads to use
-#[cfg(feature = "python")]
-#[cfg_attr(
-    all(feature = "python", feature = "rayon"),
-    pyo3::pyfunction,
-    pyo3(name = "initialize_global_thread_pool"),
-    pyo3(text_signature = "(num_threads)")
-)]
-pub fn initialize_global_thread_pool_py(num_threads: usize) -> pyo3::PyResult<()> {
-    initialize_global_thread_pool(num_threads)
-        .map_err(|e| pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(e))
-}
-
 /// Consistent conversions between quantities and reduced properties.
 pub trait EosUnit: Unit + Send + Sync {
     fn reference_temperature() -> QuantityScalar<Self>;

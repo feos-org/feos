@@ -5,8 +5,6 @@ use feos_core::{
 };
 use ndarray::arr1;
 use quantity::{QuantityArray1, QuantityScalar};
-#[cfg(feature = "rayon")]
-use rayon_::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 

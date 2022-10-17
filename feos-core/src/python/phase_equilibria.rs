@@ -513,25 +513,60 @@ macro_rules! impl_phase_equilibrium {
                 Ok(Self(dia))
             }
 
+            /// Calculate a pure component phase diagram in parallel.
+            ///
+            /// Parameters
+            /// ----------
+            /// eos : Eos
+            ///     The equation of state.
+            /// min_temperature: SINumber
+            ///     The lower limit for the temperature.
+            /// npoints : int
+            ///     The number of points.
+            /// chunksize : int
+            ///     The number of points that are calculated in sequence
+            ///     within a thread.
+            /// nthreads : int
+            ///     Number of threads.
+            /// critical_temperature: SINumber, optional
+            ///     An estimate for the critical temperature to initialize
+            ///     the calculation if necessary. For most components not necessary.
+            ///     Defaults to `None`.
+            /// max_iter : int, optional
+            ///     The maximum number of iterations.
+            /// tol: float, optional
+            ///     The solution tolerance.
+            /// verbosity : Verbosity, optional
+            ///     The verbosity.
+            ///
+            /// Returns
+            /// -------
+            /// PhaseDiagram 
             #[cfg(feature = "rayon")]
             #[staticmethod]
-            #[pyo3(text_signature = "(eos, min_temperature, npoints, critical_temperature=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(text_signature = "(eos, min_temperature, npoints, chunksize, nthreads, critical_temperature=None, max_iter=None, tol=None, verbosity=None)")]
             pub fn par_pure(
                 eos: &$py_eos,
                 min_temperature: PySINumber,
                 npoints: usize,
                 chunksize: usize,
+                nthreads: usize,
                 critical_temperature: Option<PySINumber>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
+                let thread_pool = rayon_::ThreadPoolBuilder::new()
+                    .num_threads(nthreads)
+                    .build()
+                    .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
                 let dia = PhaseDiagram::par_pure(
                     &eos.0,
                     min_temperature.into(),
                     npoints,
-                    critical_temperature.map(|t| t.into()),
                     chunksize,
+                    thread_pool,
+                    critical_temperature.map(|t| t.into()),
                     (max_iter, tol, verbosity).into(),
                 )?;
                 Ok(Self(dia))
