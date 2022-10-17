@@ -47,14 +47,6 @@ pub use state::{Contributions, DensityInitialization, State, StateBuilder, State
 #[cfg(feature = "python")]
 pub mod python;
 
-#[cfg(feature = "rayon")]
-pub fn initialize_global_thread_pool(num_threads: usize) -> Result<(), String> {
-    rayon_::ThreadPoolBuilder::new()
-        .num_threads(num_threads)
-        .build_global()
-        .map_err(|e| e.to_string())
-}
-
 /// Consistent conversions between quantities and reduced properties.
 pub trait EosUnit: Unit + Send + Sync {
     fn reference_temperature() -> QuantityScalar<Self>;
