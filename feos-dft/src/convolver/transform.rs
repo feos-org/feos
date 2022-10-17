@@ -25,7 +25,7 @@ impl SinCosTransform {
     }
 }
 
-pub(super) trait FourierTransform<T: DualNum<f64>>: Send {
+pub(super) trait FourierTransform<T: DualNum<f64>>: Send + Sync {
     fn forward_transform(&self, f_r: ArrayView1<T>, f_k: ArrayViewMut1<T>, scalar: bool);
 
     fn back_transform(&self, f_k: ArrayViewMut1<T>, f_r: ArrayViewMut1<T>, scalar: bool);

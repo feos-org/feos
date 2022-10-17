@@ -68,12 +68,9 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> DataSet<U, E> for Therm
             / U::reference_temperature()
             / U::reference_length();
 
-        #[cfg(not(feature = "rayon"))]
-        let tp_iter = ts.iter().zip(ps.iter());
-        #[cfg(feature = "rayon")]
-        let tp_iter = (ts.as_slice().unwrap(), ps.as_slice().unwrap()).into_par_iter();
-
-        let res = tp_iter
+        let res = ts
+            .iter()
+            .zip(ps.iter())
             .map(|(&t, &p)| {
                 State::new_npt(
                     eos,

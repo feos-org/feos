@@ -74,7 +74,7 @@ pub fn initialize_global_thread_pool_py(num_threads: usize) -> pyo3::PyResult<()
 }
 
 /// Consistent conversions between quantities and reduced properties.
-pub trait EosUnit: Unit + Send {
+pub trait EosUnit: Unit + Send + Sync {
     fn reference_temperature() -> QuantityScalar<Self>;
     fn reference_length() -> QuantityScalar<Self>;
     fn reference_density() -> QuantityScalar<Self>;

@@ -24,7 +24,7 @@ pub(crate) const CUTOFF_RADIUS: f64 = 14.0;
 /// In the most basic case, the chemical potential is specified in a DFT calculation,
 /// for more general systems, this trait provides the possibility to declare additional
 /// equations for the calculation of the chemical potential during the iteration.
-pub trait DFTSpecification<U, D: Dimension, F>: Send {
+pub trait DFTSpecification<U, D: Dimension, F>: Send + Sync {
     fn calculate_chemical_potential(
         &self,
         profile: &DFTProfile<U, D, F>,
