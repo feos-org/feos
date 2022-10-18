@@ -14,6 +14,10 @@ use feos_derive::EquationOfState;
 use ndarray::Array1;
 use quantity::si::*;
 
+/// Collection of different [EquationOfState] implementations.
+///
+/// Particularly relevant for situations in which generic types
+/// are undesirable (e.g. FFI).
 #[derive(EquationOfState)]
 pub enum EosVariant {
     #[cfg(feature = "pcsaft")]

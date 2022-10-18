@@ -15,6 +15,10 @@ use petgraph::graph::UnGraph;
 use petgraph::Graph;
 use quantity::si::*;
 
+/// Collection of different [HelmholtzEnergyFunctional] implementations.
+///
+/// Particularly relevant for situations in which generic types
+/// are undesirable (e.g. FFI).
 #[derive(HelmholtzEnergyFunctional)]
 pub enum FunctionalVariant {
     #[cfg(feature = "pcsaft")]

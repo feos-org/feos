@@ -12,7 +12,7 @@ keywords = ["physics", "thermodynamics", "equations_of_state", "phase_equilibria
 categories = ["science"]
 
 [package.metadata.docs.rs]
-features = ["all_models"]
+features = ["all_models", "rayon"]
 rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 
 [workspace]
