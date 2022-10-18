@@ -24,6 +24,7 @@ feos.dft.PhaseDiagram
       ~PhaseDiagram.bubble_point_line
       ~PhaseDiagram.dew_point_line
       ~PhaseDiagram.lle
+      ~PhaseDiagram.par_pure
       ~PhaseDiagram.pure
       ~PhaseDiagram.spinodal
       ~PhaseDiagram.to_dict

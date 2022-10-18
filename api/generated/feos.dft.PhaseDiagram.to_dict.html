@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="feos.dft.Contributions" href="feos.dft.Contributions.html" /><link rel="prev" title="feos.dft.PhaseDiagram.spinodal" href="feos.dft.PhaseDiagram.spinodal.html" />
 
-    <meta name="generator" content="sphinx-5.2.3, furo 2022.09.29"/>
+    <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
         <title>feos.dft.PhaseDiagram.to_dict - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
@@ -332,6 +332,7 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.bubble_point_line.html">feos.eos.PhaseDiagram.bubble_point_line</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.dew_point_line.html">feos.eos.PhaseDiagram.dew_point_line</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.lle.html">feos.eos.PhaseDiagram.lle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.par_pure.html">feos.eos.PhaseDiagram.par_pure</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.pure.html">feos.eos.PhaseDiagram.pure</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.spinodal.html">feos.eos.PhaseDiagram.spinodal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseDiagram.to_dict.html">feos.eos.PhaseDiagram.to_dict</a></li>
@@ -436,6 +437,7 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.bubble_point_line.html">feos.dft.PhaseDiagram.bubble_point_line</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.dew_point_line.html">feos.dft.PhaseDiagram.dew_point_line</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.lle.html">feos.dft.PhaseDiagram.lle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.par_pure.html">feos.dft.PhaseDiagram.par_pure</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.pure.html">feos.dft.PhaseDiagram.pure</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseDiagram.spinodal.html">feos.dft.PhaseDiagram.spinodal</a></li>
 <li class="toctree-l4 current current-page"><a class="current reference internal" href="#">feos.dft.PhaseDiagram.to_dict</a></li>
@@ -873,16 +875,18 @@
 <dt class="sig sig-object py" id="feos.dft.PhaseDiagram.to_dict">
 <span class="sig-prename descclassname"><span class="pre">PhaseDiagram.</span></span><span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#feos.dft.PhaseDiagram.to_dict" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns the phase diagram as dictionary.</p>
+<section id="units">
+<h2>Units<a class="headerlink" href="#units" title="Permalink to this heading">#</a></h2>
 <p>temperature : K
 pressure : Pa
 densities : mol / m³
 molar enthalpies : kJ / mol
 molar entropies : kJ / mol / K</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dt class="field-odd">returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Keys: property names. Values: property for each state.</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
 <dd class="field-even"><p>dict[str, list[float]]</p>
 </dd>
 </dl>
@@ -890,6 +894,7 @@ molar entropies : kJ / mol / K</p>
 <p>xi: liquid molefraction of component i
 yi: vapor molefraction of component i
 i: component index according to order in parameters.</p>
+</section>
 </dd></dl>
 
 </section>
