@@ -1,12 +1,12 @@
-#[cfg(feature = "3d_dft")]
+#[cfg(feature = "rayon")]
 use crate::adsorption::fea_potential::calculate_fea_potential;
 use crate::functional::HelmholtzEnergyFunctional;
-#[cfg(feature = "3d_dft")]
+#[cfg(feature = "rayon")]
 use crate::geometry::Geometry;
 use feos_core::EosUnit;
 use libm::tgamma;
 use ndarray::{Array1, Array2, Axis as Axis_nd};
-#[cfg(feature = "3d_dft")]
+#[cfg(feature = "rayon")]
 use quantity::{QuantityArray2, QuantityScalar};
 use std::{f64::consts::PI, marker::PhantomData};
 
@@ -52,7 +52,7 @@ pub enum ExternalPotential<U> {
         rho_s: f64,
     },
     /// Free-energy averaged potential:
-    #[cfg(feature = "3d_dft")]
+    #[cfg(feature = "rayon")]
     FreeEnergyAveraged {
         coordinates: QuantityArray2<U>,
         sigma_ss: Array1<f64>,
@@ -192,7 +192,7 @@ impl<U: EosUnit> ExternalPotential<U> {
                             * (2.0 * (sigma_sf[i] / z_grid).mapv(|x| x.powi(9))
                                 - 15.0 * (sigma_sf[i] / z_grid).mapv(|x| x.powi(3))))
                 }
-                #[cfg(feature = "3d_dft")]
+                #[cfg(feature = "rayon")]
                 Self::FreeEnergyAveraged {
                     coordinates,
                     sigma_ss,
@@ -358,7 +358,7 @@ impl<U: EosUnit> ExternalPotential<U> {
                             * sigma_sf[i].powi(3)
                             * *rho_s)
                 }
-                #[cfg(feature = "3d_dft")]
+                #[cfg(feature = "rayon")]
                 Self::FreeEnergyAveraged {
                     coordinates,
                     sigma_ss,
@@ -548,7 +548,7 @@ impl<U: EosUnit> ExternalPotential<U> {
                             * (2.0 / 5.0 * sum_n(10, r_grid, sigma_sf[i], pore_size)
                                 - sum_n(4, r_grid, sigma_sf[i], pore_size)))
                 }
-                #[cfg(feature = "3d_dft")]
+                #[cfg(feature = "rayon")]
                 Self::FreeEnergyAveraged {
                     coordinates,
                     sigma_ss,

@@ -14,7 +14,7 @@ exclude = ["/.github/*", "*.ipynb"]
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
-features = [ "3d_dft" ]
+features = [ "rayon" ]
 
 [dependencies]
 quantity = { version = "0.5", features = ["linalg"] }
@@ -33,5 +33,5 @@ pyo3 = { version = "0.16", optional = true }
 
 [features]
 default = []
-3d_dft = ["gauss-quad", "ndarray/rayon"]
-python = ["pyo3", "numpy", "feos-core/python", "3d_dft"]
+rayon = ["gauss-quad", "ndarray/rayon"]
+python = ["pyo3", "numpy", "feos-core/python", "rayon"]

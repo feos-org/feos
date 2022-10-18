@@ -11,15 +11,15 @@ use std::iter;
 use std::sync::Arc;
 
 mod external_potential;
-#[cfg(feature = "3d_dft")]
+#[cfg(feature = "rayon")]
 mod fea_potential;
 mod pore;
 pub use external_potential::{ExternalPotential, FluidParameters};
 pub use pore::{Pore1D, PoreProfile, PoreProfile1D, PoreSpecification};
 
-#[cfg(feature = "3d_dft")]
+#[cfg(feature = "rayon")]
 mod pore3d;
-#[cfg(feature = "3d_dft")]
+#[cfg(feature = "rayon")]
 pub use pore3d::{Pore3D, PoreProfile3D};
 
 const MAX_ITER_ADSORPTION_EQUILIBRIUM: usize = 50;

@@ -2,7 +2,7 @@
 mod pair_correlation;
 pub use pair_correlation::{PairCorrelation, PairPotential};
 
-#[cfg(feature = "3d_dft")]
+#[cfg(feature = "rayon")]
 mod solvation_profile;
-#[cfg(feature = "3d_dft")]
+#[cfg(feature = "rayon")]
 pub use solvation_profile::SolvationProfile;
