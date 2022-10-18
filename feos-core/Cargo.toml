@@ -28,12 +28,12 @@ indexmap = "1.8"
 conv = "0.3"
 numpy = { version = "0.16", optional = true }
 pyo3 = { version = "0.16", optional = true }
-rayon_ = { version = "1.5", optional = true, package = "rayon" }
+rayon = { version = "1.5", optional = true }
 
 [dev-dependencies]
 approx = "0.4"
 
 [features]
 default = []
-rayon = ["rayon_", "ndarray/rayon"]
+rayon = ["dep:rayon", "ndarray/rayon"]
 python = ["pyo3", "numpy", "quantity/python", "num-dual/python", "rayon"]

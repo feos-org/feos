@@ -6,7 +6,7 @@ use num_dual::DualNum;
 use std::{
     f64::consts::{FRAC_PI_3, PI},
     fmt,
-    sync::Arc
+    sync::Arc,
 };
 
 const C_BH: [[f64; 4]; 2] = [

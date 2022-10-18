@@ -541,7 +541,7 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Returns
             /// -------
-            /// PhaseDiagram 
+            /// PhaseDiagram
             #[cfg(feature = "rayon")]
             #[staticmethod]
             #[pyo3(text_signature = "(eos, min_temperature, npoints, chunksize, nthreads, critical_temperature=None, max_iter=None, tol=None, verbosity=None)")]
@@ -555,11 +555,10 @@ macro_rules! impl_phase_equilibrium {
                 max_iter: Option<usize>,
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
-            ) -> PyResult<Self> {
-                let thread_pool = rayon_::ThreadPoolBuilder::new()
+            ) -> EosResult<Self> {
+                let thread_pool = rayon::ThreadPoolBuilder::new()
                     .num_threads(nthreads)
-                    .build()
-                    .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
+                    .build()?;
                 let dia = PhaseDiagram::par_pure(
                     &eos.0,
                     min_temperature.into(),

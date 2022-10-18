@@ -3,9 +3,9 @@
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use ndarray::*;
 use num_dual::DualNum;
-use std::{borrow::Cow, sync::Arc};
 use std::f64::consts::FRAC_PI_6;
 use std::fmt;
+use std::{borrow::Cow, sync::Arc};
 
 #[cfg(feature = "dft")]
 mod dft;

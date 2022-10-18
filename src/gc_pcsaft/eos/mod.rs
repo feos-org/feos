@@ -6,6 +6,7 @@ use feos_core::{EquationOfState, HelmholtzEnergy, IdealGasContribution, MolarWei
 use ndarray::Array1;
 use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
+use std::sync::Arc;
 
 pub(crate) mod dispersion;
 mod hard_chain;
@@ -15,7 +16,6 @@ use dispersion::Dispersion;
 use hard_chain::HardChain;
 pub use parameter::{GcPcSaftChemicalRecord, GcPcSaftEosParameters};
 use polar::Dipole;
-use std::sync::Arc;
 
 /// Customization options for the gc-PC-SAFT equation of state and functional.
 #[derive(Copy, Clone)]

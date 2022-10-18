@@ -30,6 +30,9 @@ pub enum EosError {
     ParameterError(#[from] ParameterError),
     #[error(transparent)]
     LinAlgError(#[from] LinAlgError),
+    #[cfg(feature = "rayon")]
+    #[error(transparent)]
+    RayonError(#[from] rayon::ThreadPoolBuildError),
 }
 
 /// Convenience type for `Result<T, EosError>`.

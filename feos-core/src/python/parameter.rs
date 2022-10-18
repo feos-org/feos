@@ -570,7 +570,10 @@ macro_rules! impl_parameter {
                             "Could not parse binary input!"
                         )))
                     };
-                    Ok(Self(Arc::new(<$parameter>::from_records(prs, brs.unwrap()))))
+                    Ok(Self(Arc::new(<$parameter>::from_records(
+                        prs,
+                        brs.unwrap(),
+                    ))))
                 } else {
                     let n = prs.len();
                     Ok(Self(Arc::new(<$parameter>::from_records(

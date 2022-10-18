@@ -7,7 +7,7 @@ use crate::EosUnit;
 use ndarray::{Array1, ArrayView1, Axis};
 use quantity::{QuantityArray1, QuantityScalar};
 #[cfg(feature = "rayon")]
-use rayon_::{prelude::*, ThreadPool};
+use rayon::{prelude::*, ThreadPool};
 use std::sync::Arc;
 
 /// Pure component and binary mixture phase diagrams.
