@@ -16,7 +16,7 @@ use std::ops::MulAssign;
 use std::sync::Arc;
 
 pub(crate) const MAX_POTENTIAL: f64 = 50.0;
-#[cfg(feature = "3d_dft")]
+#[cfg(feature = "rayon")]
 pub(crate) const CUTOFF_RADIUS: f64 = 14.0;
 
 /// General specifications for the chemical potential in a DFT calculation.
