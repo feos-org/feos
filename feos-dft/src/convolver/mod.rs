@@ -41,12 +41,12 @@ pub(crate) struct BulkConvolver<T> {
 }
 
 impl<T: DualNum<f64>> BulkConvolver<T> {
-    pub(crate) fn new(weight_functions: Vec<WeightFunctionInfo<T>>) -> Rc<dyn Convolver<T, Ix0>> {
+    pub(crate) fn new(weight_functions: Vec<WeightFunctionInfo<T>>) -> Arc<dyn Convolver<T, Ix0>> {
         let weight_constants = weight_functions
             .into_iter()
             .map(|w| w.weight_constants(Zero::zero(), 0))
             .collect();
-        Rc::new(Self { weight_constants })
+        Arc::new(Self { weight_constants })
     }
 }
 
