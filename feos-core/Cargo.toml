@@ -15,7 +15,7 @@ workspace = ".."
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
-features = "rayon"
+features = [ "rayon" ]
 
 [dependencies]
 quantity = "0.5"
