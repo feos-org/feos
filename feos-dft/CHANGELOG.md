@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Added `Send` and `Sync` as supertraits to `HelmholtzEnergyFunctional` and all related traits. [#57](https://github.com/feos-org/feos/pull/57)
+- Renamed the `3d_dft` feature to `rayon` in accordance to the other feos crates. [#62](https://github.com/feos-org/feos/pull/62)
 
 ## [0.3.2] - 2022-10-13
 ### Changed
