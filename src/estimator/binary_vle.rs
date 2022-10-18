@@ -7,7 +7,7 @@ use ndarray::{arr1, s, Array1, ArrayView1, Axis};
 use quantity::{Quantity, QuantityArray1, QuantityScalar};
 use std::collections::HashMap;
 use std::fmt::LowerExp;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Different phases of experimental data points in the `BinaryVlePressure` data set.
 #[derive(Clone, Copy)]
@@ -66,7 +66,7 @@ where
         ]
     }
 
-    fn predict(&self, eos: &Rc<E>) -> Result<QuantityArray1<U>, EstimatorError>
+    fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
@@ -155,7 +155,7 @@ where
         vec
     }
 
-    fn predict(&self, eos: &Rc<E>) -> Result<QuantityArray1<U>, EstimatorError>
+    fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
@@ -265,7 +265,7 @@ where
         vec
     }
 
-    fn predict(&self, eos: &Rc<E>) -> Result<QuantityArray1<U>, EstimatorError>
+    fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {

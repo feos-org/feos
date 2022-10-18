@@ -5,7 +5,7 @@ use ndarray::prelude::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub const ALPHA: f64 = 1.1937350;
 
@@ -183,7 +183,7 @@ fn triplet_integral_ijk_dq<D: DualNum<f64>>(mijk: f64, eta: D, c: &[[f64; 2]]) -
 }
 
 pub struct Dipole {
-    pub parameters: Rc<PcSaftParameters>,
+    pub parameters: Arc<PcSaftParameters>,
 }
 
 impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Dipole {
@@ -279,7 +279,7 @@ impl fmt::Display for Dipole {
 }
 
 pub struct Quadrupole {
-    pub parameters: Rc<PcSaftParameters>,
+    pub parameters: Arc<PcSaftParameters>,
 }
 
 impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Quadrupole {
@@ -384,7 +384,7 @@ pub enum DQVariants {
 }
 
 pub struct DipoleQuadrupole {
-    pub parameters: Rc<PcSaftParameters>,
+    pub parameters: Arc<PcSaftParameters>,
     pub variant: DQVariants,
 }
 
@@ -505,7 +505,7 @@ mod tests {
     #[test]
     fn test_dipolar_contribution() {
         let dp = Dipole {
-            parameters: Rc::new(dme_parameters()),
+            parameters: Arc::new(dme_parameters()),
         };
         let t = 350.0;
         let v = 1000.0;
@@ -518,7 +518,7 @@ mod tests {
     #[test]
     fn test_quadrupolar_contribution() {
         let qp = Quadrupole {
-            parameters: Rc::new(carbon_dioxide_parameters()),
+            parameters: Arc::new(carbon_dioxide_parameters()),
         };
         let t = 350.0;
         let v = 1000.0;
@@ -531,17 +531,17 @@ mod tests {
     #[test]
     fn test_dipolar_quadrupolar_contribution() {
         let dp = Dipole {
-            parameters: Rc::new(dme_co2_parameters()),
+            parameters: Arc::new(dme_co2_parameters()),
         };
         let qp = Quadrupole {
-            parameters: Rc::new(dme_co2_parameters()),
+            parameters: Arc::new(dme_co2_parameters()),
         };
         // let dpqp = DipoleQuadrupole {
-        //     parameters: Rc::new(dme_co2_parameters()),
+        //     parameters: Arc::new(dme_co2_parameters()),
         //     variant: DQVariants::DQ35,
         // };
         let disp = Dispersion {
-            parameters: Rc::new(dme_co2_parameters()),
+            parameters: Arc::new(dme_co2_parameters()),
         };
         let t = 350.0;
         let v = 1000.0;

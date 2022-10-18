@@ -10,7 +10,7 @@ use ndarray::*;
 use num_dual::linalg::{norm, LU};
 use quantity::{QuantityArray1, QuantityScalar};
 use std::convert::TryFrom;
-use std::rc::Rc;
+use std::sync::Arc;
 
 const MAX_ITER_INNER: usize = 5;
 const TOL_INNER: f64 = 1e-9;
@@ -61,7 +61,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     /// Calculate a phase equilibrium for a given temperature
     /// or pressure and composition of the liquid phase.
     pub fn bubble_point(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature_or_pressure: QuantityScalar<U>,
         liquid_molefracs: &Array1<f64>,
         tp_init: Option<QuantityScalar<U>>,
@@ -85,7 +85,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     /// Calculate a phase equilibrium for a given temperature
     /// or pressure and composition of the vapor phase.
     pub fn dew_point(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature_or_pressure: QuantityScalar<U>,
         vapor_molefracs: &Array1<f64>,
         tp_init: Option<QuantityScalar<U>>,
@@ -107,7 +107,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     }
 
     pub(super) fn bubble_dew_point(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         tp_spec: TPSpec<U>,
         tp_init: Option<QuantityScalar<U>>,
         molefracs_spec: &Array1<f64>,
@@ -183,7 +183,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     }
 
     fn iterate_bubble_dew(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         tp_spec: TPSpec<U>,
         tp_init: QuantityScalar<U>,
         molefracs_spec: &Array1<f64>,
@@ -204,7 +204,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     }
 
     fn starting_pressure_ideal_gas(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         molefracs_spec: &Array1<f64>,
         bubble: bool,
@@ -220,7 +220,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     }
 
     pub(super) fn starting_pressure_ideal_gas_bubble(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         liquid_molefracs: &Array1<f64>,
     ) -> EosResult<(QuantityScalar<U>, Array1<f64>)> {
@@ -239,7 +239,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     }
 
     fn starting_pressure_ideal_gas_dew(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         vapor_molefracs: &Array1<f64>,
     ) -> EosResult<(QuantityScalar<U>, Array1<f64>)>
@@ -274,7 +274,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     }
 
     pub(super) fn starting_pressure_spinodal(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         molefracs: &Array1<f64>,
     ) -> EosResult<QuantityScalar<U>>
@@ -290,7 +290,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 }
 
 fn starting_x2_bubble<U: EosUnit, E: EquationOfState>(
-    eos: &Rc<E>,
+    eos: &Arc<E>,
     temperature: QuantityScalar<U>,
     pressure: QuantityScalar<U>,
     liquid_molefracs: &Array1<f64>,
@@ -318,7 +318,7 @@ fn starting_x2_bubble<U: EosUnit, E: EquationOfState>(
 }
 
 fn starting_x2_dew<U: EosUnit, E: EquationOfState>(
-    eos: &Rc<E>,
+    eos: &Arc<E>,
     temperature: QuantityScalar<U>,
     pressure: QuantityScalar<U>,
     vapor_molefracs: &Array1<f64>,

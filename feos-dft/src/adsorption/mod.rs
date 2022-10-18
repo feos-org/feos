@@ -8,7 +8,7 @@ use feos_core::{
 use ndarray::{Array1, Dimension, Ix1, Ix3, RemoveAxis};
 use quantity::{QuantityArray1, QuantityArray2, QuantityScalar};
 use std::iter;
-use std::rc::Rc;
+use std::sync::Arc;
 
 mod external_potential;
 #[cfg(feature = "3d_dft")]
@@ -49,7 +49,7 @@ where
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
     fn new<S: PoreSpecification<U, D>>(
-        functional: &Rc<DFT<F>>,
+        functional: &Arc<DFT<F>>,
         pore: &S,
         profiles: Vec<EosResult<PoreProfile<U, D, F>>>,
     ) -> Self {
@@ -62,7 +62,7 @@ where
 
     /// Calculate an adsorption isotherm (starting at low pressure)
     pub fn adsorption_isotherm<S: PoreSpecification<U, D>>(
-        functional: &Rc<DFT<F>>,
+        functional: &Arc<DFT<F>>,
         temperature: QuantityScalar<U>,
         pressure: &QuantityArray1<U>,
         pore: &S,
@@ -82,7 +82,7 @@ where
 
     /// Calculate an desorption isotherm (starting at high pressure)
     pub fn desorption_isotherm<S: PoreSpecification<U, D>>(
-        functional: &Rc<DFT<F>>,
+        functional: &Arc<DFT<F>>,
         temperature: QuantityScalar<U>,
         pressure: &QuantityArray1<U>,
         pore: &S,
@@ -108,7 +108,7 @@ where
 
     /// Calculate an equilibrium isotherm
     pub fn equilibrium_isotherm<S: PoreSpecification<U, D>>(
-        functional: &Rc<DFT<F>>,
+        functional: &Arc<DFT<F>>,
         temperature: QuantityScalar<U>,
         pressure: &QuantityArray1<U>,
         pore: &S,
@@ -195,7 +195,7 @@ where
     }
 
     fn isotherm<S: PoreSpecification<U, D>>(
-        functional: &Rc<DFT<F>>,
+        functional: &Arc<DFT<F>>,
         temperature: QuantityScalar<U>,
         pressure: &QuantityArray1<U>,
         pore: &S,
@@ -257,7 +257,7 @@ where
 
     /// Calculate the phase transition from an empty to a filled pore.
     pub fn phase_equilibrium<S: PoreSpecification<U, D>>(
-        functional: &Rc<DFT<F>>,
+        functional: &Arc<DFT<F>>,
         temperature: QuantityScalar<U>,
         p_min: QuantityScalar<U>,
         p_max: QuantityScalar<U>,

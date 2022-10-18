@@ -34,11 +34,11 @@ use pyo3::wrap_pymodule;
 use quantity::python::*;
 use quantity::si::*;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
-#[pyclass(name = "EquationOfState", unsendable)]
+#[pyclass(name = "EquationOfState")]
 #[derive(Clone)]
-pub struct PyEosVariant(pub Rc<EosVariant>);
+pub struct PyEosVariant(pub Arc<EosVariant>);
 
 #[pymethods]
 impl PyEosVariant {
@@ -86,7 +86,7 @@ impl PyEosVariant {
             tol_cross_assoc,
             dq_variant,
         };
-        Self(Rc::new(EosVariant::PcSaft(PcSaft::with_options(
+        Self(Arc::new(EosVariant::PcSaft(PcSaft::with_options(
             parameters.0,
             options,
         ))))
@@ -129,7 +129,7 @@ impl PyEosVariant {
             max_iter_cross_assoc,
             tol_cross_assoc,
         };
-        Self(Rc::new(EosVariant::GcPcSaft(GcPcSaft::with_options(
+        Self(Arc::new(EosVariant::GcPcSaft(GcPcSaft::with_options(
             parameters.0,
             options,
         ))))
@@ -150,7 +150,7 @@ impl PyEosVariant {
     #[staticmethod]
     #[pyo3(text_signature = "(parameters)")]
     pub fn peng_robinson(parameters: PyPengRobinsonParameters) -> Self {
-        Self(Rc::new(EosVariant::PengRobinson(PengRobinson::new(
+        Self(Arc::new(EosVariant::PengRobinson(PengRobinson::new(
             parameters.0,
         ))))
     }
@@ -169,7 +169,7 @@ impl PyEosVariant {
     #[staticmethod]
     #[pyo3(text_signature = "(obj)")]
     fn python(obj: Py<PyAny>) -> PyResult<Self> {
-        Ok(Self(Rc::new(EosVariant::Python(PyEoSObj::new(obj)?))))
+        Ok(Self(Arc::new(EosVariant::Python(PyEoSObj::new(obj)?))))
     }
 
     /// PeTS equation of state.
@@ -192,7 +192,7 @@ impl PyEosVariant {
     #[pyo3(text_signature = "(parameters, max_eta)")]
     fn pets(parameters: PyPetsParameters, max_eta: f64) -> Self {
         let options = PetsOptions { max_eta };
-        Self(Rc::new(EosVariant::Pets(Pets::with_options(
+        Self(Arc::new(EosVariant::Pets(Pets::with_options(
             parameters.0,
             options,
         ))))
@@ -223,7 +223,7 @@ impl PyEosVariant {
             max_eta,
             perturbation,
         };
-        Self(Rc::new(EosVariant::UVTheory(UVTheory::with_options(
+        Self(Arc::new(EosVariant::UVTheory(UVTheory::with_options(
             parameters.0,
             options,
         ))))

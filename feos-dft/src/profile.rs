@@ -13,7 +13,7 @@ use ndarray::{
 use num_dual::Dual64;
 use quantity::{Quantity, QuantityArray, QuantityArray1, QuantityScalar};
 use std::ops::MulAssign;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub(crate) const MAX_POTENTIAL: f64 = 50.0;
 #[cfg(feature = "3d_dft")]
@@ -24,7 +24,7 @@ pub(crate) const CUTOFF_RADIUS: f64 = 14.0;
 /// In the most basic case, the chemical potential is specified in a DFT calculation,
 /// for more general systems, this trait provides the possibility to declare additional
 /// equations for the calculation of the chemical potential during the iteration.
-pub trait DFTSpecification<U, D: Dimension, F> {
+pub trait DFTSpecification<U, D: Dimension, F>: Send + Sync {
     fn calculate_chemical_potential(
         &self,
         profile: &DFTProfile<U, D, F>,
@@ -58,12 +58,12 @@ impl DFTSpecifications {
     /// particles constant in systems, where the number itself is difficult to obtain.
     pub fn moles_from_profile<U: EosUnit, D: Dimension, F: HelmholtzEnergyFunctional>(
         profile: &DFTProfile<U, D, F>,
-    ) -> EosResult<Rc<Self>>
+    ) -> EosResult<Arc<Self>>
     where
         <D as Dimension>::Larger: Dimension<Smaller = D>,
     {
         let rho = profile.density.to_reduced(U::reference_density())?;
-        Ok(Rc::new(Self::Moles {
+        Ok(Arc::new(Self::Moles {
             moles: profile.integrate_reduced_comp(&rho),
         }))
     }
@@ -74,7 +74,7 @@ impl DFTSpecifications {
     /// particles constant in systems, e.g. to fix the equimolar dividing surface.
     pub fn total_moles_from_profile<U: EosUnit, D: Dimension, F: HelmholtzEnergyFunctional>(
         profile: &DFTProfile<U, D, F>,
-    ) -> EosResult<Rc<Self>>
+    ) -> EosResult<Arc<Self>>
     where
         <D as Dimension>::Larger: Dimension<Smaller = D>,
     {
@@ -82,7 +82,7 @@ impl DFTSpecifications {
             .density
             .to_reduced(U::reference_density())?
             .sum_axis(Axis_nd(0));
-        Ok(Rc::new(Self::TotalMoles {
+        Ok(Arc::new(Self::TotalMoles {
             total_moles: profile.integrate_reduced(rho),
             chemical_potential: profile.reduced_chemical_potential()?,
         }))
@@ -117,11 +117,11 @@ impl<U: EosUnit, D: Dimension, F: HelmholtzEnergyFunctional> DFTSpecification<U,
 /// A one-, two-, or three-dimensional density profile.
 pub struct DFTProfile<U, D: Dimension, F> {
     pub grid: Grid,
-    pub convolver: Rc<dyn Convolver<f64, D>>,
-    pub dft: Rc<DFT<F>>,
+    pub convolver: Arc<dyn Convolver<f64, D>>,
+    pub dft: Arc<DFT<F>>,
     pub temperature: QuantityScalar<U>,
     pub density: QuantityArray<U, D::Larger>,
-    pub specification: Rc<dyn DFTSpecification<U, D, F>>,
+    pub specification: Arc<dyn DFTSpecification<U, D, F>>,
     pub external_potential: Array<f64, D::Larger>,
     pub bulk: State<U, DFT<F>>,
 }
@@ -187,7 +187,7 @@ where
     /// after this call if something else is required.
     pub fn new(
         grid: Grid,
-        convolver: Rc<dyn Convolver<f64, D>>,
+        convolver: Arc<dyn Convolver<f64, D>>,
         bulk: &State<U, DFT<F>>,
         external_potential: Option<Array<f64, D::Larger>>,
         density: Option<&QuantityArray<U, D::Larger>>,
@@ -228,7 +228,7 @@ where
             dft: bulk.eos.clone(),
             temperature: bulk.temperature,
             density,
-            specification: Rc::new(DFTSpecifications::ChemicalPotential),
+            specification: Arc::new(DFTSpecifications::ChemicalPotential),
             external_potential,
             bulk: bulk.clone(),
         })

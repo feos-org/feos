@@ -6,7 +6,7 @@ use feos_core::{EquationOfState, HelmholtzEnergy, IdealGasContribution, MolarWei
 use ndarray::Array1;
 use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub(crate) mod dispersion;
 mod hard_chain;
@@ -40,18 +40,18 @@ impl Default for GcPcSaftOptions {
 
 /// gc-PC-SAFT equation of state
 pub struct GcPcSaft {
-    pub parameters: Rc<GcPcSaftEosParameters>,
+    pub parameters: Arc<GcPcSaftEosParameters>,
     options: GcPcSaftOptions,
     contributions: Vec<Box<dyn HelmholtzEnergy>>,
     joback: Joback,
 }
 
 impl GcPcSaft {
-    pub fn new(parameters: Rc<GcPcSaftEosParameters>) -> Self {
+    pub fn new(parameters: Arc<GcPcSaftEosParameters>) -> Self {
         Self::with_options(parameters, GcPcSaftOptions::default())
     }
 
-    pub fn with_options(parameters: Rc<GcPcSaftEosParameters>, options: GcPcSaftOptions) -> Self {
+    pub fn with_options(parameters: Arc<GcPcSaftEosParameters>, options: GcPcSaftOptions) -> Self {
         let mut contributions: Vec<Box<dyn HelmholtzEnergy>> = Vec::with_capacity(7);
         contributions.push(Box::new(HardSphere::new(&parameters)));
         contributions.push(Box::new(HardChain {
@@ -90,7 +90,7 @@ impl EquationOfState for GcPcSaft {
 
     fn subset(&self, component_list: &[usize]) -> Self {
         Self::with_options(
-            Rc::new(self.parameters.subset(component_list)),
+            Arc::new(self.parameters.subset(component_list)),
             self.options,
         )
     }
@@ -130,7 +130,7 @@ mod test {
     #[test]
     fn hs_propane() {
         let parameters = propane();
-        let contrib = HardSphere::new(&Rc::new(parameters));
+        let contrib = HardSphere::new(&Arc::new(parameters));
         let temperature = 300.0;
         let volume = METER
             .powi(3)
@@ -150,7 +150,7 @@ mod test {
     #[test]
     fn hs_propanol() {
         let parameters = propanol();
-        let contrib = HardSphere::new(&Rc::new(parameters));
+        let contrib = HardSphere::new(&Arc::new(parameters));
         let temperature = 300.0;
         let volume = METER
             .powi(3)
@@ -169,7 +169,7 @@ mod test {
 
     #[test]
     fn assoc_propanol() {
-        let parameters = Rc::new(propanol());
+        let parameters = Arc::new(propanol());
         let contrib = Association::new(&parameters, &parameters.association, 50, 1e-10);
         let temperature = 300.0;
         let volume = METER
@@ -189,7 +189,7 @@ mod test {
 
     #[test]
     fn cross_assoc_propanol() {
-        let parameters = Rc::new(propanol());
+        let parameters = Arc::new(propanol());
         let contrib =
             Association::new_cross_association(&parameters, &parameters.association, 50, 1e-10);
         let temperature = 300.0;
@@ -210,7 +210,7 @@ mod test {
 
     #[test]
     fn cross_assoc_ethanol_propanol() {
-        let parameters = Rc::new(ethanol_propanol(false));
+        let parameters = Arc::new(ethanol_propanol(false));
         let contrib = Association::new(&parameters, &parameters.association, 50, 1e-10);
         let temperature = 300.0;
         let volume = METER

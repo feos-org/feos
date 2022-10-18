@@ -5,10 +5,10 @@ use feos_core::{Contributions, PhaseEquilibrium, SolverOptions};
 use ndarray::*;
 use quantity::si::*;
 use std::error::Error;
-use std::rc::Rc;
+use std::sync::Arc;
 
-fn read_params(components: Vec<&str>) -> Result<Rc<PcSaftParameters>, ParameterError> {
-    Ok(Rc::new(PcSaftParameters::from_json(
+fn read_params(components: Vec<&str>) -> Result<Arc<PcSaftParameters>, ParameterError> {
+    Ok(Arc::new(PcSaftParameters::from_json(
         components,
         "tests/pcsaft/test_parameters.json",
         None,
@@ -18,8 +18,8 @@ fn read_params(components: Vec<&str>) -> Result<Rc<PcSaftParameters>, ParameterE
 
 #[test]
 fn test_tp_flash() -> Result<(), Box<dyn Error>> {
-    let propane = Rc::new(PcSaft::new(read_params(vec!["propane"])?));
-    let butane = Rc::new(PcSaft::new(read_params(vec!["butane"])?));
+    let propane = Arc::new(PcSaft::new(read_params(vec!["propane"])?));
+    let butane = Arc::new(PcSaft::new(read_params(vec!["butane"])?));
     let t = 250.0 * KELVIN;
     let p_propane = PhaseEquilibrium::pure(&propane, t, None, Default::default())?
         .vapor()
@@ -32,7 +32,7 @@ fn test_tp_flash() -> Result<(), Box<dyn Error>> {
     let y1 = (x1 * p_propane / p).into_value()?;
     let z1 = 0.5 * (x1 + y1);
     println!("{} {} {} {} {}", p_propane, p_butane, x1, y1, z1);
-    let mix = Rc::new(PcSaft::new(read_params(vec!["propane", "butane"])?));
+    let mix = Arc::new(PcSaft::new(read_params(vec!["propane", "butane"])?));
     let options = SolverOptions::new().max_iter(100).tol(1e-12);
     let vle = PhaseEquilibrium::tp_flash(
         &mix,

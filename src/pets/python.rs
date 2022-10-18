@@ -9,10 +9,10 @@ use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Create a set of PeTS parameters from records.
-#[pyclass(name = "PetsRecord", unsendable)]
+#[pyclass(name = "PetsRecord")]
 #[pyo3(
     text_signature = "(sigma, epsilon_k, viscosity=None, diffusion=None, thermal_conductivity=None)"
 )]
@@ -71,7 +71,7 @@ impl PyPetsRecord {
 impl_json_handling!(PyPetsRecord);
 impl_pure_record!(PetsRecord, PyPetsRecord, JobackRecord, PyJobackRecord);
 
-#[pyclass(name = "PetsBinaryRecord", unsendable)]
+#[pyclass(name = "PetsBinaryRecord")]
 #[pyo3(
     text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
 )]
@@ -93,12 +93,12 @@ impl_binary_record!(PetsBinaryRecord, PyPetsBinaryRecord);
 ///     When not provided, all entries of `pure_records` are used.
 /// search_option : {'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'}, optional, defaults to 'Name'.
 ///     Identifier that is used to search substance.
-#[pyclass(name = "PetsParameters", unsendable)]
+#[pyclass(name = "PetsParameters")]
 #[pyo3(
     text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
 )]
 #[derive(Clone)]
-pub struct PyPetsParameters(pub Rc<PetsParameters>);
+pub struct PyPetsParameters(pub Arc<PetsParameters>);
 
 #[pymethods]
 impl PyPetsParameters {
@@ -191,7 +191,7 @@ impl PyPetsParameters {
             None => Array2::from_shape_fn((n, n), |(_, _)| PetsBinaryRecord::from(0.0)),
         };
 
-        Ok(Self(Rc::new(PetsParameters::from_records(
+        Ok(Self(Arc::new(PetsParameters::from_records(
             pure_records,
             binary,
         ))))
@@ -241,7 +241,7 @@ impl PyPetsParameters {
             PetsRecord::new(sigma, epsilon_k, viscosity, diffusion, thermal_conductivity),
             None,
         );
-        Self(Rc::new(PetsParameters::new_pure(pure_record)))
+        Self(Arc::new(PetsParameters::new_pure(pure_record)))
     }
 
     #[getter]

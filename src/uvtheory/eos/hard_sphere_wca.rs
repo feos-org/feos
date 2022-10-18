@@ -5,7 +5,7 @@ use ndarray::prelude::*;
 use num_dual::DualNum;
 use std::f64::consts::PI;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 lazy_static! {
     static ref WCA_CONSTANTS_ETA_B: Array2<f64> = arr2(&[
@@ -38,7 +38,7 @@ lazy_static! {
 
 #[derive(Debug, Clone)]
 pub struct HardSphereWCA {
-    pub parameters: Rc<UVParameters>,
+    pub parameters: Arc<UVParameters>,
 }
 
 impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardSphereWCA {
@@ -295,7 +295,7 @@ mod test {
         );
 
         let pt = HardSphereWCA {
-            parameters: Rc::new(p),
+            parameters: Arc::new(p),
         };
         let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());
         let a = pt.helmholtz_energy(&state) / (moles[0] + moles[1]);

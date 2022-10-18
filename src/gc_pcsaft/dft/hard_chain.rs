@@ -8,15 +8,15 @@ use ndarray::*;
 use num_dual::DualNum;
 use petgraph::visit::EdgeRef;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct ChainFunctional {
-    parameters: Rc<GcPcSaftFunctionalParameters>,
+    parameters: Arc<GcPcSaftFunctionalParameters>,
 }
 
 impl ChainFunctional {
-    pub fn new(parameters: &Rc<GcPcSaftFunctionalParameters>) -> Self {
+    pub fn new(parameters: &Arc<GcPcSaftFunctionalParameters>) -> Self {
         Self {
             parameters: parameters.clone(),
         }

@@ -7,7 +7,7 @@ use num_dual::DualNum;
 use quantity::{QuantityArray, QuantityArray1, QuantityArray2, QuantityScalar};
 use std::iter::FromIterator;
 use std::ops::{Add, Deref, Sub};
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Clone, Copy)]
 pub(crate) enum Evaluate {
@@ -64,7 +64,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             };
         }
 
-        let mut cache = self.cache.borrow_mut();
+        let mut cache = self.cache.lock().unwrap();
 
         let residual = match evaluate {
             Evaluate::IdealGas => None,
@@ -305,7 +305,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         let pressure = self.pressure(Contributions::Total);
         (0..self.eos.components())
             .map(|i| {
-                let eos = Rc::new(self.eos.subset(&[i]));
+                let eos = Arc::new(self.eos.subset(&[i]));
                 let state = Self::new_npt(
                     &eos,
                     self.temperature,

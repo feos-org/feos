@@ -9,12 +9,12 @@ use quantity::QuantityScalar;
 use std::fmt;
 use std::fmt::Display;
 use std::fmt::Write;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// A collection of [`DataSet`]s and weights that can be used to
 /// evaluate an equation of state versus experimental data.
 pub struct Estimator<U: EosUnit, E: EquationOfState> {
-    data: Vec<Rc<dyn DataSet<U, E>>>,
+    data: Vec<Arc<dyn DataSet<U, E>>>,
     weights: Vec<f64>,
     losses: Vec<Loss>,
 }
@@ -27,7 +27,7 @@ where
     ///
     /// The weights are normalized and used as multiplicator when the
     /// cost function across all `DataSet`s is evaluated.
-    pub fn new(data: Vec<Rc<dyn DataSet<U, E>>>, weights: Vec<f64>, losses: Vec<Loss>) -> Self {
+    pub fn new(data: Vec<Arc<dyn DataSet<U, E>>>, weights: Vec<f64>, losses: Vec<Loss>) -> Self {
         Self {
             data,
             weights,
@@ -36,7 +36,7 @@ where
     }
 
     /// Add a `DataSet` and its weight.
-    pub fn add_data(&mut self, data: &Rc<dyn DataSet<U, E>>, weight: f64, loss: Loss) {
+    pub fn add_data(&mut self, data: &Arc<dyn DataSet<U, E>>, weight: f64, loss: Loss) {
         self.data.push(data.clone());
         self.weights.push(weight);
         self.losses.push(loss);
@@ -45,7 +45,7 @@ where
     /// Returns the cost of each `DataSet`.
     ///
     /// Each cost contains the inverse weight.
-    pub fn cost(&self, eos: &Rc<E>) -> Result<Array1<f64>, EstimatorError> {
+    pub fn cost(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
         let w = arr1(&self.weights) / self.weights.iter().sum::<f64>();
         let predictions = self
             .data
@@ -58,12 +58,12 @@ where
     }
 
     /// Returns the properties as computed by the equation of state for each `DataSet`.
-    pub fn predict(&self, eos: &Rc<E>) -> Result<Vec<QuantityArray1<U>>, EstimatorError> {
+    pub fn predict(&self, eos: &Arc<E>) -> Result<Vec<QuantityArray1<U>>, EstimatorError> {
         self.data.iter().map(|d| d.predict(eos)).collect()
     }
 
     /// Returns the relative difference for each `DataSet`.
-    pub fn relative_difference(&self, eos: &Rc<E>) -> Result<Vec<Array1<f64>>, EstimatorError> {
+    pub fn relative_difference(&self, eos: &Arc<E>) -> Result<Vec<Array1<f64>>, EstimatorError> {
         self.data
             .iter()
             .map(|d| d.relative_difference(eos))
@@ -73,7 +73,7 @@ where
     /// Returns the mean absolute relative difference for each `DataSet`.
     pub fn mean_absolute_relative_difference(
         &self,
-        eos: &Rc<E>,
+        eos: &Arc<E>,
     ) -> Result<Array1<f64>, EstimatorError> {
         self.data
             .iter()
@@ -82,7 +82,7 @@ where
     }
 
     /// Returns the stored `DataSet`s.
-    pub fn datasets(&self) -> Vec<Rc<dyn DataSet<U, E>>> {
+    pub fn datasets(&self) -> Vec<Arc<dyn DataSet<U, E>>> {
         self.data.to_vec()
     }
 

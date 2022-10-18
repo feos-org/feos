@@ -5,11 +5,11 @@ use crate::uvtheory::parameters::*;
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use num_dual::DualNum;
 use std::fmt;
-use std::{f64::consts::PI, rc::Rc};
+use std::{f64::consts::PI, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct ReferencePerturbationBH {
-    pub parameters: Rc<UVParameters>,
+    pub parameters: Arc<UVParameters>,
 }
 
 impl fmt::Display for ReferencePerturbationBH {
@@ -62,7 +62,7 @@ mod test {
 
         let p = test_parameters(24.0, 6.0, 1.0, 1.0);
         let pt = ReferencePerturbationBH {
-            parameters: Rc::new(p),
+            parameters: Arc::new(p),
         };
         let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());
         let a = pt.helmholtz_energy(&state) / moles[0];

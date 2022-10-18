@@ -3,10 +3,10 @@ use crate::errors::{EosError, EosResult};
 use crate::state::State;
 use crate::EosUnit;
 use quantity::{QuantityArray1, QuantityScalar};
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub fn density_iteration<U: EosUnit, E: EquationOfState>(
-    eos: &Rc<E>,
+    eos: &Arc<E>,
     temperature: QuantityScalar<U>,
     pressure: QuantityScalar<U>,
     moles: &QuantityArray1<U>,
@@ -142,7 +142,7 @@ pub fn density_iteration<U: EosUnit, E: EquationOfState>(
 }
 
 fn pressure_spinodal<U: EosUnit, E: EquationOfState>(
-    eos: &Rc<E>,
+    eos: &Arc<E>,
     temperature: QuantityScalar<U>,
     rho_init: QuantityScalar<U>,
     moles: &QuantityArray1<U>,

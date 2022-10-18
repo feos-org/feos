@@ -3,7 +3,7 @@ use feos_core::{DensityInitialization, EntropyScaling, EosUnit, EquationOfState,
 use ndarray::{arr1, Array1};
 use quantity::{QuantityArray1, QuantityScalar};
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Store experimental diffusion data.
 #[derive(Clone)]
@@ -11,7 +11,6 @@ pub struct Diffusion<U: EosUnit> {
     pub target: QuantityArray1<U>,
     temperature: QuantityArray1<U>,
     pressure: QuantityArray1<U>,
-    datapoints: usize,
 }
 
 impl<U: EosUnit> Diffusion<U> {
@@ -21,12 +20,10 @@ impl<U: EosUnit> Diffusion<U> {
         temperature: QuantityArray1<U>,
         pressure: QuantityArray1<U>,
     ) -> Result<Self, EstimatorError> {
-        let datapoints = target.len();
         Ok(Self {
             target,
             temperature,
             pressure,
-            datapoints,
         })
     }
 
@@ -54,20 +51,34 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> DataSet<U, E> for Diffu
         vec!["temperature", "pressure"]
     }
 
-    fn predict(&self, eos: &Rc<E>) -> Result<QuantityArray1<U>, EstimatorError>
+    fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
-        let unit = self.target.get(0);
-        let mut prediction = Array1::zeros(self.datapoints) * unit;
         let moles = arr1(&[1.0]) * U::reference_moles();
-        for i in 0..self.datapoints {
-            let t = self.temperature.get(i);
-            let p = self.pressure.get(i);
-            let state = State::new_npt(eos, t, p, &moles, DensityInitialization::None)?;
-            prediction.try_set(i, state.diffusion()?)?;
-        }
-        Ok(prediction)
+        let ts = self
+            .temperature
+            .to_reduced(U::reference_temperature())
+            .unwrap();
+        let ps = self.pressure.to_reduced(U::reference_pressure()).unwrap();
+
+        let res = ts
+            .iter()
+            .zip(ps.iter())
+            .map(|(&t, &p)| {
+                State::new_npt(
+                    eos,
+                    t * U::reference_temperature(),
+                    p * U::reference_pressure(),
+                    &moles,
+                    DensityInitialization::None,
+                )?
+                .diffusion()?
+                .to_reduced(U::reference_diffusion())
+                .map_err(EstimatorError::from)
+            })
+            .collect::<Result<Vec<f64>, EstimatorError>>();
+        Ok(Array1::from_vec(res?) * U::reference_diffusion())
     }
 
     fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {

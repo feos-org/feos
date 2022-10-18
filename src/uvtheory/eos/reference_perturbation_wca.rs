@@ -1,18 +1,16 @@
 use super::hard_sphere_wca::{
-
     diameter_wca, dimensionless_diameter_q_wca, packing_fraction, packing_fraction_a,
     packing_fraction_b,
-
 };
 use crate::uvtheory::parameters::*;
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use num_dual::DualNum;
 use std::fmt;
-use std::{f64::consts::PI, rc::Rc};
+use std::{f64::consts::PI, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct ReferencePerturbationWCA {
-    pub parameters: Rc<UVParameters>,
+    pub parameters: Arc<UVParameters>,
 }
 
 impl fmt::Display for ReferencePerturbationWCA {
@@ -47,7 +45,6 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for ReferencePerturbationWCA {
                 let q_ij = dimensionless_diameter_q_wca(t_ij, D::from(rep_ij), D::from(att_ij))
                     * p.sigma_ij[[i, j]];
 
-
                 a += x[i]
                     * x[j]
                     * ((-eta_a[[i, j]] * 0.5 + 1.0) / (-eta_a[[i, j]] + 1.0).powi(3)
@@ -80,7 +77,7 @@ mod test {
 
         let p = test_parameters(24.0, 6.0, 1.0, 1.0);
         let pt = ReferencePerturbationWCA {
-            parameters: Rc::new(p),
+            parameters: Arc::new(p),
         };
         let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());
         let a = pt.helmholtz_energy(&state) / moles[0];
@@ -88,7 +85,6 @@ mod test {
     }
     #[test]
     fn test_delta_a0_wca_mixture() {
-
         let moles = arr1(&[0.40000000000000002, 0.59999999999999998]);
         let reduced_temperature = 1.0;
         let reduced_density = 0.90000000000000002;
@@ -102,12 +98,11 @@ mod test {
         );
 
         let pt = ReferencePerturbationWCA {
-            parameters: Rc::new(p),
+            parameters: Arc::new(p),
         };
         let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());
         let a = pt.helmholtz_energy(&state) / (moles[0] + moles[1]);
 
         assert_relative_eq!(a, 0.308268896386771, epsilon = 1e-6);
-
     }
 }

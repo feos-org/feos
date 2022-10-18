@@ -5,7 +5,7 @@ use super::parameters::UVParameters;
 use feos_core::{parameter::Parameter, EquationOfState, HelmholtzEnergy};
 use ndarray::Array1;
 use std::f64::consts::FRAC_PI_6;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub(crate) mod attractive_perturbation_bh;
 pub(crate) mod attractive_perturbation_wca;
@@ -47,19 +47,19 @@ impl Default for UVTheoryOptions {
 
 /// uv-theory equation of state
 pub struct UVTheory {
-    parameters: Rc<UVParameters>,
+    parameters: Arc<UVParameters>,
     options: UVTheoryOptions,
     contributions: Vec<Box<dyn HelmholtzEnergy>>,
 }
 
 impl UVTheory {
     /// uv-theory with default options (WCA).
-    pub fn new(parameters: Rc<UVParameters>) -> Self {
+    pub fn new(parameters: Arc<UVParameters>) -> Self {
         Self::with_options(parameters, UVTheoryOptions::default())
     }
 
     /// uv-theory with provided options.
-    pub fn with_options(parameters: Rc<UVParameters>, options: UVTheoryOptions) -> Self {
+    pub fn with_options(parameters: Arc<UVParameters>, options: UVTheoryOptions) -> Self {
         let mut contributions: Vec<Box<dyn HelmholtzEnergy>> = Vec::with_capacity(3);
 
         match options.perturbation {
@@ -102,7 +102,7 @@ impl EquationOfState for UVTheory {
 
     fn subset(&self, component_list: &[usize]) -> Self {
         Self::with_options(
-            Rc::new(self.parameters.subset(component_list)),
+            Arc::new(self.parameters.subset(component_list)),
             self.options.clone(),
         )
     }
@@ -138,7 +138,7 @@ mod test {
         let i = Identifier::new(None, None, None, None, None, None);
         let pr = PureRecord::new(i, 1.0, r, None);
         let parameters = UVParameters::new_pure(pr);
-        let eos = Rc::new(UVTheory::new(Rc::new(parameters)));
+        let eos = Arc::new(UVTheory::new(Arc::new(parameters)));
 
         let reduced_temperature = 4.0;
         //let reduced_temperature = 1.0;
@@ -168,7 +168,7 @@ mod test {
             max_eta: 0.5,
             perturbation: Perturbation::BarkerHenderson,
         };
-        let eos = Rc::new(UVTheory::with_options(Rc::new(parameters), options));
+        let eos = Arc::new(UVTheory::with_options(Arc::new(parameters), options));
 
         let reduced_temperature = 4.0;
         let reduced_density = 1.0;
@@ -221,7 +221,7 @@ mod test {
             perturbation: Perturbation::BarkerHenderson,
         };
 
-        let eos_bh = Rc::new(UVTheory::with_options(Rc::new(uv_parameters), options));
+        let eos_bh = Arc::new(UVTheory::with_options(Arc::new(uv_parameters), options));
 
         let state_bh = State::new_nvt(&eos_bh, t_x, volume, &moles).unwrap();
         let a_bh = state_bh
@@ -249,7 +249,7 @@ mod test {
         let volume = (p.sigma[0] * ANGSTROM).powi(3) / reduced_density * NAV * total_moles;
 
         // EoS
-        let eos_wca = Rc::new(UVTheory::new(Rc::new(p)));
+        let eos_wca = Arc::new(UVTheory::new(Arc::new(p)));
         let state_wca = State::new_nvt(&eos_wca, t_x, volume, &moles).unwrap();
         let a_wca = state_wca
             .molar_helmholtz_energy(Contributions::ResidualNvt)
@@ -278,7 +278,7 @@ mod test {
         let volume = NAV * total_moles / density;
 
         // EoS
-        let eos_wca = Rc::new(UVTheory::new(Rc::new(p)));
+        let eos_wca = Arc::new(UVTheory::new(Arc::new(p)));
         let state_wca = State::new_nvt(&eos_wca, t_x, volume, &moles).unwrap();
         let a_wca = state_wca
             .molar_helmholtz_energy(Contributions::ResidualNvt)

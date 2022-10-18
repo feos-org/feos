@@ -12,7 +12,7 @@ use ndarray::{Array1, Array2};
 use num_traits::One;
 use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
-use std::rc::Rc;
+use std::sync::Arc;
 
 mod dispersion;
 mod hard_chain;
@@ -24,7 +24,7 @@ use pure_saft_functional::*;
 
 /// PC-SAFT Helmholtz energy functional.
 pub struct PcSaftFunctional {
-    pub parameters: Rc<PcSaftParameters>,
+    pub parameters: Arc<PcSaftParameters>,
     fmt_version: FMTVersion,
     options: PcSaftOptions,
     contributions: Vec<Box<dyn FunctionalContribution>>,
@@ -32,16 +32,16 @@ pub struct PcSaftFunctional {
 }
 
 impl PcSaftFunctional {
-    pub fn new(parameters: Rc<PcSaftParameters>) -> DFT<Self> {
+    pub fn new(parameters: Arc<PcSaftParameters>) -> DFT<Self> {
         Self::with_options(parameters, FMTVersion::WhiteBear, PcSaftOptions::default())
     }
 
-    pub fn new_full(parameters: Rc<PcSaftParameters>, fmt_version: FMTVersion) -> DFT<Self> {
+    pub fn new_full(parameters: Arc<PcSaftParameters>, fmt_version: FMTVersion) -> DFT<Self> {
         Self::with_options(parameters, fmt_version, PcSaftOptions::default())
     }
 
     pub fn with_options(
-        parameters: Rc<PcSaftParameters>,
+        parameters: Arc<PcSaftParameters>,
         fmt_version: FMTVersion,
         saft_options: PcSaftOptions,
     ) -> DFT<Self> {
@@ -106,7 +106,7 @@ impl PcSaftFunctional {
 impl HelmholtzEnergyFunctional for PcSaftFunctional {
     fn subset(&self, component_list: &[usize]) -> DFT<Self> {
         Self::with_options(
-            Rc::new(self.parameters.subset(component_list)),
+            Arc::new(self.parameters.subset(component_list)),
             self.fmt_version,
             self.options,
         )

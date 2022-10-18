@@ -13,12 +13,12 @@ use feos_core::{impl_json_handling, impl_parameter_from_segments, impl_segment_r
 #[cfg(feature = "dft")]
 use numpy::{PyArray2, ToPyArray};
 use pyo3::prelude::*;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[cfg(feature = "micelles")]
 mod micelles;
 
-#[pyclass(name = "GcPcSaftRecord", unsendable)]
+#[pyclass(name = "GcPcSaftRecord")]
 #[pyo3(text_signature = "(m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None)")]
 #[derive(Clone)]
 pub struct PyGcPcSaftRecord(GcPcSaftRecord);
@@ -83,12 +83,12 @@ impl_segment_record!(
     PyJobackRecord
 );
 
-#[pyclass(name = "GcPcSaftEosParameters", unsendable)]
+#[pyclass(name = "GcPcSaftEosParameters")]
 #[pyo3(
     text_signature = "(pure_records, segmentbinary_records=None, substances=None, search_option='Name')"
 )]
 #[derive(Clone)]
-pub struct PyGcPcSaftEosParameters(pub Rc<GcPcSaftEosParameters>);
+pub struct PyGcPcSaftEosParameters(pub Arc<GcPcSaftEosParameters>);
 
 impl_parameter_from_segments!(GcPcSaftEosParameters, PyGcPcSaftEosParameters);
 
@@ -104,12 +104,12 @@ impl PyGcPcSaftEosParameters {
 }
 
 #[cfg(feature = "dft")]
-#[pyclass(name = "GcPcSaftFunctionalParameters", unsendable)]
+#[pyclass(name = "GcPcSaftFunctionalParameters")]
 #[pyo3(
     text_signature = "(pure_records, segmentbinary_records=None, substances=None, search_option='Name')"
 )]
 #[derive(Clone)]
-pub struct PyGcPcSaftFunctionalParameters(pub Rc<GcPcSaftFunctionalParameters>);
+pub struct PyGcPcSaftFunctionalParameters(pub Arc<GcPcSaftFunctionalParameters>);
 
 #[cfg(feature = "dft")]
 impl_parameter_from_segments!(GcPcSaftFunctionalParameters, PyGcPcSaftFunctionalParameters);

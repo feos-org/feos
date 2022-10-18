@@ -8,10 +8,10 @@ use feos_core::{
 use quantity::si::*;
 use quantity::QuantityScalar;
 use std::error::Error;
-use std::rc::Rc;
+use std::sync::Arc;
 
-fn propane_parameters() -> Result<Rc<PcSaftParameters>, ParameterError> {
-    Ok(Rc::new(PcSaftParameters::from_json(
+fn propane_parameters() -> Result<Arc<PcSaftParameters>, ParameterError> {
+    Ok(Arc::new(PcSaftParameters::from_json(
         vec!["propane"],
         "tests/pcsaft/test_parameters.json",
         None,
@@ -21,7 +21,7 @@ fn propane_parameters() -> Result<Rc<PcSaftParameters>, ParameterError> {
 
 #[test]
 fn temperature_volume() -> Result<(), Box<dyn Error>> {
-    let saft = Rc::new(PcSaft::new(propane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_parameters()?));
     let temperature = 300.0 * KELVIN;
     let volume = 1.5e-3 * METER.powi(3);
     let moles = MOL;
@@ -36,7 +36,7 @@ fn temperature_volume() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn temperature_density() -> Result<(), Box<dyn Error>> {
-    let saft = Rc::new(PcSaft::new(propane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_parameters()?));
     let temperature = 300.0 * KELVIN;
     let density = MOL / METER.powi(3);
     let state = StateBuilder::new(&saft)
@@ -49,7 +49,7 @@ fn temperature_density() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn temperature_total_moles_volume() -> Result<(), Box<dyn Error>> {
-    let saft = Rc::new(PcSaft::new(propane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_parameters()?));
     let temperature = 300.0 * KELVIN;
     let total_moles = MOL;
     let volume = METER.powi(3);
@@ -65,7 +65,7 @@ fn temperature_total_moles_volume() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn temperature_total_moles_density() -> Result<(), Box<dyn Error>> {
-    let saft = Rc::new(PcSaft::new(propane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_parameters()?));
     let temperature = 300.0 * KELVIN;
     let total_moles = MOL;
     let density = MOL / METER.powi(3);
@@ -84,7 +84,7 @@ fn temperature_total_moles_density() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn pressure_temperature() -> Result<(), Box<dyn Error>> {
-    let saft = Rc::new(PcSaft::new(propane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_parameters()?));
     let pressure = BAR;
     let temperature = 300.0 * KELVIN;
     let state = StateBuilder::new(&saft)
@@ -101,7 +101,7 @@ fn pressure_temperature() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn pressure_temperature_phase() -> Result<(), Box<dyn Error>> {
-    let saft = Rc::new(PcSaft::new(propane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_parameters()?));
     let pressure = BAR;
     let temperature = 300.0 * KELVIN;
     let state = StateBuilder::new(&saft)
@@ -119,7 +119,7 @@ fn pressure_temperature_phase() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn pressure_temperature_initial_density() -> Result<(), Box<dyn Error>> {
-    let saft = Rc::new(PcSaft::new(propane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_parameters()?));
     let pressure = BAR;
     let temperature = 300.0 * KELVIN;
     let state = StateBuilder::new(&saft)
@@ -137,7 +137,7 @@ fn pressure_temperature_initial_density() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn pressure_enthalpy_vapor() -> Result<(), Box<dyn Error>> {
-    let saft = Rc::new(PcSaft::new(propane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_parameters()?));
     let pressure = 0.3 * BAR;
     let molar_enthalpy = 2000.0 * JOULE / MOL;
     let state = StateBuilder::new(&saft)
@@ -176,7 +176,7 @@ fn pressure_enthalpy_vapor() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn density_internal_energy() -> Result<(), Box<dyn Error>> {
-    let saft = Rc::new(PcSaft::new(propane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_parameters()?));
     let pressure = 5.0 * BAR;
     let temperature = 315.0 * KELVIN;
     let total_moles = 2.5 * MOL;
@@ -203,7 +203,7 @@ fn density_internal_energy() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn pressure_enthalpy_total_moles_vapor() -> Result<(), Box<dyn Error>> {
-    let saft = Rc::new(PcSaft::new(propane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_parameters()?));
     let pressure = 0.3 * BAR;
     let molar_enthalpy = 2000.0 * JOULE / MOL;
     let total_moles = 2.5 * MOL;
@@ -244,7 +244,7 @@ fn pressure_enthalpy_total_moles_vapor() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn pressure_entropy_vapor() -> Result<(), Box<dyn Error>> {
-    let saft = Rc::new(PcSaft::new(propane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_parameters()?));
     let pressure = 0.3 * BAR;
     let molar_entropy = -2.0 * JOULE / MOL / KELVIN;
     let state = StateBuilder::new(&saft)
@@ -283,7 +283,7 @@ fn pressure_entropy_vapor() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn temperature_entropy_vapor() -> Result<(), Box<dyn Error>> {
-    let saft = Rc::new(PcSaft::new(propane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_parameters()?));
     let pressure = 3.0 * BAR;
     let temperature = 315.15 * KELVIN;
     let total_moles = 3.0 * MOL;
@@ -341,7 +341,7 @@ fn assert_multiple_states<E: EquationOfState, U: EosUnit + std::fmt::Debug>(
 #[test]
 fn test_consistency() -> Result<(), Box<dyn Error>> {
     let p = propane_parameters()?;
-    let saft = Rc::new(PcSaft::new(p));
+    let saft = Arc::new(PcSaft::new(p));
     let temperatures = [350.0 * KELVIN, 400.0 * KELVIN, 450.0 * KELVIN];
     let pressures = [1.0 * BAR, 2.0 * BAR, 3.0 * BAR];
 

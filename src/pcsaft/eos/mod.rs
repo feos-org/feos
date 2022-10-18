@@ -10,7 +10,7 @@ use feos_core::{
 use ndarray::Array1;
 use quantity::si::*;
 use std::f64::consts::{FRAC_PI_6, PI};
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub(crate) mod dispersion;
 pub(crate) mod hard_chain;
@@ -50,18 +50,18 @@ impl Default for PcSaftOptions {
 
 /// PC-SAFT equation of state.
 pub struct PcSaft {
-    parameters: Rc<PcSaftParameters>,
+    parameters: Arc<PcSaftParameters>,
     options: PcSaftOptions,
     contributions: Vec<Box<dyn HelmholtzEnergy>>,
     ideal_gas: IdealGasContributions,
 }
 
 impl PcSaft {
-    pub fn new(parameters: Rc<PcSaftParameters>) -> Self {
+    pub fn new(parameters: Arc<PcSaftParameters>) -> Self {
         Self::with_options(parameters, PcSaftOptions::default())
     }
 
-    pub fn with_options(parameters: Rc<PcSaftParameters>, options: PcSaftOptions) -> Self {
+    pub fn with_options(parameters: Arc<PcSaftParameters>, options: PcSaftOptions) -> Self {
         let mut contributions: Vec<Box<dyn HelmholtzEnergy>> = Vec::with_capacity(7);
         contributions.push(Box::new(HardSphere::new(&parameters)));
         contributions.push(Box::new(HardChain {
@@ -116,7 +116,7 @@ impl EquationOfState for PcSaft {
 
     fn subset(&self, component_list: &[usize]) -> Self {
         Self::with_options(
-            Rc::new(self.parameters.subset(component_list)),
+            Arc::new(self.parameters.subset(component_list)),
             self.options,
         )
     }
@@ -286,7 +286,7 @@ impl EntropyScaling<SIUnit> for PcSaft {
         }
         let p = &self.parameters;
         let mws = self.molar_weight();
-        let state = State::new_nvt(&Rc::new(Self::new(p.clone())), temperature, volume, moles)?;
+        let state = State::new_nvt(&Arc::new(Self::new(p.clone())), temperature, volume, moles)?;
         let res: Array1<SINumber> = (0..self.components())
             .map(|i| {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN)
@@ -350,7 +350,7 @@ mod tests {
 
     #[test]
     fn ideal_gas_pressure() {
-        let e = Rc::new(PcSaft::new(propane_parameters()));
+        let e = Arc::new(PcSaft::new(propane_parameters()));
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi(3);
         let n = arr1(&[1.0]) * MOL;
@@ -366,7 +366,7 @@ mod tests {
 
     #[test]
     fn ideal_gas_heat_capacity_joback() {
-        let e = Rc::new(PcSaft::new(propane_parameters()));
+        let e = Arc::new(PcSaft::new(propane_parameters()));
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi(3);
         let n = arr1(&[1.0]) * MOL;
@@ -412,7 +412,7 @@ mod tests {
 
     #[test]
     fn association() {
-        let parameters = Rc::new(water_parameters());
+        let parameters = Arc::new(water_parameters());
         let assoc = Association::new(&parameters, &parameters.association, 50, 1e-10);
         let t = 350.0;
         let v = 41.248289328513216;
@@ -424,7 +424,7 @@ mod tests {
 
     #[test]
     fn cross_association() {
-        let parameters = Rc::new(water_parameters());
+        let parameters = Arc::new(water_parameters());
         let assoc =
             Association::new_cross_association(&parameters, &parameters.association, 50, 1e-10);
         let t = 350.0;
@@ -437,7 +437,7 @@ mod tests {
 
     #[test]
     fn new_tpn() {
-        let e = Rc::new(PcSaft::new(propane_parameters()));
+        let e = Arc::new(PcSaft::new(propane_parameters()));
         let t = 300.0 * KELVIN;
         let p = BAR;
         let m = arr1(&[1.0]) * MOL;
@@ -452,7 +452,7 @@ mod tests {
 
     #[test]
     fn vle_pure() {
-        let e = Rc::new(PcSaft::new(propane_parameters()));
+        let e = Arc::new(PcSaft::new(propane_parameters()));
         let t = 300.0 * KELVIN;
         let vle = PhaseEquilibrium::pure(&e, t, None, Default::default());
         if let Ok(v) = vle {
@@ -466,7 +466,7 @@ mod tests {
 
     #[test]
     fn critical_point() {
-        let e = Rc::new(PcSaft::new(propane_parameters()));
+        let e = Arc::new(PcSaft::new(propane_parameters()));
         let t = 300.0 * KELVIN;
         let cp = State::critical_point(&e, None, Some(t), Default::default());
         if let Ok(v) = cp {
@@ -476,7 +476,7 @@ mod tests {
 
     #[test]
     fn speed_of_sound() {
-        let e = Rc::new(PcSaft::new(propane_parameters()));
+        let e = Arc::new(PcSaft::new(propane_parameters()));
         let t = 300.0 * KELVIN;
         let p = BAR;
         let m = arr1(&[1.0]) * MOL;
@@ -490,9 +490,9 @@ mod tests {
 
     #[test]
     fn mix_single() {
-        let e1 = Rc::new(PcSaft::new(propane_parameters()));
-        let e2 = Rc::new(PcSaft::new(butane_parameters()));
-        let e12 = Rc::new(PcSaft::new(propane_butane_parameters()));
+        let e1 = Arc::new(PcSaft::new(propane_parameters()));
+        let e2 = Arc::new(PcSaft::new(butane_parameters()));
+        let e12 = Arc::new(PcSaft::new(propane_butane_parameters()));
         let t = 300.0 * KELVIN;
         let v = 0.02456883872966545 * METER.powi(3);
         let m1 = arr1(&[2.0]) * MOL;
@@ -516,7 +516,7 @@ mod tests {
 
     #[test]
     fn viscosity() -> EosResult<()> {
-        let e = Rc::new(PcSaft::new(propane_parameters()));
+        let e = Arc::new(PcSaft::new(propane_parameters()));
         let t = 300.0 * KELVIN;
         let p = BAR;
         let n = arr1(&[1.0]) * MOL;
@@ -539,7 +539,7 @@ mod tests {
 
     #[test]
     fn diffusion() -> EosResult<()> {
-        let e = Rc::new(PcSaft::new(propane_parameters()));
+        let e = Arc::new(PcSaft::new(propane_parameters()));
         let t = 300.0 * KELVIN;
         let p = BAR;
         let n = arr1(&[1.0]) * MOL;

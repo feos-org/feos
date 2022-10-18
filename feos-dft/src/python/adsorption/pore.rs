@@ -25,7 +25,7 @@ macro_rules! impl_pore {
         #[pyo3(text_signature = "(geometry, pore_size, potential, n_grid=None, potential_cutoff=None)")]
         pub struct PyPore1D(Pore1D<SIUnit>);
 
-        #[pyclass(name = "PoreProfile1D", unsendable)]
+        #[pyclass(name = "PoreProfile1D")]
         pub struct PyPoreProfile1D(PoreProfile1D<SIUnit, $func>);
 
         impl_1d_profile!(PyPoreProfile1D, [get_r, get_z]);
@@ -151,7 +151,7 @@ macro_rules! impl_pore {
         #[pyo3(text_signature = "(system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, potential_cutoff=None, cutoff_radius=None)")]
         pub struct PyPore3D(Pore3D<SIUnit>);
 
-        #[pyclass(name = "PoreProfile3D", unsendable)]
+        #[pyclass(name = "PoreProfile3D")]
         pub struct PyPoreProfile3D(PoreProfile3D<SIUnit, $func>);
 
         impl_3d_profile!(PyPoreProfile3D, get_x, get_y, get_z);

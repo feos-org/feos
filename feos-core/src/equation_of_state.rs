@@ -36,6 +36,8 @@ pub trait HelmholtzEnergy:
     + HelmholtzEnergyDual<Dual3<DualVec64<2>, f64>>
     + HelmholtzEnergyDual<Dual3<DualVec64<3>, f64>>
     + fmt::Display
+    + Send
+    + Sync
 {
 }
 
@@ -52,6 +54,8 @@ impl<T> HelmholtzEnergy for T where
         + HelmholtzEnergyDual<Dual3<DualVec64<2>, f64>>
         + HelmholtzEnergyDual<Dual3<DualVec64<3>, f64>>
         + fmt::Display
+        + Send
+        + Sync
 {
 }
 
@@ -144,7 +148,7 @@ pub trait MolarWeight<U: EosUnit> {
 }
 
 /// A general equation of state.
-pub trait EquationOfState {
+pub trait EquationOfState: Send + Sync {
     /// Return the number of components of the equation of state.
     fn components(&self) -> usize;
 

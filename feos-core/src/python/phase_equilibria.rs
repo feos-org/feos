@@ -2,7 +2,7 @@
 macro_rules! impl_phase_equilibrium {
     ($eos:ty, $py_eos:ty) => {
         /// A thermodynamic two phase equilibrium state.
-        #[pyclass(name = "PhaseEquilibrium", unsendable)]
+        #[pyclass(name = "PhaseEquilibrium")]
         #[derive(Clone)]
         pub struct PyPhaseEquilibrium(PhaseEquilibrium<SIUnit, $eos, 2>);
 
@@ -328,7 +328,7 @@ macro_rules! impl_phase_equilibrium {
         }
 
         /// A thermodynamic three phase equilibrium state.
-        #[pyclass(name = "ThreePhaseEquilibrium", unsendable)]
+        #[pyclass(name = "ThreePhaseEquilibrium")]
         #[derive(Clone)]
         struct PyThreePhaseEquilibrium(PhaseEquilibrium<SIUnit, $eos, 3>);
 
@@ -463,7 +463,7 @@ macro_rules! impl_phase_equilibrium {
         }
 
         /// Phase diagram for a pure component or a binary mixture.
-        #[pyclass(name = "PhaseDiagram", unsendable)]
+        #[pyclass(name = "PhaseDiagram")]
         pub struct PyPhaseDiagram(PhaseDiagram<SIUnit, $eos>);
 
         #[pymethods]
@@ -507,6 +507,64 @@ macro_rules! impl_phase_equilibrium {
                     &eos.0,
                     min_temperature.into(),
                     npoints,
+                    critical_temperature.map(|t| t.into()),
+                    (max_iter, tol, verbosity).into(),
+                )?;
+                Ok(Self(dia))
+            }
+
+            /// Calculate a pure component phase diagram in parallel.
+            ///
+            /// Parameters
+            /// ----------
+            /// eos : Eos
+            ///     The equation of state.
+            /// min_temperature: SINumber
+            ///     The lower limit for the temperature.
+            /// npoints : int
+            ///     The number of points.
+            /// chunksize : int
+            ///     The number of points that are calculated in sequence
+            ///     within a thread.
+            /// nthreads : int
+            ///     Number of threads.
+            /// critical_temperature: SINumber, optional
+            ///     An estimate for the critical temperature to initialize
+            ///     the calculation if necessary. For most components not necessary.
+            ///     Defaults to `None`.
+            /// max_iter : int, optional
+            ///     The maximum number of iterations.
+            /// tol: float, optional
+            ///     The solution tolerance.
+            /// verbosity : Verbosity, optional
+            ///     The verbosity.
+            ///
+            /// Returns
+            /// -------
+            /// PhaseDiagram
+            #[cfg(feature = "rayon")]
+            #[staticmethod]
+            #[pyo3(text_signature = "(eos, min_temperature, npoints, chunksize, nthreads, critical_temperature=None, max_iter=None, tol=None, verbosity=None)")]
+            pub fn par_pure(
+                eos: &$py_eos,
+                min_temperature: PySINumber,
+                npoints: usize,
+                chunksize: usize,
+                nthreads: usize,
+                critical_temperature: Option<PySINumber>,
+                max_iter: Option<usize>,
+                tol: Option<f64>,
+                verbosity: Option<Verbosity>,
+            ) -> EosResult<Self> {
+                let thread_pool = rayon::ThreadPoolBuilder::new()
+                    .num_threads(nthreads)
+                    .build()?;
+                let dia = PhaseDiagram::par_pure(
+                    &eos.0,
+                    min_temperature.into(),
+                    npoints,
+                    chunksize,
+                    thread_pool,
                     critical_temperature.map(|t| t.into()),
                     (max_iter, tol, verbosity).into(),
                 )?;
@@ -848,7 +906,7 @@ macro_rules! impl_phase_equilibrium {
         }
 
         /// Phase diagram for a binary mixture exhibiting a heteroazeotrope.
-        #[pyclass(name = "PhaseDiagramHetero", unsendable)]
+        #[pyclass(name = "PhaseDiagramHetero")]
         pub struct PyPhaseDiagramHetero(PhaseDiagramHetero<SIUnit, $eos>);
 
         #[pymethods]

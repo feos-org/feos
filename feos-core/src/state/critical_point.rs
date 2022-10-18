@@ -9,7 +9,7 @@ use num_dual::{Dual, Dual3, Dual64, DualNum, DualVec64, HyperDual, StaticVec};
 use num_traits::{One, Zero};
 use quantity::{QuantityArray1, QuantityScalar};
 use std::convert::TryFrom;
-use std::rc::Rc;
+use std::sync::Arc;
 
 const MAX_ITER_CRIT_POINT: usize = 50;
 const MAX_ITER_CRIT_POINT_BINARY: usize = 200;
@@ -19,7 +19,7 @@ const TOL_CRIT_POINT: f64 = 1e-8;
 impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// Calculate the pure component critical point of all components.
     pub fn critical_point_pure(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         initial_temperature: Option<QuantityScalar<U>>,
         options: SolverOptions,
     ) -> EosResult<Vec<Self>>
@@ -29,7 +29,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         (0..eos.components())
             .map(|i| {
                 Self::critical_point(
-                    &Rc::new(eos.subset(&[i])),
+                    &Arc::new(eos.subset(&[i])),
                     None,
                     initial_temperature,
                     options,
@@ -39,7 +39,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     pub fn critical_point_binary(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature_or_pressure: QuantityScalar<U>,
         initial_temperature: Option<QuantityScalar<U>>,
         initial_molefracs: Option<[f64; 2]>,
@@ -64,7 +64,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     /// Calculate the critical point of a system for given moles.
     pub fn critical_point(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         moles: Option<&QuantityArray1<U>>,
         initial_temperature: Option<QuantityScalar<U>>,
         options: SolverOptions,
@@ -91,7 +91,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     fn critical_point_hkm(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         moles: &QuantityArray1<U>,
         initial_temperature: QuantityScalar<U>,
         options: SolverOptions,
@@ -178,7 +178,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     /// Calculate the critical point of a binary system for given temperature.
     fn critical_point_binary_t(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
@@ -264,7 +264,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     /// Calculate the critical point of a binary system for given pressure.
     fn critical_point_binary_p(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         pressure: QuantityScalar<U>,
         initial_temperature: Option<QuantityScalar<U>>,
         initial_molefracs: Option<[f64; 2]>,
@@ -364,7 +364,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     pub fn spinodal(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         moles: Option<&QuantityArray1<U>>,
         options: SolverOptions,
@@ -393,7 +393,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     fn calculate_spinodal(
-        eos: &Rc<E>,
+        eos: &Arc<E>,
         temperature: QuantityScalar<U>,
         moles: &QuantityArray1<U>,
         density_initialization: DensityInitialization<U>,
@@ -469,7 +469,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 }
 
 fn critical_point_objective<E: EquationOfState>(
-    eos: &Rc<E>,
+    eos: &Arc<E>,
     temperature: Dual64,
     density: Dual64,
     moles: &Array1<f64>,
@@ -509,7 +509,7 @@ fn critical_point_objective<E: EquationOfState>(
 }
 
 fn critical_point_objective_t<E: EquationOfState>(
-    eos: &Rc<E>,
+    eos: &Arc<E>,
     temperature: f64,
     density: StaticVec<DualVec64<2>, 2>,
 ) -> EosResult<StaticVec<DualVec64<2>, 2>> {
@@ -544,7 +544,7 @@ fn critical_point_objective_t<E: EquationOfState>(
 }
 
 fn critical_point_objective_p<E: EquationOfState>(
-    eos: &Rc<E>,
+    eos: &Arc<E>,
     pressure: f64,
     temperature: DualVec64<3>,
     density: StaticVec<DualVec64<3>, 2>,
@@ -591,7 +591,7 @@ fn critical_point_objective_p<E: EquationOfState>(
 }
 
 fn spinodal_objective<E: EquationOfState>(
-    eos: &Rc<E>,
+    eos: &Arc<E>,
     temperature: Dual64,
     density: Dual64,
     moles: &Array1<f64>,

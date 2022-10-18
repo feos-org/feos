@@ -11,7 +11,7 @@ impl From<EstimatorError> for PyErr {
 #[macro_export]
 macro_rules! impl_estimator {
     ($eos:ty, $py_eos:ty) => {
-        #[pyclass(name = "Loss", unsendable)]
+        #[pyclass(name = "Loss")]
         #[derive(Clone)]
         pub struct PyLoss(Loss);
 
@@ -113,9 +113,9 @@ macro_rules! impl_estimator {
 
         /// A collection of experimental data that can be used to compute
         /// cost functions and make predictions using an equation of state.
-        #[pyclass(name = "DataSet", unsendable)]
+        #[pyclass(name = "DataSet")]
         #[derive(Clone)]
-        pub struct PyDataSet(Rc<dyn DataSet<SIUnit, $eos>>);
+        pub struct PyDataSet(Arc<dyn DataSet<SIUnit, $eos>>);
 
         #[pymethods]
         impl PyDataSet {
@@ -244,7 +244,7 @@ macro_rules! impl_estimator {
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
-                Ok(Self(Rc::new(VaporPressure::<SIUnit>::new(
+                Ok(Self(Arc::new(VaporPressure::<SIUnit>::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     extrapolate.unwrap_or(false),
@@ -273,7 +273,7 @@ macro_rules! impl_estimator {
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
             ) -> PyResult<Self> {
-                Ok(Self(Rc::new(LiquidDensity::<SIUnit>::new(
+                Ok(Self(Arc::new(LiquidDensity::<SIUnit>::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     pressure.clone().into(),
@@ -311,7 +311,7 @@ macro_rules! impl_estimator {
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
-                Ok(Self(Rc::new(EquilibriumLiquidDensity::<SIUnit>::new(
+                Ok(Self(Arc::new(EquilibriumLiquidDensity::<SIUnit>::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     Some((max_iter, tol, verbosity).into()),
@@ -343,7 +343,7 @@ macro_rules! impl_estimator {
                 liquid_molefracs: &PyArray1<f64>,
                 vapor_molefracs: &PyArray1<f64>,
             ) -> Self {
-                Self(Rc::new(BinaryVleChemicalPotential::new(
+                Self(Arc::new(BinaryVleChemicalPotential::new(
                     temperature.clone().into(),
                     pressure.clone().into(),
                     liquid_molefracs.to_owned_array(),
@@ -376,7 +376,7 @@ macro_rules! impl_estimator {
                 molefracs: &PyArray1<f64>,
                 phase: Phase,
             ) -> Self {
-                Self(Rc::new(BinaryVlePressure::new(
+                Self(Arc::new(BinaryVlePressure::new(
                     temperature.clone().into(),
                     pressure.clone().into(),
                     molefracs.to_owned_array(),
@@ -414,7 +414,7 @@ macro_rules! impl_estimator {
                 vapor_molefracs: Option<&PyArray1<f64>>,
                 npoints: Option<usize>,
             ) -> Self {
-                Self(Rc::new(BinaryPhaseDiagram::new(
+                Self(Arc::new(BinaryPhaseDiagram::new(
                     specification.into(),
                     temperature_or_pressure.clone().into(),
                     liquid_molefracs.map(|x| x.to_owned_array()),
@@ -466,7 +466,7 @@ macro_rules! impl_estimator {
         /// Returns
         /// -------
         /// Estimator
-        #[pyclass(name = "Estimator", unsendable)]
+        #[pyclass(name = "Estimator")]
         #[pyo3(text_signature = "(data, weights, losses)")]
         pub struct PyEstimator(Estimator<SIUnit, $eos>);
 
@@ -633,7 +633,7 @@ macro_rules! impl_estimator_entropy_scaling {
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
             ) -> PyResult<Self> {
-                Ok(Self(Rc::new(Viscosity::<SIUnit>::new(
+                Ok(Self(Arc::new(Viscosity::<SIUnit>::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     pressure.clone().into(),
@@ -661,7 +661,7 @@ macro_rules! impl_estimator_entropy_scaling {
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
             ) -> PyResult<Self> {
-                Ok(Self(Rc::new(ThermalConductivity::<SIUnit>::new(
+                Ok(Self(Arc::new(ThermalConductivity::<SIUnit>::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     pressure.clone().into(),
@@ -689,7 +689,7 @@ macro_rules! impl_estimator_entropy_scaling {
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
             ) -> PyResult<Self> {
-                Ok(Self(Rc::new(Diffusion::<SIUnit>::new(
+                Ok(Self(Arc::new(Diffusion::<SIUnit>::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     pressure.clone().into(),

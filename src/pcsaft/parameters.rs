@@ -532,7 +532,7 @@ impl std::fmt::Display for PcSaftParameters {
 pub mod utils {
     use super::*;
     use feos_core::joback::JobackRecord;
-    use std::rc::Rc;
+    use std::sync::Arc;
     // use feos_core::parameter::SegmentRecord;
 
     // pub fn pure_record_vec() -> Vec<PureRecord<PcSaftRecord, JobackRecord>> {
@@ -696,7 +696,7 @@ pub mod utils {
     //     PcSaftParameters::from_records(vec![methane_record], None).unwrap()
     // }
 
-    pub fn propane_parameters() -> Rc<PcSaftParameters> {
+    pub fn propane_parameters() -> Arc<PcSaftParameters> {
         let propane_json = r#"
             {
                 "identifier": {
@@ -719,7 +719,7 @@ pub mod utils {
             }"#;
         let propane_record: PureRecord<PcSaftRecord, JobackRecord> =
             serde_json::from_str(propane_json).expect("Unable to parse json.");
-        Rc::new(PcSaftParameters::new_pure(propane_record))
+        Arc::new(PcSaftParameters::new_pure(propane_record))
     }
 
     // pub fn propane_homogc_parameters() -> PcSaftParameters {
@@ -793,7 +793,7 @@ pub mod utils {
         PcSaftParameters::new_pure(co2_record)
     }
 
-    pub fn butane_parameters() -> Rc<PcSaftParameters> {
+    pub fn butane_parameters() -> Arc<PcSaftParameters> {
         let butane_json = r#"
             {
                 "identifier": {
@@ -813,7 +813,7 @@ pub mod utils {
             }"#;
         let butane_record: PureRecord<PcSaftRecord, JobackRecord> =
             serde_json::from_str(butane_json).expect("Unable to parse json.");
-        Rc::new(PcSaftParameters::new_pure(butane_record))
+        Arc::new(PcSaftParameters::new_pure(butane_record))
     }
 
     pub fn dme_parameters() -> PcSaftParameters {
@@ -907,7 +907,7 @@ pub mod utils {
         PcSaftParameters::new_binary(binary_record, None)
     }
 
-    pub fn propane_butane_parameters() -> Rc<PcSaftParameters> {
+    pub fn propane_butane_parameters() -> Arc<PcSaftParameters> {
         let binary_json = r#"[
             {
                 "identifier": {
@@ -949,7 +949,7 @@ pub mod utils {
         ]"#;
         let binary_record: Vec<PureRecord<PcSaftRecord, JobackRecord>> =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
-        Rc::new(PcSaftParameters::new_binary(binary_record, None))
+        Arc::new(PcSaftParameters::new_binary(binary_record, None))
     }
 
     // pub fn water_hexane_parameters() -> PcSaftParameters {

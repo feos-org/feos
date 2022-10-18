@@ -165,7 +165,7 @@ mod tests {
     use approx::assert_relative_eq;
     use ndarray::arr1;
     use quantity::si::*;
-    use std::rc::Rc;
+    use std::sync::Arc;
 
     use super::*;
 
@@ -259,7 +259,7 @@ mod tests {
         );
         assert_relative_eq!(jr.e, 0.0);
 
-        let eos = Rc::new(Joback::new(vec![jr]));
+        let eos = Arc::new(Joback::new(vec![jr]));
         let state = State::new_nvt(
             &eos,
             1000.0 * KELVIN,
@@ -281,7 +281,7 @@ mod tests {
     fn c_p_comparison() -> EosResult<()> {
         let record1 = JobackRecord::new(1.0, 0.2, 0.03, 0.004, 0.005);
         let record2 = JobackRecord::new(-5.0, 0.4, 0.03, 0.002, 0.001);
-        let joback = Rc::new(Joback::new(vec![record1, record2]));
+        let joback = Arc::new(Joback::new(vec![record1, record2]));
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi(3);
         let moles = arr1(&[1.0, 3.0]) * MOL;

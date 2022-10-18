@@ -3,7 +3,7 @@ use feos_core::{Contributions, EosUnit, EquationOfState, PhaseEquilibrium, Solve
 use ndarray::Array1;
 use quantity::{QuantityArray1, QuantityScalar};
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Store experimental vapor pressure data.
 #[derive(Clone)]
@@ -67,7 +67,7 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
         vec!["temperature"]
     }
 
-    fn predict(&self, eos: &Rc<E>) -> Result<QuantityArray1<U>, EstimatorError>
+    fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {

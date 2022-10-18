@@ -6,7 +6,7 @@ use feos_core::parameter::{IdentifierOption, ParameterHetero};
 use feos_core::{EosResult, State};
 use ndarray::arr1;
 use quantity::si::{KELVIN, MOL};
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[test]
 fn test_binary() -> EosResult<()> {
@@ -27,9 +27,9 @@ fn test_binary() -> EosResult<()> {
         IdentifierOption::Name,
     )
     .unwrap();
-    let eos = Rc::new(GcPcSaft::new(Rc::new(parameters)));
+    let eos = Arc::new(GcPcSaft::new(Arc::new(parameters)));
     #[cfg(feature = "dft")]
-    let func = Rc::new(GcPcSaftFunctional::new(Rc::new(parameters_func)));
+    let func = Arc::new(GcPcSaftFunctional::new(Arc::new(parameters_func)));
     let moles = arr1(&[0.5, 0.5]) * MOL;
     let cp = State::critical_point(&eos, Some(&moles), None, Default::default())?;
     #[cfg(feature = "dft")]

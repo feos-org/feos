@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use ndarray::prelude::*;
 use num_dual::DualNum;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 lazy_static! {
     static ref BH_CONSTANTS_ETA_B: Array2<f64> = arr2(&[
@@ -22,7 +22,7 @@ lazy_static! {
 
 #[derive(Debug, Clone)]
 pub struct HardSphere {
-    pub parameters: Rc<UVParameters>,
+    pub parameters: Arc<UVParameters>,
 }
 
 impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardSphere {
@@ -176,7 +176,7 @@ mod test {
     //     let reduced_temperature = 4.0;
 
     //     let hs = HardSphere {
-    //         parameters: Rc::new(p.clone()),
+    //         parameters: Arc::new(p.clone()),
     //     };
     //     let particles = arr1(&[1000.0]);
     //     let n = &particles / 6.02214076e23;

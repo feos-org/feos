@@ -8,7 +8,6 @@ use rustfft::num_complex::Complex;
 use rustfft::{Fft, FftDirection, FftNum, FftPlanner};
 use std::f64::consts::PI;
 use std::ops::AddAssign;
-use std::rc::Rc;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -35,7 +34,7 @@ where
         axes: &[&Axis],
         weight_functions: &[WeightFunctionInfo<T>],
         lanczos: Option<i32>,
-    ) -> Rc<dyn Convolver<T, D>> {
+    ) -> Arc<dyn Convolver<T, D>> {
         // initialize the Fourier transform
         let mut planner = FftPlanner::new();
         let mut forward_transforms = Vec::with_capacity(axes.len());
@@ -130,7 +129,7 @@ where
             });
         }
 
-        Rc::new(Self {
+        Arc::new(Self {
             k_abs,
             weight_functions: fft_weight_functions,
             lanczos_sigma,

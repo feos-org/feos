@@ -286,9 +286,9 @@ impl std::fmt::Display for PetsParameters {
 pub mod utils {
     use super::*;
     use feos_core::joback::JobackRecord;
-    use std::rc::Rc;
+    use std::sync::Arc;
 
-    pub fn argon_parameters() -> Rc<PetsParameters> {
+    pub fn argon_parameters() -> Arc<PetsParameters> {
         let argon_json = r#"
             {
                 "identifier": {
@@ -310,10 +310,10 @@ pub mod utils {
             }"#;
         let argon_record: PureRecord<PetsRecord, JobackRecord> =
             serde_json::from_str(argon_json).expect("Unable to parse json.");
-        Rc::new(PetsParameters::new_pure(argon_record))
+        Arc::new(PetsParameters::new_pure(argon_record))
     }
 
-    pub fn krypton_parameters() -> Rc<PetsParameters> {
+    pub fn krypton_parameters() -> Arc<PetsParameters> {
         let krypton_json = r#"
             {
                 "identifier": {
@@ -332,10 +332,10 @@ pub mod utils {
             }"#;
         let krypton_record: PureRecord<PetsRecord, JobackRecord> =
             serde_json::from_str(krypton_json).expect("Unable to parse json.");
-        Rc::new(PetsParameters::new_pure(krypton_record))
+        Arc::new(PetsParameters::new_pure(krypton_record))
     }
 
-    pub fn argon_krypton_parameters() -> Rc<PetsParameters> {
+    pub fn argon_krypton_parameters() -> Arc<PetsParameters> {
         let binary_json = r#"[
             {
                 "identifier": {
@@ -376,6 +376,6 @@ pub mod utils {
         ]"#;
         let binary_record: Vec<PureRecord<PetsRecord, JobackRecord>> =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
-        Rc::new(PetsParameters::new_binary(binary_record, None))
+        Arc::new(PetsParameters::new_binary(binary_record, None))
     }
 }

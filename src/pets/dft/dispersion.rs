@@ -9,7 +9,7 @@ use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// psi Parameter for DFT (Heier2018)
 const PSI_DFT: f64 = 1.21;
@@ -18,11 +18,11 @@ const PSI_PDGT: f64 = 1.21;
 
 #[derive(Clone)]
 pub struct AttractiveFunctional {
-    parameters: Rc<PetsParameters>,
+    parameters: Arc<PetsParameters>,
 }
 
 impl AttractiveFunctional {
-    pub fn new(parameters: Rc<PetsParameters>) -> Self {
+    pub fn new(parameters: Arc<PetsParameters>) -> Self {
         Self { parameters }
     }
 }
