@@ -196,6 +196,142 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> PlanarInterface<U, F> {
         self
     }
 
+    /// Relative adsorption of component `i' with respect to `j': \Gamma_i^(j)
+    pub fn relative_adsorption(&self) -> EosResult<QuantityArray2<U>> {
+        let s = self.profile.density.shape();
+        let mut rho_l = Array1::zeros(s[0]) * U::reference_density();
+        let mut rho_v = Array1::zeros(s[0]) * U::reference_density();
+
+        // Calculate the partial densities in the liquid and in the vapor phase
+        for i in 0..s[0] {
+            // rho_l.try_set(i, self.profile.density.get((i, 0)) * m[i])?;
+            // rho_v.try_set(i, self.profile.density.get((i, s[1] - 1)) * m[i])?;
+            rho_l.try_set(i, self.profile.density.get((i, 0)))?;
+            rho_v.try_set(i, self.profile.density.get((i, s[1] - 1)))?;
+        }
+
+        // Calculate \Gamma_i^(j)
+        let gamma = Array2::from_shape_fn((s[0], s[0]), |(i, j)| -> f64 {
+            if i == j {
+                0.0
+            } else {
+                (-(rho_l.get(i) - rho_v.get(i))
+                    * ((&self.profile.density.index_axis(Axis_nd(0), j) - rho_l.get(j))
+                        / (rho_l.get(j) - rho_v.get(j))
+                        - (&self.profile.density.index_axis(Axis_nd(0), i) - rho_l.get(i))
+                            / (rho_l.get(i) - rho_v.get(i)))
+                    .integrate(&self.profile.grid.integration_weights_unit()))
+                .to_reduced(U::reference_density() * U::reference_length())
+                .unwrap()
+            }
+        });
+
+        Ok(gamma * U::reference_density() * U::reference_length())
+    }
+
+    /// Interfacial enrichment of component `i': E_i
+    pub fn interfacial_enrichment(&self) -> EosResult<Array1<f64>> {
+        let s = self.profile.density.shape();
+        let mut rho_l = Array1::zeros(s[0]) * U::reference_density();
+        let mut rho_v = Array1::zeros(s[0]) * U::reference_density();
+
+        // Calculate the partial densities in the liquid and in the vapor phase
+        for i in 0..s[0] {
+            rho_l.try_set(i, self.profile.density.get((i, 0)))?;
+            rho_v.try_set(i, self.profile.density.get((i, s[1] - 1)))?;
+        }
+
+        // Calculate interfacial enrichment E_i
+        let enrichment = Array1::from_shape_fn(s[0], |i| {
+            (*(self
+                .profile
+                .density
+                .index_axis(Axis_nd(0), i)
+                .to_owned()
+                .to_reduced(U::reference_density())
+                .unwrap()
+                .iter()
+                .max_by(|&a, &b| a.total_cmp(b))
+                .unwrap())
+                * U::reference_density()
+                / (rho_l.get(i).max(rho_v.get(i)).unwrap()))
+            .into_value()
+            .unwrap()
+        });
+
+        Ok(enrichment)
+    }
+
+    /// Interface thickness (90-10 number density difference)
+    pub fn interfacial_thickness(&self, limits: (f64, f64)) -> EosResult<QuantityScalar<U>> {
+        let s = self.profile.density.shape();
+        let rho = self
+            .profile
+            .density
+            .sum_axis(Axis_nd(0))
+            .to_reduced(U::reference_density())?;
+        let z = self.profile.grid.grids()[0];
+        let dz = z[1] - z[0];
+        let (limit_upper, limit_lower) = if limits.0 > limits.1 {
+            (limits.0, limits.1)
+        } else {
+            (limits.1, limits.0)
+        };
+
+        if limit_upper >= 1.0 || limit_upper.is_sign_negative() {
+            panic!("Upper limit 'l' of interface thickness needs to satisfy 0 < l < 1.");
+        }
+        if limit_lower >= 1.0 || limit_lower.is_sign_negative() {
+            panic!("Lower limit 'l' of interface thickness needs to satisfy 0 < l < 1.");
+        }
+
+        // Get the densities in the liquid and in the vapor phase
+        let rho_l = if rho.get(0) > rho.get(s[1] - 1) {
+            rho[0]
+        } else {
+            rho[s[1] - 1]
+        };
+        let rho_v = if rho.get(0) > rho.get(s[1] - 1) {
+            rho[s[1] - 1]
+        } else {
+            rho[0]
+        };
+
+        // Density boundaries for interface definition
+        let rho_upper = rho_v + limit_upper * (rho_l - rho_v);
+        let rho_lower = rho_v + limit_lower * (rho_l - rho_v);
+
+        // Get indizes right of intersection between density profile and
+        // constant density boundaries
+        let index_upper_plus = rho
+            .iter()
+            .enumerate()
+            .find(|(_, &x)| (x - rho_upper).is_sign_negative())
+            .expect("Could not find rho_upper value!")
+            .0;
+        let index_lower_plus = rho
+            .iter()
+            .enumerate()
+            .find(|(_, &x)| (x - rho_lower).is_sign_negative())
+            .expect("Could not find rho_lower value!")
+            .0;
+
+        // Calculate distance between two density points using a linear
+        // interpolated density profiles between the two grid points where the
+        // density profile crosses the limiting densities
+        let z_upper = z[index_upper_plus - 1]
+            + (rho_upper - rho[index_upper_plus - 1])
+                / (rho[index_upper_plus] - rho[index_upper_plus - 1])
+                * dz;
+        let z_lower = z[index_lower_plus - 1]
+            + (rho_lower - rho[index_lower_plus - 1])
+                / (rho[index_lower_plus] - rho[index_lower_plus - 1])
+                * dz;
+
+        // Return
+        Ok((z_lower - z_upper) * U::reference_length())
+    }
+
     fn set_density_scale(&mut self, init: &QuantityArray2<U>) {
         assert_eq!(self.profile.density.shape(), init.shape());
         let n_grid = self.profile.density.shape()[1];
@@ -229,6 +365,8 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> PlanarInterface<U, F> {
         self
     }
 }
+
+impl<U: EosUnit, F: HelmholtzEnergyFunctional> PlanarInterface<U, F> {}
 
 fn interp_symmetric<U: EosUnit, F: HelmholtzEnergyFunctional>(
     vle_pdgt: &PhaseEquilibrium<U, DFT<F>, 2>,
