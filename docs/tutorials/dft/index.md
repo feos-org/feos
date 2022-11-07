@@ -1,9 +1,8 @@
-# Equations of state
+# Density functional theory
 
 ```{eval-rst}
 .. toctree::
    :maxdepth: 1
 
    pcsaft/index
-   python/index
 ```

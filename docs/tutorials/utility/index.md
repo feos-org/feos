@@ -4,8 +4,8 @@
 .. toctree::
    :maxdepth: 1
 
-   working_with_units
-   DualNumbers
+   core_working_with_units
+   core_dual_numbers
 ```
 
 
