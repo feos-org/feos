@@ -14,4 +14,5 @@ You can find each of the tutorials below as jupyter notebook in the github repos
    :maxdepth: 3
 
    eos/index
+   dft/index
 ```
