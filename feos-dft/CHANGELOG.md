@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Added `Send` and `Sync` as supertraits to `HelmholtzEnergyFunctional` and all related traits. [#57](https://github.com/feos-org/feos/pull/57)
 - Renamed the `3d_dft` feature to `rayon` in accordance to the other feos crates. [#62](https://github.com/feos-org/feos/pull/62)
+- internally rewrote the implementation of the Euler-Lagrange equation to use a bulk density instead of the chemical potential as variable. [#60](https://github.com/feos-org/feos/pull/60)
 
 ## [0.3.2] - 2022-10-13
 ### Changed
