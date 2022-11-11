@@ -193,7 +193,7 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
     let points = 2048;
     let tc = State::critical_point(&func, None, None, Default::default())?.temperature;
     let vle = PhaseEquilibrium::pure(&func, t, None, Default::default())?;
-    let profile = PlanarInterface::from_tanh(&vle, points, w, tc)?.solve(None)?;
+    let profile = PlanarInterface::from_tanh(&vle, points, w, tc, false)?.solve(None)?;
     println!(
         "hetero {} {} {}",
         profile.surface_tension.unwrap(),
@@ -238,7 +238,8 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
     let w = 100.0 * ANGSTROM;
     let points = 4096;
     let vle = PhaseEquilibrium::pure(&func, t, None, Default::default())?;
-    let profile = PlanarInterface::from_tanh(&vle, points, w, 600.0 * KELVIN)?.solve(None)?;
+    let profile =
+        PlanarInterface::from_tanh(&vle, points, w, 600.0 * KELVIN, false)?.solve(None)?;
     println!(
         "hetero {} {} {}",
         profile.surface_tension.unwrap(),

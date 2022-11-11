@@ -11,6 +11,13 @@ const DEFAULT_PARAMS_PICARD: SolverParameter = SolverParameter {
     tol: 1e-11,
     beta: 0.15,
 };
+const DEFAULT_PARAMS_PICARD_INIT: SolverParameter = SolverParameter {
+    solver: DFTAlgorithm::PicardIteration(1.0),
+    log: false,
+    max_iter: 50,
+    tol: 1e-5,
+    beta: 0.15,
+};
 const DEFAULT_PARAMS_ANDERSON_LOG: SolverParameter = SolverParameter {
     solver: DFTAlgorithm::AndersonMixing(100),
     log: true,
@@ -63,6 +70,13 @@ impl DFTSolver {
         Self {
             parameters: Vec::new(),
             verbosity,
+        }
+    }
+
+    pub fn default_no_log() -> Self {
+        Self {
+            parameters: vec![DEFAULT_PARAMS_PICARD_INIT, DEFAULT_PARAMS_ANDERSON],
+            verbosity: Verbosity::None,
         }
     }
 

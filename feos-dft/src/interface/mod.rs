@@ -91,6 +91,7 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> PlanarInterface<U, F> {
         n_grid: usize,
         l_grid: QuantityScalar<U>,
         critical_temperature: QuantityScalar<U>,
+        fix_equimolar_surface: bool,
     ) -> EosResult<Self> {
         let mut profile = Self::new(vle, n_grid, l_grid)?;
 
@@ -113,13 +114,19 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> PlanarInterface<U, F> {
             });
 
         // specify specification
-        profile.profile.specification =
-            DFTSpecifications::total_moles_from_profile(&profile.profile)?;
+        if fix_equimolar_surface {
+            profile.profile.specification =
+                DFTSpecifications::total_moles_from_profile(&profile.profile)?;
+        }
 
         Ok(profile)
     }
 
-    pub fn from_pdgt(vle: &PhaseEquilibrium<U, DFT<F>, 2>, n_grid: usize) -> EosResult<Self> {
+    pub fn from_pdgt(
+        vle: &PhaseEquilibrium<U, DFT<F>, 2>,
+        n_grid: usize,
+        fix_equimolar_surface: bool,
+    ) -> EosResult<Self> {
         let dft = &vle.vapor().eos;
 
         if dft.component_index().len() != 1 {
@@ -161,8 +168,10 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> PlanarInterface<U, F> {
         )?;
 
         // specify specification
-        profile.profile.specification =
-            DFTSpecifications::total_moles_from_profile(&profile.profile)?;
+        if fix_equimolar_surface {
+            profile.profile.specification =
+                DFTSpecifications::total_moles_from_profile(&profile.profile)?;
+        }
 
         Ok(profile)
     }

@@ -120,9 +120,9 @@ help_and_feedback
 :caption: Python
 :hidden:
 
-api/index
 tutorials/index
 recipes/index
+api/index
 ```
 
 ```{toctree}
@@ -131,4 +131,13 @@ recipes/index
 
 rustguide/index
 rust_api
+```
+
+```{toctree}
+:caption: Theory
+:hidden:
+
+theory/eos/index
+theory/dft/index
+theory/models/index
 ```

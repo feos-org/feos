@@ -32,29 +32,31 @@ pub enum MicelleSpecification<U> {
 impl<U: EosUnit, F: HelmholtzEnergyFunctional> DFTSpecification<U, Ix1, F>
     for MicelleSpecification<U>
 {
-    fn calculate_chemical_potential(
+    fn calculate_bulk_density(
         &self,
         profile: &DFTProfile<U, Ix1, F>,
-        chemical_potential: &Array1<f64>,
+        bulk_density: &Array1<f64>,
         z: &Array1<f64>,
-        bulk: &State<U, DFT<F>>,
     ) -> EosResult<Array1<f64>> {
         Ok(match self {
-            Self::ChemicalPotential => chemical_potential.clone(),
+            Self::ChemicalPotential => bulk_density.clone(),
             Self::Size {
                 delta_n_surfactant,
                 pressure,
             } => {
-                let m: &Array1<_> = &profile.dft.m();
-                let rho_s_bulk = bulk.partial_density.get(1);
-                let rho_w_bulk = bulk.partial_density.get(0);
+                let rho_s_bulk = bulk_density[1];
+                let rho_w_bulk = bulk_density[0];
+                let volume = U::reference_volume();
+                let moles = arr1(&[rho_w_bulk, rho_s_bulk]) * U::reference_density() * volume;
+                let bulk = State::new_nvt(&profile.dft, profile.temperature, volume, &moles)?;
                 let f_bulk = bulk.helmholtz_energy(Contributions::Total) / bulk.volume;
-                let mu_s_bulk = bulk.chemical_potential(Contributions::Total).get(1);
+                let mu_bulk = bulk.chemical_potential(Contributions::Total);
+                let mu_s_bulk = mu_bulk.get(1);
+                let mu_w_bulk = mu_bulk.get(0);
                 let n_s_bulk = (rho_s_bulk * profile.volume()).to_reduced(U::reference_moles())?;
-                let mut spec = ((delta_n_surfactant + n_s_bulk) / z).mapv(f64::ln) * m;
-                spec[0] = ((pressure + f_bulk - rho_s_bulk * mu_s_bulk) / rho_w_bulk)
-                    .to_reduced(U::reference_molar_energy())?
-                    / bulk.temperature.to_reduced(U::reference_temperature())?;
+                let mut spec = (delta_n_surfactant + n_s_bulk) / z;
+                spec[0] = ((pressure + f_bulk - rho_s_bulk * mu_s_bulk) / mu_w_bulk)
+                    .to_reduced(U::reference_density())?;
                 spec
             }
         })

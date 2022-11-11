@@ -19,6 +19,10 @@ macro_rules! impl_surface_tension_diagram {
         /// critical_temperature: SINumber, optional
         ///     An estimate for the critical temperature, used to initialize
         ///     density profile (default: 500 K)
+        /// fix_equimolar_surface: bool, optional
+        ///     If True use additional constraints to fix the
+        ///     equimolar surface of the system.
+        ///     Defaults to False.
         /// solver: DFTSolver, optional
         ///     Custom solver options
         ///
@@ -27,7 +31,7 @@ macro_rules! impl_surface_tension_diagram {
         /// SurfaceTensionDiagram
         ///
         #[pyclass(name = "SurfaceTensionDiagram")]
-        #[pyo3(text_signature = "(dia, init_densities=None, n_grid=None, l_grid=None, critical_temperature=None, solver=None)")]
+        #[pyo3(text_signature = "(dia, init_densities=None, n_grid=None, l_grid=None, critical_temperature=None, fix_equimolar_surface=None, solver=None)")]
         pub struct PySurfaceTensionDiagram(SurfaceTensionDiagram<SIUnit, $func>);
 
         #[pymethods]
@@ -39,6 +43,7 @@ macro_rules! impl_surface_tension_diagram {
                 n_grid: Option<usize>,
                 l_grid: Option<PySINumber>,
                 critical_temperature: Option<PySINumber>,
+                fix_equimolar_surface: Option<bool>,
                 solver: Option<PyDFTSolver>,
             ) -> Self {
                 let x = dia.into_iter().map(|vle| vle.0).collect();
@@ -48,6 +53,7 @@ macro_rules! impl_surface_tension_diagram {
                     n_grid,
                     l_grid.map(|l| l.into()),
                     critical_temperature.map(|c| c.into()),
+                    fix_equimolar_surface,
                     solver.map(|s| s.0).as_ref(),
                 ))
             }

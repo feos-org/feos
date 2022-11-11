@@ -19,6 +19,7 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> SurfaceTensionDiagram<U, F> {
         n_grid: Option<usize>,
         l_grid: Option<QuantityScalar<U>>,
         critical_temperature: Option<QuantityScalar<U>>,
+        fix_equimolar_surface: Option<bool>,
         solver: Option<&DFTSolver>,
     ) -> Self {
         let n_grid = n_grid.unwrap_or(DEFAULT_GRID_POINTS);
@@ -31,17 +32,19 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> SurfaceTensionDiagram<U, F> {
                     10,
                     100.0 * U::reference_length(),
                     500.0 * U::reference_temperature(),
+                    fix_equimolar_surface.unwrap_or(false),
                 )
             } else {
                 // initialize with pDGT for single segments and tanh for mixtures and segment DFT
                 if vle.vapor().eos.component_index().len() == 1 {
-                    PlanarInterface::from_pdgt(vle, n_grid)
+                    PlanarInterface::from_pdgt(vle, n_grid, false)
                 } else {
                     PlanarInterface::from_tanh(
                         vle,
                         n_grid,
                         l_grid.unwrap_or(100.0 * U::reference_length()),
                         critical_temperature.unwrap_or(500.0 * U::reference_temperature()),
+                        fix_equimolar_surface.unwrap_or(false),
                     )
                 }
                 .map(|mut profile| {
