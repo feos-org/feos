@@ -1,14 +1,13 @@
 use crate::convolver::{BulkConvolver, Convolver, ConvolverFFT};
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::Grid;
-use crate::solver::DFTSolver;
+use crate::solver::{DFTSolver, DFTSolverLog};
 use crate::weight_functions::WeightFunctionInfo;
 use feos_core::{
     log_result, Contributions, EosError, EosResult, EosUnit, EquationOfState, State, Verbosity,
 };
 use ndarray::{
-    s, Array, Array1, ArrayBase, ArrayViewMut, ArrayViewMut1, Axis as Axis_nd, Data, Dimension,
-    Ix1, Ix2, Ix3, RemoveAxis,
+    Array, Array1, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3, RemoveAxis,
 };
 use num_dual::Dual64;
 use num_traits::Zero;
@@ -110,6 +109,7 @@ pub struct DFTProfile<U, D: Dimension, F> {
     pub specification: Arc<dyn DFTSpecification<U, D, F>>,
     pub external_potential: Array<f64, D::Larger>,
     pub bulk: State<U, DFT<F>>,
+    pub solver_log: Vec<DFTSolverLog>,
 }
 
 impl<U: EosUnit, F> DFTProfile<U, Ix1, F> {
@@ -217,6 +217,7 @@ where
             specification: Arc::new(DFTSpecifications::ChemicalPotential),
             external_potential,
             bulk: bulk.clone(),
+            solver_log: vec![],
         })
     }
 
@@ -304,6 +305,7 @@ impl<U: Clone, D: Dimension, F> Clone for DFTProfile<U, D, F> {
             specification: self.specification.clone(),
             external_potential: self.external_potential.clone(),
             bulk: self.bulk.clone(),
+            solver_log: self.solver_log.clone(),
         }
     }
 }
@@ -313,6 +315,7 @@ where
     U: EosUnit,
     D: Dimension,
     D::Larger: Dimension<Smaller = D>,
+    <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
     F: HelmholtzEnergyFunctional,
 {
     pub fn weighted_densities(&self) -> EosResult<Vec<Array<f64, D::Larger>>> {
@@ -331,9 +334,8 @@ where
     }
 
     #[allow(clippy::type_complexity)]
-    pub fn residual(&self, log: bool) -> EosResult<(Array<f64, D::Larger>, Array1<f64>)> {
+    pub fn residual(&self, log: bool) -> EosResult<(Array<f64, D::Larger>, Array1<f64>, f64)> {
         // Read from profile
-        let temperature = self.temperature.to_reduced(U::reference_temperature())?;
         let density = self.density.to_reduced(U::reference_density())?;
         let partial_density = self
             .bulk
@@ -341,31 +343,19 @@ where
             .to_reduced(U::reference_density())?;
         let bulk_density = self.dft.component_index().mapv(|i| partial_density[i]);
 
-        // Allocate residual vectors
-        let mut res_rho = Array::zeros(density.raw_dim());
-        let mut res_bulk = Array1::zeros(bulk_density.len());
-
-        self.calculate_residual(
-            temperature,
-            &density,
-            &bulk_density,
-            res_rho.view_mut(),
-            res_bulk.view_mut(),
-            log,
-        )?;
-
-        Ok((res_rho, res_bulk))
+        self.euler_lagrange_equation(&density, &bulk_density, log)
     }
 
-    fn calculate_residual(
+    #[allow(clippy::type_complexity)]
+    pub(crate) fn euler_lagrange_equation(
         &self,
-        temperature: f64,
         density: &Array<f64, D::Larger>,
         bulk_density: &Array1<f64>,
-        mut res_rho: ArrayViewMut<f64, D::Larger>,
-        mut res_bulk: ArrayViewMut1<f64>,
         log: bool,
-    ) -> EosResult<()> {
+    ) -> EosResult<(Array<f64, D::Larger>, Array1<f64>, f64)> {
+        // calculate reduced temperature
+        let temperature = self.temperature.to_reduced(U::reference_temperature())?;
+
         // calculate intrinsic functional derivative
         let (_, mut dfdrho) =
             self.dft
@@ -395,25 +385,23 @@ where
             .bond_integrals(temperature, &exp_dfdrho, &self.convolver);
         exp_dfdrho *= &bonds;
 
-        // Euler-Lagrange equation
-        res_rho
+        // multiply bulk density
+        exp_dfdrho
             .outer_iter_mut()
-            .zip(exp_dfdrho.outer_iter())
             .zip(bulk_density.iter())
-            .zip(density.outer_iter())
-            .for_each(|(((mut res, df), &rho_b), rho)| {
-                res.assign(
-                    &(if log {
-                        rho.mapv(f64::ln) - rho_b.ln() - df.mapv(f64::ln)
-                    } else {
-                        &rho - rho_b * &df
-                    }),
-                );
+            .for_each(|(mut x, &rho_b)| {
+                x *= rho_b;
             });
 
+        // calculate residual
+        let mut res = if log {
+            density.mapv(f64::ln) - exp_dfdrho.mapv(f64::ln)
+        } else {
+            density - &exp_dfdrho
+        };
+
         // set residual to 0 where external potentials are overwhelming
-        res_rho
-            .iter_mut()
+        res.iter_mut()
             .zip(self.external_potential.iter())
             .for_each(|(r, &p)| {
                 if p + f64::EPSILON >= MAX_POTENTIAL {
@@ -421,21 +409,23 @@ where
                 }
             });
 
-        // Additional residuals for the calculation of the bulk densitiess
+        // additional residuals for the calculation of the bulk densitiess
         let z = self.integrate_reduced_comp(&exp_dfdrho);
-        let bulk_spec = self
-            .specification
-            .calculate_bulk_density(self, bulk_density, &z)?;
+        let res_bulk = bulk_density
+            - self
+                .specification
+                .calculate_bulk_density(self, bulk_density, &z)?;
 
-        res_bulk.assign(
-            &(if log {
-                bulk_density.mapv(f64::ln) - bulk_spec.mapv(f64::ln)
-            } else {
-                bulk_density - &bulk_spec
-            }),
-        );
+        // calculate the norm of the residual
+        let res_norm =
+            ((density - &exp_dfdrho).mapv(|x| x * x).sum() + res_bulk.mapv(|x| x * x).sum()).sqrt()
+                / ((res.len() + res_bulk.len()) as f64).sqrt();
 
-        Ok(())
+        if res_norm.is_finite() {
+            Ok((res, res_bulk, res_norm))
+        } else {
+            Err(EosError::IterationFailed("Euler-Lagrange equation".into()))
+        }
     }
 
     pub fn solve(&mut self, solver: Option<&DFTSolver>, debug: bool) -> EosResult<()> {
@@ -449,8 +439,7 @@ where
         });
 
         // Read from profile
-        let component_index = self.dft.component_index();
-        let temperature = self.temperature.to_reduced(U::reference_temperature())?;
+        let component_index = self.dft.component_index().into_owned();
         let mut density = self.density.to_reduced(U::reference_density())?;
         let partial_density = self
             .bulk
@@ -458,30 +447,9 @@ where
             .to_reduced(U::reference_density())?;
         let mut bulk_density = component_index.mapv(|i| partial_density[i]);
 
-        // initialize x-vector
-        let n_rho = density.len();
-        let mut x = Array1::zeros(n_rho + bulk_density.len());
-        x.slice_mut(s![..n_rho])
-            .assign(&density.view().into_shape(n_rho).unwrap());
-        x.slice_mut(s![n_rho..]).assign(&bulk_density);
-
-        // Residual function
-        let mut residual =
-            |x: &Array1<f64>, mut res: ArrayViewMut1<f64>, log: bool| -> EosResult<()> {
-                // Read density and chemical potential from solution vector
-                density.assign(&x.slice(s![..n_rho]).into_shape(density.shape()).unwrap());
-                bulk_density.assign(&x.slice(s![n_rho..]));
-
-                // Create views for different residuals
-                let (res_rho, res_mu) = res.multi_slice_mut((s![..n_rho], s![n_rho..]));
-                let res_rho = res_rho.into_shape(density.raw_dim()).unwrap();
-
-                // Calculate residual
-                self.calculate_residual(temperature, &density, &bulk_density, res_rho, res_mu, log)
-            };
-
         // Call solver(s)
-        let (converged, iterations) = solver.solve(&mut x, &mut residual)?;
+        let (converged, iterations) =
+            self.call_solver(&mut density, &mut bulk_density, solver.clone())?;
         if converged {
             log_result!(solver.verbosity, "DFT solved in {} iterations", iterations);
         } else if debug {

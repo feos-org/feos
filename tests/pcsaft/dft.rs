@@ -4,8 +4,9 @@ use approx::assert_relative_eq;
 use feos::hard_sphere::FMTVersion;
 use feos::pcsaft::{PcSaft, PcSaftFunctional, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter};
-use feos_core::{Contributions, PhaseEquilibrium, State};
+use feos_core::{Contributions, PhaseEquilibrium, State, Verbosity};
 use feos_dft::interface::PlanarInterface;
+use feos_dft::DFTSolver;
 use ndarray::{arr1, Axis};
 use quantity::si::*;
 use std::error::Error;
@@ -208,6 +209,26 @@ fn test_dft_propane() -> Result<(), Box<dyn Error>> {
         surface_tension_pdgt,
         max_relative = 1e-10,
     );
+    Ok(())
+}
+
+#[test]
+#[allow(non_snake_case)]
+fn test_dft_propane_newton() -> Result<(), Box<dyn Error>> {
+    let params = Arc::new(PcSaftParameters::from_json(
+        vec!["propane"],
+        "tests/pcsaft/test_parameters.json",
+        None,
+        IdentifierOption::Name,
+    )?);
+    let func = Arc::new(PcSaftFunctional::new(params));
+    let t = 200.0 * KELVIN;
+    let w = 150.0 * ANGSTROM;
+    let points = 512;
+    let tc = State::critical_point(&func, None, None, Default::default())?.temperature;
+    let vle = PhaseEquilibrium::pure(&func, t, None, Default::default())?;
+    let solver = DFTSolver::new(Some(Verbosity::Iter)).newton(None, None, None);
+    PlanarInterface::from_tanh(&vle, points, w, tc, false)?.solve(Some(&solver))?;
     Ok(())
 }
 

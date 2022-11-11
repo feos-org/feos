@@ -1,6 +1,8 @@
-use crate::DFTSolver;
+use crate::{DFTSolver, DFTSolverLog};
 use feos_core::Verbosity;
+use numpy::{PyArray1, ToPyArray};
 use pyo3::prelude::*;
+use quantity::python::PySIArray1;
 
 /// Settings for the DFT solver.
 ///
@@ -21,7 +23,7 @@ pub struct PyDFTSolver(pub DFTSolver);
 impl PyDFTSolver {
     #[new]
     fn new(verbosity: Option<Verbosity>) -> Self {
-        Self(DFTSolver::new(verbosity.unwrap_or_default()))
+        Self(DFTSolver::new(verbosity))
     }
 
     /// The default solver.
@@ -53,48 +55,18 @@ impl PyDFTSolver {
     #[pyo3(text_signature = "($self, log=None, max_iter=None, tol=None, beta=None)")]
     fn picard_iteration(
         &self,
-        max_rel: Option<f64>,
         log: Option<bool>,
         max_iter: Option<usize>,
         tol: Option<f64>,
         beta: Option<f64>,
     ) -> Self {
-        let mut solver = self.0.clone().picard_iteration(max_rel);
-        if let Some(log) = log {
-            if log {
-                solver = solver.log();
-            }
-        }
-        if let Some(max_iter) = max_iter {
-            solver = solver.max_iter(max_iter);
-        }
-        if let Some(tol) = tol {
-            solver = solver.tol(tol);
-        }
-        if let Some(beta) = beta {
-            solver = solver.beta(beta);
-        }
-        Self(solver)
-    }
-
-    fn log_iter(&self) -> Self {
-        let mut solver = self.0.clone();
-        solver.verbosity = Verbosity::Iter;
-        Self(solver)
-    }
-
-    fn log_result(&self) -> Self {
-        let mut solver = self.0.clone();
-        solver.verbosity = Verbosity::Result;
-        Self(solver)
+        Self(self.0.clone().picard_iteration(log, max_iter, tol, beta))
     }
 
     /// Add Anderson mixing to the solver object.
     ///
     /// Parameters
     /// ----------
-    /// mmax: int, optional
-    ///     The maximum number of old solutions that are used.
     /// log: bool, optional
     ///     Iterate the logarithm of the density profile
     /// max_iter: int, optional
@@ -103,35 +75,50 @@ impl PyDFTSolver {
     ///     The tolerance.
     /// beta: float, optional
     ///     The damping factor.
+    /// mmax: int, optional
+    ///     The maximum number of old solutions that are used.
     ///
     /// Returns
     /// -------
     /// DFTSolver
-    #[pyo3(text_signature = "($self, mmax=None, log=None, max_iter=None, tol=None, beta=None)")]
+    #[pyo3(text_signature = "($self, log=None, max_iter=None, tol=None, beta=None, mmax=None)")]
     fn anderson_mixing(
         &self,
-        mmax: Option<usize>,
         log: Option<bool>,
         max_iter: Option<usize>,
         tol: Option<f64>,
         beta: Option<f64>,
+        mmax: Option<usize>,
     ) -> Self {
-        let mut solver = self.0.clone().anderson_mixing(mmax);
-        if let Some(log) = log {
-            if log {
-                solver = solver.log();
-            }
-        }
-        if let Some(max_iter) = max_iter {
-            solver = solver.max_iter(max_iter);
-        }
-        if let Some(tol) = tol {
-            solver = solver.tol(tol);
-        }
-        if let Some(beta) = beta {
-            solver = solver.beta(beta);
-        }
-        Self(solver)
+        Self(
+            self.0
+                .clone()
+                .anderson_mixing(log, max_iter, tol, beta, mmax),
+        )
+    }
+
+    /// Add Newton solver to the solver object.
+    ///
+    /// Parameters
+    /// ----------
+    /// max_iter: int, optional
+    ///     The maximum number of iterations.
+    /// max_iter_gmres: int, optional
+    ///     The maximum number of iterations for the GMRES solver.
+    /// tol: float, optional
+    ///     The tolerance.
+    ///
+    /// Returns
+    /// -------
+    /// DFTSolver
+    #[pyo3(text_signature = "($self, max_iter=None, tol=None)")]
+    fn newton(
+        &self,
+        max_iter: Option<usize>,
+        max_iter_gmres: Option<usize>,
+        tol: Option<f64>,
+    ) -> Self {
+        Self(self.0.clone().newton(max_iter, max_iter_gmres, tol))
     }
 
     fn _repr_markdown_(&self) -> String {
@@ -140,5 +127,28 @@ impl PyDFTSolver {
 
     fn __repr__(&self) -> PyResult<String> {
         Ok(self.0.to_string())
+    }
+}
+
+#[pyclass(name = "DFTSolverLog")]
+#[derive(Clone)]
+#[pyo3(text_signature = "(verbosity=None)")]
+pub struct PyDFTSolverLog(pub DFTSolverLog);
+
+#[pymethods]
+impl PyDFTSolverLog {
+    #[getter]
+    fn get_residual<'py>(&self, py: Python<'py>) -> &'py PyArray1<f64> {
+        self.0.residual.view().to_pyarray(py)
+    }
+
+    #[getter]
+    fn get_time(&self) -> PySIArray1 {
+        self.0.time.clone().into()
+    }
+
+    #[getter]
+    fn get_damping<'py>(&self, py: Python<'py>) -> Option<&'py PyArray1<f64>> {
+        self.0.damping.as_ref().map(|d| d.view().to_pyarray(py))
     }
 }
