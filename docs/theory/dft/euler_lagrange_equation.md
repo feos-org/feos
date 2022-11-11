@@ -28,7 +28,7 @@ $$\beta F=\sum_i\int\rho_i(r)\left(\ln\left(\rho_i(r)\Lambda_i^3\right)-1\right)
 
 with the de Broglie wavelength $\Lambda_i$. The functional derivatives for an inhomogeneous and a bulk system follow as
 
-$$\beta F_{\rho_i}=\ln\left(\rho_i(r)\Lambda_i^3\right)+\beta F_{\rho_i}^\mathrm{res}$$
+$$\beta F_{\rho_i}(r)=\ln\left(\rho_i(r)\Lambda_i^3\right)+\beta F_{\rho_i}^\mathrm{res}$$
 
 $$\beta F_{\rho_i}^\mathrm{b}=\ln\left(\rho_i^\mathrm{b}\Lambda_i^3\right)+\beta F_{\rho_i}^\mathrm{b,res}$$
 
@@ -61,7 +61,7 @@ $$\beta F=\sum_i\int\rho_i(r)m_i\left(\ln\left(\rho_i(r)\Lambda_i^3\right)-1\rig
 
 The functional derivatives are then similar to the spherical case
 
-$$\beta F_{\rho_i}=m_i\ln\left(\rho_i(r)\Lambda_i^3\right)+\beta\hat{F}_{\rho_i}^\mathrm{res}$$
+$$\beta F_{\rho_i}(r)=m_i\ln\left(\rho_i(r)\Lambda_i^3\right)+\beta\hat{F}_{\rho_i}^\mathrm{res}(r)$$
 
 $$\beta F_{\rho_i}^\mathrm{b}=m_i\ln\left(\rho_i^\mathrm{b}\Lambda_i^3\right)+\beta\hat{F}_{\rho_i}^\mathrm{b,res}$$
 
@@ -97,5 +97,7 @@ $$I_{\alpha\alpha'}(r)=\int e^{\beta\left(\hat F_{\rho_{\alpha'}}^\mathrm{b,res}
 To avoid having multiple implementations of the central part of the DFT code, the different descriptions of molecules can be combined in a single version of the Euler-Lagrange equation:
 
 $$\rho_\alpha(r)=\rho_\alpha^\mathrm{b}e^{\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{b,res}-\hat F_{\rho_\alpha}^\mathrm{res}(r)-V_\alpha^\mathrm{ext}(r)\right)}\prod_{\alpha'}I_{\alpha\alpha'}(r)$$
+
+$$I_{\alpha\alpha'}(r)=\int e^{\frac{\beta}{m_{\alpha'}}\left(\hat F_{\rho_{\alpha'}}^\mathrm{b,res}-\hat F_{\rho_{\alpha'}}^\mathrm{res}(r')-V_{\alpha'}^\mathrm{ext}(r')\right)}\left(\prod_{\alpha''\neq\alpha}I_{\alpha'\alpha''}(r')\right)\omega_\mathrm{chain}^{\alpha\alpha'}(r-r')dr'$$
 
 If molecules consist of single (possibly non-spherical) segments, the Euler-Lagrange equation simplifies to that of the homosegmented chains shown above. For heterosegmented chains, the correct expression is obtained by setting $m_\alpha=1$.
