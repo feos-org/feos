@@ -118,7 +118,7 @@ impl AssociationParameters {
 /// Implementation of the SAFT association Helmholtz energy
 /// contribution and functional.
 #[cfg_attr(feature = "dft", derive(FunctionalContribution))]
-#[max_size(20)]
+#[cfg_attr(feature = "dft", max_size(20))]
 pub struct Association<P: HardSphereProperties> {
     parameters: Arc<P>,
     association_parameters: AssociationParameters,
