@@ -1,17 +1,20 @@
 use super::parameter::GcPcSaftFunctionalParameters;
 use crate::gc_pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::EosError;
+use feos_core::EosResult;
+use feos_derive::FunctionalContribution;
 use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
+    FunctionalContribution, FunctionalContributionDual, WeightFunction, WeightFunctionInfo,
+    WeightFunctionShape,
 };
 use ndarray::*;
-use num_dual::DualNum;
+use num_dual::*;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::fmt;
 use std::sync::Arc;
 
-#[derive(Clone)]
+#[derive(FunctionalContribution)]
+#[max_size(10)]
 pub struct AttractiveFunctional {
     parameters: Arc<GcPcSaftFunctionalParameters>,
 }
@@ -39,7 +42,7 @@ impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for Attracti
         &self,
         temperature: N,
         density: ArrayView2<N>,
-    ) -> Result<Array1<N>, EosError> {
+    ) -> EosResult<Array1<N>> {
         // auxiliary variables
         let p = &self.parameters;
         let n = p.m.len();

@@ -156,20 +156,20 @@ pub trait FunctionalContribution:
     }
 }
 
-impl<T> FunctionalContribution for T where
-    T: FunctionalContributionDual<f64>
-        + FunctionalContributionDual<Dual64>
-        + FunctionalContributionDual<Dual<DualVec64<3>, f64>>
-        + FunctionalContributionDual<HyperDual64>
-        + FunctionalContributionDual<Dual3_64>
-        + FunctionalContributionDual<HyperDual<Dual64, f64>>
-        + FunctionalContributionDual<HyperDual<DualVec64<2>, f64>>
-        + FunctionalContributionDual<HyperDual<DualVec64<3>, f64>>
-        + FunctionalContributionDual<Dual3<Dual64, f64>>
-        + FunctionalContributionDual<Dual3<DualVec64<2>, f64>>
-        + FunctionalContributionDual<Dual3<DualVec64<3>, f64>>
-        + Display
-        + Sync
-        + Send
-{
-}
+// impl<T> FunctionalContribution for T where
+//     T: FunctionalContributionDual<f64>
+//         + FunctionalContributionDual<Dual64>
+//         + FunctionalContributionDual<Dual<DualVec64<3>, f64>>
+//         + FunctionalContributionDual<HyperDual64>
+//         + FunctionalContributionDual<Dual3_64>
+//         + FunctionalContributionDual<HyperDual<Dual64, f64>>
+//         + FunctionalContributionDual<HyperDual<DualVec64<2>, f64>>
+//         + FunctionalContributionDual<HyperDual<DualVec64<3>, f64>>
+//         + FunctionalContributionDual<Dual3<Dual64, f64>>
+//         + FunctionalContributionDual<Dual3<DualVec64<2>, f64>>
+//         + FunctionalContributionDual<Dual3<DualVec64<3>, f64>>
+//         + Display
+//         + Sync
+//         + Send
+// {
+// }

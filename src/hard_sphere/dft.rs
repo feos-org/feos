@@ -1,4 +1,5 @@
 use feos_core::EosResult;
+use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{
@@ -6,7 +7,7 @@ use feos_dft::{
     WeightFunction, WeightFunctionInfo, WeightFunctionShape, DFT,
 };
 use ndarray::*;
-use num_dual::DualNum;
+use num_dual::*;
 use std::f64::consts::PI;
 use std::fmt;
 use std::sync::Arc;
@@ -61,12 +62,14 @@ pub enum FMTVersion {
 /// |$\vec\omega_2^\alpha(\mathbf{r})$|$C_{3,\alpha}\frac{\mathbf{r}}{\|\mathbf{r}\|}\\,\delta\\!\left(\frac{d_\alpha}{2}-\|\mathbf{r}\|\right)$|-|
 ///
 /// The geometry coefficients $C_{k,\alpha}$ and the segment diameters $d_\alpha$ are specified via the [HardSphereProperties] trait.
-pub struct FMTContribution<P> {
+#[derive(FunctionalContribution)]
+#[max_size(10)]
+pub struct FMTContribution<P: HardSphereProperties> {
     pub properties: Arc<P>,
     version: FMTVersion,
 }
 
-impl<P> Clone for FMTContribution<P> {
+impl<P: HardSphereProperties> Clone for FMTContribution<P> {
     fn clone(&self) -> Self {
         Self {
             properties: self.properties.clone(),
@@ -75,7 +78,7 @@ impl<P> Clone for FMTContribution<P> {
     }
 }
 
-impl<P> FMTContribution<P> {
+impl<P: HardSphereProperties> FMTContribution<P> {
     pub fn new(properties: &Arc<P>, version: FMTVersion) -> Self {
         Self {
             properties: properties.clone(),

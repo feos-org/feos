@@ -2,8 +2,10 @@ use crate::hard_sphere::{FMTVersion, HardSphereProperties};
 use crate::pets::eos::dispersion::{A, B};
 use crate::pets::parameters::PetsParameters;
 use feos_core::{EosError, EosResult};
+use feos_derive::FunctionalContribution;
 use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
+    FunctionalContribution, FunctionalContributionDual, WeightFunction, WeightFunctionInfo,
+    WeightFunctionShape,
 };
 use ndarray::*;
 use num_dual::*;
@@ -14,7 +16,8 @@ use std::sync::Arc;
 const PI36M1: f64 = 1.0 / (36.0 * PI);
 const N3_CUTOFF: f64 = 1e-5;
 
-#[derive(Clone)]
+#[derive(FunctionalContribution)]
+#[max_size(5)]
 pub struct PureFMTFunctional {
     parameters: Arc<PetsParameters>,
     version: FMTVersion,
@@ -114,7 +117,8 @@ impl fmt::Display for PureFMTFunctional {
     }
 }
 
-#[derive(Clone)]
+#[derive(FunctionalContribution)]
+#[max_size(1)]
 pub struct PureAttFunctional {
     parameters: Arc<PetsParameters>,
 }

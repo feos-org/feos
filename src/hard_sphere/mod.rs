@@ -26,7 +26,7 @@ pub enum MonomerShape<'a, D> {
 }
 
 /// Properties of (generalized) hard sphere systems.
-pub trait HardSphereProperties {
+pub trait HardSphereProperties: Send + Sync {
     /// The [MonomerShape] used in the model.
     fn monomer_shape<D: DualNum<f64>>(&self, temperature: D) -> MonomerShape<D>;
 

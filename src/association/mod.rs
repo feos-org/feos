@@ -1,7 +1,11 @@
 //! Generic implementation of the SAFT association contribution
 //! that can be used across models.
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::{EosError, HelmholtzEnergyDual, StateHD};
+use feos_core::{EosError, EosResult, HelmholtzEnergyDual, StateHD};
+#[cfg(feature = "dft")]
+use feos_derive::FunctionalContribution;
+#[cfg(feature = "dft")]
+use feos_dft::{FunctionalContribution, FunctionalContributionDual};
 use ndarray::*;
 use num_dual::linalg::{norm, LU};
 use num_dual::*;
@@ -113,7 +117,9 @@ impl AssociationParameters {
 
 /// Implementation of the SAFT association Helmholtz energy
 /// contribution and functional.
-pub struct Association<P> {
+#[cfg_attr(feature = "dft", derive(FunctionalContribution))]
+#[max_size(20)]
+pub struct Association<P: HardSphereProperties> {
     parameters: Arc<P>,
     association_parameters: AssociationParameters,
     max_iter: usize,
@@ -230,7 +236,7 @@ impl<D: DualNum<f64> + ScalarOperand, P: HardSphereProperties> HelmholtzEnergyDu
     }
 }
 
-impl<P> fmt::Display for Association<P> {
+impl<P: HardSphereProperties> fmt::Display for Association<P> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Association")
     }
@@ -270,7 +276,7 @@ impl<P: HardSphereProperties> Association<P> {
         max_iter: usize,
         tol: f64,
         x0: Option<&mut Array1<f64>>,
-    ) -> Result<D, EosError> {
+    ) -> EosResult<D> {
         // check if density is close to 0
         if density.sum().re() < f64::EPSILON {
             if let Some(x0) = x0 {
@@ -339,7 +345,7 @@ impl<P: HardSphereProperties> Association<P> {
         nb: &Array1<f64>,
         rho: &ArrayBase<S, Ix1>,
         tol: f64,
-    ) -> Result<bool, EosError> {
+    ) -> EosResult<bool> {
         // gradient
         let mut g: Array1<D> = Array::zeros(2 * nassoc);
         // Hessian

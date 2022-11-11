@@ -1,12 +1,14 @@
 use crate::hard_sphere::HardSphereProperties;
 use crate::pets::eos::dispersion::{A, B};
 use crate::pets::parameters::PetsParameters;
-use feos_core::EosError;
+use feos_core::EosResult;
+use feos_derive::FunctionalContribution;
 use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
+    FunctionalContribution, FunctionalContributionDual, WeightFunction, WeightFunctionInfo,
+    WeightFunctionShape,
 };
 use ndarray::*;
-use num_dual::DualNum;
+use num_dual::*;
 use std::f64::consts::{FRAC_PI_3, PI};
 use std::fmt;
 use std::sync::Arc;
@@ -16,7 +18,8 @@ const PSI_DFT: f64 = 1.21;
 /// psi Parameter for pDGT (not adjusted, yet)
 const PSI_PDGT: f64 = 1.21;
 
-#[derive(Clone)]
+#[derive(FunctionalContribution)]
+#[max_size(3)]
 pub struct AttractiveFunctional {
     parameters: Arc<PetsParameters>,
 }
@@ -52,7 +55,7 @@ impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for Attracti
         &self,
         temperature: N,
         density: ArrayView2<N>,
-    ) -> Result<Array1<N>, EosError> {
+    ) -> EosResult<Array1<N>> {
         // auxiliary variables
         let p = &self.parameters;
         let n = p.sigma.len();

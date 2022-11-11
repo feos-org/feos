@@ -5,8 +5,10 @@ use crate::hard_sphere::{FMTVersion, HardSphereProperties};
 use crate::pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
 use crate::pcsaft::eos::polar::{AD, AQ, BD, BQ, CD, CQ, PI_SQ_43};
 use feos_core::{EosError, EosResult};
+use feos_derive::FunctionalContribution;
 use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
+    FunctionalContribution, FunctionalContributionDual, WeightFunction, WeightFunctionInfo,
+    WeightFunctionShape,
 };
 use ndarray::*;
 use num_dual::*;
@@ -18,7 +20,8 @@ const PI36M1: f64 = 1.0 / (36.0 * PI);
 const N3_CUTOFF: f64 = 1e-5;
 const N0_CUTOFF: f64 = 1e-9;
 
-#[derive(Clone)]
+#[derive(FunctionalContribution)]
+#[max_size(5)]
 pub struct PureFMTAssocFunctional {
     parameters: Arc<PcSaftParameters>,
     version: FMTVersion,
@@ -152,7 +155,8 @@ impl fmt::Display for PureFMTAssocFunctional {
     }
 }
 
-#[derive(Clone)]
+#[derive(FunctionalContribution)]
+#[max_size(3)]
 pub struct PureChainFunctional {
     parameters: Arc<PcSaftParameters>,
 }
@@ -204,7 +208,8 @@ impl fmt::Display for PureChainFunctional {
     }
 }
 
-#[derive(Clone)]
+#[derive(FunctionalContribution)]
+#[max_size(1)]
 pub struct PureAttFunctional {
     parameters: Arc<PcSaftParameters>,
 }

@@ -1,16 +1,19 @@
 use super::GcPcSaftFunctionalParameters;
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::EosError;
+use feos_core::EosResult;
+use feos_derive::FunctionalContribution;
 use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
+    FunctionalContribution, FunctionalContributionDual, WeightFunction, WeightFunctionInfo,
+    WeightFunctionShape,
 };
 use ndarray::*;
-use num_dual::DualNum;
+use num_dual::*;
 use petgraph::visit::EdgeRef;
 use std::fmt;
 use std::sync::Arc;
 
-#[derive(Clone)]
+#[derive(FunctionalContribution)]
+#[max_size(12)]
 pub struct ChainFunctional {
     parameters: Arc<GcPcSaftFunctionalParameters>,
 }
@@ -50,7 +53,7 @@ impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for ChainFun
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
-    ) -> Result<Array1<N>, EosError> {
+    ) -> EosResult<Array1<N>> {
         let p = &self.parameters;
         // number of segments
         let segments = weighted_densities.shape()[0] - 2;
