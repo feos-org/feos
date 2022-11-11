@@ -27,6 +27,7 @@ macro_rules! impl_planar_interface {
             /// fix_equimolar_surface: bool, optional
             ///     If True use additional constraints to fix the
             ///     equimolar surface of the system.
+            ///     Defaults to False.
             ///
             /// Returns
             /// -------
@@ -62,6 +63,7 @@ macro_rules! impl_planar_interface {
             /// fix_equimolar_surface: bool, optional
             ///     If True use additional constraints to fix the
             ///     equimolar surface of the system.
+            ///     Defaults to False.
             ///
             /// Returns
             /// -------

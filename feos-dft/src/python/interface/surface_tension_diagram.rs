@@ -22,6 +22,7 @@ macro_rules! impl_surface_tension_diagram {
         /// fix_equimolar_surface: bool, optional
         ///     If True use additional constraints to fix the
         ///     equimolar surface of the system.
+        ///     Defaults to False.
         /// solver: DFTSolver, optional
         ///     Custom solver options
         ///
