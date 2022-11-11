@@ -10,7 +10,6 @@ use ndarray::{
     Array, Array1, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3, RemoveAxis,
 };
 use num_dual::Dual64;
-use num_traits::Zero;
 use quantity::{Quantity, QuantityArray, QuantityArray1, QuantityScalar};
 use std::ops::MulAssign;
 use std::sync::Arc;
@@ -430,13 +429,7 @@ where
 
     pub fn solve(&mut self, solver: Option<&DFTSolver>, debug: bool) -> EosResult<()> {
         // unwrap solver
-        let solver = solver.cloned().unwrap_or_else(|| {
-            if self.bulk.molefracs.iter().any(|x| x.is_zero()) {
-                DFTSolver::default_no_log()
-            } else {
-                DFTSolver::default()
-            }
-        });
+        let solver = solver.cloned().unwrap_or_default();
 
         // Read from profile
         let component_index = self.dft.component_index().into_owned();
