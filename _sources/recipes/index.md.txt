@@ -13,7 +13,7 @@ If you are looking for examples with explanations, see the [examples](/examples/
    recipes_surface_tension_diagram_pure
 ```
 
-## Specifying Thermodynamic Conditions
+## Critical points and phase equilibria
 
 ```{eval-rst}
 .. toctree::
@@ -23,16 +23,6 @@ If you are looking for examples with explanations, see the [examples](/examples/
    recipes_p_sat_t_boil
    recipes_phase_equilibrium_pure
 ```
-
-## Computing Properties
-
-```{eval-rst}
-.. toctree::
-   :maxdepth: 1
-
-   recipes_p_sat_t_boil
-```
-
 
 ## DFT
 
