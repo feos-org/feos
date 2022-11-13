@@ -1,5 +1,5 @@
 use crate::{DFTProfile, HelmholtzEnergyFunctional};
-use feos_core::{log_iter, EosResult, EosUnit, Verbosity};
+use feos_core::{log_iter, log_result, EosError, EosResult, EosUnit, Verbosity};
 use ndarray::prelude::*;
 use ndarray::RemoveAxis;
 use num_dual::linalg::LU;
@@ -144,25 +144,56 @@ impl DFTSolver {
 
 #[derive(Clone)]
 pub struct DFTSolverLog {
-    converged: bool,
-    pub residual: Array1<f64>,
-    pub time: SIArray1,
-    pub damping: Option<Array1<f64>>,
+    verbosity: Verbosity,
+    start_time: Instant,
+    residual: Vec<f64>,
+    time: Vec<Duration>,
+    solver: Vec<&'static str>,
 }
 
 impl DFTSolverLog {
-    fn new(
-        converged: bool,
-        residual: Vec<f64>,
-        time: Vec<Duration>,
-        damping: Option<Vec<f64>>,
-    ) -> Self {
+    fn new(verbosity: Verbosity) -> Self {
+        log_iter!(
+            verbosity,
+            "solver                 | iter |    time    | residual "
+        );
         Self {
-            converged,
-            residual: Array1::from_vec(residual),
-            time: time.into_iter().map(|d| d.as_secs_f64() * SECOND).collect(),
-            damping: damping.map(Array1::from_vec),
+            verbosity,
+            start_time: Instant::now(),
+            residual: Vec::new(),
+            time: Vec::new(),
+            solver: Vec::new(),
         }
+    }
+
+    fn add_residual(&mut self, solver: &'static str, iteration: usize, residual: f64) {
+        if iteration == 0 {
+            log_iter!(self.verbosity, "{:-<59}", "");
+        }
+        self.solver.push(solver);
+        self.residual.push(residual);
+        let time = self.start_time.elapsed();
+        self.time.push(self.start_time.elapsed());
+        log_iter!(
+            self.verbosity,
+            "{:22} | {:>4} | {:7.3} | {:.6e}",
+            solver,
+            iteration,
+            time.as_secs_f64() * SECOND,
+            residual,
+        );
+    }
+
+    pub fn residual(&self) -> ArrayView1<f64> {
+        (&self.residual).into()
+    }
+
+    pub fn time(&self) -> SIArray1 {
+        self.time.iter().map(|t| t.as_secs_f64() * SECOND).collect()
+    }
+
+    pub fn solver(&self) -> &[&'static str] {
+        &self.solver
     }
 }
 
@@ -175,28 +206,38 @@ where
         &mut self,
         rho: &mut Array<f64, D::Larger>,
         rho_bulk: &mut Array1<f64>,
-        solver: DFTSolver,
-    ) -> EosResult<(bool, usize)> {
+        solver: &DFTSolver,
+        debug: bool,
+    ) -> EosResult<()> {
         let mut converged = false;
         let mut iterations = 0;
-        for algorithm in solver.algorithms {
-            let log = match algorithm {
-                DFTAlgorithm::PicardIteration(params) => {
-                    self.solve_picard(params, rho, rho_bulk, solver.verbosity)
+        let mut log = DFTSolverLog::new(solver.verbosity);
+        for algorithm in &solver.algorithms {
+            let (conv, iter) = match algorithm {
+                DFTAlgorithm::PicardIteration(picard) => {
+                    self.solve_picard(*picard, rho, rho_bulk, &mut log)
                 }
-                DFTAlgorithm::AndersonMixing(params) => {
-                    self.solve_anderson(params, rho, rho_bulk, solver.verbosity)
+                DFTAlgorithm::AndersonMixing(anderson) => {
+                    self.solve_anderson(*anderson, rho, rho_bulk, &mut log)
                 }
-                DFTAlgorithm::Newton(params) => {
-                    self.solve_newton(params, rho, rho_bulk, solver.verbosity)
-                }
+                DFTAlgorithm::Newton(newton) => self.solve_newton(*newton, rho, rho_bulk, &mut log),
             }?;
-            converged = log.converged;
-            iterations += log.residual.len();
-            self.solver_log.push(log);
+            converged = conv;
+            iterations += iter;
         }
-
-        Ok((converged, iterations))
+        self.solver_log = Some(log);
+        if converged {
+            log_result!(solver.verbosity, "DFT solved in {} iterations", iterations);
+        } else if debug {
+            log_result!(
+                solver.verbosity,
+                "DFT not converged in {} iterations",
+                iterations
+            );
+        } else {
+            return Err(EosError::NotConverged(String::from("DFT")));
+        }
+        Ok(())
     }
 
     fn solve_picard(
@@ -204,37 +245,29 @@ where
         picard: PicardIteration,
         rho: &mut Array<f64, D::Larger>,
         rho_bulk: &mut Array1<f64>,
-        verbosity: Verbosity,
-    ) -> EosResult<DFTSolverLog> {
-        log_iter!(verbosity, "{:-<43}", "");
-        let mut residual = Vec::new();
-        let mut time = Vec::new();
+        log: &mut DFTSolverLog,
+    ) -> EosResult<(bool, usize)> {
+        let solver = if picard.log {
+            "Picard iteration (log)"
+        } else {
+            "Picard iteration"
+        };
         let mut damping = Vec::new();
-        let start_time = Instant::now();
 
         for k in 0..picard.max_iter {
             // calculate residual
             let (res, res_bulk, res_norm) =
                 self.euler_lagrange_equation(&*rho, &*rho_bulk, picard.log)?;
-            time.push(start_time.elapsed());
-            residual.push(res_norm);
+            log.add_residual(solver, k, res_norm);
 
             // check for convergence
-            log_iter!(
-                verbosity,
-                "Picard iteration {:3} | {:>4} | {:.6e}",
-                if picard.log { "log" } else { "" },
-                k,
-                res_norm,
-            );
-
             if res_norm < picard.tol {
-                return Ok(DFTSolverLog::new(true, residual, time, Some(damping)));
+                return Ok((true, k));
             }
 
             // apply line search or constant damping
             let beta = picard.beta.map_or_else(
-                || self.line_search(rho, &res, rho_bulk, res_norm, picard.log, verbosity),
+                || self.line_search(rho, &res, rho_bulk, res_norm, picard.log),
                 Ok,
             )?;
             damping.push(beta);
@@ -248,7 +281,7 @@ where
                 *rho_bulk -= &(&res_bulk * beta);
             }
         }
-        Ok(DFTSolverLog::new(false, residual, time, Some(damping)))
+        Ok((false, picard.max_iter))
     }
 
     fn line_search(
@@ -257,8 +290,7 @@ where
         delta_rho: &Array<f64, D::Larger>,
         rho_bulk: &Array1<f64>,
         res0: f64,
-        log: bool,
-        verbosity: Verbosity,
+        logarithm: bool,
     ) -> EosResult<f64> {
         let mut alpha = 2.0;
 
@@ -267,13 +299,13 @@ where
             alpha *= 0.5;
 
             // calculate full step
-            let rho_new = if log {
+            let rho_new = if logarithm {
                 rho * ((-alpha) * delta_rho).mapv(f64::exp)
             } else {
                 rho - alpha * delta_rho
             };
             let Ok((_, _, res2)) =
-                self.euler_lagrange_equation(&rho_new, rho_bulk, log) else {
+                self.euler_lagrange_equation(&rho_new, rho_bulk, logarithm) else {
                     continue;
             };
             if res2 > res0 {
@@ -281,13 +313,13 @@ where
             }
 
             // calculate intermediate step
-            let rho_new = if log {
+            let rho_new = if logarithm {
                 rho * ((-0.5 * alpha) * delta_rho).mapv(f64::exp)
             } else {
                 rho - 0.5 * alpha * delta_rho
             };
             let Ok((_, _, res1)) =
-                self.euler_lagrange_equation(&rho_new, rho_bulk, log) else {
+                self.euler_lagrange_equation(&rho_new, rho_bulk, logarithm) else {
                     continue;
             };
 
@@ -310,7 +342,7 @@ where
             alpha = alpha_opt;
             break;
         }
-        log_iter!(verbosity, "    Line search      | {} | ", alpha);
+        // log_iter!(verbosity, "    Line search      | {} | ", alpha);
         Ok(alpha)
     }
 
@@ -319,20 +351,20 @@ where
         anderson: AndersonMixing,
         rho: &mut Array<f64, D::Larger>,
         rho_bulk: &mut Array1<f64>,
-        verbosity: Verbosity,
-    ) -> EosResult<DFTSolverLog> {
-        log_iter!(verbosity, "{:-<43}", "");
-        let mut residual = Vec::new();
-        let mut time = Vec::new();
-        let mut damping = Vec::new();
-        let start_time = Instant::now();
+        log: &mut DFTSolverLog,
+    ) -> EosResult<(bool, usize)> {
+        let solver = if anderson.log {
+            "Anderson mixing (log)"
+        } else {
+            "Anderson mixing"
+        };
 
         let mut resm = VecDeque::with_capacity(anderson.mmax);
         let mut rhom = VecDeque::with_capacity(anderson.mmax);
         let mut r;
         let mut alpha;
 
-        for k in 1..=anderson.max_iter {
+        for k in 0..anderson.max_iter {
             // drop old values
             if resm.len() == anderson.mmax {
                 resm.pop_front();
@@ -341,9 +373,17 @@ where
             let m = resm.len() + 1;
 
             // calculate residual
-            resm.push_back(self.euler_lagrange_equation(&*rho, &*rho_bulk, anderson.log)?);
+            let (res, res_bulk, res_norm) =
+                self.euler_lagrange_equation(&*rho, &*rho_bulk, anderson.log)?;
+            log.add_residual(solver, k, res_norm);
 
-            // save x value
+            // check for convergence
+            if res_norm < anderson.tol {
+                return Ok((true, k));
+            }
+
+            // save residual and x value
+            resm.push_back((res, res_bulk, res_norm));
             if anderson.log {
                 rhom.push_back((rho.mapv(f64::ln), rho_bulk.mapv(f64::ln)));
             } else {
@@ -380,24 +420,8 @@ where
                 rho.mapv_inplace(f64::abs);
                 rho_bulk.mapv_inplace(f64::abs);
             }
-
-            // check for convergence
-            let (res, _, res_norm) = &resm[m - 1];
-            time.push(start_time.elapsed());
-            residual.push(*res_norm);
-            damping.push(anderson.beta);
-            log_iter!(
-                verbosity,
-                "Anderson mixing {:3}  | {:>4} | {:.6e} ",
-                if anderson.log { "log" } else { "" },
-                k,
-                res
-            );
-            if *res_norm < anderson.tol {
-                return Ok(DFTSolverLog::new(true, residual, time, Some(damping)));
-            }
         }
-        Ok(DFTSolverLog::new(false, residual, time, Some(damping)))
+        Ok((false, anderson.max_iter))
     }
 
     fn solve_newton(
@@ -405,30 +429,23 @@ where
         newton: Newton,
         rho: &mut Array<f64, D::Larger>,
         rho_bulk: &mut Array1<f64>,
-        verbosity: Verbosity,
-    ) -> EosResult<DFTSolverLog> {
-        let mut residual = Vec::new();
-        let mut time = Vec::new();
-        let start_time = Instant::now();
-
-        for k in 0..100 {
+        log: &mut DFTSolverLog,
+    ) -> EosResult<(bool, usize)> {
+        for k in 0..newton.max_iter {
             // calculate initial residual
             let (res, _, res_norm) = self.euler_lagrange_equation(rho, rho_bulk, false)?;
-            time.push(start_time.elapsed());
-            residual.push(res_norm);
+            log.add_residual("Newton", k, res_norm);
 
             // check convegrence
             if res_norm < newton.tol {
-                return Ok(DFTSolverLog::new(true, residual, time, None));
+                return Ok((true, k));
             }
 
             // update solution
-            let (x, iter) = self.gmres(newton, rho, &res)?;
-            *rho += &x;
-            log_iter!(verbosity, "Newton   | {k:>4} | {res_norm:.6e} | {iter} ");
+            *rho += &self.gmres(newton, rho, &res, log)?;
         }
 
-        Ok(DFTSolverLog::new(false, residual, time, None))
+        Ok((false, newton.max_iter))
     }
 
     fn gmres(
@@ -436,7 +453,8 @@ where
         newton: Newton,
         density: &Array<f64, D::Larger>,
         r0: &Array<f64, D::Larger>,
-    ) -> EosResult<(Array<f64, D::Larger>, usize)> {
+        log: &mut DFTSolverLog,
+    ) -> EosResult<Array<f64, D::Larger>> {
         // calculate second partial derivatives once
         let second_partial_derivatives = self.second_partial_derivatives(density)?;
         let exp_dfdrho = r0 - density;
@@ -450,6 +468,7 @@ where
 
         gamma[0] = (r0 * r0).sum().sqrt();
         v.push(r0 / gamma[0]);
+        log.add_residual("GMRES", 0, gamma[0]);
 
         let mut iter = 0;
         for j in 0..newton.max_iter {
@@ -491,6 +510,7 @@ where
             gamma[j] *= c[j + 1];
 
             // check for convergence
+            log.add_residual("GMRES", j + 1, gamma[j + 1].abs());
             if gamma[j + 1].abs() >= newton.tol && j + 1 < newton.max_iter {
                 v.push(q / h[(j + 1, j)]);
                 iter += 1;
@@ -505,7 +525,7 @@ where
             y[i] = (gamma[i] - (i + 1..=iter).map(|k| h[(i, k)] * y[k]).sum::<f64>()) / h[(i, i)];
         }
         v.iter().zip(y.into_iter()).for_each(|(v, y)| x += &(y * v));
-        Ok((x, iter))
+        Ok(x)
     }
 
     fn second_partial_derivatives(

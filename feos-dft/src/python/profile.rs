@@ -90,8 +90,8 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_solver_log<'py>(&self, py: Python<'py>) -> Vec<PyDFTSolverLog> {
-                self.0.profile.solver_log.iter().map(|l|PyDFTSolverLog(l.clone())).collect()
+            fn get_solver_log<'py>(&self, py: Python<'py>) -> Option<PyDFTSolverLog> {
+                self.0.profile.solver_log.clone().map(PyDFTSolverLog)
             }
 
             #[getter]

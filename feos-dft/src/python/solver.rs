@@ -139,16 +139,16 @@ pub struct PyDFTSolverLog(pub DFTSolverLog);
 impl PyDFTSolverLog {
     #[getter]
     fn get_residual<'py>(&self, py: Python<'py>) -> &'py PyArray1<f64> {
-        self.0.residual.view().to_pyarray(py)
+        self.0.residual().to_pyarray(py)
     }
 
     #[getter]
     fn get_time(&self) -> PySIArray1 {
-        self.0.time.clone().into()
+        self.0.time().into()
     }
 
     #[getter]
-    fn get_damping<'py>(&self, py: Python<'py>) -> Option<&'py PyArray1<f64>> {
-        self.0.damping.as_ref().map(|d| d.view().to_pyarray(py))
+    fn get_solver(&self) -> Vec<&'static str> {
+        self.0.solver().to_vec()
     }
 }

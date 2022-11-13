@@ -3,9 +3,7 @@ use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::Grid;
 use crate::solver::{DFTSolver, DFTSolverLog};
 use crate::weight_functions::WeightFunctionInfo;
-use feos_core::{
-    log_result, Contributions, EosError, EosResult, EosUnit, EquationOfState, State, Verbosity,
-};
+use feos_core::{Contributions, EosError, EosResult, EosUnit, EquationOfState, State};
 use ndarray::{
     Array, Array1, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3, RemoveAxis,
 };
@@ -108,7 +106,7 @@ pub struct DFTProfile<U, D: Dimension, F> {
     pub specification: Arc<dyn DFTSpecification<U, D, F>>,
     pub external_potential: Array<f64, D::Larger>,
     pub bulk: State<U, DFT<F>>,
-    pub solver_log: Vec<DFTSolverLog>,
+    pub solver_log: Option<DFTSolverLog>,
 }
 
 impl<U: EosUnit, F> DFTProfile<U, Ix1, F> {
@@ -216,7 +214,7 @@ where
             specification: Arc::new(DFTSpecifications::ChemicalPotential),
             external_potential,
             bulk: bulk.clone(),
-            solver_log: vec![],
+            solver_log: None,
         })
     }
 
@@ -441,19 +439,7 @@ where
         let mut bulk_density = component_index.mapv(|i| partial_density[i]);
 
         // Call solver(s)
-        let (converged, iterations) =
-            self.call_solver(&mut density, &mut bulk_density, solver.clone())?;
-        if converged {
-            log_result!(solver.verbosity, "DFT solved in {} iterations", iterations);
-        } else if debug {
-            log_result!(
-                solver.verbosity,
-                "DFT not converged in {} iterations",
-                iterations
-            );
-        } else {
-            return Err(EosError::NotConverged(String::from("DFT")));
-        }
+        self.call_solver(&mut density, &mut bulk_density, &solver, debug)?;
 
         // Update profile
         self.density = density * U::reference_density();
