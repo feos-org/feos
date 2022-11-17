@@ -1,8 +1,11 @@
-use crate::{DFTProfile, HelmholtzEnergyFunctional};
+use crate::{DFTProfile, HelmholtzEnergyFunctional, WeightFunction, WeightFunctionShape};
 use feos_core::{log_iter, log_result, EosError, EosResult, EosUnit, Verbosity};
 use ndarray::prelude::*;
 use ndarray::RemoveAxis;
 use num_dual::linalg::LU;
+use petgraph::graph::Graph;
+use petgraph::visit::EdgeRef;
+use petgraph::Directed;
 use quantity::si::{SIArray1, SECOND};
 use std::collections::VecDeque;
 use std::fmt;
@@ -256,7 +259,7 @@ where
 
         for k in 0..picard.max_iter {
             // calculate residual
-            let (res, res_bulk, res_norm) =
+            let (res, res_bulk, res_norm, _, _) =
                 self.euler_lagrange_equation(&*rho, &*rho_bulk, picard.log)?;
             log.add_residual(solver, k, res_norm);
 
@@ -274,11 +277,11 @@ where
 
             // update solution
             if picard.log {
-                *rho *= &(&res * (-beta)).mapv(f64::exp);
-                *rho_bulk *= &(&res_bulk * (-beta)).mapv(f64::exp);
+                *rho *= &(&res * beta).mapv(f64::exp);
+                *rho_bulk *= &(&res_bulk * beta).mapv(f64::exp);
             } else {
-                *rho -= &(&res * beta);
-                *rho_bulk -= &(&res_bulk * beta);
+                *rho += &(&res * beta);
+                *rho_bulk += &(&res_bulk * beta);
             }
         }
         Ok((false, picard.max_iter))
@@ -300,11 +303,11 @@ where
 
             // calculate full step
             let rho_new = if logarithm {
-                rho * ((-alpha) * delta_rho).mapv(f64::exp)
+                rho * (alpha * delta_rho).mapv(f64::exp)
             } else {
-                rho - alpha * delta_rho
+                rho + alpha * delta_rho
             };
-            let Ok((_, _, res2)) =
+            let Ok((_, _, res2, _,_)) =
                 self.euler_lagrange_equation(&rho_new, rho_bulk, logarithm) else {
                     continue;
             };
@@ -314,11 +317,11 @@ where
 
             // calculate intermediate step
             let rho_new = if logarithm {
-                rho * ((-0.5 * alpha) * delta_rho).mapv(f64::exp)
+                rho * (0.5 * alpha * delta_rho).mapv(f64::exp)
             } else {
-                rho - 0.5 * alpha * delta_rho
+                rho + 0.5 * alpha * delta_rho
             };
-            let Ok((_, _, res1)) =
+            let Ok((_, _, res1, _,_)) =
                 self.euler_lagrange_equation(&rho_new, rho_bulk, logarithm) else {
                     continue;
             };
@@ -373,7 +376,7 @@ where
             let m = resm.len() + 1;
 
             // calculate residual
-            let (res, res_bulk, res_norm) =
+            let (res, res_bulk, res_norm, _, _) =
                 self.euler_lagrange_equation(&*rho, &*rho_bulk, anderson.log)?;
             log.add_residual(solver, k, res_norm);
 
@@ -410,8 +413,8 @@ where
             for i in 0..m {
                 let (rhoi, rhoi_bulk) = &rhom[i];
                 let (resi, resi_bulk, _) = &resm[i];
-                *rho += &(alpha[i] * (rhoi - &(anderson.beta * resi)));
-                *rho_bulk += &(alpha[i] * (rhoi_bulk - &(anderson.beta * resi_bulk)));
+                *rho += &(alpha[i] * (rhoi + &(anderson.beta * resi)));
+                *rho_bulk += &(alpha[i] * (rhoi_bulk + &(anderson.beta * resi_bulk)));
             }
             if anderson.log {
                 rho.mapv_inplace(f64::exp);
@@ -433,7 +436,8 @@ where
     ) -> EosResult<(bool, usize)> {
         for k in 0..newton.max_iter {
             // calculate initial residual
-            let (res, _, res_norm) = self.euler_lagrange_equation(rho, rho_bulk, false)?;
+            let (res, _, res_norm, exp_dfdrho, rho_p) =
+                self.euler_lagrange_equation(rho, rho_bulk, false)?;
             log.add_residual("Newton", k, res_norm);
 
             // check convegrence
@@ -441,45 +445,53 @@ where
                 return Ok((true, k));
             }
 
+            // calculate second partial derivatives once
+            let second_partial_derivatives = self.second_partial_derivatives(rho)?;
+
+            // define rhs function
+            let rhs = |delta_rho: &_| {
+                let mut delta_functional_derivative =
+                    self.delta_functional_derivative(delta_rho, &second_partial_derivatives);
+                delta_functional_derivative
+                    .outer_iter_mut()
+                    .zip(self.dft.m().iter())
+                    .for_each(|(mut q, &m)| q /= m);
+                let delta_i = self.delta_bond_integrals(&exp_dfdrho, &delta_functional_derivative);
+                delta_rho + (delta_functional_derivative - delta_i) * &rho_p
+            };
+
             // update solution
-            *rho += &self.gmres(newton, rho, &res, log)?;
+            *rho += &Self::gmres(rhs, &res, newton.max_iter_gmres, newton.tol, log)?;
         }
 
         Ok((false, newton.max_iter))
     }
 
-    fn gmres(
-        &self,
-        newton: Newton,
-        density: &Array<f64, D::Larger>,
+    fn gmres<R>(
+        rhs: R,
         r0: &Array<f64, D::Larger>,
+        max_iter: usize,
+        tol: f64,
         log: &mut DFTSolverLog,
-    ) -> EosResult<Array<f64, D::Larger>> {
-        // calculate second partial derivatives once
-        let second_partial_derivatives = self.second_partial_derivatives(density)?;
-        let exp_dfdrho = r0 - density;
-
+    ) -> EosResult<Array<f64, D::Larger>>
+    where
+        R: Fn(&Array<f64, D::Larger>) -> Array<f64, D::Larger>,
+    {
         // allocate vectors and arrays
-        let mut v = Vec::with_capacity(newton.max_iter);
-        let mut h: Array2<f64> = Array::zeros([newton.max_iter + 1; 2]);
-        let mut c: Array1<f64> = Array::zeros(newton.max_iter + 1);
-        let mut s: Array1<f64> = Array::zeros(newton.max_iter + 1);
-        let mut gamma: Array1<f64> = Array::zeros(newton.max_iter + 1);
+        let mut v = Vec::with_capacity(max_iter);
+        let mut h: Array2<f64> = Array::zeros([max_iter + 1; 2]);
+        let mut c: Array1<f64> = Array::zeros(max_iter + 1);
+        let mut s: Array1<f64> = Array::zeros(max_iter + 1);
+        let mut gamma: Array1<f64> = Array::zeros(max_iter + 1);
 
         gamma[0] = (r0 * r0).sum().sqrt();
         v.push(r0 / gamma[0]);
         log.add_residual("GMRES", 0, gamma[0]);
 
         let mut iter = 0;
-        for j in 0..newton.max_iter {
+        for j in 0..max_iter {
             // calculate q=Av_j
-            let delta_n = self.convolver.weighted_densities(&v[j]);
-            let mut q =
-                self.functional_derivative_derivative(&second_partial_derivatives, &delta_n);
-            q.outer_iter_mut()
-                .zip(self.dft.m().iter())
-                .for_each(|(mut q, &m)| q /= m);
-            q = q * &exp_dfdrho - &v[j];
+            let mut q = rhs(&v[j]);
 
             // calculate h_ij
             v.iter()
@@ -511,7 +523,7 @@ where
 
             // check for convergence
             log.add_residual("GMRES", j + 1, gamma[j + 1].abs());
-            if gamma[j + 1].abs() >= newton.tol && j + 1 < newton.max_iter {
+            if gamma[j + 1].abs() >= tol && j + 1 < max_iter {
                 v.push(q / h[(j + 1, j)]);
                 iter += 1;
             } else {
@@ -519,7 +531,7 @@ where
             }
         }
         // calculate solution vector
-        let mut x = Array::zeros(density.raw_dim());
+        let mut x = Array::zeros(r0.raw_dim());
         let mut y = Array::zeros(iter + 1);
         for i in (0..=iter).rev() {
             y[i] = (gamma[i] - (i + 1..=iter).map(|k| h[(i, k)] * y[k]).sum::<f64>()) / h[(i, i)];
@@ -556,21 +568,22 @@ where
         Ok(second_partial_derivatives)
     }
 
-    fn functional_derivative_derivative(
+    fn delta_functional_derivative(
         &self,
+        delta_density: &Array<f64, D::Larger>,
         second_partial_derivatives: &[Array<f64, <D::Larger as Dimension>::Larger>],
-        weighted_densities: &[Array<f64, D::Larger>],
     ) -> Array<f64, D::Larger> {
-        let partial_derivatives: Vec<_> = second_partial_derivatives
+        let delta_weighted_densities = self.convolver.weighted_densities(delta_density);
+        let delta_partial_derivatives: Vec<_> = second_partial_derivatives
             .iter()
-            .zip(weighted_densities)
+            .zip(delta_weighted_densities)
             .map(|(pd2, wd)| {
-                let mut partial_derivatives_derivatives =
+                let mut delta_partial_derivatives =
                     Array::zeros(pd2.raw_dim().remove_axis(Axis(0)));
                 let n = wd.shape()[0];
                 for i in 0..n {
                     for j in 0..n {
-                        partial_derivatives_derivatives
+                        delta_partial_derivatives
                             .index_axis_mut(Axis(0), i)
                             .add_assign(
                                 &(&pd2.index_axis(Axis(0), i).index_axis(Axis(0), j)
@@ -578,10 +591,113 @@ where
                             );
                     }
                 }
-                partial_derivatives_derivatives
+                delta_partial_derivatives
             })
             .collect();
-        self.convolver.functional_derivative(&partial_derivatives)
+        self.convolver
+            .functional_derivative(&delta_partial_derivatives)
+    }
+
+    fn delta_bond_integrals(
+        &self,
+        exponential: &Array<f64, D::Larger>,
+        delta_functional_derivative: &Array<f64, D::Larger>,
+    ) -> Array<f64, D::Larger> {
+        let temperature = self
+            .temperature
+            .to_reduced(U::reference_temperature())
+            .unwrap();
+
+        // calculate weight functions
+        let bond_lengths = self.dft.bond_lengths(temperature).into_edge_type();
+        let mut bond_weight_functions = bond_lengths.map(
+            |_, _| (),
+            |_, &l| WeightFunction::new_scaled(arr1(&[l]), WeightFunctionShape::Delta),
+        );
+        for n in bond_lengths.node_indices() {
+            for e in bond_lengths.edges(n) {
+                bond_weight_functions.add_edge(
+                    e.target(),
+                    e.source(),
+                    WeightFunction::new_scaled(arr1(&[*e.weight()]), WeightFunctionShape::Delta),
+                );
+            }
+        }
+
+        let mut i_graph: Graph<_, Option<Array<f64, D>>, Directed> =
+            bond_weight_functions.map(|_, _| (), |_, _| None);
+        let mut delta_i_graph: Graph<_, Option<Array<f64, D>>, Directed> =
+            bond_weight_functions.map(|_, _| (), |_, _| None);
+
+        let bonds = i_graph.edge_count();
+        let mut calc = 0;
+
+        // go through the whole graph until every bond has been calculated
+        while calc < bonds {
+            let mut edge_id = None;
+            let mut i1 = None;
+            let mut delta_i1 = None;
+
+            // find the first bond that can be calculated
+            'nodes: for node in i_graph.node_indices() {
+                for edge in i_graph.edges(node) {
+                    // skip already calculated bonds
+                    if edge.weight().is_some() {
+                        continue;
+                    }
+
+                    // if all bonds from the neighboring segment are calculated calculate the bond
+                    let edges = i_graph
+                        .edges(edge.target())
+                        .filter(|e| e.target().index() != node.index());
+                    let delta_edges = delta_i_graph
+                        .edges(edge.target())
+                        .filter(|e| e.target().index() != node.index());
+                    if edges.clone().all(|e| e.weight().is_some()) {
+                        edge_id = Some(edge.id());
+                        let i0 = edges.fold(
+                            exponential
+                                .index_axis(Axis(0), edge.target().index())
+                                .to_owned(),
+                            |acc: Array<f64, D>, e| acc * e.weight().as_ref().unwrap(),
+                        );
+                        let delta_i0 = delta_edges.fold(
+                            -&delta_functional_derivative
+                                .index_axis(Axis(0), edge.target().index()),
+                            |acc: Array<f64, D>, delta_e| acc + delta_e.weight().as_ref().unwrap(),
+                        ) * &i0;
+                        i1 = Some(
+                            self.convolver
+                                .convolve(i0, &bond_weight_functions[edge.id()]),
+                        );
+                        delta_i1 = Some(
+                            self.convolver
+                                .convolve(delta_i0, &bond_weight_functions[edge.id()])
+                                / i1.as_ref().unwrap(),
+                        );
+                        break 'nodes;
+                    }
+                }
+            }
+            if let Some(edge_id) = edge_id {
+                i_graph[edge_id] = i1;
+                delta_i_graph[edge_id] = delta_i1;
+                calc += 1;
+            } else {
+                panic!("Cycle in molecular structure detected!")
+            }
+        }
+
+        let mut delta_i = Array::zeros(exponential.raw_dim());
+        for node in delta_i_graph.node_indices() {
+            for edge in delta_i_graph.edges(node) {
+                delta_i
+                    .index_axis_mut(Axis(0), node.index())
+                    .add_assign(edge.weight().as_ref().unwrap());
+            }
+        }
+
+        delta_i
     }
 }
 

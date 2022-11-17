@@ -340,7 +340,9 @@ where
             .to_reduced(U::reference_density())?;
         let bulk_density = self.dft.component_index().mapv(|i| partial_density[i]);
 
-        self.euler_lagrange_equation(&density, &bulk_density, log)
+        let (res, res_bulk, res_norm, _, _) =
+            self.euler_lagrange_equation(&density, &bulk_density, log)?;
+        Ok((res, res_bulk, res_norm))
     }
 
     #[allow(clippy::type_complexity)]
@@ -349,7 +351,13 @@ where
         density: &Array<f64, D::Larger>,
         bulk_density: &Array1<f64>,
         log: bool,
-    ) -> EosResult<(Array<f64, D::Larger>, Array1<f64>, f64)> {
+    ) -> EosResult<(
+        Array<f64, D::Larger>,
+        Array1<f64>,
+        f64,
+        Array<f64, D::Larger>,
+        Array<f64, D::Larger>,
+    )> {
         // calculate reduced temperature
         let temperature = self.temperature.to_reduced(U::reference_temperature())?;
 
@@ -376,14 +384,14 @@ where
             });
 
         // calculate bond integrals
-        let mut exp_dfdrho = dfdrho.mapv(|x| (-x).exp());
+        let exp_dfdrho = dfdrho.mapv(|x| (-x).exp());
         let bonds = self
             .dft
             .bond_integrals(temperature, &exp_dfdrho, &self.convolver);
-        exp_dfdrho *= &bonds;
+        let mut rho_projected = &exp_dfdrho * bonds;
 
         // multiply bulk density
-        exp_dfdrho
+        rho_projected
             .outer_iter_mut()
             .zip(bulk_density.iter())
             .for_each(|(mut x, &rho_b)| {
@@ -392,9 +400,9 @@ where
 
         // calculate residual
         let mut res = if log {
-            density.mapv(f64::ln) - exp_dfdrho.mapv(f64::ln)
+            rho_projected.mapv(f64::ln) - density.mapv(f64::ln)
         } else {
-            density - &exp_dfdrho
+            &rho_projected - density
         };
 
         // set residual to 0 where external potentials are overwhelming
@@ -407,19 +415,20 @@ where
             });
 
         // additional residuals for the calculation of the bulk densitiess
-        let z = self.integrate_reduced_comp(&exp_dfdrho);
+        let z = self.integrate_reduced_comp(&rho_projected);
         let res_bulk = bulk_density
             - self
                 .specification
                 .calculate_bulk_density(self, bulk_density, &z)?;
 
         // calculate the norm of the residual
-        let res_norm =
-            ((density - &exp_dfdrho).mapv(|x| x * x).sum() + res_bulk.mapv(|x| x * x).sum()).sqrt()
-                / ((res.len() + res_bulk.len()) as f64).sqrt();
+        let res_norm = ((density - &rho_projected).mapv(|x| x * x).sum()
+            + res_bulk.mapv(|x| x * x).sum())
+        .sqrt()
+            / ((res.len() + res_bulk.len()) as f64).sqrt();
 
         if res_norm.is_finite() {
-            Ok((res, res_bulk, res_norm))
+            Ok((res, res_bulk, res_norm, exp_dfdrho, rho_projected))
         } else {
             Err(EosError::IterationFailed("Euler-Lagrange equation".into()))
         }

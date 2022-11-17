@@ -111,7 +111,7 @@ impl PyDFTSolver {
     /// Returns
     /// -------
     /// DFTSolver
-    #[pyo3(text_signature = "($self, max_iter=None, tol=None)")]
+    #[pyo3(text_signature = "($self, max_iter=None, max_iter_gmres=None, tol=None)")]
     fn newton(
         &self,
         max_iter: Option<usize>,

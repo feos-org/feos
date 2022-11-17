@@ -247,11 +247,9 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
         vle.liquid().density,
     );
 
-    let solver = DFTSolver::new(Verbosity::Iter)
-        .picard_iteration(None)
-        .beta(0.05)
-        .tol(1e-5)
-        .anderson_mixing(None);
+    let solver = DFTSolver::new(Some(Verbosity::Iter))
+        .picard_iteration(None, None, Some(1e-5), Some(0.05))
+        .anderson_mixing(None, None, None, None, None);
     let bulk = StateBuilder::new(&func)
         .temperature(t)
         .pressure(5.0 * BAR)
@@ -269,5 +267,28 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
     )
     .initialize(&bulk, None, None)?
     .solve(Some(&solver))?;
+    Ok(())
+}
+
+#[test]
+#[allow(non_snake_case)]
+fn test_dft_newton() -> Result<(), Box<dyn Error>> {
+    let params = Arc::new(GcPcSaftFunctionalParameters::from_json_segments(
+        &["propane"],
+        "parameters/pcsaft/gc_substances.json",
+        "parameters/pcsaft/sauer2014_hetero.json",
+        None,
+        IdentifierOption::Name,
+    )?);
+    let func = Arc::new(GcPcSaftFunctional::new(params));
+    let t = 200.0 * KELVIN;
+    let w = 150.0 * ANGSTROM;
+    let points = 512;
+    let tc = State::critical_point(&func, None, None, Default::default())?.temperature;
+    let vle = PhaseEquilibrium::pure(&func, t, None, Default::default())?;
+    let solver = DFTSolver::new(Some(Verbosity::Iter))
+        // .picard_iteration(None, Some(1), None, None)
+        .newton(None, Some(500), None);
+    PlanarInterface::from_tanh(&vle, points, w, tc, false)?.solve(Some(&solver))?;
     Ok(())
 }
