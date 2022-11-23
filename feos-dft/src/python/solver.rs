@@ -101,6 +101,8 @@ impl PyDFTSolver {
     ///
     /// Parameters
     /// ----------
+    /// log: bool, optional
+    ///     Iterate the logarithm of the density profile
     /// max_iter: int, optional
     ///     The maximum number of iterations.
     /// max_iter_gmres: int, optional
@@ -111,14 +113,15 @@ impl PyDFTSolver {
     /// Returns
     /// -------
     /// DFTSolver
-    #[pyo3(text_signature = "($self, max_iter=None, max_iter_gmres=None, tol=None)")]
+    #[pyo3(text_signature = "($self, log=None, max_iter=None, max_iter_gmres=None, tol=None)")]
     fn newton(
         &self,
+        log: Option<bool>,
         max_iter: Option<usize>,
         max_iter_gmres: Option<usize>,
         tol: Option<f64>,
     ) -> Self {
-        Self(self.0.clone().newton(max_iter, max_iter_gmres, tol))
+        Self(self.0.clone().newton(log, max_iter, max_iter_gmres, tol))
     }
 
     fn _repr_markdown_(&self) -> String {

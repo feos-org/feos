@@ -33,6 +33,7 @@ const DEFAULT_PARAMS_ANDERSON: AndersonMixing = AndersonMixing {
     mmax: 100,
 };
 const DEFAULT_PARAMS_NEWTON: Newton = Newton {
+    log: false,
     max_iter: 50,
     max_iter_gmres: 200,
     tol: 1e-11,
@@ -57,6 +58,7 @@ struct AndersonMixing {
 
 #[derive(Clone, Copy, Debug)]
 struct Newton {
+    log: bool,
     max_iter: usize,
     max_iter_gmres: usize,
     tol: f64,
@@ -132,11 +134,13 @@ impl DFTSolver {
 
     pub fn newton(
         mut self,
+        log: Option<bool>,
         max_iter: Option<usize>,
         max_iter_gmres: Option<usize>,
         tol: Option<f64>,
     ) -> Self {
         let mut params = DEFAULT_PARAMS_NEWTON;
+        params.log = log.unwrap_or(params.log);
         params.max_iter = max_iter.unwrap_or(params.max_iter);
         params.max_iter_gmres = max_iter_gmres.unwrap_or(params.max_iter_gmres);
         params.tol = tol.unwrap_or(params.tol);
@@ -434,13 +438,14 @@ where
         rho_bulk: &mut Array1<f64>,
         log: &mut DFTSolverLog,
     ) -> EosResult<(bool, usize)> {
+        let solver = if newton.log { "Newton (log)" } else { "Newton" };
         for k in 0..newton.max_iter {
             // calculate initial residual
             let (res, _, res_norm, exp_dfdrho, rho_p) =
-                self.euler_lagrange_equation(rho, rho_bulk, false)?;
-            log.add_residual("Newton", k, res_norm);
+                self.euler_lagrange_equation(rho, rho_bulk, newton.log)?;
+            log.add_residual(solver, k, res_norm);
 
-            // check convegrence
+            // check convergence
             if res_norm < newton.tol {
                 return Ok((true, k));
             }
@@ -457,11 +462,13 @@ where
                     .zip(self.dft.m().iter())
                     .for_each(|(mut q, &m)| q /= m);
                 let delta_i = self.delta_bond_integrals(&exp_dfdrho, &delta_functional_derivative);
-                delta_rho + (delta_functional_derivative - delta_i) * &rho_p
+                let rho = if newton.log { &*rho } else { &rho_p };
+                delta_rho + (delta_functional_derivative - delta_i) * rho
             };
 
             // update solution
-            *rho += &Self::gmres(rhs, &res, newton.max_iter_gmres, newton.tol, log)?;
+            let lhs = if newton.log { &*rho * res } else { res };
+            *rho += &Self::gmres(rhs, &lhs, newton.max_iter_gmres, newton.tol * 1e-2, log)?;
         }
 
         Ok((false, newton.max_iter))
@@ -671,9 +678,11 @@ where
                                 .convolve(i0, &bond_weight_functions[edge.id()]),
                         );
                         delta_i1 = Some(
-                            self.convolver
+                            (self
+                                .convolver
                                 .convolve(delta_i0, &bond_weight_functions[edge.id()])
-                                / i1.as_ref().unwrap(),
+                                / i1.as_ref().unwrap())
+                            .mapv(|x| if x.is_finite() { x } else { 0.0 }),
                         );
                         break 'nodes;
                     }
@@ -749,7 +758,11 @@ impl DFTSolver {
                     anderson.tol,
                 ),
                 DFTAlgorithm::Newton(newton) => (
-                    format!("Newton (FFT, max_iter_gmres={})", newton.max_iter_gmres),
+                    format!(
+                        "Newton ({}max_iter_gmres={})",
+                        if newton.log { "log, " } else { "" },
+                        newton.max_iter_gmres
+                    ),
                     newton.max_iter,
                     newton.tol,
                 ),

@@ -287,8 +287,8 @@ fn test_dft_newton() -> Result<(), Box<dyn Error>> {
     let tc = State::critical_point(&func, None, None, Default::default())?.temperature;
     let vle = PhaseEquilibrium::pure(&func, t, None, Default::default())?;
     let solver = DFTSolver::new(Some(Verbosity::Iter))
-        // .picard_iteration(None, Some(1), None, None)
-        .newton(None, Some(500), None);
+        .picard_iteration(None, Some(10), None, None)
+        .newton(None, None, None, None);
     PlanarInterface::from_tanh(&vle, points, w, tc, false)?.solve(Some(&solver))?;
     Ok(())
 }

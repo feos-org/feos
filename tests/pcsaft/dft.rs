@@ -227,7 +227,9 @@ fn test_dft_propane_newton() -> Result<(), Box<dyn Error>> {
     let points = 512;
     let tc = State::critical_point(&func, None, None, Default::default())?.temperature;
     let vle = PhaseEquilibrium::pure(&func, t, None, Default::default())?;
-    let solver = DFTSolver::new(Some(Verbosity::Iter)).newton(None, None, None);
+    let solver = DFTSolver::new(Some(Verbosity::Iter)).newton(None, None, None, None);
+    PlanarInterface::from_tanh(&vle, points, w, tc, false)?.solve(Some(&solver))?;
+    let solver = DFTSolver::new(Some(Verbosity::Iter)).newton(Some(true), None, None, None);
     PlanarInterface::from_tanh(&vle, points, w, tc, false)?.solve(Some(&solver))?;
     Ok(())
 }

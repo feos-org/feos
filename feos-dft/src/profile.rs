@@ -191,10 +191,9 @@ where
             density.clone()
         } else {
             let t = bulk.temperature.to_reduced(U::reference_temperature())?;
-            let bonds = dft
-                .bond_integrals(t, &external_potential, &convolver)
-                .mapv(f64::abs)
-                * (-&external_potential).mapv(f64::exp);
+            let exp_dfdrho = (-&external_potential).mapv(f64::exp);
+            let mut bonds = dft.bond_integrals(t, &exp_dfdrho, &convolver);
+            bonds *= &exp_dfdrho;
             let mut density = Array::zeros(external_potential.raw_dim());
             let bulk_density = bulk.partial_density.to_reduced(U::reference_density())?;
             for (s, &c) in dft.component_index().iter().enumerate() {
@@ -414,7 +413,7 @@ where
                 }
             });
 
-        // additional residuals for the calculation of the bulk densitiess
+        // additional residuals for the calculation of the bulk densities
         let z = self.integrate_reduced_comp(&rho_projected);
         let res_bulk = bulk_density
             - self
