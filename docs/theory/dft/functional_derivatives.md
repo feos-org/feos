@@ -1,4 +1,4 @@
-## Functional derivatives
+# Functional derivatives
 
 In the last section the functional derivative
 

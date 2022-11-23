@@ -1,7 +1,7 @@
-## DFT solvers
+# DFT solvers
 Different solvers can be used to calculate the density profiles from the Euler-Lagrange equation introduced previously. The solvers differ in their stability, the rate of convergence, and the execution time. Unfortunately, the optimal solver and solver parameters depend on the studied system.
 
-### Picard iteration
+## Picard iteration
 The form of the Euler-Lagrange equation
 
 $$\rho_\alpha(r)=\underbrace{\rho_\alpha^\mathrm{b}e^{\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{b,res}-\hat F_{\rho_\alpha}^\mathrm{res}(r)-V_\alpha^\mathrm{ext}(r)\right)}\prod_{\alpha'}I_{\alpha\alpha'}(r)}_{\equiv \mathcal{P}_\alpha(r;[\rho(r)])}$$
@@ -39,7 +39,7 @@ with
 $$\Delta\ln\rho_\alpha(r)=\mathcal{\hat F}_\alpha\left(r;\left[\rho(r)\right]\right)\equiv\ln\mathcal{P}_\alpha\left(r;\left[\rho(r)\right]\right)-\ln\rho_\alpha(r)$$
 
 
-### Newton algorithm
+## Newton algorithm
 A newton iteration is a more refined approach to calculate the roots of the residual $\mathcal{F}$. From a Taylor expansion of the residual
 
 $$\mathcal{F}_\alpha\left(r;\left[\rho(r)+\Delta\rho(r)\right]\right)=\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)+\int\sum_\beta\frac{\delta\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')dr'+\ldots$$
@@ -109,4 +109,4 @@ In every iteration of GMRES, $q(r)$ needs to be evaluated from eqs. {eq}`eqn:new
 
 The Newton solver converges exceptionally fast compared to a simple Picard iteration. The faster convergence comes at the cost of requiring multiple steps for solving the linear subsystem. With the algorithm outlined here, the evaluation of the second partial derivatives of the Helmholtz energy density is only required once for every Newton step. The GMRES algorithm only uses the very efficient convolution integrals and no additional evaluation of the model.
 
-### Anderson mixing
+## Anderson mixing
