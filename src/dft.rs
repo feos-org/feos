@@ -5,6 +5,8 @@ use crate::hard_sphere::FMTFunctional;
 use crate::pcsaft::PcSaftFunctional;
 #[cfg(feature = "pets")]
 use crate::pets::PetsFunctional;
+#[cfg(feature = "saftvrqmie")]
+use crate::saftvrqmie::SaftVRQMieFunctional;
 use feos_core::*;
 use feos_derive::HelmholtzEnergyFunctional;
 use feos_dft::adsorption::*;
@@ -32,4 +34,7 @@ pub enum FunctionalVariant {
     Pets(PetsFunctional),
     #[implement(fluid_parameters, pair_potential)]
     Fmt(FMTFunctional),
+    #[cfg(feature = "saftvrqmie")]
+    #[implement(fluid_parameters, molar_weight, pair_potential)]
+    SaftVRQMie(SaftVRQMieFunctional),
 }

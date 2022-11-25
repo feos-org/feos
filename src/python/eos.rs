@@ -17,10 +17,15 @@ use crate::pcsaft::{DQVariants, PcSaft, PcSaftOptions};
 use crate::pets::python::PyPetsParameters;
 #[cfg(feature = "pets")]
 use crate::pets::{Pets, PetsOptions};
+#[cfg(feature = "saftvrqmie")]
+use crate::saftvrqmie::python::PySaftVRQMieParameters;
+#[cfg(feature = "saftvrqmie")]
+use crate::saftvrqmie::{FeynmanHibbsOrder, SaftVRQMie, SaftVRQMieOptions};
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::python::PyUVParameters;
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions};
+
 use feos_core::cubic::PengRobinson;
 use feos_core::python::cubic::PyPengRobinsonParameters;
 use feos_core::python::user_defined::PyEoSObj;
@@ -224,6 +229,30 @@ impl PyEosVariant {
             perturbation,
         };
         Self(Arc::new(EosVariant::UVTheory(UVTheory::with_options(
+            parameters.0,
+            options,
+        ))))
+    }
+
+    #[cfg(feature = "saftvrqmie")]
+    #[staticmethod]
+    #[args(
+        max_eta = "0.5",
+        fh_order = "FeynmanHibbsOrder::FH1",
+        inc_nonadd_term = "true"
+    )]
+    fn saftvrqmie(
+        parameters: PySaftVRQMieParameters,
+        max_eta: f64,
+        fh_order: FeynmanHibbsOrder,
+        inc_nonadd_term: bool,
+    ) -> Self {
+        let options = SaftVRQMieOptions {
+            max_eta,
+            fh_order,
+            inc_nonadd_term,
+        };
+        Self(Arc::new(EosVariant::SaftVRQMie(SaftVRQMie::with_options(
             parameters.0,
             options,
         ))))

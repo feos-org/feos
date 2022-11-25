@@ -16,6 +16,11 @@ use crate::pcsaft::{DQVariants, PcSaftFunctional, PcSaftOptions};
 use crate::pets::python::PyPetsParameters;
 #[cfg(feature = "pets")]
 use crate::pets::{PetsFunctional, PetsOptions};
+#[cfg(feature = "saftvrqmie")]
+use crate::saftvrqmie::python::PySaftVRQMieParameters;
+#[cfg(feature = "saftvrqmie")]
+use crate::saftvrqmie::{FeynmanHibbsOrder, SaftVRQMieFunctional, SaftVRQMieOptions};
+
 use feos_core::*;
 use feos_dft::adsorption::*;
 use feos_dft::interface::*;
@@ -179,6 +184,31 @@ impl PyFunctionalVariant {
     fn fmt(sigma: &PyArray1<f64>, fmt_version: FMTVersion) -> Self {
         Self(Arc::new(
             FMTFunctional::new(&sigma.to_owned_array(), fmt_version).into(),
+        ))
+    }
+
+    #[cfg(feature = "saftvrqmie")]
+    #[staticmethod]
+    #[args(
+        fmt_version = "FMTVersion::WhiteBear",
+        max_eta = "0.5",
+        fh_order = "FeynmanHibbsOrder::FH1",
+        inc_nonadd_term = "true"
+    )]
+    fn saftvrqmie(
+        parameters: PySaftVRQMieParameters,
+        fmt_version: FMTVersion,
+        max_eta: f64,
+        fh_order: FeynmanHibbsOrder,
+        inc_nonadd_term: bool,
+    ) -> Self {
+        let options = SaftVRQMieOptions {
+            max_eta,
+            fh_order,
+            inc_nonadd_term,
+        };
+        Self(Arc::new(
+            SaftVRQMieFunctional::with_options(parameters.0, fmt_version, options).into(),
         ))
     }
 }

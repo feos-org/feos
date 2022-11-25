@@ -54,6 +54,8 @@ pub mod gc_pcsaft;
 pub mod pcsaft;
 #[cfg(feature = "pets")]
 pub mod pets;
+#[cfg(feature = "saftvrqmie")]
+pub mod saftvrqmie;
 #[cfg(feature = "uvtheory")]
 pub mod uvtheory;
 
