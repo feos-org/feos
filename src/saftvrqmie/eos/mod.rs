@@ -38,11 +38,16 @@ impl Default for SaftVRQMieOptions {
 #[derive(Copy, Clone)]
 #[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum FeynmanHibbsOrder {
+    /// First order correction
     FH1,
+    /// Second order correction
     FH2,
 }
 
 /// SAFT-VRQ Mie equation of state.
+///
+/// # Note
+/// Currently, only the first-order Feynman-Hibbs term is implemented.
 pub struct SaftVRQMie {
     parameters: Arc<SaftVRQMieParameters>,
     options: SaftVRQMieOptions,
@@ -55,6 +60,10 @@ impl SaftVRQMie {
     }
 
     pub fn with_options(parameters: Arc<SaftVRQMieParameters>, options: SaftVRQMieOptions) -> Self {
+        match options.fh_order {
+            FeynmanHibbsOrder::FH1 => (),
+            FeynmanHibbsOrder::FH2 => unimplemented!(),
+        };
         let mut contributions: Vec<Box<dyn HelmholtzEnergy>> = Vec::with_capacity(4);
         contributions.push(Box::new(HardSphere {
             parameters: parameters.clone(),
@@ -69,7 +78,7 @@ impl SaftVRQMie {
         }
 
         Self {
-            parameters: parameters.clone(),
+            parameters: parameters,
             options,
             contributions,
         }

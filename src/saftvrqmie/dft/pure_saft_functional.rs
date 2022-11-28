@@ -252,7 +252,7 @@ impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for PureAttF
         let dq_ij = Array2::from_shape_fn((n, n), |(i, j)| p.quantum_d_ij(i, j, temperature));
 
         // alphas ....
-        let alpha = Alpha::new(&p, &s_eff_ij, &epsilon_k_eff_ij, temperature);
+        let alpha = Alpha::new(p, &s_eff_ij, &epsilon_k_eff_ij, temperature);
 
         let phi = rho.mapv(|rho_cell| {
             dispersion_energy_density(

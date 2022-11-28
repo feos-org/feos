@@ -1,3 +1,4 @@
+//! Python bindings for the SAFT-VRQ Mie equation of state.
 use crate::saftvrqmie::eos::FeynmanHibbsOrder;
 use crate::saftvrqmie::parameters::{
     SaftVRQMieBinaryRecord, SaftVRQMieParameters, SaftVRQMieRecord,
@@ -16,8 +17,8 @@ use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
-/// Create a set of Saft VRQ Mie parameters from records.
-#[pyclass(name = "SaftVRQMieRecord", unsendable)]
+/// Create a set of Saft-VRQ Mie parameters from records.
+#[pyclass(name = "SaftVRQMieRecord")]
 #[pyo3(
     text_signature = "(m, sigma, epsilon_k, viscosity=None, diffusion=None, thermal_conductivity=None)"
 )]
@@ -85,8 +86,8 @@ impl PySaftVRQMieRecord {
     }
 }
 
-/// Create a set of Saft VRQ Mie parameters from records.
-#[pyclass(name = "SaftVRQMieBinaryRecord", unsendable)]
+/// Create a set of Saft-VRQ Mie parameters from records.
+#[pyclass(name = "SaftVRQMieBinaryRecord")]
 #[pyo3(text_signature = "(k_ij, l_ij)")]
 #[derive(Clone)]
 pub struct PySaftVRQMieBinaryRecord(SaftVRQMieBinaryRecord);
@@ -119,7 +120,7 @@ impl PySaftVRQMieBinaryRecord {
     }
 }
 
-/// Create a set of SAFT VRQ Mie parameters from records.
+/// Create a set of SAFT-VRQ Mie parameters from records.
 ///
 /// Parameters
 /// ----------
@@ -137,7 +138,7 @@ impl PySaftVRQMieBinaryRecord {
 /// Returns
 /// -------
 /// SaftVRQMieParameters
-#[pyclass(name = "SaftVRQMieParameters", unsendable)]
+#[pyclass(name = "SaftVRQMieParameters")]
 #[pyo3(
     text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
 )]

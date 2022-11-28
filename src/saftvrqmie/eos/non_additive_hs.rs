@@ -50,7 +50,7 @@ pub fn reduced_non_additive_hs_energy<D: DualNum<f64>>(
     let n = rho.len();
     let p = &parameters;
     let d = Array1::from_shape_fn(n, |i| d_hs_ij[[i, i]]);
-    let zeta = zeta(&p.m, &rho, &d);
+    let zeta = zeta(&p.m, rho, &d);
     let frac_1mz3 = -(zeta[3] - 1.0).recip();
     let g_hs_ij = Array2::from_shape_fn((n, n), |(i, j)| {
         let mu = d[[i]] * d[[j]] / (d[[i]] + d[[j]]);

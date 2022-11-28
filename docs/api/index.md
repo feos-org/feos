@@ -24,4 +24,5 @@ These modules contain the objects to e.g. read parameters from files or build pa
    peng_robinson
    pets
    uvtheory
+   saftvrqmie
 ```

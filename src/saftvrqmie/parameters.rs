@@ -74,9 +74,12 @@ impl SaftVRQMieRecord {
     }
 }
 
+/// SAFT-VRQ Mie binary mixture parameters.
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct SaftVRQMieBinaryRecord {
+    /// correction to energy parameters
     pub k_ij: f64,
+    /// correction to diameter
     pub l_ij: f64,
 }
 
@@ -344,6 +347,7 @@ pub mod utils {
         Arc::new(SaftVRQMieParameters::new_pure(hydrogen_record))
     }
 
+    #[allow(dead_code)]
     pub fn helium_fh1() -> Arc<SaftVRQMieParameters> {
         let helium_json = r#"
             {
@@ -369,6 +373,7 @@ pub mod utils {
         Arc::new(SaftVRQMieParameters::new_pure(helium_record))
     }
 
+    #[allow(dead_code)]
     pub fn neon_fh1() -> Arc<SaftVRQMieParameters> {
         let neon_json = r#"
             {

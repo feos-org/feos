@@ -234,6 +234,25 @@ impl PyEosVariant {
         ))))
     }
 
+    /// SAFT-VRQ Mie equation of state.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters : SaftVRQMieParameters
+    ///     The parameters of the SAFT-VRQ Mie equation of state to use.
+    /// max_eta : float, optional
+    ///     Maximum packing fraction. Defaults to 0.5.
+    /// fh_order : FeynmanHibbsOrder, optional
+    ///     Which Feyman-Hibbs correction order to use. Defaults to FeynmanHibbsOrder.FH1.
+    ///     Currently, only the first order is implemented.
+    /// inc_nonadd_term : bool, optional
+    ///     Include non-additive correction to the hard-sphere reference. Defaults to True.
+    ///
+    /// Returns
+    /// -------
+    /// EquationOfState
+    ///     The SAFT-VRQ Mie equation of state that can be used to compute thermodynamic
+    ///     states.
     #[cfg(feature = "saftvrqmie")]
     #[staticmethod]
     #[args(
@@ -241,6 +260,7 @@ impl PyEosVariant {
         fh_order = "FeynmanHibbsOrder::FH1",
         inc_nonadd_term = "true"
     )]
+    #[pyo3(text_signature = "(parameters, max_eta, fh_order, inc_nonadd_term)")]
     fn saftvrqmie(
         parameters: PySaftVRQMieParameters,
         max_eta: f64,

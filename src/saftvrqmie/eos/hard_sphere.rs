@@ -6,6 +6,11 @@ use std::f64::consts::TAU;
 use std::fmt;
 use std::sync::Arc;
 
+/// Boltzmann's constant in J/K
+const KB: f64 = 1.380649e-23;
+const PLANCK: f64 = 6.62607015e-34;
+const D_QM_PREFACTOR: f64 = PLANCK * PLANCK / (TAU * TAU) / 12.0 * 1e20 / KB;
+
 const X_K21: [f64; 21] = [
     -0.995657163025808080735527280689003,
     -0.973906528517171720077964012084452,
@@ -57,11 +62,10 @@ const W_K21: [f64; 21] = [
 impl SaftVRQMieParameters {
     #[inline]
     pub fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
-        let d = Array1::from_shape_fn(self.m.len(), |i| -> D {
+        Array1::from_shape_fn(self.m.len(), |i| -> D {
             let sigma_eff = self.calc_sigma_eff_ij(i, i, temperature);
             self.hs_diameter_ij(i, i, temperature, sigma_eff)
-        });
-        d
+        })
     }
 
     #[inline]
@@ -168,8 +172,7 @@ impl SaftVRQMieParameters {
 
     #[inline]
     pub fn quantum_d_ij<D: DualNum<f64>>(&self, i: usize, j: usize, temperature: D) -> D {
-        let d = quantum_d_mass(self.mass_ij[[i, j]], temperature);
-        d
+        quantum_d_mass(self.mass_ij[[i, j]], temperature)
     }
 
     /// Feynman-Hibbs corrected potential
@@ -216,11 +219,7 @@ impl SaftVRQMieParameters {
 
 #[inline]
 pub fn quantum_d_mass<D: DualNum<f64>>(mass: f64, temperature: D) -> D {
-    const KB: f64 = 1.380649e-23;
-    let h = 6.62607015e-34;
-    let d = temperature.recip() / KB * (h / TAU).powi(2) / (12.0 * mass) * 1e20;
-    // TAU = 2 * PI
-    d
+    temperature.recip() / mass * D_QM_PREFACTOR
 }
 
 pub struct HardSphere {

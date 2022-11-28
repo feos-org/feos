@@ -73,7 +73,7 @@ impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for Attracti
         let dq_ij = Array2::from_shape_fn((n, n), |(i, j)| p.quantum_d_ij(i, j, temperature));
 
         // alphas .... // calc & store this in struct
-        let alpha = Alpha::new(&p, &s_eff_ij, &epsilon_k_eff_ij, temperature);
+        let alpha = Alpha::new(p, &s_eff_ij, &epsilon_k_eff_ij, temperature);
 
         //let mut a_disp: Array1<N> = Array::zeros(eta.raw_dim());
 
