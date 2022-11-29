@@ -142,19 +142,14 @@ macro_rules! impl_planar_interface {
 
             /// Calculates the interfacial thickness (90-10 number density difference)
             ///
-            /// Parameters
-            /// ----------
-            /// limits : tuple('float', 'float')
-            ///     The bulk phase equilibrium.
-            ///
             /// Returns
             /// -------
             /// SINumber
             ///
             #[pyo3(text_signature = "($self)")]
             fn interfacial_thickness(&self) -> PyResult<PySINumber> {
-                let limits = (0.9, 0.1);
-                Ok(self.0.interfacial_thickness(limits)?.into())
+                // let limits = (0.9, 0.1);
+                Ok(self.0.interfacial_thickness()?.into())
             }
         }
     };

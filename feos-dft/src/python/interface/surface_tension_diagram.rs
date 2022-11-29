@@ -75,6 +75,22 @@ macro_rules! impl_surface_tension_diagram {
             pub fn get_surface_tension(&mut self) -> PySIArray1 {
                 self.0.surface_tension().into()
             }
+
+            #[getter]
+            pub fn get_relative_adsorption(&self) -> Vec<PySIArray2> {
+                self.0.relative_adsorption().iter().cloned().map(|i| i.into()).collect()
+            }
+
+            #[getter]
+            pub fn get_interfacial_enrichment<'py>(&self, py: Python<'py>) -> Vec<&'py PyArray1<f64>> {
+                self.0.interfacial_enrichment().iter().map(|i| i.to_pyarray(py)).collect()
+            }
+
+            #[getter]
+            pub fn interfacial_thickness(&self) -> PySIArray1 {
+                // let limits = (0.9, 0.1);
+                self.0.interfacial_thickness().into()
+            }
         }
     };
 }

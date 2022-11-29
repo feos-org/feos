@@ -4,7 +4,7 @@ use approx::assert_relative_eq;
 use feos::hard_sphere::FMTVersion;
 use feos::pcsaft::{PcSaft, PcSaftFunctional, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter};
-use feos_core::{Contributions, PhaseEquilibrium, SolverOptions, State};
+use feos_core::{Contributions, PhaseEquilibrium, State};
 use feos_dft::interface::PlanarInterface;
 use ndarray::{arr1, Axis};
 use quantity::si::*;
@@ -354,40 +354,3 @@ fn test_entropy_bulk_values() -> Result<(), Box<dyn Error>> {
     );
     Ok(())
 }
-
-// #[test]
-// #[allow(non_snake_case)]
-// fn test_dft_relative_adsorption() -> Result<(), Box<dyn Error>> {
-//     let params = Rc::new(PcSaftParameters::from_json(
-//         vec!["propane", "butane"],
-//         "tests/pcsaft/test_parameters.json",
-//         None,
-//         IdentifierOption::Name,
-//     )?);
-
-//     let func = Rc::new(PcSaftFunctional::new(params));
-//     let t = 200.0 * KELVIN;
-//     let w = 150.0 * ANGSTROM;
-//     let points = 1024;
-
-//     let vle = PhaseEquilibrium::dew_point(
-//         &func,
-//         t,
-//         &arr1(&[0.5, 0.5]),
-//         None,
-//         None,
-//         (SolverOptions::default(), SolverOptions::default()),
-//     )?;
-//     let profile = PlanarInterface::from_tanh(&vle, points, w, 400.0 * KELVIN)?.solve(None)?;
-
-//     println!(
-//         "Output  {}\n {}\n {}\n {}\n",
-//         profile.surface_tension.unwrap(),
-//         profile.relative_adsorption().unwrap(),
-//         vle.vapor().density,
-//         vle.liquid().density,
-//     );
-//     assert!(0 == 1);
-
-//     Ok(())
-// }
