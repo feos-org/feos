@@ -2,11 +2,13 @@ use feos_core::joback::JobackRecord;
 use feos_core::parameter::{Parameter, ParameterError, PureRecord};
 use ndarray::{Array, Array1, Array2};
 use num_traits::Zero;
-use quantity::si::{GRAM, KILOGRAM, MOL, NAV};
+use quantity::si::{SINumber, ANGSTROM, CALORIE, GRAM, KELVIN, KILO, KILOGRAM, MOL, NAV, RGAS};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt::Write;
+use std::fs::File;
+use std::io::BufWriter;
 
 /// SAFT-VRQ Mie pure-component parameters.
 #[derive(Serialize, Deserialize, Clone, Default)]
@@ -299,6 +301,93 @@ impl SaftVRQMieParameters {
         }
 
         output
+    }
+
+    /// Generate energy and force tables to be used with LAMMPS' `pair_style table` command.
+    ///
+    /// For a given `temperature`, `n` values between `r_min` and `r_max` (both including) are tabulated.
+    ///
+    /// Files for all pure substances and all unique pairs are generated,
+    /// where filenames use either the "name" field of the identifier or the index if no name is present.
+    ///
+    /// # Example
+    ///
+    /// For a hydrogen-neon mixture at 30 K, three files will be created.
+    ///
+    /// - "hydrogen_30K.table" for H-H interactions,
+    /// - "neon_30K.table" for Ne-Ne interactions,
+    /// - "hydrogen_neon_30K.table" for H-Ne interactions.
+    pub fn lammps_tables(
+        &self,
+        temperature: SINumber,
+        n: usize,
+        r_min: SINumber,
+        r_max: SINumber,
+    ) -> std::io::Result<()> {
+        let t = temperature.to_reduced(KELVIN).unwrap();
+        let rs = Array1::linspace(
+            r_min.to_reduced(ANGSTROM).unwrap(),
+            r_max.to_reduced(ANGSTROM).unwrap(),
+            n,
+        );
+        let energy_conversion = (KELVIN * RGAS / (KILO * CALORIE / MOL))
+            .into_value()
+            .unwrap();
+        let force_conversion = (KELVIN * RGAS / (KILO * CALORIE / MOL))
+            .into_value()
+            .unwrap();
+
+        let n_components = self.sigma.len();
+        for i in 0..n_components {
+            for j in i..n_components {
+                let name_i = self.pure_records[i]
+                    .identifier
+                    .name
+                    .clone()
+                    .unwrap_or(i.to_string());
+                let name_j = self.pure_records[j]
+                    .identifier
+                    .name
+                    .clone()
+                    .unwrap_or(j.to_string());
+
+                let name = if i == j {
+                    name_i
+                } else {
+                    format!("{}_{}", name_i, name_j)
+                };
+                let f = File::create(format!("{}_{}K.table", name, t))?;
+                let mut stream = BufWriter::new(f);
+
+                std::io::Write::write(
+                    &mut stream,
+                    b"# DATE: YYYY-MM-DD UNITS: real CONTRIBUTOR: YOUR NAME\n",
+                )?;
+                std::io::Write::write(
+                    &mut stream,
+                    format!("# FH1 potential for {} at T = {}\n", name, temperature).as_bytes(),
+                )?;
+                std::io::Write::write(&mut stream, format!("FH1_{}\n", name).as_bytes())?;
+                std::io::Write::write(&mut stream, format!("N {}\n\n", n).as_bytes())?;
+
+                for (k, &r) in rs.iter().enumerate() {
+                    let [u, du, _] = self.qmie_potential_ij(i, j, r, t);
+                    std::io::Write::write(
+                        &mut stream,
+                        format!(
+                            "{} {:12.8} {:12.8} {:12.8}\n",
+                            k + 1,
+                            r,
+                            u * energy_conversion,
+                            -du * force_conversion
+                        )
+                        .as_bytes(),
+                    )?;
+                }
+                std::io::Write::flush(&mut stream)?;
+            }
+        }
+        Ok(())
     }
 }
 

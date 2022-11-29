@@ -12,8 +12,9 @@ use feos_core::python::parameter::PyIdentifier;
 use feos_core::*;
 use ndarray::Array2;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
-use pyo3::exceptions::PyTypeError;
+use pyo3::exceptions::{PyIOError, PyTypeError};
 use pyo3::prelude::*;
+use quantity::python::PySINumber;
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
@@ -165,6 +166,54 @@ impl PySaftVRQMieParameters {
     #[getter]
     fn get_l_ij<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
         self.0.l_ij.view().to_pyarray(py)
+    }
+
+    /// Generate energy and force tables to be used with LAMMPS' `pair_style table` command.
+    /// 
+    /// Parameters
+    /// ----------
+    /// temperature : SINumber
+    ///     temperature at which the Feynman-Hibbs corrected Mie potential
+    ///     is evaluated.
+    /// n : int
+    ///     total number of points to calculate in the table between r_min and r_max.
+    /// r_min : SINumber
+    ///     minimum distance (included)
+    /// r_max : SINumber
+    ///     maximum distance (included)
+    ///
+    /// Raises
+    /// ------
+    /// IOError
+    ///     if there are issues with writing to a file.
+    /// 
+    /// Notes
+    /// -----
+    /// 
+    /// For a given `temperature`, `n` values between `r_min` and `r_max` (both including) are tabulated.
+    ///
+    /// Files for all pure substances and all unique pairs are generated,
+    /// where filenames use either the "name" field of the identifier or the index if no name is present.
+    ///
+    /// Example
+    /// -------
+    ///
+    /// For a hydrogen-neon mixture at 30 K, three files will be created.
+    ///
+    /// - "hydrogen_30K.table" for H-H interactions,
+    /// - "neon_30K.table" for Ne-Ne interactions,
+    /// - "hydrogen_neon_30K.table" for H-Ne interactions.
+    #[pyo3(text_signature = "($self, temperature, n, r_min, r_max)")]
+    fn lammps_tables(
+        &self,
+        temperature: PySINumber,
+        n: usize,
+        r_min: PySINumber,
+        r_max: PySINumber,
+    ) -> PyResult<()> {
+        self.0
+            .lammps_tables(temperature.into(), n, r_min.into(), r_max.into())
+            .map_err(|e| PyIOError::new_err(e))
     }
 
     fn _repr_markdown_(&self) -> String {
