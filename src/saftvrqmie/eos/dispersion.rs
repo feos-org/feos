@@ -135,6 +135,7 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Dispersion {
     }
 }
 
+#[cfg(feature = "dft")]
 pub fn dispersion_energy_density<D: DualNum<f64>>(
     parameters: &SaftVRQMieParameters,
     d_hs_ij: &Array2<D>,
@@ -743,6 +744,7 @@ mod tests {
         assert_relative_eq!(a_disp.re(), a_ref[0] * 2.0, epsilon = 1e-7);
     }
 
+    #[cfg(feature = "dft")]
     #[test]
     fn test_dispersion_energy_density() {
         let disp = Dispersion {
