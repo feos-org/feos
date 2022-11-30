@@ -1,0 +1,80 @@
+units		real
+atom_style	atomic
+
+# substance
+variable        substance1          string  deuterium
+variable        substance2          string  neon
+variable        molarweight1        equal   4.028209954364
+variable        molarweight2        equal   20.17969806457545
+
+# thermodynamic state
+variable        x1                  equal   0.2
+variable        initial_density     equal   813.43 # kg / m3 @ p = 8 bar
+variable        t                   equal   32
+variable        natoms              equal   4000
+variable        n1                  equal   v_x1*v_natoms
+variable        n2                  equal   v_natoms-v_n1
+
+variable        molarweight_mix     equal   v_x1*v_molarweight1+(1-v_x1)*v_molarweight2
+variable        avogadro            equal   6.022*10^23
+variable        initial_density_mol equal   v_initial_density/v_molarweight_mix*v_avogadro*10^(-27)  # N / V
+variable        unit_cell_volume    equal   1/v_initial_density_mol
+variable        box_length          equal   v_unit_cell_volume^(1/3)*v_natoms^(1/3)
+
+variable	    rc equal 12.0
+
+# setting up the simulation box
+region          simulation_box block 0.0 ${box_length} 0.0 ${box_length} 0.0 ${box_length}
+create_box	    2 simulation_box
+create_atoms	1 random ${n1} 1234 NULL
+create_atoms	2 random ${n2} 4321 NULL
+mass		    1 ${molarweight1}
+mass		    2 ${molarweight2}
+
+# pair potentials
+pair_style	    table linear 5000
+pair_coeff	    1 1 ${substance1}_${t}K.table FH1_${substance1} ${rc}
+pair_coeff	    2 2 ${substance2}_${t}K.table FH1_${substance2} ${rc}
+pair_coeff	    1 2 ${substance1}_${substance2}_${t}K.table FH1_${substance1}_${substance2} ${rc}
+
+neighbor	    0.3 bin
+neigh_modify	delay 0 every 1
+
+# energy minimization
+print		    "Running Minimization"
+minimize        1.0e-4 1.0e-6 100 1000
+
+# generate temperatures
+velocity	    all create $t 12345
+
+# Define output
+thermo_style    custom step temp pe ke vol density
+
+print		    "Running Equilibration"
+fix             1 all nvt temp $t $t 500
+run             100000
+reset_timestep  0
+
+# RDF
+compute         gr all rdf 500 1 1 1 2 2 1 2 2
+fix             1111 all ave/time 100 1 100 c_gr[*] &
+                    file ${substance1}_${substance2}_${t}K.rdf &
+                    mode vector ave running overwrite &
+                    title1 "# g(r) for ${substance1} ${substance2} at rho=${initial_density}, t=${t}" &
+                    title2 "i r g11 c11 g12 c12 g21 c21 g22 c22"
+
+thermo          1000
+fix             1 all nvt temp $t $t 500
+dump            trj all atom 1000 ${substance1}_${substance2}_${t}K.lammpstrj
+dump_modify     trj sort id
+dump            xtctrj all xtc 1000 ${substance1}_${substance2}_${t}K.xtc
+dump_modify     xtctrj sort id
+print		    "Running Production"
+
+run             100000
+
+
+
+
+
+
