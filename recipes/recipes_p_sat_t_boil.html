@@ -500,7 +500,10 @@
 <li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.from_density_profile.html">feos.dft.PlanarInterface.from_density_profile</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.from_pdgt.html">feos.dft.PlanarInterface.from_pdgt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.from_tanh.html">feos.dft.PlanarInterface.from_tanh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.interfacial_enrichment.html">feos.dft.PlanarInterface.interfacial_enrichment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.interfacial_thickness.html">feos.dft.PlanarInterface.interfacial_thickness</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.internal_energy.html">feos.dft.PlanarInterface.internal_energy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.relative_adsorption.html">feos.dft.PlanarInterface.relative_adsorption</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.residual.html">feos.dft.PlanarInterface.residual</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.solve.html">feos.dft.PlanarInterface.solve</a></li>
 </ul>
@@ -1003,10 +1006,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -1155,15 +1159,15 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">feos.si</span> <span class="kn">import</span> <span class="n">BAR</span><span class="p">,</span> <span class="n">KELVIN</span>
-<span class="kn">from</span> <span class="nn">feos.eos</span> <span class="kn">import</span> <span class="n">EquationOfState</span><span class="p">,</span> <span class="n">PhaseEquilibrium</span>
-<span class="kn">from</span> <span class="nn">feos.pcsaft</span> <span class="kn">import</span> <span class="n">PcSaftParameters</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from feos.si import BAR, KELVIN
+from feos.eos import EquationOfState, PhaseEquilibrium
+from feos.pcsaft import PcSaftParameters
 
-<span class="n">parameters</span> <span class="o">=</span> <span class="n">PcSaftParameters</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span>
-    <span class="n">substances</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;methanol&#39;</span><span class="p">],</span>
-    <span class="n">pure_path</span><span class="o">=</span><span class="s1">&#39;../parameters/pcsaft/gross2002.json&#39;</span>
-<span class="p">)</span>
-<span class="n">eos</span> <span class="o">=</span> <span class="n">EquationOfState</span><span class="o">.</span><span class="n">pcsaft</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+parameters = PcSaftParameters.from_json(
+    substances=[&#39;methanol&#39;],
+    pure_path=&#39;../parameters/pcsaft/gross2002.json&#39;
+)
+eos = EquationOfState.pcsaft(parameters)
 </pre></div>
 </div>
 </div>
@@ -1171,9 +1175,9 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># returns pure substance vapor pressures</span>
-<span class="n">vapor_pressure</span> <span class="o">=</span> <span class="n">PhaseEquilibrium</span><span class="o">.</span><span class="n">vapor_pressure</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="mi">350</span> <span class="o">*</span> <span class="n">KELVIN</span><span class="p">)</span>
-<span class="n">vapor_pressure</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># returns pure substance vapor pressures
+vapor_pressure = PhaseEquilibrium.vapor_pressure(eos, 350 * KELVIN)
+vapor_pressure
 </pre></div>
 </div>
 </div>
@@ -1190,9 +1194,9 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># returns pure substance boiling temperatures</span>
-<span class="n">boiling_temperature</span> <span class="o">=</span> <span class="n">PhaseEquilibrium</span><span class="o">.</span><span class="n">boiling_temperature</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="mi">15</span> <span class="o">*</span> <span class="n">BAR</span><span class="p">)</span>
-<span class="n">boiling_temperature</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># returns pure substance boiling temperatures
+boiling_temperature = PhaseEquilibrium.boiling_temperature(eos, 15 * BAR)
+boiling_temperature
 </pre></div>
 </div>
 </div>

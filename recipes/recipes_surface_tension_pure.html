@@ -500,7 +500,10 @@
 <li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.from_density_profile.html">feos.dft.PlanarInterface.from_density_profile</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.from_pdgt.html">feos.dft.PlanarInterface.from_pdgt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.from_tanh.html">feos.dft.PlanarInterface.from_tanh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.interfacial_enrichment.html">feos.dft.PlanarInterface.interfacial_enrichment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.interfacial_thickness.html">feos.dft.PlanarInterface.interfacial_thickness</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.internal_energy.html">feos.dft.PlanarInterface.internal_energy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.relative_adsorption.html">feos.dft.PlanarInterface.relative_adsorption</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.residual.html">feos.dft.PlanarInterface.residual</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../api/generated/feos.dft.PlanarInterface.solve.html">feos.dft.PlanarInterface.solve</a></li>
 </ul>
@@ -1003,10 +1006,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -1155,15 +1159,15 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">feos.si</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">feos.dft</span> <span class="kn">import</span> <span class="n">HelmholtzEnergyFunctional</span><span class="p">,</span> <span class="n">PhaseEquilibrium</span><span class="p">,</span> <span class="n">PlanarInterface</span>
-<span class="kn">from</span> <span class="nn">feos.pcsaft</span> <span class="kn">import</span> <span class="n">PcSaftParameters</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from feos.si import *
+from feos.dft import HelmholtzEnergyFunctional, PhaseEquilibrium, PlanarInterface
+from feos.pcsaft import PcSaftParameters
 
-<span class="n">parameters</span> <span class="o">=</span> <span class="n">PcSaftParameters</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span>
-    <span class="n">substances</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;methanol&#39;</span><span class="p">],</span>
-    <span class="n">pure_path</span><span class="o">=</span><span class="s1">&#39;../parameters/pcsaft/gross2002.json&#39;</span>
-<span class="p">)</span>
-<span class="n">functional</span> <span class="o">=</span> <span class="n">HelmholtzEnergyFunctional</span><span class="o">.</span><span class="n">pcsaft</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+parameters = PcSaftParameters.from_json(
+    substances=[&#39;methanol&#39;],
+    pure_path=&#39;../parameters/pcsaft/gross2002.json&#39;
+)
+functional = HelmholtzEnergyFunctional.pcsaft(parameters)
 </pre></div>
 </div>
 </div>
@@ -1171,8 +1175,8 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span> <span class="o">=</span> <span class="n">PhaseEquilibrium</span><span class="o">.</span><span class="n">pure</span><span class="p">(</span><span class="n">functional</span><span class="p">,</span> <span class="mi">350</span> <span class="o">*</span> <span class="n">KELVIN</span><span class="p">)</span>
-<span class="n">vle</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>vle = PhaseEquilibrium.pure(functional, 350 * KELVIN)
+vle
 </pre></div>
 </div>
 </div>
@@ -1207,11 +1211,11 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">surface_tension_pdgt</span> <span class="o">=</span> <span class="p">(</span><span class="n">PlanarInterface</span>
-    <span class="o">.</span><span class="n">from_pdgt</span><span class="p">(</span><span class="n">vle</span><span class="p">,</span> <span class="mi">1024</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">solve</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">surface_tension</span><span class="p">)</span>
-<span class="n">surface_tension_pdgt</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>surface_tension_pdgt = (PlanarInterface
+    .from_pdgt(vle, 1024)
+    .solve()
+    .surface_tension)
+surface_tension_pdgt
 </pre></div>
 </div>
 </div>
@@ -1229,12 +1233,12 @@ $20.191\,\mathrm{\frac{mN}{m}}$</div></div>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">surface_tension_tanh</span> <span class="o">=</span> <span class="p">(</span><span class="n">PlanarInterface</span>
-    <span class="o">.</span><span class="n">from_tanh</span><span class="p">(</span><span class="n">vle</span><span class="p">,</span> <span class="mi">1024</span><span class="p">,</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">ANGSTROM</span><span class="p">,</span> <span class="mi">500</span> <span class="o">*</span> <span class="n">KELVIN</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">solve</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">surface_tension</span>
-<span class="p">)</span>
-<span class="n">surface_tension_tanh</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>surface_tension_tanh = (PlanarInterface
+    .from_tanh(vle, 1024, 100 * ANGSTROM, 500 * KELVIN)
+    .solve()
+    .surface_tension
+)
+surface_tension_tanh
 </pre></div>
 </div>
 </div>

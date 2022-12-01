@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.PlanarInterface.interfacial\_enrichment
+================================================
+
+.. currentmodule:: feos.dft
+
+.. automethod:: PlanarInterface.interfacial_enrichment

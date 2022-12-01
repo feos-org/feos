@@ -500,7 +500,10 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../api/generated/feos.dft.PlanarInterface.from_density_profile.html">feos.dft.PlanarInterface.from_density_profile</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/generated/feos.dft.PlanarInterface.from_pdgt.html">feos.dft.PlanarInterface.from_pdgt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/generated/feos.dft.PlanarInterface.from_tanh.html">feos.dft.PlanarInterface.from_tanh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/generated/feos.dft.PlanarInterface.interfacial_enrichment.html">feos.dft.PlanarInterface.interfacial_enrichment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/generated/feos.dft.PlanarInterface.interfacial_thickness.html">feos.dft.PlanarInterface.interfacial_thickness</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/generated/feos.dft.PlanarInterface.internal_energy.html">feos.dft.PlanarInterface.internal_energy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/generated/feos.dft.PlanarInterface.relative_adsorption.html">feos.dft.PlanarInterface.relative_adsorption</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/generated/feos.dft.PlanarInterface.residual.html">feos.dft.PlanarInterface.residual</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/generated/feos.dft.PlanarInterface.solve.html">feos.dft.PlanarInterface.solve</a></li>
 </ul>
@@ -1003,10 +1006,11 @@ div.nboutput.container div.prompt > div {
     }
 }
 
-/* disable scrollbars on prompts */
+/* disable scrollbars and line breaks on prompts */
 div.nbinput.container div.prompt pre,
 div.nboutput.container div.prompt pre {
     overflow: hidden;
+    white-space: pre;
 }
 
 /* input/output area */
@@ -1160,9 +1164,9 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">feos.si</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">feos.pcsaft</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">feos.eos</span> <span class="kn">import</span> <span class="o">*</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from feos.si import *
+from feos.pcsaft import *
+from feos.eos import *
 </pre></div>
 </div>
 </div>
@@ -1183,12 +1187,12 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Equation of state object.</span>
-<span class="n">parameters</span> <span class="o">=</span> <span class="n">PcSaftParameters</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span>
-    <span class="p">[</span><span class="s1">&#39;hexane&#39;</span><span class="p">],</span>
-    <span class="s1">&#39;../parameters/pcsaft/gross2001.json&#39;</span>
-<span class="p">)</span>
-<span class="n">pcsaft</span> <span class="o">=</span> <span class="n">EquationOfState</span><span class="o">.</span><span class="n">pcsaft</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Equation of state object.
+parameters = PcSaftParameters.from_json(
+    [&#39;hexane&#39;],
+    &#39;../parameters/pcsaft/gross2001.json&#39;
+)
+pcsaft = EquationOfState.pcsaft(parameters)
 </pre></div>
 </div>
 </div>
@@ -1199,13 +1203,13 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state_nvt</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
-    <span class="n">pcsaft</span><span class="p">,</span>
-    <span class="n">temperature</span><span class="o">=</span><span class="mf">300.15</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span>
-    <span class="n">density</span><span class="o">=</span><span class="mf">7.5182</span><span class="o">*</span><span class="n">KILO</span><span class="o">*</span><span class="n">MOL</span><span class="o">/</span><span class="n">METER</span><span class="o">**</span><span class="mi">3</span><span class="p">,</span>
-    <span class="n">total_moles</span><span class="o">=</span><span class="mf">100.0</span><span class="o">*</span><span class="n">MOL</span>
-<span class="p">)</span>
-<span class="n">state_nvt</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>state_nvt = State(
+    pcsaft,
+    temperature=300.15*KELVIN,
+    density=7.5182*KILO*MOL/METER**3,
+    total_moles=100.0*MOL
+)
+state_nvt
 </pre></div>
 </div>
 </div>
@@ -1236,13 +1240,13 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state_npt</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
-    <span class="n">pcsaft</span><span class="p">,</span>
-    <span class="n">temperature</span><span class="o">=</span><span class="mf">300.15</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span>
-    <span class="n">pressure</span><span class="o">=</span><span class="mf">1.0</span><span class="o">*</span><span class="n">BAR</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;density : &#39;</span><span class="p">,</span> <span class="n">state_npt</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;pressure: &#39;</span><span class="p">,</span> <span class="n">state_npt</span><span class="o">.</span><span class="n">pressure</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>state_npt = State(
+    pcsaft,
+    temperature=300.15*KELVIN,
+    pressure=1.0*BAR
+)
+print(&#39;density : &#39;, state_npt.density)
+print(&#39;pressure: &#39;, state_npt.pressure())
 </pre></div>
 </div>
 </div>
@@ -1261,13 +1265,13 @@ pressure:  100.00000000009686 kPa
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s_vapor</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
-    <span class="n">pcsaft</span><span class="p">,</span>
-    <span class="n">temperature</span><span class="o">=</span><span class="mf">335.0</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span>
-    <span class="n">pressure</span><span class="o">=</span><span class="mf">1.0</span><span class="o">*</span><span class="n">BAR</span><span class="p">,</span>
-    <span class="n">density_initialization</span><span class="o">=</span><span class="s1">&#39;vapor&#39;</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mass density: &#39;</span><span class="p">,</span> <span class="n">s_vapor</span><span class="o">.</span><span class="n">mass_density</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>s_vapor = State(
+    pcsaft,
+    temperature=335.0*KELVIN,
+    pressure=1.0*BAR,
+    density_initialization=&#39;vapor&#39;
+)
+print(&#39;mass density: &#39;, s_vapor.mass_density())
 </pre></div>
 </div>
 </div>
@@ -1283,13 +1287,13 @@ mass density:  3.2263994087922345 kg/m³
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s_liquid</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
-    <span class="n">pcsaft</span><span class="p">,</span>
-    <span class="n">temperature</span><span class="o">=</span><span class="mf">335.0</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span>
-    <span class="n">pressure</span><span class="o">=</span><span class="mf">1.0</span><span class="o">*</span><span class="n">BAR</span><span class="p">,</span>
-    <span class="n">density_initialization</span><span class="o">=</span><span class="s1">&#39;liquid&#39;</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mass density: &#39;</span><span class="p">,</span> <span class="n">s_liquid</span><span class="o">.</span><span class="n">mass_density</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>s_liquid = State(
+    pcsaft,
+    temperature=335.0*KELVIN,
+    pressure=1.0*BAR,
+    density_initialization=&#39;liquid&#39;
+)
+print(&#39;mass density: &#39;, s_liquid.mass_density())
 </pre></div>
 </div>
 </div>
@@ -1306,12 +1310,12 @@ mass density:  616.3096597655958 kg/m³
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
-    <span class="n">pcsaft</span><span class="p">,</span>
-    <span class="n">temperature</span><span class="o">=</span><span class="mf">335.0</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span>
-    <span class="n">pressure</span><span class="o">=</span><span class="mf">1.0</span><span class="o">*</span><span class="n">BAR</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mass density:&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">mass_density</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>s = State(
+    pcsaft,
+    temperature=335.0*KELVIN,
+    pressure=1.0*BAR
+)
+print(&#39;mass density:&#39;, s.mass_density())
 </pre></div>
 </div>
 </div>
@@ -1328,8 +1332,8 @@ mass density: 616.3096597655958 kg/m³
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Vapor stable? &#39;</span><span class="p">,</span> <span class="n">s_vapor</span><span class="o">.</span><span class="n">is_stable</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Liquid stable?&#39;</span><span class="p">,</span> <span class="n">s_liquid</span><span class="o">.</span><span class="n">is_stable</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&#39;Vapor stable? &#39;, s_vapor.is_stable())
+print(&#39;Liquid stable?&#39;, s_liquid.is_stable())
 </pre></div>
 </div>
 </div>
@@ -1369,14 +1373,14 @@ Liquid stable? True
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
-    <span class="n">pcsaft</span><span class="p">,</span>
-    <span class="n">temperature</span><span class="o">=</span><span class="mf">335.0</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span>
-    <span class="n">pressure</span><span class="o">=</span><span class="mf">1.0</span><span class="o">*</span><span class="n">BAR</span><span class="p">,</span>
-    <span class="n">total_moles</span><span class="o">=</span><span class="mf">200.0</span><span class="o">*</span><span class="n">MOL</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;total moles: &#39;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">total_moles</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;total mass : &#39;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">total_mass</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>state = State(
+    pcsaft,
+    temperature=335.0*KELVIN,
+    pressure=1.0*BAR,
+    total_moles=200.0*MOL
+)
+print(&#39;total moles: &#39;, state.total_moles)
+print(&#39;total mass : &#39;, state.total_mass())
 </pre></div>
 </div>
 </div>
@@ -1398,8 +1402,8 @@ total mass :  17.235400000000002 kg
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pressure</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">pressure</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;pressure: &#39;</span><span class="p">,</span> <span class="n">pressure</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pressure = state.pressure()
+print(&#39;pressure: &#39;, pressure)
 </pre></div>
 </div>
 </div>
@@ -1423,11 +1427,11 @@ pressure:  99.99999999988452 kPa
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;entropy (default)    :&#39;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;entropy (total)      :&#39;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">(</span><span class="n">Contributions</span><span class="o">.</span><span class="n">Total</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;entropy (ideal gas)  :&#39;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">(</span><span class="n">Contributions</span><span class="o">.</span><span class="n">IdealGas</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;entropy (residual)   :&#39;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">(</span><span class="n">Contributions</span><span class="o">.</span><span class="n">ResidualNvt</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;entropy (residual p) :&#39;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">(</span><span class="n">Contributions</span><span class="o">.</span><span class="n">ResidualNpt</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&#39;entropy (default)    :&#39;, state.molar_entropy())
+print(&#39;entropy (total)      :&#39;, state.molar_entropy(Contributions.Total))
+print(&#39;entropy (ideal gas)  :&#39;, state.molar_entropy(Contributions.IdealGas))
+print(&#39;entropy (residual)   :&#39;, state.molar_entropy(Contributions.ResidualNvt))
+print(&#39;entropy (residual p) :&#39;, state.molar_entropy(Contributions.ResidualNpt))
 </pre></div>
 </div>
 </div>
@@ -1447,7 +1451,7 @@ entropy (residual p) : -86.86192380683525  J/mol/K
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">()</span> <span class="o">-</span> <span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">(</span><span class="n">Contributions</span><span class="o">.</span><span class="n">IdealGas</span><span class="p">)</span> <span class="o">+</span> <span class="n">state</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">(</span><span class="n">Contributions</span><span class="o">.</span><span class="n">ResidualNvt</span><span class="p">))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>state.molar_entropy() - (state.molar_entropy(Contributions.IdealGas) + state.molar_entropy(Contributions.ResidualNvt))
 </pre></div>
 </div>
 </div>
@@ -1484,8 +1488,8 @@ $0\,\mathrm{\frac{ J}{molK}}$</div></div>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">critical_point</span> <span class="o">=</span> <span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">pcsaft</span><span class="p">)</span>
-<span class="n">critical_point</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>critical_point = State.critical_point(pcsaft)
+critical_point
 </pre></div>
 </div>
 </div>
@@ -1514,10 +1518,10 @@ $0\,\mathrm{\frac{ J}{molK}}$</div></div>
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Critical conditions for hexane&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;temperature :&#39;</span><span class="p">,</span> <span class="n">critical_point</span><span class="o">.</span><span class="n">temperature</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;pressure    :&#39;</span><span class="p">,</span> <span class="n">critical_point</span><span class="o">.</span><span class="n">pressure</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;density     :&#39;</span><span class="p">,</span> <span class="n">critical_point</span><span class="o">.</span><span class="n">mass_density</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&#39;Critical conditions for hexane&#39;)
+print(&#39;temperature :&#39;, critical_point.temperature)
+print(&#39;pressure    :&#39;, critical_point.pressure())
+print(&#39;density     :&#39;, critical_point.mass_density())
 </pre></div>
 </div>
 </div>
@@ -1542,11 +1546,11 @@ density     : 228.72574604854387 kg/m³
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span> <span class="o">=</span> <span class="n">PhaseEquilibrium</span><span class="o">.</span><span class="n">pure</span><span class="p">(</span>
-    <span class="n">pcsaft</span><span class="p">,</span>
-    <span class="n">temperature_or_pressure</span><span class="o">=</span><span class="mf">1.0</span><span class="o">*</span><span class="n">BAR</span>
-<span class="p">)</span>
-<span class="n">vle</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>vle = PhaseEquilibrium.pure(
+    pcsaft,
+    temperature_or_pressure=1.0*BAR
+)
+vle
 </pre></div>
 </div>
 </div>
@@ -1581,7 +1585,7 @@ density     : 228.72574604854387 kg/m³
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span><span class="o">.</span><span class="n">liquid</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>vle.liquid
 </pre></div>
 </div>
 </div>
@@ -1610,7 +1614,7 @@ density     : 228.72574604854387 kg/m³
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span><span class="o">.</span><span class="n">vapor</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>vle.vapor
 </pre></div>
 </div>
 </div>
@@ -1639,8 +1643,8 @@ density     : 228.72574604854387 kg/m³
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">enthalpy_of_vaporization</span> <span class="o">=</span> <span class="n">vle</span><span class="o">.</span><span class="n">vapor</span><span class="o">.</span><span class="n">molar_enthalpy</span><span class="p">()</span> <span class="o">-</span> <span class="n">vle</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">molar_enthalpy</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;enthalpy of vaporization (T = </span><span class="si">{</span><span class="n">vle</span><span class="o">.</span><span class="n">vapor</span><span class="o">.</span><span class="n">temperature</span><span class="si">}</span><span class="s1">): </span><span class="si">{</span><span class="n">enthalpy_of_vaporization</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>enthalpy_of_vaporization = vle.vapor.molar_enthalpy() - vle.liquid.molar_enthalpy()
+print(f&#39;enthalpy of vaporization (T = {vle.vapor.temperature}): {enthalpy_of_vaporization}&#39;)
 </pre></div>
 </div>
 </div>
@@ -1666,12 +1670,12 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
-    <span class="n">pcsaft</span><span class="p">,</span>
-    <span class="n">temperature</span><span class="o">=</span><span class="mf">300.0</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span>
-    <span class="n">pressure</span><span class="o">=</span><span class="mf">1.0</span><span class="o">*</span><span class="n">BAR</span><span class="p">,</span>
-    <span class="n">total_moles</span><span class="o">=</span><span class="mf">25.0</span><span class="o">*</span><span class="n">MOL</span>
-<span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>state = State(
+    pcsaft,
+    temperature=300.0*KELVIN,
+    pressure=1.0*BAR,
+    total_moles=25.0*MOL
+)
 </pre></div>
 </div>
 </div>
@@ -1679,7 +1683,7 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span><span class="o">.</span><span class="n">helmholtz_energy_contributions</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>state.helmholtz_energy_contributions()
 </pre></div>
 </div>
 </div>
@@ -1699,7 +1703,7 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span><span class="o">.</span><span class="n">pressure_contributions</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>state.pressure_contributions()
 </pre></div>
 </div>
 </div>
@@ -1719,7 +1723,7 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span><span class="o">.</span><span class="n">chemical_potential_contributions</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>state.chemical_potential_contributions(0)
 </pre></div>
 </div>
 </div>

@@ -28,8 +28,11 @@ feos.dft.SurfaceTensionDiagram
 
    .. autosummary::
    
+      ~SurfaceTensionDiagram.interfacial_enrichment
+      ~SurfaceTensionDiagram.interfacial_thickness
       ~SurfaceTensionDiagram.liquid
       ~SurfaceTensionDiagram.profiles
+      ~SurfaceTensionDiagram.relative_adsorption
       ~SurfaceTensionDiagram.surface_tension
       ~SurfaceTensionDiagram.vapor
    

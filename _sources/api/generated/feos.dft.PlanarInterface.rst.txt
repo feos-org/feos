@@ -24,7 +24,10 @@ feos.dft.PlanarInterface
       ~PlanarInterface.from_density_profile
       ~PlanarInterface.from_pdgt
       ~PlanarInterface.from_tanh
+      ~PlanarInterface.interfacial_enrichment
+      ~PlanarInterface.interfacial_thickness
       ~PlanarInterface.internal_energy
+      ~PlanarInterface.relative_adsorption
       ~PlanarInterface.residual
       ~PlanarInterface.solve
    

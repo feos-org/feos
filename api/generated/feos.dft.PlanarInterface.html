@@ -500,7 +500,10 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PlanarInterface.from_density_profile.html">feos.dft.PlanarInterface.from_density_profile</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PlanarInterface.from_pdgt.html">feos.dft.PlanarInterface.from_pdgt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PlanarInterface.from_tanh.html">feos.dft.PlanarInterface.from_tanh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.PlanarInterface.interfacial_enrichment.html">feos.dft.PlanarInterface.interfacial_enrichment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.PlanarInterface.interfacial_thickness.html">feos.dft.PlanarInterface.interfacial_thickness</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PlanarInterface.internal_energy.html">feos.dft.PlanarInterface.internal_energy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.PlanarInterface.relative_adsorption.html">feos.dft.PlanarInterface.relative_adsorption</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PlanarInterface.residual.html">feos.dft.PlanarInterface.residual</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PlanarInterface.solve.html">feos.dft.PlanarInterface.solve</a></li>
 </ul>
@@ -922,13 +925,22 @@
 <tr class="row-even"><td><p><a class="reference internal" href="feos.dft.PlanarInterface.from_tanh.html#feos.dft.PlanarInterface.from_tanh" title="feos.dft.PlanarInterface.from_tanh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_tanh</span></code></a>(vle, n_grid, l_grid, ...[, ...])</p></td>
 <td><p>Initialize a planar interface with a hyperbolic tangent.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.dft.PlanarInterface.interfacial_enrichment.html#feos.dft.PlanarInterface.interfacial_enrichment" title="feos.dft.PlanarInterface.interfacial_enrichment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interfacial_enrichment</span></code></a>()</p></td>
+<td><p>Calculates the interfacial enrichment E_i.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.dft.PlanarInterface.interfacial_thickness.html#feos.dft.PlanarInterface.interfacial_thickness" title="feos.dft.PlanarInterface.interfacial_thickness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interfacial_thickness</span></code></a>()</p></td>
+<td><p>Calculates the interfacial thickness (90-10 number density difference)</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="feos.dft.PlanarInterface.internal_energy.html#feos.dft.PlanarInterface.internal_energy" title="feos.dft.PlanarInterface.internal_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">internal_energy</span></code></a>(contributions)</p></td>
 <td><p>Calculate the internal energy of the inhomogeneous system.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.dft.PlanarInterface.residual.html#feos.dft.PlanarInterface.residual" title="feos.dft.PlanarInterface.residual"><code class="xref py py-obj docutils literal notranslate"><span class="pre">residual</span></code></a>(log)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.dft.PlanarInterface.relative_adsorption.html#feos.dft.PlanarInterface.relative_adsorption" title="feos.dft.PlanarInterface.relative_adsorption"><code class="xref py py-obj docutils literal notranslate"><span class="pre">relative_adsorption</span></code></a>()</p></td>
+<td><p>Calculates the Gibbs' relative adsorption of component <a href="#id1"><span class="problematic" id="id2">`</span></a>i' with respect to <a href="#id3"><span class="problematic" id="id4">`</span></a>j': Gamma_i^(j)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.dft.PlanarInterface.residual.html#feos.dft.PlanarInterface.residual" title="feos.dft.PlanarInterface.residual"><code class="xref py py-obj docutils literal notranslate"><span class="pre">residual</span></code></a>(log)</p></td>
 <td><p>Calculate the residual for the given profile.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.dft.PlanarInterface.solve.html#feos.dft.PlanarInterface.solve" title="feos.dft.PlanarInterface.solve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">solve</span></code></a>([solver, debug])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.dft.PlanarInterface.solve.html#feos.dft.PlanarInterface.solve" title="feos.dft.PlanarInterface.solve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">solve</span></code></a>([solver, debug])</p></td>
 <td><p>Solve the profile in-place.</p></td>
 </tr>
 </tbody>
