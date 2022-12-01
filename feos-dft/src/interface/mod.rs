@@ -204,8 +204,6 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> PlanarInterface<U, F> {
 
         // Calculate the partial densities in the liquid and in the vapor phase
         for i in 0..s[0] {
-            // rho_l.try_set(i, self.profile.density.get((i, 0)) * m[i])?;
-            // rho_v.try_set(i, self.profile.density.get((i, s[1] - 1)) * m[i])?;
             rho_l.try_set(i, self.profile.density.get((i, 0)))?;
             rho_v.try_set(i, self.profile.density.get((i, s[1] - 1)))?;
         }
@@ -239,7 +237,7 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> PlanarInterface<U, F> {
                 .index_axis(Axis_nd(0), i)
                 .iter()
                 .max_by(|&a, &b| a.total_cmp(b))
-                .unwrap())  // panics only of itertor is empty
+                .unwrap())  // panics only of iterator is empty
                 / rho_l[i].max(rho_v[i])
         });
 
@@ -280,10 +278,6 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> PlanarInterface<U, F> {
         let rho_l = rho[0].max(rho[s[1] - 1]);
 
         if (rho_l - rho_v).abs() < 1.0e-10 {
-            // return Err(EosError::NotConverged(
-            //     "Densities in both phases are to similar for interface thickness calculation."
-            //         .to_string(),
-            // ));
             return Ok(0.0 * U::reference_length());
         }
 
@@ -293,7 +287,6 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> PlanarInterface<U, F> {
 
         // Get indizes right of intersection between density profile and
         // constant density boundaries
-
         let index_upper_plus = if rho[0] >= rho[s[1] - 1] {
             rho.iter()
                 .enumerate()

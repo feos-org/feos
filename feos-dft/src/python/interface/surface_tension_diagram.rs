@@ -88,7 +88,6 @@ macro_rules! impl_surface_tension_diagram {
 
             #[getter]
             pub fn interfacial_thickness(&self) -> PySIArray1 {
-                // let limits = (0.9, 0.1);
                 self.0.interfacial_thickness().into()
             }
         }

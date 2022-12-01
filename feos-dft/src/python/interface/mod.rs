@@ -148,7 +148,6 @@ macro_rules! impl_planar_interface {
             ///
             #[pyo3(text_signature = "($self)")]
             fn interfacial_thickness(&self) -> PyResult<PySINumber> {
-                // let limits = (0.9, 0.1);
                 Ok(self.0.interfacial_thickness()?.into())
             }
         }
