@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- `PlanarInterface` can now has methods for the calculation of the 90-10 interface thickness (`PlanarInterface::interfacial_thickness`), interfacial enrichtment (`PlanarInterface::interfacial_enrichment`), and the relative adsorption (`PlanarInterface::relative_adsorption`). 
+- `PlanarInterface` now has methods for the calculation of the 90-10 interface thickness (`PlanarInterface::interfacial_thickness`), interfacial enrichtment (`PlanarInterface::interfacial_enrichment`), and relative adsorption (`PlanarInterface::relative_adsorption`). 
 
 ### Changed
 - Added `Send` and `Sync` as supertraits to `HelmholtzEnergyFunctional` and all related traits. [#57](https://github.com/feos-org/feos/pull/57)
