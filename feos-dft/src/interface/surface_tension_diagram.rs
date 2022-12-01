@@ -2,7 +2,8 @@ use super::PlanarInterface;
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::solver::DFTSolver;
 use feos_core::{EosUnit, PhaseEquilibrium, StateVec};
-use quantity::{QuantityArray1, QuantityScalar};
+use ndarray::Array1;
+use quantity::{QuantityArray1, QuantityArray2, QuantityScalar};
 
 const DEFAULT_GRID_POINTS: usize = 2048;
 
@@ -78,5 +79,26 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> SurfaceTensionDiagram<U, F> {
         QuantityArray1::from_shape_fn(self.profiles.len(), |i| {
             self.profiles[i].surface_tension.unwrap()
         })
+    }
+
+    pub fn relative_adsorption(&self) -> Vec<QuantityArray2<U>> {
+        self.profiles
+            .iter()
+            .map(|planar_interf| planar_interf.relative_adsorption().unwrap())
+            .collect()
+    }
+
+    pub fn interfacial_enrichment(&self) -> Vec<Array1<f64>> {
+        self.profiles
+            .iter()
+            .map(|planar_interf| planar_interf.interfacial_enrichment().unwrap())
+            .collect()
+    }
+
+    pub fn interfacial_thickness(&self) -> QuantityArray1<U> {
+        self.profiles
+            .iter()
+            .map(|planar_interf| planar_interf.interfacial_thickness().unwrap())
+            .collect()
     }
 }

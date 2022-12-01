@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- `PlanarInterface` now has methods for the calculation of the 90-10 interface thickness (`PlanarInterface::interfacial_thickness`), interfacial enrichtment (`PlanarInterface::interfacial_enrichment`), and relative adsorption (`PlanarInterface::relative_adsorption`). 
+
 ### Changed
 - Added `Send` and `Sync` as supertraits to `HelmholtzEnergyFunctional` and all related traits. [#57](https://github.com/feos-org/feos/pull/57)
 - Renamed the `3d_dft` feature to `rayon` in accordance to the other feos crates. [#62](https://github.com/feos-org/feos/pull/62)

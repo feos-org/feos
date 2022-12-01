@@ -124,5 +124,42 @@ macro_rules! impl_planar_interface {
                 PyPhaseEquilibrium(self.0.vle.clone())
             }
         }
+
+        #[pymethods]
+        impl PyPlanarInterface {
+            /// Calculates the Gibbs' relative adsorption of component `i' with
+            /// respect to `j': \Gamma_i^(j)
+            ///
+            /// Returns
+            /// -------
+            /// SIArray2
+            ///
+            #[pyo3(text_signature = "($self)")]
+            fn relative_adsorption(&self) -> PyResult<PySIArray2> {
+                Ok(self.0.relative_adsorption()?.into())
+            }
+
+            /// Calculates the interfacial enrichment E_i.
+            ///
+            /// Returns
+            /// -------
+            /// numpy.ndarray
+            ///
+            #[pyo3(text_signature = "($self)")]
+            fn interfacial_enrichment<'py>(&self, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
+                Ok(self.0.interfacial_enrichment()?.to_pyarray(py))
+            }
+
+            /// Calculates the interfacial thickness (90-10 number density difference)
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            ///
+            #[pyo3(text_signature = "($self)")]
+            fn interfacial_thickness(&self) -> PyResult<PySINumber> {
+                Ok(self.0.interfacial_thickness()?.into())
+            }
+        }
     };
 }
