@@ -100,10 +100,10 @@
         },
         "model_record": {
             "m": 1.0,
-            "sigma": 3.0087,
-            "epsilon_k": 39.2388,
-            "lr": 11.0,
-            "la": 7.0
+            "sigma": 3.0203,
+            "epsilon_k": 30.273,
+            "lr": 10.0,
+            "la": 6.0
         },
         "molarweight": 4.028209954364
     }
