@@ -307,15 +307,3 @@ impl EntropyScaling<SIUnit> for SaftVRQMie {
         Ok(a + b * s + c * (1.0 - s.exp()) + d * s.powi(2))
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use crate::parameters::utils::{
-//         hydrogen_fh1
-//     };
-//     use approx::assert_relative_eq;
-//     use feos_core::{Contributions, DensityInitialization, PhaseEquilibrium, State};
-//     use ndarray::arr1;
-//     use quantity::si::{BAR, KELVIN, METER, PASCAL, RGAS, SECOND};
-// }

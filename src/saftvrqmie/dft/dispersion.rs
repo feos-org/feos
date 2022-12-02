@@ -10,7 +10,7 @@ use std::fmt;
 use std::sync::Arc;
 
 /// psi Parameter for DFT (Sauer2017)
-const PSI_DFT: f64 = 1.3862; // 1.475
+const PSI_DFT: f64 = 1.3862;
 /// psi Parameter for pDGT (Rehner2018)
 const PSI_PDGT: f64 = 1.3286;
 
@@ -75,8 +75,6 @@ impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for Attracti
         // alphas .... // calc & store this in struct
         let alpha = Alpha::new(p, &s_eff_ij, &epsilon_k_eff_ij, temperature);
 
-        //let mut a_disp: Array1<N> = Array::zeros(eta.raw_dim());
-
         let phi = density
             .axis_iter(Axis(1))
             .map(|rho_lane| {
@@ -92,8 +90,6 @@ impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for Attracti
                 )
             })
             .collect();
-        // Helmholtz energy density
-        //let phi_polar = calculate_helmholtz_energy_density_polar(p, temperature, density)?;
         Ok(phi)
     }
 }

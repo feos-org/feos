@@ -169,7 +169,7 @@ impl PySaftVRQMieParameters {
     }
 
     /// Generate energy and force tables to be used with LAMMPS' `pair_style table` command.
-    /// 
+    ///
     /// Parameters
     /// ----------
     /// temperature : SINumber
@@ -186,10 +186,10 @@ impl PySaftVRQMieParameters {
     /// ------
     /// IOError
     ///     if there are issues with writing to a file.
-    /// 
+    ///
     /// Notes
     /// -----
-    /// 
+    ///
     /// For a given `temperature`, `n` values between `r_min` and `r_max` (both including) are tabulated.
     ///
     /// Files for all pure substances and all unique pairs are generated,

@@ -104,18 +104,10 @@ impl SaftVRQMieParameters {
                 break;
             }
             let dfdr = u_vec[1] / temperature;
-            //let d2fdr2 = u_vec[2] / temperature;
-            //let mut correction = f * d2fdr2 * 0.5 / dfdr.powi(2);
-            //if correction.re().abs() > 0.25 {
-            //    correction = D::zero()
-            //}
-            //dbg!(correction.re());
-            //let dr = -(f / dfdr) * (correction + 1.0);
             let mut dr = -(f / dfdr);
             if dr.re().abs() > 0.5 {
                 dr *= 0.5 / dr.re().abs();
             }
-            //println!("r {}, dr {}", r.re(), dr.re());
             r += dr;
         }
         if f.re().abs() > 1.0e-12 {
@@ -282,7 +274,6 @@ mod tests {
 
     #[test]
     fn test_quantum_d_mass() {
-        //quantum_d_mass(10.0);
         let parameters = hydrogen_fh1();
         let temperature = Dual2::from_re(26.7060).derive();
         let r = Dual2::from_re(3.5);
@@ -298,7 +289,6 @@ mod tests {
 
     #[test]
     fn test_sigma_effective() {
-        //quantum_d_mass(10.0);
         let parameters = hydrogen_fh1();
         let temperature = Dual2::from_re(26.7060).derive();
         let sigma_eff = parameters.calc_sigma_eff_ij(0, 0, temperature);

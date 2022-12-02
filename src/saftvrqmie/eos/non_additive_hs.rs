@@ -61,7 +61,6 @@ pub fn reduced_non_additive_hs_energy<D: DualNum<f64>>(
 
     // overall density
     let rho_s = Array1::from_shape_fn(n, |i| -> D { rho[i] * p.m[i] }).sum();
-    // let rho_s = (rho * &p.m).sum();
     // segment fractions
     let x_s = Array1::from_shape_fn(n, |i| -> D { rho[i] * p.m[i] / rho_s });
 

@@ -57,10 +57,6 @@ impl SaftVRQMieFunctional {
         {
             let fmt_assoc = PureFMTAssocFunctional::new(parameters.clone(), fmt_version);
             contributions.push(Box::new(fmt_assoc));
-            // if parameters.m.iter().any(|&mi| mi > 1.0) {
-            //     let chain = PureChainFunctional::new(parameters.clone());
-            //     contributions.push(Box::new(chain));
-            // }
             let att = PureAttFunctional::new(parameters.clone());
             contributions.push(Box::new(att));
         } else {
@@ -73,24 +69,10 @@ impl SaftVRQMieFunctional {
                 let non_add_hs = NonAddHardSphereFunctional::new(parameters.clone());
                 contributions.push(Box::new(non_add_hs));
             }
-            // if parameters.m.iter().any(|&mi| !mi.is_one()) {
-            //     let chain = ChainFunctional::new(parameters.clone());
-            //     contributions.push(Box::new(chain));
-            // }
 
             // Dispersion
             let att = AttractiveFunctional::new(parameters.clone());
             contributions.push(Box::new(att));
-
-            // Association
-            // if parameters.nassoc > 0 {
-            //     let assoc = AssociationFunctional::new(
-            //         parameters.clone(),
-            //         saft_options.max_iter_cross_assoc,
-            //         saft_options.tol_cross_assoc,
-            //     );
-            //     contributions.push(Box::new(assoc));
-            // }
         }
 
         let joback = match &parameters.joback_records {
@@ -162,14 +144,6 @@ impl FluidParameters for SaftVRQMieFunctional {
         &self.parameters.sigma
     }
 }
-
-// impl PairPotential for SaftVRQMieFunctional {
-//     fn pair_potential(&self, r: &Array1<f64>, temperature: f64) -> Array2<f64> {
-//         Array::from_shape_fn((self.parameters.m.len(), r.len()), |(i, j)| {
-//             self.parameters.qmie_potential_ij(0, i, r[j], temperature)[0]
-//         })
-//     }
-// }
 
 impl PairPotential for SaftVRQMieFunctional {
     fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64> {

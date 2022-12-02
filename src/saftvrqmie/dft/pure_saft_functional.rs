@@ -107,33 +107,6 @@ impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for PureFMTA
         });
         let phi = -(&n0 * &ln31) + n1n2 * &n3m1rec + n2n2 * n2 * PI36M1 * f3;
 
-        // association
-        // if p.nassoc == 1 {
-        //     let mut xi = -(&n2v * &n2v).sum_axis(Axis(0)) / (&n2 * &n2) + 1.0;
-        //     xi.iter_mut().zip(&n2).for_each(|(xi, &n2)| {
-        //         if n2.re() < N0_CUTOFF * 4.0 * PI * p.m[0] * r.re().powi(2) {
-        //             *xi = N::one();
-        //         }
-        //     });
-
-        //     let k = &n2 * &n3m1rec * r;
-        //     let deltarho = (((&k / 18.0 + 0.5) * &k * &xi + 1.0) * n3m1rec)
-        //         * ((temperature.recip() * p.epsilon_k_aibj[(0, 0)]).exp_m1()
-        //             * (p.sigma[0].powi(3) * p.kappa_aibj[(0, 0)]))
-        //         * (&n0 / p.m[0] * &xi);
-
-        //     let f = |x: N| x.ln() - x * 0.5 + 0.5;
-        //     phi = phi
-        //         + if p.nb[0] > 0.0 {
-        //             let xa = deltarho.mapv(|d| assoc_site_frac_ab(d, p.na[0], p.nb[0]));
-        //             let xb = (xa.clone() - 1.0) * p.na[0] / p.nb[0] + 1.0;
-        //             (n0 / p.m[0] * xi) * (xa.mapv(f) * p.na[0] + xb.mapv(f) * p.nb[0])
-        //         } else {
-        //             let xa = deltarho.mapv(|d| assoc_site_frac_a(d, p.na[0]));
-        //             n0 / p.m[0] * xi * (xa.mapv(f) * p.na[0])
-        //         };
-        // }
-
         Ok(phi)
     }
 }
@@ -143,58 +116,6 @@ impl fmt::Display for PureFMTAssocFunctional {
         write!(f, "Pure FMT+association")
     }
 }
-
-// #[derive(Clone)]
-// pub struct PureChainFunctional {
-//     parameters: Arc<SaftVRQMieParameters>,
-// }
-
-// impl PureChainFunctional {
-//     pub fn new(parameters: Arc<SaftVRQMieParameters>) -> Self {
-//         Self { parameters }
-//     }
-// }
-
-// impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for PureChainFunctional {
-//     fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
-//         let d = self.parameters.hs_diameter(temperature);
-//         WeightFunctionInfo::new(arr1(&[0]), true)
-//             .add(
-//                 WeightFunction::new_scaled(d.clone(), WeightFunctionShape::Delta),
-//                 false,
-//             )
-//             .add(
-//                 WeightFunction {
-//                     prefactor: (&self.parameters.m / 8.0).mapv(|x| x.into()),
-//                     kernel_radius: d,
-//                     shape: WeightFunctionShape::Theta,
-//                 },
-//                 false,
-//             )
-//     }
-
-//     fn calculate_helmholtz_energy_density(
-//         &self,
-//         _: N,
-//         weighted_densities: ArrayView2<N>,
-//     ) -> EosResult<Array1<N>> {
-//         let rho = weighted_densities.index_axis(Axis(0), 0);
-//         // negative lambdas lead to nan, therefore the absolute value is used
-//         let lambda = weighted_densities
-//             .index_axis(Axis(0), 1)
-//             .map(|&l| if l.re() < 0.0 { -l } else { l } + N::from(f64::EPSILON));
-//         let eta = weighted_densities.index_axis(Axis(0), 2);
-
-//         let y = eta.mapv(|eta| (eta * 0.5 - 1.0) / (eta - 1.0).powi(3));
-//         Ok(-(y * lambda).mapv(|x| (x.ln() - 1.0) * (self.parameters.m[0] - 1.0)) * rho)
-//     }
-// }
-
-// impl fmt::Display for PureChainFunctional {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         write!(f, "Pure chain")
-//     }
-// }
 
 #[derive(Clone)]
 pub struct PureAttFunctional {
