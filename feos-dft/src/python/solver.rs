@@ -10,6 +10,7 @@ use quantity::python::PySIArray1;
 /// ----------
 /// verbosity: Verbosity, optional
 ///     The verbosity level of the solver.
+///     Defaults to Verbosity.None.
 ///
 /// Returns
 /// -------
@@ -41,26 +42,35 @@ impl PyDFTSolver {
     /// Parameters
     /// ----------
     /// log: bool, optional
-    ///     Iterate the logarithm of the density profile
+    ///     Iterate the logarithm of the density profile.
+    ///     Defaults to False.
     /// max_iter: int, optional
     ///     The maximum number of iterations.
+    ///     Defaults to 500.
     /// tol: float, optional
     ///     The tolerance.
-    /// beta: float, optional
-    ///     The damping factor.
+    ///     Defaults to 1e-11.
+    /// damping_coefficient: float, optional
+    ///     Constant damping coefficient.
+    ///     If no damping coeffcient is provided, a line
+    ///     search is used to determine the step size.
     ///
     /// Returns
     /// -------
     /// DFTSolver
-    #[pyo3(text_signature = "($self, log=None, max_iter=None, tol=None, beta=None)")]
+    #[pyo3(text_signature = "($self, log=None, max_iter=None, tol=None, damping_coefficient=None)")]
     fn picard_iteration(
         &self,
         log: Option<bool>,
         max_iter: Option<usize>,
         tol: Option<f64>,
-        beta: Option<f64>,
+        damping_coefficient: Option<f64>,
     ) -> Self {
-        Self(self.0.clone().picard_iteration(log, max_iter, tol, beta))
+        Self(
+            self.0
+                .clone()
+                .picard_iteration(log, max_iter, tol, damping_coefficient),
+        )
     }
 
     /// Add Anderson mixing to the solver object.
@@ -69,31 +79,38 @@ impl PyDFTSolver {
     /// ----------
     /// log: bool, optional
     ///     Iterate the logarithm of the density profile
+    ///     Defaults to False.
     /// max_iter: int, optional
     ///     The maximum number of iterations.
+    ///     Defaults to 150.
     /// tol: float, optional
     ///     The tolerance.
-    /// beta: float, optional
-    ///     The damping factor.
+    ///     Defaults to 1e-11.
+    /// damping_coefficient: float, optional
+    ///     The damping coeffcient.
+    ///     Defaults to 0.15.
     /// mmax: int, optional
     ///     The maximum number of old solutions that are used.
+    ///     Defaults to 100.
     ///
     /// Returns
     /// -------
     /// DFTSolver
-    #[pyo3(text_signature = "($self, log=None, max_iter=None, tol=None, beta=None, mmax=None)")]
+    #[pyo3(
+        text_signature = "($self, log=None, max_iter=None, tol=None, damping_coefficient=None, mmax=None)"
+    )]
     fn anderson_mixing(
         &self,
         log: Option<bool>,
         max_iter: Option<usize>,
         tol: Option<f64>,
-        beta: Option<f64>,
+        damping_coefficient: Option<f64>,
         mmax: Option<usize>,
     ) -> Self {
         Self(
             self.0
                 .clone()
-                .anderson_mixing(log, max_iter, tol, beta, mmax),
+                .anderson_mixing(log, max_iter, tol, damping_coefficient, mmax),
         )
     }
 
@@ -103,12 +120,16 @@ impl PyDFTSolver {
     /// ----------
     /// log: bool, optional
     ///     Iterate the logarithm of the density profile
+    ///     Defaults to False.
     /// max_iter: int, optional
     ///     The maximum number of iterations.
+    ///     Defaults to 50.
     /// max_iter_gmres: int, optional
     ///     The maximum number of iterations for the GMRES solver.
+    ///     Defaults to 200.
     /// tol: float, optional
     ///     The tolerance.
+    ///     Defaults to 1e-11.
     ///
     /// Returns
     /// -------

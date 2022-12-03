@@ -16,20 +16,20 @@ const DEFAULT_PARAMS_PICARD: PicardIteration = PicardIteration {
     log: false,
     max_iter: 500,
     tol: 1e-11,
-    beta: None,
+    damping_coefficient: None,
 };
 const DEFAULT_PARAMS_ANDERSON_LOG: AndersonMixing = AndersonMixing {
     log: true,
     max_iter: 50,
     tol: 1e-5,
-    beta: 0.15,
+    damping_coefficient: 0.15,
     mmax: 100,
 };
 const DEFAULT_PARAMS_ANDERSON: AndersonMixing = AndersonMixing {
     log: false,
     max_iter: 150,
     tol: 1e-11,
-    beta: 0.15,
+    damping_coefficient: 0.15,
     mmax: 100,
 };
 const DEFAULT_PARAMS_NEWTON: Newton = Newton {
@@ -44,7 +44,7 @@ struct PicardIteration {
     log: bool,
     max_iter: usize,
     tol: f64,
-    beta: Option<f64>,
+    damping_coefficient: Option<f64>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -52,7 +52,7 @@ struct AndersonMixing {
     log: bool,
     max_iter: usize,
     tol: f64,
-    beta: f64,
+    damping_coefficient: f64,
     mmax: usize,
 }
 
@@ -103,13 +103,13 @@ impl DFTSolver {
         log: Option<bool>,
         max_iter: Option<usize>,
         tol: Option<f64>,
-        beta: Option<f64>,
+        damping_coefficient: Option<f64>,
     ) -> Self {
         let mut params = DEFAULT_PARAMS_PICARD;
         params.log = log.unwrap_or(params.log);
         params.max_iter = max_iter.unwrap_or(params.max_iter);
         params.tol = tol.unwrap_or(params.tol);
-        params.beta = beta;
+        params.damping_coefficient = damping_coefficient;
         self.algorithms.push(DFTAlgorithm::PicardIteration(params));
         self
     }
@@ -119,14 +119,14 @@ impl DFTSolver {
         log: Option<bool>,
         max_iter: Option<usize>,
         tol: Option<f64>,
-        beta: Option<f64>,
+        damping_coefficient: Option<f64>,
         mmax: Option<usize>,
     ) -> Self {
         let mut params = DEFAULT_PARAMS_ANDERSON;
         params.log = log.unwrap_or(params.log);
         params.max_iter = max_iter.unwrap_or(params.max_iter);
         params.tol = tol.unwrap_or(params.tol);
-        params.beta = beta.unwrap_or(params.beta);
+        params.damping_coefficient = damping_coefficient.unwrap_or(params.damping_coefficient);
         params.mmax = mmax.unwrap_or(params.mmax);
         self.algorithms.push(DFTAlgorithm::AndersonMixing(params));
         self
@@ -259,7 +259,6 @@ where
         } else {
             "Picard iteration"
         };
-        let mut damping = Vec::new();
 
         for k in 0..picard.max_iter {
             // calculate residual
@@ -273,19 +272,18 @@ where
             }
 
             // apply line search or constant damping
-            let beta = picard.beta.map_or_else(
+            let damping_coefficient = picard.damping_coefficient.map_or_else(
                 || self.line_search(rho, &res, rho_bulk, res_norm, picard.log),
                 Ok,
             )?;
-            damping.push(beta);
 
             // update solution
             if picard.log {
-                *rho *= &(&res * beta).mapv(f64::exp);
-                *rho_bulk *= &(&res_bulk * beta).mapv(f64::exp);
+                *rho *= &(&res * damping_coefficient).mapv(f64::exp);
+                *rho_bulk *= &(&res_bulk * damping_coefficient).mapv(f64::exp);
             } else {
-                *rho += &(&res * beta);
-                *rho_bulk += &(&res_bulk * beta);
+                *rho += &(&res * damping_coefficient);
+                *rho_bulk += &(&res_bulk * damping_coefficient);
             }
         }
         Ok((false, picard.max_iter))
@@ -417,8 +415,9 @@ where
             for i in 0..m {
                 let (rhoi, rhoi_bulk) = &rhom[i];
                 let (resi, resi_bulk, _) = &resm[i];
-                *rho += &(alpha[i] * (rhoi + &(anderson.beta * resi)));
-                *rho_bulk += &(alpha[i] * (rhoi_bulk + &(anderson.beta * resi_bulk)));
+                *rho += &(alpha[i] * (rhoi + &(anderson.damping_coefficient * resi)));
+                *rho_bulk +=
+                    &(alpha[i] * (rhoi_bulk + &(anderson.damping_coefficient * resi_bulk)));
             }
             if anderson.log {
                 rho.mapv_inplace(f64::exp);
@@ -739,9 +738,10 @@ impl DFTSolver {
                     format!(
                         "Picard iteration ({}{})",
                         if picard.log { "log, " } else { "" },
-                        match picard.beta {
+                        match picard.damping_coefficient {
                             None => "line search".into(),
-                            Some(beta) => format!("beta={beta}"),
+                            Some(damping_coefficient) =>
+                                format!("damping_coefficient={damping_coefficient}"),
                         }
                     ),
                     picard.max_iter,
@@ -749,9 +749,9 @@ impl DFTSolver {
                 ),
                 DFTAlgorithm::AndersonMixing(anderson) => (
                     format!(
-                        "Anderson mixing ({}beta={}, mmax={})",
+                        "Anderson mixing ({}damping_coefficient={}, mmax={})",
                         if anderson.log { "log, " } else { "" },
-                        anderson.beta,
+                        anderson.damping_coefficient,
                         anderson.mmax
                     ),
                     anderson.max_iter,

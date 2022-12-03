@@ -15,10 +15,10 @@ For a homogeneous (bulk) system, $V^\mathrm{ext}=0$ and we get
 
 $$F_{\rho_i}^\mathrm{b}-\mu_i=0$$ (eqn:euler_lagrange_bulk)
 
-The functional derivative of the Helmholtz energy of a bulk system $F_{\rho_i}^\mathrm{b}$ is a function of the temperature $T$ and bulk densities $\rho^\mathrm{b}$. At this point, it can be advantageous to relate the grand potential of an inhomogeneous system to the densities of a bulk system for which the inhomogeneous system is at equilibrium with. This approach has several advantages:
-- The thermal de Broblie wavelength $\Lambda$ cancels out.
+The functional derivative of the Helmholtz energy of a bulk system $F_{\rho_i}^\mathrm{b}$ is a function of the temperature $T$ and bulk densities $\rho^\mathrm{b}$. At this point, it can be advantageous to relate the grand potential of an inhomogeneous system to the densities of a bulk system that is in equilibrium with the inhomogeneous system. This approach has several advantages:
+- The thermal de Broglie wavelength $\Lambda$ cancels out.
 - If the chemical potential of the system is not known, all variables are the same quantity (densities).
-- The bulk system is described by a Helmhotz energy which is explicit in the density, so there are no internal iterations required.
+- The bulk system is described by a Helmholtz energy which is explicit in the density, so there are no internal iterations required.
 
 Using eq. {eq}`eqn:euler_lagrange_bulk` in eq. {eq}`eqn:euler_lagrange_mu` leads to the Euler-Lagrange equation
 

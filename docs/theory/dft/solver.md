@@ -40,31 +40,31 @@ $$\Delta\ln\rho_\alpha(r)=\mathcal{\hat F}_\alpha\left(r;\left[\rho(r)\right]\ri
 
 
 ## Newton algorithm
-A newton iteration is a more refined approach to calculate the roots of the residual $\mathcal{F}$. From a Taylor expansion of the residual
+A Newton iteration is a more refined approach to calculate the roots of the residual $\mathcal{F}$. From a Taylor expansion of the residual
 
-$$\mathcal{F}_\alpha\left(r;\left[\rho(r)+\Delta\rho(r)\right]\right)=\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)+\int\sum_\beta\frac{\delta\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')dr'+\ldots$$
+$$\mathcal{F}_\alpha\left(r;\left[\rho(r)+\Delta\rho(r)\right]\right)=\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)+\int\sum_\beta\frac{\delta\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')\mathrm{d}r'+\ldots$$
 
 the Newton step is derived by setting the updated residual $\mathcal{F}_\alpha[\rho(r)+\Delta\rho(r)]$ to 0 and neglecting higher order terms.
 
-$$\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)=-\int\sum_\beta\frac{\delta\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')dr'$$ (eqn:newton)
+$$\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)=-\int\sum_\beta\frac{\delta\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')\mathrm{d}r'$$ (eqn:newton)
 
 The linear integral equation has to be solved for the step $\Delta\rho(r)$. Explicitly evaluating the functional derivatives of the residuals is not feasible due to their high dimensionality. Instead, a matrix-free linear solver like GMRES can be used. For GMRES only the action of the linear system on the variable is required (an evaluation of the right-hand side in the equation above for a given $\Delta\rho$). This action can be approximated numerically via
 
-$$\int\sum_\beta\frac{\delta\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')dr'\approx\frac{\mathcal{F}_\alpha\left(r;\left[\rho(r)+s\Delta\rho(r)\right]\right)-\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{s}$$
+$$\int\sum_\beta\frac{\delta\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')\mathrm{d}r'\approx\frac{\mathcal{F}_\alpha\left(r;\left[\rho(r)+s\Delta\rho(r)\right]\right)-\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{s}$$
 
 However this approach requires the choice of an appropriate step size $s$ (something that we want to get away from in $\text{FeO}_\text{s}$) and also an evaluation of the full residual in every step of the linear solver. The solver can be sped up by doing parts of the functional derivative analytically beforehand. Using the definition of the residual in the rhs of eq. {eq}`eqn:newton` leads to
 
 $$\begin{align*}
-q_\alpha(r)&\equiv-\int\sum_\beta\frac{\delta\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')dr'\\
-&=\int\sum_\beta\frac{\delta}{\delta\rho_\beta(r')}\left(\rho_\alpha(r)-\rho_\alpha^\mathrm{b}e^{\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{b,res}-\hat F_{\rho_\alpha}^\mathrm{res}(r)-V_\alpha^\mathrm{ext}(r)\right)}\prod_{\alpha'}I_{\alpha\alpha'}(r)\right)\Delta\rho_\beta(r')dr'
+q_\alpha(r)&\equiv-\int\sum_\beta\frac{\delta\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')\mathrm{d}r'\\
+&=\int\sum_\beta\frac{\delta}{\delta\rho_\beta(r')}\left(\rho_\alpha(r)-\rho_\alpha^\mathrm{b}e^{\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{b,res}-\hat F_{\rho_\alpha}^\mathrm{res}(r)-V_\alpha^\mathrm{ext}(r)\right)}\prod_{\alpha'}I_{\alpha\alpha'}(r)\right)\Delta\rho_\beta(r')\mathrm{d}r'
 \end{align*}$$
 
 The functional derivative can be simplified using $\hat F_{\rho_\alpha\rho_\beta}^\mathrm{res}(r,r')=\frac{\delta \hat F_{\rho_\alpha}^\mathrm{b,res}(r)}{\delta\rho_\beta(r')}=\frac{\delta^2\hat F^\mathrm{b,res}}{\delta\rho_\alpha(r)\delta\rho_\beta(r')}$
 
 $$\begin{align*}
 q_\alpha(r)&=\int\sum_\beta\left(\delta_{\alpha\beta}\delta(r-r')+\left(\frac{\beta}{m_\alpha}\hat F_{\rho_\alpha\rho_\beta}^\mathrm{res}(r,r')-\sum_{\alpha'}\frac{1}{I_{\alpha\alpha'}(r)}\frac{\delta I_{\alpha\alpha'}(r)}{\delta\rho_\beta(r')}\right)\right.\\
-&~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\left.\times\rho_\alpha^\mathrm{b}e^{\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{b,res}-\hat F_{\rho_\alpha}^\mathrm{res}(r)-V_\alpha^\mathrm{ext}(r)\right)}\prod_{\alpha'}I_{\alpha\alpha'}(r)\right)\Delta\rho_\beta(r')dr'\\
-&=\Delta\rho_\alpha(r)+\left(\frac{\beta}{m_\alpha}\underbrace{\int\sum_\beta\hat F_{\rho_\alpha\rho_\beta}^\mathrm{res}(r,r')\Delta\rho_\beta(r')dr'}_{\Delta\hat F_{\rho_\alpha}^\mathrm{res}(r)}-\sum_{\alpha'}\frac{1}{I_{\alpha\alpha'}(r)}\underbrace{\int\sum_\beta\frac{\delta I_{\alpha\alpha'}(r)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')dr'}_{\Delta I_{\alpha\alpha'}(r)}\right)\\
+&~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\left.\times\rho_\alpha^\mathrm{b}e^{\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{b,res}-\hat F_{\rho_\alpha}^\mathrm{res}(r)-V_\alpha^\mathrm{ext}(r)\right)}\prod_{\alpha'}I_{\alpha\alpha'}(r)\right)\Delta\rho_\beta(r')\mathrm{d}r'\\
+&=\Delta\rho_\alpha(r)+\left(\frac{\beta}{m_\alpha}\underbrace{\int\sum_\beta\hat F_{\rho_\alpha\rho_\beta}^\mathrm{res}(r,r')\Delta\rho_\beta(r')\mathrm{d}r'}_{\Delta\hat F_{\rho_\alpha}^\mathrm{res}(r)}-\sum_{\alpha'}\frac{1}{I_{\alpha\alpha'}(r)}\underbrace{\int\sum_\beta\frac{\delta I_{\alpha\alpha'}(r)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')\mathrm{d}r'}_{\Delta I_{\alpha\alpha'}(r)}\right)\\
 &~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\times\rho_\alpha^\mathrm{b}e^{\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{b,res}-\hat F_{\rho_\alpha}^\mathrm{res}(r)-V_\alpha^\mathrm{ext}(r)\right)}\prod_{\alpha'}I_{\alpha\alpha'}(r)
 \end{align*}$$
 
@@ -76,33 +76,33 @@ Neglecting the second term in eq. {eq}`eqn:newton_rhs` leads to $\Delta_\alpha(r
 
 The second functional derivative of the residual Helmholtz energy can be rewritten in terms of the weight functions.
 
-$$\hat F_{\rho_\alpha\rho_\beta}^\mathrm{res}(r,r')=\int\frac{\delta\hat f^\mathrm{res}(r'')}{\delta\rho_\alpha(r)\delta\rho_\beta(r')}dr''=\int\sum_{\alpha\beta}\hat f^\mathrm{res}_{\alpha\beta}(r'')\frac{\delta n_\alpha(r'')}{\delta\rho_\alpha(r)}\frac{\delta n_\beta(r'')}{\delta\rho_\beta(r')}dr''$$
+$$\hat F_{\rho_\alpha\rho_\beta}^\mathrm{res}(r,r')=\int\frac{\delta\hat f^\mathrm{res}(r'')}{\delta\rho_\alpha(r)\delta\rho_\beta(r')}\mathrm{d}r''=\int\sum_{\alpha\beta}\hat f^\mathrm{res}_{\alpha\beta}(r'')\frac{\delta n_\alpha(r'')}{\delta\rho_\alpha(r)}\frac{\delta n_\beta(r'')}{\delta\rho_\beta(r')}\mathrm{d}r''$$
 
-Here $\hat f^\mathrm{res}_{\alpha\beta}=\frac{\partial^2\hat f^\mathrm{res}}{\partial n_\alpha\partial n_\beta}$ is the second partial derivative of the reduced Helmholtz energy density with respect to the weighted densities $n_\alpha$ and $n_\beta$. The definition of the weighted densities $n_\alpha(r)=\sum_\alpha\int\rho_\alpha(r')\omega_\alpha^i(r-r')dr'$ is used to simplify the expression further.
+Here $\hat f^\mathrm{res}_{\alpha\beta}=\frac{\partial^2\hat f^\mathrm{res}}{\partial n_\alpha\partial n_\beta}$ is the second partial derivative of the reduced Helmholtz energy density with respect to the weighted densities $n_\alpha$ and $n_\beta$. The definition of the weighted densities $n_\alpha(r)=\sum_\alpha\int\rho_\alpha(r')\omega_\alpha^i(r-r')\mathrm{d}r'$ is used to simplify the expression further.
 
-$$\hat F_{\rho_\alpha\rho_\beta}^\mathrm{res}(r,r')=\int\sum_{\alpha\beta}\hat f^\mathrm{res}_{\alpha\beta}(r'')\omega_\alpha^i(r''-r)\omega_\beta^j(r''-r')dr''$$
+$$\hat F_{\rho_\alpha\rho_\beta}^\mathrm{res}(r,r')=\int\sum_{\alpha\beta}\hat f^\mathrm{res}_{\alpha\beta}(r'')\omega_\alpha^i(r''-r)\omega_\beta^j(r''-r')\mathrm{d}r''$$
 
-With that, the $\Delta\hat F_{\rho_\alpha}^\mathrm{res}(r)$ can be rewritten as
+With that, $\Delta\hat F_{\rho_\alpha}^\mathrm{res}(r)$ can be rewritten as
 
 $$\begin{align*}
-\Delta\hat F_{\rho_\alpha}^\mathrm{res}(r)&=\int\sum_{\alpha\beta}\hat f^\mathrm{res}_{\alpha\beta}(r'')\omega_\alpha^i(r''-r)\underbrace{\sum_\beta\int\omega_\beta^j(r''-r')\Delta\rho_\beta(r')dr'}_{\Delta n_\beta(r'')}dr''\\
-&=\int\sum_\alpha\sum_\beta \hat f^\mathrm{res}_{\alpha\beta}(r'')\Delta n_\beta(r'')\omega_\alpha^i(r''-r)dr''
+\Delta\hat F_{\rho_\alpha}^\mathrm{res}(r)&=\int\sum_{\alpha\beta}\hat f^\mathrm{res}_{\alpha\beta}(r'')\omega_\alpha^i(r''-r)\underbrace{\sum_\beta\int\omega_\beta^j(r''-r')\Delta\rho_\beta(r')\mathrm{d}r'}_{\Delta n_\beta(r'')}\mathrm{d}r''\\
+&=\int\sum_\alpha\sum_\beta \hat f^\mathrm{res}_{\alpha\beta}(r'')\Delta n_\beta(r'')\omega_\alpha^i(r''-r)\mathrm{d}r''
 \end{align*}$$ (eqn:newton_F)
 
 To simplify the expression for $\Delta I_{\alpha\alpha'}(r)$, the recursive definition of the bond integrals is used.
 
 $$\begin{align*}
 \Delta I_{\alpha\alpha'}(r)&=\iint\sum_\beta\frac{\delta}{\delta\rho_\beta(r'')}\left(e^{\frac{\beta}{m_{\alpha'}}\left(\hat F_{\rho_{\alpha'}}^\mathrm{b,res}-\hat F_{\rho_{\alpha'}}^\mathrm{res}(r')-V_{\alpha'}^\mathrm{ext}(r')\right)}\left(\prod_{\alpha''\neq\alpha}I_{\alpha'\alpha''}(r')\right)\omega_\mathrm{chain}^{\alpha\alpha'}(r-r')\right)\\
-&~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\times\Delta\rho_\beta(r'')dr'dr''\\
+&~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\times\Delta\rho_\beta(r'')\mathrm{d}r'\mathrm{d}r''\\
 &=\iint\sum_\beta\left(-\frac{\beta}{m_{\alpha'}}\hat F_{\rho_{\alpha'}\rho_\beta}^\mathrm{res}(r',r'')+\sum_{\alpha''\neq\alpha}\frac{1}{I_{\alpha'\alpha''}(r')}\frac{\delta I_{\alpha'\alpha''}(r')}{\delta\rho_\beta(r'')}\right)e^{\frac{\beta}{m_{\alpha'}}\left(\hat F_{\rho_{\alpha'}}^\mathrm{b,res}-\hat F_{\rho_{\alpha'}}^\mathrm{res}(r')-V_{\alpha'}^\mathrm{ext}(r')\right)}\\
-&~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\times\left(\prod_{\alpha''\neq\alpha}I_{\alpha'\alpha''}(r')\right)\omega_\mathrm{chain}^{\alpha\alpha'}(r-r')\Delta\rho_\beta(r'')dr'dr''
+&~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\times\left(\prod_{\alpha''\neq\alpha}I_{\alpha'\alpha''}(r')\right)\omega_\mathrm{chain}^{\alpha\alpha'}(r-r')\Delta\rho_\beta(r'')\mathrm{d}r'\mathrm{d}r''
 \end{align*}$$
 
-Here, the definition of $\Delta\hat F_{\rho_\alpha}^\mathrm{res}(r)$ and $\Delta I_{\alpha\alpha'}(r)$ can be identified leading to a recursive calculation of $\Delta I_{\alpha\alpha'}(r)$ similar to the original bond integrals.
+Here, the definition of $\Delta\hat F_{\rho_\alpha}^\mathrm{res}(r)$ and $\Delta I_{\alpha\alpha'}(r)$ can be inserted leading to a recursive calculation of $\Delta I_{\alpha\alpha'}(r)$ similar to the original bond integrals.
 
 $$\begin{align*}
 \Delta I_{\alpha\alpha'}(r)&=\int\left(-\frac{\beta}{m_{\alpha'}}\Delta\hat F_{\rho_{\alpha'}}^\mathrm{res}(r')+\sum_{\alpha''\neq\alpha}\frac{\Delta I_{\alpha'\alpha''}(r')}{I_{\alpha'\alpha''}(r')}\right)\\
-&~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\times e^{\frac{\beta}{m_{\alpha'}}\left(\hat F_{\rho_{\alpha'}}^\mathrm{b,res}-\hat F_{\rho_{\alpha'}}^\mathrm{res}(r')-V_{\alpha'}^\mathrm{ext}(r')\right)}\left(\prod_{\alpha''\neq\alpha}I_{\alpha'\alpha''}(r')\right)\omega_\mathrm{chain}^{\alpha\alpha'}(r-r')dr'
+&~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\times e^{\frac{\beta}{m_{\alpha'}}\left(\hat F_{\rho_{\alpha'}}^\mathrm{b,res}-\hat F_{\rho_{\alpha'}}^\mathrm{res}(r')-V_{\alpha'}^\mathrm{ext}(r')\right)}\left(\prod_{\alpha''\neq\alpha}I_{\alpha'\alpha''}(r')\right)\omega_\mathrm{chain}^{\alpha\alpha'}(r-r')\mathrm{d}r'
 \end{align*}$$ (eqn:newton_I)
 
 In every iteration of GMRES, $q(r)$ needs to be evaluated from eqs. {eq}`eqn:newton_rhs`, {eq}`eqn:newton_F` and {eq}`eqn:newton_I`. The operations required for that are analogous to the calculation of weighted densities and the functional derivative in the Euler-Lagrange equation itself. Details of GMRES, including the pseudocode that the implementation in $\text{FeO}_\text{s}$ is based on, are given on [Wikipedia](https://de.wikipedia.org/wiki/GMRES-Verfahren) (German).

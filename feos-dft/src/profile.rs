@@ -407,11 +407,8 @@ where
         // set residual to 0 where external potentials are overwhelming
         res.iter_mut()
             .zip(self.external_potential.iter())
-            .for_each(|(r, &p)| {
-                if p + f64::EPSILON >= MAX_POTENTIAL {
-                    *r = 0.0;
-                }
-            });
+            .filter(|(_, &p)| p + f64::EPSILON >= MAX_POTENTIAL)
+            .for_each(|(r, _)| *r = 0.0);
 
         // additional residuals for the calculation of the bulk densities
         let z = self.integrate_reduced_comp(&rho_projected);
