@@ -91,6 +91,23 @@ pub trait FunctionalContribution:
         &self,
         temperature: f64,
         weighted_densities: Array2<f64>,
+        helmholtz_energy_density: ArrayViewMut1<f64>,
+        first_partial_derivative: ArrayViewMut2<f64>,
+    ) -> EosResult<()>;
+
+    fn second_partial_derivatives(
+        &self,
+        temperature: f64,
+        weighted_densities: Array2<f64>,
+        helmholtz_energy_density: ArrayViewMut1<f64>,
+        first_partial_derivative: ArrayViewMut2<f64>,
+        second_partial_derivative: ArrayViewMut3<f64>,
+    ) -> EosResult<()>;
+
+    fn first_partial_derivatives_dyn(
+        &self,
+        temperature: f64,
+        weighted_densities: Array2<f64>,
         mut helmholtz_energy_density: ArrayViewMut1<f64>,
         mut first_partial_derivative: ArrayViewMut2<f64>,
     ) -> EosResult<()> {
@@ -112,7 +129,7 @@ pub trait FunctionalContribution:
         Ok(())
     }
 
-    fn second_partial_derivatives(
+    fn second_partial_derivatives_dyn(
         &self,
         temperature: f64,
         weighted_densities: ArrayView2<f64>,
@@ -154,6 +171,69 @@ pub trait FunctionalContribution:
         helmholtz_energy_density.assign(&phi.mapv(|p| p.re));
         Ok(())
     }
+}
+
+pub trait PartialDerivativesDual<const N: usize>:
+    FunctionalContributionDual<DualVec64<N>> + FunctionalContributionDual<Dual2Vec64<N>>
+{
+    fn first_partial_derivatives_n(
+        &self,
+        temperature: f64,
+        weighted_densities: Array2<f64>,
+        mut helmholtz_energy_density: ArrayViewMut1<f64>,
+        mut first_partial_derivative: ArrayViewMut2<f64>,
+    ) -> EosResult<()> {
+        let t = DualVec64::<N>::from(temperature);
+        let mut wd = weighted_densities.mapv(DualVec64::<N>::from);
+        for i in 0..N {
+            wd.index_axis_mut(Axis(0), i)
+                .map_inplace(|x| x.eps[i] = 1.0);
+        }
+        let phi = self.calculate_helmholtz_energy_density(t, wd.view())?;
+        helmholtz_energy_density.assign(&phi.mapv(|p| p.re));
+        for i in 0..N {
+            first_partial_derivative
+                .index_axis_mut(Axis(0), i)
+                .assign(&phi.mapv(|p| p.eps[i]));
+        }
+
+        Ok(())
+    }
+
+    fn second_partial_derivatives_n(
+        &self,
+        temperature: f64,
+        weighted_densities: Array2<f64>,
+        mut helmholtz_energy_density: ArrayViewMut1<f64>,
+        mut first_partial_derivative: ArrayViewMut2<f64>,
+        mut second_partial_derivative: ArrayViewMut3<f64>,
+    ) -> EosResult<()> {
+        let t = Dual2Vec64::<N>::from(temperature);
+        let mut wd = weighted_densities.mapv(Dual2Vec64::<N>::from);
+        for i in 0..N {
+            wd.index_axis_mut(Axis(0), i).map_inplace(|x| x.v1[i] = 1.0);
+        }
+        let phi = self.calculate_helmholtz_energy_density(t, wd.view())?;
+        helmholtz_energy_density.assign(&phi.mapv(|p| p.re));
+        for i in 0..N {
+            first_partial_derivative
+                .index_axis_mut(Axis(0), i)
+                .assign(&phi.mapv(|p| p.v1[i]));
+            for j in 0..N {
+                second_partial_derivative
+                    .index_axis_mut(Axis(0), i)
+                    .index_axis_mut(Axis(0), j)
+                    .assign(&phi.mapv(|p| p.v2[(i, j)]));
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl<T, const N: usize> PartialDerivativesDual<N> for T where
+    T: FunctionalContributionDual<DualVec64<N>> + FunctionalContributionDual<Dual2Vec64<N>>
+{
 }
 
 // impl<T> FunctionalContribution for T where

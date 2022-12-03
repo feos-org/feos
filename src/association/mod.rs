@@ -5,7 +5,7 @@ use feos_core::{EosError, EosResult, HelmholtzEnergyDual, StateHD};
 #[cfg(feature = "dft")]
 use feos_derive::FunctionalContribution;
 #[cfg(feature = "dft")]
-use feos_dft::{FunctionalContribution, FunctionalContributionDual};
+use feos_dft::{FunctionalContribution, PartialDerivativesDual};
 use ndarray::*;
 use num_dual::linalg::{norm, LU};
 use num_dual::*;

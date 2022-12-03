@@ -4,7 +4,7 @@ use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{
     FunctionalContribution, FunctionalContributionDual, HelmholtzEnergyFunctional, MoleculeShape,
-    WeightFunction, WeightFunctionInfo, WeightFunctionShape, DFT,
+    PartialDerivativesDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape, DFT,
 };
 use ndarray::*;
 use num_dual::*;
