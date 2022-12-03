@@ -4,8 +4,8 @@ use crate::pets::parameters::PetsParameters;
 use feos_core::{EosError, EosResult};
 use feos_derive::FunctionalContribution;
 use feos_dft::{
-    FunctionalContribution, FunctionalContributionDual, WeightFunction, WeightFunctionInfo,
-    WeightFunctionShape,
+    FunctionalContribution, FunctionalContributionDual, PartialDerivativesDual, WeightFunction,
+    WeightFunctionInfo, WeightFunctionShape,
 };
 use ndarray::*;
 use num_dual::*;

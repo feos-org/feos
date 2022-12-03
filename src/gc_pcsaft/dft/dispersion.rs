@@ -4,8 +4,8 @@ use crate::hard_sphere::HardSphereProperties;
 use feos_core::EosResult;
 use feos_derive::FunctionalContribution;
 use feos_dft::{
-    FunctionalContribution, FunctionalContributionDual, WeightFunction, WeightFunctionInfo,
-    WeightFunctionShape,
+    FunctionalContribution, FunctionalContributionDual, PartialDerivativesDual, WeightFunction,
+    WeightFunctionInfo, WeightFunctionShape,
 };
 use ndarray::*;
 use num_dual::*;
