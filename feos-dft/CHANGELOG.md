@@ -9,12 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `PlanarInterface` now has methods for the calculation of the 90-10 interface thickness (`PlanarInterface::interfacial_thickness`), interfacial enrichtment (`PlanarInterface::interfacial_enrichment`), and relative adsorption (`PlanarInterface::relative_adsorption`). [#64](https://github.com/feos-org/feos/pull/64)
 - Added a matrix-free Newton DFT solver that uses GMRES for the linear subproblem. [#75](https://github.com/feos-org/feos/pull/75)
 - Solver metrics like execution time and the residuals are automatically logged during every computation. The results can be accessed via the `solver_log` field of `DFTProfile`. [#75](https://github.com/feos-org/feos/pull/75)
-- Renamed the parameter `beta` of the Picard iteration and Anderson mixing solvers to `damping_coefficient`. [#75](https://github.com/feos-org/feos/pull/75)
 
 ### Changed
 - Added `Send` and `Sync` as supertraits to `HelmholtzEnergyFunctional` and all related traits. [#57](https://github.com/feos-org/feos/pull/57)
 - Renamed the `3d_dft` feature to `rayon` in accordance to the other feos crates. [#62](https://github.com/feos-org/feos/pull/62)
 - internally rewrote the implementation of the Euler-Lagrange equation to use a bulk density instead of the chemical potential as variable. [#60](https://github.com/feos-org/feos/pull/60)
+- Renamed the parameter `beta` of the Picard iteration and Anderson mixing solvers to `damping_coefficient`. [#75](https://github.com/feos-org/feos/pull/75)
 
 ## [0.3.2] - 2022-10-13
 ### Changed
