@@ -43,7 +43,7 @@ impl dyn FunctionalContribution {
         let mut d2f = Array::zeros((w, w, n));
         self.second_partial_derivatives(
             temperature,
-            weighted_densities,
+            weighted_densities.view(),
             helmholtz_energy_density.view_mut(),
             df.view_mut(),
             d2f.view_mut(),

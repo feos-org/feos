@@ -499,8 +499,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
                                 .to_owned(),
                             |acc: Array<f64, D>, e| acc * e.weight().as_ref().unwrap(),
                         );
-                        i1 =
-                            Some(convolver.convolve(i0.clone(), &bond_weight_functions[edge.id()]));
+                        i1 = Some(convolver.convolve(i0, &bond_weight_functions[edge.id()]));
                         break 'nodes;
                     }
                 }

@@ -20,9 +20,9 @@ macro_rules! impl_profile {
                 &self,
                 log: bool,
                 py: Python<'py>,
-            ) -> PyResult<(&'py $arr2<f64>, &'py PyArray1<f64>)> {
-                let (res_rho, res_mu) = self.0.profile.residual(log)?;
-                Ok((res_rho.view().to_pyarray(py), res_mu.view().to_pyarray(py)))
+            ) -> PyResult<(&'py $arr2<f64>, &'py PyArray1<f64>, f64)> {
+                let (res_rho, res_mu, res_norm) = self.0.profile.residual(log)?;
+                Ok((res_rho.view().to_pyarray(py), res_mu.view().to_pyarray(py), res_norm))
             }
 
             /// Solve the profile in-place. A non-default solver can be provided
@@ -87,6 +87,11 @@ macro_rules! impl_profile {
             #[getter]
             fn get_bulk(&self) -> PyState {
                 PyState(self.0.profile.bulk.clone())
+            }
+
+            #[getter]
+            fn get_solver_log<'py>(&self, py: Python<'py>) -> Option<PyDFTSolverLog> {
+                self.0.profile.solver_log.clone().map(PyDFTSolverLog)
             }
 
             #[getter]

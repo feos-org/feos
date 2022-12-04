@@ -5,4 +5,4 @@ mod solvation;
 mod solver;
 
 pub use adsorption::PyExternalPotential;
-pub use solver::PyDFTSolver;
+pub use solver::{PyDFTSolver, PyDFTSolverLog};

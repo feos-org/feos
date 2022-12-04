@@ -21,7 +21,7 @@ pub use functional::{HelmholtzEnergyFunctional, MoleculeShape, DFT};
 pub use functional_contribution::{FunctionalContribution, FunctionalContributionDual};
 pub use geometry::{Axis, Geometry, Grid};
 pub use profile::{DFTProfile, DFTSpecification, DFTSpecifications};
-pub use solver::DFTSolver;
+pub use solver::{DFTSolver, DFTSolverLog};
 pub use weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 
 #[cfg(feature = "python")]
