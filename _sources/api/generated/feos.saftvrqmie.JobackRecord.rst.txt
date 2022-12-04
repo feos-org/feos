@@ -1,0 +1,29 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrqmie.JobackRecord
+============================
+
+.. currentmodule:: feos.saftvrqmie
+
+.. autoclass:: JobackRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~JobackRecord.__init__
+      ~JobackRecord.from_json_str
+      ~JobackRecord.to_json_str
+   
+   
+
+   
+   
+   

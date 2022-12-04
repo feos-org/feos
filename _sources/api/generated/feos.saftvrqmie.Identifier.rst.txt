@@ -1,0 +1,40 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrqmie.Identifier
+==========================
+
+.. currentmodule:: feos.saftvrqmie
+
+.. autoclass:: Identifier
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Identifier.__init__
+      ~Identifier.from_json_str
+      ~Identifier.to_json_str
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Identifier.cas
+      ~Identifier.formula
+      ~Identifier.inchi
+      ~Identifier.iupac_name
+      ~Identifier.name
+      ~Identifier.smiles
+   
+   

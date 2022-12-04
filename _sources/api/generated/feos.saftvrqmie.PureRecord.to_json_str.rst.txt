@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrqmie.PureRecord.to\_json\_str
+========================================
+
+.. currentmodule:: feos.saftvrqmie
+
+.. automethod:: PureRecord.to_json_str

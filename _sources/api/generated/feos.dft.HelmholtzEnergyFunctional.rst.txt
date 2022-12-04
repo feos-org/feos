@@ -24,6 +24,7 @@ feos.dft.HelmholtzEnergyFunctional
       ~HelmholtzEnergyFunctional.max_density
       ~HelmholtzEnergyFunctional.pcsaft
       ~HelmholtzEnergyFunctional.pets
+      ~HelmholtzEnergyFunctional.saftvrqmie
    
    
 

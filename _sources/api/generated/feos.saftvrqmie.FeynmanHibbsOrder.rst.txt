@@ -1,0 +1,34 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrqmie.FeynmanHibbsOrder
+=================================
+
+.. currentmodule:: feos.saftvrqmie
+
+.. autoclass:: FeynmanHibbsOrder
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~FeynmanHibbsOrder.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~FeynmanHibbsOrder.FH1
+      ~FeynmanHibbsOrder.FH2
+   
+   

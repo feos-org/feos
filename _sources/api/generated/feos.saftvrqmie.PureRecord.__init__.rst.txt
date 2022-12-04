@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrqmie.PureRecord.\_\_init\_\_
+=======================================
+
+.. currentmodule:: feos.saftvrqmie
+
+.. automethod:: PureRecord.__init__

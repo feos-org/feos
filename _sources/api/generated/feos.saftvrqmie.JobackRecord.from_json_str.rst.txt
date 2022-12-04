@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrqmie.JobackRecord.from\_json\_str
+============================================
+
+.. currentmodule:: feos.saftvrqmie
+
+.. automethod:: JobackRecord.from_json_str

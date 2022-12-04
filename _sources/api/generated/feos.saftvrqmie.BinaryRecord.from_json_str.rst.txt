@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrqmie.BinaryRecord.from\_json\_str
+============================================
+
+.. currentmodule:: feos.saftvrqmie
+
+.. automethod:: BinaryRecord.from_json_str

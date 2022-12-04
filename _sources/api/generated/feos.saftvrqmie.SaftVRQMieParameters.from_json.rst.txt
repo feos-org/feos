@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrqmie.SaftVRQMieParameters.from\_json
+===============================================
+
+.. currentmodule:: feos.saftvrqmie
+
+.. automethod:: SaftVRQMieParameters.from_json

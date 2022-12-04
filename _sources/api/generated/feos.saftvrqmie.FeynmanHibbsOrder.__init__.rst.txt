@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrqmie.FeynmanHibbsOrder.\_\_init\_\_
+==============================================
+
+.. currentmodule:: feos.saftvrqmie
+
+.. automethod:: FeynmanHibbsOrder.__init__

@@ -1,0 +1,41 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrqmie.SaftVRQMieParameters
+====================================
+
+.. currentmodule:: feos.saftvrqmie
+
+.. autoclass:: SaftVRQMieParameters
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~SaftVRQMieParameters.__init__
+      ~SaftVRQMieParameters.from_json
+      ~SaftVRQMieParameters.from_multiple_json
+      ~SaftVRQMieParameters.from_records
+      ~SaftVRQMieParameters.lammps_tables
+      ~SaftVRQMieParameters.new_binary
+      ~SaftVRQMieParameters.new_pure
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SaftVRQMieParameters.k_ij
+      ~SaftVRQMieParameters.l_ij
+      ~SaftVRQMieParameters.pure_records
+   
+   

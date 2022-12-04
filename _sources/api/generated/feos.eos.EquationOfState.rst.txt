@@ -25,6 +25,7 @@ feos.eos.EquationOfState
       ~EquationOfState.peng_robinson
       ~EquationOfState.pets
       ~EquationOfState.python
+      ~EquationOfState.saftvrqmie
       ~EquationOfState.second_virial_coefficient
       ~EquationOfState.second_virial_coefficient_temperature_derivative
       ~EquationOfState.third_virial_coefficient

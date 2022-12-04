@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.HelmholtzEnergyFunctional.saftvrqmie
+=============================================
+
+.. currentmodule:: feos.dft
+
+.. automethod:: HelmholtzEnergyFunctional.saftvrqmie

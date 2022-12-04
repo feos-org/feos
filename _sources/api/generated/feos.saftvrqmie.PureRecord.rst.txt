@@ -1,0 +1,38 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrqmie.PureRecord
+==========================
+
+.. currentmodule:: feos.saftvrqmie
+
+.. autoclass:: PureRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PureRecord.__init__
+      ~PureRecord.from_json_str
+      ~PureRecord.to_json_str
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PureRecord.ideal_gas_record
+      ~PureRecord.identifier
+      ~PureRecord.model_record
+      ~PureRecord.molarweight
+   
+   
