@@ -16,6 +16,11 @@ use crate::pcsaft::{DQVariants, PcSaftFunctional, PcSaftOptions};
 use crate::pets::python::PyPetsParameters;
 #[cfg(feature = "pets")]
 use crate::pets::{PetsFunctional, PetsOptions};
+#[cfg(feature = "saftvrqmie")]
+use crate::saftvrqmie::python::PySaftVRQMieParameters;
+#[cfg(feature = "saftvrqmie")]
+use crate::saftvrqmie::{FeynmanHibbsOrder, SaftVRQMieFunctional, SaftVRQMieOptions};
+
 use feos_core::*;
 use feos_dft::adsorption::*;
 use feos_dft::interface::*;
@@ -58,7 +63,7 @@ impl PyFunctionalVariant {
     ///
     /// Returns
     /// -------
-    /// Functional
+    /// HelmholtzEnergyFunctional
     #[cfg(feature = "pcsaft")]
     #[args(
         fmt_version = "FMTVersion::WhiteBear",
@@ -107,7 +112,7 @@ impl PyFunctionalVariant {
     ///
     /// Returns
     /// -------
-    /// Functional
+    /// HelmholtzEnergyFunctional
     #[cfg(feature = "gc_pcsaft")]
     #[args(
         fmt_version = "FMTVersion::WhiteBear",
@@ -150,7 +155,7 @@ impl PyFunctionalVariant {
     ///
     /// Returns
     /// -------
-    /// Functional
+    /// HelmholtzEnergyFunctional
     #[cfg(feature = "pets")]
     #[args(fmt_version = "FMTVersion::WhiteBear", max_eta = "0.5")]
     #[staticmethod]
@@ -173,12 +178,57 @@ impl PyFunctionalVariant {
     ///
     /// Returns
     /// -------
-    /// Functional
+    /// HelmholtzEnergyFunctional
     #[staticmethod]
     #[pyo3(text_signature = "(sigma, version)")]
     fn fmt(sigma: &PyArray1<f64>, fmt_version: FMTVersion) -> Self {
         Self(Arc::new(
             FMTFunctional::new(&sigma.to_owned_array(), fmt_version).into(),
+        ))
+    }
+
+    /// SAFT-VRQ Mie Helmholtz energy functional.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters : SaftVRQMieParameters
+    ///     The parameters of the SAFT-VRQ Mie Helmholtz energy functional to use.
+    /// fmt_version: FMTVersion, optional
+    ///     The specific variant of the FMT term. Defaults to FMTVersion.WhiteBear
+    /// max_eta : float, optional
+    ///     Maximum packing fraction. Defaults to 0.5.
+    /// fh_order : FeynmanHibbsOrder, optional
+    ///     Which Feyman-Hibbs correction order to use. Defaults to FeynmanHibbsOrder.FH1.
+    ///     Currently, only the first order is implemented.
+    /// inc_nonadd_term : bool, optional
+    ///     Include non-additive correction to the hard-sphere reference. Defaults to True.
+    ///
+    /// Returns
+    /// -------
+    /// HelmholtzEnergyFunctional
+    #[cfg(feature = "saftvrqmie")]
+    #[staticmethod]
+    #[args(
+        fmt_version = "FMTVersion::WhiteBear",
+        max_eta = "0.5",
+        fh_order = "FeynmanHibbsOrder::FH1",
+        inc_nonadd_term = "true"
+    )]
+    #[pyo3(text_signature = "(parameters, fmt_version, max_eta, fh_order, inc_nonadd_term)")]
+    fn saftvrqmie(
+        parameters: PySaftVRQMieParameters,
+        fmt_version: FMTVersion,
+        max_eta: f64,
+        fh_order: FeynmanHibbsOrder,
+        inc_nonadd_term: bool,
+    ) -> Self {
+        let options = SaftVRQMieOptions {
+            max_eta,
+            fh_order,
+            inc_nonadd_term,
+        };
+        Self(Arc::new(
+            SaftVRQMieFunctional::with_options(parameters.0, fmt_version, options).into(),
         ))
     }
 }

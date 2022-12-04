@@ -15,6 +15,7 @@ Implementations of Helmholtz energy functionals for DFT.
     HelmholtzEnergyFunctional.pcsaft
     HelmholtzEnergyFunctional.gcpcsaft
     HelmholtzEnergyFunctional.pets
+    HelmholtzEnergyFunctional.saftvrqmie
     HelmholtzEnergyFunctional.fmt
 ```
 

@@ -21,9 +21,7 @@ parameters = UVParameters.from_json(['methane', 'ethane'], 'parameters.json')
     Identifier
     ChemicalRecord
     PureRecord
-    SegmentRecord
     BinaryRecord
-    BinarySegmentRecord
     Perturbation
     UVRecord
     UVParameters

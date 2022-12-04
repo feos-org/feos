@@ -4,6 +4,8 @@ use crate::gc_pcsaft::GcPcSaft;
 use crate::pcsaft::PcSaft;
 #[cfg(feature = "pets")]
 use crate::pets::Pets;
+#[cfg(feature = "saftvrqmie")]
+use crate::saftvrqmie::SaftVRQMie;
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::UVTheory;
 use feos_core::cubic::PengRobinson;
@@ -31,6 +33,9 @@ pub enum EosVariant {
     #[cfg(feature = "python")]
     #[implement(molar_weight)]
     Python(PyEoSObj),
+    #[cfg(feature = "saftvrqmie")]
+    #[implement(molar_weight)]
+    SaftVRQMie(SaftVRQMie),
     #[cfg(feature = "pets")]
     #[implement(molar_weight)]
     Pets(Pets),
