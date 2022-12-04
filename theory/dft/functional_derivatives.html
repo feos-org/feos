@@ -3,7 +3,7 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Models" href="../models/index.html" /><link rel="prev" title="Euler-Lagrange equation" href="euler_lagrange_equation.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="DFT solvers" href="solver.html" /><link rel="prev" title="Euler-Lagrange equation" href="euler_lagrange_equation.html" />
 
     <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
         <title>Functional derivatives - FeOs</title>
@@ -908,6 +908,7 @@
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Classical density functional theory</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-95" name="toctree-checkbox-95" role="switch" type="checkbox"/><label for="toctree-checkbox-95"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="euler_lagrange_equation.html">Euler-Lagrange equation</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Functional derivatives</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solver.html">DFT solvers</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../models/index.html">Models</a><input class="toctree-checkbox" id="toctree-checkbox-96" name="toctree-checkbox-96" role="switch" type="checkbox"/><label for="toctree-checkbox-96"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
@@ -947,7 +948,7 @@
           </label>
         </div>
         <article role="main">
-          <section id="functional-derivatives">
+          <section class="tex2jax_ignore mathjax_ignore" id="functional-derivatives">
 <h1>Functional derivatives<a class="headerlink" href="#functional-derivatives" title="Permalink to this heading">#</a></h1>
 <p>In the last section the functional derivative</p>
 <div class="math-wrapper docutils container">
@@ -957,31 +958,31 @@
 <p>was introduced as part of the Euler-Lagrange equation. The implementation of these functional derivatives can be a major difficulty during the development of a new Helmholtz energy model. In <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> it is fully automated. The core assumption is that the residual Helmholtz energy functional <span class="math notranslate nohighlight">\(\hat F^\mathrm{res}\)</span> can be written as a sum of contributions that each can be written in the following way:</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[F=\int f[\rho(r)]dr=\int f(\lbrace n_\gamma\rbrace)dr\]</div>
+\[F=\int f[\rho(r)]\mathrm{d}r=\int f(\lbrace n_\gamma\rbrace)\mathrm{d}r\]</div>
 </div>
 <p>The Helmholtz energy density <span class="math notranslate nohighlight">\(f\)</span> which would in general be a functional of the density itself can be expressed as a <em>function</em> of weighted densities <span class="math notranslate nohighlight">\(n_\gamma\)</span> which are obtained by convolving the density profiles with weight functions <span class="math notranslate nohighlight">\(\omega_\gamma^\alpha\)</span></p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[n_\gamma(r)=\sum_\alpha\int\rho_\alpha(r')\omega_\gamma^\alpha(r-r')dr'\tag{1}\]</div>
+\[n_\gamma(r)=\sum_\alpha\int\rho_\alpha(r')\omega_\gamma^\alpha(r-r')\mathrm{d}r'\tag{1}\]</div>
 </div>
 <p>In practice the weight functions tend to have simple shapes like step functions (i.e. the weighted density is an average over a sphere) or Dirac distributions (i.e. the weighted density is an average over the surface of a sphere).</p>
 <p>For Helmholtz energy functionals that can be written in this form, the calculation of the functional derivative can be automated. In general the functional derivative can be written as</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[F_{\rho_\alpha}(r)=\int\frac{\delta f(r')}{\delta\rho_\alpha(r)}dr'=\int\sum_\gamma f_{n_\gamma}(r')\frac{\delta n_\gamma(r')}{\delta\rho_\alpha(r)}dr'\]</div>
+\[F_{\rho_\alpha}(r)=\int\frac{\delta f(r')}{\delta\rho_\alpha(r)}\mathrm{d}r'=\int\sum_\gamma f_{n_\gamma}(r')\frac{\delta n_\gamma(r')}{\delta\rho_\alpha(r)}\mathrm{d}r'\]</div>
 </div>
 <p>with <span class="math notranslate nohighlight">\(f_{n_\gamma}\)</span> as abbreviation for the <em>partial</em> derivative <span class="math notranslate nohighlight">\(\frac{\partial f}{\partial n_\gamma}\)</span>. Using the definition of the weighted densities (1), the expression can be rewritten as</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{align}
-F_{\rho_\alpha}(r)&amp;=\int\sum_\gamma f_{n_\gamma}(r')\frac{\delta n_\gamma(r')}{\delta\rho_\alpha(r)}dr'=\int\sum_\gamma f_{n_\gamma}(r')\sum_{\alpha'}\int\underbrace{\frac{\delta\rho_{\alpha'}(r'')}{\delta\rho_\alpha(r)}}_{\delta(r-r'')\delta_{\alpha\alpha'}}\omega_\gamma^{\alpha'}(r'-r'')dr''dr'\\
-&amp;=\sum_\gamma\int f_{n_\gamma}(r')\omega_\gamma^\alpha(r'-r)dr
+F_{\rho_\alpha}(r)&amp;=\int\sum_\gamma f_{n_\gamma}(r')\frac{\delta n_\gamma(r')}{\delta\rho_\alpha(r)}\mathrm{d}r'=\int\sum_\gamma f_{n_\gamma}(r')\sum_{\alpha'}\int\underbrace{\frac{\delta\rho_{\alpha'}(r'')}{\delta\rho_\alpha(r)}}_{\delta(r-r'')\delta_{\alpha\alpha'}}\omega_\gamma^{\alpha'}(r'-r'')\mathrm{d}r''\mathrm{d}r'\\
+&amp;=\sum_\gamma\int f_{n_\gamma}(r')\omega_\gamma^\alpha(r'-r)\mathrm{d}r
 \end{align}\end{split}\]</div>
 </div>
 <p>At this point the parity of the weight functions has to be taken into account. By construction scalar and spherically symmetric weight functions (the standard case) are even functions, i.e., <span class="math notranslate nohighlight">\(\omega(-r)=\omega(r)\)</span>. In contrast, vector valued weight functions, as they appear in fundamental measure theory, have odd parity, i.e., <span class="math notranslate nohighlight">\(\omega(-r)=-\omega(r)\)</span>. Therefore, the sum over the weight functions needs to be split into two contributions, as</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[F_{\rho_\alpha}(r)=\sum_\gamma^\mathrm{scal}\int f_{n_\gamma}(r')\omega_\gamma^\alpha(r-r')dr-\sum_\gamma^\mathrm{vec}\int f_{n_\gamma}(r')\omega_\gamma^\alpha(r-r')dr\tag{2}\]</div>
+\[F_{\rho_\alpha}(r)=\sum_\gamma^\mathrm{scal}\int f_{n_\gamma}(r')\omega_\gamma^\alpha(r-r')\mathrm{d}r-\sum_\gamma^\mathrm{vec}\int f_{n_\gamma}(r')\omega_\gamma^\alpha(r-r')\mathrm{d}r\tag{2}\]</div>
 </div>
 <p>With this distinction, the calculation of the functional derivative is split into three steps</p>
 <ol class="arabic simple">
@@ -1002,12 +1003,12 @@ F_{\rho_\alpha}(r)&amp;=\int\sum_\gamma f_{n_\gamma}(r')\frac{\delta n_\gamma(r'
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../models/index.html">
+          <a class="next-page" href="solver.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Models</div>
+                <div class="title">DFT solvers</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>

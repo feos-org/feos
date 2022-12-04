@@ -43,6 +43,7 @@ feos.dft.SolvationProfile
       ~SolvationProfile.grand_potential_density
       ~SolvationProfile.moles
       ~SolvationProfile.solvation_free_energy
+      ~SolvationProfile.solver_log
       ~SolvationProfile.temperature
       ~SolvationProfile.total_moles
       ~SolvationProfile.weighted_densities

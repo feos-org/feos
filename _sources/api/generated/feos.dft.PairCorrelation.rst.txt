@@ -43,6 +43,7 @@ feos.dft.PairCorrelation
       ~PairCorrelation.pair_correlation_function
       ~PairCorrelation.r
       ~PairCorrelation.self_solvation_free_energy
+      ~PairCorrelation.solver_log
       ~PairCorrelation.structure_factor
       ~PairCorrelation.temperature
       ~PairCorrelation.total_moles

@@ -27,7 +27,7 @@ p = critical_point.pressure()
 t = critical_point.temperature
 print(f'Critical point for methanol: T={t}, p={p}.')
 ```
-```terminal
+```output
 Critical point for methanol: T=531.5 K, p=10.7 MPa.
 ```
 ````
@@ -56,7 +56,7 @@ let p = critical_point.pressure(Contributions::Total);
 let t = critical_point.temperature;
 println!("Critical point for methanol: T={}, p={}.", t, p);
 ```
-```terminal
+```output
 Critical point for methanol: T=531.5 K, p=10.7 MPa.
 ```
 ````

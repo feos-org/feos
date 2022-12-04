@@ -908,6 +908,7 @@
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Classical density functional theory</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-95" name="toctree-checkbox-95" role="switch" type="checkbox"/><label for="toctree-checkbox-95"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Euler-Lagrange equation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="functional_derivatives.html">Functional derivatives</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solver.html">DFT solvers</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../models/index.html">Models</a><input class="toctree-checkbox" id="toctree-checkbox-96" name="toctree-checkbox-96" role="switch" type="checkbox"/><label for="toctree-checkbox-96"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
@@ -947,31 +948,35 @@
           </label>
         </div>
         <article role="main">
-          <section id="euler-lagrange-equation">
+          <section class="tex2jax_ignore mathjax_ignore" id="euler-lagrange-equation">
 <h1>Euler-Lagrange equation<a class="headerlink" href="#euler-lagrange-equation" title="Permalink to this heading">#</a></h1>
 <p>The fundamental expression in classical density functional theory is the relation between the grand potential <span class="math notranslate nohighlight">\(\Omega\)</span> and the intrinsic Helmholtz energy <span class="math notranslate nohighlight">\(F\)</span>.</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[
-\Omega(T,\mu,[\rho(r)])=F(T,[\rho(r)])-\sum_i\int\rho_i(r)\left(\mu_i-V_i^\mathrm{ext}(r)\right)\mathrm{d}r
-\]</div>
+\[\Omega(T,\mu,[\rho(r)])=F(T,[\rho(r)])-\sum_i\int\rho_i(r)\left(\mu_i-V_i^\mathrm{ext}(r)\right)\mathrm{d}r\]</div>
 </div>
-<p>What makes this expression so appealing is that the intrinsic Helmholtz energy does only depend on the temperature <span class="math notranslate nohighlight">\(T\)</span> and the density profiles <span class="math notranslate nohighlight">\(\rho_i(r)\)</span> of the system and not on the external potential <span class="math notranslate nohighlight">\(V_i^\mathrm{ext}\)</span>.</p>
+<p>What makes this expression so appealing is that the intrinsic Helmholtz energy only depends on the temperature <span class="math notranslate nohighlight">\(T\)</span> and the density profiles <span class="math notranslate nohighlight">\(\rho_i(r)\)</span> of the system and not on the external potential <span class="math notranslate nohighlight">\(V_i^\mathrm{ext}(r)\)</span>.</p>
 <p>For a given temperature <span class="math notranslate nohighlight">\(T\)</span>, chemical potentials <span class="math notranslate nohighlight">\(\mu\)</span> and external potentials <span class="math notranslate nohighlight">\(V^\mathrm{ext}(r)\)</span> the grand potential reaches a minimum at equilibrium. Mathematically this condition can be written as</p>
-<div class="math-wrapper docutils container">
-<div class="math notranslate nohighlight">
-\[\left.\frac{\delta\Omega}{\delta\rho_i(r)}\right|_{T,\mu}=F_{\rho_i}(r)-\mu_i+V_i^{\mathrm{ext}}(r)=0\tag{1}\]</div>
+<div class="math-wrapper docutils container" id="equation-eqn-euler-lagrange-mu">
+<div class="math notranslate nohighlight" id="equation-eqn-euler-lagrange-mu">
+<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-euler-lagrange-mu" title="Permalink to this equation">#</a></span>\[\left.\frac{\delta\Omega}{\delta\rho_i(r)}\right|_{T,\mu}=F_{\rho_i}(r)-\mu_i+V_i^{\mathrm{ext}}(r)=0\]</div>
 </div>
 <p>where <span class="math notranslate nohighlight">\(F_{\rho_i}(r)=\left.\frac{\delta F}{\delta\rho_i(r)}\right|_T\)</span> is short for the functional derivative of the intrinsic Helmholtz energy. In this context, eq. (1) is commonly referred to as the Euler-Lagrange equation, an implicit nonlinear integral equation which needs to be solved for the density profiles of the system.</p>
 <p>For a homogeneous (bulk) system, <span class="math notranslate nohighlight">\(V^\mathrm{ext}=0\)</span> and we get</p>
-<div class="math-wrapper docutils container">
-<div class="math notranslate nohighlight">
-\[F_{\rho_i}^\mathrm{b}-\mu_i=0\]</div>
+<div class="math-wrapper docutils container" id="equation-eqn-euler-lagrange-bulk">
+<div class="math notranslate nohighlight" id="equation-eqn-euler-lagrange-bulk">
+<span class="eqno">(2)<a class="headerlink" href="#equation-eqn-euler-lagrange-bulk" title="Permalink to this equation">#</a></span>\[F_{\rho_i}^\mathrm{b}-\mu_i=0\]</div>
 </div>
-<p>which can be inserted into (1) to give</p>
-<div class="math-wrapper docutils container">
-<div class="math notranslate nohighlight">
-\[F_{\rho_i}(r)=F_{\rho_i}^\mathrm{b}-V_i^\mathrm{ext}(r)\tag{2}\]</div>
+<p>The functional derivative of the Helmholtz energy of a bulk system <span class="math notranslate nohighlight">\(F_{\rho_i}^\mathrm{b}\)</span> is a function of the temperature <span class="math notranslate nohighlight">\(T\)</span> and bulk densities <span class="math notranslate nohighlight">\(\rho^\mathrm{b}\)</span>. At this point, it can be advantageous to relate the grand potential of an inhomogeneous system to the densities of a bulk system that is in equilibrium with the inhomogeneous system. This approach has several advantages:</p>
+<ul class="simple">
+<li><p>The thermal de Broglie wavelength <span class="math notranslate nohighlight">\(\Lambda\)</span> cancels out.</p></li>
+<li><p>If the chemical potential of the system is not known, all variables are the same quantity (densities).</p></li>
+<li><p>The bulk system is described by a Helmholtz energy which is explicit in the density, so there are no internal iterations required.</p></li>
+</ul>
+<p>Using eq. <a class="reference internal" href="#equation-eqn-euler-lagrange-bulk">(2)</a> in eq. <a class="reference internal" href="#equation-eqn-euler-lagrange-mu">(1)</a> leads to the Euler-Lagrange equation</p>
+<div class="math-wrapper docutils container" id="equation-eqn-euler-lagrange-rho">
+<div class="math notranslate nohighlight" id="equation-eqn-euler-lagrange-rho">
+<span class="eqno">(3)<a class="headerlink" href="#equation-eqn-euler-lagrange-rho" title="Permalink to this equation">#</a></span>\[\left.\frac{\delta\Omega}{\delta\rho_i(r)}\right|_{T,\rho^\mathrm{b}}=F_{\rho_i}(r)-F_{\rho_i}^\mathrm{b}+V_i^{\mathrm{ext}}(r)=0\]</div>
 </div>
 <section id="spherical-molecules">
 <h2>Spherical molecules<a class="headerlink" href="#spherical-molecules" title="Permalink to this heading">#</a></h2>
@@ -980,21 +985,26 @@
 <div class="math notranslate nohighlight">
 \[\beta F=\sum_i\int\rho_i(r)\left(\ln\left(\rho_i(r)\Lambda_i^3\right)-1\right)\mathrm{d}r+\beta F^\mathrm{res}\]</div>
 </div>
-<p>with the de Broglie wavelength <span class="math notranslate nohighlight">\(\Lambda_i\)</span>. The functional derivatives for an inhomogeneous and a bulk system follow as</p>
+<p>with the thermal de Broglie wavelength <span class="math notranslate nohighlight">\(\Lambda_i\)</span>. The functional derivatives for an inhomogeneous and a bulk system follow as</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\beta F_{\rho_i}=\ln\left(\rho_i(r)\Lambda_i^3\right)+\beta F_{\rho_i}^\mathrm{res}\]</div>
+\[\beta F_{\rho_i}(r)=\ln\left(\rho_i(r)\Lambda_i^3\right)+\beta F_{\rho_i}^\mathrm{res}\]</div>
 </div>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[\beta F_{\rho_i}^\mathrm{b}=\ln\left(\rho_i^\mathrm{b}\Lambda_i^3\right)+\beta F_{\rho_i}^\mathrm{b,res}\]</div>
 </div>
-<p>Using these expressions in eq. (2) and solving for the density results in</p>
+<p>Using these expressions in eq. <a class="reference internal" href="#equation-eqn-euler-lagrange-rho">(3)</a> results in</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\left.\frac{\delta\beta\Omega}{\delta\rho_i(r)}\right|_{T,\rho^\mathrm{b}}=\ln\left(\frac{\rho_i(r)}{\rho_i^\mathrm{b}}\right)+\beta\left(F_{\rho_i}^\mathrm{res}(r)-F_{\rho_i}^\mathrm{b,res}+V_i^{\mathrm{ext}}(r)\right)=0\]</div>
+</div>
+<p>The Euler-Lagrange equation can be recast as</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[\rho_i(r)=\rho_i^\mathrm{b}e^{\beta\left(F_{\rho_i}^\mathrm{b,res}-F_{\rho_i}^\mathrm{res}(r)-V_i^\mathrm{ext}(r)\right)}\]</div>
 </div>
-<p>which is the common form of the Euler-Lagrange equation for spherical molecules.</p>
+<p>which is convenient because it leads directly to a recurrence relation known as Picard iteration.</p>
 </section>
 <section id="homosegmented-chains">
 <h2>Homosegmented chains<a class="headerlink" href="#homosegmented-chains" title="Permalink to this heading">#</a></h2>
@@ -1025,7 +1035,7 @@ The presence of <span class="math notranslate nohighlight">\(\rho(r)\)</span> in
 <p>The functional derivatives are then similar to the spherical case</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\beta F_{\rho_i}=m_i\ln\left(\rho_i(r)\Lambda_i^3\right)+\beta\hat{F}_{\rho_i}^\mathrm{res}\]</div>
+\[\beta F_{\rho_i}(r)=m_i\ln\left(\rho_i(r)\Lambda_i^3\right)+\beta\hat{F}_{\rho_i}^\mathrm{res}(r)\]</div>
 </div>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1044,10 +1054,10 @@ The presence of <span class="math notranslate nohighlight">\(\rho(r)\)</span> in
 <div class="math notranslate nohighlight">
 \[\rho_\alpha(r)=\Lambda_i^{-3}e^{\beta\left(\mu_i-\hat F_{\rho_\alpha}(r)-V_\alpha^\mathrm{ext}(r)\right)}\prod_{\alpha'}I_{\alpha\alpha'}(r)\]</div>
 </div>
-<p>with</p>
+<p>with the bond integrals <span class="math notranslate nohighlight">\(I_{\alpha\alpha'}(r)\)</span> that are calculated recursively from</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[I_{\alpha\alpha'}(r)=\int e^{-\beta\left(F_{\rho_{\alpha'}}(r')+V_{\alpha'}^\mathrm{ext}(r')\right)}\left(\prod_{\alpha''\neq\alpha}I_{\alpha'\alpha''}(r)\right)\omega_\mathrm{chain}^{\alpha\alpha'}(r-r')\mathrm{d}r\]</div>
+\[I_{\alpha\alpha'}(r)=\int e^{-\beta\left(\hat{F}_{\rho_{\alpha'}}(r')+V_{\alpha'}^\mathrm{ext}(r')\right)}\left(\prod_{\alpha''\neq\alpha}I_{\alpha'\alpha''}(r)\right)\omega_\mathrm{chain}^{\alpha\alpha'}(r-r')\mathrm{d}r\]</div>
 </div>
 <p>The index <span class="math notranslate nohighlight">\(\alpha\)</span> is used for every segment on component <span class="math notranslate nohighlight">\(i\)</span>, <span class="math notranslate nohighlight">\(\alpha'\)</span> refers to all segments bonded to segment <span class="math notranslate nohighlight">\(\alpha\)</span> and <span class="math notranslate nohighlight">\(\alpha''\)</span> to all segments bonded to <span class="math notranslate nohighlight">\(\alpha'\)</span>.
 For bulk systems the expressions simplify to</p>
@@ -1076,6 +1086,10 @@ For bulk systems the expressions simplify to</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[\rho_\alpha(r)=\rho_\alpha^\mathrm{b}e^{\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{b,res}-\hat F_{\rho_\alpha}^\mathrm{res}(r)-V_\alpha^\mathrm{ext}(r)\right)}\prod_{\alpha'}I_{\alpha\alpha'}(r)\]</div>
+</div>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[I_{\alpha\alpha'}(r)=\int e^{\frac{\beta}{m_{\alpha'}}\left(\hat F_{\rho_{\alpha'}}^\mathrm{b,res}-\hat F_{\rho_{\alpha'}}^\mathrm{res}(r')-V_{\alpha'}^\mathrm{ext}(r')\right)}\left(\prod_{\alpha''\neq\alpha}I_{\alpha'\alpha''}(r')\right)\omega_\mathrm{chain}^{\alpha\alpha'}(r-r')\mathrm{d}r'\]</div>
 </div>
 <p>If molecules consist of single (possibly non-spherical) segments, the Euler-Lagrange equation simplifies to that of the homosegmented chains shown above. For heterosegmented chains, the correct expression is obtained by setting <span class="math notranslate nohighlight">\(m_\alpha=1\)</span>.</p>
 </section>
