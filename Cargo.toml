@@ -46,6 +46,15 @@ optional = true
 
 [dev-dependencies]
 approx = "0.4"
+criterion = "*"
+
+[[bench]]
+name = "benchmarks"
+harness = false
+
+[profile.release-lto]
+inherits = "release"
+lto = true
 
 [features]
 default = []
