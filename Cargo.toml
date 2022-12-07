@@ -52,6 +52,10 @@ criterion = "*"
 name = "benchmarks"
 harness = false
 
+[[bench]]
+name = "biogas"
+harness = false
+
 [profile.release-lto]
 inherits = "release"
 lto = true
