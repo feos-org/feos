@@ -1,3 +1,4 @@
+#![allow(clippy::excessive_precision)]
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use ndarray::*;
