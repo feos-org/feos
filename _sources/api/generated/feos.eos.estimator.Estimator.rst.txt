@@ -1,0 +1,37 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.estimator.Estimator
+============================
+
+.. currentmodule:: feos.eos.estimator
+
+.. autoclass:: Estimator
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Estimator.__init__
+      ~Estimator.cost
+      ~Estimator.mean_absolute_relative_difference
+      ~Estimator.predict
+      ~Estimator.relative_difference
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Estimator.datasets
+   
+   

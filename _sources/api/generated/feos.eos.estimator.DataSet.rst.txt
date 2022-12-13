@@ -1,0 +1,48 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.estimator.DataSet
+==========================
+
+.. currentmodule:: feos.eos.estimator
+
+.. autoclass:: DataSet
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~DataSet.__init__
+      ~DataSet.binary_phase_diagram
+      ~DataSet.binary_vle_chemical_potential
+      ~DataSet.binary_vle_pressure
+      ~DataSet.cost
+      ~DataSet.diffusion
+      ~DataSet.equilibrium_liquid_density
+      ~DataSet.liquid_density
+      ~DataSet.mean_absolute_relative_difference
+      ~DataSet.predict
+      ~DataSet.relative_difference
+      ~DataSet.thermal_conductivity
+      ~DataSet.vapor_pressure
+      ~DataSet.viscosity
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DataSet.datapoints
+      ~DataSet.input
+      ~DataSet.target
+   
+   

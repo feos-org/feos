@@ -1,0 +1,32 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.estimator.Loss
+=======================
+
+.. currentmodule:: feos.eos.estimator
+
+.. autoclass:: Loss
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Loss.__init__
+      ~Loss.arctan
+      ~Loss.cauchy
+      ~Loss.huber
+      ~Loss.linear
+      ~Loss.softl1
+   
+   
+
+   
+   
+   

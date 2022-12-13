@@ -1,0 +1,34 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.estimator.Phase
+========================
+
+.. currentmodule:: feos.eos.estimator
+
+.. autoclass:: Phase
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Phase.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Phase.Liquid
+      ~Phase.Vapor
+   
+   

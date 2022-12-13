@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.estimator.DataSet.binary\_vle\_chemical\_potential
+===========================================================
+
+.. currentmodule:: feos.eos.estimator
+
+.. automethod:: DataSet.binary_vle_chemical_potential

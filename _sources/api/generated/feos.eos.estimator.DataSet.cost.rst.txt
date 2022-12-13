@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.estimator.DataSet.cost
+===============================
+
+.. currentmodule:: feos.eos.estimator
+
+.. automethod:: DataSet.cost

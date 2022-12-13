@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.estimator.Loss.linear
+==============================
+
+.. currentmodule:: feos.eos.estimator
+
+.. automethod:: Loss.linear

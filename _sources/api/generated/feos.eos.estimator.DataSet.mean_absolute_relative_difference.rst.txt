@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.estimator.DataSet.mean\_absolute\_relative\_difference
+===============================================================
+
+.. currentmodule:: feos.eos.estimator
+
+.. automethod:: DataSet.mean_absolute_relative_difference
