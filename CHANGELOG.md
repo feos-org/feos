@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Added SAFT-VRQ Mie equation of state and Helmholtz energy functional for first order Feynman-Hibbs corrected Mie fluids. [#79](https://github.com/feos-org/feos/pull/79) Thanks to @morteham.
+- Added SAFT-VRQ Mie equation of state and Helmholtz energy functional for first order Feynman-Hibbs corrected Mie fluids. [#79](https://github.com/feos-org/feos/pull/79)
 - Added `estimator` module to documentation. [#86](https://github.com/feos-org/feos/pull/86)
 
 ### Changed
