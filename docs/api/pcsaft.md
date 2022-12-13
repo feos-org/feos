@@ -25,6 +25,7 @@ parameters = PcSaftParameters.from_json(['methane', 'ethane'], 'parameters.json'
     SegmentRecord
     BinaryRecord
     BinarySegmentRecord
+    DQVariants
     PcSaftRecord
     PcSaftParameters
 ```
