@@ -11,6 +11,8 @@ impl From<EstimatorError> for PyErr {
 #[macro_export]
 macro_rules! impl_estimator {
     ($eos:ty, $py_eos:ty) => {
+        /// Collection of loss functions that can be applied to residuals
+        /// to handle outliers.
         #[pyclass(name = "Loss")]
         #[derive(Clone)]
         pub struct PyLoss(Loss);
@@ -121,20 +123,26 @@ macro_rules! impl_estimator {
         impl PyDataSet {
             /// Compute the cost function for each input value.
             ///
-            /// The cost function that is used depends on the
-            /// property. See the class constructors to learn
-            /// about the cost functions of the properties.
-            ///
             /// Parameters
             /// ----------
-            /// eos : PyEos
+            /// eos : EquationOfState
             ///     The equation of state that is used.
+            /// loss : Loss
+            ///     The loss function that is applied to residuals
+            ///     to handle outliers.
             ///
             /// Returns
             /// -------
             /// numpy.ndarray[Float]
             ///     The cost function evaluated for each experimental data point.
-            #[pyo3(text_signature = "($self, eos)")]
+            /// 
+            /// Note
+            /// ----
+            /// The cost function that is used depends on the
+            /// property. For most properties it is the absolute relative difference.
+            /// See the constructors of the respective properties
+            /// to learn about the cost functions that are used.
+            #[pyo3(text_signature = "($self, eos, loss)")]
             fn cost<'py>(
                 &self,
                 eos: &$py_eos,
@@ -149,18 +157,12 @@ macro_rules! impl_estimator {
             ///
             /// Parameters
             /// ----------
-            /// eos : PyEos
+            /// eos : EquationOfState
             ///     The equation of state that is used.
             ///
             /// Returns
             /// -------
             /// SIArray1
-            ///
-            /// See also
-            /// --------
-            /// eos_python.saft.estimator.DataSet.vapor_pressure : ``DataSet`` for vapor pressure.
-            /// eos_python.saft.estimator.DataSet.liquid_density : ``DataSet`` for liquid density.
-            /// eos_python.saft.estimator.DataSet.equilibrium_liquid_density : ``DataSet`` for liquid density at vapor liquid equilibrium.
             #[pyo3(text_signature = "($self, eos)")]
             fn predict(&self, eos: &$py_eos) -> PyResult<PySIArray1> {
                 Ok(self.0.predict(&eos.0)?.into())
@@ -175,7 +177,7 @@ macro_rules! impl_estimator {
             ///
             /// Parameters
             /// ----------
-            /// eos : PyEos
+            /// eos : EquationOfState
             ///     The equation of state that is used.
             ///
             /// Returns
@@ -198,7 +200,7 @@ macro_rules! impl_estimator {
             ///
             /// Parameters
             /// ----------
-            /// eos : PyEos
+            /// eos : EquationOfState
             ///     The equation of state that is used.
             ///
             /// Returns
@@ -221,6 +223,10 @@ macro_rules! impl_estimator {
             ///     Use Antoine type equation to extrapolate vapor
             ///     pressure if experimental data is above critial
             ///     point of model. Defaults to False.
+            /// critical_temperature : SINumber, optional
+            ///     Estimate of the critical temperature used as initial
+            ///     value for critical point calculation. Defaults to None.
+            ///     For additional information, see note.
             /// max_iter : int, optional
             ///     The maximum number of iterations for critical point
             ///     and VLE algorithms.
@@ -234,12 +240,19 @@ macro_rules! impl_estimator {
             /// Returns
             /// -------
             /// ``DataSet``
+            ///
+            /// Note
+            /// ----
+            /// If no critical temperature is provided, the maximum of the `temperature` input
+            /// is used. If that fails, the default temperatures of the critical point routine
+            /// are used.
             #[staticmethod]
-            #[pyo3(text_signature = "(target, temperature, extrapolate)")]
+            #[pyo3(text_signature = "(target, temperature, extrapolate, critical_temperature=None, max_iter=None, verbosity=None)")]
             fn vapor_pressure(
                 target: &PySIArray1,
                 temperature: &PySIArray1,
                 extrapolate: Option<bool>,
+                critical_temperature: Option<&PySINumber>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
@@ -248,6 +261,7 @@ macro_rules! impl_estimator {
                     target.clone().into(),
                     temperature.clone().into(),
                     extrapolate.unwrap_or(false),
+                    critical_temperature.and_then(|tc| Some(tc.clone().into())),
                     Some((max_iter, tol, verbosity).into()),
                 )?)))
             }
@@ -439,7 +453,7 @@ macro_rules! impl_estimator {
                 PySIArray1::from(self.0.target().clone())
             }
 
-            /// Return `target` as ``SIArray1``.
+            /// Return number of stored data points.
             #[getter]
             fn get_datapoints(&self) -> usize {
                 self.0.datapoints()
@@ -483,15 +497,9 @@ macro_rules! impl_estimator {
 
             /// Compute the cost function for each ``DataSet``.
             ///
-            /// The cost function is:
-            /// - The relative difference between prediction and target value,
-            /// - to which a loss function is applied,
-            /// - and which is weighted according to the number of datapoints,
-            /// - and the relative weights as defined in the Estimator object.
-            ///
             /// Parameters
             /// ----------
-            /// eos : PyEos
+            /// eos : EquationOfState
             ///     The equation of state that is used.
             ///
             /// Returns
@@ -499,6 +507,15 @@ macro_rules! impl_estimator {
             /// numpy.ndarray[Float]
             ///     The cost function evaluated for each experimental data point
             ///     of each ``DataSet``.
+            /// 
+            /// Note
+            /// ----
+            /// The cost function is:
+            /// 
+            /// - The relative difference between prediction and target value,
+            /// - to which a loss function is applied,
+            /// - and which is weighted according to the number of datapoints,
+            /// - and the relative weights as defined in the Estimator object.
             #[pyo3(text_signature = "($self, eos)")]
             fn cost<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
                 Ok(self.0.cost(&eos.0)?.view().to_pyarray(py))
@@ -509,7 +526,7 @@ macro_rules! impl_estimator {
             ///
             /// Parameters
             /// ----------
-            /// eos : PyEos
+            /// eos : EquationOfState
             ///     The equation of state that is used.
             ///
             /// Returns
@@ -534,7 +551,7 @@ macro_rules! impl_estimator {
             ///
             /// Parameters
             /// ----------
-            /// eos : PyEos
+            /// eos : EquationOfState
             ///     The equation of state that is used.
             ///
             /// Returns
@@ -562,7 +579,7 @@ macro_rules! impl_estimator {
             ///
             /// Parameters
             /// ----------
-            /// eos : PyEos
+            /// eos : EquationOfState
             ///     The equation of state that is used.
             ///
             /// Returns

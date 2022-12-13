@@ -29,15 +29,18 @@ impl<U: EosUnit> VaporPressure<U> {
         target: QuantityArray1<U>,
         temperature: QuantityArray1<U>,
         extrapolate: bool,
+        critical_temperature: Option<QuantityScalar<U>>,
         solver_options: Option<SolverOptions>,
     ) -> Result<Self, EstimatorError> {
         let datapoints = target.len();
-        let max_temperature = temperature
-            .to_reduced(U::reference_temperature())?
-            .into_iter()
-            .reduce(|a, b| a.max(b))
-            .unwrap()
-            * U::reference_temperature();
+        let max_temperature = critical_temperature.unwrap_or(
+            temperature
+                .to_reduced(U::reference_temperature())?
+                .into_iter()
+                .reduce(|a, b| a.max(b))
+                .unwrap()
+                * U::reference_temperature(),
+        );
         Ok(Self {
             target,
             temperature,
@@ -72,7 +75,8 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
         let critical_point =
-            State::critical_point(eos, None, Some(self.max_temperature), self.solver_options)?;
+            State::critical_point(eos, None, Some(self.max_temperature), self.solver_options)
+                .or_else(|_| State::critical_point(eos, None, None, self.solver_options))?;
         let tc = critical_point.temperature;
         let pc = critical_point.pressure(Contributions::Total);
 
