@@ -138,7 +138,7 @@ impl ParameterHetero for GcPcSaftEosParameters {
                 sigma.push(segment.model_record.sigma);
                 epsilon_k.push(segment.model_record.epsilon_k);
 
-                let mut assoc = segment.model_record.association_record.clone();
+                let mut assoc = segment.model_record.association_record;
                 if let Some(mut assoc) = assoc.as_mut() {
                     assoc.na = Some(assoc.na.unwrap_or(1.0) * count);
                     assoc.nb = Some(assoc.nb.unwrap_or(1.0) * count);

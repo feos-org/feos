@@ -11,15 +11,12 @@ use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape,
 use ndarray::{Array, Array1, Array2};
 use non_additive_hs::NonAddHardSphereFunctional;
 use num_dual::DualNum;
-use pure_saft_functional::*;
 use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
-//mod association;
 mod dispersion;
 mod non_additive_hs;
-mod pure_saft_functional;
 
 /// SAFT-VRQ Mie Helmholtz energy functional.
 pub struct SaftVRQMieFunctional {
@@ -50,30 +47,19 @@ impl SaftVRQMieFunctional {
     ) -> DFT<Self> {
         let mut contributions: Vec<Box<dyn FunctionalContribution>> = Vec::with_capacity(3);
 
-        if matches!(
-            fmt_version,
-            FMTVersion::WhiteBear | FMTVersion::AntiSymWhiteBear
-        ) && parameters.m.len() == 1
-        {
-            let fmt_assoc = PureFMTAssocFunctional::new(parameters.clone(), fmt_version);
-            contributions.push(Box::new(fmt_assoc));
-            let att = PureAttFunctional::new(parameters.clone());
-            contributions.push(Box::new(att));
-        } else {
-            // Hard sphere contribution
-            let hs = FMTContribution::new(&parameters, fmt_version);
-            contributions.push(Box::new(hs));
+        // Hard sphere contribution
+        let hs = FMTContribution::new(&parameters, fmt_version);
+        contributions.push(Box::new(hs));
 
-            // Non-additive hard-sphere contribution
-            if saft_options.inc_nonadd_term {
-                let non_add_hs = NonAddHardSphereFunctional::new(parameters.clone());
-                contributions.push(Box::new(non_add_hs));
-            }
-
-            // Dispersion
-            let att = AttractiveFunctional::new(parameters.clone());
-            contributions.push(Box::new(att));
+        // Non-additive hard-sphere contribution
+        if saft_options.inc_nonadd_term {
+            let non_add_hs = NonAddHardSphereFunctional::new(parameters.clone());
+            contributions.push(Box::new(non_add_hs));
         }
+
+        // Dispersion
+        let att = AttractiveFunctional::new(parameters.clone());
+        contributions.push(Box::new(att));
 
         let joback = match &parameters.joback_records {
             Some(joback_records) => Joback::new(joback_records.clone()),

@@ -78,7 +78,7 @@ impl SaftVRQMie {
         }
 
         Self {
-            parameters: parameters,
+            parameters,
             options,
             contributions,
         }

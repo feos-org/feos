@@ -436,6 +436,7 @@ impl fmt::Display for Dispersion {
     }
 }
 
+#[allow(clippy::excessive_precision)]
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -686,13 +687,13 @@ mod tests {
             -0.24264152651314486,
         ];
         let na = 6.02214076e23;
-        for it in 0..a_ref.len() {
+        for (it, &a) in a_ref.iter().enumerate() {
             let t = Dual2::from_re(26.7060 * (it + 1) as f64).derive();
             let v = Dual2::from_re(1.0e26).derive();
             let n = Dual2::from_re(na).derive();
             let state = StateHD::new(t, v, arr1(&[n]));
             let a_disp = disp.helmholtz_energy(&state) / na;
-            assert_relative_eq!(a_disp.re(), a_ref[it], epsilon = 1e-7);
+            assert_relative_eq!(a_disp.re(), a, epsilon = 1e-7);
         }
         let t = Dual2::from_re(26.7060).derive();
         let v = Dual2::from_re(1.0e26 * 2.0).derive();
@@ -729,12 +730,12 @@ mod tests {
         let na = 6.02214076e23;
         let n = [Dual2::from_re(1.1 * na), Dual2::from_re(1.0 * na)];
         let v = Dual2::from_re(1.0e26).derive();
-        for it in 0..a_ref.len() {
+        for (it, &a) in a_ref.iter().enumerate() {
             let t = Dual2::from_re(30.0 * (it + 1) as f64).derive();
             let state = StateHD::new(t, v, arr1(&n));
             let a_disp = disp.helmholtz_energy(&state) / na;
             dbg!(it);
-            assert_relative_eq!(a_disp.re(), a_ref[it], epsilon = 1e-7);
+            assert_relative_eq!(a_disp.re(), a, epsilon = 1e-7);
         }
         let t = Dual2::from_re(30.0).derive();
         let v = Dual2::from_re(1.0e26 * 2.0).derive();
@@ -769,7 +770,7 @@ mod tests {
         let dq_ij = Array2::from_shape_fn((n, n), |(i, j)| p.quantum_d_ij(i, j, t));
 
         // alphas .... // calc & store this in struct
-        let alpha = Alpha::new(&p, &s_eff_ij, &epsilon_k_eff_ij, t);
+        let alpha = Alpha::new(p, &s_eff_ij, &epsilon_k_eff_ij, t);
         let a_disp = dispersion_energy_density(
             p,
             &d_hs_ij,

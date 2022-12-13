@@ -344,12 +344,12 @@ impl SaftVRQMieParameters {
                     .identifier
                     .name
                     .clone()
-                    .unwrap_or(i.to_string());
+                    .unwrap_or_else(|| i.to_string());
                 let name_j = self.pure_records[j]
                     .identifier
                     .name
                     .clone()
-                    .unwrap_or(j.to_string());
+                    .unwrap_or_else(|| j.to_string());
 
                 let name = if i == j {
                     name_i

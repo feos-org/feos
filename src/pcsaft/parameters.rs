@@ -354,13 +354,13 @@ impl Parameter for PcSaftParameters {
         let dipole_comp: Array1<usize> = mu2
             .iter()
             .enumerate()
-            .filter_map(|(i, &mu2)| (mu2.abs() > 0.0).then(|| i))
+            .filter_map(|(i, &mu2)| (mu2.abs() > 0.0).then_some(i))
             .collect();
         let ndipole = dipole_comp.len();
         let quadpole_comp: Array1<usize> = q2
             .iter()
             .enumerate()
-            .filter_map(|(i, &q2)| (q2.abs() > 0.0).then(|| i))
+            .filter_map(|(i, &q2)| (q2.abs() > 0.0).then_some(i))
             .collect();
         let nquadpole = quadpole_comp.len();
 

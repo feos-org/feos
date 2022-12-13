@@ -100,6 +100,7 @@ mod tests {
         assert_relative_eq!(a_rust / na, 0.0, epsilon = 1e-12);
     }
 
+    #[allow(clippy::excessive_precision)]
     #[test]
     fn test_non_add_hs_helmholtz_energy_mix() {
         let hs = NonAddHardSphere {
