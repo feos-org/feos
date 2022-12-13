@@ -11,8 +11,8 @@ impl From<EstimatorError> for PyErr {
 #[macro_export]
 macro_rules! impl_estimator {
     ($eos:ty, $py_eos:ty) => {
-        /// Loss function that is applied to the residuals to 
-        /// weight to in- and outliers.
+        /// Collection of loss functions that can be applied to residuals
+        /// to handle outliers.
         #[pyclass(name = "Loss")]
         #[derive(Clone)]
         pub struct PyLoss(Loss);
@@ -129,7 +129,7 @@ macro_rules! impl_estimator {
             ///     The equation of state that is used.
             /// loss : Loss
             ///     The loss function that is applied to residuals
-            ///     to distinguish between in- and outliers.
+            ///     to handle outliers.
             ///
             /// Returns
             /// -------
