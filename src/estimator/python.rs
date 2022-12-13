@@ -11,6 +11,7 @@ impl From<EstimatorError> for PyErr {
 #[macro_export]
 macro_rules! impl_estimator {
     ($eos:ty, $py_eos:ty) => {
+        /// Loss function that is applied to the residuum to calculate costs.
         #[pyclass(name = "Loss")]
         #[derive(Clone)]
         pub struct PyLoss(Loss);
@@ -221,6 +222,10 @@ macro_rules! impl_estimator {
             ///     Use Antoine type equation to extrapolate vapor
             ///     pressure if experimental data is above critial
             ///     point of model. Defaults to False.
+            /// critical_temperature : SINumber, optional
+            ///     Estimate of the critical temperature used as initial
+            ///     value for critical point calculation. Defaults to None.
+            ///     For additional information, see note.
             /// max_iter : int, optional
             ///     The maximum number of iterations for critical point
             ///     and VLE algorithms.
@@ -234,12 +239,19 @@ macro_rules! impl_estimator {
             /// Returns
             /// -------
             /// ``DataSet``
+            ///
+            /// Note
+            /// ----
+            /// If no critical temperature is provided, the maximum of the `temperature` input
+            /// is used. If that fails, the default temperatures of the critical point routine
+            /// are used.
             #[staticmethod]
-            #[pyo3(text_signature = "(target, temperature, extrapolate)")]
+            #[pyo3(text_signature = "(target, temperature, extrapolate, critical_temperature=None, max_iter=None, verbosity=None)")]
             fn vapor_pressure(
                 target: &PySIArray1,
                 temperature: &PySIArray1,
                 extrapolate: Option<bool>,
+                critical_temperature: Option<&PySINumber>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
@@ -248,6 +260,7 @@ macro_rules! impl_estimator {
                     target.clone().into(),
                     temperature.clone().into(),
                     extrapolate.unwrap_or(false),
+                    critical_temperature.and_then(|tc| Some(tc.clone().into())),
                     Some((max_iter, tol, verbosity).into()),
                 )?)))
             }
@@ -439,7 +452,7 @@ macro_rules! impl_estimator {
                 PySIArray1::from(self.0.target().clone())
             }
 
-            /// Return `target` as ``SIArray1``.
+            /// Return number of stored data points.
             #[getter]
             fn get_datapoints(&self) -> usize {
                 self.0.datapoints()

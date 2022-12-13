@@ -35,3 +35,17 @@ The `State` and `PhaseEquilibrium` objects are used to define thermodynamic cond
     PhaseEquilibrium
     PhaseDiagram
 ```
+
+## Estimator
+
+```{eval-rst}
+.. currentmodule:: feos.eos.estimator
+
+.. autosummary::
+    :toctree: generated/
+
+    DataSet
+    Loss
+    Estimator
+    Phase
+```
