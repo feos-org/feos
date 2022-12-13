@@ -113,7 +113,7 @@ fn molar_volume(inp: (&Arc<PcSaft>, SINumber, SINumber, &Array1<f64>)) -> SIArra
     .molar_volume(Contributions::ResidualNvt)
 }
 
-fn benchmark_properties(c: &mut Criterion) {
+fn properties_pcsaft(c: &mut Criterion) {
     let parameters = PcSaftParameters::from_json(
         vec!["methane", "ethane", "propane"],
         "./parameters/pcsaft/gross2001.json",
@@ -128,7 +128,7 @@ fn benchmark_properties(c: &mut Criterion) {
     let x = arr1(&[1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]);
     let m = &x * 100.0 * MOL;
 
-    let mut group = c.benchmark_group("properties");
+    let mut group = c.benchmark_group("PC-SAFT methane + ethane + propane");
     group.bench_function("a", |b| b.iter(|| helmholtz_energy((&eos, t, volume, &m))));
     group.bench_function("compressibility", |b| {
         b.iter(|| compressibility((&eos, t, density, &x)))
@@ -140,5 +140,5 @@ fn benchmark_properties(c: &mut Criterion) {
     });
 }
 
-criterion_group!(bench, benchmark_properties,);
+criterion_group!(bench, properties_pcsaft);
 criterion_main!(bench);
