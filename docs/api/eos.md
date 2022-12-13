@@ -3,6 +3,8 @@
 The `eos` module contains the `EquationOfState` object that contains all implemented equations of state.
 The `State` and `PhaseEquilibrium` objects are used to define thermodynamic conditions and -- once created -- can be used to compute properties.
 
+If you want to adjust parameters of a model to experimental data you can use classes and utilities from the `estimator` module.
+
 ## `EquationOfState`
 
 ```{eval-rst}
@@ -36,7 +38,13 @@ The `State` and `PhaseEquilibrium` objects are used to define thermodynamic cond
     PhaseDiagram
 ```
 
-## Estimator
+## The `estimator` module
+
+### Import 
+
+```python
+from feos.eos.estimator import Estimator, DataSet, Loss, Phase
+```
 
 ```{eval-rst}
 .. currentmodule:: feos.eos.estimator
@@ -44,8 +52,8 @@ The `State` and `PhaseEquilibrium` objects are used to define thermodynamic cond
 .. autosummary::
     :toctree: generated/
 
+    Estimator
     DataSet
     Loss
-    Estimator
     Phase
 ```
