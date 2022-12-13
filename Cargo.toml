@@ -46,14 +46,14 @@ optional = true
 
 [dev-dependencies]
 approx = "0.4"
-criterion = "*"
+criterion = "0.4"
 
 [[bench]]
-name = "benchmarks"
+name = "state_properties"
 harness = false
 
 [[bench]]
-name = "biogas"
+name = "dual_numbers"
 harness = false
 
 [profile.release-lto]
