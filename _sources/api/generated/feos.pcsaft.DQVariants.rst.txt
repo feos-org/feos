@@ -1,0 +1,34 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.DQVariants
+======================
+
+.. currentmodule:: feos.pcsaft
+
+.. autoclass:: DQVariants
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~DQVariants.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DQVariants.DQ35
+      ~DQVariants.DQ44
+   
+   
