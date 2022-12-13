@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Export `EosVariant` and `FunctionalVariant` directly in the crate root instead of their own modules. [#62](https://github.com/feos-org/feos/pull/62)
 - Changed constructors `VaporPressure::new` and `DataSet.vapor_pressure` (Python) to take a new optional argument `critical_temperature`. [#86](https://github.com/feos-org/feos/pull/86)
+- The limitations of the homo gc method for PC-SAFT are enforced more strictly. [#88](https://github.com/feos-org/feos/pull/88)
 
 ## [0.3.0] - 2022-09-14
 - Major restructuring of the entire `feos` project. All individual models are reunited in the `feos` crate. `feos-core` and `feos-dft` still live as individual crates within the `feos` workspace.

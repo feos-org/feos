@@ -151,25 +151,15 @@ impl FromSegments<f64> for PcSaftRecord {
 impl FromSegments<usize> for PcSaftRecord {
     fn from_segments(segments: &[(Self, usize)]) -> Result<Self, ParameterError> {
         // We do not allow more than a single segment for q, mu, kappa_ab, epsilon_k_ab
-        let quadpole_comps = segments.iter().filter_map(|(s, _)| s.q).count();
-        if quadpole_comps > 1 {
-            return Err(ParameterError::IncompatibleParameters(format!(
-                "{quadpole_comps} segments with quadrupole moment."
-            )));
-        };
-        let dipole_comps = segments.iter().filter_map(|(s, _)| s.mu).count();
-        if dipole_comps > 1 {
-            return Err(ParameterError::IncompatibleParameters(format!(
-                "{dipole_comps} segment with dipole moment."
-            )));
-        };
-        let assoc_comps = segments
+        let quadpole_segments: usize = segments.iter().filter_map(|(s, n)| s.q.map(|_| n)).sum();
+        let dipole_segments: usize = segments.iter().filter_map(|(s, n)| s.mu.map(|_| n)).sum();
+        let assoc_segments: usize = segments
             .iter()
-            .filter_map(|(s, _)| s.association_record.as_ref())
-            .count();
-        if assoc_comps > 1 {
+            .filter_map(|(s, n)| s.association_record.map(|_| n))
+            .sum();
+        if quadpole_segments + dipole_segments + assoc_segments > 1 {
             return Err(ParameterError::IncompatibleParameters(format!(
-                "{assoc_comps} segments with association sites."
+                "Too many polar/associating segments (dipolar: {dipole_segments}, quadrupolar {quadpole_segments}, associating: {assoc_segments})."
             )));
         }
         let segments: Vec<_> = segments
