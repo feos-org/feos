@@ -7,22 +7,58 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::{
     parameter::{IdentifierOption, Parameter},
-    EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, State, StateHD,
+    Derivative, EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, State, StateHD,
 };
-use ndarray::arr1;
-use num_dual::{Dual3, Dual64, DualNum, HyperDual64};
+use ndarray::{arr1, Array};
+use num_dual::DualNum;
 use quantity::si::*;
 use std::sync::Arc;
 
-/// Residual Helmholtz energy given a StateHD
-fn a_res<D: DualNum<f64>>(inp: (&Arc<PcSaft>, &StateHD<D>)) -> D
+/// Helper function to create a state for given parameters.
+/// - temperature is 80% of critical temperature,
+/// - volume is critical volume,
+/// - molefracs (or moles) for equimolar mixture.
+fn state_pcsaft(parameters: PcSaftParameters) -> State<SIUnit, PcSaft> {
+    let n = parameters.pure_records.len();
+    let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
+    let moles = Array::from_elem(n, 1.0 / n as f64) * 10.0 * MOL;
+    let cp = State::critical_point(&eos, Some(&moles), None, Default::default()).unwrap();
+    let temperature = 0.8 * cp.temperature;
+    State::new_nvt(&eos, temperature, cp.volume, &moles).unwrap()
+}
+
+/// Residual Helmholtz energy given an equation of state and a StateHD.
+fn a_res<D: DualNum<f64>, E: EquationOfState>(inp: (&Arc<E>, &StateHD<D>)) -> D
 where
     (dyn HelmholtzEnergy + 'static): HelmholtzEnergyDual<D>,
 {
     inp.0.evaluate_residual(inp.1)
 }
 
-fn methane_pcsaft(c: &mut Criterion) {
+/// Benchmark for evaluation of the Helmholtz energy for different dual number types.
+fn bench_dual_numbers<E: EquationOfState>(
+    c: &mut Criterion,
+    group_name: &str,
+    state: State<SIUnit, E>,
+) {
+    let mut group = c.benchmark_group(group_name);
+    group.bench_function("a_f64", |b| {
+        b.iter(|| a_res((&state.eos, &state.derive0())))
+    });
+    group.bench_function("a_dual", |b| {
+        b.iter(|| a_res((&state.eos, &state.derive1(Derivative::DV))))
+    });
+    group.bench_function("a_hyperdual", |b| {
+        b.iter(|| a_res((&state.eos, &state.derive2(Derivative::DV, Derivative::DV))))
+    });
+    group.bench_function("a_dual3", |b| {
+        b.iter(|| a_res((&state.eos, &state.derive3(Derivative::DV))))
+    });
+}
+
+/// Benchmark for the PC-SAFT equation of state
+fn pcsaft(c: &mut Criterion) {
+    // methane
     let parameters = PcSaftParameters::from_json(
         vec!["methane"],
         "./parameters/pcsaft/gross2001.json",
@@ -30,64 +66,9 @@ fn methane_pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
+    bench_dual_numbers(c, "methane", state_pcsaft(parameters));
 
-    let cp = State::critical_point(&eos, None, None, Default::default()).unwrap();
-
-    let t = 0.8 * cp.temperature;
-    let density = cp.density;
-    let volume = 10.0 * MOL / density;
-    let x = arr1(&[1.0]);
-    let m = &x * 10.0 * MOL;
-
-    let mut group = c.benchmark_group("PC-SAFT methane");
-
-    // real valued evaluation
-    let s = StateHD::new(
-        t.to_reduced(KELVIN).unwrap(),
-        volume.to_reduced(ANGSTROM.powi(3)).unwrap(),
-        m.to_reduced(MOL).unwrap(),
-    );
-    group.bench_function("a_f64", |b| b.iter(|| a_res((&eos, &s))));
-
-    // da_dv - dual number
-    let s = StateHD::new(
-        Dual64::from_re(t.to_reduced(KELVIN).unwrap()),
-        Dual64::from_re(volume.to_reduced(ANGSTROM.powi(3)).unwrap()).derive(),
-        m.to_reduced(MOL)
-            .unwrap()
-            .iter()
-            .map(|&mi| Dual64::from_re(mi))
-            .collect(),
-    );
-    group.bench_function("a_dual", |b| b.iter(|| a_res((&eos, &s))));
-
-    // d2a_dv2 - hyperdual number
-    let s = StateHD::new(
-        HyperDual64::from_re(t.to_reduced(KELVIN).unwrap()).derive1(),
-        HyperDual64::from_re(volume.to_reduced(ANGSTROM.powi(3)).unwrap()).derive2(),
-        m.to_reduced(MOL)
-            .unwrap()
-            .iter()
-            .map(|&mi| HyperDual64::from_re(mi))
-            .collect(),
-    );
-    group.bench_function("a_hyperdual", |b| b.iter(|| a_res((&eos, &s))));
-
-    // d3a_dv3 - dual3 number
-    let s = StateHD::new(
-        Dual3::from_re(t.to_reduced(KELVIN).unwrap()),
-        Dual3::from_re(volume.to_reduced(ANGSTROM.powi(3)).unwrap()).derive(),
-        m.to_reduced(MOL)
-            .unwrap()
-            .iter()
-            .map(|&mi| Dual3::from_re(mi))
-            .collect(),
-    );
-    group.bench_function("a_dual3", |b| b.iter(|| a_res((&eos, &s))));
-}
-
-fn water_4c_polar_pcsaft(c: &mut Criterion) {
+    // water (4C, polar)
     let parameters = PcSaftParameters::from_json(
         vec!["water_4C_polar"],
         "./parameters/pcsaft/rehner2020.json",
@@ -95,63 +76,21 @@ fn water_4c_polar_pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
+    bench_dual_numbers(c, "water_4c_polar", state_pcsaft(parameters));
 
-    let cp = State::critical_point(&eos, None, None, Default::default()).unwrap();
-
-    let t = 0.8 * cp.temperature;
-    let density = cp.density;
-    let volume = 10.0 * MOL / density;
-    let x = arr1(&[1.0]);
-    let m = &x * 10.0 * MOL;
-
-    let mut group = c.benchmark_group("PC-SAFT water (4C, polar)");
-
-    // real valued evaluation
-    let s = StateHD::new(
-        t.to_reduced(KELVIN).unwrap(),
-        volume.to_reduced(ANGSTROM.powi(3)).unwrap(),
-        m.to_reduced(MOL).unwrap(),
-    );
-    group.bench_function("a_f64", |b| b.iter(|| a_res((&eos, &s))));
-
-    // da_dv - dual number
-    let s = StateHD::new(
-        Dual64::from_re(t.to_reduced(KELVIN).unwrap()),
-        Dual64::from_re(volume.to_reduced(ANGSTROM.powi(3)).unwrap()).derive(),
-        m.to_reduced(MOL)
-            .unwrap()
-            .iter()
-            .map(|&mi| Dual64::from_re(mi))
-            .collect(),
-    );
-    group.bench_function("a_dual", |b| b.iter(|| a_res((&eos, &s))));
-
-    // d2a_dv2 - hyperdual number
-    let s = StateHD::new(
-        HyperDual64::from_re(t.to_reduced(KELVIN).unwrap()).derive1(),
-        HyperDual64::from_re(volume.to_reduced(ANGSTROM.powi(3)).unwrap()).derive2(),
-        m.to_reduced(MOL)
-            .unwrap()
-            .iter()
-            .map(|&mi| HyperDual64::from_re(mi))
-            .collect(),
-    );
-    group.bench_function("a_hyperdual", |b| b.iter(|| a_res((&eos, &s))));
-
-    // d3a_dv3 - dual3 number
-    let s = StateHD::new(
-        Dual3::from_re(t.to_reduced(KELVIN).unwrap()),
-        Dual3::from_re(volume.to_reduced(ANGSTROM.powi(3)).unwrap()).derive(),
-        m.to_reduced(MOL)
-            .unwrap()
-            .iter()
-            .map(|&mi| Dual3::from_re(mi))
-            .collect(),
-    );
-    group.bench_function("a_dual3", |b| b.iter(|| a_res((&eos, &s))));
+    // methane, ethane, propane
+    let parameters = PcSaftParameters::from_json(
+        vec!["methane", "ethane", "propane"],
+        "./parameters/pcsaft/gross2001.json",
+        None,
+        IdentifierOption::Name,
+    )
+    .unwrap();
+    bench_dual_numbers(c, "methane_ethane_propane", state_pcsaft(parameters));
 }
 
+/// Benchmark for the PC-SAFT equation of state.
+/// Binary system of methane and co2 used to model biogas.
 fn methane_co2_pcsaft(c: &mut Criterion) {
     let parameters = PcSaftParameters::from_multiple_json(
         &[
@@ -171,63 +110,14 @@ fn methane_co2_pcsaft(c: &mut Criterion) {
     let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
 
     // 230 K, 50 bar, x0 = 0.15
-    let t = 230.0 * KELVIN;
+    let temperature = 230.0 * KELVIN;
     let density = 24.16896 * KILO * MOL / METER.powi(3);
     let volume = 10.0 * MOL / density;
     let x = arr1(&[0.15, 0.85]);
-    let m = &x * 10.0 * MOL;
-
-    let mut group = c.benchmark_group("PC-SAFT methane + co2");
-
-    // real valued evaluation
-    let s = StateHD::new(
-        t.to_reduced(KELVIN).unwrap(),
-        volume.to_reduced(ANGSTROM.powi(3)).unwrap(),
-        m.to_reduced(MOL).unwrap(),
-    );
-    group.bench_function("a_f64", |b| b.iter(|| a_res((&eos, &s))));
-
-    // da_dv - dual number
-    let s = StateHD::new(
-        Dual64::from_re(t.to_reduced(KELVIN).unwrap()),
-        Dual64::from_re(volume.to_reduced(ANGSTROM.powi(3)).unwrap()).derive(),
-        m.to_reduced(MOL)
-            .unwrap()
-            .iter()
-            .map(|&mi| Dual64::from_re(mi))
-            .collect(),
-    );
-    group.bench_function("a_dual", |b| b.iter(|| a_res((&eos, &s))));
-
-    // d2a_dv2 - hyperdual number
-    let s = StateHD::new(
-        HyperDual64::from_re(t.to_reduced(KELVIN).unwrap()).derive1(),
-        HyperDual64::from_re(volume.to_reduced(ANGSTROM.powi(3)).unwrap()).derive2(),
-        m.to_reduced(MOL)
-            .unwrap()
-            .iter()
-            .map(|&mi| HyperDual64::from_re(mi))
-            .collect(),
-    );
-    group.bench_function("a_hyperdual", |b| b.iter(|| a_res((&eos, &s))));
-
-    // d3a_dv3 - dual3 number
-    let s = StateHD::new(
-        Dual3::from_re(t.to_reduced(KELVIN).unwrap()),
-        Dual3::from_re(volume.to_reduced(ANGSTROM.powi(3)).unwrap()).derive(),
-        m.to_reduced(MOL)
-            .unwrap()
-            .iter()
-            .map(|&mi| Dual3::from_re(mi))
-            .collect(),
-    );
-    group.bench_function("a_dual3", |b| b.iter(|| a_res((&eos, &s))));
+    let moles = &x * 10.0 * MOL;
+    let state = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
+    bench_dual_numbers(c, "methane_co2", state);
 }
 
-criterion_group!(
-    bench,
-    methane_pcsaft,
-    water_4c_polar_pcsaft,
-    methane_co2_pcsaft
-);
+criterion_group!(bench, pcsaft, methane_co2_pcsaft);
 criterion_main!(bench);

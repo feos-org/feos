@@ -42,7 +42,7 @@ pub use errors::{EosError, EosResult};
 pub use phase_equilibria::{
     PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, SolverOptions, Verbosity,
 };
-pub use state::{Contributions, DensityInitialization, State, StateBuilder, StateHD, StateVec};
+pub use state::{Contributions, DensityInitialization, State, StateBuilder, StateHD, StateVec, Derivative};
 
 #[cfg(feature = "python")]
 pub mod python;
