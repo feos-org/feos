@@ -26,7 +26,7 @@ fn helmholtz_energy(inp: (&Arc<PcSaft>, SINumber, SINumber, &SIArray1)) -> f64 {
         None,
     )
     .unwrap()
-    .compressibility(Contributions::Total)
+    .helmholtz_energy(Contributions::Total)
 }
 
 fn compressibility(inp: (&Arc<PcSaft>, SINumber, SINumber, &Array1<f64>)) -> f64 {

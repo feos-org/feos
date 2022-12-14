@@ -96,7 +96,7 @@ If there is no compiled package for your system available from PyPI and you have
 pip install git+https://github.com/feos-org/feos
 ```
 
-This command builds the package without link-time optimization (LTO) which results in considerably worse performance.
+This command builds the package without link-time optimization (LTO) that can be used to increase the performance further.
 See the *Building from source* section for information about building the wheel including LTO.
 
 ### Building from source
@@ -131,7 +131,7 @@ Use the following command to build a wheel with specific features:
 maturin build --profile="release-lto" --features "python ..."
 ```
 
-LTO increases compile times drastically but the resulting wheel is way more performant and has a smaller size.
+LTO increases compile times measurably but the resulting wheel is more performant and has a smaller size.
 For development however, we recommend using the `--release` flag.
 
 ## Documentation
