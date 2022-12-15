@@ -1,8 +1,10 @@
 use crate::saftvrqmie::eos::dispersion::{dispersion_energy_density, Alpha};
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
 use feos_core::EosResult;
+use feos_derive::FunctionalContribution;
 use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
+    FunctionalContribution, FunctionalContributionDual, PartialDerivativesDual, WeightFunction,
+    WeightFunctionInfo, WeightFunctionShape,
 };
 use ndarray::*;
 use num_dual::DualNum;
@@ -14,7 +16,8 @@ const PSI_DFT: f64 = 1.3862;
 /// psi Parameter for pDGT (Rehner2018)
 const PSI_PDGT: f64 = 1.3286;
 
-#[derive(Clone)]
+#[derive(FunctionalContribution)]
+#[max_size(5)]
 pub struct AttractiveFunctional {
     parameters: Arc<SaftVRQMieParameters>,
     // Store stuff here

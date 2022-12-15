@@ -203,7 +203,7 @@ pub trait PartialDerivativesDual<const N: usize>:
     fn second_partial_derivatives_n(
         &self,
         temperature: f64,
-        weighted_densities: Array2<f64>,
+        weighted_densities: ArrayView2<f64>,
         mut helmholtz_energy_density: ArrayViewMut1<f64>,
         mut first_partial_derivative: ArrayViewMut2<f64>,
         mut second_partial_derivative: ArrayViewMut3<f64>,

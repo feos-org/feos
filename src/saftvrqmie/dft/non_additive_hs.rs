@@ -1,7 +1,9 @@
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
 use feos_core::EosResult;
+use feos_derive::FunctionalContribution;
 use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
+    FunctionalContribution, FunctionalContributionDual, PartialDerivativesDual, WeightFunction,
+    WeightFunctionInfo, WeightFunctionShape,
 };
 use ndarray::*;
 use num_dual::DualNum;
@@ -11,7 +13,8 @@ use std::sync::Arc;
 
 pub const N0_CUTOFF: f64 = 1e-9;
 
-#[derive(Clone)]
+#[derive(FunctionalContribution)]
+#[max_size(10)]
 pub struct NonAddHardSphereFunctional {
     parameters: Arc<SaftVRQMieParameters>,
 }
