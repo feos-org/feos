@@ -3,11 +3,13 @@
 //! the boilerplate for the EquationOfState and HelmholtzEnergyFunctional traits.
 use dft::expand_helmholtz_energy_functional;
 use eos::expand_equation_of_state;
+use functional_contribution::expand_functional_contribution;
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
 
 mod dft;
 mod eos;
+mod functional_contribution;
 
 fn implement(name: &str, variant: &syn::Variant, opts: &[&'static str]) -> syn::Result<bool> {
     let syn::Variant { attrs, .. } = variant;
@@ -57,4 +59,10 @@ pub fn derive_helmholtz_energy_functional(input: TokenStream) -> TokenStream {
     expand_helmholtz_energy_functional(input)
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
+}
+
+#[proc_macro_derive(FunctionalContribution, attributes(max_size))]
+pub fn derive_functional_contribution(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    expand_functional_contribution(input).into()
 }
