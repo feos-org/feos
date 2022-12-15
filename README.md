@@ -96,36 +96,51 @@ If there is no compiled package for your system available from PyPI and you have
 pip install git+https://github.com/feos-org/feos
 ```
 
+This command builds the package without link-time optimization (LTO) that can be used to increase the performance further.
+See the *Building from source* section for information about building the wheel including LTO.
+
 ### Building from source
 
 To compile the code you need the Rust compiler and `maturin` (>=0.13,<0.14) installed.
-To install the package directly into the active environment, use
+To install the package directly into the active environment (virtualenv or conda), use
 
 ```
-maturin develop --release --features python
+maturin develop --release
 ```
 
-and specify the models that you want to include in the python package as additional features, e.g.
+which uses the `python` and `all_models` feature as specified in the `pyproject.toml` file.
+
+Alternatively, you can specify the models or features that you want to include in the python package explicitly, e.g.
 
 ```
 maturin develop --release --features "python pcsaft dft"
 ```
 
-for the PC-SAFT equation of state and Helmholtz energy functional. If you want to include all available models, use
+for the PC-SAFT equation of state and Helmholtz energy functional.
+
+To build wheels including link-time optimization (LTO), use
 
 ```
-maturin develop --release --features "python all_models"
+maturin build --profile="release-lto"
 ```
 
-To build wheels, use
+which will use the `python` and `all_models` features specified in the `pyproject.toml` file.
+Use the following command to build a wheel with specific features:
 
 ```
-maturin build --release --out dist --features "python ..."
+maturin build --profile="release-lto" --features "python ..."
 ```
+
+LTO increases compile times measurably but the resulting wheel is more performant and has a smaller size.
+For development however, we recommend using the `--release` flag.
 
 ## Documentation
 
 For a documentation of the Python API, Python examples, and a guide to the underlying Rust framework check out the [documentation](https://feos-org.github.io/feos/).
+
+## Benchmarks
+
+Check out the [benches](https://github.com/feos-org/feos/tree/main/benches) directory for information about provided Rust benchmarks and how to run them.
 
 ## Developers
 

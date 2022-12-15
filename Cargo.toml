@@ -46,6 +46,19 @@ optional = true
 
 [dev-dependencies]
 approx = "0.4"
+criterion = "0.4"
+
+[[bench]]
+name = "state_properties"
+harness = false
+
+[[bench]]
+name = "dual_numbers"
+harness = false
+
+[profile.release-lto]
+inherits = "release"
+lto = true
 
 [features]
 default = []

@@ -188,7 +188,7 @@ where
 /// Derivatives of the helmholtz energy.
 #[derive(Clone, Copy, Eq, Hash, PartialEq, Debug, PartialOrd, Ord)]
 #[allow(non_camel_case_types)]
-pub(crate) enum Derivative {
+pub enum Derivative {
     /// Derivative with respect to system volume.
     DV,
     /// Derivative with respect to temperature.
@@ -670,7 +670,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         Err(EosError::NotConverged("State::update_gibbs_energy".into()))
     }
 
-    fn derive0(&self) -> StateHD<f64> {
+    /// Creates a [StateHD] cloning temperature, volume and moles.
+    pub fn derive0(&self) -> StateHD<f64> {
         StateHD::new(
             self.reduced_temperature,
             self.reduced_volume,
@@ -678,7 +679,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         )
     }
 
-    fn derive1(&self, derivative: Derivative) -> StateHD<Dual64> {
+    /// Creates a [StateHD] taking the first derivative.
+    pub fn derive1(&self, derivative: Derivative) -> StateHD<Dual64> {
         let mut t = Dual64::from(self.reduced_temperature);
         let mut v = Dual64::from(self.reduced_volume);
         let mut n = self.reduced_moles.mapv(Dual64::from);
@@ -690,7 +692,12 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         StateHD::new(t, v, n)
     }
 
-    fn derive2(&self, derivative1: Derivative, derivative2: Derivative) -> StateHD<HyperDual64> {
+    /// Creates a [StateHD] taking the first and second (partial) derivatives.
+    pub fn derive2(
+        &self,
+        derivative1: Derivative,
+        derivative2: Derivative,
+    ) -> StateHD<HyperDual64> {
         let mut t = HyperDual64::from(self.reduced_temperature);
         let mut v = HyperDual64::from(self.reduced_volume);
         let mut n = self.reduced_moles.mapv(HyperDual64::from);
@@ -707,7 +714,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         StateHD::new(t, v, n)
     }
 
-    fn derive3(&self, derivative: Derivative) -> StateHD<Dual3_64> {
+    /// Creates a [StateHD] taking the first, second, and third derivative with respect to a single property.
+    pub fn derive3(&self, derivative: Derivative) -> StateHD<Dual3_64> {
         let mut t = Dual3_64::from(self.reduced_temperature);
         let mut v = Dual3_64::from(self.reduced_volume);
         let mut n = self.reduced_moles.mapv(Dual3_64::from);
