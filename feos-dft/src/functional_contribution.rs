@@ -98,7 +98,7 @@ pub trait FunctionalContribution:
     fn second_partial_derivatives(
         &self,
         temperature: f64,
-        weighted_densities: Array2<f64>,
+        weighted_densities: ArrayView2<f64>,
         helmholtz_energy_density: ArrayViewMut1<f64>,
         first_partial_derivative: ArrayViewMut2<f64>,
         second_partial_derivative: ArrayViewMut3<f64>,
