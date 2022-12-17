@@ -135,7 +135,7 @@ macro_rules! impl_estimator {
             /// -------
             /// numpy.ndarray[Float]
             ///     The cost function evaluated for each experimental data point.
-            /// 
+            ///
             /// Note
             /// ----
             /// The cost function that is used depends on the
@@ -501,23 +501,32 @@ macro_rules! impl_estimator {
             /// ----------
             /// eos : EquationOfState
             ///     The equation of state that is used.
+            /// nthreads : int, optional
+            ///     The number of threads to use. Defaults to None which deactivates
+            ///     the parallel evaluation of each data set.
             ///
             /// Returns
             /// -------
             /// numpy.ndarray[Float]
             ///     The cost function evaluated for each experimental data point
             ///     of each ``DataSet``.
-            /// 
+            ///
             /// Note
             /// ----
             /// The cost function is:
-            /// 
+            ///
             /// - The relative difference between prediction and target value,
             /// - to which a loss function is applied,
             /// - and which is weighted according to the number of datapoints,
             /// - and the relative weights as defined in the Estimator object.
             #[pyo3(text_signature = "($self, eos)")]
-            fn cost<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
+            fn cost<'py>(&self, eos: &$py_eos, nthreads: Option<usize>, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
+                if let Some(nt) = nthreads {
+                    let thread_pool = rayon::ThreadPoolBuilder::new()
+                        .num_threads(nt)
+                        .build().map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+                    return Ok(self.0.par_cost(&eos.0, thread_pool)?.view().to_pyarray(py))
+                }
                 Ok(self.0.cost(&eos.0)?.view().to_pyarray(py))
             }
 

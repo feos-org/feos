@@ -6,6 +6,8 @@ use feos_core::EquationOfState;
 use ndarray::{arr1, concatenate, Array1, ArrayView1, Axis};
 use quantity::QuantityArray1;
 use quantity::QuantityScalar;
+#[cfg(feature = "rayon")]
+use rayon::{prelude::*, ThreadPool};
 use std::fmt;
 use std::fmt::Display;
 use std::fmt::Write;
@@ -43,17 +45,35 @@ where
     }
 
     /// Returns the cost of each `DataSet`.
-    ///
-    /// Each cost contains the inverse weight.
     pub fn cost(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
         let w = arr1(&self.weights) / self.weights.iter().sum::<f64>();
-        let predictions = self
+        let costs = self
             .data
             .iter()
             .enumerate()
             .map(|(i, d)| Ok(d.cost(eos, self.losses[i])? * w[i]))
             .collect::<Result<Vec<_>, EstimatorError>>()?;
-        let aview: Vec<ArrayView1<f64>> = predictions.iter().map(|pi| pi.view()).collect();
+        let aview: Vec<ArrayView1<f64>> = costs.iter().map(|pi| pi.view()).collect();
+        Ok(concatenate(Axis(0), &aview)?)
+    }
+
+    /// Returns the cost of each `DataSet` evaluated in parallel.
+    #[cfg(feature = "rayon")]
+    pub fn par_cost(
+        &self,
+        eos: &Arc<E>,
+        thread_pool: ThreadPool,
+    ) -> Result<Array1<f64>, EstimatorError> {
+        let ws_inv = 1.0 / self.weights.iter().sum::<f64>();
+        let w: Vec<_> = self.weights.iter().map(|wi| wi * ws_inv).collect();
+
+        let costs = thread_pool.install(|| {
+            (&self.data, &w, &self.losses)
+                .into_par_iter()
+                .map(|(d, &w, l)| Ok(d.cost(eos, l.clone())? * w))
+                .collect::<Result<Vec<_>, EstimatorError>>()
+        })?;
+        let aview: Vec<ArrayView1<f64>> = costs.iter().map(|pi| pi.view()).collect();
         Ok(concatenate(Axis(0), &aview)?)
     }
 
