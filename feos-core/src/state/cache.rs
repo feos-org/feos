@@ -78,7 +78,7 @@ impl Cache {
     ) -> f64 {
         let d1 = min(derivative1, derivative2);
         let d2 = max(derivative1, derivative2);
-        if let Some(&value) = self.map.get(&PartialDerivative::SecondPartial(d1, d2)) {
+        if let Some(&value) = self.map.get(&PartialDerivative::SecondMixed(d1, d2)) {
             self.hit += 1;
             value
         } else {
@@ -90,7 +90,7 @@ impl Cache {
             self.map
                 .insert(PartialDerivative::First(derivative2), value.eps2[0]);
             self.map.insert(
-                PartialDerivative::SecondPartial(d1, d2),
+                PartialDerivative::SecondMixed(d1, d2),
                 value.eps1eps2[(0, 0)],
             );
             value.eps1eps2[(0, 0)]
@@ -114,7 +114,7 @@ impl Cache {
             self.map
                 .insert(PartialDerivative::Second(derivative), value.v2);
             self.map.insert(
-                PartialDerivative::SecondPartial(derivative, derivative),
+                PartialDerivative::SecondMixed(derivative, derivative),
                 value.v2,
             );
             self.map

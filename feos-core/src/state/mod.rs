@@ -212,7 +212,7 @@ pub(crate) enum PartialDerivative {
     Zeroth,
     First(Derivative),
     Second(Derivative),
-    SecondPartial(Derivative, Derivative),
+    SecondMixed(Derivative, Derivative),
     Third(Derivative),
 }
 
@@ -707,7 +707,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     /// Creates a [StateHD] taking the first and second (partial) derivatives.
-    pub fn derive2partial(
+    pub fn derive2_mixed(
         &self,
         derivative1: Derivative,
         derivative2: Derivative,

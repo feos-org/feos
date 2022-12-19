@@ -55,8 +55,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                     -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln()).v2[0]
                         * (U::reference_energy() / (v.reference() * v.reference()))
                 }
-                PartialDerivative::SecondPartial(v1, v2) => {
-                    let new_state = self.derive2partial(v1, v2);
+                PartialDerivative::SecondMixed(v1, v2) => {
+                    let new_state = self.derive2_mixed(v1, v2);
                     -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln())
                         .eps1eps2[(0, 0)]
                         * (U::reference_energy() / (v1.reference() * v2.reference()))
@@ -94,8 +94,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                     cache.get_or_insert_with_d2_64(v, &computation) * U::reference_energy()
                         / (v.reference() * v.reference())
                 }
-                PartialDerivative::SecondPartial(v1, v2) => {
-                    let new_state = self.derive2partial(v1, v2);
+                PartialDerivative::SecondMixed(v1, v2) => {
+                    let new_state = self.derive2_mixed(v1, v2);
                     let computation =
                         || self.eos.evaluate_residual(&new_state) * new_state.temperature;
                     cache.get_or_insert_with_hd64(v1, v2, &computation) * U::reference_energy()
@@ -132,8 +132,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                         * U::reference_energy()
                         / (v.reference() * v.reference())
                 }
-                PartialDerivative::SecondPartial(v1, v2) => {
-                    let new_state = self.derive2partial(v1, v2);
+                PartialDerivative::SecondMixed(v1, v2) => {
+                    let new_state = self.derive2_mixed(v1, v2);
                     (self.eos.ideal_gas().evaluate(&new_state) * new_state.temperature).eps1eps2
                         [(0, 0)]
                         * U::reference_energy()
@@ -212,12 +212,12 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     fn dp_dt_(&self, evaluate: Evaluate) -> QuantityScalar<U> {
-        -self.get_or_compute_derivative(PartialDerivative::SecondPartial(DV, DT), evaluate)
+        -self.get_or_compute_derivative(PartialDerivative::SecondMixed(DV, DT), evaluate)
     }
 
     fn dp_dni_(&self, evaluate: Evaluate) -> QuantityArray1<U> {
         QuantityArray::from_shape_fn(self.eos.components(), |i| {
-            -self.get_or_compute_derivative(PartialDerivative::SecondPartial(DV, DN(i)), evaluate)
+            -self.get_or_compute_derivative(PartialDerivative::SecondMixed(DV, DN(i)), evaluate)
         })
     }
 
@@ -227,14 +227,14 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     fn dmu_dt_(&self, evaluate: Evaluate) -> QuantityArray1<U> {
         QuantityArray::from_shape_fn(self.eos.components(), |i| {
-            self.get_or_compute_derivative(PartialDerivative::SecondPartial(DT, DN(i)), evaluate)
+            self.get_or_compute_derivative(PartialDerivative::SecondMixed(DT, DN(i)), evaluate)
         })
     }
 
     fn dmu_dni_(&self, evaluate: Evaluate) -> QuantityArray2<U> {
         let n = self.eos.components();
         QuantityArray::from_shape_fn((n, n), |(i, j)| {
-            self.get_or_compute_derivative(PartialDerivative::SecondPartial(DN(i), DN(j)), evaluate)
+            self.get_or_compute_derivative(PartialDerivative::SecondMixed(DN(i), DN(j)), evaluate)
         })
     }
 

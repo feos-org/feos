@@ -49,7 +49,7 @@ fn bench_dual_numbers<E: EquationOfState>(
         b.iter(|| a_res((&state.eos, &state.derive1(Derivative::DV))))
     });
     group.bench_function("a_hyperdual", |b| {
-        b.iter(|| a_res((&state.eos, &state.derive2partial(Derivative::DV, Derivative::DV))))
+        b.iter(|| a_res((&state.eos, &state.derive2_mixed(Derivative::DV, Derivative::DV))))
     });
     group.bench_function("a_dual3", |b| {
         b.iter(|| a_res((&state.eos, &state.derive3(Derivative::DV))))
