@@ -211,7 +211,8 @@ impl Derivative {
 pub(crate) enum PartialDerivative {
     Zeroth,
     First(Derivative),
-    Second(Derivative, Derivative),
+    Second(Derivative),
+    SecondPartial(Derivative, Derivative),
     Third(Derivative),
 }
 
@@ -693,7 +694,20 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     /// Creates a [StateHD] taking the first and second (partial) derivatives.
-    pub fn derive2(
+    pub fn derive2(&self, derivative: Derivative) -> StateHD<Dual2_64> {
+        let mut t = Dual2_64::from(self.reduced_temperature);
+        let mut v = Dual2_64::from(self.reduced_volume);
+        let mut n = self.reduced_moles.mapv(Dual2_64::from);
+        match derivative {
+            Derivative::DT => t = t.derive(),
+            Derivative::DV => v = v.derive(),
+            Derivative::DN(i) => n[i] = n[i].derive(),
+        }
+        StateHD::new(t, v, n)
+    }
+
+    /// Creates a [StateHD] taking the first and second (partial) derivatives.
+    pub fn derive2partial(
         &self,
         derivative1: Derivative,
         derivative2: Derivative,

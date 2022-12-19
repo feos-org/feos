@@ -50,8 +50,13 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                     -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln()).eps[0]
                         * (U::reference_energy() / v.reference())
                 }
-                PartialDerivative::Second(v1, v2) => {
-                    let new_state = self.derive2(v1, v2);
+                PartialDerivative::Second(v) => {
+                    let new_state = self.derive2(v);
+                    -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln()).v2[0]
+                        * (U::reference_energy() / (v.reference() * v.reference()))
+                }
+                PartialDerivative::SecondPartial(v1, v2) => {
+                    let new_state = self.derive2partial(v1, v2);
                     -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln())
                         .eps1eps2[(0, 0)]
                         * (U::reference_energy() / (v1.reference() * v2.reference()))
@@ -82,8 +87,15 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                     cache.get_or_insert_with_d64(v, &computation) * U::reference_energy()
                         / v.reference()
                 }
-                PartialDerivative::Second(v1, v2) => {
-                    let new_state = self.derive2(v1, v2);
+                PartialDerivative::Second(v) => {
+                    let new_state = self.derive2(v);
+                    let computation =
+                        || self.eos.evaluate_residual(&new_state) * new_state.temperature;
+                    cache.get_or_insert_with_d2_64(v, &computation) * U::reference_energy()
+                        / (v.reference() * v.reference())
+                }
+                PartialDerivative::SecondPartial(v1, v2) => {
+                    let new_state = self.derive2partial(v1, v2);
                     let computation =
                         || self.eos.evaluate_residual(&new_state) * new_state.temperature;
                     cache.get_or_insert_with_hd64(v1, v2, &computation) * U::reference_energy()
@@ -114,8 +126,14 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                         * U::reference_energy()
                         / v.reference()
                 }
-                PartialDerivative::Second(v1, v2) => {
-                    let new_state = self.derive2(v1, v2);
+                PartialDerivative::Second(v) => {
+                    let new_state = self.derive2(v);
+                    (self.eos.ideal_gas().evaluate(&new_state) * new_state.temperature).v2[0]
+                        * U::reference_energy()
+                        / (v.reference() * v.reference())
+                }
+                PartialDerivative::SecondPartial(v1, v2) => {
+                    let new_state = self.derive2partial(v1, v2);
                     (self.eos.ideal_gas().evaluate(&new_state) * new_state.temperature).eps1eps2
                         [(0, 0)]
                         * U::reference_energy()
@@ -190,16 +208,16 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     fn dp_dv_(&self, evaluate: Evaluate) -> QuantityScalar<U> {
-        -self.get_or_compute_derivative(PartialDerivative::Second(DV, DV), evaluate)
+        -self.get_or_compute_derivative(PartialDerivative::Second(DV), evaluate)
     }
 
     fn dp_dt_(&self, evaluate: Evaluate) -> QuantityScalar<U> {
-        -self.get_or_compute_derivative(PartialDerivative::Second(DV, DT), evaluate)
+        -self.get_or_compute_derivative(PartialDerivative::SecondPartial(DV, DT), evaluate)
     }
 
     fn dp_dni_(&self, evaluate: Evaluate) -> QuantityArray1<U> {
         QuantityArray::from_shape_fn(self.eos.components(), |i| {
-            -self.get_or_compute_derivative(PartialDerivative::Second(DV, DN(i)), evaluate)
+            -self.get_or_compute_derivative(PartialDerivative::SecondPartial(DV, DN(i)), evaluate)
         })
     }
 
@@ -209,19 +227,19 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     fn dmu_dt_(&self, evaluate: Evaluate) -> QuantityArray1<U> {
         QuantityArray::from_shape_fn(self.eos.components(), |i| {
-            self.get_or_compute_derivative(PartialDerivative::Second(DT, DN(i)), evaluate)
+            self.get_or_compute_derivative(PartialDerivative::SecondPartial(DT, DN(i)), evaluate)
         })
     }
 
     fn dmu_dni_(&self, evaluate: Evaluate) -> QuantityArray2<U> {
         let n = self.eos.components();
         QuantityArray::from_shape_fn((n, n), |(i, j)| {
-            self.get_or_compute_derivative(PartialDerivative::Second(DN(i), DN(j)), evaluate)
+            self.get_or_compute_derivative(PartialDerivative::SecondPartial(DN(i), DN(j)), evaluate)
         })
     }
 
     fn ds_dt_(&self, evaluate: Evaluate) -> QuantityScalar<U> {
-        -self.get_or_compute_derivative(PartialDerivative::Second(DT, DT), evaluate)
+        -self.get_or_compute_derivative(PartialDerivative::Second(DT), evaluate)
     }
 
     fn d2s_dt2_(&self, evaluate: Evaluate) -> QuantityScalar<U> {

@@ -2,7 +2,7 @@ use crate::errors::{EosError, EosResult};
 use crate::state::StateHD;
 use crate::EosUnit;
 use ndarray::prelude::*;
-use num_dual::{Dual, Dual3, Dual3_64, Dual64, DualNum, DualVec64, HyperDual, HyperDual64};
+use num_dual::{Dual, Dual3, Dual3_64, Dual64, DualNum, DualVec64, HyperDual, HyperDual64, Dual2_64};
 use num_traits::{One, Zero};
 use quantity::{QuantityArray1, QuantityScalar};
 use std::fmt;
@@ -28,6 +28,7 @@ pub trait HelmholtzEnergy:
     + HelmholtzEnergyDual<Dual64>
     + HelmholtzEnergyDual<Dual<DualVec64<3>, f64>>
     + HelmholtzEnergyDual<HyperDual64>
+    + HelmholtzEnergyDual<Dual2_64>
     + HelmholtzEnergyDual<Dual3_64>
     + HelmholtzEnergyDual<HyperDual<Dual64, f64>>
     + HelmholtzEnergyDual<HyperDual<DualVec64<2>, f64>>
@@ -46,6 +47,7 @@ impl<T> HelmholtzEnergy for T where
         + HelmholtzEnergyDual<Dual64>
         + HelmholtzEnergyDual<Dual<DualVec64<3>, f64>>
         + HelmholtzEnergyDual<HyperDual64>
+        + HelmholtzEnergyDual<Dual2_64>
         + HelmholtzEnergyDual<Dual3_64>
         + HelmholtzEnergyDual<HyperDual<Dual64, f64>>
         + HelmholtzEnergyDual<HyperDual<DualVec64<2>, f64>>
@@ -99,6 +101,7 @@ pub trait IdealGasContribution:
     + IdealGasContributionDual<Dual64>
     + IdealGasContributionDual<Dual<DualVec64<3>, f64>>
     + IdealGasContributionDual<HyperDual64>
+    + IdealGasContributionDual<Dual2_64>
     + IdealGasContributionDual<Dual3_64>
     + IdealGasContributionDual<HyperDual<Dual64, f64>>
     + IdealGasContributionDual<HyperDual<DualVec64<2>, f64>>
@@ -115,6 +118,7 @@ impl<T> IdealGasContribution for T where
         + IdealGasContributionDual<Dual64>
         + IdealGasContributionDual<Dual<DualVec64<3>, f64>>
         + IdealGasContributionDual<HyperDual64>
+        + IdealGasContributionDual<Dual2_64>
         + IdealGasContributionDual<Dual3_64>
         + IdealGasContributionDual<HyperDual<Dual64, f64>>
         + IdealGasContributionDual<HyperDual<DualVec64<2>, f64>>

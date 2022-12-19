@@ -1,8 +1,10 @@
 use crate::python::statehd::*;
 use crate::*;
 use ndarray::prelude::*;
-use num_dual::python::{PyDual3Dual64, PyDual3_64, PyDual64, PyHyperDual64, PyHyperDualDual64};
-use num_dual::{Dual, Dual3, Dual3_64, Dual64, DualVec64, HyperDual, HyperDual64};
+use num_dual::python::{
+    PyDual2_64, PyDual3Dual64, PyDual3_64, PyDual64, PyHyperDual64, PyHyperDualDual64,
+};
+use num_dual::{Dual, Dual2_64, Dual3, Dual3_64, Dual64, DualVec64, HyperDual, HyperDual64};
 use numpy::convert::IntoPyArray;
 use pyo3::prelude::*;
 use quantity::python::PySIArray1;
@@ -215,6 +217,7 @@ impl_helmholtz_energy!(
     PyHyperDualDualVec64_3,
     HyperDual<DualVec64<3>, f64>
 );
+impl_helmholtz_energy!(PyStateD2, PyDual2_64, Dual2_64);
 impl_helmholtz_energy!(PyStateD3, PyDual3_64, Dual3_64);
 impl_helmholtz_energy!(PyStateD3D, PyDual3Dual64, Dual3<Dual64, f64>);
 impl_helmholtz_energy!(PyStateD3DV2, PyDual3DualVec64_2, Dual3<DualVec64<2>, f64>);

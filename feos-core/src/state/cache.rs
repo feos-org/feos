@@ -50,6 +50,26 @@ impl Cache {
         }
     }
 
+    pub fn get_or_insert_with_d2_64<F: FnOnce() -> Dual2_64>(
+        &mut self,
+        derivative: Derivative,
+        f: F,
+    ) -> f64 {
+        if let Some(&value) = self.map.get(&PartialDerivative::Second(derivative)) {
+            self.hit += 1;
+            value
+        } else {
+            self.miss += 1;
+            let value = f();
+            self.map.insert(PartialDerivative::Zeroth, value.re);
+            self.map
+                .insert(PartialDerivative::First(derivative), value.v1[0]);
+            self.map
+                .insert(PartialDerivative::Second(derivative), value.v2[0]);
+            value.v2[0]
+        }
+    }
+
     pub fn get_or_insert_with_hd64<F: FnOnce() -> HyperDual64>(
         &mut self,
         derivative1: Derivative,
@@ -58,7 +78,7 @@ impl Cache {
     ) -> f64 {
         let d1 = min(derivative1, derivative2);
         let d2 = max(derivative1, derivative2);
-        if let Some(&value) = self.map.get(&PartialDerivative::Second(d1, d2)) {
+        if let Some(&value) = self.map.get(&PartialDerivative::SecondPartial(d1, d2)) {
             self.hit += 1;
             value
         } else {
@@ -69,8 +89,10 @@ impl Cache {
                 .insert(PartialDerivative::First(derivative1), value.eps1[0]);
             self.map
                 .insert(PartialDerivative::First(derivative2), value.eps2[0]);
-            self.map
-                .insert(PartialDerivative::Second(d1, d2), value.eps1eps2[(0, 0)]);
+            self.map.insert(
+                PartialDerivative::SecondPartial(d1, d2),
+                value.eps1eps2[(0, 0)],
+            );
             value.eps1eps2[(0, 0)]
         }
     }
@@ -90,7 +112,11 @@ impl Cache {
             self.map
                 .insert(PartialDerivative::First(derivative), value.v1);
             self.map
-                .insert(PartialDerivative::Second(derivative, derivative), value.v2);
+                .insert(PartialDerivative::Second(derivative), value.v2);
+            self.map.insert(
+                PartialDerivative::SecondPartial(derivative, derivative),
+                value.v2,
+            );
             self.map
                 .insert(PartialDerivative::Third(derivative), value.v3);
             value.v3
