@@ -26,6 +26,7 @@ fn critical_point((eos, n): (&Arc<PcSaft>, Option<&SIArray1>)) {
     State::critical_point(eos, n, None, Default::default()).unwrap();
 }
 
+/// Evaluate temperature, pressure flash.
 fn tp_flash((eos, t, p, feed): (&Arc<PcSaft>, SINumber, SINumber, &SIArray1)) {
     PhaseEquilibrium::tp_flash(eos, t, p, feed, None, Default::default(), None).unwrap();
 }
