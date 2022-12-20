@@ -26,6 +26,11 @@ fn critical_point<E: EquationOfState>((eos, n): (&Arc<E>, Option<&SIArray1>)) {
     State::critical_point(eos, n, None, Default::default()).unwrap();
 }
 
+/// VLE for pure substance for given temperature or pressure
+fn pure<E: EquationOfState>((eos, t_or_p): (&Arc<E>, SINumber)) {
+    PhaseEquilibrium::pure(eos, t_or_p, None, Default::default()).unwrap();
+}
+
 /// Evaluate temperature, pressure flash.
 fn tp_flash<E: EquationOfState>((eos, t, p, feed): (&Arc<E>, SINumber, SINumber, &SIArray1)) {
     PhaseEquilibrium::tp_flash(eos, t, p, feed, None, Default::default(), None).unwrap();
@@ -119,6 +124,13 @@ fn bench_states<E: EquationOfState>(c: &mut Criterion, group_name: &str, eos: &A
 
         group.bench_function("dew_point", |b| {
             b.iter(|| dew_point((&eos, vle.vapor().temperature, &vle.vapor().molefracs)))
+        });
+    } else {
+        group.bench_function("pure_t", |b| {
+            b.iter(|| pure((&eos, vle.vapor().temperature)))
+        });
+        group.bench_function("pure_p", |b| {
+            b.iter(|| pure((&eos, vle.vapor().pressure(Contributions::Total))))
         });
     }
 }
