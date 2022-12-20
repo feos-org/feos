@@ -111,8 +111,6 @@ impl Cache {
             self.map.insert(PartialDerivative::Zeroth, value.re);
             self.map
                 .insert(PartialDerivative::First(derivative), value.v1);
-            self.map
-                .insert(PartialDerivative::Second(derivative), value.v2);
             self.map.insert(
                 PartialDerivative::SecondMixed(derivative, derivative),
                 value.v2,
