@@ -179,6 +179,7 @@ impl_state_hd!(
     HyperDual<Dual64, f64>
 );
 impl_state_hd!(PyStateD, PyDual64, StateHD<Dual64>, Dual64);
+impl_state_hd!(PyStateD2, PyDual2_64, StateHD<Dual2_64>, Dual2_64);
 impl_state_hd!(PyStateD3, PyDual3_64, StateHD<Dual3_64>, Dual3_64);
 impl_state_hd!(
     PyStateD3D,
