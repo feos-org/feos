@@ -2,7 +2,9 @@ use crate::errors::{EosError, EosResult};
 use crate::state::StateHD;
 use crate::EosUnit;
 use ndarray::prelude::*;
-use num_dual::{Dual, Dual3, Dual3_64, Dual64, DualNum, DualVec64, HyperDual, HyperDual64, Dual2_64};
+use num_dual::{
+    Dual, Dual2_64, Dual3, Dual3_64, Dual64, DualNum, DualVec64, HyperDual, HyperDual64,
+};
 use num_traits::{One, Zero};
 use quantity::{QuantityArray1, QuantityScalar};
 use std::fmt;

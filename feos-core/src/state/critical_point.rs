@@ -123,17 +123,15 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
         for i in 1..=max_iter {
             // calculate residuals and derivatives w.r.t. temperature and density
-            let res_t =
-                critical_point_objective(eos, Dual64::from(t).derive(), Dual64::from(rho), &n)?;
-            let res_r =
-                critical_point_objective(eos, Dual64::from(t), Dual64::from(rho).derive(), &n)?;
-            let res = res_t.map(Dual64::re);
+            let [t_dual, rho_dual] = *StaticVec::new_vec([t, rho])
+                .map(DualVec64::<2>::from_re)
+                .derive()
+                .raw_array();
+            let res = critical_point_objective(eos, t_dual, rho_dual, &n)?;
+            let h = arr2(res.jacobian().raw_data());
+            let res = arr1(res.map(|r| r.re()).raw_array());
 
             // calculate Newton step
-            let h = arr2(&[
-                [res_t[0].eps[0], res_r[0].eps[0]],
-                [res_t[1].eps[0], res_r[1].eps[0]],
-            ]);
             let mut delta = LU::new(h)?.solve(&res);
 
             // reduce step if necessary
@@ -470,17 +468,17 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
 fn critical_point_objective<E: EquationOfState>(
     eos: &Arc<E>,
-    temperature: Dual64,
-    density: Dual64,
+    temperature: DualVec64<2>,
+    density: DualVec64<2>,
     moles: &Array1<f64>,
-) -> EosResult<Array1<Dual64>> {
+) -> EosResult<StaticVec<DualVec64<2>, 2>> {
     // calculate second partial derivatives w.r.t. moles
     let t = HyperDual::from_re(temperature);
     let v = HyperDual::from_re(density.recip() * moles.sum());
     let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
         let mut m = moles.mapv(HyperDual::from);
-        m[i].eps1[0] = Dual64::one();
-        m[j].eps2[0] = Dual64::one();
+        m[i].eps1[0] = DualVec64::one();
+        m[j].eps2[0] = DualVec64::one();
         let state = StateHD::new(t, v, m);
         (eos.evaluate_residual(&state).eps1eps2[(0, 0)]
             + eos.ideal_gas().evaluate(&state).eps1eps2[(0, 0)])
@@ -493,10 +491,10 @@ fn critical_point_objective<E: EquationOfState>(
     // evaluate third partial derivative w.r.t. s
     let moles_hd = Array1::from_shape_fn(eos.components(), |i| {
         Dual3::new(
-            Dual64::from(moles[i]),
+            DualVec64::from(moles[i]),
             evec[i] * moles[i].sqrt(),
-            Dual64::zero(),
-            Dual64::zero(),
+            DualVec64::zero(),
+            DualVec64::zero(),
         )
     });
     let state_s = StateHD::new(
@@ -505,7 +503,7 @@ fn critical_point_objective<E: EquationOfState>(
         moles_hd,
     );
     let res = eos.evaluate_residual(&state_s) + eos.ideal_gas().evaluate(&state_s);
-    Ok(arr1(&[eval, res.v3]))
+    Ok(StaticVec::new_vec([eval, res.v3]))
 }
 
 fn critical_point_objective_t<E: EquationOfState>(
