@@ -686,9 +686,9 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         let mut v = Dual64::from(self.reduced_volume);
         let mut n = self.reduced_moles.mapv(Dual64::from);
         match derivative {
-            Derivative::DT => t.eps[0] = 1.0,
-            Derivative::DV => v.eps[0] = 1.0,
-            Derivative::DN(i) => n[i].eps[0] = 1.0,
+            Derivative::DT => t = t.derive(),
+            Derivative::DV => v = v.derive(),
+            Derivative::DN(i) => n[i] = n[i].derive(),
         }
         StateHD::new(t, v, n)
     }
@@ -716,14 +716,14 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         let mut v = HyperDual64::from(self.reduced_volume);
         let mut n = self.reduced_moles.mapv(HyperDual64::from);
         match derivative1 {
-            Derivative::DT => t.eps1[0] = 1.0,
-            Derivative::DV => v.eps1[0] = 1.0,
-            Derivative::DN(i) => n[i].eps1[0] = 1.0,
+            Derivative::DT => t = t.derive1(),
+            Derivative::DV => v = v.derive1(),
+            Derivative::DN(i) => n[i] = n[i].derive1(),
         }
         match derivative2 {
-            Derivative::DT => t.eps2[0] = 1.0,
-            Derivative::DV => v.eps2[0] = 1.0,
-            Derivative::DN(i) => n[i].eps2[0] = 1.0,
+            Derivative::DT => t = t.derive2(),
+            Derivative::DV => v = v.derive2(),
+            Derivative::DN(i) => n[i] = n[i].derive2(),
         }
         StateHD::new(t, v, n)
     }
