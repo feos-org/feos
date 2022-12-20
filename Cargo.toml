@@ -53,6 +53,10 @@ name = "state_properties"
 harness = false
 
 [[bench]]
+name = "state_creation"
+harness = false
+
+[[bench]]
 name = "dual_numbers"
 harness = false
 

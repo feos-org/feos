@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Added `Sync` and `Send` as supertraits to `EquationOfState`. [#57](https://github.com/feos-org/feos/pull/57)
+- Added `Dual2_64` dual number to `HelmholtzEnergy` trait to facilitate efficient non-mixed second order derivatives. [#94](https://github.com/feos-org/feos/pull/94)
+- Renamed `PartialDerivative::Second` to `PartialDerivative::SecondMixed`. [#94](https://github.com/feos-org/feos/pull/94)
+- Added `PartialDerivative::Second` to enable non-mixed second order partial derivatives. [#94](https://github.com/feos-org/feos/pull/94)
+- Changed `dp_dv_` and `ds_dt_` to use `Dual2_64` instead of `HyperDual64`. [#94](https://github.com/feos-org/feos/pull/94)
+- Added `get_or_insert_with_d2_64` to `Cache`. [#94](https://github.com/feos-org/feos/pull/94)
 
 ## [0.3.1] - 2022-08-25
 ### Added

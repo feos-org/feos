@@ -211,7 +211,8 @@ impl Derivative {
 pub(crate) enum PartialDerivative {
     Zeroth,
     First(Derivative),
-    Second(Derivative, Derivative),
+    Second(Derivative),
+    SecondMixed(Derivative, Derivative),
     Third(Derivative),
 }
 
@@ -685,15 +686,28 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         let mut v = Dual64::from(self.reduced_volume);
         let mut n = self.reduced_moles.mapv(Dual64::from);
         match derivative {
-            Derivative::DT => t.eps[0] = 1.0,
-            Derivative::DV => v.eps[0] = 1.0,
-            Derivative::DN(i) => n[i].eps[0] = 1.0,
+            Derivative::DT => t = t.derive(),
+            Derivative::DV => v = v.derive(),
+            Derivative::DN(i) => n[i] = n[i].derive(),
         }
         StateHD::new(t, v, n)
     }
 
     /// Creates a [StateHD] taking the first and second (partial) derivatives.
-    pub fn derive2(
+    pub fn derive2(&self, derivative: Derivative) -> StateHD<Dual2_64> {
+        let mut t = Dual2_64::from(self.reduced_temperature);
+        let mut v = Dual2_64::from(self.reduced_volume);
+        let mut n = self.reduced_moles.mapv(Dual2_64::from);
+        match derivative {
+            Derivative::DT => t = t.derive(),
+            Derivative::DV => v = v.derive(),
+            Derivative::DN(i) => n[i] = n[i].derive(),
+        }
+        StateHD::new(t, v, n)
+    }
+
+    /// Creates a [StateHD] taking the first and second (partial) derivatives.
+    pub fn derive2_mixed(
         &self,
         derivative1: Derivative,
         derivative2: Derivative,
@@ -702,14 +716,14 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         let mut v = HyperDual64::from(self.reduced_volume);
         let mut n = self.reduced_moles.mapv(HyperDual64::from);
         match derivative1 {
-            Derivative::DT => t.eps1[0] = 1.0,
-            Derivative::DV => v.eps1[0] = 1.0,
-            Derivative::DN(i) => n[i].eps1[0] = 1.0,
+            Derivative::DT => t = t.derive1(),
+            Derivative::DV => v = v.derive1(),
+            Derivative::DN(i) => n[i] = n[i].derive1(),
         }
         match derivative2 {
-            Derivative::DT => t.eps2[0] = 1.0,
-            Derivative::DV => v.eps2[0] = 1.0,
-            Derivative::DN(i) => n[i].eps2[0] = 1.0,
+            Derivative::DT => t = t.derive2(),
+            Derivative::DV => v = v.derive2(),
+            Derivative::DN(i) => n[i] = n[i].derive2(),
         }
         StateHD::new(t, v, n)
     }

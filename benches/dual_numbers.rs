@@ -48,8 +48,11 @@ fn bench_dual_numbers<E: EquationOfState>(
     group.bench_function("a_dual", |b| {
         b.iter(|| a_res((&state.eos, &state.derive1(Derivative::DV))))
     });
+    group.bench_function("a_dual2", |b| {
+        b.iter(|| a_res((&state.eos, &state.derive2(Derivative::DV))))
+    });
     group.bench_function("a_hyperdual", |b| {
-        b.iter(|| a_res((&state.eos, &state.derive2(Derivative::DV, Derivative::DV))))
+        b.iter(|| a_res((&state.eos, &state.derive2_mixed(Derivative::DV, Derivative::DV))))
     });
     group.bench_function("a_dual3", |b| {
         b.iter(|| a_res((&state.eos, &state.derive3(Derivative::DV))))
@@ -66,7 +69,7 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    bench_dual_numbers(c, "methane", state_pcsaft(parameters));
+    bench_dual_numbers(c, "dual_numbers_pcsaft_methane", state_pcsaft(parameters));
 
     // water (4C, polar)
     let parameters = PcSaftParameters::from_json(
@@ -76,7 +79,7 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    bench_dual_numbers(c, "water_4c_polar", state_pcsaft(parameters));
+    bench_dual_numbers(c, "dual_numbers_pcsaft_water_4c_polar", state_pcsaft(parameters));
 
     // methane, ethane, propane
     let parameters = PcSaftParameters::from_json(
@@ -86,7 +89,7 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    bench_dual_numbers(c, "methane_ethane_propane", state_pcsaft(parameters));
+    bench_dual_numbers(c, "dual_numbers_pcsaft_methane_ethane_propane", state_pcsaft(parameters));
 }
 
 /// Benchmark for the PC-SAFT equation of state.
@@ -116,7 +119,7 @@ fn methane_co2_pcsaft(c: &mut Criterion) {
     let x = arr1(&[0.15, 0.85]);
     let moles = &x * 10.0 * MOL;
     let state = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
-    bench_dual_numbers(c, "methane_co2", state);
+    bench_dual_numbers(c, "dual_numbers_pcsaft_methane_co2", state);
 }
 
 criterion_group!(bench, pcsaft, methane_co2_pcsaft);

@@ -50,7 +50,7 @@ fn properties_pcsaft(c: &mut Criterion) {
     let x = arr1(&[1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]);
     let m = &x * 100.0 * MOL;
 
-    let mut group = c.benchmark_group("methane_ethane_propane");
+    let mut group = c.benchmark_group("state_properties_pcsaft_methane_ethane_propane");
     group.bench_function("a", |b| {
         b.iter(|| property((&eos, S::helmholtz_energy, t, v, &m, Contributions::Total)))
     });

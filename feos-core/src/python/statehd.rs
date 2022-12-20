@@ -1,7 +1,9 @@
 use crate::StateHD;
 use ndarray::Array1;
-use num_dual::python::{PyDual3Dual64, PyDual3_64, PyDual64, PyHyperDual64, PyHyperDualDual64};
-use num_dual::{Dual, Dual3, Dual3_64, Dual64, DualVec64, HyperDual, HyperDual64};
+use num_dual::python::{
+    PyDual2_64, PyDual3Dual64, PyDual3_64, PyDual64, PyHyperDual64, PyHyperDualDual64,
+};
+use num_dual::{Dual, Dual2_64, Dual3, Dual3_64, Dual64, DualVec64, HyperDual, HyperDual64};
 use pyo3::prelude::*;
 use std::convert::From;
 
@@ -71,6 +73,16 @@ pub struct PyStateDDV3(StateHD<Dual<DualVec64<3>, f64>>);
 
 impl From<StateHD<Dual<DualVec64<3>, f64>>> for PyStateDDV3 {
     fn from(s: StateHD<Dual<DualVec64<3>, f64>>) -> Self {
+        Self(s)
+    }
+}
+
+#[pyclass(name = "StateD2")]
+#[derive(Clone)]
+pub struct PyStateD2(StateHD<Dual2_64>);
+
+impl From<StateHD<Dual2_64>> for PyStateD2 {
+    fn from(s: StateHD<Dual2_64>) -> Self {
         Self(s)
     }
 }
@@ -167,6 +179,7 @@ impl_state_hd!(
     HyperDual<Dual64, f64>
 );
 impl_state_hd!(PyStateD, PyDual64, StateHD<Dual64>, Dual64);
+impl_state_hd!(PyStateD2, PyDual2_64, StateHD<Dual2_64>, Dual2_64);
 impl_state_hd!(PyStateD3, PyDual3_64, StateHD<Dual3_64>, Dual3_64);
 impl_state_hd!(
     PyStateD3D,
