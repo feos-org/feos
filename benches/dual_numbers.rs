@@ -52,7 +52,12 @@ fn bench_dual_numbers<E: EquationOfState>(
         b.iter(|| a_res((&state.eos, &state.derive2(Derivative::DV))))
     });
     group.bench_function("a_hyperdual", |b| {
-        b.iter(|| a_res((&state.eos, &state.derive2_mixed(Derivative::DV, Derivative::DV))))
+        b.iter(|| {
+            a_res((
+                &state.eos,
+                &state.derive2_mixed(Derivative::DV, Derivative::DV),
+            ))
+        })
     });
     group.bench_function("a_dual3", |b| {
         b.iter(|| a_res((&state.eos, &state.derive3(Derivative::DV))))
@@ -79,7 +84,11 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    bench_dual_numbers(c, "dual_numbers_pcsaft_water_4c_polar", state_pcsaft(parameters));
+    bench_dual_numbers(
+        c,
+        "dual_numbers_pcsaft_water_4c_polar",
+        state_pcsaft(parameters),
+    );
 
     // methane, ethane, propane
     let parameters = PcSaftParameters::from_json(
@@ -89,7 +98,11 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    bench_dual_numbers(c, "dual_numbers_pcsaft_methane_ethane_propane", state_pcsaft(parameters));
+    bench_dual_numbers(
+        c,
+        "dual_numbers_pcsaft_methane_ethane_propane",
+        state_pcsaft(parameters),
+    );
 }
 
 /// Benchmark for the PC-SAFT equation of state.
@@ -108,8 +121,7 @@ fn methane_co2_pcsaft(c: &mut Criterion) {
     )
     .unwrap();
     let k_ij = -0.0192211646;
-    let parameters =
-        PcSaftParameters::new_binary(parameters.pure_records.clone(), Some(k_ij.into()));
+    let parameters = PcSaftParameters::new_binary(parameters.pure_records, Some(k_ij.into()));
     let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
 
     // 230 K, 50 bar, x0 = 0.15

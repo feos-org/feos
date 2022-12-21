@@ -26,6 +26,11 @@ fn critical_point<E: EquationOfState>((eos, n): (&Arc<E>, Option<&SIArray1>)) {
     State::critical_point(eos, n, None, Default::default()).unwrap();
 }
 
+/// Evaluate critical point constructor for binary systems at given T or p
+fn critical_point_binary<E: EquationOfState>((eos, tp): (&Arc<E>, SINumber)) {
+    State::critical_point_binary(eos, tp, None, None, Default::default()).unwrap();
+}
+
 /// VLE for pure substance for given temperature or pressure
 fn pure<E: EquationOfState>((eos, t_or_p): (&Arc<E>, SINumber)) {
     PhaseEquilibrium::pure(eos, t_or_p, None, Default::default()).unwrap();
@@ -64,12 +69,12 @@ fn bench_states<E: EquationOfState>(c: &mut Criterion, group_name: &str, eos: &A
     let ncomponents = eos.components();
     let x = Array::from_elem(ncomponents, 1.0 / ncomponents as f64);
     let n = &x * 100.0 * MOL;
-    let crit = State::critical_point(&eos, Some(&n), None, Default::default()).unwrap();
+    let crit = State::critical_point(eos, Some(&n), None, Default::default()).unwrap();
     let vle = if ncomponents == 1 {
-        PhaseEquilibrium::pure(&eos, crit.temperature * 0.95, None, Default::default()).unwrap()
+        PhaseEquilibrium::pure(eos, crit.temperature * 0.95, None, Default::default()).unwrap()
     } else {
         PhaseEquilibrium::tp_flash(
-            &eos,
+            eos,
             crit.temperature,
             crit.pressure(Contributions::Total) * 0.95,
             &crit.moles,
@@ -84,7 +89,7 @@ fn bench_states<E: EquationOfState>(c: &mut Criterion, group_name: &str, eos: &A
     group.bench_function("new_npt_liquid", |b| {
         b.iter(|| {
             npt((
-                &eos,
+                eos,
                 vle.liquid().temperature,
                 vle.liquid().pressure(Contributions::Total) * 1.01,
                 &n,
@@ -95,7 +100,7 @@ fn bench_states<E: EquationOfState>(c: &mut Criterion, group_name: &str, eos: &A
     group.bench_function("new_npt_vapor", |b| {
         b.iter(|| {
             npt((
-                &eos,
+                eos,
                 vle.vapor().temperature,
                 vle.vapor().pressure(Contributions::Total) * 0.99,
                 &n,
@@ -104,13 +109,21 @@ fn bench_states<E: EquationOfState>(c: &mut Criterion, group_name: &str, eos: &A
         })
     });
     group.bench_function("critical_point", |b| {
-        b.iter(|| critical_point((&eos, Some(&n))))
+        b.iter(|| critical_point((eos, Some(&n))))
     });
+    if ncomponents == 2 {
+        group.bench_function("critical_point_binary_t", |b| {
+            b.iter(|| critical_point_binary((eos, crit.temperature)))
+        });
+        group.bench_function("critical_point_binary_p", |b| {
+            b.iter(|| critical_point_binary((eos, crit.pressure(Contributions::Total))))
+        });
+    }
     if ncomponents != 1 {
         group.bench_function("tp_flash", |b| {
             b.iter(|| {
                 tp_flash((
-                    &eos,
+                    eos,
                     crit.temperature,
                     crit.pressure(Contributions::Total) * 0.99,
                     &n,
@@ -119,18 +132,18 @@ fn bench_states<E: EquationOfState>(c: &mut Criterion, group_name: &str, eos: &A
         });
 
         group.bench_function("bubble_point", |b| {
-            b.iter(|| bubble_point((&eos, vle.liquid().temperature, &vle.liquid().molefracs)))
+            b.iter(|| bubble_point((eos, vle.liquid().temperature, &vle.liquid().molefracs)))
         });
 
         group.bench_function("dew_point", |b| {
-            b.iter(|| dew_point((&eos, vle.vapor().temperature, &vle.vapor().molefracs)))
+            b.iter(|| dew_point((eos, vle.vapor().temperature, &vle.vapor().molefracs)))
         });
     } else {
         group.bench_function("pure_t", |b| {
-            b.iter(|| pure((&eos, vle.vapor().temperature)))
+            b.iter(|| pure((eos, vle.vapor().temperature)))
         });
         group.bench_function("pure_p", |b| {
-            b.iter(|| pure((&eos, vle.vapor().pressure(Contributions::Total))))
+            b.iter(|| pure((eos, vle.vapor().pressure(Contributions::Total))))
         });
     }
 }
@@ -147,7 +160,7 @@ fn pcsaft(c: &mut Criterion) {
     bench_states(c, "state_creation_pcsaft_methane", &eos);
 
     let parameters = PcSaftParameters::from_json(
-        vec!["methane", "ethane", "propane"],
+        vec!["methane", "ethane"],
         "./parameters/pcsaft/gross2001.json",
         None,
         IdentifierOption::Name,
