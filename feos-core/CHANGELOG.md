@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `PartialDerivative::Second` to enable non-mixed second order partial derivatives. [#94](https://github.com/feos-org/feos/pull/94)
 - Changed `dp_dv_` and `ds_dt_` to use `Dual2_64` instead of `HyperDual64`. [#94](https://github.com/feos-org/feos/pull/94)
 - Added `get_or_insert_with_d2_64` to `Cache`. [#94](https://github.com/feos-org/feos/pull/94)
-- The critical point algorithm now uses vector dual numbers to reduce the number of model evaluations and reduce computation times. [#96](https://github.com/feos-org/feos/pull/96)
+- The critical point algorithm now uses vector dual numbers to reduce the number of model evaluations and computation times. [#96](https://github.com/feos-org/feos/pull/96)
 
 ## [0.3.1] - 2022-08-25
 ### Added
