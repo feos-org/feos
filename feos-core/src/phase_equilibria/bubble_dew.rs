@@ -488,11 +488,7 @@ where
             let mut lnpstep = -f / df;
 
             // catch too big p-steps
-            if lnpstep < -MAX_LNPSTEP {
-                lnpstep = -MAX_LNPSTEP;
-            } else if lnpstep > MAX_LNPSTEP {
-                lnpstep = MAX_LNPSTEP;
-            }
+            lnpstep = lnpstep.clamp(-MAX_LNPSTEP, MAX_LNPSTEP);
 
             // Update p
             *p = *p * lnpstep.exp();

@@ -78,34 +78,34 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                     let new_state = self.derive0();
                     let computation =
                         || self.eos.evaluate_residual(&new_state) * new_state.temperature;
-                    cache.get_or_insert_with_f64(&computation) * U::reference_energy()
+                    cache.get_or_insert_with_f64(computation) * U::reference_energy()
                 }
                 PartialDerivative::First(v) => {
                     let new_state = self.derive1(v);
                     let computation =
                         || self.eos.evaluate_residual(&new_state) * new_state.temperature;
-                    cache.get_or_insert_with_d64(v, &computation) * U::reference_energy()
+                    cache.get_or_insert_with_d64(v, computation) * U::reference_energy()
                         / v.reference()
                 }
                 PartialDerivative::Second(v) => {
                     let new_state = self.derive2(v);
                     let computation =
                         || self.eos.evaluate_residual(&new_state) * new_state.temperature;
-                    cache.get_or_insert_with_d2_64(v, &computation) * U::reference_energy()
+                    cache.get_or_insert_with_d2_64(v, computation) * U::reference_energy()
                         / (v.reference() * v.reference())
                 }
                 PartialDerivative::SecondMixed(v1, v2) => {
                     let new_state = self.derive2_mixed(v1, v2);
                     let computation =
                         || self.eos.evaluate_residual(&new_state) * new_state.temperature;
-                    cache.get_or_insert_with_hd64(v1, v2, &computation) * U::reference_energy()
+                    cache.get_or_insert_with_hd64(v1, v2, computation) * U::reference_energy()
                         / (v1.reference() * v2.reference())
                 }
                 PartialDerivative::Third(v) => {
                     let new_state = self.derive3(v);
                     let computation =
                         || self.eos.evaluate_residual(&new_state) * new_state.temperature;
-                    cache.get_or_insert_with_hd364(v, &computation) * U::reference_energy()
+                    cache.get_or_insert_with_hd364(v, computation) * U::reference_energy()
                         / (v.reference() * v.reference() * v.reference())
                 }
             }),
