@@ -19,6 +19,23 @@ lazy_static! {
         [-2.905719617, -1.778798984, -1.556827067, -4.308085347],
         [0.429154871, 20.765871545, 9.341250676, -33.787719418],
     ]);
+
+//  New Fit by Anja to numerical integrals for uv-B3-theory
+    // #Tmin = 0.0, eta_max = 0.52, simultaneous fit
+
+    pub static ref WCA_CONSTANTS_ETA_A_UVB3: Array2<f64> = arr2(&[
+        [2.64043218,   -1.2184421 ,  -22.90786387,    0.96433414],
+     [-16.75643936,   30.83929771,   73.08711814, -166.57701616],
+      [19.53170162,  -88.87955657,  -76.51387192,  443.68942745],
+       [-3.77740877,   83.04694547,   21.62502721, -304.8643176] ,
+       ]);
+
+ pub static ref WCA_CONSTANTS_ETA_B_UVB3: Array2<f64> = arr2(&[
+  [2.19821588,  -20.45005484],
+   [-13.47050687,   56.65701375],
+       [12.90119266,  -42.71680606],]);
+
+
     pub static ref WCA_CONSTANTS_Q: Array2<f64> = arr2(&[
         [1.92840364363978, 4.43165896265079E-01, 0.0, 0.0],
         [
@@ -80,44 +97,6 @@ pub fn diameter_wca<D: DualNum<f64>>(parameters: &UVParameters, temperature: D) 
         })
         .collect()
 }
-
-// Hard sphere diameter q for WCA division from eq. (S28)
-// pub fn diameter_q_wca<D: DualNum<f64>>(parameters: &UVParameters, temperature: D) -> Array1<D> {
-//     parameters
-//         .sigma
-//         .iter()
-//         .enumerate()
-//         .map(|(i, _c)| {
-//             let nu = parameters.rep[i];
-//             let n = parameters.att[i];
-//             let t = temperature / parameters.epsilon_k[i];
-//             let rs = (nu / n).powf(1.0 / (nu - n));
-//             let coeffs = arr1(&[
-//                 (nu * 2.0 * PI / n).sqrt(),
-//                 WCA_CONSTANTS_Q[[0, 0]] + WCA_CONSTANTS_Q[[0, 1]] * (nu - 7.0),
-//                 WCA_CONSTANTS_Q[[1, 0]]
-//                     + WCA_CONSTANTS_Q[[1, 1]] * (nu - 7.0)
-//                     + WCA_CONSTANTS_Q[[1, 2]] * (nu - 7.0).powi(2)
-//                     + WCA_CONSTANTS_Q[[1, 3]] * (nu - 7.0).powi(3),
-//                 WCA_CONSTANTS_Q[[2, 0]]
-//                     + WCA_CONSTANTS_Q[[2, 1]] * (nu - 7.0)
-//                     + WCA_CONSTANTS_Q[[2, 2]] * (nu - 7.0).powi(2)
-//                     + WCA_CONSTANTS_Q[[2, 3]] * (nu - 7.0).powi(3),
-//             ]);
-
-//             (t.powf(2.0) * coeffs[3]
-//                 + t.powf(3.0 / 2.0) * coeffs[2]
-//                 + t * coeffs[1]
-//                 + t.powf(1.0 / 2.0) * coeffs[0]
-//                 + 1.0)
-//                 .powf(-1.0 / (2.0 * nu))
-//                 * rs
-//                 * parameters.sigma[i]
-//         })
-//         .collect()
-// }
-
-//
 
 pub fn dimensionless_diameter_q_wca<D: DualNum<f64>>(t_x: D, rep_x: D, att_x: D) -> D {
     let nu = rep_x;
@@ -214,6 +193,28 @@ pub fn packing_fraction_b<D: DualNum<f64>>(
     })
 }
 
+pub fn packing_fraction_b_uvb3<D: DualNum<f64>>(
+    parameters: &UVParameters,
+    eta: D,
+    temperature: D,
+) -> Array2<D> {
+    let n = parameters.att.len();
+    let dimensionless_lengths = dimensionless_length_scale(parameters, temperature);
+    Array2::from_shape_fn((n, n), |(i, j)| {
+        let tau = (dimensionless_lengths[i] + dimensionless_lengths[j])
+            / parameters.sigma_ij[[i, j]]
+            * 0.5; //dimensionless
+        let tau2 = tau * tau;
+
+        let c = arr1(&[
+            tau * WCA_CONSTANTS_ETA_B_UVB3[[0, 0]] + tau2 * WCA_CONSTANTS_ETA_B_UVB3[[0, 1]],
+            tau * WCA_CONSTANTS_ETA_B_UVB3[[1, 0]] + tau2 * WCA_CONSTANTS_ETA_B_UVB3[[1, 1]],
+            tau * WCA_CONSTANTS_ETA_B_UVB3[[2, 0]] + tau2 * WCA_CONSTANTS_ETA_B_UVB3[[2, 1]],
+        ]);
+        eta + eta * c[0] + eta * eta * c[1] + eta.powi(3) * c[2]
+    })
+}
+
 pub fn packing_fraction_a<D: DualNum<f64>>(
     parameters: &UVParameters,
     eta: D,
@@ -237,6 +238,42 @@ pub fn packing_fraction_a<D: DualNum<f64>>(
                 + tau2 * (WCA_CONSTANTS_ETA_A[[2, 2]] + WCA_CONSTANTS_ETA_A[[2, 3]] * rep_inv),
             tau * (WCA_CONSTANTS_ETA_A[[3, 0]] + WCA_CONSTANTS_ETA_A[[3, 1]] * rep_inv)
                 + tau2 * (WCA_CONSTANTS_ETA_A[[3, 2]] + WCA_CONSTANTS_ETA_A[[3, 3]] * rep_inv),
+        ]);
+        eta + eta * c[0] + eta * eta * c[1] + eta.powi(3) * c[2] + eta.powi(4) * c[3]
+    })
+}
+
+pub fn packing_fraction_a_uvb3<D: DualNum<f64>>(
+    parameters: &UVParameters,
+    eta: D,
+    temperature: D,
+) -> Array2<D> {
+    let dimensionless_lengths = dimensionless_length_scale(parameters, temperature);
+    let n = parameters.att.len();
+    Array2::from_shape_fn((n, n), |(i, j)| {
+        let tau = (dimensionless_lengths[i] + dimensionless_lengths[j])
+            / parameters.sigma_ij[[i, j]]
+            * 0.5; //dimensionless
+
+        let tau2 = tau * tau;
+        let rep_inv = 1.0 / parameters.rep_ij[[i, j]];
+        let c = arr1(&[
+            tau * (WCA_CONSTANTS_ETA_A_UVB3[[0, 0]] + WCA_CONSTANTS_ETA_A_UVB3[[0, 1]] * rep_inv)
+                + tau2
+                    * (WCA_CONSTANTS_ETA_A_UVB3[[0, 2]]
+                        + WCA_CONSTANTS_ETA_A_UVB3[[0, 3]] * rep_inv),
+            tau * (WCA_CONSTANTS_ETA_A_UVB3[[1, 0]] + WCA_CONSTANTS_ETA_A_UVB3[[1, 1]] * rep_inv)
+                + tau2
+                    * (WCA_CONSTANTS_ETA_A_UVB3[[1, 2]]
+                        + WCA_CONSTANTS_ETA_A_UVB3[[1, 3]] * rep_inv),
+            tau * (WCA_CONSTANTS_ETA_A_UVB3[[2, 0]] + WCA_CONSTANTS_ETA_A_UVB3[[2, 1]] * rep_inv)
+                + tau2
+                    * (WCA_CONSTANTS_ETA_A_UVB3[[2, 2]]
+                        + WCA_CONSTANTS_ETA_A_UVB3[[2, 3]] * rep_inv),
+            tau * (WCA_CONSTANTS_ETA_A_UVB3[[3, 0]] + WCA_CONSTANTS_ETA_A_UVB3[[3, 1]] * rep_inv)
+                + tau2
+                    * (WCA_CONSTANTS_ETA_A_UVB3[[3, 2]]
+                        + WCA_CONSTANTS_ETA_A_UVB3[[3, 3]] * rep_inv),
         ]);
         eta + eta * c[0] + eta * eta * c[1] + eta.powi(3) * c[2] + eta.powi(4) * c[3]
     })
