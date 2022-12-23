@@ -252,8 +252,8 @@ mod test {
             .molar_helmholtz_energy(Contributions::ResidualNvt)
             .to_reduced(RGAS * temperature)
             .unwrap();
-
-        assert_relative_eq!(a, 0.37659378806627525, max_relative = 1e-12)
+        dbg!(a);
+        assert_relative_eq!(a, 0.37659379124271003, max_relative = 1e-12)
     }
 
     #[test]

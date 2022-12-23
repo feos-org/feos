@@ -66,47 +66,59 @@ const CONST_B2_RSAP: [[f64; 4]; 4] = [
     [0.007492596, 0.546171170, 7.979562575, -119.6126395],
 ];
 
-// Constants for B3
+// Constants for B3 (full, not rounded)
+// const CONST_B3_LJ_RSAP: [f64; 16] = [
+//     -3.98056703e+00,
+//     7.95645979e+01,
+//     5.48947334e-01,
+//     5.36319582e+00,
+//     1.42454153e+00,
+//     5.72923297e+01,
+//     3.80631996e-10,
+//     1.00308510e+00,
+//     -3.97550628e+01,
+//     -8.12130965e+01,
+//     6.98683893e-01,
+//     3.01563968e+01,
+//     -2.36919346e+01,
+//     -8.50060515e+01,
+//     7.76154927e-01,
+//     1.27979994e+01,
+// ];
+//rounded values:
 const CONST_B3_LJ_RSAP: [f64; 16] = [
-    -3.98056703e+00,
-    7.95645979e+01,
-    5.48947334e-01,
-    5.36319582e+00,
-    1.42454153e+00,
-    5.72923297e+01,
-    3.80631996e-10,
-    1.00308510e+00,
-    -3.97550628e+01,
-    -8.12130965e+01,
-    6.98683893e-01,
-    3.01563968e+01,
-    -2.36919346e+01,
-    -8.50060515e+01,
-    7.76154927e-01,
-    1.27979994e+01,
+    -3.9806, 79.565, 0.5489, 5.3632, 1.4245, 57.292, 0.0, 1.0031, -39.755, -81.213, 0.6987, 30.156,
+    -23.692, -85.006, 0.7762, 12.798,
 ];
 
-// Constants for B3 RSAP Mie nu-6 fluids
-const B3_K_PARAMETER: [f64; 4] = [8.08442174e-01, -9.54092759e-02, 4.75253015e-01, -2.83282674];
-const B3_L_PARAMETER: [f64; 4] = [4.94848492, -21.2995618, 7.0, 3.21621955];
-const B3_M_PARAMETER: [f64; 4] = [
-    1.18534625e-01,
-    7.85559789e-02,
-    -5.50389332e-01,
-    9.16296297e-03,
-];
+// // Constants for B3 RSAP Mie nu-6 fluids (not rounded)
+// const B3_K_PARAMETER: [f64; 4] = [8.08442174e-01, -9.54092759e-02, 4.75253015e-01, -2.83282674];
+// const B3_L_PARAMETER: [f64; 4] = [4.94848492, -21.2995618, 7.0, 3.21621955];
+// const B3_M_PARAMETER: [f64; 4] = [
+//     1.18534625e-01,
+//     7.85559789e-02,
+//     -5.50389332e-01,
+//     9.16296297e-03,
+// ];
 
-/// Constants for WCA u-fraction.
-const CU_WCA: [f64; 8] = [
-    26.45397287,
-    1.80454811,
-    1.79970006,
-    161.95895155,
-    11.60539317,
-    12.,
-    0.4,
-    2.0,
-];
+// // Constants for B3 RSAP Mie nu-6 fluids ( rounded)
+const B3_K_PARAMETER: [f64; 4] = [0.80844, -0.09541, 0.47525, -2.83283];
+const B3_L_PARAMETER: [f64; 4] = [4.9485, -21.3, 7.0, 3.2162];
+const B3_M_PARAMETER: [f64; 4] = [0.11853, 0.078556, -0.55039, 0.009163];
+
+/// Constants for WCA u-fraction. (unrounded)
+// const CU_WCA: [f64; 8] = [
+//     26.45397287,
+//     1.80454811,
+//     1.79970006,
+//     161.95895155,
+//     11.60539317,
+//     12.,
+//     0.4,
+//     2.0,
+// ];
+// rounded values:
+const CU_WCA: [f64; 8] = [26.454, 1.8045, 1.7997, 161.96, 11.605, 12., 0.4, 2.0];
 
 #[derive(Debug, Clone)]
 pub struct AttractivePerturbationUVB3 {
@@ -490,7 +502,8 @@ mod test {
             state.partial_density.sum() * (x * &p.sigma.mapv(|s| s.powi(3))).sum(),
             t_x,
         );
-        assert_relative_eq!(u_fraction_wca.re(), 0.8852730008077649, epsilon = 1e-10);
+        //with unrounded params: assert_relative_eq!(u_fraction_wca.re(), 0.8852730008077649, epsilon = 1e-10);
+        assert_relative_eq!(u_fraction_wca.re(), 0.8852775506870431, epsilon = 1e-10);
         // delta a1u
         let i_wca =
             correlation_integral_wca(rho_x, mean_field_constant_x, rep_x, att_x, d_x, q_vdw, rm_x);
@@ -505,18 +518,19 @@ mod test {
         assert_relative_eq!(b21u.re(), -1.5103749286162982, epsilon = 1e-10);
 
         let db3 = delta_b3(t_x, rm_x, rep_x, att_x, d_x, q_vdw);
-        assert_relative_eq!(db3.re(), -0.6591646873435744, epsilon = 1e-10);
+        assert_relative_eq!(db3.re(), -0.6591980196661884, epsilon = 1e-10);
+        //non rounded params fpr B3:assert_relative_eq!(db3.re(), -0.6591646873435744, epsilon = 1e-10);
 
         let db31 =
             delta_b31u(t_x, weighted_sigma3_ij, rm_x, rep_x, att_x, d_x) / p.sigma[0].powi(6);
-        assert_relative_eq!(db31.re(), -1.2465186585663823, epsilon = 1e-10);
 
-        // b3.re() = 1.4326204530476152
-        // b30_uv.re() = 2.0917851403911896
+        // non rounded params for B3:: b3.re() = 1.4326204530476152
+        //  b30_uv.re() = 2.0917851403911896
 
         // Full attractive perturbation:
         let a = pt.helmholtz_energy(&state) / moles[0];
 
-        assert_relative_eq!(-0.9027781726598461, a.re(), epsilon = 1e-5);
+        assert_relative_eq!(-0.9027781694834115, a.re(), epsilon = 1e-5);
+        //non rounded params for B3: assert_relative_eq!(-0.9027781726598461, a.re(), epsilon = 1e-5);
     }
 }
