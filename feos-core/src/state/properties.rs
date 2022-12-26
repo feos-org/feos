@@ -628,7 +628,7 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> State<U, E> {
         self.molar_gibbs_energy(contributions) / self.total_molar_weight()
     }
 
-    /// Speed of sound: $c=\sqrt{\left(\frac{\partial p}{\partial\rho}\right)_{S,N_i}}$
+    /// Speed of sound: $c=\sqrt{\left(\frac{\partial p}{\partial\rho^{(m)}}\right)_{S,N_i}}$
     pub fn speed_of_sound(&self) -> QuantityScalar<U> {
         (1.0 / (self.density * self.total_molar_weight() * self.isentropic_compressibility()))
             .sqrt()
