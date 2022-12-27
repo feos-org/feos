@@ -12,11 +12,11 @@ with the total number of particles $N=\sum_i N_i$, the internal energy $U$, and 
 
 ## Residual properties
 
-In most cases, the total value of a property is required because those are the ones which are actually measured. However, for some applications, e.g. phase equilibria or entropy scaling, residual properties are useful. Residual properties are based on the separation of the Helmholtz energy in an ideal gas ($\mathrm{ig}$) contribution and a residual ($\mathrm{res}$) contribution:
+In most cases, the total value of a property is required because it is the one which can actually be measured. However, for some applications, e.g. phase equilibria or entropy scaling, residual properties are useful. Residual properties are based on the separation of the Helmholtz energy in an ideal gas ($\mathrm{ig}$) contribution and a residual ($\mathrm{res}$) contribution:
 
 $$A=A^\mathrm{ig}+A^\mathrm{res}$$
 
-The ideal gas contribution contains only kinetic and intramolecular and can be derived from statistical mechanics as
+The ideal gas contribution contains only kinetic and intramolecular energies and can be derived from statistical mechanics as
 
 $$A^\mathrm{ig}(T,V,N_i)=RT\sum_iN_i\left(\ln\left(\frac{N_i\Lambda_i^3}{V}\right)-1\right)$$(eqn:a_ig)
 
@@ -24,7 +24,7 @@ with the thermal de Broglie wavelength $\Lambda_i$ that only depends on the temp
 
 $$A=A^\mathrm{ig,V}(T,V,N_i)+A^\mathrm{res,V}(T,V,N_i)=A^\mathrm{ig,p}(T,p,N_i)+A^\mathrm{res,p}(T,p,N_i)$$(eqn:a_res)
 
-Because the Helmholtz energy is expressed in $T$, $V$ and $N_i$, residual properties at constant volume can be evaluated straightforwardly. If a property $X$ is calculated from the Helmholtzenergy via the differential operator $\mathcal{D}$, i.e., $X=\mathcal{D}\left(A\right)$, then the residual contributions is calculated from
+Because the Helmholtz energy is expressed in $T$, $V$ and $N_i$, residual properties at constant volume can be evaluated straightforwardly. If a property $X$ is calculated from the Helmholtz energy via the differential operator $\mathcal{D}$, i.e., $X=\mathcal{D}\left(A\right)$, then the residual contributions is calculated from
 
 $$X^\mathrm{res,V}=\mathcal{D}\left(A\right)-\mathcal{D}\left(A^\mathrm{ig,V}\right)$$
 
@@ -32,7 +32,7 @@ In cases where the operator $\mathcal{D}$ is linear, the expression can be simpl
 
 $$X^\mathrm{res,V}=\mathcal{D}\left(A-A^\mathrm{ig,V}\right)=\mathcal{D}\left(A^\mathrm{res,V}\right)$$
 
-For residual properties at constant pressure, the reference state has to be evaluated for an ideal gas colume that corresponds to the constant pressure
+For residual properties at constant pressure, the reference state has to be evaluated for an ideal gas volume that corresponds to the constant pressure
 
 $$A^\mathrm{ig,p}(T,p,N_i)=A^\mathrm{ig,V}\left(T,V^\mathrm{ig}(T,p,N_i),N_i\right)=A^\mathrm{ig,V}\left(T,\frac{NRT}{p},N_i\right)$$
 
@@ -81,9 +81,9 @@ The table below lists all properties that are available in $\text{FeO}_\text{s}$
 | Molar enthalpy $h$ | $\frac{H}{N}$ | yes |
 | Helmholtz energy $A$ | | yes |
 | Molar Helmholtz energy $a$ | $\frac{A}{N}$ | yes |
-| Internal energy $U$ | A+TS | yes |
+| Internal energy $U$ | $A+TS$ | yes |
 | Molar internal energy $u$ | $\frac{U}{N}$ | yes |
-| Gibbs energy $G$ | A+pV | yes |
+| Gibbs energy $G$ | $A+pV$ | yes |
 | Molar Gibbs energy $g$ | $\frac{G}{N}$ | yes |
 | Partial molar entropy $s_i$ | $\left(\frac{\partial S}{\partial N_i}\right)_{T,p,N_j}$ | yes |
 | Partial molar enthalpy $h_i$ | $\left(\frac{\partial H}{\partial N_i}\right)_{T,p,N_j}$ | yes |
