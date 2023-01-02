@@ -944,7 +944,8 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Theory</span></p>
 <ul>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/eos/index.html">Equations of state</a><input class="toctree-checkbox" id="toctree-checkbox-99" name="toctree-checkbox-99" role="switch" type="checkbox"/><label for="toctree-checkbox-99"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/eos/index.html">Equations of state</a><input class="toctree-checkbox" id="toctree-checkbox-99" name="toctree-checkbox-99" role="switch" type="checkbox"/><label for="toctree-checkbox-99"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../theory/eos/properties.html">Properties</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/dft/index.html">Classical density functional theory</a><input class="toctree-checkbox" id="toctree-checkbox-100" name="toctree-checkbox-100" role="switch" type="checkbox"/><label for="toctree-checkbox-100"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -1003,13 +1004,13 @@ Shown below are the functions you have to implement when creating a new equation
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/equation_of_state.rs</span>
 
 <span class="sd">/// A general equation of state.</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">EquationOfState</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">EquationOfState</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="sd">/// Return the number of components of the equation of state.</span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">components</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">usize</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">components</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">usize</span><span class="p">;</span>
 
 <span class="w">    </span><span class="sd">/// Return an equation of state consisting of the components</span>
 <span class="w">    </span><span class="sd">/// contained in component_list.</span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">get_subset</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">component_list</span>: <span class="kp">&amp;</span><span class="p">[</span><span class="kt">usize</span><span class="p">])</span><span class="w"> </span>-&gt; <span class="nc">Self</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">get_subset</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">component_list</span>: <span class="kp">&amp;</span><span class="p">[</span><span class="kt">usize</span><span class="p">])</span><span class="w"> </span>-&gt; <span class="nc">Self</span><span class="p">;</span>
 
 <span class="w">    </span><span class="sd">/// Return the maximum density in Angstrom^-3.</span>
 <span class="w">    </span><span class="sd">///</span>
@@ -1017,14 +1018,14 @@ Shown below are the functions you have to implement when creating a new equation
 <span class="w">    </span><span class="sd">/// equilibria and other iterations. It is not explicitly meant to</span>
 <span class="w">    </span><span class="sd">/// be a mathematical limit for the density (if those exist in the</span>
 <span class="w">    </span><span class="sd">/// equation of state anyways).</span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">compute_max_density</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">moles</span>: <span class="kp">&amp;</span><span class="nc">Array1</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">f64</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">compute_max_density</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">moles</span>: <span class="kp">&amp;</span><span class="nc">Array1</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kt">f64</span><span class="p">;</span>
 
 <span class="w">    </span><span class="sd">/// Return a slice of the individual contributions (excluding the ideal gas)</span>
 <span class="w">    </span><span class="sd">/// of the equation of state.</span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">residual</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="p">[</span><span class="nb">Box</span><span class="o">&lt;</span><span class="k">dyn</span><span class="w"> </span><span class="n">HelmholtzEnergy</span><span class="o">&gt;</span><span class="p">];</span><span class="w"></span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">residual</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="p">[</span><span class="nb">Box</span><span class="o">&lt;</span><span class="k">dyn</span><span class="w"> </span><span class="n">HelmholtzEnergy</span><span class="o">&gt;</span><span class="p">];</span>
 
 <span class="w">    </span><span class="c1">// Other methods omitted.</span>
-<span class="p">}</span><span class="w"></span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>Let’s take a look at the different methods we need to implement to qualify for an equation of state.</p>
@@ -1038,7 +1039,7 @@ Shown below are the functions you have to implement when creating a new equation
 <section id="the-helmholtzenergydual-and-helmholtzenergy-traits">
 <h2>The <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergyDual</span></code> and <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergy</span></code> Traits<a class="headerlink" href="#the-helmholtzenergydual-and-helmholtzenergy-traits" title="Permalink to this heading">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">residual</span></code> method returns a slice of trait objects, denoted by the <code class="docutils literal notranslate"><span class="pre">dyn</span></code> keyword.</p>
-<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="k">fn</span> <span class="nf">residual</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="p">[</span><span class="nb">Box</span><span class="o">&lt;</span><span class="k">dyn</span><span class="w"> </span><span class="n">HelmholtzEnergy</span><span class="o">&gt;</span><span class="p">];</span><span class="w"></span>
+<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="k">fn</span> <span class="nf">residual</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="p">[</span><span class="nb">Box</span><span class="o">&lt;</span><span class="k">dyn</span><span class="w"> </span><span class="n">HelmholtzEnergy</span><span class="o">&gt;</span><span class="p">];</span>
 </pre></div>
 </div>
 <p>A <a class="reference external" href="https://doc.rust-lang.org/book/ch17-02-trait-objects.html">trait object</a> allows us to return a slice of <em>different structs</em> that share <em>common behavior</em>, i.e. all implement the same trait.
@@ -1047,23 +1048,23 @@ In fact, a trait is not <em>object-safe</em> (i.e. cannot be made into a trait o
 This is a problem, since we want to be able to use generic dual numbers as type parameters for our equation of state.
 The non-object-safe trait to do that is the <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergyDual</span></code> trait:</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// This trait cannot be made into a trait object</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="n">D</span>: <span class="nc">DualNum</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">helmholtz_energy</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">state</span>: <span class="kp">&amp;</span><span class="nc">StateHD</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">D</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="n">D</span>: <span class="nc">DualNum</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">helmholtz_energy</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">state</span>: <span class="kp">&amp;</span><span class="nc">StateHD</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">D</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>Our solution is to create an object-safe <a class="reference external" href="https://doc.rust-lang.org/book/ch19-03-advanced-traits">supertrait</a>.html#using-supertraits-to-require-one-traits-functionality-within-another-trait) that wraps <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergyDual</span></code> with possible permutations of type parameters:</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// automatically implemented for struct that implements `HelmholtzEnergyDual`</span>
 <span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">HelmholtzEnergy</span>:
-    <span class="nc">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="w"></span>
-<span class="w">    </span><span class="o">+</span><span class="w"> </span><span class="n">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="n">Dual64</span><span class="o">&gt;</span><span class="w"></span>
-<span class="w">    </span><span class="o">+</span><span class="w"> </span><span class="n">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="n">HyperDual64</span><span class="o">&gt;</span><span class="w"></span>
-<span class="w">    </span><span class="o">+</span><span class="w"> </span><span class="n">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="n">Dual3_64</span><span class="o">&gt;</span><span class="w"></span>
-<span class="w">    </span><span class="o">+</span><span class="w"> </span><span class="n">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="n">HyperDual</span><span class="o">&lt;</span><span class="n">Dual64</span><span class="p">,</span><span class="w"> </span><span class="kt">f64</span><span class="o">&gt;&gt;</span><span class="w"></span>
-<span class="w">    </span><span class="o">+</span><span class="w"> </span><span class="n">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="n">Dual3</span><span class="o">&lt;</span><span class="n">Dual64</span><span class="p">,</span><span class="w"> </span><span class="kt">f64</span><span class="o">&gt;&gt;</span><span class="w"></span>
-<span class="w">    </span><span class="o">+</span><span class="w"> </span><span class="n">fmt</span>::<span class="n">Display</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+    <span class="nc">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="o">+</span><span class="w"> </span><span class="n">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="n">Dual64</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="o">+</span><span class="w"> </span><span class="n">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="n">HyperDual64</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="o">+</span><span class="w"> </span><span class="n">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="n">Dual3_64</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="o">+</span><span class="w"> </span><span class="n">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="n">HyperDual</span><span class="o">&lt;</span><span class="n">Dual64</span><span class="p">,</span><span class="w"> </span><span class="kt">f64</span><span class="o">&gt;&gt;</span>
+<span class="w">    </span><span class="o">+</span><span class="w"> </span><span class="n">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="n">Dual3</span><span class="o">&lt;</span><span class="n">Dual64</span><span class="p">,</span><span class="w"> </span><span class="kt">f64</span><span class="o">&gt;&gt;</span>
+<span class="w">    </span><span class="o">+</span><span class="w"> </span><span class="n">fmt</span>::<span class="n">Display</span>
+<span class="p">{</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>Once we implement <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergyDual</span></code> for our structs, the <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergy</span></code> trait is automatically implemented and we can create and return trait objects.
@@ -1077,15 +1078,15 @@ This is a bit of an inconvenience but as long as we don’t need <code class="do
 <span class="sd">///</span>
 <span class="sd">/// For simple equations of state (see e.g. `PengRobinson`) it might be</span>
 <span class="sd">/// easier to overwrite this function instead of implementing `residual`.</span>
-<span class="k">fn</span> <span class="nf">evaluate_residual</span><span class="o">&lt;</span><span class="n">D</span>: <span class="nc">DualNum</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">state</span>: <span class="kp">&amp;</span><span class="nc">StateHD</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">D</span><span class="w"></span>
-<span class="k">where</span><span class="w"></span>
-<span class="w">    </span><span class="k">dyn</span><span class="w"> </span><span class="n">HelmholtzEnergy</span>: <span class="nc">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="bp">self</span><span class="p">.</span><span class="n">residual</span><span class="p">()</span><span class="w"></span>
-<span class="w">        </span><span class="p">.</span><span class="n">iter</span><span class="p">()</span><span class="w"></span>
-<span class="w">        </span><span class="p">.</span><span class="n">map</span><span class="p">(</span><span class="o">|</span><span class="n">c</span><span class="o">|</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="n">helmholtz_energy</span><span class="p">(</span><span class="n">state</span><span class="p">))</span><span class="w"></span>
-<span class="w">        </span><span class="p">.</span><span class="n">sum</span><span class="p">()</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="k">fn</span> <span class="nf">evaluate_residual</span><span class="o">&lt;</span><span class="n">D</span>: <span class="nc">DualNum</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">state</span>: <span class="kp">&amp;</span><span class="nc">StateHD</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">D</span>
+<span class="k">where</span>
+<span class="w">    </span><span class="k">dyn</span><span class="w"> </span><span class="n">HelmholtzEnergy</span>: <span class="nc">HelmholtzEnergyDual</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="bp">self</span><span class="p">.</span><span class="n">residual</span><span class="p">()</span>
+<span class="w">        </span><span class="p">.</span><span class="n">iter</span><span class="p">()</span>
+<span class="w">        </span><span class="p">.</span><span class="n">map</span><span class="p">(</span><span class="o">|</span><span class="n">c</span><span class="o">|</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="n">helmholtz_energy</span><span class="p">(</span><span class="n">state</span><span class="p">))</span>
+<span class="w">        </span><span class="p">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>As noted before, this structure is informed by equations of state with multiple contributions to the residual Helmholtz energy.
@@ -1100,7 +1101,7 @@ Note that the default implementation yields the correct results for properties t
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/equation_of_state.rs</span>
 
 <span class="sd">/// A general equation of state.</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">EquationOfState</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">EquationOfState</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="c1">// other methods omitted.</span>
 
 <span class="w">    </span><span class="sd">/// Return the ideal gas contribution.</span>
@@ -1111,10 +1112,10 @@ Note that the default implementation yields the correct results for properties t
 <span class="w">    </span><span class="sd">/// with no explicit ideal gas term. If a more detailed model is</span>
 <span class="w">    </span><span class="sd">/// required (e.g. for the calculation of enthalpies) this function</span>
 <span class="w">    </span><span class="sd">/// has to be overwritten.</span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">ideal_gas</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="nc">dyn</span><span class="w"> </span><span class="n">IdealGasContribution</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="o">&amp;</span><span class="n">DefaultIdealGasContribution</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">ideal_gas</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="kp">&amp;</span><span class="nc">dyn</span><span class="w"> </span><span class="n">IdealGasContribution</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="o">&amp;</span><span class="n">DefaultIdealGasContribution</span><span class="p">()</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">IdealGasContribution</span></code> supertrait is assembled from <code class="docutils literal notranslate"><span class="pre">IdealGasContributionDual</span></code> (for an explanation why, see <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergy</span></code> trait), where we have to provide an implementation for the <code class="docutils literal notranslate"><span class="pre">de_broglie_wavelength</span></code> (actually <span class="math notranslate nohighlight">\(\ln \Lambda^3\)</span> with <span class="math notranslate nohighlight">\([\Lambda] = A\)</span>):</p>
@@ -1122,29 +1123,29 @@ Note that the default implementation yields the correct results for properties t
 
 <span class="sd">/// Ideal gas Helmholtz energy contribution that can</span>
 <span class="sd">/// be evaluated using generalized (hyper) dual numbers.</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">IdealGasContributionDual</span><span class="o">&lt;</span><span class="n">D</span>: <span class="nc">DualNum</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">IdealGasContributionDual</span><span class="o">&lt;</span><span class="n">D</span>: <span class="nc">DualNum</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="sd">/// The thermal de Broglie wavelength of each component in the form $\ln\left(\frac{\Lambda^3}{\AA^3}\right)$</span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">de_broglie_wavelength</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">temperature</span>: <span class="nc">D</span><span class="p">,</span><span class="w"> </span><span class="n">components</span>: <span class="kt">usize</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Array1</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">de_broglie_wavelength</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">temperature</span>: <span class="nc">D</span><span class="p">,</span><span class="w"> </span><span class="n">components</span>: <span class="kt">usize</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Array1</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">;</span>
 
 <span class="w">    </span><span class="sd">/// Evaluate the ideal gas contribution for a given state.</span>
 <span class="w">    </span><span class="sd">///</span>
 <span class="w">    </span><span class="sd">/// In some cases it could be advantageous to overwrite this</span>
 <span class="w">    </span><span class="sd">/// implementation instead of implementing the de Broglie</span>
 <span class="w">    </span><span class="sd">/// wavelength.</span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">evaluate</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">state</span>: <span class="kp">&amp;</span><span class="nc">StateHD</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">D</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">de_broglie_wavelength</span><span class="p">(</span><span class="n">state</span><span class="p">.</span><span class="n">temperature</span><span class="p">,</span><span class="w"> </span><span class="n">state</span><span class="p">.</span><span class="n">moles</span><span class="p">.</span><span class="n">len</span><span class="p">());</span><span class="w"></span>
-<span class="w">        </span><span class="p">((</span><span class="n">lambda</span><span class="w"></span>
-<span class="w">            </span><span class="o">+</span><span class="w"> </span><span class="n">state</span><span class="p">.</span><span class="n">partial_density</span><span class="p">.</span><span class="n">mapv</span><span class="p">(</span><span class="o">|</span><span class="n">x</span><span class="o">|</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="n">x</span><span class="p">.</span><span class="n">re</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">                    </span><span class="n">D</span>::<span class="n">from</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="w"></span>
-<span class="w">                </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">                    </span><span class="n">x</span><span class="p">.</span><span class="n">ln</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1.0</span><span class="w"></span>
-<span class="w">                </span><span class="p">}</span><span class="w"></span>
-<span class="w">            </span><span class="p">}))</span><span class="w"></span>
-<span class="w">            </span><span class="o">*</span><span class="w"> </span><span class="o">&amp;</span><span class="n">state</span><span class="p">.</span><span class="n">moles</span><span class="p">)</span><span class="w"></span>
-<span class="w">            </span><span class="p">.</span><span class="n">sum</span><span class="p">()</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">evaluate</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">state</span>: <span class="kp">&amp;</span><span class="nc">StateHD</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">D</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">de_broglie_wavelength</span><span class="p">(</span><span class="n">state</span><span class="p">.</span><span class="n">temperature</span><span class="p">,</span><span class="w"> </span><span class="n">state</span><span class="p">.</span><span class="n">moles</span><span class="p">.</span><span class="n">len</span><span class="p">());</span>
+<span class="w">        </span><span class="p">((</span><span class="n">lambda</span>
+<span class="w">            </span><span class="o">+</span><span class="w"> </span><span class="n">state</span><span class="p">.</span><span class="n">partial_density</span><span class="p">.</span><span class="n">mapv</span><span class="p">(</span><span class="o">|</span><span class="n">x</span><span class="o">|</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="n">x</span><span class="p">.</span><span class="n">re</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="n">D</span>::<span class="n">from</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+<span class="w">                </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="n">x</span><span class="p">.</span><span class="n">ln</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">1.0</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">}))</span>
+<span class="w">            </span><span class="o">*</span><span class="w"> </span><span class="o">&amp;</span><span class="n">state</span><span class="p">.</span><span class="n">moles</span><span class="p">)</span>
+<span class="w">            </span><span class="p">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>Accordingly, the Helmholtz energy is given by</p>
@@ -1164,9 +1165,9 @@ Note that the default implementation yields the correct results for properties t
 <span class="sd">///</span>
 <span class="sd">/// The trait is required to be able to calculate (mass)</span>
 <span class="sd">/// specific properties.</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">MolarWeight</span><span class="o">&lt;</span><span class="n">U</span>: <span class="nc">EOSUnit</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">molar_weight</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityArray1</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">MolarWeight</span><span class="o">&lt;</span><span class="n">U</span>: <span class="nc">EOSUnit</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">molar_weight</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityArray1</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </section>
@@ -1176,21 +1177,21 @@ Note that the default implementation yields the correct results for properties t
 We have to implement a <em>reference</em> to produce the reduced property and a <em>correlation function</em> that models the behavior of the logarithmic reduced property as a function of the reduced residual entropy.</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/equation_of_state.rs</span>
 <span class="sd">/// Reference values and residual entropy correlations for entropy scaling.</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">EntropyScaling</span><span class="o">&lt;</span><span class="n">U</span>: <span class="nc">EOSUnit</span><span class="p">,</span><span class="w"> </span><span class="n">E</span>: <span class="nc">EquationOfState</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">viscosity_reference</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">state</span>: <span class="kp">&amp;</span><span class="nc">State</span><span class="o">&lt;</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">E</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Result</span><span class="o">&lt;</span><span class="n">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">EoSError</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">viscosity_correlation</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">s_res</span>: <span class="kt">f64</span><span class="p">,</span><span class="w"> </span><span class="n">x</span>: <span class="kp">&amp;</span><span class="nc">Array1</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Result</span><span class="o">&lt;</span><span class="kt">f64</span><span class="p">,</span><span class="w"> </span><span class="n">EoSError</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">diffusion_reference</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">state</span>: <span class="kp">&amp;</span><span class="nc">State</span><span class="o">&lt;</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">E</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Result</span><span class="o">&lt;</span><span class="n">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">EoSError</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">diffusion_correlation</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">s_res</span>: <span class="kt">f64</span><span class="p">,</span><span class="w"> </span><span class="n">x</span>: <span class="kp">&amp;</span><span class="nc">Array1</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Result</span><span class="o">&lt;</span><span class="kt">f64</span><span class="p">,</span><span class="w"> </span><span class="n">EoSError</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">thermal_conductivity_reference</span><span class="p">(</span><span class="w"></span>
-<span class="w">        </span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"></span>
-<span class="w">        </span><span class="n">state</span>: <span class="kp">&amp;</span><span class="nc">State</span><span class="o">&lt;</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">E</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Result</span><span class="o">&lt;</span><span class="n">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">EoSError</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">fn</span> <span class="nf">thermal_conductivity_correlation</span><span class="p">(</span><span class="w"></span>
-<span class="w">        </span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"></span>
-<span class="w">        </span><span class="n">s_res</span>: <span class="kt">f64</span><span class="p">,</span><span class="w"></span>
-<span class="w">        </span><span class="n">x</span>: <span class="kp">&amp;</span><span class="nc">Array1</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Result</span><span class="o">&lt;</span><span class="kt">f64</span><span class="p">,</span><span class="w"> </span><span class="n">EoSError</span><span class="o">&gt;</span><span class="p">;</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<span class="k">pub</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="n">EntropyScaling</span><span class="o">&lt;</span><span class="n">U</span>: <span class="nc">EOSUnit</span><span class="p">,</span><span class="w"> </span><span class="n">E</span>: <span class="nc">EquationOfState</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">viscosity_reference</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">state</span>: <span class="kp">&amp;</span><span class="nc">State</span><span class="o">&lt;</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">E</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Result</span><span class="o">&lt;</span><span class="n">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">EoSError</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">viscosity_correlation</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">s_res</span>: <span class="kt">f64</span><span class="p">,</span><span class="w"> </span><span class="n">x</span>: <span class="kp">&amp;</span><span class="nc">Array1</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Result</span><span class="o">&lt;</span><span class="kt">f64</span><span class="p">,</span><span class="w"> </span><span class="n">EoSError</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">diffusion_reference</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">state</span>: <span class="kp">&amp;</span><span class="nc">State</span><span class="o">&lt;</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">E</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Result</span><span class="o">&lt;</span><span class="n">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">EoSError</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">diffusion_correlation</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">s_res</span>: <span class="kt">f64</span><span class="p">,</span><span class="w"> </span><span class="n">x</span>: <span class="kp">&amp;</span><span class="nc">Array1</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Result</span><span class="o">&lt;</span><span class="kt">f64</span><span class="p">,</span><span class="w"> </span><span class="n">EoSError</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">thermal_conductivity_reference</span><span class="p">(</span>
+<span class="w">        </span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span>
+<span class="w">        </span><span class="n">state</span>: <span class="kp">&amp;</span><span class="nc">State</span><span class="o">&lt;</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">E</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Result</span><span class="o">&lt;</span><span class="n">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">EoSError</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="k">fn</span> <span class="nf">thermal_conductivity_correlation</span><span class="p">(</span>
+<span class="w">        </span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span>
+<span class="w">        </span><span class="n">s_res</span>: <span class="kt">f64</span><span class="p">,</span>
+<span class="w">        </span><span class="n">x</span>: <span class="kp">&amp;</span><span class="nc">Array1</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nb">Result</span><span class="o">&lt;</span><span class="kt">f64</span><span class="p">,</span><span class="w"> </span><span class="n">EoSError</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </section>

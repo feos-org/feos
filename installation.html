@@ -944,7 +944,8 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Theory</span></p>
 <ul>
-<li class="toctree-l1 has-children"><a class="reference internal" href="theory/eos/index.html">Equations of state</a><input class="toctree-checkbox" id="toctree-checkbox-99" name="toctree-checkbox-99" role="switch" type="checkbox"/><label for="toctree-checkbox-99"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
+<li class="toctree-l1 has-children"><a class="reference internal" href="theory/eos/index.html">Equations of state</a><input class="toctree-checkbox" id="toctree-checkbox-99" name="toctree-checkbox-99" role="switch" type="checkbox"/><label for="toctree-checkbox-99"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="theory/eos/properties.html">Properties</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="theory/dft/index.html">Classical density functional theory</a><input class="toctree-checkbox" id="toctree-checkbox-100" name="toctree-checkbox-100" role="switch" type="checkbox"/><label for="toctree-checkbox-100"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -1010,15 +1011,15 @@ Python</label><div class="sd-tab-content docutils">
 Rust</label><div class="sd-tab-content docutils">
 <p>In Rust, the <code class="docutils literal notranslate"><span class="pre">feos-dft</span></code> crate and each equation of state or DFT functional is a separate, optional module behind a feature flag.
 To use <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> with all models (including Python bindings), use the <code class="docutils literal notranslate"><span class="pre">all</span></code> feature:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[dependencies]</span><span class="w"></span>
-<span class="n">feos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="o">=</span><span class="s">&quot;0.2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;all&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="n">quantity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0.5&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[dependencies]</span>
+<span class="n">feos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="o">=</span><span class="s">&quot;0.2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;all&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="n">quantity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0.5&quot;</span>
 </pre></div>
 </div>
 <p>In the following example we use only the PC-SAFT equation of state and Helmholtz energy functionals (without Python bindings):</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[dependencies]</span><span class="w"></span>
-<span class="n">feos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="o">=</span><span class="s">&quot;0.2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;dft&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;pcsaft&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="n">quantity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0.5&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[dependencies]</span>
+<span class="n">feos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="o">=</span><span class="s">&quot;0.2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;dft&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;pcsaft&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="n">quantity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0.5&quot;</span>
 </pre></div>
 </div>
 </div>

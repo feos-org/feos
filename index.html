@@ -944,7 +944,8 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Theory</span></p>
 <ul>
-<li class="toctree-l1 has-children"><a class="reference internal" href="theory/eos/index.html">Equations of state</a><input class="toctree-checkbox" id="toctree-checkbox-99" name="toctree-checkbox-99" role="switch" type="checkbox"/><label for="toctree-checkbox-99"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
+<li class="toctree-l1 has-children"><a class="reference internal" href="theory/eos/index.html">Equations of state</a><input class="toctree-checkbox" id="toctree-checkbox-99" name="toctree-checkbox-99" role="switch" type="checkbox"/><label for="toctree-checkbox-99"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="theory/eos/properties.html">Properties</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="theory/dft/index.html">Classical density functional theory</a><input class="toctree-checkbox" id="toctree-checkbox-100" name="toctree-checkbox-100" role="switch" type="checkbox"/><label for="toctree-checkbox-100"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -1024,26 +1025,26 @@ Python</label><div class="sd-tab-content docutils">
 </input><label class="sd-tab-label" for="sd-tab-item-1">
 Rust</label><div class="sd-tab-content docutils">
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// some imports omitted</span>
-<span class="k">use</span><span class="w"> </span><span class="n">feos_core</span>::<span class="p">{</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">Contributions</span><span class="p">};</span><span class="w"></span>
-<span class="k">use</span><span class="w"> </span><span class="n">feos_core</span>::<span class="n">parameter</span>::<span class="p">{</span><span class="n">IdentifierOption</span><span class="p">,</span><span class="w"> </span><span class="n">Parameter</span><span class="p">};</span><span class="w"></span>
-<span class="k">use</span><span class="w"> </span><span class="n">feos</span>::<span class="n">pcsaft</span>::<span class="p">{</span><span class="n">PcSaft</span><span class="p">,</span><span class="w"> </span><span class="n">PcSaftParameters</span><span class="p">};</span><span class="w"></span>
+<span class="k">use</span><span class="w"> </span><span class="n">feos_core</span>::<span class="p">{</span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">Contributions</span><span class="p">};</span>
+<span class="k">use</span><span class="w"> </span><span class="n">feos_core</span>::<span class="n">parameter</span>::<span class="p">{</span><span class="n">IdentifierOption</span><span class="p">,</span><span class="w"> </span><span class="n">Parameter</span><span class="p">};</span>
+<span class="k">use</span><span class="w"> </span><span class="n">feos</span>::<span class="n">pcsaft</span>::<span class="p">{</span><span class="n">PcSaft</span><span class="p">,</span><span class="w"> </span><span class="n">PcSaftParameters</span><span class="p">};</span>
 
 <span class="c1">// Build an equation of state</span>
-<span class="kd">let</span><span class="w"> </span><span class="n">parameters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PcSaftParameters</span><span class="p">.</span><span class="n">from_json</span><span class="p">(</span><span class="w"></span>
+<span class="kd">let</span><span class="w"> </span><span class="n">parameters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PcSaftParameters</span><span class="p">.</span><span class="n">from_json</span><span class="p">(</span>
 <span class="w">    </span><span class="fm">vec!</span><span class="p">[</span><span class="s">&quot;methanol&quot;</span><span class="p">],</span><span class="w"> </span>
-<span class="w">    </span><span class="s">&quot;parameters.json&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="nb">None</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">IdentifierOption</span>::<span class="n">Name</span><span class="w"></span>
-<span class="p">)</span><span class="o">?</span><span class="p">;</span><span class="w"></span>
-<span class="kd">let</span><span class="w"> </span><span class="n">eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Rc</span>::<span class="n">new</span><span class="p">(</span><span class="n">PcSaft</span>::<span class="n">new</span><span class="p">(</span><span class="n">Rc</span>::<span class="n">new</span><span class="p">(</span><span class="n">parameters</span><span class="p">)));</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;parameters.json&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nb">None</span><span class="p">,</span>
+<span class="w">    </span><span class="n">IdentifierOption</span>::<span class="n">Name</span>
+<span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<span class="kd">let</span><span class="w"> </span><span class="n">eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Rc</span>::<span class="n">new</span><span class="p">(</span><span class="n">PcSaft</span>::<span class="n">new</span><span class="p">(</span><span class="n">Rc</span>::<span class="n">new</span><span class="p">(</span><span class="n">parameters</span><span class="p">)));</span>
 
 <span class="c1">// Define thermodynamic conditions</span>
-<span class="kd">let</span><span class="w"> </span><span class="n">critical_point</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">State</span>::<span class="n">critical_point</span><span class="p">(</span><span class="o">&amp;</span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="nb">None</span><span class="p">,</span><span class="w"> </span><span class="nb">None</span><span class="p">,</span><span class="w"> </span><span class="nb">Default</span>::<span class="n">default</span><span class="p">())</span><span class="o">?</span><span class="p">;</span><span class="w"></span>
+<span class="kd">let</span><span class="w"> </span><span class="n">critical_point</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">State</span>::<span class="n">critical_point</span><span class="p">(</span><span class="o">&amp;</span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="nb">None</span><span class="p">,</span><span class="w"> </span><span class="nb">None</span><span class="p">,</span><span class="w"> </span><span class="nb">Default</span>::<span class="n">default</span><span class="p">())</span><span class="o">?</span><span class="p">;</span>
 
 <span class="c1">// Compute properties</span>
-<span class="kd">let</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">critical_point</span><span class="p">.</span><span class="n">pressure</span><span class="p">(</span><span class="n">Contributions</span>::<span class="n">Total</span><span class="p">);</span><span class="w"></span>
-<span class="kd">let</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">critical_point</span><span class="p">.</span><span class="n">temperature</span><span class="p">;</span><span class="w"></span>
-<span class="fm">println!</span><span class="p">(</span><span class="s">&quot;Critical point for methanol: T={}, p={}.&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">);</span><span class="w"></span>
+<span class="kd">let</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">critical_point</span><span class="p">.</span><span class="n">pressure</span><span class="p">(</span><span class="n">Contributions</span>::<span class="n">Total</span><span class="p">);</span>
+<span class="kd">let</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">critical_point</span><span class="p">.</span><span class="n">temperature</span><span class="p">;</span>
+<span class="fm">println!</span><span class="p">(</span><span class="s">&quot;Critical point for methanol: T={}, p={}.&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">);</span>
 </pre></div>
 </div>
 <div class="highlight-output notranslate"><div class="highlight"><pre><span></span><span class="go">Critical point for methanol: T=531.5 K, p=10.7 MPa.</span>
