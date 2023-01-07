@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `num-dual` dependency to 0.6. [#119](https://github.com/feos-org/feos/pull/119)
 
 
+### Fixed
+- Fixed incorrect indexing that lead to panics in the polar contribution of gc-PC-SAFT. [#104](https://github.com/feos-org/feos/pull/104)
+
 ## [0.3.0] - 2022-09-14
 - Major restructuring of the entire `feos` project. All individual models are reunited in the `feos` crate. `feos-core` and `feos-dft` still live as individual crates within the `feos` workspace.
 
