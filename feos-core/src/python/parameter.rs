@@ -735,7 +735,12 @@ macro_rules! impl_parameter {
 
             #[getter]
             fn get_binary_records<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
-                self.0.records().1.mapv(f64::from).view().to_pyarray(py)
+                self.0
+                    .records()
+                    .1
+                    .mapv(|r| f64::try_from(r).unwrap())
+                    .view()
+                    .to_pyarray(py)
             }
         }
     };
