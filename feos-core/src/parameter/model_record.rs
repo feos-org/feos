@@ -2,8 +2,11 @@ use super::identifier::Identifier;
 use super::segment::SegmentRecord;
 use super::ParameterError;
 use conv::ValueInto;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{fs::File, io::BufReader, path::Path};
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::BufReader;
+use std::path::Path;
 
 /// A collection of parameters of a pure substance.
 #[derive(Serialize, Deserialize, Debug, Clone)]
