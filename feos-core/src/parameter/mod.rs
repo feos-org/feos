@@ -241,7 +241,7 @@ where
         let n = pure_records.len();
         let mut binary_records = Array2::default([n, n]);
         for i in 0..n {
-            for j in 0..n {
+            for j in i + 1..n {
                 let mut vec = Vec::new();
                 for (id1, &n1) in segment_counts[i].iter() {
                     for (id2, &n2) in segment_counts[j].iter() {
@@ -253,7 +253,9 @@ where
                         vec.push((binary, n1, n2));
                     }
                 }
-                binary_records[(i, j)] = Self::Binary::from_segments_binary(&vec)?
+                let kij = Self::Binary::from_segments_binary(&vec)?;
+                binary_records[(i, j)] = kij.clone();
+                binary_records[(j, i)] = kij;
             }
         }
 

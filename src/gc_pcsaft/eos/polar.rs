@@ -68,19 +68,12 @@ impl Dipole {
         let ndipole = parameters.dipole_comp.len();
 
         let f2_term = Array2::from_shape_fn([ndipole; 2], |(i, j)| {
-            let di = parameters.dipole_comp[i];
-            let dj = parameters.dipole_comp[j];
-            parameters.mu2[i] * parameters.mu2[j] / parameters.s_ij[[di, dj]].powi(3)
+            parameters.mu2[i] * parameters.mu2[j] / parameters.s_ij[[i, j]].powi(3)
         });
 
         let f3_term = Array3::from_shape_fn([ndipole; 3], |(i, j, k)| {
-            let di = parameters.dipole_comp[i];
-            let dj = parameters.dipole_comp[j];
-            let dk = parameters.dipole_comp[k];
             parameters.mu2[i] * parameters.mu2[j] * parameters.mu2[k]
-                / (parameters.s_ij[[di, dj]]
-                    * parameters.s_ij[[di, dk]]
-                    * parameters.s_ij[[dj, dk]])
+                / (parameters.s_ij[[i, j]] * parameters.s_ij[[i, k]] * parameters.s_ij[[j, k]])
         });
 
         let mut mij1 = Array2::zeros((ndipole, ndipole));
@@ -131,38 +124,23 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Dipole {
         let ndipole = p.dipole_comp.len();
 
         let t_inv = state.temperature.inv();
-        let eps_ij_t = Array2::from_shape_fn([ndipole; 2], |(i, j)| {
-            let di = p.dipole_comp[i];
-            let dj = p.dipole_comp[j];
-            t_inv * p.e_k_ij[[di, dj]]
-        });
+        let eps_ij_t = Array2::from_shape_fn([ndipole; 2], |(i, j)| t_inv * p.e_k_ij[[i, j]]);
 
         let rho = &state.partial_density;
-        let r = p.hs_diameter(state.temperature) * 0.5;
-        let eta = (rho * &p.m * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
+        let eta = p.zeta(state.temperature, &state.partial_density, [3])[0];
 
         let mut phi2 = D::zero();
         let mut phi3 = D::zero();
         for i in 0..ndipole {
             let di = p.dipole_comp[i];
             phi2 -= (rho[di] * rho[di] * self.f2_term[[i, i]])
-                * pair_integral_ij(
-                    self.mij1[[i, i]],
-                    self.mij2[[i, i]],
-                    eta,
-                    eps_ij_t[[di, di]],
-                );
+                * pair_integral_ij(self.mij1[[i, i]], self.mij2[[i, i]], eta, eps_ij_t[[i, i]]);
             phi3 -= (rho[di] * rho[di] * rho[di] * self.f3_term[[i, i, i]])
                 * triplet_integral_ijk(self.mijk1[[i, i, i]], self.mijk2[[i, i, i]], eta);
             for j in (i + 1)..ndipole {
                 let dj = p.dipole_comp[j];
                 phi2 -= (rho[di] * rho[dj] * self.f2_term[[i, j]])
-                    * pair_integral_ij(
-                        self.mij1[[i, j]],
-                        self.mij2[[i, j]],
-                        eta,
-                        eps_ij_t[[di, dj]],
-                    )
+                    * pair_integral_ij(self.mij1[[i, j]], self.mij2[[i, j]], eta, eps_ij_t[[i, j]])
                     * 2.0;
                 phi3 -= (rho[di] * rho[di] * rho[dj] * self.f3_term[[i, i, j]])
                     * triplet_integral_ijk(self.mijk1[[i, i, j]], self.mijk2[[i, i, j]], eta)

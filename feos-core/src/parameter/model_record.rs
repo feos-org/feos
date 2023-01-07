@@ -2,7 +2,8 @@ use super::identifier::Identifier;
 use super::segment::SegmentRecord;
 use super::ParameterError;
 use conv::ValueInto;
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::{fs::File, io::BufReader, path::Path};
 
 /// A collection of parameters of a pure substance.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -120,6 +121,15 @@ impl<I, B> BinaryRecord<I, B> {
             id2,
             model_record,
         }
+    }
+
+    /// Read a list of `BinaryRecord`s from a JSON file.
+    pub fn from_json<P: AsRef<Path>>(file: P) -> Result<Vec<Self>, ParameterError>
+    where
+        I: DeserializeOwned,
+        B: DeserializeOwned,
+    {
+        Ok(serde_json::from_reader(BufReader::new(File::open(file)?))?)
     }
 }
 

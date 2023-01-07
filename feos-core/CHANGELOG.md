@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `StateVec::moles` getter. [#113](https://github.com/feos-org/feos/pull/113)
 - Added public constructors `PhaseDiagram::new` and `StateVec::new` that allow the creation of the respective structs from a list of `PhaseEquilibrium`s or `State`s in Rust and Python. [#113](https://github.com/feos-org/feos/pull/113)
 - Added new variant `EosError::Error` which allows dispatching generic errors that are not covered by the existing variants. [#98](https://github.com/feos-org/feos/pull/98)
-- Removed generics for units in all structs and traits in favor of static SI units. [#115](https://github.com/feos-org/feos/pull/115)
+- Added `binary_records` getter for parameter classes in Python. [#104](https://github.com/feos-org/feos/pull/104)
+- Added `BinaryRecord::from_json` and `BinarySegmentRecord::from_json` that read a list of records from a file. [#104](https://github.com/feos-org/feos/pull/104)
 
 ### Changed
 - Added `Sync` and `Send` as supertraits to `EquationOfState`. [#57](https://github.com/feos-org/feos/pull/57)
@@ -22,11 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The critical point algorithm now uses vector dual numbers to reduce the number of model evaluations and computation times. [#96](https://github.com/feos-org/feos/pull/96)
 - Renamed `State::molar_volume` to `State::partial_molar_volume` and `State::ln_phi_pure` to `State::ln_phi_pure_liquid`. [#107](https://github.com/feos-org/feos/pull/107)
 - Added a const generic parameter to `PhaseDiagram` that accounts for the number of phases analogously to `PhaseEquilibrium`. [#113](https://github.com/feos-org/feos/pull/113)
+- Removed generics for units in all structs and traits in favor of static SI units. [#115](https://github.com/feos-org/feos/pull/115)
 
 ### Packaging
 - Updated `pyo3` and `numpy` dependencies to 0.18. [#119](https://github.com/feos-org/feos/pull/119)
 - Updated `quantity` dependency to 0.6. [#119](https://github.com/feos-org/feos/pull/119)
 - Updated `num-dual` dependency to 0.6. [#119](https://github.com/feos-org/feos/pull/119)
+
+### Fixed
+- `Parameter::from_segments` only calculates binary interaction parameters for unlike molecules. [#104](https://github.com/feos-org/feos/pull/104)
 
 ## [0.3.1] - 2022-08-25
 ### Added

@@ -3,9 +3,9 @@ use feos::gc_pcsaft::{GcPcSaft, GcPcSaftEosParameters};
 #[cfg(feature = "dft")]
 use feos::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftFunctionalParameters};
 use feos_core::parameter::{IdentifierOption, ParameterHetero};
-use feos_core::{EosResult, State};
+use feos_core::{Contributions, EosResult, State};
 use ndarray::arr1;
-use quantity::si::{KELVIN, MOL};
+use quantity::si::{KELVIN, METER, MOL};
 use std::sync::Arc;
 
 #[test]
@@ -48,5 +48,33 @@ fn test_binary() -> EosResult<()> {
         536.4129479522177 * KELVIN,
         max_relative = 1e-14
     );
+    Ok(())
+}
+
+#[test]
+fn test_polar_term() -> EosResult<()> {
+    let parameters1 = GcPcSaftEosParameters::from_json_segments(
+        &["CCCOC(C)=O", "CCCO"],
+        "parameters/pcsaft/gc_substances.json",
+        "parameters/pcsaft/sauer2014_hetero.json",
+        None,
+        IdentifierOption::Smiles,
+    )?;
+    let parameters2 = GcPcSaftEosParameters::from_json_segments(
+        &["CCCO", "CCCOC(C)=O"],
+        "parameters/pcsaft/gc_substances.json",
+        "parameters/pcsaft/sauer2014_hetero.json",
+        None,
+        IdentifierOption::Smiles,
+    )?;
+    let eos1 = Arc::new(GcPcSaft::new(Arc::new(parameters1)));
+    let eos2 = Arc::new(GcPcSaft::new(Arc::new(parameters2)));
+    let moles = arr1(&[0.5, 0.5]) * MOL;
+    let p1 = State::new_nvt(&eos1, 300.0 * KELVIN, METER.powi(3), &moles)?
+        .pressure(Contributions::Total);
+    let p2 = State::new_nvt(&eos2, 300.0 * KELVIN, METER.powi(3), &moles)?
+        .pressure(Contributions::Total);
+    println!("{p1} {p2}");
+    assert_eq!(p1, p2);
     Ok(())
 }
