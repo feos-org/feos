@@ -19,7 +19,7 @@ pub(crate) mod ufraction;
 use attractive_perturbation_bh::AttractivePerturbationBH;
 use attractive_perturbation_uvb3::AttractivePerturbationUVB3;
 use attractive_perturbation_wca::AttractivePerturbationWCA;
-use hard_sphere_bh::HardSphere;
+use hard_sphere_bh::HardSphereBH;
 use hard_sphere_wca::HardSphereWCA;
 use reference_perturbation_bh::ReferencePerturbationBH;
 use reference_perturbation_uvb3::ReferencePerturbationUVB3;
@@ -78,7 +78,7 @@ impl UVTheory {
         match options.perturbation {
             Perturbation::BarkerHenderson => match options.virial_order {
                 VirialOrder::Second => {
-                    contributions.push(Box::new(HardSphere {
+                    contributions.push(Box::new(HardSphereBH {
                         parameters: parameters.clone(),
                     }));
                     contributions.push(Box::new(ReferencePerturbationBH {

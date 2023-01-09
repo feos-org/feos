@@ -21,11 +21,11 @@ lazy_static! {
 }
 
 #[derive(Debug, Clone)]
-pub struct HardSphere {
+pub struct HardSphereBH {
     pub parameters: Arc<UVParameters>,
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardSphere {
+impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardSphereBH {
     /// Helmholtz energy for hard spheres, eq. 19 (check Volume)
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let d = diameter_bh(&self.parameters, state.temperature);
@@ -39,7 +39,7 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardSphere {
     }
 }
 
-impl fmt::Display for HardSphere {
+impl fmt::Display for HardSphereBH {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Hard Sphere")
     }
@@ -89,15 +89,6 @@ pub fn zeta_23<D: DualNum<f64>>(molefracs: &Array1<D>, diameter: &Array1<D>) -> 
     }
     zeta[0] / zeta[1]
 }
-
-//#[inline]
-//pub fn dimensionless_length_scale<D: DualNum<f64>>(
-//  parameters: &UVParameters,
-//temperature: D,
-//rep: f64,
-//) -> Array1<D> {
-//  -diameter_bh(parameters, temperature) + 1.0
-//}
 
 pub fn packing_fraction_b<D: DualNum<f64>>(
     parameters: &UVParameters,

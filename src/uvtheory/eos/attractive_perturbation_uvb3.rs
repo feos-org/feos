@@ -59,65 +59,23 @@ const C_WCA: [[f64; 6]; 6] = [
 ];
 
 // Constants for delta B2 RSAP
-const CONST_B2_RSAP: [[f64; 4]; 4] = [
+const C_B2_RSAP: [[f64; 4]; 4] = [
     [-0.063550989, 6.206829830, -37.45829549, 40.72849774],
     [1.519053409, 13.14989643, 85.35058674, 374.1906360],
     [0.693456220, 9.459946180, -53.28984218, 315.8199084],
     [0.007492596, 0.546171170, 7.979562575, -119.6126395],
 ];
 
-// Constants for B3 (full, not rounded)
-// const CONST_B3_LJ_RSAP: [f64; 16] = [
-//     -3.98056703e+00,
-//     7.95645979e+01,
-//     5.48947334e-01,
-//     5.36319582e+00,
-//     1.42454153e+00,
-//     5.72923297e+01,
-//     3.80631996e-10,
-//     1.00308510e+00,
-//     -3.97550628e+01,
-//     -8.12130965e+01,
-//     6.98683893e-01,
-//     3.01563968e+01,
-//     -2.36919346e+01,
-//     -8.50060515e+01,
-//     7.76154927e-01,
-//     1.27979994e+01,
-// ];
-//rounded values:
-const CONST_B3_LJ_RSAP: [f64; 16] = [
+// // Constants for B3 Model for Mie nu-6 fluids
+const K_LJ_B3: [f64; 16] = [
     -3.9806, 79.565, 0.5489, 5.3632, 1.4245, 57.292, 0.0, 1.0031, -39.755, -81.213, 0.6987, 30.156,
     -23.692, -85.006, 0.7762, 12.798,
 ];
 
-// // Constants for B3 RSAP Mie nu-6 fluids (not rounded)
-// const B3_K_PARAMETER: [f64; 4] = [8.08442174e-01, -9.54092759e-02, 4.75253015e-01, -2.83282674];
-// const B3_L_PARAMETER: [f64; 4] = [4.94848492, -21.2995618, 7.0, 3.21621955];
-// const B3_M_PARAMETER: [f64; 4] = [
-//     1.18534625e-01,
-//     7.85559789e-02,
-//     -5.50389332e-01,
-//     9.16296297e-03,
-// ];
+const P_B3: [f64; 4] = [0.80844, -0.09541, 0.47525, -2.83283];
+const L_B3: [f64; 4] = [4.9485, -21.3, 7.0, 3.2162];
+const M_B3: [f64; 4] = [0.11853, 0.078556, -0.55039, 0.009163];
 
-// // Constants for B3 RSAP Mie nu-6 fluids ( rounded)
-const B3_K_PARAMETER: [f64; 4] = [0.80844, -0.09541, 0.47525, -2.83283];
-const B3_L_PARAMETER: [f64; 4] = [4.9485, -21.3, 7.0, 3.2162];
-const B3_M_PARAMETER: [f64; 4] = [0.11853, 0.078556, -0.55039, 0.009163];
-
-/// Constants for WCA u-fraction. (unrounded)
-// const CU_WCA: [f64; 8] = [
-//     26.45397287,
-//     1.80454811,
-//     1.79970006,
-//     161.95895155,
-//     11.60539317,
-//     12.,
-//     0.4,
-//     2.0,
-// ];
-// rounded values:
 const CU_WCA: [f64; 8] = [26.454, 1.8045, 1.7997, 161.96, 11.605, 12., 0.4, 2.0];
 
 #[derive(Debug, Clone)]
@@ -345,12 +303,9 @@ fn coefficients_wca<D: DualNum<f64>>(rep: D, att: D, d: D) -> [D; 6] {
 }
 
 // Residual second virial coefficient from Revised series approximation RSAP
-fn factorial(num: i64) -> i64 {
-    return if num == 1 {
-        1
-    } else {
-        num * factorial(num - 1)
-    };
+
+pub fn factorial(num: u64) -> u64 {
+    (1..=num).product()
 }
 
 fn delta_b2<D: DualNum<f64>>(reduced_temperature: D, rep: f64, att: f64, q: D) -> D {
@@ -359,29 +314,29 @@ fn delta_b2<D: DualNum<f64>>(reduced_temperature: D, rep: f64, att: f64, q: D) -
     let b20 = q.powi(3) * 2.0 / 3.0 * PI; // eq. (16)
     let y = beta.exp() - 1.0;
 
-    let c1 = rep.recip() * CONST_B2_RSAP[0][1]
-        + (rep.powi(2)).recip() * CONST_B2_RSAP[0][2]
-        + (rep.powi(3)).recip() * CONST_B2_RSAP[0][3]
-        + CONST_B2_RSAP[0][0];
+    let c1 = rep.recip() * C_B2_RSAP[0][1]
+        + (rep.powi(2)).recip() * C_B2_RSAP[0][2]
+        + (rep.powi(3)).recip() * C_B2_RSAP[0][3]
+        + C_B2_RSAP[0][0];
 
-    let c2 = rep.recip() * CONST_B2_RSAP[1][1]
-        + (rep.powi(2)).recip() * CONST_B2_RSAP[1][2]
-        + (rep.powi(3)).recip() * CONST_B2_RSAP[1][3]
-        + CONST_B2_RSAP[1][0];
-    let c3 = rep.recip() * CONST_B2_RSAP[2][1]
-        + (rep.powi(2)).recip() * CONST_B2_RSAP[2][2]
-        + (rep.powi(3)).recip() * CONST_B2_RSAP[2][3]
-        + CONST_B2_RSAP[2][0];
-    let c4 = rep.recip() * CONST_B2_RSAP[3][1]
-        + (rep.powi(2)).recip() * CONST_B2_RSAP[3][2]
-        + (rep.powi(3)).recip() * CONST_B2_RSAP[3][3]
-        + CONST_B2_RSAP[3][0];
+    let c2 = rep.recip() * C_B2_RSAP[1][1]
+        + (rep.powi(2)).recip() * C_B2_RSAP[1][2]
+        + (rep.powi(3)).recip() * C_B2_RSAP[1][3]
+        + C_B2_RSAP[1][0];
+    let c3 = rep.recip() * C_B2_RSAP[2][1]
+        + (rep.powi(2)).recip() * C_B2_RSAP[2][2]
+        + (rep.powi(3)).recip() * C_B2_RSAP[2][3]
+        + C_B2_RSAP[2][0];
+    let c4 = rep.recip() * C_B2_RSAP[3][1]
+        + (rep.powi(2)).recip() * C_B2_RSAP[3][2]
+        + (rep.powi(3)).recip() * C_B2_RSAP[3][3]
+        + C_B2_RSAP[3][0];
 
     let mut sum_beta = beta;
 
     for i in 2..16 {
-        let k = factorial(i as i64) as f64 * i as f64;
-        sum_beta = sum_beta + beta.powi(i as i32) / k;
+        let k = factorial(i as u64) as f64 * i as f64;
+        sum_beta += beta.powi(i as i32) / k
     }
 
     (b20 - rm.powi(3) * 2.0 / 3.0 * PI - c1) * y - sum_beta * c2 - beta * c3 - beta.powi(2) * c4
@@ -409,33 +364,33 @@ fn delta_b3<D: DualNum<f64>>(t_x: D, rm_x: f64, rep_x: f64, _att_x: f64, d_x: D,
     let beta = t_x.recip();
     let b30 = (q_x.powi(3) * PI / 6.0).powi(2) * 10.0;
 
-    let b31 = ((t_x + CONST_B3_LJ_RSAP[2])
-        .powf(((rep_x - 12.0) / (rep_x - 6.0) * B3_M_PARAMETER[0] + 1.0) * CONST_B3_LJ_RSAP[3]))
+    let b31 = ((t_x + K_LJ_B3[2])
+        .powf(((rep_x - 12.0) / (rep_x - 6.0) * M_B3[0] + 1.0) * K_LJ_B3[3]))
     .recip()
-        * CONST_B3_LJ_RSAP[1]
-        * ((rep_x - 12.0) / (rep_x - B3_L_PARAMETER[0]) * B3_K_PARAMETER[0] + 1.0)
-        + CONST_B3_LJ_RSAP[0];
+        * K_LJ_B3[1]
+        * ((rep_x - 12.0) / (rep_x - L_B3[0]) * P_B3[0] + 1.0)
+        + K_LJ_B3[0];
 
-    let b32 = ((t_x + CONST_B3_LJ_RSAP[6])
-        .powf(((rep_x - 12.0) / (rep_x - 6.0) * B3_M_PARAMETER[1] + 1.0) * CONST_B3_LJ_RSAP[7]))
+    let b32 = ((t_x + K_LJ_B3[6])
+        .powf(((rep_x - 12.0) / (rep_x - 6.0) * M_B3[1] + 1.0) * K_LJ_B3[7]))
     .recip()
-        * CONST_B3_LJ_RSAP[5]
-        * ((rep_x - 12.0) / (rep_x - B3_L_PARAMETER[1]) * B3_K_PARAMETER[1] + 1.0)
-        + CONST_B3_LJ_RSAP[4];
+        * K_LJ_B3[5]
+        * ((rep_x - 12.0) / (rep_x - L_B3[1]) * P_B3[1] + 1.0)
+        + K_LJ_B3[4];
 
-    let b33 = ((t_x + CONST_B3_LJ_RSAP[10])
-        .powf(((rep_x - 12.0) / (rep_x - 6.0) * B3_M_PARAMETER[2] + 1.0) * CONST_B3_LJ_RSAP[11]))
+    let b33 = ((t_x + K_LJ_B3[10])
+        .powf(((rep_x - 12.0) / (rep_x - 6.0) * M_B3[2] + 1.0) * K_LJ_B3[11]))
     .recip()
-        * CONST_B3_LJ_RSAP[9]
-        * ((rep_x - 12.0) / (rep_x - B3_L_PARAMETER[2]) * B3_K_PARAMETER[2] + 1.0)
-        + CONST_B3_LJ_RSAP[8];
+        * K_LJ_B3[9]
+        * ((rep_x - 12.0) / (rep_x - L_B3[2]) * P_B3[2] + 1.0)
+        + K_LJ_B3[8];
 
-    let b34 = ((t_x + CONST_B3_LJ_RSAP[14])
-        .powf(((rep_x - 12.0) / (rep_x - 6.0) * B3_M_PARAMETER[3] + 1.0) * CONST_B3_LJ_RSAP[15]))
+    let b34 = ((t_x + K_LJ_B3[14])
+        .powf(((rep_x - 12.0) / (rep_x - 6.0) * M_B3[3] + 1.0) * K_LJ_B3[15]))
     .recip()
-        * CONST_B3_LJ_RSAP[13]
-        * ((rep_x - 12.0) / (rep_x - B3_L_PARAMETER[3]) * B3_K_PARAMETER[3] + 1.0)
-        + CONST_B3_LJ_RSAP[12];
+        * K_LJ_B3[13]
+        * ((rep_x - 12.0) / (rep_x - L_B3[3]) * P_B3[3] + 1.0)
+        + K_LJ_B3[12];
 
     let b3 = b30 + b31 * beta + b32 * beta.powi(2) + b33 * beta.powi(3) + b34 * beta.powi(4);
 
@@ -445,10 +400,10 @@ fn delta_b3<D: DualNum<f64>>(t_x: D, rm_x: f64, rep_x: f64, _att_x: f64, d_x: D,
     let rep_inv = rep_x.recip();
 
     let c1_eta_a = tau
-        * (rep_inv * WCA_CONSTANTS_ETA_A_UVB3[[0, 1]] + WCA_CONSTANTS_ETA_A_UVB3[[0, 0]])
-        + tau2 * (rep_inv * WCA_CONSTANTS_ETA_A_UVB3[[0, 3]] + WCA_CONSTANTS_ETA_A_UVB3[[0, 2]]);
+        * (rep_inv * WCA_CONSTANTS_ETA_A_UVB3[0][1] + WCA_CONSTANTS_ETA_A_UVB3[0][0])
+        + tau2 * (rep_inv * WCA_CONSTANTS_ETA_A_UVB3[0][3] + WCA_CONSTANTS_ETA_A_UVB3[0][2]);
 
-    let c1_eta_b = tau * WCA_CONSTANTS_ETA_B_UVB3[[0, 0]] + tau2 * WCA_CONSTANTS_ETA_B_UVB3[[0, 1]];
+    let c1_eta_b = tau * WCA_CONSTANTS_ETA_B_UVB3[0][0] + tau2 * WCA_CONSTANTS_ETA_B_UVB3[0][1];
 
     let b30_uv = (d_x.powi(3) * PI / 6.0).powi(2) * 10.0
         - d_x.powi(3) * 5.0 / 9.0
@@ -502,7 +457,6 @@ mod test {
             state.partial_density.sum() * (x * &p.sigma.mapv(|s| s.powi(3))).sum(),
             t_x,
         );
-        //with unrounded params: assert_relative_eq!(u_fraction_wca.re(), 0.8852730008077649, epsilon = 1e-10);
         assert_relative_eq!(u_fraction_wca.re(), 0.8852775506870431, epsilon = 1e-10);
         // delta a1u
         let i_wca =
@@ -519,18 +473,13 @@ mod test {
 
         let db3 = delta_b3(t_x, rm_x, rep_x, att_x, d_x, q_vdw);
         assert_relative_eq!(db3.re(), -0.6591980196661884, epsilon = 1e-10);
-        //non rounded params fpr B3:assert_relative_eq!(db3.re(), -0.6591646873435744, epsilon = 1e-10);
 
         let db31 =
             delta_b31u(t_x, weighted_sigma3_ij, rm_x, rep_x, att_x, d_x) / p.sigma[0].powi(6);
-
-        // non rounded params for B3:: b3.re() = 1.4326204530476152
-        //  b30_uv.re() = 2.0917851403911896
 
         // Full attractive perturbation:
         let a = pt.helmholtz_energy(&state) / moles[0];
 
         assert_relative_eq!(-0.9027781694834115, a.re(), epsilon = 1e-5);
-        //non rounded params for B3: assert_relative_eq!(-0.9027781726598461, a.re(), epsilon = 1e-5);
     }
 }
