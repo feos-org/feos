@@ -93,11 +93,11 @@ impl UVTheory {
                 }
             },
             Perturbation::WeeksChandlerAndersen => {
+                contributions.push(Box::new(HardSphereWCA {
+                    parameters: parameters.clone(),
+                }));
                 match options.virial_order {
                     VirialOrder::Second => {
-                        contributions.push(Box::new(HardSphereWCA {
-                            parameters: parameters.clone(),
-                        }));
                         contributions.push(Box::new(ReferencePerturbationWCA {
                             parameters: parameters.clone(),
                         }));
@@ -114,9 +114,6 @@ impl UVTheory {
                             panic!("uv-B3-theory not implemented for attractive exponents other than 6!")
                         }
 
-                        contributions.push(Box::new(HardSphereWCA {
-                            parameters: parameters.clone(),
-                        }));
                         contributions.push(Box::new(ReferencePerturbationUVB3 {
                             parameters: parameters.clone(),
                         }));
