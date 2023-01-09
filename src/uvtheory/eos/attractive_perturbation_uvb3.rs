@@ -1,3 +1,4 @@
+use super::attractive_perturbation_wca::one_fluid_properties;
 use super::hard_sphere_wca::{
     diameter_wca, dimensionless_diameter_q_wca, WCA_CONSTANTS_ETA_A_UVB3, WCA_CONSTANTS_ETA_B_UVB3,
 };
@@ -227,48 +228,6 @@ fn u_fraction_wca<D: DualNum<f64>>(rep_x: D, reduced_density: D, t_x: D) -> D {
         + 1.0
 }
 
-fn one_fluid_properties<D: DualNum<f64>>(
-    p: &UVParameters,
-    x: &Array1<D>,
-    t: D,
-) -> (D, D, D, D, D, D) {
-    let d = diameter_wca(p, t);
-    // &p.sigma;
-
-    let mut epsilon_k = D::zero();
-    let mut weighted_sigma3_ij = D::zero();
-    let mut rep = D::zero();
-    let mut att = D::zero();
-    let mut d_x_3 = D::zero();
-
-    for i in 0..p.ncomponents {
-        let xi = x[i];
-
-        d_x_3 += x[i] * d[i].powi(3);
-        for j in 0..p.ncomponents {
-            let _y = xi * x[j] * p.sigma_ij[[i, j]].powi(3);
-            weighted_sigma3_ij += _y;
-            epsilon_k += _y * p.eps_k_ij[[i, j]];
-
-            rep += xi * x[j] * p.rep_ij[[i, j]];
-            att += xi * x[j] * p.att_ij[[i, j]];
-        }
-    }
-
-    //let dx = (x * &d.mapv(|v| v.powi(3))).sum().powf(1.0 / 3.0);
-    let sigma_x = (x * &p.sigma.mapv(|v| v.powi(3))).sum().powf(1.0 / 3.0);
-    let dx = d_x_3.powf(1.0 / 3.0) / sigma_x;
-
-    (
-        rep,
-        att,
-        sigma_x,
-        weighted_sigma3_ij,
-        epsilon_k / weighted_sigma3_ij,
-        dx,
-    )
-}
-
 // Coefficients for IWCA from eq. (S55)
 fn coefficients_wca<D: DualNum<f64>>(rep: D, att: D, d: D) -> [D; 6] {
     let rep_inv = rep.recip();
@@ -474,8 +433,8 @@ mod test {
         let db3 = delta_b3(t_x, rm_x, rep_x, att_x, d_x, q_vdw);
         assert_relative_eq!(db3.re(), -0.6591980196661884, epsilon = 1e-10);
 
-        let db31 =
-            delta_b31u(t_x, weighted_sigma3_ij, rm_x, rep_x, att_x, d_x) / p.sigma[0].powi(6);
+        // let db31 =
+        //     delta_b31u(t_x, weighted_sigma3_ij, rm_x, rep_x, att_x, d_x) / p.sigma[0].powi(6);
 
         // Full attractive perturbation:
         let a = pt.helmholtz_energy(&state) / moles[0];

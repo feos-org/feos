@@ -155,17 +155,6 @@ fn correlation_integral_wca<D: DualNum<f64>>(
     rm_x: D,
 ) -> D {
     let c = coefficients_wca(rep_x, att_x, d_x);
-    // dbg!(q_x.re());
-    // dbg!(rm_x.re());
-    // dbg!(mean_field_constant_x.re());
-    // dbg!(mie_prefactor(rep_x, att_x).re());
-    // dbg!(rho_x.re());
-    // dbg!(c[0].re());
-    // dbg!(c[1].re());
-    // dbg!(c[2].re());
-    // dbg!(c[3].re());
-    // dbg!(c[4].re());
-    // dbg!(d_x.re());
 
     (q_x.powi(3) - rm_x.powi(3)) * 1.0 / 3.0 - mean_field_constant_x
         + mie_prefactor(rep_x, att_x) * (c[0] * rho_x + c[1] * rho_x.powi(2) + c[2] * rho_x.powi(3))
@@ -180,7 +169,7 @@ fn u_fraction_wca<D: DualNum<f64>>(rep_x: D, reduced_density: D) -> D {
         .tanh()
 }
 
-fn one_fluid_properties<D: DualNum<f64>>(
+pub fn one_fluid_properties<D: DualNum<f64>>(
     p: &UVParameters,
     x: &Array1<D>,
     t: D,
