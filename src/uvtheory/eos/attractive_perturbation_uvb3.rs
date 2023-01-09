@@ -91,7 +91,7 @@ impl fmt::Display for AttractivePerturbationUVB3 {
 }
 
 impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for AttractivePerturbationUVB3 {
-    /// Helmholtz energy for attractive perturbation, eq. 52
+    /// Helmholtz energy for attractive perturbation
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
         let t = state.temperature;
@@ -111,7 +111,6 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for AttractivePerturbationUVB3 {
 
         let delta_a1u = state.partial_density.sum() / t_x * i_wca * 2.0 * PI * weighted_sigma3_ij;
 
-        //                 state.partial_density.sum() / t_x * i_wca * 2.0 * PI * weighted_sigma3_ij;
         let u_fraction_wca = u_fraction_wca(
             rep_x,
             density * (x * &p.sigma.mapv(|s| s.powi(3))).sum(),
@@ -132,7 +131,6 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for AttractivePerturbationUVB3 {
     }
 }
 
-// (S43) & (S53)
 fn delta_b12u<D: DualNum<f64>>(
     t_x: D,
     mean_field_constant_x: D,
@@ -153,14 +151,14 @@ fn residual_virial_coefficient<D: DualNum<f64>>(p: &UVParameters, x: &Array1<D>,
         let xi = x[i];
 
         for j in 0..p.ncomponents {
-            //let q_ij = (q[i] / p.sigma[i] + q[j] / p.sigma[j]) * 0.5;
+        
             let t_ij = t / p.eps_k_ij[[i, j]];
             let rep_ij = p.rep_ij[[i, j]];
             let att_ij = p.att_ij[[i, j]];
 
             let q_ij = dimensionless_diameter_q_wca(t_ij, D::from(rep_ij), D::from(att_ij));
 
-            // Recheck mixing rule!
+        
             delta_b2bar +=
                 xi * x[j] * p.sigma_ij[[i, j]].powi(3) * delta_b2(t_ij, rep_ij, att_ij, q_ij);
         }
@@ -179,16 +177,15 @@ fn residual_third_virial_coefficient<D: DualNum<f64>>(
         let xi = x[i];
 
         for j in 0..p.ncomponents {
-            //let q_ij = (q[i] / p.sigma[i] + q[j] / p.sigma[j]) * 0.5;
             let t_ij = t / p.eps_k_ij[[i, j]];
             let rep_ij = p.rep_ij[[i, j]];
             let att_ij = p.att_ij[[i, j]];
             let q_ij = dimensionless_diameter_q_wca(t_ij, D::from(rep_ij), D::from(att_ij));
 
-            // Recheck mixing rule!
-            let rm_ij = (rep_ij / att_ij).powd((rep_ij - att_ij).recip()); // Anja  frei erfunden
-            let d_ij = (d[i] / p.sigma[i] + d[j] / p.sigma[j]) * 0.5; // Recheck mixing rule!
-                                                                      //                                                                       // Recheck mixing rule!
+            // No mixing rule defined for B3 yet! The implemented rule is just taken from B2 and not correct! 
+            let rm_ij = (rep_ij / att_ij).powd((rep_ij - att_ij).recip()); 
+            let d_ij = (d[i] / p.sigma[i] + d[j] / p.sigma[j]) * 0.5; 
+                                                                                                                                           // Recheck mixing rule!
             delta_b3bar += xi
                 * x[j]
                 * p.sigma_ij[[i, j]].powi(6)
@@ -215,7 +212,6 @@ fn correlation_integral_wca<D: DualNum<f64>>(
 
 /// U-fraction with low temperature correction omega
 fn u_fraction_wca<D: DualNum<f64>>(rep_x: D, reduced_density: D, t_x: D) -> D {
-    // let omega = (-t_x.powi(2) * rep_x * CU_WCA[5]).exp() * (t_x.recip() * CU_WCA[6]).exp();
     let omega = if t_x.re() < 175.0 {
         (-t_x * CU_WCA[5] * (reduced_density - CU_WCA[6]).powi(2)).exp()
             * ((t_x * CU_WCA[7]).tanh().recip() - 1.0).powi(2)
@@ -228,7 +224,7 @@ fn u_fraction_wca<D: DualNum<f64>>(rep_x: D, reduced_density: D, t_x: D) -> D {
         + 1.0
 }
 
-// Coefficients for IWCA from eq. (S55)
+// Coefficients for IWCA 
 fn coefficients_wca<D: DualNum<f64>>(rep: D, att: D, d: D) -> [D; 6] {
     let rep_inv = rep.recip();
     let rs_x = (rep / att).powd((rep - att).recip());
@@ -268,9 +264,9 @@ pub fn factorial(num: u64) -> u64 {
 }
 
 fn delta_b2<D: DualNum<f64>>(reduced_temperature: D, rep: f64, att: f64, q: D) -> D {
-    let rm = (rep / att).powd((rep - att).recip()); // Check mixing rule!!
+    let rm = (rep / att).powd((rep - att).recip());
     let beta = reduced_temperature.recip();
-    let b20 = q.powi(3) * 2.0 / 3.0 * PI; // eq. (16)
+    let b20 = q.powi(3) * 2.0 / 3.0 * PI; 
     let y = beta.exp() - 1.0;
 
     let c1 = rep.recip() * C_B2_RSAP[0][1]
@@ -353,7 +349,7 @@ fn delta_b3<D: DualNum<f64>>(t_x: D, rm_x: f64, rep_x: f64, _att_x: f64, d_x: D,
 
     let b3 = b30 + b31 * beta + b32 * beta.powi(2) + b33 * beta.powi(3) + b34 * beta.powi(4);
 
-    // Watch out: Not implemented for mixtures!!!!
+    // Watch out: Not defined for mixtures!
     let tau = -d_x + rm_x;
     let tau2 = tau * tau;
     let rep_inv = rep_x.recip();
@@ -433,8 +429,6 @@ mod test {
         let db3 = delta_b3(t_x, rm_x, rep_x, att_x, d_x, q_vdw);
         assert_relative_eq!(db3.re(), -0.6591980196661884, epsilon = 1e-10);
 
-        // let db31 =
-        //     delta_b31u(t_x, weighted_sigma3_ij, rm_x, rep_x, att_x, d_x) / p.sigma[0].powi(6);
 
         // Full attractive perturbation:
         let a = pt.helmholtz_energy(&state) / moles[0];
