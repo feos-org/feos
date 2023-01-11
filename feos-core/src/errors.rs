@@ -6,6 +6,8 @@ use thiserror::Error;
 /// Error type for improperly defined states and convergence problems.
 #[derive(Error, Debug)]
 pub enum EosError {
+    #[error("Error: {0}")]
+    Error(String),
     #[error("`{0}` did not converge within the maximum number of iterations.")]
     NotConverged(String),
     #[error("`{0}` encountered illegal values during the iteration.")]

@@ -1,3 +1,4 @@
+use feos_core::parameter::Identifier;
 use feos_core::parameter::{Parameter, PureRecord};
 use lazy_static::lazy_static;
 use ndarray::concatenate;
@@ -203,6 +204,14 @@ impl Parameter for UVParameters {
 }
 
 impl UVParameters {
+    /// Parameters for a single substance with molar weight one and no (default) ideal gas contributions.
+    pub fn new_simple(rep: f64, att: f64, sigma: f64, epsilon_k: f64) -> Self {
+        let model_record = UVRecord::new(rep, att, sigma, epsilon_k);
+        let pure_record = PureRecord::new(Identifier::default(), 1.0, model_record, None);
+        Self::new_pure(pure_record)
+    }
+
+    /// Markdown representation of parameters.
     pub fn to_markdown(&self) -> String {
         let mut output = String::new();
         let o = &mut output;

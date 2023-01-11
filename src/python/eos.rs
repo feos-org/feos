@@ -213,6 +213,9 @@ impl PyEosVariant {
     ///     Maximum packing fraction. Defaults to 0.5.
     /// perturbation : Perturbation, optional
     ///     Division type of the Mie potential. Defaults to WCA division.
+    /// virial_order : VirialOrder, optional
+    ///     Highest order of virial coefficient to consider.
+    ///     Defaults to second order (original uv-theory).
     ///
     /// Returns
     /// -------
@@ -232,15 +235,14 @@ impl PyEosVariant {
         max_eta: f64,
         perturbation: Perturbation,
         virial_order: VirialOrder,
-    ) -> Self {
+    ) -> PyResult<Self> {
         let options = UVTheoryOptions {
             max_eta,
             perturbation,
             virial_order,
         };
-        Self(Arc::new(EosVariant::UVTheory(UVTheory::with_options(
-            parameters.0,
-            options,
+        Ok(Self(Arc::new(EosVariant::UVTheory(
+            UVTheory::with_options(parameters.0, options)?,
         ))))
     }
 

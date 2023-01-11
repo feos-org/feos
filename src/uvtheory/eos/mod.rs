@@ -2,7 +2,7 @@
 #![allow(clippy::needless_range_loop)]
 
 use super::parameters::UVParameters;
-use feos_core::{parameter::Parameter, EquationOfState, HelmholtzEnergy};
+use feos_core::{parameter::Parameter, EosError, EosResult, EquationOfState, HelmholtzEnergy};
 use ndarray::Array1;
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
@@ -68,12 +68,15 @@ pub struct UVTheory {
 
 impl UVTheory {
     /// uv-theory with default options (WCA).
-    pub fn new(parameters: Arc<UVParameters>) -> Self {
+    pub fn new(parameters: Arc<UVParameters>) -> EosResult<Self> {
         Self::with_options(parameters, UVTheoryOptions::default())
     }
 
     /// uv-theory with provided options.
-    pub fn with_options(parameters: Arc<UVParameters>, options: UVTheoryOptions) -> Self {
+    pub fn with_options(
+        parameters: Arc<UVParameters>,
+        options: UVTheoryOptions,
+    ) -> EosResult<Self> {
         let mut contributions: Vec<Box<dyn HelmholtzEnergy>> = Vec::with_capacity(3);
 
         match options.perturbation {
@@ -90,7 +93,10 @@ impl UVTheory {
                     }));
                 }
                 VirialOrder::Third => {
-                    panic!("Not implemeted!");
+                    return Err(EosError::Error(
+                        "Third virial coefficient is not implemented for Barker-Henderson"
+                            .to_string(),
+                    ))
                 }
             },
             Perturbation::WeeksChandlerAndersen => {
@@ -108,13 +114,17 @@ impl UVTheory {
                     }
                     VirialOrder::Third => {
                         if parameters.sigma.len() > 1 {
-                            panic!("uv-B3-theory not implemented for mixtures!")
+                            return Err(EosError::Error(
+                                "Third virial coefficient is not implemented for mixtures!"
+                                    .to_string(),
+                            ));
                         }
-
                         if parameters.att[0] != 6.0 {
-                            panic!("uv-B3-theory not implemented for attractive exponents other than 6!")
+                            return Err(EosError::Error(
+                                "Third virial coefficient is not implemented for attractive exponents other than 6!"
+                                    .to_string(),
+                            ));
                         }
-
                         contributions.push(Box::new(ReferencePerturbationUVB3 {
                             parameters: parameters.clone(),
                         }));
@@ -126,11 +136,11 @@ impl UVTheory {
             }
         }
 
-        Self {
+        Ok(Self {
             parameters,
             options,
             contributions,
-        }
+        })
     }
 }
 
@@ -144,6 +154,7 @@ impl EquationOfState for UVTheory {
             Arc::new(self.parameters.subset(component_list)),
             self.options.clone(),
         )
+        .expect("Not defined for mixture")
     }
 
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
@@ -169,20 +180,14 @@ mod test {
     use quantity::si::{ANGSTROM, KELVIN, MOL, NAV, RGAS};
 
     #[test]
-    fn helmholtz_energy_pure_wca() {
-        let eps_k = 150.03;
+    fn helmholtz_energy_pure_wca() -> EosResult<()> {
         let sig = 3.7039;
-        let r = UVRecord::new(24.0, 6.0, sig, eps_k);
-        //let r = UVRecord::new(12.0, 6.0, sig, eps_k);
-        let i = Identifier::new(None, None, None, None, None, None);
-        let pr = PureRecord::new(i, 1.0, r, None);
-        let parameters = UVParameters::new_pure(pr);
-        let eos = Arc::new(UVTheory::new(Arc::new(parameters)));
+        let eps_k = 150.03;
+        let parameters = UVParameters::new_simple(24.0, 6.0, sig, eps_k);
+        let eos = Arc::new(UVTheory::new(Arc::new(parameters))?);
 
         let reduced_temperature = 4.0;
-        //let reduced_temperature = 1.0;
         let reduced_density = 1.0;
-        //let reduced_density = 0.9;
         let temperature = reduced_temperature * eps_k * KELVIN;
         let moles = arr1(&[2.0]) * MOL;
         let volume = (sig * ANGSTROM).powi(3) / reduced_density * NAV * 2.0 * MOL;
@@ -191,11 +196,12 @@ mod test {
             .molar_helmholtz_energy(Contributions::ResidualNvt)
             .to_reduced(RGAS * temperature)
             .unwrap();
-        assert_relative_eq!(a, 2.972986567516, max_relative = 1e-12) //wca
-                                                                     //assert_relative_eq!(a, -7.0843443690046017, max_relative = 1e-12) // bh: assert_relative_eq!(a, 2.993577305779432, max_relative = 1e-12)
+        assert_relative_eq!(a, 2.972986567516, max_relative = 1e-12); //wca
+        Ok(())
     }
+
     #[test]
-    fn helmholtz_energy_pure_bh() {
+    fn helmholtz_energy_pure_bh() -> EosResult<()> {
         let eps_k = 150.03;
         let sig = 3.7039;
         let r = UVRecord::new(24.0, 6.0, sig, eps_k);
@@ -208,7 +214,7 @@ mod test {
             perturbation: Perturbation::BarkerHenderson,
             virial_order: VirialOrder::Second,
         };
-        let eos = Arc::new(UVTheory::with_options(Arc::new(parameters), options));
+        let eos = Arc::new(UVTheory::with_options(Arc::new(parameters), options)?);
 
         let reduced_temperature = 4.0;
         let reduced_density = 1.0;
@@ -221,11 +227,12 @@ mod test {
             .to_reduced(RGAS * temperature)
             .unwrap();
 
-        assert_relative_eq!(a, 2.993577305779432, max_relative = 1e-12)
+        assert_relative_eq!(a, 2.993577305779432, max_relative = 1e-12);
+        Ok(())
     }
 
     #[test]
-    fn helmholtz_energy_pure_uvb3() {
+    fn helmholtz_energy_pure_uvb3() -> EosResult<()> {
         let eps_k = 150.03;
         let sig = 3.7039;
         let r = UVRecord::new(12.0, 6.0, sig, eps_k);
@@ -238,7 +245,7 @@ mod test {
             perturbation: Perturbation::WeeksChandlerAndersen,
             virial_order: VirialOrder::Third,
         };
-        let eos = Arc::new(UVTheory::with_options(Arc::new(parameters), options));
+        let eos = Arc::new(UVTheory::with_options(Arc::new(parameters), options)?);
 
         let reduced_temperature = 4.0;
         let reduced_density = 0.5;
@@ -251,11 +258,12 @@ mod test {
             .to_reduced(RGAS * temperature)
             .unwrap();
         dbg!(a);
-        assert_relative_eq!(a, 0.37659379124271003, max_relative = 1e-12)
+        assert_relative_eq!(a, 0.37659379124271003, max_relative = 1e-12);
+        Ok(())
     }
 
     #[test]
-    fn helmholtz_energy_mixtures_bh() {
+    fn helmholtz_energy_mixtures_bh() -> EosResult<()> {
         // Mixture of equal components --> result must be the same as fpr pure fluid ///
         // component 1
         let rep1 = 24.0;
@@ -292,7 +300,7 @@ mod test {
             virial_order: VirialOrder::Second,
         };
 
-        let eos_bh = Arc::new(UVTheory::with_options(Arc::new(uv_parameters), options));
+        let eos_bh = Arc::new(UVTheory::with_options(Arc::new(uv_parameters), options)?);
 
         let state_bh = State::new_nvt(&eos_bh, t_x, volume, &moles).unwrap();
         let a_bh = state_bh
@@ -301,9 +309,11 @@ mod test {
             .unwrap();
 
         assert_relative_eq!(a_bh, 2.993577305779432, max_relative = 1e-12);
+        Ok(())
     }
+
     #[test]
-    fn helmholtz_energy_wca_mixture() {
+    fn helmholtz_energy_wca_mixture() -> EosResult<()> {
         let p = test_parameters_mixture(
             arr1(&[12.0, 12.0]),
             arr1(&[6.0, 6.0]),
@@ -320,18 +330,19 @@ mod test {
         let volume = (p.sigma[0] * ANGSTROM).powi(3) / reduced_density * NAV * total_moles;
 
         // EoS
-        let eos_wca = Arc::new(UVTheory::new(Arc::new(p)));
+        let eos_wca = Arc::new(UVTheory::new(Arc::new(p))?);
         let state_wca = State::new_nvt(&eos_wca, t_x, volume, &moles).unwrap();
         let a_wca = state_wca
             .molar_helmholtz_energy(Contributions::ResidualNvt)
             .to_reduced(RGAS * t_x)
             .unwrap();
 
-        assert_relative_eq!(a_wca, -0.597791038364405, max_relative = 1e-5)
+        assert_relative_eq!(a_wca, -0.597791038364405, max_relative = 1e-5);
+        Ok(())
     }
 
     #[test]
-    fn helmholtz_energy_wca_mixture_different_sigma() {
+    fn helmholtz_energy_wca_mixture_different_sigma() -> EosResult<()> {
         let p = test_parameters_mixture(
             arr1(&[12.0, 12.0]),
             arr1(&[6.0, 6.0]),
@@ -349,12 +360,13 @@ mod test {
         let volume = NAV * total_moles / density;
 
         // EoS
-        let eos_wca = Arc::new(UVTheory::new(Arc::new(p)));
+        let eos_wca = Arc::new(UVTheory::new(Arc::new(p))?);
         let state_wca = State::new_nvt(&eos_wca, t_x, volume, &moles).unwrap();
         let a_wca = state_wca
             .molar_helmholtz_energy(Contributions::ResidualNvt)
             .to_reduced(RGAS * t_x)
             .unwrap();
-        assert_relative_eq!(a_wca, -0.034206207363139396, max_relative = 1e-5)
+        assert_relative_eq!(a_wca, -0.034206207363139396, max_relative = 1e-5);
+        Ok(())
     }
 }
