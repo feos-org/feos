@@ -33,6 +33,7 @@ pub enum Perturbation {
     WeeksChandlerAndersen,
 }
 
+/// Order of the highest virial coefficient included in the model.
 #[derive(Clone)]
 #[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum VirialOrder {
