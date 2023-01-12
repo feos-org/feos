@@ -290,7 +290,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     /// Partial molar volume: $v_i=\left(\frac{\partial V}{\partial N_i}\right)_{T,p,N_j}$
-    pub fn molar_volume(&self, contributions: Contributions) -> QuantityArray1<U> {
+    pub fn partial_molar_volume(&self, contributions: Contributions) -> QuantityArray1<U> {
         let func = |s: &Self, evaluate: Evaluate| -s.dp_dni_(evaluate) / s.dp_dv_(evaluate);
         self.evaluate_property(func, contributions, false)
     }
@@ -319,7 +319,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     /// Logarithm of the fugacity coefficient of all components treated as pure substance at mixture temperature and pressure.
-    pub fn ln_phi_pure(&self) -> EosResult<Array1<f64>> {
+    pub fn ln_phi_pure_liquid(&self) -> EosResult<Array1<f64>> {
         let pressure = self.pressure(Contributions::Total);
         (0..self.eos.components())
             .map(|i| {
@@ -340,7 +340,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     pub fn ln_symmetric_activity_coefficient(&self) -> EosResult<Array1<f64>> {
         match self.eos.components() {
             1 => Ok(arr1(&[0.0])),
-            _ => Ok(self.ln_phi() - &self.ln_phi_pure()?),
+            _ => Ok(self.ln_phi() - &self.ln_phi_pure_liquid()?),
         }
     }
 
@@ -356,7 +356,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. pressure: $\left(\frac{\partial\ln\varphi_i}{\partial p}\right)_{T,N_i}$
     pub fn dln_phi_dp(&self) -> QuantityArray1<U> {
-        self.molar_volume(Contributions::ResidualNpt) / (U::gas_constant() * self.temperature)
+        self.partial_molar_volume(Contributions::ResidualNpt)
+            / (U::gas_constant() * self.temperature)
     }
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. moles: $\left(\frac{\partial\ln\varphi_i}{\partial N_j}\right)_{T,p,N_k}$

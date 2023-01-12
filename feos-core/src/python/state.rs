@@ -467,7 +467,7 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.d2p_drho2(contributions))
             }
 
-            /// Return molar volume of each component.
+            /// Return partial molar volume of each component.
             ///
             /// Parameters
             /// ----------
@@ -480,8 +480,8 @@ macro_rules! impl_state {
             /// SIArray1
             #[args(contributions = "Contributions::Total")]
             #[pyo3(text_signature = "($self, contributions)")]
-            fn molar_volume(&self, contributions: Contributions) -> PySIArray1 {
-                PySIArray1::from(self.0.molar_volume(contributions))
+            fn partial_molar_volume(&self, contributions: Contributions) -> PySIArray1 {
+                PySIArray1::from(self.0.partial_molar_volume(contributions))
             }
 
             /// Return chemical potential of each component.
@@ -565,17 +565,15 @@ macro_rules! impl_state {
                 self.0.ln_phi().view().to_pyarray(py)
             }
 
-            /// Return logarithmic pure substance fugacity coefficient.
-            ///
-            /// For each component, the hypothetical liquid fugacity coefficient
-            /// at mixture temperature and pressure is computed.
+            /// Return logarithmic fugacity coefficient of all components treated as
+            /// pure substance at mixture temperature and pressure.
             ///
             /// Returns
             /// -------
             /// numpy.ndarray
             #[pyo3(text_signature = "($self)")]
-            fn ln_phi_pure<'py>(&self, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
-                Ok(self.0.ln_phi_pure()?.view().to_pyarray(py))
+            fn ln_phi_pure_liquid<'py>(&self, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
+                Ok(self.0.ln_phi_pure_liquid()?.view().to_pyarray(py))
             }
 
             /// Return logarithmic symmetric activity coefficient.
