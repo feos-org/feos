@@ -565,10 +565,8 @@ macro_rules! impl_state {
                 self.0.ln_phi().view().to_pyarray(py)
             }
 
-            /// Return logarithmic fugacity coefficient of a pure liquid reference state.
-            ///
-            /// For each component, the hypothetical liquid fugacity coefficient
-            /// at mixture temperature and pressure is computed.
+            /// Return logarithmic fugacity coefficient of all components treated as
+            /// pure substance at mixture temperature and pressure.
             ///
             /// Returns
             /// -------
