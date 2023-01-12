@@ -319,7 +319,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     /// Logarithm of the fugacity coefficient of all components treated as pure substance at mixture temperature and pressure.
-    pub fn ln_phi_pure(&self) -> EosResult<Array1<f64>> {
+    pub fn ln_phi_pure_liquid(&self) -> EosResult<Array1<f64>> {
         let pressure = self.pressure(Contributions::Total);
         (0..self.eos.components())
             .map(|i| {
@@ -340,7 +340,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     pub fn ln_symmetric_activity_coefficient(&self) -> EosResult<Array1<f64>> {
         match self.eos.components() {
             1 => Ok(arr1(&[0.0])),
-            _ => Ok(self.ln_phi() - &self.ln_phi_pure()?),
+            _ => Ok(self.ln_phi() - &self.ln_phi_pure_liquid()?),
         }
     }
 
