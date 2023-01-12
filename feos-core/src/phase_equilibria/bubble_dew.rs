@@ -227,7 +227,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         let m = liquid_molefracs * U::reference_moles();
         let density = 0.75 * eos.max_density(Some(&m))?;
         let liquid = State::new_nvt(eos, temperature, m.sum() / density, &m)?;
-        let v_l = liquid.molar_volume(Contributions::Total);
+        let v_l = liquid.partial_molar_volume(Contributions::Total);
         let p_l = liquid.pressure(Contributions::Total);
         let mu_l = liquid.chemical_potential(Contributions::ResidualNvt);
         let p_i = (temperature * density * U::gas_constant() * liquid_molefracs)
@@ -253,7 +253,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
             let m = x * U::reference_moles();
             let density = 0.75 * eos.max_density(Some(&m))?;
             let liquid = State::new_nvt(eos, temperature, m.sum() / density, &m)?;
-            let v_l = liquid.molar_volume(Contributions::Total);
+            let v_l = liquid.partial_molar_volume(Contributions::Total);
             let p_l = liquid.pressure(Contributions::Total);
             let mu_l = liquid.chemical_potential(Contributions::ResidualNvt);
             let k = vapor_molefracs

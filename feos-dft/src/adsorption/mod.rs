@@ -288,10 +288,19 @@ where
 
         // calculate initial value for the molar gibbs energy
         let nv = vapor.profile.bulk.density
-            * (vapor.profile.moles() * vapor.profile.bulk.molar_volume(Contributions::Total)).sum();
+            * (vapor.profile.moles()
+                * vapor
+                    .profile
+                    .bulk
+                    .partial_molar_volume(Contributions::Total))
+            .sum();
         let nl = liquid.profile.bulk.density
-            * (liquid.profile.moles() * liquid.profile.bulk.molar_volume(Contributions::Total))
-                .sum();
+            * (liquid.profile.moles()
+                * liquid
+                    .profile
+                    .bulk
+                    .partial_molar_volume(Contributions::Total))
+            .sum();
         let f = |s: &PoreProfile<U, D, F>, n: QuantityScalar<U>| -> EosResult<_> {
             Ok(s.grand_potential.unwrap()
                 + s.profile.bulk.molar_gibbs_energy(Contributions::Total) * n)
@@ -323,11 +332,19 @@ where
 
             // calculate moles
             let nv = vapor.profile.bulk.density
-                * (vapor.profile.moles() * vapor.profile.bulk.molar_volume(Contributions::Total))
-                    .sum();
+                * (vapor.profile.moles()
+                    * vapor
+                        .profile
+                        .bulk
+                        .partial_molar_volume(Contributions::Total))
+                .sum();
             let nl = liquid.profile.bulk.density
-                * (liquid.profile.moles() * liquid.profile.bulk.molar_volume(Contributions::Total))
-                    .sum();
+                * (liquid.profile.moles()
+                    * liquid
+                        .profile
+                        .bulk
+                        .partial_molar_volume(Contributions::Total))
+                .sum();
 
             // check for a trivial solution
             if nl.to_reduced(nv)? - 1.0 < 1e-5 {

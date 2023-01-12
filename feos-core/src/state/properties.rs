@@ -290,7 +290,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     /// Partial molar volume: $v_i=\left(\frac{\partial V}{\partial N_i}\right)_{T,p,N_j}$
-    pub fn molar_volume(&self, contributions: Contributions) -> QuantityArray1<U> {
+    pub fn partial_molar_volume(&self, contributions: Contributions) -> QuantityArray1<U> {
         let func = |s: &Self, evaluate: Evaluate| -s.dp_dni_(evaluate) / s.dp_dv_(evaluate);
         self.evaluate_property(func, contributions, false)
     }
@@ -356,7 +356,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. pressure: $\left(\frac{\partial\ln\varphi_i}{\partial p}\right)_{T,N_i}$
     pub fn dln_phi_dp(&self) -> QuantityArray1<U> {
-        self.molar_volume(Contributions::ResidualNpt) / (U::gas_constant() * self.temperature)
+        self.partial_molar_volume(Contributions::ResidualNpt)
+            / (U::gas_constant() * self.temperature)
     }
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. moles: $\left(\frac{\partial\ln\varphi_i}{\partial N_j}\right)_{T,p,N_k}$

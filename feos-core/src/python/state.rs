@@ -467,7 +467,7 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.d2p_drho2(contributions))
             }
 
-            /// Return molar volume of each component.
+            /// Return partial molar volume of each component.
             ///
             /// Parameters
             /// ----------
@@ -480,8 +480,8 @@ macro_rules! impl_state {
             /// SIArray1
             #[args(contributions = "Contributions::Total")]
             #[pyo3(text_signature = "($self, contributions)")]
-            fn molar_volume(&self, contributions: Contributions) -> PySIArray1 {
-                PySIArray1::from(self.0.molar_volume(contributions))
+            fn partial_molar_volume(&self, contributions: Contributions) -> PySIArray1 {
+                PySIArray1::from(self.0.partial_molar_volume(contributions))
             }
 
             /// Return chemical potential of each component.
