@@ -99,39 +99,20 @@ impl MeanSegmentNumbers {
             Multipole::Quadrupole => (parameters.nquadpole, &parameters.quadpole_comp),
         };
 
-        let mut mi;
-        let mut mj;
-        let mut mk;
-        let mut mij;
-        let mut mijk;
         let mut mij1 = Array2::zeros((npoles, npoles));
         let mut mij2 = Array2::zeros((npoles, npoles));
         let mut mijk1 = Array3::zeros((npoles, npoles, npoles));
         let mut mijk2 = Array3::zeros((npoles, npoles, npoles));
         for i in 0..npoles {
-            let dci = comp[i];
-            mi = parameters.m[dci].min(2.0);
-            mij1[[i, i]] = (mi - 1.0) / mi;
-            mij2[[i, i]] = mij1[[i, i]] * (mi - 2.0) / mi;
-
-            mijk1[[i, i, i]] = mij1[[i, i]];
-            mijk2[[i, i, i]] = mij2[[i, i]];
-            for j in i + 1..npoles {
-                let dcj = comp[j];
-                mj = parameters.m[dcj].min(2.0);
-                mij = (mi * mj).sqrt();
+            let mi = parameters.m[comp[i]].min(2.0);
+            for j in i..npoles {
+                let mj = parameters.m[comp[j]].min(2.0);
+                let mij = (mi * mj).sqrt();
                 mij1[[i, j]] = (mij - 1.0) / mij;
                 mij2[[i, j]] = mij1[[i, j]] * (mij - 2.0) / mij;
-                mijk = (mi * mi * mj).cbrt();
-                mijk1[[i, i, j]] = (mijk - 1.0) / mijk;
-                mijk2[[i, i, j]] = mijk1[[i, i, j]] * (mijk - 2.0) / mijk;
-                mijk = (mi * mj * mj).cbrt();
-                mijk1[[i, j, j]] = (mijk - 1.0) / mijk;
-                mijk2[[i, j, j]] = mijk1[[i, j, j]] * (mijk - 2.0) / mijk;
-                for k in j + 1..npoles {
-                    let dck = comp[k];
-                    mk = parameters.m[dck].min(2.0);
-                    mijk = (mi * mj * mk).cbrt();
+                for k in j..npoles {
+                    let mk = parameters.m[comp[k]].min(2.0);
+                    let mijk = (mi * mj * mk).cbrt();
                     mijk1[[i, j, k]] = (mijk - 1.0) / mijk;
                     mijk2[[i, j, k]] = mijk1[[i, j, k]] * (mijk - 2.0) / mijk;
                 }
@@ -149,34 +130,27 @@ impl MeanSegmentNumbers {
 fn pair_integral_ij<D: DualNum<f64>>(
     mij1: f64,
     mij2: f64,
-    eta: D,
+    etas: &[D],
     a: &[[f64; 3]],
     b: &[[f64; 3]],
     eps_ij_t: D,
 ) -> D {
-    let eta2 = eta * eta;
-    let etas = [D::one(), eta, eta2, eta2 * eta, eta2 * eta2];
     (0..a.len())
         .map(|i| {
             etas[i]
                 * (eps_ij_t * (b[i][0] + mij1 * b[i][1] + mij2 * b[i][2])
-                    + a[i][0]
-                    + mij1 * a[i][1]
-                    + mij2 * a[i][2])
+                    + (a[i][0] + mij1 * a[i][1] + mij2 * a[i][2]))
         })
         .sum()
 }
 
-fn triplet_integral_ijk<D: DualNum<f64>>(mijk1: f64, mijk2: f64, eta: D, c: &[[f64; 3]]) -> D {
-    let eta2 = eta * eta;
-    let etas = [D::one(), eta, eta2, eta2 * eta];
+fn triplet_integral_ijk<D: DualNum<f64>>(mijk1: f64, mijk2: f64, etas: &[D], c: &[[f64; 3]]) -> D {
     (0..c.len())
         .map(|i| etas[i] * (c[i][0] + mijk1 * c[i][1] + mijk2 * c[i][2]))
         .sum()
 }
 
-fn triplet_integral_ijk_dq<D: DualNum<f64>>(mijk: f64, eta: D, c: &[[f64; 2]]) -> D {
-    let etas = [D::one(), eta, eta * eta];
+fn triplet_integral_ijk_dq<D: DualNum<f64>>(mijk: f64, etas: &[D], c: &[[f64; 2]]) -> D {
     (0..c.len())
         .map(|i| etas[i] * (c[i][0] + mijk * c[i][1]))
         .sum()
@@ -203,34 +177,16 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Dipole {
         let rho = &state.partial_density;
         let r = p.hs_diameter(state.temperature) * 0.5;
         let eta = (rho * &p.m * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
+        let eta2 = eta * eta;
+        let etas = [D::one(), eta, eta2, eta2 * eta, eta2 * eta2];
 
         let mut phi2 = D::zero();
         let mut phi3 = D::zero();
         for i in 0..p.ndipole {
             let di = p.dipole_comp[i];
-            phi2 -= rho[di]
-                * rho[di]
-                * mu2_term[i]
-                * mu2_term[i]
-                * pair_integral_ij(
-                    m.mij1[[i, i]],
-                    m.mij2[[i, i]],
-                    eta,
-                    &AD,
-                    &BD,
-                    eps_ij_t[[di, di]],
-                )
-                / sig_ij_3[[di, di]];
-            phi3 -= rho[di]
-                * rho[di]
-                * rho[di]
-                * mu2_term[i]
-                * mu2_term[i]
-                * mu2_term[i]
-                * triplet_integral_ijk(m.mijk1[[i, i, i]], m.mijk2[[i, i, i]], eta, &CD)
-                / sig_ij_3[[di, di]];
-            for j in (i + 1)..p.ndipole {
+            for j in i..p.ndipole {
                 let dj = p.dipole_comp[j];
+                let c = if i == j { 1.0 } else { 2.0 };
                 phi2 -= rho[di]
                     * rho[dj]
                     * mu2_term[i]
@@ -238,27 +194,26 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Dipole {
                     * pair_integral_ij(
                         m.mij1[[i, j]],
                         m.mij2[[i, j]],
-                        eta,
+                        &etas,
                         &AD,
                         &BD,
                         eps_ij_t[[di, dj]],
                     )
                     / sig_ij_3[[di, dj]]
-                    * 2.0;
-                phi3 -= rho[di] * rho[di] * rho[dj] * mu2_term[i] * mu2_term[i] * mu2_term[j]
-                    / (p.sigma_ij[[di, di]] * p.sigma_ij[[di, dj]] * p.sigma_ij[[di, dj]])
-                    * triplet_integral_ijk(m.mijk1[[i, i, j]], m.mijk2[[i, i, j]], eta, &CD)
-                    * 3.0;
-                phi3 -= rho[di] * rho[dj] * rho[dj] * mu2_term[i] * mu2_term[j] * mu2_term[j]
-                    / (p.sigma_ij[[di, dj]] * p.sigma_ij[[di, dj]] * p.sigma_ij[[dj, dj]])
-                    * triplet_integral_ijk(m.mijk1[[i, j, j]], m.mijk2[[i, j, j]], eta, &CD)
-                    * 3.0;
-                for k in (j + 1)..p.ndipole {
+                    * c;
+                for k in j..p.ndipole {
                     let dk = p.dipole_comp[k];
+                    let c = if i == k {
+                        1.0
+                    } else if i == j || j == k {
+                        3.0
+                    } else {
+                        6.0
+                    };
                     phi3 -= rho[di] * rho[dj] * rho[dk] * mu2_term[i] * mu2_term[j] * mu2_term[k]
                         / (p.sigma_ij[[di, dj]] * p.sigma_ij[[di, dk]] * p.sigma_ij[[dj, dk]])
-                        * triplet_integral_ijk(m.mijk1[[i, j, k]], m.mijk2[[i, j, k]], eta, &CD)
-                        * 6.0;
+                        * triplet_integral_ijk(m.mijk1[[i, j, k]], m.mijk2[[i, j, k]], &etas, &CD)
+                        * c;
                 }
             }
         }
@@ -299,34 +254,16 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Quadrupole {
         let rho = &state.partial_density;
         let r = p.hs_diameter(state.temperature) * 0.5;
         let eta = (rho * &p.m * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
+        let eta2 = eta * eta;
+        let etas = [D::one(), eta, eta2, eta2 * eta, eta2 * eta2];
 
         let mut phi2 = D::zero();
         let mut phi3 = D::zero();
         for i in 0..p.nquadpole {
             let di = p.quadpole_comp[i];
-            phi2 -= (rho[di]
-                * rho[di]
-                * q2_term[i]
-                * q2_term[i]
-                * pair_integral_ij(
-                    m.mij1[[i, i]],
-                    m.mij2[[i, i]],
-                    eta,
-                    &AQ,
-                    &BQ,
-                    eps_ij_t[[di, di]],
-                ))
-                / p.sigma_ij[[di, di]].powi(7);
-            phi3 += (rho[di]
-                * rho[di]
-                * rho[di]
-                * q2_term[i]
-                * q2_term[i]
-                * q2_term[i]
-                * triplet_integral_ijk(m.mijk1[[i, i, i]], m.mijk2[[i, i, i]], eta, &CQ))
-                / sig_ij_3[[di, di]].powi(3);
-            for j in (i + 1)..p.nquadpole {
+            for j in i..p.nquadpole {
                 let dj = p.quadpole_comp[j];
+                let c = if i == j { 1.0 } else { 2.0 };
                 phi2 -= (rho[di]
                     * rho[dj]
                     * q2_term[i]
@@ -334,27 +271,26 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Quadrupole {
                     * pair_integral_ij(
                         m.mij1[[i, j]],
                         m.mij2[[i, j]],
-                        eta,
+                        &etas,
                         &AQ,
                         &BQ,
                         eps_ij_t[[di, dj]],
                     ))
                     / p.sigma_ij[[di, di]].powi(7)
-                    * 2.0;
-                phi3 += rho[di] * rho[di] * rho[dj] * q2_term[i] * q2_term[i] * q2_term[j]
-                    / (sig_ij_3[[di, di]] * sig_ij_3[[di, dj]] * sig_ij_3[[di, dj]])
-                    * triplet_integral_ijk(m.mijk1[[i, i, j]], m.mijk2[[i, i, j]], eta, &CQ)
-                    * 3.0;
-                phi3 += rho[di] * rho[dj] * rho[dj] * q2_term[i] * q2_term[j] * q2_term[j]
-                    / (sig_ij_3[[di, dj]] * sig_ij_3[[di, dj]] * sig_ij_3[[dj, dj]])
-                    * triplet_integral_ijk(m.mijk1[[i, j, j]], m.mijk2[[i, j, j]], eta, &CQ)
-                    * 3.0;
-                for k in (j + 1)..p.nquadpole {
+                    * c;
+                for k in j..p.nquadpole {
                     let dk = p.quadpole_comp[k];
+                    let c = if i == k {
+                        1.0
+                    } else if i == j || j == k {
+                        3.0
+                    } else {
+                        6.0
+                    };
                     phi3 += rho[di] * rho[dj] * rho[dk] * q2_term[i] * q2_term[j] * q2_term[k]
                         / (sig_ij_3[[di, dj]] * sig_ij_3[[di, dk]] * sig_ij_3[[dj, dk]])
-                        * triplet_integral_ijk(m.mijk1[[i, j, k]], m.mijk2[[i, j, k]], eta, &CQ)
-                        * 6.0;
+                        * triplet_integral_ijk(m.mijk1[[i, j, k]], m.mijk2[[i, j, k]], &etas, &CQ)
+                        * c;
                 }
             }
         }
@@ -409,6 +345,8 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for DipoleQuadrupole {
         let rho = &state.partial_density;
         let r = p.hs_diameter(state.temperature) * 0.5;
         let eta = (rho * &p.m * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
+        let eta2 = eta * eta;
+        let etas = [D::one(), eta, eta2, eta2 * eta, eta2 * eta2];
 
         // mean segment number
         let mut mdq1 = Array2::zeros((p.ndipole, p.nquadpole));
@@ -453,7 +391,7 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for DipoleQuadrupole {
                     * pair_integral_ij(
                         mdq1[[i, j]],
                         mdq2[[i, j]],
-                        eta,
+                        &etas,
                         &ADQ,
                         &BDQ,
                         eps_ij_t[[di, qj]],
@@ -463,7 +401,7 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for DipoleQuadrupole {
                     phi3 += rho[di] * rho[qj] * rho[dk] * mu2_term[i] * q2_term[j] * mu2_term[k]
                         / (p.sigma_ij[[di, qj]] * p.sigma_ij[[di, dk]] * p.sigma_ij[[qj, dk]])
                             .powi(2)
-                        * triplet_integral_ijk_dq(mdqd[[i, j, k]], eta, &CDQ);
+                        * triplet_integral_ijk_dq(mdqd[[i, j, k]], &etas, &CDQ);
                 }
                 for k in 0..p.nquadpole {
                     let qk = p.quadpole_comp[k];
@@ -471,7 +409,7 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for DipoleQuadrupole {
                         / (p.sigma_ij[[di, qj]] * p.sigma_ij[[di, qk]] * p.sigma_ij[[qj, qk]])
                             .powi(2)
                         * ALPHA
-                        * triplet_integral_ijk_dq(mdqq[[i, j, k]], eta, &CDQ);
+                        * triplet_integral_ijk_dq(mdqq[[i, j, k]], &etas, &CDQ);
                 }
             }
         }
@@ -500,6 +438,7 @@ mod tests {
         carbon_dioxide_parameters, dme_co2_parameters, dme_parameters,
     };
     use approx::assert_relative_eq;
+    use feos_core::parameter::{IdentifierOption, Parameter};
     use feos_core::StateHD;
 
     #[test]
@@ -516,6 +455,27 @@ mod tests {
     }
 
     #[test]
+    fn test_dipolar_contribution_mix() {
+        let dp = Dipole {
+            parameters: Arc::new(
+                PcSaftParameters::from_json(
+                    vec!["acetone", "butanal", "dimethyl ether"],
+                    "./parameters/pcsaft/gross2006.json",
+                    None,
+                    IdentifierOption::Name,
+                )
+                .unwrap(),
+            ),
+        };
+        let t = 350.0;
+        let v = 1000.0;
+        let n = [1.0, 2.0, 3.0];
+        let s = StateHD::new(t, v, arr1(&n));
+        let a = dp.helmholtz_energy(&s);
+        assert_relative_eq!(a, -1.4126308106201688, epsilon = 1e-10);
+    }
+
+    #[test]
     fn test_quadrupolar_contribution() {
         let qp = Quadrupole {
             parameters: Arc::new(carbon_dioxide_parameters()),
@@ -526,6 +486,27 @@ mod tests {
         let s = StateHD::new(t, v, arr1(&[n]));
         let a = qp.helmholtz_energy(&s);
         assert_relative_eq!(a, -4.38559558854186E-002, epsilon = 1e-6);
+    }
+
+    #[test]
+    fn test_quadrupolar_contribution_mix() {
+        let qp = Quadrupole {
+            parameters: Arc::new(
+                PcSaftParameters::from_json(
+                    vec!["carbon dioxide", "chlorine", "ethylene"],
+                    "./parameters/pcsaft/gross2005_literature.json",
+                    None,
+                    IdentifierOption::Name,
+                )
+                .unwrap(),
+            ),
+        };
+        let t = 350.0;
+        let v = 1000.0;
+        let n = [1.0, 2.0, 3.0];
+        let s = StateHD::new(t, v, arr1(&n));
+        let a = qp.helmholtz_energy(&s);
+        assert_relative_eq!(a, -0.327493924806138, epsilon = 1e-10);
     }
 
     #[test]
