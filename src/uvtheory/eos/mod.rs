@@ -204,11 +204,9 @@ mod test {
     fn helmholtz_energy_pure_bh() -> EosResult<()> {
         let eps_k = 150.03;
         let sig = 3.7039;
-        let r = UVRecord::new(24.0, 6.0, sig, eps_k);
-        let i = Identifier::new(None, None, None, None, None, None);
-        let pr = PureRecord::new(i, 1.0, r, None);
-        let parameters = UVParameters::new_pure(pr);
-
+        let rep = 24.0;
+        let att = 6.0;
+        let parameters = UVParameters::new_simple(rep, att, sig, eps_k);
         let options = UVTheoryOptions {
             max_eta: 0.5,
             perturbation: Perturbation::BarkerHenderson,
@@ -222,6 +220,7 @@ mod test {
         let moles = arr1(&[2.0]) * MOL;
         let volume = (sig * ANGSTROM).powi(3) / reduced_density * NAV * 2.0 * MOL;
         let s = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
+
         let a = s
             .molar_helmholtz_energy(Contributions::ResidualNvt)
             .to_reduced(RGAS * temperature)
@@ -235,11 +234,9 @@ mod test {
     fn helmholtz_energy_pure_uvb3() -> EosResult<()> {
         let eps_k = 150.03;
         let sig = 3.7039;
-        let r = UVRecord::new(12.0, 6.0, sig, eps_k);
-        let i = Identifier::new(None, None, None, None, None, None);
-        let pr = PureRecord::new(i, 1.0, r, None);
-        let parameters = UVParameters::new_pure(pr);
-
+        let rep = 12.0;
+        let att = 6.0;
+        let parameters = UVParameters::new_simple(rep, att, sig, eps_k);
         let options = UVTheoryOptions {
             max_eta: 0.5,
             perturbation: Perturbation::WeeksChandlerAndersen,
@@ -264,7 +261,7 @@ mod test {
 
     #[test]
     fn helmholtz_energy_mixtures_bh() -> EosResult<()> {
-        // Mixture of equal components --> result must be the same as fpr pure fluid ///
+        // Mixture of equal components --> result must be the same as for pure fluid ///
         // component 1
         let rep1 = 24.0;
         let eps_k1 = 150.03;
