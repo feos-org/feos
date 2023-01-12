@@ -151,14 +151,12 @@ fn residual_virial_coefficient<D: DualNum<f64>>(p: &UVParameters, x: &Array1<D>,
         let xi = x[i];
 
         for j in 0..p.ncomponents {
-        
             let t_ij = t / p.eps_k_ij[[i, j]];
             let rep_ij = p.rep_ij[[i, j]];
             let att_ij = p.att_ij[[i, j]];
 
             let q_ij = dimensionless_diameter_q_wca(t_ij, D::from(rep_ij), D::from(att_ij));
 
-        
             delta_b2bar +=
                 xi * x[j] * p.sigma_ij[[i, j]].powi(3) * delta_b2(t_ij, rep_ij, att_ij, q_ij);
         }
@@ -182,10 +180,10 @@ fn residual_third_virial_coefficient<D: DualNum<f64>>(
             let att_ij = p.att_ij[[i, j]];
             let q_ij = dimensionless_diameter_q_wca(t_ij, D::from(rep_ij), D::from(att_ij));
 
-            // No mixing rule defined for B3 yet! The implemented rule is just taken from B2 and not correct! 
-            let rm_ij = (rep_ij / att_ij).powd((rep_ij - att_ij).recip()); 
-            let d_ij = (d[i] / p.sigma[i] + d[j] / p.sigma[j]) * 0.5; 
-                                                                                                                                           // Recheck mixing rule!
+            // No mixing rule defined for B3 yet! The implemented rule is just taken from B2 and not correct!
+            let rm_ij = (rep_ij / att_ij).powd((rep_ij - att_ij).recip());
+            let d_ij = (d[i] / p.sigma[i] + d[j] / p.sigma[j]) * 0.5;
+            // Recheck mixing rule!
             delta_b3bar += xi
                 * x[j]
                 * p.sigma_ij[[i, j]].powi(6)
@@ -224,7 +222,7 @@ fn u_fraction_wca<D: DualNum<f64>>(rep_x: D, reduced_density: D, t_x: D) -> D {
         + 1.0
 }
 
-// Coefficients for IWCA 
+// Coefficients for IWCA
 fn coefficients_wca<D: DualNum<f64>>(rep: D, att: D, d: D) -> [D; 6] {
     let rep_inv = rep.recip();
     let rs_x = (rep / att).powd((rep - att).recip());
@@ -259,14 +257,14 @@ fn coefficients_wca<D: DualNum<f64>>(rep: D, att: D, d: D) -> [D; 6] {
 
 // Residual second virial coefficient from Revised series approximation RSAP
 
-pub fn factorial(num: u64) -> u64 {
+fn factorial(num: u64) -> u64 {
     (1..=num).product()
 }
 
 fn delta_b2<D: DualNum<f64>>(reduced_temperature: D, rep: f64, att: f64, q: D) -> D {
     let rm = (rep / att).powd((rep - att).recip());
     let beta = reduced_temperature.recip();
-    let b20 = q.powi(3) * 2.0 / 3.0 * PI; 
+    let b20 = q.powi(3) * 2.0 / 3.0 * PI;
     let y = beta.exp() - 1.0;
 
     let c1 = rep.recip() * C_B2_RSAP[0][1]
@@ -428,7 +426,6 @@ mod test {
 
         let db3 = delta_b3(t_x, rm_x, rep_x, att_x, d_x, q_vdw);
         assert_relative_eq!(db3.re(), -0.6591980196661884, epsilon = 1e-10);
-
 
         // Full attractive perturbation:
         let a = pt.helmholtz_energy(&state) / moles[0];

@@ -6,7 +6,7 @@ use std::f64::consts::PI;
 use std::fmt;
 use std::sync::Arc;
 
-pub const WCA_CONSTANTS_Q: [[f64; 4]; 3] = [
+pub(super) const WCA_CONSTANTS_Q: [[f64; 4]; 3] = [
     [1.92840364363978, 4.43165896265079E-01, 0.0, 0.0],
     [
         5.20120816141761E-01,
@@ -36,14 +36,14 @@ const WCA_CONSTANTS_ETA_B: [[f64; 2]; 3] = [
 ];
 
 //  New Fit to numerical integrals for uv-B3-theory
-pub const WCA_CONSTANTS_ETA_A_UVB3: [[f64; 4]; 4] = [
+pub(super) const WCA_CONSTANTS_ETA_A_UVB3: [[f64; 4]; 4] = [
     [2.64043218, -1.2184421, -22.90786387, 0.96433414],
     [-16.75643936, 30.83929771, 73.08711814, -166.57701616],
     [19.53170162, -88.87955657, -76.51387192, 443.68942745],
     [-3.77740877, 83.04694547, 21.62502721, -304.8643176],
 ];
 
-pub const WCA_CONSTANTS_ETA_B_UVB3: [[f64; 2]; 3] = [
+pub(super) const WCA_CONSTANTS_ETA_B_UVB3: [[f64; 2]; 3] = [
     [2.19821588, -20.45005484],
     [-13.47050687, 56.65701375],
     [12.90119266, -42.71680606],
@@ -74,7 +74,10 @@ impl fmt::Display for HardSphereWCA {
 }
 
 /// Dimensionless Hard-sphere diameter according to Weeks-Chandler-Andersen division.
-pub fn diameter_wca<D: DualNum<f64>>(parameters: &UVParameters, temperature: D) -> Array1<D> {
+pub(super) fn diameter_wca<D: DualNum<f64>>(
+    parameters: &UVParameters,
+    temperature: D,
+) -> Array1<D> {
     parameters
         .sigma
         .iter()
@@ -93,7 +96,7 @@ pub fn diameter_wca<D: DualNum<f64>>(parameters: &UVParameters, temperature: D) 
         .collect()
 }
 
-pub fn dimensionless_diameter_q_wca<D: DualNum<f64>>(t_x: D, rep_x: D, att_x: D) -> D {
+pub(super) fn dimensionless_diameter_q_wca<D: DualNum<f64>>(t_x: D, rep_x: D, att_x: D) -> D {
     let nu = rep_x;
     let n = att_x;
     let rs = (nu / n).powd((nu - n).recip());
@@ -119,7 +122,7 @@ pub fn dimensionless_diameter_q_wca<D: DualNum<f64>>(t_x: D, rep_x: D, att_x: D)
         * rs
 }
 
-pub fn zeta<D: DualNum<f64>>(partial_density: &Array1<D>, diameter: &Array1<D>) -> [D; 4] {
+pub(super) fn zeta<D: DualNum<f64>>(partial_density: &Array1<D>, diameter: &Array1<D>) -> [D; 4] {
     let mut zeta: [D; 4] = [D::zero(), D::zero(), D::zero(), D::zero()];
     for i in 0..partial_density.len() {
         for k in 0..4 {
@@ -130,13 +133,16 @@ pub fn zeta<D: DualNum<f64>>(partial_density: &Array1<D>, diameter: &Array1<D>) 
     zeta
 }
 
-pub fn packing_fraction<D: DualNum<f64>>(partial_density: &Array1<D>, diameter: &Array1<D>) -> D {
+pub(super) fn packing_fraction<D: DualNum<f64>>(
+    partial_density: &Array1<D>,
+    diameter: &Array1<D>,
+) -> D {
     (0..partial_density.len()).fold(D::zero(), |acc, i| {
         acc + partial_density[i] * diameter[i].powi(3) * (std::f64::consts::PI / 6.0)
     })
 }
 
-pub fn zeta_23<D: DualNum<f64>>(molefracs: &Array1<D>, diameter: &Array1<D>) -> D {
+pub(super) fn zeta_23<D: DualNum<f64>>(molefracs: &Array1<D>, diameter: &Array1<D>) -> D {
     let mut zeta: [D; 2] = [D::zero(), D::zero()];
     for i in 0..molefracs.len() {
         for k in 0..2 {
@@ -147,7 +153,7 @@ pub fn zeta_23<D: DualNum<f64>>(molefracs: &Array1<D>, diameter: &Array1<D>) -> 
 }
 
 #[inline]
-pub fn dimensionless_length_scale<D: DualNum<f64>>(
+pub(super) fn dimensionless_length_scale<D: DualNum<f64>>(
     parameters: &UVParameters,
     temperature: D,
 ) -> Array1<D> {
@@ -166,7 +172,7 @@ pub fn dimensionless_length_scale<D: DualNum<f64>>(
 
 #[inline]
 
-pub fn packing_fraction_b<D: DualNum<f64>>(
+pub(super) fn packing_fraction_b<D: DualNum<f64>>(
     parameters: &UVParameters,
     eta: D,
     temperature: D,
@@ -188,7 +194,7 @@ pub fn packing_fraction_b<D: DualNum<f64>>(
     })
 }
 
-pub fn packing_fraction_b_uvb3<D: DualNum<f64>>(
+pub(super) fn packing_fraction_b_uvb3<D: DualNum<f64>>(
     parameters: &UVParameters,
     eta: D,
     temperature: D,
@@ -210,7 +216,7 @@ pub fn packing_fraction_b_uvb3<D: DualNum<f64>>(
     })
 }
 
-pub fn packing_fraction_a<D: DualNum<f64>>(
+pub(super) fn packing_fraction_a<D: DualNum<f64>>(
     parameters: &UVParameters,
     eta: D,
     temperature: D,
@@ -239,7 +245,7 @@ pub fn packing_fraction_a<D: DualNum<f64>>(
     })
 }
 
-pub fn packing_fraction_a_uvb3<D: DualNum<f64>>(
+pub(super) fn packing_fraction_a_uvb3<D: DualNum<f64>>(
     parameters: &UVParameters,
     eta: D,
     temperature: D,
