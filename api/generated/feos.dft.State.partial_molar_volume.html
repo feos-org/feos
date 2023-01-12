@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="feos.dft.State.ln_symmetric_activity_coefficient" href="feos.dft.State.ln_symmetric_activity_coefficient.html" /><link rel="prev" title="feos.dft.State.ln_phi" href="feos.dft.State.ln_phi.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="feos.dft.State.pressure" href="feos.dft.State.pressure.html" /><link rel="prev" title="feos.dft.State.partial_molar_entropy" href="feos.dft.State.partial_molar_entropy.html" />
 
     <!-- Generated with Sphinx 5.3.0 and Furo 2022.12.07 -->
-        <title>feos.dft.State.ln_phi_pure - FeOs</title>
+        <title>feos.dft.State.partial_molar_volume - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=91d0f0d1c444bdcb17a68e833c7a53903343c195" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
@@ -316,7 +316,7 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.joule_thomson.html">feos.eos.State.joule_thomson</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.ln_diffusion_reduced.html">feos.eos.State.ln_diffusion_reduced</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.ln_phi.html">feos.eos.State.ln_phi</a></li>
-<li class="toctree-l4"><a class="reference internal" href="feos.eos.State.ln_phi_pure.html">feos.eos.State.ln_phi_pure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.State.ln_phi_pure_liquid.html">feos.eos.State.ln_phi_pure_liquid</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.ln_symmetric_activity_coefficient.html">feos.eos.State.ln_symmetric_activity_coefficient</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.ln_thermal_conductivity_reduced.html">feos.eos.State.ln_thermal_conductivity_reduced</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.ln_viscosity_reduced.html">feos.eos.State.ln_viscosity_reduced</a></li>
@@ -328,9 +328,9 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.molar_gibbs_energy.html">feos.eos.State.molar_gibbs_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.molar_helmholtz_energy.html">feos.eos.State.molar_helmholtz_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.molar_internal_energy.html">feos.eos.State.molar_internal_energy</a></li>
-<li class="toctree-l4"><a class="reference internal" href="feos.eos.State.molar_volume.html">feos.eos.State.molar_volume</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.partial_molar_enthalpy.html">feos.eos.State.partial_molar_enthalpy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.partial_molar_entropy.html">feos.eos.State.partial_molar_entropy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.State.partial_molar_volume.html">feos.eos.State.partial_molar_volume</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.pressure.html">feos.eos.State.pressure</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.pressure_contributions.html">feos.eos.State.pressure_contributions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.specific_enthalpy.html">feos.eos.State.specific_enthalpy</a></li>
@@ -467,7 +467,7 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.isothermal_compressibility.html">feos.dft.State.isothermal_compressibility</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.joule_thomson.html">feos.dft.State.joule_thomson</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.ln_phi.html">feos.dft.State.ln_phi</a></li>
-<li class="toctree-l4 current current-page"><a class="current reference internal" href="#">feos.dft.State.ln_phi_pure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.State.ln_phi_pure_liquid.html">feos.dft.State.ln_phi_pure_liquid</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.ln_symmetric_activity_coefficient.html">feos.dft.State.ln_symmetric_activity_coefficient</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.mass.html">feos.dft.State.mass</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.mass_density.html">feos.dft.State.mass_density</a></li>
@@ -477,9 +477,9 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.molar_gibbs_energy.html">feos.dft.State.molar_gibbs_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.molar_helmholtz_energy.html">feos.dft.State.molar_helmholtz_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.molar_internal_energy.html">feos.dft.State.molar_internal_energy</a></li>
-<li class="toctree-l4"><a class="reference internal" href="feos.dft.State.molar_volume.html">feos.dft.State.molar_volume</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.partial_molar_enthalpy.html">feos.dft.State.partial_molar_enthalpy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.partial_molar_entropy.html">feos.dft.State.partial_molar_entropy</a></li>
+<li class="toctree-l4 current current-page"><a class="current reference internal" href="#">feos.dft.State.partial_molar_volume</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.pressure.html">feos.dft.State.pressure</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.pressure_contributions.html">feos.dft.State.pressure_contributions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.specific_enthalpy.html">feos.dft.State.specific_enthalpy</a></li>
@@ -992,17 +992,19 @@
         </div>
         <article role="main">
           </div>
-<div class=col-md-9 content><section id="feos-dft-state-ln-phi-pure">
-<h1>feos.dft.State.ln_phi_pure<a class="headerlink" href="#feos-dft-state-ln-phi-pure" title="Permalink to this heading">#</a></h1>
+<div class=col-md-9 content><section id="feos-dft-state-partial-molar-volume">
+<h1>feos.dft.State.partial_molar_volume<a class="headerlink" href="#feos-dft-state-partial-molar-volume" title="Permalink to this heading">#</a></h1>
 <dl class="py method">
-<dt class="sig sig-object py" id="feos.dft.State.ln_phi_pure">
-<span class="sig-prename descclassname"><span class="pre">State.</span></span><span class="sig-name descname"><span class="pre">ln_phi_pure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#feos.dft.State.ln_phi_pure" title="Permalink to this definition">#</a></dt>
-<dd><p>Return logarithmic pure substance fugacity coefficient.</p>
-<p>For each component, the hypothetical liquid fugacity coefficient
-at mixture temperature and pressure is computed.</p>
+<dt class="sig sig-object py" id="feos.dft.State.partial_molar_volume">
+<span class="sig-prename descclassname"><span class="pre">State.</span></span><span class="sig-name descname"><span class="pre">partial_molar_volume</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">contributions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#feos.dft.State.partial_molar_volume" title="Permalink to this definition">#</a></dt>
+<dd><p>Return partial molar volume of each component.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>numpy.ndarray</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>contributions</strong> (<a class="reference internal" href="feos.dft.Contributions.html#feos.dft.Contributions" title="feos.dft.Contributions"><em>Contributions</em></a><em>, </em><em>optional</em>) – the contributions of the helmholtz energy.
+Defaults to Contributions.Total.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="feos.si.SIArray1.html#feos.si.SIArray1" title="feos.si.SIArray1">SIArray1</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1014,23 +1016,23 @@ at mixture temperature and pressure is computed.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="feos.dft.State.ln_symmetric_activity_coefficient.html">
+          <a class="next-page" href="feos.dft.State.pressure.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">feos.dft.State.ln_symmetric_activity_coefficient</div>
+                <div class="title">feos.dft.State.pressure</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="feos.dft.State.ln_phi.html">
+          <a class="prev-page" href="feos.dft.State.partial_molar_entropy.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">feos.dft.State.ln_phi</div>
+                <div class="title">feos.dft.State.partial_molar_entropy</div>
                 
               </div>
             </a>
@@ -1064,8 +1066,8 @@ at mixture temperature and pressure is computed.</p>
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">feos.dft.State.ln_phi_pure</a><ul>
-<li><a class="reference internal" href="#feos.dft.State.ln_phi_pure"><code class="docutils literal notranslate"><span class="pre">State.ln_phi_pure()</span></code></a></li>
+<li><a class="reference internal" href="#">feos.dft.State.partial_molar_volume</a><ul>
+<li><a class="reference internal" href="#feos.dft.State.partial_molar_volume"><code class="docutils literal notranslate"><span class="pre">State.partial_molar_volume()</span></code></a></li>
 </ul>
 </li>
 </ul>

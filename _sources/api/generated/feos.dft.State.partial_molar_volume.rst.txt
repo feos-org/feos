@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.State.partial\_molar\_volume
+=====================================
+
+.. currentmodule:: feos.dft
+
+.. automethod:: State.partial_molar_volume

@@ -90,8 +90,8 @@ The table below lists all properties that are available in $\text{FeO}_\text{s}$
 | Partial molar entropy $s_i$ | $\left(\frac{\partial S}{\partial n_i}\right)_{T,p,n_j}$ | yes |
 | Partial molar enthalpy $h_i$ | $\left(\frac{\partial H}{\partial n_i}\right)_{T,p,n_j}$ | yes |
 | Joule Thomson coefficient $\mu_\mathrm{JT}$ | $\left(\frac{\partial T}{\partial p}\right)_{H,n_i}$ | no |
-| Isentropic copmressibility $\kappa_s$ | $-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{S,n_i}$ | no |
-| Isothermal copmressibility $\kappa_T$ | $-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{T,n_i}$ | no |
+| Isentropic compressibility $\kappa_s$ | $-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{S,n_i}$ | no |
+| Isothermal compressibility $\kappa_T$ | $-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{T,n_i}$ | no |
 | (Static) structure factor $S(0)$ | $RT\left(\frac{\partial\rho}{\partial p}\right)_{T,n_i}$ | no |
 
 ## Additional properties for fluids with known molar weights

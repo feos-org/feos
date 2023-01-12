@@ -54,7 +54,7 @@ feos.eos.State
       ~State.joule_thomson
       ~State.ln_diffusion_reduced
       ~State.ln_phi
-      ~State.ln_phi_pure
+      ~State.ln_phi_pure_liquid
       ~State.ln_symmetric_activity_coefficient
       ~State.ln_thermal_conductivity_reduced
       ~State.ln_viscosity_reduced
@@ -66,9 +66,9 @@ feos.eos.State
       ~State.molar_gibbs_energy
       ~State.molar_helmholtz_energy
       ~State.molar_internal_energy
-      ~State.molar_volume
       ~State.partial_molar_enthalpy
       ~State.partial_molar_entropy
+      ~State.partial_molar_volume
       ~State.pressure
       ~State.pressure_contributions
       ~State.specific_enthalpy

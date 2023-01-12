@@ -51,7 +51,7 @@ feos.dft.State
       ~State.isothermal_compressibility
       ~State.joule_thomson
       ~State.ln_phi
-      ~State.ln_phi_pure
+      ~State.ln_phi_pure_liquid
       ~State.ln_symmetric_activity_coefficient
       ~State.mass
       ~State.mass_density
@@ -61,9 +61,9 @@ feos.dft.State
       ~State.molar_gibbs_energy
       ~State.molar_helmholtz_energy
       ~State.molar_internal_energy
-      ~State.molar_volume
       ~State.partial_molar_enthalpy
       ~State.partial_molar_entropy
+      ~State.partial_molar_volume
       ~State.pressure
       ~State.pressure_contributions
       ~State.specific_enthalpy
