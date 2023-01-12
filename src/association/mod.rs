@@ -80,12 +80,14 @@ impl AssociationParameters {
 
         for (i, record) in records.iter().enumerate() {
             if let Some(record) = record.as_ref() {
-                assoc_comp.push(i);
-                sigma_assoc.push(sigma[i]);
-                kappa_ab.push(record.kappa_ab);
-                epsilon_k_ab.push(record.epsilon_k_ab);
-                na.push(record.na.unwrap_or(1.0));
-                nb.push(record.nb.unwrap_or(1.0));
+                if record.kappa_ab > 0.0 && record.epsilon_k_ab > 0.0 {
+                    assoc_comp.push(i);
+                    sigma_assoc.push(sigma[i]);
+                    kappa_ab.push(record.kappa_ab);
+                    epsilon_k_ab.push(record.epsilon_k_ab);
+                    na.push(record.na.unwrap_or(1.0));
+                    nb.push(record.nb.unwrap_or(1.0));
+                }
             }
         }
 
@@ -238,21 +240,14 @@ impl<P> fmt::Display for Association<P> {
 
 impl<P: HardSphereProperties> Association<P> {
     pub fn assoc_site_frac_ab<D: DualNum<f64>>(deltarho: D, na: f64, nb: f64) -> D {
-        if deltarho.re() > f64::EPSILON.sqrt() {
-            (((deltarho * (na - nb) + 1.0).powi(2) + deltarho * nb * 4.0).sqrt()
-                - (deltarho * (nb - na) + 1.0))
-                / (deltarho * na * 2.0)
-        } else {
-            D::one() + deltarho * nb * (deltarho * (nb + na) - 1.0)
-        }
+        (((deltarho * (na - nb) + 1.0).powi(2) + deltarho * nb * 4.0).sqrt()
+            + (deltarho * (nb - na) + 1.0))
+            .recip()
+            * (2.0 * nb / na)
     }
 
     pub fn assoc_site_frac_a<D: DualNum<f64>>(deltarho: D, na: f64) -> D {
-        if deltarho.re() > f64::EPSILON.sqrt() {
-            ((deltarho * na * 4.0 + 1.0).powi(2) - 1.0).sqrt() / (deltarho * na * 2.0)
-        } else {
-            D::one() + deltarho * na * (deltarho * na * 2.0 - 1.0)
-        }
+        ((deltarho * 4.0 * na + 1.0).sqrt() + 1.0).recip() * 2.0
     }
 
     #[allow(clippy::too_many_arguments)]
