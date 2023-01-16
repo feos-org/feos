@@ -6,7 +6,7 @@ use crate::{Contributions, EosUnit};
 use quantity::{QuantityArray1, QuantityScalar};
 use std::sync::Arc;
 
-impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
+impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E, 2> {
     /// Calculate the bubble point line of a mixture with given composition.
     pub fn bubble_point_line(
         eos: &Arc<E>,
@@ -56,7 +56,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
         }
         states.push(PhaseEquilibrium::from_states(sc.clone(), sc));
 
-        Ok(PhaseDiagram { states })
+        Ok(PhaseDiagram::new(states))
     }
 
     /// Calculate the dew point line of a mixture with given composition.
@@ -102,7 +102,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
 
         let n_p = npoints - n_t;
         if vle.is_none() {
-            return Ok(PhaseDiagram { states });
+            return Ok(PhaseDiagram::new(states));
         }
 
         let min_pressure = vle.as_ref().unwrap().vapor().pressure(Contributions::Total);
@@ -124,7 +124,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
 
         states.push(PhaseEquilibrium::from_states(sc.clone(), sc));
 
-        Ok(PhaseDiagram { states })
+        Ok(PhaseDiagram::new(states))
     }
 
     /// Calculate the spinodal lines for a mixture with fixed composition.
@@ -160,6 +160,6 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
         }
         states.push(PhaseEquilibrium::from_states(sc.clone(), sc));
 
-        Ok(PhaseDiagram { states })
+        Ok(PhaseDiagram::new(states))
     }
 }

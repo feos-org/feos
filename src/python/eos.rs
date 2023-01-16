@@ -299,6 +299,7 @@ pub fn eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
     m.add_class::<PyEosVariant>()?;
     m.add_class::<PyState>()?;
+    m.add_class::<PyStateVec>()?;
     m.add_class::<PyPhaseDiagram>()?;
     m.add_class::<PyPhaseEquilibrium>()?;
 

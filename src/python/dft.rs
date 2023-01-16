@@ -258,6 +258,7 @@ pub fn dft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
     m.add_class::<PyFunctionalVariant>()?;
     m.add_class::<PyState>()?;
+    m.add_class::<PyStateVec>()?;
     m.add_class::<PyPhaseDiagram>()?;
     m.add_class::<PyPhaseEquilibrium>()?;
     m.add_class::<FMTVersion>()?;

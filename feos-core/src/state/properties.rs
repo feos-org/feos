@@ -799,6 +799,12 @@ impl<'a, U: EosUnit, E: EquationOfState> StateVec<'a, U, E> {
         QuantityArray1::from_shape_fn(self.0.len(), |i| self.0[i].density)
     }
 
+    pub fn moles(&self) -> QuantityArray2<U> {
+        QuantityArray2::from_shape_fn((self.0.len(), self.0[0].eos.components()), |(i, j)| {
+            self.0[i].moles.get(j)
+        })
+    }
+
     pub fn molefracs(&self) -> Array2<f64> {
         Array2::from_shape_fn((self.0.len(), self.0[0].eos.components()), |(i, j)| {
             self.0[i].molefracs[j]

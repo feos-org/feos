@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 const DEFAULT_POINTS: usize = 51;
 
-impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
+impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E, 2> {
     /// Create a new binary phase diagram exhibiting a
     /// vapor/liquid equilibrium.
     ///
@@ -254,12 +254,12 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
 /// Phase diagram (Txy or pxy) for a system with heteroazeotropic phase behavior.
 pub struct PhaseDiagramHetero<U, E> {
-    pub vle1: PhaseDiagram<U, E>,
-    pub vle2: PhaseDiagram<U, E>,
-    pub lle: Option<PhaseDiagram<U, E>>,
+    pub vle1: PhaseDiagram<U, E, 2>,
+    pub vle2: PhaseDiagram<U, E, 2>,
+    pub lle: Option<PhaseDiagram<U, E, 2>>,
 }
 
-impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
+impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E, 2> {
     /// Create a new binary phase diagram exhibiting a
     /// vapor/liquid/liquid equilibrium.
     ///
@@ -337,24 +337,23 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
             .transpose()?;
 
         Ok(PhaseDiagramHetero {
-            vle1: PhaseDiagram { states: dia1 },
-            vle2: PhaseDiagram { states: dia2 },
+            vle1: PhaseDiagram::new(dia1),
+            vle2: PhaseDiagram::new(dia2),
             lle,
         })
     }
 }
 
 impl<U: Clone, E> PhaseDiagramHetero<U, E> {
-    pub fn vle(&self) -> PhaseDiagram<U, E> {
-        PhaseDiagram {
-            states: self
-                .vle1
+    pub fn vle(&self) -> PhaseDiagram<U, E, 2> {
+        PhaseDiagram::new(
+            self.vle1
                 .states
                 .iter()
                 .chain(self.vle2.states.iter().rev())
                 .cloned()
                 .collect(),
-        }
+        )
     }
 }
 

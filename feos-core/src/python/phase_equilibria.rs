@@ -464,10 +464,15 @@ macro_rules! impl_phase_equilibrium {
 
         /// Phase diagram for a pure component or a binary mixture.
         #[pyclass(name = "PhaseDiagram")]
-        pub struct PyPhaseDiagram(PhaseDiagram<SIUnit, $eos>);
+        pub struct PyPhaseDiagram(PhaseDiagram<SIUnit, $eos, 2>);
 
         #[pymethods]
         impl PyPhaseDiagram {
+            #[new]
+            fn new(phase_equilibria: Vec<PyPhaseEquilibrium>) -> Self {
+                Self(PhaseDiagram::new(phase_equilibria.into_iter().map(|p| p.0).collect()))
+            }
+
             /// Calculate a pure component phase diagram.
             ///
             /// Parameters
