@@ -105,8 +105,17 @@ fn properties_pcsaft_polar(c: &mut Criterion) {
     group.bench_function("c_v", |b| {
         b.iter(|| property((&eos, S::c_v, t, v, &m, Contributions::ResidualNvt)))
     });
-    group.bench_function("molar_volume", |b| {
-        b.iter(|| property((&eos, S::molar_volume, t, v, &m, Contributions::ResidualNvt)))
+    group.bench_function("partial_molar_volume", |b| {
+        b.iter(|| {
+            property((
+                &eos,
+                S::partial_molar_volume,
+                t,
+                v,
+                &m,
+                Contributions::ResidualNvt,
+            ))
+        })
     });
 }
 
