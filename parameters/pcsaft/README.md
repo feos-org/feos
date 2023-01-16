@@ -16,7 +16,7 @@ The files named according to the pattern `NameYear.json` correspond to published
 
 ## Regular Parameters
 
-|file|model|publication|
+|file|description|publication|
 |-|-|:-:|
 [`gross2001.json`](gross2001.json) | non-associating and non-polar substances| [&#128279;](https://doi.org/10.1021/ie0003887)
 [`gross2002.json`](gross2002.json) | associating substances | [&#128279;](https://doi.org/10.1021/ie010954d)
@@ -25,10 +25,11 @@ The files named according to the pattern `NameYear.json` correspond to published
 [`gross2006.json`](gross2006.json) | dipolar substances | [&#128279;](https://doi.org/10.1002/aic.10683)
 [`loetgeringlin2018.json`](loetgeringlin2018.json) | 146 components including viscosity parameters | [&#128279;](https://doi.org/10.1021/acs.iecr.7b04871)
 [`rehner2020.json`](rehner2020.json) | water and alcohols with surface tension data included in the regression | [&#128279;](https://doi.org/10.1021/acs.jced.0c00684)
+[`eller2022.json`](eller2022.json) | hydrogen used in subsurface storage | [&#128279;](https://doi.org/10.1029/2021WR030885)
 
 ## Group-Contribution Parameters
 
-|file|model|publication(s)|
+|file|description|publication(s)|
 |-|-|:-:|
 [`sauer2014_homo.json`](sauer2014_homo.json) | GC segment parameters for homosegmented PC-SAFT | [&#128279;](https://doi.org/10.1021/ie502203w) |
 [`sauer2014_homo_joback.json`](sauer2014_homo.json) | GC segment parameters for homosegmented PC-SAFT including ideal gas parameters | [&#128279;](https://doi.org/10.1021/ie502203w) [&#128279;](https://doi.org/10.1080/00986448708960487)|
