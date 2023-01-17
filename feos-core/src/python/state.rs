@@ -1010,6 +1010,17 @@ macro_rules! impl_state {
         }
 
 
+        /// A list of states that provides convenient getters
+        /// for properties of all the individual states.
+        ///
+        /// Parameters
+        /// ----------
+        /// states : [State]
+        ///     A list of individual states.
+        ///
+        /// Returns
+        /// -------
+        /// StateVec
         #[pyclass(name = "StateVec")]
         pub struct PyStateVec(Vec<State<SIUnit, $eos>>);
 
@@ -1027,6 +1038,11 @@ macro_rules! impl_state {
 
         #[pymethods]
         impl PyStateVec {
+            #[new]
+            fn new(states: Vec<PyState>) -> Self {
+                Self(states.into_iter().map(|s| s.0).collect())
+            }
+
             fn __len__(&self) -> PyResult<usize> {
                 Ok(self.0.len())
             }
@@ -1043,10 +1059,7 @@ macro_rules! impl_state {
                     Err(PyIndexError::new_err(format!("StateVec index out of range")))
                 }
             }
-        }
 
-        #[pymethods]
-        impl PyStateVec {
             #[getter]
             fn get_temperature(&self) -> PySIArray1{
                 StateVec::from(self).temperature().into()
@@ -1065,6 +1078,11 @@ macro_rules! impl_state {
             #[getter]
             fn get_density(&self) -> PySIArray1 {
                 StateVec::from(self).density().into()
+            }
+
+            #[getter]
+            fn get_moles<'py>(&self, py: Python<'py>) -> PySIArray2 {
+                StateVec::from(self).moles().into()
             }
 
             #[getter]

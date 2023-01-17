@@ -11,11 +11,11 @@ use rayon::{prelude::*, ThreadPool};
 use std::sync::Arc;
 
 /// Pure component and binary mixture phase diagrams.
-pub struct PhaseDiagram<U, E> {
-    pub states: Vec<PhaseEquilibrium<U, E, 2>>,
+pub struct PhaseDiagram<U, E, const N: usize> {
+    pub states: Vec<PhaseEquilibrium<U, E, N>>,
 }
 
-impl<U: Clone, E> Clone for PhaseDiagram<U, E> {
+impl<U: Clone, E, const N: usize> Clone for PhaseDiagram<U, E, N> {
     fn clone(&self) -> Self {
         Self {
             states: self.states.clone(),
@@ -23,7 +23,14 @@ impl<U: Clone, E> Clone for PhaseDiagram<U, E> {
     }
 }
 
-impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
+impl<U, E, const N: usize> PhaseDiagram<U, E, N> {
+    /// Create a phase diagram from a list of phase equilibria.
+    pub fn new(states: Vec<PhaseEquilibrium<U, E, N>>) -> Self {
+        Self { states }
+    }
+}
+
+impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E, 2> {
     /// Calculate a phase diagram for a pure component.
     pub fn pure(
         eos: &Arc<E>,
@@ -52,7 +59,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
         }
         states.push(PhaseEquilibrium::from_states(sc.clone(), sc));
 
-        Ok(PhaseDiagram { states })
+        Ok(PhaseDiagram::new(states))
     }
 
     /// Return the vapor states of the diagram.
@@ -67,7 +74,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
 }
 
 #[cfg(feature = "rayon")]
-impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
+impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E, 2> {
     fn solve_temperatures(
         eos: &Arc<E>,
         temperatures: ArrayView1<f64>,
@@ -125,6 +132,6 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
         });
 
         states.push(PhaseEquilibrium::from_states(sc.clone(), sc));
-        Ok(PhaseDiagram { states })
+        Ok(PhaseDiagram::new(states))
     }
 }

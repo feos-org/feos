@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Added `PhaseDiagram::par_pure` that uses rayon to calculate phase diagrams in parallel. [#57](https://github.com/feos-org/feos/pull/57)
+- Added `StateVec::moles` getter. [#113](https://github.com/feos-org/feos/pull/113)
+- Added public constructors `PhaseDiagram::new` and `StateVec::new` that allow the creation of the respective structs from a list of `PhaseEquilibrium`s or `State`s in Rust and Python. [#113](https://github.com/feos-org/feos/pull/113)
 
 ### Changed
 - Added `Sync` and `Send` as supertraits to `EquationOfState`. [#57](https://github.com/feos-org/feos/pull/57)
@@ -17,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `get_or_insert_with_d2_64` to `Cache`. [#94](https://github.com/feos-org/feos/pull/94)
 - The critical point algorithm now uses vector dual numbers to reduce the number of model evaluations and computation times. [#96](https://github.com/feos-org/feos/pull/96)
 - Renamed `State::molar_volume` to `State::partial_molar_volume` and `State::ln_phi_pure` to `State::ln_phi_pure_liquid`. [#107](https://github.com/feos-org/feos/pull/107)
+- Added a const generic parameter to `PhaseDiagram` that accounts for the number of phases analogously to `PhaseEquilibrium`. [#113](https://github.com/feos-org/feos/pull/113)
 
 ## [0.3.1] - 2022-08-25
 ### Added
