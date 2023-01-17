@@ -1,17 +1,16 @@
-use crate::python::statehd::*;
-use crate::*;
-use ndarray::prelude::*;
-use num_dual::python::{
-    PyDual2_64, PyDual3Dual64, PyDual3_64, PyDual64, PyHyperDual64, PyHyperDualDual64,
-};
-use num_dual::{Dual, Dual2_64, Dual3, Dual3_64, Dual64, DualVec64, HyperDual, HyperDual64};
+use crate::{EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, MolarWeight, StateHD};
+use ndarray::Array1;
+use num_dual::*;
 use numpy::convert::IntoPyArray;
+use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use quantity::python::PySIArray1;
+use quantity::si::{SIArray1, SIUnit};
 use std::fmt;
 
 struct PyHelmholtzEnergy(Py<PyAny>);
 
+/// Struct containing pointer to Python Class that implements Helmholtz energy.
 pub struct PyEoSObj {
     obj: Py<PyAny>,
     contributions: Vec<Box<dyn HelmholtzEnergy>>,
@@ -50,16 +49,16 @@ impl PyEoSObj {
 
 impl MolarWeight for PyEoSObj {
     fn molar_weight(&self) -> SIArray1 {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-        let py_result = self.obj.as_ref(py).call_method0("molar_weight").unwrap();
-        if py_result.get_type().name().unwrap() != "SIArray1" {
-            panic!(
-                "Expected an 'SIArray1' for the 'molar_weight' method return type, got {}",
-                py_result.get_type().name().unwrap()
-            );
-        }
-        py_result.extract::<PySIArray1>().unwrap().into()
+        Python::with_gil(|py| {
+            let py_result = self.obj.as_ref(py).call_method0("molar_weight").unwrap();
+            if py_result.get_type().name().unwrap() != "SIArray1" {
+                panic!(
+                    "Expected an 'SIArray1' for the 'molar_weight' method return type, got {}",
+                    py_result.get_type().name().unwrap()
+                );
+            }
+            py_result.extract::<PySIArray1>().unwrap().into()
+        })
     }
 }
 
@@ -89,62 +88,19 @@ impl EquationOfState for PyEoSObj {
     }
 
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-        let py_result = self
-            .obj
-            .as_ref(py)
-            .call_method1("max_density", (moles.to_owned().into_pyarray(py),))
-            .unwrap();
-        // if py_result.get_type().name().unwrap() != "numpy.float64" {
-        //     panic!(
-        //         "Expected an 'numpy.float64' for the 'compute_max_density' method return type, got {}",
-        //         py_result.get_type().name().unwrap()
-        //     );
-        // }
-        py_result.extract().unwrap()
+        Python::with_gil(|py| {
+            let py_result = self
+                .obj
+                .as_ref(py)
+                .call_method1("max_density", (moles.to_owned().into_pyarray(py),))
+                .unwrap();
+            py_result.extract().unwrap()
+        })
     }
 
     fn residual(&self) -> &[Box<dyn HelmholtzEnergy>] {
         &self.contributions
     }
-}
-
-macro_rules! impl_helmholtz_energy {
-    ($pystate:ty, $pyhd:ty, $hd:ty) => {
-        impl HelmholtzEnergyDual<$hd> for PyHelmholtzEnergy {
-            fn helmholtz_energy(&self, state: &StateHD<$hd>) -> $hd {
-                let gil = Python::acquire_gil();
-                let py = gil.python();
-                let py_result = self
-                    .0
-                    .as_ref(py)
-                    .call_method1("helmholtz_energy", (<$pystate>::from(state.clone()),))
-                    .unwrap();
-                // if py_result.get_type().name() != stringify!($hd) {
-                //     panic!(
-                //         "Expected an {} for the 'helmholtz_energy' method signature, got {}",
-                //         stringify!($hd),
-                //         py_result.get_type().name()
-                //     );
-                // }
-                <$hd>::from(py_result.extract::<$pyhd>().unwrap())
-            }
-
-            // fn identifier(&self) -> String {
-            //     let gil = Python::acquire_gil();
-            //     let py = gil.python();
-            //     let py_result = self.obj.as_ref(py).call_method0("identifier").unwrap();
-            //     if py_result.get_type().name() != "str" {
-            //         panic!(
-            //             "Expected an 'str' for the 'identifier' method signature, got {}",
-            //             py_result.get_type().name()
-            //         );
-            //     }
-            //     py_result.extract().unwrap()
-            // }
-        }
-    };
 }
 
 impl fmt::Display for PyHelmholtzEnergy {
@@ -153,73 +109,166 @@ impl fmt::Display for PyHelmholtzEnergy {
     }
 }
 
-#[pyclass(name = "DualDualVec64_2")]
-#[derive(Clone)]
-pub struct PyDualDualVec64_3(Dual<DualVec64<3>, f64>);
+macro_rules! state {
+    ($py_state_id:ident, $py_state_ty:ty, $py_hd_ty:ty, $hd_ty:ty) => {
+        #[pyclass]
+        #[derive(Clone)]
+        struct $py_state_id(StateHD<$hd_ty>);
 
-impl From<PyDualDualVec64_3> for Dual<DualVec64<3>, f64> {
-    fn from(value: PyDualDualVec64_3) -> Self {
-        value.0
-    }
+        impl From<StateHD<$hd_ty>> for $py_state_ty {
+            fn from(s: StateHD<$hd_ty>) -> Self {
+                Self(s)
+            }
+        }
+
+        #[pymethods]
+        impl $py_state_ty {
+            #[new]
+            pub fn new(temperature: $py_hd_ty, volume: $py_hd_ty, moles: Vec<$py_hd_ty>) -> Self {
+                let m = Array1::from(moles).mapv(<$hd_ty>::from);
+                Self(StateHD::<$hd_ty>::new(temperature.into(), volume.into(), m))
+            }
+
+            #[getter]
+            pub fn get_temperature(&self) -> $py_hd_ty {
+                <$py_hd_ty>::from(self.0.temperature)
+            }
+
+            #[getter]
+            pub fn get_volume(&self) -> $py_hd_ty {
+                <$py_hd_ty>::from(self.0.volume)
+            }
+
+            #[getter]
+            pub fn get_moles(&self) -> Vec<$py_hd_ty> {
+                self.0.moles.mapv(<$py_hd_ty>::from).into_raw_vec()
+            }
+
+            #[getter]
+            pub fn get_partial_density(&self) -> Vec<$py_hd_ty> {
+                self.0
+                    .partial_density
+                    .mapv(<$py_hd_ty>::from)
+                    .into_raw_vec()
+            }
+
+            #[getter]
+            pub fn get_molefracs(&self) -> Vec<$py_hd_ty> {
+                self.0.molefracs.mapv(<$py_hd_ty>::from).into_raw_vec()
+            }
+
+            #[getter]
+            pub fn get_density(&self) -> $py_hd_ty {
+                <$py_hd_ty>::from(self.0.partial_density.sum())
+            }
+        }
+    };
 }
 
-#[pyclass(name = "HyperDualDualVec64_2")]
-#[derive(Clone)]
-pub struct PyHyperDualDualVec64_2(HyperDual<DualVec64<2>, f64>);
-
-impl From<PyHyperDualDualVec64_2> for HyperDual<DualVec64<2>, f64> {
-    fn from(value: PyHyperDualDualVec64_2) -> Self {
-        value.0
-    }
+macro_rules! dual_number {
+    ($py_hd_id:ident, $py_hd_ty:ty, $hd_ty:ty, $py_field_ty:ty) => {
+        #[pyclass]
+        #[derive(Clone)]
+        struct $py_hd_id($hd_ty);
+        impl_dual_num!($py_hd_ty, $hd_ty, $py_field_ty);
+    };
 }
 
-#[pyclass(name = "HyperDualDualVec64_3")]
-#[derive(Clone)]
-pub struct PyHyperDualDualVec64_3(HyperDual<DualVec64<3>, f64>);
-
-impl From<PyHyperDualDualVec64_3> for HyperDual<DualVec64<3>, f64> {
-    fn from(value: PyHyperDualDualVec64_3) -> Self {
-        value.0
-    }
+macro_rules! helmholtz_energy {
+    ($py_state_ty:ty, $py_hd_ty:ty, $hd_ty:ty) => {
+        impl HelmholtzEnergyDual<$hd_ty> for PyHelmholtzEnergy {
+            fn helmholtz_energy(&self, state: &StateHD<$hd_ty>) -> $hd_ty {
+                Python::with_gil(|py| {
+                    let py_result = self
+                        .0
+                        .as_ref(py)
+                        .call_method1("helmholtz_energy", (<$py_state_ty>::from(state.clone()),))
+                        .unwrap();
+                    <$hd_ty>::from(py_result.extract::<$py_hd_ty>().unwrap())
+                })
+            }
+        }
+    };
 }
 
-#[pyclass(name = "Dual3DualVec64_2")]
-#[derive(Clone)]
-pub struct PyDual3DualVec64_2(Dual3<DualVec64<2>, f64>);
-
-impl From<PyDual3DualVec64_2> for Dual3<DualVec64<2>, f64> {
-    fn from(value: PyDual3DualVec64_2) -> Self {
-        value.0
-    }
+macro_rules! impl_dual_state_helmholtz_energy {
+    ($py_state_id:ident, $py_state_ty:ty, $py_hd_id:ident, $py_hd_ty:ty, $hd_ty:ty, $py_field_ty:ty) => {
+        dual_number!($py_hd_id, $py_hd_ty, $hd_ty, $py_field_ty);
+        state!($py_state_id, $py_state_ty, $py_hd_ty, $hd_ty);
+        helmholtz_energy!($py_state_ty, $py_hd_ty, $hd_ty);
+    };
 }
 
-#[pyclass(name = "Dual3DualVec64_3")]
-#[derive(Clone)]
-pub struct PyDual3DualVec64_3(Dual3<DualVec64<3>, f64>);
+// No definition of dual number necessary for f64
+state!(PyStateF, PyStateF, f64, f64);
+helmholtz_energy!(PyStateF, f64, f64);
 
-impl From<PyDual3DualVec64_3> for Dual3<DualVec64<3>, f64> {
-    fn from(value: PyDual3DualVec64_3) -> Self {
-        value.0
-    }
-}
-
-impl_helmholtz_energy!(PyStateD, PyDual64, Dual64);
-impl_helmholtz_energy!(PyStateDDV3, PyDualDualVec64_3, Dual<DualVec64<3>, f64>);
-impl_helmholtz_energy!(PyStateHD, PyHyperDual64, HyperDual64);
-impl_helmholtz_energy!(PyStateHDD, PyHyperDualDual64, HyperDual<Dual64, f64>);
-impl_helmholtz_energy!(
-    PyStateHDDV2,
-    PyHyperDualDualVec64_2,
-    HyperDual<DualVec64<2>, f64>
+// Arguments:
+// - python state identifier,
+// - python state type (=identifier),
+// - python dual number identifier,
+// - python dual number type (=identifier),
+// - rust dual number type,
+// - python dual number field type (return of re(), etc.)
+impl_dual_state_helmholtz_energy!(PyStateD, PyStateD, PyDual64, PyDual64, Dual64, f64);
+dual_number!(PyDualVec3, PyDualVec3, DualVec64<3>, f64);
+impl_dual_state_helmholtz_energy!(
+    PyStateDualDualVec3,
+    PyStateDualDualVec3,
+    PyDualDualVec3,
+    PyDualDualVec3,
+    Dual<DualVec64<3>, f64>,
+    PyDualVec3
 );
-impl_helmholtz_energy!(
-    PyStateHDDV3,
-    PyHyperDualDualVec64_3,
-    HyperDual<DualVec64<3>, f64>
+impl_dual_state_helmholtz_energy!(
+    PyStateHD,
+    PyStateHD,
+    PyHyperDual64,
+    PyHyperDual64,
+    HyperDual64,
+    f64
 );
-impl_helmholtz_energy!(PyStateD2, PyDual2_64, Dual2_64);
-impl_helmholtz_energy!(PyStateD3, PyDual3_64, Dual3_64);
-impl_helmholtz_energy!(PyStateD3D, PyDual3Dual64, Dual3<Dual64, f64>);
-impl_helmholtz_energy!(PyStateD3DV2, PyDual3DualVec64_2, Dual3<DualVec64<2>, f64>);
-impl_helmholtz_energy!(PyStateD3DV3, PyDual3DualVec64_3, Dual3<DualVec64<3>, f64>);
-impl_helmholtz_energy!(PyStateF, f64, f64);
+impl_dual_state_helmholtz_energy!(PyStateD2, PyStateD2, PyDual2_64, PyDual2_64, Dual2_64, f64);
+impl_dual_state_helmholtz_energy!(PyStateD3, PyStateD3, PyDual3_64, PyDual3_64, Dual3_64, f64);
+impl_dual_state_helmholtz_energy!(PyStateHDD, PyStateHDD, PyHyperDualDual64, PyHyperDualDual64, HyperDual<Dual64, f64>, PyDual64);
+dual_number!(PyDualVec2, PyDualVec2, DualVec64<2>, f64);
+impl_dual_state_helmholtz_energy!(
+    PyStateHDDVec2,
+    PyStateHDDVec2,
+    PyHyperDualVec2,
+    PyHyperDualVec2,
+    HyperDual<DualVec64<2>, f64>,
+    PyDualVec2
+);
+impl_dual_state_helmholtz_energy!(
+    PyStateHDDVec3,
+    PyStateHDDVec3,
+    PyHyperDualVec3,
+    PyHyperDualVec3,
+    HyperDual<DualVec64<3>, f64>,
+    PyDualVec3
+);
+impl_dual_state_helmholtz_energy!(
+    PyStateD3D,
+    PyStateD3D,
+    PyDual3Dual64,
+    PyDual3Dual64,
+    Dual3<Dual64, f64>,
+    PyDual64
+);
+impl_dual_state_helmholtz_energy!(
+    PyStateD3DVec2,
+    PyStateD3DVec2,
+    PyDual3DualVec2,
+    PyDual3DualVec2,
+    Dual3<DualVec64<2>, f64>,
+    PyDualVec2
+);
+impl_dual_state_helmholtz_energy!(
+    PyStateD3DVec3,
+    PyStateD3DVec3,
+    PyDual3DualVec3,
+    PyDual3DualVec3,
+    Dual3<DualVec64<3>, f64>,
+    PyDualVec3
+);

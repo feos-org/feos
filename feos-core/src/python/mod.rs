@@ -8,7 +8,6 @@ pub mod joback;
 pub mod parameter;
 mod phase_equilibria;
 mod state;
-pub mod statehd;
 pub mod user_defined;
 
 impl From<EosError> for PyErr {
