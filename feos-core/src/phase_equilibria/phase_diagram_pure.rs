@@ -24,6 +24,7 @@ impl<U: Clone, E, const N: usize> Clone for PhaseDiagram<U, E, N> {
 }
 
 impl<U, E, const N: usize> PhaseDiagram<U, E, N> {
+    /// Create a phase diagram from a list of phase equilibria.
     pub fn new(states: Vec<PhaseEquilibrium<U, E, N>>) -> Self {
         Self { states }
     }

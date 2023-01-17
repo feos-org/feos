@@ -1010,6 +1010,17 @@ macro_rules! impl_state {
         }
 
 
+        /// A list of states that provides convenient getters
+        /// for properties of all the individual states.
+        ///
+        /// Parameters
+        /// ----------
+        /// states : [State]
+        ///     A list of individual states.
+        ///
+        /// Returns
+        /// -------
+        /// StateVec
         #[pyclass(name = "StateVec")]
         pub struct PyStateVec(Vec<State<SIUnit, $eos>>);
 
@@ -1028,8 +1039,8 @@ macro_rules! impl_state {
         #[pymethods]
         impl PyStateVec {
             #[new]
-            fn new(vec: Vec<PyState>) -> Self {
-                Self(vec.into_iter().map(|s| s.0).collect())
+            fn new(states: Vec<PyState>) -> Self {
+                Self(states.into_iter().map(|s| s.0).collect())
             }
 
             fn __len__(&self) -> PyResult<usize> {

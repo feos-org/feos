@@ -463,6 +463,15 @@ macro_rules! impl_phase_equilibrium {
         }
 
         /// Phase diagram for a pure component or a binary mixture.
+        ///
+        /// Parameters
+        /// ----------
+        /// phase_equilibria : [PhaseEquilibrium]
+        ///     A list of individual phase equilibria.
+        ///
+        /// Returns
+        /// -------
+        /// PhaseDiagram : the resulting phase diagram
         #[pyclass(name = "PhaseDiagram")]
         pub struct PyPhaseDiagram(PhaseDiagram<SIUnit, $eos, 2>);
 
