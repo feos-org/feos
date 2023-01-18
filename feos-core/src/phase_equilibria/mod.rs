@@ -2,7 +2,7 @@ use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use crate::state::{Contributions, DensityInitialization, State};
 use crate::EosUnit;
-use quantity::si::{SINumber, SIArray1, SIUnit};
+use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::fmt;
 use std::fmt::Write;
 use std::sync::Arc;
@@ -261,10 +261,7 @@ impl<E: EquationOfState, const N: usize> PhaseEquilibrium<E, N> {
         Ok(())
     }
 
-    pub fn update_chemical_potential(
-        &mut self,
-        chemical_potential: &SIArray1,
-    ) -> EosResult<()> {
+    pub fn update_chemical_potential(&mut self, chemical_potential: &SIArray1) -> EosResult<()> {
         for s in self.0.iter_mut() {
             s.update_chemical_potential(chemical_potential)?;
         }
@@ -272,9 +269,11 @@ impl<E: EquationOfState, const N: usize> PhaseEquilibrium<E, N> {
     }
 
     pub(super) fn total_gibbs_energy(&self) -> SINumber {
-        self.0.iter().fold(0.0 * SIUnit::reference_energy(), |acc, s| {
-            acc + s.gibbs_energy(Contributions::Total)
-        })
+        self.0
+            .iter()
+            .fold(0.0 * SIUnit::reference_energy(), |acc, s| {
+                acc + s.gibbs_energy(Contributions::Total)
+            })
     }
 }
 

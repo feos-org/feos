@@ -2,7 +2,7 @@ use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use crate::state::State;
 use crate::EosUnit;
-use quantity::si::{SINumber, SIArray1, SIUnit};
+use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::sync::Arc;
 
 pub fn density_iteration<E: EquationOfState>(
@@ -129,7 +129,10 @@ pub fn density_iteration<E: EquationOfState>(
         // Newton step
         rho += delta_rho;
         if error.to_reduced(SIUnit::reference_pressure())?.abs()
-            < f64::max(abstol, (rho * reltol).to_reduced(SIUnit::reference_density())?)
+            < f64::max(
+                abstol,
+                (rho * reltol).to_reduced(SIUnit::reference_density())?,
+            )
         {
             break 'iteration;
         }

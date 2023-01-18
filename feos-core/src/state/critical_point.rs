@@ -7,7 +7,7 @@ use ndarray::{arr1, arr2, Array1, Array2};
 use num_dual::linalg::{norm, smallest_ev, LU};
 use num_dual::{Dual, Dual3, Dual64, DualNum, DualVec64, HyperDual, StaticVec};
 use num_traits::{One, Zero};
-use quantity::si::{SINumber, SIArray1, SIUnit};
+use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::convert::TryFrom;
 use std::sync::Arc;
 
@@ -409,7 +409,9 @@ impl<E: EquationOfState> State<E> {
         let mut rho = match density_initialization {
             DensityInitialization::Vapor => 1e-5 * max_density,
             DensityInitialization::Liquid => max_density,
-            DensityInitialization::InitialDensity(rho) => rho.to_reduced(SIUnit::reference_density())?,
+            DensityInitialization::InitialDensity(rho) => {
+                rho.to_reduced(SIUnit::reference_density())?
+            }
             DensityInitialization::None => unreachable!(),
         };
         let n = moles.to_reduced(SIUnit::reference_moles())?;

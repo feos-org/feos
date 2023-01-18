@@ -151,12 +151,12 @@ impl<E> Clone for State<E> {
     fn clone(&self) -> Self {
         Self {
             eos: self.eos.clone(),
-            total_moles: self.total_moles.clone(),
-            temperature: self.temperature.clone(),
-            volume: self.volume.clone(),
+            total_moles: self.total_moles,
+            temperature: self.temperature,
+            volume: self.volume,
             moles: self.moles.clone(),
             partial_density: self.partial_density.clone(),
-            density: self.density.clone(),
+            density: self.density,
             molefracs: self.molefracs.clone(),
             reduced_temperature: self.reduced_temperature,
             reduced_volume: self.reduced_volume,
@@ -746,11 +746,7 @@ fn is_close(x: SINumber, y: SINumber, atol: SINumber, rtol: f64) -> bool {
     (x - y).abs() <= atol + rtol * y.abs()
 }
 
-fn newton<E: EquationOfState, F>(
-    mut x0: SINumber,
-    mut f: F,
-    atol: SINumber,
-) -> EosResult<State<E>>
+fn newton<E: EquationOfState, F>(mut x0: SINumber, mut f: F, atol: SINumber) -> EosResult<State<E>>
 where
     F: FnMut(SINumber) -> EosResult<(SINumber, SINumber, State<E>)>,
 {

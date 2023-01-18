@@ -85,11 +85,7 @@ impl Joback {
     }
 
     /// Directly calculates the ideal gas heat capacity from the Joback model.
-    pub fn c_p(
-        &self,
-        temperature: SINumber,
-        molefracs: &Array1<f64>,
-    ) -> EosResult<SINumber> {
+    pub fn c_p(&self, temperature: SINumber, molefracs: &Array1<f64>) -> EosResult<SINumber> {
         let t = temperature.to_reduced(SIUnit::reference_temperature())?;
         let mut c_p = 0.0;
         for (j, &x) in self.records.iter().zip(molefracs.iter()) {

@@ -48,7 +48,7 @@ impl PyEoSObj {
     }
 }
 
-impl MolarWeight<SIUnit> for PyEoSObj {
+impl MolarWeight for PyEoSObj {
     fn molar_weight(&self) -> SIArray1 {
         let gil = Python::acquire_gil();
         let py = gil.python();

@@ -4,7 +4,7 @@ use crate::errors::{EosError, EosResult};
 use crate::state::{Contributions, DensityInitialization, State};
 use ndarray::*;
 use num_dual::linalg::norm;
-use quantity::si::{SINumber, SIArray1};
+use quantity::si::{SIArray1, SINumber};
 use std::sync::Arc;
 
 const MAX_ITER_TP: usize = 400;

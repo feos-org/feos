@@ -55,7 +55,10 @@ impl Cache {
         derivative: Derivative,
         f: F,
     ) -> f64 {
-        if let Some(&value) = self.map.get(&PartialDerivative::SecondMixed(derivative, derivative)) {
+        if let Some(&value) = self
+            .map
+            .get(&PartialDerivative::SecondMixed(derivative, derivative))
+        {
             self.hit += 1;
             value
         } else {
@@ -64,8 +67,10 @@ impl Cache {
             self.map.insert(PartialDerivative::Zeroth, value.re);
             self.map
                 .insert(PartialDerivative::First(derivative), value.v1[0]);
-            self.map
-                .insert(PartialDerivative::SecondMixed(derivative, derivative), value.v2[0]);
+            self.map.insert(
+                PartialDerivative::SecondMixed(derivative, derivative),
+                value.v2[0],
+            );
             value.v2[0]
         }
     }

@@ -2,9 +2,10 @@ use super::{PhaseEquilibrium, SolverOptions};
 use crate::equation_of_state::EquationOfState;
 use crate::errors::EosResult;
 use crate::state::{State, StateVec};
+use crate::EosUnit;
 #[cfg(feature = "rayon")]
 use ndarray::{Array1, ArrayView1, Axis};
-use quantity::si::{SINumber, SIArray1};
+use quantity::si::{SIArray1, SINumber, SIUnit};
 #[cfg(feature = "rayon")]
 use rayon::{prelude::*, ThreadPool};
 use std::sync::Arc;
