@@ -9,7 +9,7 @@ use crate::{
 use conv::ValueInto;
 use ndarray::Array1;
 use num_dual::*;
-use quantity::QuantityScalar;
+use quantity::si::{SINumber, SIUnit};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -85,17 +85,17 @@ impl Joback {
     }
 
     /// Directly calculates the ideal gas heat capacity from the Joback model.
-    pub fn c_p<U: EosUnit>(
+    pub fn c_p(
         &self,
-        temperature: QuantityScalar<U>,
+        temperature: SINumber,
         molefracs: &Array1<f64>,
-    ) -> EosResult<QuantityScalar<U>> {
-        let t = temperature.to_reduced(U::reference_temperature())?;
+    ) -> EosResult<SINumber> {
+        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
         let mut c_p = 0.0;
         for (j, &x) in self.records.iter().zip(molefracs.iter()) {
             c_p += x * (j.a + j.b * t + j.c * t.powi(2) + j.d * t.powi(3) + j.e * t.powi(4));
         }
-        Ok(c_p / RGAS * U::gas_constant())
+        Ok(c_p / RGAS * SIUnit::gas_constant())
     }
 }
 

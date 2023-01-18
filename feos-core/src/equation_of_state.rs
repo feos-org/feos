@@ -6,7 +6,7 @@ use num_dual::{
     Dual, Dual2_64, Dual3, Dual3_64, Dual64, DualNum, DualVec64, HyperDual, HyperDual64,
 };
 use num_traits::{One, Zero};
-use quantity::{QuantityArray1, QuantityScalar};
+use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::fmt;
 
 /// Individual Helmholtz energy contribution that can
@@ -149,8 +149,8 @@ impl fmt::Display for DefaultIdealGasContribution {
 ///
 /// The trait is required to be able to calculate (mass)
 /// specific properties.
-pub trait MolarWeight<U: EosUnit> {
-    fn molar_weight(&self) -> QuantityArray1<U>;
+pub trait MolarWeight {
+    fn molar_weight(&self) -> SIArray1;
 }
 
 /// A general equation of state.
@@ -219,15 +219,12 @@ pub trait EquationOfState: Send + Sync {
     /// of components of the equation of state. For a pure component, however,
     /// no moles need to be provided. In that case, it is set to the constant
     /// reference value.
-    fn validate_moles<U: EosUnit>(
-        &self,
-        moles: Option<&QuantityArray1<U>>,
-    ) -> EosResult<QuantityArray1<U>> {
+    fn validate_moles(&self, moles: Option<&SIArray1>) -> EosResult<SIArray1> {
         let l = moles.map_or(1, |m| m.len());
         if self.components() == l {
             match moles {
                 Some(m) => Ok(m.to_owned()),
-                None => Ok(Array::ones(1) * U::reference_moles()),
+                None => Ok(Array::ones(1) * SIUnit::reference_moles()),
             }
         } else {
             Err(EosError::IncompatibleComponents(self.components(), l))
@@ -240,105 +237,102 @@ pub trait EquationOfState: Send + Sync {
     /// equilibria and other iterations. It is not explicitly meant to
     /// be a mathematical limit for the density (if those exist in the
     /// equation of state anyways).
-    fn max_density<U: EosUnit>(
-        &self,
-        moles: Option<&QuantityArray1<U>>,
-    ) -> EosResult<QuantityScalar<U>> {
+    fn max_density(&self, moles: Option<&SIArray1>) -> EosResult<SINumber> {
         let mr = self
             .validate_moles(moles)?
-            .to_reduced(U::reference_moles())?;
-        Ok(self.compute_max_density(&mr) * U::reference_density())
+            .to_reduced(SIUnit::reference_moles())?;
+        Ok(self.compute_max_density(&mr) * SIUnit::reference_density())
     }
 
     /// Calculate the second virial coefficient $B(T)$
-    fn second_virial_coefficient<U: EosUnit>(
+    fn second_virial_coefficient(
         &self,
-        temperature: QuantityScalar<U>,
-        moles: Option<&QuantityArray1<U>>,
-    ) -> EosResult<QuantityScalar<U>> {
+        temperature: SINumber,
+        moles: Option<&SIArray1>,
+    ) -> EosResult<SINumber> {
         let mr = self.validate_moles(moles)?;
         let x = mr.to_reduced(mr.sum())?;
         let mut rho = HyperDual64::zero();
         rho.eps1[0] = 1.0;
         rho.eps2[0] = 1.0;
-        let t = HyperDual64::from(temperature.to_reduced(U::reference_temperature())?);
+        let t = HyperDual64::from(temperature.to_reduced(SIUnit::reference_temperature())?);
         let s = StateHD::new_virial(t, rho, x);
-        Ok(self.evaluate_residual(&s).eps1eps2[(0, 0)] * 0.5 / U::reference_density())
+        Ok(self.evaluate_residual(&s).eps1eps2[(0, 0)] * 0.5 / SIUnit::reference_density())
     }
 
     /// Calculate the third virial coefficient $C(T)$
-    fn third_virial_coefficient<U: EosUnit>(
+    fn third_virial_coefficient(
         &self,
-        temperature: QuantityScalar<U>,
-        moles: Option<&QuantityArray1<U>>,
-    ) -> EosResult<QuantityScalar<U>> {
+        temperature: SINumber,
+        moles: Option<&SIArray1>,
+    ) -> EosResult<SINumber> {
         let mr = self.validate_moles(moles)?;
         let x = mr.to_reduced(mr.sum())?;
         let rho = Dual3_64::zero().derive();
-        let t = Dual3_64::from(temperature.to_reduced(U::reference_temperature())?);
+        let t = Dual3_64::from(temperature.to_reduced(SIUnit::reference_temperature())?);
         let s = StateHD::new_virial(t, rho, x);
-        Ok(self.evaluate_residual(&s).v3 / 3.0 / U::reference_density().powi(2))
+        Ok(self.evaluate_residual(&s).v3 / 3.0 / SIUnit::reference_density().powi(2))
     }
 
     /// Calculate the temperature derivative of the second virial coefficient $B'(T)$
-    fn second_virial_coefficient_temperature_derivative<U: EosUnit>(
+    fn second_virial_coefficient_temperature_derivative(
         &self,
-        temperature: QuantityScalar<U>,
-        moles: Option<&QuantityArray1<U>>,
-    ) -> EosResult<QuantityScalar<U>> {
+        temperature: SINumber,
+        moles: Option<&SIArray1>,
+    ) -> EosResult<SINumber> {
         let mr = self.validate_moles(moles)?;
         let x = mr.to_reduced(mr.sum())?;
         let mut rho = HyperDual::zero();
         rho.eps1[0] = Dual64::one();
         rho.eps2[0] = Dual64::one();
         let t = HyperDual::from_re(
-            Dual64::from(temperature.to_reduced(U::reference_temperature())?).derive(),
+            Dual64::from(temperature.to_reduced(SIUnit::reference_temperature())?).derive(),
         );
         let s = StateHD::new_virial(t, rho, x);
         Ok(self.evaluate_residual(&s).eps1eps2[(0, 0)].eps[0] * 0.5
-            / (U::reference_density() * U::reference_temperature()))
+            / (SIUnit::reference_density() * SIUnit::reference_temperature()))
     }
 
     /// Calculate the temperature derivative of the third virial coefficient $C'(T)$
-    fn third_virial_coefficient_temperature_derivative<U: EosUnit>(
+    fn third_virial_coefficient_temperature_derivative(
         &self,
-        temperature: QuantityScalar<U>,
-        moles: Option<&QuantityArray1<U>>,
-    ) -> EosResult<QuantityScalar<U>> {
+        temperature: SINumber,
+        moles: Option<&SIArray1>,
+    ) -> EosResult<SINumber> {
         let mr = self.validate_moles(moles)?;
         let x = mr.to_reduced(mr.sum())?;
         let rho = Dual3::zero().derive();
         let t = Dual3::from_re(
-            Dual64::from(temperature.to_reduced(U::reference_temperature())?).derive(),
+            Dual64::from(temperature.to_reduced(SIUnit::reference_temperature())?).derive(),
         );
         let s = StateHD::new_virial(t, rho, x);
         Ok(self.evaluate_residual(&s).v3.eps[0]
             / 3.0
-            / (U::reference_density().powi(2) * U::reference_temperature()))
+            / (SIUnit::reference_density().powi(2) * SIUnit::reference_temperature()))
     }
 }
 
 /// Reference values and residual entropy correlations for entropy scaling.
-pub trait EntropyScaling<U: EosUnit> {
+pub trait EntropyScaling {
     fn viscosity_reference(
         &self,
-        temperature: QuantityScalar<U>,
-        volume: QuantityScalar<U>,
-        moles: &QuantityArray1<U>,
-    ) -> EosResult<QuantityScalar<U>>;
+        temperature: SINumber,
+        volume: SINumber,
+        moles: &SIArray1,
+    ) -> EosResult<SINumber>;
     fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
     fn diffusion_reference(
         &self,
-        temperature: QuantityScalar<U>,
-        volume: QuantityScalar<U>,
-        moles: &QuantityArray1<U>,
-    ) -> EosResult<QuantityScalar<U>>;
+        temperature: SINumber,
+        volume: SINumber,
+        moles: &SIArray1,
+    ) -> EosResult<SINumber>;
     fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
     fn thermal_conductivity_reference(
         &self,
-        temperature: QuantityScalar<U>,
-        volume: QuantityScalar<U>,
-        moles: &QuantityArray1<U>,
-    ) -> EosResult<QuantityScalar<U>>;
+        temperature: SINumber,
+        volume: SINumber,
+        moles: &SIArray1,
+    ) -> EosResult<SINumber>;
     fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
 }

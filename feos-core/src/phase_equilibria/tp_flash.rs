@@ -2,17 +2,16 @@ use super::{PhaseEquilibrium, SolverOptions, Verbosity};
 use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use crate::state::{Contributions, DensityInitialization, State};
-use crate::EosUnit;
 use ndarray::*;
 use num_dual::linalg::norm;
-use quantity::{QuantityArray1, QuantityScalar};
+use quantity::si::{SINumber, SIArray1};
 use std::sync::Arc;
 
 const MAX_ITER_TP: usize = 400;
 const TOL_TP: f64 = 1e-8;
 
 /// # Flash calculations
-impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
+impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     /// Perform a Tp-flash calculation. If no initial values are
     /// given, the solution is initialized using a stability analysis.
     ///
@@ -20,10 +19,10 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     /// containing non-volatile components (e.g. ions).
     pub fn tp_flash(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
-        pressure: QuantityScalar<U>,
-        feed: &QuantityArray1<U>,
-        initial_state: Option<&PhaseEquilibrium<U, E, 2>>,
+        temperature: SINumber,
+        pressure: SINumber,
+        feed: &SIArray1,
+        initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
     ) -> EosResult<Self> {
@@ -39,7 +38,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 }
 
 /// # Flash calculations
-impl<U: EosUnit, E: EquationOfState> State<U, E> {
+impl<E: EquationOfState> State<E> {
     /// Perform a Tp-flash calculation using the [State] as feed.
     /// If no initial values are given, the solution is initialized
     /// using a stability analysis.
@@ -48,10 +47,10 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// containing non-volatile components (e.g. ions).
     pub fn tp_flash(
         &self,
-        initial_state: Option<&PhaseEquilibrium<U, E, 2>>,
+        initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
-    ) -> EosResult<PhaseEquilibrium<U, E, 2>> {
+    ) -> EosResult<PhaseEquilibrium<E, 2>> {
         // set options
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_TP, TOL_TP);
 
@@ -149,7 +148,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         Ok(new_vle_state)
     }
 
-    fn tangent_plane_distance(&self, trial_state: &State<U, E>) -> f64 {
+    fn tangent_plane_distance(&self, trial_state: &State<E>) -> f64 {
         let ln_phi_z = self.ln_phi();
         let ln_phi_w = trial_state.ln_phi();
         let z = &self.molefracs;
@@ -158,10 +157,10 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 }
 
-impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
+impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     fn accelerated_successive_substitution(
         &mut self,
-        feed_state: &State<U, E>,
+        feed_state: &State<E>,
         iter: &mut usize,
         max_iter: usize,
         tol: f64,
@@ -226,7 +225,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 
     fn successive_substitution(
         &mut self,
-        feed_state: &State<U, E>,
+        feed_state: &State<E>,
         iterations: usize,
         iter: &mut usize,
         k_vec: &mut Option<&mut Array2<f64>>,
@@ -284,7 +283,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         Ok(false)
     }
 
-    fn update_states(&mut self, feed_state: &State<U, E>, k: &Array1<f64>) -> EosResult<()> {
+    fn update_states(&mut self, feed_state: &State<E>, k: &Array1<f64>) -> EosResult<()> {
         // calculate vapor phase fraction using Rachford-Rice algorithm
         let mut beta = self.vapor_phase_fraction();
         beta = rachford_rice(&feed_state.molefracs, k, Some(beta))?;
@@ -296,7 +295,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         Ok(())
     }
 
-    fn vle_init_stability(feed_state: &State<U, E>) -> EosResult<Self> {
+    fn vle_init_stability(feed_state: &State<E>) -> EosResult<Self> {
         let mut stable_states = feed_state.stability_analysis(SolverOptions::default())?;
         let state1 = stable_states.pop();
         let state2 = stable_states.pop();

@@ -1,9 +1,8 @@
 use super::{DensityInitialization, State};
 use crate::equation_of_state::EquationOfState;
 use crate::errors::EosResult;
-use crate::EosUnit;
 use ndarray::Array1;
-use quantity::{QuantityArray1, QuantityScalar};
+use quantity::si::{SIArray1, SINumber};
 use std::sync::Arc;
 
 /// A simple tool to construct [State]s with arbitrary input parameters.
@@ -53,24 +52,24 @@ use std::sync::Arc;
 /// # Ok(())
 /// # }
 /// ```
-pub struct StateBuilder<'a, U: EosUnit, E: EquationOfState> {
+pub struct StateBuilder<'a, E: EquationOfState> {
     eos: Arc<E>,
-    temperature: Option<QuantityScalar<U>>,
-    volume: Option<QuantityScalar<U>>,
-    density: Option<QuantityScalar<U>>,
-    partial_density: Option<&'a QuantityArray1<U>>,
-    total_moles: Option<QuantityScalar<U>>,
-    moles: Option<&'a QuantityArray1<U>>,
+    temperature: Option<SINumber>,
+    volume: Option<SINumber>,
+    density: Option<SINumber>,
+    partial_density: Option<&'a SIArray1>,
+    total_moles: Option<SINumber>,
+    moles: Option<&'a SIArray1>,
     molefracs: Option<&'a Array1<f64>>,
-    pressure: Option<QuantityScalar<U>>,
-    molar_enthalpy: Option<QuantityScalar<U>>,
-    molar_entropy: Option<QuantityScalar<U>>,
-    molar_internal_energy: Option<QuantityScalar<U>>,
-    density_initialization: DensityInitialization<U>,
-    initial_temperature: Option<QuantityScalar<U>>,
+    pressure: Option<SINumber>,
+    molar_enthalpy: Option<SINumber>,
+    molar_entropy: Option<SINumber>,
+    molar_internal_energy: Option<SINumber>,
+    density_initialization: DensityInitialization,
+    initial_temperature: Option<SINumber>,
 }
 
-impl<'a, U: EosUnit, E: EquationOfState> StateBuilder<'a, U, E> {
+impl<'a, E: EquationOfState> StateBuilder<'a, E> {
     /// Create a new `StateBuilder` for the given equation of state.
     pub fn new(eos: &Arc<E>) -> Self {
         StateBuilder {
@@ -92,37 +91,37 @@ impl<'a, U: EosUnit, E: EquationOfState> StateBuilder<'a, U, E> {
     }
 
     /// Provide the temperature for the new state.
-    pub fn temperature(mut self, temperature: QuantityScalar<U>) -> Self {
+    pub fn temperature(mut self, temperature: SINumber) -> Self {
         self.temperature = Some(temperature);
         self
     }
 
     /// Provide the volume for the new state.
-    pub fn volume(mut self, volume: QuantityScalar<U>) -> Self {
+    pub fn volume(mut self, volume: SINumber) -> Self {
         self.volume = Some(volume);
         self
     }
 
     /// Provide the density for the new state.
-    pub fn density(mut self, density: QuantityScalar<U>) -> Self {
+    pub fn density(mut self, density: SINumber) -> Self {
         self.density = Some(density);
         self
     }
 
     /// Provide partial densities for the new state.
-    pub fn partial_density(mut self, partial_density: &'a QuantityArray1<U>) -> Self {
+    pub fn partial_density(mut self, partial_density: &'a SIArray1) -> Self {
         self.partial_density = Some(partial_density);
         self
     }
 
     /// Provide the total moles for the new state.
-    pub fn total_moles(mut self, total_moles: QuantityScalar<U>) -> Self {
+    pub fn total_moles(mut self, total_moles: SINumber) -> Self {
         self.total_moles = Some(total_moles);
         self
     }
 
     /// Provide the moles for the new state.
-    pub fn moles(mut self, moles: &'a QuantityArray1<U>) -> Self {
+    pub fn moles(mut self, moles: &'a SIArray1) -> Self {
         self.moles = Some(moles);
         self
     }
@@ -134,25 +133,25 @@ impl<'a, U: EosUnit, E: EquationOfState> StateBuilder<'a, U, E> {
     }
 
     /// Provide the pressure for the new state.
-    pub fn pressure(mut self, pressure: QuantityScalar<U>) -> Self {
+    pub fn pressure(mut self, pressure: SINumber) -> Self {
         self.pressure = Some(pressure);
         self
     }
 
     /// Provide the molar enthalpy for the new state.
-    pub fn molar_enthalpy(mut self, molar_enthalpy: QuantityScalar<U>) -> Self {
+    pub fn molar_enthalpy(mut self, molar_enthalpy: SINumber) -> Self {
         self.molar_enthalpy = Some(molar_enthalpy);
         self
     }
 
     /// Provide the molar entropy for the new state.
-    pub fn molar_entropy(mut self, molar_entropy: QuantityScalar<U>) -> Self {
+    pub fn molar_entropy(mut self, molar_entropy: SINumber) -> Self {
         self.molar_entropy = Some(molar_entropy);
         self
     }
 
     /// Provide the molar internal energy for the new state.
-    pub fn molar_internal_energy(mut self, molar_internal_energy: QuantityScalar<U>) -> Self {
+    pub fn molar_internal_energy(mut self, molar_internal_energy: SINumber) -> Self {
         self.molar_internal_energy = Some(molar_internal_energy);
         self
     }
@@ -170,19 +169,19 @@ impl<'a, U: EosUnit, E: EquationOfState> StateBuilder<'a, U, E> {
     }
 
     /// Provide an initial density used in density iterations.
-    pub fn initial_density(mut self, initial_density: QuantityScalar<U>) -> Self {
+    pub fn initial_density(mut self, initial_density: SINumber) -> Self {
         self.density_initialization = DensityInitialization::InitialDensity(initial_density);
         self
     }
 
     /// Provide an initial temperature used in the Newton solver.
-    pub fn initial_temperature(mut self, initial_temperature: QuantityScalar<U>) -> Self {
+    pub fn initial_temperature(mut self, initial_temperature: SINumber) -> Self {
         self.initial_temperature = Some(initial_temperature);
         self
     }
 
     /// Try to build the state with the given inputs.
-    pub fn build(self) -> EosResult<State<U, E>> {
+    pub fn build(self) -> EosResult<State<E>> {
         State::new(
             &self.eos,
             self.temperature,
@@ -202,7 +201,7 @@ impl<'a, U: EosUnit, E: EquationOfState> StateBuilder<'a, U, E> {
     }
 }
 
-impl<'a, U: EosUnit, E: EquationOfState> Clone for StateBuilder<'a, U, E> {
+impl<'a, E: EquationOfState> Clone for StateBuilder<'a, E> {
     fn clone(&self) -> Self {
         Self {
             eos: self.eos.clone(),

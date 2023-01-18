@@ -14,7 +14,7 @@ use cache::Cache;
 use ndarray::prelude::*;
 use num_dual::linalg::{norm, LU};
 use num_dual::*;
-use quantity::{QuantityArray1, QuantityScalar};
+use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::convert::TryFrom;
 use std::fmt;
 use std::sync::{Arc, Mutex};
@@ -27,13 +27,13 @@ pub use properties::{Contributions, StateVec};
 
 /// Initial values in a density iteration.
 #[derive(Clone, Copy)]
-pub enum DensityInitialization<U: EosUnit> {
+pub enum DensityInitialization {
     /// Calculate a vapor phase by initializing using the ideal gas.
     Vapor,
     /// Calculate a liquid phase by using the `max_density`.
     Liquid,
     /// Use the given density as initial value.
-    InitialDensity(QuantityScalar<U>),
+    InitialDensity(SINumber),
     /// Calculate the most stable phase by calculating both a vapor and a liquid
     /// and return the one with the lower molar Gibbs energy.
     None,
@@ -120,21 +120,21 @@ impl<D: DualNum<f64>> StateHD<D> {
 /// + [Stability analysis](#stability-analysis)
 /// + [Flash calculations](#flash-calculations)
 #[derive(Debug)]
-pub struct State<U, E> {
+pub struct State<E> {
     /// Equation of state
     pub eos: Arc<E>,
     /// Temperature $T$
-    pub temperature: QuantityScalar<U>,
+    pub temperature: SINumber,
     /// Volume $V$
-    pub volume: QuantityScalar<U>,
+    pub volume: SINumber,
     /// Mole numbers $N_i$
-    pub moles: QuantityArray1<U>,
+    pub moles: SIArray1,
     /// Total number of moles $N=\sum_iN_i$
-    pub total_moles: QuantityScalar<U>,
+    pub total_moles: SINumber,
     /// Partial densities $\rho_i=\frac{N_i}{V}$
-    pub partial_density: QuantityArray1<U>,
+    pub partial_density: SIArray1,
     /// Total density $\rho=\frac{N}{V}=\sum_i\rho_i$
-    pub density: QuantityScalar<U>,
+    pub density: SINumber,
     /// Mole fractions $x_i=\frac{N_i}{N}=\frac{\rho_i}{\rho}$
     pub molefracs: Array1<f64>,
     /// Reduced temperature
@@ -147,7 +147,7 @@ pub struct State<U, E> {
     cache: Mutex<Cache>,
 }
 
-impl<U: Clone, E> Clone for State<U, E> {
+impl<E> Clone for State<E> {
     fn clone(&self) -> Self {
         Self {
             eos: self.eos.clone(),
@@ -166,10 +166,10 @@ impl<U: Clone, E> Clone for State<U, E> {
     }
 }
 
-impl<U, E> fmt::Display for State<U, E>
+impl<E> fmt::Display for State<E>
 where
-    QuantityScalar<U>: fmt::Display,
-    QuantityArray1<U>: fmt::Display,
+    SINumber: fmt::Display,
+    SIArray1: fmt::Display,
     E: EquationOfState,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -198,11 +198,11 @@ pub enum Derivative {
 }
 
 impl Derivative {
-    pub fn reference<U: EosUnit>(&self) -> QuantityScalar<U> {
+    pub fn reference(&self) -> SINumber {
         match self {
-            Derivative::DV => U::reference_volume(),
-            Derivative::DT => U::reference_temperature(),
-            Derivative::DN(_) => U::reference_moles(),
+            Derivative::DV => SIUnit::reference_volume(),
+            Derivative::DT => SIUnit::reference_temperature(),
+            Derivative::DN(_) => SIUnit::reference_moles(),
         }
     }
 }
@@ -217,7 +217,7 @@ pub(crate) enum PartialDerivative {
 }
 
 /// # State constructors
-impl<U: EosUnit, E: EquationOfState> State<U, E> {
+impl<E: EquationOfState> State<E> {
     /// Return a new `State` given a temperature, an array of mole numbers and a volume.
     ///
     /// This function will perform a validation of the given properties, i.e. test for signs
@@ -225,9 +225,9 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// densities are below the maximum packing fraction.
     pub fn new_nvt(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
-        volume: QuantityScalar<U>,
-        moles: &QuantityArray1<U>,
+        temperature: SINumber,
+        volume: SINumber,
+        moles: &SIArray1,
     ) -> EosResult<Self> {
         eos.validate_moles(Some(moles))?;
         validate(temperature, volume, moles)?;
@@ -237,18 +237,20 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     pub(super) fn new_nvt_unchecked(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
-        volume: QuantityScalar<U>,
-        moles: &QuantityArray1<U>,
+        temperature: SINumber,
+        volume: SINumber,
+        moles: &SIArray1,
     ) -> Self {
-        let t = temperature.to_reduced(U::reference_temperature()).unwrap();
-        let v = volume.to_reduced(U::reference_volume()).unwrap();
-        let m = moles.to_reduced(U::reference_moles()).unwrap();
+        let t = temperature
+            .to_reduced(SIUnit::reference_temperature())
+            .unwrap();
+        let v = volume.to_reduced(SIUnit::reference_volume()).unwrap();
+        let m = moles.to_reduced(SIUnit::reference_moles()).unwrap();
 
         let total_moles = moles.sum();
         let partial_density = moles / volume;
         let density = total_moles / volume;
-        let molefracs = &m / total_moles.to_reduced(U::reference_moles()).unwrap();
+        let molefracs = &m / total_moles.to_reduced(SIUnit::reference_moles()).unwrap();
 
         State {
             eos: eos.clone(),
@@ -272,13 +274,14 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// This function will perform a validation of the given properties, i.e. test for signs
     /// and if values are finite. It will **not** validate physics, i.e. if the resulting
     /// densities are below the maximum packing fraction.
-    pub fn new_pure(
-        eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
-        density: QuantityScalar<U>,
-    ) -> EosResult<Self> {
-        let moles = arr1(&[1.0]) * U::reference_moles();
-        Self::new_nvt(eos, temperature, U::reference_moles() / density, &moles)
+    pub fn new_pure(eos: &Arc<E>, temperature: SINumber, density: SINumber) -> EosResult<Self> {
+        let moles = arr1(&[1.0]) * SIUnit::reference_moles();
+        Self::new_nvt(
+            eos,
+            temperature,
+            SIUnit::reference_moles() / density,
+            &moles,
+        )
     }
 
     /// Return a new `State` for the combination of inputs.
@@ -297,37 +300,37 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// When the state cannot be created using the combination of inputs.
     pub fn new(
         eos: &Arc<E>,
-        temperature: Option<QuantityScalar<U>>,
-        volume: Option<QuantityScalar<U>>,
-        density: Option<QuantityScalar<U>>,
-        partial_density: Option<&QuantityArray1<U>>,
-        total_moles: Option<QuantityScalar<U>>,
-        moles: Option<&QuantityArray1<U>>,
+        temperature: Option<SINumber>,
+        volume: Option<SINumber>,
+        density: Option<SINumber>,
+        partial_density: Option<&SIArray1>,
+        total_moles: Option<SINumber>,
+        moles: Option<&SIArray1>,
         molefracs: Option<&Array1<f64>>,
-        pressure: Option<QuantityScalar<U>>,
-        molar_enthalpy: Option<QuantityScalar<U>>,
-        molar_entropy: Option<QuantityScalar<U>>,
-        molar_internal_energy: Option<QuantityScalar<U>>,
-        density_initialization: DensityInitialization<U>,
-        initial_temperature: Option<QuantityScalar<U>>,
+        pressure: Option<SINumber>,
+        molar_enthalpy: Option<SINumber>,
+        molar_entropy: Option<SINumber>,
+        molar_internal_energy: Option<SINumber>,
+        density_initialization: DensityInitialization,
+        initial_temperature: Option<SINumber>,
     ) -> EosResult<Self> {
         // Check if the provided densities have correct units.
         if let DensityInitialization::InitialDensity(rho0) = density_initialization {
-            if !rho0.has_unit(&U::reference_density()) {
+            if !rho0.has_unit(&SIUnit::reference_density()) {
                 return Err(EosError::UndeterminedState(String::from(
                     "The provided initial density has to be the molar density",
                 )));
             }
         }
         if let Some(rho) = density {
-            if !rho.has_unit(&U::reference_density()) {
+            if !rho.has_unit(&SIUnit::reference_density()) {
                 return Err(EosError::UndeterminedState(String::from(
                     "The provided density has to be the molar density",
                 )));
             }
         }
         if let Some(rho) = partial_density {
-            if !rho.has_unit(&U::reference_density()) {
+            if !rho.has_unit(&SIUnit::reference_density()) {
                 return Err(EosError::UndeterminedState(String::from(
                     "The provided partial density has to be the molar density",
                 )));
@@ -386,7 +389,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
         // If no extensive property is given, moles is set to the reference value.
         if let (None, None) = (volume, n) {
-            n = Some(U::reference_moles())
+            n = Some(SIUnit::reference_moles())
         }
         let n_i = n.map(|n| &x_u * n);
         let v = volume.or_else(|| rho.and_then(|d| n.map(|n| n / d)));
@@ -429,10 +432,10 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// influence the calculation with respect to the possible solutions.
     pub fn new_npt(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
-        pressure: QuantityScalar<U>,
-        moles: &QuantityArray1<U>,
-        density_initialization: DensityInitialization<U>,
+        temperature: SINumber,
+        pressure: SINumber,
+        moles: &SIArray1,
+        density_initialization: DensityInitialization,
     ) -> EosResult<Self> {
         // calculate state from initial density or given phase
         match density_initialization {
@@ -445,7 +448,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                     temperature,
                     pressure,
                     moles,
-                    pressure / temperature / U::gas_constant(),
+                    pressure / temperature / SIUnit::gas_constant(),
                 )
             }
             DensityInitialization::Liquid => {
@@ -464,13 +467,13 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         let max_density = eos.max_density(Some(moles))?;
         let liquid = density_iteration(eos, temperature, pressure, moles, max_density);
 
-        if pressure < max_density * temperature * U::gas_constant() {
+        if pressure < max_density * temperature * SIUnit::gas_constant() {
             let vapor = density_iteration(
                 eos,
                 temperature,
                 pressure,
                 moles,
-                pressure / temperature / U::gas_constant(),
+                pressure / temperature / SIUnit::gas_constant(),
             );
             match (&liquid, &vapor) {
                 (Ok(_), Err(_)) => liquid,
@@ -496,13 +499,13 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// Return a new `State` for given pressure $p$, volume $V$, temperature $T$ and composition $x_i$.
     pub fn new_npvx(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
-        pressure: QuantityScalar<U>,
-        volume: QuantityScalar<U>,
+        temperature: SINumber,
+        pressure: SINumber,
+        volume: SINumber,
         molefracs: &Array1<f64>,
-        density_initialization: DensityInitialization<U>,
+        density_initialization: DensityInitialization,
     ) -> EosResult<Self> {
-        let moles = molefracs * U::reference_moles();
+        let moles = molefracs * SIUnit::reference_moles();
         let state = Self::new_npt(eos, temperature, pressure, &moles, density_initialization)?;
         let moles = state.partial_density * volume;
         Self::new_nvt(eos, temperature, volume, &moles)
@@ -511,13 +514,13 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// Return a new `State` for given pressure $p$ and molar enthalpy $h$.
     pub fn new_nph(
         eos: &Arc<E>,
-        pressure: QuantityScalar<U>,
-        molar_enthalpy: QuantityScalar<U>,
-        moles: &QuantityArray1<U>,
-        density_initialization: DensityInitialization<U>,
-        initial_temperature: Option<QuantityScalar<U>>,
+        pressure: SINumber,
+        molar_enthalpy: SINumber,
+        moles: &SIArray1,
+        density_initialization: DensityInitialization,
+        initial_temperature: Option<SINumber>,
     ) -> EosResult<Self> {
-        let t0 = initial_temperature.unwrap_or(298.15 * U::reference_temperature());
+        let t0 = initial_temperature.unwrap_or(298.15 * SIUnit::reference_temperature());
         let mut density = density_initialization;
         let f = |x0| {
             let s = State::new_npt(eos, x0, pressure, moles, density)?;
@@ -526,16 +529,16 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             density = DensityInitialization::InitialDensity(s.density);
             Ok((fx, dfx, s))
         };
-        newton(t0, f, 1.0e-8 * U::reference_temperature())
+        newton(t0, f, 1.0e-8 * SIUnit::reference_temperature())
     }
 
     /// Return a new `State` for given temperature $T$ and molar enthalpy $h$.
     pub fn new_nth(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
-        molar_enthalpy: QuantityScalar<U>,
-        moles: &QuantityArray1<U>,
-        density_initialization: DensityInitialization<U>,
+        temperature: SINumber,
+        molar_enthalpy: SINumber,
+        moles: &SIArray1,
+        density_initialization: DensityInitialization,
     ) -> EosResult<Self> {
         let rho0 = match density_initialization {
             DensityInitialization::InitialDensity(r) => r,
@@ -553,16 +556,16 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             let fx = s.molar_enthalpy(Contributions::Total) - molar_enthalpy;
             Ok((fx, dfx, s))
         };
-        newton(rho0, f, 1.0e-12 * U::reference_density())
+        newton(rho0, f, 1.0e-12 * SIUnit::reference_density())
     }
 
     /// Return a new `State` for given temperature $T$ and molar entropy $s$.
     pub fn new_nts(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
-        molar_entropy: QuantityScalar<U>,
-        moles: &QuantityArray1<U>,
-        density_initialization: DensityInitialization<U>,
+        temperature: SINumber,
+        molar_entropy: SINumber,
+        moles: &SIArray1,
+        density_initialization: DensityInitialization,
     ) -> EosResult<Self> {
         let rho0 = match density_initialization {
             DensityInitialization::InitialDensity(r) => r,
@@ -577,19 +580,19 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             let fx = s.molar_entropy(Contributions::Total) - molar_entropy;
             Ok((fx, dfx, s))
         };
-        newton(rho0, f, 1.0e-12 * U::reference_density())
+        newton(rho0, f, 1.0e-12 * SIUnit::reference_density())
     }
 
     /// Return a new `State` for given pressure $p$ and molar entropy $s$.
     pub fn new_nps(
         eos: &Arc<E>,
-        pressure: QuantityScalar<U>,
-        molar_entropy: QuantityScalar<U>,
-        moles: &QuantityArray1<U>,
-        density_initialization: DensityInitialization<U>,
-        initial_temperature: Option<QuantityScalar<U>>,
+        pressure: SINumber,
+        molar_entropy: SINumber,
+        moles: &SIArray1,
+        density_initialization: DensityInitialization,
+        initial_temperature: Option<SINumber>,
     ) -> EosResult<Self> {
-        let t0 = initial_temperature.unwrap_or(298.15 * U::reference_temperature());
+        let t0 = initial_temperature.unwrap_or(298.15 * SIUnit::reference_temperature());
         let mut density = density_initialization;
         let f = |x0| {
             let s = State::new_npt(eos, x0, pressure, moles, density)?;
@@ -598,52 +601,49 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             density = DensityInitialization::InitialDensity(s.density);
             Ok((fx, dfx, s))
         };
-        newton(t0, f, 1.0e-8 * U::reference_temperature())
+        newton(t0, f, 1.0e-8 * SIUnit::reference_temperature())
     }
 
     /// Return a new `State` for given volume $V$ and molar internal energy $u$.
     pub fn new_nvu(
         eos: &Arc<E>,
-        volume: QuantityScalar<U>,
-        molar_internal_energy: QuantityScalar<U>,
-        moles: &QuantityArray1<U>,
-        initial_temperature: Option<QuantityScalar<U>>,
+        volume: SINumber,
+        molar_internal_energy: SINumber,
+        moles: &SIArray1,
+        initial_temperature: Option<SINumber>,
     ) -> EosResult<Self> {
-        let t0 = initial_temperature.unwrap_or(298.15 * U::reference_temperature());
+        let t0 = initial_temperature.unwrap_or(298.15 * SIUnit::reference_temperature());
         let f = |x0| {
             let s = State::new_nvt(eos, x0, volume, moles)?;
             let fx = s.molar_internal_energy(Contributions::Total) - molar_internal_energy;
             let dfx = s.c_v(Contributions::Total);
             Ok((fx, dfx, s))
         };
-        newton(t0, f, 1.0e-8 * U::reference_temperature())
+        newton(t0, f, 1.0e-8 * SIUnit::reference_temperature())
     }
 
     /// Update the state with the given temperature
-    pub fn update_temperature(&self, temperature: QuantityScalar<U>) -> EosResult<Self> {
+    pub fn update_temperature(&self, temperature: SINumber) -> EosResult<Self> {
         Self::new_nvt(&self.eos, temperature, self.volume, &self.moles)
     }
 
     /// Update the state with the given chemical potential.
-    pub fn update_chemical_potential(
-        &mut self,
-        chemical_potential: &QuantityArray1<U>,
-    ) -> EosResult<()> {
+    pub fn update_chemical_potential(&mut self, chemical_potential: &SIArray1) -> EosResult<()> {
         for _ in 0..50 {
             let dmu_drho = self.dmu_dni(Contributions::Total) * self.volume;
             let f = self.chemical_potential(Contributions::Total) - chemical_potential;
-            let dmu_drho_r =
-                dmu_drho.to_reduced(U::reference_molar_energy() / U::reference_density())?;
-            let f_r = f.to_reduced(U::reference_molar_energy())?;
+            let dmu_drho_r = dmu_drho
+                .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
+            let f_r = f.to_reduced(SIUnit::reference_molar_energy())?;
             let rho = &self.partial_density
-                - &(LU::new(dmu_drho_r)?.solve(&f_r) * U::reference_density());
+                - &(LU::new(dmu_drho_r)?.solve(&f_r) * SIUnit::reference_density());
             *self = State::new_nvt(
                 &self.eos,
                 self.temperature,
                 self.volume,
                 &(rho * self.volume),
             )?;
-            if norm(&f.to_reduced(U::reference_molar_energy())?) < 1e-8 {
+            if norm(&f.to_reduced(SIUnit::reference_molar_energy())?) < 1e-8 {
                 return Ok(());
             }
         }
@@ -653,7 +653,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     /// Update the state with the given molar Gibbs energy.
-    pub fn update_gibbs_energy(mut self, molar_gibbs_energy: QuantityScalar<U>) -> EosResult<Self> {
+    pub fn update_gibbs_energy(mut self, molar_gibbs_energy: SINumber) -> EosResult<Self> {
         for _ in 0..50 {
             let df = self.volume / self.density * self.dp_dv(Contributions::Total);
             let f = self.molar_gibbs_energy(Contributions::Total) - molar_gibbs_energy;
@@ -664,7 +664,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                 self.total_moles / rho,
                 &self.moles,
             )?;
-            if f.to_reduced(U::reference_molar_energy())?.abs() < 1e-8 {
+            if f.to_reduced(SIUnit::reference_molar_energy())?.abs() < 1e-8 {
                 return Ok(self);
             }
         }
@@ -742,22 +742,17 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 }
 
-fn is_close<U: EosUnit>(
-    x: QuantityScalar<U>,
-    y: QuantityScalar<U>,
-    atol: QuantityScalar<U>,
-    rtol: f64,
-) -> bool {
+fn is_close(x: SINumber, y: SINumber, atol: SINumber, rtol: f64) -> bool {
     (x - y).abs() <= atol + rtol * y.abs()
 }
 
-fn newton<U: EosUnit, E: EquationOfState, F>(
-    mut x0: QuantityScalar<U>,
+fn newton<E: EquationOfState, F>(
+    mut x0: SINumber,
     mut f: F,
-    atol: QuantityScalar<U>,
-) -> EosResult<State<U, E>>
+    atol: SINumber,
+) -> EosResult<State<E>>
 where
-    F: FnMut(QuantityScalar<U>) -> EosResult<(QuantityScalar<U>, QuantityScalar<U>, State<U, E>)>,
+    F: FnMut(SINumber) -> EosResult<(SINumber, SINumber, State<E>)>,
 {
     let rtol = 1e-10;
     let maxiter = 50;
@@ -781,14 +776,10 @@ where
 ///
 /// There is no validation of the physical state, e.g.
 /// if resulting densities are below maximum packing fraction.
-fn validate<U: EosUnit>(
-    temperature: QuantityScalar<U>,
-    volume: QuantityScalar<U>,
-    moles: &QuantityArray1<U>,
-) -> EosResult<()> {
-    let t = temperature.to_reduced(U::reference_temperature())?;
-    let v = volume.to_reduced(U::reference_volume())?;
-    let m = moles.to_reduced(U::reference_moles())?;
+fn validate(temperature: SINumber, volume: SINumber, moles: &SIArray1) -> EosResult<()> {
+    let t = temperature.to_reduced(SIUnit::reference_temperature())?;
+    let v = volume.to_reduced(SIUnit::reference_volume())?;
+    let m = moles.to_reduced(SIUnit::reference_moles())?;
     if !t.is_finite() || t.is_sign_negative() {
         return Err(EosError::InvalidState(
             String::from("validate"),
@@ -816,20 +807,20 @@ fn validate<U: EosUnit>(
 }
 
 #[derive(Clone, Copy)]
-pub enum TPSpec<U> {
-    Temperature(QuantityScalar<U>),
-    Pressure(QuantityScalar<U>),
+pub enum TPSpec {
+    Temperature(SINumber),
+    Pressure(SINumber),
 }
 
-impl<U: EosUnit> TryFrom<QuantityScalar<U>> for TPSpec<U>
+impl TryFrom<SINumber> for TPSpec
 where
-    QuantityScalar<U>: std::fmt::Display,
+    SINumber: std::fmt::Display,
 {
     type Error = EosError;
-    fn try_from(quantity: QuantityScalar<U>) -> EosResult<Self> {
-        if quantity.has_unit(&U::reference_temperature()) {
+    fn try_from(quantity: SINumber) -> EosResult<Self> {
+        if quantity.has_unit(&SIUnit::reference_temperature()) {
             Ok(Self::Temperature(quantity))
-        } else if quantity.has_unit(&U::reference_pressure()) {
+        } else if quantity.has_unit(&SIUnit::reference_pressure()) {
             Ok(Self::Pressure(quantity))
         } else {
             Err(EosError::WrongUnits(

@@ -7,7 +7,7 @@ use ndarray::{arr1, arr2, Array1, Array2};
 use num_dual::linalg::{norm, smallest_ev, LU};
 use num_dual::{Dual, Dual3, Dual64, DualNum, DualVec64, HyperDual, StaticVec};
 use num_traits::{One, Zero};
-use quantity::{QuantityArray1, QuantityScalar};
+use quantity::si::{SINumber, SIArray1, SIUnit};
 use std::convert::TryFrom;
 use std::sync::Arc;
 
@@ -16,15 +16,15 @@ const MAX_ITER_CRIT_POINT_BINARY: usize = 200;
 const TOL_CRIT_POINT: f64 = 1e-8;
 
 /// # Critical points
-impl<U: EosUnit, E: EquationOfState> State<U, E> {
+impl<E: EquationOfState> State<E> {
     /// Calculate the pure component critical point of all components.
     pub fn critical_point_pure(
         eos: &Arc<E>,
-        initial_temperature: Option<QuantityScalar<U>>,
+        initial_temperature: Option<SINumber>,
         options: SolverOptions,
     ) -> EosResult<Vec<Self>>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         (0..eos.components())
             .map(|i| {
@@ -40,13 +40,13 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     pub fn critical_point_binary(
         eos: &Arc<E>,
-        temperature_or_pressure: QuantityScalar<U>,
-        initial_temperature: Option<QuantityScalar<U>>,
+        temperature_or_pressure: SINumber,
+        initial_temperature: Option<SINumber>,
         initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
     ) -> EosResult<Self>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         match TPSpec::try_from(temperature_or_pressure)? {
             TPSpec::Temperature(t) => {
@@ -65,18 +65,18 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// Calculate the critical point of a system for given moles.
     pub fn critical_point(
         eos: &Arc<E>,
-        moles: Option<&QuantityArray1<U>>,
-        initial_temperature: Option<QuantityScalar<U>>,
+        moles: Option<&SIArray1>,
+        initial_temperature: Option<SINumber>,
         options: SolverOptions,
     ) -> EosResult<Self>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         let moles = eos.validate_moles(moles)?;
         let trial_temperatures = [
-            300.0 * U::reference_temperature(),
-            700.0 * U::reference_temperature(),
-            500.0 * U::reference_temperature(),
+            300.0 * SIUnit::reference_temperature(),
+            700.0 * SIUnit::reference_temperature(),
+            500.0 * SIUnit::reference_temperature(),
         ];
         if let Some(t) = initial_temperature {
             return Self::critical_point_hkm(eos, &moles, t, options);
@@ -92,21 +92,21 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     fn critical_point_hkm(
         eos: &Arc<E>,
-        moles: &QuantityArray1<U>,
-        initial_temperature: QuantityScalar<U>,
+        moles: &SIArray1,
+        initial_temperature: SINumber,
         options: SolverOptions,
     ) -> EosResult<Self>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_CRIT_POINT, TOL_CRIT_POINT);
 
-        let mut t = initial_temperature.to_reduced(U::reference_temperature())?;
+        let mut t = initial_temperature.to_reduced(SIUnit::reference_temperature())?;
         let max_density = eos
             .max_density(Some(moles))?
-            .to_reduced(U::reference_density())?;
+            .to_reduced(SIUnit::reference_density())?;
         let mut rho = 0.3 * max_density;
-        let n = moles.to_reduced(U::reference_moles())?;
+        let n = moles.to_reduced(SIUnit::reference_moles())?;
 
         log_iter!(
             verbosity,
@@ -117,8 +117,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             verbosity,
             " {:4} |                | {:13.8} | {:12.8}",
             0,
-            t * U::reference_temperature(),
-            rho * U::reference_density(),
+            t * SIUnit::reference_temperature(),
+            rho * SIUnit::reference_density(),
         );
 
         for i in 1..=max_iter {
@@ -152,8 +152,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                 " {:4} | {:14.8e} | {:13.8} | {:12.8}",
                 i,
                 norm(&res),
-                t * U::reference_temperature(),
-                rho * U::reference_density(),
+                t * SIUnit::reference_temperature(),
+                rho * SIUnit::reference_density(),
             );
 
             // check convergence
@@ -165,8 +165,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                 );
                 return State::new_nvt(
                     eos,
-                    t * U::reference_temperature(),
-                    moles.sum() / (rho * U::reference_density()),
+                    t * SIUnit::reference_temperature(),
+                    moles.sum() / (rho * SIUnit::reference_density()),
                     moles,
                 );
             }
@@ -177,21 +177,21 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// Calculate the critical point of a binary system for given temperature.
     fn critical_point_binary_t(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
+        temperature: SINumber,
         initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
     ) -> EosResult<Self>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         let (max_iter, tol, verbosity) =
             options.unwrap_or(MAX_ITER_CRIT_POINT_BINARY, TOL_CRIT_POINT);
 
-        let t = temperature.to_reduced(U::reference_temperature())?;
+        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
         let x = StaticVec::new_vec(initial_molefracs.unwrap_or([0.5, 0.5]));
         let max_density = eos
-            .max_density(Some(&(arr1(x.raw_array()) * U::reference_moles())))?
-            .to_reduced(U::reference_density())?;
+            .max_density(Some(&(arr1(x.raw_array()) * SIUnit::reference_moles())))?
+            .to_reduced(SIUnit::reference_density())?;
         let mut rho = x * 0.3 * max_density;
 
         log_iter!(
@@ -203,8 +203,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             verbosity,
             " {:4} |                | {:12.8} | {:12.8}",
             0,
-            rho[0] * U::reference_density(),
-            rho[1] * U::reference_density(),
+            rho[0] * SIUnit::reference_density(),
+            rho[1] * SIUnit::reference_density(),
         );
 
         for i in 1..=max_iter {
@@ -238,8 +238,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                 " {:4} | {:14.8e} | {:12.8} | {:12.8}",
                 i,
                 res.norm(),
-                rho[0] * U::reference_density(),
-                rho[1] * U::reference_density(),
+                rho[0] * SIUnit::reference_density(),
+                rho[1] * SIUnit::reference_density(),
             );
 
             // check convergence
@@ -251,9 +251,9 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                 );
                 return State::new_nvt(
                     eos,
-                    t * U::reference_temperature(),
-                    U::reference_volume(),
-                    &(arr1(rho.raw_array()) * U::reference_moles()),
+                    t * SIUnit::reference_temperature(),
+                    SIUnit::reference_volume(),
+                    &(arr1(rho.raw_array()) * SIUnit::reference_moles()),
                 );
             }
         }
@@ -263,26 +263,26 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// Calculate the critical point of a binary system for given pressure.
     fn critical_point_binary_p(
         eos: &Arc<E>,
-        pressure: QuantityScalar<U>,
-        initial_temperature: Option<QuantityScalar<U>>,
+        pressure: SINumber,
+        initial_temperature: Option<SINumber>,
         initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
     ) -> EosResult<Self>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         let (max_iter, tol, verbosity) =
             options.unwrap_or(MAX_ITER_CRIT_POINT_BINARY, TOL_CRIT_POINT);
 
-        let p = pressure.to_reduced(U::reference_pressure())?;
+        let p = pressure.to_reduced(SIUnit::reference_pressure())?;
         let mut t = initial_temperature
-            .map(|t| t.to_reduced(U::reference_temperature()))
+            .map(|t| t.to_reduced(SIUnit::reference_temperature()))
             .transpose()?
             .unwrap_or(300.0);
         let x = StaticVec::new_vec(initial_molefracs.unwrap_or([0.5, 0.5]));
         let max_density = eos
-            .max_density(Some(&(arr1(x.raw_array()) * U::reference_moles())))?
-            .to_reduced(U::reference_density())?;
+            .max_density(Some(&(arr1(x.raw_array()) * SIUnit::reference_moles())))?
+            .to_reduced(SIUnit::reference_density())?;
         let mut rho = x * 0.3 * max_density;
 
         log_iter!(
@@ -294,9 +294,9 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             verbosity,
             " {:4} |                | {:13.8} | {:12.8} | {:12.8}",
             0,
-            t * U::reference_temperature(),
-            rho[0] * U::reference_density(),
-            rho[1] * U::reference_density(),
+            t * SIUnit::reference_temperature(),
+            rho[0] * SIUnit::reference_density(),
+            rho[1] * SIUnit::reference_density(),
         );
 
         for i in 1..=max_iter {
@@ -338,9 +338,9 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                 " {:4} | {:14.8e} | {:13.8} | {:12.8} | {:12.8}",
                 i,
                 norm(&res),
-                t * U::reference_temperature(),
-                rho[0] * U::reference_density(),
-                rho[1] * U::reference_density(),
+                t * SIUnit::reference_temperature(),
+                rho[0] * SIUnit::reference_density(),
+                rho[1] * SIUnit::reference_density(),
             );
 
             // check convergence
@@ -352,9 +352,9 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                 );
                 return State::new_nvt(
                     eos,
-                    t * U::reference_temperature(),
-                    U::reference_volume(),
-                    &(arr1(rho.raw_array()) * U::reference_moles()),
+                    t * SIUnit::reference_temperature(),
+                    SIUnit::reference_volume(),
+                    &(arr1(rho.raw_array()) * SIUnit::reference_moles()),
                 );
             }
         }
@@ -363,12 +363,12 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     pub fn spinodal(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
-        moles: Option<&QuantityArray1<U>>,
+        temperature: SINumber,
+        moles: Option<&SIArray1>,
         options: SolverOptions,
     ) -> EosResult<[Self; 2]>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         let critical_point = Self::critical_point(eos, moles, None, options)?;
         let moles = eos.validate_moles(moles)?;
@@ -392,27 +392,27 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     fn calculate_spinodal(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
-        moles: &QuantityArray1<U>,
-        density_initialization: DensityInitialization<U>,
+        temperature: SINumber,
+        moles: &SIArray1,
+        density_initialization: DensityInitialization,
         options: SolverOptions,
     ) -> EosResult<Self>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_CRIT_POINT, TOL_CRIT_POINT);
 
         let max_density = eos
             .max_density(Some(moles))?
-            .to_reduced(U::reference_density())?;
-        let t = temperature.to_reduced(U::reference_temperature())?;
+            .to_reduced(SIUnit::reference_density())?;
+        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
         let mut rho = match density_initialization {
             DensityInitialization::Vapor => 1e-5 * max_density,
             DensityInitialization::Liquid => max_density,
-            DensityInitialization::InitialDensity(rho) => rho.to_reduced(U::reference_density())?,
+            DensityInitialization::InitialDensity(rho) => rho.to_reduced(SIUnit::reference_density())?,
             DensityInitialization::None => unreachable!(),
         };
-        let n = moles.to_reduced(U::reference_moles())?;
+        let n = moles.to_reduced(SIUnit::reference_moles())?;
 
         log_iter!(verbosity, " iter |    residual    |       density        ");
         log_iter!(verbosity, "{:-<46}", "");
@@ -420,7 +420,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             verbosity,
             " {:4} |                | {:12.8}",
             0,
-            rho * U::reference_density(),
+            rho * SIUnit::reference_density(),
         );
 
         for i in 1..=max_iter {
@@ -444,7 +444,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                 " {:4} | {:14.8e} | {:12.8}",
                 i,
                 res.re.abs(),
-                rho * U::reference_density(),
+                rho * SIUnit::reference_density(),
             );
 
             // check convergence
@@ -457,7 +457,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                 return State::new_nvt(
                     eos,
                     temperature,
-                    moles.sum() / (rho * U::reference_density()),
+                    moles.sum() / (rho * SIUnit::reference_density()),
                     moles,
                 );
             }

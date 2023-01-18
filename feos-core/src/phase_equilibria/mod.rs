@@ -2,7 +2,7 @@ use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use crate::state::{Contributions, DensityInitialization, State};
 use crate::EosUnit;
-use quantity::{QuantityArray1, QuantityScalar};
+use quantity::si::{SINumber, SIArray1, SIUnit};
 use std::fmt;
 use std::fmt::Write;
 use std::sync::Arc;
@@ -101,18 +101,18 @@ impl SolverOptions {
 /// + [Pure component phase equilibria](#pure-component-phase-equilibria)
 /// + [Utility functions](#utility-functions)
 #[derive(Debug)]
-pub struct PhaseEquilibrium<U, E, const N: usize>([State<U, E>; N]);
+pub struct PhaseEquilibrium<E, const N: usize>([State<E>; N]);
 
-impl<U: Clone, E, const N: usize> Clone for PhaseEquilibrium<U, E, N> {
+impl<E, const N: usize> Clone for PhaseEquilibrium<E, N> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }
 }
 
-impl<U, E, const N: usize> fmt::Display for PhaseEquilibrium<U, E, N>
+impl<E, const N: usize> fmt::Display for PhaseEquilibrium<E, N>
 where
-    QuantityScalar<U>: fmt::Display,
-    QuantityArray1<U>: fmt::Display,
+    SINumber: fmt::Display,
+    SIArray1: fmt::Display,
     E: EquationOfState,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -123,10 +123,10 @@ where
     }
 }
 
-impl<U, E, const N: usize> PhaseEquilibrium<U, E, N>
+impl<E, const N: usize> PhaseEquilibrium<E, N>
 where
-    QuantityScalar<U>: fmt::Display,
-    QuantityArray1<U>: fmt::Display,
+    SINumber: fmt::Display,
+    SIArray1: fmt::Display,
     E: EquationOfState,
 {
     pub fn _repr_markdown_(&self) -> String {
@@ -161,32 +161,32 @@ where
     }
 }
 
-impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
-    pub fn vapor(&self) -> &State<U, E> {
+impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
+    pub fn vapor(&self) -> &State<E> {
         &self.0[0]
     }
 
-    pub fn liquid(&self) -> &State<U, E> {
+    pub fn liquid(&self) -> &State<E> {
         &self.0[1]
     }
 }
 
-impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 3> {
-    pub fn vapor(&self) -> &State<U, E> {
+impl<E: EquationOfState> PhaseEquilibrium<E, 3> {
+    pub fn vapor(&self) -> &State<E> {
         &self.0[0]
     }
 
-    pub fn liquid1(&self) -> &State<U, E> {
+    pub fn liquid1(&self) -> &State<E> {
         &self.0[1]
     }
 
-    pub fn liquid2(&self) -> &State<U, E> {
+    pub fn liquid2(&self) -> &State<E> {
         &self.0[2]
     }
 }
 
-impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
-    pub(super) fn from_states(state1: State<U, E>, state2: State<U, E>) -> Self {
+impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
+    pub(super) fn from_states(state1: State<E>, state2: State<E>) -> Self {
         let (vapor, liquid) = if state1.density < state2.density {
             (state1, state2)
         } else {
@@ -197,10 +197,10 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 
     pub(super) fn new_npt(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
-        pressure: QuantityScalar<U>,
-        vapor_moles: &QuantityArray1<U>,
-        liquid_moles: &QuantityArray1<U>,
+        temperature: SINumber,
+        pressure: SINumber,
+        vapor_moles: &SIArray1,
+        liquid_moles: &SIArray1,
     ) -> EosResult<Self> {
         let liquid = State::new_npt(
             eos,
@@ -226,11 +226,11 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     }
 }
 
-impl<U: EosUnit, E: EquationOfState, const N: usize> PhaseEquilibrium<U, E, N> {
+impl<E: EquationOfState, const N: usize> PhaseEquilibrium<E, N> {
     pub(super) fn update_pressure(
         mut self,
-        temperature: QuantityScalar<U>,
-        pressure: QuantityScalar<U>,
+        temperature: SINumber,
+        pressure: SINumber,
     ) -> EosResult<Self> {
         for s in self.0.iter_mut() {
             *s = State::new_npt(
@@ -246,8 +246,8 @@ impl<U: EosUnit, E: EquationOfState, const N: usize> PhaseEquilibrium<U, E, N> {
 
     pub(super) fn update_moles(
         &mut self,
-        pressure: QuantityScalar<U>,
-        moles: [&QuantityArray1<U>; N],
+        pressure: SINumber,
+        moles: [&SIArray1; N],
     ) -> EosResult<()> {
         for (i, s) in self.0.iter_mut().enumerate() {
             *s = State::new_npt(
@@ -263,7 +263,7 @@ impl<U: EosUnit, E: EquationOfState, const N: usize> PhaseEquilibrium<U, E, N> {
 
     pub fn update_chemical_potential(
         &mut self,
-        chemical_potential: &QuantityArray1<U>,
+        chemical_potential: &SIArray1,
     ) -> EosResult<()> {
         for s in self.0.iter_mut() {
             s.update_chemical_potential(chemical_potential)?;
@@ -271,8 +271,8 @@ impl<U: EosUnit, E: EquationOfState, const N: usize> PhaseEquilibrium<U, E, N> {
         Ok(())
     }
 
-    pub(super) fn total_gibbs_energy(&self) -> QuantityScalar<U> {
-        self.0.iter().fold(0.0 * U::reference_energy(), |acc, s| {
+    pub(super) fn total_gibbs_energy(&self) -> SINumber {
+        self.0.iter().fold(0.0 * SIUnit::reference_energy(), |acc, s| {
             acc + s.gibbs_energy(Contributions::Total)
         })
     }
@@ -281,7 +281,7 @@ impl<U: EosUnit, E: EquationOfState, const N: usize> PhaseEquilibrium<U, E, N> {
 const TRIVIAL_REL_DEVIATION: f64 = 1e-5;
 
 /// # Utility functions
-impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
+impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     pub(super) fn check_trivial_solution(self) -> EosResult<Self> {
         if Self::is_trivial_solution(self.vapor(), self.liquid()) {
             Err(EosError::TrivialSolution)
@@ -291,14 +291,14 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     }
 
     /// Check if the two states form a trivial solution
-    pub fn is_trivial_solution(state1: &State<U, E>, state2: &State<U, E>) -> bool {
+    pub fn is_trivial_solution(state1: &State<E>, state2: &State<E>) -> bool {
         let rho1 = state1
             .partial_density
-            .to_reduced(U::reference_density())
+            .to_reduced(SIUnit::reference_density())
             .unwrap();
         let rho2 = state2
             .partial_density
-            .to_reduced(U::reference_density())
+            .to_reduced(SIUnit::reference_density())
             .unwrap();
 
         rho1.iter()
