@@ -11,7 +11,8 @@ use num_dual::*;
 use petgraph::graph::{Graph, UnGraph};
 use petgraph::visit::EdgeRef;
 use petgraph::Directed;
-use quantity::{QuantityArray, QuantityArray1, QuantityScalar};
+// use quantity::{QuantityArray, SIArray1, SINumber};
+use quantity::si::{SIArray, SIArray1, SINumber, SIUnit};
 use std::borrow::Cow;
 use std::fmt;
 use std::ops::{AddAssign, Deref, MulAssign};
@@ -43,8 +44,8 @@ impl<F> Deref for DFT<F> {
     }
 }
 
-impl<T: MolarWeight<U>, U: EosUnit> MolarWeight<U> for DFT<T> {
-    fn molar_weight(&self) -> QuantityArray1<U> {
+impl<T: MolarWeight> MolarWeight for DFT<T> {
+    fn molar_weight(&self) -> SIArray1 {
         (self as &T).molar_weight()
     }
 }
@@ -199,20 +200,19 @@ pub trait HelmholtzEnergyFunctional: Sized + Send + Sync {
 
 impl<T: HelmholtzEnergyFunctional> DFT<T> {
     /// Calculate the grand potential density $\omega$.
-    pub fn grand_potential_density<U, D>(
+    pub fn grand_potential_density<D>(
         &self,
-        temperature: QuantityScalar<U>,
-        density: &QuantityArray<U, D::Larger>,
+        temperature: SINumber,
+        density: &SIArray<D::Larger>,
         convolver: &Arc<dyn Convolver<f64, D>>,
-    ) -> EosResult<QuantityArray<U, D>>
+    ) -> EosResult<SIArray<D>>
     where
-        U: EosUnit,
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,
     {
         // Calculate residual Helmholtz energy density and functional derivative
-        let t = temperature.to_reduced(U::reference_temperature())?;
-        let rho = density.to_reduced(U::reference_density())?;
+        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
+        let rho = density.to_reduced(SIUnit::reference_density())?;
         let (mut f, dfdrho) = self.functional_derivative(t, &rho, convolver)?;
 
         // Calculate the grand potential density
@@ -230,7 +230,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
             f += &(&rho.index_axis(Axis(0), segment.index()) * (0.5 * n as f64));
         }
 
-        Ok(f * t * U::reference_pressure())
+        Ok(f * t * SIUnit::reference_pressure())
     }
 
     pub(crate) fn ideal_gas_contribution<D>(

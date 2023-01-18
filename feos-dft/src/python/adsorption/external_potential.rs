@@ -2,12 +2,11 @@ use crate::adsorption::ExternalPotential;
 use numpy::PyArray1;
 use pyo3::prelude::*;
 use quantity::python::{PySIArray2, PySINumber};
-use quantity::si::*;
 
 /// A collection of external potentials.
 #[pyclass(name = "ExternalPotential")]
 #[derive(Clone)]
-pub struct PyExternalPotential(pub ExternalPotential<SIUnit>);
+pub struct PyExternalPotential(pub ExternalPotential);
 
 #[pymethods]
 #[allow(non_snake_case)]

@@ -7,28 +7,28 @@ use crate::profile::{DFTProfile, CUTOFF_RADIUS, MAX_POTENTIAL};
 use feos_core::{EosResult, EosUnit, State};
 use ndarray::prelude::*;
 use ndarray::Zip;
-use quantity::{QuantityArray2, QuantityArray4, QuantityScalar};
+use quantity::si::{SIArray2, SIArray4, SINumber, SIUnit};
 
 /// Parameters required to specify a 3D pore.
-pub struct Pore3D<U> {
-    system_size: [QuantityScalar<U>; 3],
+pub struct Pore3D {
+    system_size: [SINumber; 3],
     n_grid: [usize; 3],
-    coordinates: QuantityArray2<U>,
+    coordinates: SIArray2,
     sigma_ss: Array1<f64>,
     epsilon_k_ss: Array1<f64>,
     potential_cutoff: Option<f64>,
-    cutoff_radius: Option<QuantityScalar<U>>,
+    cutoff_radius: Option<SINumber>,
 }
 
-impl<U> Pore3D<U> {
+impl Pore3D {
     pub fn new(
-        system_size: [QuantityScalar<U>; 3],
+        system_size: [SINumber; 3],
         n_grid: [usize; 3],
-        coordinates: QuantityArray2<U>,
+        coordinates: SIArray2,
         sigma_ss: Array1<f64>,
         epsilon_k_ss: Array1<f64>,
         potential_cutoff: Option<f64>,
-        cutoff_radius: Option<QuantityScalar<U>>,
+        cutoff_radius: Option<SINumber>,
     ) -> Self {
         Self {
             system_size,
@@ -43,15 +43,15 @@ impl<U> Pore3D<U> {
 }
 
 /// Density profile and properties of a 3D confined system.
-pub type PoreProfile3D<U, F> = PoreProfile<U, Ix3, F>;
+pub type PoreProfile3D<F> = PoreProfile<Ix3, F>;
 
-impl<U: EosUnit> PoreSpecification<U, Ix3> for Pore3D<U> {
+impl PoreSpecification<Ix3> for Pore3D {
     fn initialize<F: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
-        bulk: &State<U, DFT<F>>,
-        density: Option<&QuantityArray4<U>>,
+        bulk: &State<DFT<F>>,
+        density: Option<&SIArray4>,
         external_potential: Option<&Array4<f64>>,
-    ) -> EosResult<PoreProfile3D<U, F>> {
+    ) -> EosResult<PoreProfile3D<F>> {
         let dft: &F = &bulk.eos;
 
         // generate grid
@@ -62,12 +62,14 @@ impl<U: EosUnit> PoreSpecification<U, Ix3> for Pore3D<U> {
         // move center of geometry of solute to box center
         let coordinates = Array2::from_shape_fn(self.coordinates.raw_dim(), |(i, j)| {
             (self.coordinates.get((i, j)))
-                .to_reduced(U::reference_length())
+                .to_reduced(SIUnit::reference_length())
                 .unwrap()
         });
 
         // temperature
-        let t = bulk.temperature.to_reduced(U::reference_temperature())?;
+        let t = bulk
+            .temperature
+            .to_reduced(SIUnit::reference_temperature())?;
 
         // calculate external potential
         let external_potential = external_potential.map_or_else(
@@ -104,14 +106,14 @@ impl<U: EosUnit> PoreSpecification<U, Ix3> for Pore3D<U> {
     }
 }
 
-pub fn external_potential_3d<U: EosUnit, F: FluidParameters>(
+pub fn external_potential_3d<F: FluidParameters>(
     functional: &F,
     axis: [&Axis; 3],
-    system_size: [QuantityScalar<U>; 3],
+    system_size: [SINumber; 3],
     coordinates: Array2<f64>,
     sigma_ss: &Array1<f64>,
     epsilon_ss: &Array1<f64>,
-    cutoff_radius: Option<QuantityScalar<U>>,
+    cutoff_radius: Option<SINumber>,
     potential_cutoff: Option<f64>,
     reduced_temperature: f64,
 ) -> EosResult<Array4<f64>> {
@@ -125,14 +127,14 @@ pub fn external_potential_3d<U: EosUnit, F: FluidParameters>(
     ));
 
     let system_size = [
-        system_size[0].to_reduced(U::reference_length())?,
-        system_size[1].to_reduced(U::reference_length())?,
-        system_size[2].to_reduced(U::reference_length())?,
+        system_size[0].to_reduced(SIUnit::reference_length())?,
+        system_size[1].to_reduced(SIUnit::reference_length())?,
+        system_size[2].to_reduced(SIUnit::reference_length())?,
     ];
 
     let cutoff_radius = cutoff_radius
-        .unwrap_or(CUTOFF_RADIUS * U::reference_length())
-        .to_reduced(U::reference_length())?;
+        .unwrap_or(CUTOFF_RADIUS * SIUnit::reference_length())
+        .to_reduced(SIUnit::reference_length())?;
 
     // square cut-off radius
     let cutoff_radius2 = cutoff_radius.powi(2);

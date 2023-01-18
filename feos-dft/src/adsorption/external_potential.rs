@@ -3,18 +3,18 @@ use crate::adsorption::fea_potential::calculate_fea_potential;
 use crate::functional::HelmholtzEnergyFunctional;
 #[cfg(feature = "rayon")]
 use crate::geometry::Geometry;
-use feos_core::EosUnit;
 use libm::tgamma;
 use ndarray::{Array1, Array2, Axis as Axis_nd};
+use quantity::si::SIUnit;
 #[cfg(feature = "rayon")]
-use quantity::{QuantityArray2, QuantityScalar};
+use quantity::si::{SIArray2, SINumber};
 use std::{f64::consts::PI, marker::PhantomData};
 
 const DELTA_STEELE: f64 = 3.35;
 
 /// A collection of external potentials.
 #[derive(Clone)]
-pub enum ExternalPotential<U> {
+pub enum ExternalPotential {
     /// Hard wall potential: $V_i^\mathrm{ext}(z)=\begin{cases}\infty&z\leq\sigma_{si}\\\\0&z>\sigma_{si}\end{cases},~~~~\sigma_{si}=\frac{1}{2}\left(\sigma_{ss}+\sigma_{ii}\right)$
     HardWall { sigma_ss: f64 },
     /// 9-3 Lennard-Jones potential: $V_i^\mathrm{ext}(z)=\frac{2\pi}{45} m_i\varepsilon_{si}\sigma_{si}^3\rho_s\left(2\left(\frac{\sigma_{si}}{z}\right)^9-15\left(\frac{\sigma_{si}}{z}\right)^3\right),~~~~\varepsilon_{si}=\sqrt{\varepsilon_{ss}\varepsilon_{ii}},~~~~\sigma_{si}=\frac{1}{2}\left(\sigma_{ss}+\sigma_{ii}\right)$
@@ -54,11 +54,11 @@ pub enum ExternalPotential<U> {
     /// Free-energy averaged potential:
     #[cfg(feature = "rayon")]
     FreeEnergyAveraged {
-        coordinates: QuantityArray2<U>,
+        coordinates: SIArray2,
         sigma_ss: Array1<f64>,
         epsilon_k_ss: Array1<f64>,
         pore_center: [f64; 3],
-        system_size: [QuantityScalar<U>; 3],
+        system_size: [SINumber; 3],
         n_grid: [usize; 2],
         cutoff_radius: Option<f64>,
     },
@@ -68,7 +68,7 @@ pub enum ExternalPotential<U> {
 
     /// Needed to keep `FreeEnergyAveraged` optional
     #[doc(hidden)]
-    Phantom(PhantomData<U>),
+    Phantom(PhantomData<SIUnit>),
 }
 
 /// Parameters of the fluid required to evaluate the external potential.
@@ -78,7 +78,7 @@ pub trait FluidParameters: HelmholtzEnergyFunctional {
 }
 
 #[allow(unused_variables)]
-impl<U: EosUnit> ExternalPotential<U> {
+impl ExternalPotential {
     // Evaluate the external potential in cartesian coordinates for a given grid and fluid parameters.
     pub fn calculate_cartesian_potential<P: FluidParameters>(
         &self,
