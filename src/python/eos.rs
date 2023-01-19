@@ -41,18 +41,19 @@ use quantity::si::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+/// Collection of equations of state.
 #[pyclass(name = "EquationOfState")]
 #[derive(Clone)]
 pub struct PyEosVariant(pub Arc<EosVariant>);
 
 #[pymethods]
 impl PyEosVariant {
-    /// Initialize PC-SAFT equation of state.
+    /// PC-SAFT equation of state.
     ///
     /// Parameters
     /// ----------
     /// parameters : PcSaftParameters
-    ///     The parameters of the PC-Saft equation of state to use.
+    ///     The parameters of the PC-SAFT equation of state to use.
     /// max_eta : float, optional
     ///     Maximum packing fraction. Defaults to 0.5.
     /// max_iter_cross_assoc : unsigned integer, optional
@@ -97,12 +98,12 @@ impl PyEosVariant {
         ))))
     }
 
-    /// Initialize the (heterosegmented) group contribution PC-SAFT equation of state.
+    /// (heterosegmented) group contribution PC-SAFT equation of state.
     ///
     /// Parameters
     /// ----------
     /// parameters : GcPcSaftEosParameters
-    ///     The parameters of the PC-Saft equation of state to use.
+    ///     The parameters of the PC-SAFT equation of state to use.
     /// max_eta : float, optional
     ///     Maximum packing fraction. Defaults to 0.5.
     /// max_iter_cross_assoc : unsigned integer, optional
