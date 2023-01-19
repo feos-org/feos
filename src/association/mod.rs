@@ -16,7 +16,7 @@ mod python;
 #[cfg(feature = "python")]
 pub use python::PyAssociationRecord;
 
-/// Pure component association parameters
+/// Pure component association parameters.
 #[derive(Serialize, Deserialize, Clone, Copy, Default)]
 pub struct AssociationRecord {
     /// Association volume parameter
