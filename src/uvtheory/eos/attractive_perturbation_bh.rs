@@ -1,3 +1,4 @@
+//use super::attractive_perturbation_wca::one_fluid_properties;
 use super::hard_sphere_bh::diameter_bh;
 use crate::uvtheory::parameters::*;
 use feos_core::{HelmholtzEnergyDual, StateHD};
@@ -132,37 +133,6 @@ fn u_fraction_bh<D: DualNum<f64>>(rep_x: D, reduced_density: D, one_fluid_beta: 
 fn activation<D: DualNum<f64>>(c: D, one_fluid_beta: D) -> D {
     one_fluid_beta * c.sqrt() / (one_fluid_beta.powi(2) * c + 1.0).sqrt()
 }
-
-// fn one_fluid_properties<D: DualNum<f64>>(
-//     p: &UVParameters,
-//     x: &Array1<D>,
-//     t: D,
-// ) -> (D, D, D, D, D, D) {
-//     let d = diameter_bh(p, t) / &p.sigma;
-//     let mut epsilon_k = D::zero();
-//     let mut weighted_sigma3_ij = D::zero();
-//     let mut rep = D::zero();
-//     let mut att = D::zero();
-//     for i in 0..p.ncomponents {
-//         let xi = x[i];
-//         for j in 0..p.ncomponents {
-//             let _y = xi * x[j] * p.sigma_ij[[i, j]].powi(3);
-//             weighted_sigma3_ij += _y;
-//             epsilon_k += _y * p.eps_k_ij[[i, j]];
-//             rep += xi * x[j] * p.rep_ij[[i, j]];
-//             att += xi * x[j] * p.att_ij[[i, j]];
-//         }
-//     }
-//     let dx = (x * &d.mapv(|v| v.powi(3))).sum().powf(1.0 / 3.0);
-//     (
-//         rep,
-//         att,
-//         (x * &p.sigma.mapv(|v| v.powi(3))).sum().powf(1.0 / 3.0),
-//         weighted_sigma3_ij,
-//         epsilon_k / weighted_sigma3_ij,
-//         dx,
-//     )
-// }
 
 fn one_fluid_properties<D: DualNum<f64>>(
     p: &UVParameters,

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `PhaseDiagram::par_pure` that uses rayon to calculate phase diagrams in parallel. [#57](https://github.com/feos-org/feos/pull/57)
 - Added `StateVec::moles` getter. [#113](https://github.com/feos-org/feos/pull/113)
 - Added public constructors `PhaseDiagram::new` and `StateVec::new` that allow the creation of the respective structs from a list of `PhaseEquilibrium`s or `State`s in Rust and Python. [#113](https://github.com/feos-org/feos/pull/113)
+- Added new variant `EosError::Error` which allows dispatching generic errors that are not covered by the existing variants. [#98](https://github.com/feos-org/feos/pull/98)
 
 ### Changed
 - Added `Sync` and `Send` as supertraits to `EquationOfState`. [#57](https://github.com/feos-org/feos/pull/57)

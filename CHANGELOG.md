@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `estimator` module to documentation. [#86](https://github.com/feos-org/feos/pull/86)
 - Added benchmarks for the evaluation of the Helmholtz energy and some properties of the `State` object for PC-SAFT. [#89](https://github.com/feos-org/feos/pull/89)
 - The Python class `StateVec` is exposed in both the `feos.eos` and `feos.dft` module. [#113](https://github.com/feos-org/feos/pull/113)
+- Added uv-B3-theory and additional optional argument `virial_order` to uvtheory constructor to enable uv-B3. [#98](https://github.com/feos-org/feos/pull/98)
 
 ### Changed
 - Export `EosVariant` and `FunctionalVariant` directly in the crate root instead of their own modules. [#62](https://github.com/feos-org/feos/pull/62)

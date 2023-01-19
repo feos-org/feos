@@ -1,31 +1,29 @@
 use crate::uvtheory::parameters::UVParameters;
 use feos_core::{HelmholtzEnergyDual, StateHD};
-use lazy_static::lazy_static;
 use ndarray::prelude::*;
 use num_dual::DualNum;
 use std::fmt;
 use std::sync::Arc;
 
-lazy_static! {
-    static ref BH_CONSTANTS_ETA_B: Array2<f64> = arr2(&[
-        [-0.960919783, -0.921097447],
-        [-0.547468020, -3.508014069],
-        [-2.253750186, 3.581161364],
-    ]);
-    static ref BH_CONSTANTS_ETA_A: Array2<f64> = arr2(&[
-        [-1.217417282, 6.754987582, -0.5919326153, -28.99719604],
-        [1.579548775, -26.93879416, 0.3998915410, 106.9446266],
-        [-1.993990512, 44.11863355, -40.10916106, -29.6130848],
-        [0.0, 0.0, 0.0, 0.0],
-    ]);
-}
+const BH_CONSTANTS_ETA_B: [[f64; 2]; 3] = [
+    [-0.960919783, -0.921097447],
+    [-0.547468020, -3.508014069],
+    [-2.253750186, 3.581161364],
+];
+
+const BH_CONSTANTS_ETA_A: [[f64; 4]; 4] = [
+    [-1.217417282, 6.754987582, -0.5919326153, -28.99719604],
+    [1.579548775, -26.93879416, 0.3998915410, 106.9446266],
+    [-1.993990512, 44.11863355, -40.10916106, -29.6130848],
+    [0.0, 0.0, 0.0, 0.0],
+];
 
 #[derive(Debug, Clone)]
-pub struct HardSphere {
+pub struct HardSphereBH {
     pub parameters: Arc<UVParameters>,
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardSphere {
+impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardSphereBH {
     /// Helmholtz energy for hard spheres, eq. 19 (check Volume)
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let d = diameter_bh(&self.parameters, state.temperature);
@@ -39,7 +37,7 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardSphere {
     }
 }
 
-impl fmt::Display for HardSphere {
+impl fmt::Display for HardSphereBH {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Hard Sphere")
     }
@@ -48,7 +46,7 @@ impl fmt::Display for HardSphere {
 /// Dimensionless Hard-sphere diameter according to Barker-Henderson division.
 /// Eq. S23 and S24.
 ///
-pub fn diameter_bh<D: DualNum<f64>>(parameters: &UVParameters, temperature: D) -> Array1<D> {
+pub(super) fn diameter_bh<D: DualNum<f64>>(parameters: &UVParameters, temperature: D) -> Array1<D> {
     parameters
         .cd_bh_pure
         .iter()
@@ -63,7 +61,7 @@ pub fn diameter_bh<D: DualNum<f64>>(parameters: &UVParameters, temperature: D) -
         .collect()
 }
 
-pub fn zeta<D: DualNum<f64>>(partial_density: &Array1<D>, diameter: &Array1<D>) -> [D; 4] {
+pub(super) fn zeta<D: DualNum<f64>>(partial_density: &Array1<D>, diameter: &Array1<D>) -> [D; 4] {
     let mut zeta: [D; 4] = [D::zero(), D::zero(), D::zero(), D::zero()];
     for i in 0..partial_density.len() {
         for k in 0..4 {
@@ -74,13 +72,16 @@ pub fn zeta<D: DualNum<f64>>(partial_density: &Array1<D>, diameter: &Array1<D>) 
     zeta
 }
 
-pub fn packing_fraction<D: DualNum<f64>>(partial_density: &Array1<D>, diameter: &Array1<D>) -> D {
+pub(super) fn packing_fraction<D: DualNum<f64>>(
+    partial_density: &Array1<D>,
+    diameter: &Array1<D>,
+) -> D {
     (0..partial_density.len()).fold(D::zero(), |acc, i| {
         acc + partial_density[i] * diameter[i].powi(3) * (std::f64::consts::PI / 6.0)
     })
 }
 
-pub fn zeta_23<D: DualNum<f64>>(molefracs: &Array1<D>, diameter: &Array1<D>) -> D {
+pub(super) fn zeta_23<D: DualNum<f64>>(molefracs: &Array1<D>, diameter: &Array1<D>) -> D {
     let mut zeta: [D; 2] = [D::zero(), D::zero()];
     for i in 0..molefracs.len() {
         for k in 0..2 {
@@ -90,16 +91,7 @@ pub fn zeta_23<D: DualNum<f64>>(molefracs: &Array1<D>, diameter: &Array1<D>) -> 
     zeta[0] / zeta[1]
 }
 
-//#[inline]
-//pub fn dimensionless_length_scale<D: DualNum<f64>>(
-//  parameters: &UVParameters,
-//temperature: D,
-//rep: f64,
-//) -> Array1<D> {
-//  -diameter_bh(parameters, temperature) + 1.0
-//}
-
-pub fn packing_fraction_b<D: DualNum<f64>>(
+pub(super) fn packing_fraction_b<D: DualNum<f64>>(
     parameters: &UVParameters,
     diameter: &Array1<D>,
     eta: D,
@@ -109,16 +101,17 @@ pub fn packing_fraction_b<D: DualNum<f64>>(
         let tau =
             -(diameter[i] / parameters.sigma[i] + diameter[j] / parameters.sigma[j]) * 0.5 + 1.0; //dimensionless
         let tau2 = tau * tau;
+
         let c = arr1(&[
-            tau * BH_CONSTANTS_ETA_B[[0, 0]] + tau2 * BH_CONSTANTS_ETA_B[[0, 1]],
-            tau * BH_CONSTANTS_ETA_B[[1, 0]] + tau2 * BH_CONSTANTS_ETA_B[[1, 1]],
-            tau * BH_CONSTANTS_ETA_B[[2, 0]] + tau2 * BH_CONSTANTS_ETA_B[[2, 1]],
+            tau * BH_CONSTANTS_ETA_B[0][0] + tau2 * BH_CONSTANTS_ETA_B[0][1],
+            tau * BH_CONSTANTS_ETA_B[1][0] + tau2 * BH_CONSTANTS_ETA_B[1][1],
+            tau * BH_CONSTANTS_ETA_B[2][0] + tau2 * BH_CONSTANTS_ETA_B[2][1],
         ]);
         eta + eta * c[0] + eta * eta * c[1] + eta.powi(3) * c[2]
     })
 }
 
-pub fn packing_fraction_a<D: DualNum<f64>>(
+pub(super) fn packing_fraction_a<D: DualNum<f64>>(
     parameters: &UVParameters,
     diameter: &Array1<D>,
     eta: D,
@@ -126,19 +119,21 @@ pub fn packing_fraction_a<D: DualNum<f64>>(
     let n = parameters.att.len();
     Array2::from_shape_fn((n, n), |(i, j)| {
         let tau =
-            -(diameter[i] / parameters.sigma[i] + diameter[j] / parameters.sigma[j]) * 0.5 + 1.0; //dimensionless//-(diameter[i] + diameter[j]) * 0.5 + 1.0;
+            -(diameter[i] / parameters.sigma[i] + diameter[j] / parameters.sigma[j]) * 0.5 + 1.0;
         let tau2 = tau * tau;
         let rep_inv = 1.0 / parameters.rep_ij[[i, j]];
+
         let c = arr1(&[
-            tau * (BH_CONSTANTS_ETA_A[[0, 0]] + BH_CONSTANTS_ETA_A[[0, 1]] * rep_inv)
-                + tau2 * (BH_CONSTANTS_ETA_A[[0, 2]] + BH_CONSTANTS_ETA_A[[0, 3]] * rep_inv),
-            tau * (BH_CONSTANTS_ETA_A[[1, 0]] + BH_CONSTANTS_ETA_A[[1, 1]] * rep_inv)
-                + tau2 * (BH_CONSTANTS_ETA_A[[1, 2]] + BH_CONSTANTS_ETA_A[[1, 3]] * rep_inv),
-            tau * (BH_CONSTANTS_ETA_A[[2, 0]] + BH_CONSTANTS_ETA_A[[2, 1]] * rep_inv)
-                + tau2 * (BH_CONSTANTS_ETA_A[[2, 2]] + BH_CONSTANTS_ETA_A[[2, 3]] * rep_inv),
-            tau * (BH_CONSTANTS_ETA_A[[3, 0]] + BH_CONSTANTS_ETA_A[[3, 1]] * rep_inv)
-                + tau2 * (BH_CONSTANTS_ETA_A[[3, 2]] + BH_CONSTANTS_ETA_A[[3, 3]] * rep_inv),
+            tau * (BH_CONSTANTS_ETA_A[0][0] + BH_CONSTANTS_ETA_A[0][1] * rep_inv)
+                + tau2 * (BH_CONSTANTS_ETA_A[0][2] + BH_CONSTANTS_ETA_A[0][3] * rep_inv),
+            tau * (BH_CONSTANTS_ETA_A[1][0] + BH_CONSTANTS_ETA_A[1][1] * rep_inv)
+                + tau2 * (BH_CONSTANTS_ETA_A[1][2] + BH_CONSTANTS_ETA_A[1][3] * rep_inv),
+            tau * (BH_CONSTANTS_ETA_A[2][0] + BH_CONSTANTS_ETA_A[2][1] * rep_inv)
+                + tau2 * (BH_CONSTANTS_ETA_A[2][2] + BH_CONSTANTS_ETA_A[2][3] * rep_inv),
+            tau * (BH_CONSTANTS_ETA_A[3][0] + BH_CONSTANTS_ETA_A[3][1] * rep_inv)
+                + tau2 * (BH_CONSTANTS_ETA_A[3][2] + BH_CONSTANTS_ETA_A[3][3] * rep_inv),
         ]);
+
         eta + eta * c[0] + eta * eta * c[1] + eta.powi(3) * c[2] + eta.powi(4) * c[3]
     })
 }
@@ -167,27 +162,4 @@ mod test {
             0.95583586434435486
         );
     }
-
-    // #[test]
-    // fn helmholtz_energy() {
-    //     let p = methane_parameters(12);
-    //     let p = test_parameters(12, 1.0, 1.0);
-    //     let reduced_density = 1.0;
-    //     let reduced_temperature = 4.0;
-
-    //     let hs = HardSphere {
-    //         parameters: Arc::new(p.clone()),
-    //     };
-    //     let particles = arr1(&[1000.0]);
-    //     let n = &particles / 6.02214076e23;
-    //     let volume = particles[0] / reduced_density * p.sigma[0].powi(3);
-    //     let temperature = reduced_temperature * p.epsilon_k[0];
-    //     let s = StateHD::new(temperature, volume, n.clone());
-    //     dbg!(particles[0] / volume * p.sigma[0].powi(3));
-    //     dbg!(&s.temperature);
-    //     dbg!(&s.volume);
-    //     dbg!(&s.moles);
-    //     let a = hs.helmholtz_energy(&s);
-    //     assert_relative_eq!(a / particles[0], 1.9859860794723039, epsilon = 1e-10)
-    // }
 }

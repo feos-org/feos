@@ -155,17 +155,6 @@ fn correlation_integral_wca<D: DualNum<f64>>(
     rm_x: D,
 ) -> D {
     let c = coefficients_wca(rep_x, att_x, d_x);
-    // dbg!(q_x.re());
-    // dbg!(rm_x.re());
-    // dbg!(mean_field_constant_x.re());
-    // dbg!(mie_prefactor(rep_x, att_x).re());
-    // dbg!(rho_x.re());
-    // dbg!(c[0].re());
-    // dbg!(c[1].re());
-    // dbg!(c[2].re());
-    // dbg!(c[3].re());
-    // dbg!(c[4].re());
-    // dbg!(d_x.re());
 
     (q_x.powi(3) - rm_x.powi(3)) * 1.0 / 3.0 - mean_field_constant_x
         + mie_prefactor(rep_x, att_x) * (c[0] * rho_x + c[1] * rho_x.powi(2) + c[2] * rho_x.powi(3))
@@ -180,7 +169,7 @@ fn u_fraction_wca<D: DualNum<f64>>(rep_x: D, reduced_density: D) -> D {
         .tanh()
 }
 
-fn one_fluid_properties<D: DualNum<f64>>(
+pub(super) fn one_fluid_properties<D: DualNum<f64>>(
     p: &UVParameters,
     x: &Array1<D>,
     t: D,
@@ -326,7 +315,6 @@ mod test {
         let q_vdw = dimensionless_diameter_q_wca(t_x, rep_x, att_x);
         let b21u = delta_b12u(t_x, mean_field_constant_x, weighted_sigma3_ij, q_vdw, rm_x)
             / p.sigma[0].powi(3);
-        //assert!(b21u.re() == -1.02233216);
         assert_relative_eq!(b21u.re(), -1.02233215790525, epsilon = 1e-12);
 
         let i_wca =
@@ -334,8 +322,6 @@ mod test {
 
         let delta_a1u = state.partial_density.sum() / t_x * i_wca * 2.0 * PI * weighted_sigma3_ij;
 
-        //dbg!(delta_a1u);
-        //assert!(delta_a1u.re() == -1.1470186919354);
         assert_relative_eq!(delta_a1u.re(), -1.52406840346272, epsilon = 1e-6);
 
         let u_fraction_wca = u_fraction_wca(
@@ -347,10 +333,8 @@ mod test {
         dbg!(b2bar);
         assert_relative_eq!(b2bar.re(), -1.09102560732964, epsilon = 1e-12);
         dbg!(u_fraction_wca);
-        //assert!(u_fraction_WCA.re() == 0.743451055308332);
-        assert_relative_eq!(u_fraction_wca.re(), 0.997069754340431, epsilon = 1e-5);
 
-        //assert!(b2bar.re() == -1.00533412744652);
+        assert_relative_eq!(u_fraction_wca.re(), 0.997069754340431, epsilon = 1e-5);
 
         let a_test = delta_a1u
             + (-u_fraction_wca + 1.0)

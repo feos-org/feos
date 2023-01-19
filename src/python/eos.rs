@@ -24,7 +24,7 @@ use crate::saftvrqmie::{FeynmanHibbsOrder, SaftVRQMie, SaftVRQMieOptions};
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::python::PyUVParameters;
 #[cfg(feature = "uvtheory")]
-use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions};
+use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, VirialOrder};
 
 use feos_core::cubic::PengRobinson;
 use feos_core::python::cubic::PyPengRobinsonParameters;
@@ -213,6 +213,9 @@ impl PyEosVariant {
     ///     Maximum packing fraction. Defaults to 0.5.
     /// perturbation : Perturbation, optional
     ///     Division type of the Mie potential. Defaults to WCA division.
+    /// virial_order : VirialOrder, optional
+    ///     Highest order of virial coefficient to consider.
+    ///     Defaults to second order (original uv-theory).
     ///
     /// Returns
     /// -------
@@ -220,17 +223,26 @@ impl PyEosVariant {
     ///     The UV-Theory equation of state that can be used to compute thermodynamic
     ///     states.
     #[cfg(feature = "uvtheory")]
-    #[args(max_eta = "0.5", perturbation = "Perturbation::WeeksChandlerAndersen")]
+    #[args(
+        max_eta = "0.5",
+        perturbation = "Perturbation::WeeksChandlerAndersen",
+        virial_order = "VirialOrder::Second"
+    )]
     #[staticmethod]
-    #[pyo3(text_signature = "(parameters, max_eta, perturbation)")]
-    fn uvtheory(parameters: PyUVParameters, max_eta: f64, perturbation: Perturbation) -> Self {
+    #[pyo3(text_signature = "(parameters, max_eta, perturbation, virial_order)")]
+    fn uvtheory(
+        parameters: PyUVParameters,
+        max_eta: f64,
+        perturbation: Perturbation,
+        virial_order: VirialOrder,
+    ) -> PyResult<Self> {
         let options = UVTheoryOptions {
             max_eta,
             perturbation,
+            virial_order,
         };
-        Self(Arc::new(EosVariant::UVTheory(UVTheory::with_options(
-            parameters.0,
-            options,
+        Ok(Self(Arc::new(EosVariant::UVTheory(
+            UVTheory::with_options(parameters.0, options)?,
         ))))
     }
 
