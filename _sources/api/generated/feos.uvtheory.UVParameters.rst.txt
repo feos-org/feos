@@ -25,6 +25,7 @@ feos.uvtheory.UVParameters
       ~UVParameters.from_records
       ~UVParameters.new_binary
       ~UVParameters.new_pure
+      ~UVParameters.new_simple
    
    
 

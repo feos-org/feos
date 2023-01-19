@@ -876,6 +876,7 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.uvtheory.UVParameters.from_records.html">feos.uvtheory.UVParameters.from_records</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.uvtheory.UVParameters.new_binary.html">feos.uvtheory.UVParameters.new_binary</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.uvtheory.UVParameters.new_pure.html">feos.uvtheory.UVParameters.new_pure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.uvtheory.UVParameters.new_simple.html">feos.uvtheory.UVParameters.new_simple</a></li>
 </ul>
 </li>
 </ul>
@@ -996,7 +997,7 @@
 <h1>feos.eos.EquationOfState.uvtheory<a class="headerlink" href="#feos-eos-equationofstate-uvtheory" title="Permalink to this heading">#</a></h1>
 <dl class="py method">
 <dt class="sig sig-object py" id="feos.eos.EquationOfState.uvtheory">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">EquationOfState.</span></span><span class="sig-name descname"><span class="pre">uvtheory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_eta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perturbation</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#feos.eos.EquationOfState.uvtheory" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">EquationOfState.</span></span><span class="sig-name descname"><span class="pre">uvtheory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_eta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perturbation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">virial_order</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#feos.eos.EquationOfState.uvtheory" title="Permalink to this definition">#</a></dt>
 <dd><p>UV-Theory equation of state.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1004,6 +1005,8 @@
 <li><p><strong>parameters</strong> (<a class="reference internal" href="feos.uvtheory.UVParameters.html#feos.uvtheory.UVParameters" title="feos.uvtheory.UVParameters"><em>UVParameters</em></a>) – The parameters of the UV-theory equation of state to use.</p></li>
 <li><p><strong>max_eta</strong> (<em>float</em><em>, </em><em>optional</em>) – Maximum packing fraction. Defaults to 0.5.</p></li>
 <li><p><strong>perturbation</strong> (<a class="reference internal" href="feos.uvtheory.Perturbation.html#feos.uvtheory.Perturbation" title="feos.uvtheory.Perturbation"><em>Perturbation</em></a><em>, </em><em>optional</em>) – Division type of the Mie potential. Defaults to WCA division.</p></li>
+<li><p><strong>virial_order</strong> (<em>VirialOrder</em><em>, </em><em>optional</em>) – Highest order of virial coefficient to consider.
+Defaults to second order (original uv-theory).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
