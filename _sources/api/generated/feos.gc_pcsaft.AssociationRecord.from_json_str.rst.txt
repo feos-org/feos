@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.gc\_pcsaft.AssociationRecord.from\_json\_str
+=================================================
+
+.. currentmodule:: feos.gc_pcsaft
+
+.. automethod:: AssociationRecord.from_json_str

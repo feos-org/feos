@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.gc\_pcsaft.IdentifierOption.\_\_init\_\_
+=============================================
+
+.. currentmodule:: feos.gc_pcsaft
+
+.. automethod:: IdentifierOption.__init__

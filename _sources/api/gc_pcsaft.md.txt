@@ -18,10 +18,11 @@ from feos.gc_pcsaft import GcPcSaftParameters
     :toctree: generated/
 
     Identifier
+    IdentifierOption
     ChemicalRecord
     JobackRecord
+    AssociationRecord
     SegmentRecord
-    BinaryRecord
     BinarySegmentRecord
     GcPcSaftRecord
     GcPcSaftEosParameters

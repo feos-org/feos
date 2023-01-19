@@ -1,0 +1,38 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.gc\_pcsaft.AssociationRecord
+=================================
+
+.. currentmodule:: feos.gc_pcsaft
+
+.. autoclass:: AssociationRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~AssociationRecord.__init__
+      ~AssociationRecord.from_json_str
+      ~AssociationRecord.to_json_str
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~AssociationRecord.epsilon_k_ab
+      ~AssociationRecord.kappa_ab
+      ~AssociationRecord.na
+      ~AssociationRecord.nb
+   
+   
