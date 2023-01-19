@@ -38,9 +38,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         npoints: usize,
         critical_temperature: Option<SINumber>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    
-    {
+    ) -> EosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
 
         let sc = State::critical_point(eos, None, critical_temperature, SolverOptions::default())?;
@@ -78,9 +76,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         eos: &Arc<E>,
         temperatures: ArrayView1<f64>,
         options: SolverOptions,
-    ) -> EosResult<Vec<PhaseEquilibrium<E, 2>>>
-    
-    {
+    ) -> EosResult<Vec<PhaseEquilibrium<E, 2>>> {
         let mut states = Vec::with_capacity(temperatures.len());
         let mut vle = None;
         for ti in temperatures {
@@ -106,9 +102,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         thread_pool: ThreadPool,
         critical_temperature: Option<SINumber>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    
-    {
+    ) -> EosResult<Self> {
         let sc = State::critical_point(eos, None, critical_temperature, SolverOptions::default())?;
 
         let max_temperature = min_temperature

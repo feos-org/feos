@@ -15,9 +15,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         npoints: usize,
         critical_temperature: Option<SINumber>,
         options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self>
-    
-    {
+    ) -> EosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
 
         let sc = State::critical_point(
@@ -66,9 +64,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         npoints: usize,
         critical_temperature: Option<SINumber>,
         options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self>
-    
-    {
+    ) -> EosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
 
         let sc = State::critical_point(
@@ -133,9 +129,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         npoints: usize,
         critical_temperature: Option<SINumber>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    
-    {
+    ) -> EosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
 
         let sc = State::critical_point(

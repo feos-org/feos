@@ -20,9 +20,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
         temperature_or_pressure: SINumber,
         initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    
-    {
+    ) -> EosResult<Self> {
         match TPSpec::try_from(temperature_or_pressure)? {
             TPSpec::Temperature(t) => Self::pure_t(eos, t, initial_state, options),
             TPSpec::Pressure(p) => Self::pure_p(eos, p, initial_state, options),
@@ -36,9 +34,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
         temperature: SINumber,
         initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    
-    {
+    ) -> EosResult<Self> {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_PURE, TOL_PURE);
 
         // First use given initial state if applicable
@@ -65,9 +61,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
         )
     }
 
-    fn iterate_pure_t(self, max_iter: usize, tol: f64, verbosity: Verbosity) -> EosResult<Self>
-    
-    {
+    fn iterate_pure_t(self, max_iter: usize, tol: f64, verbosity: Verbosity) -> EosResult<Self> {
         let mut p_old = self.vapor().pressure(Contributions::Total);
         let [mut vapor, mut liquid] = self.0;
 
@@ -168,9 +162,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
         pressure: SINumber,
         initial_state: Option<&Self>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    
-    {
+    ) -> EosResult<Self> {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_PURE, TOL_PURE);
 
         // Initialize the phase equilibrium
@@ -357,9 +349,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
 impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     /// Calculate the pure component vapor pressures of all
     /// components in the system for the given temperature.
-    pub fn vapor_pressure(eos: &Arc<E>, temperature: SINumber) -> Vec<Option<SINumber>>
-    
-    {
+    pub fn vapor_pressure(eos: &Arc<E>, temperature: SINumber) -> Vec<Option<SINumber>> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Arc::new(eos.subset(&[i]));
@@ -372,9 +362,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
 
     /// Calculate the pure component boiling temperatures of all
     /// components in the system for the given pressure.
-    pub fn boiling_temperature(eos: &Arc<E>, pressure: SINumber) -> Vec<Option<SINumber>>
-    
-    {
+    pub fn boiling_temperature(eos: &Arc<E>, pressure: SINumber) -> Vec<Option<SINumber>> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Arc::new(eos.subset(&[i]));
@@ -390,9 +378,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     pub fn vle_pure_comps(
         eos: &Arc<E>,
         temperature_or_pressure: SINumber,
-    ) -> Vec<Option<PhaseEquilibrium<E, 2>>>
-    
-    {
+    ) -> Vec<Option<PhaseEquilibrium<E, 2>>> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Arc::new(eos.subset(&[i]));

@@ -36,11 +36,7 @@ where
 }
 
 /// Benchmark for evaluation of the Helmholtz energy for different dual number types.
-fn bench_dual_numbers<E: EquationOfState>(
-    c: &mut Criterion,
-    group_name: &str,
-    state: State<E>,
-) {
+fn bench_dual_numbers<E: EquationOfState>(c: &mut Criterion, group_name: &str, state: State<E>) {
     let mut group = c.benchmark_group(group_name);
     group.bench_function("a_f64", |b| {
         b.iter(|| a_res((&state.eos, &state.derive0())))

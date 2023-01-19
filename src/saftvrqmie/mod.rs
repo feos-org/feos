@@ -1,5 +1,5 @@
 //! SAFT-VRQ Mie equation of state.
-//! 
+//!
 //! Quantum effects are described by the first order Feynman–Hibbs corrections to Mie fluids.
 //! The model accurately predicts properties for pure substances and mixtures down to 20K.
 //! For mixtures, the additive hard-sphere reference contribution is extended with a non-additive correction.

@@ -51,9 +51,7 @@ impl<E: EquationOfState + EntropyScaling> DataSet<E> for Diffusion {
         vec!["temperature", "pressure"]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError>
-    
-    {
+    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
         let moles = arr1(&[1.0]) * SIUnit::reference_moles();
         let ts = self
             .temperature

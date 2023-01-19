@@ -51,9 +51,7 @@ impl<E: EquationOfState + EntropyScaling> DataSet<E> for Viscosity {
         vec!["temperature", "pressure"]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError>
-    
-    {
+    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
         let moles = arr1(&[1.0]) * SIUnit::reference_moles();
         self.temperature
             .into_iter()

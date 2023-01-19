@@ -24,9 +24,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         npoints: Option<usize>,
         x_lle: Option<(f64, f64)>,
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self>
-    
-    {
+    ) -> EosResult<Self> {
         let npoints = npoints.unwrap_or(DEFAULT_POINTS);
         let tp = temperature_or_pressure.try_into()?;
 
@@ -104,9 +102,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         x_lle: (f64, f64),
         vle_sat: [Option<PhaseEquilibrium<E, 2>>; 2],
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<(Vec<PhaseEquilibrium<E, 2>>, Vec<PhaseEquilibrium<E, 2>>)>
-    
-    {
+    ) -> EosResult<(Vec<PhaseEquilibrium<E, 2>>, Vec<PhaseEquilibrium<E, 2>>)> {
         match vle_sat {
             [Some(vle2), Some(vle1)] => {
                 let states1 = iterate_vle(
@@ -148,9 +144,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         min_tp: SINumber,
         max_tp: SINumber,
         npoints: Option<usize>,
-    ) -> EosResult<Self>
-    
-    {
+    ) -> EosResult<Self> {
         let npoints = npoints.unwrap_or(DEFAULT_POINTS);
         let mut states = Vec::with_capacity(npoints);
         let tp: TPSpec = temperature_or_pressure.try_into()?;
@@ -268,9 +262,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         npoints_vle: Option<usize>,
         npoints_lle: Option<usize>,
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<PhaseDiagramHetero<E>>
-    
-    {
+    ) -> EosResult<PhaseDiagramHetero<E>> {
         let npoints_vle = npoints_vle.unwrap_or(DEFAULT_POINTS);
         let tp = temperature_or_pressure.try_into()?;
 

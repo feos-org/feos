@@ -4,7 +4,7 @@ use feos_dft::{
     HelmholtzEnergyFunctional, WeightFunctionInfo, DFT,
 };
 use ndarray::prelude::*;
-use quantity::{SIArray1, QuantityArray2, QuantityScalar};
+use quantity::{QuantityArray2, QuantityScalar, SIArray1};
 use std::sync::Arc;
 
 pub enum MicelleInitialization {
@@ -53,7 +53,8 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> DFTSpecification<U, Ix1, F>
                 let mu_bulk = bulk.chemical_potential(Contributions::Total);
                 let mu_s_bulk = mu_bulk.get(1);
                 let mu_w_bulk = mu_bulk.get(0);
-                let n_s_bulk = (rho_s_bulk * profile.volume()).to_reduced(SIUnit::reference_moles())?;
+                let n_s_bulk =
+                    (rho_s_bulk * profile.volume()).to_reduced(SIUnit::reference_moles())?;
                 let mut spec = (delta_n_surfactant + n_s_bulk) / z;
                 spec[0] = ((pressure + f_bulk - rho_s_bulk * mu_s_bulk) / mu_w_bulk)
                     .to_reduced(SIUnit::reference_density())?;
@@ -139,7 +140,9 @@ impl<U: EosUnit + 'static, F: HelmholtzEnergyFunctional> MicelleProfile<U, F> {
         let dft = &bulk.eos;
 
         // calculate external potential
-        let t = bulk.temperature.to_reduced(SIUnit::reference_temperature())?;
+        let t = bulk
+            .temperature
+            .to_reduced(SIUnit::reference_temperature())?;
         let mut external_potential = Array2::zeros((dft.component_index().len(), axis.grid.len()));
         if let MicelleInitialization::ExternalPotential(peak, width) = initialization {
             external_potential.index_axis_mut(Axis(0), 0).assign(

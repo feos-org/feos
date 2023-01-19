@@ -51,15 +51,16 @@ impl<E: EquationOfState + EntropyScaling> DataSet<E> for ThermalConductivity {
         vec!["temperature", "pressure"]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError>
-    
-    {
+    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
         let moles = arr1(&[1.0]) * SIUnit::reference_moles();
         let ts = self
             .temperature
             .to_reduced(SIUnit::reference_temperature())
             .unwrap();
-        let ps = self.pressure.to_reduced(SIUnit::reference_pressure()).unwrap();
+        let ps = self
+            .pressure
+            .to_reduced(SIUnit::reference_pressure())
+            .unwrap();
         let unit = SIUnit::reference_energy()
             / SIUnit::reference_time()
             / SIUnit::reference_temperature()

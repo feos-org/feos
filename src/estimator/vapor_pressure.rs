@@ -70,9 +70,7 @@ impl<E: EquationOfState> DataSet<E> for VaporPressure {
         vec!["temperature"]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError>
-    
-    {
+    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
         let critical_point =
             State::critical_point(eos, None, Some(self.max_temperature), self.solver_options)
                 .or_else(|_| State::critical_point(eos, None, None, self.solver_options))?;
@@ -94,7 +92,10 @@ impl<E: EquationOfState> DataSet<E> for VaporPressure {
             if let Some(pvap) = PhaseEquilibrium::vapor_pressure(eos, t)[0] {
                 prediction.try_set(i, pvap)?;
             } else if self.extrapolate {
-                prediction.try_set(i, (a + b.to_reduced(t)?).exp() * SIUnit::reference_pressure())?;
+                prediction.try_set(
+                    i,
+                    (a + b.to_reduced(t)?).exp() * SIUnit::reference_pressure(),
+                )?;
             } else {
                 prediction.try_set(i, f64::NAN * SIUnit::reference_pressure())?
             }
