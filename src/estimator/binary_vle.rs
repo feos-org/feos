@@ -4,9 +4,8 @@ use feos_core::{
     State,
 };
 use ndarray::{arr1, s, Array1, ArrayView1, Axis};
-use quantity::{Quantity, QuantityArray1, QuantityScalar};
+use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::collections::HashMap;
-use std::fmt::LowerExp;
 use std::sync::Arc;
 
 /// Different phases of experimental data points in the `BinaryVlePressure` data set.
@@ -19,22 +18,22 @@ pub enum Phase {
 
 /// Store experimental binary VLE data for the calculation of chemical potential residuals.
 #[derive(Clone)]
-pub struct BinaryVleChemicalPotential<U> {
-    temperature: QuantityArray1<U>,
-    pressure: QuantityArray1<U>,
+pub struct BinaryVleChemicalPotential {
+    temperature: SIArray1,
+    pressure: SIArray1,
     liquid_molefracs: Array1<f64>,
     vapor_molefracs: Array1<f64>,
-    target: QuantityArray1<U>,
+    target: SIArray1,
 }
 
-impl<U: EosUnit> BinaryVleChemicalPotential<U> {
+impl BinaryVleChemicalPotential {
     pub fn new(
-        temperature: QuantityArray1<U>,
-        pressure: QuantityArray1<U>,
+        temperature: SIArray1,
+        pressure: SIArray1,
         liquid_molefracs: Array1<f64>,
         vapor_molefracs: Array1<f64>,
     ) -> Self {
-        let target = Array1::ones(temperature.len() * 2) * 500.0 * U::reference_molar_energy();
+        let target = Array1::ones(temperature.len() * 2) * 500.0 * SIUnit::reference_molar_energy();
         Self {
             temperature,
             pressure,
@@ -45,11 +44,8 @@ impl<U: EosUnit> BinaryVleChemicalPotential<U> {
     }
 }
 
-impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for BinaryVleChemicalPotential<U>
-where
-    Quantity<f64, U>: std::fmt::Display + LowerExp,
-{
-    fn target(&self) -> &QuantityArray1<U> {
+impl<E: EquationOfState> DataSet<E> for BinaryVleChemicalPotential {
+    fn target(&self) -> &SIArray1 {
         &self.target
     }
 
@@ -66,10 +62,7 @@ where
         ]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
+    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
         let mut prediction = Vec::new();
         for (((&xi, &yi), t), p) in self
             .liquid_molefracs
@@ -78,32 +71,34 @@ where
             .zip(self.temperature.into_iter())
             .zip(self.pressure.into_iter())
         {
-            let liquid_moles = arr1(&[xi, 1.0 - xi]) * U::reference_moles();
+            let liquid_moles = arr1(&[xi, 1.0 - xi]) * SIUnit::reference_moles();
             let liquid = State::new_npt(eos, t, p, &liquid_moles, DensityInitialization::Liquid)?;
             let mu_liquid = liquid.chemical_potential(Contributions::Total);
-            let vapor_moles = arr1(&[yi, 1.0 - yi]) * U::reference_moles();
+            let vapor_moles = arr1(&[yi, 1.0 - yi]) * SIUnit::reference_moles();
             let vapor = State::new_npt(eos, t, p, &vapor_moles, DensityInitialization::Vapor)?;
             let mu_vapor = vapor.chemical_potential(Contributions::Total);
 
-            prediction
-                .push(mu_liquid.get(0) - mu_vapor.get(0) + 500.0 * U::reference_molar_energy());
-            prediction
-                .push(mu_liquid.get(1) - mu_vapor.get(1) + 500.0 * U::reference_molar_energy());
+            prediction.push(
+                mu_liquid.get(0) - mu_vapor.get(0) + 500.0 * SIUnit::reference_molar_energy(),
+            );
+            prediction.push(
+                mu_liquid.get(1) - mu_vapor.get(1) + 500.0 * SIUnit::reference_molar_energy(),
+            );
         }
-        Ok(QuantityArray1::from_vec(prediction))
+        Ok(SIArray1::from_vec(prediction))
     }
 
-    fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
+    fn get_input(&self) -> HashMap<String, SIArray1> {
         let mut m = HashMap::with_capacity(4);
         m.insert("temperature".to_owned(), self.temperature.clone());
         m.insert("pressure".to_owned(), self.pressure.clone());
         m.insert(
             "liquid_molefracs".to_owned(),
-            &self.liquid_molefracs * U::reference_moles() / U::reference_moles(),
+            &self.liquid_molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
         );
         m.insert(
             "vapor_molefracs".to_owned(),
-            &self.vapor_molefracs * U::reference_moles() / U::reference_moles(),
+            &self.vapor_molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
         );
         m
     }
@@ -111,17 +106,17 @@ where
 
 /// Store experimental binary VLE data for the calculation of pressure residuals.
 #[derive(Clone)]
-pub struct BinaryVlePressure<U> {
-    temperature: QuantityArray1<U>,
-    pressure: QuantityArray1<U>,
+pub struct BinaryVlePressure {
+    temperature: SIArray1,
+    pressure: SIArray1,
     molefracs: Array1<f64>,
     phase: Phase,
 }
 
-impl<U: EosUnit> BinaryVlePressure<U> {
+impl BinaryVlePressure {
     pub fn new(
-        temperature: QuantityArray1<U>,
-        pressure: QuantityArray1<U>,
+        temperature: SIArray1,
+        pressure: SIArray1,
         molefracs: Array1<f64>,
         phase: Phase,
     ) -> Self {
@@ -134,11 +129,8 @@ impl<U: EosUnit> BinaryVlePressure<U> {
     }
 }
 
-impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for BinaryVlePressure<U>
-where
-    Quantity<f64, U>: std::fmt::Display + LowerExp,
-{
-    fn target(&self) -> &QuantityArray1<U> {
+impl<E: EquationOfState> DataSet<E> for BinaryVlePressure {
+    fn target(&self) -> &SIArray1 {
         &self.pressure
     }
 
@@ -155,10 +147,7 @@ where
         vec
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
+    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
         let options = Default::default();
         self.molefracs
             .iter()
@@ -188,7 +177,7 @@ where
             .collect()
     }
 
-    fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
+    fn get_input(&self) -> HashMap<String, SIArray1> {
         let mut m = HashMap::with_capacity(4);
         m.insert("temperature".to_owned(), self.temperature.clone());
         m.insert("pressure".to_owned(), self.pressure.clone());
@@ -198,7 +187,7 @@ where
                 Phase::Liquid => "liquid_molefracs",
             })
             .to_owned(),
-            &self.molefracs * U::reference_moles() / U::reference_moles(),
+            &self.molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
         );
         m
     }
@@ -206,27 +195,27 @@ where
 
 /// Store experimental binary phase diagrams for the calculation of distance residuals.
 #[derive(Clone)]
-pub struct BinaryPhaseDiagram<U> {
-    specification: QuantityScalar<U>,
-    temperature_or_pressure: QuantityArray1<U>,
+pub struct BinaryPhaseDiagram {
+    specification: SINumber,
+    temperature_or_pressure: SIArray1,
     liquid_molefracs: Option<Array1<f64>>,
     vapor_molefracs: Option<Array1<f64>>,
     npoints: Option<usize>,
-    target: QuantityArray1<U>,
+    target: SIArray1,
 }
 
-impl<U: EosUnit> BinaryPhaseDiagram<U> {
+impl BinaryPhaseDiagram {
     pub fn new(
-        specification: QuantityScalar<U>,
-        temperature_or_pressure: QuantityArray1<U>,
+        specification: SINumber,
+        temperature_or_pressure: SIArray1,
         liquid_molefracs: Option<Array1<f64>>,
         vapor_molefracs: Option<Array1<f64>>,
         npoints: Option<usize>,
     ) -> Self {
         let count = liquid_molefracs.as_ref().map_or(0, |x| 2 * x.len())
             + vapor_molefracs.as_ref().map_or(0, |x| 2 * x.len());
-        let target =
-            Array1::from_elem(count, 1.0) * U::reference_temperature() / U::reference_temperature();
+        let target = Array1::from_elem(count, 1.0) * SIUnit::reference_temperature()
+            / SIUnit::reference_temperature();
         Self {
             specification,
             temperature_or_pressure,
@@ -238,11 +227,8 @@ impl<U: EosUnit> BinaryPhaseDiagram<U> {
     }
 }
 
-impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for BinaryPhaseDiagram<U>
-where
-    Quantity<f64, U>: std::fmt::Display + LowerExp,
-{
-    fn target(&self) -> &QuantityArray1<U> {
+impl<E: EquationOfState> DataSet<E> for BinaryPhaseDiagram {
+    fn target(&self) -> &SIArray1 {
         &self.target
     }
 
@@ -251,7 +237,10 @@ where
     }
 
     fn input_str(&self) -> Vec<&str> {
-        let mut vec = if self.specification.has_unit(&U::reference_temperature()) {
+        let mut vec = if self
+            .specification
+            .has_unit(&SIUnit::reference_temperature())
+        {
             vec!["temperature", "pressure"]
         } else {
             vec!["pressure", "temperature"]
@@ -265,10 +254,7 @@ where
         vec
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
+    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
         let mut res = Vec::new();
 
         let dia = PhaseDiagram::binary_vle(
@@ -284,7 +270,7 @@ where
         let x_vec_vap = x_vap.index_axis(Axis(1), 0);
         let tp_vec = if self
             .temperature_or_pressure
-            .has_unit(&U::reference_temperature())
+            .has_unit(&SIUnit::reference_temperature())
         {
             dia.vapor().temperature()
         } else {
@@ -303,21 +289,25 @@ where
                 )?);
             }
         }
-        Ok(Array1::from_vec(res) * (U::reference_temperature() / U::reference_temperature()))
+        Ok(Array1::from_vec(res)
+            * (SIUnit::reference_temperature() / SIUnit::reference_temperature()))
     }
 
-    fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
+    fn get_input(&self) -> HashMap<String, SIArray1> {
         let mut m = HashMap::with_capacity(4);
-        if self.specification.has_unit(&U::reference_temperature()) {
+        if self
+            .specification
+            .has_unit(&SIUnit::reference_temperature())
+        {
             m.insert(
                 "temperature".to_owned(),
-                QuantityArray1::from_vec(vec![self.specification]),
+                SIArray1::from_vec(vec![self.specification]),
             );
             m.insert("pressure".to_owned(), self.temperature_or_pressure.clone());
         } else {
             m.insert(
                 "pressure".to_owned(),
-                QuantityArray1::from_vec(vec![self.specification]),
+                SIArray1::from_vec(vec![self.specification]),
             );
             m.insert(
                 "temperature".to_owned(),
@@ -327,27 +317,27 @@ where
         if let Some(liquid_molefracs) = &self.liquid_molefracs {
             m.insert(
                 "liquid_molefracs".to_owned(),
-                liquid_molefracs * U::reference_moles() / U::reference_moles(),
+                liquid_molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
             );
         }
         if let Some(vapor_molefracs) = &self.vapor_molefracs {
             m.insert(
                 "vapor_molefracs".to_owned(),
-                vapor_molefracs * U::reference_moles() / U::reference_moles(),
+                vapor_molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
             );
         }
         m
     }
 }
 
-fn predict_distance<U: EosUnit>(
+fn predict_distance(
     x_vec: ArrayView1<f64>,
-    tp_vec: &QuantityArray1<U>,
+    tp_vec: &SIArray1,
     x_exp: &Array1<f64>,
-    tp_exp: &QuantityArray1<U>,
+    tp_exp: &SIArray1,
 ) -> Result<Vec<f64>, EstimatorError>
 where
-    QuantityScalar<U>: std::fmt::Display,
+    SINumber: std::fmt::Display,
 {
     let mut res = Vec::new();
     for (tp, &x) in tp_exp.into_iter().zip(x_exp.iter()) {

@@ -8,11 +8,11 @@ macro_rules! impl_adsorption {
     ($func:ty, $py_func:ty) => {
         /// Container structure for adsorption isotherms in 1D pores.
         #[pyclass(name = "Adsorption1D")]
-        pub struct PyAdsorption1D(Adsorption1D<SIUnit, $func>);
+        pub struct PyAdsorption1D(Adsorption1D<$func>);
 
         /// Container structure for adsorption isotherms in 3D pores.
         #[pyclass(name = "Adsorption3D")]
-        pub struct PyAdsorption3D(Adsorption3D<SIUnit, $func>);
+        pub struct PyAdsorption3D(Adsorption3D<$func>);
 
         impl_adsorption_isotherm!($func, $py_func, PyAdsorption1D, PyPore1D, PyPoreProfile1D);
         impl_adsorption_isotherm!($func, $py_func, PyAdsorption3D, PyPore3D, PyPoreProfile3D);

@@ -2,11 +2,9 @@ use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter, ParameterError};
 use feos_core::{
-    Contributions, DensityInitialization, EosUnit, EquationOfState, PhaseEquilibrium, State,
-    StateBuilder,
+    Contributions, DensityInitialization, EquationOfState, PhaseEquilibrium, State, StateBuilder,
 };
 use quantity::si::*;
-use quantity::QuantityScalar;
 use std::error::Error;
 use std::sync::Arc;
 
@@ -309,12 +307,12 @@ fn temperature_entropy_vapor() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn assert_multiple_states<E: EquationOfState, U: EosUnit + std::fmt::Debug>(
-    states: &[(&State<U, E>, &str)],
-    pressure: QuantityScalar<U>,
-    enthalpy: QuantityScalar<U>,
-    entropy: QuantityScalar<U>,
-    density: QuantityScalar<U>,
+fn assert_multiple_states<E: EquationOfState>(
+    states: &[(&State<E>, &str)],
+    pressure: SINumber,
+    enthalpy: SINumber,
+    entropy: SINumber,
+    density: SINumber,
     max_relative: f64,
 ) {
     for (s, name) in states {

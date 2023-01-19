@@ -39,8 +39,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         critical_temperature: Option<SINumber>,
         options: SolverOptions,
     ) -> EosResult<Self>
-    where
-        SINumber: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         let mut states = Vec::with_capacity(npoints);
 
@@ -80,8 +79,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         temperatures: ArrayView1<f64>,
         options: SolverOptions,
     ) -> EosResult<Vec<PhaseEquilibrium<E, 2>>>
-    where
-        SINumber: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         let mut states = Vec::with_capacity(temperatures.len());
         let mut vle = None;
@@ -109,8 +107,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         critical_temperature: Option<SINumber>,
         options: SolverOptions,
     ) -> EosResult<Self>
-    where
-        SINumber: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         let sc = State::critical_point(eos, None, critical_temperature, SolverOptions::default())?;
 

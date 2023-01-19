@@ -5,7 +5,7 @@ macro_rules! impl_planar_interface {
     ($func:ty) => {
         /// A one-dimensional density profile of a vapor-liquid or liquid-liquid interface.
         #[pyclass(name = "PlanarInterface")]
-        pub struct PyPlanarInterface(PlanarInterface<SIUnit, $func>);
+        pub struct PyPlanarInterface(PlanarInterface<$func>);
 
         impl_1d_profile!(PyPlanarInterface, [get_z]);
 

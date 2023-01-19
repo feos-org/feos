@@ -117,7 +117,7 @@ macro_rules! impl_estimator {
         /// cost functions and make predictions using an equation of state.
         #[pyclass(name = "DataSet")]
         #[derive(Clone)]
-        pub struct PyDataSet(Arc<dyn DataSet<SIUnit, $eos>>);
+        pub struct PyDataSet(Arc<dyn DataSet<$eos>>);
 
         #[pymethods]
         impl PyDataSet {
@@ -135,7 +135,7 @@ macro_rules! impl_estimator {
             /// -------
             /// numpy.ndarray[Float]
             ///     The cost function evaluated for each experimental data point.
-            /// 
+            ///
             /// Note
             /// ----
             /// The cost function that is used depends on the
@@ -257,7 +257,7 @@ macro_rules! impl_estimator {
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
-                Ok(Self(Arc::new(VaporPressure::<SIUnit>::new(
+                Ok(Self(Arc::new(VaporPressure::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     extrapolate.unwrap_or(false),
@@ -287,7 +287,7 @@ macro_rules! impl_estimator {
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
             ) -> PyResult<Self> {
-                Ok(Self(Arc::new(LiquidDensity::<SIUnit>::new(
+                Ok(Self(Arc::new(LiquidDensity::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     pressure.clone().into(),
@@ -325,7 +325,7 @@ macro_rules! impl_estimator {
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
-                Ok(Self(Arc::new(EquilibriumLiquidDensity::<SIUnit>::new(
+                Ok(Self(Arc::new(EquilibriumLiquidDensity::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     Some((max_iter, tol, verbosity).into()),
@@ -482,7 +482,7 @@ macro_rules! impl_estimator {
         /// Estimator
         #[pyclass(name = "Estimator")]
         #[pyo3(text_signature = "(data, weights, losses)")]
-        pub struct PyEstimator(Estimator<SIUnit, $eos>);
+        pub struct PyEstimator(Estimator<$eos>);
 
         #[pymethods]
         impl PyEstimator {
@@ -507,11 +507,11 @@ macro_rules! impl_estimator {
             /// numpy.ndarray[Float]
             ///     The cost function evaluated for each experimental data point
             ///     of each ``DataSet``.
-            /// 
+            ///
             /// Note
             /// ----
             /// The cost function is:
-            /// 
+            ///
             /// - The relative difference between prediction and target value,
             /// - to which a loss function is applied,
             /// - and which is weighted according to the number of datapoints,
@@ -650,7 +650,7 @@ macro_rules! impl_estimator_entropy_scaling {
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
             ) -> PyResult<Self> {
-                Ok(Self(Arc::new(Viscosity::<SIUnit>::new(
+                Ok(Self(Arc::new(Viscosity::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     pressure.clone().into(),
@@ -678,7 +678,7 @@ macro_rules! impl_estimator_entropy_scaling {
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
             ) -> PyResult<Self> {
-                Ok(Self(Arc::new(ThermalConductivity::<SIUnit>::new(
+                Ok(Self(Arc::new(ThermalConductivity::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     pressure.clone().into(),
@@ -706,7 +706,7 @@ macro_rules! impl_estimator_entropy_scaling {
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
             ) -> PyResult<Self> {
-                Ok(Self(Arc::new(Diffusion::<SIUnit>::new(
+                Ok(Self(Arc::new(Diffusion::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     pressure.clone().into(),

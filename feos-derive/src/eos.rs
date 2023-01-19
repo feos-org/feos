@@ -102,7 +102,7 @@ fn impl_molar_weight(
         }
     }
     Ok(quote! {
-        impl MolarWeight<SIUnit> for EosVariant {
+        impl MolarWeight for EosVariant {
             fn molar_weight(&self) -> SIArray1 {
                 match self {
                     #(#molar_weight,)*
@@ -148,7 +148,7 @@ fn impl_entropy_scaling(
     }
 
     Ok(quote! {
-        impl EntropyScaling<SIUnit> for EosVariant {
+        impl EntropyScaling for EosVariant {
             fn viscosity_reference(
                 &self,
                 temperature: SINumber,

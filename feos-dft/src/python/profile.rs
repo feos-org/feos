@@ -21,7 +21,7 @@ macro_rules! impl_profile {
                 log: bool,
                 py: Python<'py>,
             ) -> PyResult<(&'py $arr2<f64>, &'py PyArray1<f64>, f64)> {
-                let (res_rho, res_mres_norm) = self.0.profile.residual(log)?;
+                let (res_rho, res_mu, res_norm) = self.0.profile.residual(log)?;
                 Ok((res_rho.view().to_pyarray(py), res_mu.view().to_pyarray(py), res_norm))
             }
 

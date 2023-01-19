@@ -25,8 +25,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         x_lle: Option<(f64, f64)>,
         bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
-    where
-        SINumber: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         let npoints = npoints.unwrap_or(DEFAULT_POINTS);
         let tp = temperature_or_pressure.try_into()?;
@@ -106,8 +105,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         vle_sat: [Option<PhaseEquilibrium<E, 2>>; 2],
         bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<(Vec<PhaseEquilibrium<E, 2>>, Vec<PhaseEquilibrium<E, 2>>)>
-    where
-        SINumber: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         match vle_sat {
             [Some(vle2), Some(vle1)] => {
@@ -151,8 +149,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         max_tp: SINumber,
         npoints: Option<usize>,
     ) -> EosResult<Self>
-    where
-        SINumber: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         let npoints = npoints.unwrap_or(DEFAULT_POINTS);
         let mut states = Vec::with_capacity(npoints);
@@ -272,8 +269,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
         npoints_lle: Option<usize>,
         bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<PhaseDiagramHetero<E>>
-    where
-        SINumber: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         let npoints_vle = npoints_vle.unwrap_or(DEFAULT_POINTS);
         let tp = temperature_or_pressure.try_into()?;

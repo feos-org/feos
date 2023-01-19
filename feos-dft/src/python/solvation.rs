@@ -28,7 +28,7 @@ macro_rules! impl_solvation_profile {
         ///
         #[pyclass(name = "SolvationProfile")]
         #[pyo3(text_signature = "(bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None, potential_cutoff=None)")]
-        pub struct PySolvationProfile(SolvationProfile<SIUnit, $func>);
+        pub struct PySolvationProfile(SolvationProfile<$func>);
 
         impl_3d_profile!(PySolvationProfile, get_x, get_y, get_z);
 
@@ -94,7 +94,7 @@ macro_rules! impl_pair_correlation {
         ///
         #[pyclass(name = "PairCorrelation")]
         #[pyo3(text_signature = "(bulk, test_particle, n_grid, width)")]
-        pub struct PyPairCorrelation(PairCorrelation<SIUnit, $func>);
+        pub struct PyPairCorrelation(PairCorrelation<$func>);
 
         impl_1d_profile!(PyPairCorrelation, [get_r]);
 

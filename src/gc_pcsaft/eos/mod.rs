@@ -111,7 +111,7 @@ impl EquationOfState for GcPcSaft {
     }
 }
 
-impl MolarWeight<SIUnit> for GcPcSaft {
+impl MolarWeight for GcPcSaft {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }

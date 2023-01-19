@@ -8,7 +8,7 @@ use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape,
 use ndarray::Array1;
 use num_dual::DualNum;
 use petgraph::graph::UnGraph;
-use quantity::si::{SIArray1, SIUnit, GRAM, MOL};
+use quantity::si::{SIArray1, GRAM, MOL};
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
@@ -116,7 +116,7 @@ impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
     }
 }
 
-impl MolarWeight<SIUnit> for GcPcSaftFunctional {
+impl MolarWeight for GcPcSaftFunctional {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }

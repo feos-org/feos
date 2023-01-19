@@ -21,8 +21,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
         initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
     ) -> EosResult<Self>
-    where
-        SINumber: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         match TPSpec::try_from(temperature_or_pressure)? {
             TPSpec::Temperature(t) => Self::pure_t(eos, t, initial_state, options),
@@ -38,8 +37,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
         initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
     ) -> EosResult<Self>
-    where
-        SINumber: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_PURE, TOL_PURE);
 
@@ -68,8 +66,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     }
 
     fn iterate_pure_t(self, max_iter: usize, tol: f64, verbosity: Verbosity) -> EosResult<Self>
-    where
-        SINumber: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         let mut p_old = self.vapor().pressure(Contributions::Total);
         let [mut vapor, mut liquid] = self.0;
@@ -172,8 +169,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
         initial_state: Option<&Self>,
         options: SolverOptions,
     ) -> EosResult<Self>
-    where
-        SINumber: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_PURE, TOL_PURE);
 
@@ -362,8 +358,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     /// Calculate the pure component vapor pressures of all
     /// components in the system for the given temperature.
     pub fn vapor_pressure(eos: &Arc<E>, temperature: SINumber) -> Vec<Option<SINumber>>
-    where
-        SINumber: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         (0..eos.components())
             .map(|i| {
@@ -378,8 +373,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     /// Calculate the pure component boiling temperatures of all
     /// components in the system for the given pressure.
     pub fn boiling_temperature(eos: &Arc<E>, pressure: SINumber) -> Vec<Option<SINumber>>
-    where
-        SINumber: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         (0..eos.components())
             .map(|i| {
@@ -397,8 +391,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
         eos: &Arc<E>,
         temperature_or_pressure: SINumber,
     ) -> Vec<Option<PhaseEquilibrium<E, 2>>>
-    where
-        SINumber: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         (0..eos.components())
             .map(|i| {

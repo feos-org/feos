@@ -117,7 +117,7 @@ impl HelmholtzEnergyFunctional for PetsFunctional {
     }
 }
 
-impl MolarWeight<SIUnit> for PetsFunctional {
+impl MolarWeight for PetsFunctional {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }

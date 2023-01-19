@@ -1,11 +1,9 @@
 //! The [`Estimator`] struct can be used to store multiple [`DataSet`]s for convenient parameter
 //! optimization.
 use super::{DataSet, EstimatorError, Loss};
-use feos_core::EosUnit;
 use feos_core::EquationOfState;
 use ndarray::{arr1, concatenate, Array1, ArrayView1, Axis};
-use quantity::QuantityArray1;
-use quantity::QuantityScalar;
+use quantity::si::SIArray1;
 use std::fmt;
 use std::fmt::Display;
 use std::fmt::Write;
@@ -13,21 +11,18 @@ use std::sync::Arc;
 
 /// A collection of [`DataSet`]s and weights that can be used to
 /// evaluate an equation of state versus experimental data.
-pub struct Estimator<U: EosUnit, E: EquationOfState> {
-    data: Vec<Arc<dyn DataSet<U, E>>>,
+pub struct Estimator<E: EquationOfState> {
+    data: Vec<Arc<dyn DataSet<E>>>,
     weights: Vec<f64>,
     losses: Vec<Loss>,
 }
 
-impl<U: EosUnit, E: EquationOfState> Estimator<U, E>
-where
-    QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-{
+impl<E: EquationOfState> Estimator<E> {
     /// Create a new `Estimator` given `DataSet`s and weights.
     ///
     /// The weights are normalized and used as multiplicator when the
     /// cost function across all `DataSet`s is evaluated.
-    pub fn new(data: Vec<Arc<dyn DataSet<U, E>>>, weights: Vec<f64>, losses: Vec<Loss>) -> Self {
+    pub fn new(data: Vec<Arc<dyn DataSet<E>>>, weights: Vec<f64>, losses: Vec<Loss>) -> Self {
         Self {
             data,
             weights,
@@ -36,7 +31,7 @@ where
     }
 
     /// Add a `DataSet` and its weight.
-    pub fn add_data(&mut self, data: &Arc<dyn DataSet<U, E>>, weight: f64, loss: Loss) {
+    pub fn add_data(&mut self, data: &Arc<dyn DataSet<E>>, weight: f64, loss: Loss) {
         self.data.push(data.clone());
         self.weights.push(weight);
         self.losses.push(loss);
@@ -58,7 +53,7 @@ where
     }
 
     /// Returns the properties as computed by the equation of state for each `DataSet`.
-    pub fn predict(&self, eos: &Arc<E>) -> Result<Vec<QuantityArray1<U>>, EstimatorError> {
+    pub fn predict(&self, eos: &Arc<E>) -> Result<Vec<SIArray1>, EstimatorError> {
         self.data.iter().map(|d| d.predict(eos)).collect()
     }
 
@@ -82,7 +77,7 @@ where
     }
 
     /// Returns the stored `DataSet`s.
-    pub fn datasets(&self) -> Vec<Arc<dyn DataSet<U, E>>> {
+    pub fn datasets(&self) -> Vec<Arc<dyn DataSet<E>>> {
         self.data.to_vec()
     }
 
@@ -104,7 +99,7 @@ where
     }
 }
 
-impl<U: EosUnit, E: EquationOfState> Display for Estimator<U, E> {
+impl<E: EquationOfState> Display for Estimator<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for d in self.data.iter() {
             writeln!(f, "{}", d)?;

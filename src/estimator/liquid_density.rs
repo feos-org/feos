@@ -4,27 +4,27 @@ use feos_core::{
     State,
 };
 use ndarray::arr1;
-use quantity::{QuantityArray1, QuantityScalar};
+use quantity::si::{SIArray1, SIUnit};
 use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Liquid mass density data as function of pressure and temperature.
 #[derive(Clone)]
-pub struct LiquidDensity<U: EosUnit> {
+pub struct LiquidDensity {
     /// mass density
-    pub target: QuantityArray1<U>,
+    pub target: SIArray1,
     /// temperature
-    temperature: QuantityArray1<U>,
+    temperature: SIArray1,
     /// pressure
-    pressure: QuantityArray1<U>,
+    pressure: SIArray1,
 }
 
-impl<U: EosUnit> LiquidDensity<U> {
+impl LiquidDensity {
     /// A new data set for liquid densities with pressures and temperatures as input.
     pub fn new(
-        target: QuantityArray1<U>,
-        temperature: QuantityArray1<U>,
-        pressure: QuantityArray1<U>,
+        target: SIArray1,
+        temperature: SIArray1,
+        pressure: SIArray1,
     ) -> Result<Self, EstimatorError> {
         Ok(Self {
             target,
@@ -34,18 +34,18 @@ impl<U: EosUnit> LiquidDensity<U> {
     }
 
     /// Returns temperature of data points.
-    pub fn temperature(&self) -> QuantityArray1<U> {
+    pub fn temperature(&self) -> SIArray1 {
         self.temperature.clone()
     }
 
     /// Returns pressure of data points.
-    pub fn pressure(&self) -> QuantityArray1<U> {
+    pub fn pressure(&self) -> SIArray1 {
         self.pressure.clone()
     }
 }
 
-impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDensity<U> {
-    fn target(&self) -> &QuantityArray1<U> {
+impl<E: EquationOfState + MolarWeight> DataSet<E> for LiquidDensity {
+    fn target(&self) -> &SIArray1 {
         &self.target
     }
 
@@ -57,8 +57,8 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDe
         vec!["temperature", "pressure"]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError> {
-        let moles = arr1(&[1.0]) * U::reference_moles();
+    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
+        let moles = arr1(&[1.0]) * SIUnit::reference_moles();
         Ok(self
             .temperature
             .into_iter()
@@ -68,13 +68,13 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDe
                 if let Ok(s) = state {
                     s.mass_density()
                 } else {
-                    f64::NAN * U::reference_mass() / U::reference_volume()
+                    f64::NAN * SIUnit::reference_mass() / SIUnit::reference_volume()
                 }
             })
             .collect())
     }
 
-    fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
+    fn get_input(&self) -> HashMap<String, SIArray1> {
         let mut m = HashMap::with_capacity(2);
         m.insert("temperature".to_owned(), self.temperature());
         m.insert("pressure".to_owned(), self.pressure());
@@ -84,17 +84,17 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDe
 
 /// Store experimental data of liquid densities and compare to the equation of state.
 #[derive(Clone)]
-pub struct EquilibriumLiquidDensity<U: EosUnit> {
-    pub target: QuantityArray1<U>,
-    temperature: QuantityArray1<U>,
+pub struct EquilibriumLiquidDensity {
+    pub target: SIArray1,
+    temperature: SIArray1,
     solver_options: SolverOptions,
 }
 
-impl<U: EosUnit> EquilibriumLiquidDensity<U> {
+impl EquilibriumLiquidDensity {
     /// A new data set for liquid densities with pressures and temperatures as input.
     pub fn new(
-        target: QuantityArray1<U>,
-        temperature: QuantityArray1<U>,
+        target: SIArray1,
+        temperature: SIArray1,
         vle_options: Option<SolverOptions>,
     ) -> Result<Self, EstimatorError> {
         Ok(Self {
@@ -105,15 +105,13 @@ impl<U: EosUnit> EquilibriumLiquidDensity<U> {
     }
 
     /// Returns temperature of data points.
-    pub fn temperature(&self) -> QuantityArray1<U> {
+    pub fn temperature(&self) -> SIArray1 {
         self.temperature.clone()
     }
 }
 
-impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
-    for EquilibriumLiquidDensity<U>
-{
-    fn target(&self) -> &QuantityArray1<U> {
+impl<E: EquationOfState + MolarWeight> DataSet<E> for EquilibriumLiquidDensity {
+    fn target(&self) -> &SIArray1 {
         &self.target
     }
 
@@ -125,10 +123,7 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
         vec!["temperature"]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
+    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
         Ok(self
             .temperature
             .into_iter()
@@ -136,13 +131,13 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
                 if let Ok(state) = PhaseEquilibrium::pure(eos, t, None, self.solver_options) {
                     state.liquid().mass_density()
                 } else {
-                    f64::NAN * U::reference_mass() / U::reference_volume()
+                    f64::NAN * SIUnit::reference_mass() / SIUnit::reference_volume()
                 }
             })
             .collect())
     }
 
-    fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
+    fn get_input(&self) -> HashMap<String, SIArray1> {
         let mut m = HashMap::with_capacity(2);
         m.insert("temperature".to_owned(), self.temperature());
         m
