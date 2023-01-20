@@ -18,8 +18,8 @@ rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 features = [ "rayon" ]
 
 [dependencies]
-quantity = "0.5"
-num-dual = { version = "0.5", features = ["linalg"] }
+quantity = "0.6"
+num-dual = { git = "https://github.com/itt-ustutt/num-dual", features = ["linalg"] }
 ndarray = { version = "0.15", features = ["serde"] }
 num-traits = "0.2"
 thiserror = "1.0"
@@ -27,8 +27,8 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 indexmap = "1.8"
 conv = "0.3"
-numpy = { version = "0.16", optional = true }
-pyo3 = { version = "0.16", optional = true }
+numpy = { version = "0.18", optional = true }
+pyo3 = { version = "0.18", optional = true }
 rayon = { version = "1.5", optional = true }
 
 [dev-dependencies]
