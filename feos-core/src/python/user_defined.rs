@@ -110,81 +110,81 @@ impl fmt::Display for PyHelmholtzEnergy {
 }
 
 macro_rules! state {
-    ($py_state_id:ident, $py_state_ty:ty, $py_hd_ty:ty, $hd_ty:ty) => {
+    ($py_state_id:ident, $py_hd_id:ident, $hd_ty:ty) => {
         #[pyclass]
         #[derive(Clone)]
         struct $py_state_id(StateHD<$hd_ty>);
 
-        impl From<StateHD<$hd_ty>> for $py_state_ty {
+        impl From<StateHD<$hd_ty>> for $py_state_id {
             fn from(s: StateHD<$hd_ty>) -> Self {
                 Self(s)
             }
         }
 
         #[pymethods]
-        impl $py_state_ty {
+        impl $py_state_id {
             #[new]
-            pub fn new(temperature: $py_hd_ty, volume: $py_hd_ty, moles: Vec<$py_hd_ty>) -> Self {
+            pub fn new(temperature: $py_hd_id, volume: $py_hd_id, moles: Vec<$py_hd_id>) -> Self {
                 let m = Array1::from(moles).mapv(<$hd_ty>::from);
                 Self(StateHD::<$hd_ty>::new(temperature.into(), volume.into(), m))
             }
 
             #[getter]
-            pub fn get_temperature(&self) -> $py_hd_ty {
-                <$py_hd_ty>::from(self.0.temperature)
+            pub fn get_temperature(&self) -> $py_hd_id {
+                <$py_hd_id>::from(self.0.temperature)
             }
 
             #[getter]
-            pub fn get_volume(&self) -> $py_hd_ty {
-                <$py_hd_ty>::from(self.0.volume)
+            pub fn get_volume(&self) -> $py_hd_id {
+                <$py_hd_id>::from(self.0.volume)
             }
 
             #[getter]
-            pub fn get_moles(&self) -> Vec<$py_hd_ty> {
-                self.0.moles.mapv(<$py_hd_ty>::from).into_raw_vec()
+            pub fn get_moles(&self) -> Vec<$py_hd_id> {
+                self.0.moles.mapv(<$py_hd_id>::from).into_raw_vec()
             }
 
             #[getter]
-            pub fn get_partial_density(&self) -> Vec<$py_hd_ty> {
+            pub fn get_partial_density(&self) -> Vec<$py_hd_id> {
                 self.0
                     .partial_density
-                    .mapv(<$py_hd_ty>::from)
+                    .mapv(<$py_hd_id>::from)
                     .into_raw_vec()
             }
 
             #[getter]
-            pub fn get_molefracs(&self) -> Vec<$py_hd_ty> {
-                self.0.molefracs.mapv(<$py_hd_ty>::from).into_raw_vec()
+            pub fn get_molefracs(&self) -> Vec<$py_hd_id> {
+                self.0.molefracs.mapv(<$py_hd_id>::from).into_raw_vec()
             }
 
             #[getter]
-            pub fn get_density(&self) -> $py_hd_ty {
-                <$py_hd_ty>::from(self.0.partial_density.sum())
+            pub fn get_density(&self) -> $py_hd_id {
+                <$py_hd_id>::from(self.0.partial_density.sum())
             }
         }
     };
 }
 
 macro_rules! dual_number {
-    ($py_hd_id:ident, $py_hd_ty:ty, $hd_ty:ty, $py_field_ty:ty) => {
+    ($py_hd_id:ident, $hd_ty:ty, $py_field_ty:ty) => {
         #[pyclass]
         #[derive(Clone)]
         struct $py_hd_id($hd_ty);
-        impl_dual_num!($py_hd_ty, $hd_ty, $py_field_ty);
+        impl_dual_num!($py_hd_id, $hd_ty, $py_field_ty);
     };
 }
 
 macro_rules! helmholtz_energy {
-    ($py_state_ty:ty, $py_hd_ty:ty, $hd_ty:ty) => {
+    ($py_state_id:ident, $py_hd_id:ident, $hd_ty:ty) => {
         impl HelmholtzEnergyDual<$hd_ty> for PyHelmholtzEnergy {
             fn helmholtz_energy(&self, state: &StateHD<$hd_ty>) -> $hd_ty {
                 Python::with_gil(|py| {
                     let py_result = self
                         .0
                         .as_ref(py)
-                        .call_method1("helmholtz_energy", (<$py_state_ty>::from(state.clone()),))
+                        .call_method1("helmholtz_energy", (<$py_state_id>::from(state.clone()),))
                         .unwrap();
-                    <$hd_ty>::from(py_result.extract::<$py_hd_ty>().unwrap())
+                    <$hd_ty>::from(py_result.extract::<$py_hd_id>().unwrap())
                 })
             }
         }
@@ -192,82 +192,61 @@ macro_rules! helmholtz_energy {
 }
 
 macro_rules! impl_dual_state_helmholtz_energy {
-    ($py_state_id:ident, $py_state_ty:ty, $py_hd_id:ident, $py_hd_ty:ty, $hd_ty:ty, $py_field_ty:ty) => {
-        dual_number!($py_hd_id, $py_hd_ty, $hd_ty, $py_field_ty);
-        state!($py_state_id, $py_state_ty, $py_hd_ty, $hd_ty);
-        helmholtz_energy!($py_state_ty, $py_hd_ty, $hd_ty);
+    ($py_state_id:ident, $py_hd_id:ident, $hd_ty:ty, $py_field_ty:ty) => {
+        dual_number!($py_hd_id, $hd_ty, $py_field_ty);
+        state!($py_state_id, $py_hd_id, $hd_ty);
+        helmholtz_energy!($py_state_id, $py_hd_id, $hd_ty);
     };
 }
 
 // No definition of dual number necessary for f64
-state!(PyStateF, PyStateF, f64, f64);
+state!(PyStateF, f64, f64);
 helmholtz_energy!(PyStateF, f64, f64);
 
-// Arguments:
-// - python state identifier,
-// - python state type (=identifier),
-// - python dual number identifier,
-// - python dual number type (=identifier),
-// - rust dual number type,
-// - python dual number field type (return of re(), etc.)
-impl_dual_state_helmholtz_energy!(PyStateD, PyStateD, PyDual64, PyDual64, Dual64, f64);
-dual_number!(PyDualVec3, PyDualVec3, DualVec64<3>, f64);
+impl_dual_state_helmholtz_energy!(PyStateD, PyDual64, Dual64, f64);
+dual_number!(PyDualVec3, DualVec64<3>, f64);
 impl_dual_state_helmholtz_energy!(
     PyStateDualDualVec3,
-    PyStateDualDualVec3,
-    PyDualDualVec3,
     PyDualDualVec3,
     Dual<DualVec64<3>, f64>,
     PyDualVec3
 );
 impl_dual_state_helmholtz_energy!(
     PyStateHD,
-    PyStateHD,
-    PyHyperDual64,
     PyHyperDual64,
     HyperDual64,
     f64
 );
-impl_dual_state_helmholtz_energy!(PyStateD2, PyStateD2, PyDual2_64, PyDual2_64, Dual2_64, f64);
-impl_dual_state_helmholtz_energy!(PyStateD3, PyStateD3, PyDual3_64, PyDual3_64, Dual3_64, f64);
-impl_dual_state_helmholtz_energy!(PyStateHDD, PyStateHDD, PyHyperDualDual64, PyHyperDualDual64, HyperDual<Dual64, f64>, PyDual64);
-dual_number!(PyDualVec2, PyDualVec2, DualVec64<2>, f64);
+impl_dual_state_helmholtz_energy!(PyStateD2, PyDual2_64, Dual2_64, f64);
+impl_dual_state_helmholtz_energy!(PyStateD3, PyDual3_64, Dual3_64, f64);
+impl_dual_state_helmholtz_energy!(PyStateHDD, PyHyperDualDual64, HyperDual<Dual64, f64>, PyDual64);
+dual_number!(PyDualVec2, DualVec64<2>, f64);
 impl_dual_state_helmholtz_energy!(
     PyStateHDDVec2,
-    PyStateHDDVec2,
-    PyHyperDualVec2,
     PyHyperDualVec2,
     HyperDual<DualVec64<2>, f64>,
     PyDualVec2
 );
 impl_dual_state_helmholtz_energy!(
     PyStateHDDVec3,
-    PyStateHDDVec3,
-    PyHyperDualVec3,
     PyHyperDualVec3,
     HyperDual<DualVec64<3>, f64>,
     PyDualVec3
 );
 impl_dual_state_helmholtz_energy!(
     PyStateD3D,
-    PyStateD3D,
-    PyDual3Dual64,
     PyDual3Dual64,
     Dual3<Dual64, f64>,
     PyDual64
 );
 impl_dual_state_helmholtz_energy!(
     PyStateD3DVec2,
-    PyStateD3DVec2,
-    PyDual3DualVec2,
     PyDual3DualVec2,
     Dual3<DualVec64<2>, f64>,
     PyDualVec2
 );
 impl_dual_state_helmholtz_energy!(
     PyStateD3DVec3,
-    PyStateD3DVec3,
-    PyDual3DualVec3,
     PyDual3DualVec3,
     Dual3<DualVec64<3>, f64>,
     PyDualVec3
