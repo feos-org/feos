@@ -19,7 +19,7 @@ features = [ "rayon" ]
 
 [dependencies]
 quantity = "0.6"
-num-dual = { git = "https://github.com/itt-ustutt/num-dual", features = ["linalg"] }
+num-dual = { version = "0.6", features = ["linalg"] }
 ndarray = { version = "0.15", features = ["serde"] }
 num-traits = "0.2"
 thiserror = "1.0"

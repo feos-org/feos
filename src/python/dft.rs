@@ -33,7 +33,7 @@ use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
 #[cfg(feature = "estimator")]
 use pyo3::wrap_pymodule;
-use quantity::python::*;
+use quantity::python::{PySINumber, PySIArray1, PySIArray2, PySIArray3};
 use quantity::si::*;
 use std::collections::HashMap;
 use std::sync::Arc;

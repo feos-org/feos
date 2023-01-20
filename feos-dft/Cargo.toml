@@ -18,7 +18,7 @@ features = [ "rayon" ]
 
 [dependencies]
 quantity = { version = "0.6", features = ["linalg"] }
-num-dual = { git = "https://github.com/itt-ustutt/num-dual" }
+num-dual = "0.6"
 feos-core = { version = "0.3", path = "../feos-core" }
 ndarray = "0.15"
 rustdct = "0.7"

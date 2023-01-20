@@ -1,47 +1,47 @@
 #[cfg(feature = "gc_pcsaft")]
-use crate::gc_pcsaft::python::__PYO3_PYMODULE_DEF_GC_PCSAFT;
+use crate::gc_pcsaft::python::gc_pcsaft as gc_pcsaft_module;
 #[cfg(feature = "pcsaft")]
-use crate::pcsaft::python::__PYO3_PYMODULE_DEF_PCSAFT;
+use crate::pcsaft::python::pcsaft as pcsaft_module;
 #[cfg(feature = "pets")]
-use crate::pets::python::__PYO3_PYMODULE_DEF_PETS;
+use crate::pets::python::pets as pets_module;
 #[cfg(feature = "saftvrqmie")]
-use crate::saftvrqmie::python::__PYO3_PYMODULE_DEF_SAFTVRQMIE;
+use crate::saftvrqmie::python::saftvrqmie as saftvrqmie_module;
 #[cfg(feature = "uvtheory")]
-use crate::uvtheory::python::__PYO3_PYMODULE_DEF_UVTHEORY;
+use crate::uvtheory::python::uvtheory as uvtheory_module;
 
 use pyo3::prelude::*;
 use pyo3::wrap_pymodule;
-use quantity::python::__PYO3_PYMODULE_DEF_QUANTITY;
+use quantity::python::quantity as quantity_module;
 
 mod cubic;
 mod eos;
-use cubic::__PYO3_PYMODULE_DEF_CUBIC;
-use eos::__PYO3_PYMODULE_DEF_EOS;
+use cubic::cubic as cubic_module;
+use eos::eos as eos_module;
 
 #[cfg(feature = "dft")]
 mod dft;
 #[cfg(feature = "dft")]
-use dft::__PYO3_PYMODULE_DEF_DFT;
+use dft::dft as dft_module;
 
 #[pymodule]
 pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    m.add_wrapped(wrap_pymodule!(quantity))?;
+    m.add_wrapped(wrap_pymodule!(quantity_module))?;
 
-    m.add_wrapped(wrap_pymodule!(eos))?;
+    m.add_wrapped(wrap_pymodule!(eos_module))?;
     #[cfg(feature = "dft")]
-    m.add_wrapped(wrap_pymodule!(dft))?;
-    m.add_wrapped(wrap_pymodule!(cubic))?;
+    m.add_wrapped(wrap_pymodule!(dft_module))?;
+    m.add_wrapped(wrap_pymodule!(cubic_module))?;
     #[cfg(feature = "pcsaft")]
-    m.add_wrapped(wrap_pymodule!(pcsaft))?;
+    m.add_wrapped(wrap_pymodule!(pcsaft_module))?;
     #[cfg(feature = "gc_pcsaft")]
-    m.add_wrapped(wrap_pymodule!(gc_pcsaft))?;
+    m.add_wrapped(wrap_pymodule!(gc_pcsaft_module))?;
     #[cfg(feature = "pets")]
-    m.add_wrapped(wrap_pymodule!(pets))?;
+    m.add_wrapped(wrap_pymodule!(pets_module))?;
     #[cfg(feature = "uvtheory")]
-    m.add_wrapped(wrap_pymodule!(uvtheory))?;
+    m.add_wrapped(wrap_pymodule!(uvtheory_module))?;
     #[cfg(feature = "saftvrqmie")]
-    m.add_wrapped(wrap_pymodule!(saftvrqmie))?;
+    m.add_wrapped(wrap_pymodule!(saftvrqmie_module))?;
 
     set_path(py, m, "feos.si", "quantity")?;
     set_path(py, m, "feos.eos", "eos")?;
