@@ -11,6 +11,7 @@ pub struct PyAssociationRecord(pub AssociationRecord);
 
 #[pymethods]
 impl PyAssociationRecord {
+    #[pyo3(signature = (kappa_ab, epsilon_k_ab, na=None, nb=None))]
     #[new]
     fn new(kappa_ab: f64, epsilon_k_ab: f64, na: Option<f64>, nb: Option<f64>) -> Self {
         Self(AssociationRecord::new(kappa_ab, epsilon_k_ab, na, nb))

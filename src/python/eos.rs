@@ -117,13 +117,11 @@ impl PyEosVariant {
     ///     The gc-PC-SAFT equation of state that can be used to compute thermodynamic
     ///     states.
     #[cfg(feature = "gc_pcsaft")]
-    #[args(
-        max_eta = "0.5",
-        max_iter_cross_assoc = "50",
-        tol_cross_assoc = "1e-10"
-    )]
     #[staticmethod]
-    #[pyo3(text_signature = "(parameters, max_eta, max_iter_cross_assoc, tol_cross_assoc)")]
+    #[pyo3(
+        signature = (parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10),
+        text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10)"
+    )]
     pub fn gc_pcsaft(
         parameters: PyGcPcSaftEosParameters,
         max_eta: f64,
@@ -154,7 +152,6 @@ impl PyEosVariant {
     ///     The PR equation of state that can be used to compute thermodynamic
     ///     states.
     #[staticmethod]
-    #[pyo3(text_signature = "(parameters)")]
     pub fn peng_robinson(parameters: PyPengRobinsonParameters) -> Self {
         Self(Arc::new(EosVariant::PengRobinson(PengRobinson::new(
             parameters.0,
@@ -173,7 +170,6 @@ impl PyEosVariant {
     /// -------
     /// EquationOfState
     #[staticmethod]
-    #[pyo3(text_signature = "(obj)")]
     fn python(obj: Py<PyAny>) -> PyResult<Self> {
         Ok(Self(Arc::new(EosVariant::Python(PyEoSObj::new(obj)?))))
     }
@@ -193,9 +189,8 @@ impl PyEosVariant {
     ///     The PeTS equation of state that can be used to compute thermodynamic
     ///     states.
     #[cfg(feature = "pets")]
-    #[args(max_eta = "0.5")]
     #[staticmethod]
-    #[pyo3(text_signature = "(parameters, max_eta)")]
+    #[pyo3(signature = (parameters, max_eta=0.5), text_signature = "(parameters, max_eta=0.5)")]
     fn pets(parameters: PyPetsParameters, max_eta: f64) -> Self {
         let options = PetsOptions { max_eta };
         Self(Arc::new(EosVariant::Pets(Pets::with_options(
@@ -224,13 +219,11 @@ impl PyEosVariant {
     ///     The UV-Theory equation of state that can be used to compute thermodynamic
     ///     states.
     #[cfg(feature = "uvtheory")]
-    #[args(
-        max_eta = "0.5",
-        perturbation = "Perturbation::WeeksChandlerAndersen",
-        virial_order = "VirialOrder::Second"
-    )]
     #[staticmethod]
-    #[pyo3(text_signature = "(parameters, max_eta, perturbation, virial_order)")]
+    #[pyo3(
+        signature = (parameters, max_eta=0.5, perturbation=Perturbation::WeeksChandlerAndersen, virial_order=VirialOrder::Second),    
+        text_signature = "(parameters, max_eta=0.5, perturbation=Perturbation.WeeksChandlerAndersen, virial_order=VirialOrder.Second)"
+    )]
     fn uvtheory(
         parameters: PyUVParameters,
         max_eta: f64,
@@ -268,12 +261,10 @@ impl PyEosVariant {
     ///     states.
     #[cfg(feature = "saftvrqmie")]
     #[staticmethod]
-    #[args(
-        max_eta = "0.5",
-        fh_order = "FeynmanHibbsOrder::FH1",
-        inc_nonadd_term = "true"
+    #[pyo3(
+        signature = (parameters, max_eta=0.5, fh_order=FeynmanHibbsOrder::FH1, inc_nonadd_term=true),
+        text_signature = "(parameters, max_eta=0.5, fh_order=FeynmanHibbsOrder.FH1, inc_nonadd_term=True)"
     )]
-    #[pyo3(text_signature = "(parameters, max_eta, fh_order, inc_nonadd_term)")]
     fn saftvrqmie(
         parameters: PySaftVRQMieParameters,
         max_eta: f64,

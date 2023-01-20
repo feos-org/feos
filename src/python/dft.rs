@@ -65,16 +65,10 @@ impl PyFunctionalVariant {
     /// -------
     /// HelmholtzEnergyFunctional
     #[cfg(feature = "pcsaft")]
-    #[args(
-        fmt_version = "FMTVersion::WhiteBear",
-        max_eta = "0.5",
-        max_iter_cross_assoc = "50",
-        tol_cross_assoc = "1e-10",
-        dq_variant = "DQVariants::DQ35"
-    )]
     #[staticmethod]
     #[pyo3(
-        text_signature = "(parameters, fmt_version, max_eta, max_iter_cross_assoc, tol_cross_assoc, dq_variant)"
+        signature = (parameters, fmt_version=FMTVersion::WhiteBear, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant=DQVariants::DQ35),
+        text_signature = "(parameters, fmt_version=FMTVersion.WhiteBear, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant=DQVariants.DQ35)"
     )]
     fn pcsaft(
         parameters: PyPcSaftParameters,
@@ -114,15 +108,10 @@ impl PyFunctionalVariant {
     /// -------
     /// HelmholtzEnergyFunctional
     #[cfg(feature = "gc_pcsaft")]
-    #[args(
-        fmt_version = "FMTVersion::WhiteBear",
-        max_eta = "0.5",
-        max_iter_cross_assoc = "50",
-        tol_cross_assoc = "1e-10"
-    )]
     #[staticmethod]
     #[pyo3(
-        text_signature = "(parameters, fmt_version, max_eta, max_iter_cross_assoc, tol_cross_assoc)"
+        signature = (parameters, fmt_version=FMTVersion::WhiteBear, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10),
+        text_signature = "(parameters, fmt_version=FMTVersion.WhiteBear, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10)"
     )]
     fn gc_pcsaft(
         parameters: PyGcPcSaftFunctionalParameters,
@@ -157,9 +146,11 @@ impl PyFunctionalVariant {
     /// -------
     /// HelmholtzEnergyFunctional
     #[cfg(feature = "pets")]
-    #[args(fmt_version = "FMTVersion::WhiteBear", max_eta = "0.5")]
     #[staticmethod]
-    #[pyo3(text_signature = "(parameters, fmt_version, max_eta)")]
+    #[pyo3(
+        signature = (parameters, fmt_version=FMTVersion::WhiteBear, max_eta=0.5),
+        text_signature = "(parameters, fmt_version=FMTVersion.WhiteBear, max_eta=0.5)"
+    )]
     fn pets(parameters: PyPetsParameters, fmt_version: FMTVersion, max_eta: f64) -> Self {
         let options = PetsOptions { max_eta };
         Self(Arc::new(
@@ -180,7 +171,6 @@ impl PyFunctionalVariant {
     /// -------
     /// HelmholtzEnergyFunctional
     #[staticmethod]
-    #[pyo3(text_signature = "(sigma, version)")]
     fn fmt(sigma: &PyArray1<f64>, fmt_version: FMTVersion) -> Self {
         Self(Arc::new(
             FMTFunctional::new(&sigma.to_owned_array(), fmt_version).into(),
@@ -208,13 +198,10 @@ impl PyFunctionalVariant {
     /// HelmholtzEnergyFunctional
     #[cfg(feature = "saftvrqmie")]
     #[staticmethod]
-    #[args(
-        fmt_version = "FMTVersion::WhiteBear",
-        max_eta = "0.5",
-        fh_order = "FeynmanHibbsOrder::FH1",
-        inc_nonadd_term = "true"
+    #[pyo3(
+        signature = (parameters, fmt_version=FMTVersion::WhiteBear, max_eta=0.5, fh_order=FeynmanHibbsOrder::FH1, inc_nonadd_term=true),
+        text_signature = "(parameters, fmt_version=FMTVersion.WhiteBear, max_eta=0.5, fh_order=FeynmanHibbsOrder.FH1, inc_nonadd_term=True)"
     )]
-    #[pyo3(text_signature = "(parameters, fmt_version, max_eta, fh_order, inc_nonadd_term)")]
     fn saftvrqmie(
         parameters: PySaftVRQMieParameters,
         fmt_version: FMTVersion,
