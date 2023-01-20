@@ -14,8 +14,7 @@ macro_rules! impl_profile {
             /// -------
             /// (numpy.ndarray[float], numpy.ndarray[float])
             ///
-            #[args(log = "false")]
-            #[pyo3(text_signature = "($self, log)")]
+            #[pyo3(signature = (log=false), text_signature = "($self, log=False)")]
             fn residual<'py>(
                 &self,
                 log: bool,
@@ -39,8 +38,7 @@ macro_rules! impl_profile {
             /// -------
             /// $struct
             ///
-            #[args(debug = "false")]
-            #[pyo3(text_signature = "($self, solver=None, debug=False)")]
+            #[pyo3(signature = (solver=None, debug=False), text_signature = "($self, solver=None, debug=False)")]
             fn solve(slf: &PyCell<Self>, solver: Option<PyDFTSolver>, debug: bool) -> PyResult<&PyCell<Self>> {
                 slf.borrow_mut()
                     .0
@@ -122,8 +120,7 @@ macro_rules! impl_profile {
             /// Returns
             /// -------
             /// SIArray
-            #[args(contributions = "Contributions::Total")]
-            #[pyo3(text_signature = "($self, contributions)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
             fn entropy_density(
                 &mut self,
                 contributions: Contributions,
@@ -144,8 +141,7 @@ macro_rules! impl_profile {
             /// Returns
             /// -------
             /// SINumber
-            #[args(contributions = "Contributions::Total")]
-            #[pyo3(text_signature = "($self, contributions)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
             fn entropy(
                 &mut self,
                 contributions: Contributions,
@@ -166,8 +162,7 @@ macro_rules! impl_profile {
             /// Returns
             /// -------
             /// SINumber
-            #[args(contributions = "Contributions::Total")]
-            #[pyo3(text_signature = "($self, contributions)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
             fn internal_energy(
                 &mut self,
                 contributions: Contributions,

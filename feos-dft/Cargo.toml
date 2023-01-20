@@ -17,9 +17,9 @@ rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 features = [ "rayon" ]
 
 [dependencies]
-quantity = { version = "0.5", features = ["linalg"] }
+quantity = { version = "0.6", features = ["linalg"] }
+num-dual = { git = "https://github.com/itt-ustutt/num-dual" }
 feos-core = { version = "0.3", path = "../feos-core" }
-num-dual = "0.5"
 ndarray = "0.15"
 rustdct = "0.7"
 rustfft = "6.0"
@@ -28,8 +28,8 @@ num-traits = "0.2"
 libm = "0.2"
 gauss-quad = { version = "0.1", optional = true }
 petgraph = "0.6"
-numpy = { version = "0.16", optional = true }
-pyo3 = { version = "0.16", optional = true }
+numpy = { version = "0.18", optional = true }
+pyo3 = { version = "0.18", optional = true }
 
 [features]
 default = []

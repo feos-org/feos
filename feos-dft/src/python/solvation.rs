@@ -93,7 +93,6 @@ macro_rules! impl_pair_correlation {
         /// PairCorrelation
         ///
         #[pyclass(name = "PairCorrelation")]
-        #[pyo3(text_signature = "(bulk, test_particle, n_grid, width)")]
         pub struct PyPairCorrelation(PairCorrelation<$func>);
 
         impl_1d_profile!(PyPairCorrelation, [get_r]);
