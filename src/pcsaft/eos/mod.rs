@@ -139,7 +139,7 @@ impl EquationOfState for PcSaft {
     }
 }
 
-impl MolarWeight<SIUnit> for PcSaft {
+impl MolarWeight for PcSaft {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }
@@ -174,7 +174,7 @@ fn chapman_enskog_thermal_conductivity(
         / KELVIN
 }
 
-impl EntropyScaling<SIUnit> for PcSaft {
+impl EntropyScaling for PcSaft {
     fn viscosity_reference(
         &self,
         temperature: SINumber,

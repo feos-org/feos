@@ -2,26 +2,26 @@ use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use crate::state::State;
 use crate::EosUnit;
-use quantity::{QuantityArray1, QuantityScalar};
+use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::sync::Arc;
 
-pub fn density_iteration<U: EosUnit, E: EquationOfState>(
+pub fn density_iteration<E: EquationOfState>(
     eos: &Arc<E>,
-    temperature: QuantityScalar<U>,
-    pressure: QuantityScalar<U>,
-    moles: &QuantityArray1<U>,
-    initial_density: QuantityScalar<U>,
-) -> EosResult<State<U, E>> {
+    temperature: SINumber,
+    pressure: SINumber,
+    moles: &SIArray1,
+    initial_density: SINumber,
+) -> EosResult<State<E>> {
     let maxdensity = eos.max_density(Some(moles))?;
     let (abstol, reltol) = (1e-12, 1e-14);
     let n = moles.sum();
 
     let mut rho = initial_density;
-    if rho <= 0.0 * U::reference_density() {
+    if rho <= 0.0 * SIUnit::reference_density() {
         return Err(EosError::InvalidState(
             String::from("density iteration"),
             String::from("density"),
-            rho.to_reduced(U::reference_density())?,
+            rho.to_reduced(SIUnit::reference_density())?,
         ));
     }
 
@@ -117,7 +117,7 @@ pub fn density_iteration<U: EosUnit, E: EquationOfState>(
             } else {
                 rho = (rho + initial_density) * 0.5;
                 if (rho - initial_density)
-                    .to_reduced(U::reference_density())?
+                    .to_reduced(SIUnit::reference_density())?
                     .abs()
                     < 1e-8
                 {
@@ -128,8 +128,11 @@ pub fn density_iteration<U: EosUnit, E: EquationOfState>(
         }
         // Newton step
         rho += delta_rho;
-        if error.to_reduced(U::reference_pressure())?.abs()
-            < f64::max(abstol, (rho * reltol).to_reduced(U::reference_density())?)
+        if error.to_reduced(SIUnit::reference_pressure())?.abs()
+            < f64::max(
+                abstol,
+                (rho * reltol).to_reduced(SIUnit::reference_density())?,
+            )
         {
             break 'iteration;
         }
@@ -141,12 +144,12 @@ pub fn density_iteration<U: EosUnit, E: EquationOfState>(
     }
 }
 
-fn pressure_spinodal<U: EosUnit, E: EquationOfState>(
+fn pressure_spinodal<E: EquationOfState>(
     eos: &Arc<E>,
-    temperature: QuantityScalar<U>,
-    rho_init: QuantityScalar<U>,
-    moles: &QuantityArray1<U>,
-) -> EosResult<[QuantityScalar<U>; 2]> {
+    temperature: SINumber,
+    rho_init: SINumber,
+    moles: &SIArray1,
+) -> EosResult<[SINumber; 2]> {
     let maxiter = 30;
     let abstol = 1e-8;
 
@@ -154,11 +157,11 @@ fn pressure_spinodal<U: EosUnit, E: EquationOfState>(
     let n = moles.sum();
     let mut rho = rho_init;
 
-    if rho <= 0.0 * U::reference_density() {
+    if rho <= 0.0 * SIUnit::reference_density() {
         return Err(EosError::InvalidState(
             String::from("pressure spinodal"),
             String::from("density"),
-            rho.to_reduced(U::reference_density())?,
+            rho.to_reduced(SIUnit::reference_density())?,
         ));
     }
 
@@ -174,7 +177,7 @@ fn pressure_spinodal<U: EosUnit, E: EquationOfState>(
         rho += delta_rho;
 
         if dpdrho
-            .to_reduced(U::reference_pressure() / U::reference_density())?
+            .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?
             .abs()
             < abstol
         {

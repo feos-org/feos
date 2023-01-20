@@ -4,7 +4,8 @@ use super::weight_functions::WeightFunctionInfo;
 use feos_core::{Contributions, EosResult, EosUnit, EquationOfState, PhaseEquilibrium};
 use ndarray::*;
 use num_dual::HyperDual64;
-use quantity::{QuantityArray1, QuantityArray2, QuantityScalar};
+// use quantity::{SIArray2, SINumber};
+use quantity::si::{SIArray1, SIArray2, SINumber, SIUnit};
 use std::ops::AddAssign;
 
 impl WeightFunctionInfo<HyperDual64> {
@@ -112,18 +113,18 @@ impl dyn FunctionalContribution {
         Ok(())
     }
 
-    pub fn influence_diagonal<U: EosUnit>(
+    pub fn influence_diagonal(
         &self,
-        temperature: QuantityScalar<U>,
-        density: &QuantityArray2<U>,
-    ) -> EosResult<(QuantityArray1<U>, QuantityArray2<U>)> {
-        let t = temperature.to_reduced(U::reference_temperature())?;
+        temperature: SINumber,
+        density: &SIArray2,
+    ) -> EosResult<(SIArray1, SIArray2)> {
+        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
         let n = density.shape()[1];
         let mut f = Array::zeros(n);
         let mut c = Array::zeros(density.raw_dim());
         self.pdgt_properties(
             t,
-            &density.to_reduced(U::reference_density())?,
+            &density.to_reduced(SIUnit::reference_density())?,
             &mut f,
             None,
             None,
@@ -131,24 +132,24 @@ impl dyn FunctionalContribution {
             None,
         )?;
         Ok((
-            f * t * U::reference_pressure(),
-            c * t * U::reference_influence_parameter(),
+            f * t * SIUnit::reference_pressure(),
+            c * t * SIUnit::reference_influence_parameter(),
         ))
     }
 }
 
 impl<T: HelmholtzEnergyFunctional> DFT<T> {
-    pub fn solve_pdgt<U: EosUnit>(
+    pub fn solve_pdgt(
         &self,
-        vle: &PhaseEquilibrium<U, Self, 2>,
+        vle: &PhaseEquilibrium<Self, 2>,
         n_grid: usize,
         reference_component: usize,
-        z: Option<(&mut QuantityArray1<U>, &mut QuantityScalar<U>)>,
-    ) -> EosResult<(QuantityArray2<U>, QuantityScalar<U>)> {
+        z: Option<(&mut SIArray1, &mut SINumber)>,
+    ) -> EosResult<(SIArray2, SINumber)> {
         // calculate density profile
         let density = if self.components() == 1 {
             let delta_rho = (vle.vapor().density - vle.liquid().density) / (n_grid + 1) as f64;
-            QuantityArray1::linspace(
+            SIArray1::linspace(
                 vle.liquid().density + delta_rho,
                 vle.vapor().density - delta_rho,
                 n_grid,
@@ -159,9 +160,9 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         };
 
         // calculate Helmholtz energy density and influence parameter
-        let mut delta_omega = Array::zeros(n_grid) * U::reference_pressure();
+        let mut delta_omega = Array::zeros(n_grid) * SIUnit::reference_pressure();
         let mut influence_diagonal =
-            Array::zeros(density.raw_dim()) * U::reference_influence_parameter();
+            Array::zeros(density.raw_dim()) * SIUnit::reference_influence_parameter();
         for contribution in self.contributions() {
             let (f, c) = contribution.influence_diagonal(vle.vapor().temperature, &density)?;
             delta_omega += &f;
@@ -169,14 +170,15 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         }
         delta_omega += &self
             .ideal_chain_contribution()
-            .helmholtz_energy_density::<_, Ix1>(vle.vapor().temperature, &density)?;
+            .helmholtz_energy_density::<Ix1>(vle.vapor().temperature, &density)?;
 
         let t = vle
             .vapor()
             .temperature
-            .to_reduced(U::reference_temperature())?;
-        let rho = density.to_reduced(U::reference_density())?;
-        delta_omega += &(self.ideal_gas_contribution::<Ix1>(t, &rho) * U::reference_pressure());
+            .to_reduced(SIUnit::reference_temperature())?;
+        let rho = density.to_reduced(SIUnit::reference_density())?;
+        delta_omega +=
+            &(self.ideal_gas_contribution::<Ix1>(t, &rho) * SIUnit::reference_pressure());
 
         // calculate excess grand potential density
         let mu = vle.vapor().chemical_potential(Contributions::Total);
@@ -230,12 +232,12 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         Ok((density, gamma_int.integrate(&[weights])))
     }
 
-    fn pdgt_density_profile_mix<U: EosUnit>(
+    fn pdgt_density_profile_mix(
         &self,
-        _vle: &PhaseEquilibrium<U, Self, 2>,
+        _vle: &PhaseEquilibrium<Self, 2>,
         _n_grid: usize,
         _reference_component: usize,
-    ) -> EosResult<QuantityArray2<U>> {
+    ) -> EosResult<SIArray2> {
         unimplemented!()
     }
 }

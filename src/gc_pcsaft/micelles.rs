@@ -4,16 +4,16 @@ use feos_dft::{
     HelmholtzEnergyFunctional, WeightFunctionInfo, DFT,
 };
 use ndarray::prelude::*;
-use quantity::{QuantityArray1, QuantityArray2, QuantityScalar};
+use quantity::{QuantityArray2, QuantityScalar, SIArray1};
 use std::sync::Arc;
 
-pub enum MicelleInitialization<U> {
+pub enum MicelleInitialization {
     ExternalPotential(f64, f64),
-    Density(QuantityArray2<U>),
+    Density(QuantityArray2),
 }
 
-impl<U> MicelleInitialization<U> {
-    fn density(&self) -> Option<&QuantityArray2<U>> {
+impl MicelleInitialization {
+    fn density(&self) -> Option<&QuantityArray2> {
         match self {
             Self::ExternalPotential(_, _) => None,
             Self::Density(density) => Some(density),
@@ -21,16 +21,16 @@ impl<U> MicelleInitialization<U> {
     }
 }
 
-pub enum MicelleSpecification<U> {
+pub enum MicelleSpecification {
     ChemicalPotential,
     Size {
         delta_n_surfactant: f64,
-        pressure: QuantityScalar<U>,
+        pressure: SINumber,
     },
 }
 
 impl<U: EosUnit, F: HelmholtzEnergyFunctional> DFTSpecification<U, Ix1, F>
-    for MicelleSpecification<U>
+    for MicelleSpecification
 {
     fn calculate_bulk_density(
         &self,
@@ -46,17 +46,18 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> DFTSpecification<U, Ix1, F>
             } => {
                 let rho_s_bulk = bulk_density[1];
                 let rho_w_bulk = bulk_density[0];
-                let volume = U::reference_volume();
-                let moles = arr1(&[rho_w_bulk, rho_s_bulk]) * U::reference_density() * volume;
+                let volume = SIUnit::reference_volume();
+                let moles = arr1(&[rho_w_bulk, rho_s_bulk]) * SIUnit::reference_density() * volume;
                 let bulk = State::new_nvt(&profile.dft, profile.temperature, volume, &moles)?;
                 let f_bulk = bulk.helmholtz_energy(Contributions::Total) / bulk.volume;
                 let mu_bulk = bulk.chemical_potential(Contributions::Total);
                 let mu_s_bulk = mu_bulk.get(1);
                 let mu_w_bulk = mu_bulk.get(0);
-                let n_s_bulk = (rho_s_bulk * profile.volume()).to_reduced(U::reference_moles())?;
+                let n_s_bulk =
+                    (rho_s_bulk * profile.volume()).to_reduced(SIUnit::reference_moles())?;
                 let mut spec = (delta_n_surfactant + n_s_bulk) / z;
                 spec[0] = ((pressure + f_bulk - rho_s_bulk * mu_s_bulk) / mu_w_bulk)
-                    .to_reduced(U::reference_density())?;
+                    .to_reduced(SIUnit::reference_density())?;
                 spec
             }
         })
@@ -65,8 +66,8 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> DFTSpecification<U, Ix1, F>
 
 pub struct MicelleProfile<U: EosUnit, F: HelmholtzEnergyFunctional> {
     pub profile: DFTProfile<U, Ix1, F>,
-    pub delta_omega: Option<QuantityScalar<U>>,
-    pub delta_n: Option<QuantityArray1<U>>,
+    pub delta_omega: Option<SINumber>,
+    pub delta_n: Option<SIArray1>,
 }
 
 impl<U: EosUnit, F: HelmholtzEnergyFunctional> Clone for MicelleProfile<U, F> {
@@ -133,13 +134,15 @@ impl<U: EosUnit + 'static, F: HelmholtzEnergyFunctional> MicelleProfile<U, F> {
     fn new(
         bulk: &State<U, DFT<F>>,
         axis: Axis,
-        initialization: MicelleInitialization<U>,
-        specification: MicelleSpecification<U>,
+        initialization: MicelleInitialization,
+        specification: MicelleSpecification,
     ) -> EosResult<Self> {
         let dft = &bulk.eos;
 
         // calculate external potential
-        let t = bulk.temperature.to_reduced(U::reference_temperature())?;
+        let t = bulk
+            .temperature
+            .to_reduced(SIUnit::reference_temperature())?;
         let mut external_potential = Array2::zeros((dft.component_index().len(), axis.grid.len()));
         if let MicelleInitialization::ExternalPotential(peak, width) = initialization {
             external_potential.index_axis_mut(Axis(0), 0).assign(
@@ -184,9 +187,9 @@ impl<U: EosUnit + 'static, F: HelmholtzEnergyFunctional> MicelleProfile<U, F> {
     pub fn new_spherical(
         bulk: &State<U, DFT<F>>,
         n_grid: usize,
-        width: QuantityScalar<U>,
-        initialization: MicelleInitialization<U>,
-        specification: MicelleSpecification<U>,
+        width: SINumber,
+        initialization: MicelleInitialization,
+        specification: MicelleSpecification,
     ) -> EosResult<Self> {
         Self::new(
             bulk,
@@ -199,9 +202,9 @@ impl<U: EosUnit + 'static, F: HelmholtzEnergyFunctional> MicelleProfile<U, F> {
     pub fn new_cylindrical(
         bulk: &State<U, DFT<F>>,
         n_grid: usize,
-        width: QuantityScalar<U>,
-        initialization: MicelleInitialization<U>,
-        specification: MicelleSpecification<U>,
+        width: SINumber,
+        initialization: MicelleInitialization,
+        specification: MicelleSpecification,
     ) -> EosResult<Self> {
         Self::new(
             bulk,
@@ -211,7 +214,7 @@ impl<U: EosUnit + 'static, F: HelmholtzEnergyFunctional> MicelleProfile<U, F> {
         )
     }
 
-    pub fn update_specification(&self, specification: MicelleSpecification<U>) -> Self {
+    pub fn update_specification(&self, specification: MicelleSpecification) -> Self {
         let mut profile = self.clone();
         profile.profile.specification = Arc::new(specification);
         profile.delta_omega = None;
@@ -231,7 +234,7 @@ impl<U: EosUnit + 'static, F: HelmholtzEnergyFunctional> MicelleProfile<U, F> {
     ) -> EosResult<Self> {
         let n_grid = self.profile.r().len();
         let temperature = self.profile.bulk.temperature;
-        let t = temperature.to_reduced(U::reference_temperature())?;
+        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
         let pressure = self.profile.bulk.pressure(Contributions::Total);
         let eos = self.profile.bulk.eos.clone();
         let indices = self.profile.bulk.eos.component_index().into_owned();
@@ -242,7 +245,7 @@ impl<U: EosUnit + 'static, F: HelmholtzEnergyFunctional> MicelleProfile<U, F> {
             if self
                 .delta_omega
                 .unwrap()
-                .to_reduced(U::reference_energy())?
+                .to_reduced(SIUnit::reference_energy())?
                 .abs()
                 < options.tol.unwrap_or(TOL_MICELLE) * t
             {

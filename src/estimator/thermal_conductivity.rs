@@ -1,24 +1,24 @@
 use super::{DataSet, EstimatorError};
 use feos_core::{DensityInitialization, EntropyScaling, EosUnit, EquationOfState, State};
 use ndarray::{arr1, Array1};
-use quantity::{QuantityArray1, QuantityScalar};
+use quantity::si::{SIArray1, SIUnit};
 use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Store experimental thermal conductivity data.
 #[derive(Clone)]
-pub struct ThermalConductivity<U: EosUnit> {
-    pub target: QuantityArray1<U>,
-    temperature: QuantityArray1<U>,
-    pressure: QuantityArray1<U>,
+pub struct ThermalConductivity {
+    pub target: SIArray1,
+    temperature: SIArray1,
+    pressure: SIArray1,
 }
 
-impl<U: EosUnit> ThermalConductivity<U> {
+impl ThermalConductivity {
     /// Create a new data set for experimental thermal conductivity data.
     pub fn new(
-        target: QuantityArray1<U>,
-        temperature: QuantityArray1<U>,
-        pressure: QuantityArray1<U>,
+        target: SIArray1,
+        temperature: SIArray1,
+        pressure: SIArray1,
     ) -> Result<Self, EstimatorError> {
         Ok(Self {
             target,
@@ -28,18 +28,18 @@ impl<U: EosUnit> ThermalConductivity<U> {
     }
 
     /// Return temperature.
-    pub fn temperature(&self) -> QuantityArray1<U> {
+    pub fn temperature(&self) -> SIArray1 {
         self.temperature.clone()
     }
 
     /// Return pressure.
-    pub fn pressure(&self) -> QuantityArray1<U> {
+    pub fn pressure(&self) -> SIArray1 {
         self.pressure.clone()
     }
 }
 
-impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> DataSet<U, E> for ThermalConductivity<U> {
-    fn target(&self) -> &QuantityArray1<U> {
+impl<E: EquationOfState + EntropyScaling> DataSet<E> for ThermalConductivity {
+    fn target(&self) -> &SIArray1 {
         &self.target
     }
 
@@ -51,20 +51,20 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> DataSet<U, E> for Therm
         vec!["temperature", "pressure"]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        let moles = arr1(&[1.0]) * U::reference_moles();
+    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
+        let moles = arr1(&[1.0]) * SIUnit::reference_moles();
         let ts = self
             .temperature
-            .to_reduced(U::reference_temperature())
+            .to_reduced(SIUnit::reference_temperature())
             .unwrap();
-        let ps = self.pressure.to_reduced(U::reference_pressure()).unwrap();
-        let unit = U::reference_energy()
-            / U::reference_time()
-            / U::reference_temperature()
-            / U::reference_length();
+        let ps = self
+            .pressure
+            .to_reduced(SIUnit::reference_pressure())
+            .unwrap();
+        let unit = SIUnit::reference_energy()
+            / SIUnit::reference_time()
+            / SIUnit::reference_temperature()
+            / SIUnit::reference_length();
 
         let res = ts
             .iter()
@@ -72,8 +72,8 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> DataSet<U, E> for Therm
             .map(|(&t, &p)| {
                 State::new_npt(
                     eos,
-                    t * U::reference_temperature(),
-                    p * U::reference_pressure(),
+                    t * SIUnit::reference_temperature(),
+                    p * SIUnit::reference_pressure(),
                     &moles,
                     DensityInitialization::None,
                 )?
@@ -85,7 +85,7 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> DataSet<U, E> for Therm
         Ok(Array1::from_vec(res?) * unit)
     }
 
-    fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
+    fn get_input(&self) -> HashMap<String, SIArray1> {
         let mut m = HashMap::with_capacity(1);
         m.insert("temperature".to_owned(), self.temperature());
         m.insert("pressure".to_owned(), self.pressure());

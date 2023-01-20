@@ -108,7 +108,7 @@ impl EquationOfState for SaftVRQMie {
     }
 }
 
-impl MolarWeight<SIUnit> for SaftVRQMie {
+impl MolarWeight for SaftVRQMie {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }
@@ -143,7 +143,7 @@ fn chapman_enskog_thermal_conductivity(
         / KELVIN
 }
 
-impl EntropyScaling<SIUnit> for SaftVRQMie {
+impl EntropyScaling for SaftVRQMie {
     fn viscosity_reference(
         &self,
         temperature: SINumber,

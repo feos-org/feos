@@ -49,7 +49,7 @@ macro_rules! impl_state {
         #[pyclass(name = "State")]
         #[derive(Clone)]
         #[pyo3(text_signature = "(eos, temperature=None, volume=None, density=None, partial_density=None, total_moles=None, moles=None, molefracs=None, pressure=None, molar_enthalpy=None, molar_entropy=None, molar_internal_energy=None, density_initialization=None, initial_temperature=None)")]
-        pub struct PyState(pub State<SIUnit, $eos>);
+        pub struct PyState(pub State<$eos>);
 
         #[pymethods]
         impl PyState {
@@ -1022,15 +1022,15 @@ macro_rules! impl_state {
         /// -------
         /// StateVec
         #[pyclass(name = "StateVec")]
-        pub struct PyStateVec(Vec<State<SIUnit, $eos>>);
+        pub struct PyStateVec(Vec<State<$eos>>);
 
-        impl From<StateVec<'_, SIUnit, $eos>> for PyStateVec {
-            fn from(vec: StateVec<SIUnit, $eos>) -> Self {
+        impl From<StateVec<'_, $eos>> for PyStateVec {
+            fn from(vec: StateVec<$eos>) -> Self {
                 Self(vec.into_iter().map(|s| s.clone()).collect())
             }
         }
 
-        impl<'a> From<&'a PyStateVec> for StateVec<'a, SIUnit, $eos> {
+        impl<'a> From<&'a PyStateVec> for StateVec<'a, $eos> {
             fn from(vec: &'a PyStateVec) -> Self {
                 Self(vec.0.iter().collect())
             }

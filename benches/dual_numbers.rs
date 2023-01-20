@@ -18,7 +18,7 @@ use std::sync::Arc;
 /// - temperature is 80% of critical temperature,
 /// - volume is critical volume,
 /// - molefracs (or moles) for equimolar mixture.
-fn state_pcsaft(parameters: PcSaftParameters) -> State<SIUnit, PcSaft> {
+fn state_pcsaft(parameters: PcSaftParameters) -> State<PcSaft> {
     let n = parameters.pure_records.len();
     let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
     let moles = Array::from_elem(n, 1.0 / n as f64) * 10.0 * MOL;
@@ -36,11 +36,7 @@ where
 }
 
 /// Benchmark for evaluation of the Helmholtz energy for different dual number types.
-fn bench_dual_numbers<E: EquationOfState>(
-    c: &mut Criterion,
-    group_name: &str,
-    state: State<SIUnit, E>,
-) {
+fn bench_dual_numbers<E: EquationOfState>(c: &mut Criterion, group_name: &str, state: State<E>) {
     let mut group = c.benchmark_group(group_name);
     group.bench_function("a_f64", |b| {
         b.iter(|| a_res((&state.eos, &state.derive0())))

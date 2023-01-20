@@ -8,11 +8,11 @@ use ndarray::arr1;
 use quantity::si::*;
 use std::sync::Arc;
 
-type S = State<SIUnit, PcSaft>;
+type S = State<PcSaft>;
 
 /// Evaluate a property of a state given the EoS, the property to compute,
 /// temperature, volume, moles, and the contributions to consider.
-fn property<E: EquationOfState, T, F: Fn(&State<SIUnit, E>, Contributions) -> T>(
+fn property<E: EquationOfState, T, F: Fn(&State<E>, Contributions) -> T>(
     (eos, property, t, v, n, contributions): (
         &Arc<E>,
         F,
@@ -28,7 +28,7 @@ fn property<E: EquationOfState, T, F: Fn(&State<SIUnit, E>, Contributions) -> T>
 
 /// Evaluate a property with of a state given the EoS, the property to compute,
 /// temperature, volume, moles.
-fn property_no_contributions<E: EquationOfState, T, F: Fn(&State<SIUnit, E>) -> T>(
+fn property_no_contributions<E: EquationOfState, T, F: Fn(&State<E>) -> T>(
     (eos, property, t, v, n): (&Arc<E>, F, SINumber, SINumber, &SIArray1),
 ) -> T {
     let state = State::new_nvt(eos, t, v, n).unwrap();

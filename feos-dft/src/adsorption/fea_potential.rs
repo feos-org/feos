@@ -4,19 +4,19 @@ use crate::Geometry;
 use feos_core::EosUnit;
 use gauss_quad::GaussLegendre;
 use ndarray::{Array1, Array2, Zip};
-use quantity::{QuantityArray2, QuantityScalar};
+use quantity::si::{SIArray2, SINumber, SIUnit};
 use std::f64::consts::PI;
 use std::usize;
 
 // Calculate free-energy average potential for given solid structure.
-pub fn calculate_fea_potential<U: EosUnit>(
+pub fn calculate_fea_potential(
     grid: &Array1<f64>,
     mi: f64,
-    coordinates: &QuantityArray2<U>,
+    coordinates: &SIArray2,
     sigma_sf: Array1<f64>,
     epsilon_k_sf: Array1<f64>,
     pore_center: &[f64; 3],
-    system_size: &[QuantityScalar<U>; 3],
+    system_size: &[SINumber; 3],
     n_grid: &[usize; 2],
     temperature: f64,
     geometry: Geometry,
@@ -31,14 +31,20 @@ pub fn calculate_fea_potential<U: EosUnit>(
     // dimensionless solid coordinates
     let coordinates = Array2::from_shape_fn(coordinates.raw_dim(), |(i, j)| {
         (coordinates.get((i, j)))
-            .to_reduced(U::reference_length())
+            .to_reduced(SIUnit::reference_length())
             .unwrap()
     });
 
     let system_size = [
-        system_size[0].to_reduced(U::reference_length()).unwrap(),
-        system_size[1].to_reduced(U::reference_length()).unwrap(),
-        system_size[2].to_reduced(U::reference_length()).unwrap(),
+        system_size[0]
+            .to_reduced(SIUnit::reference_length())
+            .unwrap(),
+        system_size[1]
+            .to_reduced(SIUnit::reference_length())
+            .unwrap(),
+        system_size[2]
+            .to_reduced(SIUnit::reference_length())
+            .unwrap(),
     ];
 
     // Create secondary axis:

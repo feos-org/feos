@@ -6,6 +6,7 @@ use num_dual::linalg::LU;
 use petgraph::graph::Graph;
 use petgraph::visit::EdgeRef;
 use petgraph::Directed;
+use quantity::si::SIUnit;
 use quantity::si::{SIArray1, SECOND};
 use std::collections::VecDeque;
 use std::fmt;
@@ -204,7 +205,7 @@ impl DFTSolverLog {
     }
 }
 
-impl<U: EosUnit, D: Dimension, F: HelmholtzEnergyFunctional> DFTProfile<U, D, F>
+impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTProfile<D, F>
 where
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
@@ -550,7 +551,9 @@ where
         &self,
         density: &Array<f64, D::Larger>,
     ) -> EosResult<Vec<Array<f64, <D::Larger as Dimension>::Larger>>> {
-        let temperature = self.temperature.to_reduced(U::reference_temperature())?;
+        let temperature = self
+            .temperature
+            .to_reduced(SIUnit::reference_temperature())?;
         let contributions = self.dft.contributions();
         let weighted_densities = self.convolver.weighted_densities(density);
         let mut second_partial_derivatives = Vec::with_capacity(contributions.len());
@@ -611,7 +614,7 @@ where
     ) -> Array<f64, D::Larger> {
         let temperature = self
             .temperature
-            .to_reduced(U::reference_temperature())
+            .to_reduced(SIUnit::reference_temperature())
             .unwrap();
 
         // calculate weight functions

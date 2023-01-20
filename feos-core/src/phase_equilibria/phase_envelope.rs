@@ -2,23 +2,20 @@ use super::{PhaseDiagram, PhaseEquilibrium, SolverOptions};
 use crate::equation_of_state::EquationOfState;
 use crate::errors::EosResult;
 use crate::state::State;
-use crate::{Contributions, EosUnit};
-use quantity::{QuantityArray1, QuantityScalar};
+use crate::Contributions;
+use quantity::si::{SIArray1, SINumber};
 use std::sync::Arc;
 
-impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E, 2> {
+impl<E: EquationOfState> PhaseDiagram<E, 2> {
     /// Calculate the bubble point line of a mixture with given composition.
     pub fn bubble_point_line(
         eos: &Arc<E>,
-        moles: &QuantityArray1<U>,
-        min_temperature: QuantityScalar<U>,
+        moles: &SIArray1,
+        min_temperature: SINumber,
         npoints: usize,
-        critical_temperature: Option<QuantityScalar<U>>,
+        critical_temperature: Option<SINumber>,
         options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
+    ) -> EosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
 
         let sc = State::critical_point(
@@ -30,10 +27,10 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E, 2> {
 
         let max_temperature = min_temperature
             + (sc.temperature - min_temperature) * ((npoints - 2) as f64 / (npoints - 1) as f64);
-        let temperatures = QuantityArray1::linspace(min_temperature, max_temperature, npoints - 1)?;
+        let temperatures = SIArray1::linspace(min_temperature, max_temperature, npoints - 1)?;
         let molefracs = moles.to_reduced(moles.sum())?;
 
-        let mut vle: Option<PhaseEquilibrium<U, E, 2>> = None;
+        let mut vle: Option<PhaseEquilibrium<E, 2>> = None;
         for ti in &temperatures {
             // calculate new liquid point
             let p_init = vle
@@ -62,15 +59,12 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E, 2> {
     /// Calculate the dew point line of a mixture with given composition.
     pub fn dew_point_line(
         eos: &Arc<E>,
-        moles: &QuantityArray1<U>,
-        min_temperature: QuantityScalar<U>,
+        moles: &SIArray1,
+        min_temperature: SINumber,
         npoints: usize,
-        critical_temperature: Option<QuantityScalar<U>>,
+        critical_temperature: Option<SINumber>,
         options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
+    ) -> EosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
 
         let sc = State::critical_point(
@@ -83,10 +77,10 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E, 2> {
         let n_t = npoints / 2;
         let max_temperature = min_temperature
             + (sc.temperature - min_temperature) * ((n_t - 2) as f64 / (n_t - 1) as f64);
-        let temperatures = QuantityArray1::linspace(min_temperature, max_temperature, n_t - 1)?;
+        let temperatures = SIArray1::linspace(min_temperature, max_temperature, n_t - 1)?;
         let molefracs = moles.to_reduced(moles.sum())?;
 
-        let mut vle: Option<PhaseEquilibrium<U, E, 2>> = None;
+        let mut vle: Option<PhaseEquilibrium<E, 2>> = None;
         for ti in &temperatures {
             let p_init = vle
                 .as_ref()
@@ -109,7 +103,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E, 2> {
         let p_c = sc.pressure(Contributions::Total);
         let max_pressure =
             min_pressure + (p_c - min_pressure) * ((n_p - 2) as f64 / (n_p - 1) as f64);
-        let pressures = QuantityArray1::linspace(min_pressure, max_pressure, n_p)?;
+        let pressures = SIArray1::linspace(min_pressure, max_pressure, n_p)?;
 
         for pi in &pressures {
             let t_init = vle.as_ref().map(|vle| vle.vapor().temperature);
@@ -130,15 +124,12 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E, 2> {
     /// Calculate the spinodal lines for a mixture with fixed composition.
     pub fn spinodal(
         eos: &Arc<E>,
-        moles: &QuantityArray1<U>,
-        min_temperature: QuantityScalar<U>,
+        moles: &SIArray1,
+        min_temperature: SINumber,
         npoints: usize,
-        critical_temperature: Option<QuantityScalar<U>>,
+        critical_temperature: Option<SINumber>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
+    ) -> EosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
 
         let sc = State::critical_point(
@@ -150,7 +141,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E, 2> {
 
         let max_temperature = min_temperature
             + (sc.temperature - min_temperature) * ((npoints - 2) as f64 / (npoints - 1) as f64);
-        let temperatures = QuantityArray1::linspace(min_temperature, max_temperature, npoints - 1)?;
+        let temperatures = SIArray1::linspace(min_temperature, max_temperature, npoints - 1)?;
 
         for ti in &temperatures {
             let spinodal = State::spinodal(eos, ti, Some(moles), options).ok();

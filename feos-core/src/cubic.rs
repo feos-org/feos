@@ -14,7 +14,7 @@ use crate::state::StateHD;
 use crate::MolarWeight;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
-use quantity::si::{SIArray1, SIUnit};
+use quantity::si::SIArray1;
 use serde::{Deserialize, Serialize};
 use std::f64::consts::SQRT_2;
 use std::fmt;
@@ -255,7 +255,7 @@ impl EquationOfState for PengRobinson {
     }
 }
 
-impl MolarWeight<SIUnit> for PengRobinson {
+impl MolarWeight for PengRobinson {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }

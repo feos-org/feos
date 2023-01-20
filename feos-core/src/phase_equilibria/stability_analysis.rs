@@ -6,6 +6,7 @@ use crate::EosUnit;
 use ndarray::*;
 use num_dual::linalg::smallest_ev;
 use num_dual::linalg::LU;
+use quantity::si::SIUnit;
 use std::f64::EPSILON;
 use std::ops::MulAssign;
 
@@ -17,7 +18,7 @@ const MINIMIZE_KMAX: usize = 100;
 const ZERO_TPD: f64 = -1E-08;
 
 /// # Stability analysis
-impl<U: EosUnit, E: EquationOfState> State<U, E> {
+impl<E: EquationOfState> State<E> {
     /// Determine if the state is stable, i.e. if a phase split should
     /// occur or not.
     pub fn is_stable(&self, options: SolverOptions) -> EosResult<bool> {
@@ -27,7 +28,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// Perform a stability analysis. The result is a list of [State]s with
     /// negative tangent plane distance (i.e. lower Gibbs energy) that can be
     /// used as initial estimates for a phase equilibrium calculation.
-    pub fn stability_analysis(&self, options: SolverOptions) -> EosResult<Vec<State<U, E>>> {
+    pub fn stability_analysis(&self, options: SolverOptions) -> EosResult<Vec<State<E>>> {
         let mut result = Vec::new();
         for i_trial in 0..self.eos.components() + 1 {
             let phase = if i_trial == self.eos.components() {
@@ -60,7 +61,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         Ok(result)
     }
 
-    fn define_trial_state(&self, dominant_component: usize) -> EosResult<State<U, E>> {
+    fn define_trial_state(&self, dominant_component: usize) -> EosResult<State<E>> {
         let x_feed = &self.molefracs;
 
         let (x_trial, phase) = if dominant_component == self.eos.components() {
@@ -86,14 +87,14 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             &self.eos,
             self.temperature,
             self.pressure(Contributions::Total),
-            &(x_trial * U::reference_moles()),
+            &(x_trial * SIUnit::reference_moles()),
             phase,
         )
     }
 
     fn minimize_tpd(
         &self,
-        trial: &mut State<U, E>,
+        trial: &mut State<E>,
         options: SolverOptions,
     ) -> EosResult<(Option<f64>, usize)> {
         let (max_iter, tol, verbosity) = options.unwrap_or(MINIMIZE_KMAX, MINIMIZE_TOL);
@@ -117,7 +118,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                     &trial.eos,
                     trial.temperature,
                     trial.pressure(Contributions::Total),
-                    &(U::reference_moles() * &y),
+                    &(SIUnit::reference_moles() * &y),
                     DensityInitialization::InitialDensity(trial.density),
                 )?;
                 if (i > 4 && error > scaled_tol) || (tpd > tpd_old + 1E-05 && i > 2) {
@@ -160,9 +161,9 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         let tpd_old = *tpd;
 
         // calculate residual and ideal hesse matrix
-        let mut hesse = (self.dln_phi_dnj() * U::reference_moles()).into_value()?;
+        let mut hesse = (self.dln_phi_dnj() * SIUnit::reference_moles()).into_value()?;
         let lnphi = self.ln_phi();
-        let y = self.moles.to_reduced(U::reference_moles())?;
+        let y = self.moles.to_reduced(SIUnit::reference_moles())?;
         let ln_y = Zip::from(&y).map_collect(|&y| if y > EPSILON { y.ln() } else { 0.0 });
         let sq_y = y.mapv(f64::sqrt);
         let gradient = (&ln_y + &lnphi - di) * &sq_y;
@@ -224,7 +225,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                 &self.eos,
                 self.temperature,
                 self.pressure(Contributions::Total),
-                &(U::reference_moles() * y),
+                &(SIUnit::reference_moles() * y),
                 DensityInitialization::InitialDensity(self.density),
             )?;
         }

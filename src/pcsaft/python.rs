@@ -1,5 +1,5 @@
-use super::DQVariants;
 use super::parameters::{PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord};
+use super::DQVariants;
 use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
@@ -184,7 +184,7 @@ pub fn pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<IdentifierOption>()?;
     m.add_class::<PyChemicalRecord>()?;
     m.add_class::<PyJobackRecord>()?;
-    
+
     m.add_class::<DQVariants>()?;
     m.add_class::<PyPcSaftRecord>()?;
     m.add_class::<PyPureRecord>()?;

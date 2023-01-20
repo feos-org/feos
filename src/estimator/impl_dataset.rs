@@ -1,14 +1,14 @@
 /// Store experimental vapor pressure data and compare to the equation of state.
 #[derive(Clone)]
-pub struct VaporPressure<U: EosUnit> {
-    pub target: QuantityArray1<U>,
-    temperature: QuantityArray1<U>,
-    max_temperature: QuantityScalar<U>,
+pub struct VaporPressure {
+    pub target: SIArray1,
+    temperature: SIArray1,
+    max_temperature: SINumber,
     datapoints: usize,
     std_parameters: Vec<f64>,
 }
 
-impl<U: EosUnit> VaporPressure<U> {
+impl VaporPressure {
     /// Create a new vapor pressure data set.
     ///
     /// Takes the temperature as input and possibly parameters
@@ -16,16 +16,16 @@ impl<U: EosUnit> VaporPressure<U> {
     /// function of temperature. This standard deviation can be used
     /// as inverse weights in the cost function.
     pub fn new(
-        target: QuantityArray1<U>,
-        temperature: QuantityArray1<U>,
+        target: SIArray1,
+        temperature: SIArray1,
         std_parameters: Vec<f64>,
     ) -> Result<Self, FitError> {
         let datapoints = target.len();
         let max_temperature = *temperature
-            .to_reduced(U::reference_temperature())?
+            .to_reduced(SIUnit::reference_temperature())?
             .max()
             .map_err(|_| FitError::IncompatibleInput)?
-            * U::reference_temperature();
+            * SIUnit::reference_temperature();
         Ok(Self {
             target,
             temperature,
@@ -36,7 +36,7 @@ impl<U: EosUnit> VaporPressure<U> {
     }
 
     /// Return temperature.
-    pub fn temperature(&self) -> QuantityArray1<U> {
+    pub fn temperature(&self) -> SIArray1 {
         self.temperature.clone()
     }
 
@@ -49,8 +49,8 @@ impl<U: EosUnit> VaporPressure<U> {
     }
 }
 
-impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
-    fn target(&self) -> QuantityArray1<U> {
+impl<E: EquationOfState> DataSet<E> for VaporPressure {
+    fn target(&self) -> SIArray1 {
         self.target.clone()
     }
 
@@ -63,9 +63,8 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
         vec!["temperature"]
     }
 
-    fn predict(&self, eos: &Rc<E>) -> Result<QuantityArray1<U>, FitError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    fn predict(&self, eos: &Rc<E>) -> Result<SIArray1, FitError>
+    
     {
         let tc =
             State::critical_point(eos, None, Some(self.max_temperature), VLEOptions::default())?
@@ -99,8 +98,7 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
     }
 
     fn cost(&self, eos: &Rc<E>) -> Result<Array1<f64>, FitError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         let tc_inv = 1.0
             / State::critical_point(eos, None, Some(self.max_temperature), VLEOptions::default())?
@@ -119,7 +117,7 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
                 cost[i] = weights[i]
                     * 5.0
                     * (self.temperature.get(i) - 1.0 / tc_inv)
-                        .to_reduced(U::reference_temperature())?;
+                        .to_reduced(SIUnit::reference_temperature())?;
             } else {
                 cost[i] = weights[i]
                     * ((self.target.get(i) - prediction.get(i)) / self.target.get(i))
@@ -129,7 +127,7 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
         Ok(cost)
     }
 
-    fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
+    fn get_input(&self) -> HashMap<String, SIArray1> {
         let mut m = HashMap::with_capacity(1);
         m.insert("temperature".to_owned(), self.temperature());
         m
@@ -138,19 +136,19 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
 
 /// Store experimental data of liquid densities and compare to the equation of state.
 #[derive(Clone)]
-pub struct LiquidDensity<U: EosUnit> {
-    pub target: QuantityArray1<U>,
-    temperature: QuantityArray1<U>,
-    pressure: QuantityArray1<U>,
+pub struct LiquidDensity {
+    pub target: SIArray1,
+    temperature: SIArray1,
+    pressure: SIArray1,
     datapoints: usize,
 }
 
-impl<U: EosUnit> LiquidDensity<U> {
+impl LiquidDensity {
     /// A new data set for liquid densities with pressures and temperatures as input.
     pub fn new(
-        target: QuantityArray1<U>,
-        temperature: QuantityArray1<U>,
-        pressure: QuantityArray1<U>,
+        target: SIArray1,
+        temperature: SIArray1,
+        pressure: SIArray1,
     ) -> Result<Self, FitError> {
         let datapoints = target.len();
         Ok(Self {
@@ -162,18 +160,18 @@ impl<U: EosUnit> LiquidDensity<U> {
     }
 
     /// Returns temperature of data points.
-    pub fn temperature(&self) -> QuantityArray1<U> {
+    pub fn temperature(&self) -> SIArray1 {
         self.temperature.clone()
     }
 
     /// Returns pressure of data points.
-    pub fn pressure(&self) -> QuantityArray1<U> {
+    pub fn pressure(&self) -> SIArray1 {
         self.pressure.clone()
     }
 }
 
-impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDensity<U> {
-    fn target(&self) -> QuantityArray1<U> {
+impl<E: EquationOfState + MolarWeight> DataSet<E> for LiquidDensity {
+    fn target(&self) -> SIArray1 {
         self.target.clone()
     }
 
@@ -186,9 +184,9 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDe
         vec!["temperature", "pressure"]
     }
 
-    fn predict(&self, eos: &Rc<E>) -> Result<QuantityArray1<U>, FitError> {
+    fn predict(&self, eos: &Rc<E>) -> Result<SIArray1, FitError> {
         assert_eq!(1, eos.components());
-        let moles = arr1(&[1.0]) * U::reference_moles();
+        let moles = arr1(&[1.0]) * SIUnit::reference_moles();
         let unit = self.target.get(0);
         let mut prediction = Array1::zeros(self.datapoints) * unit;
         for i in 0..self.datapoints {
@@ -209,8 +207,7 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDe
     }
 
     fn cost(&self, eos: &Rc<E>) -> Result<Array1<f64>, FitError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         let n_inv = 1.0 / self.datapoints as f64;
         let prediction = &self.predict(eos)?;
@@ -222,7 +219,7 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDe
         Ok(cost)
     }
 
-    fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
+    fn get_input(&self) -> HashMap<String, SIArray1> {
         let mut m = HashMap::with_capacity(2);
         m.insert("temperature".to_owned(), self.temperature());
         m.insert("pressure".to_owned(), self.pressure());
@@ -232,25 +229,25 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDe
 
 /// Store experimental data of liquid densities at VLE and compare to the equation of state.
 #[derive(Clone)]
-pub struct EquilibriumLiquidDensity<U: EosUnit> {
-    pub target: QuantityArray1<U>,
-    temperature: QuantityArray1<U>,
-    max_temperature: QuantityScalar<U>,
+pub struct EquilibriumLiquidDensity {
+    pub target: SIArray1,
+    temperature: SIArray1,
+    max_temperature: SINumber,
     datapoints: usize,
 }
 
-impl<U: EosUnit> EquilibriumLiquidDensity<U> {
+impl EquilibriumLiquidDensity {
     /// A new data set of liquid densities at VLE given temperatures.
     pub fn new(
-        target: QuantityArray1<U>,
-        temperature: QuantityArray1<U>,
+        target: SIArray1,
+        temperature: SIArray1,
     ) -> Result<Self, FitError> {
         let datapoints = target.len();
         let max_temperature = *temperature
-            .to_reduced(U::reference_temperature())?
+            .to_reduced(SIUnit::reference_temperature())?
             .max()
             .map_err(|_| FitError::IncompatibleInput)?
-            * U::reference_temperature();
+            * SIUnit::reference_temperature();
         Ok(Self {
             target,
             temperature,
@@ -260,15 +257,15 @@ impl<U: EosUnit> EquilibriumLiquidDensity<U> {
     }
 
     /// Returns the temperature of data points.
-    pub fn temperature(&self) -> QuantityArray1<U> {
+    pub fn temperature(&self) -> SIArray1 {
         self.temperature.clone()
     }
 }
 
-impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
-    for EquilibriumLiquidDensity<U>
+impl<E: EquationOfState + MolarWeight> DataSet<E>
+    for EquilibriumLiquidDensity
 {
-    fn target(&self) -> QuantityArray1<U> {
+    fn target(&self) -> SIArray1 {
         self.target.clone()
     }
 
@@ -281,9 +278,8 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
         vec!["temperature"]
     }
 
-    fn predict(&self, eos: &Rc<E>) -> Result<QuantityArray1<U>, FitError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    fn predict(&self, eos: &Rc<E>) -> Result<SIArray1, FitError>
+    
     {
         let tc =
             State::critical_point(eos, None, Some(self.max_temperature), VLEOptions::default())?
@@ -292,7 +288,7 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
         let unit = self.target.get(0);
         let mut prediction = Array1::zeros(self.datapoints) * unit;
         for i in 0..self.datapoints {
-            let t: QuantityScalar<U> = self.temperature.get(i);
+            let t: SINumber = self.temperature.get(i);
             if t < tc {
                 let state: PhaseEquilibrium<U, E, 2> =
                     PhaseEquilibrium::pure_t(eos, t, None, VLEOptions::default())?;
@@ -305,8 +301,7 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
     }
 
     fn cost(&self, eos: &Rc<E>) -> Result<Array1<f64>, FitError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    
     {
         let tc =
             State::critical_point(eos, None, Some(self.max_temperature), VLEOptions::default())?
@@ -318,7 +313,7 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
             if prediction.get(i).is_nan() {
                 cost[i] = n_inv
                     * 5.0
-                    * (self.temperature.get(i) - tc).to_reduced(U::reference_temperature())?;
+                    * (self.temperature.get(i) - tc).to_reduced(SIUnit::reference_temperature())?;
             } else {
                 cost[i] = n_inv
                     * ((self.target.get(i) - prediction.get(i)) / self.target.get(i))
@@ -328,7 +323,7 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
         Ok(cost)
     }
 
-    fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
+    fn get_input(&self) -> HashMap<String, SIArray1> {
         let mut m = HashMap::with_capacity(2);
         m.insert("temperature".to_owned(), self.temperature());
         m

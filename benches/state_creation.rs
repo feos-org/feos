@@ -15,7 +15,7 @@ fn npt<E: EquationOfState>(
         SINumber,
         SINumber,
         &SIArray1,
-        DensityInitialization<SIUnit>,
+        DensityInitialization,
     ),
 ) {
     State::new_npt(eos, t, p, n, rho0).unwrap();

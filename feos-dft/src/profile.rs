@@ -8,7 +8,9 @@ use ndarray::{
     Array, Array1, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3, RemoveAxis,
 };
 use num_dual::Dual64;
-use quantity::{Quantity, QuantityArray, QuantityArray1, QuantityScalar};
+use quantity::si::{SIArray, SIArray1, SINumber, SIUnit};
+use quantity::Quantity;
+// use quantity::{Quantity, QuantityArray, SIArray1, SINumber};
 use std::ops::MulAssign;
 use std::sync::Arc;
 
@@ -21,10 +23,10 @@ pub(crate) const CUTOFF_RADIUS: f64 = 14.0;
 /// In the most basic case, the chemical potential is specified in a DFT calculation,
 /// for more general systems, this trait provides the possibility to declare additional
 /// equations for the calculation of the chemical potential during the iteration.
-pub trait DFTSpecification<U, D: Dimension, F>: Send + Sync {
+pub trait DFTSpecification<D: Dimension, F>: Send + Sync {
     fn calculate_bulk_density(
         &self,
-        profile: &DFTProfile<U, D, F>,
+        profile: &DFTProfile<D, F>,
         bulk_density: &Array1<f64>,
         z: &Array1<f64>,
     ) -> EosResult<Array1<f64>>;
@@ -49,13 +51,13 @@ impl DFTSpecifications {
     ///
     /// Call this after initializing the density profile to keep the number of
     /// particles constant in systems, where the number itself is difficult to obtain.
-    pub fn moles_from_profile<U: EosUnit, D: Dimension, F: HelmholtzEnergyFunctional>(
-        profile: &DFTProfile<U, D, F>,
+    pub fn moles_from_profile<D: Dimension, F: HelmholtzEnergyFunctional>(
+        profile: &DFTProfile<D, F>,
     ) -> EosResult<Arc<Self>>
     where
         <D as Dimension>::Larger: Dimension<Smaller = D>,
     {
-        let rho = profile.density.to_reduced(U::reference_density())?;
+        let rho = profile.density.to_reduced(SIUnit::reference_density())?;
         Ok(Arc::new(Self::Moles {
             moles: profile.integrate_reduced_comp(&rho),
         }))
@@ -65,24 +67,22 @@ impl DFTSpecifications {
     ///
     /// Call this after initializing the density profile to keep the total number of
     /// particles constant in systems, e.g. to fix the equimolar dividing surface.
-    pub fn total_moles_from_profile<U: EosUnit, D: Dimension, F: HelmholtzEnergyFunctional>(
-        profile: &DFTProfile<U, D, F>,
+    pub fn total_moles_from_profile<D: Dimension, F: HelmholtzEnergyFunctional>(
+        profile: &DFTProfile<D, F>,
     ) -> EosResult<Arc<Self>>
     where
         <D as Dimension>::Larger: Dimension<Smaller = D>,
     {
-        let rho = profile.density.to_reduced(U::reference_density())?;
+        let rho = profile.density.to_reduced(SIUnit::reference_density())?;
         let moles = profile.integrate_reduced_comp(&rho).sum();
         Ok(Arc::new(Self::TotalMoles { total_moles: moles }))
     }
 }
 
-impl<U: EosUnit, D: Dimension, F: HelmholtzEnergyFunctional> DFTSpecification<U, D, F>
-    for DFTSpecifications
-{
+impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTSpecification<D, F> for DFTSpecifications {
     fn calculate_bulk_density(
         &self,
-        _profile: &DFTProfile<U, D, F>,
+        _profile: &DFTProfile<D, F>,
         bulk_density: &Array1<f64>,
         z: &Array1<f64>,
     ) -> EosResult<Array1<f64>> {
@@ -97,68 +97,68 @@ impl<U: EosUnit, D: Dimension, F: HelmholtzEnergyFunctional> DFTSpecification<U,
 }
 
 /// A one-, two-, or three-dimensional density profile.
-pub struct DFTProfile<U, D: Dimension, F> {
+pub struct DFTProfile<D: Dimension, F> {
     pub grid: Grid,
     pub convolver: Arc<dyn Convolver<f64, D>>,
     pub dft: Arc<DFT<F>>,
-    pub temperature: QuantityScalar<U>,
-    pub density: QuantityArray<U, D::Larger>,
-    pub specification: Arc<dyn DFTSpecification<U, D, F>>,
+    pub temperature: SINumber,
+    pub density: SIArray<D::Larger>,
+    pub specification: Arc<dyn DFTSpecification<D, F>>,
     pub external_potential: Array<f64, D::Larger>,
-    pub bulk: State<U, DFT<F>>,
+    pub bulk: State<DFT<F>>,
     pub solver_log: Option<DFTSolverLog>,
 }
 
-impl<U: EosUnit, F> DFTProfile<U, Ix1, F> {
-    pub fn r(&self) -> QuantityArray1<U> {
-        self.grid.grids()[0] * U::reference_length()
+impl<F> DFTProfile<Ix1, F> {
+    pub fn r(&self) -> SIArray1 {
+        self.grid.grids()[0] * SIUnit::reference_length()
     }
 
-    pub fn z(&self) -> QuantityArray1<U> {
-        self.grid.grids()[0] * U::reference_length()
+    pub fn z(&self) -> SIArray1 {
+        self.grid.grids()[0] * SIUnit::reference_length()
     }
 }
 
-impl<U: EosUnit, F> DFTProfile<U, Ix2, F> {
-    pub fn edges(&self) -> (QuantityArray1<U>, QuantityArray1<U>) {
+impl<F> DFTProfile<Ix2, F> {
+    pub fn edges(&self) -> (SIArray1, SIArray1) {
         (
-            &self.grid.axes()[0].edges * U::reference_length(),
-            &self.grid.axes()[1].edges * U::reference_length(),
+            &self.grid.axes()[0].edges * SIUnit::reference_length(),
+            &self.grid.axes()[1].edges * SIUnit::reference_length(),
         )
     }
 
-    pub fn r(&self) -> QuantityArray1<U> {
-        self.grid.grids()[0] * U::reference_length()
+    pub fn r(&self) -> SIArray1 {
+        self.grid.grids()[0] * SIUnit::reference_length()
     }
 
-    pub fn z(&self) -> QuantityArray1<U> {
-        self.grid.grids()[1] * U::reference_length()
+    pub fn z(&self) -> SIArray1 {
+        self.grid.grids()[1] * SIUnit::reference_length()
     }
 }
 
-impl<U: EosUnit, F> DFTProfile<U, Ix3, F> {
-    pub fn edges(&self) -> (QuantityArray1<U>, QuantityArray1<U>, QuantityArray1<U>) {
+impl<F> DFTProfile<Ix3, F> {
+    pub fn edges(&self) -> (SIArray1, SIArray1, SIArray1) {
         (
-            &self.grid.axes()[0].edges * U::reference_length(),
-            &self.grid.axes()[1].edges * U::reference_length(),
-            &self.grid.axes()[2].edges * U::reference_length(),
+            &self.grid.axes()[0].edges * SIUnit::reference_length(),
+            &self.grid.axes()[1].edges * SIUnit::reference_length(),
+            &self.grid.axes()[2].edges * SIUnit::reference_length(),
         )
     }
 
-    pub fn x(&self) -> QuantityArray1<U> {
-        self.grid.grids()[0] * U::reference_length()
+    pub fn x(&self) -> SIArray1 {
+        self.grid.grids()[0] * SIUnit::reference_length()
     }
 
-    pub fn y(&self) -> QuantityArray1<U> {
-        self.grid.grids()[1] * U::reference_length()
+    pub fn y(&self) -> SIArray1 {
+        self.grid.grids()[1] * SIUnit::reference_length()
     }
 
-    pub fn z(&self) -> QuantityArray1<U> {
-        self.grid.grids()[2] * U::reference_length()
+    pub fn z(&self) -> SIArray1 {
+        self.grid.grids()[2] * SIUnit::reference_length()
     }
 }
 
-impl<U: EosUnit, D: Dimension, F: HelmholtzEnergyFunctional> DFTProfile<U, D, F>
+impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTProfile<D, F>
 where
     <D as Dimension>::Larger: Dimension<Smaller = D>,
 {
@@ -171,9 +171,9 @@ where
     pub fn new(
         grid: Grid,
         convolver: Arc<dyn Convolver<f64, D>>,
-        bulk: &State<U, DFT<F>>,
+        bulk: &State<DFT<F>>,
         external_potential: Option<Array<f64, D::Larger>>,
-        density: Option<&QuantityArray<U, D::Larger>>,
+        density: Option<&SIArray<D::Larger>>,
     ) -> EosResult<Self> {
         let dft = bulk.eos.clone();
 
@@ -190,18 +190,22 @@ where
         let density = if let Some(density) = density {
             density.clone()
         } else {
-            let t = bulk.temperature.to_reduced(U::reference_temperature())?;
+            let t = bulk
+                .temperature
+                .to_reduced(SIUnit::reference_temperature())?;
             let exp_dfdrho = (-&external_potential).mapv(f64::exp);
             let mut bonds = dft.bond_integrals(t, &exp_dfdrho, &convolver);
             bonds *= &exp_dfdrho;
             let mut density = Array::zeros(external_potential.raw_dim());
-            let bulk_density = bulk.partial_density.to_reduced(U::reference_density())?;
+            let bulk_density = bulk
+                .partial_density
+                .to_reduced(SIUnit::reference_density())?;
             for (s, &c) in dft.component_index().iter().enumerate() {
                 density.index_axis_mut(Axis_nd(0), s).assign(
                     &(bonds.index_axis(Axis_nd(0), s).map(|is| is.min(1.0)) * bulk_density[c]),
                 );
             }
-            density * U::reference_density()
+            density * SIUnit::reference_density()
         };
 
         Ok(Self {
@@ -237,7 +241,7 @@ where
     /// Return the volume of the profile.
     ///
     /// Depending on the geometry, the result is in m, m² or m³.
-    pub fn volume(&self) -> QuantityScalar<U> {
+    pub fn volume(&self) -> SINumber {
         self.grid
             .axes()
             .iter()
@@ -250,24 +254,27 @@ where
     /// Integrate a given profile over the iteration domain.
     pub fn integrate<S: Data<Elem = f64>>(
         &self,
-        profile: &Quantity<ArrayBase<S, D>, U>,
-    ) -> QuantityScalar<U> {
+        profile: &Quantity<ArrayBase<S, D>, SIUnit>,
+    ) -> SINumber {
         profile.integrate(&self.grid.integration_weights_unit())
     }
 
     /// Integrate each component individually.
     pub fn integrate_comp<S: Data<Elem = f64>>(
         &self,
-        profile: &Quantity<ArrayBase<S, D::Larger>, U>,
-    ) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(profile.shape()[0], |i| {
+        profile: &Quantity<ArrayBase<S, D::Larger>, SIUnit>,
+    ) -> SIArray1 {
+        SIArray1::from_shape_fn(profile.shape()[0], |i| {
             self.integrate(&profile.index_axis(Axis_nd(0), i))
         })
     }
 
     /// Return the number of moles of each component in the system.
-    pub fn moles(&self) -> QuantityArray1<U> {
-        let rho = self.density.to_reduced(U::reference_density()).unwrap();
+    pub fn moles(&self) -> SIArray1 {
+        let rho = self
+            .density
+            .to_reduced(SIUnit::reference_density())
+            .unwrap();
         let mut d = rho.raw_dim();
         d[0] = self.dft.components();
         let mut density_comps = Array::zeros(d);
@@ -276,27 +283,27 @@ where
                 .index_axis_mut(Axis_nd(0), j)
                 .assign(&rho.index_axis(Axis_nd(0), i));
         }
-        self.integrate_comp(&(density_comps * U::reference_density()))
+        self.integrate_comp(&(density_comps * SIUnit::reference_density()))
     }
 
     /// Return the total number of moles in the system.
-    pub fn total_moles(&self) -> QuantityScalar<U> {
+    pub fn total_moles(&self) -> SINumber {
         self.moles().sum()
     }
 
     /// Return the chemical potential of the system
-    pub fn chemical_potential(&self) -> QuantityArray1<U> {
+    pub fn chemical_potential(&self) -> SIArray1 {
         self.bulk.chemical_potential(Contributions::Total)
     }
 }
 
-impl<U: Clone, D: Dimension, F> Clone for DFTProfile<U, D, F> {
+impl<D: Dimension, F> Clone for DFTProfile<D, F> {
     fn clone(&self) -> Self {
         Self {
             grid: self.grid.clone(),
             convolver: self.convolver.clone(),
             dft: self.dft.clone(),
-            temperature: self.temperature.clone(),
+            temperature: self.temperature,
             density: self.density.clone(),
             specification: self.specification.clone(),
             external_potential: self.external_potential.clone(),
@@ -306,9 +313,8 @@ impl<U: Clone, D: Dimension, F> Clone for DFTProfile<U, D, F> {
     }
 }
 
-impl<U, D, F> DFTProfile<U, D, F>
+impl<D, F> DFTProfile<D, F>
 where
-    U: EosUnit,
     D: Dimension,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
@@ -317,13 +323,14 @@ where
     pub fn weighted_densities(&self) -> EosResult<Vec<Array<f64, D::Larger>>> {
         Ok(self
             .convolver
-            .weighted_densities(&self.density.to_reduced(U::reference_density())?))
+            .weighted_densities(&self.density.to_reduced(SIUnit::reference_density())?))
     }
 
     pub fn functional_derivative(&self) -> EosResult<Array<f64, D::Larger>> {
         let (_, dfdrho) = self.dft.functional_derivative(
-            self.temperature.to_reduced(U::reference_temperature())?,
-            &self.density.to_reduced(U::reference_density())?,
+            self.temperature
+                .to_reduced(SIUnit::reference_temperature())?,
+            &self.density.to_reduced(SIUnit::reference_density())?,
             &self.convolver,
         )?;
         Ok(dfdrho)
@@ -332,11 +339,11 @@ where
     #[allow(clippy::type_complexity)]
     pub fn residual(&self, log: bool) -> EosResult<(Array<f64, D::Larger>, Array1<f64>, f64)> {
         // Read from profile
-        let density = self.density.to_reduced(U::reference_density())?;
+        let density = self.density.to_reduced(SIUnit::reference_density())?;
         let partial_density = self
             .bulk
             .partial_density
-            .to_reduced(U::reference_density())?;
+            .to_reduced(SIUnit::reference_density())?;
         let bulk_density = self.dft.component_index().mapv(|i| partial_density[i]);
 
         let (res, res_bulk, res_norm, _, _) =
@@ -358,7 +365,9 @@ where
         Array<f64, D::Larger>,
     )> {
         // calculate reduced temperature
-        let temperature = self.temperature.to_reduced(U::reference_temperature())?;
+        let temperature = self
+            .temperature
+            .to_reduced(SIUnit::reference_temperature())?;
 
         // calculate intrinsic functional derivative
         let (_, mut dfdrho) =
@@ -436,25 +445,25 @@ where
 
         // Read from profile
         let component_index = self.dft.component_index().into_owned();
-        let mut density = self.density.to_reduced(U::reference_density())?;
+        let mut density = self.density.to_reduced(SIUnit::reference_density())?;
         let partial_density = self
             .bulk
             .partial_density
-            .to_reduced(U::reference_density())?;
+            .to_reduced(SIUnit::reference_density())?;
         let mut bulk_density = component_index.mapv(|i| partial_density[i]);
 
         // Call solver(s)
         self.call_solver(&mut density, &mut bulk_density, &solver, debug)?;
 
         // Update profile
-        self.density = density * U::reference_density();
-        let volume = U::reference_volume();
+        self.density = density * SIUnit::reference_density();
+        let volume = SIUnit::reference_volume();
         let mut moles = self.bulk.moles.clone();
         bulk_density
             .into_iter()
             .enumerate()
             .try_for_each(|(i, r)| {
-                moles.try_set(component_index[i], r * U::reference_density() * volume)
+                moles.try_set(component_index[i], r * SIUnit::reference_density() * volume)
             })?;
         self.bulk = State::new_nvt(&self.bulk.eos, self.bulk.temperature, volume, &moles)?;
 
@@ -462,16 +471,17 @@ where
     }
 }
 
-impl<U: EosUnit, D: Dimension + RemoveAxis + 'static, F: HelmholtzEnergyFunctional>
-    DFTProfile<U, D, F>
+impl<D: Dimension + RemoveAxis + 'static, F: HelmholtzEnergyFunctional> DFTProfile<D, F>
 where
     D::Larger: Dimension<Smaller = D>,
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
-    pub fn entropy_density(&self, contributions: Contributions) -> EosResult<QuantityArray<U, D>> {
+    pub fn entropy_density(&self, contributions: Contributions) -> EosResult<SIArray<D>> {
         // initialize convolver
-        let t = self.temperature.to_reduced(U::reference_temperature())?;
+        let t = self
+            .temperature
+            .to_reduced(SIUnit::reference_temperature())?;
         let functional_contributions = self.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
             .iter()
@@ -481,28 +491,30 @@ where
 
         Ok(self.dft.entropy_density(
             t,
-            &self.density.to_reduced(U::reference_density())?,
+            &self.density.to_reduced(SIUnit::reference_density())?,
             &convolver,
             contributions,
-        )? * (U::reference_entropy() / U::reference_volume()))
+        )? * (SIUnit::reference_entropy() / SIUnit::reference_volume()))
     }
 
-    pub fn entropy(&self, contributions: Contributions) -> EosResult<QuantityScalar<U>> {
+    pub fn entropy(&self, contributions: Contributions) -> EosResult<SINumber> {
         Ok(self.integrate(&self.entropy_density(contributions)?))
     }
 
-    pub fn grand_potential_density(&self) -> EosResult<QuantityArray<U, D>> {
+    pub fn grand_potential_density(&self) -> EosResult<SIArray<D>> {
         self.dft
             .grand_potential_density(self.temperature, &self.density, &self.convolver)
     }
 
-    pub fn grand_potential(&self) -> EosResult<QuantityScalar<U>> {
+    pub fn grand_potential(&self) -> EosResult<SINumber> {
         Ok(self.integrate(&self.grand_potential_density()?))
     }
 
-    pub fn internal_energy(&self, contributions: Contributions) -> EosResult<QuantityScalar<U>> {
+    pub fn internal_energy(&self, contributions: Contributions) -> EosResult<SINumber> {
         // initialize convolver
-        let t = self.temperature.to_reduced(U::reference_temperature())?;
+        let t = self
+            .temperature
+            .to_reduced(SIUnit::reference_temperature())?;
         let functional_contributions = self.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
             .iter()
@@ -512,11 +524,11 @@ where
 
         let internal_energy_density = self.dft.internal_energy_density(
             t,
-            &self.density.to_reduced(U::reference_density())?,
+            &self.density.to_reduced(SIUnit::reference_density())?,
             &self.external_potential,
             &convolver,
             contributions,
-        )? * U::reference_pressure();
+        )? * SIUnit::reference_pressure();
         Ok(self.integrate(&internal_energy_density))
     }
 }

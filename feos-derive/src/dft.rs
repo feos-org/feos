@@ -174,7 +174,7 @@ fn impl_molar_weight(
         }
     }
     Ok(quote! {
-        impl MolarWeight<SIUnit> for FunctionalVariant {
+        impl MolarWeight for FunctionalVariant {
             fn molar_weight(&self) -> SIArray1 {
                 match self {
                     #(#molar_weight,)*

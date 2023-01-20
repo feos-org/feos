@@ -6,7 +6,7 @@ use crate::solver::DFTSolver;
 use crate::{Axis, DFTProfile, Grid};
 use feos_core::{Contributions, EosResult, EosUnit, State};
 use ndarray::prelude::*;
-use quantity::QuantityScalar;
+use quantity::si::{SINumber, SIUnit};
 
 /// The underlying pair potential, that the Helmholtz energy functional
 /// models.
@@ -16,30 +16,30 @@ pub trait PairPotential {
 }
 
 /// Density profile and properties of a test particle system.
-pub struct PairCorrelation<U, F> {
-    pub profile: DFTProfile<U, Ix1, F>,
+pub struct PairCorrelation<F> {
+    pub profile: DFTProfile<Ix1, F>,
     pub pair_correlation_function: Option<Array2<f64>>,
-    pub self_solvation_free_energy: Option<QuantityScalar<U>>,
+    pub self_solvation_free_energy: Option<SINumber>,
     pub structure_factor: Option<f64>,
 }
 
-impl<U: Clone, F> Clone for PairCorrelation<U, F> {
+impl<F> Clone for PairCorrelation<F> {
     fn clone(&self) -> Self {
         Self {
             profile: self.profile.clone(),
             pair_correlation_function: self.pair_correlation_function.clone(),
-            self_solvation_free_energy: self.self_solvation_free_energy.clone(),
+            self_solvation_free_energy: self.self_solvation_free_energy,
             structure_factor: self.structure_factor,
         }
     }
 }
 
-impl<U: EosUnit, F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<U, F> {
+impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
     pub fn new(
-        bulk: &State<U, DFT<F>>,
+        bulk: &State<DFT<F>>,
         test_particle: usize,
         n_grid: usize,
-        width: QuantityScalar<U>,
+        width: SINumber,
     ) -> EosResult<Self> {
         let dft = &bulk.eos;
 
@@ -47,7 +47,9 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<U
         let axis = Axis::new_spherical(n_grid, width)?;
 
         // calculate external potential
-        let t = bulk.temperature.to_reduced(U::reference_temperature())?;
+        let t = bulk
+            .temperature
+            .to_reduced(SIUnit::reference_temperature())?;
         let mut external_potential = dft.pair_potential(test_particle, &axis.grid, t) / t;
         external_potential.map_inplace(|x| {
             if *x > MAX_POTENTIAL {
@@ -93,7 +95,7 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<U
         // calculate structure factor
         self.structure_factor = Some(
             (self.profile.total_moles() - self.profile.bulk.density * self.profile.volume())
-                .to_reduced(U::reference_moles())?
+                .to_reduced(SIUnit::reference_moles())?
                 + 1.0,
         );
 

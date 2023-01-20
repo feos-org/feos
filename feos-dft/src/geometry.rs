@@ -1,6 +1,6 @@
 use feos_core::{EosResult, EosUnit};
 use ndarray::Array1;
-use quantity::{QuantityArray1, QuantityArray2, QuantityScalar};
+use quantity::si::{SIArray1, SIArray2, SINumber, SIUnit};
 use std::f64::consts::{FRAC_PI_3, PI};
 
 /// Grids with up to three dimensions.
@@ -56,10 +56,12 @@ impl Grid {
             .collect()
     }
 
-    pub(crate) fn integration_weights_unit<U: EosUnit>(&self) -> Vec<QuantityArray1<U>> {
+    pub(crate) fn integration_weights_unit(&self) -> Vec<SIArray1> {
         self.axes()
             .iter()
-            .map(|ax| &ax.integration_weights * U::reference_length().powi(ax.geometry.dimension()))
+            .map(|ax| {
+                &ax.integration_weights * SIUnit::reference_length().powi(ax.geometry.dimension())
+            })
             .collect()
     }
 }
@@ -99,13 +101,13 @@ impl Axis {
     ///
     /// The potential_offset is required to make sure that particles
     /// can not interact through walls.
-    pub fn new_cartesian<U: EosUnit>(
+    pub fn new_cartesian(
         points: usize,
-        length: QuantityScalar<U>,
+        length: SINumber,
         potential_offset: Option<f64>,
     ) -> EosResult<Self> {
         let potential_offset = potential_offset.unwrap_or(0.0);
-        let l = length.to_reduced(U::reference_length())? + potential_offset;
+        let l = length.to_reduced(SIUnit::reference_length())? + potential_offset;
         let cell_size = l / points as f64;
         let grid = Array1::linspace(0.5 * cell_size, l - 0.5 * cell_size, points);
         let edges = Array1::linspace(0.0, l, points + 1);
@@ -120,8 +122,8 @@ impl Axis {
     }
 
     /// Create a new (equidistant) spherical axis.
-    pub fn new_spherical<U: EosUnit>(points: usize, length: QuantityScalar<U>) -> EosResult<Self> {
-        let l = length.to_reduced(U::reference_length())?;
+    pub fn new_spherical(points: usize, length: SINumber) -> EosResult<Self> {
+        let l = length.to_reduced(SIUnit::reference_length())?;
         let cell_size = l / points as f64;
         let grid = Array1::linspace(0.5 * cell_size, l - 0.5 * cell_size, points);
         let edges = Array1::linspace(0.0, l, points + 1);
@@ -138,8 +140,8 @@ impl Axis {
     }
 
     /// Create a new logarithmically scaled cylindrical axis.
-    pub fn new_polar<U: EosUnit>(points: usize, length: QuantityScalar<U>) -> EosResult<Self> {
-        let l = length.to_reduced(U::reference_length())?;
+    pub fn new_polar(points: usize, length: SINumber) -> EosResult<Self> {
+        let l = length.to_reduced(SIUnit::reference_length())?;
 
         let mut alpha = 0.002_f64;
         for _ in 0..20 {
@@ -196,9 +198,9 @@ impl Axis {
     /// Depending on the geometry, the result is in m, m² or m³.
     /// The `potential_offset` is not included in the volume, as
     /// it is mainly used to calculate excess properties.
-    pub fn volume<U: EosUnit>(&self) -> QuantityScalar<U> {
+    pub fn volume(&self) -> SINumber {
         let length = (self.edges[self.grid.len()] - self.potential_offset - self.edges[0])
-            * U::reference_length();
+            * SIUnit::reference_length();
         (match self.geometry {
             Geometry::Cartesian => 1.0,
             Geometry::Cylindrical => 4.0 * PI,
@@ -207,12 +209,7 @@ impl Axis {
     }
 
     /// Interpolate a function on the given axis.
-    pub fn interpolate<U: EosUnit>(
-        &self,
-        x: f64,
-        y: &QuantityArray2<U>,
-        i: usize,
-    ) -> QuantityScalar<U> {
+    pub fn interpolate(&self, x: f64, y: &SIArray2, i: usize) -> SINumber {
         let n = self.grid.len();
         y.get((
             i,

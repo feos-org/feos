@@ -7,16 +7,16 @@ use crate::solver::DFTSolver;
 use feos_core::{Contributions, EosResult, EosUnit, State};
 use ndarray::prelude::*;
 use ndarray::Zip;
-use quantity::{QuantityArray2, QuantityScalar};
+use quantity::si::{SIArray2, SINumber, SIUnit};
 
 /// Density profile and properties of a solute in a inhomogeneous bulk fluid.
-pub struct SolvationProfile<U: EosUnit, F: HelmholtzEnergyFunctional> {
-    pub profile: DFTProfile<U, Ix3, F>,
-    pub grand_potential: Option<QuantityScalar<U>>,
-    pub solvation_free_energy: Option<QuantityScalar<U>>,
+pub struct SolvationProfile<F: HelmholtzEnergyFunctional> {
+    pub profile: DFTProfile<Ix3, F>,
+    pub grand_potential: Option<SINumber>,
+    pub solvation_free_energy: Option<SINumber>,
 }
 
-impl<U: EosUnit, F: HelmholtzEnergyFunctional> Clone for SolvationProfile<U, F> {
+impl<F: HelmholtzEnergyFunctional> Clone for SolvationProfile<F> {
     fn clone(&self) -> Self {
         Self {
             profile: self.profile.clone(),
@@ -26,7 +26,7 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> Clone for SolvationProfile<U, F> 
     }
 }
 
-impl<U: EosUnit, F: HelmholtzEnergyFunctional> SolvationProfile<U, F> {
+impl<F: HelmholtzEnergyFunctional> SolvationProfile<F> {
     pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> EosResult<()> {
         // Solve the profile
         self.profile.solve(solver, debug)?;
@@ -38,7 +38,7 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> SolvationProfile<U, F> {
         // calculate solvation free energy
         self.solvation_free_energy = Some(
             (omega + self.profile.bulk.pressure(Contributions::Total) * self.profile.volume())
-                / U::reference_moles(),
+                / SIUnit::reference_moles(),
         );
 
         Ok(())
@@ -50,20 +50,20 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> SolvationProfile<U, F> {
     }
 }
 
-impl<U: EosUnit, F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<U, F> {
+impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
     pub fn new(
-        bulk: &State<U, DFT<F>>,
+        bulk: &State<DFT<F>>,
         n_grid: [usize; 3],
-        coordinates: QuantityArray2<U>,
+        coordinates: SIArray2,
         sigma_ss: Array1<f64>,
         epsilon_ss: Array1<f64>,
-        system_size: Option<[QuantityScalar<U>; 3]>,
-        cutoff_radius: Option<QuantityScalar<U>>,
+        system_size: Option<[SINumber; 3]>,
+        cutoff_radius: Option<SINumber>,
         potential_cutoff: Option<f64>,
     ) -> EosResult<Self> {
         let dft: &F = &bulk.eos;
 
-        let system_size = system_size.unwrap_or([40.0 * U::reference_length(); 3]);
+        let system_size = system_size.unwrap_or([40.0 * SIUnit::reference_length(); 3]);
 
         // generate grid
         let x = Axis::new_cartesian(n_grid[0], system_size[0], None)?;
@@ -73,14 +73,14 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfil
         // move center of geometry of solute to box center
         let mut coordinates = Array2::from_shape_fn(coordinates.raw_dim(), |(i, j)| {
             (coordinates.get((i, j)))
-                .to_reduced(U::reference_length())
+                .to_reduced(SIUnit::reference_length())
                 .unwrap()
         });
 
         let center = [
-            system_size[0].to_reduced(U::reference_length())? / 2.0,
-            system_size[1].to_reduced(U::reference_length())? / 2.0,
-            system_size[2].to_reduced(U::reference_length())? / 2.0,
+            system_size[0].to_reduced(SIUnit::reference_length())? / 2.0,
+            system_size[1].to_reduced(SIUnit::reference_length())? / 2.0,
+            system_size[2].to_reduced(SIUnit::reference_length())? / 2.0,
         ];
 
         let shift: Array2<f64> = Array2::from_shape_fn((3, 1), |(i, _)| {
@@ -90,7 +90,9 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfil
         coordinates = coordinates + shift;
 
         // temperature
-        let t = bulk.temperature.to_reduced(U::reference_temperature())?;
+        let t = bulk
+            .temperature
+            .to_reduced(SIUnit::reference_temperature())?;
 
         // calculate external potential
         let external_potential = external_potential_3d(
@@ -117,13 +119,13 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfil
     }
 }
 
-fn external_potential_3d<U: EosUnit, F: FluidParameters>(
+fn external_potential_3d<F: FluidParameters>(
     functional: &F,
     axis: [&Axis; 3],
     coordinates: Array2<f64>,
     sigma_ss: Array1<f64>,
     epsilon_ss: Array1<f64>,
-    cutoff_radius: Option<QuantityScalar<U>>,
+    cutoff_radius: Option<SINumber>,
     potential_cutoff: Option<f64>,
     reduced_temperature: f64,
 ) -> EosResult<Array4<f64>> {
@@ -137,8 +139,8 @@ fn external_potential_3d<U: EosUnit, F: FluidParameters>(
     ));
 
     let cutoff_radius = cutoff_radius
-        .unwrap_or(CUTOFF_RADIUS * U::reference_length())
-        .to_reduced(U::reference_length())?;
+        .unwrap_or(CUTOFF_RADIUS * SIUnit::reference_length())
+        .to_reduced(SIUnit::reference_length())?;
 
     // square cut-off radius
     let cutoff_radius2 = cutoff_radius.powi(2);

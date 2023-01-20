@@ -1,14 +1,15 @@
 use super::{PhaseEquilibrium, SolverOptions, Verbosity};
+use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use crate::state::{
     Contributions,
     DensityInitialization::{InitialDensity, Liquid, Vapor},
     State, StateBuilder, TPSpec,
 };
-use crate::{equation_of_state::EquationOfState, EosUnit};
+use crate::EosUnit;
 use ndarray::*;
 use num_dual::linalg::{norm, LU};
-use quantity::{QuantityArray1, QuantityScalar};
+use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::convert::TryFrom;
 use std::sync::Arc;
 
@@ -21,11 +22,8 @@ const MAX_TSTEP: f64 = 20.0;
 const MAX_LNPSTEP: f64 = 0.1;
 const NEWTON_TOL: f64 = 1e-3;
 
-impl<U: EosUnit> TPSpec<U> {
-    pub(super) fn temperature_pressure(
-        &self,
-        tp_init: QuantityScalar<U>,
-    ) -> (Self, QuantityScalar<U>, QuantityScalar<U>) {
+impl TPSpec {
+    pub(super) fn temperature_pressure(&self, tp_init: SINumber) -> (Self, SINumber, SINumber) {
         match self {
             Self::Temperature(t) => (Self::Pressure(tp_init), *t, tp_init),
             Self::Pressure(p) => (Self::Temperature(tp_init), tp_init, *p),
@@ -40,9 +38,9 @@ impl<U: EosUnit> TPSpec<U> {
     }
 }
 
-impl<U: EosUnit> std::fmt::Display for TPSpec<U>
+impl std::fmt::Display for TPSpec
 where
-    QuantityScalar<U>: std::fmt::Display,
+    SINumber: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -57,19 +55,19 @@ where
 }
 
 /// # Bubble and dew point calculations
-impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
+impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     /// Calculate a phase equilibrium for a given temperature
     /// or pressure and composition of the liquid phase.
     pub fn bubble_point(
         eos: &Arc<E>,
-        temperature_or_pressure: QuantityScalar<U>,
+        temperature_or_pressure: SINumber,
         liquid_molefracs: &Array1<f64>,
-        tp_init: Option<QuantityScalar<U>>,
+        tp_init: Option<SINumber>,
         vapor_molefracs: Option<&Array1<f64>>,
         options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         Self::bubble_dew_point(
             eos,
@@ -86,14 +84,14 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     /// or pressure and composition of the vapor phase.
     pub fn dew_point(
         eos: &Arc<E>,
-        temperature_or_pressure: QuantityScalar<U>,
+        temperature_or_pressure: SINumber,
         vapor_molefracs: &Array1<f64>,
-        tp_init: Option<QuantityScalar<U>>,
+        tp_init: Option<SINumber>,
         liquid_molefracs: Option<&Array1<f64>>,
         options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         Self::bubble_dew_point(
             eos,
@@ -108,15 +106,15 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 
     pub(super) fn bubble_dew_point(
         eos: &Arc<E>,
-        tp_spec: TPSpec<U>,
-        tp_init: Option<QuantityScalar<U>>,
+        tp_spec: TPSpec,
+        tp_init: Option<SINumber>,
         molefracs_spec: &Array1<f64>,
         molefracs_init: Option<&Array1<f64>>,
         bubble: bool,
         options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         match tp_spec {
             TPSpec::Temperature(t) => {
@@ -184,15 +182,15 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 
     fn iterate_bubble_dew(
         eos: &Arc<E>,
-        tp_spec: TPSpec<U>,
-        tp_init: QuantityScalar<U>,
+        tp_spec: TPSpec,
+        tp_init: SINumber,
         molefracs_spec: &Array1<f64>,
         molefracs_init: Option<&Array1<f64>>,
         bubble: bool,
         options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         let (var, t, p) = tp_spec.temperature_pressure(tp_init);
         let [state1, state2] = if bubble {
@@ -205,12 +203,12 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 
     fn starting_pressure_ideal_gas(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
+        temperature: SINumber,
         molefracs_spec: &Array1<f64>,
         bubble: bool,
-    ) -> EosResult<(QuantityScalar<U>, Array1<f64>)>
+    ) -> EosResult<(SINumber, Array1<f64>)>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         if bubble {
             Self::starting_pressure_ideal_gas_bubble(eos, temperature, molefracs_spec)
@@ -221,18 +219,18 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 
     pub(super) fn starting_pressure_ideal_gas_bubble(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
+        temperature: SINumber,
         liquid_molefracs: &Array1<f64>,
-    ) -> EosResult<(QuantityScalar<U>, Array1<f64>)> {
-        let m = liquid_molefracs * U::reference_moles();
+    ) -> EosResult<(SINumber, Array1<f64>)> {
+        let m = liquid_molefracs * SIUnit::reference_moles();
         let density = 0.75 * eos.max_density(Some(&m))?;
         let liquid = State::new_nvt(eos, temperature, m.sum() / density, &m)?;
         let v_l = liquid.partial_molar_volume(Contributions::Total);
         let p_l = liquid.pressure(Contributions::Total);
         let mu_l = liquid.chemical_potential(Contributions::ResidualNvt);
-        let p_i = (temperature * density * U::gas_constant() * liquid_molefracs)
+        let p_i = (temperature * density * SIUnit::gas_constant() * liquid_molefracs)
             * (mu_l - p_l * v_l)
-                .to_reduced(U::gas_constant() * temperature)?
+                .to_reduced(SIUnit::gas_constant() * temperature)?
                 .mapv(f64::exp);
         let y = p_i.to_reduced(p_i.sum())?;
         Ok((p_i.sum(), y))
@@ -240,17 +238,17 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 
     fn starting_pressure_ideal_gas_dew(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
+        temperature: SINumber,
         vapor_molefracs: &Array1<f64>,
-    ) -> EosResult<(QuantityScalar<U>, Array1<f64>)>
+    ) -> EosResult<(SINumber, Array1<f64>)>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
-        let mut p: Option<QuantityScalar<U>> = None;
+        let mut p: Option<SINumber> = None;
 
         let mut x = vapor_molefracs.clone();
         for _ in 0..5 {
-            let m = x * U::reference_moles();
+            let m = x * SIUnit::reference_moles();
             let density = 0.75 * eos.max_density(Some(&m))?;
             let liquid = State::new_nvt(eos, temperature, m.sum() / density, &m)?;
             let v_l = liquid.partial_molar_volume(Contributions::Total);
@@ -258,9 +256,9 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
             let mu_l = liquid.chemical_potential(Contributions::ResidualNvt);
             let k = vapor_molefracs
                 / (mu_l - p_l * v_l)
-                    .to_reduced(U::gas_constant() * temperature)?
+                    .to_reduced(SIUnit::gas_constant() * temperature)?
                     .mapv(f64::exp);
-            let p_new = U::gas_constant() * temperature * density / k.sum();
+            let p_new = SIUnit::gas_constant() * temperature * density / k.sum();
             x = &k / k.sum();
             if let Some(p_old) = p {
                 if (p_new - p_old).to_reduced(p_old)?.abs() < 1e-5 {
@@ -275,32 +273,32 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 
     pub(super) fn starting_pressure_spinodal(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
+        temperature: SINumber,
         molefracs: &Array1<f64>,
-    ) -> EosResult<QuantityScalar<U>>
+    ) -> EosResult<SINumber>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
-        let moles = molefracs * U::reference_moles();
+        let moles = molefracs * SIUnit::reference_moles();
         let [sp_v, sp_l] = State::spinodal(eos, temperature, Some(&moles), Default::default())?;
         let pv = sp_v.pressure(Contributions::Total);
         let pl = sp_l.pressure(Contributions::Total);
-        Ok(0.5 * ((0.0 * U::reference_pressure()).max(pl)? + pv))
+        Ok(0.5 * ((0.0 * SIUnit::reference_pressure()).max(pl)? + pv))
     }
 }
 
-fn starting_x2_bubble<U: EosUnit, E: EquationOfState>(
+fn starting_x2_bubble<E: EquationOfState>(
     eos: &Arc<E>,
-    temperature: QuantityScalar<U>,
-    pressure: QuantityScalar<U>,
+    temperature: SINumber,
+    pressure: SINumber,
     liquid_molefracs: &Array1<f64>,
     vapor_molefracs: Option<&Array1<f64>>,
-) -> EosResult<[State<U, E>; 2]> {
+) -> EosResult<[State<E>; 2]> {
     let liquid_state = State::new_npt(
         eos,
         temperature,
         pressure,
-        &(liquid_molefracs.clone() * U::reference_moles()),
+        &(liquid_molefracs.clone() * SIUnit::reference_moles()),
         Liquid,
     )?;
     let xv = match vapor_molefracs {
@@ -311,24 +309,24 @@ fn starting_x2_bubble<U: EosUnit, E: EquationOfState>(
         eos,
         temperature,
         pressure,
-        &(xv * U::reference_moles()),
+        &(xv * SIUnit::reference_moles()),
         Vapor,
     )?;
     Ok([liquid_state, vapor_state])
 }
 
-fn starting_x2_dew<U: EosUnit, E: EquationOfState>(
+fn starting_x2_dew<E: EquationOfState>(
     eos: &Arc<E>,
-    temperature: QuantityScalar<U>,
-    pressure: QuantityScalar<U>,
+    temperature: SINumber,
+    pressure: SINumber,
     vapor_molefracs: &Array1<f64>,
     liquid_molefracs: Option<&Array1<f64>>,
-) -> EosResult<[State<U, E>; 2]> {
+) -> EosResult<[State<E>; 2]> {
     let vapor_state = State::new_npt(
         eos,
         temperature,
         pressure,
-        &(vapor_molefracs.clone() * U::reference_moles()),
+        &(vapor_molefracs.clone() * SIUnit::reference_moles()),
         Vapor,
     )?;
     let xl = match liquid_molefracs {
@@ -339,7 +337,7 @@ fn starting_x2_dew<U: EosUnit, E: EquationOfState>(
                 eos,
                 temperature,
                 pressure,
-                &(xl * U::reference_moles()),
+                &(xl * SIUnit::reference_moles()),
                 Liquid,
             )?;
             (vapor_state.ln_phi() - liquid_state.ln_phi()).mapv(f64::exp) * vapor_molefracs
@@ -349,21 +347,21 @@ fn starting_x2_dew<U: EosUnit, E: EquationOfState>(
         eos,
         temperature,
         pressure,
-        &(xl * U::reference_moles()),
+        &(xl * SIUnit::reference_moles()),
         Liquid,
     )?;
     Ok([vapor_state, liquid_state])
 }
 
-fn bubble_dew<U: EosUnit, E: EquationOfState>(
-    tp_spec: TPSpec<U>,
-    mut var_tp: TPSpec<U>,
-    mut state1: State<U, E>,
-    mut state2: State<U, E>,
+fn bubble_dew<E: EquationOfState>(
+    tp_spec: TPSpec,
+    mut var_tp: TPSpec,
+    mut state1: State<E>,
+    mut state2: State<E>,
     options: (SolverOptions, SolverOptions),
-) -> EosResult<PhaseEquilibrium<U, E, 2>>
+) -> EosResult<PhaseEquilibrium<E, 2>>
 where
-    QuantityScalar<U>: std::fmt::Display,
+    SINumber: std::fmt::Display,
 {
     let (options_inner, options_outer) = options;
 
@@ -443,14 +441,14 @@ where
     }
 }
 
-fn adjust_t_p<U: EosUnit, E: EquationOfState>(
-    var: &mut TPSpec<U>,
-    state1: &mut State<U, E>,
-    state2: &mut State<U, E>,
+fn adjust_t_p<E: EquationOfState>(
+    var: &mut TPSpec,
+    state1: &mut State<E>,
+    state2: &mut State<E>,
     verbosity: Verbosity,
 ) -> EosResult<f64>
 where
-    QuantityScalar<U>: std::fmt::Display,
+    SINumber: std::fmt::Display,
 {
     // calculate K = phi_1/phi_2 = x_2/x_1
     let ln_phi_1 = state1.ln_phi();
@@ -469,10 +467,10 @@ where
             let mut tstep = -f / df;
 
             // catch too big t-steps
-            if tstep < -MAX_TSTEP * U::reference_temperature() {
-                tstep = -MAX_TSTEP * U::reference_temperature();
-            } else if tstep > MAX_TSTEP * U::reference_temperature() {
-                tstep = MAX_TSTEP * U::reference_temperature();
+            if tstep < -MAX_TSTEP * SIUnit::reference_temperature() {
+                tstep = -MAX_TSTEP * SIUnit::reference_temperature();
+            } else if tstep > MAX_TSTEP * SIUnit::reference_temperature() {
+                tstep = MAX_TSTEP * SIUnit::reference_temperature();
             }
 
             // Update t
@@ -511,11 +509,11 @@ where
     Ok(f.abs())
 }
 
-fn adjust_states<U: EosUnit, E: EquationOfState>(
-    var: &TPSpec<U>,
-    state1: &mut State<U, E>,
-    state2: &mut State<U, E>,
-    moles_state2: Option<&QuantityArray1<U>>,
+fn adjust_states<E: EquationOfState>(
+    var: &TPSpec,
+    state1: &mut State<E>,
+    state2: &mut State<E>,
+    moles_state2: Option<&SIArray1>,
 ) -> EosResult<()> {
     let (temperature, pressure) = match var {
         TPSpec::Pressure(p) => (state1.temperature, *p),
@@ -538,9 +536,9 @@ fn adjust_states<U: EosUnit, E: EquationOfState>(
     Ok(())
 }
 
-fn adjust_x2<U: EosUnit, E: EquationOfState>(
-    state1: &State<U, E>,
-    state2: &mut State<U, E>,
+fn adjust_x2<E: EquationOfState>(
+    state1: &State<E>,
+    state2: &mut State<E>,
     verbosity: Verbosity,
 ) -> EosResult<f64> {
     let x1 = &state1.molefracs;
@@ -554,21 +552,21 @@ fn adjust_x2<U: EosUnit, E: EquationOfState>(
         &state2.eos,
         state2.temperature,
         state2.pressure(Contributions::Total),
-        &(x2 * U::reference_moles()),
+        &(x2 * SIUnit::reference_moles()),
         InitialDensity(state2.density),
     )?;
     Ok(err_out)
 }
 
-fn newton_step<U: EosUnit, E: EquationOfState>(
-    tp_spec: TPSpec<U>,
-    var: &mut TPSpec<U>,
-    state1: &mut State<U, E>,
-    state2: &mut State<U, E>,
+fn newton_step<E: EquationOfState>(
+    tp_spec: TPSpec,
+    var: &mut TPSpec,
+    state1: &mut State<E>,
+    state2: &mut State<E>,
     verbosity: Verbosity,
 ) -> EosResult<f64>
 where
-    QuantityScalar<U>: std::fmt::Display,
+    SINumber: std::fmt::Display,
 {
     match tp_spec {
         TPSpec::Temperature(_) => newton_step_t(var, state1, state2, verbosity),
@@ -576,37 +574,37 @@ where
     }
 }
 
-fn newton_step_t<U: EosUnit, E: EquationOfState>(
-    pressure: &mut TPSpec<U>,
-    state1: &mut State<U, E>,
-    state2: &mut State<U, E>,
+fn newton_step_t<E: EquationOfState>(
+    pressure: &mut TPSpec,
+    state1: &mut State<E>,
+    state2: &mut State<E>,
     verbosity: Verbosity,
 ) -> EosResult<f64>
 where
-    QuantityScalar<U>: std::fmt::Display,
+    SINumber: std::fmt::Display,
 {
     let dmu_drho_1 = (state1.dmu_dni(Contributions::Total) * state1.volume)
-        .to_reduced(U::reference_molar_energy() / U::reference_density())?
+        .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?
         .dot(&state1.molefracs);
     let dmu_drho_2 = (state2.dmu_dni(Contributions::Total) * state2.volume)
-        .to_reduced(U::reference_molar_energy() / U::reference_density())?;
+        .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
     let dp_drho_1 = (state1.dp_dni(Contributions::Total) * state1.volume)
-        .to_reduced(U::reference_pressure() / U::reference_density())?
+        .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?
         .dot(&state1.molefracs);
     let dp_drho_2 = (state2.dp_dni(Contributions::Total) * state2.volume)
-        .to_reduced(U::reference_pressure() / U::reference_density())?;
+        .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?;
     let mu_1 = state1
         .chemical_potential(Contributions::Total)
-        .to_reduced(U::reference_molar_energy())?;
+        .to_reduced(SIUnit::reference_molar_energy())?;
     let mu_2 = state2
         .chemical_potential(Contributions::Total)
-        .to_reduced(U::reference_molar_energy())?;
+        .to_reduced(SIUnit::reference_molar_energy())?;
     let p_1 = state1
         .pressure(Contributions::Total)
-        .to_reduced(U::reference_pressure())?;
+        .to_reduced(SIUnit::reference_pressure())?;
     let p_2 = state2
         .pressure(Contributions::Total)
-        .to_reduced(U::reference_pressure())?;
+        .to_reduced(SIUnit::reference_pressure())?;
 
     // calculate residual
     let res = concatenate![Axis(0), mu_1 - &mu_2, arr1(&[p_1 - p_2])];
@@ -627,9 +625,9 @@ where
     let dx = LU::new(jacobian)?.solve(&res);
 
     // apply Newton step
-    let rho_l1 = state1.density - dx[dx.len() - 1] * U::reference_density();
+    let rho_l1 = state1.density - dx[dx.len() - 1] * SIUnit::reference_density();
     let rho_l2 =
-        &state2.partial_density - &(dx.slice(s![0..-1]).to_owned() * U::reference_density());
+        &state2.partial_density - &(dx.slice(s![0..-1]).to_owned() * SIUnit::reference_density());
 
     // update states
     *state1 = StateBuilder::new(&state1.eos)
@@ -653,51 +651,51 @@ where
     Ok(error)
 }
 
-fn newton_step_p<U: EosUnit, E: EquationOfState>(
-    pressure: QuantityScalar<U>,
-    temperature: &mut TPSpec<U>,
-    state1: &mut State<U, E>,
-    state2: &mut State<U, E>,
+fn newton_step_p<E: EquationOfState>(
+    pressure: SINumber,
+    temperature: &mut TPSpec,
+    state1: &mut State<E>,
+    state2: &mut State<E>,
     verbosity: Verbosity,
 ) -> EosResult<f64>
 where
-    QuantityScalar<U>: std::fmt::Display,
+    SINumber: std::fmt::Display,
 {
     let dmu_drho_1 = (state1.dmu_dni(Contributions::Total) * state1.volume)
-        .to_reduced(U::reference_molar_energy() / U::reference_density())?
+        .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?
         .dot(&state1.molefracs);
     let dmu_drho_2 = (state2.dmu_dni(Contributions::Total) * state2.volume)
-        .to_reduced(U::reference_molar_energy() / U::reference_density())?;
+        .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
     let dmu_dt_1 = state1
         .dmu_dt(Contributions::Total)
-        .to_reduced(U::reference_molar_energy() / U::reference_temperature())?;
+        .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_temperature())?;
     let dmu_dt_2 = state2
         .dmu_dt(Contributions::Total)
-        .to_reduced(U::reference_molar_energy() / U::reference_temperature())?;
+        .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_temperature())?;
     let dp_drho_1 = (state1.dp_dni(Contributions::Total) * state1.volume)
-        .to_reduced(U::reference_pressure() / U::reference_density())?
+        .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?
         .dot(&state1.molefracs);
     let dp_dt_1 = state1
         .dp_dt(Contributions::Total)
-        .to_reduced(U::reference_pressure() / U::reference_temperature())?;
+        .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_temperature())?;
     let dp_dt_2 = state2
         .dp_dt(Contributions::Total)
-        .to_reduced(U::reference_pressure() / U::reference_temperature())?;
+        .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_temperature())?;
     let dp_drho_2 = (state2.dp_dni(Contributions::Total) * state2.volume)
-        .to_reduced(U::reference_pressure() / U::reference_density())?;
+        .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?;
     let mu_1 = state1
         .chemical_potential(Contributions::Total)
-        .to_reduced(U::reference_molar_energy())?;
+        .to_reduced(SIUnit::reference_molar_energy())?;
     let mu_2 = state2
         .chemical_potential(Contributions::Total)
-        .to_reduced(U::reference_molar_energy())?;
+        .to_reduced(SIUnit::reference_molar_energy())?;
     let p_1 = state1
         .pressure(Contributions::Total)
-        .to_reduced(U::reference_pressure())?;
+        .to_reduced(SIUnit::reference_pressure())?;
     let p_2 = state2
         .pressure(Contributions::Total)
-        .to_reduced(U::reference_pressure())?;
-    let p = pressure.to_reduced(U::reference_pressure())?;
+        .to_reduced(SIUnit::reference_pressure())?;
+    let p = pressure.to_reduced(SIUnit::reference_pressure())?;
 
     // calculate residual
     let res = concatenate![Axis(0), mu_1 - &mu_2, arr1(&[p_1 - p]), arr1(&[p_2 - p])];
@@ -728,10 +726,10 @@ where
     let dx = LU::new(jacobian)?.solve(&res);
 
     // apply Newton step
-    let rho_l1 = state1.density - dx[dx.len() - 2] * U::reference_density();
+    let rho_l1 = state1.density - dx[dx.len() - 2] * SIUnit::reference_density();
     let rho_l2 =
-        &state2.partial_density - &(dx.slice(s![0..-2]).to_owned() * U::reference_density());
-    let t = state1.temperature - dx[dx.len() - 1] * U::reference_temperature();
+        &state2.partial_density - &(dx.slice(s![0..-2]).to_owned() * SIUnit::reference_density());
+    let t = state1.temperature - dx[dx.len() - 1] * SIUnit::reference_temperature();
 
     // update states
     *state1 = StateBuilder::new(&state1.eos)

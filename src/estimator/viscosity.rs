@@ -1,24 +1,24 @@
 use super::{DataSet, EstimatorError};
 use feos_core::{DensityInitialization, EntropyScaling, EosUnit, EquationOfState, State};
 use ndarray::arr1;
-use quantity::{QuantityArray1, QuantityScalar};
+use quantity::si::{SIArray1, SIUnit};
 use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Store experimental viscosity data.
 #[derive(Clone)]
-pub struct Viscosity<U: EosUnit> {
-    pub target: QuantityArray1<U>,
-    temperature: QuantityArray1<U>,
-    pressure: QuantityArray1<U>,
+pub struct Viscosity {
+    pub target: SIArray1,
+    temperature: SIArray1,
+    pressure: SIArray1,
 }
 
-impl<U: EosUnit> Viscosity<U> {
+impl Viscosity {
     /// Create a new data set for experimental viscosity data.
     pub fn new(
-        target: QuantityArray1<U>,
-        temperature: QuantityArray1<U>,
-        pressure: QuantityArray1<U>,
+        target: SIArray1,
+        temperature: SIArray1,
+        pressure: SIArray1,
     ) -> Result<Self, EstimatorError> {
         Ok(Self {
             target,
@@ -28,18 +28,18 @@ impl<U: EosUnit> Viscosity<U> {
     }
 
     /// Return temperature.
-    pub fn temperature(&self) -> QuantityArray1<U> {
+    pub fn temperature(&self) -> SIArray1 {
         self.temperature.clone()
     }
 
     /// Return pressure.
-    pub fn pressure(&self) -> QuantityArray1<U> {
+    pub fn pressure(&self) -> SIArray1 {
         self.pressure.clone()
     }
 }
 
-impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> DataSet<U, E> for Viscosity<U> {
-    fn target(&self) -> &QuantityArray1<U> {
+impl<E: EquationOfState + EntropyScaling> DataSet<E> for Viscosity {
+    fn target(&self) -> &SIArray1 {
         &self.target
     }
 
@@ -51,11 +51,8 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> DataSet<U, E> for Visco
         vec!["temperature", "pressure"]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<QuantityArray1<U>, EstimatorError>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        let moles = arr1(&[1.0]) * U::reference_moles();
+    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
+        let moles = arr1(&[1.0]) * SIUnit::reference_moles();
         self.temperature
             .into_iter()
             .zip(self.pressure.into_iter())
@@ -67,7 +64,7 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> DataSet<U, E> for Visco
             .collect()
     }
 
-    fn get_input(&self) -> HashMap<String, QuantityArray1<U>> {
+    fn get_input(&self) -> HashMap<String, SIArray1> {
         let mut m = HashMap::with_capacity(1);
         m.insert("temperature".to_owned(), self.temperature());
         m.insert("pressure".to_owned(), self.pressure());

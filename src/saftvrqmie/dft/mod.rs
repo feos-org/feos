@@ -105,7 +105,7 @@ impl HelmholtzEnergyFunctional for SaftVRQMieFunctional {
     }
 }
 
-impl MolarWeight<SIUnit> for SaftVRQMieFunctional {
+impl MolarWeight for SaftVRQMieFunctional {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }

@@ -131,7 +131,7 @@ impl HelmholtzEnergyFunctional for PcSaftFunctional {
     }
 }
 
-impl MolarWeight<SIUnit> for PcSaftFunctional {
+impl MolarWeight for PcSaftFunctional {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }

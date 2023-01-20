@@ -4,27 +4,23 @@ use crate::errors::{EosError, EosResult};
 use crate::state::{Contributions, DensityInitialization, State, TPSpec};
 use crate::EosUnit;
 use ndarray::{arr1, Array1};
-use quantity::QuantityScalar;
+use quantity::si::{SINumber, SIUnit};
 use std::convert::TryFrom;
 use std::sync::Arc;
 
 const SCALE_T_NEW: f64 = 0.7;
-
 const MAX_ITER_PURE: usize = 50;
 const TOL_PURE: f64 = 1e-12;
 
 /// # Pure component phase equilibria
-impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
+impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     /// Calculate a phase equilibrium for a pure component.
     pub fn pure(
         eos: &Arc<E>,
-        temperature_or_pressure: QuantityScalar<U>,
-        initial_state: Option<&PhaseEquilibrium<U, E, 2>>,
+        temperature_or_pressure: SINumber,
+        initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
+    ) -> EosResult<Self> {
         match TPSpec::try_from(temperature_or_pressure)? {
             TPSpec::Temperature(t) => Self::pure_t(eos, t, initial_state, options),
             TPSpec::Pressure(p) => Self::pure_p(eos, p, initial_state, options),
@@ -35,13 +31,10 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     /// and given temperature.
     fn pure_t(
         eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
-        initial_state: Option<&PhaseEquilibrium<U, E, 2>>,
+        temperature: SINumber,
+        initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
+    ) -> EosResult<Self> {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_PURE, TOL_PURE);
 
         // First use given initial state if applicable
@@ -68,10 +61,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         )
     }
 
-    fn iterate_pure_t(self, max_iter: usize, tol: f64, verbosity: Verbosity) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
+    fn iterate_pure_t(self, max_iter: usize, tol: f64, verbosity: Verbosity) -> EosResult<Self> {
         let mut p_old = self.vapor().pressure(Contributions::Total);
         let [mut vapor, mut liquid] = self.0;
 
@@ -107,12 +97,12 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
                 let mu_v = vapor.chemical_potential(Contributions::Total).get(0);
                 p_new = p_v
                     * (a_l - mu_v)
-                        .to_reduced(vapor.temperature * U::gas_constant())?
+                        .to_reduced(vapor.temperature * SIUnit::gas_constant())?
                         .exp();
             }
 
             // Improve the estimate by exploiting the almost ideal behavior of the gas phase
-            let kt = U::gas_constant() * vapor.temperature;
+            let kt = SIUnit::gas_constant() * vapor.temperature;
             let mut newton_iter = 0;
             let newton_tol = p_old * delta_v * tol;
             for _ in 0..20 {
@@ -169,13 +159,10 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     /// and given pressure.
     fn pure_p(
         eos: &Arc<E>,
-        pressure: QuantityScalar<U>,
+        pressure: SINumber,
         initial_state: Option<&Self>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
+    ) -> EosResult<Self> {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_PURE, TOL_PURE);
 
         // Initialize the phase equilibrium
@@ -228,7 +215,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 
             if rho_l.is_sign_negative()
                 || rho_v.is_sign_negative()
-                || delta_t.abs() > U::reference_temperature()
+                || delta_t.abs() > SIUnit::reference_temperature()
             {
                 // if densities are negative or the temperature step is large use density iteration instead
                 vle = vle
@@ -265,40 +252,40 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         Err(EosError::NotConverged("pure_p".to_owned()))
     }
 
-    fn init_pure_state(initial_state: &Self, temperature: QuantityScalar<U>) -> EosResult<Self> {
+    fn init_pure_state(initial_state: &Self, temperature: SINumber) -> EosResult<Self> {
         let vapor = initial_state.vapor().update_temperature(temperature)?;
         let liquid = initial_state.liquid().update_temperature(temperature)?;
         Ok(Self([vapor, liquid]))
     }
 
-    fn init_pure_ideal_gas(eos: &Arc<E>, temperature: QuantityScalar<U>) -> EosResult<Self> {
-        let m = arr1(&[1.0]) * U::reference_moles();
+    fn init_pure_ideal_gas(eos: &Arc<E>, temperature: SINumber) -> EosResult<Self> {
+        let m = arr1(&[1.0]) * SIUnit::reference_moles();
         let p = Self::starting_pressure_ideal_gas_bubble(eos, temperature, &arr1(&[1.0]))?.0;
         PhaseEquilibrium::new_npt(eos, temperature, p, &m, &m)?.check_trivial_solution()
     }
 
-    fn init_pure_spinodal(eos: &Arc<E>, temperature: QuantityScalar<U>) -> EosResult<Self>
+    fn init_pure_spinodal(eos: &Arc<E>, temperature: SINumber) -> EosResult<Self>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         let p = Self::starting_pressure_spinodal(eos, temperature, &arr1(&[1.0]))?;
-        let m = arr1(&[1.0]) * U::reference_moles();
+        let m = arr1(&[1.0]) * SIUnit::reference_moles();
         PhaseEquilibrium::new_npt(eos, temperature, p, &m, &m)
     }
 
     /// Initialize a new VLE for a pure substance for a given pressure.
-    fn init_pure_p(eos: &Arc<E>, pressure: QuantityScalar<U>) -> EosResult<Self>
+    fn init_pure_p(eos: &Arc<E>, pressure: SINumber) -> EosResult<Self>
     where
-        QuantityScalar<U>: std::fmt::Display,
+        SINumber: std::fmt::Display,
     {
         let trial_temperatures = [
-            300.0 * U::reference_temperature(),
-            500.0 * U::reference_temperature(),
-            200.0 * U::reference_temperature(),
+            300.0 * SIUnit::reference_temperature(),
+            500.0 * SIUnit::reference_temperature(),
+            200.0 * SIUnit::reference_temperature(),
         ];
-        let m = arr1(&[1.0]) * U::reference_moles();
+        let m = arr1(&[1.0]) * SIUnit::reference_moles();
         let mut vle = None;
-        let mut t0 = U::reference_temperature();
+        let mut t0 = SIUnit::reference_temperature();
         for t in trial_temperatures.iter() {
             t0 = *t;
             let _vle = PhaseEquilibrium::new_npt(eos, *t, pressure, &m, &m)?;
@@ -359,16 +346,10 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     }
 }
 
-impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
+impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     /// Calculate the pure component vapor pressures of all
     /// components in the system for the given temperature.
-    pub fn vapor_pressure(
-        eos: &Arc<E>,
-        temperature: QuantityScalar<U>,
-    ) -> Vec<Option<QuantityScalar<U>>>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
+    pub fn vapor_pressure(eos: &Arc<E>, temperature: SINumber) -> Vec<Option<SINumber>> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Arc::new(eos.subset(&[i]));
@@ -381,13 +362,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 
     /// Calculate the pure component boiling temperatures of all
     /// components in the system for the given pressure.
-    pub fn boiling_temperature(
-        eos: &Arc<E>,
-        pressure: QuantityScalar<U>,
-    ) -> Vec<Option<QuantityScalar<U>>>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
+    pub fn boiling_temperature(eos: &Arc<E>, pressure: SINumber) -> Vec<Option<SINumber>> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Arc::new(eos.subset(&[i]));
@@ -402,11 +377,8 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     /// components in the system.
     pub fn vle_pure_comps(
         eos: &Arc<E>,
-        temperature_or_pressure: QuantityScalar<U>,
-    ) -> Vec<Option<PhaseEquilibrium<U, E, 2>>>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
+        temperature_or_pressure: SINumber,
+    ) -> Vec<Option<PhaseEquilibrium<E, 2>>> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Arc::new(eos.subset(&[i]));
@@ -418,7 +390,8 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
                 )
                 .ok()
                 .map(|vle_pure| {
-                    let mut moles_vapor = Array1::zeros(eos.components()) * U::reference_moles();
+                    let mut moles_vapor =
+                        Array1::zeros(eos.components()) * SIUnit::reference_moles();
                     let mut moles_liquid = moles_vapor.clone();
                     moles_vapor
                         .try_set(i, vle_pure.vapor().total_moles)

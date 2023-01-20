@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed the `3d_dft` feature to `rayon` in accordance to the other feos crates. [#62](https://github.com/feos-org/feos/pull/62)
 - internally rewrote the implementation of the Euler-Lagrange equation to use a bulk density instead of the chemical potential as variable. [#60](https://github.com/feos-org/feos/pull/60)
 - Renamed the parameter `beta` of the Picard iteration and Anderson mixing solvers to `damping_coefficient`. [#75](https://github.com/feos-org/feos/pull/75)
+- Removed generics for units in all structs and traits in favor of static SI units. [#115](https://github.com/feos-org/feos/pull/115)
 
 ## [0.3.2] - 2022-10-13
 ### Changed

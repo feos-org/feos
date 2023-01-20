@@ -104,7 +104,7 @@ impl EquationOfState for Pets {
     }
 }
 
-impl MolarWeight<SIUnit> for Pets {
+impl MolarWeight for Pets {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }
@@ -122,7 +122,7 @@ fn omega22(t: f64) -> f64 {
         - 6.435e-4 * t.powf(0.14874) * (18.0323 * t.powf(-0.76830) - 7.27371).sin()
 }
 
-impl EntropyScaling<SIUnit> for Pets {
+impl EntropyScaling for Pets {
     fn viscosity_reference(
         &self,
         temperature: SINumber,
@@ -221,7 +221,7 @@ impl EntropyScaling<SIUnit> for Pets {
 
     // fn thermal_conductivity_reference(
     //     &self,
-    //     state: &State<SIUnit, E>,
+    //     state: &State<E>,
     // ) -> EosResult<SINumber> {
     //     if self.components() != 1 {
     //         return Err(EosError::IncompatibleComponents(self.components(), 1));
