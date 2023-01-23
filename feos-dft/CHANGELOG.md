@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed the parameter `beta` of the Picard iteration and Anderson mixing solvers to `damping_coefficient`. [#75](https://github.com/feos-org/feos/pull/75)
 - Removed generics for units in all structs and traits in favor of static SI units. [#115](https://github.com/feos-org/feos/pull/115)
 
+### Fixed
+- Fixed the sign of vector weighted densities in Cartesian and cylindrical geometries. The wrong sign had no effects on the Helmholtz energy and thus on density profiles. [#120](https://github.com/feos-org/feos/pull/120)
+
 ## [0.3.2] - 2022-10-13
 ### Changed
 - The 3D DFT functionalities (3D pores, solvation free energy, free-energy-averaged potentials) are hidden behind the new `3d_dft` feature. For the Python package, the feature is always enabled. [#51](https://github.com/feos-org/feos/pull/51)

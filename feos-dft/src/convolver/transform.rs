@@ -5,7 +5,7 @@ use num_dual::*;
 use rustdct::{DctNum, DctPlanner, TransformType2And3};
 use rustfft::{num_complex::Complex, Fft, FftPlanner};
 use std::f64::consts::PI;
-use std::ops::{DivAssign, SubAssign};
+use std::ops::DivAssign;
 use std::sync::Arc;
 
 #[derive(Clone, Copy)]
@@ -189,10 +189,10 @@ impl<T: DualNum<f64> + DctNum + ScalarOperand> FourierTransform<T> for Spherical
         if scalar {
             self.sine_transform(&f_r * &self.r_grid, f_k.view_mut(), false);
         } else {
-            self.cosine_transform(&f_r * &self.r_grid, f_k.view_mut(), false);
             let mut f_aux = Array::zeros(f_k.raw_dim());
-            self.sine_transform(f_r, f_aux.view_mut(), false);
-            f_k.sub_assign(&(&f_aux / &self.k_grid));
+            self.cosine_transform(&f_r * &self.r_grid, f_aux.view_mut(), false);
+            self.sine_transform(f_r, f_k.view_mut(), false);
+            f_k.assign(&(&f_k / &self.k_grid - &f_aux));
         }
         f_k.assign(&(&f_k / &self.k_grid));
         f_k[0] = T::zero();
@@ -202,10 +202,10 @@ impl<T: DualNum<f64> + DctNum + ScalarOperand> FourierTransform<T> for Spherical
         if scalar {
             self.sine_transform(&f_k * &self.k_grid, f_r.view_mut(), true);
         } else {
-            self.cosine_transform(&f_k * &self.k_grid, f_r.view_mut(), true);
             let mut f_aux = Array::zeros(f_r.raw_dim());
-            self.sine_transform(f_k, f_aux.view_mut(), true);
-            f_r.sub_assign(&(&f_aux / &self.r_grid));
+            self.cosine_transform(&f_k * &self.k_grid, f_aux.view_mut(), true);
+            self.sine_transform(f_k, f_r.view_mut(), true);
+            f_r.assign(&(&f_r / &self.r_grid - &f_aux));
         }
         f_r.assign(&(&f_r / &self.r_grid));
     }

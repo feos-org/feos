@@ -116,7 +116,7 @@ impl<T: DualNum<f64>> WeightFunction<T> {
                 w_i.assign(&match self.shape {
                     WeightFunctionShape::DeltaVec => {
                         &rik.mapv(|rik| {
-                            (rik.sph_j0() + rik.sph_j2()) * (-radius.powi(3) * 4.0 * FRAC_PI_3 * p)
+                            (rik.sph_j0() + rik.sph_j2()) * (radius.powi(3) * 4.0 * FRAC_PI_3 * p)
                         }) * &k_x
                     }
                     _ => unreachable!(),
