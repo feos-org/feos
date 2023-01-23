@@ -38,7 +38,7 @@ macro_rules! impl_profile {
             /// -------
             /// $struct
             ///
-            #[pyo3(signature = (solver=None, debug=False), text_signature = "($self, solver=None, debug=False)")]
+            #[pyo3(signature = (solver=None, debug=false), text_signature = "($self, solver=None, debug=False)")]
             fn solve(slf: &PyCell<Self>, solver: Option<PyDFTSolver>, debug: bool) -> PyResult<&PyCell<Self>> {
                 slf.borrow_mut()
                     .0

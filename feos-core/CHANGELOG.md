@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed `State::molar_volume` to `State::partial_molar_volume` and `State::ln_phi_pure` to `State::ln_phi_pure_liquid`. [#107](https://github.com/feos-org/feos/pull/107)
 - Added a const generic parameter to `PhaseDiagram` that accounts for the number of phases analogously to `PhaseEquilibrium`. [#113](https://github.com/feos-org/feos/pull/113)
 
+### Packaging
+- Updated `pyo3` and `numpy` dependencies to 0.18. [#119](https://github.com/feos-org/feos/pull/119)
+
 ## [0.3.1] - 2022-08-25
 ### Added
 - Added `State::spinodal` that calculates both spinodal points for a given temperature and composition using the same objective function that is also used in the critical point calculation. [#23](https://github.com/feos-org/feos/pull/23)

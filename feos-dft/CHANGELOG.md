@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed the sign of vector weighted densities in Cartesian and cylindrical geometries. The wrong sign had no effects on the Helmholtz energy and thus on density profiles. [#120](https://github.com/feos-org/feos/pull/120)
 
+### Packaging
+- Updated `pyo3` and `numpy` dependencies to 0.18. [#119](https://github.com/feos-org/feos/pull/119)
+
 ## [0.3.2] - 2022-10-13
 ### Changed
 - The 3D DFT functionalities (3D pores, solvation free energy, free-energy-averaged potentials) are hidden behind the new `3d_dft` feature. For the Python package, the feature is always enabled. [#51](https://github.com/feos-org/feos/pull/51)

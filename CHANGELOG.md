@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The limitations of the homo gc method for PC-SAFT are enforced more strictly. [#88](https://github.com/feos-org/feos/pull/88)
 - Removed generics for units in all structs and traits in favor of static SI units. [#115](https://github.com/feos-org/feos/pull/115)
 
+### Packaging
+- Updated `pyo3` and `numpy` dependencies to 0.18. [#119](https://github.com/feos-org/feos/pull/119)
+
+
 ## [0.3.0] - 2022-09-14
 - Major restructuring of the entire `feos` project. All individual models are reunited in the `feos` crate. `feos-core` and `feos-dft` still live as individual crates within the `feos` workspace.
 

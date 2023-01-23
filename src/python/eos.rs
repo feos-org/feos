@@ -36,7 +36,7 @@ use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
 #[cfg(feature = "estimator")]
 use pyo3::wrap_pymodule;
-use quantity::python::{PySINumber, PySIArray1, PySIArray2, PySIArray3};
+use quantity::python::{PySINumber, PySIArray1, PySIArray2};
 use quantity::si::*;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -69,15 +69,10 @@ impl PyEosVariant {
     ///     The PC-SAFT equation of state that can be used to compute thermodynamic
     ///     states.
     #[cfg(feature = "pcsaft")]
-    #[args(
-        max_eta = "0.5",
-        max_iter_cross_assoc = "50",
-        tol_cross_assoc = "1e-10",
-        dq_variant = "DQVariants::DQ35"
-    )]
     #[staticmethod]
     #[pyo3(
-        text_signature = "(parameters, max_eta, max_iter_cross_assoc, tol_cross_assoc, dq_variant)"
+        signature = (parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant=DQVariants::DQ35),
+        text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant=DQVariants.DQ35)"
     )]
     pub fn pcsaft(
         parameters: PyPcSaftParameters,

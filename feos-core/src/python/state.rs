@@ -164,7 +164,6 @@ macro_rules! impl_state {
             /// -------
             /// State : State at critical conditions.
             #[staticmethod]
-            #[args(initial_temperature = "None")]
             #[pyo3(text_signature = "(eos, moles=None, initial_temperature=None, max_iter=None, tol=None, verbosity=None)")]
             fn critical_point(
                 eos: $py_eos,
