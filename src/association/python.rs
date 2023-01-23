@@ -4,8 +4,10 @@ use feos_core::parameter::ParameterError;
 use pyo3::prelude::*;
 
 /// Pure component association parameters
-#[pyclass(name = "AssociationRecord")]
-#[pyo3(text_signature = "(kappa_ab, epsilon_k_ab, na=None, nb=None)")]
+#[pyclass(
+    name = "AssociationRecord",
+    text_signature = "(kappa_ab, epsilon_k_ab, na=None, nb=None)"
+)]
 #[derive(Clone)]
 pub struct PyAssociationRecord(pub AssociationRecord);
 

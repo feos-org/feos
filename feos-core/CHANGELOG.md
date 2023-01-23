@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a const generic parameter to `PhaseDiagram` that accounts for the number of phases analogously to `PhaseEquilibrium`. [#113](https://github.com/feos-org/feos/pull/113)
 
 ### Packaging
-- Updated `pyo3` and `numpy` dependencies to 0.18. [#119](https://github.com/feos-org/feos/pull/119)
+- Updated `pyo3` and `numpy` dependencies to 0.18 and accordingly `num-dual` and `quantity`. [#119](https://github.com/feos-org/feos/pull/119)
 
 ## [0.3.1] - 2022-08-25
 ### Added

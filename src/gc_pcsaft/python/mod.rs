@@ -25,6 +25,7 @@ pub struct PyGcPcSaftRecord(GcPcSaftRecord);
 
 #[pymethods]
 impl PyGcPcSaftRecord {
+    #[pyo3(signature = (m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None))]
     #[new]
     fn new(
         m: f64,

@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the sign of vector weighted densities in Cartesian and cylindrical geometries. The wrong sign had no effects on the Helmholtz energy and thus on density profiles. [#120](https://github.com/feos-org/feos/pull/120)
 
 ### Packaging
-- Updated `pyo3` and `numpy` dependencies to 0.18. [#119](https://github.com/feos-org/feos/pull/119)
+- Updated `pyo3` and `numpy` dependencies to 0.18 and accordingly `num-dual` and `quantity`. [#119](https://github.com/feos-org/feos/pull/119)
 
 ## [0.3.2] - 2022-10-13
 ### Changed

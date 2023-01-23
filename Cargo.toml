@@ -23,7 +23,7 @@ crate-type = ["rlib", "cdylib"]
 
 [dependencies]
 quantity = "0.6"
-num-dual = { version = "0.6", features = ["linalg"] }
+num-dual = "0.6"
 feos-core = { version = "0.3", path = "feos-core" }
 feos-dft = { version = "0.3", path = "feos-dft", optional = true }
 feos-derive = { version = "0.1", path = "feos-derive" }
