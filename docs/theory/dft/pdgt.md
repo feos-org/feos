@@ -49,5 +49,5 @@ $$	\gamma=\frac{F-\mu N+pV}{A}=\int_{\rho^\mathrm{V}}^{\rho^\mathrm{L}}   \sqrt{
 
 Thus, no iterative solver is necessary to calculate the surface tension of pure components, which is a major advantage of pDGT. Finally, the density profile can be calculated from
 
-$$ z=\int_{\rho^\mathrm{V}}^{\rho^\mathrm{L}}   \sqrt{\frac{c/2}{ f(\rho)-\rho\mu+p} } d\rho $$
+$$ z(\rho)=\int_{\rho^\mathrm{V}}^{\rho}   \sqrt{\frac{c/2}{ f(\rho)-\rho\mu+p} } d\rho $$
 
