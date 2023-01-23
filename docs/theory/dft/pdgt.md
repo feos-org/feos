@@ -32,11 +32,11 @@ $$ \Phi(\lbrace n_\alpha\rbrace)
 
 The Helmholtz energy functional (which was introduced in the section about the [Euler-Lagrange equation](euler_lagrange_equation.md)) then reads
 
-$$	F[\mathbf{\rho}(\mathbf{r})]=\int\left(f(\mathbf{\rho})+\sum_{ij}\frac{c_{ij}(\rho)}{2}\nabla\rho_i\cdot\nabla\rho_j\right)\mathrm{d}\mathbf{r}$$
+$$	F[\mathbf{\rho}(\mathbf{r})]=\int\left(f(\mathbf{\rho})+\sum_{ij}\frac{c_{ij}(\mathbf{\rho})}{2}\nabla\rho_i\cdot\nabla\rho_j\right)\mathrm{d}\mathbf{r}$$
 
 with the density dependent influence parameter
 
-$$	\beta c_{ij}(\rho)=-\sum_{\alpha\beta}\frac{\partial^2\Phi}{\partial n_\alpha\partial n_\beta}\left(\omega_\alpha^{i2}\omega_\beta^{j0}+ \omega_\alpha^{i0}\omega_\beta^{j2}\right).$$
+$$	\beta c_{ij}(\mathbf{\rho})=-\sum_{\alpha\beta}\frac{\partial^2\Phi}{\partial n_\alpha\partial n_\beta}\left(\omega_\alpha^{i2}\omega_\beta^{j0}+ \omega_\alpha^{i0}\omega_\beta^{j2}\right).$$
 
 and the local Helmholtz energy density $f(\mathbf{\rho})$.
 
@@ -44,7 +44,7 @@ and the local Helmholtz energy density $f(\mathbf{\rho})$.
 
 For pure components, as derived in the original publication, the surface tension can be calculated from the surface excess grand potential per area according to
 
-$$	\gamma=\frac{F-\mu N+pV}{A}=\int_{\rho^\mathrm{V}}^{\rho^\mathrm{L}}   \sqrt{\frac{c}{2} \left(f(\rho)-\rho\mu+p\right) } d\rho $$
+$$	\gamma=\frac{F-\mu N+pV}{A}=\int_{\rho^\mathrm{V}}^{\rho^\mathrm{L}}   \sqrt{2c \left(f(\rho)-\rho\mu+p\right) } d\rho $$
 
 
 Thus, no iterative solver is necessary to calculate the surface tension of pure components, which is a major advantage of pDGT. Finally, the density profile can be calculated from
