@@ -19,7 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed generics for units in all structs and traits in favor of static SI units. [#115](https://github.com/feos-org/feos/pull/115)
 
 ### Packaging
-- Updated `pyo3` and `numpy` dependencies to 0.18 and accordingly `num-dual` and `quantity`. [#119](https://github.com/feos-org/feos/pull/119)
+- Updated `pyo3` and `numpy` dependencies to 0.18. [#119](https://github.com/feos-org/feos/pull/119)
+- Updated `quantity` dependency to 0.6. [#119](https://github.com/feos-org/feos/pull/119)
+- Updated `num-dual` dependency to 0.6. [#119](https://github.com/feos-org/feos/pull/119)
 
 
 ## [0.3.0] - 2022-09-14
