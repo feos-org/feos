@@ -52,7 +52,7 @@ impl PyDFTSolver {
     ///     Defaults to 1e-11.
     /// damping_coefficient: float, optional
     ///     Constant damping coefficient.
-    ///     If no damping coeffcient is provided, a line
+    ///     If no damping coefficient is provided, a line
     ///     search is used to determine the step size.
     ///
     /// Returns
@@ -87,7 +87,7 @@ impl PyDFTSolver {
     ///     The tolerance.
     ///     Defaults to 1e-11.
     /// damping_coefficient: float, optional
-    ///     The damping coeffcient.
+    ///     The damping coefficient.
     ///     Defaults to 0.15.
     /// mmax: int, optional
     ///     The maximum number of old solutions that are used.
@@ -156,7 +156,6 @@ impl PyDFTSolver {
 
 #[pyclass(name = "DFTSolverLog")]
 #[derive(Clone)]
-#[pyo3(text_signature = "(verbosity=None)")]
 pub struct PyDFTSolverLog(pub DFTSolverLog);
 
 #[pymethods]

@@ -98,7 +98,6 @@ macro_rules! impl_micelle_profile {
             /// pressure: SINumber
             ///     Pressure.
             ///
-            #[pyo3(text_signature = "(delta_n_surfactant, pressure)")]
             fn update_specification(&self, delta_n_surfactant: f64, pressure: PySINumber) -> Self {
                 Self(self.0.update_specification(MicelleSpecification::Size {
                         delta_n_surfactant,
@@ -124,8 +123,10 @@ macro_rules! impl_micelle_profile {
             /// -------
             /// MicelleProfile
             ///
-            #[pyo3(text_signature = "(solver1=None, solver2=None, debug=False)")]
-            #[args(solver1 = "None", solver2 = "None", debug = "false")]
+            #[pyo3(
+                signature = (solver1=None, solver2=None, debug=false),
+                text_signature = "(solver1=None, solver2=None, debug=False)"
+            )]
             fn solve_micelle(
                 slf: &PyCell<Self>,
                 solver1: Option<PyDFTSolver>,

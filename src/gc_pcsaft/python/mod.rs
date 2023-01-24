@@ -25,6 +25,7 @@ pub struct PyGcPcSaftRecord(GcPcSaftRecord);
 
 #[pymethods]
 impl PyGcPcSaftRecord {
+    #[pyo3(signature = (m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None))]
     #[new]
     fn new(
         m: f64,
@@ -106,7 +107,7 @@ impl PyGcPcSaftEosParameters {
 #[cfg(feature = "dft")]
 #[pyclass(name = "GcPcSaftFunctionalParameters")]
 #[pyo3(
-    text_signature = "(pure_records, segmentbinary_records=None, substances=None, search_option='Name')"
+    text_signature = "(pure_records, segmentbinary_records=None, substances=None, search_option=IdentifierOption.Name)"
 )]
 #[derive(Clone)]
 pub struct PyGcPcSaftFunctionalParameters(pub Arc<GcPcSaftFunctionalParameters>);

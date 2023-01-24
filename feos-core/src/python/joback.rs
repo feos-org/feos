@@ -29,7 +29,6 @@ use pyo3::prelude::*;
 /// JobackRecord
 #[pyclass(name = "JobackRecord")]
 #[derive(Clone)]
-#[pyo3(text_signature = "(a, b, c, d, e)")]
 pub struct PyJobackRecord(pub JobackRecord);
 
 #[pymethods]

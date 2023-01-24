@@ -26,7 +26,6 @@ impl PyExternalPotential {
     ///
     #[staticmethod]
     #[allow(non_snake_case)]
-    #[pyo3(text_signature = "(sigma_ss)")]
     pub fn HardWall(sigma_ss: f64) -> Self {
         Self(ExternalPotential::HardWall { sigma_ss })
     }
@@ -49,7 +48,6 @@ impl PyExternalPotential {
     /// ExternalPotential
     ///
     #[staticmethod]
-    #[pyo3(text_signature = "(sigma_ss, epsilon_k_ss, rho_s)")]
     pub fn LJ93(sigma_ss: f64, epsilon_k_ss: f64, rho_s: f64) -> Self {
         Self(ExternalPotential::LJ93 {
             sigma_ss,
@@ -74,7 +72,6 @@ impl PyExternalPotential {
     /// ExternalPotential
     ///
     #[staticmethod]
-    #[pyo3(text_signature = "(sigma_ss, epsilon_k_ss)")]
     pub fn SimpleLJ93(sigma_ss: f64, epsilon_k_ss: f64) -> Self {
         Self(ExternalPotential::SimpleLJ93 {
             sigma_ss,
@@ -98,7 +95,6 @@ impl PyExternalPotential {
     /// ExternalPotential
     ///
     #[staticmethod]
-    #[pyo3(text_signature = "(sigma_sf, epsilon_k_sf)")]
     pub fn CustomLJ93(sigma_sf: &PyArray1<f64>, epsilon_k_sf: &PyArray1<f64>) -> Self {
         Self(ExternalPotential::CustomLJ93 {
             sigma_sf: sigma_sf.to_owned_array(),
@@ -191,7 +187,6 @@ impl PyExternalPotential {
     /// ExternalPotential
     ///
     #[staticmethod]
-    #[pyo3(text_signature = "(sigma_ss, epsilon1_k_ss, epsilon2_k_ss, rho_s)")]
     pub fn DoubleWell(sigma_ss: f64, epsilon1_k_ss: f64, epsilon2_k_ss: f64, rho_s: f64) -> Self {
         Self(ExternalPotential::DoubleWell {
             sigma_ss,

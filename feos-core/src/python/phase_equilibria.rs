@@ -246,7 +246,6 @@ macro_rules! impl_phase_equilibrium {
             /// chemical_potential: SIArray1
             ///     The new chemical potential
             ///
-            #[pyo3(text_signature = "(chemical_potential)")]
             fn update_chemical_potential(slf: &PyCell<Self>, chemical_potential: &PySIArray1) -> PyResult<()> {
                 slf.borrow_mut().0.update_chemical_potential(chemical_potential)?;
                 Ok(())
@@ -266,7 +265,6 @@ macro_rules! impl_phase_equilibrium {
             /// -------
             /// list[PhaseEquilibrium]
             #[staticmethod]
-            #[pyo3(text_signature = "(eos, temperature_or_pressure)")]
             fn vle_pure_comps(eos: $py_eos, temperature_or_pressure: PySINumber) -> Vec<Option<Self>> {
                 PhaseEquilibrium::vle_pure_comps(&eos.0, temperature_or_pressure.into())
                     .into_iter()
@@ -288,7 +286,6 @@ macro_rules! impl_phase_equilibrium {
             /// -------
             /// list[SINumber]
             #[staticmethod]
-            #[pyo3(text_signature = "(eos, temperature)")]
             fn vapor_pressure(eos: $py_eos, temperature: PySINumber) -> Vec<Option<PySINumber>> {
                 PhaseEquilibrium::vapor_pressure(&eos.0, temperature.into())
                     .into_iter()
@@ -310,7 +307,6 @@ macro_rules! impl_phase_equilibrium {
             /// -------
             /// list[SINumber]
             #[staticmethod]
-            #[pyo3(text_signature = "(eos, pressure)")]
             fn boiling_temperature(eos: $py_eos, pressure: PySINumber) -> Vec<Option<PySINumber>> {
                 PhaseEquilibrium::boiling_temperature(&eos.0, pressure.into())
                     .into_iter()

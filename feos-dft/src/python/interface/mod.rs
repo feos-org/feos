@@ -94,7 +94,6 @@ macro_rules! impl_planar_interface {
             /// PlanarInterface
             ///
             #[staticmethod]
-            #[pyo3(text_signature = "(vle, n_grid, l_grid, density_profile)")]
             fn from_density_profile(
                 vle: &PyPhaseEquilibrium,
                 n_grid: usize,
@@ -134,7 +133,6 @@ macro_rules! impl_planar_interface {
             /// -------
             /// SIArray2
             ///
-            #[pyo3(text_signature = "($self)")]
             fn relative_adsorption(&self) -> PyResult<PySIArray2> {
                 Ok(self.0.relative_adsorption()?.into())
             }
@@ -145,7 +143,6 @@ macro_rules! impl_planar_interface {
             /// -------
             /// numpy.ndarray
             ///
-            #[pyo3(text_signature = "($self)")]
             fn interfacial_enrichment<'py>(&self, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
                 Ok(self.0.interfacial_enrichment()?.to_pyarray(py))
             }
@@ -156,7 +153,6 @@ macro_rules! impl_planar_interface {
             /// -------
             /// SINumber
             ///
-            #[pyo3(text_signature = "($self)")]
             fn interfacial_thickness(&self) -> PyResult<PySINumber> {
                 Ok(self.0.interfacial_thickness()?.into())
             }

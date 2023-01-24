@@ -198,7 +198,6 @@ macro_rules! impl_binary_record {
         /// -------
         /// BinaryRecord
         #[pyclass(name = "BinaryRecord")]
-        #[pyo3(text_signature = "(id1, id2, model_record)")]
         #[derive(Clone)]
         pub struct PyBinaryRecord(pub BinaryRecord<Identifier, $model_record>);
 
@@ -284,7 +283,6 @@ macro_rules! impl_binary_record {
 /// -------
 /// BinarySegmentRecord
 #[pyclass(name = "BinarySegmentRecord")]
-#[pyo3(text_signature = "(id1, id2, model_record)")]
 #[derive(Clone)]
 pub struct PyBinarySegmentRecord(pub BinaryRecord<String, f64>);
 
@@ -474,7 +472,6 @@ macro_rules! impl_segment_record {
             /// -------
             /// SegmentRecord
             #[staticmethod]
-            #[pyo3(text_signature = "(path)")]
             fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
                 Ok(SegmentRecord::from_json(path)?
                     .into_iter()
@@ -548,11 +545,14 @@ macro_rules! impl_parameter {
             /// search_option : IdentifierOption, optional, defaults to IdentifierOption.Name
             ///     Identifier that is used to search binary records.
             #[staticmethod]
-            #[pyo3(text_signature = "(pure_records, binary_records, search_option)")]
+            #[pyo3(
+                signature = (pure_records, binary_records=None, search_option=IdentifierOption::Name),
+                text_signature = "(pure_records, binary_records=None, search_option=None)"
+            )]
             fn from_records(
                 pure_records: Vec<PyPureRecord>,
                 binary_records: Option<&PyAny>,
-                search_option: Option<IdentifierOption>,
+                search_option: IdentifierOption,
             ) -> PyResult<Self> {
                 let prs = pure_records.into_iter().map(|pr| pr.0).collect();
                 if let Some(binary_records) = binary_records {
@@ -563,7 +563,7 @@ macro_rules! impl_parameter {
                         Ok(<$parameter>::binary_matrix_from_records(
                             &prs,
                             &brs,
-                            search_option.unwrap_or(IdentifierOption::Name),
+                            search_option,
                         ))
                     } else {
                         Err(PyErr::new::<PyTypeError, _>(format!(
@@ -590,7 +590,6 @@ macro_rules! impl_parameter {
             /// pure_record : PureRecord
             ///     The pure component parameters.
             #[staticmethod]
-            #[pyo3(text_signature = "(pure_record)")]
             fn new_pure(pure_record: PyPureRecord) -> Self {
                 Self(Arc::new(<$parameter>::new_pure(pure_record.0)))
             }
@@ -605,7 +604,7 @@ macro_rules! impl_parameter {
             /// binary_record : float or BinaryRecord, optional
             ///     The binary interaction parameter or binary interaction record.
             #[staticmethod]
-            #[pyo3(text_signature = "(pure_records, binary_record)")]
+            #[pyo3(text_signature = "(pure_records, binary_record=None)")]
             fn new_binary(
                 pure_records: Vec<PyPureRecord>,
                 binary_record: Option<&PyAny>,
@@ -640,18 +639,21 @@ macro_rules! impl_parameter {
             /// search_option : IdentifierOption, optional, defaults to IdentifierOption.Name
             ///     Identifier that is used to search substance.
             #[staticmethod]
-            #[pyo3(text_signature = "(substances, pure_path, binary_path, search_option)")]
+            #[pyo3(
+                signature = (substances, pure_path, binary_path=None, search_option=IdentifierOption::Name),
+                text_signature = "(substances, pure_path, binary_path=None, search_option=IdentifierOption.Name)"
+            )]
             fn from_json(
                 substances: Vec<&str>,
                 pure_path: String,
                 binary_path: Option<String>,
-                search_option: Option<IdentifierOption>,
+                search_option: IdentifierOption,
             ) -> Result<Self, ParameterError> {
                 Ok(Self(Arc::new(<$parameter>::from_json(
                     substances,
                     pure_path,
                     binary_path,
-                    search_option.unwrap_or(IdentifierOption::Name),
+                    search_option,
                 )?)))
             }
 
@@ -667,7 +669,10 @@ macro_rules! impl_parameter {
             /// search_option : IdentifierOption, optional, defaults to IdentifierOption.Name
             ///     Identifier that is used to search substance.
             #[staticmethod]
-            #[pyo3(text_signature = "(input, binary_path=None, search_option='Name')")]
+            #[pyo3(
+                signature = (input, binary_path=None, search_option=IdentifierOption::Name),
+                text_signature = "(input, binary_path=None, search_option=IdentifierOption.Name)"
+            )]
             fn from_multiple_json(
                 input: Vec<(Vec<&str>, &str)>,
                 binary_path: Option<&str>,
@@ -739,21 +744,22 @@ macro_rules! impl_parameter_from_segments {
             ///     Identifier that is used to search substance.
             #[staticmethod]
             #[pyo3(
-                text_signature = "(substances, pure_path, segments_path, binary_path, search_option)"
+                signature = (substances, pure_path, segments_path, binary_path=None, search_option=IdentifierOption::Name),
+                text_signature = "(substances, pure_path, segments_path, binary_path=None, search_option=IdentifierOption.Name)"
             )]
             fn from_json_segments(
                 substances: Vec<&str>,
                 pure_path: String,
                 segments_path: String,
                 binary_path: Option<String>,
-                search_option: Option<IdentifierOption>,
+                search_option: IdentifierOption,
             ) -> Result<Self, ParameterError> {
                 Ok(Self(Arc::new(<$parameter>::from_json_segments(
                     &substances,
                     pure_path,
                     segments_path,
                     binary_path,
-                    search_option.unwrap_or(IdentifierOption::Name),
+                    search_option,
                 )?)))
             }
         }
@@ -767,7 +773,6 @@ macro_rules! impl_json_handling {
         impl $py_parameter {
             /// Creates record from json string.
             #[staticmethod]
-            #[pyo3(text_signature = "(json)")]
             fn from_json_str(json: &str) -> Result<Self, ParameterError> {
                 Ok(Self(serde_json::from_str(json)?))
             }
