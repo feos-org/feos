@@ -327,7 +327,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn pressure(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.pressure(contributions))
             }
@@ -356,7 +356,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// float
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn compressibility(&self, contributions: Contributions) -> f64 {
                 self.0.compressibility(contributions)
             }
@@ -372,7 +372,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn dp_dv(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.dp_dv(contributions))
             }
@@ -388,7 +388,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn dp_drho(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.dp_drho(contributions))
             }
@@ -404,7 +404,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn dp_dt(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.dp_dt(contributions))
             }
@@ -420,7 +420,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SIArray1
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn dp_dni(&self, contributions: Contributions) -> PySIArray1 {
                 PySIArray1::from(self.0.dp_dni(contributions))
             }
@@ -436,7 +436,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn d2p_dv2(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.d2p_dv2(contributions))
             }
@@ -452,7 +452,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn d2p_drho2(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.d2p_drho2(contributions))
             }
@@ -468,7 +468,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SIArray1
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn partial_molar_volume(&self, contributions: Contributions) -> PySIArray1 {
                 PySIArray1::from(self.0.partial_molar_volume(contributions))
             }
@@ -484,7 +484,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SIArray1
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn chemical_potential(&self, contributions: Contributions) -> PySIArray1 {
                 PySIArray1::from(self.0.chemical_potential(contributions))
             }
@@ -519,7 +519,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SIArray1
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn dmu_dt(&self, contributions: Contributions) -> PySIArray1 {
                 PySIArray1::from(self.0.dmu_dt(contributions))
             }
@@ -535,7 +535,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SIArray2
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn dmu_dni(&self, contributions: Contributions) -> PySIArray2 {
                 PySIArray2::from(self.0.dmu_dni(contributions))
             }
@@ -615,7 +615,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn c_v(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.c_v(contributions))
             }
@@ -631,7 +631,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn dc_v_dt(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.dc_v_dt(contributions))
             }
@@ -647,7 +647,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn c_p(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.c_p(contributions))
             }
@@ -663,7 +663,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn entropy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.entropy(contributions))
             }
@@ -679,7 +679,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn ds_dt(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.ds_dt(contributions))
             }
@@ -695,7 +695,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn molar_entropy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.molar_entropy(contributions))
             }
@@ -712,7 +712,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SIArray1
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn partial_molar_entropy(&self, contributions: Contributions) -> PySIArray1 {
                 PySIArray1::from(self.0.partial_molar_entropy(contributions))
             }
@@ -728,7 +728,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn enthalpy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.enthalpy(contributions))
             }
@@ -744,7 +744,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn molar_enthalpy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.molar_enthalpy(contributions))
             }
@@ -761,7 +761,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SIArray1
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn partial_molar_enthalpy(&self, contributions: Contributions) -> PySIArray1 {
                 PySIArray1::from(self.0.partial_molar_enthalpy(contributions))
             }
@@ -777,7 +777,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn helmholtz_energy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.helmholtz_energy(contributions))
             }
@@ -793,7 +793,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn molar_helmholtz_energy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.molar_helmholtz_energy(contributions))
             }
@@ -822,7 +822,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn gibbs_energy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.gibbs_energy(contributions))
             }
@@ -838,7 +838,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn molar_gibbs_energy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.molar_gibbs_energy(contributions))
             }
@@ -855,7 +855,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn internal_energy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.internal_energy(contributions))
             }
@@ -871,7 +871,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn molar_internal_energy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.molar_internal_energy(contributions))
             }
@@ -1130,7 +1130,7 @@ macro_rules! impl_state_molarweight {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn specific_helmholtz_energy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.specific_helmholtz_energy(contributions))
             }
@@ -1146,7 +1146,7 @@ macro_rules! impl_state_molarweight {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn specific_entropy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.specific_entropy(contributions))
             }
@@ -1162,7 +1162,7 @@ macro_rules! impl_state_molarweight {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn specific_internal_energy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.specific_internal_energy(contributions))
             }
@@ -1178,7 +1178,7 @@ macro_rules! impl_state_molarweight {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn specific_gibbs_energy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.specific_gibbs_energy(contributions))
             }
@@ -1194,7 +1194,7 @@ macro_rules! impl_state_molarweight {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn specific_enthalpy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.specific_enthalpy(contributions))
             }

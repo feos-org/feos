@@ -72,7 +72,7 @@ impl PyEosVariant {
     #[staticmethod]
     #[pyo3(
         signature = (parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant=DQVariants::DQ35),
-        text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant=DQVariants.DQ35)"
+        text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant)"
     )]
     pub fn pcsaft(
         parameters: PyPcSaftParameters,
@@ -217,7 +217,7 @@ impl PyEosVariant {
     #[staticmethod]
     #[pyo3(
         signature = (parameters, max_eta=0.5, perturbation=Perturbation::WeeksChandlerAndersen, virial_order=VirialOrder::Second),    
-        text_signature = "(parameters, max_eta=0.5, perturbation=Perturbation.WeeksChandlerAndersen, virial_order=VirialOrder.Second)"
+        text_signature = "(parameters, max_eta=0.5, perturbation, virial_order)"
     )]
     fn uvtheory(
         parameters: PyUVParameters,
@@ -258,7 +258,7 @@ impl PyEosVariant {
     #[staticmethod]
     #[pyo3(
         signature = (parameters, max_eta=0.5, fh_order=FeynmanHibbsOrder::FH1, inc_nonadd_term=true),
-        text_signature = "(parameters, max_eta=0.5, fh_order=FeynmanHibbsOrder.FH1, inc_nonadd_term=True)"
+        text_signature = "(parameters, max_eta=0.5, fh_order, inc_nonadd_term=True)"
     )]
     fn saftvrqmie(
         parameters: PySaftVRQMieParameters,
