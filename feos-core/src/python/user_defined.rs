@@ -2,10 +2,11 @@ use crate::{EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, MolarWeight, 
 use ndarray::Array1;
 use num_dual::*;
 use numpy::convert::IntoPyArray;
+use numpy::{PyReadonlyArrayDyn, PyArray};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use quantity::python::PySIArray1;
-use quantity::si::{SIArray1, SIUnit};
+use quantity::si::{SIArray1};
 use std::fmt;
 
 struct PyHelmholtzEnergy(Py<PyAny>);
