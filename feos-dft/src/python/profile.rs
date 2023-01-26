@@ -120,7 +120,7 @@ macro_rules! impl_profile {
             /// Returns
             /// -------
             /// SIArray
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn entropy_density(
                 &mut self,
                 contributions: Contributions,
@@ -141,7 +141,7 @@ macro_rules! impl_profile {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn entropy(
                 &mut self,
                 contributions: Contributions,
@@ -162,7 +162,7 @@ macro_rules! impl_profile {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions=Contributions.Total)")]
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn internal_energy(
                 &mut self,
                 contributions: Contributions,

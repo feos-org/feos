@@ -68,7 +68,7 @@ impl PyFunctionalVariant {
     #[staticmethod]
     #[pyo3(
         signature = (parameters, fmt_version=FMTVersion::WhiteBear, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant=DQVariants::DQ35),
-        text_signature = "(parameters, fmt_version=FMTVersion.WhiteBear, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant=DQVariants.DQ35)"
+        text_signature = "(parameters, fmt_version, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant)"
     )]
     fn pcsaft(
         parameters: PyPcSaftParameters,
@@ -111,7 +111,7 @@ impl PyFunctionalVariant {
     #[staticmethod]
     #[pyo3(
         signature = (parameters, fmt_version=FMTVersion::WhiteBear, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10),
-        text_signature = "(parameters, fmt_version=FMTVersion.WhiteBear, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10)"
+        text_signature = "(parameters, fmt_version, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10)"
     )]
     fn gc_pcsaft(
         parameters: PyGcPcSaftFunctionalParameters,
@@ -149,7 +149,7 @@ impl PyFunctionalVariant {
     #[staticmethod]
     #[pyo3(
         signature = (parameters, fmt_version=FMTVersion::WhiteBear, max_eta=0.5),
-        text_signature = "(parameters, fmt_version=FMTVersion.WhiteBear, max_eta=0.5)"
+        text_signature = "(parameters, fmt_version, max_eta=0.5)"
     )]
     fn pets(parameters: PyPetsParameters, fmt_version: FMTVersion, max_eta: f64) -> Self {
         let options = PetsOptions { max_eta };
@@ -200,7 +200,7 @@ impl PyFunctionalVariant {
     #[staticmethod]
     #[pyo3(
         signature = (parameters, fmt_version=FMTVersion::WhiteBear, max_eta=0.5, fh_order=FeynmanHibbsOrder::FH1, inc_nonadd_term=true),
-        text_signature = "(parameters, fmt_version=FMTVersion.WhiteBear, max_eta=0.5, fh_order=FeynmanHibbsOrder.FH1, inc_nonadd_term=True)"
+        text_signature = "(parameters, fmt_version, max_eta=0.5, fh_order, inc_nonadd_term=True)"
     )]
     fn saftvrqmie(
         parameters: PySaftVRQMieParameters,

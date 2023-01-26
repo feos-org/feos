@@ -641,7 +641,7 @@ macro_rules! impl_parameter {
             #[staticmethod]
             #[pyo3(
                 signature = (substances, pure_path, binary_path=None, search_option=IdentifierOption::Name),
-                text_signature = "(substances, pure_path, binary_path=None, search_option=IdentifierOption.Name)"
+                text_signature = "(substances, pure_path, binary_path=None, search_option)"
             )]
             fn from_json(
                 substances: Vec<&str>,
@@ -671,7 +671,7 @@ macro_rules! impl_parameter {
             #[staticmethod]
             #[pyo3(
                 signature = (input, binary_path=None, search_option=IdentifierOption::Name),
-                text_signature = "(input, binary_path=None, search_option=IdentifierOption.Name)"
+                text_signature = "(input, binary_path=None, search_option)"
             )]
             fn from_multiple_json(
                 input: Vec<(Vec<&str>, &str)>,
@@ -745,7 +745,7 @@ macro_rules! impl_parameter_from_segments {
             #[staticmethod]
             #[pyo3(
                 signature = (substances, pure_path, segments_path, binary_path=None, search_option=IdentifierOption::Name),
-                text_signature = "(substances, pure_path, segments_path, binary_path=None, search_option=IdentifierOption.Name)"
+                text_signature = "(substances, pure_path, segments_path, binary_path=None, search_option)"
             )]
             fn from_json_segments(
                 substances: Vec<&str>,
