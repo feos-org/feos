@@ -35,6 +35,7 @@ feos.pets.PetsParameters
 
    .. autosummary::
    
+      ~PetsParameters.binary_records
       ~PetsParameters.k_ij
       ~PetsParameters.pure_records
    

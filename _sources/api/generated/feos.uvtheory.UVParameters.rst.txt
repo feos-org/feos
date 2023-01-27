@@ -35,6 +35,7 @@ feos.uvtheory.UVParameters
 
    .. autosummary::
    
+      ~UVParameters.binary_records
       ~UVParameters.pure_records
    
    

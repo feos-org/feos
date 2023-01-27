@@ -33,6 +33,7 @@ feos.cubic.PengRobinsonParameters
 
    .. autosummary::
    
+      ~PengRobinsonParameters.binary_records
       ~PengRobinsonParameters.pure_records
    
    

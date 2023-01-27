@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.BinarySegmentRecord.from\_json
+==========================================
+
+.. currentmodule:: feos.pcsaft
+
+.. automethod:: BinarySegmentRecord.from_json

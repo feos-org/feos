@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.cubic.BinaryRecord.from\_json
+==================================
+
+.. currentmodule:: feos.cubic
+
+.. automethod:: BinaryRecord.from_json

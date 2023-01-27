@@ -19,6 +19,7 @@ feos.pcsaft.BinarySegmentRecord
       :toctree: ./
    
       ~BinarySegmentRecord.__init__
+      ~BinarySegmentRecord.from_json
       ~BinarySegmentRecord.from_json_str
       ~BinarySegmentRecord.to_json_str
    

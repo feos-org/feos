@@ -19,6 +19,7 @@ feos.cubic.BinaryRecord
       :toctree: ./
    
       ~BinaryRecord.__init__
+      ~BinaryRecord.from_json
       ~BinaryRecord.from_json_str
       ~BinaryRecord.to_json_str
    

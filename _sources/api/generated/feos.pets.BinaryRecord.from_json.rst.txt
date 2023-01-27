@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pets.BinaryRecord.from\_json
+=================================
+
+.. currentmodule:: feos.pets
+
+.. automethod:: BinaryRecord.from_json

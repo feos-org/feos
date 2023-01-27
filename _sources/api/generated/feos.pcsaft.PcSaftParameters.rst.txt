@@ -35,6 +35,7 @@ feos.pcsaft.PcSaftParameters
 
    .. autosummary::
    
+      ~PcSaftParameters.binary_records
       ~PcSaftParameters.k_ij
       ~PcSaftParameters.pure_records
    
