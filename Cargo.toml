@@ -48,22 +48,6 @@ optional = true
 approx = "0.4"
 criterion = "0.4"
 
-[[bench]]
-name = "state_properties"
-harness = false
-
-[[bench]]
-name = "state_creation"
-harness = false
-
-[[bench]]
-name = "dual_numbers"
-harness = false
-
-[[bench]]
-name = "dft_pore"
-harness = false
-
 [profile.release-lto]
 inherits = "release"
 lto = true
@@ -81,3 +65,23 @@ saftvrqmie = []
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 python = ["pyo3", "numpy", "feos-core/python", "feos-dft?/python", "rayon"]
 all_models = ["dft", "estimator", "pcsaft", "gc_pcsaft", "uvtheory", "pets", "saftvrqmie"]
+
+[[bench]]
+name = "state_properties"
+harness = false
+
+[[bench]]
+name = "state_creation"
+harness = false
+
+[[bench]]
+name = "dual_numbers"
+harness = false
+
+[[bench]]
+name = "contributions"
+harness = false
+
+[[bench]]
+name = "dft_pore"
+harness = false
