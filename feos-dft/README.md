@@ -17,5 +17,5 @@ Add this to your `Cargo.toml`
 
 ```toml
 [dependencies]
-feos-dft = "0.3"
+feos-dft = "0.4"
 ```

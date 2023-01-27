@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+
+## [0.4.0] - 2023-01-27
 ### Added
 - Added `PhaseDiagram::par_pure` that uses rayon to calculate phase diagrams in parallel. [#57](https://github.com/feos-org/feos/pull/57)
 - Added `StateVec::moles` getter. [#113](https://github.com/feos-org/feos/pull/113)
