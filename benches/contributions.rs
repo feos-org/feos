@@ -15,7 +15,7 @@ use std::sync::Arc;
 
 /// Benchmark for the PC-SAFT equation of state
 fn pcsaft(c: &mut Criterion) {
-    let mut group = c.benchmark_group("fugacity");
+    let mut group = c.benchmark_group("pcsaft");
 
     // non-polar components
     let mut records = PcSaftParameters::from_json(
