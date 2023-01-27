@@ -1,6 +1,6 @@
 use super::{DataSet, EstimatorError};
 use feos_core::{Contributions, EosUnit, EquationOfState, PhaseEquilibrium, SolverOptions, State};
-use ndarray::Array1;
+use ndarray::{arr1, Array1};
 use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -72,7 +72,7 @@ impl<E: EquationOfState> DataSet<E> for VaporPressure {
 
     fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
         if self.datapoints == 0 {
-            return Ok(arr1(&[]) * SIUnit::reference_pressure())
+            return Ok(arr1(&[]) * SIUnit::reference_pressure());
         }
 
         let critical_point =
