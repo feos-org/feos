@@ -71,6 +71,10 @@ impl<E: EquationOfState> DataSet<E> for VaporPressure {
     }
 
     fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
+        if self.datapoints == 0 {
+            return Ok(arr1(&[]) * SIUnit::reference_pressure())
+        }
+
         let critical_point =
             State::critical_point(eos, None, Some(self.max_temperature), self.solver_options)
                 .or_else(|_| State::critical_point(eos, None, None, self.solver_options))?;
