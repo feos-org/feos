@@ -17,7 +17,7 @@ jobs:
         with:
           manylinux: auto
           command: build
-          args: --release --out dist
+          args: --release --out dist --profile release-lto
       - name: Upload wheels
         uses: actions/upload-artifact@v2
         with:
@@ -41,7 +41,7 @@ jobs:
         uses: messense/maturin-action@v1
         with:
           target: x86_64
-          args: --release --out dist
+          args: --release --out dist --profile release-lto
       - name: Upload wheels
         uses: actions/upload-artifact@v2
         with:
@@ -91,7 +91,7 @@ jobs:
         uses: messense/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist
+          args: --release --out dist --profile release-lto
       - name: Upload wheels
         uses: actions/upload-artifact@v2
         with:

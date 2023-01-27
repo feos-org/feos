@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `pyo3` and `numpy` dependencies to 0.18. [#119](https://github.com/feos-org/feos/pull/119)
 - Updated `quantity` dependency to 0.6. [#119](https://github.com/feos-org/feos/pull/119)
 - Updated `num-dual` dependency to 0.6. [#119](https://github.com/feos-org/feos/pull/119)
-
+- Use `release-lto` profile to build Python wheels. [#125](https://github.com/feos-org/feos/pull/125)
 
 ### Fixed
 - Fixed incorrect indexing that lead to panics in the polar contribution of gc-PC-SAFT. [#104](https://github.com/feos-org/feos/pull/104)
