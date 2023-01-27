@@ -1276,7 +1276,7 @@ div.rendered_html tbody tr:hover {
 <li><p>Learn about the <code class="docutils literal notranslate"><span class="pre">State</span></code> object, how to construct, and how to use it.</p></li>
 </ul>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">feos.si</span> <span class="kn">import</span> <span class="o">*</span>
@@ -1299,7 +1299,7 @@ div.rendered_html tbody tr:hover {
 </ol>
 <p>Constructor methods need the <code class="docutils literal notranslate"><span class="pre">EquationOfState</span></code> or <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergyFunctional</span></code> object as input, since, except for given <span class="math notranslate nohighlight">\(\mathbf{N}, V, T\)</span>, the density and/or temperature has to be iteratively determined for which derivatives of the Helmholtz energy with respect to volume and temperature are utilized.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Equation of state object.</span>
@@ -1315,7 +1315,7 @@ div.rendered_html tbody tr:hover {
 <h3>The default constructor<a class="headerlink" href="#The-default-constructor" title="Permalink to this heading">#</a></h3>
 <p>The default constructor, <code class="docutils literal notranslate"><span class="pre">State(...)</span></code>, takes a combination of input state variables. The first argument, however, is always the equation of state. For all cases, if we do not define the amount of substance, it is set to the inverse of Avogradro’s number, <span class="math notranslate nohighlight">\(N_\text{AV}^{-1}\)</span>. The default constructor takes <code class="docutils literal notranslate"><span class="pre">SINumber</span></code> (and <code class="docutils literal notranslate"><span class="pre">SIArray1</span></code> for e.g. the partial densities) as input. If you want to learn more about dimensioned quantities, please take a look at the respective tutorial.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state_nvt</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
@@ -1329,7 +1329,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1352,7 +1352,7 @@ div.rendered_html tbody tr:hover {
 <p>Since internally, only <span class="math notranslate nohighlight">\(\mathbf{N}, V\)</span>, and <span class="math notranslate nohighlight">\(T\)</span> are stored, all other properties have to be computed even if they were used to create the <code class="docutils literal notranslate"><span class="pre">State</span></code>.</p>
 <p>For example, we can create a <code class="docutils literal notranslate"><span class="pre">State</span></code> for given temperature and pressure (using the default amount of substance for a pure component). The density is thus determined iteratively and stored as a <em>field</em> which can be accessed via <code class="docutils literal notranslate"><span class="pre">state.density</span></code>. If we are interested in the pressure of the state, we have to call the <code class="docutils literal notranslate"><span class="pre">state.pressure()</span></code> <em>method</em> which computes the pressure as partial derivative even though we used the pressure to create the <code class="docutils literal notranslate"><span class="pre">State</span></code> in the first place.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state_npt</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
@@ -1377,7 +1377,7 @@ pressure:  100.00000000009686 kPa
 <p>In the above case, specifying temperature and pressure may not yield the expected result. Consider thermodynamic conditions near phase equilibrium. The resulting density (for given tempreature and pressure) can be that of a meta-stable liquid or vapor phase depending on the initial density for the iteration.</p>
 <p>To control the initial values for the density iteration, you can use the <code class="docutils literal notranslate"><span class="pre">density_initialization</span></code> keyword. Below, we create two <code class="docutils literal notranslate"><span class="pre">State</span></code> objects for the same temperature and pressure with different initial densities denoted by the <code class="docutils literal notranslate"><span class="pre">vapor</span></code> and <code class="docutils literal notranslate"><span class="pre">liquid</span></code> keywords for <code class="docutils literal notranslate"><span class="pre">density_initialization</span></code>. Alternatively, a starting density (as <code class="docutils literal notranslate"><span class="pre">SINumber</span></code>) can be provided.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s_vapor</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
@@ -1399,7 +1399,7 @@ mass density:  3.2263994087922345 kg/m³
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s_liquid</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
@@ -1422,7 +1422,7 @@ mass density:  616.3096597655958 kg/m³
 </div>
 <p>If no value for <code class="docutils literal notranslate"><span class="pre">density_initialization</span></code> is provided, both a low and high density is used to as starting point for the iteration and only the <em>stable</em> phase is returned.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
@@ -1444,7 +1444,7 @@ mass density: 616.3096597655958 kg/m³
 </div>
 <p>You can run a <em>stability analysis</em> for each state using the <code class="docutils literal notranslate"><span class="pre">is_stable()</span></code> method.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Vapor stable? &#39;</span><span class="p">,</span> <span class="n">s_vapor</span><span class="o">.</span><span class="n">is_stable</span><span class="p">())</span>
@@ -1485,7 +1485,7 @@ Liquid stable? True
 <li><p><code class="docutils literal notranslate"><span class="pre">total_molar_weight()</span></code>: total molar weight</p></li>
 </ul>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
@@ -1514,7 +1514,7 @@ total mass :  17.235400000000002 kg
 <h2>Computing properties<a class="headerlink" href="#Computing-properties" title="Permalink to this heading">#</a></h2>
 <p>Thermodynamic properties can be computed by invoking the appropriate <strong>method</strong>. For example, we can compute the total system pressure via the <code class="docutils literal notranslate"><span class="pre">pressure()</span></code> method.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pressure</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">pressure</span><span class="p">()</span>
@@ -1539,7 +1539,7 @@ pressure:  99.99999999988452 kPa
 <li><p><code class="docutils literal notranslate"><span class="pre">Contributions.Total</span></code>: all contributions to the Helmholtz energy (and thus the property of interest) are considered, i.e. ideal gas plus residual. This is the <strong>default</strong> for most properties if no argument is provided. Please refer to the method documentation if you are not sure about the contributions used.</p></li>
 </ul>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;entropy (default)    :&#39;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">())</span>
@@ -1563,7 +1563,7 @@ entropy (residual p) : -86.86192380683525  J/mol/K
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">()</span> <span class="o">-</span> <span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">(</span><span class="n">Contributions</span><span class="o">.</span><span class="n">IdealGas</span><span class="p">)</span> <span class="o">+</span> <span class="n">state</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">(</span><span class="n">Contributions</span><span class="o">.</span><span class="n">ResidualNvt</span><span class="p">))</span>
@@ -1571,7 +1571,7 @@ entropy (residual p) : -86.86192380683525  J/mol/K
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1600,7 +1600,7 @@ $0\,\mathrm{\frac{ J}{molK}}$</div></div>
 <li><p><code class="docutils literal notranslate"><span class="pre">verbosity</span></code>: a <code class="docutils literal notranslate"><span class="pre">Verbosity</span></code> object can be used to print information of the computation. Can be used if convergence is an issue.</p></li>
 </ul>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">critical_point</span> <span class="o">=</span> <span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">pcsaft</span><span class="p">)</span>
@@ -1609,7 +1609,7 @@ $0\,\mathrm{\frac{ J}{molK}}$</div></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1630,7 +1630,7 @@ $0\,\mathrm{\frac{ J}{molK}}$</div></div>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Critical conditions for hexane&#39;</span><span class="p">)</span>
@@ -1658,7 +1658,7 @@ density     : 228.72574604854387 kg/m³
 <p>Another common use case for equations of state is the computation of phase equilibria. In <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span>, we can generate multiple <code class="docutils literal notranslate"><span class="pre">State</span></code> objects that are in equilibrium using a <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> object. We will not discuss <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> objects in detail in this notebook but merely consider it as another way to generate <code class="docutils literal notranslate"><span class="pre">State</span></code> objects. Please refer to the tutorial about phase diagrams if you want to learn more.</p>
 <p>For pure substances, we can generate two states in equilibrium using the <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium.pure(...)</span></code> static method. The resulting object contains two (or more) <code class="docutils literal notranslate"><span class="pre">State</span></code> objects which we in this case can access via the <code class="docutils literal notranslate"><span class="pre">liquid</span></code> and <code class="docutils literal notranslate"><span class="pre">vapor</span></code> fields. As before, we can now compute properties using these objects.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span> <span class="o">=</span> <span class="n">PhaseEquilibrium</span><span class="o">.</span><span class="n">pure</span><span class="p">(</span>
@@ -1670,7 +1670,7 @@ density     : 228.72574604854387 kg/m³
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1697,7 +1697,7 @@ density     : 228.72574604854387 kg/m³
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span><span class="o">.</span><span class="n">liquid</span>
@@ -1705,7 +1705,7 @@ density     : 228.72574604854387 kg/m³
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1726,7 +1726,7 @@ density     : 228.72574604854387 kg/m³
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span><span class="o">.</span><span class="n">vapor</span>
@@ -1734,7 +1734,7 @@ density     : 228.72574604854387 kg/m³
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1755,7 +1755,7 @@ density     : 228.72574604854387 kg/m³
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">enthalpy_of_vaporization</span> <span class="o">=</span> <span class="n">vle</span><span class="o">.</span><span class="n">vapor</span><span class="o">.</span><span class="n">molar_enthalpy</span><span class="p">()</span> <span class="o">-</span> <span class="n">vle</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">molar_enthalpy</span><span class="p">()</span>
@@ -1782,7 +1782,7 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 <h2>Contributions to the Helmholtz energy<a class="headerlink" href="#Contributions-to-the-Helmholtz-energy" title="Permalink to this heading">#</a></h2>
 <p>If you are interested in developing an equation of state, you might find the <code class="docutils literal notranslate"><span class="pre">..._contributions()</span></code> methods of a <code class="docutils literal notranslate"><span class="pre">State</span></code> object useful. These methods return the contributions to a property which can be insightful (or a useful debugging tool).</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
@@ -1795,7 +1795,7 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span><span class="o">.</span><span class="n">helmholtz_energy_contributions</span><span class="p">()</span>
@@ -1803,7 +1803,7 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1815,7 +1815,7 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span><span class="o">.</span><span class="n">pressure_contributions</span><span class="p">()</span>
@@ -1823,7 +1823,7 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1835,7 +1835,7 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span><span class="o">.</span><span class="n">chemical_potential_contributions</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -1843,7 +1843,7 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1971,14 +1971,6 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 <section id="Concluding-remkars">
 <h2>Concluding remkars<a class="headerlink" href="#Concluding-remkars" title="Permalink to this heading">#</a></h2>
 <p>Hopefully you found this example helpful. If you have comments, critique or feedback, please let us know and consider <a class="reference external" href="https://github.com/feos-org/feos/issues">opening an issue on github</a>.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
-</pre></div>
-</div>
-</div>
 </section>
 </section>
 

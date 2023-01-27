@@ -1475,15 +1475,6 @@ ERROR: must be real number, not si_units.SINumber
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-thread &#39;&lt;unnamed&gt;&#39; panicked at &#39;Inconsistent units Pa + K&#39;, /home/bauer/.cargo/registry/src/github.com-1ecc6299db9ec823/quantity-0.5.1/src/lib.rs:544:1
-note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
@@ -1491,8 +1482,8 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">PanicException</span>                            Traceback (most recent call last)
-Input <span class="ansi-green-fg">In [9]</span>, in <span class="ansi-cyan-fg">&lt;cell line: 1&gt;</span><span class="ansi-blue-fg">()</span>
-<span class="ansi-green-fg">----&gt; 1</span> <span class="ansi-yellow-bg">PASCAL</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">+</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">KELVIN</span>
+<span class="ansi-green-fg">&lt;ipython-input-9-3b8b977148c6&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
+<span class="ansi-green-fg">----&gt; 1</span><span class="ansi-red-fg"> </span>PASCAL <span class="ansi-blue-fg">+</span> KELVIN
 
 <span class="ansi-red-fg">PanicException</span>: Inconsistent units Pa + K
 </pre></div></div>
@@ -1567,27 +1558,6 @@ data type = &lt;class &#39;feos.si.SIArray1&#39;&gt;
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 200 kPa
-</pre></div></div>
-</div>
-<p>Mathematical operations work on arrays just like they work with scalar values.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># compute the norm of a velocity vector</span>
-<span class="n">velocity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">3.5</span><span class="p">,</span> <span class="mf">2.3</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.3</span><span class="p">])</span> <span class="o">*</span> <span class="n">METER</span> <span class="o">/</span> <span class="n">SECOND</span>
-<span class="n">speed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">velocity</span><span class="p">)</span>
-<span class="n">speed</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-[3.5, 2.3, 1.3] m/s
 </pre></div></div>
 </div>
 <p>There are several useful numpy methods to create arrays. Most of them can be simply multiplied by units to convert them to <code class="docutils literal notranslate"><span class="pre">SIArray</span></code> objects. Some of these functions, such as <code class="docutils literal notranslate"><span class="pre">linspace</span></code> and <code class="docutils literal notranslate"><span class="pre">logspace</span></code> can directly be constructed using <code class="docutils literal notranslate"><span class="pre">SIArray1.linspace</span></code> and <code class="docutils literal notranslate"><span class="pre">SIArray1.logspace</span></code>, respectively.</p>

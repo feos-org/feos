@@ -1465,7 +1465,7 @@ Segments          :  [-1.2034921145837285, -2.536713016411593, -0.415346, -0.074
 <h2>Compare methods to NIST data (T = 450 K)<a class="headerlink" href="#Compare-methods-to-NIST-data-(T-=-450-K)" title="Permalink to this heading">#</a></h2>
 <p>We will compute the residual entropy, viscosity and logarithmic reduced viscosity and compare to literature data (for which the entropy is computed with parameters fitted to the component, not GC).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">literature</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;data/hexane_nist.csv&quot;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1474,7 +1474,7 @@ Segments          :  [-1.2034921145837285, -2.536713016411593, -0.415346, -0.074
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -1604,7 +1604,7 @@ Segments          :  [-1.2034921145837285, -2.536713016411593, -0.415346, -0.074
 </div>
 <p>We loop through experimental data, read temperature, pressure and the phase (liquid or vapor) and generate <code class="docutils literal notranslate"><span class="pre">State</span></code> objects for the experimental conditions. Then, we compute the residual molar entropy and the logarithmic reduced viscosity.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1664,7 +1664,7 @@ Segments          :  [-1.2034921145837285, -2.536713016411593, -0.415346, -0.074
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -1745,7 +1745,7 @@ Segments          :  [-1.2034921145837285, -2.536713016411593, -0.415346, -0.074
 </div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">gridspec_kw</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;wspace&#39;</span><span class="p">:</span> <span class="mf">0.35</span><span class="p">})</span>
@@ -1770,7 +1770,7 @@ Segments          :  [-1.2034921145837285, -2.536713016411593, -0.415346, -0.074
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># check mean absolute relative deviation in percent</span>
