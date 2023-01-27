@@ -216,6 +216,25 @@ macro_rules! impl_binary_record {
                 }
             }
 
+            /// Read a list of `BinaryRecord`s from a JSON file.
+            ///
+            /// Parameters
+            /// ----------
+            /// path : str
+            ///     Path to file containing the binary records.
+            ///
+            /// Returns
+            /// -------
+            /// [BinaryRecord]
+            #[staticmethod]
+            #[pyo3(text_signature = "(path)")]
+            fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
+                Ok(BinaryRecord::from_json(path)?
+                    .into_iter()
+                    .map(Self)
+                    .collect())
+            }
+
             #[getter]
             fn get_id1(&self) -> PyIdentifier {
                 PyIdentifier(self.0.id1.clone())
@@ -291,6 +310,25 @@ impl PyBinarySegmentRecord {
     #[new]
     fn new(id1: String, id2: String, model_record: f64) -> PyResult<Self> {
         Ok(Self(BinaryRecord::new(id1, id2, model_record)))
+    }
+
+    /// Read a list of `BinarySegmentRecord`s from a JSON file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path : str
+    ///     Path to file containing the binary records.
+    ///
+    /// Returns
+    /// -------
+    /// [BinarySegmentRecord]
+    #[staticmethod]
+    #[pyo3(text_signature = "(path)")]
+    fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
+        Ok(BinaryRecord::from_json(path)?
+            .into_iter()
+            .map(Self)
+            .collect())
     }
 
     #[getter]
@@ -470,12 +508,12 @@ macro_rules! impl_segment_record {
             ///
             /// Returns
             /// -------
-            /// SegmentRecord
+            /// [SegmentRecord]
             #[staticmethod]
             fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
                 Ok(SegmentRecord::from_json(path)?
                     .into_iter()
-                    .map(|s| Self(s))
+                    .map(Self)
                     .collect())
             }
 
@@ -693,6 +731,16 @@ macro_rules! impl_parameter {
                     .iter()
                     .map(|r| PyPureRecord(r.clone()))
                     .collect()
+            }
+
+            #[getter]
+            fn get_binary_records<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
+                self.0
+                    .records()
+                    .1
+                    .mapv(|r| f64::try_from(r).unwrap())
+                    .view()
+                    .to_pyarray(py)
             }
         }
     };
