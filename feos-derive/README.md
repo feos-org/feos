@@ -1,8 +1,7 @@
 # FeOs-derive
 
-[![crate](https://img.shields.io/crates/v/feos.svg)](https://crates.io/crates/feos-derive)
-[![documentation](https://docs.rs/feos/badge.svg)](https://docs.rs/feos-derive)
-[![documentation](https://img.shields.io/badge/docs-github--pages-blue)](https://feos-org.github.io/feos/)
+[![crate](https://img.shields.io/crates/v/feos-derive.svg)](https://crates.io/crates/feos-derive)
+[![documentation](https://docs.rs/feos-derive/badge.svg)](https://docs.rs/feos-derive)
 
 `feos-derive` is part of the [FeOs project](https://github.com/feos-org/feos).
 

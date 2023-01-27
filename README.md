@@ -66,7 +66,7 @@ In addition to that, utilities are provided to assist in the handling of **param
 - Modeling of heterosegmented molecules, including branched molecules.
 - Functionalities for calculating surface tensions, adsorption isotherms, pair correlation functions, and solvation free energies.
 
-## Features
+## Cargo features
 
 Without additional features activated, the command
 ```
