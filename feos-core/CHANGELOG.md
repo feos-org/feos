@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed `State::molar_volume` to `State::partial_molar_volume` and `State::ln_phi_pure` to `State::ln_phi_pure_liquid`. [#107](https://github.com/feos-org/feos/pull/107)
 - Added a const generic parameter to `PhaseDiagram` that accounts for the number of phases analogously to `PhaseEquilibrium`. [#113](https://github.com/feos-org/feos/pull/113)
 
+### Fixed
+- Automatically generate all required data types to calculate higher order derivatives for equations of state implemented in Python. [#114](https://github.com/feos-org/feos/pull/114)
+
 ### Packaging
 - Updated `pyo3` and `numpy` dependencies to 0.18. [#119](https://github.com/feos-org/feos/pull/119)
 - Updated `quantity` dependency to 0.6. [#119](https://github.com/feos-org/feos/pull/119)
