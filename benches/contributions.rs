@@ -8,7 +8,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter};
-use feos_core::{Contributions, DensityInitialization, Derivative, EquationOfState, State};
+use feos_core::{DensityInitialization, Derivative, EquationOfState, State};
 use ndarray::arr1;
 use quantity::si::*;
 use std::sync::Arc;

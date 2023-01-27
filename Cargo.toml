@@ -53,7 +53,7 @@ inherits = "release"
 lto = true
 
 [features]
-default = []
+default = ["pcsaft"]
 dft = ["feos-dft", "petgraph"]
 estimator = []
 association = []
