@@ -7,6 +7,7 @@ use num_dual::linalg::{norm, LU};
 use num_dual::*;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::ops::SubAssign;
 use std::sync::Arc;
 
 #[cfg(feature = "dft")]
@@ -243,7 +244,7 @@ impl<P: HardSphereProperties> Association<P> {
         (((deltarho * (na - nb) + 1.0).powi(2) + deltarho * nb * 4.0).sqrt()
             + (deltarho * (nb - na) + 1.0))
             .recip()
-            * (2.0 * nb / na)
+            * 2.0
     }
 
     pub fn assoc_site_frac_a<D: DualNum<f64>>(deltarho: D, na: f64) -> D {
@@ -336,37 +337,32 @@ impl<P: HardSphereProperties> Association<P> {
         tol: f64,
     ) -> Result<bool, EosError> {
         // gradient
-        let mut g: Array1<D> = Array::zeros(2 * nassoc);
+        let mut g = x.map(D::recip);
         // Hessian
         let mut h: Array2<D> = Array::zeros((2 * nassoc, 2 * nassoc));
 
-        // slice arrays
-        let (xa, xb) = x.multi_slice_mut((s![..nassoc], s![nassoc..]));
-        let (mut ga, mut gb) = g.multi_slice_mut((s![..nassoc], s![nassoc..]));
-        let (mut haa, mut hab, mut hba, mut hbb) = h.multi_slice_mut((
-            s![..nassoc, ..nassoc],
-            s![..nassoc, nassoc..],
-            s![nassoc.., ..nassoc],
-            s![nassoc.., nassoc..],
-        ));
+        // split x array
+        let (xa, xb) = x.view().split_at(Axis(0), nassoc);
 
         // calculate gradients and approximate Hessian
         for i in 0..nassoc {
             let d = &delta.index_axis(Axis(0), i) * rho;
 
             let dnx = (&xb * nb * &d).sum() + 1.0;
-            ga[i] = xa[i].recip() - dnx;
-            hab.index_axis_mut(Axis(0), i).assign(&(&d * &(-nb)));
-            haa[(i, i)] = -dnx / xa[i];
+            g[i] -= dnx;
+            for j in 0..nassoc {
+                h[(i, nassoc + j)] = -d[j] * nb[j];
+                h[(nassoc + i, j)] = -d[j] * na[j];
+            }
+            h[(i, i)] = -dnx / xa[i];
 
             let dnx = (&xa * na * &d).sum() + 1.0;
-            gb[i] = xb[i].recip() - dnx;
-            hba.index_axis_mut(Axis(0), i).assign(&(&d * &(-na)));
-            hbb[(i, i)] = -dnx / xb[i];
+            g[nassoc + i] -= dnx;
+            h[(nassoc + i, nassoc + i)] = -dnx / xb[i];
         }
 
         // Newton step
-        x.assign(&(&*x - &LU::new(h)?.solve(&g)));
+        x.sub_assign(&LU::new(h)?.solve(&g));
 
         // check convergence
         Ok(norm(&g.map(D::re)) < tol)
@@ -378,7 +374,9 @@ impl<P: HardSphereProperties> Association<P> {
 mod tests_pcsaft {
     use super::*;
     use crate::pcsaft::parameters::utils::water_parameters;
+    use crate::pcsaft::PcSaftParameters;
     use approx::assert_relative_eq;
+    use feos_core::parameter::Parameter;
 
     #[test]
     fn helmholtz_energy() {
@@ -402,6 +400,26 @@ mod tests_pcsaft {
         let s = StateHD::new(t, v, arr1(&[n]));
         let a_rust = assoc.helmholtz_energy(&s) / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn helmholtz_energy_cross_3b() {
+        let mut params = water_parameters();
+        let mut record = params.pure_records.pop().unwrap();
+        let mut association_record = record.model_record.association_record.unwrap();
+        association_record.na = Some(2.0);
+        record.model_record.association_record = Some(association_record);
+        let params = Arc::new(PcSaftParameters::new_pure(record));
+        let assoc = Association::new(&params, &params.association, 50, 1e-10);
+        let cross_assoc =
+            Association::new_cross_association(&params, &params.association, 50, 1e-10);
+        let t = 350.0;
+        let v = 41.248289328513216;
+        let n = 1.23;
+        let s = StateHD::new(t, v, arr1(&[n]));
+        let a_assoc = assoc.helmholtz_energy(&s) / n;
+        let a_cross_assoc = cross_assoc.helmholtz_energy(&s) / n;
+        assert_relative_eq!(a_assoc, a_cross_assoc, epsilon = 1e-10);
     }
 }
 

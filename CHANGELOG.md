@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2023-01-28
+### Changed
+- Replaced some slow array operations to make calculations with multiple associating molecules significantly faster. [#129](https://github.com/feos-org/feos/pull/129)
+
+### Fixed
+- Fixed a regression introduced in [#108](https://github.com/feos-org/feos/pull/108) that lead to incorrect results for the 3B association scheme. [#129](https://github.com/feos-org/feos/pull/129)
+
 ## [0.4.0] - 2023-01-27
 ### Added
 - Added SAFT-VRQ Mie equation of state and Helmholtz energy functional for first order Feynman-Hibbs corrected Mie fluids. [#79](https://github.com/feos-org/feos/pull/79)
