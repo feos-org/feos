@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.4.1] - 2023-01-28
 ### Changed
 - Replaced some slow array operations to make calculations with multiple associating molecules significantly faster. [#129](https://github.com/feos-org/feos/pull/129)
 
