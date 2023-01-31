@@ -1030,18 +1030,23 @@ Python</label><div class="sd-tab-content docutils">
 </input><label class="sd-tab-label" for="sd-tab-item-1">
 Rust</label><div class="sd-tab-content docutils">
 <p>In Rust, the <code class="docutils literal notranslate"><span class="pre">feos-dft</span></code> crate and each equation of state or DFT functional is a separate, optional module behind a feature flag.
-To use <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> with all models (including Python bindings), use the <code class="docutils literal notranslate"><span class="pre">all</span></code> feature:</p>
+To use <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> with all models (including Python bindings), use the <code class="docutils literal notranslate"><span class="pre">all_models</span></code> feature:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[dependencies]</span>
-<span class="n">feos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="o">=</span><span class="s">&quot;0.2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;all&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
-<span class="n">quantity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0.5&quot;</span>
+<span class="n">feos-core</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0.4&quot;</span>
+<span class="n">feos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="o">=</span><span class="s">&quot;0.4&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;all_models&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="n">quantity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0.6&quot;</span>
 </pre></div>
 </div>
+<p>To access the generic implementations for properties and phase equilibria, the <code class="docutils literal notranslate"><span class="pre">feos-core</span></code> crate is also included as dependency. Finally, <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> makes extensive use of SI units provided by the <code class="docutils literal notranslate"><span class="pre">quantity</span></code> crate.</p>
 <p>In the following example we use only the PC-SAFT equation of state and Helmholtz energy functionals (without Python bindings):</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[dependencies]</span>
-<span class="n">feos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="o">=</span><span class="s">&quot;0.2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;dft&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;pcsaft&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
-<span class="n">quantity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0.5&quot;</span>
+<span class="n">feos-core</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0.4&quot;</span>
+<span class="n">feos-dft</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0.4&quot;</span>
+<span class="n">feos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="o">=</span><span class="s">&quot;0.4&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;dft&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;pcsaft&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="n">quantity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0.6&quot;</span>
 </pre></div>
 </div>
+<p>To access generic DFT functionalities like interfaces and adsorption isotherms, the <code class="docutils literal notranslate"><span class="pre">feos-dft</span></code> crate is added to the dependencies.</p>
 </div>
 </div>
 </section>
