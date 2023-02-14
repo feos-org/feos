@@ -3,14 +3,13 @@ use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::Grid;
 use crate::solver::{DFTSolver, DFTSolverLog};
 use crate::weight_functions::WeightFunctionInfo;
-use feos_core::{Contributions, EosError, EosResult, EosUnit, EquationOfState, State};
+use feos_core::{Contributions, EosError, EosResult, EosUnit, EquationOfState, State, Verbosity};
 use ndarray::{
     Array, Array1, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3, RemoveAxis,
 };
 use num_dual::Dual64;
-use quantity::si::{SIArray, SIArray1, SINumber, SIUnit};
+use quantity::si::{SIArray, SIArray1, SIArray2, SINumber, SIUnit};
 use quantity::Quantity;
-// use quantity::{Quantity, QuantityArray, SIArray1, SINumber};
 use std::ops::MulAssign;
 use std::sync::Arc;
 
@@ -530,5 +529,157 @@ where
             contributions,
         )? * SIUnit::reference_pressure();
         Ok(self.integrate(&internal_energy_density))
+    }
+
+    pub fn drho_dmu(&self) -> EosResult<SIArray<<D::Larger as Dimension>::Larger>> {
+        let rho = self.density.to_reduced(SIUnit::reference_density())?;
+        let second_partial_derivatives = self.second_partial_derivatives(&rho)?;
+
+        let shape = rho.shape();
+        let shape: Vec<_> = std::iter::once(&shape[0]).chain(shape).copied().collect();
+        let mut drho_dmu = Array::zeros(shape).into_dimensionality().unwrap();
+        let rhs = |x: &_| {
+            let delta_functional_derivative =
+                self.delta_functional_derivative(x, &second_partial_derivatives);
+            let mut xm = x.clone();
+            xm.outer_iter_mut()
+                .zip(self.dft.m().iter())
+                .for_each(|(mut x, &m)| x *= m);
+            // let delta_i = self.delta_bond_integrals(&exp_dfdrho, &delta_functional_derivative);
+            // x + (delta_functional_derivative - delta_i) * rho
+            xm + delta_functional_derivative * &rho
+        };
+        let mut log = DFTSolverLog::new(Verbosity::None);
+        for (k, mut d) in drho_dmu.outer_iter_mut().enumerate() {
+            let mut lhs = rho.clone();
+            for (i, mut l) in lhs.outer_iter_mut().enumerate() {
+                if i != k {
+                    l.fill(0.0);
+                }
+            }
+            d.assign(&Self::gmres(rhs, &lhs, 200, 1e-13, &mut log)?);
+        }
+        Ok(drho_dmu
+            * (SIUnit::reference_density() / SIUnit::reference_molar_entropy() / self.temperature))
+    }
+
+    pub fn dn_dmu(&self) -> EosResult<SIArray2> {
+        let drho_dmu = self.drho_dmu()?;
+        let n = drho_dmu.shape()[0];
+        let dn_dmu = SIArray2::from_shape_fn([n; 2], |(i, j)| {
+            self.integrate(&drho_dmu.index_axis(Axis_nd(0), i).index_axis(Axis_nd(0), j))
+        });
+        Ok(dn_dmu)
+    }
+
+    pub fn drho_dp(&self) -> EosResult<SIArray<D::Larger>> {
+        let rho = self.density.to_reduced(SIUnit::reference_density())?;
+        let partial_density = self
+            .bulk
+            .partial_density
+            .to_reduced(SIUnit::reference_density())?;
+        let rho_bulk = self.dft.component_index().mapv(|i| partial_density[i]);
+
+        let second_partial_derivatives = self.second_partial_derivatives(&rho)?;
+        let (_, _, _, exp_dfdrho, _) = self.euler_lagrange_equation(&rho, &rho_bulk, false)?;
+
+        let rhs = |x: &_| {
+            let delta_functional_derivative =
+                self.delta_functional_derivative(x, &second_partial_derivatives);
+            let mut xm = x.clone();
+            xm.outer_iter_mut()
+                .zip(self.dft.m().iter())
+                .for_each(|(mut x, &m)| x *= m);
+            let delta_i = self.delta_bond_integrals(&exp_dfdrho, &delta_functional_derivative);
+            xm + (delta_functional_derivative - delta_i) * &rho
+        };
+        let mut lhs = rho.clone();
+        let v = self
+            .bulk
+            .partial_molar_volume(Contributions::Total)
+            .to_reduced(SIUnit::reference_volume() / SIUnit::reference_moles())?;
+        for (mut l, &c) in lhs.outer_iter_mut().zip(self.dft.component_index().iter()) {
+            l *= v[c];
+        }
+        let mut log = DFTSolverLog::new(Verbosity::None);
+        Self::gmres(rhs, &lhs, 200, 1e-13, &mut log)
+            .map(|x| x / (SIUnit::reference_molar_entropy() * self.temperature))
+    }
+
+    pub fn dn_dp(&self) -> EosResult<SIArray1> {
+        let dn_dp = self.integrate_comp(&self.drho_dp()?);
+        let mut dn_dp_comp = Array1::zeros(self.dft.components()) * SIUnit::reference_moles()
+            / SIUnit::reference_pressure();
+        for (i, &j) in self.dft.component_index().iter().enumerate() {
+            dn_dp_comp.try_set(j, dn_dp.get(i)).unwrap();
+        }
+        Ok(dn_dp_comp)
+    }
+
+    pub fn drho_dt(&self) -> EosResult<SIArray<D::Larger>> {
+        let rho = self.density.to_reduced(SIUnit::reference_density())?;
+        let t = self
+            .temperature
+            .to_reduced(SIUnit::reference_temperature())?;
+
+        let second_partial_derivatives = self.second_partial_derivatives(&rho)?;
+
+        // define rhs
+        let rhs = |x: &_| {
+            let delta_functional_derivative =
+                self.delta_functional_derivative(x, &second_partial_derivatives);
+            let mut xm = x.clone();
+            xm.outer_iter_mut()
+                .zip(self.dft.m().iter())
+                .for_each(|(mut x, &m)| x *= m);
+            // let delta_i = self.delta_bond_integrals(&exp_dfdrho, &delta_functional_derivative);
+            // (xm + (delta_functional_derivative - delta_i) * &rho) * t
+            (xm + delta_functional_derivative * &rho) * t
+        };
+
+        // calculate temperature derivative of functional derivative
+        let functional_contributions = self.dft.contributions();
+        let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
+            .iter()
+            .map(|c| c.weight_functions(Dual64::from(t).derive()))
+            .collect();
+        let convolver: Arc<dyn Convolver<_, D>> =
+            ConvolverFFT::plan(&self.grid, &weight_functions, None);
+        let (_, dfdrhodt) = self.dft.functional_derivative_dual(t, &rho, &convolver)?;
+
+        // calculate temperature derivative of bulk functional derivative
+        let partial_density = self
+            .bulk
+            .partial_density
+            .to_reduced(SIUnit::reference_density())?;
+        let rho_bulk = self.dft.component_index().mapv(|i| partial_density[i]);
+        let bulk_convolver = BulkConvolver::new(weight_functions);
+        let (_, dfdrhodt_bulk) =
+            self.dft
+                .functional_derivative_dual(t, &rho_bulk, &bulk_convolver)?;
+
+        // solve for drho_dt
+        let x = (self.bulk.dp_dni(Contributions::Total) * self.bulk.dp_dt(Contributions::Total)
+            / self.bulk.dp_dv(Contributions::Total))
+        .to_reduced(SIUnit::reference_molar_entropy())?;
+        let mut lhs = dfdrhodt.mapv(|d| d.eps[0]);
+        lhs.outer_iter_mut()
+            .zip(dfdrhodt_bulk.into_iter())
+            .zip(x.into_iter())
+            .for_each(|((mut lhs, d), x)| lhs -= d.eps[0] + x);
+        lhs.outer_iter_mut()
+            .zip(rho.outer_iter())
+            .zip(rho_bulk.into_iter())
+            .zip(self.dft.m().iter())
+            .for_each(|(((mut lhs, rho), rho_b), &m)| lhs += &((&rho / rho_b).mapv(f64::ln) * m));
+
+        lhs *= &(-&rho);
+        let mut log = DFTSolverLog::new(Verbosity::None);
+        let drho_dt = Self::gmres(rhs, &lhs, 200, 1e-13, &mut log)?;
+        Ok(drho_dt * (SIUnit::reference_density() / SIUnit::reference_temperature()))
+    }
+
+    pub fn dn_dt(&self) -> EosResult<SIArray1> {
+        Ok(self.integrate_comp(&self.drho_dt()?))
     }
 }

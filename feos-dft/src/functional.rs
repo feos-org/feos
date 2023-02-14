@@ -441,6 +441,43 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         ))
     }
 
+    #[allow(clippy::type_complexity)]
+    pub(crate) fn functional_derivative_dual<D>(
+        &self,
+        temperature: f64,
+        density: &Array<f64, D::Larger>,
+        convolver: &Arc<dyn Convolver<Dual64, D>>,
+    ) -> EosResult<(Array<Dual64, D>, Array<Dual64, D::Larger>)>
+    where
+        D: Dimension,
+        D::Larger: Dimension<Smaller = D>,
+    {
+        let temperature_dual = Dual64::from(temperature).derive();
+        let density_dual = density.mapv(Dual64::from);
+        let weighted_densities = convolver.weighted_densities(&density_dual);
+        let contributions = self.contributions();
+        let mut partial_derivatives = Vec::with_capacity(contributions.len());
+        let mut helmholtz_energy_density = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
+        for (c, wd) in contributions.iter().zip(weighted_densities) {
+            let nwd = wd.shape()[0];
+            let ngrid = wd.len() / nwd;
+            let mut phi = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
+            let mut pd = Array::zeros(wd.raw_dim());
+            c.first_partial_derivatives_dual(
+                temperature_dual,
+                wd.into_shape((nwd, ngrid)).unwrap(),
+                phi.view_mut().into_shape(ngrid).unwrap(),
+                pd.view_mut().into_shape((nwd, ngrid)).unwrap(),
+            )?;
+            partial_derivatives.push(pd);
+            helmholtz_energy_density += &phi;
+        }
+        Ok((
+            helmholtz_energy_density,
+            convolver.functional_derivative(&partial_derivatives) * temperature_dual,
+        ))
+    }
+
     /// Calculate the bond integrals $I_{\alpha\alpha'}(\mathbf{r})$
     pub fn bond_integrals<D>(
         &self,
