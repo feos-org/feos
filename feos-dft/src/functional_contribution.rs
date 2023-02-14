@@ -3,7 +3,7 @@ use feos_core::{EosResult, HelmholtzEnergyDual, StateHD};
 use ndarray::prelude::*;
 use ndarray::RemoveAxis;
 use num_dual::*;
-use num_traits::Zero;
+use num_traits::{One, Zero};
 use std::fmt::Display;
 
 macro_rules! impl_helmholtz_energy {
@@ -75,6 +75,7 @@ pub trait FunctionalContributionDual<N: DualNum<f64>>: Display {
 pub trait FunctionalContribution:
     FunctionalContributionDual<f64>
     + FunctionalContributionDual<Dual64>
+    + FunctionalContributionDual<Dual<Dual64, f64>>
     + FunctionalContributionDual<Dual<DualVec64<3>, f64>>
     + FunctionalContributionDual<HyperDual64>
     + FunctionalContributionDual<Dual2_64>
@@ -109,6 +110,31 @@ pub trait FunctionalContribution:
                 .assign(&phi.mapv(|p| p.eps[0]));
             wd.index_axis_mut(Axis(0), i)
                 .map_inplace(|x| x.eps[0] = 0.0);
+        }
+        helmholtz_energy_density.assign(&phi.mapv(|p| p.re));
+        Ok(())
+    }
+
+    fn first_partial_derivatives_dual(
+        &self,
+        temperature: Dual64,
+        weighted_densities: Array2<Dual64>,
+        mut helmholtz_energy_density: ArrayViewMut1<Dual64>,
+        mut first_partial_derivative: ArrayViewMut2<Dual64>,
+    ) -> EosResult<()> {
+        let mut wd = weighted_densities.mapv(Dual::from_re);
+        let t = Dual::from_re(temperature);
+        let mut phi = Array::zeros(weighted_densities.raw_dim().remove_axis(Axis(0)));
+
+        for i in 0..wd.shape()[0] {
+            wd.index_axis_mut(Axis(0), i)
+                .map_inplace(|x| x.eps[0] = Dual64::one());
+            phi = self.calculate_helmholtz_energy_density(t, wd.view())?;
+            first_partial_derivative
+                .index_axis_mut(Axis(0), i)
+                .assign(&phi.mapv(|p| p.eps[0]));
+            wd.index_axis_mut(Axis(0), i)
+                .map_inplace(|x| x.eps[0] = Dual64::zero());
         }
         helmholtz_energy_density.assign(&phi.mapv(|p| p.re));
         Ok(())
@@ -161,6 +187,7 @@ pub trait FunctionalContribution:
 impl<T> FunctionalContribution for T where
     T: FunctionalContributionDual<f64>
         + FunctionalContributionDual<Dual64>
+        + FunctionalContributionDual<Dual<Dual64, f64>>
         + FunctionalContributionDual<Dual<DualVec64<3>, f64>>
         + FunctionalContributionDual<HyperDual64>
         + FunctionalContributionDual<Dual2_64>

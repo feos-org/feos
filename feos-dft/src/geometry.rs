@@ -149,11 +149,9 @@ impl Axis {
         }
         let x0 = 0.5 * ((-alpha * points as f64).exp() + (-alpha * (points - 1) as f64).exp());
         let grid = (0..points)
-            .into_iter()
             .map(|i| l * x0 * (alpha * i as f64).exp())
             .collect();
         let edges = (0..=points)
-            .into_iter()
             .map(|i| {
                 if i == 0 {
                     0.0
@@ -166,7 +164,6 @@ impl Axis {
         let k0 = (2.0 * alpha).exp() * (2.0 * alpha.exp() + (2.0 * alpha).exp() - 1.0)
             / ((1.0 + alpha.exp()).powi(2) * ((2.0 * alpha).exp() - 1.0));
         let integration_weights = (0..points)
-            .into_iter()
             .map(|i| {
                 (match i {
                     0 => k0 * (2.0 * alpha).exp(),
