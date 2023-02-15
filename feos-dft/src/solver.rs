@@ -150,6 +150,7 @@ impl DFTSolver {
     }
 }
 
+/// A log that stores the residuals and execution time of DFT solvers.
 #[derive(Clone)]
 pub struct DFTSolverLog {
     verbosity: Verbosity,
