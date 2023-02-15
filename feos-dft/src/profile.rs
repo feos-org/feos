@@ -268,21 +268,22 @@ where
         })
     }
 
+    /// Integrate each segment individually and aggregate to components.
+    pub fn integrate_segments<S: Data<Elem = f64>>(
+        &self,
+        profile: &Quantity<ArrayBase<S, D::Larger>, SIUnit>,
+    ) -> SIArray1 {
+        let integral = self.integrate_comp(profile);
+        let mut integral_comp = Array1::zeros(self.dft.components()) * integral.get(0);
+        for (i, &j) in self.dft.component_index().iter().enumerate() {
+            integral_comp.try_set(j, integral.get(i)).unwrap();
+        }
+        integral_comp
+    }
+
     /// Return the number of moles of each component in the system.
     pub fn moles(&self) -> SIArray1 {
-        let rho = self
-            .density
-            .to_reduced(SIUnit::reference_density())
-            .unwrap();
-        let mut d = rho.raw_dim();
-        d[0] = self.dft.components();
-        let mut density_comps = Array::zeros(d);
-        for (i, &j) in self.dft.component_index().iter().enumerate() {
-            density_comps
-                .index_axis_mut(Axis_nd(0), j)
-                .assign(&rho.index_axis(Axis_nd(0), i));
-        }
-        self.integrate_comp(&(density_comps * SIUnit::reference_density()))
+        self.integrate_segments(&self.density)
     }
 
     /// Return the total number of moles in the system.
@@ -531,48 +532,7 @@ where
         Ok(self.integrate(&internal_energy_density))
     }
 
-    pub fn drho_dmu(&self) -> EosResult<SIArray<<D::Larger as Dimension>::Larger>> {
-        let rho = self.density.to_reduced(SIUnit::reference_density())?;
-        let second_partial_derivatives = self.second_partial_derivatives(&rho)?;
-
-        let shape = rho.shape();
-        let shape: Vec<_> = std::iter::once(&shape[0]).chain(shape).copied().collect();
-        let mut drho_dmu = Array::zeros(shape).into_dimensionality().unwrap();
-        let rhs = |x: &_| {
-            let delta_functional_derivative =
-                self.delta_functional_derivative(x, &second_partial_derivatives);
-            let mut xm = x.clone();
-            xm.outer_iter_mut()
-                .zip(self.dft.m().iter())
-                .for_each(|(mut x, &m)| x *= m);
-            // let delta_i = self.delta_bond_integrals(&exp_dfdrho, &delta_functional_derivative);
-            // x + (delta_functional_derivative - delta_i) * rho
-            xm + delta_functional_derivative * &rho
-        };
-        let mut log = DFTSolverLog::new(Verbosity::None);
-        for (k, mut d) in drho_dmu.outer_iter_mut().enumerate() {
-            let mut lhs = rho.clone();
-            for (i, mut l) in lhs.outer_iter_mut().enumerate() {
-                if i != k {
-                    l.fill(0.0);
-                }
-            }
-            d.assign(&Self::gmres(rhs, &lhs, 200, 1e-13, &mut log)?);
-        }
-        Ok(drho_dmu
-            * (SIUnit::reference_density() / SIUnit::reference_molar_entropy() / self.temperature))
-    }
-
-    pub fn dn_dmu(&self) -> EosResult<SIArray2> {
-        let drho_dmu = self.drho_dmu()?;
-        let n = drho_dmu.shape()[0];
-        let dn_dmu = SIArray2::from_shape_fn([n; 2], |(i, j)| {
-            self.integrate(&drho_dmu.index_axis(Axis_nd(0), i).index_axis(Axis_nd(0), j))
-        });
-        Ok(dn_dmu)
-    }
-
-    pub fn drho_dp(&self) -> EosResult<SIArray<D::Larger>> {
+    fn density_derivative(&self, lhs: &Array<f64, D::Larger>) -> EosResult<Array<f64, D::Larger>> {
         let rho = self.density.to_reduced(SIUnit::reference_density())?;
         let partial_density = self
             .bulk
@@ -593,7 +553,41 @@ where
             let delta_i = self.delta_bond_integrals(&exp_dfdrho, &delta_functional_derivative);
             xm + (delta_functional_derivative - delta_i) * &rho
         };
-        let mut lhs = rho.clone();
+        let mut log = DFTSolverLog::new(Verbosity::None);
+        Self::gmres(rhs, lhs, 200, 1e-13, &mut log)
+    }
+
+    /// Return the partial derivatives of the density profiles w.r.t. the chemical potentials $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial\mu_k}\right)_T$
+    pub fn drho_dmu(&self) -> EosResult<SIArray<<D::Larger as Dimension>::Larger>> {
+        let shape = self.density.shape();
+        let shape: Vec<_> = std::iter::once(&shape[0]).chain(shape).copied().collect();
+        let mut drho_dmu = Array::zeros(shape).into_dimensionality().unwrap();
+        for (k, mut d) in drho_dmu.outer_iter_mut().enumerate() {
+            let mut lhs = self.density.to_reduced(SIUnit::reference_density())?;
+            for (i, mut l) in lhs.outer_iter_mut().enumerate() {
+                if i != k {
+                    l.fill(0.0);
+                }
+            }
+            d.assign(&self.density_derivative(&lhs)?);
+        }
+        Ok(drho_dmu
+            * (SIUnit::reference_density() / SIUnit::reference_molar_entropy() / self.temperature))
+    }
+
+    /// Return the partial derivatives of the number of moles w.r.t. the chemical potentials $\left(\frac{\partial N_i}{\partial\mu_k}\right)_T$
+    pub fn dn_dmu(&self) -> EosResult<SIArray2> {
+        let drho_dmu = self.drho_dmu()?;
+        let n = drho_dmu.shape()[0];
+        let dn_dmu = SIArray2::from_shape_fn([n; 2], |(i, j)| {
+            self.integrate(&drho_dmu.index_axis(Axis_nd(0), i).index_axis(Axis_nd(0), j))
+        });
+        Ok(dn_dmu)
+    }
+
+    /// Return the partial derivatives of the density profiles w.r.t. the bulk pressure at constant temperature and bulk composition $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial p}\right)_{T,\mathbf{x}}$
+    pub fn drho_dp(&self) -> EosResult<SIArray<D::Larger>> {
+        let mut lhs = self.density.to_reduced(SIUnit::reference_density())?;
         let v = self
             .bulk
             .partial_molar_volume(Contributions::Total)
@@ -601,41 +595,23 @@ where
         for (mut l, &c) in lhs.outer_iter_mut().zip(self.dft.component_index().iter()) {
             l *= v[c];
         }
-        let mut log = DFTSolverLog::new(Verbosity::None);
-        Self::gmres(rhs, &lhs, 200, 1e-13, &mut log)
+        self.density_derivative(&lhs)
             .map(|x| x / (SIUnit::reference_molar_entropy() * self.temperature))
     }
 
+    /// Return the partial derivatives of the number of moles w.r.t. the bulk pressure at constant temperature and bulk composition $\left(\frac{\partial N_i}{\partial p}\right)_{T,\mathbf{x}}$
     pub fn dn_dp(&self) -> EosResult<SIArray1> {
-        let dn_dp = self.integrate_comp(&self.drho_dp()?);
-        let mut dn_dp_comp = Array1::zeros(self.dft.components()) * SIUnit::reference_moles()
-            / SIUnit::reference_pressure();
-        for (i, &j) in self.dft.component_index().iter().enumerate() {
-            dn_dp_comp.try_set(j, dn_dp.get(i)).unwrap();
-        }
-        Ok(dn_dp_comp)
+        Ok(self.integrate_segments(&self.drho_dp()?))
     }
 
+    /// Return the partial derivatives of the density profiles w.r.t. the temperature at constant bulk pressure and composition $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial T}\right)_{p,\mathbf{x}}$
+    ///
+    /// Not compatible with heterosegmented DFT.
     pub fn drho_dt(&self) -> EosResult<SIArray<D::Larger>> {
         let rho = self.density.to_reduced(SIUnit::reference_density())?;
         let t = self
             .temperature
             .to_reduced(SIUnit::reference_temperature())?;
-
-        let second_partial_derivatives = self.second_partial_derivatives(&rho)?;
-
-        // define rhs
-        let rhs = |x: &_| {
-            let delta_functional_derivative =
-                self.delta_functional_derivative(x, &second_partial_derivatives);
-            let mut xm = x.clone();
-            xm.outer_iter_mut()
-                .zip(self.dft.m().iter())
-                .for_each(|(mut x, &m)| x *= m);
-            // let delta_i = self.delta_bond_integrals(&exp_dfdrho, &delta_functional_derivative);
-            // (xm + (delta_functional_derivative - delta_i) * &rho) * t
-            (xm + delta_functional_derivative * &rho) * t
-        };
 
         // calculate temperature derivative of functional derivative
         let functional_contributions = self.dft.contributions();
@@ -659,27 +635,29 @@ where
                 .functional_derivative_dual(t, &rho_bulk, &bulk_convolver)?;
 
         // solve for drho_dt
-        let x = (self.bulk.dp_dni(Contributions::Total) * self.bulk.dp_dt(Contributions::Total)
-            / self.bulk.dp_dv(Contributions::Total))
+        let x = (self.bulk.partial_molar_volume(Contributions::Total)
+            * self.bulk.dp_dt(Contributions::Total))
         .to_reduced(SIUnit::reference_molar_entropy())?;
         let mut lhs = dfdrhodt.mapv(|d| d.eps[0]);
         lhs.outer_iter_mut()
             .zip(dfdrhodt_bulk.into_iter())
             .zip(x.into_iter())
-            .for_each(|((mut lhs, d), x)| lhs -= d.eps[0] + x);
+            .for_each(|((mut lhs, d), x)| lhs -= d.eps[0] - x);
         lhs.outer_iter_mut()
             .zip(rho.outer_iter())
             .zip(rho_bulk.into_iter())
             .zip(self.dft.m().iter())
             .for_each(|(((mut lhs, rho), rho_b), &m)| lhs += &((&rho / rho_b).mapv(f64::ln) * m));
 
-        lhs *= &(-&rho);
-        let mut log = DFTSolverLog::new(Verbosity::None);
-        let drho_dt = Self::gmres(rhs, &lhs, 200, 1e-13, &mut log)?;
-        Ok(drho_dt * (SIUnit::reference_density() / SIUnit::reference_temperature()))
+        lhs *= &(-&rho / t);
+        self.density_derivative(&lhs)
+            .map(|x| x * (SIUnit::reference_density() / SIUnit::reference_temperature()))
     }
 
+    /// Return the partial derivatives of the number of moles w.r.t. the temperature at constant bulk pressure and composition $\left(\frac{\partial N_i}{\partial T}\right)_{p,\mathbf{x}}$
+    ///
+    /// Not compatible with heterosegmented DFT.
     pub fn dn_dt(&self) -> EosResult<SIArray1> {
-        Ok(self.integrate_comp(&self.drho_dt()?))
+        Ok(self.integrate_segments(&self.drho_dt()?))
     }
 }
