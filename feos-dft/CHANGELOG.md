@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Added new methods `drho_dmu`, `drho_dp` and `drho_dt` that calculate partial derivatives of density profiles to every DFT profile. Also includes direct access to the integrated derivatives `dn_dmu`, `dn_dp` and `dn_dt`. [#134](https://github.com/feos-org/feos/pull/134)
+- Added `enthalpy_of_adsoprtion` and `partial_molar_enthalpy_of_adsorption` getters to pores and adsorption isotherms. [#135](https://github.com/feos-org/feos/pull/135)
 
 ## [0.4.0] - 2023-01-27
 ### Added
