@@ -104,4 +104,4 @@ After multiplying with $T$, the following elegant expression remains
 
 $$0=\sum_j\left(\frac{\partial N_i}{\partial\mu_j}\right)_T\Delta h_j^\mathrm{ads}+T\left(\frac{\partial N_i}{\partial T}\right)_{p,x_k}$$
 
-which is a symmetric linear equation due to $\left(\frac{\partial N_i}{\partial\mu_j}\right)_T=\left(\frac{\partial^2\Omega}{\partial\mu_i\partial\mu_j}\right)_T$. The derivatives of the particle numbers are obtained by integrating over the respective derivatives of the density profiles which are outlined in their own [section](derivatives.md).
+which is a symmetric linear equation due to $\left(\frac{\partial N_i}{\partial\mu_j}\right)_T=-\left(\frac{\partial^2\Omega}{\partial\mu_i\partial\mu_j}\right)_T$. The derivatives of the particle numbers are obtained by integrating over the respective derivatives of the density profiles which were discussed [previously](derivatives.md).
