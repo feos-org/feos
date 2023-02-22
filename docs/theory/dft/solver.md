@@ -52,7 +52,7 @@ The linear integral equation has to be solved for the step $\Delta\rho(r)$. Expl
 
 $$\int\sum_\beta\frac{\delta\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')\mathrm{d}r'\approx\frac{\mathcal{F}_\alpha\left(r;\left[\rho(r)+s\Delta\rho(r)\right]\right)-\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{s}$$
 
-However this approach requires the choice of an appropriate step size $s$ (something that we want to get away from in $\text{FeO}_\text{s}$) and also an evaluation of the full residual in every step of the linear solver. The solver can be sped up by doing parts of the functional derivative analytically beforehand. Using the definition of the residual in the rhs of eq. {eq}`eqn:newton` leads to
+However this approach requires the choice of an appropriate step size $s$ (something that we want to avoid in $\text{FeO}_\text{s}$) and also an evaluation of the full residual in every step of the linear solver. The solver can be sped up by doing parts of the functional derivative analytically beforehand. Using the definition of the residual in the rhs of eq. {eq}`eqn:newton` leads to
 
 $$\begin{align*}
 q_\alpha(r)&\equiv-\int\sum_\beta\frac{\delta\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')\mathrm{d}r'\\
