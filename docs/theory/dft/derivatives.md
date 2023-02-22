@@ -11,15 +11,15 @@ $$\mathrm{d}\Omega_{\rho_i}(\mathbf{r})=\left(\frac{\partial\Omega_{\rho_i}(\mat
 
 Using eq. {eq}`eqn:euler_lagrange` and the shortened notation for derivatives of functionals in their natural variables, e.g., $F_T=\left(\frac{\partial F}{\partial T}\right)_{\rho_k}$, the expression can be simplified to
 
-$$F_{T\rho_i}(\mathbf{r})\mathrm{d}T-\mathrm{d}\mu_i+\int\sum_jF_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=0$$ (eqn:gibbs_duhem)
+$$F_{T\rho_i}(\mathbf{r})\mathrm{d}T-\mathrm{d}\mu_i+\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=0$$ (eqn:gibbs_duhem)
 
 Similar to the Gibbs-Duhem relation for bulk phases, eq. {eq}`eqn:gibbs_duhem` shows how temperature, chemical potentials and the density profiles in an inhomogeneous system cannot be varied independently. The derivatives of the density profiles with respect to the intensive variables can be directly identified as
 
-$$\int\sum_jF_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial T}\right)_{\mu_k}\mathrm{d}\mathbf{r}'=-F_{T\rho_i}(\mathbf{r})$$
+$$\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial T}\right)_{\mu_k}\mathrm{d}\mathbf{r}'=-F_{T\rho_i}(\mathbf{r})$$
 
 and
 
-$$\int\sum_jF_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial\mu_k}\right)_{T}\mathrm{d}\mathbf{r}'=\delta_{ik}$$ (eqn:drho_dmu)
+$$\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial\mu_k}\right)_{T}\mathrm{d}\mathbf{r}'=\delta_{ik}$$ (eqn:drho_dmu)
 
 Both of these expressions are implicit (linear) equations for the derivatives. They can be solved rapidly analogously to the implicit expression appearing in the [Newton solver](solver.md). In practice, it is useful to explicitly cancel out the (often unknown) thermal de Broglie wavelength $\Lambda_i$ from the expression where it has no influence. This is done by splitting the intrinsic Helmholtz energy into an ideal gas and a residual part.
 
@@ -39,7 +39,7 @@ $$\mathrm{d}\mu_i=-s_i\mathrm{d}T+v_i\mathrm{d}p$$
 
 which can be used in eq. {eq}`eqn:gibbs_duhem` to give
 
-$$\left(F_{T\rho_i}(\mathbf{r})+s_i\right)\mathrm{d}T+\int\sum_jF_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=v_i\mathrm{d}p$$
+$$\left(F_{T\rho_i}(\mathbf{r})+s_i\right)\mathrm{d}T+\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=v_i\mathrm{d}p$$
 
 Even though $s_i$ is readily available in $\text{FeO}_\text{s}$ it is useful at this point to rewrite the partial molar entropy as
 
