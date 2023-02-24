@@ -40,7 +40,7 @@ $$\Delta h^\mathrm{ads}=\sum_ix_i\Delta h_i^\mathrm{ads}=h^\mathrm{b}-\sum_ix_i\
 ## Clausius-Clapeyron relation for porous media
 The Clausius-Clapeyron relation relates the $p-T$ slope of a pure component phase transition line to the corresponding enthalpy of phase change. For a vapor-liquid phase transition, the exact relation is
 
-$$\frac{\mathrm{d}p^\mathrm{sat}}{\mathrm{d}T}=\frac{s^\mathrm{V}-s^\mathrm{L}}{v^\mathrm{V}-v^\mathrm{L}}=\frac{h^\mathrm{V}-h^\mathrm{L}}{T\left(v^\mathrm{V}-v^\mathrm{L}\right)}$$
+$$\frac{\mathrm{d}p^\mathrm{sat}}{\mathrm{d}T}=\frac{s^\mathrm{V}-s^\mathrm{L}}{v^\mathrm{V}-v^\mathrm{L}}=\frac{h^\mathrm{V}-h^\mathrm{L}}{T\left(v^\mathrm{V}-v^\mathrm{L}\right)}$$ (eqn:temp_dep_press)
 
 In this expression, the enthalpy of vaporization $\Delta h^\mathrm{vap}=h^\mathrm{V}-h^\mathrm{L}$ can be identified. If the molar volume of the liquid phase $v^\mathrm{L}$ is assumed to be negligible compared to the molar volume of the vapor phase $v^\mathrm{V}$ and the gas phase is assumed to be ideal, the relation simplifies to
 
@@ -48,7 +48,14 @@ $$\frac{\mathrm{d}p^\mathrm{sat}}{\mathrm{d}T}=\frac{p}{RT^2}\Delta h^\mathrm{va
 
 which can be compactly written as
 
-$$\frac{\mathrm{d}\ln p^\mathrm{sat}}{\mathrm{d}\frac{1}{RT}}=-\Delta h^\mathrm{vap}$$ (eqn:clausius_clapeyron)
+$$\frac{\mathrm{d}\ln p^\mathrm{sat}}{\mathrm{d}\frac{1}{RT}}=-\Delta h^\mathrm{vap}$$ (eqn:Clausius_Clapeyron)
+
+Without assuming neither ideal gas nor neglecting the volume of the liquid, eq. {eq}`eqn:temp_dep_press` can be rewritten using the compressibility factor $Z$ to
+
+$$\frac{\mathrm{d}p^\mathrm{sat}}{\mathrm{d}T}=\frac{h^\mathrm{V}-h^\mathrm{L}}{T\left(v^\mathrm{V}-v^\mathrm{L}\right)}=\frac{p}{R T^2}\frac{\Delta h^\mathrm{vap}}{Z^\mathrm{V}-Z^\mathrm{L}}$$
+
+Neglecting the compressibility of the liquid phase ($Z^\mathrm{L}=0$) and assuming ideal gas for the vapor phase ($Z^\mathrm{V}=1$) leads to eq. {eq}`eqn:Clausius_Clapeyron`. 
+
 
 A similar relation can be derived for fluids adsorbed in a porous medium that is in equilibrium with a bulk phase. At this point it is important to clarify which variables describe the system
 - The adsorbed fluid and the bulk phase are in equilibrium. Therefore, the temperature $T$ and chemical potentials $\mu_i$ are the same for both phases.
@@ -73,11 +80,10 @@ $$\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{T}{Z^\mathrm{b}}\left(s^
 
 Finally, using $h^\mathrm{b}=Ts^\mathrm{b}+\sum_ix_i\mu_i$ and $\mathrm{d}U=T\mathrm{d}S+\sum_i\mu_i\mathrm{d}N_i$ leads to
 
-$$\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{1}{Z^\mathrm{b}}\left(h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_T\right)=-\frac{\Delta h^\mathrm{ads}}{Z^\mathrm{b}}$$
+$$\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{1}{Z^\mathrm{b}}\left(h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_T\right)=-\frac{\Delta h^\mathrm{ads}}{Z^\mathrm{b}}$$ (eqn:deriv_relation_hads)
 
-The relation is exact and valid for an arbitrary number of components in the fluid phase.
+The relation is exact and valid for an arbitrary number of components in the fluid phase. 
 
-(attentive readers are aware of the fact that not assuming ideal gas behavior in the classical Clausius-Clapeyron relation will introduce the same division by the compressibility factor in eq. {eq}`eqn:clausius_clapeyron`.)
 
 ## Calculation of the enthalpy of adsorption from classical DFT
 In a DFT context, the introduction of entropies and internal energies are just unnecessary complications. The most useful definition of the (partial molar) enthalpy of adsorption is
@@ -104,4 +110,4 @@ After multiplying with $T$, the following elegant expression remains
 
 $$0=\sum_j\left(\frac{\partial N_i}{\partial\mu_j}\right)_T\Delta h_j^\mathrm{ads}+T\left(\frac{\partial N_i}{\partial T}\right)_{p,x_k}$$
 
-which is a symmetric linear equation due to $\left(\frac{\partial N_i}{\partial\mu_j}\right)_T=-\left(\frac{\partial^2\Omega}{\partial\mu_i\partial\mu_j}\right)_T$. The derivatives of the particle numbers are obtained by integrating over the respective derivatives of the density profiles which were discussed [previously](derivatives.md).
+which is a symmetric linear system of equations due to $\left(\frac{\partial N_i}{\partial\mu_j}\right)_T=-\left(\frac{\partial^2\Omega}{\partial\mu_i\partial\mu_j}\right)_T$. The derivatives of the particle numbers are obtained by integrating over the respective derivatives of the density profiles which were discussed [previously](derivatives.md).
