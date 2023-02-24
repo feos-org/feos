@@ -48,7 +48,14 @@ $$\frac{\mathrm{d}p^\mathrm{sat}}{\mathrm{d}T}=\frac{p}{RT^2}\Delta h^\mathrm{va
 
 which can be compactly written as
 
-$$\frac{\mathrm{d}\ln p^\mathrm{sat}}{\mathrm{d}\frac{1}{RT}}=-\Delta h^\mathrm{vap}$$ 
+$$\frac{\mathrm{d}\ln p^\mathrm{sat}}{\mathrm{d}\frac{1}{RT}}=-\Delta h^\mathrm{vap}$$ (eqn:Clausius_Clapeyron)
+
+Without assuming neither ideal gas nor neglecting the volume of the liquid, eq. {eq}`eqn:temp_dep_press` can be rewritten using the compressibility factor $Z$ to
+
+$$\frac{\mathrm{d}p^\mathrm{sat}}{\mathrm{d}T}=\frac{h^\mathrm{V}-h^\mathrm{L}}{T\left(v^\mathrm{V}-v^\mathrm{L}\right)}=\frac{p}{R T^2}\frac{\Delta h^\mathrm{vap}}{Z^\mathrm{V}-Z^\mathrm{L}}$$
+
+Neglecting the compressibility of the liquid phase ($Z^\mathrm{L}=0$) and assuming ideal gas for the vapor phase ($Z^\mathrm{V}=1$) leads to eq. {eq}`eqn:Clausius_Clapeyron`. 
+
 
 A similar relation can be derived for fluids adsorbed in a porous medium that is in equilibrium with a bulk phase. At this point it is important to clarify which variables describe the system
 - The adsorbed fluid and the bulk phase are in equilibrium. Therefore, the temperature $T$ and chemical potentials $\mu_i$ are the same for both phases.
@@ -75,16 +82,7 @@ Finally, using $h^\mathrm{b}=Ts^\mathrm{b}+\sum_ix_i\mu_i$ and $\mathrm{d}U=T\ma
 
 $$\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{1}{Z^\mathrm{b}}\left(h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_T\right)=-\frac{\Delta h^\mathrm{ads}}{Z^\mathrm{b}}$$ (eqn:deriv_relation_hads)
 
-The relation is exact and valid for an arbitrary number of components in the fluid phase.
-
-Starting from eq. {eq}`eqn:temp_dep_press`, using the compressibility factor $Z$ for the real gas behavior leads to 
-
-$$\frac{\mathrm{d}p}{\mathrm{d}T}=\frac{h^\mathrm{b}-h^\mathrm{ads}}{T\left(v^\mathrm{b}-v^\mathrm{ads}\right)}=\frac{p}{R T^2}\frac{\Delta h^\mathrm{ads}}{Z^\mathrm{b}-Z^\mathrm{ads}}$$
-
-with the enthalpy and the compressiblity factor of the adsorbed phase, $h^\mathrm{ads}$ and $Z^\mathrm{ads}$. Neglecting the compressibility factor of the adsorbed phase leads to the same result as eq. {eq}`eqn:deriv_relation_hads`, namely 
-
-$$\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{\Delta h^\mathrm{ads}}{Z^\mathrm{b}}$$
-
+The relation is exact and valid for an arbitrary number of components in the fluid phase. 
 
 
 ## Calculation of the enthalpy of adsorption from classical DFT
