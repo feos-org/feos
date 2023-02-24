@@ -36,6 +36,12 @@ feos.dft.PairCorrelation
       ~PairCorrelation.bulk
       ~PairCorrelation.chemical_potential
       ~PairCorrelation.density
+      ~PairCorrelation.dn_dmu
+      ~PairCorrelation.dn_dp
+      ~PairCorrelation.dn_dt
+      ~PairCorrelation.drho_dmu
+      ~PairCorrelation.drho_dp
+      ~PairCorrelation.drho_dt
       ~PairCorrelation.external_potential
       ~PairCorrelation.functional_derivative
       ~PairCorrelation.grand_potential_density

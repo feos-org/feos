@@ -42,6 +42,12 @@ feos.dft.PlanarInterface
       ~PlanarInterface.bulk
       ~PlanarInterface.chemical_potential
       ~PlanarInterface.density
+      ~PlanarInterface.dn_dmu
+      ~PlanarInterface.dn_dp
+      ~PlanarInterface.dn_dt
+      ~PlanarInterface.drho_dmu
+      ~PlanarInterface.drho_dp
+      ~PlanarInterface.drho_dt
       ~PlanarInterface.equimolar_radius
       ~PlanarInterface.external_potential
       ~PlanarInterface.functional_derivative
