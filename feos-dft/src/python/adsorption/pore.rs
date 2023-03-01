@@ -122,6 +122,16 @@ macro_rules! impl_pore {
             fn get_interfacial_tension(&self) -> Option<PySINumber> {
                 self.0.interfacial_tension.map(PySINumber::from)
             }
+
+            #[getter]
+            fn get_partial_molar_enthalpy_of_adsorption(&self) -> PyResult<PySIArray1> {
+                Ok(self.0.partial_molar_enthalpy_of_adsorption()?.into())
+            }
+
+            #[getter]
+            fn get_enthalpy_of_adsorption(&self) -> PyResult<PySINumber> {
+                Ok(self.0.enthalpy_of_adsorption()?.into())
+            }
         }
 
         /// Parameters required to specify a 3D pore.
@@ -226,6 +236,16 @@ macro_rules! impl_pore {
             #[getter]
             fn get_interfacial_tension(&self) -> Option<PySINumber> {
                 self.0.interfacial_tension.map(PySINumber::from)
+            }
+
+            #[getter]
+            fn get_partial_molar_enthalpy_of_adsorption(&self) -> PyResult<PySIArray1> {
+                Ok(self.0.partial_molar_enthalpy_of_adsorption()?.into())
+            }
+
+            #[getter]
+            fn get_enthalpy_of_adsorption(&self) -> PyResult<PySINumber> {
+                Ok(self.0.enthalpy_of_adsorption()?.into())
             }
         }
     };
