@@ -972,6 +972,7 @@
 <li class="toctree-l2"><a class="reference internal" href="functional_derivatives.html">Functional derivatives</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">DFT solvers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="derivatives.html">Derivatives of density profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="enthalpy_of_adsorption.html">Enthalpy of adsorption and the Clausius-Clapeyron relation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pdgt.html">Predictive density gradient theory</a></li>
 </ul>
 </li>
@@ -1080,7 +1081,7 @@
 <div class="math notranslate nohighlight">
 \[\int\sum_\beta\frac{\delta\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')\mathrm{d}r'\approx\frac{\mathcal{F}_\alpha\left(r;\left[\rho(r)+s\Delta\rho(r)\right]\right)-\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{s}\]</div>
 </div>
-<p>However this approach requires the choice of an appropriate step size <span class="math notranslate nohighlight">\(s\)</span> (something that we want to get away from in <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span>) and also an evaluation of the full residual in every step of the linear solver. The solver can be sped up by doing parts of the functional derivative analytically beforehand. Using the definition of the residual in the rhs of eq. <a class="reference internal" href="#equation-eqn-newton">(1)</a> leads to</p>
+<p>However this approach requires the choice of an appropriate step size <span class="math notranslate nohighlight">\(s\)</span> (something that we want to avoid in <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span>) and also an evaluation of the full residual in every step of the linear solver. The solver can be sped up by doing parts of the functional derivative analytically beforehand. Using the definition of the residual in the rhs of eq. <a class="reference internal" href="#equation-eqn-newton">(1)</a> leads to</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{align*}

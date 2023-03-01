@@ -3,7 +3,7 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Predictive density gradient theory" href="pdgt.html" /><link rel="prev" title="DFT solvers" href="solver.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Enthalpy of adsorption and the Clausius-Clapeyron relation" href="enthalpy_of_adsorption.html" /><link rel="prev" title="DFT solvers" href="solver.html" />
 
     <!-- Generated with Sphinx 5.3.0 and Furo 2022.12.07 -->
         <title>Derivatives of density profiles - FeOs</title>
@@ -972,6 +972,7 @@
 <li class="toctree-l2"><a class="reference internal" href="functional_derivatives.html">Functional derivatives</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solver.html">DFT solvers</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Derivatives of density profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="enthalpy_of_adsorption.html">Enthalpy of adsorption and the Clausius-Clapeyron relation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pdgt.html">Predictive density gradient theory</a></li>
 </ul>
 </li>
@@ -1012,40 +1013,40 @@
           </label>
         </div>
         <article role="main">
-          <section id="derivatives-of-density-profiles">
+          <section class="tex2jax_ignore mathjax_ignore" id="derivatives-of-density-profiles">
 <h1>Derivatives of density profiles<a class="headerlink" href="#derivatives-of-density-profiles" title="Permalink to this heading">#</a></h1>
-<p>For converged density properties equilibrium properties can be calculated as partial derivatives of thermodynamic potentials analogous to classical (bulk) thermodynamics. The difference is that the derivatives have to be along a path of valid density profiles (solutions of the <a class="reference internal" href="euler_lagrange_equation.html"><span class="doc std std-doc">Euler-Lagrange equation</span></a>).</p>
+<p>For converged density properties equilibrium properties can be calculated as partial derivatives of thermodynamic potentials analogous to classical (bulk) thermodynamics. The difference is that the derivatives have to be along a path of valid density profiles (solutions of the <a class="reference internal" href="euler_lagrange_equation.html"><span class="std std-doc">Euler-Lagrange equation</span></a>).</p>
 <p>The density profiles are calculated implicitly from the Euler-Lagrange equation, which can be written simplified as</p>
 <div class="math-wrapper docutils container" id="equation-eqn-euler-lagrange">
 <div class="math notranslate nohighlight" id="equation-eqn-euler-lagrange">
-<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-euler-lagrange" title="Permalink to this equation">#</a></span>\[\Omega_{\rho_i}(T,\lbrace\mu_k\rbrace,[\lbrace\rho_k(\mathbf{r})\rbrace])=\mathcal{F}_{\rho_i}(T,[\lbrace\rho_k(\mathbf{r})\rbrace])-\mu_i+V^\mathrm{ext}(\mathbf{r})=0\]</div>
+<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-euler-lagrange" title="Permalink to this equation">#</a></span>\[\Omega_{\rho_i}(T,\lbrace\mu_k\rbrace,[\lbrace\rho_k(\mathbf{r})\rbrace])=F_{\rho_i}(T,[\lbrace\rho_k(\mathbf{r})\rbrace])-\mu_i+V_i^\mathrm{ext}(\mathbf{r})=0\]</div>
 </div>
-<p>Incorporating bond integrals can be done similar to the section on the <a class="reference internal" href="solver.html"><span class="doc std std-doc">Newton solver</span></a> but will not be discussed in this section. The derivatives of the density profiles can then be calculated from the total differential of eq. <a class="reference internal" href="#equation-eqn-euler-lagrange">(1)</a>.</p>
+<p>Incorporating bond integrals can be done similar to the section on the <a class="reference internal" href="solver.html"><span class="std std-doc">Newton solver</span></a> but will not be discussed in this section. The derivatives of the density profiles can then be calculated from the total differential of eq. <a class="reference internal" href="#equation-eqn-euler-lagrange">(1)</a>, leading to</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[\mathrm{d}\Omega_{\rho_i}(\mathbf{r})=\left(\frac{\partial\Omega_{\rho_i}(\mathbf{r})}{\partial T}\right)_{\mu_k,\rho_k}\mathrm{d}T+\sum_j\left(\frac{\partial\Omega_{\rho_i}(\mathbf{r})}{\partial\mu_j}\right)_{T,\mu_k,\rho_k}\mathrm{d}\mu_j+\int\sum_j\left(\frac{\delta\Omega_{\rho_i}(\mathbf{r})}{\delta\rho_j(\mathbf{r}')}\right)_{T,\mu_k,\rho_k}\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=0\]</div>
 </div>
-<p>Using eq. <a class="reference internal" href="#equation-eqn-euler-lagrange">(1)</a> and the shortened notation for derivatives of functionals in their natural variables, e.g., <span class="math notranslate nohighlight">\(\mathcal{F}_T=\left(\frac{\partial\mathcal{F}}{\partial T}\right)_{\rho_k}\)</span>, the expression can be simplified to</p>
+<p>Using eq. <a class="reference internal" href="#equation-eqn-euler-lagrange">(1)</a> and the shortened notation for derivatives of functionals in their natural variables, e.g., <span class="math notranslate nohighlight">\(F_T=\left(\frac{\partial F}{\partial T}\right)_{\rho_k}\)</span>, the expression can be simplified to</p>
 <div class="math-wrapper docutils container" id="equation-eqn-gibbs-duhem">
 <div class="math notranslate nohighlight" id="equation-eqn-gibbs-duhem">
-<span class="eqno">(2)<a class="headerlink" href="#equation-eqn-gibbs-duhem" title="Permalink to this equation">#</a></span>\[\mathcal{F}_{T\rho_i}(\mathbf{r})\mathrm{d}T-\mathrm{d}\mu_i+\int\sum_j\mathcal{F}_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=0\]</div>
+<span class="eqno">(2)<a class="headerlink" href="#equation-eqn-gibbs-duhem" title="Permalink to this equation">#</a></span>\[F_{T\rho_i}(\mathbf{r})\mathrm{d}T-\mathrm{d}\mu_i+\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=0\]</div>
 </div>
 <p>Similar to the Gibbs-Duhem relation for bulk phases, eq. <a class="reference internal" href="#equation-eqn-gibbs-duhem">(2)</a> shows how temperature, chemical potentials and the density profiles in an inhomogeneous system cannot be varied independently. The derivatives of the density profiles with respect to the intensive variables can be directly identified as</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\int\sum_j\mathcal{F}_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial T}\right)_{\mu_k}\mathrm{d}\mathbf{r}'=-\mathcal{F}_{T\rho_i}(\mathbf{r})\]</div>
+\[\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial T}\right)_{\mu_k}\mathrm{d}\mathbf{r}'=-F_{T\rho_i}(\mathbf{r})\]</div>
 </div>
 <p>and</p>
 <div class="math-wrapper docutils container" id="equation-eqn-drho-dmu">
 <div class="math notranslate nohighlight" id="equation-eqn-drho-dmu">
-<span class="eqno">(3)<a class="headerlink" href="#equation-eqn-drho-dmu" title="Permalink to this equation">#</a></span>\[\int\sum_j\mathcal{F}_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial\mu_k}\right)_{T}\mathrm{d}\mathbf{r}'=\delta_{ik}\]</div>
+<span class="eqno">(3)<a class="headerlink" href="#equation-eqn-drho-dmu" title="Permalink to this equation">#</a></span>\[\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial\mu_k}\right)_{T}\mathrm{d}\mathbf{r}'=\delta_{ik}\]</div>
 </div>
-<p>Both of these expressions are implicit (linear) equations for the derivatives. They can be solved rapidly analogously to the implicit expression appearing in the <a class="reference internal" href="solver.html"><span class="doc std std-doc">Newton solver</span></a>. In practice, it is useful to explicitly cancel out the (often unknown) thermal de Broglie wavelength <span class="math notranslate nohighlight">\(\Lambda_i\)</span> from the expression where it has no influence. This is done by splitting the intrinsic Helmholtz energy into an ideal gas and a residual part.</p>
+<p>Both of these expressions are implicit (linear) equations for the derivatives. They can be solved rapidly analogously to the implicit expression appearing in the <a class="reference internal" href="solver.html"><span class="std std-doc">Newton solver</span></a>. In practice, it is useful to explicitly cancel out the (often unknown) thermal de Broglie wavelength <span class="math notranslate nohighlight">\(\Lambda_i\)</span> from the expression where it has no influence. This is done by splitting the intrinsic Helmholtz energy into an ideal gas and a residual part.</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\mathcal{F}=k_\mathrm{B}T\int\sum_im_i\rho_i(\mathbf{r})\left(\ln\left(\rho_i(\mathbf{r})\Lambda_i^3\right)-1\right)\mathrm{d}\mathbf{r}+\mathcal{\hat F}^\mathrm{res}\]</div>
+\[F=k_\mathrm{B}T\int\sum_im_i\rho_i(\mathbf{r})\left(\ln\left(\rho_i(\mathbf{r})\Lambda_i^3\right)-1\right)\mathrm{d}\mathbf{r}+\mathcal{\hat F}^\mathrm{res}\]</div>
 </div>
-<p>Then <span class="math notranslate nohighlight">\(\mathcal{F}_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')=m_i\frac{k_\mathrm{B}T}{\rho_i(\mathbf{r})}\delta_{ij}\delta(\mathbf{r}-\mathbf{r}')+\mathcal{\hat F}_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')\)</span> and eq. <a class="reference internal" href="#equation-eqn-drho-dmu">(3)</a> can be rewritten as</p>
+<p>Then <span class="math notranslate nohighlight">\(F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')=m_i\frac{k_\mathrm{B}T}{\rho_i(\mathbf{r})}\delta_{ij}\delta(\mathbf{r}-\mathbf{r}')+\mathcal{\hat F}_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')\)</span> and eq. <a class="reference internal" href="#equation-eqn-drho-dmu">(3)</a> can be rewritten as</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[m_i\frac{k_\mathrm{B}T}{\rho_i(\mathbf{r})}\left(\frac{\partial\rho_i(\mathbf{r})}{\partial\mu_k}\right)_T+\int\sum_j\mathcal{\hat F}_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial\mu_k}\right)_{T}\mathrm{d}\mathbf{r}'=\delta_{ik}\]</div>
@@ -1063,18 +1064,18 @@
 <p>which can be used in eq. <a class="reference internal" href="#equation-eqn-gibbs-duhem">(2)</a> to give</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\left(\mathcal{F}_{T\rho_i}(\mathbf{r})+s_i\right)\mathrm{d}T+\int\sum_j\mathcal{F}_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=v_i\mathrm{d}p\]</div>
+\[\left(F_{T\rho_i}(\mathbf{r})+s_i\right)\mathrm{d}T+\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=v_i\mathrm{d}p\]</div>
 </div>
 <p>Even though <span class="math notranslate nohighlight">\(s_i\)</span> is readily available in <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> it is useful at this point to rewrite the partial molar entropy as</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[s_i=v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}-\mathcal{F}_{T\rho_i}^\mathrm{b}\]</div>
+\[s_i=v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}-F_{T\rho_i}^\mathrm{b}\]</div>
 </div>
 <p>Then, the intrinsic Helmholtz energy can be split into an ideal gas and a residual part again, and the de Broglie wavelength cancels.</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{align*}
-&amp;\left(m_ik_\mathrm{B}\ln\left(\frac{\rho_i(\mathbf{r})}{\rho_i^\mathrm{b}}\right)+\mathcal{F}_{T\rho_i}^\mathrm{res}(\mathbf{r})-\mathcal{F}_{T\rho_i}^\mathrm{b,res}+v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}\right)\mathrm{d}T\\
+&amp;\left(m_ik_\mathrm{B}\ln\left(\frac{\rho_i(\mathbf{r})}{\rho_i^\mathrm{b}}\right)+F_{T\rho_i}^\mathrm{res}(\mathbf{r})-F_{T\rho_i}^\mathrm{b,res}+v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}\right)\mathrm{d}T\\
 &amp;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+m_i\frac{k_\mathrm{B}T}{\rho_i(\mathbf{r})}\delta\rho_i(\mathbf{r})+\int\sum_j\mathcal{\hat F}_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=v_i\mathrm{d}p
 \end{align*}\end{split}\]</div>
 </div>
@@ -1088,7 +1089,7 @@
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{align*}
 &amp;m_i\left(\frac{\partial\rho_i(\mathbf{r})}{\partial T}\right)_{p,x_k}+\rho_i(\mathbf{r})\int\sum_j\beta\mathcal{\hat F}_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial T}\right)_{p,x_k}\mathrm{d}\mathbf{r}'\\
-&amp;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~=-\frac{\rho_i(\mathbf{r})}{k_\mathrm{B}T}\left(m_ik_\mathrm{B}\ln\left(\frac{\rho_i(\mathbf{r})}{\rho_i^\mathrm{b}}\right)+\mathcal{F}_{T\rho_i}^\mathrm{res}(\mathbf{r})-\mathcal{F}_{T\rho_i}^\mathrm{b,res}+v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}\right)
+&amp;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~=-\frac{\rho_i(\mathbf{r})}{k_\mathrm{B}T}\left(m_ik_\mathrm{B}\ln\left(\frac{\rho_i(\mathbf{r})}{\rho_i^\mathrm{b}}\right)+F_{T\rho_i}^\mathrm{res}(\mathbf{r})-F_{T\rho_i}^\mathrm{b,res}+v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}\right)
 \end{align*}\end{split}\]</div>
 </div>
 <p>follow. All derivatives <span class="math notranslate nohighlight">\(x_i\)</span> shown here can be calculated from the same linear equation</p>
@@ -1112,7 +1113,7 @@
 <td><p><span class="math notranslate nohighlight">\(\rho_i(\mathbf{r})v_i\)</span></p></td>
 </tr>
 <tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\left(\frac{\partial\rho_i(\mathbf{r})}{\partial T}\right)_{p,x_k}\)</span></p></td>
-<td><p><span class="math notranslate nohighlight">\(-\frac{\rho_i(\mathbf{r})}{k_\mathrm{B}T}\left(m_ik_\mathrm{B}\ln\left(\frac{\rho_i(\mathbf{r})}{\rho_i^\mathrm{b}}\right)+\mathcal{F}_{T\rho_i}^\mathrm{res}(\mathbf{r})-\mathcal{F}_{T\rho_i}^\mathrm{b,res}+v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}\right)\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(-\frac{\rho_i(\mathbf{r})}{k_\mathrm{B}T}\left(m_ik_\mathrm{B}\ln\left(\frac{\rho_i(\mathbf{r})}{\rho_i^\mathrm{b}}\right)+F_{T\rho_i}^\mathrm{res}(\mathbf{r})-F_{T\rho_i}^\mathrm{b,res}+v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}\right)\)</span></p></td>
 </tr>
 </tbody>
 </table>
@@ -1124,12 +1125,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="pdgt.html">
+          <a class="next-page" href="enthalpy_of_adsorption.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Predictive density gradient theory</div>
+                <div class="title">Enthalpy of adsorption and the Clausius-Clapeyron relation</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>

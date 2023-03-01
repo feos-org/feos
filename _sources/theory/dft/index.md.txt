@@ -9,6 +9,7 @@ This section explains the implementation of the core expressions from classical 
    functional_derivatives
    solver
    derivatives
+   enthalpy_of_adsorption
    pdgt
 ```
 

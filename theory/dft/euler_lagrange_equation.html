@@ -972,6 +972,7 @@
 <li class="toctree-l2"><a class="reference internal" href="functional_derivatives.html">Functional derivatives</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solver.html">DFT solvers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="derivatives.html">Derivatives of density profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="enthalpy_of_adsorption.html">Enthalpy of adsorption and the Clausius-Clapeyron relation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pdgt.html">Predictive density gradient theory</a></li>
 </ul>
 </li>
@@ -1014,19 +1015,19 @@
         <article role="main">
           <section class="tex2jax_ignore mathjax_ignore" id="euler-lagrange-equation">
 <h1>Euler-Lagrange equation<a class="headerlink" href="#euler-lagrange-equation" title="Permalink to this heading">#</a></h1>
-<p>The fundamental expression in classical density functional theory is the relation between the grand potential <span class="math notranslate nohighlight">\(\Omega\)</span> and the intrinsic Helmholtz energy <span class="math notranslate nohighlight">\(F\)</span>.</p>
+<p>The fundamental expression in classical density functional theory is the relation between the grand potential functional <span class="math notranslate nohighlight">\(\Omega\)</span> and the intrinsic Helmholtz energy functional <span class="math notranslate nohighlight">\(F\)</span>.</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[\Omega(T,\mu,[\rho(r)])=F(T,[\rho(r)])-\sum_i\int\rho_i(r)\left(\mu_i-V_i^\mathrm{ext}(r)\right)\mathrm{d}r\]</div>
 </div>
-<p>What makes this expression so appealing is that the intrinsic Helmholtz energy only depends on the temperature <span class="math notranslate nohighlight">\(T\)</span> and the density profiles <span class="math notranslate nohighlight">\(\rho_i(r)\)</span> of the system and not on the external potential <span class="math notranslate nohighlight">\(V_i^\mathrm{ext}(r)\)</span>.</p>
-<p>For a given temperature <span class="math notranslate nohighlight">\(T\)</span>, chemical potentials <span class="math notranslate nohighlight">\(\mu\)</span> and external potentials <span class="math notranslate nohighlight">\(V^\mathrm{ext}(r)\)</span> the grand potential reaches a minimum at equilibrium. Mathematically this condition can be written as</p>
+<p>What makes this expression so appealing is that the intrinsic Helmholtz energy functional only depends on the temperature <span class="math notranslate nohighlight">\(T\)</span> and the density profiles <span class="math notranslate nohighlight">\(\rho_i(r)\)</span> of the system and not on the external potentials <span class="math notranslate nohighlight">\(V_i^\mathrm{ext}(r)\)</span>.</p>
+<p>For a given temperature <span class="math notranslate nohighlight">\(T\)</span>, chemical potentials <span class="math notranslate nohighlight">\(\mu_i\)</span> and external potentials <span class="math notranslate nohighlight">\(V_i^\mathrm{ext}(r)\)</span> the grand potential reaches a minimum at equilibrium. Mathematically this condition can be written as</p>
 <div class="math-wrapper docutils container" id="equation-eqn-euler-lagrange-mu">
 <div class="math notranslate nohighlight" id="equation-eqn-euler-lagrange-mu">
 <span class="eqno">(1)<a class="headerlink" href="#equation-eqn-euler-lagrange-mu" title="Permalink to this equation">#</a></span>\[\left.\frac{\delta\Omega}{\delta\rho_i(r)}\right|_{T,\mu}=F_{\rho_i}(r)-\mu_i+V_i^{\mathrm{ext}}(r)=0\]</div>
 </div>
-<p>where <span class="math notranslate nohighlight">\(F_{\rho_i}(r)=\left.\frac{\delta F}{\delta\rho_i(r)}\right|_T\)</span> is short for the functional derivative of the intrinsic Helmholtz energy. In this context, eq. (1) is commonly referred to as the Euler-Lagrange equation, an implicit nonlinear integral equation which needs to be solved for the density profiles of the system.</p>
-<p>For a homogeneous (bulk) system, <span class="math notranslate nohighlight">\(V^\mathrm{ext}=0\)</span> and we get</p>
+<p>where <span class="math notranslate nohighlight">\(F_{\rho_i}(r)=\left.\frac{\delta F}{\delta\rho_i(r)}\right|_T\)</span> is short for the functional derivative of the intrinsic Helmholtz energy. In this context, eq. (1) is commonly referred to as the Euler-Lagrange equation, an implicit nonlinear integral equation which needs to be solved for the equilibrium density profiles of the system.</p>
+<p>For a homogeneous (bulk) system, <span class="math notranslate nohighlight">\(V_i^\mathrm{ext}=0\)</span> and we get</p>
 <div class="math-wrapper docutils container" id="equation-eqn-euler-lagrange-bulk">
 <div class="math notranslate nohighlight" id="equation-eqn-euler-lagrange-bulk">
 <span class="eqno">(2)<a class="headerlink" href="#equation-eqn-euler-lagrange-bulk" title="Permalink to this equation">#</a></span>\[F_{\rho_i}^\mathrm{b}-\mu_i=0\]</div>
@@ -1077,8 +1078,8 @@
 <div class="math notranslate nohighlight">
 \[\beta F^\mathrm{chain}=-\sum_i\int\rho_i(r)\left(m_i-1\right)\ln\left(\frac{y_{ii}\lambda_i(r)}{\rho_i(r)}\right)\mathrm{d}r\]</div>
 </div>
-<p>Here, <span class="math notranslate nohighlight">\(m_i\)</span> is the number of segments (i.e., the PC-SAFT chain length parameter), <span class="math notranslate nohighlight">\(y_{ii}\)</span> the cavity correlation function at contact in the reference fluid, and <span class="math notranslate nohighlight">\(\lambda_i\)</span> a weighted density.
-The presence of <span class="math notranslate nohighlight">\(\rho(r)\)</span> in the logarithm poses numerical problems. Therefore, it is convenient to rearrange the expression as</p>
+<p>Where <span class="math notranslate nohighlight">\(m_i\)</span> is the number of segments (i.e., the PC-SAFT chain length parameter), <span class="math notranslate nohighlight">\(y_{ii}\)</span> is the cavity correlation function at contact in the reference fluid, and <span class="math notranslate nohighlight">\(\lambda_i\)</span> is a weighted density.
+The presence of <span class="math notranslate nohighlight">\(\rho_i(r)\)</span> in the logarithm poses numerical problems. Therefore, it is convenient to rearrange the expression as</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{align}
