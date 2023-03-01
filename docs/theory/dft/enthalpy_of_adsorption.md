@@ -42,19 +42,17 @@ The Clausius-Clapeyron relation relates the $p-T$ slope of a pure component phas
 
 $$\frac{\mathrm{d}p^\mathrm{sat}}{\mathrm{d}T}=\frac{s^\mathrm{V}-s^\mathrm{L}}{v^\mathrm{V}-v^\mathrm{L}}=\frac{h^\mathrm{V}-h^\mathrm{L}}{T\left(v^\mathrm{V}-v^\mathrm{L}\right)}$$ (eqn:temp_dep_press)
 
-In this expression, the enthalpy of vaporization $\Delta h^\mathrm{vap}=h^\mathrm{V}-h^\mathrm{L}$ can be identified. If the molar volume of the liquid phase $v^\mathrm{L}$ is assumed to be negligible compared to the molar volume of the vapor phase $v^\mathrm{V}$ and the gas phase is assumed to be ideal, the relation simplifies to
+In this expression, the enthalpy of vaporization $\Delta h^\mathrm{vap}=h^\mathrm{V}-h^\mathrm{L}$ can be identified. The molar volumes $v$ of the two phases can be replaced by the compressibility factor $Z=\frac{pv}{RT}$. Then, eq. {eq}`eqn:temp_dep_press` simplifies to
 
-$$\frac{\mathrm{d}p^\mathrm{sat}}{\mathrm{d}T}=\frac{p}{RT^2}\Delta h^\mathrm{vap}$$
+$$\frac{\mathrm{d}p^\mathrm{sat}}{\mathrm{d}T}=\frac{p}{R T^2}\frac{\Delta h^\mathrm{vap}}{Z^\mathrm{V}-Z^\mathrm{L}}$$
 
 which can be compactly written as
 
+$$\frac{\mathrm{d}\ln p^\mathrm{sat}}{\mathrm{d}\frac{1}{RT}}=-\frac{\Delta h^\mathrm{vap}}{Z^\mathrm{V}-Z^\mathrm{L}}$$ (eqn:Clausius_Clapeyron_exact)
+
+Eq. {eq}`eqn:Clausius_Clapeyron_exact` is still an exact expression. In practice, the volume (and hence the compressibility factor) of the liquid phase can often be neglected compared to the volume of the gas phase. Additionally assuming an ideal gas phase ($Z^\mathrm{V}\approx1$), leads to the expression commonly referred to as Clausius-Clapeyron relation:
+
 $$\frac{\mathrm{d}\ln p^\mathrm{sat}}{\mathrm{d}\frac{1}{RT}}=-\Delta h^\mathrm{vap}$$ (eqn:Clausius_Clapeyron)
-
-Without assuming neither ideal gas nor neglecting the volume of the liquid, eq. {eq}`eqn:temp_dep_press` can be rewritten using the compressibility factor $Z$ to
-
-$$\frac{\mathrm{d}p^\mathrm{sat}}{\mathrm{d}T}=\frac{h^\mathrm{V}-h^\mathrm{L}}{T\left(v^\mathrm{V}-v^\mathrm{L}\right)}=\frac{p}{R T^2}\frac{\Delta h^\mathrm{vap}}{Z^\mathrm{V}-Z^\mathrm{L}}$$
-
-Neglecting the compressibility of the liquid phase ($Z^\mathrm{L}=0$) and assuming ideal gas for the vapor phase ($Z^\mathrm{V}=1$) leads to eq. {eq}`eqn:Clausius_Clapeyron`. 
 
 
 A similar relation can be derived for fluids adsorbed in a porous medium that is in equilibrium with a bulk phase. At this point it is important to clarify which variables describe the system
