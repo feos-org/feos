@@ -12,6 +12,7 @@
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/tabs.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="../../_static/style.css" />
     
@@ -1013,269 +1014,12 @@
           </label>
         </div>
         <article role="main">
-          
-<style>
-/* CSS for nbsphinx extension */
-
-/* remove conflicting styling from Sphinx themes */
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt *,
-div.nbinput.container div.input_area pre,
-div.nboutput.container div.output_area pre,
-div.nbinput.container div.input_area .highlight,
-div.nboutput.container div.output_area .highlight {
-    border: none;
-    padding: 0;
-    margin: 0;
-    box-shadow: none;
-}
-
-div.nbinput.container > div[class*=highlight],
-div.nboutput.container > div[class*=highlight] {
-    margin: 0;
-}
-
-div.nbinput.container div.prompt *,
-div.nboutput.container div.prompt * {
-    background: none;
-}
-
-div.nboutput.container div.output_area .highlight,
-div.nboutput.container div.output_area pre {
-    background: unset;
-}
-
-div.nboutput.container div.output_area div.highlight {
-    color: unset;  /* override Pygments text color */
-}
-
-/* avoid gaps between output lines */
-div.nboutput.container div[class*=highlight] pre {
-    line-height: normal;
-}
-
-/* input/output containers */
-div.nbinput.container,
-div.nboutput.container {
-    display: -webkit-flex;
-    display: flex;
-    align-items: flex-start;
-    margin: 0;
-    width: 100%;
-}
-@media (max-width: 540px) {
-    div.nbinput.container,
-    div.nboutput.container {
-        flex-direction: column;
-    }
-}
-
-/* input container */
-div.nbinput.container {
-    padding-top: 5px;
-}
-
-/* last container */
-div.nblast.container {
-    padding-bottom: 5px;
-}
-
-/* input prompt */
-div.nbinput.container div.prompt pre {
-    color: #307FC1;
-}
-
-/* output prompt */
-div.nboutput.container div.prompt pre {
-    color: #BF5B3D;
-}
-
-/* all prompts */
-div.nbinput.container div.prompt,
-div.nboutput.container div.prompt {
-    width: 4.5ex;
-    padding-top: 5px;
-    position: relative;
-    user-select: none;
-}
-
-div.nbinput.container div.prompt > div,
-div.nboutput.container div.prompt > div {
-    position: absolute;
-    right: 0;
-    margin-right: 0.3ex;
-}
-
-@media (max-width: 540px) {
-    div.nbinput.container div.prompt,
-    div.nboutput.container div.prompt {
-        width: unset;
-        text-align: left;
-        padding: 0.4em;
-    }
-    div.nboutput.container div.prompt.empty {
-        padding: 0;
-    }
-
-    div.nbinput.container div.prompt > div,
-    div.nboutput.container div.prompt > div {
-        position: unset;
-    }
-}
-
-/* disable scrollbars and line breaks on prompts */
-div.nbinput.container div.prompt pre,
-div.nboutput.container div.prompt pre {
-    overflow: hidden;
-    white-space: pre;
-}
-
-/* input/output area */
-div.nbinput.container div.input_area,
-div.nboutput.container div.output_area {
-    -webkit-flex: 1;
-    flex: 1;
-    overflow: auto;
-}
-@media (max-width: 540px) {
-    div.nbinput.container div.input_area,
-    div.nboutput.container div.output_area {
-        width: 100%;
-    }
-}
-
-/* input area */
-div.nbinput.container div.input_area {
-    border: 1px solid #e0e0e0;
-    border-radius: 2px;
-    /*background: #f5f5f5;*/
-}
-
-/* override MathJax center alignment in output cells */
-div.nboutput.container div[class*=MathJax] {
-    text-align: left !important;
-}
-
-/* override sphinx.ext.imgmath center alignment in output cells */
-div.nboutput.container div.math p {
-    text-align: left;
-}
-
-/* standard error */
-div.nboutput.container div.output_area.stderr {
-    background: #fdd;
-}
-
-/* ANSI colors */
-.ansi-black-fg { color: #3E424D; }
-.ansi-black-bg { background-color: #3E424D; }
-.ansi-black-intense-fg { color: #282C36; }
-.ansi-black-intense-bg { background-color: #282C36; }
-.ansi-red-fg { color: #E75C58; }
-.ansi-red-bg { background-color: #E75C58; }
-.ansi-red-intense-fg { color: #B22B31; }
-.ansi-red-intense-bg { background-color: #B22B31; }
-.ansi-green-fg { color: #00A250; }
-.ansi-green-bg { background-color: #00A250; }
-.ansi-green-intense-fg { color: #007427; }
-.ansi-green-intense-bg { background-color: #007427; }
-.ansi-yellow-fg { color: #DDB62B; }
-.ansi-yellow-bg { background-color: #DDB62B; }
-.ansi-yellow-intense-fg { color: #B27D12; }
-.ansi-yellow-intense-bg { background-color: #B27D12; }
-.ansi-blue-fg { color: #208FFB; }
-.ansi-blue-bg { background-color: #208FFB; }
-.ansi-blue-intense-fg { color: #0065CA; }
-.ansi-blue-intense-bg { background-color: #0065CA; }
-.ansi-magenta-fg { color: #D160C4; }
-.ansi-magenta-bg { background-color: #D160C4; }
-.ansi-magenta-intense-fg { color: #A03196; }
-.ansi-magenta-intense-bg { background-color: #A03196; }
-.ansi-cyan-fg { color: #60C6C8; }
-.ansi-cyan-bg { background-color: #60C6C8; }
-.ansi-cyan-intense-fg { color: #258F8F; }
-.ansi-cyan-intense-bg { background-color: #258F8F; }
-.ansi-white-fg { color: #C5C1B4; }
-.ansi-white-bg { background-color: #C5C1B4; }
-.ansi-white-intense-fg { color: #A1A6B2; }
-.ansi-white-intense-bg { background-color: #A1A6B2; }
-
-.ansi-default-inverse-fg { color: #FFFFFF; }
-.ansi-default-inverse-bg { background-color: #000000; }
-
-.ansi-bold { font-weight: bold; }
-.ansi-underline { text-decoration: underline; }
-
-
-div.nbinput.container div.input_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight] > pre,
-div.nboutput.container div.output_area div[class*=highlight].math,
-div.nboutput.container div.output_area.rendered_html,
-div.nboutput.container div.output_area > div.output_javascript,
-div.nboutput.container div.output_area:not(.rendered_html) > img{
-    padding: 5px;
-    margin: 0;
-}
-
-/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
-div.nbinput.container div.input_area > div[class^='highlight'],
-div.nboutput.container div.output_area > div[class^='highlight']{
-    overflow-y: hidden;
-}
-
-/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
-.prompt .copybtn {
-    display: none;
-}
-
-/* Some additional styling taken form the Jupyter notebook CSS */
-.jp-RenderedHTMLCommon table,
-div.rendered_html table {
-  border: none;
-  border-collapse: collapse;
-  border-spacing: 0;
-  color: black;
-  font-size: 12px;
-  table-layout: fixed;
-}
-.jp-RenderedHTMLCommon thead,
-div.rendered_html thead {
-  border-bottom: 1px solid black;
-  vertical-align: bottom;
-}
-.jp-RenderedHTMLCommon tr,
-.jp-RenderedHTMLCommon th,
-.jp-RenderedHTMLCommon td,
-div.rendered_html tr,
-div.rendered_html th,
-div.rendered_html td {
-  text-align: right;
-  vertical-align: middle;
-  padding: 0.5em 0.5em;
-  line-height: normal;
-  white-space: normal;
-  max-width: none;
-  border: none;
-}
-.jp-RenderedHTMLCommon th,
-div.rendered_html th {
-  font-weight: bold;
-}
-.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
-div.rendered_html tbody tr:nth-child(odd) {
-  background: #f5f5f5;
-}
-.jp-RenderedHTMLCommon tbody tr:hover,
-div.rendered_html tbody tr:hover {
-  background: rgba(66, 165, 245, 0.2);
-}
-</style>
-<section id="Working-with-SI-units">
+          <section id="Working-with-SI-units">
 <h1>Working with SI-units<a class="headerlink" href="#Working-with-SI-units" title="Permalink to this heading">#</a></h1>
 <section id="Goal">
 <h2>Goal<a class="headerlink" href="#Goal" title="Permalink to this heading">#</a></h2>
 <blockquote>
-<div><p>Learn how to work with <code class="docutils literal notranslate"><span class="pre">SINumber</span></code> and <code class="docutils literal notranslate"><span class="pre">SIArray</span></code> objects which represent physical quantities, i.e. one or more floating point numbers with an associated unit.</p>
+<div><p>Learn how to work with <code class="docutils literal notranslate"><span class="pre">SINumber</span></code> and <code class="docutils literal notranslate"><span class="pre">SIArray</span></code> objects which represent physical quantities, i.e. one or more floating point numbers with an associated unit.</p>
 </div></blockquote>
 </section>
 <section id="The-feos.si-module">
@@ -1311,7 +1055,7 @@ temperature : 300.15 K
 data type   : &lt;class &#39;feos.si.SINumber&#39;&gt;
 </pre></div></div>
 </div>
-<p>The representation of a <code class="docutils literal notranslate"><span class="pre">SINumber</span></code> (e.g. using <code class="docutils literal notranslate"><span class="pre">print</span></code>) uses a prefix (e.g. <code class="docutils literal notranslate"><span class="pre">k</span></code> for <code class="docutils literal notranslate"><span class="pre">kilo</span></code>) so that the numerical value is convenient. For example 1000 g will be represented as 1 kg. Internally, all values are stored with respect to the basic SI unit, i.e. <code class="docutils literal notranslate"><span class="pre">METER</span></code>, <code class="docutils literal notranslate"><span class="pre">KILOGRAM</span></code>, <code class="docutils literal notranslate"><span class="pre">SECOND</span></code>, <code class="docutils literal notranslate"><span class="pre">AMPERE</span></code>, <code class="docutils literal notranslate"><span class="pre">MOL</span></code>, <code class="docutils literal notranslate"><span class="pre">KELVIN</span></code>, and <code class="docutils literal notranslate"><span class="pre">CANDELA</span></code>.</p>
+<p>The representation of a <code class="docutils literal notranslate"><span class="pre">SINumber</span></code> (e.g. using <code class="docutils literal notranslate"><span class="pre">print</span></code>) uses a prefix (e.g. <code class="docutils literal notranslate"><span class="pre">k</span></code> for <code class="docutils literal notranslate"><span class="pre">kilo</span></code>) so that the numerical value is convenient. For example 1000 g will be represented as 1 kg. Internally, all values are stored with respect to the basic SI unit, i.e. <code class="docutils literal notranslate"><span class="pre">METER</span></code>, <code class="docutils literal notranslate"><span class="pre">KILOGRAM</span></code>, <code class="docutils literal notranslate"><span class="pre">SECOND</span></code>, <code class="docutils literal notranslate"><span class="pre">AMPERE</span></code>, <code class="docutils literal notranslate"><span class="pre">MOL</span></code>, <code class="docutils literal notranslate"><span class="pre">KELVIN</span></code>, and <code class="docutils literal notranslate"><span class="pre">CANDELA</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
@@ -1374,7 +1118,7 @@ data type = &lt;class &#39;float&#39;&gt;
 </div>
 <section id="Mathematical-operations-and-interaction-with-numpy">
 <h3>Mathematical operations and interaction with <code class="docutils literal notranslate"><span class="pre">numpy</span></code><a class="headerlink" href="#Mathematical-operations-and-interaction-with-numpy" title="Permalink to this heading">#</a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">SINumber</span></code> object supports some mathematical operations, i.e. we can</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">SINumber</span></code> object supports some mathematical operations, i.e. we can</p>
 <ul class="simple">
 <li><p>add or subtract two objects, <strong>if they have the same unit</strong>,</p></li>
 <li><p>multiply or divide two objects, which returns a floating point number if they have the same unit,</p></li>
@@ -1468,7 +1212,7 @@ length            : 3 nm
 ERROR: must be real number, not si_units.SINumber
 </pre></div></div>
 </div>
-<p>If you try to perform arithmetic operations with <code class="docutils literal notranslate"><span class="pre">SINumber</span></code>s that are not allowed (e.g. adding two properties with different units), an error is raised.</p>
+<p>If you try to perform arithmetic operations with <code class="docutils literal notranslate"><span class="pre">SINumber</span></code>s that are not allowed (e.g. adding two properties with different units), an error is raised.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
@@ -1657,7 +1401,7 @@ Array &#34;[1] mol&#34; contains 1 elements.
 </section>
 <section id="Derived-units,-constants-and-prefixes">
 <h2>Derived units, constants and prefixes<a class="headerlink" href="#Derived-units,-constants-and-prefixes" title="Permalink to this heading">#</a></h2>
-<p>In conjunction to the base units, the <code class="docutils literal notranslate"><span class="pre">si</span></code> module also exports derived units (e.g. <code class="docutils literal notranslate"><span class="pre">HOUR</span> <span class="pre">=</span> <span class="pre">3600</span> <span class="pre">*</span> <span class="pre">SECOND</span></code>), constants and prefixes (such as <code class="docutils literal notranslate"><span class="pre">KILO</span></code> or <code class="docutils literal notranslate"><span class="pre">FEMTO</span></code>). Of course, we could multiply by a floating point number instead of using prefixes (e.g. <code class="docutils literal notranslate"><span class="pre">cm</span> <span class="pre">=</span> <span class="pre">1e-2</span> <span class="pre">*</span> <span class="pre">METER</span></code> vs. <code class="docutils literal notranslate"><span class="pre">cm</span> <span class="pre">=</span> <span class="pre">CENTI</span> <span class="pre">*</span> <span class="pre">METER</span></code>) but we think using prefixes make the code more readable.</p>
+<p>In conjunction to the base units, the <code class="docutils literal notranslate"><span class="pre">si</span></code> module also exports derived units (e.g. <code class="docutils literal notranslate"><span class="pre">HOUR</span> <span class="pre">=</span> <span class="pre">3600</span> <span class="pre">*</span> <span class="pre">SECOND</span></code>), constants and prefixes (such as <code class="docutils literal notranslate"><span class="pre">KILO</span></code> or <code class="docutils literal notranslate"><span class="pre">FEMTO</span></code>). Of course, we could multiply by a floating point number instead of using prefixes (e.g. <code class="docutils literal notranslate"><span class="pre">cm</span> <span class="pre">=</span> <span class="pre">1e-2</span> <span class="pre">*</span> <span class="pre">METER</span></code> vs. <code class="docutils literal notranslate"><span class="pre">cm</span> <span class="pre">=</span> <span class="pre">CENTI</span> <span class="pre">*</span> <span class="pre">METER</span></code>) but we think using prefixes make the code more readable.</p>
 <p>For a complete overview of exported units constants and prefixes, take a look at the <cite>documentation of the ``si_units`</cite> Python package &lt;<a class="reference external" href="https://itt-ustutt.github.io/quantity/api.html#si-base-units-and-associated-constants">https://itt-ustutt.github.io/quantity/api.html#si-base-units-and-associated-constants</a>&gt;`__.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
@@ -1710,7 +1454,7 @@ Ideal gas constant    : 8.31446261815324  J/mol/K
 </section>
 <section id="Summary">
 <h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this heading">#</a></h2>
-<p>In <code class="docutils literal notranslate"><span class="pre">feos</span></code>, most interfaces use dimensioned units in form of <code class="docutils literal notranslate"><span class="pre">SINumber</span></code> and <code class="docutils literal notranslate"><span class="pre">SIArrayX</span></code> (where <code class="docutils literal notranslate"><span class="pre">X</span></code> stands for the dimnesion). This enables us to write functions that can check for proper units and thus circumvent unit errors that could occur, e.g. providing mass densities instead of molar densities.</p>
+<p>In <code class="docutils literal notranslate"><span class="pre">feos</span></code>, most interfaces use dimensioned units in form of <code class="docutils literal notranslate"><span class="pre">SINumber</span></code> and <code class="docutils literal notranslate"><span class="pre">SIArrayX</span></code> (where <code class="docutils literal notranslate"><span class="pre">X</span></code> stands for the dimnesion). This enables us to write functions that can check for proper units and thus circumvent unit errors that could occur, e.g. providing mass densities instead of molar densities.</p>
 <p>In this example, we learned how to create and use these objects in conjunction with methods provided by <code class="docutils literal notranslate"><span class="pre">numpy</span></code>.</p>
 </section>
 <section id="Concluding-remkars">
