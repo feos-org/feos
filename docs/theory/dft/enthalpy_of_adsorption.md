@@ -1,41 +1,41 @@
 # Enthalpy of adsorption and the Clausius-Clapeyron relation
 
 ## Enthalpy of adsorption
-The energy balance of a simple adsorption process can be written as
+The energy balance in differential form for a simple adsorption process can be written as
 
-$$\frac{\mathrm{d}U}{\mathrm{d}t}=\sum_i\dot{n}_ih_i^\mathrm{b}+\dot{Q}$$
+$$\mathrm{d}U=h^\mathrm{in}\delta n^\mathrm{in}-h^\mathrm{b}\delta n^\mathrm{out}+\delta Q$$ (eqn:energy_balance)
 
-Here the balance is chosen to only include the fluid in the porous medium. The partial molar enthalpy $h_i^\mathrm{b}$ is the enthalpy of the fluid at the point where it enters or leaves the adsorber at which point it can be considered in a bulk state. The component balance is simply
+Here the balance is chosen to only include the fluid in the porous medium. The molar enthalpy $h^\mathrm{b}$ of the fluid that leaves the adsorber is at a state that is in equilibrium with the porous medium. In contrast, the incoming stream can be at any condition. Analogously, the component balance is
 
-$$\frac{\mathrm{d}N_i}{\mathrm{d}t}=\dot{n}_i$$
+$$\mathrm{d}N_i=x_i^\mathrm{in}\delta n^\mathrm{in}-x_i\delta n^\mathrm{out}$$ (eqn:mass_balance)
 
-and can be used in the energy balance to yield
+The differential of the internal energy can be replaced with the total differential in its variables temperature $T$ and number of particles $N_i$. The volume of the adsorber is fixed and thus not considered as a variable.
 
-$$\dot{Q}=\frac{\mathrm{d}U}{\mathrm{d}t}-\sum_ih_i^\mathrm{b}\frac{\mathrm{d}N_i}{\mathrm{d}t}$$
+$$\mathrm{d}U=\left(\frac{\partial U}{\partial T}\right)_{N_k}\mathrm{d}T+\sum_i\left(\frac{\partial U}{\partial N_i}\right)_T\mathrm{d}N_i$$ (eqn:U_differential)
 
-or in differential form
+Eqs. {eq}`eqn:energy_balance`, {eq}`eqn:mass_balance` and {eq}`eqn:U_differential` can be combined into an expression for the heat of adsorption $\delta Q$
 
-$$\delta Q=\mathrm{d}U-\sum_ih_i^\mathrm{b}\mathrm{d}N_i$$
+$$\delta Q=\left(\frac{\partial U}{\partial T}\right)_{N_k}\mathrm{d}T-\left(h^\mathrm{in}-\sum_ix_i^\mathrm{in}\left(\frac{\partial U}{\partial N_i}\right)_T\right)\delta n^\mathrm{in}+\left(h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_T\right)\delta n^\mathrm{out}$$
 
-The expression can be rewritten using the total differential of the internal energy (the volume of the adsorber is fixed and therefore not considered as a variable)
-
-$$\delta Q=\left(\frac{\partial U}{\partial T}\right)_{N_k}\mathrm{d}T-\sum_i\left(h_i^\mathrm{b}-\left(\frac{\partial U}{\partial N_i}\right)_T\right)\mathrm{d}N_i$$
-
-The heat of adsorption $\delta Q$ can thus be split into a sensible part that depends on the change in temperature, and a latent part that depends on the change in loading. The expression can be simplified by using the definitions of the isochoric heat capacity $C_v=\left(\frac{\partial U}{\partial T}\right)_{N_k}$ and the **partial molar enthalpy of adsorption**
+The heat of adsorption can thus be split into a sensible part that depends on the change in temperature, and a latent part that depends on the change in loading. The expression can be simplified by using the definitions of the isochoric heat capacity $C_v=\left(\frac{\partial U}{\partial T}\right)_{N_k}$ and the **partial molar enthalpy of adsorption**
 
 $$\Delta h_i^\mathrm{ads}=h_i^\mathrm{b}-\left(\frac{\partial U}{\partial N_i}\right)_T$$
 
 yielding
 
-$$\delta Q=C_v\mathrm{d}T-\sum_i\Delta h_i^\mathrm{ads}\mathrm{d}N_i$$
+$$\delta Q=C_v\mathrm{d}T-\sum_ix_i^\mathrm{in}\left(h_i^\mathrm{in}-h_i^\mathrm{b}+\Delta h_i^\mathrm{ads}\right)\delta n^\mathrm{in}+\sum_ix_i\Delta h_i^\mathrm{ads}\delta n^\mathrm{out}$$
 
-If the composition of the bulk phase is fixed, which can be a fair assumption for an adsorption process but is in general not the case for a desorption process, the heat of adsorption simplifies to
+or
 
-$$\delta Q=C_v\mathrm{d}T-\Delta h^\mathrm{ads}\mathrm{d}N$$
+$$\delta Q=C_v\mathrm{d}T-\sum_ix_i^\mathrm{in}\left(h_i^\mathrm{in}-h_i^\mathrm{b}+\Delta h_i^\mathrm{ads}\right)\delta n^\mathrm{in}+\Delta h^\mathrm{ads}\delta n^\mathrm{out}$$
 
 with the **enthalpy of adsorption**
 
 $$\Delta h^\mathrm{ads}=\sum_ix_i\Delta h_i^\mathrm{ads}=h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_T$$
+
+For **pure components** the balance equations simplify to
+
+$$\delta Q=C_v\mathrm{d}T-\left(h^\mathrm{in}-h^\mathrm{b}\right)\delta n^\mathrm{in}-\Delta h^\mathrm{ads}\mathrm{d}N$$
 
 ## Clausius-Clapeyron relation for porous media
 The Clausius-Clapeyron relation relates the $p-T$ slope of a pure component phase transition line to the corresponding enthalpy of phase change. For a vapor-liquid phase transition, the exact relation is
