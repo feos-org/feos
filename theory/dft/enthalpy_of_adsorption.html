@@ -1017,50 +1017,50 @@
 <h1>Enthalpy of adsorption and the Clausius-Clapeyron relation<a class="headerlink" href="#enthalpy-of-adsorption-and-the-clausius-clapeyron-relation" title="Permalink to this heading">#</a></h1>
 <section id="enthalpy-of-adsorption">
 <h2>Enthalpy of adsorption<a class="headerlink" href="#enthalpy-of-adsorption" title="Permalink to this heading">#</a></h2>
-<p>The energy balance of a simple adsorption process can be written as</p>
-<div class="math-wrapper docutils container">
-<div class="math notranslate nohighlight">
-\[\frac{\mathrm{d}U}{\mathrm{d}t}=\sum_i\dot{n}_ih_i^\mathrm{b}+\dot{Q}\]</div>
+<p>The energy balance in differential form for a simple adsorption process can be written as</p>
+<div class="math-wrapper docutils container" id="equation-eqn-energy-balance">
+<div class="math notranslate nohighlight" id="equation-eqn-energy-balance">
+<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-energy-balance" title="Permalink to this equation">#</a></span>\[\mathrm{d}U=h^\mathrm{in}\delta n^\mathrm{in}-h^\mathrm{b}\delta n^\mathrm{out}+\delta Q\]</div>
 </div>
-<p>Here the balance is chosen to only include the fluid in the porous medium. The partial molar enthalpy <span class="math notranslate nohighlight">\(h_i^\mathrm{b}\)</span> is the enthalpy of the fluid at the point where it enters or leaves the adsorber at which point it can be considered in a bulk state. The component balance is simply</p>
-<div class="math-wrapper docutils container">
-<div class="math notranslate nohighlight">
-\[\frac{\mathrm{d}N_i}{\mathrm{d}t}=\dot{n}_i\]</div>
+<p>Here the balance is chosen to only include the fluid in the porous medium. The molar enthalpy <span class="math notranslate nohighlight">\(h^\mathrm{b}\)</span> of the (bulk) fluid that leaves the adsorber is at a state that is in equilibrium with the porous medium. In contrast, the incoming stream can be at any condition. Analogously, the component balance is</p>
+<div class="math-wrapper docutils container" id="equation-eqn-mass-balance">
+<div class="math notranslate nohighlight" id="equation-eqn-mass-balance">
+<span class="eqno">(2)<a class="headerlink" href="#equation-eqn-mass-balance" title="Permalink to this equation">#</a></span>\[\mathrm{d}N_i=x_i^\mathrm{in}\delta n^\mathrm{in}-x_i\delta n^\mathrm{out}\]</div>
 </div>
-<p>and can be used in the energy balance to yield</p>
-<div class="math-wrapper docutils container">
-<div class="math notranslate nohighlight">
-\[\dot{Q}=\frac{\mathrm{d}U}{\mathrm{d}t}-\sum_ih_i^\mathrm{b}\frac{\mathrm{d}N_i}{\mathrm{d}t}\]</div>
+<p>The differential of the internal energy can be replaced with the total differential in its variables temperature <span class="math notranslate nohighlight">\(T\)</span> and number of particles <span class="math notranslate nohighlight">\(N_i\)</span>. The volume of the adsorber is fixed and thus not considered as a variable.</p>
+<div class="math-wrapper docutils container" id="equation-eqn-u-differential">
+<div class="math notranslate nohighlight" id="equation-eqn-u-differential">
+<span class="eqno">(3)<a class="headerlink" href="#equation-eqn-u-differential" title="Permalink to this equation">#</a></span>\[\mathrm{d}U=\left(\frac{\partial U}{\partial T}\right)_{N_k}\mathrm{d}T+\sum_i\left(\frac{\partial U}{\partial N_i}\right)_{T,N_j}\mathrm{d}N_i\]</div>
 </div>
-<p>or in differential form</p>
+<p>Eqs. <a class="reference internal" href="#equation-eqn-energy-balance">(1)</a>, <a class="reference internal" href="#equation-eqn-mass-balance">(2)</a> and <a class="reference internal" href="#equation-eqn-u-differential">(3)</a> can be combined into an expression for the heat of adsorption <span class="math notranslate nohighlight">\(\delta Q\)</span></p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\delta Q=\mathrm{d}U-\sum_ih_i^\mathrm{b}\mathrm{d}N_i\]</div>
+\[\delta Q=\left(\frac{\partial U}{\partial T}\right)_{N_k}\mathrm{d}T-\left(h^\mathrm{in}-\sum_ix_i^\mathrm{in}\left(\frac{\partial U}{\partial N_i}\right)_{T,N_j}\right)\delta n^\mathrm{in}+\left(h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_{T,N_j}\right)\delta n^\mathrm{out}\]</div>
 </div>
-<p>The expression can be rewritten using the total differential of the internal energy (the volume of the adsorber is fixed and therefore not considered as a variable)</p>
+<p>The heat of adsorption can thus be split into a sensible part that depends on the change in temperature, and a latent part that depends on the change in loading. The expression can be simplified by using the definitions of the isochoric heat capacity <span class="math notranslate nohighlight">\(C_v=\left(\frac{\partial U}{\partial T}\right)_{N_k}\)</span> and the <strong>partial molar enthalpy of adsorption</strong></p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\delta Q=\left(\frac{\partial U}{\partial T}\right)_{N_k}\mathrm{d}T-\sum_i\left(h_i^\mathrm{b}-\left(\frac{\partial U}{\partial N_i}\right)_T\right)\mathrm{d}N_i\]</div>
-</div>
-<p>The heat of adsorption <span class="math notranslate nohighlight">\(\delta Q\)</span> can thus be split into a sensible part that depends on the change in temperature, and a latent part that depends on the change in loading. The expression can be simplified by using the definitions of the isochoric heat capacity <span class="math notranslate nohighlight">\(C_v=\left(\frac{\partial U}{\partial T}\right)_{N_k}\)</span> and the <strong>partial molar enthalpy of adsorption</strong></p>
-<div class="math-wrapper docutils container">
-<div class="math notranslate nohighlight">
-\[\Delta h_i^\mathrm{ads}=h_i^\mathrm{b}-\left(\frac{\partial U}{\partial N_i}\right)_T\]</div>
+\[\Delta h_i^\mathrm{ads}=h_i^\mathrm{b}-\left(\frac{\partial U}{\partial N_i}\right)_{T,N_j}\]</div>
 </div>
 <p>yielding</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\delta Q=C_v\mathrm{d}T-\sum_i\Delta h_i^\mathrm{ads}\mathrm{d}N_i\]</div>
+\[\delta Q=C_v\mathrm{d}T-\sum_ix_i^\mathrm{in}\left(h_i^\mathrm{in}-h_i^\mathrm{b}+\Delta h_i^\mathrm{ads}\right)\delta n^\mathrm{in}+\sum_ix_i\Delta h_i^\mathrm{ads}\delta n^\mathrm{out}\]</div>
 </div>
-<p>If the composition of the bulk phase is fixed, which can be a fair assumption for an adsorption process but is in general not the case for a desorption process, the heat of adsorption simplifies to</p>
+<p>or</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\delta Q=C_v\mathrm{d}T-\Delta h^\mathrm{ads}\mathrm{d}N\]</div>
+\[\delta Q=C_v\mathrm{d}T-\sum_ix_i^\mathrm{in}\left(h_i^\mathrm{in}-h_i^\mathrm{b}+\Delta h_i^\mathrm{ads}\right)\delta n^\mathrm{in}+\Delta h^\mathrm{ads}\delta n^\mathrm{out}\]</div>
 </div>
 <p>with the <strong>enthalpy of adsorption</strong></p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\Delta h^\mathrm{ads}=\sum_ix_i\Delta h_i^\mathrm{ads}=h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_T\]</div>
+\[\Delta h^\mathrm{ads}=\sum_ix_i\Delta h_i^\mathrm{ads}=h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_{T,N_j}\]</div>
+</div>
+<p>For <strong>pure components</strong> the balance equations simplify to</p>
+<div class="math-wrapper docutils container">
+<div class="math notranslate nohighlight">
+\[\delta Q=C_v\mathrm{d}T-\left(h^\mathrm{in}-h^\mathrm{b}\right)\delta n^\mathrm{in}-\Delta h^\mathrm{ads}\mathrm{d}N\]</div>
 </div>
 </section>
 <section id="clausius-clapeyron-relation-for-porous-media">
@@ -1068,9 +1068,9 @@
 <p>The Clausius-Clapeyron relation relates the <span class="math notranslate nohighlight">\(p-T\)</span> slope of a pure component phase transition line to the corresponding enthalpy of phase change. For a vapor-liquid phase transition, the exact relation is</p>
 <div class="math-wrapper docutils container" id="equation-eqn-temp-dep-press">
 <div class="math notranslate nohighlight" id="equation-eqn-temp-dep-press">
-<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-temp-dep-press" title="Permalink to this equation">#</a></span>\[\frac{\mathrm{d}p^\mathrm{sat}}{\mathrm{d}T}=\frac{s^\mathrm{V}-s^\mathrm{L}}{v^\mathrm{V}-v^\mathrm{L}}=\frac{h^\mathrm{V}-h^\mathrm{L}}{T\left(v^\mathrm{V}-v^\mathrm{L}\right)}\]</div>
+<span class="eqno">(4)<a class="headerlink" href="#equation-eqn-temp-dep-press" title="Permalink to this equation">#</a></span>\[\frac{\mathrm{d}p^\mathrm{sat}}{\mathrm{d}T}=\frac{s^\mathrm{V}-s^\mathrm{L}}{v^\mathrm{V}-v^\mathrm{L}}=\frac{h^\mathrm{V}-h^\mathrm{L}}{T\left(v^\mathrm{V}-v^\mathrm{L}\right)}\]</div>
 </div>
-<p>In this expression, the enthalpy of vaporization <span class="math notranslate nohighlight">\(\Delta h^\mathrm{vap}=h^\mathrm{V}-h^\mathrm{L}\)</span> can be identified. The molar volumes <span class="math notranslate nohighlight">\(v\)</span> of the two phases can be replaced by the compressibility factor <span class="math notranslate nohighlight">\(Z=\frac{pv}{RT}\)</span>. Then, eq. <a class="reference internal" href="#equation-eqn-temp-dep-press">(1)</a> simplifies to</p>
+<p>In this expression, the enthalpy of vaporization <span class="math notranslate nohighlight">\(\Delta h^\mathrm{vap}=h^\mathrm{V}-h^\mathrm{L}\)</span> can be identified. The molar volumes <span class="math notranslate nohighlight">\(v\)</span> of the two phases can be replaced by the compressibility factor <span class="math notranslate nohighlight">\(Z=\frac{pv}{RT}\)</span>. Then, eq. <a class="reference internal" href="#equation-eqn-temp-dep-press">(4)</a> simplifies to</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[\frac{\mathrm{d}p^\mathrm{sat}}{\mathrm{d}T}=\frac{p}{R T^2}\frac{\Delta h^\mathrm{vap}}{Z^\mathrm{V}-Z^\mathrm{L}}\]</div>
@@ -1078,12 +1078,12 @@
 <p>which can be compactly written as</p>
 <div class="math-wrapper docutils container" id="equation-eqn-clausius-clapeyron-exact">
 <div class="math notranslate nohighlight" id="equation-eqn-clausius-clapeyron-exact">
-<span class="eqno">(2)<a class="headerlink" href="#equation-eqn-clausius-clapeyron-exact" title="Permalink to this equation">#</a></span>\[\frac{\mathrm{d}\ln p^\mathrm{sat}}{\mathrm{d}\frac{1}{RT}}=-\frac{\Delta h^\mathrm{vap}}{Z^\mathrm{V}-Z^\mathrm{L}}\]</div>
+<span class="eqno">(5)<a class="headerlink" href="#equation-eqn-clausius-clapeyron-exact" title="Permalink to this equation">#</a></span>\[\frac{\mathrm{d}\ln p^\mathrm{sat}}{\mathrm{d}\frac{1}{RT}}=-\frac{\Delta h^\mathrm{vap}}{Z^\mathrm{V}-Z^\mathrm{L}}\]</div>
 </div>
-<p>Eq. <a class="reference internal" href="#equation-eqn-clausius-clapeyron-exact">(2)</a> is still an exact expression. In practice, the volume (and hence the compressibility factor) of the liquid phase can often be neglected compared to the volume of the gas phase. Additionally assuming an ideal gas phase (<span class="math notranslate nohighlight">\(Z^\mathrm{V}\approx1\)</span>), leads to the expression commonly referred to as Clausius-Clapeyron relation:</p>
+<p>Eq. <a class="reference internal" href="#equation-eqn-clausius-clapeyron-exact">(5)</a> is still an exact expression. In practice, the volume (and hence the compressibility factor) of the liquid phase can often be neglected compared to the volume of the gas phase. Additionally assuming an ideal gas phase (<span class="math notranslate nohighlight">\(Z^\mathrm{V}\approx1\)</span>), leads to the expression commonly referred to as Clausius-Clapeyron relation:</p>
 <div class="math-wrapper docutils container" id="equation-eqn-clausius-clapeyron">
 <div class="math notranslate nohighlight" id="equation-eqn-clausius-clapeyron">
-<span class="eqno">(3)<a class="headerlink" href="#equation-eqn-clausius-clapeyron" title="Permalink to this equation">#</a></span>\[\frac{\mathrm{d}\ln p^\mathrm{sat}}{\mathrm{d}\frac{1}{RT}}=-\Delta h^\mathrm{vap}\]</div>
+<span class="eqno">(6)<a class="headerlink" href="#equation-eqn-clausius-clapeyron" title="Permalink to this equation">#</a></span>\[\frac{\mathrm{d}\ln p^\mathrm{sat}}{\mathrm{d}\frac{1}{RT}}=-\Delta h^\mathrm{vap}\]</div>
 </div>
 <p>A similar relation can be derived for fluids adsorbed in a porous medium that is in equilibrium with a bulk phase. At this point it is important to clarify which variables describe the system</p>
 <ul class="simple">
@@ -1099,22 +1099,22 @@
 <p>First, the pressure can be replaced using the Gibbs-Duhem relation for the bulk phase (index <span class="math notranslate nohighlight">\(\mathrm{b}\)</span>)</p>
 <div class="math-wrapper docutils container" id="equation-eqn-clausius-clapeyron-intermediate">
 <div class="math notranslate nohighlight" id="equation-eqn-clausius-clapeyron-intermediate">
-<span class="eqno">(4)<a class="headerlink" href="#equation-eqn-clausius-clapeyron-intermediate" title="Permalink to this equation">#</a></span>\[\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{RT^2}{pv^\mathrm{b}}\left(s^\mathrm{b}+\sum_ix_i\left(\frac{\partial\mu_i}{\partial T}\right)_{N_k}\right)\]</div>
+<span class="eqno">(7)<a class="headerlink" href="#equation-eqn-clausius-clapeyron-intermediate" title="Permalink to this equation">#</a></span>\[\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{RT^2}{pv^\mathrm{b}}\left(s^\mathrm{b}+\sum_ix_i\left(\frac{\partial\mu_i}{\partial T}\right)_{N_k}\right)\]</div>
 </div>
 <p>Here the directional derivative <span class="math notranslate nohighlight">\(\frac{\mathrm{d}\mu_i}{\mathrm{d}T}\)</span> could be replaced with a partial derivative amongst the variables describing the adsorbed fluid. The partial derivative can then be replaced using a Maxwell relation based on the Helmholtz energy <span class="math notranslate nohighlight">\(F\)</span> as follows</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\left(\frac{\partial\mu_i}{\partial T}\right)_{N_k}=\left(\frac{\partial^2 F}{\partial T\partial N_i}\right)=-\left(\frac{\partial S}{\partial N_i}\right)_T\]</div>
+\[\left(\frac{\partial\mu_i}{\partial T}\right)_{N_k}=\left(\frac{\partial^2 F}{\partial T\partial N_i}\right)=-\left(\frac{\partial S}{\partial N_i}\right)_{T,N_j}\]</div>
 </div>
-<p>Using the Maxwell relation together with the compressibility factor of the bulk phase <span class="math notranslate nohighlight">\(Z^\mathrm{b}=\frac{pv^\mathrm{b}}{RT}\)</span> in eq. <a class="reference internal" href="#equation-eqn-clausius-clapeyron-intermediate">(4)</a> results in</p>
+<p>Using the Maxwell relation together with the compressibility factor of the bulk phase <span class="math notranslate nohighlight">\(Z^\mathrm{b}=\frac{pv^\mathrm{b}}{RT}\)</span> in eq. <a class="reference internal" href="#equation-eqn-clausius-clapeyron-intermediate">(7)</a> results in</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-\[\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{T}{Z^\mathrm{b}}\left(s^\mathrm{b}-\sum_ix_i\left(\frac{\partial S}{\partial N_i}\right)_T\right)\]</div>
+\[\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{T}{Z^\mathrm{b}}\left(s^\mathrm{b}-\sum_ix_i\left(\frac{\partial S}{\partial N_i}\right)_{T,N_j}\right)\]</div>
 </div>
 <p>Finally, using <span class="math notranslate nohighlight">\(h^\mathrm{b}=Ts^\mathrm{b}+\sum_ix_i\mu_i\)</span> and <span class="math notranslate nohighlight">\(\mathrm{d}U=T\mathrm{d}S+\sum_i\mu_i\mathrm{d}N_i\)</span> leads to</p>
 <div class="math-wrapper docutils container" id="equation-eqn-deriv-relation-hads">
 <div class="math notranslate nohighlight" id="equation-eqn-deriv-relation-hads">
-<span class="eqno">(5)<a class="headerlink" href="#equation-eqn-deriv-relation-hads" title="Permalink to this equation">#</a></span>\[\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{1}{Z^\mathrm{b}}\left(h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_T\right)=-\frac{\Delta h^\mathrm{ads}}{Z^\mathrm{b}}\]</div>
+<span class="eqno">(8)<a class="headerlink" href="#equation-eqn-deriv-relation-hads" title="Permalink to this equation">#</a></span>\[\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{1}{Z^\mathrm{b}}\left(h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_{T,N_j}\right)=-\frac{\Delta h^\mathrm{ads}}{Z^\mathrm{b}}\]</div>
 </div>
 <p>The relation is exact and valid for an arbitrary number of components in the fluid phase.</p>
 </section>
@@ -1128,19 +1128,19 @@
 <p>The derivative at constant number of particles is problematic and has to be replaced. This is done starting from the total differential of the number of particles</p>
 <div class="math-wrapper docutils container" id="equation-eqn-dn">
 <div class="math notranslate nohighlight" id="equation-eqn-dn">
-<span class="eqno">(6)<a class="headerlink" href="#equation-eqn-dn" title="Permalink to this equation">#</a></span>\[\mathrm{d}N_i=\sum_j\left(\frac{\partial N_i}{\partial\mu_j}\right)_T\mathrm{d}\mu_j+\left(\frac{\partial N_i}{\partial T}\right)_{\mu_k}\mathrm{d}T\]</div>
+<span class="eqno">(9)<a class="headerlink" href="#equation-eqn-dn" title="Permalink to this equation">#</a></span>\[\mathrm{d}N_i=\sum_j\left(\frac{\partial N_i}{\partial\mu_j}\right)_T\mathrm{d}\mu_j+\left(\frac{\partial N_i}{\partial T}\right)_{\mu_k}\mathrm{d}T\]</div>
 </div>
 <p>Calculating the derivative with respect to <span class="math notranslate nohighlight">\(T\)</span> at constant <span class="math notranslate nohighlight">\(N_i\)</span> leads to</p>
 <div class="math-wrapper docutils container" id="equation-eqn-dndt-1">
 <div class="math notranslate nohighlight" id="equation-eqn-dndt-1">
-<span class="eqno">(7)<a class="headerlink" href="#equation-eqn-dndt-1" title="Permalink to this equation">#</a></span>\[0=\sum_j\left(\frac{\partial N_i}{\partial\mu_j}\right)_T\left(\frac{\partial\mu_j}{\partial T}\right)_{N_k}+\left(\frac{\partial N_i}{\partial T}\right)_{\mu_k}\]</div>
+<span class="eqno">(10)<a class="headerlink" href="#equation-eqn-dndt-1" title="Permalink to this equation">#</a></span>\[0=\sum_j\left(\frac{\partial N_i}{\partial\mu_j}\right)_T\left(\frac{\partial\mu_j}{\partial T}\right)_{N_k}+\left(\frac{\partial N_i}{\partial T}\right)_{\mu_k}\]</div>
 </div>
-<p>from which the unknown derivative <span class="math notranslate nohighlight">\(\left(\frac{\partial\mu_i}{\partial T}\right)_{N_k}\)</span> can be calculated. In practice the expression has the disadvantage that <span class="math notranslate nohighlight">\(\left(\frac{\partial N_i}{\partial T}\right)_{\mu_k}\)</span> depends on the (sometimes unknown) thermal de Broglie wavelength which cancels later with <span class="math notranslate nohighlight">\(s_i^\mathrm{b}\)</span>. This can be remedied by first calculating the derivative of eq. <a class="reference internal" href="#equation-eqn-dn">(6)</a> with respect to <span class="math notranslate nohighlight">\(T\)</span> at constant (bulk) pressure and composition.</p>
+<p>from which the unknown derivative <span class="math notranslate nohighlight">\(\left(\frac{\partial\mu_i}{\partial T}\right)_{N_k}\)</span> can be calculated. In practice the expression has the disadvantage that <span class="math notranslate nohighlight">\(\left(\frac{\partial N_i}{\partial T}\right)_{\mu_k}\)</span> depends on the (sometimes unknown) thermal de Broglie wavelength which cancels later with <span class="math notranslate nohighlight">\(s_i^\mathrm{b}\)</span>. This can be remedied by first calculating the derivative of eq. <a class="reference internal" href="#equation-eqn-dn">(9)</a> with respect to <span class="math notranslate nohighlight">\(T\)</span> at constant (bulk) pressure and composition.</p>
 <div class="math-wrapper docutils container" id="equation-eqn-dndt-2">
 <div class="math notranslate nohighlight" id="equation-eqn-dndt-2">
-<span class="eqno">(8)<a class="headerlink" href="#equation-eqn-dndt-2" title="Permalink to this equation">#</a></span>\[\left(\frac{\partial N_i}{\partial T}\right)_{p,x_k}=\sum_j\left(\frac{\partial N_i}{\partial\mu_j}\right)_T\left(\frac{\partial\mu_j}{\partial T}\right)_{p,x_k}+\left(\frac{\partial N_i}{\partial T}\right)_{\mu_k}\]</div>
+<span class="eqno">(11)<a class="headerlink" href="#equation-eqn-dndt-2" title="Permalink to this equation">#</a></span>\[\left(\frac{\partial N_i}{\partial T}\right)_{p,x_k}=\sum_j\left(\frac{\partial N_i}{\partial\mu_j}\right)_T\left(\frac{\partial\mu_j}{\partial T}\right)_{p,x_k}+\left(\frac{\partial N_i}{\partial T}\right)_{\mu_k}\]</div>
 </div>
-<p>From classical bulk thermodynamics we know <span class="math notranslate nohighlight">\(\left(\frac{\partial\mu_j}{\partial T}\right)_{p,x_k}=-s_j^\mathrm{b}\)</span> and therefore, eq. <a class="reference internal" href="#equation-eqn-dndt-2">(8)</a> can be used in eq. <a class="reference internal" href="#equation-eqn-dndt-1">(7)</a> to give</p>
+<p>From classical bulk thermodynamics we know <span class="math notranslate nohighlight">\(\left(\frac{\partial\mu_j}{\partial T}\right)_{p,x_k}=-s_j^\mathrm{b}\)</span> and therefore, eq. <a class="reference internal" href="#equation-eqn-dndt-2">(11)</a> can be used in eq. <a class="reference internal" href="#equation-eqn-dndt-1">(10)</a> to give</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
 \[0=\sum_j\left(\frac{\partial N_i}{\partial\mu_j}\right)_T\left(s_j^\mathrm{b}+\left(\frac{\partial\mu_j}{\partial T}\right)_{N_k}\right)+\left(\frac{\partial N_i}{\partial T}\right)_{p,x_k}\]</div>
