@@ -5,21 +5,21 @@ The energy balance in differential form for a simple adsorption process can be w
 
 $$\mathrm{d}U=h^\mathrm{in}\delta n^\mathrm{in}-h^\mathrm{b}\delta n^\mathrm{out}+\delta Q$$ (eqn:energy_balance)
 
-Here the balance is chosen to only include the fluid in the porous medium. The molar enthalpy $h^\mathrm{b}$ of the fluid that leaves the adsorber is at a state that is in equilibrium with the porous medium. In contrast, the incoming stream can be at any condition. Analogously, the component balance is
+Here the balance is chosen to only include the fluid in the porous medium. The molar enthalpy $h^\mathrm{b}$ of the (bulk) fluid that leaves the adsorber is at a state that is in equilibrium with the porous medium. In contrast, the incoming stream can be at any condition. Analogously, the component balance is
 
 $$\mathrm{d}N_i=x_i^\mathrm{in}\delta n^\mathrm{in}-x_i\delta n^\mathrm{out}$$ (eqn:mass_balance)
 
 The differential of the internal energy can be replaced with the total differential in its variables temperature $T$ and number of particles $N_i$. The volume of the adsorber is fixed and thus not considered as a variable.
 
-$$\mathrm{d}U=\left(\frac{\partial U}{\partial T}\right)_{N_k}\mathrm{d}T+\sum_i\left(\frac{\partial U}{\partial N_i}\right)_T\mathrm{d}N_i$$ (eqn:U_differential)
+$$\mathrm{d}U=\left(\frac{\partial U}{\partial T}\right)_{N_k}\mathrm{d}T+\sum_i\left(\frac{\partial U}{\partial N_i}\right)_{T,N_j}\mathrm{d}N_i$$ (eqn:U_differential)
 
 Eqs. {eq}`eqn:energy_balance`, {eq}`eqn:mass_balance` and {eq}`eqn:U_differential` can be combined into an expression for the heat of adsorption $\delta Q$
 
-$$\delta Q=\left(\frac{\partial U}{\partial T}\right)_{N_k}\mathrm{d}T-\left(h^\mathrm{in}-\sum_ix_i^\mathrm{in}\left(\frac{\partial U}{\partial N_i}\right)_T\right)\delta n^\mathrm{in}+\left(h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_T\right)\delta n^\mathrm{out}$$
+$$\delta Q=\left(\frac{\partial U}{\partial T}\right)_{N_k}\mathrm{d}T-\left(h^\mathrm{in}-\sum_ix_i^\mathrm{in}\left(\frac{\partial U}{\partial N_i}\right)_{T,N_j}\right)\delta n^\mathrm{in}+\left(h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_{T,N_j}\right)\delta n^\mathrm{out}$$
 
 The heat of adsorption can thus be split into a sensible part that depends on the change in temperature, and a latent part that depends on the change in loading. The expression can be simplified by using the definitions of the isochoric heat capacity $C_v=\left(\frac{\partial U}{\partial T}\right)_{N_k}$ and the **partial molar enthalpy of adsorption**
 
-$$\Delta h_i^\mathrm{ads}=h_i^\mathrm{b}-\left(\frac{\partial U}{\partial N_i}\right)_T$$
+$$\Delta h_i^\mathrm{ads}=h_i^\mathrm{b}-\left(\frac{\partial U}{\partial N_i}\right)_{T,N_j}$$
 
 yielding
 
@@ -31,7 +31,7 @@ $$\delta Q=C_v\mathrm{d}T-\sum_ix_i^\mathrm{in}\left(h_i^\mathrm{in}-h_i^\mathrm
 
 with the **enthalpy of adsorption**
 
-$$\Delta h^\mathrm{ads}=\sum_ix_i\Delta h_i^\mathrm{ads}=h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_T$$
+$$\Delta h^\mathrm{ads}=\sum_ix_i\Delta h_i^\mathrm{ads}=h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_{T,N_j}$$
 
 For **pure components** the balance equations simplify to
 
@@ -70,15 +70,15 @@ $$\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{RT^2}{pv^\mathrm{b}}\lef
 
 Here the directional derivative $\frac{\mathrm{d}\mu_i}{\mathrm{d}T}$ could be replaced with a partial derivative amongst the variables describing the adsorbed fluid. The partial derivative can then be replaced using a Maxwell relation based on the Helmholtz energy $F$ as follows
 
-$$\left(\frac{\partial\mu_i}{\partial T}\right)_{N_k}=\left(\frac{\partial^2 F}{\partial T\partial N_i}\right)=-\left(\frac{\partial S}{\partial N_i}\right)_T$$
+$$\left(\frac{\partial\mu_i}{\partial T}\right)_{N_k}=\left(\frac{\partial^2 F}{\partial T\partial N_i}\right)=-\left(\frac{\partial S}{\partial N_i}\right)_{T,N_j}$$
 
 Using the Maxwell relation together with the compressibility factor of the bulk phase $Z^\mathrm{b}=\frac{pv^\mathrm{b}}{RT}$ in eq. {eq}`eqn:clausius_clapeyron_intermediate` results in
 
-$$\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{T}{Z^\mathrm{b}}\left(s^\mathrm{b}-\sum_ix_i\left(\frac{\partial S}{\partial N_i}\right)_T\right)$$
+$$\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{T}{Z^\mathrm{b}}\left(s^\mathrm{b}-\sum_ix_i\left(\frac{\partial S}{\partial N_i}\right)_{T,N_j}\right)$$
 
 Finally, using $h^\mathrm{b}=Ts^\mathrm{b}+\sum_ix_i\mu_i$ and $\mathrm{d}U=T\mathrm{d}S+\sum_i\mu_i\mathrm{d}N_i$ leads to
 
-$$\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{1}{Z^\mathrm{b}}\left(h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_T\right)=-\frac{\Delta h^\mathrm{ads}}{Z^\mathrm{b}}$$ (eqn:deriv_relation_hads)
+$$\frac{\mathrm{d}\ln p}{\mathrm{d}\frac{1}{RT}}=-\frac{1}{Z^\mathrm{b}}\left(h^\mathrm{b}-\sum_ix_i\left(\frac{\partial U}{\partial N_i}\right)_{T,N_j}\right)=-\frac{\Delta h^\mathrm{ads}}{Z^\mathrm{b}}$$ (eqn:deriv_relation_hads)
 
 The relation is exact and valid for an arbitrary number of components in the fluid phase. 
 
