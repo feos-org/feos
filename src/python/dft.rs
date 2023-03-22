@@ -28,7 +28,7 @@ use feos_dft::python::*;
 use feos_dft::solvation::*;
 use feos_dft::*;
 use numpy::convert::ToPyArray;
-use numpy::{PyArray1, PyArray2, PyArray4};
+use numpy::{IntoPyArray, PyArray1, PyArray2, PyArray4};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
 #[cfg(feature = "estimator")]

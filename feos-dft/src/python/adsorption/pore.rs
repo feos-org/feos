@@ -224,6 +224,11 @@ macro_rules! impl_pore {
             fn get_pore_volume(&self) -> PyResult<PySINumber> {
                 Ok(self.0.pore_volume()?.into())
             }
+
+            fn external_potential_3d<'py>(&self, functional: &$py_func, temperature: PySINumber, py: Python<'py>) -> PyResult<&'py PyArray4<f64>> {
+                Ok(self.0.external_potential_3d::<$func>(&functional.0, temperature.into())?.into_pyarray(py))
+                // external_potential_3d<F>(&self, functional: &F, temperature: SINumber) 
+            } 
         }
 
         #[pymethods]

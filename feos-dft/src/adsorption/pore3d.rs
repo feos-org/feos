@@ -40,6 +40,37 @@ impl Pore3D {
             cutoff_radius,
         }
     }
+
+    pub fn external_potential_3d<F>(&self, functional: &F, temperature: SINumber) -> EosResult<Array4<f64>>
+    where
+        F: FluidParameters,
+    {
+        // generate grid
+        let x = Axis::new_cartesian(self.n_grid[0], self.system_size[0], None)?;
+        let y = Axis::new_cartesian(self.n_grid[1], self.system_size[1], None)?;
+        let z = Axis::new_cartesian(self.n_grid[2], self.system_size[2], None)?;
+
+        // move center of geometry of solute to box center
+        let coordinates = Array2::from_shape_fn(self.coordinates.raw_dim(), |(i, j)| {
+            (self.coordinates.get((i, j)))
+                .to_reduced(SIUnit::reference_length())
+                .unwrap()
+        });
+        let t = temperature
+            .to_reduced(SIUnit::reference_temperature())?;
+
+        external_potential_3d(
+            functional,
+            [&x, &y, &z],
+            self.system_size,
+            coordinates,
+            &self.sigma_ss,
+            &self.epsilon_k_ss,
+            self.cutoff_radius,
+            self.potential_cutoff,
+            t,
+        )
+    }
 }
 
 /// Density profile and properties of a 3D confined system.
