@@ -151,13 +151,23 @@ impl FromSegments<f64> for PcSaftRecord {
 impl FromSegments<usize> for PcSaftRecord {
     fn from_segments(segments: &[(Self, usize)]) -> Result<Self, ParameterError> {
         // We do not allow more than a single segment for q, mu, kappa_ab, epsilon_k_ab
+        let polar_segments: usize = segments
+            .iter()
+            .filter_map(|(s, n)| {
+                if s.q.is_some() || s.mu.is_some() || s.association_record.is_some() {
+                    Some(n)
+                } else {
+                    None
+                }
+            })
+            .sum();
         let quadpole_segments: usize = segments.iter().filter_map(|(s, n)| s.q.map(|_| n)).sum();
         let dipole_segments: usize = segments.iter().filter_map(|(s, n)| s.mu.map(|_| n)).sum();
         let assoc_segments: usize = segments
             .iter()
             .filter_map(|(s, n)| s.association_record.map(|_| n))
             .sum();
-        if quadpole_segments + dipole_segments + assoc_segments > 1 {
+        if polar_segments > 1 {
             return Err(ParameterError::IncompatibleParameters(format!(
                 "Too many polar/associating segments (dipolar: {dipole_segments}, quadrupolar {quadpole_segments}, associating: {assoc_segments})."
             )));
