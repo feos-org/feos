@@ -6,4 +6,7 @@ It is currently still under construction. You can help by [contributing](https:/
 ```{eval-rst}
 .. toctree::
    :maxdepth: 1
+   
+   hard_spheres
+   association
 ```

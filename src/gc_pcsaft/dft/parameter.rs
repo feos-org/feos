@@ -80,7 +80,13 @@ impl ParameterHetero for GcPcSaftFunctionalParameters {
                 sigma.push(segment.model_record.sigma);
                 epsilon_k.push(segment.model_record.epsilon_k);
 
-                association_records.push(segment.model_record.association_record);
+                association_records.push(
+                    segment
+                        .model_record
+                        .association_record
+                        .into_iter()
+                        .collect(),
+                );
 
                 psi_dft.push(segment.model_record.psi_dft.unwrap_or(PSI_GC_DFT));
 

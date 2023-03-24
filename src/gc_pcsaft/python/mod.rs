@@ -67,7 +67,7 @@ impl PyGcPcSaftRecord {
 
     #[getter]
     fn get_association_record(&self) -> Option<PyAssociationRecord> {
-        self.0.association_record.clone().map(PyAssociationRecord)
+        self.0.association_record.map(PyAssociationRecord)
     }
 
     fn __repr__(&self) -> PyResult<String> {

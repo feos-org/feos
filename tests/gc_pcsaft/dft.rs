@@ -120,13 +120,13 @@ fn test_bulk_association() -> Result<(), Box<dyn Error>> {
         segment_records.clone(),
         None,
     )?);
-    let eos = Arc::new(GcPcSaft::new(eos_parameters.clone()));
+    let eos = Arc::new(GcPcSaft::new(eos_parameters));
     let func_parameters = Arc::new(GcPcSaftFunctionalParameters::from_segments(
         vec![ethylene_glycol],
         segment_records,
         None,
     )?);
-    let func = Arc::new(GcPcSaftFunctional::new(func_parameters.clone()));
+    let func = Arc::new(GcPcSaftFunctional::new(func_parameters));
 
     let t = 200.0 * KELVIN;
     let v = 0.002 * METER.powi(3);
@@ -135,35 +135,35 @@ fn test_bulk_association() -> Result<(), Box<dyn Error>> {
     let state_func = State::new_nvt(&func, t, v, &n)?;
     let p_eos = state_eos.pressure_contributions();
     let p_func = state_func.pressure_contributions();
-    println!(
-        "Equation of state:
-        \tcomps:        {}
-        \tkappa_ab:     {}
-        \tepsilon_k_ab: {}
-        \tna:           {}
-        \tnb:           {}",
-        eos_parameters.association.assoc_comp,
-        eos_parameters.association.kappa_ab,
-        eos_parameters.association.epsilon_k_ab,
-        eos_parameters.association.na,
-        eos_parameters.association.nb,
-    );
+    // println!(
+    //     "Equation of state:
+    //     \tcomps:        {}
+    //     \tkappa_ab:     {}
+    //     \tepsilon_k_ab: {}
+    //     \tna:           {}
+    //     \tnb:           {}",
+    //     eos_parameters.association.assoc_comp,
+    //     eos_parameters.association.kappa_ab,
+    //     eos_parameters.association.epsilon_k_ab,
+    //     eos_parameters.association.na,
+    //     eos_parameters.association.nb,
+    // );
     for (s, x) in &p_eos {
         println!("{s:18}: {x:21.16}");
     }
-    println!(
-        "\nHelmholtz energy functional:
-        \tcomps:        {}
-        \tkappa_ab:     {}
-        \tepsilon_k_ab: {}
-        \tna:           {}
-        \tnb:           {}",
-        func_parameters.association.assoc_comp,
-        func_parameters.association.kappa_ab,
-        func_parameters.association.epsilon_k_ab,
-        func_parameters.association.na,
-        func_parameters.association.nb,
-    );
+    // println!(
+    //     "\nHelmholtz energy functional:
+    //     \tcomps:        {}
+    //     \tkappa_ab:     {}
+    //     \tepsilon_k_ab: {}
+    //     \tna:           {}
+    //     \tnb:           {}",
+    //     func_parameters.association.assoc_comp,
+    //     func_parameters.association.kappa_ab,
+    //     func_parameters.association.epsilon_k_ab,
+    //     func_parameters.association.na,
+    //     func_parameters.association.nb,
+    // );
     for (s, x) in &p_func {
         println!("{s:26}: {x:21.16}");
     }
