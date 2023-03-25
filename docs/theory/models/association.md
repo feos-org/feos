@@ -34,7 +34,7 @@ with the dirac delta function $\delta_{\alpha\beta}$. However, [Michelsen 2006](
 
 $$\hat{H}_{\alpha\beta}=-\frac{\delta_{\alpha\beta}}{X_\alpha}\left(1+\sum_\beta\rho_\beta X_\beta\Delta^{\alpha\beta}\right)-\rho_\beta\Delta^{\alpha\beta}$$
 
-instead. $X_\alpha$ can then be solved robustly using a standard undamped Newton algorithm. With the split in $AB$ and $CC$ association the two kinds different versions could be solved separately from each other. This is currently not implemented, because use cases are rare to nonexistent and the benefit is small.
+instead. $X_\alpha$ can then be solved robustly using a Newton algorithm with a check that ensures that the values of $X_\alpha$ remain positive. With the split in $AB$ and $CC$ association the two kinds different versions could be solved separately from each other. This is currently not implemented, because use cases are rare to nonexistent and the benefit is small.
 
 A drastic improvement in performance, however, can be achieved by solving eq. {eq}`eqn:x_assoc` analytically for simple cases. If there is only one $A$ and one $B$ site the corresponding fractions of non-bonded association sites can be calculated from
 

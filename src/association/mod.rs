@@ -8,7 +8,6 @@ use num_dual::*;
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::ops::SubAssign;
 use std::sync::Arc;
 
 #[cfg(feature = "dft")]
@@ -450,7 +449,15 @@ impl<P: HardSphereProperties> Association<P> {
         }
 
         // Newton step
-        x.sub_assign(&LU::new(h)?.solve(&g));
+        // avoid stepping to negative values for x (see Michelsen 2006)
+        let delta_x = LU::new(h)?.solve(&g);
+        Zip::from(x).and(&delta_x).for_each(|x, &delta_x| {
+            if delta_x.re() < x.re() * 0.8 {
+                *x -= delta_x
+            } else {
+                *x *= 0.2
+            }
+        });
 
         // check convergence
         Ok(norm(&g.map(D::re)) < tol)
