@@ -55,7 +55,7 @@ $$\Delta^{\alpha\beta}=\left(\frac{1}{1-\zeta_3}+\frac{\frac{3}{2}d_{ij}\zeta_2}
 
 with 
 
-$$d_{ij}=\frac{2d_id_j}{d_i+d_j},~~~~d_k=\sigma_k\left(1-0.12e^{\frac{-3\varepsilon_i}{k_\mathrm{B}T}}\right)$$
+$$d_{ij}=\frac{2d_id_j}{d_i+d_j},~~~~d_k=\sigma_k\left(1-0.12e^{\frac{-3\varepsilon_k}{k_\mathrm{B}T}}\right)$$
 
 and
 
