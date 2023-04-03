@@ -135,35 +135,9 @@ fn test_bulk_association() -> Result<(), Box<dyn Error>> {
     let state_func = State::new_nvt(&func, t, v, &n)?;
     let p_eos = state_eos.pressure_contributions();
     let p_func = state_func.pressure_contributions();
-    // println!(
-    //     "Equation of state:
-    //     \tcomps:        {}
-    //     \tkappa_ab:     {}
-    //     \tepsilon_k_ab: {}
-    //     \tna:           {}
-    //     \tnb:           {}",
-    //     eos_parameters.association.assoc_comp,
-    //     eos_parameters.association.kappa_ab,
-    //     eos_parameters.association.epsilon_k_ab,
-    //     eos_parameters.association.na,
-    //     eos_parameters.association.nb,
-    // );
     for (s, x) in &p_eos {
         println!("{s:18}: {x:21.16}");
     }
-    // println!(
-    //     "\nHelmholtz energy functional:
-    //     \tcomps:        {}
-    //     \tkappa_ab:     {}
-    //     \tepsilon_k_ab: {}
-    //     \tna:           {}
-    //     \tnb:           {}",
-    //     func_parameters.association.assoc_comp,
-    //     func_parameters.association.kappa_ab,
-    //     func_parameters.association.epsilon_k_ab,
-    //     func_parameters.association.na,
-    //     func_parameters.association.nb,
-    // );
     for (s, x) in &p_func {
         println!("{s:26}: {x:21.16}");
     }

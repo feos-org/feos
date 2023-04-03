@@ -7,7 +7,6 @@ use feos_core::parameter::{
 };
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
-use num_traits::Zero;
 use quantity::si::{JOULE, KB, KELVIN};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -514,33 +513,6 @@ impl PcSaftParameters {
         }
 
         output
-    }
-}
-
-impl std::fmt::Display for PcSaftParameters {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PcSaftParameters(")?;
-        write!(f, "\n\tmolarweight={}", self.molarweight)?;
-        write!(f, "\n\tm={}", self.m)?;
-        write!(f, "\n\tsigma={}", self.sigma)?;
-        write!(f, "\n\tepsilon_k={}", self.epsilon_k)?;
-        if !self.dipole_comp.is_empty() {
-            write!(f, "\n\tmu={}", self.mu)?;
-        }
-        if !self.quadpole_comp.is_empty() {
-            write!(f, "\n\tq={}", self.q)?;
-        }
-        // if !self.association.is_empty() {
-        //     write!(f, "\n\tassociating={}", self.association.assoc_comp)?;
-        //     write!(f, "\n\tkappa_ab={}", self.association.kappa_ab)?;
-        //     write!(f, "\n\tepsilon_k_ab={}", self.association.epsilon_k_ab)?;
-        //     write!(f, "\n\tna={}", self.association.na)?;
-        //     write!(f, "\n\tnb={}", self.association.nb)?;
-        // }
-        if !self.k_ij.iter().all(|k| k.is_zero()) {
-            write!(f, "\n\tk_ij=\n{}", self.k_ij)?;
-        }
-        write!(f, "\n)")
     }
 }
 

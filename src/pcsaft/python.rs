@@ -179,10 +179,6 @@ impl PyPcSaftParameters {
     fn _repr_markdown_(&self) -> String {
         self.0.to_markdown()
     }
-
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(self.0.to_string())
-    }
 }
 
 #[pymodule]
