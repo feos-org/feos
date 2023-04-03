@@ -1,6 +1,6 @@
 [package]
 name = "feos"
-version = "0.4.2"
+version = "0.4.3"
 authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <prehner@ethz.ch>"]
 edition = "2018"
 readme = "README.md"
