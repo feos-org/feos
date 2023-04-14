@@ -1,6 +1,6 @@
 #[macro_export]
 macro_rules! impl_profile {
-    ($struct:ident, $arr:ident, $arr2:ident, $si_arr:ident, $si_arr2:ident, $py_arr2:ident, [$([$ind:expr, $ax:ident]),+]) => {
+    ($struct:ident, $arr:ident, $arr2:ident, $si_arr:ident, $si_arr2:ident, $py_arr2:ident, [$([$ind:expr, $ax:ident]),+]$(, $si_arr3:ident)?) => {
         #[pymethods]
         impl $struct {
             /// Calculate the residual for the given profile.
@@ -178,6 +178,37 @@ macro_rules! impl_profile {
                     self.0.profile.grand_potential_density()?,
                 ))
             }
+            $(
+                #[getter]
+                fn get_drho_dmu(&self) -> PyResult<$si_arr3> {
+                    Ok(($si_arr3::from(self.0.profile.drho_dmu()?)))
+                }
+            )?
+
+            #[getter]
+            fn get_dn_dmu(&self) -> PyResult<PySIArray2> {
+                Ok((PySIArray2::from(self.0.profile.dn_dmu()?)))
+            }
+
+            #[getter]
+            fn get_drho_dp(&self) -> PyResult<$si_arr2> {
+                Ok(($si_arr2::from(self.0.profile.drho_dp()?)))
+            }
+
+            #[getter]
+            fn get_dn_dp(&self) -> PyResult<PySIArray1> {
+                Ok((PySIArray1::from(self.0.profile.dn_dp()?)))
+            }
+
+            #[getter]
+            fn get_drho_dt(&self) -> PyResult<$si_arr2> {
+                Ok(($si_arr2::from(self.0.profile.drho_dt()?)))
+            }
+
+            #[getter]
+            fn get_dn_dt(&self) -> PyResult<PySIArray1> {
+                Ok((PySIArray1::from(self.0.profile.dn_dt()?)))
+            }
         }
     };
 }
@@ -192,7 +223,8 @@ macro_rules! impl_1d_profile {
             PySIArray1,
             PySIArray2,
             PyArray2,
-            [$([0, $ax]),+]
+            [$([0, $ax]),+],
+            PySIArray3
         );
     };
 }

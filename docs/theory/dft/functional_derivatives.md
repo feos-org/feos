@@ -25,7 +25,7 @@ F_{\rho_\alpha}(r)&=\int\sum_\gamma f_{n_\gamma}(r')\frac{\delta n_\gamma(r')}{\
 &=\sum_\gamma\int f_{n_\gamma}(r')\omega_\gamma^\alpha(r'-r)\mathrm{d}r
 \end{align}$$
 
-At this point the parity of the weight functions has to be taken into account. By construction scalar and spherically symmetric weight functions (the standard case) are even functions, i.e., $\omega(-r)=\omega(r)$. In contrast, vector valued weight functions, as they appear in fundamental measure theory, have odd parity, i.e., $\omega(-r)=-\omega(r)$. Therefore, the sum over the weight functions needs to be split into two contributions, as
+At this point the parity of the weight functions has to be taken into account. By construction scalar and spherically symmetric weight functions (the standard case) are even functions, i.e., $\omega(-r)=\omega(r)$. In contrast, vector valued weight functions, as they appear in fundamental measure theory, are odd functions, i.e., $\omega(-r)=-\omega(r)$. Therefore, the sum over the weight functions needs to be split into two contributions, as
 
 $$F_{\rho_\alpha}(r)=\sum_\gamma^\mathrm{scal}\int f_{n_\gamma}(r')\omega_\gamma^\alpha(r-r')\mathrm{d}r-\sum_\gamma^\mathrm{vec}\int f_{n_\gamma}(r')\omega_\gamma^\alpha(r-r')\mathrm{d}r\tag{2}$$
 

@@ -248,6 +248,16 @@ macro_rules! impl_adsorption_isotherm {
             fn get_grand_potential(&mut self) -> PySIArray1 {
                 self.0.grand_potential().into()
             }
+
+            #[getter]
+            fn get_partial_molar_enthalpy_of_adsorption(&self) -> PySIArray2 {
+                self.0.partial_molar_enthalpy_of_adsorption().into()
+            }
+
+            #[getter]
+            fn get_enthalpy_of_adsorption(&self) -> PySIArray1 {
+                self.0.enthalpy_of_adsorption().into()
+            }
         }
     };
 }

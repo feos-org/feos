@@ -1,17 +1,17 @@
 # Euler-Lagrange equation
-The fundamental expression in classical density functional theory is the relation between the grand potential $\Omega$ and the intrinsic Helmholtz energy $F$.
+The fundamental expression in classical density functional theory is the relation between the grand potential functional $\Omega$ and the intrinsic Helmholtz energy functional $F$.
 
 $$\Omega(T,\mu,[\rho(r)])=F(T,[\rho(r)])-\sum_i\int\rho_i(r)\left(\mu_i-V_i^\mathrm{ext}(r)\right)\mathrm{d}r$$
 
-What makes this expression so appealing is that the intrinsic Helmholtz energy only depends on the temperature $T$ and the density profiles $\rho_i(r)$ of the system and not on the external potential $V_i^\mathrm{ext}(r)$.
+What makes this expression so appealing is that the intrinsic Helmholtz energy functional only depends on the temperature $T$ and the density profiles $\rho_i(r)$ of the system and not on the external potentials $V_i^\mathrm{ext}(r)$.
 
-For a given temperature $T$, chemical potentials $\mu$ and external potentials $V^\mathrm{ext}(r)$ the grand potential reaches a minimum at equilibrium. Mathematically this condition can be written as
+For a given temperature $T$, chemical potentials $\mu_i$ and external potentials $V_i^\mathrm{ext}(r)$ the grand potential reaches a minimum at equilibrium. Mathematically this condition can be written as
 
 $$\left.\frac{\delta\Omega}{\delta\rho_i(r)}\right|_{T,\mu}=F_{\rho_i}(r)-\mu_i+V_i^{\mathrm{ext}}(r)=0$$ (eqn:euler_lagrange_mu)
 
-where $F_{\rho_i}(r)=\left.\frac{\delta F}{\delta\rho_i(r)}\right|_T$ is short for the functional derivative of the intrinsic Helmholtz energy. In this context, eq. (1) is commonly referred to as the Euler-Lagrange equation, an implicit nonlinear integral equation which needs to be solved for the density profiles of the system.
+where $F_{\rho_i}(r)=\left.\frac{\delta F}{\delta\rho_i(r)}\right|_T$ is short for the functional derivative of the intrinsic Helmholtz energy. In this context, eq. (1) is commonly referred to as the Euler-Lagrange equation, an implicit nonlinear integral equation which needs to be solved for the equilibrium density profiles of the system.
 
-For a homogeneous (bulk) system, $V^\mathrm{ext}=0$ and we get
+For a homogeneous (bulk) system, $V_i^\mathrm{ext}=0$ and we get
 
 $$F_{\rho_i}^\mathrm{b}-\mu_i=0$$ (eqn:euler_lagrange_bulk)
 
@@ -50,8 +50,8 @@ For chain molecules that do not resolve individual segments (essentially the PC-
 
 $$\beta F^\mathrm{chain}=-\sum_i\int\rho_i(r)\left(m_i-1\right)\ln\left(\frac{y_{ii}\lambda_i(r)}{\rho_i(r)}\right)\mathrm{d}r$$
 
-Here, $m_i$ is the number of segments (i.e., the PC-SAFT chain length parameter), $y_{ii}$ the cavity correlation function at contact in the reference fluid, and $\lambda_i$ a weighted density.
-The presence of $\rho(r)$ in the logarithm poses numerical problems. Therefore, it is convenient to rearrange the expression as
+Where $m_i$ is the number of segments (i.e., the PC-SAFT chain length parameter), $y_{ii}$ is the cavity correlation function at contact in the reference fluid, and $\lambda_i$ is a weighted density.
+The presence of $\rho_i(r)$ in the logarithm poses numerical problems. Therefore, it is convenient to rearrange the expression as
 
 $$\begin{align}
 \beta F^\mathrm{chain}=&\sum_i\int\rho_i(r)\left(m_i-1\right)\left(\ln\left(\rho_i(r)\Lambda_i^3\right)-1\right)\mathrm{d}r\\

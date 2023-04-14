@@ -444,4 +444,39 @@ where
             }
         })
     }
+
+    pub fn partial_molar_enthalpy_of_adsorption(&self) -> SIArray2 {
+        let h_ads: Vec<_> = self
+            .profiles
+            .iter()
+            .map(|p| {
+                match p
+                    .as_ref()
+                    .ok()
+                    .and_then(|p| p.partial_molar_enthalpy_of_adsorption().ok())
+                {
+                    Some(p) => p,
+                    None => {
+                        f64::NAN * Array1::ones(self.components) * SIUnit::reference_molar_energy()
+                    }
+                }
+            })
+            .collect();
+        SIArray2::from_shape_fn((self.components, self.profiles.len()), |(j, i)| {
+            h_ads[i].get(j)
+        })
+    }
+
+    pub fn enthalpy_of_adsorption(&self) -> SIArray1 {
+        SIArray1::from_shape_fn(self.profiles.len(), |i| {
+            match self.profiles[i]
+                .as_ref()
+                .ok()
+                .and_then(|p| p.enthalpy_of_adsorption().ok())
+            {
+                Some(p) => p,
+                None => f64::NAN * SIUnit::reference_molar_energy(),
+            }
+        })
+    }
 }
