@@ -77,7 +77,7 @@ impl fmt::Display for AssociationRecord {
             write!(f, ", na={}", self.na)?;
         }
         if self.nb > 0.0 {
-            write!(f, ", nb={})", self.nb)?;
+            write!(f, ", nb={}", self.nb)?;
         }
         if self.nc > 0.0 {
             write!(f, ", nc={}", self.nc)?;

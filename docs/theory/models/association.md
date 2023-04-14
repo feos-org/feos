@@ -30,7 +30,7 @@ The analytic Hessian is
 
 $$H_{\alpha\beta}=-\frac{\delta_{\alpha\beta}}{X_\alpha^2}-\rho_\beta\Delta^{\alpha\beta}$$
 
-with the dirac delta function $\delta_{\alpha\beta}$. However, [Michelsen 2006](https://pubs.acs.org/doi/full/10.1021/ie060029x) shows that it is beneficial to use
+with the Kronecker delta $\delta_{\alpha\beta}$. However, [Michelsen 2006](https://pubs.acs.org/doi/full/10.1021/ie060029x) shows that it is beneficial to use
 
 $$\hat{H}_{\alpha\beta}=-\frac{\delta_{\alpha\beta}}{X_\alpha}\left(1+\sum_\beta\rho_\beta X_\beta\Delta^{\alpha\beta}\right)-\rho_\beta\Delta^{\alpha\beta}$$
 
