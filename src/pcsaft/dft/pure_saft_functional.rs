@@ -18,16 +18,18 @@ const PI36M1: f64 = 1.0 / (36.0 * PI);
 const N3_CUTOFF: f64 = 1e-5;
 const N0_CUTOFF: f64 = 1e-9;
 
-#[derive(Clone)]
 pub struct PureFMTAssocFunctional {
     parameters: Arc<PcSaftParameters>,
+    association: Association<PcSaftParameters>,
     version: FMTVersion,
 }
 
 impl PureFMTAssocFunctional {
     pub fn new(parameters: Arc<PcSaftParameters>, version: FMTVersion) -> Self {
+        let association = Association::new(&parameters, &parameters.association, 50, 1e-10);
         Self {
             parameters,
+            association,
             version,
         }
     }
@@ -113,33 +115,22 @@ impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for PureFMTA
 
         // association
         let a = &p.association;
-        if a.assoc_comp.len() == 1 {
+        if !a.is_empty() {
             let mut xi = -(&n2v * &n2v).sum_axis(Axis(0)) / (&n2 * &n2) + 1.0;
             xi.iter_mut().zip(&n2).for_each(|(xi, &n2)| {
                 if n2.re() < N0_CUTOFF * 4.0 * PI * p.m[0] * r.re().powi(2) {
                     *xi = N::one();
                 }
             });
+            let rho0 = (&n0 / p.m[0] * &xi).insert_axis(Axis(0));
 
-            let k = &n2 * &n3m1rec * r;
-            let deltarho = (((&k / 18.0 + 0.5) * &k * &xi + 1.0) * n3m1rec)
-                * ((temperature.recip() * a.epsilon_k_aibj[(0, 0)]).exp_m1()
-                    * a.sigma3_kappa_aibj[(0, 0)])
-                * (&n0 / p.m[0] * &xi);
-
-            let f = |x: N| x.ln() - x * 0.5 + 0.5;
-            phi = phi
-                + if a.nb[0] > 0.0 {
-                    let xa = deltarho.mapv(|d| {
-                        Association::<PcSaftParameters>::assoc_site_frac_ab(d, a.na[0], a.nb[0])
-                    });
-                    let xb = (xa.clone() - 1.0) * a.na[0] / a.nb[0] + 1.0;
-                    (n0 / p.m[0] * xi) * (xa.mapv(f) * a.na[0] + xb.mapv(f) * a.nb[0])
-                } else {
-                    let xa = deltarho
-                        .mapv(|d| Association::<PcSaftParameters>::assoc_site_frac_a(d, a.na[0]));
-                    n0 / p.m[0] * xi * (xa.mapv(f) * a.na[0])
-                };
+            phi += &(self.association.calculate_helmholtz_energy_density(
+                temperature,
+                &rho0,
+                &n2,
+                &n3m1rec,
+                &xi,
+            ))?;
         }
 
         Ok(phi)

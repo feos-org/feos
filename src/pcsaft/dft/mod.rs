@@ -76,7 +76,7 @@ impl PcSaftFunctional {
             contributions.push(Box::new(att));
 
             // Association
-            if !parameters.association.assoc_comp.is_empty() {
+            if !parameters.association.is_empty() {
                 let assoc = Association::new(
                     &parameters,
                     &parameters.association,

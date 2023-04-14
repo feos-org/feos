@@ -7,7 +7,6 @@ use feos_core::parameter::{
 };
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
-use num_traits::Zero;
 use quantity::si::{JOULE, KB, KELVIN};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -70,14 +69,23 @@ impl FromSegments<f64> for PcSaftRecord {
                     [
                         record.kappa_ab * n,
                         record.epsilon_k_ab * n,
-                        record.na.unwrap_or(1.0) * n,
-                        record.nb.unwrap_or(1.0) * n,
+                        record.na * n,
+                        record.nb * n,
+                        record.nc * n,
                     ]
                 })
             })
-            .reduce(|a, b| [a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]])
-            .map(|[kappa_ab, epsilon_k_ab, na, nb]| {
-                AssociationRecord::new(kappa_ab, epsilon_k_ab, Some(na), Some(nb))
+            .reduce(|a, b| {
+                [
+                    a[0] + b[0],
+                    a[1] + b[1],
+                    a[2] + b[2],
+                    a[3] + b[3],
+                    a[4] + b[4],
+                ]
+            })
+            .map(|[kappa_ab, epsilon_k_ab, na, nb, nc]| {
+                AssociationRecord::new(kappa_ab, epsilon_k_ab, na, nb, nc)
             });
 
         // entropy scaling
@@ -151,13 +159,23 @@ impl FromSegments<f64> for PcSaftRecord {
 impl FromSegments<usize> for PcSaftRecord {
     fn from_segments(segments: &[(Self, usize)]) -> Result<Self, ParameterError> {
         // We do not allow more than a single segment for q, mu, kappa_ab, epsilon_k_ab
+        let polar_segments: usize = segments
+            .iter()
+            .filter_map(|(s, n)| {
+                if s.q.is_some() || s.mu.is_some() || s.association_record.is_some() {
+                    Some(n)
+                } else {
+                    None
+                }
+            })
+            .sum();
         let quadpole_segments: usize = segments.iter().filter_map(|(s, n)| s.q.map(|_| n)).sum();
         let dipole_segments: usize = segments.iter().filter_map(|(s, n)| s.mu.map(|_| n)).sum();
         let assoc_segments: usize = segments
             .iter()
             .filter_map(|(s, n)| s.association_record.map(|_| n))
             .sum();
-        if quadpole_segments + dipole_segments + assoc_segments > 1 {
+        if polar_segments > 1 {
             return Err(ParameterError::IncompatibleParameters(format!(
                 "Too many polar/associating segments (dipolar: {dipole_segments}, quadrupolar {quadpole_segments}, associating: {assoc_segments})."
             )));
@@ -209,14 +227,19 @@ impl PcSaftRecord {
         epsilon_k_ab: Option<f64>,
         na: Option<f64>,
         nb: Option<f64>,
+        nc: Option<f64>,
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
     ) -> PcSaftRecord {
         let association_record = match (kappa_ab, epsilon_k_ab) {
-            (Some(kappa_ab), Some(epsilon_k_ab)) => {
-                Some(AssociationRecord::new(kappa_ab, epsilon_k_ab, na, nb))
-            }
+            (Some(kappa_ab), Some(epsilon_k_ab)) => Some(AssociationRecord::new(
+                kappa_ab,
+                epsilon_k_ab,
+                na.unwrap_or(0.0),
+                nb.unwrap_or(0.0),
+                nc.unwrap_or(0.0),
+            )),
             (None, None) => None,
             _ => {
                 panic!("To model association, both kappa_ab and epsilon_k_ab need to be specified.")
@@ -328,7 +351,7 @@ impl Parameter for PcSaftParameters {
             epsilon_k[i] = r.epsilon_k;
             mu[i] = r.mu.unwrap_or(0.0);
             q[i] = r.q.unwrap_or(0.0);
-            association_records.push(r.association_record);
+            association_records.push(r.association_record.into_iter().collect());
             viscosity.push(r.viscosity);
             diffusion.push(r.diffusion);
             thermal_conductivity.push(r.thermal_conductivity);
@@ -460,7 +483,7 @@ impl PcSaftParameters {
         let o = &mut output;
         write!(
             o,
-            "|component|molarweight|$m$|$\\sigma$|$\\varepsilon$|$\\mu$|$Q$|$\\kappa_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|\n|-|-|-|-|-|-|-|-|-|-|-|"
+            "|component|molarweight|$m$|$\\sigma$|$\\varepsilon$|$\\mu$|$Q$|$\\kappa_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|$N_C$|\n|-|-|-|-|-|-|-|-|-|-|-|-|"
         )
         .unwrap();
         for (i, record) in self.pure_records.iter().enumerate() {
@@ -469,10 +492,10 @@ impl PcSaftParameters {
             let association = record
                 .model_record
                 .association_record
-                .unwrap_or_else(|| AssociationRecord::new(0.0, 0.0, None, None));
+                .unwrap_or_else(|| AssociationRecord::new(0.0, 0.0, 0.0, 0.0, 0.0));
             write!(
                 o,
-                "\n|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|",
+                "\n|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|",
                 component,
                 record.molarweight,
                 record.model_record.m,
@@ -482,40 +505,14 @@ impl PcSaftParameters {
                 record.model_record.q.unwrap_or(0.0),
                 association.kappa_ab,
                 association.epsilon_k_ab,
-                association.na.unwrap_or(1.0),
-                association.nb.unwrap_or(1.0)
+                association.na,
+                association.nb,
+                association.nc
             )
             .unwrap();
         }
 
         output
-    }
-}
-
-impl std::fmt::Display for PcSaftParameters {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PcSaftParameters(")?;
-        write!(f, "\n\tmolarweight={}", self.molarweight)?;
-        write!(f, "\n\tm={}", self.m)?;
-        write!(f, "\n\tsigma={}", self.sigma)?;
-        write!(f, "\n\tepsilon_k={}", self.epsilon_k)?;
-        if !self.dipole_comp.is_empty() {
-            write!(f, "\n\tmu={}", self.mu)?;
-        }
-        if !self.quadpole_comp.is_empty() {
-            write!(f, "\n\tq={}", self.q)?;
-        }
-        if !self.association.assoc_comp.is_empty() {
-            write!(f, "\n\tassociating={}", self.association.assoc_comp)?;
-            write!(f, "\n\tkappa_ab={}", self.association.kappa_ab)?;
-            write!(f, "\n\tepsilon_k_ab={}", self.association.epsilon_k_ab)?;
-            write!(f, "\n\tna={}", self.association.na)?;
-            write!(f, "\n\tnb={}", self.association.nb)?;
-        }
-        if !self.k_ij.iter().all(|k| k.is_zero()) {
-            write!(f, "\n\tk_ij=\n{}", self.k_ij)?;
-        }
-        write!(f, "\n)")
     }
 }
 
@@ -639,7 +636,9 @@ pub mod utils {
                     "sigma": 3.000683,
                     "epsilon_k": 366.5121,
                     "kappa_ab": 0.034867983,
-                    "epsilon_k_ab": 2500.6706
+                    "epsilon_k_ab": 2500.6706,
+                    "na": 1.0,
+                    "nb": 1.0
                 },
                 "molarweight": 18.0152
             }"#;

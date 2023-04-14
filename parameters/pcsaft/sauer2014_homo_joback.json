@@ -332,7 +332,9 @@
             "sigma": 3.2859,
             "epsilon_k": 488.66,
             "epsilon_k_ab": 2517.0,
-            "kappa_ab": 0.006825
+            "kappa_ab": 0.006825,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 17.00734,
         "ideal_gas_record": {
@@ -350,7 +352,9 @@
             "sigma": 3.6456,
             "epsilon_k": 467.59,
             "epsilon_k_ab": 1064.6,
-            "kappa_ab": 0.026662
+            "kappa_ab": 0.026662,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 16.02238,
         "ideal_gas_record": {

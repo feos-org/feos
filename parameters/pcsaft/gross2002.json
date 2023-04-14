@@ -13,7 +13,9 @@
             "sigma": 3.23,
             "epsilon_k": 188.9,
             "kappa_ab": 0.035176,
-            "epsilon_k_ab": 2899.5
+            "epsilon_k_ab": 2899.5,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 32.042
     },
@@ -31,7 +33,9 @@
             "sigma": 3.1771,
             "epsilon_k": 198.24,
             "kappa_ab": 0.032384,
-            "epsilon_k_ab": 2653.4
+            "epsilon_k_ab": 2653.4,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 46.069
     },
@@ -49,7 +53,9 @@
             "sigma": 3.2522,
             "epsilon_k": 233.4,
             "kappa_ab": 0.015268,
-            "epsilon_k_ab": 2276.8
+            "epsilon_k_ab": 2276.8,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 60.096
     },
@@ -67,7 +73,9 @@
             "sigma": 3.6139,
             "epsilon_k": 259.59,
             "kappa_ab": 0.006692,
-            "epsilon_k_ab": 2544.6
+            "epsilon_k_ab": 2544.6,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 74.123
     },
@@ -85,7 +93,9 @@
             "sigma": 3.4508,
             "epsilon_k": 247.28,
             "kappa_ab": 0.010319,
-            "epsilon_k_ab": 2252.1
+            "epsilon_k_ab": 2252.1,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 88.15
     },
@@ -103,7 +113,9 @@
             "sigma": 3.6735,
             "epsilon_k": 262.32,
             "kappa_ab": 0.005747,
-            "epsilon_k_ab": 2538.9
+            "epsilon_k_ab": 2538.9,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 102.177
     },
@@ -121,7 +133,9 @@
             "sigma": 3.545,
             "epsilon_k": 253.46,
             "kappa_ab": 0.001155,
-            "epsilon_k_ab": 2878.5
+            "epsilon_k_ab": 2878.5,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 116.203
     },
@@ -139,7 +153,9 @@
             "sigma": 3.7145,
             "epsilon_k": 262.74,
             "kappa_ab": 0.002197,
-            "epsilon_k_ab": 2754.8
+            "epsilon_k_ab": 2754.8,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 130.23
     },
@@ -157,7 +173,9 @@
             "sigma": 3.7292,
             "epsilon_k": 263.64,
             "kappa_ab": 0.001427,
-            "epsilon_k_ab": 2941.9
+            "epsilon_k_ab": 2941.9,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 144.257
     },
@@ -175,7 +193,9 @@
             "sigma": 3.2085,
             "epsilon_k": 208.42,
             "kappa_ab": 0.024675,
-            "epsilon_k_ab": 2253.9
+            "epsilon_k_ab": 2253.9,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 60.096
     },
@@ -193,7 +213,9 @@
             "sigma": 3.9053,
             "epsilon_k": 266.01,
             "kappa_ab": 0.001863,
-            "epsilon_k_ab": 2618.8
+            "epsilon_k_ab": 2618.8,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 88.15
     },
@@ -211,7 +233,9 @@
             "sigma": 3.0007,
             "epsilon_k": 366.51,
             "kappa_ab": 0.034868,
-            "epsilon_k_ab": 2500.7
+            "epsilon_k_ab": 2500.7,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 18.015
     },
@@ -229,7 +253,9 @@
             "sigma": 2.8906,
             "epsilon_k": 214.94,
             "kappa_ab": 0.095103,
-            "epsilon_k_ab": 684.3
+            "epsilon_k_ab": 684.3,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 31.06
     },
@@ -247,7 +273,9 @@
             "sigma": 3.1343,
             "epsilon_k": 221.53,
             "kappa_ab": 0.017275,
-            "epsilon_k_ab": 854.7
+            "epsilon_k_ab": 854.7,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 45.09
     },
@@ -265,7 +293,9 @@
             "sigma": 3.5347,
             "epsilon_k": 250.52,
             "kappa_ab": 0.022674,
-            "epsilon_k_ab": 1028.1
+            "epsilon_k_ab": 1028.1,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 59.11
     },
@@ -283,7 +313,9 @@
             "sigma": 3.4777,
             "epsilon_k": 231.8,
             "kappa_ab": 0.02134,
-            "epsilon_k_ab": 932.2
+            "epsilon_k_ab": 932.2,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 59.11
     },
@@ -301,7 +333,9 @@
             "sigma": 3.7021,
             "epsilon_k": 335.47,
             "kappa_ab": 0.074883,
-            "epsilon_k_ab": 1351.6
+            "epsilon_k_ab": 1351.6,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 93.13
     },
@@ -319,7 +353,9 @@
             "sigma": 3.8582,
             "epsilon_k": 211.59,
             "kappa_ab": 0.07555,
-            "epsilon_k_ab": 3044.4
+            "epsilon_k_ab": 3044.4,
+            "na": 1.0,
+            "nb": 1.0
         },
         "molarweight": 60.053
     }
