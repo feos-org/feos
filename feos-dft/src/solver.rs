@@ -150,6 +150,7 @@ impl DFTSolver {
     }
 }
 
+/// A log that stores the residuals and execution time of DFT solvers.
 #[derive(Clone)]
 pub struct DFTSolverLog {
     verbosity: Verbosity,
@@ -160,7 +161,7 @@ pub struct DFTSolverLog {
 }
 
 impl DFTSolverLog {
-    fn new(verbosity: Verbosity) -> Self {
+    pub(crate) fn new(verbosity: Verbosity) -> Self {
         log_iter!(
             verbosity,
             "solver                 | iter |    time    | residual "
@@ -474,7 +475,7 @@ where
         Ok((false, newton.max_iter))
     }
 
-    fn gmres<R>(
+    pub(crate) fn gmres<R>(
         rhs: R,
         r0: &Array<f64, D::Larger>,
         max_iter: usize,
@@ -547,7 +548,7 @@ where
         Ok(x)
     }
 
-    fn second_partial_derivatives(
+    pub(crate) fn second_partial_derivatives(
         &self,
         density: &Array<f64, D::Larger>,
     ) -> EosResult<Vec<Array<f64, <D::Larger as Dimension>::Larger>>> {
@@ -577,7 +578,7 @@ where
         Ok(second_partial_derivatives)
     }
 
-    fn delta_functional_derivative(
+    pub(crate) fn delta_functional_derivative(
         &self,
         delta_density: &Array<f64, D::Larger>,
         second_partial_derivatives: &[Array<f64, <D::Larger as Dimension>::Larger>],
@@ -607,7 +608,7 @@ where
             .functional_derivative(&delta_partial_derivatives)
     }
 
-    fn delta_bond_integrals(
+    pub(crate) fn delta_bond_integrals(
         &self,
         exponential: &Array<f64, D::Larger>,
         delta_functional_derivative: &Array<f64, D::Larger>,
@@ -770,7 +771,7 @@ impl DFTSolver {
                     newton.tol,
                 ),
             };
-            res += &format!("\n|{}|{}|{:e}|", solver, max_iter, tol);
+            res += &format!("\n|{solver}|{max_iter}|{tol:e}|");
         }
         res
     }

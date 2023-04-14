@@ -193,7 +193,7 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for PengRobinsonContribution {
         let v = state.volume;
         n * ((v / (v - b * n)).ln()
             - ak_mix / (b * SQRT_2 * 2.0 * state.temperature)
-                * ((v * (SQRT_2 - 1.0) + b * n) / (v * (SQRT_2 + 1.0) - b * n)).ln())
+                * ((v + b * n * (1.0 + SQRT_2)) / (v + b * n * (1.0 - SQRT_2))).ln())
     }
 }
 

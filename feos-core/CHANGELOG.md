@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.4.2] - 2023-04-03
+### Fixed
+- Fixed a wrong reference state in the implementation of the Peng-Robinson equation of state. [#151](https://github.com/feos-org/feos/pull/151)
+
+## [0.4.1] - 2023-03-20
+### Fixed
+- Fixed a bug that caused the bubble and dew point solvers to ignore the initial values for the opposing phase given by the user if no initial value for temperature/pressure was also given. [#138](https://github.com/feos-org/feos/pull/138)
+
 ## [0.4.0] - 2023-01-27
 ### Added
 - Added `PhaseDiagram::par_pure` that uses rayon to calculate phase diagrams in parallel. [#57](https://github.com/feos-org/feos/pull/57)

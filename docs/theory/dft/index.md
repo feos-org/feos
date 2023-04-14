@@ -8,6 +8,8 @@ This section explains the implementation of the core expressions from classical 
    euler_lagrange_equation
    functional_derivatives
    solver
+   derivatives
+   enthalpy_of_adsorption
    pdgt
 ```
 

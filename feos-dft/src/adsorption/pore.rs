@@ -9,7 +9,8 @@ use feos_core::{Contributions, EosResult, EosUnit, State, StateBuilder};
 use ndarray::prelude::*;
 use ndarray::Axis as Axis_nd;
 use ndarray::RemoveAxis;
-use quantity::si::{SIArray, SIArray2, SINumber, SIUnit};
+use num_dual::linalg::LU;
+use quantity::si::{SIArray, SIArray1, SIArray2, SINumber, SIUnit};
 use std::sync::Arc;
 
 const POTENTIAL_OFFSET: f64 = 2.0;
@@ -127,6 +128,20 @@ where
         self.grand_potential = None;
         self.interfacial_tension = None;
         self
+    }
+
+    pub fn partial_molar_enthalpy_of_adsorption(&self) -> EosResult<SIArray1> {
+        let a = self.profile.dn_dmu()?;
+        let a_unit = a.get((0, 0));
+        let b = -self.profile.temperature * self.profile.dn_dt()?;
+        let b_unit = b.get(0);
+
+        let h_ads = LU::new(a.to_reduced(a_unit)?)?.solve(&b.to_reduced(b_unit)?);
+        Ok(h_ads * b_unit / a_unit)
+    }
+
+    pub fn enthalpy_of_adsorption(&self) -> EosResult<SINumber> {
+        Ok((self.partial_molar_enthalpy_of_adsorption()? * &self.profile.bulk.molefracs).sum())
     }
 }
 

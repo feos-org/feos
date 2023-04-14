@@ -142,7 +142,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
                         tp_spec,
                         p,
                         molefracs_spec,
-                        Some(&x),
+                        molefracs_init.or(Some(&x)),
                         bubble,
                         options,
                     )
