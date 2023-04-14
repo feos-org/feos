@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Changed the internal implementation of the association contribution to accomodate more general association schemes. [#150](https://github.com/feos-org/feos/pull/150)
+- To comply with the new association implementation, the default values of `na` and `nb` are now `0` rather than `1`. Parameter files have been adapted accordingly. [#150](https://github.com/feos-org/feos/pull/150)
 
 ## [0.4.3] - 2023-03-20
 - Python only: Release the changes introduced in `feos-core` 0.4.2.

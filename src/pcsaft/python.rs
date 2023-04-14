@@ -36,6 +36,7 @@ impl PyPcSaftRecord {
         epsilon_k_ab: Option<f64>,
         na: Option<f64>,
         nb: Option<f64>,
+        nc: Option<f64>,
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
@@ -50,6 +51,7 @@ impl PyPcSaftRecord {
             epsilon_k_ab,
             na,
             nb,
+            nc,
             viscosity,
             diffusion,
             thermal_conductivity,
@@ -93,12 +95,17 @@ impl PyPcSaftRecord {
 
     #[getter]
     fn get_na(&self) -> Option<f64> {
-        self.0.association_record.and_then(|a| a.na)
+        self.0.association_record.map(|a| a.na)
     }
 
     #[getter]
     fn get_nb(&self) -> Option<f64> {
-        self.0.association_record.and_then(|a| a.nb)
+        self.0.association_record.map(|a| a.nb)
+    }
+
+    #[getter]
+    fn get_nc(&self) -> Option<f64> {
+        self.0.association_record.map(|a| a.nc)
     }
 
     #[getter]
@@ -171,10 +178,6 @@ impl PyPcSaftParameters {
 
     fn _repr_markdown_(&self) -> String {
         self.0.to_markdown()
-    }
-
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(self.0.to_string())
     }
 }
 

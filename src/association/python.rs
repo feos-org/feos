@@ -4,19 +4,16 @@ use feos_core::parameter::ParameterError;
 use pyo3::prelude::*;
 
 /// Pure component association parameters
-#[pyclass(
-    name = "AssociationRecord",
-    text_signature = "(kappa_ab, epsilon_k_ab, na=None, nb=None)"
-)]
+#[pyclass(name = "AssociationRecord")]
 #[derive(Clone)]
 pub struct PyAssociationRecord(pub AssociationRecord);
 
 #[pymethods]
 impl PyAssociationRecord {
-    #[pyo3(signature = (kappa_ab, epsilon_k_ab, na=None, nb=None))]
     #[new]
-    fn new(kappa_ab: f64, epsilon_k_ab: f64, na: Option<f64>, nb: Option<f64>) -> Self {
-        Self(AssociationRecord::new(kappa_ab, epsilon_k_ab, na, nb))
+    #[pyo3(signature = (kappa_ab, epsilon_k_ab, na=0.0, nb=0.0, nc=0.0))]
+    fn new(kappa_ab: f64, epsilon_k_ab: f64, na: f64, nb: f64, nc: f64) -> Self {
+        Self(AssociationRecord::new(kappa_ab, epsilon_k_ab, na, nb, nc))
     }
 
     #[getter]
@@ -30,13 +27,18 @@ impl PyAssociationRecord {
     }
 
     #[getter]
-    fn get_na(&self) -> Option<f64> {
+    fn get_na(&self) -> f64 {
         self.0.na
     }
 
     #[getter]
-    fn get_nb(&self) -> Option<f64> {
+    fn get_nb(&self) -> f64 {
         self.0.nb
+    }
+
+    #[getter]
+    fn get_nc(&self) -> f64 {
+        self.0.nc
     }
 
     fn __repr__(&self) -> PyResult<String> {
