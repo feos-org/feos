@@ -277,6 +277,8 @@
       "epsilon_k": 488.66,
       "epsilon_k_ab": 2517.0,
       "kappa_ab": 0.006825,
+      "na": 1.0,
+      "nb": 1.0,
       "viscosity": [
         -15.7583e-3,
         -2.5654e-1,
@@ -294,6 +296,8 @@
       "epsilon_k": 467.59,
       "epsilon_k_ab": 1064.6,
       "kappa_ab": 0.026662,
+      "na": 1.0,
+      "nb": 1.0,
       "viscosity": [
         -4.4048e-3,
         -0.6089e-1,

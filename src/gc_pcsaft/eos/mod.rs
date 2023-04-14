@@ -60,7 +60,7 @@ impl GcPcSaft {
         contributions.push(Box::new(Dispersion {
             parameters: parameters.clone(),
         }));
-        if !parameters.association.assoc_comp.is_empty() {
+        if !parameters.association.is_empty() {
             contributions.push(Box::new(Association::new(
                 &parameters,
                 &parameters.association,

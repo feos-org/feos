@@ -86,7 +86,7 @@ impl PcSaft {
                 variant: options.dq_variant,
             }));
         };
-        if !parameters.association.assoc_comp.is_empty() {
+        if !parameters.association.is_empty() {
             contributions.push(Box::new(Association::new(
                 &parameters,
                 &parameters.association,

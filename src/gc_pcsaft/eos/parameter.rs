@@ -140,10 +140,10 @@ impl ParameterHetero for GcPcSaftEosParameters {
 
                 let mut assoc = segment.model_record.association_record;
                 if let Some(mut assoc) = assoc.as_mut() {
-                    assoc.na = Some(assoc.na.unwrap_or(1.0) * count);
-                    assoc.nb = Some(assoc.nb.unwrap_or(1.0) * count);
+                    assoc.na *= count;
+                    assoc.nb *= count;
                 };
-                association_records.push(assoc);
+                association_records.push(assoc.into_iter().collect());
 
                 m_i += segment.model_record.m * count;
                 sigma_i += segment.model_record.m * segment.model_record.sigma.powi(3) * count;
@@ -287,11 +287,17 @@ impl HardSphereProperties for GcPcSaftEosParameters {
 
 impl GcPcSaftEosParameters {
     pub fn to_markdown(&self) -> String {
+        let gorup_dict: HashMap<&String, &GcPcSaftRecord> = self
+            .segment_records
+            .iter()
+            .map(|r| (&r.identifier, &r.model_record))
+            .collect();
+
         let mut output = String::new();
         let o = &mut output;
         write!(
             o,
-            "|component|molarweight|dipole moment|group|$m$|$\\sigma$|$\\varepsilon$|$\\kappa_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|\n|-|-|-|-|-|-|-|-|-|-|-|"
+            "|component|molarweight|dipole moment|group|$m$|$\\sigma$|$\\varepsilon$|$\\kappa_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|$N_C$|\n|-|-|-|-|-|-|-|-|-|-|-|-|"
         )
         .unwrap();
         for i in 0..self.m.len() {
@@ -305,37 +311,39 @@ impl GcPcSaftEosParameters {
                         .as_ref()
                         .unwrap_or(&format!("Component {}", self.component_index[i] + 1)),
                     self.molarweight[self.component_index[i]],
-                    if let Some(d) = self.dipole_comp.iter().position(|&d| d == i) {
+                    if let Some(d) = self
+                        .dipole_comp
+                        .iter()
+                        .position(|&d| d == self.component_index[i])
+                    {
                         format!("{}", self.mu[d])
                     } else {
                         "".into()
                     }
                 )
             };
-            let association =
-                if let Some(a) = self.association.assoc_comp.iter().position(|&a| a == i) {
-                    format!(
-                        "{}|{}|{}|{}",
-                        self.association.kappa_ab[a],
-                        self.association.epsilon_k_ab[a],
-                        self.association.na[a],
-                        self.association.nb[a]
-                    )
-                } else {
-                    "|||".to_string()
-                };
+            let record = gorup_dict[&self.identifiers[i]];
+            let association = if let Some(a) = record.association_record {
+                format!(
+                    "{}|{}|{}|{}|{}",
+                    a.kappa_ab, a.epsilon_k_ab, a.na, a.nb, a.nc
+                )
+            } else {
+                "||||".to_string()
+            };
             write!(
                 o,
                 "\n|{}|{}|{}|{}|{}|{}|",
                 component,
                 self.identifiers[i],
-                self.m[i],
-                self.sigma[i],
-                self.epsilon_k[i],
+                record.m,
+                record.sigma,
+                record.epsilon_k,
                 association
             )
             .unwrap();
         }
+
         write!(o, "\n\n|component|group 1|group 2|bonds|\n|-|-|-|-|").unwrap();
 
         let mut last_component = None;
@@ -426,7 +434,7 @@ pub mod test {
                 2.7702,
                 334.29,
                 None,
-                Some(AssociationRecord::new(0.009583, 2575.9, None, None)),
+                Some(AssociationRecord::new(0.009583, 2575.9, 1.0, 1.0, 0.0)),
                 None,
             ),
             None,
