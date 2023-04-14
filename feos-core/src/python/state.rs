@@ -912,7 +912,7 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.isenthalpic_compressibility())
             }
 
-            /// Return thermal_expansivity coefficient.
+            /// Return thermal expansivity coefficient.
             ///
             /// Returns
             /// -------
