@@ -903,6 +903,33 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.isothermal_compressibility())
             }
 
+            /// Return isothermal compressibility coefficient.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            fn isenthalpic_compressibility(&self) -> PySINumber {
+                PySINumber::from(self.0.isenthalpic_compressibility())
+            }
+
+            /// Return isothermal compressibility coefficient.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            fn thermal_expansivity(&self) -> PySINumber {
+                PySINumber::from(self.0.thermal_expansivity())
+            }
+
+            /// Return isothermal compressibility coefficient.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            fn grueneisen_parameter(&self) -> f64 {
+                self.0.grueneisen_parameter()
+            }
+
             /// Return structure factor.
             ///
             /// Returns

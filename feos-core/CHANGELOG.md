@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- Added the following properties to `State`: 
+  - `isenthalpic_compressibility` the isenthalpic compressibility
+  - `thermal_expansivity` the thermal expansivity
+  - `grueneisen_parameter` the grueneisen parameter
 
 ## [0.4.2] - 2023-04-03
 ### Fixed
