@@ -512,8 +512,7 @@ impl<E: EquationOfState> State<E> {
 
     /// Isenthalpic compressibility: $\kappa_H=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{H,N_i}$
     pub fn isenthalpic_compressibility(&self) -> SINumber {
-        self.isentropic_compressibility()
-            + self.isentropic_compressibility() * self.grueneisen_parameter()
+        self.isentropic_compressibility() * (1.0 + self.grueneisen_parameter())
     }
 
     /// Thermal expansivity: $\alpha_p=-\frac{1}{V}\left(\frac{\partial V}{\partial T}\right)_{p,N_i}$
