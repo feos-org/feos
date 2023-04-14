@@ -95,6 +95,10 @@ impl_parameter_from_segments!(GcPcSaftEosParameters, PyGcPcSaftEosParameters);
 
 #[pymethods]
 impl PyGcPcSaftEosParameters {
+    fn phi(&self, phi: Vec<f64>) -> PyResult<Self> {
+        Ok(Self(Arc::new((*self.0).clone().phi(&phi)?)))
+    }
+
     fn _repr_markdown_(&self) -> String {
         self.0.to_markdown()
     }
