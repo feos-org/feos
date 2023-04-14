@@ -903,7 +903,7 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.isothermal_compressibility())
             }
 
-            /// Return isothermal compressibility coefficient.
+            /// Return isenthalpic compressibility coefficient.
             ///
             /// Returns
             /// -------
@@ -912,7 +912,7 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.isenthalpic_compressibility())
             }
 
-            /// Return isothermal compressibility coefficient.
+            /// Return thermal_expansivity coefficient.
             ///
             /// Returns
             /// -------
@@ -921,7 +921,7 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.thermal_expansivity())
             }
 
-            /// Return isothermal compressibility coefficient.
+            /// Return Grueneisen parameter.
             ///
             /// Returns
             /// -------
