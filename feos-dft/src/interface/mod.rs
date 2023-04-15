@@ -218,6 +218,8 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         }
 
         // Calculate \Gamma_i^(j)
+        let (integration_weights, functional_determinant) =
+            self.profile.grid.integration_weights_unit();
         let gamma = SIArray2::from_shape_fn((s[0], s[0]), |(i, j)| {
             if i == j {
                 0.0 * SIUnit::reference_density() * SIUnit::reference_length()
@@ -227,7 +229,8 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
                         / (rho_l.get(j) - rho_v.get(j))
                         - (&self.profile.density.index_axis(Axis_nd(0), i) - rho_l.get(i))
                             / (rho_l.get(i) - rho_v.get(i)))
-                    .integrate(&self.profile.grid.integration_weights_unit())
+                    .integrate(&integration_weights)
+                    * functional_determinant
             }
         });
 

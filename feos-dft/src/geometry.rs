@@ -1,3 +1,4 @@
+use ang::Angle;
 use feos_core::{EosResult, EosUnit};
 use ndarray::Array1;
 use quantity::si::{SIArray1, SIArray2, SINumber, SIUnit};
@@ -8,9 +9,9 @@ use std::f64::consts::{FRAC_PI_3, PI};
 pub enum Grid {
     Cartesian1(Axis),
     Cartesian2(Axis, Axis),
-    Periodical2(Axis, Axis),
+    Periodical2(Axis, Axis, Angle),
     Cartesian3(Axis, Axis, Axis),
-    Periodical3(Axis, Axis, Axis),
+    Periodical3(Axis, Axis, Axis, [Angle; 3]),
     Spherical(Axis),
     Polar(Axis),
     Cylindrical { r: Axis, z: Axis },
@@ -28,8 +29,8 @@ impl Grid {
     pub fn axes(&self) -> Vec<&Axis> {
         match self {
             Self::Cartesian1(x) => vec![x],
-            Self::Cartesian2(x, y) | Self::Periodical2(x, y) => vec![x, y],
-            Self::Cartesian3(x, y, z) | Self::Periodical3(x, y, z) => vec![x, y, z],
+            Self::Cartesian2(x, y) | Self::Periodical2(x, y, _) => vec![x, y],
+            Self::Cartesian3(x, y, z) | Self::Periodical3(x, y, z, _) => vec![x, y, z],
             Self::Spherical(r) | Self::Polar(r) => vec![r],
             Self::Cylindrical { r, z } => vec![r, z],
         }
@@ -38,8 +39,8 @@ impl Grid {
     pub fn axes_mut(&mut self) -> Vec<&mut Axis> {
         match self {
             Self::Cartesian1(x) => vec![x],
-            Self::Cartesian2(x, y) | Self::Periodical2(x, y) => vec![x, y],
-            Self::Cartesian3(x, y, z) | Self::Periodical3(x, y, z) => vec![x, y, z],
+            Self::Cartesian2(x, y) | Self::Periodical2(x, y, _) => vec![x, y],
+            Self::Cartesian3(x, y, z) | Self::Periodical3(x, y, z, _) => vec![x, y, z],
             Self::Spherical(r) | Self::Polar(r) => vec![r],
             Self::Cylindrical { r, z } => vec![r, z],
         }
@@ -49,20 +50,49 @@ impl Grid {
         self.axes().iter().map(|ax| &ax.grid).collect()
     }
 
-    pub(crate) fn integration_weights(&self) -> Vec<&Array1<f64>> {
-        self.axes()
-            .iter()
-            .map(|ax| &ax.integration_weights)
-            .collect()
+    pub(crate) fn integration_weights(&self) -> (Vec<&Array1<f64>>, f64) {
+        (
+            self.axes()
+                .iter()
+                .map(|ax| &ax.integration_weights)
+                .collect(),
+            self.functional_determinant(),
+        )
     }
 
-    pub(crate) fn integration_weights_unit(&self) -> Vec<SIArray1> {
-        self.axes()
-            .iter()
-            .map(|ax| {
-                &ax.integration_weights * SIUnit::reference_length().powi(ax.geometry.dimension())
-            })
-            .collect()
+    pub(crate) fn integration_weights_unit(&self) -> (Vec<SIArray1>, f64) {
+        (
+            self.axes()
+                .iter()
+                .map(|ax| {
+                    &ax.integration_weights
+                        * SIUnit::reference_length().powi(ax.geometry.dimension())
+                })
+                .collect(),
+            self.functional_determinant(),
+        )
+    }
+
+    fn functional_determinant(&self) -> f64 {
+        match &self {
+            Self::Periodical2(_, _, alpha) => alpha.sin(),
+            Self::Periodical3(_, _, _, [alpha, beta, gamma]) => {
+                let xi = alpha.cos() - gamma.cos() * beta.cos() / gamma.sin();
+                gamma.sin() * (1.0 - beta.cos().powi(2) - xi * xi).sqrt()
+            }
+            _ => 1.0,
+        }
+    }
+
+    pub(crate) fn volume(&self) -> SINumber {
+        self.functional_determinant()
+            * self
+                .axes()
+                .iter()
+                .fold(None, |acc, &ax| {
+                    Some(acc.map_or(ax.volume(), |acc| acc * ax.volume()))
+                })
+                .unwrap()
     }
 }
 

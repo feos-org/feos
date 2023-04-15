@@ -1,6 +1,7 @@
 use super::{Convolver, FFTWeightFunctions};
 use crate::geometry::Axis;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo};
+use ang::Angle;
 use ndarray::Axis as Axis_nd;
 use ndarray::*;
 use num_dual::DualNum;
@@ -30,8 +31,45 @@ where
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
-    pub fn new(
+    pub fn new_2d(
         axes: &[&Axis],
+        angle: Angle,
+        weight_functions: &[WeightFunctionInfo<T>],
+        lanczos: Option<i32>,
+    ) -> Arc<dyn Convolver<T, D>> {
+        let f = |k: &mut Array<f64, D::Larger>| {
+            let k_y =
+                (&k.index_axis(Axis(0), 1) - &k.index_axis(Axis(0), 0) * angle.cos()) / angle.sin();
+            k.index_axis_mut(Axis(0), 1).assign(&k_y);
+        };
+        Self::new(axes, f, weight_functions, lanczos)
+    }
+
+    pub fn new_3d(
+        axes: &[&Axis],
+        angles: [Angle; 3],
+        weight_functions: &[WeightFunctionInfo<T>],
+        lanczos: Option<i32>,
+    ) -> Arc<dyn Convolver<T, D>> {
+        let f = |k: &mut Array<f64, D::Larger>| {
+            let [alpha, beta, gamma] = angles;
+            let [k_u, k_v, k_w] = [0, 1, 2].map(|i| k.index_axis(Axis(0), i));
+            let k_y = (&k_v - &k_u * gamma.cos()) / gamma.sin();
+            let xi = (alpha.cos() - gamma.cos() * beta.cos()) / gamma.sin();
+            let zeta = (1.0 - beta.cos().powi(2) - xi * xi).sqrt();
+            let k_z = ((gamma.cos() * xi / gamma.sin() - beta.cos()) * &k_u
+                - xi / gamma.sin() * &k_v
+                + &k_w)
+                / zeta;
+            k.index_axis_mut(Axis(0), 1).assign(&k_y);
+            k.index_axis_mut(Axis(0), 2).assign(&k_z);
+        };
+        Self::new(axes, f, weight_functions, lanczos)
+    }
+
+    pub fn new<F: Fn(&mut Array<f64, D::Larger>)>(
+        axes: &[&Axis],
+        non_orthogonal_correction: F,
         weight_functions: &[WeightFunctionInfo<T>],
         lanczos: Option<i32>,
     ) -> Arc<dyn Convolver<T, D>> {
@@ -59,11 +97,18 @@ where
         let mut dim = vec![k_vec.len()];
         k_vec.iter().for_each(|k_x| dim.push(k_x.len()));
         let mut k: Array<_, D::Larger> = Array::zeros(dim).into_dimensionality().unwrap();
-        let mut k_abs = Array::zeros(k.raw_dim().remove_axis(Axis_nd(0)));
         for (i, (mut k_i, k_x)) in k.outer_iter_mut().zip(k_vec.iter()).enumerate() {
             k_i.lanes_mut(Axis_nd(i))
                 .into_iter()
                 .for_each(|mut l| l.assign(k_x));
+        }
+
+        // Correction for non-orthogonal coordinate systems
+        non_orthogonal_correction(&mut k);
+
+        // Calculate the absolute value of the k vector
+        let mut k_abs = Array::zeros(k.raw_dim().remove_axis(Axis_nd(0)));
+        for k_i in k.outer_iter() {
             k_abs.add_assign(&k_i.mapv(|k| k.powi(2)));
         }
         k_abs.map_inplace(|k| *k = k.sqrt());

@@ -146,10 +146,12 @@ where
                 CurvilinearConvolver::new(r, &[z], weight_functions, lanczos)
             }
             Grid::Cartesian2(x, y) => Self::new(Some(x), &[y], weight_functions, lanczos),
-            Grid::Periodical2(x, y) => PeriodicConvolver::new(&[x, y], weight_functions, lanczos),
+            Grid::Periodical2(x, y, alpha) => {
+                PeriodicConvolver::new_2d(&[x, y], *alpha, weight_functions, lanczos)
+            }
             Grid::Cartesian3(x, y, z) => Self::new(Some(x), &[y, z], weight_functions, lanczos),
-            Grid::Periodical3(x, y, z) => {
-                PeriodicConvolver::new(&[x, y, z], weight_functions, lanczos)
+            Grid::Periodical3(x, y, z, angles) => {
+                PeriodicConvolver::new_3d(&[x, y, z], *angles, weight_functions, lanczos)
             }
         }
     }
