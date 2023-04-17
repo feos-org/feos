@@ -77,7 +77,7 @@ impl Grid {
         match &self {
             Self::Periodical2(_, _, alpha) => alpha.sin(),
             Self::Periodical3(_, _, _, [alpha, beta, gamma]) => {
-                let xi = alpha.cos() - gamma.cos() * beta.cos() / gamma.sin();
+                let xi = (alpha.cos() - gamma.cos() * beta.cos()) / gamma.sin();
                 gamma.sin() * (1.0 - beta.cos().powi(2) - xi * xi).sqrt()
             }
             _ => 1.0,
