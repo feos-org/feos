@@ -510,6 +510,25 @@ impl<E: EquationOfState> State<E> {
         -1.0 / (self.dp_dv(c) * self.volume)
     }
 
+    /// Isenthalpic compressibility: $\kappa_H=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{H,N_i}$
+    pub fn isenthalpic_compressibility(&self) -> SINumber {
+        self.isentropic_compressibility() * (1.0 + self.grueneisen_parameter())
+    }
+
+    /// Thermal expansivity: $\alpha_p=-\frac{1}{V}\left(\frac{\partial V}{\partial T}\right)_{p,N_i}$
+    pub fn thermal_expansivity(&self) -> SINumber {
+        let c = Contributions::Total;
+        -self.dp_dt(c) / self.dp_dv(c) / self.volume
+    }
+
+    /// Grueneisen parameter: $\phi=V\left(\frac{\partial p}{\partial U}\right)_{V,n_i}=\frac{v}{c_v}\left(\frac{\partial p}{\partial T}\right)_{v,n_i}=\frac{\rho}{T}\left(\frac{\partial T}{\partial \rho}\right)_{s, n_i}$
+    pub fn grueneisen_parameter(&self) -> f64 {
+        let c = Contributions::Total;
+        (self.volume / (self.total_moles * self.c_v(c)) * self.dp_dt(c))
+            .into_value()
+            .unwrap()
+    }
+
     /// Structure factor: $S(0)=k_BT\left(\frac{\partial\rho}{\partial p}\right)_{T,N_i}$
     pub fn structure_factor(&self) -> f64 {
         -(SIUnit::gas_constant() * self.temperature * self.density)
