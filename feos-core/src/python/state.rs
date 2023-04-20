@@ -925,7 +925,7 @@ macro_rules! impl_state {
             ///
             /// Returns
             /// -------
-            /// SINumber
+            /// float
             fn grueneisen_parameter(&self) -> f64 {
                 self.0.grueneisen_parameter()
             }
