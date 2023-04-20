@@ -521,7 +521,7 @@ impl<E: EquationOfState> State<E> {
         -self.dp_dt(c) / self.dp_dv(c) / self.volume
     }
 
-    /// Grueneisen parameter: $phi=V\left(\frac{\partial p}{\partial U}\right)_{V,N_i}=\frac{v}{c_v}\left(\frac{\partial p}{\partial T}\right)_{v,N_i}=\frac{\rho}{T}\frac{\partial T}{\partial \rho}_{s, N_i}$
+    /// Grueneisen parameter: $\phi=V\left(\frac{\partial p}{\partial U}\right)_{V,n_i}=\frac{v}{c_v}\left(\frac{\partial p}{\partial T}\right)_{v,n_i}=\frac{\rho}{T}\left(\frac{\partial T}{\partial \rho}\right)_{s, n_i}$
     pub fn grueneisen_parameter(&self) -> f64 {
         let c = Contributions::Total;
         (self.volume / (self.total_moles * self.c_v(c)) * self.dp_dt(c))

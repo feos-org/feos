@@ -92,6 +92,9 @@ The table below lists all properties that are available in $\text{FeO}_\text{s}$
 | Joule Thomson coefficient $\mu_\mathrm{JT}$ | $\left(\frac{\partial T}{\partial p}\right)_{H,n_i}$ | no |
 | Isentropic compressibility $\kappa_s$ | $-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{S,n_i}$ | no |
 | Isothermal compressibility $\kappa_T$ | $-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{T,n_i}$ | no |
+| Isenthalpic compressibility $\kappa_h$ | $-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{H,n_i}$ | no |
+| Thermal expansivity $\alpha_p$ | $-\frac{1}{V}\left(\frac{\partial V}{\partial T}\right)_{p,n_i}$ | no |
+| Grüneisen parameter $\phi$ | $V\left(\frac{\partial p}{\partial U}\right)_{V,n_i}=\frac{v}{c_v}\left(\frac{\partial p}{\partial T}\right)_{v,n_i}=\frac{\rho}{T}\left(\frac{\partial T}{\partial \rho}\right)_{s, n_i}$ | no |
 | (Static) structure factor $S(0)$ | $RT\left(\frac{\partial\rho}{\partial p}\right)_{T,n_i}$ | no |
 
 ## Additional properties for fluids with known molar weights
