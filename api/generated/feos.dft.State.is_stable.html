@@ -3,15 +3,15 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="feos.dft.State.isentropic_compressibility" href="feos.dft.State.isentropic_compressibility.html" /><link rel="prev" title="feos.dft.State.internal_energy" href="feos.dft.State.internal_energy.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="feos.dft.State.isenthalpic_compressibility" href="feos.dft.State.isenthalpic_compressibility.html" /><link rel="prev" title="feos.dft.State.internal_energy" href="feos.dft.State.internal_energy.html" />
 
-    <!-- Generated with Sphinx 5.3.0 and Furo 2023.03.27 -->
+    <!-- Generated with Sphinx 6.1.3 and Furo 2023.03.27 -->
         <title>feos.dft.State.is_stable - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=fad236701ea90a88636c2a8c73b44ae642ed2a53" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/tabs.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/design-style.4045f2051d55cab465a707391d5b2007.min.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     <link rel="stylesheet" type="text/css" href="../../_static/style.css" />
     
@@ -307,10 +307,12 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.enthalpy.html">feos.eos.State.enthalpy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.entropy.html">feos.eos.State.entropy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.gibbs_energy.html">feos.eos.State.gibbs_energy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.State.grueneisen_parameter.html">feos.eos.State.grueneisen_parameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.helmholtz_energy.html">feos.eos.State.helmholtz_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.helmholtz_energy_contributions.html">feos.eos.State.helmholtz_energy_contributions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.internal_energy.html">feos.eos.State.internal_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.is_stable.html">feos.eos.State.is_stable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.State.isenthalpic_compressibility.html">feos.eos.State.isenthalpic_compressibility</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.isentropic_compressibility.html">feos.eos.State.isentropic_compressibility</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.isothermal_compressibility.html">feos.eos.State.isothermal_compressibility</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.joule_thomson.html">feos.eos.State.joule_thomson</a></li>
@@ -344,6 +346,7 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.structure_factor.html">feos.eos.State.structure_factor</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.thermal_conductivity.html">feos.eos.State.thermal_conductivity</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.thermal_conductivity_reference.html">feos.eos.State.thermal_conductivity_reference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.State.thermal_expansivity.html">feos.eos.State.thermal_expansivity</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.thermodynamic_factor.html">feos.eos.State.thermodynamic_factor</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.total_mass.html">feos.eos.State.total_mass</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.total_molar_weight.html">feos.eos.State.total_molar_weight</a></li>
@@ -460,10 +463,12 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.enthalpy.html">feos.dft.State.enthalpy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.entropy.html">feos.dft.State.entropy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.gibbs_energy.html">feos.dft.State.gibbs_energy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.State.grueneisen_parameter.html">feos.dft.State.grueneisen_parameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.helmholtz_energy.html">feos.dft.State.helmholtz_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.helmholtz_energy_contributions.html">feos.dft.State.helmholtz_energy_contributions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.internal_energy.html">feos.dft.State.internal_energy</a></li>
 <li class="toctree-l4 current current-page"><a class="current reference internal" href="#">feos.dft.State.is_stable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.State.isenthalpic_compressibility.html">feos.dft.State.isenthalpic_compressibility</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.isentropic_compressibility.html">feos.dft.State.isentropic_compressibility</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.isothermal_compressibility.html">feos.dft.State.isothermal_compressibility</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.joule_thomson.html">feos.dft.State.joule_thomson</a></li>
@@ -492,6 +497,7 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.spinodal.html">feos.dft.State.spinodal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.stability_analysis.html">feos.dft.State.stability_analysis</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.structure_factor.html">feos.dft.State.structure_factor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.State.thermal_expansivity.html">feos.dft.State.thermal_expansivity</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.thermodynamic_factor.html">feos.dft.State.thermodynamic_factor</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.total_mass.html">feos.dft.State.total_mass</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.total_molar_weight.html">feos.dft.State.total_molar_weight</a></li>
@@ -1042,12 +1048,12 @@ is stable</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="feos.dft.State.isentropic_compressibility.html">
+          <a class="next-page" href="feos.dft.State.isenthalpic_compressibility.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">feos.dft.State.isentropic_compressibility</div>
+                <div class="title">feos.dft.State.isenthalpic_compressibility</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -1106,9 +1112,6 @@ is stable</p>
     </aside>
   </div>
 </div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script src="../../_static/sphinx_highlight.js"></script>
     <script src="../../_static/scripts/furo.js"></script>

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.State.isenthalpic\_compressibility
+===========================================
+
+.. currentmodule:: feos.eos
+
+.. automethod:: State.isenthalpic_compressibility

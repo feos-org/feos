@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.State.grueneisen\_parameter
+====================================
+
+.. currentmodule:: feos.eos
+
+.. automethod:: State.grueneisen_parameter

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.State.thermal\_expansivity
+===================================
+
+.. currentmodule:: feos.eos
+
+.. automethod:: State.thermal_expansivity

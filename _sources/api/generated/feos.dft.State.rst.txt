@@ -43,10 +43,12 @@ feos.dft.State
       ~State.enthalpy
       ~State.entropy
       ~State.gibbs_energy
+      ~State.grueneisen_parameter
       ~State.helmholtz_energy
       ~State.helmholtz_energy_contributions
       ~State.internal_energy
       ~State.is_stable
+      ~State.isenthalpic_compressibility
       ~State.isentropic_compressibility
       ~State.isothermal_compressibility
       ~State.joule_thomson
@@ -75,6 +77,7 @@ feos.dft.State
       ~State.spinodal
       ~State.stability_analysis
       ~State.structure_factor
+      ~State.thermal_expansivity
       ~State.thermodynamic_factor
       ~State.total_mass
       ~State.total_molar_weight
