@@ -1,6 +1,8 @@
 #![allow(clippy::excessive_precision)]
 #![allow(clippy::needless_range_loop)]
 
+use self::ufraction::UFraction;
+
 use super::parameters::UVParameters;
 use feos_core::{parameter::Parameter, EosError, EosResult, EquationOfState, HelmholtzEnergy};
 use ndarray::Array1;
@@ -26,7 +28,7 @@ use reference_perturbation_uvb3::ReferencePerturbationUVB3;
 use reference_perturbation_wca::ReferencePerturbationWCA;
 
 /// Type of perturbation.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum Perturbation {
     BarkerHenderson,
@@ -34,7 +36,7 @@ pub enum Perturbation {
 }
 
 /// Order of the highest virial coefficient included in the model.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum VirialOrder {
     Second,
@@ -47,6 +49,7 @@ pub struct UVTheoryOptions {
     pub max_eta: f64,
     pub perturbation: Perturbation,
     pub virial_order: VirialOrder,
+    pub ufraction: Option<Arc<dyn UFraction>>,
 }
 
 impl Default for UVTheoryOptions {
@@ -55,6 +58,7 @@ impl Default for UVTheoryOptions {
             max_eta: 0.5,
             perturbation: Perturbation::WeeksChandlerAndersen,
             virial_order: VirialOrder::Second,
+            ufraction: None,
         }
     }
 }
@@ -130,6 +134,7 @@ impl UVTheory {
                         }));
                         contributions.push(Box::new(AttractivePerturbationUVB3 {
                             parameters: parameters.clone(),
+                            ufraction: options.ufraction.clone(),
                         }));
                     }
                 }
@@ -211,6 +216,7 @@ mod test {
             max_eta: 0.5,
             perturbation: Perturbation::BarkerHenderson,
             virial_order: VirialOrder::Second,
+            ufraction: None,
         };
         let eos = Arc::new(UVTheory::with_options(Arc::new(parameters), options)?);
 
@@ -241,6 +247,7 @@ mod test {
             max_eta: 0.5,
             perturbation: Perturbation::WeeksChandlerAndersen,
             virial_order: VirialOrder::Third,
+            ufraction: None,
         };
         let eos = Arc::new(UVTheory::with_options(Arc::new(parameters), options)?);
 
@@ -295,6 +302,7 @@ mod test {
             max_eta: 0.5,
             perturbation: Perturbation::BarkerHenderson,
             virial_order: VirialOrder::Second,
+            ufraction: None,
         };
 
         let eos_bh = Arc::new(UVTheory::with_options(Arc::new(uv_parameters), options)?);

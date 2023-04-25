@@ -24,7 +24,7 @@ use crate::saftvrqmie::{FeynmanHibbsOrder, SaftVRQMie, SaftVRQMieOptions};
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::python::PyUVParameters;
 #[cfg(feature = "uvtheory")]
-use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, VirialOrder};
+use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, VirialOrder, UFraction};
 
 use feos_core::cubic::PengRobinson;
 use feos_core::python::cubic::PyPengRobinsonParameters;
@@ -216,19 +216,26 @@ impl PyEosVariant {
     #[cfg(feature = "uvtheory")]
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, max_eta=0.5, perturbation=Perturbation::WeeksChandlerAndersen, virial_order=VirialOrder::Second),    
-        text_signature = "(parameters, max_eta=0.5, perturbation, virial_order)"
+        signature = (parameters, max_eta=0.5, perturbation=Perturbation::WeeksChandlerAndersen, virial_order=VirialOrder::Second, ufraction=None),    
+        text_signature = "(parameters, max_eta=0.5, perturbation, virial_order, ufraction)"
     )]
     fn uvtheory(
         parameters: PyUVParameters,
         max_eta: f64,
         perturbation: Perturbation,
         virial_order: VirialOrder,
+        ufraction: Option<Py<PyAny>>
     ) -> PyResult<Self> {
+        let uf: Option<Arc<dyn UFraction>> = if let Some(ptr) = ufraction {
+            Some(Arc::new(crate::uvtheory::python::PyUFraction::new(ptr)))
+        } else {
+            None
+        };
         let options = UVTheoryOptions {
             max_eta,
             perturbation,
             virial_order,
+            ufraction: uf
         };
         Ok(Self(Arc::new(EosVariant::UVTheory(
             UVTheory::with_options(parameters.0, options)?,

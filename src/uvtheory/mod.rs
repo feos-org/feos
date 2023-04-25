@@ -65,7 +65,7 @@
 mod eos;
 mod parameters;
 
-pub use eos::{Perturbation, UVTheory, UVTheoryOptions, VirialOrder};
+pub use eos::{Perturbation, UVTheory, UVTheoryOptions, VirialOrder, ufraction::UFraction};
 pub use parameters::{UVBinaryRecord, UVParameters, UVRecord};
 
 #[cfg(feature = "python")]

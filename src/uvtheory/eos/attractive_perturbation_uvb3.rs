@@ -2,6 +2,7 @@ use super::attractive_perturbation_wca::one_fluid_properties;
 use super::hard_sphere_wca::{
     diameter_wca, dimensionless_diameter_q_wca, WCA_CONSTANTS_ETA_A_UVB3, WCA_CONSTANTS_ETA_B_UVB3,
 };
+use super::ufraction::{UFraction, UFractionDual};
 use crate::uvtheory::parameters::*;
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use ndarray::Array1;
@@ -79,9 +80,10 @@ const M_B3: [f64; 4] = [0.11853, 0.078556, -0.55039, 0.009163];
 
 const CU_WCA: [f64; 8] = [26.454, 1.8045, 1.7997, 161.96, 11.605, 12., 0.4, 2.0];
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct AttractivePerturbationUVB3 {
     pub parameters: Arc<UVParameters>,
+    pub ufraction: Option<Arc<dyn UFraction>>,
 }
 
 impl fmt::Display for AttractivePerturbationUVB3 {
@@ -90,7 +92,10 @@ impl fmt::Display for AttractivePerturbationUVB3 {
     }
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for AttractivePerturbationUVB3 {
+impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for AttractivePerturbationUVB3
+where
+    dyn UFraction: UFractionDual<D>,
+{
     /// Helmholtz energy for attractive perturbation
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
@@ -111,11 +116,16 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for AttractivePerturbationUVB3 {
 
         let delta_a1u = state.partial_density.sum() / t_x * i_wca * 2.0 * PI * weighted_sigma3_ij;
 
-        let u_fraction_wca = u_fraction_wca(
-            rep_x,
-            density * (x * &p.sigma.mapv(|s| s.powi(3))).sum(),
-            t_x,
-        );
+        let u_fraction_wca = if let Some(ufrac) = self.ufraction.as_ref() {
+            ufrac.ufraction(state)
+        } else {
+            u_fraction_wca(
+                rep_x,
+                density * (x * &p.sigma.mapv(|s| s.powi(3))).sum(),
+                t_x,
+            )
+        };
+        // println!("u-fraction: {}", u_fraction_wca);
 
         let b21u = delta_b12u(t_x, mean_field_constant_x, weighted_sigma3_ij, q_vdw, rm_x);
         let b2bar = residual_virial_coefficient(p, x, state.temperature);
@@ -384,6 +394,7 @@ mod test {
         let p = methane_parameters(12.0, 6.0);
         let pt = AttractivePerturbationUVB3 {
             parameters: Arc::new(p.clone()),
+            ufraction: None,
         };
         let state = StateHD::new(
             reduced_temperature * p.epsilon_k[0],
