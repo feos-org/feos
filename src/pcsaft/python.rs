@@ -1,5 +1,5 @@
 use super::parameters::{PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord};
-use super::DQVariants;
+use super::{DQVariants, ElasticParameters};
 use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
@@ -178,6 +178,27 @@ impl PyPcSaftParameters {
     }
 }
 
+/// Parameter for elastic Helmholtz energy contribution.
+/// 
+/// Parameters
+/// ----------
+/// n_linker : f64
+/// n_chain : f64
+/// v0 : f64
+/// phi : f64
+#[pymethods]
+impl ElasticParameters {
+    #[new]
+    fn new(n_linker: f64, n_chain: f64, v0: f64, phi: f64) -> Self {
+        Self {
+            n_linker,
+            n_chain,
+            v0,
+            phi,
+        }
+    }
+}
+
 #[pymodule]
 pub fn pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
@@ -186,6 +207,7 @@ pub fn pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyJobackRecord>()?;
 
     m.add_class::<DQVariants>()?;
+    m.add_class::<ElasticParameters>()?;
     m.add_class::<PyPcSaftRecord>()?;
     m.add_class::<PyPureRecord>()?;
     m.add_class::<PySegmentRecord>()?;

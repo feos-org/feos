@@ -12,7 +12,7 @@ use crate::impl_estimator_entropy_scaling;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::python::PyPcSaftParameters;
 #[cfg(feature = "pcsaft")]
-use crate::pcsaft::{DQVariants, PcSaft, PcSaftOptions};
+use crate::pcsaft::{DQVariants, PcSaft, PcSaftOptions, ElasticParameters};
 #[cfg(feature = "pets")]
 use crate::pets::python::PyPetsParameters;
 #[cfg(feature = "pets")]
@@ -71,8 +71,8 @@ impl PyEosVariant {
     #[cfg(feature = "pcsaft")]
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant=DQVariants::DQ35),
-        text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant)"
+        signature = (parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant=DQVariants::DQ35, elastic=None),
+        text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant, elastic)"
     )]
     pub fn pcsaft(
         parameters: PyPcSaftParameters,
@@ -80,12 +80,14 @@ impl PyEosVariant {
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
         dq_variant: DQVariants,
+        elastic: Option<ElasticParameters>
     ) -> Self {
         let options = PcSaftOptions {
             max_eta,
             max_iter_cross_assoc,
             tol_cross_assoc,
             dq_variant,
+            elastic: elastic
         };
         Self(Arc::new(EosVariant::PcSaft(PcSaft::with_options(
             parameters.0,

@@ -83,6 +83,7 @@ impl PyFunctionalVariant {
             max_iter_cross_assoc,
             tol_cross_assoc,
             dq_variant,
+            elastic: None
         };
         Self(Arc::new(
             PcSaftFunctional::with_options(parameters.0, fmt_version, options).into(),

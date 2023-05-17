@@ -13,10 +13,13 @@ use std::f64::consts::{FRAC_PI_6, PI};
 use std::sync::Arc;
 
 pub(crate) mod dispersion;
+pub(crate) mod elastic;
 pub(crate) mod hard_chain;
 pub(crate) mod polar;
 mod qspr;
 use dispersion::Dispersion;
+use elastic::Elastic;
+pub use elastic::ElasticParameters;
 use hard_chain::HardChain;
 pub use polar::DQVariants;
 use polar::{Dipole, DipoleQuadrupole, Quadrupole};
@@ -35,6 +38,7 @@ pub struct PcSaftOptions {
     pub max_iter_cross_assoc: usize,
     pub tol_cross_assoc: f64,
     pub dq_variant: DQVariants,
+    pub elastic: Option<ElasticParameters>,
 }
 
 impl Default for PcSaftOptions {
@@ -44,6 +48,7 @@ impl Default for PcSaftOptions {
             max_iter_cross_assoc: 50,
             tol_cross_assoc: 1e-10,
             dq_variant: DQVariants::DQ35,
+            elastic: None,
         }
     }
 }
@@ -94,6 +99,12 @@ impl PcSaft {
                 options.tol_cross_assoc,
             )));
         };
+        if let Some(elastic) = options.elastic {
+            contributions.push(Box::new(Elastic {
+                parameters: parameters.clone(),
+                elastic_parameters: elastic,
+            }));
+        }
 
         let joback_records = parameters.joback_records.clone();
 

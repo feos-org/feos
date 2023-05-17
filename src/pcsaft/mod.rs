@@ -11,7 +11,7 @@ pub(crate) mod parameters;
 
 #[cfg(feature = "dft")]
 pub use dft::PcSaftFunctional;
-pub use eos::{DQVariants, PcSaft, PcSaftOptions};
+pub use eos::{DQVariants, PcSaft, PcSaftOptions, ElasticParameters};
 pub use parameters::{PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord};
 
 #[cfg(feature = "python")]
