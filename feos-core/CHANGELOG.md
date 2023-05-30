@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Packaging
+- Updated `num-dual` dependency to 0.7. [#137](https://github.com/feos-org/feos/pull/137)
 
 ## [0.4.2] - 2023-04-03
 ### Fixed
