@@ -19,7 +19,7 @@ impl IdealChainContribution {
     }
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for IdealChainContribution {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for IdealChainContribution {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let segments = self.component_index.len();
         if self.component_index[segments - 1] + 1 != segments {

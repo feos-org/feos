@@ -68,7 +68,7 @@ pub struct QSPR {
     pub parameters: Arc<PcSaftParameters>,
 }
 
-impl<D: DualNum<f64>> IdealGasContributionDual<D> for QSPR {
+impl<D: DualNum<f64> + Copy> IdealGasContributionDual<D> for QSPR {
     fn de_broglie_wavelength(&self, temperature: D, components: usize) -> Array1<D> {
         let (c_300, c_400) = if self.parameters.association.is_empty() {
             match self.parameters.ndipole + self.parameters.nquadpole {

@@ -485,7 +485,7 @@ where
         let functional_contributions = self.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
             .iter()
-            .map(|c| c.weight_functions(Dual64::from(t).derive()))
+            .map(|c| c.weight_functions(Dual64::from(t).derivative()))
             .collect();
         let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, None);
 
@@ -518,7 +518,7 @@ where
         let functional_contributions = self.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
             .iter()
-            .map(|c| c.weight_functions(Dual64::from(t).derive()))
+            .map(|c| c.weight_functions(Dual64::from(t).derivative()))
             .collect();
         let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, None);
 
@@ -617,7 +617,7 @@ where
         let functional_contributions = self.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
             .iter()
-            .map(|c| c.weight_functions(Dual64::from(t).derive()))
+            .map(|c| c.weight_functions(Dual64::from(t).derivative()))
             .collect();
         let convolver: Arc<dyn Convolver<_, D>> =
             ConvolverFFT::plan(&self.grid, &weight_functions, None);
@@ -638,11 +638,11 @@ where
         let x = (self.bulk.partial_molar_volume(Contributions::Total)
             * self.bulk.dp_dt(Contributions::Total))
         .to_reduced(SIUnit::reference_molar_entropy())?;
-        let mut lhs = dfdrhodt.mapv(|d| d.eps[0]);
+        let mut lhs = dfdrhodt.mapv(|d| d.eps.unwrap());
         lhs.outer_iter_mut()
             .zip(dfdrhodt_bulk.into_iter())
             .zip(x.into_iter())
-            .for_each(|((mut lhs, d), x)| lhs -= d.eps[0] - x);
+            .for_each(|((mut lhs, d), x)| lhs -= d.eps.unwrap() - x);
         lhs.outer_iter_mut()
             .zip(rho.outer_iter())
             .zip(rho_bulk.into_iter())

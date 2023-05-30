@@ -45,8 +45,8 @@ impl Cache {
             let value = f();
             self.map.insert(PartialDerivative::Zeroth, value.re);
             self.map
-                .insert(PartialDerivative::First(derivative), value.eps[0]);
-            value.eps[0]
+                .insert(PartialDerivative::First(derivative), value.eps.unwrap());
+            value.eps.unwrap()
         }
     }
 
@@ -66,12 +66,12 @@ impl Cache {
             let value = f();
             self.map.insert(PartialDerivative::Zeroth, value.re);
             self.map
-                .insert(PartialDerivative::First(derivative), value.v1[0]);
+                .insert(PartialDerivative::First(derivative), value.v1.unwrap());
             self.map.insert(
                 PartialDerivative::SecondMixed(derivative, derivative),
-                value.v2[0],
+                value.v2.unwrap(),
             );
-            value.v2[0]
+            value.v2.unwrap()
         }
     }
 
@@ -91,14 +91,14 @@ impl Cache {
             let value = f();
             self.map.insert(PartialDerivative::Zeroth, value.re);
             self.map
-                .insert(PartialDerivative::First(derivative1), value.eps1[0]);
+                .insert(PartialDerivative::First(derivative1), value.eps1.unwrap());
             self.map
-                .insert(PartialDerivative::First(derivative2), value.eps2[0]);
+                .insert(PartialDerivative::First(derivative2), value.eps2.unwrap());
             self.map.insert(
                 PartialDerivative::SecondMixed(d1, d2),
-                value.eps1eps2[(0, 0)],
+                value.eps1eps2.unwrap(),
             );
-            value.eps1eps2[(0, 0)]
+            value.eps1eps2.unwrap()
         }
     }
 

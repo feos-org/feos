@@ -23,7 +23,7 @@ impl ChainFunctional {
     }
 }
 
-impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for ChainFunctional {
+impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for ChainFunctional {
     fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
         let d = p.hs_diameter(temperature);

@@ -3,9 +3,12 @@ use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use crate::phase_equilibria::{SolverOptions, Verbosity};
 use crate::{DensityInitialization, EosUnit};
-use ndarray::{arr1, arr2, Array1, Array2};
-use num_dual::linalg::{norm, smallest_ev, LU};
-use num_dual::{Dual, Dual3, Dual64, DualNum, DualVec64, HyperDual, StaticVec};
+use nalgebra::{DMatrix, DVector, SVector, SymmetricEigen};
+use ndarray::{arr1, Array1};
+use num_dual::{
+    first_derivative, try_first_derivative, try_jacobian, Derivative, Dual, Dual3, Dual64, DualNum,
+    DualSVec64, DualVec, HyperDual,
+};
 use num_traits::{One, Zero};
 use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::convert::TryFrom;
@@ -123,16 +126,12 @@ impl<E: EquationOfState> State<E> {
 
         for i in 1..=max_iter {
             // calculate residuals and derivatives w.r.t. temperature and density
-            let [t_dual, rho_dual] = *StaticVec::new_vec([t, rho])
-                .map(DualVec64::<2>::from_re)
-                .derive()
-                .raw_array();
-            let res = critical_point_objective(eos, t_dual, rho_dual, &n)?;
-            let h = arr2(res.jacobian().raw_data());
-            let res = arr1(res.map(|r| r.re()).raw_array());
+            let res = |x: SVector<DualSVec64<2>, 2>| critical_point_objective(eos, x[0], x[1], &n);
+            let (res, jac) = try_jacobian(res, SVector::from([t, rho]))?;
 
             // calculate Newton step
-            let mut delta = LU::new(h)?.solve(&res);
+            let delta = jac.lu().solve(&res);
+            let mut delta = delta.ok_or(EosError::IterationFailed("Critical point".into()))?;
 
             // reduce step if necessary
             if delta[0].abs() > 0.25 * t {
@@ -151,13 +150,13 @@ impl<E: EquationOfState> State<E> {
                 verbosity,
                 " {:4} | {:14.8e} | {:13.8} | {:12.8}",
                 i,
-                norm(&res),
+                res.norm(),
                 t * SIUnit::reference_temperature(),
                 rho * SIUnit::reference_density(),
             );
 
             // check convergence
-            if norm(&res) < tol {
+            if res.norm() < tol {
                 log_result!(
                     verbosity,
                     "Critical point calculation converged in {} step(s)\n",
@@ -188,9 +187,9 @@ impl<E: EquationOfState> State<E> {
             options.unwrap_or(MAX_ITER_CRIT_POINT_BINARY, TOL_CRIT_POINT);
 
         let t = temperature.to_reduced(SIUnit::reference_temperature())?;
-        let x = StaticVec::new_vec(initial_molefracs.unwrap_or([0.5, 0.5]));
+        let x = SVector::from(initial_molefracs.unwrap_or([0.5, 0.5]));
         let max_density = eos
-            .max_density(Some(&(arr1(x.raw_array()) * SIUnit::reference_moles())))?
+            .max_density(Some(&(arr1(&x.data.0[0]) * SIUnit::reference_moles())))?
             .to_reduced(SIUnit::reference_density())?;
         let mut rho = x * 0.3 * max_density;
 
@@ -209,17 +208,12 @@ impl<E: EquationOfState> State<E> {
 
         for i in 1..=max_iter {
             // calculate residuals and derivatives w.r.t. partial densities
-            let r = StaticVec::new_vec([DualVec64::from_re(rho[0]), DualVec64::from_re(rho[1])])
-                .derive();
-            let res = critical_point_objective_t(eos, t, r)?;
+            let res = |rho| critical_point_objective_t(eos, t, rho);
+            let (res, jac) = try_jacobian(res, rho)?;
 
             // calculate Newton step
-            let h = res.jacobian();
-            let res = res.map(|r| r.re);
-            let mut delta = StaticVec::new_vec([
-                h[(1, 1)] * res[0] - h[(0, 1)] * res[1],
-                h[(0, 0)] * res[1] - h[(1, 0)] * res[0],
-            ]) / (h[(0, 0)] * h[(1, 1)] - h[(0, 1)] * h[(1, 0)]);
+            let delta = jac.lu().solve(&res);
+            let mut delta = delta.ok_or(EosError::IterationFailed("Critical point".into()))?;
 
             // reduce step if necessary
             for i in 0..2 {
@@ -253,7 +247,7 @@ impl<E: EquationOfState> State<E> {
                     eos,
                     t * SIUnit::reference_temperature(),
                     SIUnit::reference_volume(),
-                    &(arr1(rho.raw_array()) * SIUnit::reference_moles()),
+                    &(arr1(&rho.data.0[0]) * SIUnit::reference_moles()),
                 );
             }
         }
@@ -279,9 +273,9 @@ impl<E: EquationOfState> State<E> {
             .map(|t| t.to_reduced(SIUnit::reference_temperature()))
             .transpose()?
             .unwrap_or(300.0);
-        let x = StaticVec::new_vec(initial_molefracs.unwrap_or([0.5, 0.5]));
+        let x = SVector::from(initial_molefracs.unwrap_or([0.5, 0.5]));
         let max_density = eos
-            .max_density(Some(&(arr1(x.raw_array()) * SIUnit::reference_moles())))?
+            .max_density(Some(&(arr1(&x.data.0[0]) * SIUnit::reference_moles())))?
             .to_reduced(SIUnit::reference_density())?;
         let mut rho = x * 0.3 * max_density;
 
@@ -301,19 +295,15 @@ impl<E: EquationOfState> State<E> {
 
         for i in 1..=max_iter {
             // calculate residuals and derivatives w.r.t. temperature and partial densities
-            let x = StaticVec::new_vec([
-                DualVec64::from_re(t),
-                DualVec64::from_re(rho[0]),
-                DualVec64::from_re(rho[1]),
-            ])
-            .derive();
-            let r = StaticVec::new_vec([x[1], x[2]]);
-            let res = critical_point_objective_p(eos, p, x[0], r)?;
+            let res = |x: SVector<DualSVec64<3>, 3>| {
+                let r = SVector::from([x[1], x[2]]);
+                critical_point_objective_p(eos, p, x[0], r)
+            };
+            let (res, jac) = try_jacobian(res, SVector::from([t, rho[0], rho[1]]))?;
 
             // calculate Newton step
-            let h = arr2(res.jacobian().raw_data());
-            let res = arr1(res.map(|r| r.re).raw_array());
-            let mut delta = LU::new(h)?.solve(&res);
+            let delta = jac.lu().solve(&res);
+            let mut delta = delta.ok_or(EosError::IterationFailed("Critical point".into()))?;
 
             // reduce step if necessary
             if delta[0].abs() > 0.25 * t {
@@ -337,14 +327,14 @@ impl<E: EquationOfState> State<E> {
                 verbosity,
                 " {:4} | {:14.8e} | {:13.8} | {:12.8} | {:12.8}",
                 i,
-                norm(&res),
+                res.norm(),
                 t * SIUnit::reference_temperature(),
                 rho[0] * SIUnit::reference_density(),
                 rho[1] * SIUnit::reference_density(),
             );
 
             // check convergence
-            if norm(&res) < tol {
+            if res.norm() < tol {
                 log_result!(
                     verbosity,
                     "Critical point calculation converged in {} step(s)\n",
@@ -354,7 +344,7 @@ impl<E: EquationOfState> State<E> {
                     eos,
                     t * SIUnit::reference_temperature(),
                     SIUnit::reference_volume(),
-                    &(arr1(rho.raw_array()) * SIUnit::reference_moles()),
+                    &(arr1(&rho.data.0[0]) * SIUnit::reference_moles()),
                 );
             }
         }
@@ -427,10 +417,11 @@ impl<E: EquationOfState> State<E> {
 
         for i in 1..=max_iter {
             // calculate residuals and derivative w.r.t. density
-            let res = spinodal_objective(eos, Dual64::from(t), Dual64::from(rho).derive(), &n)?;
+            let (f, df) =
+                try_first_derivative(|rho| spinodal_objective(eos, t.into(), rho, &n), rho)?;
 
             // calculate Newton step
-            let mut delta = res.re / res.eps[0];
+            let mut delta = f / df;
 
             // reduce step if necessary
             if delta.abs() > 0.03 * max_density {
@@ -445,12 +436,12 @@ impl<E: EquationOfState> State<E> {
                 verbosity,
                 " {:4} | {:14.8e} | {:12.8}",
                 i,
-                res.re.abs(),
+                f.abs(),
                 rho * SIUnit::reference_density(),
             );
 
             // check convergence
-            if res.re.abs() < tol {
+            if f.abs() < tol {
                 log_result!(
                     verbosity,
                     "Spinodal calculation converged in {} step(s)\n",
@@ -470,20 +461,20 @@ impl<E: EquationOfState> State<E> {
 
 fn critical_point_objective<E: EquationOfState>(
     eos: &Arc<E>,
-    temperature: DualVec64<2>,
-    density: DualVec64<2>,
+    temperature: DualSVec64<2>,
+    density: DualSVec64<2>,
     moles: &Array1<f64>,
-) -> EosResult<StaticVec<DualVec64<2>, 2>> {
+) -> EosResult<SVector<DualSVec64<2>, 2>> {
     // calculate second partial derivatives w.r.t. moles
     let t = HyperDual::from_re(temperature);
     let v = HyperDual::from_re(density.recip() * moles.sum());
-    let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
+    let qij = DMatrix::from_fn(eos.components(), eos.components(), |i, j| {
         let mut m = moles.mapv(HyperDual::from);
-        m[i].eps1[0] = DualVec64::one();
-        m[j].eps2[0] = DualVec64::one();
+        m[i].eps1 = Derivative::some(SVector::from_element(DualSVec64::one()));
+        m[j].eps2 = Derivative::some(SVector::from_element(DualSVec64::one()));
         let state = StateHD::new(t, v, m);
-        (eos.evaluate_residual(&state).eps1eps2[(0, 0)]
-            + eos.ideal_gas().evaluate(&state).eps1eps2[(0, 0)])
+        (eos.evaluate_residual(&state).eps1eps2.unwrap()
+            + eos.ideal_gas().evaluate(&state).eps1eps2.unwrap())
             * (moles[i] * moles[j]).sqrt()
     });
 
@@ -493,10 +484,10 @@ fn critical_point_objective<E: EquationOfState>(
     // evaluate third partial derivative w.r.t. s
     let moles_hd = Array1::from_shape_fn(eos.components(), |i| {
         Dual3::new(
-            DualVec64::from(moles[i]),
+            DualSVec64::from(moles[i]),
             evec[i] * moles[i].sqrt(),
-            DualVec64::zero(),
-            DualVec64::zero(),
+            DualSVec64::zero(),
+            DualSVec64::zero(),
         )
     });
     let state_s = StateHD::new(
@@ -505,24 +496,24 @@ fn critical_point_objective<E: EquationOfState>(
         moles_hd,
     );
     let res = eos.evaluate_residual(&state_s) + eos.ideal_gas().evaluate(&state_s);
-    Ok(StaticVec::new_vec([eval, res.v3]))
+    Ok(SVector::from([eval, res.v3]))
 }
 
 fn critical_point_objective_t<E: EquationOfState>(
     eos: &Arc<E>,
     temperature: f64,
-    density: StaticVec<DualVec64<2>, 2>,
-) -> EosResult<StaticVec<DualVec64<2>, 2>> {
+    density: SVector<DualSVec64<2>, 2>,
+) -> EosResult<SVector<DualSVec64<2>, 2>> {
     // calculate second partial derivatives w.r.t. moles
     let t = HyperDual::from(temperature);
     let v = HyperDual::from(1.0);
-    let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
+    let qij = DMatrix::from_fn(eos.components(), eos.components(), |i, j| {
         let mut m = density.map(HyperDual::from_re);
-        m[i].eps1[0] = DualVec64::one();
-        m[j].eps2[0] = DualVec64::one();
+        m[i].eps1 = Derivative::some(SVector::from_element(DualSVec64::one()));
+        m[j].eps2 = Derivative::some(SVector::from_element(DualSVec64::one()));
         let state = StateHD::new(t, v, arr1(&[m[0], m[1]]));
-        (eos.evaluate_residual(&state).eps1eps2[(0, 0)]
-            + eos.ideal_gas().evaluate(&state).eps1eps2[(0, 0)])
+        (eos.evaluate_residual(&state).eps1eps2.unwrap()
+            + eos.ideal_gas().evaluate(&state).eps1eps2.unwrap())
             * (density[i] * density[j]).sqrt()
     });
 
@@ -534,31 +525,31 @@ fn critical_point_objective_t<E: EquationOfState>(
         Dual3::new(
             density[i],
             evec[i] * density[i].sqrt(),
-            DualVec64::zero(),
-            DualVec64::zero(),
+            DualSVec64::zero(),
+            DualSVec64::zero(),
         )
     });
     let state_s = StateHD::new(Dual3::from(temperature), Dual3::from(1.0), moles_hd);
     let res = eos.evaluate_residual(&state_s) + eos.ideal_gas().evaluate(&state_s);
-    Ok(StaticVec::new_vec([eval, res.v3]))
+    Ok(SVector::from([eval, res.v3]))
 }
 
 fn critical_point_objective_p<E: EquationOfState>(
     eos: &Arc<E>,
     pressure: f64,
-    temperature: DualVec64<3>,
-    density: StaticVec<DualVec64<3>, 2>,
-) -> EosResult<StaticVec<DualVec64<3>, 3>> {
+    temperature: DualSVec64<3>,
+    density: SVector<DualSVec64<3>, 2>,
+) -> EosResult<SVector<DualSVec64<3>, 3>> {
     // calculate second partial derivatives w.r.t. moles
     let t = HyperDual::from_re(temperature);
     let v = HyperDual::from(1.0);
-    let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
+    let qij = DMatrix::from_fn(eos.components(), eos.components(), |i, j| {
         let mut m = density.map(HyperDual::from_re);
-        m[i].eps1[0] = DualVec64::one();
-        m[j].eps2[0] = DualVec64::one();
+        m[i].eps1 = Derivative::some(SVector::from_element(DualSVec64::one()));
+        m[j].eps2 = Derivative::some(SVector::from_element(DualSVec64::one()));
         let state = StateHD::new(t, v, arr1(&[m[0], m[1]]));
-        (eos.evaluate_residual(&state).eps1eps2[(0, 0)]
-            + eos.ideal_gas().evaluate(&state).eps1eps2[(0, 0)])
+        (eos.evaluate_residual(&state).eps1eps2.unwrap()
+            + eos.ideal_gas().evaluate(&state).eps1eps2.unwrap())
             * (density[i] * density[j]).sqrt()
     });
 
@@ -570,24 +561,22 @@ fn critical_point_objective_p<E: EquationOfState>(
         Dual3::new(
             density[i],
             evec[i] * density[i].sqrt(),
-            DualVec64::zero(),
-            DualVec64::zero(),
+            DualSVec64::zero(),
+            DualSVec64::zero(),
         )
     });
     let state_s = StateHD::new(Dual3::from_re(temperature), Dual3::from(1.0), moles_hd);
     let res = eos.evaluate_residual(&state_s) + eos.ideal_gas().evaluate(&state_s);
 
     // calculate pressure
-    let v = Dual::from(1.0).derive();
-    let m = arr1(&[Dual::from_re(density[0]), Dual::from_re(density[1])]);
-    let state_p = StateHD::new(Dual::from_re(temperature), v, m);
-    let p = eos.evaluate_residual(&state_p) + eos.ideal_gas().evaluate(&state_p);
+    let a = |v| {
+        let m = arr1(&[Dual::from_re(density[0]), Dual::from_re(density[1])]);
+        let state_p = StateHD::new(Dual::from_re(temperature), v, m);
+        eos.evaluate_residual(&state_p) + eos.ideal_gas().evaluate(&state_p)
+    };
+    let (_, p) = first_derivative(a, DualVec::one());
 
-    Ok(StaticVec::new_vec([
-        eval,
-        res.v3,
-        p.eps[0] * temperature + pressure,
-    ]))
+    Ok(SVector::from([eval, res.v3, p * temperature + pressure]))
 }
 
 fn spinodal_objective<E: EquationOfState>(
@@ -599,13 +588,13 @@ fn spinodal_objective<E: EquationOfState>(
     // calculate second partial derivatives w.r.t. moles
     let t = HyperDual::from_re(temperature);
     let v = HyperDual::from_re(density.recip() * moles.sum());
-    let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
+    let qij = DMatrix::from_fn(eos.components(), eos.components(), |i, j| {
         let mut m = moles.mapv(HyperDual::from);
-        m[i].eps1[0] = Dual64::one();
-        m[j].eps2[0] = Dual64::one();
+        m[i].eps1 = Derivative::some(SVector::from_element(DualSVec64::one()));
+        m[j].eps2 = Derivative::some(SVector::from_element(DualSVec64::one()));
         let state = StateHD::new(t, v, m);
-        (eos.evaluate_residual(&state).eps1eps2[(0, 0)]
-            + eos.ideal_gas().evaluate(&state).eps1eps2[(0, 0)])
+        (eos.evaluate_residual(&state).eps1eps2.unwrap()
+            + eos.ideal_gas().evaluate(&state).eps1eps2.unwrap())
             * (moles[i] * moles[j]).sqrt()
     });
 
@@ -613,4 +602,17 @@ fn spinodal_objective<E: EquationOfState>(
     let (eval, _) = smallest_ev(qij);
 
     Ok(eval)
+}
+
+fn smallest_ev<const N: usize>(
+    m: DMatrix<DualSVec64<N>>,
+) -> (DualSVec64<N>, DVector<DualSVec64<N>>) {
+    let eig = SymmetricEigen::new(m);
+    let (e, ev) = eig
+        .eigenvalues
+        .iter()
+        .zip(eig.eigenvectors.column_iter())
+        .reduce(|e1, e2| if e1.0 < e2.0 { e1 } else { e2 })
+        .unwrap();
+    (*e, ev.into())
 }

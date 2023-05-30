@@ -66,7 +66,7 @@ pub struct Dispersion {
     pub parameters: Arc<GcPcSaftEosParameters>,
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Dispersion {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Dispersion {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         // auxiliary variables
         let p = &self.parameters;
@@ -151,11 +151,12 @@ mod test {
         let moles = (1.5 * MOL).to_reduced(EosUnit::reference_moles()).unwrap();
         let state = StateHD::new(
             Dual64::from_re(temperature),
-            Dual64::from_re(volume).derive(),
+            Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure =
-            -contrib.helmholtz_energy(&state).eps[0] * temperature * EosUnit::reference_pressure();
+        let pressure = -contrib.helmholtz_energy(&state).eps.unwrap()
+            * temperature
+            * EosUnit::reference_pressure();
         assert_relative_eq!(pressure, -2.846724434944439 * PASCAL, max_relative = 1e-10);
     }
 
@@ -173,11 +174,12 @@ mod test {
         let moles = (1.5 * MOL).to_reduced(EosUnit::reference_moles()).unwrap();
         let state = StateHD::new(
             Dual64::from_re(temperature),
-            Dual64::from_re(volume).derive(),
+            Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure =
-            -contrib.helmholtz_energy(&state).eps[0] * temperature * EosUnit::reference_pressure();
+        let pressure = -contrib.helmholtz_energy(&state).eps.unwrap()
+            * temperature
+            * EosUnit::reference_pressure();
         assert_relative_eq!(pressure, -5.432173507270732 * PASCAL, max_relative = 1e-10);
     }
 }

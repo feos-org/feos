@@ -469,7 +469,7 @@ impl HardSphereProperties for PcSaftParameters {
         MonomerShape::NonSpherical(self.m.mapv(N::from))
     }
 
-    fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
+    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
         let ti = temperature.recip() * -3.0;
         Array::from_shape_fn(self.sigma.len(), |i| {
             -((ti * self.epsilon_k[i]).exp() * 0.12 - 1.0) * self.sigma[i]

@@ -3,19 +3,18 @@ use super::functional_contribution::FunctionalContribution;
 use super::weight_functions::WeightFunctionInfo;
 use feos_core::{Contributions, EosResult, EosUnit, EquationOfState, PhaseEquilibrium};
 use ndarray::*;
-use num_dual::HyperDual64;
-// use quantity::{SIArray2, SINumber};
+use num_dual::Dual2_64;
 use quantity::si::{SIArray1, SIArray2, SINumber, SIUnit};
 use std::ops::AddAssign;
 
-impl WeightFunctionInfo<HyperDual64> {
+impl WeightFunctionInfo<Dual2_64> {
     fn pdgt_weight_constants(&self) -> (Array2<f64>, Array2<f64>, Array2<f64>) {
-        let k = HyperDual64::from(0.0).derive1().derive2();
+        let k = Dual2_64::from(0.0).derivative();
         let w = self.weight_constants(k, 1);
         (
             w.mapv(|w| w.re),
-            w.mapv(|w| -w.eps1[0]),
-            w.mapv(|w| -0.5 * w.eps1eps2[(0, 0)]),
+            w.mapv(|w| -w.v1.unwrap()),
+            w.mapv(|w| -0.5 * w.v2.unwrap()),
         )
     }
 }
@@ -32,7 +31,7 @@ impl dyn FunctionalContribution {
         influence_matrix: Option<&mut Array3<f64>>,
     ) -> EosResult<()> {
         // calculate weighted densities
-        let weight_functions = self.weight_functions_pdgt(HyperDual64::from(temperature));
+        let weight_functions = self.weight_functions_pdgt(Dual2_64::from(temperature));
         let (w0, w1, w2) = weight_functions.pdgt_weight_constants();
         let weighted_densities = w0.dot(density);
 

@@ -107,7 +107,7 @@ const P0: f64 = 1.0e5;
 const A3: f64 = 1e-30;
 const KB: f64 = 1.38064852e-23;
 
-impl<D: DualNum<f64>> IdealGasContributionDual<D> for Joback {
+impl<D: DualNum<f64> + Copy> IdealGasContributionDual<D> for Joback {
     fn de_broglie_wavelength(&self, temperature: D, components: usize) -> Array1<D> {
         let t = temperature;
         let t2 = t * t;

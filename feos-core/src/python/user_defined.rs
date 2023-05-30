@@ -2,11 +2,11 @@ use crate::{EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, MolarWeight, 
 use ndarray::Array1;
 use num_dual::*;
 use numpy::convert::IntoPyArray;
-use numpy::{PyReadonlyArrayDyn, PyArray};
+use numpy::{PyArray, PyReadonlyArrayDyn};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use quantity::python::PySIArray1;
-use quantity::si::{SIArray1};
+use quantity::si::SIArray1;
 use std::fmt;
 
 struct PyHelmholtzEnergy(Py<PyAny>);
@@ -205,34 +205,35 @@ state!(PyStateF, f64, f64);
 helmholtz_energy!(PyStateF, f64, f64);
 
 impl_dual_state_helmholtz_energy!(PyStateD, PyDual64, Dual64, f64);
-dual_number!(PyDualVec3, DualVec64<3>, f64);
+dual_number!(PyDualVec3, DualSVec64<3>, f64);
 impl_dual_state_helmholtz_energy!(
     PyStateDualDualVec3,
     PyDualDualVec3,
-    Dual<DualVec64<3>, f64>,
+    Dual<DualSVec64<3>, f64>,
     PyDualVec3
 );
-impl_dual_state_helmholtz_energy!(
-    PyStateHD,
-    PyHyperDual64,
-    HyperDual64,
-    f64
-);
+impl_dual_state_helmholtz_energy!(PyStateHD, PyHyperDual64, HyperDual64, f64);
 impl_dual_state_helmholtz_energy!(PyStateD2, PyDual2_64, Dual2_64, f64);
 impl_dual_state_helmholtz_energy!(PyStateD3, PyDual3_64, Dual3_64, f64);
 impl_dual_state_helmholtz_energy!(PyStateHDD, PyHyperDualDual64, HyperDual<Dual64, f64>, PyDual64);
-dual_number!(PyDualVec2, DualVec64<2>, f64);
+dual_number!(PyDualVec2, DualSVec64<2>, f64);
 impl_dual_state_helmholtz_energy!(
     PyStateHDDVec2,
     PyHyperDualVec2,
-    HyperDual<DualVec64<2>, f64>,
+    HyperDual<DualSVec64<2>, f64>,
     PyDualVec2
 );
 impl_dual_state_helmholtz_energy!(
     PyStateHDDVec3,
     PyHyperDualVec3,
-    HyperDual<DualVec64<3>, f64>,
+    HyperDual<DualSVec64<3>, f64>,
     PyDualVec3
+);
+impl_dual_state_helmholtz_energy!(
+    PyStateD2D,
+    PyDual2Dual64,
+    Dual2<Dual64, f64>,
+    PyDual64
 );
 impl_dual_state_helmholtz_energy!(
     PyStateD3D,
@@ -243,12 +244,12 @@ impl_dual_state_helmholtz_energy!(
 impl_dual_state_helmholtz_energy!(
     PyStateD3DVec2,
     PyDual3DualVec2,
-    Dual3<DualVec64<2>, f64>,
+    Dual3<DualSVec64<2>, f64>,
     PyDualVec2
 );
 impl_dual_state_helmholtz_energy!(
     PyStateD3DVec3,
     PyDual3DualVec3,
-    Dual3<DualVec64<3>, f64>,
+    Dual3<DualSVec64<3>, f64>,
     PyDualVec3
 );

@@ -3,7 +3,7 @@ use feos_core::{EosResult, HelmholtzEnergyDual, StateHD};
 use ndarray::prelude::*;
 use ndarray::RemoveAxis;
 use num_dual::*;
-use num_traits::{One, Zero};
+use num_traits::Zero;
 use std::fmt::Display;
 
 macro_rules! impl_helmholtz_energy {
@@ -34,16 +34,17 @@ macro_rules! impl_helmholtz_energy {
 
 impl_helmholtz_energy!(f64);
 impl_helmholtz_energy!(Dual64);
-impl_helmholtz_energy!(Dual<DualVec64<3>, f64>);
+impl_helmholtz_energy!(Dual<DualSVec64<3>, f64>);
 impl_helmholtz_energy!(HyperDual64);
 impl_helmholtz_energy!(Dual2_64);
 impl_helmholtz_energy!(Dual3_64);
 impl_helmholtz_energy!(HyperDual<Dual64, f64>);
-impl_helmholtz_energy!(HyperDual<DualVec64<2>, f64>);
-impl_helmholtz_energy!(HyperDual<DualVec64<3>, f64>);
+impl_helmholtz_energy!(HyperDual<DualSVec64<2>, f64>);
+impl_helmholtz_energy!(HyperDual<DualSVec64<3>, f64>);
+impl_helmholtz_energy!(Dual2<Dual64, f64>);
 impl_helmholtz_energy!(Dual3<Dual64, f64>);
-impl_helmholtz_energy!(Dual3<DualVec64<2>, f64>);
-impl_helmholtz_energy!(Dual3<DualVec64<3>, f64>);
+impl_helmholtz_energy!(Dual3<DualSVec64<2>, f64>);
+impl_helmholtz_energy!(Dual3<DualSVec64<3>, f64>);
 
 /// Individual functional contribution that can
 /// be evaluated using generalized (hyper) dual numbers.
@@ -76,16 +77,17 @@ pub trait FunctionalContribution:
     FunctionalContributionDual<f64>
     + FunctionalContributionDual<Dual64>
     + FunctionalContributionDual<Dual<Dual64, f64>>
-    + FunctionalContributionDual<Dual<DualVec64<3>, f64>>
+    + FunctionalContributionDual<Dual<DualSVec64<3>, f64>>
     + FunctionalContributionDual<HyperDual64>
     + FunctionalContributionDual<Dual2_64>
     + FunctionalContributionDual<Dual3_64>
     + FunctionalContributionDual<HyperDual<Dual64, f64>>
-    + FunctionalContributionDual<HyperDual<DualVec64<2>, f64>>
-    + FunctionalContributionDual<HyperDual<DualVec64<3>, f64>>
+    + FunctionalContributionDual<HyperDual<DualSVec64<2>, f64>>
+    + FunctionalContributionDual<HyperDual<DualSVec64<3>, f64>>
+    + FunctionalContributionDual<Dual2<Dual64, f64>>
     + FunctionalContributionDual<Dual3<Dual64, f64>>
-    + FunctionalContributionDual<Dual3<DualVec64<2>, f64>>
-    + FunctionalContributionDual<Dual3<DualVec64<3>, f64>>
+    + FunctionalContributionDual<Dual3<DualSVec64<2>, f64>>
+    + FunctionalContributionDual<Dual3<DualSVec64<3>, f64>>
     + Display
     + Sync
     + Send
@@ -103,13 +105,13 @@ pub trait FunctionalContribution:
 
         for i in 0..wd.shape()[0] {
             wd.index_axis_mut(Axis(0), i)
-                .map_inplace(|x| x.eps[0] = 1.0);
+                .map_inplace(|x| x.eps = Derivative::derivative());
             phi = self.calculate_helmholtz_energy_density(t, wd.view())?;
             first_partial_derivative
                 .index_axis_mut(Axis(0), i)
-                .assign(&phi.mapv(|p| p.eps[0]));
+                .assign(&phi.mapv(|p| p.eps.unwrap()));
             wd.index_axis_mut(Axis(0), i)
-                .map_inplace(|x| x.eps[0] = 0.0);
+                .map_inplace(|x| x.eps = Derivative::none());
         }
         helmholtz_energy_density.assign(&phi.mapv(|p| p.re));
         Ok(())
@@ -128,13 +130,13 @@ pub trait FunctionalContribution:
 
         for i in 0..wd.shape()[0] {
             wd.index_axis_mut(Axis(0), i)
-                .map_inplace(|x| x.eps[0] = Dual64::one());
+                .map_inplace(|x| x.eps = Derivative::derivative());
             phi = self.calculate_helmholtz_energy_density(t, wd.view())?;
             first_partial_derivative
                 .index_axis_mut(Axis(0), i)
-                .assign(&phi.mapv(|p| p.eps[0]));
+                .assign(&phi.mapv(|p| p.eps.unwrap()));
             wd.index_axis_mut(Axis(0), i)
-                .map_inplace(|x| x.eps[0] = Dual64::zero());
+                .map_inplace(|x| x.eps = Derivative::none());
         }
         helmholtz_energy_density.assign(&phi.mapv(|p| p.re));
         Ok(())
@@ -154,12 +156,12 @@ pub trait FunctionalContribution:
 
         for i in 0..wd.shape()[0] {
             wd.index_axis_mut(Axis(0), i)
-                .map_inplace(|x| x.eps1[0] = 1.0);
+                .map_inplace(|x| x.eps1 = Derivative::derivative());
             for j in 0..=i {
                 wd.index_axis_mut(Axis(0), j)
-                    .map_inplace(|x| x.eps2[0] = 1.0);
+                    .map_inplace(|x| x.eps2 = Derivative::derivative());
                 phi = self.calculate_helmholtz_energy_density(t, wd.view())?;
-                let p = phi.mapv(|p| p.eps1eps2[(0, 0)]);
+                let p = phi.mapv(|p| p.eps1eps2.unwrap());
                 second_partial_derivative
                     .index_axis_mut(Axis(0), i)
                     .index_axis_mut(Axis(0), j)
@@ -171,13 +173,13 @@ pub trait FunctionalContribution:
                         .assign(&p);
                 }
                 wd.index_axis_mut(Axis(0), j)
-                    .map_inplace(|x| x.eps2[0] = 0.0);
+                    .map_inplace(|x| x.eps2 = Derivative::none());
             }
             first_partial_derivative
                 .index_axis_mut(Axis(0), i)
-                .assign(&phi.mapv(|p| p.eps1[0]));
+                .assign(&phi.mapv(|p| p.eps1.unwrap()));
             wd.index_axis_mut(Axis(0), i)
-                .map_inplace(|x| x.eps1[0] = 0.0);
+                .map_inplace(|x| x.eps1 = Derivative::none());
         }
         helmholtz_energy_density.assign(&phi.mapv(|p| p.re));
         Ok(())
@@ -188,16 +190,17 @@ impl<T> FunctionalContribution for T where
     T: FunctionalContributionDual<f64>
         + FunctionalContributionDual<Dual64>
         + FunctionalContributionDual<Dual<Dual64, f64>>
-        + FunctionalContributionDual<Dual<DualVec64<3>, f64>>
+        + FunctionalContributionDual<Dual<DualSVec64<3>, f64>>
         + FunctionalContributionDual<HyperDual64>
         + FunctionalContributionDual<Dual2_64>
         + FunctionalContributionDual<Dual3_64>
         + FunctionalContributionDual<HyperDual<Dual64, f64>>
-        + FunctionalContributionDual<HyperDual<DualVec64<2>, f64>>
-        + FunctionalContributionDual<HyperDual<DualVec64<3>, f64>>
+        + FunctionalContributionDual<HyperDual<DualSVec64<2>, f64>>
+        + FunctionalContributionDual<HyperDual<DualSVec64<3>, f64>>
+        + FunctionalContributionDual<Dual2<Dual64, f64>>
         + FunctionalContributionDual<Dual3<Dual64, f64>>
-        + FunctionalContributionDual<Dual3<DualVec64<2>, f64>>
-        + FunctionalContributionDual<Dual3<DualVec64<3>, f64>>
+        + FunctionalContributionDual<Dual3<DualSVec64<2>, f64>>
+        + FunctionalContributionDual<Dual3<DualSVec64<3>, f64>>
         + Display
         + Sync
         + Send
