@@ -19,6 +19,7 @@ pub struct GcPcSaftChemicalRecord {
     pub identifier: Identifier,
     pub segments: HashMap<String, f64>,
     pub bonds: HashMap<[String; 2], f64>,
+    phi: f64,
 }
 
 impl GcPcSaftChemicalRecord {
@@ -26,11 +27,13 @@ impl GcPcSaftChemicalRecord {
         identifier: Identifier,
         segments: HashMap<String, f64>,
         bonds: HashMap<[String; 2], f64>,
+        phi: f64,
     ) -> Self {
         Self {
             identifier,
             segments,
             bonds,
+            phi,
         }
     }
 }
@@ -53,11 +56,13 @@ impl From<ChemicalRecord> for GcPcSaftChemicalRecord {
             chemical_record.identifier.clone(),
             chemical_record.segment_count(),
             chemical_record.bond_count(),
+            1.0,
         )
     }
 }
 
 /// Parameter set required for the gc-PC-SAFT equation of state.
+#[derive(Clone)]
 pub struct GcPcSaftEosParameters {
     pub molarweight: Array1<f64>,
     pub component_index: Array1<usize>,
@@ -116,11 +121,14 @@ impl ParameterHetero for GcPcSaftEosParameters {
         let mut sigma_mix = Vec::new();
         let mut epsilon_k_mix = Vec::new();
 
+        let mut phi = Vec::new();
+
         let mut joback_records = Vec::new();
 
         for (i, chemical_record) in chemical_records.iter().cloned().enumerate() {
             let mut segment_indices = IndexMap::with_capacity(segment_records.len());
             let segment_map = chemical_record.segment_map(&segment_records)?;
+            phi.push(chemical_record.phi);
 
             let mut m_i = 0.0;
             let mut sigma_i = 0.0;
@@ -214,7 +222,7 @@ impl ParameterHetero for GcPcSaftEosParameters {
         let sigma_ij =
             Array2::from_shape_fn([sigma.len(); 2], |(i, j)| 0.5 * (sigma[i] + sigma[j]));
         let epsilon_k_ij = Array2::from_shape_fn([epsilon_k.len(); 2], |(i, j)| {
-            (epsilon_k[i] * epsilon_k[j]).sqrt()
+            (epsilon_k[i] * phi[component_index[i]] * epsilon_k[j] * phi[component_index[j]]).sqrt()
         }) * (1.0 - &k_ij);
 
         // Combining rules polar
@@ -268,6 +276,14 @@ impl ParameterHetero for GcPcSaftEosParameters {
             &self.segment_records,
             &self.binary_segment_records,
         )
+    }
+}
+
+impl GcPcSaftEosParameters {
+    pub fn phi(self, phi: &[f64]) -> Result<Self, ParameterError> {
+        let mut cr = self.chemical_records;
+        cr.iter_mut().zip(phi.iter()).for_each(|(c, &p)| c.phi = p);
+        Self::from_segments(cr, self.segment_records, self.binary_segment_records)
     }
 }
 
