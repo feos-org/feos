@@ -337,7 +337,7 @@ mod tests {
         let sigma_eff = parameters.calc_sigma_eff_ij(0, 0, temperature);
         let d_hs = parameters.hs_diameter_ij(0, 0, temperature, sigma_eff);
         assert!((d_hs.re() - 3.1410453883283341).abs() < 5.0e-8);
-        assert!((d_hs.eps.unwrap() + 8.4528823966252661e-3).abs() < 1.0e-9);
+        assert!((d_hs.eps + 8.4528823966252661e-3).abs() < 1.0e-9);
     }
 
     #[test]

@@ -66,12 +66,11 @@ mod test {
         let moles = (1.5 * MOL).to_reduced(EosUnit::reference_moles()).unwrap();
         let state = StateHD::new(
             Dual64::from_re(temperature),
-            Dual64::new_scalar(volume, 1.0),
+            Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = -contrib.helmholtz_energy(&state).eps.unwrap()
-            * temperature
-            * EosUnit::reference_pressure();
+        let pressure =
+            -contrib.helmholtz_energy(&state).eps * temperature * EosUnit::reference_pressure();
         assert_relative_eq!(
             pressure,
             -7.991735636207462e-1 * PASCAL,
@@ -96,9 +95,8 @@ mod test {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = -contrib.helmholtz_energy(&state).eps.unwrap()
-            * temperature
-            * EosUnit::reference_pressure();
+        let pressure =
+            -contrib.helmholtz_energy(&state).eps * temperature * EosUnit::reference_pressure();
         assert_relative_eq!(pressure, -1.2831486124723626 * PASCAL, max_relative = 1e-10);
     }
 }

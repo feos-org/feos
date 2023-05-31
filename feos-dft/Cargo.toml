@@ -18,8 +18,7 @@ features = [ "rayon" ]
 
 [dependencies]
 quantity = { version = "0.6", features = ["linalg"] }
-#num-dual = "0.7"
-num-dual = { git = "https://github.com/itt-ustutt/num-dual", branch = "scalar_numbers" }
+num-dual = "0.7"
 feos-core = { version = "0.4", path = "../feos-core" }
 ndarray = "0.15"
 nalgebra = "0.32"

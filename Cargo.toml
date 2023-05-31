@@ -23,8 +23,7 @@ crate-type = ["rlib", "cdylib"]
 
 [dependencies]
 quantity = "0.6"
-#num-dual = "0.7"
-num-dual = { git = "https://github.com/itt-ustutt/num-dual", branch = "scalar_numbers" }
+num-dual = "0.7"
 feos-core = { version = "0.4", path = "feos-core" }
 feos-dft = { version = "0.4", path = "feos-dft", optional = true }
 feos-derive = { version = "0.2", path = "feos-derive" }

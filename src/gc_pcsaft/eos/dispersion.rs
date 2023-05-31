@@ -154,9 +154,8 @@ mod test {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = -contrib.helmholtz_energy(&state).eps.unwrap()
-            * temperature
-            * EosUnit::reference_pressure();
+        let pressure =
+            -contrib.helmholtz_energy(&state).eps * temperature * EosUnit::reference_pressure();
         assert_relative_eq!(pressure, -2.846724434944439 * PASCAL, max_relative = 1e-10);
     }
 
@@ -177,9 +176,8 @@ mod test {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = -contrib.helmholtz_energy(&state).eps.unwrap()
-            * temperature
-            * EosUnit::reference_pressure();
+        let pressure =
+            -contrib.helmholtz_energy(&state).eps * temperature * EosUnit::reference_pressure();
         assert_relative_eq!(pressure, -5.432173507270732 * PASCAL, max_relative = 1e-10);
     }
 }

@@ -142,9 +142,8 @@ mod test {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = -contrib.helmholtz_energy(&state).eps.unwrap()
-            * temperature
-            * EosUnit::reference_pressure();
+        let pressure =
+            -contrib.helmholtz_energy(&state).eps * temperature * EosUnit::reference_pressure();
         assert_relative_eq!(pressure, 1.5285037907989527 * PASCAL, max_relative = 1e-10);
     }
 
@@ -163,9 +162,8 @@ mod test {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = -contrib.helmholtz_energy(&state).eps.unwrap()
-            * temperature
-            * EosUnit::reference_pressure();
+        let pressure =
+            -contrib.helmholtz_energy(&state).eps * temperature * EosUnit::reference_pressure();
         assert_relative_eq!(pressure, 2.3168212018200243 * PASCAL, max_relative = 1e-10);
     }
 
@@ -184,9 +182,8 @@ mod test {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = -contrib.helmholtz_energy(&state).eps.unwrap()
-            * temperature
-            * EosUnit::reference_pressure();
+        let pressure =
+            -contrib.helmholtz_energy(&state).eps * temperature * EosUnit::reference_pressure();
         assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
     }
 
@@ -206,9 +203,8 @@ mod test {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = -contrib.helmholtz_energy(&state).eps.unwrap()
-            * temperature
-            * EosUnit::reference_pressure();
+        let pressure =
+            -contrib.helmholtz_energy(&state).eps * temperature * EosUnit::reference_pressure();
         assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
     }
 
@@ -229,9 +225,8 @@ mod test {
             Dual64::from_re(volume).derivative(),
             moles.mapv(Dual64::from_re),
         );
-        let pressure = -contrib.helmholtz_energy(&state).eps.unwrap()
-            * temperature
-            * EosUnit::reference_pressure();
+        let pressure =
+            -contrib.helmholtz_energy(&state).eps * temperature * EosUnit::reference_pressure();
         assert_relative_eq!(pressure, -26.105606376765632 * PASCAL, max_relative = 1e-10);
     }
 }
