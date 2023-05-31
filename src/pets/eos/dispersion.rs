@@ -30,7 +30,7 @@ pub struct Dispersion {
     pub parameters: Arc<PetsParameters>,
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Dispersion {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Dispersion {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         // auxiliary variables
         let n = self.parameters.sigma.len();

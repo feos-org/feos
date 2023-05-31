@@ -19,7 +19,7 @@ impl fmt::Display for ReferencePerturbationWCA {
     }
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for ReferencePerturbationWCA {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for ReferencePerturbationWCA {
     /// Helmholtz energy for perturbation reference (Mayer-f), eq. 29
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;

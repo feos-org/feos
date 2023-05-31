@@ -10,7 +10,7 @@ pub struct HardChain {
     pub parameters: Arc<PcSaftParameters>,
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardChain {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for HardChain {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
         let d = self.parameters.hs_diameter(state.temperature);

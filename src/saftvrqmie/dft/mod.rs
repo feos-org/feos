@@ -116,7 +116,7 @@ impl HardSphereProperties for SaftVRQMieParameters {
         MonomerShape::Spherical(self.m.len())
     }
 
-    fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
+    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
         self.hs_diameter(temperature)
     }
 }

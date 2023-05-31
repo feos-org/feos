@@ -167,7 +167,7 @@ struct PengRobinsonContribution {
     parameters: Arc<PengRobinsonParameters>,
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for PengRobinsonContribution {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for PengRobinsonContribution {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         // temperature dependent a parameter
         let p = &self.parameters;

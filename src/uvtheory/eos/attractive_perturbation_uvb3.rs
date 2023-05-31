@@ -90,7 +90,7 @@ impl fmt::Display for AttractivePerturbationUVB3 {
     }
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for AttractivePerturbationUVB3 {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for AttractivePerturbationUVB3 {
     /// Helmholtz energy for attractive perturbation
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
@@ -131,7 +131,7 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for AttractivePerturbationUVB3 {
     }
 }
 
-fn delta_b12u<D: DualNum<f64>>(
+fn delta_b12u<D: DualNum<f64> + Copy>(
     t_x: D,
     mean_field_constant_x: D,
     weighted_sigma3_ij: D,
@@ -144,7 +144,7 @@ fn delta_b12u<D: DualNum<f64>>(
         * weighted_sigma3_ij
 }
 
-fn residual_virial_coefficient<D: DualNum<f64>>(p: &UVParameters, x: &Array1<D>, t: D) -> D {
+fn residual_virial_coefficient<D: DualNum<f64> + Copy>(p: &UVParameters, x: &Array1<D>, t: D) -> D {
     let mut delta_b2bar = D::zero();
 
     for i in 0..p.ncomponents {
@@ -163,7 +163,7 @@ fn residual_virial_coefficient<D: DualNum<f64>>(p: &UVParameters, x: &Array1<D>,
     }
     delta_b2bar
 }
-fn residual_third_virial_coefficient<D: DualNum<f64>>(
+fn residual_third_virial_coefficient<D: DualNum<f64> + Copy>(
     p: &UVParameters,
     x: &Array1<D>,
     t: D,
@@ -192,7 +192,7 @@ fn residual_third_virial_coefficient<D: DualNum<f64>>(
     }
     delta_b3bar
 }
-fn correlation_integral_wca<D: DualNum<f64>>(
+fn correlation_integral_wca<D: DualNum<f64> + Copy>(
     rho_x: D,
     mean_field_constant_x: D,
     rep_x: D,
@@ -209,7 +209,7 @@ fn correlation_integral_wca<D: DualNum<f64>>(
 }
 
 /// U-fraction with low temperature correction omega
-fn u_fraction_wca<D: DualNum<f64>>(rep_x: D, reduced_density: D, t_x: D) -> D {
+fn u_fraction_wca<D: DualNum<f64> + Copy>(rep_x: D, reduced_density: D, t_x: D) -> D {
     let omega = if t_x.re() < 175.0 {
         (-t_x * CU_WCA[5] * (reduced_density - CU_WCA[6]).powi(2)).exp()
             * ((t_x * CU_WCA[7]).tanh().recip() - 1.0).powi(2)
@@ -223,7 +223,7 @@ fn u_fraction_wca<D: DualNum<f64>>(rep_x: D, reduced_density: D, t_x: D) -> D {
 }
 
 // Coefficients for IWCA
-fn coefficients_wca<D: DualNum<f64>>(rep: D, att: D, d: D) -> [D; 6] {
+fn coefficients_wca<D: DualNum<f64> + Copy>(rep: D, att: D, d: D) -> [D; 6] {
     let rep_inv = rep.recip();
     let rs_x = (rep / att).powd((rep - att).recip());
     let tau_x = -d + rs_x;
@@ -261,7 +261,7 @@ fn factorial(num: u64) -> u64 {
     (1..=num).product()
 }
 
-fn delta_b2<D: DualNum<f64>>(reduced_temperature: D, rep: f64, att: f64, q: D) -> D {
+fn delta_b2<D: DualNum<f64> + Copy>(reduced_temperature: D, rep: f64, att: f64, q: D) -> D {
     let rm = (rep / att).powd((rep - att).recip());
     let beta = reduced_temperature.recip();
     let b20 = q.powi(3) * 2.0 / 3.0 * PI;
@@ -289,13 +289,13 @@ fn delta_b2<D: DualNum<f64>>(reduced_temperature: D, rep: f64, att: f64, q: D) -
 
     for i in 2..16 {
         let k = factorial(i as u64) as f64 * i as f64;
-        sum_beta += beta.powi(i as i32) / k
+        sum_beta += beta.powi(i) / k
     }
 
     (b20 - rm.powi(3) * 2.0 / 3.0 * PI - c1) * y - sum_beta * c2 - beta * c3 - beta.powi(2) * c4
 }
 
-fn delta_b31u<D: DualNum<f64>>(
+fn delta_b31u<D: DualNum<f64> + Copy>(
     t_x: D,
     weighted_sigma3_ij: D,
     rm_x: D,
@@ -313,7 +313,14 @@ fn delta_b31u<D: DualNum<f64>>(
     t_x.recip() * 4.0 * mie_prefactor(rep_x, att_x) * PI * k1 * weighted_sigma3_ij.powi(2)
 }
 
-fn delta_b3<D: DualNum<f64>>(t_x: D, rm_x: f64, rep_x: f64, _att_x: f64, d_x: D, q_x: D) -> D {
+fn delta_b3<D: DualNum<f64> + Copy>(
+    t_x: D,
+    rm_x: f64,
+    rep_x: f64,
+    _att_x: f64,
+    d_x: D,
+    q_x: D,
+) -> D {
     let beta = t_x.recip();
     let b30 = (q_x.powi(3) * PI / 6.0).powi(2) * 10.0;
 

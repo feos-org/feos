@@ -93,12 +93,12 @@ lazy_static! {
 }
 
 #[inline]
-pub fn mie_prefactor<D: DualNum<f64>>(rep: D, att: D) -> D {
+pub fn mie_prefactor<D: DualNum<f64> + Copy>(rep: D, att: D) -> D {
     rep / (rep - att) * (rep / att).powd(att / (rep - att))
 }
 
 #[inline]
-pub fn mean_field_constant<D: DualNum<f64>>(rep: D, att: D, x: D) -> D {
+pub fn mean_field_constant<D: DualNum<f64> + Copy>(rep: D, att: D, x: D) -> D {
     mie_prefactor(rep, att) * (x.powd(-att + 3.0) / (att - 3.0) - x.powd(-rep + 3.0) / (rep - 3.0))
 }
 
