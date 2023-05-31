@@ -6,8 +6,8 @@ use crate::{DensityInitialization, EosUnit};
 use nalgebra::{DMatrix, DVector, SVector, SymmetricEigen};
 use ndarray::{arr1, Array1};
 use num_dual::{
-    first_derivative, try_first_derivative, try_jacobian, Derivative, Dual, Dual3, Dual64, DualNum,
-    DualSVec64, DualVec, HyperDual,
+    first_derivative, try_first_derivative, try_jacobian, Dual, Dual3, Dual64, DualNum, DualSVec64,
+    DualVec, HyperDual,
 };
 use num_traits::{One, Zero};
 use quantity::si::{SIArray1, SINumber, SIUnit};
@@ -470,11 +470,10 @@ fn critical_point_objective<E: EquationOfState>(
     let v = HyperDual::from_re(density.recip() * moles.sum());
     let qij = DMatrix::from_fn(eos.components(), eos.components(), |i, j| {
         let mut m = moles.mapv(HyperDual::from);
-        m[i].eps1 = Derivative::some(SVector::from_element(DualSVec64::one()));
-        m[j].eps2 = Derivative::some(SVector::from_element(DualSVec64::one()));
+        m[i].eps1 = DualSVec64::one();
+        m[j].eps2 = DualSVec64::one();
         let state = StateHD::new(t, v, m);
-        (eos.evaluate_residual(&state).eps1eps2.unwrap()
-            + eos.ideal_gas().evaluate(&state).eps1eps2.unwrap())
+        (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
             * (moles[i] * moles[j]).sqrt()
     });
 
@@ -509,11 +508,10 @@ fn critical_point_objective_t<E: EquationOfState>(
     let v = HyperDual::from(1.0);
     let qij = DMatrix::from_fn(eos.components(), eos.components(), |i, j| {
         let mut m = density.map(HyperDual::from_re);
-        m[i].eps1 = Derivative::some(SVector::from_element(DualSVec64::one()));
-        m[j].eps2 = Derivative::some(SVector::from_element(DualSVec64::one()));
+        m[i].eps1 = DualSVec64::one();
+        m[j].eps2 = DualSVec64::one();
         let state = StateHD::new(t, v, arr1(&[m[0], m[1]]));
-        (eos.evaluate_residual(&state).eps1eps2.unwrap()
-            + eos.ideal_gas().evaluate(&state).eps1eps2.unwrap())
+        (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
             * (density[i] * density[j]).sqrt()
     });
 
@@ -545,11 +543,10 @@ fn critical_point_objective_p<E: EquationOfState>(
     let v = HyperDual::from(1.0);
     let qij = DMatrix::from_fn(eos.components(), eos.components(), |i, j| {
         let mut m = density.map(HyperDual::from_re);
-        m[i].eps1 = Derivative::some(SVector::from_element(DualSVec64::one()));
-        m[j].eps2 = Derivative::some(SVector::from_element(DualSVec64::one()));
+        m[i].eps1 = DualSVec64::one();
+        m[j].eps2 = DualSVec64::one();
         let state = StateHD::new(t, v, arr1(&[m[0], m[1]]));
-        (eos.evaluate_residual(&state).eps1eps2.unwrap()
-            + eos.ideal_gas().evaluate(&state).eps1eps2.unwrap())
+        (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
             * (density[i] * density[j]).sqrt()
     });
 
@@ -590,16 +587,15 @@ fn spinodal_objective<E: EquationOfState>(
     let v = HyperDual::from_re(density.recip() * moles.sum());
     let qij = DMatrix::from_fn(eos.components(), eos.components(), |i, j| {
         let mut m = moles.mapv(HyperDual::from);
-        m[i].eps1 = Derivative::some(SVector::from_element(DualSVec64::one()));
-        m[j].eps2 = Derivative::some(SVector::from_element(DualSVec64::one()));
+        m[i].eps1 = Dual64::one();
+        m[j].eps2 = Dual64::one();
         let state = StateHD::new(t, v, m);
-        (eos.evaluate_residual(&state).eps1eps2.unwrap()
-            + eos.ideal_gas().evaluate(&state).eps1eps2.unwrap())
+        (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
             * (moles[i] * moles[j]).sqrt()
     });
 
     // calculate smallest eigenvalue of q
-    let (eval, _) = smallest_ev(qij);
+    let (eval, _) = smallest_ev_scalar(qij);
 
     Ok(eval)
 }
@@ -607,6 +603,17 @@ fn spinodal_objective<E: EquationOfState>(
 fn smallest_ev<const N: usize>(
     m: DMatrix<DualSVec64<N>>,
 ) -> (DualSVec64<N>, DVector<DualSVec64<N>>) {
+    let eig = SymmetricEigen::new(m);
+    let (e, ev) = eig
+        .eigenvalues
+        .iter()
+        .zip(eig.eigenvectors.column_iter())
+        .reduce(|e1, e2| if e1.0 < e2.0 { e1 } else { e2 })
+        .unwrap();
+    (*e, ev.into())
+}
+
+fn smallest_ev_scalar(m: DMatrix<Dual64>) -> (Dual64, DVector<Dual64>) {
     let eig = SymmetricEigen::new(m);
     let (e, ev) = eig
         .eigenvalues

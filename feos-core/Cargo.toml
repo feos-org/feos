@@ -19,7 +19,8 @@ features = [ "rayon" ]
 
 [dependencies]
 quantity = "0.6"
-num-dual = { version = "0.7", features = ["linalg"] }
+#num-dual = { version = "0.7", features = ["linalg"] }
+num-dual = { git = "https://github.com/itt-ustutt/num-dual", branch = "scalar_numbers", features = ["linalg"] }
 ndarray = { version = "0.15", features = ["serde"] }
 nalgebra = "0.32"
 num-traits = "0.2"

@@ -328,7 +328,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
             Contributions::ResidualNpt|Contributions::IdealGas => panic!("Entropy density can only be calculated for Contributions::Residual or Contributions::Total"),
             Contributions::ResidualNvt => (),
         }
-        Ok(helmholtz_energy_density.mapv(|f| -f.eps.unwrap()))
+        Ok(helmholtz_energy_density.mapv(|f| -f.eps))
     }
 
     /// Calculate the individual contributions to the entropy density.
@@ -370,7 +370,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         }
         Ok(helmholtz_energy_density
             .iter()
-            .map(|v| v.mapv(|f| -(f * temperature_dual).eps.unwrap()))
+            .map(|v| v.mapv(|f| -(f * temperature_dual).eps))
             .collect())
     }
 
@@ -400,7 +400,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
                 Contributions::ResidualNvt => (),
             }
         let helmholtz_energy_density = helmholtz_energy_density_dual
-            .mapv(|f| f.re - f.eps.unwrap() * temperature)
+            .mapv(|f| f.re - f.eps * temperature)
             + (external_potential * density).sum_axis(Axis(0)) * temperature;
         Ok(helmholtz_energy_density)
     }

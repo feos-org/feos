@@ -638,11 +638,11 @@ where
         let x = (self.bulk.partial_molar_volume(Contributions::Total)
             * self.bulk.dp_dt(Contributions::Total))
         .to_reduced(SIUnit::reference_molar_entropy())?;
-        let mut lhs = dfdrhodt.mapv(|d| d.eps.unwrap());
+        let mut lhs = dfdrhodt.mapv(|d| d.eps);
         lhs.outer_iter_mut()
             .zip(dfdrhodt_bulk.into_iter())
             .zip(x.into_iter())
-            .for_each(|((mut lhs, d), x)| lhs -= d.eps.unwrap() - x);
+            .for_each(|((mut lhs, d), x)| lhs -= d.eps - x);
         lhs.outer_iter_mut()
             .zip(rho.outer_iter())
             .zip(rho_bulk.into_iter())

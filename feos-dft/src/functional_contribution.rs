@@ -3,7 +3,7 @@ use feos_core::{EosResult, HelmholtzEnergyDual, StateHD};
 use ndarray::prelude::*;
 use ndarray::RemoveAxis;
 use num_dual::*;
-use num_traits::Zero;
+use num_traits::{One, Zero};
 use std::fmt::Display;
 
 macro_rules! impl_helmholtz_energy {
@@ -104,14 +104,12 @@ pub trait FunctionalContribution:
         let mut phi = Array::zeros(weighted_densities.raw_dim().remove_axis(Axis(0)));
 
         for i in 0..wd.shape()[0] {
-            wd.index_axis_mut(Axis(0), i)
-                .map_inplace(|x| x.eps = Derivative::derivative());
+            wd.index_axis_mut(Axis(0), i).map_inplace(|x| x.eps = 1.0);
             phi = self.calculate_helmholtz_energy_density(t, wd.view())?;
             first_partial_derivative
                 .index_axis_mut(Axis(0), i)
-                .assign(&phi.mapv(|p| p.eps.unwrap()));
-            wd.index_axis_mut(Axis(0), i)
-                .map_inplace(|x| x.eps = Derivative::none());
+                .assign(&phi.mapv(|p| p.eps));
+            wd.index_axis_mut(Axis(0), i).map_inplace(|x| x.eps = 0.0);
         }
         helmholtz_energy_density.assign(&phi.mapv(|p| p.re));
         Ok(())
@@ -130,13 +128,13 @@ pub trait FunctionalContribution:
 
         for i in 0..wd.shape()[0] {
             wd.index_axis_mut(Axis(0), i)
-                .map_inplace(|x| x.eps = Derivative::derivative());
+                .map_inplace(|x| x.eps = Dual::one());
             phi = self.calculate_helmholtz_energy_density(t, wd.view())?;
             first_partial_derivative
                 .index_axis_mut(Axis(0), i)
-                .assign(&phi.mapv(|p| p.eps.unwrap()));
+                .assign(&phi.mapv(|p| p.eps));
             wd.index_axis_mut(Axis(0), i)
-                .map_inplace(|x| x.eps = Derivative::none());
+                .map_inplace(|x| x.eps = Dual::zero());
         }
         helmholtz_energy_density.assign(&phi.mapv(|p| p.re));
         Ok(())
@@ -155,13 +153,11 @@ pub trait FunctionalContribution:
         let mut phi = Array::zeros(weighted_densities.raw_dim().remove_axis(Axis(0)));
 
         for i in 0..wd.shape()[0] {
-            wd.index_axis_mut(Axis(0), i)
-                .map_inplace(|x| x.eps1 = Derivative::derivative());
+            wd.index_axis_mut(Axis(0), i).map_inplace(|x| x.eps1 = 1.0);
             for j in 0..=i {
-                wd.index_axis_mut(Axis(0), j)
-                    .map_inplace(|x| x.eps2 = Derivative::derivative());
+                wd.index_axis_mut(Axis(0), j).map_inplace(|x| x.eps2 = 1.0);
                 phi = self.calculate_helmholtz_energy_density(t, wd.view())?;
-                let p = phi.mapv(|p| p.eps1eps2.unwrap());
+                let p = phi.mapv(|p| p.eps1eps2);
                 second_partial_derivative
                     .index_axis_mut(Axis(0), i)
                     .index_axis_mut(Axis(0), j)
@@ -172,14 +168,12 @@ pub trait FunctionalContribution:
                         .index_axis_mut(Axis(0), i)
                         .assign(&p);
                 }
-                wd.index_axis_mut(Axis(0), j)
-                    .map_inplace(|x| x.eps2 = Derivative::none());
+                wd.index_axis_mut(Axis(0), j).map_inplace(|x| x.eps2 = 0.0);
             }
             first_partial_derivative
                 .index_axis_mut(Axis(0), i)
-                .assign(&phi.mapv(|p| p.eps1.unwrap()));
-            wd.index_axis_mut(Axis(0), i)
-                .map_inplace(|x| x.eps1 = Derivative::none());
+                .assign(&phi.mapv(|p| p.eps1));
+            wd.index_axis_mut(Axis(0), i).map_inplace(|x| x.eps1 = 0.0);
         }
         helmholtz_energy_density.assign(&phi.mapv(|p| p.re));
         Ok(())

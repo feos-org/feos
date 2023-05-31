@@ -47,23 +47,18 @@ impl<E: EquationOfState> State<E> {
                 }
                 PartialDerivative::First(v) => {
                     let new_state = self.derive1(v);
-                    -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln())
-                        .eps
-                        .unwrap()
+                    -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln()).eps
                         * (SIUnit::reference_energy() / v.reference())
                 }
                 PartialDerivative::Second(v) => {
                     let new_state = self.derive2(v);
-                    -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln())
-                        .v2
-                        .unwrap()
+                    -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln()).v2
                         * (SIUnit::reference_energy() / (v.reference() * v.reference()))
                 }
                 PartialDerivative::SecondMixed(v1, v2) => {
                     let new_state = self.derive2_mixed(v1, v2);
                     -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln())
                         .eps1eps2
-                        .unwrap()
                         * (SIUnit::reference_energy() / (v1.reference() * v2.reference()))
                 }
                 PartialDerivative::Third(v) => {
@@ -128,25 +123,19 @@ impl<E: EquationOfState> State<E> {
                 }
                 PartialDerivative::First(v) => {
                     let new_state = self.derive1(v);
-                    (self.eos.ideal_gas().evaluate(&new_state) * new_state.temperature)
-                        .eps
-                        .unwrap()
+                    (self.eos.ideal_gas().evaluate(&new_state) * new_state.temperature).eps
                         * SIUnit::reference_energy()
                         / v.reference()
                 }
                 PartialDerivative::Second(v) => {
                     let new_state = self.derive2(v);
-                    (self.eos.ideal_gas().evaluate(&new_state) * new_state.temperature)
-                        .v2
-                        .unwrap()
+                    (self.eos.ideal_gas().evaluate(&new_state) * new_state.temperature).v2
                         * SIUnit::reference_energy()
                         / (v.reference() * v.reference())
                 }
                 PartialDerivative::SecondMixed(v1, v2) => {
                     let new_state = self.derive2_mixed(v1, v2);
-                    (self.eos.ideal_gas().evaluate(&new_state) * new_state.temperature)
-                        .eps1eps2
-                        .unwrap()
+                    (self.eos.ideal_gas().evaluate(&new_state) * new_state.temperature).eps1eps2
                         * SIUnit::reference_energy()
                         / (v1.reference() * v2.reference())
                 }
@@ -551,15 +540,12 @@ impl<E: EquationOfState> State<E> {
         let ig = self.eos.ideal_gas();
         res.push((
             ig.to_string(),
-            -(ig.evaluate(&new_state) * new_state.temperature)
-                .eps
-                .unwrap()
-                * SIUnit::reference_pressure(),
+            -(ig.evaluate(&new_state) * new_state.temperature).eps * SIUnit::reference_pressure(),
         ));
         for (s, v) in contributions {
             res.push((
                 s,
-                -(v * new_state.temperature).eps.unwrap() * SIUnit::reference_pressure(),
+                -(v * new_state.temperature).eps * SIUnit::reference_pressure(),
             ));
         }
         res
@@ -573,15 +559,13 @@ impl<E: EquationOfState> State<E> {
         let ig = self.eos.ideal_gas();
         res.push((
             ig.to_string(),
-            (ig.evaluate(&new_state) * new_state.temperature)
-                .eps
-                .unwrap()
+            (ig.evaluate(&new_state) * new_state.temperature).eps
                 * SIUnit::reference_molar_energy(),
         ));
         for (s, v) in contributions {
             res.push((
                 s,
-                (v * new_state.temperature).eps.unwrap() * SIUnit::reference_molar_energy(),
+                (v * new_state.temperature).eps * SIUnit::reference_molar_energy(),
             ));
         }
         res

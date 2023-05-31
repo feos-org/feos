@@ -11,11 +11,7 @@ impl WeightFunctionInfo<Dual2_64> {
     fn pdgt_weight_constants(&self) -> (Array2<f64>, Array2<f64>, Array2<f64>) {
         let k = Dual2_64::from(0.0).derivative();
         let w = self.weight_constants(k, 1);
-        (
-            w.mapv(|w| w.re),
-            w.mapv(|w| -w.v1.unwrap()),
-            w.mapv(|w| -0.5 * w.v2.unwrap()),
-        )
+        (w.mapv(|w| w.re), w.mapv(|w| -w.v1), w.mapv(|w| -0.5 * w.v2))
     }
 }
 
