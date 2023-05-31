@@ -3,9 +3,10 @@ use crate::state::StateHD;
 use crate::EosUnit;
 use ndarray::prelude::*;
 use num_dual::{
-    Dual, Dual2_64, Dual3, Dual3_64, Dual64, DualNum, DualVec64, HyperDual, HyperDual64,
+    first_derivative, second_derivative, third_derivative, Dual, Dual2, Dual2_64, Dual3, Dual3_64,
+    Dual64, DualNum, DualSVec64, HyperDual, HyperDual64,
 };
-use num_traits::{One, Zero};
+use num_traits::Zero;
 use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::fmt;
 
@@ -28,16 +29,17 @@ pub trait HelmholtzEnergyDual<D: DualNum<f64>> {
 pub trait HelmholtzEnergy:
     HelmholtzEnergyDual<f64>
     + HelmholtzEnergyDual<Dual64>
-    + HelmholtzEnergyDual<Dual<DualVec64<3>, f64>>
+    + HelmholtzEnergyDual<Dual<DualSVec64<3>, f64>>
     + HelmholtzEnergyDual<HyperDual64>
     + HelmholtzEnergyDual<Dual2_64>
     + HelmholtzEnergyDual<Dual3_64>
     + HelmholtzEnergyDual<HyperDual<Dual64, f64>>
-    + HelmholtzEnergyDual<HyperDual<DualVec64<2>, f64>>
-    + HelmholtzEnergyDual<HyperDual<DualVec64<3>, f64>>
+    + HelmholtzEnergyDual<HyperDual<DualSVec64<2>, f64>>
+    + HelmholtzEnergyDual<HyperDual<DualSVec64<3>, f64>>
+    + HelmholtzEnergyDual<Dual2<Dual64, f64>>
     + HelmholtzEnergyDual<Dual3<Dual64, f64>>
-    + HelmholtzEnergyDual<Dual3<DualVec64<2>, f64>>
-    + HelmholtzEnergyDual<Dual3<DualVec64<3>, f64>>
+    + HelmholtzEnergyDual<Dual3<DualSVec64<2>, f64>>
+    + HelmholtzEnergyDual<Dual3<DualSVec64<3>, f64>>
     + fmt::Display
     + Send
     + Sync
@@ -47,16 +49,17 @@ pub trait HelmholtzEnergy:
 impl<T> HelmholtzEnergy for T where
     T: HelmholtzEnergyDual<f64>
         + HelmholtzEnergyDual<Dual64>
-        + HelmholtzEnergyDual<Dual<DualVec64<3>, f64>>
+        + HelmholtzEnergyDual<Dual<DualSVec64<3>, f64>>
         + HelmholtzEnergyDual<HyperDual64>
         + HelmholtzEnergyDual<Dual2_64>
         + HelmholtzEnergyDual<Dual3_64>
         + HelmholtzEnergyDual<HyperDual<Dual64, f64>>
-        + HelmholtzEnergyDual<HyperDual<DualVec64<2>, f64>>
-        + HelmholtzEnergyDual<HyperDual<DualVec64<3>, f64>>
+        + HelmholtzEnergyDual<HyperDual<DualSVec64<2>, f64>>
+        + HelmholtzEnergyDual<HyperDual<DualSVec64<3>, f64>>
+        + HelmholtzEnergyDual<Dual2<Dual64, f64>>
         + HelmholtzEnergyDual<Dual3<Dual64, f64>>
-        + HelmholtzEnergyDual<Dual3<DualVec64<2>, f64>>
-        + HelmholtzEnergyDual<Dual3<DualVec64<3>, f64>>
+        + HelmholtzEnergyDual<Dual3<DualSVec64<2>, f64>>
+        + HelmholtzEnergyDual<Dual3<DualSVec64<3>, f64>>
         + fmt::Display
         + Send
         + Sync
@@ -70,7 +73,7 @@ impl<T> HelmholtzEnergy for T where
 /// the specific types in the supertraits of [IdealGasContribution]
 /// so that the implementor can be used as an ideal gas
 /// contribution in the equation of state.
-pub trait IdealGasContributionDual<D: DualNum<f64>> {
+pub trait IdealGasContributionDual<D: DualNum<f64> + Copy> {
     /// The thermal de Broglie wavelength of each component in the form $\ln\left(\frac{\Lambda^3}{\AA^3}\right)$
     fn de_broglie_wavelength(&self, temperature: D, components: usize) -> Array1<D>;
 
@@ -101,16 +104,17 @@ pub trait IdealGasContributionDual<D: DualNum<f64>> {
 pub trait IdealGasContribution:
     IdealGasContributionDual<f64>
     + IdealGasContributionDual<Dual64>
-    + IdealGasContributionDual<Dual<DualVec64<3>, f64>>
+    + IdealGasContributionDual<Dual<DualSVec64<3>, f64>>
     + IdealGasContributionDual<HyperDual64>
     + IdealGasContributionDual<Dual2_64>
     + IdealGasContributionDual<Dual3_64>
     + IdealGasContributionDual<HyperDual<Dual64, f64>>
-    + IdealGasContributionDual<HyperDual<DualVec64<2>, f64>>
-    + IdealGasContributionDual<HyperDual<DualVec64<3>, f64>>
+    + IdealGasContributionDual<HyperDual<DualSVec64<2>, f64>>
+    + IdealGasContributionDual<HyperDual<DualSVec64<3>, f64>>
+    + IdealGasContributionDual<Dual2<Dual64, f64>>
     + IdealGasContributionDual<Dual3<Dual64, f64>>
-    + IdealGasContributionDual<Dual3<DualVec64<2>, f64>>
-    + IdealGasContributionDual<Dual3<DualVec64<3>, f64>>
+    + IdealGasContributionDual<Dual3<DualSVec64<2>, f64>>
+    + IdealGasContributionDual<Dual3<DualSVec64<3>, f64>>
     + fmt::Display
 {
 }
@@ -118,22 +122,23 @@ pub trait IdealGasContribution:
 impl<T> IdealGasContribution for T where
     T: IdealGasContributionDual<f64>
         + IdealGasContributionDual<Dual64>
-        + IdealGasContributionDual<Dual<DualVec64<3>, f64>>
+        + IdealGasContributionDual<Dual<DualSVec64<3>, f64>>
         + IdealGasContributionDual<HyperDual64>
         + IdealGasContributionDual<Dual2_64>
         + IdealGasContributionDual<Dual3_64>
         + IdealGasContributionDual<HyperDual<Dual64, f64>>
-        + IdealGasContributionDual<HyperDual<DualVec64<2>, f64>>
-        + IdealGasContributionDual<HyperDual<DualVec64<3>, f64>>
+        + IdealGasContributionDual<HyperDual<DualSVec64<2>, f64>>
+        + IdealGasContributionDual<HyperDual<DualSVec64<3>, f64>>
+        + IdealGasContributionDual<Dual2<Dual64, f64>>
         + IdealGasContributionDual<Dual3<Dual64, f64>>
-        + IdealGasContributionDual<Dual3<DualVec64<2>, f64>>
-        + IdealGasContributionDual<Dual3<DualVec64<3>, f64>>
+        + IdealGasContributionDual<Dual3<DualSVec64<2>, f64>>
+        + IdealGasContributionDual<Dual3<DualSVec64<3>, f64>>
         + fmt::Display
 {
 }
 
 struct DefaultIdealGasContribution;
-impl<D: DualNum<f64>> IdealGasContributionDual<D> for DefaultIdealGasContribution {
+impl<D: DualNum<f64> + Copy> IdealGasContributionDual<D> for DefaultIdealGasContribution {
     fn de_broglie_wavelength(&self, _: D, components: usize) -> Array1<D> {
         Array1::zeros(components)
     }
@@ -175,7 +180,7 @@ pub trait EquationOfState: Send + Sync {
     fn residual(&self) -> &[Box<dyn HelmholtzEnergy>];
 
     /// Evaluate the residual reduced Helmholtz energy $\beta A^\mathrm{res}$.
-    fn evaluate_residual<D: DualNum<f64>>(&self, state: &StateHD<D>) -> D
+    fn evaluate_residual<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D
     where
         dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
     {
@@ -187,7 +192,7 @@ pub trait EquationOfState: Send + Sync {
 
     /// Evaluate the reduced Helmholtz energy of each individual contribution
     /// and return them together with a string representation of the contribution.
-    fn evaluate_residual_contributions<D: DualNum<f64>>(
+    fn evaluate_residual_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)>
@@ -252,12 +257,10 @@ pub trait EquationOfState: Send + Sync {
     ) -> EosResult<SINumber> {
         let mr = self.validate_moles(moles)?;
         let x = mr.to_reduced(mr.sum())?;
-        let mut rho = HyperDual64::zero();
-        rho.eps1[0] = 1.0;
-        rho.eps2[0] = 1.0;
-        let t = HyperDual64::from(temperature.to_reduced(SIUnit::reference_temperature())?);
-        let s = StateHD::new_virial(t, rho, x);
-        Ok(self.evaluate_residual(&s).eps1eps2[(0, 0)] * 0.5 / SIUnit::reference_density())
+        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
+        let a_res = |rho| self.evaluate_residual(&StateHD::new_virial(t.into(), rho, x));
+        let (_, _, b) = second_derivative(a_res, 0.0);
+        Ok(b * 0.5 / SIUnit::reference_density())
     }
 
     /// Calculate the third virial coefficient $C(T)$
@@ -268,10 +271,10 @@ pub trait EquationOfState: Send + Sync {
     ) -> EosResult<SINumber> {
         let mr = self.validate_moles(moles)?;
         let x = mr.to_reduced(mr.sum())?;
-        let rho = Dual3_64::zero().derive();
-        let t = Dual3_64::from(temperature.to_reduced(SIUnit::reference_temperature())?);
-        let s = StateHD::new_virial(t, rho, x);
-        Ok(self.evaluate_residual(&s).v3 / 3.0 / SIUnit::reference_density().powi(2))
+        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
+        let a_res = |rho| self.evaluate_residual(&StateHD::new_virial(t.into(), rho, x));
+        let (_, _, _, c) = third_derivative(a_res, 0.0);
+        Ok(c / 3.0 / SIUnit::reference_density().powi(2))
     }
 
     /// Calculate the temperature derivative of the second virial coefficient $B'(T)$
@@ -282,15 +285,16 @@ pub trait EquationOfState: Send + Sync {
     ) -> EosResult<SINumber> {
         let mr = self.validate_moles(moles)?;
         let x = mr.to_reduced(mr.sum())?;
-        let mut rho = HyperDual::zero();
-        rho.eps1[0] = Dual64::one();
-        rho.eps2[0] = Dual64::one();
-        let t = HyperDual::from_re(
-            Dual64::from(temperature.to_reduced(SIUnit::reference_temperature())?).derive(),
-        );
-        let s = StateHD::new_virial(t, rho, x);
-        Ok(self.evaluate_residual(&s).eps1eps2[(0, 0)].eps[0] * 0.5
-            / (SIUnit::reference_density() * SIUnit::reference_temperature()))
+        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
+        let b = |t| {
+            let a_res = |rho: Dual2<Dual64, f64>| {
+                self.evaluate_residual(&StateHD::new_virial(Dual2::from_re(t), rho, x))
+            };
+            let (_, _, b) = second_derivative(a_res, Dual64::zero());
+            b
+        };
+        let (_, b_t) = first_derivative(b, t);
+        Ok(b_t * 0.5 / (SIUnit::reference_density() * SIUnit::reference_temperature()))
     }
 
     /// Calculate the temperature derivative of the third virial coefficient $C'(T)$
@@ -301,14 +305,15 @@ pub trait EquationOfState: Send + Sync {
     ) -> EosResult<SINumber> {
         let mr = self.validate_moles(moles)?;
         let x = mr.to_reduced(mr.sum())?;
-        let rho = Dual3::zero().derive();
-        let t = Dual3::from_re(
-            Dual64::from(temperature.to_reduced(SIUnit::reference_temperature())?).derive(),
-        );
-        let s = StateHD::new_virial(t, rho, x);
-        Ok(self.evaluate_residual(&s).v3.eps[0]
-            / 3.0
-            / (SIUnit::reference_density().powi(2) * SIUnit::reference_temperature()))
+        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
+        let c = |t| {
+            let a_res =
+                |rho| self.evaluate_residual(&StateHD::new_virial(Dual3::from_re(t), rho, x));
+            let (_, _, _, c) = third_derivative(a_res, Dual64::zero());
+            c
+        };
+        let (_, c_t) = first_derivative(c, t);
+        Ok(c_t / 3.0 / (SIUnit::reference_density().powi(2) * SIUnit::reference_temperature()))
     }
 }
 

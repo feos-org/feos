@@ -26,7 +26,7 @@ impl AttractiveFunctional {
     }
 }
 
-fn att_weight_functions<N: DualNum<f64> + ScalarOperand>(
+fn att_weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
     p: &SaftVRQMieParameters,
     psi: f64,
     temperature: N,
@@ -38,7 +38,9 @@ fn att_weight_functions<N: DualNum<f64> + ScalarOperand>(
     )
 }
 
-impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for AttractiveFunctional {
+impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N>
+    for AttractiveFunctional
+{
     fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
         att_weight_functions(&self.parameters, PSI_DFT, temperature)
     }

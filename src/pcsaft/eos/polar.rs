@@ -127,7 +127,7 @@ impl MeanSegmentNumbers {
     }
 }
 
-fn pair_integral_ij<D: DualNum<f64>>(
+fn pair_integral_ij<D: DualNum<f64> + Copy>(
     mij1: f64,
     mij2: f64,
     etas: &[D],
@@ -144,13 +144,18 @@ fn pair_integral_ij<D: DualNum<f64>>(
         .sum()
 }
 
-fn triplet_integral_ijk<D: DualNum<f64>>(mijk1: f64, mijk2: f64, etas: &[D], c: &[[f64; 3]]) -> D {
+fn triplet_integral_ijk<D: DualNum<f64> + Copy>(
+    mijk1: f64,
+    mijk2: f64,
+    etas: &[D],
+    c: &[[f64; 3]],
+) -> D {
     (0..c.len())
         .map(|i| etas[i] * (c[i][0] + mijk1 * c[i][1] + mijk2 * c[i][2]))
         .sum()
 }
 
-fn triplet_integral_ijk_dq<D: DualNum<f64>>(mijk: f64, etas: &[D], c: &[[f64; 2]]) -> D {
+fn triplet_integral_ijk_dq<D: DualNum<f64> + Copy>(mijk: f64, etas: &[D], c: &[[f64; 2]]) -> D {
     (0..c.len())
         .map(|i| etas[i] * (c[i][0] + mijk * c[i][1]))
         .sum()
@@ -160,7 +165,7 @@ pub struct Dipole {
     pub parameters: Arc<PcSaftParameters>,
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Dipole {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Dipole {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let m = MeanSegmentNumbers::new(&self.parameters, Multipole::Dipole);
         let p = &self.parameters;
@@ -237,7 +242,7 @@ pub struct Quadrupole {
     pub parameters: Arc<PcSaftParameters>,
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Quadrupole {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Quadrupole {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let m = MeanSegmentNumbers::new(&self.parameters, Multipole::Quadrupole);
         let p = &self.parameters;
@@ -324,7 +329,7 @@ pub struct DipoleQuadrupole {
     pub variant: DQVariants,
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for DipoleQuadrupole {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for DipoleQuadrupole {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
 

@@ -51,7 +51,7 @@ impl<T: MolarWeight> MolarWeight for DFT<T> {
 }
 
 struct DefaultIdealGasContribution();
-impl<D: DualNum<f64>> IdealGasContributionDual<D> for DefaultIdealGasContribution {
+impl<D: DualNum<f64> + Copy> IdealGasContributionDual<D> for DefaultIdealGasContribution {
     fn de_broglie_wavelength(&self, _: D, components: usize) -> Array1<D> {
         Array1::zeros(components)
     }
@@ -80,7 +80,7 @@ impl<T: HelmholtzEnergyFunctional> EquationOfState for DFT<T> {
         unreachable!()
     }
 
-    fn evaluate_residual<D: DualNum<f64>>(&self, state: &StateHD<D>) -> D
+    fn evaluate_residual<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D
     where
         dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
     {
@@ -91,7 +91,7 @@ impl<T: HelmholtzEnergyFunctional> EquationOfState for DFT<T> {
             + self.ideal_chain_contribution().helmholtz_energy(state)
     }
 
-    fn evaluate_residual_contributions<D: DualNum<f64>>(
+    fn evaluate_residual_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)>
@@ -278,7 +278,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         convolver: &Arc<dyn Convolver<N, D>>,
     ) -> EosResult<Array<N, D>>
     where
-        N: DualNum<f64> + ScalarOperand,
+        N: DualNum<f64> + Copy + ScalarOperand,
         dyn FunctionalContribution: FunctionalContributionDual<N>,
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,
@@ -318,7 +318,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,
     {
-        let temperature_dual = Dual64::from(temperature).derive();
+        let temperature_dual = Dual64::from(temperature).derivative();
         let mut helmholtz_energy_density =
             self.intrinsic_helmholtz_energy_density(temperature_dual, density, convolver)?;
         match contributions {
@@ -328,7 +328,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
             Contributions::ResidualNpt|Contributions::IdealGas => panic!("Entropy density can only be calculated for Contributions::Residual or Contributions::Total"),
             Contributions::ResidualNvt => (),
         }
-        Ok(helmholtz_energy_density.mapv(|f| -f.eps[0]))
+        Ok(helmholtz_energy_density.mapv(|f| -f.eps))
     }
 
     /// Calculate the individual contributions to the entropy density.
@@ -346,7 +346,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
     {
         let density_dual = density.mapv(Dual64::from);
-        let temperature_dual = Dual64::from(temperature).derive();
+        let temperature_dual = Dual64::from(temperature).derivative();
         let weighted_densities = convolver.weighted_densities(&density_dual);
         let functional_contributions = self.contributions();
         let mut helmholtz_energy_density: Vec<Array<Dual64, D>> =
@@ -370,7 +370,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         }
         Ok(helmholtz_energy_density
             .iter()
-            .map(|v| v.mapv(|f| -(f * temperature_dual).eps[0]))
+            .map(|v| v.mapv(|f| -(f * temperature_dual).eps))
             .collect())
     }
 
@@ -389,7 +389,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,
     {
-        let temperature_dual = Dual64::from(temperature).derive();
+        let temperature_dual = Dual64::from(temperature).derivative();
         let mut helmholtz_energy_density_dual =
             self.intrinsic_helmholtz_energy_density(temperature_dual, density, convolver)?;
         match contributions {
@@ -400,7 +400,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
                 Contributions::ResidualNvt => (),
             }
         let helmholtz_energy_density = helmholtz_energy_density_dual
-            .mapv(|f| f.re - f.eps[0] * temperature)
+            .mapv(|f| f.re - f.eps * temperature)
             + (external_potential * density).sum_axis(Axis(0)) * temperature;
         Ok(helmholtz_energy_density)
     }
@@ -452,7 +452,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,
     {
-        let temperature_dual = Dual64::from(temperature).derive();
+        let temperature_dual = Dual64::from(temperature).derivative();
         let density_dual = density.mapv(Dual64::from);
         let weighted_densities = convolver.weighted_densities(&density_dual);
         let contributions = self.contributions();

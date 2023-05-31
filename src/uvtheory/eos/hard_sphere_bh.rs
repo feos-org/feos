@@ -23,7 +23,7 @@ pub struct HardSphereBH {
     pub parameters: Arc<UVParameters>,
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardSphereBH {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for HardSphereBH {
     /// Helmholtz energy for hard spheres, eq. 19 (check Volume)
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let d = diameter_bh(&self.parameters, state.temperature);
@@ -46,7 +46,10 @@ impl fmt::Display for HardSphereBH {
 /// Dimensionless Hard-sphere diameter according to Barker-Henderson division.
 /// Eq. S23 and S24.
 ///
-pub(super) fn diameter_bh<D: DualNum<f64>>(parameters: &UVParameters, temperature: D) -> Array1<D> {
+pub(super) fn diameter_bh<D: DualNum<f64> + Copy>(
+    parameters: &UVParameters,
+    temperature: D,
+) -> Array1<D> {
     parameters
         .cd_bh_pure
         .iter()
@@ -54,14 +57,16 @@ pub(super) fn diameter_bh<D: DualNum<f64>>(parameters: &UVParameters, temperatur
         .map(|(i, c)| {
             let t = temperature / parameters.epsilon_k[i];
             let d = t.powf(0.25) * c[1] + t.powf(0.75) * c[2] + t.powf(1.25) * c[3];
-            (t * c[0] + d * (t + 1.0).ln() + t.powi(2) * c[4] + 1.0)
-                .powf(-0.5 / parameters.rep[i] as f64)
+            (t * c[0] + d * (t + 1.0).ln() + t.powi(2) * c[4] + 1.0).powf(-0.5 / parameters.rep[i])
                 * parameters.sigma[i]
         })
         .collect()
 }
 
-pub(super) fn zeta<D: DualNum<f64>>(partial_density: &Array1<D>, diameter: &Array1<D>) -> [D; 4] {
+pub(super) fn zeta<D: DualNum<f64> + Copy>(
+    partial_density: &Array1<D>,
+    diameter: &Array1<D>,
+) -> [D; 4] {
     let mut zeta: [D; 4] = [D::zero(), D::zero(), D::zero(), D::zero()];
     for i in 0..partial_density.len() {
         for k in 0..4 {
@@ -72,7 +77,7 @@ pub(super) fn zeta<D: DualNum<f64>>(partial_density: &Array1<D>, diameter: &Arra
     zeta
 }
 
-pub(super) fn packing_fraction<D: DualNum<f64>>(
+pub(super) fn packing_fraction<D: DualNum<f64> + Copy>(
     partial_density: &Array1<D>,
     diameter: &Array1<D>,
 ) -> D {
@@ -81,7 +86,7 @@ pub(super) fn packing_fraction<D: DualNum<f64>>(
     })
 }
 
-pub(super) fn zeta_23<D: DualNum<f64>>(molefracs: &Array1<D>, diameter: &Array1<D>) -> D {
+pub(super) fn zeta_23<D: DualNum<f64> + Copy>(molefracs: &Array1<D>, diameter: &Array1<D>) -> D {
     let mut zeta: [D; 2] = [D::zero(), D::zero()];
     for i in 0..molefracs.len() {
         for k in 0..2 {
@@ -91,7 +96,7 @@ pub(super) fn zeta_23<D: DualNum<f64>>(molefracs: &Array1<D>, diameter: &Array1<
     zeta[0] / zeta[1]
 }
 
-pub(super) fn packing_fraction_b<D: DualNum<f64>>(
+pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
     parameters: &UVParameters,
     diameter: &Array1<D>,
     eta: D,
@@ -111,7 +116,7 @@ pub(super) fn packing_fraction_b<D: DualNum<f64>>(
     })
 }
 
-pub(super) fn packing_fraction_a<D: DualNum<f64>>(
+pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
     parameters: &UVParameters,
     diameter: &Array1<D>,
     eta: D,

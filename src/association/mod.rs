@@ -212,7 +212,7 @@ impl<P: HardSphereProperties> Association<P> {
         res
     }
 
-    fn association_strength<D: DualNum<f64>>(
+    fn association_strength<D: DualNum<f64> + Copy>(
         &self,
         temperature: D,
         diameter: &Array1<D>,
@@ -241,7 +241,7 @@ impl<P: HardSphereProperties> Association<P> {
     }
 }
 
-impl<D: DualNum<f64> + ScalarOperand, P: HardSphereProperties> HelmholtzEnergyDual<D>
+impl<D: DualNum<f64> + Copy + ScalarOperand, P: HardSphereProperties> HelmholtzEnergyDual<D>
     for Association<P>
 {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
@@ -305,7 +305,11 @@ impl<P> fmt::Display for Association<P> {
 }
 
 impl<P: HardSphereProperties> Association<P> {
-    fn helmholtz_energy_ab_analytic<D: DualNum<f64>>(&self, state: &StateHD<D>, delta: D) -> D {
+    fn helmholtz_energy_ab_analytic<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        delta: D,
+    ) -> D {
         let a = &self.association_parameters;
 
         // site densities
@@ -322,7 +326,11 @@ impl<P: HardSphereProperties> Association<P> {
         (rhoa * (xa.ln() - xa * 0.5 + 0.5) + rhob * (xb.ln() - xb * 0.5 + 0.5)) * state.volume
     }
 
-    fn helmholtz_energy_cc_analytic<D: DualNum<f64>>(&self, state: &StateHD<D>, delta: D) -> D {
+    fn helmholtz_energy_cc_analytic<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        delta: D,
+    ) -> D {
         let a = &self.association_parameters;
 
         // site density
@@ -337,7 +345,7 @@ impl<P: HardSphereProperties> Association<P> {
 
     #[allow(clippy::too_many_arguments)]
     fn helmholtz_energy_density_cross_association<
-        D: DualNum<f64> + ScalarOperand,
+        D: DualNum<f64> + Copy + ScalarOperand,
         S: Data<Elem = D>,
     >(
         rho: &ArrayBase<S, Ix1>,
@@ -396,7 +404,7 @@ impl<P: HardSphereProperties> Association<P> {
         Ok((rho * x_dual.mapv(f)).sum())
     }
 
-    fn newton_step_cross_association<D: DualNum<f64> + ScalarOperand, S: Data<Elem = D>>(
+    fn newton_step_cross_association<D: DualNum<f64> + Copy + ScalarOperand, S: Data<Elem = D>>(
         x: &mut Array1<D>,
         delta_ab: &Array2<D>,
         delta_cc: &Array2<D>,
@@ -541,11 +549,11 @@ mod tests_gc_pcsaft {
         let moles = (1.5 * MOL).to_reduced(EosUnit::reference_moles()).unwrap();
         let state = StateHD::new(
             Dual64::from_re(temperature),
-            Dual64::from_re(volume).derive(),
+            Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
         let pressure =
-            -contrib.helmholtz_energy(&state).eps[0] * temperature * EosUnit::reference_pressure();
+            -contrib.helmholtz_energy(&state).eps * temperature * EosUnit::reference_pressure();
         assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
     }
 
@@ -561,11 +569,11 @@ mod tests_gc_pcsaft {
         let moles = (1.5 * MOL).to_reduced(EosUnit::reference_moles()).unwrap();
         let state = StateHD::new(
             Dual64::from_re(temperature),
-            Dual64::from_re(volume).derive(),
+            Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
         let pressure =
-            -contrib.helmholtz_energy(&state).eps[0] * temperature * EosUnit::reference_pressure();
+            -contrib.helmholtz_energy(&state).eps * temperature * EosUnit::reference_pressure();
         assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
     }
 
@@ -583,11 +591,11 @@ mod tests_gc_pcsaft {
             .unwrap();
         let state = StateHD::new(
             Dual64::from_re(temperature),
-            Dual64::from_re(volume).derive(),
+            Dual64::from_re(volume).derivative(),
             moles.mapv(Dual64::from_re),
         );
         let pressure =
-            -contrib.helmholtz_energy(&state).eps[0] * temperature * EosUnit::reference_pressure();
+            -contrib.helmholtz_energy(&state).eps * temperature * EosUnit::reference_pressure();
         assert_relative_eq!(pressure, -26.105606376765632 * PASCAL, max_relative = 1e-10);
     }
 }

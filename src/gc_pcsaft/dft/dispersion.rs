@@ -24,7 +24,9 @@ impl AttractiveFunctional {
     }
 }
 
-impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for AttractiveFunctional {
+impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N>
+    for AttractiveFunctional
+{
     fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
 

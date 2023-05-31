@@ -11,7 +11,7 @@ pub struct NonAddHardSphere {
     pub parameters: Arc<SaftVRQMieParameters>,
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for NonAddHardSphere {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for NonAddHardSphere {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
         let n = p.m.len();
@@ -40,7 +40,7 @@ impl fmt::Display for NonAddHardSphere {
     }
 }
 
-pub fn reduced_non_additive_hs_energy<D: DualNum<f64>>(
+pub fn reduced_non_additive_hs_energy<D: DualNum<f64> + Copy>(
     parameters: &SaftVRQMieParameters,
     d_hs_ij: &Array2<D>,
     d_hs_add_ij: &Array2<D>,

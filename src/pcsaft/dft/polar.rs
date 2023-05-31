@@ -8,7 +8,7 @@ use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 
-pub(super) fn calculate_helmholtz_energy_density_polar<N: DualNum<f64> + ScalarOperand>(
+pub(super) fn calculate_helmholtz_energy_density_polar<N: DualNum<f64> + Copy + ScalarOperand>(
     parameters: &PcSaftParameters,
     temperature: N,
     density: ArrayView2<N>,
@@ -38,7 +38,7 @@ pub(super) fn calculate_helmholtz_energy_density_polar<N: DualNum<f64> + ScalarO
     Ok(phi)
 }
 
-pub fn pair_integral_ij<N: DualNum<f64> + ScalarOperand>(
+pub fn pair_integral_ij<N: DualNum<f64> + Copy + ScalarOperand>(
     mij1: f64,
     mij2: f64,
     eta: &Array1<N>,
@@ -93,7 +93,7 @@ fn triplet_integral_ijk_dq<N: DualNum<f64> + ScalarOperand>(
     integral
 }
 
-fn phi_polar_dipole<N: DualNum<f64> + ScalarOperand>(
+fn phi_polar_dipole<N: DualNum<f64> + Copy + ScalarOperand>(
     p: &PcSaftParameters,
     temperature: N,
     density: ArrayView2<N>,
@@ -181,7 +181,7 @@ fn phi_polar_dipole<N: DualNum<f64> + ScalarOperand>(
     Ok(result)
 }
 
-fn phi_polar_quadrupole<N: DualNum<f64> + ScalarOperand>(
+fn phi_polar_quadrupole<N: DualNum<f64> + Copy + ScalarOperand>(
     p: &PcSaftParameters,
     temperature: N,
     density: ArrayView2<N>,
@@ -269,7 +269,7 @@ fn phi_polar_quadrupole<N: DualNum<f64> + ScalarOperand>(
     Ok(result)
 }
 
-fn phi_polar_dipole_quadrupole<N: DualNum<f64> + ScalarOperand>(
+fn phi_polar_dipole_quadrupole<N: DualNum<f64> + Copy + ScalarOperand>(
     p: &PcSaftParameters,
     temperature: N,
     density: ArrayView2<N>,

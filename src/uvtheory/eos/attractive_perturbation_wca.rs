@@ -77,7 +77,7 @@ impl fmt::Display for AttractivePerturbationWCA {
     }
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for AttractivePerturbationWCA {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for AttractivePerturbationWCA {
     /// Helmholtz energy for attractive perturbation, eq. 52
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
@@ -110,7 +110,7 @@ impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for AttractivePerturbationWCA {
 }
 
 // (S43) & (S53)
-fn delta_b12u<D: DualNum<f64>>(
+fn delta_b12u<D: DualNum<f64> + Copy>(
     t_x: D,
     mean_field_constant_x: D,
     weighted_sigma3_ij: D,
@@ -123,7 +123,7 @@ fn delta_b12u<D: DualNum<f64>>(
         * weighted_sigma3_ij
 }
 
-fn residual_virial_coefficient<D: DualNum<f64>>(p: &UVParameters, x: &Array1<D>, t: D) -> D {
+fn residual_virial_coefficient<D: DualNum<f64> + Copy>(p: &UVParameters, x: &Array1<D>, t: D) -> D {
     let mut delta_b2bar = D::zero();
 
     for i in 0..p.ncomponents {
@@ -145,7 +145,7 @@ fn residual_virial_coefficient<D: DualNum<f64>>(p: &UVParameters, x: &Array1<D>,
     delta_b2bar
 }
 
-fn correlation_integral_wca<D: DualNum<f64>>(
+fn correlation_integral_wca<D: DualNum<f64> + Copy>(
     rho_x: D,
     mean_field_constant_x: D,
     rep_x: D,
@@ -163,13 +163,13 @@ fn correlation_integral_wca<D: DualNum<f64>>(
 
 /// U-fraction according to Barker-Henderson division.
 /// Eq. 15
-fn u_fraction_wca<D: DualNum<f64>>(rep_x: D, reduced_density: D) -> D {
+fn u_fraction_wca<D: DualNum<f64> + Copy>(rep_x: D, reduced_density: D) -> D {
     (reduced_density * CU_WCA[0]
         + reduced_density.powi(2) * (rep_x.recip() * CU_WCA[2] + CU_WCA[1]))
         .tanh()
 }
 
-pub(super) fn one_fluid_properties<D: DualNum<f64>>(
+pub(super) fn one_fluid_properties<D: DualNum<f64> + Copy>(
     p: &UVParameters,
     x: &Array1<D>,
     t: D,
@@ -212,7 +212,7 @@ pub(super) fn one_fluid_properties<D: DualNum<f64>>(
 }
 
 // Coefficients for IWCA from eq. (S55)
-fn coefficients_wca<D: DualNum<f64>>(rep: D, att: D, d: D) -> [D; 6] {
+fn coefficients_wca<D: DualNum<f64> + Copy>(rep: D, att: D, d: D) -> [D; 6] {
     let rep_inv = rep.recip();
     let rs_x = (rep / att).powd((rep - att).recip());
     let tau_x = -d + rs_x;
@@ -244,7 +244,7 @@ fn coefficients_wca<D: DualNum<f64>>(rep: D, att: D, d: D) -> [D; 6] {
     [c1, c2, c3, c4, c5, c6]
 }
 
-fn delta_b2<D: DualNum<f64>>(reduced_temperature: D, rep: f64, att: f64, q: D) -> D {
+fn delta_b2<D: DualNum<f64> + Copy>(reduced_temperature: D, rep: f64, att: f64, q: D) -> D {
     let rm = (rep / att).powf(1.0 / (rep - att)); // Check mixing rule!!
     let rc = 5.0;
     let alpha = mean_field_constant(rep, att, rc);
@@ -256,7 +256,7 @@ fn delta_b2<D: DualNum<f64>>(reduced_temperature: D, rep: f64, att: f64, q: D) -
         * PI
 }
 
-fn y_eff<D: DualNum<f64>>(reduced_temperature: D, rep: f64, att: f64) -> D {
+fn y_eff<D: DualNum<f64> + Copy>(reduced_temperature: D, rep: f64, att: f64) -> D {
     // optimize: move this part to parameter initialization
     let rc = 5.0;
     let rs = (rep / att).powf(1.0 / (rep - att));

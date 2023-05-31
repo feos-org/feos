@@ -40,7 +40,7 @@ pub(crate) struct BulkConvolver<T> {
     weight_constants: Vec<Array2<T>>,
 }
 
-impl<T: DualNum<f64>> BulkConvolver<T> {
+impl<T: DualNum<f64> + Copy + Send + Sync> BulkConvolver<T> {
     pub(crate) fn new(weight_functions: Vec<WeightFunctionInfo<T>>) -> Arc<dyn Convolver<T, Ix0>> {
         let weight_constants = weight_functions
             .into_iter()
@@ -50,7 +50,7 @@ impl<T: DualNum<f64>> BulkConvolver<T> {
     }
 }
 
-impl<T: DualNum<f64>> Convolver<T, Ix0> for BulkConvolver<T>
+impl<T: DualNum<f64> + Copy + Send + Sync> Convolver<T, Ix0> for BulkConvolver<T>
 where
     Array2<T>: Dot<Array1<T>, Output = Array1<T>>,
 {

@@ -28,7 +28,7 @@ fn state_pcsaft(parameters: PcSaftParameters) -> State<PcSaft> {
 }
 
 /// Residual Helmholtz energy given an equation of state and a StateHD.
-fn a_res<D: DualNum<f64>, E: EquationOfState>(inp: (&Arc<E>, &StateHD<D>)) -> D
+fn a_res<D: DualNum<f64> + Copy, E: EquationOfState>(inp: (&Arc<E>, &StateHD<D>)) -> D
 where
     (dyn HelmholtzEnergy + 'static): HelmholtzEnergyDual<D>,
 {
