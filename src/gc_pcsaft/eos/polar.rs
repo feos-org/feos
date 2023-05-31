@@ -33,7 +33,7 @@ pub const CD: [[f64; 3]; 4] = [
 
 pub const PI_SQ_43: f64 = 4.0 * PI * FRAC_PI_3;
 
-fn pair_integral_ij<D: DualNum<f64>>(mij1: f64, mij2: f64, eta: D, eps_ij_t: D) -> D {
+fn pair_integral_ij<D: DualNum<f64> + Copy>(mij1: f64, mij2: f64, eta: D, eps_ij_t: D) -> D {
     let eta2 = eta * eta;
     let etas = [D::one(), eta, eta2, eta2 * eta, eta2 * eta2];
     (0..AD.len())
@@ -45,7 +45,7 @@ fn pair_integral_ij<D: DualNum<f64>>(mij1: f64, mij2: f64, eta: D, eps_ij_t: D) 
         .sum()
 }
 
-fn triplet_integral_ijk<D: DualNum<f64>>(mijk1: f64, mijk2: f64, eta: D) -> D {
+fn triplet_integral_ijk<D: DualNum<f64> + Copy>(mijk1: f64, mijk2: f64, eta: D) -> D {
     let eta2 = eta * eta;
     let etas = [D::one(), eta, eta2, eta2 * eta];
     (0..CD.len())
@@ -118,7 +118,7 @@ impl Dipole {
     }
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for Dipole {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Dipole {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
         let ndipole = p.dipole_comp.len();

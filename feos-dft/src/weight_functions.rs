@@ -15,7 +15,7 @@ pub struct WeightFunction<T> {
     pub shape: WeightFunctionShape,
 }
 
-impl<T: DualNum<f64>> WeightFunction<T> {
+impl<T: DualNum<f64> + Copy> WeightFunction<T> {
     /// Create a new weight function without prefactor
     pub fn new_unscaled(kernel_radius: Array1<T>, shape: WeightFunctionShape) -> Self {
         Self {
@@ -276,7 +276,7 @@ impl<T> WeightFunctionInfo<T> {
     }
 }
 
-impl<T: DualNum<f64>> WeightFunctionInfo<T> {
+impl<T: DualNum<f64> + Copy> WeightFunctionInfo<T> {
     /// calculates the matrix of weight constants for this set of weighted densities
     pub fn weight_constants(&self, k: T, dimensions: usize) -> Array2<T> {
         let segments = self.component_index.len();

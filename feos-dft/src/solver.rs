@@ -1,8 +1,8 @@
 use crate::{DFTProfile, HelmholtzEnergyFunctional, WeightFunction, WeightFunctionShape};
 use feos_core::{log_iter, log_result, EosError, EosResult, EosUnit, Verbosity};
+use nalgebra::{DMatrix, DVector};
 use ndarray::prelude::*;
 use ndarray::RemoveAxis;
-use num_dual::linalg::LU;
 use petgraph::graph::Graph;
 use petgraph::visit::EdgeRef;
 use petgraph::Directed;
@@ -398,7 +398,7 @@ where
             }
 
             // calculate alpha
-            r = Array::from_shape_fn((m + 1, m + 1), |(i, j)| match (i == m, j == m) {
+            r = DMatrix::from_fn(m + 1, m + 1, |i, j| match (i == m, j == m) {
                 (false, false) => {
                     let (resi, resi_bulk, _) = &resm[i];
                     let (resj, resj_bulk, _) = &resm[j];
@@ -407,9 +407,10 @@ where
                 (true, true) => 0.0,
                 _ => 1.0,
             });
-            alpha = Array::zeros(m + 1);
+            alpha = DVector::zeros(m + 1);
             alpha[m] = 1.0;
-            alpha = LU::new(r)?.solve(&alpha);
+            let alpha = r.lu().solve(&alpha);
+            let alpha = alpha.ok_or(EosError::Error("alpha matrix is not invertible".into()))?;
 
             // update solution
             rho.fill(0.0);

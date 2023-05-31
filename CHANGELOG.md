@@ -9,9 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed the internal implementation of the association contribution to accomodate more general association schemes. [#150](https://github.com/feos-org/feos/pull/150)
 - To comply with the new association implementation, the default values of `na` and `nb` are now `0` rather than `1`. Parameter files have been adapted accordingly. [#150](https://github.com/feos-org/feos/pull/150)
 - Added the possibility to specify a pure component correction parameter `phi` for the heterosegmented gc PC-SAFT equation of state. [#157](https://github.com/feos-org/feos/pull/157)
-
-### Changed
 - Adjusted all models' implementation of the `Parameter` trait which now requires `Result`s in some methods. [#161](https://github.com/feos-org/feos/pull/161)
+
+### Packaging
+- Updated `num-dual` dependency to 0.7. [#137](https://github.com/feos-org/feos/pull/137)
 
 ## [0.4.3] - 2023-03-20
 - Python only: Release the changes introduced in `feos-core` 0.4.2.

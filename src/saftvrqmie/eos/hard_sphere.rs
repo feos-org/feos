@@ -62,7 +62,7 @@ const W_K21: [f64; 21] = [
 
 impl SaftVRQMieParameters {
     #[inline]
-    pub fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
+    pub fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
         Array1::from_shape_fn(self.m.len(), |i| -> D {
             let sigma_eff = self.calc_sigma_eff_ij(i, i, temperature);
             self.hs_diameter_ij(i, i, temperature, sigma_eff)
@@ -70,7 +70,7 @@ impl SaftVRQMieParameters {
     }
 
     #[inline]
-    pub fn hs_diameter_ij<D: DualNum<f64>>(
+    pub fn hs_diameter_ij<D: DualNum<f64> + Copy>(
         &self,
         i: usize,
         j: usize,
@@ -89,7 +89,7 @@ impl SaftVRQMieParameters {
         d_hs
     }
 
-    pub fn zero_integrand<D: DualNum<f64>>(
+    pub fn zero_integrand<D: DualNum<f64> + Copy>(
         &self,
         i: usize,
         j: usize,
@@ -118,13 +118,18 @@ impl SaftVRQMieParameters {
     }
 
     #[inline]
-    pub fn epsilon_k_eff<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
+    pub fn epsilon_k_eff<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
         Array1::from_shape_fn(self.m.len(), |i| -> D {
             self.calc_epsilon_k_eff_ij(i, i, temperature)
         })
     }
 
-    pub fn calc_epsilon_k_eff_ij<D: DualNum<f64>>(&self, i: usize, j: usize, temperature: D) -> D {
+    pub fn calc_epsilon_k_eff_ij<D: DualNum<f64> + Copy>(
+        &self,
+        i: usize,
+        j: usize,
+        temperature: D,
+    ) -> D {
         let mut r = D::one() * self.sigma_ij[[i, j]];
         let mut u_vec = [D::zero(), D::zero(), D::zero()];
         for _k in 1..20 {
@@ -141,13 +146,18 @@ impl SaftVRQMieParameters {
     }
 
     #[inline]
-    pub fn sigma_eff<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
+    pub fn sigma_eff<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
         Array1::from_shape_fn(self.m.len(), |i| -> D {
             self.calc_sigma_eff_ij(i, i, temperature)
         })
     }
 
-    pub fn calc_sigma_eff_ij<D: DualNum<f64>>(&self, i: usize, j: usize, temperature: D) -> D {
+    pub fn calc_sigma_eff_ij<D: DualNum<f64> + Copy>(
+        &self,
+        i: usize,
+        j: usize,
+        temperature: D,
+    ) -> D {
         let mut r = D::one() * self.sigma_ij[[i, j]];
         let mut u_vec = [D::zero(), D::zero(), D::zero()];
         for _k in 1..20 {
@@ -169,7 +179,7 @@ impl SaftVRQMieParameters {
     }
 
     /// Feynman-Hibbs corrected potential
-    pub fn qmie_potential_ij<D: DualNum<f64>>(
+    pub fn qmie_potential_ij<D: DualNum<f64> + Copy>(
         &self,
         i: usize,
         j: usize,
@@ -230,7 +240,7 @@ pub struct HardSphere {
     pub parameters: Arc<SaftVRQMieParameters>,
 }
 
-impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for HardSphere {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for HardSphere {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let d = self.parameters.hs_diameter(state.temperature);
         let zeta = zeta(&self.parameters.m, &state.partial_density, &d);
@@ -249,7 +259,7 @@ impl fmt::Display for HardSphere {
     }
 }
 
-pub fn zeta<D: DualNum<f64>>(
+pub fn zeta<D: DualNum<f64> + Copy>(
     m: &Array1<f64>,
     partial_density: &Array1<D>,
     diameter: &Array1<D>,
@@ -265,7 +275,11 @@ pub fn zeta<D: DualNum<f64>>(
     zeta
 }
 
-pub fn zeta_23<D: DualNum<f64>>(m: &Array1<f64>, molefracs: &Array1<D>, diameter: &Array1<D>) -> D {
+pub fn zeta_23<D: DualNum<f64> + Copy>(
+    m: &Array1<f64>,
+    molefracs: &Array1<D>,
+    diameter: &Array1<D>,
+) -> D {
     let mut zeta: [D; 2] = [D::zero(), D::zero()];
     for i in 0..m.len() {
         for (k, z) in zeta.iter_mut().enumerate() {
@@ -282,59 +296,59 @@ mod tests {
     use crate::saftvrqmie::parameters::utils::hydrogen_fh;
     use approx::assert_relative_eq;
     use ndarray::arr1;
-    use num_dual::Dual2;
+    use num_dual::Dual64;
 
     #[test]
     fn test_quantum_d_mass() {
         let parameters = hydrogen_fh("1");
-        let temperature = Dual2::from_re(26.7060).derive();
-        let r = Dual2::from_re(3.5);
+        let temperature = 26.7060;
+        let r = 3.5;
         let u0 = parameters.qmie_potential_ij(0, 0, r, temperature);
         let eps = 1.0e-5;
         let u2 = parameters.qmie_potential_ij(0, 0, r + eps, temperature);
         let u1 = parameters.qmie_potential_ij(0, 0, r - eps, temperature);
-        let dudr_num = (u2[0].re() - u1[0].re()) / eps / 2.0;
-        let d2udr2_num = (u2[1].re() - u1[1].re()) / eps / 2.0;
-        assert!(((dudr_num - u0[1].re()) / u0[1].re()).abs() < 1.0e-9);
-        assert!(((d2udr2_num - u0[2].re()) / u0[2].re()).abs() < 1.0e-9);
+        let dudr_num = (u2[0] - u1[0]) / eps / 2.0;
+        let d2udr2_num = (u2[1] - u1[1]) / eps / 2.0;
+        assert!(((dudr_num - u0[1]) / u0[1]).abs() < 1.0e-9);
+        assert!(((d2udr2_num - u0[2]) / u0[2]).abs() < 1.0e-9);
     }
 
     #[test]
     fn test_sigma_effective() {
         let parameters = hydrogen_fh("1");
-        let temperature = Dual2::from_re(26.7060).derive();
+        let temperature = 26.7060;
         let sigma_eff = parameters.calc_sigma_eff_ij(0, 0, temperature);
-        println!("{}", sigma_eff.re() - 3.2540054024660556);
-        assert!((sigma_eff.re() - 3.2540054024660556).abs() < 5.0e-7)
+        println!("{}", sigma_eff - 3.2540054024660556);
+        assert!((sigma_eff - 3.2540054024660556).abs() < 5.0e-7)
     }
 
     #[test]
     fn test_eps_div_k_effective() {
         let parameters = hydrogen_fh("1");
-        let temperature = Dual2::from_re(26.7060).derive();
+        let temperature = 26.7060;
         let epsilon_k_eff = parameters.calc_epsilon_k_eff_ij(0, 0, temperature);
-        println!("{}", epsilon_k_eff.re() - 21.654396207986697);
-        assert!((epsilon_k_eff.re() - 21.654396207986697).abs() < 1.0e-6)
+        println!("{}", epsilon_k_eff - 21.654396207986697);
+        assert!((epsilon_k_eff - 21.654396207986697).abs() < 1.0e-6)
     }
 
     #[test]
     fn test_zero_integrand() {
         let parameters = hydrogen_fh("1");
-        let temperature = Dual2::from_re(26.706).derive();
+        let temperature = 26.706;
         let sigma_eff = parameters.calc_sigma_eff_ij(0, 0, temperature);
         let r0 = parameters.zero_integrand(0, 0, temperature, sigma_eff);
-        println!("{}", r0.re() - 2.5265031901173732);
-        assert!((r0.re() - 2.5265031901173732).abs() < 5.0e-7)
+        println!("{}", r0 - 2.5265031901173732);
+        assert!((r0 - 2.5265031901173732).abs() < 5.0e-7)
     }
 
     #[test]
     fn test_hs_diameter() {
         let parameters = hydrogen_fh("1");
-        let temperature = Dual2::from_re(26.7060).derive();
+        let temperature = Dual64::from(26.7060).derivative();
         let sigma_eff = parameters.calc_sigma_eff_ij(0, 0, temperature);
         let d_hs = parameters.hs_diameter_ij(0, 0, temperature, sigma_eff);
-        assert!((d_hs.re() - 3.1410453883283341).abs() < 5.0e-8);
-        assert!((d_hs.v1[0] + 8.4528823966252661e-3).abs() < 1.0e-9);
+        assert!((d_hs.re - 3.1410453883283341).abs() < 5.0e-8);
+        assert!((d_hs.eps + 8.4528823966252661e-3).abs() < 1.0e-9);
     }
 
     #[test]

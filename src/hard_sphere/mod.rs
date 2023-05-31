@@ -31,7 +31,7 @@ pub trait HardSphereProperties {
     fn monomer_shape<D: DualNum<f64>>(&self, temperature: D) -> MonomerShape<D>;
 
     /// The temperature dependent hard-sphere diameters of every segment.
-    fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D>;
+    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D>;
 
     /// For every segment, the index of the component that it is on.
     fn component_index(&self) -> Cow<Array1<usize>> {
@@ -55,7 +55,7 @@ pub trait HardSphereProperties {
     }
 
     /// The packing fractions $\zeta_k$.
-    fn zeta<D: DualNum<f64>, const N: usize>(
+    fn zeta<D: DualNum<f64> + Copy, const N: usize>(
         &self,
         temperature: D,
         partial_density: &Array1<D>,
@@ -77,7 +77,7 @@ pub trait HardSphereProperties {
     }
 
     /// The fraction $\frac{\zeta_2}{\zeta_3}$ evaluated in a way to avoid a division by 0 when the density is 0.
-    fn zeta_23<D: DualNum<f64>>(&self, temperature: D, molefracs: &Array1<D>) -> D {
+    fn zeta_23<D: DualNum<f64> + Copy>(&self, temperature: D, molefracs: &Array1<D>) -> D {
         let component_index = self.component_index();
         let geometry_coefficients = self.geometry_coefficients(temperature);
         let diameter = self.hs_diameter(temperature);
@@ -116,7 +116,7 @@ impl<P> HardSphere<P> {
     }
 }
 
-impl<D: DualNum<f64>, P: HardSphereProperties> HelmholtzEnergyDual<D> for HardSphere<P> {
+impl<D: DualNum<f64> + Copy, P: HardSphereProperties> HelmholtzEnergyDual<D> for HardSphere<P> {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
         let zeta = p.zeta(state.temperature, &state.partial_density, [0, 1, 2, 3]);

@@ -35,7 +35,9 @@ impl PureFMTAssocFunctional {
     }
 }
 
-impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for PureFMTAssocFunctional {
+impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N>
+    for PureFMTAssocFunctional
+{
     fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
         let r = self.parameters.hs_diameter(temperature) * 0.5;
         WeightFunctionInfo::new(arr1(&[0]), false).extend(
@@ -154,7 +156,7 @@ impl PureChainFunctional {
     }
 }
 
-impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for PureChainFunctional {
+impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for PureChainFunctional {
     fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
         WeightFunctionInfo::new(arr1(&[0]), true)
@@ -206,7 +208,7 @@ impl PureAttFunctional {
     }
 }
 
-impl<N: DualNum<f64> + ScalarOperand> FunctionalContributionDual<N> for PureAttFunctional {
+impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for PureAttFunctional {
     fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
         const PSI: f64 = 1.3862; // Homosegmented DFT (Sauer2017)

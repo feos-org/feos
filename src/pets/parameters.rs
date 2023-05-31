@@ -237,7 +237,7 @@ impl HardSphereProperties for PetsParameters {
         MonomerShape::Spherical(self.sigma.len())
     }
 
-    fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
+    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
         let ti = temperature.recip() * -3.052785558;
         Array::from_shape_fn(self.sigma.len(), |i| {
             -((ti * self.epsilon_k[i]).exp() * 0.127112544 - 1.0) * self.sigma[i]

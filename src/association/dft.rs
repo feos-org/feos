@@ -12,7 +12,7 @@ pub const N0_CUTOFF: f64 = 1e-9;
 
 impl<N, P> FunctionalContributionDual<N> for Association<P>
 where
-    N: DualNum<f64> + ScalarOperand,
+    N: DualNum<f64> + Copy + ScalarOperand,
     P: HardSphereProperties,
 {
     fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
@@ -111,7 +111,7 @@ where
 
 impl<P: HardSphereProperties> Association<P> {
     pub fn calculate_helmholtz_energy_density<
-        N: DualNum<f64> + ScalarOperand,
+        N: DualNum<f64> + Copy + ScalarOperand,
         S: Data<Elem = N>,
     >(
         &self,
@@ -183,7 +183,10 @@ impl<P: HardSphereProperties> Association<P> {
         }
     }
 
-    fn helmholtz_energy_density_ab_analytic<N: DualNum<f64> + ScalarOperand, S: Data<Elem = N>>(
+    fn helmholtz_energy_density_ab_analytic<
+        N: DualNum<f64> + Copy + ScalarOperand,
+        S: Data<Elem = N>,
+    >(
         &self,
         temperature: N,
         rho0: &Array2<N>,
@@ -217,7 +220,10 @@ impl<P: HardSphereProperties> Association<P> {
         rhoa * xa.mapv(f) + rhob * xb.mapv(f)
     }
 
-    fn helmholtz_energy_density_cc_analytic<N: DualNum<f64> + ScalarOperand, S: Data<Elem = N>>(
+    fn helmholtz_energy_density_cc_analytic<
+        N: DualNum<f64> + Copy + ScalarOperand,
+        S: Data<Elem = N>,
+    >(
         &self,
         temperature: N,
         rho0: &Array2<N>,

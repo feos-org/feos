@@ -84,7 +84,7 @@ impl<P> FMTContribution<P> {
     }
 }
 
-impl<P: HardSphereProperties, N: DualNum<f64>> FunctionalContributionDual<N>
+impl<P: HardSphereProperties, N: DualNum<f64> + Copy> FunctionalContributionDual<N>
     for FMTContribution<P>
 {
     fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
