@@ -1,13 +1,11 @@
 use super::{Contributions, Derivative::*, PartialDerivative, State};
 // use crate::equation_of_state::{EntropyScaling, MolarWeight, Residual};
 use crate::equation_of_state::{IdealGas, MolarWeight, Residual};
-use crate::errors::EosResult;
 use crate::EosUnit;
-use ndarray::{arr1, Array1, Array2};
+use ndarray::Array1;
 use num_dual::DualNum;
 use quantity::si::*;
-use std::ops::{Add, Deref, Sub};
-use std::sync::Arc;
+use std::ops::{Add, Sub};
 
 #[derive(Clone, Copy)]
 pub(crate) enum Evaluate {
@@ -333,60 +331,60 @@ impl<E: Residual + IdealGas> State<E> {
         -1.0 / (self.dp_dv(c) * self.volume)
     }
 
-    /// Helmholtz energy $A$ evaluated for each contribution of the equation of state.
-    pub fn helmholtz_energy_contributions(&self) -> Vec<(String, SINumber)> {
-        let new_state = self.derive0();
-        let contributions = self.eos.evaluate_residual_contributions(&new_state);
-        let mut res = Vec::with_capacity(contributions.len() + 1);
-        let ig = self.eos.evaluate_ideal_gas();
-        res.push((
-            ig.to_string(),
-            ig.evaluate(&new_state) * new_state.temperature * SIUnit::reference_energy(),
-        ));
-        for (s, v) in contributions {
-            res.push((s, v * new_state.temperature * SIUnit::reference_energy()));
-        }
-        res
-    }
+    // /// Helmholtz energy $A$ evaluated for each contribution of the equation of state.
+    // pub fn helmholtz_energy_contributions(&self) -> Vec<(String, SINumber)> {
+    //     let new_state = self.derive0();
+    //     let contributions = self.eos.evaluate_residual_contributions(&new_state);
+    //     let mut res = Vec::with_capacity(contributions.len() + 1);
+    //     let ig = self.eos.evaluate_ideal_gas();
+    //     res.push((
+    //         ig.to_string(),
+    //         ig.evaluate(&new_state) * new_state.temperature * SIUnit::reference_energy(),
+    //     ));
+    //     for (s, v) in contributions {
+    //         res.push((s, v * new_state.temperature * SIUnit::reference_energy()));
+    //     }
+    //     res
+    // }
 
-    /// Pressure $p$ evaluated for each contribution of the equation of state.
-    pub fn pressure_contributions(&self) -> Vec<(String, SINumber)> {
-        let new_state = self.derive1(DV);
-        let contributions = self.eos.evaluate_residual_contributions(&new_state);
-        let mut res = Vec::with_capacity(contributions.len() + 1);
-        let ig = self.eos.evaluate_ideal_gas();
-        res.push((
-            ig.to_string(),
-            -(ig.evaluate(&new_state) * new_state.temperature).eps * SIUnit::reference_pressure(),
-        ));
-        for (s, v) in contributions {
-            res.push((
-                s,
-                -(v * new_state.temperature).eps * SIUnit::reference_pressure(),
-            ));
-        }
-        res
-    }
+    // /// Pressure $p$ evaluated for each contribution of the equation of state.
+    // pub fn pressure_contributions(&self) -> Vec<(String, SINumber)> {
+    //     let new_state = self.derive1(DV);
+    //     let contributions = self.eos.evaluate_residual_contributions(&new_state);
+    //     let mut res = Vec::with_capacity(contributions.len() + 1);
+    //     let ig = self.eos.evaluate_ideal_gas();
+    //     res.push((
+    //         ig.to_string(),
+    //         -(ig.evaluate(&new_state) * new_state.temperature).eps * SIUnit::reference_pressure(),
+    //     ));
+    //     for (s, v) in contributions {
+    //         res.push((
+    //             s,
+    //             -(v * new_state.temperature).eps * SIUnit::reference_pressure(),
+    //         ));
+    //     }
+    //     res
+    // }
 
-    /// Chemical potential $\mu_i$ evaluated for each contribution of the equation of state.
-    pub fn chemical_potential_contributions(&self, component: usize) -> Vec<(String, SINumber)> {
-        let new_state = self.derive1(DN(component));
-        let contributions = self.eos.evaluate_residual_contributions(&new_state);
-        let mut res = Vec::with_capacity(contributions.len() + 1);
-        let ig = self.eos.evaluate_ideal_gas();
-        res.push((
-            ig.to_string(),
-            (ig.evaluate(&new_state) * new_state.temperature).eps
-                * SIUnit::reference_molar_energy(),
-        ));
-        for (s, v) in contributions {
-            res.push((
-                s,
-                (v * new_state.temperature).eps * SIUnit::reference_molar_energy(),
-            ));
-        }
-        res
-    }
+    // /// Chemical potential $\mu_i$ evaluated for each contribution of the equation of state.
+    // pub fn chemical_potential_contributions(&self, component: usize) -> Vec<(String, SINumber)> {
+    //     let new_state = self.derive1(DN(component));
+    //     let contributions = self.eos.evaluate_residual_contributions(&new_state);
+    //     let mut res = Vec::with_capacity(contributions.len() + 1);
+    //     let ig = self.eos.evaluate_ideal_gas();
+    //     res.push((
+    //         ig.to_string(),
+    //         (ig.evaluate(&new_state) * new_state.temperature).eps
+    //             * SIUnit::reference_molar_energy(),
+    //     ));
+    //     for (s, v) in contributions {
+    //         res.push((
+    //             s,
+    //             (v * new_state.temperature).eps * SIUnit::reference_molar_energy(),
+    //         ));
+    //     }
+    //     res
+    // }
 }
 
 /// # Mass specific state properties

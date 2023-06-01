@@ -12,7 +12,7 @@ use crate::errors::{EosError, EosResult};
 use crate::EosUnit;
 use cache::Cache;
 use ndarray::prelude::*;
-use num_dual::linalg::{norm, LU};
+// use num_dual::linalg::{norm, LU};
 use num_dual::*;
 use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::convert::TryFrom;
@@ -730,49 +730,49 @@ impl<E: Residual> State<E> {
         Self::new_nvt(&self.eos, temperature, self.volume, &self.moles)
     }
 
-    /// Update the state with the given chemical potential.
-    pub fn update_chemical_potential(&mut self, chemical_potential: &SIArray1) -> EosResult<()> {
-        for _ in 0..50 {
-            let dmu_drho = self.dmu_dni(Contributions::Total) * self.volume;
-            let f = self.chemical_potential(Contributions::Total) - chemical_potential;
-            let dmu_drho_r = dmu_drho
-                .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
-            let f_r = f.to_reduced(SIUnit::reference_molar_energy())?;
-            let rho = &self.partial_density
-                - &(LU::new(dmu_drho_r)?.solve(&f_r) * SIUnit::reference_density());
-            *self = State::new_nvt(
-                &self.eos,
-                self.temperature,
-                self.volume,
-                &(rho * self.volume),
-            )?;
-            if norm(&f.to_reduced(SIUnit::reference_molar_energy())?) < 1e-8 {
-                return Ok(());
-            }
-        }
-        Err(EosError::NotConverged(
-            "State::update_chemical_potential".into(),
-        ))
-    }
+    // /// Update the state with the given chemical potential.
+    // pub fn update_chemical_potential(&mut self, chemical_potential: &SIArray1) -> EosResult<()> {
+    //     for _ in 0..50 {
+    //         let dmu_drho = self.dmu_dni(Contributions::Total) * self.volume;
+    //         let f = self.chemical_potential(Contributions::Total) - chemical_potential;
+    //         let dmu_drho_r = dmu_drho
+    //             .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
+    //         let f_r = f.to_reduced(SIUnit::reference_molar_energy())?;
+    //         let rho = &self.partial_density
+    //             - &(LU::new(dmu_drho_r)?.solve(&f_r) * SIUnit::reference_density());
+    //         *self = State::new_nvt(
+    //             &self.eos,
+    //             self.temperature,
+    //             self.volume,
+    //             &(rho * self.volume),
+    //         )?;
+    //         if norm(&f.to_reduced(SIUnit::reference_molar_energy())?) < 1e-8 {
+    //             return Ok(());
+    //         }
+    //     }
+    //     Err(EosError::NotConverged(
+    //         "State::update_chemical_potential".into(),
+    //     ))
+    // }
 
-    /// Update the state with the given molar Gibbs energy.
-    pub fn update_gibbs_energy(mut self, molar_gibbs_energy: SINumber) -> EosResult<Self> {
-        for _ in 0..50 {
-            let df = self.volume / self.density * self.dp_dv(Contributions::Total);
-            let f = self.molar_gibbs_energy(Contributions::Total) - molar_gibbs_energy;
-            let rho = self.density * (f.to_reduced(df)?).exp();
-            self = State::new_nvt(
-                &self.eos,
-                self.temperature,
-                self.total_moles / rho,
-                &self.moles,
-            )?;
-            if f.to_reduced(SIUnit::reference_molar_energy())?.abs() < 1e-8 {
-                return Ok(self);
-            }
-        }
-        Err(EosError::NotConverged("State::update_gibbs_energy".into()))
-    }
+    // /// Update the state with the given molar Gibbs energy.
+    // pub fn update_gibbs_energy(mut self, molar_gibbs_energy: SINumber) -> EosResult<Self> {
+    //     for _ in 0..50 {
+    //         let df = self.volume / self.density * self.dp_dv(Contributions::Total);
+    //         let f = self.molar_gibbs_energy(Contributions::Total) - molar_gibbs_energy;
+    //         let rho = self.density * (f.to_reduced(df)?).exp();
+    //         self = State::new_nvt(
+    //             &self.eos,
+    //             self.temperature,
+    //             self.total_moles / rho,
+    //             &self.moles,
+    //         )?;
+    //         if f.to_reduced(SIUnit::reference_molar_energy())?.abs() < 1e-8 {
+    //             return Ok(self);
+    //         }
+    //     }
+    //     Err(EosError::NotConverged("State::update_gibbs_energy".into()))
+    // }
 
     /// Creates a [StateHD] cloning temperature, volume and moles.
     pub fn derive0(&self) -> StateHD<f64> {
