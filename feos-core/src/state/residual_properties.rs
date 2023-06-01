@@ -1,6 +1,6 @@
 use super::{Contributions, Derivative::*, PartialDerivative, State};
 // use crate::equation_of_state::{EntropyScaling, MolarWeight, Residual};
-use crate::equation_of_state::{ideal_gas, residual, Residual};
+use crate::equation_of_state::Residual;
 use crate::errors::EosResult;
 use crate::EosUnit;
 use ndarray::{arr1, Array1, Array2};
@@ -282,12 +282,12 @@ impl<E: Residual> State<E> {
     }
 
     /// Partial derivative of the molar residual isochoric heat capacity w.r.t. temperature: $\left(\frac{\partial c_V^\text{res}}{\partial T}\right)_{V,N_i}$
-    pub fn dc_v_res_dt(&self, contributions: Contributions) -> SINumber {
+    pub fn dc_v_res_dt(&self) -> SINumber {
         (self.temperature * self.d2s_res_dt2() + self.ds_res_dt()) / self.total_moles
     }
 
     /// Molar residual isobaric heat capacity: $c_p^\text{res}=\left(\frac{\partial h^\text{res}}{\partial T}\right)_{p,N_i}$
-    pub fn c_p_res(&self, contributions: Contributions) -> SINumber {
+    pub fn c_p_res(&self) -> SINumber {
         self.temperature / self.total_moles
             * (self.ds_res_dt()
                 - self.dp_dt(Contributions::Total).powi(2) / self.dp_dv(Contributions::Total))
@@ -302,12 +302,12 @@ impl<E: Residual> State<E> {
     }
 
     /// Residual internal energy: $U\text{res}(T, V, \mathbf{n})=A\text{res}+TS\text{res}$
-    pub fn residual_internal_energy(&self, contributions: Contributions) -> SINumber {
+    pub fn residual_internal_energy(&self) -> SINumber {
         self.temperature * self.residual_entropy() + self.residual_helmholtz_energy()
     }
 
     /// Residual Gibbs energy: $G\text{res}(T,p,\mathbf{n})=A\text{res}+pV-NRT-NRT \ln Z$
-    pub fn residual_gibbs_energy(&self, contributions: Contributions) -> SINumber {
+    pub fn residual_gibbs_energy(&self) -> SINumber {
         self.pressure(Contributions::Residual) * self.volume + self.residual_helmholtz_energy()
             - self.total_moles
                 * SIUnit::gas_constant()

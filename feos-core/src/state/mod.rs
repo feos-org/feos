@@ -323,7 +323,6 @@ impl<E: Residual> State<E> {
         molefracs: Option<&Array1<f64>>,
         pressure: Option<SINumber>,
         density_initialization: DensityInitialization,
-        initial_temperature: Option<SINumber>,
     ) -> EosResult<Self> {
         Self::_new(
             eos,
@@ -336,7 +335,6 @@ impl<E: Residual> State<E> {
             molefracs,
             pressure,
             density_initialization,
-            initial_temperature,
         )?
         .map_err(|_| EosError::UndeterminedState(String::from("Missing input parameters.")))
     }
@@ -352,7 +350,6 @@ impl<E: Residual> State<E> {
         molefracs: Option<&Array1<f64>>,
         pressure: Option<SINumber>,
         density_initialization: DensityInitialization,
-        initial_temperature: Option<SINumber>,
     ) -> EosResult<Result<Self, Option<SIArray1>>> {
         // Check if the provided densities have correct units.
         if let DensityInitialization::InitialDensity(rho0) = density_initialization {
@@ -507,8 +504,12 @@ impl<E: Residual> State<E> {
                 (Ok(_), Err(_)) => liquid,
                 (Err(_), Ok(_)) => vapor,
                 (Ok(l), Ok(v)) => {
-                    if l.molar_gibbs_energy(Contributions::Total)
-                        > v.molar_gibbs_energy(Contributions::Total)
+                    if l.residual_gibbs_energy()
+                        > v.residual_gibbs_energy()
+                            + moles.sum()
+                                * SIUnit::gas_constant()
+                                * v.temperature
+                                * (l.volume.to_reduced(v.volume)?.ln())
                     {
                         vapor
                     } else {
@@ -582,12 +583,11 @@ impl<E: Residual + IdealGas> State<E> {
             molefracs,
             pressure,
             density_initialization,
-            initial_temperature,
         )?;
 
         let ti = initial_temperature;
         match state {
-            Ok(state) => return Ok(state),
+            Ok(state) => Ok(state),
             Err(n_i) => {
                 // Check if new state can be created using molar_enthalpy and temperature
                 if let (Some(p), Some(h), Some(n_i)) = (pressure, molar_enthalpy, &n_i) {

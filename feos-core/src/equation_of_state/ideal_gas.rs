@@ -26,7 +26,7 @@ pub trait IdealGas: Sync + Send + fmt::Display {
     /// In some cases it could be advantageous to overwrite this
     /// implementation instead of implementing the de Broglie
     /// wavelength.
-    fn evaluate_ideal_gas<D: DualNum<f64>>(&self, state: &StateHD<D>) -> D
+    fn evaluate_ideal_gas<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D
     where
         dyn DeBroglieWavelength: DeBroglieWavelengthDual<D>,
     {
