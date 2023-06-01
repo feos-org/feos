@@ -1,6 +1,6 @@
 use super::{Contributions, Derivative::*, PartialDerivative, State};
 // use crate::equation_of_state::{EntropyScaling, MolarWeight, Residual};
-use crate::equation_of_state::Residual;
+use crate::equation_of_state::{ideal_gas, residual, Residual};
 use crate::errors::EosResult;
 use crate::EosUnit;
 use ndarray::{arr1, Array1, Array2};
@@ -62,11 +62,26 @@ impl<E: Residual> State<E> {
         }
     }
 
+    fn residual_helmholtz_energy(&self) -> SINumber {
+        self.get_or_compute_derivative_residual(PartialDerivative::Zeroth)
+    }
+
+    fn residual_entropy(&self) -> SINumber {
+        -self.get_or_compute_derivative_residual(PartialDerivative::First(DT))
+    }
+
     /// Pressure: $p=-\left(\frac{\partial A}{\partial V}\right)_{T,N_i}$
     pub fn pressure(&self, contributions: Contributions) -> SINumber {
         let ideal_gas = self.density * SIUnit::gas_constant() * self.temperature;
         let residual = -self.get_or_compute_derivative_residual(PartialDerivative::First(DV));
         Self::contributions(ideal_gas, residual, contributions)
+    }
+
+    /// Residual chemical potential: $\mu_i^\text{res}=\left(\frac{\partial A^\text{res}}{\partial N_i}\right)_{T,V,N_j}$
+    fn residual_chemical_potential(&self) -> SIArray1 {
+        SIArray::from_shape_fn(self.eos.components(), |i| {
+            self.get_or_compute_derivative_residual(PartialDerivative::First(DN(i)))
+        })
     }
 
     /// Compressibility factor: $Z=\frac{pV}{NRT}$
@@ -75,6 +90,8 @@ impl<E: Residual> State<E> {
             .into_value()
             .unwrap()
     }
+
+    // pressure derivatives
 
     /// Partial derivative of pressure w.r.t. volume: $\left(\frac{\partial p}{\partial V}\right)_{T,N_i}$
     pub fn dp_dv(&self, contributions: Contributions) -> SINumber {
@@ -98,14 +115,29 @@ impl<E: Residual> State<E> {
 
     /// Partial derivative of pressure w.r.t. moles: $\left(\frac{\partial p}{\partial N_i}\right)_{T,V,N_j}$
     pub fn dp_dni(&self, contributions: Contributions) -> SIArray1 {
-        todo!();
-        // self.evaluate_property(Self::dp_dni_, contributions, true)
+        match contributions {
+            Contributions::IdealGas => {
+                SIArray::from_vec(vec![
+                    SIUnit::gas_constant() * self.temperature / self.volume;
+                    self.eos.components()
+                ])
+            }
+            Contributions::Residual => SIArray::from_shape_fn(self.eos.components(), |i| {
+                -self.get_or_compute_derivative_residual(PartialDerivative::SecondMixed(DV, DN(i)))
+            }),
+            Contributions::Total => SIArray::from_shape_fn(self.eos.components(), |i| {
+                -self.get_or_compute_derivative_residual(PartialDerivative::SecondMixed(DV, DN(i)))
+                    + SIUnit::gas_constant() * self.temperature / self.volume
+            }),
+        }
     }
 
     /// Second partial derivative of pressure w.r.t. volume: $\left(\frac{\partial^2 p}{\partial V^2}\right)_{T,N_j}$
     pub fn d2p_dv2(&self, contributions: Contributions) -> SINumber {
-        todo!();
-        // self.evaluate_property(Self::d2p_dv2_, contributions, true)
+        let ideal_gas = 2.0 * self.density * SIUnit::gas_constant() * self.temperature
+            / (self.volume * self.volume);
+        let residual = -self.get_or_compute_derivative_residual(PartialDerivative::Second(DV));
+        Self::contributions(ideal_gas, residual, contributions)
     }
 
     /// Second partial derivative of pressure w.r.t. density: $\left(\frac{\partial^2 p}{\partial \rho^2}\right)_{T,N_j}$
@@ -114,11 +146,41 @@ impl<E: Residual> State<E> {
             * (self.volume * self.d2p_dv2(contributions) + 2.0 * self.dp_dv(contributions))
     }
 
-    /// Residual chemical potential: $\mu_i^\text{res}=\left(\frac{\partial A^\text{res}}{\partial N_i}\right)_{T,V,N_j}$
-    fn residual_chemical_potential(&self) -> SIArray1 {
-        SIArray::from_shape_fn(self.eos.components(), |i| {
-            self.get_or_compute_derivative_residual(PartialDerivative::First(DN(i)))
-        })
+    /// Structure factor: $S(0)=k_BT\left(\frac{\partial\rho}{\partial p}\right)_{T,N_i}$
+    pub fn structure_factor(&self) -> f64 {
+        -(SIUnit::gas_constant() * self.temperature * self.density)
+            .to_reduced(self.volume * self.dp_dv(Contributions::Total))
+            .unwrap()
+    }
+
+    // This function is designed specifically for use in density iterations
+    pub(crate) fn p_dpdrho(&self) -> (SINumber, SINumber) {
+        let dp_dv = self.dp_dv(Contributions::Total);
+        (
+            self.pressure(Contributions::Total),
+            (-self.volume * dp_dv / self.density),
+        )
+    }
+
+    // This function is designed specifically for use in spinodal iterations
+    pub(crate) fn d2pdrho2(&self) -> (SINumber, SINumber, SINumber) {
+        let d2p_dv2 = self.d2p_dv2(Contributions::Total);
+        let dp_dv = self.dp_dv(Contributions::Total);
+        (
+            self.pressure(Contributions::Total),
+            (-self.volume * dp_dv / self.density),
+            (self.volume / (self.density * self.density) * (2.0 * dp_dv + self.volume * d2p_dv2)),
+        )
+    }
+
+    // entropy derivatives
+
+    fn ds_res_dt(&self) -> SINumber {
+        -self.get_or_compute_derivative_residual(PartialDerivative::Second(DT))
+    }
+
+    fn d2s_res_dt2(&self) -> SINumber {
+        -self.get_or_compute_derivative_residual(PartialDerivative::Third(DT))
     }
 
     /// Partial derivative of chemical potential w.r.t. temperature: $\left(\frac{\partial\mu_i}{\partial T}\right)_{V,N_i}$
@@ -134,12 +196,6 @@ impl<E: Residual> State<E> {
         SIArray::from_shape_fn((n, n), |(i, j)| {
             self.get_or_compute_derivative_residual(PartialDerivative::SecondMixed(DN(i), DN(j)))
         })
-    }
-
-    /// Partial molar volume: $v_i=\left(\frac{\partial V}{\partial N_i}\right)_{T,p,N_j}$
-    pub fn partial_molar_volume(&self, contributions: Contributions) -> SIArray1 {
-        let func = |s: &Self, evaluate: Evaluate| -s.dp_dni_(evaluate) / s.dp_dv_(evaluate);
-        self.evaluate_property(func, contributions, false)
     }
 
     /// Logarithm of the fugacity coefficient: $\ln\varphi_i=\beta\mu_i^\mathrm{res}\left(T,p,\lbrace N_i\rbrace\right)$
@@ -182,18 +238,18 @@ impl<E: Residual> State<E> {
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. temperature: $\left(\frac{\partial\ln\varphi_i}{\partial T}\right)_{p,N_i}$
     pub fn dln_phi_dt(&self) -> SIArray1 {
-        let func = |s: &Self, evaluate: Evaluate| {
-            (s.dmu_dt_(evaluate) + s.dp_dni_(evaluate) * (s.dp_dt_(evaluate) / s.dp_dv_(evaluate))
-                - s.chemical_potential_(evaluate) / self.temperature)
-                / (SIUnit::gas_constant() * self.temperature)
-        };
-        self.evaluate_property(func, Contributions::ResidualNpt, false)
+        let vi_rt = -self.dp_dni(Contributions::Total)
+            / self.dp_dv(Contributions::Total)
+            / (SIUnit::gas_constant() * self.temperature);
+        self.dmu_res_dt() + 1.0 / self.temperature - vi_rt * self.dp_dt(Contributions::Total)
     }
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. pressure: $\left(\frac{\partial\ln\varphi_i}{\partial p}\right)_{T,N_i}$
     pub fn dln_phi_dp(&self) -> SIArray1 {
-        self.partial_molar_volume(Contributions::ResidualNpt)
-            / (SIUnit::gas_constant() * self.temperature)
+        let vi_rt = -self.dp_dni(Contributions::Total)
+            / self.dp_dv(Contributions::Total)
+            / (SIUnit::gas_constant() * self.temperature);
+        vi_rt - 1.0 / self.pressure(Contributions::Total)
     }
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. moles: $\left(\frac{\partial\ln\varphi_i}{\partial N_j}\right)_{T,p,N_k}$
@@ -220,31 +276,43 @@ impl<E: Residual> State<E> {
         })
     }
 
-    /// Structure factor: $S(0)=k_BT\left(\frac{\partial\rho}{\partial p}\right)_{T,N_i}$
-    pub fn structure_factor(&self) -> f64 {
-        -(SIUnit::gas_constant() * self.temperature * self.density)
-            .to_reduced(self.volume * self.dp_dv(Contributions::Total))
-            .unwrap()
+    /// Molar residual isochoric heat capacity: $c_v^\text{res}=\left(\frac{\partial u^\text{res}}{\partial T}\right)_{V,N_i}$
+    pub fn c_v_res(&self) -> SINumber {
+        self.temperature * self.ds_res_dt() / self.total_moles
     }
 
-    // This function is designed specifically for use in density iterations
-    pub(crate) fn p_dpdrho(&self) -> (SINumber, SINumber) {
-        let dp_dv = self.dp_dv(Contributions::Total);
-        (
-            self.pressure(Contributions::Total),
-            (-self.volume * dp_dv / self.density),
-        )
+    /// Partial derivative of the molar residual isochoric heat capacity w.r.t. temperature: $\left(\frac{\partial c_V^\text{res}}{\partial T}\right)_{V,N_i}$
+    pub fn dc_v_res_dt(&self, contributions: Contributions) -> SINumber {
+        (self.temperature * self.d2s_res_dt2() + self.ds_res_dt()) / self.total_moles
     }
 
-    // This function is designed specifically for use in spinodal iterations
-    pub(crate) fn d2pdrho2(&self) -> (SINumber, SINumber, SINumber) {
-        let d2p_dv2 = self.d2p_dv2(Contributions::Total);
-        let dp_dv = self.dp_dv(Contributions::Total);
-        (
-            self.pressure(Contributions::Total),
-            (-self.volume * dp_dv / self.density),
-            (self.volume / (self.density * self.density) * (2.0 * dp_dv + self.volume * d2p_dv2)),
-        )
+    /// Molar residual isobaric heat capacity: $c_p^\text{res}=\left(\frac{\partial h^\text{res}}{\partial T}\right)_{p,N_i}$
+    pub fn c_p_res(&self, contributions: Contributions) -> SINumber {
+        self.temperature / self.total_moles
+            * (self.ds_res_dt()
+                - self.dp_dt(Contributions::Total).powi(2) / self.dp_dv(Contributions::Total))
+            - SIUnit::gas_constant()
+    }
+
+    /// Residual enthalpy: $H^\text{res}(T,p,\mathbf{n})=A^\text{res}+TS^\text{res}+pV-nRT$
+    pub fn residual_enthalpy(&self) -> SINumber {
+        self.temperature * self.residual_entropy()
+            + self.residual_helmholtz_energy()
+            + self.pressure(Contributions::Residual) * self.volume
+    }
+
+    /// Residual internal energy: $U\text{res}(T, V, \mathbf{n})=A\text{res}+TS\text{res}$
+    pub fn residual_internal_energy(&self, contributions: Contributions) -> SINumber {
+        self.temperature * self.residual_entropy() + self.residual_helmholtz_energy()
+    }
+
+    /// Residual Gibbs energy: $G\text{res}(T,p,\mathbf{n})=A\text{res}+pV-NRT-NRT \ln Z$
+    pub fn residual_gibbs_energy(&self, contributions: Contributions) -> SINumber {
+        self.pressure(Contributions::Residual) * self.volume + self.residual_helmholtz_energy()
+            - self.total_moles
+                * SIUnit::gas_constant()
+                * self.temperature
+                * self.compressibility(Contributions::Total).ln()
     }
 }
 

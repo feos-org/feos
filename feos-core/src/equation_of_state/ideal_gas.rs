@@ -1,5 +1,4 @@
 use crate::StateHD;
-use ndarray::Array1;
 use num_dual::DualNum;
 use std::fmt;
 
@@ -20,7 +19,7 @@ pub trait IdealGas: Sync + Send + fmt::Display {
     // /// contained in component_list.
     // fn subset(&self, component_list: &[usize]) -> Self;
 
-    fn de_broglie_wavelength(&self) -> &Box<dyn DeBroglieWavelength>;
+    fn ideal_gas_model(&self) -> &Box<dyn DeBroglieWavelength>;
 
     /// Evaluate the ideal gas contribution for a given state.
     ///
@@ -32,7 +31,7 @@ pub trait IdealGas: Sync + Send + fmt::Display {
         dyn DeBroglieWavelength: DeBroglieWavelengthDual<D>,
     {
         let lambda = self
-            .de_broglie_wavelength()
+            .ideal_gas_model()
             .de_broglie_wavelength(state.temperature);
         ((lambda
             + state.partial_density.mapv(|x| {
