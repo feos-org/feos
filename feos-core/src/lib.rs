@@ -2,6 +2,7 @@
 #![allow(clippy::reversed_empty_ranges)]
 #![allow(clippy::many_single_char_names)]
 #![allow(clippy::too_many_arguments)]
+#![allow(deprecated)]
 
 use quantity::si::*;
 use quantity::*;
@@ -26,24 +27,30 @@ macro_rules! log_result {
     }
 }
 
-pub mod cubic;
+// pub mod cubic;
 mod density_iteration;
 mod equation_of_state;
 mod errors;
-pub mod joback;
-pub mod parameter;
-mod phase_equilibria;
+// pub mod joback;
+// pub mod parameter;
+// mod phase_equilibria;
 mod state;
-pub use equation_of_state::{
-    EntropyScaling, EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, IdealGasContribution,
-    IdealGasContributionDual, MolarWeight,
-};
+// pub use equation_of_state::{
+//     EntropyScaling, EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, IdealGasContribution,
+//     IdealGasContributionDual, MolarWeight,
+// };
 pub use errors::{EosError, EosResult};
-pub use phase_equilibria::{
-    PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, SolverOptions, Verbosity,
-};
+// pub use phase_equilibria::{
+//     PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, SolverOptions, Verbosity,
+// };
 pub use state::{
-    Contributions, DensityInitialization, Derivative, State, StateBuilder, StateHD, StateVec,
+    Contributions,
+    DensityInitialization,
+    Derivative,
+    State,
+    // StateBuilder,
+    StateHD,
+    StateVec,
 };
 
 #[cfg(feature = "python")]

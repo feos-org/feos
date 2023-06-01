@@ -1,4 +1,4 @@
-use crate::parameter::ParameterError;
+// use crate::parameter::ParameterError;
 use num_dual::linalg::LinAlgError;
 use quantity::QuantityError;
 use thiserror::Error;
@@ -28,8 +28,8 @@ pub enum EosError {
     WrongUnits(String, String),
     #[error(transparent)]
     QuantityError(#[from] QuantityError),
-    #[error(transparent)]
-    ParameterError(#[from] ParameterError),
+    // #[error(transparent)]
+    // ParameterError(#[from] ParameterError),
     #[error(transparent)]
     LinAlgError(#[from] LinAlgError),
     #[cfg(feature = "rayon")]
