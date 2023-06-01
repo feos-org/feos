@@ -19,12 +19,12 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
-// mod builder;
+mod builder;
 mod cache;
 mod properties;
 mod residual_properties;
 mod statevec;
-// pub use builder::StateBuilder;
+pub use builder::StateBuilder;
 pub use statevec::StateVec;
 
 /// Possible contributions that can be computed.

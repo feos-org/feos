@@ -44,13 +44,7 @@ pub use errors::{EosError, EosResult};
 //     PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, SolverOptions, Verbosity,
 // };
 pub use state::{
-    Contributions,
-    DensityInitialization,
-    Derivative,
-    State,
-    // StateBuilder,
-    StateHD,
-    StateVec,
+    Contributions, DensityInitialization, Derivative, State, StateBuilder, StateHD, StateVec,
 };
 
 #[cfg(feature = "python")]
