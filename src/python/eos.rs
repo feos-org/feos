@@ -1,4 +1,4 @@
-use crate::eos::EosVariant;
+use crate::eos::{IdealGasModel, ResidualModel};
 #[cfg(feature = "estimator")]
 use crate::estimator::*;
 #[cfg(feature = "gc_pcsaft")]
@@ -27,9 +27,11 @@ use crate::uvtheory::python::PyUVParameters;
 use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, VirialOrder};
 
 use feos_core::cubic::PengRobinson;
+use feos_core::joback::Joback;
 use feos_core::python::cubic::PyPengRobinsonParameters;
-use feos_core::python::user_defined::PyEoSObj;
 use feos_core::*;
+use feos_core::python::joback::PyJobackRecord;
+use feos_core::python::user_defined::{PyResidual, PyIdealGas};
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2};
 use pyo3::exceptions::{PyIndexError, PyValueError};
@@ -44,10 +46,10 @@ use std::sync::Arc;
 /// Collection of equations of state.
 #[pyclass(name = "EquationOfState")]
 #[derive(Clone)]
-pub struct PyEosVariant(pub Arc<EosVariant>);
+pub struct PyEquationOfState(pub Arc<EquationOfState<IdealGasModel, ResidualModel>>);
 
 #[pymethods]
-impl PyEosVariant {
+impl PyEquationOfState {
     /// PC-SAFT equation of state.
     ///
     /// Parameters
@@ -87,10 +89,12 @@ impl PyEosVariant {
             tol_cross_assoc,
             dq_variant,
         };
-        Self(Arc::new(EosVariant::PcSaft(PcSaft::with_options(
+        let residual = Arc::new(ResidualModel::PcSaft(PcSaft::with_options(
             parameters.0,
             options,
-        ))))
+        )));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel);
+        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
     /// (heterosegmented) group contribution PC-SAFT equation of state.
@@ -128,10 +132,12 @@ impl PyEosVariant {
             max_iter_cross_assoc,
             tol_cross_assoc,
         };
-        Self(Arc::new(EosVariant::GcPcSaft(GcPcSaft::with_options(
+        let residual = Arc::new(ResidualModel::GcPcSaft(GcPcSaft::with_options(
             parameters.0,
             options,
-        ))))
+        )));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel);
+        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
     /// Peng-Robinson equation of state.
@@ -148,25 +154,27 @@ impl PyEosVariant {
     ///     states.
     #[staticmethod]
     pub fn peng_robinson(parameters: PyPengRobinsonParameters) -> Self {
-        Self(Arc::new(EosVariant::PengRobinson(PengRobinson::new(
-            parameters.0,
-        ))))
+        let residual = Arc::new(ResidualModel::PengRobinson(PengRobinson::new(parameters.0)));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel);
+        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
-    /// Equation of state from a Python class.
+    /// Residual Helmholtz energy model from a Python class.
     ///
     /// Parameters
     /// ----------
-    /// obj : Class
+    /// residual : Class
     ///     A python class implementing the necessary methods
-    ///     to be used as equation of state.
+    ///     to be used as residual equation of state.
     ///
     /// Returns
     /// -------
     /// EquationOfState
     #[staticmethod]
-    fn python(obj: Py<PyAny>) -> PyResult<Self> {
-        Ok(Self(Arc::new(EosVariant::Python(PyEoSObj::new(obj)?))))
+    fn python_residual(residual: Py<PyAny>) -> PyResult<Self> {
+        let residual = Arc::new(ResidualModel::Python(PyResidual::new(residual)?));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel);
+        Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 
     /// PeTS equation of state.
@@ -188,10 +196,12 @@ impl PyEosVariant {
     #[pyo3(signature = (parameters, max_eta=0.5), text_signature = "(parameters, max_eta=0.5)")]
     fn pets(parameters: PyPetsParameters, max_eta: f64) -> Self {
         let options = PetsOptions { max_eta };
-        Self(Arc::new(EosVariant::Pets(Pets::with_options(
+        let residual = Arc::new(ResidualModel::Pets(Pets::with_options(
             parameters.0,
             options,
-        ))))
+        )));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel);
+        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
     /// UV-Theory equation of state.
@@ -230,9 +240,12 @@ impl PyEosVariant {
             perturbation,
             virial_order,
         };
-        Ok(Self(Arc::new(EosVariant::UVTheory(
-            UVTheory::with_options(parameters.0, options)?,
-        ))))
+        let residual = Arc::new(ResidualModel::UVTheory(UVTheory::with_options(
+            parameters.0,
+            options,
+        )));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel);
+        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
     /// SAFT-VRQ Mie equation of state.
@@ -271,36 +284,70 @@ impl PyEosVariant {
             fh_order,
             inc_nonadd_term,
         };
-        Self(Arc::new(EosVariant::SaftVRQMie(SaftVRQMie::with_options(
+        let residual = Arc::new(ResidualModel::SaftVRQMie(SaftVRQMie::with_options(
             parameters.0,
             options,
-        ))))
+        )));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel);
+        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
+    }
+
+    /// Ideal gas equation of state from a Python class.
+    ///
+    /// Parameters
+    /// ----------
+    /// ideal_gas : Class, optional
+    ///     A python class implementing the necessary methods
+    ///     to be used as a ideal gas model.
+    ///
+    /// Returns
+    /// -------
+    /// EquationOfState
+    fn python_ideal_gas(&self, ideal_gas: Py<PyAny>) -> PyResult<Self> {
+        let ig = Arc::new(IdealGasModel::Python(PyIdealGas::new(ideal_gas)?));
+        Ok(Self(Arc::new(EquationOfState::new(ig, self.0.residual.clone()))))
+    }
+
+    /// Ideal gas equation of state from a Python class.
+    ///
+    /// Parameters
+    /// ----------
+    /// ideal_gas : Class, optional
+    ///     A python class implementing the necessary methods
+    ///     to be used as a ideal gas model.
+    ///
+    /// Returns
+    /// -------
+    /// EquationOfState
+    fn joback(&self, parameters: Vec<PyJobackRecord>) -> Self {
+        let records = Arc::new(parameters.iter().map(|p| p.0.clone()).collect());
+        let ideal_gas = Arc::new(IdealGasModel::Joback(Joback::new(records)));
+        Self(Arc::new(EquationOfState::new(ideal_gas, self.0.residual.clone())))
     }
 }
 
-impl_equation_of_state!(PyEosVariant);
-impl_virial_coefficients!(PyEosVariant);
-impl_state!(EosVariant, PyEosVariant);
-impl_state_molarweight!(EosVariant, PyEosVariant);
-#[cfg(feature = "pcsaft")]
-impl_state_entropy_scaling!(EosVariant, PyEosVariant);
-impl_phase_equilibrium!(EosVariant, PyEosVariant);
+impl_equation_of_state!(PyEquationOfState);
+impl_virial_coefficients!(PyEquationOfState);
+impl_state!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
+impl_state_molarweight!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
+impl_state_entropy_scaling!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
+// impl_phase_equilibrium!(IdealGasModel, ResidualModel, PyEquationOfState);
 
 #[cfg(feature = "estimator")]
-impl_estimator!(EosVariant, PyEosVariant);
+impl_estimator!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
 #[cfg(all(feature = "estimator", feature = "pcsaft"))]
-impl_estimator_entropy_scaling!(EosVariant, PyEosVariant);
+impl_estimator_entropy_scaling!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
 
 #[pymodule]
 pub fn eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<Contributions>()?;
     m.add_class::<Verbosity>()?;
 
-    m.add_class::<PyEosVariant>()?;
+    m.add_class::<PyEquationOfState>()?;
     m.add_class::<PyState>()?;
     m.add_class::<PyStateVec>()?;
-    m.add_class::<PyPhaseDiagram>()?;
-    m.add_class::<PyPhaseEquilibrium>()?;
+    // m.add_class::<PyPhaseDiagram>()?;
+    // m.add_class::<PyPhaseEquilibrium>()?;
 
     #[cfg(feature = "estimator")]
     m.add_wrapped(wrap_pymodule!(estimator_eos))?;

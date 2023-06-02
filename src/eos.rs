@@ -9,12 +9,12 @@ use crate::saftvrqmie::SaftVRQMie;
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::UVTheory;
 use feos_core::cubic::PengRobinson;
-#[cfg(feature = "python")]
-use feos_core::python::user_defined::PyEoSObj;
-use feos_core::*;
-use feos_derive;
-use feos_core::{DeBroglieWavelength, IdealGas, Residual};
 use feos_core::joback::Joback;
+#[cfg(feature = "python")]
+use feos_core::python::user_defined::{PyIdealGas, PyResidual};
+use feos_core::*;
+use feos_core::{DeBroglieWavelength, IdealGas, Residual};
+use feos_derive;
 use ndarray::Array1;
 use quantity::si::*;
 use std::fmt;
@@ -26,8 +26,7 @@ use std::fmt;
 #[derive(feos_derive::Residual)]
 pub enum ResidualModel {
     #[cfg(feature = "pcsaft")]
-    // #[implement(entropy_scaling, molar_weight)]
-    #[implement(molar_weight)]
+    #[implement(entropy_scaling, molar_weight)]
     PcSaft(PcSaft),
     #[cfg(feature = "gc_pcsaft")]
     #[implement(molar_weight)]
@@ -49,6 +48,7 @@ pub enum ResidualModel {
 
 #[derive(feos_derive::IdealGas)]
 pub enum IdealGasModel {
+    NoModel,
     Joback(Joback),
     #[cfg(feature = "python")]
     Python(PyIdealGas),

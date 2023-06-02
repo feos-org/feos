@@ -1,8 +1,11 @@
-use crate::{EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, MolarWeight, StateHD};
-use ndarray::Array1;
+use crate::{
+    DeBroglieWavelength, DeBroglieWavelengthDual, HelmholtzEnergy, HelmholtzEnergyDual, IdealGas,
+    MolarWeight, Residual, StateHD,
+};
+use ndarray::{arr1, Array1};
 use num_dual::*;
 use numpy::convert::IntoPyArray;
-use numpy::{PyArray, PyReadonlyArrayDyn};
+use numpy::{PyArray, PyReadonlyArray1, PyReadonlyArrayDyn};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use quantity::python::PySIArray1;
@@ -10,14 +13,73 @@ use quantity::si::SIArray1;
 use std::fmt;
 
 struct PyHelmholtzEnergy(Py<PyAny>);
+struct PyDeBroglieWavelength(Py<PyAny>);
 
+impl fmt::Display for PyDeBroglieWavelength {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Python de Broglie")
+    }
+}
+
+pub struct PyIdealGas {
+    obj: Py<PyAny>,
+    de_broglie: Box<dyn DeBroglieWavelength>,
+}
+
+impl fmt::Display for PyIdealGas {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Python ideal gas")
+    }
+}
+
+impl PyIdealGas {
+    pub fn new(obj: Py<PyAny>) -> PyResult<Self> {
+        Python::with_gil(|py| {
+            let attr = obj.as_ref(py).hasattr("subset")?;
+            if !attr {
+                panic!("Python Class has to have a method 'subset' with signature:\n\tdef subset(self, component_list: List[int]) -> Self")
+            }
+            let attr = obj.as_ref(py).hasattr("ideal_gas_model")?;
+            if !attr {
+                panic!("{}", "Python Class has to have a method 'ideal_gas_model' with signature:\n\tdef ideal_gas_model(self, state: StateHD) -> HD\nwhere 'HD' has to be any of {{float, Dual64, HyperDual64, HyperDualDual64, Dual3Dual64, Dual3_64}}.")
+            }
+            Ok(Self {
+                obj: obj.clone(),
+                de_broglie: Box::new(PyDeBroglieWavelength(obj)),
+            })
+        })
+    }
+}
+
+impl IdealGas for PyIdealGas {
+    fn subset(&self, component_list: &[usize]) -> Self {
+        Python::with_gil(|py| {
+            let py_result = self
+                .obj
+                .as_ref(py)
+                .call_method1("subset", (component_list.to_vec(),))
+                .unwrap();
+            Self::new(py_result.extract().unwrap()).unwrap()
+        })
+    }
+
+    fn ideal_gas_model(&self) -> &Box<dyn DeBroglieWavelength> {
+        &self.de_broglie
+    }
+}
 /// Struct containing pointer to Python Class that implements Helmholtz energy.
-pub struct PyEoSObj {
+pub struct PyResidual {
     obj: Py<PyAny>,
     contributions: Vec<Box<dyn HelmholtzEnergy>>,
 }
 
-impl PyEoSObj {
+impl fmt::Display for PyResidual {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Python residual")
+    }
+}
+
+impl PyResidual {
     pub fn new(obj: Py<PyAny>) -> PyResult<Self> {
         Python::with_gil(|py| {
             let attr = obj.as_ref(py).hasattr("components")?;
@@ -48,7 +110,7 @@ impl PyEoSObj {
     }
 }
 
-impl MolarWeight for PyEoSObj {
+impl MolarWeight for PyResidual {
     fn molar_weight(&self) -> SIArray1 {
         Python::with_gil(|py| {
             let py_result = self.obj.as_ref(py).call_method0("molar_weight").unwrap();
@@ -63,7 +125,7 @@ impl MolarWeight for PyEoSObj {
     }
 }
 
-impl EquationOfState for PyEoSObj {
+impl Residual for PyResidual {
     fn components(&self) -> usize {
         Python::with_gil(|py| {
             let py_result = self.obj.as_ref(py).call_method0("components").unwrap();
@@ -99,7 +161,7 @@ impl EquationOfState for PyEoSObj {
         })
     }
 
-    fn residual(&self) -> &[Box<dyn HelmholtzEnergy>] {
+    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         &self.contributions
     }
 }
@@ -192,17 +254,48 @@ macro_rules! helmholtz_energy {
     };
 }
 
+macro_rules! de_broglie_wavelength {
+    ($py_hd_id:ident, $hd_ty:ty) => {
+        impl DeBroglieWavelengthDual<$hd_ty> for PyDeBroglieWavelength {
+            fn de_broglie_wavelength(&self, temperature: $hd_ty) -> Array1<$hd_ty> {
+                Python::with_gil(|py| {
+                    let py_result = self
+                        .0
+                        .as_ref(py)
+                        .call_method1("ideal_gas_model", (<$py_hd_id>::from(temperature),))
+                        .unwrap();
+                    let rr = if let Ok(r) = py_result.extract::<PyReadonlyArray1<PyObject>>() {
+                        dbg!("Array1");
+                        r.to_owned_array()
+                            .mapv(|ri| <$hd_ty>::from(ri.extract::<$py_hd_id>(py).unwrap()))
+                    } else if let Ok(r) = py_result.extract::<PyReadonlyArrayDyn<PyObject>>() {
+                        dbg!("Array0");
+                        assert!(r.ndim() == 0);
+                        let scalar = &r.to_owned_array()[0];
+                        arr1(&[<$hd_ty>::from(scalar.extract::<$py_hd_id>(py).unwrap())])
+                    } else {
+                        panic!("ideal_gas_model: input data type must be numpy ndarray of dimension 1")
+                    };
+                    rr
+                })
+            }
+        }
+    };
+}
+
 macro_rules! impl_dual_state_helmholtz_energy {
     ($py_state_id:ident, $py_hd_id:ident, $hd_ty:ty, $py_field_ty:ty) => {
         dual_number!($py_hd_id, $hd_ty, $py_field_ty);
         state!($py_state_id, $py_hd_id, $hd_ty);
         helmholtz_energy!($py_state_id, $py_hd_id, $hd_ty);
+        de_broglie_wavelength!($py_hd_id, $hd_ty);
     };
 }
 
 // No definition of dual number necessary for f64
 state!(PyStateF, f64, f64);
 helmholtz_energy!(PyStateF, f64, f64);
+de_broglie_wavelength!(f64, f64);
 
 impl_dual_state_helmholtz_energy!(PyStateD, PyDual64, Dual64, f64);
 dual_number!(PyDualVec3, DualSVec64<3>, f64);

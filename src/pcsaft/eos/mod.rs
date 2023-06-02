@@ -5,6 +5,7 @@ use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
 use feos_core::{
     Contributions,
+    EntropyScaling,
     EosError,
     EosResult,
     EquationOfState,
@@ -165,168 +166,167 @@ fn chapman_enskog_thermal_conductivity(
         / KELVIN
 }
 
-// impl EntropyScaling for PcSaft {
-//     fn viscosity_reference(
-//         &self,
-//         temperature: SINumber,
-//         _: SINumber,
-//         moles: &SIArray1,
-//     ) -> EosResult<SINumber> {
-//         let p = &self.parameters;
-//         let mw = &p.molarweight;
-//         let x = moles.to_reduced(moles.sum())?;
-//         let ce: Array1<SINumber> = (0..self.components())
-//             .map(|i| {
-//                 let tr = (temperature / p.epsilon_k[i] / KELVIN)
-//                     .into_value()
-//                     .unwrap();
-//                 5.0 / 16.0
-//                     * (mw[i] * GRAM / MOL * KB / NAV * temperature / PI)
-//                         .sqrt()
-//                         .unwrap()
-//                     / omega22(tr)
-//                     / (p.sigma[i] * ANGSTROM).powi(2)
-//             })
-//             .collect();
-//         let mut ce_mix = 0.0 * MILLI * PASCAL * SECOND;
-//         for i in 0..self.components() {
-//             let denom: f64 = (0..self.components())
-//                 .map(|j| {
-//                     x[j] * (1.0
-//                         + (ce[i] / ce[j]).into_value().unwrap().sqrt()
-//                             * (mw[j] / mw[i]).powf(1.0 / 4.0))
-//                     .powi(2)
-//                         / (8.0 * (1.0 + mw[i] / mw[j])).sqrt()
-//                 })
-//                 .sum();
-//             ce_mix += ce[i] * x[i] / denom
-//         }
-//         Ok(ce_mix)
-//     }
+impl EntropyScaling for PcSaft {
+    fn viscosity_reference(
+        &self,
+        temperature: SINumber,
+        _: SINumber,
+        moles: &SIArray1,
+    ) -> EosResult<SINumber> {
+        let p = &self.parameters;
+        let mw = &p.molarweight;
+        let x = moles.to_reduced(moles.sum())?;
+        let ce: Array1<SINumber> = (0..self.components())
+            .map(|i| {
+                let tr = (temperature / p.epsilon_k[i] / KELVIN)
+                    .into_value()
+                    .unwrap();
+                5.0 / 16.0
+                    * (mw[i] * GRAM / MOL * KB / NAV * temperature / PI)
+                        .sqrt()
+                        .unwrap()
+                    / omega22(tr)
+                    / (p.sigma[i] * ANGSTROM).powi(2)
+            })
+            .collect();
+        let mut ce_mix = 0.0 * MILLI * PASCAL * SECOND;
+        for i in 0..self.components() {
+            let denom: f64 = (0..self.components())
+                .map(|j| {
+                    x[j] * (1.0
+                        + (ce[i] / ce[j]).into_value().unwrap().sqrt()
+                            * (mw[j] / mw[i]).powf(1.0 / 4.0))
+                    .powi(2)
+                        / (8.0 * (1.0 + mw[i] / mw[j])).sqrt()
+                })
+                .sum();
+            ce_mix += ce[i] * x[i] / denom
+        }
+        Ok(ce_mix)
+    }
 
-//     fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
-//         let coefficients = self
-//             .parameters
-//             .viscosity
-//             .as_ref()
-//             .expect("Missing viscosity coefficients.");
-//         let m = (x * &self.parameters.m).sum();
-//         let s = s_res / m;
-//         let pref = (x * &self.parameters.m) / m;
-//         let a: f64 = (&coefficients.row(0) * x).sum();
-//         let b: f64 = (&coefficients.row(1) * &pref).sum();
-//         let c: f64 = (&coefficients.row(2) * &pref).sum();
-//         let d: f64 = (&coefficients.row(3) * &pref).sum();
-//         Ok(a + b * s + c * s.powi(2) + d * s.powi(3))
-//     }
+    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+        let coefficients = self
+            .parameters
+            .viscosity
+            .as_ref()
+            .expect("Missing viscosity coefficients.");
+        let m = (x * &self.parameters.m).sum();
+        let s = s_res / m;
+        let pref = (x * &self.parameters.m) / m;
+        let a: f64 = (&coefficients.row(0) * x).sum();
+        let b: f64 = (&coefficients.row(1) * &pref).sum();
+        let c: f64 = (&coefficients.row(2) * &pref).sum();
+        let d: f64 = (&coefficients.row(3) * &pref).sum();
+        Ok(a + b * s + c * s.powi(2) + d * s.powi(3))
+    }
 
-//     fn diffusion_reference(
-//         &self,
-//         temperature: SINumber,
-//         volume: SINumber,
-//         moles: &SIArray1,
-//     ) -> EosResult<SINumber> {
-//         if self.components() != 1 {
-//             return Err(EosError::IncompatibleComponents(self.components(), 1));
-//         }
-//         let p = &self.parameters;
-//         let density = moles.sum() / volume;
-//         let res: Array1<SINumber> = (0..self.components())
-//             .map(|i| {
-//                 let tr = (temperature / p.epsilon_k[i] / KELVIN)
-//                     .into_value()
-//                     .unwrap();
-//                 3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi(2) / omega11(tr) / (density * NAV)
-//                     * (temperature * RGAS / PI / (p.molarweight[i] * GRAM / MOL))
-//                         .sqrt()
-//                         .unwrap()
-//             })
-//             .collect();
-//         Ok(res[0])
-//     }
+    fn diffusion_reference(
+        &self,
+        temperature: SINumber,
+        volume: SINumber,
+        moles: &SIArray1,
+    ) -> EosResult<SINumber> {
+        if self.components() != 1 {
+            return Err(EosError::IncompatibleComponents(self.components(), 1));
+        }
+        let p = &self.parameters;
+        let density = moles.sum() / volume;
+        let res: Array1<SINumber> = (0..self.components())
+            .map(|i| {
+                let tr = (temperature / p.epsilon_k[i] / KELVIN)
+                    .into_value()
+                    .unwrap();
+                3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi(2) / omega11(tr) / (density * NAV)
+                    * (temperature * RGAS / PI / (p.molarweight[i] * GRAM / MOL))
+                        .sqrt()
+                        .unwrap()
+            })
+            .collect();
+        Ok(res[0])
+    }
 
-//     fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
-//         if self.components() != 1 {
-//             return Err(EosError::IncompatibleComponents(self.components(), 1));
-//         }
-//         let coefficients = self
-//             .parameters
-//             .diffusion
-//             .as_ref()
-//             .expect("Missing diffusion coefficients.");
-//         let m = (x * &self.parameters.m).sum();
-//         let s = s_res / m;
-//         let pref = (x * &self.parameters.m).mapv(|v| v / m);
-//         let a: f64 = (&coefficients.row(0) * x).sum();
-//         let b: f64 = (&coefficients.row(1) * &pref).sum();
-//         let c: f64 = (&coefficients.row(2) * &pref).sum();
-//         let d: f64 = (&coefficients.row(3) * &pref).sum();
-//         let e: f64 = (&coefficients.row(4) * &pref).sum();
-//         Ok(a + b * s - c * (1.0 - s.exp()) * s.powi(2) - d * s.powi(4) - e * s.powi(8))
-//     }
+    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+        if self.components() != 1 {
+            return Err(EosError::IncompatibleComponents(self.components(), 1));
+        }
+        let coefficients = self
+            .parameters
+            .diffusion
+            .as_ref()
+            .expect("Missing diffusion coefficients.");
+        let m = (x * &self.parameters.m).sum();
+        let s = s_res / m;
+        let pref = (x * &self.parameters.m).mapv(|v| v / m);
+        let a: f64 = (&coefficients.row(0) * x).sum();
+        let b: f64 = (&coefficients.row(1) * &pref).sum();
+        let c: f64 = (&coefficients.row(2) * &pref).sum();
+        let d: f64 = (&coefficients.row(3) * &pref).sum();
+        let e: f64 = (&coefficients.row(4) * &pref).sum();
+        Ok(a + b * s - c * (1.0 - s.exp()) * s.powi(2) - d * s.powi(4) - e * s.powi(8))
+    }
 
-//     // Equation 4 of DOI: 10.1021/acs.iecr.9b04289
-//     fn thermal_conductivity_reference(
-//         &self,
-//         temperature: SINumber,
-//         volume: SINumber,
-//         moles: &SIArray1,
-//     ) -> EosResult<SINumber> {
-//         if self.components() != 1 {
-//             return Err(EosError::IncompatibleComponents(self.components(), 1));
-//         }
-//         let p = &self.parameters;
-//         let mws = self.molar_weight();
-//         let state = State::new_nvt(&Arc::new(Self::new(p.clone())), temperature, volume, moles)?;
-//         let res: Array1<SINumber> = (0..self.components())
-//             .map(|i| {
-//                 let tr = (temperature / p.epsilon_k[i] / KELVIN)
-//                     .into_value()
-//                     .unwrap();
-//                 let s_res_reduced = state
-//                     .molar_entropy(Contributions::Residual)
-//                     .to_reduced(RGAS)
-//                     .unwrap()
-//                     / p.m[i];
-//                 let ref_ce = chapman_enskog_thermal_conductivity(
-//                     temperature,
-//                     mws.get(i),
-//                     p.m[i],
-//                     p.sigma[i],
-//                     p.epsilon_k[i],
-//                 );
-//                 let alpha_visc = (-s_res_reduced / -0.5).exp();
-//                 let ref_ts = (-0.0167141 * tr / p.m[i] + 0.0470581 * (tr / p.m[i]).powi(2))
-//                     * (p.m[i] * p.m[i] * p.sigma[i].powi(3) * p.epsilon_k[i])
-//                     * 1e-5
-//                     * WATT
-//                     / METER
-//                     / KELVIN;
-//                 ref_ce + ref_ts * alpha_visc
-//             })
-//             .collect();
-//         Ok(res[0])
-//     }
+    // Equation 4 of DOI: 10.1021/acs.iecr.9b04289
+    fn thermal_conductivity_reference(
+        &self,
+        temperature: SINumber,
+        volume: SINumber,
+        moles: &SIArray1,
+    ) -> EosResult<SINumber> {
+        if self.components() != 1 {
+            return Err(EosError::IncompatibleComponents(self.components(), 1));
+        }
+        let p = &self.parameters;
+        let mws = self.molar_weight();
+        let state = State::new_nvt(&Arc::new(Self::new(p.clone())), temperature, volume, moles)?;
+        let res: Array1<SINumber> = (0..self.components())
+            .map(|i| {
+                let tr = (temperature / p.epsilon_k[i] / KELVIN)
+                    .into_value()
+                    .unwrap();
+                let s_res_reduced = (state.residual_entropy() / state.total_moles)
+                    .to_reduced(RGAS)
+                    .unwrap()
+                    / p.m[i];
+                let ref_ce = chapman_enskog_thermal_conductivity(
+                    temperature,
+                    mws.get(i),
+                    p.m[i],
+                    p.sigma[i],
+                    p.epsilon_k[i],
+                );
+                let alpha_visc = (-s_res_reduced / -0.5).exp();
+                let ref_ts = (-0.0167141 * tr / p.m[i] + 0.0470581 * (tr / p.m[i]).powi(2))
+                    * (p.m[i] * p.m[i] * p.sigma[i].powi(3) * p.epsilon_k[i])
+                    * 1e-5
+                    * WATT
+                    / METER
+                    / KELVIN;
+                ref_ce + ref_ts * alpha_visc
+            })
+            .collect();
+        Ok(res[0])
+    }
 
-//     fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
-//         if self.components() != 1 {
-//             return Err(EosError::IncompatibleComponents(self.components(), 1));
-//         }
-//         let coefficients = self
-//             .parameters
-//             .thermal_conductivity
-//             .as_ref()
-//             .expect("Missing thermal conductivity coefficients");
-//         let m = (x * &self.parameters.m).sum();
-//         let s = s_res / m;
-//         let pref = (x * &self.parameters.m).mapv(|v| v / m);
-//         let a: f64 = (&coefficients.row(0) * x).sum();
-//         let b: f64 = (&coefficients.row(1) * &pref).sum();
-//         let c: f64 = (&coefficients.row(2) * &pref).sum();
-//         let d: f64 = (&coefficients.row(3) * &pref).sum();
-//         Ok(a + b * s + c * (1.0 - s.exp()) + d * s.powi(2))
-//     }
-// }
+    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+        if self.components() != 1 {
+            return Err(EosError::IncompatibleComponents(self.components(), 1));
+        }
+        let coefficients = self
+            .parameters
+            .thermal_conductivity
+            .as_ref()
+            .expect("Missing thermal conductivity coefficients");
+        let m = (x * &self.parameters.m).sum();
+        let s = s_res / m;
+        let pref = (x * &self.parameters.m).mapv(|v| v / m);
+        let a: f64 = (&coefficients.row(0) * x).sum();
+        let b: f64 = (&coefficients.row(1) * &pref).sum();
+        let c: f64 = (&coefficients.row(2) * &pref).sum();
+        let d: f64 = (&coefficients.row(3) * &pref).sum();
+        Ok(a + b * s + c * (1.0 - s.exp()) + d * s.powi(2))
+    }
+}
 
 #[cfg(test)]
 mod tests {

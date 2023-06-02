@@ -36,15 +36,16 @@ pub mod parameter;
 // mod phase_equilibria;
 mod state;
 pub use equation_of_state::{
-    DeBroglieWavelength, EntropyScaling, EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual,
-    IdealGas, MolarWeight, Residual,
+    DeBroglieWavelength, DeBroglieWavelengthDual, EntropyScaling, EquationOfState, HelmholtzEnergy,
+    HelmholtzEnergyDual, IdealGas, MolarWeight, Residual,
 };
 pub use errors::{EosError, EosResult};
 // pub use phase_equilibria::{
 //     PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, SolverOptions, Verbosity,
 // };
 pub use state::{
-    Contributions, DensityInitialization, Derivative, State, StateBuilder, StateHD, StateVec,
+    Contributions, DensityInitialization, Derivative, SolverOptions, State, StateBuilder, StateHD,
+    StateVec, Verbosity,
 };
 
 #[cfg(feature = "python")]

@@ -7,7 +7,6 @@ use pyo3::prelude::*;
 pub fn cubic(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<PyChemicalRecord>()?;
-    m.add_class::<PyJobackRecord>()?;
 
     m.add_class::<PyPengRobinsonRecord>()?;
     m.add_class::<PyPureRecord>()?;

@@ -90,7 +90,7 @@ macro_rules! impl_state {
                 } else {
                     Ok(DensityInitialization::None)
                 };
-                let s = State::new(
+                let s = State::new_full(
                     &eos.0,
                     temperature.map(|t| t.into()),
                     volume.map(|t| t.into()),
@@ -263,58 +263,58 @@ macro_rules! impl_state {
                 Ok((PyState(state1), PyState(state2)))
             }
 
-            /// Performs a stability analysis and returns a list of stable
-            /// candidate states.
-            ///
-            /// Parameters
-            /// ----------
-            /// max_iter : int, optional
-            ///     The maximum number of iterations.
-            /// tol: float, optional
-            ///     The solution tolerance.
-            /// verbosity : Verbosity, optional
-            ///     The verbosity.
-            ///
-            /// Returns
-            /// -------
-            /// State
-            #[pyo3(text_signature = "(max_iter=None, tol=None, verbosity=None)")]
-            fn stability_analysis(&self,
-                max_iter: Option<usize>,
-                tol: Option<f64>,
-                verbosity: Option<Verbosity>,
-            ) -> PyResult<Vec<Self>> {
-                Ok(self
-                    .0
-                    .stability_analysis((max_iter, tol, verbosity).into())?
-                    .into_iter()
-                    .map(Self)
-                    .collect())
-            }
+            // /// Performs a stability analysis and returns a list of stable
+            // /// candidate states.
+            // ///
+            // /// Parameters
+            // /// ----------
+            // /// max_iter : int, optional
+            // ///     The maximum number of iterations.
+            // /// tol: float, optional
+            // ///     The solution tolerance.
+            // /// verbosity : Verbosity, optional
+            // ///     The verbosity.
+            // ///
+            // /// Returns
+            // /// -------
+            // /// State
+            // #[pyo3(text_signature = "(max_iter=None, tol=None, verbosity=None)")]
+            // fn stability_analysis(&self,
+            //     max_iter: Option<usize>,
+            //     tol: Option<f64>,
+            //     verbosity: Option<Verbosity>,
+            // ) -> PyResult<Vec<Self>> {
+            //     Ok(self
+            //         .0
+            //         .stability_analysis((max_iter, tol, verbosity).into())?
+            //         .into_iter()
+            //         .map(Self)
+            //         .collect())
+            // }
 
-            /// Performs a stability analysis and returns whether the state
-            /// is stable
-            ///
-            /// Parameters
-            /// ----------
-            /// max_iter : int, optional
-            ///     The maximum number of iterations.
-            /// tol: float, optional
-            ///     The solution tolerance.
-            /// verbosity : Verbosity, optional
-            ///     The verbosity.
-            ///
-            /// Returns
-            /// -------
-            /// bool
-            #[pyo3(text_signature = "(max_iter=None, tol=None, verbosity=None)")]
-            fn is_stable(&self,
-                max_iter: Option<usize>,
-                tol: Option<f64>,
-                verbosity: Option<Verbosity>,
-            ) -> PyResult<bool> {
-                Ok(self.0.is_stable((max_iter, tol, verbosity).into())?)
-            }
+            // /// Performs a stability analysis and returns whether the state
+            // /// is stable
+            // ///
+            // /// Parameters
+            // /// ----------
+            // /// max_iter : int, optional
+            // ///     The maximum number of iterations.
+            // /// tol: float, optional
+            // ///     The solution tolerance.
+            // /// verbosity : Verbosity, optional
+            // ///     The verbosity.
+            // ///
+            // /// Returns
+            // /// -------
+            // /// bool
+            // #[pyo3(text_signature = "(max_iter=None, tol=None, verbosity=None)")]
+            // fn is_stable(&self,
+            //     max_iter: Option<usize>,
+            //     tol: Option<f64>,
+            //     verbosity: Option<Verbosity>,
+            // ) -> PyResult<bool> {
+            //     Ok(self.0.is_stable((max_iter, tol, verbosity).into())?)
+            // }
 
             /// Return pressure.
             ///

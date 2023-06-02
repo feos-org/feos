@@ -1,9 +1,7 @@
 use crate::cubic::{PengRobinsonParameters, PengRobinsonRecord};
-use crate::joback::JobackRecord;
 use crate::parameter::{
     BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
 };
-use crate::python::joback::PyJobackRecord;
 use crate::python::parameter::PyIdentifier;
 use crate::*;
 use ndarray::Array2;
@@ -34,9 +32,7 @@ impl_json_handling!(PyPengRobinsonRecord);
 
 impl_pure_record!(
     PengRobinsonRecord,
-    PyPengRobinsonRecord,
-    JobackRecord,
-    PyJobackRecord
+    PyPengRobinsonRecord
 );
 
 impl_binary_record!();

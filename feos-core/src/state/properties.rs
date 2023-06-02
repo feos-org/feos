@@ -296,6 +296,12 @@ impl<E: Residual + IdealGas> State<E> {
         self.gibbs_energy(contributions) / self.total_moles
     }
 
+    /// Partial molar volume: $v_i=\left(\frac{\partial V}{\partial N_i}\right)_{T,p,N_j}$
+    pub fn partial_molar_volume(&self, contributions: Contributions) -> SIArray1 {
+        let func = |s: &Self, evaluate: Evaluate| -s.dp_dni_(evaluate) / s.dp_dv_(evaluate);
+        self.evaluate_property(func, contributions, false)
+    }
+
     /// Partial molar entropy: $s_i=\left(\frac{\partial S}{\partial N_i}\right)_{T,p,N_j}$
     pub fn partial_molar_entropy(&self, contributions: Contributions) -> SIArray1 {
         let func = |s: &Self, evaluate: Evaluate| {
