@@ -3,6 +3,8 @@ use num_dual::linalg::LinAlgError;
 use quantity::QuantityError;
 use thiserror::Error;
 
+use crate::parameter::ParameterError;
+
 /// Error type for improperly defined states and convergence problems.
 #[derive(Error, Debug)]
 pub enum EosError {
@@ -28,8 +30,8 @@ pub enum EosError {
     WrongUnits(String, String),
     #[error(transparent)]
     QuantityError(#[from] QuantityError),
-    // #[error(transparent)]
-    // ParameterError(#[from] ParameterError),
+    #[error(transparent)]
+    ParameterError(#[from] ParameterError),
     #[error(transparent)]
     LinAlgError(#[from] LinAlgError),
     #[cfg(feature = "rayon")]

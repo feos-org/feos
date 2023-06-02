@@ -15,9 +15,9 @@ pub trait IdealGas: Sync + Send + fmt::Display {
     // /// Return the number of components
     // fn components(&self) -> usize;
 
-    // /// Return an equation of state consisting of the components
-    // /// contained in component_list.
-    // fn subset(&self, component_list: &[usize]) -> Self;
+    /// Return an equation of state consisting of the components
+    /// contained in component_list.
+    fn subset(&self, component_list: &[usize]) -> Self;
 
     fn ideal_gas_model(&self) -> &Box<dyn DeBroglieWavelength>;
 

@@ -120,13 +120,13 @@ pub trait SegmentCount {
     /// molecule.
     ///
     /// The map contains the segment record as key and the count as value.
-    fn segment_map<M: Clone, I: Clone>(
+    fn segment_map<M: Clone>(
         &self,
-        segment_records: &[SegmentRecord<M, I>],
-    ) -> Result<HashMap<SegmentRecord<M, I>, Self::Count>, ParameterError> {
+        segment_records: &[SegmentRecord<M>],
+    ) -> Result<HashMap<SegmentRecord<M>, Self::Count>, ParameterError> {
         let count = self.segment_count();
         let queried: HashSet<_> = count.keys().cloned().collect();
-        let mut segments: HashMap<String, SegmentRecord<M, I>> = segment_records
+        let mut segments: HashMap<String, SegmentRecord<M>> = segment_records
             .iter()
             .map(|r| (r.identifier.clone(), r.clone()))
             .collect();

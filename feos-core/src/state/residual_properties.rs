@@ -62,11 +62,11 @@ impl<E: Residual> State<E> {
         }
     }
 
-    fn residual_helmholtz_energy(&self) -> SINumber {
+    pub fn residual_helmholtz_energy(&self) -> SINumber {
         self.get_or_compute_derivative_residual(PartialDerivative::Zeroth)
     }
 
-    fn residual_entropy(&self) -> SINumber {
+    pub fn residual_entropy(&self) -> SINumber {
         -self.get_or_compute_derivative_residual(PartialDerivative::First(DT))
     }
 
@@ -78,7 +78,7 @@ impl<E: Residual> State<E> {
     }
 
     /// Residual chemical potential: $\mu_i^\text{res}=\left(\frac{\partial A^\text{res}}{\partial N_i}\right)_{T,V,N_j}$
-    fn residual_chemical_potential(&self) -> SIArray1 {
+    pub fn residual_chemical_potential(&self) -> SIArray1 {
         SIArray::from_shape_fn(self.eos.components(), |i| {
             self.get_or_compute_derivative_residual(PartialDerivative::First(DN(i)))
         })
@@ -136,7 +136,7 @@ impl<E: Residual> State<E> {
     pub fn d2p_dv2(&self, contributions: Contributions) -> SINumber {
         let ideal_gas = 2.0 * self.density * SIUnit::gas_constant() * self.temperature
             / (self.volume * self.volume);
-        let residual = -self.get_or_compute_derivative_residual(PartialDerivative::Second(DV));
+        let residual = -self.get_or_compute_derivative_residual(PartialDerivative::Third(DV));
         Self::contributions(ideal_gas, residual, contributions)
     }
 
@@ -175,11 +175,11 @@ impl<E: Residual> State<E> {
 
     // entropy derivatives
 
-    fn ds_res_dt(&self) -> SINumber {
+    pub fn ds_res_dt(&self) -> SINumber {
         -self.get_or_compute_derivative_residual(PartialDerivative::Second(DT))
     }
 
-    fn d2s_res_dt2(&self) -> SINumber {
+    pub fn d2s_res_dt2(&self) -> SINumber {
         -self.get_or_compute_derivative_residual(PartialDerivative::Third(DT))
     }
 
@@ -204,10 +204,6 @@ impl<E: Residual> State<E> {
             .into_value()
             .unwrap()
             - self.compressibility(Contributions::Total)
-        // (self.chemical_potential(Contributions::ResidualNpt)
-        //     / (SIUnit::gas_constant() * self.temperature))
-        //     .into_value()
-        //     .unwrap()
     }
 
     /// Logarithm of the fugacity coefficient of all components treated as pure substance at mixture temperature and pressure.
@@ -238,10 +234,10 @@ impl<E: Residual> State<E> {
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. temperature: $\left(\frac{\partial\ln\varphi_i}{\partial T}\right)_{p,N_i}$
     pub fn dln_phi_dt(&self) -> SIArray1 {
-        let vi_rt = -self.dp_dni(Contributions::Total)
-            / self.dp_dv(Contributions::Total)
-            / (SIUnit::gas_constant() * self.temperature);
-        self.dmu_res_dt() + 1.0 / self.temperature - vi_rt * self.dp_dt(Contributions::Total)
+        let vi = -self.dp_dni(Contributions::Total) / self.dp_dv(Contributions::Total);
+        (self.dmu_res_dt() - vi * self.dp_dt(Contributions::Total))
+            / (SIUnit::gas_constant() * self.temperature)
+            + 1.0 / self.temperature
     }
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. pressure: $\left(\frac{\partial\ln\varphi_i}{\partial p}\right)_{T,N_i}$

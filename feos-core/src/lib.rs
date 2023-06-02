@@ -27,18 +27,17 @@ macro_rules! log_result {
     }
 }
 
-// pub mod cubic;
+pub mod cubic;
 mod density_iteration;
 mod equation_of_state;
 mod errors;
-// pub mod joback;
-// pub mod parameter;
+pub mod joback;
+pub mod parameter;
 // mod phase_equilibria;
 mod state;
-// pub use equation_of_state::{
-//     EntropyScaling, EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, IdealGasContribution,
-//     IdealGasContributionDual, MolarWeight,
-// };
+pub use equation_of_state::{
+    EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, IdealGas, MolarWeight, Residual,
+};
 pub use errors::{EosError, EosResult};
 // pub use phase_equilibria::{
 //     PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, SolverOptions, Verbosity,
@@ -120,5 +119,133 @@ impl EosUnit for SIUnit {
     }
     fn gas_constant() -> SINumber {
         RGAS
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::cubic::*;
+    use crate::equation_of_state::ideal_gas;
+    use crate::equation_of_state::EquationOfState;
+    use crate::joback::Joback;
+    use crate::joback::JobackRecord;
+    use crate::parameter::*;
+    use crate::state::State;
+    use crate::Contributions;
+    use crate::EosResult;
+    use crate::StateBuilder;
+    use approx::*;
+    use ndarray::Array2;
+    use quantity::si::*;
+    use std::sync::Arc;
+
+    fn pure_record_vec() -> Vec<PureRecord<PengRobinsonRecord>> {
+        let records = r#"[
+            {
+                "identifier": {
+                    "cas": "74-98-6",
+                    "name": "propane",
+                    "iupac_name": "propane",
+                    "smiles": "CCC",
+                    "inchi": "InChI=1/C3H8/c1-3-2/h3H2,1-2H3",
+                    "formula": "C3H8"
+                },
+                "model_record": {
+                    "tc": 369.96,
+                    "pc": 4250000.0,
+                    "acentric_factor": 0.153
+                },
+                "molarweight": 44.0962
+            },
+            {
+                "identifier": {
+                    "cas": "106-97-8",
+                    "name": "butane",
+                    "iupac_name": "butane",
+                    "smiles": "CCCC",
+                    "inchi": "InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3",
+                    "formula": "C4H10"
+                },
+                "model_record": {
+                    "tc": 425.2,
+                    "pc": 3800000.0,
+                    "acentric_factor": 0.199
+                },
+                "molarweight": 58.123
+            }
+        ]"#;
+        serde_json::from_str(records).expect("Unable to parse json.")
+    }
+
+    #[test]
+    fn validate_residual_properties() -> EosResult<()> {
+        let mixture = pure_record_vec();
+        let propane = mixture[0].clone();
+        let parameters = PengRobinsonParameters::from_records(vec![propane], Array2::zeros((1, 1)));
+        let residual = Arc::new(PengRobinson::new(Arc::new(parameters)));
+        let ideal_gas = Arc::new(Joback::new(Arc::new(vec![JobackRecord::new(
+            1.0, 1.0, 1.0, 1.0, 1.0,
+        )])));
+        let eos = Arc::new(EquationOfState::new(ideal_gas, residual.clone()));
+
+        let sr = StateBuilder::new(&residual)
+            .temperature(300.0 * KELVIN)
+            .pressure(1.0 * BAR)
+            .build()?;
+
+        let s = StateBuilder::new(&eos)
+            .temperature(300.0 * KELVIN)
+            .pressure(1.0 * BAR)
+            .build()?;
+
+        // pressure
+        assert_relative_eq!(s.pressure(Contributions::Total), sr.pressure(Contributions::Total), max_relative = 1e-15);
+        assert_relative_eq!(s.pressure(Contributions::Residual), sr.pressure(Contributions::Residual), max_relative = 1e-15);
+        assert_relative_eq!(s.compressibility(Contributions::Total), sr.compressibility(Contributions::Total), max_relative = 1e-15);
+        assert_relative_eq!(s.compressibility(Contributions::Residual), sr.compressibility(Contributions::Residual), max_relative = 1e-15);
+        
+        // residual properties
+        assert_relative_eq!(s.helmholtz_energy(Contributions::Residual), sr.residual_helmholtz_energy(), max_relative = 1e-15);
+        assert_relative_eq!(s.entropy(Contributions::Residual), sr.residual_entropy(), max_relative = 1e-15);
+        assert_relative_eq!(s.enthalpy(Contributions::Residual), sr.residual_enthalpy(), max_relative = 1e-15);
+        assert_relative_eq!(s.internal_energy(Contributions::Residual), sr.residual_internal_energy(), max_relative = 1e-15);
+        assert_relative_eq!(s.gibbs_energy(Contributions::Residual), sr.residual_gibbs_energy(), max_relative = 1e-15);
+        assert_relative_eq!(s.chemical_potential(Contributions::Residual), sr.residual_chemical_potential(), max_relative = 1e-15);
+
+        // pressure derivatives
+        assert_relative_eq!(s.structure_factor(), sr.structure_factor(), max_relative = 1e-15);
+        assert_relative_eq!(s.dp_dt(Contributions::Total), sr.dp_dt(Contributions::Total), max_relative = 1e-15);
+        assert_relative_eq!(s.dp_dt(Contributions::Residual), sr.dp_dt(Contributions::Residual), max_relative = 1e-15);
+        assert_relative_eq!(s.dp_dv(Contributions::Total), sr.dp_dv(Contributions::Total), max_relative = 1e-15);
+        assert_relative_eq!(s.dp_dv(Contributions::Residual), sr.dp_dv(Contributions::Residual), max_relative = 1e-15);
+        assert_relative_eq!(s.dp_drho(Contributions::Total), sr.dp_drho(Contributions::Total), max_relative = 1e-15);
+        assert_relative_eq!(s.dp_drho(Contributions::Residual), sr.dp_drho(Contributions::Residual), max_relative = 1e-15);
+        assert_relative_eq!(s.d2p_dv2(Contributions::Total), sr.d2p_dv2(Contributions::Total), max_relative = 1e-15);
+        assert_relative_eq!(s.d2p_dv2(Contributions::Residual), sr.d2p_dv2(Contributions::Residual), max_relative = 1e-15);
+        assert_relative_eq!(s.d2p_drho2(Contributions::Total), sr.d2p_drho2(Contributions::Total), max_relative = 1e-15);
+        assert_relative_eq!(s.d2p_drho2(Contributions::Residual), sr.d2p_drho2(Contributions::Residual), max_relative = 1e-15);
+        assert_relative_eq!(s.dp_dni(Contributions::Total), sr.dp_dni(Contributions::Total), max_relative = 1e-15);
+        assert_relative_eq!(s.dp_dni(Contributions::Residual), sr.dp_dni(Contributions::Residual), max_relative = 1e-15);
+        
+        // entropy
+        assert_relative_eq!(s.ds_dt(Contributions::Residual), sr.ds_res_dt(), max_relative = 1e-15);
+
+        // chemical potential
+        assert_relative_eq!(s.dmu_dt(Contributions::Residual), sr.dmu_res_dt(), max_relative = 1e-15);
+        assert_relative_eq!(s.dmu_dni(Contributions::Residual), sr.dmu_res_dni(), max_relative = 1e-15);
+        assert_relative_eq!(s.dmu_dt(Contributions::Residual), sr.dmu_res_dt(), max_relative = 1e-15);
+
+        // fugacity
+        assert_relative_eq!(s.ln_phi(), sr.ln_phi(), max_relative = 1e-15);
+        assert_relative_eq!(s.dln_phi_dt(), sr.dln_phi_dt(), max_relative = 1e-15);
+        assert_relative_eq!(s.dln_phi_dp(), sr.dln_phi_dp(), max_relative = 1e-15);
+        assert_relative_eq!(s.dln_phi_dnj(), sr.dln_phi_dnj(), max_relative = 1e-15);
+        assert_relative_eq!(s.thermodynamic_factor(), sr.thermodynamic_factor(), max_relative = 1e-15);
+
+        // residual properties using multiple derivatives
+        assert_relative_eq!(s.c_v(Contributions::Residual), sr.c_v_res(), max_relative = 1e-15);
+        assert_relative_eq!(s.dc_v_dt(Contributions::Residual), sr.dc_v_res_dt(), max_relative = 1e-15);
+        assert_relative_eq!(s.c_p(Contributions::Residual), sr.c_p_res(), max_relative = 1e-15);
+        Ok(())
     }
 }
