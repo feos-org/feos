@@ -201,10 +201,10 @@ impl<E: Residual + IdealGas> State<E> {
         self.evaluate_property(Self::dmu_dt_, contributions, true)
     }
 
-    /// Partial derivative of chemical potential w.r.t. moles: $\left(\frac{\partial\mu_i}{\partial N_j}\right)_{T,V,N_k}$
-    pub fn dmu_dni(&self, contributions: Contributions) -> SIArray2 {
-        self.evaluate_property(Self::dmu_dni_, contributions, true)
-    }
+    // /// Partial derivative of chemical potential w.r.t. moles: $\left(\frac{\partial\mu_i}{\partial N_j}\right)_{T,V,N_k}$
+    // pub fn dmu_dni(&self, contributions: Contributions) -> SIArray2 {
+    //     self.evaluate_property(Self::dmu_dni_, contributions, true)
+    // }
 
     /// Molar isochoric heat capacity: $c_v=\left(\frac{\partial u}{\partial T}\right)_{V,N_i}$
     pub fn c_v(&self, contributions: Contributions) -> SINumber {
@@ -294,12 +294,6 @@ impl<E: Residual + IdealGas> State<E> {
     /// Molar Gibbs energy: $g=\frac{G}{N}$
     pub fn molar_gibbs_energy(&self, contributions: Contributions) -> SINumber {
         self.gibbs_energy(contributions) / self.total_moles
-    }
-
-    /// Partial molar volume: $v_i=\left(\frac{\partial V}{\partial N_i}\right)_{T,p,N_j}$
-    pub fn partial_molar_volume(&self, contributions: Contributions) -> SIArray1 {
-        let func = |s: &Self, evaluate: Evaluate| -s.dp_dni_(evaluate) / s.dp_dv_(evaluate);
-        self.evaluate_property(func, contributions, false)
     }
 
     /// Partial molar entropy: $s_i=\left(\frac{\partial S}{\partial N_i}\right)_{T,p,N_j}$

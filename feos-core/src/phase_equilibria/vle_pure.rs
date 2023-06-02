@@ -1,7 +1,7 @@
-use super::{PhaseEquilibrium, SolverOptions, Verbosity};
-use crate::equation_of_state::EquationOfState;
+use super::PhaseEquilibrium;
+use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::state::{Contributions, DensityInitialization, State, TPSpec};
+use crate::state::{Contributions, DensityInitialization, SolverOptions, State, TPSpec, Verbosity};
 use crate::EosUnit;
 use ndarray::{arr1, Array1};
 use quantity::si::{SINumber, SIUnit};
@@ -13,7 +13,7 @@ const MAX_ITER_PURE: usize = 50;
 const TOL_PURE: f64 = 1e-12;
 
 /// # Pure component phase equilibria
-impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
+impl<E: Residual> PhaseEquilibrium<E, 2> {
     /// Calculate a phase equilibrium for a pure component.
     pub fn pure(
         eos: &Arc<E>,
@@ -83,21 +83,24 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
             let (p_l, p_rho_l) = liquid.p_dpdrho();
             let (p_v, p_rho_v) = vapor.p_dpdrho();
             // calculate the molar Helmholtz energies (already cached)
-            let a_l = liquid.molar_helmholtz_energy(Contributions::Total);
-            let a_v = vapor.molar_helmholtz_energy(Contributions::Total);
+            // let a_l = liquid.molar_helmholtz_energy(Contributions::Total);
+            let a_l_res = liquid.residual_helmholtz_energy() / liquid.total_moles;
+            // let a_v = vapor.molar_helmholtz_energy(Contributions::Total);
+            let a_v_res = vapor.residual_helmholtz_energy() / vapor.total_moles;
 
             // Estimate the new pressure
+            let kt = SIUnit::gas_constant() * vapor.temperature;
             let delta_v = 1.0 / vapor.density - 1.0 / liquid.density;
-            let delta_a = a_v - a_l;
+            let delta_a =
+                a_v_res - a_l_res + kt * vapor.density.to_reduced(liquid.temperature)?.ln();
             let mut p_new = -delta_a / delta_v;
 
             // If the pressure becomes negative, assume the gas phase is ideal. The
             // resulting pressure is always positive.
             if p_new.is_sign_negative() {
-                let mu_v = vapor.chemical_potential(Contributions::Total).get(0);
                 p_new = p_v
-                    * (a_l - mu_v)
-                        .to_reduced(vapor.temperature * SIUnit::gas_constant())?
+                    * (-delta_a - p_v * vapor.volume / vapor.total_moles)
+                        .to_reduced(kt)?
                         .exp();
             }
 
@@ -193,20 +196,23 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
             let p_t_l = vle.liquid().dp_dt(Contributions::Total);
             let p_t_v = vle.vapor().dp_dt(Contributions::Total);
 
-            // calculate the molar entropies (already cached)
-            let s_l = vle.liquid().molar_entropy(Contributions::Total);
-            let s_v = vle.vapor().molar_entropy(Contributions::Total);
+            // calculate the residual molar entropies (already cached)
+            let s_l_res = vle.liquid().residual_entropy() / vle.liquid().total_moles;
+            let s_v_res = vle.vapor().residual_entropy() / vle.vapor().total_moles;
 
-            // calculate the molar Helmholtz energies (already cached)
-            let a_l = vle.liquid().molar_helmholtz_energy(Contributions::Total);
-            let a_v = vle.vapor().molar_helmholtz_energy(Contributions::Total);
+            // calculate the residual molar Helmholtz energies (already cached)
+            let a_l_res = vle.liquid().residual_helmholtz_energy() / vle.liquid().total_moles;
+            let a_v_res = vle.vapor().residual_helmholtz_energy() / vle.vapor().total_moles;
 
             // calculate the molar volumes
             let v_l = 1.0 / vle.liquid().density;
             let v_v = 1.0 / vle.vapor().density;
 
             // estimate the temperature steps
-            let delta_t = (pressure * (v_v - v_l) + (a_v - a_l)) / (s_v - s_l);
+            let kt = SIUnit::gas_constant() * vle.vapor().temperature;
+            let ln_rho = v_l.to_reduced(v_v)?.ln();
+            let delta_t = (pressure * (v_v - v_l) + (a_v_res - a_l_res + kt * ln_rho))
+                / (s_v_res - s_l_res - SIUnit::gas_constant() * ln_rho);
             let t_new = vle.vapor().temperature + delta_t;
 
             // calculate Newton steps for the densities and update state.
@@ -319,10 +325,12 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
             }
 
             for _ in 0..20 {
-                t0 = (e.vapor().enthalpy(Contributions::Total)
-                    - e.liquid().enthalpy(Contributions::Total))
-                    / (e.vapor().entropy(Contributions::Total)
-                        - e.liquid().entropy(Contributions::Total));
+                t0 = (e.vapor().residual_enthalpy() - e.liquid().residual_enthalpy())
+                    / (e.vapor().residual_entropy()
+                        - e.liquid().residual_entropy()
+                        - SIUnit::gas_constant()
+                            * e.vapor().total_moles
+                            * (e.vapor().density.to_reduced(e.liquid().density)?.ln()));
                 let trial_state =
                     State::new_npt(eos, t0, pressure, &m, DensityInitialization::Vapor)?;
                 if trial_state.density < cp.density {
@@ -346,7 +354,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     }
 }
 
-impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
+impl<E: Residual> PhaseEquilibrium<E, 2> {
     /// Calculate the pure component vapor pressures of all
     /// components in the system for the given temperature.
     pub fn vapor_pressure(eos: &Arc<E>, temperature: SINumber) -> Vec<Option<SINumber>> {

@@ -1,10 +1,10 @@
-use super::{PhaseEquilibrium, SolverOptions, Verbosity};
-use crate::equation_of_state::EquationOfState;
+use super::PhaseEquilibrium;
+use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
 use crate::state::{
     Contributions,
     DensityInitialization::{InitialDensity, Liquid, Vapor},
-    State, StateBuilder, TPSpec,
+    SolverOptions, State, StateBuilder, TPSpec, Verbosity,
 };
 use crate::EosUnit;
 use ndarray::*;
@@ -55,7 +55,7 @@ where
 }
 
 /// # Bubble and dew point calculations
-impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
+impl<E: Residual> PhaseEquilibrium<E, 2> {
     /// Calculate a phase equilibrium for a given temperature
     /// or pressure and composition of the liquid phase.
     pub fn bubble_point(
@@ -225,9 +225,9 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
         let m = liquid_molefracs * SIUnit::reference_moles();
         let density = 0.75 * eos.max_density(Some(&m))?;
         let liquid = State::new_nvt(eos, temperature, m.sum() / density, &m)?;
-        let v_l = liquid.partial_molar_volume(Contributions::Total);
+        let v_l = liquid.partial_molar_volume();
         let p_l = liquid.pressure(Contributions::Total);
-        let mu_l = liquid.chemical_potential(Contributions::ResidualNvt);
+        let mu_l = liquid.residual_chemical_potential();
         let p_i = (temperature * density * SIUnit::gas_constant() * liquid_molefracs)
             * (mu_l - p_l * v_l)
                 .to_reduced(SIUnit::gas_constant() * temperature)?
@@ -251,9 +251,9 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
             let m = x * SIUnit::reference_moles();
             let density = 0.75 * eos.max_density(Some(&m))?;
             let liquid = State::new_nvt(eos, temperature, m.sum() / density, &m)?;
-            let v_l = liquid.partial_molar_volume(Contributions::Total);
+            let v_l = liquid.partial_molar_volume();
             let p_l = liquid.pressure(Contributions::Total);
-            let mu_l = liquid.chemical_potential(Contributions::ResidualNvt);
+            let mu_l = liquid.residual_chemical_potential();
             let k = vapor_molefracs
                 / (mu_l - p_l * v_l)
                     .to_reduced(SIUnit::gas_constant() * temperature)?
@@ -287,7 +287,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     }
 }
 
-fn starting_x2_bubble<E: EquationOfState>(
+fn starting_x2_bubble<E: Residual>(
     eos: &Arc<E>,
     temperature: SINumber,
     pressure: SINumber,
@@ -315,7 +315,7 @@ fn starting_x2_bubble<E: EquationOfState>(
     Ok([liquid_state, vapor_state])
 }
 
-fn starting_x2_dew<E: EquationOfState>(
+fn starting_x2_dew<E: Residual>(
     eos: &Arc<E>,
     temperature: SINumber,
     pressure: SINumber,
@@ -353,7 +353,7 @@ fn starting_x2_dew<E: EquationOfState>(
     Ok([vapor_state, liquid_state])
 }
 
-fn bubble_dew<E: EquationOfState>(
+fn bubble_dew<E: Residual>(
     tp_spec: TPSpec,
     mut var_tp: TPSpec,
     mut state1: State<E>,
@@ -441,7 +441,7 @@ where
     }
 }
 
-fn adjust_t_p<E: EquationOfState>(
+fn adjust_t_p<E: Residual>(
     var: &mut TPSpec,
     state1: &mut State<E>,
     state2: &mut State<E>,
@@ -509,7 +509,7 @@ where
     Ok(f.abs())
 }
 
-fn adjust_states<E: EquationOfState>(
+fn adjust_states<E: Residual>(
     var: &TPSpec,
     state1: &mut State<E>,
     state2: &mut State<E>,
@@ -536,7 +536,7 @@ fn adjust_states<E: EquationOfState>(
     Ok(())
 }
 
-fn adjust_x2<E: EquationOfState>(
+fn adjust_x2<E: Residual>(
     state1: &State<E>,
     state2: &mut State<E>,
     verbosity: Verbosity,
@@ -558,7 +558,7 @@ fn adjust_x2<E: EquationOfState>(
     Ok(err_out)
 }
 
-fn newton_step<E: EquationOfState>(
+fn newton_step<E: Residual>(
     tp_spec: TPSpec,
     var: &mut TPSpec,
     state1: &mut State<E>,
@@ -574,7 +574,7 @@ where
     }
 }
 
-fn newton_step_t<E: EquationOfState>(
+fn newton_step_t<E: Residual>(
     pressure: &mut TPSpec,
     state1: &mut State<E>,
     state2: &mut State<E>,
@@ -593,11 +593,11 @@ where
         .dot(&state1.molefracs);
     let dp_drho_2 = (state2.dp_dni(Contributions::Total) * state2.volume)
         .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?;
-    let mu_1 = state1
-        .chemical_potential(Contributions::Total)
+    let mu_1_res = state1
+        .residual_chemical_potential()
         .to_reduced(SIUnit::reference_molar_energy())?;
-    let mu_2 = state2
-        .chemical_potential(Contributions::Total)
+    let mu_2_res = state2
+        .residual_chemical_potential()
         .to_reduced(SIUnit::reference_molar_energy())?;
     let p_1 = state1
         .pressure(Contributions::Total)
@@ -607,7 +607,12 @@ where
         .to_reduced(SIUnit::reference_pressure())?;
 
     // calculate residual
-    let res = concatenate![Axis(0), mu_1 - &mu_2, arr1(&[p_1 - p_2])];
+    let dmu_ig = (SIUnit::gas_constant() * state1.temperature)
+        .to_reduced(SIUnit::reference_molar_energy())?
+        * (&state1.partial_density / &state2.partial_density)
+            .into_value()?
+            .mapv(f64::ln);
+    let res = concatenate![Axis(0), mu_1_res - mu_2_res + dmu_ig, arr1(&[p_1 - p_2])];
     let error = norm(&res);
 
     // calculate Jacobian
@@ -651,7 +656,7 @@ where
     Ok(error)
 }
 
-fn newton_step_p<E: EquationOfState>(
+fn newton_step_p<E: Residual>(
     pressure: SINumber,
     temperature: &mut TPSpec,
     state1: &mut State<E>,
@@ -666,12 +671,8 @@ where
         .dot(&state1.molefracs);
     let dmu_drho_2 = (state2.dmu_dni(Contributions::Total) * state2.volume)
         .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
-    let dmu_dt_1 = state1
-        .dmu_dt(Contributions::Total)
-        .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_temperature())?;
-    let dmu_dt_2 = state2
-        .dmu_dt(Contributions::Total)
-        .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_temperature())?;
+    let dmu_res_dt_1 = state1.dmu_res_dt().to_reduced(SIUnit::gas_constant())?;
+    let dmu_res_dt_2 = state2.dmu_res_dt().to_reduced(SIUnit::gas_constant())?;
     let dp_drho_1 = (state1.dp_dni(Contributions::Total) * state1.volume)
         .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?
         .dot(&state1.molefracs);
@@ -683,11 +684,11 @@ where
         .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_temperature())?;
     let dp_drho_2 = (state2.dp_dni(Contributions::Total) * state2.volume)
         .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?;
-    let mu_1 = state1
-        .chemical_potential(Contributions::Total)
+    let mu_1_res = state1
+        .residual_chemical_potential()
         .to_reduced(SIUnit::reference_molar_energy())?;
-    let mu_2 = state2
-        .chemical_potential(Contributions::Total)
+    let mu_2_res = state2
+        .residual_chemical_potential()
         .to_reduced(SIUnit::reference_molar_energy())?;
     let p_1 = state1
         .pressure(Contributions::Total)
@@ -698,7 +699,18 @@ where
     let p = pressure.to_reduced(SIUnit::reference_pressure())?;
 
     // calculate residual
-    let res = concatenate![Axis(0), mu_1 - &mu_2, arr1(&[p_1 - p]), arr1(&[p_2 - p])];
+    let delta_dmu_ig_dt = (&state1.partial_density / &state2.partial_density)
+        .into_value()?
+        .mapv(f64::ln);
+    let delta_mu_ig = (SIUnit::gas_constant() * state1.temperature)
+        .to_reduced(SIUnit::reference_molar_energy())?
+        * &delta_dmu_ig_dt;
+    let res = concatenate![
+        Axis(0),
+        mu_1_res - mu_2_res + delta_mu_ig,
+        arr1(&[p_1 - p]),
+        arr1(&[p_2 - p])
+    ];
     let error = norm(&res);
 
     // calculate Jacobian
@@ -717,7 +729,7 @@ where
         ],
         concatenate![
             Axis(0),
-            (dmu_dt_1 - dmu_dt_2).insert_axis(Axis(1)),
+            (dmu_res_dt_1 - dmu_res_dt_2 + delta_dmu_ig_dt).insert_axis(Axis(1)),
             arr2(&[[dp_dt_1], [dp_dt_2]])
         ]
     ];

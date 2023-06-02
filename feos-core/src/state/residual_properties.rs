@@ -162,6 +162,26 @@ impl<E: Residual> State<E> {
         )
     }
 
+    /// Partial molar volume: $v_i=\left(\frac{\partial V}{\partial N_i}\right)_{T,p,N_j}$
+    pub fn partial_molar_volume(&self) -> SIArray1 {
+        -self.dp_dni(Contributions::Total) / self.dp_dv(Contributions::Total)
+    }
+
+    /// Partial derivative of chemical potential w.r.t. moles: $\left(\frac{\partial\mu_i}{\partial N_j}\right)_{T,V,N_k}$
+    pub fn dmu_dni(&self, contributions: Contributions) -> SIArray2 {
+        let n = self.eos.components();
+        SIArray::from_shape_fn((n, n), |(i, j)| {
+            let ideal_gas = if i == j {
+                SIUnit::gas_constant() * self.temperature / self.moles.get(i)
+            } else {
+                0.0 * SIUnit::reference_molar_energy() / SIUnit::reference_moles()
+            };
+            let residual = self
+                .get_or_compute_derivative_residual(PartialDerivative::SecondMixed(DN(i), DN(j)));
+            Self::contributions(ideal_gas, residual, contributions)
+        })
+    }
+
     // This function is designed specifically for use in spinodal iterations
     pub(crate) fn d2pdrho2(&self) -> (SINumber, SINumber, SINumber) {
         let d2p_dv2 = self.d2p_dv2(Contributions::Total);
@@ -187,14 +207,6 @@ impl<E: Residual> State<E> {
     pub fn dmu_res_dt(&self) -> SIArray1 {
         SIArray::from_shape_fn(self.eos.components(), |i| {
             self.get_or_compute_derivative_residual(PartialDerivative::SecondMixed(DT, DN(i)))
-        })
-    }
-
-    /// Partial derivative of chemical potential w.r.t. moles: $\left(\frac{\partial\mu_i}{\partial N_j}\right)_{T,V,N_k}$
-    pub fn dmu_res_dni(&self) -> SIArray2 {
-        let n = self.eos.components();
-        SIArray::from_shape_fn((n, n), |(i, j)| {
-            self.get_or_compute_derivative_residual(PartialDerivative::SecondMixed(DN(i), DN(j)))
         })
     }
 
@@ -251,7 +263,7 @@ impl<E: Residual> State<E> {
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. moles: $\left(\frac{\partial\ln\varphi_i}{\partial N_j}\right)_{T,p,N_k}$
     pub fn dln_phi_dnj(&self) -> SIArray2 {
         let n = self.eos.components();
-        let dmu_dni = self.dmu_res_dni();
+        let dmu_dni = self.dmu_dni(Contributions::Residual);
         let dp_dni = self.dp_dni(Contributions::Total);
         let dp_dv = self.dp_dv(Contributions::Total);
         let dp_dn_2 = SIArray::from_shape_fn((n, n), |(i, j)| dp_dni.get(i) * dp_dni.get(j));

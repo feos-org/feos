@@ -33,16 +33,14 @@ mod equation_of_state;
 mod errors;
 pub mod joback;
 pub mod parameter;
-// mod phase_equilibria;
+mod phase_equilibria;
 mod state;
 pub use equation_of_state::{
     DeBroglieWavelength, DeBroglieWavelengthDual, EntropyScaling, EquationOfState, HelmholtzEnergy,
     HelmholtzEnergyDual, IdealGas, MolarWeight, Residual,
 };
 pub use errors::{EosError, EosResult};
-// pub use phase_equilibria::{
-//     PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, SolverOptions, Verbosity,
-// };
+pub use phase_equilibria::{PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium};
 pub use state::{
     Contributions, DensityInitialization, Derivative, SolverOptions, State, StateBuilder, StateHD,
     StateVec, Verbosity,
@@ -127,12 +125,10 @@ impl EosUnit for SIUnit {
 #[cfg(test)]
 mod tests {
     use crate::cubic::*;
-    use crate::equation_of_state::ideal_gas;
     use crate::equation_of_state::EquationOfState;
     use crate::joback::Joback;
     use crate::joback::JobackRecord;
     use crate::parameter::*;
-    use crate::state::State;
     use crate::Contributions;
     use crate::EosResult;
     use crate::StateBuilder;
@@ -336,7 +332,7 @@ mod tests {
         );
         assert_relative_eq!(
             s.dmu_dni(Contributions::Residual),
-            sr.dmu_res_dni(),
+            sr.dmu_dni(Contributions::Residual),
             max_relative = 1e-15
         );
         assert_relative_eq!(

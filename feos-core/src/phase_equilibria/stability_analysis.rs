@@ -1,7 +1,7 @@
-use super::{PhaseEquilibrium, SolverOptions, Verbosity};
-use crate::equation_of_state::EquationOfState;
+use super::PhaseEquilibrium;
+use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::state::{Contributions, DensityInitialization, State};
+use crate::state::{Contributions, DensityInitialization, SolverOptions, State, Verbosity};
 use crate::EosUnit;
 use ndarray::*;
 use num_dual::linalg::smallest_ev;
@@ -18,7 +18,7 @@ const MINIMIZE_KMAX: usize = 100;
 const ZERO_TPD: f64 = -1E-08;
 
 /// # Stability analysis
-impl<E: EquationOfState> State<E> {
+impl<E: Residual> State<E> {
     /// Determine if the state is stable, i.e. if a phase split should
     /// occur or not.
     pub fn is_stable(&self, options: SolverOptions) -> EosResult<bool> {
