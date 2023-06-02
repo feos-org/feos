@@ -153,3 +153,28 @@ pub trait Residual: Send + Sync + fmt::Display {
             / (SIUnit::reference_density().powi(2) * SIUnit::reference_temperature()))
     }
 }
+
+/// Reference values and residual entropy correlations for entropy scaling.
+pub trait EntropyScaling {
+    fn viscosity_reference(
+        &self,
+        temperature: SINumber,
+        volume: SINumber,
+        moles: &SIArray1,
+    ) -> EosResult<SINumber>;
+    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
+    fn diffusion_reference(
+        &self,
+        temperature: SINumber,
+        volume: SINumber,
+        moles: &SIArray1,
+    ) -> EosResult<SINumber>;
+    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
+    fn thermal_conductivity_reference(
+        &self,
+        temperature: SINumber,
+        volume: SINumber,
+        moles: &SIArray1,
+    ) -> EosResult<SINumber>;
+    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
+}

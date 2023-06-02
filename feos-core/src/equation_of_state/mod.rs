@@ -3,14 +3,14 @@ use num_dual::DualNum;
 use quantity::si::{SIArray1, MOL};
 use std::{fmt::Display, sync::Arc};
 
-pub use ideal_gas::IdealGas;
-pub use residual::Residual;
 pub mod debroglie;
 pub mod helmholtz_energy;
 pub mod ideal_gas;
 pub mod residual;
 use crate::StateHD;
 
+pub use ideal_gas::IdealGas;
+pub use residual::{EntropyScaling, Residual};
 pub use self::debroglie::{DeBroglieWavelength, DeBroglieWavelengthDual};
 pub use helmholtz_energy::{HelmholtzEnergy, HelmholtzEnergyDual};
 

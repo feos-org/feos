@@ -4,29 +4,28 @@ use crate::hard_sphere::HardSphere;
 use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
 use feos_core::{
-    Contributions, EntropyScaling, EosError, EosResult, EquationOfState, HelmholtzEnergy,
-    IdealGasContribution, MolarWeight, State,
+    Contributions,
+    EosError,
+    EosResult,
+    EquationOfState,
+    HelmholtzEnergy,
+    MolarWeight,
+    Residual, //EntropyScaling
+    State,
 };
 use ndarray::Array1;
 use quantity::si::*;
 use std::f64::consts::{FRAC_PI_6, PI};
+use std::fmt;
 use std::sync::Arc;
 
 pub(crate) mod dispersion;
 pub(crate) mod hard_chain;
 pub(crate) mod polar;
-mod qspr;
 use dispersion::Dispersion;
 use hard_chain::HardChain;
 pub use polar::DQVariants;
 use polar::{Dipole, DipoleQuadrupole, Quadrupole};
-use qspr::QSPR;
-
-#[allow(clippy::upper_case_acronyms)]
-enum IdealGasContributions {
-    QSPR(QSPR),
-    Joback(Joback),
-}
 
 /// Customization options for the PC-SAFT equation of state and functional.
 #[derive(Copy, Clone)]
@@ -53,7 +52,6 @@ pub struct PcSaft {
     parameters: Arc<PcSaftParameters>,
     options: PcSaftOptions,
     contributions: Vec<Box<dyn HelmholtzEnergy>>,
-    ideal_gas: IdealGasContributions,
 }
 
 impl PcSaft {
@@ -95,21 +93,15 @@ impl PcSaft {
             )));
         };
 
-        let joback_records = parameters.joback_records.clone();
-
         Self {
             parameters: parameters.clone(),
             options,
             contributions,
-            ideal_gas: joback_records.map_or(
-                IdealGasContributions::QSPR(QSPR { parameters }),
-                |joback_records| IdealGasContributions::Joback(Joback::new(joback_records)),
-            ),
         }
     }
 }
 
-impl EquationOfState for PcSaft {
+impl Residual for PcSaft {
     fn components(&self) -> usize {
         self.parameters.pure_records.len()
     }
@@ -127,15 +119,14 @@ impl EquationOfState for PcSaft {
                 .sum()
     }
 
-    fn residual(&self) -> &[Box<dyn HelmholtzEnergy>] {
+    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         &self.contributions
     }
+}
 
-    fn ideal_gas(&self) -> &dyn IdealGasContribution {
-        match &self.ideal_gas {
-            IdealGasContributions::QSPR(qspr) => qspr,
-            IdealGasContributions::Joback(joback) => joback,
-        }
+impl fmt::Display for PcSaft {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "PC-SAFT")
     }
 }
 
@@ -174,168 +165,168 @@ fn chapman_enskog_thermal_conductivity(
         / KELVIN
 }
 
-impl EntropyScaling for PcSaft {
-    fn viscosity_reference(
-        &self,
-        temperature: SINumber,
-        _: SINumber,
-        moles: &SIArray1,
-    ) -> EosResult<SINumber> {
-        let p = &self.parameters;
-        let mw = &p.molarweight;
-        let x = moles.to_reduced(moles.sum())?;
-        let ce: Array1<SINumber> = (0..self.components())
-            .map(|i| {
-                let tr = (temperature / p.epsilon_k[i] / KELVIN)
-                    .into_value()
-                    .unwrap();
-                5.0 / 16.0
-                    * (mw[i] * GRAM / MOL * KB / NAV * temperature / PI)
-                        .sqrt()
-                        .unwrap()
-                    / omega22(tr)
-                    / (p.sigma[i] * ANGSTROM).powi(2)
-            })
-            .collect();
-        let mut ce_mix = 0.0 * MILLI * PASCAL * SECOND;
-        for i in 0..self.components() {
-            let denom: f64 = (0..self.components())
-                .map(|j| {
-                    x[j] * (1.0
-                        + (ce[i] / ce[j]).into_value().unwrap().sqrt()
-                            * (mw[j] / mw[i]).powf(1.0 / 4.0))
-                    .powi(2)
-                        / (8.0 * (1.0 + mw[i] / mw[j])).sqrt()
-                })
-                .sum();
-            ce_mix += ce[i] * x[i] / denom
-        }
-        Ok(ce_mix)
-    }
+// impl EntropyScaling for PcSaft {
+//     fn viscosity_reference(
+//         &self,
+//         temperature: SINumber,
+//         _: SINumber,
+//         moles: &SIArray1,
+//     ) -> EosResult<SINumber> {
+//         let p = &self.parameters;
+//         let mw = &p.molarweight;
+//         let x = moles.to_reduced(moles.sum())?;
+//         let ce: Array1<SINumber> = (0..self.components())
+//             .map(|i| {
+//                 let tr = (temperature / p.epsilon_k[i] / KELVIN)
+//                     .into_value()
+//                     .unwrap();
+//                 5.0 / 16.0
+//                     * (mw[i] * GRAM / MOL * KB / NAV * temperature / PI)
+//                         .sqrt()
+//                         .unwrap()
+//                     / omega22(tr)
+//                     / (p.sigma[i] * ANGSTROM).powi(2)
+//             })
+//             .collect();
+//         let mut ce_mix = 0.0 * MILLI * PASCAL * SECOND;
+//         for i in 0..self.components() {
+//             let denom: f64 = (0..self.components())
+//                 .map(|j| {
+//                     x[j] * (1.0
+//                         + (ce[i] / ce[j]).into_value().unwrap().sqrt()
+//                             * (mw[j] / mw[i]).powf(1.0 / 4.0))
+//                     .powi(2)
+//                         / (8.0 * (1.0 + mw[i] / mw[j])).sqrt()
+//                 })
+//                 .sum();
+//             ce_mix += ce[i] * x[i] / denom
+//         }
+//         Ok(ce_mix)
+//     }
 
-    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
-        let coefficients = self
-            .parameters
-            .viscosity
-            .as_ref()
-            .expect("Missing viscosity coefficients.");
-        let m = (x * &self.parameters.m).sum();
-        let s = s_res / m;
-        let pref = (x * &self.parameters.m) / m;
-        let a: f64 = (&coefficients.row(0) * x).sum();
-        let b: f64 = (&coefficients.row(1) * &pref).sum();
-        let c: f64 = (&coefficients.row(2) * &pref).sum();
-        let d: f64 = (&coefficients.row(3) * &pref).sum();
-        Ok(a + b * s + c * s.powi(2) + d * s.powi(3))
-    }
+//     fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+//         let coefficients = self
+//             .parameters
+//             .viscosity
+//             .as_ref()
+//             .expect("Missing viscosity coefficients.");
+//         let m = (x * &self.parameters.m).sum();
+//         let s = s_res / m;
+//         let pref = (x * &self.parameters.m) / m;
+//         let a: f64 = (&coefficients.row(0) * x).sum();
+//         let b: f64 = (&coefficients.row(1) * &pref).sum();
+//         let c: f64 = (&coefficients.row(2) * &pref).sum();
+//         let d: f64 = (&coefficients.row(3) * &pref).sum();
+//         Ok(a + b * s + c * s.powi(2) + d * s.powi(3))
+//     }
 
-    fn diffusion_reference(
-        &self,
-        temperature: SINumber,
-        volume: SINumber,
-        moles: &SIArray1,
-    ) -> EosResult<SINumber> {
-        if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
-        }
-        let p = &self.parameters;
-        let density = moles.sum() / volume;
-        let res: Array1<SINumber> = (0..self.components())
-            .map(|i| {
-                let tr = (temperature / p.epsilon_k[i] / KELVIN)
-                    .into_value()
-                    .unwrap();
-                3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi(2) / omega11(tr) / (density * NAV)
-                    * (temperature * RGAS / PI / (p.molarweight[i] * GRAM / MOL))
-                        .sqrt()
-                        .unwrap()
-            })
-            .collect();
-        Ok(res[0])
-    }
+//     fn diffusion_reference(
+//         &self,
+//         temperature: SINumber,
+//         volume: SINumber,
+//         moles: &SIArray1,
+//     ) -> EosResult<SINumber> {
+//         if self.components() != 1 {
+//             return Err(EosError::IncompatibleComponents(self.components(), 1));
+//         }
+//         let p = &self.parameters;
+//         let density = moles.sum() / volume;
+//         let res: Array1<SINumber> = (0..self.components())
+//             .map(|i| {
+//                 let tr = (temperature / p.epsilon_k[i] / KELVIN)
+//                     .into_value()
+//                     .unwrap();
+//                 3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi(2) / omega11(tr) / (density * NAV)
+//                     * (temperature * RGAS / PI / (p.molarweight[i] * GRAM / MOL))
+//                         .sqrt()
+//                         .unwrap()
+//             })
+//             .collect();
+//         Ok(res[0])
+//     }
 
-    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
-        if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
-        }
-        let coefficients = self
-            .parameters
-            .diffusion
-            .as_ref()
-            .expect("Missing diffusion coefficients.");
-        let m = (x * &self.parameters.m).sum();
-        let s = s_res / m;
-        let pref = (x * &self.parameters.m).mapv(|v| v / m);
-        let a: f64 = (&coefficients.row(0) * x).sum();
-        let b: f64 = (&coefficients.row(1) * &pref).sum();
-        let c: f64 = (&coefficients.row(2) * &pref).sum();
-        let d: f64 = (&coefficients.row(3) * &pref).sum();
-        let e: f64 = (&coefficients.row(4) * &pref).sum();
-        Ok(a + b * s - c * (1.0 - s.exp()) * s.powi(2) - d * s.powi(4) - e * s.powi(8))
-    }
+//     fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+//         if self.components() != 1 {
+//             return Err(EosError::IncompatibleComponents(self.components(), 1));
+//         }
+//         let coefficients = self
+//             .parameters
+//             .diffusion
+//             .as_ref()
+//             .expect("Missing diffusion coefficients.");
+//         let m = (x * &self.parameters.m).sum();
+//         let s = s_res / m;
+//         let pref = (x * &self.parameters.m).mapv(|v| v / m);
+//         let a: f64 = (&coefficients.row(0) * x).sum();
+//         let b: f64 = (&coefficients.row(1) * &pref).sum();
+//         let c: f64 = (&coefficients.row(2) * &pref).sum();
+//         let d: f64 = (&coefficients.row(3) * &pref).sum();
+//         let e: f64 = (&coefficients.row(4) * &pref).sum();
+//         Ok(a + b * s - c * (1.0 - s.exp()) * s.powi(2) - d * s.powi(4) - e * s.powi(8))
+//     }
 
-    // Equation 4 of DOI: 10.1021/acs.iecr.9b04289
-    fn thermal_conductivity_reference(
-        &self,
-        temperature: SINumber,
-        volume: SINumber,
-        moles: &SIArray1,
-    ) -> EosResult<SINumber> {
-        if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
-        }
-        let p = &self.parameters;
-        let mws = self.molar_weight();
-        let state = State::new_nvt(&Arc::new(Self::new(p.clone())), temperature, volume, moles)?;
-        let res: Array1<SINumber> = (0..self.components())
-            .map(|i| {
-                let tr = (temperature / p.epsilon_k[i] / KELVIN)
-                    .into_value()
-                    .unwrap();
-                let s_res_reduced = state
-                    .molar_entropy(Contributions::ResidualNvt)
-                    .to_reduced(RGAS)
-                    .unwrap()
-                    / p.m[i];
-                let ref_ce = chapman_enskog_thermal_conductivity(
-                    temperature,
-                    mws.get(i),
-                    p.m[i],
-                    p.sigma[i],
-                    p.epsilon_k[i],
-                );
-                let alpha_visc = (-s_res_reduced / -0.5).exp();
-                let ref_ts = (-0.0167141 * tr / p.m[i] + 0.0470581 * (tr / p.m[i]).powi(2))
-                    * (p.m[i] * p.m[i] * p.sigma[i].powi(3) * p.epsilon_k[i])
-                    * 1e-5
-                    * WATT
-                    / METER
-                    / KELVIN;
-                ref_ce + ref_ts * alpha_visc
-            })
-            .collect();
-        Ok(res[0])
-    }
+//     // Equation 4 of DOI: 10.1021/acs.iecr.9b04289
+//     fn thermal_conductivity_reference(
+//         &self,
+//         temperature: SINumber,
+//         volume: SINumber,
+//         moles: &SIArray1,
+//     ) -> EosResult<SINumber> {
+//         if self.components() != 1 {
+//             return Err(EosError::IncompatibleComponents(self.components(), 1));
+//         }
+//         let p = &self.parameters;
+//         let mws = self.molar_weight();
+//         let state = State::new_nvt(&Arc::new(Self::new(p.clone())), temperature, volume, moles)?;
+//         let res: Array1<SINumber> = (0..self.components())
+//             .map(|i| {
+//                 let tr = (temperature / p.epsilon_k[i] / KELVIN)
+//                     .into_value()
+//                     .unwrap();
+//                 let s_res_reduced = state
+//                     .molar_entropy(Contributions::Residual)
+//                     .to_reduced(RGAS)
+//                     .unwrap()
+//                     / p.m[i];
+//                 let ref_ce = chapman_enskog_thermal_conductivity(
+//                     temperature,
+//                     mws.get(i),
+//                     p.m[i],
+//                     p.sigma[i],
+//                     p.epsilon_k[i],
+//                 );
+//                 let alpha_visc = (-s_res_reduced / -0.5).exp();
+//                 let ref_ts = (-0.0167141 * tr / p.m[i] + 0.0470581 * (tr / p.m[i]).powi(2))
+//                     * (p.m[i] * p.m[i] * p.sigma[i].powi(3) * p.epsilon_k[i])
+//                     * 1e-5
+//                     * WATT
+//                     / METER
+//                     / KELVIN;
+//                 ref_ce + ref_ts * alpha_visc
+//             })
+//             .collect();
+//         Ok(res[0])
+//     }
 
-    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
-        if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
-        }
-        let coefficients = self
-            .parameters
-            .thermal_conductivity
-            .as_ref()
-            .expect("Missing thermal conductivity coefficients");
-        let m = (x * &self.parameters.m).sum();
-        let s = s_res / m;
-        let pref = (x * &self.parameters.m).mapv(|v| v / m);
-        let a: f64 = (&coefficients.row(0) * x).sum();
-        let b: f64 = (&coefficients.row(1) * &pref).sum();
-        let c: f64 = (&coefficients.row(2) * &pref).sum();
-        let d: f64 = (&coefficients.row(3) * &pref).sum();
-        Ok(a + b * s + c * (1.0 - s.exp()) + d * s.powi(2))
-    }
-}
+//     fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+//         if self.components() != 1 {
+//             return Err(EosError::IncompatibleComponents(self.components(), 1));
+//         }
+//         let coefficients = self
+//             .parameters
+//             .thermal_conductivity
+//             .as_ref()
+//             .expect("Missing thermal conductivity coefficients");
+//         let m = (x * &self.parameters.m).sum();
+//         let s = s_res / m;
+//         let pref = (x * &self.parameters.m).mapv(|v| v / m);
+//         let a: f64 = (&coefficients.row(0) * x).sum();
+//         let b: f64 = (&coefficients.row(1) * &pref).sum();
+//         let c: f64 = (&coefficients.row(2) * &pref).sum();
+//         let d: f64 = (&coefficients.row(3) * &pref).sum();
+//         Ok(a + b * s + c * (1.0 - s.exp()) + d * s.powi(2))
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -358,7 +349,7 @@ mod tests {
         let p_ig = s.total_moles * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
-            s.pressure(Contributions::IdealGas) + s.pressure(Contributions::ResidualNvt),
+            s.pressure(Contributions::IdealGas) + s.pressure(Contributions::Residual),
             s.pressure(Contributions::Total),
             epsilon = 1e-10
         );
@@ -374,7 +365,7 @@ mod tests {
         let p_ig = s.total_moles * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
-            s.pressure(Contributions::IdealGas) + s.pressure(Contributions::ResidualNvt),
+            s.pressure(Contributions::IdealGas) + s.pressure(Contributions::Residual),
             s.pressure(Contributions::Total),
             epsilon = 1e-10
         );
@@ -450,19 +441,19 @@ mod tests {
         assert_relative_eq!(p, p_calc, epsilon = 1e-6);
     }
 
-    #[test]
-    fn vle_pure() {
-        let e = Arc::new(PcSaft::new(propane_parameters()));
-        let t = 300.0 * KELVIN;
-        let vle = PhaseEquilibrium::pure(&e, t, None, Default::default());
-        if let Ok(v) = vle {
-            assert_relative_eq!(
-                v.vapor().pressure(Contributions::Total),
-                v.liquid().pressure(Contributions::Total),
-                epsilon = 1e-6
-            )
-        }
-    }
+    // #[test]
+    // fn vle_pure() {
+    //     let e = Arc::new(PcSaft::new(propane_parameters()));
+    //     let t = 300.0 * KELVIN;
+    //     let vle = PhaseEquilibrium::pure(&e, t, None, Default::default());
+    //     if let Ok(v) = vle {
+    //         assert_relative_eq!(
+    //             v.vapor().pressure(Contributions::Total),
+    //             v.liquid().pressure(Contributions::Total),
+    //             epsilon = 1e-6
+    //         )
+    //     }
+    // }
 
     #[test]
     fn critical_point() {
@@ -474,19 +465,19 @@ mod tests {
         }
     }
 
-    #[test]
-    fn speed_of_sound() {
-        let e = Arc::new(PcSaft::new(propane_parameters()));
-        let t = 300.0 * KELVIN;
-        let p = BAR;
-        let m = arr1(&[1.0]) * MOL;
-        let s = State::new_npt(&e, t, p, &m, DensityInitialization::None).unwrap();
-        assert_relative_eq!(
-            s.speed_of_sound(),
-            245.00185709137546 * METER / SECOND,
-            epsilon = 1e-4
-        )
-    }
+    // #[test]
+    // fn speed_of_sound() {
+    //     let e = Arc::new(PcSaft::new(propane_parameters()));
+    //     let t = 300.0 * KELVIN;
+    //     let p = BAR;
+    //     let m = arr1(&[1.0]) * MOL;
+    //     let s = State::new_npt(&e, t, p, &m, DensityInitialization::None).unwrap();
+    //     assert_relative_eq!(
+    //         s.speed_of_sound(),
+    //         245.00185709137546 * METER / SECOND,
+    //         epsilon = 1e-4
+    //     )
+    // }
 
     #[test]
     fn mix_single() {
@@ -514,49 +505,49 @@ mod tests {
         )
     }
 
-    #[test]
-    fn viscosity() -> EosResult<()> {
-        let e = Arc::new(PcSaft::new(propane_parameters()));
-        let t = 300.0 * KELVIN;
-        let p = BAR;
-        let n = arr1(&[1.0]) * MOL;
-        let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
-        assert_relative_eq!(
-            s.viscosity()?,
-            0.00797 * MILLI * PASCAL * SECOND,
-            epsilon = 1e-5
-        );
-        assert_relative_eq!(
-            s.ln_viscosity_reduced()?,
-            (s.viscosity()? / e.viscosity_reference(s.temperature, s.volume, &s.moles)?)
-                .into_value()
-                .unwrap()
-                .ln(),
-            epsilon = 1e-15
-        );
-        Ok(())
-    }
+    // #[test]
+    // fn viscosity() -> EosResult<()> {
+    //     let e = Arc::new(PcSaft::new(propane_parameters()));
+    //     let t = 300.0 * KELVIN;
+    //     let p = BAR;
+    //     let n = arr1(&[1.0]) * MOL;
+    //     let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
+    //     assert_relative_eq!(
+    //         s.viscosity()?,
+    //         0.00797 * MILLI * PASCAL * SECOND,
+    //         epsilon = 1e-5
+    //     );
+    //     assert_relative_eq!(
+    //         s.ln_viscosity_reduced()?,
+    //         (s.viscosity()? / e.viscosity_reference(s.temperature, s.volume, &s.moles)?)
+    //             .into_value()
+    //             .unwrap()
+    //             .ln(),
+    //         epsilon = 1e-15
+    //     );
+    //     Ok(())
+    // }
 
-    #[test]
-    fn diffusion() -> EosResult<()> {
-        let e = Arc::new(PcSaft::new(propane_parameters()));
-        let t = 300.0 * KELVIN;
-        let p = BAR;
-        let n = arr1(&[1.0]) * MOL;
-        let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
-        assert_relative_eq!(
-            s.diffusion()?,
-            0.01505 * (CENTI * METER).powi(2) / SECOND,
-            epsilon = 1e-5
-        );
-        assert_relative_eq!(
-            s.ln_diffusion_reduced()?,
-            (s.diffusion()? / e.diffusion_reference(s.temperature, s.volume, &s.moles)?)
-                .into_value()
-                .unwrap()
-                .ln(),
-            epsilon = 1e-15
-        );
-        Ok(())
-    }
+    // #[test]
+    // fn diffusion() -> EosResult<()> {
+    //     let e = Arc::new(PcSaft::new(propane_parameters()));
+    //     let t = 300.0 * KELVIN;
+    //     let p = BAR;
+    //     let n = arr1(&[1.0]) * MOL;
+    //     let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
+    //     assert_relative_eq!(
+    //         s.diffusion()?,
+    //         0.01505 * (CENTI * METER).powi(2) / SECOND,
+    //         epsilon = 1e-5
+    //     );
+    //     assert_relative_eq!(
+    //         s.ln_diffusion_reduced()?,
+    //         (s.diffusion()? / e.diffusion_reference(s.temperature, s.volume, &s.moles)?)
+    //             .into_value()
+    //             .unwrap()
+    //             .ln(),
+    //         epsilon = 1e-15
+    //     );
+    //     Ok(())
+    // }
 }

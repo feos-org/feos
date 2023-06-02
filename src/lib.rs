@@ -38,7 +38,7 @@ mod dft;
 #[cfg(feature = "dft")]
 pub use dft::FunctionalVariant;
 mod eos;
-pub use eos::EosVariant;
+// pub use eos::EosVariant;
 
 #[cfg(feature = "estimator")]
 pub mod estimator;

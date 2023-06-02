@@ -36,7 +36,8 @@ pub mod parameter;
 // mod phase_equilibria;
 mod state;
 pub use equation_of_state::{
-    EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, IdealGas, MolarWeight, Residual,
+    DeBroglieWavelength, EntropyScaling, EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual,
+    IdealGas, MolarWeight, Residual,
 };
 pub use errors::{EosError, EosResult};
 // pub use phase_equilibria::{
@@ -199,53 +200,177 @@ mod tests {
             .build()?;
 
         // pressure
-        assert_relative_eq!(s.pressure(Contributions::Total), sr.pressure(Contributions::Total), max_relative = 1e-15);
-        assert_relative_eq!(s.pressure(Contributions::Residual), sr.pressure(Contributions::Residual), max_relative = 1e-15);
-        assert_relative_eq!(s.compressibility(Contributions::Total), sr.compressibility(Contributions::Total), max_relative = 1e-15);
-        assert_relative_eq!(s.compressibility(Contributions::Residual), sr.compressibility(Contributions::Residual), max_relative = 1e-15);
-        
+        assert_relative_eq!(
+            s.pressure(Contributions::Total),
+            sr.pressure(Contributions::Total),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.pressure(Contributions::Residual),
+            sr.pressure(Contributions::Residual),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.compressibility(Contributions::Total),
+            sr.compressibility(Contributions::Total),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.compressibility(Contributions::Residual),
+            sr.compressibility(Contributions::Residual),
+            max_relative = 1e-15
+        );
+
         // residual properties
-        assert_relative_eq!(s.helmholtz_energy(Contributions::Residual), sr.residual_helmholtz_energy(), max_relative = 1e-15);
-        assert_relative_eq!(s.entropy(Contributions::Residual), sr.residual_entropy(), max_relative = 1e-15);
-        assert_relative_eq!(s.enthalpy(Contributions::Residual), sr.residual_enthalpy(), max_relative = 1e-15);
-        assert_relative_eq!(s.internal_energy(Contributions::Residual), sr.residual_internal_energy(), max_relative = 1e-15);
-        assert_relative_eq!(s.gibbs_energy(Contributions::Residual), sr.residual_gibbs_energy(), max_relative = 1e-15);
-        assert_relative_eq!(s.chemical_potential(Contributions::Residual), sr.residual_chemical_potential(), max_relative = 1e-15);
+        assert_relative_eq!(
+            s.helmholtz_energy(Contributions::Residual),
+            sr.residual_helmholtz_energy(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.entropy(Contributions::Residual),
+            sr.residual_entropy(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.enthalpy(Contributions::Residual),
+            sr.residual_enthalpy(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.internal_energy(Contributions::Residual),
+            sr.residual_internal_energy(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.gibbs_energy(Contributions::Residual),
+            sr.residual_gibbs_energy(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.chemical_potential(Contributions::Residual),
+            sr.residual_chemical_potential(),
+            max_relative = 1e-15
+        );
 
         // pressure derivatives
-        assert_relative_eq!(s.structure_factor(), sr.structure_factor(), max_relative = 1e-15);
-        assert_relative_eq!(s.dp_dt(Contributions::Total), sr.dp_dt(Contributions::Total), max_relative = 1e-15);
-        assert_relative_eq!(s.dp_dt(Contributions::Residual), sr.dp_dt(Contributions::Residual), max_relative = 1e-15);
-        assert_relative_eq!(s.dp_dv(Contributions::Total), sr.dp_dv(Contributions::Total), max_relative = 1e-15);
-        assert_relative_eq!(s.dp_dv(Contributions::Residual), sr.dp_dv(Contributions::Residual), max_relative = 1e-15);
-        assert_relative_eq!(s.dp_drho(Contributions::Total), sr.dp_drho(Contributions::Total), max_relative = 1e-15);
-        assert_relative_eq!(s.dp_drho(Contributions::Residual), sr.dp_drho(Contributions::Residual), max_relative = 1e-15);
-        assert_relative_eq!(s.d2p_dv2(Contributions::Total), sr.d2p_dv2(Contributions::Total), max_relative = 1e-15);
-        assert_relative_eq!(s.d2p_dv2(Contributions::Residual), sr.d2p_dv2(Contributions::Residual), max_relative = 1e-15);
-        assert_relative_eq!(s.d2p_drho2(Contributions::Total), sr.d2p_drho2(Contributions::Total), max_relative = 1e-15);
-        assert_relative_eq!(s.d2p_drho2(Contributions::Residual), sr.d2p_drho2(Contributions::Residual), max_relative = 1e-15);
-        assert_relative_eq!(s.dp_dni(Contributions::Total), sr.dp_dni(Contributions::Total), max_relative = 1e-15);
-        assert_relative_eq!(s.dp_dni(Contributions::Residual), sr.dp_dni(Contributions::Residual), max_relative = 1e-15);
-        
+        assert_relative_eq!(
+            s.structure_factor(),
+            sr.structure_factor(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.dp_dt(Contributions::Total),
+            sr.dp_dt(Contributions::Total),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.dp_dt(Contributions::Residual),
+            sr.dp_dt(Contributions::Residual),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.dp_dv(Contributions::Total),
+            sr.dp_dv(Contributions::Total),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.dp_dv(Contributions::Residual),
+            sr.dp_dv(Contributions::Residual),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.dp_drho(Contributions::Total),
+            sr.dp_drho(Contributions::Total),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.dp_drho(Contributions::Residual),
+            sr.dp_drho(Contributions::Residual),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.d2p_dv2(Contributions::Total),
+            sr.d2p_dv2(Contributions::Total),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.d2p_dv2(Contributions::Residual),
+            sr.d2p_dv2(Contributions::Residual),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.d2p_drho2(Contributions::Total),
+            sr.d2p_drho2(Contributions::Total),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.d2p_drho2(Contributions::Residual),
+            sr.d2p_drho2(Contributions::Residual),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.dp_dni(Contributions::Total),
+            sr.dp_dni(Contributions::Total),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.dp_dni(Contributions::Residual),
+            sr.dp_dni(Contributions::Residual),
+            max_relative = 1e-15
+        );
+
         // entropy
-        assert_relative_eq!(s.ds_dt(Contributions::Residual), sr.ds_res_dt(), max_relative = 1e-15);
+        assert_relative_eq!(
+            s.ds_dt(Contributions::Residual),
+            sr.ds_res_dt(),
+            max_relative = 1e-15
+        );
 
         // chemical potential
-        assert_relative_eq!(s.dmu_dt(Contributions::Residual), sr.dmu_res_dt(), max_relative = 1e-15);
-        assert_relative_eq!(s.dmu_dni(Contributions::Residual), sr.dmu_res_dni(), max_relative = 1e-15);
-        assert_relative_eq!(s.dmu_dt(Contributions::Residual), sr.dmu_res_dt(), max_relative = 1e-15);
+        assert_relative_eq!(
+            s.dmu_dt(Contributions::Residual),
+            sr.dmu_res_dt(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.dmu_dni(Contributions::Residual),
+            sr.dmu_res_dni(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.dmu_dt(Contributions::Residual),
+            sr.dmu_res_dt(),
+            max_relative = 1e-15
+        );
 
         // fugacity
         assert_relative_eq!(s.ln_phi(), sr.ln_phi(), max_relative = 1e-15);
         assert_relative_eq!(s.dln_phi_dt(), sr.dln_phi_dt(), max_relative = 1e-15);
         assert_relative_eq!(s.dln_phi_dp(), sr.dln_phi_dp(), max_relative = 1e-15);
         assert_relative_eq!(s.dln_phi_dnj(), sr.dln_phi_dnj(), max_relative = 1e-15);
-        assert_relative_eq!(s.thermodynamic_factor(), sr.thermodynamic_factor(), max_relative = 1e-15);
+        assert_relative_eq!(
+            s.thermodynamic_factor(),
+            sr.thermodynamic_factor(),
+            max_relative = 1e-15
+        );
 
         // residual properties using multiple derivatives
-        assert_relative_eq!(s.c_v(Contributions::Residual), sr.c_v_res(), max_relative = 1e-15);
-        assert_relative_eq!(s.dc_v_dt(Contributions::Residual), sr.dc_v_res_dt(), max_relative = 1e-15);
-        assert_relative_eq!(s.c_p(Contributions::Residual), sr.c_p_res(), max_relative = 1e-15);
+        assert_relative_eq!(
+            s.c_v(Contributions::Residual),
+            sr.c_v_res(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.dc_v_dt(Contributions::Residual),
+            sr.dc_v_res_dt(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.c_p(Contributions::Residual),
+            sr.c_p_res(),
+            max_relative = 1e-15
+        );
         Ok(())
     }
 }

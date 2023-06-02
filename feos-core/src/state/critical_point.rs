@@ -1,7 +1,6 @@
-use super::{State, StateHD, TPSpec};
-use crate::equation_of_state::EquationOfState;
+use super::{SolverOptions, State, StateHD, TPSpec, Verbosity};
+use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::phase_equilibria::{SolverOptions, Verbosity};
 use crate::{DensityInitialization, EosUnit};
 use nalgebra::{DMatrix, DVector, SVector, SymmetricEigen};
 use ndarray::{arr1, Array1};
@@ -19,10 +18,10 @@ const MAX_ITER_CRIT_POINT_BINARY: usize = 200;
 const TOL_CRIT_POINT: f64 = 1e-8;
 
 /// # Critical points
-impl<E: EquationOfState> State<E> {
+impl<R: Residual> State<R> {
     /// Calculate the pure component critical point of all components.
     pub fn critical_point_pure(
-        eos: &Arc<E>,
+        eos: &Arc<R>,
         initial_temperature: Option<SINumber>,
         options: SolverOptions,
     ) -> EosResult<Vec<Self>>
@@ -42,7 +41,7 @@ impl<E: EquationOfState> State<E> {
     }
 
     pub fn critical_point_binary(
-        eos: &Arc<E>,
+        eos: &Arc<R>,
         temperature_or_pressure: SINumber,
         initial_temperature: Option<SINumber>,
         initial_molefracs: Option<[f64; 2]>,
@@ -67,7 +66,7 @@ impl<E: EquationOfState> State<E> {
 
     /// Calculate the critical point of a system for given moles.
     pub fn critical_point(
-        eos: &Arc<E>,
+        eos: &Arc<R>,
         moles: Option<&SIArray1>,
         initial_temperature: Option<SINumber>,
         options: SolverOptions,
@@ -94,7 +93,7 @@ impl<E: EquationOfState> State<E> {
     }
 
     fn critical_point_hkm(
-        eos: &Arc<E>,
+        eos: &Arc<R>,
         moles: &SIArray1,
         initial_temperature: SINumber,
         options: SolverOptions,
@@ -175,7 +174,7 @@ impl<E: EquationOfState> State<E> {
 
     /// Calculate the critical point of a binary system for given temperature.
     fn critical_point_binary_t(
-        eos: &Arc<E>,
+        eos: &Arc<R>,
         temperature: SINumber,
         initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
@@ -256,7 +255,7 @@ impl<E: EquationOfState> State<E> {
 
     /// Calculate the critical point of a binary system for given pressure.
     fn critical_point_binary_p(
-        eos: &Arc<E>,
+        eos: &Arc<R>,
         pressure: SINumber,
         initial_temperature: Option<SINumber>,
         initial_molefracs: Option<[f64; 2]>,
@@ -352,7 +351,7 @@ impl<E: EquationOfState> State<E> {
     }
 
     pub fn spinodal(
-        eos: &Arc<E>,
+        eos: &Arc<R>,
         temperature: SINumber,
         moles: Option<&SIArray1>,
         options: SolverOptions,
@@ -381,7 +380,7 @@ impl<E: EquationOfState> State<E> {
     }
 
     fn calculate_spinodal(
-        eos: &Arc<E>,
+        eos: &Arc<R>,
         temperature: SINumber,
         moles: &SIArray1,
         density_initialization: DensityInitialization,
@@ -459,8 +458,8 @@ impl<E: EquationOfState> State<E> {
     }
 }
 
-fn critical_point_objective<E: EquationOfState>(
-    eos: &Arc<E>,
+fn critical_point_objective<R: Residual>(
+    eos: &Arc<R>,
     temperature: DualSVec64<2>,
     density: DualSVec64<2>,
     moles: &Array1<f64>,
@@ -473,8 +472,8 @@ fn critical_point_objective<E: EquationOfState>(
         m[i].eps1 = DualSVec64::one();
         m[j].eps2 = DualSVec64::one();
         let state = StateHD::new(t, v, m);
-        (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
-            * (moles[i] * moles[j]).sqrt()
+        // (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
+        eos.evaluate_residual(&state).eps1eps2 * (moles[i] * moles[j]).sqrt()
     });
 
     // calculate smallest eigenvalue and corresponding eigenvector of q
@@ -494,12 +493,13 @@ fn critical_point_objective<E: EquationOfState>(
         Dual3::from_re(density.recip() * moles.sum()),
         moles_hd,
     );
-    let res = eos.evaluate_residual(&state_s) + eos.ideal_gas().evaluate(&state_s);
+    // let res = eos.evaluate_residual(&state_s) + eos.ideal_gas().evaluate(&state_s);
+    let res = eos.evaluate_residual(&state_s);
     Ok(SVector::from([eval, res.v3]))
 }
 
-fn critical_point_objective_t<E: EquationOfState>(
-    eos: &Arc<E>,
+fn critical_point_objective_t<R: Residual>(
+    eos: &Arc<R>,
     temperature: f64,
     density: SVector<DualSVec64<2>, 2>,
 ) -> EosResult<SVector<DualSVec64<2>, 2>> {
@@ -511,8 +511,8 @@ fn critical_point_objective_t<E: EquationOfState>(
         m[i].eps1 = DualSVec64::one();
         m[j].eps2 = DualSVec64::one();
         let state = StateHD::new(t, v, arr1(&[m[0], m[1]]));
-        (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
-            * (density[i] * density[j]).sqrt()
+        // (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
+        eos.evaluate_residual(&state).eps1eps2 * (density[i] * density[j]).sqrt()
     });
 
     // calculate smallest eigenvalue and corresponding eigenvector of q
@@ -528,12 +528,12 @@ fn critical_point_objective_t<E: EquationOfState>(
         )
     });
     let state_s = StateHD::new(Dual3::from(temperature), Dual3::from(1.0), moles_hd);
-    let res = eos.evaluate_residual(&state_s) + eos.ideal_gas().evaluate(&state_s);
+    let res = eos.evaluate_residual(&state_s); // + eos.ideal_gas().evaluate(&state_s);
     Ok(SVector::from([eval, res.v3]))
 }
 
-fn critical_point_objective_p<E: EquationOfState>(
-    eos: &Arc<E>,
+fn critical_point_objective_p<R: Residual>(
+    eos: &Arc<R>,
     pressure: f64,
     temperature: DualSVec64<3>,
     density: SVector<DualSVec64<3>, 2>,
@@ -546,8 +546,8 @@ fn critical_point_objective_p<E: EquationOfState>(
         m[i].eps1 = DualSVec64::one();
         m[j].eps2 = DualSVec64::one();
         let state = StateHD::new(t, v, arr1(&[m[0], m[1]]));
-        (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
-            * (density[i] * density[j]).sqrt()
+        // (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
+        eos.evaluate_residual(&state).eps1eps2 * (density[i] * density[j]).sqrt()
     });
 
     // calculate smallest eigenvalue and corresponding eigenvector of q
@@ -563,21 +563,21 @@ fn critical_point_objective_p<E: EquationOfState>(
         )
     });
     let state_s = StateHD::new(Dual3::from_re(temperature), Dual3::from(1.0), moles_hd);
-    let res = eos.evaluate_residual(&state_s) + eos.ideal_gas().evaluate(&state_s);
+    let res = eos.evaluate_residual(&state_s); // + eos.ideal_gas().evaluate(&state_s);
 
     // calculate pressure
     let a = |v| {
         let m = arr1(&[Dual::from_re(density[0]), Dual::from_re(density[1])]);
         let state_p = StateHD::new(Dual::from_re(temperature), v, m);
-        eos.evaluate_residual(&state_p) + eos.ideal_gas().evaluate(&state_p)
+        eos.evaluate_residual(&state_p) // + eos.ideal_gas().evaluate(&state_p)
     };
     let (_, p) = first_derivative(a, DualVec::one());
 
     Ok(SVector::from([eval, res.v3, p * temperature + pressure]))
 }
 
-fn spinodal_objective<E: EquationOfState>(
-    eos: &Arc<E>,
+fn spinodal_objective<R: Residual>(
+    eos: &Arc<R>,
     temperature: Dual64,
     density: Dual64,
     moles: &Array1<f64>,
@@ -590,8 +590,8 @@ fn spinodal_objective<E: EquationOfState>(
         m[i].eps1 = Dual64::one();
         m[j].eps2 = Dual64::one();
         let state = StateHD::new(t, v, m);
-        (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
-            * (moles[i] * moles[j]).sqrt()
+        // (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
+        eos.evaluate_residual(&state).eps1eps2 * (moles[i] * moles[j]).sqrt()
     });
 
     // calculate smallest eigenvalue of q

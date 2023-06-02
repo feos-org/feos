@@ -1,6 +1,6 @@
 use super::{Contributions, Derivative::*, PartialDerivative, State};
 // use crate::equation_of_state::{EntropyScaling, MolarWeight, Residual};
-use crate::equation_of_state::Residual;
+use crate::equation_of_state::{EntropyScaling, Residual};
 use crate::errors::EosResult;
 use crate::EosUnit;
 use ndarray::{arr1, Array1, Array2};
@@ -312,96 +312,90 @@ impl<E: Residual> State<E> {
     }
 }
 
-// /// # Transport properties
-// ///
-// /// These properties are available for equations of state
-// /// that implement the [EntropyScaling] trait.
-// impl<E: Residual + EntropyScaling> State<E> {
-//     /// Return the viscosity via entropy scaling.
-//     pub fn viscosity(&self) -> EosResult<SINumber> {
-//         let s = self
-//             .molar_entropy(Contributions::ResidualNvt)
-//             .to_reduced(SIUnit::reference_molar_entropy())?;
-//         Ok(self
-//             .eos
-//             .viscosity_reference(self.temperature, self.volume, &self.moles)?
-//             * self.eos.viscosity_correlation(s, &self.molefracs)?.exp())
-//     }
+/// # Transport properties
+///
+/// These properties are available for equations of state
+/// that implement the [EntropyScaling] trait.
+impl<E: Residual + EntropyScaling> State<E> {
+    /// Return the viscosity via entropy scaling.
+    pub fn viscosity(&self) -> EosResult<SINumber> {
+        let s = (self.residual_entropy() / self.total_moles)
+            .to_reduced(SIUnit::reference_molar_entropy())?;
+        Ok(self
+            .eos
+            .viscosity_reference(self.temperature, self.volume, &self.moles)?
+            * self.eos.viscosity_correlation(s, &self.molefracs)?.exp())
+    }
 
-//     /// Return the logarithm of the reduced viscosity.
-//     ///
-//     /// This term equals the viscosity correlation function
-//     /// that is used for entropy scaling.
-//     pub fn ln_viscosity_reduced(&self) -> EosResult<f64> {
-//         let s = self
-//             .molar_entropy(Contributions::ResidualNvt)
-//             .to_reduced(SIUnit::reference_molar_entropy())?;
-//         self.eos.viscosity_correlation(s, &self.molefracs)
-//     }
+    /// Return the logarithm of the reduced viscosity.
+    ///
+    /// This term equals the viscosity correlation function
+    /// that is used for entropy scaling.
+    pub fn ln_viscosity_reduced(&self) -> EosResult<f64> {
+        let s = (self.residual_entropy() / self.total_moles)
+            .to_reduced(SIUnit::reference_molar_entropy())?;
+        self.eos.viscosity_correlation(s, &self.molefracs)
+    }
 
-//     /// Return the viscosity reference as used in entropy scaling.
-//     pub fn viscosity_reference(&self) -> EosResult<SINumber> {
-//         self.eos
-//             .viscosity_reference(self.temperature, self.volume, &self.moles)
-//     }
+    /// Return the viscosity reference as used in entropy scaling.
+    pub fn viscosity_reference(&self) -> EosResult<SINumber> {
+        self.eos
+            .viscosity_reference(self.temperature, self.volume, &self.moles)
+    }
 
-//     /// Return the diffusion via entropy scaling.
-//     pub fn diffusion(&self) -> EosResult<SINumber> {
-//         let s = self
-//             .molar_entropy(Contributions::ResidualNvt)
-//             .to_reduced(SIUnit::reference_molar_entropy())?;
-//         Ok(self
-//             .eos
-//             .diffusion_reference(self.temperature, self.volume, &self.moles)?
-//             * self.eos.diffusion_correlation(s, &self.molefracs)?.exp())
-//     }
+    /// Return the diffusion via entropy scaling.
+    pub fn diffusion(&self) -> EosResult<SINumber> {
+        let s = (self.residual_entropy() / self.total_moles)
+            .to_reduced(SIUnit::reference_molar_entropy())?;
+        Ok(self
+            .eos
+            .diffusion_reference(self.temperature, self.volume, &self.moles)?
+            * self.eos.diffusion_correlation(s, &self.molefracs)?.exp())
+    }
 
-//     /// Return the logarithm of the reduced diffusion.
-//     ///
-//     /// This term equals the diffusion correlation function
-//     /// that is used for entropy scaling.
-//     pub fn ln_diffusion_reduced(&self) -> EosResult<f64> {
-//         let s = self
-//             .molar_entropy(Contributions::ResidualNvt)
-//             .to_reduced(SIUnit::reference_molar_entropy())?;
-//         self.eos.diffusion_correlation(s, &self.molefracs)
-//     }
+    /// Return the logarithm of the reduced diffusion.
+    ///
+    /// This term equals the diffusion correlation function
+    /// that is used for entropy scaling.
+    pub fn ln_diffusion_reduced(&self) -> EosResult<f64> {
+        let s = (self.residual_entropy() / self.total_moles)
+            .to_reduced(SIUnit::reference_molar_entropy())?;
+        self.eos.diffusion_correlation(s, &self.molefracs)
+    }
 
-//     /// Return the diffusion reference as used in entropy scaling.
-//     pub fn diffusion_reference(&self) -> EosResult<SINumber> {
-//         self.eos
-//             .diffusion_reference(self.temperature, self.volume, &self.moles)
-//     }
+    /// Return the diffusion reference as used in entropy scaling.
+    pub fn diffusion_reference(&self) -> EosResult<SINumber> {
+        self.eos
+            .diffusion_reference(self.temperature, self.volume, &self.moles)
+    }
 
-//     /// Return the thermal conductivity via entropy scaling.
-//     pub fn thermal_conductivity(&self) -> EosResult<SINumber> {
-//         let s = self
-//             .molar_entropy(Contributions::ResidualNvt)
-//             .to_reduced(SIUnit::reference_molar_entropy())?;
-//         Ok(self
-//             .eos
-//             .thermal_conductivity_reference(self.temperature, self.volume, &self.moles)?
-//             * self
-//                 .eos
-//                 .thermal_conductivity_correlation(s, &self.molefracs)?
-//                 .exp())
-//     }
+    /// Return the thermal conductivity via entropy scaling.
+    pub fn thermal_conductivity(&self) -> EosResult<SINumber> {
+        let s = (self.residual_entropy() / self.total_moles)
+            .to_reduced(SIUnit::reference_molar_entropy())?;
+        Ok(self
+            .eos
+            .thermal_conductivity_reference(self.temperature, self.volume, &self.moles)?
+            * self
+                .eos
+                .thermal_conductivity_correlation(s, &self.molefracs)?
+                .exp())
+    }
 
-//     /// Return the logarithm of the reduced thermal conductivity.
-//     ///
-//     /// This term equals the thermal conductivity correlation function
-//     /// that is used for entropy scaling.
-//     pub fn ln_thermal_conductivity_reduced(&self) -> EosResult<f64> {
-//         let s = self
-//             .molar_entropy(Contributions::ResidualNvt)
-//             .to_reduced(SIUnit::reference_molar_entropy())?;
-//         self.eos
-//             .thermal_conductivity_correlation(s, &self.molefracs)
-//     }
+    /// Return the logarithm of the reduced thermal conductivity.
+    ///
+    /// This term equals the thermal conductivity correlation function
+    /// that is used for entropy scaling.
+    pub fn ln_thermal_conductivity_reduced(&self) -> EosResult<f64> {
+        let s = (self.residual_entropy() / self.total_moles)
+            .to_reduced(SIUnit::reference_molar_entropy())?;
+        self.eos
+            .thermal_conductivity_correlation(s, &self.molefracs)
+    }
 
-//     /// Return the thermal conductivity reference as used in entropy scaling.
-//     pub fn thermal_conductivity_reference(&self) -> EosResult<SINumber> {
-//         self.eos
-//             .thermal_conductivity_reference(self.temperature, self.volume, &self.moles)
-//     }
-// }
+    /// Return the thermal conductivity reference as used in entropy scaling.
+    pub fn thermal_conductivity_reference(&self) -> EosResult<SINumber> {
+        self.eos
+            .thermal_conductivity_reference(self.temperature, self.volume, &self.moles)
+    }
+}
