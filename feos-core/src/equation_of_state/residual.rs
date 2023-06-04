@@ -1,21 +1,13 @@
-use super::{HelmholtzEnergy, HelmholtzEnergyDual};
+use super::{Components, HelmholtzEnergy, HelmholtzEnergyDual};
 use crate::StateHD;
 use crate::{EosError, EosResult, EosUnit};
 use ndarray::prelude::*;
 use num_dual::*;
 use num_traits::{One, Zero};
 use quantity::si::{SIArray1, SINumber, SIUnit};
-use std::fmt;
 
 /// A general equation of state.
-pub trait Residual: Send + Sync + fmt::Display {
-    /// Return the number of components of the equation of state.
-    fn components(&self) -> usize;
-
-    /// Return an equation of state consisting of the components
-    /// contained in component_list.
-    fn subset(&self, component_list: &[usize]) -> Self;
-
+pub trait Residual: Components + Send + Sync {
     /// Return the maximum density in Angstrom^-3.
     ///
     /// This value is used as an estimate for a liquid phase for phase

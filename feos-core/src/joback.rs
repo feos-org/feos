@@ -1,7 +1,7 @@
 //! Implementation of the ideal gas heat capacity (de Broglie wavelength)
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 
-use crate::equation_of_state::{DeBroglieWavelength, DeBroglieWavelengthDual};
+use crate::equation_of_state::Components;
 use crate::parameter::*;
 use crate::{EosResult, EosUnit, IdealGas};
 use conv::ValueInto;
@@ -68,16 +68,13 @@ impl<T: Copy + ValueInto<f64>> FromSegments<T> for JobackRecord {
 /// [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 pub struct Joback {
     pub records: Arc<Vec<JobackRecord>>,
-    de_broglie: Box<dyn DeBroglieWavelength>,
+    // de_broglie: Box<dyn DeBroglieWavelength>,
 }
 
 impl Joback {
     /// Creates a new Joback contribution.
     pub fn new(records: Arc<Vec<JobackRecord>>) -> Self {
-        Self {
-            records: records.clone(),
-            de_broglie: Box::new(JobackDeBroglie(records)),
-        }
+        Self { records }
     }
 
     /// Directly calculates the ideal gas heat capacity from the Joback model.
@@ -91,13 +88,11 @@ impl Joback {
     }
 }
 
-impl fmt::Display for Joback {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Ideal gas (Joback)")
+impl Components for Joback {
+    fn components(&self) -> usize {
+        self.records.len()
     }
-}
 
-impl IdealGas for Joback {
     fn subset(&self, component_list: &[usize]) -> Self {
         let mut records = Vec::with_capacity(component_list.len());
         component_list
@@ -105,34 +100,15 @@ impl IdealGas for Joback {
             .for_each(|&i| records.push(self.records[i].clone()));
         Self::new(Arc::new(records))
     }
-
-    fn ideal_gas_model(&self) -> &Box<dyn DeBroglieWavelength> {
-        &self.de_broglie
-    }
 }
 
-const RGAS: f64 = 6.022140857 * 1.38064852;
-const T0: f64 = 298.15;
-const P0: f64 = 1.0e5;
-const A3: f64 = 1e-30;
-const KB: f64 = 1.38064852e-23;
-
-#[derive(Debug, Clone)]
-struct JobackDeBroglie(Arc<Vec<JobackRecord>>);
-
-impl fmt::Display for JobackDeBroglie {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Ideal gas (Joback)")
-    }
-}
-
-impl<D: DualNum<f64> + Copy> DeBroglieWavelengthDual<D> for JobackDeBroglie {
-    fn de_broglie_wavelength(&self, temperature: D) -> Array1<D> {
+impl IdealGas for Joback {
+    fn de_broglie_wavelength<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
         let t = temperature;
         let t2 = t * t;
         let f = (temperature * KB / (P0 * A3)).ln();
-        Array1::from_shape_fn(self.0.len(), |i| {
-            let j = &self.0[i];
+        Array1::from_shape_fn(self.records.len(), |i| {
+            let j = &self.records[i];
             let h = (t2 - T0 * T0) * 0.5 * j.b
                 + (t * t2 - T0.powi(3)) * j.c / 3.0
                 + (t2 * t2 - T0.powi(4)) * j.d / 4.0
@@ -146,7 +122,17 @@ impl<D: DualNum<f64> + Copy> DeBroglieWavelengthDual<D> for JobackDeBroglie {
             (h - t * s) / (t * RGAS) + f
         })
     }
+
+    fn ideal_gas_model(&self) -> String {
+        "Ideal gas (Joback)".into()
+    }
 }
+
+const RGAS: f64 = 6.022140857 * 1.38064852;
+const T0: f64 = 298.15;
+const P0: f64 = 1.0e5;
+const A3: f64 = 1e-30;
+const KB: f64 = 1.38064852e-23;
 
 // #[cfg(test)]
 // mod tests {

@@ -1,9 +1,7 @@
 use super::{Contributions, Derivative::*, PartialDerivative, State};
-// use crate::equation_of_state::{EntropyScaling, MolarWeight, Residual};
 use crate::equation_of_state::{IdealGas, MolarWeight, Residual};
 use crate::EosUnit;
 use ndarray::Array1;
-use num_dual::DualNum;
 use quantity::si::*;
 use std::ops::{Add, Sub};
 
@@ -12,7 +10,7 @@ pub(crate) enum Evaluate {
     IdealGas,
     Residual,
     Total,
-    IdealGasDelta,
+    // IdealGasDelta,
 }
 
 impl<E: Residual + IdealGas> State<E> {
@@ -21,37 +19,37 @@ impl<E: Residual + IdealGas> State<E> {
         derivative: PartialDerivative,
         evaluate: Evaluate,
     ) -> SINumber {
-        if let Evaluate::IdealGasDelta = evaluate {
-            return match derivative {
-                PartialDerivative::Zeroth => {
-                    let new_state = self.derive0();
-                    -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln())
-                        * SIUnit::reference_energy()
-                }
-                PartialDerivative::First(v) => {
-                    let new_state = self.derive1(v);
-                    -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln()).eps
-                        * (SIUnit::reference_energy() / v.reference())
-                }
-                PartialDerivative::Second(v) => {
-                    let new_state = self.derive2(v);
-                    -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln()).v2
-                        * (SIUnit::reference_energy() / (v.reference() * v.reference()))
-                }
-                PartialDerivative::SecondMixed(v1, v2) => {
-                    let new_state = self.derive2_mixed(v1, v2);
-                    -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln())
-                        .eps1eps2
-                        * (SIUnit::reference_energy() / (v1.reference() * v2.reference()))
-                }
-                PartialDerivative::Third(v) => {
-                    let new_state = self.derive3(v);
-                    -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln()).v3
-                        * (SIUnit::reference_energy()
-                            / (v.reference() * v.reference() * v.reference()))
-                }
-            };
-        }
+        // if let Evaluate::IdealGasDelta = evaluate {
+        //     return match derivative {
+        //         PartialDerivative::Zeroth => {
+        //             let new_state = self.derive0();
+        //             -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln())
+        //                 * SIUnit::reference_energy()
+        //         }
+        //         PartialDerivative::First(v) => {
+        //             let new_state = self.derive1(v);
+        //             -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln()).eps
+        //                 * (SIUnit::reference_energy() / v.reference())
+        //         }
+        //         PartialDerivative::Second(v) => {
+        //             let new_state = self.derive2(v);
+        //             -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln()).v2
+        //                 * (SIUnit::reference_energy() / (v.reference() * v.reference()))
+        //         }
+        //         PartialDerivative::SecondMixed(v1, v2) => {
+        //             let new_state = self.derive2_mixed(v1, v2);
+        //             -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln())
+        //                 .eps1eps2
+        //                 * (SIUnit::reference_energy() / (v1.reference() * v2.reference()))
+        //         }
+        //         PartialDerivative::Third(v) => {
+        //             let new_state = self.derive3(v);
+        //             -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln()).v3
+        //                 * (SIUnit::reference_energy()
+        //                     / (v.reference() * v.reference() * v.reference()))
+        //         }
+        //     };
+        // }
 
         let residual = match evaluate {
             Evaluate::IdealGas => None,
@@ -166,9 +164,9 @@ impl<E: Residual + IdealGas> State<E> {
         })
     }
 
-    fn d2p_dv2_(&self, evaluate: Evaluate) -> SINumber {
-        -self.get_or_compute_derivative(PartialDerivative::Third(DV), evaluate)
-    }
+    // fn d2p_dv2_(&self, evaluate: Evaluate) -> SINumber {
+    //     -self.get_or_compute_derivative(PartialDerivative::Third(DV), evaluate)
+    // }
 
     fn dmu_dt_(&self, evaluate: Evaluate) -> SIArray1 {
         SIArray::from_shape_fn(self.eos.components(), |i| {
@@ -176,12 +174,12 @@ impl<E: Residual + IdealGas> State<E> {
         })
     }
 
-    fn dmu_dni_(&self, evaluate: Evaluate) -> SIArray2 {
-        let n = self.eos.components();
-        SIArray::from_shape_fn((n, n), |(i, j)| {
-            self.get_or_compute_derivative(PartialDerivative::SecondMixed(DN(i), DN(j)), evaluate)
-        })
-    }
+    // fn dmu_dni_(&self, evaluate: Evaluate) -> SIArray2 {
+    //     let n = self.eos.components();
+    //     SIArray::from_shape_fn((n, n), |(i, j)| {
+    //         self.get_or_compute_derivative(PartialDerivative::SecondMixed(DN(i), DN(j)), evaluate)
+    //     })
+    // }
 
     fn ds_dt_(&self, evaluate: Evaluate) -> SINumber {
         -self.get_or_compute_derivative(PartialDerivative::Second(DT), evaluate)
@@ -336,7 +334,7 @@ impl<E: Residual + IdealGas> State<E> {
         let contributions = self.eos.evaluate_residual_contributions(&new_state);
         let mut res = Vec::with_capacity(contributions.len() + 1);
         res.push((
-            self.eos.ideal_gas_model().to_string(),
+            self.eos.ideal_gas_model(),
             self.eos.evaluate_ideal_gas(&new_state)
                 * new_state.temperature
                 * SIUnit::reference_energy(),
@@ -353,7 +351,7 @@ impl<E: Residual + IdealGas> State<E> {
         let contributions = self.eos.evaluate_residual_contributions(&new_state);
         let mut res = Vec::with_capacity(contributions.len() + 1);
         res.push((
-            self.eos.ideal_gas_model().to_string(),
+            self.eos.ideal_gas_model(),
             -(self.eos.evaluate_ideal_gas(&new_state) * new_state.temperature).eps
                 * SIUnit::reference_pressure(),
         ));
@@ -372,7 +370,7 @@ impl<E: Residual + IdealGas> State<E> {
         let contributions = self.eos.evaluate_residual_contributions(&new_state);
         let mut res = Vec::with_capacity(contributions.len() + 1);
         res.push((
-            self.eos.ideal_gas_model().to_string(),
+            self.eos.ideal_gas_model(),
             (self.eos.evaluate_ideal_gas(&new_state) * new_state.temperature).eps
                 * SIUnit::reference_molar_energy(),
         ));

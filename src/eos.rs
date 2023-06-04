@@ -13,9 +13,9 @@ use feos_core::joback::Joback;
 #[cfg(feature = "python")]
 use feos_core::python::user_defined::{PyIdealGas, PyResidual};
 use feos_core::*;
-use feos_core::{DeBroglieWavelength, IdealGas, Residual};
-use feos_derive;
+use feos_derive::{Components, IdealGas, Residual};
 use ndarray::Array1;
+use num_dual::DualNum;
 use quantity::si::*;
 use std::fmt;
 
@@ -23,7 +23,7 @@ use std::fmt;
 ///
 /// Particularly relevant for situations in which generic types
 /// are undesirable (e.g. FFI).
-#[derive(feos_derive::Residual)]
+#[derive(Components, Residual)]
 pub enum ResidualModel {
     #[cfg(feature = "pcsaft")]
     #[implement(entropy_scaling, molar_weight)]
@@ -46,9 +46,9 @@ pub enum ResidualModel {
     UVTheory(UVTheory),
 }
 
-#[derive(feos_derive::IdealGas)]
+#[derive(Components, IdealGas)]
 pub enum IdealGasModel {
-    NoModel,
+    NoModel(usize),
     Joback(Joback),
     #[cfg(feature = "python")]
     Python(PyIdealGas),

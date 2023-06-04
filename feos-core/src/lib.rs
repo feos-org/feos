@@ -36,8 +36,8 @@ pub mod parameter;
 mod phase_equilibria;
 mod state;
 pub use equation_of_state::{
-    DeBroglieWavelength, DeBroglieWavelengthDual, EntropyScaling, EquationOfState, HelmholtzEnergy,
-    HelmholtzEnergyDual, IdealGas, MolarWeight, Residual,
+    Components, EntropyScaling, EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, IdealGas,
+    MolarWeight, Residual,
 };
 pub use errors::{EosError, EosResult};
 pub use phase_equilibria::{PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium};
@@ -362,6 +362,12 @@ mod tests {
             s.dc_v_dt(Contributions::Residual),
             sr.dc_v_res_dt(),
             max_relative = 1e-15
+        );
+        println!(
+            "{}\n{}\n{}",
+            s.c_p(Contributions::Residual),
+            s.c_p(Contributions::IdealGas),
+            s.c_p(Contributions::Total)
         );
         assert_relative_eq!(
             s.c_p(Contributions::Residual),

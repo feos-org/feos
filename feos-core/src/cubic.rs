@@ -4,7 +4,7 @@
 //! of state - with a single contribution to the Helmholtz energy - can be implemented.
 //! The implementation closely follows the form of the equations given in
 //! [this wikipedia article](https://en.wikipedia.org/wiki/Cubic_equations_of_state#Peng%E2%80%93Robinson_equation_of_state).
-use crate::equation_of_state::{HelmholtzEnergy, HelmholtzEnergyDual, Residual};
+use crate::equation_of_state::{Components, HelmholtzEnergy, HelmholtzEnergyDual, Residual};
 use crate::parameter::{Identifier, Parameter, ParameterError, PureRecord};
 use crate::si::{GRAM, MOL};
 use crate::state::StateHD;
@@ -144,12 +144,7 @@ impl Parameter for PengRobinsonParameters {
         }
     }
 
-    fn records(
-        &self,
-    ) -> (
-        &[PureRecord<PengRobinsonRecord>],
-        &Array2<f64>,
-    ) {
+    fn records(&self) -> (&[PureRecord<PengRobinsonRecord>], &Array2<f64>) {
         (&self.pure_records, &self.k_ij)
     }
 }
@@ -219,7 +214,7 @@ impl fmt::Display for PengRobinson {
     }
 }
 
-impl Residual for PengRobinson {
+impl Components for PengRobinson {
     fn components(&self) -> usize {
         self.parameters.b.len()
     }
@@ -227,7 +222,9 @@ impl Residual for PengRobinson {
     fn subset(&self, component_list: &[usize]) -> Self {
         Self::new(Arc::new(self.parameters.subset(component_list)))
     }
+}
 
+impl Residual for PengRobinson {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         let b = (moles * &self.parameters.b).sum() / moles.sum();
         0.9 / b
