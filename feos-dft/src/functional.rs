@@ -3,8 +3,8 @@ use crate::functional_contribution::*;
 use crate::ideal_chain_contribution::IdealChainContribution;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use feos_core::{
-    Contributions, EosResult, EosUnit, EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual,
-    IdealGasContribution, IdealGasContributionDual, MolarWeight, StateHD,
+    Components, Contributions, EosResult, EosUnit, HelmholtzEnergy, HelmholtzEnergyDual,
+    MolarWeight, Residual, StateHD,
 };
 use ndarray::*;
 use num_dual::*;
@@ -18,9 +18,11 @@ use std::fmt;
 use std::ops::{AddAssign, Deref, MulAssign};
 use std::sync::Arc;
 
+impl<F: HelmholtzEnergyFunctional> Residual for F {}
+
 /// Wrapper struct for the [HelmholtzEnergyFunctional] trait.
 ///
-/// Needed (for now) to generically implement the `EquationOfState`
+/// Needed (for now) to generically implement the `Residual`
 /// trait for Helmholtz energy functionals.
 #[derive(Clone)]
 pub struct DFT<F>(F);
@@ -50,20 +52,7 @@ impl<T: MolarWeight> MolarWeight for DFT<T> {
     }
 }
 
-struct DefaultIdealGasContribution();
-impl<D: DualNum<f64> + Copy> IdealGasContributionDual<D> for DefaultIdealGasContribution {
-    fn de_broglie_wavelength(&self, _: D, components: usize) -> Array1<D> {
-        Array1::zeros(components)
-    }
-}
-
-impl fmt::Display for DefaultIdealGasContribution {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Ideal gas (default)")
-    }
-}
-
-impl<T: HelmholtzEnergyFunctional> EquationOfState for DFT<T> {
+impl<T: HelmholtzEnergyFunctional> Components for DFT<T> {
     fn components(&self) -> usize {
         self.component_index()[self.component_index().len() - 1] + 1
     }
@@ -71,12 +60,14 @@ impl<T: HelmholtzEnergyFunctional> EquationOfState for DFT<T> {
     fn subset(&self, component_list: &[usize]) -> Self {
         (self as &T).subset(component_list)
     }
+}
 
+impl<T: HelmholtzEnergyFunctional> Residual for DFT<T> {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         (self as &T).compute_max_density(moles)
     }
 
-    fn residual(&self) -> &[Box<dyn HelmholtzEnergy>] {
+    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         unreachable!()
     }
 
@@ -114,10 +105,6 @@ impl<T: HelmholtzEnergyFunctional> EquationOfState for DFT<T> {
         ));
         res
     }
-
-    fn ideal_gas(&self) -> &dyn IdealGasContribution {
-        (self as &T).ideal_gas()
-    }
 }
 
 /// Different representations for molecules within DFT.
@@ -150,18 +137,6 @@ pub trait HelmholtzEnergyFunctional: Sized + Send + Sync {
     /// be a mathematical limit for the density (if those exist in the
     /// equation of state anyways).
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64;
-
-    /// Return the ideal gas contribution.
-    ///
-    /// Per default this function returns an ideal gas contribution
-    /// in which the de Broglie wavelength is 1 for every component.
-    /// Therefore, the correct ideal gas pressure is obtained even
-    /// with no explicit ideal gas term. If a more detailed model is
-    /// required (e.g. for the calculation of internal energies) this
-    /// function has to be overwritten.
-    fn ideal_gas(&self) -> &dyn IdealGasContribution {
-        &DefaultIdealGasContribution()
-    }
 
     /// Overwrite this, if the functional consists of heterosegmented chains.
     fn bond_lengths(&self, _temperature: f64) -> UnGraph<(), f64> {

@@ -21,7 +21,7 @@ pub trait Residual: Components + Send + Sync {
     fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>];
 
     /// Evaluate the residual reduced Helmholtz energy $\beta A^\mathrm{res}$.
-    fn evaluate_residual<D: DualNum<f64>>(&self, state: &StateHD<D>) -> D
+    fn evaluate_residual<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D
     where
         dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
     {
@@ -33,7 +33,7 @@ pub trait Residual: Components + Send + Sync {
 
     /// Evaluate the reduced Helmholtz energy of each individual contribution
     /// and return them together with a string representation of the contribution.
-    fn evaluate_residual_contributions<D: DualNum<f64>>(
+    fn evaluate_residual_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)>
