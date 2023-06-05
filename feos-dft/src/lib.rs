@@ -2,6 +2,7 @@
 #![allow(clippy::suspicious_operation_groupings)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::new_ret_no_self)]
+#![allow(deprecated)]
 
 pub mod adsorption;
 mod convolver;

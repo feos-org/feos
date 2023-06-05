@@ -17,7 +17,6 @@ use feos_derive::{Components, IdealGas, Residual};
 use ndarray::Array1;
 use num_dual::DualNum;
 use quantity::si::*;
-use std::fmt;
 
 /// Collection of different [EquationOfState] implementations.
 ///

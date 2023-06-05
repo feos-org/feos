@@ -322,12 +322,6 @@ impl<E: Residual + IdealGas> State<E> {
         -self.c_v(c) / (self.c_p(c) * self.dp_dv(c) * self.volume)
     }
 
-    /// Isothermal compressibility: $\kappa_T=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{T,N_i}$
-    pub fn isothermal_compressibility(&self) -> SINumber {
-        let c = Contributions::Total;
-        -1.0 / (self.dp_dv(c) * self.volume)
-    }
-
     /// Helmholtz energy $A$ evaluated for each contribution of the equation of state.
     pub fn helmholtz_energy_contributions(&self) -> Vec<(String, SINumber)> {
         let new_state = self.derive0();
@@ -341,25 +335,6 @@ impl<E: Residual + IdealGas> State<E> {
         ));
         for (s, v) in contributions {
             res.push((s, v * new_state.temperature * SIUnit::reference_energy()));
-        }
-        res
-    }
-
-    /// Pressure $p$ evaluated for each contribution of the equation of state.
-    pub fn pressure_contributions(&self) -> Vec<(String, SINumber)> {
-        let new_state = self.derive1(DV);
-        let contributions = self.eos.evaluate_residual_contributions(&new_state);
-        let mut res = Vec::with_capacity(contributions.len() + 1);
-        res.push((
-            self.eos.ideal_gas_model(),
-            -(self.eos.evaluate_ideal_gas(&new_state) * new_state.temperature).eps
-                * SIUnit::reference_pressure(),
-        ));
-        for (s, v) in contributions {
-            res.push((
-                s,
-                -(v * new_state.temperature).eps * SIUnit::reference_pressure(),
-            ));
         }
         res
     }
@@ -388,7 +363,7 @@ impl<E: Residual + IdealGas> State<E> {
 ///
 /// These properties are available for equations of state
 /// that implement the [MolarWeight] trait.
-impl<E: Residual + IdealGas + MolarWeight> State<E> {
+impl<E: Residual + MolarWeight> State<E> {
     /// Total molar weight: $MW=\sum_ix_iMW_i$
     pub fn total_molar_weight(&self) -> SINumber {
         (self.eos.molar_weight() * &self.molefracs).sum()
@@ -413,7 +388,9 @@ impl<E: Residual + IdealGas + MolarWeight> State<E> {
     pub fn massfracs(&self) -> Array1<f64> {
         self.mass().to_reduced(self.total_mass()).unwrap()
     }
+}
 
+impl<E: Residual + IdealGas + MolarWeight> State<E> {
     /// Specific entropy: $s^{(m)}=\frac{S}{m}$
     pub fn specific_entropy(&self, contributions: Contributions) -> SINumber {
         self.molar_entropy(contributions) / self.total_molar_weight()

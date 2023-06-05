@@ -1,18 +1,9 @@
 use super::parameters::PcSaftParameters;
 use crate::association::Association;
 use crate::hard_sphere::HardSphere;
-use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
 use feos_core::{
-    Contributions,
-    EntropyScaling,
-    EosError,
-    EosResult,
-    EquationOfState,
-    HelmholtzEnergy,
-    MolarWeight,
-    Residual, //EntropyScaling
-    State,
+    Components, EntropyScaling, EosError, EosResult, HelmholtzEnergy, MolarWeight, Residual, State,
 };
 use ndarray::Array1;
 use quantity::si::*;
@@ -95,14 +86,14 @@ impl PcSaft {
         };
 
         Self {
-            parameters: parameters.clone(),
+            parameters,
             options,
             contributions,
         }
     }
 }
 
-impl Residual for PcSaft {
+impl Components for PcSaft {
     fn components(&self) -> usize {
         self.parameters.pure_records.len()
     }
@@ -113,7 +104,9 @@ impl Residual for PcSaft {
             self.options,
         )
     }
+}
 
+impl Residual for PcSaft {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
             / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
@@ -441,19 +434,19 @@ mod tests {
         assert_relative_eq!(p, p_calc, epsilon = 1e-6);
     }
 
-    // #[test]
-    // fn vle_pure() {
-    //     let e = Arc::new(PcSaft::new(propane_parameters()));
-    //     let t = 300.0 * KELVIN;
-    //     let vle = PhaseEquilibrium::pure(&e, t, None, Default::default());
-    //     if let Ok(v) = vle {
-    //         assert_relative_eq!(
-    //             v.vapor().pressure(Contributions::Total),
-    //             v.liquid().pressure(Contributions::Total),
-    //             epsilon = 1e-6
-    //         )
-    //     }
-    // }
+    #[test]
+    fn vle_pure() {
+        let e = Arc::new(PcSaft::new(propane_parameters()));
+        let t = 300.0 * KELVIN;
+        let vle = PhaseEquilibrium::pure(&e, t, None, Default::default());
+        if let Ok(v) = vle {
+            assert_relative_eq!(
+                v.vapor().pressure(Contributions::Total),
+                v.liquid().pressure(Contributions::Total),
+                epsilon = 1e-6
+            )
+        }
+    }
 
     #[test]
     fn critical_point() {
@@ -505,49 +498,49 @@ mod tests {
         )
     }
 
-    // #[test]
-    // fn viscosity() -> EosResult<()> {
-    //     let e = Arc::new(PcSaft::new(propane_parameters()));
-    //     let t = 300.0 * KELVIN;
-    //     let p = BAR;
-    //     let n = arr1(&[1.0]) * MOL;
-    //     let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
-    //     assert_relative_eq!(
-    //         s.viscosity()?,
-    //         0.00797 * MILLI * PASCAL * SECOND,
-    //         epsilon = 1e-5
-    //     );
-    //     assert_relative_eq!(
-    //         s.ln_viscosity_reduced()?,
-    //         (s.viscosity()? / e.viscosity_reference(s.temperature, s.volume, &s.moles)?)
-    //             .into_value()
-    //             .unwrap()
-    //             .ln(),
-    //         epsilon = 1e-15
-    //     );
-    //     Ok(())
-    // }
+    #[test]
+    fn viscosity() -> EosResult<()> {
+        let e = Arc::new(PcSaft::new(propane_parameters()));
+        let t = 300.0 * KELVIN;
+        let p = BAR;
+        let n = arr1(&[1.0]) * MOL;
+        let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
+        assert_relative_eq!(
+            s.viscosity()?,
+            0.00797 * MILLI * PASCAL * SECOND,
+            epsilon = 1e-5
+        );
+        assert_relative_eq!(
+            s.ln_viscosity_reduced()?,
+            (s.viscosity()? / e.viscosity_reference(s.temperature, s.volume, &s.moles)?)
+                .into_value()
+                .unwrap()
+                .ln(),
+            epsilon = 1e-15
+        );
+        Ok(())
+    }
 
-    // #[test]
-    // fn diffusion() -> EosResult<()> {
-    //     let e = Arc::new(PcSaft::new(propane_parameters()));
-    //     let t = 300.0 * KELVIN;
-    //     let p = BAR;
-    //     let n = arr1(&[1.0]) * MOL;
-    //     let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
-    //     assert_relative_eq!(
-    //         s.diffusion()?,
-    //         0.01505 * (CENTI * METER).powi(2) / SECOND,
-    //         epsilon = 1e-5
-    //     );
-    //     assert_relative_eq!(
-    //         s.ln_diffusion_reduced()?,
-    //         (s.diffusion()? / e.diffusion_reference(s.temperature, s.volume, &s.moles)?)
-    //             .into_value()
-    //             .unwrap()
-    //             .ln(),
-    //         epsilon = 1e-15
-    //     );
-    //     Ok(())
-    // }
+    #[test]
+    fn diffusion() -> EosResult<()> {
+        let e = Arc::new(PcSaft::new(propane_parameters()));
+        let t = 300.0 * KELVIN;
+        let p = BAR;
+        let n = arr1(&[1.0]) * MOL;
+        let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
+        assert_relative_eq!(
+            s.diffusion()?,
+            0.01505 * (CENTI * METER).powi(2) / SECOND,
+            epsilon = 1e-5
+        );
+        assert_relative_eq!(
+            s.ln_diffusion_reduced()?,
+            (s.diffusion()? / e.diffusion_reference(s.temperature, s.volume, &s.moles)?)
+                .into_value()
+                .unwrap()
+                .ln(),
+            epsilon = 1e-15
+        );
+        Ok(())
+    }
 }

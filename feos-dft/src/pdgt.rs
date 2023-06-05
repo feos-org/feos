@@ -1,7 +1,7 @@
 use super::functional::{HelmholtzEnergyFunctional, DFT};
 use super::functional_contribution::FunctionalContribution;
 use super::weight_functions::WeightFunctionInfo;
-use feos_core::{Contributions, EosResult, EosUnit, EquationOfState, PhaseEquilibrium};
+use feos_core::{Components, Contributions, EosResult, EosUnit, PhaseEquilibrium};
 use ndarray::*;
 use num_dual::Dual2_64;
 use quantity::si::{SIArray1, SIArray2, SINumber, SIUnit};
@@ -167,20 +167,14 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
             .ideal_chain_contribution()
             .helmholtz_energy_density::<Ix1>(vle.vapor().temperature, &density)?;
 
-        let t = vle
-            .vapor()
-            .temperature
-            .to_reduced(SIUnit::reference_temperature())?;
-        let rho = density.to_reduced(SIUnit::reference_density())?;
-        delta_omega +=
-            &(self.ideal_gas_contribution::<Ix1>(t, &rho) * SIUnit::reference_pressure());
-
         // calculate excess grand potential density
-        let mu = vle.vapor().chemical_potential(Contributions::Total);
+        let mu_res = vle.vapor().residual_chemical_potential();
         for i in 0..self.components() {
-            let rhoi = density.index_axis(Axis(0), i);
-            let mui = mu.get(i);
-            delta_omega -= &(&rhoi * mui);
+            let rhoi = density.index_axis(Axis(0), i).to_owned();
+            let rhoi_b = vle.vapor().partial_density.get(i);
+            let mui_res = mu_res.get(i);
+            let kt = SIUnit::gas_constant() * vle.vapor().temperature;
+            delta_omega += &(&rhoi * (kt * rhoi.to_reduced(rhoi_b)?.mapv(f64::ln) - mui_res));
         }
         delta_omega += vle.vapor().pressure(Contributions::Total);
 

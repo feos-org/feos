@@ -193,6 +193,29 @@ impl<E: Residual> State<E> {
         )
     }
 
+    /// Isothermal compressibility: $\kappa_T=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{T,N_i}$
+    pub fn isothermal_compressibility(&self) -> SINumber {
+        -1.0 / (self.dp_dv(Contributions::Total) * self.volume)
+    }
+
+    /// Pressure $p$ evaluated for each contribution of the equation of state.
+    pub fn pressure_contributions(&self) -> Vec<(String, SINumber)> {
+        let new_state = self.derive1(DV);
+        let contributions = self.eos.evaluate_residual_contributions(&new_state);
+        let mut res = Vec::with_capacity(contributions.len() + 1);
+        res.push((
+            "Ideal gas".into(),
+            self.density * SIUnit::gas_constant() * self.temperature,
+        ));
+        for (s, v) in contributions {
+            res.push((
+                s,
+                -(v * new_state.temperature).eps * SIUnit::reference_pressure(),
+            ));
+        }
+        res
+    }
+
     // entropy derivatives
 
     pub fn ds_res_dt(&self) -> SINumber {
@@ -254,10 +277,8 @@ impl<E: Residual> State<E> {
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. pressure: $\left(\frac{\partial\ln\varphi_i}{\partial p}\right)_{T,N_i}$
     pub fn dln_phi_dp(&self) -> SIArray1 {
-        let vi_rt = -self.dp_dni(Contributions::Total)
-            / self.dp_dv(Contributions::Total)
-            / (SIUnit::gas_constant() * self.temperature);
-        vi_rt - 1.0 / self.pressure(Contributions::Total)
+        self.partial_molar_volume() / (SIUnit::gas_constant() * self.temperature)
+            - 1.0 / self.pressure(Contributions::Total)
     }
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. moles: $\left(\frac{\partial\ln\varphi_i}{\partial N_j}\right)_{T,p,N_k}$
@@ -309,12 +330,12 @@ impl<E: Residual> State<E> {
             + self.pressure(Contributions::Residual) * self.volume
     }
 
-    /// Residual internal energy: $U\text{res}(T, V, \mathbf{n})=A\text{res}+TS\text{res}$
+    /// Residual internal energy: $U^\text{res}(T, V, \mathbf{n})=A^\text{res}+TS^\text{res}$
     pub fn residual_internal_energy(&self) -> SINumber {
         self.temperature * self.residual_entropy() + self.residual_helmholtz_energy()
     }
 
-    /// Residual Gibbs energy: $G\text{res}(T,p,\mathbf{n})=A\text{res}+pV-NRT-NRT \ln Z$
+    /// Residual Gibbs energy: $G^\text{res}(T,p,\mathbf{n})=A^\text{res}+pV-NRT-NRT \ln Z$
     pub fn residual_gibbs_energy(&self) -> SINumber {
         self.pressure(Contributions::Residual) * self.volume + self.residual_helmholtz_energy()
             - self.total_moles

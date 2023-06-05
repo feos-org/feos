@@ -24,18 +24,6 @@ pub(crate) fn expand_residual(input: DeriveInput) -> syn::Result<proc_macro2::To
 fn impl_residual(
     variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
 ) -> proc_macro2::TokenStream {
-    // let components = variants.iter().map(|v| {
-    //     let name = &v.ident;
-    //     quote! {
-    //         Self::#name(residual) => residual.components()
-    //     }
-    // });
-    // let subset = variants.iter().map(|v| {
-    //     let name = &v.ident;
-    //     quote! {
-    //         Self::#name(residual) => Self::#name(residual.subset(component_list))
-    //     }
-    // });
     let compute_max_density = variants.iter().map(|v| {
         let name = &v.ident;
         quote! {
@@ -48,41 +36,17 @@ fn impl_residual(
             Self::#name(residual) => residual.contributions()
         }
     });
-    let display = variants.iter().map(|v| {
-        let name = &v.ident;
-        quote! {
-            Self::#name(residual) => write!(f, "{}", residual.to_string())
-        }
-    });
 
     quote! {
         impl Residual for ResidualModel {
-            // fn components(&self) -> usize {
-            //     match self {
-            //         #(#components,)*
-            //     }
-            // }
             fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
                 match self {
                     #(#compute_max_density,)*
                 }
             }
-            // fn subset(&self, component_list: &[usize]) -> Self {
-            //     match self {
-            //         #(#subset,)*
-            //     }
-            // }
             fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
                 match self {
                     #(#contributions,)*
-                }
-            }
-        }
-
-        impl fmt::Display for ResidualModel {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                match self {
-                    #(#display,)*
                 }
             }
         }

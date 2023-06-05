@@ -1,17 +1,15 @@
-use crate::convolver::{BulkConvolver, Convolver, ConvolverFFT};
+use crate::convolver::{BulkConvolver, Convolver};
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::Grid;
 use crate::solver::{DFTSolver, DFTSolverLog};
-use crate::weight_functions::WeightFunctionInfo;
-use feos_core::{Contributions, EosError, EosResult, EosUnit, EquationOfState, State, Verbosity};
-use ndarray::{
-    Array, Array1, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3, RemoveAxis,
-};
-use num_dual::Dual64;
-use quantity::si::{SIArray, SIArray1, SIArray2, SINumber, SIUnit};
+use feos_core::{Components, EosError, EosResult, EosUnit, State};
+use ndarray::{Array, Array1, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3};
+use quantity::si::{SIArray, SIArray1, SINumber, SIUnit};
 use quantity::Quantity;
 use std::ops::MulAssign;
 use std::sync::Arc;
+
+mod properties;
 
 pub(crate) const MAX_POTENTIAL: f64 = 50.0;
 #[cfg(feature = "rayon")]
@@ -291,10 +289,10 @@ where
         self.moles().sum()
     }
 
-    /// Return the chemical potential of the system
-    pub fn chemical_potential(&self) -> SIArray1 {
-        self.bulk.chemical_potential(Contributions::Total)
-    }
+    // /// Return the chemical potential of the system
+    // pub fn chemical_potential(&self) -> SIArray1 {
+    //     self.bulk.chemical_potential(Contributions::Total)
+    // }
 }
 
 impl<D: Dimension, F> Clone for DFTProfile<D, F> {
@@ -324,16 +322,6 @@ where
         Ok(self
             .convolver
             .weighted_densities(&self.density.to_reduced(SIUnit::reference_density())?))
-    }
-
-    pub fn functional_derivative(&self) -> EosResult<Array<f64, D::Larger>> {
-        let (_, dfdrho) = self.dft.functional_derivative(
-            self.temperature
-                .to_reduced(SIUnit::reference_temperature())?,
-            &self.density.to_reduced(SIUnit::reference_density())?,
-            &self.convolver,
-        )?;
-        Ok(dfdrho)
     }
 
     #[allow(clippy::type_complexity)]
@@ -468,196 +456,5 @@ where
         self.bulk = State::new_nvt(&self.bulk.eos, self.bulk.temperature, volume, &moles)?;
 
         Ok(())
-    }
-}
-
-impl<D: Dimension + RemoveAxis + 'static, F: HelmholtzEnergyFunctional> DFTProfile<D, F>
-where
-    D::Larger: Dimension<Smaller = D>,
-    D::Smaller: Dimension<Larger = D>,
-    <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
-{
-    pub fn entropy_density(&self, contributions: Contributions) -> EosResult<SIArray<D>> {
-        // initialize convolver
-        let t = self
-            .temperature
-            .to_reduced(SIUnit::reference_temperature())?;
-        let functional_contributions = self.dft.contributions();
-        let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
-            .iter()
-            .map(|c| c.weight_functions(Dual64::from(t).derivative()))
-            .collect();
-        let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, None);
-
-        Ok(self.dft.entropy_density(
-            t,
-            &self.density.to_reduced(SIUnit::reference_density())?,
-            &convolver,
-            contributions,
-        )? * (SIUnit::reference_entropy() / SIUnit::reference_volume()))
-    }
-
-    pub fn entropy(&self, contributions: Contributions) -> EosResult<SINumber> {
-        Ok(self.integrate(&self.entropy_density(contributions)?))
-    }
-
-    pub fn grand_potential_density(&self) -> EosResult<SIArray<D>> {
-        self.dft
-            .grand_potential_density(self.temperature, &self.density, &self.convolver)
-    }
-
-    pub fn grand_potential(&self) -> EosResult<SINumber> {
-        Ok(self.integrate(&self.grand_potential_density()?))
-    }
-
-    pub fn internal_energy(&self, contributions: Contributions) -> EosResult<SINumber> {
-        // initialize convolver
-        let t = self
-            .temperature
-            .to_reduced(SIUnit::reference_temperature())?;
-        let functional_contributions = self.dft.contributions();
-        let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
-            .iter()
-            .map(|c| c.weight_functions(Dual64::from(t).derivative()))
-            .collect();
-        let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, None);
-
-        let internal_energy_density = self.dft.internal_energy_density(
-            t,
-            &self.density.to_reduced(SIUnit::reference_density())?,
-            &self.external_potential,
-            &convolver,
-            contributions,
-        )? * SIUnit::reference_pressure();
-        Ok(self.integrate(&internal_energy_density))
-    }
-
-    fn density_derivative(&self, lhs: &Array<f64, D::Larger>) -> EosResult<Array<f64, D::Larger>> {
-        let rho = self.density.to_reduced(SIUnit::reference_density())?;
-        let partial_density = self
-            .bulk
-            .partial_density
-            .to_reduced(SIUnit::reference_density())?;
-        let rho_bulk = self.dft.component_index().mapv(|i| partial_density[i]);
-
-        let second_partial_derivatives = self.second_partial_derivatives(&rho)?;
-        let (_, _, _, exp_dfdrho, _) = self.euler_lagrange_equation(&rho, &rho_bulk, false)?;
-
-        let rhs = |x: &_| {
-            let delta_functional_derivative =
-                self.delta_functional_derivative(x, &second_partial_derivatives);
-            let mut xm = x.clone();
-            xm.outer_iter_mut()
-                .zip(self.dft.m().iter())
-                .for_each(|(mut x, &m)| x *= m);
-            let delta_i = self.delta_bond_integrals(&exp_dfdrho, &delta_functional_derivative);
-            xm + (delta_functional_derivative - delta_i) * &rho
-        };
-        let mut log = DFTSolverLog::new(Verbosity::None);
-        Self::gmres(rhs, lhs, 200, 1e-13, &mut log)
-    }
-
-    /// Return the partial derivatives of the density profiles w.r.t. the chemical potentials $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial\mu_k}\right)_T$
-    pub fn drho_dmu(&self) -> EosResult<SIArray<<D::Larger as Dimension>::Larger>> {
-        let shape = self.density.shape();
-        let shape: Vec<_> = std::iter::once(&shape[0]).chain(shape).copied().collect();
-        let mut drho_dmu = Array::zeros(shape).into_dimensionality().unwrap();
-        for (k, mut d) in drho_dmu.outer_iter_mut().enumerate() {
-            let mut lhs = self.density.to_reduced(SIUnit::reference_density())?;
-            for (i, mut l) in lhs.outer_iter_mut().enumerate() {
-                if i != k {
-                    l.fill(0.0);
-                }
-            }
-            d.assign(&self.density_derivative(&lhs)?);
-        }
-        Ok(drho_dmu
-            * (SIUnit::reference_density() / SIUnit::reference_molar_entropy() / self.temperature))
-    }
-
-    /// Return the partial derivatives of the number of moles w.r.t. the chemical potentials $\left(\frac{\partial N_i}{\partial\mu_k}\right)_T$
-    pub fn dn_dmu(&self) -> EosResult<SIArray2> {
-        let drho_dmu = self.drho_dmu()?;
-        let n = drho_dmu.shape()[0];
-        let dn_dmu = SIArray2::from_shape_fn([n; 2], |(i, j)| {
-            self.integrate(&drho_dmu.index_axis(Axis_nd(0), i).index_axis(Axis_nd(0), j))
-        });
-        Ok(dn_dmu)
-    }
-
-    /// Return the partial derivatives of the density profiles w.r.t. the bulk pressure at constant temperature and bulk composition $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial p}\right)_{T,\mathbf{x}}$
-    pub fn drho_dp(&self) -> EosResult<SIArray<D::Larger>> {
-        let mut lhs = self.density.to_reduced(SIUnit::reference_density())?;
-        let v = self
-            .bulk
-            .partial_molar_volume(Contributions::Total)
-            .to_reduced(SIUnit::reference_volume() / SIUnit::reference_moles())?;
-        for (mut l, &c) in lhs.outer_iter_mut().zip(self.dft.component_index().iter()) {
-            l *= v[c];
-        }
-        self.density_derivative(&lhs)
-            .map(|x| x / (SIUnit::reference_molar_entropy() * self.temperature))
-    }
-
-    /// Return the partial derivatives of the number of moles w.r.t. the bulk pressure at constant temperature and bulk composition $\left(\frac{\partial N_i}{\partial p}\right)_{T,\mathbf{x}}$
-    pub fn dn_dp(&self) -> EosResult<SIArray1> {
-        Ok(self.integrate_segments(&self.drho_dp()?))
-    }
-
-    /// Return the partial derivatives of the density profiles w.r.t. the temperature at constant bulk pressure and composition $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial T}\right)_{p,\mathbf{x}}$
-    ///
-    /// Not compatible with heterosegmented DFT.
-    pub fn drho_dt(&self) -> EosResult<SIArray<D::Larger>> {
-        let rho = self.density.to_reduced(SIUnit::reference_density())?;
-        let t = self
-            .temperature
-            .to_reduced(SIUnit::reference_temperature())?;
-
-        // calculate temperature derivative of functional derivative
-        let functional_contributions = self.dft.contributions();
-        let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
-            .iter()
-            .map(|c| c.weight_functions(Dual64::from(t).derivative()))
-            .collect();
-        let convolver: Arc<dyn Convolver<_, D>> =
-            ConvolverFFT::plan(&self.grid, &weight_functions, None);
-        let (_, dfdrhodt) = self.dft.functional_derivative_dual(t, &rho, &convolver)?;
-
-        // calculate temperature derivative of bulk functional derivative
-        let partial_density = self
-            .bulk
-            .partial_density
-            .to_reduced(SIUnit::reference_density())?;
-        let rho_bulk = self.dft.component_index().mapv(|i| partial_density[i]);
-        let bulk_convolver = BulkConvolver::new(weight_functions);
-        let (_, dfdrhodt_bulk) =
-            self.dft
-                .functional_derivative_dual(t, &rho_bulk, &bulk_convolver)?;
-
-        // solve for drho_dt
-        let x = (self.bulk.partial_molar_volume(Contributions::Total)
-            * self.bulk.dp_dt(Contributions::Total))
-        .to_reduced(SIUnit::reference_molar_entropy())?;
-        let mut lhs = dfdrhodt.mapv(|d| d.eps);
-        lhs.outer_iter_mut()
-            .zip(dfdrhodt_bulk.into_iter())
-            .zip(x.into_iter())
-            .for_each(|((mut lhs, d), x)| lhs -= d.eps - x);
-        lhs.outer_iter_mut()
-            .zip(rho.outer_iter())
-            .zip(rho_bulk.into_iter())
-            .zip(self.dft.m().iter())
-            .for_each(|(((mut lhs, rho), rho_b), &m)| lhs += &((&rho / rho_b).mapv(f64::ln) * m));
-
-        lhs *= &(-&rho / t);
-        self.density_derivative(&lhs)
-            .map(|x| x * (SIUnit::reference_density() / SIUnit::reference_temperature()))
-    }
-
-    /// Return the partial derivatives of the number of moles w.r.t. the temperature at constant bulk pressure and composition $\left(\frac{\partial N_i}{\partial T}\right)_{p,\mathbf{x}}$
-    ///
-    /// Not compatible with heterosegmented DFT.
-    pub fn dn_dt(&self) -> EosResult<SIArray1> {
-        Ok(self.integrate_segments(&self.drho_dt()?))
     }
 }

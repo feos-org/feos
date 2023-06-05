@@ -1,10 +1,9 @@
 use crate::association::AssociationParameters;
 use crate::gc_pcsaft::record::GcPcSaftRecord;
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
-    BinaryRecord, ChemicalRecord, FromSegments, Identifier, ParameterError, ParameterHetero,
-    SegmentCount, SegmentRecord,
+    BinaryRecord, ChemicalRecord, Identifier, ParameterError, ParameterHetero, SegmentCount,
+    SegmentRecord,
 };
 use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
@@ -87,20 +86,18 @@ pub struct GcPcSaftEosParameters {
     pub epsilon_k_ij: Array2<f64>,
 
     pub chemical_records: Vec<GcPcSaftChemicalRecord>,
-    segment_records: Vec<SegmentRecord<GcPcSaftRecord, JobackRecord>>,
+    segment_records: Vec<SegmentRecord<GcPcSaftRecord>>,
     binary_segment_records: Option<Vec<BinaryRecord<String, f64>>>,
-    pub joback_records: Option<Vec<JobackRecord>>,
 }
 
 impl ParameterHetero for GcPcSaftEosParameters {
     type Chemical = GcPcSaftChemicalRecord;
     type Pure = GcPcSaftRecord;
-    type IdealGas = JobackRecord;
     type Binary = f64;
 
     fn from_segments<C: Clone + Into<GcPcSaftChemicalRecord>>(
         chemical_records: Vec<C>,
-        segment_records: Vec<SegmentRecord<GcPcSaftRecord, JobackRecord>>,
+        segment_records: Vec<SegmentRecord<GcPcSaftRecord>>,
         binary_segment_records: Option<Vec<BinaryRecord<String, f64>>>,
     ) -> Result<Self, ParameterError> {
         let chemical_records: Vec<_> = chemical_records.into_iter().map(|c| c.into()).collect();
@@ -122,8 +119,6 @@ impl ParameterHetero for GcPcSaftEosParameters {
         let mut epsilon_k_mix = Vec::new();
 
         let mut phi = Vec::new();
-
-        let mut joback_records = Vec::new();
 
         for (i, chemical_record) in chemical_records.iter().cloned().enumerate() {
             let mut segment_indices = IndexMap::with_capacity(segment_records.len());
@@ -179,18 +174,6 @@ impl ParameterHetero for GcPcSaftEosParameters {
                     *bond += count;
                 }
             }
-
-            let ideal_gas_segments: Option<Vec<_>> = segment_map
-                .iter()
-                .map(|(s, &n)| s.ideal_gas_record.clone().map(|ig| (ig, n)))
-                .collect();
-
-            joback_records.push(
-                ideal_gas_segments
-                    .as_ref()
-                    .map(|s| JobackRecord::from_segments(s))
-                    .transpose()?,
-            );
         }
 
         // Binary interaction parameter
@@ -260,7 +243,6 @@ impl ParameterHetero for GcPcSaftEosParameters {
             chemical_records,
             segment_records,
             binary_segment_records,
-            joback_records: joback_records.into_iter().collect(),
         })
     }
 
@@ -268,7 +250,7 @@ impl ParameterHetero for GcPcSaftEosParameters {
         &self,
     ) -> (
         &[Self::Chemical],
-        &[SegmentRecord<Self::Pure, Self::IdealGas>],
+        &[SegmentRecord<Self::Pure>],
         &Option<Vec<BinaryRecord<String, Self::Binary>>>,
     ) {
         (
@@ -423,25 +405,23 @@ pub mod test {
     use crate::association::AssociationRecord;
     use feos_core::parameter::{ChemicalRecord, Identifier};
 
-    fn ch3() -> SegmentRecord<GcPcSaftRecord, JobackRecord> {
+    fn ch3() -> SegmentRecord<GcPcSaftRecord> {
         SegmentRecord::new(
             "CH3".into(),
             15.0,
             GcPcSaftRecord::new(0.77247, 3.6937, 181.49, None, None, None),
-            None,
         )
     }
 
-    fn ch2() -> SegmentRecord<GcPcSaftRecord, JobackRecord> {
+    fn ch2() -> SegmentRecord<GcPcSaftRecord> {
         SegmentRecord::new(
             "CH2".into(),
             14.0,
             GcPcSaftRecord::new(0.7912, 3.0207, 157.23, None, None, None),
-            None,
         )
     }
 
-    fn oh() -> SegmentRecord<GcPcSaftRecord, JobackRecord> {
+    fn oh() -> SegmentRecord<GcPcSaftRecord> {
         SegmentRecord::new(
             "OH".into(),
             0.0,
@@ -453,7 +433,6 @@ pub mod test {
                 Some(AssociationRecord::new(0.009583, 2575.9, 1.0, 1.0, 0.0)),
                 None,
             ),
-            None,
         )
     }
 

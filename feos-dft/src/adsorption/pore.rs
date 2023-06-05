@@ -264,6 +264,7 @@ fn external_potential_1d<P: FluidParameters>(
 const EPSILON_HE: f64 = 10.9;
 const SIGMA_HE: f64 = 2.64;
 
+#[derive(Clone)]
 struct Helium {
     epsilon: Array1<f64>,
     sigma: Array1<f64>,
@@ -282,16 +283,16 @@ impl HelmholtzEnergyFunctional for Helium {
         &[]
     }
 
-    fn subset(&self, _: &[usize]) -> DFT<Self> {
-        Self::new()
-    }
-
     fn compute_max_density(&self, _: &Array1<f64>) -> f64 {
         1.0
     }
 
     fn molecule_shape(&self) -> MoleculeShape {
         MoleculeShape::Spherical(1)
+    }
+
+    fn subset(&self, _: &[usize]) -> DFT<Self> {
+        self.clone().into()
     }
 }
 
