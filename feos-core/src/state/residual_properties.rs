@@ -238,7 +238,7 @@ impl<E: Residual> State<E> {
         (self.residual_chemical_potential() / (SIUnit::gas_constant() * self.temperature))
             .into_value()
             .unwrap()
-            - self.compressibility(Contributions::Total)
+            - self.compressibility(Contributions::Total).ln()
     }
 
     /// Logarithm of the fugacity coefficient of all components treated as pure substance at mixture temperature and pressure.
