@@ -39,7 +39,7 @@
 // #[cfg(feature = "dft")]
 // pub use dft::FunctionalVariant;
 mod eos;
-// pub use eos::EosVariant;
+pub use eos::{IdealGasModel, ResidualModel};
 
 #[cfg(feature = "estimator")]
 pub mod estimator;
