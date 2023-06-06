@@ -10,7 +10,6 @@ pub(crate) enum Evaluate {
     IdealGas,
     Residual,
     Total,
-    // IdealGasDelta,
 }
 
 impl<E: Residual + IdealGas> State<E> {
@@ -19,38 +18,6 @@ impl<E: Residual + IdealGas> State<E> {
         derivative: PartialDerivative,
         evaluate: Evaluate,
     ) -> SINumber {
-        // if let Evaluate::IdealGasDelta = evaluate {
-        //     return match derivative {
-        //         PartialDerivative::Zeroth => {
-        //             let new_state = self.derive0();
-        //             -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln())
-        //                 * SIUnit::reference_energy()
-        //         }
-        //         PartialDerivative::First(v) => {
-        //             let new_state = self.derive1(v);
-        //             -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln()).eps
-        //                 * (SIUnit::reference_energy() / v.reference())
-        //         }
-        //         PartialDerivative::Second(v) => {
-        //             let new_state = self.derive2(v);
-        //             -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln()).v2
-        //                 * (SIUnit::reference_energy() / (v.reference() * v.reference()))
-        //         }
-        //         PartialDerivative::SecondMixed(v1, v2) => {
-        //             let new_state = self.derive2_mixed(v1, v2);
-        //             -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln())
-        //                 .eps1eps2
-        //                 * (SIUnit::reference_energy() / (v1.reference() * v2.reference()))
-        //         }
-        //         PartialDerivative::Third(v) => {
-        //             let new_state = self.derive3(v);
-        //             -(new_state.moles.sum() * new_state.temperature * new_state.volume.ln()).v3
-        //                 * (SIUnit::reference_energy()
-        //                     / (v.reference() * v.reference() * v.reference()))
-        //         }
-        //     };
-        // }
-
         let residual = match evaluate {
             Evaluate::IdealGas => None,
             _ => Some(self.get_or_compute_derivative_residual(derivative)),
@@ -114,21 +81,7 @@ impl<E: Residual + IdealGas> State<E> {
                 } else {
                     f(self, Evaluate::Total) - f(self, Evaluate::IdealGas)
                 }
-            } // Contributions::ResidualNpt => {
-              //     let p = self.pressure_(Evaluate::Total);
-              //     let state_p = Self::new_nvt_unchecked(
-              //         &self.eos,
-              //         self.temperature,
-              //         self.total_moles * SIUnit::gas_constant() * self.temperature / p,
-              //         &self.moles,
-              //     );
-              //     if additive {
-              //         f(self, Evaluate::Residual) + f(self, Evaluate::IdealGasDelta)
-              //             - f(&state_p, Evaluate::IdealGasDelta)
-              //     } else {
-              //         f(self, Evaluate::Total) - f(&state_p, Evaluate::IdealGas)
-              //     }
-              // }
+            }
         }
     }
 
@@ -164,22 +117,11 @@ impl<E: Residual + IdealGas> State<E> {
         })
     }
 
-    // fn d2p_dv2_(&self, evaluate: Evaluate) -> SINumber {
-    //     -self.get_or_compute_derivative(PartialDerivative::Third(DV), evaluate)
-    // }
-
     fn dmu_dt_(&self, evaluate: Evaluate) -> SIArray1 {
         SIArray::from_shape_fn(self.eos.components(), |i| {
             self.get_or_compute_derivative(PartialDerivative::SecondMixed(DT, DN(i)), evaluate)
         })
     }
-
-    // fn dmu_dni_(&self, evaluate: Evaluate) -> SIArray2 {
-    //     let n = self.eos.components();
-    //     SIArray::from_shape_fn((n, n), |(i, j)| {
-    //         self.get_or_compute_derivative(PartialDerivative::SecondMixed(DN(i), DN(j)), evaluate)
-    //     })
-    // }
 
     fn ds_dt_(&self, evaluate: Evaluate) -> SINumber {
         -self.get_or_compute_derivative(PartialDerivative::Second(DT), evaluate)
@@ -198,11 +140,6 @@ impl<E: Residual + IdealGas> State<E> {
     pub fn dmu_dt(&self, contributions: Contributions) -> SIArray1 {
         self.evaluate_property(Self::dmu_dt_, contributions, true)
     }
-
-    // /// Partial derivative of chemical potential w.r.t. moles: $\left(\frac{\partial\mu_i}{\partial N_j}\right)_{T,V,N_k}$
-    // pub fn dmu_dni(&self, contributions: Contributions) -> SIArray2 {
-    //     self.evaluate_property(Self::dmu_dni_, contributions, true)
-    // }
 
     /// Molar isochoric heat capacity: $c_v=\left(\frac{\partial u}{\partial T}\right)_{V,N_i}$
     pub fn c_v(&self, contributions: Contributions) -> SINumber {

@@ -5,16 +5,9 @@ use num_dual::DualNum;
 use num_dual::*;
 use std::fmt;
 
-/// Ideal gas Helmholtz energy contribution that can
-/// be evaluated using generalized (hyper) dual numbers.
-///
-/// This trait needs to be implemented generically or for
-/// the specific types in the supertraits of [IdealGasContribution]
-/// so that the implementor can be used as an ideal gas
-/// contribution in the equation of state.
+/// Ideal gas Helmholtz energy contribution.
 pub trait IdealGas: Components + Sync + Send {
-    // fn de_broglie_wavelength<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D>;
-
+    // Return a reference to the implementation of the de Broglie wavelength.
     fn ideal_gas_model(&self) -> &dyn DeBroglieWavelength;
 
     /// Evaluate the ideal gas contribution for a given state.
@@ -42,10 +35,21 @@ pub trait IdealGas: Components + Sync + Send {
     }
 }
 
+/// Implementation of an ideal gas model in terms of the
+/// thermal de Broglie wavelength.
+///
+/// This trait needs to be implemented generically or for
+/// the specific types in the supertraits of [DeBroglieWavelength]
+/// so that the implementor can be used as an ideal gas
+/// contribution in the equation of state.
 pub trait DeBroglieWavelengthDual<D: DualNum<f64>> {
     fn de_broglie_wavelength(&self, temperature: D) -> Array1<D>;
 }
 
+/// Object safe version of the [DeBroglieWavelengthDual] trait.
+///
+/// The trait is implemented automatically for every struct that implements
+/// the supertraits.
 pub trait DeBroglieWavelength:
     DeBroglieWavelengthDual<f64>
     + DeBroglieWavelengthDual<Dual64>

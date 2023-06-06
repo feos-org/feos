@@ -19,6 +19,7 @@ pub trait MolarWeight {
     fn molar_weight(&self) -> SIArray1;
 }
 
+/// The number of components that the model is initialized for.
 pub trait Components {
     /// Return the number of components of the model.
     fn components(&self) -> usize;
@@ -28,6 +29,8 @@ pub trait Components {
     fn subset(&self, component_list: &[usize]) -> Self;
 }
 
+/// An equation of state consisting of an ideal gas model
+/// and a residual Helmholtz energy model.
 #[derive(Clone)]
 pub struct EquationOfState<I, R> {
     pub ideal_gas: Arc<I>,
@@ -35,6 +38,8 @@ pub struct EquationOfState<I, R> {
 }
 
 impl<I, R> EquationOfState<I, R> {
+    /// Return a new [EquationOfState] with the given ideal gas
+    /// and residual models.
     pub fn new(ideal_gas: Arc<I>, residual: Arc<R>) -> Self {
         Self {
             ideal_gas,

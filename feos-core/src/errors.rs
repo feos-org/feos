@@ -1,9 +1,7 @@
-// use crate::parameter::ParameterError;
+use crate::parameter::ParameterError;
 use num_dual::linalg::LinAlgError;
 use quantity::QuantityError;
 use thiserror::Error;
-
-use crate::parameter::ParameterError;
 
 /// Error type for improperly defined states and convergence problems.
 #[derive(Error, Debug)]

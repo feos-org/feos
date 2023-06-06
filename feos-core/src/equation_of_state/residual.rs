@@ -6,7 +6,7 @@ use num_dual::*;
 use num_traits::{One, Zero};
 use quantity::si::{SIArray1, SINumber, SIUnit};
 
-/// A general equation of state.
+/// A reisdual Helmholtz energy model.
 pub trait Residual: Components + Send + Sync {
     /// Return the maximum density in Angstrom^-3.
     ///

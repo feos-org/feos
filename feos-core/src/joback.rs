@@ -2,7 +2,7 @@
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 
 use crate::equation_of_state::{Components, DeBroglieWavelength, DeBroglieWavelengthDual};
-use crate::parameter::*;
+use crate::{parameter::*, Residual};
 use crate::{EosResult, EosUnit, IdealGas};
 use conv::ValueInto;
 use ndarray::Array1;
@@ -10,7 +10,6 @@ use num_dual::*;
 use quantity::si::{SINumber, SIUnit};
 use serde::{Deserialize, Serialize};
 use std::fmt::{self};
-use std::sync::Arc;
 
 /// Coefficients used in the Joback model.
 ///
@@ -67,13 +66,13 @@ impl<T: Copy + ValueInto<f64>> FromSegments<T> for JobackRecord {
 /// The ideal gas contribution according to
 /// [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 pub struct Joback {
-    pub records: Arc<Vec<JobackRecord>>,
+    pub records: Vec<JobackRecord>,
     // de_broglie: Box<dyn DeBroglieWavelength>,
 }
 
 impl Joback {
     /// Creates a new Joback contribution.
-    pub fn new(records: Arc<Vec<JobackRecord>>) -> Self {
+    pub fn new(records: Vec<JobackRecord>) -> Self {
         Self { records }
     }
 
@@ -98,13 +97,23 @@ impl Components for Joback {
         component_list
             .iter()
             .for_each(|&i| records.push(self.records[i].clone()));
-        Self::new(Arc::new(records))
+        Self::new(records)
     }
 }
 
 impl IdealGas for Joback {
     fn ideal_gas_model(&self) -> &dyn DeBroglieWavelength {
         self
+    }
+}
+
+impl Residual for Joback {
+    fn compute_max_density(&self, _moles: &Array1<f64>) -> f64 {
+        1.0
+    }
+
+    fn contributions(&self) -> &[Box<dyn crate::HelmholtzEnergy>] {
+        &[]
     }
 }
 
@@ -142,144 +151,144 @@ const P0: f64 = 1.0e5;
 const A3: f64 = 1e-30;
 const KB: f64 = 1.38064852e-23;
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::{Contributions, State, StateBuilder};
-//     use approx::assert_relative_eq;
-//     use ndarray::arr1;
-//     use quantity::si::*;
-//     use std::sync::Arc;
+#[cfg(test)]
+mod tests {
+    use crate::{Contributions, State, StateBuilder};
+    use approx::assert_relative_eq;
+    use ndarray::arr1;
+    use quantity::si::*;
+    use std::sync::Arc;
 
-//     use super::*;
+    use super::*;
 
-//     #[derive(Deserialize, Clone, Debug)]
-//     struct ModelRecord;
+    #[derive(Deserialize, Clone, Debug)]
+    struct ModelRecord;
 
-//     #[test]
-//     fn paper_example() -> EosResult<()> {
-//         let segments_json = r#"[
-//         {
-//           "identifier": "-Cl",
-//           "model_record": null,
-//           "ideal_gas_record": {
-//             "a": 33.3,
-//             "b": -0.0963,
-//             "c": 0.000187,
-//             "d": -9.96e-8,
-//             "e": 0.0
-//           },
-//           "molarweight": 35.453
-//         },
-//         {
-//           "identifier": "-CH=(ring)",
-//           "model_record": null,
-//           "ideal_gas_record": {
-//             "a": -2.14,
-//             "b": 5.74e-2,
-//             "c": -1.64e-6,
-//             "d": -1.59e-8,
-//             "e": 0.0
-//           },
-//           "molarweight": 13.01864
-//         },
-//         {
-//           "identifier": "=CH<(ring)",
-//           "model_record": null,
-//           "ideal_gas_record": {
-//             "a": -8.25,
-//             "b": 1.01e-1,
-//             "c": -1.42e-4,
-//             "d": 6.78e-8,
-//             "e": 0.0
-//           },
-//           "molarweight": 13.01864
-//         }
-//         ]"#;
-//         let segment_records: Vec<SegmentRecord<ModelRecord>> =
-//             serde_json::from_str(segments_json).expect("Unable to parse json.");
-//         let segments = ChemicalRecord::new(
-//             Identifier::default(),
-//             vec![
-//                 String::from("-Cl"),
-//                 String::from("-Cl"),
-//                 String::from("-CH=(ring)"),
-//                 String::from("-CH=(ring)"),
-//                 String::from("-CH=(ring)"),
-//                 String::from("-CH=(ring)"),
-//                 String::from("=CH<(ring)"),
-//                 String::from("=CH<(ring)"),
-//             ],
-//             None,
-//         )
-//         .segment_map(&segment_records)?;
-//         assert_eq!(segments.get(&segment_records[0]), Some(&2));
-//         assert_eq!(segments.get(&segment_records[1]), Some(&4));
-//         assert_eq!(segments.get(&segment_records[2]), Some(&2));
+    #[test]
+    fn paper_example() -> EosResult<()> {
+        let segments_json = r#"[
+        {
+          "identifier": "-Cl",
+          "model_record": {
+            "a": 33.3,
+            "b": -0.0963,
+            "c": 0.000187,
+            "d": -9.96e-8,
+            "e": 0.0
+          },
+          "molarweight": 35.453
+        },
+        {
+          "identifier": "-CH=(ring)",
+          "model_record": {
+            "a": -2.14,
+            "b": 5.74e-2,
+            "c": -1.64e-6,
+            "d": -1.59e-8,
+            "e": 0.0
+          },
+          "molarweight": 13.01864
+        },
+        {
+          "identifier": "=CH<(ring)",
+          "model_record": {
+            "a": -8.25,
+            "b": 1.01e-1,
+            "c": -1.42e-4,
+            "d": 6.78e-8,
+            "e": 0.0
+          },
+          "molarweight": 13.01864
+        }
+        ]"#;
+        let segment_records: Vec<SegmentRecord<JobackRecord>> =
+            serde_json::from_str(segments_json).expect("Unable to parse json.");
+        let segments = ChemicalRecord::new(
+            Identifier::default(),
+            vec![
+                String::from("-Cl"),
+                String::from("-Cl"),
+                String::from("-CH=(ring)"),
+                String::from("-CH=(ring)"),
+                String::from("-CH=(ring)"),
+                String::from("-CH=(ring)"),
+                String::from("=CH<(ring)"),
+                String::from("=CH<(ring)"),
+            ],
+            None,
+        )
+        .segment_map(&segment_records)?;
+        assert_eq!(segments.get(&segment_records[0]), Some(&2));
+        assert_eq!(segments.get(&segment_records[1]), Some(&4));
+        assert_eq!(segments.get(&segment_records[2]), Some(&2));
+        let joback_segments: Vec<_> = segments
+            .iter()
+            .map(|(s, &n)| (s.model_record.clone(), n))
+            .collect();
+        let jr = JobackRecord::from_segments(&joback_segments)?;
+        assert_relative_eq!(
+            jr.a,
+            33.3 * 2.0 - 2.14 * 4.0 - 8.25 * 2.0 - 37.93,
+            epsilon = 1e-10
+        );
+        assert_relative_eq!(
+            jr.b,
+            -0.0963 * 2.0 + 5.74e-2 * 4.0 + 1.01e-1 * 2.0 + 0.21,
+            epsilon = 1e-10
+        );
+        assert_relative_eq!(
+            jr.c,
+            0.000187 * 2.0 - 1.64e-6 * 4.0 - 1.42e-4 * 2.0 - 3.91e-4,
+            epsilon = 1e-10
+        );
+        assert_relative_eq!(
+            jr.d,
+            -9.96e-8 * 2.0 - 1.59e-8 * 4.0 + 6.78e-8 * 2.0 + 2.06e-7,
+            epsilon = 1e-10
+        );
+        assert_relative_eq!(jr.e, 0.0);
 
-//         let jr = JobackRecord::from_segments(&joback_segments)?;
-//         assert_relative_eq!(
-//             jr.a,
-//             33.3 * 2.0 - 2.14 * 4.0 - 8.25 * 2.0 - 37.93,
-//             epsilon = 1e-10
-//         );
-//         assert_relative_eq!(
-//             jr.b,
-//             -0.0963 * 2.0 + 5.74e-2 * 4.0 + 1.01e-1 * 2.0 + 0.21,
-//             epsilon = 1e-10
-//         );
-//         assert_relative_eq!(
-//             jr.c,
-//             0.000187 * 2.0 - 1.64e-6 * 4.0 - 1.42e-4 * 2.0 - 3.91e-4,
-//             epsilon = 1e-10
-//         );
-//         assert_relative_eq!(
-//             jr.d,
-//             -9.96e-8 * 2.0 - 1.59e-8 * 4.0 + 6.78e-8 * 2.0 + 2.06e-7,
-//             epsilon = 1e-10
-//         );
-//         assert_relative_eq!(jr.e, 0.0);
+        let eos = Arc::new(Joback::new(vec![jr]));
+        let state = State::new_nvt(
+            &eos,
+            1000.0 * KELVIN,
+            1.0 * ANGSTROM.powi(3),
+            &(arr1(&[1.0]) * MOL),
+        )?;
+        assert!(
+            (state
+                .c_p(Contributions::IdealGas)
+                .to_reduced(JOULE / MOL / KELVIN)?
+                - 224.6)
+                .abs()
+                < 1.0
+        );
+        Ok(())
+    }
 
-//         let eos = Arc::new(Joback::new(vec![jr]));
-//         let state = State::new_nvt(
-//             &eos,
-//             1000.0 * KELVIN,
-//             1.0 * ANGSTROM.powi(3),
-//             &(arr1(&[1.0]) * MOL),
-//         )?;
-//         assert!(
-//             (state
-//                 .c_p(Contributions::IdealGas)
-//                 .to_reduced(JOULE / MOL / KELVIN)?
-//                 - 224.6)
-//                 .abs()
-//                 < 1.0
-//         );
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn c_p_comparison() -> EosResult<()> {
-//         let record1 = JobackRecord::new(1.0, 0.2, 0.03, 0.004, 0.005);
-//         let record2 = JobackRecord::new(-5.0, 0.4, 0.03, 0.002, 0.001);
-//         let joback = Arc::new(Joback::new(vec![record1, record2]));
-//         let temperature = 300.0 * KELVIN;
-//         let volume = METER.powi(3);
-//         let moles = arr1(&[1.0, 3.0]) * MOL;
-//         let state = StateBuilder::new(&joback)
-//             .temperature(temperature)
-//             .volume(volume)
-//             .moles(&moles)
-//             .build()?;
-//         println!(
-//             "{} {}",
-//             joback.c_p(temperature, &state.molefracs)?,
-//             state.c_p(Contributions::IdealGas)
-//         );
-//         assert_relative_eq!(
-//             joback.c_p(temperature, &state.molefracs)?,
-//             state.c_p(Contributions::IdealGas),
-//             max_relative = 1e-10
-//         );
-//         Ok(())
-//     }
-// }
+    #[test]
+    fn c_p_comparison() -> EosResult<()> {
+        let record1 = JobackRecord::new(1.0, 0.2, 0.03, 0.004, 0.005);
+        let record2 = JobackRecord::new(-5.0, 0.4, 0.03, 0.002, 0.001);
+        let joback = Arc::new(Joback::new(vec![record1, record2]));
+        let temperature = 300.0 * KELVIN;
+        let volume = METER.powi(3);
+        let moles = arr1(&[1.0, 3.0]) * MOL;
+        let state = StateBuilder::new(&joback)
+            .temperature(temperature)
+            .volume(volume)
+            .moles(&moles)
+            .build()?;
+        println!(
+            "{} {}",
+            joback.c_p(temperature, &state.molefracs)?,
+            state.c_p(Contributions::IdealGas)
+        );
+        assert_relative_eq!(
+            joback.c_p(temperature, &state.molefracs)?,
+            state.c_p(Contributions::IdealGas),
+            max_relative = 1e-10
+        );
+        Ok(())
+    }
+}

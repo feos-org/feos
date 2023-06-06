@@ -259,13 +259,6 @@ impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
         Ok(())
     }
 
-    // pub fn update_chemical_potential(&mut self, chemical_potential: &SIArray1) -> EosResult<()> {
-    //     for s in self.0.iter_mut() {
-    //         s.update_chemical_potential(chemical_potential)?;
-    //     }
-    //     Ok(())
-    // }
-
     // Total Gibbs energy excluding the constant contribution RT sum_i N_i ln(\Lambda_i^3)
     pub(super) fn total_gibbs_energy(&self) -> SINumber {
         self.0

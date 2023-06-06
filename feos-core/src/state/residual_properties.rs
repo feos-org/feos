@@ -1,5 +1,4 @@
 use super::{Contributions, Derivative::*, PartialDerivative, State};
-// use crate::equation_of_state::{EntropyScaling, MolarWeight, Residual};
 use crate::equation_of_state::{EntropyScaling, Residual};
 use crate::errors::EosResult;
 use crate::EosUnit;
@@ -62,10 +61,12 @@ impl<E: Residual> State<E> {
         }
     }
 
+    /// Residual Helmholtz energy $A^\text{res}$
     pub fn residual_helmholtz_energy(&self) -> SINumber {
         self.get_or_compute_derivative_residual(PartialDerivative::Zeroth)
     }
 
+    /// Residual entropy $S^\text{res}=\left(\frac{\partial A^\text{res}}{\partial T}\right)_{V,N_i}$
     pub fn residual_entropy(&self) -> SINumber {
         -self.get_or_compute_derivative_residual(PartialDerivative::First(DT))
     }
@@ -218,10 +219,12 @@ impl<E: Residual> State<E> {
 
     // entropy derivatives
 
+    /// Partial derivative of the residual entropy w.r.t. temperature: $\left(\frac{\partial S^\text{res}}{\partial T}\right)_{V,N_i}$
     pub fn ds_res_dt(&self) -> SINumber {
         -self.get_or_compute_derivative_residual(PartialDerivative::Second(DT))
     }
 
+    /// Second partial derivative of the residual entropy w.r.t. temperature: $\left(\frac{\partial^2S^\text{res}}{\partial T^2}\right)_{V,N_i}$
     pub fn d2s_res_dt2(&self) -> SINumber {
         -self.get_or_compute_derivative_residual(PartialDerivative::Third(DT))
     }
@@ -330,7 +333,7 @@ impl<E: Residual> State<E> {
             + self.pressure(Contributions::Residual) * self.volume
     }
 
-    /// Residual internal energy: $U^\text{res}(T, V, \mathbf{n})=A^\text{res}+TS^\text{res}$
+    /// Residual internal energy: $U^\text{res}(T,V,\mathbf{n})=A^\text{res}+TS^\text{res}$
     pub fn residual_internal_energy(&self) -> SINumber {
         self.temperature * self.residual_entropy() + self.residual_helmholtz_energy()
     }

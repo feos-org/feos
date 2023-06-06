@@ -241,72 +241,71 @@ impl MolarWeight for PengRobinson {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use crate::phase_equilibria::SolverOptions;
-//     use crate::state::State;
-//     use crate::Contributions;
-//     use crate::{EosResult, Verbosity};
-//     use approx::*;
-//     use quantity::si::*;
-//     use std::sync::Arc;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::state::{SolverOptions, State};
+    use crate::Contributions;
+    use crate::{EosResult, Verbosity};
+    use approx::*;
+    use quantity::si::*;
+    use std::sync::Arc;
 
-//     fn pure_record_vec() -> Vec<PureRecord<PengRobinsonRecord, JobackRecord>> {
-//         let records = r#"[
-//             {
-//                 "identifier": {
-//                     "cas": "74-98-6",
-//                     "name": "propane",
-//                     "iupac_name": "propane",
-//                     "smiles": "CCC",
-//                     "inchi": "InChI=1/C3H8/c1-3-2/h3H2,1-2H3",
-//                     "formula": "C3H8"
-//                 },
-//                 "model_record": {
-//                     "tc": 369.96,
-//                     "pc": 4250000.0,
-//                     "acentric_factor": 0.153
-//                 },
-//                 "molarweight": 44.0962
-//             },
-//             {
-//                 "identifier": {
-//                     "cas": "106-97-8",
-//                     "name": "butane",
-//                     "iupac_name": "butane",
-//                     "smiles": "CCCC",
-//                     "inchi": "InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3",
-//                     "formula": "C4H10"
-//                 },
-//                 "model_record": {
-//                     "tc": 425.2,
-//                     "pc": 3800000.0,
-//                     "acentric_factor": 0.199
-//                 },
-//                 "molarweight": 58.123
-//             }
-//         ]"#;
-//         serde_json::from_str(records).expect("Unable to parse json.")
-//     }
+    fn pure_record_vec() -> Vec<PureRecord<PengRobinsonRecord>> {
+        let records = r#"[
+            {
+                "identifier": {
+                    "cas": "74-98-6",
+                    "name": "propane",
+                    "iupac_name": "propane",
+                    "smiles": "CCC",
+                    "inchi": "InChI=1/C3H8/c1-3-2/h3H2,1-2H3",
+                    "formula": "C3H8"
+                },
+                "model_record": {
+                    "tc": 369.96,
+                    "pc": 4250000.0,
+                    "acentric_factor": 0.153
+                },
+                "molarweight": 44.0962
+            },
+            {
+                "identifier": {
+                    "cas": "106-97-8",
+                    "name": "butane",
+                    "iupac_name": "butane",
+                    "smiles": "CCCC",
+                    "inchi": "InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3",
+                    "formula": "C4H10"
+                },
+                "model_record": {
+                    "tc": 425.2,
+                    "pc": 3800000.0,
+                    "acentric_factor": 0.199
+                },
+                "molarweight": 58.123
+            }
+        ]"#;
+        serde_json::from_str(records).expect("Unable to parse json.")
+    }
 
-//     #[test]
-//     fn peng_robinson() -> EosResult<()> {
-//         let mixture = pure_record_vec();
-//         let propane = mixture[0].clone();
-//         let tc = propane.model_record.tc;
-//         let pc = propane.model_record.pc;
-//         let parameters = PengRobinsonParameters::from_records(vec![propane], Array2::zeros((1, 1)));
-//         let pr = Arc::new(PengRobinson::new(Arc::new(parameters)));
-//         let options = SolverOptions::new().verbosity(Verbosity::Iter);
-//         let cp = State::critical_point(&pr, None, None, options)?;
-//         println!("{} {}", cp.temperature, cp.pressure(Contributions::Total));
-//         assert_relative_eq!(cp.temperature, tc * KELVIN, max_relative = 1e-4);
-//         assert_relative_eq!(
-//             cp.pressure(Contributions::Total),
-//             pc * PASCAL,
-//             max_relative = 1e-4
-//         );
-//         Ok(())
-//     }
-// }
+    #[test]
+    fn peng_robinson() -> EosResult<()> {
+        let mixture = pure_record_vec();
+        let propane = mixture[0].clone();
+        let tc = propane.model_record.tc;
+        let pc = propane.model_record.pc;
+        let parameters = PengRobinsonParameters::from_records(vec![propane], Array2::zeros((1, 1)));
+        let pr = Arc::new(PengRobinson::new(Arc::new(parameters)));
+        let options = SolverOptions::new().verbosity(Verbosity::Iter);
+        let cp = State::critical_point(&pr, None, None, options)?;
+        println!("{} {}", cp.temperature, cp.pressure(Contributions::Total));
+        assert_relative_eq!(cp.temperature, tc * KELVIN, max_relative = 1e-4);
+        assert_relative_eq!(
+            cp.pressure(Contributions::Total),
+            pc * PASCAL,
+            max_relative = 1e-4
+        );
+        Ok(())
+    }
+}

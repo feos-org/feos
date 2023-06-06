@@ -181,9 +181,9 @@ mod tests {
         let propane = mixture[0].clone();
         let parameters = PengRobinsonParameters::from_records(vec![propane], Array2::zeros((1, 1)));
         let residual = Arc::new(PengRobinson::new(Arc::new(parameters)));
-        let ideal_gas = Arc::new(Joback::new(Arc::new(vec![JobackRecord::new(
+        let ideal_gas = Arc::new(Joback::new(vec![JobackRecord::new(
             0.0, 0.0, 0.0, 0.0, 0.0,
-        )])));
+        )]));
         let eos = Arc::new(EquationOfState::new(ideal_gas, residual.clone()));
 
         let sr = StateBuilder::new(&residual)
