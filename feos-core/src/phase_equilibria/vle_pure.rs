@@ -322,7 +322,10 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
             }
 
             for _ in 0..20 {
-                t0 = (e.vapor().residual_enthalpy() - e.liquid().residual_enthalpy())
+                let h = |s: &State<_>| {
+                    s.residual_enthalpy() + s.total_moles * SIUnit::gas_constant() * s.temperature
+                };
+                t0 = (h(e.vapor()) - h(e.liquid()))
                     / (e.vapor().residual_entropy()
                         - e.liquid().residual_entropy()
                         - SIUnit::gas_constant()
