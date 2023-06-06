@@ -1,5 +1,4 @@
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::joback::JobackRecord;
 use feos_core::parameter::{Parameter, PureRecord};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
@@ -119,20 +118,17 @@ pub struct PetsParameters {
     /// thermal conductivity parameters for entropy scaling
     pub thermal_conductivity: Option<Array2<f64>>,
     /// records of all pure substances of the system
-    pub pure_records: Vec<PureRecord<PetsRecord, JobackRecord>>,
-    /// records of parameters for Joback method
-    pub joback_records: Option<Vec<JobackRecord>>,
+    pub pure_records: Vec<PureRecord<PetsRecord>>,
     /// records of all binary interaction parameters
     pub binary_records: Array2<PetsBinaryRecord>,
 }
 
 impl Parameter for PetsParameters {
     type Pure = PetsRecord;
-    type IdealGas = JobackRecord;
     type Binary = PetsBinaryRecord;
 
     fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
+        pure_records: Vec<PureRecord<Self::Pure>>,
         binary_records: Array2<PetsBinaryRecord>,
     ) -> Self {
         let n = pure_records.len();
@@ -200,11 +196,6 @@ impl Parameter for PetsParameters {
             Some(v)
         };
 
-        let joback_records = pure_records
-            .iter()
-            .map(|r| r.ideal_gas_record.clone())
-            .collect();
-
         Self {
             molarweight,
             sigma,
@@ -217,7 +208,6 @@ impl Parameter for PetsParameters {
             diffusion: diffusion_coefficients,
             thermal_conductivity: thermal_conductivity_coefficients,
             pure_records,
-            joback_records,
             binary_records,
         }
     }
@@ -225,7 +215,7 @@ impl Parameter for PetsParameters {
     fn records(
         &self,
     ) -> (
-        &[PureRecord<PetsRecord, JobackRecord>],
+        &[PureRecord<PetsRecord>],
         &Array2<PetsBinaryRecord>,
     ) {
         (&self.pure_records, &self.binary_records)
@@ -285,7 +275,6 @@ impl std::fmt::Display for PetsParameters {
 #[cfg(test)]
 pub mod utils {
     use super::*;
-    use feos_core::joback::JobackRecord;
     use std::sync::Arc;
 
     pub fn argon_parameters() -> Arc<PetsParameters> {
@@ -308,7 +297,7 @@ pub mod utils {
                 },
                 "molarweight": 39.948
             }"#;
-        let argon_record: PureRecord<PetsRecord, JobackRecord> =
+        let argon_record: PureRecord<PetsRecord> =
             serde_json::from_str(argon_json).expect("Unable to parse json.");
         Arc::new(PetsParameters::new_pure(argon_record))
     }
@@ -330,7 +319,7 @@ pub mod utils {
                 },
                 "molarweight": 83.798
             }"#;
-        let krypton_record: PureRecord<PetsRecord, JobackRecord> =
+        let krypton_record: PureRecord<PetsRecord> =
             serde_json::from_str(krypton_json).expect("Unable to parse json.");
         Arc::new(PetsParameters::new_pure(krypton_record))
     }
@@ -374,7 +363,7 @@ pub mod utils {
                 "molarweight": 83.798
             }
         ]"#;
-        let binary_record: Vec<PureRecord<PetsRecord, JobackRecord>> =
+        let binary_record: Vec<PureRecord<PetsRecord>> =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
         Arc::new(PetsParameters::new_binary(binary_record, None))
     }
