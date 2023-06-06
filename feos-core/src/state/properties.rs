@@ -3,28 +3,20 @@ use crate::equation_of_state::{IdealGas, MolarWeight, Residual};
 use crate::EosUnit;
 use ndarray::Array1;
 use quantity::si::*;
-use std::ops::{Add, Sub};
-
-#[derive(Clone, Copy)]
-pub(crate) enum Evaluate {
-    IdealGas,
-    Residual,
-    Total,
-}
 
 impl<E: Residual + IdealGas> State<E> {
     fn get_or_compute_derivative(
         &self,
         derivative: PartialDerivative,
-        evaluate: Evaluate,
+        contributions: Contributions,
     ) -> SINumber {
-        let residual = match evaluate {
-            Evaluate::IdealGas => None,
+        let residual = match contributions {
+            Contributions::IdealGas => None,
             _ => Some(self.get_or_compute_derivative_residual(derivative)),
         };
 
-        let ideal_gas = match evaluate {
-            Evaluate::Residual => None,
+        let ideal_gas = match contributions {
+            Contributions::Residual => None,
             _ => Some(match derivative {
                 PartialDerivative::Zeroth => {
                     let new_state = self.derive0();
@@ -67,112 +59,56 @@ impl<E: Residual + IdealGas> State<E> {
         }
     }
 
-    fn evaluate_property<R, F>(&self, f: F, contributions: Contributions, additive: bool) -> R
-    where
-        R: Add<Output = R> + Sub<Output = R>,
-        F: Fn(&Self, Evaluate) -> R,
-    {
-        match contributions {
-            Contributions::IdealGas => f(self, Evaluate::IdealGas),
-            Contributions::Total => f(self, Evaluate::Total),
-            Contributions::Residual => {
-                if additive {
-                    f(self, Evaluate::Residual)
-                } else {
-                    f(self, Evaluate::Total) - f(self, Evaluate::IdealGas)
-                }
-            }
-        }
-    }
-
-    fn helmholtz_energy_(&self, evaluate: Evaluate) -> SINumber {
-        self.get_or_compute_derivative(PartialDerivative::Zeroth, evaluate)
-    }
-
-    fn pressure_(&self, evaluate: Evaluate) -> SINumber {
-        -self.get_or_compute_derivative(PartialDerivative::First(DV), evaluate)
-    }
-
-    fn entropy_(&self, evaluate: Evaluate) -> SINumber {
-        -self.get_or_compute_derivative(PartialDerivative::First(DT), evaluate)
-    }
-
-    fn chemical_potential_(&self, evaluate: Evaluate) -> SIArray1 {
-        SIArray::from_shape_fn(self.eos.components(), |i| {
-            self.get_or_compute_derivative(PartialDerivative::First(DN(i)), evaluate)
-        })
-    }
-
-    fn dp_dv_(&self, evaluate: Evaluate) -> SINumber {
-        -self.get_or_compute_derivative(PartialDerivative::Second(DV), evaluate)
-    }
-
-    fn dp_dt_(&self, evaluate: Evaluate) -> SINumber {
-        -self.get_or_compute_derivative(PartialDerivative::SecondMixed(DV, DT), evaluate)
-    }
-
-    fn dp_dni_(&self, evaluate: Evaluate) -> SIArray1 {
-        SIArray::from_shape_fn(self.eos.components(), |i| {
-            -self.get_or_compute_derivative(PartialDerivative::SecondMixed(DV, DN(i)), evaluate)
-        })
-    }
-
-    fn dmu_dt_(&self, evaluate: Evaluate) -> SIArray1 {
-        SIArray::from_shape_fn(self.eos.components(), |i| {
-            self.get_or_compute_derivative(PartialDerivative::SecondMixed(DT, DN(i)), evaluate)
-        })
-    }
-
-    fn ds_dt_(&self, evaluate: Evaluate) -> SINumber {
-        -self.get_or_compute_derivative(PartialDerivative::Second(DT), evaluate)
-    }
-
-    fn d2s_dt2_(&self, evaluate: Evaluate) -> SINumber {
-        -self.get_or_compute_derivative(PartialDerivative::Third(DT), evaluate)
-    }
-
     /// Chemical potential: $\mu_i=\left(\frac{\partial A}{\partial N_i}\right)_{T,V,N_j}$
     pub fn chemical_potential(&self, contributions: Contributions) -> SIArray1 {
-        self.evaluate_property(Self::chemical_potential_, contributions, true)
+        SIArray::from_shape_fn(self.eos.components(), |i| {
+            self.get_or_compute_derivative(PartialDerivative::First(DN(i)), contributions)
+        })
     }
 
     /// Partial derivative of chemical potential w.r.t. temperature: $\left(\frac{\partial\mu_i}{\partial T}\right)_{V,N_i}$
     pub fn dmu_dt(&self, contributions: Contributions) -> SIArray1 {
-        self.evaluate_property(Self::dmu_dt_, contributions, true)
+        SIArray::from_shape_fn(self.eos.components(), |i| {
+            self.get_or_compute_derivative(PartialDerivative::SecondMixed(DT, DN(i)), contributions)
+        })
     }
 
     /// Molar isochoric heat capacity: $c_v=\left(\frac{\partial u}{\partial T}\right)_{V,N_i}$
     pub fn c_v(&self, contributions: Contributions) -> SINumber {
-        let func =
-            |s: &Self, evaluate: Evaluate| s.temperature * s.ds_dt_(evaluate) / s.total_moles;
-        self.evaluate_property(func, contributions, true)
+        self.temperature * self.ds_dt(contributions) / self.total_moles
     }
 
     /// Partial derivative of the molar isochoric heat capacity w.r.t. temperature: $\left(\frac{\partial c_V}{\partial T}\right)_{V,N_i}$
     pub fn dc_v_dt(&self, contributions: Contributions) -> SINumber {
-        let func = |s: &Self, evaluate: Evaluate| {
-            (s.temperature * s.d2s_dt2_(evaluate) + s.ds_dt_(evaluate)) / s.total_moles
-        };
-        self.evaluate_property(func, contributions, true)
+        (self.temperature * self.d2s_dt2(contributions) + self.ds_dt(contributions))
+            / self.total_moles
     }
 
     /// Molar isobaric heat capacity: $c_p=\left(\frac{\partial h}{\partial T}\right)_{p,N_i}$
     pub fn c_p(&self, contributions: Contributions) -> SINumber {
-        let func = |s: &Self, evaluate: Evaluate| {
-            s.temperature / s.total_moles
-                * (s.ds_dt_(evaluate) - s.dp_dt_(evaluate).powi(2) / s.dp_dv_(evaluate))
-        };
-        self.evaluate_property(func, contributions, false)
+        match contributions {
+            Contributions::Residual => self.c_p_res(),
+            _ => {
+                self.temperature / self.total_moles
+                    * (self.ds_dt(contributions)
+                        - self.dp_dt(contributions).powi(2) / self.dp_dv(contributions))
+            }
+        }
     }
 
     /// Entropy: $S=-\left(\frac{\partial A}{\partial T}\right)_{V,N_i}$
     pub fn entropy(&self, contributions: Contributions) -> SINumber {
-        self.evaluate_property(Self::entropy_, contributions, true)
+        -self.get_or_compute_derivative(PartialDerivative::First(DT), contributions)
     }
 
     /// Partial derivative of the entropy w.r.t. temperature: $\left(\frac{\partial S}{\partial T}\right)_{V,N_i}$
     pub fn ds_dt(&self, contributions: Contributions) -> SINumber {
-        self.evaluate_property(Self::ds_dt_, contributions, true)
+        -self.get_or_compute_derivative(PartialDerivative::Second(DT), contributions)
+    }
+
+    /// Second partial derivative of the entropy w.r.t. temperature: $\left(\frac{\partial^2 S}{\partial T^2}\right)_{V,N_i}$
+    pub fn d2s_dt2(&self, contributions: Contributions) -> SINumber {
+        -self.get_or_compute_derivative(PartialDerivative::Third(DT), contributions)
     }
 
     /// molar entropy: $s=\frac{S}{N}$
@@ -182,12 +118,9 @@ impl<E: Residual + IdealGas> State<E> {
 
     /// Enthalpy: $H=A+TS+pV$
     pub fn enthalpy(&self, contributions: Contributions) -> SINumber {
-        let func = |s: &Self, evaluate: Evaluate| {
-            s.temperature * s.entropy_(evaluate)
-                + s.helmholtz_energy_(evaluate)
-                + s.pressure_(evaluate) * s.volume
-        };
-        self.evaluate_property(func, contributions, true)
+        self.temperature * self.entropy(contributions)
+            + self.helmholtz_energy(contributions)
+            + self.pressure(contributions) * self.volume
     }
 
     /// molar enthalpy: $h=\frac{H}{N}$
@@ -197,7 +130,7 @@ impl<E: Residual + IdealGas> State<E> {
 
     /// Helmholtz energy: $A$
     pub fn helmholtz_energy(&self, contributions: Contributions) -> SINumber {
-        self.evaluate_property(Self::helmholtz_energy_, contributions, true)
+        self.get_or_compute_derivative(PartialDerivative::Zeroth, contributions)
     }
 
     /// molar Helmholtz energy: $a=\frac{A}{N}$
@@ -207,10 +140,7 @@ impl<E: Residual + IdealGas> State<E> {
 
     /// Internal energy: $U=A+TS$
     pub fn internal_energy(&self, contributions: Contributions) -> SINumber {
-        let func = |s: &Self, evaluate: Evaluate| {
-            s.temperature * s.entropy_(evaluate) + s.helmholtz_energy_(evaluate)
-        };
-        self.evaluate_property(func, contributions, true)
+        self.temperature * self.entropy(contributions) + self.helmholtz_energy(contributions)
     }
 
     /// Molar internal energy: $u=\frac{U}{N}$
@@ -220,10 +150,7 @@ impl<E: Residual + IdealGas> State<E> {
 
     /// Gibbs energy: $G=A+pV$
     pub fn gibbs_energy(&self, contributions: Contributions) -> SINumber {
-        let func = |s: &Self, evaluate: Evaluate| {
-            s.pressure_(evaluate) * s.volume + s.helmholtz_energy_(evaluate)
-        };
-        self.evaluate_property(func, contributions, true)
+        self.pressure(contributions) * self.volume + self.helmholtz_energy(contributions)
     }
 
     /// Molar Gibbs energy: $g=\frac{G}{N}$
@@ -232,17 +159,15 @@ impl<E: Residual + IdealGas> State<E> {
     }
 
     /// Partial molar entropy: $s_i=\left(\frac{\partial S}{\partial N_i}\right)_{T,p,N_j}$
-    pub fn partial_molar_entropy(&self, contributions: Contributions) -> SIArray1 {
-        let func = |s: &Self, evaluate: Evaluate| {
-            -(s.dmu_dt_(evaluate) + s.dp_dni_(evaluate) * (s.dp_dt_(evaluate) / s.dp_dv_(evaluate)))
-        };
-        self.evaluate_property(func, contributions, false)
+    pub fn partial_molar_entropy(&self) -> SIArray1 {
+        let c = Contributions::Total;
+        -(self.dmu_dt(c) + self.dp_dni(c) * (self.dp_dt(c) / self.dp_dv(c)))
     }
 
     /// Partial molar enthalpy: $h_i=\left(\frac{\partial H}{\partial N_i}\right)_{T,p,N_j}$
-    pub fn partial_molar_enthalpy(&self, contributions: Contributions) -> SIArray1 {
-        let s = self.partial_molar_entropy(contributions);
-        let mu = self.chemical_potential(contributions);
+    pub fn partial_molar_enthalpy(&self) -> SIArray1 {
+        let s = self.partial_molar_entropy();
+        let mu = self.chemical_potential(Contributions::Total);
         s * self.temperature + mu
     }
 
