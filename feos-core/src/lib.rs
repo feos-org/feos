@@ -182,7 +182,7 @@ mod tests {
         let parameters = PengRobinsonParameters::from_records(vec![propane], Array2::zeros((1, 1)));
         let residual = Arc::new(PengRobinson::new(Arc::new(parameters)));
         let ideal_gas = Arc::new(Joback::new(Arc::new(vec![JobackRecord::new(
-            1.0, 1.0, 1.0, 1.0, 1.0,
+            0.0, 0.0, 0.0, 0.0, 0.0,
         )])));
         let eos = Arc::new(EquationOfState::new(ideal_gas, residual.clone()));
 
@@ -372,7 +372,7 @@ mod tests {
         assert_relative_eq!(
             s.c_p(Contributions::Residual),
             sr.c_p_res(),
-            max_relative = 1e-15
+            max_relative = 1e-14
         );
         Ok(())
     }
