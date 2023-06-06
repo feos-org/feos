@@ -459,18 +459,11 @@ macro_rules! impl_state {
 
             /// Return partial molar volume of each component.
             ///
-            /// Parameters
-            /// ----------
-            /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
-            ///     Defaults to Contributions.Total.
-            ///
             /// Returns
             /// -------
             /// SIArray1
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn partial_molar_volume(&self, contributions: Contributions) -> PySIArray1 {
-                PySIArray1::from(self.0.partial_molar_volume(contributions))
+            fn partial_molar_volume(&self) -> PySIArray1 {
+                PySIArray1::from(self.0.partial_molar_volume())
             }
 
             /// Return chemical potential of each component.
