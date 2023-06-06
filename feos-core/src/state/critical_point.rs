@@ -472,8 +472,7 @@ fn critical_point_objective<R: Residual>(
         m[i].eps1 = DualSVec64::one();
         m[j].eps2 = DualSVec64::one();
         let state = StateHD::new(t, v, m);
-        // (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
-        eos.evaluate_residual(&state).eps1eps2 * (moles[i] * moles[j]).sqrt()
+        eos.evaluate_residual(&state).eps1eps2 * (moles[i] * moles[j]).sqrt() + kronecker(i, j)
     });
 
     // calculate smallest eigenvalue and corresponding eigenvector of q
@@ -493,9 +492,9 @@ fn critical_point_objective<R: Residual>(
         Dual3::from_re(density.recip() * moles.sum()),
         moles_hd,
     );
-    // let res = eos.evaluate_residual(&state_s) + eos.ideal_gas().evaluate(&state_s);
+    let ig = (&state_s.moles * (state_s.partial_density.mapv(|x| x.ln()) - 1.0)).sum();
     let res = eos.evaluate_residual(&state_s);
-    Ok(SVector::from([eval, res.v3]))
+    Ok(SVector::from([eval, (res + ig).v3]))
 }
 
 fn critical_point_objective_t<R: Residual>(
@@ -511,8 +510,7 @@ fn critical_point_objective_t<R: Residual>(
         m[i].eps1 = DualSVec64::one();
         m[j].eps2 = DualSVec64::one();
         let state = StateHD::new(t, v, arr1(&[m[0], m[1]]));
-        // (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
-        eos.evaluate_residual(&state).eps1eps2 * (density[i] * density[j]).sqrt()
+        eos.evaluate_residual(&state).eps1eps2 * (density[i] * density[j]).sqrt() + kronecker(i, j)
     });
 
     // calculate smallest eigenvalue and corresponding eigenvector of q
@@ -528,8 +526,9 @@ fn critical_point_objective_t<R: Residual>(
         )
     });
     let state_s = StateHD::new(Dual3::from(temperature), Dual3::from(1.0), moles_hd);
-    let res = eos.evaluate_residual(&state_s); // + eos.ideal_gas().evaluate(&state_s);
-    Ok(SVector::from([eval, res.v3]))
+    let ig = (&state_s.moles * (state_s.partial_density.mapv(|x| x.ln()) - 1.0)).sum();
+    let res = eos.evaluate_residual(&state_s);
+    Ok(SVector::from([eval, (res + ig).v3]))
 }
 
 fn critical_point_objective_p<R: Residual>(
@@ -546,8 +545,7 @@ fn critical_point_objective_p<R: Residual>(
         m[i].eps1 = DualSVec64::one();
         m[j].eps2 = DualSVec64::one();
         let state = StateHD::new(t, v, arr1(&[m[0], m[1]]));
-        // (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
-        eos.evaluate_residual(&state).eps1eps2 * (density[i] * density[j]).sqrt()
+        eos.evaluate_residual(&state).eps1eps2 * (density[i] * density[j]).sqrt() + kronecker(i, j)
     });
 
     // calculate smallest eigenvalue and corresponding eigenvector of q
@@ -563,17 +561,19 @@ fn critical_point_objective_p<R: Residual>(
         )
     });
     let state_s = StateHD::new(Dual3::from_re(temperature), Dual3::from(1.0), moles_hd);
-    let res = eos.evaluate_residual(&state_s); // + eos.ideal_gas().evaluate(&state_s);
+    let ig = (&state_s.moles * (state_s.partial_density.mapv(|x| x.ln()) - 1.0)).sum();
+    let res = eos.evaluate_residual(&state_s);
 
     // calculate pressure
     let a = |v| {
         let m = arr1(&[Dual::from_re(density[0]), Dual::from_re(density[1])]);
         let state_p = StateHD::new(Dual::from_re(temperature), v, m);
-        eos.evaluate_residual(&state_p) // + eos.ideal_gas().evaluate(&state_p)
+        -eos.evaluate_residual(&state_p) + state_p.partial_density.sum()
     };
     let (_, p) = first_derivative(a, DualVec::one());
+    let p = (p - density.sum()) * temperature;
 
-    Ok(SVector::from([eval, res.v3, p * temperature + pressure]))
+    Ok(SVector::from([eval, (res + ig).v3, p + pressure]))
 }
 
 fn spinodal_objective<R: Residual>(
@@ -590,8 +590,7 @@ fn spinodal_objective<R: Residual>(
         m[i].eps1 = Dual64::one();
         m[j].eps2 = Dual64::one();
         let state = StateHD::new(t, v, m);
-        // (eos.evaluate_residual(&state).eps1eps2 + eos.ideal_gas().evaluate(&state).eps1eps2)
-        eos.evaluate_residual(&state).eps1eps2 * (moles[i] * moles[j]).sqrt()
+        eos.evaluate_residual(&state).eps1eps2 * (moles[i] * moles[j]).sqrt() + kronecker(i, j)
     });
 
     // calculate smallest eigenvalue of q
@@ -622,4 +621,12 @@ fn smallest_ev_scalar(m: DMatrix<Dual64>) -> (Dual64, DVector<Dual64>) {
         .reduce(|e1, e2| if e1.0 < e2.0 { e1 } else { e2 })
         .unwrap();
     (*e, ev.into())
+}
+
+fn kronecker(i: usize, j: usize) -> f64 {
+    if i == j {
+        1.0
+    } else {
+        0.0
+    }
 }

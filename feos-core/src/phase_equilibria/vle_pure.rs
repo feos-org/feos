@@ -83,16 +83,13 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
             let (p_l, p_rho_l) = liquid.p_dpdrho();
             let (p_v, p_rho_v) = vapor.p_dpdrho();
             // calculate the molar Helmholtz energies (already cached)
-            // let a_l = liquid.molar_helmholtz_energy(Contributions::Total);
             let a_l_res = liquid.residual_helmholtz_energy() / liquid.total_moles;
-            // let a_v = vapor.molar_helmholtz_energy(Contributions::Total);
             let a_v_res = vapor.residual_helmholtz_energy() / vapor.total_moles;
 
             // Estimate the new pressure
             let kt = SIUnit::gas_constant() * vapor.temperature;
             let delta_v = 1.0 / vapor.density - 1.0 / liquid.density;
-            let delta_a =
-                a_v_res - a_l_res + kt * vapor.density.to_reduced(liquid.temperature)?.ln();
+            let delta_a = a_v_res - a_l_res + kt * vapor.density.to_reduced(liquid.density)?.ln();
             let mut p_new = -delta_a / delta_v;
 
             // If the pressure becomes negative, assume the gas phase is ideal. The

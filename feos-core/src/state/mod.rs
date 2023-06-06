@@ -575,13 +575,7 @@ impl<E: Residual> State<E> {
                 (Ok(_), Err(_)) => liquid,
                 (Err(_), Ok(_)) => vapor,
                 (Ok(l), Ok(v)) => {
-                    if l.residual_gibbs_energy()
-                        > v.residual_gibbs_energy()
-                            + moles.sum()
-                                * SIUnit::gas_constant()
-                                * v.temperature
-                                * (l.volume.to_reduced(v.volume)?.ln())
-                    {
+                    if l.residual_gibbs_energy() > v.residual_gibbs_energy() {
                         vapor
                     } else {
                         liquid
