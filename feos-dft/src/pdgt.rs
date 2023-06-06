@@ -174,7 +174,8 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
             let rhoi_b = vle.vapor().partial_density.get(i);
             let mui_res = mu_res.get(i);
             let kt = SIUnit::gas_constant() * vle.vapor().temperature;
-            delta_omega += &(&rhoi * (kt * rhoi.to_reduced(rhoi_b)?.mapv(f64::ln) - mui_res));
+            delta_omega +=
+                &(&rhoi * (kt * (rhoi.to_reduced(rhoi_b)?.mapv(f64::ln) - 1.0) - mui_res));
         }
         delta_omega += vle.vapor().pressure(Contributions::Total);
 
