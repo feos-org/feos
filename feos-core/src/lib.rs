@@ -36,8 +36,8 @@ pub mod parameter;
 mod phase_equilibria;
 mod state;
 pub use equation_of_state::{
-    Components, EntropyScaling, EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, IdealGas,
-    MolarWeight, Residual,
+    Components, DeBroglieWavelength, DeBroglieWavelengthDual, EntropyScaling, EquationOfState,
+    HelmholtzEnergy, HelmholtzEnergyDual, IdealGas, MolarWeight, Residual,
 };
 pub use errors::{EosError, EosResult};
 pub use phase_equilibria::{PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium};

@@ -328,7 +328,7 @@ impl<E: Residual + IdealGas> State<E> {
         let contributions = self.eos.evaluate_residual_contributions(&new_state);
         let mut res = Vec::with_capacity(contributions.len() + 1);
         res.push((
-            self.eos.ideal_gas_model(),
+            self.eos.ideal_gas_model().to_string(),
             self.eos.evaluate_ideal_gas(&new_state)
                 * new_state.temperature
                 * SIUnit::reference_energy(),
@@ -345,7 +345,7 @@ impl<E: Residual + IdealGas> State<E> {
         let contributions = self.eos.evaluate_residual_contributions(&new_state);
         let mut res = Vec::with_capacity(contributions.len() + 1);
         res.push((
-            self.eos.ideal_gas_model(),
+            self.eos.ideal_gas_model().to_string(),
             (self.eos.evaluate_ideal_gas(&new_state) * new_state.temperature).eps
                 * SIUnit::reference_molar_energy(),
         ));

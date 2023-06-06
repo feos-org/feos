@@ -1,15 +1,14 @@
+use crate::EosResult;
 use ndarray::Array1;
-use num_dual::DualNum;
 use quantity::si::{SIArray1, SINumber};
 use std::sync::Arc;
 
-pub mod helmholtz_energy;
-pub mod ideal_gas;
-pub mod residual;
-use crate::EosResult;
+mod helmholtz_energy;
+mod ideal_gas;
+mod residual;
 
 pub use helmholtz_energy::{HelmholtzEnergy, HelmholtzEnergyDual};
-pub use ideal_gas::IdealGas;
+pub use ideal_gas::{DeBroglieWavelength, DeBroglieWavelengthDual, IdealGas};
 pub use residual::{EntropyScaling, Residual};
 
 /// Molar weight of all components.
@@ -59,11 +58,7 @@ impl<I: Components, R: Components> Components for EquationOfState<I, R> {
 }
 
 impl<I: IdealGas, R: Residual> IdealGas for EquationOfState<I, R> {
-    fn de_broglie_wavelength<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
-        self.ideal_gas.de_broglie_wavelength(temperature)
-    }
-
-    fn ideal_gas_model(&self) -> String {
+    fn ideal_gas_model(&self) -> &dyn DeBroglieWavelength {
         self.ideal_gas.ideal_gas_model()
     }
 }

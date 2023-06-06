@@ -3,8 +3,8 @@ use crate::functional_contribution::*;
 use crate::ideal_chain_contribution::IdealChainContribution;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use feos_core::{
-    Components, EosResult, EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, IdealGas,
-    MolarWeight, Residual, StateHD,
+    Components, DeBroglieWavelength, EosResult, EquationOfState, HelmholtzEnergy,
+    HelmholtzEnergyDual, IdealGas, MolarWeight, Residual, StateHD,
 };
 use ndarray::*;
 use num_dual::*;
@@ -130,11 +130,7 @@ impl<F: HelmholtzEnergyFunctional> Residual for DFT<F> {
 }
 
 impl<F: HelmholtzEnergyFunctional + IdealGas> IdealGas for DFT<F> {
-    fn de_broglie_wavelength<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
-        self.0.de_broglie_wavelength(temperature)
-    }
-
-    fn ideal_gas_model(&self) -> String {
+    fn ideal_gas_model(&self) -> &dyn DeBroglieWavelength {
         self.0.ideal_gas_model()
     }
 }

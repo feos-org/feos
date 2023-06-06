@@ -1,7 +1,7 @@
 //! Implementation of the ideal gas heat capacity (de Broglie wavelength)
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 
-use crate::equation_of_state::Components;
+use crate::equation_of_state::{Components, DeBroglieWavelength, DeBroglieWavelengthDual};
 use crate::parameter::*;
 use crate::{EosResult, EosUnit, IdealGas};
 use conv::ValueInto;
@@ -9,7 +9,7 @@ use ndarray::Array1;
 use num_dual::*;
 use quantity::si::{SINumber, SIUnit};
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use std::fmt::{self};
 use std::sync::Arc;
 
 /// Coefficients used in the Joback model.
@@ -103,7 +103,13 @@ impl Components for Joback {
 }
 
 impl IdealGas for Joback {
-    fn de_broglie_wavelength<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+    fn ideal_gas_model(&self) -> &dyn DeBroglieWavelength {
+        self
+    }
+}
+
+impl<D: DualNum<f64> + Copy> DeBroglieWavelengthDual<D> for Joback {
+    fn de_broglie_wavelength(&self, temperature: D) -> Array1<D> {
         let t = temperature;
         let t2 = t * t;
         let f = (temperature * KB / (P0 * A3)).ln();
@@ -122,9 +128,11 @@ impl IdealGas for Joback {
             (h - t * s) / (t * RGAS) + f
         })
     }
+}
 
-    fn ideal_gas_model(&self) -> String {
-        "Ideal gas (Joback)".into()
+impl fmt::Display for Joback {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Ideal gas (Joback)")
     }
 }
 

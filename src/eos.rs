@@ -15,7 +15,6 @@ use feos_core::python::user_defined::{PyIdealGas, PyResidual};
 use feos_core::*;
 use feos_derive::{Components, IdealGas, Residual};
 use ndarray::Array1;
-use num_dual::DualNum;
 use quantity::si::*;
 
 /// Collection of different [EquationOfState] implementations.
