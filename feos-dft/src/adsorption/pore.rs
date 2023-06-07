@@ -5,7 +5,7 @@ use crate::functional_contribution::FunctionalContribution;
 use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
-use feos_core::{Contributions, EosResult, EosUnit, State, StateBuilder};
+use feos_core::{Components, Contributions, EosResult, EosUnit, State, StateBuilder};
 use ndarray::prelude::*;
 use ndarray::Axis as Axis_nd;
 use ndarray::RemoveAxis;
@@ -274,7 +274,17 @@ impl Helium {
     fn new() -> DFT<Self> {
         let epsilon = arr1(&[EPSILON_HE]);
         let sigma = arr1(&[SIGMA_HE]);
-        (Self { epsilon, sigma }).into()
+        DFT(Self { epsilon, sigma })
+    }
+}
+
+impl Components for Helium {
+    fn components(&self) -> usize {
+        1
+    }
+
+    fn subset(&self, _: &[usize]) -> Self {
+        self.clone()
     }
 }
 
@@ -289,10 +299,6 @@ impl HelmholtzEnergyFunctional for Helium {
 
     fn molecule_shape(&self) -> MoleculeShape {
         MoleculeShape::Spherical(1)
-    }
-
-    fn subset(&self, _: &[usize]) -> DFT<Self> {
-        self.clone().into()
     }
 }
 

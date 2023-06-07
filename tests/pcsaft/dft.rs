@@ -3,6 +3,7 @@
 use approx::assert_relative_eq;
 use feos::hard_sphere::FMTVersion;
 use feos::pcsaft::{PcSaft, PcSaftFunctional, PcSaftParameters};
+use feos_core::joback::{Joback, JobackRecord};
 use feos_core::parameter::{IdentifierOption, Parameter};
 use feos_core::{Contributions, PhaseEquilibrium, State, Verbosity};
 use feos_dft::interface::PlanarInterface;
@@ -321,59 +322,60 @@ fn test_dft_water() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// #[test]
-// fn test_entropy_bulk_values() -> Result<(), Box<dyn Error>> {
-//     let params = PcSaftParameters::from_json(
-//         vec!["water_np"],
-//         "tests/pcsaft/test_parameters.json",
-//         None,
-//         IdentifierOption::Name,
-//     )?;
-//     let func = Arc::new(PcSaftFunctional::new(Arc::new(params)).into());
-//     let vle = PhaseEquilibrium::pure(&func, 350.0 * KELVIN, None, Default::default())?;
-//     let profile = PlanarInterface::from_pdgt(&vle, 2048, false)?.solve(None)?;
-//     let s_res = profile.profile.residual_entropy_density()?;
-//     let s_tot = profile.profile.entropy_density(Contributions::Total)?;
-//     println!(
-//         "Density:\n{}",
-//         profile.profile.density.index_axis(Axis(0), 0).to_owned()
-//     );
-//     println!(
-//         "liquid: {}, vapor: {}",
-//         profile.vle.liquid().density,
-//         profile.vle.vapor().density
-//     );
-//     println!("\nResidual:\n{}", s_res);
-//     println!(
-//         "liquid: {}, vapor: {}",
-//         profile.vle.liquid().entropy(Contributions::ResidualNvt) / profile.vle.liquid().volume,
-//         profile.vle.vapor().entropy(Contributions::ResidualNvt) / profile.vle.vapor().volume
-//     );
-//     println!("\nTotal:\n{}", s_tot);
-//     println!(
-//         "liquid: {}, vapor: {}",
-//         profile.vle.liquid().entropy(Contributions::Total) / profile.vle.liquid().volume,
-//         profile.vle.vapor().entropy(Contributions::Total) / profile.vle.vapor().volume
-//     );
-//     assert_relative_eq!(
-//         s_res.get(0),
-//         profile.vle.liquid().entropy(Contributions::ResidualNvt) / profile.vle.liquid().volume,
-//         max_relative = 1e-8,
-//     );
-//     assert_relative_eq!(
-//         s_res.get(2047),
-//         profile.vle.vapor().entropy(Contributions::ResidualNvt) / profile.vle.vapor().volume,
-//         max_relative = 1e-8,
-//     );
-//     assert_relative_eq!(
-//         s_tot.get(0),
-//         profile.vle.liquid().entropy(Contributions::Total) / profile.vle.liquid().volume,
-//         max_relative = 1e-8,
-//     );
-//     assert_relative_eq!(
-//         s_tot.get(2047),
-//         profile.vle.vapor().entropy(Contributions::Total) / profile.vle.vapor().volume,
-//         max_relative = 1e-8,
-//     );
-//     Ok(())
-// }
+#[test]
+fn test_entropy_bulk_values() -> Result<(), Box<dyn Error>> {
+    let params = PcSaftParameters::from_json(
+        vec!["water_np"],
+        "tests/pcsaft/test_parameters.json",
+        None,
+        IdentifierOption::Name,
+    )?;
+    let joback = Joback::new(vec![JobackRecord::new(1.0, 1e-2, 1e-4, 1e-6, 1e-8)]);
+    let func = Arc::new(PcSaftFunctional::new(Arc::new(params)).ideal_gas(joback));
+    let vle = PhaseEquilibrium::pure(&func, 350.0 * KELVIN, None, Default::default())?;
+    let profile = PlanarInterface::from_pdgt(&vle, 2048, false)?.solve(None)?;
+    let s_res = profile.profile.entropy_density(Contributions::Residual)?;
+    let s_tot = profile.profile.entropy_density(Contributions::Total)?;
+    println!(
+        "Density:\n{}",
+        profile.profile.density.index_axis(Axis(0), 0).to_owned()
+    );
+    println!(
+        "liquid: {}, vapor: {}",
+        profile.vle.liquid().density,
+        profile.vle.vapor().density
+    );
+    println!("\nResidual:\n{}", s_res);
+    println!(
+        "liquid: {}, vapor: {}",
+        profile.vle.liquid().entropy(Contributions::Residual) / profile.vle.liquid().volume,
+        profile.vle.vapor().entropy(Contributions::Residual) / profile.vle.vapor().volume
+    );
+    println!("\nTotal:\n{}", s_tot);
+    println!(
+        "liquid: {}, vapor: {}",
+        profile.vle.liquid().entropy(Contributions::Total) / profile.vle.liquid().volume,
+        profile.vle.vapor().entropy(Contributions::Total) / profile.vle.vapor().volume
+    );
+    assert_relative_eq!(
+        s_res.get(0),
+        profile.vle.liquid().entropy(Contributions::Residual) / profile.vle.liquid().volume,
+        max_relative = 1e-8,
+    );
+    assert_relative_eq!(
+        s_res.get(2047),
+        profile.vle.vapor().entropy(Contributions::Residual) / profile.vle.vapor().volume,
+        max_relative = 1e-8,
+    );
+    assert_relative_eq!(
+        s_tot.get(0),
+        profile.vle.liquid().entropy(Contributions::Total) / profile.vle.liquid().volume,
+        max_relative = 1e-8,
+    );
+    assert_relative_eq!(
+        s_tot.get(2047),
+        profile.vle.vapor().entropy(Contributions::Total) / profile.vle.vapor().volume,
+        max_relative = 1e-8,
+    );
+    Ok(())
+}

@@ -62,7 +62,7 @@ impl<I: Components, R: Components> Components for EquationOfState<I, R> {
     }
 }
 
-impl<I: IdealGas, R: Residual> IdealGas for EquationOfState<I, R> {
+impl<I: IdealGas, R: Components + Sync + Send> IdealGas for EquationOfState<I, R> {
     fn ideal_gas_model(&self) -> &dyn DeBroglieWavelength {
         self.ideal_gas.ideal_gas_model()
     }

@@ -27,14 +27,6 @@ impl<I: Components + Send + Sync, F: HelmholtzEnergyFunctional> HelmholtzEnergyF
         self.residual.molecule_shape()
     }
 
-    fn subset(&self, component_list: &[usize]) -> DFT<Self> {
-        Self::new(
-            Arc::new(self.ideal_gas.subset(component_list)),
-            Arc::new(self.residual.subset(component_list).0),
-        )
-        .into()
-    }
-
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.residual.compute_max_density(moles)
     }
@@ -45,13 +37,7 @@ impl<I: Components + Send + Sync, F: HelmholtzEnergyFunctional> HelmholtzEnergyF
 /// Needed (for now) to generically implement the `Residual`
 /// trait for Helmholtz energy functionals.
 #[derive(Clone)]
-pub struct DFT<F>(F);
-
-impl<F> From<F> for DFT<F> {
-    fn from(functional: F) -> Self {
-        Self(functional)
-    }
-}
+pub struct DFT<F>(pub F);
 
 impl<F> DFT<F> {
     pub fn into<F2: From<F>>(self) -> DFT<F2> {
@@ -66,6 +52,12 @@ impl<F> Deref for DFT<F> {
     }
 }
 
+impl<F> DFT<F> {
+    pub fn ideal_gas<I>(self, ideal_gas: I) -> DFT<EquationOfState<I, F>> {
+        DFT(EquationOfState::new(Arc::new(ideal_gas), Arc::new(self.0)))
+    }
+}
+
 impl<F: MolarWeight> MolarWeight for DFT<F> {
     fn molar_weight(&self) -> SIArray1 {
         self.0.molar_weight()
@@ -74,11 +66,11 @@ impl<F: MolarWeight> MolarWeight for DFT<F> {
 
 impl<F: HelmholtzEnergyFunctional> Components for DFT<F> {
     fn components(&self) -> usize {
-        self.component_index()[self.component_index().len() - 1] + 1
+        self.0.components()
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
-        self.0.subset(component_list)
+        Self(self.0.subset(component_list))
     }
 }
 
@@ -148,15 +140,12 @@ pub enum MoleculeShape<'a> {
 }
 
 /// A general Helmholtz energy functional.
-pub trait HelmholtzEnergyFunctional: Sized + Send + Sync {
+pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
     /// Return a slice of [FunctionalContribution]s.
     fn contributions(&self) -> &[Box<dyn FunctionalContribution>];
 
     /// Return the shape of the molecules and the necessary specifications.
     fn molecule_shape(&self) -> MoleculeShape;
-
-    /// Return a functional for the specified subset of components.
-    fn subset(&self, component_list: &[usize]) -> DFT<Self>;
 
     /// Return the maximum density in Angstrom^-3.
     ///
