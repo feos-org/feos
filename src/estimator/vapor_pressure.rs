@@ -1,5 +1,5 @@
 use super::{DataSet, EstimatorError};
-use feos_core::{Contributions, EosUnit, EquationOfState, PhaseEquilibrium, SolverOptions, State};
+use feos_core::{Contributions, EosUnit, PhaseEquilibrium, Residual, SolverOptions, State};
 use ndarray::{arr1, Array1};
 use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::collections::HashMap;
@@ -57,7 +57,7 @@ impl VaporPressure {
     }
 }
 
-impl<E: EquationOfState> DataSet<E> for VaporPressure {
+impl<E: Residual> DataSet<E> for VaporPressure {
     fn target(&self) -> &SIArray1 {
         &self.target
     }

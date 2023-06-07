@@ -1,7 +1,6 @@
 use super::{DataSet, EstimatorError};
 use feos_core::{
-    Contributions, DensityInitialization, EosUnit, EquationOfState, PhaseDiagram, PhaseEquilibrium,
-    State,
+    Contributions, DensityInitialization, EosUnit, PhaseDiagram, PhaseEquilibrium, Residual, State,
 };
 use ndarray::{arr1, s, Array1, ArrayView1, Axis};
 use quantity::si::{SIArray1, SINumber, SIUnit};
@@ -44,7 +43,7 @@ impl BinaryVleChemicalPotential {
     }
 }
 
-impl<E: EquationOfState> DataSet<E> for BinaryVleChemicalPotential {
+impl<E: Residual> DataSet<E> for BinaryVleChemicalPotential {
     fn target(&self) -> &SIArray1 {
         &self.target
     }
@@ -73,16 +72,22 @@ impl<E: EquationOfState> DataSet<E> for BinaryVleChemicalPotential {
         {
             let liquid_moles = arr1(&[xi, 1.0 - xi]) * SIUnit::reference_moles();
             let liquid = State::new_npt(eos, t, p, &liquid_moles, DensityInitialization::Liquid)?;
-            let mu_liquid = liquid.chemical_potential(Contributions::Total);
+            let mu_res_liquid = liquid.residual_chemical_potential();
             let vapor_moles = arr1(&[yi, 1.0 - yi]) * SIUnit::reference_moles();
             let vapor = State::new_npt(eos, t, p, &vapor_moles, DensityInitialization::Vapor)?;
-            let mu_vapor = vapor.chemical_potential(Contributions::Total);
+            let mu_res_vapor = vapor.residual_chemical_potential();
 
+            let kt = SIUnit::gas_constant() * t;
+            let rho_frac = (&liquid.partial_density / &vapor.partial_density).into_value()?;
             prediction.push(
-                mu_liquid.get(0) - mu_vapor.get(0) + 500.0 * SIUnit::reference_molar_energy(),
+                mu_res_liquid.get(0) - mu_res_vapor.get(0)
+                    + kt * rho_frac[0].ln()
+                    + 500.0 * SIUnit::reference_molar_energy(),
             );
             prediction.push(
-                mu_liquid.get(1) - mu_vapor.get(1) + 500.0 * SIUnit::reference_molar_energy(),
+                mu_res_liquid.get(1) - mu_res_vapor.get(1)
+                    + kt * rho_frac[1].ln()
+                    + 500.0 * SIUnit::reference_molar_energy(),
             );
         }
         Ok(SIArray1::from_vec(prediction))
@@ -129,7 +134,7 @@ impl BinaryVlePressure {
     }
 }
 
-impl<E: EquationOfState> DataSet<E> for BinaryVlePressure {
+impl<E: Residual> DataSet<E> for BinaryVlePressure {
     fn target(&self) -> &SIArray1 {
         &self.pressure
     }
@@ -227,7 +232,7 @@ impl BinaryPhaseDiagram {
     }
 }
 
-impl<E: EquationOfState> DataSet<E> for BinaryPhaseDiagram {
+impl<E: Residual> DataSet<E> for BinaryPhaseDiagram {
     fn target(&self) -> &SIArray1 {
         &self.target
     }
