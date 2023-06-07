@@ -1,7 +1,8 @@
 use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
+use feos_core::joback::{Joback, JobackRecord};
 use feos_core::parameter::{IdentifierOption, Parameter, ParameterError};
-use feos_core::{Contributions, StateBuilder};
+use feos_core::{Contributions, EquationOfState, StateBuilder};
 use ndarray::prelude::*;
 use ndarray::Zip;
 use quantity::si::*;
@@ -17,36 +18,38 @@ fn propane_butane_parameters() -> Result<Arc<PcSaftParameters>, ParameterError> 
     )?))
 }
 
-// #[test]
-// fn pressure_entropy_molefracs() -> Result<(), Box<dyn Error>> {
-//     let saft = Arc::new(PcSaft::new(propane_butane_parameters()?));
-//     let pressure = BAR;
-//     let temperature = 300.0 * KELVIN;
-//     let x = arr1(&[0.3, 0.7]);
-//     let state = StateBuilder::new(&saft)
-//         .temperature(temperature)
-//         .pressure(pressure)
-//         .molefracs(&x)
-//         .build()?;
-//     let molar_entropy = state.molar_entropy(Contributions::Total);
-//     let state = StateBuilder::new(&saft)
-//         .pressure(pressure)
-//         .molar_entropy(molar_entropy)
-//         .molefracs(&x)
-//         .build()?;
-//     assert_relative_eq!(
-//         state.molar_entropy(Contributions::Total),
-//         molar_entropy,
-//         max_relative = 1e-8
-//     );
-//     assert_relative_eq!(state.temperature, temperature, max_relative = 1e-10);
-//     assert_relative_eq!(
-//         state.pressure(Contributions::Total),
-//         pressure,
-//         max_relative = 1e-8
-//     );
-//     Ok(())
-// }
+#[test]
+fn pressure_entropy_molefracs() -> Result<(), Box<dyn Error>> {
+    let saft = Arc::new(PcSaft::new(propane_butane_parameters()?));
+    let joback = Joback::new(vec![JobackRecord::new(1.0, 1e-2, 1e-4, 1e-6, 1e-8); 2]);
+    let eos = Arc::new(EquationOfState::new(Arc::new(joback), saft));
+    let pressure = BAR;
+    let temperature = 300.0 * KELVIN;
+    let x = arr1(&[0.3, 0.7]);
+    let state = StateBuilder::new(&eos)
+        .temperature(temperature)
+        .pressure(pressure)
+        .molefracs(&x)
+        .build()?;
+    let molar_entropy = state.molar_entropy(Contributions::Total);
+    let state = StateBuilder::new(&eos)
+        .pressure(pressure)
+        .molar_entropy(molar_entropy)
+        .molefracs(&x)
+        .build()?;
+    assert_relative_eq!(
+        state.molar_entropy(Contributions::Total),
+        molar_entropy,
+        max_relative = 1e-8
+    );
+    assert_relative_eq!(state.temperature, temperature, max_relative = 1e-10);
+    assert_relative_eq!(
+        state.pressure(Contributions::Total),
+        pressure,
+        max_relative = 1e-8
+    );
+    Ok(())
+}
 
 #[test]
 fn volume_temperature_molefracs() -> Result<(), Box<dyn Error>> {

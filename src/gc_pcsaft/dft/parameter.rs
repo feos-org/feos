@@ -25,7 +25,7 @@ pub struct GcPcSaftFunctionalParameters {
     pub k_ij: Array2<f64>,
     pub sigma_ij: Array2<f64>,
     pub epsilon_k_ij: Array2<f64>,
-    chemical_records: Vec<ChemicalRecord>,
+    pub chemical_records: Vec<ChemicalRecord>,
     segment_records: Vec<SegmentRecord<GcPcSaftRecord>>,
     binary_segment_records: Option<Vec<BinaryRecord<String, f64>>>,
 }

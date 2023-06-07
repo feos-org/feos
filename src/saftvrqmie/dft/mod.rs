@@ -3,7 +3,7 @@ use crate::saftvrqmie::eos::SaftVRQMieOptions;
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
 use dispersion::AttractiveFunctional;
 use feos_core::parameter::Parameter;
-use feos_core::MolarWeight;
+use feos_core::{Components, MolarWeight};
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
@@ -59,25 +59,31 @@ impl SaftVRQMieFunctional {
         let att = AttractiveFunctional::new(parameters.clone());
         contributions.push(Box::new(att));
 
-        (Self {
+        DFT(Self {
             parameters,
             fmt_version,
             options: saft_options,
             contributions,
         })
-        .into()
     }
 }
 
-impl HelmholtzEnergyFunctional for SaftVRQMieFunctional {
-    fn subset(&self, component_list: &[usize]) -> DFT<Self> {
+impl Components for SaftVRQMieFunctional {
+    fn components(&self) -> usize {
+        self.parameters.pure_records.len()
+    }
+
+    fn subset(&self, component_list: &[usize]) -> Self {
         Self::with_options(
             Arc::new(self.parameters.subset(component_list)),
             self.fmt_version,
             self.options,
         )
+        .0
     }
+}
 
+impl HelmholtzEnergyFunctional for SaftVRQMieFunctional {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
             / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
