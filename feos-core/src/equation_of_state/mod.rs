@@ -78,7 +78,7 @@ impl<I: IdealGas, R: Residual> Residual for EquationOfState<I, R> {
     }
 }
 
-impl<I: IdealGas, R: Residual + MolarWeight> MolarWeight for EquationOfState<I, R> {
+impl<I, R: MolarWeight> MolarWeight for EquationOfState<I, R> {
     fn molar_weight(&self) -> SIArray1 {
         self.residual.molar_weight()
     }
