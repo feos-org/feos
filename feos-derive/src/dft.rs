@@ -79,6 +79,28 @@ fn impl_from(
         .collect()
 }
 
+// fn impl_from(
+//     variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
+// ) -> syn::Result<proc_macro2::TokenStream> {
+//     variants
+//         .iter()
+//         .map(|v| {
+//             let (variant_name, functional_name) = extract_names(v)?;
+//             Ok(quote! {
+//                 impl From<EquationOfState<IdealGasModel, #functional_name>> for EquationOfState<IdealGasModel, FunctionalVariant> {
+//                     fn from(f: EquationOfState<IdealGasModel, #functional_name>) -> Self {
+//                         EquationOfState::new(
+//                             f.ideal_gas.clone(),
+//                             Arc::new(FunctionalVariant::#variant_name(f.residual.clone()))
+//                         )
+//                     }
+//                 }
+//             })
+//         })
+//         .collect()
+// }
+
+
 fn impl_helmholtz_energy_functional(
     variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
 ) -> syn::Result<proc_macro2::TokenStream> {
@@ -119,11 +141,6 @@ fn impl_helmholtz_energy_functional(
 
     Ok(quote! {
         impl HelmholtzEnergyFunctional for FunctionalVariant {
-            fn subset(&self, component_list: &[usize]) -> DFT<Self> {
-                match self {
-                    #(#subset,)*
-                }
-            }
             fn molecule_shape(&self) -> MoleculeShape {
                 match self {
                     #(#molecule_shape,)*

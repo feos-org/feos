@@ -85,13 +85,9 @@ impl PyFunctionalVariant {
             tol_cross_assoc,
             dq_variant,
         };
-        let functional = Arc::new(PcSaftFunctional::with_options(
-            parameters.0,
-            fmt_version,
-            options,
-        ));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(functional.components()));
-        Self(Arc::new(EquationOfState::new(ideal_gas, functional).into()))
+        let functional: DFT<FunctionalVariant> = PcSaftFunctional::with_options(parameters.0, fmt_version, options).into();
+        let eos = functional.ideal_gas(IdealGasModel::NoModel(functional.components()));
+        Self(Arc::new(eos))
     }
 
     /// (heterosegmented) group contribution PC-SAFT Helmholtz energy functional.
@@ -163,24 +159,24 @@ impl PyFunctionalVariant {
         ))
     }
 
-    /// Helmholtz energy functional for hard sphere systems.
-    ///
-    /// Parameters
-    /// ----------
-    /// sigma : numpy.ndarray[float]
-    ///     The diameters of the hard spheres in Angstrom.
-    /// fmt_version : FMTVersion
-    ///     The specific variant of the FMT term.
-    ///
-    /// Returns
-    /// -------
-    /// HelmholtzEnergyFunctional
-    #[staticmethod]
-    fn fmt(sigma: &PyArray1<f64>, fmt_version: FMTVersion) -> Self {
-        Self(Arc::new(
-            FMTFunctional::new(&sigma.to_owned_array(), fmt_version).into(),
-        ))
-    }
+    // /// Helmholtz energy functional for hard sphere systems.
+    // ///
+    // /// Parameters
+    // /// ----------
+    // /// sigma : numpy.ndarray[float]
+    // ///     The diameters of the hard spheres in Angstrom.
+    // /// fmt_version : FMTVersion
+    // ///     The specific variant of the FMT term.
+    // ///
+    // /// Returns
+    // /// -------
+    // /// HelmholtzEnergyFunctional
+    // #[staticmethod]
+    // fn fmt(sigma: &PyArray1<f64>, fmt_version: FMTVersion) -> Self {
+    //     Self(Arc::new(
+    //         FMTFunctional::new(&sigma.to_owned_array(), fmt_version).into(),
+    //     ))
+    // }
 
     /// SAFT-VRQ Mie Helmholtz energy functional.
     ///
@@ -227,9 +223,9 @@ impl PyFunctionalVariant {
 
 impl_equation_of_state!(PyFunctionalVariant);
 
-impl_state!(DFT<FunctionalVariant>, PyFunctionalVariant);
-impl_state_molarweight!(DFT<FunctionalVariant>, PyFunctionalVariant);
-impl_phase_equilibrium!(DFT<FunctionalVariant>, PyFunctionalVariant);
+impl_state!(DFT<EquationOfState<IdealGasModel, FunctionalVariant>>, PyFunctionalVariant);
+impl_state_molarweight!(DFT<EquationOfState<IdealGasModel, FunctionalVariant>>, PyFunctionalVariant);
+impl_phase_equilibrium!(DFT<EquationOfState<IdealGasModel, FunctionalVariant>>, PyFunctionalVariant);
 
 impl_planar_interface!(FunctionalVariant);
 impl_surface_tension_diagram!(FunctionalVariant);
@@ -241,7 +237,7 @@ impl_pair_correlation!(FunctionalVariant);
 impl_solvation_profile!(FunctionalVariant);
 
 #[cfg(feature = "estimator")]
-impl_estimator!(DFT<FunctionalVariant>, PyFunctionalVariant);
+impl_estimator!(DFT<EquationOfState<IdealGasModel, FunctionalVariant>>, PyFunctionalVariant);
 
 #[pymodule]
 pub fn dft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {

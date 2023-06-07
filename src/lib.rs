@@ -35,10 +35,10 @@
 #![allow(clippy::too_many_arguments)]
 #![allow(deprecated)]
 
-// #[cfg(feature = "dft")]
-// mod dft;
-// #[cfg(feature = "dft")]
-// pub use dft::FunctionalVariant;
+#[cfg(feature = "dft")]
+mod dft;
+#[cfg(feature = "dft")]
+pub use dft::FunctionalVariant;
 mod eos;
 pub use eos::{IdealGasModel, ResidualModel};
 

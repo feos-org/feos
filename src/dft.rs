@@ -7,8 +7,9 @@ use crate::pcsaft::PcSaftFunctional;
 use crate::pets::PetsFunctional;
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::SaftVRQMieFunctional;
+use crate::{IdealGasModel, ResidualModel};
 use feos_core::*;
-use feos_derive::HelmholtzEnergyFunctional;
+use feos_derive::{Components, HelmholtzEnergyFunctional};
 use feos_dft::adsorption::*;
 use feos_dft::solvation::*;
 use feos_dft::*;
@@ -16,12 +17,13 @@ use ndarray::{Array1, Array2};
 use petgraph::graph::UnGraph;
 use petgraph::Graph;
 use quantity::si::*;
+use std::sync::Arc;
 
 /// Collection of different [HelmholtzEnergyFunctional] implementations.
 ///
 /// Particularly relevant for situations in which generic types
 /// are undesirable (e.g. FFI).
-#[derive(HelmholtzEnergyFunctional)]
+#[derive(Components, HelmholtzEnergyFunctional)]
 pub enum FunctionalVariant {
     #[cfg(feature = "pcsaft")]
     #[implement(fluid_parameters, molar_weight, pair_potential)]
