@@ -177,7 +177,7 @@ mod test {
     use crate::uvtheory::parameters::*;
     use approx::assert_relative_eq;
     use feos_core::parameter::{Identifier, Parameter, PureRecord};
-    use feos_core::{Contributions, State};
+    use feos_core::State;
     use ndarray::arr1;
     use quantity::si::{ANGSTROM, KELVIN, MOL, NAV, RGAS};
 

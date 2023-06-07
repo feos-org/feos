@@ -1,5 +1,4 @@
 use feos_core::python::joback::PyJobackRecord;
-use feos_core::python::parameter::*;
 use pyo3::prelude::*;
 
 #[pymodule]

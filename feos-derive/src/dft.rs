@@ -106,12 +106,6 @@ fn impl_helmholtz_energy_functional(
             Self::#name(functional) => functional.contributions()
         }
     });
-    let ideal_gas = variants.iter().map(|v| {
-        let name = &v.ident;
-        quote! {
-            Self::#name(functional) => functional.ideal_gas()
-        }
-    });
 
     let mut bond_lengths = Vec::new();
     for v in variants.iter() {
@@ -143,11 +137,6 @@ fn impl_helmholtz_energy_functional(
             fn contributions(&self) -> &[Box<dyn FunctionalContribution>] {
                 match self {
                     #(#contributions,)*
-                }
-            }
-            fn ideal_gas(&self) -> &dyn IdealGasContribution {
-                match self {
-                    #(#ideal_gas,)*
                 }
             }
             fn bond_lengths(&self, temperature: f64) -> UnGraph<(), f64> {

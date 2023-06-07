@@ -21,6 +21,7 @@ use crate::saftvrqmie::python::PySaftVRQMieParameters;
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::{FeynmanHibbsOrder, SaftVRQMieFunctional, SaftVRQMieOptions};
 
+use crate::eos::IdealGasModel;
 use feos_core::*;
 use feos_dft::adsorption::*;
 use feos_dft::interface::*;
@@ -33,14 +34,14 @@ use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
 #[cfg(feature = "estimator")]
 use pyo3::wrap_pymodule;
-use quantity::python::{PySINumber, PySIArray1, PySIArray2, PySIArray3, PySIArray4};
+use quantity::python::{PySIArray1, PySIArray2, PySIArray3, PySIArray4, PySINumber};
 use quantity::si::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 #[pyclass(name = "HelmholtzEnergyFunctional")]
 #[derive(Clone)]
-pub struct PyFunctionalVariant(pub Arc<DFT<FunctionalVariant>>);
+pub struct PyFunctionalVariant(pub Arc<DFT<EquationOfState<IdealGasModel, FunctionalVariant>>>);
 
 #[pymethods]
 impl PyFunctionalVariant {
@@ -84,9 +85,13 @@ impl PyFunctionalVariant {
             tol_cross_assoc,
             dq_variant,
         };
-        Self(Arc::new(
-            PcSaftFunctional::with_options(parameters.0, fmt_version, options).into(),
-        ))
+        let functional = Arc::new(PcSaftFunctional::with_options(
+            parameters.0,
+            fmt_version,
+            options,
+        ));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(functional.components()));
+        Self(Arc::new(EquationOfState::new(ideal_gas, functional).into()))
     }
 
     /// (heterosegmented) group contribution PC-SAFT Helmholtz energy functional.

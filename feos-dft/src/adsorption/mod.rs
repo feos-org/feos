@@ -2,8 +2,8 @@
 use super::functional::{HelmholtzEnergyFunctional, DFT};
 use super::solver::DFTSolver;
 use feos_core::{
-    Components, Contributions, DensityInitialization, EosError, EosResult, EosUnit, Residual,
-    SolverOptions, State, StateBuilder,
+    Components, Contributions, DensityInitialization, EosResult, EosUnit, Residual, SolverOptions,
+    State, StateBuilder,
 };
 use ndarray::{Array1, Dimension, Ix1, Ix3, RemoveAxis};
 use quantity::si::{SIArray1, SIArray2, SINumber, SIUnit};

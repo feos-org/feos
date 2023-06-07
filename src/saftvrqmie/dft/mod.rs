@@ -2,9 +2,8 @@ use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, Mono
 use crate::saftvrqmie::eos::SaftVRQMieOptions;
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
 use dispersion::AttractiveFunctional;
-use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
-use feos_core::{IdealGasContribution, MolarWeight};
+use feos_core::MolarWeight;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
@@ -24,7 +23,6 @@ pub struct SaftVRQMieFunctional {
     fmt_version: FMTVersion,
     options: SaftVRQMieOptions,
     contributions: Vec<Box<dyn FunctionalContribution>>,
-    joback: Joback,
 }
 
 impl SaftVRQMieFunctional {
@@ -61,17 +59,11 @@ impl SaftVRQMieFunctional {
         let att = AttractiveFunctional::new(parameters.clone());
         contributions.push(Box::new(att));
 
-        let joback = match &parameters.joback_records {
-            Some(joback_records) => Joback::new(joback_records.clone()),
-            None => Joback::default(parameters.m.len()),
-        };
-
         (Self {
             parameters,
             fmt_version,
             options: saft_options,
             contributions,
-            joback,
         })
         .into()
     }
@@ -94,10 +86,6 @@ impl HelmholtzEnergyFunctional for SaftVRQMieFunctional {
 
     fn contributions(&self) -> &[Box<dyn FunctionalContribution>] {
         &self.contributions
-    }
-
-    fn ideal_gas(&self) -> &dyn IdealGasContribution {
-        &self.joback
     }
 
     fn molecule_shape(&self) -> MoleculeShape {

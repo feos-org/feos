@@ -1,11 +1,9 @@
 use super::parameters::{PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord};
 use super::DQVariants;
-use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
     SegmentRecord,
 };
-use feos_core::python::joback::PyJobackRecord;
 use feos_core::python::parameter::*;
 use feos_core::*;
 use ndarray::Array2;

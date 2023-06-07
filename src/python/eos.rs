@@ -39,9 +39,9 @@ use pyo3::prelude::*;
 #[cfg(feature = "estimator")]
 use pyo3::wrap_pymodule;
 use quantity::python::{PySINumber, PySIArray1, PySIArray2};
+use std::sync::Arc;
 use quantity::si::*;
 use std::collections::HashMap;
-use std::sync::Arc;
 
 /// Collection of equations of state.
 #[pyclass(name = "EquationOfState")]
@@ -93,7 +93,7 @@ impl PyEquationOfState {
             parameters.0,
             options,
         )));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel);
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
@@ -136,7 +136,7 @@ impl PyEquationOfState {
             parameters.0,
             options,
         )));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel);
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
@@ -200,7 +200,7 @@ impl PyEquationOfState {
             parameters.0,
             options,
         )));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel);
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
@@ -243,9 +243,9 @@ impl PyEquationOfState {
         let residual = Arc::new(ResidualModel::UVTheory(UVTheory::with_options(
             parameters.0,
             options,
-        )));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel);
-        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
+        )?));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 
     /// SAFT-VRQ Mie equation of state.
@@ -288,7 +288,7 @@ impl PyEquationOfState {
             parameters.0,
             options,
         )));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel);
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
@@ -320,7 +320,7 @@ impl PyEquationOfState {
     /// -------
     /// EquationOfState
     fn joback(&self, parameters: Vec<PyJobackRecord>) -> Self {
-        let records = Arc::new(parameters.iter().map(|p| p.0.clone()).collect());
+        let records = parameters.iter().map(|p| p.0.clone()).collect();
         let ideal_gas = Arc::new(IdealGasModel::Joback(Joback::new(records)));
         Self(Arc::new(EquationOfState::new(ideal_gas, self.0.residual.clone())))
     }
@@ -331,7 +331,7 @@ impl_virial_coefficients!(PyEquationOfState);
 impl_state!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
 impl_state_molarweight!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
 impl_state_entropy_scaling!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
-// impl_phase_equilibrium!(IdealGasModel, ResidualModel, PyEquationOfState);
+impl_phase_equilibrium!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
 
 #[cfg(feature = "estimator")]
 impl_estimator!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);

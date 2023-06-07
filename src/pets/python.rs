@@ -1,7 +1,5 @@
 use super::parameters::*;
-use feos_core::joback::JobackRecord;
 use feos_core::parameter::*;
-use feos_core::python::joback::PyJobackRecord;
 use feos_core::python::parameter::*;
 use feos_core::{impl_binary_record, impl_json_handling, impl_parameter, impl_pure_record};
 use ndarray::Array2;
@@ -69,7 +67,7 @@ impl PyPetsRecord {
 }
 
 impl_json_handling!(PyPetsRecord);
-impl_pure_record!(PetsRecord, PyPetsRecord, JobackRecord, PyJobackRecord);
+impl_pure_record!(PetsRecord, PyPetsRecord);
 
 #[pyclass(name = "PetsBinaryRecord")]
 #[pyo3(
@@ -180,7 +178,6 @@ impl PyPetsParameters {
                     identifier,
                     molarweight.as_ref().map_or(1.0, |v| v[i]),
                     model_record,
-                    None,
                 )
                 // Hier Ideal Gas anstatt None???
             })
@@ -239,7 +236,6 @@ impl PyPetsParameters {
             ),
             molarweight.map_or(1.0, |v| v),
             PetsRecord::new(sigma, epsilon_k, viscosity, diffusion, thermal_conductivity),
-            None,
         );
         Self(Arc::new(PetsParameters::new_pure(pure_record)))
     }
@@ -265,7 +261,6 @@ pub fn pets(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<IdentifierOption>()?;
     m.add_class::<PyChemicalRecord>()?;
-    m.add_class::<PyJobackRecord>()?;
 
     m.add_class::<PyPetsRecord>()?;
     m.add_class::<PyPureRecord>()?;
