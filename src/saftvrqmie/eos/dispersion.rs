@@ -5,6 +5,7 @@ use num_dual::DualNum;
 use std::f64::consts::FRAC_PI_6;
 use std::fmt;
 use std::sync::Arc;
+use crate::saftvrqmie::parameters::FH_ORDER;
 
 const LAM_COEFF: [[f64; 4]; 4] = [
     [0.81096, 1.7888, -37.578, 92.284],
@@ -46,7 +47,7 @@ impl<D: DualNum<f64>> Alpha<D> {
         let mut alpha_ij: Array2<D> = Array2::zeros((nc, nc));
 
         for i in 0..nc {
-            for j in 0..nc {
+            for j in i..nc {
                 let sigma_ratio = D::one() * p.sigma_ij[[i, j]] / sigma_eff_ij[[i, j]];
                 let eps_ratio = D::one() * p.epsilon_k_ij[[i, j]] / epsilon_k_eff_ij[[i, j]];
                 let la = p.lambda_a_ij[[i, j]];
@@ -56,9 +57,21 @@ impl<D: DualNum<f64>> Alpha<D> {
                 let dmt = p.quantum_d_ij(i, j, temperature) / p.sigma_ij[[i, j]].powi(2);
                 let ma = sigma_ratio_a / (la - 3.0);
                 let mr = sigma_ratio_r / (lr - 3.0);
-                let q1a = sigma_ratio_a * sigma_ratio.powi(2) * la * (la - 1.0) / (la - 1.0);
-                let q1r = sigma_ratio_r * sigma_ratio.powi(2) * lr * (lr - 1.0) / (lr - 1.0);
-                alpha_ij[[i, j]] = (dmt * (q1a - q1r) + ma - mr) * p.c_ij[[i, j]] * eps_ratio;
+                alpha_ij[[i, j]] = ma - mr;
+                if FH_ORDER > 0 {
+                    let q1a = sigma_ratio_a * sigma_ratio.powi(2) * la;
+                    let q1r = sigma_ratio_r * sigma_ratio.powi(2) * lr;
+                    alpha_ij[[i, j]] += dmt * (q1a - q1r);
+                }
+                if FH_ORDER > 1 {
+                    let q2a = sigma_ratio_a * sigma_ratio.powi(4) * (la + 2.0) * la * (la - 1.0) * 0.5;
+                    let q2r = sigma_ratio_r * sigma_ratio.powi(4) * (lr + 2.0) * lr * (lr - 1.0) * 0.5;
+                    alpha_ij[[i, j]] += dmt.powi(2) * (q2a - q2r);
+                }
+                alpha_ij[[i, j]] *= eps_ratio * p.c_ij[[i, j]];
+                if i != j {
+                    alpha_ij[[j, i]] = alpha_ij[[i, j]];
+                }
             }
         }
         Self { alpha_ij }
@@ -199,12 +212,14 @@ fn first_order_perturbation<D: DualNum<f64>>(
     let n = parameters.sigma.len();
     let mut a1 = D::zero();
     for i in 0..n {
-        for j in 0..n {
+        for j in i..n {
             let x0 = d_hs_ij[[i, j]].recip() * parameters.sigma_ij[[i, j]];
             let x0_eff = s_eff_ij[[i, j]] / d_hs_ij[[i, j]];
             let dq_div_sigma_2 = dq_ij[[i, j]] / parameters.sigma_ij[[i, j]].powi(2);
+            let fac = if i == j {1.0} else {2.0};
             a1 += x_s[i]
                 * x_s[j]
+                * fac
                 * FRAC_PI_6
                 * rho_s
                 * d_hs_ij[[i, j]].powi(3)
@@ -235,13 +250,23 @@ fn first_order_perturbation_ij<D: DualNum<f64>>(
 ) -> D {
     let int_a = combine_sutherland_and_b(lambda_a, epsilon_k, zeta, x0, x0_eff);
     let int_r = combine_sutherland_and_b(lambda_r, epsilon_k, zeta, x0, x0_eff);
-    // Quantum correction
-    let int_qa = combine_sutherland_and_b(lambda_a + 2.0, epsilon_k, zeta, x0, x0_eff);
-    let int_qr = combine_sutherland_and_b(lambda_r + 2.0, epsilon_k, zeta, x0, x0_eff);
-    let qa1 = dq_div_sigma_2 * quantum_prefactor(lambda_a);
-    let qr1 = dq_div_sigma_2 * quantum_prefactor(lambda_r);
-
-    (int_qa * qa1 - int_qr * qr1 + int_a - int_r) * c
+    let mut a1_ij = int_a - int_r;
+    // Quantum corrections
+    if FH_ORDER > 0 {
+        let int_qa = combine_sutherland_and_b(lambda_a + 2.0, epsilon_k, zeta, x0, x0_eff);
+        let int_qr = combine_sutherland_and_b(lambda_r + 2.0, epsilon_k, zeta, x0, x0_eff);
+        let qa1 = dq_div_sigma_2 * quantum_prefactor(lambda_a);
+        let qr1 = dq_div_sigma_2 * quantum_prefactor(lambda_r);
+        a1_ij += int_qa * qa1 - int_qr * qr1;
+    }
+    if FH_ORDER > 1 {
+        let int_qa2 = combine_sutherland_and_b(lambda_a + 4.0, epsilon_k, zeta, x0, x0_eff);
+        let int_qr2 = combine_sutherland_and_b(lambda_r + 4.0, epsilon_k, zeta, x0, x0_eff);
+        let qa2 = dq_div_sigma_2.powi(2) * quantum_prefactor_second_order(lambda_a);
+        let qr2 = dq_div_sigma_2.powi(2) * quantum_prefactor_second_order(lambda_r);
+        a1_ij += int_qa2 * qa2 - int_qr2 * qr2;
+    }
+    a1_ij * c
 }
 
 fn eta_eff<D: DualNum<f64>>(lambda: f64, zeta: D) -> D {
@@ -320,15 +345,17 @@ fn second_order_perturbation<D: DualNum<f64>>(
         / (zeta * 4.0 + zeta.powi(2) * 4.0 - zeta.powi(3) * 4.0 + zeta.powi(4) + 1.0);
 
     for i in 0..n {
-        for j in 0..n {
+        for j in i..n {
             let chi = alpha.f(0, i, j) * zeta_bar
                 + alpha.f(1, i, j) * zeta_bar.powi(5)
                 + alpha.f(2, i, j) * zeta_bar.powi(8);
             let x0 = d_hs_ij[[i, j]].recip() * parameters.sigma_ij[[i, j]];
             let x0_eff = s_eff_ij[[i, j]] / d_hs_ij[[i, j]];
             let dq_div_sigma_2 = dq_ij[[i, j]] / parameters.sigma_ij[[i, j]].powi(2);
+            let fac = if i == j {1.0} else {2.0};
             a2 += x_s[i]
                 * x_s[j]
+                * fac
                 * FRAC_PI_6
                 * rho_s
                 * d_hs_ij[[i, j]].powi(3)
@@ -353,6 +380,11 @@ fn quantum_prefactor(lambda: f64) -> f64 {
     lambda * (lambda - 1.0)
 }
 
+#[inline]
+fn quantum_prefactor_second_order(lambda: f64) -> f64 {
+    0.5 * (lambda + 2.0) * (lambda + 1.0) * lambda * (lambda - 1.0)
+}
+
 fn second_order_perturbation_ij<D: DualNum<f64>>(
     lambda_a: f64,
     lambda_r: f64,
@@ -366,9 +398,12 @@ fn second_order_perturbation_ij<D: DualNum<f64>>(
     let lambda_2r = 2.0 * lambda_r;
     let lambda_2a = 2.0 * lambda_a;
     let lambda_ar = lambda_a + lambda_r;
-    // Quantum contributions
+    // Quantum contributions of first order
     let qa1 = dq_div_sigma_2 * quantum_prefactor(lambda_a);
     let qr1 = dq_div_sigma_2 * quantum_prefactor(lambda_r);
+    // Quantum contributions of second order
+    let qa2 = dq_div_sigma_2.powi(2) * quantum_prefactor_second_order(lambda_a);
+    let qr2 = dq_div_sigma_2.powi(2) * quantum_prefactor_second_order(lambda_r);
 
     let mut a2_ij = D::zero();
     let mut afac = D::one();
@@ -376,8 +411,8 @@ fn second_order_perturbation_ij<D: DualNum<f64>>(
     let mut arfac = -D::one() * 2.0;
     // Loop all contributions
     // 0: Mie contribution
-    // 1,2: Quantum corrections
-    for q in 0..3 {
+    // 1,..: Quantum corrections
+    for q in 0..FH_ORDER * 2 + 1 {
         let int_a =
             combine_sutherland_and_b(lambda_2a + 2.0 * q as f64, epsilon_k, zeta, x0, x0_eff);
         let int_r =
@@ -392,6 +427,19 @@ fn second_order_perturbation_ij<D: DualNum<f64>>(
             rfac = qr1 * qr1;
             afac = qa1 * qa1;
             arfac = -qa1 * qr1 * 2.0;
+            if FH_ORDER == 2 {
+                rfac += qr2 * 2.0;
+                afac += qa2 * 2.0;
+                arfac += - (qr2 + qa2) * 2.0;
+            }
+        } else if q == 3 {
+            rfac = qr2 * qr1 * 2.0;
+            afac = qa2 * qa1 * 2.0;
+            arfac = -(qr2 * qa1 + qa2 * qr1) * 2.0;
+        } else if q == 4 {
+            rfac = qr2 * qr2;
+            afac = qa2 * qa2;
+            arfac = -qr2 * qa2 * 2.0;
         }
         a2_ij += int_a * afac + int_ar * arfac + int_r * rfac;
     }
@@ -476,11 +524,20 @@ mod tests {
             parameters.calc_epsilon_k_eff_ij(i, j, temperature)
         });
         let alpha = Alpha::new(&parameters, &s_eff_ij, &epsilon_k_eff_ij, temperature);
-        assert_relative_eq!(
-            alpha.alpha_ij[[0, 0]].re(),
-            1.0239374984636636,
-            epsilon = 5e-8
-        );
+        if FH_ORDER == 1 {
+            assert_relative_eq!(
+                alpha.alpha_ij[[0, 0]].re(),
+                1.0239374984636636,
+                epsilon = 5e-8
+            );
+        } else if FH_ORDER == 2 {
+            assert_relative_eq!(
+                alpha.alpha_ij[[0, 0]].re(),
+                0.9918845918431217,
+                epsilon = 5e-8
+            );
+        }
+
     }
 
     #[test]
@@ -520,8 +577,7 @@ mod tests {
         let s_eff = p.calc_sigma_eff_ij(0, 0, temperature);
         let d_hs = p.hs_diameter_ij(0, 0, temperature, s_eff);
         let x0 = d_hs.recip() * p.sigma_ij[[0, 0]];
-        let x0_eff = s_eff / d_hs;
-
+        let x0_eff = s_eff / d_hs;      
         let a1_ij = first_order_perturbation_ij(
             p.lambda_a_ij[[0, 0]],
             p.lambda_r_ij[[0, 0]],
@@ -532,7 +588,12 @@ mod tests {
             p.c_ij[[0, 0]],
             dq_div_s2,
         );
-        let rel_err = (a1_ij.re() + 332.00915966785539) / 332.00915966785539;
+        let mut rel_err = 0.0;
+        if FH_ORDER == 1 {
+            rel_err = (a1_ij.re() + 332.00915966785539) / 332.00915966785539;
+        } else if FH_ORDER == 2 {
+            rel_err = (a1_ij.re() + 297.9700731864537) / 297.9700731864537;
+        }
         assert_relative_eq!(rel_err, 0.0, epsilon = 1e-7);
     }
 
@@ -666,9 +727,18 @@ mod tests {
         );
         let a3 = third_order_perturbation(&p, &alpha, &x_s, zeta_bar, &epsilon_k_eff_ij);
 
-        let rel_err_a1 = (a1.re() + 30.702499892515764) / 30.702499892515764;
-        let rel_err_a2 = (a2.re() + 67.046957636607587) / 67.046957636607587;
-        let rel_err_a3 = (a3.re() + 470.96241656623727) / 470.96241656623727;
+        let mut rel_err_a1 = 0.0;
+        let mut rel_err_a2 = 0.0;
+        let mut rel_err_a3 = 0.0;
+        if FH_ORDER == 1 {
+            rel_err_a1 = (a1.re() + 30.702499892515764) / 30.702499892515764;
+            rel_err_a2 = (a2.re() + 67.046957636607587) / 67.046957636607587;
+            rel_err_a3 = (a3.re() + 470.96241656623727) / 470.96241656623727;
+        } else if FH_ORDER == 2 {
+            rel_err_a1 = (a1.re() + 29.48107233383977) / 29.48107233383977;
+            rel_err_a2 = (a2.re() + 56.178134314767334) / 56.178134314767334;
+            rel_err_a3 = (a3.re() + 374.38725161974565) / 374.38725161974565;
+        }
         assert_relative_eq!(rel_err_a1.re(), 0.0, epsilon = 5e-7);
         assert_relative_eq!(rel_err_a2.re(), 0.0, epsilon = 5e-7);
         assert_relative_eq!(rel_err_a3.re(), 0.0, epsilon = 5e-7);

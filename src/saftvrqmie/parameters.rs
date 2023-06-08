@@ -10,6 +10,8 @@ use std::fmt::Write;
 use std::fs::File;
 use std::io::BufWriter;
 
+pub const FH_ORDER: usize  = 1;
+
 /// SAFT-VRQ Mie pure-component parameters.
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct SaftVRQMieRecord {

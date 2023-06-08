@@ -6,6 +6,7 @@ use num_dual::DualNum;
 use std::f64::consts::TAU;
 use std::fmt;
 use std::sync::Arc;
+use crate::saftvrqmie::parameters::FH_ORDER;
 
 /// Boltzmann's constant in J/K
 const KB: f64 = 1.380649e-23;
@@ -181,31 +182,36 @@ impl SaftVRQMieParameters {
         let s = self.sigma_ij[[i, j]];
         let eps = self.epsilon_k_ij[[i, j]];
         let c = self.c_ij[[i, j]];
+
         let q1r = lr * (lr - 1.0);
         let q1a = la * (la - 1.0);
+        let q2r = 0.5 * (lr + 2.0) * (lr + 1.0) * lr * (lr - 1.0);
+        let q2a = 0.5 * (la + 2.0) * (la + 1.0) * la * (la - 1.0);
         let d = self.quantum_d_ij(i, j, temperature);
-        let u = (d
-            * (r.powf(lr + 2.0).recip() * q1r * s.powf(lr)
-                - r.powf(la + 2.0).recip() * q1a * s.powf(la))
-            + r.powf(lr).recip() * s.powf(lr)
-            - r.powf(la).recip() * s.powf(la))
-            * c
-            * eps;
-
-        let u_r = (d
-            * (r.powf(lr + 3.0).recip() * -q1r * (lr + 2.0) * s.powf(lr)
-                + r.powf(la + 3.0).recip() * q1a * (la + 2.0) * s.powf(la))
-            - r.powf(lr + 1.0).recip() * lr * s.powf(lr)
-            + r.powf(la + 1.0).recip() * la * s.powf(la))
-            * c
-            * eps;
-        let u_rr = (d
-            * (r.powf(lr + 4.0).recip() * q1r * (lr + 2.0) * (lr + 3.0) * s.powf(lr)
-                - r.powf(la + 4.0).recip() * q1a * (la + 2.0) * (la + 3.0) * s.powf(la))
-            + r.powf(lr + 2.0).recip() * lr * (lr + 1.0) * s.powf(lr)
-            - r.powf(la + 2.0).recip() * la * (la + 1.0) * s.powf(la))
-            * c
-            * eps;
+        let mut u = r.powf(lr).recip() * s.powf(lr) - r.powf(la).recip() * s.powf(la);
+        let mut u_r = - r.powf(lr + 1.0).recip() * lr * s.powf(lr)
+            + r.powf(la + 1.0).recip() * la * s.powf(la);
+        let mut u_rr = r.powf(lr + 2.0).recip() * lr * (lr + 1.0) * s.powf(lr)
+            - r.powf(la + 2.0).recip() * la * (la + 1.0) * s.powf(la);
+        if FH_ORDER > 0 {
+            u += d * (r.powf(lr + 2.0).recip() * q1r * s.powf(lr)
+                - r.powf(la + 2.0).recip() * q1a * s.powf(la));
+            u_r += d * (r.powf(lr + 3.0).recip() * -q1r * (lr + 2.0) * s.powf(lr)
+                + r.powf(la + 3.0).recip() * q1a * (la + 2.0) * s.powf(la));
+            u_rr += d * (r.powf(lr + 4.0).recip() * q1r * (lr + 2.0) * (lr + 3.0) * s.powf(lr)
+                - r.powf(la + 4.0).recip() * q1a * (la + 2.0) * (la + 3.0) * s.powf(la));
+        }
+        if FH_ORDER > 1 {
+            u += d.powi(2) * (r.powf(lr + 4.0).recip() * q2r * s.powf(lr)
+                - r.powf(la + 4.0).recip() * q2a * s.powf(la));
+            u_r += d.powi(2) * ( - r.powf(lr + 5.0).recip() * q2r * (lr + 4.0) * s.powf(lr)
+                + r.powf(la + 5.0).recip() * q2a * (la + 4.0) * s.powf(la));
+            u_rr += d.powi(2) * (r.powf(lr + 6.0).recip() * q2r * (lr + 4.0) * (lr + 5.0) * s.powf(lr)
+                - r.powf(la + 6.0).recip() * q2a * (la + 4.0) * (la + 5.0) * s.powf(la));
+        }
+        u *= c * eps;
+        u_r *= c * eps;
+        u_rr *= c * eps;
         [u, u_r, u_rr]
     }
 }
