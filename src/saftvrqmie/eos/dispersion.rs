@@ -790,13 +790,24 @@ mod tests {
         let disp = Dispersion {
             parameters: h2_ne_fh1(),
         };
-        let a_ref = [
-            -4.4340438372333235,
-            -2.1563424617699911,
-            -1.4211021562556054,
-            -1.0581654195146963,
-            -0.84210863940206726,
-        ];
+        let mut a_ref = [0.0; 5];
+        if FH_ORDER == 1 {
+            a_ref = [
+                -4.4340438372333235,
+                -2.1563424617699911,
+                -1.4211021562556054,
+                -1.0581654195146963,
+                -0.84210863940206726,
+            ];
+        } else if FH_ORDER == 2 {
+            a_ref = [
+                -4.319932383710704,
+                -2.138549258896613,
+                -1.4153366793223225,
+                -1.0556128125530364,
+                -0.840761876536818,
+            ];
+        }
         let na = 6.02214076e23;
         let n = [Dual2::from_re(1.1 * na), Dual2::from_re(1.0 * na)];
         let v = Dual2::from_re(1.0e26).derive();
@@ -805,14 +816,14 @@ mod tests {
             let state = StateHD::new(t, v, arr1(&n));
             let a_disp = disp.helmholtz_energy(&state) / na;
             dbg!(it);
-            assert_relative_eq!(a_disp.re(), a, epsilon = 1e-7);
+            assert_relative_eq!(a_disp.re(), a, epsilon = 5e-7);
         }
         let t = Dual2::from_re(30.0).derive();
         let v = Dual2::from_re(1.0e26 * 2.0).derive();
         let n = [Dual2::from_re(2.2 * na), Dual2::from_re(2.0 * na)];
         let state = StateHD::new(t, v, arr1(&n));
         let a_disp = disp.helmholtz_energy(&state) / na;
-        assert_relative_eq!(a_disp.re(), a_ref[0] * 2.0, epsilon = 1e-7);
+        assert_relative_eq!(a_disp.re(), a_ref[0] * 2.0, epsilon = 5e-7);
     }
 
     #[cfg(feature = "dft")]

@@ -344,7 +344,11 @@ mod tests {
         let s = StateHD::new(t, v, arr1(&[n]));
         let a_rust = hs.helmholtz_energy(&s);
         dbg!(a_rust / na);
-        assert_relative_eq!(a_rust / na, 0.54586730268029837, epsilon = 5e-7);
+        if FH_ORDER == 1 {
+            assert_relative_eq!(a_rust / na, 0.54586730268029837, epsilon = 5e-7);
+        } else if FH_ORDER == 2 {
+            assert_relative_eq!(a_rust / na, 0.5934447545083482, epsilon = 5e-7);
+        }
     }
 
     #[test]
@@ -360,6 +364,10 @@ mod tests {
         let a_rust = hs.helmholtz_energy(&s);
         dbg!(a_rust / na);
         // non-additive: 1.8249307925054206
-        assert_relative_eq!(a_rust / na, 1.8074833133403905, epsilon = 5e-7);
+        if FH_ORDER == 1 {
+            assert_relative_eq!(a_rust / na, 1.8074833133403905, epsilon = 5e-7);
+        } else if FH_ORDER == 2 {
+            assert_relative_eq!(a_rust / na, 1.898534632022848, epsilon = 5e-7);
+        }
     }
 }
