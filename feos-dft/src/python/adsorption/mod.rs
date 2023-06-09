@@ -229,11 +229,6 @@ macro_rules! impl_adsorption_isotherm {
                 self.0.pressure().into()
             }
 
-            // #[getter]
-            // fn get_molar_gibbs_energy(&self) -> PySIArray1 {
-            //     self.0.molar_gibbs_energy().into()
-            // }
-
             #[getter]
             fn get_adsorption(&self) -> PySIArray2 {
                 self.0.adsorption().into()

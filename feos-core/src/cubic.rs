@@ -244,9 +244,8 @@ impl MolarWeight for PengRobinson {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::state::{SolverOptions, State};
-    use crate::Contributions;
-    use crate::{EosResult, Verbosity};
+    use crate::state::{Contributions, State};
+    use crate::{EosResult, SolverOptions, Verbosity};
     use approx::*;
     use quantity::si::*;
     use std::sync::Arc;

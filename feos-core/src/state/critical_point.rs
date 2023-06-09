@@ -1,7 +1,7 @@
-use super::{SolverOptions, State, StateHD, TPSpec, Verbosity};
+use super::{DensityInitialization, State, StateHD, TPSpec};
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::{DensityInitialization, EosUnit};
+use crate::{EosUnit, SolverOptions, Verbosity};
 use nalgebra::{DMatrix, DVector, SVector, SymmetricEigen};
 use ndarray::{arr1, Array1};
 use num_dual::{

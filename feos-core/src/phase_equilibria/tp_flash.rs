@@ -1,7 +1,8 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::state::{Contributions, DensityInitialization, SolverOptions, State, Verbosity};
+use crate::state::{Contributions, DensityInitialization, State};
+use crate::{SolverOptions, Verbosity};
 use ndarray::*;
 use num_dual::linalg::norm;
 use quantity::si::{SIArray1, SINumber};

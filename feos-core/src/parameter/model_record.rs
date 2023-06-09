@@ -123,60 +123,59 @@ where
     }
 }
 
-// #[cfg(test)]
-// mod test {
-//     use super::*;
-//     use crate::joback::JobackRecord;
+#[cfg(test)]
+mod test {
+    use super::*;
 
-//     #[derive(Serialize, Deserialize, Debug, Default, Clone)]
-//     struct TestModelRecordSegments {
-//         a: f64,
-//     }
+    #[derive(Serialize, Deserialize, Debug, Default, Clone)]
+    struct TestModelRecordSegments {
+        a: f64,
+    }
 
-//     #[test]
-//     fn deserialize() {
-//         let r = r#"
-//         {
-//             "identifier": {
-//                 "cas": "123-4-5"
-//             },
-//             "molarweight": 16.0426,
-//             "model_record": {
-//                 "a": 0.1
-//             }
-//         }
-//         "#;
-//         let record: PureRecord<TestModelRecordSegments, JobackRecord> =
-//             serde_json::from_str(r).expect("Unable to parse json.");
-//         assert_eq!(record.identifier.cas, Some("123-4-5".into()))
-//     }
+    #[test]
+    fn deserialize() {
+        let r = r#"
+        {
+            "identifier": {
+                "cas": "123-4-5"
+            },
+            "molarweight": 16.0426,
+            "model_record": {
+                "a": 0.1
+            }
+        }
+        "#;
+        let record: PureRecord<TestModelRecordSegments> =
+            serde_json::from_str(r).expect("Unable to parse json.");
+        assert_eq!(record.identifier.cas, Some("123-4-5".into()))
+    }
 
-//     #[test]
-//     fn deserialize_list() {
-//         let r = r#"
-//         [
-//             {
-//                 "identifier": {
-//                     "cas": "1"
-//                 },
-//                 "molarweight": 1.0,
-//                 "model_record": {
-//                     "a": 1.0
-//                 }
-//             },
-//             {
-//                 "identifier": {
-//                     "cas": "2"
-//                 },
-//                 "molarweight": 2.0,
-//                 "model_record": {
-//                     "a": 2.0
-//                 }
-//             }
-//         ]"#;
-//         let records: Vec<PureRecord<TestModelRecordSegments, JobackRecord>> =
-//             serde_json::from_str(r).expect("Unable to parse json.");
-//         assert_eq!(records[0].identifier.cas, Some("1".into()));
-//         assert_eq!(records[1].identifier.cas, Some("2".into()))
-//     }
-// }
+    #[test]
+    fn deserialize_list() {
+        let r = r#"
+        [
+            {
+                "identifier": {
+                    "cas": "1"
+                },
+                "molarweight": 1.0,
+                "model_record": {
+                    "a": 1.0
+                }
+            },
+            {
+                "identifier": {
+                    "cas": "2"
+                },
+                "molarweight": 2.0,
+                "model_record": {
+                    "a": 2.0
+                }
+            }
+        ]"#;
+        let records: Vec<PureRecord<TestModelRecordSegments>> =
+            serde_json::from_str(r).expect("Unable to parse json.");
+        assert_eq!(records[0].identifier.cas, Some("1".into()));
+        assert_eq!(records[1].identifier.cas, Some("2".into()))
+    }
+}

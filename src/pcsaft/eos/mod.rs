@@ -458,20 +458,6 @@ mod tests {
         }
     }
 
-    // #[test]
-    // fn speed_of_sound() {
-    //     let e = Arc::new(PcSaft::new(propane_parameters()));
-    //     let t = 300.0 * KELVIN;
-    //     let p = BAR;
-    //     let m = arr1(&[1.0]) * MOL;
-    //     let s = State::new_npt(&e, t, p, &m, DensityInitialization::None).unwrap();
-    //     assert_relative_eq!(
-    //         s.speed_of_sound(),
-    //         245.00185709137546 * METER / SECOND,
-    //         epsilon = 1e-4
-    //     )
-    // }
-
     #[test]
     fn mix_single() {
         let e1 = Arc::new(PcSaft::new(propane_parameters()));

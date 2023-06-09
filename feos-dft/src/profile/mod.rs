@@ -288,11 +288,6 @@ where
     pub fn total_moles(&self) -> SINumber {
         self.moles().sum()
     }
-
-    // /// Return the chemical potential of the system
-    // pub fn chemical_potential(&self) -> SIArray1 {
-    //     self.bulk.chemical_potential(Contributions::Total)
-    // }
 }
 
 impl<D: Dimension, F> Clone for DFTProfile<D, F> {

@@ -1,10 +1,8 @@
 use super::{PhaseDiagram, PhaseEquilibrium};
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::state::{
-    Contributions, DensityInitialization, SolverOptions, State, StateBuilder, TPSpec,
-};
-use crate::EosUnit;
+use crate::state::{Contributions, DensityInitialization, State, StateBuilder, TPSpec};
+use crate::{EosUnit, SolverOptions};
 use ndarray::{arr1, arr2, concatenate, s, Array1, Array2, Axis};
 use num_dual::linalg::{norm, LU};
 use quantity::si::{SIArray1, SINumber, SIUnit};

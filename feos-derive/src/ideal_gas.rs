@@ -28,18 +28,6 @@ fn impl_ideal_gas(
             }
         }
     });
-    // let de_broglie_wavelength = variants.iter().map(|v| {
-    //     let name = &v.ident;
-    //     if name == "NoModel" {
-    //         quote! {
-    //             Self::#name(_) => panic!("No ideal gas model initialized!")
-    //         }
-    //     } else {
-    //         quote! {
-    //             Self::#name(ideal_gas) => ideal_gas.de_broglie_wavelength(temperature)
-    //         }
-    //     }
-    // });
 
     quote! {
         impl IdealGas for IdealGasModel {
@@ -48,11 +36,6 @@ fn impl_ideal_gas(
                     #(#ideal_gas_model,)*
                 }
             }
-            // fn de_broglie_wavelength<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
-            //     match self {
-            //         #(#de_broglie_wavelength,)*
-            //     }
-            // }
         }
     }
 }

@@ -1,8 +1,8 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::state::{Contributions, DensityInitialization, SolverOptions, State, TPSpec, Verbosity};
-use crate::EosUnit;
+use crate::state::{Contributions, DensityInitialization, State, TPSpec};
+use crate::{EosUnit, SolverOptions, Verbosity};
 use ndarray::{arr1, Array1};
 use quantity::si::{SINumber, SIUnit};
 use std::convert::TryFrom;

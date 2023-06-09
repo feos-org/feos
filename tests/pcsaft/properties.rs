@@ -36,7 +36,6 @@ fn test_dln_phi_dp() -> Result<(), Box<dyn Error>> {
     let ln_phi_h = sh.ln_phi()[0];
     let dln_phi_dp = s.dln_phi_dp().get(0);
     let dln_phi_dp_h = (ln_phi_h - ln_phi) / h;
-    println!("{}", s.partial_molar_volume());
     assert_relative_eq!(dln_phi_dp, dln_phi_dp_h, max_relative = 1e-6);
     Ok(())
 }

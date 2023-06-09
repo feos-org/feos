@@ -1,8 +1,8 @@
 use super::{PhaseDiagram, PhaseEquilibrium};
 use crate::equation_of_state::Residual;
 use crate::errors::EosResult;
-use crate::state::{SolverOptions, State};
-use crate::Contributions;
+use crate::state::{Contributions, State};
+use crate::SolverOptions;
 use quantity::si::{SIArray1, SINumber};
 use std::sync::Arc;
 

@@ -1,15 +1,17 @@
 //! Implementation of the ideal gas heat capacity (de Broglie wavelength)
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 
-use crate::equation_of_state::{Components, DeBroglieWavelength, DeBroglieWavelengthDual};
-use crate::{parameter::*, Residual};
+use crate::equation_of_state::{
+    Components, DeBroglieWavelength, DeBroglieWavelengthDual, Residual,
+};
+use crate::parameter::*;
 use crate::{EosResult, EosUnit, IdealGas};
 use conv::ValueInto;
 use ndarray::Array1;
 use num_dual::*;
 use quantity::si::{SINumber, SIUnit};
 use serde::{Deserialize, Serialize};
-use std::fmt::{self};
+use std::fmt;
 
 /// Coefficients used in the Joback model.
 ///
@@ -67,7 +69,6 @@ impl<T: Copy + ValueInto<f64>> FromSegments<T> for JobackRecord {
 /// [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 pub struct Joback {
     pub records: Vec<JobackRecord>,
-    // de_broglie: Box<dyn DeBroglieWavelength>,
 }
 
 impl Joback {

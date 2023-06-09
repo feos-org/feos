@@ -4,9 +4,9 @@ use crate::errors::{EosError, EosResult};
 use crate::state::{
     Contributions,
     DensityInitialization::{InitialDensity, Liquid, Vapor},
-    SolverOptions, State, StateBuilder, TPSpec, Verbosity,
+    State, StateBuilder, TPSpec,
 };
-use crate::EosUnit;
+use crate::{EosUnit, SolverOptions, Verbosity};
 use ndarray::*;
 use num_dual::linalg::{norm, LU};
 use quantity::si::{SIArray1, SINumber, SIUnit};

@@ -346,8 +346,8 @@ pub fn eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyEquationOfState>()?;
     m.add_class::<PyState>()?;
     m.add_class::<PyStateVec>()?;
-    // m.add_class::<PyPhaseDiagram>()?;
-    // m.add_class::<PyPhaseEquilibrium>()?;
+    m.add_class::<PyPhaseDiagram>()?;
+    m.add_class::<PyPhaseEquilibrium>()?;
 
     #[cfg(feature = "estimator")]
     m.add_wrapped(wrap_pymodule!(estimator_eos))?;

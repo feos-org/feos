@@ -1,8 +1,8 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::state::{Contributions, DensityInitialization, SolverOptions, State, Verbosity};
-use crate::EosUnit;
+use crate::state::{Contributions, DensityInitialization, State};
+use crate::{EosUnit, SolverOptions, Verbosity};
 use ndarray::*;
 use num_dual::linalg::smallest_ev;
 use num_dual::linalg::LU;

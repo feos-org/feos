@@ -12,7 +12,6 @@ use crate::errors::{EosError, EosResult};
 use crate::EosUnit;
 use cache::Cache;
 use ndarray::prelude::*;
-// use num_dual::linalg::{norm, LU};
 use num_dual::*;
 use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::convert::TryFrom;
@@ -26,77 +25,6 @@ mod residual_properties;
 mod statevec;
 pub use builder::StateBuilder;
 pub use statevec::StateVec;
-
-/// Level of detail in the iteration output.
-#[derive(Copy, Clone, PartialOrd, PartialEq, Eq)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
-pub enum Verbosity {
-    /// Do not print output.
-    None,
-    /// Print information about the success of failure of the iteration.
-    Result,
-    /// Print a detailed outpur for every iteration.
-    Iter,
-}
-
-impl Default for Verbosity {
-    fn default() -> Self {
-        Self::None
-    }
-}
-
-/// Options for the various phase equilibria solvers.
-///
-/// If the values are [None], solver specific default
-/// values are used.
-#[derive(Copy, Clone, Default)]
-pub struct SolverOptions {
-    /// Maximum number of iterations.
-    pub max_iter: Option<usize>,
-    /// Tolerance.
-    pub tol: Option<f64>,
-    /// Iteration outpput indicated by the [Verbosity] enum.
-    pub verbosity: Verbosity,
-}
-
-impl From<(Option<usize>, Option<f64>, Option<Verbosity>)> for SolverOptions {
-    fn from(options: (Option<usize>, Option<f64>, Option<Verbosity>)) -> Self {
-        Self {
-            max_iter: options.0,
-            tol: options.1,
-            verbosity: options.2.unwrap_or(Verbosity::None),
-        }
-    }
-}
-
-impl SolverOptions {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn max_iter(mut self, max_iter: usize) -> Self {
-        self.max_iter = Some(max_iter);
-        self
-    }
-
-    pub fn tol(mut self, tol: f64) -> Self {
-        self.tol = Some(tol);
-        self
-    }
-
-    pub fn verbosity(mut self, verbosity: Verbosity) -> Self {
-        self.verbosity = verbosity;
-        self
-    }
-
-    pub fn unwrap_or(self, max_iter: usize, tol: f64) -> (usize, f64, Verbosity) {
-        (
-            self.max_iter.unwrap_or(max_iter),
-            self.tol.unwrap_or(tol),
-            self.verbosity,
-        )
-    }
-}
 
 /// Possible contributions that can be computed.
 #[derive(Clone, Copy)]
