@@ -20,7 +20,6 @@ use non_additive_hs::NonAddHardSphere;
 #[derive(Copy, Clone)]
 pub struct SaftVRQMieOptions {
     pub max_eta: f64,
-    pub fh_order: FeynmanHibbsOrder,
     pub inc_nonadd_term: bool,
 }
 
@@ -28,7 +27,6 @@ impl Default for SaftVRQMieOptions {
     fn default() -> Self {
         Self {
             max_eta: 0.5,
-            fh_order: FeynmanHibbsOrder::FH1,
             inc_nonadd_term: true,
         }
     }
@@ -38,10 +36,30 @@ impl Default for SaftVRQMieOptions {
 #[derive(Copy, Clone)]
 #[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum FeynmanHibbsOrder {
+    /// Mie potential
+    FH0,
     /// First order correction
     FH1,
     /// Second order correction
     FH2,
+}
+
+impl FeynmanHibbsOrder {
+    pub fn from_i32(fh: i32) -> FeynmanHibbsOrder {
+        match fh {
+            0 => FeynmanHibbsOrder::FH0,
+            1 => FeynmanHibbsOrder::FH1,
+            2 => FeynmanHibbsOrder::FH2,
+            _ => panic!("Unknown valueto convert to FeynmanHibbsOrder: {}", fh),
+        }
+    }
+    pub fn to_i32(fh_order: FeynmanHibbsOrder) -> i32 {
+        match fh_order {
+            FeynmanHibbsOrder::FH0 => 0,
+            FeynmanHibbsOrder::FH1 => 1,
+            FeynmanHibbsOrder::FH2 => 2,
+        }
+    }
 }
 
 /// SAFT-VRQ Mie equation of state.
@@ -60,10 +78,6 @@ impl SaftVRQMie {
     }
 
     pub fn with_options(parameters: Arc<SaftVRQMieParameters>, options: SaftVRQMieOptions) -> Self {
-        match options.fh_order {
-            FeynmanHibbsOrder::FH1 => (),
-            FeynmanHibbsOrder::FH2 => unimplemented!(),
-        };
         let mut contributions: Vec<Box<dyn HelmholtzEnergy>> = Vec::with_capacity(4);
         contributions.push(Box::new(HardSphere {
             parameters: parameters.clone(),
