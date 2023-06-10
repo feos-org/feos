@@ -20,7 +20,7 @@ use crate::pets::{Pets, PetsOptions};
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::python::PySaftVRQMieParameters;
 #[cfg(feature = "saftvrqmie")]
-use crate::saftvrqmie::{FeynmanHibbsOrder, SaftVRQMie, SaftVRQMieOptions};
+use crate::saftvrqmie::{SaftVRQMie, SaftVRQMieOptions};
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::python::PyUVParameters;
 #[cfg(feature = "uvtheory")]
@@ -243,9 +243,6 @@ impl PyEosVariant {
     ///     The parameters of the SAFT-VRQ Mie equation of state to use.
     /// max_eta : float, optional
     ///     Maximum packing fraction. Defaults to 0.5.
-    /// fh_order : FeynmanHibbsOrder, optional
-    ///     Which Feyman-Hibbs correction order to use. Defaults to FeynmanHibbsOrder.FH1.
-    ///     Currently, only the first order is implemented.
     /// inc_nonadd_term : bool, optional
     ///     Include non-additive correction to the hard-sphere reference. Defaults to True.
     ///
@@ -257,18 +254,16 @@ impl PyEosVariant {
     #[cfg(feature = "saftvrqmie")]
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, max_eta=0.5, fh_order=FeynmanHibbsOrder::FH1, inc_nonadd_term=true),
-        text_signature = "(parameters, max_eta=0.5, fh_order, inc_nonadd_term=True)"
+        signature = (parameters, max_eta=0.5, inc_nonadd_term=true),
+        text_signature = "(parameters, max_eta=0.5, inc_nonadd_term=True)"
     )]
     fn saftvrqmie(
         parameters: PySaftVRQMieParameters,
         max_eta: f64,
-        fh_order: FeynmanHibbsOrder,
         inc_nonadd_term: bool,
     ) -> Self {
         let options = SaftVRQMieOptions {
             max_eta,
-            fh_order,
             inc_nonadd_term,
         };
         Self(Arc::new(EosVariant::SaftVRQMie(SaftVRQMie::with_options(
