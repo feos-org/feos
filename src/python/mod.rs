@@ -13,12 +13,12 @@ use pyo3::prelude::*;
 use pyo3::wrap_pymodule;
 use quantity::python::quantity as quantity_module;
 
-mod ideal_gas;
 mod cubic;
 mod eos;
-use ideal_gas::ideal_gas as ideal_gas_module;
+mod ideal_gas;
 use cubic::cubic as cubic_module;
 use eos::eos as eos_module;
+use ideal_gas::ideal_gas as ideal_gas_module;
 
 #[cfg(feature = "dft")]
 mod dft;

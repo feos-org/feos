@@ -29,19 +29,19 @@ use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, VirialOrder};
 use feos_core::cubic::PengRobinson;
 use feos_core::joback::Joback;
 use feos_core::python::cubic::PyPengRobinsonParameters;
+use feos_core::python::joback::PyJobackParameters;
+use feos_core::python::user_defined::{PyIdealGas, PyResidual};
 use feos_core::*;
-use feos_core::python::joback::PyJobackRecord;
-use feos_core::python::user_defined::{PyResidual, PyIdealGas};
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
 #[cfg(feature = "estimator")]
 use pyo3::wrap_pymodule;
-use quantity::python::{PySINumber, PySIArray1, PySIArray2};
-use std::sync::Arc;
+use quantity::python::{PySIArray1, PySIArray2, PySINumber};
 use quantity::si::*;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 /// Collection of equations of state.
 #[pyclass(name = "EquationOfState")]
@@ -296,33 +296,37 @@ impl PyEquationOfState {
     ///
     /// Parameters
     /// ----------
-    /// ideal_gas : Class, optional
+    /// ideal_gas : Class
     ///     A python class implementing the necessary methods
-    ///     to be used as a ideal gas model.
+    ///     to be used as an ideal gas model.
     ///
     /// Returns
     /// -------
     /// EquationOfState
     fn python_ideal_gas(&self, ideal_gas: Py<PyAny>) -> PyResult<Self> {
         let ig = Arc::new(IdealGasModel::Python(PyIdealGas::new(ideal_gas)?));
-        Ok(Self(Arc::new(EquationOfState::new(ig, self.0.residual.clone()))))
+        Ok(Self(Arc::new(EquationOfState::new(
+            ig,
+            self.0.residual.clone(),
+        ))))
     }
 
-    /// Ideal gas equation of state from a Python class.
+    /// Ideal gas model of Joback and Reid.
     ///
     /// Parameters
     /// ----------
-    /// ideal_gas : Class, optional
-    ///     A python class implementing the necessary methods
-    ///     to be used as a ideal gas model.
+    /// parameters : List[JobackRecord]
+    ///     List containing
     ///
     /// Returns
     /// -------
     /// EquationOfState
-    fn joback(&self, parameters: Vec<PyJobackRecord>) -> Self {
-        let records = parameters.iter().map(|p| p.0.clone()).collect();
-        let ideal_gas = Arc::new(IdealGasModel::Joback(Joback::new(records)));
-        Self(Arc::new(EquationOfState::new(ideal_gas, self.0.residual.clone())))
+    fn joback(&self, parameters: PyJobackParameters) -> Self {
+        let ideal_gas = Arc::new(IdealGasModel::Joback(Joback::new(parameters.0)));
+        Self(Arc::new(EquationOfState::new(
+            ideal_gas,
+            self.0.residual.clone(),
+        )))
     }
 }
 

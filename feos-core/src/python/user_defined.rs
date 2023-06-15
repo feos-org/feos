@@ -2,7 +2,7 @@ use crate::{
     Components, DeBroglieWavelength, DeBroglieWavelengthDual, HelmholtzEnergy, HelmholtzEnergyDual,
     IdealGas, MolarWeight, Residual, StateHD,
 };
-use ndarray::{arr1, Array1};
+use ndarray::Array1;
 use num_dual::*;
 use numpy::convert::IntoPyArray;
 use numpy::{PyArray, PyReadonlyArray1, PyReadonlyArrayDyn};
@@ -27,9 +27,9 @@ impl PyIdealGas {
             if !attr {
                 panic!("Python Class has to have a method 'subset' with signature:\n\tdef subset(self, component_list: List[int]) -> Self")
             }
-            let attr = obj.as_ref(py).hasattr("ideal_gas_model")?;
+            let attr = obj.as_ref(py).hasattr("ln_lambda3")?;
             if !attr {
-                panic!("{}", "Python Class has to have a method 'ideal_gas_model' with signature:\n\tdef ideal_gas_model(self, state: StateHD) -> HD\nwhere 'HD' has to be any of {{float, Dual64, HyperDual64, HyperDualDual64, Dual3Dual64, Dual3_64}}.")
+                panic!("{}", "Python Class has to have a method 'ln_lambda3' with signature:\n\tdef ln_lambda3(self, temperature: HD) -> HD\nwhere 'HD' has to be any (hyper-) dual number.")
             }
             Ok(Self(obj))
         })
@@ -266,24 +266,24 @@ macro_rules! helmholtz_energy {
 macro_rules! de_broglie_wavelength {
     ($py_hd_id:ident, $hd_ty:ty) => {
         impl DeBroglieWavelengthDual<$hd_ty> for PyIdealGas {
-            fn de_broglie_wavelength(&self, temperature: $hd_ty) -> Array1<$hd_ty> {
+            fn ln_lambda3(&self, temperature: $hd_ty) -> Array1<$hd_ty> {
                 Python::with_gil(|py| {
                     let py_result = self
                         .0
                         .as_ref(py)
-                        .call_method1("ideal_gas_model", (<$py_hd_id>::from(temperature),))
+                        .call_method1("ln_lambda3", (<$py_hd_id>::from(temperature),))
                         .unwrap();
-                    let rr = if let Ok(r) = py_result.extract::<PyReadonlyArray1<PyObject>>() {
-                        dbg!("Array1");
+
+                    // f64
+                    let rr = if let Ok(r) = py_result.extract::<PyReadonlyArray1<f64>>() {
+                        r.to_owned_array()
+                            .mapv(|ri| <$hd_ty>::from(ri))
+                    // anything but f64
+                    } else if let Ok(r) = py_result.extract::<PyReadonlyArray1<PyObject>>() {
                         r.to_owned_array()
                             .mapv(|ri| <$hd_ty>::from(ri.extract::<$py_hd_id>(py).unwrap()))
-                    } else if let Ok(r) = py_result.extract::<PyReadonlyArrayDyn<PyObject>>() {
-                        dbg!("Array0");
-                        assert!(r.ndim() == 0);
-                        let scalar = &r.to_owned_array()[0];
-                        arr1(&[<$hd_ty>::from(scalar.extract::<$py_hd_id>(py).unwrap())])
                     } else {
-                        panic!("ideal_gas_model: input data type must be numpy ndarray of dimension 1")
+                            panic!("ln_lambda3: data type of result must be one-dimensional numpy ndarray")
                     };
                     rr
                 })

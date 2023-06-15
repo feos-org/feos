@@ -212,12 +212,7 @@ impl Parameter for PetsParameters {
         }
     }
 
-    fn records(
-        &self,
-    ) -> (
-        &[PureRecord<PetsRecord>],
-        &Array2<PetsBinaryRecord>,
-    ) {
+    fn records(&self) -> (&[PureRecord<PetsRecord>], &Array2<PetsBinaryRecord>) {
         (&self.pure_records, &self.binary_records)
     }
 }

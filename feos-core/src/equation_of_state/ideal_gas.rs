@@ -10,7 +10,7 @@ pub trait IdealGas: Components + Sync + Send {
     // Return a reference to the implementation of the de Broglie wavelength.
     fn ideal_gas_model(&self) -> &dyn DeBroglieWavelength;
 
-    /// Evaluate the ideal gas contribution for a given state.
+    /// Evaluate the ideal gas Helmholtz energy contribution for a given state.
     ///
     /// In some cases it could be advantageous to overwrite this
     /// implementation instead of implementing the de Broglie
@@ -19,10 +19,8 @@ pub trait IdealGas: Components + Sync + Send {
     where
         for<'a> dyn DeBroglieWavelength + 'a: DeBroglieWavelengthDual<D>,
     {
-        let lambda = self
-            .ideal_gas_model()
-            .de_broglie_wavelength(state.temperature);
-        ((lambda
+        let ln_lambda3 = self.ideal_gas_model().ln_lambda3(state.temperature);
+        ((ln_lambda3
             + state.partial_density.mapv(|x| {
                 if x.re() == 0.0 {
                     D::from(0.0)
@@ -36,14 +34,15 @@ pub trait IdealGas: Components + Sync + Send {
 }
 
 /// Implementation of an ideal gas model in terms of the
-/// thermal de Broglie wavelength.
+/// logarithm of the cubic thermal de Broglie wavelength
+/// in units ln(A³).
 ///
 /// This trait needs to be implemented generically or for
 /// the specific types in the supertraits of [DeBroglieWavelength]
 /// so that the implementor can be used as an ideal gas
 /// contribution in the equation of state.
 pub trait DeBroglieWavelengthDual<D: DualNum<f64>> {
-    fn de_broglie_wavelength(&self, temperature: D) -> Array1<D>;
+    fn ln_lambda3(&self, temperature: D) -> Array1<D>;
 }
 
 /// Object safe version of the [DeBroglieWavelengthDual] trait.

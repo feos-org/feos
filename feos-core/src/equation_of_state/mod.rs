@@ -50,7 +50,11 @@ impl<I, R> EquationOfState<I, R> {
 
 impl<I: Components, R: Components> Components for EquationOfState<I, R> {
     fn components(&self) -> usize {
-        assert_eq!(self.residual.components(), self.ideal_gas.components());
+        assert_eq!(
+            self.residual.components(),
+            self.ideal_gas.components(),
+            "residual and ideal gas model differ in the number of components"
+        );
         self.residual.components()
     }
 

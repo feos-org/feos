@@ -196,8 +196,7 @@ impl EosUnit for SIUnit {
 mod tests {
     use crate::cubic::*;
     use crate::equation_of_state::EquationOfState;
-    use crate::joback::Joback;
-    use crate::joback::JobackRecord;
+    use crate::joback::{Joback, JobackParameters, JobackRecord};
     use crate::parameter::*;
     use crate::Contributions;
     use crate::EosResult;
@@ -251,9 +250,12 @@ mod tests {
         let propane = mixture[0].clone();
         let parameters = PengRobinsonParameters::from_records(vec![propane], Array2::zeros((1, 1)));
         let residual = Arc::new(PengRobinson::new(Arc::new(parameters)));
-        let ideal_gas = Arc::new(Joback::new(vec![JobackRecord::new(
-            0.0, 0.0, 0.0, 0.0, 0.0,
-        )]));
+        let joback_parameters = Arc::new(JobackParameters::new_pure(PureRecord::new(
+            Identifier::default(),
+            1.0,
+            JobackRecord::new(0.0, 0.0, 0.0, 0.0, 0.0),
+        )));
+        let ideal_gas = Arc::new(Joback::new(joback_parameters));
         let eos = Arc::new(EquationOfState::new(ideal_gas, residual.clone()));
 
         let sr = StateBuilder::new(&residual)

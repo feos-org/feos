@@ -30,10 +30,7 @@ impl PyPengRobinsonRecord {
 
 impl_json_handling!(PyPengRobinsonRecord);
 
-impl_pure_record!(
-    PengRobinsonRecord,
-    PyPengRobinsonRecord
-);
+impl_pure_record!(PengRobinsonRecord, PyPengRobinsonRecord);
 
 impl_binary_record!();
 
