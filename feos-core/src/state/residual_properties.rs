@@ -272,8 +272,10 @@ impl<E: Residual> State<E> {
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. temperature: $\left(\frac{\partial\ln\varphi_i}{\partial T}\right)_{p,N_i}$
     pub fn dln_phi_dt(&self) -> SIArray1 {
-        let vi = -self.dp_dni(Contributions::Total) / self.dp_dv(Contributions::Total);
-        (self.dmu_res_dt() - vi * self.dp_dt(Contributions::Total))
+        let vi = self.partial_molar_volume();
+        (self.dmu_res_dt()
+            - self.residual_chemical_potential() / self.temperature
+            - vi * self.dp_dt(Contributions::Total))
             / (SIUnit::gas_constant() * self.temperature)
             + 1.0 / self.temperature
     }
