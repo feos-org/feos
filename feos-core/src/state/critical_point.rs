@@ -568,7 +568,7 @@ fn critical_point_objective_p<R: Residual>(
     let a = |v| {
         let m = arr1(&[Dual::from_re(density[0]), Dual::from_re(density[1])]);
         let state_p = StateHD::new(Dual::from_re(temperature), v, m);
-        -eos.evaluate_residual(&state_p) + state_p.partial_density.sum()
+        eos.evaluate_residual(&state_p)
     };
     let (_, p) = first_derivative(a, DualVec::one());
     let p = (p - density.sum()) * temperature;
