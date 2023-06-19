@@ -5,6 +5,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- Added `Components`, `Residual`, `IdealGas` and `DeBroglieWavelength` traits to decouple ideal gas models from residual models. [#158](https://github.com/feos-org/feos/pull/158)
+- Added `JobackParameters` struct that implements `Parameters` including Python bindings. [#158](https://github.com/feos-org/feos/pull/)
+
+### Changed
+- Changed `EquationOfState` from a trait to a `struct` that is generic over `Residual` and `IdealGas` and implements all necessary traits to be used as equation of state including the ideal gas contribution. [#158](https://github.com/feos-org/feos/pull/)
+- The `Parameter` trait no longer has an associated type `IdealGas`. [#158](https://github.com/feos-org/feos/pull/)
+- Split properties of `State` into those that require the `Residual` trait (`residual_properties.rs`) and those that require both `Residual + IdealGas` (`properties.rs`). [#158](https://github.com/feos-org/feos/pull/)
+- State creation routines are split into those that can be used with `Residual` and those that require `Residual + IdealGas`. [#158](https://github.com/feos-org/feos/pull/158)
+- `Contributions` enum no longer includes the `ResidualNpt` variant. `ResidualNvt` variant is rename to `Residual`. [#158](https://github.com/feos-org/feos/pull/158)
+- Moved `Verbosity` and `SolverOption` from `phase_equilibria` module to `lib.rs`. [#158](https://github.com/feos-org/feos/pull/)
+- Moved `StateVec` into own file and module. [#158](https://github.com/feos-org/feos/pull/158)
+- Ideal gas and residual Helmholtz energy models can now be separately implemented in Python via the `PyIdealGas` and `PyResidual` structs. [#158](https://github.com/feos-org/feos/pull/)
+
+### Removed
+- Removed `EquationOfState` trait. [#158](https://github.com/feos-org/feos/pull/158)
+- Removed ideal gas dependencies from `PureRecord` and `SegmentRecord`. [#158](https://github.com/feos-org/feos/pull/)
+- Removed Python getter and setter functions and optional arguments for ideal gas records in macros. [#158](https://github.com/feos-org/feos/pull/)
+
 ### Packaging
 - Updated `num-dual` dependency to 0.7. [#137](https://github.com/feos-org/feos/pull/137)
 
