@@ -257,11 +257,7 @@ impl PyEosVariant {
         signature = (parameters, max_eta=0.5, inc_nonadd_term=true),
         text_signature = "(parameters, max_eta=0.5, inc_nonadd_term=True)"
     )]
-    fn saftvrqmie(
-        parameters: PySaftVRQMieParameters,
-        max_eta: f64,
-        inc_nonadd_term: bool,
-    ) -> Self {
+    fn saftvrqmie(parameters: PySaftVRQMieParameters, max_eta: f64, inc_nonadd_term: bool) -> Self {
         let options = SaftVRQMieOptions {
             max_eta,
             inc_nonadd_term,

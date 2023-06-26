@@ -213,8 +213,17 @@ impl Parameter for SaftVRQMieParameters {
                 mass_ij[[i, j]] = 2.0 * molarweight[i] * molarweight[j]
                     / (molarweight[i] + molarweight[j])
                     * to_mass_per_molecule;
-                fh_ij[[i, j]] = FeynmanHibbsOrder::try_from(max(fh[i], fh[j])).unwrap();
-                assert!(fh[i] * fh[j] != 2); // Should not mix FH1 and FH2
+                fh_ij[[i, j]] = FeynmanHibbsOrder::try_from(max(fh[i], fh[j]))?;
+                if fh[i] * fh[j] == 2 {
+                    return Err(
+                        ParameterError::IncompatibleParameters(
+                            format!(
+                                "cannot combine Feynman-Hibbs orders 1 and 2. Component {} has order {} and component {} has order {}.", 
+                                i, fh[i], j, fh[j]
+                            )
+                        )
+                    );
+                }
             }
         }
 
@@ -569,5 +578,29 @@ pub mod utils {
             )
             .unwrap(),
         )
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::utils::{helium_fh1, hydrogen_fh};
+    use super::SaftVRQMieParameters;
+    use feos_core::parameter::Parameter;
+
+    #[test]
+    #[should_panic(
+        expected = "cannot combine Feynman-Hibbs orders 1 and 2. Component 0 has order 1 and component 1 has order 2."
+    )]
+    fn incompatible_order() {
+        let order1 = helium_fh1();
+        let order2 = hydrogen_fh("2");
+        SaftVRQMieParameters::new_binary(
+            vec![
+                order1.pure_records[0].clone(),
+                order2.pure_records[0].clone(),
+            ],
+            None,
+        )
+        .unwrap();
     }
 }
