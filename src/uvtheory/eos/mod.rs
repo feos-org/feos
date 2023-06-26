@@ -183,7 +183,7 @@ mod test {
     fn helmholtz_energy_pure_wca() -> EosResult<()> {
         let sig = 3.7039;
         let eps_k = 150.03;
-        let parameters = UVParameters::new_simple(24.0, 6.0, sig, eps_k);
+        let parameters = UVParameters::new_simple(24.0, 6.0, sig, eps_k)?;
         let eos = Arc::new(UVTheory::new(Arc::new(parameters))?);
 
         let reduced_temperature = 4.0;
@@ -206,7 +206,7 @@ mod test {
         let sig = 3.7039;
         let rep = 24.0;
         let att = 6.0;
-        let parameters = UVParameters::new_simple(rep, att, sig, eps_k);
+        let parameters = UVParameters::new_simple(rep, att, sig, eps_k)?;
         let options = UVTheoryOptions {
             max_eta: 0.5,
             perturbation: Perturbation::BarkerHenderson,
@@ -236,7 +236,7 @@ mod test {
         let sig = 3.7039;
         let rep = 12.0;
         let att = 6.0;
-        let parameters = UVParameters::new_simple(rep, att, sig, eps_k);
+        let parameters = UVParameters::new_simple(rep, att, sig, eps_k)?;
         let options = UVTheoryOptions {
             max_eta: 0.5,
             perturbation: Perturbation::WeeksChandlerAndersen,
@@ -279,7 +279,7 @@ mod test {
         let pr1 = PureRecord::new(i, 1.0, r1, None);
         let pr2 = PureRecord::new(j, 1.0, r2, None);
         let pure_records = vec![pr1, pr2];
-        let uv_parameters = UVParameters::new_binary(pure_records, None);
+        let uv_parameters = UVParameters::new_binary(pure_records, None)?;
         // state
         let reduced_temperature = 4.0;
         let eps_k_x = (eps_k1 + eps_k2) / 2.0; // Check rule!!

@@ -105,10 +105,7 @@ impl PengRobinsonParameters {
                 PureRecord::new(id, molarweight[i], record, None)
             })
             .collect();
-        Ok(PengRobinsonParameters::from_records(
-            records,
-            Array2::zeros([pc.len(); 2]),
-        ))
+        PengRobinsonParameters::from_records(records, Array2::zeros([pc.len(); 2]))
     }
 }
 
@@ -121,7 +118,7 @@ impl Parameter for PengRobinsonParameters {
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
         binary_records: Array2<Self::Binary>,
-    ) -> Self {
+    ) -> Result<Self, ParameterError> {
         let n = pure_records.len();
 
         let mut tc = Array1::zeros(n);
@@ -144,7 +141,7 @@ impl Parameter for PengRobinsonParameters {
             .map(|r| r.ideal_gas_record.clone())
             .collect();
 
-        Self {
+        Ok(Self {
             tc,
             a,
             b,
@@ -153,7 +150,7 @@ impl Parameter for PengRobinsonParameters {
             molarweight,
             pure_records,
             joback_records,
-        }
+        })
     }
 
     fn records(
@@ -316,7 +313,8 @@ mod tests {
         let propane = mixture[0].clone();
         let tc = propane.model_record.tc;
         let pc = propane.model_record.pc;
-        let parameters = PengRobinsonParameters::from_records(vec![propane], Array2::zeros((1, 1)));
+        let parameters =
+            PengRobinsonParameters::from_records(vec![propane], Array2::zeros((1, 1)))?;
         let pr = Arc::new(PengRobinson::new(Arc::new(parameters)));
         let options = SolverOptions::new().verbosity(Verbosity::Iter);
         let cp = State::critical_point(&pr, None, None, options)?;

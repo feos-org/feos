@@ -37,10 +37,12 @@ where
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
         binary_records: Array2<Self::Binary>,
-    ) -> Self;
+    ) -> Result<Self, ParameterError>;
 
     /// Creates parameters for a pure component from a pure record.
-    fn new_pure(pure_record: PureRecord<Self::Pure, Self::IdealGas>) -> Self {
+    fn new_pure(
+        pure_record: PureRecord<Self::Pure, Self::IdealGas>,
+    ) -> Result<Self, ParameterError> {
         let binary_record = Array2::from_elem([1, 1], Self::Binary::default());
         Self::from_records(vec![pure_record], binary_record)
     }
@@ -50,7 +52,7 @@ where
     fn new_binary(
         pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
         binary_record: Option<Self::Binary>,
-    ) -> Self {
+    ) -> Result<Self, ParameterError> {
         let binary_record = Array2::from_shape_fn([2, 2], |(i, j)| {
             if i == j {
                 Self::Binary::default()
@@ -79,7 +81,7 @@ where
         pure_records: &Vec<PureRecord<Self::Pure, Self::IdealGas>>,
         binary_records: &[BinaryRecord<Identifier, Self::Binary>],
         search_option: IdentifierOption,
-    ) -> Array2<Self::Binary> {
+    ) -> Result<Array2<Self::Binary>, ParameterError> {
         // Build Hashmap (id, id) -> BinaryRecord
         let binary_map: HashMap<(String, String), Self::Binary> = {
             binary_records
@@ -92,7 +94,7 @@ where
                 .collect()
         };
         let n = pure_records.len();
-        Array2::from_shape_fn([n, n], |(i, j)| {
+        Ok(Array2::from_shape_fn([n, n], |(i, j)| {
             let id1 = pure_records[i]
                 .identifier
                 .as_string(search_option)
@@ -112,7 +114,7 @@ where
                 .or_else(|| binary_map.get(&(id2, id1)))
                 .cloned()
                 .unwrap_or_default()
-        })
+        }))
     }
 
     /// Creates parameters from substance information stored in json files.
@@ -192,8 +194,8 @@ where
         } else {
             Vec::new()
         };
-        let record_matrix = Self::binary_matrix_from_records(&p, &binary_records, search_option);
-        Ok(Self::from_records(p, record_matrix))
+        let record_matrix = Self::binary_matrix_from_records(&p, &binary_records, search_option)?;
+        Self::from_records(p, record_matrix)
     }
 
     /// Creates parameters from the molecular structure and segment information.
@@ -259,7 +261,7 @@ where
             }
         }
 
-        Ok(Self::from_records(pure_records, binary_records))
+        Self::from_records(pure_records, binary_records)
     }
 
     /// Creates parameters from segment information stored in json files.
@@ -334,6 +336,11 @@ where
     }
 
     /// Return a parameter set containing the subset of components specified in `component_list`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if index in `component_list` is out of bounds or if
+    /// [Parameter::from_records] fails.
     fn subset(&self, component_list: &[usize]) -> Self {
         let (pure_records, binary_records) = self.records();
         let pure_records = component_list
@@ -346,6 +353,7 @@ where
         });
 
         Self::from_records(pure_records, binary_records)
+            .expect("failed to create subset from parameters.")
     }
 }
 
@@ -506,11 +514,11 @@ mod test {
         fn from_records(
             pure_records: Vec<PureRecord<MyPureModel, JobackRecord>>,
             binary_records: Array2<MyBinaryModel>,
-        ) -> Self {
-            Self {
+        ) -> Result<Self, ParameterError> {
+            Ok(Self {
                 pure_records,
                 binary_records,
-            }
+            })
         }
 
         fn records(
@@ -524,7 +532,7 @@ mod test {
     }
 
     #[test]
-    fn from_records() {
+    fn from_records() -> Result<(), ParameterError> {
         let pr_json = r#"
         [
             {
@@ -568,16 +576,17 @@ mod test {
             &pure_records,
             &binary_records,
             IdentifierOption::Cas,
-        );
-        let p = MyParameter::from_records(pure_records, binary_matrix);
+        )?;
+        let p = MyParameter::from_records(pure_records, binary_matrix)?;
 
         assert_eq!(p.pure_records[0].identifier.cas, Some("123-4-5".into()));
         assert_eq!(p.pure_records[1].identifier.cas, Some("678-9-1".into()));
-        assert_eq!(p.binary_records[[0, 1]].b, 12.0)
+        assert_eq!(p.binary_records[[0, 1]].b, 12.0);
+        Ok(())
     }
 
     #[test]
-    fn from_records_missing_binary() {
+    fn from_records_missing_binary() -> Result<(), ParameterError> {
         let pr_json = r#"
         [
             {
@@ -621,17 +630,18 @@ mod test {
             &pure_records,
             &binary_records,
             IdentifierOption::Cas,
-        );
-        let p = MyParameter::from_records(pure_records, binary_matrix);
+        )?;
+        let p = MyParameter::from_records(pure_records, binary_matrix)?;
 
         assert_eq!(p.pure_records[0].identifier.cas, Some("123-4-5".into()));
         assert_eq!(p.pure_records[1].identifier.cas, Some("678-9-1".into()));
         assert_eq!(p.binary_records[[0, 1]], MyBinaryModel::default());
-        assert_eq!(p.binary_records[[0, 1]].b, 0.0)
+        assert_eq!(p.binary_records[[0, 1]].b, 0.0);
+        Ok(())
     }
 
     #[test]
-    fn from_records_correct_binary_order() {
+    fn from_records_correct_binary_order() -> Result<(), ParameterError> {
         let pr_json = r#"
         [
             {
@@ -684,8 +694,8 @@ mod test {
             &pure_records,
             &binary_records,
             IdentifierOption::Cas,
-        );
-        let p = MyParameter::from_records(pure_records, binary_matrix);
+        )?;
+        let p = MyParameter::from_records(pure_records, binary_matrix)?;
 
         assert_eq!(p.pure_records[0].identifier.cas, Some("000-0-0".into()));
         assert_eq!(p.pure_records[1].identifier.cas, Some("123-4-5".into()));
@@ -696,5 +706,6 @@ mod test {
         assert_eq!(p.binary_records[[2, 0]], MyBinaryModel::default());
         assert_eq!(p.binary_records[[2, 1]].b, 12.0);
         assert_eq!(p.binary_records[[1, 2]].b, 12.0);
+        Ok(())
     }
 }

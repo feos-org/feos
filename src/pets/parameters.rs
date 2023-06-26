@@ -1,6 +1,6 @@
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use feos_core::joback::JobackRecord;
-use feos_core::parameter::{Parameter, PureRecord};
+use feos_core::parameter::{Parameter, ParameterError, PureRecord};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;
@@ -134,7 +134,7 @@ impl Parameter for PetsParameters {
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
         binary_records: Array2<PetsBinaryRecord>,
-    ) -> Self {
+    ) -> Result<Self, ParameterError> {
         let n = pure_records.len();
 
         let mut molarweight = Array::zeros(n);
@@ -205,7 +205,7 @@ impl Parameter for PetsParameters {
             .map(|r| r.ideal_gas_record.clone())
             .collect();
 
-        Self {
+        Ok(Self {
             molarweight,
             sigma,
             epsilon_k,
@@ -219,7 +219,7 @@ impl Parameter for PetsParameters {
             pure_records,
             joback_records,
             binary_records,
-        }
+        })
     }
 
     fn records(
@@ -310,7 +310,7 @@ pub mod utils {
             }"#;
         let argon_record: PureRecord<PetsRecord, JobackRecord> =
             serde_json::from_str(argon_json).expect("Unable to parse json.");
-        Arc::new(PetsParameters::new_pure(argon_record))
+        Arc::new(PetsParameters::new_pure(argon_record).unwrap())
     }
 
     pub fn krypton_parameters() -> Arc<PetsParameters> {
@@ -332,7 +332,7 @@ pub mod utils {
             }"#;
         let krypton_record: PureRecord<PetsRecord, JobackRecord> =
             serde_json::from_str(krypton_json).expect("Unable to parse json.");
-        Arc::new(PetsParameters::new_pure(krypton_record))
+        Arc::new(PetsParameters::new_pure(krypton_record).unwrap())
     }
 
     pub fn argon_krypton_parameters() -> Arc<PetsParameters> {
@@ -376,6 +376,6 @@ pub mod utils {
         ]"#;
         let binary_record: Vec<PureRecord<PetsRecord, JobackRecord>> =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
-        Arc::new(PetsParameters::new_binary(binary_record, None))
+        Arc::new(PetsParameters::new_binary(binary_record, None).unwrap())
     }
 }

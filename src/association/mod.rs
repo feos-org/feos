@@ -376,7 +376,7 @@ mod tests_pcsaft {
     use crate::pcsaft::parameters::utils::water_parameters;
     use crate::pcsaft::PcSaftParameters;
     use approx::assert_relative_eq;
-    use feos_core::parameter::Parameter;
+    use feos_core::parameter::{Parameter, ParameterError};
 
     #[test]
     fn helmholtz_energy() {
@@ -403,13 +403,13 @@ mod tests_pcsaft {
     }
 
     #[test]
-    fn helmholtz_energy_cross_3b() {
+    fn helmholtz_energy_cross_3b() -> Result<(), ParameterError> {
         let mut params = water_parameters();
         let mut record = params.pure_records.pop().unwrap();
         let mut association_record = record.model_record.association_record.unwrap();
         association_record.na = Some(2.0);
         record.model_record.association_record = Some(association_record);
-        let params = Arc::new(PcSaftParameters::new_pure(record));
+        let params = Arc::new(PcSaftParameters::new_pure(record)?);
         let assoc = Association::new(&params, &params.association, 50, 1e-10);
         let cross_assoc =
             Association::new_cross_association(&params, &params.association, 50, 1e-10);
@@ -420,6 +420,7 @@ mod tests_pcsaft {
         let a_assoc = assoc.helmholtz_energy(&s) / n;
         let a_cross_assoc = cross_assoc.helmholtz_energy(&s) / n;
         assert_relative_eq!(a_assoc, a_cross_assoc, epsilon = 1e-10);
+        Ok(())
     }
 }
 

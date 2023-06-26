@@ -81,7 +81,12 @@ impl PyUVParameters {
     /// UVParameters
     #[pyo3(text_signature = "(rep, att, sigma, epsilon_k)")]
     #[staticmethod]
-    fn from_lists(rep: Vec<f64>, att: Vec<f64>, sigma: Vec<f64>, epsilon_k: Vec<f64>) -> Self {
+    fn from_lists(
+        rep: Vec<f64>,
+        att: Vec<f64>,
+        sigma: Vec<f64>,
+        epsilon_k: Vec<f64>,
+    ) -> PyResult<Self> {
         let n = rep.len();
         let pure_records = (0..n)
             .map(|i| {
@@ -98,7 +103,10 @@ impl PyUVParameters {
             })
             .collect();
         let binary = Array2::from_shape_fn((n, n), |(_, _)| UVBinaryRecord { k_ij: 0.0 });
-        Self(Arc::new(UVParameters::from_records(pure_records, binary)))
+        Ok(Self(Arc::new(UVParameters::from_records(
+            pure_records,
+            binary,
+        )?)))
     }
 
     /// Create UV Theory parameters for pure substance.
@@ -123,10 +131,10 @@ impl PyUVParameters {
     /// Molar weight is one. No ideal gas contribution is considered.
     #[pyo3(text_signature = "(rep, att, sigma, epsilon_k)")]
     #[staticmethod]
-    fn new_simple(rep: f64, att: f64, sigma: f64, epsilon_k: f64) -> Self {
-        Self(Arc::new(UVParameters::new_simple(
+    fn new_simple(rep: f64, att: f64, sigma: f64, epsilon_k: f64) -> PyResult<Self> {
+        Ok(Self(Arc::new(UVParameters::new_simple(
             rep, att, sigma, epsilon_k,
-        )))
+        )?)))
     }
 }
 
