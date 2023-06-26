@@ -35,7 +35,7 @@ impl PySaftVRQMieRecord {
         epsilon_k: f64,
         lr: f64,
         la: f64,
-        fh: i32,
+        fh: usize,
         viscosity: Option<[f64; 4]>,
     ) -> Self {
         Self(SaftVRQMieRecord::new(

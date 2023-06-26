@@ -1,5 +1,4 @@
 #![allow(clippy::excessive_precision)]
-use crate::saftvrqmie::eos::FeynmanHibbsOrder;
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use ndarray::*;
@@ -193,7 +192,7 @@ impl SaftVRQMieParameters {
             + r.powf(la + 1.0).recip() * la * s.powf(la);
         let mut u_rr = r.powf(lr + 2.0).recip() * lr * (lr + 1.0) * s.powf(lr)
             - r.powf(la + 2.0).recip() * la * (la + 1.0) * s.powf(la);
-        if FeynmanHibbsOrder::to_i32(self.fh_ij[[i, j]]) > 0 {
+        if self.fh_ij[[i, j]] as usize > 0 {
             u += d
                 * (r.powf(lr + 2.0).recip() * q1r * s.powf(lr)
                     - r.powf(la + 2.0).recip() * q1a * s.powf(la));
@@ -204,7 +203,7 @@ impl SaftVRQMieParameters {
                 * (r.powf(lr + 4.0).recip() * q1r * (lr + 2.0) * (lr + 3.0) * s.powf(lr)
                     - r.powf(la + 4.0).recip() * q1a * (la + 2.0) * (la + 3.0) * s.powf(la));
         }
-        if FeynmanHibbsOrder::to_i32(self.fh_ij[[i, j]]) > 1 {
+        if self.fh_ij[[i, j]] as usize > 1 {
             u += d.powi(2)
                 * (r.powf(lr + 4.0).recip() * q2r * s.powf(lr)
                     - r.powf(la + 4.0).recip() * q2a * s.powf(la));

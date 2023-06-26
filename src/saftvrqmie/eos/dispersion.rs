@@ -1,4 +1,3 @@
-use crate::saftvrqmie::eos::FeynmanHibbsOrder;
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use ndarray::{Array1, Array2};
@@ -58,12 +57,12 @@ impl<D: DualNum<f64>> Alpha<D> {
                 let ma = sigma_ratio_a / (la - 3.0);
                 let mr = sigma_ratio_r / (lr - 3.0);
                 alpha_ij[[i, j]] = ma - mr;
-                if FeynmanHibbsOrder::to_i32(p.fh_ij[[i, j]]) > 0 {
+                if p.fh_ij[[i, j]] as usize > 0 {
                     let q1a = sigma_ratio_a * sigma_ratio.powi(2) * la;
                     let q1r = sigma_ratio_r * sigma_ratio.powi(2) * lr;
                     alpha_ij[[i, j]] += dmt * (q1a - q1r);
                 }
-                if FeynmanHibbsOrder::to_i32(p.fh_ij[[i, j]]) > 1 {
+                if p.fh_ij[[i, j]] as usize > 1 {
                     let q2a =
                         sigma_ratio_a * sigma_ratio.powi(4) * (la + 2.0) * la * (la - 1.0) * 0.5;
                     let q2r =
@@ -234,7 +233,7 @@ fn first_order_perturbation<D: DualNum<f64>>(
                     x0_eff,
                     parameters.c_ij[[i, j]],
                     dq_div_sigma_2,
-                    FeynmanHibbsOrder::to_i32(parameters.fh_ij[[i, j]]),
+                    parameters.fh_ij[[i, j]] as usize,
                 )
         }
     }
@@ -250,7 +249,7 @@ fn first_order_perturbation_ij<D: DualNum<f64>>(
     x0_eff: D,
     c: f64,
     dq_div_sigma_2: D,
-    fh_order: i32,
+    fh_order: usize,
 ) -> D {
     let int_a = combine_sutherland_and_b(lambda_a, epsilon_k, zeta, x0, x0_eff);
     let int_r = combine_sutherland_and_b(lambda_r, epsilon_k, zeta, x0, x0_eff);
@@ -373,7 +372,7 @@ fn second_order_perturbation<D: DualNum<f64>>(
                     x0_eff,
                     parameters.c_ij[[i, j]],
                     dq_div_sigma_2,
-                    FeynmanHibbsOrder::to_i32(parameters.fh_ij[[i, j]]),
+                    parameters.fh_ij[[i, j]] as usize,
                 )
         }
     }
@@ -399,7 +398,7 @@ fn second_order_perturbation_ij<D: DualNum<f64>>(
     x0_eff: D,
     c: f64,
     dq_div_sigma_2: D,
-    fh_order: i32,
+    fh_order: usize,
 ) -> D {
     let lambda_2r = 2.0 * lambda_r;
     let lambda_2a = 2.0 * lambda_a;
@@ -603,7 +602,7 @@ mod tests {
             x0_eff,
             p.c_ij[[0, 0]],
             dq_div_s2,
-            FeynmanHibbsOrder::to_i32(p.fh_ij[[0, 0]]),
+            p.fh_ij[[0, 0]] as usize,
         );
         let rel_err = (a1_ij.re() + 332.00915966785539) / 332.00915966785539;
         assert_relative_eq!(rel_err, 0.0, epsilon = 1e-7);
@@ -628,7 +627,7 @@ mod tests {
             x0_eff,
             p.c_ij[[0, 0]],
             dq_div_s2,
-            FeynmanHibbsOrder::to_i32(p.fh_ij[[0, 0]]),
+            p.fh_ij[[0, 0]] as usize,
         );
         let rel_err = (a1_ij.re() + 296.53213134819606) / 296.53213134819606;
         assert_relative_eq!(rel_err, 0.0, epsilon = 1e-7);

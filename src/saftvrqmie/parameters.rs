@@ -26,7 +26,7 @@ pub struct SaftVRQMieRecord {
     /// Attractive Mie exponent
     pub la: f64,
     /// Feynman-Hibbs order
-    pub fh: i32,
+    pub fh: usize,
     /// Entropy scaling coefficients for the viscosity
     #[serde(skip_serializing_if = "Option::is_none")]
     pub viscosity: Option<[f64; 4]>,
@@ -63,7 +63,7 @@ impl SaftVRQMieRecord {
         epsilon_k: f64,
         lr: f64,
         la: f64,
-        fh: i32,
+        fh: usize,
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
@@ -133,7 +133,7 @@ pub struct SaftVRQMieParameters {
     pub e_k_ij: Array2<f64>,
     pub lr: Array1<f64>,
     pub la: Array1<f64>,
-    pub fh: Array1<i32>,
+    pub fh: Array1<usize>,
     pub c_ij: Array2<f64>,
     pub lambda_r_ij: Array2<f64>,
     pub lambda_a_ij: Array2<f64>,
@@ -158,7 +158,7 @@ impl Parameter for SaftVRQMieParameters {
     ) -> Result<Self, ParameterError> {
         let n = pure_records.len();
 
-        let mut fh: Array1<i32> = Array1::<i32>::zeros(n);
+        let mut fh = Array1::<usize>::zeros(n);
         let mut molarweight = Array::zeros(n);
         let mut m = Array::zeros(n);
         let mut sigma = Array::zeros(n);
@@ -213,7 +213,7 @@ impl Parameter for SaftVRQMieParameters {
                 mass_ij[[i, j]] = 2.0 * molarweight[i] * molarweight[j]
                     / (molarweight[i] + molarweight[j])
                     * to_mass_per_molecule;
-                fh_ij[[i, j]] = FeynmanHibbsOrder::from_i32(max(fh[i], fh[j]));
+                fh_ij[[i, j]] = FeynmanHibbsOrder::try_from(max(fh[i], fh[j])).unwrap();
                 assert!(fh[i] * fh[j] != 2); // Should not mix FH1 and FH2
             }
         }

@@ -1,11 +1,12 @@
 use super::parameters::SaftVRQMieParameters;
-use feos_core::parameter::Parameter;
+use feos_core::parameter::{Parameter, ParameterError};
 use feos_core::{
     Contributions, EntropyScaling, EosError, EosResult, EquationOfState, HelmholtzEnergy,
     MolarWeight, State,
 };
 use ndarray::Array1;
 use quantity::si::*;
+use std::convert::TryFrom;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::sync::Arc;
 
@@ -37,27 +38,25 @@ impl Default for SaftVRQMieOptions {
 #[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum FeynmanHibbsOrder {
     /// Mie potential
-    FH0,
+    FH0 = 0,
     /// First order correction
-    FH1,
+    FH1 = 1,
     /// Second order correction
-    FH2,
+    FH2 = 2,
 }
 
-impl FeynmanHibbsOrder {
-    pub fn from_i32(fh: i32) -> FeynmanHibbsOrder {
-        match fh {
-            0 => FeynmanHibbsOrder::FH0,
-            1 => FeynmanHibbsOrder::FH1,
-            2 => FeynmanHibbsOrder::FH2,
-            _ => panic!("Unknown valueto convert to FeynmanHibbsOrder: {}", fh),
-        }
-    }
-    pub fn to_i32(fh_order: FeynmanHibbsOrder) -> i32 {
-        match fh_order {
-            FeynmanHibbsOrder::FH0 => 0,
-            FeynmanHibbsOrder::FH1 => 1,
-            FeynmanHibbsOrder::FH2 => 2,
+impl TryFrom<usize> for FeynmanHibbsOrder {
+    type Error = ParameterError;
+
+    fn try_from(u: usize) -> Result<Self, Self::Error> {
+        match u {
+            0 => Ok(Self::FH0),
+            1 => Ok(Self::FH1),
+            2 => Ok(Self::FH2),
+            _ => Err(ParameterError::IncompatibleParameters(format!(
+                "failed to parse value '{}' as FeynmanHibbsOrder. Has to be one of '0, 1, or 2'.",
+                u
+            ))),
         }
     }
 }
