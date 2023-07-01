@@ -153,3 +153,19 @@ This software is currently maintained by members of the groups of
 `FeOs` grew from the need to maintain a common codebase used within the scientific work done in our groups. We share the code publicly as a platform to publish our own research but also encourage other researchers and developers to contribute their own models or implementations of existing equations of state.
 
 If you want to contribute to ``FeOs``, there are several ways to go: improving the documentation and helping with language issues, testing the code on your systems to find bugs, adding new models or algorithms, or providing feature requests. Feel free to message us if you have questions or open an issue to discuss improvements.
+
+## Cite us
+
+If you find `FeOs` useful for your own scientific studies, consider citing our [publication](https://pubs.acs.org/doi/full/10.1021/acs.iecr.2c04561) accompanying this library.
+
+```
+@article{rehner2023feos,
+  author = {Rehner, Philipp and Bauer, Gernot and Gross, Joachim},
+  title = {FeOs: An Open-Source Framework for Equations of State and Classical Density Functional Theory},
+  journal = {Industrial \& Engineering Chemistry Research},
+  volume = {62},
+  number = {12},
+  pages = {5347-5357},
+  year = {2023},
+}
+```

@@ -13,7 +13,7 @@ The files named according to the pattern `NameYear.json` correspond to published
 |file|model|publication|
 |-|-|:-:|
 [`aasen2019.json`](aasen2019.json) | first-order Feynman-Hibbs correction parameters. | [&#128279;](https://doi.org/10.1063/1.5111364)
-[`hammer2023.json`](hammer2023.json) | first-order Feynman-Hibbs correction parameters used for (but not adjusted to) surface tensions. | TBD
+[`hammer2023.json`](hammer2023.json) | first-order Feynman-Hibbs correction parameters used for (but not adjusted to) surface tensions. | [&#128279;](https://doi.org/10.1063/5.0137226)
 
 ## Binary Parameters
 
