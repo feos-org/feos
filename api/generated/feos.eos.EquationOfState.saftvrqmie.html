@@ -1024,15 +1024,13 @@
 <h1>feos.eos.EquationOfState.saftvrqmie<a class="headerlink" href="#feos-eos-equationofstate-saftvrqmie" title="Permalink to this heading">#</a></h1>
 <dl class="py method">
 <dt class="sig sig-object py" id="feos.eos.EquationOfState.saftvrqmie">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">EquationOfState.</span></span><span class="sig-name descname"><span class="pre">saftvrqmie</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#feos.eos.EquationOfState.saftvrqmie" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">EquationOfState.</span></span><span class="sig-name descname"><span class="pre">saftvrqmie</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_eta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inc_nonadd_term</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#feos.eos.EquationOfState.saftvrqmie" title="Permalink to this definition">#</a></dt>
 <dd><p>SAFT-VRQ Mie equation of state.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>parameters</strong> (<a class="reference internal" href="feos.saftvrqmie.SaftVRQMieParameters.html#feos.saftvrqmie.SaftVRQMieParameters" title="feos.saftvrqmie.SaftVRQMieParameters"><em>SaftVRQMieParameters</em></a>) – The parameters of the SAFT-VRQ Mie equation of state to use.</p></li>
 <li><p><strong>max_eta</strong> (<em>float</em><em>, </em><em>optional</em>) – Maximum packing fraction. Defaults to 0.5.</p></li>
-<li><p><strong>fh_order</strong> (<a class="reference internal" href="feos.saftvrqmie.FeynmanHibbsOrder.html#feos.saftvrqmie.FeynmanHibbsOrder" title="feos.saftvrqmie.FeynmanHibbsOrder"><em>FeynmanHibbsOrder</em></a><em>, </em><em>optional</em>) – Which Feyman-Hibbs correction order to use. Defaults to FeynmanHibbsOrder.FH1.
-Currently, only the first order is implemented.</p></li>
 <li><p><strong>inc_nonadd_term</strong> (<em>bool</em><em>, </em><em>optional</em>) – Include non-additive correction to the hard-sphere reference. Defaults to True.</p></li>
 </ul>
 </dd>

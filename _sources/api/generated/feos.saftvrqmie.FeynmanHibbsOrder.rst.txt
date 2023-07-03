@@ -28,6 +28,7 @@ feos.saftvrqmie.FeynmanHibbsOrder
 
    .. autosummary::
    
+      ~FeynmanHibbsOrder.FH0
       ~FeynmanHibbsOrder.FH1
       ~FeynmanHibbsOrder.FH2
    
