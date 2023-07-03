@@ -117,7 +117,8 @@ fn methane_co2_pcsaft(c: &mut Criterion) {
     )
     .unwrap();
     let k_ij = -0.0192211646;
-    let parameters = PcSaftParameters::new_binary(parameters.pure_records, Some(k_ij.into()));
+    let parameters =
+        PcSaftParameters::new_binary(parameters.pure_records, Some(k_ij.into())).unwrap();
     let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
 
     // 230 K, 50 bar, x0 = 0.15

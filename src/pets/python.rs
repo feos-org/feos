@@ -194,7 +194,7 @@ impl PyPetsParameters {
         Ok(Self(Arc::new(PetsParameters::from_records(
             pure_records,
             binary,
-        ))))
+        )?)))
     }
 
     // Create a set of PeTS parameters from values.
@@ -227,7 +227,7 @@ impl PyPetsParameters {
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
-    ) -> Self {
+    ) -> PyResult<Self> {
         let pure_record = PureRecord::new(
             Identifier::new(
                 Some(format!("{}", 1).as_str()),
@@ -241,7 +241,7 @@ impl PyPetsParameters {
             PetsRecord::new(sigma, epsilon_k, viscosity, diffusion, thermal_conductivity),
             None,
         );
-        Self(Arc::new(PetsParameters::new_pure(pure_record)))
+        Ok(Self(Arc::new(PetsParameters::new_pure(pure_record)?)))
     }
 
     #[getter]

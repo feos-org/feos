@@ -2,11 +2,11 @@ use crate::{EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, MolarWeight, 
 use ndarray::Array1;
 use num_dual::*;
 use numpy::convert::IntoPyArray;
-use numpy::{PyReadonlyArrayDyn, PyArray};
+use numpy::{PyArray, PyReadonlyArrayDyn};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use quantity::python::PySIArray1;
-use quantity::si::{SIArray1};
+use quantity::si::SIArray1;
 use std::fmt;
 
 struct PyHelmholtzEnergy(Py<PyAny>);
@@ -212,12 +212,7 @@ impl_dual_state_helmholtz_energy!(
     Dual<DualVec64<3>, f64>,
     PyDualVec3
 );
-impl_dual_state_helmholtz_energy!(
-    PyStateHD,
-    PyHyperDual64,
-    HyperDual64,
-    f64
-);
+impl_dual_state_helmholtz_energy!(PyStateHD, PyHyperDual64, HyperDual64, f64);
 impl_dual_state_helmholtz_energy!(PyStateD2, PyDual2_64, Dual2_64, f64);
 impl_dual_state_helmholtz_energy!(PyStateD3, PyDual3_64, Dual3_64, f64);
 impl_dual_state_helmholtz_energy!(PyStateHDD, PyHyperDualDual64, HyperDual<Dual64, f64>, PyDual64);

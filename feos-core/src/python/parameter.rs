@@ -602,7 +602,7 @@ macro_rules! impl_parameter {
                             &prs,
                             &brs,
                             search_option,
-                        ))
+                        )?)
                     } else {
                         Err(PyErr::new::<PyTypeError, _>(format!(
                             "Could not parse binary input!"
@@ -611,13 +611,13 @@ macro_rules! impl_parameter {
                     Ok(Self(Arc::new(<$parameter>::from_records(
                         prs,
                         brs.unwrap(),
-                    ))))
+                    )?)))
                 } else {
                     let n = prs.len();
                     Ok(Self(Arc::new(<$parameter>::from_records(
                         prs,
                         Array2::from_elem([n, n], <$parameter as Parameter>::Binary::default()),
-                    ))))
+                    )?)))
                 }
             }
 
@@ -628,8 +628,8 @@ macro_rules! impl_parameter {
             /// pure_record : PureRecord
             ///     The pure component parameters.
             #[staticmethod]
-            fn new_pure(pure_record: PyPureRecord) -> Self {
-                Self(Arc::new(<$parameter>::new_pure(pure_record.0)))
+            fn new_pure(pure_record: PyPureRecord) -> PyResult<Self> {
+                Ok(Self(Arc::new(<$parameter>::new_pure(pure_record.0)?)))
             }
 
             /// Creates parameters for a binary system from pure records and an optional
@@ -661,7 +661,7 @@ macro_rules! impl_parameter {
                         }
                     })
                     .transpose()?;
-                Ok(Self(Arc::new(<$parameter>::new_binary(prs, br))))
+                Ok(Self(Arc::new(<$parameter>::new_binary(prs, br)?)))
             }
 
             /// Creates parameters from json files.

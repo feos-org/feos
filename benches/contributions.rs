@@ -70,7 +70,8 @@ fn pcsaft(c: &mut Criterion) {
     let moles = arr1(&[1.0, 1.0]) * MOL;
     for comp1 in &[hexane, acetone, co2, ethanol] {
         for comp2 in [&heptane, &dme, &acetylene, &propanol] {
-            let params = PcSaftParameters::new_binary(vec![comp1.clone(), comp2.clone()], None);
+            let params =
+                PcSaftParameters::new_binary(vec![comp1.clone(), comp2.clone()], None).unwrap();
             let eos = Arc::new(PcSaft::new(Arc::new(params)));
             let state = State::new_npt(&eos, t, p, &moles, DensityInitialization::Liquid).unwrap();
             let state_hd = state.derive1(Derivative::DT);

@@ -147,7 +147,7 @@ impl Parameter for SaftVRQMieParameters {
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
         binary_records: Array2<SaftVRQMieBinaryRecord>,
-    ) -> Self {
+    ) -> Result<Self, ParameterError> {
         let n = pure_records.len();
 
         let mut molarweight = Array::zeros(n);
@@ -240,7 +240,7 @@ impl Parameter for SaftVRQMieParameters {
             .map(|r| r.ideal_gas_record.clone())
             .collect();
 
-        Self {
+        Ok(Self {
             molarweight,
             m,
             sigma,
@@ -262,7 +262,7 @@ impl Parameter for SaftVRQMieParameters {
             pure_records,
             binary_records,
             joback_records,
-        }
+        })
     }
 
     fn records(
@@ -433,7 +433,7 @@ pub mod utils {
             }"#;
         let hydrogen_record: PureRecord<SaftVRQMieRecord, JobackRecord> =
             serde_json::from_str(hydrogen_json).expect("Unable to parse json.");
-        Arc::new(SaftVRQMieParameters::new_pure(hydrogen_record))
+        Arc::new(SaftVRQMieParameters::new_pure(hydrogen_record).unwrap())
     }
 
     #[allow(dead_code)]
@@ -459,7 +459,7 @@ pub mod utils {
             }"#;
         let helium_record: PureRecord<SaftVRQMieRecord, JobackRecord> =
             serde_json::from_str(helium_json).expect("Unable to parse json.");
-        Arc::new(SaftVRQMieParameters::new_pure(helium_record))
+        Arc::new(SaftVRQMieParameters::new_pure(helium_record).unwrap())
     }
 
     #[allow(dead_code)]
@@ -485,7 +485,7 @@ pub mod utils {
             }"#;
         let neon_record: PureRecord<SaftVRQMieRecord, JobackRecord> =
             serde_json::from_str(neon_json).expect("Unable to parse json.");
-        Arc::new(SaftVRQMieParameters::new_pure(neon_record))
+        Arc::new(SaftVRQMieParameters::new_pure(neon_record).unwrap())
     }
 
     pub fn h2_ne_fh1() -> Arc<SaftVRQMieParameters> {
@@ -529,12 +529,15 @@ pub mod utils {
         ]"#;
         let binary_record: Vec<PureRecord<SaftVRQMieRecord, JobackRecord>> =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
-        Arc::new(SaftVRQMieParameters::new_binary(
-            binary_record,
-            Some(SaftVRQMieBinaryRecord {
-                k_ij: 0.105,
-                l_ij: 0.0,
-            }),
-        ))
+        Arc::new(
+            SaftVRQMieParameters::new_binary(
+                binary_record,
+                Some(SaftVRQMieBinaryRecord {
+                    k_ij: 0.105,
+                    l_ij: 0.0,
+                }),
+            )
+            .unwrap(),
+        )
     }
 }
