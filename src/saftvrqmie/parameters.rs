@@ -1,3 +1,5 @@
+use crate::saftvrqmie::eos::FeynmanHibbsOrder;
+use core::cmp::max;
 use feos_core::joback::JobackRecord;
 use feos_core::parameter::{Parameter, ParameterError, PureRecord};
 use ndarray::{Array, Array1, Array2};
@@ -23,6 +25,8 @@ pub struct SaftVRQMieRecord {
     pub lr: f64,
     /// Attractive Mie exponent
     pub la: f64,
+    /// Feynman-Hibbs order
+    pub fh: usize,
     /// Entropy scaling coefficients for the viscosity
     #[serde(skip_serializing_if = "Option::is_none")]
     pub viscosity: Option<[f64; 4]>,
@@ -59,6 +63,7 @@ impl SaftVRQMieRecord {
         epsilon_k: f64,
         lr: f64,
         la: f64,
+        fh: usize,
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
@@ -69,6 +74,7 @@ impl SaftVRQMieRecord {
             epsilon_k,
             lr,
             la,
+            fh,
             viscosity,
             diffusion,
             thermal_conductivity,
@@ -127,6 +133,7 @@ pub struct SaftVRQMieParameters {
     pub e_k_ij: Array2<f64>,
     pub lr: Array1<f64>,
     pub la: Array1<f64>,
+    pub fh: Array1<usize>,
     pub c_ij: Array2<f64>,
     pub lambda_r_ij: Array2<f64>,
     pub lambda_a_ij: Array2<f64>,
@@ -137,6 +144,7 @@ pub struct SaftVRQMieParameters {
     pub pure_records: Vec<PureRecord<SaftVRQMieRecord, JobackRecord>>,
     pub binary_records: Array2<SaftVRQMieBinaryRecord>,
     pub joback_records: Option<Vec<JobackRecord>>,
+    pub fh_ij: Array2<FeynmanHibbsOrder>,
 }
 
 impl Parameter for SaftVRQMieParameters {
@@ -150,6 +158,7 @@ impl Parameter for SaftVRQMieParameters {
     ) -> Result<Self, ParameterError> {
         let n = pure_records.len();
 
+        let mut fh = Array1::<usize>::zeros(n);
         let mut molarweight = Array::zeros(n);
         let mut m = Array::zeros(n);
         let mut sigma = Array::zeros(n);
@@ -170,12 +179,15 @@ impl Parameter for SaftVRQMieParameters {
             epsilon_k[i] = r.epsilon_k;
             lr[i] = r.lr;
             la[i] = r.la;
+            fh[i] = r.fh;
             viscosity.push(r.viscosity);
             diffusion.push(r.diffusion);
             thermal_conductivity.push(r.thermal_conductivity);
             molarweight[i] = record.molarweight;
         }
 
+        let mut fh_ij: Array2<FeynmanHibbsOrder> =
+            Array2::from_shape_fn((n, n), |(_i, _j)| FeynmanHibbsOrder::FH0);
         let k_ij = binary_records.map(|br| br.k_ij);
         let l_ij = binary_records.map(|br| br.l_ij);
         let mut epsilon_k_ij = Array::zeros((n, n));
@@ -201,6 +213,17 @@ impl Parameter for SaftVRQMieParameters {
                 mass_ij[[i, j]] = 2.0 * molarweight[i] * molarweight[j]
                     / (molarweight[i] + molarweight[j])
                     * to_mass_per_molecule;
+                fh_ij[[i, j]] = FeynmanHibbsOrder::try_from(max(fh[i], fh[j]))?;
+                if fh[i] * fh[j] == 2 {
+                    return Err(
+                        ParameterError::IncompatibleParameters(
+                            format!(
+                                "cannot combine Feynman-Hibbs orders 1 and 2. Component {} has order {} and component {} has order {}.", 
+                                i, fh[i], j, fh[j]
+                            )
+                        )
+                    );
+                }
             }
         }
 
@@ -252,6 +275,7 @@ impl Parameter for SaftVRQMieParameters {
             e_k_ij,
             lr,
             la,
+            fh,
             c_ij,
             lambda_r_ij,
             lambda_a_ij,
@@ -262,6 +286,7 @@ impl Parameter for SaftVRQMieParameters {
             pure_records,
             binary_records,
             joback_records,
+            fh_ij,
         })
     }
 
@@ -281,7 +306,7 @@ impl SaftVRQMieParameters {
         let o = &mut output;
         write!(
             o,
-            "|component|molarweight|$\\sigma$|$\\varepsilon$|$\\lambda_r$|$\\lambda_a$|\n|-|-|-|-|-|-|"
+            "|component|molarweight|$\\sigma$|$\\varepsilon$|$\\lambda_r$|$\\lambda_a$|fh|\n|-|-|-|-|-|-|-|"
         )
         .unwrap();
         for i in 0..self.m.len() {
@@ -289,13 +314,14 @@ impl SaftVRQMieParameters {
             let component = component.unwrap_or(format!("Component {}", i + 1));
             write!(
                 o,
-                "\n|{}|{}|{}|{}|{}|{}|",
+                "\n|{}|{}|{}|{}|{}|{}|{}|",
                 component,
                 self.molarweight[i],
                 self.sigma[i],
                 self.epsilon_k[i],
                 self.lr[i],
-                self.la[i]
+                self.la[i],
+                self.fh[i]
             )
             .unwrap();
         }
@@ -411,8 +437,8 @@ pub mod utils {
     use super::*;
     use std::sync::Arc;
 
-    pub fn hydrogen_fh1() -> Arc<SaftVRQMieParameters> {
-        let hydrogen_json = r#"
+    pub fn hydrogen_fh(fh: &str) -> Arc<SaftVRQMieParameters> {
+        let hydrogen_json = &(r#"
             {
                 "identifier": {
                     "cas": "1333-74-0",
@@ -427,10 +453,14 @@ pub mod utils {
                     "sigma": 3.0243,
                     "epsilon_k": 26.706,
                     "lr": 9.0,
-                    "la": 6.0
+                    "la": 6.0,
+                    "fh": "#
+            .to_owned()
+            + fh
+            + r#"
                 },
                 "molarweight": 2.0157309551872
-            }"#;
+            }"#);
         let hydrogen_record: PureRecord<SaftVRQMieRecord, JobackRecord> =
             serde_json::from_str(hydrogen_json).expect("Unable to parse json.");
         Arc::new(SaftVRQMieParameters::new_pure(hydrogen_record).unwrap())
@@ -453,7 +483,8 @@ pub mod utils {
                     "sigma": 2.7443,
                     "epsilon_k": 5.4195,
                     "lr": 9.0,
-                    "la": 6.0
+                    "la": 6.0,
+                    "fh": 1
                 },
                 "molarweight": 4.002601643881807
             }"#;
@@ -479,7 +510,8 @@ pub mod utils {
                     "sigma": 2.7778,
                     "epsilon_k": 37.501,
                     "lr": 13.0,
-                    "la": 6.0
+                    "la": 6.0,
+                    "fh": 1
                 },
                 "molarweight": 20.17969806457545
             }"#;
@@ -488,8 +520,8 @@ pub mod utils {
         Arc::new(SaftVRQMieParameters::new_pure(neon_record).unwrap())
     }
 
-    pub fn h2_ne_fh1() -> Arc<SaftVRQMieParameters> {
-        let binary_json = r#"[
+    pub fn h2_ne_fh(fh: &str) -> Arc<SaftVRQMieParameters> {
+        let binary_json = &(r#"[
             {
                 "identifier": {
                     "cas": "1333-74-0",
@@ -504,7 +536,11 @@ pub mod utils {
                     "sigma": 3.0243,
                     "epsilon_k": 26.706,
                     "lr": 9.0,
-                    "la": 6.0
+                    "la": 6.0,
+                    "fh": "#
+            .to_owned()
+            + fh
+            + r#"
                 },
                 "molarweight": 2.0157309551872
             },
@@ -522,11 +558,14 @@ pub mod utils {
                     "sigma": 2.7778,
                     "epsilon_k": 37.501,
                     "lr": 13.0,
-                    "la": 6.0
+                    "la": 6.0,
+                    "fh": "#
+            + fh
+            + r#"
                 },
                 "molarweight": 20.17969806457545
             }
-        ]"#;
+        ]"#);
         let binary_record: Vec<PureRecord<SaftVRQMieRecord, JobackRecord>> =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
         Arc::new(
@@ -539,5 +578,29 @@ pub mod utils {
             )
             .unwrap(),
         )
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::utils::{helium_fh1, hydrogen_fh};
+    use super::SaftVRQMieParameters;
+    use feos_core::parameter::Parameter;
+
+    #[test]
+    #[should_panic(
+        expected = "cannot combine Feynman-Hibbs orders 1 and 2. Component 0 has order 1 and component 1 has order 2."
+    )]
+    fn incompatible_order() {
+        let order1 = helium_fh1();
+        let order2 = hydrogen_fh("2");
+        SaftVRQMieParameters::new_binary(
+            vec![
+                order1.pure_records[0].clone(),
+                order2.pure_records[0].clone(),
+            ],
+            None,
+        )
+        .unwrap();
     }
 }

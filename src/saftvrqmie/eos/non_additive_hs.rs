@@ -80,15 +80,15 @@ pub fn reduced_non_additive_hs_energy<D: DualNum<f64>>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::saftvrqmie::parameters::utils::h2_ne_fh1;
-    use crate::saftvrqmie::parameters::utils::hydrogen_fh1;
+    use crate::saftvrqmie::parameters::utils::h2_ne_fh;
+    use crate::saftvrqmie::parameters::utils::hydrogen_fh;
     use approx::assert_relative_eq;
     use ndarray::arr1;
 
     #[test]
     fn test_non_add_hs_helmholtz_energy() {
         let hs = NonAddHardSphere {
-            parameters: hydrogen_fh1(),
+            parameters: hydrogen_fh("1"),
         };
         let na = 6.02214076e23;
         let t = 26.7060;
@@ -104,7 +104,7 @@ mod tests {
     #[test]
     fn test_non_add_hs_helmholtz_energy_mix() {
         let hs = NonAddHardSphere {
-            parameters: h2_ne_fh1(),
+            parameters: h2_ne_fh("1"),
         };
         let na = 6.02214076e23;
         let t = 30.0;

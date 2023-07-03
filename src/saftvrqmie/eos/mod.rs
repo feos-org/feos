@@ -1,11 +1,12 @@
 use super::parameters::SaftVRQMieParameters;
-use feos_core::parameter::Parameter;
+use feos_core::parameter::{Parameter, ParameterError};
 use feos_core::{
     Contributions, EntropyScaling, EosError, EosResult, EquationOfState, HelmholtzEnergy,
     MolarWeight, State,
 };
 use ndarray::Array1;
 use quantity::si::*;
+use std::convert::TryFrom;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::sync::Arc;
 
@@ -20,7 +21,6 @@ use non_additive_hs::NonAddHardSphere;
 #[derive(Copy, Clone)]
 pub struct SaftVRQMieOptions {
     pub max_eta: f64,
-    pub fh_order: FeynmanHibbsOrder,
     pub inc_nonadd_term: bool,
 }
 
@@ -28,7 +28,6 @@ impl Default for SaftVRQMieOptions {
     fn default() -> Self {
         Self {
             max_eta: 0.5,
-            fh_order: FeynmanHibbsOrder::FH1,
             inc_nonadd_term: true,
         }
     }
@@ -38,10 +37,28 @@ impl Default for SaftVRQMieOptions {
 #[derive(Copy, Clone)]
 #[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum FeynmanHibbsOrder {
+    /// Mie potential
+    FH0 = 0,
     /// First order correction
-    FH1,
+    FH1 = 1,
     /// Second order correction
-    FH2,
+    FH2 = 2,
+}
+
+impl TryFrom<usize> for FeynmanHibbsOrder {
+    type Error = ParameterError;
+
+    fn try_from(u: usize) -> Result<Self, Self::Error> {
+        match u {
+            0 => Ok(Self::FH0),
+            1 => Ok(Self::FH1),
+            2 => Ok(Self::FH2),
+            _ => Err(ParameterError::IncompatibleParameters(format!(
+                "failed to parse value '{}' as FeynmanHibbsOrder. Has to be one of '0, 1, or 2'.",
+                u
+            ))),
+        }
+    }
 }
 
 /// SAFT-VRQ Mie equation of state.
@@ -60,10 +77,6 @@ impl SaftVRQMie {
     }
 
     pub fn with_options(parameters: Arc<SaftVRQMieParameters>, options: SaftVRQMieOptions) -> Self {
-        match options.fh_order {
-            FeynmanHibbsOrder::FH1 => (),
-            FeynmanHibbsOrder::FH2 => unimplemented!(),
-        };
         let mut contributions: Vec<Box<dyn HelmholtzEnergy>> = Vec::with_capacity(4);
         contributions.push(Box::new(HardSphere {
             parameters: parameters.clone(),

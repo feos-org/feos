@@ -181,31 +181,42 @@ impl SaftVRQMieParameters {
         let s = self.sigma_ij[[i, j]];
         let eps = self.epsilon_k_ij[[i, j]];
         let c = self.c_ij[[i, j]];
+
         let q1r = lr * (lr - 1.0);
         let q1a = la * (la - 1.0);
+        let q2r = 0.5 * (lr + 2.0) * (lr + 1.0) * lr * (lr - 1.0);
+        let q2a = 0.5 * (la + 2.0) * (la + 1.0) * la * (la - 1.0);
         let d = self.quantum_d_ij(i, j, temperature);
-        let u = (d
-            * (r.powf(lr + 2.0).recip() * q1r * s.powf(lr)
-                - r.powf(la + 2.0).recip() * q1a * s.powf(la))
-            + r.powf(lr).recip() * s.powf(lr)
-            - r.powf(la).recip() * s.powf(la))
-            * c
-            * eps;
-
-        let u_r = (d
-            * (r.powf(lr + 3.0).recip() * -q1r * (lr + 2.0) * s.powf(lr)
-                + r.powf(la + 3.0).recip() * q1a * (la + 2.0) * s.powf(la))
-            - r.powf(lr + 1.0).recip() * lr * s.powf(lr)
-            + r.powf(la + 1.0).recip() * la * s.powf(la))
-            * c
-            * eps;
-        let u_rr = (d
-            * (r.powf(lr + 4.0).recip() * q1r * (lr + 2.0) * (lr + 3.0) * s.powf(lr)
-                - r.powf(la + 4.0).recip() * q1a * (la + 2.0) * (la + 3.0) * s.powf(la))
-            + r.powf(lr + 2.0).recip() * lr * (lr + 1.0) * s.powf(lr)
-            - r.powf(la + 2.0).recip() * la * (la + 1.0) * s.powf(la))
-            * c
-            * eps;
+        let mut u = r.powf(lr).recip() * s.powf(lr) - r.powf(la).recip() * s.powf(la);
+        let mut u_r = -r.powf(lr + 1.0).recip() * lr * s.powf(lr)
+            + r.powf(la + 1.0).recip() * la * s.powf(la);
+        let mut u_rr = r.powf(lr + 2.0).recip() * lr * (lr + 1.0) * s.powf(lr)
+            - r.powf(la + 2.0).recip() * la * (la + 1.0) * s.powf(la);
+        if self.fh_ij[[i, j]] as usize > 0 {
+            u += d
+                * (r.powf(lr + 2.0).recip() * q1r * s.powf(lr)
+                    - r.powf(la + 2.0).recip() * q1a * s.powf(la));
+            u_r += d
+                * (r.powf(lr + 3.0).recip() * -q1r * (lr + 2.0) * s.powf(lr)
+                    + r.powf(la + 3.0).recip() * q1a * (la + 2.0) * s.powf(la));
+            u_rr += d
+                * (r.powf(lr + 4.0).recip() * q1r * (lr + 2.0) * (lr + 3.0) * s.powf(lr)
+                    - r.powf(la + 4.0).recip() * q1a * (la + 2.0) * (la + 3.0) * s.powf(la));
+        }
+        if self.fh_ij[[i, j]] as usize > 1 {
+            u += d.powi(2)
+                * (r.powf(lr + 4.0).recip() * q2r * s.powf(lr)
+                    - r.powf(la + 4.0).recip() * q2a * s.powf(la));
+            u_r += d.powi(2)
+                * (-r.powf(lr + 5.0).recip() * q2r * (lr + 4.0) * s.powf(lr)
+                    + r.powf(la + 5.0).recip() * q2a * (la + 4.0) * s.powf(la));
+            u_rr += d.powi(2)
+                * (r.powf(lr + 6.0).recip() * q2r * (lr + 4.0) * (lr + 5.0) * s.powf(lr)
+                    - r.powf(la + 6.0).recip() * q2a * (la + 4.0) * (la + 5.0) * s.powf(la));
+        }
+        u *= c * eps;
+        u_r *= c * eps;
+        u_rr *= c * eps;
         [u, u_r, u_rr]
     }
 }
@@ -267,15 +278,15 @@ pub fn zeta_23<D: DualNum<f64>>(m: &Array1<f64>, molefracs: &Array1<D>, diameter
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::saftvrqmie::parameters::utils::h2_ne_fh1;
-    use crate::saftvrqmie::parameters::utils::hydrogen_fh1;
+    use crate::saftvrqmie::parameters::utils::h2_ne_fh;
+    use crate::saftvrqmie::parameters::utils::hydrogen_fh;
     use approx::assert_relative_eq;
     use ndarray::arr1;
     use num_dual::Dual2;
 
     #[test]
     fn test_quantum_d_mass() {
-        let parameters = hydrogen_fh1();
+        let parameters = hydrogen_fh("1");
         let temperature = Dual2::from_re(26.7060).derive();
         let r = Dual2::from_re(3.5);
         let u0 = parameters.qmie_potential_ij(0, 0, r, temperature);
@@ -290,7 +301,7 @@ mod tests {
 
     #[test]
     fn test_sigma_effective() {
-        let parameters = hydrogen_fh1();
+        let parameters = hydrogen_fh("1");
         let temperature = Dual2::from_re(26.7060).derive();
         let sigma_eff = parameters.calc_sigma_eff_ij(0, 0, temperature);
         println!("{}", sigma_eff.re() - 3.2540054024660556);
@@ -299,7 +310,7 @@ mod tests {
 
     #[test]
     fn test_eps_div_k_effective() {
-        let parameters = hydrogen_fh1();
+        let parameters = hydrogen_fh("1");
         let temperature = Dual2::from_re(26.7060).derive();
         let epsilon_k_eff = parameters.calc_epsilon_k_eff_ij(0, 0, temperature);
         println!("{}", epsilon_k_eff.re() - 21.654396207986697);
@@ -308,7 +319,7 @@ mod tests {
 
     #[test]
     fn test_zero_integrand() {
-        let parameters = hydrogen_fh1();
+        let parameters = hydrogen_fh("1");
         let temperature = Dual2::from_re(26.706).derive();
         let sigma_eff = parameters.calc_sigma_eff_ij(0, 0, temperature);
         let r0 = parameters.zero_integrand(0, 0, temperature, sigma_eff);
@@ -318,7 +329,7 @@ mod tests {
 
     #[test]
     fn test_hs_diameter() {
-        let parameters = hydrogen_fh1();
+        let parameters = hydrogen_fh("1");
         let temperature = Dual2::from_re(26.7060).derive();
         let sigma_eff = parameters.calc_sigma_eff_ij(0, 0, temperature);
         let d_hs = parameters.hs_diameter_ij(0, 0, temperature, sigma_eff);
@@ -329,7 +340,7 @@ mod tests {
     #[test]
     fn test_hs_helmholtz_energy() {
         let hs = HardSphere {
-            parameters: hydrogen_fh1(),
+            parameters: hydrogen_fh("1"),
         };
         let na = 6.02214076e23;
         let t = 26.7060;
@@ -342,9 +353,24 @@ mod tests {
     }
 
     #[test]
+    fn test_hs_helmholtz_energy_fh2() {
+        let hs = HardSphere {
+            parameters: hydrogen_fh("2"),
+        };
+        let na = 6.02214076e23;
+        let t = 26.7060;
+        let v = 1.0e26;
+        let n = na * 1.1;
+        let s = StateHD::new(t, v, arr1(&[n]));
+        let a_rust = hs.helmholtz_energy(&s);
+        dbg!(a_rust / na);
+        assert_relative_eq!(a_rust / na, 0.5934447545083482, epsilon = 5e-7);
+    }
+
+    #[test]
     fn test_hs_helmholtz_energy_mix() {
         let hs = HardSphere {
-            parameters: h2_ne_fh1(),
+            parameters: h2_ne_fh("1"),
         };
         let na = 6.02214076e23;
         let t = 30.0;
@@ -355,5 +381,20 @@ mod tests {
         dbg!(a_rust / na);
         // non-additive: 1.8249307925054206
         assert_relative_eq!(a_rust / na, 1.8074833133403905, epsilon = 5e-7);
+    }
+
+    #[test]
+    fn test_hs_helmholtz_energy_mix_fh2() {
+        let hs = HardSphere {
+            parameters: h2_ne_fh("2"),
+        };
+        let na = 6.02214076e23;
+        let t = 30.0;
+        let v = 1.0e26;
+        let n = [na * 1.1, na * 1.0];
+        let s = StateHD::new(t, v, arr1(&n));
+        let a_rust = hs.helmholtz_energy(&s);
+        dbg!(a_rust / na);
+        assert_relative_eq!(a_rust / na, 1.898534632022848, epsilon = 5e-7);
     }
 }

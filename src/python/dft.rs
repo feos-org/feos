@@ -19,7 +19,7 @@ use crate::pets::{PetsFunctional, PetsOptions};
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::python::PySaftVRQMieParameters;
 #[cfg(feature = "saftvrqmie")]
-use crate::saftvrqmie::{FeynmanHibbsOrder, SaftVRQMieFunctional, SaftVRQMieOptions};
+use crate::saftvrqmie::{SaftVRQMieFunctional, SaftVRQMieOptions};
 
 use feos_core::*;
 use feos_dft::adsorption::*;
@@ -187,9 +187,6 @@ impl PyFunctionalVariant {
     ///     The specific variant of the FMT term. Defaults to FMTVersion.WhiteBear
     /// max_eta : float, optional
     ///     Maximum packing fraction. Defaults to 0.5.
-    /// fh_order : FeynmanHibbsOrder, optional
-    ///     Which Feyman-Hibbs correction order to use. Defaults to FeynmanHibbsOrder.FH1.
-    ///     Currently, only the first order is implemented.
     /// inc_nonadd_term : bool, optional
     ///     Include non-additive correction to the hard-sphere reference. Defaults to True.
     ///
@@ -199,19 +196,17 @@ impl PyFunctionalVariant {
     #[cfg(feature = "saftvrqmie")]
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, fmt_version=FMTVersion::WhiteBear, max_eta=0.5, fh_order=FeynmanHibbsOrder::FH1, inc_nonadd_term=true),
-        text_signature = "(parameters, fmt_version, max_eta=0.5, fh_order, inc_nonadd_term=True)"
+        signature = (parameters, fmt_version=FMTVersion::WhiteBear, max_eta=0.5, inc_nonadd_term=true),
+        text_signature = "(parameters, fmt_version, max_eta=0.5, inc_nonadd_term=True)"
     )]
     fn saftvrqmie(
         parameters: PySaftVRQMieParameters,
         fmt_version: FMTVersion,
         max_eta: f64,
-        fh_order: FeynmanHibbsOrder,
         inc_nonadd_term: bool,
     ) -> Self {
         let options = SaftVRQMieOptions {
             max_eta,
-            fh_order,
             inc_nonadd_term,
         };
         Self(Arc::new(

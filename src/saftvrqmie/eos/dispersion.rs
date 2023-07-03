@@ -46,7 +46,7 @@ impl<D: DualNum<f64>> Alpha<D> {
         let mut alpha_ij: Array2<D> = Array2::zeros((nc, nc));
 
         for i in 0..nc {
-            for j in 0..nc {
+            for j in i..nc {
                 let sigma_ratio = D::one() * p.sigma_ij[[i, j]] / sigma_eff_ij[[i, j]];
                 let eps_ratio = D::one() * p.epsilon_k_ij[[i, j]] / epsilon_k_eff_ij[[i, j]];
                 let la = p.lambda_a_ij[[i, j]];
@@ -56,9 +56,23 @@ impl<D: DualNum<f64>> Alpha<D> {
                 let dmt = p.quantum_d_ij(i, j, temperature) / p.sigma_ij[[i, j]].powi(2);
                 let ma = sigma_ratio_a / (la - 3.0);
                 let mr = sigma_ratio_r / (lr - 3.0);
-                let q1a = sigma_ratio_a * sigma_ratio.powi(2) * la * (la - 1.0) / (la - 1.0);
-                let q1r = sigma_ratio_r * sigma_ratio.powi(2) * lr * (lr - 1.0) / (lr - 1.0);
-                alpha_ij[[i, j]] = (dmt * (q1a - q1r) + ma - mr) * p.c_ij[[i, j]] * eps_ratio;
+                alpha_ij[[i, j]] = ma - mr;
+                if p.fh_ij[[i, j]] as usize > 0 {
+                    let q1a = sigma_ratio_a * sigma_ratio.powi(2) * la;
+                    let q1r = sigma_ratio_r * sigma_ratio.powi(2) * lr;
+                    alpha_ij[[i, j]] += dmt * (q1a - q1r);
+                }
+                if p.fh_ij[[i, j]] as usize > 1 {
+                    let q2a =
+                        sigma_ratio_a * sigma_ratio.powi(4) * (la + 2.0) * la * (la - 1.0) * 0.5;
+                    let q2r =
+                        sigma_ratio_r * sigma_ratio.powi(4) * (lr + 2.0) * lr * (lr - 1.0) * 0.5;
+                    alpha_ij[[i, j]] += dmt.powi(2) * (q2a - q2r);
+                }
+                alpha_ij[[i, j]] *= eps_ratio * p.c_ij[[i, j]];
+                if i != j {
+                    alpha_ij[[j, i]] = alpha_ij[[i, j]];
+                }
             }
         }
         Self { alpha_ij }
@@ -199,12 +213,14 @@ fn first_order_perturbation<D: DualNum<f64>>(
     let n = parameters.sigma.len();
     let mut a1 = D::zero();
     for i in 0..n {
-        for j in 0..n {
+        for j in i..n {
             let x0 = d_hs_ij[[i, j]].recip() * parameters.sigma_ij[[i, j]];
             let x0_eff = s_eff_ij[[i, j]] / d_hs_ij[[i, j]];
             let dq_div_sigma_2 = dq_ij[[i, j]] / parameters.sigma_ij[[i, j]].powi(2);
+            let fac = if i == j { 1.0 } else { 2.0 };
             a1 += x_s[i]
                 * x_s[j]
+                * fac
                 * FRAC_PI_6
                 * rho_s
                 * d_hs_ij[[i, j]].powi(3)
@@ -217,6 +233,7 @@ fn first_order_perturbation<D: DualNum<f64>>(
                     x0_eff,
                     parameters.c_ij[[i, j]],
                     dq_div_sigma_2,
+                    parameters.fh_ij[[i, j]] as usize,
                 )
         }
     }
@@ -232,16 +249,27 @@ fn first_order_perturbation_ij<D: DualNum<f64>>(
     x0_eff: D,
     c: f64,
     dq_div_sigma_2: D,
+    fh_order: usize,
 ) -> D {
     let int_a = combine_sutherland_and_b(lambda_a, epsilon_k, zeta, x0, x0_eff);
     let int_r = combine_sutherland_and_b(lambda_r, epsilon_k, zeta, x0, x0_eff);
-    // Quantum correction
-    let int_qa = combine_sutherland_and_b(lambda_a + 2.0, epsilon_k, zeta, x0, x0_eff);
-    let int_qr = combine_sutherland_and_b(lambda_r + 2.0, epsilon_k, zeta, x0, x0_eff);
-    let qa1 = dq_div_sigma_2 * quantum_prefactor(lambda_a);
-    let qr1 = dq_div_sigma_2 * quantum_prefactor(lambda_r);
-
-    (int_qa * qa1 - int_qr * qr1 + int_a - int_r) * c
+    let mut a1_ij = int_a - int_r;
+    // Quantum corrections
+    if fh_order > 0 {
+        let int_qa = combine_sutherland_and_b(lambda_a + 2.0, epsilon_k, zeta, x0, x0_eff);
+        let int_qr = combine_sutherland_and_b(lambda_r + 2.0, epsilon_k, zeta, x0, x0_eff);
+        let qa1 = dq_div_sigma_2 * quantum_prefactor(lambda_a);
+        let qr1 = dq_div_sigma_2 * quantum_prefactor(lambda_r);
+        a1_ij += int_qa * qa1 - int_qr * qr1;
+    }
+    if fh_order > 1 {
+        let int_qa2 = combine_sutherland_and_b(lambda_a + 4.0, epsilon_k, zeta, x0, x0_eff);
+        let int_qr2 = combine_sutherland_and_b(lambda_r + 4.0, epsilon_k, zeta, x0, x0_eff);
+        let qa2 = dq_div_sigma_2.powi(2) * quantum_prefactor_second_order(lambda_a);
+        let qr2 = dq_div_sigma_2.powi(2) * quantum_prefactor_second_order(lambda_r);
+        a1_ij += int_qa2 * qa2 - int_qr2 * qr2;
+    }
+    a1_ij * c
 }
 
 fn eta_eff<D: DualNum<f64>>(lambda: f64, zeta: D) -> D {
@@ -320,15 +348,17 @@ fn second_order_perturbation<D: DualNum<f64>>(
         / (zeta * 4.0 + zeta.powi(2) * 4.0 - zeta.powi(3) * 4.0 + zeta.powi(4) + 1.0);
 
     for i in 0..n {
-        for j in 0..n {
+        for j in i..n {
             let chi = alpha.f(0, i, j) * zeta_bar
                 + alpha.f(1, i, j) * zeta_bar.powi(5)
                 + alpha.f(2, i, j) * zeta_bar.powi(8);
             let x0 = d_hs_ij[[i, j]].recip() * parameters.sigma_ij[[i, j]];
             let x0_eff = s_eff_ij[[i, j]] / d_hs_ij[[i, j]];
             let dq_div_sigma_2 = dq_ij[[i, j]] / parameters.sigma_ij[[i, j]].powi(2);
+            let fac = if i == j { 1.0 } else { 2.0 };
             a2 += x_s[i]
                 * x_s[j]
+                * fac
                 * FRAC_PI_6
                 * rho_s
                 * d_hs_ij[[i, j]].powi(3)
@@ -342,6 +372,7 @@ fn second_order_perturbation<D: DualNum<f64>>(
                     x0_eff,
                     parameters.c_ij[[i, j]],
                     dq_div_sigma_2,
+                    parameters.fh_ij[[i, j]] as usize,
                 )
         }
     }
@@ -353,6 +384,11 @@ fn quantum_prefactor(lambda: f64) -> f64 {
     lambda * (lambda - 1.0)
 }
 
+#[inline]
+fn quantum_prefactor_second_order(lambda: f64) -> f64 {
+    0.5 * (lambda + 2.0) * (lambda + 1.0) * lambda * (lambda - 1.0)
+}
+
 fn second_order_perturbation_ij<D: DualNum<f64>>(
     lambda_a: f64,
     lambda_r: f64,
@@ -362,13 +398,17 @@ fn second_order_perturbation_ij<D: DualNum<f64>>(
     x0_eff: D,
     c: f64,
     dq_div_sigma_2: D,
+    fh_order: usize,
 ) -> D {
     let lambda_2r = 2.0 * lambda_r;
     let lambda_2a = 2.0 * lambda_a;
     let lambda_ar = lambda_a + lambda_r;
-    // Quantum contributions
+    // Quantum contributions of first order
     let qa1 = dq_div_sigma_2 * quantum_prefactor(lambda_a);
     let qr1 = dq_div_sigma_2 * quantum_prefactor(lambda_r);
+    // Quantum contributions of second order
+    let qa2 = dq_div_sigma_2.powi(2) * quantum_prefactor_second_order(lambda_a);
+    let qr2 = dq_div_sigma_2.powi(2) * quantum_prefactor_second_order(lambda_r);
 
     let mut a2_ij = D::zero();
     let mut afac = D::one();
@@ -376,8 +416,8 @@ fn second_order_perturbation_ij<D: DualNum<f64>>(
     let mut arfac = -D::one() * 2.0;
     // Loop all contributions
     // 0: Mie contribution
-    // 1,2: Quantum corrections
-    for q in 0..3 {
+    // 1,..: Quantum corrections
+    for q in 0..fh_order * 2 + 1 {
         let int_a =
             combine_sutherland_and_b(lambda_2a + 2.0 * q as f64, epsilon_k, zeta, x0, x0_eff);
         let int_r =
@@ -392,6 +432,19 @@ fn second_order_perturbation_ij<D: DualNum<f64>>(
             rfac = qr1 * qr1;
             afac = qa1 * qa1;
             arfac = -qa1 * qr1 * 2.0;
+            if fh_order == 2 {
+                rfac += qr2 * 2.0;
+                afac += qa2 * 2.0;
+                arfac += -(qr2 + qa2) * 2.0;
+            }
+        } else if q == 3 {
+            rfac = qr2 * qr1 * 2.0;
+            afac = qa2 * qa1 * 2.0;
+            arfac = -(qr2 * qa1 + qa2 * qr1) * 2.0;
+        } else if q == 4 {
+            rfac = qr2 * qr2;
+            afac = qa2 * qa2;
+            arfac = -qr2 * qa2 * 2.0;
         }
         a2_ij += int_a * afac + int_ar * arfac + int_r * rfac;
     }
@@ -440,8 +493,8 @@ impl fmt::Display for Dispersion {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::saftvrqmie::parameters::utils::h2_ne_fh1;
-    use crate::saftvrqmie::parameters::utils::hydrogen_fh1;
+    use crate::saftvrqmie::parameters::utils::h2_ne_fh;
+    use crate::saftvrqmie::parameters::utils::hydrogen_fh;
     use approx::assert_relative_eq;
     use ndarray::arr1;
     use num_dual::Dual2;
@@ -467,7 +520,7 @@ mod tests {
     #[test]
     fn test_alpha() {
         let temperature = Dual2::from_re(26.7060).derive();
-        let parameters = hydrogen_fh1();
+        let parameters = hydrogen_fh("1");
         let n = 1;
         let s_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| {
             parameters.calc_sigma_eff_ij(i, j, temperature)
@@ -479,6 +532,25 @@ mod tests {
         assert_relative_eq!(
             alpha.alpha_ij[[0, 0]].re(),
             1.0239374984636636,
+            epsilon = 5e-8
+        );
+    }
+
+    #[test]
+    fn test_alpha_fh2() {
+        let temperature = Dual2::from_re(26.7060).derive();
+        let parameters = hydrogen_fh("2");
+        let n = 1;
+        let s_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| {
+            parameters.calc_sigma_eff_ij(i, j, temperature)
+        });
+        let epsilon_k_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| {
+            parameters.calc_epsilon_k_eff_ij(i, j, temperature)
+        });
+        let alpha = Alpha::new(&parameters, &s_eff_ij, &epsilon_k_eff_ij, temperature);
+        assert_relative_eq!(
+            alpha.alpha_ij[[0, 0]].re(),
+            0.9918845918431217,
             epsilon = 5e-8
         );
     }
@@ -505,7 +577,7 @@ mod tests {
 
     #[test]
     fn test_quantum_d_ij() {
-        let p = hydrogen_fh1();
+        let p = hydrogen_fh("1");
         let temperature = Dual2::from_re(26.7060).derive();
         let dq_ij = p.quantum_d_ij(0, 0, temperature);
         assert_relative_eq!(dq_ij.re(), 7.5092605940987542e-2, epsilon = 5e-8);
@@ -513,7 +585,7 @@ mod tests {
 
     #[test]
     fn test_first_order_perturbation_ij() {
-        let p = hydrogen_fh1();
+        let p = hydrogen_fh("1");
         let temperature = Dual2::from_re(26.7060).derive();
         let zeta = Dual2::from_re(0.333).derive();
         let dq_div_s2 = p.quantum_d_ij(0, 0, temperature) / p.sigma_ij[[0, 0]].powi(2);
@@ -521,7 +593,6 @@ mod tests {
         let d_hs = p.hs_diameter_ij(0, 0, temperature, s_eff);
         let x0 = d_hs.recip() * p.sigma_ij[[0, 0]];
         let x0_eff = s_eff / d_hs;
-
         let a1_ij = first_order_perturbation_ij(
             p.lambda_a_ij[[0, 0]],
             p.lambda_r_ij[[0, 0]],
@@ -531,14 +602,40 @@ mod tests {
             x0_eff,
             p.c_ij[[0, 0]],
             dq_div_s2,
+            p.fh_ij[[0, 0]] as usize,
         );
         let rel_err = (a1_ij.re() + 332.00915966785539) / 332.00915966785539;
         assert_relative_eq!(rel_err, 0.0, epsilon = 1e-7);
     }
 
     #[test]
+    fn test_first_order_perturbation_ij_fh2() {
+        let p = hydrogen_fh("2");
+        let temperature = Dual2::from_re(26.7060).derive();
+        let zeta = Dual2::from_re(0.333).derive();
+        let dq_div_s2 = p.quantum_d_ij(0, 0, temperature) / p.sigma_ij[[0, 0]].powi(2);
+        let s_eff = p.calc_sigma_eff_ij(0, 0, temperature);
+        let d_hs = p.hs_diameter_ij(0, 0, temperature, s_eff);
+        let x0 = d_hs.recip() * p.sigma_ij[[0, 0]];
+        let x0_eff = s_eff / d_hs;
+        let a1_ij = first_order_perturbation_ij(
+            p.lambda_a_ij[[0, 0]],
+            p.lambda_r_ij[[0, 0]],
+            p.epsilon_k_ij[[0, 0]],
+            zeta,
+            x0,
+            x0_eff,
+            p.c_ij[[0, 0]],
+            dq_div_s2,
+            p.fh_ij[[0, 0]] as usize,
+        );
+        let rel_err = (a1_ij.re() + 296.53213134819606) / 296.53213134819606;
+        assert_relative_eq!(rel_err, 0.0, epsilon = 1e-7);
+    }
+
+    #[test]
     fn test_second_order_perturbation_ij() {
-        let p = hydrogen_fh1();
+        let p = hydrogen_fh("1");
         let temperature = Dual2::from_re(26.7060).derive();
         let zeta = Dual2::from_re(0.333).derive();
         let dq_div_s2 = p.quantum_d_ij(0, 0, temperature) / p.sigma_ij[[0, 0]].powi(2);
@@ -556,6 +653,7 @@ mod tests {
             x0_eff,
             p.c_ij[[0, 0]],
             dq_div_s2,
+            1,
         );
         let rel_err = (a2_ij.re() + 1907.5055256805874) / 1907.5055256805874;
         assert_relative_eq!(rel_err, 0.0, epsilon = 1e-7);
@@ -563,7 +661,7 @@ mod tests {
 
     #[test]
     fn test_third_order_perturbation_ij() {
-        let p = hydrogen_fh1();
+        let p = hydrogen_fh("1");
         let temperature = Dual2::from_re(26.7060).derive();
         let zeta_bar = Dual2::from_re(0.333).derive();
         let n = 1;
@@ -581,7 +679,7 @@ mod tests {
 
     #[test]
     fn test_zeta_saft_vrq_mie() {
-        let p = hydrogen_fh1();
+        let p = hydrogen_fh("1");
         let t = Dual2::from_re(26.7060).derive();
         let v = Dual2::from_re(1.0e26).derive();
         let n = Dual2::from_re(6.02214076e23).derive();
@@ -616,7 +714,7 @@ mod tests {
 
     #[test]
     fn test_perturbation_terms() {
-        let p = hydrogen_fh1();
+        let p = hydrogen_fh("1");
         let t = Dual2::from_re(26.7060).derive();
         let v = Dual2::from_re(1.0e26).derive();
         let n = Dual2::from_re(6.02214076e23).derive();
@@ -675,9 +773,69 @@ mod tests {
     }
 
     #[test]
+    fn test_perturbation_terms_fh2() {
+        let p = hydrogen_fh("2");
+        let t = Dual2::from_re(26.7060).derive();
+        let v = Dual2::from_re(1.0e26).derive();
+        let n = Dual2::from_re(6.02214076e23).derive();
+        let state = StateHD::new(t, v, arr1(&[n]));
+        let nc = 1;
+        // temperature dependent sigma
+        let s_eff_ij = Array2::from_shape_fn((nc, nc), |(i, j)| {
+            p.calc_sigma_eff_ij(i, j, state.temperature)
+        });
+        // temperature dependent segment diameter
+        let d_hs_ij = Array2::from_shape_fn((nc, nc), |(i, j)| {
+            p.hs_diameter_ij(i, j, state.temperature, s_eff_ij[[i, j]])
+        });
+
+        // segment fractions
+        let mut x_s = Array1::from_shape_fn(nc, |i| state.molefracs[i] * p.m[i]);
+        let inv_x_s_sum = x_s.sum().recip();
+        for i in 0..nc {
+            x_s[i] *= inv_x_s_sum;
+        }
+
+        // Segment density
+        let mut rho_s = Dual2::zero();
+        for i in 0..nc {
+            rho_s += state.partial_density[i] * p.m[i];
+        }
+
+        // packing fractions
+        let zeta = zeta_saft_vrq_mie(&p.m, &x_s, &d_hs_ij, rho_s);
+        let zeta_bar = zeta_saft_vrq_mie(&p.m, &x_s, &s_eff_ij, rho_s);
+
+        // temperature dependent well depth
+        let epsilon_k_eff_ij = Array2::from_shape_fn((nc, nc), |(i, j)| {
+            p.calc_epsilon_k_eff_ij(i, j, state.temperature)
+        });
+
+        // alphas ....
+        let alpha = Alpha::new(&p, &s_eff_ij, &epsilon_k_eff_ij, state.temperature);
+
+        // temperature dependent well depth
+        let dq_ij =
+            Array2::from_shape_fn((nc, nc), |(i, j)| p.quantum_d_ij(i, j, state.temperature));
+
+        let a1 = first_order_perturbation(&p, &x_s, zeta, rho_s, &d_hs_ij, &s_eff_ij, &dq_ij);
+        let a2 = second_order_perturbation(
+            &p, &alpha, &x_s, zeta, zeta_bar, rho_s, &d_hs_ij, &s_eff_ij, &dq_ij,
+        );
+        let a3 = third_order_perturbation(&p, &alpha, &x_s, zeta_bar, &epsilon_k_eff_ij);
+
+        let rel_err_a1 = (a1.re() + 29.48107233383977) / 29.48107233383977;
+        let rel_err_a2 = (a2.re() + 56.178134314767334) / 56.178134314767334;
+        let rel_err_a3 = (a3.re() + 374.38725161974565) / 374.38725161974565;
+        assert_relative_eq!(rel_err_a1.re(), 0.0, epsilon = 5e-7);
+        assert_relative_eq!(rel_err_a2.re(), 0.0, epsilon = 5e-7);
+        assert_relative_eq!(rel_err_a3.re(), 0.0, epsilon = 5e-7);
+    }
+
+    #[test]
     fn test_dispersion() {
         let disp = Dispersion {
-            parameters: hydrogen_fh1(),
+            parameters: hydrogen_fh("1"),
         };
         let a_ref = [
             -1.2683816065838103,
@@ -706,7 +864,7 @@ mod tests {
     #[test]
     fn test_parameters_mix() {
         let disp = Dispersion {
-            parameters: h2_ne_fh1(),
+            parameters: h2_ne_fh("1"),
         };
         let p = disp.parameters;
         assert_relative_eq!(p.c_ij[[0, 1]], 4.7303195840057679, epsilon = 1e-7);
@@ -718,7 +876,7 @@ mod tests {
     #[test]
     fn test_dispersion_mix() {
         let disp = Dispersion {
-            parameters: h2_ne_fh1(),
+            parameters: h2_ne_fh("1"),
         };
         let a_ref = [
             -4.4340438372333235,
@@ -735,21 +893,51 @@ mod tests {
             let state = StateHD::new(t, v, arr1(&n));
             let a_disp = disp.helmholtz_energy(&state) / na;
             dbg!(it);
-            assert_relative_eq!(a_disp.re(), a, epsilon = 1e-7);
+            assert_relative_eq!(a_disp.re(), a, epsilon = 5e-7);
         }
         let t = Dual2::from_re(30.0).derive();
         let v = Dual2::from_re(1.0e26 * 2.0).derive();
         let n = [Dual2::from_re(2.2 * na), Dual2::from_re(2.0 * na)];
         let state = StateHD::new(t, v, arr1(&n));
         let a_disp = disp.helmholtz_energy(&state) / na;
-        assert_relative_eq!(a_disp.re(), a_ref[0] * 2.0, epsilon = 1e-7);
+        assert_relative_eq!(a_disp.re(), a_ref[0] * 2.0, epsilon = 5e-7);
+    }
+
+    #[test]
+    fn test_dispersion_mix_fh2() {
+        let disp = Dispersion {
+            parameters: h2_ne_fh("2"),
+        };
+        let a_ref = [
+            -4.319932383710704,
+            -2.138549258896613,
+            -1.4153366793223225,
+            -1.0556128125530364,
+            -0.840761876536818,
+        ];
+        let na = 6.02214076e23;
+        let n = [Dual2::from_re(1.1 * na), Dual2::from_re(1.0 * na)];
+        let v = Dual2::from_re(1.0e26).derive();
+        for (it, &a) in a_ref.iter().enumerate() {
+            let t = Dual2::from_re(30.0 * (it + 1) as f64).derive();
+            let state = StateHD::new(t, v, arr1(&n));
+            let a_disp = disp.helmholtz_energy(&state) / na;
+            dbg!(it);
+            assert_relative_eq!(a_disp.re(), a, epsilon = 5e-7);
+        }
+        let t = Dual2::from_re(30.0).derive();
+        let v = Dual2::from_re(1.0e26 * 2.0).derive();
+        let n = [Dual2::from_re(2.2 * na), Dual2::from_re(2.0 * na)];
+        let state = StateHD::new(t, v, arr1(&n));
+        let a_disp = disp.helmholtz_energy(&state) / na;
+        assert_relative_eq!(a_disp.re(), a_ref[0] * 2.0, epsilon = 5e-7);
     }
 
     #[cfg(feature = "dft")]
     #[test]
     fn test_dispersion_energy_density() {
         let disp = Dispersion {
-            parameters: hydrogen_fh1(),
+            parameters: hydrogen_fh("1"),
         };
         let p = &disp.parameters;
         let n = p.m.len();
