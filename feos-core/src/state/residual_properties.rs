@@ -328,7 +328,7 @@ impl<E: Residual> State<E> {
             - SIUnit::gas_constant()
     }
 
-    /// Residual enthalpy: $H^\text{res}(T,p,\mathbf{n})=A^\text{res}+TS^\text{res}+pV-nRT$
+    /// Residual enthalpy: $H^\text{res}(T,p,\mathbf{n})=A^\text{res}+TS^\text{res}+p^\text{res}V$
     pub fn residual_enthalpy(&self) -> SINumber {
         self.temperature * self.residual_entropy()
             + self.residual_helmholtz_energy()
@@ -340,7 +340,7 @@ impl<E: Residual> State<E> {
         self.temperature * self.residual_entropy() + self.residual_helmholtz_energy()
     }
 
-    /// Residual Gibbs energy: $G^\text{res}(T,p,\mathbf{n})=A^\text{res}+pV-NRT-NRT \ln Z$
+    /// Residual Gibbs energy: $G^\text{res}(T,p,\mathbf{n})=A^\text{res}+p^\text{res}V-NRT \ln Z$
     pub fn residual_gibbs_energy(&self) -> SINumber {
         self.pressure(Contributions::Residual) * self.volume + self.residual_helmholtz_energy()
             - self.total_moles
