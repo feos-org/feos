@@ -361,6 +361,7 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseEquilibrium.bubble_point.html">feos.eos.PhaseEquilibrium.bubble_point</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseEquilibrium.dew_point.html">feos.eos.PhaseEquilibrium.dew_point</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseEquilibrium.heteroazeotrope.html">feos.eos.PhaseEquilibrium.heteroazeotrope</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseEquilibrium.new_npt.html">feos.eos.PhaseEquilibrium.new_npt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseEquilibrium.pure.html">feos.eos.PhaseEquilibrium.pure</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseEquilibrium.tp_flash.html">feos.eos.PhaseEquilibrium.tp_flash</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.PhaseEquilibrium.update_chemical_potential.html">feos.eos.PhaseEquilibrium.update_chemical_potential</a></li>
@@ -510,6 +511,7 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseEquilibrium.bubble_point.html">feos.dft.PhaseEquilibrium.bubble_point</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseEquilibrium.dew_point.html">feos.dft.PhaseEquilibrium.dew_point</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseEquilibrium.heteroazeotrope.html">feos.dft.PhaseEquilibrium.heteroazeotrope</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseEquilibrium.new_npt.html">feos.dft.PhaseEquilibrium.new_npt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseEquilibrium.pure.html">feos.dft.PhaseEquilibrium.pure</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseEquilibrium.tp_flash.html">feos.dft.PhaseEquilibrium.tp_flash</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.PhaseEquilibrium.update_chemical_potential.html">feos.dft.PhaseEquilibrium.update_chemical_potential</a></li>
@@ -1045,19 +1047,22 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.PhaseEquilibrium.heteroazeotrope.html#feos.eos.PhaseEquilibrium.heteroazeotrope" title="feos.eos.PhaseEquilibrium.heteroazeotrope"><code class="xref py py-obj docutils literal notranslate"><span class="pre">heteroazeotrope</span></code></a>(eos, ...[, tp_init, ...])</p></td>
 <td><p>Calculate a heteroazeotrope in a binary mixture for a given temperature or pressure.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.PhaseEquilibrium.pure.html#feos.eos.PhaseEquilibrium.pure" title="feos.eos.PhaseEquilibrium.pure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pure</span></code></a>(eos, temperature_or_pressure[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.PhaseEquilibrium.new_npt.html#feos.eos.PhaseEquilibrium.new_npt" title="feos.eos.PhaseEquilibrium.new_npt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">new_npt</span></code></a>(eos, temperature, pressure, ...)</p></td>
+<td><p>Creates a new PhaseEquilibrium that contains two states at the specified temperature, pressure and moles.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.PhaseEquilibrium.pure.html#feos.eos.PhaseEquilibrium.pure" title="feos.eos.PhaseEquilibrium.pure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pure</span></code></a>(eos, temperature_or_pressure[, ...])</p></td>
 <td><p>Create a liquid and vapor state in equilibrium for a pure substance.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.PhaseEquilibrium.tp_flash.html#feos.eos.PhaseEquilibrium.tp_flash" title="feos.eos.PhaseEquilibrium.tp_flash"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tp_flash</span></code></a>(eos, temperature, pressure, feed[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.PhaseEquilibrium.tp_flash.html#feos.eos.PhaseEquilibrium.tp_flash" title="feos.eos.PhaseEquilibrium.tp_flash"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tp_flash</span></code></a>(eos, temperature, pressure, feed[, ...])</p></td>
 <td><p>Create a liquid and vapor state in equilibrium for given temperature, pressure and feed composition.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.PhaseEquilibrium.update_chemical_potential.html#feos.eos.PhaseEquilibrium.update_chemical_potential" title="feos.eos.PhaseEquilibrium.update_chemical_potential"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_chemical_potential</span></code></a>(chemical_potential)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.PhaseEquilibrium.update_chemical_potential.html#feos.eos.PhaseEquilibrium.update_chemical_potential" title="feos.eos.PhaseEquilibrium.update_chemical_potential"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_chemical_potential</span></code></a>(chemical_potential)</p></td>
 <td><p>Calculate a new PhaseEquilibrium with the given chemical potential.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.PhaseEquilibrium.vapor_pressure.html#feos.eos.PhaseEquilibrium.vapor_pressure" title="feos.eos.PhaseEquilibrium.vapor_pressure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vapor_pressure</span></code></a>(eos, temperature)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.PhaseEquilibrium.vapor_pressure.html#feos.eos.PhaseEquilibrium.vapor_pressure" title="feos.eos.PhaseEquilibrium.vapor_pressure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vapor_pressure</span></code></a>(eos, temperature)</p></td>
 <td><p>Calculate the pure component vapor pressures for all the components in the system.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.PhaseEquilibrium.vle_pure_comps.html#feos.eos.PhaseEquilibrium.vle_pure_comps" title="feos.eos.PhaseEquilibrium.vle_pure_comps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vle_pure_comps</span></code></a>(eos, temperature_or_pressure)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.PhaseEquilibrium.vle_pure_comps.html#feos.eos.PhaseEquilibrium.vle_pure_comps" title="feos.eos.PhaseEquilibrium.vle_pure_comps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vle_pure_comps</span></code></a>(eos, temperature_or_pressure)</p></td>
 <td><p>Calculate the pure component vapor-liquid equilibria for all components in the system.</p></td>
 </tr>
 </tbody>

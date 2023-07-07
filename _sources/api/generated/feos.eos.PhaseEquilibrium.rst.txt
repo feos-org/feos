@@ -23,6 +23,7 @@ feos.eos.PhaseEquilibrium
       ~PhaseEquilibrium.bubble_point
       ~PhaseEquilibrium.dew_point
       ~PhaseEquilibrium.heteroazeotrope
+      ~PhaseEquilibrium.new_npt
       ~PhaseEquilibrium.pure
       ~PhaseEquilibrium.tp_flash
       ~PhaseEquilibrium.update_chemical_potential

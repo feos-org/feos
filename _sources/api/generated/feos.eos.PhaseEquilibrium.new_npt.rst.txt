@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.PhaseEquilibrium.new\_npt
+==================================
+
+.. currentmodule:: feos.eos
+
+.. automethod:: PhaseEquilibrium.new_npt
