@@ -7,6 +7,7 @@ use num_dual::linalg::{norm, LU};
 use num_dual::*;
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
 
@@ -20,15 +21,17 @@ pub use python::PyAssociationRecord;
 #[derive(Clone, Copy, Debug)]
 struct AssociationSite {
     assoc_comp: usize,
+    site_index: usize,
     n: f64,
     kappa_ab: f64,
     epsilon_k_ab: f64,
 }
 
 impl AssociationSite {
-    fn new(assoc_comp: usize, n: f64, kappa_ab: f64, epsilon_k_ab: f64) -> Self {
+    fn new(assoc_comp: usize, site_index: usize, n: f64, kappa_ab: f64, epsilon_k_ab: f64) -> Self {
         Self {
             assoc_comp,
+            site_index,
             n,
             kappa_ab,
             epsilon_k_ab,
@@ -37,11 +40,15 @@ impl AssociationSite {
 }
 
 /// Pure component association parameters.
-#[derive(Serialize, Deserialize, Clone, Copy, Default)]
+#[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct AssociationRecord {
     /// Association volume parameter
+    #[serde(skip_serializing_if = "f64::is_zero")]
+    #[serde(default)]
     pub kappa_ab: f64,
     /// Association energy parameter in units of Kelvin
+    #[serde(skip_serializing_if = "f64::is_zero")]
+    #[serde(default)]
     pub epsilon_k_ab: f64,
     /// \# of association sites of type A
     #[serde(skip_serializing_if = "f64::is_zero")]
@@ -86,6 +93,23 @@ impl fmt::Display for AssociationRecord {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Copy)]
+pub struct BinaryAssociationRecord {
+    pub kappa_ab: f64,
+    pub epsilon_k_ab: f64,
+    pub site_indices: [usize; 2],
+}
+
+impl BinaryAssociationRecord {
+    pub fn new(kappa_ab: f64, epsilon_k_ab: f64, site_indices: Option<[usize; 2]>) -> Self {
+        Self {
+            kappa_ab,
+            epsilon_k_ab,
+            site_indices: site_indices.unwrap_or_default(),
+        }
+    }
+}
+
 /// Parameter set required for the SAFT association Helmoltz energy
 /// contribution and functional.
 #[derive(Clone)]
@@ -104,6 +128,7 @@ impl AssociationParameters {
     pub fn new(
         records: &[Vec<AssociationRecord>],
         sigma: &Array1<f64>,
+        binary_records: &[((usize, usize), BinaryAssociationRecord)],
         component_index: Option<&Array1<usize>>,
     ) -> Self {
         let mut sites_a = Vec::new();
@@ -111,50 +136,88 @@ impl AssociationParameters {
         let mut sites_c = Vec::new();
 
         for (i, record) in records.iter().enumerate() {
-            for site in record {
-                if site.kappa_ab > 0.0 && site.epsilon_k_ab > 0.0 {
-                    if site.na > 0.0 {
-                        sites_a.push(AssociationSite::new(
-                            i,
-                            site.na,
-                            site.kappa_ab,
-                            site.epsilon_k_ab,
-                        ));
-                    }
-                    if site.nb > 0.0 {
-                        sites_b.push(AssociationSite::new(
-                            i,
-                            site.nb,
-                            site.kappa_ab,
-                            site.epsilon_k_ab,
-                        ));
-                    }
-                    if site.nc > 0.0 {
-                        sites_c.push(AssociationSite::new(
-                            i,
-                            site.nc,
-                            site.kappa_ab,
-                            site.epsilon_k_ab,
-                        ));
-                    }
+            for (s, site) in record.iter().enumerate() {
+                if site.na > 0.0 {
+                    sites_a.push(AssociationSite::new(
+                        i,
+                        s,
+                        site.na,
+                        site.kappa_ab,
+                        site.epsilon_k_ab,
+                    ));
+                }
+                if site.nb > 0.0 {
+                    sites_b.push(AssociationSite::new(
+                        i,
+                        s,
+                        site.nb,
+                        site.kappa_ab,
+                        site.epsilon_k_ab,
+                    ));
+                }
+                if site.nc > 0.0 {
+                    sites_c.push(AssociationSite::new(
+                        i,
+                        s,
+                        site.nc,
+                        site.kappa_ab,
+                        site.epsilon_k_ab,
+                    ));
                 }
             }
         }
 
-        let sigma3_kappa_ab = Array2::from_shape_fn([sites_a.len(), sites_b.len()], |(i, j)| {
-            (sigma[sites_a[i].assoc_comp] * sigma[sites_b[j].assoc_comp]).powf(1.5)
-                * (sites_a[i].kappa_ab * sites_b[j].kappa_ab).sqrt()
-        });
-        let sigma3_kappa_cc = Array2::from_shape_fn([sites_c.len(); 2], |(i, j)| {
+        let indices_a: HashMap<_, _> = sites_a
+            .iter()
+            .enumerate()
+            .map(|(i, site)| ((site.assoc_comp, site.site_index), i))
+            .collect();
+
+        let indices_b: HashMap<_, _> = sites_b
+            .iter()
+            .enumerate()
+            .map(|(i, site)| ((site.assoc_comp, site.site_index), i))
+            .collect();
+
+        let indices_c: HashMap<_, _> = sites_c
+            .iter()
+            .enumerate()
+            .map(|(i, site)| ((site.assoc_comp, site.site_index), i))
+            .collect();
+
+        let mut sigma3_kappa_ab =
+            Array2::from_shape_fn([sites_a.len(), sites_b.len()], |(i, j)| {
+                (sigma[sites_a[i].assoc_comp] * sigma[sites_b[j].assoc_comp]).powf(1.5)
+                    * (sites_a[i].kappa_ab * sites_b[j].kappa_ab).sqrt()
+            });
+        let mut sigma3_kappa_cc = Array2::from_shape_fn([sites_c.len(); 2], |(i, j)| {
             (sigma[sites_c[i].assoc_comp] * sigma[sites_c[j].assoc_comp]).powf(1.5)
                 * (sites_c[i].kappa_ab * sites_c[j].kappa_ab).sqrt()
         });
-        let epsilon_k_ab = Array2::from_shape_fn([sites_a.len(), sites_b.len()], |(i, j)| {
+        let mut epsilon_k_ab = Array2::from_shape_fn([sites_a.len(), sites_b.len()], |(i, j)| {
             0.5 * (sites_a[i].epsilon_k_ab + sites_b[j].epsilon_k_ab)
         });
-        let epsilon_k_cc = Array2::from_shape_fn([sites_c.len(); 2], |(i, j)| {
+        let mut epsilon_k_cc = Array2::from_shape_fn([sites_c.len(); 2], |(i, j)| {
             0.5 * (sites_c[i].epsilon_k_ab + sites_c[j].epsilon_k_ab)
         });
+
+        for &((i, j), record) in binary_records.iter() {
+            let [a, b] = record.site_indices;
+            if let (Some(x), Some(y)) = (indices_a.get(&(i, a)), indices_b.get(&(j, b))) {
+                epsilon_k_ab[[*x, *y]] = record.epsilon_k_ab;
+                sigma3_kappa_ab[[*x, *y]] = (sigma[i] * sigma[j]).powf(1.5) * record.kappa_ab;
+            }
+            if let (Some(y), Some(x)) = (indices_b.get(&(i, a)), indices_a.get(&(j, b))) {
+                epsilon_k_ab[[*x, *y]] = record.epsilon_k_ab;
+                sigma3_kappa_ab[[*x, *y]] = (sigma[i] * sigma[j]).powf(1.5) * record.kappa_ab;
+            }
+            if let (Some(x), Some(y)) = (indices_c.get(&(i, a)), indices_c.get(&(j, b))) {
+                epsilon_k_cc[[*x, *y]] = record.epsilon_k_ab;
+                epsilon_k_cc[[*y, *x]] = record.epsilon_k_ab;
+                sigma3_kappa_cc[[*x, *y]] = (sigma[i] * sigma[j]).powf(1.5) * record.kappa_ab;
+                sigma3_kappa_cc[[*y, *x]] = (sigma[i] * sigma[j]).powf(1.5) * record.kappa_ab;
+            }
+        }
 
         Self {
             component_index: component_index
@@ -469,6 +532,63 @@ impl<P: HardSphereProperties> Association<P> {
 
         // check convergence
         Ok(norm(&g.map(D::re)) < tol)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_binary_parameters() {
+        let comp1 = vec![AssociationRecord::new(0.1, 2500., 1.0, 1.0, 0.0)];
+        let comp2 = vec![AssociationRecord::new(0.2, 1500., 1.0, 1.0, 0.0)];
+        let comp3 = vec![AssociationRecord::new(0.3, 500., 0.0, 1.0, 0.0)];
+        let comp4 = vec![
+            AssociationRecord::new(0.3, 1000., 1.0, 0.0, 0.0),
+            AssociationRecord::new(0.3, 2000., 0.0, 1.0, 0.0),
+        ];
+        let records = [comp1, comp2, comp3, comp4];
+        let sigma = arr1(&[3.0, 3.0, 3.0, 3.0]);
+        let binary = [
+            (
+                (0, 1),
+                BinaryAssociationRecord::new(3.5, 1234., Some([0, 0])),
+            ),
+            (
+                (0, 2),
+                BinaryAssociationRecord::new(3.5, 3140., Some([0, 0])),
+            ),
+            (
+                (1, 3),
+                BinaryAssociationRecord::new(3.5, 3333., Some([0, 1])),
+            ),
+        ];
+        let assoc = AssociationParameters::new(&records, &sigma, &binary, None);
+        println!("{}", assoc.epsilon_k_ab);
+        let epsilon_k_ab = arr2(&[
+            [2500., 1234., 3140., 2250.],
+            [1234., 1500., 1000., 3333.],
+            [1750., 1250., 750., 1500.],
+        ]);
+        assert_eq!(assoc.epsilon_k_ab, epsilon_k_ab);
+    }
+
+    #[test]
+    fn test_induced_association() {
+        let comp1 = vec![AssociationRecord::new(0.1, 2500., 1.0, 1.0, 0.0)];
+        let comp2 = vec![AssociationRecord::new(0.1, -500., 0.0, 1.0, 0.0)];
+        let comp3 = vec![AssociationRecord::new(0.0, 0.0, 0.0, 1.0, 0.0)];
+        let sigma = arr1(&[3.0, 3.5]);
+        let binary = [((0, 1), BinaryAssociationRecord::new(0.1, 1000., None))];
+        let assoc1 = AssociationParameters::new(&[comp1.clone(), comp2], &sigma, &[], None);
+        let assoc2 = AssociationParameters::new(&[comp1, comp3], &sigma, &binary, None);
+        println!("{}", assoc1.epsilon_k_ab);
+        println!("{}", assoc2.epsilon_k_ab);
+        assert_eq!(assoc1.epsilon_k_ab, assoc2.epsilon_k_ab);
+        println!("{}", assoc1.sigma3_kappa_ab);
+        println!("{}", assoc2.sigma3_kappa_ab);
+        assert_eq!(assoc1.sigma3_kappa_ab, assoc2.sigma3_kappa_ab);
     }
 }
 

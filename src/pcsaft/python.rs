@@ -137,6 +137,19 @@ impl_segment_record!(PcSaftRecord, PyPcSaftRecord);
 )]
 #[derive(Clone)]
 pub struct PyPcSaftBinaryRecord(PcSaftBinaryRecord);
+
+#[pymethods]
+impl PyPcSaftBinaryRecord {
+    #[new]
+    fn new(k_ij: Option<f64>, kappa_ab: Option<f64>, epsilon_k_ab: Option<f64>) -> Self {
+        Self(PcSaftBinaryRecord::new(k_ij, kappa_ab, epsilon_k_ab))
+    }
+
+    fn __repr__(&self) -> PyResult<String> {
+        Ok(self.0.to_string())
+    }
+}
+
 impl_binary_record!(PcSaftBinaryRecord, PyPcSaftBinaryRecord);
 
 /// Create a set of PC-SAFT parameters from records.
@@ -187,6 +200,7 @@ pub fn pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
     m.add_class::<DQVariants>()?;
     m.add_class::<PyPcSaftRecord>()?;
+    m.add_class::<PyPcSaftBinaryRecord>()?;
     m.add_class::<PyPureRecord>()?;
     m.add_class::<PySegmentRecord>()?;
     m.add_class::<PyBinaryRecord>()?;

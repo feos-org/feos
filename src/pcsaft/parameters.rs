@@ -1,4 +1,4 @@
-use crate::association::{AssociationParameters, AssociationRecord};
+use crate::association::{AssociationParameters, AssociationRecord, BinaryAssociationRecord};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use conv::ValueInto;
 use feos_core::parameter::{
@@ -161,7 +161,12 @@ impl FromSegments<usize> for PcSaftRecord {
         let polar_segments: usize = segments
             .iter()
             .filter_map(|(s, n)| {
-                if s.q.is_some() || s.mu.is_some() || s.association_record.is_some() {
+                println!("{s}");
+                if s.q.is_some()
+                    || s.mu.is_some()
+                    || s.association_record
+                        .is_some_and(|r| r.na + r.nb + r.nc > 0.0)
+                {
                     Some(n)
                 } else {
                     None
@@ -231,18 +236,21 @@ impl PcSaftRecord {
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
     ) -> PcSaftRecord {
-        let association_record = match (kappa_ab, epsilon_k_ab) {
-            (Some(kappa_ab), Some(epsilon_k_ab)) => Some(AssociationRecord::new(
-                kappa_ab,
-                epsilon_k_ab,
-                na.unwrap_or(0.0),
-                nb.unwrap_or(0.0),
-                nc.unwrap_or(0.0),
-            )),
-            (None, None) => None,
-            _ => {
-                panic!("To model association, both kappa_ab and epsilon_k_ab need to be specified.")
-            }
+        let association_record = if kappa_ab.is_none()
+            && epsilon_k_ab.is_none()
+            && na.is_none()
+            && nb.is_none()
+            && nc.is_none()
+        {
+            None
+        } else {
+            Some(AssociationRecord::new(
+                kappa_ab.unwrap_or_default(),
+                epsilon_k_ab.unwrap_or_default(),
+                na.unwrap_or_default(),
+                nb.unwrap_or_default(),
+                nc.unwrap_or_default(),
+            ))
         };
         PcSaftRecord {
             m,
@@ -261,11 +269,15 @@ impl PcSaftRecord {
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct PcSaftBinaryRecord {
     k_ij: f64,
+    association: Option<BinaryAssociationRecord>,
 }
 
 impl From<f64> for PcSaftBinaryRecord {
     fn from(k_ij: f64) -> Self {
-        Self { k_ij }
+        Self {
+            k_ij,
+            association: None,
+        }
     }
 }
 
@@ -275,19 +287,43 @@ impl From<PcSaftBinaryRecord> for f64 {
     }
 }
 
+impl PcSaftBinaryRecord {
+    pub fn new(k_ij: Option<f64>, kappa_ab: Option<f64>, epsilon_k_ab: Option<f64>) -> Self {
+        let k_ij = k_ij.unwrap_or_default();
+        let association = if kappa_ab.is_none() && epsilon_k_ab.is_none() {
+            None
+        } else {
+            Some(BinaryAssociationRecord::new(
+                kappa_ab.unwrap_or_default(),
+                epsilon_k_ab.unwrap_or_default(),
+                None,
+            ))
+        };
+        Self { k_ij, association }
+    }
+}
+
 impl<T: Copy + ValueInto<f64>> FromSegmentsBinary<T> for PcSaftBinaryRecord {
     fn from_segments_binary(segments: &[(Self, T, T)]) -> Result<Self, ParameterError> {
         let (k_ij, n) = segments.iter().fold((0.0, 0.0), |(k_ij, n), (br, n1, n2)| {
             let nab = (*n1).value_into().unwrap() * (*n2).value_into().unwrap();
             (k_ij + br.k_ij * nab, n + nab)
         });
-        Ok(Self { k_ij: k_ij / n })
+        Ok(Self {
+            k_ij: k_ij / n,
+            association: None,
+        })
     }
 }
 
 impl std::fmt::Display for PcSaftBinaryRecord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PcSaftBinaryRecord(k_ij={})", self.k_ij)
+        write!(f, "PcSaftBinaryRecord(k_ij={}", self.k_ij)?;
+        if let Some(association) = self.association {
+            write!(f, ", kappa_ab={}", association.kappa_ab)?;
+            write!(f, ", epsilon_k_ab={}", association.epsilon_k_ab)?;
+        }
+        write!(f, ")")
     }
 }
 
@@ -374,7 +410,12 @@ impl Parameter for PcSaftParameters {
             .collect();
         let nquadpole = quadpole_comp.len();
 
-        let association = AssociationParameters::new(&association_records, &sigma, None);
+        let binary_association: Vec<_> = binary_records
+            .indexed_iter()
+            .filter_map(|(i, record)| record.association.map(|r| (i, r)))
+            .collect();
+        let association =
+            AssociationParameters::new(&association_records, &sigma, &binary_association, None);
 
         let k_ij = binary_records.map(|br| br.k_ij);
         let mut epsilon_k_ij = Array::zeros((n, n));
@@ -735,7 +776,14 @@ pub mod utils {
         let binary_segment_records = kij
             .iter()
             .map(|&(id1, id2, k_ij)| {
-                BinaryRecord::new(id1.into(), id2.into(), PcSaftBinaryRecord { k_ij })
+                BinaryRecord::new(
+                    id1.into(),
+                    id2.into(),
+                    PcSaftBinaryRecord {
+                        k_ij,
+                        association: None,
+                    },
+                )
             })
             .collect();
         let params = PcSaftParameters::from_segments(
