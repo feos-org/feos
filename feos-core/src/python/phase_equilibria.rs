@@ -227,6 +227,46 @@ macro_rules! impl_phase_equilibrium {
                 )?))
             }
 
+            /// Creates a new PhaseEquilibrium that contains two states at the
+            /// specified temperature, pressure and moles.
+            ///
+            /// The constructor can be used in custom phase equilibrium solvers or,
+            /// e.g., to generate initial guesses for an actual VLE solver.
+            /// In general, the two states generated are NOT in an equilibrium.
+            ///
+            /// Parameters
+            /// ----------
+            /// eos : EquationOfState
+            ///     The equation of state.
+            /// temperature : SINumber
+            ///     The system temperature.
+            /// pressure : SINumber
+            ///     The system pressure.
+            /// vapor_moles : SIArray1
+            ///     Amount of substance of the vapor phase.
+            /// liquid_moles : SIArray1
+            ///     Amount of substance of the liquid phase.
+            ///
+            /// Returns
+            /// -------
+            /// PhaseEquilibrium
+            #[staticmethod]
+            pub fn new_npt(
+                eos: $py_eos,
+                temperature: PySINumber,
+                pressure: PySINumber,
+                vapor_moles: &PySIArray1,
+                liquid_moles: &PySIArray1
+            ) -> PyResult<Self> {
+                Ok(Self(PhaseEquilibrium::new_npt(
+                    &eos.0,
+                    temperature.into(),
+                    pressure.into(),
+                    vapor_moles,
+                    liquid_moles
+                )?))
+            }
+
             #[getter]
             fn get_vapor(&self) -> PyState {
                 PyState(self.0.vapor().clone())
