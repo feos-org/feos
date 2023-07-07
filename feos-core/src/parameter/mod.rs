@@ -30,19 +30,16 @@ where
     Self: Sized,
 {
     type Pure: Clone + DeserializeOwned;
-    type IdealGas: Clone + DeserializeOwned;
     type Binary: Clone + DeserializeOwned + Default;
 
     /// Creates parameters from records for pure substances and possibly binary parameters.
     fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
+        pure_records: Vec<PureRecord<Self::Pure>>,
         binary_records: Array2<Self::Binary>,
     ) -> Result<Self, ParameterError>;
 
     /// Creates parameters for a pure component from a pure record.
-    fn new_pure(
-        pure_record: PureRecord<Self::Pure, Self::IdealGas>,
-    ) -> Result<Self, ParameterError> {
+    fn new_pure(pure_record: PureRecord<Self::Pure>) -> Result<Self, ParameterError> {
         let binary_record = Array2::from_elem([1, 1], Self::Binary::default());
         Self::from_records(vec![pure_record], binary_record)
     }
@@ -50,7 +47,7 @@ where
     /// Creates parameters for a binary system from pure records and an optional
     /// binary interaction parameter.
     fn new_binary(
-        pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
+        pure_records: Vec<PureRecord<Self::Pure>>,
         binary_record: Option<Self::Binary>,
     ) -> Result<Self, ParameterError> {
         let binary_record = Array2::from_shape_fn([2, 2], |(i, j)| {
@@ -65,12 +62,7 @@ where
 
     /// Return the original pure and binary records that were used to construct the parameters.
     #[allow(clippy::type_complexity)]
-    fn records(
-        &self,
-    ) -> (
-        &[PureRecord<Self::Pure, Self::IdealGas>],
-        &Array2<Self::Binary>,
-    );
+    fn records(&self) -> (&[PureRecord<Self::Pure>], &Array2<Self::Binary>);
 
     /// Helper function to build matrix from list of records in correct order.
     ///
@@ -78,7 +70,7 @@ where
     /// `pure_records`, the `Default` implementation of Self::Binary is used.
     #[allow(clippy::expect_fun_call)]
     fn binary_matrix_from_records(
-        pure_records: &Vec<PureRecord<Self::Pure, Self::IdealGas>>,
+        pure_records: &Vec<PureRecord<Self::Pure>>,
         binary_records: &[BinaryRecord<Identifier, Self::Binary>],
         search_option: IdentifierOption,
     ) -> Result<Array2<Self::Binary>, ParameterError> {
@@ -140,8 +132,7 @@ where
         P: AsRef<Path>,
     {
         let mut queried: IndexSet<String> = IndexSet::new();
-        let mut record_map: HashMap<String, PureRecord<Self::Pure, Self::IdealGas>> =
-            HashMap::new();
+        let mut record_map: HashMap<String, PureRecord<Self::Pure>> = HashMap::new();
 
         for (substances, file) in input {
             substances.iter().try_for_each(|identifier| {
@@ -156,8 +147,7 @@ where
             let f = File::open(file)?;
             let reader = BufReader::new(f);
 
-            let pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>> =
-                serde_json::from_reader(reader)?;
+            let pure_records: Vec<PureRecord<Self::Pure>> = serde_json::from_reader(reader)?;
 
             pure_records
                 .into_iter()
@@ -204,12 +194,11 @@ where
     /// and the ideal gas record.
     fn from_segments<C: SegmentCount>(
         chemical_records: Vec<C>,
-        segment_records: Vec<SegmentRecord<Self::Pure, Self::IdealGas>>,
+        segment_records: Vec<SegmentRecord<Self::Pure>>,
         binary_segment_records: Option<Vec<BinaryRecord<String, Self::Binary>>>,
     ) -> Result<Self, ParameterError>
     where
         Self::Pure: FromSegments<C::Count>,
-        Self::IdealGas: FromSegments<C::Count>,
         Self::Binary: FromSegmentsBinary<C::Count>,
     {
         // update the pure records with model and ideal gas records
@@ -278,7 +267,6 @@ where
     where
         P: AsRef<Path>,
         Self::Pure: FromSegments<usize>,
-        Self::IdealGas: FromSegments<usize>,
         Self::Binary: FromSegmentsBinary<usize>,
     {
         let queried: IndexSet<String> = substances
@@ -317,7 +305,7 @@ where
             .collect();
 
         // Read segment records
-        let segment_records: Vec<SegmentRecord<Self::Pure, Self::IdealGas>> =
+        let segment_records: Vec<SegmentRecord<Self::Pure>> =
             SegmentRecord::from_json(file_segments)?;
 
         // Read binary records
@@ -361,13 +349,12 @@ where
 pub trait ParameterHetero: Sized {
     type Chemical: Clone;
     type Pure: Clone + DeserializeOwned;
-    type IdealGas: Clone + DeserializeOwned;
     type Binary: Clone + DeserializeOwned;
 
     /// Creates parameters from the molecular structure and segment information.
     fn from_segments<C: Clone + Into<Self::Chemical>>(
         chemical_records: Vec<C>,
-        segment_records: Vec<SegmentRecord<Self::Pure, Self::IdealGas>>,
+        segment_records: Vec<SegmentRecord<Self::Pure>>,
         binary_segment_records: Option<Vec<BinaryRecord<String, Self::Binary>>>,
     ) -> Result<Self, ParameterError>;
 
@@ -377,7 +364,7 @@ pub trait ParameterHetero: Sized {
         &self,
     ) -> (
         &[Self::Chemical],
-        &[SegmentRecord<Self::Pure, Self::IdealGas>],
+        &[SegmentRecord<Self::Pure>],
         &Option<Vec<BinaryRecord<String, Self::Binary>>>,
     );
 
@@ -427,7 +414,7 @@ pub trait ParameterHetero: Sized {
             .collect();
 
         // Read segment records
-        let segment_records: Vec<SegmentRecord<Self::Pure, Self::IdealGas>> =
+        let segment_records: Vec<SegmentRecord<Self::Pure>> =
             SegmentRecord::from_json(file_segments)?;
 
         // Read binary records
@@ -481,7 +468,6 @@ pub enum ParameterError {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::joback::JobackRecord;
     use serde::{Deserialize, Serialize};
     use std::convert::TryFrom;
 
@@ -503,16 +489,15 @@ mod test {
     }
 
     struct MyParameter {
-        pure_records: Vec<PureRecord<MyPureModel, JobackRecord>>,
+        pure_records: Vec<PureRecord<MyPureModel>>,
         binary_records: Array2<MyBinaryModel>,
     }
 
     impl Parameter for MyParameter {
         type Pure = MyPureModel;
-        type IdealGas = JobackRecord;
         type Binary = MyBinaryModel;
         fn from_records(
-            pure_records: Vec<PureRecord<MyPureModel, JobackRecord>>,
+            pure_records: Vec<PureRecord<MyPureModel>>,
             binary_records: Array2<MyBinaryModel>,
         ) -> Result<Self, ParameterError> {
             Ok(Self {
@@ -521,12 +506,7 @@ mod test {
             })
         }
 
-        fn records(
-            &self,
-        ) -> (
-            &[PureRecord<MyPureModel, JobackRecord>],
-            &Array2<MyBinaryModel>,
-        ) {
+        fn records(&self) -> (&[PureRecord<MyPureModel>], &Array2<MyBinaryModel>) {
             (&self.pure_records, &self.binary_records)
         }
     }

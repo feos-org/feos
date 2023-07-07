@@ -2,7 +2,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::{
     parameter::{IdentifierOption, Parameter},
-    Contributions, EquationOfState, State,
+    Contributions, Residual, State,
 };
 use ndarray::arr1;
 use quantity::si::*;
@@ -12,7 +12,7 @@ type S = State<PcSaft>;
 
 /// Evaluate a property of a state given the EoS, the property to compute,
 /// temperature, volume, moles, and the contributions to consider.
-fn property<E: EquationOfState, T, F: Fn(&State<E>, Contributions) -> T>(
+fn property<E: Residual, T, F: Fn(&State<E>, Contributions) -> T>(
     (eos, property, t, v, n, contributions): (
         &Arc<E>,
         F,
@@ -28,7 +28,7 @@ fn property<E: EquationOfState, T, F: Fn(&State<E>, Contributions) -> T>(
 
 /// Evaluate a property with of a state given the EoS, the property to compute,
 /// temperature, volume, moles.
-fn property_no_contributions<E: EquationOfState, T, F: Fn(&State<E>) -> T>(
+fn property_no_contributions<E: Residual, T, F: Fn(&State<E>) -> T>(
     (eos, property, t, v, n): (&Arc<E>, F, SINumber, SINumber, &SIArray1),
 ) -> T {
     let state = State::new_nvt(eos, t, v, n).unwrap();
@@ -52,7 +52,7 @@ fn properties_pcsaft(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("state_properties_pcsaft_methane_ethane_propane");
     group.bench_function("a", |b| {
-        b.iter(|| property((&eos, S::helmholtz_energy, t, v, &m, Contributions::Total)))
+        b.iter(|| property_no_contributions((&eos, S::residual_helmholtz_energy, t, v, &m)))
     });
     group.bench_function("compressibility", |b| {
         b.iter(|| property((&eos, S::compressibility, t, v, &m, Contributions::Total)))
@@ -61,19 +61,10 @@ fn properties_pcsaft(c: &mut Criterion) {
         b.iter(|| property_no_contributions((&eos, S::ln_phi, t, v, &m)))
     });
     group.bench_function("c_v", |b| {
-        b.iter(|| property((&eos, S::c_v, t, v, &m, Contributions::ResidualNvt)))
+        b.iter(|| property_no_contributions((&eos, S::c_v_res, t, v, &m)))
     });
     group.bench_function("partial_molar_volume", |b| {
-        b.iter(|| {
-            property((
-                &eos,
-                S::partial_molar_volume,
-                t,
-                v,
-                &m,
-                Contributions::ResidualNvt,
-            ))
-        })
+        b.iter(|| property_no_contributions((&eos, S::partial_molar_volume, t, v, &m)))
     });
 }
 
@@ -94,7 +85,7 @@ fn properties_pcsaft_polar(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("state_properties_pcsaft_polar");
     group.bench_function("a", |b| {
-        b.iter(|| property((&eos, S::helmholtz_energy, t, v, &m, Contributions::Total)))
+        b.iter(|| property_no_contributions((&eos, S::residual_helmholtz_energy, t, v, &m)))
     });
     group.bench_function("compressibility", |b| {
         b.iter(|| property((&eos, S::compressibility, t, v, &m, Contributions::Total)))
@@ -103,19 +94,10 @@ fn properties_pcsaft_polar(c: &mut Criterion) {
         b.iter(|| property_no_contributions((&eos, S::ln_phi, t, v, &m)))
     });
     group.bench_function("c_v", |b| {
-        b.iter(|| property((&eos, S::c_v, t, v, &m, Contributions::ResidualNvt)))
+        b.iter(|| property_no_contributions((&eos, S::c_v_res, t, v, &m)))
     });
     group.bench_function("partial_molar_volume", |b| {
-        b.iter(|| {
-            property((
-                &eos,
-                S::partial_molar_volume,
-                t,
-                v,
-                &m,
-                Contributions::ResidualNvt,
-            ))
-        })
+        b.iter(|| property_no_contributions((&eos, S::partial_molar_volume, t, v, &m)))
     });
 }
 

@@ -10,28 +10,19 @@ use std::path::Path;
 
 /// A collection of parameters of a pure substance.
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct PureRecord<M, I> {
+pub struct PureRecord<M> {
     pub identifier: Identifier,
     pub molarweight: f64,
     pub model_record: M,
-    #[serde(default = "Default::default")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub ideal_gas_record: Option<I>,
 }
 
-impl<M, I> PureRecord<M, I> {
+impl<M> PureRecord<M> {
     /// Create a new `PureRecord`.
-    pub fn new(
-        identifier: Identifier,
-        molarweight: f64,
-        model_record: M,
-        ideal_gas_record: Option<I>,
-    ) -> Self {
+    pub fn new(identifier: Identifier, molarweight: f64, model_record: M) -> Self {
         Self {
             identifier,
             molarweight,
             model_record,
-            ideal_gas_record,
         }
     }
 
@@ -43,47 +34,29 @@ impl<M, I> PureRecord<M, I> {
     where
         T: Copy + ValueInto<f64>,
         M: FromSegments<T>,
-        I: FromSegments<T>,
-        S: IntoIterator<Item = (SegmentRecord<M, I>, T)>,
+        S: IntoIterator<Item = (SegmentRecord<M>, T)>,
     {
         let mut molarweight = 0.0;
         let mut model_segments = Vec::new();
-        let mut ideal_gas_segments = Vec::new();
         for (s, n) in segments {
             molarweight += s.molarweight * n.value_into().unwrap();
             model_segments.push((s.model_record, n));
-            ideal_gas_segments.push(s.ideal_gas_record.map(|ig| (ig, n)));
         }
         let model_record = M::from_segments(&model_segments)?;
 
-        let ideal_gas_segments: Option<Vec<_>> = ideal_gas_segments.into_iter().collect();
-        let ideal_gas_record = ideal_gas_segments
-            .as_deref()
-            .map(I::from_segments)
-            .transpose()?;
-
-        Ok(Self::new(
-            identifier,
-            molarweight,
-            model_record,
-            ideal_gas_record,
-        ))
+        Ok(Self::new(identifier, molarweight, model_record))
     }
 }
 
-impl<M, I> std::fmt::Display for PureRecord<M, I>
+impl<M> std::fmt::Display for PureRecord<M>
 where
     M: std::fmt::Display,
-    I: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "PureRecord(")?;
         write!(f, "\n\tidentifier={},", self.identifier)?;
         write!(f, "\n\tmolarweight={},", self.molarweight)?;
         write!(f, "\n\tmodel_record={},", self.model_record)?;
-        if let Some(i) = self.ideal_gas_record.as_ref() {
-            write!(f, "\n\tideal_gas_record={},", i)?;
-        }
         write!(f, "\n)")
     }
 }
@@ -153,7 +126,6 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::joback::JobackRecord;
 
     #[derive(Serialize, Deserialize, Debug, Default, Clone)]
     struct TestModelRecordSegments {
@@ -173,7 +145,7 @@ mod test {
             }
         }
         "#;
-        let record: PureRecord<TestModelRecordSegments, JobackRecord> =
+        let record: PureRecord<TestModelRecordSegments> =
             serde_json::from_str(r).expect("Unable to parse json.");
         assert_eq!(record.identifier.cas, Some("123-4-5".into()))
     }
@@ -201,7 +173,7 @@ mod test {
                 }
             }
         ]"#;
-        let records: Vec<PureRecord<TestModelRecordSegments, JobackRecord>> =
+        let records: Vec<PureRecord<TestModelRecordSegments>> =
             serde_json::from_str(r).expect("Unable to parse json.");
         assert_eq!(records[0].identifier.cas, Some("1".into()));
         assert_eq!(records[1].identifier.cas, Some("2".into()))

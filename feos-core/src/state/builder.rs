@@ -1,5 +1,5 @@
 use super::{DensityInitialization, State};
-use crate::equation_of_state::EquationOfState;
+use crate::equation_of_state::{IdealGas, Residual};
 use crate::errors::EosResult;
 use ndarray::Array1;
 use quantity::si::{SIArray1, SINumber};
@@ -52,7 +52,7 @@ use std::sync::Arc;
 /// # Ok(())
 /// # }
 /// ```
-pub struct StateBuilder<'a, E: EquationOfState> {
+pub struct StateBuilder<'a, E, const IG: bool> {
     eos: Arc<E>,
     temperature: Option<SINumber>,
     volume: Option<SINumber>,
@@ -69,7 +69,7 @@ pub struct StateBuilder<'a, E: EquationOfState> {
     initial_temperature: Option<SINumber>,
 }
 
-impl<'a, E: EquationOfState> StateBuilder<'a, E> {
+impl<'a, E: Residual> StateBuilder<'a, E, false> {
     /// Create a new `StateBuilder` for the given equation of state.
     pub fn new(eos: &Arc<E>) -> Self {
         StateBuilder {
@@ -89,7 +89,9 @@ impl<'a, E: EquationOfState> StateBuilder<'a, E> {
             initial_temperature: None,
         }
     }
+}
 
+impl<'a, E: Residual, const IG: bool> StateBuilder<'a, E, IG> {
     /// Provide the temperature for the new state.
     pub fn temperature(mut self, temperature: SINumber) -> Self {
         self.temperature = Some(temperature);
@@ -138,24 +140,6 @@ impl<'a, E: EquationOfState> StateBuilder<'a, E> {
         self
     }
 
-    /// Provide the molar enthalpy for the new state.
-    pub fn molar_enthalpy(mut self, molar_enthalpy: SINumber) -> Self {
-        self.molar_enthalpy = Some(molar_enthalpy);
-        self
-    }
-
-    /// Provide the molar entropy for the new state.
-    pub fn molar_entropy(mut self, molar_entropy: SINumber) -> Self {
-        self.molar_entropy = Some(molar_entropy);
-        self
-    }
-
-    /// Provide the molar internal energy for the new state.
-    pub fn molar_internal_energy(mut self, molar_internal_energy: SINumber) -> Self {
-        self.molar_internal_energy = Some(molar_internal_energy);
-        self
-    }
-
     /// Specify a vapor state.
     pub fn vapor(mut self) -> Self {
         self.density_initialization = DensityInitialization::Vapor;
@@ -173,16 +157,81 @@ impl<'a, E: EquationOfState> StateBuilder<'a, E> {
         self.density_initialization = DensityInitialization::InitialDensity(initial_density);
         self
     }
+}
 
-    /// Provide an initial temperature used in the Newton solver.
-    pub fn initial_temperature(mut self, initial_temperature: SINumber) -> Self {
-        self.initial_temperature = Some(initial_temperature);
-        self
+impl<'a, E: Residual + IdealGas, const IG: bool> StateBuilder<'a, E, IG> {
+    /// Provide the molar enthalpy for the new state.
+    pub fn molar_enthalpy(mut self, molar_enthalpy: SINumber) -> StateBuilder<'a, E, true> {
+        self.molar_enthalpy = Some(molar_enthalpy);
+        self.convert()
     }
 
+    /// Provide the molar entropy for the new state.
+    pub fn molar_entropy(mut self, molar_entropy: SINumber) -> StateBuilder<'a, E, true> {
+        self.molar_entropy = Some(molar_entropy);
+        self.convert()
+    }
+
+    /// Provide the molar internal energy for the new state.
+    pub fn molar_internal_energy(
+        mut self,
+        molar_internal_energy: SINumber,
+    ) -> StateBuilder<'a, E, true> {
+        self.molar_internal_energy = Some(molar_internal_energy);
+        self.convert()
+    }
+
+    /// Provide an initial temperature used in the Newton solver.
+    pub fn initial_temperature(
+        mut self,
+        initial_temperature: SINumber,
+    ) -> StateBuilder<'a, E, true> {
+        self.initial_temperature = Some(initial_temperature);
+        self.convert()
+    }
+
+    fn convert(self) -> StateBuilder<'a, E, true> {
+        StateBuilder {
+            eos: self.eos,
+            temperature: self.temperature,
+            volume: self.volume,
+            density: self.density,
+            partial_density: self.partial_density,
+            total_moles: self.total_moles,
+            moles: self.moles,
+            molefracs: self.molefracs,
+            pressure: self.pressure,
+            molar_enthalpy: self.molar_enthalpy,
+            molar_entropy: self.molar_entropy,
+            molar_internal_energy: self.molar_internal_energy,
+            density_initialization: self.density_initialization,
+            initial_temperature: self.initial_temperature,
+        }
+    }
+}
+
+impl<'a, E: Residual> StateBuilder<'a, E, false> {
     /// Try to build the state with the given inputs.
     pub fn build(self) -> EosResult<State<E>> {
         State::new(
+            &self.eos,
+            self.temperature,
+            self.volume,
+            self.density,
+            self.partial_density,
+            self.total_moles,
+            self.moles,
+            self.molefracs,
+            self.pressure,
+            self.density_initialization,
+        )
+    }
+}
+
+impl<'a, E: Residual + IdealGas> StateBuilder<'a, E, true> {
+    /// Try to build the state with the given inputs.
+    pub fn build(self) -> EosResult<State<E>> {
+        State::new_full(
             &self.eos,
             self.temperature,
             self.volume,
@@ -201,7 +250,7 @@ impl<'a, E: EquationOfState> StateBuilder<'a, E> {
     }
 }
 
-impl<'a, E: EquationOfState> Clone for StateBuilder<'a, E> {
+impl<'a, E, const IG: bool> Clone for StateBuilder<'a, E, IG> {
     fn clone(&self) -> Self {
         Self {
             eos: self.eos.clone(),

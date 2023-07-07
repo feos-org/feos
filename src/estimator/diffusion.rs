@@ -1,5 +1,5 @@
 use super::{DataSet, EstimatorError};
-use feos_core::{DensityInitialization, EntropyScaling, EosUnit, EquationOfState, State};
+use feos_core::{DensityInitialization, EntropyScaling, EosUnit, Residual, State};
 use ndarray::{arr1, Array1};
 use quantity::si::{SIArray1, SIUnit};
 use std::collections::HashMap;
@@ -38,7 +38,7 @@ impl Diffusion {
     }
 }
 
-impl<E: EquationOfState + EntropyScaling> DataSet<E> for Diffusion {
+impl<E: Residual + EntropyScaling> DataSet<E> for Diffusion {
     fn target(&self) -> &SIArray1 {
         &self.target
     }

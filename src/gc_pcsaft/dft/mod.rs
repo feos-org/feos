@@ -2,7 +2,7 @@ use super::eos::GcPcSaftOptions;
 use crate::association::Association;
 use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use feos_core::parameter::ParameterHetero;
-use feos_core::MolarWeight;
+use feos_core::{Components, MolarWeight};
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
 use ndarray::Array1;
@@ -66,27 +66,33 @@ impl GcPcSaftFunctional {
             contributions.push(Box::new(assoc));
         }
 
-        (Self {
+        DFT(Self {
             parameters,
             fmt_version,
             options: saft_options,
             contributions,
         })
-        .into()
+    }
+}
+
+impl Components for GcPcSaftFunctional {
+    fn components(&self) -> usize {
+        self.parameters.chemical_records.len()
+    }
+
+    fn subset(&self, component_list: &[usize]) -> Self {
+        Self::with_options(
+            Arc::new(self.parameters.subset(component_list)),
+            self.fmt_version,
+            self.options,
+        )
+        .0
     }
 }
 
 impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
     fn molecule_shape(&self) -> MoleculeShape {
         MoleculeShape::Heterosegmented(&self.parameters.component_index)
-    }
-
-    fn subset(&self, component_list: &[usize]) -> DFT<Self> {
-        Self::with_options(
-            Arc::new(self.parameters.subset(component_list)),
-            self.fmt_version,
-            self.options,
-        )
     }
 
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {

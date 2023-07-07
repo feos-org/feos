@@ -66,7 +66,6 @@ where
         // weighted densities
         let n0i = weighted_densities.slice_axis(Axis(0), Slice::new(0, Some(n as isize), 1));
         let n2vi: Vec<_> = (0..dim)
-            .into_iter()
             .map(|i| {
                 weighted_densities.slice_axis(
                     Axis(0),

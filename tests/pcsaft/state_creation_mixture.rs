@@ -1,35 +1,47 @@
 use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
+use feos_core::joback::{Joback, JobackParameters};
 use feos_core::parameter::{IdentifierOption, Parameter, ParameterError};
-use feos_core::{Contributions, StateBuilder};
+use feos_core::{Contributions, EquationOfState, StateBuilder};
 use ndarray::prelude::*;
 use ndarray::Zip;
 use quantity::si::*;
 use std::error::Error;
 use std::sync::Arc;
 
-fn propane_butane_parameters() -> Result<Arc<PcSaftParameters>, ParameterError> {
-    Ok(Arc::new(PcSaftParameters::from_json(
+fn propane_butane_parameters(
+) -> Result<(Arc<PcSaftParameters>, Arc<JobackParameters>), ParameterError> {
+    let saft = Arc::new(PcSaftParameters::from_json(
         vec!["propane", "butane"],
         "tests/pcsaft/test_parameters.json",
         None,
         IdentifierOption::Name,
-    )?))
+    )?);
+    let joback = Arc::new(JobackParameters::from_json(
+        vec!["propane", "butane"],
+        "tests/pcsaft/test_parameters_joback.json",
+        None,
+        IdentifierOption::Name,
+    )?);
+    Ok((saft, joback))
 }
 
 #[test]
 fn pressure_entropy_molefracs() -> Result<(), Box<dyn Error>> {
-    let saft = Arc::new(PcSaft::new(propane_butane_parameters()?));
+    let (saft_params, joback_params) = propane_butane_parameters()?;
+    let saft = Arc::new(PcSaft::new(saft_params));
+    let joback = Joback::new(joback_params);
+    let eos = Arc::new(EquationOfState::new(Arc::new(joback), saft));
     let pressure = BAR;
     let temperature = 300.0 * KELVIN;
     let x = arr1(&[0.3, 0.7]);
-    let state = StateBuilder::new(&saft)
+    let state = StateBuilder::new(&eos)
         .temperature(temperature)
         .pressure(pressure)
         .molefracs(&x)
         .build()?;
     let molar_entropy = state.molar_entropy(Contributions::Total);
-    let state = StateBuilder::new(&saft)
+    let state = StateBuilder::new(&eos)
         .pressure(pressure)
         .molar_entropy(molar_entropy)
         .molefracs(&x)
@@ -50,7 +62,7 @@ fn pressure_entropy_molefracs() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn volume_temperature_molefracs() -> Result<(), Box<dyn Error>> {
-    let saft = Arc::new(PcSaft::new(propane_butane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_butane_parameters()?.0));
     let temperature = 300.0 * KELVIN;
     let volume = 1.5e-3 * METER.powi(3);
     let moles = MOL;
@@ -67,7 +79,7 @@ fn volume_temperature_molefracs() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn temperature_partial_density() -> Result<(), Box<dyn Error>> {
-    let saft = Arc::new(PcSaft::new(propane_butane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_butane_parameters()?.0));
     let temperature = 300.0 * KELVIN;
     let x = arr1(&[0.3, 0.7]);
     let partial_density = x.clone() * MOL / METER.powi(3);
@@ -86,7 +98,7 @@ fn temperature_partial_density() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn temperature_density_molefracs() -> Result<(), Box<dyn Error>> {
-    let saft = Arc::new(PcSaft::new(propane_butane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_butane_parameters()?.0));
     let temperature = 300.0 * KELVIN;
     let x = arr1(&[0.3, 0.7]);
     let density = MOL / METER.powi(3);
@@ -104,7 +116,7 @@ fn temperature_density_molefracs() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn temperature_pressure_molefracs() -> Result<(), Box<dyn Error>> {
-    let saft = Arc::new(PcSaft::new(propane_butane_parameters()?));
+    let saft = Arc::new(PcSaft::new(propane_butane_parameters()?.0));
     let temperature = 300.0 * KELVIN;
     let pressure = BAR;
     let x = arr1(&[0.3, 0.7]);

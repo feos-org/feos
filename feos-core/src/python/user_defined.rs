@@ -1,8 +1,11 @@
-use crate::{EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, MolarWeight, StateHD};
+use crate::{
+    Components, DeBroglieWavelength, DeBroglieWavelengthDual, HelmholtzEnergy, HelmholtzEnergyDual,
+    IdealGas, MolarWeight, Residual, StateHD,
+};
 use ndarray::Array1;
 use num_dual::*;
 use numpy::convert::IntoPyArray;
-use numpy::{PyArray, PyReadonlyArrayDyn};
+use numpy::{PyArray, PyReadonlyArray1, PyReadonlyArrayDyn};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use quantity::python::PySIArray1;
@@ -11,13 +14,79 @@ use std::fmt;
 
 struct PyHelmholtzEnergy(Py<PyAny>);
 
+pub struct PyIdealGas(Py<PyAny>);
+
+impl PyIdealGas {
+    pub fn new(obj: Py<PyAny>) -> PyResult<Self> {
+        Python::with_gil(|py| {
+            let attr = obj.as_ref(py).hasattr("components")?;
+            if !attr {
+                panic!("Python Class has to have a method 'components' with signature:\n\tdef signature(self) -> int")
+            }
+            let attr = obj.as_ref(py).hasattr("subset")?;
+            if !attr {
+                panic!("Python Class has to have a method 'subset' with signature:\n\tdef subset(self, component_list: List[int]) -> Self")
+            }
+            let attr = obj.as_ref(py).hasattr("ln_lambda3")?;
+            if !attr {
+                panic!("{}", "Python Class has to have a method 'ln_lambda3' with signature:\n\tdef ln_lambda3(self, temperature: HD) -> HD\nwhere 'HD' has to be any (hyper-) dual number.")
+            }
+            Ok(Self(obj))
+        })
+    }
+}
+
+impl Components for PyIdealGas {
+    fn components(&self) -> usize {
+        Python::with_gil(|py| {
+            let py_result = self.0.as_ref(py).call_method0("components").unwrap();
+            if py_result.get_type().name().unwrap() != "int" {
+                panic!(
+                    "Expected an integer for the components() method signature, got {}",
+                    py_result.get_type().name().unwrap()
+                );
+            }
+            py_result.extract().unwrap()
+        })
+    }
+
+    fn subset(&self, component_list: &[usize]) -> Self {
+        Python::with_gil(|py| {
+            let py_result = self
+                .0
+                .as_ref(py)
+                .call_method1("subset", (component_list.to_vec(),))
+                .unwrap();
+            Self::new(py_result.extract().unwrap()).unwrap()
+        })
+    }
+}
+
+impl IdealGas for PyIdealGas {
+    fn ideal_gas_model(&self) -> &dyn DeBroglieWavelength {
+        self
+    }
+}
+
+impl fmt::Display for PyIdealGas {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Ideal gas (Python)")
+    }
+}
+
 /// Struct containing pointer to Python Class that implements Helmholtz energy.
-pub struct PyEoSObj {
+pub struct PyResidual {
     obj: Py<PyAny>,
     contributions: Vec<Box<dyn HelmholtzEnergy>>,
 }
 
-impl PyEoSObj {
+impl fmt::Display for PyResidual {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Python residual")
+    }
+}
+
+impl PyResidual {
     pub fn new(obj: Py<PyAny>) -> PyResult<Self> {
         Python::with_gil(|py| {
             let attr = obj.as_ref(py).hasattr("components")?;
@@ -48,7 +117,7 @@ impl PyEoSObj {
     }
 }
 
-impl MolarWeight for PyEoSObj {
+impl MolarWeight for PyResidual {
     fn molar_weight(&self) -> SIArray1 {
         Python::with_gil(|py| {
             let py_result = self.obj.as_ref(py).call_method0("molar_weight").unwrap();
@@ -63,7 +132,7 @@ impl MolarWeight for PyEoSObj {
     }
 }
 
-impl EquationOfState for PyEoSObj {
+impl Components for PyResidual {
     fn components(&self) -> usize {
         Python::with_gil(|py| {
             let py_result = self.obj.as_ref(py).call_method0("components").unwrap();
@@ -87,7 +156,9 @@ impl EquationOfState for PyEoSObj {
             Self::new(py_result.extract().unwrap()).unwrap()
         })
     }
+}
 
+impl Residual for PyResidual {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         Python::with_gil(|py| {
             let py_result = self
@@ -99,7 +170,7 @@ impl EquationOfState for PyEoSObj {
         })
     }
 
-    fn residual(&self) -> &[Box<dyn HelmholtzEnergy>] {
+    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         &self.contributions
     }
 }
@@ -192,17 +263,48 @@ macro_rules! helmholtz_energy {
     };
 }
 
+macro_rules! de_broglie_wavelength {
+    ($py_hd_id:ident, $hd_ty:ty) => {
+        impl DeBroglieWavelengthDual<$hd_ty> for PyIdealGas {
+            fn ln_lambda3(&self, temperature: $hd_ty) -> Array1<$hd_ty> {
+                Python::with_gil(|py| {
+                    let py_result = self
+                        .0
+                        .as_ref(py)
+                        .call_method1("ln_lambda3", (<$py_hd_id>::from(temperature),))
+                        .unwrap();
+
+                    // f64
+                    let rr = if let Ok(r) = py_result.extract::<PyReadonlyArray1<f64>>() {
+                        r.to_owned_array()
+                            .mapv(|ri| <$hd_ty>::from(ri))
+                    // anything but f64
+                    } else if let Ok(r) = py_result.extract::<PyReadonlyArray1<PyObject>>() {
+                        r.to_owned_array()
+                            .mapv(|ri| <$hd_ty>::from(ri.extract::<$py_hd_id>(py).unwrap()))
+                    } else {
+                            panic!("ln_lambda3: data type of result must be one-dimensional numpy ndarray")
+                    };
+                    rr
+                })
+            }
+        }
+    };
+}
+
 macro_rules! impl_dual_state_helmholtz_energy {
     ($py_state_id:ident, $py_hd_id:ident, $hd_ty:ty, $py_field_ty:ty) => {
         dual_number!($py_hd_id, $hd_ty, $py_field_ty);
         state!($py_state_id, $py_hd_id, $hd_ty);
         helmholtz_energy!($py_state_id, $py_hd_id, $hd_ty);
+        de_broglie_wavelength!($py_hd_id, $hd_ty);
     };
 }
 
 // No definition of dual number necessary for f64
 state!(PyStateF, f64, f64);
 helmholtz_energy!(PyStateF, f64, f64);
+de_broglie_wavelength!(f64, f64);
 
 impl_dual_state_helmholtz_energy!(PyStateD, PyDual64, Dual64, f64);
 dual_number!(PyDualVec3, DualSVec64<3>, f64);

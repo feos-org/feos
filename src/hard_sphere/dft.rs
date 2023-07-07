@@ -1,4 +1,4 @@
-use feos_core::EosResult;
+use feos_core::{Components, EosResult};
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{
@@ -322,26 +322,31 @@ impl FMTFunctional {
         });
         let contributions: Vec<Box<dyn FunctionalContribution>> =
             vec![Box::new(FMTContribution::new(&properties, version))];
-        (Self {
+        DFT(Self {
             properties,
             contributions,
             version,
         })
-        .into()
+    }
+}
+
+impl Components for FMTFunctional {
+    fn components(&self) -> usize {
+        self.properties.sigma.len()
+    }
+
+    fn subset(&self, component_list: &[usize]) -> Self {
+        let sigma = component_list
+            .iter()
+            .map(|&c| self.properties.sigma[c])
+            .collect();
+        Self::new(&sigma, self.version).0
     }
 }
 
 impl HelmholtzEnergyFunctional for FMTFunctional {
     fn contributions(&self) -> &[Box<dyn FunctionalContribution>] {
         &self.contributions
-    }
-
-    fn subset(&self, component_list: &[usize]) -> DFT<Self> {
-        let sigma = component_list
-            .iter()
-            .map(|&c| self.properties.sigma[c])
-            .collect();
-        Self::new(&sigma, self.version)
     }
 
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {

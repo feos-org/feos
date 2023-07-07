@@ -7,12 +7,11 @@
 //!
 //! Internally, all properties are computed using such states as input.
 use crate::density_iteration::density_iteration;
-use crate::equation_of_state::EquationOfState;
+use crate::equation_of_state::{IdealGas, Residual};
 use crate::errors::{EosError, EosResult};
 use crate::EosUnit;
 use cache::Cache;
 use ndarray::prelude::*;
-use num_dual::linalg::{norm, LU};
 use num_dual::*;
 use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::convert::TryFrom;
@@ -22,8 +21,24 @@ use std::sync::{Arc, Mutex};
 mod builder;
 mod cache;
 mod properties;
+mod residual_properties;
+mod statevec;
 pub use builder::StateBuilder;
-pub use properties::{Contributions, StateVec};
+pub use statevec::StateVec;
+
+/// Possible contributions that can be computed.
+#[derive(Clone, Copy)]
+#[cfg_attr(feature = "python", pyo3::pyclass)]
+pub enum Contributions {
+    /// Only compute the ideal gas contribution
+    IdealGas,
+    /// Only compute the difference between the total and the ideal gas contribution
+    Residual,
+    // /// Compute the differnce between the total and the ideal gas contribution for a (N,p,T) reference state
+    // ResidualNpt,
+    /// Compute ideal gas and residual contributions
+    Total,
+}
 
 /// Initial values in a density iteration.
 #[derive(Clone, Copy)]
@@ -166,11 +181,10 @@ impl<E> Clone for State<E> {
     }
 }
 
-impl<E> fmt::Display for State<E>
+impl<E: Residual> fmt::Display for State<E>
 where
     SINumber: fmt::Display,
     SIArray1: fmt::Display,
-    E: EquationOfState,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.eos.components() == 1 {
@@ -217,7 +231,7 @@ pub(crate) enum PartialDerivative {
 }
 
 /// # State constructors
-impl<E: EquationOfState> State<E> {
+impl<E: Residual> State<E> {
     /// Return a new `State` given a temperature, an array of mole numbers and a volume.
     ///
     /// This function will perform a validation of the given properties, i.e. test for signs
@@ -290,7 +304,6 @@ impl<E: EquationOfState> State<E> {
     /// is overdetermined, it will choose a method based on the following hierarchy.
     /// 1. Create a state non-iteratively from the set of $T$, $V$, $\rho$, $\rho_i$, $N$, $N_i$ and $x_i$.
     /// 2. Use a density iteration for a given pressure.
-    /// 3. Determine the state using a Newton iteration from (in this order): $(p, h)$, $(p, s)$, $(T, h)$, $(T, s)$, $(V, u)$
     ///
     /// The [StateBuilder] provides a convenient way of calling this function without the need to provide
     /// all the optional input values.
@@ -308,12 +321,35 @@ impl<E: EquationOfState> State<E> {
         moles: Option<&SIArray1>,
         molefracs: Option<&Array1<f64>>,
         pressure: Option<SINumber>,
-        molar_enthalpy: Option<SINumber>,
-        molar_entropy: Option<SINumber>,
-        molar_internal_energy: Option<SINumber>,
         density_initialization: DensityInitialization,
-        initial_temperature: Option<SINumber>,
     ) -> EosResult<Self> {
+        Self::_new(
+            eos,
+            temperature,
+            volume,
+            density,
+            partial_density,
+            total_moles,
+            moles,
+            molefracs,
+            pressure,
+            density_initialization,
+        )?
+        .map_err(|_| EosError::UndeterminedState(String::from("Missing input parameters.")))
+    }
+
+    fn _new(
+        eos: &Arc<E>,
+        temperature: Option<SINumber>,
+        volume: Option<SINumber>,
+        density: Option<SINumber>,
+        partial_density: Option<&SIArray1>,
+        total_moles: Option<SINumber>,
+        moles: Option<&SIArray1>,
+        molefracs: Option<&Array1<f64>>,
+        pressure: Option<SINumber>,
+        density_initialization: DensityInitialization,
+    ) -> EosResult<Result<Self, Option<SIArray1>>> {
         // Check if the provided densities have correct units.
         if let DensityInitialization::InitialDensity(rho0) = density_initialization {
             if !rho0.has_unit(&SIUnit::reference_density()) {
@@ -396,36 +432,24 @@ impl<E: EquationOfState> State<E> {
 
         // check if new state can be created using default constructor
         if let (Some(v), Some(t), Some(n_i)) = (v, temperature, &n_i) {
-            return State::new_nvt(eos, t, v, n_i);
+            return Ok(Ok(State::new_nvt(eos, t, v, n_i)?));
         }
 
         // Check if new state can be created using density iteration
         if let (Some(p), Some(t), Some(n_i)) = (pressure, temperature, &n_i) {
-            return State::new_npt(eos, t, p, n_i, density_initialization);
+            return Ok(Ok(State::new_npt(eos, t, p, n_i, density_initialization)?));
         }
         if let (Some(p), Some(t), Some(v)) = (pressure, temperature, v) {
-            return State::new_npvx(eos, t, p, v, &x_u, density_initialization);
+            return Ok(Ok(State::new_npvx(
+                eos,
+                t,
+                p,
+                v,
+                &x_u,
+                density_initialization,
+            )?));
         }
-
-        // Check if new state can be created using molar_enthalpy and temperature
-        if let (Some(p), Some(h), Some(n_i)) = (pressure, molar_enthalpy, &n_i) {
-            return State::new_nph(eos, p, h, n_i, density_initialization, initial_temperature);
-        }
-        if let (Some(p), Some(s), Some(n_i)) = (pressure, molar_entropy, &n_i) {
-            return State::new_nps(eos, p, s, n_i, density_initialization, initial_temperature);
-        }
-        if let (Some(t), Some(h), Some(n_i)) = (temperature, molar_enthalpy, &n_i) {
-            return State::new_nth(eos, t, h, n_i, density_initialization);
-        }
-        if let (Some(t), Some(s), Some(n_i)) = (temperature, molar_entropy, &n_i) {
-            return State::new_nts(eos, t, s, n_i, density_initialization);
-        }
-        if let (Some(u), Some(v), Some(n_i)) = (molar_internal_energy, volume, &n_i) {
-            return State::new_nvu(eos, v, u, n_i, initial_temperature);
-        }
-        Err(EosError::UndeterminedState(String::from(
-            "Missing input parameters.",
-        )))
+        Ok(Err(n_i))
     }
 
     /// Return a new `State` using a density iteration. [DensityInitialization] is used to
@@ -479,9 +503,7 @@ impl<E: EquationOfState> State<E> {
                 (Ok(_), Err(_)) => liquid,
                 (Err(_), Ok(_)) => vapor,
                 (Ok(l), Ok(v)) => {
-                    if l.molar_gibbs_energy(Contributions::Total)
-                        > v.molar_gibbs_energy(Contributions::Total)
-                    {
+                    if l.residual_gibbs_energy() > v.residual_gibbs_energy() {
                         vapor
                     } else {
                         liquid
@@ -509,6 +531,78 @@ impl<E: EquationOfState> State<E> {
         let state = Self::new_npt(eos, temperature, pressure, &moles, density_initialization)?;
         let moles = state.partial_density * volume;
         Self::new_nvt(eos, temperature, volume, &moles)
+    }
+}
+
+impl<E: Residual + IdealGas> State<E> {
+    /// Return a new `State` for the combination of inputs.
+    ///
+    /// The function attempts to create a new state using the given input values. If the state
+    /// is overdetermined, it will choose a method based on the following hierarchy.
+    /// 1. Create a state non-iteratively from the set of $T$, $V$, $\rho$, $\rho_i$, $N$, $N_i$ and $x_i$.
+    /// 2. Use a density iteration for a given pressure.
+    /// 3. Determine the state using a Newton iteration from (in this order): $(p, h)$, $(p, s)$, $(T, h)$, $(T, s)$, $(V, u)$
+    ///
+    /// The [StateBuilder] provides a convenient way of calling this function without the need to provide
+    /// all the optional input values.
+    ///
+    /// # Errors
+    ///
+    /// When the state cannot be created using the combination of inputs.
+    pub fn new_full(
+        eos: &Arc<E>,
+        temperature: Option<SINumber>,
+        volume: Option<SINumber>,
+        density: Option<SINumber>,
+        partial_density: Option<&SIArray1>,
+        total_moles: Option<SINumber>,
+        moles: Option<&SIArray1>,
+        molefracs: Option<&Array1<f64>>,
+        pressure: Option<SINumber>,
+        molar_enthalpy: Option<SINumber>,
+        molar_entropy: Option<SINumber>,
+        molar_internal_energy: Option<SINumber>,
+        density_initialization: DensityInitialization,
+        initial_temperature: Option<SINumber>,
+    ) -> EosResult<Self> {
+        let state = Self::_new(
+            eos,
+            temperature,
+            volume,
+            density,
+            partial_density,
+            total_moles,
+            moles,
+            molefracs,
+            pressure,
+            density_initialization,
+        )?;
+
+        let ti = initial_temperature;
+        match state {
+            Ok(state) => Ok(state),
+            Err(n_i) => {
+                // Check if new state can be created using molar_enthalpy and temperature
+                if let (Some(p), Some(h), Some(n_i)) = (pressure, molar_enthalpy, &n_i) {
+                    return State::new_nph(eos, p, h, n_i, density_initialization, ti);
+                }
+                if let (Some(p), Some(s), Some(n_i)) = (pressure, molar_entropy, &n_i) {
+                    return State::new_nps(eos, p, s, n_i, density_initialization, ti);
+                }
+                if let (Some(t), Some(h), Some(n_i)) = (temperature, molar_enthalpy, &n_i) {
+                    return State::new_nth(eos, t, h, n_i, density_initialization);
+                }
+                if let (Some(t), Some(s), Some(n_i)) = (temperature, molar_entropy, &n_i) {
+                    return State::new_nts(eos, t, s, n_i, density_initialization);
+                }
+                if let (Some(u), Some(v), Some(n_i)) = (molar_internal_energy, volume, &n_i) {
+                    return State::new_nvu(eos, v, u, n_i, ti);
+                }
+                Err(EosError::UndeterminedState(String::from(
+                    "Missing input parameters.",
+                )))
+            }
+        }
     }
 
     /// Return a new `State` for given pressure $p$ and molar enthalpy $h$.
@@ -621,54 +715,12 @@ impl<E: EquationOfState> State<E> {
         };
         newton(t0, f, 1.0e-8 * SIUnit::reference_temperature())
     }
+}
 
+impl<E: Residual> State<E> {
     /// Update the state with the given temperature
     pub fn update_temperature(&self, temperature: SINumber) -> EosResult<Self> {
         Self::new_nvt(&self.eos, temperature, self.volume, &self.moles)
-    }
-
-    /// Update the state with the given chemical potential.
-    pub fn update_chemical_potential(&mut self, chemical_potential: &SIArray1) -> EosResult<()> {
-        for _ in 0..50 {
-            let dmu_drho = self.dmu_dni(Contributions::Total) * self.volume;
-            let f = self.chemical_potential(Contributions::Total) - chemical_potential;
-            let dmu_drho_r = dmu_drho
-                .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
-            let f_r = f.to_reduced(SIUnit::reference_molar_energy())?;
-            let rho = &self.partial_density
-                - &(LU::new(dmu_drho_r)?.solve(&f_r) * SIUnit::reference_density());
-            *self = State::new_nvt(
-                &self.eos,
-                self.temperature,
-                self.volume,
-                &(rho * self.volume),
-            )?;
-            if norm(&f.to_reduced(SIUnit::reference_molar_energy())?) < 1e-8 {
-                return Ok(());
-            }
-        }
-        Err(EosError::NotConverged(
-            "State::update_chemical_potential".into(),
-        ))
-    }
-
-    /// Update the state with the given molar Gibbs energy.
-    pub fn update_gibbs_energy(mut self, molar_gibbs_energy: SINumber) -> EosResult<Self> {
-        for _ in 0..50 {
-            let df = self.volume / self.density * self.dp_dv(Contributions::Total);
-            let f = self.molar_gibbs_energy(Contributions::Total) - molar_gibbs_energy;
-            let rho = self.density * (f.to_reduced(df)?).exp();
-            self = State::new_nvt(
-                &self.eos,
-                self.temperature,
-                self.total_moles / rho,
-                &self.moles,
-            )?;
-            if f.to_reduced(SIUnit::reference_molar_energy())?.abs() < 1e-8 {
-                return Ok(self);
-            }
-        }
-        Err(EosError::NotConverged("State::update_gibbs_energy".into()))
     }
 
     /// Creates a [StateHD] cloning temperature, volume and moles.
@@ -746,7 +798,7 @@ fn is_close(x: SINumber, y: SINumber, atol: SINumber, rtol: f64) -> bool {
     (x - y).abs() <= atol + rtol * y.abs()
 }
 
-fn newton<E: EquationOfState, F>(mut x0: SINumber, mut f: F, atol: SINumber) -> EosResult<State<E>>
+fn newton<E: Residual, F>(mut x0: SINumber, mut f: F, atol: SINumber) -> EosResult<State<E>>
 where
     F: FnMut(SINumber) -> EosResult<(SINumber, SINumber, State<E>)>,
 {

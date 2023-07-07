@@ -3,11 +3,9 @@ use crate::saftvrqmie::eos::FeynmanHibbsOrder;
 use crate::saftvrqmie::parameters::{
     SaftVRQMieBinaryRecord, SaftVRQMieParameters, SaftVRQMieRecord,
 };
-use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
 };
-use feos_core::python::joback::PyJobackRecord;
 use feos_core::python::parameter::PyIdentifier;
 use feos_core::*;
 use ndarray::Array2;
@@ -148,12 +146,7 @@ impl PySaftVRQMieBinaryRecord {
 pub struct PySaftVRQMieParameters(pub Arc<SaftVRQMieParameters>);
 
 impl_json_handling!(PySaftVRQMieRecord);
-impl_pure_record!(
-    SaftVRQMieRecord,
-    PySaftVRQMieRecord,
-    JobackRecord,
-    PyJobackRecord
-);
+impl_pure_record!(SaftVRQMieRecord, PySaftVRQMieRecord);
 impl_binary_record!(SaftVRQMieBinaryRecord, PySaftVRQMieBinaryRecord);
 impl_parameter!(SaftVRQMieParameters, PySaftVRQMieParameters);
 
@@ -230,7 +223,6 @@ impl PySaftVRQMieParameters {
 pub fn saftvrqmie(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<IdentifierOption>()?;
-    m.add_class::<PyJobackRecord>()?;
     m.add_class::<FeynmanHibbsOrder>()?;
 
     m.add_class::<PySaftVRQMieRecord>()?;

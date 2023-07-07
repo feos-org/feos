@@ -1,7 +1,7 @@
-use crate::equation_of_state::EquationOfState;
+use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::state::{Contributions, DensityInitialization, State};
-use crate::EosUnit;
+use crate::state::{DensityInitialization, State};
+use crate::{Contributions, EosUnit};
 use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::fmt;
 use std::fmt::Write;
@@ -16,77 +16,6 @@ mod tp_flash;
 mod vle_pure;
 pub use phase_diagram_binary::PhaseDiagramHetero;
 pub use phase_diagram_pure::PhaseDiagram;
-
-/// Level of detail in the iteration output.
-#[derive(Copy, Clone, PartialOrd, PartialEq, Eq)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
-pub enum Verbosity {
-    /// Do not print output.
-    None,
-    /// Print information about the success of failure of the iteration.
-    Result,
-    /// Print a detailed outpur for every iteration.
-    Iter,
-}
-
-impl Default for Verbosity {
-    fn default() -> Self {
-        Self::None
-    }
-}
-
-/// Options for the various phase equilibria solvers.
-///
-/// If the values are [None], solver specific default
-/// values are used.
-#[derive(Copy, Clone, Default)]
-pub struct SolverOptions {
-    /// Maximum number of iterations.
-    pub max_iter: Option<usize>,
-    /// Tolerance.
-    pub tol: Option<f64>,
-    /// Iteration outpput indicated by the [Verbosity] enum.
-    pub verbosity: Verbosity,
-}
-
-impl From<(Option<usize>, Option<f64>, Option<Verbosity>)> for SolverOptions {
-    fn from(options: (Option<usize>, Option<f64>, Option<Verbosity>)) -> Self {
-        Self {
-            max_iter: options.0,
-            tol: options.1,
-            verbosity: options.2.unwrap_or(Verbosity::None),
-        }
-    }
-}
-
-impl SolverOptions {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn max_iter(mut self, max_iter: usize) -> Self {
-        self.max_iter = Some(max_iter);
-        self
-    }
-
-    pub fn tol(mut self, tol: f64) -> Self {
-        self.tol = Some(tol);
-        self
-    }
-
-    pub fn verbosity(mut self, verbosity: Verbosity) -> Self {
-        self.verbosity = verbosity;
-        self
-    }
-
-    pub fn unwrap_or(self, max_iter: usize, tol: f64) -> (usize, f64, Verbosity) {
-        (
-            self.max_iter.unwrap_or(max_iter),
-            self.tol.unwrap_or(tol),
-            self.verbosity,
-        )
-    }
-}
 
 /// A thermodynamic equilibrium state.
 ///
@@ -109,11 +38,10 @@ impl<E, const N: usize> Clone for PhaseEquilibrium<E, N> {
     }
 }
 
-impl<E, const N: usize> fmt::Display for PhaseEquilibrium<E, N>
+impl<E: Residual, const N: usize> fmt::Display for PhaseEquilibrium<E, N>
 where
     SINumber: fmt::Display,
     SIArray1: fmt::Display,
-    E: EquationOfState,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (i, s) in self.0.iter().enumerate() {
@@ -123,11 +51,10 @@ where
     }
 }
 
-impl<E, const N: usize> PhaseEquilibrium<E, N>
+impl<E: Residual, const N: usize> PhaseEquilibrium<E, N>
 where
     SINumber: fmt::Display,
     SIArray1: fmt::Display,
-    E: EquationOfState,
 {
     pub fn _repr_markdown_(&self) -> String {
         if self.0[0].eos.components() == 1 {
@@ -161,7 +88,7 @@ where
     }
 }
 
-impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
+impl<E> PhaseEquilibrium<E, 2> {
     pub fn vapor(&self) -> &State<E> {
         &self.0[0]
     }
@@ -171,7 +98,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     }
 }
 
-impl<E: EquationOfState> PhaseEquilibrium<E, 3> {
+impl<E> PhaseEquilibrium<E, 3> {
     pub fn vapor(&self) -> &State<E> {
         &self.0[0]
     }
@@ -185,7 +112,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 3> {
     }
 }
 
-impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
+impl<E: Residual> PhaseEquilibrium<E, 2> {
     pub(super) fn from_states(state1: State<E>, state2: State<E>) -> Self {
         let (vapor, liquid) = if state1.density < state2.density {
             (state1, state2)
@@ -232,7 +159,7 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
     }
 }
 
-impl<E: EquationOfState, const N: usize> PhaseEquilibrium<E, N> {
+impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
     pub(super) fn update_pressure(
         mut self,
         temperature: SINumber,
@@ -267,18 +194,21 @@ impl<E: EquationOfState, const N: usize> PhaseEquilibrium<E, N> {
         Ok(())
     }
 
-    pub fn update_chemical_potential(&mut self, chemical_potential: &SIArray1) -> EosResult<()> {
-        for s in self.0.iter_mut() {
-            s.update_chemical_potential(chemical_potential)?;
-        }
-        Ok(())
-    }
-
+    // Total Gibbs energy excluding the constant contribution RT sum_i N_i ln(\Lambda_i^3)
     pub(super) fn total_gibbs_energy(&self) -> SINumber {
         self.0
             .iter()
             .fold(0.0 * SIUnit::reference_energy(), |acc, s| {
-                acc + s.gibbs_energy(Contributions::Total)
+                let ln_rho = s
+                    .partial_density
+                    .to_reduced(SIUnit::reference_density())
+                    .unwrap()
+                    .mapv(f64::ln);
+                acc + s.residual_helmholtz_energy()
+                    + s.pressure(Contributions::Total) * s.volume
+                    + SIUnit::gas_constant()
+                        * s.temperature
+                        * (s.moles.clone() * (ln_rho - 1.0)).sum()
             })
     }
 }
@@ -286,7 +216,7 @@ impl<E: EquationOfState, const N: usize> PhaseEquilibrium<E, N> {
 const TRIVIAL_REL_DEVIATION: f64 = 1e-5;
 
 /// # Utility functions
-impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
+impl<E: Residual> PhaseEquilibrium<E, 2> {
     pub(super) fn check_trivial_solution(self) -> EosResult<Self> {
         if Self::is_trivial_solution(self.vapor(), self.liquid()) {
             Err(EosError::TrivialSolution)

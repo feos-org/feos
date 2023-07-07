@@ -1,7 +1,7 @@
 //! The [`Estimator`] struct can be used to store multiple [`DataSet`]s for convenient parameter
 //! optimization.
 use super::{DataSet, EstimatorError, Loss};
-use feos_core::EquationOfState;
+use feos_core::Residual;
 use ndarray::{arr1, concatenate, Array1, ArrayView1, Axis};
 use quantity::si::SIArray1;
 use std::fmt;
@@ -11,13 +11,13 @@ use std::sync::Arc;
 
 /// A collection of [`DataSet`]s and weights that can be used to
 /// evaluate an equation of state versus experimental data.
-pub struct Estimator<E: EquationOfState> {
+pub struct Estimator<E: Residual> {
     data: Vec<Arc<dyn DataSet<E>>>,
     weights: Vec<f64>,
     losses: Vec<Loss>,
 }
 
-impl<E: EquationOfState> Estimator<E> {
+impl<E: Residual> Estimator<E> {
     /// Create a new `Estimator` given `DataSet`s and weights.
     ///
     /// The weights are normalized and used as multiplicator when the
@@ -99,7 +99,7 @@ impl<E: EquationOfState> Estimator<E> {
     }
 }
 
-impl<E: EquationOfState> Display for Estimator<E> {
+impl<E: Residual> Display for Estimator<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for d in self.data.iter() {
             writeln!(f, "{}", d)?;

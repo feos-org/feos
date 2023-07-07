@@ -78,11 +78,6 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_chemical_potential(&self) -> PySIArray1 {
-                PySIArray1::from(self.0.profile.chemical_potential())
-            }
-
-            #[getter]
             fn get_bulk(&self) -> PyState {
                 PyState(self.0.profile.bulk.clone())
             }

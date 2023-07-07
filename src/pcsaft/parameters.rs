@@ -1,7 +1,6 @@
 use crate::association::{AssociationParameters, AssociationRecord};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use conv::ValueInto;
-use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     FromSegments, FromSegmentsBinary, Parameter, ParameterError, PureRecord,
 };
@@ -314,19 +313,17 @@ pub struct PcSaftParameters {
     pub viscosity: Option<Array2<f64>>,
     pub diffusion: Option<Array2<f64>>,
     pub thermal_conductivity: Option<Array2<f64>>,
-    pub pure_records: Vec<PureRecord<PcSaftRecord, JobackRecord>>,
+    pub pure_records: Vec<PureRecord<PcSaftRecord>>,
     pub binary_records: Array2<PcSaftBinaryRecord>,
-    pub joback_records: Option<Vec<JobackRecord>>,
 }
 
 impl Parameter for PcSaftParameters {
     type Pure = PcSaftRecord;
-    type IdealGas = JobackRecord;
     type Binary = PcSaftBinaryRecord;
 
     fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
-        binary_records: Array2<PcSaftBinaryRecord>,
+        pure_records: Vec<PureRecord<Self::Pure>>,
+        binary_records: Array2<Self::Binary>,
     ) -> Result<Self, ParameterError> {
         let n = pure_records.len();
 
@@ -422,11 +419,6 @@ impl Parameter for PcSaftParameters {
             Some(v)
         };
 
-        let joback_records = pure_records
-            .iter()
-            .map(|r| r.ideal_gas_record.clone())
-            .collect();
-
         Ok(Self {
             molarweight,
             m,
@@ -450,16 +442,10 @@ impl Parameter for PcSaftParameters {
             thermal_conductivity: thermal_conductivity_coefficients,
             pure_records,
             binary_records,
-            joback_records,
         })
     }
 
-    fn records(
-        &self,
-    ) -> (
-        &[PureRecord<PcSaftRecord, JobackRecord>],
-        &Array2<PcSaftBinaryRecord>,
-    ) {
+    fn records(&self) -> (&[PureRecord<PcSaftRecord>], &Array2<PcSaftBinaryRecord>) {
         (&self.pure_records, &self.binary_records)
     }
 }
@@ -519,7 +505,6 @@ impl PcSaftParameters {
 #[cfg(test)]
 pub mod utils {
     use super::*;
-    use feos_core::joback::JobackRecord;
     use feos_core::parameter::{BinaryRecord, ChemicalRecord, SegmentRecord};
     use std::sync::Arc;
 
@@ -544,7 +529,7 @@ pub mod utils {
                 },
                 "molarweight": 44.0962
             }"#;
-        let propane_record: PureRecord<PcSaftRecord, JobackRecord> =
+        let propane_record: PureRecord<PcSaftRecord> =
             serde_json::from_str(propane_json).expect("Unable to parse json.");
         Arc::new(PcSaftParameters::new_pure(propane_record).unwrap())
     }
@@ -568,7 +553,7 @@ pub mod utils {
                 "q": 4.4
             }
         }"#;
-        let co2_record: PureRecord<PcSaftRecord, JobackRecord> =
+        let co2_record: PureRecord<PcSaftRecord> =
             serde_json::from_str(co2_json).expect("Unable to parse json.");
         PcSaftParameters::new_pure(co2_record).unwrap()
     }
@@ -591,7 +576,7 @@ pub mod utils {
                 },
                 "molarweight": 58.123
             }"#;
-        let butane_record: PureRecord<PcSaftRecord, JobackRecord> =
+        let butane_record: PureRecord<PcSaftRecord> =
             serde_json::from_str(butane_json).expect("Unable to parse json.");
         Arc::new(PcSaftParameters::new_pure(butane_record).unwrap())
     }
@@ -615,7 +600,7 @@ pub mod utils {
                 },
                 "molarweight": 46.0688
             }"#;
-        let dme_record: PureRecord<PcSaftRecord, JobackRecord> =
+        let dme_record: PureRecord<PcSaftRecord> =
             serde_json::from_str(dme_json).expect("Unable to parse json.");
         PcSaftParameters::new_pure(dme_record).unwrap()
     }
@@ -642,7 +627,7 @@ pub mod utils {
                 },
                 "molarweight": 18.0152
             }"#;
-        let water_record: PureRecord<PcSaftRecord, JobackRecord> =
+        let water_record: PureRecord<PcSaftRecord> =
             serde_json::from_str(water_json).expect("Unable to parse json.");
         PcSaftParameters::new_pure(water_record).unwrap()
     }
@@ -684,7 +669,7 @@ pub mod utils {
                 }
             }
         ]"#;
-        let binary_record: Vec<PureRecord<PcSaftRecord, JobackRecord>> =
+        let binary_record: Vec<PureRecord<PcSaftRecord>> =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
         PcSaftParameters::new_binary(binary_record, None).unwrap()
     }
@@ -729,7 +714,7 @@ pub mod utils {
                 "molarweight": 58.123
             }
         ]"#;
-        let binary_record: Vec<PureRecord<PcSaftRecord, JobackRecord>> =
+        let binary_record: Vec<PureRecord<PcSaftRecord>> =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
         Arc::new(PcSaftParameters::new_binary(binary_record, None).unwrap())
     }
