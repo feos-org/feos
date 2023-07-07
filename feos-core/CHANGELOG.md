@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `Parameter` trait no longer has an associated type `IdealGas`. [#158](https://github.com/feos-org/feos/pull/)
 - Split properties of `State` into those that require the `Residual` trait (`residual_properties.rs`) and those that require both `Residual + IdealGas` (`properties.rs`). [#158](https://github.com/feos-org/feos/pull/)
 - State creation routines are split into those that can be used with `Residual` and those that require `Residual + IdealGas`. [#158](https://github.com/feos-org/feos/pull/158)
-- `Contributions` enum no longer includes the `ResidualNpt` variant. `ResidualNvt` variant is rename to `Residual`. [#158](https://github.com/feos-org/feos/pull/158)
+- `Contributions` enum no longer includes the `ResidualNpt` variant. `ResidualNvt` variant is renamed to `Residual`. [#158](https://github.com/feos-org/feos/pull/158)
 - Moved `Verbosity` and `SolverOption` from `phase_equilibria` module to `lib.rs`. [#158](https://github.com/feos-org/feos/pull/)
 - Moved `StateVec` into own file and module. [#158](https://github.com/feos-org/feos/pull/158)
 - Ideal gas and residual Helmholtz energy models can now be separately implemented in Python via the `PyIdealGas` and `PyResidual` structs. [#158](https://github.com/feos-org/feos/pull/)
