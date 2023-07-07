@@ -3,11 +3,9 @@ use super::dft::GcPcSaftFunctionalParameters;
 use super::eos::GcPcSaftEosParameters;
 use super::record::GcPcSaftRecord;
 use crate::association::PyAssociationRecord;
-use feos_core::joback::JobackRecord;
 use feos_core::parameter::{
     BinaryRecord, IdentifierOption, ParameterError, ParameterHetero, SegmentRecord,
 };
-use feos_core::python::joback::PyJobackRecord;
 use feos_core::python::parameter::{PyBinarySegmentRecord, PyChemicalRecord, PyIdentifier};
 use feos_core::{impl_json_handling, impl_parameter_from_segments, impl_segment_record};
 #[cfg(feature = "dft")]
@@ -77,12 +75,7 @@ impl PyGcPcSaftRecord {
 
 impl_json_handling!(PyGcPcSaftRecord);
 
-impl_segment_record!(
-    GcPcSaftRecord,
-    PyGcPcSaftRecord,
-    JobackRecord,
-    PyJobackRecord
-);
+impl_segment_record!(GcPcSaftRecord, PyGcPcSaftRecord);
 
 #[pyclass(name = "GcPcSaftEosParameters")]
 #[pyo3(
@@ -156,7 +149,6 @@ pub fn gc_pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<IdentifierOption>()?;
     m.add_class::<PyChemicalRecord>()?;
-    m.add_class::<PyJobackRecord>()?;
     m.add_class::<PyAssociationRecord>()?;
 
     m.add_class::<PyGcPcSaftRecord>()?;

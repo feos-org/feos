@@ -1,8 +1,8 @@
-use super::{PhaseDiagram, PhaseEquilibrium, SolverOptions};
-use crate::equation_of_state::EquationOfState;
+use super::{PhaseDiagram, PhaseEquilibrium};
+use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
 use crate::state::{Contributions, DensityInitialization, State, StateBuilder, TPSpec};
-use crate::EosUnit;
+use crate::{EosUnit, SolverOptions};
 use ndarray::{arr1, arr2, concatenate, s, Array1, Array2, Axis};
 use num_dual::linalg::{norm, LU};
 use quantity::si::{SIArray1, SINumber, SIUnit};
@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 const DEFAULT_POINTS: usize = 51;
 
-impl<E: EquationOfState> PhaseDiagram<E, 2> {
+impl<E: Residual> PhaseDiagram<E, 2> {
     /// Create a new binary phase diagram exhibiting a
     /// vapor/liquid equilibrium.
     ///
@@ -171,7 +171,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
     }
 }
 
-fn iterate_vle<E: EquationOfState>(
+fn iterate_vle<E: Residual>(
     eos: &Arc<E>,
     tp: TPSpec,
     x_lim: &[f64],
@@ -231,7 +231,7 @@ where
     vle_vec
 }
 
-impl<E: EquationOfState> State<E> {
+impl<E: Residual> State<E> {
     fn tp(&self, tp: TPSpec) -> SINumber {
         match tp {
             TPSpec::Temperature(_) => self.pressure(Contributions::Total),
@@ -247,7 +247,7 @@ pub struct PhaseDiagramHetero<E> {
     pub lle: Option<PhaseDiagram<E, 2>>,
 }
 
-impl<E: EquationOfState> PhaseDiagram<E, 2> {
+impl<E: Residual> PhaseDiagram<E, 2> {
     /// Create a new binary phase diagram exhibiting a
     /// vapor/liquid/liquid equilibrium.
     ///
@@ -346,7 +346,7 @@ const MAX_ITER_HETERO: usize = 50;
 const TOL_HETERO: f64 = 1e-8;
 
 /// # Heteroazeotropes
-impl<E: EquationOfState> PhaseEquilibrium<E, 3>
+impl<E: Residual> PhaseEquilibrium<E, 3>
 where
     SINumber: std::fmt::Display + std::fmt::LowerExp,
 {
@@ -421,14 +421,14 @@ where
                 .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?;
             let dp_drho_v = (v.dp_dni(Contributions::Total) * v.volume)
                 .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?;
-            let mu_l1 = l1
-                .chemical_potential(Contributions::Total)
+            let mu_l1_res = l1
+                .residual_chemical_potential()
                 .to_reduced(SIUnit::reference_molar_energy())?;
-            let mu_l2 = l2
-                .chemical_potential(Contributions::Total)
+            let mu_l2_res = l2
+                .residual_chemical_potential()
                 .to_reduced(SIUnit::reference_molar_energy())?;
-            let mu_v = v
-                .chemical_potential(Contributions::Total)
+            let mu_v_res = v
+                .residual_chemical_potential()
                 .to_reduced(SIUnit::reference_molar_energy())?;
             let p_l1 = l1
                 .pressure(Contributions::Total)
@@ -441,10 +441,20 @@ where
                 .to_reduced(SIUnit::reference_pressure())?;
 
             // calculate residual
+            let delta_l1v_mu_ig = (SIUnit::gas_constant() * v.temperature)
+                .to_reduced(SIUnit::reference_molar_energy())?
+                * (&l1.partial_density / &v.partial_density)
+                    .into_value()?
+                    .mapv(f64::ln);
+            let delta_l2v_mu_ig = (SIUnit::gas_constant() * v.temperature)
+                .to_reduced(SIUnit::reference_molar_energy())?
+                * (&l2.partial_density / &v.partial_density)
+                    .into_value()?
+                    .mapv(f64::ln);
             let res = concatenate![
                 Axis(0),
-                mu_l1 - &mu_v,
-                mu_l2 - &mu_v,
+                mu_l1_res - &mu_v_res + delta_l1v_mu_ig,
+                mu_l2_res - &mu_v_res + delta_l2v_mu_ig,
                 arr1(&[p_l1 - p_v]),
                 arr1(&[p_l2 - p_v])
             ];
@@ -555,12 +565,9 @@ where
                 .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
             let dmu_drho_v = (v.dmu_dni(Contributions::Total) * v.volume)
                 .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
-            let dmu_dt_l1 = (l1.dmu_dt(Contributions::Total))
-                .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_temperature())?;
-            let dmu_dt_l2 = (l2.dmu_dt(Contributions::Total))
-                .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_temperature())?;
-            let dmu_dt_v = (v.dmu_dt(Contributions::Total))
-                .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_temperature())?;
+            let dmu_res_dt_l1 = (l1.dmu_res_dt()).to_reduced(SIUnit::gas_constant())?;
+            let dmu_res_dt_l2 = (l2.dmu_res_dt()).to_reduced(SIUnit::gas_constant())?;
+            let dmu_res_dt_v = (v.dmu_res_dt()).to_reduced(SIUnit::gas_constant())?;
             let dp_drho_l1 = (l1.dp_dni(Contributions::Total) * l1.volume)
                 .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?;
             let dp_drho_l2 = (l2.dp_dni(Contributions::Total) * l2.volume)
@@ -573,14 +580,14 @@ where
                 .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_temperature())?;
             let dp_dt_v = (v.dp_dt(Contributions::Total))
                 .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_temperature())?;
-            let mu_l1 = l1
-                .chemical_potential(Contributions::Total)
+            let mu_l1_res = l1
+                .residual_chemical_potential()
                 .to_reduced(SIUnit::reference_molar_energy())?;
-            let mu_l2 = l2
-                .chemical_potential(Contributions::Total)
+            let mu_l2_res = l2
+                .residual_chemical_potential()
                 .to_reduced(SIUnit::reference_molar_energy())?;
-            let mu_v = v
-                .chemical_potential(Contributions::Total)
+            let mu_v_res = v
+                .residual_chemical_potential()
                 .to_reduced(SIUnit::reference_molar_energy())?;
             let p_l1 = l1
                 .pressure(Contributions::Total)
@@ -593,10 +600,22 @@ where
                 .to_reduced(SIUnit::reference_pressure())?;
 
             // calculate residual
+            let delta_l1v_dmu_ig_dt = (&l1.partial_density / &v.partial_density)
+                .into_value()?
+                .mapv(f64::ln);
+            let delta_l2v_dmu_ig_dt = (&l2.partial_density / &v.partial_density)
+                .into_value()?
+                .mapv(f64::ln);
+            let delta_l1v_mu_ig = (SIUnit::gas_constant() * v.temperature)
+                .to_reduced(SIUnit::reference_molar_energy())?
+                * &delta_l1v_dmu_ig_dt;
+            let delta_l2v_mu_ig = (SIUnit::gas_constant() * v.temperature)
+                .to_reduced(SIUnit::reference_molar_energy())?
+                * &delta_l2v_dmu_ig_dt;
             let res = concatenate![
                 Axis(0),
-                mu_l1 - &mu_v,
-                mu_l2 - &mu_v,
+                mu_l1_res - &mu_v_res + delta_l1v_mu_ig,
+                mu_l2_res - &mu_v_res + delta_l2v_mu_ig,
                 arr1(&[p_l1 - p]),
                 arr1(&[p_l2 - p]),
                 arr1(&[p_v - p])
@@ -636,8 +655,8 @@ where
                 ],
                 concatenate![
                     Axis(0),
-                    (dmu_dt_l1 - &dmu_dt_v).insert_axis(Axis(1)),
-                    (dmu_dt_l2 - &dmu_dt_v).insert_axis(Axis(1)),
+                    (dmu_res_dt_l1 - &dmu_res_dt_v + delta_l1v_dmu_ig_dt).insert_axis(Axis(1)),
+                    (dmu_res_dt_l2 - &dmu_res_dt_v + delta_l2v_dmu_ig_dt).insert_axis(Axis(1)),
                     arr2(&[[dp_dt_l1]]),
                     arr2(&[[dp_dt_l2]]),
                     arr2(&[[dp_dt_v]])

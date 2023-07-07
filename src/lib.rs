@@ -33,12 +33,14 @@
 
 #![warn(clippy::all)]
 #![allow(clippy::too_many_arguments)]
+#![allow(deprecated)]
+
 #[cfg(feature = "dft")]
 mod dft;
 #[cfg(feature = "dft")]
 pub use dft::FunctionalVariant;
 mod eos;
-pub use eos::EosVariant;
+pub use eos::{IdealGasModel, ResidualModel};
 
 #[cfg(feature = "estimator")]
 pub mod estimator;

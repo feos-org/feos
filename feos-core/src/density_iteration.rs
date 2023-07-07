@@ -1,11 +1,11 @@
-use crate::equation_of_state::EquationOfState;
+use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
 use crate::state::State;
 use crate::EosUnit;
 use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::sync::Arc;
 
-pub fn density_iteration<E: EquationOfState>(
+pub fn density_iteration<E: Residual>(
     eos: &Arc<E>,
     temperature: SINumber,
     pressure: SINumber,
@@ -144,7 +144,7 @@ pub fn density_iteration<E: EquationOfState>(
     }
 }
 
-fn pressure_spinodal<E: EquationOfState>(
+fn pressure_spinodal<E: Residual>(
     eos: &Arc<E>,
     temperature: SINumber,
     rho_init: SINumber,

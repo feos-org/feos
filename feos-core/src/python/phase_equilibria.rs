@@ -277,20 +277,6 @@ macro_rules! impl_phase_equilibrium {
                 PyState(self.0.liquid().clone())
             }
 
-            /// Calculate a new PhaseEquilibrium with the given chemical potential.
-            /// The temperature remains constant, but the states are not in
-            /// a mechanical equilibrium anymore.
-            ///
-            /// Parameters
-            /// ----------
-            /// chemical_potential: SIArray1
-            ///     The new chemical potential
-            ///
-            fn update_chemical_potential(slf: &PyCell<Self>, chemical_potential: &PySIArray1) -> PyResult<()> {
-                slf.borrow_mut().0.update_chemical_potential(chemical_potential)?;
-                Ok(())
-            }
-
             /// Calculate the pure component vapor-liquid equilibria for all
             /// components in the system.
             ///

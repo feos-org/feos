@@ -3,7 +3,7 @@
 //! a `target` which can be values from experimental data or
 //! other models.
 use super::{EstimatorError, Loss};
-use feos_core::EquationOfState;
+use feos_core::Residual;
 use ndarray::Array1;
 use quantity::si::SIArray1;
 use std::collections::HashMap;
@@ -14,7 +14,7 @@ use std::sync::Arc;
 ///
 /// Functionalities in the context of optimizations of
 /// parameters of equations of state.
-pub trait DataSet<E: EquationOfState>: Send + Sync {
+pub trait DataSet<E: Residual>: Send + Sync {
     /// Return target quantity.
     fn target(&self) -> &SIArray1;
 
@@ -61,7 +61,7 @@ pub trait DataSet<E: EquationOfState>: Send + Sync {
     }
 }
 
-impl<E: EquationOfState> fmt::Display for dyn DataSet<E> {
+impl<E: Residual> fmt::Display for dyn DataSet<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,

@@ -1,9 +1,10 @@
-use super::{PhaseEquilibrium, SolverOptions};
-use crate::equation_of_state::EquationOfState;
+use super::PhaseEquilibrium;
+use crate::equation_of_state::Residual;
 use crate::errors::EosResult;
 use crate::state::{State, StateVec};
 #[cfg(feature = "rayon")]
 use crate::EosUnit;
+use crate::SolverOptions;
 #[cfg(feature = "rayon")]
 use ndarray::{Array1, ArrayView1, Axis};
 #[cfg(feature = "rayon")]
@@ -33,7 +34,7 @@ impl<E, const N: usize> PhaseDiagram<E, N> {
     }
 }
 
-impl<E: EquationOfState> PhaseDiagram<E, 2> {
+impl<E: Residual> PhaseDiagram<E, 2> {
     /// Calculate a phase diagram for a pure component.
     pub fn pure(
         eos: &Arc<E>,
@@ -74,7 +75,7 @@ impl<E: EquationOfState> PhaseDiagram<E, 2> {
 }
 
 #[cfg(feature = "rayon")]
-impl<E: EquationOfState> PhaseDiagram<E, 2> {
+impl<E: Residual> PhaseDiagram<E, 2> {
     fn solve_temperatures(
         eos: &Arc<E>,
         temperatures: ArrayView1<f64>,

@@ -5,6 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Implemented `HelmholtzEnergyFunctional` for `EquationOfState` to be able to use functionals as equations of state. [#158](https://github.com/feos-org/feos/pull/158) 
+
+### Changed
+- `HelmholtzEnergyFunctional`: added `Components` trait as trait bound and removed `ideal_gas` method. [#158](https://github.com/feos-org/feos/pull/158)
+- `DFT<F>` now implements `Residual` and furthermore `IdealGas` if `F` implements `IdealGas`. [#158](https://github.com/feos-org/feos/pull/158)
+- What properties (and contributions) of `DFTProfile` are available now depends on whether an ideal gas model is provided or not. [#158](https://github.com/feos-org/feos/pull/158)
+
+### Removed
+- Removed `DefaultIdealGasContribution` [#158](https://github.com/feos-org/feos/pull/158)
+- Removed getters for `chemical_potential` (for profiles) and `molar_gibbs_energy` (for `Adsorption1D` and `Adsorption3D`) from Python interface. [#158](https://github.com/feos-org/feos/pull/158)
+
 ### Packaging
 - Updated `num-dual` dependency to 0.7. [#137](https://github.com/feos-org/feos/pull/137)
 

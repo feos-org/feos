@@ -7,7 +7,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::{
     parameter::{IdentifierOption, Parameter},
-    Derivative, EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, State, StateHD,
+    Derivative, HelmholtzEnergy, HelmholtzEnergyDual, Residual, State, StateHD,
 };
 use ndarray::{arr1, Array};
 use num_dual::DualNum;
@@ -28,7 +28,7 @@ fn state_pcsaft(parameters: PcSaftParameters) -> State<PcSaft> {
 }
 
 /// Residual Helmholtz energy given an equation of state and a StateHD.
-fn a_res<D: DualNum<f64> + Copy, E: EquationOfState>(inp: (&Arc<E>, &StateHD<D>)) -> D
+fn a_res<D: DualNum<f64> + Copy, E: Residual>(inp: (&Arc<E>, &StateHD<D>)) -> D
 where
     (dyn HelmholtzEnergy + 'static): HelmholtzEnergyDual<D>,
 {
@@ -36,7 +36,7 @@ where
 }
 
 /// Benchmark for evaluation of the Helmholtz energy for different dual number types.
-fn bench_dual_numbers<E: EquationOfState>(c: &mut Criterion, group_name: &str, state: State<E>) {
+fn bench_dual_numbers<E: Residual>(c: &mut Criterion, group_name: &str, state: State<E>) {
     let mut group = c.benchmark_group(group_name);
     group.bench_function("a_f64", |b| {
         b.iter(|| a_res((&state.eos, &state.derive0())))

@@ -1,7 +1,7 @@
 use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter};
-use feos_core::{EquationOfState, StateBuilder};
+use feos_core::{Residual, StateBuilder};
 use ndarray::*;
 use quantity::si::*;
 use std::error::Error;

@@ -1,32 +1,23 @@
 use super::parameters::PcSaftParameters;
 use crate::association::Association;
 use crate::hard_sphere::HardSphere;
-use feos_core::joback::Joback;
 use feos_core::parameter::Parameter;
 use feos_core::{
-    Contributions, EntropyScaling, EosError, EosResult, EquationOfState, HelmholtzEnergy,
-    IdealGasContribution, MolarWeight, State,
+    Components, EntropyScaling, EosError, EosResult, HelmholtzEnergy, MolarWeight, Residual, State,
 };
 use ndarray::Array1;
 use quantity::si::*;
 use std::f64::consts::{FRAC_PI_6, PI};
+use std::fmt;
 use std::sync::Arc;
 
 pub(crate) mod dispersion;
 pub(crate) mod hard_chain;
 pub(crate) mod polar;
-mod qspr;
 use dispersion::Dispersion;
 use hard_chain::HardChain;
 pub use polar::DQVariants;
 use polar::{Dipole, DipoleQuadrupole, Quadrupole};
-use qspr::QSPR;
-
-#[allow(clippy::upper_case_acronyms)]
-enum IdealGasContributions {
-    QSPR(QSPR),
-    Joback(Joback),
-}
 
 /// Customization options for the PC-SAFT equation of state and functional.
 #[derive(Copy, Clone)]
@@ -53,7 +44,6 @@ pub struct PcSaft {
     parameters: Arc<PcSaftParameters>,
     options: PcSaftOptions,
     contributions: Vec<Box<dyn HelmholtzEnergy>>,
-    ideal_gas: IdealGasContributions,
 }
 
 impl PcSaft {
@@ -95,21 +85,15 @@ impl PcSaft {
             )));
         };
 
-        let joback_records = parameters.joback_records.clone();
-
         Self {
-            parameters: parameters.clone(),
+            parameters,
             options,
             contributions,
-            ideal_gas: joback_records.map_or(
-                IdealGasContributions::QSPR(QSPR { parameters }),
-                |joback_records| IdealGasContributions::Joback(Joback::new(joback_records)),
-            ),
         }
     }
 }
 
-impl EquationOfState for PcSaft {
+impl Components for PcSaft {
     fn components(&self) -> usize {
         self.parameters.pure_records.len()
     }
@@ -120,22 +104,23 @@ impl EquationOfState for PcSaft {
             self.options,
         )
     }
+}
 
+impl Residual for PcSaft {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
             / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
                 .sum()
     }
 
-    fn residual(&self) -> &[Box<dyn HelmholtzEnergy>] {
+    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         &self.contributions
     }
+}
 
-    fn ideal_gas(&self) -> &dyn IdealGasContribution {
-        match &self.ideal_gas {
-            IdealGasContributions::QSPR(qspr) => qspr,
-            IdealGasContributions::Joback(joback) => joback,
-        }
+impl fmt::Display for PcSaft {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "PC-SAFT")
     }
 }
 
@@ -292,8 +277,7 @@ impl EntropyScaling for PcSaft {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN)
                     .into_value()
                     .unwrap();
-                let s_res_reduced = state
-                    .molar_entropy(Contributions::ResidualNvt)
+                let s_res_reduced = (state.residual_entropy() / state.total_moles)
                     .to_reduced(RGAS)
                     .unwrap()
                     / p.m[i];
@@ -358,7 +342,7 @@ mod tests {
         let p_ig = s.total_moles * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
-            s.pressure(Contributions::IdealGas) + s.pressure(Contributions::ResidualNvt),
+            s.pressure(Contributions::IdealGas) + s.pressure(Contributions::Residual),
             s.pressure(Contributions::Total),
             epsilon = 1e-10
         );
@@ -374,7 +358,7 @@ mod tests {
         let p_ig = s.total_moles * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
-            s.pressure(Contributions::IdealGas) + s.pressure(Contributions::ResidualNvt),
+            s.pressure(Contributions::IdealGas) + s.pressure(Contributions::Residual),
             s.pressure(Contributions::Total),
             epsilon = 1e-10
         );
@@ -472,20 +456,6 @@ mod tests {
         if let Ok(v) = cp {
             assert_relative_eq!(v.temperature, 375.1244078318015 * KELVIN, epsilon = 1e-8)
         }
-    }
-
-    #[test]
-    fn speed_of_sound() {
-        let e = Arc::new(PcSaft::new(propane_parameters()));
-        let t = 300.0 * KELVIN;
-        let p = BAR;
-        let m = arr1(&[1.0]) * MOL;
-        let s = State::new_npt(&e, t, p, &m, DensityInitialization::None).unwrap();
-        assert_relative_eq!(
-            s.speed_of_sound(),
-            245.00185709137546 * METER / SECOND,
-            epsilon = 1e-4
-        )
     }
 
     #[test]

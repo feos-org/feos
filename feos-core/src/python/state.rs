@@ -90,7 +90,7 @@ macro_rules! impl_state {
                 } else {
                     Ok(DensityInitialization::None)
                 };
-                let s = State::new(
+                let s = State::new_full(
                     &eos.0,
                     temperature.map(|t| t.into()),
                     volume.map(|t| t.into()),
@@ -459,18 +459,11 @@ macro_rules! impl_state {
 
             /// Return partial molar volume of each component.
             ///
-            /// Parameters
-            /// ----------
-            /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
-            ///     Defaults to Contributions.Total.
-            ///
             /// Returns
             /// -------
             /// SIArray1
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn partial_molar_volume(&self, contributions: Contributions) -> PySIArray1 {
-                PySIArray1::from(self.0.partial_molar_volume(contributions))
+            fn partial_molar_volume(&self) -> PySIArray1 {
+                PySIArray1::from(self.0.partial_molar_volume())
             }
 
             /// Return chemical potential of each component.
@@ -703,18 +696,11 @@ macro_rules! impl_state {
 
             /// Return partial molar entropy of each component.
             ///
-            /// Parameters
-            /// ----------
-            /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
-            ///     Defaults to Contributions.Total.
-            ///
             /// Returns
             /// -------
             /// SIArray1
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn partial_molar_entropy(&self, contributions: Contributions) -> PySIArray1 {
-                PySIArray1::from(self.0.partial_molar_entropy(contributions))
+            fn partial_molar_entropy(&self) -> PySIArray1 {
+                PySIArray1::from(self.0.partial_molar_entropy())
             }
 
             /// Return enthalpy.
@@ -752,18 +738,11 @@ macro_rules! impl_state {
 
             /// Return partial molar enthalpy of each component.
             ///
-            /// Parameters
-            /// ----------
-            /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
-            ///     Defaults to Contributions.Total.
-            ///
             /// Returns
             /// -------
             /// SIArray1
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn partial_molar_enthalpy(&self, contributions: Contributions) -> PySIArray1 {
-                PySIArray1::from(self.0.partial_molar_enthalpy(contributions))
+            fn partial_molar_enthalpy(&self) -> PySIArray1 {
+                PySIArray1::from(self.0.partial_molar_enthalpy())
             }
 
             /// Return helmholtz_energy.

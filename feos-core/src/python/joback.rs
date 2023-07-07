@@ -1,7 +1,17 @@
-use crate::impl_json_handling;
-use crate::joback::JobackRecord;
-use crate::parameter::ParameterError;
+use std::sync::Arc;
+
+use crate::joback::{JobackBinaryRecord, JobackParameters, JobackRecord};
+use crate::parameter::*;
+use crate::python::parameter::*;
+use crate::{
+    impl_binary_record, impl_json_handling, impl_parameter, impl_parameter_from_segments,
+    impl_pure_record, impl_segment_record,
+};
+use ndarray::Array2;
+use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
+use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
+use std::convert::{TryFrom, TryInto};
 
 /// Create a set of Joback ideal gas heat capacity parameters
 /// for a segment or a pure component.
@@ -44,3 +54,41 @@ impl PyJobackRecord {
 }
 
 impl_json_handling!(PyJobackRecord);
+impl_pure_record!(JobackRecord, PyJobackRecord);
+impl_segment_record!(JobackRecord, PyJobackRecord);
+
+#[pyclass(name = "JobackBinaryRecord")]
+#[derive(Clone)]
+pub struct PyJobackBinaryRecord(pub JobackBinaryRecord);
+
+impl_binary_record!(JobackBinaryRecord, PyJobackBinaryRecord);
+/// Create a set of Joback parameters from records.
+///
+/// Parameters
+/// ----------
+/// pure_records : List[PureRecord]
+///     pure substance records.
+/// substances : List[str], optional
+///     The substances to use. Filters substances from `pure_records` according to
+///     `search_option`.
+///     When not provided, all entries of `pure_records` are used.
+/// search_option : {'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'}, optional, defaults to 'Name'.
+///     Identifier that is used to search substance.
+///
+/// Returns
+/// -------
+/// JobackParameters
+#[pyclass(name = "JobackParameters")]
+#[pyo3(text_signature = "(pure_records, substances=None, search_option='Name')")]
+#[derive(Clone)]
+pub struct PyJobackParameters(pub Arc<JobackParameters>);
+
+impl_parameter!(JobackParameters, PyJobackParameters);
+impl_parameter_from_segments!(JobackParameters, PyJobackParameters);
+
+#[pymethods]
+impl PyJobackParameters {
+    // fn _repr_markdown_(&self) -> String {
+    //     self.0.to_markdown()
+    // }
+}
