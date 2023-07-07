@@ -57,7 +57,11 @@ pub struct PyBinaryAssociationRecord(pub BinaryAssociationRecord);
 impl PyBinaryAssociationRecord {
     #[new]
     // #[pyo3(signature = (kappa_ab, epsilon_k_ab, na=0.0, nb=0.0, nc=0.0))]
-    fn new(kappa_ab: f64, epsilon_k_ab: f64, site_indices: Option<[usize; 2]>) -> Self {
+    fn new(
+        kappa_ab: Option<f64>,
+        epsilon_k_ab: Option<f64>,
+        site_indices: Option<[usize; 2]>,
+    ) -> Self {
         Self(BinaryAssociationRecord::new(
             kappa_ab,
             epsilon_k_ab,
@@ -66,12 +70,12 @@ impl PyBinaryAssociationRecord {
     }
 
     #[getter]
-    fn get_kappa_ab(&self) -> f64 {
+    fn get_kappa_ab(&self) -> Option<f64> {
         self.0.kappa_ab
     }
 
     #[getter]
-    fn get_epsilon_k_ab(&self) -> f64 {
+    fn get_epsilon_k_ab(&self) -> Option<f64> {
         self.0.epsilon_k_ab
     }
 

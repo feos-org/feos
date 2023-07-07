@@ -95,13 +95,17 @@ impl fmt::Display for AssociationRecord {
 
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct BinaryAssociationRecord {
-    pub kappa_ab: f64,
-    pub epsilon_k_ab: f64,
+    pub kappa_ab: Option<f64>,
+    pub epsilon_k_ab: Option<f64>,
     pub site_indices: [usize; 2],
 }
 
 impl BinaryAssociationRecord {
-    pub fn new(kappa_ab: f64, epsilon_k_ab: f64, site_indices: Option<[usize; 2]>) -> Self {
+    pub fn new(
+        kappa_ab: Option<f64>,
+        epsilon_k_ab: Option<f64>,
+        site_indices: Option<[usize; 2]>,
+    ) -> Self {
         Self {
             kappa_ab,
             epsilon_k_ab,
@@ -204,18 +208,30 @@ impl AssociationParameters {
         for &((i, j), record) in binary_records.iter() {
             let [a, b] = record.site_indices;
             if let (Some(x), Some(y)) = (indices_a.get(&(i, a)), indices_b.get(&(j, b))) {
-                epsilon_k_ab[[*x, *y]] = record.epsilon_k_ab;
-                sigma3_kappa_ab[[*x, *y]] = (sigma[i] * sigma[j]).powf(1.5) * record.kappa_ab;
+                if let Some(epsilon_k_aibj) = record.epsilon_k_ab {
+                    epsilon_k_ab[[*x, *y]] = epsilon_k_aibj;
+                }
+                if let Some(kappa_aibj) = record.kappa_ab {
+                    sigma3_kappa_ab[[*x, *y]] = (sigma[i] * sigma[j]).powf(1.5) * kappa_aibj;
+                }
             }
             if let (Some(y), Some(x)) = (indices_b.get(&(i, a)), indices_a.get(&(j, b))) {
-                epsilon_k_ab[[*x, *y]] = record.epsilon_k_ab;
-                sigma3_kappa_ab[[*x, *y]] = (sigma[i] * sigma[j]).powf(1.5) * record.kappa_ab;
+                if let Some(epsilon_k_aibj) = record.epsilon_k_ab {
+                    epsilon_k_ab[[*x, *y]] = epsilon_k_aibj;
+                }
+                if let Some(kappa_aibj) = record.kappa_ab {
+                    sigma3_kappa_ab[[*x, *y]] = (sigma[i] * sigma[j]).powf(1.5) * kappa_aibj;
+                }
             }
             if let (Some(x), Some(y)) = (indices_c.get(&(i, a)), indices_c.get(&(j, b))) {
-                epsilon_k_cc[[*x, *y]] = record.epsilon_k_ab;
-                epsilon_k_cc[[*y, *x]] = record.epsilon_k_ab;
-                sigma3_kappa_cc[[*x, *y]] = (sigma[i] * sigma[j]).powf(1.5) * record.kappa_ab;
-                sigma3_kappa_cc[[*y, *x]] = (sigma[i] * sigma[j]).powf(1.5) * record.kappa_ab;
+                if let Some(epsilon_k_aibj) = record.epsilon_k_ab {
+                    epsilon_k_cc[[*x, *y]] = epsilon_k_aibj;
+                    epsilon_k_cc[[*y, *x]] = epsilon_k_aibj;
+                }
+                if let Some(kappa_aibj) = record.kappa_ab {
+                    sigma3_kappa_cc[[*x, *y]] = (sigma[i] * sigma[j]).powf(1.5) * kappa_aibj;
+                    sigma3_kappa_cc[[*y, *x]] = (sigma[i] * sigma[j]).powf(1.5) * kappa_aibj;
+                }
             }
         }
 
@@ -553,15 +569,15 @@ mod tests {
         let binary = [
             (
                 (0, 1),
-                BinaryAssociationRecord::new(3.5, 1234., Some([0, 0])),
+                BinaryAssociationRecord::new(Some(3.5), Some(1234.), Some([0, 0])),
             ),
             (
                 (0, 2),
-                BinaryAssociationRecord::new(3.5, 3140., Some([0, 0])),
+                BinaryAssociationRecord::new(Some(3.5), Some(3140.), Some([0, 0])),
             ),
             (
                 (1, 3),
-                BinaryAssociationRecord::new(3.5, 3333., Some([0, 1])),
+                BinaryAssociationRecord::new(Some(3.5), Some(3333.), Some([0, 1])),
             ),
         ];
         let assoc = AssociationParameters::new(&records, &sigma, &binary, None);
@@ -580,7 +596,10 @@ mod tests {
         let comp2 = vec![AssociationRecord::new(0.1, -500., 0.0, 1.0, 0.0)];
         let comp3 = vec![AssociationRecord::new(0.0, 0.0, 0.0, 1.0, 0.0)];
         let sigma = arr1(&[3.0, 3.5]);
-        let binary = [((0, 1), BinaryAssociationRecord::new(0.1, 1000., None))];
+        let binary = [(
+            (0, 1),
+            BinaryAssociationRecord::new(Some(0.1), Some(1000.), None),
+        )];
         let assoc1 = AssociationParameters::new(&[comp1.clone(), comp2], &sigma, &[], None);
         let assoc2 = AssociationParameters::new(&[comp1, comp3], &sigma, &binary, None);
         println!("{}", assoc1.epsilon_k_ab);

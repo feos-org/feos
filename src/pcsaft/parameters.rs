@@ -293,11 +293,7 @@ impl PcSaftBinaryRecord {
         let association = if kappa_ab.is_none() && epsilon_k_ab.is_none() {
             None
         } else {
-            Some(BinaryAssociationRecord::new(
-                kappa_ab.unwrap_or_default(),
-                epsilon_k_ab.unwrap_or_default(),
-                None,
-            ))
+            Some(BinaryAssociationRecord::new(kappa_ab, epsilon_k_ab, None))
         };
         Self { k_ij, association }
     }
@@ -320,8 +316,12 @@ impl std::fmt::Display for PcSaftBinaryRecord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "PcSaftBinaryRecord(k_ij={}", self.k_ij)?;
         if let Some(association) = self.association {
-            write!(f, ", kappa_ab={}", association.kappa_ab)?;
-            write!(f, ", epsilon_k_ab={}", association.epsilon_k_ab)?;
+            if let Some(kappa_ab) = association.kappa_ab {
+                write!(f, ", kappa_ab={}", kappa_ab)?;
+            }
+            if let Some(epsilon_k_ab) = association.epsilon_k_ab {
+                write!(f, ", epsilon_k_ab={}", epsilon_k_ab)?;
+            }
         }
         write!(f, ")")
     }
