@@ -119,51 +119,44 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         match tp_spec {
             TPSpec::Temperature(t) => {
                 // First use given initial pressure if applicable
-                let mut vle = tp_init
-                    .map(|p| {
+                if let Some(p) = tp_init {
+                    return Self::iterate_bubble_dew(
+                        eos,
+                        tp_spec,
+                        p,
+                        molefracs_spec,
+                        molefracs_init,
+                        bubble,
+                        options,
+                    );
+                }
+
+                // Next try to initialize with an ideal gas assumption
+                let vle = Self::starting_pressure_ideal_gas(eos, t, molefracs_spec, bubble)
+                    .and_then(|(p, x)| {
                         Self::iterate_bubble_dew(
                             eos,
                             tp_spec,
                             p,
                             molefracs_spec,
-                            molefracs_init,
+                            molefracs_init.or(Some(&x)),
                             bubble,
                             options,
                         )
-                    })
-                    .and_then(Result::ok);
+                    });
 
-                // Next try to initialize with an ideal gas assumption
-                vle = vle.or_else(|| {
-                    let (p, x) =
-                        Self::starting_pressure_ideal_gas(eos, t, molefracs_spec, bubble).ok()?;
+                // Finally use the spinodal to initialize the calculation
+                vle.or_else(|_| {
                     Self::iterate_bubble_dew(
                         eos,
                         tp_spec,
-                        p,
+                        Self::starting_pressure_spinodal(eos, t, molefracs_spec)?,
                         molefracs_spec,
-                        molefracs_init.or(Some(&x)),
+                        molefracs_init,
                         bubble,
                         options,
                     )
-                    .ok()
-                });
-
-                // Finally use the spinodal to initialize the calculation
-                vle.map_or_else(
-                    || {
-                        Self::iterate_bubble_dew(
-                            eos,
-                            tp_spec,
-                            Self::starting_pressure_spinodal(eos, t, molefracs_spec)?,
-                            molefracs_spec,
-                            molefracs_init,
-                            bubble,
-                            options,
-                        )
-                    },
-                    Ok,
-                )
+                })
             }
             TPSpec::Pressure(_) => {
                 let temperature = tp_init.expect("An initial temperature is required for the calculation of bubble/dew points at given pressure!");
@@ -198,7 +191,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         } else {
             starting_x2_dew(eos, t, p, molefracs_spec, molefracs_init)
         }?;
-        bubble_dew(tp_spec, var, state1, state2, options)
+        bubble_dew(tp_spec, var, state1, state2, bubble, options)
     }
 
     fn starting_pressure_ideal_gas(
@@ -358,6 +351,7 @@ fn bubble_dew<E: Residual>(
     mut var_tp: TPSpec,
     mut state1: State<E>,
     mut state2: State<E>,
+    bubble: bool,
     options: (SolverOptions, SolverOptions),
 ) -> EosResult<PhaseEquilibrium<E, 2>>
 where
@@ -434,7 +428,11 @@ where
             "Bubble/dew point: calculation converged in {} step(s)\n",
             k_out
         );
-        Ok(PhaseEquilibrium::from_states(state1, state2))
+        if bubble {
+            Ok(PhaseEquilibrium([state2, state1]))
+        } else {
+            Ok(PhaseEquilibrium([state1, state2]))
+        }
     } else {
         // not converged, return EosError
         Err(EosError::NotConverged(String::from("bubble-dew-iteration")))
