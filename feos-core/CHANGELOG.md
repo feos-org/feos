@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Added new functions `isenthalpic_compressibility`, `thermal_expansivity` and `grueneisen_parameter` to `State`. [#154](https://github.com/feos-org/feos/pull/154)
+- Readded `PhaseEquilibrium::new_npt` to the public interface in Rust and Python.  [#164](https://github.com/feos-org/feos/pull/164)
 
 ### Changed
 - Changed constructors of `Parameter` trait to return `Result`s. [#161](https://github.com/feos-org/feos/pull/161)
