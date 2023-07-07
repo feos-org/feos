@@ -370,7 +370,7 @@ impl_json_handling!(PyBinarySegmentRecord);
 
 #[macro_export]
 macro_rules! impl_pure_record {
-    ($model_record:ident, $py_model_record:ident, $ideal_gas_record:ident, $py_ideal_gas_record:ident) => {
+    ($model_record:ident, $py_model_record:ident) => {
         /// All information required to characterize a pure component.
         ///
         /// Parameters
@@ -381,16 +381,14 @@ macro_rules! impl_pure_record {
         ///     The molar weight (in g/mol) of the pure component.
         /// model_record : ModelRecord
         ///     The pure component model parameters.
-        /// ideal_gas_record: IdealGasRecord, optional
-        ///     The pure component parameters for the ideal gas model.
         ///
         /// Returns
         /// -------
         /// PureRecord
         #[pyclass(name = "PureRecord")]
-        #[pyo3(text_signature = "(identifier, molarweight, model_record, ideal_gas_record=None)")]
+        #[pyo3(text_signature = "(identifier, molarweight, model_record)")]
         #[derive(Clone)]
-        pub struct PyPureRecord(pub PureRecord<$model_record, $ideal_gas_record>);
+        pub struct PyPureRecord(pub PureRecord<$model_record>);
 
         #[pymethods]
         impl PyPureRecord {
@@ -399,13 +397,11 @@ macro_rules! impl_pure_record {
                 identifier: PyIdentifier,
                 molarweight: f64,
                 model_record: $py_model_record,
-                ideal_gas_record: Option<$py_ideal_gas_record>,
             ) -> PyResult<Self> {
                 Ok(Self(PureRecord::new(
                     identifier.0,
                     molarweight,
                     model_record.0,
-                    ideal_gas_record.map(|ig| ig.0),
                 )))
             }
 
@@ -439,16 +435,6 @@ macro_rules! impl_pure_record {
                 self.0.model_record = model_record.0;
             }
 
-            #[getter]
-            fn get_ideal_gas_record(&self) -> Option<$py_ideal_gas_record> {
-                self.0.ideal_gas_record.clone().map($py_ideal_gas_record)
-            }
-
-            #[setter]
-            fn set_ideal_gas_record(&mut self, ideal_gas_record: $py_ideal_gas_record) {
-                self.0.ideal_gas_record = Some(ideal_gas_record.0);
-            }
-
             fn __repr__(&self) -> PyResult<String> {
                 Ok(self.0.to_string())
             }
@@ -460,7 +446,7 @@ macro_rules! impl_pure_record {
 
 #[macro_export]
 macro_rules! impl_segment_record {
-    ($model_record:ident, $py_model_record:ident, $ideal_gas_record:ident, $py_ideal_gas_record:ident) => {
+    ($model_record:ident, $py_model_record:ident) => {
         /// All information required to characterize a single segment.
         ///
         /// Parameters
@@ -471,16 +457,14 @@ macro_rules! impl_segment_record {
         ///     The molar weight (in g/mol) of the segment.
         /// model_record : ModelRecord
         ///     The segment model parameters.
-        /// ideal_gas_record: IdealGasRecord, optional
-        ///     The segment ideal gas parameters.
         ///
         /// Returns
         /// -------
         /// SegmentRecord
         #[pyclass(name = "SegmentRecord")]
-        #[pyo3(text_signature = "(identifier, molarweight, model_record, ideal_gas_record=None)")]
+        #[pyo3(text_signature = "(identifier, molarweight)")]
         #[derive(Clone)]
-        pub struct PySegmentRecord(SegmentRecord<$model_record, $ideal_gas_record>);
+        pub struct PySegmentRecord(SegmentRecord<$model_record>);
 
         #[pymethods]
         impl PySegmentRecord {
@@ -489,13 +473,11 @@ macro_rules! impl_segment_record {
                 identifier: String,
                 molarweight: f64,
                 model_record: $py_model_record,
-                ideal_gas_record: Option<$py_ideal_gas_record>,
             ) -> PyResult<Self> {
                 Ok(Self(SegmentRecord::new(
                     identifier,
                     molarweight,
                     model_record.0,
-                    ideal_gas_record.map(|ig| ig.0),
                 )))
             }
 
@@ -545,16 +527,6 @@ macro_rules! impl_segment_record {
             #[setter]
             fn set_model_record(&mut self, model_record: $py_model_record) {
                 self.0.model_record = model_record.0;
-            }
-
-            #[getter]
-            fn get_ideal_gas_record(&self) -> Option<$py_ideal_gas_record> {
-                self.0.ideal_gas_record.clone().map($py_ideal_gas_record)
-            }
-
-            #[setter]
-            fn set_ideal_gas_record(&mut self, ideal_gas_record: $py_ideal_gas_record) {
-                self.0.ideal_gas_record = Some(ideal_gas_record.0);
             }
 
             fn __repr__(&self) -> PyResult<String> {

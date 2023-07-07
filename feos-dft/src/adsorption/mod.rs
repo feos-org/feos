@@ -2,7 +2,7 @@
 use super::functional::{HelmholtzEnergyFunctional, DFT};
 use super::solver::DFTSolver;
 use feos_core::{
-    Contributions, DensityInitialization, EosError, EosResult, EosUnit, EquationOfState,
+    Components, Contributions, DensityInitialization, EosError, EosResult, EosUnit, Residual,
     SolverOptions, State, StateBuilder,
 };
 use ndarray::{Array1, Dimension, Ix1, Ix3, RemoveAxis};
@@ -273,36 +273,29 @@ where
             .moles(&moles)
             .vapor()
             .build()?;
-        let liquid_bulk = StateBuilder::new(functional)
+        let bulk_init = StateBuilder::new(functional)
             .temperature(temperature)
             .pressure(p_max)
             .moles(&moles)
             .liquid()
             .build()?;
+        let liquid_bulk = StateBuilder::new(functional)
+            .temperature(temperature)
+            .pressure(p_max)
+            .moles(&moles)
+            .vapor()
+            .build()?;
 
         let mut vapor = pore.initialize(&vapor_bulk, None, None)?.solve(None)?;
-        let mut liquid = pore.initialize(&liquid_bulk, None, None)?.solve(solver)?;
+        let mut liquid = pore.initialize(&bulk_init, None, None)?.solve(solver)?;
 
         // calculate initial value for the molar gibbs energy
-        let nv = vapor.profile.bulk.density
-            * (vapor.profile.moles()
-                * vapor
-                    .profile
-                    .bulk
-                    .partial_molar_volume(Contributions::Total))
-            .sum();
-        let nl = liquid.profile.bulk.density
-            * (liquid.profile.moles()
-                * liquid
-                    .profile
-                    .bulk
-                    .partial_molar_volume(Contributions::Total))
-            .sum();
-        let f = |s: &PoreProfile<D, F>, n: SINumber| -> EosResult<_> {
-            Ok(s.grand_potential.unwrap()
-                + s.profile.bulk.molar_gibbs_energy(Contributions::Total) * n)
-        };
-        let mut g = (f(&liquid, nl)? - f(&vapor, nv)?) / (nl - nv);
+        let n_dp_drho_v = (vapor.profile.moles() * vapor_bulk.dp_drho(Contributions::Total)).sum();
+        let n_dp_drho_l =
+            (liquid.profile.moles() * liquid_bulk.dp_drho(Contributions::Total)).sum();
+        let mut rho = (vapor.grand_potential.unwrap() + n_dp_drho_v
+            - (liquid.grand_potential.unwrap() + n_dp_drho_l))
+            / (n_dp_drho_v / vapor_bulk.density - n_dp_drho_l / liquid_bulk.density);
 
         // update filled pore with limited step size
         let mut bulk = StateBuilder::new(functional)
@@ -311,12 +304,12 @@ where
             .moles(&moles)
             .vapor()
             .build()?;
-        let g_liquid = liquid.profile.bulk.molar_gibbs_energy(Contributions::Total);
-        let steps = (10.0 * (g - g_liquid)).to_reduced(g_liquid)?.abs().ceil() as usize;
-        let delta_g = (g - g_liquid) / steps as f64;
+        let rho0 = liquid_bulk.density;
+        let steps = (10.0 * (rho - rho0)).to_reduced(rho0)?.abs().ceil() as usize;
+        let delta_rho = (rho - rho0) / steps as f64;
         for i in 1..=steps {
-            let g_i = g_liquid + i as f64 * delta_g;
-            bulk = bulk.update_gibbs_energy(g_i)?;
+            let rho_i = rho0 + i as f64 * delta_rho;
+            bulk = State::new_nvt(functional, temperature, moles.sum() / rho_i, &moles)?;
             liquid = liquid.update_bulk(&bulk).solve(solver)?;
         }
 
@@ -328,30 +321,15 @@ where
             liquid = liquid.update_bulk(&bulk).solve(solver)?;
 
             // calculate moles
-            let nv = vapor.profile.bulk.density
-                * (vapor.profile.moles()
-                    * vapor
-                        .profile
-                        .bulk
-                        .partial_molar_volume(Contributions::Total))
-                .sum();
-            let nl = liquid.profile.bulk.density
-                * (liquid.profile.moles()
-                    * liquid
-                        .profile
-                        .bulk
-                        .partial_molar_volume(Contributions::Total))
-                .sum();
-
-            // check for a trivial solution
-            if nl.to_reduced(nv)? - 1.0 < 1e-5 {
-                return Err(EosError::TrivialSolution);
-            }
+            let n_dp_drho = ((liquid.profile.moles() - vapor.profile.moles())
+                * bulk.dp_drho(Contributions::Total))
+            .sum();
 
             // Newton step
-            let delta_g =
-                (vapor.grand_potential.unwrap() - liquid.grand_potential.unwrap()) / (nv - nl);
-            if delta_g.to_reduced(SIUnit::reference_molar_energy())?.abs()
+            let delta_rho = (liquid.grand_potential.unwrap() - vapor.grand_potential.unwrap())
+                / n_dp_drho
+                * bulk.density;
+            if delta_rho.to_reduced(SIUnit::reference_density())?.abs()
                 < options.tol.unwrap_or(TOL_ADSORPTION_EQUILIBRIUM)
             {
                 return Ok(Adsorption::new(
@@ -360,10 +338,10 @@ where
                     vec![Ok(vapor), Ok(liquid)],
                 ));
             }
-            g += delta_g;
+            rho += delta_rho;
 
             // update bulk phase
-            bulk = bulk.update_gibbs_energy(g)?;
+            bulk = State::new_nvt(functional, temperature, moles.sum() / rho, &moles)?;
         }
         Err(EosError::NotConverged(
             "Adsorption::phase_equilibrium".into(),
@@ -387,26 +365,6 @@ where
                 }
             }
             Err(_) => f64::NAN * SIUnit::reference_pressure(),
-        })
-    }
-
-    pub fn molar_gibbs_energy(&self) -> SIArray1 {
-        SIArray1::from_shape_fn(self.profiles.len(), |i| match &self.profiles[i] {
-            Ok(p) => {
-                if p.profile.bulk.eos.components() > 1
-                    && !p.profile.bulk.is_stable(SolverOptions::default()).unwrap()
-                {
-                    p.profile
-                        .bulk
-                        .tp_flash(None, SolverOptions::default(), None)
-                        .unwrap()
-                        .vapor()
-                        .molar_gibbs_energy(Contributions::Total)
-                } else {
-                    p.profile.bulk.molar_gibbs_energy(Contributions::Total)
-                }
-            }
-            Err(_) => f64::NAN * SIUnit::reference_molar_energy(),
         })
     }
 

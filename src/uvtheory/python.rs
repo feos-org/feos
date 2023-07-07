@@ -94,7 +94,7 @@ impl PyUVParameters {
                     None,
                 );
                 let model_record = UVRecord::new(rep[i], att[i], sigma[i], epsilon_k[i]);
-                PureRecord::new(identifier, 1.0, model_record, None)
+                PureRecord::new(identifier, 1.0, model_record)
             })
             .collect();
         let binary = Array2::from_shape_fn((n, n), |(_, _)| UVBinaryRecord { k_ij: 0.0 });
@@ -130,7 +130,7 @@ impl PyUVParameters {
     }
 }
 
-impl_pure_record!(UVRecord, PyUVRecord, NoRecord, PyNoRecord);
+impl_pure_record!(UVRecord, PyUVRecord);
 impl_parameter!(UVParameters, PyUVParameters);
 
 #[pymodule]

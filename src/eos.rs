@@ -9,10 +9,11 @@ use crate::saftvrqmie::SaftVRQMie;
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::UVTheory;
 use feos_core::cubic::PengRobinson;
+use feos_core::joback::Joback;
 #[cfg(feature = "python")]
-use feos_core::python::user_defined::PyEoSObj;
+use feos_core::python::user_defined::{PyIdealGas, PyResidual};
 use feos_core::*;
-use feos_derive::EquationOfState;
+use feos_derive::{Components, IdealGas, Residual};
 use ndarray::Array1;
 use quantity::si::*;
 
@@ -20,8 +21,8 @@ use quantity::si::*;
 ///
 /// Particularly relevant for situations in which generic types
 /// are undesirable (e.g. FFI).
-#[derive(EquationOfState)]
-pub enum EosVariant {
+#[derive(Components, Residual)]
+pub enum ResidualModel {
     #[cfg(feature = "pcsaft")]
     #[implement(entropy_scaling, molar_weight)]
     PcSaft(PcSaft),
@@ -32,7 +33,7 @@ pub enum EosVariant {
     PengRobinson(PengRobinson),
     #[cfg(feature = "python")]
     #[implement(molar_weight)]
-    Python(PyEoSObj),
+    Python(PyResidual),
     #[cfg(feature = "saftvrqmie")]
     #[implement(molar_weight)]
     SaftVRQMie(SaftVRQMie),
@@ -41,4 +42,12 @@ pub enum EosVariant {
     Pets(Pets),
     #[cfg(feature = "uvtheory")]
     UVTheory(UVTheory),
+}
+
+#[derive(Components, IdealGas)]
+pub enum IdealGasModel {
+    NoModel(usize),
+    Joback(Joback),
+    #[cfg(feature = "python")]
+    Python(PyIdealGas),
 }

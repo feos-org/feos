@@ -5,7 +5,7 @@ use crate::functional_contribution::FunctionalContribution;
 use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
-use feos_core::{Contributions, EosResult, EosUnit, State, StateBuilder};
+use feos_core::{Components, Contributions, EosResult, EosUnit, State, StateBuilder};
 use ndarray::prelude::*;
 use ndarray::Axis as Axis_nd;
 use ndarray::RemoveAxis;
@@ -264,6 +264,7 @@ fn external_potential_1d<P: FluidParameters>(
 const EPSILON_HE: f64 = 10.9;
 const SIGMA_HE: f64 = 2.64;
 
+#[derive(Clone)]
 struct Helium {
     epsilon: Array1<f64>,
     sigma: Array1<f64>,
@@ -273,17 +274,23 @@ impl Helium {
     fn new() -> DFT<Self> {
         let epsilon = arr1(&[EPSILON_HE]);
         let sigma = arr1(&[SIGMA_HE]);
-        (Self { epsilon, sigma }).into()
+        DFT(Self { epsilon, sigma })
+    }
+}
+
+impl Components for Helium {
+    fn components(&self) -> usize {
+        1
+    }
+
+    fn subset(&self, _: &[usize]) -> Self {
+        self.clone()
     }
 }
 
 impl HelmholtzEnergyFunctional for Helium {
     fn contributions(&self) -> &[Box<dyn FunctionalContribution>] {
         &[]
-    }
-
-    fn subset(&self, _: &[usize]) -> DFT<Self> {
-        Self::new()
     }
 
     fn compute_max_density(&self, _: &Array1<f64>) -> f64 {

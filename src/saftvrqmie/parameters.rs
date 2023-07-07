@@ -1,4 +1,3 @@
-use feos_core::joback::JobackRecord;
 use feos_core::parameter::{Parameter, ParameterError, PureRecord};
 use ndarray::{Array, Array1, Array2};
 use num_traits::Zero;
@@ -134,18 +133,16 @@ pub struct SaftVRQMieParameters {
     pub viscosity: Option<Array2<f64>>,
     pub diffusion: Option<Array2<f64>>,
     pub thermal_conductivity: Option<Array2<f64>>,
-    pub pure_records: Vec<PureRecord<SaftVRQMieRecord, JobackRecord>>,
+    pub pure_records: Vec<PureRecord<SaftVRQMieRecord>>,
     pub binary_records: Array2<SaftVRQMieBinaryRecord>,
-    pub joback_records: Option<Vec<JobackRecord>>,
 }
 
 impl Parameter for SaftVRQMieParameters {
     type Pure = SaftVRQMieRecord;
-    type IdealGas = JobackRecord;
     type Binary = SaftVRQMieBinaryRecord;
 
     fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
+        pure_records: Vec<PureRecord<Self::Pure>>,
         binary_records: Array2<SaftVRQMieBinaryRecord>,
     ) -> Self {
         let n = pure_records.len();
@@ -235,11 +232,6 @@ impl Parameter for SaftVRQMieParameters {
             Some(v)
         };
 
-        let joback_records = pure_records
-            .iter()
-            .map(|r| r.ideal_gas_record.clone())
-            .collect();
-
         Self {
             molarweight,
             m,
@@ -261,14 +253,13 @@ impl Parameter for SaftVRQMieParameters {
             thermal_conductivity: thermal_conductivity_coefficients,
             pure_records,
             binary_records,
-            joback_records,
         }
     }
 
     fn records(
         &self,
     ) -> (
-        &[PureRecord<SaftVRQMieRecord, JobackRecord>],
+        &[PureRecord<SaftVRQMieRecord>],
         &Array2<SaftVRQMieBinaryRecord>,
     ) {
         (&self.pure_records, &self.binary_records)
@@ -431,7 +422,7 @@ pub mod utils {
                 },
                 "molarweight": 2.0157309551872
             }"#;
-        let hydrogen_record: PureRecord<SaftVRQMieRecord, JobackRecord> =
+        let hydrogen_record: PureRecord<SaftVRQMieRecord> =
             serde_json::from_str(hydrogen_json).expect("Unable to parse json.");
         Arc::new(SaftVRQMieParameters::new_pure(hydrogen_record))
     }
@@ -457,7 +448,7 @@ pub mod utils {
                 },
                 "molarweight": 4.002601643881807
             }"#;
-        let helium_record: PureRecord<SaftVRQMieRecord, JobackRecord> =
+        let helium_record: PureRecord<SaftVRQMieRecord> =
             serde_json::from_str(helium_json).expect("Unable to parse json.");
         Arc::new(SaftVRQMieParameters::new_pure(helium_record))
     }
@@ -483,7 +474,7 @@ pub mod utils {
                 },
                 "molarweight": 20.17969806457545
             }"#;
-        let neon_record: PureRecord<SaftVRQMieRecord, JobackRecord> =
+        let neon_record: PureRecord<SaftVRQMieRecord> =
             serde_json::from_str(neon_json).expect("Unable to parse json.");
         Arc::new(SaftVRQMieParameters::new_pure(neon_record))
     }
@@ -527,7 +518,7 @@ pub mod utils {
                 "molarweight": 20.17969806457545
             }
         ]"#;
-        let binary_record: Vec<PureRecord<SaftVRQMieRecord, JobackRecord>> =
+        let binary_record: Vec<PureRecord<SaftVRQMieRecord>> =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
         Arc::new(SaftVRQMieParameters::new_binary(
             binary_record,

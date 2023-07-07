@@ -1,17 +1,16 @@
 //! Implementation of the ideal gas heat capacity (de Broglie wavelength)
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 
+use crate::equation_of_state::{Components, DeBroglieWavelength, DeBroglieWavelengthDual};
 use crate::parameter::*;
-use crate::{
-    EosResult, EosUnit, EquationOfState, HelmholtzEnergy, IdealGasContribution,
-    IdealGasContributionDual,
-};
+use crate::{EosResult, EosUnit, IdealGas};
 use conv::ValueInto;
-use ndarray::Array1;
+use ndarray::{Array, Array1, Array2};
 use num_dual::*;
 use quantity::si::{SINumber, SIUnit};
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::sync::Arc;
 
 /// Coefficients used in the Joback model.
 ///
@@ -65,33 +64,164 @@ impl<T: Copy + ValueInto<f64>> FromSegments<T> for JobackRecord {
     }
 }
 
+/// Parameters for one or more components for the Joback and Reid model.
+pub struct JobackParameters {
+    a: Array1<f64>,
+    b: Array1<f64>,
+    c: Array1<f64>,
+    d: Array1<f64>,
+    e: Array1<f64>,
+    pure_records: Vec<PureRecord<JobackRecord>>,
+    binary_records: Array2<JobackBinaryRecord>,
+}
+
+impl Parameter for JobackParameters {
+    type Pure = JobackRecord;
+    type Binary = JobackBinaryRecord;
+
+    fn from_records(
+        pure_records: Vec<PureRecord<Self::Pure>>,
+        _binary_records: Array2<Self::Binary>,
+    ) -> Self {
+        let n = pure_records.len();
+
+        let binary_records = Array::from_elem((n, n), JobackBinaryRecord);
+        let mut a = Array::zeros(n);
+        let mut b = Array::zeros(n);
+        let mut c = Array::zeros(n);
+        let mut d = Array::zeros(n);
+        let mut e = Array::zeros(n);
+
+        for (i, record) in pure_records.iter().enumerate() {
+            let r = &record.model_record;
+            a[i] = r.a;
+            b[i] = r.b;
+            c[i] = r.c;
+            d[i] = r.d;
+            e[i] = r.e;
+        }
+
+        Self {
+            a,
+            b,
+            c,
+            d,
+            e,
+            pure_records,
+            binary_records,
+        }
+    }
+
+    fn records(&self) -> (&[PureRecord<Self::Pure>], &Array2<Self::Binary>) {
+        (&self.pure_records, &self.binary_records)
+    }
+}
+
+/// Dummy implementation to satisfy traits for parameter handling.
+/// Not intended to be used.
+#[derive(Serialize, Deserialize, Clone, Default)]
+pub struct JobackBinaryRecord;
+
+impl From<f64> for JobackBinaryRecord {
+    fn from(_: f64) -> Self {
+        Self
+    }
+}
+
+impl From<JobackBinaryRecord> for f64 {
+    fn from(_: JobackBinaryRecord) -> Self {
+        0.0 // nasty hack - panic crashes Ipython kernel, actual value is never used
+    }
+}
+
+impl<T: Copy + ValueInto<f64>> FromSegmentsBinary<T> for JobackBinaryRecord {
+    fn from_segments_binary(_segments: &[(Self, T, T)]) -> Result<Self, ParameterError> {
+        Err(ParameterError::IncompatibleParameters(
+            "No binary interaction parameters implemented for Joback".to_string(),
+        ))
+    }
+}
+
+impl std::fmt::Display for JobackBinaryRecord {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "")
+    }
+}
+
 /// The ideal gas contribution according to
 /// [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
-#[derive(Debug, Clone)]
+///
+/// The (cubic) de Broglie wavelength is calculated by integrating
+/// the heat capacity with the following reference values:
+///
+/// - T = 289.15 K
+/// - p = 1e5 Pa
+/// - V = 1e-30 A³
 pub struct Joback {
-    pub records: Vec<JobackRecord>,
+    pub parameters: Arc<JobackParameters>,
 }
 
 impl Joback {
     /// Creates a new Joback contribution.
-    pub fn new(records: Vec<JobackRecord>) -> Self {
-        Self { records }
-    }
-
-    /// Creates a default ($c_p^\mathrm{ig}=0$) ideal gas contribution for the
-    /// given number of components.
-    pub fn default(components: usize) -> Self {
-        Self::new(vec![JobackRecord::default(); components])
+    pub fn new(parameters: Arc<JobackParameters>) -> Self {
+        Self { parameters }
     }
 
     /// Directly calculates the ideal gas heat capacity from the Joback model.
     pub fn c_p(&self, temperature: SINumber, molefracs: &Array1<f64>) -> EosResult<SINumber> {
         let t = temperature.to_reduced(SIUnit::reference_temperature())?;
-        let mut c_p = 0.0;
-        for (j, &x) in self.records.iter().zip(molefracs.iter()) {
-            c_p += x * (j.a + j.b * t + j.c * t.powi(2) + j.d * t.powi(3) + j.e * t.powi(4));
-        }
+        let p = &self.parameters;
+        let c_p = (molefracs
+            * &(&p.a + &p.b * t + &p.c * t.powi(2) + &p.d * t.powi(3) + &p.e * t.powi(4)))
+            .sum();
         Ok(c_p / RGAS * SIUnit::gas_constant())
+    }
+}
+
+impl Components for Joback {
+    fn components(&self) -> usize {
+        self.parameters.pure_records.len()
+    }
+
+    fn subset(&self, component_list: &[usize]) -> Self {
+        let mut records = Vec::with_capacity(component_list.len());
+        component_list
+            .iter()
+            .for_each(|&i| records.push(self.parameters.pure_records[i].clone()));
+        let n = component_list.len();
+        Self::new(Arc::new(JobackParameters::from_records(
+            records,
+            Array::from_elem((n, n), JobackBinaryRecord),
+        )))
+    }
+}
+
+impl IdealGas for Joback {
+    fn ideal_gas_model(&self) -> &dyn DeBroglieWavelength {
+        self
+    }
+}
+
+impl<D: DualNum<f64> + Copy> DeBroglieWavelengthDual<D> for Joback {
+    fn ln_lambda3(&self, temperature: D) -> Array1<D> {
+        let t = temperature;
+        let t2 = t * t;
+        let t4 = t2 * t2;
+        let f = (temperature * KB / (P0 * A3)).ln();
+        Array1::from_shape_fn(self.parameters.pure_records.len(), |i| {
+            let j = &self.parameters.pure_records[i].model_record;
+            let h = (t2 - T0_2) * 0.5 * j.b
+                + (t * t2 - T0_3) * j.c / 3.0
+                + (t4 - T0_4) * j.d / 4.0
+                + (t4 * t - T0_5) * j.e / 5.0
+                + (t - T0) * j.a;
+            let s = (t - T0) * j.b
+                + (t2 - T0_2) * 0.5 * j.c
+                + (t2 * t - T0_3) * j.d / 3.0
+                + (t4 - T0_4) * j.e / 4.0
+                + (t / T0).ln() * j.a;
+            (h - t * s) / (t * RGAS) + f
+        })
     }
 }
 
@@ -103,61 +233,17 @@ impl fmt::Display for Joback {
 
 const RGAS: f64 = 6.022140857 * 1.38064852;
 const T0: f64 = 298.15;
+const T0_2: f64 = 298.15 * 298.15;
+const T0_3: f64 = T0 * T0_2;
+const T0_4: f64 = T0_2 * T0_2;
+const T0_5: f64 = T0 * T0_4;
 const P0: f64 = 1.0e5;
 const A3: f64 = 1e-30;
 const KB: f64 = 1.38064852e-23;
 
-impl<D: DualNum<f64> + Copy> IdealGasContributionDual<D> for Joback {
-    fn de_broglie_wavelength(&self, temperature: D, components: usize) -> Array1<D> {
-        let t = temperature;
-        let t2 = t * t;
-        let f = (temperature * KB / (P0 * A3)).ln();
-        Array1::from_shape_fn(components, |i| {
-            let j = &self.records[i];
-            let h = (t2 - T0 * T0) * 0.5 * j.b
-                + (t * t2 - T0.powi(3)) * j.c / 3.0
-                + (t2 * t2 - T0.powi(4)) * j.d / 4.0
-                + (t2 * t2 * t - T0.powi(5)) * j.e / 5.0
-                + (t - T0) * j.a;
-            let s = (t - T0) * j.b
-                + (t2 - T0.powi(2)) * 0.5 * j.c
-                + (t2 * t - T0.powi(3)) * j.d / 3.0
-                + (t2 * t2 - T0.powi(4)) * j.e / 4.0
-                + (t / T0).ln() * j.a;
-            (h - t * s) / (t * RGAS) + f
-        })
-    }
-}
-
-impl EquationOfState for Joback {
-    fn components(&self) -> usize {
-        self.records.len()
-    }
-
-    fn subset(&self, component_list: &[usize]) -> Self {
-        let records = component_list
-            .iter()
-            .map(|&i| self.records[i].clone())
-            .collect();
-        Self::new(records)
-    }
-
-    fn compute_max_density(&self, _moles: &Array1<f64>) -> f64 {
-        1.0
-    }
-
-    fn residual(&self) -> &[Box<dyn HelmholtzEnergy>] {
-        &[]
-    }
-
-    fn ideal_gas(&self) -> &dyn IdealGasContribution {
-        self
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::{Contributions, State, StateBuilder};
+    use crate::{Contributions, Residual, State, StateBuilder};
     use approx::assert_relative_eq;
     use ndarray::arr1;
     use quantity::si::*;
@@ -165,16 +251,23 @@ mod tests {
 
     use super::*;
 
-    #[derive(Deserialize, Clone, Debug)]
-    struct ModelRecord;
+    // implement Residual to test Joback as equation of state
+    impl Residual for Joback {
+        fn compute_max_density(&self, _moles: &Array1<f64>) -> f64 {
+            1.0
+        }
+
+        fn contributions(&self) -> &[Box<dyn crate::HelmholtzEnergy>] {
+            &[]
+        }
+    }
 
     #[test]
     fn paper_example() -> EosResult<()> {
         let segments_json = r#"[
         {
           "identifier": "-Cl",
-          "model_record": null,
-          "ideal_gas_record": {
+          "model_record": {
             "a": 33.3,
             "b": -0.0963,
             "c": 0.000187,
@@ -185,8 +278,7 @@ mod tests {
         },
         {
           "identifier": "-CH=(ring)",
-          "model_record": null,
-          "ideal_gas_record": {
+          "model_record": {
             "a": -2.14,
             "b": 5.74e-2,
             "c": -1.64e-6,
@@ -197,8 +289,7 @@ mod tests {
         },
         {
           "identifier": "=CH<(ring)",
-          "model_record": null,
-          "ideal_gas_record": {
+          "model_record": {
             "a": -8.25,
             "b": 1.01e-1,
             "c": -1.42e-4,
@@ -208,7 +299,7 @@ mod tests {
           "molarweight": 13.01864
         }
         ]"#;
-        let segment_records: Vec<SegmentRecord<ModelRecord, JobackRecord>> =
+        let segment_records: Vec<SegmentRecord<JobackRecord>> =
             serde_json::from_str(segments_json).expect("Unable to parse json.");
         let segments = ChemicalRecord::new(
             Identifier::default(),
@@ -230,7 +321,7 @@ mod tests {
         assert_eq!(segments.get(&segment_records[2]), Some(&2));
         let joback_segments: Vec<_> = segments
             .iter()
-            .map(|(s, &n)| (s.ideal_gas_record.clone().unwrap(), n))
+            .map(|(s, &n)| (s.model_record.clone(), n))
             .collect();
         let jr = JobackRecord::from_segments(&joback_segments)?;
         assert_relative_eq!(
@@ -255,7 +346,8 @@ mod tests {
         );
         assert_relative_eq!(jr.e, 0.0);
 
-        let eos = Arc::new(Joback::new(vec![jr]));
+        let pr = PureRecord::new(Identifier::default(), 1.0, jr);
+        let eos = Arc::new(Joback::new(Arc::new(JobackParameters::new_pure(pr))));
         let state = State::new_nvt(
             &eos,
             1000.0 * KELVIN,
@@ -275,9 +367,18 @@ mod tests {
 
     #[test]
     fn c_p_comparison() -> EosResult<()> {
-        let record1 = JobackRecord::new(1.0, 0.2, 0.03, 0.004, 0.005);
-        let record2 = JobackRecord::new(-5.0, 0.4, 0.03, 0.002, 0.001);
-        let joback = Arc::new(Joback::new(vec![record1, record2]));
+        let record1 = PureRecord::new(
+            Identifier::default(),
+            1.0,
+            JobackRecord::new(1.0, 0.2, 0.03, 0.004, 0.005),
+        );
+        let record2 = PureRecord::new(
+            Identifier::default(),
+            1.0,
+            JobackRecord::new(-5.0, 0.4, 0.03, 0.002, 0.001),
+        );
+        let parameters = Arc::new(JobackParameters::new_binary(vec![record1, record2], None));
+        let joback = Arc::new(Joback::new(parameters));
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi(3);
         let moles = arr1(&[1.0, 3.0]) * MOL;

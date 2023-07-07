@@ -5,10 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added `IdealGasModel` enum that collects all implementors of the `IdealGas` trait. [#158](https://github.com/feos-org/feos/pull/158)
+- Added `feos.ideal_gas` module in Python from which (currently) `Joback` and `JobackParameters` are available. [#158](https://github.com/feos-org/feos/pull/158)
+
 ### Changed
 - Changed the internal implementation of the association contribution to accomodate more general association schemes. [#150](https://github.com/feos-org/feos/pull/150)
 - To comply with the new association implementation, the default values of `na` and `nb` are now `0` rather than `1`. Parameter files have been adapted accordingly. [#150](https://github.com/feos-org/feos/pull/150)
 - Added the possibility to specify a pure component correction parameter `phi` for the heterosegmented gc PC-SAFT equation of state. [#157](https://github.com/feos-org/feos/pull/157)
+- Renamed `EosVariant` to `ResidualModel`. [#158](https://github.com/feos-org/feos/pull/158)
+- Added methods to add an ideal gas contribution to an initialized equation of state object in Python.  [#158](https://github.com/feos-org/feos/pull/158)
 
 ### Packaging
 - Updated `num-dual` dependency to 0.7. [#137](https://github.com/feos-org/feos/pull/137)
