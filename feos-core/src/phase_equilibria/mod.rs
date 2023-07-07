@@ -195,7 +195,13 @@ impl<E: EquationOfState> PhaseEquilibrium<E, 2> {
         Self([vapor, liquid])
     }
 
-    pub(super) fn new_npt(
+    /// Creates a new PhaseEquilibrium that contains two states at the
+    /// specified temperature, pressure and moles.
+    ///
+    /// The constructor can be used in custom phase equilibrium solvers or,
+    /// e.g., to generate initial guesses for an actual VLE solver.
+    /// In general, the two states generated are NOT in an equilibrium.
+    pub fn new_npt(
         eos: &Arc<E>,
         temperature: SINumber,
         pressure: SINumber,
