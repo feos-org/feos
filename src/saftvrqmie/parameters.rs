@@ -134,7 +134,7 @@ pub struct SaftVRQMieParameters {
     pub diffusion: Option<Array2<f64>>,
     pub thermal_conductivity: Option<Array2<f64>>,
     pub pure_records: Vec<PureRecord<SaftVRQMieRecord>>,
-    pub binary_records: Array2<SaftVRQMieBinaryRecord>,
+    pub binary_records: Option<Array2<SaftVRQMieBinaryRecord>>,
 }
 
 impl Parameter for SaftVRQMieParameters {
@@ -143,7 +143,7 @@ impl Parameter for SaftVRQMieParameters {
 
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Array2<SaftVRQMieBinaryRecord>,
+        binary_records: Option<Array2<SaftVRQMieBinaryRecord>>,
     ) -> Self {
         let n = pure_records.len();
 
@@ -173,8 +173,9 @@ impl Parameter for SaftVRQMieParameters {
             molarweight[i] = record.molarweight;
         }
 
-        let k_ij = binary_records.map(|br| br.k_ij);
-        let l_ij = binary_records.map(|br| br.l_ij);
+        let br = binary_records.as_ref();
+        let k_ij = br.map_or_else(|| Array2::zeros([n; 2]), |br| br.mapv(|br| br.k_ij));
+        let l_ij = br.map_or_else(|| Array2::zeros([n; 2]), |br| br.mapv(|br| br.l_ij));
         let mut epsilon_k_ij = Array::zeros((n, n));
         let mut sigma_ij = Array::zeros((n, n));
         let mut e_k_ij = Array::zeros((n, n));
@@ -260,9 +261,9 @@ impl Parameter for SaftVRQMieParameters {
         &self,
     ) -> (
         &[PureRecord<SaftVRQMieRecord>],
-        &Array2<SaftVRQMieBinaryRecord>,
+        Option<&Array2<SaftVRQMieBinaryRecord>>,
     ) {
-        (&self.pure_records, &self.binary_records)
+        (&self.pure_records, self.binary_records.as_ref())
     }
 }
 

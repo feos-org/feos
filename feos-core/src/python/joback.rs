@@ -7,7 +7,6 @@ use crate::{
     impl_binary_record, impl_json_handling, impl_parameter, impl_parameter_from_segments,
     impl_pure_record, impl_segment_record,
 };
-use ndarray::Array2;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
@@ -62,6 +61,7 @@ impl_segment_record!(JobackRecord, PyJobackRecord);
 pub struct PyJobackBinaryRecord(pub JobackBinaryRecord);
 
 impl_binary_record!(JobackBinaryRecord, PyJobackBinaryRecord);
+
 /// Create a set of Joback parameters from records.
 ///
 /// Parameters
@@ -83,7 +83,7 @@ impl_binary_record!(JobackBinaryRecord, PyJobackBinaryRecord);
 #[derive(Clone)]
 pub struct PyJobackParameters(pub Arc<JobackParameters>);
 
-impl_parameter!(JobackParameters, PyJobackParameters);
+impl_parameter!(JobackParameters, PyJobackParameters, PyJobackRecord);
 impl_parameter_from_segments!(JobackParameters, PyJobackParameters);
 
 #[pymethods]

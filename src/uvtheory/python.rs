@@ -5,7 +5,6 @@ use feos_core::parameter::{
 };
 use feos_core::python::parameter::*;
 use feos_core::*;
-use ndarray::Array2;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
@@ -97,8 +96,7 @@ impl PyUVParameters {
                 PureRecord::new(identifier, 1.0, model_record)
             })
             .collect();
-        let binary = Array2::from_shape_fn((n, n), |(_, _)| UVBinaryRecord { k_ij: 0.0 });
-        Self(Arc::new(UVParameters::from_records(pure_records, binary)))
+        Self(Arc::new(UVParameters::from_records(pure_records, None)))
     }
 
     /// Create UV Theory parameters for pure substance.
@@ -131,7 +129,7 @@ impl PyUVParameters {
 }
 
 impl_pure_record!(UVRecord, PyUVRecord);
-impl_parameter!(UVParameters, PyUVParameters);
+impl_parameter!(UVParameters, PyUVParameters, PyUVRecord);
 
 #[pymodule]
 pub fn uvtheory(_py: Python<'_>, m: &PyModule) -> PyResult<()> {

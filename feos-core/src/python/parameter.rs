@@ -540,7 +540,7 @@ macro_rules! impl_segment_record {
 
 #[macro_export]
 macro_rules! impl_parameter {
-    ($parameter:ty, $py_parameter:ty) => {
+    ($parameter:ty, $py_parameter:ty, $py_model_record:ty) => {
         #[pymethods]
         impl $py_parameter {
             /// Creates parameters from records.
@@ -565,32 +565,26 @@ macro_rules! impl_parameter {
                 search_option: IdentifierOption,
             ) -> PyResult<Self> {
                 let prs = pure_records.into_iter().map(|pr| pr.0).collect();
-                if let Some(binary_records) = binary_records {
-                    let brs = if let Ok(br) = binary_records.extract::<PyReadonlyArray2<f64>>() {
-                        Ok(br.to_owned_array().mapv(|r| r.try_into().unwrap()))
-                    } else if let Ok(br) = binary_records.extract::<Vec<PyBinaryRecord>>() {
-                        let brs: Vec<_> = br.into_iter().map(|br| br.0).collect();
-                        Ok(<$parameter>::binary_matrix_from_records(
-                            &prs,
-                            &brs,
-                            search_option,
-                        ))
-                    } else {
-                        Err(PyErr::new::<PyTypeError, _>(format!(
-                            "Could not parse binary input!"
-                        )))
-                    };
-                    Ok(Self(Arc::new(<$parameter>::from_records(
-                        prs,
-                        brs.unwrap(),
-                    ))))
-                } else {
-                    let n = prs.len();
-                    Ok(Self(Arc::new(<$parameter>::from_records(
-                        prs,
-                        Array2::from_elem([n, n], <$parameter as Parameter>::Binary::default()),
-                    ))))
-                }
+                let binary_records = binary_records
+                    .map(|binary_records| {
+                        if let Ok(br) = binary_records.extract::<PyReadonlyArray2<f64>>() {
+                            Ok(Some(br.to_owned_array().mapv(|r| r.try_into().unwrap())))
+                        } else if let Ok(br) = binary_records.extract::<Vec<PyBinaryRecord>>() {
+                            let brs: Vec<_> = br.into_iter().map(|br| br.0).collect();
+                            Ok(<$parameter>::binary_matrix_from_records(
+                                &prs,
+                                &brs,
+                                search_option,
+                            ))
+                        } else {
+                            Err(PyErr::new::<PyTypeError, _>(format!(
+                                "Could not parse binary input!"
+                            )))
+                        }
+                    })
+                    .transpose()?
+                    .flatten();
+                Ok(Self(Arc::new(Parameter::from_records(prs, binary_records))))
             }
 
             /// Creates parameters for a pure component from a pure record.
@@ -634,6 +628,19 @@ macro_rules! impl_parameter {
                     })
                     .transpose()?;
                 Ok(Self(Arc::new(<$parameter>::new_binary(prs, br))))
+            }
+
+            /// Creates parameters from model records with default values for the molar weight,
+            /// identifiers, and binary interaction parameters.
+            ///
+            /// Parameters
+            /// ----------
+            /// model_records : [ModelRecord]
+            ///     A list of model parameters.
+            #[staticmethod]
+            fn from_model_records(model_records: Vec<$py_model_record>) -> PyResult<Self> {
+                let mrs = model_records.into_iter().map(|mr| mr.0).collect();
+                Ok(Self(Arc::new(<$parameter>::from_model_records(mrs))))
             }
 
             /// Creates parameters from json files.
@@ -706,13 +713,11 @@ macro_rules! impl_parameter {
             }
 
             #[getter]
-            fn get_binary_records<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
+            fn get_binary_records<'py>(&self, py: Python<'py>) -> Option<&'py PyArray2<f64>> {
                 self.0
                     .records()
                     .1
-                    .mapv(|r| f64::try_from(r).unwrap())
-                    .view()
-                    .to_pyarray(py)
+                    .map(|r| r.mapv(|r| f64::try_from(r).unwrap()).view().to_pyarray(py))
             }
         }
     };

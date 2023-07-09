@@ -72,7 +72,6 @@ pub struct JobackParameters {
     d: Array1<f64>,
     e: Array1<f64>,
     pure_records: Vec<PureRecord<JobackRecord>>,
-    binary_records: Array2<JobackBinaryRecord>,
 }
 
 impl Parameter for JobackParameters {
@@ -81,11 +80,10 @@ impl Parameter for JobackParameters {
 
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
-        _binary_records: Array2<Self::Binary>,
+        _binary_records: Option<Array2<Self::Binary>>,
     ) -> Self {
         let n = pure_records.len();
 
-        let binary_records = Array::from_elem((n, n), JobackBinaryRecord);
         let mut a = Array::zeros(n);
         let mut b = Array::zeros(n);
         let mut c = Array::zeros(n);
@@ -108,12 +106,11 @@ impl Parameter for JobackParameters {
             d,
             e,
             pure_records,
-            binary_records,
         }
     }
 
-    fn records(&self) -> (&[PureRecord<Self::Pure>], &Array2<Self::Binary>) {
-        (&self.pure_records, &self.binary_records)
+    fn records(&self) -> (&[PureRecord<Self::Pure>], Option<&Array2<Self::Binary>>) {
+        (&self.pure_records, None)
     }
 }
 
@@ -188,11 +185,7 @@ impl Components for Joback {
         component_list
             .iter()
             .for_each(|&i| records.push(self.parameters.pure_records[i].clone()));
-        let n = component_list.len();
-        Self::new(Arc::new(JobackParameters::from_records(
-            records,
-            Array::from_elem((n, n), JobackBinaryRecord),
-        )))
+        Self::new(Arc::new(JobackParameters::from_records(records, None)))
     }
 }
 
