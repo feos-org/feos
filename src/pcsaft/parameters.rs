@@ -161,7 +161,6 @@ impl FromSegments<usize> for PcSaftRecord {
         let polar_segments: usize = segments
             .iter()
             .filter_map(|(s, n)| {
-                println!("{s}");
                 if s.q.is_some()
                     || s.mu.is_some()
                     || s.association_record

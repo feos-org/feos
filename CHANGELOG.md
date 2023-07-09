@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added `IdealGasModel` enum that collects all implementors of the `IdealGas` trait. [#158](https://github.com/feos-org/feos/pull/158)
 - Added `feos.ideal_gas` module in Python from which (currently) `Joback` and `JobackParameters` are available. [#158](https://github.com/feos-org/feos/pull/158)
+- Added binary association parameters to PC-SAFT. [#167](https://github.com/feos-org/feos/pull/167)
 
 ### Changed
 - Changed the internal implementation of the association contribution to accomodate more general association schemes. [#150](https://github.com/feos-org/feos/pull/150)
