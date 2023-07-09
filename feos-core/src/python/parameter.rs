@@ -201,6 +201,12 @@ macro_rules! impl_binary_record {
         #[derive(Clone)]
         pub struct PyBinaryRecord(pub BinaryRecord<Identifier, $model_record>);
 
+        impl From<$py_model_record> for $model_record {
+            fn from(record: $py_model_record) -> Self {
+                record.0
+            }
+        }
+
         #[pymethods]
         impl PyBinaryRecord {
             #[new]
@@ -540,7 +546,7 @@ macro_rules! impl_segment_record {
 
 #[macro_export]
 macro_rules! impl_parameter {
-    ($parameter:ty, $py_parameter:ty, $py_model_record:ty) => {
+    ($parameter:ty, $py_parameter:ty, $py_model_record:ty, $py_binary_model_record:ty) => {
         #[pymethods]
         impl $py_parameter {
             /// Creates parameters from records.
@@ -618,8 +624,8 @@ macro_rules! impl_parameter {
                     .map(|br| {
                         if let Ok(r) = br.extract::<f64>() {
                             Ok(r.try_into()?)
-                        } else if let Ok(r) = br.extract::<PyBinaryRecord>() {
-                            Ok(r.0.model_record)
+                        } else if let Ok(r) = br.extract::<$py_binary_model_record>() {
+                            Ok(r.into())
                         } else {
                             Err(PyErr::new::<PyTypeError, _>(format!(
                                 "Could not parse binary input!"

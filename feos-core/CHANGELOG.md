@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added `Components`, `Residual`, `IdealGas` and `DeBroglieWavelength` traits to decouple ideal gas models from residual models. [#158](https://github.com/feos-org/feos/pull/158)
 - Added `JobackParameters` struct that implements `Parameters` including Python bindings. [#158](https://github.com/feos-org/feos/pull/158)
+- Added `Parameter::from_model_records` as a simpler interface to generate parameters.  [#169](https://github.com/feos-org/feos/pull/169)
 
 ### Changed
 - Changed `EquationOfState` from a trait to a `struct` that is generic over `Residual` and `IdealGas` and implements all necessary traits to be used as equation of state including the ideal gas contribution. [#158](https://github.com/feos-org/feos/pull/158)
@@ -19,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved `StateVec` into own file and module. [#158](https://github.com/feos-org/feos/pull/158)
 - Ideal gas and residual Helmholtz energy models can now be separately implemented in Python via the `PyIdealGas` and `PyResidual` structs. [#158](https://github.com/feos-org/feos/pull/158)
 - Bubble and dew point iterations will not attempt a second iteration if no solution is found for the given initial pressure. [#166](https://github.com/feos-org/feos/pull/166)
+- Made the binary records in the constructions and getters of the `Parameter` trait optional. [#169](https://github.com/feos-org/feos/pull/169)
+- Changed the second argument of `new_binary` in Python from a `BinaryRecord` to the corresponding binary model record (analogous to the Rust implementation). [#169](https://github.com/feos-org/feos/pull/169)
 
 ### Removed
 - Removed `EquationOfState` trait. [#158](https://github.com/feos-org/feos/pull/158)

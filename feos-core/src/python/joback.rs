@@ -83,7 +83,12 @@ impl_binary_record!(JobackBinaryRecord, PyJobackBinaryRecord);
 #[derive(Clone)]
 pub struct PyJobackParameters(pub Arc<JobackParameters>);
 
-impl_parameter!(JobackParameters, PyJobackParameters, PyJobackRecord);
+impl_parameter!(
+    JobackParameters,
+    PyJobackParameters,
+    PyJobackRecord,
+    PyJobackBinaryRecord
+);
 impl_parameter_from_segments!(JobackParameters, PyJobackParameters);
 
 #[pymethods]

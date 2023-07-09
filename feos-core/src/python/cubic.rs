@@ -58,7 +58,8 @@ pub struct PyPengRobinsonParameters(pub Arc<PengRobinsonParameters>);
 impl_parameter!(
     PengRobinsonParameters,
     PyPengRobinsonParameters,
-    PyPengRobinsonRecord
+    PyPengRobinsonRecord,
+    f64
 );
 
 #[pymethods]

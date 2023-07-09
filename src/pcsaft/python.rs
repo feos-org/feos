@@ -176,7 +176,12 @@ impl_binary_record!(PcSaftBinaryRecord, PyPcSaftBinaryRecord);
 #[derive(Clone)]
 pub struct PyPcSaftParameters(pub Arc<PcSaftParameters>);
 
-impl_parameter!(PcSaftParameters, PyPcSaftParameters, PyPcSaftRecord);
+impl_parameter!(
+    PcSaftParameters,
+    PyPcSaftParameters,
+    PyPcSaftRecord,
+    PyPcSaftBinaryRecord
+);
 impl_parameter_from_segments!(PcSaftParameters, PyPcSaftParameters);
 
 #[pymethods]

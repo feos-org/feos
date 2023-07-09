@@ -129,7 +129,7 @@ impl PyUVParameters {
 }
 
 impl_pure_record!(UVRecord, PyUVRecord);
-impl_parameter!(UVParameters, PyUVParameters, PyUVRecord);
+impl_parameter!(UVParameters, PyUVParameters, PyUVRecord, PyUVBinaryRecord);
 
 #[pymodule]
 pub fn uvtheory(_py: Python<'_>, m: &PyModule) -> PyResult<()> {

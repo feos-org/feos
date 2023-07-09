@@ -250,7 +250,12 @@ impl PyPetsParameters {
     }
 }
 
-impl_parameter!(PetsParameters, PyPetsParameters, PyPetsRecord);
+impl_parameter!(
+    PetsParameters,
+    PyPetsParameters,
+    PyPetsRecord,
+    PyPetsBinaryRecord
+);
 
 #[pymodule]
 pub fn pets(_py: Python<'_>, m: &PyModule) -> PyResult<()> {

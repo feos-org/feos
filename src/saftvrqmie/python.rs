@@ -149,7 +149,8 @@ impl_binary_record!(SaftVRQMieBinaryRecord, PySaftVRQMieBinaryRecord);
 impl_parameter!(
     SaftVRQMieParameters,
     PySaftVRQMieParameters,
-    PySaftVRQMieRecord
+    PySaftVRQMieRecord,
+    PySaftVRQMieBinaryRecord
 );
 
 #[pymethods]
