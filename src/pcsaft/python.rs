@@ -6,7 +6,6 @@ use feos_core::parameter::{
 };
 use feos_core::python::parameter::*;
 use feos_core::*;
-use ndarray::Array2;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
@@ -177,14 +176,22 @@ impl_binary_record!(PcSaftBinaryRecord, PyPcSaftBinaryRecord);
 #[derive(Clone)]
 pub struct PyPcSaftParameters(pub Arc<PcSaftParameters>);
 
-impl_parameter!(PcSaftParameters, PyPcSaftParameters);
+impl_parameter!(
+    PcSaftParameters,
+    PyPcSaftParameters,
+    PyPcSaftRecord,
+    PyPcSaftBinaryRecord
+);
 impl_parameter_from_segments!(PcSaftParameters, PyPcSaftParameters);
 
 #[pymethods]
 impl PyPcSaftParameters {
     #[getter]
-    fn get_k_ij<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
-        self.0.k_ij.view().to_pyarray(py)
+    fn get_k_ij<'py>(&self, py: Python<'py>) -> Option<&'py PyArray2<f64>> {
+        self.0
+            .binary_records
+            .as_ref()
+            .map(|br| br.map(|br| br.k_ij).view().to_pyarray(py))
     }
 
     fn _repr_markdown_(&self) -> String {

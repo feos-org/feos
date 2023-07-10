@@ -267,7 +267,7 @@ impl PcSaftRecord {
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct PcSaftBinaryRecord {
-    k_ij: f64,
+    pub k_ij: f64,
     association: Option<BinaryAssociationRecord>,
 }
 
@@ -337,7 +337,6 @@ pub struct PcSaftParameters {
     pub mu2: Array1<f64>,
     pub q2: Array1<f64>,
     pub association: AssociationParameters,
-    pub k_ij: Array2<f64>,
     pub sigma_ij: Array2<f64>,
     pub epsilon_k_ij: Array2<f64>,
     pub e_k_ij: Array2<f64>,
@@ -349,7 +348,7 @@ pub struct PcSaftParameters {
     pub diffusion: Option<Array2<f64>>,
     pub thermal_conductivity: Option<Array2<f64>>,
     pub pure_records: Vec<PureRecord<PcSaftRecord>>,
-    pub binary_records: Array2<PcSaftBinaryRecord>,
+    pub binary_records: Option<Array2<PcSaftBinaryRecord>>,
 }
 
 impl Parameter for PcSaftParameters {
@@ -358,7 +357,7 @@ impl Parameter for PcSaftParameters {
 
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Array2<Self::Binary>,
+        binary_records: Option<Array2<Self::Binary>>,
     ) -> Self {
         let n = pure_records.len();
 
@@ -410,23 +409,28 @@ impl Parameter for PcSaftParameters {
         let nquadpole = quadpole_comp.len();
 
         let binary_association: Vec<_> = binary_records
-            .indexed_iter()
-            .filter_map(|(i, record)| record.association.map(|r| (i, r)))
+            .iter()
+            .flat_map(|r| {
+                r.indexed_iter()
+                    .filter_map(|(i, record)| record.association.map(|r| (i, r)))
+            })
             .collect();
         let association =
             AssociationParameters::new(&association_records, &sigma, &binary_association, None);
 
-        let k_ij = binary_records.map(|br| br.k_ij);
-        let mut epsilon_k_ij = Array::zeros((n, n));
+        let k_ij = binary_records.as_ref().map(|br| br.map(|br| br.k_ij));
         let mut sigma_ij = Array::zeros((n, n));
         let mut e_k_ij = Array::zeros((n, n));
         for i in 0..n {
             for j in 0..n {
                 e_k_ij[[i, j]] = (epsilon_k[i] * epsilon_k[j]).sqrt();
-                epsilon_k_ij[[i, j]] = (1.0 - k_ij[[i, j]]) * e_k_ij[[i, j]];
                 sigma_ij[[i, j]] = 0.5 * (sigma[i] + sigma[j]);
             }
         }
+        let mut epsilon_k_ij = e_k_ij.clone();
+        if let Some(k_ij) = k_ij.as_ref() {
+            epsilon_k_ij *= &(1.0 - k_ij)
+        };
 
         let viscosity_coefficients = if viscosity.iter().any(|v| v.is_none()) {
             None
@@ -469,7 +473,6 @@ impl Parameter for PcSaftParameters {
             mu2,
             q2,
             association,
-            k_ij,
             sigma_ij,
             epsilon_k_ij,
             e_k_ij,
@@ -485,8 +488,13 @@ impl Parameter for PcSaftParameters {
         }
     }
 
-    fn records(&self) -> (&[PureRecord<PcSaftRecord>], &Array2<PcSaftBinaryRecord>) {
-        (&self.pure_records, &self.binary_records)
+    fn records(
+        &self,
+    ) -> (
+        &[PureRecord<PcSaftRecord>],
+        Option<&Array2<PcSaftBinaryRecord>>,
+    ) {
+        (&self.pure_records, self.binary_records.as_ref())
     }
 }
 
@@ -790,7 +798,7 @@ pub mod utils {
             segment_records,
             Some(binary_segment_records),
         )?;
-        let k_ij = &params.binary_records;
+        let k_ij = params.binary_records.as_ref().unwrap();
         assert_eq!(k_ij[[0, 0]].k_ij, 0.0);
         assert_eq!(k_ij[[0, 1]].k_ij, -0.5 / 9.);
         assert_eq!(k_ij[[1, 0]].k_ij, -0.5 / 9.);

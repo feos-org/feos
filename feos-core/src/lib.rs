@@ -202,7 +202,6 @@ mod tests {
     use crate::EosResult;
     use crate::StateBuilder;
     use approx::*;
-    use ndarray::Array2;
     use quantity::si::*;
     use std::sync::Arc;
 
@@ -248,7 +247,7 @@ mod tests {
     fn validate_residual_properties() -> EosResult<()> {
         let mixture = pure_record_vec();
         let propane = mixture[0].clone();
-        let parameters = PengRobinsonParameters::from_records(vec![propane], Array2::zeros((1, 1)));
+        let parameters = PengRobinsonParameters::new_pure(propane);
         let residual = Arc::new(PengRobinson::new(Arc::new(parameters)));
         let joback_parameters = Arc::new(JobackParameters::new_pure(PureRecord::new(
             Identifier::default(),
