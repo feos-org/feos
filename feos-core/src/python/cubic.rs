@@ -4,7 +4,6 @@ use crate::parameter::{
 };
 use crate::python::parameter::PyIdentifier;
 use crate::*;
-use ndarray::Array2;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
@@ -56,7 +55,12 @@ impl_binary_record!();
 #[derive(Clone)]
 pub struct PyPengRobinsonParameters(pub Arc<PengRobinsonParameters>);
 
-impl_parameter!(PengRobinsonParameters, PyPengRobinsonParameters);
+impl_parameter!(
+    PengRobinsonParameters,
+    PyPengRobinsonParameters,
+    PyPengRobinsonRecord,
+    f64
+);
 
 #[pymethods]
 impl PyPengRobinsonParameters {
