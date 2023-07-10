@@ -6,7 +6,6 @@ use feos_core::parameter::{
 };
 use feos_core::python::parameter::*;
 use feos_core::*;
-use ndarray::Array2;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
@@ -137,6 +136,19 @@ impl_segment_record!(PcSaftRecord, PyPcSaftRecord);
 )]
 #[derive(Clone)]
 pub struct PyPcSaftBinaryRecord(PcSaftBinaryRecord);
+
+#[pymethods]
+impl PyPcSaftBinaryRecord {
+    #[new]
+    fn new(k_ij: Option<f64>, kappa_ab: Option<f64>, epsilon_k_ab: Option<f64>) -> Self {
+        Self(PcSaftBinaryRecord::new(k_ij, kappa_ab, epsilon_k_ab))
+    }
+
+    fn __repr__(&self) -> PyResult<String> {
+        Ok(self.0.to_string())
+    }
+}
+
 impl_binary_record!(PcSaftBinaryRecord, PyPcSaftBinaryRecord);
 
 /// Create a set of PC-SAFT parameters from records.
@@ -164,14 +176,22 @@ impl_binary_record!(PcSaftBinaryRecord, PyPcSaftBinaryRecord);
 #[derive(Clone)]
 pub struct PyPcSaftParameters(pub Arc<PcSaftParameters>);
 
-impl_parameter!(PcSaftParameters, PyPcSaftParameters);
+impl_parameter!(
+    PcSaftParameters,
+    PyPcSaftParameters,
+    PyPcSaftRecord,
+    PyPcSaftBinaryRecord
+);
 impl_parameter_from_segments!(PcSaftParameters, PyPcSaftParameters);
 
 #[pymethods]
 impl PyPcSaftParameters {
     #[getter]
-    fn get_k_ij<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
-        self.0.k_ij.view().to_pyarray(py)
+    fn get_k_ij<'py>(&self, py: Python<'py>) -> Option<&'py PyArray2<f64>> {
+        self.0
+            .binary_records
+            .as_ref()
+            .map(|br| br.map(|br| br.k_ij).view().to_pyarray(py))
     }
 
     fn _repr_markdown_(&self) -> String {
@@ -187,6 +207,7 @@ pub fn pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
     m.add_class::<DQVariants>()?;
     m.add_class::<PyPcSaftRecord>()?;
+    m.add_class::<PyPcSaftBinaryRecord>()?;
     m.add_class::<PyPureRecord>()?;
     m.add_class::<PySegmentRecord>()?;
     m.add_class::<PyBinaryRecord>()?;
