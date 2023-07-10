@@ -111,7 +111,7 @@ pub struct UVParameters {
     pub sigma: Array1<f64>,
     pub epsilon_k: Array1<f64>,
     pub molarweight: Array1<f64>,
-    pub k_ij: Array2<f64>,
+    pub k_ij: Option<Array2<f64>>,
     pub rep_ij: Array2<f64>,
     pub att_ij: Array2<f64>,
     pub sigma_ij: Array2<f64>,
@@ -119,7 +119,7 @@ pub struct UVParameters {
     pub cd_bh_pure: Vec<Array1<f64>>,
     pub cd_bh_binary: Array2<Array1<f64>>,
     pub pure_records: Vec<PureRecord<UVRecord>>,
-    pub binary_records: Array2<UVBinaryRecord>,
+    pub binary_records: Option<Array2<UVBinaryRecord>>,
 }
 
 impl Parameter for UVParameters {
@@ -128,7 +128,7 @@ impl Parameter for UVParameters {
 
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Array2<Self::Binary>,
+        binary_records: Option<Array2<Self::Binary>>,
     ) -> Result<Self, ParameterError> {
         let n = pure_records.len();
 
@@ -154,7 +154,7 @@ impl Parameter for UVParameters {
         let mut att_ij = Array2::zeros((n, n));
         let mut sigma_ij = Array2::zeros((n, n));
         let mut eps_k_ij = Array2::zeros((n, n));
-        let k_ij = binary_records.map(|br| br.k_ij);
+        let k_ij = binary_records.as_ref().map(|br| br.map(|br| br.k_ij));
 
         for i in 0..n {
             rep_ij[[i, i]] = rep[i];
@@ -168,7 +168,8 @@ impl Parameter for UVParameters {
                 att_ij[[j, i]] = att_ij[[i, j]];
                 sigma_ij[[i, j]] = 0.5 * (sigma[i] + sigma[j]);
                 sigma_ij[[j, i]] = sigma_ij[[i, j]];
-                eps_k_ij[[i, j]] = (1.0 - k_ij[[i, j]]) * (epsilon_k[i] * epsilon_k[j]).sqrt();
+                eps_k_ij[[i, j]] = (1.0 - k_ij.as_ref().map_or(0.0, |k_ij| k_ij[[i, j]]))
+                    * (epsilon_k[i] * epsilon_k[j]).sqrt();
                 eps_k_ij[[j, i]] = eps_k_ij[[i, j]];
             }
         }
@@ -197,8 +198,8 @@ impl Parameter for UVParameters {
         })
     }
 
-    fn records(&self) -> (&[PureRecord<UVRecord>], &Array2<UVBinaryRecord>) {
-        (&self.pure_records, &self.binary_records)
+    fn records(&self) -> (&[PureRecord<UVRecord>], Option<&Array2<UVBinaryRecord>>) {
+        (&self.pure_records, self.binary_records.as_ref())
     }
 }
 

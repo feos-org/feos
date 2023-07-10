@@ -8,7 +8,6 @@ use feos_core::parameter::{
 };
 use feos_core::python::parameter::PyIdentifier;
 use feos_core::*;
-use ndarray::Array2;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::{PyIOError, PyTypeError};
 use pyo3::prelude::*;
@@ -148,7 +147,12 @@ pub struct PySaftVRQMieParameters(pub Arc<SaftVRQMieParameters>);
 impl_json_handling!(PySaftVRQMieRecord);
 impl_pure_record!(SaftVRQMieRecord, PySaftVRQMieRecord);
 impl_binary_record!(SaftVRQMieBinaryRecord, PySaftVRQMieBinaryRecord);
-impl_parameter!(SaftVRQMieParameters, PySaftVRQMieParameters);
+impl_parameter!(
+    SaftVRQMieParameters,
+    PySaftVRQMieParameters,
+    PySaftVRQMieRecord,
+    PySaftVRQMieBinaryRecord
+);
 
 #[pymethods]
 impl PySaftVRQMieParameters {
@@ -207,7 +211,7 @@ impl PySaftVRQMieParameters {
     ) -> PyResult<()> {
         self.0
             .lammps_tables(temperature.into(), n, r_min.into(), r_max.into())
-            .map_err(|e| PyIOError::new_err(e))
+            .map_err(PyIOError::new_err)
     }
 
     fn _repr_markdown_(&self) -> String {
