@@ -6,6 +6,7 @@ use feos_core::parameter::{
 };
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
+use num_traits::Zero;
 use quantity::si::{JOULE, KB, KELVIN};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -265,9 +266,15 @@ impl PcSaftRecord {
     }
 }
 
+/// PC-SAFT binary interaction parameters.
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct PcSaftBinaryRecord {
+    /// Binary dispersion interaction parameter
+    #[serde(skip_serializing_if = "f64::is_zero")]
+    #[serde(default)]
     pub k_ij: f64,
+    /// Binary association parameters
+    #[serde(flatten)]
     association: Option<BinaryAssociationRecord>,
 }
 
@@ -313,16 +320,19 @@ impl<T: Copy + ValueInto<f64>> FromSegmentsBinary<T> for PcSaftBinaryRecord {
 
 impl std::fmt::Display for PcSaftBinaryRecord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PcSaftBinaryRecord(k_ij={}", self.k_ij)?;
+        let mut tokens = vec![];
+        if !self.k_ij.is_zero() {
+            tokens.push(format!("k_ij={}", self.k_ij));
+        }
         if let Some(association) = self.association {
             if let Some(kappa_ab) = association.kappa_ab {
-                write!(f, ", kappa_ab={}", kappa_ab)?;
+                tokens.push(format!("kappa_ab={}", kappa_ab));
             }
             if let Some(epsilon_k_ab) = association.epsilon_k_ab {
-                write!(f, ", epsilon_k_ab={}", epsilon_k_ab)?;
+                tokens.push(format!("epsilon_k_ab={}", epsilon_k_ab));
             }
         }
-        write!(f, ")")
+        write!(f, "PcSaftBinaryRecord({})", tokens.join(", "))
     }
 }
 
