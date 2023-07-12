@@ -93,11 +93,23 @@ impl fmt::Display for AssociationRecord {
     }
 }
 
+/// Binary association parameters.
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct BinaryAssociationRecord {
+    /// Cross-association association volume parameter.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub kappa_ab: Option<f64>,
+    /// Cross-association energy parameter.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub epsilon_k_ab: Option<f64>,
+    /// Indices of sites that the record refers to.
+    #[serde(skip_serializing_if = "is_default_site_indices")]
+    #[serde(default)]
     pub site_indices: [usize; 2],
+}
+
+fn is_default_site_indices([i, j]: &[usize; 2]) -> bool {
+    *i == 0 && *j == 0
 }
 
 impl BinaryAssociationRecord {

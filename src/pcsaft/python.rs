@@ -12,7 +12,7 @@ use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
-/// Create a set of PC-Saft parameters from records.
+/// Create a new set of PC-SAFT pure component parameters.
 #[pyclass(name = "PcSaftRecord")]
 #[pyo3(
     text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
@@ -131,9 +131,6 @@ impl_pure_record!(PcSaftRecord, PyPcSaftRecord);
 impl_segment_record!(PcSaftRecord, PyPcSaftRecord);
 
 #[pyclass(name = "PcSaftBinaryRecord")]
-#[pyo3(
-    text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
-)]
 #[derive(Clone)]
 pub struct PyPcSaftBinaryRecord(PcSaftBinaryRecord);
 
@@ -149,30 +146,11 @@ impl PyPcSaftBinaryRecord {
     }
 }
 
+impl_json_handling!(PyPcSaftBinaryRecord);
+
 impl_binary_record!(PcSaftBinaryRecord, PyPcSaftBinaryRecord);
 
-/// Create a set of PC-SAFT parameters from records.
-///
-/// Parameters
-/// ----------
-/// pure_records : List[PureRecord]
-///     pure substance records.
-/// binary_records : List[BinaryRecord], optional
-///     binary saft parameter records
-/// substances : List[str], optional
-///     The substances to use. Filters substances from `pure_records` according to
-///     `search_option`.
-///     When not provided, all entries of `pure_records` are used.
-/// search_option : {'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'}, optional, defaults to 'Name'.
-///     Identifier that is used to search substance.
-///
-/// Returns
-/// -------
-/// PcSaftParameters
 #[pyclass(name = "PcSaftParameters")]
-#[pyo3(
-    text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
-)]
 #[derive(Clone)]
 pub struct PyPcSaftParameters(pub Arc<PcSaftParameters>);
 
