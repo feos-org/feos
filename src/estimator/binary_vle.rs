@@ -1,19 +1,12 @@
-use super::{DataSet, EstimatorError};
+use super::{DataSet, EstimatorError, Phase};
 use feos_core::{
     Contributions, DensityInitialization, EosUnit, PhaseDiagram, PhaseEquilibrium, Residual, State,
 };
+use itertools::izip;
 use ndarray::{arr1, s, Array1, ArrayView1, Axis};
 use quantity::si::{SIArray1, SINumber, SIUnit};
 use std::collections::HashMap;
 use std::sync::Arc;
-
-/// Different phases of experimental data points in the `BinaryVlePressure` data set.
-#[derive(Clone, Copy)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
-pub enum Phase {
-    Vapor,
-    Liquid,
-}
 
 /// Store experimental binary VLE data for the calculation of chemical potential residuals.
 #[derive(Clone)]
@@ -63,13 +56,12 @@ impl<E: Residual> DataSet<E> for BinaryVleChemicalPotential {
 
     fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
         let mut prediction = Vec::new();
-        for (((&xi, &yi), t), p) in self
-            .liquid_molefracs
-            .iter()
-            .zip(self.vapor_molefracs.iter())
-            .zip(self.temperature.into_iter())
-            .zip(self.pressure.into_iter())
-        {
+        for (&xi, &yi, t, p) in izip!(
+            &self.liquid_molefracs,
+            &self.vapor_molefracs,
+            &self.temperature,
+            &self.pressure
+        ) {
             let liquid_moles = arr1(&[xi, 1.0 - xi]) * SIUnit::reference_moles();
             let liquid = State::new_npt(eos, t, p, &liquid_moles, DensityInitialization::Liquid)?;
             let mu_res_liquid = liquid.residual_chemical_potential();

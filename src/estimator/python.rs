@@ -639,21 +639,26 @@ macro_rules! impl_estimator_entropy_scaling {
             ///     Temperature for experimental data points.
             /// pressure : SIArray1
             ///     Pressure for experimental data points.
+            /// phase : List[Phase], optional
+            ///     Phase of data. Used to determine the starting
+            ///     density for the density iteration. If provided,
+            ///     resulting states may not be stable.
             ///
             /// Returns
             /// -------
             /// DataSet
             #[staticmethod]
-            #[pyo3(text_signature = "(target, temperature, pressure)")]
             fn viscosity(
                 target: &PySIArray1,
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
+                phase: Option<Vec<Phase>>,
             ) -> PyResult<Self> {
                 Ok(Self(Arc::new(Viscosity::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     pressure.clone().into(),
+                    phase.as_ref(),
                 )?)))
             }
 
@@ -667,21 +672,26 @@ macro_rules! impl_estimator_entropy_scaling {
             ///     Temperature for experimental data points.
             /// pressure : SIArray1
             ///     Pressure for experimental data points.
+            /// phase : List[Phase], optional
+            ///     Phase of data. Used to determine the starting
+            ///     density for the density iteration. If provided,
+            ///     resulting states may not be stable.
             ///
             /// Returns
             /// -------
             /// DataSet
             #[staticmethod]
-            #[pyo3(text_signature = "(target, temperature, pressure)")]
             fn thermal_conductivity(
                 target: &PySIArray1,
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
+                phase: Option<Vec<Phase>>,
             ) -> PyResult<Self> {
                 Ok(Self(Arc::new(ThermalConductivity::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     pressure.clone().into(),
+                    phase.as_ref(),
                 )?)))
             }
 
@@ -695,21 +705,26 @@ macro_rules! impl_estimator_entropy_scaling {
             ///     Temperature for experimental data points.
             /// pressure : SIArray1
             ///     Pressure for experimental data points.
+            /// phase : List[Phase], optional
+            ///     Phase of data. Used to determine the starting
+            ///     density for the density iteration. If provided,
+            ///     resulting states may not be stable.
             ///
             /// Returns
             /// -------
             /// DataSet
             #[staticmethod]
-            #[pyo3(text_signature = "(target, temperature, pressure)")]
             fn diffusion(
                 target: &PySIArray1,
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
+                phase: Option<Vec<Phase>>,
             ) -> PyResult<Self> {
                 Ok(Self(Arc::new(Diffusion::new(
                     target.clone().into(),
                     temperature.clone().into(),
                     pressure.clone().into(),
+                    phase.as_ref(),
                 )?)))
             }
         }

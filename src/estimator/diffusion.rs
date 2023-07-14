@@ -1,5 +1,6 @@
-use super::{DataSet, EstimatorError};
-use feos_core::{DensityInitialization, EntropyScaling, EosUnit, Residual, State};
+use super::{DataSet, EstimatorError, Phase};
+use feos_core::{DensityInitialization, EntropyScaling, EosUnit, State, Residual};
+use itertools::izip;
 use ndarray::{arr1, Array1};
 use quantity::si::{SIArray1, SIUnit};
 use std::collections::HashMap;
@@ -11,6 +12,7 @@ pub struct Diffusion {
     pub target: SIArray1,
     temperature: SIArray1,
     pressure: SIArray1,
+    initial_density: Vec<DensityInitialization>,
 }
 
 impl Diffusion {
@@ -19,11 +21,16 @@ impl Diffusion {
         target: SIArray1,
         temperature: SIArray1,
         pressure: SIArray1,
+        phase: Option<&Vec<Phase>>,
     ) -> Result<Self, EstimatorError> {
+        let n = temperature.len();
         Ok(Self {
             target,
             temperature,
             pressure,
+            initial_density: phase.map_or(vec![DensityInitialization::None; n], |phase| {
+                phase.iter().map(|&p| p.into()).collect()
+            }),
         })
     }
 
@@ -62,16 +69,14 @@ impl<E: Residual + EntropyScaling> DataSet<E> for Diffusion {
             .to_reduced(SIUnit::reference_pressure())
             .unwrap();
 
-        let res = ts
-            .iter()
-            .zip(ps.iter())
-            .map(|(&t, &p)| {
+        let res = izip!(&ts, &ps, &self.initial_density)
+            .map(|(&t, &p, &initial_density)| {
                 State::new_npt(
                     eos,
                     t * SIUnit::reference_temperature(),
                     p * SIUnit::reference_pressure(),
                     &moles,
-                    DensityInitialization::None,
+                    initial_density,
                 )?
                 .diffusion()?
                 .to_reduced(SIUnit::reference_diffusion())

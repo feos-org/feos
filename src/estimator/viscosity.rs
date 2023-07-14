@@ -1,5 +1,6 @@
-use super::{DataSet, EstimatorError};
-use feos_core::{DensityInitialization, EntropyScaling, EosUnit, Residual, State};
+use super::{DataSet, EstimatorError, Phase};
+use feos_core::{DensityInitialization, EntropyScaling, EosUnit, State, Residual};
+use itertools::izip;
 use ndarray::arr1;
 use quantity::si::{SIArray1, SIUnit};
 use std::collections::HashMap;
@@ -11,6 +12,7 @@ pub struct Viscosity {
     pub target: SIArray1,
     temperature: SIArray1,
     pressure: SIArray1,
+    initial_density: Vec<DensityInitialization>,
 }
 
 impl Viscosity {
@@ -19,11 +21,16 @@ impl Viscosity {
         target: SIArray1,
         temperature: SIArray1,
         pressure: SIArray1,
+        phase: Option<&Vec<Phase>>,
     ) -> Result<Self, EstimatorError> {
+        let n = temperature.len();
         Ok(Self {
             target,
             temperature,
             pressure,
+            initial_density: phase.map_or(vec![DensityInitialization::None; n], |phase| {
+                phase.iter().map(|&p| p.into()).collect()
+            }),
         })
     }
 
@@ -53,11 +60,9 @@ impl<E: Residual + EntropyScaling> DataSet<E> for Viscosity {
 
     fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
         let moles = arr1(&[1.0]) * SIUnit::reference_moles();
-        self.temperature
-            .into_iter()
-            .zip(self.pressure.into_iter())
-            .map(|(t, p)| {
-                State::new_npt(eos, t, p, &moles, DensityInitialization::None)?
+        izip!(&self.temperature, &self.pressure, &self.initial_density)
+            .map(|(t, p, &initial_density)| {
+                State::new_npt(eos, t, p, &moles, initial_density)?
                     .viscosity()
                     .map_err(EstimatorError::from)
             })
