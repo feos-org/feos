@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.EquationOfState.python\_ideal\_gas
+===========================================
+
+.. currentmodule:: feos.eos
+
+.. automethod:: EquationOfState.python_ideal_gas

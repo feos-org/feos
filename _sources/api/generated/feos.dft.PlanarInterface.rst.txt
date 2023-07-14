@@ -40,7 +40,6 @@ feos.dft.PlanarInterface
    .. autosummary::
    
       ~PlanarInterface.bulk
-      ~PlanarInterface.chemical_potential
       ~PlanarInterface.density
       ~PlanarInterface.dn_dmu
       ~PlanarInterface.dn_dp

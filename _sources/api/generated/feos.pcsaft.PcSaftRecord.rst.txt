@@ -38,6 +38,7 @@ feos.pcsaft.PcSaftRecord
       ~PcSaftRecord.mu
       ~PcSaftRecord.na
       ~PcSaftRecord.nb
+      ~PcSaftRecord.nc
       ~PcSaftRecord.q
       ~PcSaftRecord.sigma
       ~PcSaftRecord.thermal_conductivity

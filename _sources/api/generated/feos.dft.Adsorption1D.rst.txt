@@ -35,7 +35,6 @@ feos.dft.Adsorption1D
       ~Adsorption1D.adsorption
       ~Adsorption1D.enthalpy_of_adsorption
       ~Adsorption1D.grand_potential
-      ~Adsorption1D.molar_gibbs_energy
       ~Adsorption1D.partial_molar_enthalpy_of_adsorption
       ~Adsorption1D.pressure
       ~Adsorption1D.profiles

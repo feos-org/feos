@@ -30,7 +30,6 @@ feos.uvtheory.PureRecord
 
    .. autosummary::
    
-      ~PureRecord.ideal_gas_record
       ~PureRecord.identifier
       ~PureRecord.model_record
       ~PureRecord.molarweight

@@ -20,6 +20,7 @@ feos.cubic.PengRobinsonParameters
    
       ~PengRobinsonParameters.__init__
       ~PengRobinsonParameters.from_json
+      ~PengRobinsonParameters.from_model_records
       ~PengRobinsonParameters.from_multiple_json
       ~PengRobinsonParameters.from_records
       ~PengRobinsonParameters.new_binary

@@ -20,11 +20,13 @@ feos.eos.EquationOfState
    
       ~EquationOfState.__init__
       ~EquationOfState.gc_pcsaft
+      ~EquationOfState.joback
       ~EquationOfState.max_density
       ~EquationOfState.pcsaft
       ~EquationOfState.peng_robinson
       ~EquationOfState.pets
-      ~EquationOfState.python
+      ~EquationOfState.python_ideal_gas
+      ~EquationOfState.python_residual
       ~EquationOfState.saftvrqmie
       ~EquationOfState.second_virial_coefficient
       ~EquationOfState.second_virial_coefficient_temperature_derivative

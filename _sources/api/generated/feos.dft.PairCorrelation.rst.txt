@@ -34,7 +34,6 @@ feos.dft.PairCorrelation
    .. autosummary::
    
       ~PairCorrelation.bulk
-      ~PairCorrelation.chemical_potential
       ~PairCorrelation.density
       ~PairCorrelation.dn_dmu
       ~PairCorrelation.dn_dp

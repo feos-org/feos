@@ -20,6 +20,7 @@ feos.saftvrqmie.SaftVRQMieParameters
    
       ~SaftVRQMieParameters.__init__
       ~SaftVRQMieParameters.from_json
+      ~SaftVRQMieParameters.from_model_records
       ~SaftVRQMieParameters.from_multiple_json
       ~SaftVRQMieParameters.from_records
       ~SaftVRQMieParameters.lammps_tables

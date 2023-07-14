@@ -29,8 +29,7 @@ feos.dft.Contributions
    .. autosummary::
    
       ~Contributions.IdealGas
-      ~Contributions.ResidualNpt
-      ~Contributions.ResidualNvt
+      ~Contributions.Residual
       ~Contributions.Total
    
    

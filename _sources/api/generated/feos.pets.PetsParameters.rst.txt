@@ -21,6 +21,7 @@ feos.pets.PetsParameters
       ~PetsParameters.__init__
       ~PetsParameters.from_json
       ~PetsParameters.from_lists
+      ~PetsParameters.from_model_records
       ~PetsParameters.from_multiple_json
       ~PetsParameters.from_records
       ~PetsParameters.from_values

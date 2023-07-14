@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pets.PetsParameters.from\_model\_records
+=============================================
+
+.. currentmodule:: feos.pets
+
+.. automethod:: PetsParameters.from_model_records

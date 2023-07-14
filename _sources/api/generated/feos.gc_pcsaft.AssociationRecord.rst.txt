@@ -34,5 +34,6 @@ feos.gc\_pcsaft.AssociationRecord
       ~AssociationRecord.kappa_ab
       ~AssociationRecord.na
       ~AssociationRecord.nb
+      ~AssociationRecord.nc
    
    

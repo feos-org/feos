@@ -31,7 +31,6 @@ feos.gc\_pcsaft.SegmentRecord
 
    .. autosummary::
    
-      ~SegmentRecord.ideal_gas_record
       ~SegmentRecord.identifier
       ~SegmentRecord.model_record
       ~SegmentRecord.molarweight

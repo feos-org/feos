@@ -21,6 +21,7 @@ feos.uvtheory.UVParameters
       ~UVParameters.__init__
       ~UVParameters.from_json
       ~UVParameters.from_lists
+      ~UVParameters.from_model_records
       ~UVParameters.from_multiple_json
       ~UVParameters.from_records
       ~UVParameters.new_binary
