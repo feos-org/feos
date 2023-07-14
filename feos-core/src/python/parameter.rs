@@ -590,7 +590,7 @@ macro_rules! impl_parameter {
                     })
                     .transpose()?
                     .flatten();
-                Ok(Self(Arc::new(Parameter::from_records(prs, binary_records))))
+                Ok(Self(Arc::new(Parameter::from_records(prs, binary_records)?)))
             }
 
             /// Creates parameters for a pure component from a pure record.
@@ -646,7 +646,7 @@ macro_rules! impl_parameter {
             #[staticmethod]
             fn from_model_records(model_records: Vec<$py_model_record>) -> PyResult<Self> {
                 let mrs = model_records.into_iter().map(|mr| mr.0).collect();
-                Ok(Self(Arc::new(<$parameter>::from_model_records(mrs))))
+                Ok(Self(Arc::new(<$parameter>::from_model_records(mrs)?)))
             }
 
             /// Creates parameters from json files.
