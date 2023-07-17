@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Components`, `Residual`, `IdealGas` and `DeBroglieWavelength` traits to decouple ideal gas models from residual models. [#158](https://github.com/feos-org/feos/pull/158)
 - Added `JobackParameters` struct that implements `Parameters` including Python bindings. [#158](https://github.com/feos-org/feos/pull/158)
 - Added `Parameter::from_model_records` as a simpler interface to generate parameters.  [#169](https://github.com/feos-org/feos/pull/169)
+- Added optional `Phase` argument for constructors of dynamic properties of `DataSet`s.  [#174](https://github.com/feos-org/feos/pull/174)
 
 ### Changed
 - Changed constructors of `Parameter` trait to return `Result`s. [#161](https://github.com/feos-org/feos/pull/161)
