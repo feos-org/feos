@@ -46,39 +46,39 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     #[cfg(feature = "saftvrqmie")]
     m.add_wrapped(wrap_pymodule!(saftvrqmie_module))?;
 
-    set_path(py, m, "feos.si", "quantity")?;
-    set_path(py, m, "feos.eos", "eos")?;
-    #[cfg(feature = "estimator")]
-    set_path(py, m, "feos.eos.estimator", "eos.estimator_eos")?;
-    #[cfg(feature = "dft")]
-    set_path(py, m, "feos.dft", "dft")?;
-    #[cfg(all(feature = "dft", feature = "estimator"))]
-    set_path(py, m, "feos.dft.estimator", "dft.estimator_dft")?;
-    set_path(py, m, "feos.ideal_gas", "ideal_gas")?;
-    set_path(py, m, "feos.cubic", "cubic")?;
-    #[cfg(feature = "pcsaft")]
-    set_path(py, m, "feos.pcsaft", "pcsaft")?;
-    #[cfg(feature = "gc_pcsaft")]
-    set_path(py, m, "feos.gc_pcsaft", "gc_pcsaft")?;
-    #[cfg(feature = "pets")]
-    set_path(py, m, "feos.pets", "pets")?;
-    #[cfg(feature = "uvtheory")]
-    set_path(py, m, "feos.uvtheory", "uvtheory")?;
-    #[cfg(feature = "saftvrqmie")]
-    set_path(py, m, "feos.saftvrqmie", "saftvrqmie")?;
+//     set_path(py, m, "feos.si", "quantity")?;
+//     set_path(py, m, "feos.eos", "eos")?;
+//     #[cfg(feature = "estimator")]
+//     set_path(py, m, "feos.eos.estimator", "eos.estimator_eos")?;
+//     #[cfg(feature = "dft")]
+//     set_path(py, m, "feos.dft", "dft")?;
+//     #[cfg(all(feature = "dft", feature = "estimator"))]
+//     set_path(py, m, "feos.dft.estimator", "dft.estimator_dft")?;
+//     set_path(py, m, "feos.ideal_gas", "ideal_gas")?;
+//     set_path(py, m, "feos.cubic", "cubic")?;
+//     #[cfg(feature = "pcsaft")]
+//     set_path(py, m, "feos.pcsaft", "pcsaft")?;
+//     #[cfg(feature = "gc_pcsaft")]
+//     set_path(py, m, "feos.gc_pcsaft", "gc_pcsaft")?;
+//     #[cfg(feature = "pets")]
+//     set_path(py, m, "feos.pets", "pets")?;
+//     #[cfg(feature = "uvtheory")]
+//     set_path(py, m, "feos.uvtheory", "uvtheory")?;
+//     #[cfg(feature = "saftvrqmie")]
+//     set_path(py, m, "feos.saftvrqmie", "saftvrqmie")?;
 
-    py.run(
-        "\
-import sys
-quantity.SINumber.__module__ = 'feos.si'
-quantity.SIArray1.__module__ = 'feos.si'
-quantity.SIArray2.__module__ = 'feos.si'
-quantity.SIArray3.__module__ = 'feos.si'
-quantity.SIArray4.__module__ = 'feos.si'
-    ",
-        None,
-        Some(m.dict()),
-    )?;
+//     py.run(
+//         "\
+// import sys
+// quantity.SINumber.__module__ = 'feos.si'
+// quantity.SIArray1.__module__ = 'feos.si'
+// quantity.SIArray2.__module__ = 'feos.si'
+// quantity.SIArray3.__module__ = 'feos.si'
+// quantity.SIArray4.__module__ = 'feos.si'
+//     ",
+//         None,
+//         Some(m.dict()),
+//     )?;
     Ok(())
 }
 
