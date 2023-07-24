@@ -1,7 +1,6 @@
 use super::{Contributions, Derivative::*, PartialDerivative, State};
-use crate::equation_of_state::{IdealGas, MolarWeight, Residual};
+use crate::equation_of_state::{IdealGas, Residual};
 use crate::EosUnit;
-use ndarray::Array1;
 use quantity::si::*;
 
 impl<E: Residual + IdealGas> State<E> {
@@ -238,40 +237,7 @@ impl<E: Residual + IdealGas> State<E> {
         }
         res
     }
-}
 
-/// # Mass specific state properties
-///
-/// These properties are available for equations of state
-/// that implement the [MolarWeight] trait.
-impl<E: Residual + MolarWeight> State<E> {
-    /// Total molar weight: $MW=\sum_ix_iMW_i$
-    pub fn total_molar_weight(&self) -> SINumber {
-        (self.eos.molar_weight() * &self.molefracs).sum()
-    }
-
-    /// Mass of each component: $m_i=n_iMW_i$
-    pub fn mass(&self) -> SIArray1 {
-        self.moles.clone() * self.eos.molar_weight()
-    }
-
-    /// Total mass: $m=\sum_im_i=nMW$
-    pub fn total_mass(&self) -> SINumber {
-        self.total_moles * self.total_molar_weight()
-    }
-
-    /// Mass density: $\rho^{(m)}=\frac{m}{V}$
-    pub fn mass_density(&self) -> SINumber {
-        self.density * self.total_molar_weight()
-    }
-
-    /// Mass fractions: $w_i=\frac{m_i}{m}$
-    pub fn massfracs(&self) -> Array1<f64> {
-        self.mass().to_reduced(self.total_mass()).unwrap()
-    }
-}
-
-impl<E: Residual + IdealGas + MolarWeight> State<E> {
     /// Specific entropy: $s^{(m)}=\frac{S}{m}$
     pub fn specific_entropy(&self, contributions: Contributions) -> SINumber {
         self.molar_entropy(contributions) / self.total_molar_weight()

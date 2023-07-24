@@ -255,6 +255,12 @@ mod tests {
         fn contributions(&self) -> &[Box<dyn crate::HelmholtzEnergy>] {
             &[]
         }
+
+        fn molar_weight(&self) -> SIArray1 {
+            SIArray1::from_shape_fn(self.components(), |i| {
+                self.parameters.pure_records[i].molarweight * GRAM / MOL
+            })
+        }
     }
 
     #[test]

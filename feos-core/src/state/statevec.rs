@@ -1,5 +1,5 @@
 use super::{Contributions, State};
-use crate::equation_of_state::{IdealGas, MolarWeight, Residual};
+use crate::equation_of_state::{IdealGas, Residual};
 use ndarray::{Array1, Array2};
 use quantity::si::{SIArray1, SIArray2};
 use std::iter::FromIterator;
@@ -76,9 +76,7 @@ impl<'a, E: Residual + IdealGas> StateVec<'a, E> {
             self.0[i].molar_entropy(Contributions::Total)
         })
     }
-}
 
-impl<'a, E: Residual + IdealGas + MolarWeight> StateVec<'a, E> {
     pub fn mass_density(&self) -> SIArray1 {
         SIArray1::from_shape_fn(self.0.len(), |i| self.0[i].mass_density())
     }

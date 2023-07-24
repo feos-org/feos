@@ -1,6 +1,6 @@
 use crate::{
     Components, DeBroglieWavelength, DeBroglieWavelengthDual, HelmholtzEnergy, HelmholtzEnergyDual,
-    IdealGas, MolarWeight, Residual, StateHD,
+    IdealGas, Residual, StateHD,
 };
 use ndarray::Array1;
 use num_dual::*;
@@ -117,21 +117,6 @@ impl PyResidual {
     }
 }
 
-impl MolarWeight for PyResidual {
-    fn molar_weight(&self) -> SIArray1 {
-        Python::with_gil(|py| {
-            let py_result = self.obj.as_ref(py).call_method0("molar_weight").unwrap();
-            if py_result.get_type().name().unwrap() != "SIArray1" {
-                panic!(
-                    "Expected an 'SIArray1' for the 'molar_weight' method return type, got {}",
-                    py_result.get_type().name().unwrap()
-                );
-            }
-            py_result.extract::<PySIArray1>().unwrap().into()
-        })
-    }
-}
-
 impl Components for PyResidual {
     fn components(&self) -> usize {
         Python::with_gil(|py| {
@@ -172,6 +157,19 @@ impl Residual for PyResidual {
 
     fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         &self.contributions
+    }
+
+    fn molar_weight(&self) -> SIArray1 {
+        Python::with_gil(|py| {
+            let py_result = self.obj.as_ref(py).call_method0("molar_weight").unwrap();
+            if py_result.get_type().name().unwrap() != "SIArray1" {
+                panic!(
+                    "Expected an 'SIArray1' for the 'molar_weight' method return type, got {}",
+                    py_result.get_type().name().unwrap()
+                );
+            }
+            py_result.extract::<PySIArray1>().unwrap().into()
+        })
     }
 }
 

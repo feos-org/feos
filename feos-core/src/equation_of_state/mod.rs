@@ -11,13 +11,6 @@ pub use helmholtz_energy::{HelmholtzEnergy, HelmholtzEnergyDual};
 pub use ideal_gas::{DeBroglieWavelength, DeBroglieWavelengthDual, IdealGas};
 pub use residual::{EntropyScaling, Residual};
 
-/// Molar weight of all components.
-///
-/// The trait is required to be able to calculate (mass)
-/// specific properties.
-pub trait MolarWeight {
-    fn molar_weight(&self) -> SIArray1;
-}
 
 /// The number of components that the model is initialized for.
 pub trait Components {
@@ -80,9 +73,7 @@ impl<I: IdealGas, R: Residual> Residual for EquationOfState<I, R> {
     fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         self.residual.contributions()
     }
-}
 
-impl<I, R: MolarWeight> MolarWeight for EquationOfState<I, R> {
     fn molar_weight(&self) -> SIArray1 {
         self.residual.molar_weight()
     }

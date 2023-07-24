@@ -348,6 +348,30 @@ impl<E: Residual> State<E> {
                 * self.temperature
                 * self.compressibility(Contributions::Total).ln()
     }
+
+    pub fn total_molar_weight(&self) -> SINumber {
+        (self.eos.molar_weight() * &self.molefracs).sum()
+    }
+
+    /// Mass of each component: $m_i=n_iMW_i$
+    pub fn mass(&self) -> SIArray1 {
+        self.moles.clone() * self.eos.molar_weight()
+    }
+
+    /// Total mass: $m=\sum_im_i=nMW$
+    pub fn total_mass(&self) -> SINumber {
+        self.total_moles * self.total_molar_weight()
+    }
+
+    /// Mass density: $\rho^{(m)}=\frac{m}{V}$
+    pub fn mass_density(&self) -> SINumber {
+        self.density * self.total_molar_weight()
+    }
+
+    /// Mass fractions: $w_i=\frac{m_i}{m}$
+    pub fn massfracs(&self) -> Array1<f64> {
+        self.mass().to_reduced(self.total_mass()).unwrap()
+    }
 }
 
 /// # Transport properties
