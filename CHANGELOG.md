@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adjusted all models' implementation of the `Parameter` trait which now requires `Result`s in some methods. [#161](https://github.com/feos-org/feos/pull/161)
 - Renamed `EosVariant` to `ResidualModel`. [#158](https://github.com/feos-org/feos/pull/158)
 - Added methods to add an ideal gas contribution to an initialized equation of state object in Python.  [#158](https://github.com/feos-org/feos/pull/158)
+- Moved `molar_weight` impls to `Residual` due to removal of `MolarWeight` trait. [#177](https://github.com/feos-org/feos/pull/158)
 
 ### Packaging
 - Updated `num-dual` dependency to 0.7. [#137](https://github.com/feos-org/feos/pull/137)
