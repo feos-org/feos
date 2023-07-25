@@ -10,7 +10,7 @@ use ndarray::prelude::*;
 use ndarray::Axis as Axis_nd;
 use ndarray::RemoveAxis;
 use num_dual::linalg::LU;
-use quantity::si::{SIArray, SIArray1, SIArray2, SINumber, SIUnit, GRAM, MOL};
+use quantity::si::{SIArray, SIArray1, SIArray2, SINumber, SIUnit};
 use std::sync::Arc;
 
 const POTENTIAL_OFFSET: f64 = 2.0;

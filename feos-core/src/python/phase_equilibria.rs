@@ -809,25 +809,22 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Returns
             /// -------
-            /// dict[str, list[float]]
+            /// Dict[str, List[float]]
             ///     Keys: property names. Values: property for each state.
-            ///
-            /// Units
-            /// -----
-            /// temperature : K
-            /// pressure : Pa
-            /// densities : mol / m³
-            /// mass densities : kg / m³
-            /// molar enthalpies : kJ / mol
-            /// molar entropies : kJ / mol / K
-            /// specific enthalpies : kJ / kg
-            /// specific entropies : kJ / kg / K
             ///
             /// Notes
             /// -----
-            /// xi: liquid molefraction of component i
-            /// yi: vapor molefraction of component i
-            /// component index `i` matches to order of components in parameters.
+            /// - temperature : K
+            /// - pressure : Pa
+            /// - densities : mol / m³
+            /// - mass densities : kg / m³
+            /// - molar enthalpies : kJ / mol
+            /// - molar entropies : kJ / mol / K
+            /// - specific enthalpies : kJ / kg
+            /// - specific entropies : kJ / kg / K
+            /// - xi: liquid molefraction of component i
+            /// - yi: vapor molefraction of component i
+            /// - component index `i` matches to order of components in parameters.
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             pub fn to_dict(&self, contributions: Contributions) -> PyResult<HashMap<String, Vec<f64>>> {
                 let n = self.0.states[0].liquid().eos.components();
