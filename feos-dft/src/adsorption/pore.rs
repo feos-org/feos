@@ -302,7 +302,7 @@ impl HelmholtzEnergyFunctional for Helium {
     }
 
     fn molar_weight(&self) -> SIArray1 {
-        SIArray1::from_vec(vec![2.0157309551872 * GRAM / MOL])
+        unreachable!()
     }
 }
 
