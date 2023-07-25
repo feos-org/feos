@@ -20,13 +20,11 @@ pub(crate) fn expand_helmholtz_energy_functional(
 
     let from = impl_from(variants)?;
     let functional = impl_helmholtz_energy_functional(variants)?;
-    let molar_weight = impl_molar_weight(variants)?;
     let fluid_parameters = impl_fluid_parameters(variants)?;
     let pair_potential = impl_pair_potential(variants)?;
     Ok(quote! {
         #from
         #functional
-        #molar_weight
         #fluid_parameters
         #pair_potential
     })
@@ -101,6 +99,16 @@ fn impl_helmholtz_energy_functional(
         }
     });
 
+    let mut molar_weight = Vec::new();
+    for v in variants.iter() {
+        if implement("molar_weight", v, &OPT_IMPLS)? {
+            let name = &v.ident;
+            molar_weight.push(quote! {
+                Self::#name(functional) => functional.molar_weight()
+            });
+        }
+    }
+
     let mut bond_lengths = Vec::new();
     for v in variants.iter() {
         if implement("bond_lengths", v, &OPT_IMPLS)? {
@@ -128,35 +136,16 @@ fn impl_helmholtz_energy_functional(
                     #(#contributions,)*
                 }
             }
-            fn bond_lengths(&self, temperature: f64) -> UnGraph<(), f64> {
-                match self {
-                    #(#bond_lengths,)*
-                    _ => Graph::with_capacity(0, 0),
-                }
-            }
-        }
-    })
-}
-
-fn impl_molar_weight(
-    variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
-) -> syn::Result<proc_macro2::TokenStream> {
-    let mut molar_weight = Vec::new();
-
-    for v in variants.iter() {
-        if implement("molar_weight", v, &OPT_IMPLS)? {
-            let name = &v.ident;
-            molar_weight.push(quote! {
-                Self::#name(functional) => functional.molar_weight()
-            });
-        }
-    }
-    Ok(quote! {
-        impl MolarWeight for FunctionalVariant {
             fn molar_weight(&self) -> SIArray1 {
                 match self {
                     #(#molar_weight,)*
                     _ => unimplemented!()
+                }
+            }
+            fn bond_lengths(&self, temperature: f64) -> UnGraph<(), f64> {
+                match self {
+                    #(#bond_lengths,)*
+                    _ => Graph::with_capacity(0, 0),
                 }
             }
         }

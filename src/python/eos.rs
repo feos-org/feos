@@ -324,7 +324,6 @@ impl PyEquationOfState {
 impl_equation_of_state!(PyEquationOfState);
 impl_virial_coefficients!(PyEquationOfState);
 impl_state!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
-impl_state_molarweight!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
 impl_state_entropy_scaling!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
 impl_phase_equilibrium!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
 

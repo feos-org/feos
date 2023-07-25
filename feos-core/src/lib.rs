@@ -425,8 +425,8 @@ mod tests {
 
         // residual properties using multiple derivatives
         assert_relative_eq!(
-            s.c_v(Contributions::Residual),
-            sr.c_v_res(),
+            s.molar_isochoric_heat_capacity(Contributions::Residual),
+            sr.residual_molar_isochoric_heat_capacity(),
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -436,13 +436,13 @@ mod tests {
         );
         println!(
             "{}\n{}\n{}",
-            s.c_p(Contributions::Residual),
-            s.c_p(Contributions::IdealGas),
-            s.c_p(Contributions::Total)
+            s.molar_isobaric_heat_capacity(Contributions::Residual),
+            s.molar_isobaric_heat_capacity(Contributions::IdealGas),
+            s.molar_isobaric_heat_capacity(Contributions::Total)
         );
         assert_relative_eq!(
-            s.c_p(Contributions::Residual),
-            sr.c_p_res(),
+            s.molar_isobaric_heat_capacity(Contributions::Residual),
+            sr.residual_molar_isobaric_heat_capacity(),
             max_relative = 1e-14
         );
         Ok(())

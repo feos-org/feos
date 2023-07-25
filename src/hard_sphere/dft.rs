@@ -7,6 +7,7 @@ use feos_dft::{
 };
 use ndarray::*;
 use num_dual::DualNum;
+use quantity::si::SIArray1;
 use std::f64::consts::PI;
 use std::fmt;
 use std::sync::Arc;
@@ -351,6 +352,10 @@ impl HelmholtzEnergyFunctional for FMTFunctional {
 
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         moles.sum() / (moles * &self.properties.sigma).sum() * 1.2
+    }
+
+    fn molar_weight(&self) -> SIArray1 {
+        unimplemented!()
     }
 
     fn molecule_shape(&self) -> MoleculeShape {

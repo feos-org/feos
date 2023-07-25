@@ -4,6 +4,7 @@
 use super::parameters::UVParameters;
 use feos_core::{parameter::Parameter, Components, EosError, EosResult, HelmholtzEnergy, Residual};
 use ndarray::Array1;
+use quantity::si::{SIArray1, GRAM, METER};
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
@@ -166,6 +167,10 @@ impl Residual for UVTheory {
 
     fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         &self.contributions
+    }
+
+    fn molar_weight(&self) -> SIArray1 {
+        self.parameters.molarweight.clone() * GRAM / METER
     }
 }
 

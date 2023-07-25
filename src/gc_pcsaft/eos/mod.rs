@@ -1,7 +1,7 @@
 use crate::association::Association;
 use crate::hard_sphere::HardSphere;
 use feos_core::parameter::ParameterHetero;
-use feos_core::{Components, HelmholtzEnergy, MolarWeight, Residual};
+use feos_core::{Components, HelmholtzEnergy, Residual};
 use ndarray::Array1;
 use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
@@ -101,9 +101,7 @@ impl Residual for GcPcSaft {
     fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         &self.contributions
     }
-}
 
-impl MolarWeight for GcPcSaft {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }

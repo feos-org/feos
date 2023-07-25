@@ -3,7 +3,7 @@ use quote::quote;
 use syn::DeriveInput;
 
 // possible additional traits to implement
-const OPT_IMPLS: [&str; 2] = ["molar_weight", "entropy_scaling"];
+const OPT_IMPLS: [&str; 1] = ["entropy_scaling"];
 
 pub(crate) fn expand_residual(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let variants = match input.data {
@@ -12,11 +12,9 @@ pub(crate) fn expand_residual(input: DeriveInput) -> syn::Result<proc_macro2::To
     };
 
     let residual = impl_residual(variants);
-    let molar_weight = impl_molar_weight(variants)?;
     let entropy_scaling = impl_entropy_scaling(variants)?;
     Ok(quote! {
         #residual
-        #molar_weight
         #entropy_scaling
     })
 }
@@ -36,6 +34,12 @@ fn impl_residual(
             Self::#name(residual) => residual.contributions()
         }
     });
+    let molar_weight = variants.iter().map(|v| {
+        let name = &v.ident;
+        quote! {
+            Self::#name(residual) => residual.molar_weight()
+        }
+    });
 
     quote! {
         impl Residual for ResidualModel {
@@ -49,33 +53,13 @@ fn impl_residual(
                     #(#contributions,)*
                 }
             }
-        }
-    }
-}
-
-fn impl_molar_weight(
-    variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
-) -> syn::Result<proc_macro2::TokenStream> {
-    let mut molar_weight = Vec::new();
-
-    for v in variants.iter() {
-        if implement("molar_weight", v, &OPT_IMPLS)? {
-            let name = &v.ident;
-            molar_weight.push(quote! {
-                Self::#name(residual) => residual.molar_weight()
-            });
-        }
-    }
-    Ok(quote! {
-        impl MolarWeight for ResidualModel {
             fn molar_weight(&self) -> SIArray1 {
                 match self {
                     #(#molar_weight,)*
-                    _ => unimplemented!()
                 }
             }
         }
-    })
+    }
 }
 
 fn impl_entropy_scaling(

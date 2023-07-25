@@ -3,7 +3,7 @@ use crate::association::Association;
 use crate::hard_sphere::HardSphere;
 use feos_core::parameter::Parameter;
 use feos_core::{
-    Components, EntropyScaling, EosError, EosResult, HelmholtzEnergy, MolarWeight, Residual, State,
+    Components, EntropyScaling, EosError, EosResult, HelmholtzEnergy, Residual, State,
 };
 use ndarray::Array1;
 use quantity::si::*;
@@ -116,6 +116,10 @@ impl Residual for PcSaft {
     fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         &self.contributions
     }
+
+    fn molar_weight(&self) -> SIArray1 {
+        self.parameters.molarweight.clone() * GRAM / MOL
+    }
 }
 
 impl fmt::Display for PcSaft {
@@ -124,11 +128,6 @@ impl fmt::Display for PcSaft {
     }
 }
 
-impl MolarWeight for PcSaft {
-    fn molar_weight(&self) -> SIArray1 {
-        self.parameters.molarweight.clone() * GRAM / MOL
-    }
-}
 
 fn omega11(t: f64) -> f64 {
     1.06036 * t.powf(-0.15610)

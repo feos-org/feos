@@ -228,7 +228,6 @@ impl PyFunctionalVariant {
 impl_equation_of_state!(PyFunctionalVariant);
 
 impl_state!(DFT<Functional>, PyFunctionalVariant);
-impl_state_molarweight!(DFT<Functional>, PyFunctionalVariant);
 impl_phase_equilibrium!(DFT<Functional>, PyFunctionalVariant);
 
 impl_planar_interface!(Functional);

@@ -3,7 +3,7 @@ use super::parameters::PetsParameters;
 use crate::hard_sphere::{FMTContribution, FMTVersion};
 use dispersion::AttractiveFunctional;
 use feos_core::parameter::Parameter;
-use feos_core::{Components, MolarWeight};
+use feos_core::Components;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
@@ -109,9 +109,7 @@ impl HelmholtzEnergyFunctional for PetsFunctional {
     fn contributions(&self) -> &[Box<dyn FunctionalContribution>] {
         &self.contributions
     }
-}
 
-impl MolarWeight for PetsFunctional {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }

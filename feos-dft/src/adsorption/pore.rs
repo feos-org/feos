@@ -10,7 +10,7 @@ use ndarray::prelude::*;
 use ndarray::Axis as Axis_nd;
 use ndarray::RemoveAxis;
 use num_dual::linalg::LU;
-use quantity::si::{SIArray, SIArray1, SIArray2, SINumber, SIUnit};
+use quantity::si::{SIArray, SIArray1, SIArray2, SINumber, SIUnit, GRAM, MOL};
 use std::sync::Arc;
 
 const POTENTIAL_OFFSET: f64 = 2.0;
@@ -299,6 +299,10 @@ impl HelmholtzEnergyFunctional for Helium {
 
     fn molecule_shape(&self) -> MoleculeShape {
         MoleculeShape::Spherical(1)
+    }
+
+    fn molar_weight(&self) -> SIArray1 {
+        SIArray1::from_vec(vec![2.0157309551872 * GRAM / MOL])
     }
 }
 

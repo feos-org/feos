@@ -310,18 +310,18 @@ impl<E: Residual> State<E> {
         })
     }
 
-    /// Molar residual isochoric heat capacity: $c_v^\text{res}=\left(\frac{\partial u^\text{res}}{\partial T}\right)_{V,N_i}$
-    pub fn c_v_res(&self) -> SINumber {
+    /// Residual molar isochoric heat capacity: $c_v^\text{res}=\left(\frac{\partial u^\text{res}}{\partial T}\right)_{V,N_i}$
+    pub fn residual_molar_isochoric_heat_capacity(&self) -> SINumber {
         self.temperature * self.ds_res_dt() / self.total_moles
     }
 
-    /// Partial derivative of the molar residual isochoric heat capacity w.r.t. temperature: $\left(\frac{\partial c_V^\text{res}}{\partial T}\right)_{V,N_i}$
+    /// Partial derivative of the residual molar isochoric heat capacity w.r.t. temperature: $\left(\frac{\partial c_V^\text{res}}{\partial T}\right)_{V,N_i}$
     pub fn dc_v_res_dt(&self) -> SINumber {
         (self.temperature * self.d2s_res_dt2() + self.ds_res_dt()) / self.total_moles
     }
 
-    /// Molar residual isobaric heat capacity: $c_p^\text{res}=\left(\frac{\partial h^\text{res}}{\partial T}\right)_{p,N_i}$
-    pub fn c_p_res(&self) -> SINumber {
+    /// Residual molar isobaric heat capacity: $c_p^\text{res}=\left(\frac{\partial h^\text{res}}{\partial T}\right)_{p,N_i}$
+    pub fn residual_molar_isobaric_heat_capacity(&self) -> SINumber {
         self.temperature / self.total_moles
             * (self.ds_res_dt()
                 - self.dp_dt(Contributions::Total).powi(2) / self.dp_dv(Contributions::Total))
@@ -335,9 +335,19 @@ impl<E: Residual> State<E> {
             + self.pressure(Contributions::Residual) * self.volume
     }
 
+    /// Residual molar enthalpy: $h^\text{res}(T,p,\mathbf{n})=a^\text{res}+Ts^\text{res}+p^\text{res}v$
+    pub fn residual_molar_enthalpy(&self) -> SINumber {
+        self.residual_enthalpy() / self.total_moles
+    }
+
     /// Residual internal energy: $U^\text{res}(T,V,\mathbf{n})=A^\text{res}+TS^\text{res}$
     pub fn residual_internal_energy(&self) -> SINumber {
         self.temperature * self.residual_entropy() + self.residual_helmholtz_energy()
+    }
+
+    /// Residual molar internal energy: $u^\text{res}(T,V,\mathbf{n})=a^\text{res}+Ts^\text{res}$
+    pub fn residual_molar_internal_energy(&self) -> SINumber {
+        self.residual_internal_energy() / self.total_moles
     }
 
     /// Residual Gibbs energy: $G^\text{res}(T,p,\mathbf{n})=A^\text{res}+p^\text{res}V-NRT \ln Z$
@@ -347,6 +357,11 @@ impl<E: Residual> State<E> {
                 * SIUnit::gas_constant()
                 * self.temperature
                 * self.compressibility(Contributions::Total).ln()
+    }
+
+    /// Residual Gibbs energy: $g^\text{res}(T,p,\mathbf{n})=a^\text{res}+p^\text{res}v-RT \ln Z$
+    pub fn residual_molar_gibbs_energy(&self) -> SINumber {
+        self.residual_gibbs_energy() / self.total_moles
     }
 
     pub fn total_molar_weight(&self) -> SINumber {
