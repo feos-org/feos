@@ -1,7 +1,5 @@
 use super::{DataSet, EstimatorError};
-use feos_core::{
-    DensityInitialization, EosUnit, PhaseEquilibrium, Residual, SolverOptions, State,
-};
+use feos_core::{DensityInitialization, EosUnit, PhaseEquilibrium, Residual, SolverOptions, State};
 use ndarray::arr1;
 use quantity::si::{SIArray1, SIUnit};
 use std::collections::HashMap;

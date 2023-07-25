@@ -784,7 +784,7 @@ macro_rules! impl_state {
             /// contributions: Contributions, optional
             ///     the contributions of the helmholtz energy.
             ///     Defaults to Contributions.Total.
-            /// 
+            ///
             /// Returns
             /// -------
             /// List[Tuple[str, SINumber]]

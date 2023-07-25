@@ -11,7 +11,6 @@ pub use helmholtz_energy::{HelmholtzEnergy, HelmholtzEnergyDual};
 pub use ideal_gas::{DeBroglieWavelength, DeBroglieWavelengthDual, IdealGas};
 pub use residual::{EntropyScaling, Residual};
 
-
 /// The number of components that the model is initialized for.
 pub trait Components {
     /// Return the number of components of the model.

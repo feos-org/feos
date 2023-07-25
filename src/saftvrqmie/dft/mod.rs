@@ -93,7 +93,7 @@ impl HelmholtzEnergyFunctional for SaftVRQMieFunctional {
     fn contributions(&self) -> &[Box<dyn FunctionalContribution>] {
         &self.contributions
     }
-    
+
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }

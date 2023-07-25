@@ -239,7 +239,10 @@ impl<E: Residual + IdealGas> State<E> {
     }
 
     /// Helmholtz energy $A$ evaluated for each contribution of the equation of state.
-    pub fn helmholtz_energy_contributions(&self, contributions: Contributions) -> Vec<(String, SINumber)> {
+    pub fn helmholtz_energy_contributions(
+        &self,
+        contributions: Contributions,
+    ) -> Vec<(String, SINumber)> {
         let new_state = self.derive0();
         let residual_contributions = self.eos.evaluate_residual_contributions(&new_state);
         let mut res = Vec::with_capacity(residual_contributions.len() + 1);
@@ -250,7 +253,7 @@ impl<E: Residual + IdealGas> State<E> {
                     * new_state.temperature
                     * SIUnit::reference_energy(),
             )),
-            _ => ()
+            _ => (),
         }
         for (s, v) in residual_contributions {
             res.push((s, v * new_state.temperature * SIUnit::reference_energy()));

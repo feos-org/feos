@@ -334,7 +334,7 @@ fn test_entropy_bulk_values() -> Result<(), Box<dyn Error>> {
         vec!["water_np"],
         "tests/pcsaft/test_parameters_joback.json",
         None,
-        IdentifierOption::Name
+        IdentifierOption::Name,
     )?;
     let joback = Joback::new(Arc::new(joback_params));
     let func = Arc::new(PcSaftFunctional::new(Arc::new(params)).ideal_gas(joback));

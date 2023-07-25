@@ -128,7 +128,6 @@ impl fmt::Display for PcSaft {
     }
 }
 
-
 fn omega11(t: f64) -> f64 {
     1.06036 * t.powf(-0.15610)
         + 0.19300 * (-0.47635 * t).exp()

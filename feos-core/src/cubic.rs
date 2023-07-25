@@ -237,7 +237,6 @@ impl Residual for PengRobinson {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

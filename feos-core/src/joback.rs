@@ -165,7 +165,11 @@ impl Joback {
     }
 
     /// Directly calculates the molar ideal gas heat capacity from the Joback model.
-    pub fn molar_isobaric_heat_capacity(&self, temperature: SINumber, molefracs: &Array1<f64>) -> EosResult<SINumber> {
+    pub fn molar_isobaric_heat_capacity(
+        &self,
+        temperature: SINumber,
+        molefracs: &Array1<f64>,
+    ) -> EosResult<SINumber> {
         let t = temperature.to_reduced(SIUnit::reference_temperature())?;
         let p = &self.parameters;
         let c_p = (molefracs
