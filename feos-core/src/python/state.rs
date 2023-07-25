@@ -1164,6 +1164,71 @@ macro_rules! impl_state {
                 }
             }
 
+            /// Return molar entropy.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SIArray1
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn molar_entropy(&self, contributions: Contributions) -> PySIArray1 {
+                StateVec::from(self).molar_entropy(contributions).into()
+            }
+
+            /// Return mass specific entropy.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SIArray1
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn specific_entropy(&self, contributions: Contributions) -> PySIArray1 {
+                StateVec::from(self).specific_entropy(contributions).into()
+            }
+
+            /// Return molar enthalpy.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SIArray1
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn molar_enthalpy(&self, contributions: Contributions) -> PySIArray1 {
+                StateVec::from(self).molar_enthalpy(contributions).into()
+            }
+
+            /// Return mass specific enthalpy.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SIArray1
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn specific_enthalpy(&self, contributions: Contributions) -> PySIArray1 {
+                StateVec::from(self).specific_enthalpy(contributions).into()
+            }
+
+
             #[getter]
             fn get_temperature(&self) -> PySIArray1{
                 StateVec::from(self).temperature().into()
@@ -1195,16 +1260,6 @@ macro_rules! impl_state {
             }
 
             #[getter]
-            fn get_molar_enthalpy(&self) -> PySIArray1 {
-                StateVec::from(self).molar_enthalpy().into()
-            }
-
-            #[getter]
-            fn get_molar_entropy(&self) -> PySIArray1 {
-                StateVec::from(self).molar_entropy().into()
-            }
-
-            #[getter]
             fn get_mass_density(&self) -> PySIArray1 {
                 StateVec::from(self).mass_density().into()
             }
@@ -1212,16 +1267,6 @@ macro_rules! impl_state {
             #[getter]
             fn get_massfracs<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
                 StateVec::from(self).massfracs().view().to_pyarray(py)
-            }
-
-            #[getter]
-            fn get_specific_enthalpy(&self) -> PySIArray1 {
-                StateVec::from(self).specific_enthalpy().into()
-            }
-
-            #[getter]
-            fn get_specific_entropy(&self) -> PySIArray1 {
-                StateVec::from(self).specific_entropy().into()
             }
         }
     };

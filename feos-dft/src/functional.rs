@@ -169,7 +169,7 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
 
     /// Molar weight of all components.
     ///
-    /// Enables to calculate (mass) specific properties.
+    /// Enables calculation of (mass) specific properties.
     fn molar_weight(&self) -> SIArray1;
 
     /// Return the maximum density in Angstrom^-3.
