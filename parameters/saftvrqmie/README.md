@@ -1,4 +1,4 @@
-# Parameters
+# SAFT-VRQ Mie Parameters
 
 This directory contains files with parameters for SAFT-VRQ Mie equation of state.
 The files named according to the pattern `NameYear.json` correspond to published parameters. The corresponding publication is provided in the [`literature.bib`](literature.bib) file.
