@@ -164,8 +164,12 @@ impl Joback {
         Self { parameters }
     }
 
-    /// Directly calculates the ideal gas heat capacity from the Joback model.
-    pub fn c_p(&self, temperature: SINumber, molefracs: &Array1<f64>) -> EosResult<SINumber> {
+    /// Directly calculates the molar ideal gas heat capacity from the Joback model.
+    pub fn molar_isobaric_heat_capacity(
+        &self,
+        temperature: SINumber,
+        molefracs: &Array1<f64>,
+    ) -> EosResult<SINumber> {
         let t = temperature.to_reduced(SIUnit::reference_temperature())?;
         let p = &self.parameters;
         let c_p = (molefracs
@@ -254,6 +258,12 @@ mod tests {
 
         fn contributions(&self) -> &[Box<dyn crate::HelmholtzEnergy>] {
             &[]
+        }
+
+        fn molar_weight(&self) -> SIArray1 {
+            SIArray1::from_shape_fn(self.components(), |i| {
+                self.parameters.pure_records[i].molarweight * GRAM / MOL
+            })
         }
     }
 
@@ -351,7 +361,7 @@ mod tests {
         )?;
         assert!(
             (state
-                .c_p(Contributions::IdealGas)
+                .molar_isobaric_heat_capacity(Contributions::IdealGas)
                 .to_reduced(JOULE / MOL / KELVIN)?
                 - 224.6)
                 .abs()
@@ -384,12 +394,12 @@ mod tests {
             .build()?;
         println!(
             "{} {}",
-            joback.c_p(temperature, &state.molefracs)?,
-            state.c_p(Contributions::IdealGas)
+            joback.molar_isobaric_heat_capacity(temperature, &state.molefracs)?,
+            state.molar_isobaric_heat_capacity(Contributions::IdealGas)
         );
         assert_relative_eq!(
-            joback.c_p(temperature, &state.molefracs)?,
-            state.c_p(Contributions::IdealGas),
+            joback.molar_isobaric_heat_capacity(temperature, &state.molefracs)?,
+            state.molar_isobaric_heat_capacity(Contributions::IdealGas),
             max_relative = 1e-10
         );
         Ok(())

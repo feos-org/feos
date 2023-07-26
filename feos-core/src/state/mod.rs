@@ -618,7 +618,7 @@ impl<E: Residual + IdealGas> State<E> {
         let mut density = density_initialization;
         let f = |x0| {
             let s = State::new_npt(eos, x0, pressure, moles, density)?;
-            let dfx = s.c_p(Contributions::Total);
+            let dfx = s.molar_isobaric_heat_capacity(Contributions::Total);
             let fx = s.molar_enthalpy(Contributions::Total) - molar_enthalpy;
             density = DensityInitialization::InitialDensity(s.density);
             Ok((fx, dfx, s))
@@ -690,7 +690,7 @@ impl<E: Residual + IdealGas> State<E> {
         let mut density = density_initialization;
         let f = |x0| {
             let s = State::new_npt(eos, x0, pressure, moles, density)?;
-            let dfx = s.c_p(Contributions::Total) / s.temperature;
+            let dfx = s.molar_isobaric_heat_capacity(Contributions::Total) / s.temperature;
             let fx = s.molar_entropy(Contributions::Total) - molar_entropy;
             density = DensityInitialization::InitialDensity(s.density);
             Ok((fx, dfx, s))
@@ -710,7 +710,7 @@ impl<E: Residual + IdealGas> State<E> {
         let f = |x0| {
             let s = State::new_nvt(eos, x0, volume, moles)?;
             let fx = s.molar_internal_energy(Contributions::Total) - molar_internal_energy;
-            let dfx = s.c_v(Contributions::Total);
+            let dfx = s.molar_isochoric_heat_capacity(Contributions::Total);
             Ok((fx, dfx, s))
         };
         newton(t0, f, 1.0e-8 * SIUnit::reference_temperature())

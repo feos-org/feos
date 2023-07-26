@@ -1,7 +1,7 @@
 use super::parameters::SaftVRQMieParameters;
 use feos_core::parameter::{Parameter, ParameterError};
 use feos_core::{
-    Components, EntropyScaling, EosError, EosResult, HelmholtzEnergy, MolarWeight, Residual, State,
+    Components, EntropyScaling, EosError, EosResult, HelmholtzEnergy, Residual, State,
 };
 use ndarray::Array1;
 use quantity::si::*;
@@ -120,9 +120,7 @@ impl Residual for SaftVRQMie {
     fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         &self.contributions
     }
-}
 
-impl MolarWeight for SaftVRQMie {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }
@@ -277,11 +275,8 @@ impl EntropyScaling for SaftVRQMie {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN)
                     .into_value()
                     .unwrap();
-                let s_res_reduced = state
-                    .residual_entropy()
-                    .to_reduced(RGAS * state.total_moles)
-                    .unwrap()
-                    / p.m[i];
+                let s_res_reduced =
+                    state.residual_molar_entropy().to_reduced(RGAS).unwrap() / p.m[i];
                 let ref_ce = chapman_enskog_thermal_conductivity(
                     temperature,
                     mws.get(i),

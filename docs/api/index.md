@@ -7,6 +7,7 @@
    :maxdepth: 1
 
    si
+   ideal_gas
    eos
    dft
 ```

@@ -20,7 +20,6 @@ from feos.gc_pcsaft import GcPcSaftParameters
     Identifier
     IdentifierOption
     ChemicalRecord
-    JobackRecord
     AssociationRecord
     SegmentRecord
     BinarySegmentRecord

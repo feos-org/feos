@@ -13,7 +13,6 @@
 
     Identifier
     ChemicalRecord
-    JobackRecord
     PureRecord
     BinaryRecord
     PetsRecord

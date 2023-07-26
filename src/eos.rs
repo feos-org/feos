@@ -24,21 +24,16 @@ use quantity::si::*;
 #[derive(Components, Residual)]
 pub enum ResidualModel {
     #[cfg(feature = "pcsaft")]
-    #[implement(entropy_scaling, molar_weight)]
+    #[implement(entropy_scaling)]
     PcSaft(PcSaft),
     #[cfg(feature = "gc_pcsaft")]
-    #[implement(molar_weight)]
     GcPcSaft(GcPcSaft),
-    #[implement(molar_weight)]
     PengRobinson(PengRobinson),
     #[cfg(feature = "python")]
-    #[implement(molar_weight)]
     Python(PyResidual),
     #[cfg(feature = "saftvrqmie")]
-    #[implement(molar_weight)]
     SaftVRQMie(SaftVRQMie),
     #[cfg(feature = "pets")]
-    #[implement(molar_weight)]
     Pets(Pets),
     #[cfg(feature = "uvtheory")]
     UVTheory(UVTheory),

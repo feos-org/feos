@@ -61,7 +61,9 @@ fn properties_pcsaft(c: &mut Criterion) {
         b.iter(|| property_no_contributions((&eos, S::ln_phi, t, v, &m)))
     });
     group.bench_function("c_v", |b| {
-        b.iter(|| property_no_contributions((&eos, S::c_v_res, t, v, &m)))
+        b.iter(|| {
+            property_no_contributions((&eos, S::residual_molar_isochoric_heat_capacity, t, v, &m))
+        })
     });
     group.bench_function("partial_molar_volume", |b| {
         b.iter(|| property_no_contributions((&eos, S::partial_molar_volume, t, v, &m)))
@@ -94,7 +96,9 @@ fn properties_pcsaft_polar(c: &mut Criterion) {
         b.iter(|| property_no_contributions((&eos, S::ln_phi, t, v, &m)))
     });
     group.bench_function("c_v", |b| {
-        b.iter(|| property_no_contributions((&eos, S::c_v_res, t, v, &m)))
+        b.iter(|| {
+            property_no_contributions((&eos, S::residual_molar_isochoric_heat_capacity, t, v, &m))
+        })
     });
     group.bench_function("partial_molar_volume", |b| {
         b.iter(|| property_no_contributions((&eos, S::partial_molar_volume, t, v, &m)))

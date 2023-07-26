@@ -83,8 +83,8 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
             let (p_l, p_rho_l) = liquid.p_dpdrho();
             let (p_v, p_rho_v) = vapor.p_dpdrho();
             // calculate the molar Helmholtz energies (already cached)
-            let a_l_res = liquid.residual_helmholtz_energy() / liquid.total_moles;
-            let a_v_res = vapor.residual_helmholtz_energy() / vapor.total_moles;
+            let a_l_res = liquid.residual_molar_helmholtz_energy();
+            let a_v_res = vapor.residual_molar_helmholtz_energy();
 
             // Estimate the new pressure
             let kt = SIUnit::gas_constant() * vapor.temperature;
@@ -194,12 +194,12 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
             let p_t_v = vle.vapor().dp_dt(Contributions::Total);
 
             // calculate the residual molar entropies (already cached)
-            let s_l_res = vle.liquid().residual_entropy() / vle.liquid().total_moles;
-            let s_v_res = vle.vapor().residual_entropy() / vle.vapor().total_moles;
+            let s_l_res = vle.liquid().residual_molar_entropy();
+            let s_v_res = vle.vapor().residual_molar_entropy();
 
             // calculate the residual molar Helmholtz energies (already cached)
-            let a_l_res = vle.liquid().residual_helmholtz_energy() / vle.liquid().total_moles;
-            let a_v_res = vle.vapor().residual_helmholtz_energy() / vle.vapor().total_moles;
+            let a_l_res = vle.liquid().residual_molar_helmholtz_energy();
+            let a_v_res = vle.vapor().residual_molar_helmholtz_energy();
 
             // calculate the molar volumes
             let v_l = 1.0 / vle.liquid().density;

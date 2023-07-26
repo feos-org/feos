@@ -4,6 +4,7 @@
 use super::parameters::UVParameters;
 use feos_core::{parameter::Parameter, Components, EosError, EosResult, HelmholtzEnergy, Residual};
 use ndarray::Array1;
+use quantity::si::{SIArray1, GRAM, METER};
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
@@ -167,6 +168,10 @@ impl Residual for UVTheory {
     fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         &self.contributions
     }
+
+    fn molar_weight(&self) -> SIArray1 {
+        self.parameters.molarweight.clone() * GRAM / METER
+    }
 }
 
 #[cfg(test)]
@@ -194,7 +199,8 @@ mod test {
         let moles = arr1(&[2.0]) * MOL;
         let volume = (sig * ANGSTROM).powi(3) / reduced_density * NAV * 2.0 * MOL;
         let s = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
-        let a = (s.residual_helmholtz_energy() / s.total_moles)
+        let a = s
+            .residual_molar_helmholtz_energy()
             .to_reduced(RGAS * temperature)
             .unwrap();
         assert_relative_eq!(a, 2.972986567516, max_relative = 1e-12); //wca
@@ -222,7 +228,8 @@ mod test {
         let volume = (sig * ANGSTROM).powi(3) / reduced_density * NAV * 2.0 * MOL;
         let s = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
 
-        let a = (s.residual_helmholtz_energy() / s.total_moles)
+        let a = s
+            .residual_molar_helmholtz_energy()
             .to_reduced(RGAS * temperature)
             .unwrap();
 
@@ -251,8 +258,8 @@ mod test {
         let volume = (sig * ANGSTROM).powi(3) / reduced_density * NAV * 2.0 * MOL;
         let s = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
         let a = s
-            .residual_helmholtz_energy()
-            .to_reduced(RGAS * temperature * s.total_moles)
+            .residual_molar_helmholtz_energy()
+            .to_reduced(RGAS * temperature)
             .unwrap();
         dbg!(a);
         assert_relative_eq!(a, 0.37659379124271003, max_relative = 1e-12);
@@ -301,8 +308,8 @@ mod test {
 
         let state_bh = State::new_nvt(&eos_bh, t_x, volume, &moles).unwrap();
         let a_bh = state_bh
-            .residual_helmholtz_energy()
-            .to_reduced(RGAS * t_x * state_bh.total_moles)
+            .residual_molar_helmholtz_energy()
+            .to_reduced(RGAS * t_x)
             .unwrap();
 
         assert_relative_eq!(a_bh, 2.993577305779432, max_relative = 1e-12);
@@ -360,8 +367,8 @@ mod test {
         let eos_wca = Arc::new(UVTheory::new(Arc::new(p))?);
         let state_wca = State::new_nvt(&eos_wca, t_x, volume, &moles).unwrap();
         let a_wca = state_wca
-            .residual_helmholtz_energy()
-            .to_reduced(RGAS * t_x * state_wca.total_moles)
+            .residual_molar_helmholtz_energy()
+            .to_reduced(RGAS * t_x)
             .unwrap();
         assert_relative_eq!(a_wca, -0.034206207363139396, max_relative = 1e-5);
         Ok(())

@@ -66,9 +66,30 @@ impl<E: Residual> State<E> {
         self.get_or_compute_derivative_residual(PartialDerivative::Zeroth)
     }
 
+    /// Residual molar Helmholtz energy $a^\text{res}$
+    pub fn residual_molar_helmholtz_energy(&self) -> SINumber {
+        self.residual_helmholtz_energy() / self.total_moles
+    }
+
+    /// Residual Helmholtz energy $A^\text{res}$ evaluated for each contribution of the equation of state.
+    pub fn residual_helmholtz_energy_contributions(&self) -> Vec<(String, SINumber)> {
+        let new_state = self.derive0();
+        let residual_contributions = self.eos.evaluate_residual_contributions(&new_state);
+        let mut res = Vec::with_capacity(residual_contributions.len());
+        for (s, v) in residual_contributions {
+            res.push((s, v * new_state.temperature * SIUnit::reference_energy()));
+        }
+        res
+    }
+
     /// Residual entropy $S^\text{res}=\left(\frac{\partial A^\text{res}}{\partial T}\right)_{V,N_i}$
     pub fn residual_entropy(&self) -> SINumber {
         -self.get_or_compute_derivative_residual(PartialDerivative::First(DT))
+    }
+
+    /// Residual entropy $s^\text{res}=\left(\frac{\partial a^\text{res}}{\partial T}\right)_{V,N_i}$
+    pub fn residual_molar_entropy(&self) -> SINumber {
+        self.residual_entropy() / self.total_moles
     }
 
     /// Pressure: $p=-\left(\frac{\partial A}{\partial V}\right)_{T,N_i}$
@@ -83,6 +104,23 @@ impl<E: Residual> State<E> {
         SIArray::from_shape_fn(self.eos.components(), |i| {
             self.get_or_compute_derivative_residual(PartialDerivative::First(DN(i)))
         })
+    }
+
+    /// Chemical potential $\mu_i^\text{res}$ evaluated for each contribution of the equation of state.
+    pub fn residual_chemical_potential_contributions(
+        &self,
+        component: usize,
+    ) -> Vec<(String, SINumber)> {
+        let new_state = self.derive1(DN(component));
+        let contributions = self.eos.evaluate_residual_contributions(&new_state);
+        let mut res = Vec::with_capacity(contributions.len());
+        for (s, v) in contributions {
+            res.push((
+                s,
+                (v * new_state.temperature).eps * SIUnit::reference_molar_energy(),
+            ));
+        }
+        res
     }
 
     /// Compressibility factor: $Z=\frac{pV}{NRT}$
@@ -310,18 +348,18 @@ impl<E: Residual> State<E> {
         })
     }
 
-    /// Molar residual isochoric heat capacity: $c_v^\text{res}=\left(\frac{\partial u^\text{res}}{\partial T}\right)_{V,N_i}$
-    pub fn c_v_res(&self) -> SINumber {
+    /// Residual molar isochoric heat capacity: $c_v^\text{res}=\left(\frac{\partial u^\text{res}}{\partial T}\right)_{V,N_i}$
+    pub fn residual_molar_isochoric_heat_capacity(&self) -> SINumber {
         self.temperature * self.ds_res_dt() / self.total_moles
     }
 
-    /// Partial derivative of the molar residual isochoric heat capacity w.r.t. temperature: $\left(\frac{\partial c_V^\text{res}}{\partial T}\right)_{V,N_i}$
+    /// Partial derivative of the residual molar isochoric heat capacity w.r.t. temperature: $\left(\frac{\partial c_V^\text{res}}{\partial T}\right)_{V,N_i}$
     pub fn dc_v_res_dt(&self) -> SINumber {
         (self.temperature * self.d2s_res_dt2() + self.ds_res_dt()) / self.total_moles
     }
 
-    /// Molar residual isobaric heat capacity: $c_p^\text{res}=\left(\frac{\partial h^\text{res}}{\partial T}\right)_{p,N_i}$
-    pub fn c_p_res(&self) -> SINumber {
+    /// Residual molar isobaric heat capacity: $c_p^\text{res}=\left(\frac{\partial h^\text{res}}{\partial T}\right)_{p,N_i}$
+    pub fn residual_molar_isobaric_heat_capacity(&self) -> SINumber {
         self.temperature / self.total_moles
             * (self.ds_res_dt()
                 - self.dp_dt(Contributions::Total).powi(2) / self.dp_dv(Contributions::Total))
@@ -335,9 +373,19 @@ impl<E: Residual> State<E> {
             + self.pressure(Contributions::Residual) * self.volume
     }
 
+    /// Residual molar enthalpy: $h^\text{res}(T,p,\mathbf{n})=a^\text{res}+Ts^\text{res}+p^\text{res}v$
+    pub fn residual_molar_enthalpy(&self) -> SINumber {
+        self.residual_enthalpy() / self.total_moles
+    }
+
     /// Residual internal energy: $U^\text{res}(T,V,\mathbf{n})=A^\text{res}+TS^\text{res}$
     pub fn residual_internal_energy(&self) -> SINumber {
         self.temperature * self.residual_entropy() + self.residual_helmholtz_energy()
+    }
+
+    /// Residual molar internal energy: $u^\text{res}(T,V,\mathbf{n})=a^\text{res}+Ts^\text{res}$
+    pub fn residual_molar_internal_energy(&self) -> SINumber {
+        self.residual_internal_energy() / self.total_moles
     }
 
     /// Residual Gibbs energy: $G^\text{res}(T,p,\mathbf{n})=A^\text{res}+p^\text{res}V-NRT \ln Z$
@@ -348,6 +396,36 @@ impl<E: Residual> State<E> {
                 * self.temperature
                 * self.compressibility(Contributions::Total).ln()
     }
+
+    /// Residual Gibbs energy: $g^\text{res}(T,p,\mathbf{n})=a^\text{res}+p^\text{res}v-RT \ln Z$
+    pub fn residual_molar_gibbs_energy(&self) -> SINumber {
+        self.residual_gibbs_energy() / self.total_moles
+    }
+
+    /// Total molar weight: $MW=\sum_ix_iMW_i$
+    pub fn total_molar_weight(&self) -> SINumber {
+        (self.eos.molar_weight() * &self.molefracs).sum()
+    }
+
+    /// Mass of each component: $m_i=n_iMW_i$
+    pub fn mass(&self) -> SIArray1 {
+        self.moles.clone() * self.eos.molar_weight()
+    }
+
+    /// Total mass: $m=\sum_im_i=nMW$
+    pub fn total_mass(&self) -> SINumber {
+        self.total_moles * self.total_molar_weight()
+    }
+
+    /// Mass density: $\rho^{(m)}=\frac{m}{V}$
+    pub fn mass_density(&self) -> SINumber {
+        self.density * self.total_molar_weight()
+    }
+
+    /// Mass fractions: $w_i=\frac{m_i}{m}$
+    pub fn massfracs(&self) -> Array1<f64> {
+        self.mass().to_reduced(self.total_mass()).unwrap()
+    }
 }
 
 /// # Transport properties
@@ -357,7 +435,8 @@ impl<E: Residual> State<E> {
 impl<E: Residual + EntropyScaling> State<E> {
     /// Return the viscosity via entropy scaling.
     pub fn viscosity(&self) -> EosResult<SINumber> {
-        let s = (self.residual_entropy() / self.total_moles)
+        let s = self
+            .residual_molar_entropy()
             .to_reduced(SIUnit::reference_molar_entropy())?;
         Ok(self
             .eos
@@ -370,7 +449,8 @@ impl<E: Residual + EntropyScaling> State<E> {
     /// This term equals the viscosity correlation function
     /// that is used for entropy scaling.
     pub fn ln_viscosity_reduced(&self) -> EosResult<f64> {
-        let s = (self.residual_entropy() / self.total_moles)
+        let s = self
+            .residual_molar_entropy()
             .to_reduced(SIUnit::reference_molar_entropy())?;
         self.eos.viscosity_correlation(s, &self.molefracs)
     }
@@ -383,7 +463,8 @@ impl<E: Residual + EntropyScaling> State<E> {
 
     /// Return the diffusion via entropy scaling.
     pub fn diffusion(&self) -> EosResult<SINumber> {
-        let s = (self.residual_entropy() / self.total_moles)
+        let s = self
+            .residual_molar_entropy()
             .to_reduced(SIUnit::reference_molar_entropy())?;
         Ok(self
             .eos
@@ -396,7 +477,8 @@ impl<E: Residual + EntropyScaling> State<E> {
     /// This term equals the diffusion correlation function
     /// that is used for entropy scaling.
     pub fn ln_diffusion_reduced(&self) -> EosResult<f64> {
-        let s = (self.residual_entropy() / self.total_moles)
+        let s = self
+            .residual_molar_entropy()
             .to_reduced(SIUnit::reference_molar_entropy())?;
         self.eos.diffusion_correlation(s, &self.molefracs)
     }
@@ -409,7 +491,8 @@ impl<E: Residual + EntropyScaling> State<E> {
 
     /// Return the thermal conductivity via entropy scaling.
     pub fn thermal_conductivity(&self) -> EosResult<SINumber> {
-        let s = (self.residual_entropy() / self.total_moles)
+        let s = self
+            .residual_molar_entropy()
             .to_reduced(SIUnit::reference_molar_entropy())?;
         Ok(self
             .eos
@@ -425,7 +508,8 @@ impl<E: Residual + EntropyScaling> State<E> {
     /// This term equals the thermal conductivity correlation function
     /// that is used for entropy scaling.
     pub fn ln_thermal_conductivity_reduced(&self) -> EosResult<f64> {
-        let s = (self.residual_entropy() / self.total_moles)
+        let s = self
+            .residual_molar_entropy()
             .to_reduced(SIUnit::reference_molar_entropy())?;
         self.eos
             .thermal_conductivity_correlation(s, &self.molefracs)

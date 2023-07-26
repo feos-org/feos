@@ -1,5 +1,5 @@
 use super::{DataSet, EstimatorError, Phase};
-use feos_core::{DensityInitialization, EntropyScaling, EosUnit, State, Residual};
+use feos_core::{DensityInitialization, EntropyScaling, EosUnit, Residual, State};
 use itertools::izip;
 use ndarray::{arr1, Array1};
 use quantity::si::{SIArray1, SIUnit};

@@ -1,5 +1,5 @@
 use super::{Contributions, State};
-use crate::equation_of_state::{IdealGas, MolarWeight, Residual};
+use crate::equation_of_state::{IdealGas, Residual};
 use ndarray::{Array1, Array2};
 use quantity::si::{SIArray1, SIArray2};
 use std::iter::FromIterator;
@@ -65,20 +65,14 @@ impl<'a, E: Residual> StateVec<'a, E> {
 }
 
 impl<'a, E: Residual + IdealGas> StateVec<'a, E> {
-    pub fn molar_enthalpy(&self) -> SIArray1 {
-        SIArray1::from_shape_fn(self.0.len(), |i| {
-            self.0[i].molar_enthalpy(Contributions::Total)
-        })
+    pub fn molar_enthalpy(&self, contributions: Contributions) -> SIArray1 {
+        SIArray1::from_shape_fn(self.0.len(), |i| self.0[i].molar_enthalpy(contributions))
     }
 
-    pub fn molar_entropy(&self) -> SIArray1 {
-        SIArray1::from_shape_fn(self.0.len(), |i| {
-            self.0[i].molar_entropy(Contributions::Total)
-        })
+    pub fn molar_entropy(&self, contributions: Contributions) -> SIArray1 {
+        SIArray1::from_shape_fn(self.0.len(), |i| self.0[i].molar_entropy(contributions))
     }
-}
 
-impl<'a, E: Residual + IdealGas + MolarWeight> StateVec<'a, E> {
     pub fn mass_density(&self) -> SIArray1 {
         SIArray1::from_shape_fn(self.0.len(), |i| self.0[i].mass_density())
     }
@@ -89,15 +83,11 @@ impl<'a, E: Residual + IdealGas + MolarWeight> StateVec<'a, E> {
         })
     }
 
-    pub fn specific_enthalpy(&self) -> SIArray1 {
-        SIArray1::from_shape_fn(self.0.len(), |i| {
-            self.0[i].specific_enthalpy(Contributions::Total)
-        })
+    pub fn specific_enthalpy(&self, contributions: Contributions) -> SIArray1 {
+        SIArray1::from_shape_fn(self.0.len(), |i| self.0[i].specific_enthalpy(contributions))
     }
 
-    pub fn specific_entropy(&self) -> SIArray1 {
-        SIArray1::from_shape_fn(self.0.len(), |i| {
-            self.0[i].specific_entropy(Contributions::Total)
-        })
+    pub fn specific_entropy(&self, contributions: Contributions) -> SIArray1 {
+        SIArray1::from_shape_fn(self.0.len(), |i| self.0[i].specific_entropy(contributions))
     }
 }

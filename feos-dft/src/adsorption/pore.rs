@@ -300,6 +300,10 @@ impl HelmholtzEnergyFunctional for Helium {
     fn molecule_shape(&self) -> MoleculeShape {
         MoleculeShape::Spherical(1)
     }
+
+    fn molar_weight(&self) -> SIArray1 {
+        unreachable!()
+    }
 }
 
 impl FluidParameters for Helium {

@@ -8,7 +8,6 @@ use crate::equation_of_state::{Components, HelmholtzEnergy, HelmholtzEnergyDual,
 use crate::parameter::{Identifier, Parameter, ParameterError, PureRecord};
 use crate::si::{GRAM, MOL};
 use crate::state::StateHD;
-use crate::MolarWeight;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use quantity::si::SIArray1;
@@ -232,9 +231,7 @@ impl Residual for PengRobinson {
     fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         &self.contributions
     }
-}
 
-impl MolarWeight for PengRobinson {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }

@@ -1,7 +1,7 @@
 use super::parameters::PetsParameters;
 use crate::hard_sphere::HardSphere;
 use feos_core::parameter::Parameter;
-use feos_core::{Components, HelmholtzEnergy, MolarWeight, Residual};
+use feos_core::{Components, HelmholtzEnergy, Residual};
 use ndarray::Array1;
 use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
@@ -77,9 +77,7 @@ impl Residual for Pets {
     fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         &self.contributions
     }
-}
 
-impl MolarWeight for Pets {
     fn molar_weight(&self) -> SIArray1 {
         self.parameters.molarweight.clone() * GRAM / MOL
     }
@@ -268,8 +266,8 @@ impl MolarWeight for Pets {
 //                         * self
 //                             .diffusion_correlation(
 //                                 state
-//                                     .residual_entropy()
-//                                     .to_reduced(SIUnit::reference_molar_entropy() * state.total_moles)
+//                                     .residual_molar_entropy()
+//                                     .to_reduced(SIUnit::reference_molar_entropy())
 //                                     .unwrap(),
 //                                 &state.molefracs,
 //                             )

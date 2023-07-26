@@ -20,6 +20,11 @@ pub trait Residual: Components + Send + Sync {
     /// of the equation of state.
     fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>];
 
+    /// Molar weight of all components.
+    ///
+    /// Enables calculation of (mass) specific properties.
+    fn molar_weight(&self) -> SIArray1;
+
     /// Evaluate the residual reduced Helmholtz energy $\beta A^\mathrm{res}$.
     fn evaluate_residual<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D
     where

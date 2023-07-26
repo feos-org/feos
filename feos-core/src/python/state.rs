@@ -321,7 +321,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -350,7 +350,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -366,7 +366,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -382,7 +382,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -398,7 +398,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -414,7 +414,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -430,7 +430,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -446,7 +446,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -471,7 +471,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -482,7 +482,7 @@ macro_rules! impl_state {
                 PySIArray1::from(self.0.chemical_potential(contributions))
             }
 
-            /// Return chemical potential contributions.
+            /// Return residual chemical potential contributions.
             ///
             /// Parameters
             /// ----------
@@ -493,7 +493,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// List[Tuple[str, SINumber]]
-            fn chemical_potential_contributions(&self, component: usize) -> Vec<(String, PySINumber)> {
+            fn residual_chemical_potential_contributions(&self, component: usize) -> Vec<(String, PySINumber)> {
                 self.0
                     .chemical_potential_contributions(component)
                     .into_iter()
@@ -506,7 +506,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -522,7 +522,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -597,20 +597,20 @@ macro_rules! impl_state {
                 self.0.thermodynamic_factor().view().to_pyarray(py)
             }
 
-            /// Return isochoric heat capacity.
+            /// Return molar isochoric heat capacity.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn c_v(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.c_v(contributions))
+            fn molar_isochoric_heat_capacity(&self, contributions: Contributions) -> PySINumber {
+                PySINumber::from(self.0.molar_isochoric_heat_capacity(contributions))
             }
 
             /// Return derivative of isochoric heat capacity w.r.t. temperature.
@@ -618,7 +618,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -629,20 +629,20 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.dc_v_dt(contributions))
             }
 
-            /// Return isobaric heat capacity.
+            /// Return molar isobaric heat capacity.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn c_p(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.c_p(contributions))
+            fn molar_isobaric_heat_capacity(&self, contributions: Contributions) -> PySINumber {
+                PySINumber::from(self.0.molar_isobaric_heat_capacity(contributions))
             }
 
 	        /// Return entropy.
@@ -650,7 +650,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -666,7 +666,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -682,7 +682,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -708,7 +708,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -724,7 +724,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -745,12 +745,12 @@ macro_rules! impl_state {
                 PySIArray1::from(self.0.partial_molar_enthalpy())
             }
 
-            /// Return helmholtz_energy.
+            /// Return Helmholtz energy.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -761,12 +761,12 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.helmholtz_energy(contributions))
             }
 
-            /// Return molar helmholtz_energy.
+            /// Return molar Helmholtz energy.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -777,25 +777,25 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.molar_helmholtz_energy(contributions))
             }
 
-            /// Return helmholtz energy contributions.
+            /// Return residual Helmholtz energy contributions.
             ///
             /// Returns
             /// -------
             /// List[Tuple[str, SINumber]]
-            fn helmholtz_energy_contributions(&self) -> Vec<(String, PySINumber)> {
+            fn residual_helmholtz_energy_contributions(&self) -> Vec<(String, PySINumber)> {
                 self.0
-                    .helmholtz_energy_contributions()
+                    .residual_helmholtz_energy_contributions()
                     .into_iter()
                     .map(|(s, q)| (s, PySINumber::from(q)))
                     .collect()
             }
 
-            /// Return gibbs_energy.
+            /// Return Gibbs energy.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -806,12 +806,12 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.gibbs_energy(contributions))
             }
 
-            /// Return molar gibbs_energy.
+            /// Return molar Gibbs energy.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -823,12 +823,12 @@ macro_rules! impl_state {
             }
 
 
-            /// Return internal_energy.
+            /// Return internal energy.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -839,12 +839,12 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.internal_energy(contributions))
             }
 
-            /// Return molar internal_energy.
+            /// Return molar internal energy.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -916,6 +916,140 @@ macro_rules! impl_state {
             /// float
             fn structure_factor(&self) -> f64 {
                 self.0.structure_factor()
+            }
+
+            /// Return total molar weight.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            fn total_molar_weight(&self) -> PySINumber {
+                PySINumber::from(self.0.total_molar_weight())
+            }
+
+            /// Return speed of sound.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            fn speed_of_sound(&self) -> PySINumber {
+                PySINumber::from(self.0.speed_of_sound())
+            }
+
+            /// Returns mass of each component in the system.
+            ///
+            /// Returns
+            /// -------
+            /// SIArray1
+            fn mass(&self) -> PySIArray1 {
+                PySIArray1::from(self.0.mass())
+            }
+
+            /// Returns system's total mass.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            fn total_mass(&self) -> PySINumber {
+                PySINumber::from(self.0.total_mass())
+            }
+
+            /// Returns system's mass density.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            fn mass_density(&self) -> PySINumber {
+                PySINumber::from(self.0.mass_density())
+            }
+
+            /// Returns mass fractions for each component.
+            ///
+            /// Returns
+            /// -------
+            /// numpy.ndarray[Float64]
+            fn massfracs<'py>(&self, py: Python<'py>) -> &'py PyArray1<f64> {
+                self.0.massfracs().view().to_pyarray(py)
+            }
+
+            /// Return mass specific Helmholtz energy.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the Helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn specific_helmholtz_energy(&self, contributions: Contributions) -> PySINumber {
+                PySINumber::from(self.0.specific_helmholtz_energy(contributions))
+            }
+
+            /// Return mass specific entropy.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the Helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn specific_entropy(&self, contributions: Contributions) -> PySINumber {
+                PySINumber::from(self.0.specific_entropy(contributions))
+            }
+
+            /// Return mass specific internal_energy.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the Helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn specific_internal_energy(&self, contributions: Contributions) -> PySINumber {
+                PySINumber::from(self.0.specific_internal_energy(contributions))
+            }
+
+            /// Return mass specific gibbs_energy.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the Helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn specific_gibbs_energy(&self, contributions: Contributions) -> PySINumber {
+                PySINumber::from(self.0.specific_gibbs_energy(contributions))
+            }
+
+            /// Return mass specific enthalpy.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the Helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn specific_enthalpy(&self, contributions: Contributions) -> PySINumber {
+                PySINumber::from(self.0.specific_enthalpy(contributions))
             }
 
             #[getter]
@@ -1023,6 +1157,71 @@ macro_rules! impl_state {
                 }
             }
 
+            /// Return molar entropy.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the Helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SIArray1
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn molar_entropy(&self, contributions: Contributions) -> PySIArray1 {
+                StateVec::from(self).molar_entropy(contributions).into()
+            }
+
+            /// Return mass specific entropy.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the Helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SIArray1
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn specific_entropy(&self, contributions: Contributions) -> PySIArray1 {
+                StateVec::from(self).specific_entropy(contributions).into()
+            }
+
+            /// Return molar enthalpy.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the Helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SIArray1
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn molar_enthalpy(&self, contributions: Contributions) -> PySIArray1 {
+                StateVec::from(self).molar_enthalpy(contributions).into()
+            }
+
+            /// Return mass specific enthalpy.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the Helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SIArray1
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn specific_enthalpy(&self, contributions: Contributions) -> PySIArray1 {
+                StateVec::from(self).specific_enthalpy(contributions).into()
+            }
+
+
             #[getter]
             fn get_temperature(&self) -> PySIArray1{
                 StateVec::from(self).temperature().into()
@@ -1054,161 +1253,6 @@ macro_rules! impl_state {
             }
 
             #[getter]
-            fn get_molar_enthalpy(&self) -> PySIArray1 {
-                StateVec::from(self).molar_enthalpy().into()
-            }
-
-            #[getter]
-            fn get_molar_entropy(&self) -> PySIArray1 {
-                StateVec::from(self).molar_entropy().into()
-            }
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! impl_state_molarweight {
-    ($eos:ty, $py_eos:ty) => {
-        #[pymethods]
-        impl PyState {
-            /// Return total molar weight.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            fn total_molar_weight(&self) -> PySINumber {
-                PySINumber::from(self.0.total_molar_weight())
-            }
-
-            /// Return speed of sound.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            fn speed_of_sound(&self) -> PySINumber {
-                PySINumber::from(self.0.speed_of_sound())
-            }
-
-            /// Returns mass of each component in the system.
-            ///
-            /// Returns
-            /// -------
-            /// SIArray1
-            fn mass(&self) -> PySIArray1 {
-                PySIArray1::from(self.0.mass())
-            }
-
-            /// Returns system's total mass.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            fn total_mass(&self) -> PySINumber {
-                PySINumber::from(self.0.total_mass())
-            }
-
-            /// Returns system's mass density.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            fn mass_density(&self) -> PySINumber {
-                PySINumber::from(self.0.mass_density())
-            }
-
-            /// Returns mass fractions for each component.
-            ///
-            /// Returns
-            /// -------
-            /// numpy.ndarray[Float64]
-            fn massfracs<'py>(&self, py: Python<'py>) -> &'py PyArray1<f64> {
-                self.0.massfracs().view().to_pyarray(py)
-            }
-
-            /// Return mass specific helmholtz_energy.
-            ///
-            /// Parameters
-            /// ----------
-            /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
-            ///     Defaults to Contributions.Total.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn specific_helmholtz_energy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.specific_helmholtz_energy(contributions))
-            }
-
-            /// Return mass specific entropy.
-            ///
-            /// Parameters
-            /// ----------
-            /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
-            ///     Defaults to Contributions.Total.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn specific_entropy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.specific_entropy(contributions))
-            }
-
-            /// Return mass specific internal_energy.
-            ///
-            /// Parameters
-            /// ----------
-            /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
-            ///     Defaults to Contributions.Total.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn specific_internal_energy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.specific_internal_energy(contributions))
-            }
-
-            /// Return mass specific gibbs_energy.
-            ///
-            /// Parameters
-            /// ----------
-            /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
-            ///     Defaults to Contributions.Total.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn specific_gibbs_energy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.specific_gibbs_energy(contributions))
-            }
-
-            /// Return mass specific enthalpy.
-            ///
-            /// Parameters
-            /// ----------
-            /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
-            ///     Defaults to Contributions.Total.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn specific_enthalpy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.specific_enthalpy(contributions))
-            }
-        }
-
-        #[pymethods]
-        impl PyStateVec {
-            #[getter]
             fn get_mass_density(&self) -> PySIArray1 {
                 StateVec::from(self).mass_density().into()
             }
@@ -1216,16 +1260,6 @@ macro_rules! impl_state_molarweight {
             #[getter]
             fn get_massfracs<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
                 StateVec::from(self).massfracs().view().to_pyarray(py)
-            }
-
-            #[getter]
-            fn get_specific_enthalpy(&self) -> PySIArray1 {
-                StateVec::from(self).specific_enthalpy().into()
-            }
-
-            #[getter]
-            fn get_specific_entropy(&self) -> PySIArray1 {
-                StateVec::from(self).specific_entropy().into()
             }
         }
     };

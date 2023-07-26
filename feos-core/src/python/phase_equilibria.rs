@@ -801,25 +801,32 @@ macro_rules! impl_phase_equilibrium {
 
             /// Returns the phase diagram as dictionary.
             ///
-            /// Units
-            /// -----
-            /// temperature : K
-            /// pressure : Pa
-            /// densities : mol / m³
-            /// molar enthalpies : kJ / mol
-            /// molar entropies : kJ / mol / K
+            /// Parameters
+            /// ----------
+            /// contributions : Contributions, optional
+            ///     The contributions to consider when calculating properties.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
-            /// dict[str, list[float]]
+            /// Dict[str, List[float]]
             ///     Keys: property names. Values: property for each state.
             ///
             /// Notes
             /// -----
-            /// xi: liquid molefraction of component i
-            /// yi: vapor molefraction of component i
-            /// i: component index according to order in parameters.
-            pub fn to_dict(&self) -> PyResult<HashMap<String, Vec<f64>>> {
+            /// - temperature : K
+            /// - pressure : Pa
+            /// - densities : mol / m³
+            /// - mass densities : kg / m³
+            /// - molar enthalpies : kJ / mol
+            /// - molar entropies : kJ / mol / K
+            /// - specific enthalpies : kJ / kg
+            /// - specific entropies : kJ / kg / K
+            /// - xi: liquid molefraction of component i
+            /// - yi: vapor molefraction of component i
+            /// - component index `i` matches to order of components in parameters.
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            pub fn to_dict(&self, contributions: Contributions) -> PyResult<HashMap<String, Vec<f64>>> {
                 let n = self.0.states[0].liquid().eos.components();
                 let mut dict = HashMap::with_capacity(8 + 2 * n);
                 if n != 1 {
@@ -834,10 +841,16 @@ macro_rules! impl_phase_equilibrium {
                 dict.insert(String::from("pressure"), (self.0.vapor().pressure() / PASCAL).into_value()?.into_raw_vec());
                 dict.insert(String::from("density liquid"), (self.0.liquid().density() / (MOL / METER.powi(3))).into_value()?.into_raw_vec());
                 dict.insert(String::from("density vapor"), (self.0.vapor().density() / (MOL / METER.powi(3))).into_value()?.into_raw_vec());
-                dict.insert(String::from("molar enthalpy liquid"), (self.0.liquid().molar_enthalpy() / (KILO*JOULE / MOL)).into_value()?.into_raw_vec());
-                dict.insert(String::from("molar enthalpy vapor"), (self.0.vapor().molar_enthalpy() / (KILO*JOULE / MOL)).into_value()?.into_raw_vec());
-                dict.insert(String::from("molar entropy liquid"), (self.0.liquid().molar_entropy() / (KILO*JOULE / KELVIN / MOL)).into_value()?.into_raw_vec());
-                dict.insert(String::from("molar entropy vapor"), (self.0.vapor().molar_entropy() / (KILO*JOULE / KELVIN / MOL)).into_value()?.into_raw_vec());
+                dict.insert(String::from("mass density liquid"), (self.0.liquid().mass_density() / (KILOGRAM / METER.powi(3))).into_value()?.into_raw_vec());
+                dict.insert(String::from("mass density vapor"), (self.0.vapor().mass_density() / (KILOGRAM / METER.powi(3))).into_value()?.into_raw_vec());
+                dict.insert(String::from("molar enthalpy liquid"), (self.0.liquid().molar_enthalpy(contributions) / (KILO*JOULE / MOL)).into_value()?.into_raw_vec());
+                dict.insert(String::from("molar enthalpy vapor"), (self.0.vapor().molar_enthalpy(contributions) / (KILO*JOULE / MOL)).into_value()?.into_raw_vec());
+                dict.insert(String::from("molar entropy liquid"), (self.0.liquid().molar_entropy(contributions) / (KILO*JOULE / KELVIN / MOL)).into_value()?.into_raw_vec());
+                dict.insert(String::from("molar entropy vapor"), (self.0.vapor().molar_entropy(contributions) / (KILO*JOULE / KELVIN / MOL)).into_value()?.into_raw_vec());
+                dict.insert(String::from("specific enthalpy liquid"), (self.0.liquid().specific_enthalpy(contributions) / (KILO*JOULE / KILOGRAM)).into_value()?.into_raw_vec());
+                dict.insert(String::from("specific enthalpy vapor"), (self.0.vapor().specific_enthalpy(contributions) / (KILO*JOULE / KILOGRAM)).into_value()?.into_raw_vec());
+                dict.insert(String::from("specific entropy liquid"), (self.0.liquid().specific_entropy(contributions) / (KILO*JOULE / KELVIN / KILOGRAM)).into_value()?.into_raw_vec());
+                dict.insert(String::from("specific entropy vapor"), (self.0.vapor().specific_entropy(contributions) / (KILO*JOULE / KELVIN / KILOGRAM)).into_value()?.into_raw_vec());
                 Ok(dict)
             }
 

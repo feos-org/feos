@@ -18,9 +18,22 @@ If you want to adjust parameters of a model to experimental data you can use cla
     EquationOfState.gc_pcsaft
     EquationOfState.peng_robinson
     EquationOfState.pets
-    EquationOfState.python
+    EquationOfState.python_residual
+    EquationOfState.python_ideal_gas
     EquationOfState.uvtheory
     EquationOfState.saftvrqmie
+```
+
+### Models defined in Python
+
+```{eval-rst}
+.. currentmodule:: feos.eos
+
+.. autosummary::
+    :toctree: generated/
+
+    EquationOfState.python_residual
+    EquationOfState.python_ideal_gas
 ```
 
 ## Other data types
@@ -34,6 +47,7 @@ If you want to adjust parameters of a model to experimental data you can use cla
     Contributions
     Verbosity
     State
+    StateVec
     PhaseEquilibrium
     PhaseDiagram
 ```

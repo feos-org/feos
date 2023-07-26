@@ -3,7 +3,7 @@ use crate::association::Association;
 use crate::hard_sphere::HardSphere;
 use feos_core::parameter::Parameter;
 use feos_core::{
-    Components, EntropyScaling, EosError, EosResult, HelmholtzEnergy, MolarWeight, Residual, State,
+    Components, EntropyScaling, EosError, EosResult, HelmholtzEnergy, Residual, State,
 };
 use ndarray::Array1;
 use quantity::si::*;
@@ -116,17 +116,15 @@ impl Residual for PcSaft {
     fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
         &self.contributions
     }
+
+    fn molar_weight(&self) -> SIArray1 {
+        self.parameters.molarweight.clone() * GRAM / MOL
+    }
 }
 
 impl fmt::Display for PcSaft {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PC-SAFT")
-    }
-}
-
-impl MolarWeight for PcSaft {
-    fn molar_weight(&self) -> SIArray1 {
-        self.parameters.molarweight.clone() * GRAM / MOL
     }
 }
 
@@ -277,10 +275,8 @@ impl EntropyScaling for PcSaft {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN)
                     .into_value()
                     .unwrap();
-                let s_res_reduced = (state.residual_entropy() / state.total_moles)
-                    .to_reduced(RGAS)
-                    .unwrap()
-                    / p.m[i];
+                let s_res_reduced =
+                    state.residual_molar_entropy().to_reduced(RGAS).unwrap() / p.m[i];
                 let ref_ce = chapman_enskog_thermal_conductivity(
                     temperature,
                     mws.get(i),

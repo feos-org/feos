@@ -37,7 +37,7 @@ mod phase_equilibria;
 mod state;
 pub use equation_of_state::{
     Components, DeBroglieWavelength, DeBroglieWavelengthDual, EntropyScaling, EquationOfState,
-    HelmholtzEnergy, HelmholtzEnergyDual, IdealGas, MolarWeight, Residual,
+    HelmholtzEnergy, HelmholtzEnergyDual, IdealGas, Residual,
 };
 pub use errors::{EosError, EosResult};
 pub use phase_equilibria::{PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium};
@@ -260,11 +260,13 @@ mod tests {
         let sr = StateBuilder::new(&residual)
             .temperature(300.0 * KELVIN)
             .pressure(1.0 * BAR)
+            .total_moles(2.0 * MOL)
             .build()?;
 
         let s = StateBuilder::new(&eos)
             .temperature(300.0 * KELVIN)
             .pressure(1.0 * BAR)
+            .total_moles(2.0 * MOL)
             .build()?;
 
         // pressure
@@ -296,8 +298,18 @@ mod tests {
             max_relative = 1e-15
         );
         assert_relative_eq!(
+            s.molar_helmholtz_energy(Contributions::Residual),
+            sr.residual_molar_helmholtz_energy(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
             s.entropy(Contributions::Residual),
             sr.residual_entropy(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.molar_entropy(Contributions::Residual),
+            sr.residual_molar_entropy(),
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -306,13 +318,33 @@ mod tests {
             max_relative = 1e-15
         );
         assert_relative_eq!(
+            s.molar_enthalpy(Contributions::Residual),
+            sr.residual_molar_enthalpy(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
             s.internal_energy(Contributions::Residual),
             sr.residual_internal_energy(),
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.gibbs_energy(Contributions::Residual),
+            s.molar_internal_energy(Contributions::Residual),
+            sr.residual_molar_internal_energy(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.gibbs_energy(Contributions::Residual)
+                - s.total_moles
+                    * RGAS
+                    * s.temperature
+                    * s.compressibility(Contributions::Total).ln(),
             sr.residual_gibbs_energy(),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.molar_gibbs_energy(Contributions::Residual)
+                - RGAS * s.temperature * s.compressibility(Contributions::Total).ln(),
+            sr.residual_molar_gibbs_energy(),
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -425,8 +457,8 @@ mod tests {
 
         // residual properties using multiple derivatives
         assert_relative_eq!(
-            s.c_v(Contributions::Residual),
-            sr.c_v_res(),
+            s.molar_isochoric_heat_capacity(Contributions::Residual),
+            sr.residual_molar_isochoric_heat_capacity(),
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -434,16 +466,10 @@ mod tests {
             sr.dc_v_res_dt(),
             max_relative = 1e-15
         );
-        println!(
-            "{}\n{}\n{}",
-            s.c_p(Contributions::Residual),
-            s.c_p(Contributions::IdealGas),
-            s.c_p(Contributions::Total)
-        );
         assert_relative_eq!(
-            s.c_p(Contributions::Residual),
-            sr.c_p_res(),
-            max_relative = 1e-14
+            s.molar_isobaric_heat_capacity(Contributions::Residual),
+            sr.residual_molar_isobaric_heat_capacity(),
+            max_relative = 1e-15
         );
         Ok(())
     }
