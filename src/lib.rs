@@ -2,7 +2,8 @@
 //!
 //! # Example: critical point of a pure substance using PC-SAFT
 //!
-//! ```ignore
+#![cfg_attr(not(feature = "pcsaft"), doc = "```ignore")]
+#![cfg_attr(feature = "pcsaft", doc = "```")]
 //! # use feos_core::EosError;
 //! use feos::pcsaft::{PcSaft, PcSaftParameters};
 //! use feos_core::parameter::{IdentifierOption, Parameter};
