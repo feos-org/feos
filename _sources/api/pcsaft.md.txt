@@ -20,7 +20,6 @@ parameters = PcSaftParameters.from_json(['methane', 'ethane'], 'parameters.json'
 
     Identifier
     ChemicalRecord
-    JobackRecord
     PureRecord
     SegmentRecord
     BinaryRecord

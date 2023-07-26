@@ -19,10 +19,7 @@ feos.dft.State
       :toctree: ./
    
       ~State.__init__
-      ~State.c_p
-      ~State.c_v
       ~State.chemical_potential
-      ~State.chemical_potential_contributions
       ~State.compressibility
       ~State.critical_point
       ~State.critical_point_binary
@@ -45,7 +42,6 @@ feos.dft.State
       ~State.gibbs_energy
       ~State.grueneisen_parameter
       ~State.helmholtz_energy
-      ~State.helmholtz_energy_contributions
       ~State.internal_energy
       ~State.is_stable
       ~State.isenthalpic_compressibility
@@ -63,11 +59,15 @@ feos.dft.State
       ~State.molar_gibbs_energy
       ~State.molar_helmholtz_energy
       ~State.molar_internal_energy
+      ~State.molar_isobaric_heat_capacity
+      ~State.molar_isochoric_heat_capacity
       ~State.partial_molar_enthalpy
       ~State.partial_molar_entropy
       ~State.partial_molar_volume
       ~State.pressure
       ~State.pressure_contributions
+      ~State.residual_chemical_potential_contributions
+      ~State.residual_helmholtz_energy_contributions
       ~State.specific_enthalpy
       ~State.specific_entropy
       ~State.specific_gibbs_energy

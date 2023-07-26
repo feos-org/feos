@@ -1,0 +1,44 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.StateVec
+=================
+
+.. currentmodule:: feos.eos
+
+.. autoclass:: StateVec
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~StateVec.__init__
+      ~StateVec.molar_enthalpy
+      ~StateVec.molar_entropy
+      ~StateVec.specific_enthalpy
+      ~StateVec.specific_entropy
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~StateVec.compressibility
+      ~StateVec.density
+      ~StateVec.mass_density
+      ~StateVec.massfracs
+      ~StateVec.molefracs
+      ~StateVec.moles
+      ~StateVec.pressure
+      ~StateVec.temperature
+   
+   
