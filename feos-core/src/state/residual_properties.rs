@@ -72,9 +72,7 @@ impl<E: Residual> State<E> {
     }
 
     /// Residual Helmholtz energy $A^\text{res}$ evaluated for each contribution of the equation of state.
-    pub fn residual_helmholtz_energy_contributions(
-        &self,
-    ) -> Vec<(String, SINumber)> {
+    pub fn residual_helmholtz_energy_contributions(&self) -> Vec<(String, SINumber)> {
         let new_state = self.derive0();
         let residual_contributions = self.eos.evaluate_residual_contributions(&new_state);
         let mut res = Vec::with_capacity(residual_contributions.len());
@@ -91,7 +89,7 @@ impl<E: Residual> State<E> {
 
     /// Residual entropy $s^\text{res}=\left(\frac{\partial a^\text{res}}{\partial T}\right)_{V,N_i}$
     pub fn residual_molar_entropy(&self) -> SINumber {
-        -self.residual_entropy() / self.total_moles
+        self.residual_entropy() / self.total_moles
     }
 
     /// Pressure: $p=-\left(\frac{\partial A}{\partial V}\right)_{T,N_i}$
@@ -109,7 +107,10 @@ impl<E: Residual> State<E> {
     }
 
     /// Chemical potential $\mu_i^\text{res}$ evaluated for each contribution of the equation of state.
-    pub fn residual_chemical_potential_contributions(&self, component: usize) -> Vec<(String, SINumber)> {
+    pub fn residual_chemical_potential_contributions(
+        &self,
+        component: usize,
+    ) -> Vec<(String, SINumber)> {
         let new_state = self.derive1(DN(component));
         let contributions = self.eos.evaluate_residual_contributions(&new_state);
         let mut res = Vec::with_capacity(contributions.len());
@@ -434,7 +435,8 @@ impl<E: Residual> State<E> {
 impl<E: Residual + EntropyScaling> State<E> {
     /// Return the viscosity via entropy scaling.
     pub fn viscosity(&self) -> EosResult<SINumber> {
-        let s = self.residual_molar_entropy()
+        let s = self
+            .residual_molar_entropy()
             .to_reduced(SIUnit::reference_molar_entropy())?;
         Ok(self
             .eos
@@ -447,7 +449,8 @@ impl<E: Residual + EntropyScaling> State<E> {
     /// This term equals the viscosity correlation function
     /// that is used for entropy scaling.
     pub fn ln_viscosity_reduced(&self) -> EosResult<f64> {
-        let s = self.residual_molar_entropy()
+        let s = self
+            .residual_molar_entropy()
             .to_reduced(SIUnit::reference_molar_entropy())?;
         self.eos.viscosity_correlation(s, &self.molefracs)
     }
@@ -460,7 +463,8 @@ impl<E: Residual + EntropyScaling> State<E> {
 
     /// Return the diffusion via entropy scaling.
     pub fn diffusion(&self) -> EosResult<SINumber> {
-        let s = self.residual_molar_entropy()
+        let s = self
+            .residual_molar_entropy()
             .to_reduced(SIUnit::reference_molar_entropy())?;
         Ok(self
             .eos
@@ -473,7 +477,8 @@ impl<E: Residual + EntropyScaling> State<E> {
     /// This term equals the diffusion correlation function
     /// that is used for entropy scaling.
     pub fn ln_diffusion_reduced(&self) -> EosResult<f64> {
-        let s = self.residual_molar_entropy()
+        let s = self
+            .residual_molar_entropy()
             .to_reduced(SIUnit::reference_molar_entropy())?;
         self.eos.diffusion_correlation(s, &self.molefracs)
     }
@@ -486,7 +491,8 @@ impl<E: Residual + EntropyScaling> State<E> {
 
     /// Return the thermal conductivity via entropy scaling.
     pub fn thermal_conductivity(&self) -> EosResult<SINumber> {
-        let s = self.residual_molar_entropy()
+        let s = self
+            .residual_molar_entropy()
             .to_reduced(SIUnit::reference_molar_entropy())?;
         Ok(self
             .eos
@@ -502,7 +508,8 @@ impl<E: Residual + EntropyScaling> State<E> {
     /// This term equals the thermal conductivity correlation function
     /// that is used for entropy scaling.
     pub fn ln_thermal_conductivity_reduced(&self) -> EosResult<f64> {
-        let s = self.residual_molar_entropy()
+        let s = self
+            .residual_molar_entropy()
             .to_reduced(SIUnit::reference_molar_entropy())?;
         self.eos
             .thermal_conductivity_correlation(s, &self.molefracs)

@@ -199,7 +199,8 @@ mod test {
         let moles = arr1(&[2.0]) * MOL;
         let volume = (sig * ANGSTROM).powi(3) / reduced_density * NAV * 2.0 * MOL;
         let s = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
-        let a = s.residual_molar_helmholtz_energy()
+        let a = s
+            .residual_molar_helmholtz_energy()
             .to_reduced(RGAS * temperature)
             .unwrap();
         assert_relative_eq!(a, 2.972986567516, max_relative = 1e-12); //wca
@@ -227,7 +228,8 @@ mod test {
         let volume = (sig * ANGSTROM).powi(3) / reduced_density * NAV * 2.0 * MOL;
         let s = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
 
-        let a = s.residual_molar_helmholtz_energy()
+        let a = s
+            .residual_molar_helmholtz_energy()
             .to_reduced(RGAS * temperature)
             .unwrap();
 
