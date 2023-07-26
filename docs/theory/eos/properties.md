@@ -60,6 +60,11 @@ Due to different language paradigms, $\text{FeO}_\text{s}$ handles the ideal gas
 
 | Name | definition | ideal gas model required? | residual? |
 |-|:-:|-|-|
+| Total molar weight $MW$ | $\sum_ix_iMW_i$ | no | no |
+| Mass of each component $m_i$ | $n_iMW_i$ | no | no |
+| Total mass $m$ | $\sum_im_i=nMW$ | no | no |
+| Mass density $\rho^{(m)}$ | $\frac{m}{V}$ | no | no |
+| Mass fractions $w_i$ | $\frac{m_i}{m}$ | no | no |
 | Pressure $p$ | $-\left(\frac{\partial A}{\partial V}\right)_{T,n_i}$ |  no | yes |
 | Compressibility factor $Z$ | $\frac{pV}{nRT}$ |  no | yes |
 | Partial derivative of pressure w.r.t. volume | $\left(\frac{\partial p}{\partial V}\right)_{T,n_i}$ |  no | yes |
@@ -85,15 +90,20 @@ Due to different language paradigms, $\text{FeO}_\text{s}$ handles the ideal gas
 | Entropy $S$ | $-\left(\frac{\partial A}{\partial T}\right)_{V,n_i}$ |  yes | yes |
 | Partial derivative of the entropy w.r.t. temperature | $\left(\frac{\partial S}{\partial T}\right)_{V,n_i}$ |  yes | yes |
 | Second partial derivative of the entropy w.r.t. temperature | $\left(\frac{\partial^2 S}{\partial T^2}\right)_{V,n_i}$ |  yes | yes |
-| Molar entropy $s$ | $\frac{S}{n}$ | yes | yes 
+| Molar entropy $s$ | $\frac{S}{n}$ | yes | yes |
+| Specific entropy $s^{(m)}$ | $\frac{S}{m}$ | yes | yes |
 | Enthalpy $H$ | $A+TS+pV$ |  yes | yes |
 | Molar enthalpy $h$ | $\frac{H}{n}$ |  yes | yes |
+| Specific enthalpy $h^{(m)}$ | $\frac{H}{m}$ | yes | yes |
 | Helmholtz energy $A$ | |  yes | yes |
 | Molar Helmholtz energy $a$ | $\frac{A}{n}$ |  yes | yes |
+| Specific Helmholtz energy $a^{(m)}$ | $\frac{A}{m}$ | yes | yes |
 | Internal energy $U$ | $A+TS$ |  yes | yes |
 | Molar internal energy $u$ | $\frac{U}{n}$ |  yes | yes |
+| Specific internal energy $u^{(m)}$ | $\frac{U}{m}$ | yes | yes |
 | Gibbs energy $G$ | $A+pV$ |  yes | yes |
 | Molar Gibbs energy $g$ | $\frac{G}{n}$ |  yes | yes |
+| Specific Gibbs energy $g^{(m)}$ | $\frac{G}{m}$ | yes | yes |
 | Partial molar entropy $s_i$ | $\left(\frac{\partial S}{\partial n_i}\right)_{T,p,n_j}$ | yes | no |
 | Partial molar enthalpy $h_i$ | $\left(\frac{\partial H}{\partial n_i}\right)_{T,p,n_j}$ | yes | no |
 | Joule Thomson coefficient $\mu_\mathrm{JT}$ | $\left(\frac{\partial T}{\partial p}\right)_{H,n_i}$ | yes | no |
@@ -103,21 +113,4 @@ Due to different language paradigms, $\text{FeO}_\text{s}$ handles the ideal gas
 | Thermal expansivity $\alpha_p$ | $-\frac{1}{V}\left(\frac{\partial V}{\partial T}\right)_{p,n_i}$ | yes | no |
 | Grüneisen parameter $\phi$ | $V\left(\frac{\partial p}{\partial U}\right)_{V,n_i}=\frac{v}{c_v}\left(\frac{\partial p}{\partial T}\right)_{v,n_i}=\frac{\rho}{T}\left(\frac{\partial T}{\partial \rho}\right)_{s, n_i}$ | yes | no |
 | (Static) structure factor $S(0)$ | $RT\left(\frac{\partial\rho}{\partial p}\right)_{T,n_i}$ | no | no |
-
-## Additional properties for fluids with known molar weights
-
-If the Helmholtz energy model includes information about the molar weigt $MW_i$ of each species, additional properties are available in $\text{FeO}_\text{s}$
-
-| Name | definition | ideal gas model required? | residual? |
-|-|:-:|-|-|
-| Total molar weight $MW$ | $\sum_ix_iMW_i$ | no | no |
-| Mass of each component $m_i$ | $n_iMW_i$ | no | no |
-| Total mass $m$ | $\sum_im_i=nMW$ | no | no |
-| Mass density $\rho^{(m)}$ | $\frac{m}{V}$ | no | no |
-| Mass fractions $w_i$ | $\frac{m_i}{m}$ | no | no |
-| Specific entropy $s^{(m)}$ | $\frac{S}{m}$ | yes | yes |
-| Specific enthalpy $h^{(m)}$ | $\frac{H}{m}$ | yes | yes |
-| Specific Helmholtz energy $a^{(m)}$ | $\frac{A}{m}$ | yes | yes |
-| Specific internal energy $u^{(m)}$ | $\frac{U}{m}$ | yes | yes |
-| Specific Gibbs energy $g^{(m)}$ | $\frac{G}{m}$ | yes | yes |
 | Speed of sound $c$ | $\sqrt{\left(\frac{\partial p}{\partial\rho^{(m)}}\right)_{S,n_i}}$ | yes | no |

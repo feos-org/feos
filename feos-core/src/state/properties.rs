@@ -77,7 +77,7 @@ impl<E: Residual + IdealGas> State<E> {
         self.temperature * self.ds_dt(contributions) / self.total_moles
     }
 
-    /// Specific isochoric heat capacity: $c_v=^{(m)}=\frac{C_v}{m}$
+    /// Specific isochoric heat capacity: $c_v^{(m)}=\frac{C_v}{m}$
     pub fn specific_isochoric_heat_capacity(&self, contributions: Contributions) -> SINumber {
         self.molar_isochoric_heat_capacity(contributions) / self.total_molar_weight()
     }
@@ -100,7 +100,7 @@ impl<E: Residual + IdealGas> State<E> {
         }
     }
 
-    /// Specific isobaric heat capacity: $c_p=^{(m)}=\frac{C_p}{m}$
+    /// Specific isobaric heat capacity: $c_p^{(m)}=\frac{C_p}{m}$
     pub fn specific_isobaric_heat_capacity(&self, contributions: Contributions) -> SINumber {
         self.molar_isobaric_heat_capacity(contributions) / self.total_molar_weight()
     }
@@ -236,29 +236,6 @@ impl<E: Residual + IdealGas> State<E> {
         (self.volume / (self.total_moles * self.molar_isochoric_heat_capacity(c)) * self.dp_dt(c))
             .into_value()
             .unwrap()
-    }
-
-    /// Helmholtz energy $A$ evaluated for each contribution of the equation of state.
-    pub fn helmholtz_energy_contributions(
-        &self,
-        contributions: Contributions,
-    ) -> Vec<(String, SINumber)> {
-        let new_state = self.derive0();
-        let residual_contributions = self.eos.evaluate_residual_contributions(&new_state);
-        let mut res = Vec::with_capacity(residual_contributions.len() + 1);
-        match contributions {
-            Contributions::IdealGas | Contributions::Total => res.push((
-                self.eos.ideal_gas_model().to_string(),
-                self.eos.evaluate_ideal_gas(&new_state)
-                    * new_state.temperature
-                    * SIUnit::reference_energy(),
-            )),
-            _ => (),
-        }
-        for (s, v) in residual_contributions {
-            res.push((s, v * new_state.temperature * SIUnit::reference_energy()));
-        }
-        res
     }
 
     /// Chemical potential $\mu_i$ evaluated for each contribution of the equation of state.

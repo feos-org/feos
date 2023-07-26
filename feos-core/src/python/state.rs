@@ -321,7 +321,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -350,7 +350,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -366,7 +366,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -382,7 +382,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -398,7 +398,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -414,7 +414,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -430,7 +430,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -446,7 +446,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -471,7 +471,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -482,7 +482,7 @@ macro_rules! impl_state {
                 PySIArray1::from(self.0.chemical_potential(contributions))
             }
 
-            /// Return chemical potential contributions.
+            /// Return residual chemical potential contributions.
             ///
             /// Parameters
             /// ----------
@@ -493,7 +493,7 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// List[Tuple[str, SINumber]]
-            fn chemical_potential_contributions(&self, component: usize) -> Vec<(String, PySINumber)> {
+            fn residual_chemical_potential_contributions(&self, component: usize) -> Vec<(String, PySINumber)> {
                 self.0
                     .chemical_potential_contributions(component)
                     .into_iter()
@@ -506,7 +506,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -522,7 +522,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -602,7 +602,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -618,7 +618,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -634,7 +634,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -650,7 +650,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -666,7 +666,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -682,7 +682,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -708,7 +708,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -724,7 +724,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -745,12 +745,12 @@ macro_rules! impl_state {
                 PySIArray1::from(self.0.partial_molar_enthalpy())
             }
 
-            /// Return helmholtz_energy.
+            /// Return Helmholtz energy.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -761,12 +761,12 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.helmholtz_energy(contributions))
             }
 
-            /// Return molar helmholtz_energy.
+            /// Return molar Helmholtz energy.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -777,32 +777,25 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.molar_helmholtz_energy(contributions))
             }
 
-            /// Return helmholtz energy contributions.
-            ///
-            /// Parameters
-            /// ----------
-            /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
-            ///     Defaults to Contributions.Total.
+            /// Return residual Helmholtz energy contributions.
             ///
             /// Returns
             /// -------
             /// List[Tuple[str, SINumber]]
-            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn helmholtz_energy_contributions(&self, contributions: Contributions) -> Vec<(String, PySINumber)> {
+            fn residual_helmholtz_energy_contributions(&self) -> Vec<(String, PySINumber)> {
                 self.0
-                    .helmholtz_energy_contributions(contributions)
+                    .residual_helmholtz_energy_contributions()
                     .into_iter()
                     .map(|(s, q)| (s, PySINumber::from(q)))
                     .collect()
             }
 
-            /// Return gibbs_energy.
+            /// Return Gibbs energy.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -813,12 +806,12 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.gibbs_energy(contributions))
             }
 
-            /// Return molar gibbs_energy.
+            /// Return molar Gibbs energy.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -830,12 +823,12 @@ macro_rules! impl_state {
             }
 
 
-            /// Return internal_energy.
+            /// Return internal energy.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -846,12 +839,12 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.internal_energy(contributions))
             }
 
-            /// Return molar internal_energy.
+            /// Return molar internal energy.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -979,12 +972,12 @@ macro_rules! impl_state {
                 self.0.massfracs().view().to_pyarray(py)
             }
 
-            /// Return mass specific helmholtz_energy.
+            /// Return mass specific Helmholtz energy.
             ///
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -1000,7 +993,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -1016,7 +1009,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -1032,7 +1025,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -1048,7 +1041,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -1169,7 +1162,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -1185,7 +1178,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -1201,7 +1194,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns
@@ -1217,7 +1210,7 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy.
+            ///     the contributions of the Helmholtz energy.
             ///     Defaults to Contributions.Total.
             ///
             /// Returns

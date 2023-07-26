@@ -355,7 +355,7 @@ impl HelmholtzEnergyFunctional for FMTFunctional {
     }
 
     fn molar_weight(&self) -> SIArray1 {
-        unimplemented!()
+        panic!("No mass specific properties are available for this model!")
     }
 
     fn molecule_shape(&self) -> MoleculeShape {

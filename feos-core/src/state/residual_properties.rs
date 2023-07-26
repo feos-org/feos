@@ -66,6 +66,19 @@ impl<E: Residual> State<E> {
         self.get_or_compute_derivative_residual(PartialDerivative::Zeroth)
     }
 
+    /// Residual Helmholtz energy $A^\text{res}$ evaluated for each contribution of the equation of state.
+    pub fn residual_helmholtz_energy_contributions(
+        &self,
+    ) -> Vec<(String, SINumber)> {
+        let new_state = self.derive0();
+        let residual_contributions = self.eos.evaluate_residual_contributions(&new_state);
+        let mut res = Vec::with_capacity(residual_contributions.len());
+        for (s, v) in residual_contributions {
+            res.push((s, v * new_state.temperature * SIUnit::reference_energy()));
+        }
+        res
+    }
+
     /// Residual entropy $S^\text{res}=\left(\frac{\partial A^\text{res}}{\partial T}\right)_{V,N_i}$
     pub fn residual_entropy(&self) -> SINumber {
         -self.get_or_compute_derivative_residual(PartialDerivative::First(DT))
@@ -83,6 +96,20 @@ impl<E: Residual> State<E> {
         SIArray::from_shape_fn(self.eos.components(), |i| {
             self.get_or_compute_derivative_residual(PartialDerivative::First(DN(i)))
         })
+    }
+
+    /// Chemical potential $\mu_i^\text{res}$ evaluated for each contribution of the equation of state.
+    pub fn residual_chemical_potential_contributions(&self, component: usize) -> Vec<(String, SINumber)> {
+        let new_state = self.derive1(DN(component));
+        let contributions = self.eos.evaluate_residual_contributions(&new_state);
+        let mut res = Vec::with_capacity(contributions.len());
+        for (s, v) in contributions {
+            res.push((
+                s,
+                (v * new_state.temperature).eps * SIUnit::reference_molar_energy(),
+            ));
+        }
+        res
     }
 
     /// Compressibility factor: $Z=\frac{pV}{NRT}$
@@ -364,6 +391,7 @@ impl<E: Residual> State<E> {
         self.residual_gibbs_energy() / self.total_moles
     }
 
+    /// Total molar weight: $MW=\sum_ix_iMW_i$
     pub fn total_molar_weight(&self) -> SINumber {
         (self.eos.molar_weight() * &self.molefracs).sum()
     }
