@@ -266,8 +266,8 @@ impl Residual for Pets {
 //                         * self
 //                             .diffusion_correlation(
 //                                 state
-//                                     .residual_entropy()
-//                                     .to_reduced(SIUnit::reference_molar_entropy() * state.total_moles)
+//                                     .residual_molar_entropy()
+//                                     .to_reduced(SIUnit::reference_molar_entropy())
 //                                     .unwrap(),
 //                                 &state.molefracs,
 //                             )

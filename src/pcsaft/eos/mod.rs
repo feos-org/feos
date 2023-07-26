@@ -275,7 +275,7 @@ impl EntropyScaling for PcSaft {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN)
                     .into_value()
                     .unwrap();
-                let s_res_reduced = (state.residual_entropy() / state.total_moles)
+                let s_res_reduced = state.residual_molar_entropy()
                     .to_reduced(RGAS)
                     .unwrap()
                     / p.m[i];

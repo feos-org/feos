@@ -276,8 +276,8 @@ impl EntropyScaling for SaftVRQMie {
                     .into_value()
                     .unwrap();
                 let s_res_reduced = state
-                    .residual_entropy()
-                    .to_reduced(RGAS * state.total_moles)
+                    .residual_molar_entropy()
+                    .to_reduced(RGAS)
                     .unwrap()
                     / p.m[i];
                 let ref_ce = chapman_enskog_thermal_conductivity(
