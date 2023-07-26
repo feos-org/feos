@@ -1,4 +1,4 @@
-# Parameters
+# PC-SAFT Parameters
 
 This directory contains files with parameters for PC-SAFT (including gc-PC-SAFT).
 The files named according to the pattern `NameYear.json` correspond to published parameters. The corresponding publication is provided in the [`literature.bib`](literature.bib) file.
