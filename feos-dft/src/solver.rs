@@ -471,6 +471,8 @@ where
             // update solution
             let lhs = if newton.log { &*rho * res } else { res };
             *rho += &Self::gmres(rhs, &lhs, newton.max_iter_gmres, newton.tol * 1e-2, log)?;
+            rho.mapv_inplace(f64::abs);
+            rho_bulk.mapv_inplace(f64::abs);
         }
 
         Ok((false, newton.max_iter))

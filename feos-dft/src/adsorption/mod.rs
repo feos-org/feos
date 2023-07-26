@@ -286,10 +286,10 @@ where
             .vapor()
             .build()?;
 
-        let mut vapor = pore.initialize(&vapor_bulk, None, None)?.solve(None)?;
+        let mut vapor = pore.initialize(&vapor_bulk, None, None)?.solve(solver)?;
         let mut liquid = pore.initialize(&bulk_init, None, None)?.solve(solver)?;
 
-        // calculate initial value for the molar gibbs energy
+        // calculate initial value for bulk density
         let n_dp_drho_v = (vapor.profile.moles() * vapor_bulk.dp_drho(Contributions::Total)).sum();
         let n_dp_drho_l =
             (liquid.profile.moles() * liquid_bulk.dp_drho(Contributions::Total)).sum();
@@ -315,7 +315,7 @@ where
 
         for _ in 0..options.max_iter.unwrap_or(MAX_ITER_ADSORPTION_EQUILIBRIUM) {
             // update empty pore
-            vapor = vapor.update_bulk(&bulk).solve(None)?;
+            vapor = vapor.update_bulk(&bulk).solve(solver)?;
 
             // update filled pore
             liquid = liquid.update_bulk(&bulk).solve(solver)?;
