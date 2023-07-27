@@ -12,7 +12,36 @@ use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
-/// Create a new set of PC-SAFT pure component parameters.
+/// Pure-substance parameters for the PC-Saft equation of state.
+/// 
+/// Parameters
+/// ----------
+/// m : float
+///     Segment number
+/// sigma : float
+///     Segment diameter in units of Angstrom.
+/// epsilon_k : float
+///     Energetic parameter in units of Kelvin.
+/// mu : float, optional
+///     Dipole moment in units of Debye.
+/// q : float, optional
+///     Quadrupole moment in units of Debye.
+/// kappa_ab : float, optional
+///     Association volume parameter.
+/// epsilon_k_ab : float, optional
+///     Association energy parameter in units of Kelvin.
+/// na : float, optional
+///     Number of association sites of type A.
+/// nb : float, optional
+///     Number of association sites of type B.
+/// nc : float, optional
+///     Number of association sites of type C.
+/// viscosity : List[float], optional
+///     Entropy-scaling parameters for viscosity. Defaults to `None`.
+/// diffusion : List[float], optional
+///     Entropy-scaling parameters for diffusion. Defaults to `None`.
+/// thermal_conductivity : List[float], optional
+///     Entropy-scaling parameters for thermal_conductivity. Defaults to `None`.
 #[pyclass(name = "PcSaftRecord")]
 #[pyo3(
     text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, viscosity=None, diffusion=None, thermal_conductivity=None)"

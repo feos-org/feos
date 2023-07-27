@@ -171,6 +171,16 @@ impl Parameter for SaftVRQMieParameters {
         for (i, record) in pure_records.iter().enumerate() {
             component_index.insert(record.identifier.clone(), i);
             let r = &record.model_record;
+            if r.m != 1.0 {
+                return Err(
+                    ParameterError::IncompatibleParameters(
+                        format!(
+                            "Segment number `m` for component {} is not one. Chain-contributions are currently not supported.", 
+                            i
+                        )
+                    )
+                );
+            }
             m[i] = r.m;
             sigma[i] = r.sigma;
             epsilon_k[i] = r.epsilon_k;
