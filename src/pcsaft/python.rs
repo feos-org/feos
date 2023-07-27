@@ -25,7 +25,7 @@ use std::sync::Arc;
 /// mu : float, optional
 ///     Dipole moment in units of Debye.
 /// q : float, optional
-///     Quadrupole moment in units of Debye.
+///     Quadrupole moment in units of Debye * Angstrom.
 /// kappa_ab : float, optional
 ///     Association volume parameter.
 /// epsilon_k_ab : float, optional

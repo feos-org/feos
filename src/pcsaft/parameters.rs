@@ -24,7 +24,7 @@ pub struct PcSaftRecord {
     /// Dipole moment in units of Debye
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mu: Option<f64>,
-    /// Quadrupole moment in units of Debye
+    /// Quadrupole moment in units of Debye * Angstrom
     #[serde(skip_serializing_if = "Option::is_none")]
     pub q: Option<f64>,
     /// Association parameters
