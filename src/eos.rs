@@ -32,6 +32,7 @@ pub enum ResidualModel {
     #[cfg(feature = "python")]
     Python(PyResidual),
     #[cfg(feature = "saftvrqmie")]
+    #[implement(entropy_scaling)]
     SaftVRQMie(SaftVRQMie),
     #[cfg(feature = "pets")]
     Pets(Pets),
