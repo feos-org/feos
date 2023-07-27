@@ -16,7 +16,7 @@ use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
 /// Pure-substance parameters for the Saft-VRQ Mie equation of state.
-/// 
+///
 /// Parameters
 /// ----------
 /// m : float
@@ -25,7 +25,7 @@ use std::sync::Arc;
 ///     Structure parameter of the Mie potential in units of
 ///     Angstrom.
 /// epsilon_k : float
-///     Energetic parameter of the Mie potential in units of 
+///     Energetic parameter of the Mie potential in units of
 ///     Kelvin.
 /// lr : float
 ///     Repulsive exponent of the Mie potential.
@@ -61,10 +61,18 @@ impl PySaftVRQMieRecord {
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
-    ) -> Self {
-        Self(SaftVRQMieRecord::new(
-            m, sigma, epsilon_k, lr, la, fh, viscosity, diffusion, thermal_conductivity,
-        ))
+    ) -> PyResult<Self> {
+        Ok(Self(SaftVRQMieRecord::new(
+            m,
+            sigma,
+            epsilon_k,
+            lr,
+            la,
+            fh,
+            viscosity,
+            diffusion,
+            thermal_conductivity,
+        )?))
     }
 
     #[getter]

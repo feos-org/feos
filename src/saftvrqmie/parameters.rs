@@ -66,8 +66,13 @@ impl SaftVRQMieRecord {
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
-    ) -> SaftVRQMieRecord {
-        SaftVRQMieRecord {
+    ) -> Result<SaftVRQMieRecord, ParameterError> {
+        if m != 1.0 {
+            return Err(ParameterError::IncompatibleParameters(format!(
+                "Segment number `m` is not one. Chain-contributions are currently not supported."
+            )));
+        }
+        Ok(SaftVRQMieRecord {
             m,
             sigma,
             epsilon_k,
@@ -77,7 +82,7 @@ impl SaftVRQMieRecord {
             viscosity,
             diffusion,
             thermal_conductivity,
-        }
+        })
     }
 }
 
