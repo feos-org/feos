@@ -38,9 +38,12 @@ pub use equation_of_state::{
     HelmholtzEnergy, HelmholtzEnergyDual, IdealGas, Residual,
 };
 pub use errors::{EosError, EosResult};
-pub use phase_equilibria::{PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium};
+pub use phase_equilibria::{
+    PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, TemperatureOrPressure,
+};
 pub use state::{
     Contributions, DensityInitialization, Derivative, State, StateBuilder, StateHD, StateVec,
+    TPSpec,
 };
 
 #[cfg(feature = "python")]

@@ -15,6 +15,7 @@ mod phase_envelope;
 mod stability_analysis;
 mod tp_flash;
 mod vle_pure;
+pub use bubble_dew::TemperatureOrPressure;
 pub use phase_diagram_binary::PhaseDiagramHetero;
 pub use phase_diagram_pure::PhaseDiagram;
 
