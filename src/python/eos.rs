@@ -31,6 +31,7 @@ use feos_core::joback::Joback;
 use feos_core::python::cubic::PyPengRobinsonParameters;
 use feos_core::python::joback::PyJobackParameters;
 use feos_core::python::user_defined::{PyIdealGas, PyResidual};
+use feos_core::si::*;
 use feos_core::*;
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2};
@@ -39,9 +40,10 @@ use pyo3::prelude::*;
 #[cfg(feature = "estimator")]
 use pyo3::wrap_pymodule;
 use quantity::python::{PySIArray1, PySIArray2, PySINumber};
-use quantity::si::*;
 use std::collections::HashMap;
+use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
+use typenum::P3;
 
 /// Collection of equations of state.
 #[pyclass(name = "EquationOfState")]

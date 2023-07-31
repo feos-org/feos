@@ -4,12 +4,14 @@ use ndarray::{
     ShapeBuilder,
 };
 use num_traits::Zero;
-use std::convert::TryInto;
 use std::fmt;
 use std::iter::FromIterator;
 use std::marker::PhantomData;
 use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub, SubAssign};
 use typenum::{ATerm, Diff, Integer, Negate, Sum, TArr, P1, P2, P3, Z0};
+
+#[cfg(feature = "python")]
+mod python;
 
 pub type SIUnit<T, L, M, I, THETA, N, J> =
     TArr<T, TArr<L, TArr<M, TArr<I, TArr<THETA, TArr<N, TArr<J, ATerm>>>>>>>;
@@ -17,8 +19,6 @@ pub type SIUnit<T, L, M, I, THETA, N, J> =
 #[derive(Clone, Copy, Debug)]
 #[repr(transparent)]
 pub struct Quantity<T, U>(T, PhantomData<U>);
-
-type SINumber<T, L, M, I, THETA, N, J> = Quantity<f64, SIUnit<T, L, M, I, THETA, N, J>>;
 
 impl<T> Quantity<T, _Dimensionless> {
     pub fn into_value(self) -> T {
@@ -695,52 +695,6 @@ pub const RONNA: f64 = 1e27;
 /// Prefix quetta $\\left(\text{Q}=10^{30}\\right)$
 pub const QUETTA: f64 = 1e30;
 
-// impl<T: Mul<f64>> Mul<Temperature<f64>> for quantity::Quantity<T, quantity::si::SIUnit> {
-//     type Output =
-//         <quantity::Quantity<T, quantity::si::SIUnit> as Mul<quantity::si::SINumber>>::Output;
-
-//     fn mul(self, rhs: Temperature<f64>) -> Self::Output {
-//         self * (rhs.0 * quantity::si::KELVIN)
-//     }
-// }
-
-// impl<T> Mul<quantity::Quantity<T, quantity::si::SIUnit>> for Temperature<f64>
-// where
-//     f64: Mul<T>
-//         + Mul<
-//             quantity::Quantity<f64, quantity::si::SIUnit>,
-//             Output = quantity::Quantity<f64, quantity::si::SIUnit>,
-//         >,
-// {
-//     type Output =
-//         <quantity::si::SINumber as Mul<quantity::Quantity<T, quantity::si::SIUnit>>>::Output;
-
-//     fn mul(self, rhs: quantity::Quantity<T, quantity::si::SIUnit>) -> Self::Output {
-//         (self.0 * quantity::si::KELVIN) * rhs
-//     }
-// }
-
-// impl<T: Div<f64>> Div<Temperature<f64>> for quantity::Quantity<T, quantity::si::SIUnit> {
-//     type Output =
-//         <quantity::Quantity<T, quantity::si::SIUnit> as Div<quantity::si::SINumber>>::Output;
-
-//     fn div(self, rhs: Temperature<f64>) -> Self::Output {
-//         self / (rhs.0 * quantity::si::KELVIN)
-//     }
-// }
-
-// impl<T> Div<quantity::Quantity<T, quantity::si::SIUnit>> for Temperature<f64>
-// where
-//     f64: Div<T>,
-// {
-//     type Output =
-//         <quantity::si::SINumber as Div<quantity::Quantity<T, quantity::si::SIUnit>>>::Output;
-
-//     fn div(self, rhs: quantity::Quantity<T, quantity::si::SIUnit>) -> Self::Output {
-//         self.0 * quantity::si::KELVIN / rhs
-//     }
-// }
-
 impl<T: fmt::Display, U> fmt::Display for Quantity<T, U> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "")
@@ -750,68 +704,6 @@ impl<T: fmt::Display, U> fmt::Display for Quantity<T, U> {
 impl<T: fmt::LowerExp, U> fmt::LowerExp for Quantity<T, U> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "")
-    }
-}
-
-// impl<T: Add<f64>> Add<Temperature<f64>> for quantity::Quantity<T, quantity::si::SIUnit> {
-//     type Output =
-//         <quantity::Quantity<T, quantity::si::SIUnit> as Add<quantity::si::SINumber>>::Output;
-
-//     fn add(self, rhs: Temperature<f64>) -> Self::Output {
-//         self + (rhs.0 * quantity::si::KELVIN)
-//     }
-// }
-
-// impl Add<quantity::si::SINumber> for Temperature<f64> {
-//     type Output = Self;
-
-//     fn add(self, rhs: quantity::si::SINumber) -> Self::Output {
-//         self + rhs.to_reduced(quantity::si::KELVIN).unwrap() * KELVIN
-//     }
-// }
-
-#[derive(Copy, Clone, Debug)]
-struct SIPython {
-    value: f64,
-    unit: [i8; 7],
-}
-
-impl<T: Integer, L: Integer, M: Integer, I: Integer, THETA: Integer, N: Integer, J: Integer>
-    TryInto<SINumber<T, L, M, I, THETA, N, J>> for SIPython
-{
-    type Error = String;
-    fn try_into(self) -> Result<SINumber<T, L, M, I, THETA, N, J>, String> {
-        if self.unit[0] == T::to_i8()
-            && self.unit[1] == L::to_i8()
-            && self.unit[2] == M::to_i8()
-            && self.unit[3] == I::to_i8()
-            && self.unit[4] == THETA::to_i8()
-            && self.unit[5] == N::to_i8()
-            && self.unit[6] == J::to_i8()
-        {
-            Ok(Quantity(self.value, PhantomData))
-        } else {
-            Err("Wrong unit mate!".into())
-        }
-    }
-}
-
-impl<T: Integer, L: Integer, M: Integer, I: Integer, THETA: Integer, N: Integer, J: Integer>
-    From<SINumber<T, L, M, I, THETA, N, J>> for SIPython
-{
-    fn from(si: SINumber<T, L, M, I, THETA, N, J>) -> Self {
-        Self {
-            unit: [
-                T::to_i8(),
-                L::to_i8(),
-                M::to_i8(),
-                I::to_i8(),
-                THETA::to_i8(),
-                N::to_i8(),
-                J::to_i8(),
-            ],
-            value: si.0,
-        }
     }
 }
 

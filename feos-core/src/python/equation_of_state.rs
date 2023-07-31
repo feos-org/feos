@@ -15,8 +15,8 @@ macro_rules! impl_equation_of_state {
             /// SINumber
             #[pyo3(text_signature = "(moles=None)")]
             fn max_density(&self, moles: Option<PySIArray1>) -> PyResult<PySINumber> {
-                let m = moles.as_deref();
-                Ok(self.0.max_density(m)?.into())
+                let m = moles.map(|m| m.try_into()).transpose()?;
+                Ok(self.0.max_density(m.as_ref())?.into())
             }
         }
     };
@@ -45,10 +45,10 @@ macro_rules! impl_virial_coefficients {
                 temperature: PySINumber,
                 moles: Option<PySIArray1>,
             ) -> PyResult<PySINumber> {
-                let m = moles.as_deref();
+                let m = moles.map(|m| m.try_into()).transpose()?;
                 Ok(self
                     .0
-                    .second_virial_coefficient(temperature.into(), m)?
+                    .second_virial_coefficient(temperature.try_into()?, m.as_ref())?
                     .into())
             }
 
@@ -70,10 +70,10 @@ macro_rules! impl_virial_coefficients {
                 temperature: PySINumber,
                 moles: Option<PySIArray1>,
             ) -> PyResult<PySINumber> {
-                let m = moles.as_deref();
+                let m = moles.map(|m| m.try_into()).transpose()?;
                 Ok(self
                     .0
-                    .third_virial_coefficient(temperature.into(), m)?
+                    .third_virial_coefficient(temperature.try_into()?, m.as_ref())?
                     .into())
             }
 
@@ -96,10 +96,13 @@ macro_rules! impl_virial_coefficients {
                 temperature: PySINumber,
                 moles: Option<PySIArray1>,
             ) -> PyResult<PySINumber> {
-                let m = moles.as_deref();
+                let m = moles.map(|m| m.try_into()).transpose()?;
                 Ok(self
                     .0
-                    .second_virial_coefficient_temperature_derivative(temperature.into(), m)?
+                    .second_virial_coefficient_temperature_derivative(
+                        temperature.try_into()?,
+                        m.as_ref(),
+                    )?
                     .into())
             }
 
@@ -122,10 +125,13 @@ macro_rules! impl_virial_coefficients {
                 temperature: PySINumber,
                 moles: Option<PySIArray1>,
             ) -> PyResult<PySINumber> {
-                let m = moles.as_deref();
+                let m = moles.map(|m| m.try_into()).transpose()?;
                 Ok(self
                     .0
-                    .third_virial_coefficient_temperature_derivative(temperature.into(), m)?
+                    .third_virial_coefficient_temperature_derivative(
+                        temperature.try_into()?,
+                        m.as_ref(),
+                    )?
                     .into())
             }
         }

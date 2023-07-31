@@ -232,15 +232,6 @@ fn iterate_vle<E: Residual, TP: BubbleDewSpecification>(
     vle_vec
 }
 
-// impl<E: Residual> State<E> {
-//     fn tp(&self, tp: TPSpec) -> SINumber {
-//         match tp {
-//             TPSpec::Temperature(_) => self.pressure(Contributions::Total),
-//             TPSpec::Pressure(_) => self.temperature,
-//         }
-//     }
-// }
-
 /// Phase diagram (Txy or pxy) for a system with heteroazeotropic phase behavior.
 pub struct PhaseDiagramHetero<E> {
     pub vle1: PhaseDiagram<E, 2>,
@@ -268,33 +259,20 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         TPSpec: From<TP>,
     {
         let npoints_vle = npoints_vle.unwrap_or(DEFAULT_POINTS);
-        let tp = temperature_or_pressure.into();
 
         // calculate pure components
         let vle_sat = PhaseEquilibrium::vle_pure_comps(eos, temperature_or_pressure);
         let vle_sat = [vle_sat[1].clone(), vle_sat[0].clone()];
 
         // calculate heteroazeotrope
-        let tp_init_vlle = tp_init_vlle
-            .map(|tp_init_vlle| temperature_or_pressure.temperature_pressure(tp_init_vlle));
-        let vlle = match tp {
-            TPSpec::Temperature(t) => PhaseEquilibrium::heteroazeotrope_t(
-                eos,
-                t,
-                x_lle,
-                tp_init_vlle.map(|tp| tp.1),
-                SolverOptions::default(),
-                bubble_dew_options,
-            ),
-            TPSpec::Pressure(p) => PhaseEquilibrium::heteroazeotrope_p(
-                eos,
-                p,
-                x_lle,
-                tp_init_vlle.map(|tp| tp.0),
-                SolverOptions::default(),
-                bubble_dew_options,
-            ),
-        }?;
+        let vlle = PhaseEquilibrium::heteroazeotrope(
+            eos,
+            temperature_or_pressure,
+            x_lle,
+            tp_init_vlle,
+            SolverOptions::default(),
+            bubble_dew_options,
+        )?;
         let x_hetero = (vlle.liquid1().molefracs[0], vlle.liquid2().molefracs[0]);
 
         // calculate vapor liquid equilibria
@@ -350,29 +328,43 @@ const TOL_HETERO: f64 = 1e-8;
 
 /// # Heteroazeotropes
 impl<E: Residual> PhaseEquilibrium<E, 3> {
-    // /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
-    // /// system and given pressure.
-    // pub fn heteroazeotrope<TP>(
-    //     eos: &Arc<E>,
-    //     temperature_or_pressure: TP,
-    //     x_init: (f64, f64),
-    //     tp_init: Option<SINumber>,
-    //     options: SolverOptions,
-    //     bubble_dew_options: (SolverOptions, SolverOptions),
-    // ) -> EosResult<Self> {
-    //     match TPSpec::try_from(temperature_or_pressure)? {
-    //         TPSpec::Temperature(t) => {
-    //             Self::heteroazeotrope_t(eos, t, x_init, tp_init, options, bubble_dew_options)
-    //         }
-    //         TPSpec::Pressure(p) => {
-    //             Self::heteroazeotrope_p(eos, p, x_init, tp_init, options, bubble_dew_options)
-    //         }
-    //     }
-    // }
+    /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
+    /// system and given temperature or pressure.
+    pub fn heteroazeotrope<TP: TemperatureOrPressure>(
+        eos: &Arc<E>,
+        temperature_or_pressure: TP,
+        x_init: (f64, f64),
+        tp_init: Option<TP::Other>,
+        options: SolverOptions,
+        bubble_dew_options: (SolverOptions, SolverOptions),
+    ) -> EosResult<Self>
+    where
+        TPSpec: From<TP>,
+    {
+        let tp_init = tp_init.map(|tp_init| temperature_or_pressure.temperature_pressure(tp_init));
+        match TPSpec::from(temperature_or_pressure) {
+            TPSpec::Temperature(t) => PhaseEquilibrium::heteroazeotrope_t(
+                eos,
+                t,
+                x_init,
+                tp_init.map(|tp| tp.1),
+                options,
+                bubble_dew_options,
+            ),
+            TPSpec::Pressure(p) => PhaseEquilibrium::heteroazeotrope_p(
+                eos,
+                p,
+                x_init,
+                tp_init.map(|tp| tp.0),
+                options,
+                bubble_dew_options,
+            ),
+        }
+    }
 
     /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
     /// system and given temperature.
-    pub fn heteroazeotrope_t(
+    fn heteroazeotrope_t(
         eos: &Arc<E>,
         temperature: Temperature<f64>,
         x_init: (f64, f64),
@@ -634,7 +626,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
                     || t.is_sign_negative()
                 {
                     return Err(EosError::IterationFailed(String::from(
-                        "PhaseEquilibrium::heteroazeotrope_t",
+                        "PhaseEquilibrium::heteroazeotrope_p",
                     )));
                 }
             }
@@ -654,7 +646,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
                 .build()?;
         }
         Err(EosError::NotConverged(String::from(
-            "PhaseEquilibrium::heteroazeotrope_t",
+            "PhaseEquilibrium::heteroazeotrope_p",
         )))
     }
 }
