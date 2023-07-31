@@ -3,12 +3,11 @@ use crate::adsorption::fea_potential::calculate_fea_potential;
 use crate::functional::HelmholtzEnergyFunctional;
 #[cfg(feature = "rayon")]
 use crate::geometry::Geometry;
+#[cfg(feature = "rayon")]
+use feos_core::si::Length;
 use libm::tgamma;
 use ndarray::{Array1, Array2, Axis as Axis_nd};
-use quantity::si::SIUnit;
-#[cfg(feature = "rayon")]
-use quantity::si::{SIArray2, SINumber};
-use std::{f64::consts::PI, marker::PhantomData};
+use std::f64::consts::PI;
 
 const DELTA_STEELE: f64 = 3.35;
 
@@ -54,21 +53,17 @@ pub enum ExternalPotential {
     /// Free-energy averaged potential:
     #[cfg(feature = "rayon")]
     FreeEnergyAveraged {
-        coordinates: SIArray2,
+        coordinates: Length<Array2<f64>>,
         sigma_ss: Array1<f64>,
         epsilon_k_ss: Array1<f64>,
         pore_center: [f64; 3],
-        system_size: [SINumber; 3],
+        system_size: [Length<f64>; 3],
         n_grid: [usize; 2],
         cutoff_radius: Option<f64>,
     },
 
     /// Custom potential
     Custom(Array2<f64>),
-
-    /// Needed to keep `FreeEnergyAveraged` optional
-    #[doc(hidden)]
-    Phantom(PhantomData<SIUnit>),
 }
 
 /// Parameters of the fluid required to evaluate the external potential.

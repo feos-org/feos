@@ -1,6 +1,7 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::EosResult;
+use crate::si::Temperature;
 use crate::state::{State, StateVec};
 #[cfg(feature = "rayon")]
 use crate::EosUnit;
@@ -9,7 +10,6 @@ use crate::SolverOptions;
 use ndarray::{Array1, ArrayView1, Axis};
 #[cfg(feature = "rayon")]
 use quantity::si::SIUnit;
-use quantity::si::{SIArray1, SINumber};
 #[cfg(feature = "rayon")]
 use rayon::{prelude::*, ThreadPool};
 use std::sync::Arc;
@@ -38,9 +38,9 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     /// Calculate a phase diagram for a pure component.
     pub fn pure(
         eos: &Arc<E>,
-        min_temperature: SINumber,
+        min_temperature: Temperature<f64>,
         npoints: usize,
-        critical_temperature: Option<SINumber>,
+        critical_temperature: Option<Temperature<f64>>,
         options: SolverOptions,
     ) -> EosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
@@ -49,7 +49,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
         let max_temperature = min_temperature
             + (sc.temperature - min_temperature) * ((npoints - 2) as f64 / (npoints - 1) as f64);
-        let temperatures = SIArray1::linspace(min_temperature, max_temperature, npoints - 1)?;
+        let temperatures = Temperature::linspace(min_temperature, max_temperature, npoints - 1);
 
         let mut vle = None;
         for ti in &temperatures {
@@ -100,11 +100,11 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
     pub fn par_pure(
         eos: &Arc<E>,
-        min_temperature: SINumber,
+        min_temperature: Temperature<f64>,
         npoints: usize,
         chunksize: usize,
         thread_pool: ThreadPool,
-        critical_temperature: Option<SINumber>,
+        critical_temperature: Option<Temperature<f64>>,
         options: SolverOptions,
     ) -> EosResult<Self> {
         let sc = State::critical_point(eos, None, critical_temperature, SolverOptions::default())?;

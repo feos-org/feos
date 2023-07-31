@@ -1,12 +1,12 @@
+use super::bubble_dew::{BubbleDewSpecification, TemperatureOrPressure};
 use super::{PhaseDiagram, PhaseEquilibrium};
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
+use crate::si::{Density, Moles, Pressure, Temperature, RGAS};
 use crate::state::{Contributions, DensityInitialization, State, StateBuilder, TPSpec};
-use crate::{EosUnit, SolverOptions};
+use crate::SolverOptions;
 use ndarray::{arr1, arr2, concatenate, s, Array1, Array2, Axis};
 use num_dual::linalg::{norm, LU};
-use quantity::si::{SIArray1, SINumber, SIUnit};
-use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
 const DEFAULT_POINTS: usize = 51;
@@ -18,15 +18,17 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     /// If a heteroazeotrope occurs and the composition of the liquid
     /// phases are known, they can be passed as `x_lle` to avoid
     /// the calculation of unstable branches.
-    pub fn binary_vle(
+    pub fn binary_vle<TP: BubbleDewSpecification>(
         eos: &Arc<E>,
-        temperature_or_pressure: SINumber,
+        temperature_or_pressure: TP,
         npoints: Option<usize>,
         x_lle: Option<(f64, f64)>,
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self> {
+    ) -> EosResult<Self>
+    where
+        TPSpec: From<TP>,
+    {
         let npoints = npoints.unwrap_or(DEFAULT_POINTS);
-        let tp = temperature_or_pressure.try_into()?;
 
         // calculate boiling temperature/vapor pressure of pure components
         let vle_sat = PhaseEquilibrium::vle_pure_comps(eos, temperature_or_pressure);
@@ -34,8 +36,14 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
         // Only calculate up to specified compositions
         if let Some(x_lle) = x_lle {
-            let (states1, states2) =
-                Self::calculate_vlle(eos, tp, npoints, x_lle, vle_sat, bubble_dew_options)?;
+            let (states1, states2) = Self::calculate_vlle(
+                eos,
+                temperature_or_pressure,
+                npoints,
+                x_lle,
+                vle_sat,
+                bubble_dew_options,
+            )?;
 
             let states = states1
                 .into_iter()
@@ -45,7 +53,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         }
 
         // use dew point when calculating a supercritical tx diagram
-        let bubble = match tp {
+        let bubble = match temperature_or_pressure.into() {
             TPSpec::Temperature(_) => true,
             TPSpec::Pressure(_) => false,
         };
@@ -80,7 +88,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
         let mut states = iterate_vle(
             eos,
-            tp,
+            temperature_or_pressure,
             &x_lim,
             vle_lim.0,
             Some(vle_lim.1),
@@ -95,9 +103,9 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     }
 
     #[allow(clippy::type_complexity)]
-    fn calculate_vlle(
+    fn calculate_vlle<TP: BubbleDewSpecification>(
         eos: &Arc<E>,
-        tp: TPSpec,
+        tp: TP,
         npoints: usize,
         x_lle: (f64, f64),
         vle_sat: [Option<PhaseEquilibrium<E, 2>>; 2],
@@ -137,22 +145,21 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     /// liquid-liquid phase diagrams, but it can be used for vapor-
     /// liquid diagrams as well, as long as the feed composition is
     /// in a two phase region.
-    pub fn lle(
+    pub fn lle<TP: TemperatureOrPressure>(
         eos: &Arc<E>,
-        temperature_or_pressure: SINumber,
-        feed: &SIArray1,
-        min_tp: SINumber,
-        max_tp: SINumber,
+        temperature_or_pressure: TP,
+        feed: &Moles<Array1<f64>>,
+        min_tp: TP::Other,
+        max_tp: TP::Other,
         npoints: Option<usize>,
     ) -> EosResult<Self> {
         let npoints = npoints.unwrap_or(DEFAULT_POINTS);
         let mut states = Vec::with_capacity(npoints);
-        let tp: TPSpec = temperature_or_pressure.try_into()?;
 
-        let tp_vec = SIArray1::linspace(min_tp, max_tp, npoints)?;
+        let (t_vec, p_vec) = temperature_or_pressure.linspace(min_tp, max_tp, npoints);
         let mut vle = None;
         for i in 0..npoints {
-            let (_, t, p) = tp.temperature_pressure(tp_vec.get(i));
+            let (t, p) = (t_vec.get(i), p_vec.get(i));
             vle = PhaseEquilibrium::tp_flash(
                 eos,
                 t,
@@ -163,7 +170,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
                 None,
             )
             .ok();
-            if let Some(vle) = &vle {
+            if let Some(vle) = vle.as_ref() {
                 states.push(vle.clone());
             }
         }
@@ -171,19 +178,16 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     }
 }
 
-fn iterate_vle<E: Residual>(
+fn iterate_vle<E: Residual, TP: BubbleDewSpecification>(
     eos: &Arc<E>,
-    tp: TPSpec,
+    tp: TP,
     x_lim: &[f64],
     vle_0: PhaseEquilibrium<E, 2>,
     vle_1: Option<PhaseEquilibrium<E, 2>>,
     npoints: usize,
     bubble: bool,
     bubble_dew_options: (SolverOptions, SolverOptions),
-) -> Vec<PhaseEquilibrium<E, 2>>
-where
-    SINumber: std::fmt::Display + std::fmt::LowerExp,
-{
+) -> Vec<PhaseEquilibrium<E, 2>> {
     let mut vle_vec = Vec::with_capacity(npoints);
 
     let x = Array1::linspace(x_lim[0], x_lim[1], npoints);
@@ -193,7 +197,7 @@ where
         x.slice(s![1..])
     };
 
-    let tp_0 = Some(vle_0.vapor().tp(tp));
+    let tp_0 = Some(TP::pressure_temperature(vle_0.vapor()));
     let mut tp_old = tp_0;
     let mut y_old = None;
     vle_vec.push(vle_0);
@@ -214,10 +218,7 @@ where
             } else {
                 vle.liquid().molefracs.clone()
             });
-            tp_old = Some(match tp {
-                TPSpec::Temperature(_) => vle.vapor().pressure(Contributions::Total),
-                TPSpec::Pressure(_) => vle.vapor().temperature,
-            });
+            tp_old = Some(TP::pressure_temperature(vle.vapor()));
             vle_vec.push(vle.clone());
         } else {
             y_old = None;
@@ -231,14 +232,14 @@ where
     vle_vec
 }
 
-impl<E: Residual> State<E> {
-    fn tp(&self, tp: TPSpec) -> SINumber {
-        match tp {
-            TPSpec::Temperature(_) => self.pressure(Contributions::Total),
-            TPSpec::Pressure(_) => self.temperature,
-        }
-    }
-}
+// impl<E: Residual> State<E> {
+//     fn tp(&self, tp: TPSpec) -> SINumber {
+//         match tp {
+//             TPSpec::Temperature(_) => self.pressure(Contributions::Total),
+//             TPSpec::Pressure(_) => self.temperature,
+//         }
+//     }
+// }
 
 /// Phase diagram (Txy or pxy) for a system with heteroazeotropic phase behavior.
 pub struct PhaseDiagramHetero<E> {
@@ -253,30 +254,35 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     ///
     /// The `x_lle` parameter is used as initial values for the calculation
     /// of the heteroazeotrope.
-    pub fn binary_vlle(
+    pub fn binary_vlle<TP: BubbleDewSpecification>(
         eos: &Arc<E>,
-        temperature_or_pressure: SINumber,
+        temperature_or_pressure: TP,
         x_lle: (f64, f64),
-        tp_lim_lle: Option<SINumber>,
-        tp_init_vlle: Option<SINumber>,
+        tp_lim_lle: Option<TP::Other>,
+        tp_init_vlle: Option<TP::Other>,
         npoints_vle: Option<usize>,
         npoints_lle: Option<usize>,
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<PhaseDiagramHetero<E>> {
+    ) -> EosResult<PhaseDiagramHetero<E>>
+    where
+        TPSpec: From<TP>,
+    {
         let npoints_vle = npoints_vle.unwrap_or(DEFAULT_POINTS);
-        let tp = temperature_or_pressure.try_into()?;
+        let tp = temperature_or_pressure.into();
 
         // calculate pure components
         let vle_sat = PhaseEquilibrium::vle_pure_comps(eos, temperature_or_pressure);
         let vle_sat = [vle_sat[1].clone(), vle_sat[0].clone()];
 
         // calculate heteroazeotrope
+        let tp_init_vlle = tp_init_vlle
+            .map(|tp_init_vlle| temperature_or_pressure.temperature_pressure(tp_init_vlle));
         let vlle = match tp {
             TPSpec::Temperature(t) => PhaseEquilibrium::heteroazeotrope_t(
                 eos,
                 t,
                 x_lle,
-                tp_init_vlle,
+                tp_init_vlle.map(|tp| tp.1),
                 SolverOptions::default(),
                 bubble_dew_options,
             ),
@@ -284,7 +290,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
                 eos,
                 p,
                 x_lle,
-                tp_init_vlle,
+                tp_init_vlle.map(|tp| tp.0),
                 SolverOptions::default(),
                 bubble_dew_options,
             ),
@@ -294,7 +300,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         // calculate vapor liquid equilibria
         let (dia1, dia2) = PhaseDiagram::calculate_vlle(
             eos,
-            tp,
+            temperature_or_pressure,
             npoints_vle,
             x_hetero,
             vle_sat,
@@ -304,12 +310,9 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         // calculate liquid liquid equilibrium
         let lle = tp_lim_lle
             .map(|tp_lim| {
-                let tp_hetero = match tp {
-                    TPSpec::Pressure(_) => vlle.vapor().temperature,
-                    TPSpec::Temperature(_) => vlle.vapor().pressure(Contributions::Total),
-                };
+                let tp_hetero = TP::pressure_temperature(vlle.vapor());
                 let x_feed = 0.5 * (x_hetero.0 + x_hetero.1);
-                let feed = arr1(&[x_feed, 1.0 - x_feed]) * SIUnit::reference_moles();
+                let feed = Moles::from_reduced(arr1(&[x_feed, 1.0 - x_feed]));
                 PhaseDiagram::lle(
                     eos,
                     temperature_or_pressure,
@@ -346,37 +349,34 @@ const MAX_ITER_HETERO: usize = 50;
 const TOL_HETERO: f64 = 1e-8;
 
 /// # Heteroazeotropes
-impl<E: Residual> PhaseEquilibrium<E, 3>
-where
-    SINumber: std::fmt::Display + std::fmt::LowerExp,
-{
-    /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
-    /// system and given pressure.
-    pub fn heteroazeotrope(
-        eos: &Arc<E>,
-        temperature_or_pressure: SINumber,
-        x_init: (f64, f64),
-        tp_init: Option<SINumber>,
-        options: SolverOptions,
-        bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self> {
-        match TPSpec::try_from(temperature_or_pressure)? {
-            TPSpec::Temperature(t) => {
-                Self::heteroazeotrope_t(eos, t, x_init, tp_init, options, bubble_dew_options)
-            }
-            TPSpec::Pressure(p) => {
-                Self::heteroazeotrope_p(eos, p, x_init, tp_init, options, bubble_dew_options)
-            }
-        }
-    }
+impl<E: Residual> PhaseEquilibrium<E, 3> {
+    // /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
+    // /// system and given pressure.
+    // pub fn heteroazeotrope<TP>(
+    //     eos: &Arc<E>,
+    //     temperature_or_pressure: TP,
+    //     x_init: (f64, f64),
+    //     tp_init: Option<SINumber>,
+    //     options: SolverOptions,
+    //     bubble_dew_options: (SolverOptions, SolverOptions),
+    // ) -> EosResult<Self> {
+    //     match TPSpec::try_from(temperature_or_pressure)? {
+    //         TPSpec::Temperature(t) => {
+    //             Self::heteroazeotrope_t(eos, t, x_init, tp_init, options, bubble_dew_options)
+    //         }
+    //         TPSpec::Pressure(p) => {
+    //             Self::heteroazeotrope_p(eos, p, x_init, tp_init, options, bubble_dew_options)
+    //         }
+    //     }
+    // }
 
     /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
     /// system and given temperature.
-    fn heteroazeotrope_t(
+    pub fn heteroazeotrope_t(
         eos: &Arc<E>,
-        temperature: SINumber,
+        temperature: Temperature<f64>,
         x_init: (f64, f64),
-        p_init: Option<SINumber>,
+        p_init: Option<Pressure<f64>>,
         options: SolverOptions,
         bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self> {
@@ -409,47 +409,27 @@ where
 
         for _ in 0..options.max_iter.unwrap_or(MAX_ITER_HETERO) {
             // calculate properties
-            let dmu_drho_l1 = (l1.dmu_dni(Contributions::Total) * l1.volume)
-                .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
-            let dmu_drho_l2 = (l2.dmu_dni(Contributions::Total) * l2.volume)
-                .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
-            let dmu_drho_v = (v.dmu_dni(Contributions::Total) * v.volume)
-                .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
-            let dp_drho_l1 = (l1.dp_dni(Contributions::Total) * l1.volume)
-                .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?;
-            let dp_drho_l2 = (l2.dp_dni(Contributions::Total) * l2.volume)
-                .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?;
-            let dp_drho_v = (v.dp_dni(Contributions::Total) * v.volume)
-                .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?;
-            let mu_l1_res = l1
-                .residual_chemical_potential()
-                .to_reduced(SIUnit::reference_molar_energy())?;
-            let mu_l2_res = l2
-                .residual_chemical_potential()
-                .to_reduced(SIUnit::reference_molar_energy())?;
-            let mu_v_res = v
-                .residual_chemical_potential()
-                .to_reduced(SIUnit::reference_molar_energy())?;
-            let p_l1 = l1
-                .pressure(Contributions::Total)
-                .to_reduced(SIUnit::reference_pressure())?;
-            let p_l2 = l2
-                .pressure(Contributions::Total)
-                .to_reduced(SIUnit::reference_pressure())?;
-            let p_v = v
-                .pressure(Contributions::Total)
-                .to_reduced(SIUnit::reference_pressure())?;
+            let dmu_drho_l1 = (l1.dmu_dni(Contributions::Total) * l1.volume).to_reduced();
+            let dmu_drho_l2 = (l2.dmu_dni(Contributions::Total) * l2.volume).to_reduced();
+            let dmu_drho_v = (v.dmu_dni(Contributions::Total) * v.volume).to_reduced();
+            let dp_drho_l1 = (l1.dp_dni(Contributions::Total) * l1.volume).to_reduced();
+            let dp_drho_l2 = (l2.dp_dni(Contributions::Total) * l2.volume).to_reduced();
+            let dp_drho_v = (v.dp_dni(Contributions::Total) * v.volume).to_reduced();
+            let mu_l1_res = l1.residual_chemical_potential().to_reduced();
+            let mu_l2_res = l2.residual_chemical_potential().to_reduced();
+            let mu_v_res = v.residual_chemical_potential().to_reduced();
+            let p_l1 = l1.pressure(Contributions::Total).to_reduced();
+            let p_l2 = l2.pressure(Contributions::Total).to_reduced();
+            let p_v = v.pressure(Contributions::Total).to_reduced();
 
             // calculate residual
-            let delta_l1v_mu_ig = (SIUnit::gas_constant() * v.temperature)
-                .to_reduced(SIUnit::reference_molar_energy())?
+            let delta_l1v_mu_ig = (RGAS * v.temperature).to_reduced()
                 * (&l1.partial_density / &v.partial_density)
-                    .into_value()?
+                    .into_value()
                     .mapv(f64::ln);
-            let delta_l2v_mu_ig = (SIUnit::gas_constant() * v.temperature)
-                .to_reduced(SIUnit::reference_molar_energy())?
+            let delta_l2v_mu_ig = (RGAS * v.temperature).to_reduced()
                 * (&l2.partial_density / &v.partial_density)
-                    .into_value()?
+                    .into_value()
                     .mapv(f64::ln);
             let res = concatenate![
                 Axis(0),
@@ -494,12 +474,11 @@ where
             let dx = LU::new(jacobian)?.solve(&res);
 
             // apply Newton step
-            let rho_l1 = &l1.partial_density
-                - &(dx.slice(s![0..2]).to_owned() * SIUnit::reference_density());
-            let rho_l2 = &l2.partial_density
-                - &(dx.slice(s![2..4]).to_owned() * SIUnit::reference_density());
-            let rho_v =
-                &v.partial_density - &(dx.slice(s![4..6]).to_owned() * SIUnit::reference_density());
+            let rho_l1 =
+                &l1.partial_density - &Density::from_reduced(dx.slice(s![0..2]).to_owned());
+            let rho_l2 =
+                &l2.partial_density - &Density::from_reduced(dx.slice(s![2..4]).to_owned());
+            let rho_v = &v.partial_density - &Density::from_reduced(dx.slice(s![4..6]).to_owned());
 
             // check for negative densities
             for i in 0..2 {
@@ -536,13 +515,13 @@ where
     /// system and given pressure.
     fn heteroazeotrope_p(
         eos: &Arc<E>,
-        pressure: SINumber,
+        pressure: Pressure<f64>,
         x_init: (f64, f64),
-        t_init: Option<SINumber>,
+        t_init: Option<Temperature<f64>>,
         options: SolverOptions,
         bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self> {
-        let p = pressure.to_reduced(SIUnit::reference_pressure())?;
+        let p = pressure.to_reduced();
 
         // calculate initial values using bubble point
         let x1 = arr1(&[x_init.0, 1.0 - x_init.0]);
@@ -559,59 +538,34 @@ where
 
         for _ in 0..options.max_iter.unwrap_or(MAX_ITER_HETERO) {
             // calculate properties
-            let dmu_drho_l1 = (l1.dmu_dni(Contributions::Total) * l1.volume)
-                .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
-            let dmu_drho_l2 = (l2.dmu_dni(Contributions::Total) * l2.volume)
-                .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
-            let dmu_drho_v = (v.dmu_dni(Contributions::Total) * v.volume)
-                .to_reduced(SIUnit::reference_molar_energy() / SIUnit::reference_density())?;
-            let dmu_res_dt_l1 = (l1.dmu_res_dt()).to_reduced(SIUnit::gas_constant())?;
-            let dmu_res_dt_l2 = (l2.dmu_res_dt()).to_reduced(SIUnit::gas_constant())?;
-            let dmu_res_dt_v = (v.dmu_res_dt()).to_reduced(SIUnit::gas_constant())?;
-            let dp_drho_l1 = (l1.dp_dni(Contributions::Total) * l1.volume)
-                .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?;
-            let dp_drho_l2 = (l2.dp_dni(Contributions::Total) * l2.volume)
-                .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?;
-            let dp_drho_v = (v.dp_dni(Contributions::Total) * v.volume)
-                .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_density())?;
-            let dp_dt_l1 = (l1.dp_dt(Contributions::Total))
-                .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_temperature())?;
-            let dp_dt_l2 = (l2.dp_dt(Contributions::Total))
-                .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_temperature())?;
-            let dp_dt_v = (v.dp_dt(Contributions::Total))
-                .to_reduced(SIUnit::reference_pressure() / SIUnit::reference_temperature())?;
-            let mu_l1_res = l1
-                .residual_chemical_potential()
-                .to_reduced(SIUnit::reference_molar_energy())?;
-            let mu_l2_res = l2
-                .residual_chemical_potential()
-                .to_reduced(SIUnit::reference_molar_energy())?;
-            let mu_v_res = v
-                .residual_chemical_potential()
-                .to_reduced(SIUnit::reference_molar_energy())?;
-            let p_l1 = l1
-                .pressure(Contributions::Total)
-                .to_reduced(SIUnit::reference_pressure())?;
-            let p_l2 = l2
-                .pressure(Contributions::Total)
-                .to_reduced(SIUnit::reference_pressure())?;
-            let p_v = v
-                .pressure(Contributions::Total)
-                .to_reduced(SIUnit::reference_pressure())?;
+            let dmu_drho_l1 = (l1.dmu_dni(Contributions::Total) * l1.volume).to_reduced();
+            let dmu_drho_l2 = (l2.dmu_dni(Contributions::Total) * l2.volume).to_reduced();
+            let dmu_drho_v = (v.dmu_dni(Contributions::Total) * v.volume).to_reduced();
+            let dmu_res_dt_l1 = (l1.dmu_res_dt()).to_reduced();
+            let dmu_res_dt_l2 = (l2.dmu_res_dt()).to_reduced();
+            let dmu_res_dt_v = (v.dmu_res_dt()).to_reduced();
+            let dp_drho_l1 = (l1.dp_dni(Contributions::Total) * l1.volume).to_reduced();
+            let dp_drho_l2 = (l2.dp_dni(Contributions::Total) * l2.volume).to_reduced();
+            let dp_drho_v = (v.dp_dni(Contributions::Total) * v.volume).to_reduced();
+            let dp_dt_l1 = (l1.dp_dt(Contributions::Total)).to_reduced();
+            let dp_dt_l2 = (l2.dp_dt(Contributions::Total)).to_reduced();
+            let dp_dt_v = (v.dp_dt(Contributions::Total)).to_reduced();
+            let mu_l1_res = l1.residual_chemical_potential().to_reduced();
+            let mu_l2_res = l2.residual_chemical_potential().to_reduced();
+            let mu_v_res = v.residual_chemical_potential().to_reduced();
+            let p_l1 = l1.pressure(Contributions::Total).to_reduced();
+            let p_l2 = l2.pressure(Contributions::Total).to_reduced();
+            let p_v = v.pressure(Contributions::Total).to_reduced();
 
             // calculate residual
             let delta_l1v_dmu_ig_dt = (&l1.partial_density / &v.partial_density)
-                .into_value()?
+                .into_value()
                 .mapv(f64::ln);
             let delta_l2v_dmu_ig_dt = (&l2.partial_density / &v.partial_density)
-                .into_value()?
+                .into_value()
                 .mapv(f64::ln);
-            let delta_l1v_mu_ig = (SIUnit::gas_constant() * v.temperature)
-                .to_reduced(SIUnit::reference_molar_energy())?
-                * &delta_l1v_dmu_ig_dt;
-            let delta_l2v_mu_ig = (SIUnit::gas_constant() * v.temperature)
-                .to_reduced(SIUnit::reference_molar_energy())?
-                * &delta_l2v_dmu_ig_dt;
+            let delta_l1v_mu_ig = (RGAS * v.temperature).to_reduced() * &delta_l1v_dmu_ig_dt;
+            let delta_l2v_mu_ig = (RGAS * v.temperature).to_reduced() * &delta_l2v_dmu_ig_dt;
             let res = concatenate![
                 Axis(0),
                 mu_l1_res - &mu_v_res + delta_l1v_mu_ig,
@@ -667,13 +621,10 @@ where
             let dx = LU::new(jacobian)?.solve(&res);
 
             // apply Newton step
-            let rho_l1 = &l1.partial_density
-                - &(dx.slice(s![0..2]).to_owned() * SIUnit::reference_density());
-            let rho_l2 = &l2.partial_density
-                - &(dx.slice(s![2..4]).to_owned() * SIUnit::reference_density());
-            let rho_v =
-                &v.partial_density - &(dx.slice(s![4..6]).to_owned() * SIUnit::reference_density());
-            let t = v.temperature - dx[6] * SIUnit::reference_temperature();
+            let rho_l1 = l1.partial_density - Density::from_reduced(dx.slice(s![0..2]).to_owned());
+            let rho_l2 = l2.partial_density - Density::from_reduced(dx.slice(s![2..4]).to_owned());
+            let rho_v = v.partial_density - Density::from_reduced(dx.slice(s![4..6]).to_owned());
+            let t = v.temperature - Temperature::from_reduced(dx[6]);
 
             // check for negative densities and temperatures
             for i in 0..2 {

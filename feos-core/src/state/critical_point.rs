@@ -1,7 +1,8 @@
 use super::{DensityInitialization, State, StateHD, TPSpec};
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::{EosUnit, SolverOptions, Verbosity};
+use crate::si::{Density, Moles, Pressure, Temperature, Volume};
+use crate::{SolverOptions, Verbosity};
 use nalgebra::{DMatrix, DVector, SVector, SymmetricEigen};
 use ndarray::{arr1, Array1};
 use num_dual::{
@@ -9,8 +10,6 @@ use num_dual::{
     DualVec, HyperDual,
 };
 use num_traits::{One, Zero};
-use quantity::si::{SIArray1, SINumber, SIUnit};
-use std::convert::TryFrom;
 use std::sync::Arc;
 
 const MAX_ITER_CRIT_POINT: usize = 50;
@@ -22,12 +21,9 @@ impl<R: Residual> State<R> {
     /// Calculate the pure component critical point of all components.
     pub fn critical_point_pure(
         eos: &Arc<R>,
-        initial_temperature: Option<SINumber>,
+        initial_temperature: Option<Temperature<f64>>,
         options: SolverOptions,
-    ) -> EosResult<Vec<Self>>
-    where
-        SINumber: std::fmt::Display,
-    {
+    ) -> EosResult<Vec<Self>> {
         (0..eos.components())
             .map(|i| {
                 Self::critical_point(
@@ -40,17 +36,17 @@ impl<R: Residual> State<R> {
             .collect()
     }
 
-    pub fn critical_point_binary(
+    pub fn critical_point_binary<TP>(
         eos: &Arc<R>,
-        temperature_or_pressure: SINumber,
-        initial_temperature: Option<SINumber>,
+        temperature_or_pressure: TP,
+        initial_temperature: Option<Temperature<f64>>,
         initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
     ) -> EosResult<Self>
     where
-        SINumber: std::fmt::Display,
+        TPSpec: From<TP>,
     {
-        match TPSpec::try_from(temperature_or_pressure)? {
+        match TPSpec::from(temperature_or_pressure) {
             TPSpec::Temperature(t) => {
                 Self::critical_point_binary_t(eos, t, initial_molefracs, options)
             }
@@ -67,18 +63,15 @@ impl<R: Residual> State<R> {
     /// Calculate the critical point of a system for given moles.
     pub fn critical_point(
         eos: &Arc<R>,
-        moles: Option<&SIArray1>,
-        initial_temperature: Option<SINumber>,
+        moles: Option<&Moles<Array1<f64>>>,
+        initial_temperature: Option<Temperature<f64>>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    where
-        SINumber: std::fmt::Display,
-    {
+    ) -> EosResult<Self> {
         let moles = eos.validate_moles(moles)?;
         let trial_temperatures = [
-            300.0 * SIUnit::reference_temperature(),
-            700.0 * SIUnit::reference_temperature(),
-            500.0 * SIUnit::reference_temperature(),
+            Temperature::from_reduced(300.0),
+            Temperature::from_reduced(700.0),
+            Temperature::from_reduced(500.0),
         ];
         if let Some(t) = initial_temperature {
             return Self::critical_point_hkm(eos, &moles, t, options);
@@ -94,21 +87,16 @@ impl<R: Residual> State<R> {
 
     fn critical_point_hkm(
         eos: &Arc<R>,
-        moles: &SIArray1,
-        initial_temperature: SINumber,
+        moles: &Moles<Array1<f64>>,
+        initial_temperature: Temperature<f64>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    where
-        SINumber: std::fmt::Display,
-    {
+    ) -> EosResult<Self> {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_CRIT_POINT, TOL_CRIT_POINT);
 
-        let mut t = initial_temperature.to_reduced(SIUnit::reference_temperature())?;
-        let max_density = eos
-            .max_density(Some(moles))?
-            .to_reduced(SIUnit::reference_density())?;
+        let mut t = initial_temperature.to_reduced();
+        let max_density = eos.max_density(Some(moles))?.to_reduced();
         let mut rho = 0.3 * max_density;
-        let n = moles.to_reduced(SIUnit::reference_moles())?;
+        let n = moles.to_reduced();
 
         log_iter!(
             verbosity,
@@ -119,8 +107,8 @@ impl<R: Residual> State<R> {
             verbosity,
             " {:4} |                | {:13.8} | {:12.8}",
             0,
-            t * SIUnit::reference_temperature(),
-            rho * SIUnit::reference_density(),
+            Temperature::from_reduced(t),
+            Density::from_reduced(rho),
         );
 
         for i in 1..=max_iter {
@@ -150,8 +138,8 @@ impl<R: Residual> State<R> {
                 " {:4} | {:14.8e} | {:13.8} | {:12.8}",
                 i,
                 res.norm(),
-                t * SIUnit::reference_temperature(),
-                rho * SIUnit::reference_density(),
+                Temperature::from_reduced(t),
+                Density::from_reduced(rho),
             );
 
             // check convergence
@@ -163,8 +151,8 @@ impl<R: Residual> State<R> {
                 );
                 return State::new_nvt(
                     eos,
-                    t * SIUnit::reference_temperature(),
-                    moles.sum() / (rho * SIUnit::reference_density()),
+                    Temperature::from_reduced(t),
+                    moles.sum() / Density::from_reduced(rho),
                     moles,
                 );
             }
@@ -175,21 +163,18 @@ impl<R: Residual> State<R> {
     /// Calculate the critical point of a binary system for given temperature.
     fn critical_point_binary_t(
         eos: &Arc<R>,
-        temperature: SINumber,
+        temperature: Temperature<f64>,
         initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    where
-        SINumber: std::fmt::Display,
-    {
+    ) -> EosResult<Self> {
         let (max_iter, tol, verbosity) =
             options.unwrap_or(MAX_ITER_CRIT_POINT_BINARY, TOL_CRIT_POINT);
 
-        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
+        let t = temperature.to_reduced();
         let x = SVector::from(initial_molefracs.unwrap_or([0.5, 0.5]));
         let max_density = eos
-            .max_density(Some(&(arr1(&x.data.0[0]) * SIUnit::reference_moles())))?
-            .to_reduced(SIUnit::reference_density())?;
+            .max_density(Some(&Moles::from_reduced(arr1(&x.data.0[0]))))?
+            .to_reduced();
         let mut rho = x * 0.3 * max_density;
 
         log_iter!(
@@ -201,8 +186,8 @@ impl<R: Residual> State<R> {
             verbosity,
             " {:4} |                | {:12.8} | {:12.8}",
             0,
-            rho[0] * SIUnit::reference_density(),
-            rho[1] * SIUnit::reference_density(),
+            Density::from_reduced(rho[0]),
+            Density::from_reduced(rho[1]),
         );
 
         for i in 1..=max_iter {
@@ -231,8 +216,8 @@ impl<R: Residual> State<R> {
                 " {:4} | {:14.8e} | {:12.8} | {:12.8}",
                 i,
                 res.norm(),
-                rho[0] * SIUnit::reference_density(),
-                rho[1] * SIUnit::reference_density(),
+                Density::from_reduced(rho[0]),
+                Density::from_reduced(rho[1]),
             );
 
             // check convergence
@@ -244,9 +229,9 @@ impl<R: Residual> State<R> {
                 );
                 return State::new_nvt(
                     eos,
-                    t * SIUnit::reference_temperature(),
-                    SIUnit::reference_volume(),
-                    &(arr1(&rho.data.0[0]) * SIUnit::reference_moles()),
+                    Temperature::from_reduced(t),
+                    Volume::from_reduced(1.0),
+                    &Moles::from_reduced(arr1(&rho.data.0[0])),
                 );
             }
         }
@@ -256,26 +241,20 @@ impl<R: Residual> State<R> {
     /// Calculate the critical point of a binary system for given pressure.
     fn critical_point_binary_p(
         eos: &Arc<R>,
-        pressure: SINumber,
-        initial_temperature: Option<SINumber>,
+        pressure: Pressure<f64>,
+        initial_temperature: Option<Temperature<f64>>,
         initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    where
-        SINumber: std::fmt::Display,
-    {
+    ) -> EosResult<Self> {
         let (max_iter, tol, verbosity) =
             options.unwrap_or(MAX_ITER_CRIT_POINT_BINARY, TOL_CRIT_POINT);
 
-        let p = pressure.to_reduced(SIUnit::reference_pressure())?;
-        let mut t = initial_temperature
-            .map(|t| t.to_reduced(SIUnit::reference_temperature()))
-            .transpose()?
-            .unwrap_or(300.0);
+        let p = pressure.to_reduced();
+        let mut t = initial_temperature.map(|t| t.to_reduced()).unwrap_or(300.0);
         let x = SVector::from(initial_molefracs.unwrap_or([0.5, 0.5]));
         let max_density = eos
-            .max_density(Some(&(arr1(&x.data.0[0]) * SIUnit::reference_moles())))?
-            .to_reduced(SIUnit::reference_density())?;
+            .max_density(Some(&Moles::from_reduced(arr1(&x.data.0[0]))))?
+            .to_reduced();
         let mut rho = x * 0.3 * max_density;
 
         log_iter!(
@@ -287,9 +266,9 @@ impl<R: Residual> State<R> {
             verbosity,
             " {:4} |                | {:13.8} | {:12.8} | {:12.8}",
             0,
-            t * SIUnit::reference_temperature(),
-            rho[0] * SIUnit::reference_density(),
-            rho[1] * SIUnit::reference_density(),
+            Temperature::from_reduced(t),
+            Density::from_reduced(rho[0]),
+            Density::from_reduced(rho[1]),
         );
 
         for i in 1..=max_iter {
@@ -327,9 +306,9 @@ impl<R: Residual> State<R> {
                 " {:4} | {:14.8e} | {:13.8} | {:12.8} | {:12.8}",
                 i,
                 res.norm(),
-                t * SIUnit::reference_temperature(),
-                rho[0] * SIUnit::reference_density(),
-                rho[1] * SIUnit::reference_density(),
+                Temperature::from_reduced(t),
+                Density::from_reduced(rho[0]),
+                Density::from_reduced(rho[1]),
             );
 
             // check convergence
@@ -341,9 +320,9 @@ impl<R: Residual> State<R> {
                 );
                 return State::new_nvt(
                     eos,
-                    t * SIUnit::reference_temperature(),
-                    SIUnit::reference_volume(),
-                    &(arr1(&rho.data.0[0]) * SIUnit::reference_moles()),
+                    Temperature::from_reduced(t),
+                    Volume::from_reduced(1.0),
+                    &Moles::from_reduced(arr1(&rho.data.0[0])),
                 );
             }
         }
@@ -352,13 +331,10 @@ impl<R: Residual> State<R> {
 
     pub fn spinodal(
         eos: &Arc<R>,
-        temperature: SINumber,
-        moles: Option<&SIArray1>,
+        temperature: Temperature<f64>,
+        moles: Option<&Moles<Array1<f64>>>,
         options: SolverOptions,
-    ) -> EosResult<[Self; 2]>
-    where
-        SINumber: std::fmt::Display,
-    {
+    ) -> EosResult<[Self; 2]> {
         let critical_point = Self::critical_point(eos, moles, None, options)?;
         let moles = eos.validate_moles(moles)?;
         let spinodal_vapor = Self::calculate_spinodal(
@@ -381,29 +357,22 @@ impl<R: Residual> State<R> {
 
     fn calculate_spinodal(
         eos: &Arc<R>,
-        temperature: SINumber,
-        moles: &SIArray1,
+        temperature: Temperature<f64>,
+        moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    where
-        SINumber: std::fmt::Display,
-    {
+    ) -> EosResult<Self> {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_CRIT_POINT, TOL_CRIT_POINT);
 
-        let max_density = eos
-            .max_density(Some(moles))?
-            .to_reduced(SIUnit::reference_density())?;
-        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
+        let max_density = eos.max_density(Some(moles))?.to_reduced();
+        let t = temperature.to_reduced();
         let mut rho = match density_initialization {
             DensityInitialization::Vapor => 1e-5 * max_density,
             DensityInitialization::Liquid => max_density,
-            DensityInitialization::InitialDensity(rho) => {
-                rho.to_reduced(SIUnit::reference_density())?
-            }
+            DensityInitialization::InitialDensity(rho) => rho.to_reduced(),
             DensityInitialization::None => unreachable!(),
         };
-        let n = moles.to_reduced(SIUnit::reference_moles())?;
+        let n = moles.to_reduced();
 
         log_iter!(verbosity, " iter |    residual    |       density        ");
         log_iter!(verbosity, "{:-<46}", "");
@@ -411,7 +380,7 @@ impl<R: Residual> State<R> {
             verbosity,
             " {:4} |                | {:12.8}",
             0,
-            rho * SIUnit::reference_density(),
+            Density::from_reduced(rho),
         );
 
         for i in 1..=max_iter {
@@ -436,7 +405,7 @@ impl<R: Residual> State<R> {
                 " {:4} | {:14.8e} | {:12.8}",
                 i,
                 f.abs(),
-                rho * SIUnit::reference_density(),
+                Density::from_reduced(rho),
             );
 
             // check convergence
@@ -449,7 +418,7 @@ impl<R: Residual> State<R> {
                 return State::new_nvt(
                     eos,
                     temperature,
-                    moles.sum() / (rho * SIUnit::reference_density()),
+                    moles.sum() / Density::from_reduced(rho),
                     moles,
                 );
             }

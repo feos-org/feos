@@ -1,6 +1,5 @@
 use crate::parameter::ParameterError;
 use num_dual::linalg::LinAlgError;
-use quantity::QuantityError;
 use thiserror::Error;
 
 /// Error type for improperly defined states and convergence problems.
@@ -26,8 +25,6 @@ pub enum EosError {
     NoPhaseSplit,
     #[error("Wrong input units. Expected {0}, got {1}")]
     WrongUnits(String, String),
-    #[error(transparent)]
-    QuantityError(#[from] QuantityError),
     #[error(transparent)]
     ParameterError(#[from] ParameterError),
     #[error(transparent)]

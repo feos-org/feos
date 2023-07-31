@@ -2,11 +2,11 @@ use super::parameters::PcSaftParameters;
 use crate::association::Association;
 use crate::hard_sphere::HardSphere;
 use feos_core::parameter::Parameter;
+use feos_core::si::{MolarWeight, GRAM, MOL};
 use feos_core::{
     Components, EntropyScaling, EosError, EosResult, HelmholtzEnergy, Residual, State,
 };
 use ndarray::Array1;
-use quantity::si::*;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::fmt;
 use std::sync::Arc;
@@ -109,7 +109,10 @@ impl Components for PcSaft {
 impl Residual for PcSaft {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
+            / (FRAC_PI_6
+                * &self.parameters.m
+                * self.parameters.sigma.mapv(|v| v.powi::<P3>())
+                * moles)
                 .sum()
     }
 
@@ -117,7 +120,7 @@ impl Residual for PcSaft {
         &self.contributions
     }
 
-    fn molar_weight(&self) -> SIArray1 {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.parameters.molarweight.clone() * GRAM / MOL
     }
 }
@@ -209,7 +212,7 @@ impl EntropyScaling for PcSaft {
         let b: f64 = (&coefficients.row(1) * &pref).sum();
         let c: f64 = (&coefficients.row(2) * &pref).sum();
         let d: f64 = (&coefficients.row(3) * &pref).sum();
-        Ok(a + b * s + c * s.powi(2) + d * s.powi(3))
+        Ok(a + b * s + c * s.powi(2) + d * s.powi::<P3>())
     }
 
     fn diffusion_reference(
@@ -286,7 +289,7 @@ impl EntropyScaling for PcSaft {
                 );
                 let alpha_visc = (-s_res_reduced / -0.5).exp();
                 let ref_ts = (-0.0167141 * tr / p.m[i] + 0.0470581 * (tr / p.m[i]).powi(2))
-                    * (p.m[i] * p.m[i] * p.sigma[i].powi(3) * p.epsilon_k[i])
+                    * (p.m[i] * p.m[i] * p.sigma[i].powi::<P3>() * p.epsilon_k[i])
                     * 1e-5
                     * WATT
                     / METER
@@ -324,15 +327,16 @@ mod tests {
         butane_parameters, propane_butane_parameters, propane_parameters, water_parameters,
     };
     use approx::assert_relative_eq;
+    use feos_core::si::{BAR, KELVIN, METER, PASCAL, RGAS, SECOND};
     use feos_core::*;
     use ndarray::arr1;
-    use quantity::si::{BAR, KELVIN, METER, PASCAL, RGAS, SECOND};
+    use typenum::P3;
 
     #[test]
     fn ideal_gas_pressure() {
         let e = Arc::new(PcSaft::new(propane_parameters()));
         let t = 200.0 * KELVIN;
-        let v = 1e-3 * METER.powi(3);
+        let v = 1e-3 * METER.powi::<P3>();
         let n = arr1(&[1.0]) * MOL;
         let s = State::new_nvt(&e, t, v, &n).unwrap();
         let p_ig = s.total_moles * RGAS * t / v;
@@ -348,7 +352,7 @@ mod tests {
     fn ideal_gas_heat_capacity_joback() {
         let e = Arc::new(PcSaft::new(propane_parameters()));
         let t = 200.0 * KELVIN;
-        let v = 1e-3 * METER.powi(3);
+        let v = 1e-3 * METER.powi::<P3>();
         let n = arr1(&[1.0]) * MOL;
         let s = State::new_nvt(&e, t, v, &n).unwrap();
         let p_ig = s.total_moles * RGAS * t / v;
@@ -460,7 +464,7 @@ mod tests {
         let e2 = Arc::new(PcSaft::new(butane_parameters()));
         let e12 = Arc::new(PcSaft::new(propane_butane_parameters()));
         let t = 300.0 * KELVIN;
-        let v = 0.02456883872966545 * METER.powi(3);
+        let v = 0.02456883872966545 * METER.powi::<P3>();
         let m1 = arr1(&[2.0]) * MOL;
         let m1m = arr1(&[2.0, 0.0]) * MOL;
         let m2m = arr1(&[0.0, 2.0]) * MOL;

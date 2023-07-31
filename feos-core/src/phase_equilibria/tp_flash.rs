@@ -1,11 +1,11 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
+use crate::si::{Moles, Pressure, Temperature};
 use crate::state::{Contributions, DensityInitialization, State};
 use crate::{SolverOptions, Verbosity};
 use ndarray::*;
 use num_dual::linalg::norm;
-use quantity::si::{SIArray1, SINumber};
 use std::sync::Arc;
 
 const MAX_ITER_TP: usize = 400;
@@ -20,9 +20,9 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
     /// containing non-volatile components (e.g. ions).
     pub fn tp_flash(
         eos: &Arc<E>,
-        temperature: SINumber,
-        pressure: SINumber,
-        feed: &SIArray1,
+        temperature: Temperature<f64>,
+        pressure: Pressure<f64>,
+        feed: &Moles<Array1<f64>>,
         initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
@@ -290,8 +290,8 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         beta = rachford_rice(&feed_state.molefracs, k, Some(beta))?;
 
         // update VLE
-        let v = beta * k / (1.0 - beta + beta * k) * feed_state.moles.clone();
-        let l = (1.0 - beta) / (1.0 - beta + beta * k) * feed_state.moles.clone();
+        let v = feed_state.moles.clone() * &(beta * k / (1.0 - beta + beta * k));
+        let l = feed_state.moles.clone() * &((1.0 - beta) / (1.0 - beta + beta * k));
         self.update_moles(feed_state.pressure(Contributions::Total), [&v, &l])?;
         Ok(())
     }

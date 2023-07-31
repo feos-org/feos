@@ -1,8 +1,9 @@
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
+use crate::si::{Energy, Moles, Pressure, Temperature, RGAS};
 use crate::state::{DensityInitialization, State};
-use crate::{Contributions, EosUnit};
-use quantity::si::{SIArray1, SINumber, SIUnit};
+use crate::Contributions;
+use ndarray::Array1;
 use std::fmt;
 use std::fmt::Write;
 use std::sync::Arc;
@@ -38,11 +39,7 @@ impl<E, const N: usize> Clone for PhaseEquilibrium<E, N> {
     }
 }
 
-impl<E: Residual, const N: usize> fmt::Display for PhaseEquilibrium<E, N>
-where
-    SINumber: fmt::Display,
-    SIArray1: fmt::Display,
-{
+impl<E: Residual, const N: usize> fmt::Display for PhaseEquilibrium<E, N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (i, s) in self.0.iter().enumerate() {
             writeln!(f, "phase {}: {}", i, s)?;
@@ -51,11 +48,7 @@ where
     }
 }
 
-impl<E: Residual, const N: usize> PhaseEquilibrium<E, N>
-where
-    SINumber: fmt::Display,
-    SIArray1: fmt::Display,
-{
+impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
     pub fn _repr_markdown_(&self) -> String {
         if self.0[0].eos.components() == 1 {
             let mut res = "||temperature|density|\n|-|-|-|\n".to_string();
@@ -130,10 +123,10 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
     /// In general, the two states generated are NOT in an equilibrium.
     pub fn new_npt(
         eos: &Arc<E>,
-        temperature: SINumber,
-        pressure: SINumber,
-        vapor_moles: &SIArray1,
-        liquid_moles: &SIArray1,
+        temperature: Temperature<f64>,
+        pressure: Pressure<f64>,
+        vapor_moles: &Moles<Array1<f64>>,
+        liquid_moles: &Moles<Array1<f64>>,
     ) -> EosResult<Self> {
         let liquid = State::new_npt(
             eos,
@@ -155,15 +148,14 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
     pub(super) fn vapor_phase_fraction(&self) -> f64 {
         (self.vapor().total_moles / (self.vapor().total_moles + self.liquid().total_moles))
             .into_value()
-            .unwrap()
     }
 }
 
 impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
     pub(super) fn update_pressure(
         mut self,
-        temperature: SINumber,
-        pressure: SINumber,
+        temperature: Temperature<f64>,
+        pressure: Pressure<f64>,
     ) -> EosResult<Self> {
         for s in self.0.iter_mut() {
             *s = State::new_npt(
@@ -179,8 +171,8 @@ impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
 
     pub(super) fn update_moles(
         &mut self,
-        pressure: SINumber,
-        moles: [&SIArray1; N],
+        pressure: Pressure<f64>,
+        moles: [&Moles<Array1<f64>>; N],
     ) -> EosResult<()> {
         for (i, s) in self.0.iter_mut().enumerate() {
             *s = State::new_npt(
@@ -195,21 +187,13 @@ impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
     }
 
     // Total Gibbs energy excluding the constant contribution RT sum_i N_i ln(\Lambda_i^3)
-    pub(super) fn total_gibbs_energy(&self) -> SINumber {
-        self.0
-            .iter()
-            .fold(0.0 * SIUnit::reference_energy(), |acc, s| {
-                let ln_rho = s
-                    .partial_density
-                    .to_reduced(SIUnit::reference_density())
-                    .unwrap()
-                    .mapv(f64::ln);
-                acc + s.residual_helmholtz_energy()
-                    + s.pressure(Contributions::Total) * s.volume
-                    + SIUnit::gas_constant()
-                        * s.temperature
-                        * (s.moles.clone() * (ln_rho - 1.0)).sum()
-            })
+    pub(super) fn total_gibbs_energy(&self) -> Energy<f64> {
+        self.0.iter().fold(Energy::from_reduced(0.0), |acc, s| {
+            let ln_rho = s.partial_density.to_reduced().mapv(f64::ln);
+            acc + s.residual_helmholtz_energy()
+                + s.pressure(Contributions::Total) * s.volume
+                + RGAS * s.temperature * (s.moles.clone() * &(ln_rho - 1.0)).sum()
+        })
     }
 }
 
@@ -227,14 +211,8 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 
     /// Check if the two states form a trivial solution
     pub fn is_trivial_solution(state1: &State<E>, state2: &State<E>) -> bool {
-        let rho1 = state1
-            .partial_density
-            .to_reduced(SIUnit::reference_density())
-            .unwrap();
-        let rho2 = state2
-            .partial_density
-            .to_reduced(SIUnit::reference_density())
-            .unwrap();
+        let rho1 = state1.partial_density.to_reduced();
+        let rho2 = state2.partial_density.to_reduced();
 
         rho1.iter()
             .zip(rho2.iter())

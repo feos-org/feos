@@ -18,7 +18,7 @@ rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 features = [ "rayon" ]
 
 [dependencies]
-quantity = "0.6"
+quantity = { version = "0.6", optional = true }
 num-dual = { version = "0.7", features = ["linalg"] }
 ndarray = { version = "0.15", features = ["serde"] }
 nalgebra = "0.32"
@@ -31,9 +31,11 @@ conv = "0.3"
 numpy = { version = "0.18", optional = true }
 pyo3 = { version = "0.18", optional = true }
 rayon = { version = "1.5", optional = true }
+typenum = "1.16"
+approx = "0.4"
 
 [dev-dependencies]
-approx = "0.4"
+#approx = "0.4"
 
 [features]
 default = []

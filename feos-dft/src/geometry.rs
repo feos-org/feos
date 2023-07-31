@@ -1,6 +1,5 @@
-use feos_core::{EosResult, EosUnit};
-use ndarray::Array1;
-use quantity::si::{SIArray1, SIArray2, SINumber, SIUnit};
+use feos_core::si::{Length, Quantity};
+use ndarray::{Array1, Array2};
 use std::f64::consts::{FRAC_PI_3, PI};
 
 /// Grids with up to three dimensions.
@@ -55,15 +54,6 @@ impl Grid {
             .map(|ax| &ax.integration_weights)
             .collect()
     }
-
-    pub(crate) fn integration_weights_unit(&self) -> Vec<SIArray1> {
-        self.axes()
-            .iter()
-            .map(|ax| {
-                &ax.integration_weights * SIUnit::reference_length().powi(ax.geometry.dimension())
-            })
-            .collect()
-    }
 }
 
 /// Geometries of individual axes.
@@ -103,45 +93,45 @@ impl Axis {
     /// can not interact through walls.
     pub fn new_cartesian(
         points: usize,
-        length: SINumber,
+        length: Length<f64>,
         potential_offset: Option<f64>,
-    ) -> EosResult<Self> {
+    ) -> Self {
         let potential_offset = potential_offset.unwrap_or(0.0);
-        let l = length.to_reduced(SIUnit::reference_length())? + potential_offset;
+        let l = length.to_reduced() + potential_offset;
         let cell_size = l / points as f64;
         let grid = Array1::linspace(0.5 * cell_size, l - 0.5 * cell_size, points);
         let edges = Array1::linspace(0.0, l, points + 1);
         let integration_weights = Array1::from_elem(points, cell_size);
-        Ok(Self {
+        Self {
             geometry: Geometry::Cartesian,
             grid,
             edges,
             integration_weights,
             potential_offset,
-        })
+        }
     }
 
     /// Create a new (equidistant) spherical axis.
-    pub fn new_spherical(points: usize, length: SINumber) -> EosResult<Self> {
-        let l = length.to_reduced(SIUnit::reference_length())?;
+    pub fn new_spherical(points: usize, length: Length<f64>) -> Self {
+        let l = length.to_reduced();
         let cell_size = l / points as f64;
         let grid = Array1::linspace(0.5 * cell_size, l - 0.5 * cell_size, points);
         let edges = Array1::linspace(0.0, l, points + 1);
         let integration_weights = Array1::from_shape_fn(points, |k| {
             4.0 * FRAC_PI_3 * cell_size.powi(3) * (3 * k * k + 3 * k + 1) as f64
         });
-        Ok(Self {
+        Self {
             geometry: Geometry::Spherical,
             grid,
             edges,
             integration_weights,
             potential_offset: 0.0,
-        })
+        }
     }
 
     /// Create a new logarithmically scaled cylindrical axis.
-    pub fn new_polar(points: usize, length: SINumber) -> EosResult<Self> {
-        let l = length.to_reduced(SIUnit::reference_length())?;
+    pub fn new_polar(points: usize, length: Length<f64>) -> Self {
+        let l = length.to_reduced();
 
         let mut alpha = 0.002_f64;
         for _ in 0..20 {
@@ -173,13 +163,13 @@ impl Axis {
             })
             .collect();
 
-        Ok(Self {
+        Self {
             geometry: Geometry::Cylindrical,
             grid,
             edges,
             integration_weights,
             potential_offset: 0.0,
-        })
+        }
     }
 
     /// Returns the total length of the axis.
@@ -195,9 +185,8 @@ impl Axis {
     /// Depending on the geometry, the result is in m, m² or m³.
     /// The `potential_offset` is not included in the volume, as
     /// it is mainly used to calculate excess properties.
-    pub fn volume(&self) -> SINumber {
-        let length = (self.edges[self.grid.len()] - self.potential_offset - self.edges[0])
-            * SIUnit::reference_length();
+    pub fn volume(&self) -> f64 {
+        let length = self.edges[self.grid.len()] - self.potential_offset - self.edges[0];
         (match self.geometry {
             Geometry::Cartesian => 1.0,
             Geometry::Cylindrical => 4.0 * PI,
@@ -206,7 +195,12 @@ impl Axis {
     }
 
     /// Interpolate a function on the given axis.
-    pub fn interpolate(&self, x: f64, y: &SIArray2, i: usize) -> SINumber {
+    pub fn interpolate<U>(
+        &self,
+        x: f64,
+        y: Quantity<&Array2<f64>, U>,
+        i: usize,
+    ) -> Quantity<f64, U> {
         let n = self.grid.len();
         y.get((
             i,

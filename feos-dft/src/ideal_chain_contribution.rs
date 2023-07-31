@@ -1,7 +1,7 @@
-use feos_core::{EosResult, EosUnit, HelmholtzEnergyDual, StateHD};
+use feos_core::si::{Density, Pressure, Temperature};
+use feos_core::{EosResult, HelmholtzEnergyDual, StateHD};
 use ndarray::*;
 use num_dual::DualNum;
-use quantity::si::{SIArray, SINumber, SIUnit};
 use std::fmt;
 
 #[derive(Clone)]
@@ -63,15 +63,17 @@ impl IdealChainContribution {
 
     pub fn helmholtz_energy_density<D>(
         &self,
-        temperature: SINumber,
-        density: &SIArray<D::Larger>,
-    ) -> EosResult<SIArray<D>>
+        temperature: Temperature<f64>,
+        density: &Density<Array<f64, D::Larger>>,
+    ) -> EosResult<Pressure<Array<f64, D>>>
     where
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,
     {
-        let rho = density.to_reduced(SIUnit::reference_density())?;
-        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
-        Ok(self.calculate_helmholtz_energy_density(&rho)? * t * SIUnit::reference_pressure())
+        let rho = density.to_reduced();
+        let t = temperature.to_reduced();
+        Ok(Pressure::from_reduced(
+            self.calculate_helmholtz_energy_density(&rho)? * t,
+        ))
     }
 }

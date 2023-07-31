@@ -39,6 +39,7 @@ lazy_static = { version = "1.4", optional = true }
 indexmap = "1.8"
 rayon = { version = "1.5", optional = true }
 itertools = "0.10"
+typenum = "1.16"
 
 [dependencies.pyo3]
 version = "0.18"

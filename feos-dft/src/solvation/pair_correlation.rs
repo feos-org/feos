@@ -4,9 +4,9 @@ use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::profile::MAX_POTENTIAL;
 use crate::solver::DFTSolver;
 use crate::{Axis, DFTProfile, Grid};
-use feos_core::{Contributions, EosResult, EosUnit, State};
+use feos_core::si::{Energy, Length};
+use feos_core::{Contributions, EosResult, State};
 use ndarray::prelude::*;
-use quantity::si::{SINumber, SIUnit};
 
 /// The underlying pair potential, that the Helmholtz energy functional
 /// models.
@@ -19,7 +19,7 @@ pub trait PairPotential {
 pub struct PairCorrelation<F> {
     pub profile: DFTProfile<Ix1, F>,
     pub pair_correlation_function: Option<Array2<f64>>,
-    pub self_solvation_free_energy: Option<SINumber>,
+    pub self_solvation_free_energy: Option<Energy<f64>>,
     pub structure_factor: Option<f64>,
 }
 
@@ -39,17 +39,15 @@ impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
         bulk: &State<DFT<F>>,
         test_particle: usize,
         n_grid: usize,
-        width: SINumber,
-    ) -> EosResult<Self> {
+        width: Length<f64>,
+    ) -> Self {
         let dft = &bulk.eos;
 
         // generate grid
-        let axis = Axis::new_spherical(n_grid, width)?;
+        let axis = Axis::new_spherical(n_grid, width);
 
         // calculate external potential
-        let t = bulk
-            .temperature
-            .to_reduced(SIUnit::reference_temperature())?;
+        let t = bulk.temperature.to_reduced();
         let mut external_potential = dft.pair_potential(test_particle, &axis.grid, t) / t;
         external_potential.map_inplace(|x| {
             if *x > MAX_POTENTIAL {
@@ -62,12 +60,12 @@ impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
         let weight_functions = dft.weight_functions(t);
         let convolver = ConvolverFFT::plan(&grid, &weight_functions, Some(1));
 
-        Ok(Self {
-            profile: DFTProfile::new(grid, convolver, bulk, Some(external_potential), None)?,
+        Self {
+            profile: DFTProfile::new(grid, convolver, bulk, Some(external_potential), None),
             pair_correlation_function: None,
             self_solvation_free_energy: None,
             structure_factor: None,
-        })
+        }
     }
 
     pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> EosResult<()> {
@@ -78,11 +76,8 @@ impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
         self.pair_correlation_function = Some(Array::from_shape_fn(
             self.profile.density.raw_dim(),
             |(i, j)| {
-                self.profile
-                    .density
-                    .get((i, j))
-                    .to_reduced(self.profile.bulk.partial_density.get(i))
-                    .unwrap()
+                (self.profile.density.get((i, j)) / self.profile.bulk.partial_density.get(i))
+                    .into_value()
             },
         ));
 
@@ -95,7 +90,7 @@ impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
         // calculate structure factor
         self.structure_factor = Some(
             (self.profile.total_moles() - self.profile.bulk.density * self.profile.volume())
-                .to_reduced(SIUnit::reference_moles())?
+                .to_reduced()
                 + 1.0,
         );
 

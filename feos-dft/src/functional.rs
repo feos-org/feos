@@ -1,9 +1,10 @@
-use crate::adsorption::FluidParameters;
+// use crate::adsorption::FluidParameters;
 use crate::convolver::Convolver;
 use crate::functional_contribution::*;
 use crate::ideal_chain_contribution::IdealChainContribution;
-use crate::solvation::PairPotential;
+// use crate::solvation::PairPotential;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
+use feos_core::si::MolarWeight;
 use feos_core::{
     Components, DeBroglieWavelength, EosResult, EquationOfState, HelmholtzEnergy,
     HelmholtzEnergyDual, IdealGas, Residual, StateHD,
@@ -13,7 +14,6 @@ use num_dual::*;
 use petgraph::graph::{Graph, UnGraph};
 use petgraph::visit::EdgeRef;
 use petgraph::Directed;
-use quantity::si::SIArray1;
 use std::borrow::Cow;
 use std::ops::{Deref, MulAssign};
 use std::sync::Arc;
@@ -29,7 +29,7 @@ impl<I: Components + Send + Sync, F: HelmholtzEnergyFunctional> HelmholtzEnergyF
         self.residual.molecule_shape()
     }
 
-    fn molar_weight(&self) -> SIArray1 {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.residual.molar_weight()
     }
 
@@ -38,21 +38,21 @@ impl<I: Components + Send + Sync, F: HelmholtzEnergyFunctional> HelmholtzEnergyF
     }
 }
 
-impl<I, F: PairPotential> PairPotential for EquationOfState<I, F> {
-    fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64> {
-        self.residual.pair_potential(i, r, temperature)
-    }
-}
+// impl<I, F: PairPotential> PairPotential for EquationOfState<I, F> {
+//     fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64> {
+//         self.residual.pair_potential(i, r, temperature)
+//     }
+// }
 
-impl<I: Components + Send + Sync, F: FluidParameters> FluidParameters for EquationOfState<I, F> {
-    fn epsilon_k_ff(&self) -> Array1<f64> {
-        self.residual.epsilon_k_ff()
-    }
+// impl<I: Components + Send + Sync, F: FluidParameters> FluidParameters for EquationOfState<I, F> {
+//     fn epsilon_k_ff(&self) -> Array1<f64> {
+//         self.residual.epsilon_k_ff()
+//     }
 
-    fn sigma_ff(&self) -> &Array1<f64> {
-        self.residual.sigma_ff()
-    }
-}
+//     fn sigma_ff(&self) -> &Array1<f64> {
+//         self.residual.sigma_ff()
+//     }
+// }
 
 /// Wrapper struct for the [HelmholtzEnergyFunctional] trait.
 ///
@@ -99,7 +99,7 @@ impl<F: HelmholtzEnergyFunctional> Residual for DFT<F> {
         unreachable!()
     }
 
-    fn molar_weight(&self) -> SIArray1 {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.0.molar_weight()
     }
 
@@ -170,7 +170,7 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
     /// Molar weight of all components.
     ///
     /// Enables calculation of (mass) specific properties.
-    fn molar_weight(&self) -> SIArray1;
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>>;
 
     /// Return the maximum density in Angstrom^-3.
     ///
