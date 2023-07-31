@@ -1,9 +1,9 @@
 use crate::saftvrqmie::eos::FeynmanHibbsOrder;
 use core::cmp::max;
 use feos_core::parameter::{Parameter, ParameterError, PureRecord};
+use feos_core::si::{Length, Temperature, CALORIE, GRAM, KELVIN, KILO, KILOGRAM, MOL, NAV, RGAS};
 use ndarray::{Array, Array1, Array2};
 use num_traits::Zero;
-use quantity::si::{SINumber, ANGSTROM, CALORIE, GRAM, KELVIN, KILO, KILOGRAM, MOL, NAV, RGAS};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -195,7 +195,7 @@ impl Parameter for SaftVRQMieParameters {
         let mut lambda_a_ij = Array::zeros((n, n));
         let mut c_ij = Array::zeros((n, n));
         let mut mass_ij = Array::zeros((n, n));
-        let to_mass_per_molecule = (GRAM / MOL / NAV).to_reduced(KILOGRAM).unwrap();
+        let to_mass_per_molecule = (GRAM / MOL / NAV / KILOGRAM).into_value();
         for i in 0..n {
             for j in 0..n {
                 sigma_ij[[i, j]] = (1.0 - l_ij[[i, j]]) * 0.5 * (sigma[i] + sigma[j]);
@@ -337,23 +337,15 @@ impl SaftVRQMieParameters {
     /// - "hydrogen_neon_30K.table" for H-Ne interactions.
     pub fn lammps_tables(
         &self,
-        temperature: SINumber,
+        temperature: Temperature<f64>,
         n: usize,
-        r_min: SINumber,
-        r_max: SINumber,
+        r_min: Length<f64>,
+        r_max: Length<f64>,
     ) -> std::io::Result<()> {
-        let t = temperature.to_reduced(KELVIN).unwrap();
-        let rs = Array1::linspace(
-            r_min.to_reduced(ANGSTROM).unwrap(),
-            r_max.to_reduced(ANGSTROM).unwrap(),
-            n,
-        );
-        let energy_conversion = (KELVIN * RGAS / (KILO * CALORIE / MOL))
-            .into_value()
-            .unwrap();
-        let force_conversion = (KELVIN * RGAS / (KILO * CALORIE / MOL))
-            .into_value()
-            .unwrap();
+        let t = temperature.to_reduced();
+        let rs = Array1::linspace(r_min.to_reduced(), r_max.to_reduced(), n);
+        let energy_conversion = (KELVIN * RGAS / (KILO * CALORIE / MOL)).into_value();
+        let force_conversion = (KELVIN * RGAS / (KILO * CALORIE / MOL)).into_value();
 
         let n_components = self.sigma.len();
         for i in 0..n_components {

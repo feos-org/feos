@@ -2,13 +2,14 @@ use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::joback::{Joback, JobackParameters};
 use feos_core::parameter::{IdentifierOption, Parameter, ParameterError};
+use feos_core::si::*;
 use feos_core::{
     Contributions, DensityInitialization, EquationOfState, IdealGas, PhaseEquilibrium, Residual,
     State, StateBuilder,
 };
-use quantity::si::*;
 use std::error::Error;
 use std::sync::Arc;
+use typenum::P3;
 
 fn propane_parameters() -> Result<(Arc<PcSaftParameters>, Arc<JobackParameters>), ParameterError> {
     let saft = Arc::new(PcSaftParameters::from_json(
@@ -30,7 +31,7 @@ fn propane_parameters() -> Result<(Arc<PcSaftParameters>, Arc<JobackParameters>)
 fn temperature_volume() -> Result<(), Box<dyn Error>> {
     let saft = Arc::new(PcSaft::new(propane_parameters()?.0));
     let temperature = 300.0 * KELVIN;
-    let volume = 1.5e-3 * METER.powi(3);
+    let volume = 1.5e-3 * METER.powi::<P3>();
     let moles = MOL;
     let state = StateBuilder::new(&saft)
         .temperature(temperature)
@@ -45,7 +46,7 @@ fn temperature_volume() -> Result<(), Box<dyn Error>> {
 fn temperature_density() -> Result<(), Box<dyn Error>> {
     let saft = Arc::new(PcSaft::new(propane_parameters()?.0));
     let temperature = 300.0 * KELVIN;
-    let density = MOL / METER.powi(3);
+    let density = MOL / METER.powi::<P3>();
     let state = StateBuilder::new(&saft)
         .temperature(temperature)
         .density(density)
@@ -59,7 +60,7 @@ fn temperature_total_moles_volume() -> Result<(), Box<dyn Error>> {
     let saft = Arc::new(PcSaft::new(propane_parameters()?.0));
     let temperature = 300.0 * KELVIN;
     let total_moles = MOL;
-    let volume = METER.powi(3);
+    let volume = METER.powi::<P3>();
     let state = StateBuilder::new(&saft)
         .temperature(temperature)
         .volume(volume)
@@ -75,7 +76,7 @@ fn temperature_total_moles_density() -> Result<(), Box<dyn Error>> {
     let saft = Arc::new(PcSaft::new(propane_parameters()?.0));
     let temperature = 300.0 * KELVIN;
     let total_moles = MOL;
-    let density = MOL / METER.powi(3);
+    let density = MOL / METER.powi::<P3>();
     let state = StateBuilder::new(&saft)
         .temperature(temperature)
         .density(density)
@@ -132,7 +133,7 @@ fn pressure_temperature_initial_density() -> Result<(), Box<dyn Error>> {
     let state = StateBuilder::new(&saft)
         .temperature(temperature)
         .pressure(pressure)
-        .initial_density(MOL / METER.powi(3))
+        .initial_density(MOL / METER.powi::<P3>())
         .build()?;
     assert_relative_eq!(
         state.pressure(Contributions::Total),
@@ -333,10 +334,10 @@ fn temperature_entropy_vapor() -> Result<(), Box<dyn Error>> {
 
 fn assert_multiple_states<E: Residual + IdealGas>(
     states: &[(&State<E>, &str)],
-    pressure: SINumber,
-    enthalpy: SINumber,
-    entropy: SINumber,
-    density: SINumber,
+    pressure: Pressure<f64>,
+    enthalpy: MolarEnergy<f64>,
+    entropy: MolarEntropy<f64>,
+    density: Density<f64>,
     max_relative: f64,
 ) {
     for (s, name) in states {

@@ -1,8 +1,8 @@
 use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter};
+use feos_core::si::*;
 use feos_core::{Contributions, PhaseEquilibrium};
-use quantity::si::*;
 use std::error::Error;
 use std::sync::Arc;
 

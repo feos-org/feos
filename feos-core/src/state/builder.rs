@@ -11,28 +11,29 @@ use std::sync::Arc;
 /// ```
 /// # use feos_core::{EosResult, StateBuilder};
 /// # use feos_core::cubic::{PengRobinson, PengRobinsonParameters};
-/// # use quantity::si::*;
+/// # use feos_core::si::*;
 /// # use std::sync::Arc;
 /// # use ndarray::arr1;
 /// # use approx::assert_relative_eq;
+/// # use typenum::P3;
 /// # fn main() -> EosResult<()> {
 /// // Create a state for given T,V,N
 /// let eos = Arc::new(PengRobinson::new(Arc::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0])?)));
 /// let state = StateBuilder::new(&eos)
 ///                 .temperature(300.0 * KELVIN)
-///                 .volume(12.5 * METER.powi(3))
+///                 .volume(12.5 * METER.powi::<P3>())
 ///                 .moles(&(arr1(&[2.5]) * MOL))
 ///                 .build()?;
-/// assert_eq!(state.density, 0.2 * MOL / METER.powi(3));
+/// assert_eq!(state.density, 0.2 * MOL / METER.powi::<P3>());
 ///
 /// // For a pure component, the composition does not need to be specified.
 /// let eos = Arc::new(PengRobinson::new(Arc::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0])?)));
 /// let state = StateBuilder::new(&eos)
 ///                 .temperature(300.0 * KELVIN)
-///                 .volume(12.5 * METER.powi(3))
+///                 .volume(12.5 * METER.powi::<P3>())
 ///                 .total_moles(2.5 * MOL)
 ///                 .build()?;
-/// assert_eq!(state.density, 0.2 * MOL / METER.powi(3));
+/// assert_eq!(state.density, 0.2 * MOL / METER.powi::<P3>());
 ///
 /// // The state can be constructed without providing any extensive property.
 /// let eos = Arc::new(PengRobinson::new(
@@ -45,10 +46,10 @@ use std::sync::Arc;
 /// ));
 /// let state = StateBuilder::new(&eos)
 ///                 .temperature(300.0 * KELVIN)
-///                 .partial_density(&(arr1(&[0.2, 0.6]) * MOL / METER.powi(3)))
+///                 .partial_density(&(arr1(&[0.2, 0.6]) * MOL / METER.powi::<P3>()))
 ///                 .build()?;
 /// assert_relative_eq!(state.molefracs, arr1(&[0.25, 0.75]));
-/// assert_relative_eq!(state.density, 0.8 * MOL / METER.powi(3));
+/// assert_relative_eq!(state.density, 0.8 * MOL / METER.powi::<P3>());
 /// # Ok(())
 /// # }
 /// ```

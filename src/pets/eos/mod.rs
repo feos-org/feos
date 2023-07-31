@@ -1,9 +1,9 @@
 use super::parameters::PetsParameters;
 use crate::hard_sphere::HardSphere;
 use feos_core::parameter::Parameter;
+use feos_core::si::{MolarWeight, GRAM, MOL};
 use feos_core::{Components, HelmholtzEnergy, Residual};
 use ndarray::Array1;
-use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
@@ -78,7 +78,7 @@ impl Residual for Pets {
         &self.contributions
     }
 
-    fn molar_weight(&self) -> SIArray1 {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.parameters.molarweight.clone() * GRAM / MOL
     }
 }
@@ -302,17 +302,18 @@ mod tests {
         argon_krypton_parameters, argon_parameters, krypton_parameters,
     };
     use approx::assert_relative_eq;
+    use feos_core::si::{BAR, KELVIN, METER, PASCAL, RGAS};
     use feos_core::{
         Contributions, DensityInitialization, HelmholtzEnergyDual, PhaseEquilibrium, State, StateHD,
     };
     use ndarray::arr1;
-    use quantity::si::{BAR, KELVIN, METER, PASCAL, RGAS};
+    use typenum::P3;
 
     #[test]
     fn ideal_gas_pressure() {
         let e = Arc::new(Pets::new(argon_parameters()));
         let t = 200.0 * KELVIN;
-        let v = 1e-3 * METER.powi(3);
+        let v = 1e-3 * METER.powi::<P3>();
         let n = arr1(&[1.0]) * MOL;
         let s = State::new_nvt(&e, t, v, &n).unwrap();
         let p_ig = s.total_moles * RGAS * t / v;
@@ -402,7 +403,7 @@ mod tests {
         let e2 = Arc::new(Pets::new(krypton_parameters()));
         let e12 = Arc::new(Pets::new(argon_krypton_parameters()));
         let t = 300.0 * KELVIN;
-        let v = 0.02456883872966545 * METER.powi(3);
+        let v = 0.02456883872966545 * METER.powi::<P3>();
         let m1 = arr1(&[2.0]) * MOL;
         let m1m = arr1(&[2.0, 0.0]) * MOL;
         let m2m = arr1(&[0.0, 2.0]) * MOL;

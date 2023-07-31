@@ -3,6 +3,7 @@ use ndarray::{
     Array, Array1, ArrayBase, ArrayView, Axis, Data, DataMut, Dimension, NdIndex, RemoveAxis,
     ShapeBuilder,
 };
+use num_traits::Zero;
 use std::convert::TryInto;
 use std::fmt;
 use std::iter::FromIterator;
@@ -60,6 +61,13 @@ where
 
 impl<U> Mul<Quantity<f64, U>> for f64 {
     type Output = Quantity<f64, U>;
+    fn mul(self, other: Quantity<f64, U>) -> Self::Output {
+        Quantity(self * other.0, PhantomData)
+    }
+}
+
+impl<U> Mul<Quantity<f64, U>> for Array1<f64> {
+    type Output = Quantity<Array1<f64>, U>;
     fn mul(self, other: Quantity<f64, U>) -> Self::Output {
         Quantity(self * other.0, PhantomData)
     }
@@ -330,15 +338,15 @@ impl<T: RelativeEq, U: Eq> RelativeEq for Quantity<T, U> {
     }
 }
 
-// impl<const U: SIUnit> Zero for SINumber<U> {
-//     fn zero() -> Self {
-//         Self::from_reduced(0.0)
-//     }
+impl<U> Zero for Quantity<f64, U> {
+    fn zero() -> Self {
+        Quantity(0.0, PhantomData)
+    }
 
-//     fn is_zero(&self) -> bool {
-//         self.0.is_zero()
-//     }
-// }
+    fn is_zero(&self) -> bool {
+        self.0.is_zero()
+    }
+}
 
 impl<U> Quantity<Array1<f64>, U> {
     pub fn from_vec(v: Vec<Quantity<f64, U>>) -> Self {
@@ -632,7 +640,60 @@ pub const HOUR: Time<f64> = Quantity(3600.0, PhantomData);
 pub const LITER: Volume<f64> = Quantity(1e-3, PhantomData);
 pub const MINUTE: Time<f64> = Quantity(60.0, PhantomData);
 
+/// Boltzmann constant $\\left(k_\text{B}=1.380649\times 10^{-23}\\,\\frac{\text{J}}{\text{K}}\\right)$
+pub const KB: Entropy<f64> = Quantity(1.380649e-23, PhantomData);
+/// Avogadro constant $\\left(N_\text{A}=6.02214076\times 10^{23}\\,\text{mol}^{-1}\\right)$
+pub const NAV: Quantity<f64, Negate<_Moles>> = Quantity(6.02214076e23, PhantomData);
 pub const RGAS: MolarEntropy<f64> = Quantity(8.31446261815324, PhantomData);
+
+/// Prefix quecto $\\left(\text{q}=10^{-30}\\right)$
+pub const QUECTO: f64 = 1e-30;
+/// Prefix ronto $\\left(\text{r}=10^{-27}\\right)$
+pub const RONTO: f64 = 1e-27;
+/// Prefix yocto $\\left(\text{y}=10^{-24}\\right)$
+pub const YOCTO: f64 = 1e-24;
+/// Prefix zepto $\\left(\text{z}=10^{-21}\\right)$
+pub const ZEPTO: f64 = 1e-21;
+/// Prefix atto $\\left(\text{a}=10^{-18}\\right)$
+pub const ATTO: f64 = 1e-18;
+/// Prefix femto $\\left(\text{f}=10^{-15}\\right)$
+pub const FEMTO: f64 = 1e-15;
+/// Prefix pico $\\left(\text{p}=10^{-12}\\right)$
+pub const PICO: f64 = 1e-12;
+/// Prefix nano $\\left(\text{n}=10^{-9}\\right)$
+pub const NANO: f64 = 1e-9;
+/// Prefix micro $\\left(\text{µ}=10^{-6}\\right)$
+pub const MICRO: f64 = 1e-6;
+/// Prefix milli $\\left(\text{m}=10^{-3}\\right)$
+pub const MILLI: f64 = 1e-3;
+/// Prefix centi $\\left(\text{c}=10^{-2}\\right)$
+pub const CENTI: f64 = 1e-2;
+/// Prefix deci $\\left(\text{d}=10^{-1}\\right)$
+pub const DECI: f64 = 1e-1;
+/// Prefix deca $\\left(\text{da}=10^{1}\\right)$
+pub const DECA: f64 = 1e1;
+/// Prefix hecto $\\left(\text{h}=10^{2}\\right)$
+pub const HECTO: f64 = 1e2;
+/// Prefix kilo $\\left(\text{k}=10^{3}\\right)$
+pub const KILO: f64 = 1e3;
+/// Prefix mega $\\left(\text{M}=10^{6}\\right)$
+pub const MEGA: f64 = 1e6;
+/// Prefix giga $\\left(\text{G}=10^{9}\\right)$
+pub const GIGA: f64 = 1e9;
+/// Prefix tera $\\left(\text{T}=10^{12}\\right)$
+pub const TERA: f64 = 1e12;
+/// Prefix peta $\\left(\text{P}=10^{15}\\right)$
+pub const PETA: f64 = 1e15;
+/// Prefix exa $\\left(\text{E}=10^{18}\\right)$
+pub const EXA: f64 = 1e18;
+/// Prefix zetta $\\left(\text{Z}=10^{21}\\right)$
+pub const ZETTA: f64 = 1e21;
+/// Prefix yotta $\\left(\text{Y}=10^{24}\\right)$
+pub const YOTTA: f64 = 1e24;
+/// Prefix ronna $\\left(\text{R}=10^{27}\\right)$
+pub const RONNA: f64 = 1e27;
+/// Prefix quetta $\\left(\text{Q}=10^{30}\\right)$
+pub const QUETTA: f64 = 1e30;
 
 // impl<T: Mul<f64>> Mul<Temperature<f64>> for quantity::Quantity<T, quantity::si::SIUnit> {
 //     type Output =
@@ -754,43 +815,15 @@ impl<T: Integer, L: Integer, M: Integer, I: Integer, THETA: Integer, N: Integer,
     }
 }
 
-// #[derive(Copy, Clone)]
-// pub struct State<const N: usize> {
-//     pub temperature: Temperature<f64>,
-//     pub volume: Volume<f64>,
-//     pub moles: [Moles<f64>; N],
-// }
-
-// pub struct StateHD<const N: usize> {
-//     pub temperature: f64,
-//     pub volume: f64,
-//     pub moles: [f64; N],
-// }
-
-// impl<const N: usize> State<N> {
-//     pub fn derive0(&self) -> StateHD<N> {
-//         StateHD {
-//             temperature: self.temperature.into_reduced(),
-//             volume: self.volume.into_reduced(),
-//             moles: self.moles.map(|m| m.into_reduced()),
-//         }
-//     }
-// }
-
 const REFERENCE_VALUES: [f64; 7] = [
-    1e-12,
-    1e-10,
-    1.380649e-27,
-    1.0,
-    1.0,
-    1.0 / 6.02214076e23,
-    1.0,
+    1e-12,               // 1 ps
+    1e-10,               // 1 A
+    1.380649e-27,        // Fixed through k_B
+    1.0,                 // 1 A
+    1.0,                 // 1 K
+    1.0 / 6.02214076e23, // 1/N_AV
+    1.0,                 // 1 Cd
 ];
-
-// pub trait EosUnit {
-//     fn from_reduced(value: f64) -> Self;
-//     fn into_reduced(self) -> f64;
-// }
 
 impl<
         Inner,

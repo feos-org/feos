@@ -3,6 +3,7 @@ use super::parameters::PetsParameters;
 use crate::hard_sphere::{FMTContribution, FMTVersion};
 use dispersion::AttractiveFunctional;
 use feos_core::parameter::Parameter;
+use feos_core::si::{MolarWeight, GRAM, MOL};
 use feos_core::Components;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
@@ -10,7 +11,6 @@ use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape,
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use pure_pets_functional::*;
-use quantity::si::*;
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
@@ -110,7 +110,7 @@ impl HelmholtzEnergyFunctional for PetsFunctional {
         &self.contributions
     }
 
-    fn molar_weight(&self) -> SIArray1 {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.parameters.molarweight.clone() * GRAM / MOL
     }
 }

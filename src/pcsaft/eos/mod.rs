@@ -2,7 +2,7 @@ use super::parameters::PcSaftParameters;
 use crate::association::Association;
 use crate::hard_sphere::HardSphere;
 use feos_core::parameter::Parameter;
-use feos_core::si::{MolarWeight, GRAM, MOL};
+use feos_core::si::*;
 use feos_core::{
     Components, EntropyScaling, EosError, EosResult, HelmholtzEnergy, Residual, State,
 };
@@ -10,6 +10,7 @@ use ndarray::Array1;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::fmt;
 use std::sync::Arc;
+use typenum::P2;
 
 pub(crate) mod dispersion;
 pub(crate) mod hard_chain;
@@ -109,10 +110,7 @@ impl Components for PcSaft {
 impl Residual for PcSaft {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
-            / (FRAC_PI_6
-                * &self.parameters.m
-                * self.parameters.sigma.mapv(|v| v.powi::<P3>())
-                * moles)
+            / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
                 .sum()
     }
 
@@ -145,14 +143,14 @@ fn omega22(t: f64) -> f64 {
 
 #[inline]
 fn chapman_enskog_thermal_conductivity(
-    temperature: SINumber,
-    molarweight: SINumber,
+    temperature: Temperature<f64>,
+    molarweight: MolarWeight<f64>,
     m: f64,
     sigma: f64,
     epsilon_k: f64,
-) -> SINumber {
-    let t = temperature.to_reduced(KELVIN).unwrap();
-    0.083235 * (t * m / molarweight.to_reduced(GRAM / MOL).unwrap()).sqrt()
+) -> ThermalConductivity<f64> {
+    let t = temperature.to_reduced();
+    0.083235 * (t * m / (molarweight / (GRAM / MOL)).into_value()).sqrt()
         / sigma.powi(2)
         / omega22(t / epsilon_k)
         * WATT
@@ -163,24 +161,19 @@ fn chapman_enskog_thermal_conductivity(
 impl EntropyScaling for PcSaft {
     fn viscosity_reference(
         &self,
-        temperature: SINumber,
-        _: SINumber,
-        moles: &SIArray1,
-    ) -> EosResult<SINumber> {
+        temperature: Temperature<f64>,
+        _: Volume<f64>,
+        moles: &Moles<Array1<f64>>,
+    ) -> EosResult<Viscosity<f64>> {
         let p = &self.parameters;
         let mw = &p.molarweight;
-        let x = moles.to_reduced(moles.sum())?;
-        let ce: Array1<SINumber> = (0..self.components())
+        let x = (moles / moles.sum()).into_value();
+        let ce: Array1<_> = (0..self.components())
             .map(|i| {
-                let tr = (temperature / p.epsilon_k[i] / KELVIN)
-                    .into_value()
-                    .unwrap();
-                5.0 / 16.0
-                    * (mw[i] * GRAM / MOL * KB / NAV * temperature / PI)
-                        .sqrt()
-                        .unwrap()
+                let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
+                5.0 / 16.0 * (mw[i] * GRAM / MOL * KB / NAV * temperature / PI).sqrt()
                     / omega22(tr)
-                    / (p.sigma[i] * ANGSTROM).powi(2)
+                    / (p.sigma[i] * ANGSTROM).powi::<P2>()
             })
             .collect();
         let mut ce_mix = 0.0 * MILLI * PASCAL * SECOND;
@@ -188,8 +181,7 @@ impl EntropyScaling for PcSaft {
             let denom: f64 = (0..self.components())
                 .map(|j| {
                     x[j] * (1.0
-                        + (ce[i] / ce[j]).into_value().unwrap().sqrt()
-                            * (mw[j] / mw[i]).powf(1.0 / 4.0))
+                        + (ce[i] / ce[j]).into_value().sqrt() * (mw[j] / mw[i]).powf(1.0 / 4.0))
                     .powi(2)
                         / (8.0 * (1.0 + mw[i] / mw[j])).sqrt()
                 })
@@ -212,29 +204,25 @@ impl EntropyScaling for PcSaft {
         let b: f64 = (&coefficients.row(1) * &pref).sum();
         let c: f64 = (&coefficients.row(2) * &pref).sum();
         let d: f64 = (&coefficients.row(3) * &pref).sum();
-        Ok(a + b * s + c * s.powi(2) + d * s.powi::<P3>())
+        Ok(a + b * s + c * s.powi(2) + d * s.powi(3))
     }
 
     fn diffusion_reference(
         &self,
-        temperature: SINumber,
-        volume: SINumber,
-        moles: &SIArray1,
-    ) -> EosResult<SINumber> {
+        temperature: Temperature<f64>,
+        volume: Volume<f64>,
+        moles: &Moles<Array1<f64>>,
+    ) -> EosResult<Diffusivity<f64>> {
         if self.components() != 1 {
             return Err(EosError::IncompatibleComponents(self.components(), 1));
         }
         let p = &self.parameters;
         let density = moles.sum() / volume;
-        let res: Array1<SINumber> = (0..self.components())
+        let res: Array1<_> = (0..self.components())
             .map(|i| {
-                let tr = (temperature / p.epsilon_k[i] / KELVIN)
-                    .into_value()
-                    .unwrap();
-                3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi(2) / omega11(tr) / (density * NAV)
-                    * (temperature * RGAS / PI / (p.molarweight[i] * GRAM / MOL))
-                        .sqrt()
-                        .unwrap()
+                let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
+                3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi::<P2>() / omega11(tr) / (density * NAV)
+                    * (temperature * RGAS / PI / (p.molarweight[i] * GRAM / MOL)).sqrt()
             })
             .collect();
         Ok(res[0])
@@ -263,23 +251,20 @@ impl EntropyScaling for PcSaft {
     // Equation 4 of DOI: 10.1021/acs.iecr.9b04289
     fn thermal_conductivity_reference(
         &self,
-        temperature: SINumber,
-        volume: SINumber,
-        moles: &SIArray1,
-    ) -> EosResult<SINumber> {
+        temperature: Temperature<f64>,
+        volume: Volume<f64>,
+        moles: &Moles<Array1<f64>>,
+    ) -> EosResult<ThermalConductivity<f64>> {
         if self.components() != 1 {
             return Err(EosError::IncompatibleComponents(self.components(), 1));
         }
         let p = &self.parameters;
         let mws = self.molar_weight();
         let state = State::new_nvt(&Arc::new(Self::new(p.clone())), temperature, volume, moles)?;
-        let res: Array1<SINumber> = (0..self.components())
+        let res: Array1<_> = (0..self.components())
             .map(|i| {
-                let tr = (temperature / p.epsilon_k[i] / KELVIN)
-                    .into_value()
-                    .unwrap();
-                let s_res_reduced =
-                    state.residual_molar_entropy().to_reduced(RGAS).unwrap() / p.m[i];
+                let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
+                let s_res_reduced = state.residual_molar_entropy().to_reduced() / p.m[i];
                 let ref_ce = chapman_enskog_thermal_conductivity(
                     temperature,
                     mws.get(i),
@@ -289,7 +274,7 @@ impl EntropyScaling for PcSaft {
                 );
                 let alpha_visc = (-s_res_reduced / -0.5).exp();
                 let ref_ts = (-0.0167141 * tr / p.m[i] + 0.0470581 * (tr / p.m[i]).powi(2))
-                    * (p.m[i] * p.m[i] * p.sigma[i].powi::<P3>() * p.epsilon_k[i])
+                    * (p.m[i] * p.m[i] * p.sigma[i].powi(3) * p.epsilon_k[i])
                     * 1e-5
                     * WATT
                     / METER
@@ -327,7 +312,7 @@ mod tests {
         butane_parameters, propane_butane_parameters, propane_parameters, water_parameters,
     };
     use approx::assert_relative_eq;
-    use feos_core::si::{BAR, KELVIN, METER, PASCAL, RGAS, SECOND};
+    use feos_core::si::{BAR, KELVIN, METER, MILLI, PASCAL, RGAS, SECOND};
     use feos_core::*;
     use ndarray::arr1;
     use typenum::P3;
@@ -500,7 +485,6 @@ mod tests {
             s.ln_viscosity_reduced()?,
             (s.viscosity()? / e.viscosity_reference(s.temperature, s.volume, &s.moles)?)
                 .into_value()
-                .unwrap()
                 .ln(),
             epsilon = 1e-15
         );
@@ -516,14 +500,13 @@ mod tests {
         let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
         assert_relative_eq!(
             s.diffusion()?,
-            0.01505 * (CENTI * METER).powi(2) / SECOND,
+            0.01505 * (CENTI * METER).powi::<P2>() / SECOND,
             epsilon = 1e-5
         );
         assert_relative_eq!(
             s.ln_diffusion_reduced()?,
             (s.diffusion()? / e.diffusion_reference(s.temperature, s.volume, &s.moles)?)
                 .into_value()
-                .unwrap()
                 .ln(),
             epsilon = 1e-15
         );
