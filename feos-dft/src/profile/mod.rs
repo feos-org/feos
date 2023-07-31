@@ -247,7 +247,13 @@ where
         _Volume: Add<U>,
     {
         let integration_weights = self.grid.integration_weights();
-        profile.integrate::<_Volume>(&integration_weights)
+        let mut value = profile.to_owned();
+        for (i, &w) in integration_weights.iter().enumerate() {
+            for mut l in value.lanes_mut(Axis_nd(i)) {
+                l.assign(&(&l * w));
+            }
+        }
+        Volume::from_reduced(1.0) * value.sum()
     }
 
     /// Integrate each component individually.

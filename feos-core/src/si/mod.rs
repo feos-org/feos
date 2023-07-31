@@ -1,4 +1,5 @@
 use approx::{AbsDiffEq, RelativeEq};
+use ndarray::iter::LanesMut;
 use ndarray::{
     Array, Array1, ArrayBase, ArrayView, Axis, Data, DataMut, Dimension, NdIndex, RemoveAxis,
     ShapeBuilder,
@@ -416,6 +417,13 @@ impl<S: Data<Elem = f64>, U, D: Dimension> Quantity<ArrayBase<S, D>, U> {
         Quantity(self.0.index_axis(axis, index), PhantomData)
     }
 
+    pub fn lanes_mut(&mut self, axis: Axis) -> LanesMut<f64, D::Smaller>
+    where
+        S: DataMut,
+    {
+        self.0.lanes_mut(axis)
+    }
+
     pub fn sum_axis(&self, axis: Axis) -> Quantity<Array<f64, D::Smaller>, U>
     where
         D: RemoveAxis,
@@ -500,19 +508,6 @@ impl<U> FromIterator<Quantity<f64, U>> for Quantity<Array1<f64>, U> {
         I: IntoIterator<Item = Quantity<f64, U>>,
     {
         Self(iter.into_iter().map(|v| v.0).collect(), PhantomData)
-    }
-}
-
-impl<S: Data<Elem = f64>, D: Dimension, U> Quantity<ArrayBase<S, D>, U> {
-    #[allow(clippy::type_complexity)]
-    pub fn integrate<U2: Add<U>>(&self, weights: &[&Array1<f64>]) -> Quantity<f64, Sum<U2, U>> {
-        let mut value = self.0.to_owned();
-        for (i, &w) in weights.iter().enumerate() {
-            for mut l in value.lanes_mut(Axis(i)) {
-                l.assign(&(&l * w));
-            }
-        }
-        Quantity(value.sum(), PhantomData)
     }
 }
 
