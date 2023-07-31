@@ -22,6 +22,7 @@ use crate::saftvrqmie::python::PySaftVRQMieParameters;
 use crate::saftvrqmie::{SaftVRQMieFunctional, SaftVRQMieOptions};
 
 use crate::eos::IdealGasModel;
+use feos_core::si::*;
 use feos_core::*;
 use feos_dft::adsorption::*;
 use feos_dft::interface::*;
@@ -35,9 +36,10 @@ use pyo3::prelude::*;
 #[cfg(feature = "estimator")]
 use pyo3::wrap_pymodule;
 use quantity::python::{PySIArray1, PySIArray2, PySIArray3, PySIArray4, PySINumber};
-use quantity::si::*;
 use std::collections::HashMap;
+use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
+use typenum::P3;
 
 type Functional = EquationOfState<IdealGasModel, FunctionalVariant>;
 

@@ -10,6 +10,7 @@ use numpy::{PyArray, PyReadonlyArray1, PyReadonlyArrayDyn};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use quantity::python::PySIArray1;
+use std::convert::TryInto;
 use std::fmt;
 
 struct PyHelmholtzEnergy(Py<PyAny>);
@@ -168,8 +169,11 @@ impl Residual for PyResidual {
                     py_result.get_type().name().unwrap()
                 );
             }
-            todo!()
-            // py_result.extract::<PySIArray1>().unwrap().into()
+            py_result
+                .extract::<PySIArray1>()
+                .unwrap()
+                .try_into()
+                .unwrap()
         })
     }
 }

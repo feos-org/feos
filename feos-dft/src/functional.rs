@@ -1,8 +1,8 @@
-// use crate::adsorption::FluidParameters;
+use crate::adsorption::FluidParameters;
 use crate::convolver::Convolver;
 use crate::functional_contribution::*;
 use crate::ideal_chain_contribution::IdealChainContribution;
-// use crate::solvation::PairPotential;
+use crate::solvation::PairPotential;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use feos_core::si::MolarWeight;
 use feos_core::{
@@ -38,21 +38,21 @@ impl<I: Components + Send + Sync, F: HelmholtzEnergyFunctional> HelmholtzEnergyF
     }
 }
 
-// impl<I, F: PairPotential> PairPotential for EquationOfState<I, F> {
-//     fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64> {
-//         self.residual.pair_potential(i, r, temperature)
-//     }
-// }
+impl<I, F: PairPotential> PairPotential for EquationOfState<I, F> {
+    fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64> {
+        self.residual.pair_potential(i, r, temperature)
+    }
+}
 
-// impl<I: Components + Send + Sync, F: FluidParameters> FluidParameters for EquationOfState<I, F> {
-//     fn epsilon_k_ff(&self) -> Array1<f64> {
-//         self.residual.epsilon_k_ff()
-//     }
+impl<I: Components + Send + Sync, F: FluidParameters> FluidParameters for EquationOfState<I, F> {
+    fn epsilon_k_ff(&self) -> Array1<f64> {
+        self.residual.epsilon_k_ff()
+    }
 
-//     fn sigma_ff(&self) -> &Array1<f64> {
-//         self.residual.sigma_ff()
-//     }
-// }
+    fn sigma_ff(&self) -> &Array1<f64> {
+        self.residual.sigma_ff()
+    }
+}
 
 /// Wrapper struct for the [HelmholtzEnergyFunctional] trait.
 ///

@@ -21,6 +21,7 @@ impl<
     > TryFrom<PyQuantity<Inner, si::SIUnit>> for Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>
 where
     for<'a> &'a Inner: Div<f64, Output = Inner>,
+    PyQuantity<Inner, si::SIUnit>: std::fmt::Display,
 {
     type Error = EosError;
     fn try_from(quantity: PyQuantity<Inner, si::SIUnit>) -> EosResult<Self> {
@@ -35,7 +36,7 @@ where
             let value = quantity.to_reduced(unit).unwrap();
             Ok(Quantity(value, PhantomData))
         } else {
-            todo!()
+            Err(EosError::WrongUnits(unit.to_string(), quantity.to_string()))
         }
     }
 }
@@ -56,6 +57,36 @@ impl<T: Integer, L: Integer, M: Integer, I: Integer, THETA: Integer, N: Integer,
     type Error = <Self as TryFrom<PyQuantity<Array1<f64>, si::SIUnit>>>::Error;
 
     fn try_from(value: PySIArray1) -> Result<Self, Self::Error> {
+        Self::try_from(PyQuantity::from(value))
+    }
+}
+
+impl<T: Integer, L: Integer, M: Integer, I: Integer, THETA: Integer, N: Integer, J: Integer>
+    TryFrom<PySIArray2> for Quantity<Array2<f64>, SIUnit<T, L, M, I, THETA, N, J>>
+{
+    type Error = <Self as TryFrom<PyQuantity<Array2<f64>, si::SIUnit>>>::Error;
+
+    fn try_from(value: PySIArray2) -> Result<Self, Self::Error> {
+        Self::try_from(PyQuantity::from(value))
+    }
+}
+
+impl<T: Integer, L: Integer, M: Integer, I: Integer, THETA: Integer, N: Integer, J: Integer>
+    TryFrom<PySIArray3> for Quantity<Array3<f64>, SIUnit<T, L, M, I, THETA, N, J>>
+{
+    type Error = <Self as TryFrom<PyQuantity<Array3<f64>, si::SIUnit>>>::Error;
+
+    fn try_from(value: PySIArray3) -> Result<Self, Self::Error> {
+        Self::try_from(PyQuantity::from(value))
+    }
+}
+
+impl<T: Integer, L: Integer, M: Integer, I: Integer, THETA: Integer, N: Integer, J: Integer>
+    TryFrom<PySIArray4> for Quantity<Array4<f64>, SIUnit<T, L, M, I, THETA, N, J>>
+{
+    type Error = <Self as TryFrom<PyQuantity<Array4<f64>, si::SIUnit>>>::Error;
+
+    fn try_from(value: PySIArray4) -> Result<Self, Self::Error> {
         Self::try_from(PyQuantity::from(value))
     }
 }

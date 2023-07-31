@@ -180,7 +180,9 @@ macro_rules! impl_phase_equilibrium {
                         )
                     )?))
                 } else {
-                    Err(todo!())
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
                 }
             }
 
@@ -255,7 +257,9 @@ macro_rules! impl_phase_equilibrium {
                         )
                     )?))
                 } else {
-                    Err(todo!())
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
                 }
             }
 
@@ -460,7 +464,9 @@ macro_rules! impl_phase_equilibrium {
                         )
                     )?))
                 } else {
-                    Err(todo!())
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
                 }
             }
         }
@@ -965,7 +971,9 @@ macro_rules! impl_phase_equilibrium {
                         )
                     )?))
                 } else {
-                    Err(todo!())
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
                 }
             }
 
@@ -1023,7 +1031,9 @@ macro_rules! impl_phase_equilibrium {
                         npoints,
                     )?))
                 } else {
-                    Err(todo!())
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
                 }
             }
         }
@@ -1113,7 +1123,9 @@ macro_rules! impl_phase_equilibrium {
                         )
                     )?))
                 } else {
-                    Err(todo!())
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
                 }
             }
         }
