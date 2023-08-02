@@ -1,7 +1,7 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::si::{Density, Moles, Pressure, Quantity, SIUnit, Temperature, RGAS};
+use crate::si::{Density, Dimensionless, Moles, Pressure, Quantity, SIUnit, Temperature, RGAS};
 use crate::state::{
     Contributions,
     DensityInitialization::{InitialDensity, Liquid, Vapor},
@@ -168,7 +168,7 @@ impl BubbleDewSpecification for Temperature<f64> {
         // Derivative w.r.t. ln(pressure)
         let ln_phi_1_dp = state1.dln_phi_dp();
         let ln_phi_2_dp = state2.dln_phi_dp();
-        let df = ((ln_phi_1_dp - ln_phi_2_dp) * *var * &state1.molefracs * &k)
+        let df = ((ln_phi_1_dp - ln_phi_2_dp) * *var * Dimensionless::from(&state1.molefracs * &k))
             .sum()
             .into_value();
         let mut lnpstep = -f / df;
@@ -177,7 +177,7 @@ impl BubbleDewSpecification for Temperature<f64> {
         lnpstep = lnpstep.clamp(-MAX_LNPSTEP, MAX_LNPSTEP);
 
         // Update p
-        *var = *var * lnpstep.exp();
+        *var *= lnpstep.exp();
 
         // update states with new temperature/pressure
         Self::adjust_states(*var, state1, state2, None)?;
@@ -356,7 +356,7 @@ impl BubbleDewSpecification for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>
         // Derivative w.r.t. temperature
         let ln_phi_1_dt = state1.dln_phi_dt();
         let ln_phi_2_dt = state2.dln_phi_dt();
-        let df = ((ln_phi_1_dt - ln_phi_2_dt) * &state1.molefracs * &k).sum();
+        let df = ((ln_phi_1_dt - ln_phi_2_dt) * Dimensionless::from(&state1.molefracs * &k)).sum();
         let mut tstep = -f / df;
 
         // catch too big t-steps
@@ -607,9 +607,11 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         let p_l = liquid.pressure(Contributions::Total);
         let mu_l = liquid.residual_chemical_potential();
         let p_i = (liquid_molefracs * temperature * density * RGAS)
-            * &((mu_l - p_l * v_l) / (RGAS * temperature))
-                .into_value()
-                .mapv(f64::exp);
+            * Dimensionless::from(
+                ((mu_l - p_l * v_l) / (RGAS * temperature))
+                    .into_value()
+                    .mapv(f64::exp),
+            );
         let p = p_i.sum();
         let y = (p_i / p).into_value();
         Ok((p, y))

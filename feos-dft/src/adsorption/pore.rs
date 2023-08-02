@@ -139,7 +139,9 @@ where
     }
 
     pub fn enthalpy_of_adsorption(&self) -> EosResult<MolarEnergy<f64>> {
-        Ok((self.partial_molar_enthalpy_of_adsorption()? * &self.profile.bulk.molefracs).sum())
+        Ok((self.partial_molar_enthalpy_of_adsorption()?
+            * Dimensionless::from(&self.profile.bulk.molefracs))
+        .sum())
     }
 }
 

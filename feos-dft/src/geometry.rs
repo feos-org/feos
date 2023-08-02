@@ -198,7 +198,7 @@ impl Axis {
     pub fn interpolate<U>(
         &self,
         x: f64,
-        y: Quantity<&Array2<f64>, U>,
+        y: &Quantity<Array2<f64>, U>,
         i: usize,
     ) -> Quantity<f64, U> {
         let n = self.grid.len();

@@ -25,13 +25,13 @@ where
 {
     type Error = EosError;
     fn try_from(quantity: PyQuantity<Inner, si::SIUnit>) -> EosResult<Self> {
-        let unit = si::SECOND.powi(T::to_i32())
-            * si::METER.powi(L::to_i32())
-            * si::KILOGRAM.powi(M::to_i32())
-            * si::AMPERE.powi(I::to_i32())
-            * si::KELVIN.powi(THETA::to_i32())
-            * si::MOL.powi(N::to_i32())
-            * si::CANDELA.powi(J::to_i32());
+        let unit = si::SECOND.powi(T::I32)
+            * si::METER.powi(L::I32)
+            * si::KILOGRAM.powi(M::I32)
+            * si::AMPERE.powi(I::I32)
+            * si::KELVIN.powi(THETA::I32)
+            * si::MOL.powi(N::I32)
+            * si::CANDELA.powi(J::I32);
         if quantity.has_unit(&unit) {
             let value = quantity.to_reduced(unit).unwrap();
             Ok(Quantity(value, PhantomData))
@@ -106,13 +106,13 @@ where
 {
     fn from(quantity: Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>) -> Self {
         quantity.0
-            * (si::SECOND.powi(T::to_i32())
-                * si::METER.powi(L::to_i32())
-                * si::KILOGRAM.powi(M::to_i32())
-                * si::AMPERE.powi(I::to_i32())
-                * si::KELVIN.powi(THETA::to_i32())
-                * si::MOL.powi(N::to_i32())
-                * si::CANDELA.powi(J::to_i32()))
+            * (si::SECOND.powi(T::I32)
+                * si::METER.powi(L::I32)
+                * si::KILOGRAM.powi(M::I32)
+                * si::AMPERE.powi(I::I32)
+                * si::KELVIN.powi(THETA::I32)
+                * si::MOL.powi(N::I32)
+                * si::CANDELA.powi(J::I32))
     }
 }
 

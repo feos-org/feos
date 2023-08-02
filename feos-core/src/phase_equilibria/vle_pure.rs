@@ -302,7 +302,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         if let Some(mut e) = vle {
             if e.vapor().density < cp.density {
                 for _ in 0..8 {
-                    t0 = t0 * SCALE_T_NEW;
+                    t0 *= SCALE_T_NEW;
                     e.0[1] = State::new_npt(eos, t0, pressure, &m, DensityInitialization::Liquid)?;
                     if e.liquid().density > cp.density {
                         break;
@@ -310,7 +310,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
                 }
             } else {
                 for _ in 0..8 {
-                    t0 = t0 / SCALE_T_NEW;
+                    t0 /= SCALE_T_NEW;
                     e.0[0] = State::new_npt(eos, t0, pressure, &m, DensityInitialization::Vapor)?;
                     if e.vapor().density < cp.density {
                         break;

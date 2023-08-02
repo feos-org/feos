@@ -1,7 +1,7 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::si::{Moles, Pressure, Temperature};
+use crate::si::{Dimensionless, Moles, Pressure, Temperature};
 use crate::state::{Contributions, DensityInitialization, State};
 use crate::{SolverOptions, Verbosity};
 use ndarray::*;
@@ -290,8 +290,9 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         beta = rachford_rice(&feed_state.molefracs, k, Some(beta))?;
 
         // update VLE
-        let v = feed_state.moles.clone() * &(beta * k / (1.0 - beta + beta * k));
-        let l = feed_state.moles.clone() * &((1.0 - beta) / (1.0 - beta + beta * k));
+        let v = feed_state.moles.clone() * Dimensionless::from(beta * k / (1.0 - beta + beta * k));
+        let l =
+            feed_state.moles.clone() * Dimensionless::from((1.0 - beta) / (1.0 - beta + beta * k));
         self.update_moles(feed_state.pressure(Contributions::Total), [&v, &l])?;
         Ok(())
     }

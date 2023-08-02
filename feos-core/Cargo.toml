@@ -33,6 +33,8 @@ pyo3 = { version = "0.18", optional = true }
 rayon = { version = "1.5", optional = true }
 typenum = "1.16"
 approx = "0.4"
+regex = "1.9"
+once_cell = "1.18"
 
 [dev-dependencies]
 #approx = "0.4"

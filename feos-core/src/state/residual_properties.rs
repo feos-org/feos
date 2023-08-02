@@ -420,7 +420,7 @@ impl<E: Residual> State<E> {
 
     /// Total molar weight: $MW=\sum_ix_iMW_i$
     pub fn total_molar_weight(&self) -> MolarWeight<f64> {
-        (self.eos.molar_weight() * &self.molefracs).sum()
+        (self.eos.molar_weight() * Dimensionless::from(&self.molefracs)).sum()
     }
 
     /// Mass of each component: $m_i=n_iMW_i$

@@ -65,7 +65,7 @@ pub fn density_iteration<E: Residual>(
                     if error.is_sign_negative() {
                         return Err(EosError::IterationFailed(String::from("density_iteration")));
                     } else {
-                        rho = rho * 0.98
+                        rho *= 0.98
                     }
                 } else if error.is_sign_positive() {
                     rho = 0.001 * maxdensity
@@ -88,7 +88,7 @@ pub fn density_iteration<E: Residual>(
                 if error.is_sign_negative() {
                     rho = 0.8 * maxdensity
                 } else {
-                    rho = rho * 0.8
+                    rho *= 0.8
                 }
             } else if error.is_sign_negative() && d2pdrho2.is_sign_positive() {
                 let (_, rho_l) = pressure_spinodal(eos, temperature, 0.8 * maxdensity, moles)?;
