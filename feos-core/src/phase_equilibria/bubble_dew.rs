@@ -52,18 +52,12 @@ pub trait BubbleDewSpecification: TemperatureOrPressure {
     ) -> EosResult<PhaseEquilibrium<E, 2>>;
 
     fn adjust_t_p<E: Residual>(
+        tp_spec: Self,
         var: &mut Self::Other,
         state1: &mut State<E>,
         state2: &mut State<E>,
         verbosity: Verbosity,
     ) -> EosResult<f64>;
-
-    fn adjust_states<E: Residual>(
-        var: Self::Other,
-        state1: &mut State<E>,
-        state2: &mut State<E>,
-        moles_state2: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<()>;
 
     fn newton_step<E: Residual>(
         tp_spec: Self,
@@ -102,18 +96,18 @@ impl TemperatureOrPressure for Temperature<f64> {
 impl BubbleDewSpecification for Temperature<f64> {
     fn bubble_dew_point<E: Residual>(
         eos: &Arc<E>,
-        tp_spec: Self,
-        tp_init: Option<Pressure<f64>>,
+        temperature: Self,
+        p_init: Option<Pressure<f64>>,
         molefracs_spec: &Array1<f64>,
         molefracs_init: Option<&Array1<f64>>,
         bubble: bool,
         options: (SolverOptions, SolverOptions),
     ) -> EosResult<PhaseEquilibrium<E, 2>> {
         // First use given initial pressure if applicable
-        if let Some(p) = tp_init {
+        if let Some(p) = p_init {
             return PhaseEquilibrium::iterate_bubble_dew(
                 eos,
-                tp_spec,
+                temperature,
                 p,
                 molefracs_spec,
                 molefracs_init,
@@ -124,11 +118,11 @@ impl BubbleDewSpecification for Temperature<f64> {
 
         // Next try to initialize with an ideal gas assumption
         let vle =
-            PhaseEquilibrium::starting_pressure_ideal_gas(eos, tp_spec, molefracs_spec, bubble)
+            PhaseEquilibrium::starting_pressure_ideal_gas(eos, temperature, molefracs_spec, bubble)
                 .and_then(|(p, x)| {
                     PhaseEquilibrium::iterate_bubble_dew(
                         eos,
-                        tp_spec,
+                        temperature,
                         p,
                         molefracs_spec,
                         molefracs_init.or(Some(&x)),
@@ -141,8 +135,8 @@ impl BubbleDewSpecification for Temperature<f64> {
         vle.or_else(|_| {
             PhaseEquilibrium::iterate_bubble_dew(
                 eos,
-                tp_spec,
-                PhaseEquilibrium::starting_pressure_spinodal(eos, tp_spec, molefracs_spec)?,
+                temperature,
+                PhaseEquilibrium::starting_pressure_spinodal(eos, temperature, molefracs_spec)?,
                 molefracs_spec,
                 molefracs_init,
                 bubble,
@@ -152,7 +146,8 @@ impl BubbleDewSpecification for Temperature<f64> {
     }
 
     fn adjust_t_p<E: Residual>(
-        var: &mut Pressure<f64>,
+        temperature: Temperature<f64>,
+        pressure: &mut Pressure<f64>,
         state1: &mut State<E>,
         state2: &mut State<E>,
         verbosity: Verbosity,
@@ -168,19 +163,18 @@ impl BubbleDewSpecification for Temperature<f64> {
         // Derivative w.r.t. ln(pressure)
         let ln_phi_1_dp = state1.dln_phi_dp();
         let ln_phi_2_dp = state2.dln_phi_dp();
-        let df = ((ln_phi_1_dp - ln_phi_2_dp) * *var * Dimensionless::from(&state1.molefracs * &k))
-            .sum()
-            .into_value();
+        let df =
+            (((ln_phi_1_dp - ln_phi_2_dp) * *pressure).into_value() * &state1.molefracs * &k).sum();
         let mut lnpstep = -f / df;
 
         // catch too big p-steps
         lnpstep = lnpstep.clamp(-MAX_LNPSTEP, MAX_LNPSTEP);
 
         // Update p
-        *var *= lnpstep.exp();
+        *pressure *= lnpstep.exp();
 
         // update states with new temperature/pressure
-        Self::adjust_states(*var, state1, state2, None)?;
+        adjust_states(temperature, *pressure, state1, state2, None)?;
 
         // log
         log_iter!(
@@ -188,35 +182,11 @@ impl BubbleDewSpecification for Temperature<f64> {
             "{:14} | {:<14.8e} | {:12.8} | {:.8}",
             "",
             f.abs(),
-            var,
+            pressure,
             state2.molefracs
         );
 
         Ok(f.abs())
-    }
-
-    fn adjust_states<E: Residual>(
-        var: Pressure<f64>,
-        state1: &mut State<E>,
-        state2: &mut State<E>,
-        moles_state2: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<()> {
-        let (temperature, pressure) = (state1.temperature, var);
-        *state1 = State::new_npt(
-            &state1.eos,
-            temperature,
-            pressure,
-            &state1.moles,
-            InitialDensity(state1.density),
-        )?;
-        *state2 = State::new_npt(
-            &state2.eos,
-            temperature,
-            pressure,
-            moles_state2.unwrap_or(&state2.moles),
-            InitialDensity(state2.density),
-        )?;
-        Ok(())
     }
 
     fn newton_step<E: Residual>(
@@ -320,17 +290,17 @@ impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
 impl BubbleDewSpecification for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>> {
     fn bubble_dew_point<E: Residual>(
         eos: &Arc<E>,
-        tp_spec: Self,
-        tp_init: Option<Temperature<f64>>,
+        pressure: Self,
+        t_init: Option<Temperature<f64>>,
         molefracs_spec: &Array1<f64>,
         molefracs_init: Option<&Array1<f64>>,
         bubble: bool,
         options: (SolverOptions, SolverOptions),
     ) -> EosResult<PhaseEquilibrium<E, 2>> {
-        let temperature = tp_init.expect("An initial temperature is required for the calculation of bubble/dew points at given pressure!");
+        let temperature = t_init.expect("An initial temperature is required for the calculation of bubble/dew points at given pressure!");
         PhaseEquilibrium::iterate_bubble_dew(
             eos,
-            tp_spec,
+            pressure,
             temperature,
             molefracs_spec,
             molefracs_init,
@@ -340,7 +310,8 @@ impl BubbleDewSpecification for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>
     }
 
     fn adjust_t_p<E: Residual>(
-        var: &mut Temperature<f64>,
+        pressure: Pressure<f64>,
+        temperature: &mut Temperature<f64>,
         state1: &mut State<E>,
         state2: &mut State<E>,
         verbosity: Verbosity,
@@ -367,10 +338,10 @@ impl BubbleDewSpecification for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>
         }
 
         // Update t
-        *var += tstep;
+        *temperature += tstep;
 
-        // update states with new temperature/pressure
-        Self::adjust_states(*var, state1, state2, None)?;
+        // update states with new temperature
+        adjust_states(*temperature, pressure, state1, state2, None)?;
 
         // log
         log_iter!(
@@ -378,35 +349,11 @@ impl BubbleDewSpecification for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>
             "{:14} | {:<14.8e} | {:12.8} | {:.8}",
             "",
             f.abs(),
-            var,
+            temperature,
             state2.molefracs
         );
 
         Ok(f.abs())
-    }
-
-    fn adjust_states<E: Residual>(
-        var: Temperature<f64>,
-        state1: &mut State<E>,
-        state2: &mut State<E>,
-        moles_state2: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<()> {
-        let (temperature, pressure) = (var, state1.pressure(Contributions::Total));
-        *state1 = State::new_npt(
-            &state1.eos,
-            temperature,
-            pressure,
-            &state1.moles,
-            InitialDensity(state1.density),
-        )?;
-        *state2 = State::new_npt(
-            &state2.eos,
-            temperature,
-            pressure,
-            moles_state2.unwrap_or(&state2.moles),
-            InitialDensity(state2.density),
-        )?;
-        Ok(())
     }
 
     fn newton_step<E: Residual>(
@@ -752,8 +699,8 @@ fn bubble_dew<E: Residual, TP: BubbleDewSpecification>(
         err_out = if err_out > NEWTON_TOL {
             // Inner loop for finding T or p
             for _ in 0..options_inner.max_iter.unwrap_or(MAX_ITER_INNER) {
-                // Newton step
                 if TP::adjust_t_p(
+                    tp_spec,
                     &mut var_tp,
                     &mut state1,
                     &mut state2,
@@ -800,6 +747,30 @@ fn bubble_dew<E: Residual, TP: BubbleDewSpecification>(
         // not converged, return EosError
         Err(EosError::NotConverged(String::from("bubble-dew-iteration")))
     }
+}
+
+fn adjust_states<E: Residual>(
+    temperature: Temperature<f64>,
+    pressure: Pressure<f64>,
+    state1: &mut State<E>,
+    state2: &mut State<E>,
+    moles_state2: Option<&Moles<Array1<f64>>>,
+) -> EosResult<()> {
+    *state1 = State::new_npt(
+        &state1.eos,
+        temperature,
+        pressure,
+        &state1.moles,
+        InitialDensity(state1.density),
+    )?;
+    *state2 = State::new_npt(
+        &state2.eos,
+        temperature,
+        pressure,
+        moles_state2.unwrap_or(&state2.moles),
+        InitialDensity(state2.density),
+    )?;
+    Ok(())
 }
 
 fn adjust_x2<E: Residual>(
