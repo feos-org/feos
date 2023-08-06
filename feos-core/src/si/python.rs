@@ -25,18 +25,15 @@ where
 {
     type Error = EosError;
     fn try_from(quantity: PyQuantity<Inner, si::SIUnit>) -> EosResult<Self> {
-        let unit = si::SECOND.powi(T::I32)
-            * si::METER.powi(L::I32)
-            * si::KILOGRAM.powi(M::I32)
-            * si::AMPERE.powi(I::I32)
-            * si::KELVIN.powi(THETA::I32)
-            * si::MOL.powi(N::I32)
-            * si::CANDELA.powi(J::I32);
-        if quantity.has_unit(&unit) {
-            let value = quantity.to_reduced(unit).unwrap();
+        let (value, unit_from) = quantity.into_raw_parts();
+        let unit_into = [L::I8, M::I8, T::I8, I::I8, N::I8, THETA::I8, J::I8];
+        if unit_into == unit_from {
             Ok(Quantity(value, PhantomData))
         } else {
-            Err(EosError::WrongUnits(unit.to_string(), quantity.to_string()))
+            Err(EosError::WrongUnits(
+                si::SIUnit::from_raw_parts(unit_into).to_string(),
+                PyQuantity::from_raw_parts(value, unit_from).to_string(),
+            ))
         }
     }
 }
@@ -105,14 +102,10 @@ where
     Inner: Mul<si::SINumber, Output = PyQuantity<Inner, si::SIUnit>>,
 {
     fn from(quantity: Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>) -> Self {
-        quantity.0
-            * (si::SECOND.powi(T::I32)
-                * si::METER.powi(L::I32)
-                * si::KILOGRAM.powi(M::I32)
-                * si::AMPERE.powi(I::I32)
-                * si::KELVIN.powi(THETA::I32)
-                * si::MOL.powi(N::I32)
-                * si::CANDELA.powi(J::I32))
+        Self::from_raw_parts(
+            quantity.0,
+            [L::I8, M::I8, T::I8, I::I8, N::I8, THETA::I8, J::I8],
+        )
     }
 }
 
