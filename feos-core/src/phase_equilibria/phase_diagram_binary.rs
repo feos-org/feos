@@ -1,4 +1,4 @@
-use super::bubble_dew::{BubbleDewSpecification, TemperatureOrPressure};
+use super::bubble_dew::TemperatureOrPressure;
 use super::{PhaseDiagram, PhaseEquilibrium};
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
@@ -18,7 +18,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     /// If a heteroazeotrope occurs and the composition of the liquid
     /// phases are known, they can be passed as `x_lle` to avoid
     /// the calculation of unstable branches.
-    pub fn binary_vle<TP: BubbleDewSpecification>(
+    pub fn binary_vle<TP: TemperatureOrPressure>(
         eos: &Arc<E>,
         temperature_or_pressure: TP,
         npoints: Option<usize>,
@@ -103,7 +103,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     }
 
     #[allow(clippy::type_complexity)]
-    fn calculate_vlle<TP: BubbleDewSpecification>(
+    fn calculate_vlle<TP: TemperatureOrPressure>(
         eos: &Arc<E>,
         tp: TP,
         npoints: usize,
@@ -178,7 +178,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     }
 }
 
-fn iterate_vle<E: Residual, TP: BubbleDewSpecification>(
+fn iterate_vle<E: Residual, TP: TemperatureOrPressure>(
     eos: &Arc<E>,
     tp: TP,
     x_lim: &[f64],
@@ -197,7 +197,7 @@ fn iterate_vle<E: Residual, TP: BubbleDewSpecification>(
         x.slice(s![1..])
     };
 
-    let tp_0 = Some(TP::pressure_temperature(vle_0.vapor()));
+    let tp_0 = Some(TP::from_state(vle_0.vapor()));
     let mut tp_old = tp_0;
     let mut y_old = None;
     vle_vec.push(vle_0);
@@ -218,7 +218,7 @@ fn iterate_vle<E: Residual, TP: BubbleDewSpecification>(
             } else {
                 vle.liquid().molefracs.clone()
             });
-            tp_old = Some(TP::pressure_temperature(vle.vapor()));
+            tp_old = Some(TP::from_state(vle.vapor()));
             vle_vec.push(vle.clone());
         } else {
             y_old = None;
@@ -245,7 +245,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     ///
     /// The `x_lle` parameter is used as initial values for the calculation
     /// of the heteroazeotrope.
-    pub fn binary_vlle<TP: BubbleDewSpecification>(
+    pub fn binary_vlle<TP: TemperatureOrPressure>(
         eos: &Arc<E>,
         temperature_or_pressure: TP,
         x_lle: (f64, f64),
@@ -288,7 +288,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         // calculate liquid liquid equilibrium
         let lle = tp_lim_lle
             .map(|tp_lim| {
-                let tp_hetero = TP::pressure_temperature(vlle.vapor());
+                let tp_hetero = TP::from_state(vlle.vapor());
                 let x_feed = 0.5 * (x_hetero.0 + x_hetero.1);
                 let feed = Moles::from_reduced(arr1(&[x_feed, 1.0 - x_feed]));
                 PhaseDiagram::lle(

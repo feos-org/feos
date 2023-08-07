@@ -19,7 +19,7 @@ pub trait DataSet<E: Residual>: Send + Sync {
     /// Return the description of the target quantity.
     fn target_str(&self) -> &str;
 
-    // // /// Return the descritions of the input quantities needed to compute the target.
+    /// Return the descritions of the input quantities needed to compute the target.
     fn input_str(&self) -> Vec<&str>;
 
     /// Evaluation of the equation of state for the target quantity.

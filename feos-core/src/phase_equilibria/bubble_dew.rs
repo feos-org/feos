@@ -30,7 +30,7 @@ pub trait TemperatureOrPressure: Copy {
 
     fn temperature_pressure(&self, tp_init: Self::Other) -> (Temperature<f64>, Pressure<f64>);
 
-    fn pressure_temperature<E: Residual>(state: &State<E>) -> Self::Other;
+    fn from_state<E: Residual>(state: &State<E>) -> Self::Other;
 
     fn linspace(
         &self,
@@ -38,9 +38,7 @@ pub trait TemperatureOrPressure: Copy {
         end: Self::Other,
         n: usize,
     ) -> (Temperature<Array1<f64>>, Pressure<Array1<f64>>);
-}
 
-pub trait BubbleDewSpecification: TemperatureOrPressure {
     fn bubble_dew_point<E: Residual>(
         eos: &Arc<E>,
         tp_spec: Self,
@@ -76,7 +74,7 @@ impl TemperatureOrPressure for Temperature<f64> {
         (*self, tp_init)
     }
 
-    fn pressure_temperature<E: Residual>(state: &State<E>) -> Self::Other {
+    fn from_state<E: Residual>(state: &State<E>) -> Self::Other {
         state.pressure(Contributions::Total)
     }
 
@@ -91,9 +89,7 @@ impl TemperatureOrPressure for Temperature<f64> {
             Pressure::linspace(start, end, n),
         )
     }
-}
 
-impl BubbleDewSpecification for Temperature<f64> {
     fn bubble_dew_point<E: Residual>(
         eos: &Arc<E>,
         temperature: Self,
@@ -270,7 +266,7 @@ impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
         (tp_init, *self)
     }
 
-    fn pressure_temperature<E: Residual>(state: &State<E>) -> Self::Other {
+    fn from_state<E: Residual>(state: &State<E>) -> Self::Other {
         state.temperature
     }
 
@@ -285,9 +281,7 @@ impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
             Pressure::linspace(*self, *self, n),
         )
     }
-}
 
-impl BubbleDewSpecification for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>> {
     fn bubble_dew_point<E: Residual>(
         eos: &Arc<E>,
         pressure: Self,
@@ -451,7 +445,7 @@ impl BubbleDewSpecification for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>
 impl<E: Residual> PhaseEquilibrium<E, 2> {
     /// Calculate a phase equilibrium for a given temperature
     /// or pressure and composition of the liquid phase.
-    pub fn bubble_point<TP: BubbleDewSpecification>(
+    pub fn bubble_point<TP: TemperatureOrPressure>(
         eos: &Arc<E>,
         temperature_or_pressure: TP,
         liquid_molefracs: &Array1<f64>,
@@ -472,7 +466,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 
     /// Calculate a phase equilibrium for a given temperature
     /// or pressure and composition of the vapor phase.
-    pub fn dew_point<TP: BubbleDewSpecification>(
+    pub fn dew_point<TP: TemperatureOrPressure>(
         eos: &Arc<E>,
         temperature_or_pressure: TP,
         vapor_molefracs: &Array1<f64>,
@@ -491,7 +485,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         )
     }
 
-    pub(super) fn bubble_dew_point<TP: BubbleDewSpecification>(
+    pub(super) fn bubble_dew_point<TP: TemperatureOrPressure>(
         eos: &Arc<E>,
         tp_spec: TP,
         tp_init: Option<TP::Other>,
@@ -511,7 +505,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         )
     }
 
-    fn iterate_bubble_dew<TP: BubbleDewSpecification>(
+    fn iterate_bubble_dew<TP: TemperatureOrPressure>(
         eos: &Arc<E>,
         tp_spec: TP,
         tp_init: TP::Other,
@@ -659,7 +653,7 @@ fn starting_x2_dew<E: Residual>(
     Ok([vapor_state, liquid_state])
 }
 
-fn bubble_dew<E: Residual, TP: BubbleDewSpecification>(
+fn bubble_dew<E: Residual, TP: TemperatureOrPressure>(
     tp_spec: TP,
     mut var_tp: TP::Other,
     mut state1: State<E>,
