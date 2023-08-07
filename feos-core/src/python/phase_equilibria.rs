@@ -47,7 +47,7 @@ macro_rules! impl_phase_equilibrium {
             ) -> PyResult<Self> {
                 Ok(Self(PhaseEquilibrium::pure(
                     &eos.0,
-                    temperature_or_pressure.into(),
+                    TPSpec::try_from(temperature_or_pressure)?,
                     initial_state.and_then(|s| Some(&s.0)),
                     (max_iter, tol, verbosity).into(),
                 )?))
@@ -92,7 +92,7 @@ macro_rules! impl_phase_equilibrium {
                 eos: $py_eos,
                 temperature: PySINumber,
                 pressure: PySINumber,
-                feed: &PySIArray1,
+                feed: PySIArray1,
                 initial_state: Option<&PyPhaseEquilibrium>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
@@ -101,9 +101,9 @@ macro_rules! impl_phase_equilibrium {
             ) -> PyResult<Self> {
                 Ok(Self(PhaseEquilibrium::tp_flash(
                     &eos.0,
-                    temperature.into(),
-                    pressure.into(),
-                    feed,
+                    temperature.try_into()?,
+                    pressure.try_into()?,
+                    &feed.try_into()?,
                     initial_state.and_then(|s| Some(&s.0)),
                     (max_iter, tol, verbosity).into(), non_volatile_components
                 )?))
@@ -155,17 +155,35 @@ macro_rules! impl_phase_equilibrium {
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 let x = vapor_molefracs.and_then(|m| Some(m.to_owned_array()));
-                Ok(Self(PhaseEquilibrium::bubble_point(
-                    &eos.0,
-                    temperature_or_pressure.into(),
-                    &liquid_molefracs.to_owned_array(),
-                    tp_init.map(|p| p.into()),
-                    x.as_ref(),
-                    (
-                        (max_iter_inner, tol_inner, verbosity).into(),
-                        (max_iter_outer, tol_outer, verbosity).into()
-                    )
-                )?))
+                if let Ok(t) = Temperature::<f64>::try_from(temperature_or_pressure) {
+                    Ok(Self(PhaseEquilibrium::bubble_point(
+                        &eos.0,
+                        t,
+                        &liquid_molefracs.to_owned_array(),
+                        tp_init.map(|p| p.try_into()).transpose()?,
+                        x.as_ref(),
+                        (
+                            (max_iter_inner, tol_inner, verbosity).into(),
+                            (max_iter_outer, tol_outer, verbosity).into()
+                        )
+                    )?))
+                } else if let Ok(p) = Pressure::<f64>::try_from(temperature_or_pressure) {
+                    Ok(Self(PhaseEquilibrium::bubble_point(
+                        &eos.0,
+                        p,
+                        &liquid_molefracs.to_owned_array(),
+                        tp_init.map(|p| p.try_into()).transpose()?,
+                        x.as_ref(),
+                        (
+                            (max_iter_inner, tol_inner, verbosity).into(),
+                            (max_iter_outer, tol_outer, verbosity).into()
+                        )
+                    )?))
+                } else {
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
+                }
             }
 
             /// Compute a phase equilibrium for given temperature
@@ -214,17 +232,35 @@ macro_rules! impl_phase_equilibrium {
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 let x = liquid_molefracs.and_then(|m| Some(m.to_owned_array()));
-                Ok(Self(PhaseEquilibrium::dew_point(
-                    &eos.0,
-                    temperature_or_pressure.into(),
-                    &vapor_molefracs.to_owned_array(),
-                    tp_init.map(|p| p.into()),
-                    x.as_ref(),
-                    (
-                        (max_iter_inner, tol_inner, verbosity).into(),
-                        (max_iter_outer, tol_outer, verbosity).into()
-                    )
-                )?))
+                if let Ok(t) = Temperature::<f64>::try_from(temperature_or_pressure) {
+                    Ok(Self(PhaseEquilibrium::dew_point(
+                        &eos.0,
+                        t,
+                        &vapor_molefracs.to_owned_array(),
+                        tp_init.map(|p| p.try_into()).transpose()?,
+                        x.as_ref(),
+                        (
+                            (max_iter_inner, tol_inner, verbosity).into(),
+                            (max_iter_outer, tol_outer, verbosity).into()
+                        )
+                    )?))
+                } else if let Ok(p) = Pressure::<f64>::try_from(temperature_or_pressure) {
+                    Ok(Self(PhaseEquilibrium::dew_point(
+                        &eos.0,
+                        p,
+                        &vapor_molefracs.to_owned_array(),
+                        tp_init.map(|p| p.try_into()).transpose()?,
+                        x.as_ref(),
+                        (
+                            (max_iter_inner, tol_inner, verbosity).into(),
+                            (max_iter_outer, tol_outer, verbosity).into()
+                        )
+                    )?))
+                } else {
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
+                }
             }
 
             /// Creates a new PhaseEquilibrium that contains two states at the
@@ -255,15 +291,15 @@ macro_rules! impl_phase_equilibrium {
                 eos: $py_eos,
                 temperature: PySINumber,
                 pressure: PySINumber,
-                vapor_moles: &PySIArray1,
-                liquid_moles: &PySIArray1
+                vapor_moles: PySIArray1,
+                liquid_moles: PySIArray1
             ) -> PyResult<Self> {
                 Ok(Self(PhaseEquilibrium::new_npt(
                     &eos.0,
-                    temperature.into(),
-                    pressure.into(),
-                    vapor_moles,
-                    liquid_moles
+                    temperature.try_into()?,
+                    pressure.try_into()?,
+                    &vapor_moles.try_into()?,
+                    &liquid_moles.try_into()?
                 )?))
             }
 
@@ -291,11 +327,11 @@ macro_rules! impl_phase_equilibrium {
             /// -------
             /// list[PhaseEquilibrium]
             #[staticmethod]
-            fn vle_pure_comps(eos: $py_eos, temperature_or_pressure: PySINumber) -> Vec<Option<Self>> {
-                PhaseEquilibrium::vle_pure_comps(&eos.0, temperature_or_pressure.into())
+            fn vle_pure_comps(eos: $py_eos, temperature_or_pressure: PySINumber) -> PyResult<Vec<Option<Self>>> {
+                Ok(PhaseEquilibrium::vle_pure_comps(&eos.0, TPSpec::try_from(temperature_or_pressure)?)
                     .into_iter()
                     .map(|o| o.map(Self))
-                    .collect()
+                    .collect())
             }
 
             /// Calculate the pure component vapor pressures for all the
@@ -312,11 +348,11 @@ macro_rules! impl_phase_equilibrium {
             /// -------
             /// list[SINumber]
             #[staticmethod]
-            fn vapor_pressure(eos: $py_eos, temperature: PySINumber) -> Vec<Option<PySINumber>> {
-                PhaseEquilibrium::vapor_pressure(&eos.0, temperature.into())
+            fn vapor_pressure(eos: $py_eos, temperature: PySINumber) -> PyResult<Vec<Option<PySINumber>>> {
+                Ok(PhaseEquilibrium::vapor_pressure(&eos.0, temperature.try_into()?)
                     .into_iter()
                     .map(|o| o.map(|n| n.into()))
-                    .collect()
+                    .collect())
             }
 
             /// Calculate the pure component boiling temperatures for all the
@@ -333,11 +369,11 @@ macro_rules! impl_phase_equilibrium {
             /// -------
             /// list[SINumber]
             #[staticmethod]
-            fn boiling_temperature(eos: $py_eos, pressure: PySINumber) -> Vec<Option<PySINumber>> {
-                PhaseEquilibrium::boiling_temperature(&eos.0, pressure.into())
+            fn boiling_temperature(eos: $py_eos, pressure: PySINumber) -> PyResult<Vec<Option<PySINumber>>> {
+                Ok(PhaseEquilibrium::boiling_temperature(&eos.0, pressure.try_into()?)
                     .into_iter()
                     .map(|o| o.map(|n| n.into()))
-                    .collect()
+                    .collect())
             }
 
             fn _repr_markdown_(&self) -> String {
@@ -403,17 +439,35 @@ macro_rules! impl_phase_equilibrium {
                 tol_bd_outer: Option<f64>,
                 verbosity_bd: Option<Verbosity>,
             ) -> PyResult<PyThreePhaseEquilibrium> {
-                Ok(PyThreePhaseEquilibrium(PhaseEquilibrium::heteroazeotrope(
-                    &eos.0,
-                    temperature_or_pressure.into(),
-                    x_init,
-                    tp_init.map(|t| t.into()),
-                    (max_iter, tol, verbosity).into(),
-                    (
-                        (max_iter_bd_inner, tol_bd_inner, verbosity_bd).into(),
-                        (max_iter_bd_outer, tol_bd_outer, verbosity_bd).into(),
-                    )
-                )?))
+                if let Ok(t) = Temperature::<f64>::try_from(temperature_or_pressure) {
+                    Ok(PyThreePhaseEquilibrium(PhaseEquilibrium::heteroazeotrope(
+                        &eos.0,
+                        t,
+                        x_init,
+                        tp_init.map(|t| t.try_into()).transpose()?,
+                        (max_iter, tol, verbosity).into(),
+                        (
+                            (max_iter_bd_inner, tol_bd_inner, verbosity_bd).into(),
+                            (max_iter_bd_outer, tol_bd_outer, verbosity_bd).into(),
+                        )
+                    )?))
+                } else if let Ok(p) = Pressure::<f64>::try_from(temperature_or_pressure) {
+                    Ok(PyThreePhaseEquilibrium(PhaseEquilibrium::heteroazeotrope(
+                        &eos.0,
+                        p,
+                        x_init,
+                        tp_init.map(|t| t.try_into()).transpose()?,
+                        (max_iter, tol, verbosity).into(),
+                        (
+                            (max_iter_bd_inner, tol_bd_inner, verbosity_bd).into(),
+                            (max_iter_bd_outer, tol_bd_outer, verbosity_bd).into(),
+                        )
+                    )?))
+                } else {
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
+                }
             }
         }
 
@@ -541,9 +595,9 @@ macro_rules! impl_phase_equilibrium {
             ) -> PyResult<Self> {
                 let dia = PhaseDiagram::pure(
                     &eos.0,
-                    min_temperature.into(),
+                    min_temperature.try_into()?,
                     npoints,
-                    critical_temperature.map(|t| t.into()),
+                    critical_temperature.map(|t| t.try_into()).transpose()?,
                     (max_iter, tol, verbosity).into(),
                 )?;
                 Ok(Self(dia))
@@ -597,11 +651,11 @@ macro_rules! impl_phase_equilibrium {
                     .build()?;
                 let dia = PhaseDiagram::par_pure(
                     &eos.0,
-                    min_temperature.into(),
+                    min_temperature.try_into()?,
                     npoints,
                     chunksize,
                     thread_pool,
-                    critical_temperature.map(|t| t.into()),
+                    critical_temperature.map(|t| t.try_into()).transpose()?,
                     (max_iter, tol, verbosity).into(),
                 )?;
                 Ok(Self(dia))
@@ -657,10 +711,10 @@ macro_rules! impl_phase_equilibrium {
             ) -> PyResult<Self> {
                 let dia = PhaseDiagram::bubble_point_line(
                     &eos.0,
-                    &moles,
-                    min_temperature.into(),
+                    &moles.try_into()?,
+                    min_temperature.try_into()?,
                     npoints,
-                    critical_temperature.map(|t| t.into()),
+                    critical_temperature.map(|t| t.try_into()).transpose()?,
                     (
                         (max_iter_inner, tol_inner, verbosity).into(),
                         (max_iter_outer, tol_outer, verbosity).into(),
@@ -719,10 +773,10 @@ macro_rules! impl_phase_equilibrium {
             ) -> PyResult<Self> {
                 let dia = PhaseDiagram::dew_point_line(
                     &eos.0,
-                    &moles,
-                    min_temperature.into(),
+                    &moles.try_into()?,
+                    min_temperature.try_into()?,
                     npoints,
-                    critical_temperature.map(|t| t.into()),
+                    critical_temperature.map(|t| t.try_into()).transpose()?,
                     (
                         (max_iter_inner, tol_inner, verbosity).into(),
                         (max_iter_outer, tol_outer, verbosity).into(),
@@ -771,10 +825,10 @@ macro_rules! impl_phase_equilibrium {
             ) -> PyResult<Self> {
                 let dia = PhaseDiagram::spinodal(
                     &eos.0,
-                    &moles,
-                    min_temperature.into(),
+                    &moles.try_into()?,
+                    min_temperature.try_into()?,
                     npoints,
-                    critical_temperature.map(|t| t.into()),
+                    critical_temperature.map(|t| t.try_into()).transpose()?,
                     (max_iter, tol, verbosity).into(),
                 )?;
                 Ok(Self(dia))
@@ -826,7 +880,7 @@ macro_rules! impl_phase_equilibrium {
             /// - yi: vapor molefraction of component i
             /// - component index `i` matches to order of components in parameters.
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            pub fn to_dict(&self, contributions: Contributions) -> PyResult<HashMap<String, Vec<f64>>> {
+            pub fn to_dict(&self, contributions: Contributions) -> HashMap<String, Vec<f64>> {
                 let n = self.0.states[0].liquid().eos.components();
                 let mut dict = HashMap::with_capacity(8 + 2 * n);
                 if n != 1 {
@@ -837,21 +891,21 @@ macro_rules! impl_phase_equilibrium {
                         dict.insert(String::from(format!("y{}", i)), ys.column(i).to_vec());
                     }
                 }
-                dict.insert(String::from("temperature"), (self.0.vapor().temperature() / KELVIN).into_value()?.into_raw_vec());
-                dict.insert(String::from("pressure"), (self.0.vapor().pressure() / PASCAL).into_value()?.into_raw_vec());
-                dict.insert(String::from("density liquid"), (self.0.liquid().density() / (MOL / METER.powi(3))).into_value()?.into_raw_vec());
-                dict.insert(String::from("density vapor"), (self.0.vapor().density() / (MOL / METER.powi(3))).into_value()?.into_raw_vec());
-                dict.insert(String::from("mass density liquid"), (self.0.liquid().mass_density() / (KILOGRAM / METER.powi(3))).into_value()?.into_raw_vec());
-                dict.insert(String::from("mass density vapor"), (self.0.vapor().mass_density() / (KILOGRAM / METER.powi(3))).into_value()?.into_raw_vec());
-                dict.insert(String::from("molar enthalpy liquid"), (self.0.liquid().molar_enthalpy(contributions) / (KILO*JOULE / MOL)).into_value()?.into_raw_vec());
-                dict.insert(String::from("molar enthalpy vapor"), (self.0.vapor().molar_enthalpy(contributions) / (KILO*JOULE / MOL)).into_value()?.into_raw_vec());
-                dict.insert(String::from("molar entropy liquid"), (self.0.liquid().molar_entropy(contributions) / (KILO*JOULE / KELVIN / MOL)).into_value()?.into_raw_vec());
-                dict.insert(String::from("molar entropy vapor"), (self.0.vapor().molar_entropy(contributions) / (KILO*JOULE / KELVIN / MOL)).into_value()?.into_raw_vec());
-                dict.insert(String::from("specific enthalpy liquid"), (self.0.liquid().specific_enthalpy(contributions) / (KILO*JOULE / KILOGRAM)).into_value()?.into_raw_vec());
-                dict.insert(String::from("specific enthalpy vapor"), (self.0.vapor().specific_enthalpy(contributions) / (KILO*JOULE / KILOGRAM)).into_value()?.into_raw_vec());
-                dict.insert(String::from("specific entropy liquid"), (self.0.liquid().specific_entropy(contributions) / (KILO*JOULE / KELVIN / KILOGRAM)).into_value()?.into_raw_vec());
-                dict.insert(String::from("specific entropy vapor"), (self.0.vapor().specific_entropy(contributions) / (KILO*JOULE / KELVIN / KILOGRAM)).into_value()?.into_raw_vec());
-                Ok(dict)
+                dict.insert(String::from("temperature"), (self.0.vapor().temperature() / KELVIN).into_value().into_raw_vec());
+                dict.insert(String::from("pressure"), (self.0.vapor().pressure() / PASCAL).into_value().into_raw_vec());
+                dict.insert(String::from("density liquid"), (self.0.liquid().density() / (MOL / METER.powi::<P3>())).into_value().into_raw_vec());
+                dict.insert(String::from("density vapor"), (self.0.vapor().density() / (MOL / METER.powi::<P3>())).into_value().into_raw_vec());
+                dict.insert(String::from("mass density liquid"), (self.0.liquid().mass_density() / (KILOGRAM / METER.powi::<P3>())).into_value().into_raw_vec());
+                dict.insert(String::from("mass density vapor"), (self.0.vapor().mass_density() / (KILOGRAM / METER.powi::<P3>())).into_value().into_raw_vec());
+                dict.insert(String::from("molar enthalpy liquid"), (self.0.liquid().molar_enthalpy(contributions) / (KILO*JOULE / MOL)).into_value().into_raw_vec());
+                dict.insert(String::from("molar enthalpy vapor"), (self.0.vapor().molar_enthalpy(contributions) / (KILO*JOULE / MOL)).into_value().into_raw_vec());
+                dict.insert(String::from("molar entropy liquid"), (self.0.liquid().molar_entropy(contributions) / (KILO*JOULE / KELVIN / MOL)).into_value().into_raw_vec());
+                dict.insert(String::from("molar entropy vapor"), (self.0.vapor().molar_entropy(contributions) / (KILO*JOULE / KELVIN / MOL)).into_value().into_raw_vec());
+                dict.insert(String::from("specific enthalpy liquid"), (self.0.liquid().specific_enthalpy(contributions) / (KILO*JOULE / KILOGRAM)).into_value().into_raw_vec());
+                dict.insert(String::from("specific enthalpy vapor"), (self.0.vapor().specific_enthalpy(contributions) / (KILO*JOULE / KILOGRAM)).into_value().into_raw_vec());
+                dict.insert(String::from("specific entropy liquid"), (self.0.liquid().specific_entropy(contributions) / (KILO*JOULE / KELVIN / KILOGRAM)).into_value().into_raw_vec());
+                dict.insert(String::from("specific entropy vapor"), (self.0.vapor().specific_entropy(contributions) / (KILO*JOULE / KELVIN / KILOGRAM)).into_value().into_raw_vec());
+                dict
             }
 
             /// Binary phase diagram calculated using bubble/dew point iterations.
@@ -894,17 +948,33 @@ macro_rules! impl_phase_equilibrium {
                 tol_outer: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
-                let dia = PhaseDiagram::binary_vle(
-                    &eos.0,
-                    temperature_or_pressure.into(),
-                    npoints,
-                    x_lle,
-                    (
-                        (max_iter_inner, tol_inner, verbosity).into(),
-                        (max_iter_outer, tol_outer, verbosity).into(),
-                    )
-                )?;
-                Ok(Self(dia))
+                if let Ok(t) = Temperature::<f64>::try_from(temperature_or_pressure) {
+                    Ok(Self(PhaseDiagram::binary_vle(
+                        &eos.0,
+                        t,
+                        npoints,
+                        x_lle,
+                        (
+                            (max_iter_inner, tol_inner, verbosity).into(),
+                            (max_iter_outer, tol_outer, verbosity).into(),
+                        )
+                    )?))
+                } else if let Ok(p) = Pressure::<f64>::try_from(temperature_or_pressure) {
+                    Ok(Self(PhaseDiagram::binary_vle(
+                        &eos.0,
+                        p,
+                        npoints,
+                        x_lle,
+                        (
+                            (max_iter_inner, tol_inner, verbosity).into(),
+                            (max_iter_outer, tol_outer, verbosity).into(),
+                        )
+                    )?))
+                } else {
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
+                }
             }
 
             /// Create a new phase diagram using Tp flash calculations.
@@ -942,15 +1012,29 @@ macro_rules! impl_phase_equilibrium {
                 max_tp: PySINumber,
                 npoints: Option<usize>,
             ) -> PyResult<Self> {
-                let dia = PhaseDiagram::lle(
-                    &eos.0,
-                    temperature_or_pressure.into(),
-                    &feed,
-                    min_tp.into(),
-                    max_tp.into(),
-                    npoints,
-                )?;
-                Ok(Self(dia))
+                if let Ok(t) = Temperature::<f64>::try_from(temperature_or_pressure) {
+                    Ok(Self(PhaseDiagram::lle(
+                        &eos.0,
+                        t,
+                        &feed.try_into()?,
+                        min_tp.try_into()?,
+                        max_tp.try_into()?,
+                        npoints,
+                    )?))
+                } else if let Ok(p) = Pressure::<f64>::try_from(temperature_or_pressure) {
+                    Ok(Self(PhaseDiagram::lle(
+                        &eos.0,
+                        p,
+                        &feed.try_into()?,
+                        min_tp.try_into()?,
+                        max_tp.try_into()?,
+                        npoints,
+                    )?))
+                } else {
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
+                }
             }
         }
 
@@ -1010,20 +1094,39 @@ macro_rules! impl_phase_equilibrium {
                 tol_outer: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<PyPhaseDiagramHetero> {
-                let dia = PhaseDiagram::binary_vlle(
-                    &eos.0,
-                    temperature_or_pressure.into(),
-                    x_lle,
-                    tp_lim_lle.map(|t| t.into()),
-                    tp_init_vlle.map(|t| t.into()),
-                    npoints_vle,
-                    npoints_lle,
-                    (
-                        (max_iter_inner, tol_inner, verbosity).into(),
-                        (max_iter_outer, tol_outer, verbosity).into(),
-                    )
-                )?;
-                Ok(PyPhaseDiagramHetero(dia))
+                if let Ok(t) = Temperature::<f64>::try_from(temperature_or_pressure) {
+                    Ok(PyPhaseDiagramHetero(PhaseDiagram::binary_vlle(
+                        &eos.0,
+                        t,
+                        x_lle,
+                        tp_lim_lle.map(|t| t.try_into()).transpose()?,
+                        tp_init_vlle.map(|t| t.try_into()).transpose()?,
+                        npoints_vle,
+                        npoints_lle,
+                        (
+                            (max_iter_inner, tol_inner, verbosity).into(),
+                            (max_iter_outer, tol_outer, verbosity).into(),
+                        )
+                    )?))
+                } else if let Ok(p) = Pressure::<f64>::try_from(temperature_or_pressure) {
+                    Ok(PyPhaseDiagramHetero(PhaseDiagram::binary_vlle(
+                        &eos.0,
+                        p,
+                        x_lle,
+                        tp_lim_lle.map(|t| t.try_into()).transpose()?,
+                        tp_init_vlle.map(|t| t.try_into()).transpose()?,
+                        npoints_vle,
+                        npoints_lle,
+                        (
+                            (max_iter_inner, tol_inner, verbosity).into(),
+                            (max_iter_outer, tol_outer, verbosity).into(),
+                        )
+                    )?))
+                } else {
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
+                }
             }
         }
 

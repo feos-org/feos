@@ -1,9 +1,9 @@
 use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter, ParameterError};
+use feos_core::si::*;
 use feos_core::{Contributions, PhaseEquilibrium, SolverOptions};
 use ndarray::*;
-use quantity::si::*;
 use std::error::Error;
 use std::sync::Arc;
 
@@ -29,7 +29,7 @@ fn test_tp_flash() -> Result<(), Box<dyn Error>> {
         .pressure(Contributions::Total);
     let x1 = 0.5;
     let p = x1 * p_propane + (1.0 - x1) * p_butane;
-    let y1 = (x1 * p_propane / p).into_value()?;
+    let y1 = (x1 * p_propane / p).into_value();
     let z1 = 0.5 * (x1 + y1);
     println!("{} {} {} {} {}", p_propane, p_butane, x1, y1, z1);
     let mix = Arc::new(PcSaft::new(read_params(vec!["propane", "butane"])?));

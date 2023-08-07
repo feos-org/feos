@@ -1,6 +1,8 @@
-use crate::EosResult;
+use crate::{
+    si::{Diffusivity, MolarWeight, Moles, Temperature, ThermalConductivity, Viscosity, Volume},
+    EosResult,
+};
 use ndarray::Array1;
-use quantity::si::{SIArray1, SINumber};
 use std::sync::Arc;
 
 mod helmholtz_energy;
@@ -73,7 +75,7 @@ impl<I: IdealGas, R: Residual> Residual for EquationOfState<I, R> {
         self.residual.contributions()
     }
 
-    fn molar_weight(&self) -> SIArray1 {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.residual.molar_weight()
     }
 }
@@ -81,10 +83,10 @@ impl<I: IdealGas, R: Residual> Residual for EquationOfState<I, R> {
 impl<I: IdealGas, R: Residual + EntropyScaling> EntropyScaling for EquationOfState<I, R> {
     fn viscosity_reference(
         &self,
-        temperature: SINumber,
-        volume: SINumber,
-        moles: &SIArray1,
-    ) -> EosResult<SINumber> {
+        temperature: Temperature<f64>,
+        volume: Volume<f64>,
+        moles: &Moles<Array1<f64>>,
+    ) -> EosResult<Viscosity<f64>> {
         self.residual
             .viscosity_reference(temperature, volume, moles)
     }
@@ -93,10 +95,10 @@ impl<I: IdealGas, R: Residual + EntropyScaling> EntropyScaling for EquationOfSta
     }
     fn diffusion_reference(
         &self,
-        temperature: SINumber,
-        volume: SINumber,
-        moles: &SIArray1,
-    ) -> EosResult<SINumber> {
+        temperature: Temperature<f64>,
+        volume: Volume<f64>,
+        moles: &Moles<Array1<f64>>,
+    ) -> EosResult<Diffusivity<f64>> {
         self.residual
             .diffusion_reference(temperature, volume, moles)
     }
@@ -105,10 +107,10 @@ impl<I: IdealGas, R: Residual + EntropyScaling> EntropyScaling for EquationOfSta
     }
     fn thermal_conductivity_reference(
         &self,
-        temperature: SINumber,
-        volume: SINumber,
-        moles: &SIArray1,
-    ) -> EosResult<SINumber> {
+        temperature: Temperature<f64>,
+        volume: Volume<f64>,
+        moles: &Moles<Array1<f64>>,
+    ) -> EosResult<ThermalConductivity<f64>> {
         self.residual
             .thermal_conductivity_reference(temperature, volume, moles)
     }

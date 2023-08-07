@@ -4,6 +4,7 @@ use crate::functional_contribution::*;
 use crate::ideal_chain_contribution::IdealChainContribution;
 use crate::solvation::PairPotential;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
+use feos_core::si::MolarWeight;
 use feos_core::{
     Components, DeBroglieWavelength, EosResult, EquationOfState, HelmholtzEnergy,
     HelmholtzEnergyDual, IdealGas, Residual, StateHD,
@@ -13,7 +14,6 @@ use num_dual::*;
 use petgraph::graph::{Graph, UnGraph};
 use petgraph::visit::EdgeRef;
 use petgraph::Directed;
-use quantity::si::SIArray1;
 use std::borrow::Cow;
 use std::ops::{Deref, MulAssign};
 use std::sync::Arc;
@@ -29,7 +29,7 @@ impl<I: Components + Send + Sync, F: HelmholtzEnergyFunctional> HelmholtzEnergyF
         self.residual.molecule_shape()
     }
 
-    fn molar_weight(&self) -> SIArray1 {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.residual.molar_weight()
     }
 
@@ -99,7 +99,7 @@ impl<F: HelmholtzEnergyFunctional> Residual for DFT<F> {
         unreachable!()
     }
 
-    fn molar_weight(&self) -> SIArray1 {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.0.molar_weight()
     }
 
@@ -170,7 +170,7 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
     /// Molar weight of all components.
     ///
     /// Enables calculation of (mass) specific properties.
-    fn molar_weight(&self) -> SIArray1;
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>>;
 
     /// Return the maximum density in Angstrom^-3.
     ///

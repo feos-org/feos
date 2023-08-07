@@ -3,11 +3,11 @@
 
 use crate::equation_of_state::{Components, DeBroglieWavelength, DeBroglieWavelengthDual};
 use crate::parameter::*;
-use crate::{EosResult, EosUnit, IdealGas};
+use crate::si::{MolarEntropy, Temperature};
+use crate::{EosResult, IdealGas};
 use conv::ValueInto;
 use ndarray::{Array, Array1, Array2};
 use num_dual::*;
-use quantity::si::{SINumber, SIUnit};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::sync::Arc;
@@ -167,15 +167,15 @@ impl Joback {
     /// Directly calculates the molar ideal gas heat capacity from the Joback model.
     pub fn molar_isobaric_heat_capacity(
         &self,
-        temperature: SINumber,
+        temperature: Temperature<f64>,
         molefracs: &Array1<f64>,
-    ) -> EosResult<SINumber> {
-        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
+    ) -> EosResult<MolarEntropy<f64>> {
+        let t = temperature.to_reduced();
         let p = &self.parameters;
         let c_p = (molefracs
             * &(&p.a + &p.b * t + &p.c * t.powi(2) + &p.d * t.powi(3) + &p.e * t.powi(4)))
             .sum();
-        Ok(c_p / RGAS * SIUnit::gas_constant())
+        Ok(c_p / RGAS * crate::si::RGAS)
     }
 }
 
@@ -242,11 +242,12 @@ const KB: f64 = 1.38064852e-23;
 
 #[cfg(test)]
 mod tests {
+    use crate::si::*;
     use crate::{Contributions, Residual, State, StateBuilder};
     use approx::assert_relative_eq;
     use ndarray::arr1;
-    use quantity::si::*;
     use std::sync::Arc;
+    use typenum::P3;
 
     use super::*;
 
@@ -260,8 +261,8 @@ mod tests {
             &[]
         }
 
-        fn molar_weight(&self) -> SIArray1 {
-            SIArray1::from_shape_fn(self.components(), |i| {
+        fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+            MolarWeight::from_shape_fn(self.components(), |i| {
                 self.parameters.pure_records[i].molarweight * GRAM / MOL
             })
         }
@@ -356,13 +357,13 @@ mod tests {
         let state = State::new_nvt(
             &eos,
             1000.0 * KELVIN,
-            1.0 * ANGSTROM.powi(3),
-            &(arr1(&[1.0]) * MOL),
+            1.0 * ANGSTROM.powi::<P3>(),
+            &(&arr1(&[1.0]) * MOL),
         )?;
         assert!(
-            (state
-                .molar_isobaric_heat_capacity(Contributions::IdealGas)
-                .to_reduced(JOULE / MOL / KELVIN)?
+            ((state.molar_isobaric_heat_capacity(Contributions::IdealGas)
+                / (JOULE / MOL / KELVIN))
+                .into_value()
                 - 224.6)
                 .abs()
                 < 1.0
@@ -385,8 +386,8 @@ mod tests {
         let parameters = Arc::new(JobackParameters::new_binary(vec![record1, record2], None)?);
         let joback = Arc::new(Joback::new(parameters));
         let temperature = 300.0 * KELVIN;
-        let volume = METER.powi(3);
-        let moles = arr1(&[1.0, 3.0]) * MOL;
+        let volume = METER.powi::<P3>();
+        let moles = &arr1(&[1.0, 3.0]) * MOL;
         let state = StateBuilder::new(&joback)
             .temperature(temperature)
             .volume(volume)

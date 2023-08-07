@@ -45,16 +45,19 @@ macro_rules! impl_solvation_profile {
                 cutoff_radius: Option<PySINumber>,
                 potential_cutoff: Option<f64>,
             ) -> PyResult<Self> {
-                let s = system_size.map(|s| [s[0].into(), s[1].into(), s[2].into()]);
+                let s = match system_size {
+                    Some(s) => Some([s[0].try_into()?, s[1].try_into()?, s[2].try_into()?]),
+                    None => None
+                };
 
                 Ok(Self(SolvationProfile::new(
                     &bulk.0,
                     n_grid,
-                    coordinates.clone().into(),
+                    coordinates.clone().try_into()?,
                     sigma.to_owned_array(),
                     epsilon_k.to_owned_array(),
                     s,
-                    cutoff_radius.map(|r| r.into()),
+                    cutoff_radius.map(|r| r.try_into()).transpose()?,
                     potential_cutoff,
                 )?))
             }
@@ -106,7 +109,8 @@ macro_rules! impl_pair_correlation {
                 n_grid: usize,
                 width: PySINumber,
             ) -> PyResult<Self> {
-                let profile = PairCorrelation::new(&bulk.0, test_particle, n_grid, width.into())?;
+                let profile =
+                    PairCorrelation::new(&bulk.0, test_particle, n_grid, width.try_into()?);
                 Ok(PyPairCorrelation(profile))
             }
 

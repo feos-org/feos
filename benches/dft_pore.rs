@@ -5,12 +5,13 @@ use feos::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftFunctionalParameters};
 use feos::hard_sphere::{FMTFunctional, FMTVersion};
 use feos::pcsaft::{PcSaftFunctional, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter, ParameterHetero};
+use feos_core::si::{ANGSTROM, KELVIN, NAV};
 use feos_core::{PhaseEquilibrium, State, StateBuilder};
 use feos_dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
 use feos_dft::{DFTSolver, Geometry};
 use ndarray::arr1;
-use quantity::si::{ANGSTROM, KELVIN, NAV};
 use std::sync::Arc;
+use typenum::P3;
 
 fn fmt(c: &mut Criterion) {
     let mut group = c.benchmark_group("DFT_pore_fmt");
@@ -23,9 +24,9 @@ fn fmt(c: &mut Criterion) {
         None,
         None,
     );
-    let bulk = State::new_pure(&func, KELVIN, 0.75 / NAV / ANGSTROM.powi(3)).unwrap();
+    let bulk = State::new_pure(&func, KELVIN, 0.75 / NAV / ANGSTROM.powi::<P3>()).unwrap();
     group.bench_function("liquid", |b| {
-        b.iter(|| pore.initialize(&bulk, None, None).unwrap().solve(None))
+        b.iter(|| pore.initialize(&bulk, None, None).solve(None))
     });
 }
 
@@ -53,11 +54,11 @@ fn pcsaft(c: &mut Criterion) {
     let vle = PhaseEquilibrium::pure(&func, 300.0 * KELVIN, None, Default::default()).unwrap();
     let bulk = vle.liquid();
     group.bench_function("butane_liquid", |b| {
-        b.iter(|| pore.initialize(bulk, None, None).unwrap().solve(None))
+        b.iter(|| pore.initialize(bulk, None, None).solve(None))
     });
     let bulk = State::new_pure(&func, 300.0 * KELVIN, vle.vapor().density * 0.2).unwrap();
     group.bench_function("butane_vapor", |b| {
-        b.iter(|| pore.initialize(&bulk, None, None).unwrap().solve(None))
+        b.iter(|| pore.initialize(&bulk, None, None).solve(None))
     });
 
     let parameters = PcSaftParameters::from_json(
@@ -79,7 +80,7 @@ fn pcsaft(c: &mut Criterion) {
     .unwrap();
     let bulk = vle.liquid();
     group.bench_function("butane_pentane_liquid", |b| {
-        b.iter(|| pore.initialize(bulk, None, None).unwrap().solve(None))
+        b.iter(|| pore.initialize(bulk, None, None).solve(None))
     });
     let bulk = StateBuilder::new(&func)
         .temperature(300.0 * KELVIN)
@@ -87,7 +88,7 @@ fn pcsaft(c: &mut Criterion) {
         .build()
         .unwrap();
     group.bench_function("butane_pentane_vapor", |b| {
-        b.iter(|| pore.initialize(&bulk, None, None).unwrap().solve(None))
+        b.iter(|| pore.initialize(&bulk, None, None).solve(None))
     });
 }
 
@@ -121,11 +122,7 @@ fn gc_pcsaft(c: &mut Criterion) {
         .picard_iteration(None, None, Some(1e-5), None)
         .anderson_mixing(None, None, None, None, None);
     group.bench_function("butane_liquid", |b| {
-        b.iter(|| {
-            pore.initialize(bulk, None, None)
-                .unwrap()
-                .solve(Some(&solver))
-        })
+        b.iter(|| pore.initialize(bulk, None, None).solve(Some(&solver)))
     });
 }
 

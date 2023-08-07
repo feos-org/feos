@@ -39,14 +39,14 @@ macro_rules! impl_pore {
                 potential: PyExternalPotential,
                 n_grid: Option<usize>,
                 potential_cutoff: Option<f64>,
-            ) -> Self {
-                Self(Pore1D::new(
+            ) -> PyResult<Self> {
+                Ok(Self(Pore1D::new(
                     geometry,
-                    pore_size.into(),
+                    pore_size.try_into()?,
                     potential.0,
                     n_grid,
                     potential_cutoff,
-                ))
+                )))
             }
 
             /// Initialize the pore for the given bulk state.
@@ -74,9 +74,9 @@ macro_rules! impl_pore {
             ) -> PyResult<PyPoreProfile1D> {
                 Ok(PyPoreProfile1D(self.0.initialize(
                     &bulk.0,
-                    density.as_deref(),
+                    density.map(|d| d.try_into()).transpose()?.as_ref(),
                     external_potential.map(|e| e.to_owned_array()).as_ref(),
-                )?))
+                )))
             }
 
             #[getter]
@@ -172,21 +172,21 @@ macro_rules! impl_pore {
             fn new(
                 system_size: [PySINumber; 3],
                 n_grid: [usize; 3],
-                coordinates: &PySIArray2,
+                coordinates: PySIArray2,
                 sigma_ss: &PyArray1<f64>,
                 epsilon_k_ss: &PyArray1<f64>,
                 potential_cutoff: Option<f64>,
                 cutoff_radius: Option<PySINumber>,
-            ) -> Self {
-                Self(Pore3D::new(
-                    [system_size[0].into(), system_size[1].into(), system_size[2].into()],
+            ) -> PyResult<Self> {
+                Ok(Self(Pore3D::new(
+                    [system_size[0].try_into()?, system_size[1].try_into()?, system_size[2].try_into()?],
                     n_grid,
-                    coordinates.clone().into(),
+                    coordinates.try_into()?,
                     sigma_ss.to_owned_array(),
                     epsilon_k_ss.to_owned_array(),
                     potential_cutoff,
-                    cutoff_radius.map(|c| c.into()),
-                ))
+                    cutoff_radius.map(|c| c.try_into()).transpose()?,
+                )))
             }
 
             /// Initialize the pore for the given bulk state.
@@ -214,9 +214,9 @@ macro_rules! impl_pore {
             ) -> PyResult<PyPoreProfile3D> {
                 Ok(PyPoreProfile3D(self.0.initialize(
                     &bulk.0,
-                    density.as_deref(),
+                    density.map(|d| d.try_into()).transpose()?.as_ref(),
                     external_potential.map(|e| e.to_owned_array()).as_ref(),
-                )?))
+                )))
             }
 
             /// The pore volume using Helium at 298 K as reference.

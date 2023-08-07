@@ -5,12 +5,14 @@ use crate::functional_contribution::FunctionalContribution;
 use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
-use feos_core::{Components, Contributions, EosResult, EosUnit, State, StateBuilder};
+use feos_core::si::{
+    Density, Dimensionless, Energy, Length, MolarEnergy, MolarWeight, Temperature, Volume, KELVIN,
+};
+use feos_core::{Components, Contributions, EosResult, State, StateBuilder};
 use ndarray::prelude::*;
 use ndarray::Axis as Axis_nd;
 use ndarray::RemoveAxis;
 use num_dual::linalg::LU;
-use quantity::si::{SIArray, SIArray1, SIArray2, SINumber, SIUnit};
 use std::sync::Arc;
 
 const POTENTIAL_OFFSET: f64 = 2.0;
@@ -19,7 +21,7 @@ const DEFAULT_GRID_POINTS: usize = 2048;
 /// Parameters required to specify a 1D pore.
 pub struct Pore1D {
     pub geometry: Geometry,
-    pub pore_size: SINumber,
+    pub pore_size: Length<f64>,
     pub potential: ExternalPotential,
     pub n_grid: Option<usize>,
     pub potential_cutoff: Option<f64>,
@@ -28,7 +30,7 @@ pub struct Pore1D {
 impl Pore1D {
     pub fn new(
         geometry: Geometry,
-        pore_size: SINumber,
+        pore_size: Length<f64>,
         potential: ExternalPotential,
         n_grid: Option<usize>,
         potential_cutoff: Option<f64>,
@@ -49,30 +51,26 @@ pub trait PoreSpecification<D: Dimension> {
     fn initialize<F: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
         bulk: &State<DFT<F>>,
-        density: Option<&SIArray<D::Larger>>,
+        density: Option<&Density<Array<f64, D::Larger>>>,
         external_potential: Option<&Array<f64, D::Larger>>,
-    ) -> EosResult<PoreProfile<D, F>>;
-
-    /// Return the number of spatial dimensions of the pore.
-    fn dimension(&self) -> i32;
+    ) -> PoreProfile<D, F>;
 
     /// Return the pore volume using Helium at 298 K as reference.
-    fn pore_volume(&self) -> EosResult<SINumber>
+    fn pore_volume(&self) -> EosResult<Volume<f64>>
     where
         D::Larger: Dimension<Smaller = D>,
     {
         let bulk = StateBuilder::new(&Arc::new(Helium::new()))
-            .temperature(298.0 * SIUnit::reference_temperature())
-            .density(SIUnit::reference_density())
+            .temperature(298.0 * KELVIN)
+            .density(Density::from_reduced(1.0))
             .build()?;
-        let pore = self.initialize(&bulk, None, None)?;
-        let pot = pore
-            .profile
-            .external_potential
-            .index_axis(Axis(0), 0)
-            .mapv(|v| (-v).exp())
-            * SIUnit::reference_temperature()
-            / SIUnit::reference_temperature();
+        let pore = self.initialize(&bulk, None, None);
+        let pot = Dimensionless::from_reduced(
+            pore.profile
+                .external_potential
+                .index_axis(Axis(0), 0)
+                .mapv(|v| (-v).exp()),
+        );
         Ok(pore.profile.integrate(&pot))
     }
 }
@@ -80,8 +78,8 @@ pub trait PoreSpecification<D: Dimension> {
 /// Density profile and properties of a confined system in arbitrary dimensions.
 pub struct PoreProfile<D: Dimension, F> {
     pub profile: DFTProfile<D, F>,
-    pub grand_potential: Option<SINumber>,
-    pub interfacial_tension: Option<SINumber>,
+    pub grand_potential: Option<Energy<f64>>,
+    pub interfacial_tension: Option<Energy<f64>>,
 }
 
 /// Density profile and properties of a 1D confined system.
@@ -130,18 +128,20 @@ where
         self
     }
 
-    pub fn partial_molar_enthalpy_of_adsorption(&self) -> EosResult<SIArray1> {
+    pub fn partial_molar_enthalpy_of_adsorption(&self) -> EosResult<MolarEnergy<Array1<f64>>> {
         let a = self.profile.dn_dmu()?;
         let a_unit = a.get((0, 0));
         let b = -self.profile.temperature * self.profile.dn_dt()?;
         let b_unit = b.get(0);
 
-        let h_ads = LU::new(a.to_reduced(a_unit)?)?.solve(&b.to_reduced(b_unit)?);
-        Ok(h_ads * b_unit / a_unit)
+        let h_ads = LU::new((a / a_unit).into_value())?.solve(&(b / b_unit).into_value());
+        Ok(&h_ads * b_unit / a_unit)
     }
 
-    pub fn enthalpy_of_adsorption(&self) -> EosResult<SINumber> {
-        Ok((self.partial_molar_enthalpy_of_adsorption()? * &self.profile.bulk.molefracs).sum())
+    pub fn enthalpy_of_adsorption(&self) -> EosResult<MolarEnergy<f64>> {
+        Ok((self.partial_molar_enthalpy_of_adsorption()?
+            * Dimensionless::from(&self.profile.bulk.molefracs))
+        .sum())
     }
 }
 
@@ -149,9 +149,9 @@ impl PoreSpecification<Ix1> for Pore1D {
     fn initialize<F: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
         bulk: &State<DFT<F>>,
-        density: Option<&SIArray2>,
+        density: Option<&Density<Array2<f64>>>,
         external_potential: Option<&Array2<f64>>,
-    ) -> EosResult<PoreProfile1D<F>> {
+    ) -> PoreProfile1D<F> {
         let dft: &F = &bulk.eos;
         let n_grid = self.n_grid.unwrap_or(DEFAULT_GRID_POINTS);
 
@@ -164,10 +164,10 @@ impl PoreSpecification<Ix1> for Pore1D {
                         .iter()
                         .max_by(|a, b| a.total_cmp(b))
                         .unwrap();
-                Axis::new_cartesian(n_grid, 0.5 * self.pore_size, Some(potential_offset))?
+                Axis::new_cartesian(n_grid, 0.5 * self.pore_size, Some(potential_offset))
             }
-            Geometry::Cylindrical => Axis::new_polar(n_grid, self.pore_size)?,
-            Geometry::Spherical => Axis::new_spherical(n_grid, self.pore_size)?,
+            Geometry::Cylindrical => Axis::new_polar(n_grid, self.pore_size),
+            Geometry::Spherical => Axis::new_spherical(n_grid, self.pore_size),
         };
 
         // calculate external potential
@@ -182,44 +182,38 @@ impl PoreSpecification<Ix1> for Pore1D {
                     self.potential_cutoff,
                 )
             },
-            |e| Ok(e.clone()),
-        )?;
+            |e| e.clone(),
+        );
 
         // initialize convolver
         let grid = Grid::new_1d(axis);
-        let t = bulk
-            .temperature
-            .to_reduced(SIUnit::reference_temperature())?;
+        let t = bulk.temperature.to_reduced();
         let weight_functions = dft.weight_functions(t);
         let convolver = ConvolverFFT::plan(&grid, &weight_functions, Some(1));
 
-        Ok(PoreProfile {
-            profile: DFTProfile::new(grid, convolver, bulk, Some(external_potential), density)?,
+        PoreProfile {
+            profile: DFTProfile::new(grid, convolver, bulk, Some(external_potential), density),
             grand_potential: None,
             interfacial_tension: None,
-        })
-    }
-
-    fn dimension(&self) -> i32 {
-        self.geometry.dimension()
+        }
     }
 }
 
 fn external_potential_1d<P: FluidParameters>(
-    pore_width: SINumber,
-    temperature: SINumber,
+    pore_width: Length<f64>,
+    temperature: Temperature<f64>,
     potential: &ExternalPotential,
     fluid_parameters: &P,
     axis: &Axis,
     potential_cutoff: Option<f64>,
-) -> EosResult<Array2<f64>> {
+) -> Array2<f64> {
     let potential_cutoff = potential_cutoff.unwrap_or(MAX_POTENTIAL);
     let effective_pore_size = match axis.geometry {
-        Geometry::Spherical => pore_width.to_reduced(SIUnit::reference_length())?,
-        Geometry::Cylindrical => pore_width.to_reduced(SIUnit::reference_length())?,
-        Geometry::Cartesian => 0.5 * pore_width.to_reduced(SIUnit::reference_length())?,
+        Geometry::Spherical => pore_width.to_reduced(),
+        Geometry::Cylindrical => pore_width.to_reduced(),
+        Geometry::Cartesian => 0.5 * pore_width.to_reduced(),
     };
-    let t = temperature.to_reduced(SIUnit::reference_temperature())?;
+    let t = temperature.to_reduced();
     let mut external_potential = match &axis.geometry {
         Geometry::Cartesian => {
             potential.calculate_cartesian_potential(
@@ -258,7 +252,7 @@ fn external_potential_1d<P: FluidParameters>(
             *x = potential_cutoff
         }
     });
-    Ok(external_potential)
+    external_potential
 }
 
 const EPSILON_HE: f64 = 10.9;
@@ -301,7 +295,7 @@ impl HelmholtzEnergyFunctional for Helium {
         MoleculeShape::Spherical(1)
     }
 
-    fn molar_weight(&self) -> SIArray1 {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         unreachable!()
     }
 }

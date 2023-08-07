@@ -225,26 +225,26 @@ impl PyExternalPotential {
         text_signature = "(coordinates, sigma_ss, epsilon_k_ss, pore_center, system_size, n_grid, cutoff_radius=None)"
     )]
     pub fn FreeEnergyAveraged(
-        coordinates: &PySIArray2,
+        coordinates: PySIArray2,
         sigma_ss: &PyArray1<f64>,
         epsilon_k_ss: &PyArray1<f64>,
         pore_center: [f64; 3],
         system_size: [PySINumber; 3],
         n_grid: [usize; 2],
         cutoff_radius: Option<f64>,
-    ) -> Self {
-        Self(ExternalPotential::FreeEnergyAveraged {
-            coordinates: coordinates.clone().into(),
+    ) -> PyResult<Self> {
+        Ok(Self(ExternalPotential::FreeEnergyAveraged {
+            coordinates: coordinates.try_into()?,
             sigma_ss: sigma_ss.to_owned_array(),
             epsilon_k_ss: epsilon_k_ss.to_owned_array(),
             pore_center,
             system_size: [
-                system_size[0].into(),
-                system_size[1].into(),
-                system_size[2].into(),
+                system_size[0].try_into()?,
+                system_size[1].try_into()?,
+                system_size[2].try_into()?,
             ],
             n_grid,
             cutoff_radius,
-        })
+        }))
     }
 }

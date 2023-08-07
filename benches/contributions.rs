@@ -8,9 +8,9 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter};
+use feos_core::si::*;
 use feos_core::{DensityInitialization, Derivative, Residual, State};
 use ndarray::arr1;
-use quantity::si::*;
 use std::sync::Arc;
 
 /// Benchmark for the PC-SAFT equation of state

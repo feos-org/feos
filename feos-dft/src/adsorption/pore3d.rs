@@ -4,31 +4,31 @@ use crate::convolver::ConvolverFFT;
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::{Axis, Grid};
 use crate::profile::{DFTProfile, CUTOFF_RADIUS, MAX_POTENTIAL};
-use feos_core::{EosResult, EosUnit, State};
+use feos_core::si::{Density, Length};
+use feos_core::State;
 use ndarray::prelude::*;
 use ndarray::Zip;
-use quantity::si::{SIArray2, SIArray4, SINumber, SIUnit};
 
 /// Parameters required to specify a 3D pore.
 pub struct Pore3D {
-    system_size: [SINumber; 3],
+    system_size: [Length<f64>; 3],
     n_grid: [usize; 3],
-    coordinates: SIArray2,
+    coordinates: Length<Array2<f64>>,
     sigma_ss: Array1<f64>,
     epsilon_k_ss: Array1<f64>,
     potential_cutoff: Option<f64>,
-    cutoff_radius: Option<SINumber>,
+    cutoff_radius: Option<Length<f64>>,
 }
 
 impl Pore3D {
     pub fn new(
-        system_size: [SINumber; 3],
+        system_size: [Length<f64>; 3],
         n_grid: [usize; 3],
-        coordinates: SIArray2,
+        coordinates: Length<Array2<f64>>,
         sigma_ss: Array1<f64>,
         epsilon_k_ss: Array1<f64>,
         potential_cutoff: Option<f64>,
-        cutoff_radius: Option<SINumber>,
+        cutoff_radius: Option<Length<f64>>,
     ) -> Self {
         Self {
             system_size,
@@ -49,27 +49,23 @@ impl PoreSpecification<Ix3> for Pore3D {
     fn initialize<F: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
         bulk: &State<DFT<F>>,
-        density: Option<&SIArray4>,
+        density: Option<&Density<Array4<f64>>>,
         external_potential: Option<&Array4<f64>>,
-    ) -> EosResult<PoreProfile3D<F>> {
+    ) -> PoreProfile3D<F> {
         let dft: &F = &bulk.eos;
 
         // generate grid
-        let x = Axis::new_cartesian(self.n_grid[0], self.system_size[0], None)?;
-        let y = Axis::new_cartesian(self.n_grid[1], self.system_size[1], None)?;
-        let z = Axis::new_cartesian(self.n_grid[2], self.system_size[2], None)?;
+        let x = Axis::new_cartesian(self.n_grid[0], self.system_size[0], None);
+        let y = Axis::new_cartesian(self.n_grid[1], self.system_size[1], None);
+        let z = Axis::new_cartesian(self.n_grid[2], self.system_size[2], None);
 
         // move center of geometry of solute to box center
         let coordinates = Array2::from_shape_fn(self.coordinates.raw_dim(), |(i, j)| {
-            (self.coordinates.get((i, j)))
-                .to_reduced(SIUnit::reference_length())
-                .unwrap()
+            (self.coordinates.get((i, j))).to_reduced()
         });
 
         // temperature
-        let t = bulk
-            .temperature
-            .to_reduced(SIUnit::reference_temperature())?;
+        let t = bulk.temperature.to_reduced();
 
         // calculate external potential
         let external_potential = external_potential.map_or_else(
@@ -86,37 +82,33 @@ impl PoreSpecification<Ix3> for Pore3D {
                     t,
                 )
             },
-            |e| Ok(e.clone()),
-        )?;
+            |e| e.clone(),
+        );
 
         // initialize convolver
         let grid = Grid::Periodical3(x, y, z);
         let weight_functions = dft.weight_functions(t);
         let convolver = ConvolverFFT::plan(&grid, &weight_functions, Some(1));
 
-        Ok(PoreProfile {
-            profile: DFTProfile::new(grid, convolver, bulk, Some(external_potential), density)?,
+        PoreProfile {
+            profile: DFTProfile::new(grid, convolver, bulk, Some(external_potential), density),
             grand_potential: None,
             interfacial_tension: None,
-        })
-    }
-
-    fn dimension(&self) -> i32 {
-        3
+        }
     }
 }
 
 pub fn external_potential_3d<F: FluidParameters>(
     functional: &F,
     axis: [&Axis; 3],
-    system_size: [SINumber; 3],
+    system_size: [Length<f64>; 3],
     coordinates: Array2<f64>,
     sigma_ss: &Array1<f64>,
     epsilon_ss: &Array1<f64>,
-    cutoff_radius: Option<SINumber>,
+    cutoff_radius: Option<Length<f64>>,
     potential_cutoff: Option<f64>,
     reduced_temperature: f64,
-) -> EosResult<Array4<f64>> {
+) -> Array4<f64> {
     // allocate external potential
     let m = functional.m();
     let mut external_potential = Array4::zeros((
@@ -127,14 +119,14 @@ pub fn external_potential_3d<F: FluidParameters>(
     ));
 
     let system_size = [
-        system_size[0].to_reduced(SIUnit::reference_length())?,
-        system_size[1].to_reduced(SIUnit::reference_length())?,
-        system_size[2].to_reduced(SIUnit::reference_length())?,
+        system_size[0].to_reduced(),
+        system_size[1].to_reduced(),
+        system_size[2].to_reduced(),
     ];
 
     let cutoff_radius = cutoff_radius
-        .unwrap_or(CUTOFF_RADIUS * SIUnit::reference_length())
-        .to_reduced(SIUnit::reference_length())?;
+        .unwrap_or(Length::from_reduced(CUTOFF_RADIUS))
+        .to_reduced();
 
     // square cut-off radius
     let cutoff_radius2 = cutoff_radius.powi(2);
@@ -171,7 +163,7 @@ pub fn external_potential_3d<F: FluidParameters>(
         }
     });
 
-    Ok(external_potential)
+    external_potential
 }
 
 /// Evaluate LJ12-6 potential between solid site "alpha" and fluid segment

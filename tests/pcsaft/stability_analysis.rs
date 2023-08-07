@@ -1,8 +1,8 @@
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter};
+use feos_core::si::*;
 use feos_core::{DensityInitialization, PhaseEquilibrium, State};
 use ndarray::arr1;
-use quantity::si::*;
 use std::error::Error;
 use std::sync::Arc;
 

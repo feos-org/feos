@@ -1,6 +1,6 @@
 //! Utilities for working with experimental data.
 use feos_core::{DensityInitialization, EosError};
-use quantity::QuantityError;
+// use quantity::QuantityError;
 use std::num::ParseFloatError;
 use thiserror::Error;
 
@@ -53,8 +53,8 @@ pub enum EstimatorError {
     ShapeError(#[from] ndarray::ShapeError),
     #[error(transparent)]
     ParseError(#[from] ParseFloatError),
-    #[error(transparent)]
-    QuantityError(#[from] QuantityError),
+    // #[error(transparent)]
+    // QuantityError(#[from] QuantityError),
     #[error(transparent)]
     EosError(#[from] EosError),
 }

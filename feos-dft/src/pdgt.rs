@@ -1,11 +1,18 @@
 use super::functional::{HelmholtzEnergyFunctional, DFT};
 use super::functional_contribution::FunctionalContribution;
 use super::weight_functions::WeightFunctionInfo;
-use feos_core::{Components, Contributions, EosResult, EosUnit, PhaseEquilibrium};
+use feos_core::si::{
+    Density, Length, Pressure, Quantity, SurfaceTension, Temperature, _Area, _Density,
+    _MolarEnergy, RGAS,
+};
+use feos_core::{Components, Contributions, EosResult, PhaseEquilibrium};
 use ndarray::*;
 use num_dual::Dual2_64;
-use quantity::si::{SIArray1, SIArray2, SINumber, SIUnit};
-use std::ops::AddAssign;
+use std::ops::{Add, AddAssign, Sub};
+use typenum::{Diff, Sum, P2};
+
+type _InfluenceParameter = Diff<Sum<_MolarEnergy, _Area>, _Density>;
+type InfluenceParameter<T> = Quantity<T, _InfluenceParameter>;
 
 impl WeightFunctionInfo<Dual2_64> {
     fn pdgt_weight_constants(&self) -> (Array2<f64>, Array2<f64>, Array2<f64>) {
@@ -108,18 +115,19 @@ impl dyn FunctionalContribution {
         Ok(())
     }
 
+    #[allow(clippy::type_complexity)]
     pub fn influence_diagonal(
         &self,
-        temperature: SINumber,
-        density: &SIArray2,
-    ) -> EosResult<(SIArray1, SIArray2)> {
-        let t = temperature.to_reduced(SIUnit::reference_temperature())?;
+        temperature: Temperature<f64>,
+        density: &Density<Array2<f64>>,
+    ) -> EosResult<(Pressure<Array1<f64>>, InfluenceParameter<Array2<f64>>)> {
+        let t = temperature.to_reduced();
         let n = density.shape()[1];
         let mut f = Array::zeros(n);
         let mut c = Array::zeros(density.raw_dim());
         self.pdgt_properties(
             t,
-            &density.to_reduced(SIUnit::reference_density())?,
+            &density.to_reduced(),
             &mut f,
             None,
             None,
@@ -127,8 +135,8 @@ impl dyn FunctionalContribution {
             None,
         )?;
         Ok((
-            f * t * SIUnit::reference_pressure(),
-            c * t * SIUnit::reference_influence_parameter(),
+            Pressure::from_reduced(f * t),
+            InfluenceParameter::from_reduced(c * t),
         ))
     }
 }
@@ -139,25 +147,24 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         vle: &PhaseEquilibrium<Self, 2>,
         n_grid: usize,
         reference_component: usize,
-        z: Option<(&mut SIArray1, &mut SINumber)>,
-    ) -> EosResult<(SIArray2, SINumber)> {
+        z: Option<(&mut Length<Array1<f64>>, &mut Length<f64>)>,
+    ) -> EosResult<(Density<Array2<f64>>, SurfaceTension<f64>)> {
         // calculate density profile
         let density = if self.components() == 1 {
             let delta_rho = (vle.vapor().density - vle.liquid().density) / (n_grid + 1) as f64;
-            SIArray1::linspace(
+            Density::linspace(
                 vle.liquid().density + delta_rho,
                 vle.vapor().density - delta_rho,
                 n_grid,
-            )?
+            )
             .insert_axis(Axis(0))
         } else {
             self.pdgt_density_profile_mix(vle, n_grid, reference_component)?
         };
 
         // calculate Helmholtz energy density and influence parameter
-        let mut delta_omega = Array::zeros(n_grid) * SIUnit::reference_pressure();
-        let mut influence_diagonal =
-            Array::zeros(density.raw_dim()) * SIUnit::reference_influence_parameter();
+        let mut delta_omega = Pressure::zeros(n_grid);
+        let mut influence_diagonal = InfluenceParameter::zeros(density.raw_dim());
         for contribution in self.contributions() {
             let (f, c) = contribution.influence_diagonal(vle.vapor().temperature, &density)?;
             delta_omega += &f;
@@ -173,38 +180,40 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
             let rhoi = density.index_axis(Axis(0), i).to_owned();
             let rhoi_b = vle.vapor().partial_density.get(i);
             let mui_res = mu_res.get(i);
-            let kt = SIUnit::gas_constant() * vle.vapor().temperature;
+            let kt = RGAS * vle.vapor().temperature;
             delta_omega +=
-                &(&rhoi * (kt * (rhoi.to_reduced(rhoi_b)?.mapv(f64::ln) - 1.0) - mui_res));
+                &(&rhoi * (&((&rhoi / rhoi_b).into_value().mapv(f64::ln) - 1.0) * kt - mui_res));
         }
         delta_omega += vle.vapor().pressure(Contributions::Total);
 
         // calculate density gradients w.r.t. reference density
         let dx = density.get((reference_component, 0)) - density.get((reference_component, 1));
-        let drho = density.gradient(
+        let drho = gradient(
+            &density,
             -dx,
             &vle.liquid().partial_density,
             &vle.vapor().partial_density,
         );
 
         // calculate integrand
-        let gamma_int =
-            ((influence_diagonal * delta_omega.clone() * 2.0).sqrt()? * drho).sum_axis(Axis(0));
+        let gamma_int = ((influence_diagonal * delta_omega.clone() * 2.0).mapv(Quantity::sqrt)
+            * drho)
+            .sum_axis(Axis(0));
 
         // calculate z-axis
         if let Some((z, w)) = z {
             let z_int = gamma_int.clone() / (delta_omega * 2.0);
-            *z = z_int.integrate_trapezoidal_cumulative(dx);
+            *z = integrate_trapezoidal_cumulative(&z_int, dx);
 
             // calculate equimolar surface
             let rho_v = density.index_axis(Axis(1), 0).sum();
             let rho_l = density.index_axis(Axis(1), n_grid - 1).sum();
             let rho_r = (density.sum_axis(Axis(0)) - rho_v) / (rho_l - rho_v);
-            let ze = (rho_r.clone() * z_int.clone()).integrate_trapezoidal(dx);
+            let ze = integrate_trapezoidal(&rho_r * &z_int, dx);
 
             // calculate interfacial width
-            *w = (rho_r * z.clone() * z_int).integrate_trapezoidal(dx);
-            *w = (24.0 * (*w - 0.5 * ze.powi(2))).sqrt()?;
+            let w_temp = integrate_trapezoidal(&rho_r * &*z * z_int, dx);
+            *w = (24.0 * (w_temp - 0.5 * ze.powi::<P2>())).sqrt();
 
             // shift density profile
             *z -= ze;
@@ -216,10 +225,10 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         weights[1] = 23.0 / 24.0;
         weights[n_grid - 2] = 23.0 / 24.0;
         weights[n_grid - 1] = 7.0 / 6.0;
-        let weights = weights * dx;
+        let weights = &weights * dx;
 
         // calculate surface tension
-        Ok((density, gamma_int.integrate(&[weights])))
+        Ok((density, (gamma_int * weights).sum()))
     }
 
     fn pdgt_density_profile_mix(
@@ -227,7 +236,46 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         _vle: &PhaseEquilibrium<Self, 2>,
         _n_grid: usize,
         _reference_component: usize,
-    ) -> EosResult<SIArray2> {
+    ) -> EosResult<Density<Array2<f64>>> {
         unimplemented!()
     }
+}
+
+fn gradient<UF: Sub<UX>, UX: Copy>(
+    df: &Quantity<Array2<f64>, UF>,
+    dx: Quantity<f64, UX>,
+    left: &Quantity<Array1<f64>, UF>,
+    right: &Quantity<Array1<f64>, UF>,
+) -> Quantity<Array2<f64>, Diff<UF, UX>> {
+    Quantity::from_shape_fn(df.raw_dim(), |(c, i)| {
+        let d = if i == 0 {
+            df.get((c, 1)) - left.get(c)
+        } else if i == df.len() - 1 {
+            right.get(c) - df.get((c, df.len() - 2))
+        } else {
+            df.get((c, i + 1)) - df.get((c, i - 1))
+        };
+        d / (2.0 * dx)
+    })
+}
+
+pub fn integrate_trapezoidal<UF: Add<UX>, UX>(
+    f: Quantity<Array1<f64>, UF>,
+    dx: Quantity<f64, UX>,
+) -> Quantity<f64, Sum<UF, UX>> {
+    let mut weights = Array::ones(f.len());
+    weights[0] = 0.5;
+    weights[f.len() - 1] = 0.5;
+    (&f * &(&weights * dx)).sum()
+}
+
+pub fn integrate_trapezoidal_cumulative<UF: Add<UX>, UX>(
+    f: &Quantity<Array1<f64>, UF>,
+    dx: Quantity<f64, UX>,
+) -> Quantity<Array1<f64>, Sum<UF, UX>> {
+    let mut value = Quantity::zeros(f.len());
+    for i in 1..value.len() {
+        value.set(i, value.get(i - 1) + (f.get(i - 1) + f.get(i)) * 0.5);
+    }
+    value * dx
 }

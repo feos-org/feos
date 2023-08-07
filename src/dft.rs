@@ -7,6 +7,7 @@ use crate::pcsaft::PcSaftFunctional;
 use crate::pets::PetsFunctional;
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::SaftVRQMieFunctional;
+use feos_core::si::MolarWeight;
 use feos_core::*;
 use feos_derive::{Components, HelmholtzEnergyFunctional};
 use feos_dft::adsorption::*;
@@ -15,7 +16,6 @@ use feos_dft::*;
 use ndarray::{Array1, Array2};
 use petgraph::graph::UnGraph;
 use petgraph::Graph;
-use quantity::si::*;
 
 /// Collection of different [HelmholtzEnergyFunctional] implementations.
 ///
