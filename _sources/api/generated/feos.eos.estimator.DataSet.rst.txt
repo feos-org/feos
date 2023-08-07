@@ -42,7 +42,6 @@ feos.eos.estimator.DataSet
    .. autosummary::
    
       ~DataSet.datapoints
-      ~DataSet.input
       ~DataSet.target
    
    
