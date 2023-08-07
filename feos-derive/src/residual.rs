@@ -53,7 +53,7 @@ fn impl_residual(
                     #(#contributions,)*
                 }
             }
-            fn molar_weight(&self) -> SIArray1 {
+            fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
                 match self {
                     #(#molar_weight,)*
                 }
@@ -100,10 +100,10 @@ fn impl_entropy_scaling(
         impl EntropyScaling for ResidualModel {
             fn viscosity_reference(
                 &self,
-                temperature: SINumber,
-                volume: SINumber,
-                moles: &SIArray1,
-            ) -> EosResult<SINumber> {
+                temperature: Temperature<f64>,
+                volume: Volume<f64>,
+                moles: &Moles<Array1<f64>>,
+            ) -> EosResult<Viscosity<f64>> {
                 match self {
                     #(#etar,)*
                     _ => unimplemented!(),
@@ -119,10 +119,10 @@ fn impl_entropy_scaling(
 
             fn diffusion_reference(
                 &self,
-                temperature: SINumber,
-                volume: SINumber,
-                moles: &SIArray1,
-            ) -> EosResult<SINumber> {
+                temperature: Temperature<f64>,
+                volume: Volume<f64>,
+                moles: &Moles<Array1<f64>>,
+            ) -> EosResult<Diffusivity<f64>> {
                 match self {
                     #(#dr,)*
                     _ => unimplemented!(),
@@ -138,10 +138,10 @@ fn impl_entropy_scaling(
 
             fn thermal_conductivity_reference(
                 &self,
-                temperature: SINumber,
-                volume: SINumber,
-                moles: &SIArray1,
-            ) -> EosResult<SINumber> {
+                temperature: Temperature<f64>,
+                volume: Volume<f64>,
+                moles: &Moles<Array1<f64>>,
+            ) -> EosResult<ThermalConductivity<f64>> {
                 match self {
                     #(#thcr,)*
                     _ => unimplemented!(),

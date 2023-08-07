@@ -1,10 +1,9 @@
 use super::pore3d::{calculate_distance2, evaluate_lj_potential};
 use crate::profile::{CUTOFF_RADIUS, MAX_POTENTIAL};
 use crate::Geometry;
-use feos_core::EosUnit;
+use feos_core::si::Length;
 use gauss_quad::GaussLegendre;
 use ndarray::{Array1, Array2, Zip};
-use quantity::si::{SIArray2, SINumber, SIUnit};
 use std::f64::consts::PI;
 use std::usize;
 
@@ -12,11 +11,11 @@ use std::usize;
 pub fn calculate_fea_potential(
     grid: &Array1<f64>,
     mi: f64,
-    coordinates: &SIArray2,
+    coordinates: &Length<Array2<f64>>,
     sigma_sf: Array1<f64>,
     epsilon_k_sf: Array1<f64>,
     pore_center: &[f64; 3],
-    system_size: &[SINumber; 3],
+    system_size: &[Length<f64>; 3],
     n_grid: &[usize; 2],
     temperature: f64,
     geometry: Geometry,
@@ -30,21 +29,13 @@ pub fn calculate_fea_potential(
 
     // dimensionless solid coordinates
     let coordinates = Array2::from_shape_fn(coordinates.raw_dim(), |(i, j)| {
-        (coordinates.get((i, j)))
-            .to_reduced(SIUnit::reference_length())
-            .unwrap()
+        (coordinates.get((i, j))).to_reduced()
     });
 
     let system_size = [
-        system_size[0]
-            .to_reduced(SIUnit::reference_length())
-            .unwrap(),
-        system_size[1]
-            .to_reduced(SIUnit::reference_length())
-            .unwrap(),
-        system_size[2]
-            .to_reduced(SIUnit::reference_length())
-            .unwrap(),
+        system_size[0].to_reduced(),
+        system_size[1].to_reduced(),
+        system_size[2].to_reduced(),
     ];
 
     // Create secondary axis:

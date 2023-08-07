@@ -2,13 +2,13 @@ use super::eos::GcPcSaftOptions;
 use crate::association::Association;
 use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use feos_core::parameter::ParameterHetero;
+use feos_core::si::{MolarWeight, GRAM, MOL};
 use feos_core::Components;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
 use ndarray::Array1;
 use num_dual::DualNum;
 use petgraph::graph::UnGraph;
-use quantity::si::{SIArray1, GRAM, MOL};
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
@@ -106,7 +106,7 @@ impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
         &self.contributions
     }
 
-    fn molar_weight(&self) -> SIArray1 {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.parameters.molarweight.clone() * GRAM / MOL
     }
 

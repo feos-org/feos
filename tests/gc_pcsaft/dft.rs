@@ -7,14 +7,15 @@ use feos::gc_pcsaft::{
 use feos_core::parameter::{
     ChemicalRecord, Identifier, IdentifierOption, ParameterHetero, SegmentRecord,
 };
+use feos_core::si::*;
 use feos_core::{PhaseEquilibrium, State, StateBuilder, Verbosity};
 use feos_dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
 use feos_dft::interface::PlanarInterface;
 use feos_dft::{DFTSolver, Geometry};
 use ndarray::arr1;
-use quantity::si::*;
 use std::error::Error;
 use std::sync::Arc;
+use typenum::P3;
 
 #[test]
 #[allow(non_snake_case)]
@@ -44,7 +45,7 @@ fn test_bulk_implementation() -> Result<(), Box<dyn Error>> {
     let eos = Arc::new(GcPcSaft::new(Arc::new(parameters)));
     let func = Arc::new(GcPcSaftFunctional::new(Arc::new(parameters_func)));
     let t = 200.0 * KELVIN;
-    let v = 0.002 * METER.powi(3) * NAV / NAV_old;
+    let v = 0.002 * METER.powi::<P3>() * NAV / NAV_old;
     let n = arr1(&[1.5]) * MOL;
     let state_eos = State::new_nvt(&eos, t, v, &n)?;
     let state_func = State::new_nvt(&func, t, v, &n)?;
@@ -129,7 +130,7 @@ fn test_bulk_association() -> Result<(), Box<dyn Error>> {
     let func = Arc::new(GcPcSaftFunctional::new(func_parameters));
 
     let t = 200.0 * KELVIN;
-    let v = 0.002 * METER.powi(3);
+    let v = 0.002 * METER.powi::<P3>();
     let n = arr1(&[1.5]) * MOL;
     let state_eos = State::new_nvt(&eos, t, v, &n)?;
     let state_func = State::new_nvt(&func, t, v, &n)?;
@@ -167,7 +168,7 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
     let points = 2048;
     let tc = State::critical_point(&func, None, None, Default::default())?.temperature;
     let vle = PhaseEquilibrium::pure(&func, t, None, Default::default())?;
-    let profile = PlanarInterface::from_tanh(&vle, points, w, tc, false)?.solve(None)?;
+    let profile = PlanarInterface::from_tanh(&vle, points, w, tc, false).solve(None)?;
     println!(
         "hetero {} {} {}",
         profile.surface_tension.unwrap(),
@@ -177,13 +178,13 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
 
     assert_relative_eq!(
         vle.vapor().density,
-        12.8820179191167643 * MOL / METER.powi(3) * NAV_old / NAV,
+        12.8820179191167643 * MOL / METER.powi::<P3>() * NAV_old / NAV,
         max_relative = 1e-13,
     );
 
     assert_relative_eq!(
         vle.liquid().density,
-        13.2705903446123212 * KILO * MOL / METER.powi(3) * NAV_old / NAV,
+        13.2705903446123212 * KILO * MOL / METER.powi::<P3>() * NAV_old / NAV,
         max_relative = 1e-13,
     );
 
@@ -212,8 +213,7 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
     let w = 100.0 * ANGSTROM;
     let points = 4096;
     let vle = PhaseEquilibrium::pure(&func, t, None, Default::default())?;
-    let profile =
-        PlanarInterface::from_tanh(&vle, points, w, 600.0 * KELVIN, false)?.solve(None)?;
+    let profile = PlanarInterface::from_tanh(&vle, points, w, 600.0 * KELVIN, false).solve(None)?;
     println!(
         "hetero {} {} {}",
         profile.surface_tension.unwrap(),
@@ -239,7 +239,7 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
         None,
         None,
     )
-    .initialize(&bulk, None, None)?
+    .initialize(&bulk, None, None)
     .solve(Some(&solver))?;
     Ok(())
 }
@@ -263,6 +263,6 @@ fn test_dft_newton() -> Result<(), Box<dyn Error>> {
     let solver = DFTSolver::new(Some(Verbosity::Iter))
         .picard_iteration(None, Some(10), None, None)
         .newton(None, None, None, None);
-    PlanarInterface::from_tanh(&vle, points, w, tc, false)?.solve(Some(&solver))?;
+    PlanarInterface::from_tanh(&vle, points, w, tc, false).solve(Some(&solver))?;
     Ok(())
 }

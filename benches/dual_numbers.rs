@@ -5,14 +5,15 @@
 //! creation.
 use criterion::{criterion_group, criterion_main, Criterion};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
+use feos_core::si::*;
 use feos_core::{
     parameter::{IdentifierOption, Parameter},
     Derivative, HelmholtzEnergy, HelmholtzEnergyDual, Residual, State, StateHD,
 };
 use ndarray::{arr1, Array};
 use num_dual::DualNum;
-use quantity::si::*;
 use std::sync::Arc;
+use typenum::P3;
 
 /// Helper function to create a state for given parameters.
 /// - temperature is 80% of critical temperature,
@@ -123,7 +124,7 @@ fn methane_co2_pcsaft(c: &mut Criterion) {
 
     // 230 K, 50 bar, x0 = 0.15
     let temperature = 230.0 * KELVIN;
-    let density = 24.16896 * KILO * MOL / METER.powi(3);
+    let density = 24.16896 * KILO * MOL / METER.powi::<P3>();
     let volume = 10.0 * MOL / density;
     let x = arr1(&[0.15, 0.85]);
     let moles = &x * 10.0 * MOL;

@@ -12,10 +12,10 @@ use feos_core::cubic::PengRobinson;
 use feos_core::joback::Joback;
 #[cfg(feature = "python")]
 use feos_core::python::user_defined::{PyIdealGas, PyResidual};
+use feos_core::si::*;
 use feos_core::*;
 use feos_derive::{Components, IdealGas, Residual};
 use ndarray::Array1;
-use quantity::si::*;
 
 /// Collection of different [EquationOfState] implementations.
 ///

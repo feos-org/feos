@@ -22,7 +22,7 @@ members = ["feos-core", "feos-dft", "feos-derive"]
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-quantity = "0.6"
+quantity = { version = "0.6", optional = true }
 num-dual = "0.7"
 feos-core = { version = "0.4", path = "feos-core" }
 feos-dft = { version = "0.4", path = "feos-dft", optional = true }
@@ -39,6 +39,7 @@ lazy_static = { version = "1.4", optional = true }
 indexmap = "1.8"
 rayon = { version = "1.5", optional = true }
 itertools = "0.10"
+typenum = "1.16"
 
 [dependencies.pyo3]
 version = "0.18"
@@ -64,7 +65,7 @@ uvtheory = ["lazy_static"]
 pets = []
 saftvrqmie = []
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
-python = ["pyo3", "numpy", "feos-core/python", "feos-dft?/python", "rayon"]
+python = ["pyo3", "numpy", "quantity/python", "feos-core/python", "feos-dft?/python", "rayon"]
 all_models = ["dft", "estimator", "pcsaft", "gc_pcsaft", "uvtheory", "pets", "saftvrqmie"]
 
 [[bench]]

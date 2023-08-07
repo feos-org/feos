@@ -47,10 +47,10 @@ mod test {
     use super::*;
     use crate::gc_pcsaft::eos::parameter::test::*;
     use approx::assert_relative_eq;
-    use feos_core::EosUnit;
+    use feos_core::si::{Pressure, METER, MOL, PASCAL};
     use ndarray::arr1;
     use num_dual::Dual64;
-    use quantity::si::{METER, MOL, PASCAL};
+    use typenum::P3;
 
     #[test]
     fn test_hc_propane() {
@@ -59,18 +59,14 @@ mod test {
             parameters: Arc::new(parameters),
         };
         let temperature = 300.0;
-        let volume = METER
-            .powi(3)
-            .to_reduced(EosUnit::reference_volume())
-            .unwrap();
-        let moles = (1.5 * MOL).to_reduced(EosUnit::reference_moles()).unwrap();
+        let volume = METER.powi::<P3>().to_reduced();
+        let moles = (1.5 * MOL).to_reduced();
         let state = StateHD::new(
             Dual64::from_re(temperature),
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure =
-            -contrib.helmholtz_energy(&state).eps * temperature * EosUnit::reference_pressure();
+        let pressure = Pressure::from_reduced(-contrib.helmholtz_energy(&state).eps * temperature);
         assert_relative_eq!(
             pressure,
             -7.991735636207462e-1 * PASCAL,
@@ -85,18 +81,14 @@ mod test {
             parameters: Arc::new(parameters),
         };
         let temperature = 300.0;
-        let volume = METER
-            .powi(3)
-            .to_reduced(EosUnit::reference_volume())
-            .unwrap();
-        let moles = (1.5 * MOL).to_reduced(EosUnit::reference_moles()).unwrap();
+        let volume = METER.powi::<P3>().to_reduced();
+        let moles = (1.5 * MOL).to_reduced();
         let state = StateHD::new(
             Dual64::from_re(temperature),
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure =
-            -contrib.helmholtz_energy(&state).eps * temperature * EosUnit::reference_pressure();
+        let pressure = Pressure::from_reduced(-contrib.helmholtz_energy(&state).eps * temperature);
         assert_relative_eq!(pressure, -1.2831486124723626 * PASCAL, max_relative = 1e-10);
     }
 }

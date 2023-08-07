@@ -1,3 +1,4 @@
+use feos_core::si::MolarWeight;
 use feos_core::{Components, EosResult};
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
@@ -7,7 +8,6 @@ use feos_dft::{
 };
 use ndarray::*;
 use num_dual::DualNum;
-use quantity::si::SIArray1;
 use std::f64::consts::PI;
 use std::fmt;
 use std::sync::Arc;
@@ -354,7 +354,7 @@ impl HelmholtzEnergyFunctional for FMTFunctional {
         moles.sum() / (moles * &self.properties.sigma).sum() * 1.2
     }
 
-    fn molar_weight(&self) -> SIArray1 {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         panic!("No mass specific properties are available for this model!")
     }
 

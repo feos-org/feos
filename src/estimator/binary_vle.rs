@@ -1,31 +1,35 @@
 use super::{DataSet, EstimatorError, Phase};
+use feos_core::si::{
+    MolarEnergy, Moles, Pressure, Quantity, Temperature, _Dimensionless, PASCAL, RGAS,
+};
 use feos_core::{
-    Contributions, DensityInitialization, EosUnit, PhaseDiagram, PhaseEquilibrium, Residual, State,
+    Contributions, DensityInitialization, PhaseDiagram, PhaseEquilibrium, Residual, State, TPSpec,
+    TemperatureOrPressure,
 };
 use itertools::izip;
 use ndarray::{arr1, s, Array1, ArrayView1, Axis};
-use quantity::si::{SIArray1, SINumber, SIUnit};
-use std::collections::HashMap;
+use std::iter::FromIterator;
+use std::ops::Sub;
 use std::sync::Arc;
 
 /// Store experimental binary VLE data for the calculation of chemical potential residuals.
 #[derive(Clone)]
 pub struct BinaryVleChemicalPotential {
-    temperature: SIArray1,
-    pressure: SIArray1,
+    temperature: Temperature<Array1<f64>>,
+    pressure: Pressure<Array1<f64>>,
     liquid_molefracs: Array1<f64>,
     vapor_molefracs: Array1<f64>,
-    target: SIArray1,
+    target: Array1<f64>,
 }
 
 impl BinaryVleChemicalPotential {
     pub fn new(
-        temperature: SIArray1,
-        pressure: SIArray1,
+        temperature: Temperature<Array1<f64>>,
+        pressure: Pressure<Array1<f64>>,
         liquid_molefracs: Array1<f64>,
         vapor_molefracs: Array1<f64>,
     ) -> Self {
-        let target = Array1::ones(temperature.len() * 2) * 500.0 * SIUnit::reference_molar_energy();
+        let target = Array1::ones(temperature.len() * 2);
         Self {
             temperature,
             pressure,
@@ -37,7 +41,7 @@ impl BinaryVleChemicalPotential {
 }
 
 impl<E: Residual> DataSet<E> for BinaryVleChemicalPotential {
-    fn target(&self) -> &SIArray1 {
+    fn target(&self) -> &Array1<f64> {
         &self.target
     }
 
@@ -54,7 +58,7 @@ impl<E: Residual> DataSet<E> for BinaryVleChemicalPotential {
         ]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
+    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
         let mut prediction = Vec::new();
         for (&xi, &yi, t, p) in izip!(
             &self.liquid_molefracs,
@@ -62,64 +66,64 @@ impl<E: Residual> DataSet<E> for BinaryVleChemicalPotential {
             &self.temperature,
             &self.pressure
         ) {
-            let liquid_moles = arr1(&[xi, 1.0 - xi]) * SIUnit::reference_moles();
+            let liquid_moles = Moles::from_reduced(arr1(&[xi, 1.0 - xi]));
             let liquid = State::new_npt(eos, t, p, &liquid_moles, DensityInitialization::Liquid)?;
             let mu_res_liquid = liquid.residual_chemical_potential();
-            let vapor_moles = arr1(&[yi, 1.0 - yi]) * SIUnit::reference_moles();
+            let vapor_moles = Moles::from_reduced(arr1(&[yi, 1.0 - yi]));
             let vapor = State::new_npt(eos, t, p, &vapor_moles, DensityInitialization::Vapor)?;
             let mu_res_vapor = vapor.residual_chemical_potential();
 
-            let kt = SIUnit::gas_constant() * t;
-            let rho_frac = (&liquid.partial_density / &vapor.partial_density).into_value()?;
-            prediction.push(
-                mu_res_liquid.get(0) - mu_res_vapor.get(0)
-                    + kt * rho_frac[0].ln()
-                    + 500.0 * SIUnit::reference_molar_energy(),
-            );
-            prediction.push(
-                mu_res_liquid.get(1) - mu_res_vapor.get(1)
-                    + kt * rho_frac[1].ln()
-                    + 500.0 * SIUnit::reference_molar_energy(),
-            );
+            let kt = RGAS * t;
+            let rho_frac = (&liquid.partial_density / &vapor.partial_density).into_value();
+            prediction.push(mu_res_liquid.get(0) - mu_res_vapor.get(0) + kt * rho_frac[0].ln());
+            prediction.push(mu_res_liquid.get(1) - mu_res_vapor.get(1) + kt * rho_frac[1].ln());
         }
-        Ok(SIArray1::from_vec(prediction))
+        let prediction = (MolarEnergy::from_vec(prediction) / MolarEnergy::from_reduced(500.0))
+            .into_value()
+            + 1.0;
+        Ok(prediction)
     }
 
-    fn get_input(&self) -> HashMap<String, SIArray1> {
-        let mut m = HashMap::with_capacity(4);
-        m.insert("temperature".to_owned(), self.temperature.clone());
-        m.insert("pressure".to_owned(), self.pressure.clone());
-        m.insert(
-            "liquid_molefracs".to_owned(),
-            &self.liquid_molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
-        );
-        m.insert(
-            "vapor_molefracs".to_owned(),
-            &self.vapor_molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
-        );
-        m
-    }
+    // fn get_input(&self) -> HashMap<String, SIArray1> {
+    //     let mut m = HashMap::with_capacity(4);
+    //     m.insert("temperature".to_owned(), self.temperature.clone());
+    //     m.insert("pressure".to_owned(), self.pressure.clone());
+    //     m.insert(
+    //         "liquid_molefracs".to_owned(),
+    //         &self.liquid_molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
+    //     );
+    //     m.insert(
+    //         "vapor_molefracs".to_owned(),
+    //         &self.vapor_molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
+    //     );
+    //     m
+    // }
 }
 
 /// Store experimental binary VLE data for the calculation of pressure residuals.
 #[derive(Clone)]
 pub struct BinaryVlePressure {
-    temperature: SIArray1,
-    pressure: SIArray1,
+    target: Array1<f64>,
+    temperature: Temperature<Array1<f64>>,
+    pressure: Pressure<Array1<f64>>,
+    unit: Pressure<f64>,
     molefracs: Array1<f64>,
     phase: Phase,
 }
 
 impl BinaryVlePressure {
     pub fn new(
-        temperature: SIArray1,
-        pressure: SIArray1,
+        temperature: Temperature<Array1<f64>>,
+        pressure: Pressure<Array1<f64>>,
         molefracs: Array1<f64>,
         phase: Phase,
     ) -> Self {
+        let unit = PASCAL;
         Self {
+            target: (&pressure / unit).into_value(),
             temperature,
             pressure,
+            unit,
             molefracs,
             phase,
         }
@@ -127,8 +131,8 @@ impl BinaryVlePressure {
 }
 
 impl<E: Residual> DataSet<E> for BinaryVlePressure {
-    fn target(&self) -> &SIArray1 {
-        &self.pressure
+    fn target(&self) -> &Array1<f64> {
+        &self.target
     }
 
     fn target_str(&self) -> &str {
@@ -144,7 +148,7 @@ impl<E: Residual> DataSet<E> for BinaryVlePressure {
         vec
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
+    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
         let options = Default::default();
         self.molefracs
             .iter()
@@ -169,50 +173,49 @@ impl<E: Residual> DataSet<E> for BinaryVlePressure {
                     ),
                 })?;
 
-                Ok(vle.vapor().pressure(Contributions::Total))
+                Ok((vle.vapor().pressure(Contributions::Total) / self.unit).into_value())
             })
             .collect()
     }
 
-    fn get_input(&self) -> HashMap<String, SIArray1> {
-        let mut m = HashMap::with_capacity(4);
-        m.insert("temperature".to_owned(), self.temperature.clone());
-        m.insert("pressure".to_owned(), self.pressure.clone());
-        m.insert(
-            (match self.phase {
-                Phase::Vapor => "vapor_molefracs",
-                Phase::Liquid => "liquid_molefracs",
-            })
-            .to_owned(),
-            &self.molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
-        );
-        m
-    }
+    // fn get_input(&self) -> HashMap<String, SIArray1> {
+    //     let mut m = HashMap::with_capacity(4);
+    //     m.insert("temperature".to_owned(), self.temperature.clone());
+    //     m.insert("pressure".to_owned(), self.pressure.clone());
+    //     m.insert(
+    //         (match self.phase {
+    //             Phase::Vapor => "vapor_molefracs",
+    //             Phase::Liquid => "liquid_molefracs",
+    //         })
+    //         .to_owned(),
+    //         &self.molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
+    //     );
+    //     m
+    // }
 }
 
 /// Store experimental binary phase diagrams for the calculation of distance residuals.
 #[derive(Clone)]
-pub struct BinaryPhaseDiagram {
-    specification: SINumber,
-    temperature_or_pressure: SIArray1,
+pub struct BinaryPhaseDiagram<TP: TemperatureOrPressure, U> {
+    specification: TP,
+    temperature_or_pressure: Quantity<Array1<f64>, U>,
     liquid_molefracs: Option<Array1<f64>>,
     vapor_molefracs: Option<Array1<f64>>,
     npoints: Option<usize>,
-    target: SIArray1,
+    target: Array1<f64>,
 }
 
-impl BinaryPhaseDiagram {
+impl<TP: TemperatureOrPressure, U> BinaryPhaseDiagram<TP, U> {
     pub fn new(
-        specification: SINumber,
-        temperature_or_pressure: SIArray1,
+        specification: TP,
+        temperature_or_pressure: Quantity<Array1<f64>, U>,
         liquid_molefracs: Option<Array1<f64>>,
         vapor_molefracs: Option<Array1<f64>>,
         npoints: Option<usize>,
     ) -> Self {
         let count = liquid_molefracs.as_ref().map_or(0, |x| 2 * x.len())
             + vapor_molefracs.as_ref().map_or(0, |x| 2 * x.len());
-        let target = Array1::from_elem(count, 1.0) * SIUnit::reference_temperature()
-            / SIUnit::reference_temperature();
+        let target = Array1::ones(count);
         Self {
             specification,
             temperature_or_pressure,
@@ -224,8 +227,14 @@ impl BinaryPhaseDiagram {
     }
 }
 
-impl<E: Residual> DataSet<E> for BinaryPhaseDiagram {
-    fn target(&self) -> &SIArray1 {
+impl<TP: TemperatureOrPressure + Sync + Send, U: Copy + Sync + Send, E: Residual> DataSet<E>
+    for BinaryPhaseDiagram<TP, U>
+where
+    TPSpec: From<TP>,
+    Quantity<Array1<f64>, U>: FromIterator<TP::Other>,
+    U: Sub<U, Output = _Dimensionless>,
+{
+    fn target(&self) -> &Array1<f64> {
         &self.target
     }
 
@@ -234,13 +243,9 @@ impl<E: Residual> DataSet<E> for BinaryPhaseDiagram {
     }
 
     fn input_str(&self) -> Vec<&str> {
-        let mut vec = if self
-            .specification
-            .has_unit(&SIUnit::reference_temperature())
-        {
-            vec!["temperature", "pressure"]
-        } else {
-            vec!["pressure", "temperature"]
+        let mut vec = match TPSpec::from(self.specification) {
+            TPSpec::Temperature(_) => vec!["temperature", "pressure"],
+            TPSpec::Pressure(_) => vec!["pressure", "temperature"],
         };
         if self.liquid_molefracs.is_some() {
             vec.push("liquid molefracs")
@@ -251,7 +256,7 @@ impl<E: Residual> DataSet<E> for BinaryPhaseDiagram {
         vec
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
+    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
         let mut res = Vec::new();
 
         let dia = PhaseDiagram::binary_vle(
@@ -265,14 +270,15 @@ impl<E: Residual> DataSet<E> for BinaryPhaseDiagram {
         let x_vec_liq = x_liq.index_axis(Axis(1), 0);
         let x_vap = dia.vapor().molefracs();
         let x_vec_vap = x_vap.index_axis(Axis(1), 0);
-        let tp_vec = if self
-            .temperature_or_pressure
-            .has_unit(&SIUnit::reference_temperature())
-        {
-            dia.vapor().temperature()
-        } else {
-            dia.vapor().pressure()
-        };
+        let tp_vec = dia.vapor().iter().map(|s| TP::from_state(s)).collect();
+        // let tp_vec = if self
+        //     .temperature_or_pressure
+        //     .has_unit(&SIUnit::reference_temperature())
+        // {
+        //     dia.vapor().temperature()
+        // } else {
+        //     dia.vapor().pressure()
+        // };
         for (x_exp, x_vec) in [
             (&self.liquid_molefracs, x_vec_liq),
             (&self.vapor_molefracs, x_vec_vap),
@@ -283,64 +289,59 @@ impl<E: Residual> DataSet<E> for BinaryPhaseDiagram {
                     &tp_vec,
                     x_exp,
                     &self.temperature_or_pressure,
-                )?);
+                ));
             }
         }
-        Ok(Array1::from_vec(res)
-            * (SIUnit::reference_temperature() / SIUnit::reference_temperature()))
+        Ok(Array1::from_vec(res))
     }
 
-    fn get_input(&self) -> HashMap<String, SIArray1> {
-        let mut m = HashMap::with_capacity(4);
-        if self
-            .specification
-            .has_unit(&SIUnit::reference_temperature())
-        {
-            m.insert(
-                "temperature".to_owned(),
-                SIArray1::from_vec(vec![self.specification]),
-            );
-            m.insert("pressure".to_owned(), self.temperature_or_pressure.clone());
-        } else {
-            m.insert(
-                "pressure".to_owned(),
-                SIArray1::from_vec(vec![self.specification]),
-            );
-            m.insert(
-                "temperature".to_owned(),
-                self.temperature_or_pressure.clone(),
-            );
-        };
-        if let Some(liquid_molefracs) = &self.liquid_molefracs {
-            m.insert(
-                "liquid_molefracs".to_owned(),
-                liquid_molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
-            );
-        }
-        if let Some(vapor_molefracs) = &self.vapor_molefracs {
-            m.insert(
-                "vapor_molefracs".to_owned(),
-                vapor_molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
-            );
-        }
-        m
-    }
+    // fn get_input(&self) -> HashMap<String, SIArray1> {
+    //     let mut m = HashMap::with_capacity(4);
+    //     if self
+    //         .specification
+    //         .has_unit(&SIUnit::reference_temperature())
+    //     {
+    //         m.insert(
+    //             "temperature".to_owned(),
+    //             SIArray1::from_vec(vec![self.specification]),
+    //         );
+    //         m.insert("pressure".to_owned(), self.temperature_or_pressure.clone());
+    //     } else {
+    //         m.insert(
+    //             "pressure".to_owned(),
+    //             SIArray1::from_vec(vec![self.specification]),
+    //         );
+    //         m.insert(
+    //             "temperature".to_owned(),
+    //             self.temperature_or_pressure.clone(),
+    //         );
+    //     };
+    //     if let Some(liquid_molefracs) = &self.liquid_molefracs {
+    //         m.insert(
+    //             "liquid_molefracs".to_owned(),
+    //             liquid_molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
+    //         );
+    //     }
+    //     if let Some(vapor_molefracs) = &self.vapor_molefracs {
+    //         m.insert(
+    //             "vapor_molefracs".to_owned(),
+    //             vapor_molefracs * SIUnit::reference_moles() / SIUnit::reference_moles(),
+    //         );
+    //     }
+    //     m
+    // }
 }
 
-fn predict_distance(
+fn predict_distance<U: Copy + Sub<U, Output = _Dimensionless>>(
     x_vec: ArrayView1<f64>,
-    tp_vec: &SIArray1,
+    tp_vec: &Quantity<Array1<f64>, U>,
     x_exp: &Array1<f64>,
-    tp_exp: &SIArray1,
-) -> Result<Vec<f64>, EstimatorError>
-where
-    SINumber: std::fmt::Display,
-{
+    tp_exp: &Quantity<Array1<f64>, U>,
+) -> Vec<f64> {
     let mut res = Vec::new();
-    for (tp, &x) in tp_exp.into_iter().zip(x_exp.iter()) {
+    for (tp, &x) in tp_exp.into_iter().zip(x_exp.into_iter()) {
         let y = 1.0;
-
-        let y_vec = tp_vec.to_reduced(tp)?;
+        let y_vec = (tp_vec / tp).into_value();
         let dx = &x_vec.slice(s![1..]) - &x_vec.slice(s![..-1]);
         let dy = &y_vec.slice(s![1..]) - &y_vec.slice(s![..-1]);
         let x_vec = x_vec.slice(s![..-1]);
@@ -381,5 +382,5 @@ where
         res.push(x0 - x + 1.0);
         res.push(y0);
     }
-    Ok(res)
+    res
 }

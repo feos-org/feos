@@ -5,10 +5,10 @@ use feos_core::parameter::{
     BinaryRecord, ChemicalRecord, Identifier, ParameterError, ParameterHetero, SegmentCount,
     SegmentRecord,
 };
+use feos_core::si::{JOULE, KB, KELVIN};
 use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
-use quantity::si::{JOULE, KB, KELVIN};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -159,7 +159,7 @@ impl ParameterHetero for GcPcSaftEosParameters {
             if mu2_i > 0.0 {
                 dipole_comp.push(i);
                 mu.push(mu2_i.sqrt());
-                mu2.push(mu2_i / m_i * (1e-19 * (JOULE / KELVIN / KB).into_value().unwrap()));
+                mu2.push(mu2_i / m_i * (1e-19 * (JOULE / KELVIN / KB).into_value()));
                 m_mix.push(m_i);
                 sigma_mix.push((sigma_i / m_i).cbrt());
                 epsilon_k_mix.push(epsilon_k_i / m_i);

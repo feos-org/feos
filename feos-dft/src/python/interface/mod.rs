@@ -45,10 +45,10 @@ macro_rules! impl_planar_interface {
                 let profile = PlanarInterface::from_tanh(
                     &vle.0,
                     n_grid,
-                    l_grid.into(),
-                    critical_temperature.into(),
+                    l_grid.try_into()?,
+                    critical_temperature.try_into()?,
                     fix_equimolar_surface.unwrap_or(false),
-                )?;
+                );
                 Ok(PyPlanarInterface(profile))
             }
 
@@ -100,8 +100,8 @@ macro_rules! impl_planar_interface {
                 l_grid: PySINumber,
                 density_profile: PySIArray2,
             ) -> PyResult<Self> {
-                let mut profile = PlanarInterface::new(&vle.0, n_grid, l_grid.into())?;
-                profile.profile.density = density_profile.into();
+                let mut profile = PlanarInterface::new(&vle.0, n_grid, l_grid.try_into()?);
+                profile.profile.density = density_profile.try_into()?;
                 Ok(PyPlanarInterface(profile))
             }
         }

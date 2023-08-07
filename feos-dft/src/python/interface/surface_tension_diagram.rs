@@ -45,17 +45,17 @@ macro_rules! impl_surface_tension_diagram {
                 critical_temperature: Option<PySINumber>,
                 fix_equimolar_surface: Option<bool>,
                 solver: Option<PyDFTSolver>,
-            ) -> Self {
+            ) -> PyResult<Self> {
                 let x = dia.into_iter().map(|vle| vle.0).collect();
-                Self(SurfaceTensionDiagram::new(
+                Ok(Self(SurfaceTensionDiagram::new(
                     &x,
                     init_densities,
                     n_grid,
-                    l_grid.map(|l| l.into()),
-                    critical_temperature.map(|c| c.into()),
+                    l_grid.map(|l| l.try_into()).transpose()?,
+                    critical_temperature.map(|c| c.try_into()).transpose()?,
                     fix_equimolar_surface,
                     solver.map(|s| s.0).as_ref(),
-                ))
+                )))
             }
 
             #[getter]

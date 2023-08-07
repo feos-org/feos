@@ -245,7 +245,12 @@ impl PySaftVRQMieParameters {
         r_max: PySINumber,
     ) -> PyResult<()> {
         self.0
-            .lammps_tables(temperature.into(), n, r_min.into(), r_max.into())
+            .lammps_tables(
+                temperature.try_into()?,
+                n,
+                r_min.try_into()?,
+                r_max.try_into()?,
+            )
             .map_err(PyIOError::new_err)
     }
 

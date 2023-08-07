@@ -4,9 +4,9 @@ use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::{Axis, Grid};
 use crate::profile::{DFTProfile, DFTSpecifications};
 use crate::solver::DFTSolver;
-use feos_core::{Contributions, EosError, EosResult, EosUnit, PhaseEquilibrium};
-use ndarray::{s, Array, Array1, Array2, Axis as Axis_nd, Ix1};
-use quantity::si::{SIArray1, SIArray2, SINumber, SIUnit};
+use feos_core::si::{Area, Density, Length, Moles, SurfaceTension, Temperature};
+use feos_core::{Contributions, EosError, EosResult, PhaseEquilibrium};
+use ndarray::{s, Array1, Array2, Axis as Axis_nd, Ix1};
 
 mod surface_tension_diagram;
 pub use surface_tension_diagram::SurfaceTensionDiagram;
@@ -18,8 +18,8 @@ const MIN_WIDTH: f64 = 100.0;
 pub struct PlanarInterface<F: HelmholtzEnergyFunctional> {
     pub profile: DFTProfile<Ix1, F>,
     pub vle: PhaseEquilibrium<DFT<F>, 2>,
-    pub surface_tension: Option<SINumber>,
-    pub equimolar_radius: Option<SINumber>,
+    pub surface_tension: Option<SurfaceTension<f64>>,
+    pub equimolar_radius: Option<Length<f64>>,
 }
 
 impl<F: HelmholtzEnergyFunctional> Clone for PlanarInterface<F> {
@@ -39,15 +39,18 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         self.profile.solve(solver, debug)?;
 
         // postprocess
-        self.surface_tension = Some(self.profile.integrate(
-            &(self.profile.grand_potential_density()?
-                + self.vle.vapor().pressure(Contributions::Total)),
-        ));
+        self.surface_tension = Some(
+            (self.profile.integrate(
+                &(self.profile.grand_potential_density()?
+                    + self.vle.vapor().pressure(Contributions::Total)),
+            )) / Area::from_reduced(1.0),
+        );
         let delta_rho = self.vle.liquid().density - self.vle.vapor().density;
         self.equimolar_radius = Some(
             self.profile
                 .integrate(&(self.profile.density.sum_axis(Axis_nd(0)) - self.vle.vapor().density))
-                / delta_rho,
+                / delta_rho
+                / Area::from_reduced(1.0),
         );
 
         Ok(())
@@ -60,50 +63,43 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
 }
 
 impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
-    pub fn new(
-        vle: &PhaseEquilibrium<DFT<F>, 2>,
-        n_grid: usize,
-        l_grid: SINumber,
-    ) -> EosResult<Self> {
+    pub fn new(vle: &PhaseEquilibrium<DFT<F>, 2>, n_grid: usize, l_grid: Length<f64>) -> Self {
         let dft = &vle.vapor().eos;
 
         // generate grid
-        let grid = Grid::Cartesian1(Axis::new_cartesian(n_grid, l_grid, None)?);
+        let grid = Grid::Cartesian1(Axis::new_cartesian(n_grid, l_grid, None));
 
         // initialize convolver
-        let t = vle
-            .vapor()
-            .temperature
-            .to_reduced(SIUnit::reference_temperature())?;
+        let t = vle.vapor().temperature.to_reduced();
         let weight_functions = dft.weight_functions(t);
         let convolver = ConvolverFFT::plan(&grid, &weight_functions, None);
 
-        Ok(Self {
-            profile: DFTProfile::new(grid, convolver, vle.vapor(), None, None)?,
+        Self {
+            profile: DFTProfile::new(grid, convolver, vle.vapor(), None, None),
             vle: vle.clone(),
             surface_tension: None,
             equimolar_radius: None,
-        })
+        }
     }
 
     pub fn from_tanh(
         vle: &PhaseEquilibrium<DFT<F>, 2>,
         n_grid: usize,
-        l_grid: SINumber,
-        critical_temperature: SINumber,
+        l_grid: Length<f64>,
+        critical_temperature: Temperature<f64>,
         fix_equimolar_surface: bool,
-    ) -> EosResult<Self> {
-        let mut profile = Self::new(vle, n_grid, l_grid)?;
+    ) -> Self {
+        let mut profile = Self::new(vle, n_grid, l_grid);
 
         // calculate segment indices
         let indices = &profile.profile.dft.component_index();
 
         // calculate density profile
-        let z0 = 0.5 * l_grid.to_reduced(SIUnit::reference_length())?;
+        let z0 = 0.5 * l_grid.to_reduced();
         let (z0, sign) = (z0.abs(), -z0.signum());
-        let reduced_temperature = vle.vapor().temperature.to_reduced(critical_temperature)?;
+        let reduced_temperature = (vle.vapor().temperature / critical_temperature).into_value();
         profile.profile.density =
-            SIArray2::from_shape_fn(profile.profile.density.raw_dim(), |(i, z)| {
+            Density::from_shape_fn(profile.profile.density.raw_dim(), |(i, z)| {
                 let rho_v = profile.vle.vapor().partial_density.get(indices[i]);
                 let rho_l = profile.vle.liquid().partial_density.get(indices[i]);
                 0.5 * (rho_l - rho_v)
@@ -116,10 +112,10 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         // specify specification
         if fix_equimolar_surface {
             profile.profile.specification =
-                DFTSpecifications::total_moles_from_profile(&profile.profile)?;
+                DFTSpecifications::total_moles_from_profile(&profile.profile);
         }
 
-        Ok(profile)
+        profile
     }
 
     pub fn from_pdgt(
@@ -135,26 +131,21 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
 
         // calculate density profile from pDGT
         let n_grid_pdgt = 20;
-        let mut z_pdgt = Array1::zeros(n_grid_pdgt) * SIUnit::reference_length();
-        let mut w_pdgt = SIUnit::reference_length();
+        let mut z_pdgt = Length::zeros(n_grid_pdgt);
+        let mut w_pdgt = Length::from_reduced(0.0);
         let (rho_pdgt, gamma_pdgt) =
             dft.solve_pdgt(vle, 20, 0, Some((&mut z_pdgt, &mut w_pdgt)))?;
-        if !gamma_pdgt
-            .to_reduced(SIUnit::reference_surface_tension())?
-            .is_normal()
-        {
+        if !gamma_pdgt.to_reduced().is_normal() {
             return Err(EosError::InvalidState(
                 String::from("DFTProfile::from_pdgt"),
                 String::from("gamma_pdgt"),
-                gamma_pdgt.to_reduced(SIUnit::reference_surface_tension())?,
+                gamma_pdgt.to_reduced(),
             ));
         }
 
         // create PlanarInterface
-        let l_grid = (MIN_WIDTH * SIUnit::reference_length())
-            .max(w_pdgt * RELATIVE_WIDTH)
-            .unwrap();
-        let mut profile = Self::new(vle, n_grid, l_grid)?;
+        let l_grid = Length::from_reduced(MIN_WIDTH).max(w_pdgt * RELATIVE_WIDTH);
+        let mut profile = Self::new(vle, n_grid, l_grid);
 
         // interpolate density profile from pDGT to DFT
         let r = l_grid * 0.5;
@@ -170,7 +161,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         // specify specification
         if fix_equimolar_surface {
             profile.profile.specification =
-                DFTSpecifications::total_moles_from_profile(&profile.profile)?;
+                DFTSpecifications::total_moles_from_profile(&profile.profile);
         }
 
         Ok(profile)
@@ -181,9 +172,9 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
     pub fn shift_equimolar_inplace(&mut self) {
         let s = self.profile.density.shape();
         let m = &self.profile.dft.m();
-        let mut rho_l = 0.0 * SIUnit::reference_density();
-        let mut rho_v = 0.0 * SIUnit::reference_density();
-        let mut rho = Array::zeros(s[1]) * SIUnit::reference_density();
+        let mut rho_l = Density::from_reduced(0.0);
+        let mut rho_v = Density::from_reduced(0.0);
+        let mut rho = Density::zeros(s[1]);
         for i in 0..s[0] {
             rho_l += self.profile.density.get((i, 0)) * m[i];
             rho_v += self.profile.density.get((i, s[1] - 1)) * m[i];
@@ -191,12 +182,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         }
 
         let x = (rho - rho_v) / (rho_l - rho_v);
-        let ze = self.profile.grid.axes()[0].edges[0]
-            + self
-                .profile
-                .integrate(&x)
-                .to_reduced(SIUnit::reference_length())
-                .unwrap();
+        let ze = self.profile.grid.axes()[0].edges[0] + self.profile.integrate(&x).to_reduced();
         self.profile.grid.axes_mut()[0].grid -= ze;
     }
 
@@ -206,28 +192,29 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
     }
 
     /// Relative adsorption of component `i' with respect to `j': \Gamma_i^(j)
-    pub fn relative_adsorption(&self) -> EosResult<SIArray2> {
+    pub fn relative_adsorption(&self) -> EosResult<Moles<Array2<f64>>> {
         let s = self.profile.density.shape();
-        let mut rho_l = Array1::zeros(s[0]) * SIUnit::reference_density();
-        let mut rho_v = Array1::zeros(s[0]) * SIUnit::reference_density();
+        let mut rho_l = Density::zeros(s[0]);
+        let mut rho_v = Density::zeros(s[0]);
 
         // Calculate the partial densities in the liquid and in the vapor phase
         for i in 0..s[0] {
-            rho_l.try_set(i, self.profile.density.get((i, 0)))?;
-            rho_v.try_set(i, self.profile.density.get((i, s[1] - 1)))?;
+            rho_l.set(i, self.profile.density.get((i, 0)));
+            rho_v.set(i, self.profile.density.get((i, s[1] - 1)));
         }
 
         // Calculate \Gamma_i^(j)
-        let gamma = SIArray2::from_shape_fn((s[0], s[0]), |(i, j)| {
+        let gamma = Moles::from_shape_fn((s[0], s[0]), |(i, j)| {
             if i == j {
-                0.0 * SIUnit::reference_density() * SIUnit::reference_length()
+                Moles::from_reduced(0.0)
             } else {
-                -(rho_l.get(i) - rho_v.get(i))
-                    * ((&self.profile.density.index_axis(Axis_nd(0), j) - rho_l.get(j))
-                        / (rho_l.get(j) - rho_v.get(j))
-                        - (&self.profile.density.index_axis(Axis_nd(0), i) - rho_l.get(i))
-                            / (rho_l.get(i) - rho_v.get(i)))
-                    .integrate(&self.profile.grid.integration_weights_unit())
+                self.profile.integrate(
+                    &(-(rho_l.get(i) - rho_v.get(i))
+                        * ((&self.profile.density.index_axis(Axis_nd(0), j) - rho_l.get(j))
+                            / (rho_l.get(j) - rho_v.get(j))
+                            - (&self.profile.density.index_axis(Axis_nd(0), i) - rho_l.get(i))
+                                / (rho_l.get(i) - rho_v.get(i)))),
+                )
             }
         });
 
@@ -237,10 +224,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
     /// Interfacial enrichment of component `i': E_i
     pub fn interfacial_enrichment(&self) -> EosResult<Array1<f64>> {
         let s = self.profile.density.shape();
-        let density = self
-            .profile
-            .density
-            .to_reduced(SIUnit::reference_density())?;
+        let density = self.profile.density.to_reduced();
         let rho_l = density.index_axis(Axis_nd(1), 0);
         let rho_v = density.index_axis(Axis_nd(1), s[1] - 1);
 
@@ -257,13 +241,9 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
     }
 
     /// Interface thickness (90-10 number density difference)
-    pub fn interfacial_thickness(&self) -> EosResult<SINumber> {
+    pub fn interfacial_thickness(&self) -> EosResult<Length<f64>> {
         let s = self.profile.density.shape();
-        let rho = self
-            .profile
-            .density
-            .sum_axis(Axis_nd(0))
-            .to_reduced(SIUnit::reference_density())?;
+        let rho = self.profile.density.sum_axis(Axis_nd(0)).to_reduced();
         let z = self.profile.grid.grids()[0];
         let dz = z[1] - z[0];
 
@@ -290,7 +270,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         let rho_l = rho[0].max(rho[s[1] - 1]);
 
         if (rho_l - rho_v).abs() < 1.0e-10 {
-            return Ok(0.0 * SIUnit::reference_length());
+            return Ok(Length::from_reduced(0.0));
         }
 
         // Density boundaries for interface definition
@@ -339,10 +319,10 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
                 * dz;
 
         // Return
-        Ok((z_lower - z_upper) * SIUnit::reference_length())
+        Ok(Length::from_reduced(z_lower - z_upper))
     }
 
-    fn set_density_scale(&mut self, init: &SIArray2) {
+    fn set_density_scale(&mut self, init: &Density<Array2<f64>>) {
         assert_eq!(self.profile.density.shape(), init.shape());
         let n_grid = self.profile.density.shape()[1];
         let drho_init = &init.index_axis(Axis_nd(1), 0) - &init.index_axis(Axis_nd(1), n_grid - 1);
@@ -351,16 +331,13 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
             - &self.profile.density.index_axis(Axis_nd(1), n_grid - 1);
         let rho_0 = self.profile.density.index_axis(Axis_nd(1), n_grid - 1);
 
-        self.profile.density = SIArray2::from_shape_fn(self.profile.density.raw_dim(), |(i, j)| {
-            (init.get((i, j)) - rho_init_0.get(i))
-                .to_reduced(drho_init.get(i))
-                .unwrap()
-                * drho.get(i)
+        self.profile.density = Density::from_shape_fn(self.profile.density.raw_dim(), |(i, j)| {
+            ((init.get((i, j)) - rho_init_0.get(i)) / drho_init.get(i)).into_value() * drho.get(i)
                 + rho_0.get(i)
         });
     }
 
-    pub fn set_density_inplace(&mut self, init: &SIArray2, scale: bool) {
+    pub fn set_density_inplace(&mut self, init: &Density<Array2<f64>>, scale: bool) {
         if scale {
             self.set_density_scale(init)
         } else {
@@ -369,7 +346,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         }
     }
 
-    pub fn set_density(mut self, init: &SIArray2, scale: bool) -> Self {
+    pub fn set_density(mut self, init: &Density<Array2<f64>>, scale: bool) -> Self {
         self.set_density_inplace(init, scale);
         self
     }
@@ -377,40 +354,38 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
 
 fn interp_symmetric<F: HelmholtzEnergyFunctional>(
     vle_pdgt: &PhaseEquilibrium<DFT<F>, 2>,
-    z_pdgt: SIArray1,
-    rho_pdgt: SIArray2,
+    z_pdgt: Length<Array1<f64>>,
+    rho_pdgt: Density<Array2<f64>>,
     vle: &PhaseEquilibrium<DFT<F>, 2>,
     z: &Array1<f64>,
-    radius: SINumber,
-) -> EosResult<SIArray2> {
+    radius: Length<f64>,
+) -> EosResult<Density<Array2<f64>>> {
     let reduced_density = Array2::from_shape_fn(rho_pdgt.raw_dim(), |(i, j)| {
-        (rho_pdgt.get((i, j)) - vle_pdgt.vapor().partial_density.get(i))
-            .to_reduced(
-                vle_pdgt.liquid().partial_density.get(i) - vle_pdgt.vapor().partial_density.get(i),
-            )
-            .unwrap()
+        ((rho_pdgt.get((i, j)) - vle_pdgt.vapor().partial_density.get(i))
+            / (vle_pdgt.liquid().partial_density.get(i) - vle_pdgt.vapor().partial_density.get(i)))
+        .into_value()
             - 0.5
     });
     let segments = vle_pdgt.vapor().eos.component_index().len();
     let mut reduced_density = interp(
-        &z_pdgt.to_reduced(SIUnit::reference_length())?,
+        &z_pdgt.to_reduced(),
         &reduced_density,
-        &(z - radius.to_reduced(SIUnit::reference_length())?),
+        &(z - radius.to_reduced()),
         &Array1::from_elem(segments, 0.5),
         &Array1::from_elem(segments, -0.5),
         false,
     ) + interp(
-        &z_pdgt.to_reduced(SIUnit::reference_length())?,
+        &z_pdgt.to_reduced(),
         &reduced_density,
-        &(z + radius.to_reduced(SIUnit::reference_length())?),
+        &(z + radius.to_reduced()),
         &Array1::from_elem(segments, -0.5),
         &Array1::from_elem(segments, 0.5),
         true,
     );
-    if radius < 0.0 * SIUnit::reference_length() {
+    if radius.is_sign_negative() {
         reduced_density += 1.0;
     }
-    Ok(SIArray2::from_shape_fn(
+    Ok(Density::from_shape_fn(
         reduced_density.raw_dim(),
         |(i, j)| {
             reduced_density[(i, j)]

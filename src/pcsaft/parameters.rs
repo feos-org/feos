@@ -4,10 +4,10 @@ use conv::ValueInto;
 use feos_core::parameter::{
     FromSegments, FromSegmentsBinary, Parameter, ParameterError, PureRecord,
 };
+use feos_core::si::{JOULE, KB, KELVIN};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;
-use quantity::si::{JOULE, KB, KELVIN};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -401,10 +401,10 @@ impl Parameter for PcSaftParameters {
 
         let mu2 = &mu * &mu / (&m * &sigma * &sigma * &sigma * &epsilon_k)
             * 1e-19
-            * (JOULE / KELVIN / KB).into_value().unwrap();
+            * (JOULE / KELVIN / KB).into_value();
         let q2 = &q * &q / (&m * &sigma.mapv(|s| s.powi(5)) * &epsilon_k)
             * 1e-19
-            * (JOULE / KELVIN / KB).into_value().unwrap();
+            * (JOULE / KELVIN / KB).into_value();
         let dipole_comp: Array1<usize> = mu2
             .iter()
             .enumerate()

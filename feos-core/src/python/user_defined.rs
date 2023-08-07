@@ -1,3 +1,4 @@
+use crate::si::MolarWeight;
 use crate::{
     Components, DeBroglieWavelength, DeBroglieWavelengthDual, HelmholtzEnergy, HelmholtzEnergyDual,
     IdealGas, Residual, StateHD,
@@ -9,7 +10,7 @@ use numpy::{PyArray, PyReadonlyArray1, PyReadonlyArrayDyn};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use quantity::python::PySIArray1;
-use quantity::si::SIArray1;
+use std::convert::TryInto;
 use std::fmt;
 
 struct PyHelmholtzEnergy(Py<PyAny>);
@@ -159,7 +160,7 @@ impl Residual for PyResidual {
         &self.contributions
     }
 
-    fn molar_weight(&self) -> SIArray1 {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         Python::with_gil(|py| {
             let py_result = self.obj.as_ref(py).call_method0("molar_weight").unwrap();
             if py_result.get_type().name().unwrap() != "SIArray1" {
@@ -168,7 +169,11 @@ impl Residual for PyResidual {
                     py_result.get_type().name().unwrap()
                 );
             }
-            py_result.extract::<PySIArray1>().unwrap().into()
+            py_result
+                .extract::<PySIArray1>()
+                .unwrap()
+                .try_into()
+                .unwrap()
         })
     }
 }

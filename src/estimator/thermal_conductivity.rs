@@ -1,52 +1,54 @@
 use super::{DataSet, EstimatorError, Phase};
-use feos_core::{DensityInitialization, EntropyScaling, EosUnit, Residual, State};
+use feos_core::si::{self, Moles, Pressure, Temperature, KELVIN, METER, WATT};
+use feos_core::{DensityInitialization, EntropyScaling, Residual, State};
 use itertools::izip;
 use ndarray::{arr1, Array1};
-use quantity::si::{SIArray1, SIUnit};
-use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Store experimental thermal conductivity data.
 #[derive(Clone)]
 pub struct ThermalConductivity {
-    pub target: SIArray1,
-    temperature: SIArray1,
-    pressure: SIArray1,
+    pub target: Array1<f64>,
+    unit: si::ThermalConductivity<f64>,
+    temperature: Temperature<Array1<f64>>,
+    pressure: Pressure<Array1<f64>>,
     initial_density: Vec<DensityInitialization>,
 }
 
 impl ThermalConductivity {
     /// Create a new data set for experimental thermal conductivity data.
     pub fn new(
-        target: SIArray1,
-        temperature: SIArray1,
-        pressure: SIArray1,
+        target: si::ThermalConductivity<Array1<f64>>,
+        temperature: Temperature<Array1<f64>>,
+        pressure: Pressure<Array1<f64>>,
         phase: Option<&Vec<Phase>>,
-    ) -> Result<Self, EstimatorError> {
+    ) -> Self {
         let n = temperature.len();
-        Ok(Self {
-            target,
+        let unit = WATT / METER / KELVIN;
+        Self {
+            target: (target / unit).into_value(),
+            unit,
             temperature,
             pressure,
             initial_density: phase.map_or(vec![DensityInitialization::None; n], |phase| {
                 phase.iter().map(|&p| p.into()).collect()
             }),
-        })
+        }
     }
 
     /// Return temperature.
-    pub fn temperature(&self) -> SIArray1 {
-        self.temperature.clone()
+    pub fn temperature(&self) -> &Temperature<Array1<f64>> {
+        &self.temperature
     }
 
     /// Return pressure.
-    pub fn pressure(&self) -> SIArray1 {
-        self.pressure.clone()
+    pub fn pressure(&self) -> &Pressure<Array1<f64>> {
+        &self.pressure
     }
 }
 
 impl<E: Residual + EntropyScaling> DataSet<E> for ThermalConductivity {
-    fn target(&self) -> &SIArray1 {
+    fn target(&self) -> &Array1<f64> {
         &self.target
     }
 
@@ -58,42 +60,22 @@ impl<E: Residual + EntropyScaling> DataSet<E> for ThermalConductivity {
         vec!["temperature", "pressure"]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
-        let moles = arr1(&[1.0]) * SIUnit::reference_moles();
-        let ts = self
-            .temperature
-            .to_reduced(SIUnit::reference_temperature())
-            .unwrap();
-        let ps = self
-            .pressure
-            .to_reduced(SIUnit::reference_pressure())
-            .unwrap();
-        let unit = SIUnit::reference_energy()
-            / SIUnit::reference_time()
-            / SIUnit::reference_temperature()
-            / SIUnit::reference_length();
-
-        let res = izip!(&ts, &ps, &self.initial_density)
-            .map(|(&t, &p, &initial_density)| {
-                State::new_npt(
-                    eos,
-                    t * SIUnit::reference_temperature(),
-                    p * SIUnit::reference_pressure(),
-                    &moles,
-                    initial_density,
-                )?
-                .thermal_conductivity()?
-                .to_reduced(unit)
-                .map_err(EstimatorError::from)
+    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
+        let moles = Moles::from_reduced(arr1(&[1.0]));
+        izip!(&self.temperature, &self.pressure, &self.initial_density)
+            .map(|(t, p, &initial_density)| {
+                State::new_npt(eos, t, p, &moles, initial_density)?
+                    .thermal_conductivity()
+                    .map(|lambda| (lambda / self.unit).into_value())
+                    .map_err(EstimatorError::from)
             })
-            .collect::<Result<Vec<f64>, EstimatorError>>();
-        Ok(Array1::from_vec(res?) * unit)
+            .collect()
     }
 
-    fn get_input(&self) -> HashMap<String, SIArray1> {
-        let mut m = HashMap::with_capacity(1);
-        m.insert("temperature".to_owned(), self.temperature());
-        m.insert("pressure".to_owned(), self.pressure());
-        m
-    }
+    // fn get_input(&self) -> HashMap<String, SIArray1> {
+    //     let mut m = HashMap::with_capacity(1);
+    //     m.insert("temperature".to_owned(), self.temperature());
+    //     m.insert("pressure".to_owned(), self.pressure());
+    //     m
+    // }
 }

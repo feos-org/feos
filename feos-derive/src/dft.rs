@@ -136,7 +136,7 @@ fn impl_helmholtz_energy_functional(
                     #(#contributions,)*
                 }
             }
-            fn molar_weight(&self) -> SIArray1 {
+            fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
                 match self {
                     #(#molar_weight,)*
                     _ => unimplemented!()

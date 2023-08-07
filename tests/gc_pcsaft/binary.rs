@@ -3,10 +3,11 @@ use feos::gc_pcsaft::{GcPcSaft, GcPcSaftEosParameters};
 #[cfg(feature = "dft")]
 use feos::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftFunctionalParameters};
 use feos_core::parameter::{IdentifierOption, ParameterHetero};
+use feos_core::si::{KELVIN, METER, MOL};
 use feos_core::{Contributions, EosResult, State};
 use ndarray::arr1;
-use quantity::si::{KELVIN, METER, MOL};
 use std::sync::Arc;
+use typenum::P3;
 
 #[test]
 fn test_binary() -> EosResult<()> {
@@ -70,9 +71,9 @@ fn test_polar_term() -> EosResult<()> {
     let eos1 = Arc::new(GcPcSaft::new(Arc::new(parameters1)));
     let eos2 = Arc::new(GcPcSaft::new(Arc::new(parameters2)));
     let moles = arr1(&[0.5, 0.5]) * MOL;
-    let p1 = State::new_nvt(&eos1, 300.0 * KELVIN, METER.powi(3), &moles)?
+    let p1 = State::new_nvt(&eos1, 300.0 * KELVIN, METER.powi::<P3>(), &moles)?
         .pressure(Contributions::Total);
-    let p2 = State::new_nvt(&eos2, 300.0 * KELVIN, METER.powi(3), &moles)?
+    let p2 = State::new_nvt(&eos2, 300.0 * KELVIN, METER.powi::<P3>(), &moles)?
         .pressure(Contributions::Total);
     println!("{p1} {p2}");
     assert_eq!(p1, p2);

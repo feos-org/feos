@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `HelmholtzEnergyFunctional`: added `Components` trait as trait bound and removed `ideal_gas` method. [#158](https://github.com/feos-org/feos/pull/158)
 - `DFT<F>` now implements `Residual` and furthermore `IdealGas` if `F` implements `IdealGas`. [#158](https://github.com/feos-org/feos/pull/158)
 - What properties (and contributions) of `DFTProfile` are available now depends on whether an ideal gas model is provided or not. [#158](https://github.com/feos-org/feos/pull/158)
+- Pore volumes and other integrated properties (loadings, energies, ...) are now always reported in units of volume. For translationally symmetric pores this is achieved by multiplying with the reference length (1 Å) in every direction with symmetries. [#181](https://github.com/feos-org/feos/pull/181)
 
 ### Removed
 - Removed `DefaultIdealGasContribution` [#158](https://github.com/feos-org/feos/pull/158)

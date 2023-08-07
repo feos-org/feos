@@ -1,7 +1,10 @@
 use super::{Contributions, State};
 use crate::equation_of_state::{IdealGas, Residual};
+use crate::si::{
+    Density, MassDensity, MolarEnergy, MolarEntropy, Moles, Pressure, SpecificEnergy,
+    SpecificEntropy, Temperature,
+};
 use ndarray::{Array1, Array2};
-use quantity::si::{SIArray1, SIArray2};
 use std::iter::FromIterator;
 use std::ops::Deref;
 
@@ -33,12 +36,12 @@ impl<'a, E> Deref for StateVec<'a, E> {
 }
 
 impl<'a, E: Residual> StateVec<'a, E> {
-    pub fn temperature(&self) -> SIArray1 {
-        SIArray1::from_shape_fn(self.0.len(), |i| self.0[i].temperature)
+    pub fn temperature(&self) -> Temperature<Array1<f64>> {
+        Temperature::from_shape_fn(self.0.len(), |i| self.0[i].temperature)
     }
 
-    pub fn pressure(&self) -> SIArray1 {
-        SIArray1::from_shape_fn(self.0.len(), |i| self.0[i].pressure(Contributions::Total))
+    pub fn pressure(&self) -> Pressure<Array1<f64>> {
+        Pressure::from_shape_fn(self.0.len(), |i| self.0[i].pressure(Contributions::Total))
     }
 
     pub fn compressibility(&self) -> Array1<f64> {
@@ -47,12 +50,16 @@ impl<'a, E: Residual> StateVec<'a, E> {
         })
     }
 
-    pub fn density(&self) -> SIArray1 {
-        SIArray1::from_shape_fn(self.0.len(), |i| self.0[i].density)
+    pub fn density(&self) -> Density<Array1<f64>> {
+        Density::from_shape_fn(self.0.len(), |i| self.0[i].density)
     }
 
-    pub fn moles(&self) -> SIArray2 {
-        SIArray2::from_shape_fn((self.0.len(), self.0[0].eos.components()), |(i, j)| {
+    pub fn mass_density(&self) -> MassDensity<Array1<f64>> {
+        MassDensity::from_shape_fn(self.0.len(), |i| self.0[i].mass_density())
+    }
+
+    pub fn moles(&self) -> Moles<Array2<f64>> {
+        Moles::from_shape_fn((self.0.len(), self.0[0].eos.components()), |(i, j)| {
             self.0[i].moles.get(j)
         })
     }
@@ -65,16 +72,12 @@ impl<'a, E: Residual> StateVec<'a, E> {
 }
 
 impl<'a, E: Residual + IdealGas> StateVec<'a, E> {
-    pub fn molar_enthalpy(&self, contributions: Contributions) -> SIArray1 {
-        SIArray1::from_shape_fn(self.0.len(), |i| self.0[i].molar_enthalpy(contributions))
+    pub fn molar_enthalpy(&self, contributions: Contributions) -> MolarEnergy<Array1<f64>> {
+        MolarEnergy::from_shape_fn(self.0.len(), |i| self.0[i].molar_enthalpy(contributions))
     }
 
-    pub fn molar_entropy(&self, contributions: Contributions) -> SIArray1 {
-        SIArray1::from_shape_fn(self.0.len(), |i| self.0[i].molar_entropy(contributions))
-    }
-
-    pub fn mass_density(&self) -> SIArray1 {
-        SIArray1::from_shape_fn(self.0.len(), |i| self.0[i].mass_density())
+    pub fn molar_entropy(&self, contributions: Contributions) -> MolarEntropy<Array1<f64>> {
+        MolarEntropy::from_shape_fn(self.0.len(), |i| self.0[i].molar_entropy(contributions))
     }
 
     pub fn massfracs(&self) -> Array2<f64> {
@@ -83,11 +86,11 @@ impl<'a, E: Residual + IdealGas> StateVec<'a, E> {
         })
     }
 
-    pub fn specific_enthalpy(&self, contributions: Contributions) -> SIArray1 {
-        SIArray1::from_shape_fn(self.0.len(), |i| self.0[i].specific_enthalpy(contributions))
+    pub fn specific_enthalpy(&self, contributions: Contributions) -> SpecificEnergy<Array1<f64>> {
+        SpecificEnergy::from_shape_fn(self.0.len(), |i| self.0[i].specific_enthalpy(contributions))
     }
 
-    pub fn specific_entropy(&self, contributions: Contributions) -> SIArray1 {
-        SIArray1::from_shape_fn(self.0.len(), |i| self.0[i].specific_entropy(contributions))
+    pub fn specific_entropy(&self, contributions: Contributions) -> SpecificEntropy<Array1<f64>> {
+        SpecificEntropy::from_shape_fn(self.0.len(), |i| self.0[i].specific_entropy(contributions))
     }
 }

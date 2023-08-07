@@ -81,7 +81,7 @@ macro_rules! impl_state {
                             ))),
                         }
                     } else if let Ok(d) = di.extract::<PySINumber>() {
-                        Ok(DensityInitialization::InitialDensity(d.into()))
+                        Ok(DensityInitialization::InitialDensity(d.try_into()?))
                     } else {
                         Err(PyErr::new::<PyValueError, _>(format!(
                             "`density_initialization` must be 'vapor' or 'liquid' or a molar density as `SINumber` has to be provided."
@@ -92,19 +92,19 @@ macro_rules! impl_state {
                 };
                 let s = State::new_full(
                     &eos.0,
-                    temperature.map(|t| t.into()),
-                    volume.map(|t| t.into()),
-                    density.map(|s| s.into()),
-                    partial_density.as_deref(),
-                    total_moles.map(|s| s.into()),
-                    moles.as_deref(),
+                    temperature.map(|t| t.try_into()).transpose()?,
+                    volume.map(|v| v.try_into()).transpose()?,
+                    density.map(|s| s.try_into()).transpose()?,
+                    partial_density.map(|s| s.try_into()).transpose()?.as_ref(),
+                    total_moles.map(|s| s.try_into()).transpose()?,
+                    moles.map(|m| m.try_into()).transpose()?.as_ref(),
                     x.as_ref(),
-                    pressure.map(|s| s.into()),
-                    molar_enthalpy.map(|s| s.into()),
-                    molar_entropy.map(|s| s.into()),
-                    molar_internal_energy.map(|s| s.into()),
+                    pressure.map(|s| s.try_into()).transpose()?,
+                    molar_enthalpy.map(|s| s.try_into()).transpose()?,
+                    molar_entropy.map(|s| s.try_into()).transpose()?,
+                    molar_internal_energy.map(|s| s.try_into()).transpose()?,
                     density_init?,
-                    initial_temperature.map(|s| s.into()),
+                    initial_temperature.map(|s| s.try_into()).transpose()?,
                 )?;
                 Ok(Self(s))
             }
@@ -137,7 +137,7 @@ macro_rules! impl_state {
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Vec<Self>> {
-                let t = initial_temperature.and_then(|t0| Some(t0.into()));
+                let t = initial_temperature.map(|t0| t0.try_into()).transpose()?;
                 let cp = State::critical_point_pure(&eos.0, t, (max_iter, tol, verbosity).into())?;
                 Ok(cp.into_iter().map(Self).collect())
             }
@@ -175,8 +175,8 @@ macro_rules! impl_state {
             ) -> PyResult<Self> {
                 Ok(PyState(State::critical_point(
                     &eos.0,
-                    moles.as_deref(),
-                    initial_temperature.map(|t| t.into()),
+                    moles.map(|m| m.try_into()).transpose()?.as_ref(),
+                    initial_temperature.map(|t| t.try_into()).transpose()?,
                     (max_iter, tol, verbosity).into(),
                 )?))
             }
@@ -216,8 +216,8 @@ macro_rules! impl_state {
             ) -> PyResult<Self> {
                 Ok(PyState(State::critical_point_binary(
                     &eos.0,
-                    temperature_or_pressure.into(),
-                    initial_temperature.map(|t| t.into()),
+                    TPSpec::try_from(temperature_or_pressure)?,
+                    initial_temperature.map(|t| t.try_into()).transpose()?,
                     initial_molefracs,
                     (max_iter, tol, verbosity).into(),
                 )?))
@@ -256,8 +256,8 @@ macro_rules! impl_state {
             ) -> PyResult<(Self, Self)> {
                 let [state1, state2] = State::spinodal(
                     &eos.0,
-                    temperature.into(),
-                    moles.as_deref(),
+                    temperature.try_into()?,
+                    moles.map(|m| m.try_into()).transpose()?.as_ref(),
                     (max_iter, tol, verbosity).into(),
                 )?;
                 Ok((PyState(state1), PyState(state2)))

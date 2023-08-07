@@ -1,20 +1,21 @@
+#![allow(clippy::type_complexity)]
 use criterion::{criterion_group, criterion_main, Criterion};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
+use feos_core::si::*;
 use feos_core::{
     parameter::{IdentifierOption, Parameter},
-    Contributions, DensityInitialization, PhaseEquilibrium, Residual, State,
+    Contributions, DensityInitialization, PhaseEquilibrium, Residual, State, TPSpec,
 };
 use ndarray::{Array, Array1};
-use quantity::si::*;
 use std::sync::Arc;
 
 /// Evaluate NPT constructor
 fn npt<E: Residual>(
     (eos, t, p, n, rho0): (
         &Arc<E>,
-        SINumber,
-        SINumber,
-        &SIArray1,
+        Temperature<f64>,
+        Pressure<f64>,
+        &Moles<Array1<f64>>,
         DensityInitialization,
     ),
 ) {
@@ -22,26 +23,39 @@ fn npt<E: Residual>(
 }
 
 /// Evaluate critical point constructor
-fn critical_point<E: Residual>((eos, n): (&Arc<E>, Option<&SIArray1>)) {
+fn critical_point<E: Residual>((eos, n): (&Arc<E>, Option<&Moles<Array1<f64>>>)) {
     State::critical_point(eos, n, None, Default::default()).unwrap();
 }
 
 /// Evaluate critical point constructor for binary systems at given T or p
-fn critical_point_binary<E: Residual>((eos, tp): (&Arc<E>, SINumber)) {
+fn critical_point_binary<E: Residual, TP>((eos, tp): (&Arc<E>, TP))
+where
+    TPSpec: From<TP>,
+{
     State::critical_point_binary(eos, tp, None, None, Default::default()).unwrap();
 }
 
 /// VLE for pure substance for given temperature or pressure
-fn pure<E: Residual>((eos, t_or_p): (&Arc<E>, SINumber)) {
+fn pure<E: Residual, TP>((eos, t_or_p): (&Arc<E>, TP))
+where
+    TPSpec: From<TP>,
+{
     PhaseEquilibrium::pure(eos, t_or_p, None, Default::default()).unwrap();
 }
 
 /// Evaluate temperature, pressure flash.
-fn tp_flash<E: Residual>((eos, t, p, feed): (&Arc<E>, SINumber, SINumber, &SIArray1)) {
+fn tp_flash<E: Residual>(
+    (eos, t, p, feed): (
+        &Arc<E>,
+        Temperature<f64>,
+        Pressure<f64>,
+        &Moles<Array1<f64>>,
+    ),
+) {
     PhaseEquilibrium::tp_flash(eos, t, p, feed, None, Default::default(), None).unwrap();
 }
 
-fn bubble_point<E: Residual>((eos, t, x): (&Arc<E>, SINumber, &Array1<f64>)) {
+fn bubble_point<E: Residual>((eos, t, x): (&Arc<E>, Temperature<f64>, &Array1<f64>)) {
     PhaseEquilibrium::bubble_point(
         eos,
         t,
@@ -53,7 +67,7 @@ fn bubble_point<E: Residual>((eos, t, x): (&Arc<E>, SINumber, &Array1<f64>)) {
     .unwrap();
 }
 
-fn dew_point<E: Residual>((eos, t, y): (&Arc<E>, SINumber, &Array1<f64>)) {
+fn dew_point<E: Residual>((eos, t, y): (&Arc<E>, Temperature<f64>, &Array1<f64>)) {
     PhaseEquilibrium::dew_point(
         eos,
         t,
