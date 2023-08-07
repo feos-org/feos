@@ -207,16 +207,6 @@ pub enum Derivative {
     DN(usize),
 }
 
-// impl Derivative {
-//     pub fn reference(&self) -> SINumber {
-//         match self {
-//             Derivative::DV => SIUnit::reference_volume(),
-//             Derivative::DT => SIUnit::reference_temperature(),
-//             Derivative::DN(_) => SIUnit::reference_moles(),
-//         }
-//     }
-// }
-
 #[derive(Clone, Copy, Eq, Hash, PartialEq, Debug)]
 pub(crate) enum PartialDerivative {
     Zeroth,

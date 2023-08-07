@@ -12,8 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `JobackParameters` struct that implements `Parameters` including Python bindings. [#158](https://github.com/feos-org/feos/pull/158)
 - Added `Parameter::from_model_records` as a simpler interface to generate parameters.  [#169](https://github.com/feos-org/feos/pull/169)
 - Added optional `Phase` argument for constructors of dynamic properties of `DataSet`s.  [#174](https://github.com/feos-org/feos/pull/174)
-- Added `molar_weight` method to `Residual` trait. [#177](https://github.com/feos-org/feos/pull/158)
-- Added molar versions for entropy, enthalpy, etc. for residual properties. [#177](https://github.com/feos-org/feos/pull/158)
+- Added `molar_weight` method to `Residual` trait. [#177](https://github.com/feos-org/feos/pull/177)
+- Added molar versions for entropy, enthalpy, etc. for residual properties. [#177](https://github.com/feos-org/feos/pull/177)
 
 ### Changed
 - Changed constructors of `Parameter` trait to return `Result`s. [#161](https://github.com/feos-org/feos/pull/161)
@@ -28,16 +28,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bubble and dew point iterations will not attempt a second iteration if no solution is found for the given initial pressure. [#166](https://github.com/feos-org/feos/pull/166)
 - Made the binary records in the constructions and getters of the `Parameter` trait optional. [#169](https://github.com/feos-org/feos/pull/169)
 - Changed the second argument of `new_binary` in Python from a `BinaryRecord` to the corresponding binary model record (analogous to the Rust implementation). [#169](https://github.com/feos-org/feos/pull/169)
-- Renamed `c_v` and `c_p` to `isochoric_heat_capacity` and `isobaric_heat_capacity`, respectively, and added prefixes for molar and specific properties. [#177](https://github.com/feos-org/feos/pull/158)
-- `State.helmholtz_energy_contributions` in Python now accepts optional `Contributions`. [#177](https://github.com/feos-org/feos/pull/158)
-- Changed `StateVec` Python getters for entropy and enthalpy to functions that accept optional `Contributions`. [#177](https://github.com/feos-org/feos/pull/158)
-- `PhaseDiagram.to_dict` in Python now accepts optional `Contributions` and includes mass specific properties. [#177](https://github.com/feos-org/feos/pull/158)
+- Renamed `c_v` and `c_p` to `isochoric_heat_capacity` and `isobaric_heat_capacity`, respectively, and added prefixes for molar and specific properties. [#177](https://github.com/feos-org/feos/pull/177)
+- `State.helmholtz_energy_contributions` in Python now accepts optional `Contributions`. [#177](https://github.com/feos-org/feos/pull/177)
+- Changed `StateVec` Python getters for entropy and enthalpy to functions that accept optional `Contributions`. [#177](https://github.com/feos-org/feos/pull/177)
+- `PhaseDiagram.to_dict` in Python now accepts optional `Contributions` and includes mass specific properties. [#177](https://github.com/feos-org/feos/pull/177)
+- Replaced the run-time unit checks from the `quantity` crate with compile-time unit checks with custom implementations in the new `feos_core.si` module. [#181](https://github.com/feos-org/feos/pull/181)
 
 ### Removed
 - Removed `EquationOfState` trait. [#158](https://github.com/feos-org/feos/pull/158)
 - Removed ideal gas dependencies from `PureRecord` and `SegmentRecord`. [#158](https://github.com/feos-org/feos/pull/158)
 - Removed Python getter and setter functions and optional arguments for ideal gas records in macros. [#158](https://github.com/feos-org/feos/pull/158)
-- Removed `MolarWeight` trait. [#177](https://github.com/feos-org/feos/pull/158)
+- Removed `MolarWeight` trait. [#177](https://github.com/feos-org/feos/pull/177)
 
 ### Fixed
 - The vapor and liquid states in a bubble or dew point iteration are assigned correctly according to the inputs, rather than based on the mole density which can be incorrect for mixtures with large differences in molar weights. [#166](https://github.com/feos-org/feos/pull/166)
