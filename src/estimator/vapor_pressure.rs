@@ -1,16 +1,16 @@
 use super::{DataSet, EstimatorError};
-use feos_core::{Contributions, EosUnit, PhaseEquilibrium, Residual, SolverOptions, State};
+use feos_core::si::{Pressure, Temperature, PASCAL};
+use feos_core::{Contributions, PhaseEquilibrium, Residual, SolverOptions, State};
 use ndarray::{arr1, Array1};
-use quantity::si::{SIArray1, SINumber, SIUnit};
-use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Store experimental vapor pressure data.
 #[derive(Clone)]
 pub struct VaporPressure {
-    pub target: SIArray1,
-    temperature: SIArray1,
-    max_temperature: SINumber,
+    pub target: Array1<f64>,
+    unit: Pressure<f64>,
+    temperature: Temperature<Array1<f64>>,
+    max_temperature: Temperature<f64>,
     datapoints: usize,
     extrapolate: bool,
     solver_options: SolverOptions,
@@ -26,39 +26,35 @@ impl VaporPressure {
     /// calculating the slope of ln(p) over 1/T.
     /// If `extrapolate` is `false`, it is set to `NAN`.
     pub fn new(
-        target: SIArray1,
-        temperature: SIArray1,
+        target: Pressure<Array1<f64>>,
+        temperature: Temperature<Array1<f64>>,
         extrapolate: bool,
-        critical_temperature: Option<SINumber>,
+        critical_temperature: Option<Temperature<f64>>,
         solver_options: Option<SolverOptions>,
-    ) -> Result<Self, EstimatorError> {
+    ) -> Self {
         let datapoints = target.len();
-        let max_temperature = critical_temperature.unwrap_or(
-            temperature
-                .to_reduced(SIUnit::reference_temperature())?
-                .into_iter()
-                .reduce(|a, b| a.max(b))
-                .unwrap()
-                * SIUnit::reference_temperature(),
-        );
-        Ok(Self {
-            target,
+        let max_temperature = critical_temperature
+            .unwrap_or(temperature.into_iter().reduce(|a, b| a.max(b)).unwrap());
+        let target_unit = PASCAL;
+        Self {
+            target: (target / target_unit).into_value(),
+            unit: target_unit,
             temperature,
             max_temperature,
             datapoints,
             extrapolate,
             solver_options: solver_options.unwrap_or_default(),
-        })
+        }
     }
 
     /// Return temperature.
-    pub fn temperature(&self) -> SIArray1 {
+    pub fn temperature(&self) -> Temperature<Array1<f64>> {
         self.temperature.clone()
     }
 }
 
 impl<E: Residual> DataSet<E> for VaporPressure {
-    fn target(&self) -> &SIArray1 {
+    fn target(&self) -> &Array1<f64> {
         &self.target
     }
 
@@ -70,9 +66,9 @@ impl<E: Residual> DataSet<E> for VaporPressure {
         vec!["temperature"]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<SIArray1, EstimatorError> {
+    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
         if self.datapoints == 0 {
-            return Ok(arr1(&[]) * SIUnit::reference_pressure());
+            return Ok(arr1(&[]));
         }
 
         let critical_point =
@@ -86,30 +82,26 @@ impl<E: Residual> DataSet<E> for VaporPressure {
             .vapor()
             .pressure(Contributions::Total);
 
-        let b = pc.to_reduced(p0)?.ln() / (1.0 / tc - 1.0 / t0);
-        let a = pc.to_reduced(SIUnit::reference_pressure())?.ln() - b.to_reduced(tc)?;
+        let b = (pc / p0).into_value().ln() / (1.0 / tc - 1.0 / t0);
+        let a = pc.to_reduced().ln() - (b / tc).into_value();
 
-        let unit = self.target.get(0);
-        let mut prediction = Array1::zeros(self.datapoints) * unit;
-        for i in 0..self.datapoints {
-            let t = self.temperature.get(i);
-            if let Some(pvap) = PhaseEquilibrium::vapor_pressure(eos, t)[0] {
-                prediction.try_set(i, pvap)?;
-            } else if self.extrapolate {
-                prediction.try_set(
-                    i,
-                    (a + b.to_reduced(t)?).exp() * SIUnit::reference_pressure(),
-                )?;
-            } else {
-                prediction.try_set(i, f64::NAN * SIUnit::reference_pressure())?
-            }
-        }
-        Ok(prediction)
+        Ok((0..self.datapoints)
+            .map(|i| {
+                let t = self.temperature.get(i);
+                if let Some(p) = PhaseEquilibrium::vapor_pressure(eos, t)[0] {
+                    (p / self.unit).into_value()
+                } else if self.extrapolate {
+                    (a + (b / t).into_value()).exp() / self.unit.to_reduced()
+                } else {
+                    f64::NAN
+                }
+            })
+            .collect())
     }
 
-    fn get_input(&self) -> HashMap<String, SIArray1> {
-        let mut m = HashMap::with_capacity(1);
-        m.insert("temperature".to_owned(), self.temperature());
-        m
-    }
+    // fn get_input(&self) -> HashMap<String, SIArray1> {
+    //     let mut m = HashMap::with_capacity(1);
+    //     m.insert("temperature".to_owned(), self.temperature());
+    //     m
+    // }
 }

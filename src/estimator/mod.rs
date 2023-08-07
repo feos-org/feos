@@ -1,6 +1,6 @@
 //! Utilities for working with experimental data.
 use feos_core::{DensityInitialization, EosError};
-use quantity::QuantityError;
+// use quantity::QuantityError;
 use std::num::ParseFloatError;
 use thiserror::Error;
 
@@ -16,8 +16,8 @@ mod vapor_pressure;
 pub use vapor_pressure::VaporPressure;
 mod liquid_density;
 pub use liquid_density::{EquilibriumLiquidDensity, LiquidDensity};
-mod binary_vle;
-pub use binary_vle::{BinaryPhaseDiagram, BinaryVleChemicalPotential, BinaryVlePressure};
+// mod binary_vle;
+// pub use binary_vle::{BinaryPhaseDiagram, BinaryVleChemicalPotential, BinaryVlePressure};
 mod viscosity;
 pub use viscosity::Viscosity;
 mod thermal_conductivity;
@@ -53,8 +53,8 @@ pub enum EstimatorError {
     ShapeError(#[from] ndarray::ShapeError),
     #[error(transparent)]
     ParseError(#[from] ParseFloatError),
-    #[error(transparent)]
-    QuantityError(#[from] QuantityError),
+    // #[error(transparent)]
+    // QuantityError(#[from] QuantityError),
     #[error(transparent)]
     EosError(#[from] EosError),
 }
