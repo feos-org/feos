@@ -43,7 +43,6 @@ pub use phase_equilibria::{
 };
 pub use state::{
     Contributions, DensityInitialization, Derivative, State, StateBuilder, StateHD, StateVec,
-    TPSpec,
 };
 
 #[cfg(feature = "python")]

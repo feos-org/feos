@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use typenum::{Diff, Integer, Negate, Prod, Quot, Sum, P2, P3};
 
-/// Multiplication
+// Multiplication
 impl<T1, T2, U1, U2> Mul<Quantity<T2, U2>> for Quantity<T1, U1>
 where
     T1: Mul<T2>,
@@ -102,7 +102,7 @@ where
     }
 }
 
-/// Division
+// Division
 impl<T1, T2, U1, U2> Div<Quantity<T2, U2>> for Quantity<T1, U1>
 where
     T1: Div<T2>,
@@ -200,7 +200,7 @@ where
     }
 }
 
-/// Addition
+// Addition
 impl<T1, T2, U> Add<Quantity<T2, U>> for Quantity<T1, U>
 where
     T1: Add<T2>,
@@ -259,7 +259,7 @@ where
     }
 }
 
-/// Subtraction
+// Subtraction
 impl<T1, T2, U> Sub<Quantity<T2, U>> for Quantity<T1, U>
 where
     T1: Sub<T2>,
@@ -318,7 +318,7 @@ where
     }
 }
 
-/// Negation
+// Negation
 impl<T, U> Neg for Quantity<T, U>
 where
     T: Neg,
@@ -329,8 +329,18 @@ where
     }
 }
 
-/// Operations for scalars
 impl<U> Quantity<f64, U> {
+    /// Calculate the integer power of self.
+    ///
+    /// # Example
+    /// ```
+    /// # use feos_core::si::METER;
+    /// # use ndarray::arr1;
+    /// # use approx::assert_relative_eq;
+    /// # use typenum::P2;
+    /// let x = 3.0 * METER;
+    /// assert_relative_eq!(x.powi::<P2>(), 9.0 * METER * METER);
+    /// ```
     pub fn powi<E: Integer>(self) -> Quantity<f64, Prod<U, E>>
     where
         U: Mul<E>,
@@ -338,6 +348,16 @@ impl<U> Quantity<f64, U> {
         Quantity(self.0.powi(E::I32), PhantomData)
     }
 
+    /// Calculate the square root of self.
+    ///
+    /// # Example
+    /// ```
+    /// # use feos_core::si::METER;
+    /// # use ndarray::arr1;
+    /// # use approx::assert_relative_eq;
+    /// let x = 9.0 * METER * METER;
+    /// assert_relative_eq!(x.sqrt(), 3.0 * METER);
+    /// ```
     pub fn sqrt(self) -> Quantity<f64, Quot<U, P2>>
     where
         U: Div<P2>,
@@ -345,6 +365,16 @@ impl<U> Quantity<f64, U> {
         Quantity(self.0.sqrt(), PhantomData)
     }
 
+    /// Calculate the cubic root of self.
+    ///
+    /// # Example
+    /// ```
+    /// # use feos_core::si::METER;
+    /// # use ndarray::arr1;
+    /// # use approx::assert_relative_eq;
+    /// let x = 27.0 * METER * METER * METER;
+    /// assert_relative_eq!(x.cbrt(), 3.0 * METER);
+    /// ```
     pub fn cbrt(self) -> Quantity<f64, Quot<U, P3>>
     where
         U: Div<P3>,
@@ -352,43 +382,91 @@ impl<U> Quantity<f64, U> {
         Quantity(self.0.cbrt(), PhantomData)
     }
 
+    /// Calculate the integer root of self.
+    ///
+    /// # Example
+    /// ```
+    /// # use feos_core::si::METER;
+    /// # use ndarray::arr1;
+    /// # use approx::assert_relative_eq;
+    /// # use typenum::P4;
+    /// let x = 81.0 * METER * METER * METER * METER;
+    /// assert_relative_eq!(x.root::<P4>(), 3.0 * METER);
+    /// ```
     pub fn root<R: Integer>(self) -> Quantity<f64, Quot<U, R>>
     where
         U: Div<R>,
     {
-        Quantity(self.0.powf(1.0 / R::I32 as f64).cbrt(), PhantomData)
+        Quantity(self.0.powf(1.0 / R::I32 as f64), PhantomData)
     }
 
+    /// Return the absolute value of `self`.
+    ///
+    /// # Example
+    /// ```
+    /// # use feos_core::si::KELVIN;
+    /// # use approx::assert_relative_eq;
+    /// let t = -50.0 * KELVIN;
+    /// assert_relative_eq!(t.abs(), &(50.0 * KELVIN));
     pub fn abs(self) -> Self {
         Self(self.0.abs(), PhantomData)
     }
 
+    /// Returns a number that represents the sign of `self`.
+    ///
+    /// - `1.0` if the number is positive, `+0.0` or `INFINITY`
+    /// - `-1.0` if the number is negative, `-0.0` or `NEG_INFINITY`
+    /// - `NAN` if the number is `NAN`
     pub fn signum(self) -> f64 {
         self.0.signum()
     }
 
+    /// Returns `true` if `self` has a negative sign, including `-0.0`, `NaN`s with
+    /// negative sign bit and negative infinity.
     pub fn is_sign_negative(&self) -> bool {
         self.0.is_sign_negative()
     }
 
+    /// Returns `true` if `self` has a positive sign, including `+0.0`, `NaN`s with
+    /// positive sign bit and positive infinity.
     pub fn is_sign_positive(&self) -> bool {
         self.0.is_sign_positive()
     }
 
+    /// Returns true if this value is NaN.
     pub fn is_nan(&self) -> bool {
         self.0.is_nan()
     }
 
+    /// Return the minimum of `self` and `other`.
+    ///
+    /// # Example
+    /// ```
+    /// # use feos_core::si::{KILO, PASCAL, BAR};
+    /// # use approx::assert_relative_eq;
+    /// let p1 = 110.0 * KILO * PASCAL;
+    /// let p2 = BAR;
+    /// assert_relative_eq!(p1.min(p2), &p2);
+    /// ```
     pub fn min(self, other: Self) -> Self {
         Self(self.0.min(other.0), PhantomData)
     }
 
+    /// Return the maximum of `self` and `other`.
+    ///
+    /// # Example
+    /// ```
+    /// # use feos_core::si::{KILO, PASCAL, BAR};
+    /// # use approx::assert_relative_eq;
+    /// let p1 = 110.0 * KILO * PASCAL;
+    /// let p2 = BAR;
+    /// assert_relative_eq!(p1.max(p2), &p1);
+    /// ```
     pub fn max(self, other: Self) -> Self {
         Self(self.0.max(other.0), PhantomData)
     }
 }
 
-/// Comparisons
 impl<T: PartialEq, U> PartialEq for Quantity<T, U> {
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0

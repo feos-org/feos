@@ -4,7 +4,7 @@ use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::si::*;
 use feos_core::{
     parameter::{IdentifierOption, Parameter},
-    Contributions, DensityInitialization, PhaseEquilibrium, Residual, State, TPSpec,
+    Contributions, DensityInitialization, PhaseEquilibrium, Residual, State, TemperatureOrPressure,
 };
 use ndarray::{Array, Array1};
 use std::sync::Arc;
@@ -28,18 +28,12 @@ fn critical_point<E: Residual>((eos, n): (&Arc<E>, Option<&Moles<Array1<f64>>>))
 }
 
 /// Evaluate critical point constructor for binary systems at given T or p
-fn critical_point_binary<E: Residual, TP>((eos, tp): (&Arc<E>, TP))
-where
-    TPSpec: From<TP>,
-{
+fn critical_point_binary<E: Residual, TP: TemperatureOrPressure>((eos, tp): (&Arc<E>, TP)) {
     State::critical_point_binary(eos, tp, None, None, Default::default()).unwrap();
 }
 
 /// VLE for pure substance for given temperature or pressure
-fn pure<E: Residual, TP>((eos, t_or_p): (&Arc<E>, TP))
-where
-    TPSpec: From<TP>,
-{
+fn pure<E: Residual, TP: TemperatureOrPressure>((eos, t_or_p): (&Arc<E>, TP)) {
     PhaseEquilibrium::pure(eos, t_or_p, None, Default::default()).unwrap();
 }
 

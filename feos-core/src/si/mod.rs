@@ -1,8 +1,11 @@
+//! Physical quantities with compile-time checked units.
+
+#![allow(clippy::type_complexity)]
 use ang::{Angle, Degrees, Radians};
 use num_traits::Zero;
 use std::marker::PhantomData;
 use std::ops::{Div, Mul};
-use typenum::{ATerm, Diff, Integer, Negate, Sum, TArr, P1, Z0};
+use typenum::{ATerm, Diff, Integer, Negate, Sum, TArr, N1, N2, P1, P3, Z0};
 
 mod array;
 mod fmt;
@@ -13,6 +16,7 @@ mod python;
 pub type SIUnit<T, L, M, I, THETA, N, J> =
     TArr<T, TArr<L, TArr<M, TArr<I, TArr<THETA, TArr<N, TArr<J, ATerm>>>>>>>;
 
+/// Physical quantity with compile-time checked unit.
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Quantity<T, U>(T, PhantomData<U>);
@@ -98,6 +102,8 @@ pub type _MolarVolume = Diff<_Volume, _Moles>;
 pub type MolarVolume<T = f64> = Quantity<T, _MolarVolume>;
 pub type _EntropyDensity = Diff<_Entropy, _Volume>;
 pub type EntropyDensity<T = f64> = Quantity<T, _EntropyDensity>;
+pub type _Action = Sum<_Energy, _Time>;
+pub type Action<T=f64> = Quantity<T, _Action>;
 
 pub type _Viscosity = Sum<_Pressure, _Time>;
 pub type Viscosity<T = f64> = Quantity<T, _Viscosity>;
@@ -108,37 +114,67 @@ pub type ThermalConductivity<T = f64> = Quantity<T, _ThermalConductivity>;
 pub type _SurfaceTension = Diff<_Force, _Length>;
 pub type SurfaceTension<T = f64> = Quantity<T, _SurfaceTension>;
 
+/// SI base unit second $\\left(\text{s}\\right)$
 pub const SECOND: Time = Quantity(1.0, PhantomData);
+/// SI base unit meter $\\left(\text{m}\\right)$
 pub const METER: Length = Quantity(1.0, PhantomData);
+/// SI base unit kilogram $\\left(\text{kg}\\right)$
 pub const KILOGRAM: Mass = Quantity(1.0, PhantomData);
+/// SI base unit Ampere $\\left(\text{A}\\right)$
 pub const AMPERE: Current = Quantity(1.0, PhantomData);
+/// SI base unit Kelvin $\\left(\text{K}\\right)$
 pub const KELVIN: Temperature = Quantity(1.0, PhantomData);
+/// SI base unit mol $\\left(\text{mol}\\right)$
 pub const MOL: Moles = Quantity(1.0, PhantomData);
+/// SI base unit candela $\\left(\text{cd}\\right)$
 pub const CANDELA: LuminousIntensity = Quantity(1.0, PhantomData);
 
+/// Derived unit Hertz $\\left(1\\,\text{Hz}=1\\,\text{s}^{-1}\\right)$
 pub const HERTZ: Frequency = Quantity(1.0, PhantomData);
+/// Derived unit Newton $\\left(1\\,\text{N}=1\\,\text{kg}\\frac{\text{m}}{\text{s}^2}\\right)$
 pub const NEWTON: Force = Quantity(1.0, PhantomData);
+/// Derived unit Pascal $\\left(1\\,\text{Pa}=1\\,\\frac{\text{kg}}{\text{m}\\cdot\text{s}^2}\\right)$
 pub const PASCAL: Pressure = Quantity(1.0, PhantomData);
+/// Derived unit Joule $\\left(1\\,\text{J}=1\\,\text{kg}\\frac{\text{m}^2}{\text{s}^2}\\right)$
 pub const JOULE: Energy = Quantity(1.0, PhantomData);
+/// Derived unit Watt $\\left(1\\,\text{J}=1\\,\text{kg}\\frac{\text{m}^2}{\text{s}^3}\\right)$
 pub const WATT: Power = Quantity(1.0, PhantomData);
+/// Derived unit Coulomb $\\left(1\\,\text{C}=1\\,\text{A}\cdot\text{s}\\right)$
 pub const COULOMB: Charge = Quantity(1.0, PhantomData);
+/// Derived unit Volt $\\left(1\\,\text{V}=1\\,\\frac{\text{W}}{\text{A}}\\right)$
 pub const VOLT: ElectricPotential = Quantity(1.0, PhantomData);
+/// Derived unit Farad $\\left(1\\,\text{F}=1\\,\\frac{\text{C}}{\text{V}}\\right)$
 pub const FARAD: Capacitance = Quantity(1.0, PhantomData);
+/// Derived unit Ohm $\\left(1\\,\text{Ω}=1\\,\\frac{\text{V}}{\text{A}}\\right)$
 pub const OHM: Resistance = Quantity(1.0, PhantomData);
+/// Derived unit Siemens $\\left(1\\,\text{S}=1\\,\text{Ω}^{-1}\\right)$
 pub const SIEMENS: ElectricalConductance = Quantity(1.0, PhantomData);
+/// Derived unit Weber $\\left(1\\,\text{Wb}=1\\,\text{V}\\cdot\text{s}\\right)$
 pub const WEBER: MagneticFlux = Quantity(1.0, PhantomData);
+/// Derived unit Tesla $\\left(1\\,\text{T}=1\\,\\frac{\text{Wb}}{\text{m}^2}\\right)$
 pub const TESLA: MagneticFluxDensity = Quantity(1.0, PhantomData);
+/// Derived unit Henry $\\left(1\\,\text{T}=1\\,\\frac{\text{Wb}}{\text{A}}\\right)$
 pub const HENRY: Inductance = Quantity(1.0, PhantomData);
 
+/// Additional unit Ångstrom $\\left(1\\,\text{\\AA}=10^{-10}\\,\text{m}\\right)$
 pub const ANGSTROM: Length = Quantity(1e-10, PhantomData);
+/// Additional unit unified atomic mass $\\left(1\\,\text{u}\\approx 1.660539\\times 10^{-27}\\,\text{kg}\\right)$
 pub const AMU: Mass = Quantity(1.6605390671738466e-27, PhantomData);
+/// Additional unit astronomical unit $\\left(1\\,\text{au}=149597870700\\,\text{m}\\right)$
 pub const AU: Length = Quantity(149597870700.0, PhantomData);
+/// Additional unit bar $\\left(1\\,\text{bar}=10^5\\,\text{Pa}\\right)$
 pub const BAR: Pressure = Quantity(1e5, PhantomData);
+/// Additional unit calorie $\\left(1\\,\text{cal}=4.184\\,\text{J}\\right)$
 pub const CALORIE: Energy = Quantity(4.184, PhantomData);
+/// Additional unit day $\\left(1\\,\text{d}=86400,\text{s}\\right)$
 pub const DAY: Time = Quantity(86400.0, PhantomData);
+/// Additional unit gram $\\left(1\\,\text{g}=10^{-3}\\,\text{kg}\\right)$
 pub const GRAM: Mass = Quantity(1e-3, PhantomData);
+/// Additional unit hour $\\left(1\\,\text{h}=3600,\text{s}\\right)$
 pub const HOUR: Time = Quantity(3600.0, PhantomData);
+/// Additional unit liter $\\left(1\\,\text{l}=10^{-3}\\,\text{m}^3\\right)$
 pub const LITER: Volume = Quantity(1e-3, PhantomData);
+/// Additional unit minute $\\left(1\\,\text{min}=60,\text{s}\\right)$
 pub const MINUTE: Time = Quantity(60.0, PhantomData);
 
 /// Angle unit radian $\\left(\text{rad}\\right)$
@@ -150,8 +186,20 @@ pub const DEGREES: Angle = Degrees(1.0);
 pub const KB: Entropy = Quantity(1.380649e-23, PhantomData);
 /// Avogadro constant $\\left(N_\text{A}=6.02214076\times 10^{23}\\,\text{mol}^{-1}\\right)$
 pub const NAV: Quantity<f64, Negate<_Moles>> = Quantity(6.02214076e23, PhantomData);
+/// Planck constant $\\left(h=6.62607015\times 10^{-34}\\,\text{J}\\cdot\text{s}\\right)$
+pub const PLANCK: Action = Quantity(6.62607015e-34, PhantomData);
 /// Ideal gas constant $\\left(R=8.31446261815324\\,\\frac{\text{J}}{\text{molK}}\\right)$
 pub const RGAS: MolarEntropy = Quantity(8.31446261815324, PhantomData);
+/// Hyperfine transition frequency of Cs $\\left(\Delta\\nu_\text{Cs}=9192631770\\,\text{Hz}\\right)$
+pub const DVCS: Frequency = Quantity(9192631770.0, PhantomData);
+/// Elementary charge $\\left(e=1.602176634\\times 10^{-19}\\,\text{C}\\right)$
+pub const QE: Charge = Quantity(1.602176634e-19, PhantomData);
+/// Speed of light $\\left(c=299792458\\,\\frac{\text{m}}{\text{s}}\\right)$
+pub const CLIGHT: Velocity = Quantity(299792458.0, PhantomData);
+/// Luminous efficacy of $540\\,\text{THz}$ radiation $\\left(K_\text{cd}=683\\,\\frac{\text{lm}}{\text{W}}\\right)$
+pub const KCD: Quantity<f64, SIUnit<N2, N1, P3, Z0, Z0, Z0, P1>> = Quantity(683.0, PhantomData);
+/// Gravitational constant $\\left(G=6.6743\\times 10^{-11}\\,\\frac{\text{m}^3}{\text{kg}\cdot\text{s}^2}\\right)$
+pub const G: Quantity<f64, SIUnit<P3, N1, N2, Z0, Z0, Z0, Z0>> = Quantity(6.6743e-11, PhantomData);
 
 /// Prefix quecto $\\left(\text{q}=10^{-30}\\right)$
 pub const QUECTO: f64 = 1e-30;

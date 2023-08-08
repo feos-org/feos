@@ -2,7 +2,7 @@ use super::{DensityInitialization, State, StateHD, TPSpec};
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
 use crate::si::{Density, Moles, Pressure, Temperature, Volume};
-use crate::{SolverOptions, Verbosity};
+use crate::{SolverOptions, TemperatureOrPressure, Verbosity};
 use nalgebra::SVector;
 use ndarray::{arr1, Array1, Array2};
 use num_dual::linalg::smallest_ev;
@@ -37,17 +37,14 @@ impl<R: Residual> State<R> {
             .collect()
     }
 
-    pub fn critical_point_binary<TP>(
+    pub fn critical_point_binary<TP: TemperatureOrPressure>(
         eos: &Arc<R>,
         temperature_or_pressure: TP,
         initial_temperature: Option<Temperature>,
         initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    where
-        TPSpec: From<TP>,
-    {
-        match TPSpec::from(temperature_or_pressure) {
+    ) -> EosResult<Self> {
+        match temperature_or_pressure.into() {
             TPSpec::Temperature(t) => {
                 Self::critical_point_binary_t(eos, t, initial_molefracs, options)
             }

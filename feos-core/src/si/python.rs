@@ -160,6 +160,9 @@ impl TryFrom<PySINumber> for TPSpec {
         if let Ok(p) = Pressure::<f64>::try_from(quantity) {
             return Ok(TPSpec::Pressure(p));
         }
-        Err(EosError::Error("TODO".into()))
+        Err(EosError::WrongUnits(
+            "temperature or pressure".into(),
+            quantity.to_string(),
+        ))
     }
 }

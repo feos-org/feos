@@ -3,11 +3,12 @@ use feos_core::si::{
     MolarEnergy, Moles, Pressure, Quantity, Temperature, _Dimensionless, PASCAL, RGAS,
 };
 use feos_core::{
-    Contributions, DensityInitialization, PhaseDiagram, PhaseEquilibrium, Residual, State, TPSpec,
+    Contributions, DensityInitialization, PhaseDiagram, PhaseEquilibrium, Residual, State,
     TemperatureOrPressure,
 };
 use itertools::izip;
 use ndarray::{arr1, s, Array1, ArrayView1, Axis};
+use std::fmt;
 use std::iter::FromIterator;
 use std::ops::Sub;
 use std::sync::Arc;
@@ -227,10 +228,12 @@ impl<TP: TemperatureOrPressure, U> BinaryPhaseDiagram<TP, U> {
     }
 }
 
-impl<TP: TemperatureOrPressure + Sync + Send, U: Copy + Sync + Send, E: Residual> DataSet<E>
-    for BinaryPhaseDiagram<TP, U>
+impl<
+        TP: TemperatureOrPressure + Sync + Send + fmt::Display,
+        U: Copy + Sync + Send,
+        E: Residual,
+    > DataSet<E> for BinaryPhaseDiagram<TP, U>
 where
-    TPSpec: From<TP>,
     Quantity<Array1<f64>, U>: FromIterator<TP::Other>,
     U: Sub<U, Output = _Dimensionless>,
 {
@@ -243,10 +246,7 @@ where
     }
 
     fn input_str(&self) -> Vec<&str> {
-        let mut vec = match TPSpec::from(self.specification) {
-            TPSpec::Temperature(_) => vec!["temperature", "pressure"],
-            TPSpec::Pressure(_) => vec!["pressure", "temperature"],
-        };
+        let mut vec = vec![TP::IDENTIFIER, TP::Other::IDENTIFIER];
         if self.liquid_molefracs.is_some() {
             vec.push("liquid molefracs")
         }
@@ -271,14 +271,6 @@ where
         let x_vap = dia.vapor().molefracs();
         let x_vec_vap = x_vap.index_axis(Axis(1), 0);
         let tp_vec = dia.vapor().iter().map(|s| TP::from_state(s)).collect();
-        // let tp_vec = if self
-        //     .temperature_or_pressure
-        //     .has_unit(&SIUnit::reference_temperature())
-        // {
-        //     dia.vapor().temperature()
-        // } else {
-        //     dia.vapor().pressure()
-        // };
         for (x_exp, x_vec) in [
             (&self.liquid_molefracs, x_vec_liq),
             (&self.vapor_molefracs, x_vec_vap),
