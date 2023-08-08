@@ -214,13 +214,27 @@ macro_rules! impl_state {
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
-                Ok(PyState(State::critical_point_binary(
-                    &eos.0,
-                    TPSpec::try_from(temperature_or_pressure)?,
-                    initial_temperature.map(|t| t.try_into()).transpose()?,
-                    initial_molefracs,
-                    (max_iter, tol, verbosity).into(),
-                )?))
+                if let Ok(t) = Temperature::<f64>::try_from(temperature_or_pressure) {
+                    Ok(PyState(State::critical_point_binary(
+                        &eos.0,
+                        t,
+                        initial_temperature.map(|t| t.try_into()).transpose()?,
+                        initial_molefracs,
+                        (max_iter, tol, verbosity).into(),
+                    )?))
+                } else if let Ok(p) = Pressure::<f64>::try_from(temperature_or_pressure) {
+                    Ok(PyState(State::critical_point_binary(
+                        &eos.0,
+                        p,
+                        initial_temperature.map(|t| t.try_into()).transpose()?,
+                        initial_molefracs,
+                        (max_iter, tol, verbosity).into(),
+                    )?))
+                } else {
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
+                }
             }
 
             /// Calculate spinodal states for a given temperature and composition.

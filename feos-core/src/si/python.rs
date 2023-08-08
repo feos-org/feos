@@ -1,5 +1,6 @@
 use super::{Pressure, Quantity, SIUnit, Temperature};
-use crate::{EosError, EosResult, TPSpec};
+use crate::state::TPSpec;
+use crate::{EosError, EosResult};
 use ndarray::{Array1, Array2, Array3, Array4};
 use quantity::python::{PySIArray1, PySIArray2, PySIArray3, PySIArray4, PySINumber};
 use quantity::si;
