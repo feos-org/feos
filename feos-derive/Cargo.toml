@@ -1,6 +1,6 @@
 [package]
 name = "feos-derive"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <prehner@ethz.ch>"]
 edition = "2021"
 readme = "README.md"
