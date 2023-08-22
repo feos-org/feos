@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Classical density functional theory" href="../dft/index.html" /><link rel="prev" title="Equations of state" href="index.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
+    <!-- Generated with Sphinx 7.2.2 and Furo 2023.08.19 -->
         <title>Properties - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
@@ -1032,7 +1032,7 @@
         </div>
         <article role="main">
           <section class="tex2jax_ignore mathjax_ignore" id="properties">
-<h1>Properties<a class="headerlink" href="#properties" title="Permalink to this heading">#</a></h1>
+<h1>Properties<a class="headerlink" href="#properties" title="Link to this heading">#</a></h1>
 <p>(Bulk) equilibrium properties can be calculated as derivatives of a thermodynamic potential. In the case of equations of state, this thermodynamic potential is the Helmholtz energy <span class="math notranslate nohighlight">\(A\)</span> as a function of its characteristic variables temperature <span class="math notranslate nohighlight">\(T\)</span>, volume <span class="math notranslate nohighlight">\(V\)</span>, and amount of substance of each component <span class="math notranslate nohighlight">\(n_i\)</span>. Examples for common (measurable) properties that are calculated from an equation of state are the pressure</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1045,7 +1045,7 @@
 </div>
 <p>with the total number of particles <span class="math notranslate nohighlight">\(n=\sum_i n_i\)</span>, the internal energy <span class="math notranslate nohighlight">\(U\)</span>, and the entropy <span class="math notranslate nohighlight">\(S\)</span>.</p>
 <section id="residual-properties">
-<h2>Residual properties<a class="headerlink" href="#residual-properties" title="Permalink to this heading">#</a></h2>
+<h2>Residual properties<a class="headerlink" href="#residual-properties" title="Link to this heading">#</a></h2>
 <p>In most cases, the total value of a property is required because it is the one which can actually be measured. However, for some applications, e.g. phase equilibria or entropy scaling, residual properties are useful. Residual properties are based on the separation of the Helmholtz energy in an ideal gas (<span class="math notranslate nohighlight">\(\mathrm{ig}\)</span>) contribution and a residual (<span class="math notranslate nohighlight">\(\mathrm{res}\)</span>) contribution:</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1054,12 +1054,12 @@
 <p>The ideal gas contribution contains only kinetic and intramolecular energies and can be derived from statistical mechanics as</p>
 <div class="math-wrapper docutils container" id="equation-eqn-a-ig">
 <div class="math notranslate nohighlight" id="equation-eqn-a-ig">
-<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-a-ig" title="Permalink to this equation">#</a></span>\[A^\mathrm{ig}(T,V,n_i)=RT\sum_in_i\left(\ln\left(\frac{n_i\Lambda_i^3}{V}\right)-1\right)\]</div>
+<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-a-ig" title="Link to this equation">#</a></span>\[A^\mathrm{ig}(T,V,n_i)=RT\sum_in_i\left(\ln\left(\frac{n_i\Lambda_i^3}{V}\right)-1\right)\]</div>
 </div>
 <p>with the thermal de Broglie wavelength <span class="math notranslate nohighlight">\(\Lambda_i\)</span> that only depends on the temperature. Residual properties depend on the reference state. The two commonly used reference states are at constant volume or at constant pressure, i.e.,</p>
 <div class="math-wrapper docutils container" id="equation-eqn-a-res">
 <div class="math notranslate nohighlight" id="equation-eqn-a-res">
-<span class="eqno">(2)<a class="headerlink" href="#equation-eqn-a-res" title="Permalink to this equation">#</a></span>\[A=A^\mathrm{ig,V}(T,V,n_i)+A^\mathrm{res,V}(T,V,n_i)=A^\mathrm{ig,p}(T,p,n_i)+A^\mathrm{res,p}(T,p,n_i)\]</div>
+<span class="eqno">(2)<a class="headerlink" href="#equation-eqn-a-res" title="Link to this equation">#</a></span>\[A=A^\mathrm{ig,V}(T,V,n_i)+A^\mathrm{res,V}(T,V,n_i)=A^\mathrm{ig,p}(T,p,n_i)+A^\mathrm{res,p}(T,p,n_i)\]</div>
 </div>
 <p>Because the Helmholtz energy is expressed in <span class="math notranslate nohighlight">\(T\)</span>, <span class="math notranslate nohighlight">\(V\)</span> and <span class="math notranslate nohighlight">\(n_i\)</span>, residual properties at constant volume can be evaluated straightforwardly. If a property <span class="math notranslate nohighlight">\(X\)</span> is calculated from the Helmholtz energy via the differential operator <span class="math notranslate nohighlight">\(\mathcal{D}\)</span>, i.e., <span class="math notranslate nohighlight">\(X=\mathcal{D}\left(A\right)\)</span>, then the residual contributions is calculated from</p>
 <div class="math-wrapper docutils container">
@@ -1090,7 +1090,7 @@
 <p>For details on how the evaluation of properties from Helmholtz energy models is implemented in <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> check out the <a class="reference internal" href="../../rustguide/core/state.html"><span class="std std-doc">Rust guide</span></a>.</p>
 </section>
 <section id="list-of-properties-available-in-text-feo-text-s">
-<h2>List of properties available in <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span><a class="headerlink" href="#list-of-properties-available-in-text-feo-text-s" title="Permalink to this heading">#</a></h2>
+<h2>List of properties available in <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span><a class="headerlink" href="#list-of-properties-available-in-text-feo-text-s" title="Link to this heading">#</a></h2>
 <p>The table below lists all properties that are available in <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span>, their definition, and whether they can be evaluated as residual contributions as well.</p>
 <p>In general, the evaluation of (total) Helmholtz energies and their derivatives requires a model for the residual Helmholtz energy and a model for the ideal gas contribution, specifically for the temperature dependence of the thermal de Broglie wavelength <span class="math notranslate nohighlight">\(\Lambda_i\)</span>. However, for many properties like the pressure including its derivatives and fugacity coefficients, the de Broglie wavelength cancels out.</p>
 <p>Due to different language paradigms, <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> handles the ideal gas term slightly different in Rust and Python.</p>
@@ -1453,9 +1453,9 @@
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=b3ba4146"></script>
+</div><script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../_static/copybutton.js?v=f281be69"></script>

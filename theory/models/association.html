@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="prev" title="Hard spheres" href="hard_spheres.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
+    <!-- Generated with Sphinx 7.2.2 and Furo 2023.08.19 -->
         <title>Association - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
@@ -1032,7 +1032,7 @@
         </div>
         <article role="main">
           <section class="tex2jax_ignore mathjax_ignore" id="association">
-<h1>Association<a class="headerlink" href="#association" title="Permalink to this heading">#</a></h1>
+<h1>Association<a class="headerlink" href="#association" title="Link to this heading">#</a></h1>
 <p>The Helmholtz contribution due to short range attractive interaction (“association”) in SAFT models can be conveniently expressed as</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1041,14 +1041,14 @@
 <p>Here, <span class="math notranslate nohighlight">\(\alpha\)</span> is the index of all distinguishable <strong>association sites</strong> in the system. The site density <span class="math notranslate nohighlight">\(\rho_\alpha\)</span> is the density of the segment or molecule on which the association site is located times the multiplicity of the site. The fraction of non-bonded association sites <span class="math notranslate nohighlight">\(X_\alpha\)</span> is calculated implicitly from</p>
 <div class="math-wrapper docutils container" id="equation-eqn-x-assoc">
 <div class="math notranslate nohighlight" id="equation-eqn-x-assoc">
-<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-x-assoc" title="Permalink to this equation">#</a></span>\[\frac{1}{X_\alpha}=1+\sum_\beta\rho_\beta X_\beta\Delta^{\alpha\beta}\]</div>
+<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-x-assoc" title="Link to this equation">#</a></span>\[\frac{1}{X_\alpha}=1+\sum_\beta\rho_\beta X_\beta\Delta^{\alpha\beta}\]</div>
 </div>
 <p>where <span class="math notranslate nohighlight">\(\Delta^{\alpha\beta}\)</span> is the association strength between sites <span class="math notranslate nohighlight">\(\alpha\)</span> and <span class="math notranslate nohighlight">\(\beta\)</span>. The exact expression for the association strength varies between different SAFT versions. We implement the expressions used in PC-SAFT but a generalization to other models is straightforward.</p>
 <p>The number of degrees of freedom in the association strength matrix <span class="math notranslate nohighlight">\(\Delta\)</span> is vast and for practical purposes it is useful to reduce the number of non-zero elements in <span class="math notranslate nohighlight">\(\Delta\)</span>. In <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> we use 3 kinds of association sites: <span class="math notranslate nohighlight">\(A\)</span>, <span class="math notranslate nohighlight">\(B\)</span> and <span class="math notranslate nohighlight">\(C\)</span>. Association sites of kind <span class="math notranslate nohighlight">\(A\)</span> only associate with <span class="math notranslate nohighlight">\(B\)</span> and vice versa, whereas association sites of kind <span class="math notranslate nohighlight">\(C\)</span> only associate with other sites of kind <span class="math notranslate nohighlight">\(C\)</span>. By sorting the sites by their kind, the entire <span class="math notranslate nohighlight">\(\Delta\)</span> matrix can be reduced to two smaller matrices: <span class="math notranslate nohighlight">\(\Delta^{AB}\)</span> and <span class="math notranslate nohighlight">\(\Delta^{CC}\)</span>.</p>
 <a class="bg-primary reference internal image-reference" href="../../_images/FeOs_Association.png"><img alt="Association strength matrix" class="bg-primary align-center" src="../../_images/FeOs_Association.png" style="width: 300px;" /></a>
 <p>In practice, the <span class="math notranslate nohighlight">\(AB\)</span> association can be linked to hydrogen bonding sites. The <span class="math notranslate nohighlight">\(CC\)</span> association is less widely used but implemented to ensure that all the association schemes defined in <a class="reference external" href="https://pubs.acs.org/doi/10.1021/ie00107a014">Huang and Radosz 1990</a> are covered.</p>
 <section id="calculation-of-the-fraction-of-non-bonded-association-sites">
-<h2>Calculation of the fraction of non-bonded association sites<a class="headerlink" href="#calculation-of-the-fraction-of-non-bonded-association-sites" title="Permalink to this heading">#</a></h2>
+<h2>Calculation of the fraction of non-bonded association sites<a class="headerlink" href="#calculation-of-the-fraction-of-non-bonded-association-sites" title="Link to this heading">#</a></h2>
 <p>The algorithm to solve the fraction of non-bonded sites for general association schemes follows <a class="reference external" href="https://pubs.acs.org/doi/full/10.1021/ie060029x">Michelsen 2006</a>. The problem is rewritten as an optimization problem with gradients</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1082,7 +1082,7 @@
 </div>
 </section>
 <section id="pc-saft-expression-for-the-association-strength">
-<h2>PC-SAFT expression for the association strength<a class="headerlink" href="#pc-saft-expression-for-the-association-strength" title="Permalink to this heading">#</a></h2>
+<h2>PC-SAFT expression for the association strength<a class="headerlink" href="#pc-saft-expression-for-the-association-strength" title="Link to this heading">#</a></h2>
 <p>In <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> every association site <span class="math notranslate nohighlight">\(\alpha\)</span> is parametrized with the dimensionless association volume <span class="math notranslate nohighlight">\(\kappa^\alpha\)</span> and the association energy <span class="math notranslate nohighlight">\(\varepsilon^\alpha\)</span>. The association strength between sites <span class="math notranslate nohighlight">\(\alpha\)</span> and <span class="math notranslate nohighlight">\(\beta\)</span> is then calculated from</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1102,7 +1102,7 @@
 <p>On their own the parameters <span class="math notranslate nohighlight">\(\kappa^\alpha\)</span> and <span class="math notranslate nohighlight">\(\varepsilon^\beta\)</span> have no physical meaning. For a pure system of self-associating molecules it is therefore natural to define <span class="math notranslate nohighlight">\(\kappa^A=\kappa^B\equiv\kappa^{A_iB_i}\)</span> and <span class="math notranslate nohighlight">\(\varepsilon^A=\varepsilon^B\equiv\varepsilon^{A_iB_i}\)</span> where <span class="math notranslate nohighlight">\(\kappa^{A_iB_i}\)</span> and <span class="math notranslate nohighlight">\(\varepsilon^{A_iB_i}\)</span> are now parameters describing the molecule rather than individual association sites. However, for systems that are not self-associating, the more generic parametrization is required.</p>
 </section>
 <section id="helmholtz-energy-functional">
-<h2>Helmholtz energy functional<a class="headerlink" href="#helmholtz-energy-functional" title="Permalink to this heading">#</a></h2>
+<h2>Helmholtz energy functional<a class="headerlink" href="#helmholtz-energy-functional" title="Link to this heading">#</a></h2>
 <p>The Helmholtz energy contribution proposed by <a class="reference external" href="https://aip.scitation.org/doi/abs/10.1063/1.1463435">Yu and Wu 2002</a> is used to model association in inhomogeneous systems. It uses the same weighted densities that are used in <a class="reference internal" href="hard_spheres.html"><span class="doc std std-doc">Fundamental Measure Theory</span></a> (the White-Bear version). The Helmholtz energy density is then calculated from</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1188,9 +1188,9 @@
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=b3ba4146"></script>
+</div><script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../_static/copybutton.js?v=f281be69"></script>

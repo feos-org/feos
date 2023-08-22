@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="../../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><link rel="next" title="Python" href="../python/index.html" /><link rel="prev" title="Pure substance phase diagrams" href="pcsaft_phase_diagram.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
+    <!-- Generated with Sphinx 7.2.2 and Furo 2023.08.19 -->
         <title>Entropy scaling of pure substances - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=135e06be" />
@@ -1033,9 +1033,9 @@
         </div>
         <article role="main">
           <section id="Entropy-scaling-of-pure-substances">
-<h1>Entropy scaling of pure substances<a class="headerlink" href="#Entropy-scaling-of-pure-substances" title="Permalink to this heading">#</a></h1>
+<h1>Entropy scaling of pure substances<a class="headerlink" href="#Entropy-scaling-of-pure-substances" title="Link to this heading">#</a></h1>
 <section id="Goal">
-<h2>Goal<a class="headerlink" href="#Goal" title="Permalink to this heading">#</a></h2>
+<h2>Goal<a class="headerlink" href="#Goal" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p>Learn how to compute dynamic properties (viscosity in this example)</p></li>
 <li><p>Compare substance specific parameters against homo-segmented group contribution</p></li>
@@ -1043,7 +1043,7 @@
 </ul>
 </section>
 <section id="Import-needed-packages">
-<h2>Import needed packages<a class="headerlink" href="#Import-needed-packages" title="Permalink to this heading">#</a></h2>
+<h2>Import needed packages<a class="headerlink" href="#Import-needed-packages" title="Link to this heading">#</a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -1064,7 +1064,7 @@
 </div>
 </section>
 <section id="PC-SAFT-(individual-component-parameters)">
-<h2>PC-SAFT (individual component parameters)<a class="headerlink" href="#PC-SAFT-(individual-component-parameters)" title="Permalink to this heading">#</a></h2>
+<h2>PC-SAFT (individual component parameters)<a class="headerlink" href="#PC-SAFT-(individual-component-parameters)" title="Link to this heading">#</a></h2>
 <p>First, we read parameters adjusted to hexane saturation pressure and liquid densities (for the regular SAFT parameters) and to viscosity (for correlation).</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -1118,7 +1118,7 @@
 </div>
 </section>
 <section id="PC-SAFT-homo-GC">
-<h2>PC-SAFT homo-GC<a class="headerlink" href="#PC-SAFT-homo-GC" title="Permalink to this heading">#</a></h2>
+<h2>PC-SAFT homo-GC<a class="headerlink" href="#PC-SAFT-homo-GC" title="Link to this heading">#</a></h2>
 <p>For transparency, we build parameters by hand. You can read a detailed explanation about PC-SAFT parameters in the “working with parameters” tutorial.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -1187,7 +1187,7 @@
 </div>
 </div>
 <section id="Build-equations-of-state">
-<h3>Build equations of state<a class="headerlink" href="#Build-equations-of-state" title="Permalink to this heading">#</a></h3>
+<h3>Build equations of state<a class="headerlink" href="#Build-equations-of-state" title="Link to this heading">#</a></h3>
 <p>We instantiate an equation of state for each parameter set. <code class="docutils literal notranslate"><span class="pre">saft</span></code> uses substance specific parameters while <code class="docutils literal notranslate"><span class="pre">saft_gc</span></code> uses homo GC parameters both for SAFT as well as correlation parameters.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -1204,7 +1204,7 @@
 </div>
 </section>
 <section id="Compare-parameters">
-<h3>Compare parameters<a class="headerlink" href="#Compare-parameters" title="Permalink to this heading">#</a></h3>
+<h3>Compare parameters<a class="headerlink" href="#Compare-parameters" title="Link to this heading">#</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
@@ -1226,7 +1226,7 @@ Segments          :  [-1.2034921145837285, -2.536713016411593, -0.415346, -0.074
 </section>
 </section>
 <section id="Compare-methods-to-NIST-data-(T-=-450-K)">
-<h2>Compare methods to NIST data (T = 450 K)<a class="headerlink" href="#Compare-methods-to-NIST-data-(T-=-450-K)" title="Permalink to this heading">#</a></h2>
+<h2>Compare methods to NIST data (T = 450 K)<a class="headerlink" href="#Compare-methods-to-NIST-data-(T-=-450-K)" title="Link to this heading">#</a></h2>
 <p>We will compute the residual entropy, viscosity and logarithmic reduced viscosity and compare to literature data (for which the entropy is computed with parameters fitted to the component, not GC).</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -1634,9 +1634,9 @@ MARD (homo-GC)   : 3.70 %
       
     </aside>
   </div>
-</div><script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=b3ba4146"></script>
+</div><script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/scripts/furo.js?v=32e29ea5"></script>
     <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../../_static/copybutton.js?v=f281be69"></script>

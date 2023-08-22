@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Enthalpy of adsorption and the Clausius-Clapeyron relation" href="enthalpy_of_adsorption.html" /><link rel="prev" title="DFT solvers" href="solver.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
+    <!-- Generated with Sphinx 7.2.2 and Furo 2023.08.19 -->
         <title>Derivatives of density profiles - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
@@ -1032,12 +1032,12 @@
         </div>
         <article role="main">
           <section class="tex2jax_ignore mathjax_ignore" id="derivatives-of-density-profiles">
-<h1>Derivatives of density profiles<a class="headerlink" href="#derivatives-of-density-profiles" title="Permalink to this heading">#</a></h1>
+<h1>Derivatives of density profiles<a class="headerlink" href="#derivatives-of-density-profiles" title="Link to this heading">#</a></h1>
 <p>For converged density properties equilibrium properties can be calculated as partial derivatives of thermodynamic potentials analogous to classical (bulk) thermodynamics. The difference is that the derivatives have to be along a path of valid density profiles (solutions of the <a class="reference internal" href="euler_lagrange_equation.html"><span class="std std-doc">Euler-Lagrange equation</span></a>).</p>
 <p>The density profiles are calculated implicitly from the Euler-Lagrange equation, which can be written simplified as</p>
 <div class="math-wrapper docutils container" id="equation-eqn-euler-lagrange">
 <div class="math notranslate nohighlight" id="equation-eqn-euler-lagrange">
-<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-euler-lagrange" title="Permalink to this equation">#</a></span>\[\Omega_{\rho_i}(T,\lbrace\mu_k\rbrace,[\lbrace\rho_k(\mathbf{r})\rbrace])=F_{\rho_i}(T,[\lbrace\rho_k(\mathbf{r})\rbrace])-\mu_i+V_i^\mathrm{ext}(\mathbf{r})=0\]</div>
+<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-euler-lagrange" title="Link to this equation">#</a></span>\[\Omega_{\rho_i}(T,\lbrace\mu_k\rbrace,[\lbrace\rho_k(\mathbf{r})\rbrace])=F_{\rho_i}(T,[\lbrace\rho_k(\mathbf{r})\rbrace])-\mu_i+V_i^\mathrm{ext}(\mathbf{r})=0\]</div>
 </div>
 <p>Incorporating bond integrals can be done similar to the section on the <a class="reference internal" href="solver.html"><span class="std std-doc">Newton solver</span></a> but will not be discussed in this section. The derivatives of the density profiles can then be calculated from the total differential of eq. <a class="reference internal" href="#equation-eqn-euler-lagrange">(1)</a>, leading to</p>
 <div class="math-wrapper docutils container">
@@ -1047,7 +1047,7 @@
 <p>Using eq. <a class="reference internal" href="#equation-eqn-euler-lagrange">(1)</a> and the shortened notation for derivatives of functionals in their natural variables, e.g., <span class="math notranslate nohighlight">\(F_T=\left(\frac{\partial F}{\partial T}\right)_{\rho_k}\)</span>, the expression can be simplified to</p>
 <div class="math-wrapper docutils container" id="equation-eqn-gibbs-duhem">
 <div class="math notranslate nohighlight" id="equation-eqn-gibbs-duhem">
-<span class="eqno">(2)<a class="headerlink" href="#equation-eqn-gibbs-duhem" title="Permalink to this equation">#</a></span>\[F_{T\rho_i}(\mathbf{r})\mathrm{d}T-\mathrm{d}\mu_i+\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=0\]</div>
+<span class="eqno">(2)<a class="headerlink" href="#equation-eqn-gibbs-duhem" title="Link to this equation">#</a></span>\[F_{T\rho_i}(\mathbf{r})\mathrm{d}T-\mathrm{d}\mu_i+\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=0\]</div>
 </div>
 <p>Similar to the Gibbs-Duhem relation for bulk phases, eq. <a class="reference internal" href="#equation-eqn-gibbs-duhem">(2)</a> shows how temperature, chemical potentials and the density profiles in an inhomogeneous system cannot be varied independently. The derivatives of the density profiles with respect to the intensive variables can be directly identified as</p>
 <div class="math-wrapper docutils container">
@@ -1057,7 +1057,7 @@
 <p>and</p>
 <div class="math-wrapper docutils container" id="equation-eqn-drho-dmu">
 <div class="math notranslate nohighlight" id="equation-eqn-drho-dmu">
-<span class="eqno">(3)<a class="headerlink" href="#equation-eqn-drho-dmu" title="Permalink to this equation">#</a></span>\[\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial\mu_k}\right)_{T}\mathrm{d}\mathbf{r}'=\delta_{ik}\]</div>
+<span class="eqno">(3)<a class="headerlink" href="#equation-eqn-drho-dmu" title="Link to this equation">#</a></span>\[\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial\mu_k}\right)_{T}\mathrm{d}\mathbf{r}'=\delta_{ik}\]</div>
 </div>
 <p>Both of these expressions are implicit (linear) equations for the derivatives. They can be solved rapidly analogously to the implicit expression appearing in the <a class="reference internal" href="solver.html"><span class="std std-doc">Newton solver</span></a>. In practice, it is useful to explicitly cancel out the (often unknown) thermal de Broglie wavelength <span class="math notranslate nohighlight">\(\Lambda_i\)</span> from the expression where it has no influence. This is done by splitting the intrinsic Helmholtz energy into an ideal gas and a residual part.</p>
 <div class="math-wrapper docutils container">
@@ -1187,9 +1187,9 @@
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=b3ba4146"></script>
+</div><script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../_static/copybutton.js?v=f281be69"></script>

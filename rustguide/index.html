@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="feos-core" href="core/index.html" /><link rel="prev" title="feos.saftvrqmie.SaftVRQMieParameters.new_pure" href="../api/generated/feos.saftvrqmie.SaftVRQMieParameters.new_pure.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
+    <!-- Generated with Sphinx 7.2.2 and Furo 2023.08.19 -->
         <title>Guide - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
@@ -1032,17 +1032,17 @@
         </div>
         <article role="main">
           <section class="tex2jax_ignore mathjax_ignore" id="guide">
-<h1>Guide<a class="headerlink" href="#guide" title="Permalink to this heading">#</a></h1>
+<h1>Guide<a class="headerlink" href="#guide" title="Link to this heading">#</a></h1>
 <p>Welcome to the <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> Rust guide.
 On the following pages we discuss the structure of the <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> project and how to use, compile and extend it.</p>
 <section id="introduction">
-<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">#</a></h2>
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h2>
 <p><span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> is primarily developed on Linux but it is tested and runs on Linux, macOS and Windows.
 You need a <a class="reference external" href="https://www.rust-lang.org/tools/install">Rust compiler</a> to compile the code.
 For development, <a class="reference external" href="https://code.visualstudio.com/">Visual Studio Code</a> with the <a class="reference external" href="https://rust-analyzer.github.io/">rust-analyzer</a> plugin works pretty well, but you should use what you are comfortable in.</p>
 </section>
 <section id="prerequisites">
-<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading">#</a></h2>
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h2>
 <p>If you are unfamiliar with Rust a good place to start is the <a class="reference external" href="https://doc.rust-lang.org/book/">Rust Programming Language Book</a>.
 To start following our guide, you should understand the following topics:</p>
 <ul class="simple">
@@ -1061,7 +1061,7 @@ Eventually you’ll need to learn and understand</p>
 </ul>
 </section>
 <section id="project-structure">
-<h2>Project Structure<a class="headerlink" href="#project-structure" title="Permalink to this heading">#</a></h2>
+<h2>Project Structure<a class="headerlink" href="#project-structure" title="Link to this heading">#</a></h2>
 <p>Some common functionalities of <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> are contained in separate workspace crates so that they can be used as standalone dependencies outside of <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span>.
 The most important ones are</p>
 <ul class="simple">
@@ -1081,7 +1081,7 @@ Using <code class="docutils literal notranslate"><span class="pre">core</span></
 <p>Due to the particular treatment of procedural macros in Rust, an additional workspace crate <code class="docutils literal notranslate"><span class="pre">feos-derive</span></code> provides procedural macros for the implementation of the <code class="docutils literal notranslate"><span class="pre">EquationOfState</span></code> and <code class="docutils literal notranslate"><span class="pre">HelmholtzEnergyFunctional</span></code> traits for <code class="docutils literal notranslate"><span class="pre">enum</span></code>s used in FFIs like <code class="docutils literal notranslate"><span class="pre">PyO3</span></code>.</p>
 </section>
 <section id="where-to-get-help">
-<h2>Where to Get Help<a class="headerlink" href="#where-to-get-help" title="Permalink to this heading">#</a></h2>
+<h2>Where to Get Help<a class="headerlink" href="#where-to-get-help" title="Link to this heading">#</a></h2>
 <p><span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> is openly developed on <a class="reference external" href="https://github.com/feos-org">github</a>. Each crate has it’s own github repository where you can use the <em>discussion</em> feature or file an <em>issue</em>.</p>
 <div class="toctree-wrapper compound">
 </div>
@@ -1159,9 +1159,9 @@ Using <code class="docutils literal notranslate"><span class="pre">core</span></
       
     </aside>
   </div>
-</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=b3ba4146"></script>
+</div><script src="../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../_static/copybutton.js?v=f281be69"></script>

@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="On Dual Numbers in FeOs" href="core_dual_numbers.html" /><link rel="prev" title="Utility" href="index.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
+    <!-- Generated with Sphinx 7.2.2 and Furo 2023.08.19 -->
         <title>Working with SI-units - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
@@ -1033,15 +1033,15 @@
         </div>
         <article role="main">
           <section id="Working-with-SI-units">
-<h1>Working with SI-units<a class="headerlink" href="#Working-with-SI-units" title="Permalink to this heading">#</a></h1>
+<h1>Working with SI-units<a class="headerlink" href="#Working-with-SI-units" title="Link to this heading">#</a></h1>
 <section id="Goal">
-<h2>Goal<a class="headerlink" href="#Goal" title="Permalink to this heading">#</a></h2>
+<h2>Goal<a class="headerlink" href="#Goal" title="Link to this heading">#</a></h2>
 <blockquote>
 <div><p>Learn how to work with <code class="docutils literal notranslate"><span class="pre">SINumber</span></code> and <code class="docutils literal notranslate"><span class="pre">SIArray</span></code> objects which represent physical quantities, i.e. one or more floating point numbers with an associated unit.</p>
 </div></blockquote>
 </section>
 <section id="The-feos.si-module">
-<h2>The <code class="docutils literal notranslate"><span class="pre">feos.si</span></code> module<a class="headerlink" href="#The-feos.si-module" title="Permalink to this heading">#</a></h2>
+<h2>The <code class="docutils literal notranslate"><span class="pre">feos.si</span></code> module<a class="headerlink" href="#The-feos.si-module" title="Link to this heading">#</a></h2>
 <p>Most interfaces in <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> use dimensioned quantities as input. For example, to define a thermodynamic state at given temperature, pressure and amount of substance, all of these properties have to be multiplied by an apropriate unit before we can call the function that creates the state.</p>
 <p><code class="docutils literal notranslate"><span class="pre">FeOs</span></code> uses the <a class="reference external" href="https://itt-ustutt.github.io/quantity/">quantity</a> crate which generates the <code class="docutils literal notranslate"><span class="pre">si_units</span></code> Python module. You might find this module useful on it’s own in which case you can also install it as a separate python package. For convenient use with <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> however, it is re-exported as <code class="docutils literal notranslate"><span class="pre">feos.si</span></code>.</p>
 <div class="nbinput nblast docutils container">
@@ -1135,7 +1135,7 @@ data type = &lt;class &#39;float&#39;&gt;
 </pre></div></div>
 </div>
 <section id="Mathematical-operations-and-interaction-with-numpy">
-<h3>Mathematical operations and interaction with <code class="docutils literal notranslate"><span class="pre">numpy</span></code><a class="headerlink" href="#Mathematical-operations-and-interaction-with-numpy" title="Permalink to this heading">#</a></h3>
+<h3>Mathematical operations and interaction with <code class="docutils literal notranslate"><span class="pre">numpy</span></code><a class="headerlink" href="#Mathematical-operations-and-interaction-with-numpy" title="Link to this heading">#</a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">SINumber</span></code> object supports some mathematical operations, i.e. we can</p>
 <ul class="simple">
 <li><p>add or subtract two objects, <strong>if they have the same unit</strong>,</p></li>
@@ -1286,7 +1286,7 @@ ERROR: Please provide the molar density, e.g. in units of mol/m³.
 </div>
 </section>
 <section id="Arrays-of-quantities">
-<h3>Arrays of quantities<a class="headerlink" href="#Arrays-of-quantities" title="Permalink to this heading">#</a></h3>
+<h3>Arrays of quantities<a class="headerlink" href="#Arrays-of-quantities" title="Link to this heading">#</a></h3>
 <p>A <strong>numpy array</strong> of floating point numbers multiplied or divided by a unit has the <code class="docutils literal notranslate"><span class="pre">SIArrayX</span></code> data type, where the <code class="docutils literal notranslate"><span class="pre">X</span></code> stands for the dimension of the numpy array.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
@@ -1418,7 +1418,7 @@ Array &#34;[1] mol&#34; contains 1 elements.
 </section>
 </section>
 <section id="Derived-units,-constants-and-prefixes">
-<h2>Derived units, constants and prefixes<a class="headerlink" href="#Derived-units,-constants-and-prefixes" title="Permalink to this heading">#</a></h2>
+<h2>Derived units, constants and prefixes<a class="headerlink" href="#Derived-units,-constants-and-prefixes" title="Link to this heading">#</a></h2>
 <p>In conjunction to the base units, the <code class="docutils literal notranslate"><span class="pre">si</span></code> module also exports derived units (e.g. <code class="docutils literal notranslate"><span class="pre">HOUR</span> <span class="pre">=</span> <span class="pre">3600</span> <span class="pre">*</span> <span class="pre">SECOND</span></code>), constants and prefixes (such as <code class="docutils literal notranslate"><span class="pre">KILO</span></code> or <code class="docutils literal notranslate"><span class="pre">FEMTO</span></code>). Of course, we could multiply by a floating point number instead of using prefixes (e.g. <code class="docutils literal notranslate"><span class="pre">cm</span> <span class="pre">=</span> <span class="pre">1e-2</span> <span class="pre">*</span> <span class="pre">METER</span></code> vs. <code class="docutils literal notranslate"><span class="pre">cm</span> <span class="pre">=</span> <span class="pre">CENTI</span> <span class="pre">*</span> <span class="pre">METER</span></code>) but we think using prefixes make the code more readable.</p>
 <p>For a complete overview of exported units constants and prefixes, take a look at the <cite>documentation of the ``si_units`</cite> Python package &lt;<a class="reference external" href="https://itt-ustutt.github.io/quantity/api.html#si-base-units-and-associated-constants">https://itt-ustutt.github.io/quantity/api.html#si-base-units-and-associated-constants</a>&gt;`__.</p>
 <div class="nbinput docutils container">
@@ -1471,12 +1471,12 @@ Ideal gas constant    : 8.31446261815324  J/mol/K
 </div>
 </section>
 <section id="Summary">
-<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this heading">#</a></h2>
+<h2>Summary<a class="headerlink" href="#Summary" title="Link to this heading">#</a></h2>
 <p>In <code class="docutils literal notranslate"><span class="pre">feos</span></code>, most interfaces use dimensioned units in form of <code class="docutils literal notranslate"><span class="pre">SINumber</span></code> and <code class="docutils literal notranslate"><span class="pre">SIArrayX</span></code> (where <code class="docutils literal notranslate"><span class="pre">X</span></code> stands for the dimnesion). This enables us to write functions that can check for proper units and thus circumvent unit errors that could occur, e.g. providing mass densities instead of molar densities.</p>
 <p>In this example, we learned how to create and use these objects in conjunction with methods provided by <code class="docutils literal notranslate"><span class="pre">numpy</span></code>.</p>
 </section>
 <section id="Concluding-remkars">
-<h2>Concluding remkars<a class="headerlink" href="#Concluding-remkars" title="Permalink to this heading">#</a></h2>
+<h2>Concluding remkars<a class="headerlink" href="#Concluding-remkars" title="Link to this heading">#</a></h2>
 <p>Hopefully you found this example helpful. If you have comments, critique or feedback, please let us know and consider <a class="reference external" href="https://github.com/feos-org/feos/issues">opening an issue on github</a>.</p>
 </section>
 </section>
@@ -1557,9 +1557,9 @@ Ideal gas constant    : 8.31446261815324  J/mol/K
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=b3ba4146"></script>
+</div><script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../_static/copybutton.js?v=f281be69"></script>

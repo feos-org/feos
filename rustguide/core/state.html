@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="API" href="../../rust_api.html" /><link rel="prev" title="The EquationOfState Trait" href="equation_of_state.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
+    <!-- Generated with Sphinx 7.2.2 and Furo 2023.08.19 -->
         <title>Thermodynamic States - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
@@ -1032,7 +1032,7 @@
         </div>
         <article role="main">
           <section id="thermodynamic-states">
-<h1>Thermodynamic States<a class="headerlink" href="#thermodynamic-states" title="Permalink to this heading">#</a></h1>
+<h1>Thermodynamic States<a class="headerlink" href="#thermodynamic-states" title="Link to this heading">#</a></h1>
 <p>One of the most important data type of <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> is the <code class="docutils literal notranslate"><span class="pre">State</span></code> struct.</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/mod.rs</span>
 
@@ -1077,7 +1077,7 @@ A <code class="docutils literal notranslate"><span class="pre">State</span></cod
 <p><code class="docutils literal notranslate"><span class="pre">State</span></code> is the object users interact with the most.
 In what follows we will take a closer look at the specific procedures to compute a property for a given <code class="docutils literal notranslate"><span class="pre">State</span></code>.</p>
 <section id="the-natural-variables-of-state">
-<h2>The natural variables of <code class="docutils literal notranslate"><span class="pre">State</span></code><a class="headerlink" href="#the-natural-variables-of-state" title="Permalink to this heading">#</a></h2>
+<h2>The natural variables of <code class="docutils literal notranslate"><span class="pre">State</span></code><a class="headerlink" href="#the-natural-variables-of-state" title="Link to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">FeOs</span></code> is build around equations of state that are formulated in terms of <strong>residual Helmholtz energies</strong>.
 We harness the fact that all thermodynamic properties of a system can be computed from (partial) derivatives of the Helmholtz energy.
 As a consequence, we store the natural variables of the Helmholtz energy, <span class="math notranslate nohighlight">\((\mathbf{N}, V, T)\)</span>, in our <code class="docutils literal notranslate"><span class="pre">State</span></code> object together with some other variables for convenience, such as the density or the mole fractions.</p>
@@ -1085,9 +1085,9 @@ As a consequence, we store the natural variables of the Helmholtz energy, <span 
 Using other constructors, e.g. for given pressure, entropy or enthalpy, is more expensive since we have to perform an iteration of volume (density) and/or temperature.</p>
 </section>
 <section id="computing-thermodynamic-properties">
-<h2>Computing Thermodynamic Properties<a class="headerlink" href="#computing-thermodynamic-properties" title="Permalink to this heading">#</a></h2>
+<h2>Computing Thermodynamic Properties<a class="headerlink" href="#computing-thermodynamic-properties" title="Link to this heading">#</a></h2>
 <section id="generalized-hyper-dual-numbers">
-<h3>Generalized (Hyper-) Dual Numbers<a class="headerlink" href="#generalized-hyper-dual-numbers" title="Permalink to this heading">#</a></h3>
+<h3>Generalized (Hyper-) Dual Numbers<a class="headerlink" href="#generalized-hyper-dual-numbers" title="Link to this heading">#</a></h3>
 <p>As mentioned above, thermodynamic properties can readily be computed via (partial) derivatives once the Helmholtz energy function is known.
 In our code, these derivatives are <strong>not implemented analytically</strong>, instead we use <strong>generalized dual numbers</strong> (in what follows only referred to as dual numbers).</p>
 <p>Dual numbers, by construction, enable the simultaneous evaluation of a function and its partial derivatives.
@@ -1108,7 +1108,7 @@ This is a minor inconvenience though and something you’ll get quickly used to.
 </ul>
 </section>
 <section id="the-statehd-struct">
-<h3>The <code class="docutils literal notranslate"><span class="pre">StateHD</span></code> Struct<a class="headerlink" href="#the-statehd-struct" title="Permalink to this heading">#</a></h3>
+<h3>The <code class="docutils literal notranslate"><span class="pre">StateHD</span></code> Struct<a class="headerlink" href="#the-statehd-struct" title="Link to this heading">#</a></h3>
 <p>So, how can we compute a property for a given <code class="docutils literal notranslate"><span class="pre">State</span></code> using dual numbers?
 Let’s run through a small example.
 Note thought, that the way properties are actually calculated is a bit more involved - we will talk about that in more detail below.</p>
@@ -1167,7 +1167,7 @@ Next, we have to modify the non-real part of the temperature dual number since w
 There are methods that produce the correct dual number types and set the correct non-real parts according to the partial derivative you want to compute.</p>
 </section>
 <section id="helmholtz-energy-contributions">
-<h3>Helmholtz Energy Contributions<a class="headerlink" href="#helmholtz-energy-contributions" title="Permalink to this heading">#</a></h3>
+<h3>Helmholtz Energy Contributions<a class="headerlink" href="#helmholtz-energy-contributions" title="Link to this heading">#</a></h3>
 <p>The above example is a bit simplified and in our real code we have to do some additional legwork, mainly concerning the <em>contributions</em> to the Helmholtz energy that are computed.</p>
 <p>We differentiate between the following contributions to a property:</p>
 <ul class="simple">
@@ -1180,7 +1180,7 @@ There are methods that produce the correct dual number types and set the correct
 Furthermore, computation of a property (for given contributions) is different for additive and non-additive properties, so we have to take this into account as well.</p>
 </section>
 <section id="entropy-again">
-<h3>Entropy, again!<a class="headerlink" href="#entropy-again" title="Permalink to this heading">#</a></h3>
+<h3>Entropy, again!<a class="headerlink" href="#entropy-again" title="Link to this heading">#</a></h3>
 <p>Let’s look at the actual implementation of the entropy, the <code class="docutils literal notranslate"><span class="pre">entropy</span></code> method of <code class="docutils literal notranslate"><span class="pre">State</span></code>.
 There are multiple layers we have to dig through, but hopefully everything makes sense to you in the end.
 You can think of each layer as an answer to a question:</p>
@@ -1282,7 +1282,7 @@ Why is that?
 </section>
 </section>
 <section id="how-to-add-a-new-property">
-<h2>How to Add a New Property<a class="headerlink" href="#how-to-add-a-new-property" title="Permalink to this heading">#</a></h2>
+<h2>How to Add a New Property<a class="headerlink" href="#how-to-add-a-new-property" title="Link to this heading">#</a></h2>
 <p>Now that we discussed how properties are computed, let’s talk about the two possible ways to add new properties to a state.
 The first and easiest way is to use a combination of existing properties.
 As example, consider the Joule Thomson coefficient, defined as</p>
@@ -1314,7 +1314,7 @@ Note that all properties here are dimensioned quantities and so is the result.</
 </pre></div>
 </div>
 <section id="array-valued-properties">
-<h3>Array Valued Properties<a class="headerlink" href="#array-valued-properties" title="Permalink to this heading">#</a></h3>
+<h3>Array Valued Properties<a class="headerlink" href="#array-valued-properties" title="Link to this heading">#</a></h3>
 <p>Note that the return types for all given examples were scalar dimensioned values (<code class="docutils literal notranslate"><span class="pre">QuantityScalar</span></code>).
 For partial derivatives w.r.t. the amount of substance of a species, you need an array as return type.
 For example, take a look at the chemical potential:</p>
@@ -1349,7 +1349,7 @@ This is not limited to one-dimensional arrays, of course, as can be seen in the 
 </section>
 </section>
 <section id="summary">
-<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this heading">#</a></h2>
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">State</span></code> stores state variables as dimensioned quantities.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">StateHD</span></code> stores state variables as generalized dual numbers.</p></li>
@@ -1440,9 +1440,9 @@ This is not limited to one-dimensional arrays, of course, as can be seen in the 
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=b3ba4146"></script>
+</div><script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../_static/copybutton.js?v=f281be69"></script>

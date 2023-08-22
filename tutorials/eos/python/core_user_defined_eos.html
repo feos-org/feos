@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="../../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><link rel="next" title="Density functional theory" href="../../dft/index.html" /><link rel="prev" title="Python" href="index.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
+    <!-- Generated with Sphinx 7.2.2 and Furo 2023.08.19 -->
         <title>Implementing an equation of state in python - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=135e06be" />
@@ -1033,12 +1033,12 @@
         </div>
         <article role="main">
           <section id="Implementing-an-equation-of-state-in-python">
-<h1>Implementing an equation of state in python<a class="headerlink" href="#Implementing-an-equation-of-state-in-python" title="Permalink to this heading">#</a></h1>
+<h1>Implementing an equation of state in python<a class="headerlink" href="#Implementing-an-equation-of-state-in-python" title="Link to this heading">#</a></h1>
 <blockquote>
 <div><p>In <code class="docutils literal notranslate"><span class="pre">FeOs</span></code>, you can implement your equation of state in python, register it to the Rust backend, and compute properties and phase equilbria as if you implemented it in Rust. In this tutorial, we will implement the Peng-Robinson equation of state.</p>
 </div></blockquote>
 <section id="Table-of-contents">
-<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Permalink to this heading">#</a></h2>
+<h2>Table of contents<a class="headerlink" href="#Table-of-contents" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="#Implementation"><span class="std std-ref">Implementation</span></a></p></li>
 <li><p><a class="reference internal" href="#Computing-properties"><span class="std std-ref">Computing properties</span></a></p></li>
@@ -1073,7 +1073,7 @@
 </div>
 </section>
 <section id="Implementation">
-<h2>Implementation<a class="headerlink" href="#Implementation" title="Permalink to this heading">#</a></h2>
+<h2>Implementation<a class="headerlink" href="#Implementation" title="Link to this heading">#</a></h2>
 <p>↑ Back to top</p>
 <p>To implement an equation of state in python, we have to define a <code class="docutils literal notranslate"><span class="pre">class</span></code> which has to have the following methods:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyEquationOfState</span><span class="p">:</span>
@@ -1212,7 +1212,7 @@
 </div>
 </section>
 <section id="Computing-properties">
-<h2>Computing properties<a class="headerlink" href="#Computing-properties" title="Permalink to this heading">#</a></h2>
+<h2>Computing properties<a class="headerlink" href="#Computing-properties" title="Link to this heading">#</a></h2>
 <p>↑ Back to top</p>
 <p>Let’s compute some properties. First, we have to instanciate the class and register it to Rust. This is done using the <code class="docutils literal notranslate"><span class="pre">EquationOfState.python</span></code> method.</p>
 <div class="nbinput nblast docutils container">
@@ -1231,7 +1231,7 @@
 </div>
 </div>
 <section id="Thermodynamic-state:-the-State-object">
-<h3>Thermodynamic state: the <code class="docutils literal notranslate"><span class="pre">State</span></code> object<a class="headerlink" href="#Thermodynamic-state:-the-State-object" title="Permalink to this heading">#</a></h3>
+<h3>Thermodynamic state: the <code class="docutils literal notranslate"><span class="pre">State</span></code> object<a class="headerlink" href="#Thermodynamic-state:-the-State-object" title="Link to this heading">#</a></h3>
 <p>Before we can compute a property, we create a <code class="docutils literal notranslate"><span class="pre">State</span></code> object. This can be done in several ways depending on what control variables we need. If no total amount of substance is defined, it is set to <span class="math notranslate nohighlight">\(n = \frac{1}{N_{AV}}\)</span>. For possible input combinations, you can inspect the signature of the constructor using <code class="docutils literal notranslate"><span class="pre">State?</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
@@ -1391,7 +1391,7 @@ temperature:  1.5158245029548805e-15
 </section>
 </section>
 <section id="Critical-point">
-<h2>Critical point<a class="headerlink" href="#Critical-point" title="Permalink to this heading">#</a></h2>
+<h2>Critical point<a class="headerlink" href="#Critical-point" title="Link to this heading">#</a></h2>
 <p>↑ Back to top</p>
 <p>To generate a state at critical conditions, we can use the <code class="docutils literal notranslate"><span class="pre">critical_point</span></code> constructor.</p>
 <div class="nbinput docutils container">
@@ -1419,7 +1419,7 @@ pressure   :  4.249677749116942 MPa
 </div>
 </section>
 <section id="Phase-equilibria-and-phase-diagrams">
-<h2>Phase equilibria and phase diagrams<a class="headerlink" href="#Phase-equilibria-and-phase-diagrams" title="Permalink to this heading">#</a></h2>
+<h2>Phase equilibria and phase diagrams<a class="headerlink" href="#Phase-equilibria-and-phase-diagrams" title="Link to this heading">#</a></h2>
 <p>↑ Back to top</p>
 <p>We can also create an object, <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code>, that contains states that are in equilibrium.</p>
 <div class="nbinput docutils container">
@@ -1560,7 +1560,7 @@ boiling temperature (p = 3 bar): 247.84035574956746 K
 </pre></div></div>
 </div>
 <section id="Phase-Diagram">
-<h3>Phase Diagram<a class="headerlink" href="#Phase-Diagram" title="Permalink to this heading">#</a></h3>
+<h3>Phase Diagram<a class="headerlink" href="#Phase-Diagram" title="Link to this heading">#</a></h3>
 <p>We could repeatedly compute <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> states for different temperatures / pressures to generate a phase diagram. Because this a common task, there is a object for that as well.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">PhaseDiagram</span></code> object creates multiple <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> objects (<code class="docutils literal notranslate"><span class="pre">npoints</span></code> of those) between a given lower temperature and the critical point.</p>
 <div class="nbinput nblast docutils container">
@@ -1804,7 +1804,7 @@ i: component index according to order in parameters.
 </section>
 </section>
 <section id="Mixtures">
-<h2>Mixtures<a class="headerlink" href="#Mixtures" title="Permalink to this heading">#</a></h2>
+<h2>Mixtures<a class="headerlink" href="#Mixtures" title="Link to this heading">#</a></h2>
 <p>↑ Back to top</p>
 <p>Fox mixtures, we have to add information about the composition, either as molar fraction, amount of substance per component, or as partial densities.</p>
 <div class="nbinput nblast docutils container">
@@ -2017,7 +2017,7 @@ array([[ 4.90827975, -0.10593968],
 </div>
 </section>
 <section id="Comparison-to-Rust-implementation">
-<h2>Comparison to Rust implementation<a class="headerlink" href="#Comparison-to-Rust-implementation" title="Permalink to this heading">#</a></h2>
+<h2>Comparison to Rust implementation<a class="headerlink" href="#Comparison-to-Rust-implementation" title="Link to this heading">#</a></h2>
 <p>↑ Back to top</p>
 <p>Implementing an equation of state in Python is nice for quick prototyping and development but when it comes to performance, implementing the equation of state in Rust is the way to go. For each non-cached call to the Helmholtz energy, we have to transition between Rust and Python with our Python implementation which generates quite some overhead.</p>
 <p>Here are some comparisons between the Rust and our Pyhton implemenation:</p>
@@ -2189,9 +2189,9 @@ Python implementation is slower by a factor of 31.
       
     </aside>
   </div>
-</div><script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=b3ba4146"></script>
+</div><script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/scripts/furo.js?v=32e29ea5"></script>
     <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../../_static/copybutton.js?v=f281be69"></script>

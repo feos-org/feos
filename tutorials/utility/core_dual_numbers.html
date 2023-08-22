@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Equations of state" href="../eos/index.html" /><link rel="prev" title="Working with SI-units" href="core_working_with_units.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
+    <!-- Generated with Sphinx 7.2.2 and Furo 2023.08.19 -->
         <title>On Dual Numbers in FeOs - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
@@ -1033,12 +1033,12 @@
         </div>
         <article role="main">
           <section id="On-Dual-Numbers-in-FeOs">
-<h1>On Dual Numbers in <code class="docutils literal notranslate"><span class="pre">FeOs</span></code><a class="headerlink" href="#On-Dual-Numbers-in-FeOs" title="Permalink to this heading">#</a></h1>
+<h1>On Dual Numbers in <code class="docutils literal notranslate"><span class="pre">FeOs</span></code><a class="headerlink" href="#On-Dual-Numbers-in-FeOs" title="Link to this heading">#</a></h1>
 <p>In <code class="docutils literal notranslate"><span class="pre">FeOs</span></code>, we use <a class="reference external" href="https://www.frontiersin.org/articles/10.3389/fceng.2021.758090/full">generalized dual numbers</a> to compute partial derivatives of the Helmholtz energy. In this notebook, we take a closer look at how that works.</p>
 <p>We will make use of the <code class="docutils literal notranslate"><span class="pre">EquationOfState.python()</span></code> feature: we use a simple version of the Peng-Robinson equation of state implemented as Python class which is registered in <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> as equation of state. If you want to learn how to implement an equation of state as Python class in conjunction with <code class="docutils literal notranslate"><span class="pre">FeOs</span></code>, take a look at the example implementation in the examples section. In short - a class that implements a <code class="docutils literal notranslate"><span class="pre">helmholtz_energy</span></code> function that takes a <code class="docutils literal notranslate"><span class="pre">StateD</span></code> (or <em>any</em> state object, where
 the internal data types can be any generalized dual number) and returns the Helmholtz energy (plus some minor functions), can be used with <code class="docutils literal notranslate"><span class="pre">FeOs</span></code>. We use the equation of state implemented in Python simply because we can add <code class="docutils literal notranslate"><span class="pre">print</span></code> statements and inspect the data types at runtime.</p>
 <section id="Dual-Numbers">
-<h2>Dual Numbers<a class="headerlink" href="#Dual-Numbers" title="Permalink to this heading">#</a></h2>
+<h2>Dual Numbers<a class="headerlink" href="#Dual-Numbers" title="Link to this heading">#</a></h2>
 <p>We won’t go into much detail regarding the theory of generalized dual numbers. Suffice it to say that generalized dual numbers are mathematical constructs consisting of one real value and one or more non-real values (just like complex numbers) that enable evaluation of arithmetic operations such that the operation <em>and</em> the derivative(s) can simultaneously be computed. We call these <em>generalized</em> dual numbers because they can have a different number of <em>non-real</em> values. For example a <em>dual
 number</em> has a real and a single non-real value and can be used to compute first (partial) derivatives, while a <em>hyper-dual number</em> has a real and three non-real values and can be used to compute first and second (partial) derivatives. We can - in principle - create numbers that allow computation of an arbitrarily high derivative at the cost of execution speed.</p>
 <p>Similar to numerical differentiation and complex step differentiation, a derivative is computed by defining a “step size”. For complex step and dual number differentiation this step is introduced in the non-real part. Derivatives of dual numbers, however, are exact (to machine precision) and independent of the step size used. Hence, we use unity as step size.</p>
@@ -1050,7 +1050,7 @@ number</em> has a real and a single non-real value and can be used to compute fi
 <p>into a function, its return value will be a <code class="docutils literal notranslate"><span class="pre">Dual64</span></code> as well. The non-real part of the function result <em>is</em> the derivative with respect to temperature.</p>
 </section>
 <section id="Do-we-need-to-create-dual-numbers-by-hand?">
-<h2>Do we need to create dual numbers by hand?<a class="headerlink" href="#Do-we-need-to-create-dual-numbers-by-hand?" title="Permalink to this heading">#</a></h2>
+<h2>Do we need to create dual numbers by hand?<a class="headerlink" href="#Do-we-need-to-create-dual-numbers-by-hand?" title="Link to this heading">#</a></h2>
 <p>No. If you use already implemented equations of state, you will not even recognize that dual numbers are used. However, if you use Python or Rust to implement you own equation of state, it is useful to know how <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> creates and uses dual numbers. It’s easier to look at an example than to talk about it. Below, you find the implementation of the Peng-Robinson equation of state where we added some <code class="docutils literal notranslate"><span class="pre">print</span></code> statement to the <code class="docutils literal notranslate"><span class="pre">helmholtz_energy</span></code> function to keep track of the values and data
 types of the thermodynamic state that enters the Helmholtz energy computation.</p>
 <div class="nbinput nblast docutils container">
@@ -1188,7 +1188,7 @@ types of the thermodynamic state that enters the Helmholtz energy computation.</
 </div>
 </section>
 <section id="Properties-and-dual-numbers">
-<h2>Properties and dual numbers<a class="headerlink" href="#Properties-and-dual-numbers" title="Permalink to this heading">#</a></h2>
+<h2>Properties and dual numbers<a class="headerlink" href="#Properties-and-dual-numbers" title="Link to this heading">#</a></h2>
 <p>After initializing the equation of state for a single substance (in the above cell), let us now build a thermodynamic state. For the sake of this example, we use the natural variables of the Helmholtz energy (<span class="math notranslate nohighlight">\(\mathbf{N}\)</span>, <span class="math notranslate nohighlight">\(V\)</span>, <span class="math notranslate nohighlight">\(T\)</span>) as input so that no volume or temperature has to be iterated.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -1360,7 +1360,7 @@ $-1.4939\times10^{-4}\,\mathrm{\frac{ms^{2}K}{kg}}$</div></div>
 </div>
 </section>
 <section id="Summary">
-<h2>Summary<a class="headerlink" href="#Summary" title="Permalink to this heading">#</a></h2>
+<h2>Summary<a class="headerlink" href="#Summary" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">FeOs</span></code> uses generalized dual numbers which enable the computation of higher order partial derivatives of the Helmholtz energy without the need of implementing these derivatives analytically.</p></li>
 <li><p>When a property is computed, <code class="docutils literal notranslate"><span class="pre">FeOs</span></code> creates a new thermodynamic state with the correct data types according to the partial derivatives needed.</p></li>
@@ -1440,9 +1440,9 @@ $-1.4939\times10^{-4}\,\mathrm{\frac{ms^{2}K}{kg}}$</div></div>
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=b3ba4146"></script>
+</div><script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../_static/copybutton.js?v=f281be69"></script>

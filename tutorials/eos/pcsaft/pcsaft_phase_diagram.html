@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="../../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><link rel="next" title="Entropy scaling of pure substances" href="pcsaft_entropy_scaling.html" /><link rel="prev" title="Representation of thermodynamic states" href="pcsaft_state.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
+    <!-- Generated with Sphinx 7.2.2 and Furo 2023.08.19 -->
         <title>Pure substance phase diagrams - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=135e06be" />
@@ -1033,9 +1033,9 @@
         </div>
         <article role="main">
           <section id="Pure-substance-phase-diagrams">
-<h1>Pure substance phase diagrams<a class="headerlink" href="#Pure-substance-phase-diagrams" title="Permalink to this heading">#</a></h1>
+<h1>Pure substance phase diagrams<a class="headerlink" href="#Pure-substance-phase-diagrams" title="Link to this heading">#</a></h1>
 <section id="Goal-of-this-notebook">
-<h2>Goal of this notebook<a class="headerlink" href="#Goal-of-this-notebook" title="Permalink to this heading">#</a></h2>
+<h2>Goal of this notebook<a class="headerlink" href="#Goal-of-this-notebook" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p>Learn how to generate and work with phase diagrams.</p></li>
 <li><p>Learn what <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> objects are and how to use them.</p></li>
@@ -1062,7 +1062,7 @@
 </div>
 </section>
 <section id="Read-parameters-from-json-for-a-single-substance-and-generate-PcSaft-object">
-<h2>Read parameters from json for a single substance and generate <code class="docutils literal notranslate"><span class="pre">PcSaft</span></code> object<a class="headerlink" href="#Read-parameters-from-json-for-a-single-substance-and-generate-PcSaft-object" title="Permalink to this heading">#</a></h2>
+<h2>Read parameters from json for a single substance and generate <code class="docutils literal notranslate"><span class="pre">PcSaft</span></code> object<a class="headerlink" href="#Read-parameters-from-json-for-a-single-substance-and-generate-PcSaft-object" title="Link to this heading">#</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -1124,7 +1124,7 @@
 </div>
 </section>
 <section id="The-PhaseDiagram-object">
-<h2>The <code class="docutils literal notranslate"><span class="pre">PhaseDiagram</span></code> object<a class="headerlink" href="#The-PhaseDiagram-object" title="Permalink to this heading">#</a></h2>
+<h2>The <code class="docutils literal notranslate"><span class="pre">PhaseDiagram</span></code> object<a class="headerlink" href="#The-PhaseDiagram-object" title="Link to this heading">#</a></h2>
 <p>A <code class="docutils literal notranslate"><span class="pre">PhaseDiagram</span></code> object contains multiple thermodyanmic states at phase equilibrium. <strong>For a single substance</strong> it can be constructed via the <code class="docutils literal notranslate"><span class="pre">PhaseDiagram.pure</span></code> method by providing</p>
 <ul class="simple">
 <li><p>an equation of state,</p></li>
@@ -1173,7 +1173,7 @@
 </div>
 </div>
 <section id="Stored-information">
-<h3>Stored information<a class="headerlink" href="#Stored-information" title="Permalink to this heading">#</a></h3>
+<h3>Stored information<a class="headerlink" href="#Stored-information" title="Link to this heading">#</a></h3>
 <p>A <code class="docutils literal notranslate"><span class="pre">PhaseDiagram</span></code> object contains the following <em>fields</em>:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">states</span></code>: a list (with length of <code class="docutils literal notranslate"><span class="pre">npoints</span></code>) of <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> objects at the different temperatures,</p></li>
@@ -1182,7 +1182,7 @@
 <p>The <code class="docutils literal notranslate"><span class="pre">to_dict</span></code> <em>method</em> can be used to conveniently generate a <code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code> object (see below).</p>
 </section>
 <section id="Building-a-pandas.DataFrame:-the-to_dict-method">
-<h3>Building a <code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>: the <code class="docutils literal notranslate"><span class="pre">to_dict</span></code> method<a class="headerlink" href="#Building-a-pandas.DataFrame:-the-to_dict-method" title="Permalink to this heading">#</a></h3>
+<h3>Building a <code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>: the <code class="docutils literal notranslate"><span class="pre">to_dict</span></code> method<a class="headerlink" href="#Building-a-pandas.DataFrame:-the-to_dict-method" title="Link to this heading">#</a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">PhaseDiagramPure</span></code> object contains some physical properties (such as densities, temperatures and pressures) as well as the <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> objects at each temperature.</p>
 <p>Before we take a look at these objects, a useful tool when working with phase diagrams is the <code class="docutils literal notranslate"><span class="pre">to_dict</span></code> method. It generates a Python dictionary of some properties (with hard-coded units, see the docstring of <code class="docutils literal notranslate"><span class="pre">to_dict</span></code>). This dictionary can readily be used to generate a <code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>.</p>
 <div class="nbinput docutils container">
@@ -1326,7 +1326,7 @@
 </section>
 </section>
 <section id="The-PhaseEquilibrium-object">
-<h2>The <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> object<a class="headerlink" href="#The-PhaseEquilibrium-object" title="Permalink to this heading">#</a></h2>
+<h2>The <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> object<a class="headerlink" href="#The-PhaseEquilibrium-object" title="Link to this heading">#</a></h2>
 <p>A <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> object contains two thermodynamic states (<code class="docutils literal notranslate"><span class="pre">State</span></code> objects) that are in thermal, mechanical and chemical equilibrium. The <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium.pure</span></code> constructor can be used to compute a phase equilibrium for a single substance. We have to provide the equation of state and either temperature or pressure. Optionally, we can also provide <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> object which can be used as starting point for the calculation which possibly speeds up the computation.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -1416,7 +1416,7 @@ $300\,\mathrm{K}$</div></div>
 </div>
 </section>
 <section id="The-states-method-returns-all-PhaseEquilibrium-objects-from-PhaseDiagram">
-<h2>The <code class="docutils literal notranslate"><span class="pre">states</span></code> method returns all <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> objects from <code class="docutils literal notranslate"><span class="pre">PhaseDiagram</span></code><a class="headerlink" href="#The-states-method-returns-all-PhaseEquilibrium-objects-from-PhaseDiagram" title="Permalink to this heading">#</a></h2>
+<h2>The <code class="docutils literal notranslate"><span class="pre">states</span></code> method returns all <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> objects from <code class="docutils literal notranslate"><span class="pre">PhaseDiagram</span></code><a class="headerlink" href="#The-states-method-returns-all-PhaseEquilibrium-objects-from-PhaseDiagram" title="Link to this heading">#</a></h2>
 <p>Once a <code class="docutils literal notranslate"><span class="pre">PhaseDiagram</span></code> object is created, we can access all underlying <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> objects via the <code class="docutils literal notranslate"><span class="pre">states</span></code> field. In the following cell, we compute the enthalpy of vaporization by iterating through all states and calling the <code class="docutils literal notranslate"><span class="pre">specific_enthalpy</span></code> method on the vapor and liquid states of the <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> object, respectively.</p>
 <p>Note that this is merely an example to show how to compute any property of the states. The total value of enthalpy of vaporization may not be correct, depending on the ideal gas model used.</p>
 <div class="nbinput nblast docutils container">
@@ -1535,9 +1535,9 @@ $300\,\mathrm{K}$</div></div>
       
     </aside>
   </div>
-</div><script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=b3ba4146"></script>
+</div><script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/scripts/furo.js?v=32e29ea5"></script>
     <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../../_static/copybutton.js?v=f281be69"></script>

@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="../../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><link rel="next" title="Pure substance phase diagrams" href="pcsaft_phase_diagram.html" /><link rel="prev" title="Working with parameters" href="pcsaft_working_with_parameters.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
+    <!-- Generated with Sphinx 7.2.2 and Furo 2023.08.19 -->
         <title>Representation of thermodynamic states - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=135e06be" />
@@ -1033,9 +1033,9 @@
         </div>
         <article role="main">
           <section id="Representation-of-thermodynamic-states">
-<h1>Representation of thermodynamic states<a class="headerlink" href="#Representation-of-thermodynamic-states" title="Permalink to this heading">#</a></h1>
+<h1>Representation of thermodynamic states<a class="headerlink" href="#Representation-of-thermodynamic-states" title="Link to this heading">#</a></h1>
 <section id="Goal-of-this-notebook">
-<h2>Goal of this notebook<a class="headerlink" href="#Goal-of-this-notebook" title="Permalink to this heading">#</a></h2>
+<h2>Goal of this notebook<a class="headerlink" href="#Goal-of-this-notebook" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p>Learn about the <code class="docutils literal notranslate"><span class="pre">State</span></code> object, how to construct, and how to use it.</p></li>
 </ul>
@@ -1051,7 +1051,7 @@
 </div>
 </section>
 <section id="The-State-object">
-<h2>The <code class="docutils literal notranslate"><span class="pre">State</span></code> object<a class="headerlink" href="#The-State-object" title="Permalink to this heading">#</a></h2>
+<h2>The <code class="docutils literal notranslate"><span class="pre">State</span></code> object<a class="headerlink" href="#The-State-object" title="Link to this heading">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">State</span></code> object is the most important object type in <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span>. It defines a thermodynamic state in the natural variables of the Helmholtz energy - the amount of substance of each component, <span class="math notranslate nohighlight">\(\mathbf{N}\)</span>, the volume, <span class="math notranslate nohighlight">\(V\)</span>, and the temperature, <span class="math notranslate nohighlight">\(T\)</span>.</p>
 <p>Once a <code class="docutils literal notranslate"><span class="pre">State</span></code> object is constructed, we can calculate thermodynamic properties. Internally, <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> transforms the state variables to generalized hyper dual numbers (see the separate tutorial on the topic of dual numbers) with which partial derivatives of the Helmholtz energy are computed.</p>
 <p>There are <strong>several ways to construct</strong> <code class="docutils literal notranslate"><span class="pre">State</span></code> objects:</p>
@@ -1076,7 +1076,7 @@
 </div>
 </div>
 <section id="The-default-constructor">
-<h3>The default constructor<a class="headerlink" href="#The-default-constructor" title="Permalink to this heading">#</a></h3>
+<h3>The default constructor<a class="headerlink" href="#The-default-constructor" title="Link to this heading">#</a></h3>
 <p>The default constructor, <code class="docutils literal notranslate"><span class="pre">State(...)</span></code>, takes a combination of input state variables. The first argument, however, is always the equation of state. For all cases, if we do not define the amount of substance, it is set to the inverse of Avogradro’s number, <span class="math notranslate nohighlight">\(N_\text{AV}^{-1}\)</span>. The default constructor takes <code class="docutils literal notranslate"><span class="pre">SINumber</span></code> (and <code class="docutils literal notranslate"><span class="pre">SIArray1</span></code> for e.g. the partial densities) as input. If you want to learn more about dimensioned quantities, please take a look at the respective tutorial.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -1229,7 +1229,7 @@ Liquid stable? True
 </section>
 <hr class="docutils" />
 <section id="Stored-information">
-<h2>Stored information<a class="headerlink" href="#Stored-information" title="Permalink to this heading">#</a></h2>
+<h2>Stored information<a class="headerlink" href="#Stored-information" title="Link to this heading">#</a></h2>
 <p>Once we create a <code class="docutils literal notranslate"><span class="pre">State</span></code> object, we can access its <strong>fields</strong> withouth further computations:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">density</span></code>: molar density of the thermodynamic state for the given substance(s)</p></li>
@@ -1275,7 +1275,7 @@ total mass :  17.235400000000002 kg
 </section>
 <hr class="docutils" />
 <section id="Computing-properties">
-<h2>Computing properties<a class="headerlink" href="#Computing-properties" title="Permalink to this heading">#</a></h2>
+<h2>Computing properties<a class="headerlink" href="#Computing-properties" title="Link to this heading">#</a></h2>
 <p>Thermodynamic properties can be computed by invoking the appropriate <strong>method</strong>. For example, we can compute the total system pressure via the <code class="docutils literal notranslate"><span class="pre">pressure()</span></code> method.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
@@ -1347,7 +1347,7 @@ $0\,\mathrm{\frac{ J}{molK}}$</div></div>
 </section>
 <hr class="docutils" />
 <section id="State-at-critical-conditions">
-<h2><code class="docutils literal notranslate"><span class="pre">State</span></code> at critical conditions<a class="headerlink" href="#State-at-critical-conditions" title="Permalink to this heading">#</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">State</span></code> at critical conditions<a class="headerlink" href="#State-at-critical-conditions" title="Link to this heading">#</a></h2>
 <p><span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span> provides constructors for <code class="docutils literal notranslate"><span class="pre">State</span></code> objects at critical conditions as well in form of <em>static class methods</em>.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">State.critical_point(...)</span></code>: critial point of the system</p></li>
@@ -1418,7 +1418,7 @@ density     : 228.72574604854387 kg/m³
 </section>
 <hr class="docutils" />
 <section id="PhaseEquilibrium:-State-objects-at-phase-equilibrium">
-<h2><code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code>: <code class="docutils literal notranslate"><span class="pre">State</span></code> objects at phase equilibrium<a class="headerlink" href="#PhaseEquilibrium:-State-objects-at-phase-equilibrium" title="Permalink to this heading">#</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code>: <code class="docutils literal notranslate"><span class="pre">State</span></code> objects at phase equilibrium<a class="headerlink" href="#PhaseEquilibrium:-State-objects-at-phase-equilibrium" title="Link to this heading">#</a></h2>
 <p>Another common use case for equations of state is the computation of phase equilibria. In <span class="math notranslate nohighlight">\(\text{FeO}_\text{s}\)</span>, we can generate multiple <code class="docutils literal notranslate"><span class="pre">State</span></code> objects that are in equilibrium using a <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> object. We will not discuss <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> objects in detail in this notebook but merely consider it as another way to generate <code class="docutils literal notranslate"><span class="pre">State</span></code> objects. Please refer to the tutorial about phase diagrams if you want to learn more.</p>
 <p>For pure substances, we can generate two states in equilibrium using the <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium.pure(...)</span></code> static method. The resulting object contains two (or more) <code class="docutils literal notranslate"><span class="pre">State</span></code> objects which we in this case can access via the <code class="docutils literal notranslate"><span class="pre">liquid</span></code> and <code class="docutils literal notranslate"><span class="pre">vapor</span></code> fields. As before, we can now compute properties using these objects.</p>
 <div class="nbinput docutils container">
@@ -1538,12 +1538,12 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 </section>
 <hr class="docutils" />
 <section id="Caching-partial-derivatives-of-the-Helmholtz-energy">
-<h2>Caching partial derivatives of the Helmholtz energy<a class="headerlink" href="#Caching-partial-derivatives-of-the-Helmholtz-energy" title="Permalink to this heading">#</a></h2>
+<h2>Caching partial derivatives of the Helmholtz energy<a class="headerlink" href="#Caching-partial-derivatives-of-the-Helmholtz-energy" title="Link to this heading">#</a></h2>
 <p>A <code class="docutils literal notranslate"><span class="pre">State</span></code> object caches partial derivatives of the Helmholtz energy. If efficiency is a concern, you might want to consider the order in which you compute properties for a given state. If a method is called multiple times, only the first call will invoke a computation while additional calls will pull prior results from the cache.</p>
 </section>
 <hr class="docutils" />
 <section id="Contributions-to-the-Helmholtz-energy">
-<h2>Contributions to the Helmholtz energy<a class="headerlink" href="#Contributions-to-the-Helmholtz-energy" title="Permalink to this heading">#</a></h2>
+<h2>Contributions to the Helmholtz energy<a class="headerlink" href="#Contributions-to-the-Helmholtz-energy" title="Link to this heading">#</a></h2>
 <p>If you are interested in developing an equation of state, you might find the <code class="docutils literal notranslate"><span class="pre">..._contributions()</span></code> methods of a <code class="docutils literal notranslate"><span class="pre">State</span></code> object useful. These methods return the contributions to a property which can be insightful (or a useful debugging tool).</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
@@ -1621,14 +1621,14 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 </section>
 <hr class="docutils" />
 <section id="Dynamic-properties-via-entropy-scaling">
-<h2>Dynamic properties via entropy scaling<a class="headerlink" href="#Dynamic-properties-via-entropy-scaling" title="Permalink to this heading">#</a></h2>
+<h2>Dynamic properties via entropy scaling<a class="headerlink" href="#Dynamic-properties-via-entropy-scaling" title="Link to this heading">#</a></h2>
 <p>If an equation of state implements correlation functions for entropy scaling, it can be used to compute dynamic properties via entropy scaling. For more information, see the respective tutorial for entropy scaling.</p>
 </section>
 <hr class="docutils" />
 <section id="List-of-State-methods-and-fields">
-<h2>List of <code class="docutils literal notranslate"><span class="pre">State</span></code> methods and fields<a class="headerlink" href="#List-of-State-methods-and-fields" title="Permalink to this heading">#</a></h2>
+<h2>List of <code class="docutils literal notranslate"><span class="pre">State</span></code> methods and fields<a class="headerlink" href="#List-of-State-methods-and-fields" title="Link to this heading">#</a></h2>
 <section id="Constructors">
-<h3>Constructors<a class="headerlink" href="#Constructors" title="Permalink to this heading">#</a></h3>
+<h3>Constructors<a class="headerlink" href="#Constructors" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">critical_point</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">critical_point_binary_p</span></code></p></li>
@@ -1638,7 +1638,7 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 </ul>
 </section>
 <section id="Fields">
-<h3>Fields<a class="headerlink" href="#Fields" title="Permalink to this heading">#</a></h3>
+<h3>Fields<a class="headerlink" href="#Fields" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">density</span></code>,</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">molefracs</span></code>,</p></li>
@@ -1650,14 +1650,14 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 </ul>
 </section>
 <section id="Stability-analysis">
-<h3>Stability analysis<a class="headerlink" href="#Stability-analysis" title="Permalink to this heading">#</a></h3>
+<h3>Stability analysis<a class="headerlink" href="#Stability-analysis" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">is_stable</span></code>,</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">stability_analysis</span></code></p></li>
 </ul>
 </section>
 <section id="Thermodynamic-properties">
-<h3>Thermodynamic properties<a class="headerlink" href="#Thermodynamic-properties" title="Permalink to this heading">#</a></h3>
+<h3>Thermodynamic properties<a class="headerlink" href="#Thermodynamic-properties" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">c_p</span></code>,</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">c_v</span></code>,</p></li>
@@ -1704,7 +1704,7 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 </ul>
 </section>
 <section id="Mass-related-and-mass-specific-properties">
-<h3>Mass related and mass specific properties<a class="headerlink" href="#Mass-related-and-mass-specific-properties" title="Permalink to this heading">#</a></h3>
+<h3>Mass related and mass specific properties<a class="headerlink" href="#Mass-related-and-mass-specific-properties" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">specific_enthalpy</span></code>,</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">specific_entropy</span></code>,</p></li>
@@ -1718,7 +1718,7 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 </ul>
 </section>
 <section id="Dynamic-properties-(entropy-scaling)">
-<h3>Dynamic properties (entropy scaling)<a class="headerlink" href="#Dynamic-properties-(entropy-scaling)" title="Permalink to this heading">#</a></h3>
+<h3>Dynamic properties (entropy scaling)<a class="headerlink" href="#Dynamic-properties-(entropy-scaling)" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">diffusion</span></code>,</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">diffusion_reference</span></code>,</p></li>
@@ -1733,7 +1733,7 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
 </section>
 </section>
 <section id="Concluding-remkars">
-<h2>Concluding remkars<a class="headerlink" href="#Concluding-remkars" title="Permalink to this heading">#</a></h2>
+<h2>Concluding remkars<a class="headerlink" href="#Concluding-remkars" title="Link to this heading">#</a></h2>
 <p>Hopefully you found this example helpful. If you have comments, critique or feedback, please let us know and consider <a class="reference external" href="https://github.com/feos-org/feos/issues">opening an issue on github</a>.</p>
 </section>
 </section>
@@ -1827,9 +1827,9 @@ enthalpy of vaporization (T = 341.53510965735256 K): 29.123040330216202 kJ/mol
       
     </aside>
   </div>
-</div><script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=b3ba4146"></script>
+</div><script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/scripts/furo.js?v=32e29ea5"></script>
     <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../../_static/copybutton.js?v=f281be69"></script>

@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Functional derivatives" href="functional_derivatives.html" /><link rel="prev" title="Classical density functional theory" href="index.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
+    <!-- Generated with Sphinx 7.2.2 and Furo 2023.08.19 -->
         <title>Euler-Lagrange equation - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
@@ -1032,7 +1032,7 @@
         </div>
         <article role="main">
           <section class="tex2jax_ignore mathjax_ignore" id="euler-lagrange-equation">
-<h1>Euler-Lagrange equation<a class="headerlink" href="#euler-lagrange-equation" title="Permalink to this heading">#</a></h1>
+<h1>Euler-Lagrange equation<a class="headerlink" href="#euler-lagrange-equation" title="Link to this heading">#</a></h1>
 <p>The fundamental expression in classical density functional theory is the relation between the grand potential functional <span class="math notranslate nohighlight">\(\Omega\)</span> and the intrinsic Helmholtz energy functional <span class="math notranslate nohighlight">\(F\)</span>.</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1042,13 +1042,13 @@
 <p>For a given temperature <span class="math notranslate nohighlight">\(T\)</span>, chemical potentials <span class="math notranslate nohighlight">\(\mu_i\)</span> and external potentials <span class="math notranslate nohighlight">\(V_i^\mathrm{ext}(r)\)</span> the grand potential reaches a minimum at equilibrium. Mathematically this condition can be written as</p>
 <div class="math-wrapper docutils container" id="equation-eqn-euler-lagrange-mu">
 <div class="math notranslate nohighlight" id="equation-eqn-euler-lagrange-mu">
-<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-euler-lagrange-mu" title="Permalink to this equation">#</a></span>\[\left.\frac{\delta\Omega}{\delta\rho_i(r)}\right|_{T,\mu}=F_{\rho_i}(r)-\mu_i+V_i^{\mathrm{ext}}(r)=0\]</div>
+<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-euler-lagrange-mu" title="Link to this equation">#</a></span>\[\left.\frac{\delta\Omega}{\delta\rho_i(r)}\right|_{T,\mu}=F_{\rho_i}(r)-\mu_i+V_i^{\mathrm{ext}}(r)=0\]</div>
 </div>
 <p>where <span class="math notranslate nohighlight">\(F_{\rho_i}(r)=\left.\frac{\delta F}{\delta\rho_i(r)}\right|_T\)</span> is short for the functional derivative of the intrinsic Helmholtz energy. In this context, eq. (1) is commonly referred to as the Euler-Lagrange equation, an implicit nonlinear integral equation which needs to be solved for the equilibrium density profiles of the system.</p>
 <p>For a homogeneous (bulk) system, <span class="math notranslate nohighlight">\(V_i^\mathrm{ext}=0\)</span> and we get</p>
 <div class="math-wrapper docutils container" id="equation-eqn-euler-lagrange-bulk">
 <div class="math notranslate nohighlight" id="equation-eqn-euler-lagrange-bulk">
-<span class="eqno">(2)<a class="headerlink" href="#equation-eqn-euler-lagrange-bulk" title="Permalink to this equation">#</a></span>\[F_{\rho_i}^\mathrm{b}-\mu_i=0\]</div>
+<span class="eqno">(2)<a class="headerlink" href="#equation-eqn-euler-lagrange-bulk" title="Link to this equation">#</a></span>\[F_{\rho_i}^\mathrm{b}-\mu_i=0\]</div>
 </div>
 <p>The functional derivative of the Helmholtz energy of a bulk system <span class="math notranslate nohighlight">\(F_{\rho_i}^\mathrm{b}\)</span> is a function of the temperature <span class="math notranslate nohighlight">\(T\)</span> and bulk densities <span class="math notranslate nohighlight">\(\rho^\mathrm{b}\)</span>. At this point, it can be advantageous to relate the grand potential of an inhomogeneous system to the densities of a bulk system that is in equilibrium with the inhomogeneous system. This approach has several advantages:</p>
 <ul class="simple">
@@ -1059,10 +1059,10 @@
 <p>Using eq. <a class="reference internal" href="#equation-eqn-euler-lagrange-bulk">(2)</a> in eq. <a class="reference internal" href="#equation-eqn-euler-lagrange-mu">(1)</a> leads to the Euler-Lagrange equation</p>
 <div class="math-wrapper docutils container" id="equation-eqn-euler-lagrange-rho">
 <div class="math notranslate nohighlight" id="equation-eqn-euler-lagrange-rho">
-<span class="eqno">(3)<a class="headerlink" href="#equation-eqn-euler-lagrange-rho" title="Permalink to this equation">#</a></span>\[\left.\frac{\delta\Omega}{\delta\rho_i(r)}\right|_{T,\rho^\mathrm{b}}=F_{\rho_i}(r)-F_{\rho_i}^\mathrm{b}+V_i^{\mathrm{ext}}(r)=0\]</div>
+<span class="eqno">(3)<a class="headerlink" href="#equation-eqn-euler-lagrange-rho" title="Link to this equation">#</a></span>\[\left.\frac{\delta\Omega}{\delta\rho_i(r)}\right|_{T,\rho^\mathrm{b}}=F_{\rho_i}(r)-F_{\rho_i}^\mathrm{b}+V_i^{\mathrm{ext}}(r)=0\]</div>
 </div>
 <section id="spherical-molecules">
-<h2>Spherical molecules<a class="headerlink" href="#spherical-molecules" title="Permalink to this heading">#</a></h2>
+<h2>Spherical molecules<a class="headerlink" href="#spherical-molecules" title="Link to this heading">#</a></h2>
 <p>In the simplest case, the molecules under consideration can be described as spherical. Then the Helmholtz energy can be split into an ideal and a residual part:</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1090,7 +1090,7 @@
 <p>which is convenient because it leads directly to a recurrence relation known as Picard iteration.</p>
 </section>
 <section id="homosegmented-chains">
-<h2>Homosegmented chains<a class="headerlink" href="#homosegmented-chains" title="Permalink to this heading">#</a></h2>
+<h2>Homosegmented chains<a class="headerlink" href="#homosegmented-chains" title="Link to this heading">#</a></h2>
 <p>For chain molecules that do not resolve individual segments (essentially the PC-SAFT Helmholtz energy functional) a chain contribution is introduced as</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1131,7 +1131,7 @@ The presence of <span class="math notranslate nohighlight">\(\rho_i(r)\)</span> 
 </div>
 </section>
 <section id="heterosegmented-chains">
-<h2>Heterosegmented chains<a class="headerlink" href="#heterosegmented-chains" title="Permalink to this heading">#</a></h2>
+<h2>Heterosegmented chains<a class="headerlink" href="#heterosegmented-chains" title="Link to this heading">#</a></h2>
 <p>The expressions are more complex for models in which density profiles of individual segments are considered. A derivation is given in the appendix of <a class="reference external" href="https://journals.aps.org/pre/abstract/10.1103/PhysRevE.105.034110">Rehner et al. (2022)</a>. The resulting Euler-Lagrange equation is given as</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1164,7 +1164,7 @@ For bulk systems the expressions simplify to</p>
 </div>
 </section>
 <section id="combined-expression">
-<h2>Combined expression<a class="headerlink" href="#combined-expression" title="Permalink to this heading">#</a></h2>
+<h2>Combined expression<a class="headerlink" href="#combined-expression" title="Link to this heading">#</a></h2>
 <p>To avoid having multiple implementations of the central part of the DFT code, the different descriptions of molecules can be combined in a single version of the Euler-Lagrange equation:</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1249,9 +1249,9 @@ For bulk systems the expressions simplify to</p>
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=b3ba4146"></script>
+</div><script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../_static/copybutton.js?v=f281be69"></script>

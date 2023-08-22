@@ -1,11 +1,11 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Derivatives of density profiles" href="derivatives.html" /><link rel="prev" title="Functional derivatives" href="functional_derivatives.html" />
 
-    <!-- Generated with Sphinx 7.1.2 and Furo 2023.07.26 -->
+    <!-- Generated with Sphinx 7.2.2 and Furo 2023.08.19 -->
         <title>DFT solvers - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
@@ -1032,10 +1032,10 @@
         </div>
         <article role="main">
           <section class="tex2jax_ignore mathjax_ignore" id="dft-solvers">
-<h1>DFT solvers<a class="headerlink" href="#dft-solvers" title="Permalink to this heading">#</a></h1>
+<h1>DFT solvers<a class="headerlink" href="#dft-solvers" title="Link to this heading">#</a></h1>
 <p>Different solvers can be used to calculate the density profiles from the Euler-Lagrange equation introduced previously. The solvers differ in their stability, the rate of convergence, and the execution time. Unfortunately, the optimal solver and solver parameters depend on the studied system.</p>
 <section id="picard-iteration">
-<h2>Picard iteration<a class="headerlink" href="#picard-iteration" title="Permalink to this heading">#</a></h2>
+<h2>Picard iteration<a class="headerlink" href="#picard-iteration" title="Link to this heading">#</a></h2>
 <p>The form of the Euler-Lagrange equation</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1083,7 +1083,7 @@
 </div>
 </section>
 <section id="newton-algorithm">
-<h2>Newton algorithm<a class="headerlink" href="#newton-algorithm" title="Permalink to this heading">#</a></h2>
+<h2>Newton algorithm<a class="headerlink" href="#newton-algorithm" title="Link to this heading">#</a></h2>
 <p>A Newton iteration is a more refined approach to calculate the roots of the residual <span class="math notranslate nohighlight">\(\mathcal{F}\)</span>. From a Taylor expansion of the residual</p>
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
@@ -1092,7 +1092,7 @@
 <p>the Newton step is derived by setting the updated residual <span class="math notranslate nohighlight">\(\mathcal{F}_\alpha[\rho(r)+\Delta\rho(r)]\)</span> to 0 and neglecting higher order terms.</p>
 <div class="math-wrapper docutils container" id="equation-eqn-newton">
 <div class="math notranslate nohighlight" id="equation-eqn-newton">
-<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-newton" title="Permalink to this equation">#</a></span>\[\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)=-\int\sum_\beta\frac{\delta\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')\mathrm{d}r'\]</div>
+<span class="eqno">(1)<a class="headerlink" href="#equation-eqn-newton" title="Link to this equation">#</a></span>\[\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)=-\int\sum_\beta\frac{\delta\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)}{\delta\rho_\beta(r')}\Delta\rho_\beta(r')\mathrm{d}r'\]</div>
 </div>
 <p>The linear integral equation has to be solved for the step <span class="math notranslate nohighlight">\(\Delta\rho(r)\)</span>. Explicitly evaluating the functional derivatives of the residuals is not feasible due to their high dimensionality. Instead, a matrix-free linear solver like GMRES can be used. For GMRES only the action of the linear system on the variable is required (an evaluation of the right-hand side in the equation above for a given <span class="math notranslate nohighlight">\(\Delta\rho\)</span>). This action can be approximated numerically via</p>
 <div class="math-wrapper docutils container">
@@ -1120,7 +1120,7 @@ q_\alpha(r)&amp;=\int\sum_\beta\left(\delta_{\alpha\beta}\delta(r-r')+\left(\fra
 <p>and finally</p>
 <div class="math-wrapper docutils container" id="equation-eqn-newton-rhs">
 <div class="math notranslate nohighlight" id="equation-eqn-newton-rhs">
-<span class="eqno">(2)<a class="headerlink" href="#equation-eqn-newton-rhs" title="Permalink to this equation">#</a></span>\[q_\alpha(r)=\Delta\rho_\alpha(r)+\left(\frac{\beta}{m_\alpha}\Delta\hat F_{\rho_\alpha}^\mathrm{res}(r)-\sum_{\alpha'}\frac{\Delta I_{\alpha\alpha'}(r)}{I_{\alpha\alpha'}(r)}\right)\mathcal{P}_\alpha\left(r;\left[\rho(r)\right]\right)\]</div>
+<span class="eqno">(2)<a class="headerlink" href="#equation-eqn-newton-rhs" title="Link to this equation">#</a></span>\[q_\alpha(r)=\Delta\rho_\alpha(r)+\left(\frac{\beta}{m_\alpha}\Delta\hat F_{\rho_\alpha}^\mathrm{res}(r)-\sum_{\alpha'}\frac{\Delta I_{\alpha\alpha'}(r)}{I_{\alpha\alpha'}(r)}\right)\mathcal{P}_\alpha\left(r;\left[\rho(r)\right]\right)\]</div>
 </div>
 <p>Neglecting the second term in eq. <a class="reference internal" href="#equation-eqn-newton-rhs">(2)</a> leads to <span class="math notranslate nohighlight">\(\Delta_\alpha(r)=\mathcal{F}_\alpha\left(r;\left[\rho(r)\right]\right)\)</span> which is the search direction of the Picard iteration. This observation implies that the Picard iteration is an approximation of the Newton solver that neglects the residual contribution to the Jacobian. Only using the ideal gas contribution to the Jacobian is a reasonable approximation for low densities and therefore, the Picard iteration converges quickly (with a large damping coefficient <span class="math notranslate nohighlight">\(\nu\)</span>) for low densities.</p>
 <p>The second functional derivative of the residual Helmholtz energy can be rewritten in terms of the weight functions.</p>
@@ -1136,7 +1136,7 @@ q_\alpha(r)&amp;=\int\sum_\beta\left(\delta_{\alpha\beta}\delta(r-r')+\left(\fra
 <p>With that, <span class="math notranslate nohighlight">\(\Delta\hat F_{\rho_\alpha}^\mathrm{res}(r)\)</span> can be rewritten as</p>
 <div class="math-wrapper docutils container" id="equation-eqn-newton-f">
 <div class="math notranslate nohighlight" id="equation-eqn-newton-f">
-<span class="eqno">(3)<a class="headerlink" href="#equation-eqn-newton-f" title="Permalink to this equation">#</a></span>\[\begin{split}\begin{align*}
+<span class="eqno">(3)<a class="headerlink" href="#equation-eqn-newton-f" title="Link to this equation">#</a></span>\[\begin{split}\begin{align*}
 \Delta\hat F_{\rho_\alpha}^\mathrm{res}(r)&amp;=\int\sum_{\alpha\beta}\hat f^\mathrm{res}_{\alpha\beta}(r'')\omega_\alpha^i(r''-r)\underbrace{\sum_\beta\int\omega_\beta^j(r''-r')\Delta\rho_\beta(r')\mathrm{d}r'}_{\Delta n_\beta(r'')}\mathrm{d}r''\\
 &amp;=\int\sum_\alpha\sum_\beta \hat f^\mathrm{res}_{\alpha\beta}(r'')\Delta n_\beta(r'')\omega_\alpha^i(r''-r)\mathrm{d}r''
 \end{align*}\end{split}\]</div>
@@ -1154,7 +1154,7 @@ q_\alpha(r)&amp;=\int\sum_\beta\left(\delta_{\alpha\beta}\delta(r-r')+\left(\fra
 <p>Here, the definition of <span class="math notranslate nohighlight">\(\Delta\hat F_{\rho_\alpha}^\mathrm{res}(r)\)</span> and <span class="math notranslate nohighlight">\(\Delta I_{\alpha\alpha'}(r)\)</span> can be inserted leading to a recursive calculation of <span class="math notranslate nohighlight">\(\Delta I_{\alpha\alpha'}(r)\)</span> similar to the original bond integrals.</p>
 <div class="math-wrapper docutils container" id="equation-eqn-newton-i">
 <div class="math notranslate nohighlight" id="equation-eqn-newton-i">
-<span class="eqno">(4)<a class="headerlink" href="#equation-eqn-newton-i" title="Permalink to this equation">#</a></span>\[\begin{split}\begin{align*}
+<span class="eqno">(4)<a class="headerlink" href="#equation-eqn-newton-i" title="Link to this equation">#</a></span>\[\begin{split}\begin{align*}
 \Delta I_{\alpha\alpha'}(r)&amp;=\int\left(-\frac{\beta}{m_{\alpha'}}\Delta\hat F_{\rho_{\alpha'}}^\mathrm{res}(r')+\sum_{\alpha''\neq\alpha}\frac{\Delta I_{\alpha'\alpha''}(r')}{I_{\alpha'\alpha''}(r')}\right)\\
 &amp;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\times e^{\frac{\beta}{m_{\alpha'}}\left(\hat F_{\rho_{\alpha'}}^\mathrm{b,res}-\hat F_{\rho_{\alpha'}}^\mathrm{res}(r')-V_{\alpha'}^\mathrm{ext}(r')\right)}\left(\prod_{\alpha''\neq\alpha}I_{\alpha'\alpha''}(r')\right)\omega_\mathrm{chain}^{\alpha\alpha'}(r-r')\mathrm{d}r'
 \end{align*}\end{split}\]</div>
@@ -1163,7 +1163,7 @@ q_\alpha(r)&amp;=\int\sum_\beta\left(\delta_{\alpha\beta}\delta(r-r')+\left(\fra
 <p>The Newton solver converges exceptionally fast compared to a simple Picard iteration. The faster convergence comes at the cost of requiring multiple steps for solving the linear subsystem. With the algorithm outlined here, the evaluation of the second partial derivatives of the Helmholtz energy density is only required once for every Newton step. The GMRES algorithm only uses the very efficient convolution integrals and no additional evaluation of the model.</p>
 </section>
 <section id="anderson-mixing">
-<h2>Anderson mixing<a class="headerlink" href="#anderson-mixing" title="Permalink to this heading">#</a></h2>
+<h2>Anderson mixing<a class="headerlink" href="#anderson-mixing" title="Link to this heading">#</a></h2>
 </section>
 </section>
 
@@ -1237,9 +1237,9 @@ q_\alpha(r)&amp;=\int\sum_\beta\left(\delta_{\alpha\beta}\delta(r-r')+\left(\fra
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=b3ba4146"></script>
+</div><script src="../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../_static/copybutton.js?v=f281be69"></script>
