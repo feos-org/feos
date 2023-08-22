@@ -133,9 +133,7 @@ impl From<JobackBinaryRecord> for f64 {
 
 impl<T: Copy + ValueInto<f64>> FromSegmentsBinary<T> for JobackBinaryRecord {
     fn from_segments_binary(_segments: &[(Self, T, T)]) -> Result<Self, ParameterError> {
-        Err(ParameterError::IncompatibleParameters(
-            "No binary interaction parameters implemented for Joback".to_string(),
-        ))
+        Ok(Self)
     }
 }
 
