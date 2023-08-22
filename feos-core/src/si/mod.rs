@@ -2,10 +2,11 @@
 
 #![allow(clippy::type_complexity)]
 use ang::{Angle, Degrees, Radians};
+use ndarray::{Array, ArrayBase, Data, Dimension};
 use num_traits::Zero;
 use std::marker::PhantomData;
-use std::ops::{Div, Mul};
-use typenum::{ATerm, Diff, Integer, Negate, Sum, TArr, N1, N2, P1, P3, Z0};
+use std::ops::{Div, Mul, Sub};
+use typenum::{ATerm, Diff, Integer, Negate, Quot, Sum, TArr, N1, N2, P1, P3, Z0};
 
 mod array;
 mod fmt;
@@ -104,6 +105,12 @@ pub type _EntropyDensity = Diff<_Entropy, _Volume>;
 pub type EntropyDensity<T = f64> = Quantity<T, _EntropyDensity>;
 pub type _Action = Sum<_Energy, _Time>;
 pub type Action<T=f64> = Quantity<T, _Action>;
+pub type _HeatCapacityRate = Diff<_Power, _Temperature>;
+pub type HeatCapacityRate<T=f64> = Quantity<T, _HeatCapacityRate>;
+pub type _MassFlowRate = Diff<_Mass, _Time>;
+pub type MassFlowRate<T=f64> = Quantity<T, _MassFlowRate>;
+pub type _MoleFlowRate = Diff<_Moles, _Time>;
+pub type MoleFlowRate<T=f64> = Quantity<T, _MoleFlowRate>;
 
 pub type _Viscosity = Sum<_Pressure, _Time>;
 pub type Viscosity<T = f64> = Quantity<T, _Viscosity>;
@@ -250,10 +257,57 @@ pub const RONNA: f64 = 1e27;
 /// Prefix quetta $\\left(\text{Q}=10^{30}\\right)$
 pub const QUETTA: f64 = 1e30;
 
-/// Basic conversions and constructors
+/// Additional unit degrees Celsius
+pub struct CELSIUS;
+
+impl Mul<CELSIUS> for f64 {
+    type Output = Temperature<f64>;
+    #[allow(clippy::suspicious_arithmetic_impl)]
+    fn mul(self, _: CELSIUS) -> Temperature<f64> {
+        Quantity(self + 273.15, PhantomData)
+    }
+}
+
+impl<S: Data<Elem = f64>, D: Dimension> Mul<CELSIUS> for ArrayBase<S, D> {
+    type Output = Temperature<Array<f64, D>>;
+    #[allow(clippy::suspicious_arithmetic_impl)]
+    fn mul(self, _: CELSIUS) -> Temperature<Array<f64, D>> {
+        Quantity(&self + 273.15, PhantomData)
+    }
+}
+
+impl Div<CELSIUS> for Temperature<f64> {
+    type Output = f64;
+    #[allow(clippy::suspicious_arithmetic_impl)]
+    fn div(self, _: CELSIUS) -> Self::Output {
+        self.0 - 273.15
+    }
+}
+
+impl<D: Dimension> Div<CELSIUS> for Temperature<Array<f64, D>> {
+    type Output = Array<f64, D>;
+    #[allow(clippy::suspicious_arithmetic_impl)]
+    fn div(self, _: CELSIUS) -> Self::Output {
+        self.0 - 273.15
+    }
+}
+
 impl<T> Dimensionless<T> {
+    /// Return the value of a dimensionless quantity.
     pub fn into_value(self) -> T {
         self.0
+    }
+}
+
+impl<T, U> Quantity<T, U> {
+    /// Convert a quantity into the given unit and return it
+    /// as a float or array.
+    pub fn convert_into<T2>(self, unit: Quantity<T2, U>) -> Quot<T, T2>
+    where
+        T: Div<T2>,
+        U: Sub<U, Output = _Dimensionless>,
+    {
+        (self / unit).into_value()
     }
 }
 

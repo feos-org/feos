@@ -174,7 +174,10 @@ impl<E: Residual> DataSet<E> for BinaryVlePressure {
                     ),
                 })?;
 
-                Ok((vle.vapor().pressure(Contributions::Total) / self.unit).into_value())
+                Ok(vle
+                    .vapor()
+                    .pressure(Contributions::Total)
+                    .convert_into(self.unit))
             })
             .collect()
     }

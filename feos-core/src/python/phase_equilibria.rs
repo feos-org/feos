@@ -915,20 +915,20 @@ macro_rules! impl_phase_equilibrium {
                         dict.insert(String::from(format!("y{}", i)), ys.column(i).to_vec());
                     }
                 }
-                dict.insert(String::from("temperature"), (self.0.vapor().temperature() / KELVIN).into_value().into_raw_vec());
-                dict.insert(String::from("pressure"), (self.0.vapor().pressure() / PASCAL).into_value().into_raw_vec());
-                dict.insert(String::from("density liquid"), (self.0.liquid().density() / (MOL / METER.powi::<P3>())).into_value().into_raw_vec());
-                dict.insert(String::from("density vapor"), (self.0.vapor().density() / (MOL / METER.powi::<P3>())).into_value().into_raw_vec());
-                dict.insert(String::from("mass density liquid"), (self.0.liquid().mass_density() / (KILOGRAM / METER.powi::<P3>())).into_value().into_raw_vec());
-                dict.insert(String::from("mass density vapor"), (self.0.vapor().mass_density() / (KILOGRAM / METER.powi::<P3>())).into_value().into_raw_vec());
-                dict.insert(String::from("molar enthalpy liquid"), (self.0.liquid().molar_enthalpy(contributions) / (KILO*JOULE / MOL)).into_value().into_raw_vec());
-                dict.insert(String::from("molar enthalpy vapor"), (self.0.vapor().molar_enthalpy(contributions) / (KILO*JOULE / MOL)).into_value().into_raw_vec());
-                dict.insert(String::from("molar entropy liquid"), (self.0.liquid().molar_entropy(contributions) / (KILO*JOULE / KELVIN / MOL)).into_value().into_raw_vec());
-                dict.insert(String::from("molar entropy vapor"), (self.0.vapor().molar_entropy(contributions) / (KILO*JOULE / KELVIN / MOL)).into_value().into_raw_vec());
-                dict.insert(String::from("specific enthalpy liquid"), (self.0.liquid().specific_enthalpy(contributions) / (KILO*JOULE / KILOGRAM)).into_value().into_raw_vec());
-                dict.insert(String::from("specific enthalpy vapor"), (self.0.vapor().specific_enthalpy(contributions) / (KILO*JOULE / KILOGRAM)).into_value().into_raw_vec());
-                dict.insert(String::from("specific entropy liquid"), (self.0.liquid().specific_entropy(contributions) / (KILO*JOULE / KELVIN / KILOGRAM)).into_value().into_raw_vec());
-                dict.insert(String::from("specific entropy vapor"), (self.0.vapor().specific_entropy(contributions) / (KILO*JOULE / KELVIN / KILOGRAM)).into_value().into_raw_vec());
+                dict.insert(String::from("temperature"), self.0.vapor().temperature().convert_into(KELVIN).into_raw_vec());
+                dict.insert(String::from("pressure"), self.0.vapor().pressure().convert_into(PASCAL).into_raw_vec());
+                dict.insert(String::from("density liquid"), self.0.liquid().density().convert_into(MOL / METER.powi::<P3>()).into_raw_vec());
+                dict.insert(String::from("density vapor"), self.0.vapor().density().convert_into(MOL / METER.powi::<P3>()).into_raw_vec());
+                dict.insert(String::from("mass density liquid"), self.0.liquid().mass_density().convert_into(KILOGRAM / METER.powi::<P3>()).into_raw_vec());
+                dict.insert(String::from("mass density vapor"), self.0.vapor().mass_density().convert_into(KILOGRAM / METER.powi::<P3>()).into_raw_vec());
+                dict.insert(String::from("molar enthalpy liquid"), self.0.liquid().molar_enthalpy(contributions).convert_into(KILO * JOULE / MOL).into_raw_vec());
+                dict.insert(String::from("molar enthalpy vapor"), self.0.vapor().molar_enthalpy(contributions).convert_into(KILO * JOULE / MOL).into_raw_vec());
+                dict.insert(String::from("molar entropy liquid"), self.0.liquid().molar_entropy(contributions).convert_into(KILO * JOULE / KELVIN / MOL).into_raw_vec());
+                dict.insert(String::from("molar entropy vapor"), self.0.vapor().molar_entropy(contributions).convert_into(KILO * JOULE / KELVIN / MOL).into_raw_vec());
+                dict.insert(String::from("specific enthalpy liquid"), self.0.liquid().specific_enthalpy(contributions).convert_into(KILO * JOULE / KILOGRAM).into_raw_vec());
+                dict.insert(String::from("specific enthalpy vapor"), self.0.vapor().specific_enthalpy(contributions).convert_into(KILO * JOULE / KILOGRAM).into_raw_vec());
+                dict.insert(String::from("specific entropy liquid"), self.0.liquid().specific_entropy(contributions).convert_into(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec());
+                dict.insert(String::from("specific entropy vapor"), self.0.vapor().specific_entropy(contributions).convert_into(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec());
                 dict
             }
 
