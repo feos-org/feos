@@ -36,6 +36,10 @@ impl<I: Components + Send + Sync, F: HelmholtzEnergyFunctional> HelmholtzEnergyF
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.residual.compute_max_density(moles)
     }
+
+    fn bond_lengths(&self, temperature: f64) -> UnGraph<(), f64> {
+        self.residual.bond_lengths(temperature)
+    }
 }
 
 impl<I, F: PairPotential> PairPotential for EquationOfState<I, F> {
