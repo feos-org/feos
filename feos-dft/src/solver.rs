@@ -548,7 +548,7 @@ where
         for i in (0..=iter).rev() {
             y[i] = (gamma[i] - (i + 1..=iter).map(|k| h[(i, k)] * y[k]).sum::<f64>()) / h[(i, i)];
         }
-        v.iter().zip(y.into_iter()).for_each(|(v, y)| x += &(y * v));
+        v.iter().zip(y).for_each(|(v, y)| x += &(y * v));
         Ok(x)
     }
 

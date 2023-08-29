@@ -375,12 +375,12 @@ where
             (self.bulk.partial_molar_volume() * self.bulk.dp_dt(Contributions::Total)).to_reduced();
         let mut lhs = dfdrhodt.mapv(|d| d.eps);
         lhs.outer_iter_mut()
-            .zip(dfdrhodt_bulk.into_iter())
-            .zip(x.into_iter())
+            .zip(dfdrhodt_bulk)
+            .zip(x)
             .for_each(|((mut lhs, d), x)| lhs -= d.eps - x);
         lhs.outer_iter_mut()
             .zip(rho.outer_iter())
-            .zip(rho_bulk.into_iter())
+            .zip(rho_bulk)
             .zip(self.dft.m().iter())
             .for_each(|(((mut lhs, rho), rho_b), &m)| lhs += &((&rho / rho_b).mapv(f64::ln) * m));
 
