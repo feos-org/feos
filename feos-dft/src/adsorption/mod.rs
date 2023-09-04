@@ -14,8 +14,10 @@ mod external_potential;
 #[cfg(feature = "rayon")]
 mod fea_potential;
 mod pore;
+mod pore2d;
 pub use external_potential::{ExternalPotential, FluidParameters};
 pub use pore::{Pore1D, PoreProfile, PoreProfile1D, PoreSpecification};
+pub use pore2d::{Pore2D, PoreProfile2D};
 
 #[cfg(feature = "rayon")]
 mod pore3d;
@@ -212,7 +214,7 @@ where
                 _ => unreachable!(),
             };
         }
-        let profile = pore.initialize(&bulk, None, None).solve(solver)?.profile;
+        let profile = pore.initialize(&bulk, None, None)?.solve(solver)?.profile;
         let external_potential = Some(&profile.external_potential);
         let mut old_density = Some(&profile.density);
 
@@ -229,8 +231,8 @@ where
                     .clone();
             }
 
-            let p = pore.initialize(&bulk, old_density, external_potential);
-            let p2 = pore.initialize(&bulk, None, external_potential);
+            let p = pore.initialize(&bulk, old_density, external_potential)?;
+            let p2 = pore.initialize(&bulk, None, external_potential)?;
             profiles.push(p.solve(solver).or_else(|_| p2.solve(solver)));
 
             old_density = if let Some(Ok(l)) = profiles.last() {
@@ -277,8 +279,8 @@ where
             .vapor()
             .build()?;
 
-        let mut vapor = pore.initialize(&vapor_bulk, None, None).solve(solver)?;
-        let mut liquid = pore.initialize(&bulk_init, None, None).solve(solver)?;
+        let mut vapor = pore.initialize(&vapor_bulk, None, None)?.solve(solver)?;
+        let mut liquid = pore.initialize(&bulk_init, None, None)?.solve(solver)?;
 
         // calculate initial value for bulk density
         let n_dp_drho_v = (vapor.profile.moles() * vapor_bulk.dp_drho(Contributions::Total)).sum();

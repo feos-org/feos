@@ -192,7 +192,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
     }
 
     /// Relative adsorption of component `i' with respect to `j': \Gamma_i^(j)
-    pub fn relative_adsorption(&self) -> EosResult<Moles<Array2<f64>>> {
+    pub fn relative_adsorption(&self) -> Moles<Array2<f64>> {
         let s = self.profile.density.shape();
         let mut rho_l = Density::zeros(s[0]);
         let mut rho_v = Density::zeros(s[0]);
@@ -204,7 +204,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         }
 
         // Calculate \Gamma_i^(j)
-        let gamma = Moles::from_shape_fn((s[0], s[0]), |(i, j)| {
+        Moles::from_shape_fn((s[0], s[0]), |(i, j)| {
             if i == j {
                 Moles::from_reduced(0.0)
             } else {
@@ -216,28 +216,24 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
                                 / (rho_l.get(i) - rho_v.get(i)))),
                 )
             }
-        });
-
-        Ok(gamma)
+        })
     }
 
     /// Interfacial enrichment of component `i': E_i
-    pub fn interfacial_enrichment(&self) -> EosResult<Array1<f64>> {
+    pub fn interfacial_enrichment(&self) -> Array1<f64> {
         let s = self.profile.density.shape();
         let density = self.profile.density.to_reduced();
         let rho_l = density.index_axis(Axis_nd(1), 0);
         let rho_v = density.index_axis(Axis_nd(1), s[1] - 1);
 
-        let enrichment = Array1::from_shape_fn(s[0], |i| {
+        Array1::from_shape_fn(s[0], |i| {
             *(density
                 .index_axis(Axis_nd(0), i)
                 .iter()
                 .max_by(|&a, &b| a.total_cmp(b))
                 .unwrap())  // panics only of iterator is empty
                 / rho_l[i].max(rho_v[i])
-        });
-
-        Ok(enrichment)
+        })
     }
 
     /// Interface thickness (90-10 number density difference)
