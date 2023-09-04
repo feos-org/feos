@@ -30,12 +30,12 @@ use feos_dft::python::*;
 use feos_dft::solvation::*;
 use feos_dft::*;
 use numpy::convert::ToPyArray;
-use numpy::{PyArray1, PyArray2, PyArray4};
+use numpy::{PyArray1, PyArray2, PyArray3, PyArray4};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
 #[cfg(feature = "estimator")]
 use pyo3::wrap_pymodule;
-use quantity::python::{PySIArray1, PySIArray2, PySIArray3, PySIArray4, PySINumber};
+use quantity::python::{PyAngle, PySIArray1, PySIArray2, PySIArray3, PySIArray4, PySINumber};
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
@@ -259,6 +259,7 @@ pub fn dft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyPlanarInterface>()?;
     m.add_class::<Geometry>()?;
     m.add_class::<PyPore1D>()?;
+    m.add_class::<PyPore2D>()?;
     m.add_class::<PyPore3D>()?;
     m.add_class::<PyPairCorrelation>()?;
     m.add_class::<PyExternalPotential>()?;

@@ -4,6 +4,7 @@ use crate::convolver::ConvolverFFT;
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::{Axis, Grid};
 use crate::profile::{DFTProfile, CUTOFF_RADIUS, MAX_POTENTIAL};
+use ang::Angle;
 use feos_core::si::{Density, Length};
 use feos_core::State;
 use ndarray::prelude::*;
@@ -12,6 +13,7 @@ use ndarray::Zip;
 /// Parameters required to specify a 3D pore.
 pub struct Pore3D {
     system_size: [Length<f64>; 3],
+    angles: [Angle; 3],
     n_grid: [usize; 3],
     coordinates: Length<Array2<f64>>,
     sigma_ss: Array1<f64>,
@@ -23,6 +25,7 @@ pub struct Pore3D {
 impl Pore3D {
     pub fn new(
         system_size: [Length<f64>; 3],
+        angles: [Angle; 3],
         n_grid: [usize; 3],
         coordinates: Length<Array2<f64>>,
         sigma_ss: Array1<f64>,
@@ -32,6 +35,7 @@ impl Pore3D {
     ) -> Self {
         Self {
             system_size,
+            angles,
             n_grid,
             coordinates,
             sigma_ss,
@@ -86,7 +90,7 @@ impl PoreSpecification<Ix3> for Pore3D {
         );
 
         // initialize convolver
-        let grid = Grid::Periodical3(x, y, z);
+        let grid = Grid::Periodical3(x, y, z, self.angles);
         let weight_functions = dft.weight_functions(t);
         let convolver = ConvolverFFT::plan(&grid, &weight_functions, Some(1));
 

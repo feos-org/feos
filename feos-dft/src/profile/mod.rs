@@ -2,9 +2,11 @@ use crate::convolver::{BulkConvolver, Convolver};
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::Grid;
 use crate::solver::{DFTSolver, DFTSolverLog};
-use feos_core::si::{Density, Length, Moles, Quantity, Temperature, Volume, _Volume};
+use feos_core::si::{Density, Length, Moles, Quantity, Temperature, Volume, _Volume, DEGREES};
 use feos_core::{Components, EosError, EosResult, State};
-use ndarray::{Array, Array1, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3};
+use ndarray::{
+    Array, Array1, Array2, Array3, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3,
+};
 use std::ops::{Add, MulAssign};
 use std::sync::Arc;
 use typenum::Sum;
@@ -124,6 +126,19 @@ impl<F> DFTProfile<Ix2, F> {
         ]
     }
 
+    pub fn meshgrid(&self) -> [Length<Array2<f64>>; 2] {
+        let (u, v, alpha) = match &self.grid {
+            Grid::Cartesian2(u, v) => (u, v, 90.0 * DEGREES),
+            Grid::Periodical2(u, v, alpha) => (u, v, *alpha),
+            _ => unreachable!(),
+        };
+        let u_grid = Array::from_shape_fn([u.grid.len(), v.grid.len()], |(i, _)| u.grid[i]);
+        let v_grid = Array::from_shape_fn([u.grid.len(), v.grid.len()], |(_, j)| v.grid[j]);
+        let x = Length::from_reduced(u_grid + &v_grid * alpha.cos());
+        let y = Length::from_reduced(v_grid * alpha.sin());
+        [x, y]
+    }
+
     pub fn r(&self) -> Length<Array1<f64>> {
         Length::from_reduced(self.grid.grids()[0].to_owned())
     }
@@ -140,6 +155,24 @@ impl<F> DFTProfile<Ix3, F> {
             Length::from_reduced(self.grid.axes()[1].edges.to_owned()),
             Length::from_reduced(self.grid.axes()[2].edges.to_owned()),
         ]
+    }
+
+    pub fn meshgrid(&self) -> [Length<Array3<f64>>; 3] {
+        let (u, v, w, [alpha, beta, gamma]) = match &self.grid {
+            Grid::Cartesian3(u, v, w) => (u, v, w, [90.0 * DEGREES; 3]),
+            Grid::Periodical3(u, v, w, angles) => (u, v, w, *angles),
+            _ => unreachable!(),
+        };
+        let shape = [u.grid.len(), v.grid.len(), w.grid.len()];
+        let u_grid = Array::from_shape_fn(shape, |(i, _, _)| u.grid[i]);
+        let v_grid = Array::from_shape_fn(shape, |(_, j, _)| v.grid[j]);
+        let w_grid = Array::from_shape_fn(shape, |(_, _, k)| w.grid[k]);
+        let xi = (alpha.cos() - gamma.cos() * beta.cos()) / gamma.sin();
+        let zeta = (1.0 - beta.cos().powi(2) - xi * xi).sqrt();
+        let x = Length::from_reduced(u_grid + &v_grid * gamma.cos() + &w_grid * beta.cos());
+        let y = Length::from_reduced(v_grid * gamma.sin() + &w_grid * xi);
+        let z = Length::from_reduced(w_grid * zeta);
+        [x, y, z]
     }
 
     pub fn x(&self) -> Length<Array1<f64>> {
@@ -215,14 +248,14 @@ where
     }
 
     fn integrate_reduced(&self, mut profile: Array<f64, D>) -> f64 {
-        let integration_weights = self.grid.integration_weights();
+        let (integration_weights, functional_determinant) = self.grid.integration_weights();
 
         for (i, w) in integration_weights.into_iter().enumerate() {
             for mut l in profile.lanes_mut(Axis_nd(i)) {
                 l.mul_assign(w);
             }
         }
-        profile.sum()
+        profile.sum() * functional_determinant
     }
 
     fn integrate_reduced_comp(&self, profile: &Array<f64, D::Larger>) -> Array1<f64> {
@@ -233,9 +266,10 @@ where
 
     /// Return the volume of the profile.
     ///
-    /// Depending on the geometry, the result is in m, m² or m³.
+    /// In periodic directions, the length is assumed to be 1 Å.
     pub fn volume(&self) -> Volume<f64> {
-        Volume::from_reduced(self.grid.axes().iter().map(|ax| ax.volume()).product())
+        let volume: f64 = self.grid.axes().iter().map(|ax| ax.volume()).product();
+        Volume::from_reduced(volume * self.grid.functional_determinant())
     }
 
     /// Integrate a given profile over the iteration domain.
@@ -246,14 +280,14 @@ where
     where
         _Volume: Add<U>,
     {
-        let integration_weights = self.grid.integration_weights();
+        let (integration_weights, functional_determinant) = self.grid.integration_weights();
         let mut value = profile.to_owned();
         for (i, &w) in integration_weights.iter().enumerate() {
             for mut l in value.lanes_mut(Axis_nd(i)) {
                 l.assign(&(&l * w));
             }
         }
-        Volume::from_reduced(1.0) * value.sum()
+        Volume::from_reduced(functional_determinant) * value.sum()
     }
 
     /// Integrate each component individually.
