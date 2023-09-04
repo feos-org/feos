@@ -21,7 +21,7 @@ const DEFAULT_GRID_POINTS: usize = 2048;
 /// Parameters required to specify a 1D pore.
 pub struct Pore1D {
     pub geometry: Geometry,
-    pub pore_size: Length<f64>,
+    pub pore_size: Length,
     pub potential: ExternalPotential,
     pub n_grid: Option<usize>,
     pub potential_cutoff: Option<f64>,
@@ -30,7 +30,7 @@ pub struct Pore1D {
 impl Pore1D {
     pub fn new(
         geometry: Geometry,
-        pore_size: Length<f64>,
+        pore_size: Length,
         potential: ExternalPotential,
         n_grid: Option<usize>,
         potential_cutoff: Option<f64>,
@@ -56,7 +56,7 @@ pub trait PoreSpecification<D: Dimension> {
     ) -> EosResult<PoreProfile<D, F>>;
 
     /// Return the pore volume using Helium at 298 K as reference.
-    fn pore_volume(&self) -> EosResult<Volume<f64>>
+    fn pore_volume(&self) -> EosResult<Volume>
     where
         D::Larger: Dimension<Smaller = D>,
     {
@@ -78,8 +78,8 @@ pub trait PoreSpecification<D: Dimension> {
 /// Density profile and properties of a confined system in arbitrary dimensions.
 pub struct PoreProfile<D: Dimension, F> {
     pub profile: DFTProfile<D, F>,
-    pub grand_potential: Option<Energy<f64>>,
-    pub interfacial_tension: Option<Energy<f64>>,
+    pub grand_potential: Option<Energy>,
+    pub interfacial_tension: Option<Energy>,
 }
 
 /// Density profile and properties of a 1D confined system.
@@ -138,7 +138,7 @@ where
         Ok(&h_ads * b_unit / a_unit)
     }
 
-    pub fn enthalpy_of_adsorption(&self) -> EosResult<MolarEnergy<f64>> {
+    pub fn enthalpy_of_adsorption(&self) -> EosResult<MolarEnergy> {
         Ok((self.partial_molar_enthalpy_of_adsorption()?
             * Dimensionless::from(&self.profile.bulk.molefracs))
         .sum())
@@ -200,8 +200,8 @@ impl PoreSpecification<Ix1> for Pore1D {
 }
 
 fn external_potential_1d<P: FluidParameters>(
-    pore_width: Length<f64>,
-    temperature: Temperature<f64>,
+    pore_width: Length,
+    temperature: Temperature,
     potential: &ExternalPotential,
     fluid_parameters: &P,
     axis: &Axis,

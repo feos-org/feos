@@ -310,9 +310,10 @@ where
             } else {
                 rho + alpha * delta_rho
             };
-            let Ok((_, _, res2, _,_)) =
-                self.euler_lagrange_equation(&rho_new, rho_bulk, logarithm) else {
-                    continue;
+            let Ok((_, _, res2, _, _)) =
+                self.euler_lagrange_equation(&rho_new, rho_bulk, logarithm)
+            else {
+                continue;
             };
             if res2 > res0 {
                 continue;
@@ -324,9 +325,10 @@ where
             } else {
                 rho + 0.5 * alpha * delta_rho
             };
-            let Ok((_, _, res1, _,_)) =
-                self.euler_lagrange_equation(&rho_new, rho_bulk, logarithm) else {
-                    continue;
+            let Ok((_, _, res1, _, _)) =
+                self.euler_lagrange_equation(&rho_new, rho_bulk, logarithm)
+            else {
+                continue;
             };
 
             // estimate minimum

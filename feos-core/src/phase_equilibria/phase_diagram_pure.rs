@@ -34,9 +34,9 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     /// Calculate a phase diagram for a pure component.
     pub fn pure(
         eos: &Arc<E>,
-        min_temperature: Temperature<f64>,
+        min_temperature: Temperature,
         npoints: usize,
-        critical_temperature: Option<Temperature<f64>>,
+        critical_temperature: Option<Temperature>,
         options: SolverOptions,
     ) -> EosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
@@ -92,11 +92,11 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
     pub fn par_pure(
         eos: &Arc<E>,
-        min_temperature: Temperature<f64>,
+        min_temperature: Temperature,
         npoints: usize,
         chunksize: usize,
         thread_pool: ThreadPool,
-        critical_temperature: Option<Temperature<f64>>,
+        critical_temperature: Option<Temperature>,
         options: SolverOptions,
     ) -> EosResult<Self> {
         let sc = State::critical_point(eos, None, critical_temperature, SolverOptions::default())?;

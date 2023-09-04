@@ -28,7 +28,7 @@ pub trait TemperatureOrPressure: Copy {
 
     const IDENTIFIER: &'static str;
 
-    fn temperature_pressure(&self, tp_init: Self::Other) -> (Temperature<f64>, Pressure<f64>);
+    fn temperature_pressure(&self, tp_init: Self::Other) -> (Temperature, Pressure);
 
     fn from_state<E: Residual>(state: &State<E>) -> Self::Other;
 
@@ -66,11 +66,11 @@ pub trait TemperatureOrPressure: Copy {
     ) -> EosResult<f64>;
 }
 
-impl TemperatureOrPressure for Temperature<f64> {
-    type Other = Pressure<f64>;
+impl TemperatureOrPressure for Temperature {
+    type Other = Pressure;
     const IDENTIFIER: &'static str = "temperature";
 
-    fn temperature_pressure(&self, tp_init: Self::Other) -> (Temperature<f64>, Pressure<f64>) {
+    fn temperature_pressure(&self, tp_init: Self::Other) -> (Temperature, Pressure) {
         (*self, tp_init)
     }
 
@@ -80,8 +80,8 @@ impl TemperatureOrPressure for Temperature<f64> {
 
     fn linspace(
         &self,
-        start: Pressure<f64>,
-        end: Pressure<f64>,
+        start: Pressure,
+        end: Pressure,
         n: usize,
     ) -> (Temperature<Array1<f64>>, Pressure<Array1<f64>>) {
         (
@@ -93,7 +93,7 @@ impl TemperatureOrPressure for Temperature<f64> {
     fn bubble_dew_point<E: Residual>(
         eos: &Arc<E>,
         temperature: Self,
-        p_init: Option<Pressure<f64>>,
+        p_init: Option<Pressure>,
         molefracs_spec: &Array1<f64>,
         molefracs_init: Option<&Array1<f64>>,
         bubble: bool,
@@ -142,8 +142,8 @@ impl TemperatureOrPressure for Temperature<f64> {
     }
 
     fn adjust_t_p<E: Residual>(
-        temperature: Temperature<f64>,
-        pressure: &mut Pressure<f64>,
+        temperature: Temperature,
+        pressure: &mut Pressure,
         state1: &mut State<E>,
         state2: &mut State<E>,
         verbosity: Verbosity,
@@ -186,8 +186,8 @@ impl TemperatureOrPressure for Temperature<f64> {
     }
 
     fn newton_step<E: Residual>(
-        _: Temperature<f64>,
-        pressure: &mut Pressure<f64>,
+        _: Temperature,
+        pressure: &mut Pressure,
         state1: &mut State<E>,
         state2: &mut State<E>,
         verbosity: Verbosity,
@@ -259,10 +259,10 @@ impl TemperatureOrPressure for Temperature<f64> {
 // used instead of the explicit unit. Maybe the type is too complicated for the
 // compiler?
 impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>> {
-    type Other = Temperature<f64>;
+    type Other = Temperature;
     const IDENTIFIER: &'static str = "pressure";
 
-    fn temperature_pressure(&self, tp_init: Self::Other) -> (Temperature<f64>, Pressure<f64>) {
+    fn temperature_pressure(&self, tp_init: Self::Other) -> (Temperature, Pressure) {
         (tp_init, *self)
     }
 
@@ -272,8 +272,8 @@ impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
 
     fn linspace(
         &self,
-        start: Temperature<f64>,
-        end: Temperature<f64>,
+        start: Temperature,
+        end: Temperature,
         n: usize,
     ) -> (Temperature<Array1<f64>>, Pressure<Array1<f64>>) {
         (
@@ -285,7 +285,7 @@ impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
     fn bubble_dew_point<E: Residual>(
         eos: &Arc<E>,
         pressure: Self,
-        t_init: Option<Temperature<f64>>,
+        t_init: Option<Temperature>,
         molefracs_spec: &Array1<f64>,
         molefracs_init: Option<&Array1<f64>>,
         bubble: bool,
@@ -304,8 +304,8 @@ impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
     }
 
     fn adjust_t_p<E: Residual>(
-        pressure: Pressure<f64>,
-        temperature: &mut Temperature<f64>,
+        pressure: Pressure,
+        temperature: &mut Temperature,
         state1: &mut State<E>,
         state2: &mut State<E>,
         verbosity: Verbosity,
@@ -351,8 +351,8 @@ impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
     }
 
     fn newton_step<E: Residual>(
-        pressure: Pressure<f64>,
-        temperature: &mut Temperature<f64>,
+        pressure: Pressure,
+        temperature: &mut Temperature,
         state1: &mut State<E>,
         state2: &mut State<E>,
         verbosity: Verbosity,
@@ -525,10 +525,10 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 
     fn starting_pressure_ideal_gas(
         eos: &Arc<E>,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         molefracs_spec: &Array1<f64>,
         bubble: bool,
-    ) -> EosResult<(Pressure<f64>, Array1<f64>)> {
+    ) -> EosResult<(Pressure, Array1<f64>)> {
         if bubble {
             Self::starting_pressure_ideal_gas_bubble(eos, temperature, molefracs_spec)
         } else {
@@ -538,9 +538,9 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 
     pub(super) fn starting_pressure_ideal_gas_bubble(
         eos: &Arc<E>,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         liquid_molefracs: &Array1<f64>,
-    ) -> EosResult<(Pressure<f64>, Array1<f64>)> {
+    ) -> EosResult<(Pressure, Array1<f64>)> {
         let m = Moles::from_reduced(liquid_molefracs.to_owned());
         let density = 0.75 * eos.max_density(Some(&m))?;
         let liquid = State::new_nvt(eos, temperature, m.sum() / density, &m)?;
@@ -560,10 +560,10 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 
     fn starting_pressure_ideal_gas_dew(
         eos: &Arc<E>,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         vapor_molefracs: &Array1<f64>,
-    ) -> EosResult<(Pressure<f64>, Array1<f64>)> {
-        let mut p: Option<Pressure<f64>> = None;
+    ) -> EosResult<(Pressure, Array1<f64>)> {
+        let mut p: Option<Pressure> = None;
 
         let mut x = vapor_molefracs.clone();
         for _ in 0..5 {
@@ -592,9 +592,9 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 
     pub(super) fn starting_pressure_spinodal(
         eos: &Arc<E>,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         molefracs: &Array1<f64>,
-    ) -> EosResult<Pressure<f64>> {
+    ) -> EosResult<Pressure> {
         let moles = Moles::from_reduced(molefracs.clone());
         let [sp_v, sp_l] = State::spinodal(eos, temperature, Some(&moles), Default::default())?;
         let pv = sp_v.pressure(Contributions::Total);
@@ -605,8 +605,8 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 
 fn starting_x2_bubble<E: Residual>(
     eos: &Arc<E>,
-    temperature: Temperature<f64>,
-    pressure: Pressure<f64>,
+    temperature: Temperature,
+    pressure: Pressure,
     liquid_molefracs: &Array1<f64>,
     vapor_molefracs: Option<&Array1<f64>>,
 ) -> EosResult<[State<E>; 2]> {
@@ -627,8 +627,8 @@ fn starting_x2_bubble<E: Residual>(
 
 fn starting_x2_dew<E: Residual>(
     eos: &Arc<E>,
-    temperature: Temperature<f64>,
-    pressure: Pressure<f64>,
+    temperature: Temperature,
+    pressure: Pressure,
     vapor_molefracs: &Array1<f64>,
     liquid_molefracs: Option<&Array1<f64>>,
 ) -> EosResult<[State<E>; 2]> {
@@ -744,8 +744,8 @@ fn bubble_dew<E: Residual, TP: TemperatureOrPressure>(
 }
 
 fn adjust_states<E: Residual>(
-    temperature: Temperature<f64>,
-    pressure: Pressure<f64>,
+    temperature: Temperature,
+    pressure: Pressure,
     state1: &mut State<E>,
     state2: &mut State<E>,
     moles_state2: Option<&Moles<Array1<f64>>>,

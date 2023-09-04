@@ -77,7 +77,7 @@ pub trait Residual: Components + Send + Sync {
     /// equilibria and other iterations. It is not explicitly meant to
     /// be a mathematical limit for the density (if those exist in the
     /// equation of state anyways).
-    fn max_density(&self, moles: Option<&Moles<Array1<f64>>>) -> EosResult<Density<f64>> {
+    fn max_density(&self, moles: Option<&Moles<Array1<f64>>>) -> EosResult<Density> {
         let mr = self.validate_moles(moles)?.to_reduced();
         Ok(Density::from_reduced(self.compute_max_density(&mr)))
     }
@@ -85,9 +85,9 @@ pub trait Residual: Components + Send + Sync {
     /// Calculate the second virial coefficient $B(T)$
     fn second_virial_coefficient(
         &self,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         moles: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<<f64 as Div<Density<f64>>>::Output> {
+    ) -> EosResult<<f64 as Div<Density>>::Output> {
         let mr = self.validate_moles(moles)?;
         let x = (&mr / mr.sum()).into_value();
         let mut rho = HyperDual64::zero();
@@ -104,9 +104,9 @@ pub trait Residual: Components + Send + Sync {
     #[allow(clippy::type_complexity)]
     fn third_virial_coefficient(
         &self,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         moles: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<<<f64 as Div<Density<f64>>>::Output as Div<Density<f64>>>::Output> {
+    ) -> EosResult<<<f64 as Div<Density>>::Output as Div<Density>>::Output> {
         let mr = self.validate_moles(moles)?;
         let x = (&mr / mr.sum()).into_value();
         let rho = Dual3_64::zero().derivative();
@@ -119,9 +119,9 @@ pub trait Residual: Components + Send + Sync {
     #[allow(clippy::type_complexity)]
     fn second_virial_coefficient_temperature_derivative(
         &self,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         moles: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<<<f64 as Div<Density<f64>>>::Output as Div<Temperature<f64>>>::Output> {
+    ) -> EosResult<<<f64 as Div<Density>>::Output as Div<Temperature>>::Output> {
         let mr = self.validate_moles(moles)?;
         let x = (&mr / mr.sum()).into_value();
         let mut rho = HyperDual::zero();
@@ -138,12 +138,10 @@ pub trait Residual: Components + Send + Sync {
     #[allow(clippy::type_complexity)]
     fn third_virial_coefficient_temperature_derivative(
         &self,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         moles: Option<&Moles<Array1<f64>>>,
     ) -> EosResult<
-        <<<f64 as Div<Density<f64>>>::Output as Div<Density<f64>>>::Output as Div<
-            Temperature<f64>,
-        >>::Output,
+        <<<f64 as Div<Density>>::Output as Div<Density>>::Output as Div<Temperature>>::Output,
     > {
         let mr = self.validate_moles(moles)?;
         let x = (&mr / mr.sum()).into_value();
@@ -160,23 +158,23 @@ pub trait Residual: Components + Send + Sync {
 pub trait EntropyScaling {
     fn viscosity_reference(
         &self,
-        temperature: Temperature<f64>,
-        volume: Volume<f64>,
+        temperature: Temperature,
+        volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Viscosity<f64>>;
+    ) -> EosResult<Viscosity>;
     fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
     fn diffusion_reference(
         &self,
-        temperature: Temperature<f64>,
-        volume: Volume<f64>,
+        temperature: Temperature,
+        volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Diffusivity<f64>>;
+    ) -> EosResult<Diffusivity>;
     fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
     fn thermal_conductivity_reference(
         &self,
-        temperature: Temperature<f64>,
-        volume: Volume<f64>,
+        temperature: Temperature,
+        volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<ThermalConductivity<f64>>;
+    ) -> EosResult<ThermalConductivity>;
     fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
 }

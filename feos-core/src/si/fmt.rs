@@ -101,12 +101,12 @@ impl_fmt!(N2, P2, P1, N1, Z0, Z0, WEBER, "Wb", Some(PETA));
 impl_fmt!(N2, Z0, P1, N1, Z0, Z0, TESLA, "T", Some(PETA));
 impl_fmt!(N2, P2, P1, N2, Z0, Z0, HENRY, "H", Some(PETA));
 
-const M2: Area<f64> = Quantity(1.0, PhantomData);
-const M3: Volume<f64> = Quantity(1.0, PhantomData);
-const KG: Mass<f64> = KILOGRAM;
-const JMK: MolarEntropy<f64> = Quantity(1.0, PhantomData);
-const JKGK: SpecificEntropy<f64> = Quantity(1.0, PhantomData);
-const WMK: ThermalConductivity<f64> = Quantity(1.0, PhantomData);
+const M2: Area = Quantity(1.0, PhantomData);
+const M3: Volume = Quantity(1.0, PhantomData);
+const KG: Mass = KILOGRAM;
+const JMK: MolarEntropy = Quantity(1.0, PhantomData);
+const JKGK: SpecificEntropy = Quantity(1.0, PhantomData);
+const WMK: ThermalConductivity = Quantity(1.0, PhantomData);
 
 impl_fmt!(Z0, N3, Z0, Z0, Z0, P1, MOL / M3, "mol/m³", Some(MEGA));
 impl_fmt!(Z0, N2, Z0, Z0, Z0, P1, MOL / M2, "mol/m²", Some(MEGA));

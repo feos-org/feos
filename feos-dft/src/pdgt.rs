@@ -118,7 +118,7 @@ impl dyn FunctionalContribution {
     #[allow(clippy::type_complexity)]
     pub fn influence_diagonal(
         &self,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         density: &Density<Array2<f64>>,
     ) -> EosResult<(Pressure<Array1<f64>>, InfluenceParameter<Array2<f64>>)> {
         let t = temperature.to_reduced();
@@ -147,8 +147,8 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         vle: &PhaseEquilibrium<Self, 2>,
         n_grid: usize,
         reference_component: usize,
-        z: Option<(&mut Length<Array1<f64>>, &mut Length<f64>)>,
-    ) -> EosResult<(Density<Array2<f64>>, SurfaceTension<f64>)> {
+        z: Option<(&mut Length<Array1<f64>>, &mut Length)>,
+    ) -> EosResult<(Density<Array2<f64>>, SurfaceTension)> {
         // calculate density profile
         let density = if self.components() == 1 {
             let delta_rho = (vle.vapor().density - vle.liquid().density) / (n_grid + 1) as f64;

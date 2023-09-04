@@ -62,14 +62,14 @@ impl<E: Residual + IdealGas> State<E> {
     pub fn dmu_dt(
         &self,
         contributions: Contributions,
-    ) -> <MolarEnergy<Array1<f64>> as Div<Temperature<f64>>>::Output {
+    ) -> <MolarEnergy<Array1<f64>> as Div<Temperature>>::Output {
         Quantity::from_reduced(Array1::from_shape_fn(self.eos.components(), |i| {
             self.get_or_compute_derivative(PartialDerivative::SecondMixed(DT, DN(i)), contributions)
         }))
     }
 
     /// Molar isochoric heat capacity: $c_v=\left(\frac{\partial u}{\partial T}\right)_{V,N_i}$
-    pub fn molar_isochoric_heat_capacity(&self, contributions: Contributions) -> MolarEntropy<f64> {
+    pub fn molar_isochoric_heat_capacity(&self, contributions: Contributions) -> MolarEntropy {
         self.temperature * self.ds_dt(contributions) / self.total_moles
     }
 
@@ -77,7 +77,7 @@ impl<E: Residual + IdealGas> State<E> {
     pub fn specific_isochoric_heat_capacity(
         &self,
         contributions: Contributions,
-    ) -> SpecificEntropy<f64> {
+    ) -> SpecificEntropy {
         self.molar_isochoric_heat_capacity(contributions) / self.total_molar_weight()
     }
 
@@ -85,13 +85,13 @@ impl<E: Residual + IdealGas> State<E> {
     pub fn dc_v_dt(
         &self,
         contributions: Contributions,
-    ) -> <MolarEntropy<f64> as Div<Temperature<f64>>>::Output {
+    ) -> <MolarEntropy as Div<Temperature>>::Output {
         (self.temperature * self.d2s_dt2(contributions) + self.ds_dt(contributions))
             / self.total_moles
     }
 
     /// Molar isobaric heat capacity: $c_p=\left(\frac{\partial h}{\partial T}\right)_{p,N_i}$
-    pub fn molar_isobaric_heat_capacity(&self, contributions: Contributions) -> MolarEntropy<f64> {
+    pub fn molar_isobaric_heat_capacity(&self, contributions: Contributions) -> MolarEntropy {
         match contributions {
             Contributions::Residual => self.residual_molar_isobaric_heat_capacity(),
             _ => {
@@ -103,27 +103,24 @@ impl<E: Residual + IdealGas> State<E> {
     }
 
     /// Specific isobaric heat capacity: $c_p^{(m)}=\frac{C_p}{m}$
-    pub fn specific_isobaric_heat_capacity(
-        &self,
-        contributions: Contributions,
-    ) -> SpecificEntropy<f64> {
+    pub fn specific_isobaric_heat_capacity(&self, contributions: Contributions) -> SpecificEntropy {
         self.molar_isobaric_heat_capacity(contributions) / self.total_molar_weight()
     }
 
     /// Entropy: $S=-\left(\frac{\partial A}{\partial T}\right)_{V,N_i}$
-    pub fn entropy(&self, contributions: Contributions) -> Entropy<f64> {
+    pub fn entropy(&self, contributions: Contributions) -> Entropy {
         Entropy::from_reduced(
             -self.get_or_compute_derivative(PartialDerivative::First(DT), contributions),
         )
     }
 
     /// Molar entropy: $s=\frac{S}{N}$
-    pub fn molar_entropy(&self, contributions: Contributions) -> MolarEntropy<f64> {
+    pub fn molar_entropy(&self, contributions: Contributions) -> MolarEntropy {
         self.entropy(contributions) / self.total_moles
     }
 
     /// Specific entropy: $s^{(m)}=\frac{S}{m}$
-    pub fn specific_entropy(&self, contributions: Contributions) -> SpecificEntropy<f64> {
+    pub fn specific_entropy(&self, contributions: Contributions) -> SpecificEntropy {
         self.molar_entropy(contributions) / self.total_molar_weight()
     }
 
@@ -134,10 +131,7 @@ impl<E: Residual + IdealGas> State<E> {
     }
 
     /// Partial derivative of the entropy w.r.t. temperature: $\left(\frac{\partial S}{\partial T}\right)_{V,N_i}$
-    pub fn ds_dt(
-        &self,
-        contributions: Contributions,
-    ) -> <Entropy<f64> as Div<Temperature<f64>>>::Output {
+    pub fn ds_dt(&self, contributions: Contributions) -> <Entropy as Div<Temperature>>::Output {
         Quantity::from_reduced(
             -self.get_or_compute_derivative(PartialDerivative::Second(DT), contributions),
         )
@@ -147,26 +141,26 @@ impl<E: Residual + IdealGas> State<E> {
     pub fn d2s_dt2(
         &self,
         contributions: Contributions,
-    ) -> <<Entropy<f64> as Div<Temperature<f64>>>::Output as Div<Temperature<f64>>>::Output {
+    ) -> <<Entropy as Div<Temperature>>::Output as Div<Temperature>>::Output {
         Quantity::from_reduced(
             -self.get_or_compute_derivative(PartialDerivative::Third(DT), contributions),
         )
     }
 
     /// Enthalpy: $H=A+TS+pV$
-    pub fn enthalpy(&self, contributions: Contributions) -> Energy<f64> {
+    pub fn enthalpy(&self, contributions: Contributions) -> Energy {
         self.temperature * self.entropy(contributions)
             + self.helmholtz_energy(contributions)
             + self.pressure(contributions) * self.volume
     }
 
     /// Molar enthalpy: $h=\frac{H}{N}$
-    pub fn molar_enthalpy(&self, contributions: Contributions) -> MolarEnergy<f64> {
+    pub fn molar_enthalpy(&self, contributions: Contributions) -> MolarEnergy {
         self.enthalpy(contributions) / self.total_moles
     }
 
     /// Specific enthalpy: $h^{(m)}=\frac{H}{m}$
-    pub fn specific_enthalpy(&self, contributions: Contributions) -> SpecificEnergy<f64> {
+    pub fn specific_enthalpy(&self, contributions: Contributions) -> SpecificEnergy {
         self.molar_enthalpy(contributions) / self.total_molar_weight()
     }
 
@@ -178,73 +172,73 @@ impl<E: Residual + IdealGas> State<E> {
     }
 
     /// Helmholtz energy: $A$
-    pub fn helmholtz_energy(&self, contributions: Contributions) -> Energy<f64> {
+    pub fn helmholtz_energy(&self, contributions: Contributions) -> Energy {
         Energy::from_reduced(
             self.get_or_compute_derivative(PartialDerivative::Zeroth, contributions),
         )
     }
 
     /// Molar Helmholtz energy: $a=\frac{A}{N}$
-    pub fn molar_helmholtz_energy(&self, contributions: Contributions) -> MolarEnergy<f64> {
+    pub fn molar_helmholtz_energy(&self, contributions: Contributions) -> MolarEnergy {
         self.helmholtz_energy(contributions) / self.total_moles
     }
 
     /// Specific Helmholtz energy: $a^{(m)}=\frac{A}{m}$
-    pub fn specific_helmholtz_energy(&self, contributions: Contributions) -> SpecificEnergy<f64> {
+    pub fn specific_helmholtz_energy(&self, contributions: Contributions) -> SpecificEnergy {
         self.molar_helmholtz_energy(contributions) / self.total_molar_weight()
     }
 
     /// Internal energy: $U=A+TS$
-    pub fn internal_energy(&self, contributions: Contributions) -> Energy<f64> {
+    pub fn internal_energy(&self, contributions: Contributions) -> Energy {
         self.temperature * self.entropy(contributions) + self.helmholtz_energy(contributions)
     }
 
     /// Molar internal energy: $u=\frac{U}{N}$
-    pub fn molar_internal_energy(&self, contributions: Contributions) -> MolarEnergy<f64> {
+    pub fn molar_internal_energy(&self, contributions: Contributions) -> MolarEnergy {
         self.internal_energy(contributions) / self.total_moles
     }
 
     /// Specific internal energy: $u^{(m)}=\frac{U}{m}$
-    pub fn specific_internal_energy(&self, contributions: Contributions) -> SpecificEnergy<f64> {
+    pub fn specific_internal_energy(&self, contributions: Contributions) -> SpecificEnergy {
         self.molar_internal_energy(contributions) / self.total_molar_weight()
     }
 
     /// Gibbs energy: $G=A+pV$
-    pub fn gibbs_energy(&self, contributions: Contributions) -> Energy<f64> {
+    pub fn gibbs_energy(&self, contributions: Contributions) -> Energy {
         self.pressure(contributions) * self.volume + self.helmholtz_energy(contributions)
     }
 
     /// Molar Gibbs energy: $g=\frac{G}{N}$
-    pub fn molar_gibbs_energy(&self, contributions: Contributions) -> MolarEnergy<f64> {
+    pub fn molar_gibbs_energy(&self, contributions: Contributions) -> MolarEnergy {
         self.gibbs_energy(contributions) / self.total_moles
     }
 
     /// Specific Gibbs energy: $g^{(m)}=\frac{G}{m}$
-    pub fn specific_gibbs_energy(&self, contributions: Contributions) -> SpecificEnergy<f64> {
+    pub fn specific_gibbs_energy(&self, contributions: Contributions) -> SpecificEnergy {
         self.molar_gibbs_energy(contributions) / self.total_molar_weight()
     }
 
     /// Joule Thomson coefficient: $\mu_{JT}=\left(\frac{\partial T}{\partial p}\right)_{H,N_i}$
-    pub fn joule_thomson(&self) -> <Temperature<f64> as Div<Pressure<f64>>>::Output {
+    pub fn joule_thomson(&self) -> <Temperature as Div<Pressure>>::Output {
         let c = Contributions::Total;
         -(self.volume + self.temperature * self.dp_dt(c) / self.dp_dv(c))
             / (self.total_moles * self.molar_isobaric_heat_capacity(c))
     }
 
     /// Isentropic compressibility: $\kappa_s=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{S,N_i}$
-    pub fn isentropic_compressibility(&self) -> <f64 as Div<Pressure<f64>>>::Output {
+    pub fn isentropic_compressibility(&self) -> <f64 as Div<Pressure>>::Output {
         let c = Contributions::Total;
         -self.molar_isochoric_heat_capacity(c)
             / (self.molar_isobaric_heat_capacity(c) * self.dp_dv(c) * self.volume)
     }
 
     /// Isenthalpic compressibility: $\kappa_H=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{H,N_i}$
-    pub fn isenthalpic_compressibility(&self) -> <f64 as Div<Pressure<f64>>>::Output {
+    pub fn isenthalpic_compressibility(&self) -> <f64 as Div<Pressure>>::Output {
         self.isentropic_compressibility() * (1.0 + self.grueneisen_parameter())
     }
 
     /// Thermal expansivity: $\alpha_p=-\frac{1}{V}\left(\frac{\partial V}{\partial T}\right)_{p,N_i}$
-    pub fn thermal_expansivity(&self) -> <f64 as Div<Temperature<f64>>>::Output {
+    pub fn thermal_expansivity(&self) -> <f64 as Div<Temperature>>::Output {
         let c = Contributions::Total;
         -self.dp_dt(c) / self.dp_dv(c) / self.volume
     }
@@ -257,10 +251,7 @@ impl<E: Residual + IdealGas> State<E> {
     }
 
     /// Chemical potential $\mu_i$ evaluated for each contribution of the equation of state.
-    pub fn chemical_potential_contributions(
-        &self,
-        component: usize,
-    ) -> Vec<(String, MolarEnergy<f64>)> {
+    pub fn chemical_potential_contributions(&self, component: usize) -> Vec<(String, MolarEnergy)> {
         let new_state = self.derive1(DN(component));
         let contributions = self.eos.evaluate_residual_contributions(&new_state);
         let mut res = Vec::with_capacity(contributions.len() + 1);
@@ -280,7 +271,7 @@ impl<E: Residual + IdealGas> State<E> {
     }
 
     /// Speed of sound: $c=\sqrt{\left(\frac{\partial p}{\partial\rho^{(m)}}\right)_{S,N_i}}$
-    pub fn speed_of_sound(&self) -> Velocity<f64> {
+    pub fn speed_of_sound(&self) -> Velocity {
         (1.0 / (self.density * self.total_molar_weight() * self.isentropic_compressibility()))
             .sqrt()
     }

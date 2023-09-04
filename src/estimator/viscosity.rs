@@ -11,7 +11,7 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub struct Viscosity {
     pub target: Array1<f64>,
-    unit: si::Viscosity<f64>,
+    unit: si::Viscosity,
     temperature: Temperature<Array1<f64>>,
     pressure: Pressure<Array1<f64>>,
     initial_density: Vec<DensityInitialization>,

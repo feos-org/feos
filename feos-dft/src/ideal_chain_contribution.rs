@@ -63,7 +63,7 @@ impl IdealChainContribution {
 
     pub fn helmholtz_energy_density<D>(
         &self,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         density: &Density<Array<f64, D::Larger>>,
     ) -> EosResult<Pressure<Array<f64, D>>>
     where

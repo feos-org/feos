@@ -165,9 +165,9 @@ impl Joback {
     /// Directly calculates the molar ideal gas heat capacity from the Joback model.
     pub fn molar_isobaric_heat_capacity(
         &self,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         molefracs: &Array1<f64>,
-    ) -> EosResult<MolarEntropy<f64>> {
+    ) -> EosResult<MolarEntropy> {
         let t = temperature.to_reduced();
         let p = &self.parameters;
         let c_p = (molefracs

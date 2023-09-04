@@ -56,17 +56,17 @@ impl<E: Residual> State<E> {
     }
 
     /// Residual Helmholtz energy $A^\text{res}$
-    pub fn residual_helmholtz_energy(&self) -> Energy<f64> {
+    pub fn residual_helmholtz_energy(&self) -> Energy {
         Energy::from_reduced(self.get_or_compute_derivative_residual(PartialDerivative::Zeroth))
     }
 
     /// Residual molar Helmholtz energy $a^\text{res}$
-    pub fn residual_molar_helmholtz_energy(&self) -> MolarEnergy<f64> {
+    pub fn residual_molar_helmholtz_energy(&self) -> MolarEnergy {
         self.residual_helmholtz_energy() / self.total_moles
     }
 
     /// Residual Helmholtz energy $A^\text{res}$ evaluated for each contribution of the equation of state.
-    pub fn residual_helmholtz_energy_contributions(&self) -> Vec<(String, Energy<f64>)> {
+    pub fn residual_helmholtz_energy_contributions(&self) -> Vec<(String, Energy)> {
         let new_state = self.derive0();
         let residual_contributions = self.eos.evaluate_residual_contributions(&new_state);
         let mut res = Vec::with_capacity(residual_contributions.len());
@@ -77,19 +77,19 @@ impl<E: Residual> State<E> {
     }
 
     /// Residual entropy $S^\text{res}=\left(\frac{\partial A^\text{res}}{\partial T}\right)_{V,N_i}$
-    pub fn residual_entropy(&self) -> Entropy<f64> {
+    pub fn residual_entropy(&self) -> Entropy {
         Entropy::from_reduced(
             -self.get_or_compute_derivative_residual(PartialDerivative::First(DT)),
         )
     }
 
     /// Residual entropy $s^\text{res}=\left(\frac{\partial a^\text{res}}{\partial T}\right)_{V,N_i}$
-    pub fn residual_molar_entropy(&self) -> MolarEntropy<f64> {
+    pub fn residual_molar_entropy(&self) -> MolarEntropy {
         self.residual_entropy() / self.total_moles
     }
 
     /// Pressure: $p=-\left(\frac{\partial A}{\partial V}\right)_{T,N_i}$
-    pub fn pressure(&self, contributions: Contributions) -> Pressure<f64> {
+    pub fn pressure(&self, contributions: Contributions) -> Pressure {
         let ideal_gas = self.density * RGAS * self.temperature;
         let residual = Pressure::from_reduced(
             -self.get_or_compute_derivative_residual(PartialDerivative::First(DV)),
@@ -108,7 +108,7 @@ impl<E: Residual> State<E> {
     pub fn residual_chemical_potential_contributions(
         &self,
         component: usize,
-    ) -> Vec<(String, MolarEnergy<f64>)> {
+    ) -> Vec<(String, MolarEnergy)> {
         let new_state = self.derive1(DN(component));
         let contributions = self.eos.evaluate_residual_contributions(&new_state);
         let mut res = Vec::with_capacity(contributions.len());
@@ -129,10 +129,7 @@ impl<E: Residual> State<E> {
     // pressure derivatives
 
     /// Partial derivative of pressure w.r.t. volume: $\left(\frac{\partial p}{\partial V}\right)_{T,N_i}$
-    pub fn dp_dv(
-        &self,
-        contributions: Contributions,
-    ) -> <Pressure<f64> as Div<Volume<f64>>>::Output {
+    pub fn dp_dv(&self, contributions: Contributions) -> <Pressure as Div<Volume>>::Output {
         let ideal_gas = -self.density * RGAS * self.temperature / self.volume;
         let residual = Quantity::from_reduced(
             -self.get_or_compute_derivative_residual(PartialDerivative::Second(DV)),
@@ -141,18 +138,12 @@ impl<E: Residual> State<E> {
     }
 
     /// Partial derivative of pressure w.r.t. density: $\left(\frac{\partial p}{\partial \rho}\right)_{T,N_i}$
-    pub fn dp_drho(
-        &self,
-        contributions: Contributions,
-    ) -> <Pressure<f64> as Div<Density<f64>>>::Output {
+    pub fn dp_drho(&self, contributions: Contributions) -> <Pressure as Div<Density>>::Output {
         -self.volume / self.density * self.dp_dv(contributions)
     }
 
     /// Partial derivative of pressure w.r.t. temperature: $\left(\frac{\partial p}{\partial T}\right)_{V,N_i}$
-    pub fn dp_dt(
-        &self,
-        contributions: Contributions,
-    ) -> <Pressure<f64> as Div<Temperature<f64>>>::Output {
+    pub fn dp_dt(&self, contributions: Contributions) -> <Pressure as Div<Temperature>>::Output {
         let ideal_gas = self.density * RGAS;
         let residual = Quantity::from_reduced(
             -self.get_or_compute_derivative_residual(PartialDerivative::SecondMixed(DV, DT)),
@@ -164,7 +155,7 @@ impl<E: Residual> State<E> {
     pub fn dp_dni(
         &self,
         contributions: Contributions,
-    ) -> <Pressure<f64> as Div<Moles<Array1<f64>>>>::Output {
+    ) -> <Pressure as Div<Moles<Array1<f64>>>>::Output {
         let ideal_gas = Quantity::from_vec(vec![
             RGAS * self.temperature / self.volume;
             self.eos.components()
@@ -179,7 +170,7 @@ impl<E: Residual> State<E> {
     pub fn d2p_dv2(
         &self,
         contributions: Contributions,
-    ) -> <<Pressure<f64> as Div<Volume<f64>>>::Output as Div<Volume<f64>>>::Output {
+    ) -> <<Pressure as Div<Volume>>::Output as Div<Volume>>::Output {
         let ideal_gas = 2.0 * self.density * RGAS * self.temperature / (self.volume * self.volume);
         let residual = Quantity::from_reduced(
             -self.get_or_compute_derivative_residual(PartialDerivative::Third(DV)),
@@ -191,7 +182,7 @@ impl<E: Residual> State<E> {
     pub fn d2p_drho2(
         &self,
         contributions: Contributions,
-    ) -> <<Pressure<f64> as Div<Density<f64>>>::Output as Div<Density<f64>>>::Output {
+    ) -> <<Pressure as Div<Density>>::Output as Div<Density>>::Output {
         self.volume / (self.density * self.density)
             * (self.volume * self.d2p_dv2(contributions) + 2.0 * self.dp_dv(contributions))
     }
@@ -203,7 +194,7 @@ impl<E: Residual> State<E> {
     }
 
     // This function is designed specifically for use in density iterations
-    pub(crate) fn p_dpdrho(&self) -> (Pressure<f64>, <Pressure<f64> as Div<Density<f64>>>::Output) {
+    pub(crate) fn p_dpdrho(&self) -> (Pressure, <Pressure as Div<Density>>::Output) {
         let dp_dv = self.dp_dv(Contributions::Total);
         (
             self.pressure(Contributions::Total),
@@ -220,7 +211,7 @@ impl<E: Residual> State<E> {
     pub fn dmu_dni(
         &self,
         contributions: Contributions,
-    ) -> <MolarEnergy<Array2<f64>> as Div<Moles<f64>>>::Output {
+    ) -> <MolarEnergy<Array2<f64>> as Div<Moles>>::Output {
         let n = self.eos.components();
         Quantity::from_shape_fn((n, n), |(i, j)| {
             let ideal_gas = if i == j {
@@ -241,9 +232,9 @@ impl<E: Residual> State<E> {
     pub(crate) fn d2pdrho2(
         &self,
     ) -> (
-        Pressure<f64>,
-        <Pressure<f64> as Div<Density<f64>>>::Output,
-        <<Pressure<f64> as Div<Density<f64>>>::Output as Div<Density<f64>>>::Output,
+        Pressure,
+        <Pressure as Div<Density>>::Output,
+        <<Pressure as Div<Density>>::Output as Div<Density>>::Output,
     ) {
         let d2p_dv2 = self.d2p_dv2(Contributions::Total);
         let dp_dv = self.dp_dv(Contributions::Total);
@@ -255,12 +246,12 @@ impl<E: Residual> State<E> {
     }
 
     /// Isothermal compressibility: $\kappa_T=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{T,N_i}$
-    pub fn isothermal_compressibility(&self) -> <f64 as Div<Pressure<f64>>>::Output {
+    pub fn isothermal_compressibility(&self) -> <f64 as Div<Pressure>>::Output {
         -1.0 / (self.dp_dv(Contributions::Total) * self.volume)
     }
 
     /// Pressure $p$ evaluated for each contribution of the equation of state.
-    pub fn pressure_contributions(&self) -> Vec<(String, Pressure<f64>)> {
+    pub fn pressure_contributions(&self) -> Vec<(String, Pressure)> {
         let new_state = self.derive1(DV);
         let contributions = self.eos.evaluate_residual_contributions(&new_state);
         let mut res = Vec::with_capacity(contributions.len() + 1);
@@ -274,7 +265,7 @@ impl<E: Residual> State<E> {
     // entropy derivatives
 
     /// Partial derivative of the residual entropy w.r.t. temperature: $\left(\frac{\partial S^\text{res}}{\partial T}\right)_{V,N_i}$
-    pub fn ds_res_dt(&self) -> <Entropy<f64> as Div<Temperature<f64>>>::Output {
+    pub fn ds_res_dt(&self) -> <Entropy as Div<Temperature>>::Output {
         Quantity::from_reduced(
             -self.get_or_compute_derivative_residual(PartialDerivative::Second(DT)),
         )
@@ -283,14 +274,14 @@ impl<E: Residual> State<E> {
     /// Second partial derivative of the residual entropy w.r.t. temperature: $\left(\frac{\partial^2S^\text{res}}{\partial T^2}\right)_{V,N_i}$
     pub fn d2s_res_dt2(
         &self,
-    ) -> <<Entropy<f64> as Div<Temperature<f64>>>::Output as Div<Temperature<f64>>>::Output {
+    ) -> <<Entropy as Div<Temperature>>::Output as Div<Temperature>>::Output {
         Quantity::from_reduced(
             -self.get_or_compute_derivative_residual(PartialDerivative::Third(DT)),
         )
     }
 
     /// Partial derivative of chemical potential w.r.t. temperature: $\left(\frac{\partial\mu_i}{\partial T}\right)_{V,N_i}$
-    pub fn dmu_res_dt(&self) -> <MolarEnergy<Array1<f64>> as Div<Temperature<f64>>>::Output {
+    pub fn dmu_res_dt(&self) -> <MolarEnergy<Array1<f64>> as Div<Temperature>>::Output {
         Quantity::from_reduced(Array1::from_shape_fn(self.eos.components(), |i| {
             self.get_or_compute_derivative_residual(PartialDerivative::SecondMixed(DT, DN(i)))
         }))
@@ -365,17 +356,17 @@ impl<E: Residual> State<E> {
     }
 
     /// Residual molar isochoric heat capacity: $c_v^\text{res}=\left(\frac{\partial u^\text{res}}{\partial T}\right)_{V,N_i}$
-    pub fn residual_molar_isochoric_heat_capacity(&self) -> MolarEntropy<f64> {
+    pub fn residual_molar_isochoric_heat_capacity(&self) -> MolarEntropy {
         self.temperature * self.ds_res_dt() / self.total_moles
     }
 
     /// Partial derivative of the residual molar isochoric heat capacity w.r.t. temperature: $\left(\frac{\partial c_V^\text{res}}{\partial T}\right)_{V,N_i}$
-    pub fn dc_v_res_dt(&self) -> <MolarEntropy<f64> as Div<Temperature<f64>>>::Output {
+    pub fn dc_v_res_dt(&self) -> <MolarEntropy as Div<Temperature>>::Output {
         (self.temperature * self.d2s_res_dt2() + self.ds_res_dt()) / self.total_moles
     }
 
     /// Residual molar isobaric heat capacity: $c_p^\text{res}=\left(\frac{\partial h^\text{res}}{\partial T}\right)_{p,N_i}$
-    pub fn residual_molar_isobaric_heat_capacity(&self) -> MolarEntropy<f64> {
+    pub fn residual_molar_isobaric_heat_capacity(&self) -> MolarEntropy {
         self.temperature / self.total_moles
             * (self.ds_res_dt()
                 - self.dp_dt(Contributions::Total).powi::<P2>() / self.dp_dv(Contributions::Total))
@@ -383,29 +374,29 @@ impl<E: Residual> State<E> {
     }
 
     /// Residual enthalpy: $H^\text{res}(T,p,\mathbf{n})=A^\text{res}+TS^\text{res}+p^\text{res}V$
-    pub fn residual_enthalpy(&self) -> Energy<f64> {
+    pub fn residual_enthalpy(&self) -> Energy {
         self.temperature * self.residual_entropy()
             + self.residual_helmholtz_energy()
             + self.pressure(Contributions::Residual) * self.volume
     }
 
     /// Residual molar enthalpy: $h^\text{res}(T,p,\mathbf{n})=a^\text{res}+Ts^\text{res}+p^\text{res}v$
-    pub fn residual_molar_enthalpy(&self) -> MolarEnergy<f64> {
+    pub fn residual_molar_enthalpy(&self) -> MolarEnergy {
         self.residual_enthalpy() / self.total_moles
     }
 
     /// Residual internal energy: $U^\text{res}(T,V,\mathbf{n})=A^\text{res}+TS^\text{res}$
-    pub fn residual_internal_energy(&self) -> Energy<f64> {
+    pub fn residual_internal_energy(&self) -> Energy {
         self.temperature * self.residual_entropy() + self.residual_helmholtz_energy()
     }
 
     /// Residual molar internal energy: $u^\text{res}(T,V,\mathbf{n})=a^\text{res}+Ts^\text{res}$
-    pub fn residual_molar_internal_energy(&self) -> MolarEnergy<f64> {
+    pub fn residual_molar_internal_energy(&self) -> MolarEnergy {
         self.residual_internal_energy() / self.total_moles
     }
 
     /// Residual Gibbs energy: $G^\text{res}(T,p,\mathbf{n})=A^\text{res}+p^\text{res}V-NRT \ln Z$
-    pub fn residual_gibbs_energy(&self) -> Energy<f64> {
+    pub fn residual_gibbs_energy(&self) -> Energy {
         self.pressure(Contributions::Residual) * self.volume + self.residual_helmholtz_energy()
             - self.total_moles
                 * RGAS
@@ -414,12 +405,12 @@ impl<E: Residual> State<E> {
     }
 
     /// Residual Gibbs energy: $g^\text{res}(T,p,\mathbf{n})=a^\text{res}+p^\text{res}v-RT \ln Z$
-    pub fn residual_molar_gibbs_energy(&self) -> MolarEnergy<f64> {
+    pub fn residual_molar_gibbs_energy(&self) -> MolarEnergy {
         self.residual_gibbs_energy() / self.total_moles
     }
 
     /// Total molar weight: $MW=\sum_ix_iMW_i$
-    pub fn total_molar_weight(&self) -> MolarWeight<f64> {
+    pub fn total_molar_weight(&self) -> MolarWeight {
         (self.eos.molar_weight() * Dimensionless::from(&self.molefracs)).sum()
     }
 
@@ -429,12 +420,12 @@ impl<E: Residual> State<E> {
     }
 
     /// Total mass: $m=\sum_im_i=nMW$
-    pub fn total_mass(&self) -> Mass<f64> {
+    pub fn total_mass(&self) -> Mass {
         self.total_moles * self.total_molar_weight()
     }
 
     /// Mass density: $\rho^{(m)}=\frac{m}{V}$
-    pub fn mass_density(&self) -> MassDensity<f64> {
+    pub fn mass_density(&self) -> MassDensity {
         self.density * self.total_molar_weight()
     }
 
@@ -450,7 +441,7 @@ impl<E: Residual> State<E> {
 /// that implement the [EntropyScaling] trait.
 impl<E: Residual + EntropyScaling> State<E> {
     /// Return the viscosity via entropy scaling.
-    pub fn viscosity(&self) -> EosResult<Viscosity<f64>> {
+    pub fn viscosity(&self) -> EosResult<Viscosity> {
         let s = self.residual_molar_entropy().to_reduced();
         Ok(self
             .eos
@@ -468,13 +459,13 @@ impl<E: Residual + EntropyScaling> State<E> {
     }
 
     /// Return the viscosity reference as used in entropy scaling.
-    pub fn viscosity_reference(&self) -> EosResult<Viscosity<f64>> {
+    pub fn viscosity_reference(&self) -> EosResult<Viscosity> {
         self.eos
             .viscosity_reference(self.temperature, self.volume, &self.moles)
     }
 
     /// Return the diffusion via entropy scaling.
-    pub fn diffusion(&self) -> EosResult<Diffusivity<f64>> {
+    pub fn diffusion(&self) -> EosResult<Diffusivity> {
         let s = self.residual_molar_entropy().to_reduced();
         Ok(self
             .eos
@@ -492,13 +483,13 @@ impl<E: Residual + EntropyScaling> State<E> {
     }
 
     /// Return the diffusion reference as used in entropy scaling.
-    pub fn diffusion_reference(&self) -> EosResult<Diffusivity<f64>> {
+    pub fn diffusion_reference(&self) -> EosResult<Diffusivity> {
         self.eos
             .diffusion_reference(self.temperature, self.volume, &self.moles)
     }
 
     /// Return the thermal conductivity via entropy scaling.
-    pub fn thermal_conductivity(&self) -> EosResult<ThermalConductivity<f64>> {
+    pub fn thermal_conductivity(&self) -> EosResult<ThermalConductivity> {
         let s = self.residual_molar_entropy().to_reduced();
         Ok(self
             .eos
@@ -520,7 +511,7 @@ impl<E: Residual + EntropyScaling> State<E> {
     }
 
     /// Return the thermal conductivity reference as used in entropy scaling.
-    pub fn thermal_conductivity_reference(&self) -> EosResult<ThermalConductivity<f64>> {
+    pub fn thermal_conductivity_reference(&self) -> EosResult<ThermalConductivity> {
         self.eos
             .thermal_conductivity_reference(self.temperature, self.volume, &self.moles)
     }

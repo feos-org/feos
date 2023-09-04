@@ -509,7 +509,9 @@ impl<P: HardSphereProperties> Association<P> {
         let mut h: Array2<D> = Array::zeros([nassoc; 2]);
 
         // split arrays
-        let &[a, b] = delta_ab.shape() else { panic!("wrong shape!") };
+        let &[a, b] = delta_ab.shape() else {
+            panic!("wrong shape!")
+        };
         let c = delta_cc.shape()[0];
         let (xa, xc) = x.view().split_at(Axis(0), a + b);
         let (xa, xb) = xa.split_at(Axis(0), a);

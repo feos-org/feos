@@ -48,7 +48,7 @@ pub enum DensityInitialization {
     /// Calculate a liquid phase by using the `max_density`.
     Liquid,
     /// Use the given density as initial value.
-    InitialDensity(Density<f64>),
+    InitialDensity(Density),
     /// Calculate the most stable phase by calculating both a vapor and a liquid
     /// and return the one with the lower molar Gibbs energy.
     None,
@@ -139,17 +139,17 @@ pub struct State<E> {
     /// Equation of state
     pub eos: Arc<E>,
     /// Temperature $T$
-    pub temperature: Temperature<f64>,
+    pub temperature: Temperature,
     /// Volume $V$
-    pub volume: Volume<f64>,
+    pub volume: Volume,
     /// Mole numbers $N_i$
     pub moles: Moles<Array1<f64>>,
     /// Total number of moles $N=\sum_iN_i$
-    pub total_moles: Moles<f64>,
+    pub total_moles: Moles,
     /// Partial densities $\rho_i=\frac{N_i}{V}$
     pub partial_density: Density<Array1<f64>>,
     /// Total density $\rho=\frac{N}{V}=\sum_i\rho_i$
-    pub density: Density<f64>,
+    pub density: Density,
     /// Mole fractions $x_i=\frac{N_i}{N}=\frac{\rho_i}{\rho}$
     pub molefracs: Array1<f64>,
     /// Reduced temperature
@@ -225,8 +225,8 @@ impl<E: Residual> State<E> {
     /// densities are below the maximum packing fraction.
     pub fn new_nvt(
         eos: &Arc<E>,
-        temperature: Temperature<f64>,
-        volume: Volume<f64>,
+        temperature: Temperature,
+        volume: Volume,
         moles: &Moles<Array1<f64>>,
     ) -> EosResult<Self> {
         eos.validate_moles(Some(moles))?;
@@ -237,8 +237,8 @@ impl<E: Residual> State<E> {
 
     pub(super) fn new_nvt_unchecked(
         eos: &Arc<E>,
-        temperature: Temperature<f64>,
-        volume: Volume<f64>,
+        temperature: Temperature,
+        volume: Volume,
         moles: &Moles<Array1<f64>>,
     ) -> Self {
         let t = temperature.to_reduced();
@@ -272,11 +272,7 @@ impl<E: Residual> State<E> {
     /// This function will perform a validation of the given properties, i.e. test for signs
     /// and if values are finite. It will **not** validate physics, i.e. if the resulting
     /// densities are below the maximum packing fraction.
-    pub fn new_pure(
-        eos: &Arc<E>,
-        temperature: Temperature<f64>,
-        density: Density<f64>,
-    ) -> EosResult<Self> {
+    pub fn new_pure(eos: &Arc<E>, temperature: Temperature, density: Density) -> EosResult<Self> {
         let moles = Moles::from_reduced(arr1(&[1.0]));
         Self::new_nvt(eos, temperature, Moles::from_reduced(1.0) / density, &moles)
     }
@@ -296,14 +292,14 @@ impl<E: Residual> State<E> {
     /// When the state cannot be created using the combination of inputs.
     pub fn new(
         eos: &Arc<E>,
-        temperature: Option<Temperature<f64>>,
-        volume: Option<Volume<f64>>,
-        density: Option<Density<f64>>,
+        temperature: Option<Temperature>,
+        volume: Option<Volume>,
+        density: Option<Density>,
         partial_density: Option<&Density<Array1<f64>>>,
-        total_moles: Option<Moles<f64>>,
+        total_moles: Option<Moles>,
         moles: Option<&Moles<Array1<f64>>>,
         molefracs: Option<&Array1<f64>>,
-        pressure: Option<Pressure<f64>>,
+        pressure: Option<Pressure>,
         density_initialization: DensityInitialization,
     ) -> EosResult<Self> {
         Self::_new(
@@ -323,14 +319,14 @@ impl<E: Residual> State<E> {
 
     fn _new(
         eos: &Arc<E>,
-        temperature: Option<Temperature<f64>>,
-        volume: Option<Volume<f64>>,
-        density: Option<Density<f64>>,
+        temperature: Option<Temperature>,
+        volume: Option<Volume>,
+        density: Option<Density>,
         partial_density: Option<&Density<Array1<f64>>>,
-        total_moles: Option<Moles<f64>>,
+        total_moles: Option<Moles>,
         moles: Option<&Moles<Array1<f64>>>,
         molefracs: Option<&Array1<f64>>,
-        pressure: Option<Pressure<f64>>,
+        pressure: Option<Pressure>,
         density_initialization: DensityInitialization,
     ) -> EosResult<Result<Self, Option<Moles<Array1<f64>>>>> {
         // check for density
@@ -416,8 +412,8 @@ impl<E: Residual> State<E> {
     /// influence the calculation with respect to the possible solutions.
     pub fn new_npt(
         eos: &Arc<E>,
-        temperature: Temperature<f64>,
-        pressure: Pressure<f64>,
+        temperature: Temperature,
+        pressure: Pressure,
         moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
     ) -> EosResult<Self> {
@@ -481,9 +477,9 @@ impl<E: Residual> State<E> {
     /// Return a new `State` for given pressure $p$, volume $V$, temperature $T$ and composition $x_i$.
     pub fn new_npvx(
         eos: &Arc<E>,
-        temperature: Temperature<f64>,
-        pressure: Pressure<f64>,
-        volume: Volume<f64>,
+        temperature: Temperature,
+        pressure: Pressure,
+        volume: Volume,
         molefracs: &Array1<f64>,
         density_initialization: DensityInitialization,
     ) -> EosResult<Self> {
@@ -511,19 +507,19 @@ impl<E: Residual + IdealGas> State<E> {
     /// When the state cannot be created using the combination of inputs.
     pub fn new_full(
         eos: &Arc<E>,
-        temperature: Option<Temperature<f64>>,
-        volume: Option<Volume<f64>>,
-        density: Option<Density<f64>>,
+        temperature: Option<Temperature>,
+        volume: Option<Volume>,
+        density: Option<Density>,
         partial_density: Option<&Density<Array1<f64>>>,
-        total_moles: Option<Moles<f64>>,
+        total_moles: Option<Moles>,
         moles: Option<&Moles<Array1<f64>>>,
         molefracs: Option<&Array1<f64>>,
-        pressure: Option<Pressure<f64>>,
-        molar_enthalpy: Option<MolarEnergy<f64>>,
-        molar_entropy: Option<MolarEntropy<f64>>,
-        molar_internal_energy: Option<MolarEnergy<f64>>,
+        pressure: Option<Pressure>,
+        molar_enthalpy: Option<MolarEnergy>,
+        molar_entropy: Option<MolarEntropy>,
+        molar_internal_energy: Option<MolarEnergy>,
         density_initialization: DensityInitialization,
-        initial_temperature: Option<Temperature<f64>>,
+        initial_temperature: Option<Temperature>,
     ) -> EosResult<Self> {
         let state = Self::_new(
             eos,
@@ -568,11 +564,11 @@ impl<E: Residual + IdealGas> State<E> {
     /// Return a new `State` for given pressure $p$ and molar enthalpy $h$.
     pub fn new_nph(
         eos: &Arc<E>,
-        pressure: Pressure<f64>,
-        molar_enthalpy: MolarEnergy<f64>,
+        pressure: Pressure,
+        molar_enthalpy: MolarEnergy,
         moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
-        initial_temperature: Option<Temperature<f64>>,
+        initial_temperature: Option<Temperature>,
     ) -> EosResult<Self> {
         let t0 = initial_temperature.unwrap_or(Temperature::from_reduced(298.15));
         let mut density = density_initialization;
@@ -589,8 +585,8 @@ impl<E: Residual + IdealGas> State<E> {
     /// Return a new `State` for given temperature $T$ and molar enthalpy $h$.
     pub fn new_nth(
         eos: &Arc<E>,
-        temperature: Temperature<f64>,
-        molar_enthalpy: MolarEnergy<f64>,
+        temperature: Temperature,
+        molar_enthalpy: MolarEnergy,
         moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
     ) -> EosResult<Self> {
@@ -616,8 +612,8 @@ impl<E: Residual + IdealGas> State<E> {
     /// Return a new `State` for given temperature $T$ and molar entropy $s$.
     pub fn new_nts(
         eos: &Arc<E>,
-        temperature: Temperature<f64>,
-        molar_entropy: MolarEntropy<f64>,
+        temperature: Temperature,
+        molar_entropy: MolarEntropy,
         moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
     ) -> EosResult<Self> {
@@ -640,11 +636,11 @@ impl<E: Residual + IdealGas> State<E> {
     /// Return a new `State` for given pressure $p$ and molar entropy $s$.
     pub fn new_nps(
         eos: &Arc<E>,
-        pressure: Pressure<f64>,
-        molar_entropy: MolarEntropy<f64>,
+        pressure: Pressure,
+        molar_entropy: MolarEntropy,
         moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
-        initial_temperature: Option<Temperature<f64>>,
+        initial_temperature: Option<Temperature>,
     ) -> EosResult<Self> {
         let t0 = initial_temperature.unwrap_or(Temperature::from_reduced(298.15));
         let mut density = density_initialization;
@@ -661,10 +657,10 @@ impl<E: Residual + IdealGas> State<E> {
     /// Return a new `State` for given volume $V$ and molar internal energy $u$.
     pub fn new_nvu(
         eos: &Arc<E>,
-        volume: Volume<f64>,
-        molar_internal_energy: MolarEnergy<f64>,
+        volume: Volume,
+        molar_internal_energy: MolarEnergy,
         moles: &Moles<Array1<f64>>,
-        initial_temperature: Option<Temperature<f64>>,
+        initial_temperature: Option<Temperature>,
     ) -> EosResult<Self> {
         let t0 = initial_temperature.unwrap_or(Temperature::from_reduced(298.15));
         let f = |x0| {
@@ -679,7 +675,7 @@ impl<E: Residual + IdealGas> State<E> {
 
 impl<E: Residual> State<E> {
     /// Update the state with the given temperature
-    pub fn update_temperature(&self, temperature: Temperature<f64>) -> EosResult<Self> {
+    pub fn update_temperature(&self, temperature: Temperature) -> EosResult<Self> {
         Self::new_nvt(&self.eos, temperature, self.volume, &self.moles)
     }
 
@@ -800,11 +796,7 @@ where
 ///
 /// There is no validation of the physical state, e.g.
 /// if resulting densities are below maximum packing fraction.
-fn validate(
-    temperature: Temperature<f64>,
-    volume: Volume<f64>,
-    moles: &Moles<Array1<f64>>,
-) -> EosResult<()> {
+fn validate(temperature: Temperature, volume: Volume, moles: &Moles<Array1<f64>>) -> EosResult<()> {
     let t = temperature.to_reduced();
     let v = volume.to_reduced();
     let m = moles.to_reduced();
@@ -836,12 +828,12 @@ fn validate(
 
 #[derive(Clone, Copy)]
 pub enum TPSpec {
-    Temperature(Temperature<f64>),
-    Pressure(Pressure<f64>),
+    Temperature(Temperature),
+    Pressure(Pressure),
 }
 
-impl From<Temperature<f64>> for TPSpec {
-    fn from(temperature: Temperature<f64>) -> Self {
+impl From<Temperature> for TPSpec {
+    fn from(temperature: Temperature) -> Self {
         Self::Temperature(temperature)
     }
 }
@@ -850,7 +842,7 @@ impl From<Temperature<f64>> for TPSpec {
 // used instead of the explicit unit. Maybe the type is too complicated for the
 // compiler?
 impl From<Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>> for TPSpec {
-    fn from(pressure: Pressure<f64>) -> Self {
+    fn from(pressure: Pressure) -> Self {
         Self::Pressure(pressure)
     }
 }
