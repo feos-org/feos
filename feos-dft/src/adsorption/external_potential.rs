@@ -57,7 +57,7 @@ pub enum ExternalPotential {
         sigma_ss: Array1<f64>,
         epsilon_k_ss: Array1<f64>,
         pore_center: [f64; 3],
-        system_size: [Length<f64>; 3],
+        system_size: [Length; 3],
         n_grid: [usize; 2],
         cutoff_radius: Option<f64>,
     },

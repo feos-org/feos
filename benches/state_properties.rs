@@ -18,8 +18,8 @@ fn property<E: Residual, T, F: Fn(&State<E>, Contributions) -> T>(
     (eos, property, t, v, n, contributions): (
         &Arc<E>,
         F,
-        Temperature<f64>,
-        Volume<f64>,
+        Temperature,
+        Volume,
         &Moles<Array1<f64>>,
         Contributions,
     ),
@@ -31,13 +31,7 @@ fn property<E: Residual, T, F: Fn(&State<E>, Contributions) -> T>(
 /// Evaluate a property with of a state given the EoS, the property to compute,
 /// temperature, volume, moles.
 fn property_no_contributions<E: Residual, T, F: Fn(&State<E>) -> T>(
-    (eos, property, t, v, n): (
-        &Arc<E>,
-        F,
-        Temperature<f64>,
-        Volume<f64>,
-        &Moles<Array1<f64>>,
-    ),
+    (eos, property, t, v, n): (&Arc<E>, F, Temperature, Volume, &Moles<Array1<f64>>),
 ) -> T {
     let state = State::new_nvt(eos, t, v, n).unwrap();
     property(&state)

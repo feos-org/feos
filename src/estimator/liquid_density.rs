@@ -11,7 +11,7 @@ pub struct LiquidDensity {
     /// mass density
     pub target: Array1<f64>,
     /// unit of mass density
-    unit: MassDensity<f64>,
+    unit: MassDensity,
     /// temperature
     temperature: Temperature<Array1<f64>>,
     /// pressure
@@ -88,7 +88,7 @@ impl<E: Residual> DataSet<E> for LiquidDensity {
 pub struct EquilibriumLiquidDensity {
     pub target: Array1<f64>,
     /// unit of mass density
-    unit: MassDensity<f64>,
+    unit: MassDensity,
     /// temperature
     temperature: Temperature<Array1<f64>>,
     /// options for VLE solver

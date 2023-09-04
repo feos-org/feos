@@ -33,7 +33,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
     /// and given temperature.
     fn pure_t(
         eos: &Arc<E>,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
     ) -> EosResult<Self> {
@@ -162,7 +162,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
     /// and given pressure.
     fn pure_p(
         eos: &Arc<E>,
-        pressure: Pressure<f64>,
+        pressure: Pressure,
         initial_state: Option<&Self>,
         options: SolverOptions,
     ) -> EosResult<Self> {
@@ -258,26 +258,26 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         Err(EosError::NotConverged("pure_p".to_owned()))
     }
 
-    fn init_pure_state(initial_state: &Self, temperature: Temperature<f64>) -> EosResult<Self> {
+    fn init_pure_state(initial_state: &Self, temperature: Temperature) -> EosResult<Self> {
         let vapor = initial_state.vapor().update_temperature(temperature)?;
         let liquid = initial_state.liquid().update_temperature(temperature)?;
         Ok(Self([vapor, liquid]))
     }
 
-    fn init_pure_ideal_gas(eos: &Arc<E>, temperature: Temperature<f64>) -> EosResult<Self> {
+    fn init_pure_ideal_gas(eos: &Arc<E>, temperature: Temperature) -> EosResult<Self> {
         let m = Moles::from_reduced(arr1(&[1.0]));
         let p = Self::starting_pressure_ideal_gas_bubble(eos, temperature, &arr1(&[1.0]))?.0;
         PhaseEquilibrium::new_npt(eos, temperature, p, &m, &m)?.check_trivial_solution()
     }
 
-    fn init_pure_spinodal(eos: &Arc<E>, temperature: Temperature<f64>) -> EosResult<Self> {
+    fn init_pure_spinodal(eos: &Arc<E>, temperature: Temperature) -> EosResult<Self> {
         let p = Self::starting_pressure_spinodal(eos, temperature, &arr1(&[1.0]))?;
         let m = Moles::from_reduced(arr1(&[1.0]));
         PhaseEquilibrium::new_npt(eos, temperature, p, &m, &m)
     }
 
     /// Initialize a new VLE for a pure substance for a given pressure.
-    fn init_pure_p(eos: &Arc<E>, pressure: Pressure<f64>) -> EosResult<Self> {
+    fn init_pure_p(eos: &Arc<E>, pressure: Pressure) -> EosResult<Self> {
         let trial_temperatures = [
             Temperature::from_reduced(300.0),
             Temperature::from_reduced(500.0),
@@ -352,10 +352,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 impl<E: Residual> PhaseEquilibrium<E, 2> {
     /// Calculate the pure component vapor pressures of all
     /// components in the system for the given temperature.
-    pub fn vapor_pressure(
-        eos: &Arc<E>,
-        temperature: Temperature<f64>,
-    ) -> Vec<Option<Pressure<f64>>> {
+    pub fn vapor_pressure(eos: &Arc<E>, temperature: Temperature) -> Vec<Option<Pressure>> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Arc::new(eos.subset(&[i]));
@@ -368,10 +365,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 
     /// Calculate the pure component boiling temperatures of all
     /// components in the system for the given pressure.
-    pub fn boiling_temperature(
-        eos: &Arc<E>,
-        pressure: Pressure<f64>,
-    ) -> Vec<Option<Temperature<f64>>> {
+    pub fn boiling_temperature(eos: &Arc<E>, pressure: Pressure) -> Vec<Option<Temperature>> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Arc::new(eos.subset(&[i]));

@@ -18,8 +18,8 @@ impl<F: HelmholtzEnergyFunctional> SurfaceTensionDiagram<F> {
         dia: &Vec<PhaseEquilibrium<DFT<F>, 2>>,
         init_densities: Option<bool>,
         n_grid: Option<usize>,
-        l_grid: Option<Length<f64>>,
-        critical_temperature: Option<Temperature<f64>>,
+        l_grid: Option<Length>,
+        critical_temperature: Option<Temperature>,
         fix_equimolar_surface: Option<bool>,
         solver: Option<&DFTSolver>,
     ) -> Self {

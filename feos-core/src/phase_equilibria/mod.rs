@@ -124,8 +124,8 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
     /// In general, the two states generated are NOT in an equilibrium.
     pub fn new_npt(
         eos: &Arc<E>,
-        temperature: Temperature<f64>,
-        pressure: Pressure<f64>,
+        temperature: Temperature,
+        pressure: Pressure,
         vapor_moles: &Moles<Array1<f64>>,
         liquid_moles: &Moles<Array1<f64>>,
     ) -> EosResult<Self> {
@@ -155,8 +155,8 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
     pub(super) fn update_pressure(
         mut self,
-        temperature: Temperature<f64>,
-        pressure: Pressure<f64>,
+        temperature: Temperature,
+        pressure: Pressure,
     ) -> EosResult<Self> {
         for s in self.0.iter_mut() {
             *s = State::new_npt(
@@ -172,7 +172,7 @@ impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
 
     pub(super) fn update_moles(
         &mut self,
-        pressure: Pressure<f64>,
+        pressure: Pressure,
         moles: [&Moles<Array1<f64>>; N],
     ) -> EosResult<()> {
         for (i, s) in self.0.iter_mut().enumerate() {
@@ -188,7 +188,7 @@ impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
     }
 
     // Total Gibbs energy excluding the constant contribution RT sum_i N_i ln(\Lambda_i^3)
-    pub(super) fn total_gibbs_energy(&self) -> Energy<f64> {
+    pub(super) fn total_gibbs_energy(&self) -> Energy {
         self.0.iter().fold(Energy::from_reduced(0.0), |acc, s| {
             let ln_rho = s.partial_density.to_reduced().mapv(f64::ln);
             acc + s.residual_helmholtz_energy()

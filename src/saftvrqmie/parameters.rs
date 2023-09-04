@@ -352,10 +352,10 @@ impl SaftVRQMieParameters {
     /// - "hydrogen_neon_30K.table" for H-Ne interactions.
     pub fn lammps_tables(
         &self,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         n: usize,
-        r_min: Length<f64>,
-        r_max: Length<f64>,
+        r_min: Length,
+        r_max: Length,
     ) -> std::io::Result<()> {
         let t = temperature.to_reduced();
         let rs = Array1::linspace(r_min.to_reduced(), r_max.to_reduced(), n);

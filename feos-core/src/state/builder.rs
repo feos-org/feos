@@ -55,19 +55,19 @@ use std::sync::Arc;
 /// ```
 pub struct StateBuilder<'a, E, const IG: bool> {
     eos: Arc<E>,
-    temperature: Option<Temperature<f64>>,
-    volume: Option<Volume<f64>>,
-    density: Option<Density<f64>>,
+    temperature: Option<Temperature>,
+    volume: Option<Volume>,
+    density: Option<Density>,
     partial_density: Option<&'a Density<Array1<f64>>>,
-    total_moles: Option<Moles<f64>>,
+    total_moles: Option<Moles>,
     moles: Option<&'a Moles<Array1<f64>>>,
     molefracs: Option<&'a Array1<f64>>,
-    pressure: Option<Pressure<f64>>,
-    molar_enthalpy: Option<MolarEnergy<f64>>,
-    molar_entropy: Option<MolarEntropy<f64>>,
-    molar_internal_energy: Option<MolarEnergy<f64>>,
+    pressure: Option<Pressure>,
+    molar_enthalpy: Option<MolarEnergy>,
+    molar_entropy: Option<MolarEntropy>,
+    molar_internal_energy: Option<MolarEnergy>,
     density_initialization: DensityInitialization,
-    initial_temperature: Option<Temperature<f64>>,
+    initial_temperature: Option<Temperature>,
 }
 
 impl<'a, E: Residual> StateBuilder<'a, E, false> {
@@ -94,19 +94,19 @@ impl<'a, E: Residual> StateBuilder<'a, E, false> {
 
 impl<'a, E: Residual, const IG: bool> StateBuilder<'a, E, IG> {
     /// Provide the temperature for the new state.
-    pub fn temperature(mut self, temperature: Temperature<f64>) -> Self {
+    pub fn temperature(mut self, temperature: Temperature) -> Self {
         self.temperature = Some(temperature);
         self
     }
 
     /// Provide the volume for the new state.
-    pub fn volume(mut self, volume: Volume<f64>) -> Self {
+    pub fn volume(mut self, volume: Volume) -> Self {
         self.volume = Some(volume);
         self
     }
 
     /// Provide the density for the new state.
-    pub fn density(mut self, density: Density<f64>) -> Self {
+    pub fn density(mut self, density: Density) -> Self {
         self.density = Some(density);
         self
     }
@@ -118,7 +118,7 @@ impl<'a, E: Residual, const IG: bool> StateBuilder<'a, E, IG> {
     }
 
     /// Provide the total moles for the new state.
-    pub fn total_moles(mut self, total_moles: Moles<f64>) -> Self {
+    pub fn total_moles(mut self, total_moles: Moles) -> Self {
         self.total_moles = Some(total_moles);
         self
     }
@@ -136,7 +136,7 @@ impl<'a, E: Residual, const IG: bool> StateBuilder<'a, E, IG> {
     }
 
     /// Provide the pressure for the new state.
-    pub fn pressure(mut self, pressure: Pressure<f64>) -> Self {
+    pub fn pressure(mut self, pressure: Pressure) -> Self {
         self.pressure = Some(pressure);
         self
     }
@@ -154,7 +154,7 @@ impl<'a, E: Residual, const IG: bool> StateBuilder<'a, E, IG> {
     }
 
     /// Provide an initial density used in density iterations.
-    pub fn initial_density(mut self, initial_density: Density<f64>) -> Self {
+    pub fn initial_density(mut self, initial_density: Density) -> Self {
         self.density_initialization = DensityInitialization::InitialDensity(initial_density);
         self
     }
@@ -162,13 +162,13 @@ impl<'a, E: Residual, const IG: bool> StateBuilder<'a, E, IG> {
 
 impl<'a, E: Residual + IdealGas, const IG: bool> StateBuilder<'a, E, IG> {
     /// Provide the molar enthalpy for the new state.
-    pub fn molar_enthalpy(mut self, molar_enthalpy: MolarEnergy<f64>) -> StateBuilder<'a, E, true> {
+    pub fn molar_enthalpy(mut self, molar_enthalpy: MolarEnergy) -> StateBuilder<'a, E, true> {
         self.molar_enthalpy = Some(molar_enthalpy);
         self.convert()
     }
 
     /// Provide the molar entropy for the new state.
-    pub fn molar_entropy(mut self, molar_entropy: MolarEntropy<f64>) -> StateBuilder<'a, E, true> {
+    pub fn molar_entropy(mut self, molar_entropy: MolarEntropy) -> StateBuilder<'a, E, true> {
         self.molar_entropy = Some(molar_entropy);
         self.convert()
     }
@@ -176,7 +176,7 @@ impl<'a, E: Residual + IdealGas, const IG: bool> StateBuilder<'a, E, IG> {
     /// Provide the molar internal energy for the new state.
     pub fn molar_internal_energy(
         mut self,
-        molar_internal_energy: MolarEnergy<f64>,
+        molar_internal_energy: MolarEnergy,
     ) -> StateBuilder<'a, E, true> {
         self.molar_internal_energy = Some(molar_internal_energy);
         self.convert()
@@ -185,7 +185,7 @@ impl<'a, E: Residual + IdealGas, const IG: bool> StateBuilder<'a, E, IG> {
     /// Provide an initial temperature used in the Newton solver.
     pub fn initial_temperature(
         mut self,
-        initial_temperature: Temperature<f64>,
+        initial_temperature: Temperature,
     ) -> StateBuilder<'a, E, true> {
         self.initial_temperature = Some(initial_temperature);
         self.convert()

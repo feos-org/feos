@@ -143,12 +143,12 @@ fn omega22(t: f64) -> f64 {
 
 #[inline]
 fn chapman_enskog_thermal_conductivity(
-    temperature: Temperature<f64>,
-    molarweight: MolarWeight<f64>,
+    temperature: Temperature,
+    molarweight: MolarWeight,
     m: f64,
     sigma: f64,
     epsilon_k: f64,
-) -> ThermalConductivity<f64> {
+) -> ThermalConductivity {
     let t = temperature.to_reduced();
     0.083235 * (t * m / (molarweight / (GRAM / MOL)).into_value()).sqrt()
         / sigma.powi(2)
@@ -161,10 +161,10 @@ fn chapman_enskog_thermal_conductivity(
 impl EntropyScaling for PcSaft {
     fn viscosity_reference(
         &self,
-        temperature: Temperature<f64>,
-        _: Volume<f64>,
+        temperature: Temperature,
+        _: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Viscosity<f64>> {
+    ) -> EosResult<Viscosity> {
         let p = &self.parameters;
         let mw = &p.molarweight;
         let x = (moles / moles.sum()).into_value();
@@ -209,10 +209,10 @@ impl EntropyScaling for PcSaft {
 
     fn diffusion_reference(
         &self,
-        temperature: Temperature<f64>,
-        volume: Volume<f64>,
+        temperature: Temperature,
+        volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Diffusivity<f64>> {
+    ) -> EosResult<Diffusivity> {
         if self.components() != 1 {
             return Err(EosError::IncompatibleComponents(self.components(), 1));
         }
@@ -251,10 +251,10 @@ impl EntropyScaling for PcSaft {
     // Equation 4 of DOI: 10.1021/acs.iecr.9b04289
     fn thermal_conductivity_reference(
         &self,
-        temperature: Temperature<f64>,
-        volume: Volume<f64>,
+        temperature: Temperature,
+        volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<ThermalConductivity<f64>> {
+    ) -> EosResult<ThermalConductivity> {
         if self.components() != 1 {
             return Err(EosError::IncompatibleComponents(self.components(), 1));
         }

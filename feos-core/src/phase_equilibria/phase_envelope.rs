@@ -12,9 +12,9 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     pub fn bubble_point_line(
         eos: &Arc<E>,
         moles: &Moles<Array1<f64>>,
-        min_temperature: Temperature<f64>,
+        min_temperature: Temperature,
         npoints: usize,
-        critical_temperature: Option<Temperature<f64>>,
+        critical_temperature: Option<Temperature>,
         options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
@@ -61,9 +61,9 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     pub fn dew_point_line(
         eos: &Arc<E>,
         moles: &Moles<Array1<f64>>,
-        min_temperature: Temperature<f64>,
+        min_temperature: Temperature,
         npoints: usize,
-        critical_temperature: Option<Temperature<f64>>,
+        critical_temperature: Option<Temperature>,
         options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
@@ -126,9 +126,9 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     pub fn spinodal(
         eos: &Arc<E>,
         moles: &Moles<Array1<f64>>,
-        min_temperature: Temperature<f64>,
+        min_temperature: Temperature,
         npoints: usize,
-        critical_temperature: Option<Temperature<f64>>,
+        critical_temperature: Option<Temperature>,
         options: SolverOptions,
     ) -> EosResult<Self> {
         let mut states = Vec::with_capacity(npoints);

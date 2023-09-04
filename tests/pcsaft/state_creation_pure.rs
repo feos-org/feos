@@ -334,10 +334,10 @@ fn temperature_entropy_vapor() -> Result<(), Box<dyn Error>> {
 
 fn assert_multiple_states<E: Residual + IdealGas>(
     states: &[(&State<E>, &str)],
-    pressure: Pressure<f64>,
-    enthalpy: MolarEnergy<f64>,
-    entropy: MolarEntropy<f64>,
-    density: Density<f64>,
+    pressure: Pressure,
+    enthalpy: MolarEnergy,
+    entropy: MolarEntropy,
+    density: Density,
     max_relative: f64,
 ) {
     for (s, name) in states {

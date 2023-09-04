@@ -12,8 +12,8 @@ use ndarray::Zip;
 /// Density profile and properties of a solute in a inhomogeneous bulk fluid.
 pub struct SolvationProfile<F: HelmholtzEnergyFunctional> {
     pub profile: DFTProfile<Ix3, F>,
-    pub grand_potential: Option<Energy<f64>>,
-    pub solvation_free_energy: Option<MolarEnergy<f64>>,
+    pub grand_potential: Option<Energy>,
+    pub solvation_free_energy: Option<MolarEnergy>,
 }
 
 impl<F: HelmholtzEnergyFunctional> Clone for SolvationProfile<F> {
@@ -57,8 +57,8 @@ impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
         coordinates: Length<Array2<f64>>,
         sigma_ss: Array1<f64>,
         epsilon_ss: Array1<f64>,
-        system_size: Option<[Length<f64>; 3]>,
-        cutoff_radius: Option<Length<f64>>,
+        system_size: Option<[Length; 3]>,
+        cutoff_radius: Option<Length>,
         potential_cutoff: Option<f64>,
     ) -> EosResult<Self> {
         let dft: &F = &bulk.eos;
@@ -121,7 +121,7 @@ fn external_potential_3d<F: FluidParameters>(
     coordinates: Array2<f64>,
     sigma_ss: Array1<f64>,
     epsilon_ss: Array1<f64>,
-    cutoff_radius: Option<Length<f64>>,
+    cutoff_radius: Option<Length>,
     potential_cutoff: Option<f64>,
     reduced_temperature: f64,
 ) -> EosResult<Array4<f64>> {

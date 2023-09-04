@@ -8,9 +8,9 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub struct VaporPressure {
     pub target: Array1<f64>,
-    unit: Pressure<f64>,
+    unit: Pressure,
     temperature: Temperature<Array1<f64>>,
-    max_temperature: Temperature<f64>,
+    max_temperature: Temperature,
     datapoints: usize,
     extrapolate: bool,
     solver_options: SolverOptions,
@@ -29,7 +29,7 @@ impl VaporPressure {
         target: Pressure<Array1<f64>>,
         temperature: Temperature<Array1<f64>>,
         extrapolate: bool,
-        critical_temperature: Option<Temperature<f64>>,
+        critical_temperature: Option<Temperature>,
         solver_options: Option<SolverOptions>,
     ) -> Self {
         let datapoints = target.len();

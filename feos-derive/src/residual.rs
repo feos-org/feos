@@ -100,10 +100,10 @@ fn impl_entropy_scaling(
         impl EntropyScaling for ResidualModel {
             fn viscosity_reference(
                 &self,
-                temperature: Temperature<f64>,
-                volume: Volume<f64>,
+                temperature: Temperature,
+                volume: Volume,
                 moles: &Moles<Array1<f64>>,
-            ) -> EosResult<Viscosity<f64>> {
+            ) -> EosResult<Viscosity> {
                 match self {
                     #(#etar,)*
                     _ => unimplemented!(),
@@ -119,10 +119,10 @@ fn impl_entropy_scaling(
 
             fn diffusion_reference(
                 &self,
-                temperature: Temperature<f64>,
-                volume: Volume<f64>,
+                temperature: Temperature,
+                volume: Volume,
                 moles: &Moles<Array1<f64>>,
-            ) -> EosResult<Diffusivity<f64>> {
+            ) -> EosResult<Diffusivity> {
                 match self {
                     #(#dr,)*
                     _ => unimplemented!(),
@@ -138,10 +138,10 @@ fn impl_entropy_scaling(
 
             fn thermal_conductivity_reference(
                 &self,
-                temperature: Temperature<f64>,
-                volume: Volume<f64>,
+                temperature: Temperature,
+                volume: Volume,
                 moles: &Moles<Array1<f64>>,
-            ) -> EosResult<ThermalConductivity<f64>> {
+            ) -> EosResult<ThermalConductivity> {
                 match self {
                     #(#thcr,)*
                     _ => unimplemented!(),
