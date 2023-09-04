@@ -45,6 +45,7 @@ feos.dft.SolvationProfile
       ~SolvationProfile.functional_derivative
       ~SolvationProfile.grand_potential
       ~SolvationProfile.grand_potential_density
+      ~SolvationProfile.meshgrid
       ~SolvationProfile.moles
       ~SolvationProfile.solvation_free_energy
       ~SolvationProfile.solver_log
