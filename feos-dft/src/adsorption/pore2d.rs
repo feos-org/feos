@@ -2,7 +2,7 @@ use super::{FluidParameters, PoreProfile, PoreSpecification};
 use crate::{Axis, ConvolverFFT, DFTProfile, Grid, HelmholtzEnergyFunctional, DFT};
 use ang::Angle;
 use feos_core::si::{Density, Length};
-use feos_core::State;
+use feos_core::{EosResult, State};
 use ndarray::{Array3, Ix2};
 
 pub struct Pore2D {
@@ -29,7 +29,7 @@ impl PoreSpecification<Ix2> for Pore2D {
         bulk: &State<DFT<F>>,
         density: Option<&Density<Array3<f64>>>,
         external_potential: Option<&Array3<f64>>,
-    ) -> PoreProfile<Ix2, F> {
+    ) -> EosResult<PoreProfile<Ix2, F>> {
         let dft: &F = &bulk.eos;
 
         // generate grid
@@ -44,10 +44,10 @@ impl PoreSpecification<Ix2> for Pore2D {
         let weight_functions = dft.weight_functions(t);
         let convolver = ConvolverFFT::plan(&grid, &weight_functions, Some(1));
 
-        PoreProfile {
+        Ok(PoreProfile {
             profile: DFTProfile::new(grid, convolver, bulk, external_potential.cloned(), density),
             grand_potential: None,
             interfacial_tension: None,
-        }
+        })
     }
 }

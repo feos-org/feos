@@ -53,7 +53,7 @@ pub trait PoreSpecification<D: Dimension> {
         bulk: &State<DFT<F>>,
         density: Option<&Density<Array<f64, D::Larger>>>,
         external_potential: Option<&Array<f64, D::Larger>>,
-    ) -> PoreProfile<D, F>;
+    ) -> EosResult<PoreProfile<D, F>>;
 
     /// Return the pore volume using Helium at 298 K as reference.
     fn pore_volume(&self) -> EosResult<Volume<f64>>
@@ -64,7 +64,7 @@ pub trait PoreSpecification<D: Dimension> {
             .temperature(298.0 * KELVIN)
             .density(Density::from_reduced(1.0))
             .build()?;
-        let pore = self.initialize(&bulk, None, None);
+        let pore = self.initialize(&bulk, None, None)?;
         let pot = Dimensionless::from_reduced(
             pore.profile
                 .external_potential
@@ -151,7 +151,7 @@ impl PoreSpecification<Ix1> for Pore1D {
         bulk: &State<DFT<F>>,
         density: Option<&Density<Array2<f64>>>,
         external_potential: Option<&Array2<f64>>,
-    ) -> PoreProfile1D<F> {
+    ) -> EosResult<PoreProfile1D<F>> {
         let dft: &F = &bulk.eos;
         let n_grid = self.n_grid.unwrap_or(DEFAULT_GRID_POINTS);
 
@@ -191,11 +191,11 @@ impl PoreSpecification<Ix1> for Pore1D {
         let weight_functions = dft.weight_functions(t);
         let convolver = ConvolverFFT::plan(&grid, &weight_functions, Some(1));
 
-        PoreProfile {
+        Ok(PoreProfile {
             profile: DFTProfile::new(grid, convolver, bulk, Some(external_potential), density),
             grand_potential: None,
             interfacial_tension: None,
-        }
+        })
     }
 }
 

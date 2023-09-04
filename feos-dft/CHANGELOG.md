@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Implemented `HelmholtzEnergyFunctional` for `EquationOfState` to be able to use functionals as equations of state. [#158](https://github.com/feos-org/feos/pull/158) 
+- Implemented `HelmholtzEnergyFunctional` for `EquationOfState` to be able to use functionals as equations of state. [#158](https://github.com/feos-org/feos/pull/158)
+- Added the possibility to specify the angles of non-orthorombic unit cells. Currently, the external potential must be specified if non-orthorombic unit cells are calculated. [#176](https://github.com/feos-org/feos/pull/176)
 
 ### Changed
 - `HelmholtzEnergyFunctional`: added `Components` trait as trait bound and removed `ideal_gas` method. [#158](https://github.com/feos-org/feos/pull/158)
@@ -17,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Removed `DefaultIdealGasContribution` [#158](https://github.com/feos-org/feos/pull/158)
 - Removed getters for `chemical_potential` (for profiles) and `molar_gibbs_energy` (for `Adsorption1D` and `Adsorption3D`) from Python interface. [#158](https://github.com/feos-org/feos/pull/158)
+
+### Fixed
+- Added an error, if the unit cells in 3D DFT are too small and violate the minimum image convention. [#176](https://github.com/feos-org/feos/pull/176)
 
 ### Packaging
 - Updated `num-dual` dependency to 0.7. [#137](https://github.com/feos-org/feos/pull/137)

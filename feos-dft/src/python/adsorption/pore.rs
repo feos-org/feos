@@ -76,7 +76,7 @@ macro_rules! impl_pore {
                     &bulk.0,
                     density.map(|d| d.try_into()).transpose()?.as_ref(),
                     external_potential.map(|e| e.to_owned_array()).as_ref(),
-                )))
+                )?))
             }
 
             #[getter]
@@ -185,7 +185,7 @@ macro_rules! impl_pore {
                     &bulk.0,
                     density.map(|d| d.try_into()).transpose()?.as_ref(),
                     external_potential.map(|e| e.to_owned_array()).as_ref(),
-                )))
+                )?))
             }
 
             /// The pore volume using Helium at 298 K as reference.
@@ -224,6 +224,9 @@ macro_rules! impl_pore {
         /// ----------
         /// system_size : [SINumber; 3]
         ///     The size of the unit cell.
+        /// angles : [Angle; 3]
+        ///     The angles of the unit cell or `None` if the unit cell
+        ///     is orthorombic
         /// n_grid : [int; 3]
         ///     The number of grid points in each direction.
         /// coordinates : numpy.ndarray[float]
@@ -242,7 +245,7 @@ macro_rules! impl_pore {
         /// Pore3D
         ///
         #[pyclass(name = "Pore3D")]
-        #[pyo3(text_signature = "(system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, potential_cutoff=None, cutoff_radius=None)")]
+        #[pyo3(text_signature = "(system_size, angles, n_grid, coordinates, sigma_ss, epsilon_k_ss, potential_cutoff=None, cutoff_radius=None)")]
         pub struct PyPore3D(Pore3D);
 
         #[pyclass(name = "PoreProfile3D")]
@@ -255,7 +258,7 @@ macro_rules! impl_pore {
             #[new]
             fn new(
                 system_size: [PySINumber; 3],
-                angles: [PyAngle; 3],
+                angles: Option<[PyAngle; 3]>,
                 n_grid: [usize; 3],
                 coordinates: PySIArray2,
                 sigma_ss: &PyArray1<f64>,
@@ -265,7 +268,7 @@ macro_rules! impl_pore {
             ) -> PyResult<Self> {
                 Ok(Self(Pore3D::new(
                     [system_size[0].try_into()?, system_size[1].try_into()?, system_size[2].try_into()?],
-                    [angles[0].into(), angles[1].into(), angles[2].into()],
+                    angles.map(|angles| [angles[0].into(), angles[1].into(), angles[2].into()]),
                     n_grid,
                     coordinates.try_into()?,
                     sigma_ss.to_owned_array(),
@@ -302,7 +305,7 @@ macro_rules! impl_pore {
                     &bulk.0,
                     density.map(|d| d.try_into()).transpose()?.as_ref(),
                     external_potential.map(|e| e.to_owned_array()).as_ref(),
-                )))
+                )?))
             }
 
             /// The pore volume using Helium at 298 K as reference.
