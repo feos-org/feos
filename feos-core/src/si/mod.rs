@@ -1,3 +1,4 @@
+use ang::{Angle, Degrees, Radians};
 use num_traits::Zero;
 use std::marker::PhantomData;
 use std::ops::{Div, Mul};
@@ -139,6 +140,11 @@ pub const GRAM: Mass<f64> = Quantity(1e-3, PhantomData);
 pub const HOUR: Time<f64> = Quantity(3600.0, PhantomData);
 pub const LITER: Volume<f64> = Quantity(1e-3, PhantomData);
 pub const MINUTE: Time<f64> = Quantity(60.0, PhantomData);
+
+/// Angle unit radian $\\left(\text{rad}\\right)$
+pub const RADIANS: Angle = Radians(1.0);
+/// Angle unit degree $\\left(1^\\circ=\frac{\pi}{180}\\,\text{rad}\\approx 0.0174532925\\,\text{rad}\\right)$
+pub const DEGREES: Angle = Degrees(1.0);
 
 /// Boltzmann constant $\\left(k_\text{B}=1.380649\times 10^{-23}\\,\\frac{\text{J}}{\text{K}}\\right)$
 pub const KB: Entropy<f64> = Quantity(1.380649e-23, PhantomData);

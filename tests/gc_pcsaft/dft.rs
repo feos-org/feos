@@ -240,6 +240,7 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
         None,
     )
     .initialize(&bulk, None, None)
+    .unwrap()
     .solve(Some(&solver))?;
     Ok(())
 }

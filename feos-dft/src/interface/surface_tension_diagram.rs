@@ -84,14 +84,14 @@ impl<F: HelmholtzEnergyFunctional> SurfaceTensionDiagram<F> {
     pub fn relative_adsorption(&self) -> Vec<Moles<Array2<f64>>> {
         self.profiles
             .iter()
-            .map(|planar_interf| planar_interf.relative_adsorption().unwrap())
+            .map(|planar_interf| planar_interf.relative_adsorption())
             .collect()
     }
 
     pub fn interfacial_enrichment(&self) -> Vec<Array1<f64>> {
         self.profiles
             .iter()
-            .map(|planar_interf| planar_interf.interfacial_enrichment().unwrap())
+            .map(|planar_interf| planar_interf.interfacial_enrichment())
             .collect()
     }
 

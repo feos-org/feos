@@ -76,7 +76,7 @@ macro_rules! impl_pore {
                     &bulk.0,
                     density.map(|d| d.try_into()).transpose()?.as_ref(),
                     external_potential.map(|e| e.to_owned_array()).as_ref(),
-                )))
+                )?))
             }
 
             #[getter]
@@ -134,12 +134,99 @@ macro_rules! impl_pore {
             }
         }
 
+        #[pyclass(name = "Pore2D")]
+        #[pyo3(text_signature = "(geometry, pore_size, potential, n_grid=None, potential_cutoff=None)")]
+        pub struct PyPore2D(Pore2D);
+
+        #[pyclass(name = "PoreProfile2D")]
+        pub struct PyPoreProfile2D(PoreProfile2D<$func>);
+
+        impl_2d_profile!(PyPoreProfile2D, get_x, get_y);
+
+        #[pymethods]
+        impl PyPore2D {
+            #[new]
+            fn new(
+                system_size: [PySINumber; 2],
+                angle: PyAngle,
+                n_grid: [usize; 2],
+            ) -> PyResult<Self> {
+                Ok(Self(Pore2D::new(
+                    [system_size[0].try_into()?, system_size[1].try_into()?],
+                    angle.into(),
+                    n_grid,
+                )))
+            }
+
+            /// Initialize the pore for the given bulk state.
+            ///
+            /// Parameters
+            /// ----------
+            /// bulk : State
+            ///     The bulk state in equilibrium with the pore.
+            /// density : SIArray3, optional
+            ///     Initial values for the density profile.
+            /// external_potential : numpy.ndarray[float], optional
+            ///     The external potential in the pore. Used to
+            ///     save computation time in the case of costly
+            ///     evaluations of external potentials.
+            ///
+            /// Returns
+            /// -------
+            /// PoreProfile2D
+            #[pyo3(text_signature = "($self, bulk, density=None, external_potential=None)")]
+            fn initialize(
+                &self,
+                bulk: &PyState,
+                density: Option<PySIArray3>,
+                external_potential: Option<&PyArray3<f64>>,
+            ) -> PyResult<PyPoreProfile2D> {
+                Ok(PyPoreProfile2D(self.0.initialize(
+                    &bulk.0,
+                    density.map(|d| d.try_into()).transpose()?.as_ref(),
+                    external_potential.map(|e| e.to_owned_array()).as_ref(),
+                )?))
+            }
+
+            /// The pore volume using Helium at 298 K as reference.
+            #[getter]
+            fn get_pore_volume(&self) -> PyResult<PySINumber> {
+                Ok(self.0.pore_volume()?.into())
+            }
+        }
+
+        #[pymethods]
+        impl PyPoreProfile2D {
+            #[getter]
+            fn get_grand_potential(&self) -> Option<PySINumber> {
+                self.0.grand_potential.map(PySINumber::from)
+            }
+
+            #[getter]
+            fn get_interfacial_tension(&self) -> Option<PySINumber> {
+                self.0.interfacial_tension.map(PySINumber::from)
+            }
+
+            #[getter]
+            fn get_partial_molar_enthalpy_of_adsorption(&self) -> PyResult<PySIArray1> {
+                Ok(self.0.partial_molar_enthalpy_of_adsorption()?.into())
+            }
+
+            #[getter]
+            fn get_enthalpy_of_adsorption(&self) -> PyResult<PySINumber> {
+                Ok(self.0.enthalpy_of_adsorption()?.into())
+            }
+        }
+
         /// Parameters required to specify a 3D pore.
         ///
         /// Parameters
         /// ----------
         /// system_size : [SINumber; 3]
         ///     The size of the unit cell.
+        /// angles : [Angle; 3]
+        ///     The angles of the unit cell or `None` if the unit cell
+        ///     is orthorombic
         /// n_grid : [int; 3]
         ///     The number of grid points in each direction.
         /// coordinates : numpy.ndarray[float]
@@ -158,7 +245,7 @@ macro_rules! impl_pore {
         /// Pore3D
         ///
         #[pyclass(name = "Pore3D")]
-        #[pyo3(text_signature = "(system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, potential_cutoff=None, cutoff_radius=None)")]
+        #[pyo3(text_signature = "(system_size, angles, n_grid, coordinates, sigma_ss, epsilon_k_ss, potential_cutoff=None, cutoff_radius=None)")]
         pub struct PyPore3D(Pore3D);
 
         #[pyclass(name = "PoreProfile3D")]
@@ -171,6 +258,7 @@ macro_rules! impl_pore {
             #[new]
             fn new(
                 system_size: [PySINumber; 3],
+                angles: Option<[PyAngle; 3]>,
                 n_grid: [usize; 3],
                 coordinates: PySIArray2,
                 sigma_ss: &PyArray1<f64>,
@@ -180,6 +268,7 @@ macro_rules! impl_pore {
             ) -> PyResult<Self> {
                 Ok(Self(Pore3D::new(
                     [system_size[0].try_into()?, system_size[1].try_into()?, system_size[2].try_into()?],
+                    angles.map(|angles| [angles[0].into(), angles[1].into(), angles[2].into()]),
                     n_grid,
                     coordinates.try_into()?,
                     sigma_ss.to_owned_array(),
@@ -216,7 +305,7 @@ macro_rules! impl_pore {
                     &bulk.0,
                     density.map(|d| d.try_into()).transpose()?.as_ref(),
                     external_potential.map(|e| e.to_owned_array()).as_ref(),
-                )))
+                )?))
             }
 
             /// The pore volume using Helium at 298 K as reference.
