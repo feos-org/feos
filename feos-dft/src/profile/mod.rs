@@ -100,7 +100,7 @@ pub struct DFTProfile<D: Dimension, F> {
     pub grid: Grid,
     pub convolver: Arc<dyn Convolver<f64, D>>,
     pub dft: Arc<DFT<F>>,
-    pub temperature: Temperature<f64>,
+    pub temperature: Temperature,
     pub density: Density<Array<f64, D::Larger>>,
     pub specification: Arc<dyn DFTSpecification<D, F>>,
     pub external_potential: Array<f64, D::Larger>,
@@ -267,7 +267,7 @@ where
     /// Return the volume of the profile.
     ///
     /// In periodic directions, the length is assumed to be 1 Å.
-    pub fn volume(&self) -> Volume<f64> {
+    pub fn volume(&self) -> Volume {
         let volume: f64 = self.grid.axes().iter().map(|ax| ax.volume()).product();
         Volume::from_reduced(volume * self.grid.functional_determinant())
     }
@@ -325,7 +325,7 @@ where
     }
 
     /// Return the total number of moles in the system.
-    pub fn total_moles(&self) -> Moles<f64> {
+    pub fn total_moles(&self) -> Moles {
         self.moles().sum()
     }
 }

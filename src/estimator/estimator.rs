@@ -9,7 +9,6 @@ use std::fmt::Display;
 use std::fmt::Write;
 use std::sync::Arc;
 
-
 /// A collection of [`DataSet`]s and weights that can be used to
 /// evaluate an equation of state versus experimental data.
 pub struct Estimator<E: Residual> {

@@ -7,10 +7,10 @@ use std::sync::Arc;
 
 pub fn density_iteration<E: Residual>(
     eos: &Arc<E>,
-    temperature: Temperature<f64>,
-    pressure: Pressure<f64>,
+    temperature: Temperature,
+    pressure: Pressure,
     moles: &Moles<Array1<f64>>,
-    initial_density: Density<f64>,
+    initial_density: Density,
 ) -> EosResult<State<E>> {
     let maxdensity = eos.max_density(Some(moles))?;
     let (abstol, reltol) = (1e-12, 1e-14);
@@ -137,10 +137,10 @@ pub fn density_iteration<E: Residual>(
 
 fn pressure_spinodal<E: Residual>(
     eos: &Arc<E>,
-    temperature: Temperature<f64>,
-    rho_init: Density<f64>,
+    temperature: Temperature,
+    rho_init: Density,
     moles: &Moles<Array1<f64>>,
-) -> EosResult<(Pressure<f64>, Density<f64>)> {
+) -> EosResult<(Pressure, Density)> {
     let maxiter = 30;
     let abstol = 1e-8;
 

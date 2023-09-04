@@ -18,8 +18,8 @@ const MIN_WIDTH: f64 = 100.0;
 pub struct PlanarInterface<F: HelmholtzEnergyFunctional> {
     pub profile: DFTProfile<Ix1, F>,
     pub vle: PhaseEquilibrium<DFT<F>, 2>,
-    pub surface_tension: Option<SurfaceTension<f64>>,
-    pub equimolar_radius: Option<Length<f64>>,
+    pub surface_tension: Option<SurfaceTension>,
+    pub equimolar_radius: Option<Length>,
 }
 
 impl<F: HelmholtzEnergyFunctional> Clone for PlanarInterface<F> {
@@ -63,7 +63,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
 }
 
 impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
-    pub fn new(vle: &PhaseEquilibrium<DFT<F>, 2>, n_grid: usize, l_grid: Length<f64>) -> Self {
+    pub fn new(vle: &PhaseEquilibrium<DFT<F>, 2>, n_grid: usize, l_grid: Length) -> Self {
         let dft = &vle.vapor().eos;
 
         // generate grid
@@ -85,8 +85,8 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
     pub fn from_tanh(
         vle: &PhaseEquilibrium<DFT<F>, 2>,
         n_grid: usize,
-        l_grid: Length<f64>,
-        critical_temperature: Temperature<f64>,
+        l_grid: Length,
+        critical_temperature: Temperature,
         fix_equimolar_surface: bool,
     ) -> Self {
         let mut profile = Self::new(vle, n_grid, l_grid);
@@ -237,7 +237,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
     }
 
     /// Interface thickness (90-10 number density difference)
-    pub fn interfacial_thickness(&self) -> EosResult<Length<f64>> {
+    pub fn interfacial_thickness(&self) -> EosResult<Length> {
         let s = self.profile.density.shape();
         let rho = self.profile.density.sum_axis(Axis_nd(0)).to_reduced();
         let z = self.profile.grid.grids()[0];
@@ -354,7 +354,7 @@ fn interp_symmetric<F: HelmholtzEnergyFunctional>(
     rho_pdgt: Density<Array2<f64>>,
     vle: &PhaseEquilibrium<DFT<F>, 2>,
     z: &Array1<f64>,
-    radius: Length<f64>,
+    radius: Length,
 ) -> EosResult<Density<Array2<f64>>> {
     let reduced_density = Array2::from_shape_fn(rho_pdgt.raw_dim(), |(i, j)| {
         ((rho_pdgt.get((i, j)) - vle_pdgt.vapor().partial_density.get(i))

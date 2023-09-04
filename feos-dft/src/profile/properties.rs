@@ -13,12 +13,12 @@ use std::ops::{AddAssign, Div};
 use std::sync::Arc;
 
 type DrhoDmu<D: Dimension> =
-    <Density<Array<f64, <D::Larger as Dimension>::Larger>> as Div<MolarEnergy<f64>>>::Output;
-type DnDmu = <Moles<Array2<f64>> as Div<MolarEnergy<f64>>>::Output;
-type DrhoDp<D: Dimension> = <Density<Array<f64, D::Larger>> as Div<Pressure<f64>>>::Output;
-type DnDp = <Moles<Array1<f64>> as Div<Pressure<f64>>>::Output;
-type DrhoDT<D: Dimension> = <Density<Array<f64, D::Larger>> as Div<Temperature<f64>>>::Output;
-type DnDT = <Moles<Array1<f64>> as Div<Temperature<f64>>>::Output;
+    <Density<Array<f64, <D::Larger as Dimension>::Larger>> as Div<MolarEnergy>>::Output;
+type DnDmu = <Moles<Array2<f64>> as Div<MolarEnergy>>::Output;
+type DrhoDp<D: Dimension> = <Density<Array<f64, D::Larger>> as Div<Pressure>>::Output;
+type DnDp = <Moles<Array1<f64>> as Div<Pressure>>::Output;
+type DrhoDT<D: Dimension> = <Density<Array<f64, D::Larger>> as Div<Temperature>>::Output;
+type DnDT = <Moles<Array1<f64>> as Div<Temperature>>::Output;
 
 impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTProfile<D, F>
 where
@@ -50,7 +50,7 @@ where
     }
 
     /// Calculate the grand potential $\Omega$.
-    pub fn grand_potential(&self) -> EosResult<Energy<f64>> {
+    pub fn grand_potential(&self) -> EosResult<Energy> {
         Ok(self.integrate(&self.grand_potential_density()?))
     }
 
@@ -221,7 +221,7 @@ where
     /// Calculate the entropy $S$.
     ///
     /// Untested with heterosegmented functionals.
-    pub fn entropy(&self, contributions: Contributions) -> EosResult<Entropy<f64>> {
+    pub fn entropy(&self, contributions: Contributions) -> EosResult<Entropy> {
         Ok(self.integrate(&self.entropy_density(contributions)?))
     }
 
@@ -266,7 +266,7 @@ where
     /// Calculate the internal energy $U$.
     ///
     /// Untested with heterosegmented functionals.
-    pub fn internal_energy(&self, contributions: Contributions) -> EosResult<Energy<f64>> {
+    pub fn internal_energy(&self, contributions: Contributions) -> EosResult<Energy> {
         Ok(self.integrate(&self.internal_energy_density(contributions)?))
     }
 }

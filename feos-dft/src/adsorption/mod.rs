@@ -55,7 +55,7 @@ where
     /// Calculate an adsorption isotherm (starting at low pressure)
     pub fn adsorption_isotherm<S: PoreSpecification<D>>(
         functional: &Arc<DFT<F>>,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
         molefracs: Option<&Array1<f64>>,
@@ -75,7 +75,7 @@ where
     /// Calculate an desorption isotherm (starting at high pressure)
     pub fn desorption_isotherm<S: PoreSpecification<D>>(
         functional: &Arc<DFT<F>>,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
         molefracs: Option<&Array1<f64>>,
@@ -100,7 +100,7 @@ where
     /// Calculate an equilibrium isotherm
     pub fn equilibrium_isotherm<S: PoreSpecification<D>>(
         functional: &Arc<DFT<F>>,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
         molefracs: Option<&Array1<f64>>,
@@ -186,7 +186,7 @@ where
 
     fn isotherm<S: PoreSpecification<D>>(
         functional: &Arc<DFT<F>>,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
         molefracs: Option<&Array1<f64>>,
@@ -248,9 +248,9 @@ where
     /// Calculate the phase transition from an empty to a filled pore.
     pub fn phase_equilibrium<S: PoreSpecification<D>>(
         functional: &Arc<DFT<F>>,
-        temperature: Temperature<f64>,
-        p_min: Pressure<f64>,
-        p_max: Pressure<f64>,
+        temperature: Temperature,
+        p_min: Pressure,
+        p_max: Pressure,
         pore: &S,
         molefracs: Option<&Array1<f64>>,
         solver: Option<&DFTSolver>,

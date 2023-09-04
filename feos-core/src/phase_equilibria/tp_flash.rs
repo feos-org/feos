@@ -20,8 +20,8 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
     /// containing non-volatile components (e.g. ions).
     pub fn tp_flash(
         eos: &Arc<E>,
-        temperature: Temperature<f64>,
-        pressure: Pressure<f64>,
+        temperature: Temperature,
+        pressure: Pressure,
         feed: &Moles<Array1<f64>>,
         initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,

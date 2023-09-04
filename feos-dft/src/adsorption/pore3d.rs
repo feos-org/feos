@@ -12,26 +12,26 @@ use ndarray::Zip;
 
 /// Parameters required to specify a 3D pore.
 pub struct Pore3D {
-    system_size: [Length<f64>; 3],
+    system_size: [Length; 3],
     angles: Option<[Angle; 3]>,
     n_grid: [usize; 3],
     coordinates: Length<Array2<f64>>,
     sigma_ss: Array1<f64>,
     epsilon_k_ss: Array1<f64>,
     potential_cutoff: Option<f64>,
-    cutoff_radius: Option<Length<f64>>,
+    cutoff_radius: Option<Length>,
 }
 
 impl Pore3D {
     pub fn new(
-        system_size: [Length<f64>; 3],
+        system_size: [Length; 3],
         angles: Option<[Angle; 3]>,
         n_grid: [usize; 3],
         coordinates: Length<Array2<f64>>,
         sigma_ss: Array1<f64>,
         epsilon_k_ss: Array1<f64>,
         potential_cutoff: Option<f64>,
-        cutoff_radius: Option<Length<f64>>,
+        cutoff_radius: Option<Length>,
     ) -> Self {
         Self {
             system_size,
@@ -110,11 +110,11 @@ impl PoreSpecification<Ix3> for Pore3D {
 pub fn external_potential_3d<F: FluidParameters>(
     functional: &F,
     axis: [&Axis; 3],
-    system_size: [Length<f64>; 3],
+    system_size: [Length; 3],
     coordinates: Array2<f64>,
     sigma_ss: &Array1<f64>,
     epsilon_ss: &Array1<f64>,
-    cutoff_radius: Option<Length<f64>>,
+    cutoff_radius: Option<Length>,
     potential_cutoff: Option<f64>,
     reduced_temperature: f64,
 ) -> EosResult<Array4<f64>> {

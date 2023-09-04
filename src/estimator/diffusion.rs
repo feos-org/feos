@@ -10,7 +10,7 @@ use typenum::P2;
 #[derive(Clone)]
 pub struct Diffusion {
     pub target: Array1<f64>,
-    unit: si::Diffusivity<f64>,
+    unit: si::Diffusivity,
     temperature: Temperature<Array1<f64>>,
     pressure: Pressure<Array1<f64>>,
     initial_density: Vec<DensityInitialization>,

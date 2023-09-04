@@ -13,7 +13,7 @@ use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
 /// Pure-substance parameters for the PC-Saft equation of state.
-/// 
+///
 /// Parameters
 /// ----------
 /// m : float

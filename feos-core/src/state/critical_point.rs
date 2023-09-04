@@ -21,7 +21,7 @@ impl<R: Residual> State<R> {
     /// Calculate the pure component critical point of all components.
     pub fn critical_point_pure(
         eos: &Arc<R>,
-        initial_temperature: Option<Temperature<f64>>,
+        initial_temperature: Option<Temperature>,
         options: SolverOptions,
     ) -> EosResult<Vec<Self>> {
         (0..eos.components())
@@ -39,7 +39,7 @@ impl<R: Residual> State<R> {
     pub fn critical_point_binary<TP>(
         eos: &Arc<R>,
         temperature_or_pressure: TP,
-        initial_temperature: Option<Temperature<f64>>,
+        initial_temperature: Option<Temperature>,
         initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
     ) -> EosResult<Self>
@@ -64,7 +64,7 @@ impl<R: Residual> State<R> {
     pub fn critical_point(
         eos: &Arc<R>,
         moles: Option<&Moles<Array1<f64>>>,
-        initial_temperature: Option<Temperature<f64>>,
+        initial_temperature: Option<Temperature>,
         options: SolverOptions,
     ) -> EosResult<Self> {
         let moles = eos.validate_moles(moles)?;
@@ -88,7 +88,7 @@ impl<R: Residual> State<R> {
     fn critical_point_hkm(
         eos: &Arc<R>,
         moles: &Moles<Array1<f64>>,
-        initial_temperature: Temperature<f64>,
+        initial_temperature: Temperature,
         options: SolverOptions,
     ) -> EosResult<Self> {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_CRIT_POINT, TOL_CRIT_POINT);
@@ -163,7 +163,7 @@ impl<R: Residual> State<R> {
     /// Calculate the critical point of a binary system for given temperature.
     fn critical_point_binary_t(
         eos: &Arc<R>,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
     ) -> EosResult<Self> {
@@ -241,8 +241,8 @@ impl<R: Residual> State<R> {
     /// Calculate the critical point of a binary system for given pressure.
     fn critical_point_binary_p(
         eos: &Arc<R>,
-        pressure: Pressure<f64>,
-        initial_temperature: Option<Temperature<f64>>,
+        pressure: Pressure,
+        initial_temperature: Option<Temperature>,
         initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
     ) -> EosResult<Self> {
@@ -331,7 +331,7 @@ impl<R: Residual> State<R> {
 
     pub fn spinodal(
         eos: &Arc<R>,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         moles: Option<&Moles<Array1<f64>>>,
         options: SolverOptions,
     ) -> EosResult<[Self; 2]> {
@@ -357,7 +357,7 @@ impl<R: Residual> State<R> {
 
     fn calculate_spinodal(
         eos: &Arc<R>,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
         options: SolverOptions,

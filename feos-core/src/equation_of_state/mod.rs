@@ -83,10 +83,10 @@ impl<I: IdealGas, R: Residual> Residual for EquationOfState<I, R> {
 impl<I: IdealGas, R: Residual + EntropyScaling> EntropyScaling for EquationOfState<I, R> {
     fn viscosity_reference(
         &self,
-        temperature: Temperature<f64>,
-        volume: Volume<f64>,
+        temperature: Temperature,
+        volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Viscosity<f64>> {
+    ) -> EosResult<Viscosity> {
         self.residual
             .viscosity_reference(temperature, volume, moles)
     }
@@ -95,10 +95,10 @@ impl<I: IdealGas, R: Residual + EntropyScaling> EntropyScaling for EquationOfSta
     }
     fn diffusion_reference(
         &self,
-        temperature: Temperature<f64>,
-        volume: Volume<f64>,
+        temperature: Temperature,
+        volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Diffusivity<f64>> {
+    ) -> EosResult<Diffusivity> {
         self.residual
             .diffusion_reference(temperature, volume, moles)
     }
@@ -107,10 +107,10 @@ impl<I: IdealGas, R: Residual + EntropyScaling> EntropyScaling for EquationOfSta
     }
     fn thermal_conductivity_reference(
         &self,
-        temperature: Temperature<f64>,
-        volume: Volume<f64>,
+        temperature: Temperature,
+        volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<ThermalConductivity<f64>> {
+    ) -> EosResult<ThermalConductivity> {
         self.residual
             .thermal_conductivity_reference(temperature, volume, moles)
     }

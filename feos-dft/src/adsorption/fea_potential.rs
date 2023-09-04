@@ -15,7 +15,7 @@ pub fn calculate_fea_potential(
     sigma_sf: Array1<f64>,
     epsilon_k_sf: Array1<f64>,
     pore_center: &[f64; 3],
-    system_size: &[Length<f64>; 3],
+    system_size: &[Length; 3],
     n_grid: &[usize; 2],
     temperature: f64,
     geometry: Geometry,

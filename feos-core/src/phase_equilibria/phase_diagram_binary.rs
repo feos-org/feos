@@ -366,9 +366,9 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
     /// system and given temperature.
     fn heteroazeotrope_t(
         eos: &Arc<E>,
-        temperature: Temperature<f64>,
+        temperature: Temperature,
         x_init: (f64, f64),
-        p_init: Option<Pressure<f64>>,
+        p_init: Option<Pressure>,
         options: SolverOptions,
         bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self> {
@@ -507,9 +507,9 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
     /// system and given pressure.
     fn heteroazeotrope_p(
         eos: &Arc<E>,
-        pressure: Pressure<f64>,
+        pressure: Pressure,
         x_init: (f64, f64),
-        t_init: Option<Temperature<f64>>,
+        t_init: Option<Temperature>,
         options: SolverOptions,
         bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self> {

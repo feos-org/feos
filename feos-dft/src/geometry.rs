@@ -106,11 +106,7 @@ impl Axis {
     ///
     /// The potential_offset is required to make sure that particles
     /// can not interact through walls.
-    pub fn new_cartesian(
-        points: usize,
-        length: Length<f64>,
-        potential_offset: Option<f64>,
-    ) -> Self {
+    pub fn new_cartesian(points: usize, length: Length, potential_offset: Option<f64>) -> Self {
         let potential_offset = potential_offset.unwrap_or(0.0);
         let l = length.to_reduced() + potential_offset;
         let cell_size = l / points as f64;
@@ -127,7 +123,7 @@ impl Axis {
     }
 
     /// Create a new (equidistant) spherical axis.
-    pub fn new_spherical(points: usize, length: Length<f64>) -> Self {
+    pub fn new_spherical(points: usize, length: Length) -> Self {
         let l = length.to_reduced();
         let cell_size = l / points as f64;
         let grid = Array1::linspace(0.5 * cell_size, l - 0.5 * cell_size, points);
@@ -145,7 +141,7 @@ impl Axis {
     }
 
     /// Create a new logarithmically scaled cylindrical axis.
-    pub fn new_polar(points: usize, length: Length<f64>) -> Self {
+    pub fn new_polar(points: usize, length: Length) -> Self {
         let l = length.to_reduced();
 
         let mut alpha = 0.002_f64;

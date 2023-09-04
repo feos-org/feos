@@ -13,8 +13,8 @@ use std::sync::Arc;
 fn npt<E: Residual>(
     (eos, t, p, n, rho0): (
         &Arc<E>,
-        Temperature<f64>,
-        Pressure<f64>,
+        Temperature,
+        Pressure,
         &Moles<Array1<f64>>,
         DensityInitialization,
     ),
@@ -44,18 +44,11 @@ where
 }
 
 /// Evaluate temperature, pressure flash.
-fn tp_flash<E: Residual>(
-    (eos, t, p, feed): (
-        &Arc<E>,
-        Temperature<f64>,
-        Pressure<f64>,
-        &Moles<Array1<f64>>,
-    ),
-) {
+fn tp_flash<E: Residual>((eos, t, p, feed): (&Arc<E>, Temperature, Pressure, &Moles<Array1<f64>>)) {
     PhaseEquilibrium::tp_flash(eos, t, p, feed, None, Default::default(), None).unwrap();
 }
 
-fn bubble_point<E: Residual>((eos, t, x): (&Arc<E>, Temperature<f64>, &Array1<f64>)) {
+fn bubble_point<E: Residual>((eos, t, x): (&Arc<E>, Temperature, &Array1<f64>)) {
     PhaseEquilibrium::bubble_point(
         eos,
         t,
@@ -67,7 +60,7 @@ fn bubble_point<E: Residual>((eos, t, x): (&Arc<E>, Temperature<f64>, &Array1<f6
     .unwrap();
 }
 
-fn dew_point<E: Residual>((eos, t, y): (&Arc<E>, Temperature<f64>, &Array1<f64>)) {
+fn dew_point<E: Residual>((eos, t, y): (&Arc<E>, Temperature, &Array1<f64>)) {
     PhaseEquilibrium::dew_point(
         eos,
         t,

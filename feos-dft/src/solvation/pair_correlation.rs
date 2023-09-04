@@ -19,7 +19,7 @@ pub trait PairPotential {
 pub struct PairCorrelation<F> {
     pub profile: DFTProfile<Ix1, F>,
     pub pair_correlation_function: Option<Array2<f64>>,
-    pub self_solvation_free_energy: Option<Energy<f64>>,
+    pub self_solvation_free_energy: Option<Energy>,
     pub structure_factor: Option<f64>,
 }
 
@@ -35,12 +35,7 @@ impl<F> Clone for PairCorrelation<F> {
 }
 
 impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
-    pub fn new(
-        bulk: &State<DFT<F>>,
-        test_particle: usize,
-        n_grid: usize,
-        width: Length<f64>,
-    ) -> Self {
+    pub fn new(bulk: &State<DFT<F>>, test_particle: usize, n_grid: usize, width: Length) -> Self {
         let dft = &bulk.eos;
 
         // generate grid

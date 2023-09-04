@@ -106,7 +106,7 @@ pub struct BinaryVlePressure {
     target: Array1<f64>,
     temperature: Temperature<Array1<f64>>,
     pressure: Pressure<Array1<f64>>,
-    unit: Pressure<f64>,
+    unit: Pressure,
     molefracs: Array1<f64>,
     phase: Phase,
 }
