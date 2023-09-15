@@ -15,4 +15,6 @@ pub use eos::{DQVariants, PcSaft, PcSaftOptions};
 pub use parameters::{PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord};
 
 #[cfg(feature = "python")]
+pub mod gc_methods;
+#[cfg(feature = "python")]
 pub mod python;

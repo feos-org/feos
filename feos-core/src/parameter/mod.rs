@@ -209,7 +209,7 @@ where
     /// and the ideal gas record.
     fn from_segments<C: SegmentCount>(
         chemical_records: Vec<C>,
-        segment_records: Vec<SegmentRecord<Self::Pure>>,
+        segment_records: &[SegmentRecord<Self::Pure>],
         binary_segment_records: Option<Vec<BinaryRecord<String, Self::Binary>>>,
     ) -> Result<Self, ParameterError>
     where
@@ -221,7 +221,7 @@ where
         let pure_records = chemical_records
             .iter()
             .map(|cr| {
-                cr.segment_map(&segment_records).and_then(|segments| {
+                cr.segment_map(segment_records).and_then(|segments| {
                     PureRecord::from_segments(cr.identifier().into_owned(), segments)
                 })
             })
@@ -335,7 +335,7 @@ where
             })
             .transpose()?;
 
-        Self::from_segments(chemical_records, segment_records, binary_records)
+        Self::from_segments(chemical_records, &segment_records, binary_records)
     }
 
     /// Return a parameter set containing the subset of components specified in `component_list`.
