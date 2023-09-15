@@ -754,7 +754,7 @@ macro_rules! impl_parameter_from_segments {
             ) -> Result<Self, ParameterError> {
                 Ok(Self(Arc::new(<$parameter>::from_segments(
                     chemical_records.into_iter().map(|cr| cr.0).collect(),
-                    &segment_records.into_iter().map(|sr| sr.0).collect::<Vec<_>>(),
+                    segment_records.into_iter().map(|sr| sr.0).collect(),
                     binary_segment_records.map(|r| r.into_iter().map(|r| BinaryRecord{id1:r.0.id1,id2:r.0.id2,model_record:r.0.model_record.into()}).collect()),
                 )?)))
             }

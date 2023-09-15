@@ -22,7 +22,7 @@ impl PyPcSaftParameters {
                 ))
             })
             .collect::<PyResult<_>>()?;
-        let params = PcSaftParameters::from_segments(chemical_records, &SEGMENTS, None)?;
+        let params = PcSaftParameters::from_segments(chemical_records, SEGMENTS.clone(), None)?;
         Ok(Self(Arc::new(params)))
     }
 }

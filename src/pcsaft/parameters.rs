@@ -805,7 +805,7 @@ pub mod utils {
             .collect();
         let params = PcSaftParameters::from_segments(
             vec![propane, ethanol],
-            &segment_records,
+            segment_records,
             Some(binary_segment_records),
         )?;
         let k_ij = params.binary_records.as_ref().unwrap();
