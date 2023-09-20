@@ -3,8 +3,9 @@ use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
 use crate::si::{Density, Moles, Pressure, Temperature, Volume};
 use crate::{SolverOptions, Verbosity};
-use nalgebra::{DMatrix, DVector, SVector, SymmetricEigen};
-use ndarray::{arr1, Array1};
+use nalgebra::SVector;
+use ndarray::{arr1, Array1, Array2};
+use num_dual::linalg::smallest_ev;
 use num_dual::{
     first_derivative, try_first_derivative, try_jacobian, Dual, Dual3, Dual64, DualNum, DualSVec64,
     DualVec, HyperDual,
@@ -436,7 +437,7 @@ fn critical_point_objective<R: Residual>(
     // calculate second partial derivatives w.r.t. moles
     let t = HyperDual::from_re(temperature);
     let v = HyperDual::from_re(density.recip() * moles.sum());
-    let qij = DMatrix::from_fn(eos.components(), eos.components(), |i, j| {
+    let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
         let mut m = moles.mapv(HyperDual::from);
         m[i].eps1 = DualSVec64::one();
         m[j].eps2 = DualSVec64::one();
@@ -474,7 +475,7 @@ fn critical_point_objective_t<R: Residual>(
     // calculate second partial derivatives w.r.t. moles
     let t = HyperDual::from(temperature);
     let v = HyperDual::from(1.0);
-    let qij = DMatrix::from_fn(eos.components(), eos.components(), |i, j| {
+    let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
         let mut m = density.map(HyperDual::from_re);
         m[i].eps1 = DualSVec64::one();
         m[j].eps2 = DualSVec64::one();
@@ -509,7 +510,7 @@ fn critical_point_objective_p<R: Residual>(
     // calculate second partial derivatives w.r.t. moles
     let t = HyperDual::from_re(temperature);
     let v = HyperDual::from(1.0);
-    let qij = DMatrix::from_fn(eos.components(), eos.components(), |i, j| {
+    let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
         let mut m = density.map(HyperDual::from_re);
         m[i].eps1 = DualSVec64::one();
         m[j].eps2 = DualSVec64::one();
@@ -554,7 +555,7 @@ fn spinodal_objective<R: Residual>(
     // calculate second partial derivatives w.r.t. moles
     let t = HyperDual::from_re(temperature);
     let v = HyperDual::from_re(density.recip() * moles.sum());
-    let qij = DMatrix::from_fn(eos.components(), eos.components(), |i, j| {
+    let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
         let mut m = moles.mapv(HyperDual::from);
         m[i].eps1 = Dual64::one();
         m[j].eps2 = Dual64::one();
@@ -563,33 +564,9 @@ fn spinodal_objective<R: Residual>(
     });
 
     // calculate smallest eigenvalue of q
-    let (eval, _) = smallest_ev_scalar(qij);
+    let (eval, _) = smallest_ev(qij);
 
     Ok(eval)
-}
-
-fn smallest_ev<const N: usize>(
-    m: DMatrix<DualSVec64<N>>,
-) -> (DualSVec64<N>, DVector<DualSVec64<N>>) {
-    let eig = SymmetricEigen::new(m);
-    let (e, ev) = eig
-        .eigenvalues
-        .iter()
-        .zip(eig.eigenvectors.column_iter())
-        .reduce(|e1, e2| if e1.0 < e2.0 { e1 } else { e2 })
-        .unwrap();
-    (*e, ev.into())
-}
-
-fn smallest_ev_scalar(m: DMatrix<Dual64>) -> (Dual64, DVector<Dual64>) {
-    let eig = SymmetricEigen::new(m);
-    let (e, ev) = eig
-        .eigenvalues
-        .iter()
-        .zip(eig.eigenvectors.column_iter())
-        .reduce(|e1, e2| if e1.0 < e2.0 { e1 } else { e2 })
-        .unwrap();
-    (*e, ev.into())
 }
 
 fn kronecker(i: usize, j: usize) -> f64 {
