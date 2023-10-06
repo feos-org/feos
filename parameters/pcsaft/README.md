@@ -26,6 +26,7 @@ The files named according to the pattern `NameYear.json` correspond to published
 [`loetgeringlin2018.json`](loetgeringlin2018.json) | 146 components including viscosity parameters | [&#128279;](https://doi.org/10.1021/acs.iecr.7b04871)
 [`rehner2020.json`](rehner2020.json) | water and alcohols with surface tension data included in the regression | [&#128279;](https://doi.org/10.1021/acs.jced.0c00684)
 [`eller2022.json`](eller2022.json) | hydrogen used in subsurface storage | [&#128279;](https://doi.org/10.1029/2021WR030885)
+[`esper2023.json`](esper2023.json) | 1842 non-associating, associating and polar substances | [&#128279;](https://doi.org/10.1021/acs.iecr.3c02255)
 
 ## Group-Contribution Parameters
 
