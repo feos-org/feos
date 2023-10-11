@@ -330,7 +330,7 @@ impl PyBinarySegmentRecord {
     /// [BinarySegmentRecord]
     #[staticmethod]
     #[pyo3(text_signature = "(path)")]
-    fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
+    pub fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
         Ok(BinaryRecord::from_json(path)?
             .into_iter()
             .map(Self)
@@ -751,7 +751,7 @@ macro_rules! impl_parameter_from_segments {
                 chemical_records: Vec<PyChemicalRecord>,
                 segment_records: Vec<PySegmentRecord>,
                 binary_segment_records: Option<Vec<PyBinarySegmentRecord>>,
-            ) -> Result<Self, ParameterError> {
+            ) -> PyResult<Self> {
                 Ok(Self(Arc::new(<$parameter>::from_segments(
                     chemical_records.into_iter().map(|cr| cr.0).collect(),
                     segment_records.into_iter().map(|sr| sr.0).collect(),
@@ -784,7 +784,7 @@ macro_rules! impl_parameter_from_segments {
                 segments_path: String,
                 binary_path: Option<String>,
                 search_option: IdentifierOption,
-            ) -> Result<Self, ParameterError> {
+            ) -> PyResult<Self> {
                 Ok(Self(Arc::new(<$parameter>::from_json_segments(
                     &substances,
                     pure_path,
@@ -792,6 +792,76 @@ macro_rules! impl_parameter_from_segments {
                     binary_path,
                     search_option,
                 )?)))
+            }
+
+            /// Creates parameters from SMILES and segment records.
+            ///
+            /// Requires an installatin of rdkit.
+            ///
+            /// Parameters
+            /// ----------
+            /// identifier : [str | Identifier]
+            ///     A list of SMILES codes or [Identifier] objects.
+            /// smarts_records : [SmartsRecord]
+            ///     A list of records containing the SMARTS codes used
+            ///     to fragment the molecule.
+            /// segment_records : [SegmentRecord]
+            ///     A list of records containing the parameters of
+            ///     all individual segments.
+            /// binary_segment_records : [BinarySegmentRecord], optional
+            ///     A list of binary segment-segment parameters.
+            #[staticmethod]
+            #[pyo3(text_signature = "(identifier, smarts_records, segment_records, binary_segment_records=None)")]
+            fn from_smiles(
+                py: Python<'_>,
+                identifier: Vec<&PyAny>,
+                smarts_records: Vec<PySmartsRecord>,
+                segment_records: Vec<PySegmentRecord>,
+                binary_segment_records: Option<Vec<PyBinarySegmentRecord>>,
+            ) -> PyResult<Self> {
+                let chemical_records: Vec<_> = identifier
+                    .into_iter()
+                    .map(|i| PyChemicalRecord::from_smiles(py, i, smarts_records.clone()))
+                    .collect::<PyResult<_>>()?;
+                Self::from_segments(chemical_records, segment_records, binary_segment_records)
+            }
+
+            /// Creates parameters from SMILES using segments from json file.
+            ///
+            /// Requires an installatin of rdkit.
+            ///
+            /// Parameters
+            /// ----------
+            /// identifier : [str | Identifier]
+            ///     A list of SMILES codes or [Identifier] objects.
+            /// smarts_path : str
+            ///     Path to file containing SMARTS records.
+            /// segments_path : str
+            ///     Path to file containing segment parameters.
+            /// binary_path : str, optional
+            ///     Path to file containing binary segment-segment parameters.
+            #[staticmethod]
+            #[pyo3(
+                signature = (identifier, smarts_path, segments_path, binary_path=None),
+                text_signature = "(identifier, smarts_path, segments_path, binary_path=None)"
+            )]
+            fn from_json_smiles(
+                py: Python<'_>,
+                identifier: Vec<&PyAny>,
+                smarts_path: String,
+                segments_path: String,
+                binary_path: Option<String>,
+            ) -> PyResult<Self> {
+                let smarts_records = PySmartsRecord::from_json(&smarts_path)?;
+                let segment_records = PySegmentRecord::from_json(&segments_path)?;
+                let binary_segment_records = binary_path.map(|p| PyBinarySegmentRecord::from_json(&p)).transpose()?;
+                Self::from_smiles(
+                    py,
+                    identifier,
+                    smarts_records,
+                    segment_records,
+                    binary_segment_records,
+                )
             }
         }
     };
@@ -815,3 +885,6 @@ macro_rules! impl_json_handling {
         }
     };
 }
+
+mod fragmentation;
+pub use fragmentation::PySmartsRecord;
