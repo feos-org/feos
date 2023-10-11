@@ -6,7 +6,9 @@ use crate::association::PyAssociationRecord;
 use feos_core::parameter::{
     BinaryRecord, IdentifierOption, ParameterError, ParameterHetero, SegmentRecord,
 };
-use feos_core::python::parameter::{PyBinarySegmentRecord, PyChemicalRecord, PyIdentifier};
+use feos_core::python::parameter::{
+    PyBinarySegmentRecord, PyChemicalRecord, PyIdentifier, PySmartsRecord,
+};
 use feos_core::{impl_json_handling, impl_parameter_from_segments, impl_segment_record};
 #[cfg(feature = "dft")]
 use numpy::{PyArray2, ToPyArray};
@@ -149,6 +151,7 @@ pub fn gc_pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<IdentifierOption>()?;
     m.add_class::<PyChemicalRecord>()?;
+    m.add_class::<PySmartsRecord>()?;
     m.add_class::<PyAssociationRecord>()?;
 
     m.add_class::<PyGcPcSaftRecord>()?;
