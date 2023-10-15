@@ -20,7 +20,9 @@ feos.gc\_pcsaft.GcPcSaftFunctionalParameters
    
       ~GcPcSaftFunctionalParameters.__init__
       ~GcPcSaftFunctionalParameters.from_json_segments
+      ~GcPcSaftFunctionalParameters.from_json_smiles
       ~GcPcSaftFunctionalParameters.from_segments
+      ~GcPcSaftFunctionalParameters.from_smiles
    
    
 

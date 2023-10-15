@@ -21,10 +21,12 @@ feos.pcsaft.PcSaftParameters
       ~PcSaftParameters.__init__
       ~PcSaftParameters.from_json
       ~PcSaftParameters.from_json_segments
+      ~PcSaftParameters.from_json_smiles
       ~PcSaftParameters.from_model_records
       ~PcSaftParameters.from_multiple_json
       ~PcSaftParameters.from_records
       ~PcSaftParameters.from_segments
+      ~PcSaftParameters.from_smiles
       ~PcSaftParameters.new_binary
       ~PcSaftParameters.new_pure
    

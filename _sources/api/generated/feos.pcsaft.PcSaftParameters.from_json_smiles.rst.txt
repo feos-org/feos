@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.PcSaftParameters.from\_json\_smiles
+===============================================
+
+.. currentmodule:: feos.pcsaft
+
+.. automethod:: PcSaftParameters.from_json_smiles

@@ -20,6 +20,7 @@ feos.cubic.ChemicalRecord
    
       ~ChemicalRecord.__init__
       ~ChemicalRecord.from_json_str
+      ~ChemicalRecord.from_smiles
       ~ChemicalRecord.to_json_str
    
    

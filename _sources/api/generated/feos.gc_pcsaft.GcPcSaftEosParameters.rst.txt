@@ -20,7 +20,9 @@ feos.gc\_pcsaft.GcPcSaftEosParameters
    
       ~GcPcSaftEosParameters.__init__
       ~GcPcSaftEosParameters.from_json_segments
+      ~GcPcSaftEosParameters.from_json_smiles
       ~GcPcSaftEosParameters.from_segments
+      ~GcPcSaftEosParameters.from_smiles
       ~GcPcSaftEosParameters.phi
    
    

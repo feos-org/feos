@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.ChemicalRecord.from\_smiles
+=======================================
+
+.. currentmodule:: feos.pcsaft
+
+.. automethod:: ChemicalRecord.from_smiles

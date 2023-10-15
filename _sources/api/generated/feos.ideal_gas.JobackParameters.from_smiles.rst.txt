@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.ideal\_gas.JobackParameters.from\_smiles
+=============================================
+
+.. currentmodule:: feos.ideal_gas
+
+.. automethod:: JobackParameters.from_smiles

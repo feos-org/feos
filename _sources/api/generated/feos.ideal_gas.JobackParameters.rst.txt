@@ -21,10 +21,12 @@ feos.ideal\_gas.JobackParameters
       ~JobackParameters.__init__
       ~JobackParameters.from_json
       ~JobackParameters.from_json_segments
+      ~JobackParameters.from_json_smiles
       ~JobackParameters.from_model_records
       ~JobackParameters.from_multiple_json
       ~JobackParameters.from_records
       ~JobackParameters.from_segments
+      ~JobackParameters.from_smiles
       ~JobackParameters.new_binary
       ~JobackParameters.new_pure
    
