@@ -177,7 +177,10 @@ impl FromSegments<usize> for PcSaftRecord {
         let dipole_segments: usize = segments.iter().filter_map(|(s, n)| s.mu.map(|_| n)).sum();
         let assoc_segments: usize = segments
             .iter()
-            .filter_map(|(s, n)| s.association_record.map(|_| n))
+            .filter_map(|(s, n)| {
+                s.association_record
+                    .map(|r| (r.na * r.nb + r.nc) as usize * n)
+            })
             .sum();
         if polar_segments > 1 {
             return Err(ParameterError::IncompatibleParameters(format!(

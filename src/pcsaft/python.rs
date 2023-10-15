@@ -211,6 +211,7 @@ pub fn pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<IdentifierOption>()?;
     m.add_class::<PyChemicalRecord>()?;
+    m.add_class::<PySmartsRecord>()?;
 
     m.add_class::<DQVariants>()?;
     m.add_class::<PyPcSaftRecord>()?;
