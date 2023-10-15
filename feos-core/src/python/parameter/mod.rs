@@ -796,7 +796,7 @@ macro_rules! impl_parameter_from_segments {
 
             /// Creates parameters from SMILES and segment records.
             ///
-            /// Requires an installatin of rdkit.
+            /// Requires an installation of rdkit.
             ///
             /// Parameters
             /// ----------
@@ -828,7 +828,7 @@ macro_rules! impl_parameter_from_segments {
 
             /// Creates parameters from SMILES using segments from json file.
             ///
-            /// Requires an installatin of rdkit.
+            /// Requires an installation of rdkit.
             ///
             /// Parameters
             /// ----------

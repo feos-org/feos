@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added optional `Phase` argument for constructors of dynamic properties of `DataSet`s.  [#174](https://github.com/feos-org/feos/pull/174)
 - Added `molar_weight` method to `Residual` trait. [#177](https://github.com/feos-org/feos/pull/177)
 - Added molar versions for entropy, enthalpy, etc. for residual properties. [#177](https://github.com/feos-org/feos/pull/177)
+- Python only: Added `SmartsRecord` and `ChemicalRecord.from_smiles` that uses rdkit to calculate segments and bonds from a SMILES code. [#191](https://github.com/feos-org/feos/pull/191)
+- Python only: Added `from_smiles` and `from_json_smiles` to parameter objects that build parameters from SMILES codes using rdkit. [#191](https://github.com/feos-org/feos/pull/191)
 
 ### Changed
 - Changed constructors of `Parameter` trait to return `Result`s. [#161](https://github.com/feos-org/feos/pull/161)

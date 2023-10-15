@@ -177,7 +177,7 @@ fn convert_matches(
     matches: HashMap<String, Vec<Vec<usize>>>,
     bonds: Vec<[usize; 2]>,
 ) -> PyResult<(Vec<String>, Vec<[usize; 2]>)> {
-    // check if every atom is captured by exatly one fragment
+    // check if every atom is captured by exactly one fragment
     let identified_atoms: Vec<_> = matches
         .values()
         .flat_map(|v| v.iter().flat_map(|l| l.iter()))
