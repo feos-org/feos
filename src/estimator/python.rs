@@ -658,7 +658,7 @@ macro_rules! impl_estimator_entropy_scaling {
                 pressure: &PySIArray1,
                 phase: Option<Vec<Phase>>,
             ) -> PyResult<Self> {
-                Ok(Self(Arc::new(crate::estimator::Viscosity::new(
+                Ok(Self(Arc::new($crate::estimator::Viscosity::new(
                     target.clone().try_into()?,
                     temperature.clone().try_into()?,
                     pressure.clone().try_into()?,
@@ -691,7 +691,7 @@ macro_rules! impl_estimator_entropy_scaling {
                 pressure: &PySIArray1,
                 phase: Option<Vec<Phase>>,
             ) -> PyResult<Self> {
-                Ok(Self(Arc::new(crate::estimator::ThermalConductivity::new(
+                Ok(Self(Arc::new($crate::estimator::ThermalConductivity::new(
                     target.clone().try_into()?,
                     temperature.clone().try_into()?,
                     pressure.clone().try_into()?,

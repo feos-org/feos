@@ -135,7 +135,7 @@ impl PyPetsParameters {
     ) -> PyResult<Self> {
         // Check if all inputs have the same length
         let n = sigma.len();
-        let input_length = vec![
+        let input_length = [
             Some(sigma.len()),
             Some(epsilon_k.len()),
             k_ij.as_ref().map(|v| v.shape()[0]),
@@ -145,8 +145,8 @@ impl PyPetsParameters {
             diffusion.as_ref().map(|v| v.len()),
             thermal_conductivity.as_ref().map(|v| v.len()),
         ]
-        .iter()
-        .filter_map(|&v| v)
+        .into_iter()
+        .flatten()
         .all(|v| v == n);
 
         if !input_length {

@@ -65,7 +65,7 @@ impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N>
         // packing fraction
         let eta = density
             .outer_iter()
-            .zip((&r * &r * &r * 4.0 * FRAC_PI_3).into_iter())
+            .zip(&r * &r * &r * 4.0 * FRAC_PI_3)
             .fold(
                 Array::zeros(density.raw_dim().remove_axis(Axis(0))),
                 |acc: Array1<N>, (rho, r3)| acc + &rho * r3,

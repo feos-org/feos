@@ -19,7 +19,7 @@ pub(super) fn calculate_helmholtz_energy_density_polar<N: DualNum<f64> + Copy + 
     // packing fraction
     let eta = density
         .outer_iter()
-        .zip((&r * &r * &r * &parameters.m * 4.0 * FRAC_PI_3).into_iter())
+        .zip(&r * &r * &r * &parameters.m * 4.0 * FRAC_PI_3)
         .fold(
             Array::zeros(density.raw_dim().remove_axis(Axis(0))),
             |acc: Array1<N>, (rho, r3m)| acc + &rho * r3m,
