@@ -258,21 +258,21 @@ macro_rules! impl_pore {
             #[new]
             fn new(
                 system_size: [PySINumber; 3],
-                angles: Option<[PyAngle; 3]>,
                 n_grid: [usize; 3],
                 coordinates: PySIArray2,
                 sigma_ss: &PyArray1<f64>,
                 epsilon_k_ss: &PyArray1<f64>,
+                angles: Option<[PyAngle; 3]>,
                 potential_cutoff: Option<f64>,
                 cutoff_radius: Option<PySINumber>,
             ) -> PyResult<Self> {
                 Ok(Self(Pore3D::new(
                     [system_size[0].try_into()?, system_size[1].try_into()?, system_size[2].try_into()?],
-                    angles.map(|angles| [angles[0].into(), angles[1].into(), angles[2].into()]),
                     n_grid,
                     coordinates.try_into()?,
                     sigma_ss.to_owned_array(),
                     epsilon_k_ss.to_owned_array(),
+                    angles.map(|angles| [angles[0].into(), angles[1].into(), angles[2].into()]),
                     potential_cutoff,
                     cutoff_radius.map(|c| c.try_into()).transpose()?,
                 )))
