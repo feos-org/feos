@@ -1,9 +1,10 @@
 use super::identifier::Identifier;
 use super::segment::SegmentRecord;
-use super::ParameterError;
+use super::{IdentifierOption, ParameterError};
 use conv::ValueInto;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
@@ -45,6 +46,54 @@ impl<M> PureRecord<M> {
         let model_record = M::from_segments(&model_segments)?;
 
         Ok(Self::new(identifier, molarweight, model_record))
+    }
+
+    /// Create pure substance parameters from a json file.
+    pub fn from_json<P>(
+        substances: &[&str],
+        file: P,
+        identifier_option: IdentifierOption,
+    ) -> Result<Vec<Self>, ParameterError>
+    where
+        P: AsRef<Path>,
+        M: Clone + DeserializeOwned,
+    {
+        // create list of substances
+        let mut queried: HashSet<String> = substances.iter().map(|s| s.to_string()).collect();
+        // raise error on duplicate detection
+        if queried.len() != substances.len() {
+            return Err(ParameterError::IncompatibleParameters(
+                "A substance was defined more than once.".to_string(),
+            ));
+        }
+
+        let f = File::open(file)?;
+        let reader = BufReader::new(f);
+        // use stream in the future
+        let file_records: Vec<Self> = serde_json::from_reader(reader)?;
+        let mut records: HashMap<String, Self> = HashMap::with_capacity(substances.len());
+
+        // build map, draining list of queried substances in the process
+        for record in file_records {
+            if let Some(id) = record.identifier.as_string(identifier_option) {
+                queried.take(&id).map(|id| records.insert(id, record));
+            }
+            // all parameters parsed
+            if queried.is_empty() {
+                break;
+            }
+        }
+
+        // report missing parameters
+        if !queried.is_empty() {
+            return Err(ParameterError::ComponentsNotFound(format!("{:?}", queried)));
+        };
+
+        // collect into vec in correct order
+        Ok(substances
+            .iter()
+            .map(|s| records.get(&s.to_string()).unwrap().clone())
+            .collect())
     }
 }
 
