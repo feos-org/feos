@@ -51,12 +51,12 @@ impl_binary_record!(UVBinaryRecord, PyUVBinaryRecord);
 ///     binary parameter records
 /// substances : List[str], optional
 ///     The substances to use. Filters substances from `pure_records` according to
-///     `search_option`.
+///     `identifier_option`.
 ///     When not provided, all entries of `pure_records` are used.
-/// search_option : IdentifierOption, optional, defaults to IdentifierOption.Name
+/// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
 ///     Identifier that is used to search binary records.
 #[pyclass(name = "UVParameters")]
-#[pyo3(text_signature = "(pure_records, binary_records, substances, search_option)")]
+#[pyo3(text_signature = "(pure_records, binary_records, substances, identifier_option)")]
 #[derive(Clone)]
 pub struct PyUVParameters(pub Arc<UVParameters>);
 

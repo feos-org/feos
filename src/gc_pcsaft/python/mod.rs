@@ -81,7 +81,7 @@ impl_segment_record!(GcPcSaftRecord, PyGcPcSaftRecord);
 
 #[pyclass(name = "GcPcSaftEosParameters")]
 #[pyo3(
-    text_signature = "(pure_records, segmentbinary_records=None, substances=None, search_option='Name')"
+    text_signature = "(pure_records, segmentbinary_records=None, substances=None, identifier_option='Name')"
 )]
 #[derive(Clone)]
 pub struct PyGcPcSaftEosParameters(pub Arc<GcPcSaftEosParameters>);
@@ -106,7 +106,7 @@ impl PyGcPcSaftEosParameters {
 #[cfg(feature = "dft")]
 #[pyclass(name = "GcPcSaftFunctionalParameters")]
 #[pyo3(
-    text_signature = "(pure_records, segmentbinary_records=None, substances=None, search_option)"
+    text_signature = "(pure_records, segmentbinary_records=None, substances=None, identifier_option)"
 )]
 #[derive(Clone)]
 pub struct PyGcPcSaftFunctionalParameters(pub Arc<GcPcSaftFunctionalParameters>);

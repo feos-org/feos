@@ -70,7 +70,7 @@ impl_pure_record!(PetsRecord, PyPetsRecord);
 
 #[pyclass(name = "PetsBinaryRecord")]
 #[pyo3(
-    text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
+    text_signature = "(pure_records, binary_records=None, substances=None, identifier_option='Name')"
 )]
 #[derive(Clone)]
 pub struct PyPetsBinaryRecord(PetsBinaryRecord);
@@ -86,13 +86,13 @@ impl_binary_record!(PetsBinaryRecord, PyPetsBinaryRecord);
 ///     binary PeTS parameter records
 /// substances : List[str], optional
 ///     The substances to use. Filters substances from `pure_records` according to
-///     `search_option`.
+///     `identifier_option`.
 ///     When not provided, all entries of `pure_records` are used.
-/// search_option : {'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'}, optional, defaults to 'Name'.
+/// identifier_option : {'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'}, optional, defaults to 'Name'.
 ///     Identifier that is used to search substance.
 #[pyclass(name = "PetsParameters")]
 #[pyo3(
-    text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
+    text_signature = "(pure_records, binary_records=None, substances=None, identifier_option='Name')"
 )]
 #[derive(Clone)]
 pub struct PyPetsParameters(pub Arc<PetsParameters>);
