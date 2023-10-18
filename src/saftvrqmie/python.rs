@@ -120,7 +120,7 @@ impl PySaftVRQMieRecord {
     }
 }
 
-/// Create a set of Saft-VRQ Mie parameters from records.
+/// Create a binary record from k_ij and l_ij values.
 #[pyclass(name = "SaftVRQMieBinaryRecord")]
 #[pyo3(text_signature = "(k_ij, l_ij)")]
 #[derive(Clone)]
@@ -154,28 +154,7 @@ impl PySaftVRQMieBinaryRecord {
     }
 }
 
-/// Create a set of SAFT-VRQ Mie parameters from records.
-///
-/// Parameters
-/// ----------
-/// pure_records : List[PureRecord]
-///     pure substance records.
-/// binary_records : List[BinaryRecord], optional
-///     binary saft parameter records
-/// substances : List[str], optional
-///     The substances to use. Filters substances from `pure_records` according to
-///     `identifier_option`.
-///     When not provided, all entries of `pure_records` are used.
-/// identifier_option : {'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'}, optional, defaults to 'Name'.
-///     Identifier that is used to search substance.
-///
-/// Returns
-/// -------
-/// SaftVRQMieParameters
 #[pyclass(name = "SaftVRQMieParameters")]
-#[pyo3(
-    text_signature = "(pure_records, binary_records=None, substances=None, identifier_option='Name')"
-)]
 #[derive(Clone)]
 pub struct PySaftVRQMieParameters(pub Arc<SaftVRQMieParameters>);
 

@@ -33,7 +33,6 @@ impl_pure_record!(PengRobinsonRecord, PyPengRobinsonRecord);
 
 impl_binary_record!();
 
-/// A set of Peng-Robinson parameters.
 #[pyclass(name = "PengRobinsonParameters")]
 #[derive(Clone)]
 pub struct PyPengRobinsonParameters(pub Arc<PengRobinsonParameters>);

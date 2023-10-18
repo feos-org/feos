@@ -41,22 +41,7 @@ impl_json_handling!(PyUVRecord);
 pub struct PyUVBinaryRecord(UVBinaryRecord);
 impl_binary_record!(UVBinaryRecord, PyUVBinaryRecord);
 
-/// Create a set of UV Theory parameters from records.
-///
-/// Parameters
-/// ----------
-/// pure_records : List[PureRecord]
-///     pure substance records.
-/// binary_records : List[BinarySubstanceRecord], optional
-///     binary parameter records
-/// substances : List[str], optional
-///     The substances to use. Filters substances from `pure_records` according to
-///     `identifier_option`.
-///     When not provided, all entries of `pure_records` are used.
-/// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
-///     Identifier that is used to search binary records.
 #[pyclass(name = "UVParameters")]
-#[pyo3(text_signature = "(pure_records, binary_records, substances, identifier_option)")]
 #[derive(Clone)]
 pub struct PyUVParameters(pub Arc<UVParameters>);
 

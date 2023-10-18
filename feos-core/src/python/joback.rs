@@ -62,7 +62,6 @@ pub struct PyJobackBinaryRecord(pub JobackBinaryRecord);
 
 impl_binary_record!(JobackBinaryRecord, PyJobackBinaryRecord);
 
-/// A set of Joback parameters.
 #[pyclass(name = "JobackParameters")]
 #[derive(Clone)]
 pub struct PyJobackParameters(pub Arc<JobackParameters>);
