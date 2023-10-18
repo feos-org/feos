@@ -62,24 +62,8 @@ pub struct PyJobackBinaryRecord(pub JobackBinaryRecord);
 
 impl_binary_record!(JobackBinaryRecord, PyJobackBinaryRecord);
 
-/// Create a set of Joback parameters from records.
-///
-/// Parameters
-/// ----------
-/// pure_records : List[PureRecord]
-///     pure substance records.
-/// substances : List[str], optional
-///     The substances to use. Filters substances from `pure_records` according to
-///     `search_option`.
-///     When not provided, all entries of `pure_records` are used.
-/// search_option : {'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'}, optional, defaults to 'Name'.
-///     Identifier that is used to search substance.
-///
-/// Returns
-/// -------
-/// JobackParameters
+/// A set of Joback parameters.
 #[pyclass(name = "JobackParameters")]
-#[pyo3(text_signature = "(pure_records, substances=None, search_option='Name')")]
 #[derive(Clone)]
 pub struct PyJobackParameters(pub Arc<JobackParameters>);
 

@@ -83,7 +83,7 @@ where
     fn binary_matrix_from_records(
         pure_records: &Vec<PureRecord<Self::Pure>>,
         binary_records: &[BinaryRecord<Identifier, Self::Binary>],
-        search_option: IdentifierOption,
+        identifier_option: IdentifierOption,
     ) -> Option<Array2<Self::Binary>> {
         if binary_records.is_empty() {
             return None;
@@ -94,8 +94,8 @@ where
             binary_records
                 .iter()
                 .filter_map(|br| {
-                    let id1 = br.id1.as_string(search_option);
-                    let id2 = br.id2.as_string(search_option);
+                    let id1 = br.id1.as_string(identifier_option);
+                    let id2 = br.id2.as_string(identifier_option);
                     id1.and_then(|id1| id2.map(|id2| ((id1, id2), br.model_record.clone())))
                 })
                 .collect()
@@ -104,16 +104,16 @@ where
         Some(Array2::from_shape_fn([n, n], |(i, j)| {
             let id1 = pure_records[i]
                 .identifier
-                .as_string(search_option)
+                .as_string(identifier_option)
                 .expect(&format!(
-                    "No identifier for given search_option for pure record {}.",
+                    "No identifier for given identifier_option for pure record {}.",
                     i
                 ));
             let id2 = pure_records[j]
                 .identifier
-                .as_string(search_option)
+                .as_string(identifier_option)
                 .expect(&format!(
-                    "No identifier for given search_option for pure record {}.",
+                    "No identifier for given identifier_option for pure record {}.",
                     j
                 ));
             binary_map
@@ -129,12 +129,12 @@ where
         substances: Vec<&str>,
         file_pure: P,
         file_binary: Option<P>,
-        search_option: IdentifierOption,
+        identifier_option: IdentifierOption,
     ) -> Result<Self, ParameterError>
     where
         P: AsRef<Path>,
     {
-        Self::from_multiple_json(&[(substances, file_pure)], file_binary, search_option)
+        Self::from_multiple_json(&[(substances, file_pure)], file_binary, identifier_option)
     }
 
     /// Creates parameters from substance information stored in multiple json files.
@@ -263,7 +263,7 @@ where
         file_pure: P,
         file_segments: P,
         file_binary: Option<P>,
-        search_option: IdentifierOption,
+        identifier_option: IdentifierOption,
     ) -> Result<Self, ParameterError>
     where
         P: AsRef<Path>,
@@ -283,7 +283,7 @@ where
             .filter_map(|record| {
                 record
                     .identifier
-                    .as_string(search_option)
+                    .as_string(identifier_option)
                     .map(|i| (i, record))
             })
             .collect();
@@ -377,7 +377,7 @@ pub trait ParameterHetero: Sized {
         file_pure: P,
         file_segments: P,
         file_binary: Option<P>,
-        search_option: IdentifierOption,
+        identifier_option: IdentifierOption,
     ) -> Result<Self, ParameterError>
     where
         P: AsRef<Path>,
@@ -395,7 +395,7 @@ pub trait ParameterHetero: Sized {
             .filter_map(|record| {
                 record
                     .identifier
-                    .as_string(search_option)
+                    .as_string(identifier_option)
                     .map(|i| (i, record))
             })
             .collect();
