@@ -19,14 +19,16 @@ use std::sync::Arc;
 mod micelles;
 
 #[pyclass(name = "GcPcSaftRecord")]
-#[pyo3(text_signature = "(m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None)")]
 #[derive(Clone)]
 pub struct PyGcPcSaftRecord(GcPcSaftRecord);
 
 #[pymethods]
 impl PyGcPcSaftRecord {
-    #[pyo3(signature = (m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None))]
     #[new]
+    #[pyo3(
+        text_signature = "(m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None)",
+        signature = (m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None)
+    )]
     fn new(
         m: f64,
         sigma: f64,

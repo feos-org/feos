@@ -485,12 +485,12 @@ macro_rules! impl_estimator {
         /// -------
         /// Estimator
         #[pyclass(name = "Estimator")]
-        #[pyo3(text_signature = "(data, weights, losses)")]
         pub struct PyEstimator(Estimator<$eos>);
 
         #[pymethods]
         impl PyEstimator {
             #[new]
+            #[pyo3(text_signature = "(data, weights, losses)")]
             fn new(data: Vec<PyDataSet>, weights: Vec<f64>, losses: Vec<PyLoss>) -> Self {
                 Self(Estimator::new(
                     data.iter().map(|d| d.0.clone()).collect(),

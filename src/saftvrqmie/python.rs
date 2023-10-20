@@ -42,15 +42,15 @@ use std::sync::Arc;
 /// thermal_conductivity : List[float], optional
 ///     Entropy-scaling parameters for thermal_conductivity. Defaults to `None`.
 #[pyclass(name = "SaftVRQMieRecord")]
-#[pyo3(
-    text_signature = "(m, sigma, epsilon_k, lr, la, fh, viscosity=None, diffusion=None, thermal_conductivity=None)"
-)]
 #[derive(Clone)]
 pub struct PySaftVRQMieRecord(SaftVRQMieRecord);
 
 #[pymethods]
 impl PySaftVRQMieRecord {
     #[new]
+    #[pyo3(
+        text_signature = "(m, sigma, epsilon_k, lr, la, fh, viscosity=None, diffusion=None, thermal_conductivity=None)"
+    )]
     fn new(
         m: f64,
         sigma: f64,
@@ -122,13 +122,13 @@ impl PySaftVRQMieRecord {
 
 /// Create a binary record from k_ij and l_ij values.
 #[pyclass(name = "SaftVRQMieBinaryRecord")]
-#[pyo3(text_signature = "(k_ij, l_ij)")]
 #[derive(Clone)]
 pub struct PySaftVRQMieBinaryRecord(SaftVRQMieBinaryRecord);
 
 #[pymethods]
 impl PySaftVRQMieBinaryRecord {
     #[new]
+    #[pyo3(text_signature = "(k_ij, l_ij)")]
     fn new(k_ij: f64, l_ij: f64) -> Self {
         Self(SaftVRQMieBinaryRecord { k_ij, l_ij })
     }

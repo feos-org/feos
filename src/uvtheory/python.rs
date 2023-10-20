@@ -18,13 +18,13 @@ struct PyNoRecord(NoRecord);
 
 /// Create a set of UV Theory parameters from records.
 #[pyclass(name = "UVRecord")]
-#[pyo3(text_signature = "(rep, att, sigma, epsilon_k)")]
 #[derive(Clone)]
 pub struct PyUVRecord(UVRecord);
 
 #[pymethods]
 impl PyUVRecord {
     #[new]
+    #[pyo3(text_signature = "(rep, att, sigma, epsilon_k)")]
     fn new(rep: f64, att: f64, sigma: f64, epsilon_k: f64) -> Self {
         Self(UVRecord::new(rep, att, sigma, epsilon_k))
     }

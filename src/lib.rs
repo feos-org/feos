@@ -34,7 +34,6 @@
 
 #![warn(clippy::all)]
 #![allow(clippy::too_many_arguments)]
-#![allow(deprecated)]
 
 #[cfg(feature = "dft")]
 mod dft;

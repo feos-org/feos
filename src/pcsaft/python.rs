@@ -43,15 +43,15 @@ use std::sync::Arc;
 /// thermal_conductivity : List[float], optional
 ///     Entropy-scaling parameters for thermal_conductivity. Defaults to `None`.
 #[pyclass(name = "PcSaftRecord")]
-#[pyo3(
-    text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
-)]
 #[derive(Clone)]
 pub struct PyPcSaftRecord(PcSaftRecord);
 
 #[pymethods]
 impl PyPcSaftRecord {
     #[new]
+    #[pyo3(
+        text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
+    )]
     fn new(
         m: f64,
         sigma: f64,

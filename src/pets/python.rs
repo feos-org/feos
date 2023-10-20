@@ -10,15 +10,15 @@ use std::sync::Arc;
 
 /// Create a set of PeTS parameters from records.
 #[pyclass(name = "PetsRecord")]
-#[pyo3(
-    text_signature = "(sigma, epsilon_k, viscosity=None, diffusion=None, thermal_conductivity=None)"
-)]
 #[derive(Clone)]
 pub struct PyPetsRecord(PetsRecord);
 
 #[pymethods]
 impl PyPetsRecord {
     #[new]
+    #[pyo3(
+        text_signature = "(sigma, epsilon_k, viscosity=None, diffusion=None, thermal_conductivity=None)"
+    )]
     fn new(
         sigma: f64,
         epsilon_k: f64,

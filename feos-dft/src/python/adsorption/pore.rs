@@ -22,7 +22,6 @@ macro_rules! impl_pore {
         /// Pore1D
         ///
         #[pyclass(name = "Pore1D")]
-        #[pyo3(text_signature = "(geometry, pore_size, potential, n_grid=None, potential_cutoff=None)")]
         pub struct PyPore1D(Pore1D);
 
         #[pyclass(name = "PoreProfile1D")]
@@ -33,6 +32,7 @@ macro_rules! impl_pore {
         #[pymethods]
         impl PyPore1D {
             #[new]
+            #[pyo3(text_signature = "(geometry, pore_size, potential, n_grid=None, potential_cutoff=None)")]
             fn new(
                 geometry: Geometry,
                 pore_size: PySINumber,
@@ -135,7 +135,6 @@ macro_rules! impl_pore {
         }
 
         #[pyclass(name = "Pore2D")]
-        #[pyo3(text_signature = "(geometry, pore_size, potential, n_grid=None, potential_cutoff=None)")]
         pub struct PyPore2D(Pore2D);
 
         #[pyclass(name = "PoreProfile2D")]
@@ -146,6 +145,7 @@ macro_rules! impl_pore {
         #[pymethods]
         impl PyPore2D {
             #[new]
+            #[pyo3(text_signature = "(system_size, angle, n_grid)")]
             fn new(
                 system_size: [PySINumber; 2],
                 angle: PyAngle,
@@ -245,7 +245,6 @@ macro_rules! impl_pore {
         /// Pore3D
         ///
         #[pyclass(name = "Pore3D")]
-        #[pyo3(text_signature = "(system_size, angles, n_grid, coordinates, sigma_ss, epsilon_k_ss, potential_cutoff=None, cutoff_radius=None)")]
         pub struct PyPore3D(Pore3D);
 
         #[pyclass(name = "PoreProfile3D")]
@@ -256,6 +255,7 @@ macro_rules! impl_pore {
         #[pymethods]
         impl PyPore3D {
             #[new]
+            #[pyo3(text_signature = "(system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, angles=None, potential_cutoff=None, cutoff_radius=None)")]
             fn new(
                 system_size: [PySINumber; 3],
                 n_grid: [usize; 3],

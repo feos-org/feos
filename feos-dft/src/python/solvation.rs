@@ -27,7 +27,6 @@ macro_rules! impl_solvation_profile {
         /// SolvationProfile
         ///
         #[pyclass(name = "SolvationProfile")]
-        #[pyo3(text_signature = "(bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None, potential_cutoff=None)")]
         pub struct PySolvationProfile(SolvationProfile<$func>);
 
         impl_3d_profile!(PySolvationProfile, get_x, get_y, get_z);
@@ -35,6 +34,7 @@ macro_rules! impl_solvation_profile {
         #[pymethods]
         impl PySolvationProfile {
             #[new]
+            #[pyo3(text_signature = "(bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None, potential_cutoff=None)")]
             fn new(
                 bulk: &PyState,
                 n_grid: [usize; 3],
