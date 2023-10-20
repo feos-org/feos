@@ -150,7 +150,7 @@ fn chapman_enskog_thermal_conductivity(
     epsilon_k: f64,
 ) -> ThermalConductivity {
     let t = temperature.to_reduced();
-    0.083235 * (t * m / (molarweight / (GRAM / MOL)).into_value()).sqrt()
+    0.083235 * (t * m / molarweight.convert_into(GRAM / MOL)).sqrt()
         / sigma.powi(2)
         / omega22(t / epsilon_k)
         * WATT

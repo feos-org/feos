@@ -13,6 +13,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt::Write;
 
+/// [ChemicalRecord] that is used as input for the gc-PC-SAFT equation of state.
 #[derive(Clone)]
 pub struct GcPcSaftChemicalRecord {
     pub identifier: Identifier,

@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.5.0] - 2023-10-20
 ### Added
 - Implemented `HelmholtzEnergyFunctional` for `EquationOfState` to be able to use functionals as equations of state. [#158](https://github.com/feos-org/feos/pull/158)
 - Added the possibility to specify the angles of non-orthorombic unit cells. Currently, the external potential must be specified if non-orthorombic unit cells are calculated. [#176](https://github.com/feos-org/feos/pull/176)
@@ -23,7 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added an error, if the unit cells in 3D DFT are too small and violate the minimum image convention. [#176](https://github.com/feos-org/feos/pull/176)
 
 ### Packaging
-- Updated `num-dual` dependency to 0.7. [#137](https://github.com/feos-org/feos/pull/137)
+- Updated `quantity` dependency to 0.7.
+- Updated `num-dual` dependency to 0.8. [#137](https://github.com/feos-org/feos/pull/137)
+- Updated `numpy` and `PyO3` dependencies to 0.20.
 
 ## [0.4.1] - 2023-03-20
 ### Added

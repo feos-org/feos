@@ -6,61 +6,65 @@
 //!
 //! [van Westen et al. (2021)](https://doi.org/10.1063/5.0073572): utilizing second virial coeffients and Barker-Henderson or Weeks-Chandler-Andersen perturbation.
 //!
-//! ```ignore
+#![cfg_attr(not(feature = "uvtheory"), doc = "```ignore")]
+#![cfg_attr(feature = "uvtheory", doc = "```")]
 //! # use feos_core::EosError;
 //! use feos::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, UVParameters, VirialOrder};
 //! use std::sync::Arc;
 //!
 //! let parameters = Arc::new(
-//!     UVParameters::new_simple(24.0, 7.0, 3.0, 150.0)
+//!     UVParameters::new_simple(24.0, 7.0, 3.0, 150.0)?
 //! );
 //!
 //! let default_options = UVTheoryOptions {
-//!     max_eta = 0.5,
-//!     perturbation = Perturbation::WeeksChandlerAndersen,
-//!     virial_order = VirialOrder::Second
+//!     max_eta: 0.5,
+//!     perturbation: Perturbation::WeeksChandlerAndersen,
+//!     virial_order: VirialOrder::Second
 //! };
 //! // Define equation of state.
-//! let uv_wca = Arc::new(UVTheory::new(parameters));
+//! let uv_wca = Arc::new(UVTheory::new(parameters.clone()));
 //! // this is identical to above
 //! let uv_wca = Arc::new(
-//!     UVTheory::with_options(parameters, default_options)
+//!     UVTheory::with_options(parameters.clone(), default_options)
 //! );
 //!
 //! // use Barker-Henderson perturbation
 //! let options = UVTheoryOptions {
-//!     max_eta = 0.5,
-//!     perturbation = Perturbation::BarkerHenderson,
-//!     virial_order = VirialOrder::Second
+//!     max_eta: 0.5,
+//!     perturbation: Perturbation::BarkerHenderson,
+//!     virial_order: VirialOrder::Second
 //! };
 //! let uv_bh = Arc::new(
 //!     UVTheory::with_options(parameters, options)
 //! );
+//! # Ok::<(), EosError>(())
 //! ```
 //!
 //! ## uv-B3-theory
 //!
 //! - utilizing third virial coefficients for pure fluids with attractive exponent of 6 and Weeks-Chandler-Andersen perturbation. Manuscript submitted.
 //!
-//! ```ignore
+#![cfg_attr(not(feature = "uvtheory"), doc = "```ignore")]
+#![cfg_attr(feature = "uvtheory", doc = "```")]
 //! # use feos_core::EosError;
 //! use feos::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, UVParameters, VirialOrder};
 //! use std::sync::Arc;
 //!
 //! let parameters = Arc::new(
-//!     UVParameters::new_simple(24.0, 6.0, 3.0, 150.0)
+//!     UVParameters::new_simple(24.0, 6.0, 3.0, 150.0)?
 //! );
 //!
 //! // use uv-B3-theory
 //! let options = UVTheoryOptions {
-//!     max_eta = 0.5,
-//!     perturbation = Perturbation::WeeksChandlerAndersen,
-//!     virial_order = VirialOrder::Third
+//!     max_eta: 0.5,
+//!     perturbation: Perturbation::WeeksChandlerAndersen,
+//!     virial_order: VirialOrder::Third
 //! };
 //! // Define equation of state.
 //! let uv_b3 = Arc::new(
 //!     UVTheory::with_options(parameters, options)
 //! );
+//! # Ok::<(), EosError>(())
 //! ```
 mod eos;
 mod parameters;

@@ -401,7 +401,7 @@ where
                 .functional_derivative(temperature, bulk_density, &bulk_convolver)?;
         dfdrho
             .outer_iter_mut()
-            .zip(dfdrho_bulk.into_iter())
+            .zip(dfdrho_bulk)
             .zip(self.dft.m().iter())
             .for_each(|((mut df, df_b), &m)| {
                 df -= df_b;

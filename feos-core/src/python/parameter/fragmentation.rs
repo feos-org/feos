@@ -43,12 +43,12 @@ impl std::fmt::Display for SmartsRecord {
 
 #[pyclass(name = "SmartsRecord")]
 #[derive(Clone)]
-#[pyo3(text_signature = "(group, smarts, max=None)")]
 pub struct PySmartsRecord(pub SmartsRecord);
 
 #[pymethods]
 impl PySmartsRecord {
     #[new]
+    #[pyo3(text_signature = "(group, smarts, max=None)")]
     fn new(group: String, smarts: String, max: Option<usize>) -> Self {
         Self(SmartsRecord::new(group, smarts, max))
     }

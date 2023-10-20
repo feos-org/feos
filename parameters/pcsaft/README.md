@@ -1,4 +1,4 @@
-# Parameters
+# PC-SAFT Parameters
 
 This directory contains files with parameters for PC-SAFT (including gc-PC-SAFT).
 The files named according to the pattern `NameYear.json` correspond to published parameters. The corresponding publication is provided in the [`literature.bib`](literature.bib) file.
@@ -33,8 +33,6 @@ The files named according to the pattern `NameYear.json` correspond to published
 |file|description|publication(s)|
 |-|-|:-:|
 [`sauer2014_homo.json`](sauer2014_homo.json) | GC segment parameters for homosegmented PC-SAFT | [&#128279;](https://doi.org/10.1021/ie502203w) |
-[`sauer2014_homo_joback.json`](sauer2014_homo.json) | GC segment parameters for homosegmented PC-SAFT including ideal gas parameters | [&#128279;](https://doi.org/10.1021/ie502203w) [&#128279;](https://doi.org/10.1080/00986448708960487)|
 [`sauer2014_hetero.json`](sauer2014_hetero.json) | GC segment parameters for heterosegmented PC-SAFT | [&#128279;](https://doi.org/10.1021/ie502203w)
-[`sauer2014_hetero_joback.json`](sauer2014_hetero.json) | GC segment parameters for heterosegmented PC-SAFT including ideal gas parameters | [&#128279;](https://doi.org/10.1021/ie502203w) [&#128279;](https://doi.org/10.1080/00986448708960487)
 [`loetgeringlin2015_homo.json`](loetgeringlin2018.json) | GC segment parameters for homosegmented PC-SAFT including viscosity parameter | [&#128279;](https://doi.org/10.1021/acs.iecr.5b01698)
 

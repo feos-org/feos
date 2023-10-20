@@ -17,7 +17,7 @@ use feos_core::*;
 use feos_derive::{Components, IdealGas, Residual};
 use ndarray::Array1;
 
-/// Collection of different [EquationOfState] implementations.
+/// Collection of different [Residual] implementations.
 ///
 /// Particularly relevant for situations in which generic types
 /// are undesirable (e.g. FFI).
@@ -40,6 +40,10 @@ pub enum ResidualModel {
     UVTheory(UVTheory),
 }
 
+/// Collection of different [IdealGas] implementations.
+///
+/// Particularly relevant for situations in which generic types
+/// are undesirable (e.g. FFI).
 #[derive(Components, IdealGas)]
 pub enum IdealGasModel {
     NoModel(usize),

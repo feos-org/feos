@@ -10,15 +10,15 @@ use std::sync::Arc;
 
 /// Create a set of PeTS parameters from records.
 #[pyclass(name = "PetsRecord")]
-#[pyo3(
-    text_signature = "(sigma, epsilon_k, viscosity=None, diffusion=None, thermal_conductivity=None)"
-)]
 #[derive(Clone)]
 pub struct PyPetsRecord(PetsRecord);
 
 #[pymethods]
 impl PyPetsRecord {
     #[new]
+    #[pyo3(
+        text_signature = "(sigma, epsilon_k, viscosity=None, diffusion=None, thermal_conductivity=None)"
+    )]
     fn new(
         sigma: f64,
         epsilon_k: f64,
@@ -69,31 +69,11 @@ impl_json_handling!(PyPetsRecord);
 impl_pure_record!(PetsRecord, PyPetsRecord);
 
 #[pyclass(name = "PetsBinaryRecord")]
-#[pyo3(
-    text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
-)]
 #[derive(Clone)]
 pub struct PyPetsBinaryRecord(PetsBinaryRecord);
 impl_binary_record!(PetsBinaryRecord, PyPetsBinaryRecord);
 
-/// Create a set of PeTS parameters from records.
-///
-/// Parameters
-/// ----------
-/// pure_records : List[PureRecord]
-///     pure substance records.
-/// binary_records : List[BinarySubstanceRecord], optional
-///     binary PeTS parameter records
-/// substances : List[str], optional
-///     The substances to use. Filters substances from `pure_records` according to
-///     `search_option`.
-///     When not provided, all entries of `pure_records` are used.
-/// search_option : {'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'}, optional, defaults to 'Name'.
-///     Identifier that is used to search substance.
 #[pyclass(name = "PetsParameters")]
-#[pyo3(
-    text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
-)]
 #[derive(Clone)]
 pub struct PyPetsParameters(pub Arc<PetsParameters>);
 
@@ -135,7 +115,7 @@ impl PyPetsParameters {
     ) -> PyResult<Self> {
         // Check if all inputs have the same length
         let n = sigma.len();
-        let input_length = vec![
+        let input_length = [
             Some(sigma.len()),
             Some(epsilon_k.len()),
             k_ij.as_ref().map(|v| v.shape()[0]),
@@ -145,8 +125,8 @@ impl PyPetsParameters {
             diffusion.as_ref().map(|v| v.len()),
             thermal_conductivity.as_ref().map(|v| v.len()),
         ]
-        .iter()
-        .filter_map(|&v| v)
+        .into_iter()
+        .flatten()
         .all(|v| v == n);
 
         if !input_length {

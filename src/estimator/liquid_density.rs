@@ -63,7 +63,7 @@ impl<E: Residual> DataSet<E> for LiquidDensity {
         Ok(self
             .temperature
             .into_iter()
-            .zip(self.pressure.into_iter())
+            .zip(&self.pressure)
             .map(|(t, p)| {
                 let state = State::new_npt(eos, t, p, &moles, DensityInitialization::Liquid);
                 if let Ok(s) = state {

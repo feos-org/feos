@@ -48,12 +48,12 @@ macro_rules! impl_state {
         ///     When the state cannot be created using the combination of input.
         #[pyclass(name = "State")]
         #[derive(Clone)]
-        #[pyo3(text_signature = "(eos, temperature=None, volume=None, density=None, partial_density=None, total_moles=None, moles=None, molefracs=None, pressure=None, molar_enthalpy=None, molar_entropy=None, molar_internal_energy=None, density_initialization=None, initial_temperature=None)")]
         pub struct PyState(pub State<$eos>);
 
         #[pymethods]
         impl PyState {
             #[new]
+            #[pyo3(text_signature = "(eos, temperature=None, volume=None, density=None, partial_density=None, total_moles=None, moles=None, molefracs=None, pressure=None, molar_enthalpy=None, molar_entropy=None, molar_internal_energy=None, density_initialization=None, initial_temperature=None)")]
             pub fn new(
                 eos: $py_eos,
                 temperature: Option<PySINumber>,
@@ -214,13 +214,27 @@ macro_rules! impl_state {
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
-                Ok(PyState(State::critical_point_binary(
-                    &eos.0,
-                    TPSpec::try_from(temperature_or_pressure)?,
-                    initial_temperature.map(|t| t.try_into()).transpose()?,
-                    initial_molefracs,
-                    (max_iter, tol, verbosity).into(),
-                )?))
+                if let Ok(t) = Temperature::<f64>::try_from(temperature_or_pressure) {
+                    Ok(PyState(State::critical_point_binary(
+                        &eos.0,
+                        t,
+                        initial_temperature.map(|t| t.try_into()).transpose()?,
+                        initial_molefracs,
+                        (max_iter, tol, verbosity).into(),
+                    )?))
+                } else if let Ok(p) = Pressure::<f64>::try_from(temperature_or_pressure) {
+                    Ok(PyState(State::critical_point_binary(
+                        &eos.0,
+                        p,
+                        initial_temperature.map(|t| t.try_into()).transpose()?,
+                        initial_molefracs,
+                        (max_iter, tol, verbosity).into(),
+                    )?))
+                } else {
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
+                }
             }
 
             /// Calculate spinodal states for a given temperature and composition.

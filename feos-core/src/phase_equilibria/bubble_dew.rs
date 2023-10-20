@@ -2,6 +2,7 @@ use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
 use crate::si::{Density, Dimensionless, Moles, Pressure, Quantity, SIUnit, Temperature, RGAS};
+use crate::state::TPSpec;
 use crate::state::{
     Contributions,
     DensityInitialization::{InitialDensity, Liquid, Vapor},
@@ -23,8 +24,9 @@ const MAX_TSTEP: f64 = 20.0;
 const MAX_LNPSTEP: f64 = 0.1;
 const NEWTON_TOL: f64 = 1e-3;
 
-pub trait TemperatureOrPressure: Copy {
-    type Other: fmt::Display + Copy;
+/// Trait that enables functions to be generic over their input unit.
+pub trait TemperatureOrPressure: Copy + Into<TPSpec> {
+    type Other: fmt::Display + TemperatureOrPressure;
 
     const IDENTIFIER: &'static str;
 

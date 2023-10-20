@@ -17,12 +17,12 @@ use quantity::python::PySIArray1;
 /// DFTSolver
 #[pyclass(name = "DFTSolver")]
 #[derive(Clone)]
-#[pyo3(text_signature = "(verbosity=None)")]
 pub struct PyDFTSolver(pub DFTSolver);
 
 #[pymethods]
 impl PyDFTSolver {
     #[new]
+    #[pyo3(text_signature = "(verbosity=None)")]
     fn new(verbosity: Option<Verbosity>) -> Self {
         Self(DFTSolver::new(verbosity))
     }

@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::fmt;
 use typenum::{Quot, N1, N2, N3, P2, P3, P4};
 
-const UNIT_SYMBOLS: [&str; 7] = ["m", "kg", "s", "A", "mol", "K", "cd"];
+const UNIT_SYMBOLS: [&str; 7] = ["s", "m", "kg", "A", "K", "mol", "cd"];
 
 impl<
         Inner: fmt::Debug,

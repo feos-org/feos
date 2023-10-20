@@ -2,12 +2,13 @@
 //!
 //! # Example: critical point of a pure substance using PC-SAFT
 //!
-//! ```ignore
+#![cfg_attr(not(feature = "pcsaft"), doc = "```ignore")]
+#![cfg_attr(feature = "pcsaft", doc = "```")]
 //! # use feos_core::EosError;
 //! use feos::pcsaft::{PcSaft, PcSaftParameters};
 //! use feos_core::parameter::{IdentifierOption, Parameter};
 //! use feos_core::{Contributions, State};
-//! use quantity::si::KELVIN;
+//! use feos_core::si::KELVIN;
 //! use std::sync::Arc;
 //!
 //! // Read parameters from json file.
@@ -33,7 +34,6 @@
 
 #![warn(clippy::all)]
 #![allow(clippy::too_many_arguments)]
-#![allow(deprecated)]
 
 #[cfg(feature = "dft")]
 mod dft;

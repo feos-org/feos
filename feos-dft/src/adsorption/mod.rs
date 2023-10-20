@@ -146,10 +146,7 @@ where
             )?
             .profiles;
             Ok(Adsorption {
-                profiles: adsorption
-                    .into_iter()
-                    .chain(desorption.into_iter())
-                    .collect(),
+                profiles: adsorption.into_iter().chain(desorption).collect(),
                 components: functional.components(),
             })
         } else {
@@ -176,8 +173,8 @@ where
             });
             let profiles = is_ads
                 .into_iter()
-                .zip(adsorption.profiles.into_iter())
-                .zip(desorption.profiles.into_iter())
+                .zip(adsorption.profiles)
+                .zip(desorption.profiles)
                 .map(|((is_ads, a), d)| if is_ads { a } else { d })
                 .collect();
             Ok(Adsorption::new(functional, profiles))

@@ -301,7 +301,7 @@ where
 
     /// Return the partial derivatives of the density profiles w.r.t. the chemical potentials $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial\mu_k}\right)_T$
     pub fn drho_dmu(&self) -> EosResult<DrhoDmu<D>> {
-        let shape = self.density.shape().clone();
+        let shape = self.density.shape();
         let shape: Vec<_> = std::iter::once(&shape[0]).chain(shape).copied().collect();
         let mut drho_dmu = Array::zeros(shape).into_dimensionality().unwrap();
         for (k, mut d) in drho_dmu.outer_iter_mut().enumerate() {
@@ -375,12 +375,12 @@ where
             (self.bulk.partial_molar_volume() * self.bulk.dp_dt(Contributions::Total)).to_reduced();
         let mut lhs = dfdrhodt.mapv(|d| d.eps);
         lhs.outer_iter_mut()
-            .zip(dfdrhodt_bulk.into_iter())
-            .zip(x.into_iter())
+            .zip(dfdrhodt_bulk)
+            .zip(x)
             .for_each(|((mut lhs, d), x)| lhs -= d.eps - x);
         lhs.outer_iter_mut()
             .zip(rho.outer_iter())
-            .zip(rho_bulk.into_iter())
+            .zip(rho_bulk)
             .zip(self.dft.m().iter())
             .for_each(|(((mut lhs, rho), rho_b), &m)| lhs += &((&rho / rho_b).mapv(f64::ln) * m));
 

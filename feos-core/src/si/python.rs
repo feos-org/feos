@@ -1,5 +1,6 @@
 use super::{Pressure, Quantity, SIUnit, Temperature};
-use crate::{EosError, EosResult, TPSpec};
+use crate::state::TPSpec;
+use crate::{EosError, EosResult};
 use ndarray::{Array1, Array2, Array3, Array4};
 use quantity::python::{PySIArray1, PySIArray2, PySIArray3, PySIArray4, PySINumber};
 use quantity::si;
@@ -160,6 +161,9 @@ impl TryFrom<PySINumber> for TPSpec {
         if let Ok(p) = Pressure::<f64>::try_from(quantity) {
             return Ok(TPSpec::Pressure(p));
         }
-        Err(EosError::Error("TODO".into()))
+        Err(EosError::WrongUnits(
+            "temperature or pressure".into(),
+            quantity.to_string(),
+        ))
     }
 }

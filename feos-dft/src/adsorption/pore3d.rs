@@ -25,11 +25,11 @@ pub struct Pore3D {
 impl Pore3D {
     pub fn new(
         system_size: [Length; 3],
-        angles: Option<[Angle; 3]>,
         n_grid: [usize; 3],
         coordinates: Length<Array2<f64>>,
         sigma_ss: Array1<f64>,
         epsilon_k_ss: Array1<f64>,
+        angles: Option<[Angle; 3]>,
         potential_cutoff: Option<f64>,
         cutoff_radius: Option<Length>,
     ) -> Self {

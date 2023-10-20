@@ -3,7 +3,7 @@ use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
 use crate::si::{Moles, Pressure, Temperature, RGAS};
 use crate::state::{Contributions, DensityInitialization, State, TPSpec};
-use crate::{SolverOptions, Verbosity};
+use crate::{SolverOptions, TemperatureOrPressure, Verbosity};
 use ndarray::{arr1, Array1};
 use std::sync::Arc;
 
@@ -14,16 +14,13 @@ const TOL_PURE: f64 = 1e-12;
 /// # Pure component phase equilibria
 impl<E: Residual> PhaseEquilibrium<E, 2> {
     /// Calculate a phase equilibrium for a pure component.
-    pub fn pure<TP>(
+    pub fn pure<TP: TemperatureOrPressure>(
         eos: &Arc<E>,
         temperature_or_pressure: TP,
         initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
-    ) -> EosResult<Self>
-    where
-        TPSpec: From<TP>,
-    {
-        match TPSpec::from(temperature_or_pressure) {
+    ) -> EosResult<Self> {
+        match temperature_or_pressure.into() {
             TPSpec::Temperature(t) => Self::pure_t(eos, t, initial_state, options),
             TPSpec::Pressure(p) => Self::pure_p(eos, p, initial_state, options),
         }
@@ -378,13 +375,10 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 
     /// Calculate the pure component phase equilibria of all
     /// components in the system.
-    pub fn vle_pure_comps<TP: Copy>(
+    pub fn vle_pure_comps<TP: TemperatureOrPressure>(
         eos: &Arc<E>,
         temperature_or_pressure: TP,
-    ) -> Vec<Option<PhaseEquilibrium<E, 2>>>
-    where
-        TPSpec: From<TP>,
-    {
+    ) -> Vec<Option<PhaseEquilibrium<E, 2>>> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Arc::new(eos.subset(&[i]));

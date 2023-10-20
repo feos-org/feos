@@ -22,7 +22,6 @@ macro_rules! impl_pore {
         /// Pore1D
         ///
         #[pyclass(name = "Pore1D")]
-        #[pyo3(text_signature = "(geometry, pore_size, potential, n_grid=None, potential_cutoff=None)")]
         pub struct PyPore1D(Pore1D);
 
         #[pyclass(name = "PoreProfile1D")]
@@ -33,6 +32,7 @@ macro_rules! impl_pore {
         #[pymethods]
         impl PyPore1D {
             #[new]
+            #[pyo3(text_signature = "(geometry, pore_size, potential, n_grid=None, potential_cutoff=None)")]
             fn new(
                 geometry: Geometry,
                 pore_size: PySINumber,
@@ -135,7 +135,6 @@ macro_rules! impl_pore {
         }
 
         #[pyclass(name = "Pore2D")]
-        #[pyo3(text_signature = "(geometry, pore_size, potential, n_grid=None, potential_cutoff=None)")]
         pub struct PyPore2D(Pore2D);
 
         #[pyclass(name = "PoreProfile2D")]
@@ -146,6 +145,7 @@ macro_rules! impl_pore {
         #[pymethods]
         impl PyPore2D {
             #[new]
+            #[pyo3(text_signature = "(system_size, angle, n_grid)")]
             fn new(
                 system_size: [PySINumber; 2],
                 angle: PyAngle,
@@ -245,7 +245,6 @@ macro_rules! impl_pore {
         /// Pore3D
         ///
         #[pyclass(name = "Pore3D")]
-        #[pyo3(text_signature = "(system_size, angles, n_grid, coordinates, sigma_ss, epsilon_k_ss, potential_cutoff=None, cutoff_radius=None)")]
         pub struct PyPore3D(Pore3D);
 
         #[pyclass(name = "PoreProfile3D")]
@@ -256,23 +255,24 @@ macro_rules! impl_pore {
         #[pymethods]
         impl PyPore3D {
             #[new]
+            #[pyo3(text_signature = "(system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, angles=None, potential_cutoff=None, cutoff_radius=None)")]
             fn new(
                 system_size: [PySINumber; 3],
-                angles: Option<[PyAngle; 3]>,
                 n_grid: [usize; 3],
                 coordinates: PySIArray2,
                 sigma_ss: &PyArray1<f64>,
                 epsilon_k_ss: &PyArray1<f64>,
+                angles: Option<[PyAngle; 3]>,
                 potential_cutoff: Option<f64>,
                 cutoff_radius: Option<PySINumber>,
             ) -> PyResult<Self> {
                 Ok(Self(Pore3D::new(
                     [system_size[0].try_into()?, system_size[1].try_into()?, system_size[2].try_into()?],
-                    angles.map(|angles| [angles[0].into(), angles[1].into(), angles[2].into()]),
                     n_grid,
                     coordinates.try_into()?,
                     sigma_ss.to_owned_array(),
                     epsilon_k_ss.to_owned_array(),
+                    angles.map(|angles| [angles[0].into(), angles[1].into(), angles[2].into()]),
                     potential_cutoff,
                     cutoff_radius.map(|c| c.try_into()).transpose()?,
                 )))

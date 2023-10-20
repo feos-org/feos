@@ -42,15 +42,15 @@ use std::sync::Arc;
 /// thermal_conductivity : List[float], optional
 ///     Entropy-scaling parameters for thermal_conductivity. Defaults to `None`.
 #[pyclass(name = "SaftVRQMieRecord")]
-#[pyo3(
-    text_signature = "(m, sigma, epsilon_k, lr, la, fh, viscosity=None, diffusion=None, thermal_conductivity=None)"
-)]
 #[derive(Clone)]
 pub struct PySaftVRQMieRecord(SaftVRQMieRecord);
 
 #[pymethods]
 impl PySaftVRQMieRecord {
     #[new]
+    #[pyo3(
+        text_signature = "(m, sigma, epsilon_k, lr, la, fh, viscosity=None, diffusion=None, thermal_conductivity=None)"
+    )]
     fn new(
         m: f64,
         sigma: f64,
@@ -120,15 +120,15 @@ impl PySaftVRQMieRecord {
     }
 }
 
-/// Create a set of Saft-VRQ Mie parameters from records.
+/// Create a binary record from k_ij and l_ij values.
 #[pyclass(name = "SaftVRQMieBinaryRecord")]
-#[pyo3(text_signature = "(k_ij, l_ij)")]
 #[derive(Clone)]
 pub struct PySaftVRQMieBinaryRecord(SaftVRQMieBinaryRecord);
 
 #[pymethods]
 impl PySaftVRQMieBinaryRecord {
     #[new]
+    #[pyo3(text_signature = "(k_ij, l_ij)")]
     fn new(k_ij: f64, l_ij: f64) -> Self {
         Self(SaftVRQMieBinaryRecord { k_ij, l_ij })
     }
@@ -154,28 +154,7 @@ impl PySaftVRQMieBinaryRecord {
     }
 }
 
-/// Create a set of SAFT-VRQ Mie parameters from records.
-///
-/// Parameters
-/// ----------
-/// pure_records : List[PureRecord]
-///     pure substance records.
-/// binary_records : List[BinaryRecord], optional
-///     binary saft parameter records
-/// substances : List[str], optional
-///     The substances to use. Filters substances from `pure_records` according to
-///     `search_option`.
-///     When not provided, all entries of `pure_records` are used.
-/// search_option : {'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'}, optional, defaults to 'Name'.
-///     Identifier that is used to search substance.
-///
-/// Returns
-/// -------
-/// SaftVRQMieParameters
 #[pyclass(name = "SaftVRQMieParameters")]
-#[pyo3(
-    text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
-)]
 #[derive(Clone)]
 pub struct PySaftVRQMieParameters(pub Arc<SaftVRQMieParameters>);
 

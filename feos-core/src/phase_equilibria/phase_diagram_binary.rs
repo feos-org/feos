@@ -24,10 +24,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         npoints: Option<usize>,
         x_lle: Option<(f64, f64)>,
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self>
-    where
-        TPSpec: From<TP>,
-    {
+    ) -> EosResult<Self> {
         let npoints = npoints.unwrap_or(DEFAULT_POINTS);
 
         // calculate boiling temperature/vapor pressure of pure components
@@ -254,10 +251,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         npoints_vle: Option<usize>,
         npoints_lle: Option<usize>,
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<PhaseDiagramHetero<E>>
-    where
-        TPSpec: From<TP>,
-    {
+    ) -> EosResult<PhaseDiagramHetero<E>> {
         let npoints_vle = npoints_vle.unwrap_or(DEFAULT_POINTS);
 
         // calculate pure components
@@ -337,12 +331,9 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
         tp_init: Option<TP::Other>,
         options: SolverOptions,
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self>
-    where
-        TPSpec: From<TP>,
-    {
+    ) -> EosResult<Self> {
         let tp_init = tp_init.map(|tp_init| temperature_or_pressure.temperature_pressure(tp_init));
-        match TPSpec::from(temperature_or_pressure) {
+        match temperature_or_pressure.into() {
             TPSpec::Temperature(t) => PhaseEquilibrium::heteroazeotrope_t(
                 eos,
                 t,

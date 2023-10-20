@@ -52,7 +52,7 @@ impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N>
         // packing fraction
         let eta = density
             .outer_iter()
-            .zip((&d * &d * &d * &p.m * FRAC_PI_6).into_iter())
+            .zip(&d * &d * &d * &p.m * FRAC_PI_6)
             .map(|(rho, d3m)| &rho * d3m)
             .reduce(|a, b| a + b)
             .unwrap();

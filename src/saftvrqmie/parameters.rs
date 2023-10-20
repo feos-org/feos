@@ -68,9 +68,10 @@ impl SaftVRQMieRecord {
         thermal_conductivity: Option<[f64; 4]>,
     ) -> Result<SaftVRQMieRecord, ParameterError> {
         if m != 1.0 {
-            return Err(ParameterError::IncompatibleParameters(format!(
+            return Err(ParameterError::IncompatibleParameters(
                 "Segment number `m` is not one. Chain-contributions are currently not supported."
-            )));
+                    .to_string(),
+            ));
         }
         Ok(SaftVRQMieRecord {
             m,

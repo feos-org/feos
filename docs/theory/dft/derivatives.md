@@ -1,5 +1,5 @@
 # Derivatives of density profiles
-For converged density properties equilibrium properties can be calculated as partial derivatives of thermodynamic potentials analogous to classical (bulk) thermodynamics. The difference is that the derivatives have to be along a path of valid density profiles (solutions of the [Euler-Lagrange equation](euler_lagrange_equation.md)).
+For converged density profiles equilibrium properties can be calculated as partial derivatives of thermodynamic potentials analogous to classical (bulk) thermodynamics. The difference is that the derivatives have to be along a path of valid density profiles (solutions of the [Euler-Lagrange equation](euler_lagrange_equation.md)).
 
 The density profiles are calculated implicitly from the Euler-Lagrange equation, which can be written simplified as
 

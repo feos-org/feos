@@ -485,12 +485,12 @@ macro_rules! impl_estimator {
         /// -------
         /// Estimator
         #[pyclass(name = "Estimator")]
-        #[pyo3(text_signature = "(data, weights, losses)")]
         pub struct PyEstimator(Estimator<$eos>);
 
         #[pymethods]
         impl PyEstimator {
             #[new]
+            #[pyo3(text_signature = "(data, weights, losses)")]
             fn new(data: Vec<PyDataSet>, weights: Vec<f64>, losses: Vec<PyLoss>) -> Self {
                 Self(Estimator::new(
                     data.iter().map(|d| d.0.clone()).collect(),
@@ -658,7 +658,7 @@ macro_rules! impl_estimator_entropy_scaling {
                 pressure: &PySIArray1,
                 phase: Option<Vec<Phase>>,
             ) -> PyResult<Self> {
-                Ok(Self(Arc::new(crate::estimator::Viscosity::new(
+                Ok(Self(Arc::new($crate::estimator::Viscosity::new(
                     target.clone().try_into()?,
                     temperature.clone().try_into()?,
                     pressure.clone().try_into()?,
@@ -691,7 +691,7 @@ macro_rules! impl_estimator_entropy_scaling {
                 pressure: &PySIArray1,
                 phase: Option<Vec<Phase>>,
             ) -> PyResult<Self> {
-                Ok(Self(Arc::new(crate::estimator::ThermalConductivity::new(
+                Ok(Self(Arc::new($crate::estimator::ThermalConductivity::new(
                     target.clone().try_into()?,
                     temperature.clone().try_into()?,
                     pressure.clone().try_into()?,

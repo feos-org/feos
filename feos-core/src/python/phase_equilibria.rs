@@ -45,12 +45,25 @@ macro_rules! impl_phase_equilibrium {
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
-                Ok(Self(PhaseEquilibrium::pure(
-                    &eos.0,
-                    TPSpec::try_from(temperature_or_pressure)?,
-                    initial_state.and_then(|s| Some(&s.0)),
-                    (max_iter, tol, verbosity).into(),
-                )?))
+                if let Ok(t) = Temperature::<f64>::try_from(temperature_or_pressure) {
+                    Ok(Self(PhaseEquilibrium::pure(
+                        &eos.0,
+                        t,
+                        initial_state.and_then(|s| Some(&s.0)),
+                        (max_iter, tol, verbosity).into(),
+                    )?))
+                } else if let Ok(p) = Pressure::<f64>::try_from(temperature_or_pressure) {
+                    Ok(Self(PhaseEquilibrium::pure(
+                        &eos.0,
+                        p,
+                        initial_state.and_then(|s| Some(&s.0)),
+                        (max_iter, tol, verbosity).into(),
+                    )?))
+                } else {
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
+                }
             }
 
             /// Create a liquid and vapor state in equilibrium
@@ -328,10 +341,21 @@ macro_rules! impl_phase_equilibrium {
             /// list[PhaseEquilibrium]
             #[staticmethod]
             fn vle_pure_comps(eos: $py_eos, temperature_or_pressure: PySINumber) -> PyResult<Vec<Option<Self>>> {
-                Ok(PhaseEquilibrium::vle_pure_comps(&eos.0, TPSpec::try_from(temperature_or_pressure)?)
-                    .into_iter()
-                    .map(|o| o.map(Self))
-                    .collect())
+                if let Ok(t) = Temperature::<f64>::try_from(temperature_or_pressure) {
+                    Ok(PhaseEquilibrium::vle_pure_comps(&eos.0, t)
+                        .into_iter()
+                        .map(|o| o.map(Self))
+                        .collect())
+                } else if let Ok(p) = Pressure::<f64>::try_from(temperature_or_pressure) {
+                    Ok(PhaseEquilibrium::vle_pure_comps(&eos.0, p)
+                        .into_iter()
+                        .map(|o| o.map(Self))
+                        .collect())
+                } else {
+                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
+                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
+                    ))?)
+                }
             }
 
             /// Calculate the pure component vapor pressures for all the
@@ -891,20 +915,20 @@ macro_rules! impl_phase_equilibrium {
                         dict.insert(String::from(format!("y{}", i)), ys.column(i).to_vec());
                     }
                 }
-                dict.insert(String::from("temperature"), (self.0.vapor().temperature() / KELVIN).into_value().into_raw_vec());
-                dict.insert(String::from("pressure"), (self.0.vapor().pressure() / PASCAL).into_value().into_raw_vec());
-                dict.insert(String::from("density liquid"), (self.0.liquid().density() / (MOL / METER.powi::<P3>())).into_value().into_raw_vec());
-                dict.insert(String::from("density vapor"), (self.0.vapor().density() / (MOL / METER.powi::<P3>())).into_value().into_raw_vec());
-                dict.insert(String::from("mass density liquid"), (self.0.liquid().mass_density() / (KILOGRAM / METER.powi::<P3>())).into_value().into_raw_vec());
-                dict.insert(String::from("mass density vapor"), (self.0.vapor().mass_density() / (KILOGRAM / METER.powi::<P3>())).into_value().into_raw_vec());
-                dict.insert(String::from("molar enthalpy liquid"), (self.0.liquid().molar_enthalpy(contributions) / (KILO*JOULE / MOL)).into_value().into_raw_vec());
-                dict.insert(String::from("molar enthalpy vapor"), (self.0.vapor().molar_enthalpy(contributions) / (KILO*JOULE / MOL)).into_value().into_raw_vec());
-                dict.insert(String::from("molar entropy liquid"), (self.0.liquid().molar_entropy(contributions) / (KILO*JOULE / KELVIN / MOL)).into_value().into_raw_vec());
-                dict.insert(String::from("molar entropy vapor"), (self.0.vapor().molar_entropy(contributions) / (KILO*JOULE / KELVIN / MOL)).into_value().into_raw_vec());
-                dict.insert(String::from("specific enthalpy liquid"), (self.0.liquid().specific_enthalpy(contributions) / (KILO*JOULE / KILOGRAM)).into_value().into_raw_vec());
-                dict.insert(String::from("specific enthalpy vapor"), (self.0.vapor().specific_enthalpy(contributions) / (KILO*JOULE / KILOGRAM)).into_value().into_raw_vec());
-                dict.insert(String::from("specific entropy liquid"), (self.0.liquid().specific_entropy(contributions) / (KILO*JOULE / KELVIN / KILOGRAM)).into_value().into_raw_vec());
-                dict.insert(String::from("specific entropy vapor"), (self.0.vapor().specific_entropy(contributions) / (KILO*JOULE / KELVIN / KILOGRAM)).into_value().into_raw_vec());
+                dict.insert(String::from("temperature"), self.0.vapor().temperature().convert_into(KELVIN).into_raw_vec());
+                dict.insert(String::from("pressure"), self.0.vapor().pressure().convert_into(PASCAL).into_raw_vec());
+                dict.insert(String::from("density liquid"), self.0.liquid().density().convert_into(MOL / METER.powi::<P3>()).into_raw_vec());
+                dict.insert(String::from("density vapor"), self.0.vapor().density().convert_into(MOL / METER.powi::<P3>()).into_raw_vec());
+                dict.insert(String::from("mass density liquid"), self.0.liquid().mass_density().convert_into(KILOGRAM / METER.powi::<P3>()).into_raw_vec());
+                dict.insert(String::from("mass density vapor"), self.0.vapor().mass_density().convert_into(KILOGRAM / METER.powi::<P3>()).into_raw_vec());
+                dict.insert(String::from("molar enthalpy liquid"), self.0.liquid().molar_enthalpy(contributions).convert_into(KILO * JOULE / MOL).into_raw_vec());
+                dict.insert(String::from("molar enthalpy vapor"), self.0.vapor().molar_enthalpy(contributions).convert_into(KILO * JOULE / MOL).into_raw_vec());
+                dict.insert(String::from("molar entropy liquid"), self.0.liquid().molar_entropy(contributions).convert_into(KILO * JOULE / KELVIN / MOL).into_raw_vec());
+                dict.insert(String::from("molar entropy vapor"), self.0.vapor().molar_entropy(contributions).convert_into(KILO * JOULE / KELVIN / MOL).into_raw_vec());
+                dict.insert(String::from("specific enthalpy liquid"), self.0.liquid().specific_enthalpy(contributions).convert_into(KILO * JOULE / KILOGRAM).into_raw_vec());
+                dict.insert(String::from("specific enthalpy vapor"), self.0.vapor().specific_enthalpy(contributions).convert_into(KILO * JOULE / KILOGRAM).into_raw_vec());
+                dict.insert(String::from("specific entropy liquid"), self.0.liquid().specific_entropy(contributions).convert_into(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec());
+                dict.insert(String::from("specific entropy vapor"), self.0.vapor().specific_entropy(contributions).convert_into(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec());
                 dict
             }
 

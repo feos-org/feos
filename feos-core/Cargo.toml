@@ -1,9 +1,9 @@
 [package]
 name = "feos-core"
-version = "0.4.2"
+version = "0.5.0"
 authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>",
            "Philipp Rehner <prehner@ethz.ch"]
-edition = "2018"
+edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Core traits and functionalities for the `feos` project."
 homepage = "https://github.com/feos-org"
@@ -18,21 +18,21 @@ rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 features = [ "rayon" ]
 
 [dependencies]
-quantity = { version = "0.6", optional = true }
-num-dual = { version = "0.7", features = ["linalg"] }
-ndarray = { version = "0.15", features = ["serde"] }
+quantity = { version = "0.7", optional = true }
+num-dual = { version = "0.8", features = ["linalg"] }
+ndarray = { version = "0.15", features = ["serde", "approx-0_5"] }
 nalgebra = "0.32"
 num-traits = "0.2"
 thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-indexmap = "1.8"
+indexmap = "2.0"
 conv = "0.3"
-numpy = { version = "0.18", optional = true }
-pyo3 = { version = "0.18", optional = true }
+numpy = { version = "0.20", optional = true }
+pyo3 = { version = "0.20", optional = true }
 rayon = { version = "1.5", optional = true }
 typenum = "1.16"
-approx = "0.4"
+approx = "0.5"
 regex = "1.9"
 once_cell = "1.18"
 ang = "0.6"

@@ -28,7 +28,7 @@ pub enum MonomerShape<'a, D> {
 /// Properties of (generalized) hard sphere systems.
 pub trait HardSphereProperties {
     /// The [MonomerShape] used in the model.
-    fn monomer_shape<D: DualNum<f64>>(&self, temperature: D) -> MonomerShape<D>;
+    fn monomer_shape<D: DualNum<f64> + Copy>(&self, temperature: D) -> MonomerShape<D>;
 
     /// The temperature dependent hard-sphere diameters of every segment.
     fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D>;
@@ -43,7 +43,7 @@ pub trait HardSphereProperties {
     }
 
     /// The geometry coefficients $C_{k,\alpha}$ for every segment.
-    fn geometry_coefficients<D: DualNum<f64>>(&self, temperature: D) -> [Array1<D>; 4] {
+    fn geometry_coefficients<D: DualNum<f64> + Copy>(&self, temperature: D) -> [Array1<D>; 4] {
         match self.monomer_shape(temperature) {
             MonomerShape::Spherical(n) => {
                 let m = Array1::ones(n);

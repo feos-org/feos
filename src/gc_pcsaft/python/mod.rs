@@ -19,14 +19,16 @@ use std::sync::Arc;
 mod micelles;
 
 #[pyclass(name = "GcPcSaftRecord")]
-#[pyo3(text_signature = "(m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None)")]
 #[derive(Clone)]
 pub struct PyGcPcSaftRecord(GcPcSaftRecord);
 
 #[pymethods]
 impl PyGcPcSaftRecord {
-    #[pyo3(signature = (m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None))]
     #[new]
+    #[pyo3(
+        text_signature = "(m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None)",
+        signature = (m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None)
+    )]
     fn new(
         m: f64,
         sigma: f64,
@@ -80,9 +82,6 @@ impl_json_handling!(PyGcPcSaftRecord);
 impl_segment_record!(GcPcSaftRecord, PyGcPcSaftRecord);
 
 #[pyclass(name = "GcPcSaftEosParameters")]
-#[pyo3(
-    text_signature = "(pure_records, segmentbinary_records=None, substances=None, search_option='Name')"
-)]
 #[derive(Clone)]
 pub struct PyGcPcSaftEosParameters(pub Arc<GcPcSaftEosParameters>);
 
@@ -105,9 +104,6 @@ impl PyGcPcSaftEosParameters {
 
 #[cfg(feature = "dft")]
 #[pyclass(name = "GcPcSaftFunctionalParameters")]
-#[pyo3(
-    text_signature = "(pure_records, segmentbinary_records=None, substances=None, search_option)"
-)]
 #[derive(Clone)]
 pub struct PyGcPcSaftFunctionalParameters(pub Arc<GcPcSaftFunctionalParameters>);
 

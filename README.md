@@ -9,10 +9,13 @@ The `FeOs` package provides Rust implementations of different equation of state 
 
 ```python
 from feos.eos import EquationOfState, State
-from feos.pcsaft import PcSaftParameters
+from feos.pcsaft import PcSaftParameters, PcSaftRecord
+
+# PC-SAFT parameters for methanol (Gross and Sadowski 2002)
+record = PcSaftRecord(1.5255, 3.23, 188.9, kappa_ab=0.035176, epsilon_k_ab=2899.5, na=1, nb=1)
 
 # Build an equation of state
-parameters = PcSaftParameters.from_json(['methanol'], 'parameters.json')
+parameters = PcSaftParameters.from_model_records([record])
 eos = EquationOfState.pcsaft(parameters)
 
 # Define thermodynamic conditions
