@@ -154,8 +154,7 @@ where
         // queried substances with removed duplicates
         let queried: IndexSet<String> = input
             .iter()
-            .map(|(substances, _)| substances)
-            .flatten()
+            .flat_map(|(substances, _)| substances)
             .map(|substance| substance.to_string())
             .collect();
 

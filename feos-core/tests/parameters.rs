@@ -107,7 +107,7 @@ fn from_json_duplicates_input() {
     assert!(matches!(
         pure_records,
         Err(ParameterError::IncompatibleParameters(t))
-        if t == "A substance was defined more than once.".to_string()
+        if t == "A substance was defined more than once."
     ));
 }
 
@@ -124,7 +124,7 @@ fn from_multiple_json_files_duplicates() {
     assert!(matches!(
         my_parameters,
         Err(ParameterError::IncompatibleParameters(t))
-        if t == "A substance was defined more than once.".to_string()
+        if t == "A substance was defined more than once."
     ));
 
     let my_parameters = MyParameter::from_multiple_json(

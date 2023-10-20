@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed `StateVec` Python getters for entropy and enthalpy to functions that accept optional `Contributions`. [#177](https://github.com/feos-org/feos/pull/177)
 - `PhaseDiagram.to_dict` in Python now accepts optional `Contributions` and includes mass specific properties. [#177](https://github.com/feos-org/feos/pull/177)
 - Replaced the run-time unit checks from the `quantity` crate with compile-time unit checks with custom implementations in the new `feos_core.si` module. [#181](https://github.com/feos-org/feos/pull/181)
+- Renamed the keyword argument `search_option` to `identifier_option` in parameter constructors. [#196](https://github.com/feos-org/feos/pull/196)
 
 ### Removed
 - Removed `EquationOfState` trait. [#158](https://github.com/feos-org/feos/pull/158)
@@ -44,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - The vapor and liquid states in a bubble or dew point iteration are assigned correctly according to the inputs, rather than based on the mole density which can be incorrect for mixtures with large differences in molar weights. [#166](https://github.com/feos-org/feos/pull/166)
+- `Parameter::from_multiple_json` returns the correct parameters if a component occurs in multiple input files. [#196](https://github.com/feos-org/feos/pull/196)
 
 ### Packaging
 - Updated `num-dual` dependency to 0.7. [#137](https://github.com/feos-org/feos/pull/137)
