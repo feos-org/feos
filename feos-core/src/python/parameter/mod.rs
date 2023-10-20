@@ -31,14 +31,14 @@ impl From<ParameterError> for PyErr {
 /// Identifier
 #[pyclass(name = "Identifier")]
 #[derive(Clone)]
-#[pyo3(
-    text_signature = "(cas=None, name=None, iupac_name=None, smiles=None, inchi=None, formula=None)"
-)]
 pub struct PyIdentifier(pub Identifier);
 
 #[pymethods]
 impl PyIdentifier {
     #[new]
+    #[pyo3(
+        text_signature = "(cas=None, name=None, iupac_name=None, smiles=None, inchi=None, formula=None)"
+    )]
     fn new(
         cas: Option<&str>,
         name: Option<&str>,
@@ -138,12 +138,12 @@ impl_json_handling!(PyIdentifier);
 /// ChemicalRecord
 #[pyclass(name = "ChemicalRecord")]
 #[derive(Clone)]
-#[pyo3(text_signature = "(identifier, segments, bonds=None)")]
 pub struct PyChemicalRecord(pub ChemicalRecord);
 
 #[pymethods]
 impl PyChemicalRecord {
     #[new]
+    #[pyo3(text_signature = "(identifier, segments, bonds=None)")]
     fn new(
         identifier: PyIdentifier,
         segments: Vec<String>,
@@ -392,13 +392,13 @@ macro_rules! impl_pure_record {
         /// -------
         /// PureRecord
         #[pyclass(name = "PureRecord")]
-        #[pyo3(text_signature = "(identifier, molarweight, model_record)")]
         #[derive(Clone)]
         pub struct PyPureRecord(pub PureRecord<$model_record>);
 
         #[pymethods]
         impl PyPureRecord {
             #[new]
+            #[pyo3(text_signature = "(identifier, molarweight, model_record)")]
             fn new(
                 identifier: PyIdentifier,
                 molarweight: f64,
@@ -468,13 +468,13 @@ macro_rules! impl_segment_record {
         /// -------
         /// SegmentRecord
         #[pyclass(name = "SegmentRecord")]
-        #[pyo3(text_signature = "(identifier, molarweight)")]
         #[derive(Clone)]
         pub struct PySegmentRecord(SegmentRecord<$model_record>);
 
         #[pymethods]
         impl PySegmentRecord {
             #[new]
+            #[pyo3(text_signature = "(identifier, molarweight, model_record)")]
             fn new(
                 identifier: String,
                 molarweight: f64,
