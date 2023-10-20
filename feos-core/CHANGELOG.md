@@ -48,7 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Parameter::from_multiple_json` returns the correct parameters if a component occurs in multiple input files. [#196](https://github.com/feos-org/feos/pull/196)
 
 ### Packaging
-- Updated `num-dual` dependency to 0.7. [#137](https://github.com/feos-org/feos/pull/137)
+- Updated `quantity` dependency to 0.7.
+- Updated `num-dual` dependency to 0.8. [#137](https://github.com/feos-org/feos/pull/137)
+- Updated `numpy` and `PyO3` dependencies to 0.20.
 
 ## [0.4.2] - 2023-04-03
 ### Fixed
