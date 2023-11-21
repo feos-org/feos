@@ -28,7 +28,7 @@ For some applications (e.g., aqueous systems) more specialized parametrizations 
 |-|-|-|:-:|
 [`gross2001.json`](gross2001.json) | | non-associating and non-polar substances| [&#128279;](https://doi.org/10.1021/ie0003887)
 [`gross2002.json`](gross2002.json) | | associating substances | [&#128279;](https://doi.org/10.1021/ie010954d)
-[`gross2005_fit.json`](gross2005_fit.json) | | quadrupolar substances, quadrupole adjusted in regression | [&#128279;](https://doi.org/10.1002/aic.10502)
+[`gross2005_fit.json`](gross2005_fit.json) | | quadrupolar substances, quadrupole moment adjusted in regression | [&#128279;](https://doi.org/10.1002/aic.10502)
 [`gross2005_literature.json`](gross2005_literature.json) | | quadrupolar substances, quadrupole moment taken from literature | [&#128279;](https://doi.org/10.1002/aic.10502)
 [`gross2006.json`](gross2006.json) | | dipolar substances | [&#128279;](https://doi.org/10.1002/aic.10683)
 [`loetgeringlin2018.json`](loetgeringlin2018.json) | | 146 components including viscosity parameters | [&#128279;](https://doi.org/10.1021/acs.iecr.7b04871)
