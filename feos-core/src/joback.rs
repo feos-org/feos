@@ -132,7 +132,7 @@ impl From<JobackBinaryRecord> for f64 {
 }
 
 impl<T: Copy + ValueInto<f64>> FromSegmentsBinary<T> for JobackBinaryRecord {
-    fn from_segments_binary(_segments: &[(Self, T, T)]) -> Result<Self, ParameterError> {
+    fn from_segments_binary(_segments: &[(f64, T, T)]) -> Result<Self, ParameterError> {
         Ok(Self)
     }
 }
