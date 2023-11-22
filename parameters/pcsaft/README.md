@@ -37,6 +37,17 @@ For some applications (e.g., aqueous systems) more specialized parametrizations 
 [`esper2023.json`](esper2023.json) | [`rehner2023.json`](rehner2023.json) | 1842 non-associating, associating and polar substances | [&#128279;](https://doi.org/10.1021/acs.iecr.3c02255)[&#128279;](https://doi.org/10.1007/s10765-023-03290-3)
 
 ## Group-Contribution (GC) Methods
+Parameters can also be constructed from group-contribution methods. In Python only and if you have [`rdkit`](https://pypi.org/project/rdkit/) installed in your environment, you can generate parameters directly from a SMILES code:
+```Python
+PcSaftParameters.from_json_smiles(["CCC(C)=O"], "sauer2014_smarts.json", "sauer2014_homo.json")
+```
+or
+```Python
+PcSaftParameters.from_json_smiles([Identifier(name="2-butanone", smiles="CCC(C)=O")], "sauer2014_smarts.json", "sauer2014_homo.json")
+```
+The rules that are applied in the determination of the group counts from SMILES are defined by SMARTS. All GC models that are implemented currently are compatible with the SMARTS defined in  [`sauer2014_smarts.json`](sauer2014_smarts.json).
+
+For a more detailed description of parameter handling in `FeOs`, check out the [documentation](https://feos-org.github.io/feos/).
 
 ### Parameters for the homosegmented GC method
 

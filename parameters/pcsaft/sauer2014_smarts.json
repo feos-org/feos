@@ -1,0 +1,105 @@
+[
+  {
+    "group": "CH3",
+    "smarts": "[CH3;!$([CH3][CH3]);!$([CH3][OH]);!$([CH3][NH2])]"
+  },
+  {
+    "group": "CH2",
+    "smarts": "[CX4H2;!R]"
+  },
+  {
+    "group": ">CH",
+    "smarts": "[CX4H1;!R]"
+  },
+  {
+    "group": ">C<",
+    "smarts": "[CX4H0;!R]"
+  },
+  {
+    "group": "=CH2",
+    "smarts": "[CX3H2;!R;!$([CH2]=[CH2]);!$([CH2]=O)]"
+  },
+  {
+    "group": "=CH",
+    "smarts": "[CX3H1;!R;!$([CX3H1]=O)]"
+  },
+  {
+    "group": "=C<",
+    "smarts": "[CX3H0;!R;!$([CX3H0]=O)]"
+  },
+  {
+    "group": "C≡CH",
+    "smarts": "[CH0]#[CH1]",
+    "max": 1
+  },
+  {
+    "group": "CH_arom",
+    "smarts": "[cH1;R]",
+    "max": 6
+  },
+  {
+    "group": "C_arom",
+    "smarts": "[cH0;R]",
+    "max": 6
+  },
+  {
+    "group": "CH2_pent",
+    "smarts": "[CX4H2;r5]",
+    "max": 5
+  },
+  {
+    "group": "CH_pent",
+    "smarts": "[CX4H1;r5]",
+    "max": 5
+  },
+  {
+    "group": "CH2_hex",
+    "smarts": "[CX4H2;r6]",
+    "max": 6
+  },
+  {
+    "group": "CH_hex",
+    "smarts": "[CX4H1;r6]",
+    "max": 6
+  },
+  {
+    "group": "CH=O",
+    "smarts": "[$([CH1][C,c])]=O",
+    "max": 1
+  },
+  {
+    "group": ">C=O",
+    "smarts": "[$([C]([C,c])([C,c]));!R]=O",
+    "max": 1
+  },
+  {
+    "group": "OCH3",
+    "smarts": "[$([O][C]);!$([O][C]=O)][CH3]",
+    "max": 1
+  },
+  {
+    "group": "OCH2",
+    "smarts": "[$([O]([CX4H0,CX4H1,CX4H2])[CX4H2]);!$([O][C]=O);!R][CX4H2]",
+    "max": 1
+  },
+  {
+    "group": "HCOO",
+    "smarts": "[CH1](=O)[$([OH0][C,c])]",
+    "max": 1
+  },
+  {
+    "group": "COO",
+    "smarts": "[$([CH0][C,c]);!R](=O)[$([OH0]([C,c])[C,c])]",
+    "max": 1
+  },
+  {
+    "group": "OH",
+    "smarts": "[$([OH][CX4H2])]",
+    "max": 1
+  },
+  {
+    "group": "NH2",
+    "smarts": "[$([NH2][C,c]);!$([NH2][CH3])]",
+    "max": 1
+  }
+]
