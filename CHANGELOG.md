@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2023-11-23
+- Python only: Release the changes introduced in `feos-core` 0.5.1.
+
 ## [0.5.0] - 2023-10-20
 ### Added
 - Added `IdealGasModel` enum that collects all implementors of the `IdealGas` trait. [#158](https://github.com/feos-org/feos/pull/158)
