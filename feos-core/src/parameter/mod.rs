@@ -195,7 +195,7 @@ where
     fn from_segments<C: SegmentCount>(
         chemical_records: Vec<C>,
         segment_records: Vec<SegmentRecord<Self::Pure>>,
-        binary_segment_records: Option<Vec<BinaryRecord<String, Self::Binary>>>,
+        binary_segment_records: Option<Vec<BinaryRecord<String, f64>>>,
     ) -> Result<Self, ParameterError>
     where
         Self::Pure: FromSegments<C::Count>,
@@ -312,10 +312,8 @@ where
         let binary_records = file_binary
             .map(|file_binary| {
                 let reader = BufReader::new(File::open(file_binary)?);
-                let binary_records: Result<
-                    Vec<BinaryRecord<String, Self::Binary>>,
-                    ParameterError,
-                > = Ok(serde_json::from_reader(reader)?);
+                let binary_records: Result<Vec<BinaryRecord<String, f64>>, ParameterError> =
+                    Ok(serde_json::from_reader(reader)?);
                 binary_records
             })
             .transpose()?;

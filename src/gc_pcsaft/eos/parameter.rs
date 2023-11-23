@@ -67,6 +67,7 @@ pub struct GcPcSaftEosParameters {
     pub molarweight: Array1<f64>,
     pub component_index: Array1<usize>,
     identifiers: Vec<String>,
+    counts: Vec<f64>,
 
     pub m: Array1<f64>,
     pub sigma: Array1<f64>,
@@ -106,6 +107,7 @@ impl ParameterHetero for GcPcSaftEosParameters {
         let mut molarweight = Array1::zeros(chemical_records.len());
         let mut component_index = Vec::new();
         let mut identifiers = Vec::new();
+        let mut counts = Vec::new();
         let mut m = Vec::new();
         let mut sigma = Vec::new();
         let mut epsilon_k = Vec::new();
@@ -138,6 +140,7 @@ impl ParameterHetero for GcPcSaftEosParameters {
 
                 component_index.push(i);
                 identifiers.push(segment.identifier.clone());
+                counts.push(count);
                 m.push(segment.model_record.m * count);
                 sigma.push(segment.model_record.sigma);
                 epsilon_k.push(segment.model_record.epsilon_k);
@@ -227,6 +230,7 @@ impl ParameterHetero for GcPcSaftEosParameters {
             molarweight,
             component_index,
             identifiers,
+            counts,
             m: Array1::from_vec(m),
             sigma,
             epsilon_k: Array1::from_vec(epsilon_k),
@@ -296,7 +300,7 @@ impl GcPcSaftEosParameters {
         let o = &mut output;
         write!(
             o,
-            "|component|molarweight|dipole moment|group|$m$|$\\sigma$|$\\varepsilon$|$\\kappa_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|$N_C$|\n|-|-|-|-|-|-|-|-|-|-|-|-|"
+            "|component|molarweight|dipole moment|group|count|$m$|$\\sigma$|$\\varepsilon$|$\\kappa_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|$N_C$|\n|-|-|-|-|-|-|-|-|-|-|-|-|-|"
         )
         .unwrap();
         for i in 0..self.m.len() {
@@ -332,9 +336,10 @@ impl GcPcSaftEosParameters {
             };
             write!(
                 o,
-                "\n|{}|{}|{}|{}|{}|{}|",
+                "\n|{}|{}|{}|{}|{}|{}|{}|",
                 component,
                 self.identifiers[i],
+                self.counts[i],
                 record.m,
                 record.sigma,
                 record.epsilon_k,

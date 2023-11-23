@@ -309,10 +309,10 @@ impl PcSaftBinaryRecord {
 }
 
 impl<T: Copy + ValueInto<f64>> FromSegmentsBinary<T> for PcSaftBinaryRecord {
-    fn from_segments_binary(segments: &[(Self, T, T)]) -> Result<Self, ParameterError> {
+    fn from_segments_binary(segments: &[(f64, T, T)]) -> Result<Self, ParameterError> {
         let (k_ij, n) = segments.iter().fold((0.0, 0.0), |(k_ij, n), (br, n1, n2)| {
             let nab = (*n1).value_into().unwrap() * (*n2).value_into().unwrap();
-            (k_ij + br.k_ij * nab, n + nab)
+            (k_ij + br * nab, n + nab)
         });
         Ok(Self {
             k_ij: k_ij / n,
@@ -795,16 +795,7 @@ pub mod utils {
         let kij = [("CH3", "OH", -0.2), ("CH2", "OH", -0.1)];
         let binary_segment_records = kij
             .iter()
-            .map(|&(id1, id2, k_ij)| {
-                BinaryRecord::new(
-                    id1.into(),
-                    id2.into(),
-                    PcSaftBinaryRecord {
-                        k_ij,
-                        association: None,
-                    },
-                )
-            })
+            .map(|&(id1, id2, k_ij)| BinaryRecord::new(id1.into(), id2.into(), k_ij))
             .collect();
         let params = PcSaftParameters::from_segments(
             vec![propane, ethanol],

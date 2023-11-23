@@ -123,7 +123,7 @@ pub trait FromSegments<T>: Clone {
 pub trait FromSegmentsBinary<T>: Clone {
     /// Constructs the binary record from a list of segment records with
     /// their number of occurences.
-    fn from_segments_binary(segments: &[(Self, T, T)]) -> Result<Self, ParameterError>;
+    fn from_segments_binary(segments: &[(f64, T, T)]) -> Result<Self, ParameterError>;
 }
 
 /// A collection of parameters that model interactions between two
