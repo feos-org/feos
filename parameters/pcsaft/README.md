@@ -1,4 +1,4 @@
-# PC-SAFT Parameters
+# PC(P)-SAFT Parameters
 
 This directory contains files with parameters for PC(P)-SAFT (including gc-PC-SAFT).
 The files named according to the pattern `NameYear.json` correspond to published parameters. The corresponding publication is provided in the [`literature.bib`](literature.bib) file.
@@ -8,21 +8,15 @@ For most applications, we recommend using the recent parametrization by [Esper e
 ```python
 from feos.pcsaft import PcSaftParameters
 
-params = PcSaftParameters.from_json(["acetone", "hexane"], "esper2023.json", "rehner2023_binary.json")
+params = PcSaftParameters.from_json(
+    ["acetone", "hexane"], 
+    "esper2023.json", 
+    "rehner2023_binary.json"
+)
 ```
 For some applications (e.g., aqueous systems) more specialized parametrizations are required. See below for a full list of PC(P)-SAFT pure-component parameter sets available in the repository.
-<!-- - We provide *regular* PC-SAFT parameters, i.e. parameters for substances that are *not* described via group contribution (GC) methods. -->
-<!-- - Substances that can be described via GC approaches are given in `gc_substances.json` alongside their segment and bond information. -->
-<!-- - Segment SAFT parameters are given in files denoted as `NameYear_homo.json` or `NameYear_hetero.json` for homo-segmented and hetero-segmented GC methods, respectively. -->
 
-<!-- ## List of Substances with Segment Information
-
-|file||
-|-|-|
-[`gc_substances.json`](gc_substances.json) | Chemical structure of substances to be used in group contribution methods | -->
-
-
-## Pure-Component Parameters
+## Individual Parameters
 
 |file|file binary|description|publication(s)|
 |-|-|-|:-:|
@@ -39,15 +33,23 @@ For some applications (e.g., aqueous systems) more specialized parametrizations 
 ## Group-Contribution (GC) Methods
 Parameters can also be constructed from group-contribution methods. In Python only and if you have [`rdkit`](https://pypi.org/project/rdkit/) installed in your environment, you can generate parameters directly from a SMILES code:
 ```Python
-PcSaftParameters.from_json_smiles(["CCC(C)=O"], "sauer2014_smarts.json", "sauer2014_homo.json")
+PcSaftParameters.from_json_smiles(
+    ["CCC(C)=O"], 
+    "sauer2014_smarts.json", 
+    "sauer2014_homo.json"
+)
 ```
 or
 ```Python
-PcSaftParameters.from_json_smiles([Identifier(name="2-butanone", smiles="CCC(C)=O")], "sauer2014_smarts.json", "sauer2014_homo.json")
+PcSaftParameters.from_json_smiles(
+    [Identifier(name="2-butanone", smiles="CCC(C)=O")], 
+    "sauer2014_smarts.json", 
+    "sauer2014_homo.json"
+)
 ```
 The rules that are applied in the determination of the group counts from SMILES are defined by SMARTS. All GC models that are implemented currently are compatible with the SMARTS defined in  [`sauer2014_smarts.json`](sauer2014_smarts.json).
 
-For a more detailed description of parameter handling in `FeOs`, check out the [documentation](https://feos-org.github.io/feos/).
+For a more detailed description of parameter handling in `FeOs`, check out the [example notebook](https://github.com/feos-org/feos/blob/binary_interaction_parameter_files/examples/pcsaft_working_with_parameters.ipynb).
 
 ### Parameters for the homosegmented GC method
 
