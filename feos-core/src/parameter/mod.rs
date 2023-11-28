@@ -66,7 +66,7 @@ where
     fn from_model_records(model_records: Vec<Self::Pure>) -> Result<Self, ParameterError> {
         let pure_records = model_records
             .into_iter()
-            .map(|r| PureRecord::new(Default::default(), Default::default(), r))
+            .map(|r| PureRecord::new(Default::default(), r))
             .collect();
         Self::from_records(pure_records, None)
     }

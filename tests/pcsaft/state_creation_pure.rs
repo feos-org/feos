@@ -148,7 +148,7 @@ fn pressure_enthalpy_vapor() -> Result<(), Box<dyn Error>> {
     let (saft_params, joback_params) = propane_parameters()?;
     let saft = Arc::new(PcSaft::new(saft_params));
     let joback = Joback::new(joback_params);
-    let eos = Arc::new(EquationOfState::new(Arc::new(joback), saft));
+    let eos = Arc::new(EquationOfState::new(joback, saft));
     let pressure = 0.3 * BAR;
     let molar_enthalpy = 2000.0 * JOULE / MOL;
     let state = StateBuilder::new(&eos)
@@ -190,7 +190,7 @@ fn density_internal_energy() -> Result<(), Box<dyn Error>> {
     let (saft_params, joback_params) = propane_parameters()?;
     let saft = Arc::new(PcSaft::new(saft_params));
     let joback = Joback::new(joback_params);
-    let eos = Arc::new(EquationOfState::new(Arc::new(joback), saft));
+    let eos = Arc::new(EquationOfState::new(joback, saft));
     let pressure = 5.0 * BAR;
     let temperature = 315.0 * KELVIN;
     let total_moles = 2.5 * MOL;
@@ -220,7 +220,7 @@ fn pressure_enthalpy_total_moles_vapor() -> Result<(), Box<dyn Error>> {
     let (saft_params, joback_params) = propane_parameters()?;
     let saft = Arc::new(PcSaft::new(saft_params));
     let joback = Joback::new(joback_params);
-    let eos = Arc::new(EquationOfState::new(Arc::new(joback), saft));
+    let eos = Arc::new(EquationOfState::new(joback, saft));
     let pressure = 0.3 * BAR;
     let molar_enthalpy = 2000.0 * JOULE / MOL;
     let total_moles = 2.5 * MOL;
@@ -264,7 +264,7 @@ fn pressure_entropy_vapor() -> Result<(), Box<dyn Error>> {
     let (saft_params, joback_params) = propane_parameters()?;
     let saft = Arc::new(PcSaft::new(saft_params));
     let joback = Joback::new(joback_params);
-    let eos = Arc::new(EquationOfState::new(Arc::new(joback), saft));
+    let eos = Arc::new(EquationOfState::new(joback, saft));
     let pressure = 0.3 * BAR;
     let molar_entropy = -2.0 * JOULE / MOL / KELVIN;
     let state = StateBuilder::new(&eos)
@@ -306,7 +306,7 @@ fn temperature_entropy_vapor() -> Result<(), Box<dyn Error>> {
     let (saft_params, joback_params) = propane_parameters()?;
     let saft = Arc::new(PcSaft::new(saft_params));
     let joback = Joback::new(joback_params);
-    let eos = Arc::new(EquationOfState::new(Arc::new(joback), saft));
+    let eos = Arc::new(EquationOfState::new(joback, saft));
     let pressure = 3.0 * BAR;
     let temperature = 315.15 * KELVIN;
     let total_moles = 3.0 * MOL;
@@ -366,7 +366,7 @@ fn test_consistency() -> Result<(), Box<dyn Error>> {
     let (saft_params, joback_params) = propane_parameters()?;
     let saft = Arc::new(PcSaft::new(saft_params));
     let joback = Joback::new(joback_params);
-    let eos = Arc::new(EquationOfState::new(Arc::new(joback), saft));
+    let eos = Arc::new(EquationOfState::new(joback, saft));
     let temperatures = [350.0 * KELVIN, 400.0 * KELVIN, 450.0 * KELVIN];
     let pressures = [1.0 * BAR, 2.0 * BAR, 3.0 * BAR];
 

@@ -18,8 +18,13 @@ pub struct PyPengRobinsonRecord(PengRobinsonRecord);
 #[pymethods]
 impl PyPengRobinsonRecord {
     #[new]
-    fn new(tc: f64, pc: f64, acentric_factor: f64) -> Self {
-        Self(PengRobinsonRecord::new(tc, pc, acentric_factor))
+    fn new(tc: f64, pc: f64, acentric_factor: f64, molarweight: f64) -> Self {
+        Self(PengRobinsonRecord::new(
+            tc,
+            pc,
+            acentric_factor,
+            molarweight,
+        ))
     }
 
     fn __repr__(&self) -> PyResult<String> {

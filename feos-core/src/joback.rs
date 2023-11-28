@@ -333,8 +333,8 @@ mod tests {
         );
         assert_relative_eq!(jr.e, 0.0);
 
-        let pr = PureRecord::new(Identifier::default(), 1.0, jr);
-        let joback = Arc::new(Joback::new(Arc::new(JobackParameters::new_pure(pr)?)));
+        let pr = PureRecord::new(Identifier::default(), jr);
+        let joback = Joback::new(Arc::new(JobackParameters::new_pure(pr)?));
         let eos = Arc::new(EquationOfState::ideal_gas(joback));
         let state = State::new_nvt(
             &eos,
@@ -357,17 +357,16 @@ mod tests {
     fn c_p_comparison() -> EosResult<()> {
         let record1 = PureRecord::new(
             Identifier::default(),
-            1.0,
             JobackRecord::new(1.0, 0.2, 0.03, 0.004, 0.005),
         );
         let record2 = PureRecord::new(
             Identifier::default(),
-            1.0,
             JobackRecord::new(-5.0, 0.4, 0.03, 0.002, 0.001),
         );
         let parameters = Arc::new(JobackParameters::new_binary(vec![record1, record2], None)?);
-        let joback = Arc::new(Joback::new(parameters));
-        let eos = Arc::new(EquationOfState::ideal_gas(joback.clone()));
+        let joback = Joback::new(parameters.clone());
+        let ideal_gas = Joback::new(parameters);
+        let eos = Arc::new(EquationOfState::ideal_gas(ideal_gas));
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi::<P3>();
         let moles = &arr1(&[1.0, 3.0]) * MOL;

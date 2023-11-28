@@ -95,7 +95,7 @@ impl PyEquationOfState {
             parameters.0,
             options,
         )));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        let ideal_gas = IdealGasModel::NoModel(residual.components());
         Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
@@ -157,7 +157,7 @@ impl PyEquationOfState {
     #[staticmethod]
     pub fn peng_robinson(parameters: PyPengRobinsonParameters) -> Self {
         let residual = Arc::new(ResidualModel::PengRobinson(PengRobinson::new(parameters.0)));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        let ideal_gas = IdealGasModel::NoModel(residual.components());
         Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
@@ -175,7 +175,7 @@ impl PyEquationOfState {
     #[staticmethod]
     fn python_residual(residual: Py<PyAny>) -> PyResult<Self> {
         let residual = Arc::new(ResidualModel::Python(PyResidual::new(residual)?));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        let ideal_gas = IdealGasModel::NoModel(residual.components());
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 
@@ -335,10 +335,7 @@ impl PyEquationOfState {
             ))),
             _ => self.0.residual.clone(),
         };
-        Self(Arc::new(EquationOfState::new(
-            Arc::new(ideal_gas),
-            residual,
-        )))
+        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 }
 

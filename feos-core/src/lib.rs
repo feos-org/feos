@@ -173,14 +173,13 @@ mod tests {
     fn validate_residual_properties() -> EosResult<()> {
         let mixture = pure_record_vec();
         let propane = mixture[0].clone();
-        let parameters = PengRobinsonParameters::new_pure(propane)?;
-        let residual = Arc::new(PengRobinson::new(Arc::new(parameters)));
+        let parameters = Arc::new(PengRobinsonParameters::new_pure(propane)?);
+        let residual = Arc::new(PengRobinson::new(parameters));
         let joback_parameters = Arc::new(JobackParameters::new_pure(PureRecord::new(
             Identifier::default(),
-            1.0,
             JobackRecord::new(0.0, 0.0, 0.0, 0.0, 0.0),
         ))?);
-        let ideal_gas = Arc::new(Joback::new(joback_parameters));
+        let ideal_gas = Joback::new(joback_parameters);
         let eos = Arc::new(EquationOfState::new(ideal_gas, residual.clone()));
 
         let sr = StateBuilder::new(&residual)

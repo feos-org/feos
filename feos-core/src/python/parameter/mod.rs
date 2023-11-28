@@ -399,16 +399,8 @@ macro_rules! impl_pure_record {
         impl PyPureRecord {
             #[new]
             #[pyo3(text_signature = "(identifier, molarweight, model_record)")]
-            fn new(
-                identifier: PyIdentifier,
-                molarweight: f64,
-                model_record: $py_model_record,
-            ) -> PyResult<Self> {
-                Ok(Self(PureRecord::new(
-                    identifier.0,
-                    molarweight,
-                    model_record.0,
-                )))
+            fn new(identifier: PyIdentifier, model_record: $py_model_record) -> PyResult<Self> {
+                Ok(Self(PureRecord::new(identifier.0, model_record.0)))
             }
 
             #[getter]
@@ -419,16 +411,6 @@ macro_rules! impl_pure_record {
             #[setter]
             fn set_identifier(&mut self, identifier: PyIdentifier) {
                 self.0.identifier = identifier.0;
-            }
-
-            #[getter]
-            fn get_molarweight(&self) -> f64 {
-                self.0.molarweight
-            }
-
-            #[setter]
-            fn set_molarweight(&mut self, molarweight: f64) {
-                self.0.molarweight = molarweight;
             }
 
             #[getter]

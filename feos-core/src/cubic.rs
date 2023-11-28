@@ -26,15 +26,18 @@ pub struct PengRobinsonRecord {
     pc: f64,
     /// acentric factor
     acentric_factor: f64,
+    /// molar weight
+    molarweight: f64,
 }
 
 impl PengRobinsonRecord {
     /// Create a new pure substance record for the Peng-Robinson equation of state.
-    pub fn new(tc: f64, pc: f64, acentric_factor: f64) -> Self {
+    pub fn new(tc: f64, pc: f64, acentric_factor: f64, molarweight: f64) -> Self {
         Self {
             tc,
             pc,
             acentric_factor,
+            molarweight,
         }
     }
 }
@@ -43,7 +46,8 @@ impl std::fmt::Display for PengRobinsonRecord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "PengRobinsonRecord(tc={} K", self.tc)?;
         write!(f, ", pc={} Pa", self.pc)?;
-        write!(f, ", acentric factor={}", self.acentric_factor)
+        write!(f, ", acentric factor={}", self.acentric_factor)?;
+        write!(f, ", molar weight={})", self.molarweight)
     }
 }
 
@@ -93,9 +97,10 @@ impl PengRobinsonParameters {
                     tc: tc[i],
                     pc: pc[i],
                     acentric_factor: acentric_factor[i],
+                    molarweight: molarweight[i],
                 };
                 let id = Identifier::default();
-                PureRecord::new(id, molarweight[i], record)
+                PureRecord::new(id, record)
             })
             .collect();
         PengRobinsonParameters::from_records(records, None)
@@ -120,8 +125,8 @@ impl Parameter for PengRobinsonParameters {
         let mut kappa = Array1::zeros(n);
 
         for (i, record) in pure_records.iter().enumerate() {
-            molarweight[i] = record.molarweight;
             let r = &record.model_record;
+            molarweight[i] = r.molarweight;
             tc[i] = r.tc;
             a[i] = 0.45724 * r.tc.powi(2) * KB_A3 / r.pc;
             b[i] = 0.07780 * r.tc * KB_A3 / r.pc;

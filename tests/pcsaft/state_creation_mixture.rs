@@ -32,7 +32,7 @@ fn pressure_entropy_molefracs() -> Result<(), Box<dyn Error>> {
     let (saft_params, joback_params) = propane_butane_parameters()?;
     let saft = Arc::new(PcSaft::new(saft_params));
     let joback = Joback::new(joback_params);
-    let eos = Arc::new(EquationOfState::new(Arc::new(joback), saft));
+    let eos = Arc::new(EquationOfState::new(joback, saft));
     let pressure = BAR;
     let temperature = 300.0 * KELVIN;
     let x = arr1(&[0.3, 0.7]);

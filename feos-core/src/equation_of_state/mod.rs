@@ -27,14 +27,14 @@ pub trait Components {
 /// and a residual Helmholtz energy model.
 #[derive(Clone)]
 pub struct EquationOfState<I, R> {
-    pub ideal_gas: Arc<I>,
+    pub ideal_gas: I,
     pub residual: Arc<R>,
 }
 
 impl<I, R> EquationOfState<I, R> {
     /// Return a new [EquationOfState] with the given ideal gas
     /// and residual models.
-    pub fn new(ideal_gas: Arc<I>, residual: Arc<R>) -> Self {
+    pub fn new(ideal_gas: I, residual: Arc<R>) -> Self {
         Self {
             ideal_gas,
             residual,
@@ -45,7 +45,7 @@ impl<I, R> EquationOfState<I, R> {
 impl<I: IdealGas> EquationOfState<I, NoResidual> {
     /// Return a new [EquationOfState] that only consists of
     /// an ideal gas models.
-    pub fn ideal_gas(ideal_gas: Arc<I>) -> Self {
+    pub fn ideal_gas(ideal_gas: I) -> Self {
         let residual = Arc::new(NoResidual(ideal_gas.components()));
         Self {
             ideal_gas,
@@ -66,7 +66,7 @@ impl<I: Components, R: Components> Components for EquationOfState<I, R> {
 
     fn subset(&self, component_list: &[usize]) -> Self {
         Self::new(
-            Arc::new(self.ideal_gas.subset(component_list)),
+            self.ideal_gas.subset(component_list),
             Arc::new(self.residual.subset(component_list)),
         )
     }

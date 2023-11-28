@@ -53,6 +53,7 @@ impl PyPcSaftRecord {
         text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
     )]
     fn new(
+        molarweight: f64,
         m: f64,
         sigma: f64,
         epsilon_k: f64,
@@ -68,6 +69,7 @@ impl PyPcSaftRecord {
         thermal_conductivity: Option<[f64; 4]>,
     ) -> Self {
         Self(PcSaftRecord::new(
+            molarweight,
             m,
             sigma,
             epsilon_k,
@@ -82,6 +84,11 @@ impl PyPcSaftRecord {
             diffusion,
             thermal_conductivity,
         ))
+    }
+
+    #[getter]
+    fn get_molarweight(&self) -> f64 {
+        self.0.molarweight
     }
 
     #[getter]

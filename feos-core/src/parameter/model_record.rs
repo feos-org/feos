@@ -1,7 +1,6 @@
 use super::identifier::Identifier;
 use super::segment::SegmentRecord;
 use super::{IdentifierOption, ParameterError};
-use conv::ValueInto;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -13,16 +12,14 @@ use std::path::Path;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PureRecord<M> {
     pub identifier: Identifier,
-    pub molarweight: f64,
     pub model_record: M,
 }
 
 impl<M> PureRecord<M> {
     /// Create a new `PureRecord`.
-    pub fn new(identifier: Identifier, molarweight: f64, model_record: M) -> Self {
+    pub fn new(identifier: Identifier, model_record: M) -> Self {
         Self {
             identifier,
-            molarweight,
             model_record,
         }
     }
@@ -33,19 +30,16 @@ impl<M> PureRecord<M> {
     /// and the ideal gas record.
     pub fn from_segments<S, T>(identifier: Identifier, segments: S) -> Result<Self, ParameterError>
     where
-        T: Copy + ValueInto<f64>,
         M: FromSegments<T>,
         S: IntoIterator<Item = (SegmentRecord<M>, T)>,
     {
-        let mut molarweight = 0.0;
-        let mut model_segments = Vec::new();
-        for (s, n) in segments {
-            molarweight += s.molarweight * n.value_into().unwrap();
-            model_segments.push((s.model_record, n));
-        }
+        let model_segments: Vec<_> = segments
+            .into_iter()
+            .map(|(s, n)| (s.model_record, n))
+            .collect();
         let model_record = M::from_segments(&model_segments)?;
 
-        Ok(Self::new(identifier, molarweight, model_record))
+        Ok(Self::new(identifier, model_record))
     }
 
     /// Create pure substance parameters from a json file.
@@ -104,7 +98,6 @@ where
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "PureRecord(")?;
         write!(f, "\n\tidentifier={},", self.identifier)?;
-        write!(f, "\n\tmolarweight={},", self.molarweight)?;
         write!(f, "\n\tmodel_record={},", self.model_record)?;
         write!(f, "\n)")
     }

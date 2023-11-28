@@ -15,6 +15,8 @@ use std::fmt::Write;
 /// PC-SAFT pure-component parameters.
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct PcSaftRecord {
+    /// molar weight
+    pub molarweight: f64,
     /// Segment number
     pub m: f64,
     /// Segment diameter in units of Angstrom
@@ -44,11 +46,13 @@ pub struct PcSaftRecord {
 
 impl FromSegments<f64> for PcSaftRecord {
     fn from_segments(segments: &[(Self, f64)]) -> Result<Self, ParameterError> {
+        let mut molarweight = 0.0;
         let mut m = 0.0;
         let mut sigma3 = 0.0;
         let mut epsilon_k = 0.0;
 
         segments.iter().for_each(|(s, n)| {
+            molarweight += s.molarweight * n;
             m += s.m * n;
             sigma3 += s.m * s.sigma.powi(3) * n;
             epsilon_k += s.m * s.epsilon_k * n;
@@ -143,6 +147,7 @@ impl FromSegments<f64> for PcSaftRecord {
         viscosity = viscosity.map(|v| [v[0] - 0.5 * m.ln(), v[1], v[2], v[3]]);
 
         Ok(Self {
+            molarweight,
             m,
             sigma: (sigma3 / m).cbrt(),
             epsilon_k: epsilon_k / m,
@@ -225,6 +230,7 @@ impl std::fmt::Display for PcSaftRecord {
 
 impl PcSaftRecord {
     pub fn new(
+        molarweight: f64,
         m: f64,
         sigma: f64,
         epsilon_k: f64,
@@ -256,6 +262,7 @@ impl PcSaftRecord {
             ))
         };
         PcSaftRecord {
+            molarweight,
             m,
             sigma,
             epsilon_k,
@@ -399,7 +406,7 @@ impl Parameter for PcSaftParameters {
             viscosity.push(r.viscosity);
             diffusion.push(r.diffusion);
             thermal_conductivity.push(r.thermal_conductivity);
-            molarweight[i] = record.molarweight;
+            molarweight[i] = r.molarweight;
         }
 
         let mu2 = &mu * &mu / (&m * &sigma * &sigma * &sigma * &epsilon_k)
@@ -544,7 +551,7 @@ impl PcSaftParameters {
                 o,
                 "\n|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|",
                 component,
-                record.molarweight,
+                record.model_record.molarweight,
                 record.model_record.m,
                 record.model_record.sigma,
                 record.model_record.epsilon_k,

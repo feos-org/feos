@@ -80,7 +80,7 @@ impl<F> Deref for DFT<F> {
 
 impl<F> DFT<F> {
     pub fn ideal_gas<I>(self, ideal_gas: I) -> DFT<EquationOfState<I, F>> {
-        DFT(EquationOfState::new(Arc::new(ideal_gas), Arc::new(self.0)))
+        DFT(EquationOfState::new(ideal_gas, Arc::new(self.0)))
     }
 }
 
