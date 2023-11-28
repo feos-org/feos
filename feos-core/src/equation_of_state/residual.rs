@@ -179,6 +179,7 @@ pub trait EntropyScaling {
     fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
 }
 
+/// Dummy implementation for [EquationOfState](super::EquationOfState)s that only contain an ideal gas contribution.
 pub struct NoResidual(pub usize);
 
 impl Components for NoResidual {

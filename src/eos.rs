@@ -23,7 +23,7 @@ use ndarray::Array1;
 /// are undesirable (e.g. FFI).
 #[derive(Components, Residual)]
 pub enum ResidualModel {
-    NoModel(usize),
+    NoResidual(NoResidual),
     #[cfg(feature = "pcsaft")]
     #[implement(entropy_scaling)]
     PcSaft(PcSaft),
