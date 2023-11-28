@@ -228,7 +228,7 @@ impl PyEquationOfState {
     #[cfg(feature = "uvtheory")]
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, max_eta=0.5, perturbation=Perturbation::WeeksChandlerAndersen, virial_order=VirialOrder::Second),    
+        signature = (parameters, max_eta=0.5, perturbation=Perturbation::WeeksChandlerAndersen, virial_order=VirialOrder::Second),
         text_signature = "(parameters, max_eta=0.5, perturbation, virial_order)"
     )]
     fn uvtheory(
@@ -285,6 +285,18 @@ impl PyEquationOfState {
         Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
+    /// Equation of state that only contains an ideal gas contribution.
+    ///
+    /// Returns
+    /// -------
+    /// EquationOfState
+    #[staticmethod]
+    fn ideal_gas() -> Self {
+        let residual = Arc::new(ResidualModel::NoModel(0));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(0));
+        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
+    }
+
     /// Ideal gas equation of state from a Python class.
     ///
     /// Parameters
@@ -297,11 +309,7 @@ impl PyEquationOfState {
     /// -------
     /// EquationOfState
     fn python_ideal_gas(&self, ideal_gas: Py<PyAny>) -> PyResult<Self> {
-        let ig = Arc::new(IdealGasModel::Python(PyIdealGas::new(ideal_gas)?));
-        Ok(Self(Arc::new(EquationOfState::new(
-            ig,
-            self.0.residual.clone(),
-        ))))
+        Ok(self.add_ideal_gas(IdealGasModel::Python(PyIdealGas::new(ideal_gas)?)))
     }
 
     /// Ideal gas model of Joback and Reid.
@@ -315,10 +323,19 @@ impl PyEquationOfState {
     /// -------
     /// EquationOfState
     fn joback(&self, parameters: PyJobackParameters) -> Self {
-        let ideal_gas = Arc::new(IdealGasModel::Joback(Joback::new(parameters.0)));
+        self.add_ideal_gas(IdealGasModel::Joback(Joback::new(parameters.0)))
+    }
+}
+
+impl PyEquationOfState {
+    fn add_ideal_gas(&self, ideal_gas: IdealGasModel) -> Self {
+        let residual = match self.0.residual.as_ref() {
+            ResidualModel::NoModel(_) => Arc::new(ResidualModel::NoModel(ideal_gas.components())),
+            _ => self.0.residual.clone(),
+        };
         Self(Arc::new(EquationOfState::new(
-            ideal_gas,
-            self.0.residual.clone(),
+            Arc::new(ideal_gas),
+            residual,
         )))
     }
 }

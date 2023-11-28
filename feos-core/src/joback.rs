@@ -241,30 +241,13 @@ const KB: f64 = 1.38064852e-23;
 #[cfg(test)]
 mod tests {
     use crate::si::*;
-    use crate::{Contributions, Residual, State, StateBuilder};
+    use crate::{Contributions, EquationOfState, State, StateBuilder};
     use approx::assert_relative_eq;
     use ndarray::arr1;
     use std::sync::Arc;
     use typenum::P3;
 
     use super::*;
-
-    // implement Residual to test Joback as equation of state
-    impl Residual for Joback {
-        fn compute_max_density(&self, _moles: &Array1<f64>) -> f64 {
-            1.0
-        }
-
-        fn contributions(&self) -> &[Box<dyn crate::HelmholtzEnergy>] {
-            &[]
-        }
-
-        fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-            MolarWeight::from_shape_fn(self.components(), |i| {
-                self.parameters.pure_records[i].molarweight * GRAM / MOL
-            })
-        }
-    }
 
     #[test]
     fn paper_example() -> EosResult<()> {
@@ -351,7 +334,8 @@ mod tests {
         assert_relative_eq!(jr.e, 0.0);
 
         let pr = PureRecord::new(Identifier::default(), 1.0, jr);
-        let eos = Arc::new(Joback::new(Arc::new(JobackParameters::new_pure(pr)?)));
+        let joback = Arc::new(Joback::new(Arc::new(JobackParameters::new_pure(pr)?)));
+        let eos = Arc::new(EquationOfState::ideal_gas(joback));
         let state = State::new_nvt(
             &eos,
             1000.0 * KELVIN,
@@ -383,10 +367,11 @@ mod tests {
         );
         let parameters = Arc::new(JobackParameters::new_binary(vec![record1, record2], None)?);
         let joback = Arc::new(Joback::new(parameters));
+        let eos = Arc::new(EquationOfState::ideal_gas(joback.clone()));
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi::<P3>();
         let moles = &arr1(&[1.0, 3.0]) * MOL;
-        let state = StateBuilder::new(&joback)
+        let state = StateBuilder::new(&eos)
             .temperature(temperature)
             .volume(volume)
             .moles(&moles)
