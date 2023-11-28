@@ -24,38 +24,20 @@ fn impl_residual(
 ) -> proc_macro2::TokenStream {
     let compute_max_density = variants.iter().map(|v| {
         let name = &v.ident;
-        if name == "NoModel" {
-            quote! {
-                Self::#name(_) => 0.0
-            }
-        } else {
-            quote! {
-                Self::#name(residual) => residual.compute_max_density(moles)
-            }
+        quote! {
+            Self::#name(residual) => residual.compute_max_density(moles)
         }
     });
     let contributions = variants.iter().map(|v| {
         let name = &v.ident;
-        if name == "NoModel" {
-            quote! {
-                Self::#name(_) => &[]
-            }
-        } else {
-            quote! {
-                Self::#name(residual) => residual.contributions()
-            }
+        quote! {
+            Self::#name(residual) => residual.contributions()
         }
     });
     let molar_weight = variants.iter().map(|v| {
         let name = &v.ident;
-        if name == "NoModel" {
-            quote! {
-                Self::#name(_) => panic!("OH NO")
-            }
-        } else {
-            quote! {
-                Self::#name(residual) => residual.molar_weight()
-            }
+        quote! {
+            Self::#name(residual) => residual.molar_weight()
         }
     });
 
