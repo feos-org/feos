@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added `EquationOfState::ideal_gas` to initialize an equation of state that only consists of an ideal gas contribution. [#204](https://github.com/feos-org/feos/pull/204)
 
+### Changed
+- Made members of `JobackRecord` public. [#206](https://github.com/feos-org/feos/pull/206)
+
 ## [0.5.1] - 2023-11-23
 ### Fixed
 - Aligned how binary segment records are treated in Rust and Python. [#200](https://github.com/feos-org/feos/pull/200)
