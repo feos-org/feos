@@ -11,7 +11,7 @@ mod residual;
 
 pub use helmholtz_energy::{HelmholtzEnergy, HelmholtzEnergyDual};
 pub use ideal_gas::{DeBroglieWavelength, DeBroglieWavelengthDual, IdealGas};
-pub use residual::{EntropyScaling, Residual};
+pub use residual::{EntropyScaling, NoResidual, Residual};
 
 /// The number of components that the model is initialized for.
 pub trait Components {
@@ -35,6 +35,18 @@ impl<I, R> EquationOfState<I, R> {
     /// Return a new [EquationOfState] with the given ideal gas
     /// and residual models.
     pub fn new(ideal_gas: Arc<I>, residual: Arc<R>) -> Self {
+        Self {
+            ideal_gas,
+            residual,
+        }
+    }
+}
+
+impl<I: IdealGas> EquationOfState<I, NoResidual> {
+    /// Return a new [EquationOfState] that only consists of
+    /// an ideal gas models.
+    pub fn ideal_gas(ideal_gas: Arc<I>) -> Self {
+        let residual = Arc::new(NoResidual(ideal_gas.components()));
         Self {
             ideal_gas,
             residual,

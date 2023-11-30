@@ -178,3 +178,30 @@ pub trait EntropyScaling {
     ) -> EosResult<ThermalConductivity>;
     fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
 }
+
+/// Dummy implementation for [EquationOfState](super::EquationOfState)s that only contain an ideal gas contribution.
+pub struct NoResidual(pub usize);
+
+impl Components for NoResidual {
+    fn components(&self) -> usize {
+        self.0
+    }
+
+    fn subset(&self, component_list: &[usize]) -> Self {
+        Self(component_list.len())
+    }
+}
+
+impl Residual for NoResidual {
+    fn compute_max_density(&self, _: &Array1<f64>) -> f64 {
+        1.0
+    }
+
+    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
+        &[]
+    }
+
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+        panic!("No mass specific properties are available for this model!")
+    }
+}
