@@ -19,11 +19,11 @@ use std::sync::Arc;
 /// parametrization for additional molecules in other publications.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct JobackRecord {
-    a: f64,
-    b: f64,
-    c: f64,
-    d: f64,
-    e: f64,
+    pub a: f64,
+    pub b: f64,
+    pub c: f64,
+    pub d: f64,
+    pub e: f64,
 }
 
 impl JobackRecord {
@@ -71,7 +71,7 @@ pub struct JobackParameters {
     c: Array1<f64>,
     d: Array1<f64>,
     e: Array1<f64>,
-    pure_records: Vec<PureRecord<JobackRecord>>,
+    pub pure_records: Vec<PureRecord<JobackRecord>>,
 }
 
 impl Parameter for JobackParameters {
