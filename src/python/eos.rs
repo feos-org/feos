@@ -293,7 +293,7 @@ impl PyEquationOfState {
     #[staticmethod]
     fn ideal_gas() -> Self {
         let residual = Arc::new(ResidualModel::NoResidual(NoResidual(0)));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(0));
+        let ideal_gas = IdealGasModel::NoModel(0);
         Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
