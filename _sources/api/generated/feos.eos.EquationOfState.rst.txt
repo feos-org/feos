@@ -20,6 +20,7 @@ feos.eos.EquationOfState
    
       ~EquationOfState.__init__
       ~EquationOfState.gc_pcsaft
+      ~EquationOfState.ideal_gas
       ~EquationOfState.joback
       ~EquationOfState.max_density
       ~EquationOfState.pcsaft

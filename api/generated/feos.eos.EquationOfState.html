@@ -274,6 +274,7 @@
 <li class="toctree-l3 current has-children current-page"><a class="current reference internal" href="#">feos.eos.EquationOfState</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><div class="visually-hidden">Toggle navigation of feos.eos.EquationOfState</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.EquationOfState.__init__.html">feos.eos.EquationOfState.__init__</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.EquationOfState.gc_pcsaft.html">feos.eos.EquationOfState.gc_pcsaft</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.EquationOfState.ideal_gas.html">feos.eos.EquationOfState.ideal_gas</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.EquationOfState.joback.html">feos.eos.EquationOfState.joback</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.EquationOfState.max_density.html">feos.eos.EquationOfState.max_density</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.EquationOfState.pcsaft.html">feos.eos.EquationOfState.pcsaft</a></li>
@@ -1061,43 +1062,46 @@
 <tr class="row-even"><td><p><a class="reference internal" href="feos.eos.EquationOfState.gc_pcsaft.html#feos.eos.EquationOfState.gc_pcsaft" title="feos.eos.EquationOfState.gc_pcsaft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gc_pcsaft</span></code></a>(parameters[, max_eta, ...])</p></td>
 <td><p>(heterosegmented) group contribution PC-SAFT equation of state.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.EquationOfState.joback.html#feos.eos.EquationOfState.joback" title="feos.eos.EquationOfState.joback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">joback</span></code></a>(parameters)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.EquationOfState.ideal_gas.html#feos.eos.EquationOfState.ideal_gas" title="feos.eos.EquationOfState.ideal_gas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ideal_gas</span></code></a>()</p></td>
+<td><p>Equation of state that only contains an ideal gas contribution.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.EquationOfState.joback.html#feos.eos.EquationOfState.joback" title="feos.eos.EquationOfState.joback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">joback</span></code></a>(parameters)</p></td>
 <td><p>Ideal gas model of Joback and Reid.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.EquationOfState.max_density.html#feos.eos.EquationOfState.max_density" title="feos.eos.EquationOfState.max_density"><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_density</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.EquationOfState.max_density.html#feos.eos.EquationOfState.max_density" title="feos.eos.EquationOfState.max_density"><code class="xref py py-obj docutils literal notranslate"><span class="pre">max_density</span></code></a>()</p></td>
 <td><p>Return maximum density for given amount of substance of each component.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.EquationOfState.pcsaft.html#feos.eos.EquationOfState.pcsaft" title="feos.eos.EquationOfState.pcsaft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pcsaft</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.EquationOfState.pcsaft.html#feos.eos.EquationOfState.pcsaft" title="feos.eos.EquationOfState.pcsaft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pcsaft</span></code></a></p></td>
 <td><p>PC-SAFT equation of state.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.EquationOfState.peng_robinson.html#feos.eos.EquationOfState.peng_robinson" title="feos.eos.EquationOfState.peng_robinson"><code class="xref py py-obj docutils literal notranslate"><span class="pre">peng_robinson</span></code></a>(parameters)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.EquationOfState.peng_robinson.html#feos.eos.EquationOfState.peng_robinson" title="feos.eos.EquationOfState.peng_robinson"><code class="xref py py-obj docutils literal notranslate"><span class="pre">peng_robinson</span></code></a>(parameters)</p></td>
 <td><p>Peng-Robinson equation of state.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.EquationOfState.pets.html#feos.eos.EquationOfState.pets" title="feos.eos.EquationOfState.pets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pets</span></code></a>(parameters[, max_eta])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.EquationOfState.pets.html#feos.eos.EquationOfState.pets" title="feos.eos.EquationOfState.pets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pets</span></code></a>(parameters[, max_eta])</p></td>
 <td><p>PeTS equation of state.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.EquationOfState.python_ideal_gas.html#feos.eos.EquationOfState.python_ideal_gas" title="feos.eos.EquationOfState.python_ideal_gas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">python_ideal_gas</span></code></a>(ideal_gas)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.EquationOfState.python_ideal_gas.html#feos.eos.EquationOfState.python_ideal_gas" title="feos.eos.EquationOfState.python_ideal_gas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">python_ideal_gas</span></code></a>(ideal_gas)</p></td>
 <td><p>Ideal gas equation of state from a Python class.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.EquationOfState.python_residual.html#feos.eos.EquationOfState.python_residual" title="feos.eos.EquationOfState.python_residual"><code class="xref py py-obj docutils literal notranslate"><span class="pre">python_residual</span></code></a>(residual)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.EquationOfState.python_residual.html#feos.eos.EquationOfState.python_residual" title="feos.eos.EquationOfState.python_residual"><code class="xref py py-obj docutils literal notranslate"><span class="pre">python_residual</span></code></a>(residual)</p></td>
 <td><p>Residual Helmholtz energy model from a Python class.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.EquationOfState.saftvrqmie.html#feos.eos.EquationOfState.saftvrqmie" title="feos.eos.EquationOfState.saftvrqmie"><code class="xref py py-obj docutils literal notranslate"><span class="pre">saftvrqmie</span></code></a>(parameters[, max_eta, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.EquationOfState.saftvrqmie.html#feos.eos.EquationOfState.saftvrqmie" title="feos.eos.EquationOfState.saftvrqmie"><code class="xref py py-obj docutils literal notranslate"><span class="pre">saftvrqmie</span></code></a>(parameters[, max_eta, ...])</p></td>
 <td><p>SAFT-VRQ Mie equation of state.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.EquationOfState.second_virial_coefficient.html#feos.eos.EquationOfState.second_virial_coefficient" title="feos.eos.EquationOfState.second_virial_coefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">second_virial_coefficient</span></code></a>([moles])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.EquationOfState.second_virial_coefficient.html#feos.eos.EquationOfState.second_virial_coefficient" title="feos.eos.EquationOfState.second_virial_coefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">second_virial_coefficient</span></code></a>([moles])</p></td>
 <td><p>Calculate the second Virial coefficient B(T,x).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.EquationOfState.second_virial_coefficient_temperature_derivative.html#feos.eos.EquationOfState.second_virial_coefficient_temperature_derivative" title="feos.eos.EquationOfState.second_virial_coefficient_temperature_derivative"><code class="xref py py-obj docutils literal notranslate"><span class="pre">second_virial_coefficient_temperature_derivative</span></code></a>([moles])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.EquationOfState.second_virial_coefficient_temperature_derivative.html#feos.eos.EquationOfState.second_virial_coefficient_temperature_derivative" title="feos.eos.EquationOfState.second_virial_coefficient_temperature_derivative"><code class="xref py py-obj docutils literal notranslate"><span class="pre">second_virial_coefficient_temperature_derivative</span></code></a>([moles])</p></td>
 <td><p>Calculate the derivative of the second Virial coefficient B(T,x) with respect to temperature.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.EquationOfState.third_virial_coefficient.html#feos.eos.EquationOfState.third_virial_coefficient" title="feos.eos.EquationOfState.third_virial_coefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">third_virial_coefficient</span></code></a>([moles])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.EquationOfState.third_virial_coefficient.html#feos.eos.EquationOfState.third_virial_coefficient" title="feos.eos.EquationOfState.third_virial_coefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">third_virial_coefficient</span></code></a>([moles])</p></td>
 <td><p>Calculate the third Virial coefficient C(T,x).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.EquationOfState.third_virial_coefficient_temperature_derivative.html#feos.eos.EquationOfState.third_virial_coefficient_temperature_derivative" title="feos.eos.EquationOfState.third_virial_coefficient_temperature_derivative"><code class="xref py py-obj docutils literal notranslate"><span class="pre">third_virial_coefficient_temperature_derivative</span></code></a>([moles])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.EquationOfState.third_virial_coefficient_temperature_derivative.html#feos.eos.EquationOfState.third_virial_coefficient_temperature_derivative" title="feos.eos.EquationOfState.third_virial_coefficient_temperature_derivative"><code class="xref py py-obj docutils literal notranslate"><span class="pre">third_virial_coefficient_temperature_derivative</span></code></a>([moles])</p></td>
 <td><p>Calculate the derivative of the third Virial coefficient C(T,x) with respect to temperature.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.EquationOfState.uvtheory.html#feos.eos.EquationOfState.uvtheory" title="feos.eos.EquationOfState.uvtheory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uvtheory</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.EquationOfState.uvtheory.html#feos.eos.EquationOfState.uvtheory" title="feos.eos.EquationOfState.uvtheory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uvtheory</span></code></a></p></td>
 <td><p>UV-Theory equation of state.</p></td>
 </tr>
 </tbody>
