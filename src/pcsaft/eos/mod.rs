@@ -222,7 +222,7 @@ impl EntropyScaling for PcSaft {
             .map(|i| {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
                 3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi::<P2>() / omega11(tr) / (density * NAV)
-                    * (temperature * RGAS / PI / (p.molarweight[i] * GRAM / MOL)).sqrt()
+                    * (temperature * RGAS / PI / (p.molarweight[i] * GRAM / MOL) / p.m[i]).sqrt()
             })
             .collect();
         Ok(res[0])
