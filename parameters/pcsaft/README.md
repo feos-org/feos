@@ -28,7 +28,7 @@ For some applications (e.g., aqueous systems) more specialized parametrizations 
 [`loetgeringlin2018.json`](loetgeringlin2018.json) | | 146 components including viscosity parameters | [&#128279;](https://doi.org/10.1021/acs.iecr.7b04871)
 [`rehner2020.json`](rehner2020.json) | | water and alcohols with surface tension data included in the regression | [&#128279;](https://doi.org/10.1021/acs.jced.0c00684)
 [`eller2022.json`](eller2022.json) | | hydrogen used in subsurface storage | [&#128279;](https://doi.org/10.1029/2021WR030885)
-[`esper2023.json`](esper2023.json) | [`rehner2023.json`](rehner2023.json) | 1842 non-associating, associating and polar substances | [&#128279;](https://doi.org/10.1021/acs.iecr.3c02255)[&#128279;](https://doi.org/10.1007/s10765-023-03290-3)
+[`esper2023.json`](esper2023.json) | [`rehner2023_binary.json`](rehner2023_binary.json) | 1842 non-associating, associating and polar substances | [&#128279;](https://doi.org/10.1021/acs.iecr.3c02255)[&#128279;](https://doi.org/10.1007/s10765-023-03290-3)
 
 ## Group-Contribution (GC) Methods
 Parameters can also be constructed from group-contribution methods. In Python only and if you have [`rdkit`](https://pypi.org/project/rdkit/) installed in your environment, you can generate parameters directly from a SMILES code:
