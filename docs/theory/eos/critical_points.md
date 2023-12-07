@@ -1,41 +1,30 @@
 # Stability and critical points
 
-The stability of an isothermal system is determined by the inequality ([Heidemann and Khalil 1980](https://doi.org/10.1002/aic.690260510))
+The implementation of critical points in $\text{FeO}_\text{s}$ follows the algorithm by [Michelsen and Mollerup](https://tie-tech.com/new-book-release/). A necessary condition for stability is the positive-definiteness of the quadratic form ([Heidemann and Khalil 1980](https://doi.org/10.1002/aic.690260510))
 
-$$A-A_0-\sum_i\mu_{i0}\Delta N_i>0$$
+$$\sum_{ij}\left(\frac{\partial^2 A}{\partial N_i\partial N_j}\right)_{T,V}\Delta N_i\Delta N_j$$
 
-where $A_0$ and $\mu_{i0}$ are the Helmholtz energy and chemical potentials of the state which stability is being assessed and $A$ is the Helmholtz energy of any state that is obtained from state 0 by adding the amounts $\Delta N_i$. The Helmholtz energy can be expanded around the test point, giving
+The **spinodal** or limit of stability consists of the points for which the quadratic form is positive semi-definite. Following Michelsen and Mollerup, the matrix $M$ can be defined as
 
-$$\sum_{ij}\left(\frac{\partial^2 A}{\partial N_i\partial N_j}\right)\Delta N_i\Delta N_j+\sum_{ijk}\left(\frac{\partial^3 A}{\partial N_i\partial N_j\partial N_k}\right)\Delta N_i\Delta N_j\Delta N_k+\mathcal{O}\left(\Delta N^4\right)>0$$(eqn:stability)
+$$M_{ij}=\sqrt{z_iz_j}\left(\frac{\partial^2\beta A}{\partial N_i\partial N_j}\right)$$
 
-The inequality must be fulfilled for any $\Delta N_i$. Therefore, a necessary criterion for stability is that the quadratic form (the first term) in eq. {eq}`eqn:stability` is [positive definite](https://en.wikipedia.org/wiki/Definite_quadratic_form). The **spinodal** or limit of stability consists of the points for which the quadratic form is positive semi-definite. The stability is then determined by the higher-order terms in eq. {eq}`eqn:stability`. Mathematically, this implies that there exists a $\Delta N_i$ that fulfills
-
-$$\sum_i\left(\frac{\partial^2 A}{\partial N_i\partial N_j}\right)\Delta N_i=0$$
-
-Following [Michelsen and Mollerup](), the matrix $M$ can be defined with
-
-$$M_{ij}=\sqrt{x_ix_j}\left(\frac{\partial^2\beta A}{\partial N_i\partial N_j}\right)$$
-
-Then, the criterion for a point on the spinodal can be reformulated as either the smallest eigenvalue of $M$ or its determinant being 0.
-
-A **critical point** is defined as a stable point on the limit of stability.[2] For that to be the case, the quadratic and cubic terms in eq. {eq}`eqn:stability` need to vanish[1] which leads to the second criticality condition
-
-$$\sum_{ijk}\left(\frac{\partial^3 A}{\partial N_i\partial N_j\partial N_k}\right)\Delta N_i\Delta N_j\Delta N_k=0$$
-
-The criticality conditions can be reformulated by defining the matrix $M$ with[3]
-
-$$M_{ij}=\sqrt{x_ix_j}\left(\frac{\partial^2\beta A}{\partial N_i\partial N_j}\right)$$
-
-and $u$ as the eigenvector corresponding to the smallest eigenvalue $\lambda_1$ of $M$. $M$ and in conclusion the quadratic form in eq. {eq}`eqn:stability` is positive semi-definite if and only if its smallest eigenvalue is 0. Therefore the first criticality condition simplifies to
-
-$$\lambda_1=0$$
-
-For the second criticality condition $\Delta N_i$ a step $s$ is defined that acts on the mole numbers $N_i$ as
+with the molar compositon $z_i$. Further, the variable $s$ is introduced that acts on the mole numbers $N_i$ via
 
 $$N_i=z_i+su_i\sqrt{z_i}$$
 
-Then the derivative $\left.\frac{\partial^3 A}{\partial s^3}\right|_{s=0}$ can be rewritten as
+with $u_i$ the elements of the eigenvector of $M$ corresponding to the smallest eigenvector $\lambda_1$. Then, the limit of stability can be expressed as
 
-$$\left.\frac{\partial^3 A}{\partial s^3}\right|_{s=0}=\sum_{ijk}\left(\frac{\partial^3 A}{\partial N_i\partial N_j\partial N_k}\right)u_iu_ju_k\sqrt{z_iz_jz_k}$$
+$$c_1=\left.\frac{\partial^2\beta A}{\partial s^2}\right|_{s=0}=\sum_{ij}u_iu_jM_{ij}=\lambda_1=0$$
 
-$$C=\sum_{ij}\left(\sum_k\left(\frac{\partial^3 A}{\partial N_i\partial N_j\partial N_k}\right)\Delta N_k\right)\Delta N_i\Delta N_j$$
+A **critical point** is defined as a stable point on the limit of stability. This leads to the second criticality condition
+
+$$c_2=\left.\frac{\partial^3\beta A}{\partial s^3}\right|_{s=0}=0$$
+
+The derivatives of the Helmholtz energy can be calculated efficiently in a single evaluation using [generalized hyper-dual numbers](https://doi.org/10.3389/fceng.2021.758090). The following methods of `State` are available to determine spinodal or critical points for different specifications:
+
+||specified|unkonwns|equations|
+|-|-|-|-|
+|`spinodal`|$T,N_i$|$\rho$|$c_1(T,\rho,N_i)=0$|
+|`critical_point`|$N_i$|$T,\rho$|$c_1(T,\rho,N_i)=0$<br/>$c_2(T,\rho,N_i)=0$|
+|`critical_point_binary_t`|$T$|$\rho_1,\rho_2$|$c_1(T,\rho_1,\rho_2)=0$<br/>$c_2(T,\rho_1,\rho_2)=0$|
+|`critical_point_binary_p`|$p$|$T,\rho_1,\rho_2$|$c_1(T,\rho_1,\rho_2)=0$<br/>$c_2(T,\rho_1,\rho_2)=0$<br/>$p(T,\rho_1,\rho_2)=p$|
