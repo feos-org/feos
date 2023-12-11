@@ -10,5 +10,5 @@ pub fn ideal_gas(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyJobackRecord>()?;
     m.add_class::<PyPureRecord>()?;
     m.add_class::<PySegmentRecord>()?;
-    m.add_class::<PyJobackParameters>()
+    m.add_class::<PyJoback>()
 }

@@ -27,7 +27,6 @@ pub mod cubic;
 mod density_iteration;
 mod equation_of_state;
 mod errors;
-pub mod joback;
 pub mod parameter;
 mod phase_equilibria;
 pub mod si;
@@ -121,8 +120,7 @@ impl SolverOptions {
 #[cfg(test)]
 mod tests {
     use crate::cubic::*;
-    use crate::equation_of_state::EquationOfState;
-    use crate::joback::{Joback, JobackParameters, JobackRecord};
+    use crate::equation_of_state::{Components, EquationOfState, IdealGas};
     use crate::parameter::*;
     use crate::si::{BAR, KELVIN, MOL, RGAS};
     use crate::Contributions;
@@ -130,6 +128,25 @@ mod tests {
     use crate::StateBuilder;
     use approx::*;
     use std::sync::Arc;
+
+    // Only to be able to instantiate an `EquationOfState`
+    struct NoIdealGas;
+
+    impl Components for NoIdealGas {
+        fn components(&self) -> usize {
+            1
+        }
+
+        fn subset(&self, _: &[usize]) -> Self {
+            Self
+        }
+    }
+
+    impl IdealGas for NoIdealGas {
+        fn ideal_gas_model(&self) -> &dyn crate::DeBroglieWavelength {
+            unreachable!()
+        }
+    }
 
     fn pure_record_vec() -> Vec<PureRecord<PengRobinsonRecord>> {
         let records = r#"[
@@ -175,13 +192,7 @@ mod tests {
         let propane = mixture[0].clone();
         let parameters = PengRobinsonParameters::new_pure(propane)?;
         let residual = Arc::new(PengRobinson::new(Arc::new(parameters)));
-        let joback_parameters = Arc::new(JobackParameters::new_pure(PureRecord::new(
-            Identifier::default(),
-            1.0,
-            JobackRecord::new(0.0, 0.0, 0.0, 0.0, 0.0),
-        ))?);
-        let ideal_gas = Arc::new(Joback::new(joback_parameters));
-        let eos = Arc::new(EquationOfState::new(ideal_gas, residual.clone()));
+        let eos = Arc::new(EquationOfState::new(Arc::new(NoIdealGas), residual.clone()));
 
         let sr = StateBuilder::new(&residual)
             .temperature(300.0 * KELVIN)

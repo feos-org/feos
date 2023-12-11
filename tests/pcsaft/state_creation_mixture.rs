@@ -1,6 +1,6 @@
 use approx::assert_relative_eq;
+use feos::ideal_gas::Joback;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
-use feos_core::joback::{Joback, JobackParameters};
 use feos_core::parameter::{IdentifierOption, Parameter, ParameterError};
 use feos_core::si::*;
 use feos_core::{Contributions, EquationOfState, StateBuilder};
@@ -10,15 +10,14 @@ use std::error::Error;
 use std::sync::Arc;
 use typenum::P3;
 
-fn propane_butane_parameters(
-) -> Result<(Arc<PcSaftParameters>, Arc<JobackParameters>), ParameterError> {
+fn propane_butane_parameters() -> Result<(Arc<PcSaftParameters>, Arc<Joback>), ParameterError> {
     let saft = Arc::new(PcSaftParameters::from_json(
         vec!["propane", "butane"],
         "tests/pcsaft/test_parameters.json",
         None,
         IdentifierOption::Name,
     )?);
-    let joback = Arc::new(JobackParameters::from_json(
+    let joback = Arc::new(Joback::from_json(
         vec!["propane", "butane"],
         "tests/pcsaft/test_parameters_joback.json",
         None,
@@ -29,10 +28,9 @@ fn propane_butane_parameters(
 
 #[test]
 fn pressure_entropy_molefracs() -> Result<(), Box<dyn Error>> {
-    let (saft_params, joback_params) = propane_butane_parameters()?;
+    let (saft_params, joback) = propane_butane_parameters()?;
     let saft = Arc::new(PcSaft::new(saft_params));
-    let joback = Joback::new(joback_params);
-    let eos = Arc::new(EquationOfState::new(Arc::new(joback), saft));
+    let eos = Arc::new(EquationOfState::new(joback, saft));
     let pressure = BAR;
     let temperature = 300.0 * KELVIN;
     let x = arr1(&[0.3, 0.7]);

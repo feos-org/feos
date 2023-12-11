@@ -61,5 +61,7 @@ pub mod saftvrqmie;
 #[cfg(feature = "uvtheory")]
 pub mod uvtheory;
 
+pub mod ideal_gas;
+
 #[cfg(feature = "python")]
 mod python;

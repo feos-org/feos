@@ -27,9 +27,8 @@ use crate::uvtheory::python::PyUVParameters;
 use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, VirialOrder};
 
 use feos_core::cubic::PengRobinson;
-use feos_core::joback::Joback;
 use feos_core::python::cubic::PyPengRobinsonParameters;
-use feos_core::python::joback::PyJobackParameters;
+use feos_core::python::joback::PyJoback;
 use feos_core::python::user_defined::{PyIdealGas, PyResidual};
 use feos_core::si::*;
 use feos_core::*;
@@ -322,8 +321,8 @@ impl PyEquationOfState {
     /// Returns
     /// -------
     /// EquationOfState
-    fn joback(&self, parameters: PyJobackParameters) -> Self {
-        self.add_ideal_gas(IdealGasModel::Joback(Joback::new(parameters.0)))
+    fn joback(&self, parameters: PyJoback) -> Self {
+        self.add_ideal_gas(IdealGasModel::Joback(parameters.0))
     }
 }
 

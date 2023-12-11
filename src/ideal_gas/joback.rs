@@ -1,16 +1,14 @@
 //! Implementation of the ideal gas heat capacity (de Broglie wavelength)
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 
-use crate::equation_of_state::{Components, DeBroglieWavelength, DeBroglieWavelengthDual};
-use crate::parameter::*;
-use crate::si::{MolarEntropy, Temperature};
-use crate::{EosResult, IdealGas};
 use conv::ValueInto;
-use ndarray::{Array, Array1, Array2};
+use feos_core::parameter::*;
+use feos_core::si::{MolarEntropy, Temperature};
+use feos_core::{Components, DeBroglieWavelength, DeBroglieWavelengthDual, EosResult, IdealGas};
+use ndarray::{Array1, Array2};
 use num_dual::*;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::sync::Arc;
 
 /// Coefficients used in the Joback model.
 ///
@@ -64,17 +62,18 @@ impl<T: Copy + ValueInto<f64>> FromSegments<T> for JobackRecord {
     }
 }
 
-/// Parameters for one or more components for the Joback and Reid model.
-pub struct JobackParameters {
-    a: Array1<f64>,
-    b: Array1<f64>,
-    c: Array1<f64>,
-    d: Array1<f64>,
-    e: Array1<f64>,
-    pub pure_records: Vec<PureRecord<JobackRecord>>,
-}
+/// The ideal gas contribution according to
+/// [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
+///
+/// The thermal de Broglie wavelength is calculated by integrating
+/// the heat capacity with the following reference values:
+///
+/// - T = 289.15 K
+/// - p = 1e5 Pa
+/// - V = 1e-30 A³
+pub struct Joback(Vec<PureRecord<JobackRecord>>);
 
-impl Parameter for JobackParameters {
+impl Parameter for Joback {
     type Pure = JobackRecord;
     type Binary = JobackBinaryRecord;
 
@@ -82,35 +81,11 @@ impl Parameter for JobackParameters {
         pure_records: Vec<PureRecord<Self::Pure>>,
         _binary_records: Option<Array2<Self::Binary>>,
     ) -> Result<Self, ParameterError> {
-        let n = pure_records.len();
-
-        let mut a = Array::zeros(n);
-        let mut b = Array::zeros(n);
-        let mut c = Array::zeros(n);
-        let mut d = Array::zeros(n);
-        let mut e = Array::zeros(n);
-
-        for (i, record) in pure_records.iter().enumerate() {
-            let r = &record.model_record;
-            a[i] = r.a;
-            b[i] = r.b;
-            c[i] = r.c;
-            d[i] = r.d;
-            e[i] = r.e;
-        }
-
-        Ok(Self {
-            a,
-            b,
-            c,
-            d,
-            e,
-            pure_records,
-        })
+        Ok(Self(pure_records))
     }
 
     fn records(&self) -> (&[PureRecord<Self::Pure>], Option<&Array2<Self::Binary>>) {
-        (&self.pure_records, None)
+        (&self.0, None)
     }
 }
 
@@ -137,31 +112,13 @@ impl<T: Copy + ValueInto<f64>> FromSegmentsBinary<T> for JobackBinaryRecord {
     }
 }
 
-impl std::fmt::Display for JobackBinaryRecord {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for JobackBinaryRecord {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "")
     }
 }
 
-/// The ideal gas contribution according to
-/// [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
-///
-/// The (cubic) de Broglie wavelength is calculated by integrating
-/// the heat capacity with the following reference values:
-///
-/// - T = 289.15 K
-/// - p = 1e5 Pa
-/// - V = 1e-30 A³
-pub struct Joback {
-    pub parameters: Arc<JobackParameters>,
-}
-
 impl Joback {
-    /// Creates a new Joback contribution.
-    pub fn new(parameters: Arc<JobackParameters>) -> Self {
-        Self { parameters }
-    }
-
     /// Directly calculates the molar ideal gas heat capacity from the Joback model.
     pub fn molar_isobaric_heat_capacity(
         &self,
@@ -169,27 +126,29 @@ impl Joback {
         molefracs: &Array1<f64>,
     ) -> EosResult<MolarEntropy> {
         let t = temperature.to_reduced();
-        let p = &self.parameters;
-        let c_p = (molefracs
-            * &(&p.a + &p.b * t + &p.c * t.powi(2) + &p.d * t.powi(3) + &p.e * t.powi(4)))
+        let c_p: f64 = molefracs
+            .iter()
+            .zip(&self.0)
+            .map(|(x, p)| {
+                let m = &p.model_record;
+                x * (m.a + m.b * t + m.c * t.powi(2) + m.d * t.powi(3) + m.e * t.powi(4))
+            })
             .sum();
-        Ok(c_p / RGAS * crate::si::RGAS)
+        Ok(c_p / RGAS * feos_core::si::RGAS)
     }
 }
 
 impl Components for Joback {
     fn components(&self) -> usize {
-        self.parameters.pure_records.len()
+        self.0.len()
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
         let mut records = Vec::with_capacity(component_list.len());
         component_list
             .iter()
-            .for_each(|&i| records.push(self.parameters.pure_records[i].clone()));
-        Self::new(Arc::new(
-            JobackParameters::from_records(records, None).unwrap(),
-        ))
+            .for_each(|&i| records.push(self.0[i].clone()));
+        Self::from_records(records, None).unwrap()
     }
 }
 
@@ -205,8 +164,8 @@ impl<D: DualNum<f64> + Copy> DeBroglieWavelengthDual<D> for Joback {
         let t2 = t * t;
         let t4 = t2 * t2;
         let f = (temperature * KB / (P0 * A3)).ln();
-        Array1::from_shape_fn(self.parameters.pure_records.len(), |i| {
-            let j = &self.parameters.pure_records[i].model_record;
+        Array1::from_shape_fn(self.0.len(), |i| {
+            let j = &self.0[i].model_record;
             let h = (t2 - T0_2) * 0.5 * j.b
                 + (t * t2 - T0_3) * j.c / 3.0
                 + (t4 - T0_4) * j.d / 4.0
@@ -230,7 +189,7 @@ impl fmt::Display for Joback {
 
 const RGAS: f64 = 6.022140857 * 1.38064852;
 const T0: f64 = 298.15;
-const T0_2: f64 = 298.15 * 298.15;
+const T0_2: f64 = T0 * T0;
 const T0_3: f64 = T0 * T0_2;
 const T0_4: f64 = T0_2 * T0_2;
 const T0_5: f64 = T0 * T0_4;
@@ -240,9 +199,9 @@ const KB: f64 = 1.38064852e-23;
 
 #[cfg(test)]
 mod tests {
-    use crate::si::*;
-    use crate::{Contributions, EquationOfState, State, StateBuilder};
     use approx::assert_relative_eq;
+    use feos_core::si::*;
+    use feos_core::{Contributions, EquationOfState, State, StateBuilder};
     use ndarray::arr1;
     use std::sync::Arc;
     use typenum::P3;
@@ -334,7 +293,7 @@ mod tests {
         assert_relative_eq!(jr.e, 0.0);
 
         let pr = PureRecord::new(Identifier::default(), 1.0, jr);
-        let joback = Arc::new(Joback::new(Arc::new(JobackParameters::new_pure(pr)?)));
+        let joback = Arc::new(Joback::new_pure(pr)?);
         let eos = Arc::new(EquationOfState::ideal_gas(joback));
         let state = State::new_nvt(
             &eos,
@@ -365,8 +324,7 @@ mod tests {
             1.0,
             JobackRecord::new(-5.0, 0.4, 0.03, 0.002, 0.001),
         );
-        let parameters = Arc::new(JobackParameters::new_binary(vec![record1, record2], None)?);
-        let joback = Arc::new(Joback::new(parameters));
+        let joback = Arc::new(Joback::new_binary(vec![record1, record2], None)?);
         let eos = Arc::new(EquationOfState::ideal_gas(joback.clone()));
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi::<P3>();

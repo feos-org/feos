@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::joback::{JobackBinaryRecord, JobackParameters, JobackRecord};
+use crate::ideal_gas::{Joback, JobackBinaryRecord, JobackRecord};
 use crate::parameter::*;
 use crate::python::parameter::*;
 use crate::{
@@ -62,20 +62,15 @@ pub struct PyJobackBinaryRecord(pub JobackBinaryRecord);
 
 impl_binary_record!(JobackBinaryRecord, PyJobackBinaryRecord);
 
-#[pyclass(name = "JobackParameters")]
+#[pyclass(name = "Joback")]
 #[derive(Clone)]
-pub struct PyJobackParameters(pub Arc<JobackParameters>);
+pub struct PyJoback(pub Arc<Joback>);
 
-impl_parameter!(
-    JobackParameters,
-    PyJobackParameters,
-    PyJobackRecord,
-    PyJobackBinaryRecord
-);
-impl_parameter_from_segments!(JobackParameters, PyJobackParameters);
+impl_parameter!(Joback, PyJoback, PyJobackRecord, PyJobackBinaryRecord);
+impl_parameter_from_segments!(Joback, PyJoback);
 
 #[pymethods]
-impl PyJobackParameters {
+impl PyJoback {
     // fn _repr_markdown_(&self) -> String {
     //     self.0.to_markdown()
     // }
