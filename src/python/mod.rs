@@ -14,11 +14,13 @@ use pyo3::wrap_pymodule;
 use quantity::python::quantity as quantity_module;
 
 mod cubic;
+mod dippr;
 mod eos;
-mod ideal_gas;
+mod joback;
 use cubic::cubic as cubic_module;
+use dippr::dippr as dippr_module;
 use eos::eos as eos_module;
-use ideal_gas::ideal_gas as ideal_gas_module;
+use joback::joback as joback_module;
 
 #[cfg(feature = "dft")]
 mod dft;
@@ -33,7 +35,8 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(eos_module))?;
     #[cfg(feature = "dft")]
     m.add_wrapped(wrap_pymodule!(dft_module))?;
-    m.add_wrapped(wrap_pymodule!(ideal_gas_module))?;
+    m.add_wrapped(wrap_pymodule!(joback_module))?;
+    m.add_wrapped(wrap_pymodule!(dippr_module))?;
     m.add_wrapped(wrap_pymodule!(cubic_module))?;
     #[cfg(feature = "pcsaft")]
     m.add_wrapped(wrap_pymodule!(pcsaft_module))?;
@@ -54,7 +57,8 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     set_path(py, m, "feos.dft", "dft")?;
     #[cfg(all(feature = "dft", feature = "estimator"))]
     set_path(py, m, "feos.dft.estimator", "dft.estimator_dft")?;
-    set_path(py, m, "feos.ideal_gas", "ideal_gas")?;
+    set_path(py, m, "feos.joback", "joback")?;
+    set_path(py, m, "feos.dippr", "dippr")?;
     set_path(py, m, "feos.cubic", "cubic")?;
     #[cfg(feature = "pcsaft")]
     set_path(py, m, "feos.pcsaft", "pcsaft")?;

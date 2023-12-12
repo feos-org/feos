@@ -1,6 +1,5 @@
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::GcPcSaft;
-use crate::ideal_gas::Joback;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::PcSaft;
 #[cfg(feature = "pets")]
@@ -11,12 +10,11 @@ use crate::saftvrqmie::SaftVRQMie;
 use crate::uvtheory::UVTheory;
 use feos_core::cubic::PengRobinson;
 #[cfg(feature = "python")]
-use feos_core::python::user_defined::{PyIdealGas, PyResidual};
+use feos_core::python::user_defined::PyResidual;
 use feos_core::si::*;
 use feos_core::*;
-use feos_derive::{Components, IdealGas, Residual};
+use feos_derive::{Components, Residual};
 use ndarray::Array1;
-use std::sync::Arc;
 
 /// Collection of different [Residual] implementations.
 ///
@@ -40,16 +38,4 @@ pub enum ResidualModel {
     Pets(Pets),
     #[cfg(feature = "uvtheory")]
     UVTheory(UVTheory),
-}
-
-/// Collection of different [IdealGas] implementations.
-///
-/// Particularly relevant for situations in which generic types
-/// are undesirable (e.g. FFI).
-#[derive(Components, IdealGas)]
-pub enum IdealGasModel {
-    NoModel(usize),
-    Joback(Arc<Joback>),
-    #[cfg(feature = "python")]
-    Python(PyIdealGas),
 }

@@ -75,7 +75,7 @@ pub struct Joback(Vec<PureRecord<JobackRecord>>);
 
 impl Parameter for Joback {
     type Pure = JobackRecord;
-    type Binary = JobackBinaryRecord;
+    type Binary = NoBinaryModelRecord;
 
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
@@ -86,35 +86,6 @@ impl Parameter for Joback {
 
     fn records(&self) -> (&[PureRecord<Self::Pure>], Option<&Array2<Self::Binary>>) {
         (&self.0, None)
-    }
-}
-
-/// Dummy implementation to satisfy traits for parameter handling.
-/// Not intended to be used.
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct JobackBinaryRecord;
-
-impl From<f64> for JobackBinaryRecord {
-    fn from(_: f64) -> Self {
-        Self
-    }
-}
-
-impl From<JobackBinaryRecord> for f64 {
-    fn from(_: JobackBinaryRecord) -> Self {
-        0.0 // nasty hack - panic crashes Ipython kernel, actual value is never used
-    }
-}
-
-impl<T: Copy + ValueInto<f64>> FromSegmentsBinary<T> for JobackBinaryRecord {
-    fn from_segments_binary(_segments: &[(f64, T, T)]) -> Result<Self, ParameterError> {
-        Ok(Self)
-    }
-}
-
-impl fmt::Display for JobackBinaryRecord {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "")
     }
 }
 

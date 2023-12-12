@@ -1,10 +1,11 @@
-use crate::eos::{IdealGasModel, ResidualModel};
+use crate::eos::ResidualModel;
 #[cfg(feature = "estimator")]
 use crate::estimator::*;
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::python::PyGcPcSaftEosParameters;
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::{GcPcSaft, GcPcSaftOptions};
+use crate::ideal_gas::IdealGasModel;
 #[cfg(feature = "estimator")]
 use crate::impl_estimator;
 #[cfg(all(feature = "estimator", feature = "pcsaft"))]
@@ -26,9 +27,10 @@ use crate::uvtheory::python::PyUVParameters;
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, VirialOrder};
 
+use super::dippr::PyDippr;
+use super::joback::PyJoback;
 use feos_core::cubic::PengRobinson;
 use feos_core::python::cubic::PyPengRobinsonParameters;
-use feos_core::python::joback::PyJoback;
 use feos_core::python::user_defined::{PyIdealGas, PyResidual};
 use feos_core::si::*;
 use feos_core::*;
@@ -323,6 +325,20 @@ impl PyEquationOfState {
     /// EquationOfState
     fn joback(&self, parameters: PyJoback) -> Self {
         self.add_ideal_gas(IdealGasModel::Joback(parameters.0))
+    }
+
+    /// Ideal gas model of Joback and Reid.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters : List[JobackRecord]
+    ///     List containing
+    ///
+    /// Returns
+    /// -------
+    /// EquationOfState
+    fn dippr(&self, parameters: PyDippr) -> Self {
+        self.add_ideal_gas(IdealGasModel::Dippr(parameters.0))
     }
 }
 

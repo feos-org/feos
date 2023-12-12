@@ -1,6 +1,8 @@
 use crate::impl_json_handling;
-use crate::parameter::{BinaryRecord, ChemicalRecord, Identifier, ParameterError};
-use pyo3::exceptions::PyRuntimeError;
+use crate::parameter::{
+    BinaryRecord, ChemicalRecord, Identifier, NoBinaryModelRecord, ParameterError,
+};
+use pyo3::exceptions::{PyRuntimeError, PyTypeError};
 use pyo3::prelude::*;
 
 impl From<ParameterError> for PyErr {
@@ -293,6 +295,12 @@ macro_rules! impl_binary_record {
     };
 }
 
+#[pyclass(name = "NoBinaryModelRecord")]
+#[derive(Clone)]
+pub struct PyNoBinaryModelRecord(pub NoBinaryModelRecord);
+
+impl_binary_record!(NoBinaryModelRecord, PyNoBinaryModelRecord);
+
 /// Create a record for a binary segment interaction parameter.
 ///
 /// Parameters
@@ -546,7 +554,10 @@ macro_rules! impl_segment_record {
 
 #[macro_export]
 macro_rules! impl_parameter {
-    ($parameter:ty, $py_parameter:ty, $py_model_record:ty, $py_binary_model_record:ty) => {
+        ($parameter:ty, $py_parameter:ty, $py_model_record:ty) => {
+            impl_parameter!($parameter, $py_parameter, $py_model_record, PyNoBinaryModelRecord);
+        };
+        ($parameter:ty, $py_parameter:ty, $py_model_record:ty, $py_binary_model_record:ty) => {
         #[pymethods]
         impl $py_parameter {
             /// Creates parameters from records.

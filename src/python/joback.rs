@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use crate::ideal_gas::{Joback, JobackBinaryRecord, JobackRecord};
-use crate::parameter::*;
-use crate::python::parameter::*;
-use crate::{
-    impl_binary_record, impl_json_handling, impl_parameter, impl_parameter_from_segments,
-    impl_pure_record, impl_segment_record,
+use crate::ideal_gas::{Joback, JobackRecord};
+use feos_core::parameter::*;
+use feos_core::python::parameter::*;
+use feos_core::{
+    impl_json_handling, impl_parameter, impl_parameter_from_segments, impl_pure_record,
+    impl_segment_record,
 };
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyTypeError;
@@ -56,17 +56,11 @@ impl_json_handling!(PyJobackRecord);
 impl_pure_record!(JobackRecord, PyJobackRecord);
 impl_segment_record!(JobackRecord, PyJobackRecord);
 
-#[pyclass(name = "JobackBinaryRecord")]
-#[derive(Clone)]
-pub struct PyJobackBinaryRecord(pub JobackBinaryRecord);
-
-impl_binary_record!(JobackBinaryRecord, PyJobackBinaryRecord);
-
 #[pyclass(name = "Joback")]
 #[derive(Clone)]
 pub struct PyJoback(pub Arc<Joback>);
 
-impl_parameter!(Joback, PyJoback, PyJobackRecord, PyJobackBinaryRecord);
+impl_parameter!(Joback, PyJoback, PyJobackRecord);
 impl_parameter_from_segments!(Joback, PyJoback);
 
 #[pymethods]
@@ -74,4 +68,14 @@ impl PyJoback {
     // fn _repr_markdown_(&self) -> String {
     //     self.0.to_markdown()
     // }
+}
+
+#[pymodule]
+pub fn joback(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_class::<PyIdentifier>()?;
+    m.add_class::<IdentifierOption>()?;
+    m.add_class::<PyJobackRecord>()?;
+    m.add_class::<PyPureRecord>()?;
+    m.add_class::<PySegmentRecord>()?;
+    m.add_class::<PyJoback>()
 }

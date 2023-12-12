@@ -4,7 +4,6 @@ use pyo3::PyErr;
 
 pub mod cubic;
 mod equation_of_state;
-pub mod joback;
 pub mod parameter;
 mod phase_equilibria;
 mod state;
