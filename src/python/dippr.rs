@@ -9,47 +9,54 @@ use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
 
-/// Create a set of Dippr ideal gas heat capacity parameters
-/// for a segment or a pure component.
-///
-/// The fourth order coefficient `e` is not present in the
-/// orginial publication by Dippr and Reid but is required
-/// for correlations for some pure components that are modeled
-/// using the same polynomial approach.
-///
-/// Parameters
-/// ----------
-/// a : float
-///     zeroth order coefficient
-/// b : float
-///     first order coefficient
-/// c : float
-///     second order coefficient
-/// d : float
-///     third order coefficient
-/// e : float
-///     fourth order coefficient
-///
-/// Returns
-/// -------
-/// DipprRecord
+/// DIPPR ideal gas heat capacity parameters for a pure component.
 #[pyclass(name = "DipprRecord")]
 #[derive(Clone)]
 pub struct PyDipprRecord(pub DipprRecord);
 
 #[pymethods]
 impl PyDipprRecord {
+    /// Create a set of parameters for DIPPR eq. # 100.
+    ///
+    /// Parameters
+    /// ----------
+    /// a-g : float, optional
+    ///     Model parameters. Default to 0.0.
+    ///
+    /// Returns
+    /// -------
+    /// DipprRecord
     #[staticmethod]
     #[pyo3(signature = (a=0.0, b=0.0, c=0.0, d=0.0, e=0.0, f=0.0, g=0.0))]
     fn eq100(a: f64, b: f64, c: f64, d: f64, e: f64, f: f64, g: f64) -> Self {
-        Self(DipprRecord::eq100(a, b, c, d, e, f, g))
+        Self(DipprRecord::eq100(&[a, b, c, d, e, f, g]).unwrap())
     }
 
+    /// Create a set of parameters for DIPPR eq. # 107.
+    ///
+    /// Parameters
+    /// ----------
+    /// a-e : float
+    ///     Model parameters.
+    ///
+    /// Returns
+    /// -------
+    /// DipprRecord
     #[staticmethod]
     fn eq107(a: f64, b: f64, c: f64, d: f64, e: f64) -> Self {
         Self(DipprRecord::eq107(a, b, c, d, e))
     }
 
+    /// Create a set of parameters for DIPPR eq. # 127.
+    ///
+    /// Parameters
+    /// ----------
+    /// a-g : float
+    ///     Model parameters.
+    ///
+    /// Returns
+    /// -------
+    /// DipprRecord
     #[staticmethod]
     fn eq127(a: f64, b: f64, c: f64, d: f64, e: f64, f: f64, g: f64) -> Self {
         Self(DipprRecord::eq127(a, b, c, d, e, f, g))

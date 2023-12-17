@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Added `EquationOfState::ideal_gas` to initialize an equation of state that only consists of an ideal gas contribution. [#204](https://github.com/feos-org/feos/pull/204)
+- Added `NoBinaryModelRecord` for models that do not use binary interaction parameters. [#211](https://github.com/feos-org/feos/pull/211)
 
 ### Changed
 - Made members of `JobackRecord` public. [#206](https://github.com/feos-org/feos/pull/206)
+
+### Removed
+- Removed `JobackParameters` and `JobackBinaryRecord`. [#204](https://github.com/feos-org/feos/pull/204)
+- Moved the remaining implementation of `Joback` to `feos`. [#204](https://github.com/feos-org/feos/pull/204)
 
 ## [0.5.1] - 2023-11-23
 ### Fixed

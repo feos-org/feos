@@ -1,3 +1,5 @@
+//! Collection of ideal gas models.
+
 #[cfg(feature = "python")]
 use feos_core::python::user_defined::PyIdealGas;
 use feos_core::{Components, DeBroglieWavelength, IdealGas};

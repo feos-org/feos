@@ -6,22 +6,39 @@ use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+/// Parameters for DIPPR equations # 100, 107, and 127 for isobaric
+/// heat capacities of ideal gases.
+///
+/// All equations use units $\[T\]=\text{K}$ and $\[c_p\]=\text{J/kmol/K}$.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum DipprRecord {
+    /// $$c_p = A + BT + CT^2 + DT^3 + ET^4 + FT^5 + GT^6$$
     DIPPR100([f64; 7]),
+    /// $$c_p = A + B\left[\frac{C/T}{\sinh(C/T)}\right]^2 + D\left[\frac{E/T}{\cosh(E/T)}\right]^2$$
     DIPPR107([f64; 5]),
+    /// $$c_p = A+B\left[\frac{\left(\frac{C}{T}\right)^2\exp\left(\frac{C}{T}\right)}{\left(\exp\frac{C}{T}-1 \right)^2}\right]+D\left[\frac{\left(\frac{E}{T}\right)^2\exp\left(\frac{E}{T}\right)}{\left(\exp\frac{E}{T}-1 \right)^2}\right]+F\left[\frac{\left(\frac{G}{T}\right)^2\exp\left(\frac{G}{T}\right)}{\left(\exp\frac{G}{T}-1 \right)^2}\right]$$
     DIPPR127([f64; 7]),
 }
 
 impl DipprRecord {
-    pub fn eq100(a: f64, b: f64, c: f64, d: f64, e: f64, f: f64, g: f64) -> Self {
-        Self::DIPPR100([a, b, c, d, e, f, g])
+    /// Create parameters for Eq. # 100. `coefs` can contain up to 7 values; the remaining parameters are set to 0.
+    pub fn eq100(coefs: &[f64]) -> Result<Self, ParameterError> {
+        if coefs.len() > 7 {
+            return Err(ParameterError::IncompatibleParameters(
+                "Too many coefficients.".into(),
+            ));
+        }
+        let mut par = [0.0; 7];
+        par.iter_mut().zip(coefs).for_each(|(p, &c)| *p = c);
+        Ok(Self::DIPPR100(par))
     }
 
+    /// Create parameters for Eq. # 107.
     pub fn eq107(a: f64, b: f64, c: f64, d: f64, e: f64) -> Self {
         Self::DIPPR107([a, b, c, d, e])
     }
 
+    /// Create parameters for Eq. # 127.
     pub fn eq127(a: f64, b: f64, c: f64, d: f64, e: f64, f: f64, g: f64) -> Self {
         Self::DIPPR127([a, b, c, d, e, f, g])
     }
@@ -119,6 +136,8 @@ impl fmt::Display for DipprRecord {
     }
 }
 
+/// Ideal gas equations of state based on DIPPR equations for
+/// ideal gas heat capacities.
 pub struct Dippr(Vec<PureRecord<DipprRecord>>);
 
 impl Parameter for Dippr {
@@ -138,6 +157,7 @@ impl Parameter for Dippr {
 }
 
 impl Dippr {
+    /// Directly calculates the molar ideal gas heat capacity from the DIPPR equations.
     pub fn molar_isobaric_heat_capacity(
         &self,
         temperature: Temperature,
@@ -218,7 +238,7 @@ mod tests {
         let record = PureRecord::new(
             Identifier::default(),
             0.0,
-            DipprRecord::eq100(276370., -2090.1, 8.125, -0.014116, 0.0000093701, 0.0, 0.0),
+            DipprRecord::eq100(&[276370., -2090.1, 8.125, -0.014116, 0.0000093701])?,
         );
         let dippr = Arc::new(Dippr::new_pure(record.clone())?);
         let eos = Arc::new(EquationOfState::ideal_gas(dippr.clone()));

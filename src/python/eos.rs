@@ -317,28 +317,29 @@ impl PyEquationOfState {
     ///
     /// Parameters
     /// ----------
-    /// parameters : List[JobackRecord]
-    ///     List containing
+    /// joback : Joback
+    ///     The parametrized Joback model.
     ///
     /// Returns
     /// -------
     /// EquationOfState
-    fn joback(&self, parameters: PyJoback) -> Self {
-        self.add_ideal_gas(IdealGasModel::Joback(parameters.0))
+    fn joback(&self, joback: PyJoback) -> Self {
+        self.add_ideal_gas(IdealGasModel::Joback(joback.0))
     }
 
-    /// Ideal gas model of Joback and Reid.
+    /// Ideal gas model based on DIPPR equations for the ideal
+    /// gas heat capacity.
     ///
     /// Parameters
     /// ----------
-    /// parameters : List[JobackRecord]
-    ///     List containing
+    /// dippr : Dippr
+    ///     The parametrized Dippr model.
     ///
     /// Returns
     /// -------
     /// EquationOfState
-    fn dippr(&self, parameters: PyDippr) -> Self {
-        self.add_ideal_gas(IdealGasModel::Dippr(parameters.0))
+    fn dippr(&self, dippr: PyDippr) -> Self {
+        self.add_ideal_gas(IdealGasModel::Dippr(dippr.0))
     }
 }
 
