@@ -12,8 +12,10 @@ use std::fmt;
 /// All equations use units $\[T\]=\text{K}$ and $\[c_p\]=\text{J/kmol/K}$.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum DipprRecord {
+    /// Technically, DIPPR eq. # 100 is
     /// $$c_p = A + BT + CT^2 + DT^3 + ET^4 + FT^5 + GT^6$$
-    DIPPR100([f64; 7]),
+    /// This implementation works with an arbitrary number of expansion terms.
+    DIPPR100(Vec<f64>),
     /// $$c_p = A + B\left[\frac{C/T}{\sinh(C/T)}\right]^2 + D\left[\frac{E/T}{\cosh(E/T)}\right]^2$$
     DIPPR107([f64; 5]),
     /// $$c_p = A+B\left[\frac{\left(\frac{C}{T}\right)^2\exp\left(\frac{C}{T}\right)}{\left(\exp\frac{C}{T}-1 \right)^2}\right]+D\left[\frac{\left(\frac{E}{T}\right)^2\exp\left(\frac{E}{T}\right)}{\left(\exp\frac{E}{T}-1 \right)^2}\right]+F\left[\frac{\left(\frac{G}{T}\right)^2\exp\left(\frac{G}{T}\right)}{\left(\exp\frac{G}{T}-1 \right)^2}\right]$$
@@ -21,16 +23,9 @@ pub enum DipprRecord {
 }
 
 impl DipprRecord {
-    /// Create parameters for Eq. # 100. `coefs` can contain up to 7 values; the remaining parameters are set to 0.
-    pub fn eq100(coefs: &[f64]) -> Result<Self, ParameterError> {
-        if coefs.len() > 7 {
-            return Err(ParameterError::IncompatibleParameters(
-                "Too many coefficients.".into(),
-            ));
-        }
-        let mut par = [0.0; 7];
-        par.iter_mut().zip(coefs).for_each(|(p, &c)| *p = c);
-        Ok(Self::DIPPR100(par))
+    /// Create parameters for Eq. # 100.
+    pub fn eq100(coefs: &[f64]) -> Self {
+        Self::DIPPR100(coefs.to_vec())
     }
 
     /// Create parameters for Eq. # 107.
@@ -87,13 +82,14 @@ impl DipprRecord {
 
     fn c_p_t_integral<D: DualNum<f64> + Copy>(&self, t: D) -> D {
         match self {
-            Self::DIPPR100([a, coefs @ ..]) => {
+            Self::DIPPR100(coefs) => {
                 coefs
                     .iter()
+                    .skip(1)
                     .enumerate()
                     .rev()
                     .fold(D::zero(), |acc, (i, &c)| t * (acc + c / (i + 1) as f64))
-                    + t.ln() * *a
+                    + t.ln() * coefs[0]
             }
             Self::DIPPR107([a, b, c, d, e]) => {
                 let t_inv = t.recip();
@@ -121,10 +117,7 @@ impl DipprRecord {
 impl fmt::Display for DipprRecord {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::DIPPR100([a, b, c, d, e, f, g]) => write!(
-                fmt,
-                "DipprRecord(EQ100, a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g})"
-            ),
+            Self::DIPPR100(coefs) => write!(fmt, "DipprRecord(EQ100, coefs={coefs:?})"),
             Self::DIPPR107([a, b, c, d, e]) => {
                 write!(fmt, "DipprRecord(EQ107, a={a}, b={b}, c={c}, d={d}, e={e})")
             }
@@ -195,21 +188,17 @@ impl IdealGas for Dippr {
 
 const RGAS: f64 = 8.31446261815324 * 1000.0;
 const T0: f64 = 298.15;
-const P0: f64 = 1.0e5;
-const A3: f64 = 1e-30;
-const KB: f64 = 1.38064852e-23;
 
 impl<D: DualNum<f64> + Copy> DeBroglieWavelengthDual<D> for Dippr {
     fn ln_lambda3(&self, temperature: D) -> Array1<D> {
         let t = temperature;
-        let f = (temperature * KB / (P0 * A3)).ln();
         self.0
             .iter()
             .map(|r| {
                 let m = &r.model_record;
                 let h = m.c_p_integral(t) - m.c_p_integral(T0);
                 let s = m.c_p_t_integral(t) - m.c_p_t_integral(T0);
-                (h - t * s) / (t * RGAS) + f
+                (h - t * s) / (t * RGAS) + temperature.ln()
             })
             .collect()
     }
@@ -238,7 +227,7 @@ mod tests {
         let record = PureRecord::new(
             Identifier::default(),
             0.0,
-            DipprRecord::eq100(&[276370., -2090.1, 8.125, -0.014116, 0.0000093701])?,
+            DipprRecord::eq100(&[276370., -2090.1, 8.125, -0.014116, 0.0000093701]),
         );
         let dippr = Arc::new(Dippr::new_pure(record.clone())?);
         let eos = Arc::new(EquationOfState::ideal_gas(dippr.clone()));

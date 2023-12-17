@@ -20,16 +20,15 @@ impl PyDipprRecord {
     ///
     /// Parameters
     /// ----------
-    /// a-g : float, optional
-    ///     Model parameters. Default to 0.0.
+    /// coefs : list[float]
+    ///     Model parameters.
     ///
     /// Returns
     /// -------
     /// DipprRecord
     #[staticmethod]
-    #[pyo3(signature = (a=0.0, b=0.0, c=0.0, d=0.0, e=0.0, f=0.0, g=0.0))]
-    fn eq100(a: f64, b: f64, c: f64, d: f64, e: f64, f: f64, g: f64) -> Self {
-        Self(DipprRecord::eq100(&[a, b, c, d, e, f, g]).unwrap())
+    fn eq100(coefs: Vec<f64>) -> Self {
+        Self(DipprRecord::eq100(&coefs))
     }
 
     /// Create a set of parameters for DIPPR eq. # 107.
