@@ -36,9 +36,9 @@
 #![allow(clippy::too_many_arguments)]
 
 #[cfg(feature = "dft")]
-mod dft;
+mod functional;
 #[cfg(feature = "dft")]
-pub use dft::FunctionalVariant;
+pub use functional::FunctionalVariant;
 mod eos;
 pub use eos::ResidualModel;
 
@@ -65,3 +65,14 @@ pub mod ideal_gas;
 
 #[cfg(feature = "python")]
 mod python;
+
+pub mod core {
+    //! Re-export of all functionalities in [feos_core].
+    pub use feos_core::*;
+}
+
+#[cfg(feature = "dft")]
+pub mod dft {
+    //! Re-export of all functionalities in [feos_dft].
+    pub use feos_dft::*;
+}
