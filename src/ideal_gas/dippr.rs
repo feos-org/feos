@@ -85,10 +85,10 @@ impl DipprRecord {
             Self::DIPPR100(coefs) => {
                 coefs
                     .iter()
-                    .skip(1)
                     .enumerate()
+                    .skip(1)
                     .rev()
-                    .fold(D::zero(), |acc, (i, &c)| t * (acc + c / (i + 1) as f64))
+                    .fold(D::zero(), |acc, (i, &c)| t * (acc + c / i as f64))
                     + t.ln() * coefs[0]
             }
             Self::DIPPR107([a, b, c, d, e]) => {
