@@ -1,6 +1,6 @@
-use crate::dft::FunctionalVariant;
 #[cfg(feature = "estimator")]
 use crate::estimator::*;
+use crate::functional::FunctionalVariant;
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::python::PyGcPcSaftFunctionalParameters;
 #[cfg(feature = "gc_pcsaft")]
