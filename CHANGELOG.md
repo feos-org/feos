@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `PureRecord`, `SegmentRecord`, `Identifier`, and `IdentifierOption` to `feos.ideal_gas`. [#205](https://github.com/feos-org/feos/pull/205)
 - Added implementation of the Joback ideal gas model that was previously part of `feos-core`. [#204](https://github.com/feos-org/feos/pull/204)
 - Added an implementation of the ideal gas heat capacity based on DIPPR equations. [#204](https://github.com/feos-org/feos/pull/204)
+- Added re-exports for the members of `feos-core` and `feos-dft` in the new modules `feos::core` and `feos::dft`. [#212](https://github.com/feos-org/feos/pull/212)
 
 ### Changed
 - Split `feos.ideal_gas` into `feos.joback` and `feos.dippr`. [#204](https://github.com/feos-org/feos/pull/204)
