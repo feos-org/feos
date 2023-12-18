@@ -40,7 +40,7 @@ mod dft;
 #[cfg(feature = "dft")]
 pub use dft::FunctionalVariant;
 mod eos;
-pub use eos::{IdealGasModel, ResidualModel};
+pub use eos::ResidualModel;
 
 #[cfg(feature = "estimator")]
 pub mod estimator;
@@ -60,6 +60,8 @@ pub mod pets;
 pub mod saftvrqmie;
 #[cfg(feature = "uvtheory")]
 pub mod uvtheory;
+
+pub mod ideal_gas;
 
 #[cfg(feature = "python")]
 mod python;

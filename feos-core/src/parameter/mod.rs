@@ -1,9 +1,12 @@
 //! Structures and traits that can be used to build model parameters for equations of state.
 
+use conv::ValueInto;
 use indexmap::{IndexMap, IndexSet};
 use ndarray::Array2;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt;
 use std::fs::File;
 use std::io;
 use std::io::BufReader;
@@ -342,6 +345,34 @@ where
 
         Self::from_records(pure_records, binary_records)
             .expect("failed to create subset from parameters.")
+    }
+}
+
+/// Dummy struct used for models that do not use binary interaction parameters.
+#[derive(Serialize, Deserialize, Clone, Default)]
+pub struct NoBinaryModelRecord;
+
+impl From<f64> for NoBinaryModelRecord {
+    fn from(_: f64) -> Self {
+        Self
+    }
+}
+
+impl From<NoBinaryModelRecord> for f64 {
+    fn from(_: NoBinaryModelRecord) -> Self {
+        0.0 // nasty hack - panic crashes Ipython kernel, actual value is never used
+    }
+}
+
+impl<T: Copy + ValueInto<f64>> FromSegmentsBinary<T> for NoBinaryModelRecord {
+    fn from_segments_binary(_segments: &[(f64, T, T)]) -> Result<Self, ParameterError> {
+        Ok(Self)
+    }
+}
+
+impl fmt::Display for NoBinaryModelRecord {
+    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Ok(())
     }
 }
 

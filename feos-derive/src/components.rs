@@ -37,7 +37,7 @@ fn impl_components(
             }
         } else {
             quote! {
-                Self::#name(residual) => Self::#name(residual.subset(component_list))
+                Self::#name(residual) => Self::#name(residual.subset(component_list).into())
             }
         }
     });

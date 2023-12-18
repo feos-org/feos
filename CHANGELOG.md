@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added `EquationOfState.ideal_gas()` to initialize an equation of state that only consists of an ideal gas contribution. [#204](https://github.com/feos-org/feos/pull/204)
 - Added `PureRecord`, `SegmentRecord`, `Identifier`, and `IdentifierOption` to `feos.ideal_gas`. [#205](https://github.com/feos-org/feos/pull/205)
+- Added implementation of the Joback ideal gas model that was previously part of `feos-core`. [#204](https://github.com/feos-org/feos/pull/204)
+- Added an implementation of the ideal gas heat capacity based on DIPPR equations. [#204](https://github.com/feos-org/feos/pull/204)
+
+### Changed
+- Split `feos.ideal_gas` into `feos.joback` and `feos.dippr`. [#204](https://github.com/feos-org/feos/pull/204)
 
 ## [0.5.1] - 2023-11-23
 - Python only: Release the changes introduced in `feos-core` 0.5.1.

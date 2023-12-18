@@ -6,6 +6,7 @@ use crate::gc_pcsaft::python::PyGcPcSaftFunctionalParameters;
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftOptions};
 use crate::hard_sphere::{FMTFunctional, FMTVersion};
+use crate::ideal_gas::IdealGasModel;
 #[cfg(feature = "estimator")]
 use crate::impl_estimator;
 #[cfg(feature = "pcsaft")]
@@ -21,7 +22,6 @@ use crate::saftvrqmie::python::PySaftVRQMieParameters;
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::{SaftVRQMieFunctional, SaftVRQMieOptions};
 
-use crate::eos::IdealGasModel;
 use feos_core::si::*;
 use feos_core::*;
 use feos_dft::adsorption::*;

@@ -2,8 +2,8 @@
 #![cfg(feature = "dft")]
 use approx::assert_relative_eq;
 use feos::hard_sphere::FMTVersion;
+use feos::ideal_gas::Joback;
 use feos::pcsaft::{PcSaft, PcSaftFunctional, PcSaftParameters};
-use feos_core::joback::{Joback, JobackParameters};
 use feos_core::parameter::{IdentifierOption, Parameter};
 use feos_core::si::*;
 use feos_core::{Contributions, PhaseEquilibrium, State, Verbosity};
@@ -331,13 +331,12 @@ fn test_entropy_bulk_values() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let joback_params = JobackParameters::from_json(
+    let joback = Joback::from_json(
         vec!["water_np"],
         "tests/pcsaft/test_parameters_joback.json",
         None,
         IdentifierOption::Name,
     )?;
-    let joback = Joback::new(Arc::new(joback_params));
     let func = Arc::new(PcSaftFunctional::new(Arc::new(params)).ideal_gas(joback));
     let vle = PhaseEquilibrium::pure(&func, 350.0 * KELVIN, None, Default::default())?;
     let profile = PlanarInterface::from_pdgt(&vle, 2048, false)?.solve(None)?;
