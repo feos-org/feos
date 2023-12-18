@@ -4,7 +4,6 @@
             "cas": "56-23-5",
             "name": "tetrachloromethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 20935.81687250985,
@@ -20,7 +19,6 @@
             "cas": "60-29-7",
             "name": "diethyl ether"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 38346.301594922734,
@@ -36,7 +34,6 @@
             "cas": "62-53-3",
             "name": "benzeneamine (aniline)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 21600.973881962113,
@@ -52,7 +49,6 @@
             "cas": "64-17-5",
             "name": "ethanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 36550.377669401634,
@@ -68,7 +64,6 @@
             "cas": "64-18-6",
             "name": "methanoic acid (formic acid)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 31669.788112545688,
@@ -84,7 +79,6 @@
             "cas": "64-19-7",
             "name": "ethanoic acid (acetic acid)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 36375.773954420416,
@@ -100,7 +94,6 @@
             "cas": "67-56-1",
             "name": "methanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 39194.376781974366,
@@ -116,7 +109,6 @@
             "cas": "67-63-0",
             "name": "2-propanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 27720.4183689229,
@@ -132,7 +124,6 @@
             "cas": "67-64-1",
             "name": "propanone (acetone)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 42619.9353806535,
@@ -148,7 +139,6 @@
             "cas": "67-66-3",
             "name": "trichloromethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 19863.251194768087,
@@ -164,7 +154,6 @@
             "cas": "71-23-8",
             "name": "1-propanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 39177.74785673806,
@@ -180,7 +169,6 @@
             "cas": "71-36-3",
             "name": "1-butanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 37140.70451529051,
@@ -196,7 +184,6 @@
             "cas": "71-41-0",
             "name": "1-pentanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 45978.97827838741,
@@ -212,7 +199,6 @@
             "cas": "71-43-2",
             "name": "benzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 29524.656757062152,
@@ -228,7 +214,6 @@
             "cas": "74-82-8",
             "name": "methane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 37980.46523972399,
@@ -244,7 +229,6 @@
             "cas": "74-84-0",
             "name": "ethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 34737.82481864423,
@@ -260,7 +244,6 @@
             "cas": "74-85-1",
             "name": "ethene (ethylene)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 35095.34671122482,
@@ -276,7 +259,6 @@
             "cas": "74-86-2",
             "name": "ethyne (acetylene)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 20037.854909749305,
@@ -292,7 +274,6 @@
             "cas": "74-87-3",
             "name": "chloromethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 29749.147247752288,
@@ -308,7 +289,6 @@
             "cas": "74-89-5",
             "name": "methanamine (methyl amine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 34862.54175791652,
@@ -324,7 +304,6 @@
             "cas": "74-93-1",
             "name": "methanethiol (methyl mercaptan)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 34247.271524173186,
@@ -340,7 +319,6 @@
             "cas": "74-96-4",
             "name": "bromoethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 30231.386079605178,
@@ -356,7 +334,6 @@
             "cas": "74-98-6",
             "name": "propane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 31985.73769203551,
@@ -372,7 +349,6 @@
             "cas": "74-99-7",
             "name": "1-propyne (methyl acetylene)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 26257.072948127927,
@@ -388,7 +364,6 @@
             "cas": "75-00-3",
             "name": "chloroethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 25184.50727038616,
@@ -404,7 +379,6 @@
             "cas": "75-04-7",
             "name": "ethanamine (ethyl amine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 38579.10654823102,
@@ -420,7 +394,6 @@
             "cas": "75-08-1",
             "name": "ethanethiol (ethyl mercaptan)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 32376.51743508871,
@@ -436,7 +409,6 @@
             "cas": "75-09-2",
             "name": "dichloromethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 22532.193695195278,
@@ -452,7 +424,6 @@
             "cas": "75-10-5",
             "name": "difluoromethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 34505.01986533594,
@@ -468,7 +439,6 @@
             "cas": "75-18-3",
             "name": "2-thiapropane (dimethylsulfide)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 29391.625355171698,
@@ -484,7 +454,6 @@
             "cas": "75-19-4",
             "name": "cyclopropane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 37356.8805433625,
@@ -500,7 +469,6 @@
             "cas": "75-28-5",
             "name": "2-methylpropane (isobutane)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 27861.764233431502,
@@ -516,7 +484,6 @@
             "cas": "75-31-0",
             "name": "2-propanamine (methyl ethyl amine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 30206.442691750715,
@@ -532,7 +499,6 @@
             "cas": "75-34-3",
             "name": "1,1-dichloroethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 21700.74743337995,
@@ -548,7 +514,6 @@
             "cas": "75-37-6",
             "name": "1,1-difluoroethane (R-152a)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 27371.21093896046,
@@ -564,7 +529,6 @@
             "cas": "75-38-7",
             "name": "1,1-difluoroethene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 6227.5325009967755,
@@ -580,7 +544,6 @@
             "cas": "75-43-4",
             "name": "dichlorofluoromethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 24519.350260933898,
@@ -596,7 +559,6 @@
             "cas": "75-45-6",
             "name": "chlorodifluoromethane (R-22)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 26306.959723836848,
@@ -612,7 +574,6 @@
             "cas": "75-46-7",
             "name": "trifluoromethane (R-23)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 28684.896032628676,
@@ -628,7 +589,6 @@
             "cas": "75-50-3",
             "name": "N, N-dimethylmethanamine (trimethyl amine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 13802.007946134376,
@@ -644,7 +604,6 @@
             "cas": "75-52-5",
             "name": "nitromethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 34887.48514577099,
@@ -660,7 +619,6 @@
             "cas": "75-61-6",
             "name": "dibromodifluoromethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 20586.60944254742,
@@ -676,7 +634,6 @@
             "cas": "75-63-8",
             "name": "bromotrifluoromethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 16288.032268962195,
@@ -692,7 +649,6 @@
             "cas": "75-65-0",
             "name": "2-methyl-2-propanol (tert-butanol)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 21709.061895998108,
@@ -708,7 +664,6 @@
             "cas": "75-68-3",
             "name": "1-chloro-1,1-difluoroethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 19439.21360124227,
@@ -724,7 +679,6 @@
             "cas": "75-69-4",
             "name": "trichlorofluoromethane (R-11)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 17377.226871940267,
@@ -740,7 +694,6 @@
             "cas": "75-71-8",
             "name": "dichlorodifluoromethane (R-12)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 18167.100820664826,
@@ -756,7 +709,6 @@
             "cas": "75-72-9",
             "name": "chlorotrifluoromethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 19696.961942405025,
@@ -772,7 +724,6 @@
             "cas": "75-73-0",
             "name": "tetrafluoromethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 21975.124699779008,
@@ -788,7 +739,6 @@
             "cas": "75-83-2",
             "name": "2,2-dimethylbutane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 25001.589092786788,
@@ -804,7 +754,6 @@
             "cas": "75-85-4",
             "name": "2-methyl-2-butanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 35602.52893093217,
@@ -820,7 +769,6 @@
             "cas": "76-13-1",
             "name": "1,1,2-trichloro-1,2,2- trifluoroethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 17734.748764520857,
@@ -836,7 +784,6 @@
             "cas": "76-14-2",
             "name": "1,2-dichloro-1,1,2,2- tetrafluoroethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 20994.018110836925,
@@ -852,7 +799,6 @@
             "cas": "76-15-3",
             "name": "1-chloro-1,1,2,2,2- pentafluoroethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 19580.559465750877,
@@ -868,7 +814,6 @@
             "cas": "76-16-4",
             "name": "hexafluoroethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 20994.018110836925,
@@ -884,7 +829,6 @@
             "cas": "76-19-7",
             "name": "octafluoropropane (R-218)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 13344.712502135948,
@@ -900,7 +844,6 @@
             "cas": "78-78-4",
             "name": "2-methylbutane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 16288.032268962195,
@@ -916,7 +859,6 @@
             "cas": "78-81-9",
             "name": "2-methyl-1-propanamine (isobutyl amine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 3159.4957948982305,
@@ -932,7 +874,6 @@
             "cas": "78-86-4",
             "name": "2-chlorobutane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 36999.35865078191,
@@ -948,7 +889,6 @@
             "cas": "78-87-5",
             "name": "1,2-dichloropropane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 14109.643063006046,
@@ -964,7 +904,6 @@
             "cas": "78-92-2",
             "name": "2-butanol (sec-butanol)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 32093.8257060715,
@@ -980,7 +919,6 @@
             "cas": "78-93-3",
             "name": "butanone (methyl ethyl ketone)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 52788.523162654914,
@@ -996,7 +934,6 @@
             "cas": "79-20-9",
             "name": "methyl ethanoate (methyl acetate)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 35269.950426206036,
@@ -1012,7 +949,6 @@
             "cas": "79-29-8",
             "name": "2,3-dimethylbutane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -18408.22023659127,
@@ -1028,7 +964,6 @@
             "cas": "85-01-8",
             "name": "phenanthrene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 19738.53425549579,
@@ -1044,7 +979,6 @@
             "cas": "90-00-6",
             "name": "2-ethylphenol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -19888.194582622546,
@@ -1060,7 +994,6 @@
             "cas": "90-12-0",
             "name": "1-methylnaphthalene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -46868.6257785298,
@@ -1076,7 +1009,6 @@
             "cas": "91-20-3",
             "name": "naphthalene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 24020.482503844705,
@@ -1092,7 +1024,6 @@
             "cas": "91-57-6",
             "name": "2-methylnaphthalene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -38836.85488939378,
@@ -1108,7 +1039,6 @@
             "cas": "92-52-4",
             "name": "1,1\u2b18-biphenyl"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -7009.09198710318,
@@ -1124,7 +1054,6 @@
             "cas": "95-47-6",
             "name": "1,2-dimethylbenzene (o-xylene)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 27346.267551106004,
@@ -1140,7 +1069,6 @@
             "cas": "95-48-7",
             "name": "2-methylphenol (o-cresol)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 25966.066756492564,
@@ -1156,7 +1084,6 @@
             "cas": "95-63-6",
             "name": "1,2,4-trimethylbenzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 44224.626665957076,
@@ -1172,7 +1099,6 @@
             "cas": "95-65-8",
             "name": "3,4-dimethylphenol (3,4 xylenol)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 11698.448903741606,
@@ -1188,7 +1114,6 @@
             "cas": "95-87-4",
             "name": "2,5-dimethylphenol (2,5 xylenol)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 25009.90355540494,
@@ -1204,7 +1129,6 @@
             "cas": "95-93-2",
             "name": "1,2,4,5-tetramethylbenzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 27870.078696049655,
@@ -1220,7 +1144,6 @@
             "cas": "96-14-0",
             "name": "3-methylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 3600.162313660352,
@@ -1236,7 +1159,6 @@
             "cas": "96-22-0",
             "name": "3-pentanone (diethyl ketone)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 67106.02779111479,
@@ -1252,7 +1174,6 @@
             "cas": "96-37-7",
             "name": "methylcyclopentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 44723.494423046264,
@@ -1268,7 +1189,6 @@
             "cas": "96-41-3",
             "name": "cyclopentanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 36334.20164132965,
@@ -1284,7 +1204,6 @@
             "cas": "98-82-8",
             "name": "1-methylethylbenzene (cumene)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 24818.670915187417,
@@ -1300,7 +1219,6 @@
             "cas": "100-41-4",
             "name": "ethylbenzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 37780.918136888315,
@@ -1316,7 +1234,6 @@
             "cas": "102-25-0",
             "name": "1,3,5-triethylbenzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 10966.776193344122,
@@ -1332,7 +1249,6 @@
             "cas": "103-65-1",
             "name": "propylbenzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 39568.52759979126,
@@ -1348,7 +1264,6 @@
             "cas": "104-51-8",
             "name": "butylbenzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 53960.86239181452,
@@ -1364,7 +1279,6 @@
             "cas": "105-05-5",
             "name": "1,4-diethylbenzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -2984.8920799170123,
@@ -1380,7 +1294,6 @@
             "cas": "105-67-9",
             "name": "2,4-dimethylphenol (2,4 xylenol)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 31195.86374331095,
@@ -1396,7 +1309,6 @@
             "cas": "106-42-3",
             "name": "1,4-dimethylbenzene (p-xylene)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 34197.384748464276,
@@ -1412,7 +1324,6 @@
             "cas": "106-44-5",
             "name": "4-methylphenol (p-cresol)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 23953.96680289948,
@@ -1428,7 +1339,6 @@
             "cas": "106-93-4",
             "name": "1,2-dibromoethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 31461.926547091854,
@@ -1444,7 +1354,6 @@
             "cas": "106-97-8",
             "name": "butane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 46120.32414289601,
@@ -1460,7 +1369,6 @@
             "cas": "106-98-9",
             "name": "1-butene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 36492.176431074564,
@@ -1476,7 +1384,6 @@
             "cas": "106-99-0",
             "name": "1,3-butadiene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 29990.266663678733,
@@ -1492,7 +1399,6 @@
             "cas": "107-00-6",
             "name": "1-butyne"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 24901.81554136895,
@@ -1508,7 +1414,6 @@
             "cas": "107-06-2",
             "name": "1,2-dichloroethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 24860.243228278185,
@@ -1524,7 +1429,6 @@
             "cas": "107-10-8",
             "name": "1-propanamine (propyl amine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 34438.50416439072,
@@ -1540,7 +1444,6 @@
             "cas": "107-18-6",
             "name": "2-propen-1-ol (allyl alcohol)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 2061.986729302003,
@@ -1556,7 +1459,6 @@
             "cas": "107-31-3",
             "name": "methyl methanoate (methyl formate)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 18932.031381534925,
@@ -1572,7 +1474,6 @@
             "cas": "107-83-5",
             "name": "2-methylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 17427.11364764919,
@@ -1588,7 +1489,6 @@
             "cas": "107-87-9",
             "name": "2-pentanone (methyl propyl ketone)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 65152.12907584878,
@@ -1604,7 +1504,6 @@
             "cas": "108-08-7",
             "name": "2,4-dimethylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -26049.211382674097,
@@ -1620,7 +1519,6 @@
             "cas": "108-24-7",
             "name": "acetic anhydride"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -10592.625375527226,
@@ -1636,7 +1534,6 @@
             "cas": "108-38-3",
             "name": "1,3-dimethylbenzene (m-xylene)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 33274.47939784926,
@@ -1652,7 +1549,6 @@
             "cas": "108-39-4",
             "name": "3-methylphenol (m-cresol)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 23912.394489808714,
@@ -1668,7 +1564,6 @@
             "cas": "108-47-4",
             "name": "2,3-dimethylpyridine (2,3 lutidine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 35128.60456169743,
@@ -1684,7 +1579,6 @@
             "cas": "108-48-5",
             "name": "2,5-dimethylpyridine (2,5 lutidine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 34779.39713173499,
@@ -1700,7 +1594,6 @@
             "cas": "108-67-8",
             "name": "1,3,5-trimethylbenzene (mesitylene)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 44108.22418930293,
@@ -1716,7 +1609,6 @@
             "cas": "108-68-9",
             "name": "3,5-dimethylphenol (3,5 xylenol)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 23854.193251481644,
@@ -1732,7 +1624,6 @@
             "cas": "108-87-2",
             "name": "methylcyclohexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 26173.928321946394,
@@ -1748,7 +1639,6 @@
             "cas": "108-88-3",
             "name": "toluene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 32143.71248178042,
@@ -1764,7 +1654,6 @@
             "cas": "108-90-7",
             "name": "chlorobenzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 864.7041122879367,
@@ -1780,7 +1669,6 @@
             "cas": "108-93-0",
             "name": "cyclohexanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 26930.544420198337,
@@ -1796,7 +1684,6 @@
             "cas": "108-94-1",
             "name": "cyclohexanone"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 36716.66692176471,
@@ -1812,7 +1699,6 @@
             "cas": "108-95-2",
             "name": "phenol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 21467.94248007166,
@@ -1828,7 +1714,6 @@
             "cas": "108-99-6",
             "name": "3-methylpyridine (3-picoline)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 34421.875239154404,
@@ -1844,7 +1729,6 @@
             "cas": "109-06-8",
             "name": "2-methylpyridine (2-picoline)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 34554.90664104486,
@@ -1860,7 +1744,6 @@
             "cas": "109-66-0",
             "name": "pentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 62807.45061752957,
@@ -1876,7 +1759,6 @@
             "cas": "109-67-1",
             "name": "1-pentene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 42229.1556376003,
@@ -1892,7 +1774,6 @@
             "cas": "109-73-9",
             "name": "1-butanamine (butyl amine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 22182.98626523284,
@@ -1908,7 +1789,6 @@
             "cas": "109-89-7",
             "name": "n-ethylethanamine (diethyl amine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 25176.192807768006,
@@ -1924,7 +1804,6 @@
             "cas": "109-97-7",
             "name": "pyrrole"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 29549.600144916607,
@@ -1940,7 +1819,6 @@
             "cas": "109-99-9",
             "name": "tetrahydrofuran"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 42994.086198470395,
@@ -1956,7 +1834,6 @@
             "cas": "110-00-9",
             "name": "furan"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 31727.98935087276,
@@ -1972,7 +1849,6 @@
             "cas": "110-02-1",
             "name": "thiophene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 25467.198999403372,
@@ -1988,7 +1864,6 @@
             "cas": "110-54-3",
             "name": "hexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 73425.01938091124,
@@ -2004,7 +1879,6 @@
             "cas": "110-82-7",
             "name": "cyclohexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 33548.85666424832,
@@ -2020,7 +1894,6 @@
             "cas": "110-83-8",
             "name": "cyclohexene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 32210.22818272565,
@@ -2036,7 +1909,6 @@
             "cas": "110-86-1",
             "name": "pyridine"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -29142.1914766271,
@@ -2052,7 +1924,6 @@
             "cas": "111-27-3",
             "name": "1-hexanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 56405.31440155157,
@@ -2068,7 +1939,6 @@
             "cas": "111-65-9",
             "name": "octane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 89995.74337889065,
@@ -2084,7 +1954,6 @@
             "cas": "111-66-0",
             "name": "1-octene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 72709.97559575006,
@@ -2100,7 +1969,6 @@
             "cas": "111-70-6",
             "name": "1-heptanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 65975.26087504595,
@@ -2116,7 +1984,6 @@
             "cas": "111-84-2",
             "name": "nonane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 101037.34973579815,
@@ -2132,7 +1999,6 @@
             "cas": "111-87-5",
             "name": "1-octanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 76434.85484868272,
@@ -2148,7 +2014,6 @@
             "cas": "112-30-1",
             "name": "1-decanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 96755.40148744924,
@@ -2164,7 +2029,6 @@
             "cas": "112-40-3",
             "name": "dodecane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 143249.87644816213,
@@ -2180,7 +2044,6 @@
             "cas": "112-41-4",
             "name": "1-dodecene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 113218.03747139266,
@@ -2196,7 +2059,6 @@
             "cas": "112-42-5",
             "name": "1-undecanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 107447.8004143943,
@@ -2212,7 +2074,6 @@
             "cas": "112-53-8",
             "name": "1-dodecanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 117009.43242527053,
@@ -2228,7 +2089,6 @@
             "cas": "112-95-8",
             "name": "eicosane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 230842.7401304065,
@@ -2244,7 +2104,6 @@
             "cas": "115-07-1",
             "name": "propene (propylene)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 31877.649677999518,
@@ -2260,7 +2119,6 @@
             "cas": "115-10-6",
             "name": "dimethyl ether"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 36259.37147776627,
@@ -2276,7 +2134,6 @@
             "cas": "115-11-7",
             "name": "2-methylpropene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 26864.028719253114,
@@ -2292,7 +2149,6 @@
             "cas": "115-25-3",
             "name": "octafluorocyclobutane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 7890.425024627423,
@@ -2308,7 +2164,6 @@
             "cas": "116-14-3",
             "name": "tetrafluoroethene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 18483.050400154647,
@@ -2324,7 +2179,6 @@
             "cas": "120-12-7",
             "name": "anthracene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 21426.370166980894,
@@ -2340,7 +2194,6 @@
             "cas": "120-92-3",
             "name": "cyclopentanone"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 35702.30248235,
@@ -2356,7 +2209,6 @@
             "cas": "121-44-8",
             "name": "N, N-diethylethanamine (triethyl amine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 38088.55325375999,
@@ -2372,7 +2224,6 @@
             "cas": "123-07-9",
             "name": "4-ethyl-phenol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -30164.87037865995,
@@ -2388,7 +2239,6 @@
             "cas": "123-91-1",
             "name": "1,4-dioxane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 31012.94556571158,
@@ -2404,7 +2254,6 @@
             "cas": "124-11-8",
             "name": "1-nonene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 82836.9910646607,
@@ -2420,7 +2269,6 @@
             "cas": "124-18-5",
             "name": "decane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 111970.86807866966,
@@ -2436,7 +2284,6 @@
             "cas": "124-38-9",
             "name": "carbon dioxide"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 27096.833672561403,
@@ -2452,7 +2299,6 @@
             "cas": "124-40-3",
             "name": "N-methylmethanamine (dimethyl amine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 20528.408204220344,
@@ -2468,7 +2314,6 @@
             "cas": "141-78-6",
             "name": "ethyl ethanoate (ethyl acetate)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 85040.32365847132,
@@ -2484,7 +2329,6 @@
             "cas": "142-29-0",
             "name": "cyclopentene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 37872.377225688,
@@ -2500,7 +2344,6 @@
             "cas": "142-82-5",
             "name": "heptane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 80101.5328632883,
@@ -2516,7 +2359,6 @@
             "cas": "143-08-8",
             "name": "1-nonanol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 86054.68809788601,
@@ -2532,7 +2374,6 @@
             "cas": "287-23-0",
             "name": "cyclobutane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 39402.238347428196,
@@ -2548,7 +2389,6 @@
             "cas": "287-92-3",
             "name": "cyclopentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 41730.2878805111,
@@ -2564,7 +2404,6 @@
             "cas": "288-14-2",
             "name": "1,2-oxazole (isoxazole)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 32517.863299597317,
@@ -2580,7 +2419,6 @@
             "cas": "291-64-5",
             "name": "3,5-dimethylpyridine (3,5 lutidine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 33216.27815952219,
@@ -2596,7 +2434,6 @@
             "cas": "292-64-8",
             "name": "cyclooctane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 35220.06365049712,
@@ -2612,7 +2449,6 @@
             "cas": "302-01-2",
             "name": "hydrazine"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 30156.555916041794,
@@ -2628,7 +2464,6 @@
             "cas": "306-83-2",
             "name": "1,1-dichloro-2,2,2-trifluoroethane (R-123)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 24910.130003987102,
@@ -2644,7 +2479,6 @@
             "cas": "307-34-6",
             "name": "octadecafluorooctane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 27870.078696049655,
@@ -2660,7 +2494,6 @@
             "cas": "307-45-9",
             "name": "docosafluorodecane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 33607.05790257539,
@@ -2676,7 +2509,6 @@
             "cas": "327-54-8",
             "name": "1,2,4,5-tetrafluorobenzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 58.20123832707267,
@@ -2692,7 +2524,6 @@
             "cas": "335-57-9",
             "name": "hexadecafluoroheptane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 24960.01677969602,
@@ -2708,7 +2539,6 @@
             "cas": "344-07-0",
             "name": "chloropentafluorobenzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 24893.501078750796,
@@ -2724,7 +2554,6 @@
             "cas": "352-93-2",
             "name": "3-thiapentane (diethyl sulfide)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 36043.195449694285,
@@ -2740,7 +2569,6 @@
             "cas": "353-36-6",
             "name": "fluoroethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 32268.429421052715,
@@ -2756,7 +2584,6 @@
             "cas": "353-59-3",
             "name": "bromochlorodifluoromethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 16362.862432525573,
@@ -2772,7 +2599,6 @@
             "cas": "354-23-4",
             "name": "1,2-dichloro-1,2,2-trifluoroethane (R-123a)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 22440.73460639559,
@@ -2788,7 +2614,6 @@
             "cas": "354-25-6",
             "name": "1-chloro-1,1,2,2-tetrafluoroethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 24012.168041226552,
@@ -2804,7 +2629,6 @@
             "cas": "354-33-6",
             "name": "pentafluoroethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 26157.29939671009,
@@ -2820,7 +2644,6 @@
             "cas": "355-25-9",
             "name": "decafluoro-2-methylpropane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 16337.919044671115,
@@ -2836,7 +2659,6 @@
             "cas": "355-42-0",
             "name": "tetradecafluorohexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 22116.470564287614,
@@ -2852,7 +2674,6 @@
             "cas": "359-35-3",
             "name": "1,1,2,2-tetrafluoroethane (R-134)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 25641.802714384587,
@@ -2868,7 +2689,6 @@
             "cas": "363-72-4",
             "name": "pentafluorobenzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 9952.411753929428,
@@ -2884,7 +2704,6 @@
             "cas": "374-07-2",
             "name": "1,1-dichloro-1,2,2,2- tetrafluoroethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 18857.201217971542,
@@ -2900,7 +2719,6 @@
             "cas": "375-96-2",
             "name": "eicosafluorononane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 30738.568299312523,
@@ -2916,7 +2734,6 @@
             "cas": "392-56-3",
             "name": "hexafluorobenzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 21043.904886545846,
@@ -2932,7 +2749,6 @@
             "cas": "420-46-2",
             "name": "1,1,1-trifluoroethane (R-143a)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 21426.370166980894,
@@ -2948,7 +2764,6 @@
             "cas": "430-66-0",
             "name": "1,1,2-trifluoroethane (R-143)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 29358.367504699087,
@@ -2964,7 +2779,6 @@
             "cas": "463-49-0",
             "name": "1,2-propadiene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 28294.11628957547,
@@ -2980,7 +2794,6 @@
             "cas": "463-82-1",
             "name": "2,2-dimethylpropane (neopentane)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -95017.67880025522,
@@ -2996,7 +2809,6 @@
             "cas": "464-06-2",
             "name": "2,2,3-trimethylbutane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -5911.5829215069525,
@@ -3012,7 +2824,6 @@
             "cas": "493-01-6",
             "name": "cis-bicyclo[4.4.0]decane (cis-decalin)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -45272.248955844385,
@@ -3028,7 +2839,6 @@
             "cas": "493-02-7",
             "name": "trans-bicyclo[4.4.0]decane (trans-decalin)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -17917.666942120228,
@@ -3044,7 +2854,6 @@
             "cas": "505-22-6",
             "name": "1,3-dioxane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 31877.649677999518,
@@ -3060,7 +2869,6 @@
             "cas": "513-35-9",
             "name": "2-methyl-2-butene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 10309.933646510015,
@@ -3076,7 +2884,6 @@
             "cas": "526-73-8",
             "name": "1,2,3-trimethylbenzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 33607.05790257539,
@@ -3092,7 +2899,6 @@
             "cas": "534-22-5",
             "name": "2-methylfuran"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 32858.7562669416,
@@ -3108,7 +2914,6 @@
             "cas": "540-54-5",
             "name": "1-chloropropane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 36292.62932823889,
@@ -3124,7 +2929,6 @@
             "cas": "540-67-0",
             "name": "methyl ethyl ether"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 33324.36617355818,
@@ -3140,7 +2944,6 @@
             "cas": "540-84-1",
             "name": "2,2,4-trimethylpentane (isooctane)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 3192.7536453708435,
@@ -3156,7 +2959,6 @@
             "cas": "543-59-9",
             "name": "1-chloropentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 58633.59038321664,
@@ -3172,7 +2974,6 @@
             "cas": "544-76-3",
             "name": "hexadecane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 330474.94568373676,
@@ -3188,7 +2989,6 @@
             "cas": "560-21-4",
             "name": "2,3,3-trimethylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -47608.612951545445,
@@ -3204,7 +3004,6 @@
             "cas": "562-49-2",
             "name": "3,3-dimethylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -3990.9420567135544,
@@ -3220,7 +3019,6 @@
             "cas": "563-16-6",
             "name": "3,3-dimethylhexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -17402.17025979473,
@@ -3236,7 +3034,6 @@
             "cas": "563-45-1",
             "name": "3-methyl-1-butene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 17526.887199067027,
@@ -3252,7 +3049,6 @@
             "cas": "564-02-3",
             "name": "2,2,3-trimethylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -37331.93715550804,
@@ -3268,7 +3064,6 @@
             "cas": "565-59-3",
             "name": "2,3-dimethylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -35868.591734713074,
@@ -3284,7 +3079,6 @@
             "cas": "575-43-9",
             "name": "1,6-dimethylnaphthalene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -36018.25206183983,
@@ -3300,7 +3094,6 @@
             "cas": "576-26-1",
             "name": "2,6-dimethylphenol (2,6 xylenol)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 21650.860657671034,
@@ -3316,7 +3109,6 @@
             "cas": "582-16-1",
             "name": "2,7-dimethylnaphthalene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -27337.953088487848,
@@ -3332,7 +3124,6 @@
             "cas": "583-48-2",
             "name": "3,4-dimethylhexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -51117.31617640611,
@@ -3348,7 +3139,6 @@
             "cas": "583-58-4",
             "name": "2,6-dimethylpyridine (2,6 lutidine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 28377.260915757,
@@ -3364,7 +3154,6 @@
             "cas": "584-94-1",
             "name": "2,3-dimethylhexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -29882.178649642738,
@@ -3380,7 +3169,6 @@
             "cas": "589-38-8",
             "name": "3-hexanone (ethyl propyl ketone)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 77798.42671805984,
@@ -3396,7 +3184,6 @@
             "cas": "589-43-5",
             "name": "2,4-dimethylhexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -28036.36794841272,
@@ -3412,7 +3199,6 @@
             "cas": "589-53-7",
             "name": "4-methylheptane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 18142.157432810367,
@@ -3428,7 +3214,6 @@
             "cas": "589-93-5",
             "name": "2,4-dimethylpyridine (2,4 lutidine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 35311.5227392968,
@@ -3444,7 +3229,6 @@
             "cas": "590-18-1",
             "name": "cis-2-butene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 30672.052598367296,
@@ -3460,7 +3244,6 @@
             "cas": "590-35-2",
             "name": "2,2-dimethylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 10933.518342871508,
@@ -3476,7 +3259,6 @@
             "cas": "590-73-8",
             "name": "2,2-dimethylhexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 28701.52495786498,
@@ -3492,7 +3274,6 @@
             "cas": "591-22-0",
             "name": "3,4-dimethylpyridine (3,4 lutidine)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 34380.30292606364,
@@ -3508,7 +3289,6 @@
             "cas": "591-76-4",
             "name": "2-methylhexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 28701.52495786498,
@@ -3524,7 +3304,6 @@
             "cas": "591-78-6",
             "name": "2-hexanone (methyl butyl ketone)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 76044.07510562953,
@@ -3540,7 +3319,6 @@
             "cas": "592-13-2",
             "name": "2,5-dimethylhexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -11365.870399015477,
@@ -3556,7 +3334,6 @@
             "cas": "592-27-8",
             "name": "2-methylheptane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 43709.129983631574,
@@ -3572,7 +3349,6 @@
             "cas": "592-41-6",
             "name": "1-hexene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 52406.05788221986,
@@ -3588,7 +3364,6 @@
             "cas": "592-76-7",
             "name": "1-heptene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 62524.75888851235,
@@ -3604,7 +3379,6 @@
             "cas": "593-45-3",
             "name": "octadecane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 208942.44559419088,
@@ -3620,7 +3394,6 @@
             "cas": "593-53-3",
             "name": "fluoromethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 37922.26400139692,
@@ -3636,7 +3409,6 @@
             "cas": "594-82-1",
             "name": "2,2,3,3-tetramethylbutane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 6385.507290741687,
@@ -3652,7 +3424,6 @@
             "cas": "609-26-7",
             "name": "3-ethyl-2-methylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -7258.525865647777,
@@ -3667,7 +3438,6 @@
             "cas": "617-78-7",
             "name": "3-ethylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 63173.2869727283,
@@ -3683,7 +3453,6 @@
             "cas": "619-99-8",
             "name": "3-ethylhexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 59681.212673103946,
@@ -3699,7 +3468,6 @@
             "cas": "620-17-7",
             "name": "3-ethylphenol"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -33498.969888539395,
@@ -3715,7 +3483,6 @@
             "cas": "622-96-8",
             "name": "1-ethyl-4-methylbenzene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 42378.81596472706,
@@ -3731,7 +3498,6 @@
             "cas": "624-64-6",
             "name": "trans-2-butene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 46427.95925976768,
@@ -3747,7 +3513,6 @@
             "cas": "624-89-5",
             "name": "2-thiabutane (methyl ethyl sulfide)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 23413.526732719518,
@@ -3763,7 +3528,6 @@
             "cas": "627-19-0",
             "name": "1-pentyne"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 28119.512574594253,
@@ -3779,7 +3543,6 @@
             "cas": "627-20-3",
             "name": "cis-2-pentene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 24120.256055262544,
@@ -3795,7 +3558,6 @@
             "cas": "629-50-5",
             "name": "tridecane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 154200.02371626996,
@@ -3811,7 +3573,6 @@
             "cas": "629-59-4",
             "name": "tetradecane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 152778.25060856575,
@@ -3827,7 +3588,6 @@
             "cas": "629-62-9",
             "name": "pentadecane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 176100.3182524856,
@@ -3843,7 +3603,6 @@
             "cas": "629-78-7",
             "name": "heptadecane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 197992.29832608305,
@@ -3859,7 +3618,6 @@
             "cas": "629-92-5",
             "name": "nonadecane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 219892.59286229868,
@@ -3875,7 +3633,6 @@
             "cas": "630-08-0",
             "name": "carbon monoxide"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 32526.17776221547,
@@ -3891,7 +3648,6 @@
             "cas": "678-26-2",
             "name": "dodecafluoropentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 19247.980961024747,
@@ -3907,7 +3663,6 @@
             "cas": "691-37-2",
             "name": "4-methylpent-1-ene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -11024.977431671196,
@@ -3923,7 +3678,6 @@
             "cas": "771-56-2",
             "name": "pentafluorotoluene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 50543.618255753536,
@@ -3939,7 +3693,6 @@
             "cas": "811-97-2",
             "name": "1,1,1,2-tetrafluoroethane (R-134a)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 25475.513462021525,
@@ -3955,7 +3708,6 @@
             "cas": "872-05-9",
             "name": "1-decene"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 92914.11975786244,
@@ -3971,7 +3723,6 @@
             "cas": "1067-08-9",
             "name": "3-ethyl-3-methylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -11224.524534506872,
@@ -3987,7 +3738,6 @@
             "cas": "1070-87-7",
             "name": "2,2,4,4-tetramethylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 30106.669140332877,
@@ -4003,7 +3753,6 @@
             "cas": "1071-81-4",
             "name": "2,2,5,5-tetramethylhexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 6651.570094522591,
@@ -4019,7 +3768,6 @@
             "cas": "108-89-4",
             "name": "4-methylpyridine (4-picoline)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 32459.662061270243,
@@ -4035,7 +3783,6 @@
             "cas": "1186-53-4",
             "name": "2,2,3,4-tetramethylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -45081.01631562685,
@@ -4051,7 +3798,6 @@
             "cas": "1333-74-0",
             "name": "hydrogen"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 23970.595728135788,
@@ -4067,7 +3813,6 @@
             "cas": "1511-62-2",
             "name": "bromodifluoromethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 27055.261359470638,
@@ -4083,7 +3828,6 @@
             "cas": "1640-89-7",
             "name": "ethylcyclopentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 48614.66292834199,
@@ -4099,7 +3843,6 @@
             "cas": "1717-00-6",
             "name": "1,1-dichloro-1-fluoroethane (R-141b)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 17792.95000284793,
@@ -4115,7 +3858,6 @@
             "cas": "1759-58-6",
             "name": "trans-1,3-dimethylcyclopentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -20969.074722982466,
@@ -4131,7 +3873,6 @@
             "cas": "2207-04-7",
             "name": "t-1,4-dimethylcyclohexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 32443.033136033937,
@@ -4147,7 +3888,6 @@
             "cas": "2532-58-3",
             "name": "cis-1,3-dimethylcyclopentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -20969.074722982466,
@@ -4163,7 +3903,6 @@
             "cas": "2837-89-0",
             "name": "1-chloro-1,2,2,2-tetrafluoroethane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 25126.306032059085,
@@ -4179,7 +3918,6 @@
             "cas": "3221-61-2",
             "name": "2-methyloctane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 49171.73192375825,
@@ -4195,7 +3933,6 @@
             "cas": "3522-94-9",
             "name": "2,2,5-trimethylhexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -7316.72710397485,
@@ -4211,7 +3948,6 @@
             "cas": "7154-79-2",
             "name": "2,2,3,3-tetramethylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -50044.75049866435,
@@ -4227,7 +3963,6 @@
             "cas": "7154-80-5",
             "name": "3,3,5-trimethylheptane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -24935.073391841564,
@@ -4243,7 +3978,6 @@
             "cas": "7439-90-9",
             "name": "krypton"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 20786.156545383095
@@ -4255,7 +3989,6 @@
             "cas": "7440-01-9",
             "name": "neon"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 20786.156545383095
@@ -4267,7 +4000,6 @@
             "cas": "7440-37-1",
             "name": "argon"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 20786.156545383095
@@ -4279,7 +4011,6 @@
             "cas": "7440-63-3",
             "name": "xenon"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 20786.156545383095
@@ -4291,7 +4022,6 @@
             "cas": "7446-09-5",
             "name": "sulfur dioxide"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 36724.98138438285,
@@ -4307,7 +4037,6 @@
             "cas": "7446-11-9",
             "name": "sulfur trioxide"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 28485.348929792995,
@@ -4323,7 +4052,6 @@
             "cas": "7553-56-2",
             "name": "iodine"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 29167.134864481563,
@@ -4339,7 +4067,6 @@
             "cas": "7616-94-6",
             "name": "perchloryl fluoride"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 3907.7974305320217,
@@ -4355,7 +4082,6 @@
             "cas": "7647-01-0",
             "name": "hydrogen chloride"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 31819.448439672444,
@@ -4371,7 +4097,6 @@
             "cas": "7664-39-3",
             "name": "hydrogen fluoride"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 32434.71867341578,
@@ -4387,7 +4112,6 @@
             "cas": "7664-41-7",
             "name": "ammonia"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 35236.69257573343,
@@ -4403,7 +4127,6 @@
             "cas": "7698-05-7",
             "name": "deuterium chloride"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 32567.750075306234,
@@ -4419,7 +4142,6 @@
             "cas": "7704-34-9",
             "name": "sulfur"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 23305.438718683527,
@@ -4435,7 +4157,6 @@
             "cas": "7726-95-6",
             "name": "bromine"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 26706.053929508205,
@@ -4451,7 +4172,6 @@
             "cas": "7727-37-9",
             "name": "nitrogen"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 29424.883205644313,
@@ -4467,7 +4187,6 @@
             "cas": "7732-18-5",
             "name": "water"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 36542.06320678348,
@@ -4483,7 +4202,6 @@
             "cas": "7782-39-0",
             "name": "deuterium"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 29848.920799170126,
@@ -4499,7 +4217,6 @@
             "cas": "7782-41-4",
             "name": "Fluorine"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 27828.50638295889,
@@ -4515,7 +4232,6 @@
             "cas": "7782-44-7",
             "name": "oxygen"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 30181.499303896257,
@@ -4531,7 +4247,6 @@
             "cas": "7782-50-5",
             "name": "chlorine"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 25408.997761076298,
@@ -4547,7 +4262,6 @@
             "cas": "7783-06-4",
             "name": "hydrogen sulfide"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 35469.49752904171,
@@ -4563,7 +4277,6 @@
             "cas": "7783-41-7",
             "name": "oxygen difluoride"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 28576.80801859268,
@@ -4579,7 +4292,6 @@
             "cas": "7783-60-0",
             "name": "sulfur tetrafluoride"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -6718.085795467817,
@@ -4595,7 +4307,6 @@
             "cas": "7789-20-0",
             "name": "deuterium oxide"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 35536.013229986944,
@@ -4611,7 +4322,6 @@
             "cas": "7440-59-7",
             "name": "helium"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 20786.156545383095
@@ -4623,7 +4333,6 @@
             "cas": "10022-50-1",
             "name": "nitrogen dioxyfluoride"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 13469.429441408247,
@@ -4639,7 +4348,6 @@
             "cas": "10024-97-2",
             "name": "dinitrogen oxide (nitrous oxide)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 26315.274186455,
@@ -4655,7 +4363,6 @@
             "cas": "10028-15-6",
             "name": "ozone"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 34139.1835101372,
@@ -4671,7 +4378,6 @@
             "cas": "10034-85-2",
             "name": "hydrogen iodide"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 30331.159631023016,
@@ -4687,7 +4393,6 @@
             "cas": "10035-10-6",
             "name": "hydrogen bromide"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 31944.165378944745,
@@ -4703,7 +4408,6 @@
             "cas": "10043-92-2",
             "name": "radon"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 20786.156545383095
@@ -4715,7 +4419,6 @@
             "cas": "10102-43-9",
             "name": "nitrogen monoxide (nitric oxide)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 37697.77351070678,
@@ -4731,7 +4434,6 @@
             "cas": "10544-72-6",
             "name": "dinitrogen tetroxide (nitrogen dioxide)"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 28052.996873649026,
@@ -4747,7 +4449,6 @@
             "cas": "13465-07-1",
             "name": "dihydrogen disulfide"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 27969.852247467494,
@@ -4763,7 +4464,6 @@
             "cas": "13475-81-5",
             "name": "2,2,3,3-tetramethylhexane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -63838.443982180564,
@@ -4779,7 +4479,6 @@
             "cas": "13536-59-9",
             "name": "deuteriumbromide"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 30896.543089057435,
@@ -4795,7 +4494,6 @@
             "cas": "13536-94-2",
             "name": "deuterium sulfide"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 35669.04463187739,
@@ -4811,7 +4509,6 @@
             "cas": "13550-49-7",
             "name": "trideuteroammonia"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 34006.152108246744,
@@ -4827,7 +4524,6 @@
             "cas": "13983-20-5",
             "name": "deuterium hydride"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 32368.202972470557,
@@ -4843,7 +4539,6 @@
             "cas": "14104-45-1",
             "name": "deuterium iodide"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 31104.404654511265,
@@ -4859,7 +4554,6 @@
             "cas": "14762-55-1",
             "name": "helium-3"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 20786.156545383095
@@ -4871,7 +4565,6 @@
             "cas": "16747-38-9",
             "name": "2,3,3,4-tetramethylpentane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -76401.59699821011,
@@ -4887,7 +4580,6 @@
             "cas": "20291-95-6",
             "name": "2,2,5-trimethylheptane"
         },
-        "molarweight": 0.0,
         "model_record": {
             "DIPPR100": [
                 -7990.198576045262,
