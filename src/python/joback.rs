@@ -56,6 +56,7 @@ impl_json_handling!(PyJobackRecord);
 impl_pure_record!(JobackRecord, PyJobackRecord);
 impl_segment_record!(JobackRecord, PyJobackRecord);
 
+/// Ideal gas model based on the Joback & Reid GC method.
 #[pyclass(name = "Joback")]
 #[derive(Clone)]
 pub struct PyJoback(pub Arc<Joback>);
