@@ -13,6 +13,7 @@ use std::path::Path;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PureRecord<M> {
     pub identifier: Identifier,
+    #[serde(default)]
     pub molarweight: f64,
     pub model_record: M,
 }
