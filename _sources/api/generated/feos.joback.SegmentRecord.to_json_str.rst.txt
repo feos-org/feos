@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.joback.SegmentRecord.to\_json\_str
+=======================================
+
+.. currentmodule:: feos.joback
+
+.. automethod:: SegmentRecord.to_json_str

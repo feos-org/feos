@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dippr.DipprRecord.to\_json\_str
+====================================
+
+.. currentmodule:: feos.dippr
+
+.. automethod:: DipprRecord.to_json_str

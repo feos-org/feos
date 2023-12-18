@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dippr.Dippr.from\_model\_records
+=====================================
+
+.. currentmodule:: feos.dippr
+
+.. automethod:: Dippr.from_model_records

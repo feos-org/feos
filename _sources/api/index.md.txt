@@ -7,7 +7,6 @@
    :maxdepth: 1
 
    si
-   ideal_gas
    eos
    dft
 ```
@@ -26,4 +25,6 @@ These modules contain the objects to e.g. read parameters from files or build pa
    pets
    uvtheory
    saftvrqmie
+   joback
+   dippr
 ```

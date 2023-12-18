@@ -1,0 +1,44 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.joback.Joback
+==================
+
+.. currentmodule:: feos.joback
+
+.. autoclass:: Joback
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Joback.__init__
+      ~Joback.from_json
+      ~Joback.from_json_segments
+      ~Joback.from_json_smiles
+      ~Joback.from_model_records
+      ~Joback.from_multiple_json
+      ~Joback.from_records
+      ~Joback.from_segments
+      ~Joback.from_smiles
+      ~Joback.new_binary
+      ~Joback.new_pure
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Joback.binary_records
+      ~Joback.pure_records
+   
+   

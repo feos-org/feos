@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.joback.Joback.from\_records
+================================
+
+.. currentmodule:: feos.joback
+
+.. automethod:: Joback.from_records

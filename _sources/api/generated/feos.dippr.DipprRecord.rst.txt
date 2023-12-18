@@ -1,0 +1,32 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dippr.DipprRecord
+======================
+
+.. currentmodule:: feos.dippr
+
+.. autoclass:: DipprRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~DipprRecord.__init__
+      ~DipprRecord.eq100
+      ~DipprRecord.eq107
+      ~DipprRecord.eq127
+      ~DipprRecord.from_json_str
+      ~DipprRecord.to_json_str
+   
+   
+
+   
+   
+   

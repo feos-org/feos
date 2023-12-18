@@ -19,6 +19,7 @@ feos.eos.EquationOfState
       :toctree: ./
    
       ~EquationOfState.__init__
+      ~EquationOfState.dippr
       ~EquationOfState.gc_pcsaft
       ~EquationOfState.ideal_gas
       ~EquationOfState.joback

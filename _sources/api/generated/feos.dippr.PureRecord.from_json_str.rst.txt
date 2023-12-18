@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dippr.PureRecord.from\_json\_str
+=====================================
+
+.. currentmodule:: feos.dippr
+
+.. automethod:: PureRecord.from_json_str
