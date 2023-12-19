@@ -1,6 +1,6 @@
 [package]
 name = "feos"
-version = "0.5.1"
+version = "0.6.0"
 authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <prehner@ethz.ch>"]
 edition = "2021"
 readme = "README.md"
@@ -24,9 +24,9 @@ crate-type = ["rlib", "cdylib"]
 [dependencies]
 quantity = { version = "0.7", optional = true }
 num-dual = "0.8"
-feos-core = { version = "0.5", path = "feos-core" }
-feos-dft = { version = "0.5", path = "feos-dft", optional = true }
-feos-derive = { version = "0.3", path = "feos-derive" }
+feos-core = { version = "0.6", path = "feos-core" }
+feos-dft = { version = "0.6", path = "feos-dft", optional = true }
+feos-derive = { version = "0.4", path = "feos-derive" }
 numpy = { version = "0.20", optional = true }
 ndarray = { version = "0.15", features = ["approx"] }
 petgraph = { version = "0.6", optional = true }
@@ -38,7 +38,7 @@ serde_json = "1.0"
 lazy_static = { version = "1.4", optional = true }
 indexmap = "2.0"
 rayon = { version = "1.7", optional = true }
-itertools = "0.11"
+itertools = "0.12"
 typenum = "1.16"
 
 [dependencies.pyo3]
