@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2023-12-19
+### Packaging
+- Updated `feos-core` dependency to 0.6.
+
 ## [0.5.0] - 2023-10-20
 ### Added
 - Implemented `HelmholtzEnergyFunctional` for `EquationOfState` to be able to use functionals as equations of state. [#158](https://github.com/feos-org/feos/pull/158)
