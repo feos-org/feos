@@ -52,24 +52,40 @@ impl<E: Residual> State<E> {
         options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
     ) -> EosResult<PhaseEquilibrium<E, 2>> {
+        // initialization
+        if let Some(init) = initial_state {
+            let vle = self.tp_flash_(
+                init.clone()
+                    .update_pressure(self.temperature, self.pressure(Contributions::Total))?,
+                options,
+                non_volatile_components.clone(),
+            );
+            if vle.is_ok() {
+                return vle;
+            }
+        }
+
+        let (init1, init2) = PhaseEquilibrium::vle_init_stability(self)?;
+        let vle = self.tp_flash_(init1, options, non_volatile_components.clone());
+        if vle.is_ok() {
+            return vle;
+        }
+
+        if let Some(init2) = init2 {
+            self.tp_flash_(init2, options, non_volatile_components)
+        } else {
+            vle
+        }
+    }
+
+    pub fn tp_flash_(
+        &self,
+        mut new_vle_state: PhaseEquilibrium<E, 2>,
+        options: SolverOptions,
+        non_volatile_components: Option<Vec<usize>>,
+    ) -> EosResult<PhaseEquilibrium<E, 2>> {
         // set options
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_TP, TOL_TP);
-
-        // initialization
-        let mut new_vle_state = match initial_state {
-            Some(init) => init
-                .clone()
-                .update_pressure(self.temperature, self.pressure(Contributions::Total))?,
-            None => {
-                let (init1, init2) = PhaseEquilibrium::vle_init_stability(self)?;
-                let vle1 = self.tp_flash(Some(&init1), options, non_volatile_components.clone());
-                return if vle1.is_err() && init2.is_some() {
-                    self.tp_flash(init2.as_ref(), options, non_volatile_components)
-                } else {
-                    vle1
-                };
-            }
-        };
 
         log_iter!(
             verbosity,
