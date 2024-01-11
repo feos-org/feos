@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2024-01-11
+- Python only: Release the changes introduced in `feos-core` 0.6.1.
+
 ## [0.6.0] - 2023-12-19
 ### Added
 - Added `EquationOfState.ideal_gas()` to initialize an equation of state that only consists of an ideal gas contribution. [#204](https://github.com/feos-org/feos/pull/204)

@@ -60,7 +60,15 @@ impl<E: Residual> State<E> {
             Some(init) => init
                 .clone()
                 .update_pressure(self.temperature, self.pressure(Contributions::Total))?,
-            None => PhaseEquilibrium::vle_init_stability(self)?,
+            None => {
+                let (init1, init2) = PhaseEquilibrium::vle_init_stability(self)?;
+                let vle1 = self.tp_flash(Some(&init1), options, non_volatile_components.clone());
+                return if vle1.is_err() && init2.is_some() {
+                    self.tp_flash(init2.as_ref(), options, non_volatile_components)
+                } else {
+                    vle1
+                };
+            }
         };
 
         log_iter!(
@@ -297,14 +305,19 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         Ok(())
     }
 
-    fn vle_init_stability(feed_state: &State<E>) -> EosResult<Self> {
+    fn vle_init_stability(feed_state: &State<E>) -> EosResult<(Self, Option<Self>)> {
         let mut stable_states = feed_state.stability_analysis(SolverOptions::default())?;
         let state1 = stable_states.pop();
         let state2 = stable_states.pop();
-        match (state1, state2) {
-            (Some(s1), Some(s2)) => Ok(Self::from_states(s1, s2)),
-            (Some(s1), None) => Ok(Self::from_states(s1, feed_state.clone())),
-            _ => Err(EosError::NoPhaseSplit),
+        if let Some(s1) = state1 {
+            let init1 = Self::from_states(s1.clone(), feed_state.clone());
+            if let Some(s2) = state2 {
+                Ok((Self::from_states(s1, s2), Some(init1)))
+            } else {
+                Ok((init1, None))
+            }
+        } else {
+            Err(EosError::NoPhaseSplit)
         }
     }
 }
