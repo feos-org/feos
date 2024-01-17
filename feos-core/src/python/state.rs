@@ -1066,6 +1066,38 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.specific_enthalpy(contributions))
             }
 
+            /// Return mass specific isochoric heat capacity.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the Helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn specific_isochoric_heat_capacity(&self, contributions: Contributions) -> PySINumber {
+                PySINumber::from(self.0.specific_isochoric_heat_capacity(contributions))
+            }
+
+            /// Return mass specific isobaric heat capacity.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the Helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            fn specific_isobaric_heat_capacity(&self, contributions: Contributions) -> PySINumber {
+                PySINumber::from(self.0.specific_isobaric_heat_capacity(contributions))
+            }
+
             #[getter]
             fn get_total_moles(&self) -> PySINumber {
                 PySINumber::from(self.0.total_moles)
