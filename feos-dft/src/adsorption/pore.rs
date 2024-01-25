@@ -6,18 +6,26 @@ use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
 use crate::WeightFunctionInfo;
+use feos_core::si::{
+    Density, Dimensionless, Energy, Length, MolarEnergy, MolarWeight, Quantity, Temperature,
+    Volume, _Moles, _Pressure, KELVIN, RGAS,
+};
 use feos_core::{Components, Contributions, EosResult, ReferenceSystem, State, StateBuilder};
+use feos_core::{Components, Contributions, EosResult, State, StateBuilder};
 use ndarray::prelude::*;
-use ndarray::Axis as Axis_nd;
-use ndarray::RemoveAxis;
+use ndarray::{Axis as Axis_nd, RemoveAxis};
 use num_dual::linalg::LU;
 use num_dual::DualNum;
 use quantity::{Density, Dimensionless, Energy, Length, MolarEnergy, Temperature, Volume, KELVIN};
 use std::fmt::Display;
 use std::sync::Arc;
+use typenum::Diff;
 
 const POTENTIAL_OFFSET: f64 = 2.0;
 const DEFAULT_GRID_POINTS: usize = 2048;
+
+pub type _HenryCoefficient = Diff<_Moles, _Pressure>;
+pub type HenryCoefficient<T> = Quantity<T, _HenryCoefficient>;
 
 /// Parameters required to specify a 1D pore.
 pub struct Pore1D {
@@ -143,6 +151,35 @@ where
         Ok((self.partial_molar_enthalpy_of_adsorption()?
             * Dimensionless::new(&self.profile.bulk.molefracs))
         .sum())
+    }
+
+    pub fn henry_coefficient(&self) -> EosResult<HenryCoefficient<Array1<f64>>> {
+        let mut pot = self.profile.external_potential.clone();
+        // pot.outer_iter_mut()
+        //     .zip(self.profile.dft.m().iter())
+        //     .for_each(|(mut v, &m)| v /= m);
+        let exp_pot = Dimensionless::from_reduced(pot.mapv(|v| (-v).exp()));
+        let m = self.profile.dft.m().into_owned();
+        Ok(self.profile.integrate_comp(&exp_pot)
+            / (RGAS * self.profile.temperature * Dimensionless::from_reduced(m)))
+    }
+
+    pub fn ideal_gas_enthalpy_of_adsorption(&self) -> EosResult<MolarEnergy<Array1<f64>>>
+    where
+        D::Larger: Dimension<Smaller = D>,
+    {
+        let mut pot = self.profile.external_potential.clone();
+        pot.outer_iter_mut()
+            .zip(self.profile.dft.m().iter())
+            .for_each(|(mut v, &m)| v /= m);
+        let potm1 = Dimensionless::from_reduced(self.profile.external_potential.mapv(|v| 1.0 - v));
+        let exp_pot = Dimensionless::from_reduced(pot.mapv(|v| (-v).exp()));
+        let h = self
+            .profile
+            .integrate_comp(&(potm1 * &exp_pot))
+            .convert_into(self.profile.integrate_comp(&exp_pot));
+        let m = self.profile.dft.m().into_owned();
+        Ok(h * RGAS * self.profile.temperature / Dimensionless::from_reduced(m))
     }
 }
 
