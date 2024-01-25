@@ -51,11 +51,7 @@ typenum = "1.16"
 
 [dependencies.pyo3]
 version = "0.23"
-<<<<<<< HEAD
 features = ["extension-module", "abi3", "abi3-py39"]
-=======
-features = ["extension-module", "abi3", "abi3-py37"]
->>>>>>> 13057cfa (Update to PyO3 v0.23)
 optional = true
 
 [dev-dependencies]
