@@ -132,5 +132,25 @@ fn methane_co2_pcsaft(c: &mut Criterion) {
     bench_dual_numbers(c, "dual_numbers_pcsaft_methane_co2", state);
 }
 
-criterion_group!(bench, pcsaft, methane_co2_pcsaft);
+fn co2_pcsaft(c: &mut Criterion) {
+    let parameters = PcSaftParameters::from_json(
+        vec!["carbon dioxide"],
+        "./parameters/pcsaft/gross2005_fit.json",
+        None,
+        IdentifierOption::Name,
+    )
+    .unwrap();
+    let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
+
+    // 230 K, 50 bar
+    let temperature = 230.0 * KELVIN;
+    let density = 24.16896 * KILO * MOL / METER.powi::<P3>();
+    let volume = 10.0 * MOL / density;
+    let x = arr1(&[1.0]);
+    let moles = &x * 10.0 * MOL;
+    let state = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
+    bench_dual_numbers(c, "dual_numbers_pcsaft_co2", state);
+}
+
+criterion_group!(bench, co2_pcsaft); //pcsaft, methane_co2_pcsaft);
 criterion_main!(bench);

@@ -35,6 +35,11 @@
 #![warn(clippy::all)]
 #![allow(clippy::too_many_arguments)]
 
+use mimalloc::MiMalloc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
+
 #[cfg(feature = "dft")]
 mod functional;
 #[cfg(feature = "dft")]
@@ -76,3 +81,4 @@ pub mod dft {
     //! Re-export of all functionalities in [feos_dft].
     pub use feos_dft::*;
 }
+
