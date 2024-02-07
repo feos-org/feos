@@ -8,11 +8,13 @@ use crate::equation_of_state::{Components, HelmholtzEnergy, HelmholtzEnergyDual,
 use crate::parameter::{Identifier, Parameter, ParameterError, PureRecord};
 use crate::si::{MolarWeight, GRAM, MOL};
 use crate::state::StateHD;
+use crate::Properties;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
 use std::f64::consts::SQRT_2;
 use std::fmt;
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 const KB_A3: f64 = 13806490.0;
@@ -150,8 +152,8 @@ struct PengRobinsonContribution {
     parameters: Arc<PengRobinsonParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for PengRobinsonContribution {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<PhantomData<D>, D> for PengRobinsonContribution {
+    fn helmholtz_energy(&self, state: &StateHD<D>, properties: &PhantomData<D>) -> D {
         // temperature dependent a parameter
         let p = &self.parameters;
         let x = &state.molefracs;
@@ -188,13 +190,13 @@ pub struct PengRobinson {
     /// Parameters
     parameters: Arc<PengRobinsonParameters>,
     /// Non-ideal contributions to the Helmholtz energy
-    contributions: Vec<Box<dyn HelmholtzEnergy>>,
+    contributions: Vec<Box<dyn HelmholtzEnergy<Self>>>,
 }
 
 impl PengRobinson {
     /// Create a new equation of state from a set of parameters.
     pub fn new(parameters: Arc<PengRobinsonParameters>) -> Self {
-        let contributions: Vec<Box<dyn HelmholtzEnergy>> =
+        let contributions: Vec<Box<dyn HelmholtzEnergy<Self>>> =
             vec![Box::new(PengRobinsonContribution {
                 parameters: parameters.clone(),
             })];
@@ -222,12 +224,18 @@ impl Components for PengRobinson {
 }
 
 impl Residual for PengRobinson {
+    type Properties<D> = PhantomData<D>;
+
+    fn properties<D: DualNum<f64>>(&self, _: D) -> PhantomData<D> {
+        PhantomData
+    }
+
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         let b = (moles * &self.parameters.b).sum() / moles.sum();
         0.9 / b
     }
 
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
+    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy<Self>>] {
         &self.contributions
     }
 

@@ -5,10 +5,19 @@ use crate::{EosError, EosResult};
 use ndarray::prelude::*;
 use num_dual::*;
 use num_traits::{One, Zero};
+use std::marker::PhantomData;
 use std::ops::Div;
+
+pub trait Properties {
+    type Values<D>;
+}
 
 /// A reisdual Helmholtz energy model.
 pub trait Residual: Components + Send + Sync {
+    type Properties<D>;
+
+    fn properties<D: DualNum<f64>>(&self, temperature: D) -> Self::Properties<D>;
+
     /// Return the maximum density in Angstrom^-3.
     ///
     /// This value is used as an estimate for a liquid phase for phase
@@ -19,7 +28,7 @@ pub trait Residual: Components + Send + Sync {
 
     /// Return a slice of the individual contributions (excluding the ideal gas)
     /// of the equation of state.
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>];
+    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy<Self>>];
 
     /// Molar weight of all components.
     ///
@@ -29,11 +38,12 @@ pub trait Residual: Components + Send + Sync {
     /// Evaluate the residual reduced Helmholtz energy $\beta A^\mathrm{res}$.
     fn evaluate_residual<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D
     where
-        dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
+        dyn HelmholtzEnergy<Self>: HelmholtzEnergyDual<Self::Properties<D>, D>,
     {
+        let properties = self.properties(state.temperature);
         self.contributions()
             .iter()
-            .map(|c| c.helmholtz_energy(state))
+            .map(|c| c.helmholtz_energy(state, &properties))
             .sum()
     }
 
@@ -44,11 +54,12 @@ pub trait Residual: Components + Send + Sync {
         state: &StateHD<D>,
     ) -> Vec<(String, D)>
     where
-        dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
+        dyn HelmholtzEnergy<Self>: HelmholtzEnergyDual<Self::Properties<D>, D>,
     {
+        let properties = self.properties(state.temperature);
         self.contributions()
             .iter()
-            .map(|c| (c.to_string(), c.helmholtz_energy(state)))
+            .map(|c| (c.to_string(), c.helmholtz_energy(state, &properties)))
             .collect()
     }
 
@@ -82,76 +93,76 @@ pub trait Residual: Components + Send + Sync {
         Ok(Density::from_reduced(self.compute_max_density(&mr)))
     }
 
-    /// Calculate the second virial coefficient $B(T)$
-    fn second_virial_coefficient(
-        &self,
-        temperature: Temperature,
-        moles: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<<f64 as Div<Density>>::Output> {
-        let mr = self.validate_moles(moles)?;
-        let x = (&mr / mr.sum()).into_value();
-        let mut rho = HyperDual64::zero();
-        rho.eps1 = 1.0;
-        rho.eps2 = 1.0;
-        let t = HyperDual64::from(temperature.to_reduced());
-        let s = StateHD::new_virial(t, rho, x);
-        Ok(Quantity::from_reduced(
-            self.evaluate_residual(&s).eps1eps2 * 0.5,
-        ))
-    }
+    // /// Calculate the second virial coefficient $B(T)$
+    // fn second_virial_coefficient(
+    //     &self,
+    //     temperature: Temperature,
+    //     moles: Option<&Moles<Array1<f64>>>,
+    // ) -> EosResult<<f64 as Div<Density>>::Output> {
+    //     let mr = self.validate_moles(moles)?;
+    //     let x = (&mr / mr.sum()).into_value();
+    //     let mut rho = HyperDual64::zero();
+    //     rho.eps1 = 1.0;
+    //     rho.eps2 = 1.0;
+    //     let t = HyperDual64::from(temperature.to_reduced());
+    //     let s = StateHD::new_virial(t, rho, x);
+    //     Ok(Quantity::from_reduced(
+    //         self.evaluate_residual(&s).eps1eps2 * 0.5,
+    //     ))
+    // }
 
-    /// Calculate the third virial coefficient $C(T)$
-    #[allow(clippy::type_complexity)]
-    fn third_virial_coefficient(
-        &self,
-        temperature: Temperature,
-        moles: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<<<f64 as Div<Density>>::Output as Div<Density>>::Output> {
-        let mr = self.validate_moles(moles)?;
-        let x = (&mr / mr.sum()).into_value();
-        let rho = Dual3_64::zero().derivative();
-        let t = Dual3_64::from(temperature.to_reduced());
-        let s = StateHD::new_virial(t, rho, x);
-        Ok(Quantity::from_reduced(self.evaluate_residual(&s).v3 / 3.0))
-    }
+    // /// Calculate the third virial coefficient $C(T)$
+    // #[allow(clippy::type_complexity)]
+    // fn third_virial_coefficient(
+    //     &self,
+    //     temperature: Temperature,
+    //     moles: Option<&Moles<Array1<f64>>>,
+    // ) -> EosResult<<<f64 as Div<Density>>::Output as Div<Density>>::Output> {
+    //     let mr = self.validate_moles(moles)?;
+    //     let x = (&mr / mr.sum()).into_value();
+    //     let rho = Dual3_64::zero().derivative();
+    //     let t = Dual3_64::from(temperature.to_reduced());
+    //     let s = StateHD::new_virial(t, rho, x);
+    //     Ok(Quantity::from_reduced(self.evaluate_residual(&s).v3 / 3.0))
+    // }
 
-    /// Calculate the temperature derivative of the second virial coefficient $B'(T)$
-    #[allow(clippy::type_complexity)]
-    fn second_virial_coefficient_temperature_derivative(
-        &self,
-        temperature: Temperature,
-        moles: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<<<f64 as Div<Density>>::Output as Div<Temperature>>::Output> {
-        let mr = self.validate_moles(moles)?;
-        let x = (&mr / mr.sum()).into_value();
-        let mut rho = HyperDual::zero();
-        rho.eps1 = Dual64::one();
-        rho.eps2 = Dual64::one();
-        let t = HyperDual::from_re(Dual64::from(temperature.to_reduced()).derivative());
-        let s = StateHD::new_virial(t, rho, x);
-        Ok(Quantity::from_reduced(
-            self.evaluate_residual(&s).eps1eps2.eps * 0.5,
-        ))
-    }
+    // /// Calculate the temperature derivative of the second virial coefficient $B'(T)$
+    // #[allow(clippy::type_complexity)]
+    // fn second_virial_coefficient_temperature_derivative(
+    //     &self,
+    //     temperature: Temperature,
+    //     moles: Option<&Moles<Array1<f64>>>,
+    // ) -> EosResult<<<f64 as Div<Density>>::Output as Div<Temperature>>::Output> {
+    //     let mr = self.validate_moles(moles)?;
+    //     let x = (&mr / mr.sum()).into_value();
+    //     let mut rho = HyperDual::zero();
+    //     rho.eps1 = Dual64::one();
+    //     rho.eps2 = Dual64::one();
+    //     let t = HyperDual::from_re(Dual64::from(temperature.to_reduced()).derivative());
+    //     let s = StateHD::new_virial(t, rho, x);
+    //     Ok(Quantity::from_reduced(
+    //         self.evaluate_residual(&s).eps1eps2.eps * 0.5,
+    //     ))
+    // }
 
-    /// Calculate the temperature derivative of the third virial coefficient $C'(T)$
-    #[allow(clippy::type_complexity)]
-    fn third_virial_coefficient_temperature_derivative(
-        &self,
-        temperature: Temperature,
-        moles: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<
-        <<<f64 as Div<Density>>::Output as Div<Density>>::Output as Div<Temperature>>::Output,
-    > {
-        let mr = self.validate_moles(moles)?;
-        let x = (&mr / mr.sum()).into_value();
-        let rho = Dual3::zero().derivative();
-        let t = Dual3::from_re(Dual64::from(temperature.to_reduced()).derivative());
-        let s = StateHD::new_virial(t, rho, x);
-        Ok(Quantity::from_reduced(
-            self.evaluate_residual(&s).v3.eps / 3.0,
-        ))
-    }
+    // /// Calculate the temperature derivative of the third virial coefficient $C'(T)$
+    // #[allow(clippy::type_complexity)]
+    // fn third_virial_coefficient_temperature_derivative(
+    //     &self,
+    //     temperature: Temperature,
+    //     moles: Option<&Moles<Array1<f64>>>,
+    // ) -> EosResult<
+    //     <<<f64 as Div<Density>>::Output as Div<Density>>::Output as Div<Temperature>>::Output,
+    // > {
+    //     let mr = self.validate_moles(moles)?;
+    //     let x = (&mr / mr.sum()).into_value();
+    //     let rho = Dual3::zero().derivative();
+    //     let t = Dual3::from_re(Dual64::from(temperature.to_reduced()).derivative());
+    //     let s = StateHD::new_virial(t, rho, x);
+    //     Ok(Quantity::from_reduced(
+    //         self.evaluate_residual(&s).v3.eps / 3.0,
+    //     ))
+    // }
 }
 
 /// Reference values and residual entropy correlations for entropy scaling.
@@ -193,11 +204,17 @@ impl Components for NoResidual {
 }
 
 impl Residual for NoResidual {
+    type Properties<D> = PhantomData<D>;
+
+    fn properties<D: DualNum<f64>>(&self, temperature: D) -> PhantomData<D> {
+        PhantomData
+    }
+
     fn compute_max_density(&self, _: &Array1<f64>) -> f64 {
         1.0
     }
 
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
+    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy<Self>>] {
         &[]
     }
 
