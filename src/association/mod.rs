@@ -332,7 +332,7 @@ impl<P: HardSphereProperties> Association<P> {
     }
 }
 
-impl<D: DualNum<f64> + Copy + ScalarOperand, P: HardSphereProperties> HelmholtzEnergyDual<D>
+impl<D: DualNum<f64> + Copy + ScalarOperand, P: HardSphereProperties> HelmholtzEnergyDual<Self, D>
     for Association<P>
 {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {

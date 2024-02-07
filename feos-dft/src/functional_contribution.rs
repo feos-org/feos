@@ -5,11 +5,18 @@ use ndarray::RemoveAxis;
 use num_dual::*;
 use num_traits::{One, Zero};
 use std::fmt::Display;
+use std::marker::PhantomData;
 
 macro_rules! impl_helmholtz_energy {
     ($number:ty) => {
-        impl HelmholtzEnergyDual<$number> for Box<dyn FunctionalContribution> {
-            fn helmholtz_energy(&self, state: &StateHD<$number>) -> $number {
+        impl HelmholtzEnergyDual<PhantomData<$number>, $number>
+            for Box<dyn FunctionalContribution>
+        {
+            fn helmholtz_energy(
+                &self,
+                state: &StateHD<$number>,
+                _: &PhantomData<$number>,
+            ) -> $number {
                 // calculate weight functions
                 let weight_functions = self.weight_functions(state.temperature);
 

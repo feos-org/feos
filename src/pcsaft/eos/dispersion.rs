@@ -1,4 +1,4 @@
-use super::PcSaftParameters;
+use super::{PcSaft, PcSaftParameters};
 use crate::hard_sphere::HardSphereProperties;
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use num_dual::DualNum;
@@ -65,7 +65,7 @@ pub struct Dispersion {
     pub parameters: Arc<PcSaftParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Dispersion {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<PcSaft, D> for Dispersion {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         // auxiliary variables
         let n = self.parameters.m.len();

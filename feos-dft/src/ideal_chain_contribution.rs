@@ -3,6 +3,7 @@ use feos_core::{EosResult, HelmholtzEnergyDual, StateHD};
 use ndarray::*;
 use num_dual::DualNum;
 use std::fmt;
+use std::marker::PhantomData;
 
 #[derive(Clone)]
 pub struct IdealChainContribution {
@@ -19,8 +20,8 @@ impl IdealChainContribution {
     }
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for IdealChainContribution {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<PhantomData<D>, D> for IdealChainContribution {
+    fn helmholtz_energy(&self, state: &StateHD<D>, _: &PhantomData<D>) -> D {
         let segments = self.component_index.len();
         if self.component_index[segments - 1] + 1 != segments {
             return D::zero();

@@ -1,4 +1,4 @@
-use super::PcSaftParameters;
+use super::{PcSaft, PcSaftParameters};
 use crate::hard_sphere::HardSphereProperties;
 use feos_core::{HelmholtzEnergyDual, StateHD};
 use ndarray::prelude::*;
@@ -165,7 +165,7 @@ pub struct Dipole {
     pub parameters: Arc<PcSaftParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Dipole {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<PcSaft, D> for Dipole {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let m = MeanSegmentNumbers::new(&self.parameters, Multipole::Dipole);
         let p = &self.parameters;
@@ -242,7 +242,7 @@ pub struct Quadrupole {
     pub parameters: Arc<PcSaftParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Quadrupole {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<PcSaft, D> for Quadrupole {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let m = MeanSegmentNumbers::new(&self.parameters, Multipole::Quadrupole);
         let p = &self.parameters;
@@ -329,7 +329,7 @@ pub struct DipoleQuadrupole {
     pub variant: DQVariants,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for DipoleQuadrupole {
+impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<PcSaft, D> for DipoleQuadrupole {
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
 

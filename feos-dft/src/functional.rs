@@ -15,6 +15,7 @@ use petgraph::graph::{Graph, UnGraph};
 use petgraph::visit::EdgeRef;
 use petgraph::Directed;
 use std::borrow::Cow;
+use std::marker::PhantomData;
 use std::ops::{Deref, MulAssign};
 use std::sync::Arc;
 
@@ -95,11 +96,18 @@ impl<F: HelmholtzEnergyFunctional> Components for DFT<F> {
 }
 
 impl<F: HelmholtzEnergyFunctional> Residual for DFT<F> {
+    type Properties<D> = PhantomData<D>;
+    type Inner = Self;
+
+    fn properties<D: DualNum<f64>>(&self, _: D) -> PhantomData<D> {
+        PhantomData
+    }
+
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.0.compute_max_density(moles)
     }
 
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
+    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy<Self>>] {
         unreachable!()
     }
 
@@ -109,14 +117,16 @@ impl<F: HelmholtzEnergyFunctional> Residual for DFT<F> {
 
     fn evaluate_residual<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D
     where
-        dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
+        dyn HelmholtzEnergy<Self>: HelmholtzEnergyDual<PhantomData<D>, D>,
     {
         self.0
             .contributions()
             .iter()
-            .map(|c| (c as &dyn HelmholtzEnergy).helmholtz_energy(state))
+            .map(|c| (c as &dyn HelmholtzEnergy<Self>).helmholtz_energy(state, &PhantomData))
             .sum::<D>()
-            + self.ideal_chain_contribution().helmholtz_energy(state)
+            + self
+                .ideal_chain_contribution()
+                .helmholtz_energy(state, &PhantomData)
     }
 
     fn evaluate_residual_contributions<D: DualNum<f64> + Copy>(
@@ -124,7 +134,7 @@ impl<F: HelmholtzEnergyFunctional> Residual for DFT<F> {
         state: &StateHD<D>,
     ) -> Vec<(String, D)>
     where
-        dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
+        dyn HelmholtzEnergy<Self>: HelmholtzEnergyDual<PhantomData<D>, D>,
     {
         let mut res: Vec<(String, D)> = self
             .0
@@ -133,13 +143,14 @@ impl<F: HelmholtzEnergyFunctional> Residual for DFT<F> {
             .map(|c| {
                 (
                     c.to_string(),
-                    (c as &dyn HelmholtzEnergy).helmholtz_energy(state),
+                    (c as &dyn HelmholtzEnergy<Self>).helmholtz_energy(state, &PhantomData),
                 )
             })
             .collect();
         res.push((
             self.ideal_chain_contribution().to_string(),
-            self.ideal_chain_contribution().helmholtz_energy(state),
+            self.ideal_chain_contribution()
+                .helmholtz_energy(state, &PhantomData),
         ));
         res
     }

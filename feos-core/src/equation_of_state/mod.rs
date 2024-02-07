@@ -11,7 +11,7 @@ mod residual;
 
 pub use helmholtz_energy::{HelmholtzEnergy, HelmholtzEnergyDual};
 pub use ideal_gas::{DeBroglieWavelength, DeBroglieWavelengthDual, IdealGas};
-pub use residual::{EntropyScaling, NoResidual, Properties, Residual};
+pub use residual::{EntropyScaling, NoResidual, Residual};
 
 /// The number of components that the model is initialized for.
 pub trait Components {
@@ -80,15 +80,19 @@ impl<I: IdealGas, R: Components + Sync + Send> IdealGas for EquationOfState<I, R
 
 impl<I: IdealGas, R: Residual> Residual for EquationOfState<I, R> {
     type Properties<D> = R::Properties<D>;
+    type Inner = R::Inner;
 
-    fn properties<D: num_dual::DualNum<f64>>(&self, temperature: D) -> Self::Properties<D> {
+    fn properties<D: num_dual::DualNum<f64>>(
+        &self,
+        temperature: D,
+    ) -> <Self::Inner as Residual>::Properties<D> {
         self.residual.properties(temperature)
     }
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.residual.compute_max_density(moles)
     }
 
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy<Self>>] {
+    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy<Self::Inner>>] {
         self.residual.contributions()
     }
 

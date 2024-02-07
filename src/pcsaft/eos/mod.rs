@@ -9,6 +9,7 @@ use feos_core::{
 use ndarray::Array1;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::fmt;
+use std::marker::PhantomData;
 use std::sync::Arc;
 use typenum::P2;
 
@@ -44,7 +45,7 @@ impl Default for PcSaftOptions {
 pub struct PcSaft {
     parameters: Arc<PcSaftParameters>,
     options: PcSaftOptions,
-    contributions: Vec<Box<dyn HelmholtzEnergy>>,
+    contributions: Vec<Box<dyn HelmholtzEnergy<Self>>>,
 }
 
 impl PcSaft {
@@ -108,13 +109,20 @@ impl Components for PcSaft {
 }
 
 impl Residual for PcSaft {
+    type Properties<D> = PhantomData<D>;
+    type Inner = Self;
+
+    fn properties<D: num_dual::DualNum<f64>>(&self, temperature: D) -> PhantomData<D> {
+        todo!()
+    }
+
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
             / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
                 .sum()
     }
 
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
+    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy<Self>>] {
         &self.contributions
     }
 

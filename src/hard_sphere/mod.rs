@@ -116,7 +116,9 @@ impl<P> HardSphere<P> {
     }
 }
 
-impl<D: DualNum<f64> + Copy, P: HardSphereProperties> HelmholtzEnergyDual<D> for HardSphere<P> {
+impl<D: DualNum<f64> + Copy, P: HardSphereProperties> HelmholtzEnergyDual<Self, D>
+    for HardSphere<P>
+{
     fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
         let zeta = p.zeta(state.temperature, &state.partial_density, [0, 1, 2, 3]);

@@ -8,7 +8,6 @@ use crate::equation_of_state::{Components, HelmholtzEnergy, HelmholtzEnergyDual,
 use crate::parameter::{Identifier, Parameter, ParameterError, PureRecord};
 use crate::si::{MolarWeight, GRAM, MOL};
 use crate::state::StateHD;
-use crate::Properties;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
@@ -153,7 +152,7 @@ struct PengRobinsonContribution {
 }
 
 impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<PhantomData<D>, D> for PengRobinsonContribution {
-    fn helmholtz_energy(&self, state: &StateHD<D>, properties: &PhantomData<D>) -> D {
+    fn helmholtz_energy(&self, state: &StateHD<D>, _: &PhantomData<D>) -> D {
         // temperature dependent a parameter
         let p = &self.parameters;
         let x = &state.molefracs;
@@ -225,6 +224,7 @@ impl Components for PengRobinson {
 
 impl Residual for PengRobinson {
     type Properties<D> = PhantomData<D>;
+    type Inner = Self;
 
     fn properties<D: DualNum<f64>>(&self, _: D) -> PhantomData<D> {
         PhantomData
