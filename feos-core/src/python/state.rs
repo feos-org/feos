@@ -1307,6 +1307,53 @@ macro_rules! impl_state {
             fn get_massfracs<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
                 StateVec::from(self).massfracs().view().to_pyarray(py)
             }
+
+            /// Returns selected properties of a StateVec as dictionary.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions : Contributions, optional
+            ///     The contributions to consider when calculating properties.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// Dict[str, List[float]]
+            ///     Keys: property names. Values: property for each state.
+            ///
+            /// Notes
+            /// -----
+            /// - temperature : K
+            /// - pressure : Pa
+            /// - densities : mol / m³
+            /// - mass densities : kg / m³
+            /// - molar enthalpies : kJ / mol
+            /// - molar entropies : kJ / mol / K
+            /// - specific enthalpies : kJ / kg
+            /// - specific entropies : kJ / kg / K
+            /// - xi: molefraction of component i
+            /// - component index `i` matches to order of components in parameters.
+            #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
+            pub fn to_dict(&self, contributions: Contributions) -> HashMap<String, Vec<f64>> {
+                let states = StateVec::from(self);
+                let n = states.0[0].eos.components();
+                let mut dict = HashMap::with_capacity(8 + n);
+                if n != 1 {
+                    let xs = states.molefracs();
+                    for i in 0..n {
+                        dict.insert(String::from(format!("x{}", i)), xs.column(i).to_vec());
+                    }
+                }
+                dict.insert(String::from("temperature"), states.temperature().convert_into(KELVIN).into_raw_vec());
+                dict.insert(String::from("pressure"), states.pressure().convert_into(PASCAL).into_raw_vec());
+                dict.insert(String::from("density"), states.density().convert_into(MOL / METER.powi::<P3>()).into_raw_vec());
+                dict.insert(String::from("mass density"), states.mass_density().convert_into(KILOGRAM / METER.powi::<P3>()).into_raw_vec());
+                dict.insert(String::from("molar enthalpy"), states.molar_enthalpy(contributions).convert_into(KILO * JOULE / MOL).into_raw_vec());
+                dict.insert(String::from("molar entropy"), states.molar_entropy(contributions).convert_into(KILO * JOULE / KELVIN / MOL).into_raw_vec());
+                dict.insert(String::from("specific enthalpy"), states.specific_enthalpy(contributions).convert_into(KILO * JOULE / KILOGRAM).into_raw_vec());
+                dict.insert(String::from("specific entropy"), states.specific_entropy(contributions).convert_into(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec());
+                dict
+            }
         }
     };
 }

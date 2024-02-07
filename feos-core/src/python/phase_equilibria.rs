@@ -906,7 +906,7 @@ macro_rules! impl_phase_equilibrium {
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             pub fn to_dict(&self, contributions: Contributions) -> HashMap<String, Vec<f64>> {
                 let n = self.0.states[0].liquid().eos.components();
-                let mut dict = HashMap::with_capacity(8 + 2 * n);
+                let mut dict = HashMap::with_capacity(16 + 2 * n);
                 if n != 1 {
                     let xs = self.0.liquid().molefracs();
                     let ys = self.0.vapor().molefracs();
@@ -916,7 +916,18 @@ macro_rules! impl_phase_equilibrium {
                     }
                 }
                 dict.insert(String::from("temperature"), self.0.vapor().temperature().convert_into(KELVIN).into_raw_vec());
-                dict.insert(String::from("pressure"), self.0.vapor().pressure().convert_into(PASCAL).into_raw_vec());
+
+                // Check if liquid and vapor pressures are different (e.g. if )
+                let p_v = self.0.vapor().pressure().convert_into(PASCAL).into_raw_vec();
+                let p_l = self.0.liquid().pressure().convert_into(PASCAL).into_raw_vec();
+                let different_pressures = p_v.iter().zip(p_l.iter()).any(|(pv, pl)| (pv - pl).abs() / pv > 1e-3);
+
+                if different_pressures {
+                    dict.insert(String::from("pressure vapor"), p_v);
+                    dict.insert(String::from("pressure liquid"), p_l);
+                }else {
+                    dict.insert(String::from("pressure"), p_v);
+                }
                 dict.insert(String::from("density liquid"), self.0.liquid().density().convert_into(MOL / METER.powi::<P3>()).into_raw_vec());
                 dict.insert(String::from("density vapor"), self.0.vapor().density().convert_into(MOL / METER.powi::<P3>()).into_raw_vec());
                 dict.insert(String::from("mass density liquid"), self.0.liquid().mass_density().convert_into(KILOGRAM / METER.powi::<P3>()).into_raw_vec());
