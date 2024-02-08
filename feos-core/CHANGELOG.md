@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Added specific isochoric and isobaric heat capacities to the Python interface. [#223](https://github.com/feos-org/feos/pull/223))
+- Added `to_dict` method for `PyStateVec`. [#224](https://github.com/feos-org/feos/pull/224)
+
+### Fixed
+- Added comparison for pressures of both phases in `PyPhaseDiagram.to_dict` to make the method work with `spinodal` constructor. [#224](https://github.com/feos-org/feos/pull/224)
 
 ## [0.6.1] 2024-01-11
 ### Fixed
