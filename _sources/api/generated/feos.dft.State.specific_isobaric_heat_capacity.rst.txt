@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.State.specific\_isobaric\_heat\_capacity
+=================================================
+
+.. currentmodule:: feos.dft
+
+.. automethod:: State.specific_isobaric_heat_capacity

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.State.specific\_isochoric\_heat\_capacity
+==================================================
+
+.. currentmodule:: feos.eos
+
+.. automethod:: State.specific_isochoric_heat_capacity

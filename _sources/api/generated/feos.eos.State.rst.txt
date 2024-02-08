@@ -78,6 +78,8 @@ feos.eos.State
       ~State.specific_gibbs_energy
       ~State.specific_helmholtz_energy
       ~State.specific_internal_energy
+      ~State.specific_isobaric_heat_capacity
+      ~State.specific_isochoric_heat_capacity
       ~State.speed_of_sound
       ~State.spinodal
       ~State.stability_analysis
