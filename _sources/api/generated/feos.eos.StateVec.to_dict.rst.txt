@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.StateVec.to\_dict
+==========================
+
+.. currentmodule:: feos.eos
+
+.. automethod:: StateVec.to_dict

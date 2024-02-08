@@ -23,6 +23,7 @@ feos.eos.StateVec
       ~StateVec.molar_entropy
       ~StateVec.specific_enthalpy
       ~StateVec.specific_entropy
+      ~StateVec.to_dict
    
    
 
