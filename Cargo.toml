@@ -52,7 +52,9 @@ criterion = "0.5"
 
 [profile.release-lto]
 inherits = "release"
-lto = true
+lto = "fat"
+codegen-units = 1
+
 
 [features]
 default = []

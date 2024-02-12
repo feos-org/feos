@@ -11,6 +11,7 @@ pub struct HardChain {
 }
 
 impl HardChain {
+    #[inline]
     pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
         let d = self.parameters.hs_diameter(state.temperature);

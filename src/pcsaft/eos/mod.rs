@@ -1,6 +1,6 @@
 use super::parameters::PcSaftParameters;
 use crate::association::Association;
-use crate::hard_sphere::HardSphere;
+use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::parameter::Parameter;
 use feos_core::{si::*, StateHD};
 use feos_core::{Components, EntropyScaling, EosError, EosResult, Residual, State};
@@ -138,23 +138,25 @@ impl Residual for PcSaft {
     }
 
     fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
+        let d = self.parameters.hs_diameter(state.temperature);
+
         let mut a = self.hard_sphere.helmholtz_energy(&state);
-        a += self.dispersion.helmholtz_energy(&state);
+        a += self.dispersion.helmholtz_energy(&state, &d);
 
         if let Some(hc) = self.hard_chain.as_ref() {
             a += hc.helmholtz_energy(&state);
         }
         if let Some(dipole) = self.dipole.as_ref() {
-            a += dipole.helmholtz_energy(&state);
+            a += dipole.helmholtz_energy(&state, &d);
         }
         if let Some(quadrupole) = self.quadrupole.as_ref() {
-            a += quadrupole.helmholtz_energy(&state);
+            a += quadrupole.helmholtz_energy(&state, &d);
         }
         if let Some(dipole_quadrupole) = self.dipole_quadrupole.as_ref() {
-            a += dipole_quadrupole.helmholtz_energy(&state);
+            a += dipole_quadrupole.helmholtz_energy(&state, &d);
         }
         if let Some(association) = self.association.as_ref() {
-            a += association.helmholtz_energy(&state);
+            a += association.helmholtz_energy(&state, &d);
         }
         a
     }
@@ -164,6 +166,8 @@ impl Residual for PcSaft {
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
         let mut v = Vec::with_capacity(7);
+        let d = self.parameters.hs_diameter(state.temperature);
+
         v.push((
             "Hard Sphere".to_string(),
             self.hard_sphere.helmholtz_energy(&state),
@@ -173,27 +177,27 @@ impl Residual for PcSaft {
         }
         v.push((
             "Dispersion".to_string(),
-            self.dispersion.helmholtz_energy(&state),
+            self.dispersion.helmholtz_energy(&state, &d),
         ));
         if let Some(dipole) = self.dipole.as_ref() {
-            v.push(("Dipole".to_string(), dipole.helmholtz_energy(&state)))
+            v.push(("Dipole".to_string(), dipole.helmholtz_energy(&state, &d)))
         }
         if let Some(quadrupole) = self.quadrupole.as_ref() {
             v.push((
                 "Quadrupole".to_string(),
-                quadrupole.helmholtz_energy(&state),
+                quadrupole.helmholtz_energy(&state, &d),
             ))
         }
         if let Some(dipole_quadrupole) = self.dipole_quadrupole.as_ref() {
             v.push((
                 "Dipole-Quadrupole".to_string(),
-                dipole_quadrupole.helmholtz_energy(&state),
+                dipole_quadrupole.helmholtz_energy(&state, &d),
             ))
         }
         if let Some(association) = self.association.as_ref() {
             v.push((
                 "Association".to_string(),
-                association.helmholtz_energy(&state),
+                association.helmholtz_energy(&state, &d),
             ))
         }
         v
@@ -468,7 +472,8 @@ mod tests {
         let v = 41.248289328513216;
         let n = 1.23;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a_rust = assoc.helmholtz_energy(&s) / n;
+        let d = parameters.hs_diameter(t);
+        let a_rust = assoc.helmholtz_energy(&s, &d) / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 
@@ -481,7 +486,8 @@ mod tests {
         let v = 41.248289328513216;
         let n = 1.23;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a_rust = assoc.helmholtz_energy(&s) / n;
+        let d = parameters.hs_diameter(t);
+        let a_rust = assoc.helmholtz_energy(&s, &d) / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 

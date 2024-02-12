@@ -333,12 +333,13 @@ impl<P: HardSphereProperties> Association<P> {
 }
 
 impl<P: HardSphereProperties> Association<P> {
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
+    #[inline]
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>, diameter: &Array1<D>) -> D {
         let p: &P = &self.parameters;
         let a = &self.association_parameters;
 
         // temperature dependent segment diameter
-        let diameter = p.hs_diameter(state.temperature);
+        // let diameter = p.hs_diameter(state.temperature);
 
         // auxiliary variables
         let [zeta2, n3] = p.zeta(state.temperature, &state.partial_density, [2, 3]);
@@ -637,7 +638,8 @@ mod tests_pcsaft {
         let v = 41.248289328513216;
         let n = 1.23;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a_rust = assoc.helmholtz_energy(&s) / n;
+        let d = params.hs_diameter(t);
+        let a_rust = assoc.helmholtz_energy(&s, &d) / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 
@@ -649,7 +651,8 @@ mod tests_pcsaft {
         let v = 41.248289328513216;
         let n = 1.23;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a_rust = assoc.helmholtz_energy(&s) / n;
+        let d = params.hs_diameter(t);
+        let a_rust = assoc.helmholtz_energy(&s, &d) / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 
@@ -668,8 +671,9 @@ mod tests_pcsaft {
         let v = 41.248289328513216;
         let n = 1.23;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a_assoc = assoc.helmholtz_energy(&s) / n;
-        let a_cross_assoc = cross_assoc.helmholtz_energy(&s) / n;
+        let d = params.hs_diameter(t);
+        let a_assoc = assoc.helmholtz_energy(&s, &d) / n;
+        let a_cross_assoc = cross_assoc.helmholtz_energy(&s, &d) / n;
         assert_relative_eq!(a_assoc, a_cross_assoc, epsilon = 1e-10);
         Ok(())
     }
