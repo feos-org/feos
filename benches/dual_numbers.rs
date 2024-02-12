@@ -8,7 +8,7 @@ use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::si::*;
 use feos_core::{
     parameter::{IdentifierOption, Parameter},
-    Derivative, HelmholtzEnergy, HelmholtzEnergyDual, Residual, State, StateHD,
+    Derivative, Residual, State, StateHD,
 };
 use ndarray::{arr1, Array};
 use num_dual::DualNum;
@@ -29,11 +29,8 @@ fn state_pcsaft(parameters: PcSaftParameters) -> State<PcSaft> {
 }
 
 /// Residual Helmholtz energy given an equation of state and a StateHD.
-fn a_res<D: DualNum<f64> + Copy, E: Residual>(inp: (&Arc<E>, &StateHD<D>)) -> D
-where
-    (dyn HelmholtzEnergy + 'static): HelmholtzEnergyDual<D>,
-{
-    inp.0.evaluate_residual(inp.1)
+fn a_res<D: DualNum<f64> + Copy, E: Residual>(inp: (&Arc<E>, &StateHD<D>)) -> D {
+    inp.0.residual_helmholtz_energy(inp.1)
 }
 
 /// Benchmark for evaluation of the Helmholtz energy for different dual number types.

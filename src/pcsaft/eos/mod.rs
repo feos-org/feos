@@ -2,11 +2,10 @@ use super::parameters::PcSaftParameters;
 use crate::association::Association;
 use crate::hard_sphere::HardSphere;
 use feos_core::parameter::Parameter;
-use feos_core::si::*;
-use feos_core::{
-    Components, EntropyScaling, EosError, EosResult, HelmholtzEnergy, Residual, State,
-};
-use ndarray::Array1;
+use feos_core::{si::*, StateHD};
+use feos_core::{Components, EntropyScaling, EosError, EosResult, Residual, State};
+use ndarray::{Array1, ScalarOperand};
+use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::fmt;
 use std::sync::Arc;
@@ -44,7 +43,13 @@ impl Default for PcSaftOptions {
 pub struct PcSaft {
     parameters: Arc<PcSaftParameters>,
     options: PcSaftOptions,
-    contributions: Vec<Box<dyn HelmholtzEnergy>>,
+    hard_sphere: HardSphere<PcSaftParameters>,
+    hard_chain: Option<HardChain>,
+    dispersion: Dispersion,
+    dipole: Option<Dipole>,
+    quadrupole: Option<Quadrupole>,
+    dipole_quadrupole: Option<DipoleQuadrupole>,
+    association: Option<Association<PcSaftParameters>>,
 }
 
 impl PcSaft {
@@ -53,43 +58,61 @@ impl PcSaft {
     }
 
     pub fn with_options(parameters: Arc<PcSaftParameters>, options: PcSaftOptions) -> Self {
-        let mut contributions: Vec<Box<dyn HelmholtzEnergy>> = Vec::with_capacity(7);
-        contributions.push(Box::new(HardSphere::new(&parameters)));
-        contributions.push(Box::new(HardChain {
+        let hard_sphere = HardSphere::new(&parameters);
+        let dispersion = Dispersion {
             parameters: parameters.clone(),
-        }));
-        contributions.push(Box::new(Dispersion {
-            parameters: parameters.clone(),
-        }));
-        if parameters.ndipole > 0 {
-            contributions.push(Box::new(Dipole {
-                parameters: parameters.clone(),
-            }));
         };
-        if parameters.nquadpole > 0 {
-            contributions.push(Box::new(Quadrupole {
+        let hard_chain = if parameters.m.iter().any(|m| (m - 1.0).abs() > 1e-15) {
+            Some(HardChain {
                 parameters: parameters.clone(),
-            }));
+            })
+        } else {
+            None
         };
-        if parameters.ndipole > 0 && parameters.nquadpole > 0 {
-            contributions.push(Box::new(DipoleQuadrupole {
+
+        let dipole = if parameters.ndipole > 0 {
+            Some(Dipole {
+                parameters: parameters.clone(),
+            })
+        } else {
+            None
+        };
+        let quadrupole = if parameters.nquadpole > 0 {
+            Some(Quadrupole {
+                parameters: parameters.clone(),
+            })
+        } else {
+            None
+        };
+        let dipole_quadrupole = if parameters.ndipole > 0 && parameters.nquadpole > 0 {
+            Some(DipoleQuadrupole {
                 parameters: parameters.clone(),
                 variant: options.dq_variant,
-            }));
+            })
+        } else {
+            None
         };
-        if !parameters.association.is_empty() {
-            contributions.push(Box::new(Association::new(
+        let association = if !parameters.association.is_empty() {
+            Some(Association::new(
                 &parameters,
                 &parameters.association,
                 options.max_iter_cross_assoc,
                 options.tol_cross_assoc,
-            )));
+            ))
+        } else {
+            None
         };
 
         Self {
             parameters,
             options,
-            contributions,
+            hard_sphere,
+            hard_chain,
+            dispersion,
+            dipole,
+            quadrupole,
+            dipole_quadrupole,
+            association,
         }
     }
 }
@@ -114,8 +137,66 @@ impl Residual for PcSaft {
                 .sum()
     }
 
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
-        &self.contributions
+    fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
+        let mut a = self.hard_sphere.helmholtz_energy(&state);
+        a += self.dispersion.helmholtz_energy(&state);
+
+        if let Some(hc) = self.hard_chain.as_ref() {
+            a += hc.helmholtz_energy(&state);
+        }
+        if let Some(dipole) = self.dipole.as_ref() {
+            a += dipole.helmholtz_energy(&state);
+        }
+        if let Some(quadrupole) = self.quadrupole.as_ref() {
+            a += quadrupole.helmholtz_energy(&state);
+        }
+        if let Some(dipole_quadrupole) = self.dipole_quadrupole.as_ref() {
+            a += dipole_quadrupole.helmholtz_energy(&state);
+        }
+        if let Some(association) = self.association.as_ref() {
+            a += association.helmholtz_energy(&state);
+        }
+        a
+    }
+
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+    ) -> Vec<(String, D)> {
+        let mut v = Vec::with_capacity(7);
+        v.push((
+            "Hard Sphere".to_string(),
+            self.hard_sphere.helmholtz_energy(&state),
+        ));
+        if let Some(hc) = self.hard_chain.as_ref() {
+            v.push(("Hard Sphere".to_string(), hc.helmholtz_energy(&state)))
+        }
+        v.push((
+            "Dispersion".to_string(),
+            self.dispersion.helmholtz_energy(&state),
+        ));
+        if let Some(dipole) = self.dipole.as_ref() {
+            v.push(("Dipole".to_string(), dipole.helmholtz_energy(&state)))
+        }
+        if let Some(quadrupole) = self.quadrupole.as_ref() {
+            v.push((
+                "Quadrupole".to_string(),
+                quadrupole.helmholtz_energy(&state),
+            ))
+        }
+        if let Some(dipole_quadrupole) = self.dipole_quadrupole.as_ref() {
+            v.push((
+                "Dipole-Quadrupole".to_string(),
+                dipole_quadrupole.helmholtz_energy(&state),
+            ))
+        }
+        if let Some(association) = self.association.as_ref() {
+            v.push((
+                "Association".to_string(),
+                association.helmholtz_energy(&state),
+            ))
+        }
+        v
     }
 
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {

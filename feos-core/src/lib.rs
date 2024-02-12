@@ -32,8 +32,7 @@ mod phase_equilibria;
 pub mod si;
 mod state;
 pub use equation_of_state::{
-    Components, DeBroglieWavelength, DeBroglieWavelengthDual, EntropyScaling, EquationOfState,
-    HelmholtzEnergy, HelmholtzEnergyDual, IdealGas, NoResidual, Residual,
+    Components, EntropyScaling, EquationOfState, IdealGas, NoResidual, Residual,
 };
 pub use errors::{EosError, EosResult};
 pub use phase_equilibria::{
@@ -143,7 +142,13 @@ mod tests {
     }
 
     impl IdealGas for NoIdealGas {
-        fn ideal_gas_model(&self) -> &dyn crate::DeBroglieWavelength {
+        fn ideal_gas_name(&self) -> String {
+            unreachable!()
+        }
+        fn ln_lambda3<D: num_dual::DualNum<f64> + Copy>(
+            &self,
+            _: D,
+        ) -> ndarray::prelude::Array1<D> {
             unreachable!()
         }
     }

@@ -439,7 +439,8 @@ fn critical_point_objective<R: Residual>(
         m[i].eps1 = DualSVec64::one();
         m[j].eps2 = DualSVec64::one();
         let state = StateHD::new(t, v, m);
-        eos.evaluate_residual(&state).eps1eps2 * (moles[i] * moles[j]).sqrt() + kronecker(i, j)
+        eos.residual_helmholtz_energy(&state).eps1eps2 * (moles[i] * moles[j]).sqrt()
+            + kronecker(i, j)
     });
 
     // calculate smallest eigenvalue and corresponding eigenvector of q
@@ -460,7 +461,7 @@ fn critical_point_objective<R: Residual>(
         moles_hd,
     );
     let ig = (&state_s.moles * (state_s.partial_density.mapv(|x| x.ln()) - 1.0)).sum();
-    let res = eos.evaluate_residual(&state_s);
+    let res = eos.residual_helmholtz_energy(&state_s);
     Ok(SVector::from([eval, (res + ig).v3]))
 }
 
@@ -477,7 +478,8 @@ fn critical_point_objective_t<R: Residual>(
         m[i].eps1 = DualSVec64::one();
         m[j].eps2 = DualSVec64::one();
         let state = StateHD::new(t, v, arr1(&[m[0], m[1]]));
-        eos.evaluate_residual(&state).eps1eps2 * (density[i] * density[j]).sqrt() + kronecker(i, j)
+        eos.residual_helmholtz_energy(&state).eps1eps2 * (density[i] * density[j]).sqrt()
+            + kronecker(i, j)
     });
 
     // calculate smallest eigenvalue and corresponding eigenvector of q
@@ -494,7 +496,7 @@ fn critical_point_objective_t<R: Residual>(
     });
     let state_s = StateHD::new(Dual3::from(temperature), Dual3::from(1.0), moles_hd);
     let ig = (&state_s.moles * (state_s.partial_density.mapv(|x| x.ln()) - 1.0)).sum();
-    let res = eos.evaluate_residual(&state_s);
+    let res = eos.residual_helmholtz_energy(&state_s);
     Ok(SVector::from([eval, (res + ig).v3]))
 }
 
@@ -512,7 +514,8 @@ fn critical_point_objective_p<R: Residual>(
         m[i].eps1 = DualSVec64::one();
         m[j].eps2 = DualSVec64::one();
         let state = StateHD::new(t, v, arr1(&[m[0], m[1]]));
-        eos.evaluate_residual(&state).eps1eps2 * (density[i] * density[j]).sqrt() + kronecker(i, j)
+        eos.residual_helmholtz_energy(&state).eps1eps2 * (density[i] * density[j]).sqrt()
+            + kronecker(i, j)
     });
 
     // calculate smallest eigenvalue and corresponding eigenvector of q
@@ -529,13 +532,13 @@ fn critical_point_objective_p<R: Residual>(
     });
     let state_s = StateHD::new(Dual3::from_re(temperature), Dual3::from(1.0), moles_hd);
     let ig = (&state_s.moles * (state_s.partial_density.mapv(|x| x.ln()) - 1.0)).sum();
-    let res = eos.evaluate_residual(&state_s);
+    let res = eos.residual_helmholtz_energy(&state_s);
 
     // calculate pressure
     let a = |v| {
         let m = arr1(&[Dual::from_re(density[0]), Dual::from_re(density[1])]);
         let state_p = StateHD::new(Dual::from_re(temperature), v, m);
-        eos.evaluate_residual(&state_p)
+        eos.residual_helmholtz_energy(&state_p)
     };
     let (_, p) = first_derivative(a, DualVec::one());
     let p = (p - density.sum()) * temperature;
@@ -557,7 +560,8 @@ fn spinodal_objective<R: Residual>(
         m[i].eps1 = Dual64::one();
         m[j].eps2 = Dual64::one();
         let state = StateHD::new(t, v, m);
-        eos.evaluate_residual(&state).eps1eps2 * (moles[i] * moles[j]).sqrt() + kronecker(i, j)
+        eos.residual_helmholtz_energy(&state).eps1eps2 * (moles[i] * moles[j]).sqrt()
+            + kronecker(i, j)
     });
 
     // calculate smallest eigenvalue of q

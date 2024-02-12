@@ -1,7 +1,7 @@
 //! Generic implementation of the SAFT association contribution
 //! that can be used across models.
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::{EosError, EosResult, HelmholtzEnergyDual, StateHD};
+use feos_core::{EosError, EosResult, StateHD};
 use ndarray::*;
 use num_dual::linalg::{norm, LU};
 use num_dual::*;
@@ -332,10 +332,8 @@ impl<P: HardSphereProperties> Association<P> {
     }
 }
 
-impl<D: DualNum<f64> + Copy + ScalarOperand, P: HardSphereProperties> HelmholtzEnergyDual<D>
-    for Association<P>
-{
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl<P: HardSphereProperties> Association<P> {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let p: &P = &self.parameters;
         let a = &self.association_parameters;
 
@@ -435,10 +433,7 @@ impl<P: HardSphereProperties> Association<P> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn helmholtz_energy_density_cross_association<
-        D: DualNum<f64> + Copy + ScalarOperand,
-        S: Data<Elem = D>,
-    >(
+    fn helmholtz_energy_density_cross_association<D: DualNum<f64> + Copy, S: Data<Elem = D>>(
         rho: &ArrayBase<S, Ix1>,
         delta_ab: &Array2<D>,
         delta_cc: &Array2<D>,
@@ -495,7 +490,7 @@ impl<P: HardSphereProperties> Association<P> {
         Ok((rho * x_dual.mapv(f)).sum())
     }
 
-    fn newton_step_cross_association<D: DualNum<f64> + Copy + ScalarOperand, S: Data<Elem = D>>(
+    fn newton_step_cross_association<D: DualNum<f64> + Copy, S: Data<Elem = D>>(
         x: &mut Array1<D>,
         delta_ab: &Array2<D>,
         delta_cc: &Array2<D>,

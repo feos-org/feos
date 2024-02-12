@@ -4,7 +4,7 @@
 use conv::ValueInto;
 use feos_core::parameter::*;
 use feos_core::si::{MolarEntropy, Temperature};
-use feos_core::{Components, DeBroglieWavelength, DeBroglieWavelengthDual, EosResult, IdealGas};
+use feos_core::{Components, EosResult, IdealGas};
 use ndarray::{Array1, Array2};
 use num_dual::*;
 use serde::{Deserialize, Serialize};
@@ -124,13 +124,11 @@ impl Components for Joback {
 }
 
 impl IdealGas for Joback {
-    fn ideal_gas_model(&self) -> &dyn DeBroglieWavelength {
-        self
+    fn ideal_gas_name(&self) -> String {
+        "Joback".to_string()
     }
-}
 
-impl<D: DualNum<f64> + Copy> DeBroglieWavelengthDual<D> for Joback {
-    fn ln_lambda3(&self, temperature: D) -> Array1<D> {
+    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
         let t = temperature;
         let t2 = t * t;
         let t4 = t2 * t2;

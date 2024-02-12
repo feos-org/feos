@@ -15,6 +15,7 @@ use feos_core::si::*;
 use feos_core::*;
 use feos_derive::{Components, Residual};
 use ndarray::Array1;
+use num_dual::DualNum;
 
 /// Collection of different [Residual] implementations.
 ///

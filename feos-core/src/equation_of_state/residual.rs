@@ -1,4 +1,4 @@
-use super::{Components, HelmholtzEnergy, HelmholtzEnergyDual};
+use super::Components;
 use crate::si::*;
 use crate::StateHD;
 use crate::{EosError, EosResult};
@@ -17,40 +17,20 @@ pub trait Residual: Components + Send + Sync {
     /// equation of state anyways).
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64;
 
-    /// Return a slice of the individual contributions (excluding the ideal gas)
-    /// of the equation of state.
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>];
-
     /// Molar weight of all components.
     ///
     /// Enables calculation of (mass) specific properties.
     fn molar_weight(&self) -> MolarWeight<Array1<f64>>;
 
     /// Evaluate the residual reduced Helmholtz energy $\beta A^\mathrm{res}$.
-    fn evaluate_residual<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D
-    where
-        dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
-    {
-        self.contributions()
-            .iter()
-            .map(|c| c.helmholtz_energy(state))
-            .sum()
-    }
+    fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D;
 
     /// Evaluate the reduced Helmholtz energy of each individual contribution
     /// and return them together with a string representation of the contribution.
-    fn evaluate_residual_contributions<D: DualNum<f64> + Copy>(
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(String, D)>
-    where
-        dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
-    {
-        self.contributions()
-            .iter()
-            .map(|c| (c.to_string(), c.helmholtz_energy(state)))
-            .collect()
-    }
+    ) -> Vec<(String, D)>;
 
     /// Check if the provided optional mole number is consistent with the
     /// equation of state.
@@ -96,7 +76,7 @@ pub trait Residual: Components + Send + Sync {
         let t = HyperDual64::from(temperature.to_reduced());
         let s = StateHD::new_virial(t, rho, x);
         Ok(Quantity::from_reduced(
-            self.evaluate_residual(&s).eps1eps2 * 0.5,
+            self.residual_helmholtz_energy(&s).eps1eps2 * 0.5,
         ))
     }
 
@@ -112,7 +92,9 @@ pub trait Residual: Components + Send + Sync {
         let rho = Dual3_64::zero().derivative();
         let t = Dual3_64::from(temperature.to_reduced());
         let s = StateHD::new_virial(t, rho, x);
-        Ok(Quantity::from_reduced(self.evaluate_residual(&s).v3 / 3.0))
+        Ok(Quantity::from_reduced(
+            self.residual_helmholtz_energy(&s).v3 / 3.0,
+        ))
     }
 
     /// Calculate the temperature derivative of the second virial coefficient $B'(T)$
@@ -130,7 +112,7 @@ pub trait Residual: Components + Send + Sync {
         let t = HyperDual::from_re(Dual64::from(temperature.to_reduced()).derivative());
         let s = StateHD::new_virial(t, rho, x);
         Ok(Quantity::from_reduced(
-            self.evaluate_residual(&s).eps1eps2.eps * 0.5,
+            self.residual_helmholtz_energy(&s).eps1eps2.eps * 0.5,
         ))
     }
 
@@ -149,7 +131,7 @@ pub trait Residual: Components + Send + Sync {
         let t = Dual3::from_re(Dual64::from(temperature.to_reduced()).derivative());
         let s = StateHD::new_virial(t, rho, x);
         Ok(Quantity::from_reduced(
-            self.evaluate_residual(&s).v3.eps / 3.0,
+            self.residual_helmholtz_energy(&s).v3.eps / 3.0,
         ))
     }
 }
@@ -197,8 +179,15 @@ impl Residual for NoResidual {
         1.0
     }
 
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
-        &[]
+    fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, _: &StateHD<D>) -> D {
+        D::zero()
+    }
+
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
+        &self,
+        _: &StateHD<D>,
+    ) -> Vec<(String, D)> {
+        vec![]
     }
 
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {

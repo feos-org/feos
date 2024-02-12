@@ -22,23 +22,24 @@ impl<E: Residual + IdealGas> State<E> {
             _ => Some(match derivative {
                 PartialDerivative::Zeroth => {
                     let new_state = self.derive0();
-                    self.eos.evaluate_ideal_gas(&new_state) * new_state.temperature
+                    self.eos.ideal_gas_helmholtz_energy(&new_state) * new_state.temperature
                 }
                 PartialDerivative::First(v) => {
                     let new_state = self.derive1(v);
-                    (self.eos.evaluate_ideal_gas(&new_state) * new_state.temperature).eps
+                    (self.eos.ideal_gas_helmholtz_energy(&new_state) * new_state.temperature).eps
                 }
                 PartialDerivative::Second(v) => {
                     let new_state = self.derive2(v);
-                    (self.eos.evaluate_ideal_gas(&new_state) * new_state.temperature).v2
+                    (self.eos.ideal_gas_helmholtz_energy(&new_state) * new_state.temperature).v2
                 }
                 PartialDerivative::SecondMixed(v1, v2) => {
                     let new_state = self.derive2_mixed(v1, v2);
-                    (self.eos.evaluate_ideal_gas(&new_state) * new_state.temperature).eps1eps2
+                    (self.eos.ideal_gas_helmholtz_energy(&new_state) * new_state.temperature)
+                        .eps1eps2
                 }
                 PartialDerivative::Third(v) => {
                     let new_state = self.derive3(v);
-                    (self.eos.evaluate_ideal_gas(&new_state) * new_state.temperature).v3
+                    (self.eos.ideal_gas_helmholtz_energy(&new_state) * new_state.temperature).v3
                 }
             }),
         };
@@ -253,12 +254,12 @@ impl<E: Residual + IdealGas> State<E> {
     /// Chemical potential $\mu_i$ evaluated for each contribution of the equation of state.
     pub fn chemical_potential_contributions(&self, component: usize) -> Vec<(String, MolarEnergy)> {
         let new_state = self.derive1(DN(component));
-        let contributions = self.eos.evaluate_residual_contributions(&new_state);
+        let contributions = self.eos.residual_helmholtz_energy_contributions(&new_state);
         let mut res = Vec::with_capacity(contributions.len() + 1);
         res.push((
-            self.eos.ideal_gas_model().to_string(),
+            self.eos.ideal_gas_name(),
             MolarEnergy::from_reduced(
-                (self.eos.evaluate_ideal_gas(&new_state) * new_state.temperature).eps,
+                (self.eos.ideal_gas_helmholtz_energy(&new_state) * new_state.temperature).eps,
             ),
         ));
         for (s, v) in contributions {
