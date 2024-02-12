@@ -36,7 +36,7 @@ fn impl_ideal_gas(
             }
         } else {
             quote! {
-                Self::#name(ideal_gas) => ideal_gas.ideal_gas_model()
+                Self::#name(ideal_gas) => ideal_gas.ideal_gas_name()
             }
         }
     });
