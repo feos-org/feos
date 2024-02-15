@@ -124,10 +124,6 @@ impl Components for Joback {
 }
 
 impl IdealGas for Joback {
-    fn ideal_gas_name(&self) -> String {
-        "Joback".to_string()
-    }
-
     fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
         let t = temperature;
         let t2 = t * t;

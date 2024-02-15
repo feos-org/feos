@@ -3,7 +3,7 @@ use crate::{
     EosResult,
 };
 use ndarray::Array1;
-use std::sync::Arc;
+use std::{fmt::Display, sync::Arc};
 
 mod ideal_gas;
 mod residual;
@@ -52,6 +52,12 @@ impl<I: IdealGas> EquationOfState<I, NoResidual> {
     }
 }
 
+impl<I: IdealGas, R> Display for EquationOfState<I, R> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.ideal_gas)
+    }
+}
+
 impl<I: Components, R: Components> Components for EquationOfState<I, R> {
     fn components(&self) -> usize {
         assert_eq!(
@@ -71,10 +77,6 @@ impl<I: Components, R: Components> Components for EquationOfState<I, R> {
 }
 
 impl<I: IdealGas, R: Components + Sync + Send> IdealGas for EquationOfState<I, R> {
-    fn ideal_gas_name(&self) -> String {
-        self.ideal_gas.ideal_gas_name()
-    }
-
     fn ln_lambda3<D: num_dual::DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
         self.ideal_gas.ln_lambda3(temperature)
     }

@@ -1,4 +1,5 @@
 //! Collection of ideal gas models.
+use std::fmt;
 
 #[cfg(feature = "python")]
 use feos_core::python::user_defined::PyIdealGas;

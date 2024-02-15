@@ -126,10 +126,17 @@ mod tests {
     use crate::EosResult;
     use crate::StateBuilder;
     use approx::*;
+    use std::fmt::Display;
     use std::sync::Arc;
 
     // Only to be able to instantiate an `EquationOfState`
     struct NoIdealGas;
+
+    impl Display for NoIdealGas {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "NoIdealGas")
+        }
+    }
 
     impl Components for NoIdealGas {
         fn components(&self) -> usize {
@@ -142,9 +149,6 @@ mod tests {
     }
 
     impl IdealGas for NoIdealGas {
-        fn ideal_gas_name(&self) -> String {
-            unreachable!()
-        }
         fn ln_lambda3<D: num_dual::DualNum<f64> + Copy>(
             &self,
             _: D,

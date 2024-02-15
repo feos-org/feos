@@ -137,30 +137,6 @@ impl Residual for PcSaft {
                 .sum()
     }
 
-    fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
-        let d = self.parameters.hs_diameter(state.temperature);
-
-        let mut a = self.hard_sphere.helmholtz_energy(&state);
-        a += self.dispersion.helmholtz_energy(&state, &d);
-
-        if let Some(hc) = self.hard_chain.as_ref() {
-            a += hc.helmholtz_energy(&state);
-        }
-        if let Some(dipole) = self.dipole.as_ref() {
-            a += dipole.helmholtz_energy(&state, &d);
-        }
-        if let Some(quadrupole) = self.quadrupole.as_ref() {
-            a += quadrupole.helmholtz_energy(&state, &d);
-        }
-        if let Some(dipole_quadrupole) = self.dipole_quadrupole.as_ref() {
-            a += dipole_quadrupole.helmholtz_energy(&state, &d);
-        }
-        if let Some(association) = self.association.as_ref() {
-            a += association.helmholtz_energy(&state, &d);
-        }
-        a
-    }
-
     fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,

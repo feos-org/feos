@@ -1,11 +1,13 @@
 #![allow(clippy::excessive_precision)]
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_core::StateHD;
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::TAU;
 use std::fmt;
 use std::sync::Arc;
+
+use super::TemperatureDependentProperties;
 
 /// Boltzmann's constant in J/K
 const KB: f64 = 1.380649e-23;
@@ -112,7 +114,7 @@ impl SaftVRQMieParameters {
             r += dr;
         }
         if f.re().abs() > 1.0e-12 {
-            println!("zero_integrand  calculation failed {}", f.re().abs());
+            println!("zero_integrand calculation failed {}", f.re().abs());
         }
         r
     }
@@ -240,9 +242,15 @@ pub struct HardSphere {
     pub parameters: Arc<SaftVRQMieParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for HardSphere {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
-        let d = self.parameters.hs_diameter(state.temperature);
+impl HardSphere {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        properties: &TemperatureDependentProperties<D>,
+    ) -> D {
+        let d = Array1::from_shape_fn(self.parameters.m.len(), |i| {
+            properties.hs_diameter_ij[[i, i]]
+        });
         let zeta = zeta(&self.parameters.m, &state.partial_density, &d);
         let frac_1mz3 = -(zeta[3] - 1.0).recip();
         let zeta_23 = zeta_23(&self.parameters.m, &state.molefracs, &d);
@@ -361,7 +369,8 @@ mod tests {
         let v = 1.0e26;
         let n = na * 1.1;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a_rust = hs.helmholtz_energy(&s);
+        let properties = TemperatureDependentProperties::new(&hs.parameters, s.temperature);
+        let a_rust = hs.helmholtz_energy(&s, &properties);
         dbg!(a_rust / na);
         assert_relative_eq!(a_rust / na, 0.54586730268029837, epsilon = 5e-7);
     }
@@ -376,7 +385,8 @@ mod tests {
         let v = 1.0e26;
         let n = na * 1.1;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a_rust = hs.helmholtz_energy(&s);
+        let properties = TemperatureDependentProperties::new(&hs.parameters, s.temperature);
+        let a_rust = hs.helmholtz_energy(&s, &properties);
         dbg!(a_rust / na);
         assert_relative_eq!(a_rust / na, 0.5934447545083482, epsilon = 5e-7);
     }
@@ -391,7 +401,8 @@ mod tests {
         let v = 1.0e26;
         let n = [na * 1.1, na * 1.0];
         let s = StateHD::new(t, v, arr1(&n));
-        let a_rust = hs.helmholtz_energy(&s);
+        let properties = TemperatureDependentProperties::new(&hs.parameters, s.temperature);
+        let a_rust = hs.helmholtz_energy(&s, &properties);
         dbg!(a_rust / na);
         // non-additive: 1.8249307925054206
         assert_relative_eq!(a_rust / na, 1.8074833133403905, epsilon = 5e-7);
@@ -407,7 +418,8 @@ mod tests {
         let v = 1.0e26;
         let n = [na * 1.1, na * 1.0];
         let s = StateHD::new(t, v, arr1(&n));
-        let a_rust = hs.helmholtz_energy(&s);
+        let properties = TemperatureDependentProperties::new(&hs.parameters, s.temperature);
+        let a_rust = hs.helmholtz_energy(&s, &properties);
         dbg!(a_rust / na);
         assert_relative_eq!(a_rust / na, 1.898534632022848, epsilon = 5e-7);
     }

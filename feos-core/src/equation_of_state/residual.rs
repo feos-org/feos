@@ -22,15 +22,19 @@ pub trait Residual: Components + Send + Sync {
     /// Enables calculation of (mass) specific properties.
     fn molar_weight(&self) -> MolarWeight<Array1<f64>>;
 
-    /// Evaluate the residual reduced Helmholtz energy $\beta A^\mathrm{res}$.
-    fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D;
-
     /// Evaluate the reduced Helmholtz energy of each individual contribution
     /// and return them together with a string representation of the contribution.
     fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)>;
+
+    /// Evaluate the residual reduced Helmholtz energy $\beta A^\mathrm{res}$.
+    fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
+        self.residual_helmholtz_energy_contributions(state)
+            .iter()
+            .fold(D::zero(), |acc, (_, a)| acc + a)
+    }
 
     /// Check if the provided optional mole number is consistent with the
     /// equation of state.

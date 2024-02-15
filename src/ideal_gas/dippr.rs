@@ -184,10 +184,6 @@ const RGAS: f64 = 8.31446261815324 * 1000.0;
 const T0: f64 = 298.15;
 
 impl IdealGas for Dippr {
-    fn ideal_gas_name(&self) -> String {
-        "Dippr".to_string()
-    }
-
     fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
         let t = temperature;
         self.0

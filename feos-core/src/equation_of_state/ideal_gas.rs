@@ -2,12 +2,10 @@ use super::Components;
 use crate::StateHD;
 use ndarray::Array1;
 use num_dual::DualNum;
+use std::fmt::Display;
 
 /// Ideal gas Helmholtz energy contribution.
-pub trait IdealGas: Components + Sync + Send {
-    // Return a reference to the implementation of the de Broglie wavelength.
-    fn ideal_gas_name(&self) -> String;
-
+pub trait IdealGas: Components + Sync + Send + Display {
     fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D>;
 
     /// Evaluate the ideal gas Helmholtz energy contribution for a given state.

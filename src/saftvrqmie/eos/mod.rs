@@ -1,10 +1,9 @@
 use super::parameters::SaftVRQMieParameters;
 use feos_core::parameter::{Parameter, ParameterError};
 use feos_core::si::*;
-use feos_core::{
-    Components, EntropyScaling, EosError, EosResult, HelmholtzEnergy, Residual, State,
-};
-use ndarray::Array1;
+use feos_core::{Components, EntropyScaling, EosError, EosResult, Residual, State};
+use ndarray::{Array1, Array2};
+use num_dual::DualNum;
 use std::convert::TryFrom;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::sync::Arc;
@@ -61,6 +60,43 @@ impl TryFrom<usize> for FeynmanHibbsOrder {
     }
 }
 
+pub(crate) struct TemperatureDependentProperties<D> {
+    sigma_eff_ij: Array2<D>,
+    epsilon_k_eff_ij: Array2<D>,
+    hs_diameter_ij: Array2<D>,
+    quantum_d_ij: Array2<D>,
+}
+
+impl<D: DualNum<f64> + Copy> TemperatureDependentProperties<D> {
+    fn new(parameters: &SaftVRQMieParameters, temperature: D) -> Self {
+        let n = parameters.m.len();
+        let sigma_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
+            parameters.calc_sigma_eff_ij(i, j, temperature)
+        });
+
+        // temperature dependent segment radius
+        let hs_diameter_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
+            parameters.hs_diameter_ij(i, j, temperature, sigma_eff_ij[[i, j]])
+        });
+
+        // temperature dependent well depth
+        let epsilon_k_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
+            parameters.calc_epsilon_k_eff_ij(i, j, temperature)
+        });
+
+        // temperature dependent well depth
+        let quantum_d_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
+            parameters.quantum_d_ij(i, j, temperature)
+        });
+        Self {
+            sigma_eff_ij,
+            epsilon_k_eff_ij,
+            hs_diameter_ij,
+            quantum_d_ij,
+        }
+    }
+}
+
 /// SAFT-VRQ Mie equation of state.
 ///
 /// # Note
@@ -68,7 +104,9 @@ impl TryFrom<usize> for FeynmanHibbsOrder {
 pub struct SaftVRQMie {
     parameters: Arc<SaftVRQMieParameters>,
     options: SaftVRQMieOptions,
-    contributions: Vec<Box<dyn HelmholtzEnergy>>,
+    hard_sphere: HardSphere,
+    dispersion: Dispersion,
+    non_additive_hard_sphere: Option<NonAddHardSphere>,
 }
 
 impl SaftVRQMie {
@@ -77,23 +115,26 @@ impl SaftVRQMie {
     }
 
     pub fn with_options(parameters: Arc<SaftVRQMieParameters>, options: SaftVRQMieOptions) -> Self {
-        let mut contributions: Vec<Box<dyn HelmholtzEnergy>> = Vec::with_capacity(4);
-        contributions.push(Box::new(HardSphere {
+        let hard_sphere = HardSphere {
             parameters: parameters.clone(),
-        }));
-        contributions.push(Box::new(Dispersion {
+        };
+        let dispersion = Dispersion {
             parameters: parameters.clone(),
-        }));
-        if parameters.m.len() > 1 && options.inc_nonadd_term {
-            contributions.push(Box::new(NonAddHardSphere {
+        };
+        let non_additive_hard_sphere = if parameters.m.len() > 1 && options.inc_nonadd_term {
+            Some(NonAddHardSphere {
                 parameters: parameters.clone(),
-            }));
-        }
+            })
+        } else {
+            None
+        };
 
         Self {
             parameters,
             options,
-            contributions,
+            hard_sphere,
+            dispersion,
+            non_additive_hard_sphere,
         }
     }
 }
@@ -118,8 +159,28 @@ impl Residual for SaftVRQMie {
                 .sum()
     }
 
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
-        &self.contributions
+    fn residual_helmholtz_energy_contributions<D: num_dual::DualNum<f64> + Copy>(
+        &self,
+        state: &feos_core::StateHD<D>,
+    ) -> Vec<(String, D)> {
+        let mut v = Vec::with_capacity(7);
+        let properties = TemperatureDependentProperties::new(&self.parameters, state.temperature);
+
+        v.push((
+            "Hard Sphere".to_string(),
+            self.hard_sphere.helmholtz_energy(&state, &properties),
+        ));
+        v.push((
+            "Dispersion".to_string(),
+            self.dispersion.helmholtz_energy(&state, &properties),
+        ));
+        if let Some(non_additive_hard_sphere) = self.non_additive_hard_sphere.as_ref() {
+            v.push((
+                "Non additive Hard Sphere".to_string(),
+                non_additive_hard_sphere.helmholtz_energy(&state, &properties),
+            ))
+        }
+        v
     }
 
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
