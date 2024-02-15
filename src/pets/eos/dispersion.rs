@@ -1,6 +1,6 @@
 use crate::hard_sphere::HardSphereProperties;
 use crate::pets::parameters::PetsParameters;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_core::StateHD;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 use std::fmt;
@@ -26,12 +26,12 @@ pub const B: [f64; 7] = [
 ];
 
 #[derive(Debug, Clone)]
-pub struct Dispersion {
+pub(super) struct Dispersion {
     pub parameters: Arc<PetsParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Dispersion {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl Dispersion {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         // auxiliary variables
         let n = self.parameters.sigma.len();
         let p = &self.parameters;
