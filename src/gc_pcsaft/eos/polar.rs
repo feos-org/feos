@@ -1,6 +1,6 @@
 use super::GcPcSaftEosParameters;
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_core::StateHD;
 use ndarray::prelude::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
@@ -53,7 +53,7 @@ fn triplet_integral_ijk<D: DualNum<f64> + Copy>(mijk1: f64, mijk2: f64, eta: D) 
         .sum()
 }
 
-pub struct Dipole {
+pub(super) struct Dipole {
     parameters: Arc<GcPcSaftEosParameters>,
     mij1: Array2<f64>,
     mij2: Array2<f64>,
@@ -118,8 +118,8 @@ impl Dipole {
     }
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Dipole {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl Dipole {
+    pub(super) fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
         let ndipole = p.dipole_comp.len();
 

@@ -1,17 +1,17 @@
 use super::GcPcSaftEosParameters;
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_core::StateHD;
 use num_dual::*;
 use std::fmt;
 use std::sync::Arc;
 
 #[derive(Clone)]
-pub struct HardChain {
+pub(super) struct HardChain {
     pub parameters: Arc<GcPcSaftEosParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for HardChain {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl HardChain {
+    pub(super) fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         // temperature dependent segment diameter
         let diameter = self.parameters.hs_diameter(state.temperature);
 

@@ -334,7 +334,11 @@ impl<P: HardSphereProperties> Association<P> {
 
 impl<P: HardSphereProperties> Association<P> {
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>, diameter: &Array1<D>) -> D {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        diameter: &Array1<D>,
+    ) -> D {
         let p: &P = &self.parameters;
         let a = &self.association_parameters;
 
@@ -702,7 +706,9 @@ mod tests_gc_pcsaft {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = Pressure::from_reduced(-contrib.helmholtz_energy(&state).eps * temperature);
+        let diameter = params.hs_diameter(state.temperature);
+        let pressure =
+            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
         assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
     }
 
@@ -718,7 +724,9 @@ mod tests_gc_pcsaft {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = Pressure::from_reduced(-contrib.helmholtz_energy(&state).eps * temperature);
+        let diameter = params.hs_diameter(state.temperature);
+        let pressure =
+            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
         assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
     }
 
@@ -734,7 +742,9 @@ mod tests_gc_pcsaft {
             Dual64::from_re(volume).derivative(),
             moles.mapv(Dual64::from_re),
         );
-        let pressure = Pressure::from_reduced(-contrib.helmholtz_energy(&state).eps * temperature);
+        let diameter = params.hs_diameter(state.temperature);
+        let pressure =
+            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
         assert_relative_eq!(pressure, -26.105606376765632 * PASCAL, max_relative = 1e-10);
     }
 }

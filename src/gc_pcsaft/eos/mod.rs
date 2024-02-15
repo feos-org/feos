@@ -1,8 +1,8 @@
 use crate::association::Association;
-use crate::hard_sphere::HardSphere;
+use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::parameter::ParameterHetero;
 use feos_core::si::{MolarWeight, GRAM, MOL};
-use feos_core::{Components, HelmholtzEnergy, Residual};
+use feos_core::{Components, Residual};
 use ndarray::Array1;
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
@@ -41,7 +41,11 @@ impl Default for GcPcSaftOptions {
 pub struct GcPcSaft {
     pub parameters: Arc<GcPcSaftEosParameters>,
     options: GcPcSaftOptions,
-    contributions: Vec<Box<dyn HelmholtzEnergy>>,
+    hard_sphere: HardSphere<GcPcSaftEosParameters>,
+    hard_chain: HardChain,
+    dispersion: Dispersion,
+    association: Option<Association<GcPcSaftEosParameters>>,
+    dipole: Option<Dipole>,
 }
 
 impl GcPcSaft {
@@ -50,29 +54,36 @@ impl GcPcSaft {
     }
 
     pub fn with_options(parameters: Arc<GcPcSaftEosParameters>, options: GcPcSaftOptions) -> Self {
-        let mut contributions: Vec<Box<dyn HelmholtzEnergy>> = Vec::with_capacity(7);
-        contributions.push(Box::new(HardSphere::new(&parameters)));
-        contributions.push(Box::new(HardChain {
+        let hard_sphere = HardSphere::new(&parameters);
+        let hard_chain = HardChain {
             parameters: parameters.clone(),
-        }));
-        contributions.push(Box::new(Dispersion {
+        };
+        let dispersion = Dispersion {
             parameters: parameters.clone(),
-        }));
-        if !parameters.association.is_empty() {
-            contributions.push(Box::new(Association::new(
+        };
+        let association = if !parameters.association.is_empty() {
+            Some(Association::new(
                 &parameters,
                 &parameters.association,
                 options.max_iter_cross_assoc,
                 options.tol_cross_assoc,
-            )));
-        }
-        if !parameters.dipole_comp.is_empty() {
-            contributions.push(Box::new(Dipole::new(&parameters)))
-        }
+            ))
+        } else {
+            None
+        };
+        let dipole = if !parameters.dipole_comp.is_empty() {
+            Some(Dipole::new(&parameters))
+        } else {
+            None
+        };
         Self {
             parameters,
             options,
-            contributions,
+            hard_sphere,
+            hard_chain,
+            dispersion,
+            association,
+            dipole,
         }
     }
 }
@@ -98,8 +109,35 @@ impl Residual for GcPcSaft {
             / (FRAC_PI_6 * &p.m * p.sigma.mapv(|v| v.powi(3)) * moles_segments).sum()
     }
 
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
-        &self.contributions
+    fn residual_helmholtz_energy_contributions<D: num_dual::DualNum<f64> + Copy>(
+        &self,
+        state: &feos_core::StateHD<D>,
+    ) -> Vec<(String, D)> {
+        let mut v = Vec::with_capacity(7);
+        let d = self.parameters.hs_diameter(state.temperature);
+
+        v.push((
+            "Hard Sphere".to_string(),
+            self.hard_sphere.helmholtz_energy(&state),
+        ));
+        v.push((
+            "Hard Sphere".to_string(),
+            self.hard_chain.helmholtz_energy(&state),
+        ));
+        v.push((
+            "Dispersion".to_string(),
+            self.dispersion.helmholtz_energy(&state),
+        ));
+        if let Some(dipole) = self.dipole.as_ref() {
+            v.push(("Dipole".to_string(), dipole.helmholtz_energy(&state)))
+        }
+        if let Some(association) = self.association.as_ref() {
+            v.push((
+                "Association".to_string(),
+                association.helmholtz_energy(&state, &d),
+            ))
+        }
+        v
     }
 
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
@@ -111,9 +149,10 @@ impl Residual for GcPcSaft {
 mod test {
     use super::*;
     use crate::gc_pcsaft::eos::parameter::test::*;
+    use crate::hard_sphere::HardSphereProperties;
     use approx::assert_relative_eq;
     use feos_core::si::{Pressure, METER, MOL, PASCAL};
-    use feos_core::{HelmholtzEnergyDual, StateHD};
+    use feos_core::StateHD;
     use ndarray::arr1;
     use num_dual::Dual64;
     use typenum::P3;
@@ -162,7 +201,9 @@ mod test {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = Pressure::from_reduced(-contrib.helmholtz_energy(&state).eps * temperature);
+        let diameter = parameters.hs_diameter(state.temperature);
+        let pressure =
+            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
         assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
     }
 
@@ -179,7 +220,9 @@ mod test {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = Pressure::from_reduced(-contrib.helmholtz_energy(&state).eps * temperature);
+        let diameter = parameters.hs_diameter(state.temperature);
+        let pressure =
+            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
         assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
     }
 
@@ -195,7 +238,9 @@ mod test {
             Dual64::from_re(volume).derivative(),
             moles.mapv(Dual64::from_re),
         );
-        let pressure = Pressure::from_reduced(-contrib.helmholtz_energy(&state).eps * temperature);
+        let diameter = parameters.hs_diameter(state.temperature);
+        let pressure =
+            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
         assert_relative_eq!(pressure, -26.105606376765632 * PASCAL, max_relative = 1e-10);
     }
 }
