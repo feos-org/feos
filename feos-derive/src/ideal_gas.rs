@@ -8,8 +8,10 @@ pub(crate) fn expand_ideal_gas(input: DeriveInput) -> syn::Result<proc_macro2::T
     };
 
     let ideal_gas = impl_ideal_gas(variants);
+    let display = impl_display(variants);
     Ok(quote! {
         #ideal_gas
+        #display
     })
 }
 
