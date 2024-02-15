@@ -1,9 +1,9 @@
-use super::attractive_perturbation_wca::one_fluid_properties;
-use super::hard_sphere_wca::{
+use super::attractive_perturbation::one_fluid_properties;
+use super::hard_sphere::{
     diameter_wca, dimensionless_diameter_q_wca, WCA_CONSTANTS_ETA_A_UVB3, WCA_CONSTANTS_ETA_B_UVB3,
 };
 use crate::uvtheory::parameters::*;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_core::StateHD;
 use ndarray::Array1;
 use num_dual::DualNum;
 use std::{f64::consts::PI, fmt, sync::Arc};
@@ -80,19 +80,19 @@ const M_B3: [f64; 4] = [0.11853, 0.078556, -0.55039, 0.009163];
 const CU_WCA: [f64; 8] = [26.454, 1.8045, 1.7997, 161.96, 11.605, 12., 0.4, 2.0];
 
 #[derive(Debug, Clone)]
-pub struct AttractivePerturbationUVB3 {
-    pub parameters: Arc<UVParameters>,
+pub(super) struct AttractivePerturbationB3 {
+    pub parameters: Arc<UVTheoryParameters>,
 }
 
-impl fmt::Display for AttractivePerturbationUVB3 {
+impl fmt::Display for AttractivePerturbationB3 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Attractive Perturbation")
     }
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for AttractivePerturbationUVB3 {
+impl AttractivePerturbationB3 {
     /// Helmholtz energy for attractive perturbation
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
         let t = state.temperature;
         let density = state.partial_density.sum();
@@ -144,7 +144,7 @@ fn delta_b12u<D: DualNum<f64> + Copy>(
         * weighted_sigma3_ij
 }
 
-fn residual_virial_coefficient<D: DualNum<f64> + Copy>(p: &UVParameters, x: &Array1<D>, t: D) -> D {
+fn residual_virial_coefficient<D: DualNum<f64> + Copy>(p: &UVTheoryParameters, x: &Array1<D>, t: D) -> D {
     let mut delta_b2bar = D::zero();
 
     for i in 0..p.ncomponents {
@@ -164,7 +164,7 @@ fn residual_virial_coefficient<D: DualNum<f64> + Copy>(p: &UVParameters, x: &Arr
     delta_b2bar
 }
 fn residual_third_virial_coefficient<D: DualNum<f64> + Copy>(
-    p: &UVParameters,
+    p: &UVTheoryParameters,
     x: &Array1<D>,
     t: D,
     d: &Array1<D>,
@@ -389,7 +389,7 @@ mod test {
         let reduced_volume = moles[0] / reduced_density;
 
         let p = methane_parameters(12.0, 6.0);
-        let pt = AttractivePerturbationUVB3 {
+        let pt = AttractivePerturbationB3 {
             parameters: Arc::new(p.clone()),
         };
         let state = StateHD::new(

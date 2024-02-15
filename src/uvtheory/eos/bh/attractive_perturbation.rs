@@ -1,7 +1,7 @@
 //use super::attractive_perturbation_wca::one_fluid_properties;
-use super::hard_sphere_bh::diameter_bh;
+use super::hard_sphere::diameter_bh;
 use crate::uvtheory::parameters::*;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_core::StateHD;
 use ndarray::Array1;
 use num_dual::DualNum;
 use std::{
@@ -41,19 +41,19 @@ const C2: [[f64; 2]; 3] = [
 ];
 
 #[derive(Debug, Clone)]
-pub struct AttractivePerturbationBH {
-    pub parameters: Arc<UVParameters>,
+pub(super) struct AttractivePerturbation {
+    pub parameters: Arc<UVTheoryParameters>,
 }
 
-impl fmt::Display for AttractivePerturbationBH {
+impl fmt::Display for AttractivePerturbation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Attractive Perturbation")
     }
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for AttractivePerturbationBH {
+impl AttractivePerturbation {
     /// Helmholtz energy for attractive perturbation, eq. 52
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
         let x = &state.molefracs;
         let t = state.temperature;
@@ -87,7 +87,7 @@ fn delta_b12u<D: DualNum<f64>>(t_x: D, mean_field_constant_x: D, weighted_sigma3
     -mean_field_constant_x / t_x * 2.0 * PI * weighted_sigma3_ij
 }
 
-fn residual_virial_coefficient<D: DualNum<f64> + Copy>(p: &UVParameters, x: &Array1<D>, t: D) -> D {
+fn residual_virial_coefficient<D: DualNum<f64> + Copy>(p: &UVTheoryParameters, x: &Array1<D>, t: D) -> D {
     let mut delta_b2bar = D::zero();
     for i in 0..p.ncomponents {
         let xi = x[i];
@@ -135,7 +135,7 @@ fn activation<D: DualNum<f64> + Copy>(c: D, one_fluid_beta: D) -> D {
 }
 
 fn one_fluid_properties<D: DualNum<f64> + Copy>(
-    p: &UVParameters,
+    p: &UVTheoryParameters,
     x: &Array1<D>,
     t: D,
 ) -> (D, D, D, D, D, D) {
@@ -229,7 +229,7 @@ mod test {
         let reduced_volume = moles[0] / reduced_density;
 
         let p = methane_parameters(24.0, 6.0);
-        let pt = AttractivePerturbationBH {
+        let pt = AttractivePerturbation {
             parameters: Arc::new(p.clone()),
         };
         let state = StateHD::new(

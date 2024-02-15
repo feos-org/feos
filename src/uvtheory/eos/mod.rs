@@ -1,30 +1,18 @@
 #![allow(clippy::excessive_precision)]
 #![allow(clippy::needless_range_loop)]
 
-use super::parameters::UVParameters;
+use self::bh::BarkerHenderson;
+use self::wca::{WeeksChandlerAndersen, WeeksChandlerAndersenB3};
+
+use super::parameters::UVTheoryParameters;
 use feos_core::si::{MolarWeight, GRAM, MOL};
-use feos_core::{parameter::Parameter, Components, EosError, EosResult, HelmholtzEnergy, Residual};
+use feos_core::{parameter::Parameter, Components, Residual};
 use ndarray::Array1;
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
-pub(crate) mod attractive_perturbation_bh;
-pub(crate) mod attractive_perturbation_uvb3;
-pub(crate) mod attractive_perturbation_wca;
-pub(crate) mod hard_sphere_bh;
-pub(crate) mod hard_sphere_wca;
-pub(crate) mod reference_perturbation_bh;
-pub(crate) mod reference_perturbation_uvb3;
-pub(crate) mod reference_perturbation_wca;
-pub(crate) mod ufraction;
-use attractive_perturbation_bh::AttractivePerturbationBH;
-use attractive_perturbation_uvb3::AttractivePerturbationUVB3;
-use attractive_perturbation_wca::AttractivePerturbationWCA;
-use hard_sphere_bh::HardSphereBH;
-use hard_sphere_wca::HardSphereWCA;
-use reference_perturbation_bh::ReferencePerturbationBH;
-use reference_perturbation_uvb3::ReferencePerturbationUVB3;
-use reference_perturbation_wca::ReferencePerturbationWCA;
+mod bh;
+mod wca;
 
 /// Type of perturbation.
 #[derive(Clone)]
@@ -32,14 +20,7 @@ use reference_perturbation_wca::ReferencePerturbationWCA;
 pub enum Perturbation {
     BarkerHenderson,
     WeeksChandlerAndersen,
-}
-
-/// Order of the highest virial coefficient included in the model.
-#[derive(Clone)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
-pub enum VirialOrder {
-    Second,
-    Third,
+    WeeksChandlerAndersenB3,
 }
 
 /// Configuration options for uv-theory
@@ -47,7 +28,6 @@ pub enum VirialOrder {
 pub struct UVTheoryOptions {
     pub max_eta: f64,
     pub perturbation: Perturbation,
-    pub virial_order: VirialOrder,
 }
 
 impl Default for UVTheoryOptions {
@@ -55,93 +35,51 @@ impl Default for UVTheoryOptions {
         Self {
             max_eta: 0.5,
             perturbation: Perturbation::WeeksChandlerAndersen,
-            virial_order: VirialOrder::Second,
         }
     }
+}
+
+/// Collection of utility structs for each implementation
+enum UVTheoryImplementation {
+    BarkerHenderson(BarkerHenderson),
+    WeeksChandlerAndersen(WeeksChandlerAndersen),
+    WeeksChandlerAndersenB3(WeeksChandlerAndersenB3),
 }
 
 /// uv-theory equation of state
 pub struct UVTheory {
-    parameters: Arc<UVParameters>,
+    parameters: Arc<UVTheoryParameters>,
     options: UVTheoryOptions,
-    contributions: Vec<Box<dyn HelmholtzEnergy>>,
+    implementation: UVTheoryImplementation,
 }
 
 impl UVTheory {
     /// uv-theory with default options (WCA).
-    pub fn new(parameters: Arc<UVParameters>) -> EosResult<Self> {
+    pub fn new(parameters: Arc<UVTheoryParameters>) -> Self {
         Self::with_options(parameters, UVTheoryOptions::default())
     }
 
     /// uv-theory with provided options.
-    pub fn with_options(
-        parameters: Arc<UVParameters>,
-        options: UVTheoryOptions,
-    ) -> EosResult<Self> {
-        let mut contributions: Vec<Box<dyn HelmholtzEnergy>> = Vec::with_capacity(3);
-
-        match options.perturbation {
-            Perturbation::BarkerHenderson => match options.virial_order {
-                VirialOrder::Second => {
-                    contributions.push(Box::new(HardSphereBH {
-                        parameters: parameters.clone(),
-                    }));
-                    contributions.push(Box::new(ReferencePerturbationBH {
-                        parameters: parameters.clone(),
-                    }));
-                    contributions.push(Box::new(AttractivePerturbationBH {
-                        parameters: parameters.clone(),
-                    }));
-                }
-                VirialOrder::Third => {
-                    return Err(EosError::Error(
-                        "Third virial coefficient is not implemented for Barker-Henderson"
-                            .to_string(),
-                    ))
-                }
-            },
-            Perturbation::WeeksChandlerAndersen => {
-                contributions.push(Box::new(HardSphereWCA {
-                    parameters: parameters.clone(),
-                }));
-                match options.virial_order {
-                    VirialOrder::Second => {
-                        contributions.push(Box::new(ReferencePerturbationWCA {
-                            parameters: parameters.clone(),
-                        }));
-                        contributions.push(Box::new(AttractivePerturbationWCA {
-                            parameters: parameters.clone(),
-                        }));
-                    }
-                    VirialOrder::Third => {
-                        if parameters.sigma.len() > 1 {
-                            return Err(EosError::Error(
-                                "Third virial coefficient is not implemented for mixtures!"
-                                    .to_string(),
-                            ));
-                        }
-                        if parameters.att[0] != 6.0 {
-                            return Err(EosError::Error(
-                                "Third virial coefficient is not implemented for attractive exponents other than 6!"
-                                    .to_string(),
-                            ));
-                        }
-                        contributions.push(Box::new(ReferencePerturbationUVB3 {
-                            parameters: parameters.clone(),
-                        }));
-                        contributions.push(Box::new(AttractivePerturbationUVB3 {
-                            parameters: parameters.clone(),
-                        }));
-                    }
-                }
+    pub fn with_options(parameters: Arc<UVTheoryParameters>, options: UVTheoryOptions) -> Self {
+        let implementation = match options.perturbation {
+            Perturbation::BarkerHenderson => {
+                UVTheoryImplementation::BarkerHenderson(BarkerHenderson::new(parameters.clone()))
             }
-        }
+            Perturbation::WeeksChandlerAndersen => UVTheoryImplementation::WeeksChandlerAndersen(
+                WeeksChandlerAndersen::new(parameters.clone()),
+            ),
+            Perturbation::WeeksChandlerAndersenB3 => {
+                UVTheoryImplementation::WeeksChandlerAndersenB3(WeeksChandlerAndersenB3::new(
+                    parameters.clone(),
+                ))
+            }
+        };
 
-        Ok(Self {
+        Self {
             parameters,
             options,
-            contributions,
-        })
+            implementation,
+        }
     }
 }
 
@@ -155,7 +93,6 @@ impl Components for UVTheory {
             Arc::new(self.parameters.subset(component_list)),
             self.options.clone(),
         )
-        .expect("Not defined for mixture")
     }
 }
 
@@ -165,8 +102,21 @@ impl Residual for UVTheory {
             / (FRAC_PI_6 * self.parameters.sigma.mapv(|v| v.powi(3)) * moles).sum()
     }
 
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
-        &self.contributions
+    fn residual_helmholtz_energy_contributions<D: num_dual::DualNum<f64> + Copy>(
+        &self,
+        state: &feos_core::StateHD<D>,
+    ) -> Vec<(String, D)> {
+        match &self.implementation {
+            UVTheoryImplementation::BarkerHenderson(a) => {
+                a.residual_helmholtz_energy_contributions(state)
+            }
+            UVTheoryImplementation::WeeksChandlerAndersen(a) => {
+                a.residual_helmholtz_energy_contributions(state)
+            }
+            UVTheoryImplementation::WeeksChandlerAndersenB3(a) => {
+                a.residual_helmholtz_energy_contributions(state)
+            }
+        }
     }
 
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
@@ -183,7 +133,7 @@ mod test {
     use approx::assert_relative_eq;
     use feos_core::parameter::{Identifier, Parameter, PureRecord};
     use feos_core::si::{ANGSTROM, KELVIN, MOL, NAV, RGAS};
-    use feos_core::State;
+    use feos_core::{EosResult, State};
     use ndarray::arr1;
     use typenum::P3;
 
@@ -191,8 +141,8 @@ mod test {
     fn helmholtz_energy_pure_wca() -> EosResult<()> {
         let sig = 3.7039;
         let eps_k = 150.03;
-        let parameters = UVParameters::new_simple(24.0, 6.0, sig, eps_k)?;
-        let eos = Arc::new(UVTheory::new(Arc::new(parameters))?);
+        let parameters = UVTheoryParameters::new_simple(24.0, 6.0, sig, eps_k)?;
+        let eos = Arc::new(UVTheory::new(Arc::new(parameters)));
 
         let reduced_temperature = 4.0;
         let reduced_density = 1.0;
@@ -211,13 +161,12 @@ mod test {
         let sig = 3.7039;
         let rep = 24.0;
         let att = 6.0;
-        let parameters = UVParameters::new_simple(rep, att, sig, eps_k)?;
+        let parameters = UVTheoryParameters::new_simple(rep, att, sig, eps_k)?;
         let options = UVTheoryOptions {
             max_eta: 0.5,
             perturbation: Perturbation::BarkerHenderson,
-            virial_order: VirialOrder::Second,
         };
-        let eos = Arc::new(UVTheory::with_options(Arc::new(parameters), options)?);
+        let eos = Arc::new(UVTheory::with_options(Arc::new(parameters), options));
 
         let reduced_temperature = 4.0;
         let reduced_density = 1.0;
@@ -238,13 +187,12 @@ mod test {
         let sig = 3.7039;
         let rep = 12.0;
         let att = 6.0;
-        let parameters = UVParameters::new_simple(rep, att, sig, eps_k)?;
+        let parameters = UVTheoryParameters::new_simple(rep, att, sig, eps_k)?;
         let options = UVTheoryOptions {
             max_eta: 0.5,
-            perturbation: Perturbation::WeeksChandlerAndersen,
-            virial_order: VirialOrder::Third,
+            perturbation: Perturbation::WeeksChandlerAndersenB3,
         };
-        let eos = Arc::new(UVTheory::with_options(Arc::new(parameters), options)?);
+        let eos = Arc::new(UVTheory::with_options(Arc::new(parameters), options));
 
         let reduced_temperature = 4.0;
         let reduced_density = 0.5;
@@ -265,20 +213,20 @@ mod test {
         let rep1 = 24.0;
         let eps_k1 = 150.03;
         let sig1 = 3.7039;
-        let r1 = UVRecord::new(rep1, 6.0, sig1, eps_k1);
+        let r1 = UVTheoryRecord::new(rep1, 6.0, sig1, eps_k1);
         let i = Identifier::new(None, None, None, None, None, None);
         // compontent 2
         let rep2 = 24.0;
         let eps_k2 = 150.03;
         let sig2 = 3.7039;
-        let r2 = UVRecord::new(rep2, 6.0, sig2, eps_k2);
+        let r2 = UVTheoryRecord::new(rep2, 6.0, sig2, eps_k2);
         let j = Identifier::new(None, None, None, None, None, None);
         //////////////
 
         let pr1 = PureRecord::new(i, 1.0, r1);
         let pr2 = PureRecord::new(j, 1.0, r2);
         let pure_records = vec![pr1, pr2];
-        let uv_parameters = UVParameters::new_binary(pure_records, None)?;
+        let uv_parameters = UVTheoryParameters::new_binary(pure_records, None)?;
         // state
         let reduced_temperature = 4.0;
         let eps_k_x = (eps_k1 + eps_k2) / 2.0; // Check rule!!
@@ -293,10 +241,9 @@ mod test {
         let options = UVTheoryOptions {
             max_eta: 0.5,
             perturbation: Perturbation::BarkerHenderson,
-            virial_order: VirialOrder::Second,
         };
 
-        let eos_bh = Arc::new(UVTheory::with_options(Arc::new(uv_parameters), options)?);
+        let eos_bh = Arc::new(UVTheory::with_options(Arc::new(uv_parameters), options));
 
         let state_bh = State::new_nvt(&eos_bh, t_x, volume, &moles).unwrap();
         let a_bh = (state_bh.residual_molar_helmholtz_energy() / (RGAS * t_x)).into_value();
@@ -323,7 +270,7 @@ mod test {
         let volume = (p.sigma[0] * ANGSTROM).powi::<P3>() / reduced_density * NAV * total_moles;
 
         // EoS
-        let eos_wca = Arc::new(UVTheory::new(Arc::new(p))?);
+        let eos_wca = Arc::new(UVTheory::new(Arc::new(p)));
         let state_wca = State::new_nvt(&eos_wca, t_x, volume, &moles).unwrap();
         let a_wca = (state_wca.residual_helmholtz_energy() / (RGAS * t_x * state_wca.total_moles))
             .into_value();
@@ -351,7 +298,7 @@ mod test {
         let volume = NAV * total_moles / density;
 
         // EoS
-        let eos_wca = Arc::new(UVTheory::new(Arc::new(p))?);
+        let eos_wca = Arc::new(UVTheory::new(Arc::new(p)));
         let state_wca = State::new_nvt(&eos_wca, t_x, volume, &moles).unwrap();
         let a_wca = (state_wca.residual_molar_helmholtz_energy() / (RGAS * t_x)).into_value();
         assert_relative_eq!(a_wca, -0.034206207363139396, max_relative = 1e-5);
