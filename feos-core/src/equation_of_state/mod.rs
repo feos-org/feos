@@ -52,12 +52,6 @@ impl<I: IdealGas> EquationOfState<I, NoResidual> {
     }
 }
 
-impl<I: IdealGas, R> Display for EquationOfState<I, R> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.ideal_gas)
-    }
-}
-
 impl<I: Components, R: Components> Components for EquationOfState<I, R> {
     fn components(&self) -> usize {
         assert_eq!(

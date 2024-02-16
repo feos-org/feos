@@ -133,12 +133,6 @@ mod tests {
     // Only to be able to instantiate an `EquationOfState`
     struct NoIdealGas;
 
-    impl Display for NoIdealGas {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "NoIdealGas")
-        }
-    }
-
     impl Components for NoIdealGas {
         fn components(&self) -> usize {
             1

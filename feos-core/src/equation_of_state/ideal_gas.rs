@@ -2,7 +2,6 @@ use super::Components;
 use crate::StateHD;
 use ndarray::Array1;
 use num_dual::DualNum;
-use std::fmt::Display;
 
 /// Ideal gas Helmholtz energy contribution.
 pub trait IdealGas: Components + Sync + Send {

@@ -12,10 +12,10 @@ use std::ops::{Add, AddAssign, Sub};
 use typenum::{Diff, Sum, P2};
 
 type _InfluenceParameter = Diff<Sum<_MolarEnergy, _Area>, _Density>;
-type InfluenceParameter<T> = Quantity<T, _InfluenceParameter>;
+pub type InfluenceParameter<T> = Quantity<T, _InfluenceParameter>;
 
 impl WeightFunctionInfo<Dual2_64> {
-    fn pdgt_weight_constants(&self) -> (Array2<f64>, Array2<f64>, Array2<f64>) {
+    pub fn pdgt_weight_constants(&self) -> (Array2<f64>, Array2<f64>, Array2<f64>) {
         let k = Dual2_64::from(0.0).derivative();
         let w = self.weight_constants(k, 1);
         (w.mapv(|w| w.re), w.mapv(|w| -w.v1), w.mapv(|w| -0.5 * w.v2))
