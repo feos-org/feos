@@ -1,5 +1,4 @@
 use super::PcSaftParameters;
-use crate::hard_sphere::HardSphereProperties;
 use feos_core::StateHD;
 use ndarray::prelude::*;
 use num_dual::DualNum;
@@ -167,7 +166,11 @@ pub struct Dipole {
 
 impl Dipole {
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>, diameter: &Array1<D>) -> D {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        diameter: &Array1<D>,
+    ) -> D {
         let m = MeanSegmentNumbers::new(&self.parameters, Multipole::Dipole);
         let p = &self.parameters;
 
@@ -246,7 +249,11 @@ pub struct Quadrupole {
 
 impl Quadrupole {
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>, diameter: &Array1<D>) -> D {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        diameter: &Array1<D>,
+    ) -> D {
         let m = MeanSegmentNumbers::new(&self.parameters, Multipole::Quadrupole);
         let p = &self.parameters;
 
@@ -335,7 +342,11 @@ pub struct DipoleQuadrupole {
 
 impl DipoleQuadrupole {
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>, diameter: &Array1<D>) -> D {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        diameter: &Array1<D>,
+    ) -> D {
         let p = &self.parameters;
 
         let t_inv = state.temperature.inv();
@@ -444,6 +455,7 @@ impl fmt::Display for DipoleQuadrupole {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::hard_sphere::HardSphereProperties;
     use crate::pcsaft::eos::dispersion::Dispersion;
     use crate::pcsaft::parameters::utils::{
         carbon_dioxide_parameters, dme_co2_parameters, dme_parameters,

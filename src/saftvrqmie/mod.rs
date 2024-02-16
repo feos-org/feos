@@ -15,7 +15,7 @@ mod eos;
 mod parameters;
 
 #[cfg(feature = "dft")]
-pub use dft::SaftVRQMieFunctional;
+pub use dft::{SaftVRQMieFunctional, SaftVRQMieFunctionalContribution};
 pub use eos::{FeynmanHibbsOrder, SaftVRQMie, SaftVRQMieOptions};
 pub use parameters::{SaftVRQMieBinaryRecord, SaftVRQMieParameters, SaftVRQMieRecord};
 

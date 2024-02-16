@@ -1,97 +1,51 @@
 use crate::weight_functions::WeightFunctionInfo;
-use feos_core::{EosResult, HelmholtzEnergyDual, StateHD};
+use feos_core::{EosResult, StateHD};
 use ndarray::prelude::*;
-use ndarray::RemoveAxis;
+use ndarray::{RemoveAxis, ScalarOperand};
 use num_dual::*;
 use num_traits::{One, Zero};
 use std::fmt::Display;
 
-macro_rules! impl_helmholtz_energy {
-    ($number:ty) => {
-        impl HelmholtzEnergyDual<$number> for Box<dyn FunctionalContribution> {
-            fn helmholtz_energy(&self, state: &StateHD<$number>) -> $number {
-                // calculate weight functions
-                let weight_functions = self.weight_functions(state.temperature);
-
-                // calculate segment density
-                let density = weight_functions
-                    .component_index
-                    .mapv(|c| state.partial_density[c]);
-
-                // calculate weighted density and Helmholtz energy
-                let weight_constants = weight_functions.weight_constants(Zero::zero(), 0);
-                let weighted_densities = weight_constants.dot(&density).insert_axis(Axis(1));
-                self.calculate_helmholtz_energy_density(
-                    state.temperature,
-                    weighted_densities.view(),
-                )
-                .unwrap()[0]
-                    * state.volume
-            }
-        }
-    };
-}
-
-impl_helmholtz_energy!(f64);
-impl_helmholtz_energy!(Dual64);
-impl_helmholtz_energy!(Dual<DualSVec64<3>, f64>);
-impl_helmholtz_energy!(HyperDual64);
-impl_helmholtz_energy!(Dual2_64);
-impl_helmholtz_energy!(Dual3_64);
-impl_helmholtz_energy!(HyperDual<Dual64, f64>);
-impl_helmholtz_energy!(HyperDual<DualSVec64<2>, f64>);
-impl_helmholtz_energy!(HyperDual<DualSVec64<3>, f64>);
-impl_helmholtz_energy!(Dual2<Dual64, f64>);
-impl_helmholtz_energy!(Dual3<Dual64, f64>);
-impl_helmholtz_energy!(Dual3<DualSVec64<2>, f64>);
-impl_helmholtz_energy!(Dual3<DualSVec64<3>, f64>);
-
-/// Individual functional contribution that can
-/// be evaluated using generalized (hyper) dual numbers.
-///
-/// This trait needs to be implemented generically or for
-/// the specific types in the supertraits of [FunctionalContribution]
-/// so that the implementor can be used as a functional
-/// contribution in the Helmholtz energy functional.
-pub trait FunctionalContributionDual<N: DualNum<f64>>: Display {
+/// Individual functional contribution that can be evaluated using generalized (hyper) dual numbers.
+pub trait FunctionalContribution: Display + Sync + Send {
     /// Return the weight functions required in this contribution.
-    fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N>;
+    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N>;
+
     /// Overwrite this if the weight functions in pDGT are different than for DFT.
-    fn weight_functions_pdgt(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions_pdgt<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         self.weight_functions(temperature)
     }
 
     /// Return the Helmholtz energy density for the given temperature and weighted densities.
-    fn calculate_helmholtz_energy_density(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
     ) -> EosResult<Array1<N>>;
-}
 
-/// Object safe version of the [FunctionalContributionDual] trait.
-///
-/// The trait is implemented automatically for every struct that implements
-/// the supertraits.
-pub trait FunctionalContribution:
-    FunctionalContributionDual<f64>
-    + FunctionalContributionDual<Dual64>
-    + FunctionalContributionDual<Dual<Dual64, f64>>
-    + FunctionalContributionDual<Dual<DualSVec64<3>, f64>>
-    + FunctionalContributionDual<HyperDual64>
-    + FunctionalContributionDual<Dual2_64>
-    + FunctionalContributionDual<Dual3_64>
-    + FunctionalContributionDual<HyperDual<Dual64, f64>>
-    + FunctionalContributionDual<HyperDual<DualSVec64<2>, f64>>
-    + FunctionalContributionDual<HyperDual<DualSVec64<3>, f64>>
-    + FunctionalContributionDual<Dual2<Dual64, f64>>
-    + FunctionalContributionDual<Dual3<Dual64, f64>>
-    + FunctionalContributionDual<Dual3<DualSVec64<2>, f64>>
-    + FunctionalContributionDual<Dual3<DualSVec64<3>, f64>>
-    + Display
-    + Sync
-    + Send
-{
+    fn helmholtz_energy<N: DualNum<f64> + Copy + ScalarOperand>(&self, state: &StateHD<N>) -> N {
+        // calculate weight functions
+        let weight_functions = self.weight_functions(state.temperature);
+
+        // calculate segment density
+        let density = weight_functions
+            .component_index
+            .mapv(|c| state.partial_density[c]);
+
+        // calculate weighted density and Helmholtz energy
+        let weight_constants = weight_functions.weight_constants(Zero::zero(), 0);
+        let weighted_densities = weight_constants.dot(&density).insert_axis(Axis(1));
+        self.helmholtz_energy_density(state.temperature, weighted_densities.view())
+            .unwrap()[0]
+            * state.volume
+    }
+
     fn first_partial_derivatives(
         &self,
         temperature: f64,
@@ -105,7 +59,7 @@ pub trait FunctionalContribution:
 
         for i in 0..wd.shape()[0] {
             wd.index_axis_mut(Axis(0), i).map_inplace(|x| x.eps = 1.0);
-            phi = self.calculate_helmholtz_energy_density(t, wd.view())?;
+            phi = self.helmholtz_energy_density(t, wd.view())?;
             first_partial_derivative
                 .index_axis_mut(Axis(0), i)
                 .assign(&phi.mapv(|p| p.eps));
@@ -129,7 +83,7 @@ pub trait FunctionalContribution:
         for i in 0..wd.shape()[0] {
             wd.index_axis_mut(Axis(0), i)
                 .map_inplace(|x| x.eps = Dual::one());
-            phi = self.calculate_helmholtz_energy_density(t, wd.view())?;
+            phi = self.helmholtz_energy_density(t, wd.view())?;
             first_partial_derivative
                 .index_axis_mut(Axis(0), i)
                 .assign(&phi.mapv(|p| p.eps));
@@ -156,7 +110,7 @@ pub trait FunctionalContribution:
             wd.index_axis_mut(Axis(0), i).map_inplace(|x| x.eps1 = 1.0);
             for j in 0..=i {
                 wd.index_axis_mut(Axis(0), j).map_inplace(|x| x.eps2 = 1.0);
-                phi = self.calculate_helmholtz_energy_density(t, wd.view())?;
+                phi = self.helmholtz_energy_density(t, wd.view())?;
                 let p = phi.mapv(|p| p.eps1eps2);
                 second_partial_derivative
                     .index_axis_mut(Axis(0), i)
@@ -178,25 +132,4 @@ pub trait FunctionalContribution:
         helmholtz_energy_density.assign(&phi.mapv(|p| p.re));
         Ok(())
     }
-}
-
-impl<T> FunctionalContribution for T where
-    T: FunctionalContributionDual<f64>
-        + FunctionalContributionDual<Dual64>
-        + FunctionalContributionDual<Dual<Dual64, f64>>
-        + FunctionalContributionDual<Dual<DualSVec64<3>, f64>>
-        + FunctionalContributionDual<HyperDual64>
-        + FunctionalContributionDual<Dual2_64>
-        + FunctionalContributionDual<Dual3_64>
-        + FunctionalContributionDual<HyperDual<Dual64, f64>>
-        + FunctionalContributionDual<HyperDual<DualSVec64<2>, f64>>
-        + FunctionalContributionDual<HyperDual<DualSVec64<3>, f64>>
-        + FunctionalContributionDual<Dual2<Dual64, f64>>
-        + FunctionalContributionDual<Dual3<Dual64, f64>>
-        + FunctionalContributionDual<Dual3<DualSVec64<2>, f64>>
-        + FunctionalContributionDual<Dual3<DualSVec64<3>, f64>>
-        + Display
-        + Sync
-        + Send
-{
 }

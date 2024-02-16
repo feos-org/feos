@@ -4,7 +4,7 @@ use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::parameter::Parameter;
 use feos_core::{si::*, StateHD};
 use feos_core::{Components, EntropyScaling, EosError, EosResult, Residual, State};
-use ndarray::{Array1, ScalarOperand};
+use ndarray::Array1;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::fmt;
@@ -146,34 +146,34 @@ impl Residual for PcSaft {
 
         v.push((
             "Hard Sphere".to_string(),
-            self.hard_sphere.helmholtz_energy(&state),
+            self.hard_sphere.helmholtz_energy(state),
         ));
         if let Some(hc) = self.hard_chain.as_ref() {
-            v.push(("Hard Sphere".to_string(), hc.helmholtz_energy(&state)))
+            v.push(("Hard Chain".to_string(), hc.helmholtz_energy(state)))
         }
         v.push((
             "Dispersion".to_string(),
-            self.dispersion.helmholtz_energy(&state, &d),
+            self.dispersion.helmholtz_energy(state, &d),
         ));
         if let Some(dipole) = self.dipole.as_ref() {
-            v.push(("Dipole".to_string(), dipole.helmholtz_energy(&state, &d)))
+            v.push(("Dipole".to_string(), dipole.helmholtz_energy(state, &d)))
         }
         if let Some(quadrupole) = self.quadrupole.as_ref() {
             v.push((
                 "Quadrupole".to_string(),
-                quadrupole.helmholtz_energy(&state, &d),
+                quadrupole.helmholtz_energy(state, &d),
             ))
         }
         if let Some(dipole_quadrupole) = self.dipole_quadrupole.as_ref() {
             v.push((
                 "Dipole-Quadrupole".to_string(),
-                dipole_quadrupole.helmholtz_energy(&state, &d),
+                dipole_quadrupole.helmholtz_energy(state, &d),
             ))
         }
         if let Some(association) = self.association.as_ref() {
             v.push((
                 "Association".to_string(),
-                association.helmholtz_energy(&state, &d),
+                association.helmholtz_energy(state, &d),
             ))
         }
         v

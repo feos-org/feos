@@ -1,6 +1,4 @@
-use super::hard_sphere::{
-    diameter_bh, packing_fraction, packing_fraction_a, packing_fraction_b,
-};
+use super::hard_sphere::{diameter_bh, packing_fraction, packing_fraction_a, packing_fraction_b};
 use crate::uvtheory::parameters::*;
 use feos_core::StateHD;
 use num_dual::DualNum;

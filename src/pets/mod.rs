@@ -16,7 +16,7 @@ mod eos;
 mod parameters;
 
 #[cfg(feature = "dft")]
-pub use dft::PetsFunctional;
+pub use dft::{PetsFunctional, PetsFunctionalContribution};
 pub use eos::{Pets, PetsOptions};
 pub use parameters::{PetsBinaryRecord, PetsParameters, PetsRecord};
 

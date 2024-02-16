@@ -8,7 +8,7 @@ use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 
-pub(super) fn calculate_helmholtz_energy_density_polar<N: DualNum<f64> + Copy + ScalarOperand>(
+pub(super) fn helmholtz_energy_density_polar<N: DualNum<f64> + Copy + ScalarOperand>(
     parameters: &PcSaftParameters,
     temperature: N,
     density: ArrayView2<N>,

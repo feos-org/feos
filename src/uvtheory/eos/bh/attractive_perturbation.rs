@@ -87,7 +87,11 @@ fn delta_b12u<D: DualNum<f64>>(t_x: D, mean_field_constant_x: D, weighted_sigma3
     -mean_field_constant_x / t_x * 2.0 * PI * weighted_sigma3_ij
 }
 
-fn residual_virial_coefficient<D: DualNum<f64> + Copy>(p: &UVTheoryParameters, x: &Array1<D>, t: D) -> D {
+fn residual_virial_coefficient<D: DualNum<f64> + Copy>(
+    p: &UVTheoryParameters,
+    x: &Array1<D>,
+    t: D,
+) -> D {
     let mut delta_b2bar = D::zero();
     for i in 0..p.ncomponents {
         let xi = x[i];

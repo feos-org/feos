@@ -196,11 +196,9 @@ impl IdealGas for Dippr {
             })
             .collect()
     }
-}
 
-impl fmt::Display for Dippr {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Ideal gas (DIPPR)")
+    fn ideal_gas_model(&self) -> String {
+        "Ideal gas (DIPPR)".into()
     }
 }
 

@@ -4,11 +4,14 @@ use crate::hard_sphere::{FMTContribution, FMTVersion};
 use dispersion::AttractiveFunctional;
 use feos_core::parameter::Parameter;
 use feos_core::si::{MolarWeight, GRAM, MOL};
-use feos_core::Components;
+use feos_core::{Components, EosResult};
+use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
-use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
-use ndarray::{Array1, Array2};
+use feos_dft::{
+    FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, WeightFunctionInfo, DFT,
+};
+use ndarray::{Array1, Array2, ArrayView2, ScalarOperand};
 use num_dual::DualNum;
 use pure_pets_functional::*;
 use std::f64::consts::FRAC_PI_6;
@@ -23,7 +26,6 @@ pub struct PetsFunctional {
     pub parameters: Arc<PetsParameters>,
     fmt_version: FMTVersion,
     options: PetsOptions,
-    contributions: Vec<Box<dyn FunctionalContribution>>,
 }
 
 impl PetsFunctional {
@@ -47,36 +49,10 @@ impl PetsFunctional {
         fmt_version: FMTVersion,
         pets_options: PetsOptions,
     ) -> DFT<Self> {
-        let mut contributions: Vec<Box<dyn FunctionalContribution>> = Vec::with_capacity(2);
-
-        if matches!(
-            fmt_version,
-            FMTVersion::WhiteBear | FMTVersion::AntiSymWhiteBear
-        ) && parameters.sigma.len() == 1
-        // Pure substance or mixture
-        {
-            // Hard-sphere contribution pure substance
-            let fmt = PureFMTFunctional::new(parameters.clone(), fmt_version);
-            contributions.push(Box::new(fmt));
-
-            // Dispersion contribution pure substance
-            let att = PureAttFunctional::new(parameters.clone());
-            contributions.push(Box::new(att));
-        } else {
-            // Hard-sphere contribution mixtures
-            let hs = FMTContribution::new(&parameters, fmt_version);
-            contributions.push(Box::new(hs));
-
-            // Dispersion contribution mixtures
-            let att = AttractiveFunctional::new(parameters.clone());
-            contributions.push(Box::new(att));
-        }
-
         DFT(Self {
             parameters,
             fmt_version,
             options: pets_options,
-            contributions,
         })
     }
 }
@@ -97,6 +73,8 @@ impl Components for PetsFunctional {
 }
 
 impl HelmholtzEnergyFunctional for PetsFunctional {
+    type Contribution = PetsFunctionalContribution;
+
     fn molecule_shape(&self) -> MoleculeShape {
         MoleculeShape::Spherical(self.parameters.sigma.len())
     }
@@ -106,8 +84,33 @@ impl HelmholtzEnergyFunctional for PetsFunctional {
             / (FRAC_PI_6 * self.parameters.sigma.mapv(|v| v.powi(3)) * moles).sum()
     }
 
-    fn contributions(&self) -> &[Box<dyn FunctionalContribution>] {
-        &self.contributions
+    fn contributions(&self) -> Box<(dyn Iterator<Item = PetsFunctionalContribution>)> {
+        let mut contributions = Vec::with_capacity(2);
+
+        if matches!(
+            self.fmt_version,
+            FMTVersion::WhiteBear | FMTVersion::AntiSymWhiteBear
+        ) && self.parameters.sigma.len() == 1
+        // Pure substance or mixture
+        {
+            // Hard-sphere contribution pure substance
+            let fmt = PureFMTFunctional::new(self.parameters.clone(), self.fmt_version);
+            contributions.push(fmt.into());
+
+            // Dispersion contribution pure substance
+            let att = PureAttFunctional::new(self.parameters.clone());
+            contributions.push(att.into());
+        } else {
+            // Hard-sphere contribution mixtures
+            let hs = FMTContribution::new(&self.parameters, self.fmt_version);
+            contributions.push(hs.into());
+
+            // Dispersion contribution mixtures
+            let att = AttractiveFunctional::new(self.parameters.clone());
+            contributions.push(att.into());
+        }
+
+        Box::new(contributions.into_iter())
     }
 
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
@@ -139,4 +142,12 @@ impl PairPotential for PetsFunctional {
             }
         })
     }
+}
+
+#[derive(FunctionalContribution)]
+pub enum PetsFunctionalContribution {
+    PureFMT(PureFMTFunctional),
+    PureAtt(PureAttFunctional),
+    Fmt(FMTContribution<PetsParameters>),
+    Attractive(AttractiveFunctional),
 }

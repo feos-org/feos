@@ -1,11 +1,9 @@
-use super::polar::calculate_helmholtz_energy_density_polar;
+use super::polar::helmholtz_energy_density_polar;
 use super::PcSaftParameters;
 use crate::hard_sphere::HardSphereProperties;
 use crate::pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
 use feos_core::EosError;
-use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
-};
+use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
@@ -40,18 +38,22 @@ fn att_weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
     )
 }
 
-impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N>
-    for AttractiveFunctional
-{
-    fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
+impl FunctionalContribution for AttractiveFunctional {
+    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         att_weight_functions(&self.parameters, PSI_DFT, temperature)
     }
 
-    fn weight_functions_pdgt(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions_pdgt<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         att_weight_functions(&self.parameters, PSI_PDGT, temperature)
     }
 
-    fn calculate_helmholtz_energy_density(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
         density: ArrayView2<N>,
@@ -124,7 +126,7 @@ impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N>
         });
 
         // Helmholtz energy density
-        let phi_polar = calculate_helmholtz_energy_density_polar(p, temperature, density)?;
+        let phi_polar = helmholtz_energy_density_polar(p, temperature, density)?;
         Ok((-rho1mix * i1 * 2.0 - rho2mix * m_bar * c1 * i2) * PI + phi_polar)
     }
 }

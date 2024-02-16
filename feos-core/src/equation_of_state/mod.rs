@@ -2,8 +2,8 @@ use crate::{
     si::{Diffusivity, MolarWeight, Moles, Temperature, ThermalConductivity, Viscosity, Volume},
     EosResult,
 };
-use ndarray::Array1;
-use std::{fmt::Display, sync::Arc};
+use ndarray::{Array1, ScalarOperand};
+use std::sync::Arc;
 
 mod ideal_gas;
 mod residual;
@@ -52,12 +52,6 @@ impl<I: IdealGas> EquationOfState<I, NoResidual> {
     }
 }
 
-impl<I: IdealGas, R> Display for EquationOfState<I, R> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.ideal_gas)
-    }
-}
-
 impl<I: Components, R: Components> Components for EquationOfState<I, R> {
     fn components(&self) -> usize {
         assert_eq!(
@@ -80,6 +74,10 @@ impl<I: IdealGas, R: Components + Sync + Send> IdealGas for EquationOfState<I, R
     fn ln_lambda3<D: num_dual::DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
         self.ideal_gas.ln_lambda3(temperature)
     }
+
+    fn ideal_gas_model(&self) -> String {
+        self.ideal_gas.ideal_gas_model()
+    }
 }
 
 impl<I: IdealGas, R: Residual> Residual for EquationOfState<I, R> {
@@ -87,14 +85,7 @@ impl<I: IdealGas, R: Residual> Residual for EquationOfState<I, R> {
         self.residual.compute_max_density(moles)
     }
 
-    fn residual_helmholtz_energy<D: num_dual::DualNum<f64> + Copy>(
-        &self,
-        state: &crate::StateHD<D>,
-    ) -> D {
-        self.residual.residual_helmholtz_energy(state)
-    }
-
-    fn residual_helmholtz_energy_contributions<D: num_dual::DualNum<f64> + Copy>(
+    fn residual_helmholtz_energy_contributions<D: num_dual::DualNum<f64> + Copy + ScalarOperand>(
         &self,
         state: &crate::StateHD<D>,
     ) -> Vec<(String, D)> {

@@ -1,5 +1,4 @@
 use super::PcSaftParameters;
-use crate::hard_sphere::HardSphereProperties;
 use feos_core::StateHD;
 use ndarray::Array1;
 use num_dual::DualNum;
@@ -67,7 +66,11 @@ pub struct Dispersion {
 }
 
 impl Dispersion {
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>, diameter: &Array1<D>) -> D {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        diameter: &Array1<D>,
+    ) -> D {
         // auxiliary variables
         let n = self.parameters.m.len();
         let p = &self.parameters;
@@ -130,6 +133,7 @@ impl fmt::Display for Dispersion {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::hard_sphere::HardSphereProperties;
     use crate::pcsaft::parameters::utils::{
         butane_parameters, propane_butane_parameters, propane_parameters,
     };

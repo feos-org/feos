@@ -84,7 +84,7 @@ where
     /// `pure_records`, the `Default` implementation of Self::Binary is used.
     #[allow(clippy::expect_fun_call)]
     fn binary_matrix_from_records(
-        pure_records: &Vec<PureRecord<Self::Pure>>,
+        pure_records: &[PureRecord<Self::Pure>],
         binary_records: &[BinaryRecord<Identifier, Self::Binary>],
         identifier_option: IdentifierOption,
     ) -> Option<Array2<Self::Binary>> {

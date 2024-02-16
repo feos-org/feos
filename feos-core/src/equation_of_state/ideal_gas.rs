@@ -2,11 +2,12 @@ use super::Components;
 use crate::StateHD;
 use ndarray::Array1;
 use num_dual::DualNum;
-use std::fmt::Display;
 
 /// Ideal gas Helmholtz energy contribution.
-pub trait IdealGas: Components + Sync + Send + Display {
+pub trait IdealGas: Components + Sync + Send {
     fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D>;
+
+    fn ideal_gas_model(&self) -> String;
 
     /// Evaluate the ideal gas Helmholtz energy contribution for a given state.
     ///

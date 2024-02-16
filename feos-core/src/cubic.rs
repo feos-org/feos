@@ -8,7 +8,7 @@ use crate::equation_of_state::{Components, Residual};
 use crate::parameter::{Identifier, Parameter, ParameterError, PureRecord};
 use crate::si::{MolarWeight, GRAM, MOL};
 use crate::state::StateHD;
-use ndarray::{Array1, Array2};
+use ndarray::{Array1, Array2, ScalarOperand};
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
 use std::f64::consts::SQRT_2;
@@ -146,16 +146,6 @@ impl Parameter for PengRobinsonParameters {
     }
 }
 
-struct PengRobinsonContribution {
-    parameters: Arc<PengRobinsonParameters>,
-}
-
-impl fmt::Display for PengRobinsonContribution {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Peng Robinson")
-    }
-}
-
 /// A simple version of the Peng-Robinson equation of state.
 pub struct PengRobinson {
     /// Parameters
@@ -215,7 +205,7 @@ impl Residual for PengRobinson {
                 * ((v + b * n * (1.0 + SQRT_2)) / (v + b * n * (1.0 - SQRT_2))).ln())
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {

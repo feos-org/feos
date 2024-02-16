@@ -270,7 +270,7 @@ impl AssociationParameters {
 /// contribution and functional.
 pub struct Association<P> {
     parameters: Arc<P>,
-    association_parameters: AssociationParameters,
+    association_parameters: Arc<AssociationParameters>,
     max_iter: usize,
     tol: f64,
     force_cross_association: bool,
@@ -285,7 +285,7 @@ impl<P: HardSphereProperties> Association<P> {
     ) -> Self {
         Self {
             parameters: parameters.clone(),
-            association_parameters: association_parameters.clone(),
+            association_parameters: Arc::new(association_parameters.clone()),
             max_iter,
             tol,
             force_cross_association: false,
@@ -352,7 +352,7 @@ impl<P: HardSphereProperties> Association<P> {
 
         // association strength
         let [delta_ab, delta_cc] =
-            self.association_strength(state.temperature, &diameter, n2, n3i, D::one());
+            self.association_strength(state.temperature, diameter, n2, n3i, D::one());
 
         match (
             a.sites_a.len() * a.sites_b.len(),

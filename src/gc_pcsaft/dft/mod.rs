@@ -3,10 +3,13 @@ use crate::association::Association;
 use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use feos_core::parameter::ParameterHetero;
 use feos_core::si::{MolarWeight, GRAM, MOL};
-use feos_core::Components;
+use feos_core::{Components, EosResult};
+use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
-use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
-use ndarray::Array1;
+use feos_dft::{
+    FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, WeightFunctionInfo, DFT,
+};
+use ndarray::{Array1, ArrayView2, ScalarOperand};
 use num_dual::DualNum;
 use petgraph::graph::UnGraph;
 use std::f64::consts::FRAC_PI_6;
@@ -24,7 +27,6 @@ pub struct GcPcSaftFunctional {
     pub parameters: Arc<GcPcSaftFunctionalParameters>,
     fmt_version: FMTVersion,
     options: GcPcSaftOptions,
-    contributions: Vec<Box<dyn FunctionalContribution>>,
 }
 
 impl GcPcSaftFunctional {
@@ -41,36 +43,10 @@ impl GcPcSaftFunctional {
         fmt_version: FMTVersion,
         saft_options: GcPcSaftOptions,
     ) -> DFT<Self> {
-        let mut contributions: Vec<Box<dyn FunctionalContribution>> = Vec::with_capacity(4);
-
-        // Hard sphere contribution
-        let hs = FMTContribution::new(&parameters, fmt_version);
-        contributions.push(Box::new(hs));
-
-        // Hard chains
-        let chain = ChainFunctional::new(&parameters);
-        contributions.push(Box::new(chain));
-
-        // Dispersion
-        let att = AttractiveFunctional::new(&parameters);
-        contributions.push(Box::new(att));
-
-        // Association
-        if !parameters.association.is_empty() {
-            let assoc = Association::new(
-                &parameters,
-                &parameters.association,
-                saft_options.max_iter_cross_assoc,
-                saft_options.tol_cross_assoc,
-            );
-            contributions.push(Box::new(assoc));
-        }
-
         DFT(Self {
             parameters,
             fmt_version,
             options: saft_options,
-            contributions,
         })
     }
 }
@@ -91,6 +67,8 @@ impl Components for GcPcSaftFunctional {
 }
 
 impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
+    type Contribution = GcPcSaftFunctionalContribution;
+
     fn molecule_shape(&self) -> MoleculeShape {
         MoleculeShape::Heterosegmented(&self.parameters.component_index)
     }
@@ -102,8 +80,33 @@ impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
             / (FRAC_PI_6 * &p.m * p.sigma.mapv(|v| v.powi(3)) * moles_segments).sum()
     }
 
-    fn contributions(&self) -> &[Box<dyn FunctionalContribution>] {
-        &self.contributions
+    fn contributions(&self) -> Box<dyn Iterator<Item = GcPcSaftFunctionalContribution>> {
+        let mut contributions = Vec::with_capacity(4);
+
+        // Hard sphere contribution
+        let hs = FMTContribution::new(&self.parameters, self.fmt_version);
+        contributions.push(hs.into());
+
+        // Hard chains
+        let chain = ChainFunctional::new(&self.parameters);
+        contributions.push(chain.into());
+
+        // Dispersion
+        let att = AttractiveFunctional::new(&self.parameters);
+        contributions.push(att.into());
+
+        // Association
+        if !self.parameters.association.is_empty() {
+            let assoc = Association::new(
+                &self.parameters,
+                &self.parameters.association,
+                self.options.max_iter_cross_assoc,
+                self.options.tol_cross_assoc,
+            );
+            contributions.push(Box::new(assoc).into());
+        }
+
+        Box::new(contributions.into_iter())
     }
 
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
@@ -148,4 +151,12 @@ impl FluidParameters for GcPcSaftFunctional {
     fn sigma_ff(&self) -> &Array1<f64> {
         &self.parameters.sigma
     }
+}
+
+#[derive(FunctionalContribution)]
+pub enum GcPcSaftFunctionalContribution {
+    Fmt(FMTContribution<GcPcSaftFunctionalParameters>),
+    Chain(ChainFunctional),
+    Attractive(AttractiveFunctional),
+    Association(Box<Association<GcPcSaftFunctionalParameters>>),
 }

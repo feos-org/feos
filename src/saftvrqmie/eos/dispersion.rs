@@ -139,17 +139,17 @@ impl Dispersion {
             rho_s += rho[i] * p.m[i];
         }
         // packing fractions
-        let zeta = zeta_saft_vrq_mie(&p.m, &x_s, &d_hs_ij, rho_s);
-        let zeta_bar = zeta_saft_vrq_mie(&p.m, &x_s, &s_eff_ij, rho_s);
+        let zeta = zeta_saft_vrq_mie(&p.m, &x_s, d_hs_ij, rho_s);
+        let zeta_bar = zeta_saft_vrq_mie(&p.m, &x_s, s_eff_ij, rho_s);
 
         // alphas ....
-        let alpha = Alpha::new(p, &s_eff_ij, &epsilon_k_eff_ij, state.temperature);
+        let alpha = Alpha::new(p, s_eff_ij, epsilon_k_eff_ij, state.temperature);
 
-        let a1 = first_order_perturbation(p, &x_s, zeta, rho_s, &d_hs_ij, &s_eff_ij, &dq_ij);
+        let a1 = first_order_perturbation(p, &x_s, zeta, rho_s, d_hs_ij, s_eff_ij, dq_ij);
         let a2 = second_order_perturbation(
-            p, &alpha, &x_s, zeta, zeta_bar, rho_s, &d_hs_ij, &s_eff_ij, &dq_ij,
+            p, &alpha, &x_s, zeta, zeta_bar, rho_s, d_hs_ij, s_eff_ij, dq_ij,
         );
-        let a3 = third_order_perturbation(p, &alpha, &x_s, zeta_bar, &epsilon_k_eff_ij);
+        let a3 = third_order_perturbation(p, &alpha, &x_s, zeta_bar, epsilon_k_eff_ij);
 
         let mut n_s = D::zero();
         for i in 0..n {

@@ -3,6 +3,7 @@
 //! the boilerplate for the EquationOfState and HelmholtzEnergyFunctional traits.
 use components::expand_components;
 use dft::expand_helmholtz_energy_functional;
+use functional_contribution::expand_functional_contribution;
 use ideal_gas::expand_ideal_gas;
 use proc_macro::TokenStream;
 use residual::expand_residual;
@@ -10,6 +11,7 @@ use syn::{parse_macro_input, DeriveInput};
 
 mod components;
 mod dft;
+mod functional_contribution;
 mod ideal_gas;
 mod residual;
 
@@ -75,6 +77,14 @@ pub fn derive_residual(input: TokenStream) -> TokenStream {
 pub fn derive_helmholtz_energy_functional(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     expand_helmholtz_energy_functional(input)
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
+}
+
+#[proc_macro_derive(FunctionalContribution, attributes(implement))]
+pub fn derive_functional_contribution(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    expand_functional_contribution(input)
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }

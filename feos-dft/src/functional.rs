@@ -5,10 +5,7 @@ use crate::ideal_chain_contribution::IdealChainContribution;
 use crate::solvation::PairPotential;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use feos_core::si::MolarWeight;
-use feos_core::{
-    Components, DeBroglieWavelength, EosResult, EquationOfState, HelmholtzEnergy,
-    HelmholtzEnergyDual, IdealGas, Residual, StateHD,
-};
+use feos_core::{Components, EosResult, EquationOfState, IdealGas, Residual, StateHD};
 use ndarray::*;
 use num_dual::*;
 use petgraph::graph::{Graph, UnGraph};
@@ -21,7 +18,9 @@ use std::sync::Arc;
 impl<I: Components + Send + Sync, F: HelmholtzEnergyFunctional> HelmholtzEnergyFunctional
     for EquationOfState<I, F>
 {
-    fn contributions(&self) -> &[Box<dyn FunctionalContribution>] {
+    type Contribution = F::Contribution;
+
+    fn contributions(&self) -> Box<dyn Iterator<Item = Self::Contribution>> {
         self.residual.contributions()
     }
 
@@ -99,43 +98,18 @@ impl<F: HelmholtzEnergyFunctional> Residual for DFT<F> {
         self.0.compute_max_density(moles)
     }
 
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
-        unreachable!()
-    }
-
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.0.molar_weight()
     }
 
-    fn evaluate_residual<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D
-    where
-        dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
-    {
-        self.0
-            .contributions()
-            .iter()
-            .map(|c| (c as &dyn HelmholtzEnergy).helmholtz_energy(state))
-            .sum::<D>()
-            + self.ideal_chain_contribution().helmholtz_energy(state)
-    }
-
-    fn evaluate_residual_contributions<D: DualNum<f64> + Copy>(
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(String, D)>
-    where
-        dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
-    {
+    ) -> Vec<(String, D)> {
         let mut res: Vec<(String, D)> = self
             .0
             .contributions()
-            .iter()
-            .map(|c| {
-                (
-                    c.to_string(),
-                    (c as &dyn HelmholtzEnergy).helmholtz_energy(state),
-                )
-            })
+            .map(|c| (c.to_string(), c.helmholtz_energy(state)))
             .collect();
         res.push((
             self.ideal_chain_contribution().to_string(),
@@ -146,7 +120,11 @@ impl<F: HelmholtzEnergyFunctional> Residual for DFT<F> {
 }
 
 impl<F: HelmholtzEnergyFunctional + IdealGas> IdealGas for DFT<F> {
-    fn ideal_gas_model(&self) -> &dyn DeBroglieWavelength {
+    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+        self.0.ln_lambda3(temperature)
+    }
+
+    fn ideal_gas_model(&self) -> String {
         self.0.ideal_gas_model()
     }
 }
@@ -165,8 +143,10 @@ pub enum MoleculeShape<'a> {
 
 /// A general Helmholtz energy functional.
 pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
+    type Contribution: FunctionalContribution;
+
     /// Return a slice of [FunctionalContribution]s.
-    fn contributions(&self) -> &[Box<dyn FunctionalContribution>];
+    fn contributions(&self) -> Box<dyn Iterator<Item = Self::Contribution>>;
 
     /// Return the shape of the molecules and the necessary specifications.
     fn molecule_shape(&self) -> MoleculeShape;
@@ -191,7 +171,6 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
 
     fn weight_functions(&self, temperature: f64) -> Vec<WeightFunctionInfo<f64>> {
         self.contributions()
-            .iter()
             .map(|c| c.weight_functions(temperature))
             .collect()
     }
@@ -232,9 +211,9 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
     {
         let weighted_densities = convolver.weighted_densities(density);
         let contributions = self.contributions();
-        let mut partial_derivatives = Vec::with_capacity(contributions.len());
+        let mut partial_derivatives = Vec::new();
         let mut helmholtz_energy_density = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
-        for (c, wd) in contributions.iter().zip(weighted_densities) {
+        for (c, wd) in contributions.zip(weighted_densities) {
             let nwd = wd.shape()[0];
             let ngrid = wd.len() / nwd;
             let mut phi = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
@@ -269,9 +248,9 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
         let density_dual = density.mapv(Dual64::from);
         let weighted_densities = convolver.weighted_densities(&density_dual);
         let contributions = self.contributions();
-        let mut partial_derivatives = Vec::with_capacity(contributions.len());
+        let mut partial_derivatives = Vec::new();
         let mut helmholtz_energy_density = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
-        for (c, wd) in contributions.iter().zip(weighted_densities) {
+        for (c, wd) in contributions.zip(weighted_densities) {
             let nwd = wd.shape()[0];
             let ngrid = wd.len() / nwd;
             let mut phi = Array::zeros(density.raw_dim().remove_axis(Axis(0)));

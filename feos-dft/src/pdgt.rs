@@ -12,18 +12,18 @@ use std::ops::{Add, AddAssign, Sub};
 use typenum::{Diff, Sum, P2};
 
 type _InfluenceParameter = Diff<Sum<_MolarEnergy, _Area>, _Density>;
-type InfluenceParameter<T> = Quantity<T, _InfluenceParameter>;
+pub type InfluenceParameter<T> = Quantity<T, _InfluenceParameter>;
 
 impl WeightFunctionInfo<Dual2_64> {
-    fn pdgt_weight_constants(&self) -> (Array2<f64>, Array2<f64>, Array2<f64>) {
+    pub fn pdgt_weight_constants(&self) -> (Array2<f64>, Array2<f64>, Array2<f64>) {
         let k = Dual2_64::from(0.0).derivative();
         let w = self.weight_constants(k, 1);
         (w.mapv(|w| w.re), w.mapv(|w| -w.v1), w.mapv(|w| -0.5 * w.v2))
     }
 }
 
-impl dyn FunctionalContribution {
-    pub fn pdgt_properties(
+trait PdgtProperties: FunctionalContribution {
+    fn pdgt_properties(
         &self,
         temperature: f64,
         density: &Array2<f64>,
@@ -116,7 +116,7 @@ impl dyn FunctionalContribution {
     }
 
     #[allow(clippy::type_complexity)]
-    pub fn influence_diagonal(
+    fn influence_diagonal(
         &self,
         temperature: Temperature,
         density: &Density<Array2<f64>>,
@@ -140,6 +140,8 @@ impl dyn FunctionalContribution {
         ))
     }
 }
+
+impl<T: FunctionalContribution> PdgtProperties for T {}
 
 impl<T: HelmholtzEnergyFunctional> DFT<T> {
     pub fn solve_pdgt(
@@ -172,7 +174,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         }
         delta_omega += &self
             .ideal_chain_contribution()
-            .helmholtz_energy_density::<Ix1>(vle.vapor().temperature, &density)?;
+            .helmholtz_energy_density_units::<Ix1>(vle.vapor().temperature, &density)?;
 
         // calculate excess grand potential density
         let mu_res = vle.vapor().residual_chemical_potential();

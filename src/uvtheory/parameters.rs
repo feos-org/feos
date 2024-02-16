@@ -198,7 +198,12 @@ impl Parameter for UVTheoryParameters {
         })
     }
 
-    fn records(&self) -> (&[PureRecord<UVTheoryRecord>], Option<&Array2<UVTheoryBinaryRecord>>) {
+    fn records(
+        &self,
+    ) -> (
+        &[PureRecord<UVTheoryRecord>],
+        Option<&Array2<UVTheoryBinaryRecord>>,
+    ) {
         (&self.pure_records, self.binary_records.as_ref())
     }
 }

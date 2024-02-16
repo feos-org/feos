@@ -168,16 +168,16 @@ impl Residual for SaftVRQMie {
 
         v.push((
             "Hard Sphere".to_string(),
-            self.hard_sphere.helmholtz_energy(&state, &properties),
+            self.hard_sphere.helmholtz_energy(state, &properties),
         ));
         v.push((
             "Dispersion".to_string(),
-            self.dispersion.helmholtz_energy(&state, &properties),
+            self.dispersion.helmholtz_energy(state, &properties),
         ));
         if let Some(non_additive_hard_sphere) = self.non_additive_hard_sphere.as_ref() {
             v.push((
                 "Non additive Hard Sphere".to_string(),
-                non_additive_hard_sphere.helmholtz_energy(&state, &properties),
+                non_additive_hard_sphere.helmholtz_energy(state, &properties),
             ))
         }
         v

@@ -4,11 +4,14 @@ use crate::saftvrqmie::parameters::SaftVRQMieParameters;
 use dispersion::AttractiveFunctional;
 use feos_core::parameter::Parameter;
 use feos_core::si::{MolarWeight, GRAM, MOL};
-use feos_core::Components;
+use feos_core::{Components, EosResult};
+use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
-use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
-use ndarray::{Array, Array1, Array2};
+use feos_dft::{
+    FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, WeightFunctionInfo, DFT,
+};
+use ndarray::{Array, Array1, Array2, ArrayView2, ScalarOperand};
 use non_additive_hs::NonAddHardSphereFunctional;
 use num_dual::DualNum;
 use std::f64::consts::FRAC_PI_6;
@@ -22,7 +25,6 @@ pub struct SaftVRQMieFunctional {
     pub parameters: Arc<SaftVRQMieParameters>,
     fmt_version: FMTVersion,
     options: SaftVRQMieOptions,
-    contributions: Vec<Box<dyn FunctionalContribution>>,
 }
 
 impl SaftVRQMieFunctional {
@@ -43,27 +45,10 @@ impl SaftVRQMieFunctional {
         fmt_version: FMTVersion,
         saft_options: SaftVRQMieOptions,
     ) -> DFT<Self> {
-        let mut contributions: Vec<Box<dyn FunctionalContribution>> = Vec::with_capacity(3);
-
-        // Hard sphere contribution
-        let hs = FMTContribution::new(&parameters, fmt_version);
-        contributions.push(Box::new(hs));
-
-        // Non-additive hard-sphere contribution
-        if saft_options.inc_nonadd_term {
-            let non_add_hs = NonAddHardSphereFunctional::new(parameters.clone());
-            contributions.push(Box::new(non_add_hs));
-        }
-
-        // Dispersion
-        let att = AttractiveFunctional::new(parameters.clone());
-        contributions.push(Box::new(att));
-
         DFT(Self {
             parameters,
             fmt_version,
             options: saft_options,
-            contributions,
         })
     }
 }
@@ -84,14 +69,32 @@ impl Components for SaftVRQMieFunctional {
 }
 
 impl HelmholtzEnergyFunctional for SaftVRQMieFunctional {
+    type Contribution = SaftVRQMieFunctionalContribution;
+
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
             / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
                 .sum()
     }
 
-    fn contributions(&self) -> &[Box<dyn FunctionalContribution>] {
-        &self.contributions
+    fn contributions(&self) -> Box<(dyn Iterator<Item = SaftVRQMieFunctionalContribution>)> {
+        let mut contributions = Vec::with_capacity(3);
+
+        // Hard sphere contribution
+        let hs = FMTContribution::new(&self.parameters, self.fmt_version);
+        contributions.push(hs.into());
+
+        // Non-additive hard-sphere contribution
+        if self.options.inc_nonadd_term {
+            let non_add_hs = NonAddHardSphereFunctional::new(self.parameters.clone());
+            contributions.push(non_add_hs.into());
+        }
+
+        // Dispersion
+        let att = AttractiveFunctional::new(self.parameters.clone());
+        contributions.push(att.into());
+
+        Box::new(contributions.into_iter())
     }
 
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
@@ -129,4 +132,11 @@ impl PairPotential for SaftVRQMieFunctional {
             self.parameters.qmie_potential_ij(i, j, r[k], temperature)[0]
         })
     }
+}
+
+#[derive(FunctionalContribution)]
+pub enum SaftVRQMieFunctionalContribution {
+    Fmt(FMTContribution<SaftVRQMieParameters>),
+    NonAddHardSphere(NonAddHardSphereFunctional),
+    Attractive(AttractiveFunctional),
 }

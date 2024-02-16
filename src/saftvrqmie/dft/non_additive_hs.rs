@@ -1,8 +1,6 @@
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
 use feos_core::EosResult;
-use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
-};
+use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::PI;
@@ -22,11 +20,11 @@ impl NonAddHardSphereFunctional {
     }
 }
 
-impl<N> FunctionalContributionDual<N> for NonAddHardSphereFunctional
-where
-    N: DualNum<f64> + Copy + ScalarOperand,
-{
-    fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
+impl FunctionalContribution for NonAddHardSphereFunctional {
+    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
         let r = p.hs_diameter(temperature) * 0.5;
         WeightFunctionInfo::new(Array1::from_shape_fn(r.len(), |i| i), false)
@@ -52,7 +50,7 @@ where
             )
     }
 
-    fn calculate_helmholtz_energy_density(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,

@@ -1,9 +1,7 @@
 use super::PcSaftParameters;
 use crate::hard_sphere::HardSphereProperties;
 use feos_core::EosError;
-use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
-};
+use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::DualNum;
 use std::fmt;
@@ -20,8 +18,11 @@ impl ChainFunctional {
     }
 }
 
-impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for ChainFunctional {
-    fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
+impl FunctionalContribution for ChainFunctional {
+    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
         let d = p.hs_diameter(temperature);
         WeightFunctionInfo::new(p.component_index().into_owned(), true)
@@ -47,7 +48,7 @@ impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for C
             )
     }
 
-    fn calculate_helmholtz_energy_density(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,

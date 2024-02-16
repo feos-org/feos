@@ -12,7 +12,7 @@ pub(crate) mod eos;
 pub mod micelles;
 mod record;
 #[cfg(feature = "dft")]
-pub use dft::{GcPcSaftFunctional, GcPcSaftFunctionalParameters};
+pub use dft::{GcPcSaftFunctional, GcPcSaftFunctionalContribution, GcPcSaftFunctionalParameters};
 pub use eos::{GcPcSaft, GcPcSaftChemicalRecord, GcPcSaftEosParameters, GcPcSaftOptions};
 pub use record::GcPcSaftRecord;
 

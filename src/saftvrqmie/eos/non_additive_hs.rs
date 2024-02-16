@@ -28,7 +28,7 @@ impl NonAddHardSphere {
             Array2::from_shape_fn((n, n), |(i, j)| (d_hs_ij[[i, i]] + d_hs_ij[[j, j]]) * 0.5);
 
         let n_s = Array1::from_shape_fn(n, |i| state.moles[i] * p.m[i]).sum();
-        n_s * reduced_non_additive_hs_energy(p, &d_hs_ij, &d_hs_add_ij, &state.partial_density)
+        n_s * reduced_non_additive_hs_energy(p, d_hs_ij, &d_hs_add_ij, &state.partial_density)
     }
 }
 

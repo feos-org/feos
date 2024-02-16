@@ -95,7 +95,7 @@ fn impl_helmholtz_energy_functional(
     let contributions = variants.iter().map(|v| {
         let name = &v.ident;
         quote! {
-            Self::#name(functional) => functional.contributions()
+            Self::#name(functional) => Box::new(functional.contributions().map(FunctionalContributionVariant::from))
         }
     });
 
@@ -121,6 +121,7 @@ fn impl_helmholtz_energy_functional(
 
     Ok(quote! {
         impl HelmholtzEnergyFunctional for FunctionalVariant {
+            type Contribution = FunctionalContributionVariant;
             fn molecule_shape(&self) -> MoleculeShape {
                 match self {
                     #(#molecule_shape,)*
@@ -131,7 +132,7 @@ fn impl_helmholtz_energy_functional(
                     #(#compute_max_density,)*
                 }
             }
-            fn contributions(&self) -> &[Box<dyn FunctionalContribution>] {
+            fn contributions(&self) -> Box<dyn Iterator<Item = FunctionalContributionVariant>> {
                 match self {
                     #(#contributions,)*
                 }

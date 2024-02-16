@@ -144,11 +144,9 @@ impl IdealGas for Joback {
             (h - t * s) / (t * RGAS) + f
         })
     }
-}
 
-impl fmt::Display for Joback {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Ideal gas (Joback)")
+    fn ideal_gas_model(&self) -> String {
+        "Ideal gas (Joback)".into()
     }
 }
 
