@@ -1,6 +1,6 @@
 use crate::si::MolarWeight;
 use crate::{Components, IdealGas, Residual, StateHD};
-use ndarray::Array1;
+use ndarray::{Array1, ScalarOperand};
 use num_dual::*;
 use numpy::convert::IntoPyArray;
 use numpy::{PyArray, PyReadonlyArray1, PyReadonlyArrayDyn};
@@ -62,8 +62,8 @@ impl Components for PyIdealGas {
 macro_rules! impl_ideal_gas {
     ($($py_hd_id:ident, $hd_ty:ty);*) => {
         impl IdealGas for PyIdealGas {
-            fn ideal_gas_name(&self) -> String {
-                "Python".to_string()
+            fn ideal_gas_model(&self) -> String {
+                "Ideal gas (Python)".to_string()
             }
 
             fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
@@ -206,7 +206,7 @@ macro_rules! impl_residual {
                 panic!("helmholtz_energy: input data type not understood")
             }
 
-            fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
+            fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
                     &self,
                     state: &StateHD<D>,
                 ) -> Vec<(String, D)> {

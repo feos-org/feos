@@ -581,7 +581,7 @@ macro_rules! impl_parameter {
                 binary_records: Option<&PyAny>,
                 identifier_option: IdentifierOption,
             ) -> PyResult<Self> {
-                let prs = pure_records.into_iter().map(|pr| pr.0).collect();
+                let prs: Vec<_> = pure_records.into_iter().map(|pr| pr.0).collect();
                 let binary_records = binary_records
                     .map(|binary_records| {
                         if let Ok(br) = binary_records.extract::<PyReadonlyArray2<f64>>() {

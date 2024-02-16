@@ -23,7 +23,7 @@ use crate::saftvrqmie::python::PySaftVRQMieParameters;
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::{SaftVRQMie, SaftVRQMieOptions};
 #[cfg(feature = "uvtheory")]
-use crate::uvtheory::python::PyUVParameters;
+use crate::uvtheory::python::PyUVTheoryParameters;
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, VirialOrder};
 
@@ -233,7 +233,7 @@ impl PyEquationOfState {
         text_signature = "(parameters, max_eta=0.5, perturbation, virial_order)"
     )]
     fn uvtheory(
-        parameters: PyUVParameters,
+        parameters: PyUVTheoryParameters,
         max_eta: f64,
         perturbation: Perturbation,
         virial_order: VirialOrder,
