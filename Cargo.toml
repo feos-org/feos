@@ -68,7 +68,8 @@ pets = []
 saftvrqmie = []
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 python = ["pyo3", "numpy", "quantity/python", "feos-core/python", "feos-dft?/python", "rayon"]
-all_models = ["dft", "estimator", "pcsaft", "gc_pcsaft", "uvtheory", "pets", "saftvrqmie"]
+all_models = ["dft", "estimator", "pcsaft", "gc_pcsaft", "pets", "saftvrqmie"]
+#all_models = ["dft", "estimator", "pcsaft", "gc_pcsaft", "uvtheory", "pets", "saftvrqmie"]
 
 [[bench]]
 name = "state_properties"
