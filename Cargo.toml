@@ -52,7 +52,7 @@ criterion = "0.5"
 
 [profile.release-lto]
 inherits = "release"
-lto = "fat"
+lto = true
 codegen-units = 1
 
 
@@ -68,8 +68,7 @@ pets = []
 saftvrqmie = []
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 python = ["pyo3", "numpy", "quantity/python", "feos-core/python", "feos-dft?/python", "rayon"]
-all_models = ["dft", "estimator", "pcsaft", "gc_pcsaft", "pets", "saftvrqmie"]
-#all_models = ["dft", "estimator", "pcsaft", "gc_pcsaft", "uvtheory", "pets", "saftvrqmie"]
+all_models = ["dft", "estimator", "pcsaft", "gc_pcsaft", "uvtheory", "pets", "saftvrqmie"]
 
 [[bench]]
 name = "state_properties"
