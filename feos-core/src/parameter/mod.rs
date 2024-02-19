@@ -441,7 +441,7 @@ pub trait ParameterHetero: Sized {
         // Collect all pure records that were queried
         let chemical_records: Vec<_> = queried
             .iter()
-            .filter_map(|identifier| record_map.remove(&identifier.clone()))
+            .filter_map(|identifier| record_map.shift_remove(&identifier.clone()))
             .collect();
 
         // Read segment records
