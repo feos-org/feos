@@ -8,18 +8,18 @@ jobs:
   linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v2
         with:
           python-version: 3.9
       - name: Build Wheels
-        uses: messense/maturin-action@v1
+        uses: PyO3/maturin-action@v1
         with:
           manylinux: auto
           command: build
           args: --profile release-lto --out dist
       - name: Upload wheels
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: dist
           path: dist
@@ -27,7 +27,7 @@ jobs:
   macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v2
         with:
           python-version: 3.9
@@ -39,27 +39,45 @@ jobs:
           profile: minimal
           default: true
       - name: Build wheels - x86_64
-        uses: messense/maturin-action@v1
+        uses: PyO3/maturin-action@v1
         with:
           target: x86_64
           args: --profile release-lto --out dist
-      - name: Build wheels - universal2
-        uses: messense/maturin-action@v1
-        with:
-          args: --profile release-lto --universal2 --out dist
       - name: Upload wheels
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: dist
           path: dist
-
+  macos_universal2:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+          architecture: x64
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          default: true
+      - name: Build wheels - universal2
+        uses: PyO3/maturin-action@v1
+        with:
+          args: --release --target universal2-apple-darwin --out dist
+      - name: Upload wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist
   windows:
     runs-on: windows-latest
     strategy:
       matrix:
         target: [x64, x86]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v2
         with:
           python-version: 3.9
@@ -71,12 +89,12 @@ jobs:
           profile: minimal
           default: true
       - name: Build wheels
-        uses: messense/maturin-action@v1
+        uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
           args: --profile release-lto --out dist
       - name: Upload wheels
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: dist
           path: dist
@@ -105,7 +123,7 @@ jobs:
     name: Release crates.io
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal

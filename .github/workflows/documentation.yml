@@ -11,7 +11,7 @@ jobs:
   build-documentation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -22,7 +22,7 @@ jobs:
         run: |
           pip install sphinx nbsphinx ipython pygments sphinx_inline_tabs sphinx_design sphinx_copybutton myst_parser furo
       - name: Build Wheels
-        uses: messense/maturin-action@v1
+        uses: PyO3/maturin-action@v1
         with:
           manylinux: auto
           command: build
@@ -33,7 +33,7 @@ jobs:
       - name: Build documentation
         run: sphinx-build docs/ public/ -b html
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: documentation
           path: public
