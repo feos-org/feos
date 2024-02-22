@@ -134,6 +134,7 @@ impl PairPotential for SaftVRQMieFunctional {
     }
 }
 
+/// Individual contributions for the SAFT-VRQ Mie Helmholtz energy functional.
 #[derive(FunctionalContribution)]
 pub enum SaftVRQMieFunctionalContribution {
     Fmt(FMTContribution<SaftVRQMieParameters>),

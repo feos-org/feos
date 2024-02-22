@@ -153,6 +153,7 @@ impl FluidParameters for GcPcSaftFunctional {
     }
 }
 
+/// Individual contributions for the gc-PC-SAFT Helmholtz energy functional.
 #[derive(FunctionalContribution)]
 pub enum GcPcSaftFunctionalContribution {
     Fmt(FMTContribution<GcPcSaftFunctionalParameters>),

@@ -153,6 +153,7 @@ impl PairPotential for PcSaftFunctional {
     }
 }
 
+/// Individual contributions for the PC-SAFT Helmholtz energy functional.
 #[derive(FunctionalContribution)]
 pub enum PcSaftFunctionalContribution {
     PureFMTAssoc(PureFMTAssocFunctional),
