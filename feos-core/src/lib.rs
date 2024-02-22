@@ -126,6 +126,8 @@ mod tests {
     use crate::EosResult;
     use crate::StateBuilder;
     use approx::*;
+    use ndarray::Array1;
+    use num_dual::DualNum;
     use std::sync::Arc;
 
     // Only to be able to instantiate an `EquationOfState`
@@ -142,10 +144,7 @@ mod tests {
     }
 
     impl IdealGas for NoIdealGas {
-        fn ln_lambda3<D: num_dual::DualNum<f64> + Copy>(
-            &self,
-            _: D,
-        ) -> ndarray::prelude::Array1<D> {
+        fn ln_lambda3<D: DualNum<f64> + Copy>(&self, _: D) -> Array1<D> {
             unreachable!()
         }
 

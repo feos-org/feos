@@ -184,7 +184,6 @@ impl Dipole {
             .collect();
 
         let rho = &state.partial_density;
-        // let r = p.hs_diameter(state.temperature) * 0.5;
         let r = diameter * 0.5;
         let eta = (rho * &p.m * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
         let eta2 = eta * eta;
@@ -267,7 +266,6 @@ impl Quadrupole {
             .collect();
 
         let rho = &state.partial_density;
-        // let r = p.hs_diameter(state.temperature) * 0.5;
         let r = diameter * 0.5;
         let eta = (rho * &p.m * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
         let eta2 = eta * eta;
@@ -364,7 +362,6 @@ impl DipoleQuadrupole {
             .collect();
 
         let rho = &state.partial_density;
-        // let r = p.hs_diameter(state.temperature) * 0.5;
         let r = diameter * 0.5;
         let eta = (rho * &p.m * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
         let eta2 = eta * eta;

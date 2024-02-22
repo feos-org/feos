@@ -81,7 +81,7 @@ pub fn derive_helmholtz_energy_functional(input: TokenStream) -> TokenStream {
         .into()
 }
 
-#[proc_macro_derive(FunctionalContribution, attributes(implement))]
+#[proc_macro_derive(FunctionalContribution)]
 pub fn derive_functional_contribution(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     expand_functional_contribution(input)

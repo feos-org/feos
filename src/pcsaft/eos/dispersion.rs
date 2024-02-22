@@ -77,7 +77,6 @@ impl Dispersion {
         let rho = &state.partial_density;
 
         // temperature dependent segment radius
-        // let r = p.hs_diameter(state.temperature) * 0.5;
         let r = diameter * 0.5;
 
         // packing fraction

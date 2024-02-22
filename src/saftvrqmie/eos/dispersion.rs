@@ -104,28 +104,16 @@ impl Dispersion {
         let rho = &state.partial_density;
 
         // temperature dependent segment radius
-        // let s_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
-        //     p.calc_sigma_eff_ij(i, j, state.temperature)
-        // });
         let s_eff_ij = &properties.sigma_eff_ij;
 
         // temperature dependent segment radius
         let d_hs_ij = &properties.hs_diameter_ij;
-        // let d_hs_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
-        //     p.hs_diameter_ij(i, j, state.temperature, s_eff_ij[[i, j]])
-        // });
 
         // temperature dependent well depth
         let epsilon_k_eff_ij = &properties.epsilon_k_eff_ij;
-        // let epsilon_k_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
-        //     p.calc_epsilon_k_eff_ij(i, j, state.temperature)
-        // });
 
         // temperature dependent well depth
         let dq_ij = &properties.quantum_d_ij;
-        // let dq_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
-        //     p.quantum_d_ij(i, j, state.temperature)
-        // });
 
         // segment fractions
         let mut x_s = Array1::from_shape_fn(n, |i| -> D { state.molefracs[i] * p.m[i] });

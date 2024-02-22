@@ -298,51 +298,6 @@ macro_rules! dual_number {
     };
 }
 
-// macro_rules! helmholtz_energy {
-//     ($py_state_id:ident, $py_hd_id:ident, $hd_ty:ty) => {
-//         impl HelmholtzEnergyDual<$hd_ty> for PyHelmholtzEnergy {
-//             fn helmholtz_energy(&self, state: &StateHD<$hd_ty>) -> $hd_ty {
-//                 Python::with_gil(|py| {
-//                     let py_result = self
-//                         .0
-//                         .as_ref(py)
-//                         .call_method1("helmholtz_energy", (<$py_state_id>::from(state.clone()),))
-//                         .unwrap();
-//                     <$hd_ty>::from(py_result.extract::<$py_hd_id>().unwrap())
-//                 })
-//             }
-//         }
-//     };
-// }
-
-// macro_rules! de_broglie_wavelength {
-//     ($py_hd_id:ident, $hd_ty:ty) => {
-//         impl DeBroglieWavelengthDual<$hd_ty> for PyIdealGas {
-//             fn ln_lambda3(&self, temperature: $hd_ty) -> Array1<$hd_ty> {
-//                 Python::with_gil(|py| {
-//                     let py_result = self
-//                         .0
-//                         .as_ref(py)
-//                         .call_method1("ln_lambda3", (<$py_hd_id>::from(temperature),))
-//                         .unwrap();
-
-//                     // f64
-//                     let rr = if let Ok(r) = py_result.extract::<PyReadonlyArray1<f64>>() {
-//                         r.to_owned_array()
-//                             .mapv(|ri| <$hd_ty>::from(ri))
-//                     // anything but f64
-//                     } else if let Ok(r) = py_result.extract::<PyReadonlyArray1<PyObject>>() {
-//                         r.to_owned_array()
-//                             .mapv(|ri| <$hd_ty>::from(ri.extract::<$py_hd_id>(py).unwrap()))
-//                     } else {
-//                             panic!("ln_lambda3: data type of result must be one-dimensional numpy ndarray")
-//                     };
-//                     rr
-//                 })
-//             }
-//         }
-//     };
-
 macro_rules! impl_dual_state_helmholtz_energy {
     ($py_state_id:ident, $py_hd_id:ident, $hd_ty:ty, $py_field_ty:ty) => {
         dual_number!($py_hd_id, $hd_ty, $py_field_ty);
@@ -352,8 +307,6 @@ macro_rules! impl_dual_state_helmholtz_energy {
 
 // No definition of dual number necessary for f64
 state!(PyStateF, f64, f64);
-// helmholtz_energy!(PyStateF, f64, f64);
-// de_broglie_wavelength!(f64, f64);
 
 impl_dual_state_helmholtz_energy!(PyStateD, PyDual64, Dual64, f64);
 

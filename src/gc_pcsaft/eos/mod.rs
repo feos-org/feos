@@ -117,23 +117,23 @@ impl Residual for GcPcSaft {
         let d = self.parameters.hs_diameter(state.temperature);
 
         v.push((
-            "Hard Sphere".to_string(),
+            self.hard_sphere.to_string(),
             self.hard_sphere.helmholtz_energy(state),
         ));
         v.push((
-            "Hard Sphere".to_string(),
+            self.hard_chain.to_string(),
             self.hard_chain.helmholtz_energy(state),
         ));
         v.push((
-            "Dispersion".to_string(),
+            self.dispersion.to_string(),
             self.dispersion.helmholtz_energy(state),
         ));
         if let Some(dipole) = self.dipole.as_ref() {
-            v.push(("Dipole".to_string(), dipole.helmholtz_energy(state)))
+            v.push((dipole.to_string(), dipole.helmholtz_energy(state)))
         }
         if let Some(association) = self.association.as_ref() {
             v.push((
-                "Association".to_string(),
+                association.to_string(),
                 association.helmholtz_energy(state, &d),
             ))
         }

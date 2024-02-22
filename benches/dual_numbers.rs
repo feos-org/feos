@@ -10,7 +10,7 @@ use feos_core::{
     parameter::{IdentifierOption, Parameter},
     Derivative, Residual, State, StateHD,
 };
-use ndarray::{arr1, Array};
+use ndarray::{arr1, Array, ScalarOperand};
 use num_dual::DualNum;
 use std::sync::Arc;
 use typenum::P3;
@@ -29,7 +29,7 @@ fn state_pcsaft(parameters: PcSaftParameters) -> State<PcSaft> {
 }
 
 /// Residual Helmholtz energy given an equation of state and a StateHD.
-fn a_res<D: DualNum<f64> + Copy, E: Residual>(inp: (&Arc<E>, &StateHD<D>)) -> D {
+fn a_res<D: DualNum<f64> + Copy + ScalarOperand, E: Residual>(inp: (&Arc<E>, &StateHD<D>)) -> D {
     inp.0.residual_helmholtz_energy(inp.1)
 }
 

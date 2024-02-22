@@ -342,9 +342,6 @@ impl<P: HardSphereProperties> Association<P> {
         let p: &P = &self.parameters;
         let a = &self.association_parameters;
 
-        // temperature dependent segment diameter
-        // let diameter = p.hs_diameter(state.temperature);
-
         // auxiliary variables
         let [zeta2, n3] = p.zeta(state.temperature, &state.partial_density, [2, 3]);
         let n2 = zeta2 * 6.0;

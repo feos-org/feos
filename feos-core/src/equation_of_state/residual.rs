@@ -187,10 +187,6 @@ impl Residual for NoResidual {
         1.0
     }
 
-    fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, _: &StateHD<D>) -> D {
-        D::zero()
-    }
-
     fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
         &self,
         _: &StateHD<D>,
