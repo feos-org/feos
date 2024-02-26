@@ -9,8 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added specific isochoric and isobaric heat capacities to the Python interface. [#223](https://github.com/feos-org/feos/pull/223))
 - Added `to_dict` method for `PyStateVec`. [#224](https://github.com/feos-org/feos/pull/224)
 
+### Changed
+- Interface for Helmholtz energy calculation in `Residual` and `IdealGas` which removes the need for the `HelmholtzEnergy` and `HelmholtzEnergyDual` traits and trait objects.[226](https://github.com/feos-org/feos/pull/226)
+- Adjusted Python macros to account for the removal of trait objects.[226](https://github.com/feos-org/feos/pull/226)
+- Changed deprecated `remove` method of `IndexMap` to `shift_remove`.[226](https://github.com/feos-org/feos/pull/226)
+
+### Removed
+- `HelmholtzEnergyDual`, `HelmholzEnergy`, `DeBroglieWavelengthDual` and `DeBroglieWavelength` traits.
+
 ### Fixed
 - Added comparison for pressures of both phases in `PyPhaseDiagram.to_dict` to make the method work with `spinodal` constructor. [#224](https://github.com/feos-org/feos/pull/224)
+
 
 ## [0.6.1] 2024-01-11
 ### Fixed
@@ -140,7 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2022-06-13
 ### Added
 - Added `pure_records` getter in the `impl_parameter` macro. [#54](https://github.com/feos-org/feos-core/pull/54)
-- Implemented `Deref` and `IntoIterator` for `StateVec` for additional vector functionalities of the `StateVec`. [#55](https://github.com/feos-org/feos-core/pull/55) 
+- Implemented `Deref` and `IntoIterator` for `StateVec` for additional vector functionalities of the `StateVec`. [#55](https://github.com/feos-org/feos-core/pull/55)
 - Added `StateVec.__len__` and `StateVec.__getitem__` to allow indexing and iterating over `StateVec`s in Python. [#55](https://github.com/feos-org/feos-core/pull/55)
 - Added `SegmentCount` trait that allows the construction of parameter sets from arbitrary chemical records. [#56](https://github.com/feos-org/feos-core/pull/56)
 - Added `ParameterHetero` trait to generically provide utility functions for parameter sets of heterosegmented Helmholtz energy models. [#56](https://github.com/feos-org/feos-core/pull/56)
