@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.uvtheory.UVTheoryParameters.new\_pure
+==========================================
+
+.. currentmodule:: feos.uvtheory
+
+.. automethod:: UVTheoryParameters.new_pure

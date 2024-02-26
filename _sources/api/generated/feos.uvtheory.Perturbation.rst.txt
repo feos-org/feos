@@ -30,5 +30,6 @@ feos.uvtheory.Perturbation
    
       ~Perturbation.BarkerHenderson
       ~Perturbation.WeeksChandlerAndersen
+      ~Perturbation.WeeksChandlerAndersenB3
    
    

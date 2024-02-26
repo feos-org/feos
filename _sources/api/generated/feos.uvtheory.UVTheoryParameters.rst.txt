@@ -1,0 +1,42 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.uvtheory.UVTheoryParameters
+================================
+
+.. currentmodule:: feos.uvtheory
+
+.. autoclass:: UVTheoryParameters
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~UVTheoryParameters.__init__
+      ~UVTheoryParameters.from_json
+      ~UVTheoryParameters.from_lists
+      ~UVTheoryParameters.from_model_records
+      ~UVTheoryParameters.from_multiple_json
+      ~UVTheoryParameters.from_records
+      ~UVTheoryParameters.new_binary
+      ~UVTheoryParameters.new_pure
+      ~UVTheoryParameters.new_simple
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~UVTheoryParameters.binary_records
+      ~UVTheoryParameters.pure_records
+   
+   

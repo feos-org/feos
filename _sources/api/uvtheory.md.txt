@@ -1,13 +1,13 @@
 # `feos.uvtheory`
 
-Utilities to build `UVParameters`.
+Utilities to build `UVTheoryParameters`.
 
 ## Example
 
 ```python
-from feos.uvtheory import UVParameters
+from feos.uvtheory import UVTheoryParameters
 
-parameters = UVParameters.from_json(['methane', 'ethane'], 'parameters.json')
+parameters = UVTheoryParameters.from_json(['methane', 'ethane'], 'parameters.json')
 ```
 
 ## Data types
@@ -23,6 +23,6 @@ parameters = UVParameters.from_json(['methane', 'ethane'], 'parameters.json')
     PureRecord
     BinaryRecord
     Perturbation
-    UVRecord
-    UVParameters
+    UVTheoryRecord
+    UVTheoryParameters
 ```
