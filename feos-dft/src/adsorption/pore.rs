@@ -5,6 +5,7 @@ use crate::functional_contribution::FunctionalContribution;
 use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
+use crate::WeightFunctionInfo;
 use feos_core::si::{
     Density, Dimensionless, Energy, Length, MolarEnergy, MolarWeight, Temperature, Volume, KELVIN,
 };
@@ -13,6 +14,8 @@ use ndarray::prelude::*;
 use ndarray::Axis as Axis_nd;
 use ndarray::RemoveAxis;
 use num_dual::linalg::LU;
+use num_dual::DualNum;
+use std::fmt::Display;
 use std::sync::Arc;
 
 const POTENTIAL_OFFSET: f64 = 2.0;
@@ -283,8 +286,10 @@ impl Components for Helium {
 }
 
 impl HelmholtzEnergyFunctional for Helium {
-    fn contributions(&self) -> &[Box<dyn FunctionalContribution>] {
-        &[]
+    type Contribution = HeliumContribution;
+
+    fn contributions(&self) -> Box<dyn Iterator<Item = Self::Contribution>> {
+        Box::new([].into_iter())
     }
 
     fn compute_max_density(&self, _: &Array1<f64>) -> f64 {
@@ -307,5 +312,27 @@ impl FluidParameters for Helium {
 
     fn sigma_ff(&self) -> &Array1<f64> {
         &self.sigma
+    }
+}
+
+struct HeliumContribution;
+
+impl FunctionalContribution for HeliumContribution {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, _: N) -> WeightFunctionInfo<N> {
+        unreachable!()
+    }
+
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
+        &self,
+        _: N,
+        _: ArrayView2<N>,
+    ) -> EosResult<Array1<N>> {
+        unreachable!()
+    }
+}
+
+impl Display for HeliumContribution {
+    fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        unreachable!()
     }
 }

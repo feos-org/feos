@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Updated model implementations to account for the removal of trait objects for Helmholtz energy contributions and the de Broglie in `feos-core`. [#226](https://github.com/feos-org/feos/pull/226)
+- Changed Helmholtz energy functions in `PcSaft` contributions so that the temperature-dependent diameter is re-used across different contributions. [#226](https://github.com/feos-org/feos/pull/226)
+- Renamed structs in `uvtheory` module in accordance with names in other models (`UV...` to `UVTheory...`). [#226](https://github.com/feos-org/feos/pull/226)
+- Restructured `uvtheory` module: added modules for BH and WCA. [#226](https://github.com/feos-org/feos/pull/226)
+- Updated github action versions for CI/CD. [#226](https://github.com/feos-org/feos/pull/226)
+- Added `codegen-units = 1` to `release-lto` profile. [#226](https://github.com/feos-org/feos/pull/226)
+
+### Removed
+- Removed `VirialOrder` from `uvtheory` module. Orders are now variants of the existing `Perturbation` enum. [#226](https://github.com/feos-org/feos/pull/226)
+
 ## [0.6.1] - 2024-01-11
 - Python only: Release the changes introduced in `feos-core` 0.6.1.
 

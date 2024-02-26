@@ -5,9 +5,7 @@ use crate::hard_sphere::{FMTVersion, HardSphereProperties};
 use crate::pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
 use crate::pcsaft::eos::polar::{AD, AQ, BD, BQ, CD, CQ, PI_SQ_43};
 use feos_core::{EosError, EosResult};
-use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
-};
+use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::*;
 use std::f64::consts::{FRAC_PI_6, PI};
@@ -35,10 +33,11 @@ impl PureFMTAssocFunctional {
     }
 }
 
-impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N>
-    for PureFMTAssocFunctional
-{
-    fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
+impl FunctionalContribution for PureFMTAssocFunctional {
+    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let r = self.parameters.hs_diameter(temperature) * 0.5;
         WeightFunctionInfo::new(arr1(&[0]), false).extend(
             vec![
@@ -57,7 +56,7 @@ impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N>
         )
     }
 
-    fn calculate_helmholtz_energy_density(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
@@ -126,7 +125,7 @@ impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N>
             });
             let rho0 = (&n0 / p.m[0] * &xi).insert_axis(Axis(0));
 
-            phi += &(self.association.calculate_helmholtz_energy_density(
+            phi += &(self.association._helmholtz_energy_density(
                 temperature,
                 &rho0,
                 &n2,
@@ -156,8 +155,11 @@ impl PureChainFunctional {
     }
 }
 
-impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for PureChainFunctional {
-    fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
+impl FunctionalContribution for PureChainFunctional {
+    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
         WeightFunctionInfo::new(arr1(&[0]), true)
             .add(
@@ -174,7 +176,7 @@ impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for P
             )
     }
 
-    fn calculate_helmholtz_energy_density(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         _: N,
         weighted_densities: ArrayView2<N>,
@@ -208,8 +210,11 @@ impl PureAttFunctional {
     }
 }
 
-impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for PureAttFunctional {
-    fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
+impl FunctionalContribution for PureAttFunctional {
+    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
         const PSI: f64 = 1.3862; // Homosegmented DFT (Sauer2017)
         WeightFunctionInfo::new(arr1(&[0]), false).add(
@@ -218,7 +223,10 @@ impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for P
         )
     }
 
-    fn weight_functions_pdgt(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions_pdgt<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
         const PSI: f64 = 1.3286; // pDGT (Rehner2018)
         WeightFunctionInfo::new(arr1(&[0]), false).add(
@@ -227,7 +235,7 @@ impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for P
         )
     }
 
-    fn calculate_helmholtz_energy_density(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,

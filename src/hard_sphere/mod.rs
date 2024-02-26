@@ -1,6 +1,6 @@
 //! Generic implementation of the hard-sphere contribution
 //! that can be used across models.
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_core::StateHD;
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::FRAC_PI_6;
@@ -9,6 +9,8 @@ use std::{borrow::Cow, sync::Arc};
 
 #[cfg(feature = "dft")]
 mod dft;
+#[cfg(feature = "dft")]
+pub(crate) use dft::HardSphereParameters;
 #[cfg(feature = "dft")]
 pub use dft::{FMTContribution, FMTFunctional, FMTVersion};
 
@@ -116,8 +118,9 @@ impl<P> HardSphere<P> {
     }
 }
 
-impl<D: DualNum<f64> + Copy, P: HardSphereProperties> HelmholtzEnergyDual<D> for HardSphere<P> {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl<P: HardSphereProperties> HardSphere<P> {
+    #[inline]
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
         let zeta = p.zeta(state.temperature, &state.partial_density, [0, 1, 2, 3]);
         let frac_1mz3 = -(zeta[3] - 1.0).recip();

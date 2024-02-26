@@ -1,5 +1,5 @@
 use feos_core::si::{Density, Pressure, Temperature};
-use feos_core::{EosResult, HelmholtzEnergyDual, StateHD};
+use feos_core::{EosResult, StateHD};
 use ndarray::*;
 use num_dual::DualNum;
 use std::fmt;
@@ -19,8 +19,14 @@ impl IdealChainContribution {
     }
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for IdealChainContribution {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl fmt::Display for IdealChainContribution {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Ideal chain")
+    }
+}
+
+impl IdealChainContribution {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let segments = self.component_index.len();
         if self.component_index[segments - 1] + 1 != segments {
             return D::zero();
@@ -36,16 +42,8 @@ impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for IdealChainContribution {
         .sum()
             * state.volume
     }
-}
 
-impl fmt::Display for IdealChainContribution {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Ideal chain")
-    }
-}
-
-impl IdealChainContribution {
-    pub fn calculate_helmholtz_energy_density<D, N>(
+    pub fn helmholtz_energy_density<D, N>(
         &self,
         density: &Array<N, D::Larger>,
     ) -> EosResult<Array<N, D>>
@@ -61,7 +59,7 @@ impl IdealChainContribution {
         Ok(phi)
     }
 
-    pub fn helmholtz_energy_density<D>(
+    pub fn helmholtz_energy_density_units<D>(
         &self,
         temperature: Temperature,
         density: &Density<Array<f64, D::Larger>>,
@@ -73,7 +71,7 @@ impl IdealChainContribution {
         let rho = density.to_reduced();
         let t = temperature.to_reduced();
         Ok(Pressure::from_reduced(
-            self.calculate_helmholtz_energy_density(&rho)? * t,
+            self.helmholtz_energy_density(&rho)? * t,
         ))
     }
 }

@@ -1,6 +1,5 @@
 use super::PcSaftParameters;
-use crate::hard_sphere::HardSphereProperties;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_core::StateHD;
 use ndarray::prelude::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
@@ -165,8 +164,13 @@ pub struct Dipole {
     pub parameters: Arc<PcSaftParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Dipole {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl Dipole {
+    #[inline]
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        diameter: &Array1<D>,
+    ) -> D {
         let m = MeanSegmentNumbers::new(&self.parameters, Multipole::Dipole);
         let p = &self.parameters;
 
@@ -180,7 +184,7 @@ impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Dipole {
             .collect();
 
         let rho = &state.partial_density;
-        let r = p.hs_diameter(state.temperature) * 0.5;
+        let r = diameter * 0.5;
         let eta = (rho * &p.m * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
         let eta2 = eta * eta;
         let etas = [D::one(), eta, eta2, eta2 * eta, eta2 * eta2];
@@ -242,8 +246,13 @@ pub struct Quadrupole {
     pub parameters: Arc<PcSaftParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Quadrupole {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl Quadrupole {
+    #[inline]
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        diameter: &Array1<D>,
+    ) -> D {
         let m = MeanSegmentNumbers::new(&self.parameters, Multipole::Quadrupole);
         let p = &self.parameters;
 
@@ -257,7 +266,7 @@ impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Quadrupole {
             .collect();
 
         let rho = &state.partial_density;
-        let r = p.hs_diameter(state.temperature) * 0.5;
+        let r = diameter * 0.5;
         let eta = (rho * &p.m * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
         let eta2 = eta * eta;
         let etas = [D::one(), eta, eta2, eta2 * eta, eta2 * eta2];
@@ -329,8 +338,13 @@ pub struct DipoleQuadrupole {
     pub variant: DQVariants,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for DipoleQuadrupole {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl DipoleQuadrupole {
+    #[inline]
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        diameter: &Array1<D>,
+    ) -> D {
         let p = &self.parameters;
 
         let t_inv = state.temperature.inv();
@@ -348,7 +362,7 @@ impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for DipoleQuadrupole {
             .collect();
 
         let rho = &state.partial_density;
-        let r = p.hs_diameter(state.temperature) * 0.5;
+        let r = diameter * 0.5;
         let eta = (rho * &p.m * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
         let eta2 = eta * eta;
         let etas = [D::one(), eta, eta2, eta2 * eta, eta2 * eta2];
@@ -438,6 +452,7 @@ impl fmt::Display for DipoleQuadrupole {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::hard_sphere::HardSphereProperties;
     use crate::pcsaft::eos::dispersion::Dispersion;
     use crate::pcsaft::parameters::utils::{
         carbon_dioxide_parameters, dme_co2_parameters, dme_parameters,
@@ -455,7 +470,8 @@ mod tests {
         let v = 1000.0;
         let n = 1.0;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a = dp.helmholtz_energy(&s);
+        let d = dp.parameters.hs_diameter(t);
+        let a = dp.helmholtz_energy(&s, &d);
         assert_relative_eq!(a, -1.40501033595417E-002, epsilon = 1e-6);
     }
 
@@ -476,7 +492,8 @@ mod tests {
         let v = 1000.0;
         let n = [1.0, 2.0, 3.0];
         let s = StateHD::new(t, v, arr1(&n));
-        let a = dp.helmholtz_energy(&s);
+        let d = dp.parameters.hs_diameter(t);
+        let a = dp.helmholtz_energy(&s, &d);
         assert_relative_eq!(a, -1.4126308106201688, epsilon = 1e-10);
     }
 
@@ -489,7 +506,8 @@ mod tests {
         let v = 1000.0;
         let n = 1.0;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a = qp.helmholtz_energy(&s);
+        let d = qp.parameters.hs_diameter(t);
+        let a = qp.helmholtz_energy(&s, &d);
         assert_relative_eq!(a, -4.38559558854186E-002, epsilon = 1e-6);
     }
 
@@ -510,7 +528,8 @@ mod tests {
         let v = 1000.0;
         let n = [1.0, 2.0, 3.0];
         let s = StateHD::new(t, v, arr1(&n));
-        let a = qp.helmholtz_energy(&s);
+        let d = qp.parameters.hs_diameter(t);
+        let a = qp.helmholtz_energy(&s, &d);
         assert_relative_eq!(a, -0.327493924806138, epsilon = 1e-10);
     }
 
@@ -535,9 +554,11 @@ mod tests {
         let n_co2 = 1.0;
         let s = StateHD::new(t, v, arr1(&[n_dme, n_co2]));
         // let a_dpqp = dpqp.helmholtz_energy(&s);
-        let a_disp = disp.helmholtz_energy(&s);
-        let a_qp = qp.helmholtz_energy(&s);
-        let a_dp = dp.helmholtz_energy(&s);
+        let d = disp.parameters.hs_diameter(t);
+        let a_disp = disp.helmholtz_energy(&s, &d);
+        let d = dp.parameters.hs_diameter(t);
+        let a_qp = qp.helmholtz_energy(&s, &d);
+        let a_dp = dp.helmholtz_energy(&s, &d);
         assert_relative_eq!(a_disp, -1.6283622072860044, epsilon = 1e-6);
         assert_relative_eq!(a_dp, -1.35361827881345E-002, epsilon = 1e-6);
         assert_relative_eq!(a_qp, -4.20168059082731E-002, epsilon = 1e-6);

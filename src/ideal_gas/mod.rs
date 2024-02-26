@@ -1,9 +1,10 @@
 //! Collection of ideal gas models.
-
 #[cfg(feature = "python")]
 use feos_core::python::user_defined::PyIdealGas;
-use feos_core::{Components, DeBroglieWavelength, IdealGas};
+use feos_core::{Components, IdealGas};
 use feos_derive::{Components, IdealGas};
+use ndarray::Array1;
+use num_dual::DualNum;
 use std::sync::Arc;
 
 mod dippr;

@@ -1,5 +1,5 @@
-use crate::uvtheory::parameters::UVParameters;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use crate::uvtheory::parameters::UVTheoryParameters;
+use feos_core::StateHD;
 use ndarray::prelude::*;
 use num_dual::DualNum;
 use std::fmt;
@@ -18,14 +18,15 @@ const BH_CONSTANTS_ETA_A: [[f64; 4]; 4] = [
     [0.0, 0.0, 0.0, 0.0],
 ];
 
+/// Hard sphere contribution using Barker-Henderson separation.
 #[derive(Debug, Clone)]
-pub struct HardSphereBH {
-    pub parameters: Arc<UVParameters>,
+pub(super) struct HardSphere {
+    pub parameters: Arc<UVTheoryParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for HardSphereBH {
+impl HardSphere {
     /// Helmholtz energy for hard spheres, eq. 19 (check Volume)
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let d = diameter_bh(&self.parameters, state.temperature);
         let zeta = zeta(&state.partial_density, &d);
         let frac_1mz3 = -(zeta[3] - 1.0).recip();
@@ -37,7 +38,7 @@ impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for HardSphereBH {
     }
 }
 
-impl fmt::Display for HardSphereBH {
+impl fmt::Display for HardSphere {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Hard Sphere")
     }
@@ -47,7 +48,7 @@ impl fmt::Display for HardSphereBH {
 /// Eq. S23 and S24.
 ///
 pub(super) fn diameter_bh<D: DualNum<f64> + Copy>(
-    parameters: &UVParameters,
+    parameters: &UVTheoryParameters,
     temperature: D,
 ) -> Array1<D> {
     parameters
@@ -97,7 +98,7 @@ pub(super) fn zeta_23<D: DualNum<f64> + Copy>(molefracs: &Array1<D>, diameter: &
 }
 
 pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
-    parameters: &UVParameters,
+    parameters: &UVTheoryParameters,
     diameter: &Array1<D>,
     eta: D,
 ) -> Array2<D> {
@@ -117,7 +118,7 @@ pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
 }
 
 pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
-    parameters: &UVParameters,
+    parameters: &UVTheoryParameters,
     diameter: &Array1<D>,
     eta: D,
 ) -> Array2<D> {

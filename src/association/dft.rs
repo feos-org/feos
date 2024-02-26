@@ -1,21 +1,15 @@
 use super::*;
 use crate::hard_sphere::HardSphereProperties;
 use feos_core::EosResult;
-use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
-};
+use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use num_dual::DualNum;
 use std::f64::consts::PI;
 use std::ops::MulAssign;
 
 pub const N0_CUTOFF: f64 = 1e-9;
 
-impl<N, P> FunctionalContributionDual<N> for Association<P>
-where
-    N: DualNum<f64> + Copy + ScalarOperand,
-    P: HardSphereProperties,
-{
-    fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
+impl<P: HardSphereProperties + Sync + Send> FunctionalContribution for Association<P> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
         let r = p.hs_diameter(temperature) * 0.5;
         let [_, _, _, c3] = p.geometry_coefficients(temperature);
@@ -42,7 +36,7 @@ where
             )
     }
 
-    fn calculate_helmholtz_energy_density(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
@@ -105,15 +99,12 @@ where
         // auxiliary variables
         let n3i = n3.mapv(|n3| (-n3 + 1.0).recip());
 
-        self.calculate_helmholtz_energy_density(temperature, &rho0, &n2, &n3i, &xi)
+        self._helmholtz_energy_density(temperature, &rho0, &n2, &n3i, &xi)
     }
 }
 
 impl<P: HardSphereProperties> Association<P> {
-    pub fn calculate_helmholtz_energy_density<
-        N: DualNum<f64> + Copy + ScalarOperand,
-        S: Data<Elem = N>,
-    >(
+    pub fn _helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand, S: Data<Elem = N>>(
         &self,
         temperature: N,
         rho0: &Array2<N>,

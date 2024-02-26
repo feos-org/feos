@@ -15,27 +15,32 @@ impl<E: Residual> State<E> {
         match derivative {
             PartialDerivative::Zeroth => {
                 let new_state = self.derive0();
-                let computation = || self.eos.evaluate_residual(&new_state) * new_state.temperature;
+                let computation =
+                    || self.eos.residual_helmholtz_energy(&new_state) * new_state.temperature;
                 cache.get_or_insert_with_f64(computation)
             }
             PartialDerivative::First(v) => {
                 let new_state = self.derive1(v);
-                let computation = || self.eos.evaluate_residual(&new_state) * new_state.temperature;
+                let computation =
+                    || self.eos.residual_helmholtz_energy(&new_state) * new_state.temperature;
                 cache.get_or_insert_with_d64(v, computation)
             }
             PartialDerivative::Second(v) => {
                 let new_state = self.derive2(v);
-                let computation = || self.eos.evaluate_residual(&new_state) * new_state.temperature;
+                let computation =
+                    || self.eos.residual_helmholtz_energy(&new_state) * new_state.temperature;
                 cache.get_or_insert_with_d2_64(v, computation)
             }
             PartialDerivative::SecondMixed(v1, v2) => {
                 let new_state = self.derive2_mixed(v1, v2);
-                let computation = || self.eos.evaluate_residual(&new_state) * new_state.temperature;
+                let computation =
+                    || self.eos.residual_helmholtz_energy(&new_state) * new_state.temperature;
                 cache.get_or_insert_with_hd64(v1, v2, computation)
             }
             PartialDerivative::Third(v) => {
                 let new_state = self.derive3(v);
-                let computation = || self.eos.evaluate_residual(&new_state) * new_state.temperature;
+                let computation =
+                    || self.eos.residual_helmholtz_energy(&new_state) * new_state.temperature;
                 cache.get_or_insert_with_hd364(v, computation)
             }
         }
@@ -68,7 +73,7 @@ impl<E: Residual> State<E> {
     /// Residual Helmholtz energy $A^\text{res}$ evaluated for each contribution of the equation of state.
     pub fn residual_helmholtz_energy_contributions(&self) -> Vec<(String, Energy)> {
         let new_state = self.derive0();
-        let residual_contributions = self.eos.evaluate_residual_contributions(&new_state);
+        let residual_contributions = self.eos.residual_helmholtz_energy_contributions(&new_state);
         let mut res = Vec::with_capacity(residual_contributions.len());
         for (s, v) in residual_contributions {
             res.push((s, Energy::from_reduced(v * new_state.temperature)));
@@ -110,7 +115,7 @@ impl<E: Residual> State<E> {
         component: usize,
     ) -> Vec<(String, MolarEnergy)> {
         let new_state = self.derive1(DN(component));
-        let contributions = self.eos.evaluate_residual_contributions(&new_state);
+        let contributions = self.eos.residual_helmholtz_energy_contributions(&new_state);
         let mut res = Vec::with_capacity(contributions.len());
         for (s, v) in contributions {
             res.push((
@@ -253,7 +258,7 @@ impl<E: Residual> State<E> {
     /// Pressure $p$ evaluated for each contribution of the equation of state.
     pub fn pressure_contributions(&self) -> Vec<(String, Pressure)> {
         let new_state = self.derive1(DV);
-        let contributions = self.eos.evaluate_residual_contributions(&new_state);
+        let contributions = self.eos.residual_helmholtz_energy_contributions(&new_state);
         let mut res = Vec::with_capacity(contributions.len() + 1);
         res.push(("Ideal gas".into(), self.density * RGAS * self.temperature));
         for (s, v) in contributions {

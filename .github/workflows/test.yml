@@ -17,7 +17,7 @@ jobs:
       matrix:
         crate: [feos-core, feos-dft]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Build
         run: cargo build --release -p ${{ matrix.crate }}
       - name: Run tests
@@ -31,7 +31,7 @@ jobs:
         model: [pcsaft, gc_pcsaft, pets, uvtheory, saftvrqmie]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Build
         run: cargo build --release --features ${{ matrix.model }}
       - name: Run tests
@@ -45,7 +45,7 @@ jobs:
         model: [pcsaft, gc_pcsaft]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Build
         run: cargo build --release --features "${{ matrix.model }} dft"
       - name: Run tests

@@ -1,6 +1,6 @@
-use super::hard_sphere_wca::{diameter_wca, dimensionless_diameter_q_wca};
+use super::hard_sphere::{diameter_wca, dimensionless_diameter_q_wca};
 use crate::uvtheory::parameters::*;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_core::StateHD;
 use ndarray::Array1;
 use num_dual::DualNum;
 use std::{f64::consts::PI, fmt, sync::Arc};
@@ -67,19 +67,19 @@ const C2: [[f64; 2]; 3] = [
 ];
 
 #[derive(Debug, Clone)]
-pub struct AttractivePerturbationWCA {
-    pub parameters: Arc<UVParameters>,
+pub struct AttractivePerturbation {
+    pub parameters: Arc<UVTheoryParameters>,
 }
 
-impl fmt::Display for AttractivePerturbationWCA {
+impl fmt::Display for AttractivePerturbation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Attractive Perturbation")
     }
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for AttractivePerturbationWCA {
+impl AttractivePerturbation {
     /// Helmholtz energy for attractive perturbation, eq. 52
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
         let x = &state.molefracs;
         let t = state.temperature;
@@ -123,7 +123,11 @@ fn delta_b12u<D: DualNum<f64> + Copy>(
         * weighted_sigma3_ij
 }
 
-fn residual_virial_coefficient<D: DualNum<f64> + Copy>(p: &UVParameters, x: &Array1<D>, t: D) -> D {
+fn residual_virial_coefficient<D: DualNum<f64> + Copy>(
+    p: &UVTheoryParameters,
+    x: &Array1<D>,
+    t: D,
+) -> D {
     let mut delta_b2bar = D::zero();
 
     for i in 0..p.ncomponents {
@@ -170,7 +174,7 @@ fn u_fraction_wca<D: DualNum<f64> + Copy>(rep_x: D, reduced_density: D) -> D {
 }
 
 pub(super) fn one_fluid_properties<D: DualNum<f64> + Copy>(
-    p: &UVParameters,
+    p: &UVTheoryParameters,
     x: &Array1<D>,
     t: D,
 ) -> (D, D, D, D, D, D) {
@@ -294,7 +298,7 @@ mod test {
         let reduced_volume = moles[0] / reduced_density;
 
         let p = methane_parameters(24.0, 6.0);
-        let pt = AttractivePerturbationWCA {
+        let pt = AttractivePerturbation {
             parameters: Arc::new(p.clone()),
         };
         let state = StateHD::new(
@@ -406,7 +410,7 @@ mod test {
         dbg!(delta_b2);
         assert_relative_eq!(delta_b2, -4.7846399638747954, epsilon = 1e-6);
         // Full attractive contribution
-        let pt = AttractivePerturbationWCA {
+        let pt = AttractivePerturbation {
             parameters: Arc::new(p),
         };
 
@@ -472,7 +476,7 @@ mod test {
         assert_relative_eq!(delta_a1u, -1.3182160310774731, epsilon = 1e-6);
 
         // Full attractive contribution
-        let pt = AttractivePerturbationWCA {
+        let pt = AttractivePerturbation {
             parameters: Arc::new(p),
         };
         let a = pt.helmholtz_energy(&state) / (moles[0] + moles[1]);

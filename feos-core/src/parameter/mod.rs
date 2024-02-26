@@ -84,7 +84,7 @@ where
     /// `pure_records`, the `Default` implementation of Self::Binary is used.
     #[allow(clippy::expect_fun_call)]
     fn binary_matrix_from_records(
-        pure_records: &Vec<PureRecord<Self::Pure>>,
+        pure_records: &[PureRecord<Self::Pure>],
         binary_records: &[BinaryRecord<Identifier, Self::Binary>],
         identifier_option: IdentifierOption,
     ) -> Option<Array2<Self::Binary>> {
@@ -441,7 +441,7 @@ pub trait ParameterHetero: Sized {
         // Collect all pure records that were queried
         let chemical_records: Vec<_> = queried
             .iter()
-            .filter_map(|identifier| record_map.remove(&identifier.clone()))
+            .filter_map(|identifier| record_map.shift_remove(&identifier.clone()))
             .collect();
 
         // Read segment records

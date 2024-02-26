@@ -2,9 +2,7 @@ use crate::hard_sphere::{FMTVersion, HardSphereProperties};
 use crate::pets::eos::dispersion::{A, B};
 use crate::pets::parameters::PetsParameters;
 use feos_core::{EosError, EosResult};
-use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
-};
+use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::*;
 use std::f64::consts::{FRAC_PI_6, PI};
@@ -29,8 +27,11 @@ impl PureFMTFunctional {
     }
 }
 
-impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for PureFMTFunctional {
-    fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
+impl FunctionalContribution for PureFMTFunctional {
+    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let r = self.parameters.hs_diameter(temperature) * 0.5;
         WeightFunctionInfo::new(arr1(&[0]), false).extend(
             vec![
@@ -49,7 +50,7 @@ impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for P
         )
     }
 
-    fn calculate_helmholtz_energy_density(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
@@ -125,8 +126,11 @@ impl PureAttFunctional {
     }
 }
 
-impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for PureAttFunctional {
-    fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
+impl FunctionalContribution for PureAttFunctional {
+    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
         const PSI: f64 = 1.21; // Homosegmented DFT (Heier2018)
         WeightFunctionInfo::new(arr1(&[0]), false).add(
@@ -135,7 +139,10 @@ impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for P
         )
     }
 
-    fn weight_functions_pdgt(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions_pdgt<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
         const PSI: f64 = 1.21; // pDGT (not yet determined)
         WeightFunctionInfo::new(arr1(&[0]), false).add(
@@ -144,7 +151,7 @@ impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N> for P
         )
     }
 
-    fn calculate_helmholtz_energy_density(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,

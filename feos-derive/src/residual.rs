@@ -28,10 +28,10 @@ fn impl_residual(
             Self::#name(residual) => residual.compute_max_density(moles)
         }
     });
-    let contributions = variants.iter().map(|v| {
+    let residual_helmholtz_energy_contributions = variants.iter().map(|v| {
         let name = &v.ident;
         quote! {
-            Self::#name(residual) => residual.contributions()
+            Self::#name(residual) => residual.residual_helmholtz_energy_contributions(state)
         }
     });
     let molar_weight = variants.iter().map(|v| {
@@ -48,9 +48,9 @@ fn impl_residual(
                     #(#compute_max_density,)*
                 }
             }
-            fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
+            fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(&self, state: &StateHD<D>) -> Vec<(String, D)> {
                 match self {
-                    #(#contributions,)*
+                    #(#residual_helmholtz_energy_contributions,)*
                 }
             }
             fn molar_weight(&self) -> MolarWeight<Array1<f64>> {

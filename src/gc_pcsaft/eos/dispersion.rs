@@ -1,6 +1,6 @@
 use super::GcPcSaftEosParameters;
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_core::StateHD;
 use num_dual::DualNum;
 use std::f64::consts::PI;
 use std::fmt;
@@ -62,12 +62,12 @@ pub const B2: [f64; 7] = [
 ];
 
 #[derive(Clone)]
-pub struct Dispersion {
+pub(super) struct Dispersion {
     pub parameters: Arc<GcPcSaftEosParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Dispersion {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl Dispersion {
+    pub(super) fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         // auxiliary variables
         let p = &self.parameters;
         let n = p.m.len();

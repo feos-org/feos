@@ -82,7 +82,7 @@ fn from_records() -> Result<(), ParameterError> {
             }
         ]
         "#;
-    let pure_records = serde_json::from_str(pr_json).expect("Unable to parse json.");
+    let pure_records: Vec<_> = serde_json::from_str(pr_json).expect("Unable to parse json.");
     let binary_records: Vec<_> = serde_json::from_str(br_json).expect("Unable to parse json.");
     let binary_matrix = MyParameter::binary_matrix_from_records(
         &pure_records,
@@ -201,7 +201,7 @@ fn from_records_missing_binary() -> Result<(), ParameterError> {
             }
         ]
         "#;
-    let pure_records = serde_json::from_str(pr_json).expect("Unable to parse json.");
+    let pure_records: Vec<_> = serde_json::from_str(pr_json).expect("Unable to parse json.");
     let binary_records: Vec<_> = serde_json::from_str(br_json).expect("Unable to parse json.");
     let binary_matrix = MyParameter::binary_matrix_from_records(
         &pure_records,
@@ -266,7 +266,7 @@ fn from_records_correct_binary_order() -> Result<(), ParameterError> {
             }
         ]
         "#;
-    let pure_records = serde_json::from_str(pr_json).expect("Unable to parse json.");
+    let pure_records: Vec<_> = serde_json::from_str(pr_json).expect("Unable to parse json.");
     let binary_records: Vec<_> = serde_json::from_str(br_json).expect("Unable to parse json.");
     let binary_matrix = MyParameter::binary_matrix_from_records(
         &pure_records,

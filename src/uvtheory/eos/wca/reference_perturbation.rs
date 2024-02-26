@@ -1,27 +1,27 @@
-use super::hard_sphere_wca::{
+use super::hard_sphere::{
     diameter_wca, dimensionless_diameter_q_wca, packing_fraction, packing_fraction_a,
     packing_fraction_b,
 };
 use crate::uvtheory::parameters::*;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_core::StateHD;
 use num_dual::DualNum;
 use std::fmt;
 use std::{f64::consts::PI, sync::Arc};
 
 #[derive(Debug, Clone)]
-pub struct ReferencePerturbationWCA {
-    pub parameters: Arc<UVParameters>,
+pub(super) struct ReferencePerturbation {
+    pub parameters: Arc<UVTheoryParameters>,
 }
 
-impl fmt::Display for ReferencePerturbationWCA {
+impl fmt::Display for ReferencePerturbation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Reference Perturbation")
     }
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for ReferencePerturbationWCA {
+impl ReferencePerturbation {
     /// Helmholtz energy for perturbation reference (Mayer-f), eq. 29
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
         let n = p.sigma.len();
         let x = &state.molefracs;
@@ -76,7 +76,7 @@ mod test {
         let reduced_volume = moles[0] / reduced_density;
 
         let p = test_parameters(24.0, 6.0, 1.0, 1.0);
-        let pt = ReferencePerturbationWCA {
+        let pt = ReferencePerturbation {
             parameters: Arc::new(p),
         };
         let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());
@@ -97,7 +97,7 @@ mod test {
             arr1(&[1.0, 0.5]),
         );
 
-        let pt = ReferencePerturbationWCA {
+        let pt = ReferencePerturbation {
             parameters: Arc::new(p),
         };
         let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());

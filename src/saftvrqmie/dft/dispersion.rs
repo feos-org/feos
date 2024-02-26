@@ -1,9 +1,7 @@
 use crate::saftvrqmie::eos::dispersion::{dispersion_energy_density, Alpha};
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
 use feos_core::EosResult;
-use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
-};
+use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::DualNum;
 use std::fmt;
@@ -38,18 +36,22 @@ fn att_weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
     )
 }
 
-impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N>
-    for AttractiveFunctional
-{
-    fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
+impl FunctionalContribution for AttractiveFunctional {
+    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         att_weight_functions(&self.parameters, PSI_DFT, temperature)
     }
 
-    fn weight_functions_pdgt(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions_pdgt<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         att_weight_functions(&self.parameters, PSI_PDGT, temperature)
     }
 
-    fn calculate_helmholtz_energy_density(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
         density: ArrayView2<N>,

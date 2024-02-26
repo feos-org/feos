@@ -1,7 +1,7 @@
 //! Generic implementation of the SAFT association contribution
 //! that can be used across models.
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::{EosError, EosResult, HelmholtzEnergyDual, StateHD};
+use feos_core::{EosError, EosResult, StateHD};
 use ndarray::*;
 use num_dual::linalg::{norm, LU};
 use num_dual::*;
@@ -270,7 +270,7 @@ impl AssociationParameters {
 /// contribution and functional.
 pub struct Association<P> {
     parameters: Arc<P>,
-    association_parameters: AssociationParameters,
+    association_parameters: Arc<AssociationParameters>,
     max_iter: usize,
     tol: f64,
     force_cross_association: bool,
@@ -285,7 +285,7 @@ impl<P: HardSphereProperties> Association<P> {
     ) -> Self {
         Self {
             parameters: parameters.clone(),
-            association_parameters: association_parameters.clone(),
+            association_parameters: Arc::new(association_parameters.clone()),
             max_iter,
             tol,
             force_cross_association: false,
@@ -332,15 +332,15 @@ impl<P: HardSphereProperties> Association<P> {
     }
 }
 
-impl<D: DualNum<f64> + Copy + ScalarOperand, P: HardSphereProperties> HelmholtzEnergyDual<D>
-    for Association<P>
-{
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl<P: HardSphereProperties> Association<P> {
+    #[inline]
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        diameter: &Array1<D>,
+    ) -> D {
         let p: &P = &self.parameters;
         let a = &self.association_parameters;
-
-        // temperature dependent segment diameter
-        let diameter = p.hs_diameter(state.temperature);
 
         // auxiliary variables
         let [zeta2, n3] = p.zeta(state.temperature, &state.partial_density, [2, 3]);
@@ -349,7 +349,7 @@ impl<D: DualNum<f64> + Copy + ScalarOperand, P: HardSphereProperties> HelmholtzE
 
         // association strength
         let [delta_ab, delta_cc] =
-            self.association_strength(state.temperature, &diameter, n2, n3i, D::one());
+            self.association_strength(state.temperature, diameter, n2, n3i, D::one());
 
         match (
             a.sites_a.len() * a.sites_b.len(),
@@ -435,10 +435,7 @@ impl<P: HardSphereProperties> Association<P> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn helmholtz_energy_density_cross_association<
-        D: DualNum<f64> + Copy + ScalarOperand,
-        S: Data<Elem = D>,
-    >(
+    fn helmholtz_energy_density_cross_association<D: DualNum<f64> + Copy, S: Data<Elem = D>>(
         rho: &ArrayBase<S, Ix1>,
         delta_ab: &Array2<D>,
         delta_cc: &Array2<D>,
@@ -495,7 +492,7 @@ impl<P: HardSphereProperties> Association<P> {
         Ok((rho * x_dual.mapv(f)).sum())
     }
 
-    fn newton_step_cross_association<D: DualNum<f64> + Copy + ScalarOperand, S: Data<Elem = D>>(
+    fn newton_step_cross_association<D: DualNum<f64> + Copy, S: Data<Elem = D>>(
         x: &mut Array1<D>,
         delta_ab: &Array2<D>,
         delta_cc: &Array2<D>,
@@ -642,7 +639,8 @@ mod tests_pcsaft {
         let v = 41.248289328513216;
         let n = 1.23;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a_rust = assoc.helmholtz_energy(&s) / n;
+        let d = params.hs_diameter(t);
+        let a_rust = assoc.helmholtz_energy(&s, &d) / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 
@@ -654,7 +652,8 @@ mod tests_pcsaft {
         let v = 41.248289328513216;
         let n = 1.23;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a_rust = assoc.helmholtz_energy(&s) / n;
+        let d = params.hs_diameter(t);
+        let a_rust = assoc.helmholtz_energy(&s, &d) / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 
@@ -673,8 +672,9 @@ mod tests_pcsaft {
         let v = 41.248289328513216;
         let n = 1.23;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a_assoc = assoc.helmholtz_energy(&s) / n;
-        let a_cross_assoc = cross_assoc.helmholtz_energy(&s) / n;
+        let d = params.hs_diameter(t);
+        let a_assoc = assoc.helmholtz_energy(&s, &d) / n;
+        let a_cross_assoc = cross_assoc.helmholtz_energy(&s, &d) / n;
         assert_relative_eq!(a_assoc, a_cross_assoc, epsilon = 1e-10);
         Ok(())
     }
@@ -703,7 +703,9 @@ mod tests_gc_pcsaft {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = Pressure::from_reduced(-contrib.helmholtz_energy(&state).eps * temperature);
+        let diameter = params.hs_diameter(state.temperature);
+        let pressure =
+            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
         assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
     }
 
@@ -719,7 +721,9 @@ mod tests_gc_pcsaft {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = Pressure::from_reduced(-contrib.helmholtz_energy(&state).eps * temperature);
+        let diameter = params.hs_diameter(state.temperature);
+        let pressure =
+            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
         assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
     }
 
@@ -735,7 +739,9 @@ mod tests_gc_pcsaft {
             Dual64::from_re(volume).derivative(),
             moles.mapv(Dual64::from_re),
         );
-        let pressure = Pressure::from_reduced(-contrib.helmholtz_energy(&state).eps * temperature);
+        let diameter = params.hs_diameter(state.temperature);
+        let pressure =
+            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
         assert_relative_eq!(pressure, -26.105606376765632 * PASCAL, max_relative = 1e-10);
     }
 }

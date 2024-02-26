@@ -22,8 +22,8 @@ impl WeightFunctionInfo<Dual2_64> {
     }
 }
 
-impl dyn FunctionalContribution {
-    pub fn pdgt_properties(
+trait PdgtProperties: FunctionalContribution {
+    fn pdgt_properties(
         &self,
         temperature: f64,
         density: &Array2<f64>,
@@ -116,7 +116,7 @@ impl dyn FunctionalContribution {
     }
 
     #[allow(clippy::type_complexity)]
-    pub fn influence_diagonal(
+    fn influence_diagonal(
         &self,
         temperature: Temperature,
         density: &Density<Array2<f64>>,
@@ -140,6 +140,8 @@ impl dyn FunctionalContribution {
         ))
     }
 }
+
+impl<T: FunctionalContribution> PdgtProperties for T {}
 
 impl<T: HelmholtzEnergyFunctional> DFT<T> {
     pub fn solve_pdgt(
@@ -172,7 +174,7 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         }
         delta_omega += &self
             .ideal_chain_contribution()
-            .helmholtz_energy_density::<Ix1>(vle.vapor().temperature, &density)?;
+            .helmholtz_energy_density_units::<Ix1>(vle.vapor().temperature, &density)?;
 
         // calculate excess grand potential density
         let mu_res = vle.vapor().residual_chemical_potential();

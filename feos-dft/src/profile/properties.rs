@@ -1,7 +1,7 @@
 #![allow(type_alias_bounds)]
 use super::DFTProfile;
 use crate::convolver::{BulkConvolver, Convolver};
-use crate::functional_contribution::{FunctionalContribution, FunctionalContributionDual};
+use crate::functional_contribution::FunctionalContribution;
 use crate::{ConvolverFFT, DFTSolverLog, HelmholtzEnergyFunctional, WeightFunctionInfo};
 use feos_core::si::{
     Density, Energy, Entropy, EntropyDensity, MolarEnergy, Moles, Pressure, Quantity, Temperature,
@@ -79,7 +79,6 @@ where
     ) -> EosResult<Array<N, D>>
     where
         N: DualNum<f64> + Copy + ScalarOperand,
-        dyn FunctionalContribution: FunctionalContributionDual<N>,
     {
         let density_dual = density.mapv(N::from);
         let weighted_densities = convolver.weighted_densities(&density_dual);
@@ -87,15 +86,15 @@ where
         let mut helmholtz_energy_density: Array<N, D> = self
             .dft
             .ideal_chain_contribution()
-            .calculate_helmholtz_energy_density(&density.mapv(N::from))?;
-        for (c, wd) in functional_contributions.iter().zip(weighted_densities) {
+            .helmholtz_energy_density(&density.mapv(N::from))?;
+        for (c, wd) in functional_contributions.zip(weighted_densities) {
             let nwd = wd.shape()[0];
             let ngrid = wd.len() / nwd;
             helmholtz_energy_density
                 .view_mut()
                 .into_shape(ngrid)
                 .unwrap()
-                .add_assign(&c.calculate_helmholtz_energy_density(
+                .add_assign(&c.helmholtz_energy_density(
                     temperature,
                     wd.into_shape((nwd, ngrid)).unwrap().view(),
                 )?);
@@ -112,7 +111,6 @@ where
         let temperature_dual = Dual64::from(temperature).derivative();
         let functional_contributions = self.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
-            .iter()
             .map(|c| c.weight_functions(temperature_dual))
             .collect();
         let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, None);
@@ -139,19 +137,18 @@ where
         let temperature_dual = Dual64::from(temperature).derivative();
         let weighted_densities = convolver.weighted_densities(&density_dual);
         let functional_contributions = self.dft.contributions();
-        let mut helmholtz_energy_density: Vec<Array<Dual64, _>> =
-            Vec::with_capacity(functional_contributions.len() + 1);
+        let mut helmholtz_energy_density: Vec<Array<Dual64, _>> = Vec::new();
         helmholtz_energy_density.push(
             self.dft
                 .ideal_chain_contribution()
-                .calculate_helmholtz_energy_density(&density.mapv(Dual64::from))?,
+                .helmholtz_energy_density(&density.mapv(Dual64::from))?,
         );
 
-        for (c, wd) in functional_contributions.iter().zip(weighted_densities) {
+        for (c, wd) in functional_contributions.zip(weighted_densities) {
             let nwd = wd.shape()[0];
             let ngrid = wd.len() / nwd;
             helmholtz_energy_density.push(
-                c.calculate_helmholtz_energy_density(
+                c.helmholtz_energy_density(
                     temperature_dual,
                     wd.into_shape((nwd, ngrid)).unwrap().view(),
                 )?
@@ -177,7 +174,7 @@ where
         temperature: Dual64,
         density: &Array<f64, D::Larger>,
     ) -> Array<Dual64, D> {
-        let lambda = self.dft.ideal_gas_model().ln_lambda3(temperature);
+        let lambda = self.dft.ln_lambda3(temperature);
         let mut phi = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
         for (i, rhoi) in density.outer_iter().enumerate() {
             phi += &rhoi.mapv(|rhoi| (lambda[i] + rhoi.ln() - 1.0) * rhoi);
@@ -197,7 +194,6 @@ where
         let temperature_dual = Dual64::from(temperature).derivative();
         let functional_contributions = self.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
-            .iter()
             .map(|c| c.weight_functions(temperature_dual))
             .collect();
         let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, None);
@@ -241,7 +237,6 @@ where
         let temperature_dual = Dual64::from(temperature).derivative();
         let functional_contributions = self.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
-            .iter()
             .map(|c| c.weight_functions(temperature_dual))
             .collect();
         let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, None);
@@ -355,7 +350,6 @@ where
         // calculate temperature derivative of functional derivative
         let functional_contributions = self.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
-            .iter()
             .map(|c| c.weight_functions(Dual64::from(t).derivative()))
             .collect();
         let convolver: Arc<dyn Convolver<_, D>> =

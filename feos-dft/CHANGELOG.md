@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Updated interfaces according to removal of `HelmholtzEnergyDual` and `HelmholtzEnergy` in `feos-core`. [#226](https://github.com/feos-org/feos/pull/226)
+- Changed return values of `HelmholtzEnergyFunctional::contributions` from `dyn FunctionalContribution` to `HelmholtzEnergyFunctional::Contribution`. [#226](https://github.com/feos-org/feos/pull/226)
+
+### Removed
+- Removed `FunctionalContributionDual` trait. [#226](https://github.com/feos-org/feos/pull/226)
 
 ## [0.6.0] - 2023-12-19
 ### Packaging

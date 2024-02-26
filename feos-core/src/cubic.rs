@@ -4,11 +4,11 @@
 //! of state - with a single contribution to the Helmholtz energy - can be implemented.
 //! The implementation closely follows the form of the equations given in
 //! [this wikipedia article](https://en.wikipedia.org/wiki/Cubic_equations_of_state#Peng%E2%80%93Robinson_equation_of_state).
-use crate::equation_of_state::{Components, HelmholtzEnergy, HelmholtzEnergyDual, Residual};
+use crate::equation_of_state::{Components, Residual};
 use crate::parameter::{Identifier, Parameter, ParameterError, PureRecord};
 use crate::si::{MolarWeight, GRAM, MOL};
 use crate::state::StateHD;
-use ndarray::{Array1, Array2};
+use ndarray::{Array1, Array2, ScalarOperand};
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
 use std::f64::consts::SQRT_2;
@@ -146,62 +146,16 @@ impl Parameter for PengRobinsonParameters {
     }
 }
 
-struct PengRobinsonContribution {
-    parameters: Arc<PengRobinsonParameters>,
-}
-
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for PengRobinsonContribution {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
-        // temperature dependent a parameter
-        let p = &self.parameters;
-        let x = &state.molefracs;
-        let ak = (&p.tc.mapv(|tc| (D::one() - (state.temperature / tc).sqrt())) * &p.kappa + 1.0)
-            .mapv(|x| x.powi(2))
-            * &p.a;
-
-        // Mixing rules
-        let mut ak_mix = D::zero();
-        for i in 0..ak.len() {
-            for j in 0..ak.len() {
-                ak_mix += (ak[i] * ak[j]).sqrt() * (x[i] * x[j] * (1.0 - p.k_ij[(i, j)]));
-            }
-        }
-        let b = (x * &p.b).sum();
-
-        // Helmholtz energy
-        let n = state.moles.sum();
-        let v = state.volume;
-        n * ((v / (v - b * n)).ln()
-            - ak_mix / (b * SQRT_2 * 2.0 * state.temperature)
-                * ((v + b * n * (1.0 + SQRT_2)) / (v + b * n * (1.0 - SQRT_2))).ln())
-    }
-}
-
-impl fmt::Display for PengRobinsonContribution {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Peng Robinson")
-    }
-}
-
 /// A simple version of the Peng-Robinson equation of state.
 pub struct PengRobinson {
     /// Parameters
     parameters: Arc<PengRobinsonParameters>,
-    /// Non-ideal contributions to the Helmholtz energy
-    contributions: Vec<Box<dyn HelmholtzEnergy>>,
 }
 
 impl PengRobinson {
     /// Create a new equation of state from a set of parameters.
     pub fn new(parameters: Arc<PengRobinsonParameters>) -> Self {
-        let contributions: Vec<Box<dyn HelmholtzEnergy>> =
-            vec![Box::new(PengRobinsonContribution {
-                parameters: parameters.clone(),
-            })];
-        Self {
-            parameters,
-            contributions,
-        }
+        Self { parameters }
     }
 }
 
@@ -227,8 +181,38 @@ impl Residual for PengRobinson {
         0.9 / b
     }
 
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
-        &self.contributions
+    fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
+        let p = &self.parameters;
+        let x = &state.molefracs;
+        let ak = (&p.tc.mapv(|tc| (D::one() - (state.temperature / tc).sqrt())) * &p.kappa + 1.0)
+            .mapv(|x| x.powi(2))
+            * &p.a;
+
+        // Mixing rules
+        let mut ak_mix = D::zero();
+        for i in 0..ak.len() {
+            for j in 0..ak.len() {
+                ak_mix += (ak[i] * ak[j]).sqrt() * (x[i] * x[j] * (1.0 - p.k_ij[(i, j)]));
+            }
+        }
+        let b = (x * &p.b).sum();
+
+        // Helmholtz energy
+        let n = state.moles.sum();
+        let v = state.volume;
+        n * ((v / (v - b * n)).ln()
+            - ak_mix / (b * SQRT_2 * 2.0 * state.temperature)
+                * ((v + b * n * (1.0 + SQRT_2)) / (v + b * n * (1.0 - SQRT_2))).ln())
+    }
+
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        state: &StateHD<D>,
+    ) -> Vec<(String, D)> {
+        vec![(
+            "Peng Robinson".to_string(),
+            self.residual_helmholtz_energy(state),
+        )]
     }
 
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {

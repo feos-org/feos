@@ -3,8 +3,8 @@ use feos_core::{Components, EosResult};
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{
-    FunctionalContribution, FunctionalContributionDual, HelmholtzEnergyFunctional, MoleculeShape,
-    WeightFunction, WeightFunctionInfo, WeightFunctionShape, DFT,
+    FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, WeightFunction,
+    WeightFunctionInfo, WeightFunctionShape, DFT,
 };
 use ndarray::*;
 use num_dual::DualNum;
@@ -85,10 +85,8 @@ impl<P> FMTContribution<P> {
     }
 }
 
-impl<P: HardSphereProperties, N: DualNum<f64> + Copy> FunctionalContributionDual<N>
-    for FMTContribution<P>
-{
-    fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
+impl<P: HardSphereProperties + Send + Sync> FunctionalContribution for FMTContribution<P> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let r = self.properties.hs_diameter(temperature) * 0.5;
         let [c0, c1, c2, c3] = self.properties.geometry_coefficients(temperature);
         match (self.version, r.len()) {
@@ -191,7 +189,7 @@ impl<P: HardSphereProperties, N: DualNum<f64> + Copy> FunctionalContributionDual
         }
     }
 
-    fn calculate_helmholtz_energy_density(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
@@ -295,7 +293,7 @@ impl<P: HardSphereProperties> fmt::Display for FMTContribution<P> {
     }
 }
 
-struct HardSphereParameters {
+pub struct HardSphereParameters {
     sigma: Array1<f64>,
 }
 
@@ -312,7 +310,6 @@ impl HardSphereProperties for HardSphereParameters {
 /// [HelmholtzEnergyFunctional] for hard sphere systems.
 pub struct FMTFunctional {
     properties: Arc<HardSphereParameters>,
-    contributions: Vec<Box<dyn FunctionalContribution>>,
     version: FMTVersion,
 }
 
@@ -321,11 +318,8 @@ impl FMTFunctional {
         let properties = Arc::new(HardSphereParameters {
             sigma: sigma.clone(),
         });
-        let contributions: Vec<Box<dyn FunctionalContribution>> =
-            vec![Box::new(FMTContribution::new(&properties, version))];
         DFT(Self {
             properties,
-            contributions,
             version,
         })
     }
@@ -346,8 +340,13 @@ impl Components for FMTFunctional {
 }
 
 impl HelmholtzEnergyFunctional for FMTFunctional {
-    fn contributions(&self) -> &[Box<dyn FunctionalContribution>] {
-        &self.contributions
+    type Contribution = FMTContribution<HardSphereParameters>;
+
+    fn contributions(&self) -> Box<dyn Iterator<Item = FMTContribution<HardSphereParameters>>> {
+        Box::new(std::iter::once(FMTContribution::new(
+            &self.properties,
+            self.version,
+        )))
     }
 
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {

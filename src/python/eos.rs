@@ -23,9 +23,9 @@ use crate::saftvrqmie::python::PySaftVRQMieParameters;
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::{SaftVRQMie, SaftVRQMieOptions};
 #[cfg(feature = "uvtheory")]
-use crate::uvtheory::python::PyUVParameters;
+use crate::uvtheory::python::PyUVTheoryParameters;
 #[cfg(feature = "uvtheory")]
-use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, VirialOrder};
+use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions};
 
 use super::dippr::PyDippr;
 use super::joback::PyJoback;
@@ -211,15 +211,12 @@ impl PyEquationOfState {
     ///
     /// Parameters
     /// ----------
-    /// parameters : UVParameters
+    /// parameters : UVTheoryParameters
     ///     The parameters of the UV-theory equation of state to use.
     /// max_eta : float, optional
     ///     Maximum packing fraction. Defaults to 0.5.
     /// perturbation : Perturbation, optional
     ///     Division type of the Mie potential. Defaults to WCA division.
-    /// virial_order : VirialOrder, optional
-    ///     Highest order of virial coefficient to consider.
-    ///     Defaults to second order (original uv-theory).
     ///
     /// Returns
     /// -------
@@ -229,24 +226,22 @@ impl PyEquationOfState {
     #[cfg(feature = "uvtheory")]
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, max_eta=0.5, perturbation=Perturbation::WeeksChandlerAndersen, virial_order=VirialOrder::Second),
-        text_signature = "(parameters, max_eta=0.5, perturbation, virial_order)"
+        signature = (parameters, max_eta=0.5, perturbation=Perturbation::WeeksChandlerAndersen),
+        text_signature = "(parameters, max_eta=0.5, perturbation)"
     )]
     fn uvtheory(
-        parameters: PyUVParameters,
+        parameters: PyUVTheoryParameters,
         max_eta: f64,
         perturbation: Perturbation,
-        virial_order: VirialOrder,
     ) -> PyResult<Self> {
         let options = UVTheoryOptions {
             max_eta,
             perturbation,
-            virial_order,
         };
         let residual = Arc::new(ResidualModel::UVTheory(UVTheory::with_options(
             parameters.0,
             options,
-        )?));
+        )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }

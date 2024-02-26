@@ -1,6 +1,6 @@
 use feos_core::parameter::{NoBinaryModelRecord, Parameter, ParameterError, PureRecord};
 use feos_core::si::{MolarEntropy, Temperature, JOULE, KELVIN, KILO, MOL};
-use feos_core::{Components, DeBroglieWavelength, DeBroglieWavelengthDual, EosResult, IdealGas};
+use feos_core::{Components, EosResult, IdealGas};
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
@@ -180,17 +180,11 @@ impl Components for Dippr {
     }
 }
 
-impl IdealGas for Dippr {
-    fn ideal_gas_model(&self) -> &dyn DeBroglieWavelength {
-        self
-    }
-}
-
 const RGAS: f64 = 8.31446261815324 * 1000.0;
 const T0: f64 = 298.15;
 
-impl<D: DualNum<f64> + Copy> DeBroglieWavelengthDual<D> for Dippr {
-    fn ln_lambda3(&self, temperature: D) -> Array1<D> {
+impl IdealGas for Dippr {
+    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
         let t = temperature;
         self.0
             .iter()
@@ -202,11 +196,9 @@ impl<D: DualNum<f64> + Copy> DeBroglieWavelengthDual<D> for Dippr {
             })
             .collect()
     }
-}
 
-impl fmt::Display for Dippr {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Ideal gas (DIPPR)")
+    fn ideal_gas_model(&self) -> String {
+        "Ideal gas (DIPPR)".into()
     }
 }
 

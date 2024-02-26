@@ -2,7 +2,7 @@ use super::parameters::PetsParameters;
 use crate::hard_sphere::HardSphere;
 use feos_core::parameter::Parameter;
 use feos_core::si::{MolarWeight, GRAM, MOL};
-use feos_core::{Components, HelmholtzEnergy, Residual};
+use feos_core::{Components, Residual};
 use ndarray::Array1;
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
@@ -30,7 +30,8 @@ impl Default for PetsOptions {
 pub struct Pets {
     parameters: Arc<PetsParameters>,
     options: PetsOptions,
-    contributions: Vec<Box<dyn HelmholtzEnergy>>,
+    hard_sphere: HardSphere<PetsParameters>,
+    dispersion: Dispersion,
 }
 
 impl Pets {
@@ -41,16 +42,15 @@ impl Pets {
 
     /// PeTS equation of state with provided options.
     pub fn with_options(parameters: Arc<PetsParameters>, options: PetsOptions) -> Self {
-        let contributions: Vec<Box<dyn HelmholtzEnergy>> = vec![
-            Box::new(HardSphere::new(&parameters)),
-            Box::new(Dispersion {
-                parameters: parameters.clone(),
-            }),
-        ];
+        let hard_sphere = HardSphere::new(&parameters);
+        let dispersion = Dispersion {
+            parameters: parameters.clone(),
+        };
         Self {
             parameters,
             options,
-            contributions,
+            hard_sphere,
+            dispersion,
         }
     }
 }
@@ -74,8 +74,20 @@ impl Residual for Pets {
             / (FRAC_PI_6 * self.parameters.sigma.mapv(|v| v.powi(3)) * moles).sum()
     }
 
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
-        &self.contributions
+    fn residual_helmholtz_energy_contributions<D: num_dual::DualNum<f64> + Copy>(
+        &self,
+        state: &feos_core::StateHD<D>,
+    ) -> Vec<(String, D)> {
+        vec![
+            (
+                "Hard Sphere".to_string(),
+                self.hard_sphere.helmholtz_energy(state),
+            ),
+            (
+                "Dispersion".to_string(),
+                self.dispersion.helmholtz_energy(state),
+            ),
+        ]
     }
 
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
@@ -303,9 +315,7 @@ mod tests {
     };
     use approx::assert_relative_eq;
     use feos_core::si::{BAR, KELVIN, METER, PASCAL, RGAS};
-    use feos_core::{
-        Contributions, DensityInitialization, HelmholtzEnergyDual, PhaseEquilibrium, State, StateHD,
-    };
+    use feos_core::{Contributions, DensityInitialization, PhaseEquilibrium, State, StateHD};
     use ndarray::arr1;
     use typenum::P3;
 

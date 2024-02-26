@@ -4,11 +4,15 @@ use crate::hard_sphere::{FMTContribution, FMTVersion};
 use crate::pcsaft::eos::PcSaftOptions;
 use feos_core::parameter::Parameter;
 use feos_core::si::{MolarWeight, GRAM, MOL};
-use feos_core::Components;
+use feos_core::{Components, EosResult};
+use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
-use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, DFT};
-use ndarray::{Array1, Array2};
+use feos_dft::{
+    FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, WeightFunctionInfo, DFT,
+};
+use ndarray::{Array1, Array2, ArrayView2, ScalarOperand};
+use num_dual::DualNum;
 use num_traits::One;
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
@@ -26,7 +30,6 @@ pub struct PcSaftFunctional {
     pub parameters: Arc<PcSaftParameters>,
     fmt_version: FMTVersion,
     options: PcSaftOptions,
-    contributions: Vec<Box<dyn FunctionalContribution>>,
 }
 
 impl PcSaftFunctional {
@@ -43,53 +46,10 @@ impl PcSaftFunctional {
         fmt_version: FMTVersion,
         saft_options: PcSaftOptions,
     ) -> DFT<Self> {
-        let mut contributions: Vec<Box<dyn FunctionalContribution>> = Vec::with_capacity(4);
-
-        if matches!(
-            fmt_version,
-            FMTVersion::WhiteBear | FMTVersion::AntiSymWhiteBear
-        ) && parameters.m.len() == 1
-        {
-            let fmt_assoc = PureFMTAssocFunctional::new(parameters.clone(), fmt_version);
-            contributions.push(Box::new(fmt_assoc));
-            if parameters.m.iter().any(|&mi| mi > 1.0) {
-                let chain = PureChainFunctional::new(parameters.clone());
-                contributions.push(Box::new(chain));
-            }
-            let att = PureAttFunctional::new(parameters.clone());
-            contributions.push(Box::new(att));
-        } else {
-            // Hard sphere contribution
-            let hs = FMTContribution::new(&parameters, fmt_version);
-            contributions.push(Box::new(hs));
-
-            // Hard chains
-            if parameters.m.iter().any(|&mi| !mi.is_one()) {
-                let chain = ChainFunctional::new(parameters.clone());
-                contributions.push(Box::new(chain));
-            }
-
-            // Dispersion
-            let att = AttractiveFunctional::new(parameters.clone());
-            contributions.push(Box::new(att));
-
-            // Association
-            if !parameters.association.is_empty() {
-                let assoc = Association::new(
-                    &parameters,
-                    &parameters.association,
-                    saft_options.max_iter_cross_assoc,
-                    saft_options.tol_cross_assoc,
-                );
-                contributions.push(Box::new(assoc));
-            }
-        }
-
         DFT(Self {
             parameters,
             fmt_version,
             options: saft_options,
-            contributions,
         })
     }
 }
@@ -110,14 +70,57 @@ impl Components for PcSaftFunctional {
 }
 
 impl HelmholtzEnergyFunctional for PcSaftFunctional {
+    type Contribution = PcSaftFunctionalContribution;
+
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
             / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
                 .sum()
     }
 
-    fn contributions(&self) -> &[Box<dyn FunctionalContribution>] {
-        &self.contributions
+    fn contributions(&self) -> Box<dyn Iterator<Item = PcSaftFunctionalContribution>> {
+        let mut contributions = Vec::with_capacity(4);
+
+        if matches!(
+            self.fmt_version,
+            FMTVersion::WhiteBear | FMTVersion::AntiSymWhiteBear
+        ) && self.parameters.m.len() == 1
+        {
+            let fmt_assoc = PureFMTAssocFunctional::new(self.parameters.clone(), self.fmt_version);
+            contributions.push(fmt_assoc.into());
+            if self.parameters.m.iter().any(|&mi| mi > 1.0) {
+                let chain = PureChainFunctional::new(self.parameters.clone());
+                contributions.push(chain.into());
+            }
+            let att = PureAttFunctional::new(self.parameters.clone());
+            contributions.push(att.into());
+        } else {
+            // Hard sphere contribution
+            let hs = FMTContribution::new(&self.parameters, self.fmt_version);
+            contributions.push(hs.into());
+
+            // Hard chains
+            if self.parameters.m.iter().any(|&mi| !mi.is_one()) {
+                let chain = ChainFunctional::new(self.parameters.clone());
+                contributions.push(chain.into());
+            }
+
+            // Dispersion
+            let att = AttractiveFunctional::new(self.parameters.clone());
+            contributions.push(att.into());
+
+            // Association
+            if !self.parameters.association.is_empty() {
+                let assoc = Association::new(
+                    &self.parameters,
+                    &self.parameters.association,
+                    self.options.max_iter_cross_assoc,
+                    self.options.tol_cross_assoc,
+                );
+                contributions.push(assoc.into());
+            }
+        }
+        Box::new(contributions.into_iter())
     }
 
     fn molecule_shape(&self) -> MoleculeShape {
@@ -148,4 +151,16 @@ impl PairPotential for PcSaftFunctional {
             eps_ij_4[[i, j]] * att * (att - 1.0)
         })
     }
+}
+
+/// Individual contributions for the PC-SAFT Helmholtz energy functional.
+#[derive(FunctionalContribution)]
+pub enum PcSaftFunctionalContribution {
+    PureFMTAssoc(PureFMTAssocFunctional),
+    PureChain(PureChainFunctional),
+    PureAtt(PureAttFunctional),
+    Fmt(FMTContribution<PcSaftParameters>),
+    Chain(ChainFunctional),
+    Attractive(AttractiveFunctional),
+    Association(Association<PcSaftParameters>),
 }

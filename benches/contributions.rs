@@ -78,7 +78,7 @@ fn pcsaft(c: &mut Criterion) {
             let name1 = comp1.identifier.name.as_deref().unwrap();
             let name2 = comp2.identifier.name.as_deref().unwrap();
             let mix = format!("{name1}_{name2}");
-            group.bench_function(mix, |b| b.iter(|| eos.evaluate_residual(&state_hd)));
+            group.bench_function(mix, |b| b.iter(|| eos.residual_helmholtz_energy(&state_hd)));
         }
     }
 }

@@ -14,7 +14,8 @@ use feos_core::python::user_defined::PyResidual;
 use feos_core::si::*;
 use feos_core::*;
 use feos_derive::{Components, Residual};
-use ndarray::Array1;
+use ndarray::{Array1, ScalarOperand};
+use num_dual::DualNum;
 
 /// Collection of different [Residual] implementations.
 ///

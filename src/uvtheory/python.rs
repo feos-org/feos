@@ -1,5 +1,5 @@
-use super::parameters::{NoRecord, UVBinaryRecord, UVParameters, UVRecord};
-use super::{Perturbation, VirialOrder};
+use super::parameters::{NoRecord, UVTheoryBinaryRecord, UVTheoryParameters, UVTheoryRecord};
+use super::Perturbation;
 use feos_core::parameter::{
     BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
 };
@@ -17,16 +17,16 @@ use std::sync::Arc;
 struct PyNoRecord(NoRecord);
 
 /// Create a set of UV Theory parameters from records.
-#[pyclass(name = "UVRecord")]
+#[pyclass(name = "UVTheoryRecord")]
 #[derive(Clone)]
-pub struct PyUVRecord(UVRecord);
+pub struct PyUVTheoryRecord(UVTheoryRecord);
 
 #[pymethods]
-impl PyUVRecord {
+impl PyUVTheoryRecord {
     #[new]
     #[pyo3(text_signature = "(rep, att, sigma, epsilon_k)")]
     fn new(rep: f64, att: f64, sigma: f64, epsilon_k: f64) -> Self {
-        Self(UVRecord::new(rep, att, sigma, epsilon_k))
+        Self(UVTheoryRecord::new(rep, att, sigma, epsilon_k))
     }
 
     fn __repr__(&self) -> PyResult<String> {
@@ -34,19 +34,19 @@ impl PyUVRecord {
     }
 }
 
-impl_json_handling!(PyUVRecord);
+impl_json_handling!(PyUVTheoryRecord);
 
-#[pyclass(name = "UVBinaryRecord")]
+#[pyclass(name = "UVTheoryBinaryRecord")]
 #[derive(Clone)]
-pub struct PyUVBinaryRecord(UVBinaryRecord);
-impl_binary_record!(UVBinaryRecord, PyUVBinaryRecord);
+pub struct PyUVTheoryBinaryRecord(UVTheoryBinaryRecord);
+impl_binary_record!(UVTheoryBinaryRecord, PyUVTheoryBinaryRecord);
 
-#[pyclass(name = "UVParameters")]
+#[pyclass(name = "UVTheoryParameters")]
 #[derive(Clone)]
-pub struct PyUVParameters(pub Arc<UVParameters>);
+pub struct PyUVTheoryParameters(pub Arc<UVTheoryParameters>);
 
 #[pymethods]
-impl PyUVParameters {
+impl PyUVTheoryParameters {
     /// Create a set of UV Theory parameters from lists.
     ///
     /// Parameters
@@ -62,7 +62,7 @@ impl PyUVParameters {
     ///
     /// Returns
     /// -------
-    /// UVParameters
+    /// UVTheoryParameters
     #[pyo3(text_signature = "(rep, att, sigma, epsilon_k)")]
     #[staticmethod]
     fn from_lists(
@@ -82,11 +82,11 @@ impl PyUVParameters {
                     None,
                     None,
                 );
-                let model_record = UVRecord::new(rep[i], att[i], sigma[i], epsilon_k[i]);
+                let model_record = UVTheoryRecord::new(rep[i], att[i], sigma[i], epsilon_k[i]);
                 PureRecord::new(identifier, 1.0, model_record)
             })
             .collect();
-        Ok(Self(Arc::new(UVParameters::from_records(
+        Ok(Self(Arc::new(UVTheoryParameters::from_records(
             pure_records,
             None,
         )?)))
@@ -107,7 +107,7 @@ impl PyUVParameters {
     ///
     /// Returns
     /// -------
-    /// UVParameters
+    /// UVTheoryParameters
     ///
     /// # Info
     ///
@@ -115,14 +115,19 @@ impl PyUVParameters {
     #[pyo3(text_signature = "(rep, att, sigma, epsilon_k)")]
     #[staticmethod]
     fn new_simple(rep: f64, att: f64, sigma: f64, epsilon_k: f64) -> PyResult<Self> {
-        Ok(Self(Arc::new(UVParameters::new_simple(
+        Ok(Self(Arc::new(UVTheoryParameters::new_simple(
             rep, att, sigma, epsilon_k,
         )?)))
     }
 }
 
-impl_pure_record!(UVRecord, PyUVRecord);
-impl_parameter!(UVParameters, PyUVParameters, PyUVRecord, PyUVBinaryRecord);
+impl_pure_record!(UVTheoryRecord, PyUVTheoryRecord);
+impl_parameter!(
+    UVTheoryParameters,
+    PyUVTheoryParameters,
+    PyUVTheoryRecord,
+    PyUVTheoryBinaryRecord
+);
 
 #[pymodule]
 pub fn uvtheory(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
@@ -131,10 +136,9 @@ pub fn uvtheory(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyChemicalRecord>()?;
 
     m.add_class::<Perturbation>()?;
-    m.add_class::<VirialOrder>()?;
-    m.add_class::<PyUVRecord>()?;
+    m.add_class::<PyUVTheoryRecord>()?;
     m.add_class::<PyPureRecord>()?;
     m.add_class::<PyBinaryRecord>()?;
-    m.add_class::<PyUVParameters>()?;
+    m.add_class::<PyUVTheoryParameters>()?;
     Ok(())
 }

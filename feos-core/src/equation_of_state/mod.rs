@@ -2,15 +2,13 @@ use crate::{
     si::{Diffusivity, MolarWeight, Moles, Temperature, ThermalConductivity, Viscosity, Volume},
     EosResult,
 };
-use ndarray::Array1;
+use ndarray::{Array1, ScalarOperand};
 use std::sync::Arc;
 
-mod helmholtz_energy;
 mod ideal_gas;
 mod residual;
 
-pub use helmholtz_energy::{HelmholtzEnergy, HelmholtzEnergyDual};
-pub use ideal_gas::{DeBroglieWavelength, DeBroglieWavelengthDual, IdealGas};
+pub use ideal_gas::IdealGas;
 pub use residual::{EntropyScaling, NoResidual, Residual};
 
 /// The number of components that the model is initialized for.
@@ -73,7 +71,11 @@ impl<I: Components, R: Components> Components for EquationOfState<I, R> {
 }
 
 impl<I: IdealGas, R: Components + Sync + Send> IdealGas for EquationOfState<I, R> {
-    fn ideal_gas_model(&self) -> &dyn DeBroglieWavelength {
+    fn ln_lambda3<D: num_dual::DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+        self.ideal_gas.ln_lambda3(temperature)
+    }
+
+    fn ideal_gas_model(&self) -> String {
         self.ideal_gas.ideal_gas_model()
     }
 }
@@ -83,8 +85,11 @@ impl<I: IdealGas, R: Residual> Residual for EquationOfState<I, R> {
         self.residual.compute_max_density(moles)
     }
 
-    fn contributions(&self) -> &[Box<dyn HelmholtzEnergy>] {
-        self.residual.contributions()
+    fn residual_helmholtz_energy_contributions<D: num_dual::DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        state: &crate::StateHD<D>,
+    ) -> Vec<(String, D)> {
+        self.residual.residual_helmholtz_energy_contributions(state)
     }
 
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {

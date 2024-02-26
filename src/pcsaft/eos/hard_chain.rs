@@ -1,6 +1,6 @@
 use super::PcSaftParameters;
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_core::StateHD;
 use ndarray::Array;
 use num_dual::*;
 use std::fmt;
@@ -10,8 +10,9 @@ pub struct HardChain {
     pub parameters: Arc<PcSaftParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for HardChain {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl HardChain {
+    #[inline]
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;
         let d = self.parameters.hs_diameter(state.temperature);
         let [zeta2, zeta3] = p.zeta(state.temperature, &state.partial_density, [2, 3]);

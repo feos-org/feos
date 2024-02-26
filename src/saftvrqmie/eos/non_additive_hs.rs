@@ -1,36 +1,34 @@
 use crate::saftvrqmie::eos::hard_sphere::zeta;
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_core::StateHD;
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::PI;
 use std::fmt;
 use std::sync::Arc;
 
+use super::TemperatureDependentProperties;
+
 pub struct NonAddHardSphere {
     pub parameters: Arc<SaftVRQMieParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for NonAddHardSphere {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl NonAddHardSphere {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        properties: &TemperatureDependentProperties<D>,
+    ) -> D {
         let p = &self.parameters;
         let n = p.m.len();
-        // temperature dependent segment radius
-        let s_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
-            p.calc_sigma_eff_ij(i, j, state.temperature)
-        });
-
-        // temperature dependent segment radius
-        let d_hs_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
-            p.hs_diameter_ij(i, j, state.temperature, s_eff_ij[[i, j]])
-        });
+        let d_hs_ij = &properties.hs_diameter_ij;
 
         // Additive hard-sphere diameter
         let d_hs_add_ij =
             Array2::from_shape_fn((n, n), |(i, j)| (d_hs_ij[[i, i]] + d_hs_ij[[j, j]]) * 0.5);
 
         let n_s = Array1::from_shape_fn(n, |i| state.moles[i] * p.m[i]).sum();
-        n_s * reduced_non_additive_hs_energy(p, &d_hs_ij, &d_hs_add_ij, &state.partial_density)
+        n_s * reduced_non_additive_hs_energy(p, d_hs_ij, &d_hs_add_ij, &state.partial_density)
     }
 }
 
@@ -95,7 +93,8 @@ mod tests {
         let v = 1.0e26;
         let n = na * 1.1;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a_rust = hs.helmholtz_energy(&s);
+        let properties = TemperatureDependentProperties::new(&hs.parameters, s.temperature);
+        let a_rust = hs.helmholtz_energy(&s, &properties);
         dbg!(a_rust / na);
         assert_relative_eq!(a_rust / na, 0.0, epsilon = 1e-12);
     }
@@ -111,7 +110,8 @@ mod tests {
         let v = 1.0e26;
         let n = [na * 1.1, na * 1.0];
         let s = StateHD::new(t, v, arr1(&n));
-        let a_rust = hs.helmholtz_energy(&s);
+        let properties = TemperatureDependentProperties::new(&hs.parameters, s.temperature);
+        let a_rust = hs.helmholtz_energy(&s, &properties);
         dbg!(a_rust / na);
         assert_relative_eq!(a_rust / na, 1.7874359117834266E-002, epsilon = 5e-7);
     }

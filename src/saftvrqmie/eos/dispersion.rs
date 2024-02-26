@@ -1,10 +1,12 @@
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use feos_core::StateHD;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use std::f64::consts::FRAC_PI_6;
 use std::fmt;
 use std::sync::Arc;
+
+use super::TemperatureDependentProperties;
 
 const LAM_COEFF: [[f64; 4]; 4] = [
     [0.81096, 1.7888, -37.578, 92.284],
@@ -90,31 +92,28 @@ pub struct Dispersion {
     pub parameters: Arc<SaftVRQMieParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Dispersion {
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+impl Dispersion {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        properties: &TemperatureDependentProperties<D>,
+    ) -> D {
         // auxiliary variables
         let n = self.parameters.m.len();
         let p = &self.parameters;
         let rho = &state.partial_density;
-        // temperature dependent segment radius
-        let s_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
-            p.calc_sigma_eff_ij(i, j, state.temperature)
-        });
 
         // temperature dependent segment radius
-        let d_hs_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
-            p.hs_diameter_ij(i, j, state.temperature, s_eff_ij[[i, j]])
-        });
+        let s_eff_ij = &properties.sigma_eff_ij;
+
+        // temperature dependent segment radius
+        let d_hs_ij = &properties.hs_diameter_ij;
 
         // temperature dependent well depth
-        let epsilon_k_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
-            p.calc_epsilon_k_eff_ij(i, j, state.temperature)
-        });
+        let epsilon_k_eff_ij = &properties.epsilon_k_eff_ij;
 
         // temperature dependent well depth
-        let dq_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
-            p.quantum_d_ij(i, j, state.temperature)
-        });
+        let dq_ij = &properties.quantum_d_ij;
 
         // segment fractions
         let mut x_s = Array1::from_shape_fn(n, |i| -> D { state.molefracs[i] * p.m[i] });
@@ -128,17 +127,17 @@ impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for Dispersion {
             rho_s += rho[i] * p.m[i];
         }
         // packing fractions
-        let zeta = zeta_saft_vrq_mie(&p.m, &x_s, &d_hs_ij, rho_s);
-        let zeta_bar = zeta_saft_vrq_mie(&p.m, &x_s, &s_eff_ij, rho_s);
+        let zeta = zeta_saft_vrq_mie(&p.m, &x_s, d_hs_ij, rho_s);
+        let zeta_bar = zeta_saft_vrq_mie(&p.m, &x_s, s_eff_ij, rho_s);
 
         // alphas ....
-        let alpha = Alpha::new(p, &s_eff_ij, &epsilon_k_eff_ij, state.temperature);
+        let alpha = Alpha::new(p, s_eff_ij, epsilon_k_eff_ij, state.temperature);
 
-        let a1 = first_order_perturbation(p, &x_s, zeta, rho_s, &d_hs_ij, &s_eff_ij, &dq_ij);
+        let a1 = first_order_perturbation(p, &x_s, zeta, rho_s, d_hs_ij, s_eff_ij, dq_ij);
         let a2 = second_order_perturbation(
-            p, &alpha, &x_s, zeta, zeta_bar, rho_s, &d_hs_ij, &s_eff_ij, &dq_ij,
+            p, &alpha, &x_s, zeta, zeta_bar, rho_s, d_hs_ij, s_eff_ij, dq_ij,
         );
-        let a3 = third_order_perturbation(p, &alpha, &x_s, zeta_bar, &epsilon_k_eff_ij);
+        let a3 = third_order_perturbation(p, &alpha, &x_s, zeta_bar, epsilon_k_eff_ij);
 
         let mut n_s = D::zero();
         for i in 0..n {
@@ -838,14 +837,17 @@ mod tests {
             let t = 26.7060 * (it + 1) as f64;
             let v = 1.0e26;
             let state = StateHD::new(t, v, arr1(&[na]));
-            let a_disp = disp.helmholtz_energy(&state) / na;
+            let properties =
+                TemperatureDependentProperties::new(&disp.parameters, state.temperature);
+            let a_disp = disp.helmholtz_energy(&state, &properties) / na;
             assert_relative_eq!(a_disp, a, epsilon = 1e-7);
         }
         let t = 26.7060;
         let v = 1.0e26 * 2.0;
         let n = na * 2.0;
         let state = StateHD::new(t, v, arr1(&[n]));
-        let a_disp = disp.helmholtz_energy(&state) / na;
+        let properties = TemperatureDependentProperties::new(&disp.parameters, state.temperature);
+        let a_disp = disp.helmholtz_energy(&state, &properties) / na;
         assert_relative_eq!(a_disp, a_ref[0] * 2.0, epsilon = 1e-7);
     }
 
@@ -879,7 +881,9 @@ mod tests {
         for (it, &a) in a_ref.iter().enumerate() {
             let t = 30.0 * (it + 1) as f64;
             let state = StateHD::new(t, v, arr1(&n));
-            let a_disp = disp.helmholtz_energy(&state) / na;
+            let properties =
+                TemperatureDependentProperties::new(&disp.parameters, state.temperature);
+            let a_disp = disp.helmholtz_energy(&state, &properties) / na;
             dbg!(it);
             assert_relative_eq!(a_disp, a, epsilon = 5e-7);
         }
@@ -887,7 +891,8 @@ mod tests {
         let v = 1.0e26 * 2.0;
         let n = [2.2 * na, 2.0 * na];
         let state = StateHD::new(t, v, arr1(&n));
-        let a_disp = disp.helmholtz_energy(&state) / na;
+        let properties = TemperatureDependentProperties::new(&disp.parameters, state.temperature);
+        let a_disp = disp.helmholtz_energy(&state, &properties) / na;
         assert_relative_eq!(a_disp, a_ref[0] * 2.0, epsilon = 5e-7);
     }
 
@@ -909,7 +914,9 @@ mod tests {
         for (it, &a) in a_ref.iter().enumerate() {
             let t = 30.0 * (it + 1) as f64;
             let state = StateHD::new(t, v, arr1(&n));
-            let a_disp = disp.helmholtz_energy(&state) / na;
+            let properties =
+                TemperatureDependentProperties::new(&disp.parameters, state.temperature);
+            let a_disp = disp.helmholtz_energy(&state, &properties) / na;
             dbg!(it);
             assert_relative_eq!(a_disp, a, epsilon = 5e-7);
         }
@@ -917,7 +924,8 @@ mod tests {
         let v = 1.0e26 * 2.0;
         let n = [2.2 * na, 2.0 * na];
         let state = StateHD::new(t, v, arr1(&n));
-        let a_disp = disp.helmholtz_energy(&state) / na;
+        let properties = TemperatureDependentProperties::new(&disp.parameters, state.temperature);
+        let a_disp = disp.helmholtz_energy(&state, &properties) / na;
         assert_relative_eq!(a_disp, a_ref[0] * 2.0, epsilon = 5e-7);
     }
 

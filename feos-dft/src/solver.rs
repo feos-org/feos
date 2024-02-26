@@ -1,4 +1,7 @@
-use crate::{DFTProfile, HelmholtzEnergyFunctional, WeightFunction, WeightFunctionShape};
+use crate::{
+    DFTProfile, FunctionalContribution, HelmholtzEnergyFunctional, WeightFunction,
+    WeightFunctionShape,
+};
 use feos_core::si::{Time, SECOND};
 use feos_core::{log_iter, log_result, EosError, EosResult, Verbosity};
 use nalgebra::{DMatrix, DVector};
@@ -559,8 +562,8 @@ where
         let temperature = self.temperature.to_reduced();
         let contributions = self.dft.contributions();
         let weighted_densities = self.convolver.weighted_densities(density);
-        let mut second_partial_derivatives = Vec::with_capacity(contributions.len());
-        for (c, wd) in contributions.iter().zip(&weighted_densities) {
+        let mut second_partial_derivatives = Vec::new();
+        for (c, wd) in contributions.zip(&weighted_densities) {
             let nwd = wd.shape()[0];
             let ngrid = wd.len() / nwd;
             let mut phi = Array::zeros(density.raw_dim().remove_axis(Axis(0)));

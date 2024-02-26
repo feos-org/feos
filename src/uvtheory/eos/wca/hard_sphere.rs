@@ -1,5 +1,5 @@
-use crate::uvtheory::parameters::UVParameters;
-use feos_core::{HelmholtzEnergyDual, StateHD};
+use crate::uvtheory::parameters::UVTheoryParameters;
+use feos_core::StateHD;
 use ndarray::prelude::*;
 use num_dual::DualNum;
 use std::f64::consts::PI;
@@ -48,14 +48,15 @@ pub(super) const WCA_CONSTANTS_ETA_B_UVB3: [[f64; 2]; 3] = [
     [-13.47050687, 56.65701375],
     [12.90119266, -42.71680606],
 ];
+
 #[derive(Debug, Clone)]
-pub struct HardSphereWCA {
-    pub parameters: Arc<UVParameters>,
+pub(super) struct HardSphere {
+    pub parameters: Arc<UVTheoryParameters>,
 }
 
-impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for HardSphereWCA {
+impl HardSphere {
     /// Helmholtz energy for hard spheres, eq. 19 (check Volume)
-    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let d = diameter_wca(&self.parameters, state.temperature);
         let zeta = zeta(&state.partial_density, &d);
         let frac_1mz3 = -(zeta[3] - 1.0).recip();
@@ -67,7 +68,7 @@ impl<D: DualNum<f64> + Copy> HelmholtzEnergyDual<D> for HardSphereWCA {
     }
 }
 
-impl fmt::Display for HardSphereWCA {
+impl fmt::Display for HardSphere {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Hard Sphere")
     }
@@ -75,7 +76,7 @@ impl fmt::Display for HardSphereWCA {
 
 /// Dimensionless Hard-sphere diameter according to Weeks-Chandler-Andersen division.
 pub(super) fn diameter_wca<D: DualNum<f64> + Copy>(
-    parameters: &UVParameters,
+    parameters: &UVTheoryParameters,
     temperature: D,
 ) -> Array1<D> {
     parameters
@@ -161,7 +162,7 @@ pub(super) fn zeta_23<D: DualNum<f64> + Copy>(molefracs: &Array1<D>, diameter: &
 
 #[inline]
 pub(super) fn dimensionless_length_scale<D: DualNum<f64> + Copy>(
-    parameters: &UVParameters,
+    parameters: &UVTheoryParameters,
     temperature: D,
 ) -> Array1<D> {
     parameters
@@ -180,7 +181,7 @@ pub(super) fn dimensionless_length_scale<D: DualNum<f64> + Copy>(
 #[inline]
 
 pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
-    parameters: &UVParameters,
+    parameters: &UVTheoryParameters,
     eta: D,
     temperature: D,
 ) -> Array2<D> {
@@ -202,7 +203,7 @@ pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
 }
 
 pub(super) fn packing_fraction_b_uvb3<D: DualNum<f64> + Copy>(
-    parameters: &UVParameters,
+    parameters: &UVTheoryParameters,
     eta: D,
     temperature: D,
 ) -> Array2<D> {
@@ -224,7 +225,7 @@ pub(super) fn packing_fraction_b_uvb3<D: DualNum<f64> + Copy>(
 }
 
 pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
-    parameters: &UVParameters,
+    parameters: &UVTheoryParameters,
     eta: D,
     temperature: D,
 ) -> Array2<D> {
@@ -253,7 +254,7 @@ pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
 }
 
 pub(super) fn packing_fraction_a_uvb3<D: DualNum<f64> + Copy>(
-    parameters: &UVParameters,
+    parameters: &UVTheoryParameters,
     eta: D,
     temperature: D,
 ) -> Array2<D> {
@@ -336,7 +337,7 @@ mod test {
             arr1(&[1.0, 0.5]),
         );
 
-        let pt = HardSphereWCA {
+        let pt = HardSphere {
             parameters: Arc::new(p),
         };
         let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());

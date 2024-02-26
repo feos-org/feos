@@ -2,9 +2,7 @@ use super::parameter::GcPcSaftFunctionalParameters;
 use crate::gc_pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
 use crate::hard_sphere::HardSphereProperties;
 use feos_core::EosError;
-use feos_dft::{
-    FunctionalContributionDual, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
-};
+use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_6, PI};
@@ -24,10 +22,11 @@ impl AttractiveFunctional {
     }
 }
 
-impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N>
-    for AttractiveFunctional
-{
-    fn weight_functions(&self, temperature: N) -> WeightFunctionInfo<N> {
+impl FunctionalContribution for AttractiveFunctional {
+    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
 
         let d = p.hs_diameter(temperature);
@@ -37,7 +36,7 @@ impl<N: DualNum<f64> + Copy + ScalarOperand> FunctionalContributionDual<N>
         )
     }
 
-    fn calculate_helmholtz_energy_density(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
         density: ArrayView2<N>,
