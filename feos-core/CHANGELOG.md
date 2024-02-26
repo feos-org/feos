@@ -10,12 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `to_dict` method for `PyStateVec`. [#224](https://github.com/feos-org/feos/pull/224)
 
 ### Changed
-- Interface for Helmholtz energy calculation in `Residual` and `IdealGas` which removes the need for the `HelmholtzEnergy` and `HelmholtzEnergyDual` traits and trait objects.[226](https://github.com/feos-org/feos/pull/226)
-- Adjusted Python macros to account for the removal of trait objects.[226](https://github.com/feos-org/feos/pull/226)
-- Changed deprecated `remove` method of `IndexMap` to `shift_remove`.[226](https://github.com/feos-org/feos/pull/226)
+- Changed the interface for Helmholtz energy calculation in `Residual` and `IdealGas` which removes the need for the `HelmholtzEnergy` and `HelmholtzEnergyDual` traits and trait objects. [#226](https://github.com/feos-org/feos/pull/226)
+- Adjusted Python macros to account for the removal of trait objects. [#226](https://github.com/feos-org/feos/pull/226)
+- Changed deprecated `remove` method of `IndexMap` to `shift_remove`. [#226](https://github.com/feos-org/feos/pull/226)
 
 ### Removed
-- `HelmholtzEnergyDual`, `HelmholzEnergy`, `DeBroglieWavelengthDual` and `DeBroglieWavelength` traits.
+- Removed `HelmholtzEnergyDual`, `HelmholzEnergy`, `DeBroglieWavelengthDual` and `DeBroglieWavelength` traits. [#226](https://github.com/feos-org/feos/pull/226)
 
 ### Fixed
 - Added comparison for pressures of both phases in `PyPhaseDiagram.to_dict` to make the method work with `spinodal` constructor. [#224](https://github.com/feos-org/feos/pull/224)
