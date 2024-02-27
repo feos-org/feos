@@ -392,7 +392,6 @@ impl<E: Residual> State<E> {
         }
 
         // Check if new state can be created using density iteration
-        println!("{:?} {:?} {:?}", pressure, temperature, n_i);
         if let (Some(p), Some(t), Some(n_i)) = (pressure, temperature, &n_i) {
             return Ok(Ok(State::new_npt(eos, t, p, n_i, density_initialization)?));
         }
