@@ -383,7 +383,7 @@ impl<E: Residual> State<E> {
         if let (None, None) = (volume, n) {
             n = Some(Moles::from_reduced(1.0))
         }
-        let n_i = n.map(|n| &x_u * n);
+        let n_i = n.map(|n| &x_u * n / x_u.sum());
         let v = volume.or_else(|| rho.and_then(|d| n.map(|n| n / d)));
 
         // check if new state can be created using default constructor
@@ -392,6 +392,7 @@ impl<E: Residual> State<E> {
         }
 
         // Check if new state can be created using density iteration
+        println!("{:?} {:?} {:?}", pressure, temperature, n_i);
         if let (Some(p), Some(t), Some(n_i)) = (pressure, temperature, &n_i) {
             return Ok(Ok(State::new_npt(eos, t, p, n_i, density_initialization)?));
         }
