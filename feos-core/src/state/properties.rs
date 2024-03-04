@@ -252,21 +252,29 @@ impl<E: Residual + IdealGas> State<E> {
     }
 
     /// Chemical potential $\mu_i$ evaluated for each contribution of the equation of state.
-    pub fn chemical_potential_contributions(&self, component: usize) -> Vec<(String, MolarEnergy)> {
+    pub fn chemical_potential_contributions(
+        &self,
+        component: usize,
+        contributions: Contributions,
+    ) -> Vec<(String, MolarEnergy)> {
         let new_state = self.derive1(DN(component));
-        let contributions = self.eos.residual_helmholtz_energy_contributions(&new_state);
-        let mut res = Vec::with_capacity(contributions.len() + 1);
-        res.push((
-            self.eos.ideal_gas_model(),
-            MolarEnergy::from_reduced(
-                (self.eos.ideal_gas_helmholtz_energy(&new_state) * new_state.temperature).eps,
-            ),
-        ));
-        for (s, v) in contributions {
+        let mut res = Vec::new();
+        if let Contributions::IdealGas | Contributions::Total = contributions {
             res.push((
-                s,
-                MolarEnergy::from_reduced((v * new_state.temperature).eps),
+                self.eos.ideal_gas_model(),
+                MolarEnergy::from_reduced(
+                    (self.eos.ideal_gas_helmholtz_energy(&new_state) * new_state.temperature).eps,
+                ),
             ));
+        }
+        if let Contributions::Residual | Contributions::Total = contributions {
+            let contributions = self.eos.residual_helmholtz_energy_contributions(&new_state);
+            for (s, v) in contributions {
+                res.push((
+                    s,
+                    MolarEnergy::from_reduced((v * new_state.temperature).eps),
+                ));
+            }
         }
         res
     }
