@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed the interface for Helmholtz energy calculation in `Residual` and `IdealGas` which removes the need for the `HelmholtzEnergy` and `HelmholtzEnergyDual` traits and trait objects. [#226](https://github.com/feos-org/feos/pull/226)
 - Adjusted Python macros to account for the removal of trait objects. [#226](https://github.com/feos-org/feos/pull/226)
 - Changed deprecated `remove` method of `IndexMap` to `shift_remove`. [#226](https://github.com/feos-org/feos/pull/226)
+- Added `contributions` argument to `State::chemical_potential_contributions` and fixed the corresponding Python function. [#228](https://github.com/feos-org/feos/pull/228)
 
 ### Removed
 - Removed `HelmholtzEnergyDual`, `HelmholzEnergy`, `DeBroglieWavelengthDual` and `DeBroglieWavelength` traits. [#226](https://github.com/feos-org/feos/pull/226)
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Added comparison for pressures of both phases in `PyPhaseDiagram.to_dict` to make the method work with `spinodal` constructor. [#224](https://github.com/feos-org/feos/pull/224)
 - Enforce the total moles when providing `State::new` with molefracs that do not add up to 1. [#227](https://github.com/feos-org/feos/pull/227)
+- 
 
 
 ## [0.6.1] 2024-01-11

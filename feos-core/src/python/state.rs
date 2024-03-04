@@ -496,20 +496,24 @@ macro_rules! impl_state {
                 PySIArray1::from(self.0.chemical_potential(contributions))
             }
 
-            /// Return residual chemical potential contributions.
+            /// Return chemical potential contributions.
             ///
             /// Parameters
             /// ----------
             /// component: int
             ///     the component for which the contributions
             ///     are calculated
+            /// contributions: Contributions, optional
+            ///     the contributions of the Helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
             /// List[Tuple[str, SINumber]]
-            fn residual_chemical_potential_contributions(&self, component: usize) -> Vec<(String, PySINumber)> {
+            #[pyo3(signature = (component, contributions=Contributions::Total), text_signature = "($self, component, contributions)")]
+            fn chemical_potential_contributions(&self, component: usize, contributions: Contributions) -> Vec<(String, PySINumber)> {
                 self.0
-                    .chemical_potential_contributions(component)
+                    .chemical_potential_contributions(component, contributions)
                     .into_iter()
                     .map(|(s, q)| (s, PySINumber::from(q)))
                     .collect()
