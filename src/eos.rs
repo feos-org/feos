@@ -2,6 +2,8 @@
 use crate::gc_pcsaft::GcPcSaft;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::PcSaft;
+#[cfg(feature = "epcsaft")]
+use crate::epcsaft::ElectrolytePcSaft;
 #[cfg(feature = "pets")]
 use crate::pets::Pets;
 #[cfg(feature = "saftvrmie")]
@@ -29,6 +31,9 @@ pub enum ResidualModel {
     #[cfg(feature = "pcsaft")]
     #[implement(entropy_scaling)]
     PcSaft(PcSaft),
+    #[cfg(feature = "epcsaft")]
+    #[implement(entropy_scaling)]
+    ElectrolytePcSaft(ElectrolytePcSaft),
     #[cfg(feature = "gc_pcsaft")]
     GcPcSaft(GcPcSaft),
     PengRobinson(PengRobinson),
