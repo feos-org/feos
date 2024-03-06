@@ -966,7 +966,9 @@ pub mod utils {
                     "sigma": 3.000683,
                     "epsilon_k": 366.5121,
                     "kappa_ab": 0.034867983,
-                    "epsilon_k_ab": 2500.6706
+                    "epsilon_k_ab": 2500.6706,
+                    "na": 1.0,
+                    "nb": 1.0
                 },
                 "molarweight": 18.0152
             }"#;
