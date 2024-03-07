@@ -4,6 +4,8 @@ use crate::gc_pcsaft::GcPcSaft;
 use crate::pcsaft::PcSaft;
 #[cfg(feature = "pets")]
 use crate::pets::Pets;
+#[cfg(feature = "saftvrmie")]
+use crate::saftvrmie::SaftVRMie;
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::SaftVRQMie;
 #[cfg(feature = "uvtheory")]
@@ -35,6 +37,8 @@ pub enum ResidualModel {
     #[cfg(feature = "saftvrqmie")]
     #[implement(entropy_scaling)]
     SaftVRQMie(SaftVRQMie),
+    #[cfg(feature = "saftvrmie")]
+    SaftVRMie(SaftVRMie),
     #[cfg(feature = "pets")]
     Pets(Pets),
     #[cfg(feature = "uvtheory")]

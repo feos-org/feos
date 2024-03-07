@@ -119,6 +119,38 @@ impl<P> HardSphere<P> {
 }
 
 impl<P: HardSphereProperties> HardSphere<P> {
+    pub fn helmholtz_energy_and_properties<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+    ) -> (D, [D; 4], Array1<D>) {
+        let p = &self.parameters;
+        let temperature = state.temperature;
+
+        // diameter
+        let diameter = p.hs_diameter(temperature);
+
+        // zeta
+        let component_index = p.component_index();
+        let geometry_coefficients = p.geometry_coefficients(temperature);
+        let mut zeta = [D::zero(); 4];
+        for i in 0..diameter.len() {
+            for (z, &k) in zeta.iter_mut().zip([0, 1, 2, 3].iter()) {
+                *z += state.partial_density[component_index[i]]
+                    * diameter[i].powi(k)
+                    * (geometry_coefficients[k as usize][i] * FRAC_PI_6);
+            }
+        }
+
+        let frac_1mz3 = -(zeta[3] - 1.0).recip();
+        // todo: cover case of density = 0.
+        let zeta_23 = zeta[2] / zeta[3];
+        let a = state.volume / std::f64::consts::FRAC_PI_6
+            * (zeta[1] * zeta[2] * frac_1mz3 * 3.0
+                + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
+                + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (zeta[3] * (-1.0)).ln_1p());
+        (a, zeta, diameter)
+    }
+
     #[inline]
     pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let p = &self.parameters;

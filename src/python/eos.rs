@@ -18,6 +18,10 @@ use crate::pcsaft::{DQVariants, PcSaft, PcSaftOptions};
 use crate::pets::python::PyPetsParameters;
 #[cfg(feature = "pets")]
 use crate::pets::{Pets, PetsOptions};
+#[cfg(feature = "saftvrmie")]
+use crate::saftvrmie::python::PySaftVRMieParameters;
+#[cfg(feature = "saftvrmie")]
+use crate::saftvrmie::{SaftVRMie, SaftVRMieOptions};
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::python::PySaftVRQMieParameters;
 #[cfg(feature = "saftvrqmie")]
@@ -93,6 +97,31 @@ impl PyEquationOfState {
             dq_variant,
         };
         let residual = Arc::new(ResidualModel::PcSaft(PcSaft::with_options(
+            parameters.0,
+            options,
+        )));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
+    }
+
+    #[cfg(feature = "saftvrmie")]
+    #[staticmethod]
+    #[pyo3(
+        signature = (parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10),
+        text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10)"
+    )]
+    pub fn saftvrmie(
+        parameters: PySaftVRMieParameters,
+        max_eta: f64,
+        max_iter_cross_assoc: usize,
+        tol_cross_assoc: f64,
+    ) -> Self {
+        let options = SaftVRMieOptions {
+            max_eta,
+            max_iter_cross_assoc,
+            tol_cross_assoc,
+        };
+        let residual = Arc::new(ResidualModel::SaftVRMie(SaftVRMie::with_options(
             parameters.0,
             options,
         )));
