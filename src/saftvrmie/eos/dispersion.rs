@@ -14,15 +14,15 @@ pub struct Properties<D> {
     /// Temperature dependent diameter
     diameter: Array1<D>,
     /// total number density of segments
-    segment_density: D,
+    pub segment_density: D,
     /// mole fraction of segments
-    segment_molefracs: Array1<D>,
+    pub segment_molefracs: Array1<D>,
     /// mean segment number
     mean_segment_number: D,
     /// mixture packing fraction using d(T)
     zeta_x: D,
     /// mixture packing fraction using sigma
-    zeta_x_bar: D,
+    pub zeta_x_bar: D,
     /// k-values for HS pair correlation fn
     k0: [D; 4],
 }

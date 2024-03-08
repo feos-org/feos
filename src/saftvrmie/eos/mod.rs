@@ -1,6 +1,6 @@
 use crate::hard_sphere::HardSphere;
 
-use self::dispersion::{a_disp_chain, Properties};
+use self::dispersion::{a_disp, a_disp_chain, Properties};
 
 use super::SaftVRMieParameters;
 use association::Association;
@@ -38,6 +38,7 @@ pub struct SaftVRMie {
     parameters: Arc<SaftVRMieParameters>,
     options: SaftVRMieOptions,
     hard_sphere: HardSphere<SaftVRMieParameters>,
+    chain: bool,
     association: Option<Association<SaftVRMieParameters>>,
 }
 
@@ -61,6 +62,7 @@ impl SaftVRMie {
             parameters: parameters.clone(),
             options,
             hard_sphere: HardSphere::new(&parameters),
+            chain: parameters.m.iter().any(|&m| m > 1.0),
             association,
         }
     }
@@ -92,33 +94,31 @@ impl Residual for SaftVRMie {
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
         let mut a = Vec::with_capacity(5);
-        let chain = true;
 
         let (a_hs, _, diameter) = self.hard_sphere.helmholtz_energy_and_properties(state);
         a.push(("hard sphere".to_string(), a_hs));
 
         let properties = Properties::new(&self.parameters, state, &diameter);
-        let a_disp_chain = a_disp_chain(&self.parameters, &properties, state);
-        a.push(("disp_chain".to_string(), a_disp_chain));
+        if self.chain {
+            let a_disp_chain = a_disp_chain(&self.parameters, &properties, state);
+            a.push(("dispersion + chain".to_string(), a_disp_chain));
+        } else {
+            let a_disp = a_disp(&self.parameters, &properties, state);
+            a.push(("dispersion".to_string(), a_disp));
+        }
 
         if let Some(assoc) = self.association.as_ref() {
-            let x = &state.molefracs;
-            let xs = x * &self.parameters.m / (x * &self.parameters.m).sum();
-            let segment_density = state.partial_density.sum() * (x * &self.parameters.m).sum();
-            let mut sigma_3x = D::zero();
-            for i in 0..x.len() {
-                sigma_3x += xs[i] * xs[i] * self.parameters.sigma_ij[[i, i]].powi(3);
-                for j in i + 1..x.len() {
-                    sigma_3x += xs[i] * xs[j] * self.parameters.sigma_ij[[i, j]].powi(3) * 2.0;
-                }
-            }
             let reduced_temperature = self
                 .parameters
                 .epsilon_k_ij
                 .mapv(|eps| state.temperature / eps);
             a.push((
                 "association".to_string(),
-                assoc.helmholtz_energy(state, segment_density * sigma_3x, &reduced_temperature),
+                assoc.helmholtz_energy(
+                    state,
+                    properties.segment_density * properties.zeta_x_bar,
+                    &reduced_temperature,
+                ),
             ));
         }
         a
@@ -128,10 +128,7 @@ impl Residual for SaftVRMie {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::saftvrmie::{
-        eos::properties::MonomerProperties, ethane, methane, methane_ethane, methanol,
-        methanol_propanol,
-    };
+    use crate::saftvrmie::{ethane, methane, methane_ethane, methanol, methanol_propanol};
     use approx::assert_relative_eq;
     use feos_core::{si::*, SolverOptions, State, StateBuilder};
     use ndarray::{arr1, Array1};
