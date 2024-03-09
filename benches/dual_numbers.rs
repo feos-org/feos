@@ -4,14 +4,18 @@
 //! on the dual number type used without the overhead of the `State`
 //! creation.
 use criterion::{criterion_group, criterion_main, Criterion};
+use feos::hard_sphere::HardSphereProperties;
+#[cfg(feature = "pcsaft")]
 use feos::pcsaft::{PcSaft, PcSaftParameters};
+#[cfg(feature = "saftvrmie")]
+use feos::saftvrmie::{SaftVRMie, SaftVRMieParameters};
 use feos_core::si::*;
 use feos_core::{
     parameter::{IdentifierOption, Parameter},
     Derivative, Residual, State, StateHD,
 };
 use ndarray::{arr1, Array, ScalarOperand};
-use num_dual::DualNum;
+use num_dual::{Dual2_64, Dual3_64, Dual64, DualNum, HyperDual64};
 use std::sync::Arc;
 use typenum::P3;
 
@@ -19,6 +23,7 @@ use typenum::P3;
 /// - temperature is 80% of critical temperature,
 /// - volume is critical volume,
 /// - molefracs (or moles) for equimolar mixture.
+#[cfg(feature = "pcsaft")]
 fn state_pcsaft(parameters: PcSaftParameters) -> State<PcSaft> {
     let n = parameters.pure_records.len();
     let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
@@ -28,9 +33,48 @@ fn state_pcsaft(parameters: PcSaftParameters) -> State<PcSaft> {
     State::new_nvt(&eos, temperature, cp.volume, &moles).unwrap()
 }
 
+#[cfg(feature = "saftvrmie")]
+fn state_saftvrmie(parameters: &Arc<SaftVRMieParameters>) -> State<SaftVRMie> {
+    use feos::saftvrmie::{SaftVRMie, SaftVRMieParameters};
+
+    let n = parameters.pure_records.len();
+    let eos = Arc::new(SaftVRMie::new(parameters.clone()));
+    let moles = Array::from_elem(n, 1.0 / n as f64) * 10.0 * MOL;
+    let cp = State::critical_point(&eos, Some(&moles), None, Default::default()).unwrap();
+    let temperature = 0.8 * cp.temperature;
+    State::new_nvt(&eos, temperature, cp.volume, &moles).unwrap()
+}
+
 /// Residual Helmholtz energy given an equation of state and a StateHD.
 fn a_res<D: DualNum<f64> + Copy + ScalarOperand, E: Residual>(inp: (&Arc<E>, &StateHD<D>)) -> D {
     inp.0.residual_helmholtz_energy(inp.1)
+}
+
+fn d_hs<D: DualNum<f64> + Copy, P: HardSphereProperties>(inp: (&P, D)) -> D {
+    inp.0.hs_diameter(inp.1)[0]
+}
+
+/// Benchmark for evaluation of the hard sphere diameter
+fn bench_diameter<P: HardSphereProperties>(
+    c: &mut Criterion,
+    group_name: &str,
+    temperature: f64,
+    parameters: &P,
+) {
+    let mut group = c.benchmark_group(group_name);
+    group.bench_function("d_f64", |b| b.iter(|| d_hs((parameters, temperature))));
+    group.bench_function("d_dual", |b| {
+        b.iter(|| d_hs((parameters, Dual64::from_re(temperature).derivative())))
+    });
+    group.bench_function("d_dual2", |b| {
+        b.iter(|| d_hs((parameters, Dual2_64::from_re(temperature).derivative())))
+    });
+    group.bench_function("d_hyperdual", |b| {
+        b.iter(|| d_hs((parameters, HyperDual64::from_re(temperature).derivative1())))
+    });
+    group.bench_function("d_dual3", |b| {
+        b.iter(|| d_hs((parameters, Dual3_64::from_re(temperature).derivative())))
+    });
 }
 
 /// Benchmark for evaluation of the Helmholtz energy for different dual number types.
@@ -59,6 +103,7 @@ fn bench_dual_numbers<E: Residual>(c: &mut Criterion, group_name: &str, state: S
 }
 
 /// Benchmark for the PC-SAFT equation of state
+#[cfg(feature = "pcsaft")]
 fn pcsaft(c: &mut Criterion) {
     // methane
     let parameters = PcSaftParameters::from_json(
@@ -99,8 +144,28 @@ fn pcsaft(c: &mut Criterion) {
     );
 }
 
+/// Benchmark for the SAFT VR Mie equation of state
+#[cfg(feature = "saftvrmie")]
+fn saftvrmie(c: &mut Criterion) {
+    use feos::saftvrmie::{ethane, methane};
+
+    let parameters = Arc::new(methane());
+    // bench_dual_numbers(
+    //     c,
+    //     "dual_numbers_saftvrmie_methane",
+    //     state_saftvrmie(&parameters),
+    // );
+    bench_diameter(
+        c,
+        "dual_numbers_diameter_saftvrmie_methane",
+        200.0,
+        parameters.as_ref(),
+    );
+}
+
 /// Benchmark for the PC-SAFT equation of state.
 /// Binary system of methane and co2 used to model biogas.
+#[cfg(feature = "pcsaft")]
 fn methane_co2_pcsaft(c: &mut Criterion) {
     let parameters = PcSaftParameters::from_multiple_json(
         &[
@@ -129,5 +194,8 @@ fn methane_co2_pcsaft(c: &mut Criterion) {
     bench_dual_numbers(c, "dual_numbers_pcsaft_methane_co2", state);
 }
 
+#[cfg(feature = "pcsaft")]
 criterion_group!(bench, pcsaft, methane_co2_pcsaft);
+#[cfg(feature = "saftvrmie")]
+criterion_group!(bench, saftvrmie);
 criterion_main!(bench);

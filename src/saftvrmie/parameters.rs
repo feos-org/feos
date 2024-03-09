@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use super::eos::association::{AssociationParameters, AssociationRecord, BinaryAssociationRecord};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::parameter::{Parameter, ParameterError, PureRecord};
+use feos_core::{
+    parameter::{Parameter, ParameterError, PureRecord},
+    EosResult,
+};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;
@@ -357,72 +360,6 @@ impl Parameter for SaftVRMieParameters {
 }
 
 impl SaftVRMieParameters {
-    /// Find the lower limit for integration of HS diameter
-    pub fn zero_integrand(&self, i: usize, j: usize, inverse_temperature: f64) -> f64 {
-        let lr = self.lr_ij[[i, j]];
-        let la = self.la_ij[[i, j]];
-        let s = self.sigma_ij[[i, j]];
-        let c_eps = self.c_ij[[i, j]] * self.epsilon_k_ij[[i, j]];
-        let s_lr = s.powf(lr);
-        let s_la = s.powf(la);
-
-        let mut r = s * 0.7;
-        let mut f = 0.0;
-        let ln_eps = f64::EPSILON.ln();
-        for _k in 1..20 {
-            let u_vec = mie_potential_derivatives(la, lr, c_eps, s_la, s_lr, r);
-            f = inverse_temperature * u_vec[0] + ln_eps;
-            if f.abs() < 1.0e-12 {
-                break;
-            }
-            let dfdr = inverse_temperature * u_vec[1];
-            let mut dr = -(f / dfdr);
-            if dr.abs() > 0.5 {
-                dr *= 0.5 / dr.abs();
-            }
-            r += dr;
-        }
-        if f.abs() > 1.0e-12 {
-            println!("zero_integrand calculation failed {}", f);
-        }
-        r
-    }
-
-    pub fn zero_integrand_d<D: DualNum<f64> + Copy>(
-        &self,
-        i: usize,
-        j: usize,
-        inverse_temperature: D,
-    ) -> D {
-        let lr = self.lr_ij[[i, j]];
-        let la = self.la_ij[[i, j]];
-        let s = self.sigma_ij[[i, j]];
-        let c_eps = self.c_ij[[i, j]] * self.epsilon_k_ij[[i, j]];
-        let s_lr = s.powf(lr);
-        let s_la = s.powf(la);
-
-        let mut r = D::one() * s * 0.7;
-        let mut f = D::zero();
-        let ln_eps = f64::EPSILON.ln();
-        for _k in 1..20 {
-            let u_vec = mie_potential_derivatives(la, lr, c_eps, s_la, s_lr, r);
-            f = inverse_temperature * u_vec[0] + ln_eps;
-            if f.re().abs() < 1.0e-12 {
-                break;
-            }
-            let dfdr = inverse_temperature * u_vec[1];
-            let mut dr = -(f / dfdr);
-            if dr.re().abs() > 0.5 {
-                dr *= 0.5 / dr.re().abs();
-            }
-            r += dr;
-        }
-        if f.re().abs() > 1.0e-12 {
-            println!("zero_integrand calculation failed {}", f.re().abs());
-        }
-        r
-    }
-
     #[inline]
     pub fn hs_diameter_ij<D: DualNum<f64> + Copy>(
         &self,
@@ -430,93 +367,70 @@ impl SaftVRMieParameters {
         j: usize,
         inverse_temperature: D,
     ) -> D {
-        // Find lower limit for integration
-        // Method of Aasen et al.
-        fn zero_integrand<D: DualNum<f64> + Copy>(
-            la: f64,
-            lr: f64,
-            s: f64,
-            c_eps: f64,
-            sa: f64,
-            sr: f64,
-            inverse_temperature: D,
-        ) -> D {
-            let mut r = D::one() * s * 0.7;
-            let mut f = D::zero();
-            let ln_eps = f64::EPSILON.ln();
-            for _k in 1..20 {
-                let u_vec = mie_potential_derivatives(la, lr, c_eps, sa, sr, r);
-                f = inverse_temperature * u_vec[0] + ln_eps;
-                if f.re().abs() < 1.0e-12 {
-                    break;
-                }
-                let dfdr = inverse_temperature * u_vec[1];
-                let mut dr = -(f / dfdr);
-                if dr.re().abs() > 0.5 {
-                    dr *= 0.5 / dr.re().abs();
-                }
-                r += dr;
-            }
-            if f.re().abs() > 1.0e-12 {
-                println!("zero_integrand calculation failed {}", f.re().abs());
-            }
-            r
-        }
-
         let lr = self.lr_ij[[i, j]];
         let la = self.la_ij[[i, j]];
-        let s = self.sigma_ij[[i, j]];
-        let c_eps = self.c_ij[[i, j]] * self.epsilon_k_ij[[i, j]];
-        let s_lr = s.powf(lr);
-        let s_la = s.powf(la);
+        let c_eps_t = inverse_temperature * self.c_ij[[i, j]] * self.epsilon_k_ij[[i, j]];
 
-        let r0 = zero_integrand(la, lr, s, c_eps, s_la, s_lr, inverse_temperature);
-        let width = (-r0 + s) * 0.5;
-        // let mut d_hs = r0;
-        // for &[x, w] in GLQ10.iter() {
-        //     let r = width * x + width + r0;
-        //     let u = mie_potential(la, lr, c_eps, s_la, s_lr, r);
-        //     let f_u = -(-u * inverse_temperature).exp_m1();
-        //     d_hs += width * f_u * w;
-        // }
-
-        let d_hs = GLQ10.iter().fold(r0, |acc, &[x, w]| {
+        // perform integration in reduced distances, then multiply sigma
+        // r0 is dimensionless
+        let r0 = lower_integratal_limit(la, lr, c_eps_t);
+        let width = (-r0 + 1.0) * 0.5;
+        GLQ10.iter().fold(r0, |d, &[x, w]| {
             let r = width * x + width + r0;
-            let u = mie_potential(la, lr, c_eps, s_la, s_lr, r);
-            let f_u = -(-u * inverse_temperature).exp_m1();
-            acc + width * f_u * w
-        });
-        d_hs
+            let u = beta_u_mie(r, la, lr, 1.0, c_eps_t);
+            let f_u = -(-u).exp_m1();
+            d + width * f_u * w
+        }) * self.sigma_ij[[i, j]]
     }
 }
 
-#[inline]
-pub fn mie_potential_derivatives<D: DualNum<f64> + Copy>(
-    la: f64,
-    lr: f64,
-    c_eps: f64,
-    sa: f64,
-    sr: f64,
-    r: D,
-) -> [D; 3] {
-    let u = (r.powf(lr).recip() * sr - r.powf(la).recip() * sa) * c_eps;
-    let u_r = (-r.powf(lr + 1.0).recip() * lr * sr + r.powf(la + 1.0).recip() * la * sa) * c_eps;
-    let u_rr = (r.powf(lr + 2.0).recip() * lr * (lr + 1.0) * sr
-        - r.powf(la + 2.0).recip() * la * (la + 1.0) * sa)
-        * c_eps;
-    [u, u_r, u_rr]
+// Find lower limit for integration of diameter
+// Method of Aasen et al.
+// Using starting value proposed in Clapeyron.jl (Andrés Riedemann)
+fn lower_integratal_limit<D: DualNum<f64> + Copy>(la: f64, lr: f64, c_eps_t: D) -> D {
+    // initial value from repulsive contribution
+    let k = (-c_eps_t.recip() * f64::EPSILON.ln()).ln();
+    let mut r = (-k / lr).exp();
+    // Halley's method
+    for _ in 1..5 {
+        let [u, u_du, du_d2u] = mie_potential_halley(r, la, lr, c_eps_t);
+        let dr = u_du / (-u_du / du_d2u * 0.5 + 1.0);
+        // if dr.re() < f64::EPSILON {
+        if u.re() < 0.0 {
+            return r;
+        }
+        r -= dr;
+    }
+    r // error instead?
 }
 
+// Calculate the fractions f / df and df / d2f used for Halley's method,
+// where f is the function to find the root of.
+// Here, f = -beta u_mie(r) - ln(EPS)
 #[inline]
-pub fn mie_potential<D: DualNum<f64> + Copy>(
-    la: f64,
-    lr: f64,
-    c_eps: f64,
-    sa: f64,
-    sr: f64,
-    r: D,
-) -> D {
-    (r.powf(lr).recip() * sr - r.powf(la).recip() * sa) * c_eps
+fn mie_potential_halley<D: DualNum<f64> + Copy>(r: D, la: f64, lr: f64, c_eps_t: D) -> [D; 3] {
+    let ri = r.recip();
+    let plr = ri.powf(lr);
+    let pla = ri.powf(la);
+    let u = plr - pla;
+    let dplr = plr * (-lr) * ri;
+    let dpla = pla * (-la) * ri;
+    let du_dr = dplr - dpla;
+    let d2u_dr2 = (dplr * (-lr - 1.0) - dpla * (-la - 1.0)) * ri;
+
+    // exp(-beta u) < EPS
+    // -beta u < ln(EPS)
+    let f = -c_eps_t * u - f64::EPSILON.ln();
+    let df = -c_eps_t * du_dr;
+    let d2f = -c_eps_t * d2u_dr2;
+    [f, f / df, df / d2f]
+}
+
+/// Dimensionless Mie potential (divided by kT)
+#[inline]
+fn beta_u_mie<D: DualNum<f64> + Copy>(r: D, la: f64, lr: f64, sigma: f64, c_eps_t: D) -> D {
+    let ri = r.recip() * sigma;
+    (ri.powf(lr) - ri.powf(la)) * c_eps_t
 }
 
 impl HardSphereProperties for SaftVRMieParameters {
@@ -525,9 +439,8 @@ impl HardSphereProperties for SaftVRMieParameters {
     }
 
     fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
-        Array1::from_shape_fn(self.m.len(), |i| -> D {
-            self.hs_diameter_ij(i, i, temperature.recip())
-        })
+        let t_inv = temperature.recip();
+        Array1::from_shape_fn(self.m.len(), |i| -> D { self.hs_diameter_ij(i, i, t_inv) })
     }
 }
 
@@ -545,6 +458,25 @@ pub(super) mod utils {
         let epsilon_k = 152.58;
         let sigma = 3.737;
         let lr = 12.504;
+        let la = 6.0;
+        let molarweight = 16.04;
+
+        let model_record = SaftVRMieRecord::new(
+            m, sigma, epsilon_k, lr, la, None, None, None, None, None, None, None, None,
+        );
+        SaftVRMieParameters::new_pure(PureRecord {
+            identifier: Identifier::default(),
+            molarweight,
+            model_record,
+        })
+        .unwrap()
+    }
+
+    pub fn methane2() -> SaftVRMieParameters {
+        let m = 1.0;
+        let epsilon_k = 152.58;
+        let sigma = 3.737;
+        let lr = 12.0;
         let la = 6.0;
         let molarweight = 16.04;
 
@@ -606,6 +538,47 @@ pub(super) mod utils {
         let lr = 12.4;
         let la = 6.0;
         let molarweight = 30.07;
+
+        let model_record = SaftVRMieRecord::new(
+            m, sigma, epsilon_k, lr, la, None, None, None, None, None, None, None, None,
+        );
+        let ethane = PureRecord {
+            identifier: Identifier {
+                name: Some("ethane".to_string()),
+                ..Default::default()
+            },
+            molarweight,
+            model_record,
+        };
+        SaftVRMieParameters::new_binary(vec![methane, ethane], None).unwrap()
+    }
+
+    pub fn mixture_thijs() -> SaftVRMieParameters {
+        let m = 1.0;
+        let epsilon_k = 1.0;
+        let sigma = 1.0;
+        let lr = 12.0;
+        let la = 6.0;
+        let molarweight = 1.0;
+
+        let model_record = SaftVRMieRecord::new(
+            m, sigma, epsilon_k, lr, la, None, None, None, None, None, None, None, None,
+        );
+        let methane = PureRecord {
+            identifier: Identifier {
+                name: Some("methane".to_string()),
+                ..Default::default()
+            },
+            molarweight,
+            model_record,
+        };
+
+        let m = 1.0;
+        let epsilon_k = 1.0;
+        let sigma = 1.5;
+        let lr = 12.0;
+        let la = 6.0;
+        let molarweight = 1.0;
 
         let model_record = SaftVRMieRecord::new(
             m, sigma, epsilon_k, lr, la, None, None, None, None, None, None, None, None,
@@ -737,9 +710,24 @@ pub(super) mod utils {
 #[cfg(test)]
 mod test {
     use approx::assert_relative_eq;
+    use num_dual::Dual2;
     use test::utils::ethane;
+    use utils::methane;
 
     use super::*;
+
+    #[test]
+    fn test_mie_potential() {
+        let la = 6.0;
+        let lr = 12.0;
+        let c_eps_t = Dual2::from_re(4.0);
+        let r = 0.9;
+        let rd = Dual2::from_re(r).derivative();
+        let u = beta_u_mie(rd, la, lr, 1.0, c_eps_t);
+        let [_, u_du, du_d2u] = mie_potential_halley(r, la, lr, 4.0);
+        assert_relative_eq!(u.re / u.v1, u_du);
+        assert_relative_eq!(u.v1 / u.v2, du_d2u);
+    }
 
     #[test]
     fn hs_diameter() {
@@ -753,5 +741,19 @@ mod test {
             max_relative = 1e-9,
             epsilon = 1e-9
         )
+    }
+
+    #[test]
+    fn test_zero_integrant() {
+        let la = 6.0;
+        let lr = 12.4;
+        let eps_k = 206.12;
+        let temperature = 50.0;
+        let c = lr / (lr - la) * (lr / la).powf(la / (lr - la));
+        let c_eps_t = c * eps_k / temperature;
+        dbg!(c_eps_t);
+        let r0 = lower_integratal_limit(la, lr, c_eps_t);
+        dbg!(&r0);
+        assert_relative_eq!(3.694019351651498, r0, max_relative = 1e-9, epsilon = 1e-9)
     }
 }

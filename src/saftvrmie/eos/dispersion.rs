@@ -147,7 +147,6 @@ pub fn a_disp<D: DualNum<f64> + Copy + ScalarOperand>(
             * (zeta_x_bar * (zeta_x_bar * f(5, alpha) + f(4, alpha))).exp()
             * eps_k.powi(3);
 
-        // chi is not Dual(D), since it is not needed in chain
         let xii = zeta_x_bar * f(0, alpha) + zx5 * f(1, alpha) + zx8 * f(2, alpha);
 
         // accumulate contributions
@@ -386,17 +385,52 @@ const C: [[f64; 4]; 4] = [
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::saftvrmie::{ethane, methane, methane_ethane};
+    use crate::saftvrmie::{ethane, methane, methane2, methane_ethane, mixture_thijs};
     use approx::assert_relative_eq;
-    use ndarray::Array1;
+    use feos_core::si::{ANGSTROM, MOL, NAV};
+    use ndarray::{arr1, Array1};
+    use typenum::P3;
 
     #[test]
     fn test_disp_only() {
-        let parameters = ethane();
-        let moles = 1.0;
-        let volume = 249.6620487495878;
-        let state = StateHD::new(200.0, volume, Array1::from_vec(vec![moles]));
+        let parameters = methane2();
+        let t_red = 0.8;
+        let rho_red = 0.75;
+        let temperature = t_red * parameters.epsilon_k[0];
+
+        let moles = (MOL / NAV).to_reduced();
+        let density = (rho_red / (parameters.sigma[0].powi(3) * ANGSTROM.powi::<P3>()) / MOL / NAV)
+            .convert_into(1.0 / ANGSTROM.powi::<P3>());
+
+        let state = StateHD::new(temperature, 1.0 / density, Array1::from_vec(vec![moles]));
         let diameters = parameters.hs_diameter(state.temperature);
+        dbg!(&diameters[0] / parameters.sigma[0]);
+        dbg!(&diameters[0]);
+        let diameters = arr1(&[parameters.sigma[0] * 0.97717907949781424]);
+        let properties = Properties::new(&parameters, &state, &diameters);
+        let a = a_disp(&parameters, &properties, &state);
+        // let mono_props = MonomerProperties::new(&parameters, &state, &diameters);
+        // let a_monomers = a_monomer_conributions(&parameters, &mono_props, &state);
+        assert_relative_eq!(a, 1.0, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn test_thijs_mixture() {
+        let parameters = mixture_thijs();
+        let t_red = 1.0;
+        let rho_red = 0.25;
+        let temperature = t_red * parameters.epsilon_k[0];
+
+        let moles = (MOL / NAV).to_reduced();
+        let density = (rho_red / (parameters.sigma[0].powi(3) * ANGSTROM.powi::<P3>()) / MOL / NAV)
+            .convert_into(1.0 / ANGSTROM.powi::<P3>());
+
+        let state = StateHD::new(
+            temperature,
+            1.0 / density,
+            Array1::from_vec(vec![0.4 * moles, 0.6 * moles]),
+        );
+        let diameters = arr1(&[0.97347218967036042, 1.4602082845055406]);
         let properties = Properties::new(&parameters, &state, &diameters);
         let a = a_disp(&parameters, &properties, &state);
         // let mono_props = MonomerProperties::new(&parameters, &state, &diameters);

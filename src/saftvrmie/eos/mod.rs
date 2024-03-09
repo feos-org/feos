@@ -9,7 +9,7 @@ use feos_core::{
     si::{MolarWeight, GRAM, MOL},
     Components, Residual, StateHD,
 };
-use ndarray::{Array1, ScalarOperand};
+use ndarray::{arr1, Array1, ScalarOperand};
 use num_dual::DualNum;
 use std::{f64::consts::FRAC_PI_6, sync::Arc};
 
