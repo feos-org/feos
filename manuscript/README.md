@@ -1,3 +1,3 @@
 # Accompanying publication
 
-The codebase is accompanied by this peer reviewed publication that was published open access in Industrial & Engineering Chemistry Research, copyright @ 2023 the authors, published by American Chemical Society. The publication is licensed under [CC-BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/). You can find the work on the publisher's website [here](https://doi.org/10.1021/acs.iecr.2c04561).
+The codebase is accompanied by this peer reviewed publication that was published open access in Industrial & Engineering Chemistry Research, copyright © 2023 the authors, published by American Chemical Society. The publication is licensed under [CC-BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/). You can find the work on the publisher's website [here](https://doi.org/10.1021/acs.iecr.2c04561).
