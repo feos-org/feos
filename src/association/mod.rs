@@ -44,12 +44,8 @@ impl AssociationSite {
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct AssociationRecord {
     /// Association volume parameter
-    #[serde(skip_serializing_if = "f64::is_zero")]
-    #[serde(default)]
     pub kappa_ab: f64,
     /// Association energy parameter in units of Kelvin
-    #[serde(skip_serializing_if = "f64::is_zero")]
-    #[serde(default)]
     pub epsilon_k_ab: f64,
     /// \# of association sites of type A
     #[serde(skip_serializing_if = "f64::is_zero")]
