@@ -1,3 +1,5 @@
+use crate::association::PyAssociationRecord;
+
 use super::parameters::{PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord};
 use super::DQVariants;
 use feos_core::parameter::{
@@ -36,6 +38,8 @@ use std::sync::Arc;
 ///     Number of association sites of type B.
 /// nc : float, optional
 ///     Number of association sites of type C.
+/// association_records : List[AssociationRecord], optional
+///     A list of association records, if the molecule has more than one association site.
 /// viscosity : List[float], optional
 ///     Entropy-scaling parameters for viscosity. Defaults to `None`.
 /// diffusion : List[float], optional
@@ -50,7 +54,7 @@ pub struct PyPcSaftRecord(PcSaftRecord);
 impl PyPcSaftRecord {
     #[new]
     #[pyo3(
-        text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
+        text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, association_records=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
     )]
     fn new(
         m: f64,
@@ -63,6 +67,7 @@ impl PyPcSaftRecord {
         na: Option<f64>,
         nb: Option<f64>,
         nc: Option<f64>,
+        association_records: Option<Vec<PyAssociationRecord>>,
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
@@ -78,6 +83,7 @@ impl PyPcSaftRecord {
             na,
             nb,
             nc,
+            association_records.map(|r| r.into_iter().map(|r| r.0).collect()),
             viscosity,
             diffusion,
             thermal_conductivity,
@@ -110,28 +116,13 @@ impl PyPcSaftRecord {
     }
 
     #[getter]
-    fn get_kappa_ab(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.kappa_ab)
-    }
-
-    #[getter]
-    fn get_epsilon_k_ab(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.epsilon_k_ab)
-    }
-
-    #[getter]
-    fn get_na(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.na)
-    }
-
-    #[getter]
-    fn get_nb(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.nb)
-    }
-
-    #[getter]
-    fn get_nc(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.nc)
+    fn get_association_records(&self) -> Vec<PyAssociationRecord> {
+        self.0
+            .association_records
+            .iter()
+            .copied()
+            .map(PyAssociationRecord)
+            .collect()
     }
 
     #[getter]
@@ -212,6 +203,7 @@ pub fn pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<IdentifierOption>()?;
     m.add_class::<PyChemicalRecord>()?;
     m.add_class::<PySmartsRecord>()?;
+    m.add_class::<PyAssociationRecord>()?;
 
     m.add_class::<DQVariants>()?;
     m.add_class::<PyPcSaftRecord>()?;
