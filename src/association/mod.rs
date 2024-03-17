@@ -125,10 +125,6 @@ impl AssociationRecords {
         }
         Self(association_records)
     }
-
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
 }
 
 impl Deref for AssociationRecords {
