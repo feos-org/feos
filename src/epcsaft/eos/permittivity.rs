@@ -172,7 +172,7 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
     }
 
     pub fn pure_from_experimental_data(data: &[(f64, f64)], temperature: D) -> Self {
-        let permittivity_pure = Self::interpolate(data.to_vec(), temperature).permittivity;
+        let permittivity_pure = Self::interpolate(data, temperature).permittivity;
         Self {
             permittivity: permittivity_pure,
         }
@@ -218,7 +218,7 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
         let permittivity = data
             .iter()
             .enumerate()
-            .map(|(i, d)| Self::interpolate(d.to_vec(), temperature).permittivity * molefracs[i])
+            .map(|(i, d)| Self::interpolate(d, temperature).permittivity * molefracs[i])
             .sum();
         Self { permittivity }
     }
@@ -261,43 +261,38 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
         Self { permittivity }
     }
 
-    pub fn interpolate(interpolation_points: Vec<(f64, f64)>, temperature: D) -> Self {
-        let t_interpol = Array1::from_iter(interpolation_points.iter().map(|t| (t.0)));
-        let eps_interpol = Array1::from_iter(interpolation_points.iter().map(|e| e.1));
-
-        // Initialize permittivity
-        let mut permittivity_pure = D::zero();
-
-        // Check if only 1 data point is given
-        if interpolation_points.len() == 1 {
-            permittivity_pure = D::one() * eps_interpol[0];
-        } else {
-            // Check which interval temperature is in
-            let temperature = temperature.re();
-            for i in 0..(t_interpol.len() - 1) {
-                // Temperature is within intervals
-                if temperature >= t_interpol[i] && temperature < t_interpol[i + 1] {
-                    // Interpolate
-                    permittivity_pure = D::one() * eps_interpol[i]
-                        + (temperature - t_interpol[i]) * (eps_interpol[i + 1] - eps_interpol[i])
-                            / (t_interpol[i + 1] - t_interpol[i]);
-                }
-            }
-            // Temperature is lower than lowest temperature
-            if temperature < t_interpol[0] {
-                // Extrapolate from eps_0 and eps_1
-                permittivity_pure = D::one() * eps_interpol[0]
-                    + (temperature - t_interpol[0]) * (eps_interpol[1] - eps_interpol[0])
-                        / (t_interpol[1] - t_interpol[0]);
-            // Temperature is higher than highest temperature
-            } else if temperature >= t_interpol[t_interpol.len() - 1] {
-                // extrapolate from last two epsilons
-                permittivity_pure = D::one() * eps_interpol[t_interpol.len() - 2]
-                    + (temperature - t_interpol[t_interpol.len() - 2])
-                        * (eps_interpol[t_interpol.len() - 1] - eps_interpol[t_interpol.len() - 2])
-                        / (t_interpol[t_interpol.len() - 1] - t_interpol[t_interpol.len() - 2]);
-            }
+    /// Structure: &[(temperature, epsilon)]
+    /// Assume ordered by temperature
+    /// and temperatures are all finite.
+    pub fn interpolate(interpolation_points: &[(f64, f64)], temperature: D) -> Self {
+        // find index where temperature could be inserted
+        let i = interpolation_points.binary_search_by(|&(ti, _)| {
+            ti.partial_cmp(&temperature.re())
+                .expect("Unexpected value for temperature in interpolation points.")
+        });
+        // if the result is OK we don't need to interpolate ...
+        if let Ok(i) = i {
+            return Self {
+                permittivity: D::one() * interpolation_points[i].1,
+            };
         }
+
+        // if not, we can unwrap safely:
+        let i = i.unwrap_err();
+        let n = interpolation_points.len();
+
+        // check cases:
+        // 0.   : below lowest temperature
+        // >= n : above highest temperature
+        // else : regular interpolation
+
+        let (l, u) = match i {
+            0 => (interpolation_points[0], interpolation_points[1]),
+            i if i >= n => (interpolation_points[n - 2], interpolation_points[n - 1]),
+            _ => (interpolation_points[i - 1], interpolation_points[i]),
+        };
+        let permittivity_pure = (temperature - l.0) / (u.0 - l.0) * (u.1 - l.1) + l.1;
+
         Self {
             permittivity: permittivity_pure,
         }

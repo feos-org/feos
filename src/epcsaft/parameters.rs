@@ -615,6 +615,12 @@ impl Parameter for ElectrolytePcSaftParameters {
                     {
                         let mut data = data.clone();
                         data.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+                        // check if all temperatures a.0 in data are finite, if not, make them finite by rounding to four digits
+                        data.iter_mut().for_each(|a| {
+                            if !a.0.is_finite() {
+                                a.0 = (a.0 * 1e4).round() / 1e4;
+                            }
+                        });
                         // save data again in record
                         permittivity_records[i] =
                             Some(PermittivityRecord::ExperimentalData { data });
