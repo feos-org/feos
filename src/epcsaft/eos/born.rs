@@ -1,7 +1,7 @@
 use crate::epcsaft::eos::permittivity::Permittivity;
-use ndarray::Array1;
 use crate::epcsaft::parameters::ElectrolytePcSaftParameters;
 use feos_core::StateHD;
+use ndarray::Array1;
 use num_dual::DualNum;
 use std::fmt;
 use std::sync::Arc;
@@ -13,7 +13,11 @@ pub struct Born {
 }
 
 impl Born {
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>, diameter: &Array1<D>) -> D {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        diameter: &Array1<D>,
+    ) -> D {
         // Parameters
         let p = &self.parameters;
 

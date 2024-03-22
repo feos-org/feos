@@ -20,7 +20,7 @@ impl ElectrolytePcSaftParameters {
 
         // relative permittivity of water (usually function of T,p,x)
         let epsilon_r = Permittivity::new(state, self, &epcsaft_variant).permittivity;
-        
+
         let epsreps0 = epsilon_r * epsilon_0;
 
         // unit charge
@@ -42,13 +42,17 @@ pub struct Ionic {
 }
 
 impl Ionic {
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>, diameter: &Array1<D>) -> D {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        diameter: &Array1<D>,
+    ) -> D {
         // Extract parameters
         let p = &self.parameters;
 
         // Calculate Bjerrum length
         let lambda_b = p.bjerrum_length(state, self.variant);
-        
+
         // Calculate inverse Debye length
         let mut sum_dens_z = D::zero();
         for i in 0..state.molefracs.len() {
@@ -67,7 +71,7 @@ impl Ionic {
                         + 1.5)
             })
             .collect();
-        
+
         let mut sum_x_z_chi = D::zero();
         for i in 0..state.molefracs.len() {
             sum_x_z_chi += chi[i] * state.molefracs[i] * p.z[i].powi(2);
