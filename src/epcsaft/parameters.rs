@@ -688,29 +688,6 @@ impl HardSphereProperties for ElectrolytePcSaftParameters {
         }
         d
     }
-
-    // fn sigma_t<D: DualNum<f64>>(&self, temperature: D) -> Array1<f64> {
-    //     let mut sigma_t: Array1<f64> = Array::from_shape_fn(self.sigma.len(), |i| self.sigma[i]);
-    //     for i in 0..self.sigma_t_comp.len() {
-    //         sigma_t[i] = (sigma_t[i] + (temperature.re() * -0.01775).exp() * 10.11
-    //             - (temperature.re() * -0.01146).exp() * 1.417)
-    //             .re()
-    //     }
-    //     sigma_t
-    // }
-
-    // fn sigma_ij_t<D: DualNum<f64>>(&self, temperature: D) -> Array2<f64> {
-    //     let diameter = self.sigma_t(temperature);
-    //     let n = diameter.len();
-
-    //     let mut sigma_ij_t = Array::zeros((n, n));
-    //     for i in 0..n {
-    //         for j in 0..n {
-    //             sigma_ij_t[[i, j]] = (diameter[i] + diameter[j]) * 0.5;
-    //         }
-    //     }
-    //     sigma_ij_t
-    // }
 }
 
 impl ElectrolytePcSaftParameters {

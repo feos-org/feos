@@ -1,7 +1,4 @@
 use crate::association::Association;
-// use crate::epcsaft::association::Association;
-// use crate::epcsaft::hard_sphere::HardSphere;
-// use crate::epcsaft::hard_sphere::HardSphereProperties;
 use crate::epcsaft::parameters::ElectrolytePcSaftParameters;
 use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::parameter::Parameter;
