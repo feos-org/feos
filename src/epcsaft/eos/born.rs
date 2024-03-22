@@ -30,6 +30,7 @@ impl Born {
             &self.parameters,
             &ElectrolytePcSaftVariants::Advanced,
         )
+        .unwrap()
         .permittivity;
 
         // Calculate sum xi zi^2 / di

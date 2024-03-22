@@ -362,7 +362,7 @@ pub struct ElectrolytePcSaftParameters {
     pub solvent_comp: Array1<usize>,
     pub viscosity: Option<Array2<f64>>,
     pub diffusion: Option<Array2<f64>>,
-    pub permittivity: Option<PermittivityRecord>,
+    pub permittivity: Array1<Option<PermittivityRecord>>,
     pub thermal_conductivity: Option<Array2<f64>>,
     pub pure_records: Vec<PureRecord<ElectrolytePcSaftRecord>>,
     pub binary_records: Option<Array2<ElectrolytePcSaftBinaryRecord>>,
@@ -503,7 +503,9 @@ impl Parameter for ElectrolytePcSaftParameters {
                 for j in 0..n {
                     let temp_kij = binary_records[[i, j]].k_ij.clone();
                     if temp_kij.len() > 4 {
-                        panic!("Binary interaction for component {} with {} is parametrized with more than 4 k_ij coefficients.", i, j);
+                        return Err(ParameterError::IncompatibleParameters(
+                            format!("Binary interaction for component {} with {} is parametrized with more than 4 k_ij coefficients.", i, j),
+                        ));
                     } else {
                         (0..temp_kij.len()).for_each(|k| {
                             k_ij[[i, j]][k] = temp_kij[k];
@@ -561,72 +563,64 @@ impl Parameter for ElectrolytePcSaftParameters {
             Some(v)
         };
 
-        // Permittivity
-        let permittivity_records: Array1<PermittivityRecord> = pure_records
+        // Permittivity records
+        let mut permittivity_records: Array1<Option<PermittivityRecord>> = pure_records
             .iter()
-            .filter(|&record| (record.model_record.permittivity_record.is_some()))
-            .map(|record| record.clone().model_record.permittivity_record.unwrap())
+            .map(|record| record.clone().model_record.permittivity_record)
             .collect();
 
-        if nionic != 0 && permittivity_records.len() < nsolvent {
-            panic!("Provide permittivity records for each solvent.")
+        // Check if permittivity_records contains maximum one record for each solvent
+        // Permittivity
+        if nionic != 0
+            && permittivity_records
+                .iter()
+                .enumerate()
+                .any(|(i, record)| record.is_none() && z[i] == 0.0)
+        {
+            return Err(ParameterError::IncompatibleParameters(
+                "Provide permittivity record for all solvent components.".to_string(),
+            ));
         }
 
-        let mut modeltype = -1;
-        let mut mu_scaling: Vec<f64> = vec![];
-        let mut alpha_scaling: Vec<f64> = vec![];
-        let mut ci_param: Vec<f64> = vec![];
-        let mut points: Vec<Vec<(f64, f64)>> = vec![];
+        let mut modeltypes: Vec<usize> = vec![];
 
         permittivity_records
             .iter()
-            .enumerate()
-            .for_each(|(i, record)| {
-                match record {
-                    PermittivityRecord::PerturbationTheory {
-                        dipole_scaling,
-                        polarizability_scaling,
-                        correlation_integral_parameter,
-                    } => {
-                        if modeltype == 2 {
-                            panic!("Inconsistent models for permittivity.")
-                        };
-                        modeltype = 1;
-                        mu_scaling.push(dipole_scaling[0]);
-                        alpha_scaling.push(polarizability_scaling[0]);
-                        ci_param.push(correlation_integral_parameter[0]);
-                    }
-                    PermittivityRecord::ExperimentalData { data } => {
-                        if modeltype == 1 {
-                            panic!("Inconsistent models for permittivity.")
-                        };
-                        modeltype = 2;
-                        points.push(data[0].clone());
-                        // Check if experimental data points are sorted
-                        let mut t_check = 0.0;
-                        for point in &data[0] {
-                            if point.0 < t_check {
-                                panic!("Permittivity points for component {} are unsorted.", i);
-                            }
-                            t_check = point.0;
-                        }
-                    }
+            .filter(|&record| (record.is_some()))
+            .for_each(|record| match record.as_ref().unwrap() {
+                PermittivityRecord::PerturbationTheory { .. } => {
+                    modeltypes.push(1);
+                }
+                PermittivityRecord::ExperimentalData { .. } => {
+                    modeltypes.push(2);
                 }
             });
 
-        let permittivity = match modeltype {
-            1 => Some(PermittivityRecord::PerturbationTheory {
-                dipole_scaling: mu_scaling,
-                polarizability_scaling: alpha_scaling,
-                correlation_integral_parameter: ci_param,
-            }),
-            2 => Some(PermittivityRecord::ExperimentalData { data: points }),
-            _ => None,
-        };
+        // check if modeltypes contains a mix of 1 and 2
+        if modeltypes.iter().any(|&x| x == 1) && modeltypes.iter().any(|&x| x == 2) {
+            return Err(ParameterError::IncompatibleParameters(
+                "Inconsistent models for permittivity.".to_string(),
+            ));
+        }
 
-        if nionic > 0 && permittivity.is_none() {
-            panic!("Permittivity of one or more solvents must be specified.")
-        };
+        if modeltypes[0] == 2 {
+            // order points in data by increasing temperature
+            let mut permittivity_records_clone = permittivity_records.clone();
+            permittivity_records_clone
+                .iter_mut()
+                .filter(|record| (record.is_some()))
+                .enumerate()
+                .for_each(|(i, record)| {
+                    if let PermittivityRecord::ExperimentalData { data } = record.as_mut().unwrap()
+                    {
+                        let mut data = data.clone();
+                        data.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+                        // save data again in record
+                        permittivity_records[i] =
+                            Some(PermittivityRecord::ExperimentalData { data });
+                    }
+                });
+        }
 
         Ok(Self {
             molarweight,
@@ -654,7 +648,7 @@ impl Parameter for ElectrolytePcSaftParameters {
             viscosity: viscosity_coefficients,
             diffusion: diffusion_coefficients,
             thermal_conductivity: thermal_conductivity_coefficients,
-            permittivity,
+            permittivity: permittivity_records,
             pure_records,
             binary_records,
         })
