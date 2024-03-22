@@ -15,7 +15,6 @@ use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
-
 // Pure-substance parameters for the ePC-SAFT equation of state.
 ///
 /// Parameters
@@ -41,7 +40,7 @@ use std::sync::Arc;
 /// nc : float, optional
 ///     Number of association sites of type C.
 /// z : float, optional
-///     Charge of the electrolyte. 
+///     Charge of the electrolyte.
 /// viscosity : List[float], optional
 ///     Entropy-scaling parameters for viscosity. Defaults to `None`.
 /// diffusion : List[float], optional
@@ -168,14 +167,8 @@ impl PyElectrolytePcSaftRecord {
 
 impl_json_handling!(PyElectrolytePcSaftRecord);
 
-impl_pure_record!(
-    ElectrolytePcSaftRecord,
-    PyElectrolytePcSaftRecord
-);
-impl_segment_record!(
-    ElectrolytePcSaftRecord,
-    PyElectrolytePcSaftRecord
-);
+impl_pure_record!(ElectrolytePcSaftRecord, PyElectrolytePcSaftRecord);
+impl_segment_record!(ElectrolytePcSaftRecord, PyElectrolytePcSaftRecord);
 
 #[pyclass(name = "ElectrolytePcSaftBinaryRecord")]
 #[derive(Clone)]
@@ -185,7 +178,11 @@ pub struct PyElectrolytePcSaftBinaryRecord(ElectrolytePcSaftBinaryRecord);
 impl PyElectrolytePcSaftBinaryRecord {
     #[new]
     fn new(k_ij: [f64; 4]) -> Self {
-        Self(ElectrolytePcSaftBinaryRecord::new(Some(k_ij.to_vec()), None, None))
+        Self(ElectrolytePcSaftBinaryRecord::new(
+            Some(k_ij.to_vec()),
+            None,
+            None,
+        ))
     }
 
     #[getter]
@@ -206,12 +203,16 @@ impl_binary_record!(
     PyElectrolytePcSaftBinaryRecord
 );
 
-
 #[pyclass(name = "ElectrolytePcSaftParameters")]
 #[derive(Clone)]
 pub struct PyElectrolytePcSaftParameters(pub Arc<ElectrolytePcSaftParameters>);
 
-impl_parameter!(ElectrolytePcSaftParameters, PyElectrolytePcSaftParameters, PyElectrolytePcSaftRecord, PyElectrolytePcSaftBinaryRecord);
+impl_parameter!(
+    ElectrolytePcSaftParameters,
+    PyElectrolytePcSaftParameters,
+    PyElectrolytePcSaftRecord,
+    PyElectrolytePcSaftBinaryRecord
+);
 
 #[pymethods]
 impl PyElectrolytePcSaftParameters {
@@ -227,24 +228,6 @@ pub struct PyPermittivityRecord(pub PermittivityRecord);
 
 #[pymethods]
 impl PyPermittivityRecord {
-    /// pure_from_experimental_data
-    ///
-    /// Parameters
-    /// ----------
-    /// interpolation_points : Vec<(f64, f64)>
-    ///
-    /// Returns
-    /// -------
-    /// PermittivityRecord
-    ///
-    #[staticmethod]
-    #[pyo3(text_signature = "(interpolation_points)")]
-    pub fn pure_from_experimental_data(interpolation_points: Vec<(f64, f64)>) -> Self {
-        Self(PermittivityRecord::ExperimentalData {
-            data: Vec::from([interpolation_points]),
-        })
-    }
-
     /// from_experimental_data
     ///
     /// Parameters
@@ -258,38 +241,9 @@ impl PyPermittivityRecord {
     #[staticmethod]
     #[allow(non_snake_case)]
     #[pyo3(text_signature = "(interpolation_points)")]
-    pub fn from_experimental_data(interpolation_points: Vec<Vec<(f64, f64)>>) -> Self {
+    pub fn from_experimental_data(interpolation_points: Vec<(f64, f64)>) -> Self {
         Self(PermittivityRecord::ExperimentalData {
             data: interpolation_points,
-        })
-    }
-
-    /// pure_from_perturbation_theory
-    ///
-    /// Parameters
-    /// ----------
-    /// dipole_scaling : f64,
-    /// polarizability_scaling: f64,
-    /// correlation_integral_parameter : f64,
-    ///
-    /// Returns
-    /// -------
-    /// PermittivityRecord
-    ///
-    #[staticmethod]
-    #[allow(non_snake_case)]
-    #[pyo3(
-        text_signature = "(dipole_scaling, polarizability_scaling, correlation_integral_parameter)"
-    )]
-    pub fn pure_from_perturbation_theory(
-        dipole_scaling: f64,
-        polarizability_scaling: f64,
-        correlation_integral_parameter: f64,
-    ) -> Self {
-        Self(PermittivityRecord::PerturbationTheory {
-            dipole_scaling: Vec::from([dipole_scaling]),
-            polarizability_scaling: Vec::from([polarizability_scaling]),
-            correlation_integral_parameter: Vec::from([correlation_integral_parameter]),
         })
     }
 
@@ -311,9 +265,9 @@ impl PyPermittivityRecord {
         text_signature = "(dipole_scaling, polarizability_scaling, correlation_integral_parameter)"
     )]
     pub fn from_perturbation_theory(
-        dipole_scaling: Vec<f64>,
-        polarizability_scaling: Vec<f64>,
-        correlation_integral_parameter: Vec<f64>,
+        dipole_scaling: f64,
+        polarizability_scaling: f64,
+        correlation_integral_parameter: f64,
     ) -> Self {
         Self(PermittivityRecord::PerturbationTheory {
             dipole_scaling,

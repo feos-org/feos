@@ -111,6 +111,15 @@ impl ElectrolytePcSaft {
             None
         };
 
+        match options.epcsaft_variant {
+            ElectrolytePcSaftVariants::Revised => {
+                if ionic.is_some() {
+                    panic!("Ionic contribution is not available in the revised ePC-SAFT variant.")
+                }
+            }
+            ElectrolytePcSaftVariants::Advanced => (),
+        }
+
         Self {
             parameters,
             options,

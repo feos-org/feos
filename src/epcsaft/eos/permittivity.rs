@@ -1,4 +1,5 @@
-use feos_core::StateHD;
+use feos_core::parameter::ParameterError;
+use feos_core::{EosError, StateHD};
 use ndarray::Array1;
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
@@ -11,12 +12,12 @@ use crate::epcsaft::parameters::ElectrolytePcSaftParameters;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum PermittivityRecord {
     ExperimentalData {
-        data: Vec<Vec<(f64, f64)>>,
+        data: Vec<(f64, f64)>,
     },
     PerturbationTheory {
-        dipole_scaling: Vec<f64>,
-        polarizability_scaling: Vec<f64>,
-        correlation_integral_parameter: Vec<f64>,
+        dipole_scaling: f64,
+        polarizability_scaling: f64,
+        correlation_integral_parameter: f64,
     },
 }
 
@@ -32,12 +33,12 @@ impl std::fmt::Display for PermittivityRecord {
                 polarizability_scaling,
                 correlation_integral_parameter,
             } => {
-                write!(f, "PermittivityRecord(dipole_scaling={}", dipole_scaling[0])?;
-                write!(f, ", polarizability_scaling={}", polarizability_scaling[0])?;
+                write!(f, "PermittivityRecord(dipole_scaling={}", dipole_scaling)?;
+                write!(f, ", polarizability_scaling={}", polarizability_scaling)?;
                 write!(
                     f,
                     ", correlation_integral_parameter={}",
-                    correlation_integral_parameter[0]
+                    correlation_integral_parameter
                 )?;
                 write!(f, ")")
             }
@@ -55,15 +56,13 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
         state: &StateHD<D>,
         parameters: &ElectrolytePcSaftParameters,
         epcsaft_variant: &ElectrolytePcSaftVariants,
-    ) -> Self {
-        let n = parameters.pure_records.len();
-
+    ) -> Result<Self, EosError> {
         // Set permittivity to an arbitrary value of 1 if system contains no ions
         // Ionic and Born contributions will be zero anyways
         if parameters.nionic == 0 {
-            return Self {
+            return Ok(Self {
                 permittivity: D::one() * 1.,
-            };
+            });
         }
         let all_comp: Array1<usize> = parameters
             .pure_records
@@ -73,71 +72,103 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
             .collect();
 
         if let ElectrolytePcSaftVariants::Advanced = epcsaft_variant {
-            let permittivity = match parameters.permittivity.as_ref().unwrap() {
-                PermittivityRecord::ExperimentalData { data } => {
-                    // Check length of permittivity_record
-                    if data.len() != n {
-                        panic!("Provide permittivities for all components for ePC-SAFT advanced.")
-                    }
-                    Self::from_experimental_data(data, state.temperature, &state.molefracs)
-                        .permittivity
-                }
-                PermittivityRecord::PerturbationTheory {
-                    dipole_scaling,
-                    polarizability_scaling,
-                    correlation_integral_parameter,
-                } => {
-                    // Check length of permittivity_record
-                    if dipole_scaling.len() != n {
-                        panic!("Provide permittivities for all components for ePC-SAFT advanced.")
-                    }
-                    Self::from_perturbation_theory(
-                        state,
+            // check if permittivity is Some for all components
+            if parameters
+                .permittivity
+                .iter()
+                .any(|record| record.is_none())
+            {
+                return Err(EosError::ParameterError(
+                    ParameterError::IncompatibleParameters(
+                        "Provide permittivities for all components for ePC-SAFT advanced."
+                            .to_string(),
+                    ),
+                ));
+            }
+
+            // Extract parameters from PermittivityRecords
+            let mut mu_scaling: Vec<&f64> = vec![];
+            let mut alpha_scaling: Vec<&f64> = vec![];
+            let mut ci_param: Vec<&f64> = vec![];
+            let mut datas: Vec<Vec<(f64, f64)>> = vec![];
+
+            parameters
+                .permittivity
+                .iter()
+                .for_each(|record| match record.as_ref().unwrap() {
+                    PermittivityRecord::PerturbationTheory {
                         dipole_scaling,
                         polarizability_scaling,
                         correlation_integral_parameter,
-                        &all_comp,
-                    )
-                    .permittivity
-                }
-            };
+                    } => {
+                        mu_scaling.push(dipole_scaling);
+                        alpha_scaling.push(polarizability_scaling);
+                        ci_param.push(correlation_integral_parameter);
+                    }
+                    PermittivityRecord::ExperimentalData { data } => {
+                        datas.push(data.clone());
+                    }
+                });
 
-            return Self { permittivity };
+            if let PermittivityRecord::ExperimentalData { .. } =
+                parameters.permittivity[0].as_ref().unwrap()
+            {
+                let permittivity =
+                    Self::from_experimental_data(&datas, state.temperature, &state.molefracs)
+                        .permittivity;
+                return Ok(Self { permittivity });
+            }
+
+            if let PermittivityRecord::PerturbationTheory { .. } =
+                parameters.permittivity[0].as_ref().unwrap()
+            {
+                let permittivity = Self::from_perturbation_theory(
+                    state,
+                    &mu_scaling,
+                    &alpha_scaling,
+                    &ci_param,
+                    &all_comp,
+                )
+                .permittivity;
+                return Ok(Self { permittivity });
+            }
         }
+
         if let ElectrolytePcSaftVariants::Revised = epcsaft_variant {
             if parameters.nsolvent > 1 {
-                panic!(
-                "The use of ePC-SAFT revised requires the definition of exactly 1 solvent. Currently specified: {} solvents", parameters.nsolvent
-                    )
+                return Err(EosError::ParameterError(
+                    ParameterError::IncompatibleParameters(
+                        "ePC-SAFT revised cannot be used for more than 1 solvent.".to_string(),
+                    ),
+                ));
             };
-            let permittivity = match parameters.permittivity.as_ref().unwrap() {
+            let permittivity = match parameters.permittivity[parameters.solvent_comp[0]]
+                .as_ref()
+                .unwrap()
+            {
                 PermittivityRecord::ExperimentalData { data } => {
-                    Self::pure_from_experimental_data(&data[0], state.temperature).permittivity
+                    Self::pure_from_experimental_data(data, state.temperature).permittivity
                 }
                 PermittivityRecord::PerturbationTheory {
                     dipole_scaling,
                     polarizability_scaling,
                     correlation_integral_parameter,
                 } => {
-                    // Check length of permittivity_record
-                    if dipole_scaling.len() != n {
-                        panic!("Provide permittivities for all components for ePC-SAFT advanced.")
-                    }
                     Self::pure_from_perturbation_theory(
                         state,
-                        &dipole_scaling[0],
-                        &polarizability_scaling[0],
-                        &correlation_integral_parameter[0],
+                        *dipole_scaling,
+                        *polarizability_scaling,
+                        *correlation_integral_parameter,
                     )
                     .permittivity
                 }
             };
 
-            return Self { permittivity };
+            return Ok(Self { permittivity });
         };
-        Self {
-            permittivity: D::zero(),
-        }
+        Err(EosError::ParameterError(
+            ParameterError::IncompatibleParameters("Permittivity computation failed".to_string()),
+        ))
     }
 
     pub fn pure_from_experimental_data(data: &[(f64, f64)], temperature: D) -> Self {
@@ -149,9 +180,9 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
 
     pub fn pure_from_perturbation_theory(
         state: &StateHD<D>,
-        dipole_scaling: &f64,
-        polarizability_scaling: &f64,
-        correlation_integral_parameter: &f64,
+        dipole_scaling: f64,
+        polarizability_scaling: f64,
+        correlation_integral_parameter: f64,
     ) -> Self {
         // reciprocal thermodynamic temperature
         let boltzmann = 1.380649e-23;
@@ -162,12 +193,11 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
         let density = state.moles.mapv(|n| n / state.volume).sum();
 
         // dipole density y -> scaled dipole density y_star
-        let y_star = density * (beta * *dipole_scaling * 1e-19 + *polarizability_scaling * 3.) * 4.
-            / 9.
-            * PI;
+        let y_star =
+            density * (beta * dipole_scaling * 1e-19 + polarizability_scaling * 3.) * 4. / 9. * PI;
 
         // correlation integral
-        let correlation_integral = ((-y_star).exp() - 1.0) * *correlation_integral_parameter + 1.0;
+        let correlation_integral = ((-y_star).exp() - 1.0) * correlation_integral_parameter + 1.0;
 
         // dielectric constan
         let permittivity_pure = y_star
@@ -195,9 +225,9 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
 
     pub fn from_perturbation_theory(
         state: &StateHD<D>,
-        dipole_scaling: &[f64],
-        polarizability_scaling: &[f64],
-        correlation_integral_parameter: &[f64],
+        dipole_scaling: &[&f64],
+        polarizability_scaling: &[&f64],
+        correlation_integral_parameter: &[&f64],
         comp: &Array1<usize>,
     ) -> Self {
         //let nsolvent = comp.len();
@@ -212,10 +242,10 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
             let x_i = state.molefracs[*i];
 
             y_star +=
-                rho_i * (beta * dipole_scaling[*i] * 1e-19 + polarizability_scaling[*i] * 3.) * 4.
+                rho_i * (beta * *dipole_scaling[*i] * 1e-19 + polarizability_scaling[*i] * 3.) * 4.
                     / 9.
                     * PI;
-            correlation_integral_parameter_mixture += x_i * correlation_integral_parameter[*i];
+            correlation_integral_parameter_mixture += x_i * *correlation_integral_parameter[*i];
         }
 
         // correlation integral

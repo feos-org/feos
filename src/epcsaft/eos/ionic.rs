@@ -19,7 +19,9 @@ impl ElectrolytePcSaftParameters {
         let epsilon_0 = 8.85416e-12;
 
         // relative permittivity of water (usually function of T,p,x)
-        let epsilon_r = Permittivity::new(state, self, &epcsaft_variant).permittivity;
+        let epsilon_r = Permittivity::new(state, self, &epcsaft_variant)
+            .unwrap()
+            .permittivity;
 
         let epsreps0 = epsilon_r * epsilon_0;
 
