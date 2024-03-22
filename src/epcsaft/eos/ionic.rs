@@ -52,6 +52,12 @@ impl Ionic {
         // Extract parameters
         let p = &self.parameters;
 
+        // Set to zero if one of the ions is 0
+        let sum_mole_fraction: f64 = p.ionic_comp.iter().map(|&i| state.molefracs[i].re()).sum();
+        if sum_mole_fraction == 0. {
+            return D::zero();
+        }
+
         // Calculate Bjerrum length
         let lambda_b = p.bjerrum_length(state, self.variant);
 
@@ -79,14 +85,7 @@ impl Ionic {
             sum_x_z_chi += chi[i] * state.molefracs[i] * p.z[i].powi(2);
         }
 
-        // Set to zero if one of the ions is 0
-        let sum_mole_fraction: f64 = p.ionic_comp.iter().map(|&i| state.molefracs[i].re()).sum();
-        let mut a_ion = -kappa * lambda_b * sum_x_z_chi * state.moles.sum();
-        if sum_mole_fraction == 0. {
-            a_ion = D::zero();
-        }
-
-        a_ion
+        -kappa * lambda_b * sum_x_z_chi * state.moles.sum()
     }
 }
 
