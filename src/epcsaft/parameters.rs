@@ -1,10 +1,10 @@
-use crate::epcsaft::association::{AssociationParameters, AssociationRecord, BinaryAssociationRecord};
-use crate::epcsaft::hard_sphere::{HardSphereProperties, MonomerShape};
+use crate::association::{AssociationParameters, AssociationRecord, BinaryAssociationRecord};
+use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use feos_core::parameter::{FromSegments, Parameter, ParameterError, PureRecord};
+use feos_core::si::{JOULE, KB, KELVIN};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;
-use feos_core::si::{JOULE, KB, KELVIN};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -167,7 +167,7 @@ impl FromSegments<f64> for ElectrolytePcSaftRecord {
 
 impl FromSegments<usize> for ElectrolytePcSaftRecord {
     fn from_segments(segments: &[(Self, usize)]) -> Result<Self, ParameterError> {
-        // We do not allow more than a single segment for q, mu, kappa_ab, epsilon_k_ab    
+        // We do not allow more than a single segment for q, mu, kappa_ab, epsilon_k_ab
         let segments: Vec<_> = segments
             .iter()
             .cloned()
@@ -176,7 +176,6 @@ impl FromSegments<usize> for ElectrolytePcSaftRecord {
         Self::from_segments(&segments)
     }
 }
-      
 
 impl std::fmt::Display for ElectrolytePcSaftRecord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -308,20 +307,33 @@ impl std::fmt::Display for ElectrolytePcSaftBinaryRecord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut tokens = vec![];
         if !self.k_ij[0].is_zero() {
-            tokens.push(format!("ElectrolytePcSaftBinaryRecord(k_ij_0={})", self.k_ij[0]));
-            tokens.push(format!("ElectrolytePcSaftBinaryRecord(k_ij_1={})", self.k_ij[1]));
-            tokens.push(format!("ElectrolytePcSaftBinaryRecord(k_ij_2={})", self.k_ij[2]));
-            tokens.push(format!("ElectrolytePcSaftBinaryRecord(k_ij_3={})", self.k_ij[3]));
-            tokens.push(")".to_string());}
-            if let Some(association) = self.association {
-                if let Some(kappa_ab) = association.kappa_ab {
-                    tokens.push(format!("kappa_ab={}", kappa_ab));
-                }
-                if let Some(epsilon_k_ab) = association.epsilon_k_ab {
-                    tokens.push(format!("epsilon_k_ab={}", epsilon_k_ab));
-                }
+            tokens.push(format!(
+                "ElectrolytePcSaftBinaryRecord(k_ij_0={})",
+                self.k_ij[0]
+            ));
+            tokens.push(format!(
+                "ElectrolytePcSaftBinaryRecord(k_ij_1={})",
+                self.k_ij[1]
+            ));
+            tokens.push(format!(
+                "ElectrolytePcSaftBinaryRecord(k_ij_2={})",
+                self.k_ij[2]
+            ));
+            tokens.push(format!(
+                "ElectrolytePcSaftBinaryRecord(k_ij_3={})",
+                self.k_ij[3]
+            ));
+            tokens.push(")".to_string());
+        }
+        if let Some(association) = self.association {
+            if let Some(kappa_ab) = association.kappa_ab {
+                tokens.push(format!("kappa_ab={}", kappa_ab));
             }
-            write!(f, "PcSaftBinaryRecord({})", tokens.join(", "))
+            if let Some(epsilon_k_ab) = association.epsilon_k_ab {
+                tokens.push(format!("epsilon_k_ab={}", epsilon_k_ab));
+            }
+        }
+        write!(f, "PcSaftBinaryRecord({})", tokens.join(", "))
     }
 }
 
@@ -354,6 +366,31 @@ pub struct ElectrolytePcSaftParameters {
     pub thermal_conductivity: Option<Array2<f64>>,
     pub pure_records: Vec<PureRecord<ElectrolytePcSaftRecord>>,
     pub binary_records: Option<Array2<ElectrolytePcSaftBinaryRecord>>,
+}
+
+impl ElectrolytePcSaftParameters {
+    pub fn sigma_t<D: DualNum<f64>>(&self, temperature: D) -> Array1<f64> {
+        let mut sigma_t: Array1<f64> = Array::from_shape_fn(self.sigma.len(), |i| self.sigma[i]);
+        for i in 0..self.sigma_t_comp.len() {
+            sigma_t[i] = (sigma_t[i] + (temperature.re() * -0.01775).exp() * 10.11
+                - (temperature.re() * -0.01146).exp() * 1.417)
+                .re()
+        }
+        sigma_t
+    }
+
+    pub fn sigma_ij_t<D: DualNum<f64>>(&self, temperature: D) -> Array2<f64> {
+        let diameter = self.sigma_t(temperature);
+        let n = diameter.len();
+
+        let mut sigma_ij_t = Array::zeros((n, n));
+        for i in 0..n {
+            for j in 0..n {
+                sigma_ij_t[[i, j]] = (diameter[i] + diameter[j]) * 0.5;
+            }
+        }
+        sigma_ij_t
+    }
 }
 
 impl Parameter for ElectrolytePcSaftParameters {
@@ -527,7 +564,8 @@ impl Parameter for ElectrolytePcSaftParameters {
         // Permittivity
         let permittivity_records: Array1<PermittivityRecord> = pure_records
             .iter()
-            .filter(|&record| (record.model_record.permittivity_record.is_some())).map(|record| record.clone().model_record.permittivity_record.unwrap())
+            .filter(|&record| (record.model_record.permittivity_record.is_some()))
+            .map(|record| record.clone().model_record.permittivity_record.unwrap())
             .collect();
 
         if nionic != 0 && permittivity_records.len() < nsolvent {
@@ -618,7 +656,7 @@ impl Parameter for ElectrolytePcSaftParameters {
             thermal_conductivity: thermal_conductivity_coefficients,
             permittivity,
             pure_records,
-            binary_records
+            binary_records,
         })
     }
 
@@ -630,7 +668,6 @@ impl Parameter for ElectrolytePcSaftParameters {
     ) {
         (&self.pure_records, self.binary_records.as_ref())
     }
-    
 }
 
 impl HardSphereProperties for ElectrolytePcSaftParameters {
@@ -652,29 +689,28 @@ impl HardSphereProperties for ElectrolytePcSaftParameters {
         d
     }
 
-    fn sigma_t<D: DualNum<f64>>(&self, temperature: D) -> Array1<f64> {
-        let mut sigma_t: Array1<f64> = Array::from_shape_fn(self.sigma.len(), |i| self.sigma[i]);
-        for i in 0..self.sigma_t_comp.len() {
-            sigma_t[i] = (sigma_t[i] + (temperature.re() * -0.01775).exp() * 10.11
-                - (temperature.re() * -0.01146).exp() * 1.417)
-                .re()
-        }
-        sigma_t
-    }
+    // fn sigma_t<D: DualNum<f64>>(&self, temperature: D) -> Array1<f64> {
+    //     let mut sigma_t: Array1<f64> = Array::from_shape_fn(self.sigma.len(), |i| self.sigma[i]);
+    //     for i in 0..self.sigma_t_comp.len() {
+    //         sigma_t[i] = (sigma_t[i] + (temperature.re() * -0.01775).exp() * 10.11
+    //             - (temperature.re() * -0.01146).exp() * 1.417)
+    //             .re()
+    //     }
+    //     sigma_t
+    // }
 
-    fn sigma_ij_t<D: DualNum<f64>>(&self, temperature: D) -> Array2<f64> {
-        
-        let diameter = self.sigma_t(temperature);
-        let n = diameter.len();
+    // fn sigma_ij_t<D: DualNum<f64>>(&self, temperature: D) -> Array2<f64> {
+    //     let diameter = self.sigma_t(temperature);
+    //     let n = diameter.len();
 
-        let mut sigma_ij_t = Array::zeros((n, n));
-        for i in 0..n {
-            for j in 0..n {
-                sigma_ij_t[[i, j]] = (diameter[i] + diameter[j]) * 0.5;
-            }
-        }
-        sigma_ij_t
-    }
+    //     let mut sigma_ij_t = Array::zeros((n, n));
+    //     for i in 0..n {
+    //         for j in 0..n {
+    //             sigma_ij_t[[i, j]] = (diameter[i] + diameter[j]) * 0.5;
+    //         }
+    //     }
+    //     sigma_ij_t
+    // }
 }
 
 impl ElectrolytePcSaftParameters {
@@ -716,7 +752,6 @@ impl ElectrolytePcSaftParameters {
         output
     }
 }
-
 
 #[allow(dead_code)]
 #[cfg(test)]

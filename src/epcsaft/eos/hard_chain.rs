@@ -1,5 +1,5 @@
-use crate::epcsaft::hard_sphere::HardSphereProperties;
 use crate::epcsaft::parameters::ElectrolytePcSaftParameters;
+use crate::hard_sphere::HardSphereProperties;
 use feos_core::StateHD;
 use ndarray::Array;
 use num_dual::*;
