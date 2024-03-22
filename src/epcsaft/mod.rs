@@ -4,13 +4,15 @@
 #![warn(clippy::all)]
 #![allow(clippy::too_many_arguments)]
 
+// mod association;
 mod eos;
-mod association;
-mod hard_sphere;
+// mod hard_sphere;
 pub(crate) mod parameters;
 
 pub use eos::{ElectrolytePcSaft, ElectrolytePcSaftOptions, ElectrolytePcSaftVariants};
-pub use parameters::{ElectrolytePcSaftBinaryRecord, ElectrolytePcSaftParameters, ElectrolytePcSaftRecord};
+pub use parameters::{
+    ElectrolytePcSaftBinaryRecord, ElectrolytePcSaftParameters, ElectrolytePcSaftRecord,
+};
 
 #[cfg(feature = "python")]
 pub mod python;
