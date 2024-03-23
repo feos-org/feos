@@ -1,4 +1,6 @@
-use crate::association::{AssociationParameters, AssociationRecord, BinaryAssociationRecord};
+use crate::association::{
+    AssociationParameters, AssociationRecord, AssociationRecords, BinaryAssociationRecord,
+};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use conv::ValueInto;
 use feos_core::parameter::{
@@ -29,8 +31,7 @@ pub struct PcSaftRecord {
     pub q: Option<f64>,
     /// Association parameters
     #[serde(flatten)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub association_record: Option<AssociationRecord>,
+    pub association_records: AssociationRecords,
     /// Entropy scaling coefficients for the viscosity
     #[serde(skip_serializing_if = "Option::is_none")]
     pub viscosity: Option<[f64; 4]>,
@@ -62,31 +63,20 @@ impl FromSegments<f64> for PcSaftRecord {
             .iter()
             .filter_map(|(s, n)| s.mu.map(|mu| mu * n))
             .reduce(|a, b| a + b);
-        let association_record = segments
+        let association_records = segments
             .iter()
-            .filter_map(|(s, n)| {
-                s.association_record.as_ref().map(|record| {
-                    [
-                        record.kappa_ab * n,
-                        record.epsilon_k_ab * n,
+            .flat_map(|(s, n)| {
+                s.association_records.iter().map(move |record| {
+                    AssociationRecord::new(
+                        record.kappa_ab,
+                        record.epsilon_k_ab,
                         record.na * n,
                         record.nb * n,
                         record.nc * n,
-                    ]
+                    )
                 })
             })
-            .reduce(|a, b| {
-                [
-                    a[0] + b[0],
-                    a[1] + b[1],
-                    a[2] + b[2],
-                    a[3] + b[3],
-                    a[4] + b[4],
-                ]
-            })
-            .map(|[kappa_ab, epsilon_k_ab, na, nb, nc]| {
-                AssociationRecord::new(kappa_ab, epsilon_k_ab, na, nb, nc)
-            });
+            .collect();
 
         // entropy scaling
         let mut viscosity = if segments
@@ -148,7 +138,7 @@ impl FromSegments<f64> for PcSaftRecord {
             epsilon_k: epsilon_k / m,
             mu,
             q,
-            association_record,
+            association_records,
             viscosity,
             diffusion,
             thermal_conductivity,
@@ -158,15 +148,11 @@ impl FromSegments<f64> for PcSaftRecord {
 
 impl FromSegments<usize> for PcSaftRecord {
     fn from_segments(segments: &[(Self, usize)]) -> Result<Self, ParameterError> {
-        // We do not allow more than a single segment for q, mu, kappa_ab, epsilon_k_ab
+        // We do not allow more than one polar segment
         let polar_segments: usize = segments
             .iter()
             .filter_map(|(s, n)| {
-                if s.q.is_some()
-                    || s.mu.is_some()
-                    || s.association_record
-                        .is_some_and(|r| r.na + r.nb + r.nc > 0.0)
-                {
+                if s.q.is_some() || s.mu.is_some() {
                     Some(n)
                 } else {
                     None
@@ -175,16 +161,9 @@ impl FromSegments<usize> for PcSaftRecord {
             .sum();
         let quadpole_segments: usize = segments.iter().filter_map(|(s, n)| s.q.map(|_| n)).sum();
         let dipole_segments: usize = segments.iter().filter_map(|(s, n)| s.mu.map(|_| n)).sum();
-        let assoc_segments: usize = segments
-            .iter()
-            .filter_map(|(s, n)| {
-                s.association_record
-                    .map(|r| (r.na * r.nb + r.nc) as usize * n)
-            })
-            .sum();
         if polar_segments > 1 {
             return Err(ParameterError::IncompatibleParameters(format!(
-                "Too many polar/associating segments (dipolar: {dipole_segments}, quadrupolar {quadpole_segments}, associating: {assoc_segments})."
+                "Too many polar segments (dipolar: {dipole_segments}, quadrupolar {quadpole_segments})."
             )));
         }
         let segments: Vec<_> = segments
@@ -207,8 +186,8 @@ impl std::fmt::Display for PcSaftRecord {
         if let Some(n) = &self.q {
             write!(f, ", q={}", n)?;
         }
-        if let Some(n) = &self.association_record {
-            write!(f, ", association_record={}", n)?;
+        if !self.association_records.is_empty() {
+            write!(f, ", association_records={}", self.association_records)?;
         }
         if let Some(n) = &self.viscosity {
             write!(f, ", viscosity={:?}", n)?;
@@ -235,33 +214,20 @@ impl PcSaftRecord {
         na: Option<f64>,
         nb: Option<f64>,
         nc: Option<f64>,
+        association_records: Option<Vec<AssociationRecord>>,
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
     ) -> PcSaftRecord {
-        let association_record = if kappa_ab.is_none()
-            && epsilon_k_ab.is_none()
-            && na.is_none()
-            && nb.is_none()
-            && nc.is_none()
-        {
-            None
-        } else {
-            Some(AssociationRecord::new(
-                kappa_ab.unwrap_or_default(),
-                epsilon_k_ab.unwrap_or_default(),
-                na.unwrap_or_default(),
-                nb.unwrap_or_default(),
-                nc.unwrap_or_default(),
-            ))
-        };
+        let association_records =
+            AssociationRecords::new(kappa_ab, epsilon_k_ab, na, nb, nc, association_records);
         PcSaftRecord {
             m,
             sigma,
             epsilon_k,
             mu,
             q,
-            association_record,
+            association_records,
             viscosity,
             diffusion,
             thermal_conductivity,
@@ -395,7 +361,7 @@ impl Parameter for PcSaftParameters {
             epsilon_k[i] = r.epsilon_k;
             mu[i] = r.mu.unwrap_or(0.0);
             q[i] = r.q.unwrap_or(0.0);
-            association_records.push(r.association_record.into_iter().collect());
+            association_records.push(r.association_records.clone());
             viscosity.push(r.viscosity);
             diffusion.push(r.diffusion);
             thermal_conductivity.push(r.thermal_conductivity);
@@ -530,19 +496,15 @@ impl PcSaftParameters {
         let o = &mut output;
         write!(
             o,
-            "|component|molarweight|$m$|$\\sigma$|$\\varepsilon$|$\\mu$|$Q$|$\\kappa_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|$N_C$|\n|-|-|-|-|-|-|-|-|-|-|-|-|"
+            "|component|molarweight|$m$|$\\sigma$|$\\varepsilon$|$\\mu$|$Q$|\n|-|-|-|-|-|-|-|"
         )
         .unwrap();
         for (i, record) in self.pure_records.iter().enumerate() {
             let component = record.identifier.name.clone();
             let component = component.unwrap_or(format!("Component {}", i + 1));
-            let association = record
-                .model_record
-                .association_record
-                .unwrap_or_else(|| AssociationRecord::new(0.0, 0.0, 0.0, 0.0, 0.0));
             write!(
                 o,
-                "\n|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|",
+                "\n|{}|{}|{}|{}|{}|{}|{}|",
                 component,
                 record.molarweight,
                 record.model_record.m,
@@ -550,13 +512,29 @@ impl PcSaftParameters {
                 record.model_record.epsilon_k,
                 record.model_record.mu.unwrap_or(0.0),
                 record.model_record.q.unwrap_or(0.0),
-                association.kappa_ab,
-                association.epsilon_k_ab,
-                association.na,
-                association.nb,
-                association.nc
             )
             .unwrap();
+        }
+
+        if !self.association.is_empty() {
+            write!(o, "\n\n|component|$\\kappa_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|$N_C$|\n|-|-|-|-|-|-|").unwrap();
+            for (i, record) in self.pure_records.iter().enumerate() {
+                let component = record.identifier.name.clone();
+                let component = component.unwrap_or(format!("Component {}", i + 1));
+                for association in record.model_record.association_records.iter() {
+                    write!(
+                        o,
+                        "\n|{}|{}|{}|{}|{}|{}|",
+                        component,
+                        association.kappa_ab,
+                        association.epsilon_k_ab,
+                        association.na,
+                        association.nb,
+                        association.nc
+                    )
+                    .unwrap();
+                }
+            }
         }
 
         output
