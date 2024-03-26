@@ -1,5 +1,6 @@
 use crate::epcsaft::eos::permittivity::Permittivity;
 use crate::epcsaft::parameters::ElectrolytePcSaftParameters;
+use crate::hard_sphere::HardSphereProperties;
 use feos_core::StateHD;
 use ndarray::Array1;
 use num_dual::DualNum;
@@ -47,5 +48,43 @@ impl Born {
 impl fmt::Display for Born {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Born")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::epcsaft::parameters::utils::{water_nacl_parameters, water_nacl_parameters_perturb};
+    use approx::assert_relative_eq;
+    use ndarray::arr1;
+
+    #[test]
+    fn helmholtz_energy_perturb() {
+        let born = Born {
+            parameters: water_nacl_parameters_perturb(),
+        };
+
+        let t = 298.0;
+        let v = 31.875;
+        let s = StateHD::new(t, v, arr1(&[0.9, 0.05, 0.05]));
+        let d = born.parameters.hs_diameter(t);
+        let a_rust = born.helmholtz_energy(&s, &d);
+
+        assert_relative_eq!(a_rust, -22.51064553710294, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn helmholtz_energy() {
+        let born = Born {
+            parameters: water_nacl_parameters(),
+        };
+
+        let t = 298.0;
+        let v = 31.875;
+        let s = StateHD::new(t, v, arr1(&[0.9, 0.05, 0.05]));
+        let d = born.parameters.hs_diameter(t);
+        let a_rust = born.helmholtz_energy(&s, &d);
+
+        assert_relative_eq!(a_rust, -22.525624511559244, epsilon = 1e-10);
     }
 }

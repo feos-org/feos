@@ -7,7 +7,6 @@ use num_dual::DualNum;
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::convert::TryFrom;
 use std::fmt::Write;
 
 use crate::epcsaft::eos::permittivity::PermittivityRecord;
@@ -282,24 +281,36 @@ impl ElectrolytePcSaftBinaryRecord {
     }
 }
 
-impl TryFrom<f64> for ElectrolytePcSaftBinaryRecord {
-    type Error = ParameterError;
-
-    fn try_from(k_ij: f64) -> Result<Self, Self::Error> {
-        Ok(Self {
+impl From<f64> for ElectrolytePcSaftBinaryRecord {
+    fn from(k_ij: f64) -> Self {
+        Self {
             k_ij: vec![k_ij, 0., 0., 0.],
             association: None,
-        })
+        }
     }
 }
 
-impl TryFrom<ElectrolytePcSaftBinaryRecord> for f64 {
-    type Error = ParameterError;
+impl From<Vec<f64>> for ElectrolytePcSaftBinaryRecord {
+    fn from(k_ij: Vec<f64>) -> Self {
+        Self {
+            k_ij,
+            association: None,
+        }
+    }
+}
 
-    fn try_from(_f: ElectrolytePcSaftBinaryRecord) -> Result<Self, Self::Error> {
-        Err(ParameterError::IncompatibleParameters(
-            "Cannot infer k_ij from single float.".to_string(),
-        ))
+impl From<ElectrolytePcSaftBinaryRecord> for f64 {
+    fn from(binary_record: ElectrolytePcSaftBinaryRecord) -> Self {
+        match binary_record.k_ij.first() {
+            Some(&k_ij) => k_ij,
+            None => 0.0,
+        }
+    }
+}
+
+impl From<ElectrolytePcSaftBinaryRecord> for Vec<f64> {
+    fn from(binary_record: ElectrolytePcSaftBinaryRecord) -> Self {
+        binary_record.k_ij
     }
 }
 
@@ -307,23 +318,10 @@ impl std::fmt::Display for ElectrolytePcSaftBinaryRecord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut tokens = vec![];
         if !self.k_ij[0].is_zero() {
-            tokens.push(format!(
-                "ElectrolytePcSaftBinaryRecord(k_ij_0={})",
-                self.k_ij[0]
-            ));
-            tokens.push(format!(
-                "ElectrolytePcSaftBinaryRecord(k_ij_1={})",
-                self.k_ij[1]
-            ));
-            tokens.push(format!(
-                "ElectrolytePcSaftBinaryRecord(k_ij_2={})",
-                self.k_ij[2]
-            ));
-            tokens.push(format!(
-                "ElectrolytePcSaftBinaryRecord(k_ij_3={})",
-                self.k_ij[3]
-            ));
-            tokens.push(")".to_string());
+            tokens.push(format!("k_ij_0={}", self.k_ij[0]));
+            tokens.push(format!(", k_ij_1={}", self.k_ij[1]));
+            tokens.push(format!(", k_ij_2={}", self.k_ij[2]));
+            tokens.push(format!(", k_ij_3={})", self.k_ij[3]));
         }
         if let Some(association) = self.association {
             if let Some(kappa_ab) = association.kappa_ab {
@@ -333,7 +331,7 @@ impl std::fmt::Display for ElectrolytePcSaftBinaryRecord {
                 tokens.push(format!("epsilon_k_ab={}", epsilon_k_ab));
             }
         }
-        write!(f, "PcSaftBinaryRecord({})", tokens.join(", "))
+        write!(f, "ElectrolytePcSaftBinaryRecord({})", tokens.join(""))
     }
 }
 
@@ -355,7 +353,7 @@ pub struct ElectrolytePcSaftParameters {
     pub nquadpole: usize,
     pub nionic: usize,
     pub nsolvent: usize,
-    pub sigma_t_comp: Array1<usize>,
+    pub water_sigma_t_comp: Option<usize>,
     pub dipole_comp: Array1<usize>,
     pub quadpole_comp: Array1<usize>,
     pub ionic_comp: Array1<usize>,
@@ -371,11 +369,13 @@ pub struct ElectrolytePcSaftParameters {
 impl ElectrolytePcSaftParameters {
     pub fn sigma_t<D: DualNum<f64>>(&self, temperature: D) -> Array1<f64> {
         let mut sigma_t: Array1<f64> = Array::from_shape_fn(self.sigma.len(), |i| self.sigma[i]);
-        for i in 0..self.sigma_t_comp.len() {
+
+        if let Some(i) = self.water_sigma_t_comp {
             sigma_t[i] = (sigma_t[i] + (temperature.re() * -0.01775).exp() * 10.11
                 - (temperature.re() * -0.01146).exp() * 1.417)
-                .re()
+                .re();
         }
+
         sigma_t
     }
 
@@ -414,6 +414,7 @@ impl Parameter for ElectrolytePcSaftParameters {
         let mut viscosity = Vec::with_capacity(n);
         let mut diffusion = Vec::with_capacity(n);
         let mut thermal_conductivity = Vec::with_capacity(n);
+        let mut water_sigma_t_comp = None;
 
         let mut component_index = HashMap::with_capacity(n);
 
@@ -431,6 +432,16 @@ impl Parameter for ElectrolytePcSaftParameters {
             diffusion.push(r.diffusion);
             thermal_conductivity.push(r.thermal_conductivity);
             molarweight[i] = record.molarweight;
+            // check if component i is water with temperature-dependent sigma
+            if (m[i] * 1000.0).round() / 1000.0 == 1.205 && epsilon_k[i].round() == 354.0 {
+                if let Some(record) = r.association_record {
+                    if (record.kappa_ab * 1000.0).round() / 1000.0 == 0.045
+                        && record.epsilon_k_ab.round() == 2426.0
+                    {
+                        water_sigma_t_comp = Some(i);
+                    }
+                }
+            }
         }
 
         let mu2 = &mu * &mu / (&m * &sigma * &sigma * &sigma * &epsilon_k)
@@ -476,25 +487,6 @@ impl Parameter for ElectrolytePcSaftParameters {
             .filter_map(|(i, &zi)| (zi.abs() == 0.0).then_some(i))
             .collect();
         let nsolvent = solvent_comp.len();
-
-        let mut bool_sigma_t = Array1::zeros(n);
-        for i in 0..n {
-            let name = pure_records[i]
-                .identifier
-                .name
-                .clone()
-                .unwrap_or(String::from("unknown"));
-            if name.contains("sigma_t") {
-                bool_sigma_t[i] = 1usize
-            }
-        }
-        let sigma_t_comp: Array1<usize> = Array::from_iter(
-            bool_sigma_t
-                .iter()
-                .enumerate()
-                .filter(|x| x.1 == &1usize)
-                .map(|x| x.0),
-        );
 
         let mut k_ij: Array2<Vec<f64>> = Array2::from_elem((n, n), vec![0., 0., 0., 0.]);
 
@@ -653,7 +645,7 @@ impl Parameter for ElectrolytePcSaftParameters {
             quadpole_comp,
             ionic_comp,
             solvent_comp,
-            sigma_t_comp,
+            water_sigma_t_comp,
             viscosity: viscosity_coefficients,
             diffusion: diffusion_coefficients,
             thermal_conductivity: thermal_conductivity_coefficients,
@@ -736,6 +728,9 @@ impl ElectrolytePcSaftParameters {
 #[allow(dead_code)]
 #[cfg(test)]
 pub mod utils {
+    use feos_core::parameter::{BinaryRecord, Identifier};
+    use ndarray::ArrayBase;
+
     use super::*;
     use std::sync::Arc;
 
@@ -765,7 +760,7 @@ pub mod utils {
         Arc::new(ElectrolytePcSaftParameters::new_pure(propane_record).unwrap())
     }
 
-    pub fn carbon_dioxide_parameters() -> ElectrolytePcSaftParameters {
+    pub fn carbon_dioxide_parameters() -> Arc<ElectrolytePcSaftParameters> {
         let co2_json = r#"
         {
             "identifier": {
@@ -786,7 +781,7 @@ pub mod utils {
         }"#;
         let co2_record: PureRecord<ElectrolytePcSaftRecord> =
             serde_json::from_str(co2_json).expect("Unable to parse json.");
-        ElectrolytePcSaftParameters::new_pure(co2_record).unwrap()
+        Arc::new(ElectrolytePcSaftParameters::new_pure(co2_record).unwrap())
     }
 
     pub fn butane_parameters() -> Arc<ElectrolytePcSaftParameters> {
@@ -812,7 +807,7 @@ pub mod utils {
         Arc::new(ElectrolytePcSaftParameters::new_pure(butane_record).unwrap())
     }
 
-    pub fn dme_parameters() -> ElectrolytePcSaftParameters {
+    pub fn dme_parameters() -> Arc<ElectrolytePcSaftParameters> {
         let dme_json = r#"
             {
                 "identifier": {
@@ -833,10 +828,10 @@ pub mod utils {
             }"#;
         let dme_record: PureRecord<ElectrolytePcSaftRecord> =
             serde_json::from_str(dme_json).expect("Unable to parse json.");
-        ElectrolytePcSaftParameters::new_pure(dme_record).unwrap()
+        Arc::new(ElectrolytePcSaftParameters::new_pure(dme_record).unwrap())
     }
 
-    pub fn water_parameters_sigma_t() -> ElectrolytePcSaftParameters {
+    pub fn water_parameters_sigma_t() -> Arc<ElectrolytePcSaftParameters> {
         let water_json = r#"
         {
                 "identifier": {
@@ -858,10 +853,10 @@ pub mod utils {
               }"#;
         let water_record: PureRecord<ElectrolytePcSaftRecord> =
             serde_json::from_str(water_json).expect("Unable to parse json.");
-        ElectrolytePcSaftParameters::new_pure(water_record).unwrap()
+        Arc::new(ElectrolytePcSaftParameters::new_pure(water_record).unwrap())
     }
 
-    pub fn water_nacl_parameters() -> ElectrolytePcSaftParameters {
+    pub fn water_nacl_parameters_perturb() -> Arc<ElectrolytePcSaftParameters> {
         // Water parameters from Held et al. (2014), originally from Fuchs et al. (2006)
         let pure_json = r#"[
             {
@@ -873,12 +868,25 @@ pub mod utils {
                     "inchi": "InChI=1/H2O/h1H2",
                     "formula": "H2O"
                 },
-                "saft_record": {
+                "model_record": {
                     "m": 1.2047,
                     "sigma": 2.7927,
                     "epsilon_k": 353.95,
                     "kappa_ab": 0.04509,
-                    "epsilon_k_ab": 2425.7
+                    "epsilon_k_ab": 2425.7,
+                    "permittivity_record": {
+                        "PerturbationTheory": {
+                            "dipole_scaling": 
+                                5.199
+                            ,
+                            "polarizability_scaling": 
+                                0.0
+                            ,
+                            "correlation_integral_parameter": 
+                                0.1276
+                            
+                        }
+                    }
                 },
                 "molarweight": 18.0152
             },
@@ -888,13 +896,23 @@ pub mod utils {
                     "name": "na+",
                     "formula": "na+"
                 },
-                "saft_record": {
+                "model_record": {
                     "m": 1,
                     "sigma": 2.8232,
                     "epsilon_k": 230.0,
-                    "z": 1
+                    "z": 1,
+                    "permittivity_record": {
+                        "PerturbationTheory": {
+                            "dipole_scaling": 
+                                0.0,
+                            "polarizability_scaling": 
+                                0.0,
+                            "correlation_integral_parameter": 
+                                0.0658      
+                        }
+                    }
                 },
-                "molarweight": 22.98976
+                "molarweight": 22.98977
             },
             {
                 "identifier": {
@@ -902,70 +920,283 @@ pub mod utils {
                     "name": "cl-",
                     "formula": "cl-"
                 },
-                "saft_record": {
+                "model_record": {
                     "m": 1,
                     "sigma": 2.7560,
                     "epsilon_k": 170,
-                    "z": -1
+                    "z": -1,
+                    "permittivity_record": {
+                        "PerturbationTheory": {
+                            "dipole_scaling": 
+                                7.3238,
+                            "polarizability_scaling": 
+                                0.0,
+                            "correlation_integral_parameter": 
+                                0.2620 
+                        }
+                    }
                 },
                 "molarweight": 35.45
             }
             ]"#;
         let binary_json = r#"[
-                {
-                    "id1": {
-                        "cas": "7732-18-5",
-                        "name": "water_np",
-                        "iupac_name": "oxidane",
-                        "smiles": "O",
-                        "inchi": "InChI=1/H2O/h1H2",
-                        "formula": "H2O"
-                    },
-                    "id2": {
-                        "cas": "110-54-3",
-                        "name": "na+",
-                        "formula": "na+"
-                    },
-                    "k_ij": [0.0045]
+            {
+                "id1": {
+                    "cas": "7732-18-5",
+                    "name": "water_np_sigma_t",
+                    "iupac_name": "oxidane",
+                    "smiles": "O",
+                    "inchi": "InChI=1/H2O/h1H2",
+                    "formula": "H2O"
                 },
-                {
-                    "id1": {
-                        "cas": "7732-18-5",
-                        "name": "water_np",
-                        "iupac_name": "oxidane",
-                        "smiles": "O",
-                        "inchi": "InChI=1/H2O/h1H2",
-                        "formula": "H2O"
-                    },
-                    "id2": {
-                        "cas": "7782-50-5",
-                        "name": "cl-",
-                        "formula": "cl-"
-                    },
-                    "k_ij": [-0.25]
+                "id2": {
+                    "cas": "110-54-3",
+                    "name": "sodium ion",
+                    "formula": "na+"
                 },
-                {
-                    "id1": {
-                        "cas": "110-54-3",
-                        "name": "na+",
-                        "formula": "na+"
-                    },
-                    "id2": {
-                        "cas": "7782-50-5",
-                        "name": "cl-",
-                        "formula": "cl-"
-                    },
-                    "k_ij": [0.317]
+                "model_record": {
+                    "k_ij": [
+                        0.0045,
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
                 }
-                ]"#;
+            },
+            {
+                "id1": {
+                    "cas": "7732-18-5",
+                    "name": "water_np_sigma_t",
+                    "iupac_name": "oxidane",
+                    "smiles": "O",
+                    "inchi": "InChI=1/H2O/h1H2",
+                    "formula": "H2O"
+                },
+                "id2": {
+                    "cas": "7782-50-5",
+                    "name": "chloride ion",
+                    "formula": "cl-"
+                },
+                "model_record": {
+                    "k_ij": [
+                        -0.25,
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                }
+            },
+            {
+                "id1": {
+                    "cas": "110-54-3",
+                    "name": "sodium ion",
+                    "formula": "na+"
+                },
+                "id2": {
+                    "cas": "7782-50-5",
+                    "name": "chloride ion",
+                    "formula": "cl-"
+                },
+                "model_record": {
+                    "k_ij": [
+                        0.317,
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                }
+            }
+            ]"#;
         let pure_records: Vec<PureRecord<ElectrolytePcSaftRecord>> =
             serde_json::from_str(pure_json).expect("Unable to parse json.");
-        let binary_records: ElectrolytePcSaftBinaryRecord =
+        let binary_records: Vec<BinaryRecord<Identifier, ElectrolytePcSaftBinaryRecord>> =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
-        ElectrolytePcSaftParameters::new_binary(pure_records, Some(binary_records)).unwrap()
+        let binary_matrix = ElectrolytePcSaftParameters::binary_matrix_from_records(
+            &pure_records,
+            &binary_records,
+            feos_core::parameter::IdentifierOption::Name,
+        )
+        .unwrap();
+        Arc::new(
+            ElectrolytePcSaftParameters::from_records(pure_records, Some(binary_matrix)).unwrap(),
+        )
     }
 
-    pub fn water_parameters() -> ElectrolytePcSaftParameters {
+    pub fn water_nacl_parameters() -> Arc<ElectrolytePcSaftParameters> {
+        // Water parameters from Held et al. (2014), originally from Fuchs et al. (2006)
+        let pure_json = r#"[
+            {
+                "identifier": {
+                    "cas": "7732-18-5",
+                    "name": "water_np_sigma_t",
+                    "iupac_name": "oxidane",
+                    "smiles": "O",
+                    "inchi": "InChI=1/H2O/h1H2",
+                    "formula": "H2O"
+                },
+                "model_record": {
+                    "m": 1.2047,
+                    "sigma": 2.7927,
+                    "epsilon_k": 353.95,
+                    "kappa_ab": 0.04509,
+                    "epsilon_k_ab": 2425.7,
+                    "permittivity_record": {
+                        "ExperimentalData": {
+                        "data": 
+                            [
+                                [
+                                    280.15,
+                                    84.89
+                                ],
+                                [
+                                    298.15,
+                                    78.39
+                                ],
+                                [
+                                    360.15,
+                                    58.73
+                                ]
+                            ]
+                        }
+                    }
+                },
+                "molarweight": 18.0152
+            },
+            {
+                "identifier": {
+                    "cas": "110-54-3",
+                    "name": "na+",
+                    "formula": "na+"
+                },
+                "model_record": {
+                    "m": 1,
+                    "sigma": 2.8232,
+                    "epsilon_k": 230.0,
+                    "z": 1,
+                    "permittivity_record": {
+                        "ExperimentalData": {
+                        "data":  
+                            [
+                                [
+                                    298.15,
+                                    8.0
+                                ]
+                            ]
+                        }
+                    }
+                },
+                "molarweight": 22.98977
+            },
+            {
+                "identifier": {
+                    "cas": "7782-50-5",
+                    "name": "cl-",
+                    "formula": "cl-"
+                },
+                "model_record": {
+                    "m": 1,
+                    "sigma": 2.7560,
+                    "epsilon_k": 170,
+                    "z": -1,
+                    "permittivity_record": {
+                        "ExperimentalData": {
+                        "data": 
+                            [
+                                [
+                                    298.15,
+                                    8.0
+                                ]
+                            ]
+                        }
+                    }
+                },
+                "molarweight": 35.45
+            }
+            ]"#;
+        let binary_json = r#"[
+            {
+                "id1": {
+                    "cas": "7732-18-5",
+                    "name": "water_np_sigma_t",
+                    "iupac_name": "oxidane",
+                    "smiles": "O",
+                    "inchi": "InChI=1/H2O/h1H2",
+                    "formula": "H2O"
+                },
+                "id2": {
+                    "cas": "110-54-3",
+                    "name": "sodium ion",
+                    "formula": "na+"
+                },
+                "model_record": {
+                    "k_ij": [
+                        0.0045,
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                }
+            },
+            {
+                "id1": {
+                    "cas": "7732-18-5",
+                    "name": "water_np_sigma_t",
+                    "iupac_name": "oxidane",
+                    "smiles": "O",
+                    "inchi": "InChI=1/H2O/h1H2",
+                    "formula": "H2O"
+                },
+                "id2": {
+                    "cas": "7782-50-5",
+                    "name": "chloride ion",
+                    "formula": "cl-"
+                },
+                "model_record": {
+                    "k_ij": [
+                        -0.25,
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                }
+            },
+            {
+                "id1": {
+                    "cas": "110-54-3",
+                    "name": "sodium ion",
+                    "formula": "na+"
+                },
+                "id2": {
+                    "cas": "7782-50-5",
+                    "name": "chloride ion",
+                    "formula": "cl-"
+                },
+                "model_record": {
+                    "k_ij": [
+                        0.317,
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                }
+            }
+            ]"#;
+        let pure_records: Vec<PureRecord<ElectrolytePcSaftRecord>> =
+            serde_json::from_str(pure_json).expect("Unable to parse json.");
+        let binary_records: Vec<BinaryRecord<Identifier, ElectrolytePcSaftBinaryRecord>> =
+            serde_json::from_str(binary_json).expect("Unable to parse json.");
+        let binary_matrix = ElectrolytePcSaftParameters::binary_matrix_from_records(
+            &pure_records,
+            &binary_records,
+            feos_core::parameter::IdentifierOption::Name,
+        )
+        .unwrap();
+        Arc::new(
+            ElectrolytePcSaftParameters::from_records(pure_records, Some(binary_matrix)).unwrap(),
+        )
+    }
+
+    pub fn water_parameters() -> Arc<ElectrolytePcSaftParameters> {
         let water_json = r#"
             {
                 "identifier": {
@@ -989,10 +1220,10 @@ pub mod utils {
             }"#;
         let water_record: PureRecord<ElectrolytePcSaftRecord> =
             serde_json::from_str(water_json).expect("Unable to parse json.");
-        ElectrolytePcSaftParameters::new_pure(water_record).unwrap()
+        Arc::new(ElectrolytePcSaftParameters::new_pure(water_record).unwrap())
     }
 
-    pub fn dme_co2_parameters() -> ElectrolytePcSaftParameters {
+    pub fn dme_co2_parameters() -> Arc<ElectrolytePcSaftParameters> {
         let binary_json = r#"[
             {
                 "identifier": {
@@ -1031,7 +1262,7 @@ pub mod utils {
         ]"#;
         let binary_record: Vec<PureRecord<ElectrolytePcSaftRecord>> =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
-        ElectrolytePcSaftParameters::new_binary(binary_record, None).unwrap()
+        Arc::new(ElectrolytePcSaftParameters::new_binary(binary_record, None).unwrap())
     }
 
     pub fn propane_butane_parameters() -> Arc<ElectrolytePcSaftParameters> {

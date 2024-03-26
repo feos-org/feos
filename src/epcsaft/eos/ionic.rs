@@ -1,5 +1,6 @@
 use crate::epcsaft::eos::permittivity::Permittivity;
 use crate::epcsaft::parameters::ElectrolytePcSaftParameters;
+use crate::hard_sphere::HardSphereProperties;
 use feos_core::StateHD;
 use ndarray::*;
 use num_dual::DualNum;
@@ -92,5 +93,45 @@ impl Ionic {
 impl fmt::Display for Ionic {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Ionic")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::epcsaft::parameters::utils::{water_nacl_parameters, water_nacl_parameters_perturb};
+    use approx::assert_relative_eq;
+    use ndarray::arr1;
+
+    #[test]
+    fn helmholtz_energy_perturb() {
+        let ionic = Ionic {
+            parameters: water_nacl_parameters_perturb(),
+            variant: ElectrolytePcSaftVariants::Advanced,
+        };
+        let t = 298.0;
+        let v = 31.875;
+
+        let s = StateHD::new(t, v, arr1(&[0.9, 0.05, 0.05]));
+
+        let d = ionic.parameters.hs_diameter(t);
+        let a_rust = ionic.helmholtz_energy(&s, &d);
+
+        assert_relative_eq!(a_rust, -0.07775796084032328, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn helmholtz_energy() {
+        let ionic = Ionic {
+            parameters: water_nacl_parameters(),
+            variant: ElectrolytePcSaftVariants::Advanced,
+        };
+        let t = 298.0;
+        let v = 31.875;
+        let s = StateHD::new(t, v, arr1(&[0.9, 0.05, 0.05]));
+        let d = ionic.parameters.hs_diameter(t);
+        let a_rust = ionic.helmholtz_energy(&s, &d);
+
+        assert_relative_eq!(a_rust, -0.07341337106244776, epsilon = 1e-10);
     }
 }

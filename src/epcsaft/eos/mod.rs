@@ -449,7 +449,7 @@ mod tests {
 
     #[test]
     fn association() {
-        let parameters = Arc::new(water_parameters());
+        let parameters = water_parameters();
         let assoc = Association::new(&parameters, &parameters.association, 50, 1e-10);
         let t = 350.0;
         let v = 41.248289328513216;
@@ -462,7 +462,7 @@ mod tests {
 
     #[test]
     fn cross_association() {
-        let parameters = Arc::new(water_parameters());
+        let parameters = water_parameters();
         let assoc =
             Association::new_cross_association(&parameters, &parameters.association, 50, 1e-10);
         let t = 350.0;
