@@ -265,6 +265,13 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
     /// Assume ordered by temperature
     /// and temperatures are all finite.
     pub fn interpolate(interpolation_points: &[(f64, f64)], temperature: D) -> Self {
+        // if there is only one point, return it (means constant permittivity)
+        if interpolation_points.len() == 1 {
+            return Self {
+                permittivity: D::one() * interpolation_points[0].1,
+            };
+        }
+
         // find index where temperature could be inserted
         let i = interpolation_points.binary_search_by(|&(ti, _)| {
             ti.partial_cmp(&temperature.re())
