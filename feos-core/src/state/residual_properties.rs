@@ -328,22 +328,25 @@ impl<E: Residual> State<E> {
     /// Henry's law constant $H_{i,s}=\lim_{x_i\to 0}\frac{y_ip}{x_i}=p_s^\mathrm{sat}\frac{\varphi_i^{\infty,\mathrm{L}}}{\varphi_i^{\infty,\mathrm{V}}}$
     ///
     /// The composition of the (possibly mixed) solvent is determined by the state. All components for which the composition is 0 are treated as solutes.
-    pub fn henrys_law_constant(&self) -> EosResult<Pressure<Array1<f64>>> {
+    pub fn henrys_law_constant(
+        eos: &Arc<E>,
+        temperature: Temperature,
+        molefracs: &Array1<f64>,
+    ) -> EosResult<Pressure<Array1<f64>>> {
         // Calculate the phase equilibrium (bubble point) of the solvent only
-        let (solvent_comps, solvent_molefracs): (Vec<_>, Vec<_>) = self
-            .molefracs
+        let (solvent_comps, solvent_molefracs): (Vec<_>, Vec<_>) = molefracs
             .iter()
             .enumerate()
             .filter_map(|(i, &x)| (x != 0.0).then_some((i, x)))
             .unzip();
         let solvent_molefracs = Array1::from_vec(solvent_molefracs);
-        let solvent = Arc::new(self.eos.subset(&solvent_comps));
+        let solvent = Arc::new(eos.subset(&solvent_comps));
         let vle = if solvent_comps.len() == 1 {
-            PhaseEquilibrium::pure(&solvent, self.temperature, None, Default::default())
+            PhaseEquilibrium::pure(&solvent, temperature, None, Default::default())
         } else {
             PhaseEquilibrium::bubble_point(
                 &solvent,
-                self.temperature,
+                temperature,
                 &solvent_molefracs,
                 None,
                 None,
@@ -353,21 +356,21 @@ impl<E: Residual> State<E> {
 
         // Calculate the liquid state including the Henry components
         let liquid = State::new_nvt(
-            &self.eos,
-            self.temperature,
+            eos,
+            temperature,
             vle.liquid().volume,
-            &(&self.molefracs * vle.liquid().total_moles),
+            &(molefracs * vle.liquid().total_moles),
         )?;
 
         // Calculate the vapor state including the Henry components
-        let mut molefracs_vapor = self.molefracs.clone();
+        let mut molefracs_vapor = molefracs.clone();
         solvent_comps
             .into_iter()
             .zip(&vle.vapor().molefracs)
             .for_each(|(i, &y)| molefracs_vapor[i] = y);
         let vapor = State::new_nvt(
-            &self.eos,
-            self.temperature,
+            eos,
+            temperature,
             vle.vapor().volume,
             &(molefracs_vapor * vle.vapor().total_moles),
         )?;
@@ -376,7 +379,7 @@ impl<E: Residual> State<E> {
         let p = vle.vapor().pressure(Contributions::Total);
         let h = (liquid.ln_phi() - vapor.ln_phi()).mapv(f64::exp) * p;
         Ok(h.into_iter()
-            .zip(&self.molefracs)
+            .zip(molefracs)
             .filter_map(|(h, &x)| (x == 0.0).then_some(h))
             .collect())
     }

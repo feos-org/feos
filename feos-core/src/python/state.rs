@@ -581,11 +581,21 @@ macro_rules! impl_state {
 
             /// Return Henry's law constant of every solute (x_i=0) for a given solvent (x_i>0).
             ///
+            /// Parameters
+            /// ----------
+            /// eos : Eos
+            ///     The equation of state to use.
+            /// temperature : SINumber
+            ///     Temperature.
+            /// molefracs : np.ndarray[float]
+            ///     Composition of the solvent including x_i=0 for solutes.
+            ///
             /// Returns
             /// -------
             /// SIArray1
-            fn henrys_law_constant(&self) -> PyResult<PySIArray1> {
-                Ok(self.0.henrys_law_constant()?.into())
+            #[staticmethod]
+            fn henrys_law_constant(eos: $py_eos, temperature: PySINumber, molefracs: &PyArray1<f64>) -> PyResult<PySIArray1> {
+                Ok(State::henrys_law_constant(&eos.0, temperature.try_into()?, &molefracs.to_owned_array())?.into())
             }
 
             /// Return derivative of logarithmic fugacity coefficient w.r.t. temperature.
