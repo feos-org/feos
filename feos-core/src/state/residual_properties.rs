@@ -384,6 +384,16 @@ impl<E: Residual> State<E> {
             .collect())
     }
 
+    /// Henry's law constant $H_{i,s}=\lim_{x_i\to 0}\frac{y_ip}{x_i}=p_s^\mathrm{sat}\frac{\varphi_i^{\infty,\mathrm{L}}}{\varphi_i^{\infty,\mathrm{V}}}$ for a binary system
+    ///
+    /// The solute (i) is the first component and the solvent (s) the second component.
+    pub fn henrys_law_constant_binary(
+        eos: &Arc<E>,
+        temperature: Temperature,
+    ) -> EosResult<Pressure> {
+        Ok(Self::henrys_law_constant(eos, temperature, &arr1(&[0.0, 1.0]))?.get(0))
+    }
+
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. temperature: $\left(\frac{\partial\ln\varphi_i}{\partial T}\right)_{p,N_i}$
     pub fn dln_phi_dt(&self) -> <f64 as Div<Temperature<Array1<f64>>>>::Output {
         let vi = self.partial_molar_volume();

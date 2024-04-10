@@ -598,6 +598,24 @@ macro_rules! impl_state {
                 Ok(State::henrys_law_constant(&eos.0, temperature.try_into()?, &molefracs.to_owned_array())?.into())
             }
 
+            /// Return Henry's law constant of a binary system, assuming the first
+            /// component is the solute and the second component is the solvent.
+            ///
+            /// Parameters
+            /// ----------
+            /// eos : Eos
+            ///     The equation of state to use.
+            /// temperature : SINumber
+            ///     Temperature.
+            ///
+            /// Returns
+            /// -------
+            /// SIArray1
+            #[staticmethod]
+            fn henrys_law_constant_binary(eos: $py_eos, temperature: PySINumber) -> PyResult<PySINumber> {
+                Ok(State::henrys_law_constant_binary(&eos.0, temperature.try_into()?)?.into())
+            }
+
             /// Return derivative of logarithmic fugacity coefficient w.r.t. temperature.
             ///
             /// Returns
