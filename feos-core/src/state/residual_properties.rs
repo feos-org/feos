@@ -2,6 +2,7 @@ use super::{Contributions, Derivative::*, PartialDerivative, State};
 use crate::equation_of_state::{EntropyScaling, Residual};
 use crate::errors::EosResult;
 use crate::si::*;
+use crate::PhaseEquilibrium;
 use ndarray::{arr1, Array1, Array2};
 use std::ops::{Add, Div};
 use std::sync::Arc;
@@ -316,12 +317,68 @@ impl<E: Residual> State<E> {
             .collect()
     }
 
-    /// Activity coefficient $\ln \gamma_i = \ln \varphi_i(T, p, \mathbf{N}) - \ln \varphi_i(T, p)$
+    /// Activity coefficient $\ln \gamma_i = \ln \varphi_i(T, p, \mathbf{N}) - \ln \varphi_i^\mathrm{pure}(T, p)$
     pub fn ln_symmetric_activity_coefficient(&self) -> EosResult<Array1<f64>> {
         match self.eos.components() {
             1 => Ok(arr1(&[0.0])),
             _ => Ok(self.ln_phi() - &self.ln_phi_pure_liquid()?),
         }
+    }
+
+    /// Henry's law constant $H_{i,s}=\lim_{x_i\to 0}\frac{y_ip}{x_i}=p_s^\mathrm{sat}\frac{\varphi_i^{\infty,\mathrm{L}}}{\varphi_i^{\infty,\mathrm{V}}}$
+    ///
+    /// The composition of the (possibly mixed) solvent is determined by the state. All components for which the composition is 0 are treated as solutes.
+    pub fn henrys_law_constant(&self) -> EosResult<Pressure<Array1<f64>>> {
+        // Calculate the phase equilibrium (bubble point) of the solvent only
+        let (solvent_comps, solvent_molefracs): (Vec<_>, Vec<_>) = self
+            .molefracs
+            .iter()
+            .enumerate()
+            .filter_map(|(i, &x)| (x != 0.0).then_some((i, x)))
+            .unzip();
+        let solvent_molefracs = Array1::from_vec(solvent_molefracs);
+        let solvent = Arc::new(self.eos.subset(&solvent_comps));
+        let vle = if solvent_comps.len() == 1 {
+            PhaseEquilibrium::pure(&solvent, self.temperature, None, Default::default())
+        } else {
+            PhaseEquilibrium::bubble_point(
+                &solvent,
+                self.temperature,
+                &solvent_molefracs,
+                None,
+                None,
+                Default::default(),
+            )
+        }?;
+
+        // Calculate the liquid state including the Henry components
+        let liquid = State::new_nvt(
+            &self.eos,
+            self.temperature,
+            vle.liquid().volume,
+            &(&self.molefracs * vle.liquid().total_moles),
+        )?;
+
+        // Calculate the vapor state including the Henry components
+        let mut molefracs_vapor = self.molefracs.clone();
+        solvent_comps
+            .into_iter()
+            .zip(&vle.vapor().molefracs)
+            .for_each(|(i, &y)| molefracs_vapor[i] = y);
+        let vapor = State::new_nvt(
+            &self.eos,
+            self.temperature,
+            vle.vapor().volume,
+            &(molefracs_vapor * vle.vapor().total_moles),
+        )?;
+
+        // Determine the Henry's law coefficients and return only those of the Henry components
+        let p = vle.vapor().pressure(Contributions::Total);
+        let h = (liquid.ln_phi() - vapor.ln_phi()).mapv(f64::exp) * p;
+        Ok(h.into_iter()
+            .zip(&self.molefracs)
+            .filter_map(|(h, &x)| (x == 0.0).then_some(h))
+            .collect())
     }
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. temperature: $\left(\frac{\partial\ln\varphi_i}{\partial T}\right)_{p,N_i}$

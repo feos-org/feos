@@ -579,6 +579,15 @@ macro_rules! impl_state {
                 Ok(self.0.ln_symmetric_activity_coefficient()?.view().to_pyarray(py))
             }
 
+            /// Return Henry's law constant of every solute (x_i=0) for a given solvent (x_i>0).
+            ///
+            /// Returns
+            /// -------
+            /// SIArray1
+            fn henrys_law_constant(&self) -> PyResult<PySIArray1> {
+                Ok(self.0.henrys_law_constant()?.into())
+            }
+
             /// Return derivative of logarithmic fugacity coefficient w.r.t. temperature.
             ///
             /// Returns
