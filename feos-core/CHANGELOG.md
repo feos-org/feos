@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added specific isochoric and isobaric heat capacities to the Python interface. [#223](https://github.com/feos-org/feos/pull/223))
 - Added `to_dict` method for `PyStateVec`. [#224](https://github.com/feos-org/feos/pull/224)
+- Added `State::henrys_law_constant` to calculate Henry's law constants for arbitrary mixtures. [#234](https://github.com/feos-org/feos/pull/234)
 
 ### Changed
 - Changed the interface for Helmholtz energy calculation in `Residual` and `IdealGas` which removes the need for the `HelmholtzEnergy` and `HelmholtzEnergyDual` traits and trait objects. [#226](https://github.com/feos-org/feos/pull/226)

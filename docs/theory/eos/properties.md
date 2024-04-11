@@ -80,6 +80,7 @@ Due to different language paradigms, $\text{FeO}_\text{s}$ handles the ideal gas
 | Logarithmic fugacity coefficient $\ln\varphi_i$ | $\beta\mu_i^\mathrm{res}\left(T,p,\lbrace n_i\rbrace\right)$ | no | no |
 | Pure component logarithmic fugacity coefficient $\ln\varphi_i^\mathrm{pure}$ | $\lim_{x_i\to 1}\ln\varphi_i$ | no | no |
 | Logarithmic (symmetric) activity coefficient $\ln\gamma_i$ | $\ln\left(\frac{\varphi_i}{\varphi_i^\mathrm{pure}}\right)$ | no | no |
+| Henry's law constant $H_{i,s}$ | $\lim_{x_i\to 0}\frac{y_ip}{x_i}=p_s^\mathrm{sat}\frac{\varphi_i^{\infty,\mathrm{L}}}{\varphi_i^{\infty,\mathrm{V}}}$ | no | no |
 | Partial derivative of the logarithmic fugacity coefficient w.r.t. temperature | $\left(\frac{\partial\ln\varphi_i}{\partial T}\right)_{p,n_i}$ | no | no |
 | Partial derivative of the logarithmic fugacity coefficient w.r.t. pressure | $\left(\frac{\partial\ln\varphi_i}{\partial p}\right)_{T,n_i}=\frac{v_i^\mathrm{res,p}}{RT}$ | no | no |
 | Partial derivative of the logarithmic fugacity coefficient w.r.t. moles |  $\left(\frac{\partial\ln\varphi_i}{\partial n_j}\right)_{T,p,n_k}$ | no | no |
