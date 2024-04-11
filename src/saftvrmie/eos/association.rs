@@ -302,6 +302,7 @@ impl<P: HardSphereProperties> Association<P> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn new_cross_association(
         parameters: &Arc<P>,
         association_parameters: &AssociationParameters,
