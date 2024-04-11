@@ -21,14 +21,14 @@ pub struct PySaftVRMieAssociationRecord(pub AssociationRecord);
 #[pymethods]
 impl PySaftVRMieAssociationRecord {
     #[new]
-    #[pyo3(signature = (kappa_ab, epsilon_k_ab, na=0.0, nb=0.0, nc=0.0))]
-    fn new(kappa_ab: f64, epsilon_k_ab: f64, na: f64, nb: f64, nc: f64) -> Self {
-        Self(AssociationRecord::new(kappa_ab, epsilon_k_ab, na, nb, nc))
+    #[pyo3(signature = (rc_ab, epsilon_k_ab, na=0.0, nb=0.0, nc=0.0))]
+    fn new(rc_ab: f64, epsilon_k_ab: f64, na: f64, nb: f64, nc: f64) -> Self {
+        Self(AssociationRecord::new(rc_ab, epsilon_k_ab, na, nb, nc))
     }
 
     #[getter]
-    fn get_kappa_ab(&self) -> f64 {
-        self.0.kappa_ab
+    fn get_rc_ab(&self) -> f64 {
+        self.0.rc_ab
     }
 
     #[getter]
@@ -68,12 +68,12 @@ impl_json_handling!(PySaftVRMieAssociationRecord);
 ///     Segment diameter in units of Angstrom.
 /// epsilon_k : float
 ///     Energetic parameter in units of Kelvin.
-/// mu : float, optional
-///     Dipole moment in units of Debye.
-/// q : float, optional
-///     Quadrupole moment in units of Debye * Angstrom.
-/// kappa_ab : float, optional
-///     Association volume parameter.
+/// lr : float
+///     Repulsive Mie exponent.
+/// la : float
+///     Attractive Mie exponent.
+/// rc_ab : float, optional
+///     Dimensionless association distance parameter (divided by sigma).
 /// epsilon_k_ab : float, optional
 ///     Association energy parameter in units of Kelvin.
 /// na : float, optional
@@ -96,7 +96,7 @@ pub struct PySaftVRMieRecord(SaftVRMieRecord);
 impl PySaftVRMieRecord {
     #[new]
     #[pyo3(
-        text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
+        text_signature = "(m, sigma, epsilon_k, lr, la, rc_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
     )]
     fn new(
         m: f64,
@@ -104,7 +104,7 @@ impl PySaftVRMieRecord {
         epsilon_k: f64,
         lr: f64,
         la: f64,
-        kappa_ab: Option<f64>,
+        rc_ab: Option<f64>,
         epsilon_k_ab: Option<f64>,
         na: Option<f64>,
         nb: Option<f64>,
@@ -119,7 +119,7 @@ impl PySaftVRMieRecord {
             epsilon_k,
             lr,
             la,
-            kappa_ab,
+            rc_ab,
             epsilon_k_ab,
             na,
             nb,
@@ -156,8 +156,8 @@ impl PySaftVRMieRecord {
     }
 
     #[getter]
-    fn get_kappa_ab(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.kappa_ab)
+    fn get_rc_ab(&self) -> Option<f64> {
+        self.0.association_record.map(|a| a.rc_ab)
     }
 
     #[getter]
@@ -195,9 +195,9 @@ impl PySaftVRMieRecord {
         self.0.thermal_conductivity
     }
 
-    // fn __repr__(&self) -> PyResult<String> {
-    //     Ok(self.0.to_string())
-    // }
+    fn __repr__(&self) -> PyResult<String> {
+        Ok(self.0.to_string())
+    }
 }
 
 impl_json_handling!(PySaftVRMieRecord);
@@ -213,20 +213,20 @@ impl PySaftVRMieBinaryRecord {
     fn new(
         k_ij: Option<f64>,
         gamma_ij: Option<f64>,
-        kappa_ab: Option<f64>,
+        rc_ab: Option<f64>,
         epsilon_k_ab: Option<f64>,
     ) -> Self {
         Self(SaftVRMieBinaryRecord::new(
             k_ij,
             gamma_ij,
-            kappa_ab,
+            rc_ab,
             epsilon_k_ab,
         ))
     }
 
-    // fn __repr__(&self) -> PyResult<String> {
-    //     Ok(self.0.to_string())
-    // }
+    fn __repr__(&self) -> PyResult<String> {
+        Ok(self.0.to_string())
+    }
 }
 
 impl_json_handling!(PySaftVRMieBinaryRecord);
@@ -242,7 +242,6 @@ impl_parameter!(
     PySaftVRMieRecord,
     PySaftVRMieBinaryRecord
 );
-// impl_parameter_from_segments!(SaftVRMieParameters, PySaftVRMieParameters);
 
 #[pymethods]
 impl PySaftVRMieParameters {
@@ -254,9 +253,9 @@ impl PySaftVRMieParameters {
             .map(|br| br.map(|br| br.k_ij).view().to_pyarray(py))
     }
 
-    // fn _repr_markdown_(&self) -> String {
-    //     self.0.to_markdown()
-    // }
+    fn _repr_markdown_(&self) -> String {
+        self.0.to_markdown()
+    }
 }
 
 #[pymodule]

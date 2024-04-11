@@ -104,6 +104,24 @@ impl PyEquationOfState {
         Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
+    /// SAFT-VR Mie equation of state.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters : SaftVRMieParameters
+    ///     The parameters of the PC-SAFT equation of state to use.
+    /// max_eta : float, optional
+    ///     Maximum packing fraction. Defaults to 0.5.
+    /// max_iter_cross_assoc : unsigned integer, optional
+    ///     Maximum number of iterations for cross association. Defaults to 50.
+    /// tol_cross_assoc : float
+    ///     Tolerance for convergence of cross association. Defaults to 1e-10.
+    ///
+    /// Returns
+    /// -------
+    /// EquationOfState
+    ///     The SAFT-VR Mie equation of state that can be used to compute thermodynamic
+    ///     states.
     #[cfg(feature = "saftvrmie")]
     #[staticmethod]
     #[pyo3(

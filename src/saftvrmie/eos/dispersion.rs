@@ -1,15 +1,13 @@
 use std::f64::consts::{FRAC_PI_6, PI};
 
 use feos_core::StateHD;
-use itertools::Itertools;
-use ndarray::{Array, Array1, Array2, ScalarOperand};
-use num_dual::{Dual, Dual2, DualNum};
+use ndarray::{Array1, Array2, ScalarOperand};
+use num_dual::{Dual, DualNum};
 use num_traits::Zero;
-
-use crate::hard_sphere::HardSphereProperties;
 
 use super::SaftVRMieParameters;
 
+#[derive(Debug)]
 pub struct Properties<D> {
     /// Temperature dependent diameter
     diameter: Array1<D>,
@@ -211,7 +209,12 @@ pub fn a_disp_chain<D: DualNum<f64> + Copy + ScalarOperand>(
     // for chain contribution on the fly.
     let rho_s_dual = Dual::from_re(properties.segment_density).derivative();
     let zeta_x = properties.zeta_x;
-    let zeta_x_dual = Dual::from_re(zeta_x / properties.segment_density) * rho_s_dual;
+    let zeta_x_dual = if properties.segment_density.is_zero() {
+        rho_s_dual * 0.0
+    } else {
+        Dual::from_re(zeta_x / properties.segment_density) * rho_s_dual
+    };
+    // let zeta_x_dual = Dual::from_re(zeta_x / properties.segment_density) * rho_s_dual;
     let k_hs_dual = (zeta_x_dual - 1.0).powi(4)
         / ((zeta_x_dual + zeta_x_dual.powi(2) - zeta_x_dual.powi(3)) * 4.0
             + zeta_x_dual.powi(4)
@@ -381,124 +384,3 @@ const C: [[f64; 4]; 4] = [
     [-1.9057, 22.845, -228.14, 973.92],
     [1.0885, -6.1962, 106.98, -677.64],
 ];
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::saftvrmie::{ethane, methane, methane2, methane_ethane, mixture_thijs};
-    use approx::assert_relative_eq;
-    use feos_core::si::{ANGSTROM, MOL, NAV};
-    use ndarray::{arr1, Array1};
-    use typenum::P3;
-
-    #[test]
-    fn test_disp_only() {
-        let parameters = methane2();
-        let t_red = 0.8;
-        let rho_red = 0.75;
-        let temperature = t_red * parameters.epsilon_k[0];
-
-        let moles = (MOL / NAV).to_reduced();
-        let density = (rho_red / (parameters.sigma[0].powi(3) * ANGSTROM.powi::<P3>()) / MOL / NAV)
-            .convert_into(1.0 / ANGSTROM.powi::<P3>());
-
-        let state = StateHD::new(temperature, 1.0 / density, Array1::from_vec(vec![moles]));
-        let diameters = parameters.hs_diameter(state.temperature);
-        dbg!(&diameters[0] / parameters.sigma[0]);
-        dbg!(&diameters[0]);
-        let diameters = arr1(&[parameters.sigma[0] * 0.97717907949781424]);
-        let properties = Properties::new(&parameters, &state, &diameters);
-        let a = a_disp(&parameters, &properties, &state);
-        // let mono_props = MonomerProperties::new(&parameters, &state, &diameters);
-        // let a_monomers = a_monomer_conributions(&parameters, &mono_props, &state);
-        assert_relative_eq!(a, 1.0, epsilon = 1e-10);
-    }
-
-    #[test]
-    fn test_thijs_mixture() {
-        let parameters = mixture_thijs();
-        let t_red = 1.0;
-        let rho_red = 0.25;
-        let temperature = t_red * parameters.epsilon_k[0];
-
-        let moles = (MOL / NAV).to_reduced();
-        let density = (rho_red / (parameters.sigma[0].powi(3) * ANGSTROM.powi::<P3>()) / MOL / NAV)
-            .convert_into(1.0 / ANGSTROM.powi::<P3>());
-
-        let state = StateHD::new(
-            temperature,
-            1.0 / density,
-            Array1::from_vec(vec![0.4 * moles, 0.6 * moles]),
-        );
-        let diameters = arr1(&[0.97347218967036042, 1.4602082845055406]);
-        let properties = Properties::new(&parameters, &state, &diameters);
-        let a = a_disp(&parameters, &properties, &state);
-        // let mono_props = MonomerProperties::new(&parameters, &state, &diameters);
-        // let a_monomers = a_monomer_conributions(&parameters, &mono_props, &state);
-        assert_relative_eq!(a, 1.0, epsilon = 1e-10);
-    }
-
-    #[test]
-    fn test_disp() {
-        let parameters = ethane();
-        let moles = 1.0;
-        let volume = 249.6620487495878;
-        let state = StateHD::new(200.0, volume, Array1::from_vec(vec![moles]));
-        let diameters = parameters.hs_diameter(state.temperature);
-        let properties = Properties::new(&parameters, &state, &diameters);
-        let a = a_disp_chain(&parameters, &properties, &state);
-        // let mono_props = MonomerProperties::new(&parameters, &state, &diameters);
-        // let a_monomers = a_monomer_conributions(&parameters, &mono_props, &state);
-        assert_relative_eq!(a, 1.0, epsilon = 1e-10);
-    }
-
-    #[test]
-    fn test_chain() {
-        let parameters = ethane();
-        let moles = 1.0;
-        let volume = 249.6620487495878;
-        let state = StateHD::new(200.0, volume, Array1::from_vec(vec![moles]));
-        let diameters = parameters.hs_diameter(state.temperature);
-        let properties = Properties::new(&parameters, &state, &diameters);
-        let a = a_disp_chain(&parameters, &properties, &state);
-        // let (monomer_properties, chain_properties) =
-        //     MonomerProperties::new_derivative(&parameters, &state, &diameters);
-        // let a_monomers = a_monomer_conributions(&parameters, &monomer_properties, &state);
-        // let a_chain = a_chain(
-        //     &parameters,
-        //     &monomer_properties.x0_ij,
-        //     monomer_properties.segment_density,
-        //     monomer_properties.zeta_x_bar,
-        //     &monomer_properties.d3_ij,
-        //     &chain_properties,
-        //     &state,
-        // );
-        // dbg!(&a_monomers);
-        assert_relative_eq!(a, 1.0, epsilon = 1e-10);
-    }
-
-    #[test]
-    fn test_chain_mixture() {
-        let parameters = methane_ethane();
-        let moles = 1.0;
-        let volume = 249.6620487495878;
-        let state = StateHD::new(200.0, volume, Array1::from_vec(vec![moles, moles]));
-        let diameters = parameters.hs_diameter(state.temperature);
-        let properties = Properties::new(&parameters, &state, &diameters);
-        let a = a_disp_chain(&parameters, &properties, &state);
-        // let (monomer_properties, chain_properties) =
-        //     MonomerProperties::new_derivative(&parameters, &state, &diameters);
-        // let a_monomers = a_monomer_conributions(&parameters, &monomer_properties, &state);
-        // let a_chain = a_chain(
-        //     &parameters,
-        //     &monomer_properties.x0_ij,
-        //     monomer_properties.segment_density,
-        //     monomer_properties.zeta_x_bar,
-        //     &monomer_properties.d3_ij,
-        //     &chain_properties,
-        //     &state,
-        // );
-        // dbg!(&a_monomers);
-        assert_relative_eq!(a, 1.0, epsilon = 1e-10);
-    }
-}

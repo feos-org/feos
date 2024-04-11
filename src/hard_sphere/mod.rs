@@ -119,31 +119,29 @@ impl<P> HardSphere<P> {
 }
 
 impl<P: HardSphereProperties> HardSphere<P> {
+    /// Returns the Helmholtz energy, packing fractions, and temperature dependent diameters without redundant calculations.
+    #[inline]
     pub fn helmholtz_energy_and_properties<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> (D, [D; 4], Array1<D>) {
         let p = &self.parameters;
-        let temperature = state.temperature;
+        let diameter = p.hs_diameter(state.temperature);
 
-        // diameter
-        let diameter = p.hs_diameter(temperature);
-
-        // zeta
         let component_index = p.component_index();
-        let geometry_coefficients = p.geometry_coefficients(temperature);
+        let geometry_coefficients = p.geometry_coefficients(state.temperature);
         let mut zeta = [D::zero(); 4];
         for i in 0..diameter.len() {
             for (z, &k) in zeta.iter_mut().zip([0, 1, 2, 3].iter()) {
-                *z += state.partial_density[component_index[i]]
+                *z += state.molefracs[component_index[i]]
                     * diameter[i].powi(k)
                     * (geometry_coefficients[k as usize][i] * FRAC_PI_6);
             }
         }
-
-        let frac_1mz3 = -(zeta[3] - 1.0).recip();
-        // todo: cover case of density = 0.
         let zeta_23 = zeta[2] / zeta[3];
+        let density = state.partial_density.sum();
+        zeta.iter_mut().for_each(|z| *z *= density);
+        let frac_1mz3 = -(zeta[3] - 1.0).recip();
         let a = state.volume / std::f64::consts::FRAC_PI_6
             * (zeta[1] * zeta[2] * frac_1mz3 * 3.0
                 + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
@@ -153,14 +151,15 @@ impl<P: HardSphereProperties> HardSphere<P> {
 
     #[inline]
     pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
-        let p = &self.parameters;
-        let zeta = p.zeta(state.temperature, &state.partial_density, [0, 1, 2, 3]);
-        let frac_1mz3 = -(zeta[3] - 1.0).recip();
-        let zeta_23 = p.zeta_23(state.temperature, &state.molefracs);
-        state.volume * 6.0 / std::f64::consts::PI
-            * (zeta[1] * zeta[2] * frac_1mz3 * 3.0
-                + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
-                + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (zeta[3] * (-1.0)).ln_1p())
+        self.helmholtz_energy_and_properties(state).0
+        // let p = &self.parameters;
+        // let zeta = p.zeta(state.temperature, &state.partial_density, [0, 1, 2, 3]);
+        // let frac_1mz3 = -(zeta[3] - 1.0).recip();
+        // let zeta_23 = p.zeta_23(state.temperature, &state.molefracs);
+        // state.volume * 6.0 / std::f64::consts::PI
+        //     * (zeta[1] * zeta[2] * frac_1mz3 * 3.0
+        //         + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
+        //         + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (zeta[3] * (-1.0)).ln_1p())
     }
 }
 
