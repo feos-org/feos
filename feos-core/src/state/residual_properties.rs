@@ -327,7 +327,7 @@ impl<E: Residual> State<E> {
 
     /// Henry's law constant $H_{i,s}=\lim_{x_i\to 0}\frac{y_ip}{x_i}=p_s^\mathrm{sat}\frac{\varphi_i^{\infty,\mathrm{L}}}{\varphi_i^{\infty,\mathrm{V}}}$
     ///
-    /// The composition of the (possibly mixed) solvent is determined by the state. All components for which the composition is 0 are treated as solutes.
+    /// The composition of the (possibly mixed) solvent is determined by the molefracs. All components for which the composition is 0 are treated as solutes.
     pub fn henrys_law_constant(
         eos: &Arc<E>,
         temperature: Temperature,
