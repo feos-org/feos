@@ -45,6 +45,8 @@ feos.eos.State
       ~State.gibbs_energy
       ~State.grueneisen_parameter
       ~State.helmholtz_energy
+      ~State.henrys_law_constant
+      ~State.henrys_law_constant_binary
       ~State.internal_energy
       ~State.is_stable
       ~State.isenthalpic_compressibility

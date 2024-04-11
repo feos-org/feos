@@ -314,6 +314,8 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.gibbs_energy.html">feos.eos.State.gibbs_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.grueneisen_parameter.html">feos.eos.State.grueneisen_parameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.helmholtz_energy.html">feos.eos.State.helmholtz_energy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.State.henrys_law_constant.html">feos.eos.State.henrys_law_constant</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.eos.State.henrys_law_constant_binary.html">feos.eos.State.henrys_law_constant_binary</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.internal_energy.html">feos.eos.State.internal_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.is_stable.html">feos.eos.State.is_stable</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.eos.State.isenthalpic_compressibility.html">feos.eos.State.isenthalpic_compressibility</a></li>
@@ -481,6 +483,8 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.gibbs_energy.html">feos.dft.State.gibbs_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.grueneisen_parameter.html">feos.dft.State.grueneisen_parameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.helmholtz_energy.html">feos.dft.State.helmholtz_energy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.State.henrys_law_constant.html">feos.dft.State.henrys_law_constant</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.dft.State.henrys_law_constant_binary.html">feos.dft.State.henrys_law_constant_binary</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.internal_energy.html">feos.dft.State.internal_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.is_stable.html">feos.dft.State.is_stable</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.dft.State.isenthalpic_compressibility.html">feos.dft.State.isenthalpic_compressibility</a></li>
@@ -1236,6 +1240,12 @@ when the state is specified with pressure and molar entropy or enthalpy.</p></li
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.State.helmholtz_energy.html#feos.eos.State.helmholtz_energy" title="feos.eos.State.helmholtz_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">helmholtz_energy</span></code></a>(contributions)</p></td>
 <td><p>Return Helmholtz energy.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.eos.State.henrys_law_constant.html#feos.eos.State.henrys_law_constant" title="feos.eos.State.henrys_law_constant"><code class="xref py py-obj docutils literal notranslate"><span class="pre">henrys_law_constant</span></code></a>(eos, temperature, molefracs)</p></td>
+<td><p>Return Henry's law constant of every solute (x_i=0) for a given solvent (x_i&gt;0).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.eos.State.henrys_law_constant_binary.html#feos.eos.State.henrys_law_constant_binary" title="feos.eos.State.henrys_law_constant_binary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">henrys_law_constant_binary</span></code></a>(eos, temperature)</p></td>
+<td><p>Return Henry's law constant of a binary system, assuming the first component is the solute and the second component is the solvent.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="feos.eos.State.internal_energy.html#feos.eos.State.internal_energy" title="feos.eos.State.internal_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">internal_energy</span></code></a>(contributions)</p></td>
 <td><p>Return internal energy.</p></td>

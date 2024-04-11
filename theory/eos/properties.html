@@ -314,6 +314,8 @@
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.eos.State.gibbs_energy.html">feos.eos.State.gibbs_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.eos.State.grueneisen_parameter.html">feos.eos.State.grueneisen_parameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.eos.State.helmholtz_energy.html">feos.eos.State.helmholtz_energy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.eos.State.henrys_law_constant.html">feos.eos.State.henrys_law_constant</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.eos.State.henrys_law_constant_binary.html">feos.eos.State.henrys_law_constant_binary</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.eos.State.internal_energy.html">feos.eos.State.internal_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.eos.State.is_stable.html">feos.eos.State.is_stable</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.eos.State.isenthalpic_compressibility.html">feos.eos.State.isenthalpic_compressibility</a></li>
@@ -481,6 +483,8 @@
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.dft.State.gibbs_energy.html">feos.dft.State.gibbs_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.dft.State.grueneisen_parameter.html">feos.dft.State.grueneisen_parameter</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.dft.State.helmholtz_energy.html">feos.dft.State.helmholtz_energy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.dft.State.henrys_law_constant.html">feos.dft.State.henrys_law_constant</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.dft.State.henrys_law_constant_binary.html">feos.dft.State.henrys_law_constant_binary</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.dft.State.internal_energy.html">feos.dft.State.internal_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.dft.State.is_stable.html">feos.dft.State.is_stable</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.dft.State.isenthalpic_compressibility.html">feos.dft.State.isenthalpic_compressibility</a></li>
@@ -1289,172 +1293,177 @@
 <td><p>no</p></td>
 <td><p>no</p></td>
 </tr>
-<tr class="row-even"><td><p>Partial derivative of the logarithmic fugacity coefficient w.r.t. temperature</p></td>
+<tr class="row-even"><td><p>Henry’s law constant <span class="math notranslate nohighlight">\(H_{i,s}\)</span></p></td>
+<td class="text-center"><p><span class="math notranslate nohighlight">\(\lim_{x_i\to 0}\frac{y_ip}{x_i}=p_s^\mathrm{sat}\frac{\varphi_i^{\infty,\mathrm{L}}}{\varphi_i^{\infty,\mathrm{V}}}\)</span></p></td>
+<td><p>no</p></td>
+<td><p>no</p></td>
+</tr>
+<tr class="row-odd"><td><p>Partial derivative of the logarithmic fugacity coefficient w.r.t. temperature</p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\left(\frac{\partial\ln\varphi_i}{\partial T}\right)_{p,n_i}\)</span></p></td>
 <td><p>no</p></td>
 <td><p>no</p></td>
 </tr>
-<tr class="row-odd"><td><p>Partial derivative of the logarithmic fugacity coefficient w.r.t. pressure</p></td>
+<tr class="row-even"><td><p>Partial derivative of the logarithmic fugacity coefficient w.r.t. pressure</p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\left(\frac{\partial\ln\varphi_i}{\partial p}\right)_{T,n_i}=\frac{v_i^\mathrm{res,p}}{RT}\)</span></p></td>
 <td><p>no</p></td>
 <td><p>no</p></td>
 </tr>
-<tr class="row-even"><td><p>Partial derivative of the logarithmic fugacity coefficient w.r.t. moles</p></td>
+<tr class="row-odd"><td><p>Partial derivative of the logarithmic fugacity coefficient w.r.t. moles</p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\left(\frac{\partial\ln\varphi_i}{\partial n_j}\right)_{T,p,n_k}\)</span></p></td>
 <td><p>no</p></td>
 <td><p>no</p></td>
 </tr>
-<tr class="row-odd"><td><p>Thermodynamic factor <span class="math notranslate nohighlight">\(\Gamma_{ij}\)</span></p></td>
+<tr class="row-even"><td><p>Thermodynamic factor <span class="math notranslate nohighlight">\(\Gamma_{ij}\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\delta_{ij}+x_i\left(\frac{\partial\ln\varphi_i}{\partial x_j}\right)_{T,p,\Sigma}\)</span></p></td>
 <td><p>no</p></td>
 <td><p>no</p></td>
 </tr>
-<tr class="row-even"><td><p>Molar isochoric heat capacity <span class="math notranslate nohighlight">\(c_v\)</span></p></td>
+<tr class="row-odd"><td><p>Molar isochoric heat capacity <span class="math notranslate nohighlight">\(c_v\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\left(\frac{\partial u}{\partial T}\right)_{V,n_i}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-odd"><td><p>Partial derivative of the molar isochoric heat capacity w.r.t. temperature</p></td>
+<tr class="row-even"><td><p>Partial derivative of the molar isochoric heat capacity w.r.t. temperature</p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\left(\frac{\partial c_V}{\partial T}\right)_{V,n_i}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-even"><td><p>Molar isobaric heat capacity <span class="math notranslate nohighlight">\(c_p\)</span></p></td>
+<tr class="row-odd"><td><p>Molar isobaric heat capacity <span class="math notranslate nohighlight">\(c_p\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\left(\frac{\partial h}{\partial T}\right)_{p,n_i}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-odd"><td><p>Entropy <span class="math notranslate nohighlight">\(S\)</span></p></td>
+<tr class="row-even"><td><p>Entropy <span class="math notranslate nohighlight">\(S\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(-\left(\frac{\partial A}{\partial T}\right)_{V,n_i}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-even"><td><p>Partial derivative of the entropy w.r.t. temperature</p></td>
+<tr class="row-odd"><td><p>Partial derivative of the entropy w.r.t. temperature</p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\left(\frac{\partial S}{\partial T}\right)_{V,n_i}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-odd"><td><p>Second partial derivative of the entropy w.r.t. temperature</p></td>
+<tr class="row-even"><td><p>Second partial derivative of the entropy w.r.t. temperature</p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\left(\frac{\partial^2 S}{\partial T^2}\right)_{V,n_i}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-even"><td><p>Molar entropy <span class="math notranslate nohighlight">\(s\)</span></p></td>
+<tr class="row-odd"><td><p>Molar entropy <span class="math notranslate nohighlight">\(s\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\frac{S}{n}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-odd"><td><p>Specific entropy <span class="math notranslate nohighlight">\(s^{(m)}\)</span></p></td>
+<tr class="row-even"><td><p>Specific entropy <span class="math notranslate nohighlight">\(s^{(m)}\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\frac{S}{m}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-even"><td><p>Enthalpy <span class="math notranslate nohighlight">\(H\)</span></p></td>
+<tr class="row-odd"><td><p>Enthalpy <span class="math notranslate nohighlight">\(H\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(A+TS+pV\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-odd"><td><p>Molar enthalpy <span class="math notranslate nohighlight">\(h\)</span></p></td>
+<tr class="row-even"><td><p>Molar enthalpy <span class="math notranslate nohighlight">\(h\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\frac{H}{n}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-even"><td><p>Specific enthalpy <span class="math notranslate nohighlight">\(h^{(m)}\)</span></p></td>
+<tr class="row-odd"><td><p>Specific enthalpy <span class="math notranslate nohighlight">\(h^{(m)}\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\frac{H}{m}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-odd"><td><p>Helmholtz energy <span class="math notranslate nohighlight">\(A\)</span></p></td>
+<tr class="row-even"><td><p>Helmholtz energy <span class="math notranslate nohighlight">\(A\)</span></p></td>
 <td class="text-center"><p></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-even"><td><p>Molar Helmholtz energy <span class="math notranslate nohighlight">\(a\)</span></p></td>
+<tr class="row-odd"><td><p>Molar Helmholtz energy <span class="math notranslate nohighlight">\(a\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\frac{A}{n}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-odd"><td><p>Specific Helmholtz energy <span class="math notranslate nohighlight">\(a^{(m)}\)</span></p></td>
+<tr class="row-even"><td><p>Specific Helmholtz energy <span class="math notranslate nohighlight">\(a^{(m)}\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\frac{A}{m}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-even"><td><p>Internal energy <span class="math notranslate nohighlight">\(U\)</span></p></td>
+<tr class="row-odd"><td><p>Internal energy <span class="math notranslate nohighlight">\(U\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(A+TS\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-odd"><td><p>Molar internal energy <span class="math notranslate nohighlight">\(u\)</span></p></td>
+<tr class="row-even"><td><p>Molar internal energy <span class="math notranslate nohighlight">\(u\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\frac{U}{n}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-even"><td><p>Specific internal energy <span class="math notranslate nohighlight">\(u^{(m)}\)</span></p></td>
+<tr class="row-odd"><td><p>Specific internal energy <span class="math notranslate nohighlight">\(u^{(m)}\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\frac{U}{m}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-odd"><td><p>Gibbs energy <span class="math notranslate nohighlight">\(G\)</span></p></td>
+<tr class="row-even"><td><p>Gibbs energy <span class="math notranslate nohighlight">\(G\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(A+pV\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-even"><td><p>Molar Gibbs energy <span class="math notranslate nohighlight">\(g\)</span></p></td>
+<tr class="row-odd"><td><p>Molar Gibbs energy <span class="math notranslate nohighlight">\(g\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\frac{G}{n}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-odd"><td><p>Specific Gibbs energy <span class="math notranslate nohighlight">\(g^{(m)}\)</span></p></td>
+<tr class="row-even"><td><p>Specific Gibbs energy <span class="math notranslate nohighlight">\(g^{(m)}\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\frac{G}{m}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>yes</p></td>
 </tr>
-<tr class="row-even"><td><p>Partial molar entropy <span class="math notranslate nohighlight">\(s_i\)</span></p></td>
+<tr class="row-odd"><td><p>Partial molar entropy <span class="math notranslate nohighlight">\(s_i\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\left(\frac{\partial S}{\partial n_i}\right)_{T,p,n_j}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>no</p></td>
 </tr>
-<tr class="row-odd"><td><p>Partial molar enthalpy <span class="math notranslate nohighlight">\(h_i\)</span></p></td>
+<tr class="row-even"><td><p>Partial molar enthalpy <span class="math notranslate nohighlight">\(h_i\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\left(\frac{\partial H}{\partial n_i}\right)_{T,p,n_j}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>no</p></td>
 </tr>
-<tr class="row-even"><td><p>Joule Thomson coefficient <span class="math notranslate nohighlight">\(\mu_\mathrm{JT}\)</span></p></td>
+<tr class="row-odd"><td><p>Joule Thomson coefficient <span class="math notranslate nohighlight">\(\mu_\mathrm{JT}\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\left(\frac{\partial T}{\partial p}\right)_{H,n_i}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>no</p></td>
 </tr>
-<tr class="row-odd"><td><p>Isentropic compressibility <span class="math notranslate nohighlight">\(\kappa_s\)</span></p></td>
+<tr class="row-even"><td><p>Isentropic compressibility <span class="math notranslate nohighlight">\(\kappa_s\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{S,n_i}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>no</p></td>
 </tr>
-<tr class="row-even"><td><p>Isothermal compressibility <span class="math notranslate nohighlight">\(\kappa_T\)</span></p></td>
+<tr class="row-odd"><td><p>Isothermal compressibility <span class="math notranslate nohighlight">\(\kappa_T\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{T,n_i}\)</span></p></td>
 <td><p>no</p></td>
 <td><p>no</p></td>
 </tr>
-<tr class="row-odd"><td><p>Isenthalpic compressibility <span class="math notranslate nohighlight">\(\kappa_h\)</span></p></td>
+<tr class="row-even"><td><p>Isenthalpic compressibility <span class="math notranslate nohighlight">\(\kappa_h\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{H,n_i}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>no</p></td>
 </tr>
-<tr class="row-even"><td><p>Thermal expansivity <span class="math notranslate nohighlight">\(\alpha_p\)</span></p></td>
+<tr class="row-odd"><td><p>Thermal expansivity <span class="math notranslate nohighlight">\(\alpha_p\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(-\frac{1}{V}\left(\frac{\partial V}{\partial T}\right)_{p,n_i}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>no</p></td>
 </tr>
-<tr class="row-odd"><td><p>Grüneisen parameter <span class="math notranslate nohighlight">\(\phi\)</span></p></td>
+<tr class="row-even"><td><p>Grüneisen parameter <span class="math notranslate nohighlight">\(\phi\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(V\left(\frac{\partial p}{\partial U}\right)_{V,n_i}=\frac{v}{c_v}\left(\frac{\partial p}{\partial T}\right)_{v,n_i}=\frac{\rho}{T}\left(\frac{\partial T}{\partial \rho}\right)_{s, n_i}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>no</p></td>
 </tr>
-<tr class="row-even"><td><p>(Static) structure factor <span class="math notranslate nohighlight">\(S(0)\)</span></p></td>
+<tr class="row-odd"><td><p>(Static) structure factor <span class="math notranslate nohighlight">\(S(0)\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(RT\left(\frac{\partial\rho}{\partial p}\right)_{T,n_i}\)</span></p></td>
 <td><p>no</p></td>
 <td><p>no</p></td>
 </tr>
-<tr class="row-odd"><td><p>Speed of sound <span class="math notranslate nohighlight">\(c\)</span></p></td>
+<tr class="row-even"><td><p>Speed of sound <span class="math notranslate nohighlight">\(c\)</span></p></td>
 <td class="text-center"><p><span class="math notranslate nohighlight">\(\sqrt{\left(\frac{\partial p}{\partial\rho^{(m)}}\right)_{S,n_i}}\)</span></p></td>
 <td><p>yes</p></td>
 <td><p>no</p></td>

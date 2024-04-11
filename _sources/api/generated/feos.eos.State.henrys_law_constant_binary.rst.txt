@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.eos.State.henrys\_law\_constant\_binary
+============================================
+
+.. currentmodule:: feos.eos
+
+.. automethod:: State.henrys_law_constant_binary
