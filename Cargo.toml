@@ -103,10 +103,6 @@ name = "state_creation"
 harness = false
 
 [[bench]]
-name = "state_creation_saftvrmie"
-harness = false
-
-[[bench]]
 name = "dual_numbers"
 harness = false
 

@@ -5,7 +5,7 @@
 //! creation.
 use criterion::{criterion_group, criterion_main, Criterion};
 use feos::hard_sphere::HardSphereProperties;
-use feos::saftvrmie::{ethane, methane, SaftVRMie, SaftVRMieParameters};
+use feos::saftvrmie::{test_utils::test_parameters, SaftVRMie, SaftVRMieParameters};
 use feos_core::si::*;
 use feos_core::{Derivative, Residual, State, StateHD};
 use ndarray::{Array, ScalarOperand};
@@ -89,7 +89,7 @@ fn bench_dual_numbers<E: Residual>(
 
 /// Benchmark for the SAFT VR Mie equation of state
 fn saftvrmie(c: &mut Criterion) {
-    let parameters = Arc::new(ethane());
+    let parameters = Arc::new(test_parameters().remove("ethane").unwrap());
     bench_dual_numbers(
         c,
         "dual_numbers_saftvrmie_ethane",
