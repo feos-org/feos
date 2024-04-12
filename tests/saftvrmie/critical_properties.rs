@@ -45,7 +45,7 @@ pub fn critical_data() -> HashMap<&'static str, (Temperature, Pressure, MassDens
 }
 
 #[test]
-fn critical_data_pure() {
+fn critical_properties_pure() {
     let t0 = Some(500.0 * KELVIN);
     critical_data().iter().for_each(|(name, data)| {
         dbg!(name);
