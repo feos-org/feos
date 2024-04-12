@@ -6,9 +6,6 @@ use feos_derive::{Components, IdealGas};
 use ndarray::Array1;
 use num_dual::DualNum;
 use std::sync::Arc;
-use ndarray::Array1;
-use num_dual::DualNum;
-use std::sync::Arc;
 
 mod dippr;
 mod joback;
