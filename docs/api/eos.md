@@ -21,6 +21,7 @@ If you want to adjust parameters of a model to experimental data you can use cla
     EquationOfState.python_residual
     EquationOfState.python_ideal_gas
     EquationOfState.uvtheory
+    EquationOfState.saftvrmie
     EquationOfState.saftvrqmie
 ```
 
@@ -54,7 +55,7 @@ If you want to adjust parameters of a model to experimental data you can use cla
 
 ## The `estimator` module
 
-### Import 
+### Import
 
 ```python
 from feos.eos.estimator import Estimator, DataSet, Loss, Phase
