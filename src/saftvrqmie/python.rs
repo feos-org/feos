@@ -10,7 +10,8 @@ use feos_core::python::parameter::PyIdentifier;
 use feos_core::si::{Temperature, AMU, ANGSTROM, KB, KELVIN, PLANCK};
 use feos_core::*;
 use ndarray::{Array1, Array2};
-use numpy::{PyArray1, PyArray2, PyReadonlyArray2, ToPyArray};
+use numpy::prelude::*;
+use numpy::{PyArray1, PyArray2, PyReadonlyArray2};
 use pyo3::exceptions::{PyIOError, PyTypeError};
 use pyo3::prelude::*;
 use quantity::python::{PySIArray2, PySINumber};
@@ -173,13 +174,13 @@ impl_parameter!(
 #[pymethods]
 impl PySaftVRQMieParameters {
     #[getter]
-    fn get_k_ij<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
-        self.0.k_ij.view().to_pyarray(py)
+    fn get_k_ij<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray2<f64>> {
+        self.0.k_ij.view().to_pyarray_bound(py)
     }
 
     #[getter]
-    fn get_l_ij<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
-        self.0.l_ij.view().to_pyarray(py)
+    fn get_l_ij<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray2<f64>> {
+        self.0.l_ij.view().to_pyarray_bound(py)
     }
 
     /// Calculate effective sigma.
@@ -344,7 +345,7 @@ impl PySaftVRQMieParameters {
 }
 
 #[pymodule]
-pub fn saftvrqmie(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+pub fn saftvrqmie(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<IdentifierOption>()?;
     m.add_class::<FeynmanHibbsOrder>()?;

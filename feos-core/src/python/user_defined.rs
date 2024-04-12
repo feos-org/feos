@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use crate::si::MolarWeight;
 use crate::{Components, IdealGas, Residual, StateHD};
 use ndarray::{Array1, ScalarOperand};
@@ -14,29 +15,27 @@ use std::fmt;
 pub struct PyIdealGas(Py<PyAny>);
 
 impl PyIdealGas {
-    pub fn new(obj: Py<PyAny>) -> PyResult<Self> {
-        Python::with_gil(|py| {
-            let attr = obj.as_ref(py).hasattr("components")?;
-            if !attr {
-                panic!("Python Class has to have a method 'components' with signature:\n\tdef signature(self) -> int")
-            }
-            let attr = obj.as_ref(py).hasattr("subset")?;
-            if !attr {
-                panic!("Python Class has to have a method 'subset' with signature:\n\tdef subset(self, component_list: List[int]) -> Self")
-            }
-            let attr = obj.as_ref(py).hasattr("ln_lambda3")?;
-            if !attr {
-                panic!("{}", "Python Class has to have a method 'ln_lambda3' with signature:\n\tdef ln_lambda3(self, temperature: HD) -> HD\nwhere 'HD' has to be any (hyper-) dual number.")
-            }
-            Ok(Self(obj))
-        })
+    pub fn new(obj: Bound<'_, PyAny>) -> PyResult<Self> {
+        let attr = obj.hasattr("components")?;
+        if !attr {
+            panic!("Python Class has to have a method 'components' with signature:\n\tdef signature(self) -> int")
+        }
+        let attr = obj.hasattr("subset")?;
+        if !attr {
+            panic!("Python Class has to have a method 'subset' with signature:\n\tdef subset(self, component_list: List[int]) -> Self")
+        }
+        let attr = obj.hasattr("ln_lambda3")?;
+        if !attr {
+            panic!("{}", "Python Class has to have a method 'ln_lambda3' with signature:\n\tdef ln_lambda3(self, temperature: HD) -> HD\nwhere 'HD' has to be any (hyper-) dual number.")
+        }
+        Ok(Self(obj.unbind()))
     }
 }
 
 impl Components for PyIdealGas {
     fn components(&self) -> usize {
         Python::with_gil(|py| {
-            let py_result = self.0.as_ref(py).call_method0("components").unwrap();
+            let py_result = self.0.bind(py).call_method0("components").unwrap();
             if py_result.get_type().name().unwrap() != "int" {
                 panic!(
                     "Expected an integer for the components() method signature, got {}",
@@ -51,7 +50,7 @@ impl Components for PyIdealGas {
         Python::with_gil(|py| {
             let py_result = self
                 .0
-                .as_ref(py)
+                .bind(py)
                 .call_method1("subset", (component_list.to_vec(),))
                 .unwrap();
             Self::new(py_result.extract().unwrap()).unwrap()
@@ -75,18 +74,16 @@ macro_rules! impl_ideal_gas {
                         *l3_any = Python::with_gil(|py| {
                             let py_result = self
                                 .0
-                                .as_ref(py)
+                                .bind(py)
                                 .call_method1("ln_lambda3", (<$py_hd_id>::from(t.clone()),))
                                 .unwrap();
 
                             // f64
                             if let Ok(r) = py_result.extract::<PyReadonlyArray1<f64>>() {
-                                r.to_owned_array()
-                                    .mapv(|ri| <$hd_ty>::from(ri))
+                                r.as_array().mapv(|ri| <$hd_ty>::from(ri))
                             // anything but f64
                             } else if let Ok(r) = py_result.extract::<PyReadonlyArray1<PyObject>>() {
-                                r.to_owned_array()
-                                    .mapv(|ri| <$hd_ty>::from(ri.extract::<$py_hd_id>(py).unwrap()))
+                                r.as_array().mapv(|ri| <$hd_ty>::from(ri.extract::<$py_hd_id>(py).unwrap()))
                             } else {
                                     panic!("ln_lambda3: data type of result must be one-dimensional numpy ndarray")
                             }
@@ -107,9 +104,7 @@ impl fmt::Display for PyIdealGas {
 }
 
 /// Struct containing pointer to Python Class that implements Helmholtz energy.
-pub struct PyResidual {
-    obj: Py<PyAny>,
-}
+pub struct PyResidual(Py<PyAny>);
 
 impl fmt::Display for PyResidual {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -118,37 +113,35 @@ impl fmt::Display for PyResidual {
 }
 
 impl PyResidual {
-    pub fn new(obj: Py<PyAny>) -> PyResult<Self> {
-        Python::with_gil(|py| {
-            let attr = obj.as_ref(py).hasattr("components")?;
-            if !attr {
-                panic!("Python Class has to have a method 'components' with signature:\n\tdef signature(self) -> int")
-            }
-            let attr = obj.as_ref(py).hasattr("subset")?;
-            if !attr {
-                panic!("Python Class has to have a method 'subset' with signature:\n\tdef subset(self, component_list: List[int]) -> Self")
-            }
-            let attr = obj.as_ref(py).hasattr("molar_weight")?;
-            if !attr {
-                panic!("Python Class has to have a method 'molar_weight' with signature:\n\tdef molar_weight(self) -> SIArray1\nwhere the size of the returned array has to be 'components'.")
-            }
-            let attr = obj.as_ref(py).hasattr("max_density")?;
-            if !attr {
-                panic!("Python Class has to have a method 'max_density' with signature:\n\tdef max_density(self, moles: numpy.ndarray[float]) -> float\nwhere the size of the input array has to be 'components'.")
-            }
-            let attr = obj.as_ref(py).hasattr("helmholtz_energy")?;
-            if !attr {
-                panic!("{}", "Python Class has to have a method 'helmholtz_energy' with signature:\n\tdef helmholtz_energy(self, state: StateHD) -> HD\nwhere 'HD' has to be any of {{float, Dual64, HyperDual64, HyperDualDual64, Dual3Dual64, Dual3_64}}.")
-            }
-            Ok(Self { obj: obj.clone() })
-        })
+    pub fn new(obj: Bound<'_, PyAny>) -> PyResult<Self> {
+        let attr = obj.hasattr("components")?;
+        if !attr {
+            panic!("Python Class has to have a method 'components' with signature:\n\tdef signature(self) -> int")
+        }
+        let attr = obj.hasattr("subset")?;
+        if !attr {
+            panic!("Python Class has to have a method 'subset' with signature:\n\tdef subset(self, component_list: List[int]) -> Self")
+        }
+        let attr = obj.hasattr("molar_weight")?;
+        if !attr {
+            panic!("Python Class has to have a method 'molar_weight' with signature:\n\tdef molar_weight(self) -> SIArray1\nwhere the size of the returned array has to be 'components'.")
+        }
+        let attr = obj.hasattr("max_density")?;
+        if !attr {
+            panic!("Python Class has to have a method 'max_density' with signature:\n\tdef max_density(self, moles: numpy.ndarray[float]) -> float\nwhere the size of the input array has to be 'components'.")
+        }
+        let attr = obj.hasattr("helmholtz_energy")?;
+        if !attr {
+            panic!("{}", "Python Class has to have a method 'helmholtz_energy' with signature:\n\tdef helmholtz_energy(self, state: StateHD) -> HD\nwhere 'HD' has to be any of {{float, Dual64, HyperDual64, HyperDualDual64, Dual3Dual64, Dual3_64}}.")
+        }
+        Ok(Self(obj.unbind()))
     }
 }
 
 impl Components for PyResidual {
     fn components(&self) -> usize {
         Python::with_gil(|py| {
-            let py_result = self.obj.as_ref(py).call_method0("components").unwrap();
+            let py_result = self.0.bind(py).call_method0("components").unwrap();
             if py_result.get_type().name().unwrap() != "int" {
                 panic!(
                     "Expected an integer for the components() method signature, got {}",
@@ -162,8 +155,8 @@ impl Components for PyResidual {
     fn subset(&self, component_list: &[usize]) -> Self {
         Python::with_gil(|py| {
             let py_result = self
-                .obj
-                .as_ref(py)
+                .0
+                .bind(py)
                 .call_method1("subset", (component_list.to_vec(),))
                 .unwrap();
             Self::new(py_result.extract().unwrap()).unwrap()
@@ -177,9 +170,9 @@ macro_rules! impl_residual {
             fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
                 Python::with_gil(|py| {
                     let py_result = self
-                        .obj
-                        .as_ref(py)
-                        .call_method1("max_density", (moles.to_owned().into_pyarray(py),))
+                        .0
+                        .bind(py)
+                        .call_method1("max_density", (moles.to_owned().into_pyarray_bound(py),))
                         .unwrap();
                     py_result.extract().unwrap()
                 })
@@ -194,8 +187,8 @@ macro_rules! impl_residual {
                         let d = (&mut a as &mut dyn Any).downcast_mut::<$hd_ty>().unwrap();
                         *d = Python::with_gil(|py| {
                             let py_result = self
-                                .obj
-                                .as_ref(py)
+                                .0
+                                .bind(py)
                                 .call_method1("helmholtz_energy", (<$py_state_id>::from(s.clone()),))
                                 .unwrap();
                             <$hd_ty>::from(py_result.extract::<$py_hd_id>().unwrap())
@@ -215,7 +208,7 @@ macro_rules! impl_residual {
 
             fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
                 Python::with_gil(|py| {
-                    let py_result = self.obj.as_ref(py).call_method0("molar_weight").unwrap();
+                    let py_result = self.0.bind(py).call_method0("molar_weight").unwrap();
                     if py_result.get_type().name().unwrap() != "SIArray1" {
                         panic!(
                             "Expected an 'SIArray1' for the 'molar_weight' method return type, got {}",

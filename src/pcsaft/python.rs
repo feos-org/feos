@@ -194,11 +194,11 @@ impl_parameter_from_segments!(PcSaftParameters, PyPcSaftParameters);
 #[pymethods]
 impl PyPcSaftParameters {
     #[getter]
-    fn get_k_ij<'py>(&self, py: Python<'py>) -> Option<&'py PyArray2<f64>> {
+    fn get_k_ij<'py>(&self, py: Python<'py>) -> Option<Bound<'py, PyArray2<f64>>> {
         self.0
             .binary_records
             .as_ref()
-            .map(|br| br.map(|br| br.k_ij).view().to_pyarray(py))
+            .map(|br| br.map(|br| br.k_ij).view().to_pyarray_bound(py))
     }
 
     fn _repr_markdown_(&self) -> String {
@@ -207,7 +207,7 @@ impl PyPcSaftParameters {
 }
 
 #[pymodule]
-pub fn pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+pub fn pcsaft(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<IdentifierOption>()?;
     m.add_class::<PyChemicalRecord>()?;

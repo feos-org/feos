@@ -212,7 +212,11 @@ macro_rules! impl_binary_record {
         #[pymethods]
         impl PyBinaryRecord {
             #[new]
-            fn new(id1: PyIdentifier, id2: PyIdentifier, model_record: &PyAny) -> PyResult<Self> {
+            fn new(
+                id1: PyIdentifier,
+                id2: PyIdentifier,
+                model_record: &Bound<'_, PyAny>,
+            ) -> PyResult<Self> {
                 if let Ok(mr) = model_record.extract::<f64>() {
                     Ok(Self(BinaryRecord::new(id1.0, id2.0, mr.try_into()?)))
                 } else if let Ok(mr) = model_record.extract::<$py_model_record>() {
@@ -264,16 +268,16 @@ macro_rules! impl_binary_record {
             }
 
             #[getter]
-            fn get_model_record(&self, py: Python) -> PyObject {
-                if let Ok(mr) = f64::try_from(self.0.model_record.clone()) {
-                    mr.to_object(py)
+            fn get_model_record<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+                Ok(if let Ok(mr) = f64::try_from(self.0.model_record.clone()) {
+                    pyo3::types::PyFloat::new_bound(py, mr).into_any()
                 } else {
-                    $py_model_record(self.0.model_record.clone()).into_py(py)
-                }
+                    Bound::new(py, $py_model_record(self.0.model_record.clone()))?.into_any()
+                })
             }
 
             #[setter]
-            fn set_model_record(&mut self, model_record: &PyAny) -> PyResult<()> {
+            fn set_model_record(&mut self, model_record: &Bound<'_, PyAny>) -> PyResult<()> {
                 if let Ok(mr) = model_record.extract::<f64>() {
                     self.0.model_record = mr.try_into()?;
                 } else if let Ok(mr) = model_record.extract::<$py_model_record>() {
@@ -558,6 +562,8 @@ macro_rules! impl_parameter {
             impl_parameter!($parameter, $py_parameter, $py_model_record, PyNoBinaryModelRecord);
         };
         ($parameter:ty, $py_parameter:ty, $py_model_record:ty, $py_binary_model_record:ty) => {
+        use pyo3::pybacked::*;
+
         #[pymethods]
         impl $py_parameter {
             /// Creates parameters from records.
@@ -578,14 +584,14 @@ macro_rules! impl_parameter {
             )]
             fn from_records(
                 pure_records: Vec<PyPureRecord>,
-                binary_records: Option<&PyAny>,
+                binary_records: Option<&Bound<'_, PyAny>>,
                 identifier_option: IdentifierOption,
             ) -> PyResult<Self> {
                 let prs: Vec<_> = pure_records.into_iter().map(|pr| pr.0).collect();
                 let binary_records = binary_records
                     .map(|binary_records| {
                         if let Ok(br) = binary_records.extract::<PyReadonlyArray2<f64>>() {
-                            Ok(Some(br.to_owned_array().mapv(|r| r.try_into().unwrap())))
+                            Ok(Some(br.as_array().mapv(|r| r.try_into().unwrap())))
                         } else if let Ok(br) = binary_records.extract::<Vec<PyBinaryRecord>>() {
                             let brs: Vec<_> = br.into_iter().map(|br| br.0).collect();
                             Ok(<$parameter>::binary_matrix_from_records(
@@ -628,7 +634,7 @@ macro_rules! impl_parameter {
             #[pyo3(text_signature = "(pure_records, binary_record=None)")]
             fn new_binary(
                 pure_records: Vec<PyPureRecord>,
-                binary_record: Option<&PyAny>,
+                binary_record: Option<&Bound<'_, PyAny>>,
             ) -> PyResult<Self> {
                 let prs = pure_records.into_iter().map(|pr| pr.0).collect();
                 let br = binary_record
@@ -678,11 +684,12 @@ macro_rules! impl_parameter {
                 text_signature = "(substances, pure_path, binary_path=None, identifier_option)"
             )]
             fn from_json(
-                substances: Vec<&str>,
+                substances: Vec<PyBackedStr>,
                 pure_path: String,
                 binary_path: Option<String>,
                 identifier_option: IdentifierOption,
             ) -> Result<Self, ParameterError> {
+                let substances = substances.iter().map(|s| &**s).collect();
                 Ok(Self(Arc::new(<$parameter>::from_json(
                     substances,
                     pure_path,
@@ -708,13 +715,14 @@ macro_rules! impl_parameter {
                 text_signature = "(input, binary_path=None, identifier_option)"
             )]
             fn from_multiple_json(
-                input: Vec<(Vec<&str>, &str)>,
-                binary_path: Option<&str>,
+                input: Vec<(Vec<PyBackedStr>, PyBackedStr)>,
+                binary_path: Option<PyBackedStr>,
                 identifier_option: Option<IdentifierOption>,
             ) -> Result<Self, ParameterError> {
+                let input: Vec<(Vec<&str>, &str)> = input.iter().map(|(c, f)| (c.iter().map(|c| &**c).collect(), &**f)).collect();
                 Ok(Self(Arc::new(<$parameter>::from_multiple_json(
                     &input,
-                    binary_path,
+                    binary_path.as_deref(),
                     identifier_option.unwrap_or(IdentifierOption::Name),
                 )?)))
             }
@@ -730,11 +738,11 @@ macro_rules! impl_parameter {
             }
 
             #[getter]
-            fn get_binary_records<'py>(&self, py: Python<'py>) -> Option<&'py PyArray2<f64>> {
+            fn get_binary_records<'py>(&self, py: Python<'py>) -> Option<Bound<'py, PyArray2<f64>>> {
                 self.0
                     .records()
                     .1
-                    .map(|r| r.mapv(|r| f64::try_from(r).unwrap()).view().to_pyarray(py))
+                    .map(|r| r.mapv(|r| f64::try_from(r).unwrap()).view().to_pyarray_bound(py))
             }
         }
     };
@@ -743,6 +751,8 @@ macro_rules! impl_parameter {
 #[macro_export]
 macro_rules! impl_parameter_from_segments {
     ($parameter:ty, $py_parameter:ty) => {
+        use pyo3::pybacked::*;
+
         #[pymethods]
         impl $py_parameter {
             /// Creates parameters from segment records.
@@ -790,12 +800,13 @@ macro_rules! impl_parameter_from_segments {
                 text_signature = "(substances, pure_path, segments_path, binary_path=None, identifier_option)"
             )]
             fn from_json_segments(
-                substances: Vec<&str>,
+                substances: Vec<PyBackedStr>,
                 pure_path: String,
                 segments_path: String,
                 binary_path: Option<String>,
                 identifier_option: IdentifierOption,
             ) -> PyResult<Self> {
+                let substances: Vec<_> = substances.iter().map(|s| &**s).collect();
                 Ok(Self(Arc::new(<$parameter>::from_json_segments(
                     &substances,
                     pure_path,
@@ -824,15 +835,14 @@ macro_rules! impl_parameter_from_segments {
             #[staticmethod]
             #[pyo3(text_signature = "(identifier, smarts_records, segment_records, binary_segment_records=None)")]
             fn from_smiles(
-                py: Python<'_>,
-                identifier: Vec<&PyAny>,
+                identifier: Vec<Bound<'_,PyAny>>,
                 smarts_records: Vec<PySmartsRecord>,
                 segment_records: Vec<PySegmentRecord>,
                 binary_segment_records: Option<Vec<PyBinarySegmentRecord>>,
             ) -> PyResult<Self> {
                 let chemical_records: Vec<_> = identifier
                     .into_iter()
-                    .map(|i| PyChemicalRecord::from_smiles(py, i, smarts_records.clone()))
+                    .map(|i| PyChemicalRecord::from_smiles(&i, smarts_records.clone()))
                     .collect::<PyResult<_>>()?;
                 Self::from_segments(chemical_records, segment_records, binary_segment_records)
             }
@@ -857,8 +867,7 @@ macro_rules! impl_parameter_from_segments {
                 text_signature = "(identifier, smarts_path, segments_path, binary_path=None)"
             )]
             fn from_json_smiles(
-                py: Python<'_>,
-                identifier: Vec<&PyAny>,
+                identifier: Vec<Bound<'_,PyAny>>,
                 smarts_path: String,
                 segments_path: String,
                 binary_path: Option<String>,
@@ -867,7 +876,6 @@ macro_rules! impl_parameter_from_segments {
                 let segment_records = PySegmentRecord::from_json(&segments_path)?;
                 let binary_segment_records = binary_path.map(|p| PyBinarySegmentRecord::from_json(&p)).transpose()?;
                 Self::from_smiles(
-                    py,
                     identifier,
                     smarts_records,
                     segment_records,

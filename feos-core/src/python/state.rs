@@ -54,7 +54,7 @@ macro_rules! impl_state {
         impl PyState {
             #[new]
             #[pyo3(text_signature = "(eos, temperature=None, volume=None, density=None, partial_density=None, total_moles=None, moles=None, molefracs=None, pressure=None, molar_enthalpy=None, molar_entropy=None, molar_internal_energy=None, density_initialization=None, initial_temperature=None)")]
-            pub fn new(
+            pub fn new<'py>(
                 eos: $py_eos,
                 temperature: Option<PySINumber>,
                 volume: Option<PySINumber>,
@@ -62,17 +62,17 @@ macro_rules! impl_state {
                 partial_density: Option<PySIArray1>,
                 total_moles: Option<PySINumber>,
                 moles: Option<PySIArray1>,
-                molefracs: Option<&PyArray1<f64>>,
+                molefracs: Option<&Bound<'py, PyArray1<f64>>>,
                 pressure: Option<PySINumber>,
                 molar_enthalpy: Option<PySINumber>,
                 molar_entropy: Option<PySINumber>,
                 molar_internal_energy: Option<PySINumber>,
-                density_initialization: Option<&PyAny>,
+                density_initialization: Option<&Bound<'py, PyAny>>,
                 initial_temperature: Option<PySINumber>,
             ) -> PyResult<Self> {
                 let x = molefracs.and_then(|m| Some(m.to_owned_array()));
                 let density_init = if let Some(di) = density_initialization {
-                    if let Ok(d) = di.extract::<&str>() {
+                    if let Ok(d) = di.extract::<String>().as_deref() {
                         match d {
                             "vapor" => Ok(DensityInitialization::Vapor),
                             "liquid" => Ok(DensityInitialization::Liquid),
@@ -556,8 +556,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// numpy.ndarray
-            fn ln_phi<'py>(&self, py: Python<'py>) -> &'py PyArray1<f64> {
-                self.0.ln_phi().view().to_pyarray(py)
+            fn ln_phi<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+                self.0.ln_phi().into_pyarray_bound(py)
             }
 
             /// Return logarithmic fugacity coefficient of all components treated as
@@ -566,8 +566,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// numpy.ndarray
-            fn ln_phi_pure_liquid<'py>(&self, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
-                Ok(self.0.ln_phi_pure_liquid()?.view().to_pyarray(py))
+            fn ln_phi_pure_liquid<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray1<f64>>> {
+                Ok(self.0.ln_phi_pure_liquid()?.into_pyarray_bound(py))
             }
 
             /// Return logarithmic symmetric activity coefficient.
@@ -575,8 +575,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// numpy.ndarray
-            fn ln_symmetric_activity_coefficient<'py>(&self, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
-                Ok(self.0.ln_symmetric_activity_coefficient()?.view().to_pyarray(py))
+            fn ln_symmetric_activity_coefficient<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray1<f64>>> {
+                Ok(self.0.ln_symmetric_activity_coefficient()?.into_pyarray_bound(py))
             }
 
             /// Return Henry's law constant of every solute (x_i=0) for a given solvent (x_i>0).
@@ -594,7 +594,7 @@ macro_rules! impl_state {
             /// -------
             /// SIArray1
             #[staticmethod]
-            fn henrys_law_constant(eos: $py_eos, temperature: PySINumber, molefracs: &PyArray1<f64>) -> PyResult<PySIArray1> {
+            fn henrys_law_constant(eos: $py_eos, temperature: PySINumber, molefracs: &Bound<'_, PyArray1<f64>>) -> PyResult<PySIArray1> {
                 Ok(State::henrys_law_constant(&eos.0, temperature.try_into()?, &molefracs.to_owned_array())?.into())
             }
 
@@ -648,8 +648,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// numpy.ndarray
-            fn thermodynamic_factor<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
-                self.0.thermodynamic_factor().view().to_pyarray(py)
+            fn thermodynamic_factor<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray2<f64>> {
+                self.0.thermodynamic_factor().into_pyarray_bound(py)
             }
 
             /// Return molar isochoric heat capacity.
@@ -1023,8 +1023,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// numpy.ndarray[Float64]
-            fn massfracs<'py>(&self, py: Python<'py>) -> &'py PyArray1<f64> {
-                self.0.massfracs().view().to_pyarray(py)
+            fn massfracs<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+                self.0.massfracs().into_pyarray_bound(py)
             }
 
             /// Return mass specific Helmholtz energy.
@@ -1170,8 +1170,8 @@ macro_rules! impl_state {
             }
 
             #[getter]
-            fn get_molefracs<'py>(&self, py: Python<'py>) -> &'py PyArray1<f64> {
-                self.0.molefracs.view().to_pyarray(py)
+            fn get_molefracs<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+                self.0.molefracs.to_pyarray_bound(py)
             }
 
             fn _repr_markdown_(&self) -> String {
@@ -1320,8 +1320,8 @@ macro_rules! impl_state {
             }
 
             #[getter]
-            fn get_compressibility<'py>(&self, py: Python<'py>) -> &'py PyArray1<f64> {
-                StateVec::from(self).compressibility().view().to_pyarray(py)
+            fn get_compressibility<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+                StateVec::from(self).compressibility().into_pyarray_bound(py)
             }
 
             #[getter]
@@ -1335,8 +1335,8 @@ macro_rules! impl_state {
             }
 
             #[getter]
-            fn get_molefracs<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
-                StateVec::from(self).molefracs().view().to_pyarray(py)
+            fn get_molefracs<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray2<f64>> {
+                StateVec::from(self).molefracs().into_pyarray_bound(py)
             }
 
             #[getter]
@@ -1345,8 +1345,8 @@ macro_rules! impl_state {
             }
 
             #[getter]
-            fn get_massfracs<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
-                StateVec::from(self).massfracs().view().to_pyarray(py)
+            fn get_massfracs<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray2<f64>> {
+                StateVec::from(self).massfracs().into_pyarray_bound(py)
             }
 
             /// Returns selected properties of a StateVec as dictionary.

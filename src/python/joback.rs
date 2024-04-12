@@ -72,7 +72,7 @@ impl PyJoback {
 }
 
 #[pymodule]
-pub fn joback(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+pub fn joback(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<IdentifierOption>()?;
     m.add_class::<PyJobackRecord>()?;

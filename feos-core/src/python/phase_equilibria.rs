@@ -155,12 +155,12 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseEquilibrium
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, liquid_molefracs, tp_init=None, vapor_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
-            pub fn bubble_point(
+            pub fn bubble_point<'py>(
                 eos: $py_eos,
                 temperature_or_pressure: PySINumber,
-                liquid_molefracs: &PyArray1<f64>,
+                liquid_molefracs: &Bound<'py, PyArray1<f64>>,
                 tp_init: Option<PySINumber>,
-                vapor_molefracs: Option<&PyArray1<f64>>,
+                vapor_molefracs: Option<&Bound<'py, PyArray1<f64>>>,
                 max_iter_inner: Option<usize>,
                 max_iter_outer: Option<usize>,
                 tol_inner: Option<f64>,
@@ -232,12 +232,12 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseEquilibrium
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, vapor_molefracs, tp_init=None, liquid_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
-            pub fn dew_point(
+            pub fn dew_point<'py>(
                 eos: $py_eos,
                 temperature_or_pressure: PySINumber,
-                vapor_molefracs: &PyArray1<f64>,
+                vapor_molefracs: &Bound<'py, PyArray1<f64>>,
                 tp_init: Option<PySINumber>,
-                liquid_molefracs: Option<&PyArray1<f64>>,
+                liquid_molefracs: Option<&Bound<'py, PyArray1<f64>>>,
                 max_iter_inner: Option<usize>,
                 max_iter_outer: Option<usize>,
                 tol_inner: Option<f64>,

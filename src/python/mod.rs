@@ -1,9 +1,9 @@
+#[cfg(feature = "epcsaft")]
+use crate::epcsaft::python::epcsaft as epcsaft_module;
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::python::gc_pcsaft as gc_pcsaft_module;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::python::pcsaft as pcsaft_module;
-#[cfg(feature = "epcsaft")]
-use crate::epcsaft::python::epcsaft as epcsaft_module;
 #[cfg(feature = "pets")]
 use crate::pets::python::pets as pets_module;
 #[cfg(feature = "saftvrmie")]
@@ -32,7 +32,7 @@ mod dft;
 use dft::dft as dft_module;
 
 #[pymodule]
-pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
+pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_wrapped(wrap_pymodule!(quantity_module))?;
 
@@ -57,33 +57,33 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     #[cfg(feature = "saftvrmie")]
     m.add_wrapped(wrap_pymodule!(saftvrmie_module))?;
 
-    set_path(py, m, "feos.si", "quantity")?;
-    set_path(py, m, "feos.eos", "eos")?;
+    set_path(m, "feos.si", "quantity")?;
+    set_path(m, "feos.eos", "eos")?;
     #[cfg(feature = "estimator")]
-    set_path(py, m, "feos.eos.estimator", "eos.estimator_eos")?;
+    set_path(m, "feos.eos.estimator", "eos.estimator_eos")?;
     #[cfg(feature = "dft")]
-    set_path(py, m, "feos.dft", "dft")?;
+    set_path(m, "feos.dft", "dft")?;
     #[cfg(all(feature = "dft", feature = "estimator"))]
-    set_path(py, m, "feos.dft.estimator", "dft.estimator_dft")?;
-    set_path(py, m, "feos.joback", "joback")?;
-    set_path(py, m, "feos.dippr", "dippr")?;
-    set_path(py, m, "feos.cubic", "cubic")?;
+    set_path(m, "feos.dft.estimator", "dft.estimator_dft")?;
+    set_path(m, "feos.joback", "joback")?;
+    set_path(m, "feos.dippr", "dippr")?;
+    set_path(m, "feos.cubic", "cubic")?;
     #[cfg(feature = "pcsaft")]
-    set_path(py, m, "feos.pcsaft", "pcsaft")?;
+    set_path(m, "feos.pcsaft", "pcsaft")?;
     #[cfg(feature = "epcsaft")]
-    set_path(py, m, "feos.epcsaft", "epcsaft")?;
+    set_path(m, "feos.epcsaft", "epcsaft")?;
     #[cfg(feature = "gc_pcsaft")]
-    set_path(py, m, "feos.gc_pcsaft", "gc_pcsaft")?;
+    set_path(m, "feos.gc_pcsaft", "gc_pcsaft")?;
     #[cfg(feature = "pets")]
-    set_path(py, m, "feos.pets", "pets")?;
+    set_path(m, "feos.pets", "pets")?;
     #[cfg(feature = "uvtheory")]
-    set_path(py, m, "feos.uvtheory", "uvtheory")?;
+    set_path(m, "feos.uvtheory", "uvtheory")?;
     #[cfg(feature = "saftvrqmie")]
-    set_path(py, m, "feos.saftvrqmie", "saftvrqmie")?;
+    set_path(m, "feos.saftvrqmie", "saftvrqmie")?;
     #[cfg(feature = "saftvrmie")]
-    set_path(py, m, "feos.saftvrmie", "saftvrmie")?;
+    set_path(m, "feos.saftvrmie", "saftvrmie")?;
 
-    py.run(
+    m.py().run_bound(
         "\
 import sys
 quantity.SINumber.__module__ = 'feos.si'
@@ -93,13 +93,13 @@ quantity.SIArray3.__module__ = 'feos.si'
 quantity.SIArray4.__module__ = 'feos.si'
     ",
         None,
-        Some(m.dict()),
+        Some(&m.dict()),
     )?;
     Ok(())
 }
 
-fn set_path(py: Python<'_>, m: &PyModule, path: &str, module: &str) -> PyResult<()> {
-    py.run(
+fn set_path(m: &Bound<'_, PyModule>, path: &str, module: &str) -> PyResult<()> {
+    m.py().run_bound(
         &format!(
             "\
 import sys
@@ -107,6 +107,6 @@ sys.modules['{path}'] = {module}
     "
         ),
         None,
-        Some(m.dict()),
+        Some(&m.dict()),
     )
 }

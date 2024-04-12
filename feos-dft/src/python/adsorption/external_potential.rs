@@ -1,4 +1,5 @@
 use crate::adsorption::ExternalPotential;
+use numpy::prelude::*;
 use numpy::PyArray1;
 use pyo3::prelude::*;
 use quantity::python::{PySIArray2, PySINumber};
@@ -95,7 +96,10 @@ impl PyExternalPotential {
     /// ExternalPotential
     ///
     #[staticmethod]
-    pub fn CustomLJ93(sigma_sf: &PyArray1<f64>, epsilon_k_sf: &PyArray1<f64>) -> Self {
+    pub fn CustomLJ93(
+        sigma_sf: &Bound<'_, PyArray1<f64>>,
+        epsilon_k_sf: &Bound<'_, PyArray1<f64>>,
+    ) -> Self {
         Self(ExternalPotential::CustomLJ93 {
             sigma_sf: sigma_sf.to_owned_array(),
             epsilon_k_sf: epsilon_k_sf.to_owned_array(),
@@ -154,8 +158,8 @@ impl PyExternalPotential {
     #[staticmethod]
     #[pyo3(text_signature = "(sigma_sf, epsilon_k_sf, rho_s, xi=None)")]
     pub fn CustomSteele(
-        sigma_sf: &PyArray1<f64>,
-        epsilon_k_sf: &PyArray1<f64>,
+        sigma_sf: &Bound<'_, PyArray1<f64>>,
+        epsilon_k_sf: &Bound<'_, PyArray1<f64>>,
         rho_s: f64,
         xi: Option<f64>,
     ) -> Self {
@@ -226,8 +230,8 @@ impl PyExternalPotential {
     )]
     pub fn FreeEnergyAveraged(
         coordinates: PySIArray2,
-        sigma_ss: &PyArray1<f64>,
-        epsilon_k_ss: &PyArray1<f64>,
+        sigma_ss: &Bound<'_, PyArray1<f64>>,
+        epsilon_k_ss: &Bound<'_, PyArray1<f64>>,
         pore_center: [f64; 3],
         system_size: [PySINumber; 3],
         n_grid: [usize; 2],

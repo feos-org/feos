@@ -35,12 +35,12 @@ macro_rules! impl_solvation_profile {
         impl PySolvationProfile {
             #[new]
             #[pyo3(text_signature = "(bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None, potential_cutoff=None)")]
-            fn new(
+            fn new<'py>(
                 bulk: &PyState,
                 n_grid: [usize; 3],
                 coordinates: &PySIArray2,
-                sigma: &PyArray1<f64>,
-                epsilon_k: &PyArray1<f64>,
+                sigma: &Bound<'py, PyArray1<f64>>,
+                epsilon_k: &Bound<'py, PyArray1<f64>>,
                 system_size: Option<[PySINumber; 3]>,
                 cutoff_radius: Option<PySINumber>,
                 potential_cutoff: Option<f64>,
@@ -118,11 +118,11 @@ macro_rules! impl_pair_correlation {
             fn get_pair_correlation_function<'py>(
                 &self,
                 py: Python<'py>,
-            ) -> Option<&'py PyArray2<f64>> {
+            ) -> Option<Bound<'py, PyArray2<f64>>> {
                 self.0
                     .pair_correlation_function
                     .as_ref()
-                    .map(|g| g.view().to_pyarray(py))
+                    .map(|g| g.view().to_pyarray_bound(py))
             }
 
             #[getter]

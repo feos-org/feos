@@ -145,7 +145,7 @@ impl PyGcPcSaftFunctionalParameters {
 
     #[getter]
     fn get_graph(&self, py: Python) -> PyResult<PyObject> {
-        let fun: Py<PyAny> = PyModule::from_code(
+        let fun: Py<PyAny> = PyModule::from_code_bound(
             py,
             "def f(s): 
                 import graphviz
@@ -159,8 +159,8 @@ impl PyGcPcSaftFunctionalParameters {
     }
 
     #[getter]
-    fn get_k_ij<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
-        self.0.k_ij.view().to_pyarray(py)
+    fn get_k_ij<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray2<f64>> {
+        self.0.k_ij.view().to_pyarray_bound(py)
     }
 
     fn __repr__(&self) -> PyResult<String> {
@@ -169,7 +169,7 @@ impl PyGcPcSaftFunctionalParameters {
 }
 
 #[pymodule]
-pub fn gc_pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+pub fn gc_pcsaft(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<IdentifierOption>()?;
     m.add_class::<PyChemicalRecord>()?;

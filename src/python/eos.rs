@@ -42,7 +42,7 @@ use feos_core::python::cubic::PyPengRobinsonParameters;
 use feos_core::python::user_defined::{PyIdealGas, PyResidual};
 use feos_core::si::*;
 use feos_core::*;
-use numpy::convert::ToPyArray;
+use numpy::prelude::*;
 use numpy::{PyArray1, PyArray2};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
@@ -271,7 +271,7 @@ impl PyEquationOfState {
     /// -------
     /// EquationOfState
     #[staticmethod]
-    fn python_residual(residual: Py<PyAny>) -> PyResult<Self> {
+    fn python_residual(residual: Bound<'_, PyAny>) -> PyResult<Self> {
         let residual = Arc::new(ResidualModel::Python(PyResidual::new(residual)?));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
@@ -401,7 +401,7 @@ impl PyEquationOfState {
     /// Returns
     /// -------
     /// EquationOfState
-    fn python_ideal_gas(&self, ideal_gas: Py<PyAny>) -> PyResult<Self> {
+    fn python_ideal_gas(&self, ideal_gas: Bound<'_, PyAny>) -> PyResult<Self> {
         Ok(self.add_ideal_gas(IdealGasModel::Python(PyIdealGas::new(ideal_gas)?)))
     }
 
@@ -462,7 +462,7 @@ impl_estimator!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState
 impl_estimator_entropy_scaling!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
 
 #[pymodule]
-pub fn eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+pub fn eos(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Contributions>()?;
     m.add_class::<Verbosity>()?;
 
@@ -480,7 +480,7 @@ pub fn eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
 #[cfg(feature = "estimator")]
 #[pymodule]
-pub fn estimator_eos(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+pub fn estimator_eos(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyDataSet>()?;
     m.add_class::<PyEstimator>()?;
     m.add_class::<PyLoss>()?;
