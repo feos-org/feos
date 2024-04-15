@@ -35,8 +35,6 @@ fn state_pcsaft(parameters: PcSaftParameters) -> State<PcSaft> {
 
 #[cfg(feature = "saftvrmie")]
 fn state_saftvrmie(parameters: &Arc<SaftVRMieParameters>) -> State<SaftVRMie> {
-    use feos::saftvrmie::{SaftVRMie, SaftVRMieParameters};
-
     let n = parameters.pure_records.len();
     let eos = Arc::new(SaftVRMie::new(parameters.clone()));
     let moles = Array::from_elem(n, 1.0 / n as f64) * 10.0 * MOL;
@@ -147,14 +145,14 @@ fn pcsaft(c: &mut Criterion) {
 /// Benchmark for the SAFT VR Mie equation of state
 #[cfg(feature = "saftvrmie")]
 fn saftvrmie(c: &mut Criterion) {
-    use feos::saftvrmie::{ethane, methane};
+    use feos::saftvrmie::test_utils::test_parameters;
 
-    let parameters = Arc::new(methane());
-    // bench_dual_numbers(
-    //     c,
-    //     "dual_numbers_saftvrmie_methane",
-    //     state_saftvrmie(&parameters),
-    // );
+    let parameters = Arc::new(test_parameters().remove("methane").unwrap());
+    bench_dual_numbers(
+        c,
+        "dual_numbers_saftvrmie_methane",
+        state_saftvrmie(&parameters),
+    );
     bench_diameter(
         c,
         "dual_numbers_diameter_saftvrmie_methane",
@@ -195,7 +193,7 @@ fn methane_co2_pcsaft(c: &mut Criterion) {
 }
 
 #[cfg(feature = "pcsaft")]
-criterion_group!(bench, pcsaft, methane_co2_pcsaft);
+criterion_group!(benches, pcsaft, methane_co2_pcsaft);
 #[cfg(feature = "saftvrmie")]
-criterion_group!(bench, saftvrmie);
-criterion_main!(bench);
+criterion_group!(benches, saftvrmie);
+criterion_main!(benches);

@@ -135,7 +135,7 @@ pub fn density_iteration<E: Residual>(
     }
 }
 
-pub(crate) fn pressure_spinodal<E: Residual>(
+fn pressure_spinodal<E: Residual>(
     eos: &Arc<E>,
     temperature: Temperature,
     rho_init: Density,
