@@ -1,4 +1,5 @@
 # Association
+
 The Helmholtz contribution due to short range attractive interaction ("association") in SAFT models can be conveniently expressed as
 
 $$\frac{A^\mathrm{assoc}}{k_\mathrm{B}TV}=\sum_\alpha\rho_\alpha\left(\ln X_\alpha-\frac{X_\alpha}{2}+\frac{1}{2}\right)$$
@@ -47,13 +48,13 @@ Analogously, for a single $C$ site, the expression becomes
 
 $$X_C=\frac{2}{\sqrt{1+4\rho_C\Delta^{CC}}+1}$$
 
-
 ## PC-SAFT expression for the association strength
+
 In $\text{FeO}_\text{s}$ every association site $\alpha$ is parametrized with the dimensionless association volume $\kappa^\alpha$ and the association energy $\varepsilon^\alpha$. The association strength between sites $\alpha$ and $\beta$ is then calculated from
 
 $$\Delta^{\alpha\beta}=\left(\frac{1}{1-\zeta_3}+\frac{\frac{3}{2}d_{ij}\zeta_2}{\left(1-\zeta_3\right)^2}+\frac{\frac{1}{2}d_{ij}^2\zeta_2^2}{\left(1-\zeta_3\right)^3}\right)\sqrt{\sigma_i^3\kappa^\alpha\sigma_j^3\kappa^\beta}\left(e^{\frac{\varepsilon^\alpha+\varepsilon^\beta}{2k_\mathrm{B}T}}-1\right)$$
 
-with 
+with
 
 $$d_{ij}=\frac{2d_id_j}{d_i+d_j},~~~~d_k=\sigma_k\left(1-0.12e^{\frac{-3\varepsilon_k}{k_\mathrm{B}T}}\right)$$
 
@@ -65,7 +66,31 @@ The indices $i$, $j$ and $k$ are used to index molecules or segments rather than
 
 On their own the parameters $\kappa^\alpha$ and $\varepsilon^\beta$ have no physical meaning. For a pure system of self-associating molecules it is therefore natural to define $\kappa^A=\kappa^B\equiv\kappa^{A_iB_i}$ and $\varepsilon^A=\varepsilon^B\equiv\varepsilon^{A_iB_i}$ where $\kappa^{A_iB_i}$ and $\varepsilon^{A_iB_i}$ are now parameters describing the molecule rather than individual association sites. However, for systems that are not self-associating, the more generic parametrization is required.
 
+## SAFT-VR Mie expression for the association strength
+
+We provide an implementation of the association strength as published by [Lafitte et al. (2013)](https://doi.org/10.1063/1.4819786).
+Every association site $\alpha$ is parametrized with two distances $r_c^\alpha$ and $r_d^\alpha$, and the association energy $\varepsilon^\alpha$. Whereas $r_c^\alpha$ is a parameter that is adjusted for each substance, $r_d^\alpha$ is kept constant as $r_d^\alpha = 0.4 \sigma$. Note that the parameter $r_c^\alpha$ has to be provided as dimensionless quantity in the input, i.e. divided by the segment's $\sigma$ value. 
+
+The association strength between sites $\alpha$ and $\beta$ is then calculated from
+
+$$\Delta^{\alpha\beta}=\left(\frac{1}{1-\zeta_3}+\frac{\frac{3}{2}\tilde{d}_{ij}\zeta_2}{\left(1-\zeta_3\right)^2}+\frac{\frac{1}{2}\tilde{d}_{ij}^2\zeta_2^2}{\left(1-\zeta_3\right)^3}\right)K_{ij}^{\alpha\beta}\sigma_{ij}^3\left(e^{\frac{\sqrt{\varepsilon^\alpha\varepsilon^\beta}}{k_\mathrm{B}T}}-1\right)$$
+ 
+with
+
+$$\tilde{d}_{ij}=\frac{2d_id_j}{d_i+d_j},~~~~\sigma_{ij} = \frac{\sigma_i + \sigma_j}{2}$$
+
+and 
+
+$$\zeta_2=\frac{\pi}{6}\sum_k\rho_km_kd_k^2,~~~~\zeta_3=\frac{\pi}{6}\sum_k\rho_km_kd_k^3$$
+
+where 
+
+$$d_i = \int_{l}^{\sigma_i} \left[1 - e^{-\beta u_i^\text{Mie}(r)}\right]\mathrm{d}r.$$
+
+The integral is solved using a Gauss-Legendre quadrature of fifth order where the lower limit, $l$, is determined using the method of [Aasen et al.](https://doi.org/10.1063/1.5111364) The dimensionless bonding volume $K^{\alpha\beta}_{ij}$ (see [A43](https://doi.org/10.1063/1.4819786)) utilizes arithmetic combining rules for $r_c^{\alpha\beta}$, $r_d^{\alpha\beta}$ and $d_{ij}$ of unlike sites and segments, respectively.
+
 ## Helmholtz energy functional
+
 The Helmholtz energy contribution proposed by [Yu and Wu 2002](https://aip.scitation.org/doi/abs/10.1063/1.1463435) is used to model association in inhomogeneous systems. It uses the same weighted densities that are used in [Fundamental Measure Theory](hard_spheres) (the White-Bear version). The Helmholtz energy density is then calculated from
 
 $$\beta f=\sum_\alpha\frac{n_0^\alpha\xi_i}{m_i}\left(\ln X_\alpha-\frac{X_\alpha}{2}+\frac{1}{2}\right)$$
