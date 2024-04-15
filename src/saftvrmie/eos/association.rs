@@ -197,7 +197,7 @@ impl AssociationParameters {
             .map(|(i, site)| ((site.assoc_comp, site.site_index), i))
             .collect();
 
-        // rc_ab and rc_cc are *dimensioned* volume parameters (i.e. multiplied by sigma, in Angstrom)
+        // rc_ab and rc_cc are *dimensioned* distance parameters (i.e. multiplied by sigma, in Angstrom)
         let mut rc_ab = Array2::from_shape_fn([sites_a.len(), sites_b.len()], |(i, j)| {
             (sites_a[i].rc_ab * sigma[sites_a[i].assoc_comp]
                 + sites_b[j].rc_ab * sigma[sites_b[j].assoc_comp])
