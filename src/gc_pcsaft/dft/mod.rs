@@ -1,5 +1,6 @@
 use super::eos::GcPcSaftOptions;
-use crate::association::Association;
+use super::record::GcPcSaftAssociationRecord;
+use crate::association::{Association, AssociationStrength};
 use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use feos_core::parameter::ParameterHetero;
 use feos_core::si::{MolarWeight, GRAM, MOL};
@@ -140,6 +141,32 @@ impl HardSphereProperties for GcPcSaftFunctionalParameters {
         Array1::from_shape_fn(self.sigma.len(), |i| {
             -((ti * self.epsilon_k[i]).exp() * 0.12 - 1.0) * self.sigma[i]
         })
+    }
+}
+
+impl AssociationStrength for GcPcSaftFunctionalParameters {
+    type Record = GcPcSaftAssociationRecord;
+    type BinaryRecord = ();
+
+    fn association_strength<D: DualNum<f64> + Copy>(
+        &self,
+        temperature: D,
+        comp_i: usize,
+        comp_j: usize,
+        assoc_ij: Self::Record,
+    ) -> D {
+        let si = self.sigma[comp_i];
+        let sj = self.sigma[comp_j];
+        (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
+            * assoc_ij.kappa_ab
+            * (si * sj).powf(1.5)
+    }
+
+    fn combining_rule(parameters_i: Self::Record, parameters_j: Self::Record) -> Self::Record {
+        Self::Record {
+            kappa_ab: (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt(),
+            epsilon_k_ab: 0.5 * (parameters_i.epsilon_k_ab + parameters_j.epsilon_k_ab),
+        }
     }
 }
 

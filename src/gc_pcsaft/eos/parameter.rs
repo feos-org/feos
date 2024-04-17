@@ -1,5 +1,5 @@
-use crate::association::AssociationParameters;
-use crate::gc_pcsaft::record::GcPcSaftRecord;
+use crate::association::{AssociationParameters, AssociationStrength};
+use crate::gc_pcsaft::record::{GcPcSaftAssociationRecord, GcPcSaftRecord};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use feos_core::parameter::{
     BinaryRecord, ChemicalRecord, Identifier, ParameterError, ParameterHetero, SegmentCount,
@@ -12,6 +12,7 @@ use num_dual::DualNum;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt::Write;
+use std::sync::Arc;
 
 /// [ChemicalRecord] that is used as input for the gc-PC-SAFT equation of state.
 #[derive(Clone)]
@@ -74,7 +75,7 @@ pub struct GcPcSaftEosParameters {
     pub epsilon_k: Array1<f64>,
     pub bonds: IndexMap<[usize; 2], f64>,
 
-    pub association: AssociationParameters,
+    pub association: Arc<AssociationParameters<Self>>,
 
     pub dipole_comp: Array1<usize>,
     mu: Array1<f64>,
@@ -235,7 +236,7 @@ impl ParameterHetero for GcPcSaftEosParameters {
             sigma,
             epsilon_k: Array1::from_vec(epsilon_k),
             bonds,
-            association,
+            association: Arc::new(association),
             dipole_comp: Array1::from_vec(dipole_comp),
             mu: Array1::from_vec(mu),
             mu2: Array1::from_vec(mu2),
@@ -288,6 +289,32 @@ impl HardSphereProperties for GcPcSaftEosParameters {
     }
 }
 
+impl AssociationStrength for GcPcSaftEosParameters {
+    type Record = GcPcSaftAssociationRecord;
+    type BinaryRecord = ();
+
+    fn association_strength<D: DualNum<f64> + Copy>(
+        &self,
+        temperature: D,
+        comp_i: usize,
+        comp_j: usize,
+        assoc_ij: Self::Record,
+    ) -> D {
+        let si = self.sigma[comp_i];
+        let sj = self.sigma[comp_j];
+        (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
+            * assoc_ij.kappa_ab
+            * (si * sj).powf(1.5)
+    }
+
+    fn combining_rule(parameters_i: Self::Record, parameters_j: Self::Record) -> Self::Record {
+        Self::Record {
+            kappa_ab: (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt(),
+            epsilon_k_ab: 0.5 * (parameters_i.epsilon_k_ab + parameters_j.epsilon_k_ab),
+        }
+    }
+}
+
 impl GcPcSaftEosParameters {
     pub fn to_markdown(&self) -> String {
         let gorup_dict: HashMap<&String, &GcPcSaftRecord> = self
@@ -329,7 +356,7 @@ impl GcPcSaftEosParameters {
             let association = if let Some(a) = record.association_record {
                 format!(
                     "{}|{}|{}|{}|{}",
-                    a.kappa_ab, a.epsilon_k_ab, a.na, a.nb, a.nc
+                    a.parameters.kappa_ab, a.parameters.epsilon_k_ab, a.na, a.nb, a.nc
                 )
             } else {
                 "||||".to_string()
@@ -408,14 +435,15 @@ impl std::fmt::Display for GcPcSaftEosParameters {
 #[cfg(test)]
 pub mod test {
     use super::*;
-    use crate::association::AssociationRecord;
     use feos_core::parameter::{ChemicalRecord, Identifier};
 
     fn ch3() -> SegmentRecord<GcPcSaftRecord> {
         SegmentRecord::new(
             "CH3".into(),
             15.0,
-            GcPcSaftRecord::new(0.77247, 3.6937, 181.49, None, None, None),
+            GcPcSaftRecord::new(
+                0.77247, 3.6937, 181.49, None, None, None, None, None, None, None,
+            ),
         )
     }
 
@@ -423,7 +451,9 @@ pub mod test {
         SegmentRecord::new(
             "CH2".into(),
             14.0,
-            GcPcSaftRecord::new(0.7912, 3.0207, 157.23, None, None, None),
+            GcPcSaftRecord::new(
+                0.7912, 3.0207, 157.23, None, None, None, None, None, None, None,
+            ),
         )
     }
 
@@ -436,7 +466,11 @@ pub mod test {
                 2.7702,
                 334.29,
                 None,
-                Some(AssociationRecord::new(0.009583, 2575.9, 1.0, 1.0, 0.0)),
+                Some(0.009583),
+                Some(2575.9),
+                Some(1.0),
+                Some(1.0),
+                None,
                 None,
             ),
         )

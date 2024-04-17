@@ -7,6 +7,7 @@ use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{Graph, UnGraph};
+use std::sync::Arc;
 
 /// psi Parameter for heterosegmented DFT (Mairhofer2018)
 const PSI_GC_DFT: f64 = 1.5357;
@@ -20,7 +21,7 @@ pub struct GcPcSaftFunctionalParameters {
     pub sigma: Array1<f64>,
     pub epsilon_k: Array1<f64>,
     pub bonds: UnGraph<(), ()>,
-    pub association: AssociationParameters,
+    pub association: Arc<AssociationParameters<Self>>,
     pub psi_dft: Array1<f64>,
     pub k_ij: Array2<f64>,
     pub sigma_ij: Array2<f64>,
@@ -128,7 +129,7 @@ impl ParameterHetero for GcPcSaftFunctionalParameters {
         let sigma = Array1::from_vec(sigma);
         let component_index = Array1::from_vec(component_index);
         let association =
-            AssociationParameters::new(&association_records, &sigma, &[], Some(&component_index));
+            AssociationParameters::new(&association_records, &[], Some(&component_index));
 
         Ok(Self {
             molarweight,
@@ -138,7 +139,7 @@ impl ParameterHetero for GcPcSaftFunctionalParameters {
             sigma,
             epsilon_k: Array1::from_vec(epsilon_k),
             bonds,
-            association,
+            association: Arc::new(association),
             psi_dft: Array1::from_vec(psi_dft),
             k_ij,
             sigma_ij,
