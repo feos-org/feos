@@ -173,7 +173,7 @@ impl Residual for PcSaft {
         if let Some(association) = self.association.as_ref() {
             v.push((
                 association.to_string(),
-                association.helmholtz_energy(state, &d),
+                association.helmholtz_energy(state, &self.parameters.sigma, &d),
             ))
         }
         v
@@ -449,7 +449,7 @@ mod tests {
         let n = 1.23;
         let s = StateHD::new(t, v, arr1(&[n]));
         let d = parameters.hs_diameter(t);
-        let a_rust = assoc.helmholtz_energy(&s, &d) / n;
+        let a_rust = assoc.helmholtz_energy(&s, &parameters.sigma, &d) / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 
@@ -463,7 +463,7 @@ mod tests {
         let n = 1.23;
         let s = StateHD::new(t, v, arr1(&[n]));
         let d = parameters.hs_diameter(t);
-        let a_rust = assoc.helmholtz_energy(&s, &d) / n;
+        let a_rust = assoc.helmholtz_energy(&s, &parameters.sigma, &d) / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 

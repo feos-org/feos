@@ -429,7 +429,7 @@ impl Parameter for PcSaftParameters {
             })
             .collect();
         let association =
-            AssociationParameters::new(&association_records, &sigma, &binary_association, None);
+            AssociationParameters::new(&association_records, &binary_association, None);
 
         let k_ij = binary_records.as_ref().map(|br| br.map(|br| br.k_ij));
         let mut sigma_ij = Array::zeros((n, n));

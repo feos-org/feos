@@ -134,7 +134,7 @@ impl Residual for GcPcSaft {
         if let Some(association) = self.association.as_ref() {
             v.push((
                 association.to_string(),
-                association.helmholtz_energy(state, &d),
+                association.helmholtz_energy(state, &self.parameters.sigma, &d),
             ))
         }
         v
@@ -202,8 +202,12 @@ mod test {
             arr1(&[Dual64::from_re(moles)]),
         );
         let diameter = parameters.hs_diameter(state.temperature);
-        let pressure =
-            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
+        let pressure = Pressure::from_reduced(
+            -contrib
+                .helmholtz_energy(&state, &parameters.sigma, &diameter)
+                .eps
+                * temperature,
+        );
         assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
     }
 
@@ -221,8 +225,12 @@ mod test {
             arr1(&[Dual64::from_re(moles)]),
         );
         let diameter = parameters.hs_diameter(state.temperature);
-        let pressure =
-            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
+        let pressure = Pressure::from_reduced(
+            -contrib
+                .helmholtz_energy(&state, &parameters.sigma, &diameter)
+                .eps
+                * temperature,
+        );
         assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
     }
 
@@ -239,8 +247,12 @@ mod test {
             moles.mapv(Dual64::from_re),
         );
         let diameter = parameters.hs_diameter(state.temperature);
-        let pressure =
-            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
+        let pressure = Pressure::from_reduced(
+            -contrib
+                .helmholtz_energy(&state, &parameters.sigma, &diameter)
+                .eps
+                * temperature,
+        );
         assert_relative_eq!(pressure, -26.105606376765632 * PASCAL, max_relative = 1e-10);
     }
 }

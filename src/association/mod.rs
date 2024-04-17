@@ -134,8 +134,8 @@ pub struct AssociationParameters {
     sites_a: Array1<AssociationSite>,
     sites_b: Array1<AssociationSite>,
     sites_c: Array1<AssociationSite>,
-    pub sigma3_kappa_ab: Array2<f64>,
-    pub sigma3_kappa_cc: Array2<f64>,
+    pub kappa_ab: Array2<f64>,
+    pub kappa_cc: Array2<f64>,
     pub epsilon_k_ab: Array2<f64>,
     pub epsilon_k_cc: Array2<f64>,
 }
@@ -143,7 +143,6 @@ pub struct AssociationParameters {
 impl AssociationParameters {
     pub fn new(
         records: &[Vec<AssociationRecord>],
-        sigma: &Array1<f64>,
         binary_records: &[((usize, usize), BinaryAssociationRecord)],
         component_index: Option<&Array1<usize>>,
     ) -> Self {
@@ -201,14 +200,11 @@ impl AssociationParameters {
             .map(|(i, site)| ((site.assoc_comp, site.site_index), i))
             .collect();
 
-        let mut sigma3_kappa_ab =
-            Array2::from_shape_fn([sites_a.len(), sites_b.len()], |(i, j)| {
-                (sigma[sites_a[i].assoc_comp] * sigma[sites_b[j].assoc_comp]).powf(1.5)
-                    * (sites_a[i].kappa_ab * sites_b[j].kappa_ab).sqrt()
-            });
-        let mut sigma3_kappa_cc = Array2::from_shape_fn([sites_c.len(); 2], |(i, j)| {
-            (sigma[sites_c[i].assoc_comp] * sigma[sites_c[j].assoc_comp]).powf(1.5)
-                * (sites_c[i].kappa_ab * sites_c[j].kappa_ab).sqrt()
+        let mut kappa_ab = Array2::from_shape_fn([sites_a.len(), sites_b.len()], |(i, j)| {
+            (sites_a[i].kappa_ab * sites_b[j].kappa_ab).sqrt()
+        });
+        let mut kappa_cc = Array2::from_shape_fn([sites_c.len(); 2], |(i, j)| {
+            (sites_c[i].kappa_ab * sites_c[j].kappa_ab).sqrt()
         });
         let mut epsilon_k_ab = Array2::from_shape_fn([sites_a.len(), sites_b.len()], |(i, j)| {
             0.5 * (sites_a[i].epsilon_k_ab + sites_b[j].epsilon_k_ab)
@@ -224,7 +220,7 @@ impl AssociationParameters {
                     epsilon_k_ab[[*x, *y]] = epsilon_k_aibj;
                 }
                 if let Some(kappa_aibj) = record.kappa_ab {
-                    sigma3_kappa_ab[[*x, *y]] = (sigma[i] * sigma[j]).powf(1.5) * kappa_aibj;
+                    kappa_ab[[*x, *y]] = kappa_aibj;
                 }
             }
             if let (Some(y), Some(x)) = (indices_b.get(&(i, a)), indices_a.get(&(j, b))) {
@@ -232,7 +228,7 @@ impl AssociationParameters {
                     epsilon_k_ab[[*x, *y]] = epsilon_k_aibj;
                 }
                 if let Some(kappa_aibj) = record.kappa_ab {
-                    sigma3_kappa_ab[[*x, *y]] = (sigma[i] * sigma[j]).powf(1.5) * kappa_aibj;
+                    kappa_ab[[*x, *y]] = kappa_aibj;
                 }
             }
             if let (Some(x), Some(y)) = (indices_c.get(&(i, a)), indices_c.get(&(j, b))) {
@@ -241,8 +237,8 @@ impl AssociationParameters {
                     epsilon_k_cc[[*y, *x]] = epsilon_k_aibj;
                 }
                 if let Some(kappa_aibj) = record.kappa_ab {
-                    sigma3_kappa_cc[[*x, *y]] = (sigma[i] * sigma[j]).powf(1.5) * kappa_aibj;
-                    sigma3_kappa_cc[[*y, *x]] = (sigma[i] * sigma[j]).powf(1.5) * kappa_aibj;
+                    kappa_cc[[*x, *y]] = kappa_aibj;
+                    kappa_cc[[*y, *x]] = kappa_aibj;
                 }
             }
         }
@@ -254,8 +250,8 @@ impl AssociationParameters {
             sites_a: Array1::from_vec(sites_a),
             sites_b: Array1::from_vec(sites_b),
             sites_c: Array1::from_vec(sites_c),
-            sigma3_kappa_ab,
-            sigma3_kappa_cc,
+            kappa_ab,
+            kappa_cc,
             epsilon_k_ab,
             epsilon_k_cc,
         }
@@ -306,6 +302,7 @@ impl<P: HardSphereProperties> Association<P> {
     fn association_strength<D: DualNum<f64> + Copy>(
         &self,
         temperature: D,
+        sigma: &Array1<f64>,
         diameter: &Array1<D>,
         n2: D,
         n3i: D,
@@ -313,19 +310,25 @@ impl<P: HardSphereProperties> Association<P> {
     ) -> [Array2<D>; 2] {
         let p = &self.association_parameters;
         let delta_ab = Array2::from_shape_fn([p.sites_a.len(), p.sites_b.len()], |(i, j)| {
+            let si = sigma[p.sites_a[i].assoc_comp];
+            let sj = sigma[p.sites_b[j].assoc_comp];
             let di = diameter[p.sites_a[i].assoc_comp];
             let dj = diameter[p.sites_b[j].assoc_comp];
             let k = di * dj / (di + dj) * (n2 * n3i);
             n3i * (k * xi * (k / 18.0 + 0.5) + 1.0)
-                * p.sigma3_kappa_ab[(i, j)]
+                * p.kappa_ab[(i, j)]
+                * (si * sj).powf(1.5)
                 * (temperature.recip() * p.epsilon_k_ab[(i, j)]).exp_m1()
         });
         let delta_cc = Array2::from_shape_fn([p.sites_c.len(); 2], |(i, j)| {
+            let si = sigma[p.sites_c[i].assoc_comp];
+            let sj = sigma[p.sites_c[j].assoc_comp];
             let di = diameter[p.sites_c[i].assoc_comp];
             let dj = diameter[p.sites_c[j].assoc_comp];
             let k = di * dj / (di + dj) * (n2 * n3i);
             n3i * (k * xi * (k / 18.0 + 0.5) + 1.0)
-                * p.sigma3_kappa_cc[(i, j)]
+                * p.kappa_cc[(i, j)]
+                * (si * sj).powf(1.5)
                 * (temperature.recip() * p.epsilon_k_cc[(i, j)]).exp_m1()
         });
         [delta_ab, delta_cc]
@@ -337,6 +340,7 @@ impl<P: HardSphereProperties> Association<P> {
     pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
+        sigma: &Array1<f64>,
         diameter: &Array1<D>,
     ) -> D {
         let p: &P = &self.parameters;
@@ -349,7 +353,7 @@ impl<P: HardSphereProperties> Association<P> {
 
         // association strength
         let [delta_ab, delta_cc] =
-            self.association_strength(state.temperature, diameter, n2, n3i, D::one());
+            self.association_strength(state.temperature, sigma, diameter, n2, n3i, D::one());
 
         match (
             a.sites_a.len() * a.sites_b.len(),
@@ -576,7 +580,6 @@ mod tests {
             AssociationRecord::new(0.3, 2000., 0.0, 1.0, 0.0),
         ];
         let records = [comp1, comp2, comp3, comp4];
-        let sigma = arr1(&[3.0, 3.0, 3.0, 3.0]);
         let binary = [
             (
                 (0, 1),
@@ -591,7 +594,7 @@ mod tests {
                 BinaryAssociationRecord::new(Some(3.5), Some(3333.), Some([0, 1])),
             ),
         ];
-        let assoc = AssociationParameters::new(&records, &sigma, &binary, None);
+        let assoc = AssociationParameters::new(&records, &binary, None);
         println!("{}", assoc.epsilon_k_ab);
         let epsilon_k_ab = arr2(&[
             [2500., 1234., 3140., 2250.],
@@ -606,19 +609,18 @@ mod tests {
         let comp1 = vec![AssociationRecord::new(0.1, 2500., 1.0, 1.0, 0.0)];
         let comp2 = vec![AssociationRecord::new(0.1, -500., 0.0, 1.0, 0.0)];
         let comp3 = vec![AssociationRecord::new(0.0, 0.0, 0.0, 1.0, 0.0)];
-        let sigma = arr1(&[3.0, 3.5]);
         let binary = [(
             (0, 1),
             BinaryAssociationRecord::new(Some(0.1), Some(1000.), None),
         )];
-        let assoc1 = AssociationParameters::new(&[comp1.clone(), comp2], &sigma, &[], None);
-        let assoc2 = AssociationParameters::new(&[comp1, comp3], &sigma, &binary, None);
+        let assoc1 = AssociationParameters::new(&[comp1.clone(), comp2], &[], None);
+        let assoc2 = AssociationParameters::new(&[comp1, comp3], &binary, None);
         println!("{}", assoc1.epsilon_k_ab);
         println!("{}", assoc2.epsilon_k_ab);
         assert_eq!(assoc1.epsilon_k_ab, assoc2.epsilon_k_ab);
-        println!("{}", assoc1.sigma3_kappa_ab);
-        println!("{}", assoc2.sigma3_kappa_ab);
-        assert_eq!(assoc1.sigma3_kappa_ab, assoc2.sigma3_kappa_ab);
+        println!("{}", assoc1.kappa_ab);
+        println!("{}", assoc2.kappa_ab);
+        assert_eq!(assoc1.kappa_ab, assoc2.kappa_ab);
     }
 }
 
@@ -640,7 +642,7 @@ mod tests_pcsaft {
         let n = 1.23;
         let s = StateHD::new(t, v, arr1(&[n]));
         let d = params.hs_diameter(t);
-        let a_rust = assoc.helmholtz_energy(&s, &d) / n;
+        let a_rust = assoc.helmholtz_energy(&s, &params.sigma, &d) / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 
@@ -653,7 +655,7 @@ mod tests_pcsaft {
         let n = 1.23;
         let s = StateHD::new(t, v, arr1(&[n]));
         let d = params.hs_diameter(t);
-        let a_rust = assoc.helmholtz_energy(&s, &d) / n;
+        let a_rust = assoc.helmholtz_energy(&s, &params.sigma, &d) / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 
@@ -673,8 +675,8 @@ mod tests_pcsaft {
         let n = 1.23;
         let s = StateHD::new(t, v, arr1(&[n]));
         let d = params.hs_diameter(t);
-        let a_assoc = assoc.helmholtz_energy(&s, &d) / n;
-        let a_cross_assoc = cross_assoc.helmholtz_energy(&s, &d) / n;
+        let a_assoc = assoc.helmholtz_energy(&s, &params.sigma, &d) / n;
+        let a_cross_assoc = cross_assoc.helmholtz_energy(&s, &params.sigma, &d) / n;
         assert_relative_eq!(a_assoc, a_cross_assoc, epsilon = 1e-10);
         Ok(())
     }
@@ -704,8 +706,12 @@ mod tests_gc_pcsaft {
             arr1(&[Dual64::from_re(moles)]),
         );
         let diameter = params.hs_diameter(state.temperature);
-        let pressure =
-            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
+        let pressure = Pressure::from_reduced(
+            -contrib
+                .helmholtz_energy(&state, &params.sigma, &diameter)
+                .eps
+                * temperature,
+        );
         assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
     }
 
@@ -722,8 +728,12 @@ mod tests_gc_pcsaft {
             arr1(&[Dual64::from_re(moles)]),
         );
         let diameter = params.hs_diameter(state.temperature);
-        let pressure =
-            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
+        let pressure = Pressure::from_reduced(
+            -contrib
+                .helmholtz_energy(&state, &params.sigma, &diameter)
+                .eps
+                * temperature,
+        );
         assert_relative_eq!(pressure, -3.6819598891967344 * PASCAL, max_relative = 1e-10);
     }
 
@@ -740,8 +750,12 @@ mod tests_gc_pcsaft {
             moles.mapv(Dual64::from_re),
         );
         let diameter = params.hs_diameter(state.temperature);
-        let pressure =
-            Pressure::from_reduced(-contrib.helmholtz_energy(&state, &diameter).eps * temperature);
+        let pressure = Pressure::from_reduced(
+            -contrib
+                .helmholtz_energy(&state, &params.sigma, &diameter)
+                .eps
+                * temperature,
+        );
         assert_relative_eq!(pressure, -26.105606376765632 * PASCAL, max_relative = 1e-10);
     }
 }
