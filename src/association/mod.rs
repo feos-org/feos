@@ -8,7 +8,7 @@ use num_dual::*;
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt::{self, Display};
+use std::fmt;
 use std::sync::Arc;
 
 #[cfg(feature = "dft")]
@@ -63,7 +63,7 @@ impl<A> AssociationRecord<A> {
     }
 }
 
-impl<A: Display> fmt::Display for AssociationRecord<A> {
+impl<A: fmt::Display> fmt::Display for AssociationRecord<A> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "AssociationRecord(parameters={}", self.parameters)?;
         if self.na > 0.0 {
