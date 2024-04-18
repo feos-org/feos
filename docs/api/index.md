@@ -20,6 +20,7 @@ These modules contain the objects to e.g. read parameters from files or build pa
    :maxdepth: 1
 
    pcsaft
+   epcsaft
    gc_pcsaft
    peng_robinson
    pets

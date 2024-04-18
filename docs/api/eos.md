@@ -15,6 +15,7 @@ If you want to adjust parameters of a model to experimental data you can use cla
 
     EquationOfState
     EquationOfState.pcsaft
+    EquationOfState.epcsaft
     EquationOfState.gc_pcsaft
     EquationOfState.peng_robinson
     EquationOfState.pets
