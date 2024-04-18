@@ -10,30 +10,28 @@ use std::sync::Arc;
 
 use super::ElectrolytePcSaftVariants;
 
+const EPSILON_0: f64 = 8.85416e-12;
+const QE: f64 = 1.602176634e-19f64;
+const BOLTZMANN: f64 = 1.380649e-23;
+
 impl ElectrolytePcSaftParameters {
     pub fn bjerrum_length<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
+        diameter: &Array1<D>,
         epcsaft_variant: ElectrolytePcSaftVariants,
     ) -> D {
-        // permittivity in vacuum
-        let epsilon_0 = 8.85416e-12;
-
         // relative permittivity of water (usually function of T,p,x)
-        let epsilon_r = Permittivity::new(state, self, &epcsaft_variant)
+        let epsilon_r = Permittivity::new(state, diameter, self, &epcsaft_variant)
             .unwrap()
             .permittivity;
 
-        let epsreps0 = epsilon_r * epsilon_0;
+        let epsreps0 = epsilon_r * EPSILON_0;
 
-        // unit charge
-        let qe2 = 1.602176634e-19f64.powi(2);
-
-        // Boltzmann constant
-        let boltzmann = 1.380649e-23;
+        let qe2 = QE.powi(2);
 
         // Bjerrum length
-        (state.temperature * 4.0 * std::f64::consts::PI * epsreps0 * boltzmann).recip()
+        (state.temperature * 4.0 * std::f64::consts::PI * epsreps0 * BOLTZMANN).recip()
             * qe2
             * 1.0e10
     }
@@ -60,7 +58,7 @@ impl Ionic {
         }
 
         // Calculate Bjerrum length
-        let lambda_b = p.bjerrum_length(state, self.variant);
+        let lambda_b = p.bjerrum_length(state, diameter, self.variant);
 
         // Calculate inverse Debye length
         let mut sum_dens_z = D::zero();
