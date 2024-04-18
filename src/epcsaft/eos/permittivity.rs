@@ -277,15 +277,9 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
             ti.partial_cmp(&temperature.re())
                 .expect("Unexpected value for temperature in interpolation points.")
         });
-        // if the result is OK we don't need to interpolate ...
-        if let Ok(i) = i {
-            return Self {
-                permittivity: D::one() * interpolation_points[i].1,
-            };
-        }
 
-        // if not, we can unwrap safely:
-        let i = i.unwrap_err();
+        // unwrap
+        let i = i.unwrap_or_else(|i| i);
         let n = interpolation_points.len();
 
         // check cases:
