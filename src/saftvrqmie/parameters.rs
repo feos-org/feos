@@ -42,6 +42,8 @@ impl std::fmt::Display for SaftVRQMieRecord {
         write!(f, "SaftVRQMieRecord(m={}", self.m)?;
         write!(f, ", sigma={}", self.sigma)?;
         write!(f, ", epsilon_k={}", self.epsilon_k)?;
+        write!(f, ", lr={}", self.lr)?;
+        write!(f, ", la={}", self.la)?;
         if let Some(n) = &self.viscosity {
             write!(f, ", viscosity={:?}", n)?;
         }
@@ -181,7 +183,7 @@ impl Parameter for SaftVRQMieParameters {
                 return Err(
                     ParameterError::IncompatibleParameters(
                         format!(
-                            "Segment number `m` for component {} is not one. Chain-contributions are currently not supported.", 
+                            "Segment number `m` for component {} is not one. Chain-contributions are currently not supported.",
                             i
                         )
                     )
@@ -232,7 +234,7 @@ impl Parameter for SaftVRQMieParameters {
                     return Err(
                         ParameterError::IncompatibleParameters(
                             format!(
-                                "cannot combine Feynman-Hibbs orders 1 and 2. Component {} has order {} and component {} has order {}.", 
+                                "cannot combine Feynman-Hibbs orders 1 and 2. Component {} has order {} and component {} has order {}.",
                                 i, fh[i], j, fh[j]
                             )
                         )
@@ -424,6 +426,8 @@ impl std::fmt::Display for SaftVRQMieParameters {
         write!(f, "\n\tm={}", self.m)?;
         write!(f, "\n\tsigma={}", self.sigma)?;
         write!(f, "\n\tepsilon_k={}", self.epsilon_k)?;
+        write!(f, "\n\tlr={}", self.lr)?;
+        write!(f, "\n\tla={}", self.la)?;
 
         if !self.k_ij.iter().all(|k| k.is_zero()) {
             write!(f, "\n\tk_ij=\n{}", self.k_ij)?;

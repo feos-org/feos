@@ -259,14 +259,14 @@ impl PySaftVRQMieParameters {
         let quantum_d = Array2::from_shape_fn((n, n), |(i, j)| -> f64 {
             self.0.quantum_d_ij(i, j, t.to_reduced())
         });
-        Ok(PySIArray2::from(quantum_d / ANGSTROM / ANGSTROM))
+        Ok(PySIArray2::from(quantum_d / (ANGSTROM * ANGSTROM)))
     }
 
     /// Calculate de Boer parameter.
     ///
     /// Returns
     /// -------
-    /// PySIArray1
+    /// np.ndarray
     #[getter]
     fn de_boer<'py>(&self, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
         let n = self.0.m.len();
