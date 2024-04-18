@@ -18,11 +18,10 @@ impl ElectrolytePcSaftParameters {
     pub fn bjerrum_length<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-        diameter: &Array1<D>,
         epcsaft_variant: ElectrolytePcSaftVariants,
     ) -> D {
         // relative permittivity of water (usually function of T,p,x)
-        let epsilon_r = Permittivity::new(state, diameter, self, &epcsaft_variant)
+        let epsilon_r = Permittivity::new(state, self, &epcsaft_variant)
             .unwrap()
             .permittivity;
 
@@ -58,7 +57,7 @@ impl Ionic {
         }
 
         // Calculate Bjerrum length
-        let lambda_b = p.bjerrum_length(state, diameter, self.variant);
+        let lambda_b = p.bjerrum_length(state, self.variant);
 
         // Calculate inverse Debye length
         let mut sum_dens_z = D::zero();
