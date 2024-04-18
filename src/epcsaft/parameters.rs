@@ -30,15 +30,6 @@ pub struct ElectrolytePcSaftRecord {
     #[serde(flatten)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub association_record: Option<AssociationRecord>,
-    /// Entropy scaling coefficients for the viscosity
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub viscosity: Option<[f64; 4]>,
-    /// Entropy scaling coefficients for the diffusion coefficient
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub diffusion: Option<[f64; 5]>,
-    /// Entropy scaling coefficients for the thermal conductivity
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub thermal_conductivity: Option<[f64; 4]>,
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub z: Option<f64>,
@@ -94,60 +85,6 @@ impl FromSegments<f64> for ElectrolytePcSaftRecord {
                 AssociationRecord::new(kappa_ab, epsilon_k_ab, na, nb, nc)
             });
 
-        // entropy scaling
-        let mut viscosity = if segments
-            .iter()
-            .all(|(record, _)| record.viscosity.is_some())
-        {
-            Some([0.0; 4])
-        } else {
-            None
-        };
-        let mut thermal_conductivity = if segments
-            .iter()
-            .all(|(record, _)| record.thermal_conductivity.is_some())
-        {
-            Some([0.0; 4])
-        } else {
-            None
-        };
-        let diffusion = if segments
-            .iter()
-            .all(|(record, _)| record.diffusion.is_some())
-        {
-            Some([0.0; 5])
-        } else {
-            None
-        };
-
-        let n_t = segments.iter().fold(0.0, |acc, (_, n)| acc + n);
-        segments.iter().for_each(|(s, n)| {
-            let s3 = s.m * s.sigma.powi(3) * n;
-            if let Some(p) = viscosity.as_mut() {
-                let [a, b, c, d] = s.viscosity.unwrap();
-                p[0] += s3 * a;
-                p[1] += s3 * b / sigma3.powf(0.45);
-                p[2] += n * c;
-                p[3] += n * d;
-            }
-            if let Some(p) = thermal_conductivity.as_mut() {
-                let [a, b, c, d] = s.thermal_conductivity.unwrap();
-                p[0] += n * a;
-                p[1] += n * b;
-                p[2] += n * c;
-                p[3] += n_t * d;
-            }
-            // if let Some(p) = diffusion.as_mut() {
-            //     let [a, b, c, d, e] = s.diffusion.unwrap();
-            //     p[0] += s3 * a;
-            //     p[1] += s3 * b / sigma3.powf(0.45);
-            //     p[2] += *n * c;
-            //     p[3] += *n * d;
-            // }
-        });
-        // correction due to difference in Chapman-Enskog reference between GC and regular formulation.
-        viscosity = viscosity.map(|v| [v[0] - 0.5 * m.ln(), v[1], v[2], v[3]]);
-
         Ok(Self {
             m,
             sigma: (sigma3 / m).cbrt(),
@@ -155,9 +92,6 @@ impl FromSegments<f64> for ElectrolytePcSaftRecord {
             mu,
             q,
             association_record,
-            viscosity,
-            diffusion,
-            thermal_conductivity,
             z: Some(z),
             permittivity_record: None,
         })
@@ -190,15 +124,6 @@ impl std::fmt::Display for ElectrolytePcSaftRecord {
         if let Some(n) = &self.association_record {
             write!(f, ", association_record={}", n)?;
         }
-        if let Some(n) = &self.viscosity {
-            write!(f, ", viscosity={:?}", n)?;
-        }
-        if let Some(n) = &self.diffusion {
-            write!(f, ", diffusion={:?}", n)?;
-        }
-        if let Some(n) = &self.thermal_conductivity {
-            write!(f, ", thermal_conductivity={:?}", n)?;
-        }
         if let Some(n) = &self.z {
             write!(f, ", z={}", n)?;
         }
@@ -221,9 +146,6 @@ impl ElectrolytePcSaftRecord {
         na: Option<f64>,
         nb: Option<f64>,
         nc: Option<f64>,
-        viscosity: Option<[f64; 4]>,
-        diffusion: Option<[f64; 5]>,
-        thermal_conductivity: Option<[f64; 4]>,
         z: Option<f64>,
         permittivity_record: Option<PermittivityRecord>,
     ) -> ElectrolytePcSaftRecord {
@@ -250,9 +172,6 @@ impl ElectrolytePcSaftRecord {
             mu,
             q,
             association_record,
-            viscosity,
-            diffusion,
-            thermal_conductivity,
             z,
             permittivity_record,
         }
@@ -358,10 +277,7 @@ pub struct ElectrolytePcSaftParameters {
     pub quadpole_comp: Array1<usize>,
     pub ionic_comp: Array1<usize>,
     pub solvent_comp: Array1<usize>,
-    pub viscosity: Option<Array2<f64>>,
-    pub diffusion: Option<Array2<f64>>,
     pub permittivity: Array1<Option<PermittivityRecord>>,
-    pub thermal_conductivity: Option<Array2<f64>>,
     pub pure_records: Vec<PureRecord<ElectrolytePcSaftRecord>>,
     pub binary_records: Option<Array2<ElectrolytePcSaftBinaryRecord>>,
 }
@@ -411,9 +327,6 @@ impl Parameter for ElectrolytePcSaftParameters {
         let mut q = Array::zeros(n);
         let mut z = Array::zeros(n);
         let mut association_records = Vec::with_capacity(n);
-        let mut viscosity = Vec::with_capacity(n);
-        let mut diffusion = Vec::with_capacity(n);
-        let mut thermal_conductivity = Vec::with_capacity(n);
         let mut water_sigma_t_comp = None;
 
         let mut component_index = HashMap::with_capacity(n);
@@ -428,9 +341,6 @@ impl Parameter for ElectrolytePcSaftParameters {
             q[i] = r.q.unwrap_or(0.0);
             z[i] = r.z.unwrap_or(0.0);
             association_records.push(r.association_record.into_iter().collect());
-            viscosity.push(r.viscosity);
-            diffusion.push(r.diffusion);
-            thermal_conductivity.push(r.thermal_conductivity);
             molarweight[i] = record.molarweight;
             // check if component i is water with temperature-dependent sigma
             if (m[i] * 1000.0).round() / 1000.0 == 1.205 && epsilon_k[i].round() == 354.0 {
@@ -524,37 +434,6 @@ impl Parameter for ElectrolytePcSaftParameters {
             }
         }
 
-        let viscosity_coefficients = if viscosity.iter().any(|v| v.is_none()) {
-            None
-        } else {
-            let mut v = Array2::zeros((4, viscosity.len()));
-            for (i, vi) in viscosity.iter().enumerate() {
-                v.column_mut(i).assign(&Array1::from(vi.unwrap().to_vec()));
-            }
-            Some(v)
-        };
-
-        let diffusion_coefficients = if diffusion.iter().any(|v| v.is_none()) {
-            None
-        } else {
-            let mut v = Array2::zeros((5, diffusion.len()));
-            for (i, vi) in diffusion.iter().enumerate() {
-                v.column_mut(i).assign(&Array1::from(vi.unwrap().to_vec()));
-            }
-            Some(v)
-        };
-
-        let thermal_conductivity_coefficients = if thermal_conductivity.iter().any(|v| v.is_none())
-        {
-            None
-        } else {
-            let mut v = Array2::zeros((4, thermal_conductivity.len()));
-            for (i, vi) in thermal_conductivity.iter().enumerate() {
-                v.column_mut(i).assign(&Array1::from(vi.unwrap().to_vec()));
-            }
-            Some(v)
-        };
-
         // Permittivity records
         let mut permittivity_records: Array1<Option<PermittivityRecord>> = pure_records
             .iter()
@@ -646,9 +525,6 @@ impl Parameter for ElectrolytePcSaftParameters {
             ionic_comp,
             solvent_comp,
             water_sigma_t_comp,
-            viscosity: viscosity_coefficients,
-            diffusion: diffusion_coefficients,
-            thermal_conductivity: thermal_conductivity_coefficients,
             permittivity: permittivity_records,
             pure_records,
             binary_records,
@@ -749,9 +625,6 @@ pub mod utils {
                     "m": 2.001829,
                     "sigma": 3.618353,
                     "epsilon_k": 208.1101,
-                    "viscosity": [-0.8013, -1.9972,-0.2907, -0.0467],
-                    "thermal_conductivity": [-0.15348,  -0.6388, 1.21342, -0.01664],
-                    "diffusion": [-0.675163251512047, 0.3212017677695878, 0.100175249144429, 0.0, 0.0]
                 },
                 "molarweight": 44.0962
             }"#;
@@ -1280,9 +1153,6 @@ pub mod utils {
                     "m": 2.0018290000000003,
                     "sigma": 3.618353,
                     "epsilon_k": 208.1101,
-                    "viscosity": [-0.8013, -1.9972, -0.2907, -0.0467],
-                    "thermal_conductivity": [-0.15348, -0.6388, 1.21342, -0.01664],
-                    "diffusion": [-0.675163251512047, 0.3212017677695878, 0.100175249144429, 0.0, 0.0]
                 },
                 "molarweight": 44.0962
             },
@@ -1299,8 +1169,6 @@ pub mod utils {
                     "m": 2.331586,
                     "sigma": 3.7086010000000003,
                     "epsilon_k": 222.8774,
-                    "viscosity": [-0.9763, -2.2413, -0.3690, -0.0605],
-                    "diffusion": [-0.8985872992958458, 0.3428584416613513, 0.10236616087103916, 0.0, 0.0]
                 },
                 "molarweight": 58.123
             }

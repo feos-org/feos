@@ -3,13 +3,12 @@ use crate::epcsaft::parameters::ElectrolytePcSaftParameters;
 use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::parameter::Parameter;
 use feos_core::{si::*, StateHD};
-use feos_core::{Components, EntropyScaling, EosError, EosResult, Residual, State};
+use feos_core::{Components, Residual};
 use ndarray::Array1;
 use num_dual::DualNum;
-use std::f64::consts::{FRAC_PI_6, PI};
+use std::f64::consts::FRAC_PI_6;
 use std::fmt;
 use std::sync::Arc;
-use typenum::P2;
 
 pub(crate) mod born;
 pub(crate) mod dispersion;
@@ -197,182 +196,6 @@ impl fmt::Display for ElectrolytePcSaft {
     }
 }
 
-fn omega11(t: f64) -> f64 {
-    1.06036 * t.powf(-0.15610)
-        + 0.19300 * (-0.47635 * t).exp()
-        + 1.03587 * (-1.52996 * t).exp()
-        + 1.76474 * (-3.89411 * t).exp()
-}
-
-fn omega22(t: f64) -> f64 {
-    1.16145 * t.powf(-0.14874) + 0.52487 * (-0.77320 * t).exp() + 2.16178 * (-2.43787 * t).exp()
-        - 6.435e-4 * t.powf(0.14874) * (18.0323 * t.powf(-0.76830) - 7.27371).sin()
-}
-
-#[inline]
-fn chapman_enskog_thermal_conductivity(
-    temperature: Temperature,
-    molarweight: MolarWeight,
-    m: f64,
-    sigma: f64,
-    epsilon_k: f64,
-) -> ThermalConductivity {
-    let t = temperature.to_reduced();
-    0.083235 * (t * m / molarweight.convert_into(GRAM / MOL)).sqrt()
-        / sigma.powi(2)
-        / omega22(t / epsilon_k)
-        * WATT
-        / METER
-        / KELVIN
-}
-
-impl EntropyScaling for ElectrolytePcSaft {
-    fn viscosity_reference(
-        &self,
-        temperature: Temperature,
-        _: Volume,
-        moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Viscosity> {
-        let p = &self.parameters;
-        let mw = &p.molarweight;
-        let x = (moles / moles.sum()).into_value();
-        let ce: Array1<_> = (0..self.components())
-            .map(|i| {
-                let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
-                5.0 / 16.0 * (mw[i] * GRAM / MOL * KB / NAV * temperature / PI).sqrt()
-                    / omega22(tr)
-                    / (p.sigma[i] * ANGSTROM).powi::<P2>()
-            })
-            .collect();
-        let mut ce_mix = 0.0 * MILLI * PASCAL * SECOND;
-        for i in 0..self.components() {
-            let denom: f64 = (0..self.components())
-                .map(|j| {
-                    x[j] * (1.0
-                        + (ce[i] / ce[j]).into_value().sqrt() * (mw[j] / mw[i]).powf(1.0 / 4.0))
-                    .powi(2)
-                        / (8.0 * (1.0 + mw[i] / mw[j])).sqrt()
-                })
-                .sum();
-            ce_mix += ce[i] * x[i] / denom
-        }
-        Ok(ce_mix)
-    }
-
-    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
-        let coefficients = self
-            .parameters
-            .viscosity
-            .as_ref()
-            .expect("Missing viscosity coefficients.");
-        let m = (x * &self.parameters.m).sum();
-        let s = s_res / m;
-        let pref = (x * &self.parameters.m) / m;
-        let a: f64 = (&coefficients.row(0) * x).sum();
-        let b: f64 = (&coefficients.row(1) * &pref).sum();
-        let c: f64 = (&coefficients.row(2) * &pref).sum();
-        let d: f64 = (&coefficients.row(3) * &pref).sum();
-        Ok(a + b * s + c * s.powi(2) + d * s.powi(3))
-    }
-
-    fn diffusion_reference(
-        &self,
-        temperature: Temperature,
-        volume: Volume,
-        moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Diffusivity> {
-        if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
-        }
-        let p = &self.parameters;
-        let density = moles.sum() / volume;
-        let res: Array1<_> = (0..self.components())
-            .map(|i| {
-                let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
-                3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi::<P2>() / omega11(tr) / (density * NAV)
-                    * (temperature * RGAS / PI / (p.molarweight[i] * GRAM / MOL) / p.m[i]).sqrt()
-            })
-            .collect();
-        Ok(res[0])
-    }
-
-    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
-        if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
-        }
-        let coefficients = self
-            .parameters
-            .diffusion
-            .as_ref()
-            .expect("Missing diffusion coefficients.");
-        let m = (x * &self.parameters.m).sum();
-        let s = s_res / m;
-        let pref = (x * &self.parameters.m).mapv(|v| v / m);
-        let a: f64 = (&coefficients.row(0) * x).sum();
-        let b: f64 = (&coefficients.row(1) * &pref).sum();
-        let c: f64 = (&coefficients.row(2) * &pref).sum();
-        let d: f64 = (&coefficients.row(3) * &pref).sum();
-        let e: f64 = (&coefficients.row(4) * &pref).sum();
-        Ok(a + b * s - c * (1.0 - s.exp()) * s.powi(2) - d * s.powi(4) - e * s.powi(8))
-    }
-
-    // Equation 4 of DOI: 10.1021/acs.iecr.9b04289
-    fn thermal_conductivity_reference(
-        &self,
-        temperature: Temperature,
-        volume: Volume,
-        moles: &Moles<Array1<f64>>,
-    ) -> EosResult<ThermalConductivity> {
-        if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
-        }
-        let p = &self.parameters;
-        let mws = self.molar_weight();
-        let state = State::new_nvt(&Arc::new(Self::new(p.clone())), temperature, volume, moles)?;
-        let res: Array1<_> = (0..self.components())
-            .map(|i| {
-                let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
-                let s_res_reduced = state.residual_molar_entropy().to_reduced() / p.m[i];
-                let ref_ce = chapman_enskog_thermal_conductivity(
-                    temperature,
-                    mws.get(i),
-                    p.m[i],
-                    p.sigma[i],
-                    p.epsilon_k[i],
-                );
-                let alpha_visc = (-s_res_reduced / -0.5).exp();
-                let ref_ts = (-0.0167141 * tr / p.m[i] + 0.0470581 * (tr / p.m[i]).powi(2))
-                    * (p.m[i] * p.m[i] * p.sigma[i].powi(3) * p.epsilon_k[i])
-                    * 1e-5
-                    * WATT
-                    / METER
-                    / KELVIN;
-                ref_ce + ref_ts * alpha_visc
-            })
-            .collect();
-        Ok(res[0])
-    }
-
-    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
-        if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
-        }
-        let coefficients = self
-            .parameters
-            .thermal_conductivity
-            .as_ref()
-            .expect("Missing thermal conductivity coefficients");
-        let m = (x * &self.parameters.m).sum();
-        let s = s_res / m;
-        let pref = (x * &self.parameters.m).mapv(|v| v / m);
-        let a: f64 = (&coefficients.row(0) * x).sum();
-        let b: f64 = (&coefficients.row(1) * &pref).sum();
-        let c: f64 = (&coefficients.row(2) * &pref).sum();
-        let d: f64 = (&coefficients.row(3) * &pref).sum();
-        Ok(a + b * s + c * (1.0 - s.exp()) + d * s.powi(2))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -380,7 +203,7 @@ mod tests {
         butane_parameters, propane_butane_parameters, propane_parameters, water_parameters,
     };
     use approx::assert_relative_eq;
-    use feos_core::si::{BAR, KELVIN, METER, MILLI, PASCAL, RGAS, SECOND};
+    use feos_core::si::{BAR, KELVIN, METER, PASCAL, RGAS};
     use feos_core::*;
     use ndarray::arr1;
     use typenum::P3;
@@ -542,49 +365,5 @@ mod tests {
             s2m.pressure(Contributions::Total),
             epsilon = 1e-12
         )
-    }
-
-    #[test]
-    fn viscosity() -> EosResult<()> {
-        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()));
-        let t = 300.0 * KELVIN;
-        let p = BAR;
-        let n = arr1(&[1.0]) * MOL;
-        let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
-        assert_relative_eq!(
-            s.viscosity()?,
-            0.00797 * MILLI * PASCAL * SECOND,
-            epsilon = 1e-5
-        );
-        assert_relative_eq!(
-            s.ln_viscosity_reduced()?,
-            (s.viscosity()? / e.viscosity_reference(s.temperature, s.volume, &s.moles)?)
-                .into_value()
-                .ln(),
-            epsilon = 1e-15
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn diffusion() -> EosResult<()> {
-        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()));
-        let t = 300.0 * KELVIN;
-        let p = BAR;
-        let n = arr1(&[1.0]) * MOL;
-        let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
-        assert_relative_eq!(
-            s.diffusion()?,
-            0.01505 * (CENTI * METER).powi::<P2>() / SECOND,
-            epsilon = 1e-5
-        );
-        assert_relative_eq!(
-            s.ln_diffusion_reduced()?,
-            (s.diffusion()? / e.diffusion_reference(s.temperature, s.volume, &s.moles)?)
-                .into_value()
-                .ln(),
-            epsilon = 1e-15
-        );
-        Ok(())
     }
 }

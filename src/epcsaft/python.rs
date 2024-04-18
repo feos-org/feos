@@ -41,12 +41,6 @@ use std::sync::Arc;
 ///     Number of association sites of type C.
 /// z : float, optional
 ///     Charge of the electrolyte.
-/// viscosity : List[float], optional
-///     Entropy-scaling parameters for viscosity. Defaults to `None`.
-/// diffusion : List[float], optional
-///     Entropy-scaling parameters for diffusion. Defaults to `None`.
-/// thermal_conductivity : List[float], optional
-///     Entropy-scaling parameters for thermal_conductivity. Defaults to `None`.
 /// permittivity_record : PyPermittivityRecord, optional
 ///     Permittivity record. Defaults to `None`.
 
@@ -92,9 +86,6 @@ impl PyElectrolytePcSaftRecord {
             na,
             nb,
             nc,
-            viscosity,
-            diffusion,
-            thermal_conductivity,
             z,
             perm,
         ))
@@ -143,21 +134,6 @@ impl PyElectrolytePcSaftRecord {
     #[getter]
     fn get_nc(&self) -> Option<f64> {
         self.0.association_record.map(|a| a.nc)
-    }
-
-    #[getter]
-    fn get_viscosity(&self) -> Option<[f64; 4]> {
-        self.0.viscosity
-    }
-
-    #[getter]
-    fn get_diffusion(&self) -> Option<[f64; 5]> {
-        self.0.diffusion
-    }
-
-    #[getter]
-    fn get_thermal_conductivity(&self) -> Option<[f64; 4]> {
-        self.0.thermal_conductivity
     }
 
     fn __repr__(&self) -> PyResult<String> {
