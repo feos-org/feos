@@ -1,0 +1,47 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrmie.SaftVRMieRecord
+==============================
+
+.. currentmodule:: feos.saftvrmie
+
+.. autoclass:: SaftVRMieRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~SaftVRMieRecord.__init__
+      ~SaftVRMieRecord.from_json_str
+      ~SaftVRMieRecord.to_json_str
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SaftVRMieRecord.diffusion
+      ~SaftVRMieRecord.epsilon_k
+      ~SaftVRMieRecord.epsilon_k_ab
+      ~SaftVRMieRecord.la
+      ~SaftVRMieRecord.lr
+      ~SaftVRMieRecord.m
+      ~SaftVRMieRecord.na
+      ~SaftVRMieRecord.nb
+      ~SaftVRMieRecord.nc
+      ~SaftVRMieRecord.rc_ab
+      ~SaftVRMieRecord.sigma
+      ~SaftVRMieRecord.thermal_conductivity
+      ~SaftVRMieRecord.viscosity
+   
+   

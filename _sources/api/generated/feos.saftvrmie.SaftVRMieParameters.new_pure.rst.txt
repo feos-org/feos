@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrmie.SaftVRMieParameters.new\_pure
+============================================
+
+.. currentmodule:: feos.saftvrmie
+
+.. automethod:: SaftVRMieParameters.new_pure
