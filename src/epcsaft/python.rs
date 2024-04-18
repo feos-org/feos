@@ -52,7 +52,7 @@ pub struct PyElectrolytePcSaftRecord(ElectrolytePcSaftRecord);
 impl PyElectrolytePcSaftRecord {
     #[new]
     #[pyo3(
-        text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, viscosity=None, diffusion=None, thermal_conductivity=None, permittivity_record=None)"
+        text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, permittivity_record=None)"
     )]
     fn new(
         m: f64,
@@ -66,9 +66,6 @@ impl PyElectrolytePcSaftRecord {
         nb: Option<f64>,
         nc: Option<f64>,
         z: Option<f64>,
-        viscosity: Option<[f64; 4]>,
-        diffusion: Option<[f64; 5]>,
-        thermal_conductivity: Option<[f64; 4]>,
         permittivity_record: Option<PyPermittivityRecord>,
     ) -> Self {
         let perm = match permittivity_record {
