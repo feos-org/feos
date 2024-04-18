@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added SAFT-VR Mie equation of state.[#237](https://github.com/feos-org/feos/pull/237)
 
 ### Changed
 - Updated model implementations to account for the removal of trait objects for Helmholtz energy contributions and the de Broglie in `feos-core`. [#226](https://github.com/feos-org/feos/pull/226)

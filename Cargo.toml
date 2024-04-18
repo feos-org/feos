@@ -66,9 +66,10 @@ gc_pcsaft = ["association"]
 uvtheory = ["lazy_static"]
 pets = []
 saftvrqmie = []
+saftvrmie = []
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 python = ["pyo3", "numpy", "quantity/python", "feos-core/python", "feos-dft?/python", "rayon"]
-all_models = ["dft", "estimator", "pcsaft", "gc_pcsaft", "uvtheory", "pets", "saftvrqmie"]
+all_models = ["dft", "estimator", "pcsaft", "gc_pcsaft", "uvtheory", "pets", "saftvrqmie", "saftvrmie"]
 
 [[bench]]
 name = "state_properties"
@@ -80,6 +81,10 @@ harness = false
 
 [[bench]]
 name = "dual_numbers"
+harness = false
+
+[[bench]]
+name = "dual_numbers_saftvrmie"
 harness = false
 
 [[bench]]

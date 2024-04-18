@@ -4,6 +4,8 @@ use crate::gc_pcsaft::python::gc_pcsaft as gc_pcsaft_module;
 use crate::pcsaft::python::pcsaft as pcsaft_module;
 #[cfg(feature = "pets")]
 use crate::pets::python::pets as pets_module;
+#[cfg(feature = "saftvrmie")]
+use crate::saftvrmie::python::saftvrmie as saftvrmie_module;
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::python::saftvrqmie as saftvrqmie_module;
 #[cfg(feature = "uvtheory")]
@@ -48,6 +50,8 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(uvtheory_module))?;
     #[cfg(feature = "saftvrqmie")]
     m.add_wrapped(wrap_pymodule!(saftvrqmie_module))?;
+    #[cfg(feature = "saftvrmie")]
+    m.add_wrapped(wrap_pymodule!(saftvrmie_module))?;
 
     set_path(py, m, "feos.si", "quantity")?;
     set_path(py, m, "feos.eos", "eos")?;
@@ -70,6 +74,8 @@ pub fn feos(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     set_path(py, m, "feos.uvtheory", "uvtheory")?;
     #[cfg(feature = "saftvrqmie")]
     set_path(py, m, "feos.saftvrqmie", "saftvrqmie")?;
+    #[cfg(feature = "saftvrmie")]
+    set_path(py, m, "feos.saftvrmie", "saftvrmie")?;
 
     py.run(
         "\

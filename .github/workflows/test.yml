@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        model: [pcsaft, gc_pcsaft, pets, uvtheory, saftvrqmie]
+        model: [pcsaft, gc_pcsaft, pets, uvtheory, saftvrqmie, saftvrmie]
 
     steps:
       - uses: actions/checkout@v4
