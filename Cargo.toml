@@ -1,27 +1,19 @@
 [package]
 name = "feos"
 version = "0.6.1"
-authors = [
-    "Gernot Bauer <bauer@itt.uni-stuttgart.de>",
-    "Philipp Rehner <prehner@ethz.ch>",
-]
+authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <prehner@ethz.ch>"]
 edition = "2021"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 description = "FeOs - A framework for equations of state and classical density functional theory."
 homepage = "https://github.com/feos-org"
 repository = "https://github.com/feos-org/feos"
-keywords = [
-    "physics",
-    "thermodynamics",
-    "equations_of_state",
-    "phase_equilibria",
-]
+keywords = ["physics", "thermodynamics", "equations_of_state", "phase_equilibria"]
 categories = ["science"]
 
 [package.metadata.docs.rs]
 features = ["all_models", "rayon"]
-rustdoc-args = ["--html-in-header", "./docs-header.html"]
+rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 
 [workspace]
 members = ["feos-core", "feos-dft", "feos-derive"]

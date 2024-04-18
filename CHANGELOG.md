@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added SAFT-VR Mie equation of state.[#237](https://github.com/feos-org/feos/pull/237)
 
+### Added
+- Added ePC-SAFT equation of state. [#229](https://github.com/feos-org/feos/pull/229)
+
 ### Changed
 - Updated model implementations to account for the removal of trait objects for Helmholtz energy contributions and the de Broglie in `feos-core`. [#226](https://github.com/feos-org/feos/pull/226)
 - Changed Helmholtz energy functions in `PcSaft` contributions so that the temperature-dependent diameter is re-used across different contributions. [#226](https://github.com/feos-org/feos/pull/226)

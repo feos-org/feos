@@ -36,6 +36,7 @@ The following models are currently published as part of the `FeOs` framework
 |name|description|eos|dft|
 |-|-|:-:|:-:|
 |`pcsaft`|perturbed-chain (polar) statistical associating fluid theory|✓|✓|
+|`epcsaft`|electrolyte PC-SAFT|✓||
 |`gc-pcsaft`|(heterosegmented) group contribution PC-SAFT|✓|✓|
 |`pets`|perturbed truncated and shifted Lennard-Jones mixtures|✓|✓|
 |`uvtheory`|equation of state for Mie fluids and mixtures|✓||
