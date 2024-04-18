@@ -474,32 +474,29 @@ impl Parameter for ElectrolytePcSaftParameters {
             ));
         }
 
-        if modeltypes.len() >= 1 {
-            if modeltypes[0] == 2 {
-                // order points in data by increasing temperature
-                let mut permittivity_records_clone = permittivity_records.clone();
-                permittivity_records_clone
-                    .iter_mut()
-                    .filter(|record| (record.is_some()))
-                    .enumerate()
-                    .for_each(|(i, record)| {
-                        if let PermittivityRecord::ExperimentalData { data } =
-                            record.as_mut().unwrap()
-                        {
-                            let mut data = data.clone();
-                            data.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-                            // check if all temperatures a.0 in data are finite, if not, make them finite by rounding to four digits
-                            data.iter_mut().for_each(|a| {
-                                if !a.0.is_finite() {
-                                    a.0 = (a.0 * 1e4).round() / 1e4;
-                                }
-                            });
-                            // save data again in record
-                            permittivity_records[i] =
-                                Some(PermittivityRecord::ExperimentalData { data });
-                        }
-                    });
-            }
+        if !modeltypes.is_empty() && modeltypes[0] == 2 {
+            // order points in data by increasing temperature
+            let mut permittivity_records_clone = permittivity_records.clone();
+            permittivity_records_clone
+                .iter_mut()
+                .filter(|record| (record.is_some()))
+                .enumerate()
+                .for_each(|(i, record)| {
+                    if let PermittivityRecord::ExperimentalData { data } = record.as_mut().unwrap()
+                    {
+                        let mut data = data.clone();
+                        data.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+                        // check if all temperatures a.0 in data are finite, if not, make them finite by rounding to four digits
+                        data.iter_mut().for_each(|a| {
+                            if !a.0.is_finite() {
+                                a.0 = (a.0 * 1e4).round() / 1e4;
+                            }
+                        });
+                        // save data again in record
+                        permittivity_records[i] =
+                            Some(PermittivityRecord::ExperimentalData { data });
+                    }
+                });
         }
 
         Ok(Self {
@@ -605,7 +602,6 @@ impl ElectrolytePcSaftParameters {
 #[cfg(test)]
 pub mod utils {
     use feos_core::parameter::{BinaryRecord, Identifier};
-    use ndarray::ArrayBase;
 
     use super::*;
     use std::sync::Arc;
@@ -624,7 +620,7 @@ pub mod utils {
                 "model_record": {
                     "m": 2.001829,
                     "sigma": 3.618353,
-                    "epsilon_k": 208.1101,
+                    "epsilon_k": 208.1101
                 },
                 "molarweight": 44.0962
             }"#;
@@ -1152,7 +1148,7 @@ pub mod utils {
                 "model_record": {
                     "m": 2.0018290000000003,
                     "sigma": 3.618353,
-                    "epsilon_k": 208.1101,
+                    "epsilon_k": 208.1101
                 },
                 "molarweight": 44.0962
             },
@@ -1168,7 +1164,7 @@ pub mod utils {
                 "model_record": {
                     "m": 2.331586,
                     "sigma": 3.7086010000000003,
-                    "epsilon_k": 222.8774,
+                    "epsilon_k": 222.8774
                 },
                 "molarweight": 58.123
             }

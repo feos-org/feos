@@ -1,5 +1,4 @@
 use crate::epcsaft::parameters::ElectrolytePcSaftParameters;
-use crate::hard_sphere::HardSphereProperties;
 use feos_core::StateHD;
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
@@ -174,6 +173,7 @@ mod tests {
     use crate::epcsaft::parameters::utils::{
         butane_parameters, propane_butane_parameters, propane_parameters,
     };
+    use crate::hard_sphere::HardSphereProperties;
     use approx::assert_relative_eq;
     use ndarray::arr1;
 

@@ -1,6 +1,5 @@
 use crate::epcsaft::eos::permittivity::Permittivity;
 use crate::epcsaft::parameters::ElectrolytePcSaftParameters;
-use crate::hard_sphere::HardSphereProperties;
 use feos_core::StateHD;
 use ndarray::*;
 use num_dual::DualNum;
@@ -97,6 +96,7 @@ impl fmt::Display for Ionic {
 mod tests {
     use super::*;
     use crate::epcsaft::parameters::utils::{water_nacl_parameters, water_nacl_parameters_perturb};
+    use crate::hard_sphere::HardSphereProperties;
     use approx::assert_relative_eq;
     use ndarray::arr1;
 
