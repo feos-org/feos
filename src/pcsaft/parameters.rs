@@ -247,24 +247,17 @@ impl PcSaftRecord {
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
     ) -> PcSaftRecord {
-        let association_record = if kappa_ab.is_none()
-            && epsilon_k_ab.is_none()
-            && na.is_none()
-            && nb.is_none()
-            && nc.is_none()
-        {
-            None
-        } else {
-            Some(AssociationRecord::new(
-                PcSaftAssociationRecord::new(
-                    kappa_ab.unwrap_or_default(),
-                    epsilon_k_ab.unwrap_or_default(),
-                ),
-                na.unwrap_or_default(),
-                nb.unwrap_or_default(),
-                nc.unwrap_or_default(),
-            ))
-        };
+        let association_record =
+            if let (Some(kappa_ab), Some(epsilon_k_ab)) = (kappa_ab, epsilon_k_ab) {
+                Some(AssociationRecord::new(
+                    PcSaftAssociationRecord::new(kappa_ab, epsilon_k_ab),
+                    na.unwrap_or_default(),
+                    nb.unwrap_or_default(),
+                    nc.unwrap_or_default(),
+                ))
+            } else {
+                None
+            };
         Self {
             m,
             sigma,
@@ -282,12 +275,8 @@ impl PcSaftRecord {
 #[derive(Serialize, Deserialize, Clone, Copy, Default)]
 pub struct PcSaftAssociationRecord {
     /// Association volume parameter
-    #[serde(skip_serializing_if = "f64::is_zero")]
-    #[serde(default)]
     pub kappa_ab: f64,
     /// Association energy parameter in units of Kelvin
-    #[serde(skip_serializing_if = "f64::is_zero")]
-    #[serde(default)]
     pub epsilon_k_ab: f64,
 }
 
