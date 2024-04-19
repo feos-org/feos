@@ -1,0 +1,34 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.epcsaft.ElectrolytePcSaftVariants
+======================================
+
+.. currentmodule:: feos.epcsaft
+
+.. autoclass:: ElectrolytePcSaftVariants
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~ElectrolytePcSaftVariants.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ElectrolytePcSaftVariants.Advanced
+      ~ElectrolytePcSaftVariants.Revised
+   
+   

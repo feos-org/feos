@@ -1,0 +1,29 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.epcsaft.PermittivityRecord
+===============================
+
+.. currentmodule:: feos.epcsaft
+
+.. autoclass:: PermittivityRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PermittivityRecord.__init__
+      ~PermittivityRecord.from_experimental_data
+      ~PermittivityRecord.from_perturbation_theory
+   
+   
+
+   
+   
+   

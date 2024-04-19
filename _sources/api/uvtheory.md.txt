@@ -19,6 +19,7 @@ parameters = UVTheoryParameters.from_json(['methane', 'ethane'], 'parameters.jso
     :toctree: generated/
 
     Identifier
+    IdentifierOption
     ChemicalRecord
     PureRecord
     BinaryRecord

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.epcsaft.PermittivityRecord.from\_perturbation\_theory
+==========================================================
+
+.. currentmodule:: feos.epcsaft
+
+.. automethod:: PermittivityRecord.from_perturbation_theory

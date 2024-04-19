@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrqmie.SaftVRQMieParameters.diameter
+=============================================
+
+.. currentmodule:: feos.saftvrqmie
+
+.. automethod:: SaftVRQMieParameters.diameter

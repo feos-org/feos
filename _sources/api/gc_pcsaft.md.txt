@@ -1,6 +1,6 @@
 # `feos.gc_pcsaft`
 
-Utilities to build `GcPcSaftParameters`. To learn more about ways to build parameters from files or within Python, see [this example](/examples/eos/pcsaft/pcsaft_working_with_parameters).
+Utilities to build `GcPcSaftParameters`. To learn more about ways to build parameters from files or within Python, see [this example](/tutorials/eos/pcsaft/pcsaft_working_with_parameters).
 
 ## Example
 
@@ -20,10 +20,10 @@ from feos.gc_pcsaft import GcPcSaftParameters
     Identifier
     IdentifierOption
     ChemicalRecord
-    AssociationRecord
+    SmartsRecord
+    GcPcSaftRecord
     SegmentRecord
     BinarySegmentRecord
-    GcPcSaftRecord
     GcPcSaftEosParameters
     GcPcSaftFunctionalParameters
 ```

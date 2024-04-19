@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.StateVec.specific\_entropy
+===================================
+
+.. currentmodule:: feos.dft
+
+.. automethod:: StateVec.specific_entropy

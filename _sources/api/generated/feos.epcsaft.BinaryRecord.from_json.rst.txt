@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.epcsaft.BinaryRecord.from\_json
+====================================
+
+.. currentmodule:: feos.epcsaft
+
+.. automethod:: BinaryRecord.from_json

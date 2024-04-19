@@ -20,6 +20,7 @@ parameters = SaftVRQMieParameters.from_json(['hydrogen', 'neon'], 'parameters.js
 
     FeynmanHibbsOrder
     Identifier
+    IdentifierOption
     PureRecord
     BinaryRecord
     SaftVRQMieRecord

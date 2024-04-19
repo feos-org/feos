@@ -30,10 +30,14 @@ feos.gc\_pcsaft.GcPcSaftRecord
 
    .. autosummary::
    
-      ~GcPcSaftRecord.association_record
       ~GcPcSaftRecord.epsilon_k
+      ~GcPcSaftRecord.epsilon_k_ab
+      ~GcPcSaftRecord.kappa_ab
       ~GcPcSaftRecord.m
       ~GcPcSaftRecord.mu
+      ~GcPcSaftRecord.na
+      ~GcPcSaftRecord.nb
+      ~GcPcSaftRecord.nc
       ~GcPcSaftRecord.sigma
    
    

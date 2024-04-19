@@ -1,0 +1,38 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.epcsaft.BinarySegmentRecord
+================================
+
+.. currentmodule:: feos.epcsaft
+
+.. autoclass:: BinarySegmentRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~BinarySegmentRecord.__init__
+      ~BinarySegmentRecord.from_json
+      ~BinarySegmentRecord.from_json_str
+      ~BinarySegmentRecord.to_json_str
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~BinarySegmentRecord.id1
+      ~BinarySegmentRecord.id2
+      ~BinarySegmentRecord.model_record
+   
+   

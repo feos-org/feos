@@ -1,0 +1,43 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.epcsaft.ElectrolytePcSaftRecord
+====================================
+
+.. currentmodule:: feos.epcsaft
+
+.. autoclass:: ElectrolytePcSaftRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~ElectrolytePcSaftRecord.__init__
+      ~ElectrolytePcSaftRecord.from_json_str
+      ~ElectrolytePcSaftRecord.to_json_str
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ElectrolytePcSaftRecord.epsilon_k
+      ~ElectrolytePcSaftRecord.epsilon_k_ab
+      ~ElectrolytePcSaftRecord.kappa_ab
+      ~ElectrolytePcSaftRecord.m
+      ~ElectrolytePcSaftRecord.na
+      ~ElectrolytePcSaftRecord.nb
+      ~ElectrolytePcSaftRecord.nc
+      ~ElectrolytePcSaftRecord.sigma
+      ~ElectrolytePcSaftRecord.z
+   
+   

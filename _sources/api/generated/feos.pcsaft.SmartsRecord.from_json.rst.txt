@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.SmartsRecord.from\_json
+===================================
+
+.. currentmodule:: feos.pcsaft
+
+.. automethod:: SmartsRecord.from_json

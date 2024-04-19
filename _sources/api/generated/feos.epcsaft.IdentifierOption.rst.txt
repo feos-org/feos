@@ -1,0 +1,38 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.epcsaft.IdentifierOption
+=============================
+
+.. currentmodule:: feos.epcsaft
+
+.. autoclass:: IdentifierOption
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~IdentifierOption.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~IdentifierOption.Cas
+      ~IdentifierOption.Formula
+      ~IdentifierOption.Inchi
+      ~IdentifierOption.IupacName
+      ~IdentifierOption.Name
+      ~IdentifierOption.Smiles
+   
+   

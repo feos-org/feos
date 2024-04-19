@@ -19,6 +19,8 @@ feos.saftvrqmie.SaftVRQMieParameters
       :toctree: ./
    
       ~SaftVRQMieParameters.__init__
+      ~SaftVRQMieParameters.diameter
+      ~SaftVRQMieParameters.epsilon_k_eff
       ~SaftVRQMieParameters.from_json
       ~SaftVRQMieParameters.from_model_records
       ~SaftVRQMieParameters.from_multiple_json
@@ -26,6 +28,8 @@ feos.saftvrqmie.SaftVRQMieParameters
       ~SaftVRQMieParameters.lammps_tables
       ~SaftVRQMieParameters.new_binary
       ~SaftVRQMieParameters.new_pure
+      ~SaftVRQMieParameters.quantum_d
+      ~SaftVRQMieParameters.sigma_eff
    
    
 
@@ -36,6 +40,7 @@ feos.saftvrqmie.SaftVRQMieParameters
    .. autosummary::
    
       ~SaftVRQMieParameters.binary_records
+      ~SaftVRQMieParameters.de_boer
       ~SaftVRQMieParameters.k_ij
       ~SaftVRQMieParameters.l_ij
       ~SaftVRQMieParameters.pure_records

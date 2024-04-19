@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrmie.IdentifierOption.\_\_init\_\_
+============================================
+
+.. currentmodule:: feos.saftvrmie
+
+.. automethod:: IdentifierOption.__init__

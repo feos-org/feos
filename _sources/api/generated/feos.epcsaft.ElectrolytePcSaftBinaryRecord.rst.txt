@@ -1,0 +1,35 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.epcsaft.ElectrolytePcSaftBinaryRecord
+==========================================
+
+.. currentmodule:: feos.epcsaft
+
+.. autoclass:: ElectrolytePcSaftBinaryRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~ElectrolytePcSaftBinaryRecord.__init__
+      ~ElectrolytePcSaftBinaryRecord.from_json_str
+      ~ElectrolytePcSaftBinaryRecord.to_json_str
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ElectrolytePcSaftBinaryRecord.k_ij
+   
+   

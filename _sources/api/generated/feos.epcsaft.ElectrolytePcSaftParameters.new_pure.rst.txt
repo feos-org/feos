@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.epcsaft.ElectrolytePcSaftParameters.new\_pure
+==================================================
+
+.. currentmodule:: feos.epcsaft
+
+.. automethod:: ElectrolytePcSaftParameters.new_pure

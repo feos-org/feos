@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.Pore2D.\_\_init\_\_
+============================
+
+.. currentmodule:: feos.dft
+
+.. automethod:: Pore2D.__init__

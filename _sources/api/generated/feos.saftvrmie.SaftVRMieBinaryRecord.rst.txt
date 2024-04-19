@@ -1,0 +1,29 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrmie.SaftVRMieBinaryRecord
+====================================
+
+.. currentmodule:: feos.saftvrmie
+
+.. autoclass:: SaftVRMieBinaryRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~SaftVRMieBinaryRecord.__init__
+      ~SaftVRMieBinaryRecord.from_json_str
+      ~SaftVRMieBinaryRecord.to_json_str
+   
+   
+
+   
+   
+   

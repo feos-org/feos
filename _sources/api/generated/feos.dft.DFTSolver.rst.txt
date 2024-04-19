@@ -1,0 +1,36 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.DFTSolver
+==================
+
+.. currentmodule:: feos.dft
+
+.. autoclass:: DFTSolver
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~DFTSolver.__init__
+      ~DFTSolver.anderson_mixing
+      ~DFTSolver.newton
+      ~DFTSolver.picard_iteration
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DFTSolver.default
+   
+   

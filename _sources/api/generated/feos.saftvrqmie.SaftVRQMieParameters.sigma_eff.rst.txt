@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrqmie.SaftVRQMieParameters.sigma\_eff
+===============================================
+
+.. currentmodule:: feos.saftvrqmie
+
+.. automethod:: SaftVRQMieParameters.sigma_eff

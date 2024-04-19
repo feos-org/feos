@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.dft.StateVec.molar\_enthalpy
+=================================
+
+.. currentmodule:: feos.dft
+
+.. automethod:: StateVec.molar_enthalpy

@@ -1,0 +1,29 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pcsaft.PcSaftBinaryRecord
+==============================
+
+.. currentmodule:: feos.pcsaft
+
+.. autoclass:: PcSaftBinaryRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PcSaftBinaryRecord.__init__
+      ~PcSaftBinaryRecord.from_json_str
+      ~PcSaftBinaryRecord.to_json_str
+   
+   
+
+   
+   
+   

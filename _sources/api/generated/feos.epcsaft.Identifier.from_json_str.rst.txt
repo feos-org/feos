@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.epcsaft.Identifier.from\_json\_str
+=======================================
+
+.. currentmodule:: feos.epcsaft
+
+.. automethod:: Identifier.from_json_str

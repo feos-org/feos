@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.epcsaft.PermittivityRecord.from\_experimental\_data
+========================================================
+
+.. currentmodule:: feos.epcsaft
+
+.. automethod:: PermittivityRecord.from_experimental_data

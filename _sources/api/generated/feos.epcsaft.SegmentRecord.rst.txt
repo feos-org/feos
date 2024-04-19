@@ -1,0 +1,38 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.epcsaft.SegmentRecord
+==========================
+
+.. currentmodule:: feos.epcsaft
+
+.. autoclass:: SegmentRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~SegmentRecord.__init__
+      ~SegmentRecord.from_json
+      ~SegmentRecord.from_json_str
+      ~SegmentRecord.to_json_str
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SegmentRecord.identifier
+      ~SegmentRecord.model_record
+      ~SegmentRecord.molarweight
+   
+   

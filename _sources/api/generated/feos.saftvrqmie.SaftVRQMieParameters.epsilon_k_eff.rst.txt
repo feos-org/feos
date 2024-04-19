@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.saftvrqmie.SaftVRQMieParameters.epsilon\_k\_eff
+====================================================
+
+.. currentmodule:: feos.saftvrqmie
+
+.. automethod:: SaftVRQMieParameters.epsilon_k_eff
