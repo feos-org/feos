@@ -43,7 +43,6 @@ use std::sync::Arc;
 ///     Charge of the electrolyte.
 /// permittivity_record : PyPermittivityRecord, optional
 ///     Permittivity record. Defaults to `None`.
-
 #[pyclass(name = "ElectrolytePcSaftRecord")]
 #[derive(Clone)]
 pub struct PyElectrolytePcSaftRecord(ElectrolytePcSaftRecord);
@@ -68,10 +67,6 @@ impl PyElectrolytePcSaftRecord {
         z: Option<f64>,
         permittivity_record: Option<PyPermittivityRecord>,
     ) -> Self {
-        let perm = match permittivity_record {
-            Some(p) => Some(p.0),
-            None => None,
-        };
         Self(ElectrolytePcSaftRecord::new(
             m,
             sigma,
@@ -84,7 +79,7 @@ impl PyElectrolytePcSaftRecord {
             nb,
             nc,
             z,
-            perm,
+            permittivity_record.map(|p| p.0),
         ))
     }
 
@@ -105,12 +100,12 @@ impl PyElectrolytePcSaftRecord {
 
     #[getter]
     fn get_kappa_ab(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.kappa_ab)
+        self.0.association_record.map(|a| a.parameters.kappa_ab)
     }
 
     #[getter]
     fn get_epsilon_k_ab(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.epsilon_k_ab)
+        self.0.association_record.map(|a| a.parameters.epsilon_k_ab)
     }
 
     #[getter]
