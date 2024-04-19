@@ -269,7 +269,7 @@ impl PySaftVRQMieParameters {
     /// -------
     /// np.ndarray
     #[getter]
-    fn de_boer<'py>(&self, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
+    fn de_boer<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray1<f64>>> {
         let n = self.0.m.len();
         Ok(Array1::from_shape_fn(n, |i| -> f64 {
             (PLANCK
@@ -279,7 +279,7 @@ impl PySaftVRQMieParameters {
             .into_value()
         })
         .view()
-        .to_pyarray(py))
+        .to_pyarray_bound(py))
     }
 
     /// Generate energy and force tables to be used with LAMMPS' `pair_style table` command.
