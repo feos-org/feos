@@ -1,4 +1,6 @@
-use crate::association::{AssociationParameters, AssociationRecord, BinaryAssociationRecord};
+use crate::association::{
+    AssociationParameters, AssociationRecord, AssociationStrength, BinaryAssociationRecord,
+};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use feos_core::parameter::{FromSegments, Parameter, ParameterError, PureRecord};
 use feos_core::si::{JOULE, KB, KELVIN};
@@ -8,6 +10,7 @@ use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Write;
+use std::sync::Arc;
 
 use crate::epcsaft::eos::permittivity::PermittivityRecord;
 
@@ -29,7 +32,7 @@ pub struct ElectrolytePcSaftRecord {
     /// Association parameters
     #[serde(flatten)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub association_record: Option<AssociationRecord>,
+    pub association_record: Option<AssociationRecord<ElectrolytePcSaftAssociationRecord>>,
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub z: Option<f64>,
@@ -64,8 +67,8 @@ impl FromSegments<f64> for ElectrolytePcSaftRecord {
             .filter_map(|(s, n)| {
                 s.association_record.as_ref().map(|record| {
                     [
-                        record.kappa_ab * n,
-                        record.epsilon_k_ab * n,
+                        record.parameters.kappa_ab * n,
+                        record.parameters.epsilon_k_ab * n,
                         record.na * n,
                         record.nb * n,
                         record.nc * n,
@@ -82,7 +85,12 @@ impl FromSegments<f64> for ElectrolytePcSaftRecord {
                 ]
             })
             .map(|[kappa_ab, epsilon_k_ab, na, nb, nc]| {
-                AssociationRecord::new(kappa_ab, epsilon_k_ab, na, nb, nc)
+                AssociationRecord::new(
+                    ElectrolytePcSaftAssociationRecord::new(kappa_ab, epsilon_k_ab),
+                    na,
+                    nb,
+                    nc,
+                )
             });
 
         Ok(Self {
@@ -149,22 +157,17 @@ impl ElectrolytePcSaftRecord {
         z: Option<f64>,
         permittivity_record: Option<PermittivityRecord>,
     ) -> ElectrolytePcSaftRecord {
-        let association_record = if kappa_ab.is_none()
-            && epsilon_k_ab.is_none()
-            && na.is_none()
-            && nb.is_none()
-            && nc.is_none()
-        {
-            None
-        } else {
-            Some(AssociationRecord::new(
-                kappa_ab.unwrap_or_default(),
-                epsilon_k_ab.unwrap_or_default(),
-                na.unwrap_or_default(),
-                nb.unwrap_or_default(),
-                nc.unwrap_or_default(),
-            ))
-        };
+        let association_record =
+            if let (Some(kappa_ab), Some(epsilon_k_ab)) = (kappa_ab, epsilon_k_ab) {
+                Some(AssociationRecord::new(
+                    ElectrolytePcSaftAssociationRecord::new(kappa_ab, epsilon_k_ab),
+                    na.unwrap_or_default(),
+                    nb.unwrap_or_default(),
+                    nc.unwrap_or_default(),
+                ))
+            } else {
+                None
+            };
         ElectrolytePcSaftRecord {
             m,
             sigma,
@@ -178,6 +181,34 @@ impl ElectrolytePcSaftRecord {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Copy, Default)]
+pub struct ElectrolytePcSaftAssociationRecord {
+    /// Association volume parameter
+    pub kappa_ab: f64,
+    /// Association energy parameter in units of Kelvin
+    pub epsilon_k_ab: f64,
+}
+
+impl ElectrolytePcSaftAssociationRecord {
+    pub fn new(kappa_ab: f64, epsilon_k_ab: f64) -> Self {
+        Self {
+            kappa_ab,
+            epsilon_k_ab,
+        }
+    }
+}
+
+impl std::fmt::Display for ElectrolytePcSaftAssociationRecord {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "ElectrolytePcSaftAssociationRecord(kappa_ab={}",
+            self.kappa_ab
+        )?;
+        write!(f, ", epsilon_k_ab={})", self.epsilon_k_ab)
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct ElectrolytePcSaftBinaryRecord {
     /// Binary dispersion interaction parameter
@@ -185,7 +216,7 @@ pub struct ElectrolytePcSaftBinaryRecord {
     pub k_ij: Vec<f64>,
     /// Binary association parameters
     #[serde(flatten)]
-    association: Option<BinaryAssociationRecord>,
+    association: Option<BinaryAssociationRecord<ElectrolytePcSaftBinaryAssociationRecord>>,
 }
 
 impl ElectrolytePcSaftBinaryRecord {
@@ -194,7 +225,10 @@ impl ElectrolytePcSaftBinaryRecord {
         let association = if kappa_ab.is_none() && epsilon_k_ab.is_none() {
             None
         } else {
-            Some(BinaryAssociationRecord::new(kappa_ab, epsilon_k_ab, None))
+            Some(BinaryAssociationRecord::new(
+                ElectrolytePcSaftBinaryAssociationRecord::new(kappa_ab, epsilon_k_ab),
+                None,
+            ))
         };
         Self { k_ij, association }
     }
@@ -243,14 +277,33 @@ impl std::fmt::Display for ElectrolytePcSaftBinaryRecord {
             tokens.push(format!(", k_ij_3={})", self.k_ij[3]));
         }
         if let Some(association) = self.association {
-            if let Some(kappa_ab) = association.kappa_ab {
+            if let Some(kappa_ab) = association.parameters.kappa_ab {
                 tokens.push(format!("kappa_ab={}", kappa_ab));
             }
-            if let Some(epsilon_k_ab) = association.epsilon_k_ab {
+            if let Some(epsilon_k_ab) = association.parameters.epsilon_k_ab {
                 tokens.push(format!("epsilon_k_ab={}", epsilon_k_ab));
             }
         }
         write!(f, "ElectrolytePcSaftBinaryRecord({})", tokens.join(""))
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Default)]
+pub struct ElectrolytePcSaftBinaryAssociationRecord {
+    /// Cross-association association volume parameter.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kappa_ab: Option<f64>,
+    /// Cross-association energy parameter.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub epsilon_k_ab: Option<f64>,
+}
+
+impl ElectrolytePcSaftBinaryAssociationRecord {
+    pub fn new(kappa_ab: Option<f64>, epsilon_k_ab: Option<f64>) -> Self {
+        Self {
+            kappa_ab,
+            epsilon_k_ab,
+        }
     }
 }
 
@@ -263,7 +316,7 @@ pub struct ElectrolytePcSaftParameters {
     pub q: Array1<f64>,
     pub mu2: Array1<f64>,
     pub q2: Array1<f64>,
-    pub association: AssociationParameters,
+    pub association: Arc<AssociationParameters<Self>>,
     pub z: Array1<f64>,
     pub k_ij: Array2<Vec<f64>>,
     pub sigma_ij: Array2<f64>,
@@ -345,8 +398,8 @@ impl Parameter for ElectrolytePcSaftParameters {
             // check if component i is water with temperature-dependent sigma
             if (m[i] * 1000.0).round() / 1000.0 == 1.205 && epsilon_k[i].round() == 354.0 {
                 if let Some(record) = r.association_record {
-                    if (record.kappa_ab * 1000.0).round() / 1000.0 == 0.045
-                        && record.epsilon_k_ab.round() == 2426.0
+                    if (record.parameters.kappa_ab * 1000.0).round() / 1000.0 == 0.045
+                        && record.parameters.epsilon_k_ab.round() == 2426.0
                     {
                         water_sigma_t_comp = Some(i);
                     }
@@ -377,11 +430,11 @@ impl Parameter for ElectrolytePcSaftParameters {
             .iter()
             .flat_map(|r| {
                 r.indexed_iter()
-                    .filter_map(|(i, record)| record.association.map(|r| (i, r)))
+                    .filter_map(|((i, j), record)| record.association.map(|r| ([i, j], r)))
             })
             .collect();
         let association =
-            AssociationParameters::new(&association_records, &sigma, &binary_association, None);
+            AssociationParameters::new(&association_records, &binary_association, None);
 
         let ionic_comp: Array1<usize> = z
             .iter()
@@ -508,7 +561,7 @@ impl Parameter for ElectrolytePcSaftParameters {
             q,
             mu2,
             q2,
-            association,
+            association: Arc::new(association),
             z,
             k_ij,
             sigma_ij,
@@ -558,6 +611,42 @@ impl HardSphereProperties for ElectrolytePcSaftParameters {
     }
 }
 
+impl AssociationStrength for ElectrolytePcSaftParameters {
+    type Record = ElectrolytePcSaftAssociationRecord;
+    type BinaryRecord = ElectrolytePcSaftBinaryAssociationRecord;
+
+    fn association_strength<D: DualNum<f64> + Copy>(
+        &self,
+        temperature: D,
+        comp_i: usize,
+        comp_j: usize,
+        assoc_ij: Self::Record,
+    ) -> D {
+        let sigma_t = self.sigma_t(temperature);
+        let si = sigma_t[comp_i];
+        let sj = sigma_t[comp_j];
+        (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
+            * assoc_ij.kappa_ab
+            * (si * sj).powf(1.5)
+    }
+
+    fn combining_rule(parameters_i: Self::Record, parameters_j: Self::Record) -> Self::Record {
+        Self::Record {
+            kappa_ab: (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt(),
+            epsilon_k_ab: 0.5 * (parameters_i.epsilon_k_ab + parameters_j.epsilon_k_ab),
+        }
+    }
+
+    fn update_binary(parameters_ij: &mut Self::Record, binary_parameters: Self::BinaryRecord) {
+        if let Some(kappa_ab) = binary_parameters.kappa_ab {
+            parameters_ij.kappa_ab = kappa_ab
+        }
+        if let Some(epsilon_k_ab) = binary_parameters.epsilon_k_ab {
+            parameters_ij.epsilon_k_ab = epsilon_k_ab
+        }
+    }
+}
+
 impl ElectrolytePcSaftParameters {
     pub fn to_markdown(&self) -> String {
         let mut output = String::new();
@@ -570,10 +659,14 @@ impl ElectrolytePcSaftParameters {
         for (i, record) in self.pure_records.iter().enumerate() {
             let component = record.identifier.name.clone();
             let component = component.unwrap_or(format!("Component {}", i + 1));
-            let association = record
-                .model_record
-                .association_record
-                .unwrap_or_else(|| AssociationRecord::new(0.0, 0.0, 0.0, 0.0, 0.0));
+            let association = record.model_record.association_record.unwrap_or_else(|| {
+                AssociationRecord::new(
+                    ElectrolytePcSaftAssociationRecord::new(0.0, 0.0),
+                    0.0,
+                    0.0,
+                    0.0,
+                )
+            });
             write!(
                 o,
                 "\n|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|",
@@ -585,8 +678,8 @@ impl ElectrolytePcSaftParameters {
                 record.model_record.mu.unwrap_or(0.0),
                 record.model_record.q.unwrap_or(0.0),
                 record.model_record.z.unwrap_or(0.0),
-                association.kappa_ab,
-                association.epsilon_k_ab,
+                association.parameters.kappa_ab,
+                association.parameters.epsilon_k_ab,
                 association.na,
                 association.nb,
                 association.nc
