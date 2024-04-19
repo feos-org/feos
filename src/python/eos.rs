@@ -1,4 +1,8 @@
 use crate::eos::ResidualModel;
+#[cfg(feature = "epcsaft")]
+use crate::epcsaft::python::PyElectrolytePcSaftParameters;
+#[cfg(feature = "epcsaft")]
+use crate::epcsaft::{ElectrolytePcSaft, ElectrolytePcSaftOptions, ElectrolytePcSaftVariants};
 #[cfg(feature = "estimator")]
 use crate::estimator::*;
 #[cfg(feature = "gc_pcsaft")]
@@ -14,10 +18,6 @@ use crate::impl_estimator_entropy_scaling;
 use crate::pcsaft::python::PyPcSaftParameters;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::{DQVariants, PcSaft, PcSaftOptions};
-#[cfg(feature = "epcsaft")]
-use crate::epcsaft::python::PyElectrolytePcSaftParameters;
-#[cfg(feature = "epcsaft")]
-use crate::epcsaft::{ElectrolytePcSaft, ElectrolytePcSaftOptions, ElectrolytePcSaftVariants};
 #[cfg(feature = "pets")]
 use crate::pets::python::PyPetsParameters;
 #[cfg(feature = "pets")]
@@ -212,20 +212,20 @@ impl PyEquationOfState {
     /// Returns
     /// -------
     /// EquationOfState
-    ///     The PC-SAFT equation of state that can be used to compute thermodynamic
+    ///     The ePC-SAFT equation of state that can be used to compute thermodynamic
     ///     states.
     #[cfg(feature = "epcsaft")]
     #[staticmethod]
     #[pyo3(
         signature = (parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, epcsaft_variant=ElectrolytePcSaftVariants::Advanced),
-        text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, epcsaft_variant=advanced)",
+        text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, epcsaft_variant)",
     )]
     pub fn epcsaft(
         parameters: PyElectrolytePcSaftParameters,
         max_eta: f64,
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
-        epcsaft_variant: ElectrolytePcSaftVariants
+        epcsaft_variant: ElectrolytePcSaftVariants,
     ) -> Self {
         let options = ElectrolytePcSaftOptions {
             max_eta,
@@ -233,10 +233,9 @@ impl PyEquationOfState {
             tol_cross_assoc,
             epcsaft_variant,
         };
-        let residual = Arc::new(ResidualModel::ElectrolytePcSaft(ElectrolytePcSaft::with_options(
-            parameters.0,
-            options,
-        )));
+        let residual = Arc::new(ResidualModel::ElectrolytePcSaft(
+            ElectrolytePcSaft::with_options(parameters.0, options),
+        ));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }

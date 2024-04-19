@@ -3,7 +3,6 @@ use crate::association::{
 };
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use feos_core::parameter::{FromSegments, Parameter, ParameterError, PureRecord};
-use feos_core::si::{JOULE, KB, KELVIN};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;
@@ -23,12 +22,6 @@ pub struct ElectrolytePcSaftRecord {
     pub sigma: f64,
     /// Energetic parameter in units of Kelvin
     pub epsilon_k: f64,
-    /// Dipole moment in units of Debye
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub mu: Option<f64>,
-    /// Quadrupole moment in units of Debye
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub q: Option<f64>,
     /// Association parameters
     #[serde(flatten)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -54,14 +47,6 @@ impl FromSegments<f64> for ElectrolytePcSaftRecord {
             z += s.z.unwrap_or(0.0);
         });
 
-        let q = segments
-            .iter()
-            .filter_map(|(s, n)| s.q.map(|q| q * n))
-            .reduce(|a, b| a + b);
-        let mu = segments
-            .iter()
-            .filter_map(|(s, n)| s.mu.map(|mu| mu * n))
-            .reduce(|a, b| a + b);
         let association_record = segments
             .iter()
             .filter_map(|(s, n)| {
@@ -97,8 +82,6 @@ impl FromSegments<f64> for ElectrolytePcSaftRecord {
             m,
             sigma: (sigma3 / m).cbrt(),
             epsilon_k: epsilon_k / m,
-            mu,
-            q,
             association_record,
             z: Some(z),
             permittivity_record: None,
@@ -123,12 +106,6 @@ impl std::fmt::Display for ElectrolytePcSaftRecord {
         write!(f, "ElectrolytePcSaftRecord(m={}", self.m)?;
         write!(f, ", sigma={}", self.sigma)?;
         write!(f, ", epsilon_k={}", self.epsilon_k)?;
-        if let Some(n) = &self.mu {
-            write!(f, ", mu={}", n)?;
-        }
-        if let Some(n) = &self.q {
-            write!(f, ", q={}", n)?;
-        }
         if let Some(n) = &self.association_record {
             write!(f, ", association_record={}", n)?;
         }
@@ -147,8 +124,6 @@ impl ElectrolytePcSaftRecord {
         m: f64,
         sigma: f64,
         epsilon_k: f64,
-        mu: Option<f64>,
-        q: Option<f64>,
         kappa_ab: Option<f64>,
         epsilon_k_ab: Option<f64>,
         na: Option<f64>,
@@ -172,8 +147,6 @@ impl ElectrolytePcSaftRecord {
             m,
             sigma,
             epsilon_k,
-            mu,
-            q,
             association_record,
             z,
             permittivity_record,
@@ -312,22 +285,14 @@ pub struct ElectrolytePcSaftParameters {
     pub m: Array1<f64>,
     pub sigma: Array1<f64>,
     pub epsilon_k: Array1<f64>,
-    pub mu: Array1<f64>,
-    pub q: Array1<f64>,
-    pub mu2: Array1<f64>,
-    pub q2: Array1<f64>,
     pub association: Arc<AssociationParameters<Self>>,
     pub z: Array1<f64>,
     pub k_ij: Array2<Vec<f64>>,
     pub sigma_ij: Array2<f64>,
     pub e_k_ij: Array2<f64>,
-    pub ndipole: usize,
-    pub nquadpole: usize,
     pub nionic: usize,
     pub nsolvent: usize,
     pub water_sigma_t_comp: Option<usize>,
-    pub dipole_comp: Array1<usize>,
-    pub quadpole_comp: Array1<usize>,
     pub ionic_comp: Array1<usize>,
     pub solvent_comp: Array1<usize>,
     pub permittivity: Array1<Option<PermittivityRecord>>,
@@ -376,8 +341,6 @@ impl Parameter for ElectrolytePcSaftParameters {
         let mut m = Array::zeros(n);
         let mut sigma = Array::zeros(n);
         let mut epsilon_k = Array::zeros(n);
-        let mut mu = Array::zeros(n);
-        let mut q = Array::zeros(n);
         let mut z = Array::zeros(n);
         let mut association_records = Vec::with_capacity(n);
         let mut water_sigma_t_comp = None;
@@ -390,8 +353,6 @@ impl Parameter for ElectrolytePcSaftParameters {
             m[i] = r.m;
             sigma[i] = r.sigma;
             epsilon_k[i] = r.epsilon_k;
-            mu[i] = r.mu.unwrap_or(0.0);
-            q[i] = r.q.unwrap_or(0.0);
             z[i] = r.z.unwrap_or(0.0);
             association_records.push(r.association_record.into_iter().collect());
             molarweight[i] = record.molarweight;
@@ -406,25 +367,6 @@ impl Parameter for ElectrolytePcSaftParameters {
                 }
             }
         }
-
-        let mu2 = &mu * &mu / (&m * &sigma * &sigma * &sigma * &epsilon_k)
-            * 1e-19
-            * (JOULE / KELVIN / KB).into_value();
-        let q2 = &q * &q / (&m * &sigma.mapv(|s| s.powi(5)) * &epsilon_k)
-            * 1e-19
-            * (JOULE / KELVIN / KB).into_value();
-        let dipole_comp: Array1<usize> = mu2
-            .iter()
-            .enumerate()
-            .filter_map(|(i, &mu2)| (mu2.abs() > 0.0).then_some(i))
-            .collect();
-        let ndipole = dipole_comp.len();
-        let quadpole_comp: Array1<usize> = q2
-            .iter()
-            .enumerate()
-            .filter_map(|(i, &q2)| (q2.abs() > 0.0).then_some(i))
-            .collect();
-        let nquadpole = quadpole_comp.len();
 
         let binary_association: Vec<_> = binary_records
             .iter()
@@ -557,21 +499,13 @@ impl Parameter for ElectrolytePcSaftParameters {
             m,
             sigma,
             epsilon_k,
-            mu,
-            q,
-            mu2,
-            q2,
             association: Arc::new(association),
             z,
             k_ij,
             sigma_ij,
             e_k_ij,
-            ndipole,
-            nquadpole,
             nionic,
             nsolvent,
-            dipole_comp,
-            quadpole_comp,
             ionic_comp,
             solvent_comp,
             water_sigma_t_comp,
@@ -653,7 +587,7 @@ impl ElectrolytePcSaftParameters {
         let o = &mut output;
         write!(
             o,
-            "|component|molarweight|$m$|$\\sigma$|$\\varepsilon$|$\\mu$|$Q$|$z$|$\\kappa_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|\n|-|-|-|-|-|-|-|-|-|-|-|-|"
+            "|component|molarweight|$m$|$\\sigma$|$\\varepsilon$|$z$|$\\kappa_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|\n|-|-|-|-|-|-|-|-|-|-|-|-|"
         )
         .unwrap();
         for (i, record) in self.pure_records.iter().enumerate() {
@@ -669,14 +603,12 @@ impl ElectrolytePcSaftParameters {
             });
             write!(
                 o,
-                "\n|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|",
+                "\n|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|",
                 component,
                 record.molarweight,
                 record.model_record.m,
                 record.model_record.sigma,
                 record.model_record.epsilon_k,
-                record.model_record.mu.unwrap_or(0.0),
-                record.model_record.q.unwrap_or(0.0),
                 record.model_record.z.unwrap_or(0.0),
                 association.parameters.kappa_ab,
                 association.parameters.epsilon_k_ab,
@@ -691,7 +623,6 @@ impl ElectrolytePcSaftParameters {
     }
 }
 
-#[allow(dead_code)]
 #[cfg(test)]
 pub mod utils {
     use feos_core::parameter::{BinaryRecord, Identifier};
@@ -722,30 +653,6 @@ pub mod utils {
         Arc::new(ElectrolytePcSaftParameters::new_pure(propane_record).unwrap())
     }
 
-    pub fn carbon_dioxide_parameters() -> Arc<ElectrolytePcSaftParameters> {
-        let co2_json = r#"
-        {
-            "identifier": {
-                "cas": "124-38-9",
-                "name": "carbon-dioxide",
-                "iupac_name": "carbon dioxide",
-                "smiles": "O=C=O",
-                "inchi": "InChI=1/CO2/c2-1-3",
-                "formula": "CO2"
-            },
-            "molarweight": 44.0098,
-            "model_record": {
-                "m": 1.5131,
-                "sigma": 3.1869,
-                "epsilon_k": 163.333,
-                "q": 4.4
-            }
-        }"#;
-        let co2_record: PureRecord<ElectrolytePcSaftRecord> =
-            serde_json::from_str(co2_json).expect("Unable to parse json.");
-        Arc::new(ElectrolytePcSaftParameters::new_pure(co2_record).unwrap())
-    }
-
     pub fn butane_parameters() -> Arc<ElectrolytePcSaftParameters> {
         let butane_json = r#"
             {
@@ -767,55 +674,6 @@ pub mod utils {
         let butane_record: PureRecord<ElectrolytePcSaftRecord> =
             serde_json::from_str(butane_json).expect("Unable to parse json.");
         Arc::new(ElectrolytePcSaftParameters::new_pure(butane_record).unwrap())
-    }
-
-    pub fn dme_parameters() -> Arc<ElectrolytePcSaftParameters> {
-        let dme_json = r#"
-            {
-                "identifier": {
-                    "cas": "115-10-6",
-                    "name": "dimethyl-ether",
-                    "iupac_name": "methoxymethane",
-                    "smiles": "COC",
-                    "inchi": "InChI=1/C2H6O/c1-3-2/h1-2H3",
-                    "formula": "C2H6O"
-                },
-                "model_record": {
-                    "m": 2.2634,
-                    "sigma": 3.2723,
-                    "epsilon_k": 210.29,
-                    "mu": 1.3
-                },
-                "molarweight": 46.0688
-            }"#;
-        let dme_record: PureRecord<ElectrolytePcSaftRecord> =
-            serde_json::from_str(dme_json).expect("Unable to parse json.");
-        Arc::new(ElectrolytePcSaftParameters::new_pure(dme_record).unwrap())
-    }
-
-    pub fn water_parameters_sigma_t() -> Arc<ElectrolytePcSaftParameters> {
-        let water_json = r#"
-        {
-                "identifier": {
-                    "cas": "7732-18-5",
-                    "name": "water_np_sigma_t",
-                    "iupac_name": "oxidane",
-                    "smiles": "O",
-                    "inchi": "InChI=1/H2O/h1H2",
-                    "formula": "H2O"
-                },
-                "model_record": {
-                    "m": 1.2047,
-                    "sigma": 2.7927,
-                    "epsilon_k": 353.95,
-                    "kappa_ab": 0.04509,
-                    "epsilon_k_ab": 2425.7
-                },
-                "molarweight": 18.0152
-              }"#;
-        let water_record: PureRecord<ElectrolytePcSaftRecord> =
-            serde_json::from_str(water_json).expect("Unable to parse json.");
-        Arc::new(ElectrolytePcSaftParameters::new_pure(water_record).unwrap())
     }
 
     pub fn water_nacl_parameters_perturb() -> Arc<ElectrolytePcSaftParameters> {
@@ -1183,48 +1041,6 @@ pub mod utils {
         let water_record: PureRecord<ElectrolytePcSaftRecord> =
             serde_json::from_str(water_json).expect("Unable to parse json.");
         Arc::new(ElectrolytePcSaftParameters::new_pure(water_record).unwrap())
-    }
-
-    pub fn dme_co2_parameters() -> Arc<ElectrolytePcSaftParameters> {
-        let binary_json = r#"[
-            {
-                "identifier": {
-                    "cas": "115-10-6",
-                    "name": "dimethyl-ether",
-                    "iupac_name": "methoxymethane",
-                    "smiles": "COC",
-                    "inchi": "InChI=1/C2H6O/c1-3-2/h1-2H3",
-                    "formula": "C2H6O"
-                },
-                "molarweight": 46.0688,
-                "model_record": {
-                    "m": 2.2634,
-                    "sigma": 3.2723,
-                    "epsilon_k": 210.29,
-                    "mu": 1.3
-                }
-            },
-            {
-                "identifier": {
-                    "cas": "124-38-9",
-                    "name": "carbon-dioxide",
-                    "iupac_name": "carbon dioxide",
-                    "smiles": "O=C=O",
-                    "inchi": "InChI=1/CO2/c2-1-3",
-                    "formula": "CO2"
-                },
-                "molarweight": 44.0098,
-                "model_record": {
-                    "m": 1.5131,
-                    "sigma": 3.1869,
-                    "epsilon_k": 163.333,
-                    "q": 4.4
-                }
-            }
-        ]"#;
-        let binary_record: Vec<PureRecord<ElectrolytePcSaftRecord>> =
-            serde_json::from_str(binary_json).expect("Unable to parse json.");
-        Arc::new(ElectrolytePcSaftParameters::new_binary(binary_record, None).unwrap())
     }
 
     pub fn propane_butane_parameters() -> Arc<ElectrolytePcSaftParameters> {

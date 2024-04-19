@@ -20,9 +20,10 @@ parameters = SaftVRMieParameters.from_json(['ethane', 'methane'], path)
     :toctree: generated/
 
     Identifier
-    ChemicalRecord
+    IdentifierOption
     PureRecord
     BinaryRecord
     SaftVRMieRecord
+    SaftVRMieBinaryRecord
     SaftVRMieParameters
 ```

@@ -50,12 +50,12 @@ pub mod association;
 pub mod hard_sphere;
 
 // models
+#[cfg(feature = "epcsaft")]
+pub mod epcsaft;
 #[cfg(feature = "gc_pcsaft")]
 pub mod gc_pcsaft;
 #[cfg(feature = "pcsaft")]
 pub mod pcsaft;
-#[cfg(feature = "epcsaft")]
-pub mod epcsaft;
 #[cfg(feature = "pets")]
 pub mod pets;
 #[cfg(feature = "saftvrmie")]

@@ -1,8 +1,4 @@
-//! Electrolyte Perturbed-Chain Statistical Associating Fluid Theory (e12PC-SAFT)
-//!
-
-#![warn(clippy::all)]
-#![allow(clippy::too_many_arguments)]
+//! Electrolyte Perturbed-Chain Statistical Associating Fluid Theory (ePC-SAFT)
 
 mod eos;
 pub(crate) mod parameters;
