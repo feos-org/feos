@@ -345,7 +345,7 @@ impl PySaftVRQMieParameters {
 }
 
 #[pymodule]
-pub fn saftvrqmie(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+pub fn saftvrqmie(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<IdentifierOption>()?;
     m.add_class::<FeynmanHibbsOrder>()?;

@@ -245,7 +245,7 @@ impl_solvation_profile!(Functional);
 impl_estimator!(DFT<Functional>, PyFunctionalVariant);
 
 #[pymodule]
-pub fn dft(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+pub fn dft(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Contributions>()?;
     m.add_class::<Verbosity>()?;
 
@@ -277,7 +277,7 @@ pub fn dft(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
 
 #[cfg(feature = "estimator")]
 #[pymodule]
-pub fn estimator_dft(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+pub fn estimator_dft(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyDataSet>()?;
     m.add_class::<PyEstimator>()?;
     m.add_class::<PyLoss>()

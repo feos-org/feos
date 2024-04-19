@@ -462,7 +462,7 @@ impl_estimator!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState
 impl_estimator_entropy_scaling!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
 
 #[pymodule]
-pub fn eos(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+pub fn eos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Contributions>()?;
     m.add_class::<Verbosity>()?;
 
@@ -480,7 +480,7 @@ pub fn eos(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
 
 #[cfg(feature = "estimator")]
 #[pymodule]
-pub fn estimator_eos(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+pub fn estimator_eos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyDataSet>()?;
     m.add_class::<PyEstimator>()?;
     m.add_class::<PyLoss>()?;
