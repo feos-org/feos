@@ -2,7 +2,6 @@
 use super::dft::GcPcSaftFunctionalParameters;
 use super::eos::GcPcSaftEosParameters;
 use super::record::GcPcSaftRecord;
-use crate::association::PyAssociationRecord;
 use feos_core::parameter::{
     BinaryRecord, IdentifierOption, ParameterError, ParameterHetero, SegmentRecord,
 };
@@ -26,15 +25,18 @@ pub struct PyGcPcSaftRecord(GcPcSaftRecord);
 impl PyGcPcSaftRecord {
     #[new]
     #[pyo3(
-        text_signature = "(m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None)",
-        signature = (m, sigma, epsilon_k, mu=None, association_record=None, psi_dft=None)
+        text_signature = "(m, sigma, epsilon_k, mu=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, psi_dft=None)"
     )]
     fn new(
         m: f64,
         sigma: f64,
         epsilon_k: f64,
         mu: Option<f64>,
-        association_record: Option<PyAssociationRecord>,
+        kappa_ab: Option<f64>,
+        epsilon_k_ab: Option<f64>,
+        na: Option<f64>,
+        nb: Option<f64>,
+        nc: Option<f64>,
         psi_dft: Option<f64>,
     ) -> Self {
         Self(GcPcSaftRecord::new(
@@ -42,7 +44,11 @@ impl PyGcPcSaftRecord {
             sigma,
             epsilon_k,
             mu,
-            association_record.map(|r| r.0),
+            kappa_ab,
+            epsilon_k_ab,
+            na,
+            nb,
+            nc,
             psi_dft,
         ))
     }
@@ -68,8 +74,28 @@ impl PyGcPcSaftRecord {
     }
 
     #[getter]
-    fn get_association_record(&self) -> Option<PyAssociationRecord> {
-        self.0.association_record.map(PyAssociationRecord)
+    fn get_kappa_ab(&self) -> Option<f64> {
+        self.0.association_record.map(|a| a.parameters.kappa_ab)
+    }
+
+    #[getter]
+    fn get_epsilon_k_ab(&self) -> Option<f64> {
+        self.0.association_record.map(|a| a.parameters.epsilon_k_ab)
+    }
+
+    #[getter]
+    fn get_na(&self) -> Option<f64> {
+        self.0.association_record.map(|a| a.na)
+    }
+
+    #[getter]
+    fn get_nb(&self) -> Option<f64> {
+        self.0.association_record.map(|a| a.nb)
+    }
+
+    #[getter]
+    fn get_nc(&self) -> Option<f64> {
+        self.0.association_record.map(|a| a.nc)
     }
 
     fn __repr__(&self) -> PyResult<String> {
@@ -148,7 +174,6 @@ pub fn gc_pcsaft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<IdentifierOption>()?;
     m.add_class::<PyChemicalRecord>()?;
     m.add_class::<PySmartsRecord>()?;
-    m.add_class::<PyAssociationRecord>()?;
 
     m.add_class::<PyGcPcSaftRecord>()?;
     m.add_class::<PySegmentRecord>()?;

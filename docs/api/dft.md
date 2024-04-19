@@ -28,11 +28,13 @@ Implementations of Helmholtz energy functionals for DFT.
     :toctree: generated/
 
     State
+    StateVec
     PhaseEquilibrium
     PhaseDiagram
     Contributions
     Verbosity
     FMTVersion
+    DFTSolver
 ```
 
 ## Interfaces
@@ -54,6 +56,7 @@ Implementations of Helmholtz energy functionals for DFT.
     ExternalPotential
     Geometry
     Pore1D
+    Pore2D
     Pore3D
     Adsorption1D
     Adsorption3D

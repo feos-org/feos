@@ -12,6 +12,7 @@
     :toctree: generated/
 
     Identifier
+    IdentifierOption
     ChemicalRecord
     PureRecord
     BinaryRecord

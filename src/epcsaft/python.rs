@@ -25,10 +25,6 @@ use std::sync::Arc;
 ///     Segment diameter in units of Angstrom.
 /// epsilon_k : float
 ///     Energetic parameter in units of Kelvin.
-/// mu : float, optional
-///     Dipole moment in units of Debye.
-/// q : float, optional
-///     Quadrupole moment in units of Debye * Angstrom.
 /// kappa_ab : float, optional
 ///     Association volume parameter.
 /// epsilon_k_ab : float, optional
@@ -43,7 +39,6 @@ use std::sync::Arc;
 ///     Charge of the electrolyte.
 /// permittivity_record : PyPermittivityRecord, optional
 ///     Permittivity record. Defaults to `None`.
-
 #[pyclass(name = "ElectrolytePcSaftRecord")]
 #[derive(Clone)]
 pub struct PyElectrolytePcSaftRecord(ElectrolytePcSaftRecord);
@@ -52,14 +47,12 @@ pub struct PyElectrolytePcSaftRecord(ElectrolytePcSaftRecord);
 impl PyElectrolytePcSaftRecord {
     #[new]
     #[pyo3(
-        text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, permittivity_record=None)"
+        text_signature = "(m, sigma, epsilon_k, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, permittivity_record=None)"
     )]
     fn new(
         m: f64,
         sigma: f64,
         epsilon_k: f64,
-        mu: Option<f64>,
-        q: Option<f64>,
         kappa_ab: Option<f64>,
         epsilon_k_ab: Option<f64>,
         na: Option<f64>,
@@ -68,23 +61,17 @@ impl PyElectrolytePcSaftRecord {
         z: Option<f64>,
         permittivity_record: Option<PyPermittivityRecord>,
     ) -> Self {
-        let perm = match permittivity_record {
-            Some(p) => Some(p.0),
-            None => None,
-        };
         Self(ElectrolytePcSaftRecord::new(
             m,
             sigma,
             epsilon_k,
-            mu,
-            q,
             kappa_ab,
             epsilon_k_ab,
             na,
             nb,
             nc,
             z,
-            perm,
+            permittivity_record.map(|p| p.0),
         ))
     }
 
@@ -105,12 +92,12 @@ impl PyElectrolytePcSaftRecord {
 
     #[getter]
     fn get_kappa_ab(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.kappa_ab)
+        self.0.association_record.map(|a| a.parameters.kappa_ab)
     }
 
     #[getter]
     fn get_epsilon_k_ab(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.epsilon_k_ab)
+        self.0.association_record.map(|a| a.parameters.epsilon_k_ab)
     }
 
     #[getter]
@@ -212,7 +199,6 @@ impl PyPermittivityRecord {
     /// PermittivityRecord
     ///
     #[staticmethod]
-    #[allow(non_snake_case)]
     #[pyo3(text_signature = "(interpolation_points)")]
     pub fn from_experimental_data(interpolation_points: Vec<(f64, f64)>) -> Self {
         Self(PermittivityRecord::ExperimentalData {
@@ -233,7 +219,6 @@ impl PyPermittivityRecord {
     /// PermittivityRecord
     ///
     #[staticmethod]
-    #[allow(non_snake_case)]
     #[pyo3(
         text_signature = "(dipole_scaling, polarizability_scaling, correlation_integral_parameter)"
     )]

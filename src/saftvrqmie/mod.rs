@@ -7,8 +7,7 @@
 //! # Literature
 //! - Pure substances: [Aasen et al. (2019)](https://aip.scitation.org/doi/10.1063/1.5111364)  
 //! - Binary mixtures: [Aasen et al. (2020)](https://aip.scitation.org/doi/10.1063/1.5136079)
-#![warn(clippy::all)]
-#![allow(clippy::too_many_arguments)]
+
 #[cfg(feature = "dft")]
 mod dft;
 mod eos;

@@ -5,10 +5,6 @@
 //! PeTS is an equation of state for the truncated and shifted Lennar-Jones fluid with cut-off
 //! distance 2.5 $\sigma$.
 //! It utilizes a hard-sphere fluid as reference with an attactive perturbation.
-#![warn(clippy::all)]
-#![allow(clippy::too_many_arguments)]
-#![allow(clippy::many_single_char_names)]
-#![allow(clippy::suspicious_operation_groupings)]
 
 #[cfg(feature = "dft")]
 mod dft;

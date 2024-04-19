@@ -1,7 +1,7 @@
 # Recipes
 
 This section contains short code snippets for specific, commonly used tasks.
-If you are looking for examples with explanations, see the [examples](/examples/index).
+If you are looking for tutorials with explanations, see the [tutorials](/tutorials/index).
 
 ## Plots
 
