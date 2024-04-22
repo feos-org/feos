@@ -22,7 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Added comparison for pressures of both phases in `PyPhaseDiagram.to_dict` to make the method work with `spinodal` constructor. [#224](https://github.com/feos-org/feos/pull/224)
 - Enforce the total moles when providing `State::new` with molefracs that do not add up to 1. [#227](https://github.com/feos-org/feos/pull/227)
-- 
+
+### Packaging
+- Updated `quantity` dependency to 0.8. [#238](https://github.com/feos-org/feos/pull/238)
+- Updated `num-dual` dependency to 0.9. [#238](https://github.com/feos-org/feos/pull/238)
+- Updated `numpy` and `PyO3` dependencies to 0.21. [#238](https://github.com/feos-org/feos/pull/238)
 
 
 ## [0.6.1] 2024-01-11
