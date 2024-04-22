@@ -54,7 +54,7 @@ macro_rules! impl_adsorption_isotherm {
                 temperature: PySINumber,
                 pressure: PySIArray1,
                 pore: &$py_pore,
-                molefracs: Option<&PyArray1<f64>>,
+                molefracs: Option<&Bound<'_, PyArray1<f64>>>,
                 solver: Option<PyDFTSolver>,
             ) -> PyResult<Self> {
                 Ok(Self(Adsorption::adsorption_isotherm(
@@ -97,7 +97,7 @@ macro_rules! impl_adsorption_isotherm {
                 temperature: PySINumber,
                 pressure: PySIArray1,
                 pore: &$py_pore,
-                molefracs: Option<&PyArray1<f64>>,
+                molefracs: Option<&Bound<'_, PyArray1<f64>>>,
                 solver: Option<PyDFTSolver>,
             ) -> PyResult<Self> {
                 Ok(Self(Adsorption::desorption_isotherm(
@@ -143,7 +143,7 @@ macro_rules! impl_adsorption_isotherm {
                 temperature: PySINumber,
                 pressure: PySIArray1,
                 pore: &$py_pore,
-                molefracs: Option<&PyArray1<f64>>,
+                molefracs: Option<&Bound<'_, PyArray1<f64>>>,
                 solver: Option<PyDFTSolver>,
             ) -> PyResult<Self> {
                 Ok(Self(Adsorption::equilibrium_isotherm(
@@ -193,7 +193,7 @@ macro_rules! impl_adsorption_isotherm {
                 p_min: PySINumber,
                 p_max: PySINumber,
                 pore: &$py_pore,
-                molefracs: Option<&PyArray1<f64>>,
+                molefracs: Option<&Bound<'_, PyArray1<f64>>>,
                 solver: Option<PyDFTSolver>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,

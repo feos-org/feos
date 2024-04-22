@@ -70,7 +70,7 @@ macro_rules! impl_pore {
                 &self,
                 bulk: &PyState,
                 density: Option<PySIArray2>,
-                external_potential: Option<&PyArray2<f64>>,
+                external_potential: Option<&Bound<'_ ,PyArray2<f64>>>,
             ) -> PyResult<PyPoreProfile1D> {
                 Ok(PyPoreProfile1D(self.0.initialize(
                     &bulk.0,
@@ -179,7 +179,7 @@ macro_rules! impl_pore {
                 &self,
                 bulk: &PyState,
                 density: Option<PySIArray3>,
-                external_potential: Option<&PyArray3<f64>>,
+                external_potential: Option<&Bound<'_, PyArray3<f64>>>,
             ) -> PyResult<PyPoreProfile2D> {
                 Ok(PyPoreProfile2D(self.0.initialize(
                     &bulk.0,
@@ -260,8 +260,8 @@ macro_rules! impl_pore {
                 system_size: [PySINumber; 3],
                 n_grid: [usize; 3],
                 coordinates: PySIArray2,
-                sigma_ss: &PyArray1<f64>,
-                epsilon_k_ss: &PyArray1<f64>,
+                sigma_ss: &Bound<'_, PyArray1<f64>>,
+                epsilon_k_ss: &Bound<'_, PyArray1<f64>>,
                 angles: Option<[PyAngle; 3]>,
                 potential_cutoff: Option<f64>,
                 cutoff_radius: Option<PySINumber>,
@@ -299,7 +299,7 @@ macro_rules! impl_pore {
                 &self,
                 bulk: &PyState,
                 density: Option<PySIArray4>,
-                external_potential: Option<&PyArray4<f64>>,
+                external_potential: Option<&Bound<'_, PyArray4<f64>>>,
             ) -> PyResult<PyPoreProfile3D> {
                 Ok(PyPoreProfile3D(self.0.initialize(
                     &bulk.0,

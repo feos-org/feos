@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Removed `FunctionalContributionDual` trait. [#226](https://github.com/feos-org/feos/pull/226)
 
+### Packaging
+- Updated `quantity` dependency to 0.8. [#238](https://github.com/feos-org/feos/pull/238)
+- Updated `num-dual` dependency to 0.9. [#238](https://github.com/feos-org/feos/pull/238)
+- Updated `numpy` and `PyO3` dependencies to 0.21. [#238](https://github.com/feos-org/feos/pull/238)
+
 ## [0.6.0] - 2023-12-19
 ### Packaging
 - Updated `feos-core` dependency to 0.6.

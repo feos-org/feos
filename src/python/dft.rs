@@ -29,7 +29,7 @@ use feos_dft::interface::*;
 use feos_dft::python::*;
 use feos_dft::solvation::*;
 use feos_dft::*;
-use numpy::convert::ToPyArray;
+use numpy::prelude::*;
 use numpy::{PyArray1, PyArray2, PyArray3, PyArray4};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
@@ -185,7 +185,7 @@ impl PyFunctionalVariant {
     /// -------
     /// HelmholtzEnergyFunctional
     #[staticmethod]
-    fn fmt(sigma: &PyArray1<f64>, fmt_version: FMTVersion) -> Self {
+    fn fmt(sigma: &Bound<'_, PyArray1<f64>>, fmt_version: FMTVersion) -> Self {
         let func = FMTFunctional::new(&sigma.to_owned_array(), fmt_version);
         Self::new(func)
     }
@@ -245,7 +245,7 @@ impl_solvation_profile!(Functional);
 impl_estimator!(DFT<Functional>, PyFunctionalVariant);
 
 #[pymodule]
-pub fn dft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+pub fn dft(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Contributions>()?;
     m.add_class::<Verbosity>()?;
 
@@ -277,7 +277,7 @@ pub fn dft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
 #[cfg(feature = "estimator")]
 #[pymodule]
-pub fn estimator_dft(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+pub fn estimator_dft(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyDataSet>()?;
     m.add_class::<PyEstimator>()?;
     m.add_class::<PyLoss>()

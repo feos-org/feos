@@ -2,7 +2,8 @@ use super::parameters::*;
 use feos_core::parameter::*;
 use feos_core::python::parameter::*;
 use feos_core::{impl_binary_record, impl_json_handling, impl_parameter, impl_pure_record};
-use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
+use numpy::prelude::*;
+use numpy::{PyArray2, PyReadonlyArray2};
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
@@ -107,7 +108,7 @@ impl PyPetsParameters {
     fn from_lists(
         sigma: Vec<f64>,
         epsilon_k: Vec<f64>,
-        k_ij: Option<&PyArray2<f64>>,
+        k_ij: Option<&Bound<'_, PyArray2<f64>>>,
         molarweight: Option<Vec<f64>>,
         viscosity: Option<Vec<[f64; 4]>>,
         diffusion: Option<Vec<[f64; 5]>>,
@@ -217,8 +218,8 @@ impl PyPetsParameters {
     }
 
     #[getter]
-    fn get_k_ij<'py>(&self, py: Python<'py>) -> Option<&'py PyArray2<f64>> {
-        self.0.k_ij.as_ref().map(|k| k.view().to_pyarray(py))
+    fn get_k_ij<'py>(&self, py: Python<'py>) -> Option<Bound<'py, PyArray2<f64>>> {
+        self.0.k_ij.as_ref().map(|k| k.view().to_pyarray_bound(py))
     }
 
     fn _repr_markdown_(&self) -> String {
@@ -238,7 +239,7 @@ impl_parameter!(
 );
 
 #[pymodule]
-pub fn pets(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+pub fn pets(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<IdentifierOption>()?;
     m.add_class::<PyChemicalRecord>()?;

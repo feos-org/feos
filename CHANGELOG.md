@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Added SAFT-VR Mie equation of state.[#237](https://github.com/feos-org/feos/pull/237)
+- Added SAFT-VR Mie equation of state. [#237](https://github.com/feos-org/feos/pull/237)
 - Added ePC-SAFT equation of state. [#229](https://github.com/feos-org/feos/pull/229)
 
 ### Changed
@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Removed `VirialOrder` from `uvtheory` module. Orders are now variants of the existing `Perturbation` enum. [#226](https://github.com/feos-org/feos/pull/226)
+
+### Packaging
+- Updated `quantity` dependency to 0.8. [#238](https://github.com/feos-org/feos/pull/238)
+- Updated `num-dual` dependency to 0.9. [#238](https://github.com/feos-org/feos/pull/238)
+- Updated `numpy` and `PyO3` dependencies to 0.21. [#238](https://github.com/feos-org/feos/pull/238)
 
 ## [0.6.1] - 2024-01-11
 - Python only: Release the changes introduced in `feos-core` 0.6.1.

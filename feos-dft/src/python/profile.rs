@@ -19,9 +19,9 @@ macro_rules! impl_profile {
                 &self,
                 log: bool,
                 py: Python<'py>,
-            ) -> PyResult<(&'py $arr2<f64>, &'py PyArray1<f64>, f64)> {
+            ) -> PyResult<(Bound<'py, $arr2<f64>>, Bound<'py, PyArray1<f64>>, f64)> {
                 let (res_rho, res_mu, res_norm) = self.0.profile.residual(log)?;
-                Ok((res_rho.view().to_pyarray(py), res_mu.view().to_pyarray(py), res_norm))
+                Ok((res_rho.view().to_pyarray_bound(py), res_mu.view().to_pyarray_bound(py), res_norm))
             }
 
             /// Solve the profile in-place. A non-default solver can be provided
@@ -39,7 +39,7 @@ macro_rules! impl_profile {
             /// $struct
             ///
             #[pyo3(signature = (solver=None, debug=false), text_signature = "($self, solver=None, debug=False)")]
-            fn solve(slf: &PyCell<Self>, solver: Option<PyDFTSolver>, debug: bool) -> PyResult<&PyCell<Self>> {
+            fn solve<'py>(slf: Bound<'py, Self>, solver: Option<PyDFTSolver>, debug: bool) -> PyResult<Bound<'py, Self>> {
                 slf.borrow_mut()
                     .0
                     .solve_inplace(solver.map(|s| s.0).as_ref(), debug)?;
@@ -73,8 +73,8 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_external_potential<'py>(&self, py: Python<'py>) -> &'py $py_arr2<f64> {
-                self.0.profile.external_potential.view().to_pyarray(py)
+            fn get_external_potential<'py>(&self, py: Python<'py>) -> Bound<'py, $py_arr2<f64>> {
+                self.0.profile.external_potential.view().to_pyarray_bound(py)
             }
 
             #[getter]
@@ -91,17 +91,17 @@ macro_rules! impl_profile {
             fn get_weighted_densities<'py>(
                 &self,
                 py: Python<'py>,
-            ) -> PyResult<Vec<&'py $arr2<f64>>> {
+            ) -> PyResult<Vec<Bound<'py, $arr2<f64>>>> {
                 let n = self.0.profile.weighted_densities()?;
-                Ok(n.into_iter().map(|n| n.view().to_pyarray(py)).collect())
+                Ok(n.into_iter().map(|n| n.view().to_pyarray_bound(py)).collect())
             }
 
             #[getter]
             fn get_functional_derivative<'py>(
                 &self,
                 py: Python<'py>,
-            ) -> PyResult<&'py $arr2<f64>> {
-                Ok(self.0.profile.functional_derivative()?.view().to_pyarray(py))
+            ) -> PyResult<Bound<'py, $arr2<f64>>> {
+                Ok(self.0.profile.functional_derivative()?.view().to_pyarray_bound(py))
             }
 
             /// Calculate the entropy density of the inhomogeneous system.

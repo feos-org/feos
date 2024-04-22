@@ -26,6 +26,7 @@ use num_dual::DualNum;
 /// Particularly relevant for situations in which generic types
 /// are undesirable (e.g. FFI).
 #[derive(Components, Residual)]
+#[allow(clippy::large_enum_variant)]
 pub enum ResidualModel {
     NoResidual(NoResidual),
     #[cfg(feature = "pcsaft")]

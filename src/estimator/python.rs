@@ -148,8 +148,8 @@ macro_rules! impl_estimator {
                 eos: &$py_eos,
                 loss: PyLoss,
                 py: Python<'py>,
-            ) -> PyResult<&'py PyArray1<f64>> {
-                Ok(self.0.cost(&eos.0, loss.0)?.view().to_pyarray(py))
+            ) -> PyResult<Bound<'py, PyArray1<f64>>> {
+                Ok(self.0.cost(&eos.0, loss.0)?.view().to_pyarray_bound(py))
             }
 
             /// Return the property of interest for each data point
@@ -164,8 +164,8 @@ macro_rules! impl_estimator {
             /// -------
             /// SIArray1
             #[pyo3(text_signature = "($self, eos)")]
-            fn predict<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
-                Ok(self.0.predict(&eos.0)?.view().to_pyarray(py))
+            fn predict<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<Bound<'py, PyArray1<f64>>> {
+                Ok(self.0.predict(&eos.0)?.view().to_pyarray_bound(py))
             }
 
             /// Return the relative difference between experimental data
@@ -188,8 +188,8 @@ macro_rules! impl_estimator {
                 &self,
                 eos: &$py_eos,
                 py: Python<'py>,
-            ) -> PyResult<&'py PyArray1<f64>> {
-                Ok(self.0.relative_difference(&eos.0)?.view().to_pyarray(py))
+            ) -> PyResult<Bound<'py, PyArray1<f64>>> {
+                Ok(self.0.relative_difference(&eos.0)?.view().to_pyarray_bound(py))
             }
 
             /// Return the mean absolute relative difference.
@@ -354,8 +354,8 @@ macro_rules! impl_estimator {
             fn binary_vle_chemical_potential(
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
-                liquid_molefracs: &PyArray1<f64>,
-                vapor_molefracs: &PyArray1<f64>,
+                liquid_molefracs: &Bound<'_, PyArray1<f64>>,
+                vapor_molefracs: &Bound<'_, PyArray1<f64>>,
             ) -> PyResult<Self> {
                 Ok(Self(Arc::new(BinaryVleChemicalPotential::new(
                     temperature.clone().try_into()?,
@@ -387,7 +387,7 @@ macro_rules! impl_estimator {
             fn binary_vle_pressure(
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
-                molefracs: &PyArray1<f64>,
+                molefracs: &Bound<'_, PyArray1<f64>>,
                 phase: Phase,
             ) -> PyResult<Self> {
                 Ok(Self(Arc::new(BinaryVlePressure::new(
@@ -424,8 +424,8 @@ macro_rules! impl_estimator {
             fn binary_phase_diagram(
                 specification: PySINumber,
                 temperature_or_pressure: PySIArray1,
-                liquid_molefracs: Option<&PyArray1<f64>>,
-                vapor_molefracs: Option<&PyArray1<f64>>,
+                liquid_molefracs: Option<&Bound<'_, PyArray1<f64>>>,
+                vapor_molefracs: Option<&Bound<'_, PyArray1<f64>>>,
                 npoints: Option<usize>,
             ) -> PyResult<Self> {
                 if let Ok(t) = Temperature::<f64>::try_from(specification) {
@@ -453,8 +453,8 @@ macro_rules! impl_estimator {
 
             /// Return `target` as ``SIArray1``.
             #[getter]
-            fn get_target<'py>(&self, py: Python<'py>,) -> &'py PyArray1<f64> {
-                self.0.target().view().to_pyarray(py)
+            fn get_target<'py>(&self, py: Python<'py>,) -> Bound<'py, PyArray1<f64>> {
+                self.0.target().view().to_pyarray_bound(py)
             }
 
             /// Return number of stored data points.
@@ -521,8 +521,8 @@ macro_rules! impl_estimator {
             /// - and which is weighted according to the number of datapoints,
             /// - and the relative weights as defined in the Estimator object.
             #[pyo3(text_signature = "($self, eos)")]
-            fn cost<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
-                Ok(self.0.cost(&eos.0)?.view().to_pyarray(py))
+            fn cost<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<Bound<'py, PyArray1<f64>>> {
+                Ok(self.0.cost(&eos.0)?.view().to_pyarray_bound(py))
             }
 
             /// Return the properties as computed by the
@@ -537,12 +537,12 @@ macro_rules! impl_estimator {
             /// -------
             /// List[SIArray1]
             #[pyo3(text_signature = "($self, eos)")]
-            fn predict<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<Vec<&'py PyArray1<f64>>> {
+            fn predict<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyArray1<f64>>>> {
                 Ok(self
                     .0
                     .predict(&eos.0)?
                     .iter()
-                    .map(|d| d.view().to_pyarray(py))
+                    .map(|d| d.view().to_pyarray_bound(py))
                     .collect())
             }
 
@@ -566,12 +566,12 @@ macro_rules! impl_estimator {
                 &self,
                 eos: &$py_eos,
                 py: Python<'py>,
-            ) -> PyResult<Vec<&'py PyArray1<f64>>> {
+            ) -> PyResult<Vec<Bound<'py, PyArray1<f64>>>> {
                 Ok(self
                     .0
                     .relative_difference(&eos.0)?
                     .iter()
-                    .map(|d| d.view().to_pyarray(py))
+                    .map(|d| d.view().to_pyarray_bound(py))
                     .collect())
             }
 
@@ -594,12 +594,12 @@ macro_rules! impl_estimator {
                 &self,
                 eos: &$py_eos,
                 py: Python<'py>,
-            ) -> PyResult<&'py PyArray1<f64>> {
+            ) -> PyResult<Bound<'py, PyArray1<f64>>> {
                 Ok(self
                     .0
                     .mean_absolute_relative_difference(&eos.0)?
                     .view()
-                    .to_pyarray(py))
+                    .to_pyarray_bound(py))
             }
 
             /// Return the stored ``DataSet``s.
