@@ -470,6 +470,21 @@ impl Parameter for ElectrolytePcSaftParameters {
         }
 
         if !modeltypes.is_empty() && modeltypes[0] == 2 {
+            for permittivity_record in &permittivity_records {
+                if let Some(PermittivityRecord::ExperimentalData { data }) =
+                    permittivity_record.as_ref()
+                {
+                    // check if length of data is greater than 0
+                    if data.is_empty() {
+                        return Err(ParameterError::IncompatibleParameters(
+                                "Experimental data for permittivity must contain at least one data point.".to_string(),
+                            ));
+                    }
+                }
+            }
+        }
+
+        if !modeltypes.is_empty() && modeltypes[0] == 2 {
             // order points in data by increasing temperature
             let mut permittivity_records_clone = permittivity_records.clone();
             permittivity_records_clone
