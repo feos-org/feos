@@ -33,7 +33,7 @@ jobs:
       - name: Build documentation
         run: sphinx-build docs/ public/ -b html
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: documentation
           path: public
