@@ -5,10 +5,10 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="API" href="../../rust_api.html" /><link rel="prev" title="The EquationOfState Trait" href="equation_of_state.html" />
 
-    <!-- Generated with Sphinx 7.3.7 and Furo 2024.04.27 -->
+    <!-- Generated with Sphinx 7.3.7 and Furo 2024.05.06 -->
         <title>Thermodynamic States - FeOs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=437aa6ec" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=387cc868" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../_static/tabs.css?v=4c969af8" />
     <link rel="stylesheet" type="text/css" href="../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
@@ -72,7 +72,7 @@
   <symbol id="svg-sun" viewBox="0 0 24 24">
     <title>Light mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
       <circle cx="12" cy="12" r="5"></circle>
       <line x1="12" y1="1" x2="12" y2="3"></line>
       <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -87,7 +87,7 @@
   <symbol id="svg-moon" viewBox="0 0 24 24">
     <title>Dark mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
     </svg>
@@ -95,7 +95,7 @@
   <symbol id="svg-sun-half" viewBox="0 0 24 24">
     <title>Auto light/dark mode</title>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
       <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
       <circle cx="12" cy="12" r="9" />
       <path d="M13 12h5" />
@@ -103,6 +103,60 @@
       <path d="M13 18h1" />
       <path d="M13 9h4" />
       <path d="M13 6h1" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" /
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
     </svg>
   </symbol>
 </svg>
@@ -135,7 +189,8 @@
       <div class="theme-toggle-container theme-toggle-header">
         <button class="theme-toggle">
           <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
-          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
           <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
@@ -1296,11 +1351,17 @@
           <span>Back to top</span>
         </a>
         <div class="content-icon-container">
-          
+          <div class="view-this-page">
+  <a class="muted-link" href="../../_sources/rustguide/core/state.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
 <div class="theme-toggle-container theme-toggle-content">
             <button class="theme-toggle">
               <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
-              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
               <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
@@ -1317,31 +1378,31 @@
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/mod.rs</span>
 
 <span class="c1">// Documentation omitted</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">State</span><span class="o">&lt;</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">E</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">State</span><span class="o">&lt;</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">E</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="sd">/// Equation of state</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">eos</span>: <span class="nc">Rc</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">eos</span><span class="p">:</span><span class="w"> </span><span class="nc">Rc</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// Temperature $T$</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">temperature</span>: <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">temperature</span><span class="p">:</span><span class="w"> </span><span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// Volume $V$</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">volume</span>: <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">volume</span><span class="p">:</span><span class="w"> </span><span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// Mole numbers $N_i$</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">moles</span>: <span class="nc">QuantityArray1</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">moles</span><span class="p">:</span><span class="w"> </span><span class="nc">QuantityArray1</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// Total number of moles $N=\sum_iN_i$</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">total_moles</span>: <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">total_moles</span><span class="p">:</span><span class="w"> </span><span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// Partial densities $\rho_i=\frac{N_i}{V}$</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">partial_density</span>: <span class="nc">QuantityArray1</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">partial_density</span><span class="p">:</span><span class="w"> </span><span class="nc">QuantityArray1</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// Total density $\rho=\frac{N}{V}=\sum_i\rho_i$</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">density</span>: <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">density</span><span class="p">:</span><span class="w"> </span><span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// Mole fractions $x_i=\frac{N_i}{N}=\frac{\rho_i}{\rho}$</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">molefracs</span>: <span class="nc">Array1</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">molefracs</span><span class="p">:</span><span class="w"> </span><span class="nc">Array1</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// Reduced temperature</span>
-<span class="w">    </span><span class="n">reduced_temperature</span>: <span class="kt">f64</span><span class="p">,</span>
+<span class="w">    </span><span class="n">reduced_temperature</span><span class="p">:</span><span class="w"> </span><span class="kt">f64</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// Reduced volume,</span>
-<span class="w">    </span><span class="n">reduced_volume</span>: <span class="kt">f64</span><span class="p">,</span>
+<span class="w">    </span><span class="n">reduced_volume</span><span class="p">:</span><span class="w"> </span><span class="kt">f64</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// Reduced moles</span>
-<span class="w">    </span><span class="n">reduced_moles</span>: <span class="nc">Array1</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">reduced_moles</span><span class="p">:</span><span class="w"> </span><span class="nc">Array1</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// Cache</span>
-<span class="w">    </span><span class="n">cache</span>: <span class="nc">RefCell</span><span class="o">&lt;</span><span class="n">Cache</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">cache</span><span class="p">:</span><span class="w"> </span><span class="nc">RefCell</span><span class="o">&lt;</span><span class="n">Cache</span><span class="o">&gt;</span><span class="p">,</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -1402,7 +1463,7 @@ The residual entropy is defined as</p>
 The first derivative can be computed using a dual number consisting of a real part and <em>one non-real part</em> which is a <code class="docutils literal notranslate"><span class="pre">Dual64</span></code> struct.
 Looking at the signature of the Helmholtz energy function, we see that it takes a <code class="docutils literal notranslate"><span class="pre">StateHD&lt;D&gt;</span></code> as input (not a <code class="docutils literal notranslate"><span class="pre">State</span></code>), where <code class="docutils literal notranslate"><span class="pre">D</span></code> is a generalized dual number (<code class="docutils literal notranslate"><span class="pre">D:</span> <span class="pre">DualNum&lt;f64&gt;</span></code>):</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="sd">/// The Helmholtz energy contribution $\beta A$ of a given state in reduced units.</span>
-<span class="k">fn</span> <span class="nf">helmholtz_energy</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">state</span>: <span class="kp">&amp;</span><span class="nc">StateHD</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">D</span><span class="p">;</span>
+<span class="k">fn</span><span class="w"> </span><span class="nf">helmholtz_energy</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">state</span><span class="p">:</span><span class="w"> </span><span class="kp">&amp;</span><span class="nc">StateHD</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">D</span><span class="p">;</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">StateHD</span></code> contains the same state variables as the <code class="docutils literal notranslate"><span class="pre">State</span></code> object, but instead of dimensioned quantities, properties are stored as generalized dual numbers:</p>
@@ -1414,17 +1475,17 @@ Looking at the signature of the Helmholtz energy function, we see that it takes 
 <span class="sd">/// Properties are stored as generalized (hyper) dual numbers which allows</span>
 <span class="sd">/// for automatic differentiation.</span>
 <span class="cp">#[derive(Clone, Debug)]</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">StateHD</span><span class="o">&lt;</span><span class="n">D</span>: <span class="nc">DualNum</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">StateHD</span><span class="o">&lt;</span><span class="n">D</span><span class="p">:</span><span class="w"> </span><span class="nc">DualNum</span><span class="o">&lt;</span><span class="kt">f64</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="sd">/// temperature in Kelvin</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">temperature</span>: <span class="nc">D</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">temperature</span><span class="p">:</span><span class="w"> </span><span class="nc">D</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// volume in Angstrom^3</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">volume</span>: <span class="nc">D</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">volume</span><span class="p">:</span><span class="w"> </span><span class="nc">D</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// number of particles</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">moles</span>: <span class="nc">Array1</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">moles</span><span class="p">:</span><span class="w"> </span><span class="nc">Array1</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// mole fractions</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">molefracs</span>: <span class="nc">Array1</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">molefracs</span><span class="p">:</span><span class="w"> </span><span class="nc">Array1</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">,</span>
 <span class="w">    </span><span class="sd">/// partial number densities in Angstrom^-3</span>
-<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">partial_density</span>: <span class="nc">Array1</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="n">partial_density</span><span class="p">:</span><span class="w"> </span><span class="nc">Array1</span><span class="o">&lt;</span><span class="n">D</span><span class="o">&gt;</span><span class="p">,</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -1435,11 +1496,11 @@ Next, we have to modify the non-real part of the temperature dual number since w
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// &quot;state&quot; is our State struct we already constructed.</span>
 
 <span class="c1">// create an array of dual numbers from array of f64</span>
-<span class="kd">let</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">state</span><span class="p">.</span><span class="n">reduced_moles</span><span class="p">.</span><span class="n">mapv</span><span class="p">(</span><span class="n">Dual64</span>::<span class="n">from</span><span class="p">);</span>
-<span class="kd">let</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Dual64</span>::<span class="n">from</span><span class="p">(</span><span class="n">state</span><span class="p">.</span><span class="n">reduced_volume</span><span class="p">);</span>
+<span class="kd">let</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">state</span><span class="p">.</span><span class="n">reduced_moles</span><span class="p">.</span><span class="n">mapv</span><span class="p">(</span><span class="n">Dual64</span><span class="p">::</span><span class="n">from</span><span class="p">);</span>
+<span class="kd">let</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Dual64</span><span class="p">::</span><span class="n">from</span><span class="p">(</span><span class="n">state</span><span class="p">.</span><span class="n">reduced_volume</span><span class="p">);</span>
 <span class="c1">// .derive() sets the dual part to unity</span>
-<span class="kd">let</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Dual64</span>::<span class="n">from</span><span class="p">(</span><span class="n">state</span><span class="p">.</span><span class="n">reduced_temperature</span><span class="p">).</span><span class="n">derive</span><span class="p">();</span>
-<span class="kd">let</span><span class="w"> </span><span class="n">state_hd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">StateHD</span><span class="o">&lt;</span><span class="n">Dual64</span><span class="o">&gt;</span>::<span class="n">new</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">);</span>
+<span class="kd">let</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Dual64</span><span class="p">::</span><span class="n">from</span><span class="p">(</span><span class="n">state</span><span class="p">.</span><span class="n">reduced_temperature</span><span class="p">).</span><span class="n">derive</span><span class="p">();</span>
+<span class="kd">let</span><span class="w"> </span><span class="n">state_hd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">StateHD</span><span class="o">&lt;</span><span class="n">Dual64</span><span class="o">&gt;</span><span class="p">::</span><span class="n">new</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>The result of the <code class="docutils literal notranslate"><span class="pre">helmholtz_energy</span></code> function using this <code class="docutils literal notranslate"><span class="pre">StateHD</span></code> is also a <code class="docutils literal notranslate"><span class="pre">Dual64</span></code> where the dual part contains the temperature derivative of the residual Helmholtz energy.</p>
@@ -1497,8 +1558,8 @@ You can think of each layer as an answer to a question:</p>
 </ul>
 <p>The <code class="docutils literal notranslate"><span class="pre">entropy</span></code> method is defined in the <code class="docutils literal notranslate"><span class="pre">impl</span></code> block of <code class="docutils literal notranslate"><span class="pre">State</span></code> and looks like so:</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/properties.rs</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">entropy</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span>: <span class="nc">Contributions</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="bp">self</span><span class="p">.</span><span class="n">evaluate_property</span><span class="p">(</span><span class="bp">Self</span>::<span class="n">entropy_</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">entropy</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span><span class="p">:</span><span class="w"> </span><span class="nc">Contributions</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="bp">self</span><span class="p">.</span><span class="n">evaluate_property</span><span class="p">(</span><span class="bp">Self</span><span class="p">::</span><span class="n">entropy_</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -1510,31 +1571,31 @@ You can think of each layer as an answer to a question:</p>
 </ul>
 <p><code class="docutils literal notranslate"><span class="pre">evaluate_property</span></code> then simply calls the function (here <code class="docutils literal notranslate"><span class="pre">entropy_</span></code>) and handles the ideal gas contribution:</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/properties.rs</span>
-<span class="k">fn</span> <span class="nf">evaluate_property</span><span class="o">&lt;</span><span class="n">R</span><span class="p">,</span><span class="w"> </span><span class="n">F</span><span class="o">&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">f</span>: <span class="nc">F</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span>: <span class="nc">Contributions</span><span class="p">,</span><span class="w"> </span><span class="n">additive</span>: <span class="kt">bool</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">R</span>
+<span class="k">fn</span><span class="w"> </span><span class="nf">evaluate_property</span><span class="o">&lt;</span><span class="n">R</span><span class="p">,</span><span class="w"> </span><span class="n">F</span><span class="o">&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">:</span><span class="w"> </span><span class="nc">F</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span><span class="p">:</span><span class="w"> </span><span class="nc">Contributions</span><span class="p">,</span><span class="w"> </span><span class="n">additive</span><span class="p">:</span><span class="w"> </span><span class="kt">bool</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">R</span>
 <span class="k">where</span>
-<span class="w">    </span><span class="n">R</span>: <span class="nc">Sub</span><span class="o">&lt;</span><span class="n">Output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">R</span><span class="o">&gt;</span><span class="p">,</span>
-<span class="w">    </span><span class="n">F</span>: <span class="nb">Fn</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">Self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">R</span><span class="p">,</span>
+<span class="w">    </span><span class="n">R</span><span class="p">:</span><span class="w"> </span><span class="nc">Sub</span><span class="o">&lt;</span><span class="n">Output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">R</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">F</span><span class="p">:</span><span class="w"> </span><span class="nb">Fn</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">Self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">R</span><span class="p">,</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="k">match</span><span class="w"> </span><span class="n">contributions</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">Contributions</span>::<span class="n">IdealGas</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span>::<span class="n">IdealGas</span><span class="p">),</span>
-<span class="w">        </span><span class="n">Contributions</span>::<span class="n">Total</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span>::<span class="n">Total</span><span class="p">),</span>
-<span class="w">        </span><span class="n">Contributions</span>::<span class="n">Residual</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">Contributions</span><span class="p">::</span><span class="n">IdealGas</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span><span class="p">::</span><span class="n">IdealGas</span><span class="p">),</span>
+<span class="w">        </span><span class="n">Contributions</span><span class="p">::</span><span class="n">Total</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span><span class="p">::</span><span class="n">Total</span><span class="p">),</span>
+<span class="w">        </span><span class="n">Contributions</span><span class="p">::</span><span class="n">Residual</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="n">additive</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span>::<span class="n">Residual</span><span class="p">)</span>
+<span class="w">                </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span><span class="p">::</span><span class="n">Residual</span><span class="p">)</span>
 <span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span>::<span class="n">Total</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span>::<span class="n">IdealGas</span><span class="p">)</span>
+<span class="w">                </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span><span class="p">::</span><span class="n">Total</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span><span class="p">::</span><span class="n">IdealGas</span><span class="p">)</span>
 <span class="w">            </span><span class="p">}</span>
 <span class="w">        </span><span class="p">}</span>
-<span class="w">        </span><span class="n">Contributions</span>::<span class="n">ResidualP</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">pressure_</span><span class="p">(</span><span class="n">Evaluate</span>::<span class="n">Total</span><span class="p">);</span>
-<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">state_p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">Self</span>::<span class="n">new_nvt</span><span class="p">(</span>
+<span class="w">        </span><span class="n">Contributions</span><span class="p">::</span><span class="n">ResidualP</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">pressure_</span><span class="p">(</span><span class="n">Evaluate</span><span class="p">::</span><span class="n">Total</span><span class="p">);</span>
+<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">state_p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">Self</span><span class="p">::</span><span class="n">new_nvt</span><span class="p">(</span>
 <span class="w">                </span><span class="o">&amp;</span><span class="bp">self</span><span class="p">.</span><span class="n">eos</span><span class="p">,</span>
 <span class="w">                </span><span class="bp">self</span><span class="p">.</span><span class="n">temperature</span><span class="p">,</span>
-<span class="w">                </span><span class="bp">self</span><span class="p">.</span><span class="n">total_moles</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">U</span>::<span class="n">gas_constant</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">temperature</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">p</span><span class="p">,</span>
+<span class="w">                </span><span class="bp">self</span><span class="p">.</span><span class="n">total_moles</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">U</span><span class="p">::</span><span class="n">gas_constant</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">temperature</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">p</span><span class="p">,</span>
 <span class="w">                </span><span class="o">&amp;</span><span class="bp">self</span><span class="p">.</span><span class="n">moles</span><span class="p">,</span>
 <span class="w">            </span><span class="p">)</span>
 <span class="w">            </span><span class="p">.</span><span class="n">unwrap</span><span class="p">();</span>
-<span class="w">            </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span>::<span class="n">Total</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="o">&amp;</span><span class="n">state_p</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span>::<span class="n">IdealGas</span><span class="p">)</span>
+<span class="w">            </span><span class="n">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span><span class="p">::</span><span class="n">Total</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="o">&amp;</span><span class="n">state_p</span><span class="p">,</span><span class="w"> </span><span class="n">Evaluate</span><span class="p">::</span><span class="n">IdealGas</span><span class="p">)</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
@@ -1543,8 +1604,8 @@ You can think of each layer as an answer to a question:</p>
 <p>For example, the residual value of the additive property entropy can be computed by evaluating the partial derivative of the residual Helmholtz energy while a non-additive property (e.g. the heat capacity) is computed by taking the difference between the total property and the ideal gas property.</p>
 <p>Let’s look at the <code class="docutils literal notranslate"><span class="pre">entropy_</span></code> method:</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/properties.rs</span>
-<span class="k">fn</span> <span class="nf">entropy_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span>: <span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="o">-</span><span class="bp">self</span><span class="p">.</span><span class="n">get_or_compute_derivative</span><span class="p">(</span><span class="n">PartialDerivative</span>::<span class="n">First</span><span class="p">(</span><span class="n">DT</span><span class="p">),</span><span class="w"> </span><span class="n">evaluate</span><span class="p">)</span>
+<span class="k">fn</span><span class="w"> </span><span class="nf">entropy_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span><span class="p">:</span><span class="w"> </span><span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="o">-</span><span class="bp">self</span><span class="p">.</span><span class="n">get_or_compute_derivative</span><span class="p">(</span><span class="n">PartialDerivative</span><span class="p">::</span><span class="n">First</span><span class="p">(</span><span class="n">DT</span><span class="p">),</span><span class="w"> </span><span class="n">evaluate</span><span class="p">)</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -1572,8 +1633,8 @@ As example, consider the Joule Thomson coefficient, defined as</p>
 </div>
 <p>which is implemented as</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/properties.rs</span>
-<span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">joule_thomson</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Contributions</span>::<span class="n">Total</span><span class="p">;</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">joule_thomson</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Contributions</span><span class="p">::</span><span class="n">Total</span><span class="p">;</span>
 <span class="w">    </span><span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">volume</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">temperature</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">dp_dt</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">dp_dv</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
 <span class="w">        </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">total_moles</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">c_p</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
 <span class="p">}</span>
@@ -1584,12 +1645,12 @@ Note that all properties here are dimensioned quantities and so is the result.</
 <p>In contrast to the Joule Thomson coefficient, properties such as partial derivatives of pressure are implemented similar to what we saw before for the entropy:</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/properties.rs</span>
 
-<span class="k">fn</span> <span class="nf">dp_dv_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span>: <span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="o">-</span><span class="bp">self</span><span class="p">.</span><span class="n">get_or_compute_derivative</span><span class="p">(</span><span class="n">PartialDerivative</span>::<span class="n">Second</span><span class="p">(</span><span class="n">DV</span><span class="p">,</span><span class="w"> </span><span class="n">DV</span><span class="p">),</span><span class="w"> </span><span class="n">evaluate</span><span class="p">)</span>
+<span class="k">fn</span><span class="w"> </span><span class="nf">dp_dv_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span><span class="p">:</span><span class="w"> </span><span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="o">-</span><span class="bp">self</span><span class="p">.</span><span class="n">get_or_compute_derivative</span><span class="p">(</span><span class="n">PartialDerivative</span><span class="p">::</span><span class="n">Second</span><span class="p">(</span><span class="n">DV</span><span class="p">,</span><span class="w"> </span><span class="n">DV</span><span class="p">),</span><span class="w"> </span><span class="n">evaluate</span><span class="p">)</span>
 <span class="p">}</span>
 
-<span class="k">fn</span> <span class="nf">dp_dt_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span>: <span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="o">-</span><span class="bp">self</span><span class="p">.</span><span class="n">get_or_compute_derivative</span><span class="p">(</span><span class="n">PartialDerivative</span>::<span class="n">Second</span><span class="p">(</span><span class="n">DV</span><span class="p">,</span><span class="w"> </span><span class="n">DT</span><span class="p">),</span><span class="w"> </span><span class="n">evaluate</span><span class="p">)</span>
+<span class="k">fn</span><span class="w"> </span><span class="nf">dp_dt_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span><span class="p">:</span><span class="w"> </span><span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">QuantityScalar</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="o">-</span><span class="bp">self</span><span class="p">.</span><span class="n">get_or_compute_derivative</span><span class="p">(</span><span class="n">PartialDerivative</span><span class="p">::</span><span class="n">Second</span><span class="p">(</span><span class="n">DV</span><span class="p">,</span><span class="w"> </span><span class="n">DT</span><span class="p">),</span><span class="w"> </span><span class="n">evaluate</span><span class="p">)</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -1600,13 +1661,13 @@ For partial derivatives w.r.t. the amount of substance of a species, you need an
 For example, take a look at the chemical potential:</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/properties.rs</span>
 
-<span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">chemical_potential</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span>: <span class="nc">Contributions</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityArray1</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="bp">self</span><span class="p">.</span><span class="n">evaluate_property</span><span class="p">(</span><span class="bp">Self</span>::<span class="n">chemical_potential_</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<span class="k">pub</span><span class="w"> </span><span class="k">fn</span><span class="w"> </span><span class="nf">chemical_potential</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span><span class="p">:</span><span class="w"> </span><span class="nc">Contributions</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">QuantityArray1</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="bp">self</span><span class="p">.</span><span class="n">evaluate_property</span><span class="p">(</span><span class="bp">Self</span><span class="p">::</span><span class="n">chemical_potential_</span><span class="p">,</span><span class="w"> </span><span class="n">contributions</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
 <span class="p">}</span>
 
-<span class="k">fn</span> <span class="nf">chemical_potential_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span>: <span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityArray1</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="n">QuantityArray</span>::<span class="n">from_shape_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">eos</span><span class="p">.</span><span class="n">components</span><span class="p">(),</span><span class="w"> </span><span class="o">|</span><span class="n">i</span><span class="o">|</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="bp">self</span><span class="p">.</span><span class="n">get_or_compute_derivative</span><span class="p">(</span><span class="n">PartialDerivative</span>::<span class="n">First</span><span class="p">(</span><span class="n">DN</span><span class="p">(</span><span class="n">i</span><span class="p">)),</span><span class="w"> </span><span class="n">evaluate</span><span class="p">)</span>
+<span class="k">fn</span><span class="w"> </span><span class="nf">chemical_potential_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span><span class="p">:</span><span class="w"> </span><span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">QuantityArray1</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">QuantityArray</span><span class="p">::</span><span class="n">from_shape_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">eos</span><span class="p">.</span><span class="n">components</span><span class="p">(),</span><span class="w"> </span><span class="o">|</span><span class="n">i</span><span class="o">|</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="bp">self</span><span class="p">.</span><span class="n">get_or_compute_derivative</span><span class="p">(</span><span class="n">PartialDerivative</span><span class="p">::</span><span class="n">First</span><span class="p">(</span><span class="n">DN</span><span class="p">(</span><span class="n">i</span><span class="p">)),</span><span class="w"> </span><span class="n">evaluate</span><span class="p">)</span>
 <span class="w">    </span><span class="p">})</span>
 <span class="p">}</span>
 </pre></div>
@@ -1614,11 +1675,11 @@ For example, take a look at the chemical potential:</p>
 <p>Here, <code class="docutils literal notranslate"><span class="pre">QuantityArray::from_shape:fn</span></code> will create an array given a shape (here one-dimension: the number of components of the equation of state, <code class="docutils literal notranslate"><span class="pre">self.eos.components()</span></code>) and a function that returns a scalar value.
 This is not limited to one-dimensional arrays, of course, as can be seen in the implementation of the partial derivative of the chemical potential:</p>
 <div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// file: feos-core/src/state/properties.rs</span>
-<span class="k">fn</span> <span class="nf">dmu_dni_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span>: <span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">QuantityArray2</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="k">fn</span><span class="w"> </span><span class="nf">dmu_dni_</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">evaluate</span><span class="p">:</span><span class="w"> </span><span class="nc">Evaluate</span><span class="p">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">QuantityArray2</span><span class="o">&lt;</span><span class="n">U</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">eos</span><span class="p">.</span><span class="n">components</span><span class="p">();</span>
-<span class="w">    </span><span class="n">QuantityArray</span>::<span class="n">from_shape_fn</span><span class="p">((</span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">),</span><span class="w"> </span><span class="o">|</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">)</span><span class="o">|</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">QuantityArray</span><span class="p">::</span><span class="n">from_shape_fn</span><span class="p">((</span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">),</span><span class="w"> </span><span class="o">|</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">)</span><span class="o">|</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="bp">self</span><span class="p">.</span><span class="n">get_or_compute_derivative</span><span class="p">(</span>
-<span class="w">            </span><span class="n">PartialDerivative</span>::<span class="n">Second</span><span class="p">(</span><span class="n">DN</span><span class="p">(</span><span class="n">i</span><span class="p">),</span><span class="w"> </span><span class="n">DN</span><span class="p">(</span><span class="n">j</span><span class="p">)),</span>
+<span class="w">            </span><span class="n">PartialDerivative</span><span class="p">::</span><span class="n">Second</span><span class="p">(</span><span class="n">DN</span><span class="p">(</span><span class="n">i</span><span class="p">),</span><span class="w"> </span><span class="n">DN</span><span class="p">(</span><span class="n">j</span><span class="p">)),</span>
 <span class="w">            </span><span class="n">evaluate</span>
 <span class="w">        </span><span class="p">)</span>
 <span class="w">    </span><span class="p">})</span>
