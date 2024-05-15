@@ -49,7 +49,7 @@ jobs:
         with:
           python-version: 3.9
           architecture: arm64
-      - name: Build wheels - universal2
+      - name: Build wheels - aarch64
         uses: PyO3/maturin-action@v1
         with:
           target: aarch64
@@ -78,5 +78,5 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.target }}
+          name: wheel-${{ matrix.target }}
           path: dist
