@@ -244,7 +244,7 @@ impl PySaftVRQMieParameters {
         Ok(PySIArray2::from(diameter * ANGSTROM))
     }
 
-    /// Calculate FH prefactor D.
+    /// Calculate FH pre-factor D.
     ///
     /// Parameters
     /// ----------
@@ -260,7 +260,7 @@ impl PySaftVRQMieParameters {
         let quantum_d = Array2::from_shape_fn((n, n), |(i, j)| -> f64 {
             self.0.quantum_d_ij(i, j, t.to_reduced())
         });
-        Ok(PySIArray2::from(quantum_d / (ANGSTROM * ANGSTROM)))
+        Ok(PySIArray2::from(quantum_d * (ANGSTROM * ANGSTROM)))
     }
 
     /// Calculate de Boer parameter.
