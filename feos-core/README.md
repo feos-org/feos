@@ -20,4 +20,4 @@ Add this to your `Cargo.toml`
 
 ```toml
 [dependencies]
-feos-core = "0.6"
+feos-core = "0.7"

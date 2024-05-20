@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.7.0] - 2024-05-20
 ### Added
 - Added SAFT-VR Mie equation of state. [#237](https://github.com/feos-org/feos/pull/237)
 - Added ePC-SAFT equation of state. [#229](https://github.com/feos-org/feos/pull/229)

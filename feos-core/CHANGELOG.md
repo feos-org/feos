@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+
+## [0.7.0] - 2024-05-20
 ### Added
 - Added specific isochoric and isobaric heat capacities to the Python interface. [#223](https://github.com/feos-org/feos/pull/223))
 - Added `to_dict` method for `PyStateVec`. [#224](https://github.com/feos-org/feos/pull/224)
@@ -29,11 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `numpy` and `PyO3` dependencies to 0.21. [#238](https://github.com/feos-org/feos/pull/238)
 
 
-## [0.6.1] 2024-01-11
+## [0.6.1] - 2024-01-11
 ### Fixed
 - Improved convergence of `tp_flash` for certain edge cases. [#219](https://github.com/feos-org/feos/pull/219)
 
-## [0.6.0] 2023-12-19
+## [0.6.0] - 2023-12-19
 ### Added
 - Added `EquationOfState::ideal_gas` to initialize an equation of state that only consists of an ideal gas contribution. [#204](https://github.com/feos-org/feos/pull/204)
 - Added `NoBinaryModelRecord` for models that do not use binary interaction parameters. [#211](https://github.com/feos-org/feos/pull/211)
