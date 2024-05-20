@@ -234,6 +234,7 @@ impl<P: AssociationStrength> Association<P> {
     }
 }
 
+/// Implementation of the association strength in the SAFT association model.
 pub trait AssociationStrength: HardSphereProperties {
     type Record: Copy;
     type BinaryRecord: Copy;

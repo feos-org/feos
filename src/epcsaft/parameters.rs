@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use crate::epcsaft::eos::permittivity::PermittivityRecord;
 
-/// PC-SAFT pure-component parameters.
+/// ePC-SAFT pure-component parameters.
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct ElectrolytePcSaftRecord {
     /// Segment number
@@ -182,6 +182,7 @@ impl std::fmt::Display for ElectrolytePcSaftAssociationRecord {
     }
 }
 
+/// ePC-SAFT binary interaction parameters.
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct ElectrolytePcSaftBinaryRecord {
     /// Binary dispersion interaction parameter
@@ -280,6 +281,7 @@ impl ElectrolytePcSaftBinaryAssociationRecord {
     }
 }
 
+/// Parameter set required for the ePC-SAFT equation of state.
 pub struct ElectrolytePcSaftParameters {
     pub molarweight: Array1<f64>,
     pub m: Array1<f64>,

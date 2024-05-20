@@ -20,7 +20,7 @@ use dispersion::Dispersion;
 use hard_chain::HardChain;
 use ionic::Ionic;
 
-/// Customization options for the ePC-SAFT equation of state.
+/// Implemented variants of the ePC-SAFT equation of state.
 #[derive(Copy, Clone)]
 #[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum ElectrolytePcSaftVariants {
@@ -28,6 +28,7 @@ pub enum ElectrolytePcSaftVariants {
     Revised,
 }
 
+/// Customization options for the ePC-SAFT equation of state.
 #[derive(Copy, Clone)]
 pub struct ElectrolytePcSaftOptions {
     pub max_eta: f64,
@@ -47,6 +48,7 @@ impl Default for ElectrolytePcSaftOptions {
     }
 }
 
+/// electrolyte PC-SAFT (ePC-SAFT) equation of state.
 pub struct ElectrolytePcSaft {
     pub parameters: Arc<ElectrolytePcSaftParameters>,
     pub options: ElectrolytePcSaftOptions,

@@ -135,7 +135,7 @@ impl std::fmt::Display for SaftVRMieRecord {
     }
 }
 
-/// PC-SAFT binary interaction parameters.
+/// SAFT-VR Mie binary interaction parameters.
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct SaftVRMieBinaryRecord {
     /// Binary dispersion energy interaction parameter
@@ -210,6 +210,7 @@ impl std::fmt::Display for SaftVRMieBinaryRecord {
     }
 }
 
+/// Parameter set required for the SAFT-VR Mie equation of state.
 pub struct SaftVRMieParameters {
     pub molarweight: Array1<f64>,
     pub m: Array1<f64>,
@@ -497,6 +498,7 @@ impl HardSphereProperties for SaftVRMieParameters {
 }
 
 /// Utilities for running tests
+#[doc(hidden)]
 pub mod test_utils {
     use super::*;
     use feos_core::parameter::Identifier;

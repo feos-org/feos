@@ -15,7 +15,7 @@ pub(super) mod association;
 pub(crate) mod dispersion;
 use dispersion::{a_disp, a_disp_chain, Properties};
 
-/// Customization options for the PC-SAFT equation of state and functional.
+/// Customization options for the SAFT-VR Mie equation of state.
 #[derive(Copy, Clone)]
 pub struct SaftVRMieOptions {
     pub max_eta: f64,
@@ -33,6 +33,7 @@ impl Default for SaftVRMieOptions {
     }
 }
 
+/// SAFT-VR Mie equation of state.
 pub struct SaftVRMie {
     parameters: Arc<SaftVRMieParameters>,
     options: SaftVRMieOptions,
