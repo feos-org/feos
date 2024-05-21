@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.7.0] - 2024-05-20
+## [0.7.0] - 2024-05-21
 ### Changed
 - Updated interfaces according to removal of `HelmholtzEnergyDual` and `HelmholtzEnergy` in `feos-core`. [#226](https://github.com/feos-org/feos/pull/226)
 - Changed return values of `HelmholtzEnergyFunctional::contributions` from `dyn FunctionalContribution` to `HelmholtzEnergyFunctional::Contribution`. [#226](https://github.com/feos-org/feos/pull/226)

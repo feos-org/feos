@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-## [0.7.0] - 2024-05-20
+## [0.7.0] - 2024-05-21
 ### Added
 - Added specific isochoric and isobaric heat capacities to the Python interface. [#223](https://github.com/feos-org/feos/pull/223))
 - Added `to_dict` method for `PyStateVec`. [#224](https://github.com/feos-org/feos/pull/224)
