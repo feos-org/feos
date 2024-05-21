@@ -43,7 +43,7 @@ The following models are currently published as part of the `FeOs` framework
 |`saftvrqmie`|equation of state for quantum fluids and mixtures|✓|✓|
 |`saftvrmie`|statistical associating fluid theory for variable range interactions of Mie form|✓||
 
-The list is being expanded continuously. Currently under development are implementations of ePC-SAFT and a Helmholtz energy functional for the UV theory.
+The list is being expanded continuously. Currently under development are implementations of Helmholtz energy functionals for the UV theory and for SAFT-VR Mie.
 
 Other public repositories that implement models within the `FeOs` framework, but are currently not part of the `feos` Python package, are
 
