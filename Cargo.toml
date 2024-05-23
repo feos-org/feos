@@ -52,7 +52,7 @@ criterion = "0.5"
 
 [profile.release-lto]
 inherits = "release"
-lto = true
+lto = "thin"
 codegen-units = 1
 
 
