@@ -42,7 +42,7 @@ jobs:
           name: wheel-macos-x86_64
           path: dist
   macos-aarch64:
-    runs-on: macos-14
+    runs-on: macos-13-xlarge
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -53,7 +53,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: aarch64
-          args: --release --out dist
+          args: --profile release-lto --out dist
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
