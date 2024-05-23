@@ -55,6 +55,11 @@ inherits = "release"
 lto = true
 codegen-units = 1
 
+[profile.release-lto-thin]
+inherits = "release"
+lto = "thin"
+codegen-units = 1
+
 
 [features]
 default = []
