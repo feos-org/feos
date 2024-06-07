@@ -104,6 +104,16 @@ pub struct CubicOptions {
     pub(crate) delta: Delta,
 }
 
+impl CubicOptions {
+    fn subset(&self, component_list: &[usize]) -> Self {
+        Self {
+            alpha: self.alpha.subset(component_list),
+            mixing: self.mixing.clone(),
+            delta: self.delta.clone(),
+        }
+    }
+}
+
 /// A generic cubic equation of state.
 pub struct Cubic {
     /// Parameters
@@ -198,7 +208,7 @@ impl Components for Cubic {
     fn subset(&self, component_list: &[usize]) -> Self {
         Self {
             parameters: Arc::new(self.parameters.subset(component_list)),
-            options: self.options.clone(),
+            options: self.options.subset(component_list),
             critical_parameters: self.critical_parameters.subset(component_list),
         }
     }
