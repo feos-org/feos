@@ -200,8 +200,6 @@ impl Residual for PengRobinson {
         // Helmholtz energy
         let n = state.moles.sum();
         let v = state.volume;
-        dbg!(&b);
-        dbg!(&ak_mix);
         n * ((v / (v - b * n)).ln()
             - ak_mix / (b * SQRT_2 * 2.0 * state.temperature)
                 * ((v + b * n * (1.0 + SQRT_2)) / (v + b * n * (1.0 - SQRT_2))).ln())

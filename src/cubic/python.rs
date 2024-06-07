@@ -46,7 +46,7 @@ impl PyAlpha {
     /// using
     /// $m_\text{RK} = 0.480 + 1.574 \omega - 0.176 \omega^2$
     #[staticmethod]
-    fn redlich_kwing1972() -> Self {
+    fn redlich_kwong1972() -> Self {
         Self(RedlichKwong1972.into())
     }
 
