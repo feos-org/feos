@@ -1,217 +1,274 @@
-use feos_core::parameter::{Identifier, Parameter, ParameterError, PureRecord};
+use feos_core::parameter::Parameter;
 use feos_core::si::{MolarWeight, GRAM, MOL};
-use feos_core::{Components, Residual, StateHD};
-use ndarray::{Array1, Array2, ScalarOperand};
+use feos_core::{Components, EosResult, Residual, StateHD};
+use mixing_rules::{MixingRule, MixingRuleFunction, MixtureParameters, Quadratic};
+use ndarray::{Array1, ScalarOperand, Zip};
 use num_dual::DualNum;
-use serde::{Deserialize, Serialize};
 use std::f64::consts::SQRT_2;
 use std::fmt;
 use std::sync::Arc;
 
 mod alpha;
+use alpha::{Alpha, AlphaFunction, PengRobinson1976, RedlichKwong1972};
 mod mixing_rules;
+mod parameters;
+use parameters::CubicParameters;
+// mod volume_translation;
+
+#[cfg(feature = "python")]
+pub(crate) mod python;
 
 const KB_A3: f64 = 13806490.0;
 
-/// Cubic parameters for a single substance.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CubicRecord {
-    /// critical temperature in Kelvin
-    tc: f64,
-    /// critical pressure in Pascal
-    pc: f64,
-    /// acentric factor
-    acentric_factor: f64,
+#[derive(Debug, Clone, Copy)]
+pub struct Delta {
+    d1: f64,
+    d2: f64,
+    d12: f64,
 }
 
-impl CubicRecord {
-    /// Create a new pure substance record for the Cubic equation of state.
-    pub fn new(tc: f64, pc: f64, acentric_factor: f64) -> Self {
+impl From<(f64, f64)> for Delta {
+    fn from(value: (f64, f64)) -> Self {
+        Delta {
+            d1: value.0,
+            d2: value.1,
+            d12: value.0 - value.1,
+        }
+    }
+}
+
+impl Delta {
+    // Calculate universal critical constants from universal cubic parameters.
+    //
+    // See https://doi.org/10.1016/j.fluid.2012.05.008
+    fn critical_constants(&self) -> (f64, f64) {
+        let (r1, r2) = (-self.d1, -self.d2);
+        let eta_c = 1.0
+            / (((1.0 - r1) * (1.0 - r2).powi(2)).cbrt()
+                + ((1.0 - r2) * (1.0 - r1).powi(2)).cbrt()
+                + 1.0);
+        let omega_a = (1.0 - eta_c * r1) * (1.0 - eta_c * r2) / (1.0 - eta_c)
+            * (2.0 - eta_c * (r1 + r2))
+            / (3.0 - eta_c * (1.0 + r1 + r2)).powi(2);
+        let omega_b = eta_c / (3.0 - eta_c * (1.0 + r1 + r2));
+        (omega_a, omega_b)
+    }
+}
+
+/// Parameters processed using model constants and substance critial data.
+#[derive(Debug)]
+pub struct CriticalParameters {
+    ac: Array1<f64>,
+    bc: Array1<f64>,
+    omega_a: f64,
+    omega_b: f64,
+}
+
+impl CriticalParameters {
+    fn new(p: &Arc<CubicParameters>, delta: &Delta) -> Self {
+        let (omega_a, omega_b) = delta.critical_constants();
+        let ac = omega_a * &p.tc.mapv(|tc| tc.powi(2)) * KB_A3 / &p.pc;
+        let bc = omega_b * &p.tc * KB_A3 / &p.pc;
         Self {
-            tc,
-            pc,
-            acentric_factor,
+            ac,
+            bc,
+            omega_a,
+            omega_b,
+        }
+    }
+
+    fn subset(&self, component_list: &[usize]) -> Self {
+        let n = component_list.len();
+        let mut ac = Array1::zeros(n);
+        let mut bc = Array1::zeros(n);
+        Zip::from(&mut ac)
+            .and(&mut bc)
+            .and(component_list)
+            .for_each(|a, b, &i| {
+                *a = self.ac[i];
+                *b = self.bc[i];
+            });
+        Self {
+            ac,
+            bc,
+            omega_a: self.omega_a,
+            omega_b: self.omega_b,
         }
     }
 }
 
-impl std::fmt::Display for CubicRecord {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "CubicRecord(tc={} K", self.tc)?;
-        write!(f, ", pc={} Pa", self.pc)?;
-        write!(f, ", acentric factor={}", self.acentric_factor)
-    }
+#[derive(Debug, Clone)]
+pub struct CubicOptions {
+    pub(crate) alpha: Alpha,
+    pub(crate) mixing: MixingRule,
+    pub(crate) delta: Delta,
 }
 
-/// Cubic parameters for one ore more substances.
-pub struct CubicParameters {
-    /// Critical temperature in Kelvin
-    tc: Array1<f64>,
-    a: Array1<f64>,
-    b: Array1<f64>,
-    /// Binary interaction parameter
-    k_ij: Array2<f64>,
-    kappa: Array1<f64>,
-    /// Molar weight in units of g/mol
-    molarweight: Array1<f64>,
-    /// List of pure component records
-    pure_records: Vec<PureRecord<CubicRecord>>,
-}
-
-impl std::fmt::Display for CubicParameters {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.pure_records
-            .iter()
-            .try_for_each(|pr| writeln!(f, "{}", pr))?;
-        writeln!(f, "\nk_ij:\n{}", self.k_ij)
-    }
-}
-
-impl CubicParameters {
-    /// Build a simple parameter set without binary interaction parameters.
-    pub fn new_simple(
-        tc: &[f64],
-        pc: &[f64],
-        acentric_factor: &[f64],
-        molarweight: &[f64],
-    ) -> Result<Self, ParameterError> {
-        if [pc.len(), acentric_factor.len(), molarweight.len()]
-            .iter()
-            .any(|&l| l != tc.len())
-        {
-            return Err(ParameterError::IncompatibleParameters(String::from(
-                "each component has to have parameters.",
-            )));
-        }
-        let records = (0..tc.len())
-            .map(|i| {
-                let record = CubicRecord {
-                    tc: tc[i],
-                    pc: pc[i],
-                    acentric_factor: acentric_factor[i],
-                };
-                let id = Identifier::default();
-                PureRecord::new(id, molarweight[i], record)
-            })
-            .collect();
-        CubicParameters::from_records(records, None)
-    }
-}
-
-impl Parameter for CubicParameters {
-    type Pure = CubicRecord;
-    type Binary = f64;
-
-    /// Creates parameters from pure component records.
-    fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Option<Array2<Self::Binary>>,
-    ) -> Result<Self, ParameterError> {
-        let n = pure_records.len();
-
-        let mut tc = Array1::zeros(n);
-        let mut a = Array1::zeros(n);
-        let mut b = Array1::zeros(n);
-        let mut molarweight = Array1::zeros(n);
-        let mut kappa = Array1::zeros(n);
-
-        for (i, record) in pure_records.iter().enumerate() {
-            molarweight[i] = record.molarweight;
-            let r = &record.model_record;
-            tc[i] = r.tc;
-            a[i] = 0.45724 * r.tc.powi(2) * KB_A3 / r.pc;
-            b[i] = 0.07780 * r.tc * KB_A3 / r.pc;
-            kappa[i] = 0.37464 + (1.54226 - 0.26992 * r.acentric_factor) * r.acentric_factor;
-        }
-
-        let k_ij = binary_records.unwrap_or_else(|| Array2::zeros([n; 2]));
-
-        Ok(Self {
-            tc,
-            a,
-            b,
-            k_ij,
-            kappa,
-            molarweight,
-            pure_records,
-        })
-    }
-
-    fn records(&self) -> (&[PureRecord<CubicRecord>], Option<&Array2<f64>>) {
-        (&self.pure_records, Some(&self.k_ij))
-    }
-}
-
-/// A simple version of the Cubic equation of state.
+/// A generic cubic equation of state.
 pub struct Cubic {
     /// Parameters
-    parameters: Arc<CubicParameters>,
+    pub parameters: Arc<CubicParameters>,
+    pub options: CubicOptions,
+    /// processed parameters using model and substance critical data
+    pub critical_parameters: CriticalParameters,
 }
 
 impl Cubic {
-    /// Create a new equation of state from a set of parameters.
-    pub fn new(parameters: Arc<CubicParameters>) -> Self {
-        Self { parameters }
+    /// Generic cubic equation of state with adjustable universal constants.
+    pub fn new(parameters: Arc<CubicParameters>, options: CubicOptions) -> EosResult<Self> {
+        let p = CriticalParameters::new(&parameters, &options.delta);
+        options.alpha.validate(&parameters)?;
+        Ok(Self {
+            parameters,
+            options,
+            critical_parameters: p,
+        })
+    }
+
+    /// Peng Robinson equation of state.
+    ///
+    /// Universal constants:
+    /// - $\delta_1 = 1 + \sqrt{2}$
+    /// - $\delta_2 = 1 - \sqrt{2}$
+    ///
+    /// If no options are supplied, the following is used:
+    /// - alpha function: Peng Robinson (1976)
+    /// - mixing rules: quadratic mixing
+    pub fn peng_robinson(
+        parameters: Arc<CubicParameters>,
+        alpha: Option<Alpha>,
+        mixing: Option<MixingRule>,
+    ) -> EosResult<Self> {
+        let delta: Delta = (1.0 + SQRT_2, 1.0 - SQRT_2).into();
+        let p = CriticalParameters::new(&parameters, &delta);
+        let options = CubicOptions {
+            alpha: alpha.unwrap_or(PengRobinson1976.into()),
+            mixing: mixing.unwrap_or(Quadratic.into()),
+            delta,
+        };
+        options.alpha.validate(&parameters)?;
+        Ok(Self {
+            parameters,
+            options,
+            critical_parameters: p,
+        })
+    }
+
+    /// Create equation of state of (Suave) Redlich Kwong.
+    ///
+    /// Universal constants:
+    /// - $\delta_1 = 1$
+    /// - $\delta_2 = 0$
+    ///
+    /// If no options are supplied, the following is used:
+    /// - alpha function: Soave (1972)
+    /// - mixing rules: quadratic mixing
+    pub fn redlich_kwong(
+        parameters: Arc<CubicParameters>,
+        alpha: Option<Alpha>,
+        mixing: Option<MixingRule>,
+    ) -> EosResult<Self> {
+        let delta: Delta = (1.0, 0.0).into();
+        let p = CriticalParameters::new(&parameters, &delta);
+        let options = CubicOptions {
+            alpha: alpha.unwrap_or(RedlichKwong1972.into()),
+            mixing: mixing.unwrap_or(Quadratic.into()),
+            delta,
+        };
+        options.alpha.validate(&parameters)?;
+        Ok(Self {
+            parameters,
+            options,
+            critical_parameters: p,
+        })
     }
 }
 
 impl fmt::Display for Cubic {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Peng Robinson")
+        write!(f, "cubic")
     }
 }
 
 impl Components for Cubic {
     fn components(&self) -> usize {
-        self.parameters.b.len()
+        self.parameters.tc.len()
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
-        Self::new(Arc::new(self.parameters.subset(component_list)))
+        Self {
+            parameters: Arc::new(self.parameters.subset(component_list)),
+            options: self.options.clone(),
+            critical_parameters: self.critical_parameters.subset(component_list),
+        }
     }
 }
 
 impl Residual for Cubic {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        let b = (moles * &self.parameters.b).sum() / moles.sum();
+        let b = (moles * &self.critical_parameters.bc).sum() / moles.sum();
         0.9 / b
     }
 
-    fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
-        let p = &self.parameters;
-        let x = &state.molefracs;
-        let ak = (&p.tc.mapv(|tc| (D::one() - (state.temperature / tc).sqrt())) * &p.kappa + 1.0)
-            .mapv(|x| x.powi(2))
-            * &p.a;
-
-        // Mixing rules
-        let mut ak_mix = D::zero();
-        for i in 0..ak.len() {
-            for j in 0..ak.len() {
-                ak_mix += (ak[i] * ak[j]).sqrt() * (x[i] * x[j] * (1.0 - p.k_ij[(i, j)]));
-            }
-        }
-        let b = (x * &p.b).sum();
-
-        // Helmholtz energy
+    fn residual_helmholtz_energy<D: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        state: &StateHD<D>,
+    ) -> D {
+        let MixtureParameters { a, b, c: _ } = self.options.mixing.apply(self, state);
         let n = state.moles.sum();
         let v = state.volume;
-        n * ((v / (v - b * n)).ln()
-            - ak_mix / (b * SQRT_2 * 2.0 * state.temperature)
-                * ((v + b * n * (1.0 + SQRT_2)) / (v + b * n * (1.0 - SQRT_2))).ln())
+        let bn = b * n;
+        n * ((v / (v - bn)).ln()
+            - a / (b * self.options.delta.d12 * state.temperature)
+                * ((v + bn * self.options.delta.d1) / (v + bn * self.options.delta.d2)).ln())
     }
 
     fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
-        vec![(
-            "Peng Robinson".to_string(),
-            self.residual_helmholtz_energy(state),
-        )]
+        vec![("cubic".to_string(), self.residual_helmholtz_energy(state))]
     }
 
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         &self.parameters.molarweight * (GRAM / MOL)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use feos_core::{
+        cubic::{PengRobinson, PengRobinsonParameters, PengRobinsonRecord},
+        parameter::{Identifier, PureRecord},
+    };
+    use ndarray::arr1;
+    use parameters::CubicRecord;
+
+    use super::*;
+
+    #[test]
+    fn a_res() {
+        let propane = PureRecord::new(
+            Identifier::new(None, Some("propane"), None, None, None, None),
+            44.0962,
+            CubicRecord::new(369.96, 4250000.0, 0.153),
+        );
+        let parameters = Arc::new(CubicParameters::new_pure(propane).unwrap());
+        let eos = Cubic::peng_robinson(parameters, None, None).unwrap();
+        dbg!(&eos.critical_parameters);
+        let state = StateHD::new(300.0, 1e5, arr1(&[5.0]));
+
+        let propane = PureRecord::new(
+            Identifier::new(None, Some("propane"), None, None, None, None),
+            44.0962,
+            PengRobinsonRecord::new(369.96, 4250000.0, 0.153),
+        );
+        let parameters = PengRobinsonParameters::new_pure(propane).unwrap();
+        let pr = Arc::new(PengRobinson::new(Arc::new(parameters)));
+
+        assert_eq!(
+            pr.residual_helmholtz_energy(&state),
+            eos.residual_helmholtz_energy(&state)
+        )
     }
 }

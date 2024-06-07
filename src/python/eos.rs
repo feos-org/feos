@@ -1,3 +1,9 @@
+#[cfg(feature = "cubic")]
+use crate::cubic::python::PyCubicParameters;
+use crate::cubic::python::{PyAlpha, PyMixingRule};
+#[cfg(feature = "cubic")]
+use crate::cubic::Cubic;
+use crate::cubic::CubicOptions;
 use crate::eos::ResidualModel;
 #[cfg(feature = "epcsaft")]
 use crate::epcsaft::python::PyElectrolytePcSaftParameters;
@@ -240,6 +246,89 @@ impl PyEquationOfState {
         Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
+    /// Generalized cubic equations of state.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters : CubicParameters
+    ///     The parameters of the equation of state to use.
+    ///
+    /// Returns
+    /// -------
+    /// EquationOfState
+    ///     The equation of state that can be used to compute thermodynamic
+    ///     states.
+    #[staticmethod]
+    pub fn cubic(
+        parameters: PyCubicParameters,
+        alpha: PyAlpha,
+        mixing_rule: PyMixingRule,
+        delta: (f64, f64),
+    ) -> PyResult<Self> {
+        let options = CubicOptions {
+            alpha: alpha.0,
+            mixing: mixing_rule.0,
+            delta: delta.into(),
+        };
+        let residual = Arc::new(ResidualModel::Cubic(Cubic::new(parameters.0, options)?));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
+    }
+
+    /// Peng-Robinson equations of state.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters : CubicParameters
+    ///     The parameters of the equation of state to use.
+    ///
+    /// Returns
+    /// -------
+    /// EquationOfState
+    ///     The equation of state that can be used to compute thermodynamic
+    ///     states.
+    #[staticmethod]
+    pub fn peng_robinson(
+        parameters: PyCubicParameters,
+        alpha: Option<PyAlpha>,
+        mixing_rule: Option<PyMixingRule>,
+    ) -> PyResult<Self> {
+        let residual = Arc::new(ResidualModel::Cubic(Cubic::peng_robinson(
+            parameters.0,
+            alpha.map(|a| a.0),
+            mixing_rule.map(|mr| mr.0),
+        )?));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
+    }
+
+    /// Redlich-Kwong equations of state.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters : CubicParameters
+    ///     The parameters of the equation of state to use.
+    ///
+    /// Returns
+    /// -------
+    /// EquationOfState
+    ///     The equation of state that can be used to compute thermodynamic
+    ///     states.
+    #[staticmethod]
+    pub fn redlich_kwong(
+        parameters: PyCubicParameters,
+        alpha: Option<PyAlpha>,
+        mixing_rule: Option<PyMixingRule>,
+    ) -> PyResult<Self> {
+        let residual = Arc::new(ResidualModel::Cubic(Cubic::redlich_kwong(
+            parameters.0,
+            alpha.map(|a| a.0),
+            mixing_rule.map(|mr| mr.0),
+        )?));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
+    }
+
     /// Peng-Robinson equation of state.
     ///
     /// Parameters
@@ -253,7 +342,7 @@ impl PyEquationOfState {
     ///     The PR equation of state that can be used to compute thermodynamic
     ///     states.
     #[staticmethod]
-    pub fn peng_robinson(parameters: PyPengRobinsonParameters) -> Self {
+    pub fn peng_robinson_old(parameters: PyPengRobinsonParameters) -> Self {
         let residual = Arc::new(ResidualModel::PengRobinson(PengRobinson::new(parameters.0)));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
