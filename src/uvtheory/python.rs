@@ -133,10 +133,10 @@ impl_parameter!(
 pub fn uvtheory(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<IdentifierOption>()?;
-    m.add_class::<PyChemicalRecord>()?;
 
     m.add_class::<Perturbation>()?;
     m.add_class::<PyUVTheoryRecord>()?;
+    m.add_class::<PyUVTheoryBinaryRecord>()?;
     m.add_class::<PyPureRecord>()?;
     m.add_class::<PyBinaryRecord>()?;
     m.add_class::<PyUVTheoryParameters>()?;

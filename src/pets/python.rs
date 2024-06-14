@@ -242,9 +242,9 @@ impl_parameter!(
 pub fn pets(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<IdentifierOption>()?;
-    m.add_class::<PyChemicalRecord>()?;
 
     m.add_class::<PyPetsRecord>()?;
+    m.add_class::<PyPetsBinaryRecord>()?;
     m.add_class::<PyPureRecord>()?;
     m.add_class::<PyBinaryRecord>()?;
     m.add_class::<PyPetsParameters>()?;
