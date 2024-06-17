@@ -25,5 +25,6 @@ parameters = UVTheoryParameters.from_json(['methane', 'ethane'], 'parameters.jso
     BinaryRecord
     Perturbation
     UVTheoryRecord
+    UVTheoryBinaryRecord
     UVTheoryParameters
 ```

@@ -16,6 +16,7 @@
     ChemicalRecord
     PureRecord
     BinaryRecord
+    PetsBinaryRecord
     PetsRecord
     PetsParameters
 ```
