@@ -46,6 +46,12 @@ version = "0.21"
 features = ["extension-module", "abi3", "abi3-py37"]
 optional = true
 
+[target.'cfg(all(any(not(target_family = "unix"), allocator = "mimalloc"), not(allocator = "default")))'.dependencies]
+mimalloc = { version = "0.1", default-features = false }
+
+[target.'cfg(all(target_family = "unix", not(allocator = "mimalloc"), not(allocator = "default")))'.dependencies]
+tikv-jemallocator = { version = "0.5", features = ["disable_initial_exec_tls"] }
+
 [dev-dependencies]
 approx = "0.5"
 criterion = "0.5"
