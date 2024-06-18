@@ -20,6 +20,7 @@ members = ["feos-core", "feos-dft", "feos-derive"]
 
 [lib]
 crate-type = ["rlib", "cdylib"]
+bench = false
 
 [dependencies]
 quantity = { version = "0.8", optional = true }
