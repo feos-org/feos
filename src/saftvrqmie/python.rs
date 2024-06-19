@@ -351,6 +351,7 @@ pub fn saftvrqmie(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<FeynmanHibbsOrder>()?;
 
     m.add_class::<PySaftVRQMieRecord>()?;
+    m.add_class::<PySaftVRQMieBinaryRecord>()?;
     m.add_class::<PyPureRecord>()?;
     m.add_class::<PyBinaryRecord>()?;
     m.add_class::<PySaftVRQMieParameters>()?;

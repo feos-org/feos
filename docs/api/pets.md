@@ -13,9 +13,9 @@
 
     Identifier
     IdentifierOption
-    ChemicalRecord
     PureRecord
     BinaryRecord
+    PetsBinaryRecord
     PetsRecord
     PetsParameters
 ```

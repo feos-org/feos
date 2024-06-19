@@ -24,5 +24,6 @@ parameters = SaftVRQMieParameters.from_json(['hydrogen', 'neon'], 'parameters.js
     PureRecord
     BinaryRecord
     SaftVRQMieRecord
+    SaftVRQMieBinaryRecord
     SaftVRQMieParameters
 ```

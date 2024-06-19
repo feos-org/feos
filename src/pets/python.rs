@@ -69,6 +69,7 @@ impl PyPetsRecord {
 impl_json_handling!(PyPetsRecord);
 impl_pure_record!(PetsRecord, PyPetsRecord);
 
+/// Create a record for a binary interaction parameter, i.e. k_ij.
 #[pyclass(name = "PetsBinaryRecord")]
 #[derive(Clone)]
 pub struct PyPetsBinaryRecord(PetsBinaryRecord);
@@ -242,9 +243,9 @@ impl_parameter!(
 pub fn pets(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<IdentifierOption>()?;
-    m.add_class::<PyChemicalRecord>()?;
 
     m.add_class::<PyPetsRecord>()?;
+    m.add_class::<PyPetsBinaryRecord>()?;
     m.add_class::<PyPureRecord>()?;
     m.add_class::<PyBinaryRecord>()?;
     m.add_class::<PyPetsParameters>()?;
