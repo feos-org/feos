@@ -159,6 +159,7 @@ impl_json_handling!(PyPcSaftRecord);
 impl_pure_record!(PcSaftRecord, PyPcSaftRecord);
 impl_segment_record!(PcSaftRecord, PyPcSaftRecord);
 
+/// Create a record for a binary interaction parameter.
 #[pyclass(name = "PcSaftBinaryRecord")]
 #[derive(Clone)]
 pub struct PyPcSaftBinaryRecord(PcSaftBinaryRecord);

@@ -203,6 +203,7 @@ impl PySaftVRMieRecord {
 impl_json_handling!(PySaftVRMieRecord);
 impl_pure_record!(SaftVRMieRecord, PySaftVRMieRecord);
 
+/// Create a record for a binary interaction parameter.
 #[pyclass(name = "SaftVRMieBinaryRecord")]
 #[derive(Clone)]
 pub struct PySaftVRMieBinaryRecord(SaftVRMieBinaryRecord);

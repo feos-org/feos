@@ -20,7 +20,6 @@ parameters = UVTheoryParameters.from_json(['methane', 'ethane'], 'parameters.jso
 
     Identifier
     IdentifierOption
-    ChemicalRecord
     PureRecord
     BinaryRecord
     Perturbation

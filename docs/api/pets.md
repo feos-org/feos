@@ -13,7 +13,6 @@
 
     Identifier
     IdentifierOption
-    ChemicalRecord
     PureRecord
     BinaryRecord
     PetsBinaryRecord
