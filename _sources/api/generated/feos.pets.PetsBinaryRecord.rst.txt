@@ -1,0 +1,27 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.pets.PetsBinaryRecord
+==========================
+
+.. currentmodule:: feos.pets
+
+.. autoclass:: PetsBinaryRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PetsBinaryRecord.__init__
+   
+   
+
+   
+   
+   

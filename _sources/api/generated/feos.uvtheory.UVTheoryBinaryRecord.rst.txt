@@ -1,0 +1,27 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.uvtheory.UVTheoryBinaryRecord
+==================================
+
+.. currentmodule:: feos.uvtheory
+
+.. autoclass:: UVTheoryBinaryRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~UVTheoryBinaryRecord.__init__
+   
+   
+
+   
+   
+   

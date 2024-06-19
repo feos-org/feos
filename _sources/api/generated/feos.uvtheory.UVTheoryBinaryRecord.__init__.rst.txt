@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.uvtheory.UVTheoryBinaryRecord.\_\_init\_\_
+===============================================
+
+.. currentmodule:: feos.uvtheory
+
+.. automethod:: UVTheoryBinaryRecord.__init__
