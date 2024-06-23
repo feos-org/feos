@@ -1,3 +1,5 @@
+#[cfg(feature = "cubic")]
+use crate::cubic::Cubic;
 #[cfg(feature = "epcsaft")]
 use crate::epcsaft::ElectrolytePcSaft;
 #[cfg(feature = "gc_pcsaft")]
@@ -48,4 +50,6 @@ pub enum ResidualModel {
     Pets(Pets),
     #[cfg(feature = "uvtheory")]
     UVTheory(UVTheory),
+    #[cfg(feature = "cubic")]
+    Cubic(Cubic),
 }

@@ -1,3 +1,5 @@
+#[cfg(feature = "cubic")]
+use crate::cubic::python::cubic as cubic_module;
 #[cfg(feature = "epcsaft")]
 use crate::epcsaft::python::epcsaft as epcsaft_module;
 #[cfg(feature = "gc_pcsaft")]
@@ -21,7 +23,7 @@ mod cubic;
 mod dippr;
 mod eos;
 mod joback;
-use cubic::cubic as cubic_module;
+use cubic::cubic_old as cubic_module_old;
 use dippr::dippr as dippr_module;
 use eos::eos as eos_module;
 use joback::joback as joback_module;
@@ -41,6 +43,8 @@ pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(dft_module))?;
     m.add_wrapped(wrap_pymodule!(joback_module))?;
     m.add_wrapped(wrap_pymodule!(dippr_module))?;
+    m.add_wrapped(wrap_pymodule!(cubic_module_old))?;
+    #[cfg(feature = "cubic")]
     m.add_wrapped(wrap_pymodule!(cubic_module))?;
     #[cfg(feature = "pcsaft")]
     m.add_wrapped(wrap_pymodule!(pcsaft_module))?;
@@ -67,6 +71,7 @@ pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     set_path(m, "feos.dft.estimator", "dft.estimator_dft")?;
     set_path(m, "feos.joback", "joback")?;
     set_path(m, "feos.dippr", "dippr")?;
+    set_path(m, "feos.cubic_old", "cubic_old")?;
     set_path(m, "feos.cubic", "cubic")?;
     #[cfg(feature = "pcsaft")]
     set_path(m, "feos.pcsaft", "pcsaft")?;

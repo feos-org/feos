@@ -50,6 +50,8 @@ pub mod association;
 pub mod hard_sphere;
 
 // models
+#[cfg(feature = "cubic")]
+pub mod cubic;
 #[cfg(feature = "epcsaft")]
 pub mod epcsaft;
 #[cfg(feature = "gc_pcsaft")]

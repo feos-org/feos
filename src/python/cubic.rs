@@ -3,7 +3,7 @@ use feos_core::python::parameter::{PyChemicalRecord, PyIdentifier};
 use pyo3::prelude::*;
 
 #[pymodule]
-pub fn cubic(m: &Bound<'_, PyModule>) -> PyResult<()> {
+pub fn cubic_old(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<PyChemicalRecord>()?;
 
