@@ -759,7 +759,7 @@ fn is_close<U: Copy>(
     (x - y).abs() <= atol + rtol * y.abs()
 }
 
-fn newton<E: Residual, F, X: Copy, Y: Copy>(
+fn newton<E: Residual, F, X: Copy, Y>(
     mut x0: Quantity<f64, X>,
     mut f: F,
     atol: Quantity<f64, X>,
@@ -852,7 +852,6 @@ mod critical_point;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::f64::NAN;
     use typenum::P3;
 
     #[test]
@@ -873,7 +872,7 @@ mod tests {
 
     #[test]
     fn test_nan_temperature() {
-        let temperature = NAN * KELVIN;
+        let temperature = f64::NAN * KELVIN;
         let volume = 3000.0 * METER.powi::<P3>();
         let moles = &arr1(&[0.03, 0.02, 0.05]) * MOL;
         assert!(validate(temperature, volume, &moles).is_err());
@@ -891,7 +890,7 @@ mod tests {
     fn test_nan_mole_number() {
         let temperature = 298.15 * KELVIN;
         let volume = 3000.0 * METER.powi::<P3>();
-        let moles = &arr1(&[NAN, 0.02, 0.05]) * MOL;
+        let moles = &arr1(&[f64::NAN, 0.02, 0.05]) * MOL;
         assert!(validate(temperature, volume, &moles).is_err());
     }
 

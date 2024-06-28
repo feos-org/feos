@@ -303,7 +303,7 @@ impl<P: AssociationStrength> Association<P> {
                     self.tol,
                     None,
                 )
-                .unwrap_or_else(|_| D::from(std::f64::NAN))
+                .unwrap_or_else(|_| D::from(f64::NAN))
                     * state.volume
             }
         }
