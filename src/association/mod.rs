@@ -623,9 +623,7 @@ mod tests_pcsaft {
     fn helmholtz_energy_cross_3b() -> Result<(), ParameterError> {
         let mut params = water_parameters();
         let mut record = params.pure_records.pop().unwrap();
-        let mut association_record = record.model_record.association_record.unwrap();
-        association_record.na = 2.0;
-        record.model_record.association_record = Some(association_record);
+        record.model_record.association_records[0].na = 2.0;
         let params = Arc::new(PcSaftParameters::new_pure(record)?);
         let assoc = Association::new(&params, &params.association, 50, 1e-10);
         let cross_assoc =
