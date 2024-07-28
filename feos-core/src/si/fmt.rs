@@ -1,8 +1,8 @@
 use super::*;
 use ndarray::{Array, Dimension};
-use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::fmt;
+use std::sync::LazyLock;
 use typenum::{Quot, N1, N2, N3, P2, P3, P4};
 
 const UNIT_SYMBOLS: [&str; 7] = ["s", "m", "kg", "A", "K", "mol", "cd"];
@@ -144,7 +144,7 @@ fn get_prefix(value: f64, has_prefix: Option<f64>) -> (f64, &'static str) {
     (value, "")
 }
 
-static PREFIX_SYMBOLS: Lazy<HashMap<i8, &'static str>> = Lazy::new(|| {
+static PREFIX_SYMBOLS: LazyLock<HashMap<i8, &'static str>> = LazyLock::new(|| {
     let mut m = HashMap::new();
     m.insert(0, " ");
     m.insert(-24, "y");
