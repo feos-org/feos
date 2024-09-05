@@ -198,7 +198,7 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
     }
 
     /// Calculate the (residual) intrinsic functional derivative $\frac{\delta\mathcal{F}}{\delta\rho_i(\mathbf{r})}$.
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     fn functional_derivative<D>(
         &self,
         temperature: f64,
@@ -233,7 +233,7 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
         ))
     }
 
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     fn functional_derivative_dual<D>(
         &self,
         temperature: f64,

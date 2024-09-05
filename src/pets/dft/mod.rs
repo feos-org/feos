@@ -38,9 +38,8 @@ impl PetsFunctional {
     }
 
     /// PeTS functional with default options for and provided FMT version.
-    #[allow(non_snake_case)]
-    pub fn new_full(parameters: Arc<PetsParameters>, fmt_Version: FMTVersion) -> DFT<Self> {
-        Self::with_options(parameters, fmt_Version, PetsOptions::default())
+    pub fn new_full(parameters: Arc<PetsParameters>, fmt_version: FMTVersion) -> DFT<Self> {
+        Self::with_options(parameters, fmt_version, PetsOptions::default())
     }
 
     /// PeTS functional with provided options for FMT and equation of state options.

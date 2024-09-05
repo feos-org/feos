@@ -43,18 +43,18 @@ fn bench_dual_numbers<E: Residual>(
 ) {
     let mut group = c.benchmark_group(group_name);
     group.bench_function("d_f64", |b| {
-        b.iter(|| d_hs((&parameters, state.derive0().temperature)))
+        b.iter(|| d_hs((parameters, state.derive0().temperature)))
     });
     group.bench_function("d_dual", |b| {
-        b.iter(|| d_hs((&parameters, state.derive1(Derivative::DT).temperature)))
+        b.iter(|| d_hs((parameters, state.derive1(Derivative::DT).temperature)))
     });
     group.bench_function("d_dual2", |b| {
-        b.iter(|| d_hs((&parameters, state.derive2(Derivative::DT).temperature)))
+        b.iter(|| d_hs((parameters, state.derive2(Derivative::DT).temperature)))
     });
     group.bench_function("d_hyperdual", |b| {
         b.iter(|| {
             d_hs((
-                &parameters,
+                parameters,
                 state
                     .derive2_mixed(Derivative::DT, Derivative::DT)
                     .temperature,
@@ -62,7 +62,7 @@ fn bench_dual_numbers<E: Residual>(
         })
     });
     group.bench_function("d_dual3", |b| {
-        b.iter(|| d_hs((&parameters, state.derive3(Derivative::DT).temperature)))
+        b.iter(|| d_hs((parameters, state.derive3(Derivative::DT).temperature)))
     });
 
     group.bench_function("a_f64", |b| {

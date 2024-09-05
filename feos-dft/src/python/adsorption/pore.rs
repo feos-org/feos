@@ -256,6 +256,7 @@ macro_rules! impl_pore {
         impl PyPore3D {
             #[new]
             #[pyo3(text_signature = "(system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, angles=None, potential_cutoff=None, cutoff_radius=None)")]
+            #[expect(clippy::too_many_arguments)]
             fn new(
                 system_size: [PySINumber; 3],
                 n_grid: [usize; 3],

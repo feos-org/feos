@@ -23,6 +23,7 @@ pub struct Pore3D {
 }
 
 impl Pore3D {
+    #[expect(clippy::too_many_arguments)]
     pub fn new(
         system_size: [Length; 3],
         n_grid: [usize; 3],
@@ -107,6 +108,7 @@ impl PoreSpecification<Ix3> for Pore3D {
     }
 }
 
+#[expect(clippy::too_many_arguments)]
 pub fn external_potential_3d<F: FluidParameters>(
     functional: &F,
     axis: [&Axis; 3],

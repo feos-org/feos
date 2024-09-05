@@ -175,6 +175,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     }
 }
 
+#[expect(clippy::too_many_arguments)]
 fn iterate_vle<E: Residual, TP: TemperatureOrPressure>(
     eos: &Arc<E>,
     tp: TP,
@@ -242,6 +243,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     ///
     /// The `x_lle` parameter is used as initial values for the calculation
     /// of the heteroazeotrope.
+    #[expect(clippy::too_many_arguments)]
     pub fn binary_vlle<TP: TemperatureOrPressure>(
         eos: &Arc<E>,
         temperature_or_pressure: TP,

@@ -290,6 +290,7 @@ impl<E: Residual> State<E> {
     /// # Errors
     ///
     /// When the state cannot be created using the combination of inputs.
+    #[expect(clippy::too_many_arguments)]
     pub fn new(
         eos: &Arc<E>,
         temperature: Option<Temperature>,
@@ -317,6 +318,7 @@ impl<E: Residual> State<E> {
         .map_err(|_| EosError::UndeterminedState(String::from("Missing input parameters.")))
     }
 
+    #[expect(clippy::too_many_arguments)]
     fn _new(
         eos: &Arc<E>,
         temperature: Option<Temperature>,
@@ -505,6 +507,7 @@ impl<E: Residual + IdealGas> State<E> {
     /// # Errors
     ///
     /// When the state cannot be created using the combination of inputs.
+    #[expect(clippy::too_many_arguments)]
     pub fn new_full(
         eos: &Arc<E>,
         temperature: Option<Temperature>,

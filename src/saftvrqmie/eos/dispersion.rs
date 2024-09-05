@@ -149,6 +149,7 @@ impl Dispersion {
 }
 
 #[cfg(feature = "dft")]
+#[expect(clippy::too_many_arguments)]
 pub fn dispersion_energy_density<D: DualNum<f64> + Copy>(
     parameters: &SaftVRQMieParameters,
     d_hs_ij: &Array2<D>,
@@ -239,6 +240,7 @@ fn first_order_perturbation<D: DualNum<f64> + Copy>(
     a1
 }
 
+#[expect(clippy::too_many_arguments)]
 fn first_order_perturbation_ij<D: DualNum<f64> + Copy>(
     lambda_a: f64,
     lambda_r: f64,
@@ -328,6 +330,7 @@ fn combine_sutherland_and_b<D: DualNum<f64> + Copy>(
     int_as + int_b
 }
 
+#[expect(clippy::too_many_arguments)]
 fn second_order_perturbation<D: DualNum<f64> + Copy>(
     parameters: &SaftVRQMieParameters,
     alpha: &Alpha<D>,
@@ -388,6 +391,7 @@ fn quantum_prefactor_second_order(lambda: f64) -> f64 {
     0.5 * (lambda + 2.0) * (lambda + 1.0) * lambda * (lambda - 1.0)
 }
 
+#[expect(clippy::too_many_arguments)]
 fn second_order_perturbation_ij<D: DualNum<f64> + Copy>(
     lambda_a: f64,
     lambda_r: f64,
@@ -488,7 +492,7 @@ impl fmt::Display for Dispersion {
     }
 }
 
-#[allow(clippy::excessive_precision)]
+#[expect(clippy::excessive_precision)]
 #[cfg(test)]
 mod tests {
     use super::*;

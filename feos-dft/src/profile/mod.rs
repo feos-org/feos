@@ -358,7 +358,7 @@ where
             .weighted_densities(&self.density.to_reduced()))
     }
 
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     pub fn residual(&self, log: bool) -> EosResult<(Array<f64, D::Larger>, Array1<f64>, f64)> {
         // Read from profile
         let density = self.density.to_reduced();
@@ -370,7 +370,7 @@ where
         Ok((res, res_bulk, res_norm))
     }
 
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     pub(crate) fn euler_lagrange_equation(
         &self,
         density: &Array<f64, D::Larger>,

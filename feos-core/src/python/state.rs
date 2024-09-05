@@ -54,6 +54,7 @@ macro_rules! impl_state {
         impl PyState {
             #[new]
             #[pyo3(text_signature = "(eos, temperature=None, volume=None, density=None, partial_density=None, total_moles=None, moles=None, molefracs=None, pressure=None, molar_enthalpy=None, molar_entropy=None, molar_internal_energy=None, density_initialization=None, initial_temperature=None)")]
+            #[expect(clippy::too_many_arguments)]
             pub fn new<'py>(
                 eos: $py_eos,
                 temperature: Option<PySINumber>,

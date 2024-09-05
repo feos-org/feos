@@ -392,7 +392,6 @@ impl<P: AssociationStrength> Association<P> {
         rhoc * (xc.ln() - xc * 0.5 + 0.5) * state.volume
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn helmholtz_energy_density_cross_association<D: DualNum<f64> + Copy, S: Data<Elem = D>>(
         rho: &ArrayBase<S, Ix1>,
         delta_ab: &Array2<D>,

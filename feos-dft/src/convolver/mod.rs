@@ -41,6 +41,7 @@ pub(crate) struct BulkConvolver<T> {
 }
 
 impl<T: DualNum<f64> + Copy + Send + Sync> BulkConvolver<T> {
+    #[expect(clippy::new_ret_no_self)]
     pub(crate) fn new(weight_functions: Vec<WeightFunctionInfo<T>>) -> Arc<dyn Convolver<T, Ix0>> {
         let weight_constants = weight_functions
             .into_iter()
@@ -163,6 +164,7 @@ where
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
+    #[expect(clippy::new_ret_no_self)]
     fn new(
         axis: Option<&Axis>,
         cartesian_axes: &[&Axis],
@@ -560,6 +562,7 @@ where
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
+    #[expect(clippy::new_ret_no_self)]
     fn new(
         r: &Axis,
         z: &[&Axis],

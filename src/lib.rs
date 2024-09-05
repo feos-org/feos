@@ -33,7 +33,7 @@
 //! ```
 
 #![warn(clippy::all)]
-#![allow(clippy::too_many_arguments)]
+#![warn(clippy::allow_attributes)]
 
 #[cfg(feature = "dft")]
 mod functional;

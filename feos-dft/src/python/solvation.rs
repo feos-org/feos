@@ -35,6 +35,7 @@ macro_rules! impl_solvation_profile {
         impl PySolvationProfile {
             #[new]
             #[pyo3(text_signature = "(bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None, potential_cutoff=None)")]
+            #[expect(clippy::too_many_arguments)]
             fn new<'py>(
                 bulk: &PyState,
                 n_grid: [usize; 3],

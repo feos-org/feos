@@ -24,6 +24,7 @@ pub struct GcPcSaftRecord {
 }
 
 impl GcPcSaftRecord {
+    #[expect(clippy::too_many_arguments)]
     pub fn new(
         m: f64,
         sigma: f64,

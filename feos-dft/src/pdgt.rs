@@ -23,6 +23,7 @@ impl WeightFunctionInfo<Dual2_64> {
 }
 
 trait PdgtProperties: FunctionalContribution {
+    #[expect(clippy::too_many_arguments)]
     fn pdgt_properties(
         &self,
         temperature: f64,
@@ -115,7 +116,7 @@ trait PdgtProperties: FunctionalContribution {
         Ok(())
     }
 
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     fn influence_diagonal(
         &self,
         temperature: Temperature,
