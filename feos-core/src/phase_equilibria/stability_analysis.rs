@@ -1,12 +1,12 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::si::Moles;
 use crate::state::{Contributions, DensityInitialization, State};
-use crate::{SolverOptions, Verbosity};
+use crate::{ReferenceSystem, SolverOptions, Verbosity};
 use ndarray::*;
 use num_dual::linalg::smallest_ev;
 use num_dual::linalg::LU;
+use quantity::Moles;
 use std::ops::MulAssign;
 
 const X_DOMINANT: f64 = 0.99;

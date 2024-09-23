@@ -1,8 +1,8 @@
-use crate::{
-    si::{Diffusivity, MolarWeight, Moles, Temperature, ThermalConductivity, Viscosity, Volume},
-    EosResult,
-};
+use crate::EosResult;
 use ndarray::{Array1, ScalarOperand};
+use quantity::{
+    Diffusivity, MolarWeight, Moles, Temperature, ThermalConductivity, Viscosity, Volume,
+};
 use std::sync::Arc;
 
 mod ideal_gas;

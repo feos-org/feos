@@ -1,16 +1,15 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::si::{Density, Dimensionless, Moles, Pressure, Quantity, SIUnit, Temperature, RGAS};
-use crate::state::TPSpec;
 use crate::state::{
     Contributions,
     DensityInitialization::{InitialDensity, Liquid, Vapor},
-    State, StateBuilder,
+    State, StateBuilder, TPSpec,
 };
-use crate::{SolverOptions, Verbosity};
+use crate::{ReferenceSystem, SolverOptions, Verbosity};
 use ndarray::*;
 use num_dual::linalg::{norm, LU};
+use quantity::{Density, Dimensionless, Moles, Pressure, Quantity, SIUnit, Temperature, RGAS};
 use std::fmt;
 use std::sync::Arc;
 use typenum::{N1, N2, P1, Z0};
@@ -323,7 +322,7 @@ impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
         // Derivative w.r.t. temperature
         let ln_phi_1_dt = state1.dln_phi_dt();
         let ln_phi_2_dt = state2.dln_phi_dt();
-        let df = ((ln_phi_1_dt - ln_phi_2_dt) * Dimensionless::from(&state1.molefracs * &k)).sum();
+        let df = ((ln_phi_1_dt - ln_phi_2_dt) * Dimensionless::new(&state1.molefracs * &k)).sum();
         let mut tstep = -f / df;
 
         // catch too big t-steps
@@ -550,7 +549,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         let p_l = liquid.pressure(Contributions::Total);
         let mu_l = liquid.residual_chemical_potential();
         let p_i = (liquid_molefracs * temperature * density * RGAS)
-            * Dimensionless::from(
+            * Dimensionless::new(
                 ((mu_l - p_l * v_l) / (RGAS * temperature))
                     .into_value()
                     .mapv(f64::exp),

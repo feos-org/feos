@@ -1,11 +1,10 @@
 use super::Components;
-use crate::si::*;
-use crate::StateHD;
-use crate::{EosError, EosResult};
+use crate::{EosError, EosResult, ReferenceSystem, StateHD};
 use ndarray::prelude::*;
 use ndarray::ScalarOperand;
 use num_dual::*;
 use num_traits::{One, Zero};
+use quantity::*;
 use std::ops::Div;
 
 /// A reisdual Helmholtz energy model.

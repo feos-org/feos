@@ -1,7 +1,7 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::EosResult;
-use crate::si::Temperature;
+use quantity::Temperature;
 use crate::state::{State, StateVec};
 use crate::SolverOptions;
 #[cfg(feature = "rayon")]

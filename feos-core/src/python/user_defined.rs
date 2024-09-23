@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use crate::si::MolarWeight;
+use quantity::MolarWeight;
 use crate::{Components, IdealGas, Residual, StateHD};
 use ndarray::{Array1, ScalarOperand};
 use num_dual::*;

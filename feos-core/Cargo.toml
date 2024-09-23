@@ -19,7 +19,7 @@ rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 features = [ "rayon" ]
 
 [dependencies]
-quantity = { version = "0.8", optional = true }
+quantity = { path = "../../../quantity" }
 num-dual = { version = "0.9", features = ["linalg"] }
 ndarray = { version = "0.15", features = ["serde", "approx-0_5"] }
 nalgebra = "0.32"
