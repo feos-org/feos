@@ -1,9 +1,9 @@
 use super::PlanarInterface;
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::solver::DFTSolver;
-use feos_core::si::{Length, Moles, SurfaceTension, Temperature};
-use feos_core::{PhaseEquilibrium, StateVec};
+use feos_core::{PhaseEquilibrium, ReferenceSystem, StateVec};
 use ndarray::{Array1, Array2};
+use quantity::{Length, Moles, SurfaceTension, Temperature};
 
 const DEFAULT_GRID_POINTS: usize = 2048;
 

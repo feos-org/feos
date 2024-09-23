@@ -3,7 +3,7 @@ use crate::saftvrqmie::eos::SaftVRQMieOptions;
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
 use dispersion::AttractiveFunctional;
 use feos_core::parameter::Parameter;
-use feos_core::si::{MolarWeight, GRAM, MOL};
+use quantity::{MolarWeight, GRAM, MOL};
 use feos_core::{Components, EosResult};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;

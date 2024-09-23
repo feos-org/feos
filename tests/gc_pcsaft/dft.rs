@@ -7,12 +7,12 @@ use feos::gc_pcsaft::{
 use feos_core::parameter::{
     ChemicalRecord, Identifier, IdentifierOption, ParameterHetero, SegmentRecord,
 };
-use feos_core::si::*;
 use feos_core::{PhaseEquilibrium, State, StateBuilder, Verbosity};
 use feos_dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
 use feos_dft::interface::PlanarInterface;
 use feos_dft::{DFTSolver, Geometry};
 use ndarray::arr1;
+use quantity::*;
 use std::error::Error;
 use std::sync::Arc;
 use typenum::P3;

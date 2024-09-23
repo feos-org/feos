@@ -17,7 +17,7 @@ rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 features = [ "rayon" ]
 
 [dependencies]
-quantity = { version = "0.8", optional = true }
+quantity = { path = "../../../quantity" }
 num-dual = "0.9"
 feos-core = { version = "0.7", path = "../feos-core" }
 ndarray = "0.15"

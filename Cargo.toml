@@ -22,7 +22,7 @@ members = ["feos-core", "feos-dft", "feos-derive"]
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-quantity = { version = "0.8", optional = true }
+quantity = { path = "../../quantity" }
 num-dual = "0.9"
 feos-core = { version = "0.7", path = "feos-core" }
 feos-dft = { version = "0.7", path = "feos-dft", optional = true }

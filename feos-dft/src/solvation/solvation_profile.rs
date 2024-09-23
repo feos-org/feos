@@ -4,10 +4,10 @@ use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::{Axis, Grid};
 use crate::profile::{DFTProfile, CUTOFF_RADIUS, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
-use feos_core::si::{Energy, Length, MolarEnergy, Moles};
 use feos_core::{Contributions, EosResult, State};
 use ndarray::prelude::*;
 use ndarray::Zip;
+use quantity::{Energy, Length, MolarEnergy, Moles};
 
 /// Density profile and properties of a solute in a inhomogeneous bulk fluid.
 pub struct SolvationProfile<F: HelmholtzEnergyFunctional> {

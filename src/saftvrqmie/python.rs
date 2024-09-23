@@ -7,7 +7,7 @@ use feos_core::parameter::{
     BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
 };
 use feos_core::python::parameter::PyIdentifier;
-use feos_core::si::{Temperature, AMU, ANGSTROM, KB, KELVIN, PLANCK};
+use quantity::{Temperature, AMU, ANGSTROM, KB, KELVIN, PLANCK};
 use feos_core::*;
 use ndarray::{Array1, Array2};
 use numpy::prelude::*;

@@ -5,7 +5,7 @@
 //! creation.
 use criterion::{criterion_group, criterion_main, Criterion};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
-use feos_core::si::*;
+use quantity::*;
 use feos_core::{
     parameter::{IdentifierOption, Parameter},
     Derivative, Residual, State, StateHD,

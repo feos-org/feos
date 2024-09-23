@@ -22,7 +22,7 @@ use crate::saftvrqmie::python::PySaftVRQMieParameters;
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::{SaftVRQMieFunctional, SaftVRQMieOptions};
 
-use feos_core::si::*;
+use quantity::*;
 use feos_core::*;
 use feos_dft::adsorption::*;
 use feos_dft::interface::*;

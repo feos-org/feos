@@ -4,9 +4,9 @@ use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::profile::MAX_POTENTIAL;
 use crate::solver::DFTSolver;
 use crate::{Axis, DFTProfile, Grid};
-use feos_core::si::{Energy, Length};
-use feos_core::{Contributions, EosResult, State};
+use feos_core::{Contributions, EosResult, ReferenceSystem, State};
 use ndarray::prelude::*;
+use quantity::{Energy, Length};
 
 /// The underlying pair potential, that the Helmholtz energy functional
 /// models.

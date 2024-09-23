@@ -1,6 +1,7 @@
 use ang::Angle;
-use feos_core::si::{Length, Quantity};
+use feos_core::ReferenceSystem;
 use ndarray::{Array1, Array2};
+use quantity::{Length, Quantity};
 use std::f64::consts::{FRAC_PI_3, PI};
 
 /// Grids with up to three dimensions.

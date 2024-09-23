@@ -2,11 +2,11 @@ use crate::convolver::{BulkConvolver, Convolver};
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::Grid;
 use crate::solver::{DFTSolver, DFTSolverLog};
-use feos_core::si::{Density, Length, Moles, Quantity, Temperature, Volume, _Volume, DEGREES};
-use feos_core::{Components, EosError, EosResult, State};
+use feos_core::{Components, EosError, EosResult, ReferenceSystem, State};
 use ndarray::{
     Array, Array1, Array2, Array3, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3,
 };
+use quantity::{Density, Length, Moles, Quantity, Temperature, Volume, _Volume, DEGREES};
 use std::ops::{Add, MulAssign};
 use std::sync::Arc;
 use typenum::Sum;

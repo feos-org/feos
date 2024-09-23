@@ -5,7 +5,7 @@ use self::bh::BarkerHenderson;
 use self::wca::{WeeksChandlerAndersen, WeeksChandlerAndersenB3};
 
 use super::parameters::UVTheoryParameters;
-use feos_core::si::{MolarWeight, GRAM, MOL};
+use quantity::{MolarWeight, GRAM, MOL};
 use feos_core::{parameter::Parameter, Components, Residual};
 use ndarray::Array1;
 use std::f64::consts::FRAC_PI_6;
@@ -132,7 +132,7 @@ mod test {
     use crate::uvtheory::parameters::*;
     use approx::assert_relative_eq;
     use feos_core::parameter::{Identifier, Parameter, PureRecord};
-    use feos_core::si::{ANGSTROM, KELVIN, MOL, NAV, RGAS};
+    use quantity::{ANGSTROM, KELVIN, MOL, NAV, RGAS};
     use feos_core::{EosResult, State};
     use ndarray::arr1;
     use typenum::P3;

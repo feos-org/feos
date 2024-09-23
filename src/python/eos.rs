@@ -40,7 +40,7 @@ use super::joback::PyJoback;
 use feos_core::cubic::PengRobinson;
 use feos_core::python::cubic::PyPengRobinsonParameters;
 use feos_core::python::user_defined::{PyIdealGas, PyResidual};
-use feos_core::si::*;
+use quantity::*;
 use feos_core::*;
 use numpy::prelude::*;
 use numpy::{PyArray1, PyArray2};
