@@ -2,13 +2,12 @@ use super::pore::{PoreProfile, PoreSpecification};
 use crate::adsorption::FluidParameters;
 use crate::convolver::ConvolverFFT;
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
-use crate::geometry::{Axis, Grid};
+use crate::geometry::{Angle, Axis, Grid, DEGREES};
 use crate::profile::{DFTProfile, CUTOFF_RADIUS, MAX_POTENTIAL};
-use ang::Angle;
-use feos_core::{EosError, EosResult, State};
+use feos_core::{EosError, EosResult, ReferenceSystem, State};
 use ndarray::prelude::*;
 use ndarray::Zip;
-use quantity::{Density, Length, DEGREES};
+use quantity::{Density, Length};
 
 /// Parameters required to specify a 3D pore.
 pub struct Pore3D {

@@ -249,21 +249,21 @@ macro_rules! impl_estimator {
             #[staticmethod]
             #[pyo3(text_signature = "(target, temperature, extrapolate, critical_temperature=None, max_iter=None, verbosity=None)")]
             fn vapor_pressure(
-                target: &PySIArray1,
-                temperature: &PySIArray1,
+                target: Pressure<Array1<f64>>,
+                temperature: Temperature<Array1<f64>>,
                 extrapolate: Option<bool>,
-                critical_temperature: Option<&PySINumber>,
+                critical_temperature: Option<Temperature>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
-            ) -> PyResult<Self> {
-                Ok(Self(Arc::new(VaporPressure::new(
-                    target.clone().try_into()?,
-                    temperature.clone().try_into()?,
+            ) -> Self {
+                Self(Arc::new(VaporPressure::new(
+                    target,
+                    temperature,
                     extrapolate.unwrap_or(false),
-                    critical_temperature.and_then(|tc| tc.clone().try_into().ok()),
+                    critical_temperature,
                     Some((max_iter, tol, verbosity).into()),
-                ))))
+                )))
             }
 
             /// Create a DataSet with experimental data for liquid density.
@@ -283,15 +283,15 @@ macro_rules! impl_estimator {
             #[staticmethod]
             #[pyo3(text_signature = "(target, temperature, pressure)")]
             fn liquid_density(
-                target: &PySIArray1,
-                temperature: &PySIArray1,
-                pressure: &PySIArray1,
-            ) -> PyResult<Self> {
-                Ok(Self(Arc::new(LiquidDensity::new(
-                    target.clone().try_into()?,
-                    temperature.clone().try_into()?,
-                    pressure.clone().try_into()?,
-                ))))
+                target: MassDensity<Array1<f64>>,
+                temperature: Temperature<Array1<f64>>,
+                pressure: Pressure<Array1<f64>>,
+            ) -> Self {
+                Self(Arc::new(LiquidDensity::new(
+                    target,
+                    temperature,
+                    pressure,
+                )))
             }
 
             /// Create a DataSet with experimental data for liquid density
@@ -319,17 +319,17 @@ macro_rules! impl_estimator {
             #[staticmethod]
             #[pyo3(text_signature = "(target, temperature)")]
             fn equilibrium_liquid_density(
-                target: &PySIArray1,
-                temperature: &PySIArray1,
+                target: MassDensity<Array1<f64>>,
+                temperature: Temperature<Array1<f64>>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
-            ) -> PyResult<Self> {
-                Ok(Self(Arc::new(EquilibriumLiquidDensity::new(
-                    target.clone().try_into()?,
-                    temperature.clone().try_into()?,
+            ) -> Self {
+                Self(Arc::new(EquilibriumLiquidDensity::new(
+                    target,
+                    temperature,
                     Some((max_iter, tol, verbosity).into()),
-                ))))
+                )))
             }
 
             /// Create a DataSet with experimental data for binary
@@ -352,17 +352,17 @@ macro_rules! impl_estimator {
             #[staticmethod]
             #[pyo3(text_signature = "(temperature, pressure, liquid_molefracs, vapor_molefracs)")]
             fn binary_vle_chemical_potential(
-                temperature: &PySIArray1,
-                pressure: &PySIArray1,
+                temperature: Temperature<Array1<f64>>,
+                pressure: Pressure<Array1<f64>>,
                 liquid_molefracs: &Bound<'_, PyArray1<f64>>,
                 vapor_molefracs: &Bound<'_, PyArray1<f64>>,
-            ) -> PyResult<Self> {
-                Ok(Self(Arc::new(BinaryVleChemicalPotential::new(
-                    temperature.clone().try_into()?,
-                    pressure.clone().try_into()?,
+            ) -> Self {
+                Self(Arc::new(BinaryVleChemicalPotential::new(
+                    temperature,
+                    pressure,
                     liquid_molefracs.to_owned_array(),
                     vapor_molefracs.to_owned_array(),
-                ))))
+                )))
             }
 
             /// Create a DataSet with experimental data for binary
@@ -385,17 +385,17 @@ macro_rules! impl_estimator {
             #[staticmethod]
             #[pyo3(text_signature = "(temperature, pressure, molefracs, phase)")]
             fn binary_vle_pressure(
-                temperature: &PySIArray1,
-                pressure: &PySIArray1,
+                temperature: Temperature<Array1<f64>>,
+                pressure: Pressure<Array1<f64>>,
                 molefracs: &Bound<'_, PyArray1<f64>>,
                 phase: Phase,
-            ) -> PyResult<Self> {
-                Ok(Self(Arc::new(BinaryVlePressure::new(
-                    temperature.clone().try_into()?,
-                    pressure.clone().try_into()?,
+            ) -> Self {
+                Self(Arc::new(BinaryVlePressure::new(
+                    temperature,
+                    pressure,
                     molefracs.to_owned_array(),
                     phase,
-                ))))
+                )))
             }
 
             /// Create a DataSet with experimental data for binary
@@ -422,32 +422,33 @@ macro_rules! impl_estimator {
             #[staticmethod]
             #[pyo3(text_signature = "(specification, temperature_or_pressure, liquid_molefracs=None, vapor_molefracs=None, npoints=None)")]
             fn binary_phase_diagram(
-                specification: PySINumber,
-                temperature_or_pressure: PySIArray1,
+                specification: Bound<'_, PyAny>,
+                temperature_or_pressure: Bound<'_, PyAny>,
                 liquid_molefracs: Option<&Bound<'_, PyArray1<f64>>>,
                 vapor_molefracs: Option<&Bound<'_, PyArray1<f64>>>,
                 npoints: Option<usize>,
             ) -> PyResult<Self> {
-                if let Ok(t) = Temperature::<f64>::try_from(specification) {
+                if let Ok(t) = specification.extract::<Temperature>() {
                     Ok(Self(Arc::new(BinaryPhaseDiagram::new(
                         t,
-                        temperature_or_pressure.try_into()?,
+                        temperature_or_pressure.extract()?,
                         liquid_molefracs.map(|x| x.to_owned_array()),
                         vapor_molefracs.map(|x| x.to_owned_array()),
                         npoints,
                     ))))
-                } else if let Ok(p) = Pressure::<f64>::try_from(specification) {
+                } else if let Ok(p) = specification.extract::<Pressure>() {
                     Ok(Self(Arc::new(BinaryPhaseDiagram::new(
                         p,
-                        temperature_or_pressure.try_into()?,
+                        temperature_or_pressure.extract()?,
                         liquid_molefracs.map(|x| x.to_owned_array()),
                         vapor_molefracs.map(|x| x.to_owned_array()),
                         npoints,
                     ))))
                 } else {
-                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
-                        quantity::si::SINumber::from(specification).to_string()
-                    ))?)
+                    Err(PyErr::new::<PyValueError, _>(format!(
+                        "Wrong units! Expected K or Pa, got {}.",
+                        temperature_or_pressure.call_method0("__repr__")?
+                    )))
                 }
             }
 
@@ -653,17 +654,17 @@ macro_rules! impl_estimator_entropy_scaling {
             /// DataSet
             #[staticmethod]
             fn viscosity(
-                target: &PySIArray1,
-                temperature: &PySIArray1,
-                pressure: &PySIArray1,
+                target: quantity::Viscosity<Array1<f64>>,
+                temperature: Temperature<Array1<f64>>,
+                pressure: Pressure<Array1<f64>>,
                 phase: Option<Vec<Phase>>,
-            ) -> PyResult<Self> {
-                Ok(Self(Arc::new($crate::estimator::Viscosity::new(
-                    target.clone().try_into()?,
-                    temperature.clone().try_into()?,
-                    pressure.clone().try_into()?,
+            ) -> Self {
+                Self(Arc::new($crate::estimator::Viscosity::new(
+                    target,
+                    temperature,
+                    pressure,
                     phase.as_ref(),
-                ))))
+                )))
             }
 
             /// Create a DataSet with experimental data for thermal conductivity.
@@ -686,17 +687,17 @@ macro_rules! impl_estimator_entropy_scaling {
             /// DataSet
             #[staticmethod]
             fn thermal_conductivity(
-                target: &PySIArray1,
-                temperature: &PySIArray1,
-                pressure: &PySIArray1,
+                target: quantity::ThermalConductivity<Array1<f64>>,
+                temperature: Temperature<Array1<f64>>,
+                pressure: Pressure<Array1<f64>>,
                 phase: Option<Vec<Phase>>,
-            ) -> PyResult<Self> {
-                Ok(Self(Arc::new($crate::estimator::ThermalConductivity::new(
-                    target.clone().try_into()?,
-                    temperature.clone().try_into()?,
-                    pressure.clone().try_into()?,
+            ) -> Self {
+                Self(Arc::new($crate::estimator::ThermalConductivity::new(
+                    target,
+                    temperature,
+                    pressure,
                     phase.as_ref(),
-                ))))
+                )))
             }
 
             /// Create a DataSet with experimental data for diffusion coefficient.
@@ -719,17 +720,17 @@ macro_rules! impl_estimator_entropy_scaling {
             /// DataSet
             #[staticmethod]
             fn diffusion(
-                target: &PySIArray1,
-                temperature: &PySIArray1,
-                pressure: &PySIArray1,
+                target: quantity::Diffusivity<Array1<f64>>,
+                temperature: Temperature<Array1<f64>>,
+                pressure: Pressure<Array1<f64>>,
                 phase: Option<Vec<Phase>>,
-            ) -> PyResult<Self> {
-                Ok(Self(Arc::new(Diffusion::new(
-                    target.clone().try_into()?,
-                    temperature.clone().try_into()?,
-                    pressure.clone().try_into()?,
+            ) -> Self {
+                Self(Arc::new(Diffusion::new(
+                    target,
+                    temperature,
+                    pressure,
                     phase.as_ref(),
-                ))))
+                )))
             }
         }
     };

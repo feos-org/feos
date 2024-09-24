@@ -7,14 +7,13 @@ use feos_core::parameter::{
     BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
 };
 use feos_core::python::parameter::PyIdentifier;
-use quantity::{Temperature, AMU, ANGSTROM, KB, KELVIN, PLANCK};
 use feos_core::*;
 use ndarray::{Array1, Array2};
 use numpy::prelude::*;
 use numpy::{PyArray1, PyArray2, PyReadonlyArray2};
 use pyo3::exceptions::{PyIOError, PyTypeError};
 use pyo3::prelude::*;
-use quantity::python::{PySIArray2, PySINumber};
+use quantity::{Area, Length, Temperature, AMU, ANGSTROM, KB, KELVIN, PLANCK};
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
@@ -194,13 +193,13 @@ impl PySaftVRQMieParameters {
     /// Returns
     /// -------
     /// PySIArray2
-    fn sigma_eff(&self, temperature: PySINumber) -> PyResult<PySIArray2> {
+    fn sigma_eff(&self, temperature: Temperature) -> PyResult<Length<Array2<f64>>> {
         let n = self.0.m.len();
         let t: Temperature = temperature.try_into()?;
         let sigma_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| -> f64 {
             self.0.calc_sigma_eff_ij(i, j, t.to_reduced())
         });
-        Ok(PySIArray2::from(sigma_eff_ij * ANGSTROM))
+        Ok(sigma_eff_ij * ANGSTROM)
     }
 
     /// Calculate effective epsilon_k.
@@ -213,13 +212,13 @@ impl PySaftVRQMieParameters {
     /// Returns
     /// -------
     /// PySIArray2
-    fn epsilon_k_eff(&self, temperature: PySINumber) -> PyResult<PySIArray2> {
+    fn epsilon_k_eff(&self, temperature: Temperature) -> PyResult<Temperature<Array2<f64>>> {
         let n = self.0.m.len();
         let t: Temperature = temperature.try_into()?;
         let epsilon_k_eff = Array2::from_shape_fn((n, n), |(i, j)| -> f64 {
             self.0.calc_epsilon_k_eff_ij(i, j, t.to_reduced())
         });
-        Ok(PySIArray2::from(epsilon_k_eff * KELVIN))
+        Ok(epsilon_k_eff * KELVIN)
     }
 
     /// Calculate temperature dependent diameter.
@@ -232,7 +231,7 @@ impl PySaftVRQMieParameters {
     /// Returns
     /// -------
     /// PySIArray2
-    fn diameter(&self, temperature: PySINumber) -> PyResult<PySIArray2> {
+    fn diameter(&self, temperature: Temperature) -> PyResult<Length<Array2<f64>>> {
         let n = self.0.m.len();
         let t: Temperature = temperature.try_into()?;
         let sigma_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| -> f64 {
@@ -242,7 +241,7 @@ impl PySaftVRQMieParameters {
             self.0
                 .hs_diameter_ij(i, j, t.to_reduced(), sigma_eff_ij[[i, j]])
         });
-        Ok(PySIArray2::from(diameter * ANGSTROM))
+        Ok(diameter * ANGSTROM)
     }
 
     /// Calculate FH pre-factor D.
@@ -255,13 +254,13 @@ impl PySaftVRQMieParameters {
     /// Returns
     /// -------
     /// PySIArray2
-    fn quantum_d(&self, temperature: PySINumber) -> PyResult<PySIArray2> {
+    fn quantum_d(&self, temperature: Temperature) -> PyResult<Area<Array2<f64>>> {
         let n = self.0.m.len();
         let t: Temperature = temperature.try_into()?;
         let quantum_d = Array2::from_shape_fn((n, n), |(i, j)| -> f64 {
             self.0.quantum_d_ij(i, j, t.to_reduced())
         });
-        Ok(PySIArray2::from(quantum_d * (ANGSTROM * ANGSTROM)))
+        Ok(quantum_d * (ANGSTROM * ANGSTROM))
     }
 
     /// Calculate de Boer parameter.
@@ -321,18 +320,13 @@ impl PySaftVRQMieParameters {
     #[pyo3(text_signature = "($self, temperature, n, r_min, r_max)")]
     fn lammps_tables(
         &self,
-        temperature: PySINumber,
+        temperature: Temperature,
         n: usize,
-        r_min: PySINumber,
-        r_max: PySINumber,
+        r_min: Length,
+        r_max: Length,
     ) -> PyResult<()> {
         self.0
-            .lammps_tables(
-                temperature.try_into()?,
-                n,
-                r_min.try_into()?,
-                r_max.try_into()?,
-            )
+            .lammps_tables(temperature, n, r_min, r_max)
             .map_err(PyIOError::new_err)
     }
 

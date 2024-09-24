@@ -39,38 +39,33 @@ macro_rules! impl_solvation_profile {
             fn new<'py>(
                 bulk: &PyState,
                 n_grid: [usize; 3],
-                coordinates: &PySIArray2,
+                coordinates: Length<Array2<f64>>,
                 sigma: &Bound<'py, PyArray1<f64>>,
                 epsilon_k: &Bound<'py, PyArray1<f64>>,
-                system_size: Option<[PySINumber; 3]>,
-                cutoff_radius: Option<PySINumber>,
+                system_size: Option<[Length; 3]>,
+                cutoff_radius: Option<Length>,
                 potential_cutoff: Option<f64>,
             ) -> PyResult<Self> {
-                let s = match system_size {
-                    Some(s) => Some([s[0].try_into()?, s[1].try_into()?, s[2].try_into()?]),
-                    None => None
-                };
-
                 Ok(Self(SolvationProfile::new(
                     &bulk.0,
                     n_grid,
-                    coordinates.clone().try_into()?,
+                    coordinates,
                     sigma.to_owned_array(),
                     epsilon_k.to_owned_array(),
-                    s,
-                    cutoff_radius.map(|r| r.try_into()).transpose()?,
+                    system_size,
+                    cutoff_radius,
                     potential_cutoff,
                 )?))
             }
 
             #[getter]
-            fn get_grand_potential(&self) -> Option<PySINumber> {
-                self.0.grand_potential.map(PySINumber::from)
+            fn get_grand_potential(&self) -> Option<Energy> {
+                self.0.grand_potential
             }
 
             #[getter]
-            fn get_solvation_free_energy(&self) -> Option<PySINumber> {
-                self.0.solvation_free_energy.map(PySINumber::from)
+            fn get_solvation_free_energy(&self) -> Option<MolarEnergy> {
+                self.0.solvation_free_energy
             }
         }
     };
@@ -104,15 +99,8 @@ macro_rules! impl_pair_correlation {
         #[pymethods]
         impl PyPairCorrelation {
             #[new]
-            fn new(
-                bulk: PyState,
-                test_particle: usize,
-                n_grid: usize,
-                width: PySINumber,
-            ) -> PyResult<Self> {
-                let profile =
-                    PairCorrelation::new(&bulk.0, test_particle, n_grid, width.try_into()?);
-                Ok(PyPairCorrelation(profile))
+            fn new(bulk: PyState, test_particle: usize, n_grid: usize, width: Length) -> Self {
+                Self(PairCorrelation::new(&bulk.0, test_particle, n_grid, width))
             }
 
             #[getter]
@@ -127,8 +115,8 @@ macro_rules! impl_pair_correlation {
             }
 
             #[getter]
-            fn get_self_solvation_free_energy(&self) -> Option<PySINumber> {
-                self.0.self_solvation_free_energy.map(PySINumber::from)
+            fn get_self_solvation_free_energy(&self) -> Option<Energy> {
+                self.0.self_solvation_free_energy
             }
 
             #[getter]

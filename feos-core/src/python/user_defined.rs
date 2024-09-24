@@ -1,5 +1,4 @@
 #![allow(non_snake_case)]
-use quantity::MolarWeight;
 use crate::{Components, IdealGas, Residual, StateHD};
 use ndarray::{Array1, ScalarOperand};
 use num_dual::*;
@@ -7,9 +6,8 @@ use numpy::convert::IntoPyArray;
 use numpy::{PyArray, PyReadonlyArray1, PyReadonlyArrayDyn};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
-use quantity::python::PySIArray1;
+use quantity::MolarWeight;
 use std::any::Any;
-use std::convert::TryInto;
 use std::fmt;
 
 pub struct PyIdealGas(Py<PyAny>);
@@ -209,16 +207,14 @@ macro_rules! impl_residual {
             fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
                 Python::with_gil(|py| {
                     let py_result = self.0.bind(py).call_method0("molar_weight").unwrap();
-                    if py_result.get_type().name().unwrap() != "SIArray1" {
+                    if py_result.get_type().name().unwrap() != "PySIQuantity" {
                         panic!(
-                            "Expected an 'SIArray1' for the 'molar_weight' method return type, got {}",
+                            "Expected an 'PySIQuantity' for the 'molar_weight' method return type, got {}",
                             py_result.get_type().name().unwrap()
                         );
                     }
                     py_result
-                        .extract::<PySIArray1>()
-                        .unwrap()
-                        .try_into()
+                        .extract::<MolarWeight<Array1<f64>>>()
                         .unwrap()
                 })
             }

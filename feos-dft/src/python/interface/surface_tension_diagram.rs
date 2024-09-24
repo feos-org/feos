@@ -41,8 +41,8 @@ macro_rules! impl_surface_tension_diagram {
                 dia: Vec<PyPhaseEquilibrium>,
                 init_densities: Option<bool>,
                 n_grid: Option<usize>,
-                l_grid: Option<PySINumber>,
-                critical_temperature: Option<PySINumber>,
+                l_grid: Option<Length>,
+                critical_temperature: Option<Temperature>,
                 fix_equimolar_surface: Option<bool>,
                 solver: Option<PyDFTSolver>,
             ) -> PyResult<Self> {
@@ -78,13 +78,13 @@ macro_rules! impl_surface_tension_diagram {
             }
 
             #[getter]
-            pub fn get_surface_tension(&mut self) -> PySIArray1 {
-                self.0.surface_tension().into()
+            pub fn get_surface_tension(&mut self) -> SurfaceTension<Array1<f64>> {
+                self.0.surface_tension()
             }
 
             #[getter]
-            pub fn get_relative_adsorption(&self) -> Vec<PySIArray2> {
-                self.0.relative_adsorption().iter().cloned().map(|i| i.into()).collect()
+            pub fn get_relative_adsorption(&self) -> Vec<Moles<Array2<f64>>> {
+                self.0.relative_adsorption()
             }
 
             #[getter]
@@ -93,8 +93,8 @@ macro_rules! impl_surface_tension_diagram {
             }
 
             #[getter]
-            pub fn interfacial_thickness(&self) -> PySIArray1 {
-                self.0.interfacial_thickness().into()
+            pub fn interfacial_thickness(&self) -> Length<Array1<f64>> {
+                self.0.interfacial_thickness()
             }
         }
     };

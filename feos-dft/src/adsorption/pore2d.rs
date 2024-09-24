@@ -1,6 +1,5 @@
 use super::{FluidParameters, PoreProfile, PoreSpecification};
-use crate::{Axis, ConvolverFFT, DFTProfile, Grid, HelmholtzEnergyFunctional, DFT};
-use ang::Angle;
+use crate::{Angle, Axis, ConvolverFFT, DFTProfile, Grid, HelmholtzEnergyFunctional, DFT};
 use feos_core::{EosResult, ReferenceSystem, State};
 use ndarray::{Array3, Ix2};
 use quantity::{Density, Length};

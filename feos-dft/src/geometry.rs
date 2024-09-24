@@ -1,8 +1,10 @@
-use ang::Angle;
 use feos_core::ReferenceSystem;
 use ndarray::{Array1, Array2};
 use quantity::{Length, Quantity};
-use std::f64::consts::{FRAC_PI_3, PI};
+use std::{
+    f64::consts::{FRAC_PI_3, PI},
+    ops::Mul,
+};
 
 /// Grids with up to three dimensions.
 #[derive(Clone)]
@@ -91,6 +93,31 @@ impl Geometry {
         }
     }
 }
+
+/// Angle type with the most rudimentary functionalities.
+#[derive(Clone, Copy)]
+pub struct Angle(f64);
+
+impl Angle {
+    pub fn sin(&self) -> f64 {
+        self.0.sin()
+    }
+
+    pub fn cos(&self) -> f64 {
+        self.0.cos()
+    }
+}
+
+impl Mul<Angle> for f64 {
+    type Output = Angle;
+
+    fn mul(self, rhs: Angle) -> Angle {
+        Angle(self * rhs.0)
+    }
+}
+
+pub const DEGREES: Angle = Angle(std::f64::consts::PI / 180.);
+pub const RADIANS: Angle = Angle(1.0);
 
 /// An individual discretized axis.
 #[derive(Clone)]

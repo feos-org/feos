@@ -15,7 +15,6 @@ use crate::uvtheory::python::uvtheory as uvtheory_module;
 
 use pyo3::prelude::*;
 use pyo3::wrap_pymodule;
-use quantity::python::quantity as quantity_module;
 
 mod cubic;
 mod dippr;
@@ -34,7 +33,8 @@ use dft::dft as dft_module;
 #[pymodule]
 pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    m.add_wrapped(wrap_pymodule!(quantity_module))?;
+    // m.add_wrapped(wrap_pymodule!(quantity_module))?;
+    todo!();
 
     m.add_wrapped(wrap_pymodule!(eos_module))?;
     #[cfg(feature = "dft")]

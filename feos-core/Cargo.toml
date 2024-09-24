@@ -30,7 +30,7 @@ serde_json = "1.0"
 indexmap = "2.0"
 conv = "0.3"
 numpy = { version = "0.21", optional = true }
-pyo3 = { version = "0.21", optional = true }
+pyo3 = { version = "0.21", features = ["multiple-pymethods"], optional = true }
 rayon = { version = "1.5", optional = true }
 typenum = "1.16"
 approx = "0.5"

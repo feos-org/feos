@@ -24,7 +24,6 @@ ndarray = "0.15"
 nalgebra = "0.32"
 rustdct = "0.7"
 rustfft = "6.0"
-ang = "0.6"
 num-traits = "0.2"
 libm = "0.2"
 gauss-quad = { version = "0.1", optional = true }

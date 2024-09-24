@@ -22,24 +22,24 @@ use crate::saftvrqmie::python::PySaftVRQMieParameters;
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::{SaftVRQMieFunctional, SaftVRQMieOptions};
 
-use quantity::*;
 use feos_core::*;
 use feos_dft::adsorption::*;
 use feos_dft::interface::*;
 use feos_dft::python::*;
 use feos_dft::solvation::*;
 use feos_dft::*;
+use ndarray::{Array1, Array2, Array3, Array4};
 use numpy::prelude::*;
 use numpy::{PyArray1, PyArray2, PyArray3, PyArray4};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
 #[cfg(feature = "estimator")]
 use pyo3::wrap_pymodule;
-use quantity::python::{PyAngle, PySIArray1, PySIArray2, PySIArray3, PySIArray4, PySINumber};
+use quantity::*;
 use std::collections::HashMap;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryInto;
 use std::sync::Arc;
-use typenum::P3;
+use typenum::{Quot, P3};
 
 type Functional = EquationOfState<IdealGasModel, FunctionalVariant>;
 

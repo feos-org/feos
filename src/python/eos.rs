@@ -40,19 +40,19 @@ use super::joback::PyJoback;
 use feos_core::cubic::PengRobinson;
 use feos_core::python::cubic::PyPengRobinsonParameters;
 use feos_core::python::user_defined::{PyIdealGas, PyResidual};
-use quantity::*;
 use feos_core::*;
+use ndarray::{Array1, Array2};
 use numpy::prelude::*;
 use numpy::{PyArray1, PyArray2};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
 #[cfg(feature = "estimator")]
 use pyo3::wrap_pymodule;
-use quantity::python::{PySIArray1, PySIArray2, PySINumber};
+use quantity::*;
 use std::collections::HashMap;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryInto;
 use std::sync::Arc;
-use typenum::P3;
+use typenum::{Quot, P3};
 
 /// Collection of equations of state.
 #[pyclass(name = "EquationOfState")]
