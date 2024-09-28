@@ -34,7 +34,6 @@ use dft::dft as dft_module;
 pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     // m.add_wrapped(wrap_pymodule!(quantity_module))?;
-    todo!();
 
     m.add_wrapped(wrap_pymodule!(eos_module))?;
     #[cfg(feature = "dft")]
@@ -57,7 +56,7 @@ pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     #[cfg(feature = "saftvrmie")]
     m.add_wrapped(wrap_pymodule!(saftvrmie_module))?;
 
-    set_path(m, "feos.si", "quantity")?;
+    // set_path(m, "feos.si", "quantity")?;
     set_path(m, "feos.eos", "eos")?;
     #[cfg(feature = "estimator")]
     set_path(m, "feos.eos.estimator", "eos.estimator_eos")?;
@@ -83,15 +82,15 @@ pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     #[cfg(feature = "saftvrmie")]
     set_path(m, "feos.saftvrmie", "saftvrmie")?;
 
+    // re-export si_units within feos. Overriding __module__ is required for pickling.
     m.py().run_bound(
         "\
 import sys
-quantity.SINumber.__module__ = 'feos.si'
-quantity.SIArray1.__module__ = 'feos.si'
-quantity.SIArray2.__module__ = 'feos.si'
-quantity.SIArray3.__module__ = 'feos.si'
-quantity.SIArray4.__module__ = 'feos.si'
-    ",
+import si_units
+sys.modules['feos.si'] = si_units
+si_units.PySIObject.__module__ = 'feos.si'
+si_units.PyAngle.__module__ = 'feos.si'
+        ",
         None,
         Some(&m.dict()),
     )?;

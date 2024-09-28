@@ -193,13 +193,13 @@ impl PySaftVRQMieParameters {
     /// Returns
     /// -------
     /// PySIArray2
-    fn sigma_eff(&self, temperature: Temperature) -> PyResult<Length<Array2<f64>>> {
+    fn sigma_eff(&self, temperature: Temperature) -> Length<Array2<f64>> {
         let n = self.0.m.len();
-        let t: Temperature = temperature.try_into()?;
+        let t = temperature.to_reduced();
         let sigma_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| -> f64 {
-            self.0.calc_sigma_eff_ij(i, j, t.to_reduced())
+            self.0.calc_sigma_eff_ij(i, j, t)
         });
-        Ok(sigma_eff_ij * ANGSTROM)
+        sigma_eff_ij * ANGSTROM
     }
 
     /// Calculate effective epsilon_k.
@@ -212,13 +212,13 @@ impl PySaftVRQMieParameters {
     /// Returns
     /// -------
     /// PySIArray2
-    fn epsilon_k_eff(&self, temperature: Temperature) -> PyResult<Temperature<Array2<f64>>> {
+    fn epsilon_k_eff(&self, temperature: Temperature) -> Temperature<Array2<f64>> {
         let n = self.0.m.len();
-        let t: Temperature = temperature.try_into()?;
+        let t = temperature.to_reduced();
         let epsilon_k_eff = Array2::from_shape_fn((n, n), |(i, j)| -> f64 {
-            self.0.calc_epsilon_k_eff_ij(i, j, t.to_reduced())
+            self.0.calc_epsilon_k_eff_ij(i, j, t)
         });
-        Ok(epsilon_k_eff * KELVIN)
+        epsilon_k_eff * KELVIN
     }
 
     /// Calculate temperature dependent diameter.
@@ -231,17 +231,16 @@ impl PySaftVRQMieParameters {
     /// Returns
     /// -------
     /// PySIArray2
-    fn diameter(&self, temperature: Temperature) -> PyResult<Length<Array2<f64>>> {
+    fn diameter(&self, temperature: Temperature) -> Length<Array2<f64>> {
         let n = self.0.m.len();
-        let t: Temperature = temperature.try_into()?;
+        let t = temperature.to_reduced();
         let sigma_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| -> f64 {
-            self.0.calc_sigma_eff_ij(i, j, t.to_reduced())
+            self.0.calc_sigma_eff_ij(i, j, t)
         });
         let diameter = Array2::from_shape_fn((n, n), |(i, j)| -> f64 {
-            self.0
-                .hs_diameter_ij(i, j, t.to_reduced(), sigma_eff_ij[[i, j]])
+            self.0.hs_diameter_ij(i, j, t, sigma_eff_ij[[i, j]])
         });
-        Ok(diameter * ANGSTROM)
+        diameter * ANGSTROM
     }
 
     /// Calculate FH pre-factor D.
@@ -254,13 +253,12 @@ impl PySaftVRQMieParameters {
     /// Returns
     /// -------
     /// PySIArray2
-    fn quantum_d(&self, temperature: Temperature) -> PyResult<Area<Array2<f64>>> {
+    fn quantum_d(&self, temperature: Temperature) -> Area<Array2<f64>> {
         let n = self.0.m.len();
-        let t: Temperature = temperature.try_into()?;
-        let quantum_d = Array2::from_shape_fn((n, n), |(i, j)| -> f64 {
-            self.0.quantum_d_ij(i, j, t.to_reduced())
-        });
-        Ok(quantum_d * (ANGSTROM * ANGSTROM))
+        let t = temperature.to_reduced();
+        let quantum_d =
+            Array2::from_shape_fn((n, n), |(i, j)| -> f64 { self.0.quantum_d_ij(i, j, t) });
+        quantum_d * (ANGSTROM * ANGSTROM)
     }
 
     /// Calculate de Boer parameter.

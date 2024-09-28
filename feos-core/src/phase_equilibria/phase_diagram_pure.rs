@@ -2,7 +2,9 @@ use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::EosResult;
 use crate::state::{State, StateVec};
-use crate::{ReferenceSystem, SolverOptions};
+#[cfg(feature = "rayon")]
+use crate::ReferenceSystem;
+use crate::SolverOptions;
 #[cfg(feature = "rayon")]
 use ndarray::{Array1, ArrayView1, Axis};
 use quantity::Temperature;

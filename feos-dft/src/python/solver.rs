@@ -168,7 +168,7 @@ impl PyDFTSolverLog {
 
     #[getter]
     fn get_time(&self) -> Time<Array1<f64>> {
-        self.0.time().into()
+        self.0.time()
     }
 
     #[getter]
