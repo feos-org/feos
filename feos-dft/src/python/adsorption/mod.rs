@@ -187,6 +187,7 @@ macro_rules! impl_adsorption_isotherm {
             ///
             #[staticmethod]
             #[pyo3(text_signature = "(functional, temperature, p_min, p_max, pore, molefracs=None, solver=None, max_iter=None, tol=None, verbosity=None)")]
+            #[expect(clippy::too_many_arguments)]
             pub fn phase_equilibrium(
                 functional: &$py_func,
                 temperature: PySINumber,

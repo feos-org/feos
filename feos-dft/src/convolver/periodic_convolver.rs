@@ -67,6 +67,7 @@ where
         Self::new(axes, f, weight_functions, lanczos)
     }
 
+    #[expect(clippy::new_ret_no_self)]
     pub fn new<F: Fn(&mut Array<f64, D::Larger>)>(
         axes: &[&Axis],
         non_orthogonal_correction: F,

@@ -93,7 +93,7 @@ impl<M> PureRecord<M> {
         // collect into vec in correct order
         Ok(substances
             .iter()
-            .map(|s| records.get(&s.to_string()).unwrap().clone())
+            .map(|&s| records.get(s).unwrap().clone())
             .collect())
     }
 }

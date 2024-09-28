@@ -54,6 +54,7 @@ impl PySaftVRQMieRecord {
     #[pyo3(
         text_signature = "(m, sigma, epsilon_k, lr, la, fh, viscosity=None, diffusion=None, thermal_conductivity=None)"
     )]
+    #[expect(clippy::too_many_arguments)]
     fn new(
         m: f64,
         sigma: f64,

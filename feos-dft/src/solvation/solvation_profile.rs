@@ -51,6 +51,7 @@ impl<F: HelmholtzEnergyFunctional> SolvationProfile<F> {
 }
 
 impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
+    #[expect(clippy::too_many_arguments)]
     pub fn new(
         bulk: &State<DFT<F>>,
         n_grid: [usize; 3],
@@ -115,6 +116,7 @@ impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
     }
 }
 
+#[expect(clippy::too_many_arguments)]
 fn external_potential_3d<F: FluidParameters>(
     functional: &F,
     axis: [&Axis; 3],

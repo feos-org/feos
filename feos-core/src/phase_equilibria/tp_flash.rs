@@ -248,6 +248,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         Err(EosError::NotConverged("TP flash".to_owned()))
     }
 
+    #[expect(clippy::too_many_arguments)]
     fn successive_substitution(
         &mut self,
         feed_state: &State<E>,

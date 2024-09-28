@@ -58,6 +58,7 @@ impl std::fmt::Display for SaftVRQMieRecord {
 }
 
 impl SaftVRQMieRecord {
+    #[expect(clippy::too_many_arguments)]
     pub fn new(
         m: f64,
         sigma: f64,
@@ -470,7 +471,6 @@ pub mod utils {
         Arc::new(SaftVRQMieParameters::new_pure(hydrogen_record).unwrap())
     }
 
-    #[allow(dead_code)]
     pub fn helium_fh1() -> Arc<SaftVRQMieParameters> {
         let helium_json = r#"
             {
@@ -497,7 +497,7 @@ pub mod utils {
         Arc::new(SaftVRQMieParameters::new_pure(helium_record).unwrap())
     }
 
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub fn neon_fh1() -> Arc<SaftVRQMieParameters> {
         let neon_json = r#"
             {

@@ -243,6 +243,7 @@ where
     }
 
     /// Calculate the phase transition from an empty to a filled pore.
+    #[expect(clippy::too_many_arguments)]
     pub fn phase_equilibrium<S: PoreSpecification<D>>(
         functional: &Arc<DFT<F>>,
         temperature: Temperature,

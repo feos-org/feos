@@ -46,7 +46,7 @@ macro_rules! impl_surface_tension_diagram {
                 fix_equimolar_surface: Option<bool>,
                 solver: Option<PyDFTSolver>,
             ) -> PyResult<Self> {
-                let x = dia.into_iter().map(|vle| vle.0).collect();
+                let x: Vec<_> = dia.into_iter().map(|vle| vle.0).collect();
                 Ok(Self(SurfaceTensionDiagram::new(
                     &x,
                     init_densities,

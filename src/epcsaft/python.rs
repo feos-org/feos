@@ -49,6 +49,7 @@ impl PyElectrolytePcSaftRecord {
     #[pyo3(
         text_signature = "(m, sigma, epsilon_k, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, permittivity_record=None)"
     )]
+    #[expect(clippy::too_many_arguments)]
     fn new(
         m: f64,
         sigma: f64,

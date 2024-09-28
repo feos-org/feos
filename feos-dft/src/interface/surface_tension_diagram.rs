@@ -12,10 +12,10 @@ pub struct SurfaceTensionDiagram<F: HelmholtzEnergyFunctional> {
     pub profiles: Vec<PlanarInterface<F>>,
 }
 
-#[allow(clippy::ptr_arg)]
+// #[expect(clippy::ptr_arg)]
 impl<F: HelmholtzEnergyFunctional> SurfaceTensionDiagram<F> {
     pub fn new(
-        dia: &Vec<PhaseEquilibrium<DFT<F>, 2>>,
+        dia: &[PhaseEquilibrium<DFT<F>, 2>],
         init_densities: Option<bool>,
         n_grid: Option<usize>,
         l_grid: Option<Length>,

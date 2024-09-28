@@ -10,7 +10,7 @@ use quantity::python::{PySIArray2, PySINumber};
 pub struct PyExternalPotential(pub ExternalPotential);
 
 #[pymethods]
-#[allow(non_snake_case)]
+#[expect(non_snake_case)]
 impl PyExternalPotential {
     /// Hard wall potential
     ///
@@ -26,7 +26,7 @@ impl PyExternalPotential {
     /// ExternalPotential
     ///
     #[staticmethod]
-    #[allow(non_snake_case)]
+    #[expect(non_snake_case)]
     pub fn HardWall(sigma_ss: f64) -> Self {
         Self(ExternalPotential::HardWall { sigma_ss })
     }

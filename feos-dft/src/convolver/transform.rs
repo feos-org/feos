@@ -36,6 +36,7 @@ pub(super) struct CartesianTransform<T> {
 }
 
 impl<T: DualNum<f64> + DctNum + ScalarOperand> CartesianTransform<T> {
+    #[expect(clippy::new_ret_no_self)]
     pub(super) fn new(axis: &Axis) -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
         let (s, k) = Self::init(axis);
         (Arc::new(s), k)
@@ -129,6 +130,7 @@ pub(super) struct SphericalTransform<T> {
 }
 
 impl<T: DualNum<f64> + DctNum + ScalarOperand> SphericalTransform<T> {
+    #[expect(clippy::new_ret_no_self)]
     pub(super) fn new(axis: &Axis) -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
         let points = axis.grid.len();
         let length = axis.length();
@@ -223,6 +225,7 @@ pub(super) struct PolarTransform<T: DctNum> {
 }
 
 impl<T: DualNum<f64> + DctNum + ScalarOperand> PolarTransform<T> {
+    #[expect(clippy::new_ret_no_self)]
     pub(super) fn new(axis: &Axis) -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
         let points = axis.grid.len();
 
@@ -328,6 +331,7 @@ impl<T: DualNum<f64> + DctNum + ScalarOperand> FourierTransform<T> for PolarTran
 pub(super) struct NoTransform();
 
 impl NoTransform {
+    #[expect(clippy::new_ret_no_self)]
     pub(super) fn new<T: DualNum<f64>>() -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
         (Arc::new(Self()), arr1(&[0.0]))
     }

@@ -101,6 +101,7 @@ macro_rules! impl_phase_equilibrium {
             ///     When pressure iteration fails or no phase equilibrium is found.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature, pressure, feed, initial_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None)")]
+            #[expect(clippy::too_many_arguments)]
             pub fn tp_flash(
                 eos: $py_eos,
                 temperature: PySINumber,
@@ -155,6 +156,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseEquilibrium
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, liquid_molefracs, tp_init=None, vapor_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
+            #[expect(clippy::too_many_arguments)]
             pub fn bubble_point<'py>(
                 eos: $py_eos,
                 temperature_or_pressure: PySINumber,
@@ -232,6 +234,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseEquilibrium
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, vapor_molefracs, tp_init=None, liquid_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
+            #[expect(clippy::too_many_arguments)]
             pub fn dew_point<'py>(
                 eos: $py_eos,
                 temperature_or_pressure: PySINumber,
@@ -449,6 +452,7 @@ macro_rules! impl_phase_equilibrium {
             ///     The verbosity of the bubble/dew point iteration.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, x_init, tp_init=None, max_iter=None, tol=None, verbosity=None, max_iter_bd_inner=None, max_iter_bd_outer=None, tol_bd_inner=None, tol_bd_outer=None, verbosity_bd=None)")]
+            #[expect(clippy::too_many_arguments)]
             fn heteroazeotrope(
                 eos: $py_eos,
                 temperature_or_pressure: PySINumber,
@@ -659,6 +663,7 @@ macro_rules! impl_phase_equilibrium {
             #[cfg(feature = "rayon")]
             #[staticmethod]
             #[pyo3(text_signature = "(eos, min_temperature, npoints, chunksize, nthreads, critical_temperature=None, max_iter=None, tol=None, verbosity=None)")]
+            #[expect(clippy::too_many_arguments)]
             pub fn par_pure(
                 eos: &$py_eos,
                 min_temperature: PySINumber,
@@ -721,6 +726,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseDiagram
             #[staticmethod]
             #[pyo3(text_signature = "(eos, moles, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
+            #[expect(clippy::too_many_arguments)]
             pub fn bubble_point_line(
                 eos: &$py_eos,
                 moles: PySIArray1,
@@ -783,6 +789,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseDiagram
             #[staticmethod]
             #[pyo3(text_signature = "(eos, moles, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
+            #[expect(clippy::too_many_arguments)]
             pub fn dew_point_line(
                 eos: &$py_eos,
                 moles: PySIArray1,
@@ -837,6 +844,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseDiagram
             #[staticmethod]
             #[pyo3(text_signature = "(eos, moles, min_temperature, npoints, critical_temperature=None, max_iter=None, tol=None, verbosity=None)")]
+            #[expect(clippy::too_many_arguments)]
             pub fn spinodal(
                 eos: &$py_eos,
                 moles: PySIArray1,
@@ -972,6 +980,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseDiagram
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, npoints=None, x_lle=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
+            #[expect(clippy::too_many_arguments)]
             pub fn binary_vle(
                 eos: $py_eos,
                 temperature_or_pressure: PySINumber,
@@ -1115,6 +1124,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseDiagramHetero
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, x_lle, tp_lim_lle=None, tp_init_vlle=None, npoints_vle=None, npoints_lle=None, max_iter_bd_inner=None, max_iter_bd_outer=None, tol_bd_inner=None, tol_bd_outer=None, verbosity_bd=None)")]
+            #[expect(clippy::too_many_arguments)]
             pub fn binary_vlle(
                 eos: $py_eos,
                 temperature_or_pressure: PySINumber,

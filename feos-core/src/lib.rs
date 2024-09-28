@@ -1,7 +1,6 @@
 #![warn(clippy::all)]
 #![allow(clippy::reversed_empty_ranges)]
-#![allow(clippy::many_single_char_names)]
-#![allow(clippy::too_many_arguments)]
+#![warn(clippy::allow_attributes)]
 
 /// Print messages with level `Verbosity::Iter` or higher.
 #[macro_export]

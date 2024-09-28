@@ -52,6 +52,7 @@ pub struct SaftVRMieRecord {
 }
 
 impl SaftVRMieRecord {
+    #[expect(clippy::too_many_arguments)]
     pub fn new(
         m: f64,
         sigma: f64,

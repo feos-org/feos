@@ -1,6 +1,7 @@
 //! This crate provides derive macros used for the EosVariant and
 //! FunctionalVariant enums in FeOs. The macros implement
 //! the boilerplate for the EquationOfState and HelmholtzEnergyFunctional traits.
+#![warn(clippy::all)]
 use components::expand_components;
 use dft::expand_helmholtz_energy_functional;
 use functional_contribution::expand_functional_contribution;

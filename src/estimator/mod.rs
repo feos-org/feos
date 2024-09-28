@@ -6,6 +6,7 @@ use thiserror::Error;
 
 mod dataset;
 pub use dataset::DataSet;
+#[expect(clippy::module_inception)]
 mod estimator;
 pub use estimator::Estimator;
 mod loss;

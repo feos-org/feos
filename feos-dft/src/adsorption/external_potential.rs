@@ -72,14 +72,13 @@ pub trait FluidParameters: HelmholtzEnergyFunctional {
     fn sigma_ff(&self) -> &Array1<f64>;
 }
 
-#[allow(unused_variables)]
 impl ExternalPotential {
     // Evaluate the external potential in cartesian coordinates for a given grid and fluid parameters.
     pub fn calculate_cartesian_potential<P: FluidParameters>(
         &self,
         z_grid: &Array1<f64>,
         fluid_parameters: &P,
-        temperature: f64,
+        #[cfg_attr(not(feature = "rayon"), expect(unused_variables))] temperature: f64,
     ) -> Array2<f64> {
         if let ExternalPotential::Custom(potential) = self {
             return potential.clone();
@@ -228,7 +227,7 @@ impl ExternalPotential {
         r_grid: &Array1<f64>,
         pore_size: f64,
         fluid_parameters: &P,
-        temperature: f64,
+        #[cfg_attr(not(feature = "rayon"), expect(unused_variables))] temperature: f64,
     ) -> Array2<f64> {
         if let ExternalPotential::Custom(potential) = self {
             return potential.clone();
@@ -394,7 +393,7 @@ impl ExternalPotential {
         r_grid: &Array1<f64>,
         pore_size: f64,
         fluid_parameters: &P,
-        temperature: f64,
+        #[cfg_attr(not(feature = "rayon"), expect(unused_variables))] temperature: f64,
     ) -> Array2<f64> {
         if let ExternalPotential::Custom(potential) = self {
             return potential.clone();

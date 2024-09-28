@@ -5,9 +5,9 @@ use feos_core::si::Length;
 use gauss_quad::GaussLegendre;
 use ndarray::{Array1, Array2, Zip};
 use std::f64::consts::PI;
-use std::usize;
 
 // Calculate free-energy average potential for given solid structure.
+#[expect(clippy::too_many_arguments)]
 pub fn calculate_fea_potential(
     grid: &Array1<f64>,
     mi: f64,

@@ -120,6 +120,7 @@ impl std::fmt::Display for ElectrolytePcSaftRecord {
 }
 
 impl ElectrolytePcSaftRecord {
+    #[expect(clippy::too_many_arguments)]
     pub fn new(
         m: f64,
         sigma: f64,

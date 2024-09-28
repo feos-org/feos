@@ -7,7 +7,6 @@ use crate::{SolverOptions, Verbosity};
 use ndarray::*;
 use num_dual::linalg::smallest_ev;
 use num_dual::linalg::LU;
-use std::f64::EPSILON;
 use std::ops::MulAssign;
 
 const X_DOMINANT: f64 = 0.99;
@@ -164,7 +163,7 @@ impl<E: Residual> State<E> {
         let mut hesse = (self.dln_phi_dnj() * Moles::from_reduced(1.0)).into_value();
         let lnphi = self.ln_phi();
         let y = self.moles.to_reduced();
-        let ln_y = Zip::from(&y).map_collect(|&y| if y > EPSILON { y.ln() } else { 0.0 });
+        let ln_y = Zip::from(&y).map_collect(|&y| if y > f64::EPSILON { y.ln() } else { 0.0 });
         let sq_y = y.mapv(f64::sqrt);
         let gradient = (&ln_y + &lnphi - di) * &sq_y;
 
@@ -173,7 +172,7 @@ impl<E: Residual> State<E> {
             hesse
                 .index_axis_mut(Axis(0), i)
                 .mul_assign(&(sq_y[i] * &sq_y));
-            if y[i] > EPSILON {
+            if y[i] > f64::EPSILON {
                 hesse[[i, i]] += ln_y[i] + lnphi[i] - di[i];
             }
         }
@@ -212,7 +211,7 @@ impl<E: Residual> State<E> {
             }
 
             let y = (&sq_y - &(delta_y / 2.0)).mapv(|v| v.powi(2));
-            let ln_y = Zip::from(&y).map_collect(|&y| if y > EPSILON { y.ln() } else { 0.0 });
+            let ln_y = Zip::from(&y).map_collect(|&y| if y > f64::EPSILON { y.ln() } else { 0.0 });
             *tpd = 1.0 + (&y * &(&ln_y + &lnphi - di - 1.0)).sum();
             if *tpd > tpd_old + 0.0 * 1E-03 && eta_h < 30.0 {
                 eta_h += ETA_STEP;
