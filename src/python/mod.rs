@@ -88,8 +88,8 @@ pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
 import sys
 import si_units
 sys.modules['feos.si'] = si_units
-si_units.PySIObject.__module__ = 'feos.si'
-si_units.PyAngle.__module__ = 'feos.si'
+si_units.SIObject.__module__ = 'feos.si'
+si_units.Angle.__module__ = 'feos.si'
         ",
         None,
         Some(&m.dict()),

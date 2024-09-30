@@ -31,7 +31,6 @@ mod equation_of_state;
 mod errors;
 pub mod parameter;
 mod phase_equilibria;
-// pub mod si;
 mod state;
 pub use equation_of_state::{
     Components, EntropyScaling, EquationOfState, IdealGas, NoResidual, Residual,
