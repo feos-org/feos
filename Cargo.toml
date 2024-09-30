@@ -22,7 +22,7 @@ members = ["feos-core", "feos-dft", "feos-derive"]
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-quantity = { path = "../../quantity" }
+quantity = { git = "https://github.com/itt-ustutt/quantity" }
 num-dual = "0.9"
 feos-core = { version = "0.7", path = "feos-core" }
 feos-dft = { version = "0.7", path = "feos-dft", optional = true }

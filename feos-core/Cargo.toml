@@ -19,7 +19,7 @@ rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 features = [ "rayon" ]
 
 [dependencies]
-quantity = { path = "../../../quantity" }
+quantity = { git = "https://github.com/itt-ustutt/quantity" }
 num-dual = { version = "0.9", features = ["linalg"] }
 ndarray = { version = "0.15", features = ["serde", "approx-0_5"] }
 nalgebra = "0.32"
