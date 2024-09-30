@@ -1,9 +1,10 @@
 use super::pore3d::{calculate_distance2, evaluate_lj_potential};
 use crate::profile::{CUTOFF_RADIUS, MAX_POTENTIAL};
 use crate::Geometry;
-use feos_core::si::Length;
+use feos_core::ReferenceSystem;
 use gauss_quad::GaussLegendre;
 use ndarray::{Array1, Array2, Zip};
+use quantity::Length;
 use std::f64::consts::PI;
 
 // Calculate free-energy average potential for given solid structure.

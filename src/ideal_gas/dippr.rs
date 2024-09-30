@@ -1,8 +1,8 @@
 use feos_core::parameter::{NoBinaryModelRecord, Parameter, ParameterError, PureRecord};
-use feos_core::si::{MolarEntropy, Temperature, JOULE, KELVIN, KILO, MOL};
 use feos_core::{Components, EosResult, IdealGas};
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
+use quantity::{MolarEntropy, Temperature, JOULE, KELVIN, KILO, MOL};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -156,7 +156,7 @@ impl Dippr {
         temperature: Temperature,
         molefracs: &Array1<f64>,
     ) -> EosResult<MolarEntropy> {
-        let t = temperature.convert_into(KELVIN);
+        let t = temperature.convert_to(KELVIN);
         let c_p: f64 = molefracs
             .iter()
             .zip(&self.0)
@@ -206,9 +206,9 @@ impl IdealGas for Dippr {
 mod tests {
     use approx::assert_relative_eq;
     use feos_core::parameter::Identifier;
-    use feos_core::si::*;
     use feos_core::{Contributions, EquationOfState, StateBuilder};
     use num_dual::first_derivative;
+    use quantity::*;
     use std::sync::Arc;
     use typenum::P3;
 
@@ -231,7 +231,7 @@ mod tests {
             .total_moles(MOL)
             .build()?;
 
-        let t = temperature.convert_into(KELVIN);
+        let t = temperature.convert_to(KELVIN);
         let c_p_direct = record.model_record.c_p(t);
         let (_, c_p) = first_derivative(|t| record.model_record.c_p_integral(t), t);
         let (_, c_p_t) = first_derivative(|t| record.model_record.c_p_t_integral(t), t);
@@ -275,7 +275,7 @@ mod tests {
             .total_moles(MOL)
             .build()?;
 
-        let t = temperature.convert_into(KELVIN);
+        let t = temperature.convert_to(KELVIN);
         let c_p_direct = record.model_record.c_p(t);
         let (_, c_p) = first_derivative(|t| record.model_record.c_p_integral(t), t);
         let (_, c_p_t) = first_derivative(|t| record.model_record.c_p_t_integral(t), t);
@@ -321,7 +321,7 @@ mod tests {
             .total_moles(MOL)
             .build()?;
 
-        let t = temperature.convert_into(KELVIN);
+        let t = temperature.convert_to(KELVIN);
         let c_p_direct = record.model_record.c_p(t);
         let (_, c_p) = first_derivative(|t| record.model_record.c_p_integral(t), t);
         let (_, c_p_t) = first_derivative(|t| record.model_record.c_p_t_integral(t), t);

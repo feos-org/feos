@@ -1,4 +1,4 @@
-use feos_core::si::MolarWeight;
+use quantity::MolarWeight;
 use feos_core::{Components, EosResult};
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;

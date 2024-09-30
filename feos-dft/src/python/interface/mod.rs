@@ -38,18 +38,18 @@ macro_rules! impl_planar_interface {
             fn from_tanh(
                 vle: &PyPhaseEquilibrium,
                 n_grid: usize,
-                l_grid: PySINumber,
-                critical_temperature: PySINumber,
+                l_grid: Length,
+                critical_temperature: Temperature,
                 fix_equimolar_surface: Option<bool>,
-            ) -> PyResult<Self> {
+            ) -> Self {
                 let profile = PlanarInterface::from_tanh(
                     &vle.0,
                     n_grid,
-                    l_grid.try_into()?,
-                    critical_temperature.try_into()?,
+                    l_grid,
+                    critical_temperature,
                     fix_equimolar_surface.unwrap_or(false),
                 );
-                Ok(PyPlanarInterface(profile))
+                PyPlanarInterface(profile)
             }
 
             /// Initialize a planar interface with a pDGT calculation.
@@ -97,11 +97,11 @@ macro_rules! impl_planar_interface {
             fn from_density_profile(
                 vle: &PyPhaseEquilibrium,
                 n_grid: usize,
-                l_grid: PySINumber,
-                density_profile: PySIArray2,
+                l_grid: Length,
+                density_profile: Density<Array2<f64>>,
             ) -> PyResult<Self> {
-                let mut profile = PlanarInterface::new(&vle.0, n_grid, l_grid.try_into()?);
-                profile.profile.density = density_profile.try_into()?;
+                let mut profile = PlanarInterface::new(&vle.0, n_grid, l_grid);
+                profile.profile.density = density_profile;
                 Ok(PyPlanarInterface(profile))
             }
         }
@@ -109,23 +109,20 @@ macro_rules! impl_planar_interface {
         #[pymethods]
         impl PyPlanarInterface {
             #[getter]
-            fn get_surface_tension(&mut self) -> Option<PySINumber> {
-                self.0.surface_tension.map(PySINumber::from)
+            fn get_surface_tension(&mut self) -> Option<SurfaceTension> {
+                self.0.surface_tension
             }
 
             #[getter]
-            fn get_equimolar_radius(&mut self) -> Option<PySINumber> {
-                self.0.equimolar_radius.map(PySINumber::from)
+            fn get_equimolar_radius(&mut self) -> Option<Length> {
+                self.0.equimolar_radius
             }
 
             #[getter]
             fn get_vle(&self) -> PyPhaseEquilibrium {
                 PyPhaseEquilibrium(self.0.vle.clone())
             }
-        }
 
-        #[pymethods]
-        impl PyPlanarInterface {
             /// Calculates the Gibbs' relative adsorption of component `i' with
             /// respect to `j': \Gamma_i^(j)
             ///
@@ -133,8 +130,8 @@ macro_rules! impl_planar_interface {
             /// -------
             /// SIArray2
             ///
-            fn relative_adsorption(&self) -> PySIArray2 {
-                self.0.relative_adsorption().into()
+            fn relative_adsorption(&self) -> Moles<Array2<f64>> {
+                self.0.relative_adsorption()
             }
 
             /// Calculates the interfacial enrichment E_i.
@@ -153,8 +150,8 @@ macro_rules! impl_planar_interface {
             /// -------
             /// SINumber
             ///
-            fn interfacial_thickness(&self) -> PyResult<PySINumber> {
-                Ok(self.0.interfacial_thickness()?.into())
+            fn interfacial_thickness(&self) -> PyResult<Length> {
+                Ok(self.0.interfacial_thickness()?)
             }
         }
     };

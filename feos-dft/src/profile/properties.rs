@@ -3,12 +3,12 @@ use super::DFTProfile;
 use crate::convolver::{BulkConvolver, Convolver};
 use crate::functional_contribution::FunctionalContribution;
 use crate::{ConvolverFFT, DFTSolverLog, HelmholtzEnergyFunctional, WeightFunctionInfo};
-use feos_core::si::{
-    Density, Energy, Entropy, EntropyDensity, MolarEnergy, Moles, Pressure, Quantity, Temperature,
-};
-use feos_core::{Contributions, EosResult, IdealGas, Verbosity};
+use feos_core::{Contributions, EosResult, IdealGas, ReferenceSystem, Verbosity};
 use ndarray::{Array, Array1, Array2, Axis, Dimension, RemoveAxis, ScalarOperand};
 use num_dual::{Dual64, DualNum};
+use quantity::{
+    Density, Energy, Entropy, EntropyDensity, MolarEnergy, Moles, Pressure, Quantity, Temperature,
+};
 use std::ops::{AddAssign, Div};
 use std::sync::Arc;
 

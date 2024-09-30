@@ -2,13 +2,11 @@ use crate::hard_sphere::HardSphere;
 
 use super::SaftVRMieParameters;
 use association::Association;
-use feos_core::{
-    parameter::Parameter,
-    si::{MolarWeight, GRAM, MOL},
-    Components, Residual, StateHD,
-};
+use feos_core::parameter::Parameter;
+use feos_core::{Components, Residual, StateHD};
 use ndarray::{Array1, ScalarOperand};
 use num_dual::DualNum;
+use quantity::{MolarWeight, GRAM, MOL};
 use std::{f64::consts::FRAC_PI_6, sync::Arc};
 
 pub(super) mod association;

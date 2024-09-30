@@ -132,9 +132,10 @@ mod test {
     use super::*;
     use crate::gc_pcsaft::eos::parameter::test::*;
     use approx::assert_relative_eq;
-    use feos_core::si::{Pressure, METER, MOL, PASCAL};
+    use feos_core::ReferenceSystem;
     use ndarray::arr1;
     use num_dual::Dual64;
+    use quantity::{Pressure, METER, MOL, PASCAL};
     use typenum::P3;
 
     #[test]

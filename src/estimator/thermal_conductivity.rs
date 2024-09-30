@@ -1,15 +1,15 @@
 use super::{DataSet, EstimatorError, Phase};
-use feos_core::si::{self, Moles, Pressure, Temperature, KELVIN, METER, WATT};
-use feos_core::{DensityInitialization, EntropyScaling, Residual, State};
+use feos_core::{DensityInitialization, EntropyScaling, ReferenceSystem, Residual, State};
 use itertools::izip;
 use ndarray::{arr1, Array1};
+use quantity::{self, Moles, Pressure, Temperature, KELVIN, METER, WATT};
 use std::sync::Arc;
 
 /// Store experimental thermal conductivity data.
 #[derive(Clone)]
 pub struct ThermalConductivity {
     pub target: Array1<f64>,
-    unit: si::ThermalConductivity,
+    unit: quantity::ThermalConductivity,
     temperature: Temperature<Array1<f64>>,
     pressure: Pressure<Array1<f64>>,
     initial_density: Vec<DensityInitialization>,
@@ -18,7 +18,7 @@ pub struct ThermalConductivity {
 impl ThermalConductivity {
     /// Create a new data set for experimental thermal conductivity data.
     pub fn new(
-        target: si::ThermalConductivity<Array1<f64>>,
+        target: quantity::ThermalConductivity<Array1<f64>>,
         temperature: Temperature<Array1<f64>>,
         pressure: Pressure<Array1<f64>>,
         phase: Option<&Vec<Phase>>,
@@ -66,7 +66,7 @@ impl<E: Residual + EntropyScaling> DataSet<E> for ThermalConductivity {
             .map(|(t, p, &initial_density)| {
                 State::new_npt(eos, t, p, &moles, initial_density)?
                     .thermal_conductivity()
-                    .map(|lambda| (lambda / self.unit).into_value())
+                    .map(|lambda| lambda.convert_to(self.unit))
                     .map_err(EstimatorError::from)
             })
             .collect()

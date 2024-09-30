@@ -1,8 +1,9 @@
 use crate::{DFTSolver, DFTSolverLog};
 use feos_core::Verbosity;
+use ndarray::Array1;
 use numpy::{PyArray1, ToPyArray};
 use pyo3::prelude::*;
-use quantity::python::PySIArray1;
+use quantity::Time;
 
 /// Settings for the DFT solver.
 ///
@@ -166,8 +167,8 @@ impl PyDFTSolverLog {
     }
 
     #[getter]
-    fn get_time(&self) -> PySIArray1 {
-        self.0.time().into()
+    fn get_time(&self) -> Time<Array1<f64>> {
+        self.0.time()
     }
 
     #[getter]

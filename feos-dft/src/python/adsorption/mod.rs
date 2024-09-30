@@ -51,16 +51,16 @@ macro_rules! impl_adsorption_isotherm {
             #[pyo3(text_signature = "(functional, temperature, pressure, pore, molefracs=None, solver=None)")]
             pub fn adsorption_isotherm(
                 functional: &$py_func,
-                temperature: PySINumber,
-                pressure: PySIArray1,
+                temperature: Temperature,
+                pressure: Pressure<Array1<f64>>,
                 pore: &$py_pore,
                 molefracs: Option<&Bound<'_, PyArray1<f64>>>,
                 solver: Option<PyDFTSolver>,
             ) -> PyResult<Self> {
                 Ok(Self(Adsorption::adsorption_isotherm(
                     &functional.0,
-                    temperature.try_into()?,
-                    &pressure.try_into()?,
+                    temperature,
+                    &pressure,
                     &pore.0,
                     molefracs.map(|x| x.to_owned_array()).as_ref(),
                     solver.map(|s| s.0).as_ref(),
@@ -94,16 +94,16 @@ macro_rules! impl_adsorption_isotherm {
             #[pyo3(text_signature = "(functional, temperature, pressure, pore, molefracs=None, solver=None)")]
             pub fn desorption_isotherm(
                 functional: &$py_func,
-                temperature: PySINumber,
-                pressure: PySIArray1,
+                temperature: Temperature,
+                pressure: Pressure<Array1<f64>>,
                 pore: &$py_pore,
                 molefracs: Option<&Bound<'_, PyArray1<f64>>>,
                 solver: Option<PyDFTSolver>,
             ) -> PyResult<Self> {
                 Ok(Self(Adsorption::desorption_isotherm(
                     &functional.0,
-                    temperature.try_into()?,
-                    &pressure.try_into()?,
+                    temperature,
+                    &pressure,
                     &pore.0,
                     molefracs.map(|x| x.to_owned_array()).as_ref(),
                     solver.map(|s| s.0).as_ref(),
@@ -140,16 +140,16 @@ macro_rules! impl_adsorption_isotherm {
             #[pyo3(text_signature = "(functional, temperature, pressure, pore, molefracs=None, solver=None)")]
             pub fn equilibrium_isotherm(
                 functional: &$py_func,
-                temperature: PySINumber,
-                pressure: PySIArray1,
+                temperature: Temperature,
+                pressure: Pressure<Array1<f64>>,
                 pore: &$py_pore,
                 molefracs: Option<&Bound<'_, PyArray1<f64>>>,
                 solver: Option<PyDFTSolver>,
             ) -> PyResult<Self> {
                 Ok(Self(Adsorption::equilibrium_isotherm(
                     &functional.0,
-                    temperature.try_into()?,
-                    &pressure.try_into()?,
+                    temperature,
+                    &pressure,
                     &pore.0,
                     molefracs.map(|x| x.to_owned_array()).as_ref(),
                     solver.map(|s| s.0).as_ref(),
@@ -190,9 +190,9 @@ macro_rules! impl_adsorption_isotherm {
             #[expect(clippy::too_many_arguments)]
             pub fn phase_equilibrium(
                 functional: &$py_func,
-                temperature: PySINumber,
-                p_min: PySINumber,
-                p_max: PySINumber,
+                temperature: Temperature,
+                p_min: Pressure,
+                p_max: Pressure,
                 pore: &$py_pore,
                 molefracs: Option<&Bound<'_, PyArray1<f64>>>,
                 solver: Option<PyDFTSolver>,
@@ -202,9 +202,9 @@ macro_rules! impl_adsorption_isotherm {
             ) -> PyResult<Self> {
                 Ok(Self(Adsorption::phase_equilibrium(
                     &functional.0,
-                    temperature.try_into()?,
-                    p_min.try_into()?,
-                    p_max.try_into()?,
+                    temperature,
+                    p_min,
+                    p_max,
                     &pore.0,
                     molefracs.map(|x| x.to_owned_array()).as_ref(),
                     solver.map(|s| s.0).as_ref(),
@@ -226,33 +226,33 @@ macro_rules! impl_adsorption_isotherm {
             }
 
             #[getter]
-            fn get_pressure(&self) -> PySIArray1 {
-                self.0.pressure().into()
+            fn get_pressure(&self) -> Pressure<Array1<f64>> {
+                self.0.pressure()
             }
 
             #[getter]
-            fn get_adsorption(&self) -> PySIArray2 {
-                self.0.adsorption().into()
+            fn get_adsorption(&self) -> Moles<Array2<f64>> {
+                self.0.adsorption()
             }
 
             #[getter]
-            fn get_total_adsorption(&self) -> PySIArray1 {
-                self.0.total_adsorption().into()
+            fn get_total_adsorption(&self) -> Moles<Array1<f64>> {
+                self.0.total_adsorption()
             }
 
             #[getter]
-            fn get_grand_potential(&mut self) -> PySIArray1 {
-                self.0.grand_potential().into()
+            fn get_grand_potential(&mut self) -> Energy<Array1<f64>> {
+                self.0.grand_potential()
             }
 
             #[getter]
-            fn get_partial_molar_enthalpy_of_adsorption(&self) -> PySIArray2 {
-                self.0.partial_molar_enthalpy_of_adsorption().into()
+            fn get_partial_molar_enthalpy_of_adsorption(&self) -> MolarEnergy<Array2<f64>> {
+                self.0.partial_molar_enthalpy_of_adsorption()
             }
 
             #[getter]
-            fn get_enthalpy_of_adsorption(&self) -> PySIArray1 {
-                self.0.enthalpy_of_adsorption().into()
+            fn get_enthalpy_of_adsorption(&self) -> MolarEnergy<Array1<f64>> {
+                self.0.enthalpy_of_adsorption()
             }
         }
     };

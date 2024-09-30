@@ -1,9 +1,9 @@
 use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter, ParameterError};
-use feos_core::si::*;
 use feos_core::{Contributions, PhaseEquilibrium, SolverOptions};
 use ndarray::*;
+use quantity::*;
 use std::error::Error;
 use std::sync::Arc;
 

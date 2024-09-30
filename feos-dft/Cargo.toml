@@ -17,14 +17,13 @@ rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 features = [ "rayon" ]
 
 [dependencies]
-quantity = { version = "0.8", optional = true }
+quantity = { git = "https://github.com/itt-ustutt/quantity" }
 num-dual = "0.9"
 feos-core = { version = "0.7", path = "../feos-core" }
 ndarray = "0.15"
 nalgebra = "0.32"
 rustdct = "0.7"
 rustfft = "6.0"
-ang = "0.6"
 num-traits = "0.2"
 libm = "0.2"
 gauss-quad = { version = "0.1", optional = true }

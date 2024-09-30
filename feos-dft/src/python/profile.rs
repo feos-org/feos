@@ -48,28 +48,28 @@ macro_rules! impl_profile {
 
             $(
             #[getter]
-            fn $ax(&self) -> PySIArray1 {
-                PySIArray1::from(Length::from_reduced(self.0.profile.grid.grids()[$ind].clone()))
+            fn $ax(&self) -> Length<Array1<f64>> {
+                Length::from_reduced(self.0.profile.grid.grids()[$ind].clone())
             })+
 
             #[getter]
-            fn get_temperature(&self) -> PySINumber {
-                PySINumber::from(self.0.profile.temperature)
+            fn get_temperature(&self) -> Temperature {
+                self.0.profile.temperature
             }
 
             #[getter]
-            fn get_density(&self) -> $si_arr2 {
-                $si_arr2::from(self.0.profile.density.clone())
+            fn get_density(&self) -> Density<$si_arr2<f64>> {
+                self.0.profile.density.clone()
             }
 
             #[getter]
-            fn get_moles(&self) -> PySIArray1 {
-                PySIArray1::from(self.0.profile.moles())
+            fn get_moles(&self) -> Moles<Array1<f64>> {
+                self.0.profile.moles()
             }
 
             #[getter]
-            fn get_total_moles(&self) -> PySINumber {
-                PySINumber::from(self.0.profile.total_moles())
+            fn get_total_moles(&self) -> Moles {
+                self.0.profile.total_moles()
             }
 
             #[getter]
@@ -119,10 +119,8 @@ macro_rules! impl_profile {
             fn entropy_density(
                 &mut self,
                 contributions: Contributions,
-            ) -> PyResult<$si_arr> {
-                Ok($si_arr::from(
-                    self.0.profile.entropy_density(contributions)?,
-                ))
+            ) -> PyResult<Quot<Entropy<$si_arr<f64>>, Volume>> {
+                Ok(self.0.profile.entropy_density(contributions)?)
             }
 
             /// Calculate the entropy of the inhomogeneous system.
@@ -140,10 +138,8 @@ macro_rules! impl_profile {
             fn entropy(
                 &mut self,
                 contributions: Contributions,
-            ) -> PyResult<PySINumber> {
-                Ok(PySINumber::from(
-                    self.0.profile.entropy(contributions)?,
-                ))
+            ) -> PyResult<Entropy> {
+                Ok(self.0.profile.entropy(contributions)?)
             }
 
             /// Calculate the internal energy of the inhomogeneous system.
@@ -161,48 +157,44 @@ macro_rules! impl_profile {
             fn internal_energy(
                 &mut self,
                 contributions: Contributions,
-            ) -> PyResult<PySINumber> {
-                Ok(PySINumber::from(
-                    self.0.profile.internal_energy(contributions)?,
-                ))
+            ) -> PyResult<Energy> {
+                Ok(self.0.profile.internal_energy(contributions)?)
             }
 
             #[getter]
-            fn get_grand_potential_density(&self) -> PyResult<$si_arr> {
-                Ok($si_arr::from(
-                    self.0.profile.grand_potential_density()?,
-                ))
+            fn get_grand_potential_density(&self) -> PyResult<Pressure<$si_arr<f64>>> {
+                Ok(self.0.profile.grand_potential_density()?)
             }
             $(
                 #[getter]
-                fn get_drho_dmu(&self) -> PyResult<$si_arr3> {
-                    Ok(($si_arr3::from(self.0.profile.drho_dmu()?)))
+                fn get_drho_dmu(&self) -> PyResult<Quot<Density<$si_arr3<f64>>, MolarEnergy>> {
+                    Ok(self.0.profile.drho_dmu()?)
                 }
             )?
 
             #[getter]
-            fn get_dn_dmu(&self) -> PyResult<PySIArray2> {
-                Ok((PySIArray2::from(self.0.profile.dn_dmu()?)))
+            fn get_dn_dmu(&self) -> PyResult<Quot<Moles<Array2<f64>>, MolarEnergy>> {
+                Ok(self.0.profile.dn_dmu()?)
             }
 
             #[getter]
-            fn get_drho_dp(&self) -> PyResult<$si_arr2> {
-                Ok(($si_arr2::from(self.0.profile.drho_dp()?)))
+            fn get_drho_dp(&self) -> PyResult<Quot<Density<$si_arr2<f64>>, Pressure>> {
+                Ok(self.0.profile.drho_dp()?)
             }
 
             #[getter]
-            fn get_dn_dp(&self) -> PyResult<PySIArray1> {
-                Ok((PySIArray1::from(self.0.profile.dn_dp()?)))
+            fn get_dn_dp(&self) -> PyResult<Quot<Moles<Array1<f64>>, Pressure>> {
+                Ok(self.0.profile.dn_dp()?)
             }
 
             #[getter]
-            fn get_drho_dt(&self) -> PyResult<$si_arr2> {
-                Ok(($si_arr2::from(self.0.profile.drho_dt()?)))
+            fn get_drho_dt(&self) -> PyResult<Quot<Density<$si_arr2<f64>>, Temperature>> {
+                Ok(self.0.profile.drho_dt()?)
             }
 
             #[getter]
-            fn get_dn_dt(&self) -> PyResult<PySIArray1> {
-                Ok((PySIArray1::from(self.0.profile.dn_dt()?)))
+            fn get_dn_dt(&self) -> PyResult<Quot<Moles<Array1<f64>>, Temperature>> {
+                Ok(self.0.profile.dn_dt()?)
             }
         }
     };
@@ -215,11 +207,11 @@ macro_rules! impl_1d_profile {
             $struct,
             PyArray1,
             PyArray2,
-            PySIArray1,
-            PySIArray2,
+            Array1,
+            Array2,
             PyArray2,
             [$([0, $ax]),+],
-            PySIArray3
+            Array3
         );
     };
 }
@@ -231,8 +223,8 @@ macro_rules! impl_2d_profile {
             $struct,
             PyArray2,
             PyArray3,
-            PySIArray2,
-            PySIArray3,
+            Array2,
+            Array3,
             PyArray3,
             [[0, $ax1], [1, $ax2]]
         );
@@ -240,15 +232,13 @@ macro_rules! impl_2d_profile {
         #[pymethods]
         impl $struct {
             #[getter]
-            fn get_edges(&self) -> [PySIArray1; 2] {
-                let [edge1, edge2] = self.0.profile.edges();
-                [edge1.into(), edge2.into()]
+            fn get_edges(&self) -> [Length<Array1<f64>>; 2] {
+                self.0.profile.edges()
             }
 
             #[getter]
-            fn get_meshgrid(&self) -> [PySIArray2; 2] {
-                let [x, y] = self.0.profile.meshgrid();
-                [x.into(), y.into()]
+            fn get_meshgrid(&self) -> [Length<Array2<f64>>; 2] {
+                self.0.profile.meshgrid()
             }
         }
     };
@@ -261,8 +251,8 @@ macro_rules! impl_3d_profile {
             $struct,
             PyArray3,
             PyArray4,
-            PySIArray3,
-            PySIArray4,
+            Array3,
+            Array4,
             PyArray4,
             [[0, $ax1], [1, $ax2], [2, $ax3]]
         );
@@ -270,15 +260,13 @@ macro_rules! impl_3d_profile {
         #[pymethods]
         impl $struct {
             #[getter]
-            fn get_edges(&self) -> [PySIArray1; 3] {
-                let [edge1, edge2, edge3] = self.0.profile.edges();
-                [edge1.into(), edge2.into(), edge3.into()]
+            fn get_edges(&self) -> [Length<Array1<f64>>; 3] {
+                self.0.profile.edges()
             }
 
             #[getter]
-            fn get_meshgrid(&self) -> [PySIArray3; 3] {
-                let [x, y, z] = self.0.profile.meshgrid();
-                [x.into(), y.into(), z.into()]
+            fn get_meshgrid(&self) -> [Length<Array3<f64>>; 3] {
+                self.0.profile.meshgrid()
             }
         }
     };

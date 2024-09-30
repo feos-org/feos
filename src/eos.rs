@@ -15,7 +15,7 @@ use crate::uvtheory::UVTheory;
 use feos_core::cubic::PengRobinson;
 #[cfg(feature = "python")]
 use feos_core::python::user_defined::PyResidual;
-use feos_core::si::*;
+use quantity::*;
 use feos_core::*;
 use feos_derive::{Components, Residual};
 use ndarray::{Array1, ScalarOperand};

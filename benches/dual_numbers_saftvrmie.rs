@@ -6,10 +6,10 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use feos::hard_sphere::HardSphereProperties;
 use feos::saftvrmie::{test_utils::test_parameters, SaftVRMie, SaftVRMieParameters};
-use feos_core::si::*;
 use feos_core::{Derivative, Residual, State, StateHD};
 use ndarray::{Array, ScalarOperand};
 use num_dual::DualNum;
+use quantity::*;
 use std::sync::Arc;
 
 /// Helper function to create a state for given parameters.

@@ -1,7 +1,7 @@
 use super::{PhaseDiagram, PhaseEquilibrium};
 use crate::equation_of_state::Residual;
 use crate::errors::EosResult;
-use crate::si::{Moles, Pressure, Temperature};
+use quantity::{Moles, Pressure, Temperature};
 use crate::state::{Contributions, State};
 use crate::SolverOptions;
 use ndarray::Array1;

@@ -3,10 +3,10 @@
 
 use conv::ValueInto;
 use feos_core::parameter::*;
-use feos_core::si::{MolarEntropy, Temperature};
-use feos_core::{Components, EosResult, IdealGas};
+use feos_core::{Components, EosResult, IdealGas, ReferenceSystem};
 use ndarray::{Array1, Array2};
 use num_dual::*;
+use quantity::{MolarEntropy, Temperature};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -105,7 +105,7 @@ impl Joback {
                 x * (m.a + m.b * t + m.c * t.powi(2) + m.d * t.powi(3) + m.e * t.powi(4))
             })
             .sum();
-        Ok(c_p / RGAS * feos_core::si::RGAS)
+        Ok(c_p / RGAS * quantity::RGAS)
     }
 }
 
@@ -163,9 +163,9 @@ const KB: f64 = 1.38064852e-23;
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
-    use feos_core::si::*;
     use feos_core::{Contributions, EquationOfState, State, StateBuilder};
     use ndarray::arr1;
+    use quantity::*;
     use std::sync::Arc;
     use typenum::P3;
 

@@ -1,13 +1,13 @@
 use super::functional::{HelmholtzEnergyFunctional, DFT};
 use super::functional_contribution::FunctionalContribution;
 use super::weight_functions::WeightFunctionInfo;
-use feos_core::si::{
+use feos_core::{Components, Contributions, EosResult, PhaseEquilibrium, ReferenceSystem};
+use ndarray::*;
+use num_dual::Dual2_64;
+use quantity::{
     Density, Length, Pressure, Quantity, SurfaceTension, Temperature, _Area, _Density,
     _MolarEnergy, RGAS,
 };
-use feos_core::{Components, Contributions, EosResult, PhaseEquilibrium};
-use ndarray::*;
-use num_dual::Dual2_64;
 use std::ops::{Add, AddAssign, Sub};
 use typenum::{Diff, Sum, P2};
 

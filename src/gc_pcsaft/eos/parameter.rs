@@ -5,7 +5,7 @@ use feos_core::parameter::{
     BinaryRecord, ChemicalRecord, Identifier, ParameterError, ParameterHetero, SegmentCount,
     SegmentRecord,
 };
-use feos_core::si::{JOULE, KB, KELVIN};
+use quantity::{JOULE, KB, KELVIN};
 use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;

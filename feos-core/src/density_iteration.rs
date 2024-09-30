@@ -1,8 +1,9 @@
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::si::{Density, Moles, Pressure, Temperature};
 use crate::state::State;
+use crate::ReferenceSystem;
 use ndarray::Array1;
+use quantity::{Density, Moles, Pressure, Temperature};
 use std::sync::Arc;
 
 pub fn density_iteration<E: Residual>(

@@ -1,9 +1,9 @@
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::si::{Dimensionless, Energy, Moles, Pressure, Temperature, RGAS};
 use crate::state::{DensityInitialization, State};
-use crate::Contributions;
+use crate::{Contributions, ReferenceSystem};
 use ndarray::Array1;
+use quantity::{Dimensionless, Energy, Moles, Pressure, Temperature, RGAS};
 use std::fmt;
 use std::fmt::Write;
 use std::sync::Arc;
@@ -193,7 +193,7 @@ impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
             let ln_rho = s.partial_density.to_reduced().mapv(f64::ln);
             acc + s.residual_helmholtz_energy()
                 + s.pressure(Contributions::Total) * s.volume
-                + RGAS * s.temperature * (s.moles.clone() * Dimensionless::from(ln_rho - 1.0)).sum()
+                + RGAS * s.temperature * (s.moles.clone() * Dimensionless::new(ln_rho - 1.0)).sum()
         })
     }
 }

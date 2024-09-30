@@ -6,7 +6,7 @@ use conv::ValueInto;
 use feos_core::parameter::{
     FromSegments, FromSegmentsBinary, Parameter, ParameterError, PureRecord,
 };
-use feos_core::si::{JOULE, KB, KELVIN};
+use quantity::{JOULE, KB, KELVIN};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;

@@ -1,7 +1,7 @@
-use feos_core::si::{Density, Pressure, Temperature};
-use feos_core::{EosResult, StateHD};
+use feos_core::{EosResult, ReferenceSystem, StateHD};
 use ndarray::*;
 use num_dual::DualNum;
+use quantity::{Density, Pressure, Temperature};
 use std::fmt;
 
 #[derive(Clone)]

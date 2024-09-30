@@ -1,7 +1,6 @@
 use super::{Convolver, FFTWeightFunctions};
-use crate::geometry::Axis;
+use crate::geometry::{Angle, Axis};
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo};
-use ang::Angle;
 use ndarray::Axis as Axis_nd;
 use ndarray::*;
 use num_dual::DualNum;

@@ -5,11 +5,11 @@ use feos::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftFunctionalParameters};
 use feos::hard_sphere::{FMTFunctional, FMTVersion};
 use feos::pcsaft::{PcSaftFunctional, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter, ParameterHetero};
-use feos_core::si::{ANGSTROM, KELVIN, NAV};
 use feos_core::{PhaseEquilibrium, State, StateBuilder};
 use feos_dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
 use feos_dft::{DFTSolver, Geometry};
 use ndarray::arr1;
+use quantity::{ANGSTROM, KELVIN, NAV};
 use std::sync::Arc;
 use typenum::P3;
 
