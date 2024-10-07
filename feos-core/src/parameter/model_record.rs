@@ -106,7 +106,7 @@ where
         write!(f, "PureRecord(")?;
         write!(f, "\n\tidentifier={},", self.identifier)?;
         write!(f, "\n\tmolarweight={},", self.molarweight)?;
-        write!(f, "\n\tmodel_record={},", self.model_record)?;
+        write!(f, "\n\tmodel_record={}", self.model_record)?;
         write!(f, "\n)")
     }
 }
