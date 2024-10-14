@@ -40,6 +40,7 @@ indexmap = "2.0"
 rayon = { version = "1.7", optional = true }
 itertools = "0.13"
 typenum = "1.16"
+enum_dispatch = "0.3.13"
 
 [dependencies.pyo3]
 version = "0.21"
@@ -73,9 +74,10 @@ uvtheory = ["lazy_static"]
 pets = []
 saftvrqmie = []
 saftvrmie = []
+cubic = []
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 python = ["pyo3", "numpy", "quantity/python", "feos-core/python", "feos-dft?/python", "rayon"]
-all_models = ["dft", "estimator", "pcsaft", "epcsaft", "gc_pcsaft", "uvtheory", "pets", "saftvrqmie", "saftvrmie"]
+all_models = ["dft", "estimator", "pcsaft", "epcsaft", "gc_pcsaft", "uvtheory", "pets", "saftvrqmie", "saftvrmie", "cubic"]
 
 [[bench]]
 name = "state_properties"
