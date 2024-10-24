@@ -70,7 +70,7 @@ codegen-units = 1
 
 
 [features]
-default = []
+default = ["all_models", "python"]
 dft = ["feos-dft", "petgraph"]
 estimator = []
 association = []
@@ -85,7 +85,7 @@ rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 python = [
     "pyo3",
     "numpy",
-    "quantity/python",
+    "quantity/python_numpy",
     "feos-core/python",
     "feos-dft?/python",
     "rayon",
