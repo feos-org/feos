@@ -6,6 +6,7 @@ This section explains the thermodynamic principles and algorithms used for equat
    :maxdepth: 1
 
    properties
+   critical_points
 ```
 
 It is currently still under construction. You can help by [contributing](https://github.com/feos-org/feos/issues/70).
