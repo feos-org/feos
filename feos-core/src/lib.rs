@@ -135,6 +135,9 @@ pub trait ReferenceSystem<Inner> {
     fn to_reduced(&self) -> Inner
     where
         for<'a> &'a Inner: Div<f64, Output = Inner>;
+    fn into_reduced(self) -> Inner
+    where
+        Inner: Div<f64, Output = Inner>;
 }
 
 /// Conversion to and from reduced units
@@ -170,6 +173,21 @@ impl<
         for<'a> &'a Inner: Div<f64, Output = Inner>,
     {
         self.convert_to(Quantity::new(
+            REFERENCE_VALUES[0].powi(T::I32)
+                * REFERENCE_VALUES[1].powi(L::I32)
+                * REFERENCE_VALUES[2].powi(M::I32)
+                * REFERENCE_VALUES[3].powi(I::I32)
+                * REFERENCE_VALUES[4].powi(THETA::I32)
+                * REFERENCE_VALUES[5].powi(N::I32)
+                * REFERENCE_VALUES[6].powi(J::I32),
+        ))
+    }
+
+    fn into_reduced(self) -> Inner
+    where
+        Inner: Div<f64, Output = Inner>,
+    {
+        self.convert_into(Quantity::new(
             REFERENCE_VALUES[0].powi(T::I32)
                 * REFERENCE_VALUES[1].powi(L::I32)
                 * REFERENCE_VALUES[2].powi(M::I32)

@@ -1,7 +1,10 @@
 [package]
 name = "feos-dft"
 version = "0.7.0"
-authors = ["Philipp Rehner <prehner@ethz.ch>", "Gernot Bauer <bauer@itt.uni-stuttgart.de>"]
+authors = [
+    "Philipp Rehner <prehner@ethz.ch>",
+    "Gernot Bauer <bauer@itt.uni-stuttgart.de>",
+]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Generic classical DFT implementations for the `feos` project."
@@ -13,15 +16,15 @@ categories = ["science"]
 exclude = ["/.github/*", "*.ipynb"]
 
 [package.metadata.docs.rs]
-rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
-features = [ "rayon" ]
+rustdoc-args = ["--html-in-header", "./docs-header.html"]
+features = ["rayon"]
 
 [dependencies]
-quantity = { git = "https://github.com/itt-ustutt/quantity" }
-num-dual = "0.9"
+quantity = "0.9"
+num-dual = "0.10"
 feos-core = { version = "0.7", path = "../feos-core" }
-ndarray = "0.15"
-nalgebra = "0.32"
+ndarray = "0.16"
+nalgebra = "0.33"
 rustdct = "0.7"
 rustfft = "6.0"
 num-traits = "0.2"
@@ -29,8 +32,8 @@ libm = "0.2"
 gauss-quad = { version = "0.1", optional = true }
 petgraph = "0.6"
 typenum = "1.16"
-numpy = { version = "0.21", optional = true }
-pyo3 = { version = "0.21", optional = true }
+numpy = { version = "0.22", optional = true }
+pyo3 = { version = "0.22", optional = true }
 
 [features]
 default = []

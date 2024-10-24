@@ -1,8 +1,10 @@
 [package]
 name = "feos-core"
 version = "0.7.0"
-authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>",
-           "Philipp Rehner <prehner@ethz.ch"]
+authors = [
+    "Gernot Bauer <bauer@itt.uni-stuttgart.de>",
+    "Philipp Rehner <prehner@ethz.ch",
+]
 edition = "2021"
 rust-version = "1.80"
 license = "MIT OR Apache-2.0"
@@ -10,27 +12,32 @@ description = "Core traits and functionalities for the `feos` project."
 homepage = "https://github.com/feos-org"
 readme = "README.md"
 repository = "https://github.com/feos-org/feos"
-keywords = ["physics", "thermodynamics", "equations_of_state", "phase_equilibria"]
+keywords = [
+    "physics",
+    "thermodynamics",
+    "equations_of_state",
+    "phase_equilibria",
+]
 categories = ["science"]
 workspace = ".."
 
 [package.metadata.docs.rs]
-rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
-features = [ "rayon" ]
+rustdoc-args = ["--html-in-header", "./docs-header.html"]
+features = ["rayon"]
 
 [dependencies]
-quantity = { git = "https://github.com/itt-ustutt/quantity" }
-num-dual = { version = "0.9", features = ["linalg"] }
-ndarray = { version = "0.15", features = ["serde", "approx-0_5"] }
-nalgebra = "0.32"
+quantity = { version = "0.9", features = ["approx", "ndarray"]}
+num-dual = { version = "0.10", features = ["linalg"] }
+ndarray = { version = "0.16", features = ["serde", "approx"] }
+nalgebra = "0.33"
 num-traits = "0.2"
 thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 indexmap = "2.0"
 conv = "0.3"
-numpy = { version = "0.21", optional = true }
-pyo3 = { version = "0.21", features = ["multiple-pymethods"], optional = true }
+numpy = { git = "https://github.com/PyO3/rust-numpy", optional = true }
+pyo3 = { version = "0.22", features = ["multiple-pymethods"], optional = true }
 rayon = { version = "1.5", optional = true }
 typenum = "1.16"
 approx = "0.5"
