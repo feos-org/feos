@@ -70,7 +70,7 @@ codegen-units = 1
 
 
 [features]
-default = ["all_models", "python"]
+default = []
 dft = ["feos-dft", "petgraph"]
 estimator = []
 association = []
