@@ -1,6 +1,6 @@
 use super::{Contributions, State};
 use crate::equation_of_state::{IdealGas, Residual};
-use crate::si::{
+use quantity::{
     Density, MassDensity, MolarEnergy, MolarEntropy, Moles, Pressure, SpecificEnergy,
     SpecificEntropy, Temperature,
 };

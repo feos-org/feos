@@ -1,8 +1,9 @@
 use crate::{DFTSolver, DFTSolverLog};
 use feos_core::Verbosity;
+use ndarray::Array1;
 use numpy::{PyArray1, ToPyArray};
 use pyo3::prelude::*;
-use quantity::python::PySIArray1;
+use quantity::Time;
 
 /// Settings for the DFT solver.
 ///
@@ -22,7 +23,7 @@ pub struct PyDFTSolver(pub DFTSolver);
 #[pymethods]
 impl PyDFTSolver {
     #[new]
-    #[pyo3(text_signature = "(verbosity=None)")]
+    #[pyo3(text_signature = "(verbosity=None)", signature = (verbosity=None))]
     fn new(verbosity: Option<Verbosity>) -> Self {
         Self(DFTSolver::new(verbosity))
     }
@@ -59,6 +60,7 @@ impl PyDFTSolver {
     /// -------
     /// DFTSolver
     #[pyo3(text_signature = "($self, log=None, max_iter=None, tol=None, damping_coefficient=None)")]
+    #[pyo3(signature = (log=None, max_iter=None, tol=None, damping_coefficient=None))]
     fn picard_iteration(
         &self,
         log: Option<bool>,
@@ -97,7 +99,8 @@ impl PyDFTSolver {
     /// -------
     /// DFTSolver
     #[pyo3(
-        text_signature = "($self, log=None, max_iter=None, tol=None, damping_coefficient=None, mmax=None)"
+        text_signature = "($self, log=None, max_iter=None, tol=None, damping_coefficient=None, mmax=None)",
+        signature = (log=None, max_iter=None, tol=None, damping_coefficient=None, mmax=None)
     )]
     fn anderson_mixing(
         &self,
@@ -134,7 +137,10 @@ impl PyDFTSolver {
     /// Returns
     /// -------
     /// DFTSolver
-    #[pyo3(text_signature = "($self, log=None, max_iter=None, max_iter_gmres=None, tol=None)")]
+    #[pyo3(
+        text_signature = "($self, log=None, max_iter=None, max_iter_gmres=None, tol=None)",
+        signature = (log=None, max_iter=None, max_iter_gmres=None, tol=None)
+    )]
     fn newton(
         &self,
         log: Option<bool>,
@@ -166,8 +172,8 @@ impl PyDFTSolverLog {
     }
 
     #[getter]
-    fn get_time(&self) -> PySIArray1 {
-        self.0.time().into()
+    fn get_time(&self) -> Time<Array1<f64>> {
+        self.0.time()
     }
 
     #[getter]

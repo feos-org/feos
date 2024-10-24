@@ -128,7 +128,7 @@ impl FunctionalContribution for NonAddHardSphereFunctional {
 
         Ok(rho0
             .view()
-            .into_shape([n, rho0.len() / n])
+            .into_shape_with_order([n, rho0.len() / n])
             .unwrap()
             .axis_iter(Axis(1))
             .zip(n2.iter())
@@ -138,7 +138,7 @@ impl FunctionalContribution for NonAddHardSphereFunctional {
                 non_additive_hs_energy_density(p, &d_hs_ij, &d_hs_add_ij, &rho0, n2, n3i, xi)
             })
             .collect::<Array1<N>>()
-            .into_shape(n2.raw_dim())
+            .into_shape_with_order(n2.raw_dim())
             .unwrap())
     }
 }

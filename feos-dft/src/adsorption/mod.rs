@@ -1,12 +1,12 @@
 //! Adsorption profiles and isotherms.
 use super::functional::{HelmholtzEnergyFunctional, DFT};
 use super::solver::DFTSolver;
-use feos_core::si::{Energy, MolarEnergy, Moles, Pressure, Temperature};
 use feos_core::{
-    Components, Contributions, DensityInitialization, EosError, EosResult, Residual, SolverOptions,
-    State, StateBuilder,
+    Components, Contributions, DensityInitialization, EosError, EosResult, ReferenceSystem,
+    Residual, SolverOptions, State, StateBuilder,
 };
 use ndarray::{Array1, Array2, Dimension, Ix1, Ix3, RemoveAxis};
+use quantity::{Energy, MolarEnergy, Moles, Pressure, Temperature};
 use std::iter;
 use std::sync::Arc;
 

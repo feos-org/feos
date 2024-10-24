@@ -1,10 +1,10 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::si::{Moles, Pressure, Temperature, RGAS};
 use crate::state::{Contributions, DensityInitialization, State, TPSpec};
-use crate::{SolverOptions, TemperatureOrPressure, Verbosity};
+use crate::{ReferenceSystem, SolverOptions, TemperatureOrPressure, Verbosity};
 use ndarray::{arr1, Array1};
+use quantity::{Moles, Pressure, Temperature, RGAS};
 use std::sync::Arc;
 
 const SCALE_T_NEW: f64 = 0.7;

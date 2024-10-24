@@ -61,22 +61,19 @@ jobs:
           path: dist
   windows:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        target: [x64, x86]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: 3.9
-          architecture: ${{ matrix.target }}
+          architecture: x64
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
-          target: ${{ matrix.target }}
+          target: x64
           args: --release --out dist
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheel-${{ matrix.target }}
+          name: wheel-windows-x86_64
           path: dist

@@ -4,13 +4,13 @@ use crate::functional_contribution::*;
 use crate::ideal_chain_contribution::IdealChainContribution;
 use crate::solvation::PairPotential;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
-use feos_core::si::MolarWeight;
 use feos_core::{Components, EosResult, EquationOfState, IdealGas, Residual, StateHD};
 use ndarray::*;
 use num_dual::*;
 use petgraph::graph::{Graph, UnGraph};
 use petgraph::visit::EdgeRef;
 use petgraph::Directed;
+use quantity::MolarWeight;
 use std::borrow::Cow;
 use std::ops::{Deref, MulAssign};
 use std::sync::Arc;
@@ -220,9 +220,9 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
             let mut pd = Array::zeros(wd.raw_dim());
             c.first_partial_derivatives(
                 temperature,
-                wd.into_shape((nwd, ngrid)).unwrap(),
-                phi.view_mut().into_shape(ngrid).unwrap(),
-                pd.view_mut().into_shape((nwd, ngrid)).unwrap(),
+                wd.into_shape_with_order((nwd, ngrid)).unwrap(),
+                phi.view_mut().into_shape_with_order(ngrid).unwrap(),
+                pd.view_mut().into_shape_with_order((nwd, ngrid)).unwrap(),
             )?;
             partial_derivatives.push(pd);
             helmholtz_energy_density += &phi;
@@ -257,9 +257,9 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
             let mut pd = Array::zeros(wd.raw_dim());
             c.first_partial_derivatives_dual(
                 temperature_dual,
-                wd.into_shape((nwd, ngrid)).unwrap(),
-                phi.view_mut().into_shape(ngrid).unwrap(),
-                pd.view_mut().into_shape((nwd, ngrid)).unwrap(),
+                wd.into_shape_with_order((nwd, ngrid)).unwrap(),
+                phi.view_mut().into_shape_with_order(ngrid).unwrap(),
+                pd.view_mut().into_shape_with_order((nwd, ngrid)).unwrap(),
             )?;
             partial_derivatives.push(pd);
             helmholtz_energy_density += &phi;

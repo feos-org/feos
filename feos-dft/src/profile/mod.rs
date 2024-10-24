@@ -2,11 +2,11 @@ use crate::convolver::{BulkConvolver, Convolver};
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::Grid;
 use crate::solver::{DFTSolver, DFTSolverLog};
-use feos_core::si::{Density, Length, Moles, Quantity, Temperature, Volume, _Volume, DEGREES};
-use feos_core::{Components, EosError, EosResult, State};
+use feos_core::{Components, EosError, EosResult, ReferenceSystem, State};
 use ndarray::{
     Array, Array1, Array2, Array3, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3,
 };
+use quantity::{Density, Length, Moles, Quantity, Temperature, Volume, _Volume, DEGREES};
 use std::ops::{Add, MulAssign};
 use std::sync::Arc;
 use typenum::Sum;
@@ -168,7 +168,7 @@ impl<F> DFTProfile<Ix3, F> {
         let v_grid = Array::from_shape_fn(shape, |(_, j, _)| v.grid[j]);
         let w_grid = Array::from_shape_fn(shape, |(_, _, k)| w.grid[k]);
         let xi = (alpha.cos() - gamma.cos() * beta.cos()) / gamma.sin();
-        let zeta = (1.0 - beta.cos().powi(2) - xi * xi).sqrt();
+        let zeta = (1.0_f64 - beta.cos().powi(2) - xi * xi).sqrt();
         let x = Length::from_reduced(u_grid + &v_grid * gamma.cos() + &w_grid * beta.cos());
         let y = Length::from_reduced(v_grid * gamma.sin() + &w_grid * xi);
         let z = Length::from_reduced(w_grid * zeta);

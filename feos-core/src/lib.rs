@@ -1,6 +1,9 @@
 #![warn(clippy::all)]
 #![allow(clippy::reversed_empty_ranges)]
 #![warn(clippy::allow_attributes)]
+use quantity::{Quantity, SIUnit};
+use std::ops::{Div, Mul};
+use typenum::Integer;
 
 /// Print messages with level `Verbosity::Iter` or higher.
 #[macro_export]
@@ -28,7 +31,6 @@ mod equation_of_state;
 mod errors;
 pub mod parameter;
 mod phase_equilibria;
-pub mod si;
 mod state;
 pub use equation_of_state::{
     Components, EntropyScaling, EquationOfState, IdealGas, NoResidual, Residual,
@@ -46,7 +48,7 @@ pub mod python;
 
 /// Level of detail in the iteration output.
 #[derive(Copy, Clone, PartialOrd, PartialEq, Eq)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq))]
 pub enum Verbosity {
     /// Do not print output.
     None,
@@ -115,18 +117,100 @@ impl SolverOptions {
     }
 }
 
+/// Reference values used for reduced properties in feos
+const REFERENCE_VALUES: [f64; 7] = [
+    1e-12,               // 1 ps
+    1e-10,               // 1 Å
+    1.380649e-27,        // Fixed through k_B
+    1.0,                 // 1 A
+    1.0,                 // 1 K
+    1.0 / 6.02214076e23, // 1/N_AV
+    1.0,                 // 1 Cd
+];
+
+pub trait ReferenceSystem<Inner> {
+    fn from_reduced(value: Inner) -> Self
+    where
+        Inner: Mul<f64, Output = Inner>;
+    fn to_reduced(&self) -> Inner
+    where
+        for<'a> &'a Inner: Div<f64, Output = Inner>;
+    fn into_reduced(self) -> Inner
+    where
+        Inner: Div<f64, Output = Inner>;
+}
+
+/// Conversion to and from reduced units
+impl<
+        Inner,
+        T: Integer,
+        L: Integer,
+        M: Integer,
+        I: Integer,
+        THETA: Integer,
+        N: Integer,
+        J: Integer,
+    > ReferenceSystem<Inner> for Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>
+{
+    fn from_reduced(value: Inner) -> Self
+    where
+        Inner: Mul<f64, Output = Inner>,
+    {
+        Self::new(
+            value
+                * REFERENCE_VALUES[0].powi(T::I32)
+                * REFERENCE_VALUES[1].powi(L::I32)
+                * REFERENCE_VALUES[2].powi(M::I32)
+                * REFERENCE_VALUES[3].powi(I::I32)
+                * REFERENCE_VALUES[4].powi(THETA::I32)
+                * REFERENCE_VALUES[5].powi(N::I32)
+                * REFERENCE_VALUES[6].powi(J::I32),
+        )
+    }
+
+    fn to_reduced(&self) -> Inner
+    where
+        for<'a> &'a Inner: Div<f64, Output = Inner>,
+    {
+        self.convert_to(Quantity::new(
+            REFERENCE_VALUES[0].powi(T::I32)
+                * REFERENCE_VALUES[1].powi(L::I32)
+                * REFERENCE_VALUES[2].powi(M::I32)
+                * REFERENCE_VALUES[3].powi(I::I32)
+                * REFERENCE_VALUES[4].powi(THETA::I32)
+                * REFERENCE_VALUES[5].powi(N::I32)
+                * REFERENCE_VALUES[6].powi(J::I32),
+        ))
+    }
+
+    fn into_reduced(self) -> Inner
+    where
+        Inner: Div<f64, Output = Inner>,
+    {
+        self.convert_into(Quantity::new(
+            REFERENCE_VALUES[0].powi(T::I32)
+                * REFERENCE_VALUES[1].powi(L::I32)
+                * REFERENCE_VALUES[2].powi(M::I32)
+                * REFERENCE_VALUES[3].powi(I::I32)
+                * REFERENCE_VALUES[4].powi(THETA::I32)
+                * REFERENCE_VALUES[5].powi(N::I32)
+                * REFERENCE_VALUES[6].powi(J::I32),
+        ))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::cubic::*;
     use crate::equation_of_state::{Components, EquationOfState, IdealGas};
     use crate::parameter::*;
-    use crate::si::{BAR, KELVIN, MOL, RGAS};
     use crate::Contributions;
     use crate::EosResult;
     use crate::StateBuilder;
     use approx::*;
     use ndarray::Array1;
     use num_dual::DualNum;
+    use quantity::{BAR, KELVIN, MOL, RGAS};
     use std::sync::Arc;
 
     // Only to be able to instantiate an `EquationOfState`

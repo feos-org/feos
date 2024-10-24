@@ -1,13 +1,11 @@
 use super::{DataSet, EstimatorError, Phase};
-use feos_core::si::{
-    MolarEnergy, Moles, Pressure, Quantity, Temperature, _Dimensionless, PASCAL, RGAS,
-};
 use feos_core::{
-    Contributions, DensityInitialization, PhaseDiagram, PhaseEquilibrium, Residual, State,
-    TemperatureOrPressure,
+    Contributions, DensityInitialization, PhaseDiagram, PhaseEquilibrium, ReferenceSystem,
+    Residual, State, TemperatureOrPressure,
 };
 use itertools::izip;
 use ndarray::{arr1, s, Array1, ArrayView1, Axis};
+use quantity::{MolarEnergy, Moles, Pressure, Quantity, Temperature, _Dimensionless, PASCAL, RGAS};
 use std::fmt;
 use std::iter::FromIterator;
 use std::ops::Sub;
@@ -177,7 +175,7 @@ impl<E: Residual> DataSet<E> for BinaryVlePressure {
                 Ok(vle
                     .vapor()
                     .pressure(Contributions::Total)
-                    .convert_into(self.unit))
+                    .convert_to(self.unit))
             })
             .collect()
     }

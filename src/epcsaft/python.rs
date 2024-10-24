@@ -47,7 +47,8 @@ pub struct PyElectrolytePcSaftRecord(ElectrolytePcSaftRecord);
 impl PyElectrolytePcSaftRecord {
     #[new]
     #[pyo3(
-        text_signature = "(m, sigma, epsilon_k, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, permittivity_record=None)"
+        text_signature = "(m, sigma, epsilon_k, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, z=None, permittivity_record=None)",
+        signature = (m, sigma, epsilon_k, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, z=None, permittivity_record=None)
     )]
     #[expect(clippy::too_many_arguments)]
     fn new(

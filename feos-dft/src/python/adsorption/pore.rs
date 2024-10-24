@@ -33,16 +33,17 @@ macro_rules! impl_pore {
         impl PyPore1D {
             #[new]
             #[pyo3(text_signature = "(geometry, pore_size, potential, n_grid=None, potential_cutoff=None)")]
+            #[pyo3(signature = (geometry, pore_size, potential, n_grid=None, potential_cutoff=None))]
             fn new(
                 geometry: Geometry,
-                pore_size: PySINumber,
+                pore_size: Length,
                 potential: PyExternalPotential,
                 n_grid: Option<usize>,
                 potential_cutoff: Option<f64>,
             ) -> PyResult<Self> {
                 Ok(Self(Pore1D::new(
                     geometry,
-                    pore_size.try_into()?,
+                    pore_size,
                     potential.0,
                     n_grid,
                     potential_cutoff,
@@ -66,10 +67,11 @@ macro_rules! impl_pore {
             /// -------
             /// PoreProfile1D
             #[pyo3(text_signature = "($self, bulk, density=None, external_potential=None)")]
+            #[pyo3(signature = (bulk, density=None, external_potential=None))]
             fn initialize(
                 &self,
                 bulk: &PyState,
-                density: Option<PySIArray2>,
+                density: Option<Density<Array2<f64>>>,
                 external_potential: Option<&Bound<'_ ,PyArray2<f64>>>,
             ) -> PyResult<PyPoreProfile1D> {
                 Ok(PyPoreProfile1D(self.0.initialize(
@@ -85,7 +87,7 @@ macro_rules! impl_pore {
             }
 
             #[getter]
-            fn get_pore_size(&self)-> PySINumber {
+            fn get_pore_size(&self)-> Length {
                 self.0.pore_size.into()
             }
 
@@ -106,7 +108,7 @@ macro_rules! impl_pore {
 
             /// The pore volume using Helium at 298 K as reference.
             #[getter]
-            fn get_pore_volume(&self) -> PyResult<PySINumber> {
+            fn get_pore_volume(&self) -> PyResult<Volume> {
                 Ok(self.0.pore_volume()?.into())
             }
         }
@@ -114,22 +116,22 @@ macro_rules! impl_pore {
         #[pymethods]
         impl PyPoreProfile1D {
             #[getter]
-            fn get_grand_potential(&self) -> Option<PySINumber> {
-                self.0.grand_potential.map(PySINumber::from)
+            fn get_grand_potential(&self) -> Option<Energy> {
+                self.0.grand_potential
             }
 
             #[getter]
-            fn get_interfacial_tension(&self) -> Option<PySINumber> {
-                self.0.interfacial_tension.map(PySINumber::from)
+            fn get_interfacial_tension(&self) -> Option<Energy> {
+                self.0.interfacial_tension
             }
 
             #[getter]
-            fn get_partial_molar_enthalpy_of_adsorption(&self) -> PyResult<PySIArray1> {
+            fn get_partial_molar_enthalpy_of_adsorption(&self) -> PyResult<MolarEnergy<Array1<f64>>> {
                 Ok(self.0.partial_molar_enthalpy_of_adsorption()?.into())
             }
 
             #[getter]
-            fn get_enthalpy_of_adsorption(&self) -> PyResult<PySINumber> {
+            fn get_enthalpy_of_adsorption(&self) -> PyResult<MolarEnergy> {
                 Ok(self.0.enthalpy_of_adsorption()?.into())
             }
         }
@@ -147,13 +149,13 @@ macro_rules! impl_pore {
             #[new]
             #[pyo3(text_signature = "(system_size, angle, n_grid)")]
             fn new(
-                system_size: [PySINumber; 2],
-                angle: PyAngle,
+                system_size: [Length; 2],
+                angle: Angle,
                 n_grid: [usize; 2],
             ) -> PyResult<Self> {
                 Ok(Self(Pore2D::new(
-                    [system_size[0].try_into()?, system_size[1].try_into()?],
-                    angle.into(),
+                    [system_size[0], system_size[1]],
+                    angle,
                     n_grid,
                 )))
             }
@@ -175,10 +177,11 @@ macro_rules! impl_pore {
             /// -------
             /// PoreProfile2D
             #[pyo3(text_signature = "($self, bulk, density=None, external_potential=None)")]
+            #[pyo3(signature = (bulk, density=None, external_potential=None))]
             fn initialize(
                 &self,
                 bulk: &PyState,
-                density: Option<PySIArray3>,
+                density: Option<Density<Array3<f64>>>,
                 external_potential: Option<&Bound<'_, PyArray3<f64>>>,
             ) -> PyResult<PyPoreProfile2D> {
                 Ok(PyPoreProfile2D(self.0.initialize(
@@ -190,31 +193,31 @@ macro_rules! impl_pore {
 
             /// The pore volume using Helium at 298 K as reference.
             #[getter]
-            fn get_pore_volume(&self) -> PyResult<PySINumber> {
-                Ok(self.0.pore_volume()?.into())
+            fn get_pore_volume(&self) -> PyResult<Volume> {
+                Ok(self.0.pore_volume()?)
             }
         }
 
         #[pymethods]
         impl PyPoreProfile2D {
             #[getter]
-            fn get_grand_potential(&self) -> Option<PySINumber> {
-                self.0.grand_potential.map(PySINumber::from)
+            fn get_grand_potential(&self) -> Option<Energy> {
+                self.0.grand_potential
             }
 
             #[getter]
-            fn get_interfacial_tension(&self) -> Option<PySINumber> {
-                self.0.interfacial_tension.map(PySINumber::from)
+            fn get_interfacial_tension(&self) -> Option<Energy> {
+                self.0.interfacial_tension
             }
 
             #[getter]
-            fn get_partial_molar_enthalpy_of_adsorption(&self) -> PyResult<PySIArray1> {
-                Ok(self.0.partial_molar_enthalpy_of_adsorption()?.into())
+            fn get_partial_molar_enthalpy_of_adsorption(&self) -> PyResult<MolarEnergy<Array1<f64>>> {
+                Ok(self.0.partial_molar_enthalpy_of_adsorption()?)
             }
 
             #[getter]
-            fn get_enthalpy_of_adsorption(&self) -> PyResult<PySINumber> {
-                Ok(self.0.enthalpy_of_adsorption()?.into())
+            fn get_enthalpy_of_adsorption(&self) -> PyResult<MolarEnergy> {
+                Ok(self.0.enthalpy_of_adsorption()?)
             }
         }
 
@@ -256,27 +259,28 @@ macro_rules! impl_pore {
         impl PyPore3D {
             #[new]
             #[pyo3(text_signature = "(system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, angles=None, potential_cutoff=None, cutoff_radius=None)")]
+            #[pyo3(signature = (system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, angles=None, potential_cutoff=None, cutoff_radius=None))]
             #[expect(clippy::too_many_arguments)]
             fn new(
-                system_size: [PySINumber; 3],
+                system_size: [Length; 3],
                 n_grid: [usize; 3],
-                coordinates: PySIArray2,
+                coordinates: Length<Array2<f64>>,
                 sigma_ss: &Bound<'_, PyArray1<f64>>,
                 epsilon_k_ss: &Bound<'_, PyArray1<f64>>,
-                angles: Option<[PyAngle; 3]>,
+                angles: Option<[Angle; 3]>,
                 potential_cutoff: Option<f64>,
-                cutoff_radius: Option<PySINumber>,
-            ) -> PyResult<Self> {
-                Ok(Self(Pore3D::new(
-                    [system_size[0].try_into()?, system_size[1].try_into()?, system_size[2].try_into()?],
+                cutoff_radius: Option<Length>,
+            ) -> Self {
+                Self(Pore3D::new(
+                    system_size,
                     n_grid,
-                    coordinates.try_into()?,
+                    coordinates,
                     sigma_ss.to_owned_array(),
                     epsilon_k_ss.to_owned_array(),
-                    angles.map(|angles| [angles[0].into(), angles[1].into(), angles[2].into()]),
+                    angles,
                     potential_cutoff,
-                    cutoff_radius.map(|c| c.try_into()).transpose()?,
-                )))
+                    cutoff_radius,
+                ))
             }
 
             /// Initialize the pore for the given bulk state.
@@ -296,10 +300,11 @@ macro_rules! impl_pore {
             /// -------
             /// PoreProfile3D
             #[pyo3(text_signature = "($self, bulk, density=None, external_potential=None)")]
+            #[pyo3(signature = (bulk, density=None, external_potential=None))]
             fn initialize(
                 &self,
                 bulk: &PyState,
-                density: Option<PySIArray4>,
+                density: Option<Density<Array4<f64>>>,
                 external_potential: Option<&Bound<'_, PyArray4<f64>>>,
             ) -> PyResult<PyPoreProfile3D> {
                 Ok(PyPoreProfile3D(self.0.initialize(
@@ -311,7 +316,7 @@ macro_rules! impl_pore {
 
             /// The pore volume using Helium at 298 K as reference.
             #[getter]
-            fn get_pore_volume(&self) -> PyResult<PySINumber> {
+            fn get_pore_volume(&self) -> PyResult<Volume> {
                 Ok(self.0.pore_volume()?.into())
             }
         }
@@ -319,23 +324,23 @@ macro_rules! impl_pore {
         #[pymethods]
         impl PyPoreProfile3D {
             #[getter]
-            fn get_grand_potential(&self) -> Option<PySINumber> {
-                self.0.grand_potential.map(PySINumber::from)
+            fn get_grand_potential(&self) -> Option<Energy> {
+                self.0.grand_potential
             }
 
             #[getter]
-            fn get_interfacial_tension(&self) -> Option<PySINumber> {
-                self.0.interfacial_tension.map(PySINumber::from)
+            fn get_interfacial_tension(&self) -> Option<Energy> {
+                self.0.interfacial_tension
             }
 
             #[getter]
-            fn get_partial_molar_enthalpy_of_adsorption(&self) -> PyResult<PySIArray1> {
-                Ok(self.0.partial_molar_enthalpy_of_adsorption()?.into())
+            fn get_partial_molar_enthalpy_of_adsorption(&self) -> PyResult<MolarEnergy<Array1<f64>>> {
+                Ok(self.0.partial_molar_enthalpy_of_adsorption()?)
             }
 
             #[getter]
-            fn get_enthalpy_of_adsorption(&self) -> PyResult<PySINumber> {
-                Ok(self.0.enthalpy_of_adsorption()?.into())
+            fn get_enthalpy_of_adsorption(&self) -> PyResult<MolarEnergy> {
+                Ok(self.0.enthalpy_of_adsorption()?)
             }
         }
     };

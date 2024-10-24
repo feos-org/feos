@@ -6,10 +6,10 @@
 //! [this wikipedia article](https://en.wikipedia.org/wiki/Cubic_equations_of_state#Peng%E2%80%93Robinson_equation_of_state).
 use crate::equation_of_state::{Components, Residual};
 use crate::parameter::{Identifier, Parameter, ParameterError, PureRecord};
-use crate::si::{MolarWeight, GRAM, MOL};
 use crate::state::StateHD;
 use ndarray::{Array1, Array2, ScalarOperand};
 use num_dual::DualNum;
+use quantity::{MolarWeight, GRAM, MOL};
 use serde::{Deserialize, Serialize};
 use std::f64::consts::SQRT_2;
 use std::fmt;
@@ -223,10 +223,10 @@ impl Residual for PengRobinson {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::si::{KELVIN, PASCAL};
     use crate::state::{Contributions, State};
     use crate::{EosResult, SolverOptions, Verbosity};
     use approx::*;
+    use quantity::{KELVIN, PASCAL};
     use std::sync::Arc;
 
     fn pure_record_vec() -> Vec<PureRecord<PengRobinsonRecord>> {

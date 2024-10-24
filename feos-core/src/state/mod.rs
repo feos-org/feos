@@ -9,10 +9,11 @@
 use crate::density_iteration::density_iteration;
 use crate::equation_of_state::{IdealGas, Residual};
 use crate::errors::{EosError, EosResult};
-use crate::si::*;
+use crate::ReferenceSystem;
 use cache::Cache;
 use ndarray::prelude::*;
 use num_dual::*;
+use quantity::*;
 use std::fmt;
 use std::ops::Sub;
 use std::sync::{Arc, Mutex};
@@ -27,8 +28,8 @@ pub use builder::StateBuilder;
 pub use statevec::StateVec;
 
 /// Possible contributions that can be computed.
-#[derive(Clone, Copy)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[derive(Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq))]
 pub enum Contributions {
     /// Only compute the ideal gas contribution
     IdealGas,

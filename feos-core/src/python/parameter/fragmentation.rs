@@ -48,7 +48,7 @@ pub struct PySmartsRecord(pub SmartsRecord);
 #[pymethods]
 impl PySmartsRecord {
     #[new]
-    #[pyo3(text_signature = "(group, smarts, max=None)")]
+    #[pyo3(text_signature = "(group, smarts, max=None)", signature = (group, smarts, max=None))]
     fn new(group: String, smarts: String, max: Option<usize>) -> Self {
         Self(SmartsRecord::new(group, smarts, max))
     }
@@ -124,7 +124,7 @@ fn fragment_molecule(
             let m = chem.call_method1("MolFromSmarts", (s.0.smarts,))?;
             let matches = mol
                 .call_method1("GetSubstructMatches", (m,))?
-                .extract::<Vec<&PyAny>>()?;
+                .extract::<Vec<Bound<'_, PyAny>>>()?;
             let mut matches: Vec<_> = matches
                 .into_iter()
                 .map(|m| m.extract::<Vec<usize>>())
@@ -158,7 +158,7 @@ fn fragment_molecule(
     let builtins = py.import_bound("builtins")?;
     let bonds = builtins
         .call_method1("list", (bonds,))?
-        .extract::<Vec<&PyAny>>()?;
+        .extract::<Vec<Bound<'_, PyAny>>>()?;
     let bonds: Vec<_> = bonds
         .into_iter()
         .map(|b| {

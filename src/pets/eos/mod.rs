@@ -1,7 +1,7 @@
 use super::parameters::PetsParameters;
 use crate::hard_sphere::HardSphere;
 use feos_core::parameter::Parameter;
-use feos_core::si::{MolarWeight, GRAM, MOL};
+use quantity::{MolarWeight, GRAM, MOL};
 use feos_core::{Components, Residual};
 use ndarray::Array1;
 use std::f64::consts::FRAC_PI_6;
@@ -314,7 +314,7 @@ mod tests {
         argon_krypton_parameters, argon_parameters, krypton_parameters,
     };
     use approx::assert_relative_eq;
-    use feos_core::si::{BAR, KELVIN, METER, PASCAL, RGAS};
+    use quantity::{BAR, KELVIN, METER, PASCAL, RGAS};
     use feos_core::{Contributions, DensityInitialization, PhaseEquilibrium, State, StateHD};
     use ndarray::arr1;
     use typenum::P3;

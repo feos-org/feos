@@ -3,7 +3,7 @@ use super::record::GcPcSaftAssociationRecord;
 use crate::association::{Association, AssociationStrength};
 use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use feos_core::parameter::ParameterHetero;
-use feos_core::si::{MolarWeight, GRAM, MOL};
+use quantity::{MolarWeight, GRAM, MOL};
 use feos_core::{Components, EosResult};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;

@@ -2,10 +2,12 @@ use super::parameters::PcSaftParameters;
 use crate::association::Association;
 use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::parameter::Parameter;
-use feos_core::{si::*, StateHD};
-use feos_core::{Components, EntropyScaling, EosError, EosResult, Residual, State};
+use feos_core::{
+    Components, EntropyScaling, EosError, EosResult, ReferenceSystem, Residual, State, StateHD,
+};
 use ndarray::Array1;
 use num_dual::DualNum;
+use quantity::*;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::fmt;
 use std::sync::Arc;
@@ -211,7 +213,7 @@ fn chapman_enskog_thermal_conductivity(
     epsilon_k: f64,
 ) -> ThermalConductivity {
     let t = temperature.to_reduced();
-    0.083235 * (t * m / molarweight.convert_into(GRAM / MOL)).sqrt()
+    0.083235 * (t * m / molarweight.convert_to(GRAM / MOL)).sqrt()
         / sigma.powi(2)
         / omega22(t / epsilon_k)
         * WATT
@@ -373,9 +375,9 @@ mod tests {
         butane_parameters, propane_butane_parameters, propane_parameters, water_parameters,
     };
     use approx::assert_relative_eq;
-    use feos_core::si::{BAR, KELVIN, METER, MILLI, PASCAL, RGAS, SECOND};
     use feos_core::*;
     use ndarray::arr1;
+    use quantity::{BAR, KELVIN, METER, MILLI, PASCAL, RGAS, SECOND};
     use typenum::P3;
 
     #[test]

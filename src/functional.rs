@@ -7,7 +7,7 @@ use crate::pcsaft::{PcSaftFunctional, PcSaftFunctionalContribution};
 use crate::pets::{PetsFunctional, PetsFunctionalContribution};
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::{SaftVRQMieFunctional, SaftVRQMieFunctionalContribution};
-use feos_core::si::MolarWeight;
+use quantity::MolarWeight;
 use feos_core::*;
 use feos_derive::FunctionalContribution;
 use feos_derive::{Components, HelmholtzEnergyFunctional};

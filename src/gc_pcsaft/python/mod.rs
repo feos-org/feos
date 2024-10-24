@@ -25,7 +25,8 @@ pub struct PyGcPcSaftRecord(GcPcSaftRecord);
 impl PyGcPcSaftRecord {
     #[new]
     #[pyo3(
-        text_signature = "(m, sigma, epsilon_k, mu=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, psi_dft=None)"
+        text_signature = "(m, sigma, epsilon_k, mu=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, psi_dft=None)",
+        signature = (m, sigma, epsilon_k, mu=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, psi_dft=None)
     )]
     #[expect(clippy::too_many_arguments)]
     fn new(

@@ -6,15 +6,15 @@ use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
 use crate::WeightFunctionInfo;
-use feos_core::si::{
-    Density, Dimensionless, Energy, Length, MolarEnergy, MolarWeight, Temperature, Volume, KELVIN,
-};
-use feos_core::{Components, Contributions, EosResult, State, StateBuilder};
+use feos_core::{Components, Contributions, EosResult, ReferenceSystem, State, StateBuilder};
 use ndarray::prelude::*;
 use ndarray::Axis as Axis_nd;
 use ndarray::RemoveAxis;
 use num_dual::linalg::LU;
 use num_dual::DualNum;
+use quantity::{
+    Density, Dimensionless, Energy, Length, MolarEnergy, MolarWeight, Temperature, Volume, KELVIN,
+};
 use std::fmt::Display;
 use std::sync::Arc;
 
@@ -143,7 +143,7 @@ where
 
     pub fn enthalpy_of_adsorption(&self) -> EosResult<MolarEnergy> {
         Ok((self.partial_molar_enthalpy_of_adsorption()?
-            * Dimensionless::from(&self.profile.bulk.molefracs))
+            * Dimensionless::new(&self.profile.bulk.molefracs))
         .sum())
     }
 }

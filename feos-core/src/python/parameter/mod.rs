@@ -39,7 +39,8 @@ pub struct PyIdentifier(pub Identifier);
 impl PyIdentifier {
     #[new]
     #[pyo3(
-        text_signature = "(cas=None, name=None, iupac_name=None, smiles=None, inchi=None, formula=None)"
+        text_signature = "(cas=None, name=None, iupac_name=None, smiles=None, inchi=None, formula=None)",
+        signature = (cas=None, name=None, iupac_name=None, smiles=None, inchi=None, formula=None)
     )]
     fn new(
         cas: Option<&str>,
@@ -145,7 +146,7 @@ pub struct PyChemicalRecord(pub ChemicalRecord);
 #[pymethods]
 impl PyChemicalRecord {
     #[new]
-    #[pyo3(text_signature = "(identifier, segments, bonds=None)")]
+    #[pyo3(text_signature = "(identifier, segments, bonds=None)", signature = (identifier, segments, bonds=None))]
     fn new(
         identifier: PyIdentifier,
         segments: Vec<String>,
@@ -268,6 +269,7 @@ macro_rules! impl_binary_record {
             }
 
             #[getter]
+            #[expect(irrefutable_let_patterns)]
             fn get_model_record<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
                 Ok(if let Ok(mr) = f64::try_from(self.0.model_record.clone()) {
                     pyo3::types::PyFloat::new_bound(py, mr).into_any()
@@ -631,7 +633,7 @@ macro_rules! impl_parameter {
             /// binary_record : float or BinaryRecord, optional
             ///     The binary interaction parameter or binary interaction record.
             #[staticmethod]
-            #[pyo3(text_signature = "(pure_records, binary_record=None)")]
+            #[pyo3(text_signature = "(pure_records, binary_record=None)", signature = (pure_records, binary_record=None))]
             fn new_binary(
                 pure_records: Vec<PyPureRecord>,
                 binary_record: Option<&Bound<'_, PyAny>>,
@@ -767,7 +769,8 @@ macro_rules! impl_parameter_from_segments {
             /// binary_segment_records : [BinarySegmentRecord], optional
             ///     A list of binary segment-segment parameters.
             #[staticmethod]
-            #[pyo3(text_signature = "(chemical_records, segment_records, binary_segment_records=None)")]
+            #[pyo3(text_signature = "(chemical_records, segment_records, binary_segment_records=None)",
+            signature = (chemical_records, segment_records, binary_segment_records=None))]
             fn from_segments(
                 chemical_records: Vec<PyChemicalRecord>,
                 segment_records: Vec<PySegmentRecord>,
@@ -834,6 +837,7 @@ macro_rules! impl_parameter_from_segments {
             ///     A list of binary segment-segment parameters.
             #[staticmethod]
             #[pyo3(text_signature = "(identifier, smarts_records, segment_records, binary_segment_records=None)")]
+            #[pyo3(signature = (identifier, smarts_records, segment_records, binary_segment_records=None))]
             fn from_smiles(
                 identifier: Vec<Bound<'_,PyAny>>,
                 smarts_records: Vec<PySmartsRecord>,

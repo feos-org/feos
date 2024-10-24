@@ -1,9 +1,11 @@
 use super::parameters::SaftVRQMieParameters;
 use feos_core::parameter::{Parameter, ParameterError};
-use feos_core::si::*;
-use feos_core::{Components, EntropyScaling, EosError, EosResult, Residual, State};
+use feos_core::{
+    Components, EntropyScaling, EosError, EosResult, ReferenceSystem, Residual, State,
+};
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
+use quantity::*;
 use std::convert::TryFrom;
 use std::f64::consts::{FRAC_PI_6, PI};
 use std::sync::Arc;
@@ -33,8 +35,8 @@ impl Default for SaftVRQMieOptions {
 }
 
 /// Order of Feynman-Hibbs potential
-#[derive(Copy, Clone)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[derive(Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int))]
 pub enum FeynmanHibbsOrder {
     /// Mie potential
     FH0 = 0,
@@ -209,7 +211,7 @@ fn chapman_enskog_thermal_conductivity(
     epsilon_k: f64,
 ) -> ThermalConductivity {
     let t = temperature.to_reduced();
-    0.083235 * (t * m / molarweight.convert_into(GRAM / MOL)).sqrt()
+    0.083235 * (t * m / molarweight.convert_to(GRAM / MOL)).sqrt()
         / sigma.powi(2)
         / omega22(t / epsilon_k)
         * WATT
