@@ -28,8 +28,8 @@ pub use builder::StateBuilder;
 pub use statevec::StateVec;
 
 /// Possible contributions that can be computed.
-#[derive(Clone, Copy)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[derive(Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq))]
 pub enum Contributions {
     /// Only compute the ideal gas contribution
     IdealGas,

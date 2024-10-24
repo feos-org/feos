@@ -22,8 +22,8 @@ use hard_chain::HardChain;
 use ionic::Ionic;
 
 /// Implemented variants of the ePC-SAFT equation of state.
-#[derive(Copy, Clone)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[derive(Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq))]
 pub enum ElectrolytePcSaftVariants {
     Advanced,
     Revised,

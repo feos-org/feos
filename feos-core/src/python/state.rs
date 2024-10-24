@@ -54,6 +54,7 @@ macro_rules! impl_state {
         impl PyState {
             #[new]
             #[pyo3(text_signature = "(eos, temperature=None, volume=None, density=None, partial_density=None, total_moles=None, moles=None, molefracs=None, pressure=None, molar_enthalpy=None, molar_entropy=None, molar_internal_energy=None, density_initialization=None, initial_temperature=None)")]
+            #[pyo3(signature = (eos, temperature=None, volume=None, density=None, partial_density=None, total_moles=None, moles=None, molefracs=None, pressure=None, molar_enthalpy=None, molar_entropy=None, molar_internal_energy=None, density_initialization=None, initial_temperature=None))]
             #[expect(clippy::too_many_arguments)]
             pub fn new<'py>(
                 eos: $py_eos,
@@ -131,6 +132,7 @@ macro_rules! impl_state {
             /// State : tate at critical conditions
             #[staticmethod]
             #[pyo3(text_signature = "(eos, initial_temperature=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (eos, initial_temperature=None, max_iter=None, tol=None, verbosity=None))]
             fn critical_point_pure(
                 eos: $py_eos,
                 initial_temperature: Option<Temperature>,
@@ -166,6 +168,7 @@ macro_rules! impl_state {
             /// State : State at critical conditions.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, moles=None, initial_temperature=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (eos, moles=None, initial_temperature=None, max_iter=None, tol=None, verbosity=None))]
             fn critical_point(
                 eos: $py_eos,
                 moles: Option<Moles<Array1<f64>>>,
@@ -206,6 +209,7 @@ macro_rules! impl_state {
             /// State : State at critical conditions.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, initial_temperature=None, initial_molefracs=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (eos, temperature_or_pressure, initial_temperature=None, initial_molefracs=None, max_iter=None, tol=None, verbosity=None))]
             fn critical_point_binary(
                 eos: $py_eos,
                 temperature_or_pressure: Bound<'_, PyAny>,
@@ -262,6 +266,7 @@ macro_rules! impl_state {
             /// State : State at critical conditions.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature, moles=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (eos, temperature, moles=None, max_iter=None, tol=None, verbosity=None))]
             fn spinodal(
                 eos: $py_eos,
                 temperature: Temperature,
@@ -295,6 +300,7 @@ macro_rules! impl_state {
             /// -------
             /// State
             #[pyo3(text_signature = "(max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (max_iter=None, tol=None, verbosity=None))]
             fn stability_analysis(&self,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
@@ -324,6 +330,7 @@ macro_rules! impl_state {
             /// -------
             /// bool
             #[pyo3(text_signature = "(max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (max_iter=None, tol=None, verbosity=None))]
             fn is_stable(&self,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
@@ -1375,14 +1382,14 @@ macro_rules! impl_state {
                         dict.insert(String::from(format!("x{}", i)), xs.column(i).to_vec());
                     }
                 }
-                dict.insert(String::from("temperature"), states.temperature().convert_to(KELVIN).into_raw_vec());
-                dict.insert(String::from("pressure"), states.pressure().convert_to(PASCAL).into_raw_vec());
-                dict.insert(String::from("density"), states.density().convert_to(MOL / METER.powi::<P3>()).into_raw_vec());
-                dict.insert(String::from("mass density"), states.mass_density().convert_to(KILOGRAM / METER.powi::<P3>()).into_raw_vec());
-                dict.insert(String::from("molar enthalpy"), states.molar_enthalpy(contributions).convert_to(KILO * JOULE / MOL).into_raw_vec());
-                dict.insert(String::from("molar entropy"), states.molar_entropy(contributions).convert_to(KILO * JOULE / KELVIN / MOL).into_raw_vec());
-                dict.insert(String::from("specific enthalpy"), states.specific_enthalpy(contributions).convert_to(KILO * JOULE / KILOGRAM).into_raw_vec());
-                dict.insert(String::from("specific entropy"), states.specific_entropy(contributions).convert_to(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec());
+                dict.insert(String::from("temperature"), states.temperature().convert_to(KELVIN).into_raw_vec_and_offset().0);
+                dict.insert(String::from("pressure"), states.pressure().convert_to(PASCAL).into_raw_vec_and_offset().0);
+                dict.insert(String::from("density"), states.density().convert_to(MOL / METER.powi::<P3>()).into_raw_vec_and_offset().0);
+                dict.insert(String::from("mass density"), states.mass_density().convert_to(KILOGRAM / METER.powi::<P3>()).into_raw_vec_and_offset().0);
+                dict.insert(String::from("molar enthalpy"), states.molar_enthalpy(contributions).convert_to(KILO * JOULE / MOL).into_raw_vec_and_offset().0);
+                dict.insert(String::from("molar entropy"), states.molar_entropy(contributions).convert_to(KILO * JOULE / KELVIN / MOL).into_raw_vec_and_offset().0);
+                dict.insert(String::from("specific enthalpy"), states.specific_enthalpy(contributions).convert_to(KILO * JOULE / KILOGRAM).into_raw_vec_and_offset().0);
+                dict.insert(String::from("specific entropy"), states.specific_entropy(contributions).convert_to(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec_and_offset().0);
                 dict
             }
         }

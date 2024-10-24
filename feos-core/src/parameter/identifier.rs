@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
 /// Possible variants to identify a substance.
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq))]
 pub enum IdentifierOption {
     Cas,
     Name,

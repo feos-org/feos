@@ -573,10 +573,12 @@ where
             let mut pd2 = Array::zeros(dim).into_dimensionality().unwrap();
             c.second_partial_derivatives(
                 temperature,
-                wd.view().into_shape((nwd, ngrid)).unwrap(),
-                phi.view_mut().into_shape(ngrid).unwrap(),
-                pd.view_mut().into_shape((nwd, ngrid)).unwrap(),
-                pd2.view_mut().into_shape((nwd, nwd, ngrid)).unwrap(),
+                wd.view().into_shape_with_order((nwd, ngrid)).unwrap(),
+                phi.view_mut().into_shape_with_order(ngrid).unwrap(),
+                pd.view_mut().into_shape_with_order((nwd, ngrid)).unwrap(),
+                pd2.view_mut()
+                    .into_shape_with_order((nwd, nwd, ngrid))
+                    .unwrap(),
             )?;
             second_partial_derivatives.push(pd2);
         }

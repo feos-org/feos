@@ -326,8 +326,8 @@ impl fmt::Display for Quadrupole {
 }
 
 /// Different combination rules used in the dipole-quadrupole contribution.
-#[derive(Clone, Copy)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[derive(Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq))]
 pub enum DQVariants {
     DQ35,
     DQ44,

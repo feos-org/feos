@@ -92,11 +92,11 @@ where
             let ngrid = wd.len() / nwd;
             helmholtz_energy_density
                 .view_mut()
-                .into_shape(ngrid)
+                .into_shape_with_order(ngrid)
                 .unwrap()
                 .add_assign(&c.helmholtz_energy_density(
                     temperature,
-                    wd.into_shape((nwd, ngrid)).unwrap().view(),
+                    wd.into_shape_with_order((nwd, ngrid)).unwrap().view(),
                 )?);
         }
         Ok(helmholtz_energy_density * temperature)
@@ -150,9 +150,9 @@ where
             helmholtz_energy_density.push(
                 c.helmholtz_energy_density(
                     temperature_dual,
-                    wd.into_shape((nwd, ngrid)).unwrap().view(),
+                    wd.into_shape_with_order((nwd, ngrid)).unwrap().view(),
                 )?
-                .into_shape(density.raw_dim().remove_axis(Axis(0)))
+                .into_shape_with_order(density.raw_dim().remove_axis(Axis(0)))
                 .unwrap(),
             );
         }

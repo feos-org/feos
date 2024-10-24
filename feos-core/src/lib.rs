@@ -48,7 +48,7 @@ pub mod python;
 
 /// Level of detail in the iteration output.
 #[derive(Copy, Clone, PartialOrd, PartialEq, Eq)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq))]
 pub enum Verbosity {
     /// Do not print output.
     None,

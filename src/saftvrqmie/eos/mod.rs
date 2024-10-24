@@ -35,8 +35,8 @@ impl Default for SaftVRQMieOptions {
 }
 
 /// Order of Feynman-Hibbs potential
-#[derive(Copy, Clone)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[derive(Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq, eq_int))]
 pub enum FeynmanHibbsOrder {
     /// Mie potential
     FH0 = 0,

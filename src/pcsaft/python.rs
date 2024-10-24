@@ -50,7 +50,8 @@ pub struct PyPcSaftRecord(PcSaftRecord);
 impl PyPcSaftRecord {
     #[new]
     #[pyo3(
-        text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
+        text_signature = "(m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, viscosity=None, diffusion=None, thermal_conductivity=None)",
+        signature = (m, sigma, epsilon_k, mu=None, q=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, viscosity=None, diffusion=None, thermal_conductivity=None)
     )]
     #[expect(clippy::too_many_arguments)]
     fn new(
@@ -168,6 +169,8 @@ pub struct PyPcSaftBinaryRecord(PcSaftBinaryRecord);
 #[pymethods]
 impl PyPcSaftBinaryRecord {
     #[new]
+    #[pyo3(text_signature = "(k_ij=None, kappa_ab=None, epsilon_k_ab=None)")]
+    #[pyo3(signature = (k_ij=None, kappa_ab=None, epsilon_k_ab=None))]
     fn new(k_ij: Option<f64>, kappa_ab: Option<f64>, epsilon_k_ab: Option<f64>) -> Self {
         Self(PcSaftBinaryRecord::new(k_ij, kappa_ab, epsilon_k_ab))
     }

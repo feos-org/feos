@@ -13,7 +13,7 @@ macro_rules! impl_equation_of_state {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(text_signature = "(moles=None)")]
+            #[pyo3(text_signature = "(moles=None)", signature = (moles=None))]
             fn max_density(&self, moles: Option<Moles<Array1<f64>>>) -> PyResult<Density> {
                 let m = moles.map(|m| m.try_into()).transpose()?;
                 Ok(self.0.max_density(m.as_ref())?.into())
@@ -39,7 +39,7 @@ macro_rules! impl_virial_coefficients {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(text_signature = "(temperature, moles=None)")]
+            #[pyo3(text_signature = "(temperature, moles=None)", signature = (temperature, moles=None))]
             fn second_virial_coefficient(
                 &self,
                 temperature: Temperature,
@@ -64,7 +64,7 @@ macro_rules! impl_virial_coefficients {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(text_signature = "(temperature, moles=None)")]
+            #[pyo3(text_signature = "(temperature, moles=None)", signature = (temperature, moles=None))]
             fn third_virial_coefficient(
                 &self,
                 temperature: Temperature,
@@ -90,7 +90,7 @@ macro_rules! impl_virial_coefficients {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(text_signature = "(temperature, moles=None)")]
+            #[pyo3(text_signature = "(temperature, moles=None)", signature = (temperature, moles=None))]
             fn second_virial_coefficient_temperature_derivative(
                 &self,
                 temperature: Temperature,
@@ -119,7 +119,7 @@ macro_rules! impl_virial_coefficients {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(text_signature = "(temperature, moles=None)")]
+            #[pyo3(text_signature = "(temperature, moles=None)", signature = (temperature, moles=None))]
             fn third_virial_coefficient_temperature_derivative(
                 &self,
                 temperature: Temperature,

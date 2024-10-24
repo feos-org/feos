@@ -42,7 +42,6 @@ rayon = { version = "1.5", optional = true }
 typenum = "1.16"
 approx = "0.5"
 regex = "1.9"
-ang = "0.6"
 
 [features]
 default = []

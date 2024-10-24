@@ -33,6 +33,7 @@ macro_rules! impl_pore {
         impl PyPore1D {
             #[new]
             #[pyo3(text_signature = "(geometry, pore_size, potential, n_grid=None, potential_cutoff=None)")]
+            #[pyo3(signature = (geometry, pore_size, potential, n_grid=None, potential_cutoff=None))]
             fn new(
                 geometry: Geometry,
                 pore_size: Length,
@@ -66,6 +67,7 @@ macro_rules! impl_pore {
             /// -------
             /// PoreProfile1D
             #[pyo3(text_signature = "($self, bulk, density=None, external_potential=None)")]
+            #[pyo3(signature = (bulk, density=None, external_potential=None))]
             fn initialize(
                 &self,
                 bulk: &PyState,
@@ -175,6 +177,7 @@ macro_rules! impl_pore {
             /// -------
             /// PoreProfile2D
             #[pyo3(text_signature = "($self, bulk, density=None, external_potential=None)")]
+            #[pyo3(signature = (bulk, density=None, external_potential=None))]
             fn initialize(
                 &self,
                 bulk: &PyState,
@@ -256,6 +259,7 @@ macro_rules! impl_pore {
         impl PyPore3D {
             #[new]
             #[pyo3(text_signature = "(system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, angles=None, potential_cutoff=None, cutoff_radius=None)")]
+            #[pyo3(signature = (system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, angles=None, potential_cutoff=None, cutoff_radius=None))]
             #[expect(clippy::too_many_arguments)]
             fn new(
                 system_size: [Length; 3],
@@ -296,6 +300,7 @@ macro_rules! impl_pore {
             /// -------
             /// PoreProfile3D
             #[pyo3(text_signature = "($self, bulk, density=None, external_potential=None)")]
+            #[pyo3(signature = (bulk, density=None, external_potential=None))]
             fn initialize(
                 &self,
                 bulk: &PyState,

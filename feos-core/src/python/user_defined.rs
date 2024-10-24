@@ -3,7 +3,7 @@ use crate::{Components, IdealGas, Residual, StateHD};
 use ndarray::{Array1, ScalarOperand};
 use num_dual::*;
 use numpy::convert::IntoPyArray;
-use numpy::{PyArray, PyReadonlyArray1, PyReadonlyArrayDyn};
+use numpy::{PyArray, PyReadonlyArray1, PyReadonlyArrayDyn, PyReadwriteArrayDyn};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use quantity::MolarWeight;
@@ -81,7 +81,7 @@ macro_rules! impl_ideal_gas {
                                 r.as_array().mapv(|ri| <$hd_ty>::from(ri))
                             // anything but f64
                             } else if let Ok(r) = py_result.extract::<PyReadonlyArray1<PyObject>>() {
-                                r.as_array().mapv(|ri| <$hd_ty>::from(ri.extract::<$py_hd_id>(py).unwrap()))
+                                r.as_array().map(|ri| <$hd_ty>::from(ri.extract::<$py_hd_id>(py).unwrap()))
                             } else {
                                     panic!("ln_lambda3: data type of result must be one-dimensional numpy ndarray")
                             }
@@ -254,7 +254,11 @@ macro_rules! state {
 
             #[getter]
             pub fn get_moles(&self) -> Vec<$py_hd_id> {
-                self.0.moles.mapv(<$py_hd_id>::from).into_raw_vec()
+                self.0
+                    .moles
+                    .mapv(<$py_hd_id>::from)
+                    .into_raw_vec_and_offset()
+                    .0
             }
 
             #[getter]
@@ -262,12 +266,17 @@ macro_rules! state {
                 self.0
                     .partial_density
                     .mapv(<$py_hd_id>::from)
-                    .into_raw_vec()
+                    .into_raw_vec_and_offset()
+                    .0
             }
 
             #[getter]
             pub fn get_molefracs(&self) -> Vec<$py_hd_id> {
-                self.0.molefracs.mapv(<$py_hd_id>::from).into_raw_vec()
+                self.0
+                    .molefracs
+                    .mapv(<$py_hd_id>::from)
+                    .into_raw_vec_and_offset()
+                    .0
             }
 
             #[getter]

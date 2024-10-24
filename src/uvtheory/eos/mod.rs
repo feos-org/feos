@@ -5,9 +5,9 @@ use self::bh::BarkerHenderson;
 use self::wca::{WeeksChandlerAndersen, WeeksChandlerAndersenB3};
 
 use super::parameters::UVTheoryParameters;
-use quantity::{MolarWeight, GRAM, MOL};
 use feos_core::{parameter::Parameter, Components, Residual};
 use ndarray::Array1;
+use quantity::{MolarWeight, GRAM, MOL};
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
@@ -15,8 +15,8 @@ mod bh;
 mod wca;
 
 /// Type of perturbation.
-#[derive(Clone)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[derive(Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq))]
 pub enum Perturbation {
     BarkerHenderson,
     WeeksChandlerAndersen,
@@ -132,9 +132,9 @@ mod test {
     use crate::uvtheory::parameters::*;
     use approx::assert_relative_eq;
     use feos_core::parameter::{Identifier, Parameter, PureRecord};
-    use quantity::{ANGSTROM, KELVIN, MOL, NAV, RGAS};
     use feos_core::{EosResult, State};
     use ndarray::arr1;
+    use quantity::{ANGSTROM, KELVIN, MOL, NAV, RGAS};
     use typenum::P3;
 
     #[test]

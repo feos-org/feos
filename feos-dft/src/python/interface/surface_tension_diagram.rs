@@ -37,6 +37,7 @@ macro_rules! impl_surface_tension_diagram {
         impl PySurfaceTensionDiagram {
             #[new]
             #[pyo3(text_signature = "(dia, init_densities=None, n_grid=None, l_grid=None, critical_temperature=None, fix_equimolar_surface=None, solver=None)")]
+            #[pyo3(signature = (dia, init_densities=None, n_grid=None, l_grid=None, critical_temperature=None, fix_equimolar_surface=None, solver=None))]
             pub fn isotherm(
                 dia: Vec<PyPhaseEquilibrium>,
                 init_densities: Option<bool>,

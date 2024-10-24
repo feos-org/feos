@@ -37,6 +37,7 @@ macro_rules! impl_phase_equilibrium {
             ///     When pressure iteration fails or no phase equilibrium is found.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, initial_state=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (eos, temperature_or_pressure, initial_state=None, max_iter=None, tol=None, verbosity=None))]
             pub fn pure(
                 eos: $py_eos,
                 temperature_or_pressure: Bound<'_, PyAny>,
@@ -102,6 +103,7 @@ macro_rules! impl_phase_equilibrium {
             ///     When pressure iteration fails or no phase equilibrium is found.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature, pressure, feed, initial_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None)")]
+            #[pyo3(signature = (eos, temperature, pressure, feed, initial_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None))]
             #[expect(clippy::too_many_arguments)]
             pub fn tp_flash(
                 eos: $py_eos,
@@ -157,6 +159,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseEquilibrium
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, liquid_molefracs, tp_init=None, vapor_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
+            #[pyo3(signature = (eos, temperature_or_pressure, liquid_molefracs, tp_init=None, vapor_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
             #[expect(clippy::too_many_arguments)]
             pub fn bubble_point<'py>(
                 eos: $py_eos,
@@ -236,6 +239,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseEquilibrium
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, vapor_molefracs, tp_init=None, liquid_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
+            #[pyo3(signature = (eos, temperature_or_pressure, vapor_molefracs, tp_init=None, liquid_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
             #[expect(clippy::too_many_arguments)]
             pub fn dew_point<'py>(
                 eos: $py_eos,
@@ -450,6 +454,7 @@ macro_rules! impl_phase_equilibrium {
             ///     The verbosity of the bubble/dew point iteration.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, x_init, tp_init=None, max_iter=None, tol=None, verbosity=None, max_iter_bd_inner=None, max_iter_bd_outer=None, tol_bd_inner=None, tol_bd_outer=None, verbosity_bd=None)")]
+            #[pyo3(signature = (eos, temperature_or_pressure, x_init, tp_init=None, max_iter=None, tol=None, verbosity=None, max_iter_bd_inner=None, max_iter_bd_outer=None, tol_bd_inner=None, tol_bd_outer=None, verbosity_bd=None))]
             #[expect(clippy::too_many_arguments)]
             fn heteroazeotrope(
                 eos: $py_eos,
@@ -549,6 +554,7 @@ macro_rules! impl_phase_equilibrium {
             /// RuntimeError
             ///     When pressure iteration fails or no phase equilibrium is found.
             #[pyo3(text_signature = "($self, initial_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None)")]
+            #[pyo3(signature = (initial_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None))]
             pub fn tp_flash(
                 &self,
                 initial_state: Option<&PyPhaseEquilibrium>,
@@ -611,6 +617,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseDiagram
             #[staticmethod]
             #[pyo3(text_signature = "(eos, min_temperature, npoints, critical_temperature=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (eos, min_temperature, npoints, critical_temperature=None, max_iter=None, tol=None, verbosity=None))]
             pub fn pure(
                 eos: &$py_eos,
                 min_temperature: Temperature,
@@ -662,6 +669,7 @@ macro_rules! impl_phase_equilibrium {
             #[cfg(feature = "rayon")]
             #[staticmethod]
             #[pyo3(text_signature = "(eos, min_temperature, npoints, chunksize, nthreads, critical_temperature=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (eos, min_temperature, npoints, chunksize, nthreads, critical_temperature=None, max_iter=None, tol=None, verbosity=None))]
             #[expect(clippy::too_many_arguments)]
             pub fn par_pure(
                 eos: &$py_eos,
@@ -725,6 +733,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseDiagram
             #[staticmethod]
             #[pyo3(text_signature = "(eos, moles, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
+            #[pyo3(signature = (eos, moles, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
             #[expect(clippy::too_many_arguments)]
             pub fn bubble_point_line(
                 eos: &$py_eos,
@@ -788,6 +797,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseDiagram
             #[staticmethod]
             #[pyo3(text_signature = "(eos, moles, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
+            #[pyo3(signature = (eos, moles, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
             #[expect(clippy::too_many_arguments)]
             pub fn dew_point_line(
                 eos: &$py_eos,
@@ -843,6 +853,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseDiagram
             #[staticmethod]
             #[pyo3(text_signature = "(eos, moles, min_temperature, npoints, critical_temperature=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (eos, moles, min_temperature, npoints, critical_temperature=None, max_iter=None, tol=None, verbosity=None))]
             #[expect(clippy::too_many_arguments)]
             pub fn spinodal(
                 eos: &$py_eos,
@@ -922,11 +933,11 @@ macro_rules! impl_phase_equilibrium {
                         dict.insert(String::from(format!("y{}", i)), ys.column(i).to_vec());
                     }
                 }
-                dict.insert(String::from("temperature"), self.0.vapor().temperature().convert_to(KELVIN).into_raw_vec());
+                dict.insert(String::from("temperature"), self.0.vapor().temperature().convert_to(KELVIN).into_raw_vec_and_offset().0);
 
                 // Check if liquid and vapor pressures are different (e.g. if )
-                let p_v = self.0.vapor().pressure().convert_to(PASCAL).into_raw_vec();
-                let p_l = self.0.liquid().pressure().convert_to(PASCAL).into_raw_vec();
+                let p_v = self.0.vapor().pressure().convert_to(PASCAL).into_raw_vec_and_offset().0;
+                let p_l = self.0.liquid().pressure().convert_to(PASCAL).into_raw_vec_and_offset().0;
                 let different_pressures = p_v.iter().zip(p_l.iter()).any(|(pv, pl)| (pv - pl).abs() / pv > 1e-3);
 
                 if different_pressures {
@@ -935,18 +946,18 @@ macro_rules! impl_phase_equilibrium {
                 }else {
                     dict.insert(String::from("pressure"), p_v);
                 }
-                dict.insert(String::from("density liquid"), self.0.liquid().density().convert_to(MOL / METER.powi::<P3>()).into_raw_vec());
-                dict.insert(String::from("density vapor"), self.0.vapor().density().convert_to(MOL / METER.powi::<P3>()).into_raw_vec());
-                dict.insert(String::from("mass density liquid"), self.0.liquid().mass_density().convert_to(KILOGRAM / METER.powi::<P3>()).into_raw_vec());
-                dict.insert(String::from("mass density vapor"), self.0.vapor().mass_density().convert_to(KILOGRAM / METER.powi::<P3>()).into_raw_vec());
-                dict.insert(String::from("molar enthalpy liquid"), self.0.liquid().molar_enthalpy(contributions).convert_to(KILO * JOULE / MOL).into_raw_vec());
-                dict.insert(String::from("molar enthalpy vapor"), self.0.vapor().molar_enthalpy(contributions).convert_to(KILO * JOULE / MOL).into_raw_vec());
-                dict.insert(String::from("molar entropy liquid"), self.0.liquid().molar_entropy(contributions).convert_to(KILO * JOULE / KELVIN / MOL).into_raw_vec());
-                dict.insert(String::from("molar entropy vapor"), self.0.vapor().molar_entropy(contributions).convert_to(KILO * JOULE / KELVIN / MOL).into_raw_vec());
-                dict.insert(String::from("specific enthalpy liquid"), self.0.liquid().specific_enthalpy(contributions).convert_to(KILO * JOULE / KILOGRAM).into_raw_vec());
-                dict.insert(String::from("specific enthalpy vapor"), self.0.vapor().specific_enthalpy(contributions).convert_to(KILO * JOULE / KILOGRAM).into_raw_vec());
-                dict.insert(String::from("specific entropy liquid"), self.0.liquid().specific_entropy(contributions).convert_to(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec());
-                dict.insert(String::from("specific entropy vapor"), self.0.vapor().specific_entropy(contributions).convert_to(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec());
+                dict.insert(String::from("density liquid"), self.0.liquid().density().convert_to(MOL / METER.powi::<P3>()).into_raw_vec_and_offset().0);
+                dict.insert(String::from("density vapor"), self.0.vapor().density().convert_to(MOL / METER.powi::<P3>()).into_raw_vec_and_offset().0);
+                dict.insert(String::from("mass density liquid"), self.0.liquid().mass_density().convert_to(KILOGRAM / METER.powi::<P3>()).into_raw_vec_and_offset().0);
+                dict.insert(String::from("mass density vapor"), self.0.vapor().mass_density().convert_to(KILOGRAM / METER.powi::<P3>()).into_raw_vec_and_offset().0);
+                dict.insert(String::from("molar enthalpy liquid"), self.0.liquid().molar_enthalpy(contributions).convert_to(KILO * JOULE / MOL).into_raw_vec_and_offset().0);
+                dict.insert(String::from("molar enthalpy vapor"), self.0.vapor().molar_enthalpy(contributions).convert_to(KILO * JOULE / MOL).into_raw_vec_and_offset().0);
+                dict.insert(String::from("molar entropy liquid"), self.0.liquid().molar_entropy(contributions).convert_to(KILO * JOULE / KELVIN / MOL).into_raw_vec_and_offset().0);
+                dict.insert(String::from("molar entropy vapor"), self.0.vapor().molar_entropy(contributions).convert_to(KILO * JOULE / KELVIN / MOL).into_raw_vec_and_offset().0);
+                dict.insert(String::from("specific enthalpy liquid"), self.0.liquid().specific_enthalpy(contributions).convert_to(KILO * JOULE / KILOGRAM).into_raw_vec_and_offset().0);
+                dict.insert(String::from("specific enthalpy vapor"), self.0.vapor().specific_enthalpy(contributions).convert_to(KILO * JOULE / KILOGRAM).into_raw_vec_and_offset().0);
+                dict.insert(String::from("specific entropy liquid"), self.0.liquid().specific_entropy(contributions).convert_to(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec_and_offset().0);
+                dict.insert(String::from("specific entropy vapor"), self.0.vapor().specific_entropy(contributions).convert_to(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec_and_offset().0);
                 dict
             }
 
@@ -979,6 +990,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseDiagram
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, npoints=None, x_lle=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
+            #[pyo3(signature = (eos, temperature_or_pressure, npoints=None, x_lle=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
             #[expect(clippy::too_many_arguments)]
             pub fn binary_vle(
                 eos: $py_eos,
@@ -1048,6 +1060,7 @@ macro_rules! impl_phase_equilibrium {
             /// PhaseDiagram
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, feed, min_tp, max_tp, npoints=None)")]
+            #[pyo3(signature = (eos, temperature_or_pressure, feed, min_tp, max_tp, npoints=None))]
             pub fn lle(
                 eos: $py_eos,
                 temperature_or_pressure: Bound<'_, PyAny>,
@@ -1124,7 +1137,8 @@ macro_rules! impl_phase_equilibrium {
             /// -------
             /// PhaseDiagramHetero
             #[staticmethod]
-            #[pyo3(text_signature = "(eos, temperature_or_pressure, x_lle, tp_lim_lle=None, tp_init_vlle=None, npoints_vle=None, npoints_lle=None, max_iter_bd_inner=None, max_iter_bd_outer=None, tol_bd_inner=None, tol_bd_outer=None, verbosity_bd=None)")]
+            #[pyo3(text_signature = "(eos, temperature_or_pressure, x_lle, tp_lim_lle=None, tp_init_vlle=None, npoints_vle=None, npoints_lle=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
+            #[pyo3(signature = (eos, temperature_or_pressure, x_lle, tp_lim_lle=None, tp_init_vlle=None, npoints_vle=None, npoints_lle=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
             #[expect(clippy::too_many_arguments)]
             pub fn binary_vlle(
                 eos: $py_eos,

@@ -18,7 +18,8 @@ pub struct PyPetsRecord(PetsRecord);
 impl PyPetsRecord {
     #[new]
     #[pyo3(
-        text_signature = "(sigma, epsilon_k, viscosity=None, diffusion=None, thermal_conductivity=None)"
+        text_signature = "(sigma, epsilon_k, viscosity=None, diffusion=None, thermal_conductivity=None)",
+        signature = (sigma, epsilon_k, viscosity=None, diffusion=None, thermal_conductivity=None)
     )]
     fn new(
         sigma: f64,
@@ -103,7 +104,8 @@ impl PyPetsParameters {
     /// -------
     /// PetsParameters
     #[pyo3(
-        text_signature = "(sigma, epsilon_k, k_ij=None, molarweight=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
+        text_signature = "(sigma, epsilon_k, k_ij=None, molarweight=None, viscosity=None, diffusion=None, thermal_conductivity=None)",
+        signature = (sigma, epsilon_k, k_ij=None, molarweight=None, viscosity=None, diffusion=None, thermal_conductivity=None)
     )]
     #[staticmethod]
     fn from_lists(
@@ -192,7 +194,8 @@ impl PyPetsParameters {
     /// -------
     /// PetsParameters
     #[pyo3(
-        text_signature = "(sigma, epsilon_k, molarweight=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
+        text_signature = "(sigma, epsilon_k, molarweight=None, viscosity=None, diffusion=None, thermal_conductivity=None)",
+        signature = (sigma, epsilon_k, molarweight=None, viscosity=None, diffusion=None, thermal_conductivity=None)
     )]
     #[staticmethod]
     fn from_values(

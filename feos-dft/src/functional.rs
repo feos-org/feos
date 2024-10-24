@@ -220,9 +220,9 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
             let mut pd = Array::zeros(wd.raw_dim());
             c.first_partial_derivatives(
                 temperature,
-                wd.into_shape((nwd, ngrid)).unwrap(),
-                phi.view_mut().into_shape(ngrid).unwrap(),
-                pd.view_mut().into_shape((nwd, ngrid)).unwrap(),
+                wd.into_shape_with_order((nwd, ngrid)).unwrap(),
+                phi.view_mut().into_shape_with_order(ngrid).unwrap(),
+                pd.view_mut().into_shape_with_order((nwd, ngrid)).unwrap(),
             )?;
             partial_derivatives.push(pd);
             helmholtz_energy_density += &phi;
@@ -257,9 +257,9 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
             let mut pd = Array::zeros(wd.raw_dim());
             c.first_partial_derivatives_dual(
                 temperature_dual,
-                wd.into_shape((nwd, ngrid)).unwrap(),
-                phi.view_mut().into_shape(ngrid).unwrap(),
-                pd.view_mut().into_shape((nwd, ngrid)).unwrap(),
+                wd.into_shape_with_order((nwd, ngrid)).unwrap(),
+                phi.view_mut().into_shape_with_order(ngrid).unwrap(),
+                pd.view_mut().into_shape_with_order((nwd, ngrid)).unwrap(),
             )?;
             partial_derivatives.push(pd);
             helmholtz_energy_density += &phi;

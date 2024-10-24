@@ -128,6 +128,7 @@ impl PyExternalPotential {
     ///
     #[staticmethod]
     #[pyo3(text_signature = "(sigma_ss, epsilon_k_ss, rho_s, xi=None)")]
+    #[pyo3(signature = (sigma_ss, epsilon_k_ss, rho_s, xi=None))]
     pub fn Steele(sigma_ss: f64, epsilon_k_ss: f64, rho_s: f64, xi: Option<f64>) -> Self {
         Self(ExternalPotential::Steele {
             sigma_ss,
@@ -158,6 +159,7 @@ impl PyExternalPotential {
     ///
     #[staticmethod]
     #[pyo3(text_signature = "(sigma_sf, epsilon_k_sf, rho_s, xi=None)")]
+    #[pyo3(signature = (sigma_sf, epsilon_k_sf, rho_s, xi=None))]
     pub fn CustomSteele(
         sigma_sf: &Bound<'_, PyArray1<f64>>,
         epsilon_k_sf: &Bound<'_, PyArray1<f64>>,
@@ -227,7 +229,8 @@ impl PyExternalPotential {
     ///
     #[staticmethod]
     #[pyo3(
-        text_signature = "(coordinates, sigma_ss, epsilon_k_ss, pore_center, system_size, n_grid, cutoff_radius=None)"
+        text_signature = "(coordinates, sigma_ss, epsilon_k_ss, pore_center, system_size, n_grid, cutoff_radius=None)",
+        signature = (coordinates, sigma_ss, epsilon_k_ss, pore_center, system_size, n_grid, cutoff_radius=None)
     )]
     pub fn FreeEnergyAveraged(
         coordinates: Length<Array2<f64>>,

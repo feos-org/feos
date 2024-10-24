@@ -30,8 +30,8 @@ pub use diffusion::Diffusion;
 pub mod python;
 
 /// Different phases of experimental data points.
-#[derive(Clone, Copy)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[derive(Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq))]
 pub enum Phase {
     Vapor,
     Liquid,

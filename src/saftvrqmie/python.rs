@@ -51,7 +51,8 @@ pub struct PySaftVRQMieRecord(SaftVRQMieRecord);
 impl PySaftVRQMieRecord {
     #[new]
     #[pyo3(
-        text_signature = "(m, sigma, epsilon_k, lr, la, fh, viscosity=None, diffusion=None, thermal_conductivity=None)"
+        text_signature = "(m, sigma, epsilon_k, lr, la, fh, viscosity=None, diffusion=None, thermal_conductivity=None)",
+        signature = (m, sigma, epsilon_k, lr, la, fh, viscosity=None, diffusion=None, thermal_conductivity=None)
     )]
     #[expect(clippy::too_many_arguments)]
     fn new(

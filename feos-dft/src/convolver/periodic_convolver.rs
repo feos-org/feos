@@ -1,9 +1,10 @@
 use super::{Convolver, FFTWeightFunctions};
-use crate::geometry::{Angle, Axis};
+use crate::geometry::Axis;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo};
 use ndarray::Axis as Axis_nd;
 use ndarray::*;
 use num_dual::DualNum;
+use quantity::Angle;
 use rustfft::num_complex::Complex;
 use rustfft::{Fft, FftDirection, FftNum, FftPlanner};
 use std::f64::consts::PI;

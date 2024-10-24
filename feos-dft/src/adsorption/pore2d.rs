@@ -1,8 +1,8 @@
 use super::{FluidParameters, PoreProfile, PoreSpecification};
-use crate::{Angle, Axis, ConvolverFFT, DFTProfile, Grid, HelmholtzEnergyFunctional, DFT};
+use crate::{Axis, ConvolverFFT, DFTProfile, Grid, HelmholtzEnergyFunctional, DFT};
 use feos_core::{EosResult, ReferenceSystem, State};
 use ndarray::{Array3, Ix2};
-use quantity::{Density, Length};
+use quantity::{Angle, Density, Length};
 
 pub struct Pore2D {
     system_size: [Length<f64>; 2],

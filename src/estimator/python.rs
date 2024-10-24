@@ -247,7 +247,8 @@ macro_rules! impl_estimator {
             /// is used. If that fails, the default temperatures of the critical point routine
             /// are used.
             #[staticmethod]
-            #[pyo3(text_signature = "(target, temperature, extrapolate, critical_temperature=None, max_iter=None, verbosity=None)")]
+            #[pyo3(text_signature = "(target, temperature, extrapolate, critical_temperature=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (target, temperature, extrapolate, critical_temperature=None, max_iter=None, tol=None, verbosity=None))]
             fn vapor_pressure(
                 target: Pressure<Array1<f64>>,
                 temperature: Temperature<Array1<f64>>,
@@ -317,7 +318,8 @@ macro_rules! impl_estimator {
             /// -------
             /// DataSet
             #[staticmethod]
-            #[pyo3(text_signature = "(target, temperature)")]
+            #[pyo3(text_signature = "(target, temperature, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (target, temperature, max_iter=None, tol=None, verbosity=None))]
             fn equilibrium_liquid_density(
                 target: MassDensity<Array1<f64>>,
                 temperature: Temperature<Array1<f64>>,
@@ -421,6 +423,7 @@ macro_rules! impl_estimator {
             /// DataSet
             #[staticmethod]
             #[pyo3(text_signature = "(specification, temperature_or_pressure, liquid_molefracs=None, vapor_molefracs=None, npoints=None)")]
+            #[pyo3(signature = (specification, temperature_or_pressure, liquid_molefracs=None, vapor_molefracs=None, npoints=None))]
             fn binary_phase_diagram(
                 specification: Bound<'_, PyAny>,
                 temperature_or_pressure: Bound<'_, PyAny>,
@@ -653,6 +656,8 @@ macro_rules! impl_estimator_entropy_scaling {
             /// -------
             /// DataSet
             #[staticmethod]
+            #[pyo3(text_signature = "(target, temperature, pressure, phase=None)")]
+            #[pyo3(signature = (target, temperature, pressure, phase=None))]
             fn viscosity(
                 target: quantity::Viscosity<Array1<f64>>,
                 temperature: Temperature<Array1<f64>>,
@@ -686,6 +691,8 @@ macro_rules! impl_estimator_entropy_scaling {
             /// -------
             /// DataSet
             #[staticmethod]
+            #[pyo3(text_signature = "(target, temperature, pressure, phase=None)")]
+            #[pyo3(signature = (target, temperature, pressure, phase=None))]
             fn thermal_conductivity(
                 target: quantity::ThermalConductivity<Array1<f64>>,
                 temperature: Temperature<Array1<f64>>,
@@ -719,6 +726,8 @@ macro_rules! impl_estimator_entropy_scaling {
             /// -------
             /// DataSet
             #[staticmethod]
+            #[pyo3(text_signature = "(target, temperature, pressure, phase=None)")]
+            #[pyo3(signature = (target, temperature, pressure, phase=None))]
             fn diffusion(
                 target: quantity::Diffusivity<Array1<f64>>,
                 temperature: Temperature<Array1<f64>>,

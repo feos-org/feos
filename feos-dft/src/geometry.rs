@@ -1,10 +1,7 @@
 use feos_core::ReferenceSystem;
 use ndarray::{Array1, Array2};
-use quantity::{Length, Quantity};
-use std::{
-    f64::consts::{FRAC_PI_3, PI},
-    ops::Mul,
-};
+use quantity::{Angle, Length, Quantity};
+use std::f64::consts::{FRAC_PI_3, PI};
 
 /// Grids with up to three dimensions.
 #[derive(Clone)]
@@ -75,8 +72,8 @@ impl Grid {
 }
 
 /// Geometries of individual axes.
-#[derive(Copy, Clone)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[derive(Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq))]
 pub enum Geometry {
     Cartesian,
     Cylindrical,
@@ -93,31 +90,6 @@ impl Geometry {
         }
     }
 }
-
-/// Angle type with the most rudimentary functionalities.
-#[derive(Clone, Copy)]
-pub struct Angle(f64);
-
-impl Angle {
-    pub fn sin(&self) -> f64 {
-        self.0.sin()
-    }
-
-    pub fn cos(&self) -> f64 {
-        self.0.cos()
-    }
-}
-
-impl Mul<Angle> for f64 {
-    type Output = Angle;
-
-    fn mul(self, rhs: Angle) -> Angle {
-        Angle(self * rhs.0)
-    }
-}
-
-pub const DEGREES: Angle = Angle(std::f64::consts::PI / 180.);
-pub const RADIANS: Angle = Angle(1.0);
 
 /// An individual discretized axis.
 #[derive(Clone)]
