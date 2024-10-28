@@ -1,11 +1,13 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::EosResult;
-use crate::si::Temperature;
 use crate::state::{State, StateVec};
+#[cfg(feature = "rayon")]
+use crate::ReferenceSystem;
 use crate::SolverOptions;
 #[cfg(feature = "rayon")]
 use ndarray::{Array1, ArrayView1, Axis};
+use quantity::Temperature;
 #[cfg(feature = "rayon")]
 use rayon::{prelude::*, ThreadPool};
 use std::sync::Arc;

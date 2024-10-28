@@ -1,8 +1,8 @@
 use super::{DensityInitialization, State};
 use crate::equation_of_state::{IdealGas, Residual};
 use crate::errors::EosResult;
-use crate::si::*;
 use ndarray::Array1;
+use quantity::*;
 use std::sync::Arc;
 
 /// A simple tool to construct [State]s with arbitrary input parameters.
@@ -11,7 +11,7 @@ use std::sync::Arc;
 /// ```
 /// # use feos_core::{EosResult, StateBuilder};
 /// # use feos_core::cubic::{PengRobinson, PengRobinsonParameters};
-/// # use feos_core::si::*;
+/// # use quantity::*;
 /// # use std::sync::Arc;
 /// # use ndarray::arr1;
 /// # use approx::assert_relative_eq;

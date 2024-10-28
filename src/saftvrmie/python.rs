@@ -96,7 +96,8 @@ pub struct PySaftVRMieRecord(SaftVRMieRecord);
 impl PySaftVRMieRecord {
     #[new]
     #[pyo3(
-        text_signature = "(m, sigma, epsilon_k, lr, la, rc_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, viscosity=None, diffusion=None, thermal_conductivity=None)"
+        text_signature = "(m, sigma, epsilon_k, lr, la, rc_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, viscosity=None, diffusion=None, thermal_conductivity=None)",
+        signature = (m, sigma, epsilon_k, lr, la, rc_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, viscosity=None, diffusion=None, thermal_conductivity=None)
     )]
     #[expect(clippy::too_many_arguments)]
     fn new(
@@ -212,6 +213,8 @@ pub struct PySaftVRMieBinaryRecord(SaftVRMieBinaryRecord);
 #[pymethods]
 impl PySaftVRMieBinaryRecord {
     #[new]
+    #[pyo3(text_signature = "(k_ij=None, gamma_ij=None, rc_ab=None, epsilon_k_ab=None)")]
+    #[pyo3(signature = (k_ij=None, gamma_ij=None, rc_ab=None, epsilon_k_ab=None))]
     fn new(
         k_ij: Option<f64>,
         gamma_ij: Option<f64>,

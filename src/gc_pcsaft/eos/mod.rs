@@ -1,9 +1,9 @@
 use crate::association::Association;
 use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::parameter::ParameterHetero;
-use feos_core::si::{MolarWeight, GRAM, MOL};
 use feos_core::{Components, Residual};
 use ndarray::Array1;
+use quantity::{MolarWeight, GRAM, MOL};
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
@@ -151,10 +151,11 @@ mod test {
     use crate::gc_pcsaft::eos::parameter::test::*;
     use crate::hard_sphere::HardSphereProperties;
     use approx::assert_relative_eq;
-    use feos_core::si::{Pressure, METER, MOL, PASCAL};
+    use feos_core::ReferenceSystem;
     use feos_core::StateHD;
     use ndarray::arr1;
     use num_dual::Dual64;
+    use quantity::{Pressure, METER, MOL, PASCAL};
     use typenum::P3;
 
     #[test]

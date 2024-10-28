@@ -54,22 +54,23 @@ macro_rules! impl_state {
         impl PyState {
             #[new]
             #[pyo3(text_signature = "(eos, temperature=None, volume=None, density=None, partial_density=None, total_moles=None, moles=None, molefracs=None, pressure=None, molar_enthalpy=None, molar_entropy=None, molar_internal_energy=None, density_initialization=None, initial_temperature=None)")]
+            #[pyo3(signature = (eos, temperature=None, volume=None, density=None, partial_density=None, total_moles=None, moles=None, molefracs=None, pressure=None, molar_enthalpy=None, molar_entropy=None, molar_internal_energy=None, density_initialization=None, initial_temperature=None))]
             #[expect(clippy::too_many_arguments)]
             pub fn new<'py>(
                 eos: $py_eos,
-                temperature: Option<PySINumber>,
-                volume: Option<PySINumber>,
-                density: Option<PySINumber>,
-                partial_density: Option<PySIArray1>,
-                total_moles: Option<PySINumber>,
-                moles: Option<PySIArray1>,
+                temperature: Option<Temperature>,
+                volume: Option<Volume>,
+                density: Option<Density>,
+                partial_density: Option<Density<Array1<f64>>>,
+                total_moles: Option<Moles>,
+                moles: Option<Moles<Array1<f64>>>,
                 molefracs: Option<&Bound<'py, PyArray1<f64>>>,
-                pressure: Option<PySINumber>,
-                molar_enthalpy: Option<PySINumber>,
-                molar_entropy: Option<PySINumber>,
-                molar_internal_energy: Option<PySINumber>,
+                pressure: Option<Pressure>,
+                molar_enthalpy: Option<MolarEnergy>,
+                molar_entropy: Option<MolarEntropy>,
+                molar_internal_energy: Option<MolarEnergy>,
                 density_initialization: Option<&Bound<'py, PyAny>>,
-                initial_temperature: Option<PySINumber>,
+                initial_temperature: Option<Temperature>,
             ) -> PyResult<Self> {
                 let x = molefracs.and_then(|m| Some(m.to_owned_array()));
                 let density_init = if let Some(di) = density_initialization {
@@ -81,7 +82,7 @@ macro_rules! impl_state {
                                 "`density_initialization` must be 'vapor' or 'liquid'."
                             ))),
                         }
-                    } else if let Ok(d) = di.extract::<PySINumber>() {
+                    } else if let Ok(d) = di.extract::<Density>() {
                         Ok(DensityInitialization::InitialDensity(d.try_into()?))
                     } else {
                         Err(PyErr::new::<PyValueError, _>(format!(
@@ -131,9 +132,10 @@ macro_rules! impl_state {
             /// State : tate at critical conditions
             #[staticmethod]
             #[pyo3(text_signature = "(eos, initial_temperature=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (eos, initial_temperature=None, max_iter=None, tol=None, verbosity=None))]
             fn critical_point_pure(
                 eos: $py_eos,
-                initial_temperature: Option<PySINumber>,
+                initial_temperature: Option<Temperature>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
@@ -166,10 +168,11 @@ macro_rules! impl_state {
             /// State : State at critical conditions.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, moles=None, initial_temperature=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (eos, moles=None, initial_temperature=None, max_iter=None, tol=None, verbosity=None))]
             fn critical_point(
                 eos: $py_eos,
-                moles: Option<PySIArray1>,
-                initial_temperature: Option<PySINumber>,
+                moles: Option<Moles<Array1<f64>>>,
+                initial_temperature: Option<Temperature>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
@@ -206,16 +209,17 @@ macro_rules! impl_state {
             /// State : State at critical conditions.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature_or_pressure, initial_temperature=None, initial_molefracs=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (eos, temperature_or_pressure, initial_temperature=None, initial_molefracs=None, max_iter=None, tol=None, verbosity=None))]
             fn critical_point_binary(
                 eos: $py_eos,
-                temperature_or_pressure: PySINumber,
-                initial_temperature: Option<PySINumber>,
+                temperature_or_pressure: Bound<'_, PyAny>,
+                initial_temperature: Option<Temperature>,
                 initial_molefracs: Option<[f64; 2]>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
-                if let Ok(t) = Temperature::<f64>::try_from(temperature_or_pressure) {
+                if let Ok(t) = temperature_or_pressure.extract::<Temperature>() {
                     Ok(PyState(State::critical_point_binary(
                         &eos.0,
                         t,
@@ -223,7 +227,7 @@ macro_rules! impl_state {
                         initial_molefracs,
                         (max_iter, tol, verbosity).into(),
                     )?))
-                } else if let Ok(p) = Pressure::<f64>::try_from(temperature_or_pressure) {
+                } else if let Ok(p) = temperature_or_pressure.extract::<Pressure>() {
                     Ok(PyState(State::critical_point_binary(
                         &eos.0,
                         p,
@@ -232,9 +236,10 @@ macro_rules! impl_state {
                         (max_iter, tol, verbosity).into(),
                     )?))
                 } else {
-                    Ok(Err(EosError::WrongUnits("temperature or pressure".into(),
-                        quantity::si::SINumber::from(temperature_or_pressure).to_string()
-                    ))?)
+                    Err(PyErr::new::<PyValueError, _>(format!(
+                        "Wrong units! Expected K or Pa, got {}.",
+                        temperature_or_pressure.call_method0("__repr__")?
+                    )))
                 }
             }
 
@@ -261,17 +266,18 @@ macro_rules! impl_state {
             /// State : State at critical conditions.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature, moles=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (eos, temperature, moles=None, max_iter=None, tol=None, verbosity=None))]
             fn spinodal(
                 eos: $py_eos,
-                temperature: PySINumber,
-                moles: Option<PySIArray1>,
+                temperature: Temperature,
+                moles: Option<Moles<Array1<f64>>>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<(Self, Self)> {
                 let [state1, state2] = State::spinodal(
                     &eos.0,
-                    temperature.try_into()?,
+                    temperature,
                     moles.map(|m| m.try_into()).transpose()?.as_ref(),
                     (max_iter, tol, verbosity).into(),
                 )?;
@@ -294,6 +300,7 @@ macro_rules! impl_state {
             /// -------
             /// State
             #[pyo3(text_signature = "(max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (max_iter=None, tol=None, verbosity=None))]
             fn stability_analysis(&self,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
@@ -323,6 +330,7 @@ macro_rules! impl_state {
             /// -------
             /// bool
             #[pyo3(text_signature = "(max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (max_iter=None, tol=None, verbosity=None))]
             fn is_stable(&self,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
@@ -343,8 +351,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn pressure(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.pressure(contributions))
+            fn pressure(&self, contributions: Contributions) -> Pressure {
+                self.0.pressure(contributions)
             }
 
             /// Return pressure contributions.
@@ -352,12 +360,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// List[Tuple[str, SINumber]]
-            fn pressure_contributions(&self) -> Vec<(String, PySINumber)> {
-                self.0
-                    .pressure_contributions()
-                    .into_iter()
-                    .map(|(s, q)| (s, PySINumber::from(q)))
-                    .collect()
+            fn pressure_contributions(&self) -> Vec<(String, Pressure)> {
+                self.0.pressure_contributions()
             }
 
             /// Return compressibility.
@@ -388,8 +392,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn dp_dv(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.dp_dv(contributions))
+            fn dp_dv(&self, contributions: Contributions) -> Quot<Pressure, Volume> {
+                self.0.dp_dv(contributions)
             }
 
             /// Return partial derivative of pressure w.r.t. density.
@@ -404,8 +408,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn dp_drho(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.dp_drho(contributions))
+            fn dp_drho(&self, contributions: Contributions) -> Quot<Pressure, Density> {
+                self.0.dp_drho(contributions)
             }
 
             /// Return partial derivative of pressure w.r.t. temperature.
@@ -420,8 +424,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn dp_dt(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.dp_dt(contributions))
+            fn dp_dt(&self, contributions: Contributions) -> Quot<Pressure, Temperature> {
+                self.0.dp_dt(contributions)
             }
 
             /// Return partial derivative of pressure w.r.t. amount of substance.
@@ -436,8 +440,8 @@ macro_rules! impl_state {
             /// -------
             /// SIArray1
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn dp_dni(&self, contributions: Contributions) -> PySIArray1 {
-                PySIArray1::from(self.0.dp_dni(contributions))
+            fn dp_dni(&self, contributions: Contributions) -> Quot<Pressure, Moles<Array1<f64>>> {
+                self.0.dp_dni(contributions)
             }
 
             /// Return second partial derivative of pressure w.r.t. volume.
@@ -452,8 +456,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn d2p_dv2(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.d2p_dv2(contributions))
+            fn d2p_dv2(&self, contributions: Contributions) -> Quot<Quot<Pressure, Volume>, Volume> {
+                self.0.d2p_dv2(contributions)
             }
 
             /// Return second partial derivative of pressure w.r.t. density.
@@ -468,8 +472,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn d2p_drho2(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.d2p_drho2(contributions))
+            fn d2p_drho2(&self, contributions: Contributions) -> Quot<Quot<Pressure, Density>, Density> {
+                self.0.d2p_drho2(contributions)
             }
 
             /// Return partial molar volume of each component.
@@ -477,8 +481,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SIArray1
-            fn partial_molar_volume(&self) -> PySIArray1 {
-                PySIArray1::from(self.0.partial_molar_volume())
+            fn partial_molar_volume(&self) -> MolarVolume<Array1<f64>> {
+                self.0.partial_molar_volume()
             }
 
             /// Return chemical potential of each component.
@@ -493,8 +497,8 @@ macro_rules! impl_state {
             /// -------
             /// SIArray1
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn chemical_potential(&self, contributions: Contributions) -> PySIArray1 {
-                PySIArray1::from(self.0.chemical_potential(contributions))
+            fn chemical_potential(&self, contributions: Contributions) -> MolarEnergy<Array1<f64>> {
+                self.0.chemical_potential(contributions)
             }
 
             /// Return chemical potential contributions.
@@ -512,12 +516,8 @@ macro_rules! impl_state {
             /// -------
             /// List[Tuple[str, SINumber]]
             #[pyo3(signature = (component, contributions=Contributions::Total), text_signature = "($self, component, contributions)")]
-            fn chemical_potential_contributions(&self, component: usize, contributions: Contributions) -> Vec<(String, PySINumber)> {
-                self.0
-                    .chemical_potential_contributions(component, contributions)
-                    .into_iter()
-                    .map(|(s, q)| (s, PySINumber::from(q)))
-                    .collect()
+            fn chemical_potential_contributions(&self, component: usize, contributions: Contributions) -> Vec<(String, MolarEnergy)> {
+                self.0.chemical_potential_contributions(component, contributions)
             }
 
             /// Return derivative of chemical potential w.r.t temperature.
@@ -532,8 +532,8 @@ macro_rules! impl_state {
             /// -------
             /// SIArray1
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn dmu_dt(&self, contributions: Contributions) -> PySIArray1 {
-                PySIArray1::from(self.0.dmu_dt(contributions))
+            fn dmu_dt(&self, contributions: Contributions) -> Quot<MolarEnergy<Array1<f64>>, Temperature> {
+                self.0.dmu_dt(contributions)
             }
 
             /// Return derivative of chemical potential w.r.t amount of substance.
@@ -548,8 +548,8 @@ macro_rules! impl_state {
             /// -------
             /// SIArray2
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn dmu_dni(&self, contributions: Contributions) -> PySIArray2 {
-                PySIArray2::from(self.0.dmu_dni(contributions))
+            fn dmu_dni(&self, contributions: Contributions) -> Quot<MolarEnergy<Array2<f64>>, Moles> {
+                self.0.dmu_dni(contributions)
             }
 
             /// Return logarithmic fugacity coefficient.
@@ -595,8 +595,8 @@ macro_rules! impl_state {
             /// -------
             /// SIArray1
             #[staticmethod]
-            fn henrys_law_constant(eos: $py_eos, temperature: PySINumber, molefracs: &Bound<'_, PyArray1<f64>>) -> PyResult<PySIArray1> {
-                Ok(State::henrys_law_constant(&eos.0, temperature.try_into()?, &molefracs.to_owned_array())?.into())
+            fn henrys_law_constant(eos: $py_eos, temperature: Temperature, molefracs: &Bound<'_, PyArray1<f64>>) -> PyResult<Pressure<Array1<f64>>> {
+                Ok(State::henrys_law_constant(&eos.0, temperature, &molefracs.to_owned_array())?)
             }
 
             /// Return Henry's law constant of a binary system, assuming the first
@@ -613,8 +613,8 @@ macro_rules! impl_state {
             /// -------
             /// SIArray1
             #[staticmethod]
-            fn henrys_law_constant_binary(eos: $py_eos, temperature: PySINumber) -> PyResult<PySINumber> {
-                Ok(State::henrys_law_constant_binary(&eos.0, temperature.try_into()?)?.into())
+            fn henrys_law_constant_binary(eos: $py_eos, temperature: Temperature) -> PyResult<Pressure> {
+                Ok(State::henrys_law_constant_binary(&eos.0, temperature)?)
             }
 
             /// Return derivative of logarithmic fugacity coefficient w.r.t. temperature.
@@ -622,8 +622,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SIArray1
-            fn dln_phi_dt(&self) -> PySIArray1 {
-                PySIArray1::from(self.0.dln_phi_dt())
+            fn dln_phi_dt(&self) -> Quot<f64, Temperature<Array1<f64>>> {
+                self.0.dln_phi_dt()
             }
 
             /// Return derivative of logarithmic fugacity coefficient w.r.t. pressure.
@@ -631,8 +631,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SIArray1
-            fn dln_phi_dp(&self) -> PySIArray1 {
-                PySIArray1::from(self.0.dln_phi_dp())
+            fn dln_phi_dp(&self) -> Quot<f64, Pressure<Array1<f64>>> {
+                self.0.dln_phi_dp()
             }
 
             /// Return derivative of logarithmic fugacity coefficient w.r.t. amount of substance.
@@ -640,8 +640,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SIArray2
-            fn dln_phi_dnj(&self) -> PySIArray2 {
-                PySIArray2::from(self.0.dln_phi_dnj())
+            fn dln_phi_dnj(&self) -> Quot<f64, Moles<Array2<f64>>> {
+                self.0.dln_phi_dnj()
             }
 
             /// Return thermodynamic factor.
@@ -665,8 +665,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn molar_isochoric_heat_capacity(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.molar_isochoric_heat_capacity(contributions))
+            fn molar_isochoric_heat_capacity(&self, contributions: Contributions) -> MolarEntropy {
+                self.0.molar_isochoric_heat_capacity(contributions)
             }
 
             /// Return derivative of isochoric heat capacity w.r.t. temperature.
@@ -681,8 +681,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn dc_v_dt(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.dc_v_dt(contributions))
+            fn dc_v_dt(&self, contributions: Contributions) -> Quot<MolarEntropy, Temperature> {
+                self.0.dc_v_dt(contributions)
             }
 
             /// Return molar isobaric heat capacity.
@@ -697,8 +697,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn molar_isobaric_heat_capacity(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.molar_isobaric_heat_capacity(contributions))
+            fn molar_isobaric_heat_capacity(&self, contributions: Contributions) -> MolarEntropy {
+                self.0.molar_isobaric_heat_capacity(contributions)
             }
 
 	        /// Return entropy.
@@ -713,8 +713,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn entropy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.entropy(contributions))
+            fn entropy(&self, contributions: Contributions) -> Entropy {
+                self.0.entropy(contributions)
             }
 
             /// Return derivative of entropy with respect to temperature.
@@ -729,8 +729,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn ds_dt(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.ds_dt(contributions))
+            fn ds_dt(&self, contributions: Contributions) -> Quot<Entropy, Temperature> {
+                self.0.ds_dt(contributions)
             }
 
             /// Return molar entropy.
@@ -745,8 +745,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn molar_entropy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.molar_entropy(contributions))
+            fn molar_entropy(&self, contributions: Contributions) -> MolarEntropy {
+                self.0.molar_entropy(contributions)
             }
 
 
@@ -755,8 +755,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SIArray1
-            fn partial_molar_entropy(&self) -> PySIArray1 {
-                PySIArray1::from(self.0.partial_molar_entropy())
+            fn partial_molar_entropy(&self) -> MolarEntropy<Array1<f64>> {
+                self.0.partial_molar_entropy()
             }
 
             /// Return enthalpy.
@@ -771,8 +771,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn enthalpy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.enthalpy(contributions))
+            fn enthalpy(&self, contributions: Contributions) -> Energy {
+                self.0.enthalpy(contributions)
             }
 
             /// Return molar enthalpy.
@@ -787,8 +787,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn molar_enthalpy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.molar_enthalpy(contributions))
+            fn molar_enthalpy(&self, contributions: Contributions) -> MolarEnergy {
+                self.0.molar_enthalpy(contributions)
             }
 
 
@@ -797,8 +797,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SIArray1
-            fn partial_molar_enthalpy(&self) -> PySIArray1 {
-                PySIArray1::from(self.0.partial_molar_enthalpy())
+            fn partial_molar_enthalpy(&self) -> MolarEnergy<Array1<f64>> {
+                self.0.partial_molar_enthalpy()
             }
 
             /// Return Helmholtz energy.
@@ -813,8 +813,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn helmholtz_energy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.helmholtz_energy(contributions))
+            fn helmholtz_energy(&self, contributions: Contributions) -> Energy {
+                self.0.helmholtz_energy(contributions)
             }
 
             /// Return molar Helmholtz energy.
@@ -829,8 +829,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn molar_helmholtz_energy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.molar_helmholtz_energy(contributions))
+            fn molar_helmholtz_energy(&self, contributions: Contributions) -> MolarEnergy {
+                self.0.molar_helmholtz_energy(contributions)
             }
 
             /// Return residual Helmholtz energy contributions.
@@ -838,12 +838,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// List[Tuple[str, SINumber]]
-            fn residual_helmholtz_energy_contributions(&self) -> Vec<(String, PySINumber)> {
-                self.0
-                    .residual_helmholtz_energy_contributions()
-                    .into_iter()
-                    .map(|(s, q)| (s, PySINumber::from(q)))
-                    .collect()
+            fn residual_helmholtz_energy_contributions(&self) -> Vec<(String, Energy)> {
+                self.0.residual_helmholtz_energy_contributions()
             }
 
             /// Return Gibbs energy.
@@ -858,8 +854,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn gibbs_energy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.gibbs_energy(contributions))
+            fn gibbs_energy(&self, contributions: Contributions) -> Energy {
+                self.0.gibbs_energy(contributions)
             }
 
             /// Return molar Gibbs energy.
@@ -874,8 +870,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn molar_gibbs_energy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.molar_gibbs_energy(contributions))
+            fn molar_gibbs_energy(&self, contributions: Contributions) -> MolarEnergy {
+                self.0.molar_gibbs_energy(contributions)
             }
 
 
@@ -891,8 +887,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn internal_energy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.internal_energy(contributions))
+            fn internal_energy(&self, contributions: Contributions) -> Energy {
+                self.0.internal_energy(contributions)
             }
 
             /// Return molar internal energy.
@@ -907,8 +903,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn molar_internal_energy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.molar_internal_energy(contributions))
+            fn molar_internal_energy(&self, contributions: Contributions) -> MolarEnergy {
+                self.0.molar_internal_energy(contributions)
             }
 
             /// Return Joule Thomson coefficient.
@@ -916,8 +912,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            fn joule_thomson(&self) -> PySINumber {
-                PySINumber::from(self.0.joule_thomson())
+            fn joule_thomson(&self) -> Quot<Temperature, Pressure> {
+                self.0.joule_thomson()
             }
 
             /// Return isentropy compressibility coefficient.
@@ -925,8 +921,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            fn isentropic_compressibility(&self) -> PySINumber {
-                PySINumber::from(self.0.isentropic_compressibility())
+            fn isentropic_compressibility(&self) -> Quot<f64, Pressure> {
+                self.0.isentropic_compressibility()
             }
 
             /// Return isothermal compressibility coefficient.
@@ -934,8 +930,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            fn isothermal_compressibility(&self) -> PySINumber {
-                PySINumber::from(self.0.isothermal_compressibility())
+            fn isothermal_compressibility(&self) -> Quot<f64, Pressure> {
+                self.0.isothermal_compressibility()
             }
 
             /// Return isenthalpic compressibility coefficient.
@@ -943,8 +939,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            fn isenthalpic_compressibility(&self) -> PySINumber {
-                PySINumber::from(self.0.isenthalpic_compressibility())
+            fn isenthalpic_compressibility(&self) -> Quot<f64, Pressure> {
+                self.0.isenthalpic_compressibility()
             }
 
             /// Return thermal expansivity coefficient.
@@ -952,8 +948,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            fn thermal_expansivity(&self) -> PySINumber {
-                PySINumber::from(self.0.thermal_expansivity())
+            fn thermal_expansivity(&self) -> Quot<f64, Temperature> {
+                self.0.thermal_expansivity()
             }
 
             /// Return Grueneisen parameter.
@@ -979,8 +975,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            fn total_molar_weight(&self) -> PySINumber {
-                PySINumber::from(self.0.total_molar_weight())
+            fn total_molar_weight(&self) -> MolarWeight {
+                self.0.total_molar_weight()
             }
 
             /// Return speed of sound.
@@ -988,8 +984,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            fn speed_of_sound(&self) -> PySINumber {
-                PySINumber::from(self.0.speed_of_sound())
+            fn speed_of_sound(&self) -> Velocity {
+                self.0.speed_of_sound()
             }
 
             /// Returns mass of each component in the system.
@@ -997,8 +993,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SIArray1
-            fn mass(&self) -> PySIArray1 {
-                PySIArray1::from(self.0.mass())
+            fn mass(&self) -> Mass<Array1<f64>> {
+                self.0.mass()
             }
 
             /// Returns system's total mass.
@@ -1006,8 +1002,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            fn total_mass(&self) -> PySINumber {
-                PySINumber::from(self.0.total_mass())
+            fn total_mass(&self) -> Mass {
+                self.0.total_mass()
             }
 
             /// Returns system's mass density.
@@ -1015,8 +1011,8 @@ macro_rules! impl_state {
             /// Returns
             /// -------
             /// SINumber
-            fn mass_density(&self) -> PySINumber {
-                PySINumber::from(self.0.mass_density())
+            fn mass_density(&self) -> MassDensity {
+                self.0.mass_density()
             }
 
             /// Returns mass fractions for each component.
@@ -1040,8 +1036,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn specific_helmholtz_energy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.specific_helmholtz_energy(contributions))
+            fn specific_helmholtz_energy(&self, contributions: Contributions) -> SpecificEnergy {
+                self.0.specific_helmholtz_energy(contributions)
             }
 
             /// Return mass specific entropy.
@@ -1056,8 +1052,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn specific_entropy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.specific_entropy(contributions))
+            fn specific_entropy(&self, contributions: Contributions) -> SpecificEntropy {
+                self.0.specific_entropy(contributions)
             }
 
             /// Return mass specific internal_energy.
@@ -1072,8 +1068,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn specific_internal_energy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.specific_internal_energy(contributions))
+            fn specific_internal_energy(&self, contributions: Contributions) -> SpecificEnergy {
+                self.0.specific_internal_energy(contributions)
             }
 
             /// Return mass specific gibbs_energy.
@@ -1088,8 +1084,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn specific_gibbs_energy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.specific_gibbs_energy(contributions))
+            fn specific_gibbs_energy(&self, contributions: Contributions) -> SpecificEnergy {
+                self.0.specific_gibbs_energy(contributions)
             }
 
             /// Return mass specific enthalpy.
@@ -1104,8 +1100,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn specific_enthalpy(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.specific_enthalpy(contributions))
+            fn specific_enthalpy(&self, contributions: Contributions) -> SpecificEnergy {
+                self.0.specific_enthalpy(contributions)
             }
 
             /// Return mass specific isochoric heat capacity.
@@ -1120,8 +1116,8 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn specific_isochoric_heat_capacity(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.specific_isochoric_heat_capacity(contributions))
+            fn specific_isochoric_heat_capacity(&self, contributions: Contributions) -> SpecificEntropy {
+                self.0.specific_isochoric_heat_capacity(contributions)
             }
 
             /// Return mass specific isobaric heat capacity.
@@ -1136,38 +1132,38 @@ macro_rules! impl_state {
             /// -------
             /// SINumber
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn specific_isobaric_heat_capacity(&self, contributions: Contributions) -> PySINumber {
-                PySINumber::from(self.0.specific_isobaric_heat_capacity(contributions))
+            fn specific_isobaric_heat_capacity(&self, contributions: Contributions) -> SpecificEntropy {
+                self.0.specific_isobaric_heat_capacity(contributions)
             }
 
             #[getter]
-            fn get_total_moles(&self) -> PySINumber {
-                PySINumber::from(self.0.total_moles)
+            fn get_total_moles(&self) -> Moles {
+                self.0.total_moles
             }
 
             #[getter]
-            fn get_temperature(&self) -> PySINumber {
-                PySINumber::from(self.0.temperature)
+            fn get_temperature(&self) -> Temperature {
+                self.0.temperature
             }
 
             #[getter]
-            fn get_volume(&self) -> PySINumber {
-                PySINumber::from(self.0.volume)
+            fn get_volume(&self) -> Volume {
+                self.0.volume
             }
 
             #[getter]
-            fn get_density(&self) -> PySINumber {
-                PySINumber::from(self.0.density)
+            fn get_density(&self) -> Density {
+                self.0.density
             }
 
             #[getter]
-            fn get_moles(&self) -> PySIArray1 {
-                PySIArray1::from(self.0.moles.clone())
+            fn get_moles(&self) -> Moles<Array1<f64>> {
+                self.0.moles.clone()
             }
 
             #[getter]
-            fn get_partial_density(&self) -> PySIArray1 {
-                PySIArray1::from(self.0.partial_density.clone())
+            fn get_partial_density(&self) -> Density<Array1<f64>> {
+                self.0.partial_density.clone()
             }
 
             #[getter]
@@ -1257,7 +1253,7 @@ macro_rules! impl_state {
             /// -------
             /// SIArray1
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn molar_entropy(&self, contributions: Contributions) -> PySIArray1 {
+            fn molar_entropy(&self, contributions: Contributions) -> MolarEntropy<Array1<f64>> {
                 StateVec::from(self).molar_entropy(contributions).into()
             }
 
@@ -1273,7 +1269,7 @@ macro_rules! impl_state {
             /// -------
             /// SIArray1
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn specific_entropy(&self, contributions: Contributions) -> PySIArray1 {
+            fn specific_entropy(&self, contributions: Contributions) -> SpecificEntropy<Array1<f64>> {
                 StateVec::from(self).specific_entropy(contributions).into()
             }
 
@@ -1289,7 +1285,7 @@ macro_rules! impl_state {
             /// -------
             /// SIArray1
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn molar_enthalpy(&self, contributions: Contributions) -> PySIArray1 {
+            fn molar_enthalpy(&self, contributions: Contributions) -> MolarEnergy<Array1<f64>> {
                 StateVec::from(self).molar_enthalpy(contributions).into()
             }
 
@@ -1305,18 +1301,18 @@ macro_rules! impl_state {
             /// -------
             /// SIArray1
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
-            fn specific_enthalpy(&self, contributions: Contributions) -> PySIArray1 {
+            fn specific_enthalpy(&self, contributions: Contributions) -> SpecificEnergy<Array1<f64>> {
                 StateVec::from(self).specific_enthalpy(contributions).into()
             }
 
 
             #[getter]
-            fn get_temperature(&self) -> PySIArray1{
+            fn get_temperature(&self) -> Temperature<Array1<f64>> {
                 StateVec::from(self).temperature().into()
             }
 
             #[getter]
-            fn get_pressure(&self) -> PySIArray1 {
+            fn get_pressure(&self) -> Pressure<Array1<f64>> {
                 StateVec::from(self).pressure().into()
             }
 
@@ -1326,12 +1322,12 @@ macro_rules! impl_state {
             }
 
             #[getter]
-            fn get_density(&self) -> PySIArray1 {
+            fn get_density(&self) -> Density<Array1<f64>> {
                 StateVec::from(self).density().into()
             }
 
             #[getter]
-            fn get_moles<'py>(&self, py: Python<'py>) -> PySIArray2 {
+            fn get_moles<'py>(&self, py: Python<'py>) -> Moles<Array2<f64>> {
                 StateVec::from(self).moles().into()
             }
 
@@ -1341,7 +1337,7 @@ macro_rules! impl_state {
             }
 
             #[getter]
-            fn get_mass_density(&self) -> PySIArray1 {
+            fn get_mass_density(&self) -> MassDensity<Array1<f64>> {
                 StateVec::from(self).mass_density().into()
             }
 
@@ -1386,14 +1382,14 @@ macro_rules! impl_state {
                         dict.insert(String::from(format!("x{}", i)), xs.column(i).to_vec());
                     }
                 }
-                dict.insert(String::from("temperature"), states.temperature().convert_into(KELVIN).into_raw_vec());
-                dict.insert(String::from("pressure"), states.pressure().convert_into(PASCAL).into_raw_vec());
-                dict.insert(String::from("density"), states.density().convert_into(MOL / METER.powi::<P3>()).into_raw_vec());
-                dict.insert(String::from("mass density"), states.mass_density().convert_into(KILOGRAM / METER.powi::<P3>()).into_raw_vec());
-                dict.insert(String::from("molar enthalpy"), states.molar_enthalpy(contributions).convert_into(KILO * JOULE / MOL).into_raw_vec());
-                dict.insert(String::from("molar entropy"), states.molar_entropy(contributions).convert_into(KILO * JOULE / KELVIN / MOL).into_raw_vec());
-                dict.insert(String::from("specific enthalpy"), states.specific_enthalpy(contributions).convert_into(KILO * JOULE / KILOGRAM).into_raw_vec());
-                dict.insert(String::from("specific entropy"), states.specific_entropy(contributions).convert_into(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec());
+                dict.insert(String::from("temperature"), states.temperature().convert_to(KELVIN).into_raw_vec_and_offset().0);
+                dict.insert(String::from("pressure"), states.pressure().convert_to(PASCAL).into_raw_vec_and_offset().0);
+                dict.insert(String::from("density"), states.density().convert_to(MOL / METER.powi::<P3>()).into_raw_vec_and_offset().0);
+                dict.insert(String::from("mass density"), states.mass_density().convert_to(KILOGRAM / METER.powi::<P3>()).into_raw_vec_and_offset().0);
+                dict.insert(String::from("molar enthalpy"), states.molar_enthalpy(contributions).convert_to(KILO * JOULE / MOL).into_raw_vec_and_offset().0);
+                dict.insert(String::from("molar entropy"), states.molar_entropy(contributions).convert_to(KILO * JOULE / KELVIN / MOL).into_raw_vec_and_offset().0);
+                dict.insert(String::from("specific enthalpy"), states.specific_enthalpy(contributions).convert_to(KILO * JOULE / KILOGRAM).into_raw_vec_and_offset().0);
+                dict.insert(String::from("specific entropy"), states.specific_entropy(contributions).convert_to(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec_and_offset().0);
                 dict
             }
         }
@@ -1410,8 +1406,8 @@ macro_rules! impl_state_entropy_scaling {
             /// Returns
             /// -------
             /// SINumber
-            fn viscosity(&self) -> PyResult<PySINumber> {
-                Ok(PySINumber::from(self.0.viscosity()?))
+            fn viscosity(&self) -> PyResult<quantity::Viscosity> {
+                Ok(self.0.viscosity()?)
             }
 
             /// Return reference viscosity for entropy scaling.
@@ -1419,8 +1415,8 @@ macro_rules! impl_state_entropy_scaling {
             /// Returns
             /// -------
             /// SINumber
-            fn viscosity_reference(&self) -> PyResult<PySINumber> {
-                Ok(PySINumber::from(self.0.viscosity_reference()?))
+            fn viscosity_reference(&self) -> PyResult<quantity::Viscosity> {
+                Ok(self.0.viscosity_reference()?)
             }
 
             /// Return logarithmic reduced viscosity.
@@ -1440,8 +1436,8 @@ macro_rules! impl_state_entropy_scaling {
             /// Returns
             /// -------
             /// SINumber
-            fn diffusion(&self) -> PyResult<PySINumber> {
-                Ok(PySINumber::from(self.0.diffusion()?))
+            fn diffusion(&self) -> PyResult<Diffusivity> {
+                Ok(self.0.diffusion()?)
             }
 
             /// Return reference diffusion for entropy scaling.
@@ -1449,8 +1445,8 @@ macro_rules! impl_state_entropy_scaling {
             /// Returns
             /// -------
             /// SINumber
-            fn diffusion_reference(&self) -> PyResult<PySINumber> {
-                Ok(PySINumber::from(self.0.diffusion_reference()?))
+            fn diffusion_reference(&self) -> PyResult<Diffusivity> {
+                Ok(self.0.diffusion_reference()?)
             }
 
             /// Return logarithmic reduced diffusion.
@@ -1470,8 +1466,8 @@ macro_rules! impl_state_entropy_scaling {
             /// Returns
             /// -------
             /// SINumber
-            fn thermal_conductivity(&self) -> PyResult<PySINumber> {
-                Ok(PySINumber::from(self.0.thermal_conductivity()?))
+            fn thermal_conductivity(&self) -> PyResult<quantity::ThermalConductivity> {
+                Ok(self.0.thermal_conductivity()?)
             }
 
             /// Return reference thermal conductivity for entropy scaling.
@@ -1479,8 +1475,8 @@ macro_rules! impl_state_entropy_scaling {
             /// Returns
             /// -------
             /// SINumber
-            fn thermal_conductivity_reference(&self) -> PyResult<PySINumber> {
-                Ok(PySINumber::from(self.0.thermal_conductivity_reference()?))
+            fn thermal_conductivity_reference(&self) -> PyResult<quantity::ThermalConductivity> {
+                Ok(self.0.thermal_conductivity_reference()?)
             }
 
             /// Return logarithmic reduced thermal conductivity.

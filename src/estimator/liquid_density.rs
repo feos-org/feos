@@ -1,7 +1,9 @@
 use super::{DataSet, EstimatorError};
-use feos_core::si::{MassDensity, Moles, Pressure, Temperature, KILOGRAM, METER};
-use feos_core::{DensityInitialization, PhaseEquilibrium, Residual, SolverOptions, State};
+use feos_core::{
+    DensityInitialization, PhaseEquilibrium, ReferenceSystem, Residual, SolverOptions, State,
+};
 use ndarray::{arr1, Array1};
+use quantity::{MassDensity, Moles, Pressure, Temperature, KILOGRAM, METER};
 use std::sync::Arc;
 use typenum::P3;
 

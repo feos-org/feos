@@ -1,9 +1,10 @@
 use crate::saftvrqmie::eos::FeynmanHibbsOrder;
 use core::cmp::max;
 use feos_core::parameter::{Parameter, ParameterError, PureRecord};
-use feos_core::si::{Length, Temperature, CALORIE, GRAM, KELVIN, KILO, KILOGRAM, MOL, NAV, RGAS};
+use feos_core::ReferenceSystem;
 use ndarray::{Array, Array1, Array2};
 use num_traits::Zero;
+use quantity::{Length, Temperature, CALORIE, GRAM, KELVIN, KILO, KILOGRAM, MOL, NAV, RGAS};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::TryFrom;

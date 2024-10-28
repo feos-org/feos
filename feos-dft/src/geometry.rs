@@ -1,6 +1,6 @@
-use ang::Angle;
-use feos_core::si::{Length, Quantity};
+use feos_core::ReferenceSystem;
 use ndarray::{Array1, Array2};
+use quantity::{Angle, Length, Quantity};
 use std::f64::consts::{FRAC_PI_3, PI};
 
 /// Grids with up to three dimensions.
@@ -72,8 +72,8 @@ impl Grid {
 }
 
 /// Geometries of individual axes.
-#[derive(Copy, Clone)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[derive(Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq))]
 pub enum Geometry {
     Cartesian,
     Cylindrical,

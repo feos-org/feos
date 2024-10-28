@@ -1,4 +1,3 @@
-use feos_core::si::MolarWeight;
 use feos_core::{Components, EosResult};
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
@@ -8,6 +7,7 @@ use feos_dft::{
 };
 use ndarray::*;
 use num_dual::DualNum;
+use quantity::MolarWeight;
 use std::f64::consts::PI;
 use std::fmt;
 use std::sync::Arc;
@@ -18,8 +18,8 @@ const PI36M1: f64 = 1.0 / (36.0 * PI);
 const N3_CUTOFF: f64 = 1e-5;
 
 /// Different versions of fundamental measure theory.
-#[derive(Clone, Copy)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[derive(Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq))]
 pub enum FMTVersion {
     /// White Bear ([Roth et al., 2002](https://doi.org/10.1088/0953-8984/14/46/313)) or modified ([Yu and Wu, 2002](https://doi.org/10.1063/1.1520530)) fundamental measure theory
     WhiteBear,

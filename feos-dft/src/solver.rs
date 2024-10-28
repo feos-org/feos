@@ -2,14 +2,14 @@ use crate::{
     DFTProfile, FunctionalContribution, HelmholtzEnergyFunctional, WeightFunction,
     WeightFunctionShape,
 };
-use feos_core::si::{Time, SECOND};
-use feos_core::{log_iter, log_result, EosError, EosResult, Verbosity};
+use feos_core::{log_iter, log_result, EosError, EosResult, ReferenceSystem, Verbosity};
 use nalgebra::{DMatrix, DVector};
 use ndarray::prelude::*;
 use ndarray::RemoveAxis;
 use petgraph::graph::Graph;
 use petgraph::visit::EdgeRef;
 use petgraph::Directed;
+use quantity::{Time, SECOND};
 use std::collections::VecDeque;
 use std::fmt;
 use std::ops::AddAssign;
@@ -573,10 +573,12 @@ where
             let mut pd2 = Array::zeros(dim).into_dimensionality().unwrap();
             c.second_partial_derivatives(
                 temperature,
-                wd.view().into_shape((nwd, ngrid)).unwrap(),
-                phi.view_mut().into_shape(ngrid).unwrap(),
-                pd.view_mut().into_shape((nwd, ngrid)).unwrap(),
-                pd2.view_mut().into_shape((nwd, nwd, ngrid)).unwrap(),
+                wd.view().into_shape_with_order((nwd, ngrid)).unwrap(),
+                phi.view_mut().into_shape_with_order(ngrid).unwrap(),
+                pd.view_mut().into_shape_with_order((nwd, ngrid)).unwrap(),
+                pd2.view_mut()
+                    .into_shape_with_order((nwd, nwd, ngrid))
+                    .unwrap(),
             )?;
             second_partial_derivatives.push(pd2);
         }

@@ -3,12 +3,12 @@ use super::DFTProfile;
 use crate::convolver::{BulkConvolver, Convolver};
 use crate::functional_contribution::FunctionalContribution;
 use crate::{ConvolverFFT, DFTSolverLog, HelmholtzEnergyFunctional, WeightFunctionInfo};
-use feos_core::si::{
-    Density, Energy, Entropy, EntropyDensity, MolarEnergy, Moles, Pressure, Quantity, Temperature,
-};
-use feos_core::{Contributions, EosResult, IdealGas, Verbosity};
+use feos_core::{Contributions, EosResult, IdealGas, ReferenceSystem, Verbosity};
 use ndarray::{Array, Array1, Array2, Axis, Dimension, RemoveAxis, ScalarOperand};
 use num_dual::{Dual64, DualNum};
+use quantity::{
+    Density, Energy, Entropy, EntropyDensity, MolarEnergy, Moles, Pressure, Quantity, Temperature,
+};
 use std::ops::{AddAssign, Div};
 use std::sync::Arc;
 
@@ -92,11 +92,11 @@ where
             let ngrid = wd.len() / nwd;
             helmholtz_energy_density
                 .view_mut()
-                .into_shape(ngrid)
+                .into_shape_with_order(ngrid)
                 .unwrap()
                 .add_assign(&c.helmholtz_energy_density(
                     temperature,
-                    wd.into_shape((nwd, ngrid)).unwrap().view(),
+                    wd.into_shape_with_order((nwd, ngrid)).unwrap().view(),
                 )?);
         }
         Ok(helmholtz_energy_density * temperature)
@@ -150,9 +150,9 @@ where
             helmholtz_energy_density.push(
                 c.helmholtz_energy_density(
                     temperature_dual,
-                    wd.into_shape((nwd, ngrid)).unwrap().view(),
+                    wd.into_shape_with_order((nwd, ngrid)).unwrap().view(),
                 )?
-                .into_shape(density.raw_dim().remove_axis(Axis(0)))
+                .into_shape_with_order(density.raw_dim().remove_axis(Axis(0)))
                 .unwrap(),
             );
         }

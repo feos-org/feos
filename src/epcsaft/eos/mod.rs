@@ -2,10 +2,11 @@ use crate::association::Association;
 use crate::epcsaft::parameters::ElectrolytePcSaftParameters;
 use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::parameter::Parameter;
-use feos_core::{si::*, StateHD};
+use feos_core::StateHD;
 use feos_core::{Components, Residual};
 use ndarray::Array1;
 use num_dual::DualNum;
+use quantity::*;
 use std::f64::consts::FRAC_PI_6;
 use std::fmt;
 use std::sync::Arc;
@@ -21,8 +22,8 @@ use hard_chain::HardChain;
 use ionic::Ionic;
 
 /// Implemented variants of the ePC-SAFT equation of state.
-#[derive(Copy, Clone)]
-#[cfg_attr(feature = "python", pyo3::pyclass)]
+#[derive(Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass(eq))]
 pub enum ElectrolytePcSaftVariants {
     Advanced,
     Revised,
@@ -205,7 +206,6 @@ mod tests {
         butane_parameters, propane_butane_parameters, propane_parameters, water_parameters,
     };
     use approx::assert_relative_eq;
-    use feos_core::si::{BAR, KELVIN, METER, PASCAL, RGAS};
     use feos_core::*;
     use ndarray::arr1;
     use typenum::P3;

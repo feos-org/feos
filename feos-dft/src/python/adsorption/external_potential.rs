@@ -1,8 +1,9 @@
 use crate::adsorption::ExternalPotential;
+use ndarray::Array2;
 use numpy::prelude::*;
 use numpy::PyArray1;
 use pyo3::prelude::*;
-use quantity::python::{PySIArray2, PySINumber};
+use quantity::Length;
 
 /// A collection of external potentials.
 #[pyclass(name = "ExternalPotential")]
@@ -127,6 +128,7 @@ impl PyExternalPotential {
     ///
     #[staticmethod]
     #[pyo3(text_signature = "(sigma_ss, epsilon_k_ss, rho_s, xi=None)")]
+    #[pyo3(signature = (sigma_ss, epsilon_k_ss, rho_s, xi=None))]
     pub fn Steele(sigma_ss: f64, epsilon_k_ss: f64, rho_s: f64, xi: Option<f64>) -> Self {
         Self(ExternalPotential::Steele {
             sigma_ss,
@@ -157,6 +159,7 @@ impl PyExternalPotential {
     ///
     #[staticmethod]
     #[pyo3(text_signature = "(sigma_sf, epsilon_k_sf, rho_s, xi=None)")]
+    #[pyo3(signature = (sigma_sf, epsilon_k_sf, rho_s, xi=None))]
     pub fn CustomSteele(
         sigma_sf: &Bound<'_, PyArray1<f64>>,
         epsilon_k_sf: &Bound<'_, PyArray1<f64>>,
@@ -226,27 +229,24 @@ impl PyExternalPotential {
     ///
     #[staticmethod]
     #[pyo3(
-        text_signature = "(coordinates, sigma_ss, epsilon_k_ss, pore_center, system_size, n_grid, cutoff_radius=None)"
+        text_signature = "(coordinates, sigma_ss, epsilon_k_ss, pore_center, system_size, n_grid, cutoff_radius=None)",
+        signature = (coordinates, sigma_ss, epsilon_k_ss, pore_center, system_size, n_grid, cutoff_radius=None)
     )]
     pub fn FreeEnergyAveraged(
-        coordinates: PySIArray2,
+        coordinates: Length<Array2<f64>>,
         sigma_ss: &Bound<'_, PyArray1<f64>>,
         epsilon_k_ss: &Bound<'_, PyArray1<f64>>,
         pore_center: [f64; 3],
-        system_size: [PySINumber; 3],
+        system_size: [Length; 3],
         n_grid: [usize; 2],
         cutoff_radius: Option<f64>,
     ) -> PyResult<Self> {
         Ok(Self(ExternalPotential::FreeEnergyAveraged {
-            coordinates: coordinates.try_into()?,
+            coordinates,
             sigma_ss: sigma_ss.to_owned_array(),
             epsilon_k_ss: epsilon_k_ss.to_owned_array(),
             pore_center,
-            system_size: [
-                system_size[0].try_into()?,
-                system_size[1].try_into()?,
-                system_size[2].try_into()?,
-            ],
+            system_size,
             n_grid,
             cutoff_radius,
         }))

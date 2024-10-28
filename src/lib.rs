@@ -8,7 +8,7 @@
 //! use feos::pcsaft::{PcSaft, PcSaftParameters};
 //! use feos_core::parameter::{IdentifierOption, Parameter};
 //! use feos_core::{Contributions, State};
-//! use feos_core::si::KELVIN;
+//! use quantity::KELVIN;
 //! use std::sync::Arc;
 //!
 //! // Read parameters from json file.

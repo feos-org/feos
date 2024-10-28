@@ -15,7 +15,6 @@ use crate::uvtheory::python::uvtheory as uvtheory_module;
 
 use pyo3::prelude::*;
 use pyo3::wrap_pymodule;
-use quantity::python::quantity as quantity_module;
 
 mod cubic;
 mod dippr;
@@ -34,7 +33,7 @@ use dft::dft as dft_module;
 #[pymodule]
 pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    m.add_wrapped(wrap_pymodule!(quantity_module))?;
+    // m.add_wrapped(wrap_pymodule!(quantity_module))?;
 
     m.add_wrapped(wrap_pymodule!(eos_module))?;
     #[cfg(feature = "dft")]
@@ -57,7 +56,7 @@ pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     #[cfg(feature = "saftvrmie")]
     m.add_wrapped(wrap_pymodule!(saftvrmie_module))?;
 
-    set_path(m, "feos.si", "quantity")?;
+    // set_path(m, "feos.si", "quantity")?;
     set_path(m, "feos.eos", "eos")?;
     #[cfg(feature = "estimator")]
     set_path(m, "feos.eos.estimator", "eos.estimator_eos")?;
@@ -83,15 +82,15 @@ pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     #[cfg(feature = "saftvrmie")]
     set_path(m, "feos.saftvrmie", "saftvrmie")?;
 
+    // re-export si_units within feos. Overriding __module__ is required for pickling.
     m.py().run_bound(
         "\
 import sys
-quantity.SINumber.__module__ = 'feos.si'
-quantity.SIArray1.__module__ = 'feos.si'
-quantity.SIArray2.__module__ = 'feos.si'
-quantity.SIArray3.__module__ = 'feos.si'
-quantity.SIArray4.__module__ = 'feos.si'
-    ",
+import si_units
+sys.modules['feos.si'] = si_units
+si_units.SIObject.__module__ = 'feos.si'
+si_units.Angle.__module__ = 'feos.si'
+        ",
         None,
         Some(&m.dict()),
     )?;

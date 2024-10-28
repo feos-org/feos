@@ -1,12 +1,12 @@
 use super::Components;
-use crate::si::*;
-use crate::StateHD;
-use crate::{EosError, EosResult};
+use crate::{EosError, EosResult, ReferenceSystem, StateHD};
 use ndarray::prelude::*;
 use ndarray::ScalarOperand;
 use num_dual::*;
 use num_traits::{One, Zero};
+use quantity::*;
 use std::ops::Div;
+use typenum::Quot;
 
 /// A reisdual Helmholtz energy model.
 pub trait Residual: Components + Send + Sync {
@@ -75,7 +75,7 @@ pub trait Residual: Components + Send + Sync {
         &self,
         temperature: Temperature,
         moles: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<<f64 as Div<Density>>::Output> {
+    ) -> EosResult<Quot<f64, Density>> {
         let mr = self.validate_moles(moles)?;
         let x = (&mr / mr.sum()).into_value();
         let mut rho = HyperDual64::zero();

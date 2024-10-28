@@ -1,8 +1,7 @@
 use super::{DensityInitialization, State, StateHD, TPSpec};
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::si::{Density, Moles, Pressure, Temperature, Volume};
-use crate::{SolverOptions, TemperatureOrPressure, Verbosity};
+use crate::{ReferenceSystem, SolverOptions, TemperatureOrPressure, Verbosity};
 use nalgebra::SVector;
 use ndarray::{arr1, Array1, Array2};
 use num_dual::linalg::smallest_ev;
@@ -11,6 +10,7 @@ use num_dual::{
     DualVec, HyperDual,
 };
 use num_traits::{One, Zero};
+use quantity::{Density, Moles, Pressure, Temperature, Volume};
 use std::sync::Arc;
 
 const MAX_ITER_CRIT_POINT: usize = 50;

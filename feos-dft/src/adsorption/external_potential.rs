@@ -3,10 +3,10 @@ use crate::adsorption::fea_potential::calculate_fea_potential;
 use crate::functional::HelmholtzEnergyFunctional;
 #[cfg(feature = "rayon")]
 use crate::geometry::Geometry;
-#[cfg(feature = "rayon")]
-use feos_core::si::Length;
 use libm::tgamma;
 use ndarray::{Array1, Array2, Axis as Axis_nd};
+#[cfg(feature = "rayon")]
+use quantity::Length;
 use std::f64::consts::PI;
 
 const DELTA_STEELE: f64 = 3.35;

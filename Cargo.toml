@@ -1,19 +1,27 @@
 [package]
 name = "feos"
 version = "0.7.0"
-authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>", "Philipp Rehner <prehner@ethz.ch>"]
+authors = [
+    "Gernot Bauer <bauer@itt.uni-stuttgart.de>",
+    "Philipp Rehner <prehner@ethz.ch>",
+]
 edition = "2021"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 description = "FeOs - A framework for equations of state and classical density functional theory."
 homepage = "https://github.com/feos-org"
 repository = "https://github.com/feos-org/feos"
-keywords = ["physics", "thermodynamics", "equations_of_state", "phase_equilibria"]
+keywords = [
+    "physics",
+    "thermodynamics",
+    "equations_of_state",
+    "phase_equilibria",
+]
 categories = ["science"]
 
 [package.metadata.docs.rs]
 features = ["all_models", "rayon"]
-rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
+rustdoc-args = ["--html-in-header", "./docs-header.html"]
 
 [workspace]
 members = ["feos-core", "feos-dft", "feos-derive"]
@@ -22,13 +30,13 @@ members = ["feos-core", "feos-dft", "feos-derive"]
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-quantity = { version = "0.8", optional = true }
-num-dual = "0.9"
+quantity = "0.9"
+num-dual = "0.10"
 feos-core = { version = "0.7", path = "feos-core" }
 feos-dft = { version = "0.7", path = "feos-dft", optional = true }
 feos-derive = { version = "0.5", path = "feos-derive" }
-numpy = { version = "0.21", optional = true }
-ndarray = { version = "0.15", features = ["approx"] }
+numpy = { version = "0.22", optional = true }
+ndarray = { version = "0.16", features = ["approx"] }
 petgraph = { version = "0.6", optional = true }
 thiserror = "1.0"
 conv = "0.3"
@@ -42,7 +50,7 @@ itertools = "0.13"
 typenum = "1.16"
 
 [dependencies.pyo3]
-version = "0.21"
+version = "0.22"
 features = ["extension-module", "abi3", "abi3-py37"]
 optional = true
 
@@ -74,8 +82,25 @@ pets = []
 saftvrqmie = []
 saftvrmie = []
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
-python = ["pyo3", "numpy", "quantity/python", "feos-core/python", "feos-dft?/python", "rayon"]
-all_models = ["dft", "estimator", "pcsaft", "epcsaft", "gc_pcsaft", "uvtheory", "pets", "saftvrqmie", "saftvrmie"]
+python = [
+    "pyo3",
+    "numpy",
+    "quantity/python_numpy",
+    "feos-core/python",
+    "feos-dft?/python",
+    "rayon",
+]
+all_models = [
+    "dft",
+    "estimator",
+    "pcsaft",
+    "epcsaft",
+    "gc_pcsaft",
+    "uvtheory",
+    "pets",
+    "saftvrqmie",
+    "saftvrmie",
+]
 
 [[bench]]
 name = "state_properties"

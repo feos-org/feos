@@ -1,9 +1,9 @@
-use std::ops::Div;
-
 use super::{Contributions, Derivative::*, PartialDerivative, State};
 use crate::equation_of_state::{IdealGas, Residual};
-use crate::si::*;
+use crate::ReferenceSystem;
 use ndarray::Array1;
+use quantity::*;
+use std::ops::Div;
 use typenum::P2;
 
 impl<E: Residual + IdealGas> State<E> {

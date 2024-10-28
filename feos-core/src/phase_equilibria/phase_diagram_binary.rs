@@ -2,11 +2,11 @@ use super::bubble_dew::TemperatureOrPressure;
 use super::{PhaseDiagram, PhaseEquilibrium};
 use crate::equation_of_state::Residual;
 use crate::errors::{EosError, EosResult};
-use crate::si::{Density, Moles, Pressure, Temperature, RGAS};
 use crate::state::{Contributions, DensityInitialization, State, StateBuilder, TPSpec};
-use crate::SolverOptions;
+use crate::{ReferenceSystem, SolverOptions};
 use ndarray::{arr1, arr2, concatenate, s, Array1, Array2, Axis};
 use num_dual::linalg::{norm, LU};
+use quantity::{Density, Moles, Pressure, Temperature, RGAS};
 use std::sync::Arc;
 
 const DEFAULT_POINTS: usize = 51;

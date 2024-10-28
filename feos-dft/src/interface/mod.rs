@@ -4,9 +4,9 @@ use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::{Axis, Grid};
 use crate::profile::{DFTProfile, DFTSpecifications};
 use crate::solver::DFTSolver;
-use feos_core::si::{Area, Density, Length, Moles, SurfaceTension, Temperature};
-use feos_core::{Contributions, EosError, EosResult, PhaseEquilibrium};
+use feos_core::{Contributions, EosError, EosResult, PhaseEquilibrium, ReferenceSystem};
 use ndarray::{s, Array1, Array2, Axis as Axis_nd, Ix1};
+use quantity::{Area, Density, Length, Moles, SurfaceTension, Temperature};
 
 mod surface_tension_diagram;
 pub use surface_tension_diagram::SurfaceTensionDiagram;

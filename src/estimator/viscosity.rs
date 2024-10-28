@@ -1,17 +1,15 @@
 use super::{DataSet, EstimatorError, Phase};
-use feos_core::{
-    si::{self, Moles, Pressure, Temperature, MILLI, PASCAL, SECOND},
-    DensityInitialization, EntropyScaling, Residual, State,
-};
+use feos_core::{DensityInitialization, EntropyScaling, ReferenceSystem, Residual, State};
 use itertools::izip;
 use ndarray::{arr1, Array1};
+use quantity::{Moles, Pressure, Temperature, MILLI, PASCAL, SECOND};
 use std::sync::Arc;
 
 /// Store experimental viscosity data.
 #[derive(Clone)]
 pub struct Viscosity {
     pub target: Array1<f64>,
-    unit: si::Viscosity,
+    unit: quantity::Viscosity,
     temperature: Temperature<Array1<f64>>,
     pressure: Pressure<Array1<f64>>,
     initial_density: Vec<DensityInitialization>,
@@ -20,7 +18,7 @@ pub struct Viscosity {
 impl Viscosity {
     /// Create a new data set for experimental viscosity data.
     pub fn new(
-        target: si::Viscosity<Array1<f64>>,
+        target: quantity::Viscosity<Array1<f64>>,
         temperature: Temperature<Array1<f64>>,
         pressure: Pressure<Array1<f64>>,
         phase: Option<&Vec<Phase>>,
@@ -68,7 +66,7 @@ impl<E: Residual + EntropyScaling> DataSet<E> for Viscosity {
             .map(|(t, p, &initial_density)| {
                 State::new_npt(eos, t, p, &moles, initial_density)?
                     .viscosity()
-                    .map(|viscosity| (viscosity / self.unit).into_value())
+                    .map(|viscosity| viscosity.convert_to(self.unit))
                     .map_err(EstimatorError::from)
             })
             .collect()

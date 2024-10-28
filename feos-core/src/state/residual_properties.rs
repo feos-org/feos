@@ -1,9 +1,10 @@
 use super::{Contributions, Derivative::*, PartialDerivative, State};
 use crate::equation_of_state::{EntropyScaling, Residual};
 use crate::errors::EosResult;
-use crate::si::*;
-use crate::PhaseEquilibrium;
+use crate::phase_equilibria::PhaseEquilibrium;
+use crate::ReferenceSystem;
 use ndarray::{arr1, Array1, Array2};
+use quantity::*;
 use std::ops::{Add, Div};
 use std::sync::Arc;
 use typenum::P2;
@@ -486,7 +487,7 @@ impl<E: Residual> State<E> {
 
     /// Total molar weight: $MW=\sum_ix_iMW_i$
     pub fn total_molar_weight(&self) -> MolarWeight {
-        (self.eos.molar_weight() * Dimensionless::from(&self.molefracs)).sum()
+        (self.eos.molar_weight() * Dimensionless::new(&self.molefracs)).sum()
     }
 
     /// Mass of each component: $m_i=n_iMW_i$

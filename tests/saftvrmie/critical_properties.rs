@@ -1,6 +1,6 @@
 use feos::saftvrmie::{test_utils, SaftVRMie};
-use feos_core::State;
-use feos_core::{si::*, SolverOptions};
+use feos_core::{SolverOptions, State};
+use quantity::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 use typenum::P3;

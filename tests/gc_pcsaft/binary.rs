@@ -3,9 +3,9 @@ use feos::gc_pcsaft::{GcPcSaft, GcPcSaftEosParameters};
 #[cfg(feature = "dft")]
 use feos::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftFunctionalParameters};
 use feos_core::parameter::{IdentifierOption, ParameterHetero};
-use feos_core::si::{KELVIN, METER, MOL};
 use feos_core::{Contributions, EosResult, State};
 use ndarray::arr1;
+use quantity::{KELVIN, METER, MOL};
 use std::sync::Arc;
 use typenum::P3;
 
