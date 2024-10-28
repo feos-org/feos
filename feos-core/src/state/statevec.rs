@@ -1,10 +1,10 @@
 use super::{Contributions, State};
-use crate::equation_of_state::{IdealGas, Residual};
+use crate::equation_of_state::{IdealGas, Molarweight, Residual};
+use ndarray::{Array1, Array2};
 use quantity::{
     Density, MassDensity, MolarEnergy, MolarEntropy, Moles, Pressure, SpecificEnergy,
     SpecificEntropy, Temperature,
 };
-use ndarray::{Array1, Array2};
 use std::iter::FromIterator;
 use std::ops::Deref;
 
@@ -54,10 +54,6 @@ impl<'a, E: Residual> StateVec<'a, E> {
         Density::from_shape_fn(self.0.len(), |i| self.0[i].density)
     }
 
-    pub fn mass_density(&self) -> MassDensity<Array1<f64>> {
-        MassDensity::from_shape_fn(self.0.len(), |i| self.0[i].mass_density())
-    }
-
     pub fn moles(&self) -> Moles<Array2<f64>> {
         Moles::from_shape_fn((self.0.len(), self.0[0].eos.components()), |(i, j)| {
             self.0[i].moles.get(j)
@@ -71,6 +67,18 @@ impl<'a, E: Residual> StateVec<'a, E> {
     }
 }
 
+impl<'a, E: Residual + Molarweight> StateVec<'a, E> {
+    pub fn mass_density(&self) -> MassDensity<Array1<f64>> {
+        MassDensity::from_shape_fn(self.0.len(), |i| self.0[i].mass_density())
+    }
+
+    pub fn massfracs(&self) -> Array2<f64> {
+        Array2::from_shape_fn((self.0.len(), self.0[0].eos.components()), |(i, j)| {
+            self.0[i].massfracs()[j]
+        })
+    }
+}
+
 impl<'a, E: Residual + IdealGas> StateVec<'a, E> {
     pub fn molar_enthalpy(&self, contributions: Contributions) -> MolarEnergy<Array1<f64>> {
         MolarEnergy::from_shape_fn(self.0.len(), |i| self.0[i].molar_enthalpy(contributions))
@@ -79,13 +87,9 @@ impl<'a, E: Residual + IdealGas> StateVec<'a, E> {
     pub fn molar_entropy(&self, contributions: Contributions) -> MolarEntropy<Array1<f64>> {
         MolarEntropy::from_shape_fn(self.0.len(), |i| self.0[i].molar_entropy(contributions))
     }
+}
 
-    pub fn massfracs(&self) -> Array2<f64> {
-        Array2::from_shape_fn((self.0.len(), self.0[0].eos.components()), |(i, j)| {
-            self.0[i].massfracs()[j]
-        })
-    }
-
+impl<'a, E: Residual + Molarweight + IdealGas> StateVec<'a, E> {
     pub fn specific_enthalpy(&self, contributions: Contributions) -> SpecificEnergy<Array1<f64>> {
         SpecificEnergy::from_shape_fn(self.0.len(), |i| self.0[i].specific_enthalpy(contributions))
     }

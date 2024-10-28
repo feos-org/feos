@@ -12,9 +12,7 @@ use ndarray::Axis as Axis_nd;
 use ndarray::RemoveAxis;
 use num_dual::linalg::LU;
 use num_dual::DualNum;
-use quantity::{
-    Density, Dimensionless, Energy, Length, MolarEnergy, MolarWeight, Temperature, Volume, KELVIN,
-};
+use quantity::{Density, Dimensionless, Energy, Length, MolarEnergy, Temperature, Volume, KELVIN};
 use std::fmt::Display;
 use std::sync::Arc;
 
@@ -298,10 +296,6 @@ impl HelmholtzEnergyFunctional for Helium {
 
     fn molecule_shape(&self) -> MoleculeShape {
         MoleculeShape::Spherical(1)
-    }
-
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        unreachable!()
     }
 }
 

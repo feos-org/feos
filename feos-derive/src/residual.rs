@@ -3,7 +3,7 @@ use quote::quote;
 use syn::DeriveInput;
 
 // possible additional traits to implement
-const OPT_IMPLS: [&str; 1] = ["entropy_scaling"];
+const OPT_IMPLS: [&str; 2] = ["molar_weight", "entropy_scaling"];
 
 pub(crate) fn expand_residual(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let variants = match input.data {
@@ -12,9 +12,11 @@ pub(crate) fn expand_residual(input: DeriveInput) -> syn::Result<proc_macro2::To
     };
 
     let residual = impl_residual(variants);
+    let molar_weight = impl_molar_weight(variants)?;
     let entropy_scaling = impl_entropy_scaling(variants)?;
     Ok(quote! {
         #residual
+        #molar_weight
         #entropy_scaling
     })
 }
@@ -34,12 +36,6 @@ fn impl_residual(
             Self::#name(residual) => residual.residual_helmholtz_energy_contributions(state)
         }
     });
-    let molar_weight = variants.iter().map(|v| {
-        let name = &v.ident;
-        quote! {
-            Self::#name(residual) => residual.molar_weight()
-        }
-    });
 
     quote! {
         impl Residual for ResidualModel {
@@ -53,13 +49,47 @@ fn impl_residual(
                     #(#residual_helmholtz_energy_contributions,)*
                 }
             }
+        }
+    }
+}
+
+fn impl_molar_weight(
+    variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
+) -> syn::Result<proc_macro2::TokenStream> {
+    let mut molar_weight = Vec::new();
+    let mut has_molar_weight = Vec::new();
+
+    for v in variants.iter() {
+        if implement("molar_weight", v, &OPT_IMPLS)? {
+            let name = &v.ident;
+            molar_weight.push(quote! {
+                Self::#name(eos) => eos.molar_weight()
+            });
+            has_molar_weight.push(quote! {
+                Self::#name(_) => true
+            });
+        }
+    }
+
+    Ok(quote! {
+        impl Molarweight for ResidualModel {
             fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
                 match self {
                     #(#molar_weight,)*
+                    _ => unimplemented!(),
                 }
             }
         }
-    }
+
+        impl ResidualModel {
+            pub fn has_molar_weight(&self) -> bool {
+                match self {
+                    #(#has_molar_weight,)*
+                    _ => false,
+                }
+            }
+        }
+    })
 }
 
 fn impl_entropy_scaling(

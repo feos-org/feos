@@ -100,11 +100,15 @@ fn impl_helmholtz_energy_functional(
     });
 
     let mut molar_weight = Vec::new();
+    let mut has_molar_weight = Vec::new();
     for v in variants.iter() {
         if implement("molar_weight", v, &OPT_IMPLS)? {
             let name = &v.ident;
             molar_weight.push(quote! {
                 Self::#name(functional) => functional.molar_weight()
+            });
+            has_molar_weight.push(quote! {
+                Self::#name(functional) => true
             });
         }
     }
@@ -137,16 +141,28 @@ fn impl_helmholtz_energy_functional(
                     #(#contributions,)*
                 }
             }
+            fn bond_lengths(&self, temperature: f64) -> UnGraph<(), f64> {
+                match self {
+                    #(#bond_lengths,)*
+                    _ => Graph::with_capacity(0, 0),
+                }
+            }
+        }
+
+        impl Molarweight for FunctionalVariant {
             fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
                 match self {
                     #(#molar_weight,)*
                     _ => unimplemented!()
                 }
             }
-            fn bond_lengths(&self, temperature: f64) -> UnGraph<(), f64> {
+        }
+
+        impl FunctionalVariant {
+            pub fn has_molar_weight(&self) -> bool {
                 match self {
-                    #(#bond_lengths,)*
-                    _ => Graph::with_capacity(0, 0),
+                    #(#has_molar_weight,)*
+                    _ => false,
                 }
             }
         }

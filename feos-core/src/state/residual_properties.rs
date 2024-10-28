@@ -1,5 +1,5 @@
 use super::{Contributions, Derivative::*, PartialDerivative, State};
-use crate::equation_of_state::{EntropyScaling, Residual};
+use crate::equation_of_state::{EntropyScaling, Molarweight, Residual};
 use crate::errors::EosResult;
 use crate::phase_equilibria::PhaseEquilibrium;
 use crate::ReferenceSystem;
@@ -484,7 +484,9 @@ impl<E: Residual> State<E> {
     pub fn residual_molar_gibbs_energy(&self) -> MolarEnergy {
         self.residual_gibbs_energy() / self.total_moles
     }
+}
 
+impl<E: Residual + Molarweight> State<E> {
     /// Total molar weight: $MW=\sum_ix_iMW_i$
     pub fn total_molar_weight(&self) -> MolarWeight {
         (self.eos.molar_weight() * Dimensionless::new(&self.molefracs)).sum()

@@ -3,8 +3,7 @@ use super::record::GcPcSaftAssociationRecord;
 use crate::association::{Association, AssociationStrength};
 use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use feos_core::parameter::ParameterHetero;
-use quantity::{MolarWeight, GRAM, MOL};
-use feos_core::{Components, EosResult};
+use feos_core::{Components, EosResult, Molarweight};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::{
@@ -13,6 +12,7 @@ use feos_dft::{
 use ndarray::{Array1, ArrayView2, ScalarOperand};
 use num_dual::DualNum;
 use petgraph::graph::UnGraph;
+use quantity::{MolarWeight, GRAM, MOL};
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
@@ -110,10 +110,6 @@ impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
         Box::new(contributions.into_iter())
     }
 
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        self.parameters.molarweight.clone() * GRAM / MOL
-    }
-
     fn bond_lengths(&self, temperature: f64) -> UnGraph<(), f64> {
         // temperature dependent segment diameter
         let d = self.parameters.hs_diameter(temperature);
@@ -127,6 +123,12 @@ impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
                 0.5 * (di + dj)
             },
         )
+    }
+}
+
+impl Molarweight for GcPcSaftFunctional {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+        self.parameters.molarweight.clone() * GRAM / MOL
     }
 }
 

@@ -1,9 +1,9 @@
 use super::parameters::PetsParameters;
 use crate::hard_sphere::HardSphere;
 use feos_core::parameter::Parameter;
-use quantity::{MolarWeight, GRAM, MOL};
-use feos_core::{Components, Residual};
+use feos_core::{Components, Molarweight, Residual};
 use ndarray::Array1;
+use quantity::{MolarWeight, GRAM, MOL};
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
@@ -89,7 +89,9 @@ impl Residual for Pets {
             ),
         ]
     }
+}
 
+impl Molarweight for Pets {
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.parameters.molarweight.clone() * GRAM / MOL
     }
@@ -314,9 +316,9 @@ mod tests {
         argon_krypton_parameters, argon_parameters, krypton_parameters,
     };
     use approx::assert_relative_eq;
-    use quantity::{BAR, KELVIN, METER, PASCAL, RGAS};
     use feos_core::{Contributions, DensityInitialization, PhaseEquilibrium, State, StateHD};
     use ndarray::arr1;
+    use quantity::{BAR, KELVIN, METER, PASCAL, RGAS};
     use typenum::P3;
 
     #[test]

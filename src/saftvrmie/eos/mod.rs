@@ -3,7 +3,7 @@ use crate::hard_sphere::HardSphere;
 use super::SaftVRMieParameters;
 use association::Association;
 use feos_core::parameter::Parameter;
-use feos_core::{Components, Residual, StateHD};
+use feos_core::{Components, Molarweight, Residual, StateHD};
 use ndarray::{Array1, ScalarOperand};
 use num_dual::DualNum;
 use quantity::{MolarWeight, GRAM, MOL};
@@ -83,10 +83,6 @@ impl Residual for SaftVRMie {
                 .sum()
     }
 
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        self.parameters.molarweight.clone() * GRAM / MOL
-    }
-
     fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         state: &StateHD<D>,
@@ -108,5 +104,11 @@ impl Residual for SaftVRMie {
             a.push(("Association".to_string(), assoc.helmholtz_energy(state, &d)));
         }
         a
+    }
+}
+
+impl Molarweight for SaftVRMie {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+        self.parameters.molarweight.clone() * GRAM / MOL
     }
 }

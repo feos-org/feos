@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use crate::{Components, IdealGas, Residual, StateHD};
+use crate::{Components, IdealGas, Molarweight, Residual, StateHD};
 use ndarray::{Array1, ScalarOperand};
 use num_dual::*;
 use numpy::convert::IntoPyArray;
@@ -203,7 +203,9 @@ macro_rules! impl_residual {
                 ) -> Vec<(String, D)> {
                 vec![("Python".to_string(), self.residual_helmholtz_energy(state))]
             }
+        }
 
+        impl Molarweight for PyResidual {
             fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
                 Python::with_gil(|py| {
                     let py_result = self.0.bind(py).call_method0("molar_weight").unwrap();

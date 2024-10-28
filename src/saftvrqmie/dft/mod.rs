@@ -3,8 +3,7 @@ use crate::saftvrqmie::eos::SaftVRQMieOptions;
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
 use dispersion::AttractiveFunctional;
 use feos_core::parameter::Parameter;
-use quantity::{MolarWeight, GRAM, MOL};
-use feos_core::{Components, EosResult};
+use feos_core::{Components, EosResult, Molarweight};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
@@ -14,6 +13,7 @@ use feos_dft::{
 use ndarray::{Array, Array1, Array2, ArrayView2, ScalarOperand};
 use non_additive_hs::NonAddHardSphereFunctional;
 use num_dual::DualNum;
+use quantity::{MolarWeight, GRAM, MOL};
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
@@ -97,12 +97,14 @@ impl HelmholtzEnergyFunctional for SaftVRQMieFunctional {
         Box::new(contributions.into_iter())
     }
 
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        self.parameters.molarweight.clone() * GRAM / MOL
-    }
-
     fn molecule_shape(&self) -> MoleculeShape {
         MoleculeShape::NonSpherical(&self.parameters.m)
+    }
+}
+
+impl Molarweight for SaftVRQMieFunctional {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+        self.parameters.molarweight.clone() * GRAM / MOL
     }
 }
 

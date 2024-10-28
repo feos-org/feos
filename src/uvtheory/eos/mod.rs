@@ -1,18 +1,17 @@
 #![allow(clippy::excessive_precision)]
 #![allow(clippy::needless_range_loop)]
-
-use self::bh::BarkerHenderson;
-use self::wca::{WeeksChandlerAndersen, WeeksChandlerAndersenB3};
-
 use super::parameters::UVTheoryParameters;
-use feos_core::{parameter::Parameter, Components, Residual};
+use feos_core::parameter::Parameter;
+use feos_core::{Components, Molarweight, Residual};
 use ndarray::Array1;
 use quantity::{MolarWeight, GRAM, MOL};
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
 mod bh;
+use bh::BarkerHenderson;
 mod wca;
+use wca::{WeeksChandlerAndersen, WeeksChandlerAndersenB3};
 
 /// Type of perturbation.
 #[derive(Clone, Copy, PartialEq)]
@@ -118,7 +117,9 @@ impl Residual for UVTheory {
             }
         }
     }
+}
 
+impl Molarweight for UVTheory {
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.parameters.molarweight.clone() * GRAM / MOL
     }

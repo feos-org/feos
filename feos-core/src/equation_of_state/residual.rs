@@ -8,7 +8,14 @@ use quantity::*;
 use std::ops::Div;
 use typenum::Quot;
 
-/// A reisdual Helmholtz energy model.
+/// Molar weight of all components.
+///
+/// Enables calculation of (mass) specific properties.
+pub trait Molarweight {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>>;
+}
+
+/// A residual Helmholtz energy model.
 pub trait Residual: Components + Send + Sync {
     /// Return the maximum density in Angstrom^-3.
     ///
@@ -17,11 +24,6 @@ pub trait Residual: Components + Send + Sync {
     /// be a mathematical limit for the density (if those exist in the
     /// equation of state anyways).
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64;
-
-    /// Molar weight of all components.
-    ///
-    /// Enables calculation of (mass) specific properties.
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>>;
 
     /// Evaluate the reduced Helmholtz energy of each individual contribution
     /// and return them together with a string representation of the contribution.
@@ -192,9 +194,5 @@ impl Residual for NoResidual {
         _: &StateHD<D>,
     ) -> Vec<(String, D)> {
         vec![]
-    }
-
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        panic!("No mass specific properties are available for this model!")
     }
 }

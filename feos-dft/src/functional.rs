@@ -4,7 +4,7 @@ use crate::functional_contribution::*;
 use crate::ideal_chain_contribution::IdealChainContribution;
 use crate::solvation::PairPotential;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
-use feos_core::{Components, EosResult, EquationOfState, IdealGas, Residual, StateHD};
+use feos_core::{Components, EosResult, EquationOfState, IdealGas, Molarweight, Residual, StateHD};
 use ndarray::*;
 use num_dual::*;
 use petgraph::graph::{Graph, UnGraph};
@@ -26,10 +26,6 @@ impl<I: Components + Send + Sync, F: HelmholtzEnergyFunctional> HelmholtzEnergyF
 
     fn molecule_shape(&self) -> MoleculeShape {
         self.residual.molecule_shape()
-    }
-
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        self.residual.molar_weight()
     }
 
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
@@ -98,10 +94,6 @@ impl<F: HelmholtzEnergyFunctional> Residual for DFT<F> {
         self.0.compute_max_density(moles)
     }
 
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        self.0.molar_weight()
-    }
-
     fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         state: &StateHD<D>,
@@ -116,6 +108,12 @@ impl<F: HelmholtzEnergyFunctional> Residual for DFT<F> {
             self.ideal_chain_contribution().helmholtz_energy(state),
         ));
         res
+    }
+}
+
+impl<F: Molarweight> Molarweight for DFT<F> {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+        self.0.molar_weight()
     }
 }
 
@@ -150,11 +148,6 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
 
     /// Return the shape of the molecules and the necessary specifications.
     fn molecule_shape(&self) -> MoleculeShape;
-
-    /// Molar weight of all components.
-    ///
-    /// Enables calculation of (mass) specific properties.
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>>;
 
     /// Return the maximum density in Angstrom^-3.
     ///
