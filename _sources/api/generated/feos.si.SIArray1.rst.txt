@@ -8,32 +8,4 @@ feos.si.SIArray1
 
 .. currentmodule:: feos.si
 
-.. autoclass:: SIArray1
-
-   
-
-   
-   .. rubric:: Methods
-
-   .. autosummary::
-      :toctree: ./
-   
-      ~SIArray1.__init__
-      ~SIArray1.as_list
-      ~SIArray1.cbrt
-      ~SIArray1.has_unit
-      ~SIArray1.linspace
-      ~SIArray1.logspace
-      ~SIArray1.sqrt
-   
-   
-
-   
-   
-   .. rubric:: Attributes
-
-   .. autosummary::
-   
-      ~SIArray1.shape
-   
-   
+.. autodata:: SIArray1
