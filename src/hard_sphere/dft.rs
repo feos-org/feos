@@ -7,7 +7,6 @@ use feos_dft::{
 };
 use ndarray::*;
 use num_dual::DualNum;
-use quantity::MolarWeight;
 use std::f64::consts::PI;
 use std::fmt;
 use std::sync::Arc;
@@ -351,10 +350,6 @@ impl HelmholtzEnergyFunctional for FMTFunctional {
 
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         moles.sum() / (moles * &self.properties.sigma).sum() * 1.2
-    }
-
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        panic!("No mass specific properties are available for this model!")
     }
 
     fn molecule_shape(&self) -> MoleculeShape {

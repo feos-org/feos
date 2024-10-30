@@ -1,7 +1,7 @@
 use super::parameters::SaftVRQMieParameters;
 use feos_core::parameter::{Parameter, ParameterError};
 use feos_core::{
-    Components, EntropyScaling, EosError, EosResult, ReferenceSystem, Residual, State,
+    Components, EntropyScaling, EosError, EosResult, Molarweight, ReferenceSystem, Residual, State,
 };
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
@@ -184,7 +184,9 @@ impl Residual for SaftVRQMie {
         }
         v
     }
+}
 
+impl Molarweight for SaftVRQMie {
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.parameters.molarweight.clone() * GRAM / MOL
     }

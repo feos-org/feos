@@ -1,6 +1,7 @@
 use super::{DataSet, EstimatorError};
 use feos_core::{
-    DensityInitialization, PhaseEquilibrium, ReferenceSystem, Residual, SolverOptions, State,
+    DensityInitialization, Molarweight, PhaseEquilibrium, ReferenceSystem, Residual, SolverOptions,
+    State,
 };
 use ndarray::{arr1, Array1};
 use quantity::{MassDensity, Moles, Pressure, Temperature, KILOGRAM, METER};
@@ -47,7 +48,7 @@ impl LiquidDensity {
     }
 }
 
-impl<E: Residual> DataSet<E> for LiquidDensity {
+impl<E: Residual + Molarweight> DataSet<E> for LiquidDensity {
     fn target(&self) -> &Array1<f64> {
         &self.target
     }
@@ -119,7 +120,7 @@ impl EquilibriumLiquidDensity {
     }
 }
 
-impl<E: Residual> DataSet<E> for EquilibriumLiquidDensity {
+impl<E: Residual + Molarweight> DataSet<E> for EquilibriumLiquidDensity {
     fn target(&self) -> &Array1<f64> {
         &self.target
     }

@@ -9,7 +9,7 @@ mod ideal_gas;
 mod residual;
 
 pub use ideal_gas::IdealGas;
-pub use residual::{EntropyScaling, NoResidual, Residual};
+pub use residual::{EntropyScaling, Molarweight, NoResidual, Residual};
 
 /// The number of components that the model is initialized for.
 pub trait Components {
@@ -91,7 +91,9 @@ impl<I: IdealGas, R: Residual> Residual for EquationOfState<I, R> {
     ) -> Vec<(String, D)> {
         self.residual.residual_helmholtz_energy_contributions(state)
     }
+}
 
+impl<I, R: Molarweight> Molarweight for EquationOfState<I, R> {
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.residual.molar_weight()
     }

@@ -1254,7 +1254,7 @@ macro_rules! impl_state {
             /// SIArray1
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn molar_entropy(&self, contributions: Contributions) -> MolarEntropy<Array1<f64>> {
-                StateVec::from(self).molar_entropy(contributions).into()
+                StateVec::from(self).molar_entropy(contributions)
             }
 
             /// Return mass specific entropy.
@@ -1270,7 +1270,7 @@ macro_rules! impl_state {
             /// SIArray1
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn specific_entropy(&self, contributions: Contributions) -> SpecificEntropy<Array1<f64>> {
-                StateVec::from(self).specific_entropy(contributions).into()
+                StateVec::from(self).specific_entropy(contributions)
             }
 
             /// Return molar enthalpy.
@@ -1286,7 +1286,7 @@ macro_rules! impl_state {
             /// SIArray1
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn molar_enthalpy(&self, contributions: Contributions) -> MolarEnergy<Array1<f64>> {
-                StateVec::from(self).molar_enthalpy(contributions).into()
+                StateVec::from(self).molar_enthalpy(contributions)
             }
 
             /// Return mass specific enthalpy.
@@ -1302,18 +1302,18 @@ macro_rules! impl_state {
             /// SIArray1
             #[pyo3(signature = (contributions=Contributions::Total), text_signature = "($self, contributions)")]
             fn specific_enthalpy(&self, contributions: Contributions) -> SpecificEnergy<Array1<f64>> {
-                StateVec::from(self).specific_enthalpy(contributions).into()
+                StateVec::from(self).specific_enthalpy(contributions)
             }
 
 
             #[getter]
             fn get_temperature(&self) -> Temperature<Array1<f64>> {
-                StateVec::from(self).temperature().into()
+                StateVec::from(self).temperature()
             }
 
             #[getter]
             fn get_pressure(&self) -> Pressure<Array1<f64>> {
-                StateVec::from(self).pressure().into()
+                StateVec::from(self).pressure()
             }
 
             #[getter]
@@ -1323,12 +1323,12 @@ macro_rules! impl_state {
 
             #[getter]
             fn get_density(&self) -> Density<Array1<f64>> {
-                StateVec::from(self).density().into()
+                StateVec::from(self).density()
             }
 
             #[getter]
             fn get_moles<'py>(&self, py: Python<'py>) -> Moles<Array2<f64>> {
-                StateVec::from(self).moles().into()
+                StateVec::from(self).moles()
             }
 
             #[getter]
@@ -1337,13 +1337,13 @@ macro_rules! impl_state {
             }
 
             #[getter]
-            fn get_mass_density(&self) -> MassDensity<Array1<f64>> {
-                StateVec::from(self).mass_density().into()
+            fn get_mass_density(&self) -> Option<MassDensity<Array1<f64>>> {
+                self.0[0].eos.residual.has_molar_weight().then(|| StateVec::from(self).mass_density())
             }
 
             #[getter]
-            fn get_massfracs<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray2<f64>> {
-                StateVec::from(self).massfracs().into_pyarray_bound(py)
+            fn get_massfracs<'py>(&self, py: Python<'py>) -> Option<Bound<'py, PyArray2<f64>>> {
+                self.0[0].eos.residual.has_molar_weight().then(|| StateVec::from(self).massfracs().into_pyarray_bound(py))
             }
 
             /// Returns selected properties of a StateVec as dictionary.
@@ -1385,11 +1385,13 @@ macro_rules! impl_state {
                 dict.insert(String::from("temperature"), states.temperature().convert_to(KELVIN).into_raw_vec_and_offset().0);
                 dict.insert(String::from("pressure"), states.pressure().convert_to(PASCAL).into_raw_vec_and_offset().0);
                 dict.insert(String::from("density"), states.density().convert_to(MOL / METER.powi::<P3>()).into_raw_vec_and_offset().0);
-                dict.insert(String::from("mass density"), states.mass_density().convert_to(KILOGRAM / METER.powi::<P3>()).into_raw_vec_and_offset().0);
                 dict.insert(String::from("molar enthalpy"), states.molar_enthalpy(contributions).convert_to(KILO * JOULE / MOL).into_raw_vec_and_offset().0);
                 dict.insert(String::from("molar entropy"), states.molar_entropy(contributions).convert_to(KILO * JOULE / KELVIN / MOL).into_raw_vec_and_offset().0);
-                dict.insert(String::from("specific enthalpy"), states.specific_enthalpy(contributions).convert_to(KILO * JOULE / KILOGRAM).into_raw_vec_and_offset().0);
-                dict.insert(String::from("specific entropy"), states.specific_entropy(contributions).convert_to(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec_and_offset().0);
+                if states.0[0].eos.residual.has_molar_weight() {
+                    dict.insert(String::from("mass density"), states.mass_density().convert_to(KILOGRAM / METER.powi::<P3>()).into_raw_vec_and_offset().0);
+                    dict.insert(String::from("specific enthalpy"), states.specific_enthalpy(contributions).convert_to(KILO * JOULE / KILOGRAM).into_raw_vec_and_offset().0);
+                    dict.insert(String::from("specific entropy"), states.specific_entropy(contributions).convert_to(KILO * JOULE / KELVIN / KILOGRAM).into_raw_vec_and_offset().0);
+                }
                 dict
             }
         }

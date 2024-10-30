@@ -15,11 +15,11 @@ use crate::uvtheory::UVTheory;
 use feos_core::cubic::PengRobinson;
 #[cfg(feature = "python")]
 use feos_core::python::user_defined::PyResidual;
-use quantity::*;
 use feos_core::*;
 use feos_derive::{Components, Residual};
 use ndarray::{Array1, ScalarOperand};
 use num_dual::DualNum;
+use quantity::*;
 
 /// Collection of different [Residual] implementations.
 ///
@@ -29,22 +29,29 @@ use num_dual::DualNum;
 pub enum ResidualModel {
     NoResidual(NoResidual),
     #[cfg(feature = "pcsaft")]
-    #[implement(entropy_scaling)]
+    #[implement(entropy_scaling, molar_weight)]
     PcSaft(PcSaft),
     #[cfg(feature = "epcsaft")]
+    #[implement(molar_weight)]
     ElectrolytePcSaft(ElectrolytePcSaft),
     #[cfg(feature = "gc_pcsaft")]
+    #[implement(molar_weight)]
     GcPcSaft(GcPcSaft),
+    #[implement(molar_weight)]
     PengRobinson(PengRobinson),
     #[cfg(feature = "python")]
+    #[implement(molar_weight)]
     Python(PyResidual),
     #[cfg(feature = "saftvrqmie")]
-    #[implement(entropy_scaling)]
+    #[implement(entropy_scaling, molar_weight)]
     SaftVRQMie(SaftVRQMie),
     #[cfg(feature = "saftvrmie")]
+    #[implement(molar_weight)]
     SaftVRMie(SaftVRMie),
     #[cfg(feature = "pets")]
+    #[implement(molar_weight)]
     Pets(Pets),
     #[cfg(feature = "uvtheory")]
+    #[implement(molar_weight)]
     UVTheory(UVTheory),
 }

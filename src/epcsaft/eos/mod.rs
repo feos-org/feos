@@ -2,8 +2,8 @@ use crate::association::Association;
 use crate::epcsaft::parameters::ElectrolytePcSaftParameters;
 use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::parameter::Parameter;
-use feos_core::StateHD;
 use feos_core::{Components, Residual};
+use feos_core::{Molarweight, StateHD};
 use ndarray::Array1;
 use num_dual::DualNum;
 use quantity::*;
@@ -187,7 +187,9 @@ impl Residual for ElectrolytePcSaft {
         };
         v
     }
+}
 
+impl Molarweight for ElectrolytePcSaft {
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.parameters.molarweight.clone() * GRAM / MOL
     }

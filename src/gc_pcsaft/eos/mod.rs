@@ -1,7 +1,7 @@
 use crate::association::Association;
 use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::parameter::ParameterHetero;
-use feos_core::{Components, Residual};
+use feos_core::{Components, Molarweight, Residual};
 use ndarray::Array1;
 use quantity::{MolarWeight, GRAM, MOL};
 use std::f64::consts::FRAC_PI_6;
@@ -139,7 +139,9 @@ impl Residual for GcPcSaft {
         }
         v
     }
+}
 
+impl Molarweight for GcPcSaft {
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         self.parameters.molarweight.clone() * GRAM / MOL
     }

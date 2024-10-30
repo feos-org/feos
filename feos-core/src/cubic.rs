@@ -4,7 +4,7 @@
 //! of state - with a single contribution to the Helmholtz energy - can be implemented.
 //! The implementation closely follows the form of the equations given in
 //! [this wikipedia article](https://en.wikipedia.org/wiki/Cubic_equations_of_state#Peng%E2%80%93Robinson_equation_of_state).
-use crate::equation_of_state::{Components, Residual};
+use crate::equation_of_state::{Components, Molarweight, Residual};
 use crate::parameter::{Identifier, Parameter, ParameterError, PureRecord};
 use crate::state::StateHD;
 use ndarray::{Array1, Array2, ScalarOperand};
@@ -214,7 +214,9 @@ impl Residual for PengRobinson {
             self.residual_helmholtz_energy(state),
         )]
     }
+}
 
+impl Molarweight for PengRobinson {
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
         &self.parameters.molarweight * (GRAM / MOL)
     }

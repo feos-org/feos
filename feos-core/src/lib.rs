@@ -33,7 +33,7 @@ pub mod parameter;
 mod phase_equilibria;
 mod state;
 pub use equation_of_state::{
-    Components, EntropyScaling, EquationOfState, IdealGas, NoResidual, Residual,
+    Components, EntropyScaling, EquationOfState, IdealGas, Molarweight, NoResidual, Residual,
 };
 pub use errors::{EosError, EosResult};
 pub use phase_equilibria::{
