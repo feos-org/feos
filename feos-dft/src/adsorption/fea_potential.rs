@@ -54,10 +54,8 @@ pub fn calculate_fea_potential(
             (nodes, weights)
         }
         Geometry::Spherical | Geometry::Cylindrical => {
-            let (unscaled_nodes, unscaled_weights) = GaussLegendre::new(n_grid[0])
-                .unwrap()
-                .into_iter()
-                .unzip();
+            let (unscaled_nodes, unscaled_weights) =
+                GaussLegendre::new(n_grid[0]).unwrap().into_iter().unzip();
 
             let nodes = PI + Array1::from_vec(unscaled_nodes) * PI;
             let weights = Array1::from_vec(unscaled_weights) * PI;
@@ -81,17 +79,13 @@ pub fn calculate_fea_potential(
             (nodes, weights)
         }
         Geometry::Spherical => {
-            let (unscaled_nodes, unscaled_weights) = GaussLegendre::new(n_grid[1])
-                .unwrap()
-                .into_iter()
-                .unzip();
+            let (unscaled_nodes, unscaled_weights) =
+                GaussLegendre::new(n_grid[1]).unwrap().into_iter().unzip();
 
-            let nodes = PI / 2.0
-                + Array1::from_vec(unscaled_nodes) * PI / 2.0;
-            let weights = Array1::from_vec(unscaled_weights) * PI
-                / 2.0
+            let nodes = PI / 2.0 + Array1::from_vec(unscaled_nodes) * PI / 2.0;
+            let weights = Array1::from_vec(unscaled_weights) * PI / 2.0
                 * Array1::from_shape_fn(n_grid[1], |i| nodes[i].sin());
-                
+
             (nodes, weights)
         }
     };
