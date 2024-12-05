@@ -20,8 +20,8 @@ rustdoc-args = ["--html-in-header", "./docs-header.html"]
 features = ["rayon"]
 
 [dependencies]
-quantity = "0.9"
-num-dual = "0.10"
+quantity = "0.10"
+num-dual = "0.11"
 feos-core = { version = "0.7", path = "../feos-core" }
 ndarray = "0.16"
 nalgebra = "0.33"
@@ -32,8 +32,8 @@ libm = "0.2"
 gauss-quad = { version = "0.2", optional = true }
 petgraph = "0.6"
 typenum = "1.16"
-numpy = { version = "0.22", optional = true }
-pyo3 = { version = "0.22", optional = true }
+numpy = { version = "0.23", optional = true }
+pyo3 = { version = "0.23", optional = true }
 
 [features]
 default = []

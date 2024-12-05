@@ -164,10 +164,7 @@ pub enum WeightFunctionShape {
     DeltaVec,
 }
 
-/// Defining `type` for information about weight functions based on
-/// `WeightFunctionBase<TScal, TVec>`.
-// pub type WeightFunctionInfo<T> = WeightFunctionBase<WeightFunction<T>, WeightFunction<T>>;
-
+/// Information about weight functions
 pub struct WeightFunctionInfo<T> {
     /// Index of the component that each individual segment belongs to.
     pub(crate) component_index: Array1<usize>,

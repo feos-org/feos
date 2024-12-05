@@ -176,12 +176,12 @@ impl_parameter!(
 impl PySaftVRQMieParameters {
     #[getter]
     fn get_k_ij<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray2<f64>> {
-        self.0.k_ij.view().to_pyarray_bound(py)
+        self.0.k_ij.view().to_pyarray(py)
     }
 
     #[getter]
     fn get_l_ij<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray2<f64>> {
-        self.0.l_ij.view().to_pyarray_bound(py)
+        self.0.l_ij.view().to_pyarray(py)
     }
 
     /// Calculate effective sigma.
@@ -278,7 +278,7 @@ impl PySaftVRQMieParameters {
             .into_value()
         })
         .view()
-        .to_pyarray_bound(py))
+        .to_pyarray(py))
     }
 
     /// Generate energy and force tables to be used with LAMMPS' `pair_style table` command.

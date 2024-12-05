@@ -30,15 +30,15 @@ members = ["feos-core", "feos-dft", "feos-derive"]
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-quantity = "0.9"
-num-dual = "0.10"
+quantity = "0.10"
+num-dual = "0.11"
 feos-core = { version = "0.7", path = "feos-core" }
 feos-dft = { version = "0.7", path = "feos-dft", optional = true }
 feos-derive = { version = "0.5", path = "feos-derive" }
-numpy = { version = "0.22", optional = true }
+numpy = { version = "0.23", optional = true }
 ndarray = { version = "0.16", features = ["approx"] }
 petgraph = { version = "0.6", optional = true }
-thiserror = "1.0"
+thiserror = "2.0"
 conv = "0.3"
 num-traits = "0.2"
 serde = "1.0"
@@ -50,7 +50,7 @@ itertools = "0.13"
 typenum = "1.16"
 
 [dependencies.pyo3]
-version = "0.22"
+version = "0.23"
 features = ["extension-module", "abi3", "abi3-py37"]
 optional = true
 

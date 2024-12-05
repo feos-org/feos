@@ -112,7 +112,7 @@ macro_rules! impl_pair_correlation {
                 self.0
                     .pair_correlation_function
                     .as_ref()
-                    .map(|g| g.view().to_pyarray_bound(py))
+                    .map(|g| g.view().to_pyarray(py))
             }
 
             #[getter]

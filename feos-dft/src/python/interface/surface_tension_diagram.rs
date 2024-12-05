@@ -90,7 +90,7 @@ macro_rules! impl_surface_tension_diagram {
 
             #[getter]
             pub fn get_interfacial_enrichment<'py>(&self, py: Python<'py>) -> Vec<Bound<'py, PyArray1<f64>>> {
-                self.0.interfacial_enrichment().iter().map(|i| i.to_pyarray_bound(py)).collect()
+                self.0.interfacial_enrichment().iter().map(|i| i.to_pyarray(py)).collect()
             }
 
             #[getter]

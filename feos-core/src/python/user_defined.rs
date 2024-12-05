@@ -170,7 +170,7 @@ macro_rules! impl_residual {
                     let py_result = self
                         .0
                         .bind(py)
-                        .call_method1("max_density", (moles.to_owned().into_pyarray_bound(py),))
+                        .call_method1("max_density", (moles.to_owned().into_pyarray(py),))
                         .unwrap();
                     py_result.extract().unwrap()
                 })
