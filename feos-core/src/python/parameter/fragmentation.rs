@@ -113,7 +113,7 @@ fn fragment_molecule(
     smiles: &str,
     smarts: Vec<PySmartsRecord>,
 ) -> PyResult<(Vec<String>, Vec<[usize; 2]>)> {
-    let chem = py.import_bound("rdkit.Chem")?;
+    let chem = py.import("rdkit.Chem")?;
     let mol = chem.call_method1("MolFromSmiles", (smiles,))?;
     let atoms = mol.call_method0("GetNumHeavyAtoms")?.extract::<usize>()?;
 
@@ -155,7 +155,7 @@ fn fragment_molecule(
         .for_each(|(_, m)| m.retain(|m| !(m.len() == 1 && large_segments.contains(&m[0]))));
 
     let bonds = mol.call_method0("GetBonds")?;
-    let builtins = py.import_bound("builtins")?;
+    let builtins = py.import("builtins")?;
     let bonds = builtins
         .call_method1("list", (bonds,))?
         .extract::<Vec<Bound<'_, PyAny>>>()?;

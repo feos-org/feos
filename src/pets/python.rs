@@ -223,7 +223,7 @@ impl PyPetsParameters {
 
     #[getter]
     fn get_k_ij<'py>(&self, py: Python<'py>) -> Option<Bound<'py, PyArray2<f64>>> {
-        self.0.k_ij.as_ref().map(|k| k.view().to_pyarray_bound(py))
+        self.0.k_ij.as_ref().map(|k| k.view().to_pyarray(py))
     }
 
     fn _repr_markdown_(&self) -> String {

@@ -272,7 +272,7 @@ macro_rules! impl_binary_record {
             #[expect(irrefutable_let_patterns)]
             fn get_model_record<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
                 Ok(if let Ok(mr) = f64::try_from(self.0.model_record.clone()) {
-                    pyo3::types::PyFloat::new_bound(py, mr).into_any()
+                    pyo3::types::PyFloat::new(py, mr).into_any()
                 } else {
                     Bound::new(py, $py_model_record(self.0.model_record.clone()))?.into_any()
                 })
@@ -744,7 +744,7 @@ macro_rules! impl_parameter {
                 self.0
                     .records()
                     .1
-                    .map(|r| r.mapv(|r| f64::try_from(r).unwrap()).view().to_pyarray_bound(py))
+                    .map(|r| r.mapv(|r| f64::try_from(r).unwrap()).view().to_pyarray(py))
             }
         }
     };

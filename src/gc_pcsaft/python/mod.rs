@@ -147,13 +147,13 @@ impl PyGcPcSaftFunctionalParameters {
 
     #[getter]
     fn get_graph(&self, py: Python) -> PyResult<PyObject> {
-        let fun: Py<PyAny> = PyModule::from_code_bound(
+        let fun: Py<PyAny> = PyModule::from_code(
             py,
-            "def f(s): 
+            c"def f(s): 
                 import graphviz
                 return graphviz.Source(s.replace('\\\\\"', ''))",
-            "",
-            "",
+            c"",
+            c"",
         )?
         .getattr("f")?
         .into();
@@ -162,7 +162,7 @@ impl PyGcPcSaftFunctionalParameters {
 
     #[getter]
     fn get_k_ij<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray2<f64>> {
-        self.0.k_ij.view().to_pyarray_bound(py)
+        self.0.k_ij.view().to_pyarray(py)
     }
 
     fn __repr__(&self) -> PyResult<String> {

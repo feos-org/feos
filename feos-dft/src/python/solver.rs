@@ -168,7 +168,7 @@ pub struct PyDFTSolverLog(pub DFTSolverLog);
 impl PyDFTSolverLog {
     #[getter]
     fn get_residual<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-        self.0.residual().to_pyarray_bound(py)
+        self.0.residual().to_pyarray(py)
     }
 
     #[getter]

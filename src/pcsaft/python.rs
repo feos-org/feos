@@ -203,7 +203,7 @@ impl PyPcSaftParameters {
         self.0
             .binary_records
             .as_ref()
-            .map(|br| br.map(|br| br.k_ij).view().to_pyarray_bound(py))
+            .map(|br| br.map(|br| br.k_ij).view().to_pyarray(py))
     }
 
     fn _repr_markdown_(&self) -> String {

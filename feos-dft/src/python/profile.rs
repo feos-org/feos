@@ -21,7 +21,7 @@ macro_rules! impl_profile {
                 py: Python<'py>,
             ) -> PyResult<(Bound<'py, $arr2<f64>>, Bound<'py, PyArray1<f64>>, f64)> {
                 let (res_rho, res_mu, res_norm) = self.0.profile.residual(log)?;
-                Ok((res_rho.view().to_pyarray_bound(py), res_mu.view().to_pyarray_bound(py), res_norm))
+                Ok((res_rho.view().to_pyarray(py), res_mu.view().to_pyarray(py), res_norm))
             }
 
             /// Solve the profile in-place. A non-default solver can be provided
@@ -74,7 +74,7 @@ macro_rules! impl_profile {
 
             #[getter]
             fn get_external_potential<'py>(&self, py: Python<'py>) -> Bound<'py, $py_arr2<f64>> {
-                self.0.profile.external_potential.view().to_pyarray_bound(py)
+                self.0.profile.external_potential.view().to_pyarray(py)
             }
 
             #[getter]
@@ -93,7 +93,7 @@ macro_rules! impl_profile {
                 py: Python<'py>,
             ) -> PyResult<Vec<Bound<'py, $arr2<f64>>>> {
                 let n = self.0.profile.weighted_densities()?;
-                Ok(n.into_iter().map(|n| n.view().to_pyarray_bound(py)).collect())
+                Ok(n.into_iter().map(|n| n.view().to_pyarray(py)).collect())
             }
 
             #[getter]
@@ -101,7 +101,7 @@ macro_rules! impl_profile {
                 &self,
                 py: Python<'py>,
             ) -> PyResult<Bound<'py, $arr2<f64>>> {
-                Ok(self.0.profile.functional_derivative()?.view().to_pyarray_bound(py))
+                Ok(self.0.profile.functional_derivative()?.view().to_pyarray(py))
             }
 
             /// Calculate the entropy density of the inhomogeneous system.

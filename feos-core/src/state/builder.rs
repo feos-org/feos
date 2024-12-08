@@ -70,7 +70,7 @@ pub struct StateBuilder<'a, E, const IG: bool> {
     initial_temperature: Option<Temperature>,
 }
 
-impl<'a, E: Residual> StateBuilder<'a, E, false> {
+impl<E: Residual> StateBuilder<'_, E, false> {
     /// Create a new `StateBuilder` for the given equation of state.
     pub fn new(eos: &Arc<E>) -> Self {
         StateBuilder {
@@ -211,7 +211,7 @@ impl<'a, E: Residual + IdealGas, const IG: bool> StateBuilder<'a, E, IG> {
     }
 }
 
-impl<'a, E: Residual> StateBuilder<'a, E, false> {
+impl<E: Residual> StateBuilder<'_, E, false> {
     /// Try to build the state with the given inputs.
     pub fn build(self) -> EosResult<State<E>> {
         State::new(
@@ -229,7 +229,7 @@ impl<'a, E: Residual> StateBuilder<'a, E, false> {
     }
 }
 
-impl<'a, E: Residual + IdealGas> StateBuilder<'a, E, true> {
+impl<E: Residual + IdealGas> StateBuilder<'_, E, true> {
     /// Try to build the state with the given inputs.
     pub fn build(self) -> EosResult<State<E>> {
         State::new_full(
@@ -251,7 +251,7 @@ impl<'a, E: Residual + IdealGas> StateBuilder<'a, E, true> {
     }
 }
 
-impl<'a, E, const IG: bool> Clone for StateBuilder<'a, E, IG> {
+impl<E, const IG: bool> Clone for StateBuilder<'_, E, IG> {
     fn clone(&self) -> Self {
         Self {
             eos: self.eos.clone(),

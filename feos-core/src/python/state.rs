@@ -558,7 +558,7 @@ macro_rules! impl_state {
             /// -------
             /// numpy.ndarray
             fn ln_phi<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-                self.0.ln_phi().into_pyarray_bound(py)
+                self.0.ln_phi().into_pyarray(py)
             }
 
             /// Return logarithmic fugacity coefficient of all components treated as
@@ -568,7 +568,7 @@ macro_rules! impl_state {
             /// -------
             /// numpy.ndarray
             fn ln_phi_pure_liquid<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray1<f64>>> {
-                Ok(self.0.ln_phi_pure_liquid()?.into_pyarray_bound(py))
+                Ok(self.0.ln_phi_pure_liquid()?.into_pyarray(py))
             }
 
             /// Return logarithmic symmetric activity coefficient.
@@ -577,7 +577,7 @@ macro_rules! impl_state {
             /// -------
             /// numpy.ndarray
             fn ln_symmetric_activity_coefficient<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray1<f64>>> {
-                Ok(self.0.ln_symmetric_activity_coefficient()?.into_pyarray_bound(py))
+                Ok(self.0.ln_symmetric_activity_coefficient()?.into_pyarray(py))
             }
 
             /// Return Henry's law constant of every solute (x_i=0) for a given solvent (x_i>0).
@@ -650,7 +650,7 @@ macro_rules! impl_state {
             /// -------
             /// numpy.ndarray
             fn thermodynamic_factor<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray2<f64>> {
-                self.0.thermodynamic_factor().into_pyarray_bound(py)
+                self.0.thermodynamic_factor().into_pyarray(py)
             }
 
             /// Return molar isochoric heat capacity.
@@ -1021,7 +1021,7 @@ macro_rules! impl_state {
             /// -------
             /// numpy.ndarray[Float64]
             fn massfracs<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-                self.0.massfracs().into_pyarray_bound(py)
+                self.0.massfracs().into_pyarray(py)
             }
 
             /// Return mass specific Helmholtz energy.
@@ -1168,7 +1168,7 @@ macro_rules! impl_state {
 
             #[getter]
             fn get_molefracs<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-                self.0.molefracs.to_pyarray_bound(py)
+                self.0.molefracs.to_pyarray(py)
             }
 
             fn _repr_markdown_(&self) -> String {
@@ -1318,7 +1318,7 @@ macro_rules! impl_state {
 
             #[getter]
             fn get_compressibility<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-                StateVec::from(self).compressibility().into_pyarray_bound(py)
+                StateVec::from(self).compressibility().into_pyarray(py)
             }
 
             #[getter]
@@ -1333,7 +1333,7 @@ macro_rules! impl_state {
 
             #[getter]
             fn get_molefracs<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray2<f64>> {
-                StateVec::from(self).molefracs().into_pyarray_bound(py)
+                StateVec::from(self).molefracs().into_pyarray(py)
             }
 
             #[getter]
@@ -1343,7 +1343,7 @@ macro_rules! impl_state {
 
             #[getter]
             fn get_massfracs<'py>(&self, py: Python<'py>) -> Option<Bound<'py, PyArray2<f64>>> {
-                self.0[0].eos.residual.has_molar_weight().then(|| StateVec::from(self).massfracs().into_pyarray_bound(py))
+                self.0[0].eos.residual.has_molar_weight().then(|| StateVec::from(self).massfracs().into_pyarray(py))
             }
 
             /// Returns selected properties of a StateVec as dictionary.

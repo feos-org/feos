@@ -143,7 +143,7 @@ macro_rules! impl_planar_interface {
             /// numpy.ndarray
             ///
             fn interfacial_enrichment<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-                self.0.interfacial_enrichment().to_pyarray_bound(py)
+                self.0.interfacial_enrichment().to_pyarray(py)
             }
 
             /// Calculates the interfacial thickness (90-10 number density difference)

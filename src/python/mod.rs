@@ -15,6 +15,7 @@ use crate::uvtheory::python::uvtheory as uvtheory_module;
 
 use pyo3::prelude::*;
 use pyo3::wrap_pymodule;
+use std::ffi::CString;
 
 mod cubic;
 mod dippr;
@@ -83,8 +84,8 @@ pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     set_path(m, "feos.saftvrmie", "saftvrmie")?;
 
     // re-export si_units within feos. Overriding __module__ is required for pickling.
-    m.py().run_bound(
-        "\
+    m.py().run(
+        c"\
 import sys
 import si_units
 sys.modules['feos.si'] = si_units
@@ -98,13 +99,14 @@ si_units.Angle.__module__ = 'feos.si'
 }
 
 fn set_path(m: &Bound<'_, PyModule>, path: &str, module: &str) -> PyResult<()> {
-    m.py().run_bound(
-        &format!(
+    m.py().run(
+        &CString::new(format!(
             "\
 import sys
 sys.modules['{path}'] = {module}
     "
-        ),
+        ))
+        .unwrap(),
         None,
         Some(&m.dict()),
     )

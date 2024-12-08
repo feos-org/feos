@@ -179,7 +179,6 @@ pub(super) fn dimensionless_length_scale<D: DualNum<f64> + Copy>(
 }
 
 #[inline]
-
 pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
     parameters: &UVTheoryParameters,
     eta: D,

@@ -149,7 +149,7 @@ macro_rules! impl_estimator {
                 loss: PyLoss,
                 py: Python<'py>,
             ) -> PyResult<Bound<'py, PyArray1<f64>>> {
-                Ok(self.0.cost(&eos.0, loss.0)?.view().to_pyarray_bound(py))
+                Ok(self.0.cost(&eos.0, loss.0)?.view().to_pyarray(py))
             }
 
             /// Return the property of interest for each data point
@@ -165,7 +165,7 @@ macro_rules! impl_estimator {
             /// SIArray1
             #[pyo3(text_signature = "($self, eos)")]
             fn predict<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<Bound<'py, PyArray1<f64>>> {
-                Ok(self.0.predict(&eos.0)?.view().to_pyarray_bound(py))
+                Ok(self.0.predict(&eos.0)?.view().to_pyarray(py))
             }
 
             /// Return the relative difference between experimental data
@@ -189,7 +189,7 @@ macro_rules! impl_estimator {
                 eos: &$py_eos,
                 py: Python<'py>,
             ) -> PyResult<Bound<'py, PyArray1<f64>>> {
-                Ok(self.0.relative_difference(&eos.0)?.view().to_pyarray_bound(py))
+                Ok(self.0.relative_difference(&eos.0)?.view().to_pyarray(py))
             }
 
             /// Return the mean absolute relative difference.
@@ -458,7 +458,7 @@ macro_rules! impl_estimator {
             /// Return `target` as ``SIArray1``.
             #[getter]
             fn get_target<'py>(&self, py: Python<'py>,) -> Bound<'py, PyArray1<f64>> {
-                self.0.target().view().to_pyarray_bound(py)
+                self.0.target().view().to_pyarray(py)
             }
 
             /// Return number of stored data points.
@@ -526,7 +526,7 @@ macro_rules! impl_estimator {
             /// - and the relative weights as defined in the Estimator object.
             #[pyo3(text_signature = "($self, eos)")]
             fn cost<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<Bound<'py, PyArray1<f64>>> {
-                Ok(self.0.cost(&eos.0)?.view().to_pyarray_bound(py))
+                Ok(self.0.cost(&eos.0)?.view().to_pyarray(py))
             }
 
             /// Return the properties as computed by the
@@ -546,7 +546,7 @@ macro_rules! impl_estimator {
                     .0
                     .predict(&eos.0)?
                     .iter()
-                    .map(|d| d.view().to_pyarray_bound(py))
+                    .map(|d| d.view().to_pyarray(py))
                     .collect())
             }
 
@@ -575,7 +575,7 @@ macro_rules! impl_estimator {
                     .0
                     .relative_difference(&eos.0)?
                     .iter()
-                    .map(|d| d.view().to_pyarray_bound(py))
+                    .map(|d| d.view().to_pyarray(py))
                     .collect())
             }
 
@@ -603,7 +603,7 @@ macro_rules! impl_estimator {
                     .0
                     .mean_absolute_relative_difference(&eos.0)?
                     .view()
-                    .to_pyarray_bound(py))
+                    .to_pyarray(py))
             }
 
             /// Return the stored ``DataSet``s.
