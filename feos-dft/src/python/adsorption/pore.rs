@@ -308,13 +308,13 @@ macro_rules! impl_pore_profile {
             }
 
             #[getter]
-            fn get_henry_coefficient(&self) -> PyResult<PySIArray1> {
-                Ok(self.0.henry_coefficient()?.into())
+            fn get_henry_coefficients(&self) -> HenryCoefficient<Array1<f64>> {
+                self.0.henry_coefficients()
             }
 
             #[getter]
-            fn get_ideal_gas_enthalpy_of_adsorption(&self) -> PyResult<PySIArray1> {
-                Ok(self.0.ideal_gas_enthalpy_of_adsorption()?.into())
+            fn get_ideal_gas_enthalpy_of_adsorption(&self) -> MolarEnergy<Array1<f64>> {
+                self.0.ideal_gas_enthalpy_of_adsorption()
             }
         }
     };

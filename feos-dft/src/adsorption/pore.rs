@@ -6,17 +6,16 @@ use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
 use crate::WeightFunctionInfo;
-use feos_core::si::{
-    Density, Dimensionless, Energy, Length, MolarEnergy, MolarWeight, Quantity, Temperature,
-    Volume, _Moles, _Pressure, KELVIN, RGAS,
-};
 use feos_core::{Components, Contributions, EosResult, ReferenceSystem, State, StateBuilder};
-use feos_core::{Components, Contributions, EosResult, State, StateBuilder};
-use ndarray::prelude::*;
+use ndarray::{prelude::*, ScalarOperand};
 use ndarray::{Axis as Axis_nd, RemoveAxis};
 use num_dual::linalg::LU;
-use num_dual::DualNum;
-use quantity::{Density, Dimensionless, Energy, Length, MolarEnergy, Temperature, Volume, KELVIN};
+use num_dual::{Dual64, DualNum};
+use quantity::{
+    Density, Dimensionless, Energy, Length, MolarEnergy, Quantity, Temperature, Volume, _Moles,
+    _Pressure, KELVIN, RGAS,
+};
+use rustdct::DctNum;
 use std::fmt::Display;
 use std::sync::Arc;
 use typenum::Diff;
@@ -153,33 +152,38 @@ where
         .sum())
     }
 
-    pub fn henry_coefficient(&self) -> EosResult<HenryCoefficient<Array1<f64>>> {
-        let mut pot = self.profile.external_potential.clone();
-        // pot.outer_iter_mut()
-        //     .zip(self.profile.dft.m().iter())
-        //     .for_each(|(mut v, &m)| v /= m);
-        let exp_pot = Dimensionless::from_reduced(pot.mapv(|v| (-v).exp()));
-        let m = self.profile.dft.m().into_owned();
-        Ok(self.profile.integrate_comp(&exp_pot)
-            / (RGAS * self.profile.temperature * Dimensionless::from_reduced(m)))
+    fn _henry_coefficients<N: DualNum<f64> + Copy + ScalarOperand + DctNum>(
+        &self,
+        temperature: N,
+    ) -> Array1<N> {
+        let pot = self.profile.external_potential.mapv(N::from)
+            * self.profile.temperature.to_reduced()
+            / temperature;
+        let exp_pot = pot.mapv(|v| (-v).exp());
+        let functional_contributions = self.profile.dft.contributions();
+        let weight_functions: Vec<WeightFunctionInfo<N>> = functional_contributions
+            .map(|c| c.weight_functions(temperature))
+            .collect();
+        let convolver = ConvolverFFT::<_, D>::plan(&self.profile.grid, &weight_functions, None);
+        let bonds = self
+            .profile
+            .dft
+            .bond_integrals(temperature, &exp_pot, &convolver);
+        self.profile.integrate_reduced_segments(&(exp_pot * bonds))
     }
 
-    pub fn ideal_gas_enthalpy_of_adsorption(&self) -> EosResult<MolarEnergy<Array1<f64>>>
-    where
-        D::Larger: Dimension<Smaller = D>,
-    {
-        let mut pot = self.profile.external_potential.clone();
-        pot.outer_iter_mut()
-            .zip(self.profile.dft.m().iter())
-            .for_each(|(mut v, &m)| v /= m);
-        let potm1 = Dimensionless::from_reduced(self.profile.external_potential.mapv(|v| 1.0 - v));
-        let exp_pot = Dimensionless::from_reduced(pot.mapv(|v| (-v).exp()));
-        let h = self
-            .profile
-            .integrate_comp(&(potm1 * &exp_pot))
-            .convert_into(self.profile.integrate_comp(&exp_pot));
-        let m = self.profile.dft.m().into_owned();
-        Ok(h * RGAS * self.profile.temperature / Dimensionless::from_reduced(m))
+    pub fn henry_coefficients(&self) -> HenryCoefficient<Array1<f64>> {
+        let t = self.profile.temperature.to_reduced();
+        Volume::from_reduced(self._henry_coefficients(t)) / (RGAS * self.profile.temperature)
+    }
+
+    pub fn ideal_gas_enthalpy_of_adsorption(&self) -> MolarEnergy<Array1<f64>> {
+        let t = Dual64::from(self.profile.temperature.to_reduced()).derivative();
+        let h_dual = self._henry_coefficients(t);
+        let h = h_dual.mapv(|h| h.re);
+        let dh = h_dual.mapv(|h| h.eps);
+        let t = self.profile.temperature.to_reduced();
+        RGAS * self.profile.temperature * Dimensionless::from_reduced((&h - t * dh) / h)
     }
 }
 

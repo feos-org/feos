@@ -10,6 +10,7 @@ This section explains the implementation of the core expressions from classical 
    solver
    derivatives
    enthalpy_of_adsorption
+   ideal_gas
    pdgt
 ```
 
