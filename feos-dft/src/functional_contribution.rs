@@ -3,7 +3,7 @@ use feos_core::{EosResult, StateHD};
 use ndarray::prelude::*;
 use ndarray::{RemoveAxis, ScalarOperand};
 use num_dual::*;
-use num_traits::{One, Zero};
+use num_traits::Zero;
 use std::fmt::Display;
 
 /// Individual functional contribution that can be evaluated using generalized (hyper) dual numbers.
@@ -46,35 +46,12 @@ pub trait FunctionalContribution: Display + Sync + Send {
             * state.volume
     }
 
-    fn first_partial_derivatives(
+    fn first_partial_derivatives<N: DualNum<f64> + Copy>(
         &self,
-        temperature: f64,
-        weighted_densities: Array2<f64>,
-        mut helmholtz_energy_density: ArrayViewMut1<f64>,
-        mut first_partial_derivative: ArrayViewMut2<f64>,
-    ) -> EosResult<()> {
-        let mut wd = weighted_densities.mapv(Dual64::from);
-        let t = Dual64::from(temperature);
-        let mut phi = Array::zeros(weighted_densities.raw_dim().remove_axis(Axis(0)));
-
-        for i in 0..wd.shape()[0] {
-            wd.index_axis_mut(Axis(0), i).map_inplace(|x| x.eps = 1.0);
-            phi = self.helmholtz_energy_density(t, wd.view())?;
-            first_partial_derivative
-                .index_axis_mut(Axis(0), i)
-                .assign(&phi.mapv(|p| p.eps));
-            wd.index_axis_mut(Axis(0), i).map_inplace(|x| x.eps = 0.0);
-        }
-        helmholtz_energy_density.assign(&phi.mapv(|p| p.re));
-        Ok(())
-    }
-
-    fn first_partial_derivatives_dual(
-        &self,
-        temperature: Dual64,
-        weighted_densities: Array2<Dual64>,
-        mut helmholtz_energy_density: ArrayViewMut1<Dual64>,
-        mut first_partial_derivative: ArrayViewMut2<Dual64>,
+        temperature: N,
+        weighted_densities: Array2<N>,
+        mut helmholtz_energy_density: ArrayViewMut1<N>,
+        mut first_partial_derivative: ArrayViewMut2<N>,
     ) -> EosResult<()> {
         let mut wd = weighted_densities.mapv(Dual::from_re);
         let t = Dual::from_re(temperature);
@@ -82,13 +59,13 @@ pub trait FunctionalContribution: Display + Sync + Send {
 
         for i in 0..wd.shape()[0] {
             wd.index_axis_mut(Axis(0), i)
-                .map_inplace(|x| x.eps = Dual::one());
+                .map_inplace(|x| x.eps = N::one());
             phi = self.helmholtz_energy_density(t, wd.view())?;
             first_partial_derivative
                 .index_axis_mut(Axis(0), i)
                 .assign(&phi.mapv(|p| p.eps));
             wd.index_axis_mut(Axis(0), i)
-                .map_inplace(|x| x.eps = Dual::zero());
+                .map_inplace(|x| x.eps = N::zero());
         }
         helmholtz_energy_density.assign(&phi.mapv(|p| p.re));
         Ok(())

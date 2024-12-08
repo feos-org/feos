@@ -296,13 +296,16 @@ where
 
     /// Return the partial derivatives of the density profiles w.r.t. the chemical potentials $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial\mu_k}\right)_T$
     pub fn drho_dmu(&self) -> EosResult<DrhoDmu<D>> {
-        let shape = self.density.shape();
-        let shape: Vec<_> = std::iter::once(&shape[0]).chain(shape).copied().collect();
+        let shape: Vec<_> = std::iter::once(&self.dft.components())
+            .chain(self.density.shape())
+            .copied()
+            .collect();
         let mut drho_dmu = Array::zeros(shape).into_dimensionality().unwrap();
+        let component_index = self.dft.component_index();
         for (k, mut d) in drho_dmu.outer_iter_mut().enumerate() {
             let mut lhs = self.density.to_reduced();
             for (i, mut l) in lhs.outer_iter_mut().enumerate() {
-                if i != k {
+                if component_index[i] != k {
                     l.fill(0.0);
                 }
             }
@@ -315,12 +318,14 @@ where
 
     /// Return the partial derivatives of the number of moles w.r.t. the chemical potentials $\left(\frac{\partial N_i}{\partial\mu_k}\right)_T$
     pub fn dn_dmu(&self) -> EosResult<DnDmu> {
-        let drho_dmu = self.drho_dmu()?;
+        let drho_dmu = self.drho_dmu()?.into_reduced();
         let n = drho_dmu.shape()[0];
-        let dn_dmu = DnDmu::from_shape_fn([n; 2], |(i, j)| {
-            self.integrate(&drho_dmu.index_axis(Axis(0), i).index_axis(Axis(0), j))
-        });
-        Ok(dn_dmu)
+        let mut dn_dmu = Array2::zeros([n; 2]);
+        dn_dmu
+            .outer_iter_mut()
+            .zip(drho_dmu.outer_iter())
+            .for_each(|(mut dn, drho)| dn.assign(&self.integrate_reduced_segments(&drho)));
+        Ok(DnDmu::from_reduced(dn_dmu))
     }
 
     /// Return the partial derivatives of the density profiles w.r.t. the bulk pressure at constant temperature and bulk composition $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial p}\right)_{T,\mathbf{x}}$
@@ -341,50 +346,73 @@ where
     }
 
     /// Return the partial derivatives of the density profiles w.r.t. the temperature at constant bulk pressure and composition $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial T}\right)_{p,\mathbf{x}}$
-    ///
-    /// Not compatible with heterosegmented DFT.
     pub fn drho_dt(&self) -> EosResult<DrhoDT<D>> {
         let rho = self.density.to_reduced();
         let t = self.temperature.to_reduced();
+        let rho_dual = rho.mapv(Dual64::from);
+        let t_dual = Dual64::from(t).derivative();
 
-        // calculate temperature derivative of functional derivative
+        // calculate intrinsic functional derivative
         let functional_contributions = self.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
-            .map(|c| c.weight_functions(Dual64::from(t).derivative()))
+            .map(|c| c.weight_functions(t_dual))
             .collect();
         let convolver: Arc<dyn Convolver<_, D>> =
             ConvolverFFT::plan(&self.grid, &weight_functions, None);
-        let (_, dfdrhodt) = self.dft.functional_derivative_dual(t, &rho, &convolver)?;
+        let (_, mut dfdrho) = self
+            .dft
+            .functional_derivative(t_dual, &rho_dual, &convolver)?;
 
-        // calculate temperature derivative of bulk functional derivative
+        // calculate total functional derivative
+        dfdrho += &((&self.external_potential * t).mapv(Dual64::from) / t_dual);
+
+        // calculate bulk functional derivative
         let partial_density = self.bulk.partial_density.to_reduced();
         let rho_bulk = self.dft.component_index().mapv(|i| partial_density[i]);
+        let rho_bulk_dual = rho_bulk.mapv(Dual64::from);
         let bulk_convolver = BulkConvolver::new(weight_functions);
-        let (_, dfdrhodt_bulk) =
+        let (_, dfdrho_bulk) =
             self.dft
-                .functional_derivative_dual(t, &rho_bulk, &bulk_convolver)?;
+                .functional_derivative(t_dual, &rho_bulk_dual, &bulk_convolver)?;
+        dfdrho
+            .outer_iter_mut()
+            .zip(dfdrho_bulk)
+            .zip(self.dft.m().iter())
+            .for_each(|((mut df, df_b), &m)| {
+                df -= df_b;
+                df /= Dual64::from(m)
+            });
+
+        // calculate bond integrals
+        let exp_dfdrho = dfdrho.mapv(|x| (-x).exp());
+        let bonds = self.dft.bond_integrals(t_dual, &exp_dfdrho, &convolver);
 
         // solve for drho_dt
+        let mut lhs = ((exp_dfdrho * bonds).mapv(|x| -x.ln()) * t_dual).mapv(|d| d.eps);
         let x =
             (self.bulk.partial_molar_volume() * self.bulk.dp_dt(Contributions::Total)).to_reduced();
-        let mut lhs = dfdrhodt.mapv(|d| d.eps);
-        lhs.outer_iter_mut()
-            .zip(dfdrhodt_bulk)
-            .zip(x)
-            .for_each(|((mut lhs, d), x)| lhs -= d.eps - x);
+        let x = self.dft.component_index().mapv(|i| x[i]);
         lhs.outer_iter_mut()
             .zip(rho.outer_iter())
             .zip(rho_bulk)
             .zip(self.dft.m().iter())
-            .for_each(|(((mut lhs, rho), rho_b), &m)| lhs += &((&rho / rho_b).mapv(f64::ln) * m));
+            .zip(x)
+            .for_each(|((((mut lhs, rho), rho_b), &m), x)| {
+                lhs += &(&rho / rho_b).mapv(f64::ln);
+                lhs *= m;
+                lhs += x;
+            });
 
         lhs *= &(-&rho / t);
+        lhs.iter_mut().for_each(|l| {
+            if !l.is_finite() {
+                *l = 0.0
+            }
+        });
         Ok(Quantity::from_reduced(self.density_derivative(&lhs)?))
     }
 
     /// Return the partial derivatives of the number of moles w.r.t. the temperature at constant bulk pressure and composition $\left(\frac{\partial N_i}{\partial T}\right)_{p,\mathbf{x}}$
-    ///
-    /// Not compatible with heterosegmented DFT.
     pub fn dn_dt(&self) -> EosResult<DnDT> {
         Ok(self.integrate_segments(&self.drho_dt()?))
     }

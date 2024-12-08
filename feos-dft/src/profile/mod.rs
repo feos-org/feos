@@ -6,6 +6,7 @@ use feos_core::{Components, EosError, EosResult, ReferenceSystem, State};
 use ndarray::{
     Array, Array1, Array2, Array3, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3,
 };
+use num_dual::DualNum;
 use quantity::{Density, Length, Moles, Quantity, Temperature, Volume, _Volume, DEGREES};
 use std::ops::{Add, MulAssign};
 use std::sync::Arc;
@@ -247,21 +248,36 @@ where
         }
     }
 
-    fn integrate_reduced(&self, mut profile: Array<f64, D>) -> f64 {
+    fn integrate_reduced<N: DualNum<f64> + Copy>(&self, mut profile: Array<N, D>) -> N {
         let (integration_weights, functional_determinant) = self.grid.integration_weights();
 
         for (i, w) in integration_weights.into_iter().enumerate() {
             for mut l in profile.lanes_mut(Axis_nd(i)) {
-                l.mul_assign(w);
+                l.mul_assign(&w.mapv(N::from));
             }
         }
         profile.sum() * functional_determinant
     }
 
-    fn integrate_reduced_comp(&self, profile: &Array<f64, D::Larger>) -> Array1<f64> {
+    fn integrate_reduced_comp<S: Data<Elem = N>, N: DualNum<f64> + Copy>(
+        &self,
+        profile: &ArrayBase<S, D::Larger>,
+    ) -> Array1<N> {
         Array1::from_shape_fn(profile.shape()[0], |i| {
             self.integrate_reduced(profile.index_axis(Axis_nd(0), i).to_owned())
         })
+    }
+
+    pub(crate) fn integrate_reduced_segments<S: Data<Elem = N>, N: DualNum<f64> + Copy>(
+        &self,
+        profile: &ArrayBase<S, D::Larger>,
+    ) -> Array1<N> {
+        let integral = self.integrate_reduced_comp(profile);
+        let mut integral_comp = Array1::zeros(self.dft.components());
+        for (i, &j) in self.dft.component_index().iter().enumerate() {
+            integral_comp[j] = integral[i];
+        }
+        integral_comp
     }
 
     /// Return the volume of the profile.

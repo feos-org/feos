@@ -141,7 +141,7 @@ fn impl_helmholtz_energy_functional(
                     #(#contributions,)*
                 }
             }
-            fn bond_lengths(&self, temperature: f64) -> UnGraph<(), f64> {
+            fn bond_lengths<N: DualNum<f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
                 match self {
                     #(#bond_lengths,)*
                     _ => Graph::with_capacity(0, 0),

@@ -32,7 +32,7 @@ impl<I: Components + Send + Sync, F: HelmholtzEnergyFunctional> HelmholtzEnergyF
         self.residual.compute_max_density(moles)
     }
 
-    fn bond_lengths(&self, temperature: f64) -> UnGraph<(), f64> {
+    fn bond_lengths<N: DualNum<f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
         self.residual.bond_lengths(temperature)
     }
 }
@@ -158,7 +158,7 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64;
 
     /// Overwrite this, if the functional consists of heterosegmented chains.
-    fn bond_lengths(&self, _temperature: f64) -> UnGraph<(), f64> {
+    fn bond_lengths<N: DualNum<f64> + Copy>(&self, _temperature: N) -> UnGraph<(), N> {
         Graph::with_capacity(0, 0)
     }
 
@@ -190,14 +190,14 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
         IdealChainContribution::new(&self.component_index(), &self.m())
     }
 
-    /// Calculate the (residual) intrinsic functional derivative $\frac{\delta\mathcal{F}}{\delta\rho_i(\mathbf{r})}$.
+    /// Calculate the (residual) intrinsic functional derivative $\frac{\delta\mathcal{\beta F}}{\delta\rho_i(\mathbf{r})}$.
     #[expect(clippy::type_complexity)]
-    fn functional_derivative<D>(
+    fn functional_derivative<D, N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
-        temperature: f64,
-        density: &Array<f64, D::Larger>,
-        convolver: &Arc<dyn Convolver<f64, D>>,
-    ) -> EosResult<(Array<f64, D>, Array<f64, D::Larger>)>
+        temperature: N,
+        density: &Array<N, D::Larger>,
+        convolver: &Arc<dyn Convolver<N, D>>,
+    ) -> EosResult<(Array<N, D>, Array<N, D::Larger>)>
     where
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,
@@ -226,50 +226,13 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
         ))
     }
 
-    #[expect(clippy::type_complexity)]
-    fn functional_derivative_dual<D>(
-        &self,
-        temperature: f64,
-        density: &Array<f64, D::Larger>,
-        convolver: &Arc<dyn Convolver<Dual64, D>>,
-    ) -> EosResult<(Array<Dual64, D>, Array<Dual64, D::Larger>)>
-    where
-        D: Dimension,
-        D::Larger: Dimension<Smaller = D>,
-    {
-        let temperature_dual = Dual64::from(temperature).derivative();
-        let density_dual = density.mapv(Dual64::from);
-        let weighted_densities = convolver.weighted_densities(&density_dual);
-        let contributions = self.contributions();
-        let mut partial_derivatives = Vec::new();
-        let mut helmholtz_energy_density = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
-        for (c, wd) in contributions.zip(weighted_densities) {
-            let nwd = wd.shape()[0];
-            let ngrid = wd.len() / nwd;
-            let mut phi = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
-            let mut pd = Array::zeros(wd.raw_dim());
-            c.first_partial_derivatives_dual(
-                temperature_dual,
-                wd.into_shape_with_order((nwd, ngrid)).unwrap(),
-                phi.view_mut().into_shape_with_order(ngrid).unwrap(),
-                pd.view_mut().into_shape_with_order((nwd, ngrid)).unwrap(),
-            )?;
-            partial_derivatives.push(pd);
-            helmholtz_energy_density += &phi;
-        }
-        Ok((
-            helmholtz_energy_density,
-            convolver.functional_derivative(&partial_derivatives) * temperature_dual,
-        ))
-    }
-
     /// Calculate the bond integrals $I_{\alpha\alpha'}(\mathbf{r})$
-    fn bond_integrals<D>(
+    fn bond_integrals<D, N: DualNum<f64> + Copy>(
         &self,
-        temperature: f64,
-        exponential: &Array<f64, D::Larger>,
-        convolver: &Arc<dyn Convolver<f64, D>>,
-    ) -> Array<f64, D::Larger>
+        temperature: N,
+        exponential: &Array<N, D::Larger>,
+        convolver: &Arc<dyn Convolver<N, D>>,
+    ) -> Array<N, D::Larger>
     where
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,
@@ -290,7 +253,7 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
             }
         }
 
-        let mut i_graph: Graph<_, Option<Array<f64, D>>, Directed> =
+        let mut i_graph: Graph<_, Option<Array<N, D>>, Directed> =
             bond_weight_functions.map(|_, _| (), |_, _| None);
 
         let bonds = i_graph.edge_count();
@@ -319,7 +282,7 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
                             exponential
                                 .index_axis(Axis(0), edge.target().index())
                                 .to_owned(),
-                            |acc: Array<f64, D>, e| acc * e.weight().as_ref().unwrap(),
+                            |acc: Array<N, D>, e| acc * e.weight().as_ref().unwrap(),
                         );
                         i1 = Some(convolver.convolve(i0, &bond_weight_functions[edge.id()]));
                         break 'nodes;
