@@ -156,6 +156,9 @@ where
         &self,
         temperature: N,
     ) -> Array1<N> {
+        if self.profile.dft.m().iter().any(|&m| m != 1.0) {
+            panic!("Henry coefficients can only be calculated for spherical and heterosegmented molecules!")
+        };
         let pot = self.profile.external_potential.mapv(N::from)
             * self.profile.temperature.to_reduced()
             / temperature;
