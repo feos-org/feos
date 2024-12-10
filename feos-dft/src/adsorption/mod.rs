@@ -16,7 +16,7 @@ mod fea_potential;
 mod pore;
 mod pore2d;
 pub use external_potential::{ExternalPotential, FluidParameters};
-pub use pore::{Pore1D, PoreProfile, PoreProfile1D, PoreSpecification};
+pub use pore::{HenryCoefficient, Pore1D, PoreProfile, PoreProfile1D, PoreSpecification};
 pub use pore2d::{Pore2D, PoreProfile2D};
 
 #[cfg(feature = "rayon")]

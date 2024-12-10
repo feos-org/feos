@@ -7,17 +7,24 @@ use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
 use crate::WeightFunctionInfo;
 use feos_core::{Components, Contributions, EosResult, ReferenceSystem, State, StateBuilder};
-use ndarray::prelude::*;
-use ndarray::Axis as Axis_nd;
-use ndarray::RemoveAxis;
+use ndarray::{prelude::*, ScalarOperand};
+use ndarray::{Axis as Axis_nd, RemoveAxis};
 use num_dual::linalg::LU;
-use num_dual::DualNum;
-use quantity::{Density, Dimensionless, Energy, Length, MolarEnergy, Temperature, Volume, KELVIN};
+use num_dual::{Dual64, DualNum};
+use quantity::{
+    Density, Dimensionless, Energy, Length, MolarEnergy, Quantity, Temperature, Volume, _Moles,
+    _Pressure, KELVIN, RGAS,
+};
+use rustdct::DctNum;
 use std::fmt::Display;
 use std::sync::Arc;
+use typenum::Diff;
 
 const POTENTIAL_OFFSET: f64 = 2.0;
 const DEFAULT_GRID_POINTS: usize = 2048;
+
+pub type _HenryCoefficient = Diff<_Moles, _Pressure>;
+pub type HenryCoefficient<T> = Quantity<T, _HenryCoefficient>;
 
 /// Parameters required to specify a 1D pore.
 pub struct Pore1D {
@@ -143,6 +150,43 @@ where
         Ok((self.partial_molar_enthalpy_of_adsorption()?
             * Dimensionless::new(&self.profile.bulk.molefracs))
         .sum())
+    }
+
+    fn _henry_coefficients<N: DualNum<f64> + Copy + ScalarOperand + DctNum>(
+        &self,
+        temperature: N,
+    ) -> Array1<N> {
+        if self.profile.dft.m().iter().any(|&m| m != 1.0) {
+            panic!("Henry coefficients can only be calculated for spherical and heterosegmented molecules!")
+        };
+        let pot = self.profile.external_potential.mapv(N::from)
+            * self.profile.temperature.to_reduced()
+            / temperature;
+        let exp_pot = pot.mapv(|v| (-v).exp());
+        let functional_contributions = self.profile.dft.contributions();
+        let weight_functions: Vec<WeightFunctionInfo<N>> = functional_contributions
+            .map(|c| c.weight_functions(temperature))
+            .collect();
+        let convolver = ConvolverFFT::<_, D>::plan(&self.profile.grid, &weight_functions, None);
+        let bonds = self
+            .profile
+            .dft
+            .bond_integrals(temperature, &exp_pot, &convolver);
+        self.profile.integrate_reduced_segments(&(exp_pot * bonds))
+    }
+
+    pub fn henry_coefficients(&self) -> HenryCoefficient<Array1<f64>> {
+        let t = self.profile.temperature.to_reduced();
+        Volume::from_reduced(self._henry_coefficients(t)) / (RGAS * self.profile.temperature)
+    }
+
+    pub fn ideal_gas_enthalpy_of_adsorption(&self) -> MolarEnergy<Array1<f64>> {
+        let t = Dual64::from(self.profile.temperature.to_reduced()).derivative();
+        let h_dual = self._henry_coefficients(t);
+        let h = h_dual.mapv(|h| h.re);
+        let dh = h_dual.mapv(|h| h.eps);
+        let t = self.profile.temperature.to_reduced();
+        RGAS * self.profile.temperature * Dimensionless::from_reduced((&h - t * dh) / h)
     }
 }
 

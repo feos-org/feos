@@ -110,7 +110,7 @@ impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
         Box::new(contributions.into_iter())
     }
 
-    fn bond_lengths(&self, temperature: f64) -> UnGraph<(), f64> {
+    fn bond_lengths<N: DualNum<f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
         // temperature dependent segment diameter
         let d = self.parameters.hs_diameter(temperature);
 
@@ -120,7 +120,7 @@ impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
                 let (i, j) = self.parameters.bonds.edge_endpoints(e).unwrap();
                 let di = d[i.index()];
                 let dj = d[j.index()];
-                0.5 * (di + dj)
+                (di + dj) * 0.5
             },
         )
     }
