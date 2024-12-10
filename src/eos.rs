@@ -22,6 +22,10 @@ pub enum ResidualModel {
     #[implement(entropy_scaling, molar_weight)]
     PcSaft(crate::pcsaft::PcSaft),
 
+    #[cfg(feature = "fcsaft")]
+    #[implement(molar_weight)]
+    FcSaft(crate::fcsaft::FcSaft),
+
     #[cfg(feature = "epcsaft")]
     #[implement(molar_weight)]
     ElectrolytePcSaft(crate::epcsaft::ElectrolytePcSaft),
@@ -58,6 +62,10 @@ pub enum ResidualModel {
     #[implement(molar_weight, functional, fluid_parameters, pair_potential)]
     PcSaftFunctional(crate::pcsaft::PcSaftFunctional),
 
+    #[cfg(all(feature = "dft", feature = "fcsaft"))]
+    #[implement(molar_weight, functional, fluid_parameters, bond_lengths)]
+    FcSaftFunctional(crate::fcsaft::FcSaftFunctional),
+
     #[cfg(all(feature = "dft", feature = "gc_pcsaft"))]
     #[implement(molar_weight, functional, fluid_parameters, bond_lengths)]
     GcPcSaftFunctional(crate::gc_pcsaft::GcPcSaftFunctional),
@@ -80,6 +88,8 @@ pub enum ResidualModel {
 pub enum FunctionalContributionVariant {
     #[cfg(feature = "pcsaft")]
     PcSaftFunctional(crate::pcsaft::PcSaftFunctionalContribution),
+    #[cfg(feature = "fcsaft")]
+    FcSaftFunctional(crate::fcsaft::FcSaftFunctionalContribution),
     #[cfg(feature = "gc_pcsaft")]
     GcPcSaftFunctional(crate::gc_pcsaft::GcPcSaftFunctionalContribution),
     #[cfg(feature = "pets")]

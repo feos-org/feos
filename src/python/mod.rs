@@ -1,5 +1,7 @@
 #[cfg(feature = "epcsaft")]
 use crate::epcsaft::python::epcsaft as epcsaft_module;
+#[cfg(feature = "fcsaft")]
+use crate::fcsaft::python::fcsaft as fcsaft_module;
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::python::gc_pcsaft as gc_pcsaft_module;
 #[cfg(feature = "pcsaft")]
@@ -45,6 +47,8 @@ pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(pcsaft_module))?;
     #[cfg(feature = "epcsaft")]
     m.add_wrapped(wrap_pymodule!(epcsaft_module))?;
+    #[cfg(feature = "fcsaft")]
+    m.add_wrapped(wrap_pymodule!(fcsaft_module))?;
     #[cfg(feature = "gc_pcsaft")]
     m.add_wrapped(wrap_pymodule!(gc_pcsaft_module))?;
     #[cfg(feature = "pets")]
@@ -66,6 +70,8 @@ pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     set_path(m, "feos.cubic", "cubic")?;
     #[cfg(feature = "pcsaft")]
     set_path(m, "feos.pcsaft", "pcsaft")?;
+    #[cfg(feature = "fcsaft")]
+    set_path(m, "feos.fcsaft", "fcsaft")?;
     #[cfg(feature = "epcsaft")]
     set_path(m, "feos.epcsaft", "epcsaft")?;
     #[cfg(feature = "gc_pcsaft")]

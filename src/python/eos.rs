@@ -4,6 +4,10 @@ use crate::epcsaft::python::PyElectrolytePcSaftParameters;
 use crate::epcsaft::{ElectrolytePcSaft, ElectrolytePcSaftOptions, ElectrolytePcSaftVariants};
 #[cfg(feature = "estimator")]
 use crate::estimator::*;
+#[cfg(feature = "fcsaft")]
+use crate::fcsaft::python::PyFcSaftParameters;
+#[cfg(feature = "fcsaft")]
+use crate::fcsaft::{FcSaft, FcSaftOptions};
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::python::PyGcPcSaftEosParameters;
 #[cfg(feature = "gc_pcsaft")]
@@ -189,6 +193,33 @@ impl PyEquationOfState {
         let residual = Arc::new(ResidualModel::GcPcSaft(GcPcSaft::with_options(
             parameters.0,
             options,
+        )));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
+    }
+
+    #[cfg(feature = "fcsaft")]
+    #[staticmethod]
+    #[pyo3(
+        signature = (parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, model_params=None),
+        text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, model_params=None)"
+    )]
+    pub fn fcsaft(
+        parameters: PyFcSaftParameters,
+        max_eta: f64,
+        max_iter_cross_assoc: usize,
+        tol_cross_assoc: f64,
+        model_params: Option<[[f64; 7]; 4]>,
+    ) -> Self {
+        let options = FcSaftOptions {
+            max_eta,
+            max_iter_cross_assoc,
+            tol_cross_assoc,
+        };
+        let residual = Arc::new(ResidualModel::FcSaft(FcSaft::with_options(
+            parameters.0,
+            options,
+            model_params,
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Self(Arc::new(EquationOfState::new(ideal_gas, residual)))

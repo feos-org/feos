@@ -1,3 +1,7 @@
+#[cfg(feature = "fcsaft")]
+use crate::fcsaft::python::PyFcSaftParameters;
+#[cfg(feature = "fcsaft")]
+use crate::fcsaft::{FcSaftFunctional, FcSaftOptions};
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::python::PyGcPcSaftFunctionalParameters;
 #[cfg(feature = "gc_pcsaft")]
@@ -127,6 +131,31 @@ impl PyHelmholtzEnergyFunctional {
         };
         let func = Arc::new(ResidualModel::GcPcSaftFunctional(
             GcPcSaftFunctional::with_options(parameters.0, fmt_version, options),
+        ));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
+        PyEquationOfState(Arc::new(EquationOfState::new(ideal_gas, func)))
+    }
+
+    #[cfg(feature = "fcsaft")]
+    #[staticmethod]
+    #[pyo3(
+        signature = (parameters, fmt_version, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10),
+        text_signature = "(parameters, fmt_version, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10)"
+    )]
+    fn fcsaft(
+        parameters: PyFcSaftParameters,
+        fmt_version: FMTVersion,
+        max_eta: f64,
+        max_iter_cross_assoc: usize,
+        tol_cross_assoc: f64,
+    ) -> PyEquationOfState {
+        let options = FcSaftOptions {
+            max_eta,
+            max_iter_cross_assoc,
+            tol_cross_assoc,
+        };
+        let func = Arc::new(ResidualModel::FcSaftFunctional(
+            FcSaftFunctional::with_options(parameters.0, fmt_version, options),
         ));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
         PyEquationOfState(Arc::new(EquationOfState::new(ideal_gas, func)))
