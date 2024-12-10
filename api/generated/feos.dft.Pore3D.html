@@ -1270,6 +1270,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/solver.html">DFT solvers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/derivatives.html">Derivatives of density profiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/enthalpy_of_adsorption.html">Enthalpy of adsorption and the Clausius-Clapeyron relation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../theory/dft/ideal_gas.html">Ideal gas properties</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/pdgt.html">Predictive density gradient theory</a></li>
 </ul>
 </li>
@@ -1329,12 +1330,12 @@
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>system_size</strong> (<em>[</em><em>SINumber; 3</em><em>]</em>) – The size of the unit cell.</p></li>
-<li><p><strong>angles</strong> (<em>[</em><em>Angle; 3</em><em>]</em>) – The angles of the unit cell or <cite>None</cite> if the unit cell
-is orthorombic</p></li>
 <li><p><strong>n_grid</strong> (<em>[</em><em>int; 3</em><em>]</em>) – The number of grid points in each direction.</p></li>
 <li><p><strong>coordinates</strong> (<em>numpy.ndarray</em><em>[</em><em>float</em><em>]</em>) – The positions of all interaction sites in the solid.</p></li>
 <li><p><strong>sigma_ss</strong> (<em>numpy.ndarray</em><em>[</em><em>float</em><em>]</em>) – The size parameters of all interaction sites.</p></li>
 <li><p><strong>epsilon_k_ss</strong> (<em>numpy.ndarray</em><em>[</em><em>float</em><em>]</em>) – The energy parameter of all interaction sites.</p></li>
+<li><p><strong>angles</strong> (<em>[</em><em>Angle; 3</em><em>]</em><em>, </em><em>optional</em>) – The angles of the unit cell or <cite>None</cite> if the unit cell
+is orthorombic</p></li>
 <li><p><strong>potential_cutoff</strong> (<em>float</em><em>, </em><em>optional</em>) – Maximum value for the external potential.</p></li>
 <li><p><strong>cutoff_radius</strong> (<em>SINumber</em><em>, </em><em>optional</em>) – The cutoff radius for the calculation of solid-fluid interactions.</p></li>
 </ul>
