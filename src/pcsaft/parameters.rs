@@ -248,18 +248,12 @@ impl PcSaftRecord {
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
     ) -> PcSaftRecord {
-        let association_record =
-            // if let (Some(kappa_ab), Some(epsilon_k_ab)) = (kappa_ab, epsilon_k_ab) {
-                Some(AssociationRecord::new(
-                    PcSaftAssociationRecord::new(kappa_ab, epsilon_k_ab),
-                    na.unwrap_or_default(),
-                    nb.unwrap_or_default(),
-                    nc.unwrap_or_default(),
-                ))
-            // } else {
-                // None
-            // };
-            ;
+        let association_record = Some(AssociationRecord::new(
+            PcSaftAssociationRecord::new(kappa_ab, epsilon_k_ab),
+            na.unwrap_or_default(),
+            nb.unwrap_or_default(),
+            nc.unwrap_or_default(),
+        ));
         Self {
             m,
             sigma,
@@ -378,25 +372,6 @@ impl std::fmt::Display for PcSaftBinaryRecord {
         write!(f, "PcSaftBinaryRecord({})", tokens.join(", "))
     }
 }
-
-// #[derive(Serialize, Deserialize, Clone, Copy, Default)]
-// pub struct PcSaftBinaryAssociationRecord {
-//     /// Cross-association association volume parameter.
-//     #[serde(skip_serializing_if = "Option::is_none")]
-//     pub kappa_ab: Option<f64>,
-//     /// Cross-association energy parameter.
-//     #[serde(skip_serializing_if = "Option::is_none")]
-//     pub epsilon_k_ab: Option<f64>,
-// }
-
-// impl PcSaftBinaryAssociationRecord {
-//     pub fn new(kappa_ab: Option<f64>, epsilon_k_ab: Option<f64>) -> Self {
-//         Self {
-//             kappa_ab,
-//             epsilon_k_ab,
-//         }
-//     }
-// }
 
 /// Parameter set required for the PC-SAFT equation of state and Helmholtz energy functional.
 pub struct PcSaftParameters {
