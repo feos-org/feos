@@ -113,12 +113,16 @@ impl PyPcSaftRecord {
 
     #[getter]
     fn get_kappa_ab(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.parameters.kappa_ab)
+        self.0
+            .association_record
+            .and_then(|a| a.parameters.kappa_ab)
     }
 
     #[getter]
     fn get_epsilon_k_ab(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.parameters.epsilon_k_ab)
+        self.0
+            .association_record
+            .and_then(|a| a.parameters.epsilon_k_ab)
     }
 
     #[getter]

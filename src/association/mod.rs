@@ -525,7 +525,7 @@ mod tests_pcsaft {
     use super::*;
     use crate::hard_sphere::HardSphereProperties;
     use crate::pcsaft::parameters::utils::water_parameters;
-    use crate::pcsaft::parameters::{PcSaftAssociationRecord, PcSaftBinaryAssociationRecord};
+    use crate::pcsaft::parameters::PcSaftAssociationRecord;
     use crate::pcsaft::PcSaftParameters;
     use approx::assert_relative_eq;
     use feos_core::parameter::{Parameter, ParameterError};
@@ -536,7 +536,7 @@ mod tests_pcsaft {
         na: f64,
         nb: f64,
     ) -> AssociationRecord<PcSaftAssociationRecord> {
-        let pcsaft = PcSaftAssociationRecord::new(kappa_ab, epsilon_k_ab);
+        let pcsaft = PcSaftAssociationRecord::new(Some(kappa_ab), Some(epsilon_k_ab));
         AssociationRecord::new(pcsaft, na, nb, 0.0)
     }
 
@@ -544,8 +544,8 @@ mod tests_pcsaft {
         kappa_ab: f64,
         epsilon_k_ab: f64,
         indices: Option<[usize; 2]>,
-    ) -> BinaryAssociationRecord<PcSaftBinaryAssociationRecord> {
-        let pcsaft = PcSaftBinaryAssociationRecord::new(Some(kappa_ab), Some(epsilon_k_ab));
+    ) -> BinaryAssociationRecord<PcSaftAssociationRecord> {
+        let pcsaft = PcSaftAssociationRecord::new(Some(kappa_ab), Some(epsilon_k_ab));
         BinaryAssociationRecord::new(pcsaft, indices)
     }
 
@@ -568,7 +568,10 @@ mod tests_pcsaft {
             [1234., 1500., 1000., 3333.],
             [1750., 1250., 750., 1500.],
         ]);
-        assert_eq!(assoc.parameters_ab.mapv(|p| p.epsilon_k_ab), epsilon_k_ab);
+        assert_eq!(
+            assoc.parameters_ab.mapv(|p| p.epsilon_k_ab.unwrap()),
+            epsilon_k_ab
+        );
     }
 
     #[test]
