@@ -6,10 +6,10 @@ use conv::ValueInto;
 use feos_core::parameter::{
     FromSegments, FromSegmentsBinary, Parameter, ParameterError, PureRecord,
 };
-use quantity::{JOULE, KB, KELVIN};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;
+use quantity::{JOULE, KB, KELVIN};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -70,8 +70,8 @@ impl FromSegments<f64> for PcSaftRecord {
             .filter_map(|(s, n)| {
                 s.association_record.as_ref().map(|record| {
                     [
-                        record.parameters.kappa_ab * n,
-                        record.parameters.epsilon_k_ab * n,
+                        record.parameters.kappa_ab.unwrap_or(0.0) * n,
+                        record.parameters.epsilon_k_ab.unwrap_or(0.0) * n,
                         record.na * n,
                         record.nb * n,
                         record.nc * n,
@@ -89,7 +89,7 @@ impl FromSegments<f64> for PcSaftRecord {
             })
             .map(|[kappa_ab, epsilon_k_ab, na, nb, nc]| {
                 AssociationRecord::new(
-                    PcSaftAssociationRecord::new(kappa_ab, epsilon_k_ab),
+                    PcSaftAssociationRecord::new(Some(kappa_ab), Some(epsilon_k_ab)),
                     na,
                     nb,
                     nc,
@@ -248,17 +248,12 @@ impl PcSaftRecord {
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
     ) -> PcSaftRecord {
-        let association_record =
-            if let (Some(kappa_ab), Some(epsilon_k_ab)) = (kappa_ab, epsilon_k_ab) {
-                Some(AssociationRecord::new(
-                    PcSaftAssociationRecord::new(kappa_ab, epsilon_k_ab),
-                    na.unwrap_or_default(),
-                    nb.unwrap_or_default(),
-                    nc.unwrap_or_default(),
-                ))
-            } else {
-                None
-            };
+        let association_record = Some(AssociationRecord::new(
+            PcSaftAssociationRecord::new(kappa_ab, epsilon_k_ab),
+            na.unwrap_or_default(),
+            nb.unwrap_or_default(),
+            nc.unwrap_or_default(),
+        ));
         Self {
             m,
             sigma,
@@ -276,13 +271,15 @@ impl PcSaftRecord {
 #[derive(Serialize, Deserialize, Clone, Copy, Default)]
 pub struct PcSaftAssociationRecord {
     /// Association volume parameter
-    pub kappa_ab: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kappa_ab: Option<f64>,
     /// Association energy parameter in units of Kelvin
-    pub epsilon_k_ab: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub epsilon_k_ab: Option<f64>,
 }
 
 impl PcSaftAssociationRecord {
-    pub fn new(kappa_ab: f64, epsilon_k_ab: f64) -> Self {
+    pub fn new(kappa_ab: Option<f64>, epsilon_k_ab: Option<f64>) -> Self {
         Self {
             kappa_ab,
             epsilon_k_ab,
@@ -292,8 +289,14 @@ impl PcSaftAssociationRecord {
 
 impl std::fmt::Display for PcSaftAssociationRecord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PcSaftAssociationRecord(kappa_ab={}", self.kappa_ab)?;
-        write!(f, ", epsilon_k_ab={})", self.epsilon_k_ab)
+        let mut params = vec![];
+        if let Some(kappa_ab) = self.kappa_ab {
+            params.push(format!("kappa_ab={}", kappa_ab));
+        }
+        if let Some(epsilon_k_ab) = self.epsilon_k_ab {
+            params.push(format!("epsilon_k_ab={}", epsilon_k_ab));
+        }
+        write!(f, "PcSaftAssociationRecord({})", params.join(", "))
     }
 }
 
@@ -306,7 +309,7 @@ pub struct PcSaftBinaryRecord {
     pub k_ij: f64,
     /// Binary association parameters
     #[serde(flatten)]
-    association: Option<BinaryAssociationRecord<PcSaftBinaryAssociationRecord>>,
+    association: Option<BinaryAssociationRecord<PcSaftAssociationRecord>>,
 }
 
 impl From<f64> for PcSaftBinaryRecord {
@@ -331,7 +334,7 @@ impl PcSaftBinaryRecord {
             None
         } else {
             Some(BinaryAssociationRecord::new(
-                PcSaftBinaryAssociationRecord::new(kappa_ab, epsilon_k_ab),
+                PcSaftAssociationRecord::new(kappa_ab, epsilon_k_ab),
                 None,
             ))
         };
@@ -367,25 +370,6 @@ impl std::fmt::Display for PcSaftBinaryRecord {
             }
         }
         write!(f, "PcSaftBinaryRecord({})", tokens.join(", "))
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Copy, Default)]
-pub struct PcSaftBinaryAssociationRecord {
-    /// Cross-association association volume parameter.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kappa_ab: Option<f64>,
-    /// Cross-association energy parameter.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub epsilon_k_ab: Option<f64>,
-}
-
-impl PcSaftBinaryAssociationRecord {
-    pub fn new(kappa_ab: Option<f64>, epsilon_k_ab: Option<f64>) -> Self {
-        Self {
-            kappa_ab,
-            epsilon_k_ab,
-        }
     }
 }
 
@@ -576,7 +560,7 @@ impl HardSphereProperties for PcSaftParameters {
 
 impl AssociationStrength for PcSaftParameters {
     type Record = PcSaftAssociationRecord;
-    type BinaryRecord = PcSaftBinaryAssociationRecord;
+    type BinaryRecord = PcSaftAssociationRecord;
 
     fn association_strength<D: DualNum<f64> + Copy>(
         &self,
@@ -585,26 +569,42 @@ impl AssociationStrength for PcSaftParameters {
         comp_j: usize,
         assoc_ij: Self::Record,
     ) -> D {
-        let si = self.sigma[comp_i];
-        let sj = self.sigma[comp_j];
-        (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
-            * assoc_ij.kappa_ab
-            * (si * sj).powf(1.5)
+        if let (Some(kappa_ab), Some(epsilon_k_ab)) = (assoc_ij.kappa_ab, assoc_ij.epsilon_k_ab) {
+            let si = self.sigma[comp_i];
+            let sj = self.sigma[comp_j];
+            (temperature.recip() * epsilon_k_ab).exp_m1() * kappa_ab * (si * sj).powf(1.5)
+        } else {
+            D::zero()
+        }
     }
 
     fn combining_rule(parameters_i: Self::Record, parameters_j: Self::Record) -> Self::Record {
+        let kappa_ab = if let (Some(kappa_ab_i), Some(kappa_ab_j)) =
+            (parameters_i.kappa_ab, parameters_j.kappa_ab)
+        {
+            Some((kappa_ab_i * kappa_ab_j).sqrt())
+        } else {
+            None
+        };
+        let epsilon_k_ab = if let (Some(epsilon_k_ab_i), Some(epsilon_k_ab_j)) =
+            (parameters_i.epsilon_k_ab, parameters_j.epsilon_k_ab)
+        {
+            Some(0.5 * (epsilon_k_ab_i + epsilon_k_ab_j))
+        } else {
+            None
+        };
         Self::Record {
-            kappa_ab: (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt(),
-            epsilon_k_ab: 0.5 * (parameters_i.epsilon_k_ab + parameters_j.epsilon_k_ab),
+            kappa_ab,
+            epsilon_k_ab,
         }
     }
 
     fn update_binary(parameters_ij: &mut Self::Record, binary_parameters: Self::BinaryRecord) {
         if let Some(kappa_ab) = binary_parameters.kappa_ab {
-            parameters_ij.kappa_ab = kappa_ab
+            parameters_ij.kappa_ab = Some(kappa_ab)
         }
         if let Some(epsilon_k_ab) = binary_parameters.epsilon_k_ab {
-            parameters_ij.epsilon_k_ab = epsilon_k_ab
+            parameters_ij.epsilon_k_ab = Some(epsilon_k_ab)
         }
     }
 }
@@ -622,7 +622,7 @@ impl PcSaftParameters {
             let component = record.identifier.name.clone();
             let component = component.unwrap_or(format!("Component {}", i + 1));
             let association = record.model_record.association_record.unwrap_or_else(|| {
-                AssociationRecord::new(PcSaftAssociationRecord::new(0.0, 0.0), 0.0, 0.0, 0.0)
+                AssociationRecord::new(PcSaftAssociationRecord::new(None, None), 0.0, 0.0, 0.0)
             });
             write!(
                 o,
@@ -632,10 +632,10 @@ impl PcSaftParameters {
                 record.model_record.m,
                 record.model_record.sigma,
                 record.model_record.epsilon_k,
-                record.model_record.mu.unwrap_or(0.0),
-                record.model_record.q.unwrap_or(0.0),
-                association.parameters.kappa_ab,
-                association.parameters.epsilon_k_ab,
+                format_option(record.model_record.mu),
+                format_option(record.model_record.q),
+                format_option(association.parameters.kappa_ab),
+                format_option(association.parameters.epsilon_k_ab),
                 association.na,
                 association.nb,
                 association.nc
@@ -644,6 +644,14 @@ impl PcSaftParameters {
         }
 
         output
+    }
+}
+
+fn format_option(value: Option<f64>) -> String {
+    if let Some(value) = value {
+        format!("{value}")
+    } else {
+        "-".into()
     }
 }
 
