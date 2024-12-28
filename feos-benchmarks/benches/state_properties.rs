@@ -1,12 +1,10 @@
 #![allow(clippy::type_complexity)]
 use criterion::{criterion_group, criterion_main, Criterion};
+use feos::core::parameter::{IdentifierOption, Parameter};
+use feos::core::{Contributions, Residual, State};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
-use quantity::*;
-use feos_core::{
-    parameter::{IdentifierOption, Parameter},
-    Contributions, Residual, State,
-};
 use ndarray::{arr1, Array1};
+use quantity::*;
 use std::sync::Arc;
 use typenum::P3;
 
@@ -40,7 +38,7 @@ fn property_no_contributions<E: Residual, T, F: Fn(&State<E>) -> T>(
 fn properties_pcsaft(c: &mut Criterion) {
     let parameters = PcSaftParameters::from_json(
         vec!["methane", "ethane", "propane"],
-        "./parameters/pcsaft/gross2001.json",
+        "../parameters/pcsaft/gross2001.json",
         None,
         IdentifierOption::Name,
     )
@@ -75,7 +73,7 @@ fn properties_pcsaft(c: &mut Criterion) {
 fn properties_pcsaft_polar(c: &mut Criterion) {
     let parameters = PcSaftParameters::from_json(
         vec!["acetone", "butanal", "dimethyl ether"],
-        "./parameters/pcsaft/gross2006.json",
+        "../parameters/pcsaft/gross2006.json",
         None,
         IdentifierOption::Name,
     )

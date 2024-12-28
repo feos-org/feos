@@ -24,7 +24,7 @@ features = ["all_models", "rayon"]
 rustdoc-args = ["--html-in-header", "./docs-header.html"]
 
 [workspace]
-members = ["feos-core", "feos-dft", "feos-derive"]
+members = ["feos-core", "feos-dft", "feos-derive", "feos-benchmarks"]
 
 [lib]
 crate-type = ["rlib", "cdylib"]
@@ -56,7 +56,6 @@ optional = true
 
 [dev-dependencies]
 approx = "0.5"
-criterion = "0.5"
 
 [profile.release-lto]
 inherits = "release"
@@ -101,27 +100,3 @@ all_models = [
     "saftvrqmie",
     "saftvrmie",
 ]
-
-[[bench]]
-name = "state_properties"
-harness = false
-
-[[bench]]
-name = "state_creation"
-harness = false
-
-[[bench]]
-name = "dual_numbers"
-harness = false
-
-[[bench]]
-name = "dual_numbers_saftvrmie"
-harness = false
-
-[[bench]]
-name = "contributions"
-harness = false
-
-[[bench]]
-name = "dft_pore"
-harness = false
