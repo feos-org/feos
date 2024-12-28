@@ -1,6 +1,6 @@
 [package]
 name = "feos-dft"
-version = "0.7.0"
+version = "0.8.0"
 authors = [
     "Philipp Rehner <prehner@ethz.ch>",
     "Gernot Bauer <bauer@itt.uni-stuttgart.de>",
@@ -22,7 +22,7 @@ features = ["rayon"]
 [dependencies]
 quantity = "0.10"
 num-dual = "0.11"
-feos-core = { version = "0.7", path = "../feos-core" }
+feos-core = { version = "0.8", path = "../feos-core" }
 ndarray = "0.16"
 nalgebra = "0.33"
 rustdct = "0.7"

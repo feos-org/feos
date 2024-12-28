@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2024-12-28
+### Fixed
+- Fixed the handling of association records in combination with induced association in PC-SAFT [#264](https://github.com/feos-org/feos/pull/264)
+
+### Packaging
+- Updated `quantity` dependency to 0.10. [#262](https://github.com/feos-org/feos/pull/262)
+- Updated `num-dual` dependency to 0.11. [#262](https://github.com/feos-org/feos/pull/262)
+- Updated `numpy` and `PyO3` dependencies to 0.23. [#262](https://github.com/feos-org/feos/pull/262)
+
 ## [0.7.0] - 2024-05-21
 ### Added
 - Added SAFT-VR Mie equation of state. [#237](https://github.com/feos-org/feos/pull/237)

@@ -32,9 +32,9 @@ crate-type = ["rlib", "cdylib"]
 [dependencies]
 quantity = "0.10"
 num-dual = "0.11"
-feos-core = { version = "0.7", path = "feos-core" }
-feos-dft = { version = "0.7", path = "feos-dft", optional = true }
-feos-derive = { version = "0.5", path = "feos-derive" }
+feos-core = { version = "0.8", path = "feos-core" }
+feos-dft = { version = "0.8", path = "feos-dft", optional = true }
+feos-derive = { version = "0.6", path = "feos-derive" }
 numpy = { version = "0.23", optional = true }
 ndarray = { version = "0.16", features = ["approx"] }
 petgraph = { version = "0.6", optional = true }
