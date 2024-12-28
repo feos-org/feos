@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.8.0] - 2024-12-28
+### Added
+- Added `ReferenceSystem` trait to handle conversion between SI units and reduced units. [#257](https://github.com/feos-org/feos/pull/257)
+- Readded `Molarweight` trait to avoid extra implementation requirements for some models. [#258](https://github.com/feos-org/feos/pull/258)
+
+### Removed
+- Removed `si` module after the compile-time units are incorporated into the `quantity` crate. [#257](https://github.com/feos-org/feos/pull/257)
+
+### Packaging
+- Updated `quantity` dependency to 0.10. [#262](https://github.com/feos-org/feos/pull/262)
+- Updated `num-dual` dependency to 0.11. [#262](https://github.com/feos-org/feos/pull/262)
+- Updated `numpy` and `PyO3` dependencies to 0.23. [#262](https://github.com/feos-org/feos/pull/262)
+- Updated `gauss-quad`  dependency to 0.2. [#261](https://github.com/feos-org/feos/pull/261)
+
 ## [0.7.0] - 2024-05-21
 ### Added
 - Added specific isochoric and isobaric heat capacities to the Python interface. [#223](https://github.com/feos-org/feos/pull/223))

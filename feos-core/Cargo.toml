@@ -1,6 +1,6 @@
 [package]
 name = "feos-core"
-version = "0.7.0"
+version = "0.8.0"
 authors = [
     "Gernot Bauer <bauer@itt.uni-stuttgart.de>",
     "Philipp Rehner <prehner@ethz.ch",
