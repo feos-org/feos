@@ -56,7 +56,6 @@ optional = true
 
 [dev-dependencies]
 approx = "0.5"
-criterion = "0.5"
 
 [profile.release-lto]
 inherits = "release"
