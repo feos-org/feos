@@ -4,9 +4,9 @@
 //! on the dual number type used without the overhead of the `State`
 //! creation.
 use criterion::{criterion_group, criterion_main, Criterion};
+use feos::core::{Derivative, Residual, State, StateHD};
 use feos::hard_sphere::HardSphereProperties;
 use feos::saftvrmie::{test_utils::test_parameters, SaftVRMie, SaftVRMieParameters};
-use feos_core::{Derivative, Residual, State, StateHD};
 use ndarray::{Array, ScalarOperand};
 use num_dual::DualNum;
 use quantity::*;

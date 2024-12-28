@@ -1,13 +1,13 @@
 //! Benchmarks for the calculation of density profiles
 //! in pores at different conditions.
 use criterion::{criterion_group, criterion_main, Criterion};
+use feos::core::parameter::{IdentifierOption, Parameter, ParameterHetero};
+use feos::core::{PhaseEquilibrium, State, StateBuilder};
+use feos::dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
+use feos::dft::{DFTSolver, Geometry};
 use feos::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftFunctionalParameters};
 use feos::hard_sphere::{FMTFunctional, FMTVersion};
 use feos::pcsaft::{PcSaftFunctional, PcSaftParameters};
-use feos_core::parameter::{IdentifierOption, Parameter, ParameterHetero};
-use feos_core::{PhaseEquilibrium, State, StateBuilder};
-use feos_dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
-use feos_dft::{DFTSolver, Geometry};
 use ndarray::arr1;
 use quantity::{ANGSTROM, KELVIN, NAV};
 use std::sync::Arc;
@@ -34,7 +34,7 @@ fn pcsaft(c: &mut Criterion) {
     let mut group = c.benchmark_group("DFT_pore_pcsaft");
     let parameters = PcSaftParameters::from_json(
         vec!["butane"],
-        "./parameters/pcsaft/gross2001.json",
+        "../parameters/pcsaft/gross2001.json",
         None,
         IdentifierOption::Name,
     )
@@ -63,7 +63,7 @@ fn pcsaft(c: &mut Criterion) {
 
     let parameters = PcSaftParameters::from_json(
         vec!["butane", "pentane"],
-        "./parameters/pcsaft/gross2001.json",
+        "../parameters/pcsaft/gross2001.json",
         None,
         IdentifierOption::Name,
     )
@@ -98,8 +98,8 @@ fn gc_pcsaft(c: &mut Criterion) {
 
     let parameters = GcPcSaftFunctionalParameters::from_json_segments(
         &["butane"],
-        "./parameters/pcsaft/gc_substances.json",
-        "./parameters/pcsaft/sauer2014_hetero.json",
+        "../parameters/pcsaft/gc_substances.json",
+        "../parameters/pcsaft/sauer2014_hetero.json",
         None,
         IdentifierOption::Name,
     )

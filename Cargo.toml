@@ -24,7 +24,7 @@ features = ["all_models", "rayon"]
 rustdoc-args = ["--html-in-header", "./docs-header.html"]
 
 [workspace]
-members = ["feos-core", "feos-dft", "feos-derive"]
+members = ["feos-core", "feos-dft", "feos-derive", "feos-benchmarks"]
 
 [lib]
 crate-type = ["rlib", "cdylib"]
@@ -101,27 +101,3 @@ all_models = [
     "saftvrqmie",
     "saftvrmie",
 ]
-
-[[bench]]
-name = "state_properties"
-harness = false
-
-[[bench]]
-name = "state_creation"
-harness = false
-
-[[bench]]
-name = "dual_numbers"
-harness = false
-
-[[bench]]
-name = "dual_numbers_saftvrmie"
-harness = false
-
-[[bench]]
-name = "contributions"
-harness = false
-
-[[bench]]
-name = "dft_pore"
-harness = false
