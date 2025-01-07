@@ -209,12 +209,6 @@ macro_rules! impl_residual {
             fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
                 Python::with_gil(|py| {
                     let py_result = self.0.bind(py).call_method0("molar_weight").unwrap();
-                    if py_result.get_type().name().unwrap() != "si_units.SIObject" {
-                        panic!(
-                            "Expected an 'SIObject' for the 'molar_weight' method return type, got {}",
-                            py_result.get_type().name().unwrap()
-                        );
-                    }
                     py_result
                         .extract::<MolarWeight<Array1<f64>>>()
                         .unwrap()
