@@ -34,12 +34,6 @@ impl Components for PyIdealGas {
     fn components(&self) -> usize {
         Python::with_gil(|py| {
             let py_result = self.0.bind(py).call_method0("components").unwrap();
-            if py_result.get_type().name().unwrap() != "int" {
-                panic!(
-                    "Expected an integer for the components() method signature, got {}",
-                    py_result.get_type().name().unwrap()
-                );
-            }
             py_result.extract().unwrap()
         })
     }
@@ -140,12 +134,6 @@ impl Components for PyResidual {
     fn components(&self) -> usize {
         Python::with_gil(|py| {
             let py_result = self.0.bind(py).call_method0("components").unwrap();
-            if py_result.get_type().name().unwrap() != "int" {
-                panic!(
-                    "Expected an integer for the components() method signature, got {}",
-                    py_result.get_type().name().unwrap()
-                );
-            }
             py_result.extract().unwrap()
         })
     }
