@@ -57,7 +57,6 @@ pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     #[cfg(feature = "saftvrmie")]
     m.add_wrapped(wrap_pymodule!(saftvrmie_module))?;
 
-    // set_path(m, "feos.si", "quantity")?;
     set_path(m, "feos.eos", "eos")?;
     #[cfg(feature = "estimator")]
     set_path(m, "feos.eos.estimator", "eos.estimator_eos")?;
