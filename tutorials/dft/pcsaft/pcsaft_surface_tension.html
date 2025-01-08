@@ -7,7 +7,7 @@
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2024.08.06 -->
         <title>Surface tension using PC-SAFT Helmholtz energy functionals - FeOs</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../../_static/tabs.css?v=4c969af8" />
@@ -218,7 +218,6 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../eos/index.html">Equations of state</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Equations of state</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../eos/pcsaft/index.html">PC-SAFT</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of PC-SAFT</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../eos/pcsaft/pcsaft_working_with_parameters.html">Working with parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../eos/pcsaft/pcsaft_state.html">Representation of thermodynamic states</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../eos/pcsaft/pcsaft_phase_diagram.html">Pure substance phase diagrams</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../eos/pcsaft/pcsaft_entropy_scaling.html">Entropy scaling of pure substances</a></li>
 </ul>
@@ -248,7 +247,6 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../../api/index.html">API</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of API</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../../api/si.html"><code class="docutils literal notranslate"><span class="pre">feos.si</span></code></a></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../../api/eos.html"><code class="docutils literal notranslate"><span class="pre">feos.eos</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle navigation of feos.eos</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../api/generated/feos.eos.EquationOfState.html">feos.eos.EquationOfState</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle navigation of feos.eos.EquationOfState</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/generated/feos.eos.EquationOfState.__init__.html">feos.eos.EquationOfState.__init__</a></li>
@@ -1329,14 +1327,14 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">feos.si</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">feos.pcsaft</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">feos.dft</span> <span class="kn">import</span> <span class="o">*</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">feos.pcsaft</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">feos.dft</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">si_units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">si</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
 
 <span class="n">sns</span><span class="o">.</span><span class="n">set_context</span><span class="p">(</span><span class="s2">&quot;talk&quot;</span><span class="p">)</span>
 <span class="n">sns</span><span class="o">.</span><span class="n">set_palette</span><span class="p">(</span><span class="s2">&quot;Dark2&quot;</span><span class="p">)</span>
@@ -1409,7 +1407,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span> <span class="o">=</span> <span class="n">PhaseEquilibrium</span><span class="o">.</span><span class="n">pure</span><span class="p">(</span><span class="n">pcsaft</span><span class="p">,</span> <span class="mi">300</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span> <span class="o">=</span> <span class="n">PhaseEquilibrium</span><span class="o">.</span><span class="n">pure</span><span class="p">(</span><span class="n">pcsaft</span><span class="p">,</span> <span class="mi">300</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">)</span>
 <span class="n">vle</span>
 </pre></div>
 </div>
@@ -1453,10 +1451,10 @@
 <span class="n">interface</span> <span class="o">=</span> <span class="n">PlanarInterface</span><span class="o">.</span><span class="n">from_tanh</span><span class="p">(</span>
     <span class="n">vle</span><span class="o">=</span><span class="n">vle</span><span class="p">,</span>
     <span class="n">n_grid</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
-    <span class="n">l_grid</span><span class="o">=</span><span class="mi">100</span><span class="o">*</span><span class="n">ANGSTROM</span><span class="p">,</span>
+    <span class="n">l_grid</span><span class="o">=</span><span class="mi">100</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">ANGSTROM</span><span class="p">,</span>
     <span class="n">critical_temperature</span><span class="o">=</span><span class="n">cp</span><span class="o">.</span><span class="n">temperature</span>
 <span class="p">)</span>
-<span class="n">initial_density</span> <span class="o">=</span> <span class="n">interface</span><span class="o">.</span><span class="n">density</span>
+<span class="n">initial_density</span> <span class="o">=</span> <span class="n">interface</span><span class="o">.</span><span class="n">density</span> <span class="o">/</span> <span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">KILO</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">METER</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1465,8 +1463,8 @@
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-CPU times: user 89 µs, sys: 137 µs, total: 226 µs
-Wall time: 227 µs
+CPU times: user 562 µs, sys: 19 µs, total: 581 µs
+Wall time: 583 µs
 </pre></div></div>
 </div>
 <p>The above method does not yet run a calculation. If we try to extract the surface tension, it will return <code class="docutils literal notranslate"><span class="pre">None</span></code>. Let’s store the initial density profile for a later comparison.</p>
@@ -1502,8 +1500,8 @@ True
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-CPU times: user 31.2 ms, sys: 1.3 ms, total: 32.5 ms
-Wall time: 32.4 ms
+CPU times: user 28.6 ms, sys: 24 µs, total: 28.6 ms
+Wall time: 28.5 ms
 </pre></div></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">solve()</span></code> calculates the equilibrium density profile and returns the <code class="docutils literal notranslate"><span class="pre">PlanarInterface</span></code> object so that we can readily extract the <code class="docutils literal notranslate"><span class="pre">surface_tension</span></code>.</p>
@@ -1513,8 +1511,8 @@ Wall time: 32.4 ms
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">interface</span><span class="o">.</span><span class="n">z</span> <span class="o">/</span> <span class="n">ANGSTROM</span><span class="p">,</span> <span class="p">(</span><span class="n">initial_density</span> <span class="o">/</span> <span class="p">(</span><span class="n">KILO</span> <span class="o">*</span> <span class="n">MOL</span> <span class="o">/</span> <span class="n">METER</span><span class="o">**</span><span class="mi">3</span><span class="p">))[</span><span class="mi">0</span><span class="p">],</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;dashed&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;initial density&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">interface</span><span class="o">.</span><span class="n">z</span> <span class="o">/</span> <span class="n">ANGSTROM</span><span class="p">,</span> <span class="p">(</span><span class="n">interface</span><span class="o">.</span><span class="n">density</span> <span class="o">/</span> <span class="p">(</span><span class="n">KILO</span> <span class="o">*</span> <span class="n">MOL</span> <span class="o">/</span> <span class="n">METER</span><span class="o">**</span><span class="mi">3</span><span class="p">))[</span><span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;equilibrium density&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">interface</span><span class="o">.</span><span class="n">z</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">ANGSTROM</span><span class="p">,</span> <span class="n">initial_density</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;dashed&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;initial density&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">interface</span><span class="o">.</span><span class="n">z</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">ANGSTROM</span><span class="p">,</span> <span class="p">(</span><span class="n">interface</span><span class="o">.</span><span class="n">density</span> <span class="o">/</span> <span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">KILO</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">METER</span><span class="o">**</span><span class="mi">3</span><span class="p">))[</span><span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;equilibrium density&quot;</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
@@ -1726,14 +1724,14 @@ Wall time: 32.4 ms
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
 <span class="n">vles</span> <span class="o">=</span> <span class="n">PhaseDiagram</span><span class="o">.</span><span class="n">pure</span><span class="p">(</span>
     <span class="n">pcsaft</span><span class="p">,</span>
-    <span class="mi">275</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span>
+    <span class="mi">275</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span>
     <span class="mi">50</span><span class="p">,</span>
     <span class="n">critical_temperature</span><span class="o">=</span><span class="n">cp</span><span class="o">.</span><span class="n">temperature</span>
 <span class="p">)</span>
 <span class="n">sfts</span> <span class="o">=</span> <span class="n">SurfaceTensionDiagram</span><span class="p">(</span>
     <span class="n">vles</span><span class="o">.</span><span class="n">states</span><span class="p">,</span>
     <span class="n">n_grid</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
-    <span class="n">l_grid</span><span class="o">=</span><span class="mi">100</span><span class="o">*</span><span class="n">ANGSTROM</span><span class="p">,</span>
+    <span class="n">l_grid</span><span class="o">=</span><span class="mi">100</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">ANGSTROM</span><span class="p">,</span>
     <span class="n">critical_temperature</span><span class="o">=</span><span class="n">cp</span><span class="o">.</span><span class="n">temperature</span>
 <span class="p">)</span>
 </pre></div>
@@ -1744,8 +1742,8 @@ Wall time: 32.4 ms
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-CPU times: user 1.24 s, sys: 3.05 ms, total: 1.24 s
-Wall time: 1.24 s
+CPU times: user 608 ms, sys: 0 ns, total: 608 ms
+Wall time: 606 ms
 </pre></div></div>
 </div>
 <p>We now can extract all surface tensions via <code class="docutils literal notranslate"><span class="pre">surface_tension</span></code> as well as the liquid and vapor states via the <code class="docutils literal notranslate"><span class="pre">liquid</span></code> and <code class="docutils literal notranslate"><span class="pre">vapor</span></code> getters, respectively. Let’s store the results in a pandas <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> to make plotting easier.</p>
@@ -1755,8 +1753,8 @@ Wall time: 1.24 s
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dft_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
     <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
-        <span class="n">sfts</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">temperature</span> <span class="o">/</span> <span class="n">KELVIN</span><span class="p">,</span>
-        <span class="n">sfts</span><span class="o">.</span><span class="n">surface_tension</span> <span class="o">/</span> <span class="n">NEWTON</span> <span class="o">*</span> <span class="n">METER</span>
+        <span class="n">sfts</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">temperature</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span>
+        <span class="n">sfts</span><span class="o">.</span><span class="n">surface_tension</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">NEWTON</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">METER</span>
     <span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
     <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Temperature (K)&quot;</span><span class="p">,</span> <span class="s2">&quot;Surf. Tension (l, N/m)&quot;</span><span class="p">]</span>
 <span class="p">)</span>
@@ -1771,7 +1769,7 @@ Wall time: 1.24 s
 <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Surface tension of water&quot;</span><span class="p">)</span>
 <span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">literature</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">&quot;Temperature (K)&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;Surf. Tension (l, N/m)&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;NIST&quot;</span><span class="p">)</span>
 <span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">dft_data</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">&quot;Temperature (K)&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;Surf. Tension (l, N/m)&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;PC-SAFT (2B)&quot;</span><span class="p">)</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">cp</span><span class="o">.</span><span class="n">temperature</span> <span class="o">/</span> <span class="n">KELVIN</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">],</span> <span class="n">clip_on</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;PC-SAFT (2B), critical point&quot;</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">cp</span><span class="o">.</span><span class="n">temperature</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">],</span> <span class="n">clip_on</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;PC-SAFT (2B), critical point&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\gamma$ / Nm$^{-1}$&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$T$ / K&quot;</span><span class="p">)</span>
 

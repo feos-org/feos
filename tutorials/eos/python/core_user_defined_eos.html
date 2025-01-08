@@ -7,7 +7,7 @@
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2024.08.06 -->
         <title>Implementing an equation of state in python - FeOs</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../../_static/tabs.css?v=4c969af8" />
@@ -218,7 +218,6 @@
 <li class="toctree-l2 current has-children"><a class="reference internal" href="../index.html">Equations of state</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Equations of state</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l3 has-children"><a class="reference internal" href="../pcsaft/index.html">PC-SAFT</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of PC-SAFT</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../pcsaft/pcsaft_working_with_parameters.html">Working with parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../pcsaft/pcsaft_state.html">Representation of thermodynamic states</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../pcsaft/pcsaft_phase_diagram.html">Pure substance phase diagrams</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../pcsaft/pcsaft_entropy_scaling.html">Entropy scaling of pure substances</a></li>
 </ul>
@@ -248,7 +247,6 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../../api/index.html">API</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of API</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../../api/si.html"><code class="docutils literal notranslate"><span class="pre">feos.si</span></code></a></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../../api/eos.html"><code class="docutils literal notranslate"><span class="pre">feos.eos</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle navigation of feos.eos</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../api/generated/feos.eos.EquationOfState.html">feos.eos.EquationOfState</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle navigation of feos.eos.EquationOfState</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/generated/feos.eos.EquationOfState.__init__.html">feos.eos.EquationOfState.__init__</a></li>
@@ -1336,19 +1334,19 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">feos.eos</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">feos.si</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">feos.eos</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">si_units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">si</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="n">optional</span> <span class="o">=</span> <span class="kc">True</span>
 
-<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="n">optional</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-    <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-    <span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
 
     <span class="n">sns</span><span class="o">.</span><span class="n">set_style</span><span class="p">(</span><span class="s2">&quot;ticks&quot;</span><span class="p">)</span>
     <span class="n">sns</span><span class="o">.</span><span class="n">set_palette</span><span class="p">(</span><span class="s2">&quot;Dark2&quot;</span><span class="p">)</span>
@@ -1361,16 +1359,16 @@
 <h2>Implementation<a class="headerlink" href="#Implementation" title="Link to this heading">¶</a></h2>
 <p>↑ Back to top</p>
 <p>To implement an equation of state in python, we have to define a <code class="docutils literal notranslate"><span class="pre">class</span></code> which has to have the following methods:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyEquationOfState</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">helmholtz_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">StateHD</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">D</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyEquationOfState</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">helmholtz_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">StateHD</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">D</span>
 
-    <span class="k">def</span> <span class="nf">components</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">components</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span>
 
-    <span class="k">def</span> <span class="nf">subset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">subset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span>
 
-    <span class="k">def</span> <span class="nf">molar_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SIArray1</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">molar_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SIArray1</span>
 
-    <span class="k">def</span> <span class="nf">max_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">moles</span><span class="p">:</span> <span class="n">SIArray1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">f64</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">moles</span><span class="p">:</span> <span class="n">SIArray1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">f64</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -1381,13 +1379,13 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">helmholtz_energy(self,</span> <span class="pre">state:</span> <span class="pre">StateHD)</span> <span class="pre">-&gt;</span> <span class="pre">Dual</span></code>: Returns the helmholtz energy as (hyper)-dual number given a <code class="docutils literal notranslate"><span class="pre">StateHD</span></code>.</p></li>
 </ul>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">SQRT2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 
-<span class="k">class</span> <span class="nc">PyPengRobinson</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PyPengRobinson</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">critical_temperature</span><span class="p">,</span> <span class="n">critical_pressure</span><span class="p">,</span>
         <span class="n">acentric_factor</span><span class="p">,</span> <span class="n">molar_weight</span><span class="p">,</span> <span class="n">delta_ij</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
@@ -1419,21 +1417,21 @@
         <span class="p">)))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input parameters must all have the same lenght.&quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">tc</span> <span class="o">=</span> <span class="n">critical_temperature</span> <span class="o">/</span> <span class="n">KELVIN</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">PASCAL</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tc</span> <span class="o">=</span> <span class="n">critical_temperature</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">PASCAL</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">omega</span> <span class="o">=</span> <span class="n">acentric_factor</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mw</span> <span class="o">=</span> <span class="n">molar_weight</span> <span class="o">/</span> <span class="n">GRAM</span> <span class="o">*</span> <span class="n">MOL</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mw</span> <span class="o">=</span> <span class="n">molar_weight</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">GRAM</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">a_r</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.45724</span> <span class="o">*</span> <span class="n">critical_temperature</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">RGAS</span>
-                    <span class="o">/</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">ANGSTROM</span><span class="o">**</span><span class="mi">3</span> <span class="o">/</span> <span class="n">NAV</span> <span class="o">/</span> <span class="n">KELVIN</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.07780</span> <span class="o">*</span> <span class="n">critical_temperature</span> <span class="o">*</span> <span class="n">RGAS</span>
-                  <span class="o">/</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">ANGSTROM</span><span class="o">**</span><span class="mi">3</span> <span class="o">/</span> <span class="n">NAV</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a_r</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.45724</span> <span class="o">*</span> <span class="n">critical_temperature</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">RGAS</span>
+                    <span class="o">/</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">ANGSTROM</span><span class="o">**</span><span class="mi">3</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">NAV</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.07780</span> <span class="o">*</span> <span class="n">critical_temperature</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">RGAS</span>
+                  <span class="o">/</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">ANGSTROM</span><span class="o">**</span><span class="mi">3</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">NAV</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kappa</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.37464</span>
                       <span class="o">+</span> <span class="p">(</span><span class="mf">1.54226</span> <span class="o">-</span> <span class="mf">0.26992</span> <span class="o">*</span> <span class="n">acentric_factor</span><span class="p">)</span> <span class="o">*</span> <span class="n">acentric_factor</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delta_ij</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">))</span>
                          <span class="k">if</span> <span class="n">delta_ij</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">delta_ij</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">helmholtz_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">helmholtz_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return helmholtz energy.</span>
 
 <span class="sd">        Parameters</span>
@@ -1466,11 +1464,11 @@
                  <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="mf">1.0</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">SQRT2</span><span class="p">)</span> <span class="o">*</span> <span class="n">b</span> <span class="o">*</span> <span class="n">rho</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">SQRT2</span><span class="p">)</span> <span class="o">*</span> <span class="n">b</span> <span class="o">*</span> <span class="n">rho</span><span class="p">)))</span>
         <span class="k">return</span> <span class="n">a</span>
 
-    <span class="k">def</span> <span class="nf">components</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">components</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of components.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
 
-    <span class="k">def</span> <span class="nf">subset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">subset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return new equation of state containing a subset of all components.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
@@ -1478,19 +1476,19 @@
             <span class="n">mw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mw</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="n">omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="k">return</span> <span class="n">PyPengRobinson</span><span class="p">(</span>
-                <span class="n">SIArray1</span><span class="p">(</span><span class="n">tc</span> <span class="o">*</span> <span class="n">KELVIN</span><span class="p">),</span>
-                <span class="n">SIArray1</span><span class="p">(</span><span class="n">pc</span> <span class="o">*</span> <span class="n">PASCAL</span><span class="p">),</span>
+                <span class="n">si</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tc</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">),</span>
+                <span class="n">si</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pc</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">PASCAL</span><span class="p">),</span>
                 <span class="n">omega</span><span class="p">,</span>
-                <span class="n">SIArray1</span><span class="p">(</span><span class="n">mw</span> <span class="o">*</span> <span class="n">GRAM</span> <span class="o">/</span> <span class="n">MOL</span><span class="p">)</span>
+                <span class="n">si</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mw</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">GRAM</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span><span class="p">)</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="nf">molar_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SIArray1</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">SIArray1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mw</span> <span class="o">*</span> <span class="n">GRAM</span> <span class="o">/</span> <span class="n">MOL</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">molar_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">si</span><span class="o">.</span><span class="n">SIObject</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">si</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mw</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">GRAM</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">max_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">moles</span><span class="p">:[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">moles</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">moles</span><span class="p">);</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">moles</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">moles</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">moles</span><span class="p">)</span>
         <span class="k">return</span> <span class="mf">0.9</span> <span class="o">/</span> <span class="n">b</span>
 </pre></div>
 </div>
@@ -1501,17 +1499,25 @@
 <p>↑ Back to top</p>
 <p>Let’s compute some properties. First, we have to instanciate the class and register it to Rust. This is done using the <code class="docutils literal notranslate"><span class="pre">EquationOfState.python</span></code> method.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tc</span> <span class="o">=</span> <span class="n">SIArray1</span><span class="p">(</span><span class="mf">369.96</span> <span class="o">*</span> <span class="n">KELVIN</span><span class="p">)</span>
-<span class="n">pc</span> <span class="o">=</span> <span class="n">SIArray1</span><span class="p">(</span><span class="mf">4250000.0</span> <span class="o">*</span> <span class="n">PASCAL</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tc</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">369.96</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">)</span>
+<span class="n">pc</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">4250000.0</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">PASCAL</span><span class="p">)</span>
 <span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.153</span><span class="p">])</span>
-<span class="n">molar_weight</span> <span class="o">=</span> <span class="n">SIArray1</span><span class="p">(</span><span class="mf">44.0962</span> <span class="o">*</span> <span class="n">GRAM</span> <span class="o">/</span> <span class="n">MOL</span><span class="p">)</span>
+<span class="n">molar_weight</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">44.0962</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">GRAM</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span><span class="p">)</span>
 
 <span class="c1"># create an instance of our python class and hand it over to rust</span>
 <span class="n">pr</span> <span class="o">=</span> <span class="n">PyPengRobinson</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">pc</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">molar_weight</span><span class="p">)</span>
-<span class="n">eos</span> <span class="o">=</span> <span class="n">EquationOfState</span><span class="o">.</span><span class="n">python</span><span class="p">(</span><span class="n">pr</span><span class="p">)</span>
+<span class="n">eos</span> <span class="o">=</span> <span class="n">EquationOfState</span><span class="o">.</span><span class="n">python_residual</span><span class="p">(</span><span class="n">pr</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
 </pre></div>
 </div>
 </div>
@@ -1519,7 +1525,7 @@
 <h3>Thermodynamic state: the <code class="docutils literal notranslate"><span class="pre">State</span></code> object<a class="headerlink" href="#Thermodynamic-state:-the-State-object" title="Link to this heading">¶</a></h3>
 <p>Before we can compute a property, we create a <code class="docutils literal notranslate"><span class="pre">State</span></code> object. This can be done in several ways depending on what control variables we need. If no total amount of substance is defined, it is set to <span class="math notranslate nohighlight">\(n = \frac{1}{N_{AV}}\)</span>. For possible input combinations, you can inspect the signature of the constructor using <code class="docutils literal notranslate"><span class="pre">State?</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>State<span class="o">?</span>
@@ -1580,22 +1586,21 @@ Error
     When the state cannot be created using the combination of input.
 <span class="ansi-red-fg">Type:</span>           type
 <span class="ansi-red-fg">Subclasses:</span>
-
 </pre></div></div>
 </div>
 <p>If we use input variables other than <span class="math notranslate nohighlight">\(\mathbf{N}, V, T\)</span> (the natural variables of the Helmholtz energy), creating a state is an iterative procedure. For example, we can create a state for a give <span class="math notranslate nohighlight">\(T, p\)</span>, which will result in a iteration of the volume (density).</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># If no amount of substance is given, it is set to 1/NAV.</span>
-<span class="n">s</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">300</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span> <span class="n">pressure</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">BAR</span><span class="p">)</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">300</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span> <span class="n">pressure</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">)</span>
 <span class="n">s</span><span class="o">.</span><span class="n">total_moles</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1605,21 +1610,21 @@ $1.6605\times10^{-24}\,\mathrm{ mol}$</div></div>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s_pt</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
     <span class="n">eos</span><span class="p">,</span>
-    <span class="n">temperature</span><span class="o">=</span><span class="mi">300</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span>
-    <span class="n">pressure</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">BAR</span><span class="p">,</span>
-    <span class="n">total_moles</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">MOL</span>
+    <span class="n">temperature</span><span class="o">=</span><span class="mi">300</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span>
+    <span class="n">pressure</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">,</span>
+    <span class="n">total_moles</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">MOL</span>
 <span class="p">)</span>
 <span class="n">s_pt</span><span class="o">.</span><span class="n">total_moles</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1628,51 +1633,6 @@ $1.6605\times10^{-24}\,\mathrm{ mol}$</div></div>
 $1\,\mathrm{ mol}$</div></div>
 </div>
 </div>
-<p>We can use other variables as well. For example, we can create a state at given <span class="math notranslate nohighlight">\(h, p\)</span> (using the enthalpy from the prior computation as input):</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s_ph</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
-    <span class="n">eos</span><span class="p">,</span>
-    <span class="n">pressure</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">BAR</span><span class="p">,</span>
-    <span class="n">molar_enthalpy</span><span class="o">=</span><span class="n">s_pt</span><span class="o">.</span><span class="n">molar_enthalpy</span><span class="p">()</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># check if states are equal</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;rel. dev.&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span>
-    <span class="s2">&quot;entropy    : &quot;</span><span class="p">,</span>
-    <span class="p">(</span><span class="n">s_ph</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">()</span> <span class="o">-</span> <span class="n">s_pt</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">())</span> <span class="o">/</span> <span class="n">s_pt</span><span class="o">.</span><span class="n">molar_entropy</span><span class="p">()</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span>
-    <span class="s2">&quot;density    : &quot;</span><span class="p">,</span>
-    <span class="p">(</span><span class="n">s_ph</span><span class="o">.</span><span class="n">mass_density</span><span class="p">()</span> <span class="o">-</span> <span class="n">s_pt</span><span class="o">.</span><span class="n">mass_density</span><span class="p">())</span> <span class="o">/</span> <span class="n">s_pt</span><span class="o">.</span><span class="n">mass_density</span><span class="p">()</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span>
-    <span class="s2">&quot;temperature: &quot;</span><span class="p">,</span>
-    <span class="p">(</span><span class="n">s_ph</span><span class="o">.</span><span class="n">temperature</span> <span class="o">-</span> <span class="n">s_pt</span><span class="o">.</span><span class="n">temperature</span><span class="p">)</span> <span class="o">/</span> <span class="n">s_pt</span><span class="o">.</span><span class="n">temperature</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-rel. dev.
-entropy    :  1.2028878239185388e-16
-density    :  -1.8532974044002563e-15
-temperature:  1.5158245029548805e-15
-</pre></div></div>
-</div>
 </section>
 </section>
 <section id="Critical-point">
@@ -1680,7 +1640,7 @@ temperature:  1.5158245029548805e-15
 <p>↑ Back to top</p>
 <p>To generate a state at critical conditions, we can use the <code class="docutils literal notranslate"><span class="pre">critical_point</span></code> constructor.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s_cp</span> <span class="o">=</span> <span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos</span><span class="p">)</span>
@@ -1697,9 +1657,9 @@ temperature:  1.5158245029548805e-15
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Critical point
-temperature:  369.9506174234607 K
+temperature:  369.95061742346076 K
 density    :  198.1862458057177 kg/m³
-pressure   :  4.249677749116942 MPa
+pressure   :  4.249677749116944 MPa
 </pre></div></div>
 </div>
 </section>
@@ -1708,16 +1668,16 @@ pressure   :  4.249677749116942 MPa
 <p>↑ Back to top</p>
 <p>We can also create an object, <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code>, that contains states that are in equilibrium.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span> <span class="o">=</span> <span class="n">PhaseEquilibrium</span><span class="o">.</span><span class="n">pure</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="mf">300.0</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span> <span class="o">=</span> <span class="n">PhaseEquilibrium</span><span class="o">.</span><span class="n">pure</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="mf">300.0</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">)</span>
 <span class="n">vle</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1745,7 +1705,7 @@ pressure   :  4.249677749116942 MPa
 </div>
 <p>Each phase is a <code class="docutils literal notranslate"><span class="pre">State</span></code> object. We can simply access these states and compute properties, just like before.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span><span class="o">.</span><span class="n">liquid</span> <span class="c1"># the high density phase `State`</span>
@@ -1753,7 +1713,7 @@ pressure   :  4.249677749116942 MPa
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1774,7 +1734,7 @@ pressure   :  4.249677749116942 MPa
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span><span class="o">.</span><span class="n">vapor</span> <span class="c1"># the low density phase `State`</span>
@@ -1782,7 +1742,7 @@ pressure   :  4.249677749116942 MPa
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1803,13 +1763,13 @@ pressure   :  4.249677749116942 MPa
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># we can now easily compute any property:</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Heat of vaporization: &quot;</span><span class="p">,</span> <span class="n">vle</span><span class="o">.</span><span class="n">vapor</span><span class="o">.</span><span class="n">molar_enthalpy</span><span class="p">()</span> <span class="o">-</span> <span class="n">vle</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">molar_enthalpy</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Heat of vaporization: &quot;</span><span class="p">,</span> <span class="n">vle</span><span class="o">.</span><span class="n">vapor</span><span class="o">.</span><span class="n">molar_enthalpy</span><span class="p">(</span><span class="n">Contributions</span><span class="o">.</span><span class="n">Residual</span><span class="p">)</span> <span class="o">-</span> <span class="n">vle</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">molar_enthalpy</span><span class="p">(</span><span class="n">Contributions</span><span class="o">.</span><span class="n">Residual</span><span class="p">))</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;for T = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vle</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">temperature</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;and p = </span><span class="si">{:.2f}</span><span class="s2"> bar&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vle</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">pressure</span><span class="p">()</span> <span class="o">/</span> <span class="n">BAR</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;and p = </span><span class="si">{:.2f}</span><span class="s2"> bar&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vle</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">pressure</span><span class="p">()</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -1818,20 +1778,20 @@ pressure   :  4.249677749116942 MPa
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Heat of vaporization:  14.782343503305114 kJ/mol
+Heat of vaporization:  14.782343503305125 kJ/mol
 for T = 300 K
 and p = 9.95 bar
 </pre></div></div>
 </div>
 <p>We can also easily compute <strong>vapor pressures</strong> and <strong>boiling temperatures</strong>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># This also works for mixtures, in which case the pure component properties are computed.</span>
 <span class="c1"># Hence, the result is a list - that is why we use an index [0] here.</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;vapor pressure      (T = 300 K):&quot;</span><span class="p">,</span> <span class="n">PhaseEquilibrium</span><span class="o">.</span><span class="n">vapor_pressure</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="mi">300</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;boiling temperature (p = 3 bar):&quot;</span><span class="p">,</span> <span class="n">PhaseEquilibrium</span><span class="o">.</span><span class="n">boiling_temperature</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">BAR</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;vapor pressure      (T = 300 K):&quot;</span><span class="p">,</span> <span class="n">PhaseEquilibrium</span><span class="o">.</span><span class="n">vapor_pressure</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="mi">300</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;boiling temperature (p = 3 bar):&quot;</span><span class="p">,</span> <span class="n">PhaseEquilibrium</span><span class="o">.</span><span class="n">boiling_temperature</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
@@ -1840,8 +1800,8 @@ and p = 9.95 bar
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-vapor pressure      (T = 300 K): 994.7761635610093 kPa
-boiling temperature (p = 3 bar): 247.84035574956746 K
+vapor pressure      (T = 300 K): 994.776163561008 kPa
+boiling temperature (p = 3 bar): 247.84035574956764 K
 </pre></div></div>
 </div>
 <section id="Phase-Diagram">
@@ -1849,31 +1809,31 @@ boiling temperature (p = 3 bar): 247.84035574956746 K
 <p>We could repeatedly compute <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> states for different temperatures / pressures to generate a phase diagram. Because this a common task, there is a object for that as well.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">PhaseDiagram</span></code> object creates multiple <code class="docutils literal notranslate"><span class="pre">PhaseEquilibrium</span></code> objects (<code class="docutils literal notranslate"><span class="pre">npoints</span></code> of those) between a given lower temperature and the critical point.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dia</span> <span class="o">=</span> <span class="n">PhaseDiagram</span><span class="o">.</span><span class="n">pure</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="mf">230.0</span> <span class="o">*</span> <span class="n">KELVIN</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dia</span> <span class="o">=</span> <span class="n">PhaseDiagram</span><span class="o">.</span><span class="n">pure</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="mf">230.0</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <p>We can access each <code class="docutils literal notranslate"><span class="pre">PhaseEquilbrium</span></code> and then conveniently comput any property we like:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">enthalpy_of_vaporization</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">(</span><span class="n">vle</span><span class="o">.</span><span class="n">vapor</span><span class="o">.</span><span class="n">molar_enthalpy</span><span class="p">()</span> <span class="o">-</span> <span class="n">vle</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">molar_enthalpy</span><span class="p">())</span> <span class="o">/</span> <span class="p">(</span><span class="n">KILO</span> <span class="o">*</span> <span class="n">JOULE</span><span class="p">)</span> <span class="o">*</span> <span class="n">MOL</span>
+    <span class="p">(</span><span class="n">vle</span><span class="o">.</span><span class="n">vapor</span><span class="o">.</span><span class="n">molar_enthalpy</span><span class="p">(</span><span class="n">Contributions</span><span class="o">.</span><span class="n">Residual</span><span class="p">)</span> <span class="o">-</span> <span class="n">vle</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">molar_enthalpy</span><span class="p">(</span><span class="n">Contributions</span><span class="o">.</span><span class="n">Residual</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">KILO</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">JOULE</span><span class="p">)</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span>
     <span class="k">for</span> <span class="n">vle</span> <span class="ow">in</span> <span class="n">dia</span><span class="o">.</span><span class="n">states</span>
 <span class="p">]</span>
 </pre></div>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">dia</span><span class="o">.</span><span class="n">vapor</span><span class="o">.</span><span class="n">temperature</span> <span class="o">/</span> <span class="n">KELVIN</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">enthalpy_of_vaporization</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">);</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">dia</span><span class="o">.</span><span class="n">vapor</span><span class="o">.</span><span class="n">temperature</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">enthalpy_of_vaporization</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">);</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\Delta^</span><span class="si">{LV}</span><span class="s2">h$ / kJ / mol&quot;</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$T$ / K&quot;</span><span class="p">);</span>
 </pre></div>
@@ -1883,12 +1843,12 @@ boiling temperature (p = 3 bar): 247.84035574956746 K
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../../_images/tutorials_eos_python_core_user_defined_eos_29_0.png" src="../../../_images/tutorials_eos_python_core_user_defined_eos_29_0.png" />
+<img alt="../../../_images/tutorials_eos_python_core_user_defined_eos_27_0.png" src="../../../_images/tutorials_eos_python_core_user_defined_eos_27_0.png" />
 </div>
 </div>
 <p>A more convenient way is to create a dictionary. The dictionary can be used to build pandas <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> objects. This is a bit less flexible, because the units of the properties are rigid. You can inspect the method signature to check what units are used.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>dia.to_dict<span class="o">?</span>
@@ -1900,43 +1860,48 @@ boiling temperature (p = 3 bar): 247.84035574956746 K
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-<span class="ansi-red-fg">Signature:</span> dia<span class="ansi-blue-fg">.</span>to_dict<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span>
+<span class="ansi-red-fg">Signature:</span> dia<span class="ansi-blue-fg">.</span>to_dict<span class="ansi-blue-fg">(</span>contributions<span class="ansi-blue-fg">)</span>
 <span class="ansi-red-fg">Docstring:</span>
 Returns the phase diagram as dictionary.
 
-Units
------
-temperature : K
-pressure : Pa
-densities : mol / m³
-molar enthalpies : kJ / mol
-molar entropies : kJ / mol / K
+Parameters
+----------
+contributions : Contributions, optional
+    The contributions to consider when calculating properties.
+    Defaults to Contributions.Total.
 
 Returns
 -------
-dict[str, list[float]]
+Dict[str, List[float]]
     Keys: property names. Values: property for each state.
 
 Notes
 -----
-xi: liquid molefraction of component i
-yi: vapor molefraction of component i
-i: component index according to order in parameters.
+- temperature : K
+- pressure : Pa
+- densities : mol / m³
+- mass densities : kg / m³
+- molar enthalpies : kJ / mol
+- molar entropies : kJ / mol / K
+- specific enthalpies : kJ / kg
+- specific entropies : kJ / kg / K
+- xi: liquid molefraction of component i
+- yi: vapor molefraction of component i
+- component index `i` matches to order of components in parameters.
 <span class="ansi-red-fg">Type:</span>      builtin_function_or_method
-
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_dia</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dia</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_dia</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dia</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">Contributions</span><span class="o">.</span><span class="n">Residual</span><span class="p">))</span>
 <span class="n">data_dia</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -1958,71 +1923,107 @@ i: component index according to order in parameters.
   <thead>
     <tr style="text-align: right;">
       <th></th>
+      <th>specific enthalpy liquid</th>
+      <th>pressure</th>
+      <th>molar enthalpy liquid</th>
       <th>density liquid</th>
+      <th>temperature</th>
+      <th>molar entropy liquid</th>
+      <th>mass density liquid</th>
+      <th>specific enthalpy vapor</th>
       <th>density vapor</th>
       <th>molar enthalpy vapor</th>
-      <th>temperature</th>
-      <th>molar enthalpy liquid</th>
-      <th>pressure</th>
-      <th>molar entropy liquid</th>
+      <th>specific entropy vapor</th>
       <th>molar entropy vapor</th>
+      <th>mass density vapor</th>
+      <th>specific entropy liquid</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <th>0</th>
-      <td>14125.988947</td>
-      <td>52.208491</td>
-      <td>22.140400</td>
-      <td>230.000000</td>
-      <td>3.376293</td>
+      <td>-429.097170</td>
       <td>96625.278174</td>
-      <td>0.039106</td>
-      <td>0.120689</td>
+      <td>-18.921555</td>
+      <td>14125.988947</td>
+      <td>230.000000</td>
+      <td>-0.035166</td>
+      <td>622.902434</td>
+      <td>-3.570554</td>
+      <td>52.208491</td>
+      <td>-0.157448</td>
+      <td>-0.003363</td>
+      <td>-0.000148</td>
+      <td>2.302196</td>
+      <td>-0.797483</td>
     </tr>
     <tr>
       <th>1</th>
-      <td>14118.006852</td>
-      <td>52.811929</td>
-      <td>22.135738</td>
-      <td>230.280462</td>
-      <td>3.383021</td>
+      <td>-428.878435</td>
       <td>97830.133956</td>
-      <td>0.039135</td>
-      <td>0.120569</td>
+      <td>-18.911909</td>
+      <td>14118.006852</td>
+      <td>230.280462</td>
+      <td>-0.035119</td>
+      <td>622.550454</td>
+      <td>-3.610123</td>
+      <td>52.811929</td>
+      <td>-0.159193</td>
+      <td>-0.003399</td>
+      <td>-0.000150</td>
+      <td>2.328805</td>
+      <td>-0.796418</td>
     </tr>
     <tr>
       <th>2</th>
-      <td>14110.010220</td>
-      <td>53.420767</td>
-      <td>22.131064</td>
-      <td>230.560924</td>
-      <td>3.389761</td>
+      <td>-428.659501</td>
       <td>99046.729400</td>
-      <td>0.039164</td>
-      <td>0.120449</td>
+      <td>-18.902255</td>
+      <td>14110.010220</td>
+      <td>230.560924</td>
+      <td>-0.035072</td>
+      <td>622.197833</td>
+      <td>-3.650021</td>
+      <td>53.420767</td>
+      <td>-0.160952</td>
+      <td>-0.003436</td>
+      <td>-0.000152</td>
+      <td>2.355653</td>
+      <td>-0.795354</td>
     </tr>
     <tr>
       <th>3</th>
-      <td>14101.999011</td>
-      <td>54.035036</td>
-      <td>22.126380</td>
-      <td>230.841386</td>
-      <td>3.396514</td>
+      <td>-428.440366</td>
       <td>100275.143120</td>
-      <td>0.039193</td>
-      <td>0.120330</td>
+      <td>-18.892592</td>
+      <td>14101.999011</td>
+      <td>230.841386</td>
+      <td>-0.035025</td>
+      <td>621.844569</td>
+      <td>-3.690251</td>
+      <td>54.035036</td>
+      <td>-0.162726</td>
+      <td>-0.003473</td>
+      <td>-0.000153</td>
+      <td>2.382740</td>
+      <td>-0.794290</td>
     </tr>
     <tr>
       <th>4</th>
-      <td>14093.973182</td>
-      <td>54.654773</td>
-      <td>22.121683</td>
-      <td>231.121849</td>
-      <td>3.403278</td>
+      <td>-428.221030</td>
       <td>101515.453964</td>
-      <td>0.039221</td>
-      <td>0.120211</td>
+      <td>-18.882920</td>
+      <td>14093.973182</td>
+      <td>231.121849</td>
+      <td>-0.034978</td>
+      <td>621.490660</td>
+      <td>-3.730814</td>
+      <td>54.654773</td>
+      <td>-0.164515</td>
+      <td>-0.003510</td>
+      <td>-0.000155</td>
+      <td>2.410068</td>
+      <td>-0.793228</td>
     </tr>
   </tbody>
 </table>
@@ -2030,10 +2031,10 @@ i: component index according to order in parameters.
 </div>
 <p>Once we have a dataframe, we can store our results or create a nicely looking plot:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">phase_plot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">phase_plot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
     <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="s2">&quot;pressure&quot;</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">!=</span> <span class="s2">&quot;temperature&quot;</span><span class="p">:</span>
         <span class="n">xl</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> liquid&quot;</span>
@@ -2057,7 +2058,7 @@ i: component index according to order in parameters.
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">phase_plot</span><span class="p">(</span><span class="n">data_dia</span><span class="p">,</span> <span class="s2">&quot;density&quot;</span><span class="p">,</span> <span class="s2">&quot;temperature&quot;</span><span class="p">)</span>
@@ -2068,11 +2069,11 @@ i: component index according to order in parameters.
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../../_images/tutorials_eos_python_core_user_defined_eos_35_0.png" src="../../../_images/tutorials_eos_python_core_user_defined_eos_35_0.png" />
+<img alt="../../../_images/tutorials_eos_python_core_user_defined_eos_33_0.png" src="../../../_images/tutorials_eos_python_core_user_defined_eos_33_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">phase_plot</span><span class="p">(</span><span class="n">data_dia</span><span class="p">,</span> <span class="s2">&quot;molar entropy&quot;</span><span class="p">,</span> <span class="s2">&quot;temperature&quot;</span><span class="p">)</span>
@@ -2083,7 +2084,7 @@ i: component index according to order in parameters.
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../../_images/tutorials_eos_python_core_user_defined_eos_36_0.png" src="../../../_images/tutorials_eos_python_core_user_defined_eos_36_0.png" />
+<img alt="../../../_images/tutorials_eos_python_core_user_defined_eos_34_0.png" src="../../../_images/tutorials_eos_python_core_user_defined_eos_34_0.png" />
 </div>
 </div>
 </section>
@@ -2093,37 +2094,37 @@ i: component index according to order in parameters.
 <p>↑ Back to top</p>
 <p>Fox mixtures, we have to add information about the composition, either as molar fraction, amount of substance per component, or as partial densities.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># propane, butane mixture</span>
-<span class="n">tc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">369.96</span><span class="p">,</span> <span class="mf">425.2</span><span class="p">])</span> <span class="o">*</span> <span class="n">KELVIN</span>
-<span class="n">pc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">4250000.0</span><span class="p">,</span> <span class="mf">3800000.0</span><span class="p">])</span> <span class="o">*</span> <span class="n">PASCAL</span>
+<span class="n">tc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">369.96</span><span class="p">,</span> <span class="mf">425.2</span><span class="p">])</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span>
+<span class="n">pc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">4250000.0</span><span class="p">,</span> <span class="mf">3800000.0</span><span class="p">])</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">PASCAL</span>
 <span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.153</span><span class="p">,</span> <span class="mf">0.199</span><span class="p">])</span>
-<span class="n">molar_weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">44.0962</span><span class="p">,</span> <span class="mf">58.123</span><span class="p">])</span> <span class="o">*</span> <span class="n">GRAM</span> <span class="o">/</span> <span class="n">MOL</span>
+<span class="n">molar_weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">44.0962</span><span class="p">,</span> <span class="mf">58.123</span><span class="p">])</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">GRAM</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span>
 
 <span class="n">pr</span> <span class="o">=</span> <span class="n">PyPengRobinson</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">pc</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">molar_weight</span><span class="p">)</span>
-<span class="n">eos</span> <span class="o">=</span> <span class="n">EquationOfState</span><span class="o">.</span><span class="n">python</span><span class="p">(</span><span class="n">pr</span><span class="p">)</span>
+<span class="n">eos</span> <span class="o">=</span> <span class="n">EquationOfState</span><span class="o">.</span><span class="n">python_residual</span><span class="p">(</span><span class="n">pr</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
     <span class="n">eos</span><span class="p">,</span>
-    <span class="n">temperature</span><span class="o">=</span><span class="mi">300</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span>
-    <span class="n">pressure</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">BAR</span><span class="p">,</span>
+    <span class="n">temperature</span><span class="o">=</span><span class="mi">300</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span>
+    <span class="n">pressure</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">,</span>
     <span class="n">molefracs</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]),</span>
-    <span class="n">total_moles</span><span class="o">=</span><span class="n">MOL</span>
+    <span class="n">total_moles</span><span class="o">=</span><span class="n">si</span><span class="o">.</span><span class="n">MOL</span>
 <span class="p">)</span>
 <span class="n">s</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2147,55 +2148,55 @@ i: component index according to order in parameters.
 </div>
 <p>As before, we can compute properties by calling methods on the <code class="docutils literal notranslate"><span class="pre">State</span></code> object. Some return vectors or matrices - for example the chemical potential and its derivative w.r.t amount of substance:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="o">.</span><span class="n">chemical_potential</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="o">.</span><span class="n">chemical_potential</span><span class="p">(</span><span class="n">Contributions</span><span class="o">.</span><span class="n">Residual</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[-15625.3474516824, -12435.866602695127] J/mol
+array([ -93.60749754, -120.5269973 ]) J/mol
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="o">.</span><span class="n">dmu_dni</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">KILO</span> <span class="o">*</span> <span class="n">JOULE</span> <span class="o">/</span> <span class="n">MOL</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="o">.</span><span class="n">dmu_dni</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">KILO</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">JOULE</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-array([[ 4.90827975, -0.10593968],
-       [-0.10593968,  4.85467746]])
+array([[ 4.90721995, -0.10487987],
+       [-0.10487987,  4.85361765]])
 </pre></div></div>
 </div>
 <p>Phase equilibria can be built from different constructors. E.g. at critical conditions given composition:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s_cp</span> <span class="o">=</span> <span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span>
     <span class="n">eos</span><span class="p">,</span>
-    <span class="n">moles</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span><span class="o">*</span><span class="n">MOL</span>
+    <span class="n">moles</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">MOL</span>
 <span class="p">)</span>
 <span class="n">s_cp</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2208,8 +2209,8 @@ array([[ 4.90827975, -0.10593968],
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>401.65486 K</p></td>
-<td><p>3.99952 kmol/m³</p></td>
+<tr class="row-even"><td><p>401.65562 K</p></td>
+<td><p>3.99954 kmol/m³</p></td>
 <td><p>[0.50000, 0.50000]</p></td>
 </tr>
 </tbody>
@@ -2219,12 +2220,12 @@ array([[ 4.90827975, -0.10593968],
 </div>
 <p>Or at given temperature (or pressure) and composition for bubble and dew points.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span> <span class="o">=</span> <span class="n">PhaseEquilibrium</span><span class="o">.</span><span class="n">bubble_point</span><span class="p">(</span>
     <span class="n">eos</span><span class="p">,</span>
-    <span class="mi">350</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span>
+    <span class="mi">350</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span>
     <span class="n">liquid_molefracs</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
 <span class="p">)</span>
 <span class="n">vle</span>
@@ -2232,7 +2233,7 @@ array([[ 4.90827975, -0.10593968],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2248,12 +2249,12 @@ array([[ 4.90827975, -0.10593968],
 <tbody>
 <tr class="row-even"><td><p>phase 1</p></td>
 <td><p>350.00000 K</p></td>
-<td><p>879.47505 mol/m³</p></td>
-<td><p>[0.67625, 0.32375]</p></td>
+<td><p>879.50373 mol/m³</p></td>
+<td><p>[0.67631, 0.32369]</p></td>
 </tr>
 <tr class="row-odd"><td><p>phase 2</p></td>
 <td><p>350.00000 K</p></td>
-<td><p>8.96382 kmol/m³</p></td>
+<td><p>8.96383 kmol/m³</p></td>
 <td><p>[0.50000, 0.50000]</p></td>
 </tr>
 </tbody>
@@ -2263,21 +2264,21 @@ array([[ 4.90827975, -0.10593968],
 </div>
 <p>Similar to pure substance phase diagrams, there is a constructor for binary systems.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span> <span class="o">=</span> <span class="n">PhaseDiagram</span><span class="o">.</span><span class="n">binary_vle</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="mi">350</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span> <span class="n">npoints</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vle</span> <span class="o">=</span> <span class="n">PhaseDiagram</span><span class="o">.</span><span class="n">binary_vle</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="mi">350</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span> <span class="n">npoints</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="c1"># fig.title(&quot;T = 350 K, Propane (1), Butane (2)&quot;)</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">vle</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">molefracs</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">vle</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">pressure</span> <span class="o">/</span> <span class="n">BAR</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">vle</span><span class="o">.</span><span class="n">vapor</span><span class="o">.</span><span class="n">molefracs</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">vle</span><span class="o">.</span><span class="n">vapor</span><span class="o">.</span><span class="n">pressure</span> <span class="o">/</span> <span class="n">BAR</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">vle</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">molefracs</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">vle</span><span class="o">.</span><span class="n">liquid</span><span class="o">.</span><span class="n">pressure</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">vle</span><span class="o">.</span><span class="n">vapor</span><span class="o">.</span><span class="n">molefracs</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">vle</span><span class="o">.</span><span class="n">vapor</span><span class="o">.</span><span class="n">pressure</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$x_1$, $y_1$&quot;</span><span class="p">)</span>
 <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$p$ / bar&quot;</span><span class="p">)</span>
 <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -2297,7 +2298,7 @@ array([[ 4.90827975, -0.10593968],
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../../_images/tutorials_eos_python_core_user_defined_eos_49_0.png" src="../../../_images/tutorials_eos_python_core_user_defined_eos_49_0.png" />
+<img alt="../../../_images/tutorials_eos_python_core_user_defined_eos_47_0.png" src="../../../_images/tutorials_eos_python_core_user_defined_eos_47_0.png" />
 </div>
 </div>
 </section>
@@ -2307,37 +2308,37 @@ array([[ 4.90827975, -0.10593968],
 <p>Implementing an equation of state in Python is nice for quick prototyping and development but when it comes to performance, implementing the equation of state in Rust is the way to go. For each non-cached call to the Helmholtz energy, we have to transition between Rust and Python with our Python implementation which generates quite some overhead.</p>
 <p>Here are some comparisons between the Rust and our Pyhton implemenation:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[49]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># rust</span>
-<span class="kn">from</span> <span class="nn">feos.cubic</span> <span class="kn">import</span> <span class="n">PengRobinsonParameters</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">feos.cubic</span><span class="w"> </span><span class="kn">import</span> <span class="n">PengRobinsonParameters</span>
 <span class="n">eos_rust</span> <span class="o">=</span> <span class="n">EquationOfState</span><span class="o">.</span><span class="n">peng_robinson</span><span class="p">(</span><span class="n">PengRobinsonParameters</span><span class="o">.</span><span class="n">from_json</span><span class="p">([</span><span class="s2">&quot;propane&quot;</span><span class="p">],</span> <span class="s2">&quot;peng-robinson.json&quot;</span><span class="p">))</span>
 
 <span class="c1"># python</span>
-<span class="n">tc</span> <span class="o">=</span> <span class="n">SIArray1</span><span class="p">(</span><span class="mf">369.96</span> <span class="o">*</span> <span class="n">KELVIN</span><span class="p">)</span>
-<span class="n">pc</span> <span class="o">=</span> <span class="n">SIArray1</span><span class="p">(</span><span class="mf">4250000.0</span> <span class="o">*</span> <span class="n">PASCAL</span><span class="p">)</span>
+<span class="n">tc</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">369.96</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">)</span>
+<span class="n">pc</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">4250000.0</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">PASCAL</span><span class="p">)</span>
 <span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.153</span><span class="p">])</span>
-<span class="n">molar_weight</span> <span class="o">=</span> <span class="n">SIArray1</span><span class="p">(</span><span class="mf">44.0962</span> <span class="o">*</span> <span class="n">GRAM</span> <span class="o">/</span> <span class="n">MOL</span><span class="p">)</span>
-<span class="n">eos_python</span> <span class="o">=</span> <span class="n">EquationOfState</span><span class="o">.</span><span class="n">python</span><span class="p">(</span><span class="n">PyPengRobinson</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">pc</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">molar_weight</span><span class="p">))</span>
+<span class="n">molar_weight</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">44.0962</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">GRAM</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span><span class="p">)</span>
+<span class="n">eos_python</span> <span class="o">=</span> <span class="n">EquationOfState</span><span class="o">.</span><span class="n">python_residual</span><span class="p">(</span><span class="n">PyPengRobinson</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">pc</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">molar_weight</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[50]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># let&#39;s first test if both actually yield the same results ;)</span>
-<span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos_python</span><span class="p">)</span><span class="o">.</span><span class="n">pressure</span><span class="p">()</span> <span class="o">/</span> <span class="n">BAR</span> <span class="o">-</span> <span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos_rust</span><span class="p">)</span><span class="o">.</span><span class="n">pressure</span><span class="p">()</span> <span class="o">/</span> <span class="n">BAR</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-13</span>
-<span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos_python</span><span class="p">)</span><span class="o">.</span><span class="n">temperature</span> <span class="o">/</span> <span class="n">KELVIN</span> <span class="o">-</span> <span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos_rust</span><span class="p">)</span><span class="o">.</span><span class="n">temperature</span> <span class="o">/</span> <span class="n">KELVIN</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-13</span>
+<span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos_python</span><span class="p">)</span><span class="o">.</span><span class="n">pressure</span><span class="p">()</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">BAR</span> <span class="o">-</span> <span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos_rust</span><span class="p">)</span><span class="o">.</span><span class="n">pressure</span><span class="p">()</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-13</span>
+<span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos_python</span><span class="p">)</span><span class="o">.</span><span class="n">temperature</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span> <span class="o">-</span> <span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos_rust</span><span class="p">)</span><span class="o">.</span><span class="n">temperature</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-13</span>
 </pre></div>
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[51]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">timeit</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">timeit</span>
 
 <span class="n">time_python</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos_python</span><span class="p">),</span> <span class="n">number</span><span class="o">=</span><span class="mi">2_500</span><span class="p">)</span>
 <span class="n">time_rust</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos_rust</span><span class="p">),</span> <span class="n">number</span><span class="o">=</span><span class="mi">2_500</span><span class="p">)</span>
@@ -2345,7 +2346,7 @@ array([[ 4.90827975, -0.10593968],
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[52]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rel_dev</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_rust</span> <span class="o">-</span> <span class="n">time_python</span><span class="p">)</span> <span class="o">/</span> <span class="n">time_rust</span>
@@ -2360,20 +2361,20 @@ array([[ 4.90827975, -0.10593968],
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Critical point for pure substance
-Python implementation is slower by a factor of 48.
+Python implementation is slower by a factor of 42.
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[53]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">time_python</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">PhaseDiagram</span><span class="o">.</span><span class="n">pure</span><span class="p">(</span><span class="n">eos_python</span><span class="p">,</span> <span class="mi">300</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="n">number</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-<span class="n">time_rust</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">PhaseDiagram</span><span class="o">.</span><span class="n">pure</span><span class="p">(</span><span class="n">eos_rust</span><span class="p">,</span> <span class="mi">300</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="n">number</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">time_python</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">PhaseDiagram</span><span class="o">.</span><span class="n">pure</span><span class="p">(</span><span class="n">eos_python</span><span class="p">,</span> <span class="mi">300</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="n">number</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">time_rust</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">timeit</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">PhaseDiagram</span><span class="o">.</span><span class="n">pure</span><span class="p">(</span><span class="n">eos_rust</span><span class="p">,</span> <span class="mi">300</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="n">number</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[54]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rel_dev</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_rust</span> <span class="o">-</span> <span class="n">time_python</span><span class="p">)</span> <span class="o">/</span> <span class="n">time_rust</span>
@@ -2388,7 +2389,7 @@ Python implementation is slower by a factor of 48.
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Phase diagram for pure substance
-Python implementation is slower by a factor of 31.
+Python implementation is slower by a factor of 57.
 </pre></div></div>
 </div>
 </section>

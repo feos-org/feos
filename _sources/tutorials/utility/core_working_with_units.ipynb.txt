@@ -10,12 +10,11 @@
     "\n",
     "> Learn how to work with `SINumber` and `SIArray` objects which represent physical quantities, i.e. one or more floating point numbers with an associated unit.\n",
     "\n",
-    "## The `feos.si` module\n",
+    "## The `si-units` module\n",
     "\n",
     "Most interfaces in `FeOs` use dimensioned quantities as input. For example, to define a thermodynamic state at given temperature, pressure and amount of substance, all of these properties have to be multiplied by an apropriate unit before we can call the function that creates the state.\n",
     "\n",
-    "`FeOs` uses the [quantity](https://itt-ustutt.github.io/quantity/) crate which generates the `si_units` Python module. You might find this module useful on it's own in which case you can also install it as a separate python package.\n",
-    "For convenient use with `FeOs` however, it is re-exported as `feos.si`."
+    "`FeOs` uses the [quantity](https://itt-ustutt.github.io/quantity/) crate which generates the `si_units` Python module. To have consistency throughout the ecosystem, we recommend importing the package as `import si_units as si`"
    ]
   },
   {
@@ -24,7 +23,7 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "from feos.si import *\n",
+    "import si_units as si\n",
     "import numpy as np"
    ]
   },
@@ -33,7 +32,7 @@
    "metadata": {},
    "source": [
     "The `si` module contains units according to [the Standard Interational System of Units](https://en.wikipedia.org/wiki/International_System_of_Units) (SI), constants and prefixes.\n",
-    "A **scalar** floating point number multiplied or divided by a unit has the **`SINumber`** data type."
+    "A **scalar** floating point number multiplied or divided by a unit has the **`SIObject`** data type."
    ]
   },
   {
@@ -46,12 +45,12 @@
      "output_type": "stream",
      "text": [
       "temperature : 300.15 K\n",
-      "data type   : <class 'feos.si.SINumber'>\n"
+      "data type   : <class 'si_units._core.SIObject'>\n"
      ]
     }
    ],
    "source": [
-    "temperature = 300.15 * KELVIN\n",
+    "temperature = 300.15 * si.KELVIN\n",
     "print(f\"temperature : {temperature}\")\n",
     "print(f\"data type   : {type(temperature)}\")"
    ]
@@ -60,7 +59,7 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "The representation of a `SINumber` (e.g. using `print`) uses a prefix (e.g. `k` for `kilo`) so that the numerical value is convenient. For example 1000 g will be represented as 1 kg. Internally, all values are stored with respect to the basic SI unit, i.e. `METER`, `KILOGRAM`, `SECOND`, `AMPERE`, `MOL`, `KELVIN`, and `CANDELA`."
+    "The representation of a `SIObject` (e.g. using `print`) uses a prefix (e.g. `k` for `kilo`) so that the numerical value is convenient. For example 1000 g will be represented as 1 kg. Internally, all values are stored with respect to the basic SI unit, i.e. `METER`, `KILOGRAM`, `SECOND`, `AMPERE`, `MOL`, `KELVIN`, and `CANDELA`."
    ]
   },
   {
@@ -83,7 +82,7 @@
     }
    ],
    "source": [
-    "1000 * GRAM"
+    "1000 * si.GRAM"
    ]
   },
   {
@@ -101,10 +100,10 @@
    ],
    "source": [
     "# volume of an ideal gas\n",
-    "t = 300.15 * KELVIN\n",
-    "p = 0.5 * BAR\n",
-    "n = 1.5 * MOL\n",
-    "v = n * RGAS * t / p\n",
+    "t = 300.15 * si.KELVIN\n",
+    "p = 0.5 * si.BAR\n",
+    "n = 1.5 * si.MOL\n",
+    "v = n * si.RGAS * t / p\n",
     "print(f\"v = {v}\")"
    ]
   },
@@ -112,7 +111,7 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "We can use division to transform a `SINumber` to a `float` for the desired unit:"
+    "We can use division to transform a `SIObject` to a `float` for the desired unit:"
    ]
   },
   {
@@ -131,7 +130,7 @@
    ],
    "source": [
     "# temperature in Celsius\n",
-    "t_c = t / CELSIUS\n",
+    "t_c = t / si.CELSIUS\n",
     "print(f\"t = {t_c:3.2f} °C\")\n",
     "print(f\"data type = {type(t_c)}\")"
    ]
@@ -169,23 +168,23 @@
    ],
    "source": [
     "# addition\n",
-    "pressure = 2.5 * BAR + 15_000 * PASCAL\n",
+    "pressure = 2.5 * si.BAR + 15_000 * si.PASCAL\n",
     "print('pressure          :', pressure)\n",
     "\n",
     "# subtraction\n",
-    "temperature = 543.15 * KELVIN - 230.0 * CELSIUS\n",
+    "temperature = 543.15 * si.KELVIN - 230.0 * si.CELSIUS\n",
     "print('temperature       :', temperature)\n",
     "\n",
     "# division\n",
-    "velocity = 360_000 * METER / HOUR\n",
+    "velocity = 360_000 * si.METER / si.HOUR\n",
     "print('velocity          :', velocity)\n",
     "\n",
     "# division as transformation to target unit\n",
-    "v_cm_minute = velocity / (CENTI * METER / MINUTE) # this is a floating point number\n",
+    "v_cm_minute = velocity / (si.CENTI * si.METER / si.MINUTE) # this is a floating point number\n",
     "print(f'velocity (cm/min) : {v_cm_minute:8.1f}')\n",
     "\n",
     "# power\n",
-    "acceleration = 9.81 * METER / SECOND**2\n",
+    "acceleration = 9.81 * si.METER / si.SECOND**2\n",
     "print('acceleration      :', acceleration)"
    ]
   },
@@ -212,15 +211,15 @@
    ],
    "source": [
     "# square root\n",
-    "speed = np.sqrt(METER**2 / SECOND**2)\n",
+    "speed = np.sqrt(si.METER**2 / si.SECOND**2)\n",
     "print('speed             :', speed)\n",
     "\n",
     "# cubic root\n",
-    "box_length = (27_000 * ANGSTROM**3).cbrt()\n",
+    "box_length = (27_000 * si.ANGSTROM**3).cbrt()\n",
     "print('length            :', box_length)\n",
     "\n",
     "# both numpy and methods of SINumbers work\n",
-    "assert(np.sqrt(METER**2 / SECOND**2) == (METER**2 / SECOND**2).sqrt())"
+    "assert(np.sqrt(si.METER**2 / si.SECOND**2) == (si.METER**2 / si.SECOND**2).sqrt())"
    ]
   },
   {
@@ -240,7 +239,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "ERROR: must be real number, not si_units.SINumber\n"
+      "ERROR: must be real number, not si_units._core.SIObject\n"
      ]
     }
    ],
@@ -248,7 +247,7 @@
     "from math import sqrt\n",
     "\n",
     "try:\n",
-    "    sqrt(METER**2 / SECOND**2)\n",
+    "    sqrt(si.METER**2 / si.SECOND**2)\n",
     "except Exception as e:\n",
     "    print(\"ERROR:\", e)"
    ]
@@ -266,19 +265,19 @@
    "metadata": {},
    "outputs": [
     {
-     "ename": "PanicException",
-     "evalue": "Inconsistent units Pa + K",
+     "ename": "RuntimeError",
+     "evalue": "Inconsistent units Pa and K",
      "output_type": "error",
      "traceback": [
       "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
-      "\u001b[0;31mPanicException\u001b[0m                            Traceback (most recent call last)",
-      "\u001b[0;32m<ipython-input-9-3b8b977148c6>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m\u001b[0m\n\u001b[0;32m----> 1\u001b[0;31m \u001b[0mPASCAL\u001b[0m \u001b[0;34m+\u001b[0m \u001b[0mKELVIN\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m",
-      "\u001b[0;31mPanicException\u001b[0m: Inconsistent units Pa + K"
+      "\u001b[0;31mRuntimeError\u001b[0m                              Traceback (most recent call last)",
+      "Input \u001b[0;32mIn [9]\u001b[0m, in \u001b[0;36m<module>\u001b[0;34m\u001b[0m\n\u001b[0;32m----> 1\u001b[0m \u001b[43msi\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mPASCAL\u001b[49m\u001b[43m \u001b[49m\u001b[38;5;241;43m+\u001b[39;49m\u001b[43m \u001b[49m\u001b[43msi\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mKELVIN\u001b[49m\n",
+      "\u001b[0;31mRuntimeError\u001b[0m: Inconsistent units Pa and K"
      ]
     }
    ],
    "source": [
-    "PASCAL + KELVIN"
+    "si.PASCAL + si.KELVIN"
    ]
   },
   {
@@ -303,18 +302,18 @@
     }
    ],
    "source": [
-    "MOL_M3 = MOL / METER**3 # we can create own units for future use\n",
+    "MOL_M3 = si.MOL / si.METER**3 # we can create own units for future use\n",
     "\n",
     "def ideal_gas_pressure(density, temperature):\n",
     "    if not density.has_unit(MOL_M3):\n",
     "        raise ValueError(\"Please provide the molar density, e.g. in units of mol/m³.\")\n",
     "    else:\n",
-    "        return density * temperature * RGAS\n",
+    "        return density * temperature * si.RGAS\n",
     "    \n",
     "try:\n",
-    "    p1 = ideal_gas_pressure(0.5 * KILO * MOL / METER**3, 350 * KELVIN)\n",
+    "    p1 = ideal_gas_pressure(0.5 * si.KILO * si.MOL / si.METER**3, 350 * si.KELVIN)\n",
     "    print('p1 = ', p1)\n",
-    "    p2 = ideal_gas_pressure(0.5 * KILOGRAM / METER**3, 350 * KELVIN)\n",
+    "    p2 = ideal_gas_pressure(0.5 * si.KILOGRAM / si.METER**3, 350 * si.KELVIN)\n",
     "    print('p2 = ', p2)\n",
     "except Exception as e:\n",
     "    print(\"ERROR:\", e)      "
@@ -326,7 +325,7 @@
    "source": [
     "### Arrays of quantities\n",
     "\n",
-    "A **numpy array** of floating point numbers multiplied or divided by a unit has the `SIArrayX` data type, where the `X` stands for the dimension of the numpy array."
+    "The \"number\" part of the `SIObject` can be any type that supports the necessary operations. Aside from floats, those are, e.g., **numpy arrays** or **tensors**."
    ]
   },
   {
@@ -338,13 +337,13 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "pressures = [100000, 200000] Pa\n",
-      "data type = <class 'feos.si.SIArray1'>\n"
+      "pressures = array([100000., 200000.]) Pa\n",
+      "data type = <class 'si_units._core.SIObject'>\n"
      ]
     }
    ],
    "source": [
-    "ps = np.array([1.0, 2.0]) * BAR\n",
+    "ps = np.array([1.0, 2.0]) * si.BAR\n",
     "print(f\"pressures = {ps}\")\n",
     "print(f\"data type = {type(ps)}\")"
    ]
@@ -353,7 +352,8 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "Currently, indexing into an array only works for arrays of dimension one."
+    "The most important functionalities of array or tensor datatypes are also implemented for `SIObject`.\n",
+    "For example, you can index into an array of dimension one."
    ]
   },
   {
@@ -377,27 +377,27 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "There are several useful numpy methods to create arrays. Most of them can be simply multiplied by units to convert them to `SIArray` objects.\n",
-    "Some of these functions, such as `linspace` and `logspace` can directly be constructed using `SIArray1.linspace` and `SIArray1.logspace`, respectively."
+    "There are several useful numpy methods to create arrays. Most of them can be simply multiplied by units to convert them to `SIObject` objects.\n",
+    "Some of these functions, such as `linspace` and `logspace` can directly be constructed using `si.linspace` and `si.logspace`, respectively."
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 14,
+   "execution_count": 13,
    "metadata": {},
    "outputs": [
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "pressures (numpy) = [100000, 125000, 150000, 175000, 200000] Pa\n",
-      "pressures (si)    = [100000, 125000, 150000, 175000, 200000] Pa\n"
+      "pressures (numpy) = array([100000., 125000., 150000., 175000., 200000.]) Pa\n",
+      "pressures (si)    = array([100000., 125000., 150000., 175000., 200000.]) Pa\n"
      ]
     }
    ],
    "source": [
-    "ps_np = np.linspace(1, 2, 5) * BAR\n",
-    "ps_si = SIArray1.linspace(1 * BAR, 2 * BAR, 5)\n",
+    "ps_np = np.linspace(1, 2, 5) * si.BAR\n",
+    "ps_si = si.linspace(1 * si.BAR, 2 * si.BAR, 5)\n",
     "print(f\"pressures (numpy) = {ps_np}\")\n",
     "print(f\"pressures (si)    = {ps_si}\")"
    ]
@@ -406,12 +406,12 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "Just like `SINumber`, division by a unit that matches the property stored in an array yields a numpy ndarray."
+    "Just like scalars, division by a unit that matches the property stored in an array yields a numpy ndarray."
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 15,
+   "execution_count": 14,
    "metadata": {},
    "outputs": [
     {
@@ -424,75 +424,9 @@
     }
    ],
    "source": [
-    "ps_mpa = ps_np / (MEGA*PASCAL)\n",
+    "ps_mpa = ps_np / (si.MEGA*si.PASCAL)\n",
     "print(f\"pressures = {ps_mpa} MPa\")\n",
     "print(f\"data type = {type(ps_mpa)}\")"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
-    "Sometimes, we write functions that use arrays as input where it is possible that these arrays only contain one element.\n",
-    "A numpy array with a single element qualifies for multiplication rules of a *scalar* and a `SINumber` which can cause problems.\n",
-    "\n",
-    "Consider the following example:"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 16,
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "Array \"[1, 2] mol\" contains 2 elements.\n",
-      "\n",
-      "ERROR: object of type 'si_units.SINumber' has no len()\n"
-     ]
-    }
-   ],
-   "source": [
-    "def print_length(array):\n",
-    "    print(f'Array \"{array}\" contains {len(array)} elements.\\n')\n",
-    "\n",
-    "n2 = np.array([1.0, 2.0]) * MOL # data type: SIArray1\n",
-    "n1 = np.array([1.0]) * MOL      # data type: SINumber\n",
-    "\n",
-    "try:\n",
-    "    print_length(n2)\n",
-    "    print_length(n1) # <- this fails, since n1 has data type SINumber, not SIArray1\n",
-    "except Exception as e:\n",
-    "    print('ERROR:', e)"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
-    "This example does not work, because `np.array([1.0]) * MOL` has data type `SINumber` instead of `SIArray1`. We can construct a `SIArray1` using the base constructor:"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 17,
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "Array \"[1] mol\" contains 1 elements.\n",
-      "\n"
-     ]
-    }
-   ],
-   "source": [
-    "# now it works\n",
-    "n1 = SIArray1(1.0*MOL)\n",
-    "print_length(n1)"
    ]
   },
   {
@@ -504,12 +438,12 @@
     "In conjunction to the base units, the `si` module also exports derived units (e.g. `HOUR = 3600 * SECOND`), constants and prefixes (such as `KILO` or `FEMTO`).\n",
     "Of course, we could multiply by a floating point number instead of using prefixes (e.g. `cm = 1e-2 * METER` vs. `cm = CENTI * METER`) but we think using prefixes make the code more readable.\n",
     "\n",
-    "For a complete overview of exported units constants and prefixes, take a look at the [documentation of the `si_units` Python package](https://itt-ustutt.github.io/quantity/api.html#si-base-units-and-associated-constants)."
+    "For a complete overview of exported units constants and prefixes, take a look at the [documentation of the `si_units` Python package](https://itt-ustutt.github.io/quantity/base/)."
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 18,
+   "execution_count": 15,
    "metadata": {},
    "outputs": [
     {
@@ -528,18 +462,18 @@
    ],
    "source": [
     "# The seven constants that inform the base units\n",
-    "print('Hyperfine transition frequency of Cs:', DVCS)\n",
-    "print('Speed of light                      :', CLIGHT)\n",
-    "print('Planck constant                     :', PLANCK)\n",
-    "print('Elementary charge                   :', QE)\n",
-    "print('Boltzmann constant                  :', KB)\n",
-    "print('Avogradro constant                  :', NAV)\n",
-    "print('Luminous efficacy                   :', KCD)"
+    "print('Hyperfine transition frequency of Cs:', si.DVCS)\n",
+    "print('Speed of light                      :', si.CLIGHT)\n",
+    "print('Planck constant                     :', si.PLANCK)\n",
+    "print('Elementary charge                   :', si.QE)\n",
+    "print('Boltzmann constant                  :', si.KB)\n",
+    "print('Avogradro constant                  :', si.NAV)\n",
+    "print('Luminous efficacy                   :', si.KCD)"
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 19,
+   "execution_count": 16,
    "metadata": {},
    "outputs": [
     {
@@ -553,8 +487,8 @@
    ],
    "source": [
     "# Derived constants\n",
-    "print('Gravitational constant:', G)\n",
-    "print('Ideal gas constant    :', RGAS)"
+    "print('Gravitational constant:', si.G)\n",
+    "print('Ideal gas constant    :', si.RGAS)"
    ]
   },
   {
@@ -563,7 +497,7 @@
    "source": [
     "## Summary\n",
     "\n",
-    "In `feos`, most interfaces use dimensioned units in form of `SINumber` and `SIArrayX` (where `X` stands for the dimnesion).\n",
+    "In `feos`, most interfaces use dimensioned units in form of `SIObject` from the `si-units` Python library.\n",
     "This enables us to write functions that can check for proper units and thus circumvent unit errors that could occur, e.g. providing mass densities instead of molar densities.\n",
     "\n",
     "In this example, we learned how to create and use these objects in conjunction with methods provided by `numpy`.\n",
@@ -576,7 +510,7 @@
  ],
  "metadata": {
   "kernelspec": {
-   "display_name": "Python 3",
+   "display_name": "feos",
    "language": "python",
    "name": "python3"
   },
@@ -590,7 +524,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.8.6"
+   "version": "3.9.10"
   }
  },
  "nbformat": 4,

@@ -7,7 +7,7 @@
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2024.08.06 -->
         <title>On Dual Numbers in FeOs - FeOs</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../_static/tabs.css?v=4c969af8" />
@@ -218,7 +218,6 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="../eos/index.html">Equations of state</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Equations of state</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../eos/pcsaft/index.html">PC-SAFT</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of PC-SAFT</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../eos/pcsaft/pcsaft_working_with_parameters.html">Working with parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../eos/pcsaft/pcsaft_state.html">Representation of thermodynamic states</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../eos/pcsaft/pcsaft_phase_diagram.html">Pure substance phase diagrams</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../eos/pcsaft/pcsaft_entropy_scaling.html">Entropy scaling of pure substances</a></li>
 </ul>
@@ -248,7 +247,6 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../api/index.html">API</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of API</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../api/si.html"><code class="docutils literal notranslate"><span class="pre">feos.si</span></code></a></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../api/eos.html"><code class="docutils literal notranslate"><span class="pre">feos.eos</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle navigation of feos.eos</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../api/generated/feos.eos.EquationOfState.html">feos.eos.EquationOfState</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle navigation of feos.eos.EquationOfState</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.eos.EquationOfState.__init__.html">feos.eos.EquationOfState.__init__</a></li>
@@ -1342,14 +1340,14 @@ types of the thermodynamic state that enters the Helmholtz energy computation.</
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">feos.eos</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">feos.si</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">feos.eos</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">si_units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">si</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="n">SQRT2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 
-<span class="k">class</span> <span class="nc">PyPengRobinson</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">critical_temperature</span><span class="p">,</span> <span class="n">critical_pressure</span><span class="p">,</span> <span class="n">acentric_factor</span><span class="p">,</span> <span class="n">molar_weight</span><span class="p">,</span> <span class="n">delta_ij</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PyPengRobinson</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">critical_temperature</span><span class="p">,</span> <span class="n">critical_pressure</span><span class="p">,</span> <span class="n">acentric_factor</span><span class="p">,</span> <span class="n">molar_weight</span><span class="p">,</span> <span class="n">delta_ij</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Peng-Robinson Equation of State</span>
 
 <span class="sd">        Parameters</span>
@@ -1375,22 +1373,22 @@ types of the thermodynamic state that enters the Helmholtz energy computation.</
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input parameters must all have the same lenght.&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">tc</span> <span class="o">=</span> <span class="p">(</span><span class="n">critical_temperature</span> <span class="o">/</span> <span class="n">KELVIN</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="p">(</span><span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">PASCAL</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tc</span> <span class="o">=</span> <span class="p">(</span><span class="n">critical_temperature</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="p">(</span><span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">PASCAL</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">omega</span> <span class="o">=</span> <span class="n">acentric_factor</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mw</span> <span class="o">=</span> <span class="p">(</span><span class="n">molar_weight</span> <span class="o">/</span> <span class="n">GRAM</span> <span class="o">*</span> <span class="n">MOL</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mw</span> <span class="o">=</span> <span class="p">(</span><span class="n">molar_weight</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">GRAM</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">tc</span> <span class="o">=</span> <span class="n">critical_temperature</span> <span class="o">/</span> <span class="n">KELVIN</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">PASCAL</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tc</span> <span class="o">=</span> <span class="n">critical_temperature</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">PASCAL</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">omega</span> <span class="o">=</span> <span class="n">acentric_factor</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mw</span> <span class="o">=</span> <span class="n">molar_weight</span> <span class="o">/</span> <span class="n">GRAM</span> <span class="o">*</span> <span class="n">MOL</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mw</span> <span class="o">=</span> <span class="n">molar_weight</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">GRAM</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">a_r</span> <span class="o">=</span> <span class="mf">0.45724</span> <span class="o">*</span> <span class="n">critical_temperature</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">RGAS</span> <span class="o">/</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">ANGSTROM</span><span class="o">**</span><span class="mi">3</span> <span class="o">/</span> <span class="n">NAV</span> <span class="o">/</span> <span class="n">KELVIN</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mf">0.07780</span> <span class="o">*</span> <span class="n">critical_temperature</span> <span class="o">*</span> <span class="n">RGAS</span> <span class="o">/</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">ANGSTROM</span><span class="o">**</span><span class="mi">3</span> <span class="o">/</span> <span class="n">NAV</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a_r</span> <span class="o">=</span> <span class="mf">0.45724</span> <span class="o">*</span> <span class="n">critical_temperature</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">RGAS</span> <span class="o">/</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">ANGSTROM</span><span class="o">**</span><span class="mi">3</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">NAV</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mf">0.07780</span> <span class="o">*</span> <span class="n">critical_temperature</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">RGAS</span> <span class="o">/</span> <span class="n">critical_pressure</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">ANGSTROM</span><span class="o">**</span><span class="mi">3</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">NAV</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kappa</span> <span class="o">=</span> <span class="mf">0.37464</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.54226</span> <span class="o">-</span> <span class="mf">0.26992</span> <span class="o">*</span> <span class="n">acentric_factor</span><span class="p">)</span> <span class="o">*</span> <span class="n">acentric_factor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delta_ij</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">))</span> <span class="k">if</span> <span class="n">delta_ij</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">delta_ij</span>
 
-    <span class="k">def</span> <span class="nf">helmholtz_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">helmholtz_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return Helmholtz energy.</span>
 
 <span class="sd">        Parameters</span>
@@ -1429,30 +1427,47 @@ types of the thermodynamic state that enters the Helmholtz energy computation.</
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;A/kT       : &quot;</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">a</span>
 
-    <span class="k">def</span> <span class="nf">components</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">components</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of components.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
 
-    <span class="k">def</span> <span class="nf">subset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">subset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return new equation of state containing a subset of all components.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="n">pc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="n">mw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mw</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="n">omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="k">return</span> <span class="n">PyPengRobinson</span><span class="p">(</span><span class="n">tc</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span> <span class="n">pc</span><span class="o">*</span><span class="n">PASCAL</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">mw</span><span class="o">*</span><span class="n">GRAM</span><span class="o">/</span><span class="n">MOL</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">PyPengRobinson</span><span class="p">(</span><span class="n">tc</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span> <span class="n">pc</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">PASCAL</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">mw</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">GRAM</span><span class="o">/</span><span class="n">si</span><span class="o">.</span><span class="n">MOL</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="nf">molar_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SIArray1</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">molar_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">si</span><span class="o">.</span><span class="n">SIObject</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mw</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">mw</span><span class="p">])</span> <span class="o">*</span> <span class="n">GRAM</span> <span class="o">/</span> <span class="n">MOL</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">mw</span><span class="p">])</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">GRAM</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mw</span> <span class="o">*</span> <span class="n">GRAM</span> <span class="o">/</span> <span class="n">MOL</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mw</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">GRAM</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span>
 
-    <span class="k">def</span> <span class="nf">max_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">moles</span><span class="p">:[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">moles</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">moles</span><span class="p">);</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">moles</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">moles</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">moles</span><span class="p">)</span>
         <span class="k">return</span> <span class="mf">0.9</span> <span class="o">/</span> <span class="n">b</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PyPerfectGas</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">components</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dummy implementation for an ideal gas with constant heat capacity&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">components</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">components</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of components.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">subset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return new equation of state containing a subset of all components.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">PyPerfectGas</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">ln_lambda3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temperature</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1461,13 +1476,13 @@ types of the thermodynamic state that enters the Helmholtz energy computation.</
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># parameters for propane</span>
-<span class="n">tc</span> <span class="o">=</span> <span class="n">SIArray1</span><span class="p">(</span><span class="mf">369.96</span> <span class="o">*</span> <span class="n">KELVIN</span><span class="p">)</span>
-<span class="n">pc</span> <span class="o">=</span> <span class="n">SIArray1</span><span class="p">(</span><span class="mf">4250000.0</span> <span class="o">*</span> <span class="n">PASCAL</span><span class="p">)</span>
+<span class="n">tc</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">369.96</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">)</span>
+<span class="n">pc</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">4250000.0</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">PASCAL</span><span class="p">)</span>
 <span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.153</span><span class="p">])</span>
-<span class="n">molar_weight</span> <span class="o">=</span> <span class="n">SIArray1</span><span class="p">(</span><span class="mf">44.0962</span> <span class="o">*</span> <span class="n">GRAM</span> <span class="o">/</span> <span class="n">MOL</span><span class="p">)</span>
+<span class="n">molar_weight</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">44.0962</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">GRAM</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span><span class="p">)</span>
 
 <span class="c1"># create an instance of our python class and hand it over to rust</span>
-<span class="n">eos</span> <span class="o">=</span> <span class="n">EquationOfState</span><span class="o">.</span><span class="n">python</span><span class="p">(</span><span class="n">PyPengRobinson</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">pc</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">molar_weight</span><span class="p">))</span>
+<span class="n">eos</span> <span class="o">=</span> <span class="n">EquationOfState</span><span class="o">.</span><span class="n">python_residual</span><span class="p">(</span><span class="n">PyPengRobinson</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">pc</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">molar_weight</span><span class="p">))</span><span class="o">.</span><span class="n">python_ideal_gas</span><span class="p">(</span><span class="n">PyPerfectGas</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -1479,7 +1494,7 @@ types of the thermodynamic state that enters the Helmholtz energy computation.</
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">300</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">,</span> <span class="n">volume</span><span class="o">=</span><span class="mi">40744</span><span class="o">*</span><span class="n">ANGSTROM</span><span class="o">**</span><span class="mi">3</span><span class="p">,</span> <span class="n">total_moles</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="n">NAV</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">300</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span> <span class="n">volume</span><span class="o">=</span><span class="mi">40744</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">ANGSTROM</span><span class="o">**</span><span class="mi">3</span><span class="p">,</span> <span class="n">total_moles</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="n">si</span><span class="o">.</span><span class="n">NAV</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1492,7 +1507,7 @@ types of the thermodynamic state that enters the Helmholtz energy computation.</
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span><span class="o">.</span><span class="n">helmholtz_energy</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">KB</span> <span class="o">*</span> <span class="mi">300</span><span class="o">*</span><span class="n">KELVIN</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span><span class="o">.</span><span class="n">helmholtz_energy</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">KB</span> <span class="o">*</span> <span class="mi">300</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1510,13 +1525,22 @@ density    :  2.4543491066169253e-05
 A/kT       :  [5.06008546]
 </pre></div></div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_2503909/809879024.py:1: DeprecationWarning: Conversion of an array with ndim &gt; 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  state.helmholtz_energy() / (si.KB * 300*si.KELVIN)
+</pre></div></div>
+</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
--6.554978406564657
+-5.554978406564658
 </pre></div></div>
 </div>
 <p>Next, we compute the <code class="docutils literal notranslate"><span class="pre">pressure</span></code>, for which we compute the first partial derivative of the Helmholtz energy with respect to the volume.</p>
@@ -1538,11 +1562,20 @@ A/kT       :  [5.06008546]
 <div class="highlight"><pre>
 
 data type  :  &lt;class &#39;builtins.PyDual64&#39;&gt;
-temperature:  300 + [0]ε
-volume     :  40744 + [1]ε
-moles      :  [1 + [0]ε]
-density    :  0.000024543491066169253 + [-0.00000000060238295371513]ε
-A/kT       :  5.060085461999783 + [0.00000040024326944247174]ε
+temperature:  300 + 0ε
+volume     :  40744 + 1ε
+moles      :  [1 + 0ε]
+density    :  0.000024543491066169253 + -0.00000000060238295371513ε
+A/kT       :  5.060085461999783 + 0.00000040024326944247174ε
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_2503909/1295861783.py:65: DeprecationWarning: Conversion of an array with ndim &gt; 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  ak = ((1.0 - np.sqrt(tr)) * self.kappa + 1.0)**2 * self.a_r
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1571,11 +1604,20 @@ $100\,\mathrm{kPa}$</div></div>
 <div class="highlight"><pre>
 
 data type  :  &lt;class &#39;builtins.PyDual64&#39;&gt;
-temperature:  300 + [1]ε
-volume     :  40744 + [0]ε
-moles      :  [1 + [0]ε]
-density    :  0.000024543491066169253 + [0]ε
-A/kT       :  5.060085461999783 + [-0.025513116823522065]ε
+temperature:  300 + 1ε
+volume     :  40744 + 0ε
+moles      :  [1 + 0ε]
+density    :  0.000024543491066169253 + 0ε
+A/kT       :  5.060085461999783 + -0.025513116823522065ε
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_2503909/1295861783.py:65: DeprecationWarning: Conversion of an array with ndim &gt; 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  ak = ((1.0 - np.sqrt(tr)) * self.kappa + 1.0)**2 * self.a_r
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1585,7 +1627,7 @@ A/kT       :  5.060085461999783 + [-0.025513116823522065]ε
 <div class="output_area docutils container">
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-$118.14\,\mathrm{\frac{ J}{molK}}$</div></div>
+$109.83\,\mathrm{\frac{ J}{molK}}$</div></div>
 </div>
 </div>
 <p>Let’s take a look at a more involved property. For the Joule-Thomson coefficient, we need multiple second partial derivatives:</p>
@@ -1596,7 +1638,7 @@ $118.14\,\mathrm{\frac{ J}{molK}}$</div></div>
 <li><p><span class="math notranslate nohighlight">\(\left(\frac{\partial p}{\partial V}\right)_{\mathbf{n}, T} \rightarrow -\left(\frac{\partial^2 A}{\partial V^2}\right)_{\mathbf{n}, T}\)</span>: second derivative w.r.t volume,</p></li>
 <li><p><span class="math notranslate nohighlight">\(\left(\frac{\partial^2 A}{\partial T^2}\right)_{\mathbf{n}, V}\)</span>: 2nd partial derivative w.r.t temperature.</p></li>
 </ol>
-<p>Since we compute second partial derivatives, the data type is now <code class="docutils literal notranslate"><span class="pre">HyperDual64</span></code> (one real, 3 non-real values).</p>
+<p>Since we compute second derivatives, the data type is now <code class="docutils literal notranslate"><span class="pre">HyperDual64</span></code> (one real, 3 non-real values) for mixed partial derivatives and <code class="docutils literal notranslate"><span class="pre">Dual2_64</span></code> (one real, 2 non-real values) for the other partial derivatives.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
@@ -1612,25 +1654,34 @@ $118.14\,\mathrm{\frac{ J}{molK}}$</div></div>
 <div class="highlight"><pre>
 
 data type  :  &lt;class &#39;builtins.PyHyperDual64&#39;&gt;
-temperature:  300 + [0]ε1 + [1]ε2 + [0]ε1ε2
-volume     :  40744 + [1]ε1 + [0]ε2 + [0]ε1ε2
-moles      :  [1 + [0]ε1 + [0]ε2 + [0]ε1ε2]
-density    :  0.000024543491066169253 + [-0.00000000060238295371513]ε1 + [0]ε2 + [0]ε1ε2
-A/kT       :  5.060085461999783 + [0.00000040024326944247174]ε1 + [-0.025513116823522065]ε2 + [-0.0000000023037315630585307]ε1ε2
+temperature:  300 + 0ε1 + 1ε2 + 0ε1ε2
+volume     :  40744 + 1ε1 + 0ε2 + 0ε1ε2
+moles      :  [1 + 0ε1 + 0ε2 + 0ε1ε2]
+density    :  0.000024543491066169253 + -0.00000000060238295371513ε1 + 0ε2 + 0ε1ε2
+A/kT       :  5.060085461999783 + 0.00000040024326944247174ε1 + -0.025513116823522065ε2 + -0.0000000023037315630585307ε1ε2
 
 data type  :  &lt;class &#39;builtins.PyDual2_64&#39;&gt;
-temperature:  300 + [0]ε1 + [0]ε1²
-volume     :  40744 + [1]ε1 + [0]ε1²
-moles      :  [1 + [0]ε1 + [0]ε1²]
-density    :  0.000024543491066169253 + [-0.00000000060238295371513]ε1 + [0.00000000000002956916128583988]ε1²
-A/kT       :  5.060085461999783 + [0.00000040024326944247174]ε1 + [-0.000000000019592452372041545]ε1²
+temperature:  300 + 0ε1 + 0ε1²
+volume     :  40744 + 1ε1 + 0ε1²
+moles      :  [1 + 0ε1 + 0ε1²]
+density    :  0.000024543491066169253 + -0.00000000060238295371513ε1 + 0.00000000000002956916128583988ε1²
+A/kT       :  5.060085461999783 + 0.00000040024326944247174ε1 + -0.000000000019592452372041545ε1²
 
 data type  :  &lt;class &#39;builtins.PyDual2_64&#39;&gt;
-temperature:  300 + [1]ε1 + [0]ε1²
-volume     :  40744 + [0]ε1 + [0]ε1²
-moles      :  [1 + [0]ε1 + [0]ε1²]
-density    :  0.000024543491066169253 + [0]ε1 + [0]ε1²
-A/kT       :  5.060085461999783 + [-0.025513116823522065]ε1 + [0.0001919137873859282]ε1²
+temperature:  300 + 1ε1 + 0ε1²
+volume     :  40744 + 0ε1 + 0ε1²
+moles      :  [1 + 0ε1 + 0ε1²]
+density    :  0.000024543491066169253 + 0ε1 + 0ε1²
+A/kT       :  5.060085461999783 + -0.025513116823522065ε1 + 0.0001919137873859282ε1²
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_2503909/1295861783.py:65: DeprecationWarning: Conversion of an array with ndim &gt; 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  ak = ((1.0 - np.sqrt(tr)) * self.kappa + 1.0)**2 * self.a_r
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">

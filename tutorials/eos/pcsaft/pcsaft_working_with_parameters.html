@@ -3,11 +3,11 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><link rel="next" title="Representation of thermodynamic states" href="pcsaft_state.html" /><link rel="prev" title="PC-SAFT" href="index.html" />
+<link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><link rel="next" title="Pure substance phase diagrams" href="pcsaft_phase_diagram.html" /><link rel="prev" title="PC-SAFT" href="index.html" />
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2024.08.06 -->
         <title>Working with parameters - FeOs</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../../_static/tabs.css?v=4c969af8" />
@@ -218,7 +218,6 @@
 <li class="toctree-l2 current has-children"><a class="reference internal" href="../index.html">Equations of state</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of Equations of state</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l3 current has-children"><a class="reference internal" href="index.html">PC-SAFT</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of PC-SAFT</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l4 current current-page"><a class="current reference internal" href="#">Working with parameters</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pcsaft_state.html">Representation of thermodynamic states</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pcsaft_phase_diagram.html">Pure substance phase diagrams</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pcsaft_entropy_scaling.html">Entropy scaling of pure substances</a></li>
 </ul>
@@ -248,7 +247,6 @@
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../../api/index.html">API</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of API</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../../api/si.html"><code class="docutils literal notranslate"><span class="pre">feos.si</span></code></a></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../../api/eos.html"><code class="docutils literal notranslate"><span class="pre">feos.eos</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle navigation of feos.eos</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../api/generated/feos.eos.EquationOfState.html">feos.eos.EquationOfState</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle navigation of feos.eos.EquationOfState</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/generated/feos.eos.EquationOfState.__init__.html">feos.eos.EquationOfState.__init__</a></li>
@@ -1341,7 +1339,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">feos.pcsaft</span> <span class="kn">import</span> <span class="o">*</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">feos.pcsaft</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 </pre></div>
 </div>
 </div>
@@ -1400,10 +1398,22 @@
 <td><p>1</p></td>
 <td><p>3.7039</p></td>
 <td><p>150.03</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -1451,10 +1461,22 @@
 <td><p>1</p></td>
 <td><p>3.7039</p></td>
 <td><p>150.03</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -1509,10 +1531,22 @@
 <td><p>1</p></td>
 <td><p>3.7039</p></td>
 <td><p>150.03</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -1522,10 +1556,22 @@
 <td><p>3.0576</p></td>
 <td><p>3.7983</p></td>
 <td><p>236.77</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -1535,10 +1581,22 @@
 <td><p>5.306</p></td>
 <td><p>3.8959</p></td>
 <td><p>249.21</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -1560,7 +1618,7 @@
 <li><p>acetone parameters are read from a file that contains substances modelled with dipolar interactions.</p></li>
 </ul>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># na = non-associating</span>
@@ -1582,7 +1640,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1609,10 +1667,22 @@
 <td><p>1</p></td>
 <td><p>3.7039</p></td>
 <td><p>150.03</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -1622,8 +1692,14 @@
 <td><p>2.7515</p></td>
 <td><p>3.6139</p></td>
 <td><p>259.59</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0.006692</p></td>
 <td><p>2544.6</p></td>
 <td><p>1</p></td>
@@ -1635,8 +1711,14 @@
 <td><p>1.0656</p></td>
 <td><p>3.0007</p></td>
 <td><p>366.51</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0.034868</p></td>
 <td><p>2500.7</p></td>
 <td><p>1</p></td>
@@ -1649,9 +1731,18 @@
 <td><p>3.2742</p></td>
 <td><p>232.99</p></td>
 <td><p>2.88</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -1667,7 +1758,7 @@
 <p>Some mixtures cannot be adequately described with combination rules from pure substance parameters. In PC-SAFT, we can use a binary interaction parameter, <code class="docutils literal notranslate"><span class="pre">k_ij</span></code>, to enhance the description of mixture behavior. These interaction parameters can be supplied from a json file via the <code class="docutils literal notranslate"><span class="pre">binary_path</span></code> option.</p>
 <p>This parameter is not shown in the default representation of the parameter object. You can access the matrix of <code class="docutils literal notranslate"><span class="pre">k_ij</span></code> via the getter, <code class="docutils literal notranslate"><span class="pre">PcSaftParameters.k_ij</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">file_na</span> <span class="o">=</span> <span class="s1">&#39;../parameters/pcsaft/gross2001.json&#39;</span>
@@ -1687,7 +1778,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1714,10 +1805,22 @@
 <td><p>2.3316</p></td>
 <td><p>3.7086</p></td>
 <td><p>222.88</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -1727,8 +1830,14 @@
 <td><p>2.7515</p></td>
 <td><p>3.6139</p></td>
 <td><p>259.59</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0.006692</p></td>
 <td><p>2544.6</p></td>
 <td><p>1</p></td>
@@ -1741,7 +1850,7 @@
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">parameters</span><span class="o">.</span><span class="n">k_ij</span>
@@ -1749,7 +1858,7 @@
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1771,15 +1880,15 @@ array([[0.   , 0.015],
 </ul>
 <p>All these objects are imported from the <code class="docutils literal notranslate"><span class="pre">feos.pcsaft</span></code> module.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">feos.pcsaft</span> <span class="kn">import</span> <span class="n">Identifier</span><span class="p">,</span> <span class="n">PcSaftRecord</span><span class="p">,</span> <span class="n">PureRecord</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">feos.pcsaft</span><span class="w"> </span><span class="kn">import</span> <span class="n">Identifier</span><span class="p">,</span> <span class="n">PcSaftRecord</span><span class="p">,</span> <span class="n">PureRecord</span>
 </pre></div>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">identifier</span> <span class="o">=</span> <span class="n">Identifier</span><span class="p">(</span>
@@ -1795,7 +1904,7 @@ array([[0.   , 0.015],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1826,7 +1935,7 @@ Identifier(cas=106-97-8, name=butane, iupac_name=butane, smiles=CCCC, inchi=InCh
 </li>
 </ul>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># parameters for a non-associating, non-polar substance (butane)</span>
@@ -1836,17 +1945,17 @@ Identifier(cas=106-97-8, name=butane, iupac_name=butane, smiles=CCCC, inchi=InCh
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-PcSaftRecord(m=2.3316, sigma=3.7086, epsilon_k=222.88)
+PcSaftRecord(m=2.3316, sigma=3.7086, epsilon_k=222.88, association_record=AssociationRecord(parameters=PcSaftAssociationRecord()))
 </pre></div></div>
 </div>
 <p>A <code class="docutils literal notranslate"><span class="pre">PureRecord</span></code> is built from an <code class="docutils literal notranslate"><span class="pre">Identifier</span></code>, the molar weight (in gram per mole) and a <code class="docutils literal notranslate"><span class="pre">PcSaftRecord</span></code>. Optionally, but not shown in this example, we can provide an <code class="docutils literal notranslate"><span class="pre">ideal_gas_record</span></code> depending on the ideal gas model used in the equation of state. We will not discuss this contribution here but address the topic in a different example.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">butane</span> <span class="o">=</span> <span class="n">PureRecord</span><span class="p">(</span><span class="n">identifier</span><span class="p">,</span> <span class="n">molarweight</span><span class="o">=</span><span class="mf">58.123</span><span class="p">,</span> <span class="n">model_record</span><span class="o">=</span><span class="n">psr</span><span class="p">)</span>
@@ -1855,7 +1964,7 @@ PcSaftRecord(m=2.3316, sigma=3.7086, epsilon_k=222.88)
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1863,13 +1972,13 @@ PcSaftRecord(m=2.3316, sigma=3.7086, epsilon_k=222.88)
 PureRecord(
         identifier=Identifier(cas=106-97-8, name=butane, iupac_name=butane, smiles=CCCC, inchi=InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3, formula=C4H10),
         molarweight=58.123,
-        model_record=PcSaftRecord(m=2.3316, sigma=3.7086, epsilon_k=222.88),
+        model_record=PcSaftRecord(m=2.3316, sigma=3.7086, epsilon_k=222.88, association_record=AssociationRecord(parameters=PcSaftAssociationRecord())),
 )
 </pre></div></div>
 </div>
 <p>For a single substance, we can use the <code class="docutils literal notranslate"><span class="pre">PcSaftParameters.new_pure</span></code> constructor.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">parameters</span> <span class="o">=</span> <span class="n">PcSaftParameters</span><span class="o">.</span><span class="n">new_pure</span><span class="p">(</span><span class="n">butane</span><span class="p">)</span>
@@ -1878,7 +1987,7 @@ PureRecord(
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1905,10 +2014,22 @@ PureRecord(
 <td><p>2.3316</p></td>
 <td><p>3.7086</p></td>
 <td><p>222.88</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -1920,7 +2041,7 @@ PureRecord(
 </div>
 <p>We can create another <code class="docutils literal notranslate"><span class="pre">PureRecord</span></code> for a second component. Then, the <code class="docutils literal notranslate"><span class="pre">PcSaftParameters.new_binary</span></code> constructor let’s us build the parameters. Optionally, we can also directly provide a <code class="docutils literal notranslate"><span class="pre">k_ij</span></code> value for this system. Here, we build a record for an associating substance.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">butan_1_ol</span> <span class="o">=</span> <span class="n">PureRecord</span><span class="p">(</span>
@@ -1945,7 +2066,7 @@ PureRecord(
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">parameters</span> <span class="o">=</span> <span class="n">PcSaftParameters</span><span class="o">.</span><span class="n">new_binary</span><span class="p">([</span><span class="n">butane</span><span class="p">,</span> <span class="n">butan_1_ol</span><span class="p">],</span> <span class="n">binary_record</span><span class="o">=</span><span class="mf">0.015</span><span class="p">)</span>
@@ -1954,7 +2075,7 @@ PureRecord(
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1981,10 +2102,22 @@ PureRecord(
 <td><p>2.3316</p></td>
 <td><p>3.7086</p></td>
 <td><p>222.88</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -1994,8 +2127,14 @@ PureRecord(
 <td><p>2.7515</p></td>
 <td><p>3.6139</p></td>
 <td><p>259.59</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0.006692</p></td>
 <td><p>2544.6</p></td>
 <td><p>0</p></td>
@@ -2008,7 +2147,7 @@ PureRecord(
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">parameters</span><span class="o">.</span><span class="n">k_ij</span>
@@ -2016,7 +2155,7 @@ PureRecord(
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2027,10 +2166,10 @@ array([[0.   , 0.015],
 </div>
 <p>For mixtures with more than two components, we can use the <code class="docutils literal notranslate"><span class="pre">PcSaftParameters.from_records</span></code> constructor which takes a list of <code class="docutils literal notranslate"><span class="pre">PureRecords</span></code> and a <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code> containing the matrix of <code class="docutils literal notranslate"><span class="pre">k_ij</span></code> values.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="n">k_ij</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 <span class="n">k_ij</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_ij</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.015</span>
@@ -2044,7 +2183,7 @@ array([[0.   , 0.015],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2071,10 +2210,22 @@ array([[0.   , 0.015],
 <td><p>2.3316</p></td>
 <td><p>3.7086</p></td>
 <td><p>222.88</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -2084,8 +2235,14 @@ array([[0.   , 0.015],
 <td><p>2.7515</p></td>
 <td><p>3.6139</p></td>
 <td><p>259.59</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0.006692</p></td>
 <td><p>2544.6</p></td>
 <td><p>0</p></td>
@@ -2098,7 +2255,7 @@ array([[0.   , 0.015],
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">parameters</span><span class="o">.</span><span class="n">k_ij</span>
@@ -2106,7 +2263,7 @@ array([[0.   , 0.015],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2130,7 +2287,7 @@ array([[0.   , 0.015],
 </ul>
 <p>As before, we can specify our substance identifier using <code class="docutils literal notranslate"><span class="pre">identifier_option</span></code> and we can provide binary interaction parameters (segment-segment <code class="docutils literal notranslate"><span class="pre">k_ij</span></code>) via the <code class="docutils literal notranslate"><span class="pre">binary_path</span></code> argument.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pure_path</span> <span class="o">=</span> <span class="s1">&#39;../parameters/pcsaft/gc_substances.json&#39;</span>
@@ -2147,7 +2304,7 @@ array([[0.   , 0.015],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2174,8 +2331,14 @@ array([[0.   , 0.015],
 <td><p>2.1360799999999998</p></td>
 <td><p>3.7945688260994523</p></td>
 <td><p>233.79002902513017</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -2185,10 +2348,16 @@ array([[0.   , 0.015],
 <tr class="row-odd"><td><p>1-butanol</p></td>
 <td><p>74.12158</p></td>
 <td><p>2.3821600000000003</p></td>
-<td><p>3.7568140627964164</p></td>
+<td><p>3.7568140627964173</p></td>
 <td><p>278.79916705846796</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0.006825</p></td>
 <td><p>2517</p></td>
 <td><p>1</p></td>
@@ -2210,10 +2379,10 @@ array([[0.   , 0.015],
 </ul>
 <p>If both are available, we can use the <code class="docutils literal notranslate"><span class="pre">PcSaftParameters.from_segments</span></code> constructor to build the parameters.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">feos.pcsaft</span> <span class="kn">import</span> <span class="n">ChemicalRecord</span><span class="p">,</span> <span class="n">SegmentRecord</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">feos.pcsaft</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChemicalRecord</span><span class="p">,</span> <span class="n">SegmentRecord</span>
 
 <span class="n">cr1</span> <span class="o">=</span> <span class="n">ChemicalRecord</span><span class="p">(</span>
     <span class="n">identifier</span><span class="o">=</span><span class="n">Identifier</span><span class="p">(</span>
@@ -2243,7 +2412,7 @@ array([[0.   , 0.015],
 </div>
 <p>Each segment has a <code class="docutils literal notranslate"><span class="pre">PcSaftRecord</span></code> which can be constructed just like we did before for a substance.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ch3</span> <span class="o">=</span> <span class="n">SegmentRecord</span><span class="p">(</span>
@@ -2271,7 +2440,7 @@ array([[0.   , 0.015],
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">parameters</span> <span class="o">=</span> <span class="n">PcSaftParameters</span><span class="o">.</span><span class="n">from_segments</span><span class="p">(</span>
@@ -2283,7 +2452,7 @@ array([[0.   , 0.015],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2310,8 +2479,14 @@ array([[0.   , 0.015],
 <td><p>2.1360799999999998</p></td>
 <td><p>3.7945688260994523</p></td>
 <td><p>233.79002902513017</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -2323,8 +2498,14 @@ array([[0.   , 0.015],
 <td><p>2.3821600000000003</p></td>
 <td><p>3.7568140627964164</p></td>
 <td><p>278.79916705846796</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0.006825</p></td>
 <td><p>2517</p></td>
 <td><p>0</p></td>
@@ -2343,7 +2524,7 @@ array([[0.   , 0.015],
 <p>Once the <code class="docutils literal notranslate"><span class="pre">PcSaftParameter</span></code> object is constructed, within a jupyter notebook, we get a nice representation in form of a markdown table. Sometimes, however you might want to access information not presented in this table or you might want to store information in a variable.</p>
 <p>Let’s build parameters for the four-component mixture we looked at earlier:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">file_na</span> <span class="o">=</span> <span class="s1">&#39;../parameters/pcsaft/gross2001.json&#39;</span>
@@ -2363,7 +2544,7 @@ array([[0.   , 0.015],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2390,10 +2571,22 @@ array([[0.   , 0.015],
 <td><p>1</p></td>
 <td><p>3.7039</p></td>
 <td><p>150.03</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -2403,8 +2596,14 @@ array([[0.   , 0.015],
 <td><p>2.7515</p></td>
 <td><p>3.6139</p></td>
 <td><p>259.59</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0.006692</p></td>
 <td><p>2544.6</p></td>
 <td><p>1</p></td>
@@ -2416,8 +2615,14 @@ array([[0.   , 0.015],
 <td><p>1.0656</p></td>
 <td><p>3.0007</p></td>
 <td><p>366.51</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0.034868</p></td>
 <td><p>2500.7</p></td>
 <td><p>1</p></td>
@@ -2430,9 +2635,18 @@ array([[0.   , 0.015],
 <td><p>3.2742</p></td>
 <td><p>232.99</p></td>
 <td><p>2.88</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
-<td><p>0</p></td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><ul class="simple">
+<li></li>
+</ul>
+</td>
 <td><p>0</p></td>
 <td><p>0</p></td>
 <td><p>0</p></td>
@@ -2442,21 +2656,29 @@ array([[0.   , 0.015],
 </div>
 </div>
 </div>
-<p>As we’ve seen before, we can directly access the binary interaction parameter, <code class="docutils literal notranslate"><span class="pre">k_ij</span></code>, which is zero here for all binary interactions (we did not provide a file).</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+<p>Since we did not provide a file for binary parameters, <code class="docutils literal notranslate"><span class="pre">parameters.k_ij</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code> (internally, <code class="docutils literal notranslate"><span class="pre">k_ij</span> <span class="pre">=</span> <span class="pre">0</span></code> for all binary pairs).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">parameters</span><span class="o">.</span><span class="n">k_ij</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">parameters</span><span class="o">.</span><span class="n">k_ij</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+None
+</pre></div></div>
 </div>
 <section id="Get-PureRecords-via-parameters.pure_records">
 <h3>Get <code class="docutils literal notranslate"><span class="pre">PureRecord</span></code>s via <code class="docutils literal notranslate"><span class="pre">parameters.pure_records</span></code><a class="headerlink" href="#Get-PureRecords-via-parameters.pure_records" title="Link to this heading">¶</a></h3>
 <p>We have seen above that it is possible to generate parameters in Python using intermediate objects, such as <code class="docutils literal notranslate"><span class="pre">Identifier</span></code>, <code class="docutils literal notranslate"><span class="pre">PcSaftRecord</span></code> and <code class="docutils literal notranslate"><span class="pre">PureRecord</span></code>. You can generate these objects for all substances via the <code class="docutils literal notranslate"><span class="pre">pure_records</span></code> method (getter). This getter returns <code class="docutils literal notranslate"><span class="pre">PureRecord</span></code> objects which can be further deconstructed to yield the <code class="docutils literal notranslate"><span class="pre">Identifier</span></code> and <code class="docutils literal notranslate"><span class="pre">PcSaftRecord</span></code> objects and the molar weight.</p>
 <p>Note that the order in which substances are returned matches the order in which we specified the substances above.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">parameters</span><span class="o">.</span><span class="n">pure_records</span>
@@ -2464,7 +2686,7 @@ array([[0.   , 0.015],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2472,27 +2694,27 @@ array([[0.   , 0.015],
 [PureRecord(
         identifier=Identifier(cas=74-82-8, name=methane, iupac_name=methane, smiles=C, inchi=InChI=1/CH4/h1H4, formula=CH4),
         molarweight=16.043,
-        model_record=PcSaftRecord(m=1, sigma=3.7039, epsilon_k=150.03, association_record=AssociationRecord(kappa_ab=0, epsilon_k_ab=0)),
+        model_record=PcSaftRecord(m=1, sigma=3.7039, epsilon_k=150.03, association_record=AssociationRecord(parameters=PcSaftAssociationRecord())),
  ),
  PureRecord(
         identifier=Identifier(cas=71-36-3, name=1-butanol, iupac_name=butan-1-ol, smiles=CCCCO, inchi=InChI=1/C4H10O/c1-2-3-4-5/h5H,2-4H2,1H3, formula=C4H10O),
         molarweight=74.123,
-        model_record=PcSaftRecord(m=2.7515, sigma=3.6139, epsilon_k=259.59, association_record=AssociationRecord(kappa_ab=0.006692, epsilon_k_ab=2544.6, na=1, nb=1)),
+        model_record=PcSaftRecord(m=2.7515, sigma=3.6139, epsilon_k=259.59, association_record=AssociationRecord(parameters=PcSaftAssociationRecord(kappa_ab=0.006692, epsilon_k_ab=2544.6), na=1, nb=1)),
  ),
  PureRecord(
         identifier=Identifier(cas=7732-18-5, name=water, iupac_name=oxidane, smiles=O, inchi=InChI=1/H2O/h1H2, formula=H2O),
         molarweight=18.015,
-        model_record=PcSaftRecord(m=1.0656, sigma=3.0007, epsilon_k=366.51, association_record=AssociationRecord(kappa_ab=0.034868, epsilon_k_ab=2500.7, na=1, nb=1)),
+        model_record=PcSaftRecord(m=1.0656, sigma=3.0007, epsilon_k=366.51, association_record=AssociationRecord(parameters=PcSaftAssociationRecord(kappa_ab=0.034868, epsilon_k_ab=2500.7), na=1, nb=1)),
  ),
  PureRecord(
         identifier=Identifier(cas=67-64-1, name=acetone, iupac_name=propan-2-one, smiles=CC(C)=O, inchi=InChI=1/C3H6O/c1-3(2)4/h1-2H3, formula=C3H6O),
         molarweight=58.08,
-        model_record=PcSaftRecord(m=2.7447, sigma=3.2742, epsilon_k=232.99, mu=2.88, association_record=AssociationRecord(kappa_ab=0, epsilon_k_ab=0)),
+        model_record=PcSaftRecord(m=2.7447, sigma=3.2742, epsilon_k=232.99, mu=2.88, association_record=AssociationRecord(parameters=PcSaftAssociationRecord())),
  )]
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">pure_record</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">pure_records</span><span class="p">:</span>
@@ -2512,7 +2734,7 @@ array([[0.   , 0.015],
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># get identifier of substance 0</span>
@@ -2521,7 +2743,7 @@ array([[0.   , 0.015],
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2530,7 +2752,7 @@ Identifier(cas=74-82-8, name=methane, iupac_name=methane, smiles=C, inchi=InChI=
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># get molarweight of substance 0</span>
@@ -2539,7 +2761,7 @@ Identifier(cas=74-82-8, name=methane, iupac_name=methane, smiles=C, inchi=InChI=
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2549,7 +2771,7 @@ Identifier(cas=74-82-8, name=methane, iupac_name=methane, smiles=C, inchi=InChI=
 </div>
 <p>A <code class="docutils literal notranslate"><span class="pre">PureRecord</span></code> object can be used to generate a json string which then can conveniently be stored in a file.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># generate a json string from identifier of substance 0</span>
@@ -2558,7 +2780,7 @@ Identifier(cas=74-82-8, name=methane, iupac_name=methane, smiles=C, inchi=InChI=
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -2582,21 +2804,12 @@ Identifier(cas=74-82-8, name=methane, iupac_name=methane, smiles=C, inchi=InChI=
 <section id="Further-reading">
 <h2>Further reading<a class="headerlink" href="#Further-reading" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p>For more information about group contribution methods, see <a class="reference external" href="https://pubs.acs.org/doi/abs/10.1021/ie502203w">this paper by Sauer et al.</a></p></li>
-<li><p>Files of published parameters can be found <cite>in the ``feos`</cite> github repositoy &lt;<a class="reference external" href="https://github.com/feos-org/feos/tree/main/parameters/pcsaft">https://github.com/feos-org/feos/tree/main/parameters/pcsaft</a>&gt;`__.</p></li>
+<li><p>Files of published parameters and further explanations can be found <cite>in the ``feos`</cite> github repositoy &lt;<a class="reference external" href="https://github.com/feos-org/feos/tree/main/parameters/pcsaft">https://github.com/feos-org/feos/tree/main/parameters/pcsaft</a>&gt;`__.</p></li>
 </ul>
 </section>
 <section id="Concluding-remkars">
 <h2>Concluding remkars<a class="headerlink" href="#Concluding-remkars" title="Link to this heading">¶</a></h2>
 <p>Hopefully you found this example helpful. If you have comments, critique or feedback, please let us know and consider <a class="reference external" href="https://github.com/feos-org/feos/issues">opening an issue on github</a>.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">feos.ideal_gas</span> <span class="kn">import</span> <span class="n">JobackParameters</span>
-</pre></div>
-</div>
-</div>
 </section>
 </section>
 
@@ -2605,12 +2818,12 @@ Identifier(cas=74-82-8, name=methane, iupac_name=methane, smiles=C, inchi=InChI=
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="pcsaft_state.html">
+          <a class="next-page" href="pcsaft_phase_diagram.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Representation of thermodynamic states</div>
+                <div class="title">Pure substance phase diagrams</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
