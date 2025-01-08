@@ -1,6 +1,5 @@
 use feos_core::parameter::{Identifier, ParameterError};
 use feos_core::parameter::{Parameter, PureRecord};
-use lazy_static::lazy_static;
 use ndarray::concatenate;
 use ndarray::prelude::*;
 use ndarray::Array2;
@@ -9,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Write;
+use std::sync::LazyLock;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct NoRecord;
@@ -74,9 +74,8 @@ impl std::fmt::Display for UVTheoryBinaryRecord {
     }
 }
 
-lazy_static! {
-/// Constants for BH temperature dependent HS diameter.
-    static ref CD_BH: Array2<f64> = arr2(&[
+static CD_BH: LazyLock<Array2<f64>> = LazyLock::new(|| {
+    arr2(&[
         [0.0, 1.09360455168912E-02, 0.0],
         [-2.00897880971934E-01, -1.27074910870683E-02, 0.0],
         [
@@ -89,8 +88,8 @@ lazy_static! {
             5.05384813757953E-03,
             4.91003312452622E-02,
         ],
-    ]);
-}
+    ])
+});
 
 #[inline]
 pub fn mie_prefactor<D: DualNum<f64> + Copy>(rep: D, att: D) -> D {
