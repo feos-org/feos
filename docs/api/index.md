@@ -6,7 +6,6 @@
 .. toctree::
    :maxdepth: 1
 
-   si
    eos
    dft
 ```
