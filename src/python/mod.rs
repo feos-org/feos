@@ -82,19 +82,6 @@ pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     set_path(m, "feos.saftvrqmie", "saftvrqmie")?;
     #[cfg(feature = "saftvrmie")]
     set_path(m, "feos.saftvrmie", "saftvrmie")?;
-
-    // re-export si_units within feos. Overriding __module__ is required for pickling.
-    m.py().run(
-        c"\
-import sys
-import si_units
-sys.modules['feos.si'] = si_units
-si_units.SIObject.__module__ = 'feos.si'
-si_units.Angle.__module__ = 'feos.si'
-        ",
-        None,
-        Some(&m.dict()),
-    )?;
     Ok(())
 }
 

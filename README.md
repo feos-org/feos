@@ -145,7 +145,7 @@ For a documentation of the Python API, Python examples, and a guide to the under
 
 ## Benchmarks
 
-Check out the [benches](https://github.com/feos-org/feos/tree/main/benches) directory for information about provided Rust benchmarks and how to run them.
+Check out the [benches](https://github.com/feos-org/feos/tree/main/feos-benchmarks) directory for information about provided Rust benchmarks and how to run them.
 
 ## Developers
 

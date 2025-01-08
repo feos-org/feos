@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2024-12-28
+### Added
+- Added `henry_coefficients` and `ideal_gas_enthalpy_of_adosrption` to `PoreProfile`. [#263](https://github.com/feos-org/feos/pull/263)
+
+### Packaging
+- Updated `quantity` dependency to 0.10. [#262](https://github.com/feos-org/feos/pull/262)
+- Updated `num-dual` dependency to 0.11. [#262](https://github.com/feos-org/feos/pull/262)
+- Updated `numpy` and `PyO3` dependencies to 0.23. [#262](https://github.com/feos-org/feos/pull/262)
+- Updated `gauss-quad`  dependency to 0.2. [#261](https://github.com/feos-org/feos/pull/261)
+
 ## [0.7.0] - 2024-05-21
 ### Changed
 - Updated interfaces according to removal of `HelmholtzEnergyDual` and `HelmholtzEnergy` in `feos-core`. [#226](https://github.com/feos-org/feos/pull/226)
