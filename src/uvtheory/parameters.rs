@@ -74,6 +74,7 @@ impl std::fmt::Display for UVTheoryBinaryRecord {
     }
 }
 
+/// Constants for BH temperature dependent HS diameter.
 static CD_BH: LazyLock<Array2<f64>> = LazyLock::new(|| {
     arr2(&[
         [0.0, 1.09360455168912E-02, 0.0],
