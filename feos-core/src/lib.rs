@@ -128,13 +128,42 @@ const REFERENCE_VALUES: [f64; 7] = [
     1.0,                 // 1 Cd
 ];
 
-pub trait ReferenceSystem<Inner> {
+const fn powi(x: f64, n: i32) -> f64 {
+    match n {
+        ..=-1 => powi(1.0 / x, -n),
+        0 => 1.0,
+        n if n % 2 == 0 => powi(x * x, n / 2),
+        n => x * powi(x * x, (n - 1) / 2),
+    }
+}
+
+pub trait ReferenceSystem<
+    Inner,
+    T: Integer,
+    L: Integer,
+    M: Integer,
+    I: Integer,
+    THETA: Integer,
+    N: Integer,
+    J: Integer,
+>
+{
+    const FACTOR: f64 = powi(REFERENCE_VALUES[0], T::I32)
+        * powi(REFERENCE_VALUES[1], L::I32)
+        * powi(REFERENCE_VALUES[2], M::I32)
+        * powi(REFERENCE_VALUES[3], I::I32)
+        * powi(REFERENCE_VALUES[4], THETA::I32)
+        * powi(REFERENCE_VALUES[5], N::I32)
+        * powi(REFERENCE_VALUES[6], J::I32);
+
     fn from_reduced(value: Inner) -> Self
     where
         Inner: Mul<f64, Output = Inner>;
+
     fn to_reduced(&self) -> Inner
     where
         for<'a> &'a Inner: Div<f64, Output = Inner>;
+
     fn into_reduced(self) -> Inner
     where
         Inner: Div<f64, Output = Inner>;
@@ -150,52 +179,28 @@ impl<
         THETA: Integer,
         N: Integer,
         J: Integer,
-    > ReferenceSystem<Inner> for Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>
+    > ReferenceSystem<Inner, T, L, M, I, THETA, N, J>
+    for Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>
 {
     fn from_reduced(value: Inner) -> Self
     where
         Inner: Mul<f64, Output = Inner>,
     {
-        Self::new(
-            value
-                * REFERENCE_VALUES[0].powi(T::I32)
-                * REFERENCE_VALUES[1].powi(L::I32)
-                * REFERENCE_VALUES[2].powi(M::I32)
-                * REFERENCE_VALUES[3].powi(I::I32)
-                * REFERENCE_VALUES[4].powi(THETA::I32)
-                * REFERENCE_VALUES[5].powi(N::I32)
-                * REFERENCE_VALUES[6].powi(J::I32),
-        )
+        Self::new(value * Self::FACTOR)
     }
 
     fn to_reduced(&self) -> Inner
     where
         for<'a> &'a Inner: Div<f64, Output = Inner>,
     {
-        self.convert_to(Quantity::new(
-            REFERENCE_VALUES[0].powi(T::I32)
-                * REFERENCE_VALUES[1].powi(L::I32)
-                * REFERENCE_VALUES[2].powi(M::I32)
-                * REFERENCE_VALUES[3].powi(I::I32)
-                * REFERENCE_VALUES[4].powi(THETA::I32)
-                * REFERENCE_VALUES[5].powi(N::I32)
-                * REFERENCE_VALUES[6].powi(J::I32),
-        ))
+        self.convert_to(Quantity::new(Self::FACTOR))
     }
 
     fn into_reduced(self) -> Inner
     where
         Inner: Div<f64, Output = Inner>,
     {
-        self.convert_into(Quantity::new(
-            REFERENCE_VALUES[0].powi(T::I32)
-                * REFERENCE_VALUES[1].powi(L::I32)
-                * REFERENCE_VALUES[2].powi(M::I32)
-                * REFERENCE_VALUES[3].powi(I::I32)
-                * REFERENCE_VALUES[4].powi(THETA::I32)
-                * REFERENCE_VALUES[5].powi(N::I32)
-                * REFERENCE_VALUES[6].powi(J::I32),
-        ))
+        self.convert_into(Quantity::new(Self::FACTOR))
     }
 }
 
