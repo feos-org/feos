@@ -43,7 +43,6 @@ conv = "0.3"
 num-traits = "0.2"
 serde = "1.0"
 serde_json = "1.0"
-lazy_static = { version = "1.4", optional = true }
 indexmap = "2.0"
 rayon = { version = "1.7", optional = true }
 itertools = "0.14"
@@ -76,7 +75,7 @@ association = []
 pcsaft = ["association"]
 epcsaft = ["association"]
 gc_pcsaft = ["association"]
-uvtheory = ["lazy_static"]
+uvtheory = []
 pets = []
 saftvrqmie = []
 saftvrmie = []
