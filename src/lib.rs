@@ -35,6 +35,7 @@
 #![warn(clippy::all)]
 #![warn(clippy::allow_attributes)]
 
+mod allocator;
 #[cfg(feature = "dft")]
 mod functional;
 #[cfg(feature = "dft")]

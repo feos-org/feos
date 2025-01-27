@@ -28,6 +28,7 @@ members = ["feos-core", "feos-dft", "feos-derive", "feos-benchmarks"]
 
 [lib]
 crate-type = ["rlib", "cdylib"]
+bench = false
 
 [dependencies]
 quantity = "0.10"
@@ -52,6 +53,12 @@ typenum = "1.16"
 version = "0.23"
 features = ["extension-module", "abi3", "abi3-py39"]
 optional = true
+
+[target.'cfg(all(any(not(target_family = "unix"), allocator = "mimalloc"), not(allocator = "default")))'.dependencies]
+mimalloc = { version = "0.1", default-features = false }
+
+[target.'cfg(all(target_family = "unix", not(allocator = "mimalloc"), not(allocator = "default")))'.dependencies]
+tikv-jemallocator = { version = "0.5", features = ["disable_initial_exec_tls"] }
 
 [dev-dependencies]
 approx = "0.5"
