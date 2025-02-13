@@ -1,7 +1,7 @@
 use super::parameters::PcSaftParameters;
 use super::DQVariants;
 use feos_core::parameter::{
-    BinarySegmentRecord, ChemicalRecord, IdentifierOption, Parameter, ParameterError,
+    BinaryRecord, BinarySegmentRecord, ChemicalRecord, IdentifierOption, Parameter, ParameterError,
 };
 use feos_core::python::parameter::*;
 use feos_core::*;

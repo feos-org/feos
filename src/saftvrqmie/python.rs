@@ -1,7 +1,7 @@
 //! Python bindings for the SAFT-VRQ Mie equation of state.
 use crate::saftvrqmie::eos::FeynmanHibbsOrder;
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
-use feos_core::parameter::{IdentifierOption, Parameter, ParameterError};
+use feos_core::parameter::{BinaryRecord, IdentifierOption, Parameter, ParameterError};
 use feos_core::python::parameter::{PyBinaryRecord, PyPureRecord};
 use feos_core::*;
 use ndarray::{Array1, Array2};

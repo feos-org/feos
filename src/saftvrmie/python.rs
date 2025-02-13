@@ -1,5 +1,5 @@
 use super::parameters::{SaftVRMieParameters, SaftVRMieRecord};
-use feos_core::parameter::{Identifier, IdentifierOption, Parameter, ParameterError};
+use feos_core::parameter::{BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError};
 use feos_core::python::parameter::{PyBinaryRecord, PyPureRecord};
 use feos_core::*;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};

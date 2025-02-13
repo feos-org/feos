@@ -321,9 +321,6 @@ impl PySegmentRecord {
 
 #[macro_export]
 macro_rules! impl_parameter {
-        // ($parameter:ty, $py_parameter:ty) => {
-        //     impl_parameter!($parameter, $py_parameter, PyNoBinaryModelRecord);
-        // };
         ($parameter:ty, $py_parameter:ty) => {
         use pyo3::pybacked::*;
 
@@ -384,37 +381,38 @@ macro_rules! impl_parameter {
                 Ok(Self(Arc::new(<$parameter>::new_pure(pure_record.try_into()?)?)))
             }
 
-            // /// Creates parameters for a binary system from pure records and an optional
-            // /// binary interaction parameter or binary interaction parameter record.
-            // ///
-            // /// Parameters
-            // /// ----------
-            // /// pure_records : [PureRecord]
-            // ///     A list of pure component parameters.
-            // /// binary_record : float or BinaryRecord, optional
-            // ///     The binary interaction parameter or binary interaction record.
-            // #[staticmethod]
-            // #[pyo3(text_signature = "(pure_records, binary_record=None)", signature = (pure_records, binary_record=None))]
-            // fn new_binary(
-            //     pure_records: Vec<PyPureRecord>,
-            //     binary_record: Option<&Bound<'_, PyAny>>,
-            // ) -> PyResult<Self> {
-            //     let prs = pure_records.into_iter().map(|pr| pr.try_into()).collect::<Result<_,_>>()?;
-            //     let br = binary_record
-            //         .map(|br| {
-            //             if let Ok(r) = br.extract::<f64>() {
-            //                 Ok(r.try_into()?)
-            //             } else if let Ok(r) = br.extract::<$py_binary_model_record>() {
-            //                 Ok(r.into())
-            //             } else {
-            //                 Err(PyErr::new::<PyTypeError, _>(format!(
-            //                     "Could not parse binary input!"
-            //                 )))
-            //             }
-            //         })
-            //         .transpose()?;
-            //     Ok(Self(Arc::new(<$parameter>::new_binary(prs, br)?)))
-            // }
+            /// Creates parameters for a binary system from pure records and an optional
+            /// binary interaction parameter or binary interaction parameter record.
+            ///
+            /// Parameters
+            /// ----------
+            /// pure_records : [PureRecord]
+            ///     A list of pure component parameters.
+            /// binary_record : float or BinaryRecord, optional
+            ///     The binary interaction parameter or binary interaction record.
+            #[staticmethod]
+            #[pyo3(text_signature = "(pure_records, binary_record=None)", signature = (pure_records, binary_record=None))]
+            fn new_binary(
+                pure_records: Vec<PyPureRecord>,
+                binary_record: Option<&Bound<'_, PyAny>>,
+            ) -> PyResult<Self> {
+                let prs = pure_records.into_iter().map(|pr| pr.try_into()).collect::<Result<_,_>>()?;
+                let br = binary_record
+                    .map(|br| {
+                        if let Ok(r) = br.extract::<f64>() {
+                            Ok(r.try_into()?)
+                        } else if let Ok(r) = br.extract::<PyBinaryRecord>() {
+                            let r: BinaryRecord<<$parameter as Parameter>::Binary> = r.try_into()?;
+                            Ok(r.model_record)
+                        } else {
+                            Err(PyErr::new::<PyTypeError, _>(format!(
+                                "Could not parse binary input!"
+                            )))
+                        }
+                    })
+                    .transpose()?;
+                Ok(Self(Arc::new(<$parameter>::new_binary(prs, br)?)))
+            }
 
             // /// Creates parameters from model records with default values for the molar weight,
             // /// identifiers, and binary interaction parameters.
@@ -490,15 +488,14 @@ macro_rules! impl_parameter {
                 )?)))
             }
 
-            // #[getter]
-            // fn get_pure_records(&self) -> Vec<PyPureRecord> {
-            //     self.0
-            //         .records()
-            //         .0
-            //         .iter()
-            //         .map(|r| PyPureRecord(r.clone()))
-            //         .collect()
-            // }
+            #[getter]
+            fn get_pure_records(&self) -> PyResult<Vec<PyPureRecord>> {
+                let (pure_records, _) = self.0.records();
+                Ok(pure_records
+                    .iter()
+                    .map(|r| Ok(serde_json::from_str(&serde_json::to_string(&r)?)?))
+                    .collect::<Result<_,ParameterError>>()?)
+            }
 
             #[getter]
             fn get_binary_records<'py>(&self, py: Python<'py>) -> Option<Bound<'py, PyArray2<f64>>> {

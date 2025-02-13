@@ -1,6 +1,6 @@
 use super::parameter::PyPureRecord;
 use crate::cubic::PengRobinsonParameters;
-use crate::parameter::{IdentifierOption, Parameter, ParameterError};
+use crate::parameter::{BinaryRecord, IdentifierOption, Parameter, ParameterError};
 use crate::python::parameter::PyBinaryRecord;
 use crate::*;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};

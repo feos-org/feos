@@ -1,7 +1,7 @@
 use super::eos::permittivity::PermittivityRecord;
 use super::parameters::ElectrolytePcSaftParameters;
 use super::ElectrolytePcSaftVariants;
-use feos_core::parameter::{IdentifierOption, Parameter, ParameterError};
+use feos_core::parameter::{BinaryRecord, IdentifierOption, Parameter, ParameterError};
 use feos_core::python::parameter::*;
 use feos_core::*;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};

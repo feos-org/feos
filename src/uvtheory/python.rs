@@ -1,6 +1,8 @@
 use super::parameters::{UVTheoryParameters, UVTheoryRecord};
 use super::Perturbation;
-use feos_core::parameter::{Identifier, IdentifierOption, Parameter, ParameterError, PureRecord};
+use feos_core::parameter::{
+    BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
+};
 use feos_core::python::parameter::*;
 use feos_core::*;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
