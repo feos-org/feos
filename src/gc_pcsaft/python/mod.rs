@@ -1,14 +1,11 @@
 #[cfg(feature = "dft")]
 use super::dft::GcPcSaftFunctionalParameters;
 use super::eos::GcPcSaftEosParameters;
-use super::record::GcPcSaftRecord;
+use feos_core::impl_parameter_from_segments;
 use feos_core::parameter::{
-    BinaryRecord, IdentifierOption, ParameterError, ParameterHetero, SegmentRecord,
+    BinarySegmentRecord, ChemicalRecord, IdentifierOption, ParameterError, ParameterHetero,
 };
-use feos_core::python::parameter::{
-    PyBinarySegmentRecord, PyChemicalRecord, PyIdentifier, PySmartsRecord,
-};
-use feos_core::{impl_json_handling, impl_parameter_from_segments, impl_segment_record};
+use feos_core::python::parameter::{PySegmentRecord, PySmartsRecord};
 #[cfg(feature = "dft")]
 use numpy::{PyArray2, ToPyArray};
 use pyo3::prelude::*;
@@ -17,97 +14,97 @@ use std::sync::Arc;
 #[cfg(feature = "micelles")]
 mod micelles;
 
-#[pyclass(name = "GcPcSaftRecord")]
-#[derive(Clone)]
-pub struct PyGcPcSaftRecord(GcPcSaftRecord);
+// #[pyclass(name = "GcPcSaftRecord")]
+// #[derive(Clone)]
+// pub struct PyGcPcSaftRecord(GcPcSaftRecord);
 
-#[pymethods]
-impl PyGcPcSaftRecord {
-    #[new]
-    #[pyo3(
-        text_signature = "(m, sigma, epsilon_k, mu=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, psi_dft=None)",
-        signature = (m, sigma, epsilon_k, mu=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, psi_dft=None)
-    )]
-    #[expect(clippy::too_many_arguments)]
-    fn new(
-        m: f64,
-        sigma: f64,
-        epsilon_k: f64,
-        mu: Option<f64>,
-        kappa_ab: Option<f64>,
-        epsilon_k_ab: Option<f64>,
-        na: Option<f64>,
-        nb: Option<f64>,
-        nc: Option<f64>,
-        psi_dft: Option<f64>,
-    ) -> Self {
-        Self(GcPcSaftRecord::new(
-            m,
-            sigma,
-            epsilon_k,
-            mu,
-            kappa_ab,
-            epsilon_k_ab,
-            na,
-            nb,
-            nc,
-            psi_dft,
-        ))
-    }
+// #[pymethods]
+// impl PyGcPcSaftRecord {
+//     #[new]
+//     #[pyo3(
+//         text_signature = "(m, sigma, epsilon_k, mu=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, psi_dft=None)",
+//         signature = (m, sigma, epsilon_k, mu=None, kappa_ab=None, epsilon_k_ab=None, na=None, nb=None, nc=None, psi_dft=None)
+//     )]
+//     #[expect(clippy::too_many_arguments)]
+//     fn new(
+//         m: f64,
+//         sigma: f64,
+//         epsilon_k: f64,
+//         mu: Option<f64>,
+//         kappa_ab: Option<f64>,
+//         epsilon_k_ab: Option<f64>,
+//         na: Option<f64>,
+//         nb: Option<f64>,
+//         nc: Option<f64>,
+//         psi_dft: Option<f64>,
+//     ) -> Self {
+//         Self(GcPcSaftRecord::new(
+//             m,
+//             sigma,
+//             epsilon_k,
+//             mu,
+//             kappa_ab,
+//             epsilon_k_ab,
+//             na,
+//             nb,
+//             nc,
+//             psi_dft,
+//         ))
+//     }
 
-    #[getter]
-    fn get_m(&self) -> f64 {
-        self.0.m
-    }
+//     #[getter]
+//     fn get_m(&self) -> f64 {
+//         self.0.m
+//     }
 
-    #[getter]
-    fn get_sigma(&self) -> f64 {
-        self.0.sigma
-    }
+//     #[getter]
+//     fn get_sigma(&self) -> f64 {
+//         self.0.sigma
+//     }
 
-    #[getter]
-    fn get_epsilon_k(&self) -> f64 {
-        self.0.epsilon_k
-    }
+//     #[getter]
+//     fn get_epsilon_k(&self) -> f64 {
+//         self.0.epsilon_k
+//     }
 
-    #[getter]
-    fn get_mu(&self) -> Option<f64> {
-        self.0.mu
-    }
+//     #[getter]
+//     fn get_mu(&self) -> Option<f64> {
+//         self.0.mu
+//     }
 
-    #[getter]
-    fn get_kappa_ab(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.parameters.kappa_ab)
-    }
+//     #[getter]
+//     fn get_kappa_ab(&self) -> Option<f64> {
+//         self.0.association_record.map(|a| a.parameters.kappa_ab)
+//     }
 
-    #[getter]
-    fn get_epsilon_k_ab(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.parameters.epsilon_k_ab)
-    }
+//     #[getter]
+//     fn get_epsilon_k_ab(&self) -> Option<f64> {
+//         self.0.association_record.map(|a| a.parameters.epsilon_k_ab)
+//     }
 
-    #[getter]
-    fn get_na(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.na)
-    }
+//     #[getter]
+//     fn get_na(&self) -> Option<f64> {
+//         self.0.association_record.map(|a| a.na)
+//     }
 
-    #[getter]
-    fn get_nb(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.nb)
-    }
+//     #[getter]
+//     fn get_nb(&self) -> Option<f64> {
+//         self.0.association_record.map(|a| a.nb)
+//     }
 
-    #[getter]
-    fn get_nc(&self) -> Option<f64> {
-        self.0.association_record.map(|a| a.nc)
-    }
+//     #[getter]
+//     fn get_nc(&self) -> Option<f64> {
+//         self.0.association_record.map(|a| a.nc)
+//     }
 
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(self.0.to_string())
-    }
-}
+//     fn __repr__(&self) -> PyResult<String> {
+//         Ok(self.0.to_string())
+//     }
+// }
 
-impl_json_handling!(PyGcPcSaftRecord);
+// impl_json_handling!(PyGcPcSaftRecord);
 
-impl_segment_record!(GcPcSaftRecord, PyGcPcSaftRecord);
+// impl_segment_record!(GcPcSaftRecord, PyGcPcSaftRecord);
 
 #[pyclass(name = "GcPcSaftEosParameters")]
 #[derive(Clone)]
@@ -172,14 +169,6 @@ impl PyGcPcSaftFunctionalParameters {
 
 #[pymodule]
 pub fn gc_pcsaft(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<PyIdentifier>()?;
-    m.add_class::<IdentifierOption>()?;
-    m.add_class::<PyChemicalRecord>()?;
-    m.add_class::<PySmartsRecord>()?;
-
-    m.add_class::<PyGcPcSaftRecord>()?;
-    m.add_class::<PySegmentRecord>()?;
-    m.add_class::<PyBinarySegmentRecord>()?;
     m.add_class::<PyGcPcSaftEosParameters>()?;
     #[cfg(feature = "dft")]
     m.add_class::<PyGcPcSaftFunctionalParameters>()?;

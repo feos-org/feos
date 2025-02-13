@@ -21,7 +21,7 @@ mod segment;
 pub use chemical_record::{ChemicalRecord, SegmentCount};
 pub use identifier::{Identifier, IdentifierOption};
 pub use model_record::{BinaryRecord, FromSegments, FromSegmentsBinary, PureRecord};
-pub use segment::SegmentRecord;
+pub use segment::{BinarySegmentRecord, SegmentRecord};
 
 /// Constructor methods for parameters.
 ///
@@ -85,7 +85,7 @@ where
     #[allow(clippy::expect_fun_call)]
     fn binary_matrix_from_records(
         pure_records: &[PureRecord<Self::Pure>],
-        binary_records: &[BinaryRecord<Identifier, Self::Binary>],
+        binary_records: &[BinaryRecord<Self::Binary>],
         identifier_option: IdentifierOption,
     ) -> Option<Array2<Self::Binary>> {
         if binary_records.is_empty() {
@@ -198,7 +198,7 @@ where
     fn from_segments<C: SegmentCount>(
         chemical_records: Vec<C>,
         segment_records: Vec<SegmentRecord<Self::Pure>>,
-        binary_segment_records: Option<Vec<BinaryRecord<String, f64>>>,
+        binary_segment_records: Option<Vec<BinarySegmentRecord>>,
     ) -> Result<Self, ParameterError>
     where
         Self::Pure: FromSegments<C::Count>,
@@ -315,7 +315,7 @@ where
         let binary_records = file_binary
             .map(|file_binary| {
                 let reader = BufReader::new(File::open(file_binary)?);
-                let binary_records: Result<Vec<BinaryRecord<String, f64>>, ParameterError> =
+                let binary_records: Result<Vec<BinarySegmentRecord>, ParameterError> =
                     Ok(serde_json::from_reader(reader)?);
                 binary_records
             })
@@ -380,13 +380,12 @@ impl fmt::Display for NoBinaryModelRecord {
 pub trait ParameterHetero: Sized {
     type Chemical: Clone;
     type Pure: Clone + DeserializeOwned;
-    type Binary: Clone + DeserializeOwned;
 
     /// Creates parameters from the molecular structure and segment information.
     fn from_segments<C: Clone + Into<Self::Chemical>>(
         chemical_records: Vec<C>,
         segment_records: Vec<SegmentRecord<Self::Pure>>,
-        binary_segment_records: Option<Vec<BinaryRecord<String, Self::Binary>>>,
+        binary_segment_records: Option<Vec<BinarySegmentRecord>>,
     ) -> Result<Self, ParameterError>;
 
     /// Return the original records that were used to construct the parameters.
@@ -396,7 +395,7 @@ pub trait ParameterHetero: Sized {
     ) -> (
         &[Self::Chemical],
         &[SegmentRecord<Self::Pure>],
-        &Option<Vec<BinaryRecord<String, Self::Binary>>>,
+        &Option<Vec<BinarySegmentRecord>>,
     );
 
     /// Creates parameters from segment information stored in json files.
@@ -452,10 +451,8 @@ pub trait ParameterHetero: Sized {
         let binary_records = file_binary
             .map(|file_binary| {
                 let reader = BufReader::new(File::open(file_binary)?);
-                let binary_records: Result<
-                    Vec<BinaryRecord<String, Self::Binary>>,
-                    ParameterError,
-                > = Ok(serde_json::from_reader(reader)?);
+                let binary_records: Result<Vec<BinarySegmentRecord>, ParameterError> =
+                    Ok(serde_json::from_reader(reader)?);
                 binary_records
             })
             .transpose()?;

@@ -1,9 +1,14 @@
-use crate::impl_json_handling;
-use crate::parameter::{
-    BinaryRecord, ChemicalRecord, Identifier, NoBinaryModelRecord, ParameterError,
-};
-use pyo3::exceptions::{PyRuntimeError, PyTypeError};
+use crate::parameter::*;
+use indexmap::IndexMap;
+use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
+use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::BufReader;
+
+mod fragmentation;
+pub use fragmentation::PySmartsRecord;
 
 impl From<ParameterError> for PyErr {
     fn from(e: ParameterError) -> PyErr {
@@ -11,38 +16,14 @@ impl From<ParameterError> for PyErr {
     }
 }
 
-/// Create an identifier for a pure substance.
-///
-/// Parameters
-/// ----------
-/// cas : str, optional
-///     CAS number.
-/// name : str, optional
-///     name
-/// iupac_name : str, optional
-///     Iupac name.
-/// smiles : str, optional
-///     Canonical SMILES
-/// inchi : str, optional
-///     Inchi number
-/// formula : str, optional
-///     Molecular formula.
-///
-/// Returns
-/// -------
-/// Identifier
-#[pyclass(name = "Identifier")]
-#[derive(Clone)]
-pub struct PyIdentifier(pub Identifier);
-
 #[pymethods]
-impl PyIdentifier {
+impl Identifier {
     #[new]
     #[pyo3(
         text_signature = "(cas=None, name=None, iupac_name=None, smiles=None, inchi=None, formula=None)",
         signature = (cas=None, name=None, iupac_name=None, smiles=None, inchi=None, formula=None)
     )]
-    fn new(
+    fn py_new(
         cas: Option<&str>,
         name: Option<&str>,
         iupac_name: Option<&str>,
@@ -50,289 +31,112 @@ impl PyIdentifier {
         inchi: Option<&str>,
         formula: Option<&str>,
     ) -> Self {
-        Self(Identifier::new(
-            cas, name, iupac_name, smiles, inchi, formula,
-        ))
-    }
-
-    #[getter]
-    fn get_cas(&self) -> Option<String> {
-        self.0.cas.clone()
-    }
-
-    #[setter]
-    fn set_cas(&mut self, cas: &str) {
-        self.0.cas = Some(cas.to_string());
-    }
-
-    #[getter]
-    fn get_name(&self) -> Option<String> {
-        self.0.name.clone()
-    }
-
-    #[setter]
-    fn set_name(&mut self, name: &str) {
-        self.0.name = Some(name.to_string());
-    }
-
-    #[getter]
-    fn get_iupac_name(&self) -> Option<String> {
-        self.0.iupac_name.clone()
-    }
-
-    #[setter]
-    fn set_iupac_name(&mut self, iupac_name: &str) {
-        self.0.iupac_name = Some(iupac_name.to_string());
-    }
-
-    #[getter]
-    fn get_smiles(&self) -> Option<String> {
-        self.0.smiles.clone()
-    }
-
-    #[setter]
-    fn set_smiles(&mut self, smiles: &str) {
-        self.0.smiles = Some(smiles.to_string());
-    }
-
-    #[getter]
-    fn get_inchi(&self) -> Option<String> {
-        self.0.inchi.clone()
-    }
-
-    #[setter]
-    fn set_inchi(&mut self, inchi: &str) {
-        self.0.inchi = Some(inchi.to_string());
-    }
-
-    #[getter]
-    fn get_formula(&self) -> Option<String> {
-        self.0.formula.clone()
-    }
-
-    #[setter]
-    fn set_formula(&mut self, formula: &str) {
-        self.0.formula = Some(formula.to_string());
+        Self::new(cas, name, iupac_name, smiles, inchi, formula)
     }
 
     fn __repr__(&self) -> PyResult<String> {
-        Ok(self.0.to_string())
+        Ok(self.to_string())
+    }
+
+    /// Creates record from json string.
+    #[staticmethod]
+    fn from_json_str(json: &str) -> Result<Self, ParameterError> {
+        Ok(serde_json::from_str(json)?)
+    }
+
+    /// Creates a json string from record.
+    fn to_json_str(&self) -> Result<String, ParameterError> {
+        Ok(serde_json::to_string(&self)?)
     }
 }
 
-impl_json_handling!(PyIdentifier);
-
-/// Create a chemical record for a pure substance.
-///
-/// Parameters
-/// ----------
-/// identifier : Identifier
-///     The identifier of the pure component.
-/// segments : [str]
-///     List of segments, that the molecule consists of.
-/// bonds : [[int, int]], optional
-///     List of bonds with the indices starting at 0 and
-///     referring to the list of segments passed as first
-///     argument. If no bonds are specified, the molecule
-///     is assumed to be linear.
-///
-/// Returns
-/// -------
-/// ChemicalRecord
-#[pyclass(name = "ChemicalRecord")]
-#[derive(Clone)]
-pub struct PyChemicalRecord(pub ChemicalRecord);
-
 #[pymethods]
-impl PyChemicalRecord {
+impl ChemicalRecord {
     #[new]
     #[pyo3(text_signature = "(identifier, segments, bonds=None)", signature = (identifier, segments, bonds=None))]
-    fn new(
-        identifier: PyIdentifier,
+    fn py_new(
+        identifier: Identifier,
         segments: Vec<String>,
         bonds: Option<Vec<[usize; 2]>>,
     ) -> Self {
-        Self(ChemicalRecord::new(identifier.0, segments, bonds))
-    }
-
-    #[getter]
-    fn get_identifier(&self) -> PyIdentifier {
-        PyIdentifier(self.0.identifier.clone())
-    }
-
-    #[getter]
-    fn get_segments(&self) -> Vec<String> {
-        self.0.segments.clone()
-    }
-
-    #[getter]
-    fn get_bonds(&self) -> Vec<[usize; 2]> {
-        self.0.bonds.clone()
+        Self::new(identifier, segments, bonds)
     }
 
     fn __repr__(&self) -> PyResult<String> {
-        Ok(self.0.to_string())
+        Ok(self.to_string())
+    }
+
+    /// Creates record from json string.
+    #[staticmethod]
+    fn from_json_str(json: &str) -> Result<Self, ParameterError> {
+        Ok(serde_json::from_str(json)?)
+    }
+
+    /// Creates a json string from record.
+    fn to_json_str(&self) -> Result<String, ParameterError> {
+        Ok(serde_json::to_string(&self)?)
     }
 }
 
-impl_json_handling!(PyChemicalRecord);
-
-#[macro_export]
-macro_rules! impl_binary_record {
-    () => {
-        #[pyclass(name = "BinaryModelRecord")]
-        #[derive(Clone)]
-        struct PyBinaryModelRecord(f64);
-        impl_binary_record!(f64, PyBinaryModelRecord);
-    };
-    ($model_record:ident, $py_model_record:ident) => {
-        /// Create a record for a binary interaction parameter.
-        ///
-        /// Parameters
-        /// ----------
-        /// id1 : Identifier
-        ///     The identifier of the first component.
-        /// id2 : Identifier
-        ///     The identifier of the second component.
-        /// model_record : float or BinaryModelRecord
-        ///     The binary interaction parameter.
-        ///
-        /// Returns
-        /// -------
-        /// BinaryRecord
-        #[pyclass(name = "BinaryRecord")]
-        #[derive(Clone)]
-        pub struct PyBinaryRecord(pub BinaryRecord<Identifier, $model_record>);
-
-        impl From<$py_model_record> for $model_record {
-            fn from(record: $py_model_record) -> Self {
-                record.0
-            }
-        }
-
-        #[pymethods]
-        impl PyBinaryRecord {
-            #[new]
-            fn new(
-                id1: PyIdentifier,
-                id2: PyIdentifier,
-                model_record: &Bound<'_, PyAny>,
-            ) -> PyResult<Self> {
-                if let Ok(mr) = model_record.extract::<f64>() {
-                    Ok(Self(BinaryRecord::new(id1.0, id2.0, mr.try_into()?)))
-                } else if let Ok(mr) = model_record.extract::<$py_model_record>() {
-                    Ok(Self(BinaryRecord::new(id1.0, id2.0, mr.0)))
-                } else {
-                    Err(PyErr::new::<PyTypeError, _>(format!(
-                        "Could not parse model_record input!"
-                    )))
-                }
-            }
-
-            /// Read a list of `BinaryRecord`s from a JSON file.
-            ///
-            /// Parameters
-            /// ----------
-            /// path : str
-            ///     Path to file containing the binary records.
-            ///
-            /// Returns
-            /// -------
-            /// [BinaryRecord]
-            #[staticmethod]
-            #[pyo3(text_signature = "(path)")]
-            fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
-                Ok(BinaryRecord::from_json(path)?
-                    .into_iter()
-                    .map(Self)
-                    .collect())
-            }
-
-            #[getter]
-            fn get_id1(&self) -> PyIdentifier {
-                PyIdentifier(self.0.id1.clone())
-            }
-
-            #[setter]
-            fn set_id1(&mut self, id1: PyIdentifier) {
-                self.0.id1 = id1.0;
-            }
-
-            #[getter]
-            fn get_id2(&self) -> PyIdentifier {
-                PyIdentifier(self.0.id2.clone())
-            }
-
-            #[setter]
-            fn set_id2(&mut self, id2: PyIdentifier) {
-                self.0.id2 = id2.0;
-            }
-
-            #[getter]
-            #[expect(irrefutable_let_patterns)]
-            fn get_model_record<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
-                Ok(if let Ok(mr) = f64::try_from(self.0.model_record.clone()) {
-                    pyo3::types::PyFloat::new(py, mr).into_any()
-                } else {
-                    Bound::new(py, $py_model_record(self.0.model_record.clone()))?.into_any()
-                })
-            }
-
-            #[setter]
-            fn set_model_record(&mut self, model_record: &Bound<'_, PyAny>) -> PyResult<()> {
-                if let Ok(mr) = model_record.extract::<f64>() {
-                    self.0.model_record = mr.try_into()?;
-                } else if let Ok(mr) = model_record.extract::<$py_model_record>() {
-                    self.0.model_record = mr.0;
-                } else {
-                    return Err(PyErr::new::<PyTypeError, _>(format!(
-                        "Could not parse model_record input!"
-                    )));
-                }
-                Ok(())
-            }
-
-            fn __repr__(&self) -> PyResult<String> {
-                Ok(self.0.to_string())
-            }
-        }
-
-        impl_json_handling!(PyBinaryRecord);
-    };
+#[pyclass(name = "BinaryRecord", get_all, set_all)]
+#[derive(Clone, Serialize, Deserialize)]
+pub struct PyBinaryRecord {
+    id1: Identifier,
+    id2: Identifier,
+    model_record: IndexMap<String, f64>,
 }
 
-#[pyclass(name = "NoBinaryModelRecord")]
-#[derive(Clone)]
-pub struct PyNoBinaryModelRecord(pub NoBinaryModelRecord);
-
-impl_binary_record!(NoBinaryModelRecord, PyNoBinaryModelRecord);
-
-/// Create a record for a binary segment interaction parameter.
-///
-/// Parameters
-/// ----------
-/// id1 : str
-///     The identifier of the first segment.
-/// id2 : str
-///     The identifier of the second segment.
-/// model_record : float
-///     The binary segment interaction parameter.
-///
-/// Returns
-/// -------
-/// BinarySegmentRecord
-#[pyclass(name = "BinarySegmentRecord")]
-#[derive(Clone)]
-pub struct PyBinarySegmentRecord(pub BinaryRecord<String, f64>);
+impl<M> TryInto<BinaryRecord<M>> for PyBinaryRecord
+where
+    for<'de> M: Deserialize<'de>,
+{
+    type Error = ParameterError;
+    fn try_into(self) -> Result<BinaryRecord<M>, ParameterError> {
+        Ok(serde_json::from_str(&serde_json::to_string(&self)?)?)
+    }
+}
 
 #[pymethods]
-impl PyBinarySegmentRecord {
+impl PyBinaryRecord {
     #[new]
-    fn new(id1: String, id2: String, model_record: f64) -> PyResult<Self> {
-        Ok(Self(BinaryRecord::new(id1, id2, model_record)))
+    #[pyo3(signature = (id1, id2, **parameters))]
+    fn new(id1: Identifier, id2: Identifier, parameters: Option<&Bound<'_, PyDict>>) -> Self {
+        let mut model_record = IndexMap::new();
+        parameters.map(|p| {
+            p.iter().try_for_each(|(key, value)| {
+                model_record.insert(key.extract::<String>()?, value.extract::<f64>()?);
+                Ok::<_, PyErr>(())
+            })
+        });
+        Self {
+            id1,
+            id2,
+            model_record,
+        }
     }
 
-    /// Read a list of `BinarySegmentRecord`s from a JSON file.
+    fn __repr__(&self) -> String {
+        let params = self
+            .model_record
+            .iter()
+            .map(|(p, &v)| format!(", {p}={v}"))
+            .collect::<Vec<_>>()
+            .join("");
+        format!("BinaryRecord(id1={}, id2={}{})", self.id1, self.id2, params)
+    }
+
+    /// Creates record from json string.
+    #[staticmethod]
+    fn from_json_str(json: &str) -> Result<Self, ParameterError> {
+        Ok(serde_json::from_str(json)?)
+    }
+
+    /// Creates a json string from record.
+    fn to_json_str(&self) -> Result<String, ParameterError> {
+        Ok(serde_json::to_string(&self)?)
+    }
+
+    /// Read a list of `BinaryRecord`s from a JSON file.
     ///
     /// Parameters
     /// ----------
@@ -341,229 +145,186 @@ impl PyBinarySegmentRecord {
     ///
     /// Returns
     /// -------
-    /// [BinarySegmentRecord]
+    /// [BinaryRecord]
     #[staticmethod]
     #[pyo3(text_signature = "(path)")]
-    pub fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
-        Ok(BinaryRecord::from_json(path)?
-            .into_iter()
-            .map(Self)
-            .collect())
+    fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
+        Ok(serde_json::from_reader(BufReader::new(File::open(path)?))?)
     }
+}
 
-    #[getter]
-    fn get_id1(&self) -> String {
-        self.0.id1.clone()
-    }
-
-    #[setter]
-    fn set_id1(&mut self, id1: String) {
-        self.0.id1 = id1;
-    }
-
-    #[getter]
-    fn get_id2(&self) -> String {
-        self.0.id2.clone()
-    }
-
-    #[setter]
-    fn set_id2(&mut self, id2: String) {
-        self.0.id2 = id2;
-    }
-
-    #[getter]
-    fn get_model_record(&self) -> f64 {
-        self.0.model_record
-    }
-
-    #[setter]
-    fn set_model_record(&mut self, model_record: f64) {
-        self.0.model_record = model_record;
+#[pymethods]
+impl BinarySegmentRecord {
+    #[new]
+    fn py_new(id1: String, id2: String, model_record: f64) -> PyResult<Self> {
+        Ok(Self::new(id1, id2, model_record))
     }
 
     fn __repr__(&self) -> PyResult<String> {
-        Ok(self.0.to_string())
+        Ok(self.to_string())
+    }
+
+    /// Creates record from json string.
+    #[staticmethod]
+    fn from_json_str(json: &str) -> Result<Self, ParameterError> {
+        Ok(serde_json::from_str(json)?)
+    }
+
+    /// Creates a json string from record.
+    fn to_json_str(&self) -> Result<String, ParameterError> {
+        Ok(serde_json::to_string(&self)?)
     }
 }
 
-impl_json_handling!(PyBinarySegmentRecord);
-
-#[macro_export]
-macro_rules! impl_pure_record {
-    ($model_record:ident, $py_model_record:ident) => {
-        /// All information required to characterize a pure component.
-        ///
-        /// Parameters
-        /// ----------
-        /// identifier : Identifier
-        ///     The identifier of the pure component.
-        /// molarweight : float
-        ///     The molar weight (in g/mol) of the pure component.
-        /// model_record : ModelRecord
-        ///     The pure component model parameters.
-        ///
-        /// Returns
-        /// -------
-        /// PureRecord
-        #[pyclass(name = "PureRecord")]
-        #[derive(Clone)]
-        pub struct PyPureRecord(pub PureRecord<$model_record>);
-
-        #[pymethods]
-        impl PyPureRecord {
-            #[new]
-            #[pyo3(text_signature = "(identifier, molarweight, model_record)")]
-            fn new(
-                identifier: PyIdentifier,
-                molarweight: f64,
-                model_record: $py_model_record,
-            ) -> PyResult<Self> {
-                Ok(Self(PureRecord::new(
-                    identifier.0,
-                    molarweight,
-                    model_record.0,
-                )))
-            }
-
-            #[getter]
-            fn get_identifier(&self) -> PyIdentifier {
-                PyIdentifier(self.0.identifier.clone())
-            }
-
-            #[setter]
-            fn set_identifier(&mut self, identifier: PyIdentifier) {
-                self.0.identifier = identifier.0;
-            }
-
-            #[getter]
-            fn get_molarweight(&self) -> f64 {
-                self.0.molarweight
-            }
-
-            #[setter]
-            fn set_molarweight(&mut self, molarweight: f64) {
-                self.0.molarweight = molarweight;
-            }
-
-            #[getter]
-            fn get_model_record(&self) -> $py_model_record {
-                $py_model_record(self.0.model_record.clone())
-            }
-
-            #[setter]
-            fn set_model_record(&mut self, model_record: $py_model_record) {
-                self.0.model_record = model_record.0;
-            }
-
-            fn __repr__(&self) -> PyResult<String> {
-                Ok(self.0.to_string())
-            }
-        }
-
-        impl_json_handling!(PyPureRecord);
-    };
+#[pyclass(name = "PureRecord", get_all, set_all)]
+#[derive(Clone, Serialize, Deserialize)]
+pub struct PyPureRecord {
+    identifier: Identifier,
+    molarweight: f64,
+    model_record: IndexMap<String, f64>,
 }
 
-#[macro_export]
-macro_rules! impl_segment_record {
-    ($model_record:ident, $py_model_record:ident) => {
-        /// All information required to characterize a single segment.
-        ///
-        /// Parameters
-        /// ----------
-        /// identifier : str
-        ///     The identifier of the segment.
-        /// molarweight : float
-        ///     The molar weight (in g/mol) of the segment.
-        /// model_record : ModelRecord
-        ///     The segment model parameters.
-        ///
-        /// Returns
-        /// -------
-        /// SegmentRecord
-        #[pyclass(name = "SegmentRecord")]
-        #[derive(Clone)]
-        pub struct PySegmentRecord(SegmentRecord<$model_record>);
+impl<M> TryInto<PureRecord<M>> for PyPureRecord
+where
+    for<'de> M: Deserialize<'de>,
+{
+    type Error = ParameterError;
+    fn try_into(self) -> Result<PureRecord<M>, ParameterError> {
+        Ok(serde_json::from_str(&serde_json::to_string(&self)?)?)
+    }
+}
 
-        #[pymethods]
-        impl PySegmentRecord {
-            #[new]
-            #[pyo3(text_signature = "(identifier, molarweight, model_record)")]
-            fn new(
-                identifier: String,
-                molarweight: f64,
-                model_record: $py_model_record,
-            ) -> PyResult<Self> {
-                Ok(Self(SegmentRecord::new(
-                    identifier,
-                    molarweight,
-                    model_record.0,
-                )))
-            }
-
-            /// Read a list of `SegmentRecord`s from a JSON file.
-            ///
-            /// Parameters
-            /// ----------
-            /// path : str
-            ///     Path to file containing the segment records.
-            ///
-            /// Returns
-            /// -------
-            /// [SegmentRecord]
-            #[staticmethod]
-            fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
-                Ok(SegmentRecord::from_json(path)?
-                    .into_iter()
-                    .map(Self)
-                    .collect())
-            }
-
-            #[getter]
-            fn get_identifier(&self) -> String {
-                self.0.identifier.clone()
-            }
-
-            #[setter]
-            fn set_identifier(&mut self, identifier: String) {
-                self.0.identifier = identifier;
-            }
-
-            #[getter]
-            fn get_molarweight(&self) -> f64 {
-                self.0.molarweight
-            }
-
-            #[setter]
-            fn set_molarweight(&mut self, molarweight: f64) {
-                self.0.molarweight = molarweight;
-            }
-
-            #[getter]
-            fn get_model_record(&self) -> $py_model_record {
-                $py_model_record(self.0.model_record.clone())
-            }
-
-            #[setter]
-            fn set_model_record(&mut self, model_record: $py_model_record) {
-                self.0.model_record = model_record.0;
-            }
-
-            fn __repr__(&self) -> PyResult<String> {
-                Ok(self.0.to_string())
-            }
+#[pymethods]
+impl PyPureRecord {
+    #[new]
+    #[pyo3(signature = (identifier, molarweight, **parameters))]
+    fn new(
+        identifier: Identifier,
+        molarweight: f64,
+        parameters: Option<&Bound<'_, PyDict>>,
+    ) -> Self {
+        let mut model_record = IndexMap::new();
+        parameters.map(|p| {
+            p.iter().try_for_each(|(key, value)| {
+                model_record.insert(key.extract::<String>()?, value.extract::<f64>()?);
+                Ok::<_, PyErr>(())
+            })
+        });
+        Self {
+            identifier,
+            molarweight,
+            model_record,
         }
+    }
 
-        impl_json_handling!(PySegmentRecord);
-    };
+    fn __repr__(&self) -> String {
+        let params = self
+            .model_record
+            .iter()
+            .map(|(p, &v)| format!(", {p}={v}"))
+            .collect::<Vec<_>>()
+            .join("");
+        format!(
+            "PureRecord(identifier={}, molarweight={}{})",
+            self.identifier, self.molarweight, params
+        )
+    }
+
+    /// Creates record from json string.
+    #[staticmethod]
+    fn from_json_str(json: &str) -> Result<Self, ParameterError> {
+        Ok(serde_json::from_str(json)?)
+    }
+
+    /// Creates a json string from record.
+    fn to_json_str(&self) -> Result<String, ParameterError> {
+        Ok(serde_json::to_string(&self)?)
+    }
+}
+
+#[pyclass(name = "SegmentRecord", get_all, set_all)]
+#[derive(Clone, Serialize, Deserialize)]
+pub struct PySegmentRecord {
+    identifier: String,
+    molarweight: f64,
+    model_record: IndexMap<String, f64>,
+}
+
+impl<M> TryInto<SegmentRecord<M>> for PySegmentRecord
+where
+    for<'de> M: Deserialize<'de>,
+{
+    type Error = ParameterError;
+    fn try_into(self) -> Result<SegmentRecord<M>, ParameterError> {
+        Ok(serde_json::from_str(&serde_json::to_string(&self)?)?)
+    }
+}
+
+#[pymethods]
+impl PySegmentRecord {
+    #[new]
+    #[pyo3(signature = (identifier, molarweight, **parameters))]
+    fn new(identifier: String, molarweight: f64, parameters: Option<&Bound<'_, PyDict>>) -> Self {
+        let mut model_record = IndexMap::new();
+        parameters.map(|p| {
+            p.iter().try_for_each(|(key, value)| {
+                model_record.insert(key.extract::<String>()?, value.extract::<f64>()?);
+                Ok::<_, PyErr>(())
+            })
+        });
+        Self {
+            identifier,
+            molarweight,
+            model_record,
+        }
+    }
+
+    fn __repr__(&self) -> String {
+        let params = self
+            .model_record
+            .iter()
+            .map(|(p, &v)| format!(", {p}={v}"))
+            .collect::<Vec<_>>()
+            .join("");
+        format!(
+            "SegmentRecord(identifier={}, molarweight={}{})",
+            self.identifier, self.molarweight, params
+        )
+    }
+
+    /// Creates record from json string.
+    #[staticmethod]
+    fn from_json_str(json: &str) -> Result<Self, ParameterError> {
+        Ok(serde_json::from_str(json)?)
+    }
+
+    /// Creates a json string from record.
+    fn to_json_str(&self) -> Result<String, ParameterError> {
+        Ok(serde_json::to_string(&self)?)
+    }
+
+    /// Read a list of `SegmentRecord`s from a JSON file.
+    ///
+    /// Parameters
+    /// ----------
+    /// path : str
+    ///     Path to file containing the segment records.
+    ///
+    /// Returns
+    /// -------
+    /// [SegmentRecord]
+    #[staticmethod]
+    pub fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
+        Ok(serde_json::from_reader(BufReader::new(File::open(path)?))?)
+    }
 }
 
 #[macro_export]
 macro_rules! impl_parameter {
-        ($parameter:ty, $py_parameter:ty, $py_model_record:ty) => {
-            impl_parameter!($parameter, $py_parameter, $py_model_record, PyNoBinaryModelRecord);
-        };
-        ($parameter:ty, $py_parameter:ty, $py_model_record:ty, $py_binary_model_record:ty) => {
+        // ($parameter:ty, $py_parameter:ty) => {
+        //     impl_parameter!($parameter, $py_parameter, PyNoBinaryModelRecord);
+        // };
+        ($parameter:ty, $py_parameter:ty) => {
         use pyo3::pybacked::*;
 
         #[pymethods]
@@ -589,13 +350,13 @@ macro_rules! impl_parameter {
                 binary_records: Option<&Bound<'_, PyAny>>,
                 identifier_option: IdentifierOption,
             ) -> PyResult<Self> {
-                let prs: Vec<_> = pure_records.into_iter().map(|pr| pr.0).collect();
+                let prs = pure_records.into_iter().map(|pr| pr.try_into()).collect::<Result<Vec<_>, _>>()?;
                 let binary_records = binary_records
                     .map(|binary_records| {
                         if let Ok(br) = binary_records.extract::<PyReadonlyArray2<f64>>() {
                             Ok(Some(br.as_array().mapv(|r| r.try_into().unwrap())))
                         } else if let Ok(br) = binary_records.extract::<Vec<PyBinaryRecord>>() {
-                            let brs: Vec<_> = br.into_iter().map(|br| br.0).collect();
+                            let brs: Vec<_> = br.into_iter().map(|br| br.try_into()).collect::<Result<_,_>>()?;
                             Ok(<$parameter>::binary_matrix_from_records(
                                 &prs,
                                 &brs,
@@ -620,53 +381,53 @@ macro_rules! impl_parameter {
             ///     The pure component parameters.
             #[staticmethod]
             fn new_pure(pure_record: PyPureRecord) -> PyResult<Self> {
-                Ok(Self(Arc::new(<$parameter>::new_pure(pure_record.0)?)))
+                Ok(Self(Arc::new(<$parameter>::new_pure(pure_record.try_into()?)?)))
             }
 
-            /// Creates parameters for a binary system from pure records and an optional
-            /// binary interaction parameter or binary interaction parameter record.
-            ///
-            /// Parameters
-            /// ----------
-            /// pure_records : [PureRecord]
-            ///     A list of pure component parameters.
-            /// binary_record : float or BinaryRecord, optional
-            ///     The binary interaction parameter or binary interaction record.
-            #[staticmethod]
-            #[pyo3(text_signature = "(pure_records, binary_record=None)", signature = (pure_records, binary_record=None))]
-            fn new_binary(
-                pure_records: Vec<PyPureRecord>,
-                binary_record: Option<&Bound<'_, PyAny>>,
-            ) -> PyResult<Self> {
-                let prs = pure_records.into_iter().map(|pr| pr.0).collect();
-                let br = binary_record
-                    .map(|br| {
-                        if let Ok(r) = br.extract::<f64>() {
-                            Ok(r.try_into()?)
-                        } else if let Ok(r) = br.extract::<$py_binary_model_record>() {
-                            Ok(r.into())
-                        } else {
-                            Err(PyErr::new::<PyTypeError, _>(format!(
-                                "Could not parse binary input!"
-                            )))
-                        }
-                    })
-                    .transpose()?;
-                Ok(Self(Arc::new(<$parameter>::new_binary(prs, br)?)))
-            }
+            // /// Creates parameters for a binary system from pure records and an optional
+            // /// binary interaction parameter or binary interaction parameter record.
+            // ///
+            // /// Parameters
+            // /// ----------
+            // /// pure_records : [PureRecord]
+            // ///     A list of pure component parameters.
+            // /// binary_record : float or BinaryRecord, optional
+            // ///     The binary interaction parameter or binary interaction record.
+            // #[staticmethod]
+            // #[pyo3(text_signature = "(pure_records, binary_record=None)", signature = (pure_records, binary_record=None))]
+            // fn new_binary(
+            //     pure_records: Vec<PyPureRecord>,
+            //     binary_record: Option<&Bound<'_, PyAny>>,
+            // ) -> PyResult<Self> {
+            //     let prs = pure_records.into_iter().map(|pr| pr.try_into()).collect::<Result<_,_>>()?;
+            //     let br = binary_record
+            //         .map(|br| {
+            //             if let Ok(r) = br.extract::<f64>() {
+            //                 Ok(r.try_into()?)
+            //             } else if let Ok(r) = br.extract::<$py_binary_model_record>() {
+            //                 Ok(r.into())
+            //             } else {
+            //                 Err(PyErr::new::<PyTypeError, _>(format!(
+            //                     "Could not parse binary input!"
+            //                 )))
+            //             }
+            //         })
+            //         .transpose()?;
+            //     Ok(Self(Arc::new(<$parameter>::new_binary(prs, br)?)))
+            // }
 
-            /// Creates parameters from model records with default values for the molar weight,
-            /// identifiers, and binary interaction parameters.
-            ///
-            /// Parameters
-            /// ----------
-            /// model_records : [ModelRecord]
-            ///     A list of model parameters.
-            #[staticmethod]
-            fn from_model_records(model_records: Vec<$py_model_record>) -> PyResult<Self> {
-                let mrs = model_records.into_iter().map(|mr| mr.0).collect();
-                Ok(Self(Arc::new(<$parameter>::from_model_records(mrs)?)))
-            }
+            // /// Creates parameters from model records with default values for the molar weight,
+            // /// identifiers, and binary interaction parameters.
+            // ///
+            // /// Parameters
+            // /// ----------
+            // /// model_records : [ModelRecord]
+            // ///     A list of model parameters.
+            // #[staticmethod]
+            // fn from_model_records(model_records: Vec<$py_model_record>) -> PyResult<Self> {
+            //     let mrs = model_records.into_iter().map(|mr| mr.0).collect();
+            //     Ok(Self(Arc::new(<$parameter>::from_model_records(mrs)?)))
+            // }
 
             /// Creates parameters from json files.
             ///
@@ -729,15 +490,15 @@ macro_rules! impl_parameter {
                 )?)))
             }
 
-            #[getter]
-            fn get_pure_records(&self) -> Vec<PyPureRecord> {
-                self.0
-                    .records()
-                    .0
-                    .iter()
-                    .map(|r| PyPureRecord(r.clone()))
-                    .collect()
-            }
+            // #[getter]
+            // fn get_pure_records(&self) -> Vec<PyPureRecord> {
+            //     self.0
+            //         .records()
+            //         .0
+            //         .iter()
+            //         .map(|r| PyPureRecord(r.clone()))
+            //         .collect()
+            // }
 
             #[getter]
             fn get_binary_records<'py>(&self, py: Python<'py>) -> Option<Bound<'py, PyArray2<f64>>> {
@@ -772,14 +533,14 @@ macro_rules! impl_parameter_from_segments {
             #[pyo3(text_signature = "(chemical_records, segment_records, binary_segment_records=None)",
             signature = (chemical_records, segment_records, binary_segment_records=None))]
             fn from_segments(
-                chemical_records: Vec<PyChemicalRecord>,
+                chemical_records: Vec<ChemicalRecord>,
                 segment_records: Vec<PySegmentRecord>,
-                binary_segment_records: Option<Vec<PyBinarySegmentRecord>>,
+                binary_segment_records: Option<Vec<BinarySegmentRecord>>,
             ) -> PyResult<Self> {
                 Ok(Self(Arc::new(<$parameter>::from_segments(
-                    chemical_records.into_iter().map(|cr| cr.0).collect(),
-                    segment_records.into_iter().map(|sr| sr.0).collect(),
-                    binary_segment_records.map(|r| r.into_iter().map(|r| BinaryRecord{id1:r.0.id1,id2:r.0.id2,model_record:r.0.model_record.into()}).collect()),
+                    chemical_records,
+                    segment_records.into_iter().map(|sr| sr.try_into()).collect::<Result<_, ParameterError>>()?,
+                    binary_segment_records,
                 )?)))
             }
 
@@ -842,11 +603,11 @@ macro_rules! impl_parameter_from_segments {
                 identifier: Vec<Bound<'_,PyAny>>,
                 smarts_records: Vec<PySmartsRecord>,
                 segment_records: Vec<PySegmentRecord>,
-                binary_segment_records: Option<Vec<PyBinarySegmentRecord>>,
+                binary_segment_records: Option<Vec<BinarySegmentRecord>>,
             ) -> PyResult<Self> {
                 let chemical_records: Vec<_> = identifier
                     .into_iter()
-                    .map(|i| PyChemicalRecord::from_smiles(&i, smarts_records.clone()))
+                    .map(|i| ChemicalRecord::from_smiles(&i, smarts_records.clone()))
                     .collect::<PyResult<_>>()?;
                 Self::from_segments(chemical_records, segment_records, binary_segment_records)
             }
@@ -878,7 +639,7 @@ macro_rules! impl_parameter_from_segments {
             ) -> PyResult<Self> {
                 let smarts_records = PySmartsRecord::from_json(&smarts_path)?;
                 let segment_records = PySegmentRecord::from_json(&segments_path)?;
-                let binary_segment_records = binary_path.map(|p| PyBinarySegmentRecord::from_json(&p)).transpose()?;
+                let binary_segment_records = binary_path.map(|p| BinarySegmentRecord::from_json(&p)).transpose()?;
                 Self::from_smiles(
                     identifier,
                     smarts_records,
@@ -889,25 +650,3 @@ macro_rules! impl_parameter_from_segments {
         }
     };
 }
-
-#[macro_export]
-macro_rules! impl_json_handling {
-    ($py_parameter:ty) => {
-        #[pymethods]
-        impl $py_parameter {
-            /// Creates record from json string.
-            #[staticmethod]
-            fn from_json_str(json: &str) -> Result<Self, ParameterError> {
-                Ok(Self(serde_json::from_str(json)?))
-            }
-
-            /// Creates a json string from record.
-            fn to_json_str(&self) -> Result<String, ParameterError> {
-                Ok(serde_json::to_string(&self.0)?)
-            }
-        }
-    };
-}
-
-mod fragmentation;
-pub use fragmentation::PySmartsRecord;

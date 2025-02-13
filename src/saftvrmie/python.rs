@@ -1,8 +1,6 @@
-use super::parameters::{SaftVRMieBinaryRecord, SaftVRMieParameters, SaftVRMieRecord};
-use feos_core::parameter::{
-    BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
-};
-use feos_core::python::parameter::*;
+use super::parameters::{SaftVRMieParameters, SaftVRMieRecord};
+use feos_core::parameter::{Identifier, IdentifierOption, Parameter, ParameterError};
+use feos_core::python::parameter::{PyBinaryRecord, PyPureRecord};
 use feos_core::*;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyTypeError;
@@ -11,7 +9,6 @@ use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
 use super::eos::association::AssociationRecord;
-use feos_core::impl_json_handling;
 
 /// Pure component association parameters
 #[pyclass(name = "SaftVRMieAssociationRecord")]
@@ -55,8 +52,6 @@ impl PySaftVRMieAssociationRecord {
         Ok(self.0.to_string())
     }
 }
-
-impl_json_handling!(PySaftVRMieAssociationRecord);
 
 /// Pure-substance parameters for the SAFT VR Mie equation of state.
 ///
@@ -202,51 +197,43 @@ impl PySaftVRMieRecord {
     }
 }
 
-impl_json_handling!(PySaftVRMieRecord);
-impl_pure_record!(SaftVRMieRecord, PySaftVRMieRecord);
+// /// Create a record for a binary interaction parameter.
+// #[pyclass(name = "SaftVRMieBinaryRecord")]
+// #[derive(Clone)]
+// pub struct PySaftVRMieBinaryRecord(SaftVRMieBinaryRecord);
 
-/// Create a record for a binary interaction parameter.
-#[pyclass(name = "SaftVRMieBinaryRecord")]
-#[derive(Clone)]
-pub struct PySaftVRMieBinaryRecord(SaftVRMieBinaryRecord);
+// #[pymethods]
+// impl PySaftVRMieBinaryRecord {
+//     #[new]
+//     #[pyo3(text_signature = "(k_ij=None, gamma_ij=None, rc_ab=None, epsilon_k_ab=None)")]
+//     #[pyo3(signature = (k_ij=None, gamma_ij=None, rc_ab=None, epsilon_k_ab=None))]
+//     fn new(
+//         k_ij: Option<f64>,
+//         gamma_ij: Option<f64>,
+//         rc_ab: Option<f64>,
+//         epsilon_k_ab: Option<f64>,
+//     ) -> Self {
+//         Self(SaftVRMieBinaryRecord::new(
+//             k_ij,
+//             gamma_ij,
+//             rc_ab,
+//             epsilon_k_ab,
+//         ))
+//     }
 
-#[pymethods]
-impl PySaftVRMieBinaryRecord {
-    #[new]
-    #[pyo3(text_signature = "(k_ij=None, gamma_ij=None, rc_ab=None, epsilon_k_ab=None)")]
-    #[pyo3(signature = (k_ij=None, gamma_ij=None, rc_ab=None, epsilon_k_ab=None))]
-    fn new(
-        k_ij: Option<f64>,
-        gamma_ij: Option<f64>,
-        rc_ab: Option<f64>,
-        epsilon_k_ab: Option<f64>,
-    ) -> Self {
-        Self(SaftVRMieBinaryRecord::new(
-            k_ij,
-            gamma_ij,
-            rc_ab,
-            epsilon_k_ab,
-        ))
-    }
+//     fn __repr__(&self) -> PyResult<String> {
+//         Ok(self.0.to_string())
+//     }
+// }
 
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(self.0.to_string())
-    }
-}
-
-impl_json_handling!(PySaftVRMieBinaryRecord);
-impl_binary_record!(SaftVRMieBinaryRecord, PySaftVRMieBinaryRecord);
+// impl_json_handling!(PySaftVRMieBinaryRecord);
+// impl_binary_record!(SaftVRMieBinaryRecord, PySaftVRMieBinaryRecord);
 
 #[pyclass(name = "SaftVRMieParameters")]
 #[derive(Clone)]
 pub struct PySaftVRMieParameters(pub Arc<SaftVRMieParameters>);
 
-impl_parameter!(
-    SaftVRMieParameters,
-    PySaftVRMieParameters,
-    PySaftVRMieRecord,
-    PySaftVRMieBinaryRecord
-);
+impl_parameter!(SaftVRMieParameters, PySaftVRMieParameters);
 
 #[pymethods]
 impl PySaftVRMieParameters {
@@ -265,11 +252,10 @@ impl PySaftVRMieParameters {
 
 #[pymodule]
 pub fn saftvrmie(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<PyIdentifier>()?;
+    m.add_class::<Identifier>()?;
     m.add_class::<IdentifierOption>()?;
 
     m.add_class::<PySaftVRMieRecord>()?;
-    m.add_class::<PySaftVRMieBinaryRecord>()?;
     m.add_class::<PyPureRecord>()?;
     m.add_class::<PyBinaryRecord>()?;
     m.add_class::<PySaftVRMieParameters>()?;

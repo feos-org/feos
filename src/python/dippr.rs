@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use crate::ideal_gas::{Dippr, DipprRecord};
+use feos_core::impl_parameter;
 use feos_core::parameter::*;
 use feos_core::python::parameter::*;
-use feos_core::{impl_json_handling, impl_parameter, impl_pure_record};
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
@@ -66,21 +66,17 @@ impl PyDipprRecord {
     }
 }
 
-impl_json_handling!(PyDipprRecord);
-impl_pure_record!(DipprRecord, PyDipprRecord);
+// impl_json_handling!(PyDipprRecord);
 
 /// Ideal gas model based on DIPPR correlations.
 #[pyclass(name = "Dippr")]
 #[derive(Clone)]
 pub struct PyDippr(pub Arc<Dippr>);
 
-impl_parameter!(Dippr, PyDippr, PyDipprRecord);
+impl_parameter!(Dippr, PyDippr);
 
 #[pymodule]
 pub fn dippr(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<PyIdentifier>()?;
-    m.add_class::<IdentifierOption>()?;
     m.add_class::<PyDipprRecord>()?;
-    m.add_class::<PyPureRecord>()?;
     m.add_class::<PyDippr>()
 }
