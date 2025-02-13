@@ -1,12 +1,8 @@
 //! Python bindings for the SAFT-VRQ Mie equation of state.
 use crate::saftvrqmie::eos::FeynmanHibbsOrder;
-use crate::saftvrqmie::parameters::{
-    SaftVRQMieBinaryRecord, SaftVRQMieParameters, SaftVRQMieRecord,
-};
-use feos_core::parameter::{
-    BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
-};
-use feos_core::python::parameter::PyIdentifier;
+use crate::saftvrqmie::parameters::SaftVRQMieParameters;
+use feos_core::parameter::{IdentifierOption, Parameter, ParameterError};
+use feos_core::python::parameter::{PyBinaryRecord, PyPureRecord};
 use feos_core::*;
 use ndarray::{Array1, Array2};
 use numpy::prelude::*;
@@ -17,160 +13,155 @@ use quantity::{Area, Length, Temperature, AMU, ANGSTROM, KB, KELVIN, PLANCK};
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
-/// Pure-substance parameters for the Saft-VRQ Mie equation of state.
-///
-/// Parameters
-/// ----------
-/// m : float
-///     Segment number
-/// sigma : float
-///     Structure parameter of the Mie potential in units of
-///     Angstrom.
-/// epsilon_k : float
-///     Energetic parameter of the Mie potential in units of
-///     Kelvin.
-/// lr : float
-///     Repulsive exponent of the Mie potential.
-/// la : float
-///     Attractive exponent of the Mie potential.
-/// fh : int
-///     Feynman-Hibbs order. One of {0, 1, 2}.
-///     `fh = 0` disables quantum corrections so that effectively,
-///     the SAFT-VR Mie equation of state is used.
-/// viscosity : List[float], optional
-///     Entropy-scaling parameters for viscosity. Defaults to `None`.
-/// diffusion : List[float], optional
-///     Entropy-scaling parameters for diffusion. Defaults to `None`.
-/// thermal_conductivity : List[float], optional
-///     Entropy-scaling parameters for thermal_conductivity. Defaults to `None`.
-#[pyclass(name = "SaftVRQMieRecord")]
-#[derive(Clone)]
-pub struct PySaftVRQMieRecord(SaftVRQMieRecord);
+// /// Pure-substance parameters for the Saft-VRQ Mie equation of state.
+// ///
+// /// Parameters
+// /// ----------
+// /// m : float
+// ///     Segment number
+// /// sigma : float
+// ///     Structure parameter of the Mie potential in units of
+// ///     Angstrom.
+// /// epsilon_k : float
+// ///     Energetic parameter of the Mie potential in units of
+// ///     Kelvin.
+// /// lr : float
+// ///     Repulsive exponent of the Mie potential.
+// /// la : float
+// ///     Attractive exponent of the Mie potential.
+// /// fh : int
+// ///     Feynman-Hibbs order. One of {0, 1, 2}.
+// ///     `fh = 0` disables quantum corrections so that effectively,
+// ///     the SAFT-VR Mie equation of state is used.
+// /// viscosity : List[float], optional
+// ///     Entropy-scaling parameters for viscosity. Defaults to `None`.
+// /// diffusion : List[float], optional
+// ///     Entropy-scaling parameters for diffusion. Defaults to `None`.
+// /// thermal_conductivity : List[float], optional
+// ///     Entropy-scaling parameters for thermal_conductivity. Defaults to `None`.
+// #[pyclass(name = "SaftVRQMieRecord")]
+// #[derive(Clone)]
+// pub struct PySaftVRQMieRecord(SaftVRQMieRecord);
 
-#[pymethods]
-impl PySaftVRQMieRecord {
-    #[new]
-    #[pyo3(
-        text_signature = "(m, sigma, epsilon_k, lr, la, fh, viscosity=None, diffusion=None, thermal_conductivity=None)",
-        signature = (m, sigma, epsilon_k, lr, la, fh, viscosity=None, diffusion=None, thermal_conductivity=None)
-    )]
-    #[expect(clippy::too_many_arguments)]
-    fn new(
-        m: f64,
-        sigma: f64,
-        epsilon_k: f64,
-        lr: f64,
-        la: f64,
-        fh: usize,
-        viscosity: Option<[f64; 4]>,
-        diffusion: Option<[f64; 5]>,
-        thermal_conductivity: Option<[f64; 4]>,
-    ) -> PyResult<Self> {
-        Ok(Self(SaftVRQMieRecord::new(
-            m,
-            sigma,
-            epsilon_k,
-            lr,
-            la,
-            fh,
-            viscosity,
-            diffusion,
-            thermal_conductivity,
-        )?))
-    }
+// #[pymethods]
+// impl PySaftVRQMieRecord {
+//     #[new]
+//     #[pyo3(
+//         text_signature = "(m, sigma, epsilon_k, lr, la, fh, viscosity=None, diffusion=None, thermal_conductivity=None)",
+//         signature = (m, sigma, epsilon_k, lr, la, fh, viscosity=None, diffusion=None, thermal_conductivity=None)
+//     )]
+//     #[expect(clippy::too_many_arguments)]
+//     fn new(
+//         m: f64,
+//         sigma: f64,
+//         epsilon_k: f64,
+//         lr: f64,
+//         la: f64,
+//         fh: usize,
+//         viscosity: Option<[f64; 4]>,
+//         diffusion: Option<[f64; 5]>,
+//         thermal_conductivity: Option<[f64; 4]>,
+//     ) -> PyResult<Self> {
+//         Ok(Self(SaftVRQMieRecord::new(
+//             m,
+//             sigma,
+//             epsilon_k,
+//             lr,
+//             la,
+//             fh,
+//             viscosity,
+//             diffusion,
+//             thermal_conductivity,
+//         )?))
+//     }
 
-    #[getter]
-    fn get_m(&self) -> f64 {
-        self.0.m
-    }
+//     #[getter]
+//     fn get_m(&self) -> f64 {
+//         self.0.m
+//     }
 
-    #[getter]
-    fn get_sigma(&self) -> f64 {
-        self.0.sigma
-    }
+//     #[getter]
+//     fn get_sigma(&self) -> f64 {
+//         self.0.sigma
+//     }
 
-    #[getter]
-    fn get_epsilon_k(&self) -> f64 {
-        self.0.epsilon_k
-    }
+//     #[getter]
+//     fn get_epsilon_k(&self) -> f64 {
+//         self.0.epsilon_k
+//     }
 
-    #[getter]
-    fn get_lr(&self) -> f64 {
-        self.0.lr
-    }
+//     #[getter]
+//     fn get_lr(&self) -> f64 {
+//         self.0.lr
+//     }
 
-    #[getter]
-    fn get_la(&self) -> f64 {
-        self.0.la
-    }
+//     #[getter]
+//     fn get_la(&self) -> f64 {
+//         self.0.la
+//     }
 
-    #[getter]
-    fn get_viscosity(&self) -> Option<[f64; 4]> {
-        self.0.viscosity
-    }
+//     #[getter]
+//     fn get_viscosity(&self) -> Option<[f64; 4]> {
+//         self.0.viscosity
+//     }
 
-    #[getter]
-    fn get_diffusion(&self) -> Option<[f64; 5]> {
-        self.0.diffusion
-    }
+//     #[getter]
+//     fn get_diffusion(&self) -> Option<[f64; 5]> {
+//         self.0.diffusion
+//     }
 
-    #[getter]
-    fn get_thermal_conductivity(&self) -> Option<[f64; 4]> {
-        self.0.thermal_conductivity
-    }
+//     #[getter]
+//     fn get_thermal_conductivity(&self) -> Option<[f64; 4]> {
+//         self.0.thermal_conductivity
+//     }
 
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(self.0.to_string())
-    }
-}
+//     fn __repr__(&self) -> PyResult<String> {
+//         Ok(self.0.to_string())
+//     }
+// }
 
-/// Create a binary record from k_ij and l_ij values.
-#[pyclass(name = "SaftVRQMieBinaryRecord")]
-#[derive(Clone)]
-pub struct PySaftVRQMieBinaryRecord(SaftVRQMieBinaryRecord);
+// /// Create a binary record from k_ij and l_ij values.
+// #[pyclass(name = "SaftVRQMieBinaryRecord")]
+// #[derive(Clone)]
+// pub struct PySaftVRQMieBinaryRecord(SaftVRQMieBinaryRecord);
 
-#[pymethods]
-impl PySaftVRQMieBinaryRecord {
-    #[new]
-    #[pyo3(text_signature = "(k_ij, l_ij)")]
-    fn new(k_ij: f64, l_ij: f64) -> Self {
-        Self(SaftVRQMieBinaryRecord { k_ij, l_ij })
-    }
+// #[pymethods]
+// impl PySaftVRQMieBinaryRecord {
+//     #[new]
+//     #[pyo3(text_signature = "(k_ij, l_ij)")]
+//     fn new(k_ij: f64, l_ij: f64) -> Self {
+//         Self(SaftVRQMieBinaryRecord { k_ij, l_ij })
+//     }
 
-    #[getter]
-    fn get_k_ij(&self) -> f64 {
-        self.0.k_ij
-    }
+//     #[getter]
+//     fn get_k_ij(&self) -> f64 {
+//         self.0.k_ij
+//     }
 
-    #[getter]
-    fn get_l_ij(&self) -> f64 {
-        self.0.l_ij
-    }
+//     #[getter]
+//     fn get_l_ij(&self) -> f64 {
+//         self.0.l_ij
+//     }
 
-    #[setter]
-    fn set_k_ij(&mut self, k_ij: f64) {
-        self.0.k_ij = k_ij
-    }
+//     #[setter]
+//     fn set_k_ij(&mut self, k_ij: f64) {
+//         self.0.k_ij = k_ij
+//     }
 
-    #[setter]
-    fn set_l_ij(&mut self, l_ij: f64) {
-        self.0.l_ij = l_ij
-    }
-}
+//     #[setter]
+//     fn set_l_ij(&mut self, l_ij: f64) {
+//         self.0.l_ij = l_ij
+//     }
+// }
 
 #[pyclass(name = "SaftVRQMieParameters")]
 #[derive(Clone)]
 pub struct PySaftVRQMieParameters(pub Arc<SaftVRQMieParameters>);
 
-impl_json_handling!(PySaftVRQMieRecord);
-impl_pure_record!(SaftVRQMieRecord, PySaftVRQMieRecord);
-impl_binary_record!(SaftVRQMieBinaryRecord, PySaftVRQMieBinaryRecord);
-impl_parameter!(
-    SaftVRQMieParameters,
-    PySaftVRQMieParameters,
-    PySaftVRQMieRecord,
-    PySaftVRQMieBinaryRecord
-);
+// impl_json_handling!(PySaftVRQMieRecord);
+// impl_pure_record!(SaftVRQMieRecord, PySaftVRQMieRecord);
+// impl_binary_record!(SaftVRQMieBinaryRecord, PySaftVRQMieBinaryRecord);
+impl_parameter!(SaftVRQMieParameters, PySaftVRQMieParameters);
 
 #[pymethods]
 impl PySaftVRQMieParameters {
@@ -340,14 +331,7 @@ impl PySaftVRQMieParameters {
 
 #[pymodule]
 pub fn saftvrqmie(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<PyIdentifier>()?;
-    m.add_class::<IdentifierOption>()?;
     m.add_class::<FeynmanHibbsOrder>()?;
-
-    m.add_class::<PySaftVRQMieRecord>()?;
-    m.add_class::<PySaftVRQMieBinaryRecord>()?;
-    m.add_class::<PyPureRecord>()?;
-    m.add_class::<PyBinaryRecord>()?;
     m.add_class::<PySaftVRQMieParameters>()?;
     Ok(())
 }

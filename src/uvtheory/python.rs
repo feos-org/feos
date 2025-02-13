@@ -1,8 +1,6 @@
-use super::parameters::{NoRecord, UVTheoryBinaryRecord, UVTheoryParameters, UVTheoryRecord};
+use super::parameters::{UVTheoryParameters, UVTheoryRecord};
 use super::Perturbation;
-use feos_core::parameter::{
-    BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
-};
+use feos_core::parameter::{Identifier, IdentifierOption, Parameter, ParameterError, PureRecord};
 use feos_core::python::parameter::*;
 use feos_core::*;
 use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
@@ -11,35 +9,35 @@ use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
-/// Create a set of UV Theory parameters from records.
-#[pyclass(name = "NoRecord")]
-#[derive(Clone)]
-struct PyNoRecord(NoRecord);
+// /// Create a set of UV Theory parameters from records.
+// #[pyclass(name = "NoRecord")]
+// #[derive(Clone)]
+// struct PyNoRecord(NoRecord);
 
-/// Create a set of UV Theory parameters from records.
-#[pyclass(name = "UVTheoryRecord")]
-#[derive(Clone)]
-pub struct PyUVTheoryRecord(UVTheoryRecord);
+// /// Create a set of UV Theory parameters from records.
+// #[pyclass(name = "UVTheoryRecord")]
+// #[derive(Clone)]
+// pub struct PyUVTheoryRecord(UVTheoryRecord);
 
-#[pymethods]
-impl PyUVTheoryRecord {
-    #[new]
-    #[pyo3(text_signature = "(rep, att, sigma, epsilon_k)")]
-    fn new(rep: f64, att: f64, sigma: f64, epsilon_k: f64) -> Self {
-        Self(UVTheoryRecord::new(rep, att, sigma, epsilon_k))
-    }
+// #[pymethods]
+// impl PyUVTheoryRecord {
+//     #[new]
+//     #[pyo3(text_signature = "(rep, att, sigma, epsilon_k)")]
+//     fn new(rep: f64, att: f64, sigma: f64, epsilon_k: f64) -> Self {
+//         Self(UVTheoryRecord::new(rep, att, sigma, epsilon_k))
+//     }
 
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(self.0.to_string())
-    }
-}
+//     fn __repr__(&self) -> PyResult<String> {
+//         Ok(self.0.to_string())
+//     }
+// }
 
-impl_json_handling!(PyUVTheoryRecord);
+// impl_json_handling!(PyUVTheoryRecord);
 
-#[pyclass(name = "UVTheoryBinaryRecord")]
-#[derive(Clone)]
-pub struct PyUVTheoryBinaryRecord(UVTheoryBinaryRecord);
-impl_binary_record!(UVTheoryBinaryRecord, PyUVTheoryBinaryRecord);
+// #[pyclass(name = "UVTheoryBinaryRecord")]
+// #[derive(Clone)]
+// pub struct PyUVTheoryBinaryRecord(UVTheoryBinaryRecord);
+// impl_binary_record!(UVTheoryBinaryRecord, PyUVTheoryBinaryRecord);
 
 #[pyclass(name = "UVTheoryParameters")]
 #[derive(Clone)]
@@ -121,24 +119,12 @@ impl PyUVTheoryParameters {
     }
 }
 
-impl_pure_record!(UVTheoryRecord, PyUVTheoryRecord);
-impl_parameter!(
-    UVTheoryParameters,
-    PyUVTheoryParameters,
-    PyUVTheoryRecord,
-    PyUVTheoryBinaryRecord
-);
+// impl_pure_record!(UVTheoryRecord, PyUVTheoryRecord);
+impl_parameter!(UVTheoryParameters, PyUVTheoryParameters);
 
 #[pymodule]
 pub fn uvtheory(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<PyIdentifier>()?;
-    m.add_class::<IdentifierOption>()?;
-
     m.add_class::<Perturbation>()?;
-    m.add_class::<PyUVTheoryRecord>()?;
-    m.add_class::<PyUVTheoryBinaryRecord>()?;
-    m.add_class::<PyPureRecord>()?;
-    m.add_class::<PyBinaryRecord>()?;
     m.add_class::<PyUVTheoryParameters>()?;
     Ok(())
 }

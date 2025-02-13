@@ -1,7 +1,7 @@
 use super::parameters::*;
+use feos_core::impl_parameter;
 use feos_core::parameter::*;
 use feos_core::python::parameter::*;
-use feos_core::{impl_binary_record, impl_json_handling, impl_parameter, impl_pure_record};
 use numpy::prelude::*;
 use numpy::{PyArray2, PyReadonlyArray2};
 use pyo3::exceptions::{PyTypeError, PyValueError};
@@ -9,72 +9,72 @@ use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
-/// Create a set of PeTS parameters from records.
-#[pyclass(name = "PetsRecord")]
-#[derive(Clone)]
-pub struct PyPetsRecord(PetsRecord);
+// /// Create a set of PeTS parameters from records.
+// #[pyclass(name = "PetsRecord")]
+// #[derive(Clone)]
+// pub struct PyPetsRecord(PetsRecord);
 
-#[pymethods]
-impl PyPetsRecord {
-    #[new]
-    #[pyo3(
-        text_signature = "(sigma, epsilon_k, viscosity=None, diffusion=None, thermal_conductivity=None)",
-        signature = (sigma, epsilon_k, viscosity=None, diffusion=None, thermal_conductivity=None)
-    )]
-    fn new(
-        sigma: f64,
-        epsilon_k: f64,
-        viscosity: Option<[f64; 4]>,
-        diffusion: Option<[f64; 5]>,
-        thermal_conductivity: Option<[f64; 4]>,
-    ) -> Self {
-        Self(PetsRecord::new(
-            sigma,
-            epsilon_k,
-            viscosity,
-            diffusion,
-            thermal_conductivity,
-        ))
-    }
+// #[pymethods]
+// impl PyPetsRecord {
+//     #[new]
+//     #[pyo3(
+//         text_signature = "(sigma, epsilon_k, viscosity=None, diffusion=None, thermal_conductivity=None)",
+//         signature = (sigma, epsilon_k, viscosity=None, diffusion=None, thermal_conductivity=None)
+//     )]
+//     fn new(
+//         sigma: f64,
+//         epsilon_k: f64,
+//         viscosity: Option<[f64; 4]>,
+//         diffusion: Option<[f64; 5]>,
+//         thermal_conductivity: Option<[f64; 4]>,
+//     ) -> Self {
+//         Self(PetsRecord::new(
+//             sigma,
+//             epsilon_k,
+//             viscosity,
+//             diffusion,
+//             thermal_conductivity,
+//         ))
+//     }
 
-    #[getter]
-    fn get_sigma(&self) -> f64 {
-        self.0.sigma
-    }
+//     #[getter]
+//     fn get_sigma(&self) -> f64 {
+//         self.0.sigma
+//     }
 
-    #[getter]
-    fn get_epsilon_k(&self) -> f64 {
-        self.0.epsilon_k
-    }
+//     #[getter]
+//     fn get_epsilon_k(&self) -> f64 {
+//         self.0.epsilon_k
+//     }
 
-    #[getter]
-    fn get_viscosity(&self) -> Option<[f64; 4]> {
-        self.0.viscosity
-    }
+//     #[getter]
+//     fn get_viscosity(&self) -> Option<[f64; 4]> {
+//         self.0.viscosity
+//     }
 
-    #[getter]
-    fn get_diffusion(&self) -> Option<[f64; 5]> {
-        self.0.diffusion
-    }
+//     #[getter]
+//     fn get_diffusion(&self) -> Option<[f64; 5]> {
+//         self.0.diffusion
+//     }
 
-    #[getter]
-    fn get_thermal_conductivity(&self) -> Option<[f64; 4]> {
-        self.0.thermal_conductivity
-    }
+//     #[getter]
+//     fn get_thermal_conductivity(&self) -> Option<[f64; 4]> {
+//         self.0.thermal_conductivity
+//     }
 
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(self.0.to_string())
-    }
-}
+//     fn __repr__(&self) -> PyResult<String> {
+//         Ok(self.0.to_string())
+//     }
+// }
 
-impl_json_handling!(PyPetsRecord);
-impl_pure_record!(PetsRecord, PyPetsRecord);
+// impl_json_handling!(PyPetsRecord);
+// impl_pure_record!(PetsRecord, PyPetsRecord);
 
-/// Create a record for a binary interaction parameter, i.e. k_ij.
-#[pyclass(name = "PetsBinaryRecord")]
-#[derive(Clone)]
-pub struct PyPetsBinaryRecord(PetsBinaryRecord);
-impl_binary_record!(PetsBinaryRecord, PyPetsBinaryRecord);
+// /// Create a record for a binary interaction parameter, i.e. k_ij.
+// #[pyclass(name = "PetsBinaryRecord")]
+// #[derive(Clone)]
+// pub struct PyPetsBinaryRecord(PetsBinaryRecord);
+// impl_binary_record!(PetsBinaryRecord, PyPetsBinaryRecord);
 
 #[pyclass(name = "PetsParameters")]
 #[derive(Clone)]
@@ -235,22 +235,10 @@ impl PyPetsParameters {
     }
 }
 
-impl_parameter!(
-    PetsParameters,
-    PyPetsParameters,
-    PyPetsRecord,
-    PyPetsBinaryRecord
-);
+impl_parameter!(PetsParameters, PyPetsParameters);
 
 #[pymodule]
 pub fn pets(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<PyIdentifier>()?;
-    m.add_class::<IdentifierOption>()?;
-
-    m.add_class::<PyPetsRecord>()?;
-    m.add_class::<PyPetsBinaryRecord>()?;
-    m.add_class::<PyPureRecord>()?;
-    m.add_class::<PyBinaryRecord>()?;
     m.add_class::<PyPetsParameters>()?;
     Ok(())
 }
