@@ -13,7 +13,7 @@ pub enum IdentifierOption {
     Formula,
 }
 
-// /// A collection of identifiers for a chemical structure or substance.
+/// A collection of identifiers for a chemical structure or substance.
 #[cfg_attr(feature = "python", pyo3::pyclass(get_all, set_all))]
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Identifier {
