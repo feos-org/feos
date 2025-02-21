@@ -1,5 +1,4 @@
 //! Density profiles at planar interfaces and interfacial tensions.
-use crate::convolver::ConvolverFFT;
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::{Axis, Grid};
 use crate::profile::{DFTProfile, DFTSpecifications};
@@ -64,18 +63,11 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
 
 impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
     pub fn new(vle: &PhaseEquilibrium<DFT<F>, 2>, n_grid: usize, l_grid: Length) -> Self {
-        let dft = &vle.vapor().eos;
-
         // generate grid
         let grid = Grid::Cartesian1(Axis::new_cartesian(n_grid, l_grid, None));
 
-        // initialize convolver
-        let t = vle.vapor().temperature.to_reduced();
-        let weight_functions = dft.weight_functions(t);
-        let convolver = ConvolverFFT::plan(&grid, &weight_functions, None);
-
         Self {
-            profile: DFTProfile::new(grid, convolver, vle.vapor(), None, None),
+            profile: DFTProfile::new(grid, vle.vapor(), None, None, None),
             vle: vle.clone(),
             surface_tension: None,
             equimolar_radius: None,

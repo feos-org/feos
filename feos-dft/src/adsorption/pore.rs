@@ -167,7 +167,8 @@ where
         let weight_functions: Vec<WeightFunctionInfo<N>> = functional_contributions
             .map(|c| c.weight_functions(temperature))
             .collect();
-        let convolver = ConvolverFFT::<_, D>::plan(&self.profile.grid, &weight_functions, None);
+        let convolver =
+            ConvolverFFT::<_, D>::plan(&self.profile.grid, &weight_functions, self.profile.lanczos);
         let bonds = self
             .profile
             .dft
@@ -230,14 +231,11 @@ impl PoreSpecification<Ix1> for Pore1D {
             |e| e.clone(),
         );
 
-        // initialize convolver
+        // initialize grid
         let grid = Grid::new_1d(axis);
-        let t = bulk.temperature.to_reduced();
-        let weight_functions = dft.weight_functions(t);
-        let convolver = ConvolverFFT::plan(&grid, &weight_functions, Some(1));
 
         Ok(PoreProfile {
-            profile: DFTProfile::new(grid, convolver, bulk, Some(external_potential), density),
+            profile: DFTProfile::new(grid, bulk, Some(external_potential), density, Some(1)),
             grand_potential: None,
             interfacial_tension: None,
         })
