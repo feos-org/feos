@@ -1,5 +1,5 @@
 use super::{FluidParameters, PoreProfile, PoreSpecification};
-use crate::{Axis, DFTProfile, Grid, HelmholtzEnergyFunctional, DFT};
+use crate::{Axis, DFTProfile, Grid, HelmholtzEnergyFunctional};
 use feos_core::{EosResult, State};
 use ndarray::{Array3, Ix2};
 use quantity::{Angle, Density, Length};
@@ -25,7 +25,7 @@ impl Pore2D {
 impl PoreSpecification<Ix2> for Pore2D {
     fn initialize<F: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
-        bulk: &State<DFT<F>>,
+        bulk: &State<F>,
         density: Option<&Density<Array3<f64>>>,
         external_potential: Option<&Array3<f64>>,
     ) -> EosResult<PoreProfile<Ix2, F>> {

@@ -1,5 +1,5 @@
 use crate::adsorption::FluidParameters;
-use crate::functional::{HelmholtzEnergyFunctional, DFT};
+use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::{Axis, Grid};
 use crate::profile::{DFTProfile, CUTOFF_RADIUS, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
@@ -52,7 +52,7 @@ impl<F: HelmholtzEnergyFunctional> SolvationProfile<F> {
 impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
     #[expect(clippy::too_many_arguments)]
     pub fn new(
-        bulk: &State<DFT<F>>,
+        bulk: &State<F>,
         n_grid: [usize; 3],
         coordinates: Length<Array2<f64>>,
         sigma_ss: Array1<f64>,

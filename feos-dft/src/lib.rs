@@ -15,9 +15,10 @@ mod solver;
 mod weight_functions;
 
 pub use convolver::{Convolver, ConvolverFFT};
-pub use functional::{HelmholtzEnergyFunctional, MoleculeShape, DFT};
+pub use functional::{HelmholtzEnergyFunctional, MoleculeShape};
 pub use functional_contribution::FunctionalContribution;
 pub use geometry::{Axis, Geometry, Grid};
+pub use pdgt::PdgtFunctionalProperties;
 pub use profile::{DFTProfile, DFTSpecification, DFTSpecifications};
 pub use solver::{DFTSolver, DFTSolverLog};
 pub use weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};

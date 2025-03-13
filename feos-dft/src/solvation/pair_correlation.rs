@@ -1,5 +1,5 @@
 //! Functionalities for the calculation of pair correlation functions.
-use crate::functional::{HelmholtzEnergyFunctional, DFT};
+use crate::functional::HelmholtzEnergyFunctional;
 use crate::profile::MAX_POTENTIAL;
 use crate::solver::DFTSolver;
 use crate::{Axis, DFTProfile, Grid};
@@ -34,7 +34,7 @@ impl<F> Clone for PairCorrelation<F> {
 }
 
 impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
-    pub fn new(bulk: &State<DFT<F>>, test_particle: usize, n_grid: usize, width: Length) -> Self {
+    pub fn new(bulk: &State<F>, test_particle: usize, n_grid: usize, width: Length) -> Self {
         let dft = &bulk.eos;
 
         // generate grid

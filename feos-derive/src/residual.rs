@@ -1,9 +1,6 @@
-use super::implement;
+use super::{implement, OPT_IMPLS};
 use quote::quote;
 use syn::DeriveInput;
-
-// possible additional traits to implement
-const OPT_IMPLS: [&str; 2] = ["molar_weight", "entropy_scaling"];
 
 pub(crate) fn expand_residual(input: DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let variants = match input.data {
@@ -11,9 +8,9 @@ pub(crate) fn expand_residual(input: DeriveInput) -> syn::Result<proc_macro2::To
         _ => panic!("this derive macro only works on enums"),
     };
 
-    let residual = impl_residual(variants);
-    let molar_weight = impl_molar_weight(variants)?;
-    let entropy_scaling = impl_entropy_scaling(variants)?;
+    let residual = impl_residual(&input.ident, variants);
+    let molar_weight = impl_molar_weight(&input.ident, variants)?;
+    let entropy_scaling = impl_entropy_scaling(&input.ident, variants)?;
     Ok(quote! {
         #residual
         #molar_weight
@@ -22,6 +19,7 @@ pub(crate) fn expand_residual(input: DeriveInput) -> syn::Result<proc_macro2::To
 }
 
 fn impl_residual(
+    ident: &syn::Ident,
     variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
 ) -> proc_macro2::TokenStream {
     let compute_max_density = variants.iter().map(|v| {
@@ -38,7 +36,7 @@ fn impl_residual(
     });
 
     quote! {
-        impl Residual for ResidualModel {
+        impl Residual for #ident {
             fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
                 match self {
                     #(#compute_max_density,)*
@@ -54,38 +52,44 @@ fn impl_residual(
 }
 
 fn impl_molar_weight(
+    ident: &syn::Ident,
     variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
 ) -> syn::Result<proc_macro2::TokenStream> {
     let mut molar_weight = Vec::new();
     let mut has_molar_weight = Vec::new();
 
     for v in variants.iter() {
+        let name = &v.ident;
         if implement("molar_weight", v, &OPT_IMPLS)? {
-            let name = &v.ident;
             molar_weight.push(quote! {
                 Self::#name(eos) => eos.molar_weight()
             });
             has_molar_weight.push(quote! {
                 Self::#name(_) => true
             });
+        } else {
+            molar_weight.push(quote! {
+                Self::#name(eos) => panic!("{} does not provide molar weights and can not be used to calculate mass-specific properties", stringify!(#name))
+            });
+            has_molar_weight.push(quote! {
+                Self::#name(_) => false
+            });
         }
     }
 
     Ok(quote! {
-        impl Molarweight for ResidualModel {
+        impl Molarweight for #ident {
             fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
                 match self {
                     #(#molar_weight,)*
-                    _ => unimplemented!(),
                 }
             }
         }
 
-        impl ResidualModel {
+        impl #ident {
             pub fn has_molar_weight(&self) -> bool {
                 match self {
                     #(#has_molar_weight,)*
-                    _ => false,
                 }
             }
         }
@@ -93,6 +97,7 @@ fn impl_molar_weight(
 }
 
 fn impl_entropy_scaling(
+    ident: &syn::Ident,
     variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
 ) -> syn::Result<proc_macro2::TokenStream> {
     let mut etar = Vec::new();
@@ -103,8 +108,8 @@ fn impl_entropy_scaling(
     let mut thcc = Vec::new();
 
     for v in variants.iter() {
+        let name = &v.ident;
         if implement("entropy_scaling", v, &OPT_IMPLS)? {
-            let name = &v.ident;
             etar.push(quote! {
                 Self::#name(eos) => eos.viscosity_reference(temperature, volume, moles)
             });
@@ -123,11 +128,30 @@ fn impl_entropy_scaling(
             thcc.push(quote! {
                 Self::#name(eos) => eos.thermal_conductivity_correlation(s_res, x)
             });
+        } else {
+            etar.push(quote! {
+                Self::#name(eos) => panic!("{} does not implement entropy scaling for transport properties!", stringify!(#name))
+            });
+            etac.push(quote! {
+                Self::#name(eos) => panic!("{} does not implement entropy scaling for transport properties!", stringify!(#name))
+            });
+            dr.push(quote! {
+                Self::#name(eos) => panic!("{} does not implement entropy scaling for transport properties!", stringify!(#name))
+            });
+            dc.push(quote! {
+                Self::#name(eos) => panic!("{} does not implement entropy scaling for transport properties!", stringify!(#name))
+            });
+            thcr.push(quote! {
+                Self::#name(eos) => panic!("{} does not implement entropy scaling for transport properties!", stringify!(#name))
+            });
+            thcc.push(quote! {
+                Self::#name(eos) => panic!("{} does not implement entropy scaling for transport properties!", stringify!(#name))
+            });
         }
     }
 
     Ok(quote! {
-        impl EntropyScaling for ResidualModel {
+        impl EntropyScaling for #ident {
             fn viscosity_reference(
                 &self,
                 temperature: Temperature,
@@ -136,14 +160,12 @@ fn impl_entropy_scaling(
             ) -> EosResult<Viscosity> {
                 match self {
                     #(#etar,)*
-                    _ => unimplemented!(),
                 }
             }
 
             fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
                 match self {
                     #(#etac,)*
-                    _ => unimplemented!(),
                 }
             }
 
@@ -155,14 +177,12 @@ fn impl_entropy_scaling(
             ) -> EosResult<Diffusivity> {
                 match self {
                     #(#dr,)*
-                    _ => unimplemented!(),
                 }
             }
 
             fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
                 match self {
                     #(#dc,)*
-                    _ => unimplemented!(),
                 }
             }
 
@@ -174,14 +194,12 @@ fn impl_entropy_scaling(
             ) -> EosResult<ThermalConductivity> {
                 match self {
                     #(#thcr,)*
-                    _ => unimplemented!(),
                 }
             }
 
             fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
                 match self {
                     #(#thcc,)*
-                    _ => unimplemented!(),
                 }
             }
         }

@@ -1,4 +1,3 @@
-use crate::eos::ResidualModel;
 #[cfg(feature = "epcsaft")]
 use crate::epcsaft::python::PyElectrolytePcSaftParameters;
 #[cfg(feature = "epcsaft")]
@@ -34,6 +33,7 @@ use crate::saftvrqmie::{SaftVRQMie, SaftVRQMieOptions};
 use crate::uvtheory::python::PyUVTheoryParameters;
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions};
+use crate::ResidualModel;
 
 use super::dippr::PyDippr;
 use super::joback::PyJoback;

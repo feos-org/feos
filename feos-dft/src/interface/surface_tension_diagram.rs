@@ -1,5 +1,5 @@
 use super::PlanarInterface;
-use crate::functional::{HelmholtzEnergyFunctional, DFT};
+use crate::functional::HelmholtzEnergyFunctional;
 use crate::solver::DFTSolver;
 use feos_core::{PhaseEquilibrium, ReferenceSystem, StateVec};
 use ndarray::{Array1, Array2};
@@ -15,7 +15,7 @@ pub struct SurfaceTensionDiagram<F: HelmholtzEnergyFunctional> {
 // #[expect(clippy::ptr_arg)]
 impl<F: HelmholtzEnergyFunctional> SurfaceTensionDiagram<F> {
     pub fn new(
-        dia: &[PhaseEquilibrium<DFT<F>, 2>],
+        dia: &[PhaseEquilibrium<F, 2>],
         init_densities: Option<bool>,
         n_grid: Option<usize>,
         l_grid: Option<Length>,
@@ -67,11 +67,11 @@ impl<F: HelmholtzEnergyFunctional> SurfaceTensionDiagram<F> {
         Self { profiles }
     }
 
-    pub fn vapor(&self) -> StateVec<'_, DFT<F>> {
+    pub fn vapor(&self) -> StateVec<'_, F> {
         self.profiles.iter().map(|p| p.vle.vapor()).collect()
     }
 
-    pub fn liquid(&self) -> StateVec<'_, DFT<F>> {
+    pub fn liquid(&self) -> StateVec<'_, F> {
         self.profiles.iter().map(|p| p.vle.liquid()).collect()
     }
 

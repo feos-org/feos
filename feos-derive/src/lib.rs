@@ -16,6 +16,16 @@ mod functional_contribution;
 mod ideal_gas;
 mod residual;
 
+// possible additional traits to implement
+const OPT_IMPLS: [&str; 6] = [
+    "molar_weight",
+    "entropy_scaling",
+    "functional",
+    "bond_lengths",
+    "fluid_parameters",
+    "pair_potential",
+];
+
 fn implement(name: &str, variant: &syn::Variant, opts: &[&'static str]) -> syn::Result<bool> {
     let syn::Variant { attrs, .. } = variant;
     let mut implement = Ok(false);
@@ -74,7 +84,7 @@ pub fn derive_residual(input: TokenStream) -> TokenStream {
         .into()
 }
 
-#[proc_macro_derive(HelmholtzEnergyFunctional, attributes(implement))]
+#[proc_macro_derive(HelmholtzEnergyFunctional, attributes(implement_dft))]
 pub fn derive_helmholtz_energy_functional(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     expand_helmholtz_energy_functional(input)

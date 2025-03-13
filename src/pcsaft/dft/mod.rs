@@ -3,14 +3,12 @@ use crate::association::Association;
 use crate::hard_sphere::{FMTContribution, FMTVersion};
 use crate::pcsaft::eos::PcSaftOptions;
 use feos_core::parameter::Parameter;
-use feos_core::{Components, EosResult, Molarweight};
+use feos_core::{Components, EosResult, Molarweight, Residual, StateHD};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
-use feos_dft::{
-    FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, WeightFunctionInfo, DFT,
-};
-use ndarray::{Array1, Array2, ArrayView2, ScalarOperand};
+use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape};
+use ndarray::{Array1, Array2, ScalarOperand};
 use num_dual::DualNum;
 use num_traits::One;
 use quantity::{MolarWeight, GRAM, MOL};
@@ -33,11 +31,11 @@ pub struct PcSaftFunctional {
 }
 
 impl PcSaftFunctional {
-    pub fn new(parameters: Arc<PcSaftParameters>) -> DFT<Self> {
+    pub fn new(parameters: Arc<PcSaftParameters>) -> Self {
         Self::with_options(parameters, FMTVersion::WhiteBear, PcSaftOptions::default())
     }
 
-    pub fn new_full(parameters: Arc<PcSaftParameters>, fmt_version: FMTVersion) -> DFT<Self> {
+    pub fn new_full(parameters: Arc<PcSaftParameters>, fmt_version: FMTVersion) -> Self {
         Self::with_options(parameters, fmt_version, PcSaftOptions::default())
     }
 
@@ -45,12 +43,12 @@ impl PcSaftFunctional {
         parameters: Arc<PcSaftParameters>,
         fmt_version: FMTVersion,
         saft_options: PcSaftOptions,
-    ) -> DFT<Self> {
-        DFT(Self {
+    ) -> Self {
+        Self {
             parameters,
             fmt_version,
             options: saft_options,
-        })
+        }
     }
 }
 
@@ -65,18 +63,26 @@ impl Components for PcSaftFunctional {
             self.fmt_version,
             self.options,
         )
-        .0
     }
 }
 
-impl HelmholtzEnergyFunctional for PcSaftFunctional {
-    type Contribution = PcSaftFunctionalContribution;
-
+impl Residual for PcSaftFunctional {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
             / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
                 .sum()
     }
+
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        state: &StateHD<D>,
+    ) -> Vec<(String, D)> {
+        self.evaluate_bulk(state)
+    }
+}
+
+impl HelmholtzEnergyFunctional for PcSaftFunctional {
+    type Contribution = PcSaftFunctionalContribution;
 
     fn contributions(&self) -> Box<dyn Iterator<Item = PcSaftFunctionalContribution>> {
         let mut contributions = Vec::with_capacity(4);

@@ -132,7 +132,7 @@ impl<U: EosUnit, F: HelmholtzEnergyFunctional> MicelleProfile<U, F> {
 
 impl<U: EosUnit + 'static, F: HelmholtzEnergyFunctional> MicelleProfile<U, F> {
     fn new(
-        bulk: &State<U, DFT<F>>,
+        bulk: &State<U, F>,
         axis: Axis,
         initialization: MicelleInitialization,
         specification: MicelleSpecification,
@@ -185,7 +185,7 @@ impl<U: EosUnit + 'static, F: HelmholtzEnergyFunctional> MicelleProfile<U, F> {
     }
 
     pub fn new_spherical(
-        bulk: &State<U, DFT<F>>,
+        bulk: &State<U, F>,
         n_grid: usize,
         width: SINumber,
         initialization: MicelleInitialization,
@@ -200,7 +200,7 @@ impl<U: EosUnit + 'static, F: HelmholtzEnergyFunctional> MicelleProfile<U, F> {
     }
 
     pub fn new_cylindrical(
-        bulk: &State<U, DFT<F>>,
+        bulk: &State<U, F>,
         n_grid: usize,
         width: SINumber,
         initialization: MicelleInitialization,
