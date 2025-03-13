@@ -1,4 +1,4 @@
-use super::{ParameterError, PyChemicalRecord, PyIdentifier};
+use super::ParameterError;
 use crate::parameter::{ChemicalRecord, Identifier};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -6,55 +6,37 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::BufReader;
-use std::path::Path;
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct SmartsRecord {
+#[pyclass(name = "SmartsRecord")]
+pub struct PySmartsRecord {
     group: String,
     smarts: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     max: Option<usize>,
 }
 
-impl SmartsRecord {
-    fn new(group: String, smarts: String, max: Option<usize>) -> Self {
-        Self { group, smarts, max }
-    }
-
-    /// Read a list of `SmartsRecord`s from a JSON file.
-    pub fn from_json<P: AsRef<Path>>(file: P) -> Result<Vec<Self>, ParameterError> {
-        Ok(serde_json::from_reader(BufReader::new(File::open(file)?))?)
-    }
-}
-
-impl std::fmt::Display for SmartsRecord {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "SmartsRecord(group={}, smarts={}",
-            self.group, self.smarts
-        )?;
-        if let Some(max) = self.max {
-            write!(f, ", max={}", max)?;
-        }
-        write!(f, ")")
-    }
-}
-
-#[pyclass(name = "SmartsRecord")]
-#[derive(Clone)]
-pub struct PySmartsRecord(pub SmartsRecord);
-
 #[pymethods]
 impl PySmartsRecord {
     #[new]
     #[pyo3(text_signature = "(group, smarts, max=None)", signature = (group, smarts, max=None))]
     fn new(group: String, smarts: String, max: Option<usize>) -> Self {
-        Self(SmartsRecord::new(group, smarts, max))
+        Self { group, smarts, max }
     }
 
     fn __repr__(&self) -> PyResult<String> {
-        Ok(self.0.to_string())
+        Ok(self.to_string())
+    }
+
+    /// Creates record from json string.
+    #[staticmethod]
+    fn from_json_str(json: &str) -> Result<Self, ParameterError> {
+        Ok(serde_json::from_str(json)?)
+    }
+
+    /// Creates a json string from record.
+    fn to_json_str(&self) -> Result<String, ParameterError> {
+        Ok(serde_json::to_string(&self)?)
     }
 
     /// Read a list of `SmartsRecord`s from a JSON file.
@@ -70,19 +52,26 @@ impl PySmartsRecord {
     #[staticmethod]
     #[pyo3(text_signature = "(path)")]
     pub fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
-        Ok(SmartsRecord::from_json(path)?
-            .into_iter()
-            .map(Self)
-            .collect())
+        Ok(serde_json::from_reader(BufReader::new(File::open(path)?))?)
     }
 }
 
-// This macro call is the only reason why SmartsRecord is not implemented as one
-// single Python class.
-impl_json_handling!(PySmartsRecord);
+impl std::fmt::Display for PySmartsRecord {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "SmartsRecord(group={}, smarts={}",
+            self.group, self.smarts
+        )?;
+        if let Some(max) = self.max {
+            write!(f, ", max={}", max)?;
+        }
+        write!(f, ")")
+    }
+}
 
 #[pymethods]
-impl PyChemicalRecord {
+impl ChemicalRecord {
     #[staticmethod]
     pub fn from_smiles(
         identifier: &Bound<'_, PyAny>,
@@ -91,8 +80,8 @@ impl PyChemicalRecord {
         let py = identifier.py();
         let identifier = if let Ok(smiles) = identifier.extract::<String>() {
             Identifier::new(None, None, None, Some(&smiles), None, None)
-        } else if let Ok(identifier) = identifier.extract::<PyIdentifier>() {
-            identifier.0
+        } else if let Ok(identifier) = identifier.extract::<Identifier>() {
+            identifier
         } else {
             return Err(PyErr::new::<PyValueError, _>(
                 "`identifier` must be a SMILES code or `Identifier` object.".to_string(),
@@ -104,7 +93,7 @@ impl PyChemicalRecord {
             .expect("Missing SMILES in `Identifier`");
         let (segments, bonds) = fragment_molecule(py, smiles, smarts)?;
         let segments = segments.into_iter().map(|s| s.to_owned()).collect();
-        Ok(Self(ChemicalRecord::new(identifier, segments, Some(bonds))))
+        Ok(Self::new(identifier, segments, Some(bonds)))
     }
 }
 
@@ -121,7 +110,7 @@ fn fragment_molecule(
     let mut matches: HashMap<_, _> = smarts
         .into_iter()
         .map(|s| {
-            let m = chem.call_method1("MolFromSmarts", (s.0.smarts,))?;
+            let m = chem.call_method1("MolFromSmarts", (s.smarts,))?;
             let matches = mol
                 .call_method1("GetSubstructMatches", (m,))?
                 .extract::<Vec<Bound<'_, PyAny>>>()?;
@@ -132,12 +121,12 @@ fn fragment_molecule(
             // Instead of just throwing an error at this point, just try to continue with the first max
             // occurrences. For some cases (the ethers) this just means that the symetry of C-O-C is broken.
             // If a necessary segment is eliminated the error will be thrown later.
-            if let Some(max) = s.0.max {
+            if let Some(max) = s.max {
                 if matches.len() > max {
                     matches = matches[..max].to_vec();
                 }
             }
-            Ok((s.0.group, matches))
+            Ok((s.group, matches))
         })
         .collect::<PyResult<_>>()?;
 

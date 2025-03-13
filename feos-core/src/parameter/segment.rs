@@ -54,3 +54,41 @@ impl<M: std::fmt::Display> std::fmt::Display for SegmentRecord<M> {
         write!(f, "\n)")
     }
 }
+
+/// A collection of parameters that model interactions between two segments.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(feature = "python", pyo3::pyclass)]
+pub struct BinarySegmentRecord {
+    /// Identifier of the first component
+    pub id1: String,
+    /// Identifier of the second component
+    pub id2: String,
+    /// Binary interaction parameter(s)
+    pub model_record: f64,
+}
+
+impl BinarySegmentRecord {
+    /// Crates a new `BinaryRecord`.
+    pub fn new(id1: String, id2: String, model_record: f64) -> Self {
+        Self {
+            id1,
+            id2,
+            model_record,
+        }
+    }
+
+    /// Read a list of `BinaryRecord`s from a JSON file.
+    pub fn from_json<P: AsRef<Path>>(file: P) -> Result<Vec<Self>, ParameterError> {
+        Ok(serde_json::from_reader(BufReader::new(File::open(file)?))?)
+    }
+}
+
+impl std::fmt::Display for BinarySegmentRecord {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "BinaryRecord(")?;
+        write!(f, "\n\tid1={},", self.id1)?;
+        write!(f, "\n\tid2={},", self.id2)?;
+        write!(f, "\n\tmodel_record={},", self.model_record)?;
+        write!(f, "\n)")
+    }
+}

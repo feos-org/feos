@@ -643,7 +643,7 @@ impl ElectrolytePcSaftParameters {
 
 #[cfg(test)]
 pub mod utils {
-    use feos_core::parameter::{BinaryRecord, Identifier};
+    use feos_core::parameter::BinaryRecord;
 
     use super::*;
     use std::sync::Arc;
@@ -847,7 +847,7 @@ pub mod utils {
             ]"#;
         let pure_records: Vec<PureRecord<ElectrolytePcSaftRecord>> =
             serde_json::from_str(pure_json).expect("Unable to parse json.");
-        let binary_records: Vec<BinaryRecord<Identifier, ElectrolytePcSaftBinaryRecord>> =
+        let binary_records: Vec<BinaryRecord<ElectrolytePcSaftBinaryRecord>> =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
         let binary_matrix = ElectrolytePcSaftParameters::binary_matrix_from_records(
             &pure_records,
@@ -1021,7 +1021,7 @@ pub mod utils {
             ]"#;
         let pure_records: Vec<PureRecord<ElectrolytePcSaftRecord>> =
             serde_json::from_str(pure_json).expect("Unable to parse json.");
-        let binary_records: Vec<BinaryRecord<Identifier, ElectrolytePcSaftBinaryRecord>> =
+        let binary_records: Vec<BinaryRecord<ElectrolytePcSaftBinaryRecord>> =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
         let binary_matrix = ElectrolytePcSaftParameters::binary_matrix_from_records(
             &pure_records,
