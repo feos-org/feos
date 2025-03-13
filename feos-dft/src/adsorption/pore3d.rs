@@ -1,6 +1,5 @@
 use super::pore::{PoreProfile, PoreSpecification};
 use crate::adsorption::FluidParameters;
-use crate::convolver::ConvolverFFT;
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::{Axis, Grid};
 use crate::profile::{DFTProfile, CUTOFF_RADIUS, MAX_POTENTIAL};
@@ -93,14 +92,10 @@ impl PoreSpecification<Ix3> for Pore3D {
             },
             |e| Ok(e.clone()),
         )?;
-
-        // initialize convolver
         let grid = Grid::Periodical3(x, y, z, self.angles.unwrap_or([90.0 * DEGREES; 3]));
-        let weight_functions = dft.weight_functions(t);
-        let convolver = ConvolverFFT::plan(&grid, &weight_functions, Some(1));
 
         Ok(PoreProfile {
-            profile: DFTProfile::new(grid, convolver, bulk, Some(external_potential), density),
+            profile: DFTProfile::new(grid, bulk, Some(external_potential), density, Some(1)),
             grand_potential: None,
             interfacial_tension: None,
         })

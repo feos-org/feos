@@ -293,7 +293,7 @@ where
             .zip(result.lanes_mut(Axis_nd(0)))
         {
             self.transform
-                .forward_transform(f, r, vector_index.map_or(true, |ind| ind != 0));
+                .forward_transform(f, r, vector_index != Some(0));
         }
         for (i, transform) in self.cartesian_transforms.iter().enumerate() {
             dim[i + 1] = self.k_abs.shape()[i + 1];
@@ -303,7 +303,7 @@ where
                 .into_iter()
                 .zip(res.lanes_mut(Axis_nd(i + 1)))
             {
-                transform.forward_transform(f, r, vector_index.map_or(true, |ind| ind != i + 1));
+                transform.forward_transform(f, r, vector_index.is_none_or(|ind| ind != i + 1));
             }
             result = res;
         }
@@ -339,8 +339,7 @@ where
             .into_iter()
             .zip(res.lanes_mut(Axis_nd(0)))
         {
-            self.transform
-                .back_transform(f, r, vector_index.map_or(true, |ind| ind != 0));
+            self.transform.back_transform(f, r, vector_index != Some(0));
         }
         for (i, transform) in self.cartesian_transforms.iter().enumerate() {
             dim[i + 1] = result.shape()[i + 1];
@@ -350,7 +349,7 @@ where
                 .into_iter()
                 .zip(res2.lanes_mut(Axis_nd(i + 1)))
             {
-                transform.back_transform(f, r, vector_index.map_or(true, |ind| ind != i + 1));
+                transform.back_transform(f, r, vector_index.is_none_or(|ind| ind != i + 1));
             }
             res = res2;
         }

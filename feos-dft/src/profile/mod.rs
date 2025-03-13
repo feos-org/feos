@@ -1,10 +1,11 @@
-use crate::convolver::{BulkConvolver, Convolver};
+use crate::convolver::{BulkConvolver, Convolver, ConvolverFFT};
 use crate::functional::{HelmholtzEnergyFunctional, DFT};
 use crate::geometry::Grid;
 use crate::solver::{DFTSolver, DFTSolverLog};
 use feos_core::{Components, EosError, EosResult, ReferenceSystem, State};
 use ndarray::{
     Array, Array1, Array2, Array3, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3,
+    RemoveAxis,
 };
 use num_dual::DualNum;
 use quantity::{Density, Length, Moles, Quantity, Temperature, Volume, _Volume, DEGREES};
@@ -107,6 +108,7 @@ pub struct DFTProfile<D: Dimension, F> {
     pub external_potential: Array<f64, D::Larger>,
     pub bulk: State<DFT<F>>,
     pub solver_log: Option<DFTSolverLog>,
+    pub lanczos: Option<i32>,
 }
 
 impl<F> DFTProfile<Ix1, F> {
@@ -189,9 +191,11 @@ impl<F> DFTProfile<Ix3, F> {
     }
 }
 
-impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTProfile<D, F>
+impl<D: Dimension + RemoveAxis + 'static, F: HelmholtzEnergyFunctional> DFTProfile<D, F>
 where
     D::Larger: Dimension<Smaller = D>,
+    D::Smaller: Dimension<Larger = D>,
+    <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
     /// Create a new density profile.
     ///
@@ -201,12 +205,17 @@ where
     /// after this call if something else is required.
     pub fn new(
         grid: Grid,
-        convolver: Arc<dyn Convolver<f64, D>>,
         bulk: &State<DFT<F>>,
         external_potential: Option<Array<f64, D::Larger>>,
         density: Option<&Density<Array<f64, D::Larger>>>,
+        lanczos: Option<i32>,
     ) -> Self {
         let dft = bulk.eos.clone();
+
+        // initialize convolver
+        let t = bulk.temperature.to_reduced();
+        let weight_functions = dft.weight_functions(t);
+        let convolver = ConvolverFFT::plan(&grid, &weight_functions, lanczos);
 
         // initialize external potential
         let external_potential = external_potential.unwrap_or_else(|| {
@@ -221,7 +230,6 @@ where
         let density = if let Some(density) = density {
             density.to_owned()
         } else {
-            let t = bulk.temperature.to_reduced();
             let exp_dfdrho = (-&external_potential).mapv(f64::exp);
             let mut bonds = dft.bond_integrals(t, &exp_dfdrho, &convolver);
             bonds *= &exp_dfdrho;
@@ -245,9 +253,15 @@ where
             external_potential,
             bulk: bulk.clone(),
             solver_log: None,
+            lanczos,
         }
     }
+}
 
+impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTProfile<D, F>
+where
+    D::Larger: Dimension<Smaller = D>,
+{
     fn integrate_reduced<N: DualNum<f64> + Copy>(&self, mut profile: Array<N, D>) -> N {
         let (integration_weights, functional_determinant) = self.grid.integration_weights();
 
@@ -358,6 +372,7 @@ impl<D: Dimension + Clone, F> Clone for DFTProfile<D, F> {
             external_potential: self.external_potential.clone(),
             bulk: self.bulk.clone(),
             solver_log: self.solver_log.clone(),
+            lanczos: self.lanczos,
         }
     }
 }

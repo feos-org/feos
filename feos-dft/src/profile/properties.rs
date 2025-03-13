@@ -113,7 +113,7 @@ where
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
             .map(|c| c.weight_functions(temperature_dual))
             .collect();
-        let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, None);
+        let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, self.lanczos);
 
         let density = self.density.to_reduced();
 
@@ -196,7 +196,7 @@ where
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
             .map(|c| c.weight_functions(temperature_dual))
             .collect();
-        let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, None);
+        let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, self.lanczos);
 
         let density = self.density.to_reduced();
 
@@ -239,7 +239,7 @@ where
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
             .map(|c| c.weight_functions(temperature_dual))
             .collect();
-        let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, None);
+        let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, self.lanczos);
 
         let density = self.density.to_reduced();
 
@@ -358,7 +358,7 @@ where
             .map(|c| c.weight_functions(t_dual))
             .collect();
         let convolver: Arc<dyn Convolver<_, D>> =
-            ConvolverFFT::plan(&self.grid, &weight_functions, None);
+            ConvolverFFT::plan(&self.grid, &weight_functions, self.lanczos);
         let (_, mut dfdrho) = self
             .dft
             .functional_derivative(t_dual, &rho_dual, &convolver)?;
