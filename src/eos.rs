@@ -54,22 +54,23 @@ pub enum ResidualModel {
     UVTheory(crate::uvtheory::UVTheory),
 
     // Helmholtz energy functionals
-    #[cfg(feature = "dft")]
+    #[cfg(all(feature = "dft", feature = "pcsaft"))]
     #[implement(molar_weight, functional, fluid_parameters, pair_potential)]
     PcSaftFunctional(crate::pcsaft::PcSaftFunctional),
 
-    #[cfg(feature = "gc_pcsaft")]
+    #[cfg(all(feature = "dft", feature = "gc_pcsaft"))]
     #[implement(molar_weight, functional, fluid_parameters, bond_lengths)]
     GcPcSaftFunctional(crate::gc_pcsaft::GcPcSaftFunctional),
 
-    #[cfg(feature = "pets")]
+    #[cfg(all(feature = "dft", feature = "pets"))]
     #[implement(molar_weight, functional, fluid_parameters, pair_potential)]
     PetsFunctional(crate::pets::PetsFunctional),
 
+    #[cfg(feature = "dft")]
     #[implement(functional, fluid_parameters, pair_potential)]
     FmtFunctional(crate::hard_sphere::FMTFunctional),
 
-    #[cfg(feature = "saftvrqmie")]
+    #[cfg(all(feature = "dft", feature = "saftvrqmie"))]
     #[implement(molar_weight, functional, fluid_parameters, pair_potential)]
     SaftVRQMieFunctional(crate::saftvrqmie::SaftVRQMieFunctional),
 }
