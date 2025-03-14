@@ -4,18 +4,17 @@ use crate::functional_contribution::*;
 use crate::ideal_chain_contribution::IdealChainContribution;
 use crate::solvation::PairPotential;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
-use feos_core::{Components, EosResult, EquationOfState, IdealGas, Molarweight, Residual, StateHD};
+use feos_core::{EosResult, EquationOfState, IdealGas, Residual, StateHD};
 use ndarray::*;
 use num_dual::*;
 use petgraph::graph::{Graph, UnGraph};
 use petgraph::visit::EdgeRef;
 use petgraph::Directed;
-use quantity::MolarWeight;
 use std::borrow::Cow;
-use std::ops::{Deref, MulAssign};
+use std::ops::MulAssign;
 use std::sync::Arc;
 
-impl<I: Components + Send + Sync, F: HelmholtzEnergyFunctional> HelmholtzEnergyFunctional
+impl<I: IdealGas, F: HelmholtzEnergyFunctional> HelmholtzEnergyFunctional
     for EquationOfState<I, F>
 {
     type Contribution = F::Contribution;
@@ -26,10 +25,6 @@ impl<I: Components + Send + Sync, F: HelmholtzEnergyFunctional> HelmholtzEnergyF
 
     fn molecule_shape(&self) -> MoleculeShape {
         self.residual.molecule_shape()
-    }
-
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        self.residual.compute_max_density(moles)
     }
 
     fn bond_lengths<N: DualNum<f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
@@ -43,87 +38,13 @@ impl<I, F: PairPotential> PairPotential for EquationOfState<I, F> {
     }
 }
 
-impl<I: Components + Send + Sync, F: FluidParameters> FluidParameters for EquationOfState<I, F> {
+impl<I: IdealGas, F: FluidParameters> FluidParameters for EquationOfState<I, F> {
     fn epsilon_k_ff(&self) -> Array1<f64> {
         self.residual.epsilon_k_ff()
     }
 
     fn sigma_ff(&self) -> &Array1<f64> {
         self.residual.sigma_ff()
-    }
-}
-
-/// Wrapper struct for the [HelmholtzEnergyFunctional] trait.
-///
-/// Needed (for now) to generically implement the `Residual`
-/// trait for Helmholtz energy functionals.
-#[derive(Clone)]
-pub struct DFT<F>(pub F);
-
-impl<F> DFT<F> {
-    pub fn into<F2: From<F>>(self) -> DFT<F2> {
-        DFT(self.0.into())
-    }
-}
-
-impl<F> Deref for DFT<F> {
-    type Target = F;
-    fn deref(&self) -> &F {
-        &self.0
-    }
-}
-
-impl<F> DFT<F> {
-    pub fn ideal_gas<I>(self, ideal_gas: I) -> DFT<EquationOfState<I, F>> {
-        DFT(EquationOfState::new(Arc::new(ideal_gas), Arc::new(self.0)))
-    }
-}
-
-impl<F: HelmholtzEnergyFunctional> Components for DFT<F> {
-    fn components(&self) -> usize {
-        self.0.components()
-    }
-
-    fn subset(&self, component_list: &[usize]) -> Self {
-        Self(self.0.subset(component_list))
-    }
-}
-
-impl<F: HelmholtzEnergyFunctional> Residual for DFT<F> {
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        self.0.compute_max_density(moles)
-    }
-
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
-        let mut res: Vec<(String, D)> = self
-            .0
-            .contributions()
-            .map(|c| (c.to_string(), c.helmholtz_energy(state)))
-            .collect();
-        res.push((
-            self.ideal_chain_contribution().to_string(),
-            self.ideal_chain_contribution().helmholtz_energy(state),
-        ));
-        res
-    }
-}
-
-impl<F: Molarweight> Molarweight for DFT<F> {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        self.0.molar_weight()
-    }
-}
-
-impl<F: HelmholtzEnergyFunctional + IdealGas> IdealGas for DFT<F> {
-    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
-        self.0.ln_lambda3(temperature)
-    }
-
-    fn ideal_gas_model(&self) -> String {
-        self.0.ideal_gas_model()
     }
 }
 
@@ -140,7 +61,7 @@ pub enum MoleculeShape<'a> {
 }
 
 /// A general Helmholtz energy functional.
-pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
+pub trait HelmholtzEnergyFunctional: Residual + Sized {
     type Contribution: FunctionalContribution;
 
     /// Return a slice of [FunctionalContribution]s.
@@ -148,14 +69,6 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
 
     /// Return the shape of the molecules and the necessary specifications.
     fn molecule_shape(&self) -> MoleculeShape;
-
-    /// Return the maximum density in Angstrom^-3.
-    ///
-    /// This value is used as an estimate for a liquid phase for phase
-    /// equilibria and other iterations. It is not explicitly meant to
-    /// be a mathematical limit for the density (if those exist in the
-    /// equation of state anyways).
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64;
 
     /// Overwrite this, if the functional consists of heterosegmented chains.
     fn bond_lengths<N: DualNum<f64> + Copy>(&self, _temperature: N) -> UnGraph<(), N> {
@@ -306,5 +219,20 @@ pub trait HelmholtzEnergyFunctional: Components + Sized + Send + Sync {
         }
 
         i
+    }
+
+    fn evaluate_bulk<D: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        state: &StateHD<D>,
+    ) -> Vec<(String, D)> {
+        let mut res: Vec<(String, D)> = self
+            .contributions()
+            .map(|c| (c.to_string(), c.helmholtz_energy(state)))
+            .collect();
+        res.push((
+            self.ideal_chain_contribution().to_string(),
+            self.ideal_chain_contribution().helmholtz_energy(state),
+        ));
+        res
     }
 }

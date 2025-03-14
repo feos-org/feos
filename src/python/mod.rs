@@ -34,7 +34,6 @@ use dft::dft as dft_module;
 #[pymodule]
 pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    // m.add_wrapped(wrap_pymodule!(quantity_module))?;
 
     m.add_wrapped(wrap_pymodule!(eos_module))?;
     #[cfg(feature = "dft")]
@@ -62,8 +61,6 @@ pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     set_path(m, "feos.eos.estimator", "eos.estimator_eos")?;
     #[cfg(feature = "dft")]
     set_path(m, "feos.dft", "dft")?;
-    #[cfg(all(feature = "dft", feature = "estimator"))]
-    set_path(m, "feos.dft.estimator", "dft.estimator_dft")?;
     set_path(m, "feos.joback", "joback")?;
     set_path(m, "feos.dippr", "dippr")?;
     set_path(m, "feos.cubic", "cubic")?;

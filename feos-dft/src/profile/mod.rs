@@ -1,8 +1,8 @@
 use crate::convolver::{BulkConvolver, Convolver, ConvolverFFT};
-use crate::functional::{HelmholtzEnergyFunctional, DFT};
+use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::Grid;
 use crate::solver::{DFTSolver, DFTSolverLog};
-use feos_core::{Components, EosError, EosResult, ReferenceSystem, State};
+use feos_core::{EosError, EosResult, ReferenceSystem, State};
 use ndarray::{
     Array, Array1, Array2, Array3, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3,
     RemoveAxis,
@@ -101,12 +101,12 @@ impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTSpecification<D, F> for DFTS
 pub struct DFTProfile<D: Dimension, F> {
     pub grid: Grid,
     pub convolver: Arc<dyn Convolver<f64, D>>,
-    pub dft: Arc<DFT<F>>,
+    pub dft: Arc<F>,
     pub temperature: Temperature,
     pub density: Density<Array<f64, D::Larger>>,
     pub specification: Arc<dyn DFTSpecification<D, F>>,
     pub external_potential: Array<f64, D::Larger>,
-    pub bulk: State<DFT<F>>,
+    pub bulk: State<F>,
     pub solver_log: Option<DFTSolverLog>,
     pub lanczos: Option<i32>,
 }
@@ -205,7 +205,7 @@ where
     /// after this call if something else is required.
     pub fn new(
         grid: Grid,
-        bulk: &State<DFT<F>>,
+        bulk: &State<F>,
         external_potential: Option<Array<f64, D::Larger>>,
         density: Option<&Density<Array<f64, D::Larger>>>,
         lanczos: Option<i32>,

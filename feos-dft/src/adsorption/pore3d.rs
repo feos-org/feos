@@ -1,6 +1,6 @@
 use super::pore::{PoreProfile, PoreSpecification};
 use crate::adsorption::FluidParameters;
-use crate::functional::{HelmholtzEnergyFunctional, DFT};
+use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::{Axis, Grid};
 use crate::profile::{DFTProfile, CUTOFF_RADIUS, MAX_POTENTIAL};
 use feos_core::{EosError, EosResult, ReferenceSystem, State};
@@ -51,7 +51,7 @@ pub type PoreProfile3D<F> = PoreProfile<Ix3, F>;
 impl PoreSpecification<Ix3> for Pore3D {
     fn initialize<F: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
-        bulk: &State<DFT<F>>,
+        bulk: &State<F>,
         density: Option<&Density<Array4<f64>>>,
         external_potential: Option<&Array4<f64>>,
     ) -> EosResult<PoreProfile3D<F>> {

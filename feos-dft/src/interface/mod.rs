@@ -1,6 +1,7 @@
 //! Density profiles at planar interfaces and interfacial tensions.
-use crate::functional::{HelmholtzEnergyFunctional, DFT};
+use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::{Axis, Grid};
+use crate::pdgt::PdgtFunctionalProperties;
 use crate::profile::{DFTProfile, DFTSpecifications};
 use crate::solver::DFTSolver;
 use feos_core::{Contributions, EosError, EosResult, PhaseEquilibrium, ReferenceSystem};
@@ -16,7 +17,7 @@ const MIN_WIDTH: f64 = 100.0;
 /// Density profile and properties of a planar interface.
 pub struct PlanarInterface<F: HelmholtzEnergyFunctional> {
     pub profile: DFTProfile<Ix1, F>,
-    pub vle: PhaseEquilibrium<DFT<F>, 2>,
+    pub vle: PhaseEquilibrium<F, 2>,
     pub surface_tension: Option<SurfaceTension>,
     pub equimolar_radius: Option<Length>,
 }
@@ -62,7 +63,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
 }
 
 impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
-    pub fn new(vle: &PhaseEquilibrium<DFT<F>, 2>, n_grid: usize, l_grid: Length) -> Self {
+    pub fn new(vle: &PhaseEquilibrium<F, 2>, n_grid: usize, l_grid: Length) -> Self {
         // generate grid
         let grid = Grid::Cartesian1(Axis::new_cartesian(n_grid, l_grid, None));
 
@@ -75,7 +76,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
     }
 
     pub fn from_tanh(
-        vle: &PhaseEquilibrium<DFT<F>, 2>,
+        vle: &PhaseEquilibrium<F, 2>,
         n_grid: usize,
         l_grid: Length,
         critical_temperature: Temperature,
@@ -111,7 +112,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
     }
 
     pub fn from_pdgt(
-        vle: &PhaseEquilibrium<DFT<F>, 2>,
+        vle: &PhaseEquilibrium<F, 2>,
         n_grid: usize,
         fix_equimolar_surface: bool,
     ) -> EosResult<Self> {
@@ -341,10 +342,10 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
 }
 
 fn interp_symmetric<F: HelmholtzEnergyFunctional>(
-    vle_pdgt: &PhaseEquilibrium<DFT<F>, 2>,
+    vle_pdgt: &PhaseEquilibrium<F, 2>,
     z_pdgt: Length<Array1<f64>>,
     rho_pdgt: Density<Array2<f64>>,
-    vle: &PhaseEquilibrium<DFT<F>, 2>,
+    vle: &PhaseEquilibrium<F, 2>,
     z: &Array1<f64>,
     radius: Length,
 ) -> EosResult<Density<Array2<f64>>> {

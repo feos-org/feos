@@ -35,10 +35,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::allow_attributes)]
 
-#[cfg(feature = "dft")]
-mod functional;
-#[cfg(feature = "dft")]
-pub use functional::FunctionalVariant;
 mod eos;
 pub use eos::ResidualModel;
 

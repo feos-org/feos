@@ -1,12 +1,14 @@
 use crate::adsorption::{ExternalPotential, FluidParameters};
 use crate::convolver::ConvolverFFT;
-use crate::functional::{HelmholtzEnergyFunctional, MoleculeShape, DFT};
+use crate::functional::{HelmholtzEnergyFunctional, MoleculeShape};
 use crate::functional_contribution::FunctionalContribution;
 use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
 use crate::WeightFunctionInfo;
-use feos_core::{Components, Contributions, EosResult, ReferenceSystem, State, StateBuilder};
+use feos_core::{
+    Components, Contributions, EosResult, ReferenceSystem, Residual, State, StateBuilder, StateHD,
+};
 use ndarray::{prelude::*, ScalarOperand};
 use ndarray::{Axis as Axis_nd, RemoveAxis};
 use num_dual::linalg::LU;
@@ -58,7 +60,7 @@ pub trait PoreSpecification<D: Dimension> {
     /// Initialize a new single pore.
     fn initialize<F: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
-        bulk: &State<DFT<F>>,
+        bulk: &State<F>,
         density: Option<&Density<Array<f64, D::Larger>>>,
         external_potential: Option<&Array<f64, D::Larger>>,
     ) -> EosResult<PoreProfile<D, F>>;
@@ -129,7 +131,7 @@ where
         Ok(self)
     }
 
-    pub fn update_bulk(mut self, bulk: &State<DFT<F>>) -> Self {
+    pub fn update_bulk(mut self, bulk: &State<F>) -> Self {
         self.profile.bulk = bulk.clone();
         self.grand_potential = None;
         self.interfacial_tension = None;
@@ -194,7 +196,7 @@ where
 impl PoreSpecification<Ix1> for Pore1D {
     fn initialize<F: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
-        bulk: &State<DFT<F>>,
+        bulk: &State<F>,
         density: Option<&Density<Array2<f64>>>,
         external_potential: Option<&Array2<f64>>,
     ) -> EosResult<PoreProfile1D<F>> {
@@ -308,10 +310,10 @@ struct Helium {
 }
 
 impl Helium {
-    fn new() -> DFT<Self> {
+    fn new() -> Self {
         let epsilon = arr1(&[EPSILON_HE]);
         let sigma = arr1(&[SIGMA_HE]);
-        DFT(Self { epsilon, sigma })
+        Self { epsilon, sigma }
     }
 }
 
@@ -325,15 +327,24 @@ impl Components for Helium {
     }
 }
 
+impl Residual for Helium {
+    fn compute_max_density(&self, _: &Array1<f64>) -> f64 {
+        1.0
+    }
+
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        state: &StateHD<D>,
+    ) -> Vec<(String, D)> {
+        self.evaluate_bulk(state)
+    }
+}
+
 impl HelmholtzEnergyFunctional for Helium {
     type Contribution = HeliumContribution;
 
     fn contributions(&self) -> Box<dyn Iterator<Item = Self::Contribution>> {
         Box::new([].into_iter())
-    }
-
-    fn compute_max_density(&self, _: &Array1<f64>) -> f64 {
-        1.0
     }
 
     fn molecule_shape(&self) -> MoleculeShape {

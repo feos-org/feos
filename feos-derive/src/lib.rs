@@ -16,6 +16,16 @@ mod functional_contribution;
 mod ideal_gas;
 mod residual;
 
+// possible additional traits to implement
+const OPT_IMPLS: [&str; 6] = [
+    "molar_weight",
+    "entropy_scaling",
+    "functional",
+    "bond_lengths",
+    "fluid_parameters",
+    "pair_potential",
+];
+
 fn implement(name: &str, variant: &syn::Variant, opts: &[&'static str]) -> syn::Result<bool> {
     let syn::Variant { attrs, .. } = variant;
     let mut implement = Ok(false);

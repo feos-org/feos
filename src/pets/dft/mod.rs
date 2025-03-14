@@ -3,14 +3,12 @@ use super::parameters::PetsParameters;
 use crate::hard_sphere::{FMTContribution, FMTVersion};
 use dispersion::AttractiveFunctional;
 use feos_core::parameter::Parameter;
-use feos_core::{Components, EosResult, Molarweight};
+use feos_core::{Components, EosResult, Molarweight, Residual, StateHD};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
-use feos_dft::{
-    FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, WeightFunctionInfo, DFT,
-};
-use ndarray::{Array1, Array2, ArrayView2, ScalarOperand};
+use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape};
+use ndarray::{Array1, Array2, ScalarOperand};
 use num_dual::DualNum;
 use pure_pets_functional::*;
 use quantity::{MolarWeight, GRAM, MOL};
@@ -33,12 +31,12 @@ impl PetsFunctional {
     ///
     /// # Defaults
     /// `FMTVersion`: `FMTVersion::WhiteBear`
-    pub fn new(parameters: Arc<PetsParameters>) -> DFT<Self> {
+    pub fn new(parameters: Arc<PetsParameters>) -> Self {
         Self::with_options(parameters, FMTVersion::WhiteBear, PetsOptions::default())
     }
 
     /// PeTS functional with default options for and provided FMT version.
-    pub fn new_full(parameters: Arc<PetsParameters>, fmt_version: FMTVersion) -> DFT<Self> {
+    pub fn new_full(parameters: Arc<PetsParameters>, fmt_version: FMTVersion) -> Self {
         Self::with_options(parameters, fmt_version, PetsOptions::default())
     }
 
@@ -47,12 +45,12 @@ impl PetsFunctional {
         parameters: Arc<PetsParameters>,
         fmt_version: FMTVersion,
         pets_options: PetsOptions,
-    ) -> DFT<Self> {
-        DFT(Self {
+    ) -> Self {
+        Self {
             parameters,
             fmt_version,
             options: pets_options,
-        })
+        }
     }
 }
 
@@ -67,7 +65,20 @@ impl Components for PetsFunctional {
             self.fmt_version,
             self.options,
         )
-        .0
+    }
+}
+
+impl Residual for PetsFunctional {
+    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
+        self.options.max_eta * moles.sum()
+            / (FRAC_PI_6 * self.parameters.sigma.mapv(|v| v.powi(3)) * moles).sum()
+    }
+
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        state: &StateHD<D>,
+    ) -> Vec<(String, D)> {
+        self.evaluate_bulk(state)
     }
 }
 
@@ -76,11 +87,6 @@ impl HelmholtzEnergyFunctional for PetsFunctional {
 
     fn molecule_shape(&self) -> MoleculeShape {
         MoleculeShape::Spherical(self.parameters.sigma.len())
-    }
-
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * self.parameters.sigma.mapv(|v| v.powi(3)) * moles).sum()
     }
 
     fn contributions(&self) -> Box<(dyn Iterator<Item = PetsFunctionalContribution>)> {

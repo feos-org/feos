@@ -3,14 +3,12 @@ use crate::saftvrqmie::eos::SaftVRQMieOptions;
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
 use dispersion::AttractiveFunctional;
 use feos_core::parameter::Parameter;
-use feos_core::{Components, EosResult, Molarweight};
+use feos_core::{Components, EosResult, Molarweight, Residual, StateHD};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
-use feos_dft::{
-    FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, WeightFunctionInfo, DFT,
-};
-use ndarray::{Array, Array1, Array2, ArrayView2, ScalarOperand};
+use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape};
+use ndarray::{Array, Array1, Array2, ScalarOperand};
 use non_additive_hs::NonAddHardSphereFunctional;
 use num_dual::DualNum;
 use quantity::{MolarWeight, GRAM, MOL};
@@ -28,7 +26,7 @@ pub struct SaftVRQMieFunctional {
 }
 
 impl SaftVRQMieFunctional {
-    pub fn new(parameters: Arc<SaftVRQMieParameters>) -> DFT<Self> {
+    pub fn new(parameters: Arc<SaftVRQMieParameters>) -> Self {
         Self::with_options(
             parameters,
             FMTVersion::WhiteBear,
@@ -36,7 +34,7 @@ impl SaftVRQMieFunctional {
         )
     }
 
-    pub fn new_full(parameters: Arc<SaftVRQMieParameters>, fmt_version: FMTVersion) -> DFT<Self> {
+    pub fn new_full(parameters: Arc<SaftVRQMieParameters>, fmt_version: FMTVersion) -> Self {
         Self::with_options(parameters, fmt_version, SaftVRQMieOptions::default())
     }
 
@@ -44,12 +42,12 @@ impl SaftVRQMieFunctional {
         parameters: Arc<SaftVRQMieParameters>,
         fmt_version: FMTVersion,
         saft_options: SaftVRQMieOptions,
-    ) -> DFT<Self> {
-        DFT(Self {
+    ) -> Self {
+        Self {
             parameters,
             fmt_version,
             options: saft_options,
-        })
+        }
     }
 }
 
@@ -64,18 +62,26 @@ impl Components for SaftVRQMieFunctional {
             self.fmt_version,
             self.options,
         )
-        .0
     }
 }
 
-impl HelmholtzEnergyFunctional for SaftVRQMieFunctional {
-    type Contribution = SaftVRQMieFunctionalContribution;
-
+impl Residual for SaftVRQMieFunctional {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
             / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
                 .sum()
     }
+
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        state: &StateHD<D>,
+    ) -> Vec<(String, D)> {
+        self.evaluate_bulk(state)
+    }
+}
+
+impl HelmholtzEnergyFunctional for SaftVRQMieFunctional {
+    type Contribution = SaftVRQMieFunctionalContribution;
 
     fn contributions(&self) -> Box<(dyn Iterator<Item = SaftVRQMieFunctionalContribution>)> {
         let mut contributions = Vec::with_capacity(3);

@@ -4,7 +4,7 @@ macro_rules! impl_phase_equilibrium {
         /// A thermodynamic two phase equilibrium state.
         #[pyclass(name = "PhaseEquilibrium")]
         #[derive(Clone)]
-        pub struct PyPhaseEquilibrium(PhaseEquilibrium<$eos, 2>);
+        pub struct PyPhaseEquilibrium(pub PhaseEquilibrium<$eos, 2>);
 
         #[pymethods]
         impl PyPhaseEquilibrium {

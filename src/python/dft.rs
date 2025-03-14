@@ -1,14 +1,9 @@
-#[cfg(feature = "estimator")]
-use crate::estimator::*;
-use crate::functional::FunctionalVariant;
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::python::PyGcPcSaftFunctionalParameters;
 #[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftOptions};
 use crate::hard_sphere::{FMTFunctional, FMTVersion};
 use crate::ideal_gas::IdealGasModel;
-#[cfg(feature = "estimator")]
-use crate::impl_estimator;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::python::PyPcSaftParameters;
 #[cfg(feature = "pcsaft")]
@@ -21,7 +16,9 @@ use crate::pets::{PetsFunctional, PetsOptions};
 use crate::saftvrqmie::python::PySaftVRQMieParameters;
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::{SaftVRQMieFunctional, SaftVRQMieOptions};
+use crate::ResidualModel;
 
+use super::eos::{PyEquationOfState, PyPhaseEquilibrium, PyState, PyStateVec};
 use feos_core::*;
 use feos_dft::adsorption::*;
 use feos_dft::interface::*;
@@ -31,36 +28,18 @@ use feos_dft::*;
 use ndarray::{Array1, Array2, Array3, Array4};
 use numpy::prelude::*;
 use numpy::{PyArray1, PyArray2, PyArray3, PyArray4};
-use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
-#[cfg(feature = "estimator")]
-use pyo3::wrap_pymodule;
 use quantity::*;
-use std::collections::HashMap;
 use std::convert::TryInto;
 use std::sync::Arc;
-use typenum::{Quot, P3};
-
-type Functional = EquationOfState<IdealGasModel, FunctionalVariant>;
+use typenum::Quot;
 
 #[pyclass(name = "HelmholtzEnergyFunctional")]
 #[derive(Clone)]
-pub struct PyFunctionalVariant(pub Arc<DFT<Functional>>);
-
-impl PyFunctionalVariant {
-    fn new<F>(functional: DFT<F>) -> Self
-    where
-        FunctionalVariant: From<F>,
-    {
-        let functional: DFT<FunctionalVariant> = functional.into();
-        let n = functional.components();
-        let eos = functional.ideal_gas(IdealGasModel::NoModel(n));
-        Self(Arc::new(eos))
-    }
-}
+pub struct PyHelmholtzEnergyFunctional;
 
 #[pymethods]
-impl PyFunctionalVariant {
+impl PyHelmholtzEnergyFunctional {
     /// PC-SAFT Helmholtz energy functional.
     ///
     /// Parameters
@@ -94,15 +73,20 @@ impl PyFunctionalVariant {
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
         dq_variant: DQVariants,
-    ) -> Self {
+    ) -> PyEquationOfState {
+        use super::eos::PyEquationOfState;
+
         let options = PcSaftOptions {
             max_eta,
             max_iter_cross_assoc,
             tol_cross_assoc,
             dq_variant,
         };
-        let func = PcSaftFunctional::with_options(parameters.0, fmt_version, options);
-        Self::new(func)
+        let func = Arc::new(ResidualModel::PcSaftFunctional(
+            PcSaftFunctional::with_options(parameters.0, fmt_version, options),
+        ));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
+        PyEquationOfState(Arc::new(EquationOfState::new(ideal_gas, func)))
     }
 
     /// (heterosegmented) group contribution PC-SAFT Helmholtz energy functional.
@@ -135,14 +119,17 @@ impl PyFunctionalVariant {
         max_eta: f64,
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
-    ) -> Self {
+    ) -> PyEquationOfState {
         let options = GcPcSaftOptions {
             max_eta,
             max_iter_cross_assoc,
             tol_cross_assoc,
         };
-        let func = GcPcSaftFunctional::with_options(parameters.0, fmt_version, options);
-        Self::new(func)
+        let func = Arc::new(ResidualModel::GcPcSaftFunctional(
+            GcPcSaftFunctional::with_options(parameters.0, fmt_version, options),
+        ));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
+        PyEquationOfState(Arc::new(EquationOfState::new(ideal_gas, func)))
     }
 
     /// PeTS Helmholtz energy functional without simplifications
@@ -166,10 +153,19 @@ impl PyFunctionalVariant {
         signature = (parameters, fmt_version=FMTVersion::WhiteBear, max_eta=0.5),
         text_signature = "(parameters, fmt_version, max_eta=0.5)"
     )]
-    fn pets(parameters: PyPetsParameters, fmt_version: FMTVersion, max_eta: f64) -> Self {
+    fn pets(
+        parameters: PyPetsParameters,
+        fmt_version: FMTVersion,
+        max_eta: f64,
+    ) -> PyEquationOfState {
         let options = PetsOptions { max_eta };
-        let func = PetsFunctional::with_options(parameters.0, fmt_version, options);
-        Self::new(func)
+        let func = Arc::new(ResidualModel::PetsFunctional(PetsFunctional::with_options(
+            parameters.0,
+            fmt_version,
+            options,
+        )));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
+        PyEquationOfState(Arc::new(EquationOfState::new(ideal_gas, func)))
     }
 
     /// Helmholtz energy functional for hard sphere systems.
@@ -185,9 +181,13 @@ impl PyFunctionalVariant {
     /// -------
     /// HelmholtzEnergyFunctional
     #[staticmethod]
-    fn fmt(sigma: &Bound<'_, PyArray1<f64>>, fmt_version: FMTVersion) -> Self {
-        let func = FMTFunctional::new(&sigma.to_owned_array(), fmt_version);
-        Self::new(func)
+    fn fmt(sigma: &Bound<'_, PyArray1<f64>>, fmt_version: FMTVersion) -> PyEquationOfState {
+        let func = Arc::new(ResidualModel::FmtFunctional(FMTFunctional::new(
+            &sigma.to_owned_array(),
+            fmt_version,
+        )));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
+        PyEquationOfState(Arc::new(EquationOfState::new(ideal_gas, func)))
     }
 
     /// SAFT-VRQ Mie Helmholtz energy functional.
@@ -217,44 +217,32 @@ impl PyFunctionalVariant {
         fmt_version: FMTVersion,
         max_eta: f64,
         inc_nonadd_term: bool,
-    ) -> Self {
+    ) -> PyEquationOfState {
         let options = SaftVRQMieOptions {
             max_eta,
             inc_nonadd_term,
         };
-        let func = SaftVRQMieFunctional::with_options(parameters.0, fmt_version, options);
-        Self::new(func)
+        let func = Arc::new(ResidualModel::SaftVRQMieFunctional(
+            SaftVRQMieFunctional::with_options(parameters.0, fmt_version, options),
+        ));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
+        PyEquationOfState(Arc::new(EquationOfState::new(ideal_gas, func)))
     }
 }
 
-impl_equation_of_state!(PyFunctionalVariant);
+impl_planar_interface!(EquationOfState<IdealGasModel, ResidualModel>);
+impl_surface_tension_diagram!(EquationOfState<IdealGasModel, ResidualModel>);
 
-impl_state!(DFT<Functional>, PyFunctionalVariant);
-impl_phase_equilibrium!(DFT<Functional>, PyFunctionalVariant);
+impl_pore!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
+impl_adsorption!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
 
-impl_planar_interface!(Functional);
-impl_surface_tension_diagram!(Functional);
-
-impl_pore!(Functional, PyFunctionalVariant);
-impl_adsorption!(Functional, PyFunctionalVariant);
-
-impl_pair_correlation!(Functional);
-impl_solvation_profile!(Functional);
-
-#[cfg(feature = "estimator")]
-impl_estimator!(DFT<Functional>, PyFunctionalVariant);
+impl_pair_correlation!(EquationOfState<IdealGasModel, ResidualModel>);
+impl_solvation_profile!(EquationOfState<IdealGasModel, ResidualModel>);
 
 #[pymodule]
 pub fn dft(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<Contributions>()?;
-    m.add_class::<Verbosity>()?;
-
-    m.add_class::<PyFunctionalVariant>()?;
-    m.add_class::<PyState>()?;
-    m.add_class::<PyStateVec>()?;
-    m.add_class::<PyPhaseDiagram>()?;
-    m.add_class::<PyPhaseEquilibrium>()?;
     m.add_class::<FMTVersion>()?;
+    m.add_class::<PyHelmholtzEnergyFunctional>()?;
 
     m.add_class::<PyPlanarInterface>()?;
     m.add_class::<Geometry>()?;
@@ -269,16 +257,5 @@ pub fn dft(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyDFTSolver>()?;
     m.add_class::<PySolvationProfile>()?;
 
-    #[cfg(feature = "estimator")]
-    m.add_wrapped(wrap_pymodule!(estimator_dft))?;
-
     Ok(())
-}
-
-#[cfg(feature = "estimator")]
-#[pymodule]
-pub fn estimator_dft(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<PyDataSet>()?;
-    m.add_class::<PyEstimator>()?;
-    m.add_class::<PyLoss>()
 }

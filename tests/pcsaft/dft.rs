@@ -5,9 +5,9 @@ use feos::hard_sphere::FMTVersion;
 use feos::ideal_gas::Joback;
 use feos::pcsaft::{PcSaft, PcSaftFunctional, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter};
-use feos_core::{Contributions, PhaseEquilibrium, State, Verbosity};
+use feos_core::{Contributions, EquationOfState, PhaseEquilibrium, State, Verbosity};
 use feos_dft::interface::PlanarInterface;
-use feos_dft::DFTSolver;
+use feos_dft::{DFTSolver, PdgtFunctionalProperties};
 use ndarray::{arr1, Axis};
 use quantity::*;
 use std::error::Error;
@@ -337,7 +337,10 @@ fn test_entropy_bulk_values() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let func = Arc::new(PcSaftFunctional::new(Arc::new(params)).ideal_gas(joback));
+    let func = Arc::new(EquationOfState::new(
+        Arc::new(joback),
+        Arc::new(PcSaftFunctional::new(Arc::new(params))),
+    ));
     let vle = PhaseEquilibrium::pure(&func, 350.0 * KELVIN, None, Default::default())?;
     let profile = PlanarInterface::from_pdgt(&vle, 2048, false)?.solve(None)?;
     let s_res = profile.profile.entropy_density(Contributions::Residual)?;
