@@ -21,7 +21,6 @@ feos.dft.HelmholtzEnergyFunctional
       ~HelmholtzEnergyFunctional.__init__
       ~HelmholtzEnergyFunctional.fmt
       ~HelmholtzEnergyFunctional.gc_pcsaft
-      ~HelmholtzEnergyFunctional.max_density
       ~HelmholtzEnergyFunctional.pcsaft
       ~HelmholtzEnergyFunctional.pets
       ~HelmholtzEnergyFunctional.saftvrqmie
