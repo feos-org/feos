@@ -3,13 +3,11 @@ use super::record::GcPcSaftAssociationRecord;
 use crate::association::{Association, AssociationStrength};
 use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use feos_core::parameter::ParameterHetero;
-use feos_core::{Components, EosResult, Molarweight};
+use feos_core::{Components, EosResult, Molarweight, Residual, StateHD};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
-use feos_dft::{
-    FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, WeightFunctionInfo, DFT,
-};
-use ndarray::{Array1, ArrayView2, ScalarOperand};
+use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape};
+use ndarray::{Array1, ScalarOperand};
 use num_dual::DualNum;
 use petgraph::graph::UnGraph;
 use quantity::{MolarWeight, GRAM, MOL};
@@ -31,7 +29,7 @@ pub struct GcPcSaftFunctional {
 }
 
 impl GcPcSaftFunctional {
-    pub fn new(parameters: Arc<GcPcSaftFunctionalParameters>) -> DFT<Self> {
+    pub fn new(parameters: Arc<GcPcSaftFunctionalParameters>) -> Self {
         Self::with_options(
             parameters,
             FMTVersion::WhiteBear,
@@ -43,12 +41,12 @@ impl GcPcSaftFunctional {
         parameters: Arc<GcPcSaftFunctionalParameters>,
         fmt_version: FMTVersion,
         saft_options: GcPcSaftOptions,
-    ) -> DFT<Self> {
-        DFT(Self {
+    ) -> Self {
+        Self {
             parameters,
             fmt_version,
             options: saft_options,
-        })
+        }
     }
 }
 
@@ -63,7 +61,22 @@ impl Components for GcPcSaftFunctional {
             self.fmt_version,
             self.options,
         )
-        .0
+    }
+}
+
+impl Residual for GcPcSaftFunctional {
+    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
+        let p = &self.parameters;
+        let moles_segments: Array1<f64> = p.component_index.iter().map(|&i| moles[i]).collect();
+        self.options.max_eta * moles.sum()
+            / (FRAC_PI_6 * &p.m * p.sigma.mapv(|v| v.powi(3)) * moles_segments).sum()
+    }
+
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        state: &StateHD<D>,
+    ) -> Vec<(String, D)> {
+        self.evaluate_bulk(state)
     }
 }
 
@@ -72,13 +85,6 @@ impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
 
     fn molecule_shape(&self) -> MoleculeShape {
         MoleculeShape::Heterosegmented(&self.parameters.component_index)
-    }
-
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        let p = &self.parameters;
-        let moles_segments: Array1<f64> = p.component_index.iter().map(|&i| moles[i]).collect();
-        self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * &p.m * p.sigma.mapv(|v| v.powi(3)) * moles_segments).sum()
     }
 
     fn contributions(&self) -> Box<dyn Iterator<Item = GcPcSaftFunctionalContribution>> {

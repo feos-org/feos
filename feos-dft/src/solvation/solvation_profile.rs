@@ -1,6 +1,5 @@
 use crate::adsorption::FluidParameters;
-use crate::convolver::ConvolverFFT;
-use crate::functional::{HelmholtzEnergyFunctional, DFT};
+use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::{Axis, Grid};
 use crate::profile::{DFTProfile, CUTOFF_RADIUS, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
@@ -53,7 +52,7 @@ impl<F: HelmholtzEnergyFunctional> SolvationProfile<F> {
 impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
     #[expect(clippy::too_many_arguments)]
     pub fn new(
-        bulk: &State<DFT<F>>,
+        bulk: &State<F>,
         n_grid: [usize; 3],
         coordinates: Length<Array2<f64>>,
         sigma_ss: Array1<f64>,
@@ -103,13 +102,10 @@ impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
             t,
         )?;
 
-        // initialize convolver
         let grid = Grid::Cartesian3(x, y, z);
-        let weight_functions = dft.weight_functions(t);
-        let convolver = ConvolverFFT::plan(&grid, &weight_functions, Some(1));
 
         Ok(Self {
-            profile: DFTProfile::new(grid, convolver, bulk, Some(external_potential), None),
+            profile: DFTProfile::new(grid, bulk, Some(external_potential), None, Some(1)),
             grand_potential: None,
             solvation_free_energy: None,
         })

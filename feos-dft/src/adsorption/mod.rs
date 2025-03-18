@@ -1,9 +1,9 @@
 //! Adsorption profiles and isotherms.
-use super::functional::{HelmholtzEnergyFunctional, DFT};
+use super::functional::HelmholtzEnergyFunctional;
 use super::solver::DFTSolver;
 use feos_core::{
-    Components, Contributions, DensityInitialization, EosError, EosResult, ReferenceSystem,
-    Residual, SolverOptions, State, StateBuilder,
+    Contributions, DensityInitialization, EosError, EosResult, ReferenceSystem, SolverOptions,
+    State, StateBuilder,
 };
 use ndarray::{Array1, Array2, Dimension, Ix1, Ix3, RemoveAxis};
 use quantity::{Energy, MolarEnergy, Moles, Pressure, Temperature};
@@ -45,7 +45,7 @@ where
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
-    fn new(functional: &Arc<DFT<F>>, profiles: Vec<EosResult<PoreProfile<D, F>>>) -> Self {
+    fn new(functional: &Arc<F>, profiles: Vec<EosResult<PoreProfile<D, F>>>) -> Self {
         Self {
             components: functional.components(),
             profiles,
@@ -54,7 +54,7 @@ where
 
     /// Calculate an adsorption isotherm (starting at low pressure)
     pub fn adsorption_isotherm<S: PoreSpecification<D>>(
-        functional: &Arc<DFT<F>>,
+        functional: &Arc<F>,
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
@@ -74,7 +74,7 @@ where
 
     /// Calculate an desorption isotherm (starting at high pressure)
     pub fn desorption_isotherm<S: PoreSpecification<D>>(
-        functional: &Arc<DFT<F>>,
+        functional: &Arc<F>,
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
@@ -99,7 +99,7 @@ where
 
     /// Calculate an equilibrium isotherm
     pub fn equilibrium_isotherm<S: PoreSpecification<D>>(
-        functional: &Arc<DFT<F>>,
+        functional: &Arc<F>,
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
@@ -182,7 +182,7 @@ where
     }
 
     fn isotherm<S: PoreSpecification<D>>(
-        functional: &Arc<DFT<F>>,
+        functional: &Arc<F>,
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
@@ -245,7 +245,7 @@ where
     /// Calculate the phase transition from an empty to a filled pore.
     #[expect(clippy::too_many_arguments)]
     pub fn phase_equilibrium<S: PoreSpecification<D>>(
-        functional: &Arc<DFT<F>>,
+        functional: &Arc<F>,
         temperature: Temperature,
         p_min: Pressure,
         p_max: Pressure,

@@ -1,6 +1,5 @@
 //! Functionalities for the calculation of pair correlation functions.
-use crate::convolver::ConvolverFFT;
-use crate::functional::{HelmholtzEnergyFunctional, DFT};
+use crate::functional::HelmholtzEnergyFunctional;
 use crate::profile::MAX_POTENTIAL;
 use crate::solver::DFTSolver;
 use crate::{Axis, DFTProfile, Grid};
@@ -35,7 +34,7 @@ impl<F> Clone for PairCorrelation<F> {
 }
 
 impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
-    pub fn new(bulk: &State<DFT<F>>, test_particle: usize, n_grid: usize, width: Length) -> Self {
+    pub fn new(bulk: &State<F>, test_particle: usize, n_grid: usize, width: Length) -> Self {
         let dft = &bulk.eos;
 
         // generate grid
@@ -49,14 +48,10 @@ impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
                 *x = MAX_POTENTIAL
             }
         });
-
-        // initialize convolver
         let grid = Grid::Spherical(axis);
-        let weight_functions = dft.weight_functions(t);
-        let convolver = ConvolverFFT::plan(&grid, &weight_functions, Some(1));
 
         Self {
-            profile: DFTProfile::new(grid, convolver, bulk, Some(external_potential), None),
+            profile: DFTProfile::new(grid, bulk, Some(external_potential), None, Some(1)),
             pair_correlation_function: None,
             self_solvation_free_energy: None,
             structure_factor: None,

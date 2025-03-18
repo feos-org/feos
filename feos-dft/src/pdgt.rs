@@ -1,7 +1,7 @@
-use super::functional::{HelmholtzEnergyFunctional, DFT};
+use super::functional::HelmholtzEnergyFunctional;
 use super::functional_contribution::FunctionalContribution;
 use super::weight_functions::WeightFunctionInfo;
-use feos_core::{Components, Contributions, EosResult, PhaseEquilibrium, ReferenceSystem};
+use feos_core::{Contributions, EosResult, PhaseEquilibrium, ReferenceSystem};
 use ndarray::*;
 use num_dual::Dual2_64;
 use quantity::{
@@ -144,8 +144,9 @@ trait PdgtProperties: FunctionalContribution {
 
 impl<T: FunctionalContribution> PdgtProperties for T {}
 
-impl<T: HelmholtzEnergyFunctional> DFT<T> {
-    pub fn solve_pdgt(
+pub trait PdgtFunctionalProperties: HelmholtzEnergyFunctional {
+    // impl<T: HelmholtzEnergyFunctional> T {
+    fn solve_pdgt(
         &self,
         vle: &PhaseEquilibrium<Self, 2>,
         n_grid: usize,
@@ -243,6 +244,8 @@ impl<T: HelmholtzEnergyFunctional> DFT<T> {
         unimplemented!()
     }
 }
+
+impl<T: HelmholtzEnergyFunctional> PdgtFunctionalProperties for T {}
 
 fn gradient<UF: Sub<UX>, UX: Copy>(
     df: &Quantity<Array2<f64>, UF>,

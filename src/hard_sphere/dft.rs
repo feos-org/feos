@@ -1,9 +1,9 @@
-use feos_core::{Components, EosResult};
+use feos_core::{Components, EosResult, Residual, StateHD};
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{
     FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, WeightFunction,
-    WeightFunctionInfo, WeightFunctionShape, DFT,
+    WeightFunctionInfo, WeightFunctionShape,
 };
 use ndarray::*;
 use num_dual::DualNum;
@@ -313,14 +313,14 @@ pub struct FMTFunctional {
 }
 
 impl FMTFunctional {
-    pub fn new(sigma: &Array1<f64>, version: FMTVersion) -> DFT<Self> {
+    pub fn new(sigma: &Array1<f64>, version: FMTVersion) -> Self {
         let properties = Arc::new(HardSphereParameters {
             sigma: sigma.clone(),
         });
-        DFT(Self {
+        Self {
             properties,
             version,
-        })
+        }
     }
 }
 
@@ -334,7 +334,20 @@ impl Components for FMTFunctional {
             .iter()
             .map(|&c| self.properties.sigma[c])
             .collect();
-        Self::new(&sigma, self.version).0
+        Self::new(&sigma, self.version)
+    }
+}
+
+impl Residual for FMTFunctional {
+    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
+        moles.sum() / (moles * &self.properties.sigma).sum() * 1.2
+    }
+
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        state: &StateHD<D>,
+    ) -> Vec<(String, D)> {
+        self.evaluate_bulk(state)
     }
 }
 
@@ -346,10 +359,6 @@ impl HelmholtzEnergyFunctional for FMTFunctional {
             &self.properties,
             self.version,
         )))
-    }
-
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        moles.sum() / (moles * &self.properties.sigma).sum() * 1.2
     }
 
     fn molecule_shape(&self) -> MoleculeShape {

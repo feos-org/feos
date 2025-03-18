@@ -1,6 +1,6 @@
 use super::{FluidParameters, PoreProfile, PoreSpecification};
-use crate::{Axis, ConvolverFFT, DFTProfile, Grid, HelmholtzEnergyFunctional, DFT};
-use feos_core::{EosResult, ReferenceSystem, State};
+use crate::{Axis, DFTProfile, Grid, HelmholtzEnergyFunctional};
+use feos_core::{EosResult, State};
 use ndarray::{Array3, Ix2};
 use quantity::{Angle, Density, Length};
 
@@ -25,26 +25,17 @@ impl Pore2D {
 impl PoreSpecification<Ix2> for Pore2D {
     fn initialize<F: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
-        bulk: &State<DFT<F>>,
+        bulk: &State<F>,
         density: Option<&Density<Array3<f64>>>,
         external_potential: Option<&Array3<f64>>,
     ) -> EosResult<PoreProfile<Ix2, F>> {
-        let dft: &F = &bulk.eos;
-
         // generate grid
         let x = Axis::new_cartesian(self.n_grid[0], self.system_size[0], None);
         let y = Axis::new_cartesian(self.n_grid[1], self.system_size[1], None);
-
-        // temperature
-        let t = bulk.temperature.to_reduced();
-
-        // initialize convolver
         let grid = Grid::Periodical2(x, y, self.angle);
-        let weight_functions = dft.weight_functions(t);
-        let convolver = ConvolverFFT::plan(&grid, &weight_functions, Some(1));
 
         Ok(PoreProfile {
-            profile: DFTProfile::new(grid, convolver, bulk, external_potential.cloned(), density),
+            profile: DFTProfile::new(grid, bulk, external_potential.cloned(), density, Some(1)),
             grand_potential: None,
             interfacial_tension: None,
         })
