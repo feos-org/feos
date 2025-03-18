@@ -4,7 +4,7 @@ use crate::ideal_gas::{Dippr, DipprRecord};
 use feos_core::impl_parameter;
 use feos_core::parameter::*;
 use feos_core::python::parameter::*;
-use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
+use numpy::{PyReadonlyArray2};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};

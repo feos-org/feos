@@ -32,8 +32,8 @@ pub trait Parameter
 where
     Self: Sized,
 {
-    type Pure: Clone + DeserializeOwned;
-    type Binary: Clone + DeserializeOwned + Default;
+    type Pure: Clone + DeserializeOwned + Serialize;
+    type Binary: Clone + DeserializeOwned + Serialize + Default;
 
     /// Creates parameters from records for pure substances and possibly binary parameters.
     fn from_records(
@@ -138,6 +138,27 @@ where
         P: AsRef<Path>,
     {
         Self::from_multiple_json(&[(substances, file_pure)], file_binary, identifier_option)
+    }
+
+    /// Creates a json string from pure and possibly binary records.
+    fn to_json_str(&self, pretty: bool) -> Result<(String, Option<String>), ParameterError> {
+        let (pr, br) = self.records();
+
+        let pr_json = if pretty {
+            serde_json::to_string_pretty(pr)
+        } else {
+            serde_json::to_string(pr)
+        }?;
+        let br_json = if let Some(br) = br {
+            Some(if pretty {
+                serde_json::to_string_pretty(br)
+            } else {
+                serde_json::to_string(br)
+            }?)
+        } else {
+            None
+        };
+        Ok((pr_json, br_json))
     }
 
     /// Creates parameters from substance information stored in multiple json files.
@@ -479,6 +500,8 @@ pub trait ParameterHetero: Sized {
 /// Error type for incomplete parameter information and IO problems.
 #[derive(Error, Debug)]
 pub enum ParameterError {
+    #[error("{0}")]
+    Error(String),
     #[error(transparent)]
     FileIO(#[from] io::Error),
     #[error(transparent)]

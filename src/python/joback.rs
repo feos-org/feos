@@ -4,7 +4,7 @@ use crate::ideal_gas::Joback;
 use feos_core::parameter::*;
 use feos_core::python::parameter::*;
 use feos_core::{impl_parameter, impl_parameter_from_segments};
-use numpy::{PyArray2, PyReadonlyArray2, ToPyArray};
+use numpy::PyReadonlyArray2;
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};

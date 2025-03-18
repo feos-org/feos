@@ -1,14 +1,14 @@
 use crate::parameter::*;
-use indexmap::IndexMap;
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use pythonize::{depythonize, pythonize};
 use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::BufReader;
-
 mod fragmentation;
 pub use fragmentation::PySmartsRecord;
+use serde_json::Value;
+use std::fs::File;
+use std::io::BufReader;
 
 impl From<ParameterError> for PyErr {
     fn from(e: ParameterError) -> PyErr {
@@ -78,12 +78,14 @@ impl ChemicalRecord {
     }
 }
 
-#[pyclass(name = "BinaryRecord", get_all, set_all)]
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[pyclass(name = "BinaryRecord")]
 pub struct PyBinaryRecord {
+    #[pyo3(get)]
     id1: Identifier,
+    #[pyo3(get)]
     id2: Identifier,
-    model_record: IndexMap<String, f64>,
+    model_record: Value,
 }
 
 impl<M> TryInto<BinaryRecord<M>> for PyBinaryRecord
@@ -92,7 +94,7 @@ where
 {
     type Error = ParameterError;
     fn try_into(self) -> Result<BinaryRecord<M>, ParameterError> {
-        Ok(serde_json::from_str(&serde_json::to_string(&self)?)?)
+        Ok(serde_json::from_value(serde_json::to_value(self)?)?)
     }
 }
 
@@ -100,56 +102,66 @@ where
 impl PyBinaryRecord {
     #[new]
     #[pyo3(signature = (id1, id2, **parameters))]
-    fn new(id1: Identifier, id2: Identifier, parameters: Option<&Bound<'_, PyDict>>) -> Self {
-        let mut model_record = IndexMap::new();
-        parameters.map(|p| {
-            p.iter().try_for_each(|(key, value)| {
-                model_record.insert(key.extract::<String>()?, value.extract::<f64>()?);
-                Ok::<_, PyErr>(())
-            })
-        });
-        Self {
+    fn new(
+        id1: Identifier,
+        id2: Identifier,
+        parameters: Option<&Bound<'_, PyDict>>,
+    ) -> Result<Self, ParameterError> {
+        if parameters.is_none() {
+            return Err(ParameterError::Error(
+                "No model parameters provided for BinaryRecord".to_string(),
+            ));
+        }
+        let model_record =
+            depythonize(parameters.unwrap()).map_err(|e| ParameterError::Error(e.to_string()))?;
+        Ok(Self {
             id1,
             id2,
             model_record,
-        }
+        })
     }
 
-    fn __repr__(&self) -> String {
-        let params = self
-            .model_record
-            .iter()
-            .map(|(p, &v)| format!(", {p}={v}"))
-            .collect::<Vec<_>>()
-            .join("");
-        format!("BinaryRecord(id1={}, id2={}{})", self.id1, self.id2, params)
+    #[getter]
+    fn get_model_record<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyDict>, ParameterError> {
+        pythonize(py, &self.model_record)
+            .map_err(|e| ParameterError::Error(e.to_string()))
+            .and_then(|d| {
+                d.downcast_into::<PyDict>()
+                    .map_err(|e| ParameterError::Error(e.to_string()))
+            })
     }
 
-    /// Creates record from json string.
+    pub fn to_dict<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyDict>, ParameterError> {
+        pythonize(py, &self)
+            .map_err(|e| ParameterError::Error(e.to_string()))
+            .and_then(|d| {
+                d.downcast_into::<PyDict>()
+                    .map_err(|e| ParameterError::Error(e.to_string()))
+            })
+    }
+
     #[staticmethod]
-    fn from_json_str(json: &str) -> Result<Self, ParameterError> {
-        Ok(serde_json::from_str(json)?)
+    pub fn from_json_str(s: &str) -> Result<Self, ParameterError> {
+        Ok(serde_json::from_str(s)?)
     }
 
-    /// Creates a json string from record.
-    fn to_json_str(&self) -> Result<String, ParameterError> {
+    pub fn to_json_str(&self) -> Result<String, ParameterError> {
         Ok(serde_json::to_string(&self)?)
     }
 
-    /// Read a list of `BinaryRecord`s from a JSON file.
-    ///
-    /// Parameters
-    /// ----------
-    /// path : str
-    ///     Path to file containing the binary records.
-    ///
-    /// Returns
-    /// -------
-    /// [BinaryRecord]
-    #[staticmethod]
-    #[pyo3(text_signature = "(path)")]
-    fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
-        Ok(serde_json::from_reader(BufReader::new(File::open(path)?))?)
+    fn __repr__(&self) -> Result<String, ParameterError> {
+        let params: Result<String, ParameterError> = Python::with_gil(|py| {
+            Ok(self
+                .get_model_record(py)?
+                .iter()
+                .map(|(p, v)| format!(", {p}={v}"))
+                .collect::<Vec<_>>()
+                .join(""))
+        });
+        Ok(format!(
+            "BinaryRecord(id1={}, id2={}{})",
+            self.id1, self.id2, params?
+        ))
     }
 }
 
@@ -176,12 +188,26 @@ impl BinarySegmentRecord {
     }
 }
 
-#[pyclass(name = "PureRecord", get_all, set_all)]
-#[derive(Clone, Serialize, Deserialize)]
+#[pyclass(name = "PureRecord")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PyPureRecord {
+    #[pyo3(get)]
     identifier: Identifier,
+    #[pyo3(get)]
     molarweight: f64,
-    model_record: IndexMap<String, f64>,
+    model_record: Value,
+}
+
+impl<M> TryFrom<&PureRecord<M>> for PyPureRecord
+where
+    M: Serialize + Clone,
+{
+    type Error = ParameterError;
+    fn try_from(value: &PureRecord<M>) -> Result<Self, Self::Error> {
+        Ok(serde_json::from_value(serde_json::to_value(
+            value.clone(),
+        )?)?)
+    }
 }
 
 impl<M> TryInto<PureRecord<M>> for PyPureRecord
@@ -190,7 +216,7 @@ where
 {
     type Error = ParameterError;
     fn try_into(self) -> Result<PureRecord<M>, ParameterError> {
-        Ok(serde_json::from_str(&serde_json::to_string(&self)?)?)
+        Ok(serde_json::from_value(serde_json::to_value(self)?)?)
     }
 }
 
@@ -202,52 +228,73 @@ impl PyPureRecord {
         identifier: Identifier,
         molarweight: f64,
         parameters: Option<&Bound<'_, PyDict>>,
-    ) -> Self {
-        let mut model_record = IndexMap::new();
-        parameters.map(|p| {
-            p.iter().try_for_each(|(key, value)| {
-                model_record.insert(key.extract::<String>()?, value.extract::<f64>()?);
-                Ok::<_, PyErr>(())
-            })
-        });
-        Self {
+    ) -> Result<Self, ParameterError> {
+        if parameters.is_none() {
+            return Err(ParameterError::Error(
+                "No model parameters provided for PureRecord".to_string(),
+            ));
+        }
+        let model_record =
+            depythonize(parameters.unwrap()).map_err(|e| ParameterError::Error(e.to_string()))?;
+        Ok(Self {
             identifier,
             molarweight,
             model_record,
-        }
+        })
     }
 
-    fn __repr__(&self) -> String {
-        let params = self
-            .model_record
-            .iter()
-            .map(|(p, &v)| format!(", {p}={v}"))
-            .collect::<Vec<_>>()
-            .join("");
-        format!(
-            "PureRecord(identifier={}, molarweight={}{})",
-            self.identifier, self.molarweight, params
-        )
+    #[getter]
+    fn get_model_record<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyDict>, ParameterError> {
+        pythonize(py, &self.model_record)
+            .map_err(|e| ParameterError::Error(e.to_string()))
+            .and_then(|d| {
+                d.downcast_into::<PyDict>()
+                    .map_err(|e| ParameterError::Error(e.to_string()))
+            })
     }
 
-    /// Creates record from json string.
+    pub fn to_dict<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyDict>, ParameterError> {
+        pythonize(py, &self)
+            .map_err(|e| ParameterError::Error(e.to_string()))
+            .and_then(|d| {
+                d.downcast_into::<PyDict>()
+                    .map_err(|e| ParameterError::Error(e.to_string()))
+            })
+    }
+
     #[staticmethod]
-    fn from_json_str(json: &str) -> Result<Self, ParameterError> {
-        Ok(serde_json::from_str(json)?)
+    pub fn from_json_str(s: &str) -> Result<Self, ParameterError> {
+        Ok(serde_json::from_str(s)?)
     }
 
-    /// Creates a json string from record.
-    fn to_json_str(&self) -> Result<String, ParameterError> {
+    pub fn to_json_str(&self) -> Result<String, ParameterError> {
         Ok(serde_json::to_string(&self)?)
+    }
+
+    fn __repr__(&self) -> Result<String, ParameterError> {
+        let params: Result<String, ParameterError> = Python::with_gil(|py| {
+            Ok(self
+                .get_model_record(py)?
+                .iter()
+                .map(|(p, v)| format!(", {p}={v}"))
+                .collect::<Vec<_>>()
+                .join(""))
+        });
+        Ok(format!(
+            "PureRecord(identifier={}, molarweight={}{})",
+            self.identifier, self.molarweight, params?
+        ))
     }
 }
 
-#[pyclass(name = "SegmentRecord", get_all, set_all)]
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[pyclass(name = "SegmentRecord")]
 pub struct PySegmentRecord {
+    #[pyo3(get)]
     identifier: String,
+    #[pyo3(get)]
     molarweight: f64,
-    model_record: IndexMap<String, f64>,
+    model_record: Value,
 }
 
 impl<M> TryInto<SegmentRecord<M>> for PySegmentRecord
@@ -256,7 +303,7 @@ where
 {
     type Error = ParameterError;
     fn try_into(self) -> Result<SegmentRecord<M>, ParameterError> {
-        Ok(serde_json::from_str(&serde_json::to_string(&self)?)?)
+        Ok(serde_json::from_value(serde_json::to_value(self)?)?)
     }
 }
 
@@ -264,43 +311,67 @@ where
 impl PySegmentRecord {
     #[new]
     #[pyo3(signature = (identifier, molarweight, **parameters))]
-    fn new(identifier: String, molarweight: f64, parameters: Option<&Bound<'_, PyDict>>) -> Self {
-        let mut model_record = IndexMap::new();
-        parameters.map(|p| {
-            p.iter().try_for_each(|(key, value)| {
-                model_record.insert(key.extract::<String>()?, value.extract::<f64>()?);
-                Ok::<_, PyErr>(())
-            })
-        });
-        Self {
+    fn new(
+        identifier: String,
+        molarweight: f64,
+        parameters: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Self> {
+        if parameters.is_none() {
+            return Err(ParameterError::Error(
+                "No model parameters provided for SegmentRecord".to_string(),
+            )
+            .into());
+        }
+        let model_record =
+            depythonize(parameters.unwrap()).map_err(|e| ParameterError::Error(e.to_string()))?;
+        Ok(Self {
             identifier,
             molarweight,
             model_record,
-        }
+        })
     }
 
-    fn __repr__(&self) -> String {
-        let params = self
-            .model_record
-            .iter()
-            .map(|(p, &v)| format!(", {p}={v}"))
-            .collect::<Vec<_>>()
-            .join("");
-        format!(
-            "SegmentRecord(identifier={}, molarweight={}{})",
-            self.identifier, self.molarweight, params
-        )
+    #[getter]
+    fn get_model_record<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyDict>, ParameterError> {
+        pythonize(py, &self.model_record)
+            .map_err(|e| ParameterError::Error(e.to_string()))
+            .and_then(|d| {
+                d.downcast_into::<PyDict>()
+                    .map_err(|e| ParameterError::Error(e.to_string()))
+            })
     }
 
-    /// Creates record from json string.
+    pub fn to_dict<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyDict>, ParameterError> {
+        pythonize(py, &self)
+            .map_err(|e| ParameterError::Error(e.to_string()))
+            .and_then(|d| {
+                d.downcast_into::<PyDict>()
+                    .map_err(|e| ParameterError::Error(e.to_string()))
+            })
+    }
+
     #[staticmethod]
-    fn from_json_str(json: &str) -> Result<Self, ParameterError> {
-        Ok(serde_json::from_str(json)?)
+    pub fn from_json_str(s: &str) -> Result<Self, ParameterError> {
+        Ok(serde_json::from_str(s)?)
     }
 
-    /// Creates a json string from record.
-    fn to_json_str(&self) -> Result<String, ParameterError> {
+    pub fn to_json_str(&self) -> Result<String, ParameterError> {
         Ok(serde_json::to_string(&self)?)
+    }
+
+    fn __repr__(&self) -> Result<String, ParameterError> {
+        let params: Result<String, ParameterError> = Python::with_gil(|py| {
+            Ok(self
+                .get_model_record(py)?
+                .iter()
+                .map(|(p, v)| format!(", {p}={v}"))
+                .collect::<Vec<_>>()
+                .join(""))
+        });
+        Ok(format!(
+            "SegmentRecord(identifier={}, molarweight={}{})",
+            self.identifier, self.molarweight, params?
+        ))
     }
 
     /// Read a list of `SegmentRecord`s from a JSON file.
@@ -488,22 +559,45 @@ macro_rules! impl_parameter {
                 )?)))
             }
 
-            #[getter]
-            fn get_pure_records(&self) -> PyResult<Vec<PyPureRecord>> {
-                let (pure_records, _) = self.0.records();
-                Ok(pure_records
-                    .iter()
-                    .map(|r| Ok(serde_json::from_str(&serde_json::to_string(&r)?)?))
-                    .collect::<Result<_,ParameterError>>()?)
+            /// Generates JSON-formatted string for pure and binary records (if initialized).
+            ///
+            /// Parameters
+            /// ----------
+            /// pretty : bool
+            ///     Whether to use pretty (true) or dense (false) formatting. Defaults to true.
+            ///
+            /// Returns
+            /// -------
+            /// str : The JSON-formatted string.
+            #[pyo3(
+                signature = (pretty=true),
+                text_signature = "(pretty=true)"
+            )]
+            fn to_json_str(&self, pretty: bool) -> Result<(String, Option<String>), ParameterError> {
+                <$parameter>::to_json_str(&self.0, pretty)
             }
 
             #[getter]
-            fn get_binary_records<'py>(&self, py: Python<'py>) -> Option<Bound<'py, PyArray2<f64>>> {
-                self.0
-                    .records()
-                    .1
-                    .map(|r| r.mapv(|r| f64::try_from(r).unwrap()).view().to_pyarray(py))
+            fn get_pure_records(&self) -> PyResult<Vec<PyPureRecord>> {
+                let pure_records = self.0.records().0;
+                Ok(pure_records
+                    .iter()
+                    .map(|r| PyPureRecord::try_from(r))
+                    .collect::<Result<_,ParameterError>>()?)
             }
+
+            // #[getter]
+            // fn get_binary_records<'py>(&self, py: Python<'py>) -> Result<Option<Bound<'py, PyAny>>, ParameterError> {
+            //     let binary_records = self.0.records().1;
+            //     let Some(br) = binary_records else {
+            //         return Ok(None)
+            //     };
+
+            //     if br.shape()[0] == 0 {
+            //         return Ok(None)
+            //     }
+            //     // todo: map f64 or binary records
+            // }
         }
     };
 }
@@ -615,7 +709,7 @@ macro_rules! impl_parameter_from_segments {
             ///
             /// Parameters
             /// ----------
-            /// identifier : [str | Identifier]
+            /// identifier : list[str | Identifier]
             ///     A list of SMILES codes or [Identifier] objects.
             /// smarts_path : str
             ///     Path to file containing SMARTS records.
@@ -634,6 +728,7 @@ macro_rules! impl_parameter_from_segments {
                 segments_path: String,
                 binary_path: Option<String>,
             ) -> PyResult<Self> {
+
                 let smarts_records = PySmartsRecord::from_json(&smarts_path)?;
                 let segment_records = PySegmentRecord::from_json(&segments_path)?;
                 let binary_segment_records = binary_path.map(|p| BinarySegmentRecord::from_json(&p)).transpose()?;
