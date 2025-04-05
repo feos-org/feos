@@ -14,6 +14,3 @@ mod record;
 pub use dft::{GcPcSaftFunctional, GcPcSaftFunctionalContribution, GcPcSaftFunctionalParameters};
 pub use eos::{GcPcSaft, GcPcSaftChemicalRecord, GcPcSaftEosParameters, GcPcSaftOptions};
 pub use record::GcPcSaftRecord;
-
-#[cfg(feature = "python")]
-pub mod python;

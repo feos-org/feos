@@ -1,12 +1,17 @@
 use crate::parameter::*;
+use indexmap::{IndexMap, IndexSet};
+use itertools::Itertools;
+use ndarray::Array2;
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::PyDict;
 use pythonize::{depythonize, pythonize};
 use serde::{Deserialize, Serialize};
 mod fragmentation;
 pub use fragmentation::PySmartsRecord;
 use serde_json::Value;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::BufReader;
 
@@ -220,6 +225,49 @@ where
     }
 }
 
+impl PyPureRecord {
+    fn from_json(
+        substances: &[PyBackedStr],
+        file: &PyBackedStr,
+        identifier_option: IdentifierOption,
+    ) -> Result<Vec<Self>, ParameterError> {
+        // create list of substances
+        let mut queried: HashSet<_> = substances.iter().map(|s| s.to_string()).collect();
+        // raise error on duplicate detection
+        if queried.len() != substances.len() {
+            return Err(ParameterError::IncompatibleParameters(
+                "A substance was defined more than once.".to_string(),
+            ));
+        }
+
+        let reader = BufReader::new(File::open::<&str>(file.as_ref())?);
+        let file_records: Vec<Self> = serde_json::from_reader(reader)?;
+        let mut records: HashMap<_, _> = HashMap::with_capacity(substances.len());
+
+        // build map, draining list of queried substances in the process
+        for record in file_records {
+            if let Some(id) = record.identifier.as_string(identifier_option) {
+                queried.take(&id).map(|id| records.insert(id, record));
+            }
+            // all parameters parsed
+            if queried.is_empty() {
+                break;
+            }
+        }
+
+        // report missing parameters
+        if !queried.is_empty() {
+            return Err(ParameterError::ComponentsNotFound(format!("{:?}", queried)));
+        };
+
+        // collect into vec in correct order
+        Ok(substances
+            .iter()
+            .map(|s| records.get(&s.to_string()).unwrap().clone())
+            .collect())
+    }
+}
+
 #[pymethods]
 impl PyPureRecord {
     #[new]
@@ -390,355 +438,492 @@ impl PySegmentRecord {
     }
 }
 
-#[macro_export]
-macro_rules! impl_parameter {
-        ($parameter:ty, $py_parameter:ty) => {
-        use pyo3::pybacked::*;
-
-        #[pymethods]
-        impl $py_parameter {
-            /// Creates parameters from records.
-            ///
-            /// Parameters
-            /// ----------
-            /// pure_records : [PureRecord]
-            ///     A list of pure component parameters.
-            /// binary_records : numpy.ndarray[float] or List[BinaryRecord], optional
-            ///     A matrix of binary interaction parameters or a list
-            ///     containing records for binary interactions.
-            /// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
-            ///     Identifier that is used to search binary records.
-            #[staticmethod]
-            #[pyo3(
-                signature = (pure_records, binary_records=None, identifier_option=IdentifierOption::Name),
-                text_signature = "(pure_records, binary_records=None, identifier_option=None)"
-            )]
-            fn from_records(
-                pure_records: Vec<PyPureRecord>,
-                binary_records: Option<&Bound<'_, PyAny>>,
-                identifier_option: IdentifierOption,
-            ) -> PyResult<Self> {
-                let prs = pure_records.into_iter().map(|pr| pr.try_into()).collect::<Result<Vec<_>, _>>()?;
-                let binary_records = binary_records
-                    .map(|binary_records| {
-                        if let Ok(br) = binary_records.extract::<PyReadonlyArray2<f64>>() {
-                            Ok(Some(br.as_array().mapv(|r| r.try_into().unwrap())))
-                        } else if let Ok(br) = binary_records.extract::<Vec<PyBinaryRecord>>() {
-                            let brs: Vec<_> = br.into_iter().map(|br| br.try_into()).collect::<Result<_,_>>()?;
-                            Ok(<$parameter>::binary_matrix_from_records(
-                                &prs,
-                                &brs,
-                                identifier_option,
-                            ))
-                        } else {
-                            Err(PyErr::new::<PyTypeError, _>(format!(
-                                "Could not parse binary input!"
-                            )))
-                        }
-                    })
-                    .transpose()?
-                    .flatten();
-                Ok(Self(Arc::new(Parameter::from_records(prs, binary_records)?)))
-            }
-
-            /// Creates parameters for a pure component from a pure record.
-            ///
-            /// Parameters
-            /// ----------
-            /// pure_record : PureRecord
-            ///     The pure component parameters.
-            #[staticmethod]
-            fn new_pure(pure_record: PyPureRecord) -> PyResult<Self> {
-                Ok(Self(Arc::new(<$parameter>::new_pure(pure_record.try_into()?)?)))
-            }
-
-            /// Creates parameters for a binary system from pure records and an optional
-            /// binary interaction parameter or binary interaction parameter record.
-            ///
-            /// Parameters
-            /// ----------
-            /// pure_records : [PureRecord]
-            ///     A list of pure component parameters.
-            /// binary_record : float or BinaryRecord, optional
-            ///     The binary interaction parameter or binary interaction record.
-            #[staticmethod]
-            #[pyo3(text_signature = "(pure_records, binary_record=None)", signature = (pure_records, binary_record=None))]
-            fn new_binary(
-                pure_records: Vec<PyPureRecord>,
-                binary_record: Option<&Bound<'_, PyAny>>,
-            ) -> PyResult<Self> {
-                let prs = pure_records.into_iter().map(|pr| pr.try_into()).collect::<Result<_,_>>()?;
-                let br = binary_record
-                    .map(|br| {
-                        if let Ok(r) = br.extract::<f64>() {
-                            Ok(r.try_into()?)
-                        } else if let Ok(r) = br.extract::<PyBinaryRecord>() {
-                            let r: BinaryRecord<<$parameter as Parameter>::Binary> = r.try_into()?;
-                            Ok(r.model_record)
-                        } else {
-                            Err(PyErr::new::<PyTypeError, _>(format!(
-                                "Could not parse binary input!"
-                            )))
-                        }
-                    })
-                    .transpose()?;
-                Ok(Self(Arc::new(<$parameter>::new_binary(prs, br)?)))
-            }
-
-            // /// Creates parameters from model records with default values for the molar weight,
-            // /// identifiers, and binary interaction parameters.
-            // ///
-            // /// Parameters
-            // /// ----------
-            // /// model_records : [ModelRecord]
-            // ///     A list of model parameters.
-            // #[staticmethod]
-            // fn from_model_records(model_records: Vec<$py_model_record>) -> PyResult<Self> {
-            //     let mrs = model_records.into_iter().map(|mr| mr.0).collect();
-            //     Ok(Self(Arc::new(<$parameter>::from_model_records(mrs)?)))
-            // }
-
-            /// Creates parameters from json files.
-            ///
-            /// Parameters
-            /// ----------
-            /// substances : List[str]
-            ///     The substances to search.
-            /// pure_path : str
-            ///     Path to file containing pure substance parameters.
-            /// binary_path : str, optional
-            ///     Path to file containing binary substance parameters.
-            /// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
-            ///     Identifier that is used to search substance.
-            #[staticmethod]
-            #[pyo3(
-                signature = (substances, pure_path, binary_path=None, identifier_option=IdentifierOption::Name),
-                text_signature = "(substances, pure_path, binary_path=None, identifier_option)"
-            )]
-            fn from_json(
-                substances: Vec<PyBackedStr>,
-                pure_path: String,
-                binary_path: Option<String>,
-                identifier_option: IdentifierOption,
-            ) -> Result<Self, ParameterError> {
-                let substances = substances.iter().map(|s| &**s).collect();
-                Ok(Self(Arc::new(<$parameter>::from_json(
-                    substances,
-                    pure_path,
-                    binary_path,
-                    identifier_option,
-                )?)))
-            }
-
-            /// Creates parameters from json files.
-            ///
-            /// Parameters
-            /// ----------
-            /// input : List[Tuple[List[str], str]]
-            ///     The substances to search and their respective parameter files.
-            ///     E.g. [(["methane", "propane"], "parameters/alkanes.json"), (["methanol"], "parameters/alcohols.json")]
-            /// binary_path : str, optional
-            ///     Path to file containing binary substance parameters.
-            /// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
-            ///     Identifier that is used to search substance.
-            #[staticmethod]
-            #[pyo3(
-                signature = (input, binary_path=None, identifier_option=IdentifierOption::Name),
-                text_signature = "(input, binary_path=None, identifier_option)"
-            )]
-            fn from_multiple_json(
-                input: Vec<(Vec<PyBackedStr>, PyBackedStr)>,
-                binary_path: Option<PyBackedStr>,
-                identifier_option: Option<IdentifierOption>,
-            ) -> Result<Self, ParameterError> {
-                let input: Vec<(Vec<&str>, &str)> = input.iter().map(|(c, f)| (c.iter().map(|c| &**c).collect(), &**f)).collect();
-                Ok(Self(Arc::new(<$parameter>::from_multiple_json(
-                    &input,
-                    binary_path.as_deref(),
-                    identifier_option.unwrap_or(IdentifierOption::Name),
-                )?)))
-            }
-
-            /// Generates JSON-formatted string for pure and binary records (if initialized).
-            ///
-            /// Parameters
-            /// ----------
-            /// pretty : bool
-            ///     Whether to use pretty (true) or dense (false) formatting. Defaults to true.
-            ///
-            /// Returns
-            /// -------
-            /// str : The JSON-formatted string.
-            #[pyo3(
-                signature = (pretty=true),
-                text_signature = "(pretty=true)"
-            )]
-            fn to_json_str(&self, pretty: bool) -> Result<(String, Option<String>), ParameterError> {
-                <$parameter>::to_json_str(&self.0, pretty)
-            }
-
-            #[getter]
-            fn get_pure_records(&self) -> PyResult<Vec<PyPureRecord>> {
-                let pure_records = self.0.records().0;
-                Ok(pure_records
-                    .iter()
-                    .map(|r| PyPureRecord::try_from(r))
-                    .collect::<Result<_,ParameterError>>()?)
-            }
-
-            // #[getter]
-            // fn get_binary_records<'py>(&self, py: Python<'py>) -> Result<Option<Bound<'py, PyAny>>, ParameterError> {
-            //     let binary_records = self.0.records().1;
-            //     let Some(br) = binary_records else {
-            //         return Ok(None)
-            //     };
-
-            //     if br.shape()[0] == 0 {
-            //         return Ok(None)
-            //     }
-            //     // todo: map f64 or binary records
-            // }
-        }
-    };
+#[pyclass(name = "Parameters")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PyParameters {
+    #[pyo3(get)]
+    pub pure_records: Vec<PyPureRecord>,
+    pub binary_records: Vec<([usize; 2], Value)>,
 }
 
-#[macro_export]
-macro_rules! impl_parameter_from_segments {
-    ($parameter:ty, $py_parameter:ty) => {
-        use pyo3::pybacked::*;
-
-        #[pymethods]
-        impl $py_parameter {
-            /// Creates parameters from segment records.
-            ///
-            /// Parameters
-            /// ----------
-            /// chemical_records : [ChemicalRecord]
-            ///     A list of pure component chemical records.
-            /// segment_records : [SegmentRecord]
-            ///     A list of records containing the parameters of
-            ///     all individual segments.
-            /// binary_segment_records : [BinarySegmentRecord], optional
-            ///     A list of binary segment-segment parameters.
-            #[staticmethod]
-            #[pyo3(text_signature = "(chemical_records, segment_records, binary_segment_records=None)",
-            signature = (chemical_records, segment_records, binary_segment_records=None))]
-            fn from_segments(
-                chemical_records: Vec<ChemicalRecord>,
-                segment_records: Vec<PySegmentRecord>,
-                binary_segment_records: Option<Vec<BinarySegmentRecord>>,
-            ) -> PyResult<Self> {
-                Ok(Self(Arc::new(<$parameter>::from_segments(
-                    chemical_records,
-                    segment_records.into_iter().map(|sr| sr.try_into()).collect::<Result<_, ParameterError>>()?,
-                    binary_segment_records,
-                )?)))
+impl PyParameters {
+    pub fn try_convert<P: Parameter>(self) -> Result<P, ParameterError> {
+        let n = self.pure_records.len();
+        let pure_records = self
+            .pure_records
+            .into_iter()
+            .map(|r| r.try_into())
+            .collect::<Result<_, _>>()?;
+        let binary_records = if self.binary_records.is_empty() {
+            None
+        } else {
+            let mut br = Array2::default((n, n));
+            for ([i, j], r) in self.binary_records {
+                let r: P::Binary = serde_json::from_value(r)?;
+                br[[i, j]] = r.clone();
+                br[[j, i]] = r;
             }
+            Some(br)
+        };
+        P::from_records(pure_records, binary_records)
+    }
+}
 
-            /// Creates parameters using segments from json file.
-            ///
-            /// Parameters
-            /// ----------
-            /// substances : List[str]
-            ///     The substances to search.
-            /// pure_path : str
-            ///     Path to file containing pure substance parameters.
-            /// segments_path : str
-            ///     Path to file containing segment parameters.
-            /// binary_path : str, optional
-            ///     Path to file containing binary segment-segment parameters.
-            /// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
-            ///     Identifier that is used to search substance.
-            #[staticmethod]
-            #[pyo3(
-                signature = (substances, pure_path, segments_path, binary_path=None, identifier_option=IdentifierOption::Name),
-                text_signature = "(substances, pure_path, segments_path, binary_path=None, identifier_option)"
+#[pymethods]
+impl PyParameters {
+    /// Creates parameters from records.
+    ///
+    /// Parameters
+    /// ----------
+    /// pure_records : List[PureRecord]
+    ///     A list of pure component parameters.
+    /// binary_records : List[BinaryRecord], optional, defaults to []
+    ///     A list containing records for binary interactions.
+    /// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
+    ///     Identifier that is used to search binary records.
+    #[staticmethod]
+    #[pyo3(
+                signature = (pure_records, binary_records=vec![], identifier_option=IdentifierOption::Name),
+                text_signature = "(pure_records, binary_records=[], identifier_option=IdentifierOption.Name)"
             )]
-            fn from_json_segments(
-                substances: Vec<PyBackedStr>,
-                pure_path: String,
-                segments_path: String,
-                binary_path: Option<String>,
-                identifier_option: IdentifierOption,
-            ) -> PyResult<Self> {
-                let substances: Vec<_> = substances.iter().map(|s| &**s).collect();
-                Ok(Self(Arc::new(<$parameter>::from_json_segments(
-                    &substances,
-                    pure_path,
-                    segments_path,
-                    binary_path,
-                    identifier_option,
-                )?)))
-            }
+    fn from_records(
+        pure_records: Vec<PyPureRecord>,
+        binary_records: Vec<PyBinaryRecord>,
+        identifier_option: IdentifierOption,
+    ) -> Result<Self, ParameterError> {
+        // Build Hashmap (id, id) -> BinaryRecord
+        let binary_map: HashMap<_, _> = {
+            binary_records
+                .iter()
+                .filter_map(|br| {
+                    let id1 = br.id1.as_string(identifier_option);
+                    let id2 = br.id2.as_string(identifier_option);
+                    id1.and_then(|id1| id2.map(|id2| ((id1, id2), br.model_record.clone())))
+                })
+                .collect()
+        };
 
-            /// Creates parameters from SMILES and segment records.
-            ///
-            /// Requires an installation of rdkit.
-            ///
-            /// Parameters
-            /// ----------
-            /// identifier : [str | Identifier]
-            ///     A list of SMILES codes or [Identifier] objects.
-            /// smarts_records : [SmartsRecord]
-            ///     A list of records containing the SMARTS codes used
-            ///     to fragment the molecule.
-            /// segment_records : [SegmentRecord]
-            ///     A list of records containing the parameters of
-            ///     all individual segments.
-            /// binary_segment_records : [BinarySegmentRecord], optional
-            ///     A list of binary segment-segment parameters.
-            #[staticmethod]
-            #[pyo3(text_signature = "(identifier, smarts_records, segment_records, binary_segment_records=None)")]
-            #[pyo3(signature = (identifier, smarts_records, segment_records, binary_segment_records=None))]
-            fn from_smiles(
-                identifier: Vec<Bound<'_,PyAny>>,
-                smarts_records: Vec<PySmartsRecord>,
-                segment_records: Vec<PySegmentRecord>,
-                binary_segment_records: Option<Vec<BinarySegmentRecord>>,
-            ) -> PyResult<Self> {
-                let chemical_records: Vec<_> = identifier
-                    .into_iter()
-                    .map(|i| ChemicalRecord::from_smiles(&i, smarts_records.clone()))
-                    .collect::<PyResult<_>>()?;
-                Self::from_segments(chemical_records, segment_records, binary_segment_records)
-            }
+        // look up pure records in Hashmap
+        let binary_records = pure_records
+            .iter()
+            .enumerate()
+            .array_combinations()
+            .map(|[(i1, p1), (i2, p2)]| {
+                let id1 = p1
+                    .identifier
+                    .as_string(identifier_option)
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "No {} for pure record {} ({}).",
+                            identifier_option, i1, p1.identifier
+                        )
+                    });
+                let id2 = p2
+                    .identifier
+                    .as_string(identifier_option)
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "No {} for pure record {} ({}).",
+                            identifier_option, i2, p2.identifier
+                        )
+                    });
+                let br = binary_map
+                    .get(&(id1.clone(), id2.clone()))
+                    .or_else(|| binary_map.get(&(id2, id1)))
+                    .cloned()
+                    .unwrap_or_default();
+                ([i1, i2], br)
+            })
+            .collect();
 
-            /// Creates parameters from SMILES using segments from json file.
-            ///
-            /// Requires an installation of rdkit.
-            ///
-            /// Parameters
-            /// ----------
-            /// identifier : list[str | Identifier]
-            ///     A list of SMILES codes or [Identifier] objects.
-            /// smarts_path : str
-            ///     Path to file containing SMARTS records.
-            /// segments_path : str
-            ///     Path to file containing segment parameters.
-            /// binary_path : str, optional
-            ///     Path to file containing binary segment-segment parameters.
-            #[staticmethod]
-            #[pyo3(
-                signature = (identifier, smarts_path, segments_path, binary_path=None),
-                text_signature = "(identifier, smarts_path, segments_path, binary_path=None)"
-            )]
-            fn from_json_smiles(
-                identifier: Vec<Bound<'_,PyAny>>,
-                smarts_path: String,
-                segments_path: String,
-                binary_path: Option<String>,
-            ) -> PyResult<Self> {
+        Ok(Self {
+            pure_records,
+            binary_records,
+        })
+    }
 
-                let smarts_records = PySmartsRecord::from_json(&smarts_path)?;
-                let segment_records = PySegmentRecord::from_json(&segments_path)?;
-                let binary_segment_records = binary_path.map(|p| BinarySegmentRecord::from_json(&p)).transpose()?;
-                Self::from_smiles(
-                    identifier,
-                    smarts_records,
-                    segment_records,
-                    binary_segment_records,
-                )
-            }
+    /// Creates parameters for a pure component from a pure record.
+    ///
+    /// Parameters
+    /// ----------
+    /// pure_record : PureRecord
+    ///     The pure component parameters.
+    #[staticmethod]
+    fn new_pure(pure_record: PyPureRecord) -> Self {
+        Self {
+            pure_records: vec![pure_record],
+            binary_records: vec![],
         }
-    };
+    }
+
+    /// Creates parameters for a binary system from pure records and an optional
+    /// binary interaction parameter or binary interaction parameter record.
+    ///
+    /// Parameters
+    /// ----------
+    /// pure_records : [PureRecord]
+    ///     A list of pure component parameters.
+    /// binary_record : float or BinaryRecord, optional
+    ///     The binary interaction parameter or binary interaction record.
+    #[staticmethod]
+    #[pyo3(text_signature = "(pure_records, binary_record=None)", signature = (pure_records, binary_record=None))]
+    fn new_binary(pure_records: Vec<PyPureRecord>, binary_record: Option<PyBinaryRecord>) -> Self {
+        let binary_records = binary_record
+            .into_iter()
+            .map(|r| ([0, 1], r.model_record))
+            .collect();
+        Self {
+            pure_records,
+            binary_records,
+        }
+    }
+
+    /// Creates parameters from json files.
+    ///
+    /// Parameters
+    /// ----------
+    /// substances : List[str]
+    ///     The substances to search.
+    /// pure_path : str
+    ///     Path to file containing pure substance parameters.
+    /// binary_path : str, optional
+    ///     Path to file containing binary substance parameters.
+    /// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
+    ///     Identifier that is used to search substance.
+    #[staticmethod]
+    #[pyo3(
+        signature = (substances, pure_path, binary_path=None, identifier_option=IdentifierOption::Name),
+        text_signature = "(substances, pure_path, binary_path=None, identifier_option)"
+    )]
+    fn from_json(
+        substances: Vec<PyBackedStr>,
+        pure_path: PyBackedStr,
+        binary_path: Option<PyBackedStr>,
+        identifier_option: IdentifierOption,
+    ) -> Result<Self, ParameterError> {
+        Self::from_multiple_json(
+            vec![(substances, pure_path)],
+            binary_path,
+            identifier_option,
+        )
+    }
+
+    /// Creates parameters from json files.
+    ///
+    /// Parameters
+    /// ----------
+    /// input : List[Tuple[List[str], str]]
+    ///     The substances to search and their respective parameter files.
+    ///     E.g. [(["methane", "propane"], "parameters/alkanes.json"), (["methanol"], "parameters/alcohols.json")]
+    /// binary_path : str, optional
+    ///     Path to file containing binary substance parameters.
+    /// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
+    ///     Identifier that is used to search substance.
+    #[staticmethod]
+    #[pyo3(
+        signature = (input, binary_path=None, identifier_option=IdentifierOption::Name),
+        text_signature = "(input, binary_path=None, identifier_option)"
+    )]
+    fn from_multiple_json(
+        input: Vec<(Vec<PyBackedStr>, PyBackedStr)>,
+        binary_path: Option<PyBackedStr>,
+        identifier_option: IdentifierOption,
+    ) -> Result<Self, ParameterError> {
+        // total number of substances queried
+        let nsubstances = input.iter().map(|(substances, _)| substances.len()).sum();
+
+        // queried substances with removed duplicates
+        let queried: HashSet<_> = input
+            .iter()
+            .flat_map(|(substances, _)| substances)
+            .collect();
+
+        // check if there are duplicates
+        if queried.len() != nsubstances {
+            return Err(ParameterError::IncompatibleParameters(
+                "A substance was defined more than once.".to_string(),
+            ));
+        }
+
+        let mut pure_records = Vec::with_capacity(nsubstances);
+
+        // collect parameters from files into single map
+        for (substances, file) in input {
+            pure_records.extend(PyPureRecord::from_json(
+                &substances,
+                &file,
+                identifier_option,
+            )?);
+        }
+
+        let binary_records = if let Some(path) = binary_path {
+            let reader = BufReader::new(File::open::<&str>(path.as_ref())?);
+            serde_json::from_reader(reader)?
+        } else {
+            Vec::new()
+        };
+
+        Self::from_records(pure_records, binary_records, identifier_option)
+    }
+
+    // /// Generates JSON-formatted string for pure and binary records (if initialized).
+    // ///
+    // /// Parameters
+    // /// ----------
+    // /// pretty : bool
+    // ///     Whether to use pretty (True) or dense (False) formatting. Defaults to True.
+    // ///
+    // /// Returns
+    // /// -------
+    // /// str : The JSON-formatted string.
+    // #[pyo3(
+    //     signature = (pretty=true),
+    //     text_signature = "(pretty=True)"
+    // )]
+    // fn to_json_str(&self, pretty: bool) -> Result<(String, Option<String>), ParameterError> {
+    //     Self::to_json_str(&self.0, pretty)
+    // }
+
+    #[getter]
+    fn get_binary_records<'py>(
+        &self,
+        py: Python<'py>,
+    ) -> Result<Bound<'py, PyDict>, ParameterError> {
+        pythonize(py, &self.binary_records)
+            .map_err(|e| ParameterError::Error(e.to_string()))
+            .and_then(|d| {
+                d.downcast_into::<PyDict>()
+                    .map_err(|e| ParameterError::Error(e.to_string()))
+            })
+    }
+}
+
+#[pyclass(name = "GcParameters", get_all)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PyGcParameters {
+    chemical_records: Vec<ChemicalRecord>,
+    segment_records: Vec<PySegmentRecord>,
+    binary_segment_records: Option<Vec<BinarySegmentRecord>>,
+}
+
+impl PyGcParameters {
+    pub fn try_convert_homosegmented<P: Parameter>(self) -> Result<P, ParameterError>
+    where
+        P::Pure: FromSegments<usize>,
+        P::Binary: FromSegmentsBinary<usize>,
+    {
+        let segment_records = self
+            .segment_records
+            .into_iter()
+            .map(|r| r.try_into())
+            .collect::<Result<_, _>>()?;
+        P::from_segments(
+            self.chemical_records,
+            segment_records,
+            self.binary_segment_records,
+        )
+    }
+
+    pub fn try_convert_heterosegmented<P: ParameterHetero>(self) -> Result<P, ParameterError>
+    where
+        P::Chemical: From<ChemicalRecord>,
+    {
+        let segment_records = self
+            .segment_records
+            .into_iter()
+            .map(|r| r.try_into())
+            .collect::<Result<_, _>>()?;
+        P::from_segments(
+            self.chemical_records,
+            segment_records,
+            self.binary_segment_records,
+        )
+    }
+}
+
+#[pymethods]
+impl PyGcParameters {
+    /// Creates parameters from segment records.
+    ///
+    /// Parameters
+    /// ----------
+    /// chemical_records : [ChemicalRecord]
+    ///     A list of pure component chemical records.
+    /// segment_records : [SegmentRecord]
+    ///     A list of records containing the parameters of
+    ///     all individual segments.
+    /// binary_segment_records : [BinarySegmentRecord], optional
+    ///     A list of binary segment-segment parameters.
+    #[staticmethod]
+    #[pyo3(text_signature = "(chemical_records, segment_records, binary_segment_records=None)",
+    signature = (chemical_records, segment_records, binary_segment_records=None))]
+    fn from_segments(
+        chemical_records: Vec<ChemicalRecord>,
+        segment_records: Vec<PySegmentRecord>,
+        binary_segment_records: Option<Vec<BinarySegmentRecord>>,
+    ) -> Self {
+        Self {
+            chemical_records,
+            segment_records,
+            binary_segment_records,
+        }
+    }
+
+    /// Creates parameters using segments from json file.
+    ///
+    /// Parameters
+    /// ----------
+    /// substances : List[str]
+    ///     The substances to search.
+    /// pure_path : str
+    ///     Path to file containing pure substance parameters.
+    /// segments_path : str
+    ///     Path to file containing segment parameters.
+    /// binary_path : str, optional
+    ///     Path to file containing binary segment-segment parameters.
+    /// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
+    ///     Identifier that is used to search substance.
+    #[staticmethod]
+    #[pyo3(
+        signature = (substances, pure_path, segments_path, binary_path=None, identifier_option=IdentifierOption::Name),
+        text_signature = "(substances, pure_path, segments_path, binary_path=None, identifier_option=IdentiferOption.Name)"
+    )]
+    fn from_json_segments(
+        substances: Vec<PyBackedStr>,
+        pure_path: PyBackedStr,
+        segments_path: PyBackedStr,
+        binary_path: Option<PyBackedStr>,
+        identifier_option: IdentifierOption,
+    ) -> Result<Self, ParameterError> {
+        let queried: IndexSet<String> = substances
+            .iter()
+            .map(|identifier| identifier.to_string())
+            .collect();
+
+        let reader = BufReader::new(File::open(&pure_path as &str)?);
+        let chemical_records: Vec<ChemicalRecord> = serde_json::from_reader(reader)?;
+        let mut record_map: IndexMap<_, _> = chemical_records
+            .into_iter()
+            .filter_map(|record| {
+                record
+                    .identifier
+                    .as_string(identifier_option)
+                    .map(|i| (i, record))
+            })
+            .collect();
+
+        // Compare queried components and available components
+        let available: IndexSet<String> = record_map
+            .keys()
+            .map(|identifier| identifier.to_string())
+            .collect();
+        if !queried.is_subset(&available) {
+            let missing: Vec<String> = queried.difference(&available).cloned().collect();
+            return Err(ParameterError::ComponentsNotFound(format!("{:?}", missing)));
+        };
+
+        // Collect all pure records that were queried
+        let chemical_records: Vec<_> = queried
+            .iter()
+            .filter_map(|identifier| record_map.shift_remove(&identifier.clone()))
+            .collect();
+
+        // Read segment records
+        let segment_records: Vec<PySegmentRecord> =
+            PySegmentRecord::from_json(&segments_path as &str)?;
+
+        // Read binary records
+        let binary_records = binary_path
+            .as_ref()
+            .map(|file_binary| {
+                let reader = BufReader::new(File::open(file_binary as &str)?);
+                let binary_records: Result<Vec<BinarySegmentRecord>, ParameterError> =
+                    Ok(serde_json::from_reader(reader)?);
+                binary_records
+            })
+            .transpose()?;
+
+        Ok(Self::from_segments(
+            chemical_records,
+            segment_records,
+            binary_records,
+        ))
+    }
+
+    /// Creates parameters from SMILES and segment records.
+    ///
+    /// Requires an installation of rdkit.
+    ///
+    /// Parameters
+    /// ----------
+    /// identifier : [str | Identifier]
+    ///     A list of SMILES codes or [Identifier] objects.
+    /// smarts_records : [SmartsRecord]
+    ///     A list of records containing the SMARTS codes used
+    ///     to fragment the molecule.
+    /// segment_records : [SegmentRecord]
+    ///     A list of records containing the parameters of
+    ///     all individual segments.
+    /// binary_segment_records : [BinarySegmentRecord], optional
+    ///     A list of binary segment-segment parameters.
+    #[staticmethod]
+    #[pyo3(
+        text_signature = "(identifier, smarts_records, segment_records, binary_segment_records=None)"
+    )]
+    #[pyo3(signature = (identifier, smarts_records, segment_records, binary_segment_records=None))]
+    fn from_smiles(
+        identifier: Vec<Bound<'_, PyAny>>,
+        smarts_records: Vec<PySmartsRecord>,
+        segment_records: Vec<PySegmentRecord>,
+        binary_segment_records: Option<Vec<BinarySegmentRecord>>,
+    ) -> PyResult<Self> {
+        let chemical_records: Vec<_> = identifier
+            .into_iter()
+            .map(|i| ChemicalRecord::from_smiles(&i, smarts_records.clone()))
+            .collect::<PyResult<_>>()?;
+        Ok(Self::from_segments(
+            chemical_records,
+            segment_records,
+            binary_segment_records,
+        ))
+    }
+
+    /// Creates parameters from SMILES using segments from json file.
+    ///
+    /// Requires an installation of rdkit.
+    ///
+    /// Parameters
+    /// ----------
+    /// identifier : list[str | Identifier]
+    ///     A list of SMILES codes or [Identifier] objects.
+    /// smarts_path : str
+    ///     Path to file containing SMARTS records.
+    /// segments_path : str
+    ///     Path to file containing segment parameters.
+    /// binary_path : str, optional
+    ///     Path to file containing binary segment-segment parameters.
+    #[staticmethod]
+    #[pyo3(
+        signature = (identifier, smarts_path, segments_path, binary_path=None),
+        text_signature = "(identifier, smarts_path, segments_path, binary_path=None)"
+    )]
+    fn from_json_smiles(
+        identifier: Vec<Bound<'_, PyAny>>,
+        smarts_path: PyBackedStr,
+        segments_path: PyBackedStr,
+        binary_path: Option<PyBackedStr>,
+    ) -> PyResult<Self> {
+        let smarts_records = PySmartsRecord::from_json(&smarts_path)?;
+        let segment_records = PySegmentRecord::from_json(&segments_path)?;
+        let binary_segment_records = binary_path
+            .as_ref()
+            .map(|p| BinarySegmentRecord::from_json(p as &str))
+            .transpose()?;
+        Self::from_smiles(
+            identifier,
+            smarts_records,
+            segment_records,
+            binary_segment_records,
+        )
+    }
 }

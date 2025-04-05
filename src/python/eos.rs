@@ -5,16 +5,12 @@ use crate::epcsaft::{ElectrolytePcSaft, ElectrolytePcSaftOptions, ElectrolytePcS
 #[cfg(feature = "estimator")]
 use crate::estimator::*;
 #[cfg(feature = "gc_pcsaft")]
-use crate::gc_pcsaft::python::PyGcPcSaftEosParameters;
-#[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::{GcPcSaft, GcPcSaftOptions};
 use crate::ideal_gas::IdealGasModel;
 #[cfg(feature = "estimator")]
 use crate::impl_estimator;
 #[cfg(all(feature = "estimator", feature = "pcsaft"))]
 use crate::impl_estimator_entropy_scaling;
-#[cfg(feature = "pcsaft")]
-use crate::pcsaft::python::PyPcSaftParameters;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::{DQVariants, PcSaft, PcSaftOptions};
 #[cfg(feature = "pets")]
@@ -35,10 +31,9 @@ use crate::uvtheory::python::PyUVTheoryParameters;
 use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions};
 use crate::ResidualModel;
 
-use super::dippr::PyDippr;
-use super::joback::PyJoback;
 use feos_core::cubic::PengRobinson;
-use feos_core::python::cubic::PyPengRobinsonParameters;
+use feos_core::parameter::ParameterError;
+use feos_core::python::parameter::{PyGcParameters, PyParameters};
 use feos_core::python::user_defined::{PyIdealGas, PyResidual};
 use feos_core::*;
 use ndarray::{Array1, Array2};
@@ -71,7 +66,7 @@ impl PyEquationOfState {
     ///     Maximum packing fraction. Defaults to 0.5.
     /// max_iter_cross_assoc : unsigned integer, optional
     ///     Maximum number of iterations for cross association. Defaults to 50.
-    /// tol_cross_assoc : float
+    /// tol_cross_assoc : float, optional
     ///     Tolerance for convergence of cross association. Defaults to 1e-10.
     /// dq_variant : DQVariants, optional
     ///     Combination rule used in the dipole/quadrupole term. Defaults to 'DQVariants.DQ35'
@@ -88,24 +83,31 @@ impl PyEquationOfState {
         text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant)"
     )]
     pub fn pcsaft(
-        parameters: PyPcSaftParameters,
+        parameters: &Bound<'_, PyAny>,
         max_eta: f64,
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
         dq_variant: DQVariants,
-    ) -> Self {
+    ) -> Result<Self, ParameterError> {
         let options = PcSaftOptions {
             max_eta,
             max_iter_cross_assoc,
             tol_cross_assoc,
             dq_variant,
         };
+        let parameters = if let Ok(parameters) = parameters.extract::<PyParameters>() {
+            parameters.try_convert()
+        } else if let Ok(parameters) = parameters.extract::<PyGcParameters>() {
+            parameters.try_convert_homosegmented()
+        } else {
+            todo!()
+        }?;
         let residual = Arc::new(ResidualModel::PcSaft(PcSaft::with_options(
-            parameters.0,
+            Arc::new(parameters),
             options,
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
-        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
+        Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 
     /// SAFT-VR Mie equation of state.
@@ -176,22 +178,22 @@ impl PyEquationOfState {
         text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10)"
     )]
     pub fn gc_pcsaft(
-        parameters: PyGcPcSaftEosParameters,
+        parameters: PyGcParameters,
         max_eta: f64,
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
-    ) -> Self {
+    ) -> Result<Self, ParameterError> {
         let options = GcPcSaftOptions {
             max_eta,
             max_iter_cross_assoc,
             tol_cross_assoc,
         };
         let residual = Arc::new(ResidualModel::GcPcSaft(GcPcSaft::with_options(
-            parameters.0,
+            Arc::new(parameters.try_convert_heterosegmented()?),
             options,
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
-        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
+        Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 
     /// ePC-SAFT equation of state.
@@ -253,10 +255,12 @@ impl PyEquationOfState {
     ///     The PR equation of state that can be used to compute thermodynamic
     ///     states.
     #[staticmethod]
-    pub fn peng_robinson(parameters: PyPengRobinsonParameters) -> Self {
-        let residual = Arc::new(ResidualModel::PengRobinson(PengRobinson::new(parameters.0)));
+    pub fn peng_robinson(parameters: PyParameters) -> Result<Self, ParameterError> {
+        let residual = Arc::new(ResidualModel::PengRobinson(PengRobinson::new(Arc::new(
+            parameters.try_convert()?,
+        ))));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
-        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
+        Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 
     /// Residual Helmholtz energy model from a Python class.
@@ -415,8 +419,10 @@ impl PyEquationOfState {
     /// Returns
     /// -------
     /// EquationOfState
-    fn joback(&self, joback: PyJoback) -> Self {
-        self.add_ideal_gas(IdealGasModel::Joback(joback.0))
+    fn joback(&self, joback: PyGcParameters) -> Result<Self, ParameterError> {
+        Ok(self.add_ideal_gas(IdealGasModel::Joback(Arc::new(
+            joback.try_convert_homosegmented()?,
+        ))))
     }
 
     /// Ideal gas model based on DIPPR equations for the ideal
@@ -430,8 +436,8 @@ impl PyEquationOfState {
     /// Returns
     /// -------
     /// EquationOfState
-    fn dippr(&self, dippr: PyDippr) -> Self {
-        self.add_ideal_gas(IdealGasModel::Dippr(dippr.0))
+    fn dippr(&self, dippr: PyParameters) -> Result<Self, ParameterError> {
+        Ok(self.add_ideal_gas(IdealGasModel::Dippr(Arc::new(dippr.try_convert()?))))
     }
 }
 

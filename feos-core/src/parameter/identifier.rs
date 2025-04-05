@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::hash::{Hash, Hasher};
 
 /// Possible variants to identify a substance.
@@ -11,6 +12,20 @@ pub enum IdentifierOption {
     Smiles,
     Inchi,
     Formula,
+}
+
+impl fmt::Display for IdentifierOption {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str = match self {
+            IdentifierOption::Cas => "CAS",
+            IdentifierOption::Name => "name",
+            IdentifierOption::IupacName => "IUPAC name",
+            IdentifierOption::Smiles => "SMILES",
+            IdentifierOption::Inchi => "InChI",
+            IdentifierOption::Formula => "formula",
+        };
+        write!(f, "{}", str)
+    }
 }
 
 /// A collection of identifiers for a chemical structure or substance.

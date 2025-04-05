@@ -43,6 +43,7 @@ typenum = "1.16"
 approx = "0.5"
 regex = "1.9"
 pythonize = "0.23.0"
+itertools = "0.14"
 
 [features]
 default = []
