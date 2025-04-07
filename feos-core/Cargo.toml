@@ -43,7 +43,7 @@ typenum = "1.16"
 approx = "0.5"
 regex = "1.9"
 pythonize = { version = "0.23", optional = true }
-itertools = "0.14"
+itertools = { version = "0.14", optional = true }
 
 [features]
 default = []
@@ -52,6 +52,7 @@ python = [
     "pyo3",
     "numpy",
     "pythonize",
+    "itertools",
     "quantity/python",
     "num-dual/python_macro",
     "rayon",
