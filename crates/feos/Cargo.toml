@@ -1,0 +1,55 @@
+[package]
+name = "feos"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "FeOs - A framework for equations of state and classical density functional theory."
+
+[dependencies]
+quantity = { workspace = true }
+num-dual = { workspace = true }
+ndarray = { workspace = true }
+petgraph = { version = "0.7", optional = true }
+thiserror = { workspace = true }
+conv = { workspace = true }
+num-traits = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+indexmap = { workspace = true }
+rayon = { version = "1.7", optional = true }
+itertools = "0.14"
+typenum = { workspace = true }
+
+feos-core = { workspace = true }
+feos-derive = { workspace = true }
+feos-dft = { version = "0.8", path = "../feos-dft", optional = true }
+
+[features]
+default = []
+dft = ["feos-dft", "petgraph"]
+estimator = []
+association = []
+pcsaft = ["association"]
+epcsaft = ["association"]
+gc_pcsaft = ["association"]
+uvtheory = []
+pets = []
+saftvrqmie = []
+saftvrmie = []
+rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
+all_models = [
+    "dft",
+    "estimator",
+    "pcsaft",
+    "epcsaft",
+    "gc_pcsaft",
+    "uvtheory",
+    "pets",
+    "saftvrqmie",
+    "saftvrmie",
+]

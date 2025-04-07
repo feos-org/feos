@@ -1,0 +1,35 @@
+[package]
+name = "feos-dft"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Generic classical DFT implementations for the `feos` project."
+exclude = ["/.github/*", "*.ipynb"]
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--html-in-header", "./docs-header.html"]
+features = ["rayon"]
+
+[dependencies]
+quantity = { workspace = true }
+num-dual = { workspace = true }
+ndarray = { workspace = true }
+nalgebra = { workspace = true }
+rustdct = "0.7"
+rustfft = "6.0"
+num-traits = { workspace = true }
+libm = "0.2"
+gauss-quad = { version = "0.2", optional = true }
+petgraph = "0.7"
+typenum = { workspace = true }
+
+feos-core = { workspace = true }
+
+[features]
+default = []
+rayon = ["gauss-quad", "ndarray/rayon"]

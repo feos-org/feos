@@ -1,14 +1,26 @@
-[package]
-name = "feos"
+[workspace]
+resolver = "2"
+members = [
+    "crates/feos-core",
+    "crates/feos-dft",
+    "crates/feos-derive",
+    "crates/feos"
+]
+default-members = [
+    "crates/feos-core",
+    "crates/feos-dft",
+    "crates/feos-derive",
+    "crates/feos"
+]
+
+[workspace.package]
 version = "0.8.0"
+edition = "2024"
 authors = [
     "Gernot Bauer <bauer@itt.uni-stuttgart.de>",
     "Philipp Rehner <prehner@ethz.ch>",
 ]
-edition = "2021"
-readme = "README.md"
 license = "MIT OR Apache-2.0"
-description = "FeOs - A framework for equations of state and classical density functional theory."
 homepage = "https://github.com/feos-org"
 repository = "https://github.com/feos-org/feos"
 keywords = [
@@ -19,42 +31,23 @@ keywords = [
 ]
 categories = ["science"]
 
-[package.metadata.docs.rs]
-features = ["all_models", "rayon"]
-rustdoc-args = ["--html-in-header", "./docs-header.html"]
-
-[workspace]
-members = ["feos-core", "feos-dft", "feos-derive", "feos-benchmarks"]
-
-[lib]
-crate-type = ["rlib", "cdylib"]
-
-[dependencies]
+[workspace.dependencies]
 quantity = "0.10"
 num-dual = "0.11"
-feos-core = { version = "0.8", path = "feos-core" }
-feos-dft = { version = "0.8", path = "feos-dft", optional = true }
-feos-derive = { version = "0.6", path = "feos-derive" }
-numpy = { version = "0.23", optional = true }
 ndarray = { version = "0.16", features = ["approx"] }
-petgraph = { version = "0.7", optional = true }
+nalgebra = "0.33"
 thiserror = "2.0"
 conv = "0.3"
 num-traits = "0.2"
 serde = "1.0"
 serde_json = "1.0"
 indexmap = "2.0"
-rayon = { version = "1.7", optional = true }
 itertools = "0.14"
 typenum = "1.16"
 
-[dependencies.pyo3]
-version = "0.23"
-features = ["extension-module", "abi3", "abi3-py39"]
-optional = true
+feos-core = { version = "0.8", path = "crates/feos-core" }
+feos-derive = { version = "0.6", path = "crates/feos-derive" }
 
-[dev-dependencies]
-approx = "0.5"
 
 [profile.release-lto]
 inherits = "release"
@@ -65,37 +58,3 @@ codegen-units = 1
 inherits = "release"
 lto = "thin"
 codegen-units = 1
-
-
-[features]
-default = []
-dft = ["feos-dft", "petgraph"]
-estimator = []
-association = []
-pcsaft = ["association"]
-epcsaft = ["association"]
-gc_pcsaft = ["association"]
-uvtheory = []
-pets = []
-saftvrqmie = []
-saftvrmie = []
-rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
-python = [
-    "pyo3",
-    "numpy",
-    "quantity/python_numpy",
-    "feos-core/python",
-    "feos-dft?/python",
-    "rayon",
-]
-all_models = [
-    "dft",
-    "estimator",
-    "pcsaft",
-    "epcsaft",
-    "gc_pcsaft",
-    "uvtheory",
-    "pets",
-    "saftvrqmie",
-    "saftvrmie",
-]
