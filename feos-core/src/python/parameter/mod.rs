@@ -5,7 +5,7 @@ use ndarray::Array2;
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyList};
 use pythonize::{depythonize, pythonize};
 use serde::{Deserialize, Serialize};
 mod fragmentation;
@@ -508,7 +508,7 @@ impl PyParameters {
             .iter()
             .enumerate()
             .array_combinations()
-            .map(|[(i1, p1), (i2, p2)]| {
+            .filter_map(|[(i1, p1), (i2, p2)]| {
                 let id1 = p1
                     .identifier
                     .as_string(identifier_option)
@@ -527,12 +527,10 @@ impl PyParameters {
                             identifier_option, i2, p2.identifier
                         )
                     });
-                let br = binary_map
+                binary_map
                     .get(&(id1.clone(), id2.clone()))
                     .or_else(|| binary_map.get(&(id2, id1)))
-                    .cloned()
-                    .unwrap_or_default();
-                ([i1, i2], br)
+                    .map(|br| ([i1, i2], br.clone()))
             })
             .collect();
 
@@ -688,11 +686,11 @@ impl PyParameters {
     fn get_binary_records<'py>(
         &self,
         py: Python<'py>,
-    ) -> Result<Bound<'py, PyDict>, ParameterError> {
+    ) -> Result<Bound<'py, PyList>, ParameterError> {
         pythonize(py, &self.binary_records)
             .map_err(|e| ParameterError::Error(e.to_string()))
             .and_then(|d| {
-                d.downcast_into::<PyDict>()
+                d.downcast_into::<PyList>()
                     .map_err(|e| ParameterError::Error(e.to_string()))
             })
     }
