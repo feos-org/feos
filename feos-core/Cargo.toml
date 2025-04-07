@@ -42,10 +42,17 @@ rayon = { version = "1.5", optional = true }
 typenum = "1.16"
 approx = "0.5"
 regex = "1.9"
-pythonize = "0.23.0"
+pythonize = { version = "0.23", optional = true }
 itertools = "0.14"
 
 [features]
 default = []
 rayon = ["dep:rayon", "ndarray/rayon"]
-python = ["pyo3", "numpy", "quantity/python", "num-dual/python_macro", "rayon"]
+python = [
+    "pyo3",
+    "numpy",
+    "pythonize",
+    "quantity/python",
+    "num-dual/python_macro",
+    "rayon",
+]
