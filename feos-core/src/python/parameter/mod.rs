@@ -200,6 +200,7 @@ pub struct PyPureRecord {
     #[pyo3(get)]
     identifier: Identifier,
     #[pyo3(get)]
+    #[serde(default)]
     molarweight: f64,
     model_record: Value,
 }
@@ -659,37 +660,37 @@ impl PyParameters {
         Self::from_records(pure_records, binary_records, identifier_option)
     }
 
-    // /// Generates JSON-formatted string for pure and binary records (if initialized).
-    // ///
-    // /// Parameters
-    // /// ----------
-    // /// pretty : bool
-    // ///     Whether to use pretty (True) or dense (False) formatting. Defaults to True.
-    // ///
-    // /// Returns
-    // /// -------
-    // /// str : The JSON-formatted string.
-    // #[pyo3(
-    //     signature = (pretty=true),
-    //     text_signature = "(pretty=True)"
-    // )]
-    // fn to_json_str(&self, pretty: bool) -> Result<(String, Option<String>), ParameterError> {
-    //     let pr_json = if pretty {
-    //         serde_json::to_string_pretty(&self.pure_records)
-    //     } else {
-    //         serde_json::to_string(&self.pure_records)
-    //     }?;
-    //     let br_json = (!self.binary_records.is_empty())
-    //         .then(|| {
-    //             if pretty {
-    //                 serde_json::to_string_pretty(&self.binary_records)
-    //             } else {
-    //                 serde_json::to_string(&self.binary_records)
-    //             }
-    //         })
-    //         .transpose()?;
-    //     Ok((pr_json, br_json))
-    // }
+    /// Generates JSON-formatted string for pure and binary records (if initialized).
+    ///
+    /// Parameters
+    /// ----------
+    /// pretty : bool
+    ///     Whether to use pretty (True) or dense (False) formatting. Defaults to True.
+    ///
+    /// Returns
+    /// -------
+    /// str : The JSON-formatted string.
+    #[pyo3(
+        signature = (pretty=true),
+        text_signature = "(pretty=True)"
+    )]
+    fn to_json_str(&self, pretty: bool) -> Result<(String, Option<String>), ParameterError> {
+        let pr_json = if pretty {
+            serde_json::to_string_pretty(&self.pure_records)
+        } else {
+            serde_json::to_string(&self.pure_records)
+        }?;
+        let br_json = (!self.binary_records.is_empty())
+            .then(|| {
+                if pretty {
+                    serde_json::to_string_pretty(&self.binary_records)
+                } else {
+                    serde_json::to_string(&self.binary_records)
+                }
+            })
+            .transpose()?;
+        Ok((pr_json, br_json))
+    }
 
     #[getter]
     fn get_binary_records<'py>(
@@ -697,6 +698,15 @@ impl PyParameters {
         py: Python<'py>,
     ) -> Result<Bound<'py, PyAny>, PythonizeError> {
         pythonize(py, &self.binary_records)
+    }
+
+    fn __repr__(&self) -> Result<String, ParameterError> {
+        let (mut pr, br) = self.to_json_str(true)?;
+        if let Some(br) = br {
+            pr += "\n\n";
+            pr += &br;
+        }
+        Ok(pr)
     }
 
     fn _repr_markdown_(&self) -> String {
