@@ -15,6 +15,3 @@ mod parameters;
 pub use dft::{PetsFunctional, PetsFunctionalContribution};
 pub use eos::{Pets, PetsOptions};
 pub use parameters::{PetsBinaryRecord, PetsParameters, PetsRecord};
-
-#[cfg(feature = "python")]
-pub mod python;

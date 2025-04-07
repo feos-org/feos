@@ -17,6 +17,3 @@ mod parameters;
 pub use dft::{SaftVRQMieFunctional, SaftVRQMieFunctionalContribution};
 pub use eos::{FeynmanHibbsOrder, SaftVRQMie, SaftVRQMieOptions};
 pub use parameters::{SaftVRQMieBinaryRecord, SaftVRQMieParameters, SaftVRQMieRecord};
-
-#[cfg(feature = "python")]
-pub mod python;

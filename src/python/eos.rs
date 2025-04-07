@@ -1,6 +1,4 @@
 #[cfg(feature = "epcsaft")]
-use crate::epcsaft::python::PyElectrolytePcSaftParameters;
-#[cfg(feature = "epcsaft")]
 use crate::epcsaft::{ElectrolytePcSaft, ElectrolytePcSaftOptions, ElectrolytePcSaftVariants};
 #[cfg(feature = "estimator")]
 use crate::estimator::*;
@@ -14,19 +12,11 @@ use crate::impl_estimator_entropy_scaling;
 #[cfg(feature = "pcsaft")]
 use crate::pcsaft::{DQVariants, PcSaft, PcSaftOptions};
 #[cfg(feature = "pets")]
-use crate::pets::python::PyPetsParameters;
-#[cfg(feature = "pets")]
 use crate::pets::{Pets, PetsOptions};
-#[cfg(feature = "saftvrmie")]
-use crate::saftvrmie::python::PySaftVRMieParameters;
 #[cfg(feature = "saftvrmie")]
 use crate::saftvrmie::{SaftVRMie, SaftVRMieOptions};
 #[cfg(feature = "saftvrqmie")]
-use crate::saftvrqmie::python::PySaftVRQMieParameters;
-#[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::{SaftVRQMie, SaftVRQMieOptions};
-#[cfg(feature = "uvtheory")]
-use crate::uvtheory::python::PyUVTheoryParameters;
 #[cfg(feature = "uvtheory")]
 use crate::uvtheory::{Perturbation, UVTheory, UVTheoryOptions};
 use crate::ResidualModel;
@@ -135,22 +125,22 @@ impl PyEquationOfState {
         text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10)"
     )]
     pub fn saftvrmie(
-        parameters: PySaftVRMieParameters,
+        parameters: PyParameters,
         max_eta: f64,
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
-    ) -> Self {
+    ) -> Result<Self, ParameterError> {
         let options = SaftVRMieOptions {
             max_eta,
             max_iter_cross_assoc,
             tol_cross_assoc,
         };
         let residual = Arc::new(ResidualModel::SaftVRMie(SaftVRMie::with_options(
-            parameters.0,
+            Arc::new(parameters.try_convert()?),
             options,
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
-        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
+        Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 
     /// (heterosegmented) group contribution PC-SAFT equation of state.
@@ -223,12 +213,12 @@ impl PyEquationOfState {
         text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, epcsaft_variant)",
     )]
     pub fn epcsaft(
-        parameters: PyElectrolytePcSaftParameters,
+        parameters: PyParameters,
         max_eta: f64,
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
         epcsaft_variant: ElectrolytePcSaftVariants,
-    ) -> Self {
+    ) -> Result<Self, ParameterError> {
         let options = ElectrolytePcSaftOptions {
             max_eta,
             max_iter_cross_assoc,
@@ -236,10 +226,10 @@ impl PyEquationOfState {
             epcsaft_variant,
         };
         let residual = Arc::new(ResidualModel::ElectrolytePcSaft(
-            ElectrolytePcSaft::with_options(parameters.0, options),
+            ElectrolytePcSaft::with_options(Arc::new(parameters.try_convert()?), options),
         ));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
-        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
+        Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 
     /// Peng-Robinson equation of state.
@@ -298,14 +288,14 @@ impl PyEquationOfState {
     #[cfg(feature = "pets")]
     #[staticmethod]
     #[pyo3(signature = (parameters, max_eta=0.5), text_signature = "(parameters, max_eta=0.5)")]
-    fn pets(parameters: PyPetsParameters, max_eta: f64) -> Self {
+    fn pets(parameters: PyParameters, max_eta: f64) -> Result<Self, ParameterError> {
         let options = PetsOptions { max_eta };
         let residual = Arc::new(ResidualModel::Pets(Pets::with_options(
-            parameters.0,
+            Arc::new(parameters.try_convert()?),
             options,
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
-        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
+        Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 
     /// UV-Theory equation of state.
@@ -331,7 +321,7 @@ impl PyEquationOfState {
         text_signature = "(parameters, max_eta=0.5, perturbation)"
     )]
     fn uvtheory(
-        parameters: PyUVTheoryParameters,
+        parameters: PyParameters,
         max_eta: f64,
         perturbation: Perturbation,
     ) -> PyResult<Self> {
@@ -340,7 +330,7 @@ impl PyEquationOfState {
             perturbation,
         };
         let residual = Arc::new(ResidualModel::UVTheory(UVTheory::with_options(
-            parameters.0,
+            Arc::new(parameters.try_convert()?),
             options,
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
@@ -369,17 +359,21 @@ impl PyEquationOfState {
         signature = (parameters, max_eta=0.5, inc_nonadd_term=true),
         text_signature = "(parameters, max_eta=0.5, inc_nonadd_term=True)"
     )]
-    fn saftvrqmie(parameters: PySaftVRQMieParameters, max_eta: f64, inc_nonadd_term: bool) -> Self {
+    fn saftvrqmie(
+        parameters: PyParameters,
+        max_eta: f64,
+        inc_nonadd_term: bool,
+    ) -> Result<Self, ParameterError> {
         let options = SaftVRQMieOptions {
             max_eta,
             inc_nonadd_term,
         };
         let residual = Arc::new(ResidualModel::SaftVRQMie(SaftVRQMie::with_options(
-            parameters.0,
+            Arc::new(parameters.try_convert()?),
             options,
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
-        Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
+        Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 
     /// Equation of state that only contains an ideal gas contribution.

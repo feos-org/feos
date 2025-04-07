@@ -68,6 +68,3 @@ mod parameters;
 
 pub use eos::{Perturbation, UVTheory, UVTheoryOptions};
 pub use parameters::{UVTheoryBinaryRecord, UVTheoryParameters, UVTheoryRecord};
-
-#[cfg(feature = "python")]
-pub mod python;

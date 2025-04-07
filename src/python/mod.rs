@@ -1,14 +1,3 @@
-#[cfg(feature = "epcsaft")]
-use crate::epcsaft::python::epcsaft as epcsaft_module;
-#[cfg(feature = "pets")]
-use crate::pets::python::pets as pets_module;
-#[cfg(feature = "saftvrmie")]
-use crate::saftvrmie::python::saftvrmie as saftvrmie_module;
-#[cfg(feature = "saftvrqmie")]
-use crate::saftvrqmie::python::saftvrqmie as saftvrqmie_module;
-#[cfg(feature = "uvtheory")]
-use crate::uvtheory::python::uvtheory as uvtheory_module;
-
 use feos_core::parameter::{BinarySegmentRecord, ChemicalRecord, Identifier, IdentifierOption};
 use feos_core::python::parameter::{
     PyBinaryRecord, PyGcParameters, PyParameters, PyPureRecord, PySegmentRecord, PySmartsRecord,
@@ -44,32 +33,12 @@ pub fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(eos_module))?;
     #[cfg(feature = "dft")]
     m.add_wrapped(wrap_pymodule!(dft_module))?;
-    #[cfg(feature = "epcsaft")]
-    m.add_wrapped(wrap_pymodule!(epcsaft_module))?;
-    #[cfg(feature = "pets")]
-    m.add_wrapped(wrap_pymodule!(pets_module))?;
-    #[cfg(feature = "uvtheory")]
-    m.add_wrapped(wrap_pymodule!(uvtheory_module))?;
-    #[cfg(feature = "saftvrqmie")]
-    m.add_wrapped(wrap_pymodule!(saftvrqmie_module))?;
-    #[cfg(feature = "saftvrmie")]
-    m.add_wrapped(wrap_pymodule!(saftvrmie_module))?;
 
     set_path(m, "feos.eos", "eos")?;
     #[cfg(feature = "estimator")]
     set_path(m, "feos.eos.estimator", "eos.estimator_eos")?;
     #[cfg(feature = "dft")]
     set_path(m, "feos.dft", "dft")?;
-    #[cfg(feature = "epcsaft")]
-    set_path(m, "feos.epcsaft", "epcsaft")?;
-    #[cfg(feature = "pets")]
-    set_path(m, "feos.pets", "pets")?;
-    #[cfg(feature = "uvtheory")]
-    set_path(m, "feos.uvtheory", "uvtheory")?;
-    #[cfg(feature = "saftvrqmie")]
-    set_path(m, "feos.saftvrqmie", "saftvrqmie")?;
-    #[cfg(feature = "saftvrmie")]
-    set_path(m, "feos.saftvrmie", "saftvrmie")?;
     Ok(())
 }
 
