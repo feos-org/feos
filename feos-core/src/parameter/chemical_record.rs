@@ -21,6 +21,7 @@ struct ChemicalRecordJSON {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(from = "ChemicalRecordJSON")]
 #[serde(into = "ChemicalRecordJSON")]
+#[cfg_attr(feature = "python", pyo3::pyclass(get_all, set_all))]
 pub struct ChemicalRecord {
     pub identifier: Identifier,
     pub segments: Vec<String>,

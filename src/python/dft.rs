@@ -1,24 +1,21 @@
 #[cfg(feature = "gc_pcsaft")]
-use crate::gc_pcsaft::python::PyGcPcSaftFunctionalParameters;
-#[cfg(feature = "gc_pcsaft")]
 use crate::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftOptions};
 use crate::hard_sphere::{FMTFunctional, FMTVersion};
 use crate::ideal_gas::IdealGasModel;
 #[cfg(feature = "pcsaft")]
-use crate::pcsaft::python::PyPcSaftParameters;
-#[cfg(feature = "pcsaft")]
 use crate::pcsaft::{DQVariants, PcSaftFunctional, PcSaftOptions};
 #[cfg(feature = "pets")]
-use crate::pets::python::PyPetsParameters;
-#[cfg(feature = "pets")]
 use crate::pets::{PetsFunctional, PetsOptions};
-#[cfg(feature = "saftvrqmie")]
-use crate::saftvrqmie::python::PySaftVRQMieParameters;
 #[cfg(feature = "saftvrqmie")]
 use crate::saftvrqmie::{SaftVRQMieFunctional, SaftVRQMieOptions};
 use crate::ResidualModel;
 
 use super::eos::{PyEquationOfState, PyPhaseEquilibrium, PyState, PyStateVec};
+use feos_core::parameter::ParameterError;
+#[cfg(feature = "gc_pcsaft")]
+use feos_core::python::parameter::PyGcParameters;
+#[cfg(any(feature = "pcsaft", feature = "pets", feature = "saftvrqmie"))]
+use feos_core::python::parameter::PyParameters;
 use feos_core::*;
 use feos_dft::adsorption::*;
 use feos_dft::interface::*;
@@ -67,15 +64,13 @@ impl PyHelmholtzEnergyFunctional {
         text_signature = "(parameters, fmt_version, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant)"
     )]
     fn pcsaft(
-        parameters: PyPcSaftParameters,
+        parameters: PyParameters,
         fmt_version: FMTVersion,
         max_eta: f64,
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
         dq_variant: DQVariants,
-    ) -> PyEquationOfState {
-        use super::eos::PyEquationOfState;
-
+    ) -> Result<PyEquationOfState, ParameterError> {
         let options = PcSaftOptions {
             max_eta,
             max_iter_cross_assoc,
@@ -83,10 +78,16 @@ impl PyHelmholtzEnergyFunctional {
             dq_variant,
         };
         let func = Arc::new(ResidualModel::PcSaftFunctional(
-            PcSaftFunctional::with_options(parameters.0, fmt_version, options),
+            PcSaftFunctional::with_options(
+                Arc::new(parameters.try_convert()?),
+                fmt_version,
+                options,
+            ),
         ));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
-        PyEquationOfState(Arc::new(EquationOfState::new(ideal_gas, func)))
+        Ok(PyEquationOfState(Arc::new(EquationOfState::new(
+            ideal_gas, func,
+        ))))
     }
 
     /// (heterosegmented) group contribution PC-SAFT Helmholtz energy functional.
@@ -114,22 +115,28 @@ impl PyHelmholtzEnergyFunctional {
         text_signature = "(parameters, fmt_version, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10)"
     )]
     fn gc_pcsaft(
-        parameters: PyGcPcSaftFunctionalParameters,
+        parameters: PyGcParameters,
         fmt_version: FMTVersion,
         max_eta: f64,
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
-    ) -> PyEquationOfState {
+    ) -> Result<PyEquationOfState, ParameterError> {
         let options = GcPcSaftOptions {
             max_eta,
             max_iter_cross_assoc,
             tol_cross_assoc,
         };
         let func = Arc::new(ResidualModel::GcPcSaftFunctional(
-            GcPcSaftFunctional::with_options(parameters.0, fmt_version, options),
+            GcPcSaftFunctional::with_options(
+                Arc::new(parameters.try_convert_heterosegmented()?),
+                fmt_version,
+                options,
+            ),
         ));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
-        PyEquationOfState(Arc::new(EquationOfState::new(ideal_gas, func)))
+        Ok(PyEquationOfState(Arc::new(EquationOfState::new(
+            ideal_gas, func,
+        ))))
     }
 
     /// PeTS Helmholtz energy functional without simplifications
@@ -154,18 +161,20 @@ impl PyHelmholtzEnergyFunctional {
         text_signature = "(parameters, fmt_version, max_eta=0.5)"
     )]
     fn pets(
-        parameters: PyPetsParameters,
+        parameters: PyParameters,
         fmt_version: FMTVersion,
         max_eta: f64,
-    ) -> PyEquationOfState {
+    ) -> Result<PyEquationOfState, ParameterError> {
         let options = PetsOptions { max_eta };
         let func = Arc::new(ResidualModel::PetsFunctional(PetsFunctional::with_options(
-            parameters.0,
+            Arc::new(parameters.try_convert()?),
             fmt_version,
             options,
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
-        PyEquationOfState(Arc::new(EquationOfState::new(ideal_gas, func)))
+        Ok(PyEquationOfState(Arc::new(EquationOfState::new(
+            ideal_gas, func,
+        ))))
     }
 
     /// Helmholtz energy functional for hard sphere systems.
@@ -181,13 +190,18 @@ impl PyHelmholtzEnergyFunctional {
     /// -------
     /// HelmholtzEnergyFunctional
     #[staticmethod]
-    fn fmt(sigma: &Bound<'_, PyArray1<f64>>, fmt_version: FMTVersion) -> PyEquationOfState {
+    fn fmt(
+        sigma: &Bound<'_, PyArray1<f64>>,
+        fmt_version: FMTVersion,
+    ) -> Result<PyEquationOfState, ParameterError> {
         let func = Arc::new(ResidualModel::FmtFunctional(FMTFunctional::new(
             &sigma.to_owned_array(),
             fmt_version,
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
-        PyEquationOfState(Arc::new(EquationOfState::new(ideal_gas, func)))
+        Ok(PyEquationOfState(Arc::new(EquationOfState::new(
+            ideal_gas, func,
+        ))))
     }
 
     /// SAFT-VRQ Mie Helmholtz energy functional.
@@ -213,20 +227,26 @@ impl PyHelmholtzEnergyFunctional {
         text_signature = "(parameters, fmt_version, max_eta=0.5, inc_nonadd_term=True)"
     )]
     fn saftvrqmie(
-        parameters: PySaftVRQMieParameters,
+        parameters: PyParameters,
         fmt_version: FMTVersion,
         max_eta: f64,
         inc_nonadd_term: bool,
-    ) -> PyEquationOfState {
+    ) -> Result<PyEquationOfState, ParameterError> {
         let options = SaftVRQMieOptions {
             max_eta,
             inc_nonadd_term,
         };
         let func = Arc::new(ResidualModel::SaftVRQMieFunctional(
-            SaftVRQMieFunctional::with_options(parameters.0, fmt_version, options),
+            SaftVRQMieFunctional::with_options(
+                Arc::new(parameters.try_convert()?),
+                fmt_version,
+                options,
+            ),
         ));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
-        PyEquationOfState(Arc::new(EquationOfState::new(ideal_gas, func)))
+        Ok(PyEquationOfState(Arc::new(EquationOfState::new(
+            ideal_gas, func,
+        ))))
     }
 }
 

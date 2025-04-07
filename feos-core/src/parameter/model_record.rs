@@ -76,8 +76,8 @@ impl<M> PureRecord<M> {
 
         // build map, draining list of queried substances in the process
         for record in file_records {
-            if let Some(id) = record.identifier.as_string(identifier_option) {
-                queried.take(&id).map(|id| records.insert(id, record));
+            if let Some(id) = record.identifier.as_str(identifier_option) {
+                queried.take(id).map(|id| records.insert(id, record));
             }
             // all parameters parsed
             if queried.is_empty() {
@@ -127,21 +127,20 @@ pub trait FromSegmentsBinary<T>: Clone {
     fn from_segments_binary(segments: &[(f64, T, T)]) -> Result<Self, ParameterError>;
 }
 
-/// A collection of parameters that model interactions between two
-/// substances or segments.
+/// A collection of parameters that model interactions between two substances.
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct BinaryRecord<I, B> {
+pub struct BinaryRecord<B> {
     /// Identifier of the first component
-    pub id1: I,
+    pub id1: Identifier,
     /// Identifier of the second component
-    pub id2: I,
+    pub id2: Identifier,
     /// Binary interaction parameter(s)
     pub model_record: B,
 }
 
-impl<I, B> BinaryRecord<I, B> {
+impl<B> BinaryRecord<B> {
     /// Crates a new `BinaryRecord`.
-    pub fn new(id1: I, id2: I, model_record: B) -> Self {
+    pub fn new(id1: Identifier, id2: Identifier, model_record: B) -> Self {
         Self {
             id1,
             id2,
@@ -152,18 +151,13 @@ impl<I, B> BinaryRecord<I, B> {
     /// Read a list of `BinaryRecord`s from a JSON file.
     pub fn from_json<P: AsRef<Path>>(file: P) -> Result<Vec<Self>, ParameterError>
     where
-        I: DeserializeOwned,
         B: DeserializeOwned,
     {
         Ok(serde_json::from_reader(BufReader::new(File::open(file)?))?)
     }
 }
 
-impl<I, B> std::fmt::Display for BinaryRecord<I, B>
-where
-    I: std::fmt::Display,
-    B: std::fmt::Display,
-{
+impl<B: std::fmt::Display> std::fmt::Display for BinaryRecord<B> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "BinaryRecord(")?;
         write!(f, "\n\tid1={},", self.id1)?;

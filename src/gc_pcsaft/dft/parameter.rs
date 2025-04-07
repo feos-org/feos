@@ -1,7 +1,7 @@
 use crate::association::AssociationParameters;
 use crate::gc_pcsaft::record::GcPcSaftRecord;
 use feos_core::parameter::{
-    BinaryRecord, ChemicalRecord, ParameterError, ParameterHetero, SegmentRecord,
+    BinarySegmentRecord, ChemicalRecord, ParameterError, ParameterHetero, SegmentRecord,
 };
 use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
@@ -28,18 +28,17 @@ pub struct GcPcSaftFunctionalParameters {
     pub epsilon_k_ij: Array2<f64>,
     pub chemical_records: Vec<ChemicalRecord>,
     segment_records: Vec<SegmentRecord<GcPcSaftRecord>>,
-    binary_segment_records: Option<Vec<BinaryRecord<String, f64>>>,
+    binary_segment_records: Option<Vec<BinarySegmentRecord>>,
 }
 
 impl ParameterHetero for GcPcSaftFunctionalParameters {
     type Chemical = ChemicalRecord;
     type Pure = GcPcSaftRecord;
-    type Binary = f64;
 
     fn from_segments<C: Into<ChemicalRecord>>(
         chemical_records: Vec<C>,
         segment_records: Vec<SegmentRecord<GcPcSaftRecord>>,
-        binary_segment_records: Option<Vec<BinaryRecord<String, f64>>>,
+        binary_segment_records: Option<Vec<BinarySegmentRecord>>,
     ) -> Result<Self, ParameterError> {
         let chemical_records: Vec<_> = chemical_records.into_iter().map(|cr| cr.into()).collect();
 
@@ -155,7 +154,7 @@ impl ParameterHetero for GcPcSaftFunctionalParameters {
     ) -> (
         &[Self::Chemical],
         &[SegmentRecord<Self::Pure>],
-        &Option<Vec<BinaryRecord<String, Self::Binary>>>,
+        &Option<Vec<BinarySegmentRecord>>,
     ) {
         (
             &self.chemical_records,

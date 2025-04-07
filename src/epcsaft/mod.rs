@@ -7,6 +7,3 @@ pub use eos::{ElectrolytePcSaft, ElectrolytePcSaftOptions, ElectrolytePcSaftVari
 pub use parameters::{
     ElectrolytePcSaftBinaryRecord, ElectrolytePcSaftParameters, ElectrolytePcSaftRecord,
 };
-
-#[cfg(feature = "python")]
-pub mod python;

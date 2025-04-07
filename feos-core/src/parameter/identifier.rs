@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::hash::{Hash, Hasher};
 
 /// Possible variants to identify a substance.
@@ -13,7 +14,22 @@ pub enum IdentifierOption {
     Formula,
 }
 
+impl fmt::Display for IdentifierOption {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str = match self {
+            IdentifierOption::Cas => "CAS",
+            IdentifierOption::Name => "name",
+            IdentifierOption::IupacName => "IUPAC name",
+            IdentifierOption::Smiles => "SMILES",
+            IdentifierOption::Inchi => "InChI",
+            IdentifierOption::Formula => "formula",
+        };
+        write!(f, "{}", str)
+    }
+}
+
 /// A collection of identifiers for a chemical structure or substance.
+#[cfg_attr(feature = "python", pyo3::pyclass(get_all, set_all))]
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Identifier {
     /// CAS number
@@ -75,15 +91,27 @@ impl Identifier {
         }
     }
 
-    pub fn as_string(&self, option: IdentifierOption) -> Option<String> {
+    pub fn as_str(&self, option: IdentifierOption) -> Option<&str> {
         match option {
-            IdentifierOption::Cas => self.cas.clone(),
-            IdentifierOption::Name => self.name.clone(),
-            IdentifierOption::IupacName => self.iupac_name.clone(),
-            IdentifierOption::Smiles => self.smiles.clone(),
-            IdentifierOption::Inchi => self.inchi.clone(),
-            IdentifierOption::Formula => self.formula.clone(),
+            IdentifierOption::Cas => self.cas.as_deref(),
+            IdentifierOption::Name => self.name.as_deref(),
+            IdentifierOption::IupacName => self.iupac_name.as_deref(),
+            IdentifierOption::Smiles => self.smiles.as_deref(),
+            IdentifierOption::Inchi => self.inchi.as_deref(),
+            IdentifierOption::Formula => self.formula.as_deref(),
         }
+    }
+
+    // returns the first available identifier in a somewhat arbitrary
+    // prioritization. Used for readable outputs.
+    pub fn as_readable_str(&self) -> Option<&str> {
+        self.name
+            .as_deref()
+            .or(self.iupac_name.as_deref())
+            .or(self.smiles.as_deref())
+            .or(self.cas.as_deref())
+            .or(self.inchi.as_deref())
+            .or(self.formula.as_deref())
     }
 }
 

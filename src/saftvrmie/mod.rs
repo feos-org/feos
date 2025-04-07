@@ -6,6 +6,3 @@ pub(crate) mod parameters;
 
 pub use eos::{SaftVRMie, SaftVRMieOptions};
 pub use parameters::{test_utils, SaftVRMieBinaryRecord, SaftVRMieParameters, SaftVRMieRecord};
-
-#[cfg(feature = "python")]
-pub mod python;

@@ -2,13 +2,13 @@ use crate::association::{AssociationParameters, AssociationStrength};
 use crate::gc_pcsaft::record::{GcPcSaftAssociationRecord, GcPcSaftRecord};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use feos_core::parameter::{
-    BinaryRecord, ChemicalRecord, Identifier, ParameterError, ParameterHetero, SegmentCount,
+    BinarySegmentRecord, ChemicalRecord, Identifier, ParameterError, ParameterHetero, SegmentCount,
     SegmentRecord,
 };
-use quantity::{JOULE, KB, KELVIN};
 use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
+use quantity::{JOULE, KB, KELVIN};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -90,18 +90,17 @@ pub struct GcPcSaftEosParameters {
 
     pub chemical_records: Vec<GcPcSaftChemicalRecord>,
     segment_records: Vec<SegmentRecord<GcPcSaftRecord>>,
-    binary_segment_records: Option<Vec<BinaryRecord<String, f64>>>,
+    binary_segment_records: Option<Vec<BinarySegmentRecord>>,
 }
 
 impl ParameterHetero for GcPcSaftEosParameters {
     type Chemical = GcPcSaftChemicalRecord;
     type Pure = GcPcSaftRecord;
-    type Binary = f64;
 
     fn from_segments<C: Clone + Into<GcPcSaftChemicalRecord>>(
         chemical_records: Vec<C>,
         segment_records: Vec<SegmentRecord<GcPcSaftRecord>>,
-        binary_segment_records: Option<Vec<BinaryRecord<String, f64>>>,
+        binary_segment_records: Option<Vec<BinarySegmentRecord>>,
     ) -> Result<Self, ParameterError> {
         let chemical_records: Vec<_> = chemical_records.into_iter().map(|c| c.into()).collect();
 
@@ -257,7 +256,7 @@ impl ParameterHetero for GcPcSaftEosParameters {
     ) -> (
         &[Self::Chemical],
         &[SegmentRecord<Self::Pure>],
-        &Option<Vec<BinaryRecord<String, Self::Binary>>>,
+        &Option<Vec<BinarySegmentRecord>>,
     ) {
         (
             &self.chemical_records,
@@ -476,8 +475,8 @@ pub mod test {
         )
     }
 
-    pub fn ch3_oh() -> BinaryRecord<String, f64> {
-        BinaryRecord::new("CH3".to_string(), "OH".to_string(), -0.0087)
+    pub fn ch3_oh() -> BinarySegmentRecord {
+        BinarySegmentRecord::new("CH3".to_string(), "OH".to_string(), -0.0087)
     }
 
     pub fn propane() -> GcPcSaftEosParameters {

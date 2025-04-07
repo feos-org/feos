@@ -1,7 +1,6 @@
 use feos_core::parameter::*;
 use ndarray::Array2;
 use serde::{Deserialize, Serialize};
-use std::convert::TryFrom;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 struct MyPureModel {
@@ -11,13 +10,6 @@ struct MyPureModel {
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 struct MyBinaryModel {
     b: f64,
-}
-
-impl TryFrom<f64> for MyBinaryModel {
-    type Error = &'static str;
-    fn try_from(f: f64) -> Result<Self, Self::Error> {
-        Ok(Self { b: f })
-    }
 }
 
 struct MyParameter {

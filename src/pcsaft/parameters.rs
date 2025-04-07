@@ -658,7 +658,7 @@ fn format_option(value: Option<f64>) -> String {
 #[cfg(test)]
 pub mod utils {
     use super::*;
-    use feos_core::parameter::{BinaryRecord, ChemicalRecord, SegmentRecord};
+    use feos_core::parameter::{BinarySegmentRecord, ChemicalRecord, SegmentRecord};
     use std::sync::Arc;
 
     pub fn propane_parameters() -> Arc<PcSaftParameters> {
@@ -887,7 +887,7 @@ pub mod utils {
         let kij = [("CH3", "OH", -0.2), ("CH2", "OH", -0.1)];
         let binary_segment_records = kij
             .iter()
-            .map(|&(id1, id2, k_ij)| BinaryRecord::new(id1.into(), id2.into(), k_ij))
+            .map(|&(id1, id2, k_ij)| BinarySegmentRecord::new(id1.into(), id2.into(), k_ij))
             .collect();
         let params = PcSaftParameters::from_segments(
             vec![propane, ethanol],

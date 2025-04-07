@@ -21,7 +21,7 @@ mod segment;
 pub use chemical_record::{ChemicalRecord, SegmentCount};
 pub use identifier::{Identifier, IdentifierOption};
 pub use model_record::{BinaryRecord, FromSegments, FromSegmentsBinary, PureRecord};
-pub use segment::SegmentRecord;
+pub use segment::{BinarySegmentRecord, SegmentRecord};
 
 /// Constructor methods for parameters.
 ///
@@ -32,8 +32,8 @@ pub trait Parameter
 where
     Self: Sized,
 {
-    type Pure: Clone + DeserializeOwned;
-    type Binary: Clone + DeserializeOwned + Default;
+    type Pure: Clone + DeserializeOwned + Serialize;
+    type Binary: Clone + DeserializeOwned + Serialize + Default;
 
     /// Creates parameters from records for pure substances and possibly binary parameters.
     fn from_records(
@@ -85,7 +85,7 @@ where
     #[allow(clippy::expect_fun_call)]
     fn binary_matrix_from_records(
         pure_records: &[PureRecord<Self::Pure>],
-        binary_records: &[BinaryRecord<Identifier, Self::Binary>],
+        binary_records: &[BinaryRecord<Self::Binary>],
         identifier_option: IdentifierOption,
     ) -> Option<Array2<Self::Binary>> {
         if binary_records.is_empty() {
@@ -93,12 +93,12 @@ where
         }
 
         // Build Hashmap (id, id) -> BinaryRecord
-        let binary_map: HashMap<(String, String), Self::Binary> = {
+        let binary_map: HashMap<_, _> = {
             binary_records
                 .iter()
                 .filter_map(|br| {
-                    let id1 = br.id1.as_string(identifier_option);
-                    let id2 = br.id2.as_string(identifier_option);
+                    let id1 = br.id1.as_str(identifier_option);
+                    let id2 = br.id2.as_str(identifier_option);
                     id1.and_then(|id1| id2.map(|id2| ((id1, id2), br.model_record.clone())))
                 })
                 .collect()
@@ -107,20 +107,20 @@ where
         Some(Array2::from_shape_fn([n, n], |(i, j)| {
             let id1 = pure_records[i]
                 .identifier
-                .as_string(identifier_option)
+                .as_str(identifier_option)
                 .expect(&format!(
                     "No identifier for given identifier_option for pure record {}.",
                     i
                 ));
             let id2 = pure_records[j]
                 .identifier
-                .as_string(identifier_option)
+                .as_str(identifier_option)
                 .expect(&format!(
                     "No identifier for given identifier_option for pure record {}.",
                     j
                 ));
             binary_map
-                .get(&(id1.clone(), id2.clone()))
+                .get(&(id1, id2))
                 .or_else(|| binary_map.get(&(id2, id1)))
                 .cloned()
                 .unwrap_or_default()
@@ -138,6 +138,27 @@ where
         P: AsRef<Path>,
     {
         Self::from_multiple_json(&[(substances, file_pure)], file_binary, identifier_option)
+    }
+
+    /// Creates a json string from pure and possibly binary records.
+    fn to_json_str(&self, pretty: bool) -> Result<(String, Option<String>), ParameterError> {
+        let (pr, br) = self.records();
+
+        let pr_json = if pretty {
+            serde_json::to_string_pretty(pr)
+        } else {
+            serde_json::to_string(pr)
+        }?;
+        let br_json = if let Some(br) = br {
+            Some(if pretty {
+                serde_json::to_string_pretty(br)
+            } else {
+                serde_json::to_string(br)
+            }?)
+        } else {
+            None
+        };
+        Ok((pr_json, br_json))
     }
 
     /// Creates parameters from substance information stored in multiple json files.
@@ -198,7 +219,7 @@ where
     fn from_segments<C: SegmentCount>(
         chemical_records: Vec<C>,
         segment_records: Vec<SegmentRecord<Self::Pure>>,
-        binary_segment_records: Option<Vec<BinaryRecord<String, f64>>>,
+        binary_segment_records: Option<Vec<BinarySegmentRecord>>,
     ) -> Result<Self, ParameterError>
     where
         Self::Pure: FromSegments<C::Count>,
@@ -272,10 +293,7 @@ where
         Self::Pure: FromSegments<usize>,
         Self::Binary: FromSegmentsBinary<usize>,
     {
-        let queried: IndexSet<String> = substances
-            .iter()
-            .map(|identifier| identifier.to_string())
-            .collect();
+        let queried: IndexSet<_> = substances.iter().copied().collect();
 
         let file = File::open(file_pure)?;
         let reader = BufReader::new(file);
@@ -285,26 +303,27 @@ where
             .filter_map(|record| {
                 record
                     .identifier
-                    .as_string(identifier_option)
+                    .as_str(identifier_option)
+                    .map(|i| i.to_owned())
                     .map(|i| (i, record))
             })
             .collect();
 
         // Compare queried components and available components
-        let available: IndexSet<String> = record_map
+        let available: IndexSet<_> = record_map
             .keys()
-            .map(|identifier| identifier.to_string())
+            .map(|identifier| identifier as &str)
             .collect();
         if !queried.is_subset(&available) {
-            let missing: Vec<String> = queried.difference(&available).cloned().collect();
+            let missing: Vec<_> = queried.difference(&available).cloned().collect();
             let msg = format!("{:?}", missing);
             return Err(ParameterError::ComponentsNotFound(msg));
         };
 
         // collect all pure records that were queried
         let chemical_records: Vec<_> = queried
-            .iter()
-            .filter_map(|identifier| record_map.remove(&identifier.clone()))
+            .into_iter()
+            .filter_map(|identifier| record_map.remove(identifier))
             .collect();
 
         // Read segment records
@@ -315,7 +334,7 @@ where
         let binary_records = file_binary
             .map(|file_binary| {
                 let reader = BufReader::new(File::open(file_binary)?);
-                let binary_records: Result<Vec<BinaryRecord<String, f64>>, ParameterError> =
+                let binary_records: Result<Vec<BinarySegmentRecord>, ParameterError> =
                     Ok(serde_json::from_reader(reader)?);
                 binary_records
             })
@@ -380,13 +399,12 @@ impl fmt::Display for NoBinaryModelRecord {
 pub trait ParameterHetero: Sized {
     type Chemical: Clone;
     type Pure: Clone + DeserializeOwned;
-    type Binary: Clone + DeserializeOwned;
 
     /// Creates parameters from the molecular structure and segment information.
     fn from_segments<C: Clone + Into<Self::Chemical>>(
         chemical_records: Vec<C>,
         segment_records: Vec<SegmentRecord<Self::Pure>>,
-        binary_segment_records: Option<Vec<BinaryRecord<String, Self::Binary>>>,
+        binary_segment_records: Option<Vec<BinarySegmentRecord>>,
     ) -> Result<Self, ParameterError>;
 
     /// Return the original records that were used to construct the parameters.
@@ -396,7 +414,7 @@ pub trait ParameterHetero: Sized {
     ) -> (
         &[Self::Chemical],
         &[SegmentRecord<Self::Pure>],
-        &Option<Vec<BinaryRecord<String, Self::Binary>>>,
+        &Option<Vec<BinarySegmentRecord>>,
     );
 
     /// Creates parameters from segment information stored in json files.
@@ -411,9 +429,9 @@ pub trait ParameterHetero: Sized {
         P: AsRef<Path>,
         ChemicalRecord: Into<Self::Chemical>,
     {
-        let queried: IndexSet<String> = substances
+        let queried: IndexSet<_> = substances
             .iter()
-            .map(|identifier| identifier.to_string())
+            .map(|identifier| identifier as &str)
             .collect();
 
         let reader = BufReader::new(File::open(file_pure)?);
@@ -423,25 +441,26 @@ pub trait ParameterHetero: Sized {
             .filter_map(|record| {
                 record
                     .identifier
-                    .as_string(identifier_option)
+                    .as_str(identifier_option)
+                    .map(|i| i.to_owned())
                     .map(|i| (i, record))
             })
             .collect();
 
         // Compare queried components and available components
-        let available: IndexSet<String> = record_map
+        let available: IndexSet<_> = record_map
             .keys()
-            .map(|identifier| identifier.to_string())
+            .map(|identifier| identifier as &str)
             .collect();
         if !queried.is_subset(&available) {
-            let missing: Vec<String> = queried.difference(&available).cloned().collect();
+            let missing: Vec<_> = queried.difference(&available).cloned().collect();
             return Err(ParameterError::ComponentsNotFound(format!("{:?}", missing)));
         };
 
         // Collect all pure records that were queried
         let chemical_records: Vec<_> = queried
-            .iter()
-            .filter_map(|identifier| record_map.shift_remove(&identifier.clone()))
+            .into_iter()
+            .filter_map(|identifier| record_map.shift_remove(identifier))
             .collect();
 
         // Read segment records
@@ -452,10 +471,8 @@ pub trait ParameterHetero: Sized {
         let binary_records = file_binary
             .map(|file_binary| {
                 let reader = BufReader::new(File::open(file_binary)?);
-                let binary_records: Result<
-                    Vec<BinaryRecord<String, Self::Binary>>,
-                    ParameterError,
-                > = Ok(serde_json::from_reader(reader)?);
+                let binary_records: Result<Vec<BinarySegmentRecord>, ParameterError> =
+                    Ok(serde_json::from_reader(reader)?);
                 binary_records
             })
             .transpose()?;
@@ -482,6 +499,8 @@ pub trait ParameterHetero: Sized {
 /// Error type for incomplete parameter information and IO problems.
 #[derive(Error, Debug)]
 pub enum ParameterError {
+    #[error("{0}")]
+    Error(String),
     #[error(transparent)]
     FileIO(#[from] io::Error),
     #[error(transparent)]
