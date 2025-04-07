@@ -5,13 +5,14 @@ use ndarray::Array2;
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
-use pyo3::types::{PyDict, PyList};
-use pythonize::{depythonize, pythonize};
+use pyo3::types::PyDict;
+use pythonize::{depythonize, pythonize, PythonizeError};
 use serde::{Deserialize, Serialize};
 mod fragmentation;
 pub use fragmentation::PySmartsRecord;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
+use std::fmt::Write;
 use std::fs::File;
 use std::io::BufReader;
 
@@ -246,8 +247,8 @@ impl PyPureRecord {
 
         // build map, draining list of queried substances in the process
         for record in file_records {
-            if let Some(id) = record.identifier.as_string(identifier_option) {
-                queried.take(&id).map(|id| records.insert(id, record));
+            if let Some(id) = record.identifier.as_str(identifier_option) {
+                queried.take(id).map(|id| records.insert(id, record));
             }
             // all parameters parsed
             if queried.is_empty() {
@@ -496,8 +497,8 @@ impl PyParameters {
             binary_records
                 .iter()
                 .filter_map(|br| {
-                    let id1 = br.id1.as_string(identifier_option);
-                    let id2 = br.id2.as_string(identifier_option);
+                    let id1 = br.id1.as_str(identifier_option);
+                    let id2 = br.id2.as_str(identifier_option);
                     id1.and_then(|id1| id2.map(|id2| ((id1, id2), br.model_record.clone())))
                 })
                 .collect()
@@ -509,26 +510,20 @@ impl PyParameters {
             .enumerate()
             .array_combinations()
             .filter_map(|[(i1, p1), (i2, p2)]| {
-                let id1 = p1
-                    .identifier
-                    .as_string(identifier_option)
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "No {} for pure record {} ({}).",
-                            identifier_option, i1, p1.identifier
-                        )
-                    });
-                let id2 = p2
-                    .identifier
-                    .as_string(identifier_option)
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "No {} for pure record {} ({}).",
-                            identifier_option, i2, p2.identifier
-                        )
-                    });
+                let id1 = p1.identifier.as_str(identifier_option).unwrap_or_else(|| {
+                    panic!(
+                        "No {} for pure record {} ({}).",
+                        identifier_option, i1, p1.identifier
+                    )
+                });
+                let id2 = p2.identifier.as_str(identifier_option).unwrap_or_else(|| {
+                    panic!(
+                        "No {} for pure record {} ({}).",
+                        identifier_option, i2, p2.identifier
+                    )
+                });
                 binary_map
-                    .get(&(id1.clone(), id2.clone()))
+                    .get(&(id1, id2))
                     .or_else(|| binary_map.get(&(id2, id1)))
                     .map(|br| ([i1, i2], br.clone()))
             })
@@ -679,20 +674,119 @@ impl PyParameters {
     //     text_signature = "(pretty=True)"
     // )]
     // fn to_json_str(&self, pretty: bool) -> Result<(String, Option<String>), ParameterError> {
-    //     Self::to_json_str(&self.0, pretty)
+    //     let pr_json = if pretty {
+    //         serde_json::to_string_pretty(&self.pure_records)
+    //     } else {
+    //         serde_json::to_string(&self.pure_records)
+    //     }?;
+    //     let br_json = (!self.binary_records.is_empty())
+    //         .then(|| {
+    //             if pretty {
+    //                 serde_json::to_string_pretty(&self.binary_records)
+    //             } else {
+    //                 serde_json::to_string(&self.binary_records)
+    //             }
+    //         })
+    //         .transpose()?;
+    //     Ok((pr_json, br_json))
     // }
 
     #[getter]
     fn get_binary_records<'py>(
         &self,
         py: Python<'py>,
-    ) -> Result<Bound<'py, PyList>, ParameterError> {
+    ) -> Result<Bound<'py, PyAny>, PythonizeError> {
         pythonize(py, &self.binary_records)
-            .map_err(|e| ParameterError::Error(e.to_string()))
-            .and_then(|d| {
-                d.downcast_into::<PyList>()
-                    .map_err(|e| ParameterError::Error(e.to_string()))
+    }
+
+    fn _repr_markdown_(&self) -> String {
+        // crate consistent list of component names
+        let component_names: Vec<_> = self
+            .pure_records
+            .iter()
+            .enumerate()
+            .map(|(i, r)| {
+                r.identifier
+                    .as_readable_str()
+                    .map_or_else(|| format!("Component {}", i + 1), |s| s.to_owned())
             })
+            .collect();
+
+        // collect all pure component parameters
+        let params: IndexSet<_> = self
+            .pure_records
+            .iter()
+            .flat_map(|r| {
+                serde_json::from_value::<IndexMap<String, Value>>(r.model_record.clone())
+                    .unwrap()
+                    .into_keys()
+            })
+            .collect();
+
+        let mut output = String::new();
+        let o = &mut output;
+
+        // print pure component parameters in a table
+        write!(o, "|component|molarweight|").unwrap();
+        for p in &params {
+            write!(o, "{}|", p).unwrap();
+        }
+        write!(o, "\n|-|-|").unwrap();
+        for _ in &params {
+            write!(o, "-|").unwrap();
+        }
+        for (record, comp) in self.pure_records.iter().zip(&component_names) {
+            write!(o, "\n|{}|{}|", comp, record.molarweight).unwrap();
+            let model_record =
+                serde_json::from_value::<IndexMap<String, Value>>(record.model_record.clone())
+                    .unwrap();
+            for p in &params {
+                if let Some(val) = model_record.get(p) {
+                    write!(o, "{}|", val)
+                } else {
+                    write!(o, "-|")
+                }
+                .unwrap();
+            }
+        }
+
+        if !self.binary_records.is_empty() {
+            // collect all binary interaction parameters
+            let params: IndexSet<_> = self
+                .binary_records
+                .iter()
+                .flat_map(|(_, r)| {
+                    serde_json::from_value::<IndexMap<String, Value>>(r.clone())
+                        .unwrap()
+                        .into_keys()
+                })
+                .collect();
+
+            // print binary interaction parameters
+            write!(o, "\n\n|component 1|component 2|").unwrap();
+            for p in &params {
+                write!(o, "{}|", p).unwrap();
+            }
+            write!(o, "\n|-|-|").unwrap();
+            for _ in &params {
+                write!(o, "-|").unwrap();
+            }
+            for ([i, j], r) in &self.binary_records {
+                write!(o, "\n|{}|{}|", component_names[*i], component_names[*j]).unwrap();
+                let model_record =
+                    serde_json::from_value::<IndexMap<String, Value>>(r.clone()).unwrap();
+                for p in &params {
+                    if let Some(val) = model_record.get(p) {
+                        write!(o, "{}|", val)
+                    } else {
+                        write!(o, "-|")
+                    }
+                    .unwrap();
+                }
+            }
+        }
+
+        output
     }
 }
 
@@ -793,9 +887,9 @@ impl PyGcParameters {
         binary_path: Option<PyBackedStr>,
         identifier_option: IdentifierOption,
     ) -> Result<Self, ParameterError> {
-        let queried: IndexSet<String> = substances
+        let queried: IndexSet<_> = substances
             .iter()
-            .map(|identifier| identifier.to_string())
+            .map(|identifier| identifier as &str)
             .collect();
 
         let reader = BufReader::new(File::open(&pure_path as &str)?);
@@ -805,25 +899,26 @@ impl PyGcParameters {
             .filter_map(|record| {
                 record
                     .identifier
-                    .as_string(identifier_option)
+                    .as_str(identifier_option)
+                    .map(|i| i.to_owned())
                     .map(|i| (i, record))
             })
             .collect();
 
         // Compare queried components and available components
-        let available: IndexSet<String> = record_map
+        let available: IndexSet<_> = record_map
             .keys()
-            .map(|identifier| identifier.to_string())
+            .map(|identifier| identifier as &str)
             .collect();
         if !queried.is_subset(&available) {
-            let missing: Vec<String> = queried.difference(&available).cloned().collect();
+            let missing: Vec<_> = queried.difference(&available).cloned().collect();
             return Err(ParameterError::ComponentsNotFound(format!("{:?}", missing)));
         };
 
         // Collect all pure records that were queried
         let chemical_records: Vec<_> = queried
-            .iter()
-            .filter_map(|identifier| record_map.shift_remove(&identifier.clone()))
+            .into_iter()
+            .filter_map(|identifier| record_map.shift_remove(identifier))
             .collect();
 
         // Read segment records

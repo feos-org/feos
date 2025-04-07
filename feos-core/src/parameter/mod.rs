@@ -93,12 +93,12 @@ where
         }
 
         // Build Hashmap (id, id) -> BinaryRecord
-        let binary_map: HashMap<(String, String), Self::Binary> = {
+        let binary_map: HashMap<_, _> = {
             binary_records
                 .iter()
                 .filter_map(|br| {
-                    let id1 = br.id1.as_string(identifier_option);
-                    let id2 = br.id2.as_string(identifier_option);
+                    let id1 = br.id1.as_str(identifier_option);
+                    let id2 = br.id2.as_str(identifier_option);
                     id1.and_then(|id1| id2.map(|id2| ((id1, id2), br.model_record.clone())))
                 })
                 .collect()
@@ -107,20 +107,20 @@ where
         Some(Array2::from_shape_fn([n, n], |(i, j)| {
             let id1 = pure_records[i]
                 .identifier
-                .as_string(identifier_option)
+                .as_str(identifier_option)
                 .expect(&format!(
                     "No identifier for given identifier_option for pure record {}.",
                     i
                 ));
             let id2 = pure_records[j]
                 .identifier
-                .as_string(identifier_option)
+                .as_str(identifier_option)
                 .expect(&format!(
                     "No identifier for given identifier_option for pure record {}.",
                     j
                 ));
             binary_map
-                .get(&(id1.clone(), id2.clone()))
+                .get(&(id1, id2))
                 .or_else(|| binary_map.get(&(id2, id1)))
                 .cloned()
                 .unwrap_or_default()
@@ -293,10 +293,7 @@ where
         Self::Pure: FromSegments<usize>,
         Self::Binary: FromSegmentsBinary<usize>,
     {
-        let queried: IndexSet<String> = substances
-            .iter()
-            .map(|identifier| identifier.to_string())
-            .collect();
+        let queried: IndexSet<_> = substances.iter().copied().collect();
 
         let file = File::open(file_pure)?;
         let reader = BufReader::new(file);
@@ -306,26 +303,27 @@ where
             .filter_map(|record| {
                 record
                     .identifier
-                    .as_string(identifier_option)
+                    .as_str(identifier_option)
+                    .map(|i| i.to_owned())
                     .map(|i| (i, record))
             })
             .collect();
 
         // Compare queried components and available components
-        let available: IndexSet<String> = record_map
+        let available: IndexSet<_> = record_map
             .keys()
-            .map(|identifier| identifier.to_string())
+            .map(|identifier| identifier as &str)
             .collect();
         if !queried.is_subset(&available) {
-            let missing: Vec<String> = queried.difference(&available).cloned().collect();
+            let missing: Vec<_> = queried.difference(&available).cloned().collect();
             let msg = format!("{:?}", missing);
             return Err(ParameterError::ComponentsNotFound(msg));
         };
 
         // collect all pure records that were queried
         let chemical_records: Vec<_> = queried
-            .iter()
-            .filter_map(|identifier| record_map.remove(&identifier.clone()))
+            .into_iter()
+            .filter_map(|identifier| record_map.remove(identifier))
             .collect();
 
         // Read segment records
@@ -431,9 +429,9 @@ pub trait ParameterHetero: Sized {
         P: AsRef<Path>,
         ChemicalRecord: Into<Self::Chemical>,
     {
-        let queried: IndexSet<String> = substances
+        let queried: IndexSet<_> = substances
             .iter()
-            .map(|identifier| identifier.to_string())
+            .map(|identifier| identifier as &str)
             .collect();
 
         let reader = BufReader::new(File::open(file_pure)?);
@@ -443,25 +441,26 @@ pub trait ParameterHetero: Sized {
             .filter_map(|record| {
                 record
                     .identifier
-                    .as_string(identifier_option)
+                    .as_str(identifier_option)
+                    .map(|i| i.to_owned())
                     .map(|i| (i, record))
             })
             .collect();
 
         // Compare queried components and available components
-        let available: IndexSet<String> = record_map
+        let available: IndexSet<_> = record_map
             .keys()
-            .map(|identifier| identifier.to_string())
+            .map(|identifier| identifier as &str)
             .collect();
         if !queried.is_subset(&available) {
-            let missing: Vec<String> = queried.difference(&available).cloned().collect();
+            let missing: Vec<_> = queried.difference(&available).cloned().collect();
             return Err(ParameterError::ComponentsNotFound(format!("{:?}", missing)));
         };
 
         // Collect all pure records that were queried
         let chemical_records: Vec<_> = queried
-            .iter()
-            .filter_map(|identifier| record_map.shift_remove(&identifier.clone()))
+            .into_iter()
+            .filter_map(|identifier| record_map.shift_remove(identifier))
             .collect();
 
         // Read segment records
