@@ -26,8 +26,8 @@ fn test_bulk_implementation() -> Result<(), Box<dyn Error>> {
 
     let parameters = GcPcSaftEosParameters::from_json_segments(
         &["propane"],
-        "parameters/pcsaft/gc_substances.json",
-        "parameters/pcsaft/sauer2014_hetero.json",
+        "../../parameters/pcsaft/gc_substances.json",
+        "../../parameters/pcsaft/sauer2014_hetero.json",
         None,
         IdentifierOption::Name,
     )
@@ -35,8 +35,8 @@ fn test_bulk_implementation() -> Result<(), Box<dyn Error>> {
 
     let parameters_func = GcPcSaftFunctionalParameters::from_json_segments(
         &["propane"],
-        "parameters/pcsaft/gc_substances.json",
-        "parameters/pcsaft/sauer2014_hetero.json",
+        "../../parameters/pcsaft/gc_substances.json",
+        "../../parameters/pcsaft/sauer2014_hetero.json",
         None,
         IdentifierOption::Name,
     )
@@ -110,7 +110,8 @@ fn test_bulk_implementation() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn test_bulk_association() -> Result<(), Box<dyn Error>> {
-    let segment_records = SegmentRecord::from_json("parameters/pcsaft/sauer2014_hetero.json")?;
+    let segment_records =
+        SegmentRecord::from_json("../../parameters/pcsaft/sauer2014_hetero.json")?;
     let ethylene_glycol = ChemicalRecord::new(
         Identifier::default(),
         vec!["OH".into(), "CH2".into(), "CH2".into(), "OH".into()],
@@ -155,8 +156,8 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
 
     let parameters = GcPcSaftFunctionalParameters::from_json_segments(
         &["propane"],
-        "parameters/pcsaft/gc_substances.json",
-        "parameters/pcsaft/sauer2014_hetero.json",
+        "../../parameters/pcsaft/gc_substances.json",
+        "../../parameters/pcsaft/sauer2014_hetero.json",
         None,
         IdentifierOption::Name,
     )
@@ -201,8 +202,8 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
 fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
     let parameters = GcPcSaftFunctionalParameters::from_json_segments(
         &["1-pentanol"],
-        "parameters/pcsaft/gc_substances.json",
-        "parameters/pcsaft/sauer2014_hetero.json",
+        "../../parameters/pcsaft/gc_substances.json",
+        "../../parameters/pcsaft/sauer2014_hetero.json",
         None,
         IdentifierOption::Name,
     )
@@ -250,8 +251,8 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
 fn test_dft_newton() -> Result<(), Box<dyn Error>> {
     let params = Arc::new(GcPcSaftFunctionalParameters::from_json_segments(
         &["propane"],
-        "parameters/pcsaft/gc_substances.json",
-        "parameters/pcsaft/sauer2014_hetero.json",
+        "../../parameters/pcsaft/gc_substances.json",
+        "../../parameters/pcsaft/sauer2014_hetero.json",
         None,
         IdentifierOption::Name,
     )?);

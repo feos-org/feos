@@ -13,8 +13,8 @@ use typenum::P3;
 fn test_binary() -> EosResult<()> {
     let parameters = GcPcSaftEosParameters::from_json_segments(
         &["ethanol", "methanol"],
-        "parameters/pcsaft/gc_substances.json",
-        "parameters/pcsaft/sauer2014_hetero.json",
+        "../../parameters/pcsaft/gc_substances.json",
+        "../../parameters/pcsaft/sauer2014_hetero.json",
         None,
         IdentifierOption::Name,
     )
@@ -22,8 +22,8 @@ fn test_binary() -> EosResult<()> {
     #[cfg(feature = "dft")]
     let parameters_func = GcPcSaftFunctionalParameters::from_json_segments(
         &["ethanol", "methanol"],
-        "parameters/pcsaft/gc_substances.json",
-        "parameters/pcsaft/sauer2014_hetero.json",
+        "../../parameters/pcsaft/gc_substances.json",
+        "../../parameters/pcsaft/sauer2014_hetero.json",
         None,
         IdentifierOption::Name,
     )
@@ -56,15 +56,15 @@ fn test_binary() -> EosResult<()> {
 fn test_polar_term() -> EosResult<()> {
     let parameters1 = GcPcSaftEosParameters::from_json_segments(
         &["CCCOC(C)=O", "CCCO"],
-        "parameters/pcsaft/gc_substances.json",
-        "parameters/pcsaft/sauer2014_hetero.json",
+        "../../parameters/pcsaft/gc_substances.json",
+        "../../parameters/pcsaft/sauer2014_hetero.json",
         None,
         IdentifierOption::Smiles,
     )?;
     let parameters2 = GcPcSaftEosParameters::from_json_segments(
         &["CCCO", "CCCOC(C)=O"],
-        "parameters/pcsaft/gc_substances.json",
-        "parameters/pcsaft/sauer2014_hetero.json",
+        "../../parameters/pcsaft/gc_substances.json",
+        "../../parameters/pcsaft/sauer2014_hetero.json",
         None,
         IdentifierOption::Smiles,
     )?;

@@ -883,7 +883,8 @@ pub mod utils {
             None,
         );
         let ethanol = ChemicalRecord::new(Default::default(), vec![ch3, ch2, oh], None);
-        let segment_records = SegmentRecord::from_json("parameters/pcsaft/sauer2014_homo.json")?;
+        let segment_records =
+            SegmentRecord::from_json("../../parameters/pcsaft/sauer2014_homo.json")?;
         let kij = [("CH3", "OH", -0.2), ("CH2", "OH", -0.1)];
         let binary_segment_records = kij
             .iter()

@@ -14,7 +14,7 @@
 //! // Read parameters from json file.
 //! let parameters = PcSaftParameters::from_json(
 //!     vec!["propane"],
-//!     "tests/pcsaft/test_parameters.json",
+//!     "../../parameters/pcsaft/esper2023.json",
 //!     None,
 //!     IdentifierOption::Name,
 //! )?;
@@ -34,9 +34,6 @@
 
 #![warn(clippy::all)]
 #![warn(clippy::allow_attributes)]
-
-// mod eos;
-// pub use eos::ResidualModel;
 
 #[cfg(feature = "estimator")]
 pub mod estimator;

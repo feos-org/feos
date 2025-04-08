@@ -457,8 +457,8 @@ mod tests {
         carbon_dioxide_parameters, dme_co2_parameters, dme_parameters,
     };
     use approx::assert_relative_eq;
-    use feos_core::parameter::{IdentifierOption, Parameter};
     use feos_core::StateHD;
+    use feos_core::parameter::{IdentifierOption, Parameter};
 
     #[test]
     fn test_dipolar_contribution() {
@@ -480,7 +480,7 @@ mod tests {
             parameters: Arc::new(
                 PcSaftParameters::from_json(
                     vec!["acetone", "butanal", "dimethyl ether"],
-                    "./parameters/pcsaft/gross2006.json",
+                    "../../parameters/pcsaft/gross2006.json",
                     None,
                     IdentifierOption::Name,
                 )
@@ -516,7 +516,7 @@ mod tests {
             parameters: Arc::new(
                 PcSaftParameters::from_json(
                     vec!["carbon dioxide", "chlorine", "ethylene"],
-                    "./parameters/pcsaft/gross2005_literature.json",
+                    "../../parameters/pcsaft/gross2005_literature.json",
                     None,
                     IdentifierOption::Name,
                 )
