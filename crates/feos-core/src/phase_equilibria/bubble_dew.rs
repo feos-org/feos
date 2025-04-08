@@ -8,8 +8,8 @@ use crate::state::{
 };
 use crate::{ReferenceSystem, SolverOptions, Verbosity};
 use ndarray::*;
-use num_dual::linalg::{norm, LU};
-use quantity::{Density, Dimensionless, Moles, Pressure, Quantity, SIUnit, Temperature, RGAS};
+use num_dual::linalg::{LU, norm};
+use quantity::{Density, Dimensionless, Moles, Pressure, Quantity, RGAS, SIUnit, Temperature};
 use std::fmt;
 use std::sync::Arc;
 use typenum::{N1, N2, P1, Z0};

@@ -1,7 +1,6 @@
+use super::ParameterError;
 use super::identifier::Identifier;
 use super::segment::SegmentRecord;
-use super::ParameterError;
-use conv::ValueInto;
 use num_traits::NumAssign;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -104,9 +103,25 @@ impl std::fmt::Display for ChemicalRecord {
     }
 }
 
+pub trait CountType: Copy {
+    fn apply_count(self, x: f64) -> f64;
+}
+
+impl CountType for usize {
+    fn apply_count(self, x: f64) -> f64 {
+        self as f64 * x
+    }
+}
+
+impl CountType for f64 {
+    fn apply_count(self, x: f64) -> f64 {
+        self * x
+    }
+}
+
 /// Trait that enables parameter generation from generic molecular representations.
 pub trait SegmentCount {
-    type Count: Copy + ValueInto<f64>;
+    type Count: CountType;
 
     fn identifier(&self) -> Cow<Identifier>;
 

@@ -1,7 +1,6 @@
 //! Implementation of the ideal gas heat capacity (de Broglie wavelength)
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 
-use conv::ValueInto;
 use feos_core::parameter::*;
 use feos_core::{Components, EosResult, IdealGas, ReferenceSystem};
 use ndarray::{Array1, Array2};
@@ -43,7 +42,7 @@ impl fmt::Display for JobackRecord {
 
 /// Implementation of the combining rules as described in
 /// [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
-impl<T: Copy + ValueInto<f64>> FromSegments<T> for JobackRecord {
+impl<T: CountType> FromSegments<T> for JobackRecord {
     fn from_segments(segments: &[(Self, T)]) -> Result<Self, ParameterError> {
         let mut a = -37.93;
         let mut b = 0.21;
@@ -51,12 +50,11 @@ impl<T: Copy + ValueInto<f64>> FromSegments<T> for JobackRecord {
         let mut d = 2.06e-7;
         let mut e = 0.0;
         segments.iter().for_each(|(s, n)| {
-            let n = (*n).value_into().unwrap();
-            a += s.a * n;
-            b += s.b * n;
-            c += s.c * n;
-            d += s.d * n;
-            e += s.e * n;
+            a += n.apply_count(s.a);
+            b += n.apply_count(s.b);
+            c += n.apply_count(s.c);
+            d += n.apply_count(s.d);
+            e += n.apply_count(s.e);
         });
         Ok(Self { a, b, c, d, e })
     }

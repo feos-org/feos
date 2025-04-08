@@ -2,9 +2,8 @@ use crate::association::{
     AssociationParameters, AssociationRecord, AssociationStrength, BinaryAssociationRecord,
 };
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use conv::ValueInto;
 use feos_core::parameter::{
-    FromSegments, FromSegmentsBinary, Parameter, ParameterError, PureRecord,
+    CountType, FromSegments, FromSegmentsBinary, Parameter, ParameterError, PureRecord,
 };
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
@@ -342,10 +341,10 @@ impl PcSaftBinaryRecord {
     }
 }
 
-impl<T: Copy + ValueInto<f64>> FromSegmentsBinary<T> for PcSaftBinaryRecord {
+impl<T: CountType> FromSegmentsBinary<T> for PcSaftBinaryRecord {
     fn from_segments_binary(segments: &[(f64, T, T)]) -> Result<Self, ParameterError> {
         let (k_ij, n) = segments.iter().fold((0.0, 0.0), |(k_ij, n), (br, n1, n2)| {
-            let nab = (*n1).value_into().unwrap() * (*n2).value_into().unwrap();
+            let nab = n1.apply_count(1.0) * n2.apply_count(1.0);
             (k_ij + br * nab, n + nab)
         });
         Ok(Self {

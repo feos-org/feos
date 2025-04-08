@@ -1,8 +1,8 @@
 use feos_core::parameter::{Identifier, ParameterError};
 use feos_core::parameter::{Parameter, PureRecord};
+use ndarray::Array2;
 use ndarray::concatenate;
 use ndarray::prelude::*;
-use ndarray::Array2;
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -103,7 +103,7 @@ pub fn mean_field_constant<D: DualNum<f64> + Copy>(rep: D, att: D, x: D) -> D {
 }
 
 /// Parameters for all substances for uv-theory equation of state and Helmholtz energy functional
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct UVTheoryParameters {
     pub ncomponents: usize,
     pub rep: Array1<f64>,

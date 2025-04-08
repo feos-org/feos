@@ -14,29 +14,28 @@ description = "FeOs - A framework for equations of state and classical density f
 quantity = { workspace = true }
 num-dual = { workspace = true }
 ndarray = { workspace = true }
-petgraph = { version = "0.7", optional = true }
+petgraph = { workspace = true, optional = true }
 thiserror = { workspace = true }
-conv = { workspace = true }
 num-traits = { workspace = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
 indexmap = { workspace = true }
-rayon = { version = "1.7", optional = true }
-itertools = "0.14"
+rayon = { workspace = true, optional = true }
+itertools = { workspace = true, optional = true }
 typenum = { workspace = true }
 
 feos-core = { workspace = true }
 feos-derive = { workspace = true }
-feos-dft = { version = "0.8", path = "../feos-dft", optional = true }
+feos-dft = { workspace = true, optional = true }
 
 [dev-dependencies]
-approx = "0.5"
-criterion = "0.5"
+approx = { workspace = true }
+criterion = { workspace = true }
+serde_json = { workspace = true }
 
 [features]
 default = []
 dft = ["feos-dft", "petgraph"]
-estimator = []
+estimator = ["itertools"]
 association = []
 pcsaft = ["association"]
 epcsaft = ["association"]

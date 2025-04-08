@@ -24,7 +24,7 @@ categories = ["science"]
 [workspace.dependencies]
 quantity = "0.10"
 num-dual = "0.11"
-ndarray = { version = "0.16", features = ["approx"] }
+ndarray = "0.16"
 nalgebra = "0.33"
 thiserror = "2.0"
 conv = "0.3"
@@ -34,8 +34,17 @@ serde_json = "1.0"
 indexmap = "2.0"
 itertools = "0.14"
 typenum = "1.16"
+rayon = "1.5"
+petgraph = "0.8"
+rustdct = "0.7"
+rustfft = "6.0"
+libm = "0.2"
+gauss-quad = "0.2"
+approx = "0.5"
+criterion = "0.5"
 
 feos-core = { version = "0.8", path = "crates/feos-core" }
+feos-dft = { version = "0.8", path = "crates/feos-dft" }
 feos-derive = { version = "0.6", path = "crates/feos-derive" }
 
 

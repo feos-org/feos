@@ -1,6 +1,5 @@
 //! Structures and traits that can be used to build model parameters for equations of state.
 
-use conv::ValueInto;
 use indexmap::{IndexMap, IndexSet};
 use ndarray::Array2;
 use serde::de::DeserializeOwned;
@@ -18,7 +17,7 @@ mod identifier;
 mod model_record;
 mod segment;
 
-pub use chemical_record::{ChemicalRecord, SegmentCount};
+pub use chemical_record::{ChemicalRecord, CountType, SegmentCount};
 pub use identifier::{Identifier, IdentifierOption};
 pub use model_record::{BinaryRecord, FromSegments, FromSegmentsBinary, PureRecord};
 pub use segment::{BinarySegmentRecord, SegmentRecord};
@@ -138,27 +137,6 @@ where
         P: AsRef<Path>,
     {
         Self::from_multiple_json(&[(substances, file_pure)], file_binary, identifier_option)
-    }
-
-    /// Creates a json string from pure and possibly binary records.
-    fn to_json_str(&self, pretty: bool) -> Result<(String, Option<String>), ParameterError> {
-        let (pr, br) = self.records();
-
-        let pr_json = if pretty {
-            serde_json::to_string_pretty(pr)
-        } else {
-            serde_json::to_string(pr)
-        }?;
-        let br_json = if let Some(br) = br {
-            Some(if pretty {
-                serde_json::to_string_pretty(br)
-            } else {
-                serde_json::to_string(br)
-            }?)
-        } else {
-            None
-        };
-        Ok((pr_json, br_json))
     }
 
     /// Creates parameters from substance information stored in multiple json files.
@@ -371,19 +349,7 @@ where
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct NoBinaryModelRecord;
 
-impl From<f64> for NoBinaryModelRecord {
-    fn from(_: f64) -> Self {
-        Self
-    }
-}
-
-impl From<NoBinaryModelRecord> for f64 {
-    fn from(_: NoBinaryModelRecord) -> Self {
-        0.0 // nasty hack - panic crashes Ipython kernel, actual value is never used
-    }
-}
-
-impl<T: Copy + ValueInto<f64>> FromSegmentsBinary<T> for NoBinaryModelRecord {
+impl<T: Copy> FromSegmentsBinary<T> for NoBinaryModelRecord {
     fn from_segments_binary(_segments: &[(f64, T, T)]) -> Result<Self, ParameterError> {
         Ok(Self)
     }
@@ -507,7 +473,9 @@ pub enum ParameterError {
     Serde(#[from] serde_json::Error),
     #[error("The following component(s) were not found: {0}")]
     ComponentsNotFound(String),
-    #[error("The identifier '{0}' is not known. ['cas', 'name', 'iupacname', 'smiles', inchi', 'formula']")]
+    #[error(
+        "The identifier '{0}' is not known. ['cas', 'name', 'iupacname', 'smiles', inchi', 'formula']"
+    )]
     IdentifierNotFound(String),
     #[error("Information missing.")]
     InsufficientInformation,

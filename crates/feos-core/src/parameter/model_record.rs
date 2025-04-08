@@ -1,7 +1,7 @@
+use super::chemical_record::CountType;
 use super::identifier::Identifier;
 use super::segment::SegmentRecord;
 use super::{IdentifierOption, ParameterError};
-use conv::ValueInto;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -34,14 +34,14 @@ impl<M> PureRecord<M> {
     /// and the ideal gas record.
     pub fn from_segments<S, T>(identifier: Identifier, segments: S) -> Result<Self, ParameterError>
     where
-        T: Copy + ValueInto<f64>,
+        T: CountType,
         M: FromSegments<T>,
         S: IntoIterator<Item = (SegmentRecord<M>, T)>,
     {
         let mut molarweight = 0.0;
         let mut model_segments = Vec::new();
         for (s, n) in segments {
-            molarweight += s.molarweight * n.value_into().unwrap();
+            molarweight += n.apply_count(s.molarweight);
             model_segments.push((s.model_record, n));
         }
         let model_record = M::from_segments(&model_segments)?;

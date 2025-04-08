@@ -94,7 +94,7 @@ impl std::fmt::Display for PetsBinaryRecord {
 }
 
 /// Parameter set for the PeTS equation of state and Helmholtz energy functional.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct PetsParameters {
     /// molar weight in gram per mole
     pub molarweight: Array1<f64>,

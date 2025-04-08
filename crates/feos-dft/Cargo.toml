@@ -20,12 +20,12 @@ quantity = { workspace = true }
 num-dual = { workspace = true }
 ndarray = { workspace = true }
 nalgebra = { workspace = true }
-rustdct = "0.7"
-rustfft = "6.0"
+rustdct = { workspace = true }
+rustfft = { workspace = true }
 num-traits = { workspace = true }
-libm = "0.2"
-gauss-quad = { version = "0.2", optional = true }
-petgraph = "0.7"
+libm = { workspace = true }
+gauss-quad = { workspace = true, optional = true }
+petgraph = { workspace = true }
 typenum = { workspace = true }
 
 feos-core = { workspace = true }
