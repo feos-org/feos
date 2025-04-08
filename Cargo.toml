@@ -1,17 +1,7 @@
 [workspace]
 resolver = "2"
-members = [
-    "crates/feos-core",
-    "crates/feos-dft",
-    "crates/feos-derive",
-    "crates/feos"
-]
-default-members = [
-    "crates/feos-core",
-    "crates/feos-dft",
-    "crates/feos-derive",
-    "crates/feos"
-]
+members = ["crates/*"]
+default-members = ["crates/feos"]
 
 [workspace.package]
 version = "0.8.0"

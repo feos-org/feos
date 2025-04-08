@@ -3,13 +3,13 @@
 //! These should give an idea about the expected slow-down depending
 //! on the dual number type used without the overhead of the `State`
 //! creation.
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use feos::core::{
-    parameter::{IdentifierOption, Parameter},
     Derivative, Residual, State, StateHD,
+    parameter::{IdentifierOption, Parameter},
 };
 use feos::pcsaft::{PcSaft, PcSaftParameters};
-use ndarray::{arr1, Array, ScalarOperand};
+use ndarray::{Array, ScalarOperand, arr1};
 use num_dual::DualNum;
 use quantity::*;
 use std::sync::Arc;
@@ -63,7 +63,7 @@ fn pcsaft(c: &mut Criterion) {
     // methane
     let parameters = PcSaftParameters::from_json(
         vec!["methane"],
-        "../parameters/pcsaft/gross2001.json",
+        "../../parameters/pcsaft/gross2001.json",
         None,
         IdentifierOption::Name,
     )
@@ -73,7 +73,7 @@ fn pcsaft(c: &mut Criterion) {
     // water (4C, polar)
     let parameters = PcSaftParameters::from_json(
         vec!["water_4C_polar"],
-        "../parameters/pcsaft/rehner2020.json",
+        "../../parameters/pcsaft/rehner2020.json",
         None,
         IdentifierOption::Name,
     )
@@ -87,7 +87,7 @@ fn pcsaft(c: &mut Criterion) {
     // methane, ethane, propane
     let parameters = PcSaftParameters::from_json(
         vec!["methane", "ethane", "propane"],
-        "../parameters/pcsaft/gross2001.json",
+        "../../parameters/pcsaft/gross2001.json",
         None,
         IdentifierOption::Name,
     )
@@ -104,10 +104,10 @@ fn pcsaft(c: &mut Criterion) {
 fn methane_co2_pcsaft(c: &mut Criterion) {
     let parameters = PcSaftParameters::from_multiple_json(
         &[
-            (vec!["methane"], "../parameters/pcsaft/gross2001.json"),
+            (vec!["methane"], "../../parameters/pcsaft/gross2001.json"),
             (
                 vec!["carbon dioxide"],
-                "../parameters/pcsaft/gross2005_fit.json",
+                "../../parameters/pcsaft/gross2005_fit.json",
             ),
         ],
         None,

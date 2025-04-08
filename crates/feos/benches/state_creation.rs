@@ -1,8 +1,8 @@
 #![allow(clippy::type_complexity)]
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use feos::core::{
-    parameter::{IdentifierOption, Parameter},
     Contributions, DensityInitialization, PhaseEquilibrium, Residual, State, TemperatureOrPressure,
+    parameter::{IdentifierOption, Parameter},
 };
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use ndarray::{Array, Array1};
@@ -152,7 +152,7 @@ fn bench_states<E: Residual>(c: &mut Criterion, group_name: &str, eos: &Arc<E>) 
 fn pcsaft(c: &mut Criterion) {
     let parameters = PcSaftParameters::from_json(
         vec!["methane"],
-        "../parameters/pcsaft/gross2001.json",
+        "../../parameters/pcsaft/gross2001.json",
         None,
         IdentifierOption::Name,
     )
@@ -162,7 +162,7 @@ fn pcsaft(c: &mut Criterion) {
 
     let parameters = PcSaftParameters::from_json(
         vec!["methane", "ethane"],
-        "../parameters/pcsaft/gross2001.json",
+        "../../parameters/pcsaft/gross2001.json",
         None,
         IdentifierOption::Name,
     )
@@ -172,7 +172,7 @@ fn pcsaft(c: &mut Criterion) {
 
     let parameters = PcSaftParameters::from_json(
         vec!["methane", "ethane", "propane"],
-        "../parameters/pcsaft/gross2001.json",
+        "../../parameters/pcsaft/gross2001.json",
         None,
         IdentifierOption::Name,
     )

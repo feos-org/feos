@@ -29,6 +29,10 @@ feos-core = { workspace = true }
 feos-derive = { workspace = true }
 feos-dft = { version = "0.8", path = "../feos-dft", optional = true }
 
+[dev-dependencies]
+approx = "0.5"
+criterion = "0.5"
+
 [features]
 default = []
 dft = ["feos-dft", "petgraph"]
@@ -53,3 +57,33 @@ all_models = [
     "saftvrqmie",
     "saftvrmie",
 ]
+
+[[bench]]
+name = "state_properties"
+harness = false
+required-features = ["pcsaft"]
+
+[[bench]]
+name = "state_creation"
+harness = false
+required-features = ["pcsaft"]
+
+[[bench]]
+name = "dual_numbers"
+harness = false
+required-features = ["pcsaft"]
+
+[[bench]]
+name = "dual_numbers_saftvrmie"
+required-features = ["saftvrmie"]
+harness = false
+
+[[bench]]
+name = "contributions"
+harness = false
+required-features = ["saftvrmie"]
+
+[[bench]]
+name = "dft_pore"
+harness = false
+required-features = ["pcsaft", "gc_pcsaft", "dft"]

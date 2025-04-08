@@ -5,7 +5,7 @@
 //! It is supposed to demonstrate the expected reduction in
 //! performance when more complex physical interactions are
 //! modeled.
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use feos::core::parameter::{IdentifierOption, Parameter};
 use feos::core::{DensityInitialization, Derivative, Residual, State};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
@@ -20,7 +20,7 @@ fn pcsaft(c: &mut Criterion) {
     // non-polar components
     let mut records = PcSaftParameters::from_json(
         vec!["hexane", "heptane"],
-        "../parameters/pcsaft/gross2001.json",
+        "../../parameters/pcsaft/gross2001.json",
         None,
         IdentifierOption::Name,
     )
@@ -32,7 +32,7 @@ fn pcsaft(c: &mut Criterion) {
     // dipolar components
     records = PcSaftParameters::from_json(
         vec!["acetone", "dimethyl ether"],
-        "../parameters/pcsaft/gross2006.json",
+        "../../parameters/pcsaft/gross2006.json",
         None,
         IdentifierOption::Name,
     )
@@ -44,7 +44,7 @@ fn pcsaft(c: &mut Criterion) {
     // quadrupolar components
     records = PcSaftParameters::from_json(
         vec!["carbon dioxide", "acetylene"],
-        "../parameters/pcsaft/gross2005_literature.json",
+        "../../parameters/pcsaft/gross2005_literature.json",
         None,
         IdentifierOption::Name,
     )
@@ -56,7 +56,7 @@ fn pcsaft(c: &mut Criterion) {
     // associating components
     records = PcSaftParameters::from_json(
         vec!["ethanol", "1-propanol"],
-        "../parameters/pcsaft/gross2002.json",
+        "../../parameters/pcsaft/gross2002.json",
         None,
         IdentifierOption::Name,
     )
