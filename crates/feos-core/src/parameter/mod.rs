@@ -75,14 +75,14 @@ where
     }
 
     /// Return the original pure and binary records that were used to construct the parameters.
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     fn records(&self) -> (&[PureRecord<Self::Pure>], Option<&Array2<Self::Binary>>);
 
     /// Helper function to build matrix from list of records in correct order.
     ///
     /// If the identifiers in `binary_records` are not a subset of those in
     /// `pure_records`, the `Default` implementation of Self::Binary is used.
-    #[allow(clippy::expect_fun_call)]
+    #[expect(clippy::expect_fun_call)]
     fn binary_matrix_from_records(
         pure_records: &[PureRecord<Self::Pure>],
         binary_records: &[BinaryRecord<Self::Binary>],
@@ -408,7 +408,7 @@ pub trait ParameterHetero: Sized {
     ) -> Result<Self, ParameterError>;
 
     /// Return the original records that were used to construct the parameters.
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     fn records(
         &self,
     ) -> (

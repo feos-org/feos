@@ -6,10 +6,10 @@
 //! * the volume
 //!
 //! Internally, all properties are computed using such states as input.
+use crate::ReferenceSystem;
 use crate::density_iteration::density_iteration;
 use crate::equation_of_state::{IdealGas, Residual};
 use crate::errors::{EosError, EosResult};
-use crate::ReferenceSystem;
 use cache::Cache;
 use ndarray::prelude::*;
 use num_dual::*;
@@ -197,7 +197,6 @@ impl<E: Residual> fmt::Display for State<E> {
 
 /// Derivatives of the helmholtz energy.
 #[derive(Clone, Copy, Eq, Hash, PartialEq, Debug, PartialOrd, Ord)]
-#[allow(non_camel_case_types)]
 pub enum Derivative {
     /// Derivative with respect to system volume.
     DV,
@@ -369,7 +368,7 @@ impl<E: Residual> State<E> {
             (Some(_), Some(_), _) => {
                 return Err(EosError::UndeterminedState(String::from(
                     "Composition is overdetermined.",
-                )))
+                )));
             }
             (Some(x), None, _) => x,
             (None, Some(x), _) => x.clone(),
@@ -377,7 +376,7 @@ impl<E: Residual> State<E> {
             _ => {
                 return Err(EosError::UndeterminedState(String::from(
                     "Missing composition.",
-                )))
+                )));
             }
         };
 
@@ -422,7 +421,7 @@ impl<E: Residual> State<E> {
         // calculate state from initial density or given phase
         match density_initialization {
             DensityInitialization::InitialDensity(rho0) => {
-                return density_iteration(eos, temperature, pressure, moles, rho0)
+                return density_iteration(eos, temperature, pressure, moles, rho0);
             }
             DensityInitialization::Vapor => {
                 return density_iteration(
@@ -431,7 +430,7 @@ impl<E: Residual> State<E> {
                     pressure,
                     moles,
                     pressure / temperature / RGAS,
-                )
+                );
             }
             DensityInitialization::Liquid => {
                 return density_iteration(
@@ -440,7 +439,7 @@ impl<E: Residual> State<E> {
                     pressure,
                     moles,
                     eos.max_density(Some(moles))?,
-                )
+                );
             }
             DensityInitialization::None => (),
         }

@@ -1,9 +1,9 @@
 use super::{Contributions, Derivative::*, PartialDerivative, State};
+use crate::ReferenceSystem;
 use crate::equation_of_state::{EntropyScaling, Molarweight, Residual};
 use crate::errors::EosResult;
 use crate::phase_equilibria::PhaseEquilibrium;
-use crate::ReferenceSystem;
-use ndarray::{arr1, Array1, Array2};
+use ndarray::{Array1, Array2, arr1};
 use quantity::*;
 use std::ops::{Add, Div};
 use std::sync::Arc;
@@ -235,7 +235,7 @@ impl<E: Residual> State<E> {
     }
 
     // This function is designed specifically for use in spinodal iterations
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     pub(crate) fn d2pdrho2(
         &self,
     ) -> (

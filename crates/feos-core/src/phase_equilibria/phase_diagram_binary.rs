@@ -99,7 +99,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         Ok(Self { states })
     }
 
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     fn calculate_vlle<TP: TemperatureOrPressure>(
         eos: &Arc<E>,
         tp: TP,

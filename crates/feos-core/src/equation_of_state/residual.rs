@@ -1,7 +1,7 @@
 use super::Components;
 use crate::{EosError, EosResult, ReferenceSystem, StateHD};
-use ndarray::prelude::*;
 use ndarray::ScalarOperand;
+use ndarray::prelude::*;
 use num_dual::*;
 use num_traits::{One, Zero};
 use quantity::*;
@@ -91,7 +91,6 @@ pub trait Residual: Components + Send + Sync {
     }
 
     /// Calculate the third virial coefficient $C(T)$
-    #[allow(clippy::type_complexity)]
     fn third_virial_coefficient(
         &self,
         temperature: Temperature,
@@ -108,7 +107,6 @@ pub trait Residual: Components + Send + Sync {
     }
 
     /// Calculate the temperature derivative of the second virial coefficient $B'(T)$
-    #[allow(clippy::type_complexity)]
     fn second_virial_coefficient_temperature_derivative(
         &self,
         temperature: Temperature,
@@ -127,7 +125,7 @@ pub trait Residual: Components + Send + Sync {
     }
 
     /// Calculate the temperature derivative of the third virial coefficient $C'(T)$
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     fn third_virial_coefficient_temperature_derivative(
         &self,
         temperature: Temperature,
