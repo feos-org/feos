@@ -29,6 +29,7 @@ feos-dft = { workspace = true, optional = true }
 
 [dev-dependencies]
 approx = { workspace = true }
+quantity = { workspace = true, features = ["approx"] }
 criterion = { workspace = true }
 serde_json = { workspace = true }
 
