@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use crate::{Components, IdealGas, Molarweight, Residual, StateHD};
+use feos_core::{Components, IdealGas, Molarweight, Residual, StateHD};
 use ndarray::{Array1, ScalarOperand};
 use num_dual::*;
 use numpy::convert::IntoPyArray;

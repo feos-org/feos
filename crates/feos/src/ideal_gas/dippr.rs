@@ -1,8 +1,8 @@
-use feos_core::parameter::{NoBinaryModelRecord, Parameter, ParameterError, PureRecord};
-use feos_core::{Components, EosResult, IdealGas};
+use feos_core::parameter::{NoBinaryModelRecord, Parameter, PureRecord};
+use feos_core::{Components, FeosResult, IdealGas};
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
-use quantity::{MolarEntropy, Temperature, JOULE, KELVIN, KILO, MOL};
+use quantity::{JOULE, KELVIN, KILO, MOL, MolarEntropy, Temperature};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -140,7 +140,7 @@ impl Parameter for Dippr {
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
         _binary_records: Option<Array2<Self::Binary>>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         Ok(Self(pure_records))
     }
 
@@ -155,7 +155,7 @@ impl Dippr {
         &self,
         temperature: Temperature,
         molefracs: &Array1<f64>,
-    ) -> EosResult<MolarEntropy> {
+    ) -> FeosResult<MolarEntropy> {
         let t = temperature.convert_to(KELVIN);
         let c_p: f64 = molefracs
             .iter()
@@ -215,7 +215,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn eq100() -> EosResult<()> {
+    fn eq100() -> FeosResult<()> {
         let record = PureRecord::new(
             Identifier::default(),
             0.0,
@@ -259,7 +259,7 @@ mod tests {
     }
 
     #[test]
-    fn eq107() -> EosResult<()> {
+    fn eq107() -> FeosResult<()> {
         let record = PureRecord::new(
             Identifier::default(),
             0.0,
@@ -303,7 +303,7 @@ mod tests {
     }
 
     #[test]
-    fn eq127() -> EosResult<()> {
+    fn eq127() -> FeosResult<()> {
         let record = PureRecord::new(
             Identifier::default(),
             0.0,

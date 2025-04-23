@@ -1,6 +1,6 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
-use crate::errors::{EosError, EosResult};
+use crate::errors::{FeosError, FeosResult};
 use crate::state::{
     Contributions,
     DensityInitialization::{InitialDensity, Liquid, Vapor},
@@ -48,7 +48,7 @@ pub trait TemperatureOrPressure: Copy + Into<TPSpec> {
         molefracs_init: Option<&Array1<f64>>,
         bubble: bool,
         options: (SolverOptions, SolverOptions),
-    ) -> EosResult<PhaseEquilibrium<E, 2>>;
+    ) -> FeosResult<PhaseEquilibrium<E, 2>>;
 
     fn adjust_t_p<E: Residual>(
         tp_spec: Self,
@@ -56,7 +56,7 @@ pub trait TemperatureOrPressure: Copy + Into<TPSpec> {
         state1: &mut State<E>,
         state2: &mut State<E>,
         verbosity: Verbosity,
-    ) -> EosResult<f64>;
+    ) -> FeosResult<f64>;
 
     fn newton_step<E: Residual>(
         tp_spec: Self,
@@ -64,7 +64,7 @@ pub trait TemperatureOrPressure: Copy + Into<TPSpec> {
         state1: &mut State<E>,
         state2: &mut State<E>,
         verbosity: Verbosity,
-    ) -> EosResult<f64>;
+    ) -> FeosResult<f64>;
 }
 
 impl TemperatureOrPressure for Temperature {
@@ -99,7 +99,7 @@ impl TemperatureOrPressure for Temperature {
         molefracs_init: Option<&Array1<f64>>,
         bubble: bool,
         options: (SolverOptions, SolverOptions),
-    ) -> EosResult<PhaseEquilibrium<E, 2>> {
+    ) -> FeosResult<PhaseEquilibrium<E, 2>> {
         // First use given initial pressure if applicable
         if let Some(p) = p_init {
             return PhaseEquilibrium::iterate_bubble_dew(
@@ -148,7 +148,7 @@ impl TemperatureOrPressure for Temperature {
         state1: &mut State<E>,
         state2: &mut State<E>,
         verbosity: Verbosity,
-    ) -> EosResult<f64> {
+    ) -> FeosResult<f64> {
         // calculate K = phi_1/phi_2 = x_2/x_1
         let ln_phi_1 = state1.ln_phi();
         let ln_phi_2 = state2.ln_phi();
@@ -192,7 +192,7 @@ impl TemperatureOrPressure for Temperature {
         state1: &mut State<E>,
         state2: &mut State<E>,
         verbosity: Verbosity,
-    ) -> EosResult<f64> {
+    ) -> FeosResult<f64> {
         let dmu_drho_1 = (state1.dmu_dni(Contributions::Total) * state1.volume)
             .to_reduced()
             .dot(&state1.molefracs);
@@ -291,7 +291,7 @@ impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
         molefracs_init: Option<&Array1<f64>>,
         bubble: bool,
         options: (SolverOptions, SolverOptions),
-    ) -> EosResult<PhaseEquilibrium<E, 2>> {
+    ) -> FeosResult<PhaseEquilibrium<E, 2>> {
         let temperature = t_init.expect("An initial temperature is required for the calculation of bubble/dew points at given pressure!");
         PhaseEquilibrium::iterate_bubble_dew(
             eos,
@@ -310,7 +310,7 @@ impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
         state1: &mut State<E>,
         state2: &mut State<E>,
         verbosity: Verbosity,
-    ) -> EosResult<f64> {
+    ) -> FeosResult<f64> {
         // calculate K = phi_1/phi_2 = x_2/x_1
         let ln_phi_1 = state1.ln_phi();
         let ln_phi_2 = state2.ln_phi();
@@ -357,7 +357,7 @@ impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
         state1: &mut State<E>,
         state2: &mut State<E>,
         verbosity: Verbosity,
-    ) -> EosResult<f64> {
+    ) -> FeosResult<f64> {
         let dmu_drho_1 = (state1.dmu_dni(Contributions::Total) * state1.volume)
             .to_reduced()
             .dot(&state1.molefracs);
@@ -453,7 +453,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         tp_init: Option<TP::Other>,
         vapor_molefracs: Option<&Array1<f64>>,
         options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         Self::bubble_dew_point(
             eos,
             temperature_or_pressure,
@@ -474,7 +474,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         tp_init: Option<TP::Other>,
         liquid_molefracs: Option<&Array1<f64>>,
         options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         Self::bubble_dew_point(
             eos,
             temperature_or_pressure,
@@ -494,7 +494,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         molefracs_init: Option<&Array1<f64>>,
         bubble: bool,
         options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         TP::bubble_dew_point(
             eos,
             tp_spec,
@@ -514,7 +514,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         molefracs_init: Option<&Array1<f64>>,
         bubble: bool,
         options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let (t, p) = tp_spec.temperature_pressure(tp_init);
         let [state1, state2] = if bubble {
             starting_x2_bubble(eos, t, p, molefracs_spec, molefracs_init)
@@ -529,7 +529,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         temperature: Temperature,
         molefracs_spec: &Array1<f64>,
         bubble: bool,
-    ) -> EosResult<(Pressure, Array1<f64>)> {
+    ) -> FeosResult<(Pressure, Array1<f64>)> {
         if bubble {
             Self::starting_pressure_ideal_gas_bubble(eos, temperature, molefracs_spec)
         } else {
@@ -541,7 +541,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         eos: &Arc<E>,
         temperature: Temperature,
         liquid_molefracs: &Array1<f64>,
-    ) -> EosResult<(Pressure, Array1<f64>)> {
+    ) -> FeosResult<(Pressure, Array1<f64>)> {
         let m = Moles::from_reduced(liquid_molefracs.to_owned());
         let density = 0.75 * eos.max_density(Some(&m))?;
         let liquid = State::new_nvt(eos, temperature, m.sum() / density, &m)?;
@@ -563,7 +563,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         eos: &Arc<E>,
         temperature: Temperature,
         vapor_molefracs: &Array1<f64>,
-    ) -> EosResult<(Pressure, Array1<f64>)> {
+    ) -> FeosResult<(Pressure, Array1<f64>)> {
         let mut p: Option<Pressure> = None;
 
         let mut x = vapor_molefracs.clone();
@@ -595,7 +595,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         eos: &Arc<E>,
         temperature: Temperature,
         molefracs: &Array1<f64>,
-    ) -> EosResult<Pressure> {
+    ) -> FeosResult<Pressure> {
         let moles = Moles::from_reduced(molefracs.clone());
         let [sp_v, sp_l] = State::spinodal(eos, temperature, Some(&moles), Default::default())?;
         let pv = sp_v.pressure(Contributions::Total);
@@ -610,7 +610,7 @@ fn starting_x2_bubble<E: Residual>(
     pressure: Pressure,
     liquid_molefracs: &Array1<f64>,
     vapor_molefracs: Option<&Array1<f64>>,
-) -> EosResult<[State<E>; 2]> {
+) -> FeosResult<[State<E>; 2]> {
     let liquid_state = State::new_npt(
         eos,
         temperature,
@@ -632,7 +632,7 @@ fn starting_x2_dew<E: Residual>(
     pressure: Pressure,
     vapor_molefracs: &Array1<f64>,
     liquid_molefracs: Option<&Array1<f64>>,
-) -> EosResult<[State<E>; 2]> {
+) -> FeosResult<[State<E>; 2]> {
     let vapor_state = State::new_npt(
         eos,
         temperature,
@@ -661,7 +661,7 @@ fn bubble_dew<E: Residual, TP: TemperatureOrPressure>(
     mut state2: State<E>,
     bubble: bool,
     options: (SolverOptions, SolverOptions),
-) -> EosResult<PhaseEquilibrium<E, 2>> {
+) -> FeosResult<PhaseEquilibrium<E, 2>> {
     let (options_inner, options_outer) = options;
 
     // initialize variables
@@ -670,7 +670,7 @@ fn bubble_dew<E: Residual, TP: TemperatureOrPressure>(
 
     if PhaseEquilibrium::is_trivial_solution(&state1, &state2) {
         log_iter!(options_outer.verbosity, "Trivial solution encountered!");
-        return Err(EosError::TrivialSolution);
+        return Err(FeosError::TrivialSolution);
     }
 
     log_iter!(
@@ -718,7 +718,7 @@ fn bubble_dew<E: Residual, TP: TemperatureOrPressure>(
 
         if PhaseEquilibrium::is_trivial_solution(&state1, &state2) {
             log_iter!(options_outer.verbosity, "Trivial solution encountered!");
-            return Err(EosError::TrivialSolution);
+            return Err(FeosError::TrivialSolution);
         }
 
         if err_out < options_outer.tol.unwrap_or(TOL_OUTER) {
@@ -740,7 +740,7 @@ fn bubble_dew<E: Residual, TP: TemperatureOrPressure>(
         }
     } else {
         // not converged, return EosError
-        Err(EosError::NotConverged(String::from("bubble-dew-iteration")))
+        Err(FeosError::NotConverged(String::from("bubble-dew-iteration")))
     }
 }
 
@@ -750,7 +750,7 @@ fn adjust_states<E: Residual>(
     state1: &mut State<E>,
     state2: &mut State<E>,
     moles_state2: Option<&Moles<Array1<f64>>>,
-) -> EosResult<()> {
+) -> FeosResult<()> {
     *state1 = State::new_npt(
         &state1.eos,
         temperature,
@@ -772,7 +772,7 @@ fn adjust_x2<E: Residual>(
     state1: &State<E>,
     state2: &mut State<E>,
     verbosity: Verbosity,
-) -> EosResult<f64> {
+) -> FeosResult<f64> {
     let x1 = &state1.molefracs;
     let ln_phi_1 = state1.ln_phi();
     let ln_phi_2 = state2.ln_phi();

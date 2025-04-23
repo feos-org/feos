@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::eos::association::{AssociationParameters, AssociationRecord, BinaryAssociationRecord};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::parameter::{Parameter, ParameterError, PureRecord};
+use feos_core::{parameter::{Parameter, PureRecord}, FeosResult};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;
@@ -241,7 +241,7 @@ impl Parameter for SaftVRMieParameters {
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
         binary_records: Option<Array2<SaftVRMieBinaryRecord>>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let n = pure_records.len();
 
         let mut molarweight = Array::zeros(n);

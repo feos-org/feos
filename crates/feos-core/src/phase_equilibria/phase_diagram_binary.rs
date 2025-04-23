@@ -1,7 +1,7 @@
 use super::bubble_dew::TemperatureOrPressure;
 use super::{PhaseDiagram, PhaseEquilibrium};
 use crate::equation_of_state::Residual;
-use crate::errors::{EosError, EosResult};
+use crate::errors::{FeosError, FeosResult};
 use crate::state::{Contributions, DensityInitialization, State, StateBuilder, TPSpec};
 use crate::{ReferenceSystem, SolverOptions};
 use ndarray::{arr1, arr2, concatenate, s, Array1, Array2, Axis};
@@ -24,7 +24,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         npoints: Option<usize>,
         x_lle: Option<(f64, f64)>,
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let npoints = npoints.unwrap_or(DEFAULT_POINTS);
 
         // calculate boiling temperature/vapor pressure of pure components
@@ -57,7 +57,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
         // look for supercritical components
         let (x_lim, vle_lim, bubble) = match vle_sat {
-            [None, None] => return Err(EosError::SuperCritical),
+            [None, None] => return Err(FeosError::SuperCritical),
             [Some(vle2), None] => {
                 let cp = State::critical_point_binary(
                     eos,
@@ -107,7 +107,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         x_lle: (f64, f64),
         vle_sat: [Option<PhaseEquilibrium<E, 2>>; 2],
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<(Vec<PhaseEquilibrium<E, 2>>, Vec<PhaseEquilibrium<E, 2>>)> {
+    ) -> FeosResult<(Vec<PhaseEquilibrium<E, 2>>, Vec<PhaseEquilibrium<E, 2>>)> {
         match vle_sat {
             [Some(vle2), Some(vle1)] => {
                 let states1 = iterate_vle(
@@ -132,7 +132,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
                 );
                 Ok((states1, states2))
             }
-            _ => Err(EosError::SuperCritical),
+            _ => Err(FeosError::SuperCritical),
         }
     }
 
@@ -149,7 +149,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         min_tp: TP::Other,
         max_tp: TP::Other,
         npoints: Option<usize>,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let npoints = npoints.unwrap_or(DEFAULT_POINTS);
         let mut states = Vec::with_capacity(npoints);
 
@@ -253,7 +253,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         npoints_vle: Option<usize>,
         npoints_lle: Option<usize>,
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<PhaseDiagramHetero<E>> {
+    ) -> FeosResult<PhaseDiagramHetero<E>> {
         let npoints_vle = npoints_vle.unwrap_or(DEFAULT_POINTS);
 
         // calculate pure components
@@ -333,7 +333,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
         tp_init: Option<TP::Other>,
         options: SolverOptions,
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let tp_init = tp_init.map(|tp_init| temperature_or_pressure.temperature_pressure(tp_init));
         match temperature_or_pressure.into() {
             TPSpec::Temperature(t) => PhaseEquilibrium::heteroazeotrope_t(
@@ -364,7 +364,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
         p_init: Option<Pressure>,
         options: SolverOptions,
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         // calculate initial values using bubble point
         let x1 = arr1(&[x_init.0, 1.0 - x_init.0]);
         let x2 = arr1(&[x_init.1, 1.0 - x_init.1]);
@@ -471,7 +471,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
                     || rho_l2.get(i).is_sign_negative()
                     || rho_v.get(i).is_sign_negative()
                 {
-                    return Err(EosError::IterationFailed(String::from(
+                    return Err(FeosError::IterationFailed(String::from(
                         "PhaseEquilibrium::heteroazeotrope_t",
                     )));
                 }
@@ -491,7 +491,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
                 .partial_density(&rho_v)
                 .build()?;
         }
-        Err(EosError::NotConverged(String::from(
+        Err(FeosError::NotConverged(String::from(
             "PhaseEquilibrium::heteroazeotrope_t",
         )))
     }
@@ -505,7 +505,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
         t_init: Option<Temperature>,
         options: SolverOptions,
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let p = pressure.to_reduced();
 
         // calculate initial values using bubble point
@@ -618,7 +618,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
                     || rho_v.get(i).is_sign_negative()
                     || t.is_sign_negative()
                 {
-                    return Err(EosError::IterationFailed(String::from(
+                    return Err(FeosError::IterationFailed(String::from(
                         "PhaseEquilibrium::heteroazeotrope_p",
                     )));
                 }
@@ -638,7 +638,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
                 .partial_density(&rho_v)
                 .build()?;
         }
-        Err(EosError::NotConverged(String::from(
+        Err(FeosError::NotConverged(String::from(
             "PhaseEquilibrium::heteroazeotrope_p",
         )))
     }

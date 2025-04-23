@@ -1,6 +1,6 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
-use crate::errors::{EosError, EosResult};
+use crate::errors::{FeosError, FeosResult};
 use crate::state::{Contributions, DensityInitialization, State, TPSpec};
 use crate::{ReferenceSystem, SolverOptions, TemperatureOrPressure, Verbosity};
 use ndarray::{arr1, Array1};
@@ -19,7 +19,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         temperature_or_pressure: TP,
         initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         match temperature_or_pressure.into() {
             TPSpec::Temperature(t) => Self::pure_t(eos, t, initial_state, options),
             TPSpec::Pressure(p) => Self::pure_p(eos, p, initial_state, options),
@@ -33,7 +33,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         temperature: Temperature,
         initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_PURE, TOL_PURE);
 
         // First use given initial state if applicable
@@ -60,7 +60,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         )
     }
 
-    fn iterate_pure_t(self, max_iter: usize, tol: f64, verbosity: Verbosity) -> EosResult<Self> {
+    fn iterate_pure_t(self, max_iter: usize, tol: f64, verbosity: Verbosity) -> FeosResult<Self> {
         let mut p_old = self.vapor().pressure(Contributions::Total);
         let [mut vapor, mut liquid] = self.0;
 
@@ -118,7 +118,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 
             // Emergency brake if the implementation of the EOS is not safe.
             if p_new.is_nan() {
-                return Err(EosError::IterationFailed("pure_t".to_owned()));
+                return Err(FeosError::IterationFailed("pure_t".to_owned()));
             }
 
             // Calculate Newton steps for the densities and update state.
@@ -127,7 +127,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
             liquid = State::new_pure(&liquid.eos, liquid.temperature, rho_l)?;
             vapor = State::new_pure(&vapor.eos, vapor.temperature, rho_v)?;
             if Self::is_trivial_solution(&vapor, &liquid) {
-                return Err(EosError::TrivialSolution);
+                return Err(FeosError::TrivialSolution);
             }
 
             // Check for convergence
@@ -152,7 +152,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
             }
             p_old = p_new;
         }
-        Err(EosError::NotConverged("pure_t".to_owned()))
+        Err(FeosError::NotConverged("pure_t".to_owned()))
     }
 
     /// Calculate a phase equilibrium for a pure component
@@ -162,7 +162,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         pressure: Pressure,
         initial_state: Option<&Self>,
         options: SolverOptions,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_PURE, TOL_PURE);
 
         // Initialize the phase equilibrium
@@ -252,29 +252,29 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
                 return Ok(vle);
             }
         }
-        Err(EosError::NotConverged("pure_p".to_owned()))
+        Err(FeosError::NotConverged("pure_p".to_owned()))
     }
 
-    fn init_pure_state(initial_state: &Self, temperature: Temperature) -> EosResult<Self> {
+    fn init_pure_state(initial_state: &Self, temperature: Temperature) -> FeosResult<Self> {
         let vapor = initial_state.vapor().update_temperature(temperature)?;
         let liquid = initial_state.liquid().update_temperature(temperature)?;
         Ok(Self([vapor, liquid]))
     }
 
-    fn init_pure_ideal_gas(eos: &Arc<E>, temperature: Temperature) -> EosResult<Self> {
+    fn init_pure_ideal_gas(eos: &Arc<E>, temperature: Temperature) -> FeosResult<Self> {
         let m = Moles::from_reduced(arr1(&[1.0]));
         let p = Self::starting_pressure_ideal_gas_bubble(eos, temperature, &arr1(&[1.0]))?.0;
         PhaseEquilibrium::new_npt(eos, temperature, p, &m, &m)?.check_trivial_solution()
     }
 
-    fn init_pure_spinodal(eos: &Arc<E>, temperature: Temperature) -> EosResult<Self> {
+    fn init_pure_spinodal(eos: &Arc<E>, temperature: Temperature) -> FeosResult<Self> {
         let p = Self::starting_pressure_spinodal(eos, temperature, &arr1(&[1.0]))?;
         let m = Moles::from_reduced(arr1(&[1.0]));
         PhaseEquilibrium::new_npt(eos, temperature, p, &m, &m)
     }
 
     /// Initialize a new VLE for a pure substance for a given pressure.
-    fn init_pure_p(eos: &Arc<E>, pressure: Pressure) -> EosResult<Self> {
+    fn init_pure_p(eos: &Arc<E>, pressure: Pressure) -> FeosResult<Self> {
         let trial_temperatures = [
             Temperature::from_reduced(300.0),
             Temperature::from_reduced(500.0),
@@ -294,7 +294,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 
         let cp = State::critical_point(eos, None, None, SolverOptions::default())?;
         if pressure > cp.pressure(Contributions::Total) {
-            return Err(EosError::SuperCritical);
+            return Err(FeosError::SuperCritical);
         };
         if let Some(mut e) = vle {
             if e.vapor().density < cp.density {
@@ -337,7 +337,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
                     return Ok(e);
                 }
             }
-            Err(EosError::IterationFailed(
+            Err(FeosError::IterationFailed(
                 "new_init_p: could not find proper initial state".to_owned(),
             ))
         } else {

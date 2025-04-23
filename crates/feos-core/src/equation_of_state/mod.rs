@@ -1,4 +1,4 @@
-use crate::EosResult;
+use crate::FeosResult;
 use ndarray::{Array1, ScalarOperand};
 use quantity::{
     Diffusivity, MolarWeight, Moles, Temperature, ThermalConductivity, Viscosity, Volume,
@@ -105,11 +105,11 @@ impl<I: IdealGas, R: Residual + EntropyScaling> EntropyScaling for EquationOfSta
         temperature: Temperature,
         volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Viscosity> {
+    ) -> FeosResult<Viscosity> {
         self.residual
             .viscosity_reference(temperature, volume, moles)
     }
-    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
         self.residual.viscosity_correlation(s_res, x)
     }
     fn diffusion_reference(
@@ -117,11 +117,11 @@ impl<I: IdealGas, R: Residual + EntropyScaling> EntropyScaling for EquationOfSta
         temperature: Temperature,
         volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Diffusivity> {
+    ) -> FeosResult<Diffusivity> {
         self.residual
             .diffusion_reference(temperature, volume, moles)
     }
-    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
         self.residual.diffusion_correlation(s_res, x)
     }
     fn thermal_conductivity_reference(
@@ -129,11 +129,11 @@ impl<I: IdealGas, R: Residual + EntropyScaling> EntropyScaling for EquationOfSta
         temperature: Temperature,
         volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<ThermalConductivity> {
+    ) -> FeosResult<ThermalConductivity> {
         self.residual
             .thermal_conductivity_reference(temperature, volume, moles)
     }
-    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
         self.residual.thermal_conductivity_correlation(s_res, x)
     }
 }

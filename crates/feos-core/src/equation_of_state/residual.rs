@@ -1,5 +1,5 @@
 use super::Components;
-use crate::{EosError, EosResult, ReferenceSystem, StateHD};
+use crate::{FeosError, FeosResult, ReferenceSystem, StateHD};
 use ndarray::ScalarOperand;
 use ndarray::prelude::*;
 use num_dual::*;
@@ -49,7 +49,7 @@ pub trait Residual: Components + Send + Sync {
     /// of components of the equation of state. For a pure component, however,
     /// no moles need to be provided. In that case, it is set to the constant
     /// reference value.
-    fn validate_moles(&self, moles: Option<&Moles<Array1<f64>>>) -> EosResult<Moles<Array1<f64>>> {
+    fn validate_moles(&self, moles: Option<&Moles<Array1<f64>>>) -> FeosResult<Moles<Array1<f64>>> {
         let l = moles.map_or(1, |m| m.len());
         if self.components() == l {
             match moles {
@@ -57,7 +57,7 @@ pub trait Residual: Components + Send + Sync {
                 None => Ok(Moles::from_reduced(Array::ones(1))),
             }
         } else {
-            Err(EosError::IncompatibleComponents(self.components(), l))
+            Err(FeosError::IncompatibleComponents(self.components(), l))
         }
     }
 
@@ -67,7 +67,7 @@ pub trait Residual: Components + Send + Sync {
     /// equilibria and other iterations. It is not explicitly meant to
     /// be a mathematical limit for the density (if those exist in the
     /// equation of state anyways).
-    fn max_density(&self, moles: Option<&Moles<Array1<f64>>>) -> EosResult<Density> {
+    fn max_density(&self, moles: Option<&Moles<Array1<f64>>>) -> FeosResult<Density> {
         let mr = self.validate_moles(moles)?.to_reduced();
         Ok(Density::from_reduced(self.compute_max_density(&mr)))
     }
@@ -77,7 +77,7 @@ pub trait Residual: Components + Send + Sync {
         &self,
         temperature: Temperature,
         moles: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<Quot<f64, Density>> {
+    ) -> FeosResult<Quot<f64, Density>> {
         let mr = self.validate_moles(moles)?;
         let x = (&mr / mr.sum()).into_value();
         let mut rho = HyperDual64::zero();
@@ -95,7 +95,7 @@ pub trait Residual: Components + Send + Sync {
         &self,
         temperature: Temperature,
         moles: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<<<f64 as Div<Density>>::Output as Div<Density>>::Output> {
+    ) -> FeosResult<<<f64 as Div<Density>>::Output as Div<Density>>::Output> {
         let mr = self.validate_moles(moles)?;
         let x = (&mr / mr.sum()).into_value();
         let rho = Dual3_64::zero().derivative();
@@ -111,7 +111,7 @@ pub trait Residual: Components + Send + Sync {
         &self,
         temperature: Temperature,
         moles: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<<<f64 as Div<Density>>::Output as Div<Temperature>>::Output> {
+    ) -> FeosResult<<<f64 as Div<Density>>::Output as Div<Temperature>>::Output> {
         let mr = self.validate_moles(moles)?;
         let x = (&mr / mr.sum()).into_value();
         let mut rho = HyperDual::zero();
@@ -130,7 +130,7 @@ pub trait Residual: Components + Send + Sync {
         &self,
         temperature: Temperature,
         moles: Option<&Moles<Array1<f64>>>,
-    ) -> EosResult<
+    ) -> FeosResult<
         <<<f64 as Div<Density>>::Output as Div<Density>>::Output as Div<Temperature>>::Output,
     > {
         let mr = self.validate_moles(moles)?;
@@ -151,22 +151,22 @@ pub trait EntropyScaling {
         temperature: Temperature,
         volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Viscosity>;
-    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
+    ) -> FeosResult<Viscosity>;
+    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64>;
     fn diffusion_reference(
         &self,
         temperature: Temperature,
         volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Diffusivity>;
-    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
+    ) -> FeosResult<Diffusivity>;
+    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64>;
     fn thermal_conductivity_reference(
         &self,
         temperature: Temperature,
         volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<ThermalConductivity>;
-    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
+    ) -> FeosResult<ThermalConductivity>;
+    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64>;
 }
 
 /// Dummy implementation for [EquationOfState](super::EquationOfState)s that only contain an ideal gas contribution.

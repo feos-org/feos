@@ -2,7 +2,7 @@
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 
 use feos_core::parameter::*;
-use feos_core::{Components, EosResult, IdealGas, ReferenceSystem};
+use feos_core::{Components, FeosResult, IdealGas, ReferenceSystem};
 use ndarray::{Array1, Array2};
 use num_dual::*;
 use quantity::{MolarEntropy, Temperature};
@@ -43,7 +43,7 @@ impl fmt::Display for JobackRecord {
 /// Implementation of the combining rules as described in
 /// [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 impl<T: CountType> FromSegments<T> for JobackRecord {
-    fn from_segments(segments: &[(Self, T)]) -> Result<Self, ParameterError> {
+    fn from_segments(segments: &[(Self, T)]) -> FeosResult<Self> {
         let mut a = -37.93;
         let mut b = 0.21;
         let mut c = -3.91e-4;
@@ -78,7 +78,7 @@ impl Parameter for Joback {
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
         _binary_records: Option<Array2<Self::Binary>>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         Ok(Self(pure_records))
     }
 
@@ -93,7 +93,7 @@ impl Joback {
         &self,
         temperature: Temperature,
         molefracs: &Array1<f64>,
-    ) -> EosResult<MolarEntropy> {
+    ) -> FeosResult<MolarEntropy> {
         let t = temperature.to_reduced();
         let c_p: f64 = molefracs
             .iter()
@@ -170,7 +170,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn paper_example() -> EosResult<()> {
+    fn paper_example() -> FeosResult<()> {
         let segments_json = r#"[
         {
           "identifier": "-Cl",
@@ -274,7 +274,7 @@ mod tests {
     }
 
     #[test]
-    fn c_p_comparison() -> EosResult<()> {
+    fn c_p_comparison() -> FeosResult<()> {
         let record1 = PureRecord::new(
             Identifier::default(),
             1.0,

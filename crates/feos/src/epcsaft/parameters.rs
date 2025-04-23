@@ -2,7 +2,8 @@ use crate::association::{
     AssociationParameters, AssociationRecord, AssociationStrength, BinaryAssociationRecord,
 };
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::parameter::{FromSegments, Parameter, ParameterError, PureRecord};
+use feos_core::parameter::{FromSegments, Parameter, PureRecord};
+use feos_core::{FeosError, FeosResult};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;
@@ -34,7 +35,7 @@ pub struct ElectrolytePcSaftRecord {
 }
 
 impl FromSegments<f64> for ElectrolytePcSaftRecord {
-    fn from_segments(segments: &[(Self, f64)]) -> Result<Self, ParameterError> {
+    fn from_segments(segments: &[(Self, f64)]) -> FeosResult<Self> {
         let mut m = 0.0;
         let mut sigma3 = 0.0;
         let mut epsilon_k = 0.0;
@@ -90,7 +91,7 @@ impl FromSegments<f64> for ElectrolytePcSaftRecord {
 }
 
 impl FromSegments<usize> for ElectrolytePcSaftRecord {
-    fn from_segments(segments: &[(Self, usize)]) -> Result<Self, ParameterError> {
+    fn from_segments(segments: &[(Self, usize)]) -> FeosResult<Self> {
         // We do not allow more than a single segment for q, mu, kappa_ab, epsilon_k_ab
         let segments: Vec<_> = segments
             .iter()
@@ -337,7 +338,7 @@ impl Parameter for ElectrolytePcSaftParameters {
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
         binary_records: Option<Array2<Self::Binary>>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let n = pure_records.len();
 
         let mut molarweight = Array::zeros(n);
@@ -403,9 +404,10 @@ impl Parameter for ElectrolytePcSaftParameters {
                 for j in 0..n {
                     let temp_kij = binary_records[[i, j]].k_ij.clone();
                     if temp_kij.len() > 4 {
-                        return Err(ParameterError::IncompatibleParameters(
-                            format!("Binary interaction for component {} with {} is parametrized with more than 4 k_ij coefficients.", i, j),
-                        ));
+                        return Err(FeosError::IncompatibleParameters(format!(
+                            "Binary interaction for component {} with {} is parametrized with more than 4 k_ij coefficients.",
+                            i, j
+                        )));
                     } else {
                         (0..temp_kij.len()).for_each(|k| {
                             k_ij[[i, j]][k] = temp_kij[k];
@@ -446,7 +448,7 @@ impl Parameter for ElectrolytePcSaftParameters {
                 .enumerate()
                 .any(|(i, record)| record.is_none() && z[i] == 0.0)
         {
-            return Err(ParameterError::IncompatibleParameters(
+            return Err(FeosError::IncompatibleParameters(
                 "Provide permittivity record for all solvent components.".to_string(),
             ));
         }
@@ -467,7 +469,7 @@ impl Parameter for ElectrolytePcSaftParameters {
 
         // check if modeltypes contains a mix of 1 and 2
         if modeltypes.iter().any(|&x| x == 1) && modeltypes.iter().any(|&x| x == 2) {
-            return Err(ParameterError::IncompatibleParameters(
+            return Err(FeosError::IncompatibleParameters(
                 "Inconsistent models for permittivity.".to_string(),
             ));
         }
@@ -479,7 +481,7 @@ impl Parameter for ElectrolytePcSaftParameters {
                 {
                     // check if length of data is greater than 0
                     if data.is_empty() {
-                        return Err(ParameterError::IncompatibleParameters(
+                        return Err(FeosError::IncompatibleParameters(
                                 "Experimental data for permittivity must contain at least one data point.".to_string(),
                             ));
                     }

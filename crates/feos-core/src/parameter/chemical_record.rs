@@ -1,6 +1,6 @@
-use super::ParameterError;
 use super::identifier::Identifier;
 use super::segment::SegmentRecord;
+use crate::{FeosError, FeosResult};
 use num_traits::NumAssign;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -138,7 +138,7 @@ pub trait SegmentCount {
     fn segment_map<M: Clone>(
         &self,
         segment_records: &[SegmentRecord<M>],
-    ) -> Result<HashMap<SegmentRecord<M>, Self::Count>, ParameterError> {
+    ) -> FeosResult<HashMap<SegmentRecord<M>, Self::Count>> {
         let count = self.segment_count();
         let queried: HashSet<_> = count.keys().cloned().collect();
         let mut segments: HashMap<String, SegmentRecord<M>> = segment_records
@@ -149,7 +149,7 @@ pub trait SegmentCount {
         if !queried.is_subset(&available) {
             let missing: Vec<String> = queried.difference(&available).cloned().collect();
             let msg = format!("{:?}", missing);
-            return Err(ParameterError::ComponentsNotFound(msg));
+            return Err(FeosError::ComponentsNotFound(msg));
         };
         Ok(count
             .iter()

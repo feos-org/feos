@@ -10,7 +10,7 @@ use std::{borrow::Cow, sync::Arc};
 #[cfg(feature = "dft")]
 mod dft;
 #[cfg(feature = "dft")]
-pub use dft::{FMTContribution, FMTFunctional, FMTVersion};
+pub use dft::{FMTContribution, FMTFunctional, FMTVersion, HardSphereParameters};
 
 /// Different monomer shapes for FMT and BMCSL.
 pub enum MonomerShape<'a, D> {

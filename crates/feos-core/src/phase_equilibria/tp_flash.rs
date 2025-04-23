@@ -1,6 +1,6 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
-use crate::errors::{EosError, EosResult};
+use crate::errors::{FeosError, FeosResult};
 use crate::state::{Contributions, DensityInitialization, State};
 use crate::{SolverOptions, Verbosity};
 use ndarray::*;
@@ -26,7 +26,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         State::new_npt(
             eos,
             temperature,
@@ -51,7 +51,7 @@ impl<E: Residual> State<E> {
         initial_state: Option<&PhaseEquilibrium<E, 2>>,
         options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
-    ) -> EosResult<PhaseEquilibrium<E, 2>> {
+    ) -> FeosResult<PhaseEquilibrium<E, 2>> {
         // initialization
         if let Some(init) = initial_state {
             let vle = self.tp_flash_(
@@ -83,7 +83,7 @@ impl<E: Residual> State<E> {
         mut new_vle_state: PhaseEquilibrium<E, 2>,
         options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
-    ) -> EosResult<PhaseEquilibrium<E, 2>> {
+    ) -> FeosResult<PhaseEquilibrium<E, 2>> {
         // set options
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_TP, TOL_TP);
 
@@ -191,7 +191,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         tol: f64,
         verbosity: Verbosity,
         non_volatile_components: &Option<Vec<usize>>,
-    ) -> EosResult<()> {
+    ) -> FeosResult<()> {
         for _ in 0..max_iter {
             // do 5 successive substitution steps and check for convergence
             let mut k_vec = Array::zeros((4, self.vapor().eos.components()));
@@ -245,7 +245,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
                 *self = trial_vle_state;
             }
         }
-        Err(EosError::NotConverged("TP flash".to_owned()))
+        Err(FeosError::NotConverged("TP flash".to_owned()))
     }
 
     #[expect(clippy::too_many_arguments)]
@@ -258,7 +258,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         abs_tol: f64,
         verbosity: Verbosity,
         non_volatile_components: &Option<Vec<usize>>,
-    ) -> EosResult<bool> {
+    ) -> FeosResult<bool> {
         for i in 0..iterations {
             let ln_phi_v = self.vapor().ln_phi();
             let ln_phi_l = self.liquid().ln_phi();
@@ -309,7 +309,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         Ok(false)
     }
 
-    fn update_states(&mut self, feed_state: &State<E>, k: &Array1<f64>) -> EosResult<()> {
+    fn update_states(&mut self, feed_state: &State<E>, k: &Array1<f64>) -> FeosResult<()> {
         // calculate vapor phase fraction using Rachford-Rice algorithm
         let mut beta = self.vapor_phase_fraction();
         beta = rachford_rice(&feed_state.molefracs, k, Some(beta))?;
@@ -322,7 +322,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         Ok(())
     }
 
-    fn vle_init_stability(feed_state: &State<E>) -> EosResult<(Self, Option<Self>)> {
+    fn vle_init_stability(feed_state: &State<E>) -> FeosResult<(Self, Option<Self>)> {
         let mut stable_states = feed_state.stability_analysis(SolverOptions::default())?;
         let state1 = stable_states.pop();
         let state2 = stable_states.pop();
@@ -334,12 +334,12 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
                 Ok((init1, None))
             }
         } else {
-            Err(EosError::NoPhaseSplit)
+            Err(FeosError::NoPhaseSplit)
         }
     }
 }
 
-fn rachford_rice(feed: &Array1<f64>, k: &Array1<f64>, beta_in: Option<f64>) -> EosResult<f64> {
+fn rachford_rice(feed: &Array1<f64>, k: &Array1<f64>, beta_in: Option<f64>) -> FeosResult<f64> {
     const MAX_ITER: usize = 10;
     const ABS_TOL: f64 = 1e-6;
 
@@ -348,7 +348,7 @@ fn rachford_rice(feed: &Array1<f64>, k: &Array1<f64>, beta_in: Option<f64>) -> E
         if (feed * k).sum() > 1.0 && (feed / k).iter().filter(|x| !x.is_nan()).sum::<f64>() > 1.0 {
             (0.0, 1.0)
         } else {
-            return Err(EosError::IterationFailed(String::from("rachford_rice")));
+            return Err(FeosError::IterationFailed(String::from("rachford_rice")));
         };
 
     // look for tighter bounds

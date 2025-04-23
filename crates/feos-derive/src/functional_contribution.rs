@@ -59,7 +59,7 @@ fn impl_functional_contribution(
                 &self,
                 temperature: N,
                 weighted_densities: ndarray::ArrayView2<N>,
-            ) -> EosResult<Array1<N>> {
+            ) -> FeosResult<Array1<N>> {
                 match self {
                     #(#helmholtz_energy_density,)*
                 }

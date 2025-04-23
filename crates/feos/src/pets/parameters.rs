@@ -1,5 +1,6 @@
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::parameter::{Parameter, ParameterError, PureRecord};
+use feos_core::parameter::{Parameter, PureRecord};
+use feos_core::FeosResult;
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
@@ -129,7 +130,7 @@ impl Parameter for PetsParameters {
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
         binary_records: Option<Array2<PetsBinaryRecord>>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let n = pure_records.len();
 
         let mut molarweight = Array::zeros(n);

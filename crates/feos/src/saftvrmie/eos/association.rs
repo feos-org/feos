@@ -1,7 +1,7 @@
 //! Generic implementation of the SAFT association contribution
 //! that can be used across models.
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::{EosError, EosResult, StateHD};
+use feos_core::{FeosError, FeosResult, StateHD};
 use ndarray::*;
 use num_dual::linalg::{norm, LU};
 use num_dual::*;
@@ -478,7 +478,7 @@ impl<P: HardSphereProperties> Association<P> {
         max_iter: usize,
         tol: f64,
         x0: Option<&mut Array1<f64>>,
-    ) -> EosResult<D> {
+    ) -> FeosResult<D> {
         // check if density is close to 0
         if rho.sum().re() < f64::EPSILON {
             if let Some(x0) = x0 {
@@ -508,7 +508,7 @@ impl<P: HardSphereProperties> Association<P> {
                 break;
             }
             if k == max_iter - 1 {
-                return Err(EosError::NotConverged("Cross association".into()));
+                return Err(FeosError::NotConverged("Cross association".into()));
             }
         }
 
@@ -534,7 +534,7 @@ impl<P: HardSphereProperties> Association<P> {
         delta_cc: &Array2<D>,
         rho: &ArrayBase<S, Ix1>,
         tol: f64,
-    ) -> EosResult<bool> {
+    ) -> FeosResult<bool> {
         let nassoc = x.len();
         // gradient
         let mut g = x.map(D::recip);

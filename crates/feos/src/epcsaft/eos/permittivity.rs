@@ -1,5 +1,4 @@
-use feos_core::parameter::ParameterError;
-use feos_core::{EosError, StateHD};
+use feos_core::{FeosError, FeosResult, StateHD};
 use ndarray::Array1;
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
@@ -56,7 +55,7 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
         state: &StateHD<D>,
         parameters: &ElectrolytePcSaftParameters,
         epcsaft_variant: &ElectrolytePcSaftVariants,
-    ) -> Result<Self, EosError> {
+    ) -> FeosResult<Self> {
         // Set permittivity to an arbitrary value of 1 if system contains no ions
         // Ionic and Born contributions will be zero anyways
         if parameters.nionic == 0 {
@@ -78,11 +77,8 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
                 .iter()
                 .any(|record| record.is_none())
             {
-                return Err(EosError::ParameterError(
-                    ParameterError::IncompatibleParameters(
-                        "Provide permittivities for all components for ePC-SAFT advanced."
-                            .to_string(),
-                    ),
+                return Err(FeosError::IncompatibleParameters(
+                    "Provide permittivities for all components for ePC-SAFT advanced.".to_string(),
                 ));
             }
 
@@ -136,10 +132,8 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
 
         if let ElectrolytePcSaftVariants::Revised = epcsaft_variant {
             if parameters.nsolvent > 1 {
-                return Err(EosError::ParameterError(
-                    ParameterError::IncompatibleParameters(
-                        "ePC-SAFT revised cannot be used for more than 1 solvent.".to_string(),
-                    ),
+                return Err(FeosError::IncompatibleParameters(
+                    "ePC-SAFT revised cannot be used for more than 1 solvent.".to_string(),
                 ));
             };
             let permittivity = match parameters.permittivity[parameters.solvent_comp[0]]
@@ -166,9 +160,8 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
 
             return Ok(Self { permittivity });
         };
-        Err(EosError::ParameterError(
-            ParameterError::IncompatibleParameters("Permittivity computation failed".to_string()),
-        ))
+        Err(FeosError::IncompatibleParameters("Permittivity computation failed".to_string()),
+        )
     }
 
     pub fn pure_from_experimental_data(data: &[(f64, f64)], temperature: D) -> Self {

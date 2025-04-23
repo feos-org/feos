@@ -1,5 +1,6 @@
 //! Structures and traits that can be used to build model parameters for equations of state.
 
+use crate::errors::*;
 use indexmap::{IndexMap, IndexSet};
 use ndarray::Array2;
 use serde::de::DeserializeOwned;
@@ -7,10 +8,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
 use std::fs::File;
-use std::io;
 use std::io::BufReader;
 use std::path::Path;
-use thiserror::Error;
 
 mod chemical_record;
 mod identifier;
@@ -38,10 +37,10 @@ where
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
         binary_records: Option<Array2<Self::Binary>>,
-    ) -> Result<Self, ParameterError>;
+    ) -> FeosResult<Self>;
 
     /// Creates parameters for a pure component from a pure record.
-    fn new_pure(pure_record: PureRecord<Self::Pure>) -> Result<Self, ParameterError> {
+    fn new_pure(pure_record: PureRecord<Self::Pure>) -> FeosResult<Self> {
         Self::from_records(vec![pure_record], None)
     }
 
@@ -50,7 +49,7 @@ where
     fn new_binary(
         pure_records: Vec<PureRecord<Self::Pure>>,
         binary_record: Option<Self::Binary>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let binary_record = binary_record.map(|br| {
             Array2::from_shape_fn([2, 2], |(i, j)| {
                 if i == j {
@@ -65,7 +64,7 @@ where
 
     /// Creates parameters from model records with default values for the molar weight,
     /// identifiers, and binary interaction parameters.
-    fn from_model_records(model_records: Vec<Self::Pure>) -> Result<Self, ParameterError> {
+    fn from_model_records(model_records: Vec<Self::Pure>) -> FeosResult<Self> {
         let pure_records = model_records
             .into_iter()
             .map(|r| PureRecord::new(Default::default(), Default::default(), r))
@@ -132,7 +131,7 @@ where
         file_pure: P,
         file_binary: Option<P>,
         identifier_option: IdentifierOption,
-    ) -> Result<Self, ParameterError>
+    ) -> FeosResult<Self>
     where
         P: AsRef<Path>,
     {
@@ -144,7 +143,7 @@ where
         input: &[(Vec<&str>, P)],
         file_binary: Option<P>,
         identifier_option: IdentifierOption,
-    ) -> Result<Self, ParameterError>
+    ) -> FeosResult<Self>
     where
         P: AsRef<Path>,
     {
@@ -162,7 +161,7 @@ where
 
         // check if there are duplicates
         if queried.len() != nsubstances {
-            return Err(ParameterError::IncompatibleParameters(
+            return Err(FeosError::IncompatibleParameters(
                 "A substance was defined more than once.".to_string(),
             ));
         }
@@ -198,7 +197,7 @@ where
         chemical_records: Vec<C>,
         segment_records: Vec<SegmentRecord<Self::Pure>>,
         binary_segment_records: Option<Vec<BinarySegmentRecord>>,
-    ) -> Result<Self, ParameterError>
+    ) -> FeosResult<Self>
     where
         Self::Pure: FromSegments<C::Count>,
         Self::Binary: FromSegmentsBinary<C::Count>,
@@ -265,7 +264,7 @@ where
         file_segments: P,
         file_binary: Option<P>,
         identifier_option: IdentifierOption,
-    ) -> Result<Self, ParameterError>
+    ) -> FeosResult<Self>
     where
         P: AsRef<Path>,
         Self::Pure: FromSegments<usize>,
@@ -295,7 +294,7 @@ where
         if !queried.is_subset(&available) {
             let missing: Vec<_> = queried.difference(&available).cloned().collect();
             let msg = format!("{:?}", missing);
-            return Err(ParameterError::ComponentsNotFound(msg));
+            return Err(FeosError::ComponentsNotFound(msg));
         };
 
         // collect all pure records that were queried
@@ -312,7 +311,7 @@ where
         let binary_records = file_binary
             .map(|file_binary| {
                 let reader = BufReader::new(File::open(file_binary)?);
-                let binary_records: Result<Vec<BinarySegmentRecord>, ParameterError> =
+                let binary_records: FeosResult<Vec<BinarySegmentRecord>> =
                     Ok(serde_json::from_reader(reader)?);
                 binary_records
             })
@@ -350,7 +349,7 @@ where
 pub struct NoBinaryModelRecord;
 
 impl<T: Copy> FromSegmentsBinary<T> for NoBinaryModelRecord {
-    fn from_segments_binary(_segments: &[(f64, T, T)]) -> Result<Self, ParameterError> {
+    fn from_segments_binary(_segments: &[(f64, T, T)]) -> FeosResult<Self> {
         Ok(Self)
     }
 }
@@ -371,7 +370,7 @@ pub trait ParameterHetero: Sized {
         chemical_records: Vec<C>,
         segment_records: Vec<SegmentRecord<Self::Pure>>,
         binary_segment_records: Option<Vec<BinarySegmentRecord>>,
-    ) -> Result<Self, ParameterError>;
+    ) -> FeosResult<Self>;
 
     /// Return the original records that were used to construct the parameters.
     #[expect(clippy::type_complexity)]
@@ -390,7 +389,7 @@ pub trait ParameterHetero: Sized {
         file_segments: P,
         file_binary: Option<P>,
         identifier_option: IdentifierOption,
-    ) -> Result<Self, ParameterError>
+    ) -> FeosResult<Self>
     where
         P: AsRef<Path>,
         ChemicalRecord: Into<Self::Chemical>,
@@ -420,7 +419,7 @@ pub trait ParameterHetero: Sized {
             .collect();
         if !queried.is_subset(&available) {
             let missing: Vec<_> = queried.difference(&available).cloned().collect();
-            return Err(ParameterError::ComponentsNotFound(format!("{:?}", missing)));
+            return Err(FeosError::ComponentsNotFound(format!("{:?}", missing)));
         };
 
         // Collect all pure records that were queried
@@ -437,7 +436,7 @@ pub trait ParameterHetero: Sized {
         let binary_records = file_binary
             .map(|file_binary| {
                 let reader = BufReader::new(File::open(file_binary)?);
-                let binary_records: Result<Vec<BinarySegmentRecord>, ParameterError> =
+                let binary_records: FeosResult<Vec<BinarySegmentRecord>> =
                     Ok(serde_json::from_reader(reader)?);
                 binary_records
             })
@@ -460,25 +459,4 @@ pub trait ParameterHetero: Sized {
         )
         .unwrap()
     }
-}
-
-/// Error type for incomplete parameter information and IO problems.
-#[derive(Error, Debug)]
-pub enum ParameterError {
-    #[error("{0}")]
-    Error(String),
-    #[error(transparent)]
-    FileIO(#[from] io::Error),
-    #[error(transparent)]
-    Serde(#[from] serde_json::Error),
-    #[error("The following component(s) were not found: {0}")]
-    ComponentsNotFound(String),
-    #[error(
-        "The identifier '{0}' is not known. ['cas', 'name', 'iupacname', 'smiles', inchi', 'formula']"
-    )]
-    IdentifierNotFound(String),
-    #[error("Information missing.")]
-    InsufficientInformation,
-    #[error("Incompatible parameters: {0}")]
-    IncompatibleParameters(String),
 }

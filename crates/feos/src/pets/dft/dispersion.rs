@@ -1,7 +1,7 @@
 use crate::hard_sphere::HardSphereProperties;
 use crate::pets::eos::dispersion::{A, B};
 use crate::pets::parameters::PetsParameters;
-use feos_core::EosError;
+use feos_core::FeosError;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::DualNum;
@@ -56,7 +56,7 @@ impl FunctionalContribution for AttractiveFunctional {
         &self,
         temperature: N,
         density: ArrayView2<N>,
-    ) -> Result<Array1<N>, EosError> {
+    ) -> Result<Array1<N>, FeosError> {
         // auxiliary variables
         let p = &self.parameters;
         let n = p.sigma.len();

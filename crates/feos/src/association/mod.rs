@@ -1,9 +1,9 @@
 //! Generic implementation of the SAFT association contribution
 //! that can be used across models.
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::{EosError, EosResult, StateHD};
+use feos_core::{FeosError, FeosResult, StateHD};
 use ndarray::*;
-use num_dual::linalg::{norm, LU};
+use num_dual::linalg::{LU, norm};
 use num_dual::*;
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
@@ -399,7 +399,7 @@ impl<P: AssociationStrength> Association<P> {
         max_iter: usize,
         tol: f64,
         x0: Option<&mut Array1<f64>>,
-    ) -> EosResult<D> {
+    ) -> FeosResult<D> {
         // check if density is close to 0
         if rho.sum().re() < f64::EPSILON {
             if let Some(x0) = x0 {
@@ -429,7 +429,7 @@ impl<P: AssociationStrength> Association<P> {
                 break;
             }
             if k == max_iter - 1 {
-                return Err(EosError::NotConverged("Cross association".into()));
+                return Err(FeosError::NotConverged("Cross association".into()));
             }
         }
 
@@ -455,7 +455,7 @@ impl<P: AssociationStrength> Association<P> {
         delta_cc: &Array2<D>,
         rho: &ArrayBase<S, Ix1>,
         tol: f64,
-    ) -> EosResult<bool> {
+    ) -> FeosResult<bool> {
         let nassoc = x.len();
         // gradient
         let mut g = x.map(D::recip);
@@ -524,11 +524,11 @@ impl<P: AssociationStrength> Association<P> {
 mod tests_pcsaft {
     use super::*;
     use crate::hard_sphere::HardSphereProperties;
-    use crate::pcsaft::parameters::utils::water_parameters;
-    use crate::pcsaft::parameters::PcSaftAssociationRecord;
     use crate::pcsaft::PcSaftParameters;
+    use crate::pcsaft::parameters::PcSaftAssociationRecord;
+    use crate::pcsaft::parameters::utils::water_parameters;
     use approx::assert_relative_eq;
-    use feos_core::parameter::{Parameter, ParameterError};
+    use feos_core::parameter::Parameter;
 
     fn record(
         kappa_ab: f64,
@@ -622,7 +622,7 @@ mod tests_pcsaft {
     }
 
     #[test]
-    fn helmholtz_energy_cross_3b() -> Result<(), ParameterError> {
+    fn helmholtz_energy_cross_3b() -> FeosResult<()> {
         let mut params = water_parameters();
         let mut record = params.pure_records.pop().unwrap();
         let mut association_record = record.model_record.association_record.unwrap();
@@ -653,7 +653,7 @@ mod tests_gc_pcsaft {
     use feos_core::ReferenceSystem;
     use ndarray::arr1;
     use num_dual::Dual64;
-    use quantity::{Pressure, METER, MOL, PASCAL};
+    use quantity::{METER, MOL, PASCAL, Pressure};
     use typenum::P3;
 
     #[test]

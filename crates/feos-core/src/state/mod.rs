@@ -9,7 +9,7 @@
 use crate::ReferenceSystem;
 use crate::density_iteration::density_iteration;
 use crate::equation_of_state::{IdealGas, Residual};
-use crate::errors::{EosError, EosResult};
+use crate::errors::{FeosError, FeosResult};
 use cache::Cache;
 use ndarray::prelude::*;
 use num_dual::*;
@@ -227,7 +227,7 @@ impl<E: Residual> State<E> {
         temperature: Temperature,
         volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         eos.validate_moles(Some(moles))?;
         validate(temperature, volume, moles)?;
 
@@ -271,7 +271,7 @@ impl<E: Residual> State<E> {
     /// This function will perform a validation of the given properties, i.e. test for signs
     /// and if values are finite. It will **not** validate physics, i.e. if the resulting
     /// densities are below the maximum packing fraction.
-    pub fn new_pure(eos: &Arc<E>, temperature: Temperature, density: Density) -> EosResult<Self> {
+    pub fn new_pure(eos: &Arc<E>, temperature: Temperature, density: Density) -> FeosResult<Self> {
         let moles = Moles::from_reduced(arr1(&[1.0]));
         Self::new_nvt(eos, temperature, Moles::from_reduced(1.0) / density, &moles)
     }
@@ -301,7 +301,7 @@ impl<E: Residual> State<E> {
         molefracs: Option<&Array1<f64>>,
         pressure: Option<Pressure>,
         density_initialization: DensityInitialization,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         Self::_new(
             eos,
             temperature,
@@ -314,7 +314,7 @@ impl<E: Residual> State<E> {
             pressure,
             density_initialization,
         )?
-        .map_err(|_| EosError::UndeterminedState(String::from("Missing input parameters.")))
+        .map_err(|_| FeosError::UndeterminedState(String::from("Missing input parameters.")))
     }
 
     #[expect(clippy::too_many_arguments)]
@@ -329,10 +329,10 @@ impl<E: Residual> State<E> {
         molefracs: Option<&Array1<f64>>,
         pressure: Option<Pressure>,
         density_initialization: DensityInitialization,
-    ) -> EosResult<Result<Self, Option<Moles<Array1<f64>>>>> {
+    ) -> FeosResult<Result<Self, Option<Moles<Array1<f64>>>>> {
         // check for density
         if density.and(partial_density).is_some() {
-            return Err(EosError::UndeterminedState(String::from(
+            return Err(FeosError::UndeterminedState(String::from(
                 "Both density and partial density given.",
             )));
         }
@@ -340,7 +340,7 @@ impl<E: Residual> State<E> {
 
         // check for total moles
         if moles.and(total_moles).is_some() {
-            return Err(EosError::UndeterminedState(String::from(
+            return Err(FeosError::UndeterminedState(String::from(
                 "Both moles and total moles given.",
             )));
         }
@@ -348,7 +348,7 @@ impl<E: Residual> State<E> {
 
         // check if total moles can be inferred from volume
         if rho.and(n).and(volume).is_some() {
-            return Err(EosError::UndeterminedState(String::from(
+            return Err(FeosError::UndeterminedState(String::from(
                 "Density is overdetermined.",
             )));
         }
@@ -356,7 +356,7 @@ impl<E: Residual> State<E> {
 
         // check for composition
         if partial_density.and(moles).is_some() {
-            return Err(EosError::UndeterminedState(String::from(
+            return Err(FeosError::UndeterminedState(String::from(
                 "Composition is overdetermined.",
             )));
         }
@@ -366,7 +366,7 @@ impl<E: Residual> State<E> {
             .map(Quantity::into_value);
         let x_u = match (x, molefracs, eos.components()) {
             (Some(_), Some(_), _) => {
-                return Err(EosError::UndeterminedState(String::from(
+                return Err(FeosError::UndeterminedState(String::from(
                     "Composition is overdetermined.",
                 )));
             }
@@ -374,7 +374,7 @@ impl<E: Residual> State<E> {
             (None, Some(x), _) => x.clone(),
             (None, None, 1) => arr1(&[1.0]),
             _ => {
-                return Err(EosError::UndeterminedState(String::from(
+                return Err(FeosError::UndeterminedState(String::from(
                     "Missing composition.",
                 )));
             }
@@ -417,7 +417,7 @@ impl<E: Residual> State<E> {
         pressure: Pressure,
         moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         // calculate state from initial density or given phase
         match density_initialization {
             DensityInitialization::InitialDensity(rho0) => {
@@ -466,7 +466,7 @@ impl<E: Residual> State<E> {
                         liquid
                     }
                 }
-                _ => Err(EosError::UndeterminedState(String::from(
+                _ => Err(FeosError::UndeterminedState(String::from(
                     "Density iteration did not find a solution.",
                 ))),
             }
@@ -483,7 +483,7 @@ impl<E: Residual> State<E> {
         volume: Volume,
         molefracs: &Array1<f64>,
         density_initialization: DensityInitialization,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let moles = molefracs * Moles::from_reduced(1.0);
         let state = Self::new_npt(eos, temperature, pressure, &moles, density_initialization)?;
         let moles = state.partial_density * volume;
@@ -522,7 +522,7 @@ impl<E: Residual + IdealGas> State<E> {
         molar_internal_energy: Option<MolarEnergy>,
         density_initialization: DensityInitialization,
         initial_temperature: Option<Temperature>,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let state = Self::_new(
             eos,
             temperature,
@@ -556,7 +556,7 @@ impl<E: Residual + IdealGas> State<E> {
                 if let (Some(u), Some(v), Some(n_i)) = (molar_internal_energy, volume, &n_i) {
                     return State::new_nvu(eos, v, u, n_i, ti);
                 }
-                Err(EosError::UndeterminedState(String::from(
+                Err(FeosError::UndeterminedState(String::from(
                     "Missing input parameters.",
                 )))
             }
@@ -571,7 +571,7 @@ impl<E: Residual + IdealGas> State<E> {
         moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
         initial_temperature: Option<Temperature>,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let t0 = initial_temperature.unwrap_or(Temperature::from_reduced(298.15));
         let mut density = density_initialization;
         let f = |x0| {
@@ -591,7 +591,7 @@ impl<E: Residual + IdealGas> State<E> {
         molar_enthalpy: MolarEnergy,
         moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let rho0 = match density_initialization {
             DensityInitialization::InitialDensity(r) => r,
             DensityInitialization::Liquid => eos.max_density(Some(moles))?,
@@ -618,7 +618,7 @@ impl<E: Residual + IdealGas> State<E> {
         molar_entropy: MolarEntropy,
         moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let rho0 = match density_initialization {
             DensityInitialization::InitialDensity(r) => r,
             DensityInitialization::Liquid => eos.max_density(Some(moles))?,
@@ -643,7 +643,7 @@ impl<E: Residual + IdealGas> State<E> {
         moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
         initial_temperature: Option<Temperature>,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let t0 = initial_temperature.unwrap_or(Temperature::from_reduced(298.15));
         let mut density = density_initialization;
         let f = |x0| {
@@ -663,7 +663,7 @@ impl<E: Residual + IdealGas> State<E> {
         molar_internal_energy: MolarEnergy,
         moles: &Moles<Array1<f64>>,
         initial_temperature: Option<Temperature>,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let t0 = initial_temperature.unwrap_or(Temperature::from_reduced(298.15));
         let f = |x0| {
             let s = State::new_nvt(eos, x0, volume, moles)?;
@@ -677,7 +677,7 @@ impl<E: Residual + IdealGas> State<E> {
 
 impl<E: Residual> State<E> {
     /// Update the state with the given temperature
-    pub fn update_temperature(&self, temperature: Temperature) -> EosResult<Self> {
+    pub fn update_temperature(&self, temperature: Temperature) -> FeosResult<Self> {
         Self::new_nvt(&self.eos, temperature, self.volume, &self.moles)
     }
 
@@ -765,12 +765,12 @@ fn newton<E: Residual, F, X: Copy, Y>(
     mut x0: Quantity<f64, X>,
     mut f: F,
     atol: Quantity<f64, X>,
-) -> EosResult<State<E>>
+) -> FeosResult<State<E>>
 where
     Y: Sub<X> + Sub<<Y as Sub<X>>::Output, Output = X>,
     F: FnMut(
         Quantity<f64, X>,
-    ) -> EosResult<(
+    ) -> FeosResult<(
         Quantity<f64, Y>,
         Quantity<f64, <Y as Sub<X>>::Output>,
         State<E>,
@@ -787,7 +787,7 @@ where
         }
         x0 = x;
     }
-    Err(EosError::NotConverged("newton".to_owned()))
+    Err(FeosError::NotConverged("newton".to_owned()))
 }
 
 /// Validate the given temperature, mole numbers and volume.
@@ -798,19 +798,19 @@ where
 ///
 /// There is no validation of the physical state, e.g.
 /// if resulting densities are below maximum packing fraction.
-fn validate(temperature: Temperature, volume: Volume, moles: &Moles<Array1<f64>>) -> EosResult<()> {
+fn validate(temperature: Temperature, volume: Volume, moles: &Moles<Array1<f64>>) -> FeosResult<()> {
     let t = temperature.to_reduced();
     let v = volume.to_reduced();
     let m = moles.to_reduced();
     if !t.is_finite() || t.is_sign_negative() {
-        return Err(EosError::InvalidState(
+        return Err(FeosError::InvalidState(
             String::from("validate"),
             String::from("temperature"),
             t,
         ));
     }
     if !v.is_finite() || v.is_sign_negative() {
-        return Err(EosError::InvalidState(
+        return Err(FeosError::InvalidState(
             String::from("validate"),
             String::from("volume"),
             v,
@@ -818,7 +818,7 @@ fn validate(temperature: Temperature, volume: Volume, moles: &Moles<Array1<f64>>
     }
     for &n in m.iter() {
         if !n.is_finite() || n.is_sign_negative() {
-            return Err(EosError::InvalidState(
+            return Err(FeosError::InvalidState(
                 String::from("validate"),
                 String::from("moles"),
                 n,

@@ -1,10 +1,10 @@
 use crate::saftvrqmie::eos::FeynmanHibbsOrder;
 use core::cmp::max;
-use feos_core::parameter::{Parameter, ParameterError, PureRecord};
-use feos_core::ReferenceSystem;
+use feos_core::parameter::{Parameter, PureRecord};
+use feos_core::{FeosError, FeosResult, ReferenceSystem};
 use ndarray::{Array, Array1, Array2};
 use num_traits::Zero;
-use quantity::{Length, Temperature, CALORIE, GRAM, KELVIN, KILO, KILOGRAM, MOL, NAV, RGAS};
+use quantity::{CALORIE, GRAM, KELVIN, KILO, KILOGRAM, Length, MOL, NAV, RGAS, Temperature};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -70,9 +70,9 @@ impl SaftVRQMieRecord {
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
-    ) -> Result<SaftVRQMieRecord, ParameterError> {
+    ) -> FeosResult<SaftVRQMieRecord> {
         if m != 1.0 {
-            return Err(ParameterError::IncompatibleParameters(
+            return Err(FeosError::IncompatibleParameters(
                 "Segment number `m` is not one. Chain-contributions are currently not supported."
                     .to_string(),
             ));
@@ -110,20 +110,20 @@ impl std::fmt::Display for SaftVRQMieBinaryRecord {
 }
 
 impl TryFrom<f64> for SaftVRQMieBinaryRecord {
-    type Error = ParameterError;
+    type Error = FeosError;
 
     fn try_from(_f: f64) -> Result<Self, Self::Error> {
-        Err(ParameterError::IncompatibleParameters(
+        Err(FeosError::IncompatibleParameters(
             "Cannot infer k_ij and l_ij from single float.".to_string(),
         ))
     }
 }
 
 impl TryFrom<SaftVRQMieBinaryRecord> for f64 {
-    type Error = ParameterError;
+    type Error = FeosError;
 
     fn try_from(_f: SaftVRQMieBinaryRecord) -> Result<Self, Self::Error> {
-        Err(ParameterError::IncompatibleParameters(
+        Err(FeosError::IncompatibleParameters(
             "Cannot infer k_ij and l_ij from single float.".to_string(),
         ))
     }
@@ -162,7 +162,7 @@ impl Parameter for SaftVRQMieParameters {
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
         binary_records: Option<Array2<SaftVRQMieBinaryRecord>>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let n = pure_records.len();
 
         let mut fh = Array1::<usize>::zeros(n);
@@ -182,14 +182,10 @@ impl Parameter for SaftVRQMieParameters {
             component_index.insert(record.identifier.clone(), i);
             let r = &record.model_record;
             if r.m != 1.0 {
-                return Err(
-                    ParameterError::IncompatibleParameters(
-                        format!(
-                            "Segment number `m` for component {} is not one. Chain-contributions are currently not supported.",
-                            i
-                        )
-                    )
-                );
+                return Err(FeosError::IncompatibleParameters(format!(
+                    "Segment number `m` for component {} is not one. Chain-contributions are currently not supported.",
+                    i
+                )));
             }
             m[i] = r.m;
             sigma[i] = r.sigma;
@@ -233,14 +229,10 @@ impl Parameter for SaftVRQMieParameters {
                     * to_mass_per_molecule;
                 fh_ij[[i, j]] = FeynmanHibbsOrder::try_from(max(fh[i], fh[j]))?;
                 if fh[i] * fh[j] == 2 {
-                    return Err(
-                        ParameterError::IncompatibleParameters(
-                            format!(
-                                "cannot combine Feynman-Hibbs orders 1 and 2. Component {} has order {} and component {} has order {}.",
-                                i, fh[i], j, fh[j]
-                            )
-                        )
-                    );
+                    return Err(FeosError::IncompatibleParameters(format!(
+                        "cannot combine Feynman-Hibbs orders 1 and 2. Component {} has order {} and component {} has order {}.",
+                        i, fh[i], j, fh[j]
+                    )));
                 }
             }
         }
@@ -588,8 +580,8 @@ pub mod utils {
 
 #[cfg(test)]
 mod test {
-    use super::utils::{helium_fh1, hydrogen_fh};
     use super::SaftVRQMieParameters;
+    use super::utils::{helium_fh1, hydrogen_fh};
     use feos_core::parameter::Parameter;
 
     #[test]

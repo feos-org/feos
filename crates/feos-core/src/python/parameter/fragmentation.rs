@@ -30,7 +30,7 @@ impl PySmartsRecord {
 
     /// Creates record from json string.
     #[staticmethod]
-    fn from_json_str(json: &str) -> Result<Self, ParameterError> {
+    fn from_json_str(json: &str) -> FeosResult<Self> {
         Ok(serde_json::from_str(json)?)
     }
 
@@ -70,32 +70,7 @@ impl std::fmt::Display for PySmartsRecord {
     }
 }
 
-#[pymethods]
-impl ChemicalRecord {
-    #[staticmethod]
-    pub fn from_smiles(
-        identifier: &Bound<'_, PyAny>,
-        smarts: Vec<PySmartsRecord>,
-    ) -> PyResult<Self> {
-        let py = identifier.py();
-        let identifier = if let Ok(smiles) = identifier.extract::<String>() {
-            Identifier::new(None, None, None, Some(&smiles), None, None)
-        } else if let Ok(identifier) = identifier.extract::<Identifier>() {
-            identifier
-        } else {
-            return Err(PyErr::new::<PyValueError, _>(
-                "`identifier` must be a SMILES code or `Identifier` object.".to_string(),
-            ));
-        };
-        let smiles = identifier
-            .smiles
-            .as_ref()
-            .expect("Missing SMILES in `Identifier`");
-        let (segments, bonds) = fragment_molecule(py, smiles, smarts)?;
-        let segments = segments.into_iter().map(|s| s.to_owned()).collect();
-        Ok(Self::new(identifier, segments, Some(bonds)))
-    }
-}
+
 
 fn fragment_molecule(
     py: Python<'_>,

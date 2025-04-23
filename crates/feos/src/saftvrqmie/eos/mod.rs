@@ -1,7 +1,8 @@
 use super::parameters::SaftVRQMieParameters;
-use feos_core::parameter::{Parameter, ParameterError};
+use feos_core::parameter::Parameter;
 use feos_core::{
-    Components, EntropyScaling, EosError, EosResult, Molarweight, ReferenceSystem, Residual, State,
+    Components, EntropyScaling, FeosError, FeosResult, Molarweight, ReferenceSystem, Residual,
+    State,
 };
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
@@ -46,14 +47,14 @@ pub enum FeynmanHibbsOrder {
 }
 
 impl TryFrom<usize> for FeynmanHibbsOrder {
-    type Error = ParameterError;
+    type Error = FeosError;
 
     fn try_from(u: usize) -> Result<Self, Self::Error> {
         match u {
             0 => Ok(Self::FH0),
             1 => Ok(Self::FH1),
             2 => Ok(Self::FH2),
-            _ => Err(ParameterError::IncompatibleParameters(format!(
+            _ => Err(FeosError::IncompatibleParameters(format!(
                 "failed to parse value '{}' as FeynmanHibbsOrder. Has to be one of '0, 1, or 2'.",
                 u
             ))),
@@ -226,7 +227,7 @@ impl EntropyScaling for SaftVRQMie {
         temperature: Temperature,
         _: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Viscosity> {
+    ) -> FeosResult<Viscosity> {
         let p = &self.parameters;
         let mw = &p.molarweight;
         let x = (moles / moles.sum()).into_value();
@@ -255,7 +256,7 @@ impl EntropyScaling for SaftVRQMie {
         Ok(ce_mix)
     }
 
-    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
         let coefficients = self
             .parameters
             .viscosity
@@ -276,9 +277,9 @@ impl EntropyScaling for SaftVRQMie {
         temperature: Temperature,
         volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Diffusivity> {
+    ) -> FeosResult<Diffusivity> {
         if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
+            return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
         let p = &self.parameters;
         let density = moles.sum() / volume;
@@ -292,9 +293,9 @@ impl EntropyScaling for SaftVRQMie {
         Ok(res[0])
     }
 
-    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
         if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
+            return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
         let coefficients = self
             .parameters
@@ -318,9 +319,9 @@ impl EntropyScaling for SaftVRQMie {
         temperature: Temperature,
         volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<ThermalConductivity> {
+    ) -> FeosResult<ThermalConductivity> {
         if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
+            return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
         let p = &self.parameters;
         let mws = self.molar_weight();
@@ -349,9 +350,9 @@ impl EntropyScaling for SaftVRQMie {
         Ok(res[0])
     }
 
-    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
         if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
+            return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
         let coefficients = self
             .parameters

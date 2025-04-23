@@ -2,7 +2,7 @@ use super::polar::helmholtz_energy_density_polar;
 use super::PcSaftParameters;
 use crate::hard_sphere::HardSphereProperties;
 use crate::pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
-use feos_core::EosError;
+use feos_core::FeosError;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::DualNum;
@@ -57,7 +57,7 @@ impl FunctionalContribution for AttractiveFunctional {
         &self,
         temperature: N,
         density: ArrayView2<N>,
-    ) -> Result<Array1<N>, EosError> {
+    ) -> Result<Array1<N>, FeosError> {
         // auxiliary variables
         let p = &self.parameters;
         let n = p.m.len();

@@ -1,4 +1,5 @@
-use feos_core::parameter::{Identifier, ParameterError};
+use feos_core::FeosResult;
+use feos_core::parameter::Identifier;
 use feos_core::parameter::{Parameter, PureRecord};
 use ndarray::Array2;
 use ndarray::concatenate;
@@ -129,7 +130,7 @@ impl Parameter for UVTheoryParameters {
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
         binary_records: Option<Array2<Self::Binary>>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let n = pure_records.len();
 
         let mut molarweight = Array::zeros(n);
@@ -210,12 +211,7 @@ impl Parameter for UVTheoryParameters {
 
 impl UVTheoryParameters {
     /// Parameters for a single substance with molar weight one and no (default) ideal gas contributions.
-    pub fn new_simple(
-        rep: f64,
-        att: f64,
-        sigma: f64,
-        epsilon_k: f64,
-    ) -> Result<Self, ParameterError> {
+    pub fn new_simple(rep: f64, att: f64, sigma: f64, epsilon_k: f64) -> FeosResult<Self> {
         let model_record = UVTheoryRecord::new(rep, att, sigma, epsilon_k);
         let pure_record = PureRecord::new(Identifier::default(), 1.0, model_record);
         Self::new_pure(pure_record)

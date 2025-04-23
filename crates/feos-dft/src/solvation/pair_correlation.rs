@@ -3,7 +3,7 @@ use crate::functional::HelmholtzEnergyFunctional;
 use crate::profile::MAX_POTENTIAL;
 use crate::solver::DFTSolver;
 use crate::{Axis, DFTProfile, Grid};
-use feos_core::{Contributions, EosResult, ReferenceSystem, State};
+use feos_core::{Contributions, FeosResult, ReferenceSystem, State};
 use ndarray::prelude::*;
 use quantity::{Energy, Length};
 
@@ -58,7 +58,7 @@ impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
         }
     }
 
-    pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> EosResult<()> {
+    pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> FeosResult<()> {
         // Solve the profile
         self.profile.solve(solver, debug)?;
 
@@ -87,7 +87,7 @@ impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
         Ok(())
     }
 
-    pub fn solve(mut self, solver: Option<&DFTSolver>) -> EosResult<Self> {
+    pub fn solve(mut self, solver: Option<&DFTSolver>) -> FeosResult<Self> {
         self.solve_inplace(solver, false)?;
         Ok(self)
     }

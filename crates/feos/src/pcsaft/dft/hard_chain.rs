@@ -1,6 +1,6 @@
 use super::PcSaftParameters;
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::EosError;
+use feos_core::FeosError;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::DualNum;
@@ -52,7 +52,7 @@ impl FunctionalContribution for ChainFunctional {
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
-    ) -> Result<Array1<N>, EosError> {
+    ) -> Result<Array1<N>, FeosError> {
         let p = &self.parameters;
         // number of segments
         let n = (weighted_densities.shape()[0] - 2) / 2;

@@ -1,5 +1,5 @@
 use super::*;
-use feos_core::EosResult;
+use feos_core::FeosResult;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use num_dual::DualNum;
 use std::f64::consts::PI;
@@ -42,7 +42,7 @@ where
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
-    ) -> EosResult<Array1<N>> {
+    ) -> FeosResult<Array1<N>> {
         let p = &self.parameters;
 
         // number of segments
@@ -113,7 +113,7 @@ impl<P: AssociationStrength> Association<P> {
         n2: &ArrayBase<S, Ix1>,
         n3i: &Array1<N>,
         xi: &Array1<N>,
-    ) -> EosResult<Array1<N>> {
+    ) -> FeosResult<Array1<N>> {
         let a = &self.association_parameters;
 
         let d = self.parameters.hs_diameter(temperature);

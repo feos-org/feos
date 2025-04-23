@@ -157,13 +157,13 @@ fn impl_entropy_scaling(
                 temperature: Temperature,
                 volume: Volume,
                 moles: &Moles<Array1<f64>>,
-            ) -> EosResult<Viscosity> {
+            ) -> FeosResult<Viscosity> {
                 match self {
                     #(#etar,)*
                 }
             }
 
-            fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+            fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
                 match self {
                     #(#etac,)*
                 }
@@ -174,13 +174,13 @@ fn impl_entropy_scaling(
                 temperature: Temperature,
                 volume: Volume,
                 moles: &Moles<Array1<f64>>,
-            ) -> EosResult<Diffusivity> {
+            ) -> FeosResult<Diffusivity> {
                 match self {
                     #(#dr,)*
                 }
             }
 
-            fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+            fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
                 match self {
                     #(#dc,)*
                 }
@@ -191,13 +191,13 @@ fn impl_entropy_scaling(
                 temperature: Temperature,
                 volume: Volume,
                 moles: &Moles<Array1<f64>>,
-            ) -> EosResult<ThermalConductivity> {
+            ) -> FeosResult<ThermalConductivity> {
                 match self {
                     #(#thcr,)*
                 }
             }
 
-            fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+            fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
                 match self {
                     #(#thcc,)*
                 }

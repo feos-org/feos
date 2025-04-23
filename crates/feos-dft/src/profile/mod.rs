@@ -2,7 +2,7 @@ use crate::convolver::{BulkConvolver, Convolver, ConvolverFFT};
 use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::Grid;
 use crate::solver::{DFTSolver, DFTSolverLog};
-use feos_core::{EosError, EosResult, ReferenceSystem, State};
+use feos_core::{FeosError, FeosResult, ReferenceSystem, State};
 use ndarray::{
     Array, Array1, Array2, Array3, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3,
     RemoveAxis,
@@ -30,7 +30,7 @@ pub trait DFTSpecification<D: Dimension, F>: Send + Sync {
         profile: &DFTProfile<D, F>,
         bulk_density: &Array1<f64>,
         z: &Array1<f64>,
-    ) -> EosResult<Array1<f64>>;
+    ) -> FeosResult<Array1<f64>>;
 }
 
 /// Common specifications for the grand potentials in a DFT calculation.
@@ -86,7 +86,7 @@ impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTSpecification<D, F> for DFTS
         _profile: &DFTProfile<D, F>,
         bulk_density: &Array1<f64>,
         z: &Array1<f64>,
-    ) -> EosResult<Array1<f64>> {
+    ) -> FeosResult<Array1<f64>> {
         Ok(match self {
             Self::ChemicalPotential => bulk_density.clone(),
             Self::Moles { moles } => moles / z,
@@ -383,14 +383,14 @@ where
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
     F: HelmholtzEnergyFunctional,
 {
-    pub fn weighted_densities(&self) -> EosResult<Vec<Array<f64, D::Larger>>> {
+    pub fn weighted_densities(&self) -> FeosResult<Vec<Array<f64, D::Larger>>> {
         Ok(self
             .convolver
             .weighted_densities(&self.density.to_reduced()))
     }
 
     #[expect(clippy::type_complexity)]
-    pub fn residual(&self, log: bool) -> EosResult<(Array<f64, D::Larger>, Array1<f64>, f64)> {
+    pub fn residual(&self, log: bool) -> FeosResult<(Array<f64, D::Larger>, Array1<f64>, f64)> {
         // Read from profile
         let density = self.density.to_reduced();
         let partial_density = self.bulk.partial_density.to_reduced();
@@ -407,7 +407,7 @@ where
         density: &Array<f64, D::Larger>,
         bulk_density: &Array1<f64>,
         log: bool,
-    ) -> EosResult<(
+    ) -> FeosResult<(
         Array<f64, D::Larger>,
         Array1<f64>,
         f64,
@@ -483,11 +483,11 @@ where
         if res_norm.is_finite() {
             Ok((res, res_bulk, res_norm, exp_dfdrho, rho_projected))
         } else {
-            Err(EosError::IterationFailed("Euler-Lagrange equation".into()))
+            Err(FeosError::IterationFailed("Euler-Lagrange equation".into()))
         }
     }
 
-    pub fn solve(&mut self, solver: Option<&DFTSolver>, debug: bool) -> EosResult<()> {
+    pub fn solve(&mut self, solver: Option<&DFTSolver>, debug: bool) -> FeosResult<()> {
         // unwrap solver
         let solver = solver.cloned().unwrap_or_default();
 

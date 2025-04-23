@@ -1,7 +1,7 @@
 use super::{Contributions, Derivative::*, PartialDerivative, State};
 use crate::ReferenceSystem;
 use crate::equation_of_state::{EntropyScaling, Molarweight, Residual};
-use crate::errors::EosResult;
+use crate::errors::FeosResult;
 use crate::phase_equilibria::PhaseEquilibrium;
 use ndarray::{Array1, Array2, arr1};
 use quantity::*;
@@ -301,7 +301,7 @@ impl<E: Residual> State<E> {
     }
 
     /// Logarithm of the fugacity coefficient of all components treated as pure substance at mixture temperature and pressure.
-    pub fn ln_phi_pure_liquid(&self) -> EosResult<Array1<f64>> {
+    pub fn ln_phi_pure_liquid(&self) -> FeosResult<Array1<f64>> {
         let pressure = self.pressure(Contributions::Total);
         (0..self.eos.components())
             .map(|i| {
@@ -319,7 +319,7 @@ impl<E: Residual> State<E> {
     }
 
     /// Activity coefficient $\ln \gamma_i = \ln \varphi_i(T, p, \mathbf{N}) - \ln \varphi_i^\mathrm{pure}(T, p)$
-    pub fn ln_symmetric_activity_coefficient(&self) -> EosResult<Array1<f64>> {
+    pub fn ln_symmetric_activity_coefficient(&self) -> FeosResult<Array1<f64>> {
         match self.eos.components() {
             1 => Ok(arr1(&[0.0])),
             _ => Ok(self.ln_phi() - &self.ln_phi_pure_liquid()?),
@@ -333,7 +333,7 @@ impl<E: Residual> State<E> {
         eos: &Arc<E>,
         temperature: Temperature,
         molefracs: &Array1<f64>,
-    ) -> EosResult<Pressure<Array1<f64>>> {
+    ) -> FeosResult<Pressure<Array1<f64>>> {
         // Calculate the phase equilibrium (bubble point) of the solvent only
         let (solvent_comps, solvent_molefracs): (Vec<_>, Vec<_>) = molefracs
             .iter()
@@ -391,7 +391,7 @@ impl<E: Residual> State<E> {
     pub fn henrys_law_constant_binary(
         eos: &Arc<E>,
         temperature: Temperature,
-    ) -> EosResult<Pressure> {
+    ) -> FeosResult<Pressure> {
         Ok(Self::henrys_law_constant(eos, temperature, &arr1(&[0.0, 1.0]))?.get(0))
     }
 
@@ -519,7 +519,7 @@ impl<E: Residual + Molarweight> State<E> {
 /// that implement the [EntropyScaling] trait.
 impl<E: Residual + EntropyScaling> State<E> {
     /// Return the viscosity via entropy scaling.
-    pub fn viscosity(&self) -> EosResult<Viscosity> {
+    pub fn viscosity(&self) -> FeosResult<Viscosity> {
         let s = self.residual_molar_entropy().to_reduced();
         Ok(self
             .eos
@@ -531,19 +531,19 @@ impl<E: Residual + EntropyScaling> State<E> {
     ///
     /// This term equals the viscosity correlation function
     /// that is used for entropy scaling.
-    pub fn ln_viscosity_reduced(&self) -> EosResult<f64> {
+    pub fn ln_viscosity_reduced(&self) -> FeosResult<f64> {
         let s = self.residual_molar_entropy().to_reduced();
         self.eos.viscosity_correlation(s, &self.molefracs)
     }
 
     /// Return the viscosity reference as used in entropy scaling.
-    pub fn viscosity_reference(&self) -> EosResult<Viscosity> {
+    pub fn viscosity_reference(&self) -> FeosResult<Viscosity> {
         self.eos
             .viscosity_reference(self.temperature, self.volume, &self.moles)
     }
 
     /// Return the diffusion via entropy scaling.
-    pub fn diffusion(&self) -> EosResult<Diffusivity> {
+    pub fn diffusion(&self) -> FeosResult<Diffusivity> {
         let s = self.residual_molar_entropy().to_reduced();
         Ok(self
             .eos
@@ -555,19 +555,19 @@ impl<E: Residual + EntropyScaling> State<E> {
     ///
     /// This term equals the diffusion correlation function
     /// that is used for entropy scaling.
-    pub fn ln_diffusion_reduced(&self) -> EosResult<f64> {
+    pub fn ln_diffusion_reduced(&self) -> FeosResult<f64> {
         let s = self.residual_molar_entropy().to_reduced();
         self.eos.diffusion_correlation(s, &self.molefracs)
     }
 
     /// Return the diffusion reference as used in entropy scaling.
-    pub fn diffusion_reference(&self) -> EosResult<Diffusivity> {
+    pub fn diffusion_reference(&self) -> FeosResult<Diffusivity> {
         self.eos
             .diffusion_reference(self.temperature, self.volume, &self.moles)
     }
 
     /// Return the thermal conductivity via entropy scaling.
-    pub fn thermal_conductivity(&self) -> EosResult<ThermalConductivity> {
+    pub fn thermal_conductivity(&self) -> FeosResult<ThermalConductivity> {
         let s = self.residual_molar_entropy().to_reduced();
         Ok(self
             .eos
@@ -582,14 +582,14 @@ impl<E: Residual + EntropyScaling> State<E> {
     ///
     /// This term equals the thermal conductivity correlation function
     /// that is used for entropy scaling.
-    pub fn ln_thermal_conductivity_reduced(&self) -> EosResult<f64> {
+    pub fn ln_thermal_conductivity_reduced(&self) -> FeosResult<f64> {
         let s = self.residual_molar_entropy().to_reduced();
         self.eos
             .thermal_conductivity_correlation(s, &self.molefracs)
     }
 
     /// Return the thermal conductivity reference as used in entropy scaling.
-    pub fn thermal_conductivity_reference(&self) -> EosResult<ThermalConductivity> {
+    pub fn thermal_conductivity_reference(&self) -> FeosResult<ThermalConductivity> {
         self.eos
             .thermal_conductivity_reference(self.temperature, self.volume, &self.moles)
     }

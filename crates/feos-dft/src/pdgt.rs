@@ -1,7 +1,7 @@
 use super::functional::HelmholtzEnergyFunctional;
 use super::functional_contribution::FunctionalContribution;
 use super::weight_functions::WeightFunctionInfo;
-use feos_core::{Contributions, EosResult, PhaseEquilibrium, ReferenceSystem};
+use feos_core::{Contributions, FeosResult, PhaseEquilibrium, ReferenceSystem};
 use ndarray::*;
 use num_dual::Dual2_64;
 use quantity::{
@@ -33,7 +33,7 @@ trait PdgtProperties: FunctionalContribution {
         second_partial_derivatives: Option<&mut Array3<f64>>,
         influence_diagonal: Option<&mut Array2<f64>>,
         influence_matrix: Option<&mut Array3<f64>>,
-    ) -> EosResult<()> {
+    ) -> FeosResult<()> {
         // calculate weighted densities
         let weight_functions = self.weight_functions_pdgt(Dual2_64::from(temperature));
         let (w0, w1, w2) = weight_functions.pdgt_weight_constants();
@@ -121,7 +121,7 @@ trait PdgtProperties: FunctionalContribution {
         &self,
         temperature: Temperature,
         density: &Density<Array2<f64>>,
-    ) -> EosResult<(Pressure<Array1<f64>>, InfluenceParameter<Array2<f64>>)> {
+    ) -> FeosResult<(Pressure<Array1<f64>>, InfluenceParameter<Array2<f64>>)> {
         let t = temperature.to_reduced();
         let n = density.shape()[1];
         let mut f = Array::zeros(n);
@@ -152,7 +152,7 @@ pub trait PdgtFunctionalProperties: HelmholtzEnergyFunctional {
         n_grid: usize,
         reference_component: usize,
         z: Option<(&mut Length<Array1<f64>>, &mut Length)>,
-    ) -> EosResult<(Density<Array2<f64>>, SurfaceTension)> {
+    ) -> FeosResult<(Density<Array2<f64>>, SurfaceTension)> {
         // calculate density profile
         let density = if self.components() == 1 {
             let delta_rho = (vle.vapor().density - vle.liquid().density) / (n_grid + 1) as f64;
@@ -240,7 +240,7 @@ pub trait PdgtFunctionalProperties: HelmholtzEnergyFunctional {
         _vle: &PhaseEquilibrium<Self, 2>,
         _n_grid: usize,
         _reference_component: usize,
-    ) -> EosResult<Density<Array2<f64>>> {
+    ) -> FeosResult<Density<Array2<f64>>> {
         unimplemented!()
     }
 }

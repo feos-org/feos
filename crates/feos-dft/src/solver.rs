@@ -2,7 +2,7 @@ use crate::{
     DFTProfile, FunctionalContribution, HelmholtzEnergyFunctional, WeightFunction,
     WeightFunctionShape,
 };
-use feos_core::{log_iter, log_result, EosError, EosResult, ReferenceSystem, Verbosity};
+use feos_core::{log_iter, log_result, FeosError, FeosResult, ReferenceSystem, Verbosity};
 use nalgebra::{DMatrix, DVector};
 use ndarray::prelude::*;
 use ndarray::RemoveAxis;
@@ -219,7 +219,7 @@ where
         rho_bulk: &mut Array1<f64>,
         solver: &DFTSolver,
         debug: bool,
-    ) -> EosResult<()> {
+    ) -> FeosResult<()> {
         let mut converged = false;
         let mut iterations = 0;
         let mut log = DFTSolverLog::new(solver.verbosity);
@@ -246,7 +246,7 @@ where
                 iterations
             );
         } else {
-            return Err(EosError::NotConverged(String::from("DFT")));
+            return Err(FeosError::NotConverged(String::from("DFT")));
         }
         Ok(())
     }
@@ -257,7 +257,7 @@ where
         rho: &mut Array<f64, D::Larger>,
         rho_bulk: &mut Array1<f64>,
         log: &mut DFTSolverLog,
-    ) -> EosResult<(bool, usize)> {
+    ) -> FeosResult<(bool, usize)> {
         let solver = if picard.log {
             "Picard iteration (log)"
         } else {
@@ -300,7 +300,7 @@ where
         rho_bulk: &Array1<f64>,
         res0: f64,
         logarithm: bool,
-    ) -> EosResult<f64> {
+    ) -> FeosResult<f64> {
         let mut alpha = 2.0;
 
         // reduce step until a feasible solution is found
@@ -363,7 +363,7 @@ where
         rho: &mut Array<f64, D::Larger>,
         rho_bulk: &mut Array1<f64>,
         log: &mut DFTSolverLog,
-    ) -> EosResult<(bool, usize)> {
+    ) -> FeosResult<(bool, usize)> {
         let solver = if anderson.log {
             "Anderson mixing (log)"
         } else {
@@ -414,7 +414,7 @@ where
             alpha = DVector::zeros(m + 1);
             alpha[m] = 1.0;
             let alpha = r.lu().solve(&alpha);
-            let alpha = alpha.ok_or(EosError::Error("alpha matrix is not invertible".into()))?;
+            let alpha = alpha.ok_or(FeosError::Error("alpha matrix is not invertible".into()))?;
 
             // update solution
             rho.fill(0.0);
@@ -443,7 +443,7 @@ where
         rho: &mut Array<f64, D::Larger>,
         rho_bulk: &mut Array1<f64>,
         log: &mut DFTSolverLog,
-    ) -> EosResult<(bool, usize)> {
+    ) -> FeosResult<(bool, usize)> {
         let solver = if newton.log { "Newton (log)" } else { "Newton" };
         for k in 0..newton.max_iter {
             // calculate initial residual
@@ -488,7 +488,7 @@ where
         max_iter: usize,
         tol: f64,
         log: &mut DFTSolverLog,
-    ) -> EosResult<Array<f64, D::Larger>>
+    ) -> FeosResult<Array<f64, D::Larger>>
     where
         R: Fn(&Array<f64, D::Larger>) -> Array<f64, D::Larger>,
     {
@@ -558,7 +558,7 @@ where
     pub(crate) fn second_partial_derivatives(
         &self,
         density: &Array<f64, D::Larger>,
-    ) -> EosResult<Vec<Array<f64, <D::Larger as Dimension>::Larger>>> {
+    ) -> FeosResult<Vec<Array<f64, <D::Larger as Dimension>::Larger>>> {
         let temperature = self.temperature.to_reduced();
         let contributions = self.dft.contributions();
         let weighted_densities = self.convolver.weighted_densities(density);

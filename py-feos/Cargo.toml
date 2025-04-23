@@ -1,0 +1,57 @@
+[package]
+name = "py_feos"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "feos"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.23", features = ["extension-module", "abi3-py39", "multiple-pymethods"] }
+pythonize = "*"
+quantity = { workspace = true, features = ["python", "python_numpy"] }
+num-dual = { workspace = true, features = ["python_macro"] }
+numpy = { version = "0.23" }
+ndarray = { workspace = true }
+petgraph = { workspace = true, optional = true }
+thiserror = { workspace = true }
+conv = { workspace = true }
+num-traits = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+indexmap = { workspace = true }
+rayon = { version = "1.7", optional = true }
+itertools = "0.14"
+typenum = { workspace = true }
+
+feos = { version = "0.8", path = "../crates/feos" }
+feos-core = { workspace = true }
+feos-derive = { workspace = true }
+feos-dft = { version = "0.8", path = "../crates/feos-dft", optional = true }
+
+
+[features]
+default = []
+dft = ["feos-dft", "petgraph"]
+estimator = []
+association = []
+pcsaft = ["association"]
+epcsaft = ["association"]
+gc_pcsaft = ["association"]
+uvtheory = []
+pets = []
+saftvrqmie = []
+saftvrmie = []
+rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
+all_models = [
+    "dft",
+    "estimator",
+    "pcsaft",
+    "epcsaft",
+    "gc_pcsaft",
+    "uvtheory",
+    "pets",
+    "saftvrqmie",
+    "saftvrmie",
+]

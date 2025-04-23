@@ -1,6 +1,6 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
-use crate::errors::EosResult;
+use crate::errors::FeosResult;
 use crate::state::{State, StateVec};
 #[cfg(feature = "rayon")]
 use crate::ReferenceSystem;
@@ -40,7 +40,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         npoints: usize,
         critical_temperature: Option<Temperature>,
         options: SolverOptions,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
 
         let sc = State::critical_point(eos, None, critical_temperature, SolverOptions::default())?;
@@ -78,7 +78,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         eos: &Arc<E>,
         temperatures: ArrayView1<f64>,
         options: SolverOptions,
-    ) -> EosResult<Vec<PhaseEquilibrium<E, 2>>> {
+    ) -> FeosResult<Vec<PhaseEquilibrium<E, 2>>> {
         let mut states = Vec::with_capacity(temperatures.len());
         let mut vle = None;
         for ti in temperatures {
@@ -100,7 +100,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         thread_pool: ThreadPool,
         critical_temperature: Option<Temperature>,
         options: SolverOptions,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let sc = State::critical_point(eos, None, critical_temperature, SolverOptions::default())?;
 
         let max_temperature = min_temperature

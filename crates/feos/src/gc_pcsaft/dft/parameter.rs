@@ -1,8 +1,9 @@
 use crate::association::AssociationParameters;
 use crate::gc_pcsaft::record::GcPcSaftRecord;
 use feos_core::parameter::{
-    BinarySegmentRecord, ChemicalRecord, ParameterError, ParameterHetero, SegmentRecord,
+    BinarySegmentRecord, ChemicalRecord, ParameterHetero, SegmentRecord,
 };
+use feos_core::{FeosError, FeosResult};
 use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
 use petgraph::dot::{Config, Dot};
@@ -39,7 +40,7 @@ impl ParameterHetero for GcPcSaftFunctionalParameters {
         chemical_records: Vec<C>,
         segment_records: Vec<SegmentRecord<GcPcSaftRecord>>,
         binary_segment_records: Option<Vec<BinarySegmentRecord>>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let chemical_records: Vec<_> = chemical_records.into_iter().map(|cr| cr.into()).collect();
 
         let segment_map: IndexMap<_, _> = segment_records
@@ -70,7 +71,7 @@ impl ParameterHetero for GcPcSaftFunctionalParameters {
             for id in &chemical_record.segments {
                 let segment = segment_map
                     .get(id)
-                    .ok_or_else(|| ParameterError::ComponentsNotFound(id.to_string()))?;
+                    .ok_or_else(|| FeosError::ComponentsNotFound(id.to_string()))?;
                 molarweight[i] += segment.molarweight;
                 component_index.push(i);
                 identifiers.push(id.clone());

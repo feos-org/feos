@@ -1,4 +1,4 @@
-use feos_core::{Components, EosResult, Residual, StateHD};
+use feos_core::{Components, FeosResult, Residual, StateHD};
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{
@@ -191,7 +191,7 @@ impl<P: HardSphereProperties + Send + Sync> FunctionalContribution for FMTContri
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
-    ) -> EosResult<Array1<N>> {
+    ) -> FeosResult<Array1<N>> {
         let pure_component_weighted_densities = matches!(
             self.version,
             FMTVersion::WhiteBear | FMTVersion::AntiSymWhiteBear

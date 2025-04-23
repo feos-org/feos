@@ -1,5 +1,5 @@
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
-use feos_core::EosResult;
+use feos_core::FeosResult;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::DualNum;
@@ -54,7 +54,7 @@ impl FunctionalContribution for NonAddHardSphereFunctional {
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
-    ) -> EosResult<Array1<N>> {
+    ) -> FeosResult<Array1<N>> {
         let p = &self.parameters;
         // number of components
         let n = p.m.len();

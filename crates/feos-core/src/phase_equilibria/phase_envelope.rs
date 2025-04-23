@@ -1,6 +1,6 @@
 use super::{PhaseDiagram, PhaseEquilibrium};
 use crate::equation_of_state::Residual;
-use crate::errors::EosResult;
+use crate::errors::FeosResult;
 use quantity::{Moles, Pressure, Temperature};
 use crate::state::{Contributions, State};
 use crate::SolverOptions;
@@ -16,7 +16,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         npoints: usize,
         critical_temperature: Option<Temperature>,
         options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
 
         let sc = State::critical_point(
@@ -65,7 +65,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         npoints: usize,
         critical_temperature: Option<Temperature>,
         options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
 
         let sc = State::critical_point(
@@ -130,7 +130,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         npoints: usize,
         critical_temperature: Option<Temperature>,
         options: SolverOptions,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let mut states = Vec::with_capacity(npoints);
 
         let sc = State::critical_point(

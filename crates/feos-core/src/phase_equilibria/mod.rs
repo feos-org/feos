@@ -1,5 +1,5 @@
 use crate::equation_of_state::Residual;
-use crate::errors::{EosError, EosResult};
+use crate::errors::{FeosError, FeosResult};
 use crate::state::{DensityInitialization, State};
 use crate::{Contributions, ReferenceSystem};
 use ndarray::Array1;
@@ -128,7 +128,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         pressure: Pressure,
         vapor_moles: &Moles<Array1<f64>>,
         liquid_moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let liquid = State::new_npt(
             eos,
             temperature,
@@ -157,7 +157,7 @@ impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
         mut self,
         temperature: Temperature,
         pressure: Pressure,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         for s in self.0.iter_mut() {
             *s = State::new_npt(
                 &s.eos,
@@ -174,7 +174,7 @@ impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
         &mut self,
         pressure: Pressure,
         moles: [&Moles<Array1<f64>>; N],
-    ) -> EosResult<()> {
+    ) -> FeosResult<()> {
         for (i, s) in self.0.iter_mut().enumerate() {
             *s = State::new_npt(
                 &s.eos,
@@ -202,9 +202,9 @@ const TRIVIAL_REL_DEVIATION: f64 = 1e-5;
 
 /// # Utility functions
 impl<E: Residual> PhaseEquilibrium<E, 2> {
-    pub(super) fn check_trivial_solution(self) -> EosResult<Self> {
+    pub(super) fn check_trivial_solution(self) -> FeosResult<Self> {
         if Self::is_trivial_solution(self.vapor(), self.liquid()) {
-            Err(EosError::TrivialSolution)
+            Err(FeosError::TrivialSolution)
         } else {
             Ok(self)
         }

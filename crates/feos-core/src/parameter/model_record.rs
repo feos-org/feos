@@ -1,7 +1,9 @@
+use super::IdentifierOption;
 use super::chemical_record::CountType;
 use super::identifier::Identifier;
 use super::segment::SegmentRecord;
-use super::{IdentifierOption, ParameterError};
+use crate::FeosResult;
+use crate::errors::FeosError;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -32,7 +34,7 @@ impl<M> PureRecord<M> {
     ///
     /// The [FromSegments] trait needs to be implemented for both the model record
     /// and the ideal gas record.
-    pub fn from_segments<S, T>(identifier: Identifier, segments: S) -> Result<Self, ParameterError>
+    pub fn from_segments<S, T>(identifier: Identifier, segments: S) -> FeosResult<Self>
     where
         T: CountType,
         M: FromSegments<T>,
@@ -54,7 +56,7 @@ impl<M> PureRecord<M> {
         substances: &[&str],
         file: P,
         identifier_option: IdentifierOption,
-    ) -> Result<Vec<Self>, ParameterError>
+    ) -> FeosResult<Vec<Self>>
     where
         P: AsRef<Path>,
         M: Clone + DeserializeOwned,
@@ -63,7 +65,7 @@ impl<M> PureRecord<M> {
         let mut queried: HashSet<String> = substances.iter().map(|s| s.to_string()).collect();
         // raise error on duplicate detection
         if queried.len() != substances.len() {
-            return Err(ParameterError::IncompatibleParameters(
+            return Err(FeosError::IncompatibleParameters(
                 "A substance was defined more than once.".to_string(),
             ));
         }
@@ -87,7 +89,7 @@ impl<M> PureRecord<M> {
 
         // report missing parameters
         if !queried.is_empty() {
-            return Err(ParameterError::ComponentsNotFound(format!("{:?}", queried)));
+            return Err(FeosError::ComponentsNotFound(format!("{:?}", queried)));
         };
 
         // collect into vec in correct order
@@ -116,7 +118,7 @@ where
 pub trait FromSegments<T>: Clone {
     /// Constructs the record from a list of segment records with their
     /// number of occurences.
-    fn from_segments(segments: &[(Self, T)]) -> Result<Self, ParameterError>;
+    fn from_segments(segments: &[(Self, T)]) -> FeosResult<Self>;
 }
 
 /// Trait for models that implement a homosegmented group contribution
@@ -124,7 +126,7 @@ pub trait FromSegments<T>: Clone {
 pub trait FromSegmentsBinary<T>: Clone {
     /// Constructs the binary record from a list of segment records with
     /// their number of occurences.
-    fn from_segments_binary(segments: &[(f64, T, T)]) -> Result<Self, ParameterError>;
+    fn from_segments_binary(segments: &[(f64, T, T)]) -> FeosResult<Self>;
 }
 
 /// A collection of parameters that model interactions between two substances.
@@ -149,7 +151,7 @@ impl<B> BinaryRecord<B> {
     }
 
     /// Read a list of `BinaryRecord`s from a JSON file.
-    pub fn from_json<P: AsRef<Path>>(file: P) -> Result<Vec<Self>, ParameterError>
+    pub fn from_json<P: AsRef<Path>>(file: P) -> FeosResult<Vec<Self>>
     where
         B: DeserializeOwned,
     {

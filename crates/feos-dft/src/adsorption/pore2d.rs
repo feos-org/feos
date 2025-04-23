@@ -1,6 +1,6 @@
 use super::{FluidParameters, PoreProfile, PoreSpecification};
 use crate::{Axis, DFTProfile, Grid, HelmholtzEnergyFunctional};
-use feos_core::{EosResult, State};
+use feos_core::{FeosResult, State};
 use ndarray::{Array3, Ix2};
 use quantity::{Angle, Density, Length};
 
@@ -28,7 +28,7 @@ impl PoreSpecification<Ix2> for Pore2D {
         bulk: &State<F>,
         density: Option<&Density<Array3<f64>>>,
         external_potential: Option<&Array3<f64>>,
-    ) -> EosResult<PoreProfile<Ix2, F>> {
+    ) -> FeosResult<PoreProfile<Ix2, F>> {
         // generate grid
         let x = Axis::new_cartesian(self.n_grid[0], self.system_size[0], None);
         let y = Axis::new_cartesian(self.n_grid[1], self.system_size[1], None);

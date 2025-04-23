@@ -1,5 +1,5 @@
 use crate::equation_of_state::Residual;
-use crate::errors::{EosError, EosResult};
+use crate::errors::{FeosError, FeosResult};
 use crate::state::State;
 use crate::ReferenceSystem;
 use ndarray::Array1;
@@ -12,14 +12,14 @@ pub fn density_iteration<E: Residual>(
     pressure: Pressure,
     moles: &Moles<Array1<f64>>,
     initial_density: Density,
-) -> EosResult<State<E>> {
+) -> FeosResult<State<E>> {
     let maxdensity = eos.max_density(Some(moles))?;
     let (abstol, reltol) = (1e-12, 1e-14);
     let n = moles.sum();
 
     let mut rho = initial_density;
     if rho <= Density::from_reduced(0.0) {
-        return Err(EosError::InvalidState(
+        return Err(FeosError::InvalidState(
             String::from("density iteration"),
             String::from("density"),
             rho.to_reduced(),
@@ -64,7 +64,7 @@ pub fn density_iteration<E: Residual>(
                 error = sp_p - pressure;
                 if rho > 0.85 * maxdensity {
                     if error.is_sign_negative() {
-                        return Err(EosError::IterationFailed(String::from("density_iteration")));
+                        return Err(FeosError::IterationFailed(String::from("density_iteration")));
                     } else {
                         rho *= 0.98
                     }
@@ -130,7 +130,7 @@ pub fn density_iteration<E: Residual>(
         }
     }
     if iterations == maxiter + 1 {
-        Err(EosError::NotConverged("density_iteration".to_owned()))
+        Err(FeosError::NotConverged("density_iteration".to_owned()))
     } else {
         Ok(State::new_nvt(eos, temperature, n / rho, moles)?)
     }
@@ -141,7 +141,7 @@ fn pressure_spinodal<E: Residual>(
     temperature: Temperature,
     rho_init: Density,
     moles: &Moles<Array1<f64>>,
-) -> EosResult<(Pressure, Density)> {
+) -> FeosResult<(Pressure, Density)> {
     let maxiter = 30;
     let abstol = 1e-8;
 
@@ -150,7 +150,7 @@ fn pressure_spinodal<E: Residual>(
     let mut rho = rho_init;
 
     if rho <= Density::from_reduced(0.0) {
-        return Err(EosError::InvalidState(
+        return Err(FeosError::InvalidState(
             String::from("pressure spinodal"),
             String::from("density"),
             rho.to_reduced(),
@@ -172,5 +172,5 @@ fn pressure_spinodal<E: Residual>(
             return Ok((p, rho));
         }
     }
-    Err(EosError::NotConverged("pressure_spinodal".to_owned()))
+    Err(FeosError::NotConverged("pressure_spinodal".to_owned()))
 }

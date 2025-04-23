@@ -4,7 +4,7 @@ use crate::association::Association;
 use crate::hard_sphere::{FMTVersion, HardSphereProperties};
 use crate::pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
 use crate::pcsaft::eos::polar::{AD, AQ, BD, BQ, CD, CQ, PI_SQ_43};
-use feos_core::{EosError, EosResult};
+use feos_core::{FeosError, FeosResult};
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::*;
@@ -60,7 +60,7 @@ impl FunctionalContribution for PureFMTAssocFunctional {
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
-    ) -> EosResult<Array1<N>> {
+    ) -> FeosResult<Array1<N>> {
         let p = &self.parameters;
 
         // weighted densities
@@ -73,7 +73,7 @@ impl FunctionalContribution for PureFMTAssocFunctional {
 
         // auxiliary variables
         if n3.iter().any(|n3| n3.re() > 1.0) {
-            return Err(EosError::IterationFailed(String::from(
+            return Err(FeosError::IterationFailed(String::from(
                 "PureFMTAssocFunctional",
             )));
         }
@@ -180,7 +180,7 @@ impl FunctionalContribution for PureChainFunctional {
         &self,
         _: N,
         weighted_densities: ArrayView2<N>,
-    ) -> EosResult<Array1<N>> {
+    ) -> FeosResult<Array1<N>> {
         let rho = weighted_densities.index_axis(Axis(0), 0);
         // negative lambdas lead to nan, therefore the absolute value is used
         let lambda = weighted_densities
@@ -239,7 +239,7 @@ impl FunctionalContribution for PureAttFunctional {
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
-    ) -> EosResult<Array1<N>> {
+    ) -> FeosResult<Array1<N>> {
         let p = &self.parameters;
         let rho = weighted_densities.index_axis(Axis(0), 0);
 

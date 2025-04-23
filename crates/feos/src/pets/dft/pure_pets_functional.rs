@@ -1,7 +1,7 @@
 use crate::hard_sphere::{FMTVersion, HardSphereProperties};
 use crate::pets::eos::dispersion::{A, B};
 use crate::pets::parameters::PetsParameters;
-use feos_core::{EosError, EosResult};
+use feos_core::{FeosError, FeosResult};
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::*;
@@ -54,7 +54,7 @@ impl FunctionalContribution for PureFMTFunctional {
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
-    ) -> EosResult<Array1<N>> {
+    ) -> FeosResult<Array1<N>> {
         // Weighted densities
         let n2 = weighted_densities.index_axis(Axis(0), 0);
         let n3 = weighted_densities.index_axis(Axis(0), 1);
@@ -65,7 +65,7 @@ impl FunctionalContribution for PureFMTFunctional {
 
         // Auxiliary variables
         if n3.iter().any(|n3| n3.re() > 1.0) {
-            return Err(EosError::IterationFailed(String::from("PureFMTFunctional")));
+            return Err(FeosError::IterationFailed(String::from("PureFMTFunctional")));
         }
         let ln31 = n3.mapv(|n3| (-n3).ln_1p());
         let n3rec = n3.mapv(|n3| n3.recip());
@@ -155,7 +155,7 @@ impl FunctionalContribution for PureAttFunctional {
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
-    ) -> Result<Array1<N>, EosError> {
+    ) -> Result<Array1<N>, FeosError> {
         let p = &self.parameters;
         let rho = weighted_densities.index_axis(Axis(0), 0);
 

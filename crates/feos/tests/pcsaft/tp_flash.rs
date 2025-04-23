@@ -1,13 +1,13 @@
 use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
-use feos_core::parameter::{IdentifierOption, Parameter, ParameterError};
-use feos_core::{Contributions, PhaseEquilibrium, SolverOptions};
+use feos_core::parameter::{IdentifierOption, Parameter};
+use feos_core::{Contributions, FeosResult, PhaseEquilibrium, SolverOptions};
 use ndarray::*;
 use quantity::*;
 use std::error::Error;
 use std::sync::Arc;
 
-fn read_params(components: Vec<&str>) -> Result<Arc<PcSaftParameters>, ParameterError> {
+fn read_params(components: Vec<&str>) -> FeosResult<Arc<PcSaftParameters>> {
     Ok(Arc::new(PcSaftParameters::from_json(
         components,
         "tests/pcsaft/test_parameters.json",

@@ -1,3 +1,5 @@
+use feos_core::FeosError;
+use feos_core::FeosResult;
 use feos_core::parameter::*;
 use ndarray::Array2;
 use serde::{Deserialize, Serialize};
@@ -23,7 +25,7 @@ impl Parameter for MyParameter {
     fn from_records(
         pure_records: Vec<PureRecord<MyPureModel>>,
         binary_records: Option<Array2<MyBinaryModel>>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         Ok(Self {
             pure_records,
             binary_records,
@@ -36,7 +38,7 @@ impl Parameter for MyParameter {
 }
 
 #[test]
-fn from_records() -> Result<(), ParameterError> {
+fn from_records() -> FeosResult<()> {
     let pr_json = r#"
         [
             {
@@ -98,7 +100,7 @@ fn from_json_duplicates_input() {
     );
     assert!(matches!(
         pure_records,
-        Err(ParameterError::IncompatibleParameters(t))
+        Err(FeosError::IncompatibleParameters(t))
         if t == "A substance was defined more than once."
     ));
 }
@@ -115,7 +117,7 @@ fn from_multiple_json_files_duplicates() {
     );
     assert!(matches!(
         my_parameters,
-        Err(ParameterError::IncompatibleParameters(t))
+        Err(FeosError::IncompatibleParameters(t))
         if t == "A substance was defined more than once."
     ));
 
@@ -155,7 +157,7 @@ fn from_multiple_json_files() {
 }
 
 #[test]
-fn from_records_missing_binary() -> Result<(), ParameterError> {
+fn from_records_missing_binary() -> FeosResult<()> {
     let pr_json = r#"
         [
             {
@@ -211,7 +213,7 @@ fn from_records_missing_binary() -> Result<(), ParameterError> {
 }
 
 #[test]
-fn from_records_correct_binary_order() -> Result<(), ParameterError> {
+fn from_records_correct_binary_order() -> FeosResult<()> {
     let pr_json = r#"
         [
             {

@@ -16,73 +16,6 @@ use std::fmt::Write;
 use std::fs::File;
 use std::io::BufReader;
 
-impl From<ParameterError> for PyErr {
-    fn from(e: ParameterError) -> PyErr {
-        PyRuntimeError::new_err(e.to_string())
-    }
-}
-
-#[pymethods]
-impl Identifier {
-    #[new]
-    #[pyo3(
-        text_signature = "(cas=None, name=None, iupac_name=None, smiles=None, inchi=None, formula=None)",
-        signature = (cas=None, name=None, iupac_name=None, smiles=None, inchi=None, formula=None)
-    )]
-    fn py_new(
-        cas: Option<&str>,
-        name: Option<&str>,
-        iupac_name: Option<&str>,
-        smiles: Option<&str>,
-        inchi: Option<&str>,
-        formula: Option<&str>,
-    ) -> Self {
-        Self::new(cas, name, iupac_name, smiles, inchi, formula)
-    }
-
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(self.to_string())
-    }
-
-    /// Creates record from json string.
-    #[staticmethod]
-    fn from_json_str(json: &str) -> Result<Self, ParameterError> {
-        Ok(serde_json::from_str(json)?)
-    }
-
-    /// Creates a json string from record.
-    fn to_json_str(&self) -> Result<String, ParameterError> {
-        Ok(serde_json::to_string(&self)?)
-    }
-}
-
-#[pymethods]
-impl ChemicalRecord {
-    #[new]
-    #[pyo3(text_signature = "(identifier, segments, bonds=None)", signature = (identifier, segments, bonds=None))]
-    fn py_new(
-        identifier: Identifier,
-        segments: Vec<String>,
-        bonds: Option<Vec<[usize; 2]>>,
-    ) -> Self {
-        Self::new(identifier, segments, bonds)
-    }
-
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(self.to_string())
-    }
-
-    /// Creates record from json string.
-    #[staticmethod]
-    fn from_json_str(json: &str) -> Result<Self, ParameterError> {
-        Ok(serde_json::from_str(json)?)
-    }
-
-    /// Creates a json string from record.
-    fn to_json_str(&self) -> Result<String, ParameterError> {
-        Ok(serde_json::to_string(&self)?)
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[pyclass(name = "BinaryRecord")]
@@ -112,14 +45,14 @@ impl PyBinaryRecord {
         id1: Identifier,
         id2: Identifier,
         parameters: Option<&Bound<'_, PyDict>>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         if parameters.is_none() {
-            return Err(ParameterError::Error(
+            return Err(FeosError::Error(
                 "No model parameters provided for BinaryRecord".to_string(),
             ));
         }
         let model_record =
-            depythonize(parameters.unwrap()).map_err(|e| ParameterError::Error(e.to_string()))?;
+            depythonize(parameters.unwrap()).map_err(|e| FeosError::Error(e.to_string()))?;
         Ok(Self {
             id1,
             id2,
@@ -130,24 +63,24 @@ impl PyBinaryRecord {
     #[getter]
     fn get_model_record<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyDict>, ParameterError> {
         pythonize(py, &self.model_record)
-            .map_err(|e| ParameterError::Error(e.to_string()))
+            .map_err(|e| FeosError::Error(e.to_string()))
             .and_then(|d| {
                 d.downcast_into::<PyDict>()
-                    .map_err(|e| ParameterError::Error(e.to_string()))
+                    .map_err(|e| FeosError::Error(e.to_string()))
             })
     }
 
     pub fn to_dict<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyDict>, ParameterError> {
         pythonize(py, &self)
-            .map_err(|e| ParameterError::Error(e.to_string()))
+            .map_err(|e| FeosError::Error(e.to_string()))
             .and_then(|d| {
                 d.downcast_into::<PyDict>()
-                    .map_err(|e| ParameterError::Error(e.to_string()))
+                    .map_err(|e| FeosError::Error(e.to_string()))
             })
     }
 
     #[staticmethod]
-    pub fn from_json_str(s: &str) -> Result<Self, ParameterError> {
+    pub fn from_json_str(s: &str) -> FeosResult<Self> {
         Ok(serde_json::from_str(s)?)
     }
 
@@ -171,28 +104,7 @@ impl PyBinaryRecord {
     }
 }
 
-#[pymethods]
-impl BinarySegmentRecord {
-    #[new]
-    fn py_new(id1: String, id2: String, model_record: f64) -> PyResult<Self> {
-        Ok(Self::new(id1, id2, model_record))
-    }
 
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(self.to_string())
-    }
-
-    /// Creates record from json string.
-    #[staticmethod]
-    fn from_json_str(json: &str) -> Result<Self, ParameterError> {
-        Ok(serde_json::from_str(json)?)
-    }
-
-    /// Creates a json string from record.
-    fn to_json_str(&self) -> Result<String, ParameterError> {
-        Ok(serde_json::to_string(&self)?)
-    }
-}
 
 #[pyclass(name = "PureRecord")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -237,7 +149,7 @@ impl PyPureRecord {
         let mut queried: HashSet<_> = substances.iter().map(|s| s.to_string()).collect();
         // raise error on duplicate detection
         if queried.len() != substances.len() {
-            return Err(ParameterError::IncompatibleParameters(
+            return Err(FeosError::IncompatibleParameters(
                 "A substance was defined more than once.".to_string(),
             ));
         }
@@ -259,7 +171,7 @@ impl PyPureRecord {
 
         // report missing parameters
         if !queried.is_empty() {
-            return Err(ParameterError::ComponentsNotFound(format!("{:?}", queried)));
+            return Err(FeosError::ComponentsNotFound(format!("{:?}", queried)));
         };
 
         // collect into vec in correct order
@@ -278,14 +190,14 @@ impl PyPureRecord {
         identifier: Identifier,
         molarweight: f64,
         parameters: Option<&Bound<'_, PyDict>>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         if parameters.is_none() {
-            return Err(ParameterError::Error(
+            return Err(FeosError::Error(
                 "No model parameters provided for PureRecord".to_string(),
             ));
         }
         let model_record =
-            depythonize(parameters.unwrap()).map_err(|e| ParameterError::Error(e.to_string()))?;
+            depythonize(parameters.unwrap()).map_err(|e| FeosError::Error(e.to_string()))?;
         Ok(Self {
             identifier,
             molarweight,
@@ -296,24 +208,24 @@ impl PyPureRecord {
     #[getter]
     fn get_model_record<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyDict>, ParameterError> {
         pythonize(py, &self.model_record)
-            .map_err(|e| ParameterError::Error(e.to_string()))
+            .map_err(|e| FeosError::Error(e.to_string()))
             .and_then(|d| {
                 d.downcast_into::<PyDict>()
-                    .map_err(|e| ParameterError::Error(e.to_string()))
+                    .map_err(|e| FeosError::Error(e.to_string()))
             })
     }
 
     pub fn to_dict<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyDict>, ParameterError> {
         pythonize(py, &self)
-            .map_err(|e| ParameterError::Error(e.to_string()))
+            .map_err(|e| FeosError::Error(e.to_string()))
             .and_then(|d| {
                 d.downcast_into::<PyDict>()
-                    .map_err(|e| ParameterError::Error(e.to_string()))
+                    .map_err(|e| FeosError::Error(e.to_string()))
             })
     }
 
     #[staticmethod]
-    pub fn from_json_str(s: &str) -> Result<Self, ParameterError> {
+    pub fn from_json_str(s: &str) -> FeosResult<Self> {
         Ok(serde_json::from_str(s)?)
     }
 
@@ -367,13 +279,13 @@ impl PySegmentRecord {
         parameters: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
         if parameters.is_none() {
-            return Err(ParameterError::Error(
+            return Err(FeosError::Error(
                 "No model parameters provided for SegmentRecord".to_string(),
             )
             .into());
         }
         let model_record =
-            depythonize(parameters.unwrap()).map_err(|e| ParameterError::Error(e.to_string()))?;
+            depythonize(parameters.unwrap()).map_err(|e| FeosError::Error(e.to_string()))?;
         Ok(Self {
             identifier,
             molarweight,
@@ -384,24 +296,24 @@ impl PySegmentRecord {
     #[getter]
     fn get_model_record<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyDict>, ParameterError> {
         pythonize(py, &self.model_record)
-            .map_err(|e| ParameterError::Error(e.to_string()))
+            .map_err(|e| FeosError::Error(e.to_string()))
             .and_then(|d| {
                 d.downcast_into::<PyDict>()
-                    .map_err(|e| ParameterError::Error(e.to_string()))
+                    .map_err(|e| FeosError::Error(e.to_string()))
             })
     }
 
     pub fn to_dict<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyDict>, ParameterError> {
         pythonize(py, &self)
-            .map_err(|e| ParameterError::Error(e.to_string()))
+            .map_err(|e| FeosError::Error(e.to_string()))
             .and_then(|d| {
                 d.downcast_into::<PyDict>()
-                    .map_err(|e| ParameterError::Error(e.to_string()))
+                    .map_err(|e| FeosError::Error(e.to_string()))
             })
     }
 
     #[staticmethod]
-    pub fn from_json_str(s: &str) -> Result<Self, ParameterError> {
+    pub fn from_json_str(s: &str) -> FeosResult<Self> {
         Ok(serde_json::from_str(s)?)
     }
 
@@ -492,7 +404,7 @@ impl PyParameters {
         pure_records: Vec<PyPureRecord>,
         binary_records: Vec<PyBinaryRecord>,
         identifier_option: IdentifierOption,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         // Build Hashmap (id, id) -> BinaryRecord
         let binary_map: HashMap<_, _> = {
             binary_records
@@ -594,7 +506,7 @@ impl PyParameters {
         pure_path: PyBackedStr,
         binary_path: Option<PyBackedStr>,
         identifier_option: IdentifierOption,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         Self::from_multiple_json(
             vec![(substances, pure_path)],
             binary_path,
@@ -622,7 +534,7 @@ impl PyParameters {
         input: Vec<(Vec<PyBackedStr>, PyBackedStr)>,
         binary_path: Option<PyBackedStr>,
         identifier_option: IdentifierOption,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         // total number of substances queried
         let nsubstances = input.iter().map(|(substances, _)| substances.len()).sum();
 
@@ -634,7 +546,7 @@ impl PyParameters {
 
         // check if there are duplicates
         if queried.len() != nsubstances {
-            return Err(ParameterError::IncompatibleParameters(
+            return Err(FeosError::IncompatibleParameters(
                 "A substance was defined more than once.".to_string(),
             ));
         }
@@ -896,7 +808,7 @@ impl PyGcParameters {
         segments_path: PyBackedStr,
         binary_path: Option<PyBackedStr>,
         identifier_option: IdentifierOption,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let queried: IndexSet<_> = substances
             .iter()
             .map(|identifier| identifier as &str)
@@ -922,7 +834,7 @@ impl PyGcParameters {
             .collect();
         if !queried.is_subset(&available) {
             let missing: Vec<_> = queried.difference(&available).cloned().collect();
-            return Err(ParameterError::ComponentsNotFound(format!("{:?}", missing)));
+            return Err(FeosError::ComponentsNotFound(format!("{:?}", missing)));
         };
 
         // Collect all pure records that were queried

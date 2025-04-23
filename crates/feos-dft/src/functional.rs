@@ -4,7 +4,7 @@ use crate::functional_contribution::*;
 use crate::ideal_chain_contribution::IdealChainContribution;
 use crate::solvation::PairPotential;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
-use feos_core::{EosResult, EquationOfState, IdealGas, Residual, StateHD};
+use feos_core::{FeosResult, EquationOfState, IdealGas, Residual, StateHD};
 use ndarray::*;
 use num_dual::*;
 use petgraph::graph::{Graph, UnGraph};
@@ -110,7 +110,7 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
         temperature: N,
         density: &Array<N, D::Larger>,
         convolver: &Arc<dyn Convolver<N, D>>,
-    ) -> EosResult<(Array<N, D>, Array<N, D::Larger>)>
+    ) -> FeosResult<(Array<N, D>, Array<N, D::Larger>)>
     where
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,

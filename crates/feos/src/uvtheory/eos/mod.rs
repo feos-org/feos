@@ -132,13 +132,13 @@ mod test {
     use crate::uvtheory::parameters::*;
     use approx::assert_relative_eq;
     use feos_core::parameter::{Identifier, Parameter, PureRecord};
-    use feos_core::{EosResult, State};
+    use feos_core::{FeosResult, State};
     use ndarray::arr1;
     use quantity::{ANGSTROM, KELVIN, MOL, NAV, RGAS};
     use typenum::P3;
 
     #[test]
-    fn helmholtz_energy_pure_wca() -> EosResult<()> {
+    fn helmholtz_energy_pure_wca() -> FeosResult<()> {
         let sig = 3.7039;
         let eps_k = 150.03;
         let parameters = UVTheoryParameters::new_simple(24.0, 6.0, sig, eps_k)?;
@@ -156,7 +156,7 @@ mod test {
     }
 
     #[test]
-    fn helmholtz_energy_pure_bh() -> EosResult<()> {
+    fn helmholtz_energy_pure_bh() -> FeosResult<()> {
         let eps_k = 150.03;
         let sig = 3.7039;
         let rep = 24.0;
@@ -182,7 +182,7 @@ mod test {
     }
 
     #[test]
-    fn helmholtz_energy_pure_uvb3() -> EosResult<()> {
+    fn helmholtz_energy_pure_uvb3() -> FeosResult<()> {
         let eps_k = 150.03;
         let sig = 3.7039;
         let rep = 12.0;
@@ -207,7 +207,7 @@ mod test {
     }
 
     #[test]
-    fn helmholtz_energy_mixtures_bh() -> EosResult<()> {
+    fn helmholtz_energy_mixtures_bh() -> FeosResult<()> {
         // Mixture of equal components --> result must be the same as for pure fluid ///
         // component 1
         let rep1 = 24.0;
@@ -253,7 +253,7 @@ mod test {
     }
 
     #[test]
-    fn helmholtz_energy_wca_mixture() -> EosResult<()> {
+    fn helmholtz_energy_wca_mixture() -> FeosResult<()> {
         let p = test_parameters_mixture(
             arr1(&[12.0, 12.0]),
             arr1(&[6.0, 6.0]),
@@ -280,7 +280,7 @@ mod test {
     }
 
     #[test]
-    fn helmholtz_energy_wca_mixture_different_sigma() -> EosResult<()> {
+    fn helmholtz_energy_wca_mixture_different_sigma() -> FeosResult<()> {
         let p = test_parameters_mixture(
             arr1(&[12.0, 12.0]),
             arr1(&[6.0, 6.0]),

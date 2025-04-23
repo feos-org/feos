@@ -35,7 +35,7 @@ mod state;
 pub use equation_of_state::{
     Components, EntropyScaling, EquationOfState, IdealGas, Molarweight, NoResidual, Residual,
 };
-pub use errors::{EosError, EosResult};
+pub use errors::{FeosError, FeosResult};
 pub use phase_equilibria::{
     PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, TemperatureOrPressure,
 };
@@ -207,7 +207,7 @@ mod tests {
     use crate::equation_of_state::{Components, EquationOfState, IdealGas};
     use crate::parameter::*;
     use crate::Contributions;
-    use crate::EosResult;
+    use crate::FeosResult;
     use crate::StateBuilder;
     use approx::*;
     use ndarray::Array1;
@@ -277,7 +277,7 @@ mod tests {
     }
 
     #[test]
-    fn validate_residual_properties() -> EosResult<()> {
+    fn validate_residual_properties() -> FeosResult<()> {
         let mixture = pure_record_vec();
         let propane = mixture[0].clone();
         let parameters = PengRobinsonParameters::new_pure(propane)?;

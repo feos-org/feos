@@ -1,0 +1,33 @@
+[project]
+name = "feos"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Gernot Bauer", email = "gernotbauer85@googlemail.com" }
+]
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.maturin]
+module-name = "feos._feos"
+python-packages = ["feos"]
+python-source = "feos"
+
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[tool.ruff]
+line-length = 80
+
+[tool.ruff.lint]
+extend-select = [
+    "D", # pydocstyle
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google" # https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 80

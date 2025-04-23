@@ -3,7 +3,7 @@ use crate::association::Association;
 use crate::hard_sphere::{FMTContribution, FMTVersion};
 use crate::pcsaft::eos::PcSaftOptions;
 use feos_core::parameter::Parameter;
-use feos_core::{Components, EosResult, Molarweight, Residual, StateHD};
+use feos_core::{Components, FeosResult, Molarweight, Residual, StateHD};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;

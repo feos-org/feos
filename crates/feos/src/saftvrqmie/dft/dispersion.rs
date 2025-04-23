@@ -1,6 +1,6 @@
 use crate::saftvrqmie::eos::dispersion::{dispersion_energy_density, Alpha};
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
-use feos_core::EosResult;
+use feos_core::FeosResult;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::DualNum;
@@ -55,7 +55,7 @@ impl FunctionalContribution for AttractiveFunctional {
         &self,
         temperature: N,
         density: ArrayView2<N>,
-    ) -> EosResult<Array1<N>> {
+    ) -> FeosResult<Array1<N>> {
         // auxiliary variables
         let p = &self.parameters;
         let n = p.m.len();

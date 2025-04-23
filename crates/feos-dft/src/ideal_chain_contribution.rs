@@ -1,4 +1,4 @@
-use feos_core::{EosResult, ReferenceSystem, StateHD};
+use feos_core::{FeosResult, ReferenceSystem, StateHD};
 use ndarray::*;
 use num_dual::DualNum;
 use quantity::{Density, Pressure, Temperature};
@@ -46,7 +46,7 @@ impl IdealChainContribution {
     pub fn helmholtz_energy_density<D, N>(
         &self,
         density: &Array<N, D::Larger>,
-    ) -> EosResult<Array<N, D>>
+    ) -> FeosResult<Array<N, D>>
     where
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,
@@ -63,7 +63,7 @@ impl IdealChainContribution {
         &self,
         temperature: Temperature,
         density: &Density<Array<f64, D::Larger>>,
-    ) -> EosResult<Pressure<Array<f64, D>>>
+    ) -> FeosResult<Pressure<Array<f64, D>>>
     where
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,

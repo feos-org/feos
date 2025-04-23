@@ -3,7 +3,7 @@ use super::DFTProfile;
 use crate::convolver::{BulkConvolver, Convolver};
 use crate::functional_contribution::FunctionalContribution;
 use crate::{ConvolverFFT, DFTSolverLog, HelmholtzEnergyFunctional, WeightFunctionInfo};
-use feos_core::{Contributions, EosResult, IdealGas, ReferenceSystem, Verbosity};
+use feos_core::{Contributions, FeosResult, IdealGas, ReferenceSystem, Verbosity};
 use ndarray::{Array, Array1, Array2, Axis, Dimension, RemoveAxis, ScalarOperand};
 use num_dual::{Dual64, DualNum};
 use quantity::{
@@ -25,7 +25,7 @@ where
     D::Larger: Dimension<Smaller = D>,
 {
     /// Calculate the grand potential density $\omega$.
-    pub fn grand_potential_density(&self) -> EosResult<Pressure<Array<f64, D>>> {
+    pub fn grand_potential_density(&self) -> FeosResult<Pressure<Array<f64, D>>> {
         // Calculate residual Helmholtz energy density and functional derivative
         let t = self.temperature.to_reduced();
         let rho = self.density.to_reduced();
@@ -50,12 +50,12 @@ where
     }
 
     /// Calculate the grand potential $\Omega$.
-    pub fn grand_potential(&self) -> EosResult<Energy> {
+    pub fn grand_potential(&self) -> FeosResult<Energy> {
         Ok(self.integrate(&self.grand_potential_density()?))
     }
 
     /// Calculate the (residual) intrinsic functional derivative $\frac{\delta\mathcal{F}}{\delta\rho_i(\mathbf{r})}$.
-    pub fn functional_derivative(&self) -> EosResult<Array<f64, D::Larger>> {
+    pub fn functional_derivative(&self) -> FeosResult<Array<f64, D::Larger>> {
         let (_, dfdrho) = self.dft.functional_derivative(
             self.temperature.to_reduced(),
             &self.density.to_reduced(),
@@ -76,7 +76,7 @@ where
         temperature: N,
         density: &Array<f64, D::Larger>,
         convolver: &Arc<dyn Convolver<N, D>>,
-    ) -> EosResult<Array<N, D>>
+    ) -> FeosResult<Array<N, D>>
     where
         N: DualNum<f64> + Copy + ScalarOperand,
     {
@@ -105,7 +105,7 @@ where
     /// Calculate the residual entropy density $s^\mathrm{res}(\mathbf{r})$.
     ///
     /// Untested with heterosegmented functionals.
-    pub fn residual_entropy_density(&self) -> EosResult<EntropyDensity<Array<f64, D>>> {
+    pub fn residual_entropy_density(&self) -> FeosResult<EntropyDensity<Array<f64, D>>> {
         // initialize convolver
         let temperature = self.temperature.to_reduced();
         let temperature_dual = Dual64::from(temperature).derivative();
@@ -132,7 +132,7 @@ where
         temperature: f64,
         density: &Array<f64, D::Larger>,
         convolver: &Arc<dyn Convolver<Dual64, D>>,
-    ) -> EosResult<Vec<Array<f64, D>>> {
+    ) -> FeosResult<Vec<Array<f64, D>>> {
         let density_dual = density.mapv(Dual64::from);
         let temperature_dual = Dual64::from(temperature).derivative();
         let weighted_densities = convolver.weighted_densities(&density_dual);
@@ -188,7 +188,7 @@ where
     pub fn entropy_density(
         &self,
         contributions: Contributions,
-    ) -> EosResult<EntropyDensity<Array<f64, D>>> {
+    ) -> FeosResult<EntropyDensity<Array<f64, D>>> {
         // initialize convolver
         let temperature = self.temperature.to_reduced();
         let temperature_dual = Dual64::from(temperature).derivative();
@@ -217,7 +217,7 @@ where
     /// Calculate the entropy $S$.
     ///
     /// Untested with heterosegmented functionals.
-    pub fn entropy(&self, contributions: Contributions) -> EosResult<Entropy> {
+    pub fn entropy(&self, contributions: Contributions) -> FeosResult<Entropy> {
         Ok(self.integrate(&self.entropy_density(contributions)?))
     }
 
@@ -227,7 +227,7 @@ where
     pub fn internal_energy_density(
         &self,
         contributions: Contributions,
-    ) -> EosResult<Pressure<Array<f64, D>>>
+    ) -> FeosResult<Pressure<Array<f64, D>>>
     where
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,
@@ -261,7 +261,7 @@ where
     /// Calculate the internal energy $U$.
     ///
     /// Untested with heterosegmented functionals.
-    pub fn internal_energy(&self, contributions: Contributions) -> EosResult<Energy> {
+    pub fn internal_energy(&self, contributions: Contributions) -> FeosResult<Energy> {
         Ok(self.integrate(&self.internal_energy_density(contributions)?))
     }
 }
@@ -272,7 +272,7 @@ where
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
-    fn density_derivative(&self, lhs: &Array<f64, D::Larger>) -> EosResult<Array<f64, D::Larger>> {
+    fn density_derivative(&self, lhs: &Array<f64, D::Larger>) -> FeosResult<Array<f64, D::Larger>> {
         let rho = self.density.to_reduced();
         let partial_density = self.bulk.partial_density.to_reduced();
         let rho_bulk = self.dft.component_index().mapv(|i| partial_density[i]);
@@ -295,7 +295,7 @@ where
     }
 
     /// Return the partial derivatives of the density profiles w.r.t. the chemical potentials $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial\mu_k}\right)_T$
-    pub fn drho_dmu(&self) -> EosResult<DrhoDmu<D>> {
+    pub fn drho_dmu(&self) -> FeosResult<DrhoDmu<D>> {
         let shape: Vec<_> = std::iter::once(&self.dft.components())
             .chain(self.density.shape())
             .copied()
@@ -317,7 +317,7 @@ where
     }
 
     /// Return the partial derivatives of the number of moles w.r.t. the chemical potentials $\left(\frac{\partial N_i}{\partial\mu_k}\right)_T$
-    pub fn dn_dmu(&self) -> EosResult<DnDmu> {
+    pub fn dn_dmu(&self) -> FeosResult<DnDmu> {
         let drho_dmu = self.drho_dmu()?.into_reduced();
         let n = drho_dmu.shape()[0];
         let mut dn_dmu = Array2::zeros([n; 2]);
@@ -329,7 +329,7 @@ where
     }
 
     /// Return the partial derivatives of the density profiles w.r.t. the bulk pressure at constant temperature and bulk composition $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial p}\right)_{T,\mathbf{x}}$
-    pub fn drho_dp(&self) -> EosResult<DrhoDp<D>> {
+    pub fn drho_dp(&self) -> FeosResult<DrhoDp<D>> {
         let mut lhs = self.density.to_reduced();
         let v = self.bulk.partial_molar_volume().to_reduced();
         for (mut l, &c) in lhs.outer_iter_mut().zip(self.dft.component_index().iter()) {
@@ -341,12 +341,12 @@ where
     }
 
     /// Return the partial derivatives of the number of moles w.r.t. the bulk pressure at constant temperature and bulk composition $\left(\frac{\partial N_i}{\partial p}\right)_{T,\mathbf{x}}$
-    pub fn dn_dp(&self) -> EosResult<DnDp> {
+    pub fn dn_dp(&self) -> FeosResult<DnDp> {
         Ok(self.integrate_segments(&self.drho_dp()?))
     }
 
     /// Return the partial derivatives of the density profiles w.r.t. the temperature at constant bulk pressure and composition $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial T}\right)_{p,\mathbf{x}}$
-    pub fn drho_dt(&self) -> EosResult<DrhoDT<D>> {
+    pub fn drho_dt(&self) -> FeosResult<DrhoDT<D>> {
         let rho = self.density.to_reduced();
         let t = self.temperature.to_reduced();
         let rho_dual = rho.mapv(Dual64::from);
@@ -413,7 +413,7 @@ where
     }
 
     /// Return the partial derivatives of the number of moles w.r.t. the temperature at constant bulk pressure and composition $\left(\frac{\partial N_i}{\partial T}\right)_{p,\mathbf{x}}$
-    pub fn dn_dt(&self) -> EosResult<DnDT> {
+    pub fn dn_dt(&self) -> FeosResult<DnDT> {
         Ok(self.integrate_segments(&self.drho_dt()?))
     }
 }

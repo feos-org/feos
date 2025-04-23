@@ -7,7 +7,7 @@ use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
 use crate::WeightFunctionInfo;
 use feos_core::{
-    Components, Contributions, EosResult, ReferenceSystem, Residual, State, StateBuilder, StateHD,
+    Components, Contributions, FeosResult, ReferenceSystem, Residual, State, StateBuilder, StateHD,
 };
 use ndarray::{prelude::*, ScalarOperand};
 use ndarray::{Axis as Axis_nd, RemoveAxis};
@@ -63,10 +63,10 @@ pub trait PoreSpecification<D: Dimension> {
         bulk: &State<F>,
         density: Option<&Density<Array<f64, D::Larger>>>,
         external_potential: Option<&Array<f64, D::Larger>>,
-    ) -> EosResult<PoreProfile<D, F>>;
+    ) -> FeosResult<PoreProfile<D, F>>;
 
     /// Return the pore volume using Helium at 298 K as reference.
-    fn pore_volume(&self) -> EosResult<Volume>
+    fn pore_volume(&self) -> FeosResult<Volume>
     where
         D::Larger: Dimension<Smaller = D>,
     {
@@ -111,7 +111,7 @@ where
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
-    pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> EosResult<()> {
+    pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> FeosResult<()> {
         // Solve the profile
         self.profile.solve(solver, debug)?;
 
@@ -126,7 +126,7 @@ where
         Ok(())
     }
 
-    pub fn solve(mut self, solver: Option<&DFTSolver>) -> EosResult<Self> {
+    pub fn solve(mut self, solver: Option<&DFTSolver>) -> FeosResult<Self> {
         self.solve_inplace(solver, false)?;
         Ok(self)
     }
@@ -138,7 +138,7 @@ where
         self
     }
 
-    pub fn partial_molar_enthalpy_of_adsorption(&self) -> EosResult<MolarEnergy<Array1<f64>>> {
+    pub fn partial_molar_enthalpy_of_adsorption(&self) -> FeosResult<MolarEnergy<Array1<f64>>> {
         let a = self.profile.dn_dmu()?;
         let a_unit = a.get((0, 0));
         let b = -self.profile.temperature * self.profile.dn_dt()?;
@@ -148,7 +148,7 @@ where
         Ok(&h_ads * b_unit / a_unit)
     }
 
-    pub fn enthalpy_of_adsorption(&self) -> EosResult<MolarEnergy> {
+    pub fn enthalpy_of_adsorption(&self) -> FeosResult<MolarEnergy> {
         Ok((self.partial_molar_enthalpy_of_adsorption()?
             * Dimensionless::new(&self.profile.bulk.molefracs))
         .sum())
@@ -199,7 +199,7 @@ impl PoreSpecification<Ix1> for Pore1D {
         bulk: &State<F>,
         density: Option<&Density<Array2<f64>>>,
         external_potential: Option<&Array2<f64>>,
-    ) -> EosResult<PoreProfile1D<F>> {
+    ) -> FeosResult<PoreProfile1D<F>> {
         let dft: &F = &bulk.eos;
         let n_grid = self.n_grid.unwrap_or(DEFAULT_GRID_POINTS);
 
@@ -373,7 +373,7 @@ impl FunctionalContribution for HeliumContribution {
         &self,
         _: N,
         _: ArrayView2<N>,
-    ) -> EosResult<Array1<N>> {
+    ) -> FeosResult<Array1<N>> {
         unreachable!()
     }
 }

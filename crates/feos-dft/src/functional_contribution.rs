@@ -1,5 +1,5 @@
 use crate::weight_functions::WeightFunctionInfo;
-use feos_core::{EosResult, StateHD};
+use feos_core::{FeosResult, StateHD};
 use ndarray::prelude::*;
 use ndarray::{RemoveAxis, ScalarOperand};
 use num_dual::*;
@@ -27,7 +27,7 @@ pub trait FunctionalContribution: Display + Sync + Send {
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
-    ) -> EosResult<Array1<N>>;
+    ) -> FeosResult<Array1<N>>;
 
     fn helmholtz_energy<N: DualNum<f64> + Copy + ScalarOperand>(&self, state: &StateHD<N>) -> N {
         // calculate weight functions
@@ -52,7 +52,7 @@ pub trait FunctionalContribution: Display + Sync + Send {
         weighted_densities: Array2<N>,
         mut helmholtz_energy_density: ArrayViewMut1<N>,
         mut first_partial_derivative: ArrayViewMut2<N>,
-    ) -> EosResult<()> {
+    ) -> FeosResult<()> {
         let mut wd = weighted_densities.mapv(Dual::from_re);
         let t = Dual::from_re(temperature);
         let mut phi = Array::zeros(weighted_densities.raw_dim().remove_axis(Axis(0)));
@@ -78,7 +78,7 @@ pub trait FunctionalContribution: Display + Sync + Send {
         mut helmholtz_energy_density: ArrayViewMut1<f64>,
         mut first_partial_derivative: ArrayViewMut2<f64>,
         mut second_partial_derivative: ArrayViewMut3<f64>,
-    ) -> EosResult<()> {
+    ) -> FeosResult<()> {
         let mut wd = weighted_densities.mapv(HyperDual64::from);
         let t = HyperDual64::from(temperature);
         let mut phi = Array::zeros(weighted_densities.raw_dim().remove_axis(Axis(0)));

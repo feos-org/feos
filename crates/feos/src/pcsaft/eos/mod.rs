@@ -3,7 +3,7 @@ use crate::association::Association;
 use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::parameter::Parameter;
 use feos_core::{
-    Components, EntropyScaling, EosError, EosResult, Molarweight, ReferenceSystem, Residual, State,
+    Components, EntropyScaling, FeosError, FeosResult, Molarweight, ReferenceSystem, Residual, State,
     StateHD,
 };
 use ndarray::Array1;
@@ -230,7 +230,7 @@ impl EntropyScaling for PcSaft {
         temperature: Temperature,
         _: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Viscosity> {
+    ) -> FeosResult<Viscosity> {
         let p = &self.parameters;
         let mw = &p.molarweight;
         let x = (moles / moles.sum()).into_value();
@@ -257,7 +257,7 @@ impl EntropyScaling for PcSaft {
         Ok(ce_mix)
     }
 
-    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
         let coefficients = self
             .parameters
             .viscosity
@@ -278,9 +278,9 @@ impl EntropyScaling for PcSaft {
         temperature: Temperature,
         volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<Diffusivity> {
+    ) -> FeosResult<Diffusivity> {
         if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
+            return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
         let p = &self.parameters;
         let density = moles.sum() / volume;
@@ -294,9 +294,9 @@ impl EntropyScaling for PcSaft {
         Ok(res[0])
     }
 
-    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
         if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
+            return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
         let coefficients = self
             .parameters
@@ -320,9 +320,9 @@ impl EntropyScaling for PcSaft {
         temperature: Temperature,
         volume: Volume,
         moles: &Moles<Array1<f64>>,
-    ) -> EosResult<ThermalConductivity> {
+    ) -> FeosResult<ThermalConductivity> {
         if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
+            return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
         let p = &self.parameters;
         let mws = self.molar_weight();
@@ -351,9 +351,9 @@ impl EntropyScaling for PcSaft {
         Ok(res[0])
     }
 
-    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
+    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
         if self.components() != 1 {
-            return Err(EosError::IncompatibleComponents(self.components(), 1));
+            return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
         let coefficients = self
             .parameters
@@ -538,7 +538,7 @@ mod tests {
     }
 
     #[test]
-    fn viscosity() -> EosResult<()> {
+    fn viscosity() -> FeosResult<()> {
         let e = Arc::new(PcSaft::new(propane_parameters()));
         let t = 300.0 * KELVIN;
         let p = BAR;
@@ -560,7 +560,7 @@ mod tests {
     }
 
     #[test]
-    fn diffusion() -> EosResult<()> {
+    fn diffusion() -> FeosResult<()> {
         let e = Arc::new(PcSaft::new(propane_parameters()));
         let t = 300.0 * KELVIN;
         let p = BAR;

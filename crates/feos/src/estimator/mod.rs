@@ -1,5 +1,5 @@
 //! Utilities for working with experimental data.
-use feos_core::{DensityInitialization, EosError};
+use feos_core::{DensityInitialization, FeosError};
 // use quantity::QuantityError;
 use std::num::ParseFloatError;
 use thiserror::Error;
@@ -53,5 +53,5 @@ pub enum EstimatorError {
     // #[error(transparent)]
     // QuantityError(#[from] QuantityError),
     #[error(transparent)]
-    EosError(#[from] EosError),
+    EosError(#[from] FeosError),
 }

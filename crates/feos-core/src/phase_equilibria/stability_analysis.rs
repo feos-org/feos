@@ -1,6 +1,6 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
-use crate::errors::{EosError, EosResult};
+use crate::errors::{FeosError, FeosResult};
 use crate::state::{Contributions, DensityInitialization, State};
 use crate::{ReferenceSystem, SolverOptions, Verbosity};
 use ndarray::*;
@@ -20,14 +20,14 @@ const ZERO_TPD: f64 = -1E-08;
 impl<E: Residual> State<E> {
     /// Determine if the state is stable, i.e. if a phase split should
     /// occur or not.
-    pub fn is_stable(&self, options: SolverOptions) -> EosResult<bool> {
+    pub fn is_stable(&self, options: SolverOptions) -> FeosResult<bool> {
         Ok(self.stability_analysis(options)?.is_empty())
     }
 
     /// Perform a stability analysis. The result is a list of [State]s with
     /// negative tangent plane distance (i.e. lower Gibbs energy) that can be
     /// used as initial estimates for a phase equilibrium calculation.
-    pub fn stability_analysis(&self, options: SolverOptions) -> EosResult<Vec<State<E>>> {
+    pub fn stability_analysis(&self, options: SolverOptions) -> FeosResult<Vec<State<E>>> {
         let mut result = Vec::new();
         for i_trial in 0..self.eos.components() + 1 {
             let phase = if i_trial == self.eos.components() {
@@ -60,7 +60,7 @@ impl<E: Residual> State<E> {
         Ok(result)
     }
 
-    fn define_trial_state(&self, dominant_component: usize) -> EosResult<State<E>> {
+    fn define_trial_state(&self, dominant_component: usize) -> FeosResult<State<E>> {
         let x_feed = &self.molefracs;
 
         let (x_trial, phase) = if dominant_component == self.eos.components() {
@@ -95,7 +95,7 @@ impl<E: Residual> State<E> {
         &self,
         trial: &mut State<E>,
         options: SolverOptions,
-    ) -> EosResult<(Option<f64>, usize)> {
+    ) -> FeosResult<(Option<f64>, usize)> {
         let (max_iter, tol, verbosity) = options.unwrap_or(MINIMIZE_KMAX, MINIMIZE_TOL);
         let mut newton = false;
         let mut scaled_tol = tol;
@@ -152,10 +152,10 @@ impl<E: Residual> State<E> {
                 return Ok((Some(tpd), i));
             }
         }
-        Err(EosError::NotConverged(String::from("stability analysis")))
+        Err(FeosError::NotConverged(String::from("stability analysis")))
     }
 
-    fn stability_newton_step(&mut self, di: &Array1<f64>, tpd: &mut f64) -> EosResult<f64> {
+    fn stability_newton_step(&mut self, di: &Array1<f64>, tpd: &mut f64) -> FeosResult<f64> {
         // save old values
         let tpd_old = *tpd;
 

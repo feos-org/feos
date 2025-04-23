@@ -3,7 +3,7 @@ use crate::saftvrqmie::eos::SaftVRQMieOptions;
 use crate::saftvrqmie::parameters::SaftVRQMieParameters;
 use dispersion::AttractiveFunctional;
 use feos_core::parameter::Parameter;
-use feos_core::{Components, EosResult, Molarweight, Residual, StateHD};
+use feos_core::{Components, FeosResult, Molarweight, Residual, StateHD};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;

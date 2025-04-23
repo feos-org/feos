@@ -2,9 +2,10 @@ use crate::association::{AssociationParameters, AssociationStrength};
 use crate::gc_pcsaft::record::{GcPcSaftAssociationRecord, GcPcSaftRecord};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use feos_core::parameter::{
-    BinarySegmentRecord, ChemicalRecord, Identifier, ParameterError, ParameterHetero, SegmentCount,
+    BinarySegmentRecord, ChemicalRecord, Identifier, ParameterHetero, SegmentCount,
     SegmentRecord,
 };
+use feos_core::FeosResult;
 use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
@@ -101,7 +102,7 @@ impl ParameterHetero for GcPcSaftEosParameters {
         chemical_records: Vec<C>,
         segment_records: Vec<SegmentRecord<GcPcSaftRecord>>,
         binary_segment_records: Option<Vec<BinarySegmentRecord>>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let chemical_records: Vec<_> = chemical_records.into_iter().map(|c| c.into()).collect();
 
         let mut molarweight = Array1::zeros(chemical_records.len());
@@ -267,7 +268,7 @@ impl ParameterHetero for GcPcSaftEosParameters {
 }
 
 impl GcPcSaftEosParameters {
-    pub fn phi(self, phi: &[f64]) -> Result<Self, ParameterError> {
+    pub fn phi(self, phi: &[f64]) -> FeosResult<Self> {
         let mut cr = self.chemical_records;
         cr.iter_mut().zip(phi.iter()).for_each(|(c, &p)| c.phi = p);
         Self::from_segments(cr, self.segment_records, self.binary_segment_records)

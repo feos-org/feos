@@ -78,7 +78,7 @@ impl PyEquationOfState {
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
         dq_variant: DQVariants,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let options = PcSaftOptions {
             max_eta,
             max_iter_cross_assoc,
@@ -129,7 +129,7 @@ impl PyEquationOfState {
         max_eta: f64,
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let options = SaftVRMieOptions {
             max_eta,
             max_iter_cross_assoc,
@@ -172,7 +172,7 @@ impl PyEquationOfState {
         max_eta: f64,
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let options = GcPcSaftOptions {
             max_eta,
             max_iter_cross_assoc,
@@ -218,7 +218,7 @@ impl PyEquationOfState {
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
         epcsaft_variant: ElectrolytePcSaftVariants,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let options = ElectrolytePcSaftOptions {
             max_eta,
             max_iter_cross_assoc,
@@ -245,7 +245,7 @@ impl PyEquationOfState {
     ///     The PR equation of state that can be used to compute thermodynamic
     ///     states.
     #[staticmethod]
-    pub fn peng_robinson(parameters: PyParameters) -> Result<Self, ParameterError> {
+    pub fn peng_robinson(parameters: PyParameters) -> FeosResult<Self> {
         let residual = Arc::new(ResidualModel::PengRobinson(PengRobinson::new(Arc::new(
             parameters.try_convert()?,
         ))));
@@ -288,7 +288,7 @@ impl PyEquationOfState {
     #[cfg(feature = "pets")]
     #[staticmethod]
     #[pyo3(signature = (parameters, max_eta=0.5), text_signature = "(parameters, max_eta=0.5)")]
-    fn pets(parameters: PyParameters, max_eta: f64) -> Result<Self, ParameterError> {
+    fn pets(parameters: PyParameters, max_eta: f64) -> FeosResult<Self> {
         let options = PetsOptions { max_eta };
         let residual = Arc::new(ResidualModel::Pets(Pets::with_options(
             Arc::new(parameters.try_convert()?),
@@ -363,7 +363,7 @@ impl PyEquationOfState {
         parameters: PyParameters,
         max_eta: f64,
         inc_nonadd_term: bool,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let options = SaftVRQMieOptions {
             max_eta,
             inc_nonadd_term,
@@ -413,7 +413,7 @@ impl PyEquationOfState {
     /// Returns
     /// -------
     /// EquationOfState
-    fn joback(&self, joback: PyGcParameters) -> Result<Self, ParameterError> {
+    fn joback(&self, joback: PyGcParameters) -> FeosResult<Self> {
         Ok(self.add_ideal_gas(IdealGasModel::Joback(Arc::new(
             joback.try_convert_homosegmented()?,
         ))))
@@ -430,7 +430,7 @@ impl PyEquationOfState {
     /// Returns
     /// -------
     /// EquationOfState
-    fn dippr(&self, dippr: PyParameters) -> Result<Self, ParameterError> {
+    fn dippr(&self, dippr: PyParameters) -> FeosResult<Self> {
         Ok(self.add_ideal_gas(IdealGasModel::Dippr(Arc::new(dippr.try_convert()?))))
     }
 }

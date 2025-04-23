@@ -2,7 +2,7 @@
 use super::functional::HelmholtzEnergyFunctional;
 use super::solver::DFTSolver;
 use feos_core::{
-    Contributions, DensityInitialization, EosError, EosResult, ReferenceSystem, SolverOptions,
+    Contributions, DensityInitialization, FeosError, FeosResult, ReferenceSystem, SolverOptions,
     State, StateBuilder,
 };
 use ndarray::{Array1, Array2, Dimension, Ix1, Ix3, RemoveAxis};
@@ -30,7 +30,7 @@ const TOL_ADSORPTION_EQUILIBRIUM: f64 = 1e-8;
 /// Container structure for the calculation of adsorption isotherms.
 pub struct Adsorption<D: Dimension, F> {
     components: usize,
-    pub profiles: Vec<EosResult<PoreProfile<D, F>>>,
+    pub profiles: Vec<FeosResult<PoreProfile<D, F>>>,
 }
 
 /// Container structure for adsorption isotherms in 1D pores.
@@ -45,7 +45,7 @@ where
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
-    fn new(functional: &Arc<F>, profiles: Vec<EosResult<PoreProfile<D, F>>>) -> Self {
+    fn new(functional: &Arc<F>, profiles: Vec<FeosResult<PoreProfile<D, F>>>) -> Self {
         Self {
             components: functional.components(),
             profiles,
@@ -60,7 +60,7 @@ where
         pore: &S,
         molefracs: Option<&Array1<f64>>,
         solver: Option<&DFTSolver>,
-    ) -> EosResult<Adsorption<D, F>> {
+    ) -> FeosResult<Adsorption<D, F>> {
         Self::isotherm(
             functional,
             temperature,
@@ -80,7 +80,7 @@ where
         pore: &S,
         molefracs: Option<&Array1<f64>>,
         solver: Option<&DFTSolver>,
-    ) -> EosResult<Adsorption<D, F>> {
+    ) -> FeosResult<Adsorption<D, F>> {
         let pressure = pressure.into_iter().rev().collect();
         let isotherm = Self::isotherm(
             functional,
@@ -105,7 +105,7 @@ where
         pore: &S,
         molefracs: Option<&Array1<f64>>,
         solver: Option<&DFTSolver>,
-    ) -> EosResult<Adsorption<D, F>> {
+    ) -> FeosResult<Adsorption<D, F>> {
         let (p_min, p_max) = (pressure.get(0), pressure.get(pressure.len() - 1));
         let equilibrium = Self::phase_equilibrium(
             functional,
@@ -189,10 +189,10 @@ where
         molefracs: Option<&Array1<f64>>,
         density_initialization: DensityInitialization,
         solver: Option<&DFTSolver>,
-    ) -> EosResult<Adsorption<D, F>> {
+    ) -> FeosResult<Adsorption<D, F>> {
         let moles = functional
             .validate_moles(molefracs.map(|x| Moles::from_reduced(x.clone())).as_ref())?;
-        let mut profiles: Vec<EosResult<PoreProfile<D, F>>> = Vec::with_capacity(pressure.len());
+        let mut profiles: Vec<FeosResult<PoreProfile<D, F>>> = Vec::with_capacity(pressure.len());
 
         // On the first iteration, initialize the density profile according to the direction
         // and calculate the external potential once.
@@ -253,7 +253,7 @@ where
         molefracs: Option<&Array1<f64>>,
         solver: Option<&DFTSolver>,
         options: SolverOptions,
-    ) -> EosResult<Adsorption<D, F>> {
+    ) -> FeosResult<Adsorption<D, F>> {
         let moles = functional
             .validate_moles(molefracs.map(|x| Moles::from_reduced(x.clone())).as_ref())?;
 
@@ -328,7 +328,7 @@ where
             // update bulk phase
             bulk = State::new_nvt(functional, temperature, moles.sum() / rho, &moles)?;
         }
-        Err(EosError::NotConverged(
+        Err(FeosError::NotConverged(
             "Adsorption::phase_equilibrium".into(),
         ))
     }

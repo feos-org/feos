@@ -4,12 +4,14 @@
 //! of state - with a single contribution to the Helmholtz energy - can be implemented.
 //! The implementation closely follows the form of the equations given in
 //! [this wikipedia article](https://en.wikipedia.org/wiki/Cubic_equations_of_state#Peng%E2%80%93Robinson_equation_of_state).
+use crate::FeosError;
 use crate::equation_of_state::{Components, Molarweight, Residual};
-use crate::parameter::{Identifier, Parameter, ParameterError, PureRecord};
+use crate::errors::FeosResult;
+use crate::parameter::{Identifier, Parameter, PureRecord};
 use crate::state::StateHD;
 use ndarray::{Array1, Array2, ScalarOperand};
 use num_dual::DualNum;
-use quantity::{MolarWeight, GRAM, MOL};
+use quantity::{GRAM, MOL, MolarWeight};
 use serde::{Deserialize, Serialize};
 use std::f64::consts::SQRT_2;
 use std::fmt;
@@ -78,12 +80,12 @@ impl PengRobinsonParameters {
         pc: &[f64],
         acentric_factor: &[f64],
         molarweight: &[f64],
-    ) -> Result<Self, crate::parameter::ParameterError> {
+    ) -> FeosResult<Self> {
         if [pc.len(), acentric_factor.len(), molarweight.len()]
             .iter()
             .any(|&l| l != tc.len())
         {
-            return Err(ParameterError::IncompatibleParameters(String::from(
+            return Err(FeosError::IncompatibleParameters(String::from(
                 "each component has to have parameters.",
             )));
         }
@@ -110,7 +112,7 @@ impl Parameter for PengRobinsonParameters {
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
         binary_records: Option<Array2<Self::Binary>>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let n = pure_records.len();
 
         let mut tc = Array1::zeros(n);
@@ -226,7 +228,7 @@ impl Molarweight for PengRobinson {
 mod tests {
     use super::*;
     use crate::state::{Contributions, State};
-    use crate::{EosResult, SolverOptions, Verbosity};
+    use crate::{FeosResult, SolverOptions, Verbosity};
     use approx::*;
     use quantity::{KELVIN, PASCAL};
     use std::sync::Arc;
@@ -270,7 +272,7 @@ mod tests {
     }
 
     #[test]
-    fn peng_robinson() -> EosResult<()> {
+    fn peng_robinson() -> FeosResult<()> {
         let mixture = pure_record_vec();
         let propane = mixture[0].clone();
         let tc = propane.model_record.tc;

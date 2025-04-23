@@ -1,10 +1,11 @@
-use super::ParameterError;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::hash::{Hash, Hasher};
 use std::io::BufReader;
 use std::path::Path;
+
+use crate::FeosResult;
 
 /// Parameters describing an individual segment of a molecule.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -25,7 +26,7 @@ impl<M> SegmentRecord<M> {
     }
 
     /// Read a list of `SegmentRecord`s from a JSON file.
-    pub fn from_json<P: AsRef<Path>>(file: P) -> Result<Vec<Self>, ParameterError>
+    pub fn from_json<P: AsRef<Path>>(file: P) -> FeosResult<Vec<Self>>
     where
         M: DeserializeOwned,
     {
@@ -77,7 +78,7 @@ impl BinarySegmentRecord {
     }
 
     /// Read a list of `BinaryRecord`s from a JSON file.
-    pub fn from_json<P: AsRef<Path>>(file: P) -> Result<Vec<Self>, ParameterError> {
+    pub fn from_json<P: AsRef<Path>>(file: P) -> FeosResult<Vec<Self>> {
         Ok(serde_json::from_reader(BufReader::new(File::open(file)?))?)
     }
 }

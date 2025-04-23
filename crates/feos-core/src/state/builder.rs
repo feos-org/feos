@@ -1,6 +1,6 @@
 use super::{DensityInitialization, State};
 use crate::equation_of_state::{IdealGas, Residual};
-use crate::errors::EosResult;
+use crate::errors::FeosResult;
 use ndarray::Array1;
 use quantity::*;
 use std::sync::Arc;
@@ -213,7 +213,7 @@ impl<'a, E: Residual + IdealGas, const IG: bool> StateBuilder<'a, E, IG> {
 
 impl<E: Residual> StateBuilder<'_, E, false> {
     /// Try to build the state with the given inputs.
-    pub fn build(self) -> EosResult<State<E>> {
+    pub fn build(self) -> FeosResult<State<E>> {
         State::new(
             &self.eos,
             self.temperature,
@@ -231,7 +231,7 @@ impl<E: Residual> StateBuilder<'_, E, false> {
 
 impl<E: Residual + IdealGas> StateBuilder<'_, E, true> {
     /// Try to build the state with the given inputs.
-    pub fn build(self) -> EosResult<State<E>> {
+    pub fn build(self) -> FeosResult<State<E>> {
         State::new_full(
             &self.eos,
             self.temperature,

@@ -2,9 +2,8 @@ use crate::association::{
     AssociationParameters, AssociationRecord, AssociationStrength, BinaryAssociationRecord,
 };
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::parameter::{
-    CountType, FromSegments, FromSegmentsBinary, Parameter, ParameterError, PureRecord,
-};
+use feos_core::parameter::{CountType, FromSegments, FromSegmentsBinary, Parameter, PureRecord};
+use feos_core::{FeosError, FeosResult};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;
@@ -45,7 +44,7 @@ pub struct PcSaftRecord {
 }
 
 impl FromSegments<f64> for PcSaftRecord {
-    fn from_segments(segments: &[(Self, f64)]) -> Result<Self, ParameterError> {
+    fn from_segments(segments: &[(Self, f64)]) -> FeosResult<Self> {
         let mut m = 0.0;
         let mut sigma3 = 0.0;
         let mut epsilon_k = 0.0;
@@ -164,7 +163,7 @@ impl FromSegments<f64> for PcSaftRecord {
 }
 
 impl FromSegments<usize> for PcSaftRecord {
-    fn from_segments(segments: &[(Self, usize)]) -> Result<Self, ParameterError> {
+    fn from_segments(segments: &[(Self, usize)]) -> FeosResult<Self> {
         // We do not allow more than a single segment for q, mu, kappa_ab, epsilon_k_ab
         let polar_segments: usize = segments
             .iter()
@@ -190,7 +189,7 @@ impl FromSegments<usize> for PcSaftRecord {
             })
             .sum();
         if polar_segments > 1 {
-            return Err(ParameterError::IncompatibleParameters(format!(
+            return Err(FeosError::IncompatibleParameters(format!(
                 "Too many polar/associating segments (dipolar: {dipole_segments}, quadrupolar {quadpole_segments}, associating: {assoc_segments})."
             )));
         }
@@ -342,7 +341,7 @@ impl PcSaftBinaryRecord {
 }
 
 impl<T: CountType> FromSegmentsBinary<T> for PcSaftBinaryRecord {
-    fn from_segments_binary(segments: &[(f64, T, T)]) -> Result<Self, ParameterError> {
+    fn from_segments_binary(segments: &[(f64, T, T)]) -> FeosResult<Self> {
         let (k_ij, n) = segments.iter().fold((0.0, 0.0), |(k_ij, n), (br, n1, n2)| {
             let nab = n1.apply_count(1.0) * n2.apply_count(1.0);
             (k_ij + br * nab, n + nab)
@@ -404,7 +403,7 @@ impl Parameter for PcSaftParameters {
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
         binary_records: Option<Array2<Self::Binary>>,
-    ) -> Result<Self, ParameterError> {
+    ) -> FeosResult<Self> {
         let n = pure_records.len();
 
         let mut molarweight = Array::zeros(n);
@@ -872,7 +871,7 @@ pub mod utils {
     }
 
     #[test]
-    pub fn test_kij() -> Result<(), ParameterError> {
+    pub fn test_kij() -> FeosResult<()> {
         let ch3: String = "CH3".into();
         let ch2: String = "CH2".into();
         let oh = "OH".into();

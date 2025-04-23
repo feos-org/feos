@@ -3,7 +3,7 @@ use crate::hard_sphere::HardSphereProperties;
 use crate::pcsaft::eos::polar::{
     MeanSegmentNumbers, Multipole, AD, ADQ, ALPHA, AQ, BD, BDQ, BQ, CD, CDQ, CQ, PI_SQ_43,
 };
-use feos_core::EosError;
+use feos_core::FeosError;
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
@@ -12,7 +12,7 @@ pub(super) fn helmholtz_energy_density_polar<N: DualNum<f64> + Copy + ScalarOper
     parameters: &PcSaftParameters,
     temperature: N,
     density: ArrayView2<N>,
-) -> Result<Array1<N>, EosError> {
+) -> Result<Array1<N>, FeosError> {
     // temperature dependent segment radius
     let r = parameters.hs_diameter(temperature) * 0.5;
 
@@ -98,7 +98,7 @@ fn phi_polar_dipole<N: DualNum<f64> + Copy + ScalarOperand>(
     temperature: N,
     density: ArrayView2<N>,
     eta: &Array1<N>,
-) -> Result<Array1<N>, EosError> {
+) -> Result<Array1<N>, FeosError> {
     // mean segment number
     let m = MeanSegmentNumbers::new(p, Multipole::Dipole);
 
@@ -186,7 +186,7 @@ fn phi_polar_quadrupole<N: DualNum<f64> + Copy + ScalarOperand>(
     temperature: N,
     density: ArrayView2<N>,
     eta: &Array1<N>,
-) -> Result<Array1<N>, EosError> {
+) -> Result<Array1<N>, FeosError> {
     // mean segment number
     let m = MeanSegmentNumbers::new(p, Multipole::Quadrupole);
 
@@ -274,7 +274,7 @@ fn phi_polar_dipole_quadrupole<N: DualNum<f64> + Copy + ScalarOperand>(
     temperature: N,
     density: ArrayView2<N>,
     eta: &Array1<N>,
-) -> Result<Array1<N>, EosError> {
+) -> Result<Array1<N>, FeosError> {
     let t_inv = temperature.inv();
     let eps_ij_t = p.e_k_ij.mapv(|v| t_inv * v);
     let mu2_term: Array1<N> = p

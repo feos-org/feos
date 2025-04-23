@@ -3,14 +3,14 @@ use feos::gc_pcsaft::{GcPcSaft, GcPcSaftEosParameters};
 #[cfg(feature = "dft")]
 use feos::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftFunctionalParameters};
 use feos_core::parameter::{IdentifierOption, ParameterHetero};
-use feos_core::{Contributions, EosResult, State};
+use feos_core::{Contributions, FeosResult, State};
 use ndarray::arr1;
 use quantity::{KELVIN, METER, MOL};
 use std::sync::Arc;
 use typenum::P3;
 
 #[test]
-fn test_binary() -> EosResult<()> {
+fn test_binary() -> FeosResult<()> {
     let parameters = GcPcSaftEosParameters::from_json_segments(
         &["ethanol", "methanol"],
         "../../parameters/pcsaft/gc_substances.json",
@@ -53,7 +53,7 @@ fn test_binary() -> EosResult<()> {
 }
 
 #[test]
-fn test_polar_term() -> EosResult<()> {
+fn test_polar_term() -> FeosResult<()> {
     let parameters1 = GcPcSaftEosParameters::from_json_segments(
         &["CCCOC(C)=O", "CCCO"],
         "../../parameters/pcsaft/gc_substances.json",

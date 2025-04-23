@@ -4,7 +4,7 @@ use crate::geometry::{Axis, Grid};
 use crate::pdgt::PdgtFunctionalProperties;
 use crate::profile::{DFTProfile, DFTSpecifications};
 use crate::solver::DFTSolver;
-use feos_core::{Contributions, EosError, EosResult, PhaseEquilibrium, ReferenceSystem};
+use feos_core::{Contributions, FeosError, FeosResult, PhaseEquilibrium, ReferenceSystem};
 use ndarray::{s, Array1, Array2, Axis as Axis_nd, Ix1};
 use quantity::{Area, Density, Length, Moles, SurfaceTension, Temperature};
 
@@ -34,7 +34,7 @@ impl<F: HelmholtzEnergyFunctional> Clone for PlanarInterface<F> {
 }
 
 impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
-    pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> EosResult<()> {
+    pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> FeosResult<()> {
         // Solve the profile
         self.profile.solve(solver, debug)?;
 
@@ -56,7 +56,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         Ok(())
     }
 
-    pub fn solve(mut self, solver: Option<&DFTSolver>) -> EosResult<Self> {
+    pub fn solve(mut self, solver: Option<&DFTSolver>) -> FeosResult<Self> {
         self.solve_inplace(solver, false)?;
         Ok(self)
     }
@@ -115,7 +115,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         vle: &PhaseEquilibrium<F, 2>,
         n_grid: usize,
         fix_equimolar_surface: bool,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let dft = &vle.vapor().eos;
 
         if dft.component_index().len() != 1 {
@@ -129,7 +129,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         let (rho_pdgt, gamma_pdgt) =
             dft.solve_pdgt(vle, 20, 0, Some((&mut z_pdgt, &mut w_pdgt)))?;
         if !gamma_pdgt.to_reduced().is_normal() {
-            return Err(EosError::InvalidState(
+            return Err(FeosError::InvalidState(
                 String::from("DFTProfile::from_pdgt"),
                 String::from("gamma_pdgt"),
                 gamma_pdgt.to_reduced(),
@@ -230,7 +230,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
     }
 
     /// Interface thickness (90-10 number density difference)
-    pub fn interfacial_thickness(&self) -> EosResult<Length> {
+    pub fn interfacial_thickness(&self) -> FeosResult<Length> {
         let s = self.profile.density.shape();
         let rho = self.profile.density.sum_axis(Axis_nd(0)).to_reduced();
         let z = self.profile.grid.grids()[0];
@@ -244,12 +244,12 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         };
 
         if limit_upper >= 1.0 || limit_upper.is_sign_negative() {
-            return Err(EosError::IterationFailed(String::from(
+            return Err(FeosError::IterationFailed(String::from(
                 "Upper limit 'l' of interface thickness needs to satisfy 0 < l < 1.",
             )));
         }
         if limit_lower >= 1.0 || limit_lower.is_sign_negative() {
-            return Err(EosError::IterationFailed(String::from(
+            return Err(FeosError::IterationFailed(String::from(
                 "Lower limit 'l' of interface thickness needs to satisfy 0 < l < 1.",
             )));
         }
@@ -348,7 +348,7 @@ fn interp_symmetric<F: HelmholtzEnergyFunctional>(
     vle: &PhaseEquilibrium<F, 2>,
     z: &Array1<f64>,
     radius: Length,
-) -> EosResult<Density<Array2<f64>>> {
+) -> FeosResult<Density<Array2<f64>>> {
     let reduced_density = Array2::from_shape_fn(rho_pdgt.raw_dim(), |(i, j)| {
         ((rho_pdgt.get((i, j)) - vle_pdgt.vapor().partial_density.get(i))
             / (vle_pdgt.liquid().partial_density.get(i) - vle_pdgt.vapor().partial_density.get(i)))
