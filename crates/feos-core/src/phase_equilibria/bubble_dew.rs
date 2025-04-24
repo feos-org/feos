@@ -739,8 +739,10 @@ fn bubble_dew<E: Residual, TP: TemperatureOrPressure>(
             Ok(PhaseEquilibrium([state1, state2]))
         }
     } else {
-        // not converged, return EosError
-        Err(FeosError::NotConverged(String::from("bubble-dew-iteration")))
+        // not converged, return error
+        Err(FeosError::NotConverged(String::from(
+            "bubble-dew-iteration",
+        )))
     }
 }
 

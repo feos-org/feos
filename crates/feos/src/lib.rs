@@ -4,7 +4,7 @@
 //!
 #![cfg_attr(not(feature = "pcsaft"), doc = "```ignore")]
 #![cfg_attr(feature = "pcsaft", doc = "```")]
-//! # use feos_core::EosError;
+//! # use feos_core::FeosError;
 //! use feos::pcsaft::{PcSaft, PcSaftParameters};
 //! use feos_core::parameter::{IdentifierOption, Parameter};
 //! use feos_core::{Contributions, State};
@@ -29,7 +29,7 @@
 //! let p = critical_point.pressure(Contributions::Total);
 //! let t = critical_point.temperature;
 //! println!("Critical point: T={}, p={}.", t, p);
-//! # Ok::<(), EosError>(())
+//! # Ok::<(), FeosError>(())
 //! ```
 
 #![warn(clippy::all)]

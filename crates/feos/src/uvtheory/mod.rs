@@ -8,7 +8,7 @@
 //!
 #![cfg_attr(not(feature = "uvtheory"), doc = "```ignore")]
 #![cfg_attr(feature = "uvtheory", doc = "```")]
-//! # use feos_core::EosError;
+//! # use feos_core::FeosError;
 //! use feos::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, UVTheoryParameters};
 //! use std::sync::Arc;
 //!
@@ -35,7 +35,7 @@
 //! let uv_bh = Arc::new(
 //!     UVTheory::with_options(parameters, options)
 //! );
-//! # Ok::<(), EosError>(())
+//! # Ok::<(), FeosError>(())
 //! ```
 //!
 //! ## uv-B3-theory
@@ -44,7 +44,7 @@
 //!
 #![cfg_attr(not(feature = "uvtheory"), doc = "```ignore")]
 #![cfg_attr(feature = "uvtheory", doc = "```")]
-//! # use feos_core::EosError;
+//! # use feos_core::FeosError;
 //! use feos::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, UVTheoryParameters};
 //! use std::sync::Arc;
 //!
@@ -61,7 +61,7 @@
 //! let uv_b3 = Arc::new(
 //!     UVTheory::with_options(parameters, options)
 //! );
-//! # Ok::<(), EosError>(())
+//! # Ok::<(), FeosError>(())
 //! ```
 mod eos;
 mod parameters;

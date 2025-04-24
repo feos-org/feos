@@ -1,5 +1,5 @@
-use std::io;
 use num_dual::linalg::LinAlgError;
+use std::io;
 use thiserror::Error;
 
 /// Error type for improperly defined states and convergence problems.
@@ -59,5 +59,5 @@ pub enum FeosError {
     RayonError(#[from] rayon::ThreadPoolBuildError),
 }
 
-/// Convenience type for `Result<T, EosError>`.
+/// Convenience type for `Result<T, FeosError>`.
 pub type FeosResult<T> = Result<T, FeosError>;

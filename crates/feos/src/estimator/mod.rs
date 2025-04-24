@@ -50,8 +50,6 @@ pub enum EstimatorError {
     ShapeError(#[from] ndarray::ShapeError),
     #[error(transparent)]
     ParseError(#[from] ParseFloatError),
-    // #[error(transparent)]
-    // QuantityError(#[from] QuantityError),
     #[error(transparent)]
-    EosError(#[from] FeosError),
+    FeosError(#[from] FeosError),
 }
