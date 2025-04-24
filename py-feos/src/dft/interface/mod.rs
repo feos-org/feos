@@ -2,6 +2,7 @@ use super::profile::{impl_1d_profile, impl_profile};
 use super::{PyDFTSolver, PyDFTSolverLog};
 use crate::error::PyFeosError;
 use crate::ideal_gas::IdealGasModel;
+use crate::phase_equilibria::PyPhaseEquilibrium;
 use crate::residual::ResidualModel;
 use crate::state::{PyContributions, PyState};
 use feos_core::{EquationOfState, ReferenceSystem};

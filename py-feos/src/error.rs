@@ -19,6 +19,9 @@ pub enum PyFeosError {
     FeosError(#[from] FeosError),
     #[error(transparent)]
     Serde(#[from] serde_json::Error),
+    #[cfg(feature = "rayon")]
+    #[error(transparent)]
+    Rayon(#[from] rayon::ThreadPoolBuildError),
     // #[error(transparent)]
     // PythonizeError(#[from] PythonizeError),
 }

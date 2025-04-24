@@ -1,6 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::allow_attributes)]
-use feos_core::Verbosity;
+use feos_core::{SolverOptions, Verbosity};
 use pyo3::prelude::*;
 
 #[cfg(feature = "dft")]
@@ -9,6 +9,7 @@ pub(crate) mod eos;
 pub(crate) mod error;
 pub(crate) mod ideal_gas;
 pub(crate) mod parameter;
+pub(crate) mod phase_equilibria;
 pub(crate) mod residual;
 pub(crate) mod state;
 pub(crate) mod user_defined;
@@ -45,6 +46,7 @@ impl From<PyVerbosity> for Verbosity {
         }
     }
 }
+
 
 #[pymodule]
 fn _feos(m: &Bound<'_, PyModule>) -> PyResult<()> {

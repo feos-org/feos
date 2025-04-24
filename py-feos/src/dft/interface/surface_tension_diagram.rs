@@ -1,5 +1,6 @@
 use super::PyPlanarInterface;
 use crate::dft::PyDFTSolver;
+use crate::phase_equilibria::PyPhaseEquilibrium;
 use crate::state::PyStateVec;
 use crate::{ideal_gas::IdealGasModel, residual::ResidualModel};
 use feos_core::EquationOfState;
@@ -37,7 +38,6 @@ use quantity::*;
 /// Returns
 /// -------
 /// SurfaceTensionDiagram
-///
 #[pyclass(name = "SurfaceTensionDiagram")]
 pub struct PySurfaceTensionDiagram(
     SurfaceTensionDiagram<EquationOfState<IdealGasModel, ResidualModel>>,

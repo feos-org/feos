@@ -160,8 +160,9 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
 
             return Ok(Self { permittivity });
         };
-        Err(FeosError::IncompatibleParameters("Permittivity computation failed".to_string()),
-        )
+        Err(FeosError::IncompatibleParameters(
+            "Permittivity computation failed".to_string(),
+        ))
     }
 
     pub fn pure_from_experimental_data(data: &[(f64, f64)], temperature: D) -> Self {

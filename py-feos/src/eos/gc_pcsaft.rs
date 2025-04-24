@@ -1,5 +1,5 @@
 use super::PyEquationOfState;
-#[cfg(feature = "gc_pcsaft")]
+#[cfg(feature = "dft")]
 use crate::dft::{PyFMTVersion, PyHelmholtzEnergyFunctional};
 use crate::{ideal_gas::IdealGasModel, parameter::PyGcParameters, residual::ResidualModel};
 #[cfg(feature = "gc_pcsaft")]
@@ -55,7 +55,7 @@ impl PyEquationOfState {
     }
 }
 
-#[cfg(feature = "gc_pcsaft")]
+#[cfg(feature = "dft")]
 #[pymethods]
 impl PyHelmholtzEnergyFunctional {
     /// (heterosegmented) group contribution PC-SAFT Helmholtz energy functional.
