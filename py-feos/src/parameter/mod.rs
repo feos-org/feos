@@ -481,88 +481,92 @@ impl PyGcParameters {
         }
     }
 
-    // /// Creates parameters using segments from json file.
-    // ///
-    // /// Parameters
-    // /// ----------
-    // /// substances : List[str]
-    // ///     The substances to search.
-    // /// pure_path : str
-    // ///     Path to file containing pure substance parameters.
-    // /// segments_path : str
-    // ///     Path to file containing segment parameters.
-    // /// binary_path : str, optional
-    // ///     Path to file containing binary segment-segment parameters.
-    // /// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
-    // ///     Identifier that is used to search substance.
-    // #[staticmethod]
-    // #[pyo3(
-    //     signature = (substances, pure_path, segments_path, binary_path=None, identifier_option=PyIdentifierOption::Name),
-    //     text_signature = "(substances, pure_path, segments_path, binary_path=None, identifier_option=IdentiferOption.Name)"
-    // )]
-    // fn from_json_segments(
-    //     substances: Vec<PyBackedStr>,
-    //     pure_path: PyBackedStr,
-    //     segments_path: PyBackedStr,
-    //     binary_path: Option<PyBackedStr>,
-    //     identifier_option: PyIdentifierOption,
-    // ) -> PyResult<Self> {
-    //     let queried: IndexSet<_> = substances
-    //         .iter()
-    //         .map(|identifier| identifier as &str)
-    //         .collect();
+    /// Creates parameters using segments from json file.
+    ///
+    /// Parameters
+    /// ----------
+    /// substances : List[str]
+    ///     The substances to search.
+    /// pure_path : str
+    ///     Path to file containing pure substance parameters.
+    /// segments_path : str
+    ///     Path to file containing segment parameters.
+    /// binary_path : str, optional
+    ///     Path to file containing binary segment-segment parameters.
+    /// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
+    ///     Identifier that is used to search substance.
+    #[staticmethod]
+    #[pyo3(
+        signature = (substances, pure_path, segments_path, binary_path=None, identifier_option=PyIdentifierOption::Name),
+        text_signature = "(substances, pure_path, segments_path, binary_path=None, identifier_option=IdentiferOption.Name)"
+    )]
+    fn from_json_segments(
+        substances: Vec<PyBackedStr>,
+        pure_path: PyBackedStr,
+        segments_path: PyBackedStr,
+        binary_path: Option<PyBackedStr>,
+        identifier_option: PyIdentifierOption,
+    ) -> PyResult<Self> {
+        let queried: IndexSet<_> = substances
+            .iter()
+            .map(|identifier| identifier as &str)
+            .collect();
 
-    //     let reader = BufReader::new(File::open(&pure_path as &str)?);
-    //     let chemical_records: Vec<ChemicalRecord> = serde_json::from_reader(reader)?;
-    //     let mut record_map: IndexMap<_, _> = chemical_records
-    //         .into_iter()
-    //         .filter_map(|record| {
-    //             record
-    //                 .identifier
-    //                 .as_str(identifier_option.into())
-    //                 .map(|i| i.to_owned())
-    //                 .map(|i| (i, record))
-    //         })
-    //         .collect();
+        let reader = BufReader::new(File::open(&pure_path as &str)?);
+        let chemical_records: Vec<ChemicalRecord> =
+            serde_json::from_reader(reader).map_err(PyFeosError::from)?;
+        let mut record_map: IndexMap<_, _> = chemical_records
+            .into_iter()
+            .filter_map(|record| {
+                record
+                    .identifier
+                    .as_str(identifier_option.into())
+                    .map(|i| i.to_owned())
+                    .map(|i| (i, record))
+            })
+            .collect();
 
-    //     // Compare queried components and available components
-    //     let available: IndexSet<_> = record_map
-    //         .keys()
-    //         .map(|identifier| identifier as &str)
-    //         .collect();
-    //     if !queried.is_subset(&available) {
-    //         let missing: Vec<_> = queried.difference(&available).cloned().collect();
-    //         return Err(FeosError::ComponentsNotFound(format!("{:?}", missing)));
-    //     };
+        // Compare queried components and available components
+        let available: IndexSet<_> = record_map
+            .keys()
+            .map(|identifier| identifier as &str)
+            .collect();
+        if !queried.is_subset(&available) {
+            let missing: Vec<_> = queried.difference(&available).cloned().collect();
+            return Err(PyFeosError::FeosError(FeosError::ComponentsNotFound(
+                format!("{:?}", missing),
+            )))?;
+        };
 
-    //     // Collect all pure records that were queried
-    //     let chemical_records: Vec<_> = queried
-    //         .into_iter()
-    //         .filter_map(|identifier| record_map.shift_remove(identifier))
-    //         .map(|r| r.into())
-    //         .collect();
+        // Collect all pure records that were queried
+        let chemical_records: Vec<_> = queried
+            .into_iter()
+            .filter_map(|identifier| record_map.shift_remove(identifier))
+            .map(|r| r.into())
+            .collect();
 
-    //     // Read segment records
-    //     let segment_records: Vec<PySegmentRecord> =
-    //         PySegmentRecord::from_json(&segments_path as &str)?;
+        // Read segment records
+        let segment_records: Vec<PySegmentRecord> =
+            PySegmentRecord::from_json(&segments_path as &str)?;
 
-    //     // Read binary records
-    //     let binary_records = binary_path
-    //         .as_ref()
-    //         .map(|file_binary| {
-    //             let reader = BufReader::new(File::open(file_binary as &str)?);
-    //             let binary_records: Result<Vec<BinarySegmentRecord>, ParameterError> =
-    //                 Ok(serde_json::from_reader(reader)?);
-    //             binary_records
-    //         })
-    //         .transpose()?;
+        // Read binary records
+        let binary_records = binary_path
+            .as_ref()
+            .map(|file_binary| {
+                let reader = BufReader::new(File::open(file_binary as &str)?);
+                let binary_records: Result<Vec<PyBinarySegmentRecord>, FeosError> =
+                    Ok(serde_json::from_reader(reader)?);
+                binary_records
+            })
+            .transpose()
+            .map_err(PyFeosError::from)?;
 
-    //     Ok(Self::from_segments(
-    //         chemical_records,
-    //         segment_records,
-    //         binary_records,
-    //     ))
-    // }
+        Ok(Self::from_segments(
+            chemical_records,
+            segment_records,
+            binary_records,
+        ))
+    }
 
     /// Creates parameters from SMILES and segment records.
     ///
