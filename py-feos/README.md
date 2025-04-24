@@ -30,8 +30,8 @@ from feos.parameters import PureRecord, Identifier, Parameters
 
 # PC-SAFT parameters for methanol (Gross and Sadowski 2002)
 record = PureRecord(
-    Identifier(name="methane"),
-    molarweight=16.04,
+    Identifier(name="methanol"),
+    molarweight=32.04,
     m=1.5255,
     sigma=3.23,
     epsilon_k=188.9,
