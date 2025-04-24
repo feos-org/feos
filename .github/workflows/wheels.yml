@@ -18,7 +18,7 @@ jobs:
           manylinux: auto
           command: build
           args: >
-            --profile release-lto
+            --profile debug
             --manifest-path py-feos/Cargo.toml
             --out dist
       - name: Upload wheels
@@ -39,7 +39,7 @@ jobs:
         with:
           target: x86_64
           args: >
-            --profile release-lto
+            --profile debug
             --manifest-path py-feos/Cargo.toml
             --out dist
       - name: Upload wheels
@@ -60,7 +60,7 @@ jobs:
         with:
           target: aarch64
           args: >
-            --profile release-lto
+            --profile debug
             --manifest-path py-feos/Cargo.toml
             --out dist
       - name: Upload wheels
@@ -81,7 +81,7 @@ jobs:
         with:
           target: x64
           args: >
-            --profile release-lto
+            --profile debug
             --manifest-path py-feos/Cargo.toml
             --out dist
       - name: Upload wheels
