@@ -48,7 +48,6 @@ feos-dft = { version = "0.8", path = "crates/feos-dft" }
 feos-derive = { version = "0.6", path = "crates/feos-derive" }
 feos = { version = "0.8", path = "crates/feos" }
 
-
 [profile.release-lto]
 inherits = "release"
 lto = true

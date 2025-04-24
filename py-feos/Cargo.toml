@@ -35,7 +35,6 @@ feos-core = { workspace = true }
 feos-derive = { workspace = true }
 feos-dft = { workspace = true, optional = true }
 
-
 [features]
 default = []
 dft = ["feos/dft", "feos-dft", "petgraph", "rayon"]
