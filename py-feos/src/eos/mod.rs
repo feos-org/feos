@@ -6,7 +6,6 @@ use feos_core::*;
 use ndarray::Array1;
 use pyo3::prelude::*;
 use quantity::*;
-use std::convert::TryInto;
 use std::sync::Arc;
 use typenum::Quot;
 
@@ -45,8 +44,10 @@ impl PyEquationOfState {
     /// SINumber
     #[pyo3(text_signature = "(moles=None)", signature = (moles=None))]
     fn max_density(&self, moles: Option<Moles<Array1<f64>>>) -> PyResult<Density> {
-        let m = moles.map(|m| m.try_into()).transpose()?;
-        Ok(self.0.max_density(m.as_ref()).map_err(PyFeosError::from)?)
+        Ok(self
+            .0
+            .max_density(moles.as_ref())
+            .map_err(PyFeosError::from)?)
     }
 
     /// Calculate the second Virial coefficient B(T,x).
@@ -67,10 +68,9 @@ impl PyEquationOfState {
         temperature: Temperature,
         moles: Option<Moles<Array1<f64>>>,
     ) -> PyResult<Quot<f64, Density>> {
-        let m = moles.map(|m| m.try_into()).transpose()?;
         Ok(self
             .0
-            .second_virial_coefficient(temperature.try_into()?, m.as_ref())
+            .second_virial_coefficient(temperature, moles.as_ref())
             .map_err(PyFeosError::from)?)
     }
 
@@ -92,10 +92,9 @@ impl PyEquationOfState {
         temperature: Temperature,
         moles: Option<Moles<Array1<f64>>>,
     ) -> PyResult<Quot<Quot<f64, Density>, Density>> {
-        let m = moles.map(|m| m.try_into()).transpose()?;
         Ok(self
             .0
-            .third_virial_coefficient(temperature.try_into()?, m.as_ref())
+            .third_virial_coefficient(temperature, moles.as_ref())
             .map_err(PyFeosError::from)?)
     }
 
@@ -118,10 +117,9 @@ impl PyEquationOfState {
         temperature: Temperature,
         moles: Option<Moles<Array1<f64>>>,
     ) -> PyResult<Quot<Quot<f64, Density>, Temperature>> {
-        let m = moles.map(|m| m.try_into()).transpose()?;
         Ok(self
             .0
-            .second_virial_coefficient_temperature_derivative(temperature.try_into()?, m.as_ref())
+            .second_virial_coefficient_temperature_derivative(temperature, moles.as_ref())
             .map_err(PyFeosError::from)?)
     }
 
@@ -139,17 +137,16 @@ impl PyEquationOfState {
     /// -------
     /// SINumber
     #[pyo3(text_signature = "(temperature, moles=None)", signature = (temperature, moles=None))]
+    #[expect(clippy::type_complexity)]
     fn third_virial_coefficient_temperature_derivative(
         &self,
         temperature: Temperature,
         moles: Option<Moles<Array1<f64>>>,
     ) -> PyResult<Quot<Quot<Quot<f64, Density>, Density>, Temperature>> {
-        let m = moles.map(|m| m.try_into()).transpose()?;
         Ok(self
             .0
-            .third_virial_coefficient_temperature_derivative(temperature.try_into()?, m.as_ref())
-            .map_err(PyFeosError::from)?
-            .into())
+            .third_virial_coefficient_temperature_derivative(temperature, moles.as_ref())
+            .map_err(PyFeosError::from)?)
     }
 }
 

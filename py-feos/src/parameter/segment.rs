@@ -146,12 +146,12 @@ impl From<BinarySegmentRecord> for PyBinarySegmentRecord {
     }
 }
 
-impl Into<BinarySegmentRecord> for PyBinarySegmentRecord {
-    fn into(self) -> BinarySegmentRecord {
-        BinarySegmentRecord {
-            id1: self.id1,
-            id2: self.id2,
-            model_record: self.model_record,
+impl From<PyBinarySegmentRecord> for BinarySegmentRecord {
+    fn from(value: PyBinarySegmentRecord) -> Self {
+        Self {
+            id1: value.id1,
+            id2: value.id2,
+            model_record: value.model_record,
         }
     }
 }

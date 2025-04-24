@@ -11,7 +11,8 @@ use feos_core::{
 };
 use ndarray::Array1;
 use numpy::{PyArray1, PyArrayMethods};
-use pyo3::{exceptions::PyValueError, prelude::*};
+use pyo3::exceptions::PyValueError;
+use pyo3::prelude::*;
 use quantity::*;
 use std::collections::HashMap;
 use typenum::P3;
@@ -70,7 +71,7 @@ impl PyPhaseEquilibrium {
                 PhaseEquilibrium::pure(
                     &eos.0,
                     t,
-                    initial_state.and_then(|s| Some(&s.0)),
+                    initial_state.map(|s| &s.0),
                     (max_iter, tol, verbosity.map(|v| v.into())).into(),
                 )
                 .map_err(PyFeosError::from)?,
@@ -80,7 +81,7 @@ impl PyPhaseEquilibrium {
                 PhaseEquilibrium::pure(
                     &eos.0,
                     p,
-                    initial_state.and_then(|s| Some(&s.0)),
+                    initial_state.map(|s| &s.0),
                     (max_iter, tol, verbosity.map(|v| v.into())).into(),
                 )
                 .map_err(PyFeosError::from)?,
@@ -147,9 +148,9 @@ impl PyPhaseEquilibrium {
             PhaseEquilibrium::tp_flash(
                 &eos.0,
                 temperature,
-                pressure.try_into()?,
-                &feed.try_into()?,
-                initial_state.and_then(|s| Some(&s.0)),
+                pressure,
+                &feed,
+                initial_state.map(|s| &s.0),
                 (max_iter, tol, verbosity.map(|v| v.into())).into(),
                 non_volatile_components,
             )
@@ -206,7 +207,7 @@ impl PyPhaseEquilibrium {
         tol_outer: Option<f64>,
         verbosity: Option<PyVerbosity>,
     ) -> PyResult<Self> {
-        let x = vapor_molefracs.and_then(|m| Some(m.to_owned_array()));
+        let x = vapor_molefracs.map(|m| m.to_owned_array());
         if let Ok(t) = temperature_or_pressure.extract::<Temperature>() {
             Ok(Self(
                 PhaseEquilibrium::bubble_point(
@@ -294,7 +295,7 @@ impl PyPhaseEquilibrium {
         tol_outer: Option<f64>,
         verbosity: Option<PyVerbosity>,
     ) -> PyResult<Self> {
-        let x = liquid_molefracs.and_then(|m| Some(m.to_owned_array()));
+        let x = liquid_molefracs.map(|m| m.to_owned_array());
         if let Ok(t) = temperature_or_pressure.extract::<Temperature>() {
             Ok(Self(
                 PhaseEquilibrium::dew_point(
@@ -365,14 +366,8 @@ impl PyPhaseEquilibrium {
         liquid_moles: Moles<Array1<f64>>,
     ) -> PyResult<Self> {
         Ok(Self(
-            PhaseEquilibrium::new_npt(
-                &eos.0,
-                temperature,
-                pressure.try_into()?,
-                &vapor_moles.try_into()?,
-                &liquid_moles.try_into()?,
-            )
-            .map_err(PyFeosError::from)?,
+            PhaseEquilibrium::new_npt(&eos.0, temperature, pressure, &vapor_moles, &liquid_moles)
+                .map_err(PyFeosError::from)?,
         ))
     }
 
@@ -649,7 +644,7 @@ impl PyState {
         Ok(PyPhaseEquilibrium(
             self.0
                 .tp_flash(
-                    initial_state.and_then(|s| Some(&s.0)),
+                    initial_state.map(|s| &s.0),
                     (max_iter, tol, verbosity.map(|v| v.into())).into(),
                     non_volatile_components,
                 )
@@ -722,7 +717,7 @@ impl PyPhaseDiagram {
             &eos.0,
             min_temperature,
             npoints,
-            critical_temperature.map(|t| t.try_into()).transpose()?,
+            critical_temperature,
             (max_iter, tol, verbosity.map(|v| v.into())).into(),
         )
         .map_err(PyFeosError::from)?;
@@ -778,7 +773,8 @@ impl PyPhaseDiagram {
     ) -> PyResult<Self> {
         let thread_pool = rayon::ThreadPoolBuilder::new()
             .num_threads(nthreads)
-            .build().map_err(PyFeosError::from)?;
+            .build()
+            .map_err(PyFeosError::from)?;
         let dia = PhaseDiagram::par_pure(
             &eos.0,
             min_temperature,
@@ -846,10 +842,10 @@ impl PyPhaseDiagram {
     ) -> PyResult<Self> {
         let dia = PhaseDiagram::bubble_point_line(
             &eos.0,
-            &moles.try_into()?,
+            &moles,
             min_temperature,
             npoints,
-            critical_temperature.map(|t| t.try_into()).transpose()?,
+            critical_temperature,
             (
                 (max_iter_inner, tol_inner, verbosity.map(|v| v.into())).into(),
                 (max_iter_outer, tol_outer, verbosity.map(|v| v.into())).into(),
@@ -913,10 +909,10 @@ impl PyPhaseDiagram {
     ) -> PyResult<Self> {
         let dia = PhaseDiagram::dew_point_line(
             &eos.0,
-            &moles.try_into()?,
+            &moles,
             min_temperature,
             npoints,
-            critical_temperature.map(|t| t.try_into()).transpose()?,
+            critical_temperature,
             (
                 (max_iter_inner, tol_inner, verbosity.map(|v| v.into())).into(),
                 (max_iter_outer, tol_outer, verbosity.map(|v| v.into())).into(),
@@ -970,10 +966,10 @@ impl PyPhaseDiagram {
     ) -> PyResult<Self> {
         let dia = PhaseDiagram::spinodal(
             &eos.0,
-            &moles.try_into()?,
+            &moles,
             min_temperature,
             npoints,
-            critical_temperature.map(|t| t.try_into()).transpose()?,
+            critical_temperature,
             (max_iter, tol, verbosity.map(|v| v.into())).into(),
         )
         .map_err(PyFeosError::from)?;
@@ -1034,8 +1030,8 @@ impl PyPhaseDiagram {
             let xs = self.0.liquid().molefracs();
             let ys = self.0.vapor().molefracs();
             for i in 0..n {
-                dict.insert(String::from(format!("x{}", i)), xs.column(i).to_vec());
-                dict.insert(String::from(format!("y{}", i)), ys.column(i).to_vec());
+                dict.insert(format!("x{}", i), xs.column(i).to_vec());
+                dict.insert(format!("y{}", i), ys.column(i).to_vec());
             }
         }
         dict.insert(

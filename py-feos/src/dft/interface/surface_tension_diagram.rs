@@ -64,8 +64,8 @@ impl PySurfaceTensionDiagram {
             &x,
             init_densities,
             n_grid,
-            l_grid.map(|l| l.try_into()).transpose()?,
-            critical_temperature.map(|c| c.try_into()).transpose()?,
+            l_grid,
+            critical_temperature,
             fix_equimolar_surface,
             solver.map(|s| s.0).as_ref(),
         )))

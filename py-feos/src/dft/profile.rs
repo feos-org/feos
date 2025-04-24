@@ -38,7 +38,7 @@ macro_rules! impl_profile {
             /// $struct
             ///
             #[pyo3(signature = (solver=None, debug=false), text_signature = "($self, solver=None, debug=False)")]
-            fn solve<'py>(slf: Bound<'py, Self>, solver: Option<PyDFTSolver>, debug: bool) -> PyResult<Bound<'py, Self>> {
+            fn solve(slf: Bound<'_, Self>, solver: Option<PyDFTSolver>, debug: bool) -> PyResult<Bound<'_, Self>> {
                 slf.borrow_mut()
                     .0
                     .solve_inplace(solver.map(|s| s.0).as_ref(), debug).map_err(PyFeosError::from)?;
@@ -82,7 +82,7 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_solver_log<'py>(&self) -> Option<PyDFTSolverLog> {
+            fn get_solver_log(&self) -> Option<PyDFTSolverLog> {
                 self.0.profile.solver_log.clone().map(PyDFTSolverLog)
             }
 

@@ -85,8 +85,8 @@ impl PyParameters {
             binary_records
                 .iter()
                 .filter_map(|br| {
-                    let id1 = br.id1.as_str(identifier_option.into());
-                    let id2 = br.id2.as_str(identifier_option.into());
+                    let id1 = br.id1.as_str(identifier_option);
+                    let id2 = br.id2.as_str(identifier_option);
                     id1.and_then(|id1| id2.map(|id2| ((id1, id2), br.model_record.clone())))
                 })
                 .collect()
@@ -633,7 +633,7 @@ impl PyGcParameters {
             .as_ref()
             .map(|p| {
                 BinarySegmentRecord::from_json(p as &str)
-                    .and_then(|brs| Ok(brs.into_iter().map(|r| r.into()).collect()))
+                    .map(|brs| brs.into_iter().map(|r| r.into()).collect())
             })
             .transpose()
             .map_err(PyFeosError::from)?;

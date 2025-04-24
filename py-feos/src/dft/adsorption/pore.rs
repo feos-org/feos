@@ -132,7 +132,7 @@ impl PyPore1D {
             self.0
                 .initialize(
                     &bulk.0,
-                    density.map(|d| d.try_into()).transpose()?.as_ref(),
+                    density.as_ref(),
                     external_potential.map(|e| e.to_owned_array()).as_ref(),
                 )
                 .map_err(PyFeosError::from)?,
@@ -146,7 +146,7 @@ impl PyPore1D {
 
     #[getter]
     fn get_pore_size(&self) -> Length {
-        self.0.pore_size.into()
+        self.0.pore_size
     }
 
     #[getter]
@@ -220,7 +220,7 @@ impl PyPore2D {
             self.0
                 .initialize(
                     &bulk.0,
-                    density.map(|d| d.try_into()).transpose()?.as_ref(),
+                    density.as_ref(),
                     external_potential.map(|e| e.to_owned_array()).as_ref(),
                 )
                 .map_err(PyFeosError::from)?,
@@ -327,7 +327,7 @@ impl PyPore3D {
             self.0
                 .initialize(
                     &bulk.0,
-                    density.map(|d| d.try_into()).transpose()?.as_ref(),
+                    density.as_ref(),
                     external_potential.map(|e| e.to_owned_array()).as_ref(),
                 )
                 .map_err(PyFeosError::from)?,

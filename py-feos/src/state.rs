@@ -1,21 +1,53 @@
-use std::collections::HashMap;
-
-use feos_core::{Components, DensityInitialization, EquationOfState, FeosError, State, StateVec};
-use ndarray::{Array1, Array2};
-use numpy::{IntoPyArray, PyArray1, PyArray2, PyArrayMethods, ToPyArray};
-use pyo3::{
-    exceptions::{PyIndexError, PyValueError},
-    prelude::*,
-};
-use quantity::*;
-use typenum::{Quot, P3};
-
 use crate::{
     eos::PyEquationOfState, error::PyFeosError, ideal_gas::IdealGasModel, residual::ResidualModel,
     PyVerbosity,
 };
+use feos_core::{
+    Components, Contributions, DensityInitialization, EquationOfState, FeosError, State, StateVec,
+};
+use ndarray::{Array1, Array2};
+use numpy::{IntoPyArray, PyArray1, PyArray2, PyArrayMethods, ToPyArray};
+use pyo3::exceptions::{PyIndexError, PyValueError};
+use pyo3::prelude::*;
+use quantity::*;
+use std::collections::HashMap;
+use typenum::{Quot, P3};
 
-use super::PyContributions;
+/// Possible contributions that can be computed.
+#[derive(Clone, Copy, PartialEq)]
+#[pyclass(name = "Contributions", eq, eq_int)]
+pub enum PyContributions {
+    /// Only compute the ideal gas contribution
+    IdealGas,
+    /// Only compute the difference between the total and the ideal gas contribution
+    Residual,
+    // /// Compute the differnce between the total and the ideal gas contribution for a (N,p,T) reference state
+    // ResidualNpt,
+    /// Compute ideal gas and residual contributions
+    Total,
+}
+
+impl From<Contributions> for PyContributions {
+    fn from(value: Contributions) -> Self {
+        use Contributions::*;
+        match value {
+            IdealGas => Self::IdealGas,
+            Residual => Self::Residual,
+            Total => Self::Total,
+        }
+    }
+}
+
+impl From<PyContributions> for Contributions {
+    fn from(value: PyContributions) -> Self {
+        use PyContributions::*;
+        match value {
+            IdealGas => Self::IdealGas,
+            Residual => Self::Residual,
+            Total => Self::Total,
+        }
+    }
+}
 
 /// A thermodynamic state at given conditions.
 ///
@@ -90,41 +122,39 @@ impl PyState {
         density_initialization: Option<&Bound<'py, PyAny>>,
         initial_temperature: Option<Temperature>,
     ) -> PyResult<Self> {
-        let x = molefracs.and_then(|m| Some(m.to_owned_array()));
+        let x = molefracs.map(|m| m.to_owned_array());
         let density_init = if let Some(di) = density_initialization {
             if let Ok(d) = di.extract::<String>().as_deref() {
                 match d {
                     "vapor" => Ok(DensityInitialization::Vapor),
                     "liquid" => Ok(DensityInitialization::Liquid),
-                    _ => Err(PyErr::new::<PyValueError, _>(format!(
-                        "`density_initialization` must be 'vapor' or 'liquid'."
-                    ))),
+                    _ => Err(PyErr::new::<PyValueError, _>(
+                        "`density_initialization` must be 'vapor' or 'liquid'.".to_string(),
+                    )),
                 }
             } else if let Ok(d) = di.extract::<Density>() {
-                Ok(DensityInitialization::InitialDensity(d.try_into()?))
+                Ok(DensityInitialization::InitialDensity(d))
             } else {
-                Err(PyErr::new::<PyValueError, _>(format!(
-                    "`density_initialization` must be 'vapor' or 'liquid' or a molar density as `SINumber` has to be provided."
-                )))
+                Err(PyErr::new::<PyValueError, _>("`density_initialization` must be 'vapor' or 'liquid' or a molar density as `SINumber` has to be provided.".to_string()))
             }
         } else {
             Ok(DensityInitialization::None)
         };
         let s = State::new_full(
             &eos.0,
-            temperature.map(|t| t.try_into()).transpose()?,
-            volume.map(|v| v.try_into()).transpose()?,
-            density.map(|s| s.try_into()).transpose()?,
-            partial_density.map(|s| s.try_into()).transpose()?.as_ref(),
-            total_moles.map(|s| s.try_into()).transpose()?,
-            moles.map(|m| m.try_into()).transpose()?.as_ref(),
+            temperature,
+            volume,
+            density,
+            partial_density.as_ref(),
+            total_moles,
+            moles.as_ref(),
             x.as_ref(),
-            pressure.map(|s| s.try_into()).transpose()?,
-            molar_enthalpy.map(|s| s.try_into()).transpose()?,
-            molar_entropy.map(|s| s.try_into()).transpose()?,
-            molar_internal_energy.map(|s| s.try_into()).transpose()?,
+            pressure,
+            molar_enthalpy,
+            molar_entropy,
+            molar_internal_energy,
             density_init?,
-            initial_temperature.map(|s| s.try_into()).transpose()?,
+            initial_temperature,
         )
         .map_err(PyFeosError::from)?;
         Ok(Self(s))
@@ -163,7 +193,7 @@ impl PyState {
     ) -> PyResult<Vec<Self>> {
         let cp = State::critical_point_pure(
             &eos.0,
-            initial_temperature.map(|t0| t0.try_into()).transpose()?,
+            initial_temperature,
             (max_iter, tol, verbosity.map(|v| v.into())).into(),
         )
         .map_err(PyFeosError::from)?;
@@ -207,8 +237,8 @@ impl PyState {
         Ok(PyState(
             State::critical_point(
                 &eos.0,
-                moles.map(|m| m.try_into()).transpose()?.as_ref(),
-                initial_temperature.map(|t| t.try_into()).transpose()?,
+                moles.as_ref(),
+                initial_temperature,
                 (max_iter, tol, verbosity.map(|v| v.into())).into(),
             )
             .map_err(PyFeosError::from)?,
@@ -257,7 +287,7 @@ impl PyState {
                 State::critical_point_binary(
                     &eos.0,
                     t,
-                    initial_temperature.map(|t| t.try_into()).transpose()?,
+                    initial_temperature,
                     initial_molefracs,
                     (max_iter, tol, v).into(),
                 )
@@ -268,7 +298,7 @@ impl PyState {
                 State::critical_point_binary(
                     &eos.0,
                     p,
-                    initial_temperature.map(|t| t.try_into()).transpose()?,
+                    initial_temperature,
                     initial_molefracs,
                     (max_iter, tol, v).into(),
                 )
@@ -321,7 +351,7 @@ impl PyState {
         let [state1, state2] = State::spinodal(
             &eos.0,
             temperature,
-            moles.map(|m| m.try_into()).transpose()?.as_ref(),
+            moles.as_ref(),
             (max_iter, tol, verbosity.map(|v| v.into())).into(),
         )
         .map_err(PyFeosError::from)?;
@@ -1283,7 +1313,7 @@ pub struct PyStateVec(Vec<State<EquationOfState<IdealGasModel, ResidualModel>>>)
 
 impl From<StateVec<'_, EquationOfState<IdealGasModel, ResidualModel>>> for PyStateVec {
     fn from(vec: StateVec<EquationOfState<IdealGasModel, ResidualModel>>) -> Self {
-        Self(vec.into_iter().map(|s| s.clone()).collect())
+        Self(vec.into_iter().cloned().collect())
     }
 }
 
@@ -1313,9 +1343,9 @@ impl PyStateVec {
         if (0..self.0.len()).contains(&(i as usize)) {
             Ok(PyState(self.0[i as usize].clone()))
         } else {
-            Err(PyIndexError::new_err(format!(
-                "StateVec index out of range"
-            )))
+            Err(PyIndexError::new_err(
+                "StateVec index out of range".to_string(),
+            ))
         }
     }
 
@@ -1404,7 +1434,7 @@ impl PyStateVec {
     }
 
     #[getter]
-    fn get_moles<'py>(&self, py: Python<'py>) -> Moles<Array2<f64>> {
+    fn get_moles(&self) -> Moles<Array2<f64>> {
         StateVec::from(self).moles()
     }
 
@@ -1464,7 +1494,7 @@ impl PyStateVec {
         if n != 1 {
             let xs = states.molefracs();
             for i in 0..n {
-                dict.insert(String::from(format!("x{}", i)), xs.column(i).to_vec());
+                dict.insert(format!("x{}", i), xs.column(i).to_vec());
             }
         }
         dict.insert(

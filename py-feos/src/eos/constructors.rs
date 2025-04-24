@@ -1,44 +1,12 @@
+use super::PyEquationOfState;
 use crate::ideal_gas::IdealGasModel;
 use crate::parameter::{PyGcParameters, PyParameters};
 use crate::residual::ResidualModel;
-#[cfg(feature = "epcsaft")]
-use feos::epcsaft::{ElectrolytePcSaft, ElectrolytePcSaftOptions, ElectrolytePcSaftVariants};
-#[cfg(feature = "estimator")]
-use feos::estimator::*;
-#[cfg(feature = "gc_pcsaft")]
-use feos::gc_pcsaft::{GcPcSaft, GcPcSaftOptions};
-// #[cfg(feature = "estimator")]
-// use feos::impl_estimator;
-// #[cfg(all(feature = "estimator", feature = "pcsaft"))]
-// use feos::impl_estimator_entropy_scaling;
-#[cfg(feature = "pcsaft")]
-use feos::pcsaft::{DQVariants, PcSaft, PcSaftOptions};
-#[cfg(feature = "pets")]
-use feos::pets::{Pets, PetsOptions};
-#[cfg(feature = "saftvrmie")]
-use feos::saftvrmie::{SaftVRMie, SaftVRMieOptions};
-#[cfg(feature = "saftvrqmie")]
-use feos::saftvrqmie::{SaftVRQMie, SaftVRQMieOptions};
-#[cfg(feature = "uvtheory")]
-use feos::uvtheory::{Perturbation, UVTheory, UVTheoryOptions};
-
 use crate::user_defined::{PyIdealGas, PyResidual};
 use feos_core::cubic::PengRobinson;
 use feos_core::*;
-use ndarray::{Array1, Array2};
-use numpy::prelude::*;
-use numpy::{PyArray1, PyArray2};
-use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
-#[cfg(feature = "estimator")]
-use pyo3::wrap_pymodule;
-use quantity::*;
-use std::collections::HashMap;
-use std::convert::TryInto;
 use std::sync::Arc;
-use typenum::{Quot, P3};
-
-use super::PyEquationOfState;
 
 #[pymethods]
 impl PyEquationOfState {

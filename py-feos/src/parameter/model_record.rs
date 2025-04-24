@@ -71,7 +71,7 @@ impl PyPureRecord {
 
         // build map, draining list of queried substances in the process
         for record in file_records {
-            if let Some(id) = record.identifier.as_str(identifier_option.into()) {
+            if let Some(id) = record.identifier.as_str(identifier_option) {
                 queried.take(id).map(|id| records.insert(id, record));
             }
             // all parameters parsed
