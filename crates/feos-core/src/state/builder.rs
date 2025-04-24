@@ -9,14 +9,14 @@ use std::sync::Arc;
 ///
 /// # Examples
 /// ```
-/// # use feos_core::{EosResult, StateBuilder};
+/// # use feos_core::{FeosResult, StateBuilder};
 /// # use feos_core::cubic::{PengRobinson, PengRobinsonParameters};
 /// # use quantity::*;
 /// # use std::sync::Arc;
 /// # use ndarray::arr1;
 /// # use approx::assert_relative_eq;
 /// # use typenum::P3;
-/// # fn main() -> EosResult<()> {
+/// # fn main() -> FeosResult<()> {
 /// // Create a state for given T,V,N
 /// let eos = Arc::new(PengRobinson::new(Arc::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0])?)));
 /// let state = StateBuilder::new(&eos)
