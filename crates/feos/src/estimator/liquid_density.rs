@@ -1,4 +1,4 @@
-use super::{DataSet, EstimatorError};
+use super::{DataSet, FeosError};
 use feos_core::{
     DensityInitialization, Molarweight, PhaseEquilibrium, ReferenceSystem, Residual, SolverOptions,
     State,
@@ -61,7 +61,7 @@ impl<E: Residual + Molarweight> DataSet<E> for LiquidDensity {
         vec!["temperature", "pressure"]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
+    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, FeosError> {
         let moles = Moles::from_reduced(arr1(&[1.0]));
         Ok(self
             .temperature
@@ -133,7 +133,7 @@ impl<E: Residual + Molarweight> DataSet<E> for EquilibriumLiquidDensity {
         vec!["temperature"]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
+    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, FeosError> {
         Ok(self
             .temperature
             .into_iter()

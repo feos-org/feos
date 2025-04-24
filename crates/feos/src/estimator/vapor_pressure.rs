@@ -1,4 +1,4 @@
-use super::{DataSet, EstimatorError};
+use super::{DataSet, FeosError};
 use feos_core::{Contributions, PhaseEquilibrium, ReferenceSystem, Residual, SolverOptions, State};
 use ndarray::{arr1, Array1};
 use quantity::{Pressure, Temperature, PASCAL};
@@ -66,7 +66,7 @@ impl<E: Residual> DataSet<E> for VaporPressure {
         vec!["temperature"]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
+    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, FeosError> {
         if self.datapoints == 0 {
             return Ok(arr1(&[]));
         }

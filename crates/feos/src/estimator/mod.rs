@@ -1,9 +1,5 @@
 //! Utilities for working with experimental data.
 use feos_core::{DensityInitialization, FeosError};
-// use quantity::QuantityError;
-use std::num::ParseFloatError;
-use thiserror::Error;
-
 mod dataset;
 pub use dataset::DataSet;
 #[expect(clippy::module_inception)]
@@ -40,16 +36,4 @@ impl From<Phase> for DensityInitialization {
             Phase::Vapor => DensityInitialization::Vapor,
         }
     }
-}
-
-#[derive(Debug, Error)]
-pub enum EstimatorError {
-    #[error("Input has not the same amount of data as the target.")]
-    IncompatibleInput,
-    #[error(transparent)]
-    ShapeError(#[from] ndarray::ShapeError),
-    #[error(transparent)]
-    ParseError(#[from] ParseFloatError),
-    #[error(transparent)]
-    FeosError(#[from] FeosError),
 }

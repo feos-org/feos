@@ -57,6 +57,8 @@ pub enum FeosError {
     #[cfg(feature = "rayon")]
     #[error(transparent)]
     RayonError(#[from] rayon::ThreadPoolBuildError),
+    #[error(transparent)]
+    ShapeError(#[from] ndarray::ShapeError),
 }
 
 /// Convenience type for `Result<T, FeosError>`.

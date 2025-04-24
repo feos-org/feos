@@ -7,6 +7,7 @@ use pyo3::prelude::*;
 pub(crate) mod dft;
 pub(crate) mod eos;
 pub(crate) mod error;
+pub(crate) mod estimator;
 pub(crate) mod ideal_gas;
 pub(crate) mod parameter;
 pub(crate) mod phase_equilibria;
@@ -76,6 +77,12 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     // Equation of state
     m.add_class::<eos::PyEquationOfState>()?;
+
+    // Estimator
+    m.add_class::<estimator::PyDataSet>()?;
+    m.add_class::<estimator::PyEstimator>()?;
+    m.add_class::<estimator::PyLoss>()?;
+    m.add_class::<estimator::PyPhase>()?;
 
     #[cfg(feature = "dft")]
     {

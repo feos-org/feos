@@ -1,6 +1,6 @@
 //! The [`Estimator`] struct can be used to store multiple [`DataSet`]s for convenient parameter
 //! optimization.
-use super::{DataSet, EstimatorError, Loss};
+use super::{DataSet, FeosError, Loss};
 use feos_core::Residual;
 use ndarray::{arr1, concatenate, Array1, ArrayView1, Axis};
 // use quantity::si::SIArray1;
@@ -40,25 +40,25 @@ impl<E: Residual> Estimator<E> {
     /// Returns the cost of each `DataSet`.
     ///
     /// Each cost contains the inverse weight.
-    pub fn cost(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
+    pub fn cost(&self, eos: &Arc<E>) -> Result<Array1<f64>, FeosError> {
         let w = arr1(&self.weights) / self.weights.iter().sum::<f64>();
         let predictions = self
             .data
             .iter()
             .enumerate()
             .map(|(i, d)| Ok(d.cost(eos, self.losses[i])? * w[i]))
-            .collect::<Result<Vec<_>, EstimatorError>>()?;
+            .collect::<Result<Vec<_>, FeosError>>()?;
         let aview: Vec<ArrayView1<f64>> = predictions.iter().map(|pi| pi.view()).collect();
         Ok(concatenate(Axis(0), &aview)?)
     }
 
     /// Returns the properties as computed by the equation of state for each `DataSet`.
-    pub fn predict(&self, eos: &Arc<E>) -> Result<Vec<Array1<f64>>, EstimatorError> {
+    pub fn predict(&self, eos: &Arc<E>) -> Result<Vec<Array1<f64>>, FeosError> {
         self.data.iter().map(|d| d.predict(eos)).collect()
     }
 
     /// Returns the relative difference for each `DataSet`.
-    pub fn relative_difference(&self, eos: &Arc<E>) -> Result<Vec<Array1<f64>>, EstimatorError> {
+    pub fn relative_difference(&self, eos: &Arc<E>) -> Result<Vec<Array1<f64>>, FeosError> {
         self.data
             .iter()
             .map(|d| d.relative_difference(eos))
@@ -69,7 +69,7 @@ impl<E: Residual> Estimator<E> {
     pub fn mean_absolute_relative_difference(
         &self,
         eos: &Arc<E>,
-    ) -> Result<Array1<f64>, EstimatorError> {
+    ) -> Result<Array1<f64>, FeosError> {
         self.data
             .iter()
             .map(|d| d.mean_absolute_relative_difference(eos))

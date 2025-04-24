@@ -2,8 +2,8 @@
 //! optimization of parameters of equations of state given
 //! a `target` which can be values from experimental data or
 //! other models.
-use super::{EstimatorError, Loss};
-use feos_core::Residual;
+use super::Loss;
+use feos_core::{FeosError, Residual};
 use ndarray::Array1;
 use std::fmt;
 use std::sync::Arc;
@@ -23,10 +23,10 @@ pub trait DataSet<E: Residual>: Send + Sync {
     fn input_str(&self) -> Vec<&str>;
 
     /// Evaluation of the equation of state for the target quantity.
-    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError>;
+    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, FeosError>;
 
     /// Evaluate the cost function.
-    fn cost(&self, eos: &Arc<E>, loss: Loss) -> Result<Array1<f64>, EstimatorError> {
+    fn cost(&self, eos: &Arc<E>, loss: Loss) -> Result<Array1<f64>, FeosError> {
         let mut cost = self.relative_difference(eos)?;
         loss.apply(&mut cost);
         let datapoints = cost.len();
@@ -39,14 +39,14 @@ pub trait DataSet<E: Residual>: Send + Sync {
     }
 
     /// Returns the relative difference between the equation of state and the experimental values.
-    fn relative_difference(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
+    fn relative_difference(&self, eos: &Arc<E>) -> Result<Array1<f64>, FeosError> {
         let prediction = &self.predict(eos)?;
         let target = self.target();
         Ok((prediction - target) / target)
     }
 
     /// Returns the mean of the absolute relative difference between the equation of state and the experimental values.
-    fn mean_absolute_relative_difference(&self, eos: &Arc<E>) -> Result<f64, EstimatorError> {
+    fn mean_absolute_relative_difference(&self, eos: &Arc<E>) -> Result<f64, FeosError> {
         Ok(self
             .relative_difference(eos)?
             .into_iter()

@@ -1,4 +1,4 @@
-use super::{DataSet, EstimatorError, Phase};
+use super::{DataSet, FeosError, Phase};
 use feos_core::{
     Contributions, DensityInitialization, PhaseDiagram, PhaseEquilibrium, ReferenceSystem,
     Residual, State, TemperatureOrPressure,
@@ -57,7 +57,7 @@ impl<E: Residual> DataSet<E> for BinaryVleChemicalPotential {
         ]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
+    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, FeosError> {
         let mut prediction = Vec::new();
         for (&xi, &yi, t, p) in izip!(
             &self.liquid_molefracs,
@@ -147,7 +147,7 @@ impl<E: Residual> DataSet<E> for BinaryVlePressure {
         vec
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
+    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, FeosError> {
         let options = Default::default();
         self.molefracs
             .iter()
@@ -257,7 +257,7 @@ where
         vec
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
+    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, FeosError> {
         let mut res = Vec::new();
 
         let dia = PhaseDiagram::binary_vle(

@@ -17,6 +17,7 @@ __version__ = version
 __all__ = [
     "dft",
     "parameters",
+    "estimator",
     "Verbosity",
     "Contributions",
     "State",

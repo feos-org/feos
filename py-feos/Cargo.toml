@@ -39,7 +39,6 @@ feos-dft = { workspace = true, optional = true }
 [features]
 default = []
 dft = ["feos/dft", "feos-dft", "petgraph", "rayon"]
-estimator = ["feos/estimator"]
 pcsaft = ["feos/pcsaft"]
 epcsaft = ["feos/epcsaft"]
 gc_pcsaft = ["feos/gc_pcsaft"]
@@ -50,7 +49,6 @@ saftvrmie = ["feos/saftvrmie"]
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 all_models = [
     "dft",
-    "estimator",
     "pcsaft",
     "epcsaft",
     "gc_pcsaft",

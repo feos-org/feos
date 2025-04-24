@@ -1,4 +1,4 @@
-use super::{DataSet, EstimatorError, Phase};
+use super::{DataSet, FeosError, Phase};
 use feos_core::{DensityInitialization, EntropyScaling, ReferenceSystem, Residual, State};
 use itertools::izip;
 use ndarray::{arr1, Array1};
@@ -61,7 +61,7 @@ impl<E: Residual + EntropyScaling> DataSet<E> for Diffusion {
         vec!["temperature", "pressure"]
     }
 
-    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, EstimatorError> {
+    fn predict(&self, eos: &Arc<E>) -> Result<Array1<f64>, FeosError> {
         let moles = Moles::from_reduced(arr1(&[1.0]));
 
         izip!(&self.temperature, &self.pressure, &self.initial_density)
@@ -69,7 +69,7 @@ impl<E: Residual + EntropyScaling> DataSet<E> for Diffusion {
                 State::new_npt(eos, t, p, &moles, initial_density)?
                     .diffusion()
                     .map(|lambda| lambda.convert_to(self.unit))
-                    .map_err(EstimatorError::from)
+                    .map_err(FeosError::from)
             })
             .collect()
     }

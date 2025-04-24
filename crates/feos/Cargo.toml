@@ -20,7 +20,7 @@ num-traits = { workspace = true }
 serde = { workspace = true }
 indexmap = { workspace = true }
 rayon = { workspace = true, optional = true }
-itertools = { workspace = true, optional = true }
+itertools = { workspace = true }
 typenum = { workspace = true }
 
 feos-core = { workspace = true }
@@ -36,7 +36,6 @@ serde_json = { workspace = true }
 [features]
 default = []
 dft = ["feos-dft", "petgraph"]
-estimator = ["itertools"]
 association = []
 pcsaft = ["association"]
 epcsaft = ["association"]
@@ -48,7 +47,6 @@ saftvrmie = []
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 all_models = [
     "dft",
-    "estimator",
     "pcsaft",
     "epcsaft",
     "gc_pcsaft",

@@ -35,7 +35,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::allow_attributes)]
 
-#[cfg(feature = "estimator")]
 pub mod estimator;
 
 #[cfg(feature = "association")]
