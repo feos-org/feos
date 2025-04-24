@@ -1,6 +1,8 @@
 use feos_core::Contributions;
 use pyo3::prelude::*;
+
 mod state;
+pub use state::{PyState, PyStateVec};
 
 /// Possible contributions that can be computed.
 #[derive(Clone, Copy, PartialEq)]

@@ -6,9 +6,9 @@ use feos_core::*;
 use ndarray::Array1;
 use pyo3::prelude::*;
 use quantity::*;
-use typenum::Quot;
 use std::convert::TryInto;
 use std::sync::Arc;
+use typenum::Quot;
 
 mod constructors;
 #[cfg(feature = "epcsaft")]
@@ -168,8 +168,8 @@ impl PyEquationOfState {
     }
 }
 
-impl_state_entropy_scaling!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
-impl_phase_equilibrium!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
+// impl_state_entropy_scaling!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
+// impl_phase_equilibrium!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
 
 // #[cfg(feature = "estimator")]
 // impl_estimator!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);

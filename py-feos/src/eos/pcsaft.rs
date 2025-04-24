@@ -1,9 +1,11 @@
 use super::PyEquationOfState;
-use crate::{
-    ideal_gas::IdealGasModel,
-    parameter::{PyGcParameters, PyParameters},
-    residual::ResidualModel,
-};
+#[cfg(feature = "dft")]
+use crate::dft::{PyFMTVersion, PyHelmholtzEnergyFunctional};
+use crate::ideal_gas::IdealGasModel;
+use crate::parameter::{PyGcParameters, PyParameters};
+use crate::residual::ResidualModel;
+#[cfg(feature = "dft")]
+use feos::pcsaft::PcSaftFunctional;
 use feos::pcsaft::{DQVariants, PcSaft, PcSaftOptions};
 use feos_core::{Components, EquationOfState};
 use pyo3::prelude::*;
@@ -90,5 +92,62 @@ impl PyEquationOfState {
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
+    }
+}
+
+#[cfg(feature = "dft")]
+#[pymethods]
+impl PyHelmholtzEnergyFunctional {
+    /// PC-SAFT Helmholtz energy functional.
+    ///
+    /// Parameters
+    /// ----------
+    /// parameters: PcSaftParameters
+    ///     The set of PC-SAFT parameters.
+    /// fmt_version: FMTVersion, optional
+    ///     The specific variant of the FMT term. Defaults to FMTVersion.WhiteBear
+    /// max_eta : float, optional
+    ///     Maximum packing fraction. Defaults to 0.5.
+    /// max_iter_cross_assoc : unsigned integer, optional
+    ///     Maximum number of iterations for cross association. Defaults to 50.
+    /// tol_cross_assoc : float
+    ///     Tolerance for convergence of cross association. Defaults to 1e-10.
+    /// dq_variant : DQVariants, optional
+    ///     Combination rule used in the dipole/quadrupole term. Defaults to 'DQVariants.DQ35'
+    ///
+    /// Returns
+    /// -------
+    /// HelmholtzEnergyFunctional
+    #[cfg(feature = "pcsaft")]
+    #[staticmethod]
+    #[pyo3(
+        signature = (parameters, fmt_version=PyFMTVersion::WhiteBear, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant=PyDQVariants::DQ35),
+        text_signature = "(parameters, fmt_version, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant)"
+    )]
+    fn pcsaft(
+        parameters: crate::parameter::PyParameters,
+        fmt_version: PyFMTVersion,
+        max_eta: f64,
+        max_iter_cross_assoc: usize,
+        tol_cross_assoc: f64,
+        dq_variant: PyDQVariants,
+    ) -> PyResult<PyEquationOfState> {
+        let options = PcSaftOptions {
+            max_eta,
+            max_iter_cross_assoc,
+            tol_cross_assoc,
+            dq_variant: dq_variant.into(),
+        };
+        let func = Arc::new(ResidualModel::PcSaftFunctional(
+            PcSaftFunctional::with_options(
+                Arc::new(parameters.try_convert()?),
+                fmt_version.into(),
+                options,
+            ),
+        ));
+        let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
+        Ok(PyEquationOfState(Arc::new(EquationOfState::new(
+            ideal_gas, func,
+        ))))
     }
 }

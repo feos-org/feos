@@ -1,6 +1,10 @@
+#![warn(clippy::all)]
+#![warn(clippy::allow_attributes)]
 use feos_core::Verbosity;
 use pyo3::prelude::*;
 
+#[cfg(feature = "dft")]
+pub(crate) mod dft;
 pub(crate) mod eos;
 pub(crate) mod error;
 pub(crate) mod ideal_gas;

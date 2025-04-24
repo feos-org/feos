@@ -2,11 +2,11 @@ use super::pore::{PoreProfile, PoreSpecification};
 use crate::adsorption::FluidParameters;
 use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::{Axis, Grid};
-use crate::profile::{DFTProfile, CUTOFF_RADIUS, MAX_POTENTIAL};
-use feos_core::{EosError, EosResult, ReferenceSystem, State};
-use ndarray::prelude::*;
+use crate::profile::{CUTOFF_RADIUS, DFTProfile, MAX_POTENTIAL};
+use feos_core::{FeosError, FeosResult, ReferenceSystem, State};
 use ndarray::Zip;
-use quantity::{Angle, Density, Length, DEGREES};
+use ndarray::prelude::*;
+use quantity::{Angle, DEGREES, Density, Length};
 
 /// Parameters required to specify a 3D pore.
 pub struct Pore3D {
@@ -54,7 +54,7 @@ impl PoreSpecification<Ix3> for Pore3D {
         bulk: &State<F>,
         density: Option<&Density<Array4<f64>>>,
         external_potential: Option<&Array4<f64>>,
-    ) -> EosResult<PoreProfile3D<F>> {
+    ) -> FeosResult<PoreProfile3D<F>> {
         let dft: &F = &bulk.eos;
 
         // generate grid
@@ -70,7 +70,7 @@ impl PoreSpecification<Ix3> for Pore3D {
         // For non-orthorombic unit cells, the external potential has to be
         // provided at the moment
         if let (Some(_), None) = (self.angles, external_potential) {
-            return Err(EosError::UndeterminedState(
+            return Err(FeosError::UndeterminedState(
                 "For non-orthorombic unit cells, the external potential has to provided!".into(),
             ));
         }
@@ -113,7 +113,7 @@ pub fn external_potential_3d<F: FluidParameters>(
     cutoff_radius: Option<Length>,
     potential_cutoff: Option<f64>,
     reduced_temperature: f64,
-) -> EosResult<Array4<f64>> {
+) -> FeosResult<Array4<f64>> {
     // allocate external potential
     let m = functional.m();
     let mut external_potential = Array4::zeros((
@@ -134,7 +134,7 @@ pub fn external_potential_3d<F: FluidParameters>(
         .to_reduced();
 
     if system_size.iter().any(|&s| s < 2.0 * cutoff_radius) {
-        return Err(EosError::UndeterminedState(
+        return Err(FeosError::UndeterminedState(
             "The unit cell is smaller than 2*cutoff".into(),
         ));
     }

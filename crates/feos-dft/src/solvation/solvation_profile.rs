@@ -1,11 +1,11 @@
 use crate::adsorption::FluidParameters;
 use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::{Axis, Grid};
-use crate::profile::{DFTProfile, CUTOFF_RADIUS, MAX_POTENTIAL};
+use crate::profile::{CUTOFF_RADIUS, DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
-use feos_core::{Contributions, EosResult, ReferenceSystem, State};
-use ndarray::prelude::*;
+use feos_core::{Contributions, FeosResult, ReferenceSystem, State};
 use ndarray::Zip;
+use ndarray::prelude::*;
 use quantity::{Energy, Length, MolarEnergy, Moles};
 
 /// Density profile and properties of a solute in a inhomogeneous bulk fluid.
@@ -26,7 +26,7 @@ impl<F: HelmholtzEnergyFunctional> Clone for SolvationProfile<F> {
 }
 
 impl<F: HelmholtzEnergyFunctional> SolvationProfile<F> {
-    pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> EosResult<()> {
+    pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> FeosResult<()> {
         // Solve the profile
         self.profile.solve(solver, debug)?;
 
@@ -43,7 +43,7 @@ impl<F: HelmholtzEnergyFunctional> SolvationProfile<F> {
         Ok(())
     }
 
-    pub fn solve(mut self, solver: Option<&DFTSolver>) -> EosResult<Self> {
+    pub fn solve(mut self, solver: Option<&DFTSolver>) -> FeosResult<Self> {
         self.solve_inplace(solver, false)?;
         Ok(self)
     }
@@ -60,7 +60,7 @@ impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
         system_size: Option<[Length; 3]>,
         cutoff_radius: Option<Length>,
         potential_cutoff: Option<f64>,
-    ) -> EosResult<Self> {
+    ) -> FeosResult<Self> {
         let dft: &F = &bulk.eos;
 
         let system_size = system_size.unwrap_or([Length::from_reduced(40.0); 3]);
@@ -122,7 +122,7 @@ fn external_potential_3d<F: FluidParameters>(
     cutoff_radius: Option<Length>,
     potential_cutoff: Option<f64>,
     reduced_temperature: f64,
-) -> EosResult<Array4<f64>> {
+) -> FeosResult<Array4<f64>> {
     // allocate external potential
     let m = functional.m();
     let mut external_potential = Array4::zeros((
