@@ -1,15 +1,7 @@
 use feos_core::FeosError;
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
-// use pythonize::PythonizeError;
 use thiserror::Error;
-
-pub type PyFeosResult<T> = Result<T, PyFeosError>;
-
-// pub struct PyFeosError(pub FeosError);
-// #[derive(Error, Debug)]
-// #[error(transparent)]
-// pub struct PyFeosError(#[from] pub FeosError);
 
 #[derive(Debug, Error)]
 pub enum PyFeosError {
@@ -22,15 +14,7 @@ pub enum PyFeosError {
     #[cfg(feature = "rayon")]
     #[error(transparent)]
     Rayon(#[from] rayon::ThreadPoolBuildError),
-    // #[error(transparent)]
-    // PythonizeError(#[from] PythonizeError),
 }
-
-// impl From<FeosError> for PyFeosError {
-//     fn from(value: FeosError) -> Self {
-//         Self(value)
-//     }
-// }
 
 impl From<PyFeosError> for PyErr {
     fn from(e: PyFeosError) -> PyErr {

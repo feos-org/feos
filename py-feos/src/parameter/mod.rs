@@ -1,20 +1,11 @@
-//! All things parameters.
-//!
-//! This module mirrors feos-core::parameter's module structure.
-//!
-//! # Structs
-//!
-//! - PyParameter: wraps the Parameter trait.
+use crate::error::PyFeosError;
 use feos_core::{parameter::*, FeosError};
-use fragmentation::PySmartsRecord;
-use identifier::PyIdentifierOption;
 use indexmap::{IndexMap, IndexSet};
 use itertools::Itertools;
 use ndarray::Array2;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
-use pyo3::types::PyDict;
-use pythonize::{depythonize, pythonize, PythonizeError};
+use pythonize::{pythonize, PythonizeError};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -27,17 +18,13 @@ mod fragmentation;
 mod identifier;
 mod model_record;
 mod segment;
-use chemical_record::PyChemicalRecord;
-use model_record::{PyBinaryRecord, PyPureRecord};
-use segment::{PyBinarySegmentRecord, PySegmentRecord};
 
-use crate::error::PyFeosError;
-
-// PyParameters: A struct mimicing the feos::core::Parameter trait.
-//
-// Pure substance records and binary records are stored in a
-// model agnostic way and converted when initializing an
-// equation of state or functional via `try_convert`.
+// Export for wheel.
+pub(crate) use chemical_record::PyChemicalRecord;
+pub(crate) use fragmentation::PySmartsRecord;
+pub(crate) use identifier::{PyIdentifier, PyIdentifierOption};
+pub(crate) use model_record::{PyBinaryRecord, PyPureRecord};
+pub(crate) use segment::{PyBinarySegmentRecord, PySegmentRecord};
 
 #[pyclass(name = "Parameters")]
 #[derive(Debug, Clone, Serialize, Deserialize)]

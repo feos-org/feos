@@ -6,6 +6,7 @@ use feos_core::{Components, EquationOfState};
 use feos_dft::Geometry;
 use numpy::{PyArray1, PyArrayMethods};
 use pyo3::prelude::*;
+use pyo3::pyclass;
 use std::sync::Arc;
 
 mod adsorption;
@@ -14,13 +15,12 @@ mod profile;
 mod solvation;
 mod solver;
 
-use adsorption::{
+pub(crate) use adsorption::{
     PyAdsorption1D, PyAdsorption3D, PyExternalPotential, PyPore1D, PyPore2D, PyPore3D,
 };
-use interface::{PyPlanarInterface, PySurfaceTensionDiagram};
-use pyo3::pyclass;
-use solvation::{PyPairCorrelation, PySolvationProfile};
-use solver::{PyDFTSolver, PyDFTSolverLog};
+pub(crate) use interface::{PyPlanarInterface, PySurfaceTensionDiagram};
+pub(crate) use solvation::{PyPairCorrelation, PySolvationProfile};
+pub(crate) use solver::{PyDFTSolver, PyDFTSolverLog};
 
 /// Geometries of individual axes.
 #[derive(Clone, Copy, PartialEq)]
@@ -117,23 +117,23 @@ impl PyHelmholtzEnergyFunctional {
     }
 }
 
-#[pymodule]
-pub fn dft(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<PyFMTVersion>()?;
-    m.add_class::<PyHelmholtzEnergyFunctional>()?;
+// #[pymodule]
+// pub fn dft(m: &Bound<'_, PyModule>) -> PyResult<()> {
+//     m.add_class::<PyFMTVersion>()?;
+//     m.add_class::<PyHelmholtzEnergyFunctional>()?;
 
-    m.add_class::<PyPlanarInterface>()?;
-    m.add_class::<PyGeometry>()?;
-    m.add_class::<PyPore1D>()?;
-    m.add_class::<PyPore2D>()?;
-    m.add_class::<PyPore3D>()?;
-    m.add_class::<PyPairCorrelation>()?;
-    m.add_class::<PyExternalPotential>()?;
-    m.add_class::<PyAdsorption1D>()?;
-    m.add_class::<PyAdsorption3D>()?;
-    m.add_class::<PySurfaceTensionDiagram>()?;
-    m.add_class::<PyDFTSolver>()?;
-    m.add_class::<PySolvationProfile>()?;
+//     m.add_class::<PyPlanarInterface>()?;
+//     m.add_class::<PyGeometry>()?;
+//     m.add_class::<PyPore1D>()?;
+//     m.add_class::<PyPore2D>()?;
+//     m.add_class::<PyPore3D>()?;
+//     m.add_class::<PyPairCorrelation>()?;
+//     m.add_class::<PyExternalPotential>()?;
+//     m.add_class::<PyAdsorption1D>()?;
+//     m.add_class::<PyAdsorption3D>()?;
+//     m.add_class::<PySurfaceTensionDiagram>()?;
+//     m.add_class::<PyDFTSolver>()?;
+//     m.add_class::<PySolvationProfile>()?;
 
-    Ok(())
-}
+//     Ok(())
+// }

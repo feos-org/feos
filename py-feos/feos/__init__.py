@@ -1,5 +1,28 @@
-from py_feos._core import hello_from_bin
+"""Feos."""
 
+from feos.feos import (
+    version,
+    Verbosity,
+    Contributions,
+    State,
+    StateVec,
+    PhaseDiagram,
+    PhaseDiagramHetero,
+    PhaseEquilibrium,
+    EquationOfState,
+)
 
-def main() -> None:
-    print(hello_from_bin())
+__version__ = version
+
+__all__ = [
+    "dft",
+    "parameters",
+    "Verbosity",
+    "Contributions",
+    "State",
+    "StateVec",
+    "PhaseDiagram",
+    "PhaseDiagramHetero",
+    "PhaseEquilibrium",
+    "EquationOfState",
+]

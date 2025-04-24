@@ -1,18 +1,15 @@
 use std::{fs::File, io::BufReader};
 
-use crate::error::{PyFeosError, PyFeosResult};
+use crate::error::PyFeosError;
 use feos_core::{
     parameter::{BinarySegmentRecord, SegmentRecord},
     FeosError, FeosResult,
 };
 use pyo3::prelude::*;
-use pyo3::pybacked::PyBackedStr;
 use pyo3::types::PyDict;
-use pythonize::{depythonize, pythonize, PythonizeError};
+use pythonize::{depythonize, pythonize};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-
-use super::model_record;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[pyclass(name = "SegmentRecord")]

@@ -1,6 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::allow_attributes)]
-use feos_core::{SolverOptions, Verbosity};
+use feos_core::Verbosity;
 use pyo3::prelude::*;
 
 #[cfg(feature = "dft")]
@@ -47,8 +47,61 @@ impl From<PyVerbosity> for Verbosity {
     }
 }
 
-
 #[pymodule]
-fn _feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add("version", env!("CARGO_PKG_VERSION"))?;
+
+    // Utility
+    m.add_class::<PyVerbosity>()?;
+
+    // State & phase equilibria.
+    m.add_class::<state::PyContributions>()?;
+    m.add_class::<state::PyState>()?;
+    m.add_class::<state::PyStateVec>()?;
+    m.add_class::<phase_equilibria::PyPhaseDiagram>()?;
+    m.add_class::<phase_equilibria::PyPhaseDiagramHetero>()?;
+    m.add_class::<phase_equilibria::PyPhaseEquilibrium>()?;
+
+    // Parameter
+    m.add_class::<parameter::PyIdentifier>()?;
+    m.add_class::<parameter::PyIdentifierOption>()?;
+    m.add_class::<parameter::PyChemicalRecord>()?;
+    m.add_class::<parameter::PySmartsRecord>()?;
+    m.add_class::<parameter::PyPureRecord>()?;
+    m.add_class::<parameter::PySegmentRecord>()?;
+    m.add_class::<parameter::PyBinaryRecord>()?;
+    m.add_class::<parameter::PyBinarySegmentRecord>()?;
+    m.add_class::<parameter::PyParameters>()?;
+    m.add_class::<parameter::PyGcParameters>()?;
+
+    // Equation of state
+    m.add_class::<eos::PyEquationOfState>()?;
+
+    #[cfg(feature = "dft")]
+    {
+        m.add_class::<dft::PyHelmholtzEnergyFunctional>()?;
+        m.add_class::<dft::PyFMTVersion>()?;
+        m.add_class::<dft::PyGeometry>()?;
+
+        // Solver
+        m.add_class::<dft::PyDFTSolver>()?;
+        m.add_class::<dft::PyDFTSolverLog>()?;
+
+        // Adsorption
+        m.add_class::<dft::PyAdsorption1D>()?;
+        m.add_class::<dft::PyAdsorption3D>()?;
+        m.add_class::<dft::PyExternalPotential>()?;
+        m.add_class::<dft::PyPore1D>()?;
+        m.add_class::<dft::PyPore2D>()?;
+        m.add_class::<dft::PyPore3D>()?;
+
+        // Interface
+        m.add_class::<dft::PySurfaceTensionDiagram>()?;
+        m.add_class::<dft::PyPlanarInterface>()?;
+
+        // Solvation
+        m.add_class::<dft::PyPairCorrelation>()?;
+        m.add_class::<dft::PySolvationProfile>()?;
+    }
     Ok(())
 }
