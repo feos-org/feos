@@ -1,7 +1,6 @@
 use feos_core::FeosError;
 use feos_core::FeosResult;
 use feos_core::parameter::*;
-use ndarray::Array2;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -9,14 +8,14 @@ struct MyPureModel {
     a: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq)]
 struct MyBinaryModel {
     b: f64,
 }
 
 struct MyParameter {
     pure_records: Vec<PureRecord<MyPureModel>>,
-    binary_records: Option<Array2<MyBinaryModel>>,
+    binary_records: Vec<([usize; 2], MyBinaryModel)>,
 }
 
 impl Parameter for MyParameter {
@@ -24,7 +23,7 @@ impl Parameter for MyParameter {
     type Binary = MyBinaryModel;
     fn from_records(
         pure_records: Vec<PureRecord<MyPureModel>>,
-        binary_records: Option<Array2<MyBinaryModel>>,
+        binary_records: Vec<([usize; 2], MyBinaryModel)>,
     ) -> FeosResult<Self> {
         Ok(Self {
             pure_records,
@@ -32,8 +31,8 @@ impl Parameter for MyParameter {
         })
     }
 
-    fn records(&self) -> (&[PureRecord<MyPureModel>], Option<&Array2<MyBinaryModel>>) {
-        (&self.pure_records, self.binary_records.as_ref())
+    fn records(&self) -> (&[PureRecord<MyPureModel>], &[([usize; 2], MyBinaryModel)]) {
+        (&self.pure_records, &self.binary_records)
     }
 }
 
@@ -87,7 +86,7 @@ fn from_records() -> FeosResult<()> {
 
     assert_eq!(p.pure_records[0].identifier.cas, Some("123-4-5".into()));
     assert_eq!(p.pure_records[1].identifier.cas, Some("678-9-1".into()));
-    assert_eq!(p.binary_records.unwrap()[[0, 1]].b, 12.0);
+    assert_eq!(p.binary_records[0].1.b, 12.0);
     Ok(())
 }
 
@@ -151,9 +150,8 @@ fn from_multiple_json_files() {
     // test_parameters1: a = 0.5
     // test_parameters2: a = 0.1 or 0.3
     assert_eq!(p.pure_records[1].model_record.a, 0.5);
-    let br = p.binary_records.as_ref().unwrap();
-    assert_eq!(br[[0, 1]].b, 12.0);
-    assert_eq!(br[[1, 0]].b, 12.0);
+    let br = p.binary_records;
+    assert_eq!(br[0].1.b, 12.0);
 }
 
 #[test]
@@ -206,9 +204,8 @@ fn from_records_missing_binary() -> FeosResult<()> {
 
     assert_eq!(p.pure_records[0].identifier.cas, Some("123-4-5".into()));
     assert_eq!(p.pure_records[1].identifier.cas, Some("678-9-1".into()));
-    let br = p.binary_records.as_ref().unwrap();
-    assert_eq!(br[[0, 1]], MyBinaryModel::default());
-    assert_eq!(br[[0, 1]].b, 0.0);
+    let br = p.binary_records;
+    assert_eq!(br.len(), 0);
     Ok(())
 }
 
@@ -272,12 +269,9 @@ fn from_records_correct_binary_order() -> FeosResult<()> {
     assert_eq!(p.pure_records[0].identifier.cas, Some("000-0-0".into()));
     assert_eq!(p.pure_records[1].identifier.cas, Some("123-4-5".into()));
     assert_eq!(p.pure_records[2].identifier.cas, Some("678-9-1".into()));
-    let br = p.binary_records.as_ref().unwrap();
-    assert_eq!(br[[0, 1]], MyBinaryModel::default());
-    assert_eq!(br[[1, 0]], MyBinaryModel::default());
-    assert_eq!(br[[0, 2]], MyBinaryModel::default());
-    assert_eq!(br[[2, 0]], MyBinaryModel::default());
-    assert_eq!(br[[2, 1]].b, 12.0);
-    assert_eq!(br[[1, 2]].b, 12.0);
+    let ([i, j], br) = p.binary_records[0];
+    assert_eq!(i, 1);
+    assert_eq!(j, 2);
+    assert_eq!(br.b, 12.0);
     Ok(())
 }

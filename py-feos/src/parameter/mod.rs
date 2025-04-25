@@ -2,7 +2,6 @@ use crate::error::PyFeosError;
 use feos_core::{parameter::*, FeosError};
 use indexmap::{IndexMap, IndexSet};
 use itertools::Itertools;
-use ndarray::Array2;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pythonize::{pythonize, PythonizeError};
@@ -36,24 +35,18 @@ pub struct PyParameters {
 
 impl PyParameters {
     pub fn try_convert<P: Parameter>(self) -> PyResult<P> {
-        let n = self.pure_records.len();
         let pure_records = self
             .pure_records
             .into_iter()
             .map(|r| r.try_into())
             .collect::<Result<_, _>>()
             .map_err(PyFeosError::from)?;
-        let binary_records = if self.binary_records.is_empty() {
-            None
-        } else {
-            let mut br = Array2::default((n, n));
-            for ([i, j], r) in self.binary_records {
-                let r: P::Binary = serde_json::from_value(r).map_err(PyFeosError::from)?;
-                br[[i, j]] = r.clone();
-                br[[j, i]] = r;
-            }
-            Some(br)
-        };
+        let binary_records = self
+            .binary_records
+            .into_iter()
+            .map(|([i, j], r)| serde_json::from_value(r).map(|r| ([i, j], r)))
+            .collect::<Result<_, _>>()
+            .map_err(PyFeosError::from)?;
         Ok(P::from_records(pure_records, binary_records).map_err(PyFeosError::from)?)
     }
 }

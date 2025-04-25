@@ -94,12 +94,10 @@
   },
   {
     "group": "OH",
-    "smarts": "[$([OH][CX4H2])]",
-    "max": 1
+    "smarts": "[$([OH][CX4H2])]"
   },
   {
     "group": "NH2",
-    "smarts": "[$([NH2][C,c]);!$([NH2][CH3])]",
-    "max": 1
+    "smarts": "[$([NH2][C,c]);!$([NH2][CH3])]"
   }
 ]

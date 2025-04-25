@@ -203,7 +203,6 @@ impl ElectrolytePcSaftBinaryRecord {
         } else {
             Some(BinaryAssociationRecord::new(
                 ElectrolytePcSaftBinaryAssociationRecord::new(kappa_ab, epsilon_k_ab),
-                None,
             ))
         };
         Self { k_ij, association }

@@ -3,7 +3,7 @@
 
 use feos_core::parameter::*;
 use feos_core::{Components, FeosResult, IdealGas, ReferenceSystem};
-use ndarray::{Array1, Array2};
+use ndarray::Array1;
 use num_dual::*;
 use quantity::{MolarEntropy, Temperature};
 use serde::{Deserialize, Serialize};
@@ -77,13 +77,13 @@ impl Parameter for Joback {
 
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
-        _binary_records: Option<Array2<Self::Binary>>,
+        _binary_records: Vec<([usize; 2], Self::Binary)>,
     ) -> FeosResult<Self> {
         Ok(Self(pure_records))
     }
 
-    fn records(&self) -> (&[PureRecord<Self::Pure>], Option<&Array2<Self::Binary>>) {
-        (&self.0, None)
+    fn records(&self) -> (&[PureRecord<Self::Pure>], &[([usize; 2], Self::Binary)]) {
+        (&self.0, &[])
     }
 }
 
@@ -117,7 +117,7 @@ impl Components for Joback {
         component_list
             .iter()
             .for_each(|&i| records.push(self.0[i].clone()));
-        Self::from_records(records, None).unwrap()
+        Self::from_records(records, vec![]).unwrap()
     }
 }
 

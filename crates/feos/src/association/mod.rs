@@ -1,32 +1,35 @@
 //! Generic implementation of the SAFT association contribution
 //! that can be used across models.
 use crate::hard_sphere::HardSphereProperties;
+use arrayvec::ArrayString;
 use feos_core::{FeosError, FeosResult, StateHD};
 use ndarray::*;
 use num_dual::linalg::{LU, norm};
 use num_dual::*;
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::sync::Arc;
 
 #[cfg(feature = "dft")]
 mod dft;
 
+type SiteId = ArrayString<8>;
+
 #[derive(Clone, Copy, Debug)]
 struct AssociationSite<A> {
     assoc_comp: usize,
-    site_index: usize,
+    id: SiteId,
     n: f64,
     parameters: A,
 }
 
 impl<A> AssociationSite<A> {
-    fn new(assoc_comp: usize, site_index: usize, n: f64, parameters: A) -> Self {
+    fn new(assoc_comp: usize, id: SiteId, n: f64, parameters: A) -> Self {
         Self {
             assoc_comp,
-            site_index,
+            id,
             n,
             parameters,
         }
@@ -36,6 +39,9 @@ impl<A> AssociationSite<A> {
 /// Pure component association parameters.
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct AssociationRecord<A> {
+    #[serde(skip_serializing_if = "SiteId::is_empty")]
+    #[serde(default)]
+    pub id: SiteId,
     #[serde(flatten)]
     pub parameters: A,
     /// \# of association sites of type A
@@ -54,7 +60,12 @@ pub struct AssociationRecord<A> {
 
 impl<A> AssociationRecord<A> {
     pub fn new(parameters: A, na: f64, nb: f64, nc: f64) -> Self {
+        Self::with_id(Default::default(), parameters, na, nb, nc)
+    }
+
+    pub fn with_id(id: SiteId, parameters: A, na: f64, nb: f64, nc: f64) -> Self {
         Self {
+            id,
             parameters,
             na,
             nb,
@@ -65,42 +76,71 @@ impl<A> AssociationRecord<A> {
 
 impl<A: fmt::Display> fmt::Display for AssociationRecord<A> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "AssociationRecord(parameters={}", self.parameters)?;
+        let mut params = vec![];
+        if !self.id.is_empty() {
+            params.push(format!("id={}", self.id));
+        }
+        let model = self.parameters.to_string();
+        if !model.is_empty() {
+            params.push(model);
+        }
         if self.na > 0.0 {
-            write!(f, ", na={}", self.na)?;
+            params.push(format!("na={}", self.na));
         }
         if self.nb > 0.0 {
-            write!(f, ", nb={}", self.nb)?;
+            params.push(format!("nb={}", self.nb));
         }
         if self.nc > 0.0 {
-            write!(f, ", nc={}", self.nc)?;
+            params.push(format!("nc={}", self.nc));
         }
-        write!(f, ")")
+        write!(f, "AssociationRecord({})", params.join(", "))
     }
 }
 
 /// Binary association parameters.
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct BinaryAssociationRecord<B> {
+    // Identifier of the association site on the first molecule.
+    #[serde(skip_serializing_if = "SiteId::is_empty")]
+    #[serde(default)]
+    pub id1: SiteId,
+    // Identifier of the association site on the second molecule.
+    #[serde(skip_serializing_if = "SiteId::is_empty")]
+    #[serde(default)]
+    pub id2: SiteId,
     // Binary association parameters
     #[serde(flatten)]
     pub parameters: B,
-    /// Indices of sites that the record refers to.
-    #[serde(skip_serializing_if = "is_default_site_indices")]
-    #[serde(default)]
-    pub site_indices: [usize; 2],
-}
-
-fn is_default_site_indices([i, j]: &[usize; 2]) -> bool {
-    *i == 0 && *j == 0
 }
 
 impl<B> BinaryAssociationRecord<B> {
-    pub fn new(parameters: B, site_indices: Option<[usize; 2]>) -> Self {
+    pub fn new(parameters: B) -> Self {
+        Self::with_id(Default::default(), Default::default(), parameters)
+    }
+
+    pub fn with_id(id1: SiteId, id2: SiteId, parameters: B) -> Self {
         Self {
+            id1,
+            id2,
             parameters,
-            site_indices: site_indices.unwrap_or_default(),
         }
+    }
+}
+
+impl<A: fmt::Display> fmt::Display for BinaryAssociationRecord<A> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut params = vec![];
+        if !self.id1.is_empty() {
+            params.push(format!("id1={}", self.id1));
+        }
+        if !self.id2.is_empty() {
+            params.push(format!("id2={}", self.id2));
+        }
+        let model = self.parameters.to_string();
+        if !model.is_empty() {
+            params.push(model);
+        }
+        write!(f, "BinaryAssociationRecord({})", params.join(", "))
     }
 }
 
@@ -121,21 +161,21 @@ impl<P: AssociationStrength> AssociationParameters<P> {
         records: &[Vec<AssociationRecord<P::Record>>],
         binary_records: &[([usize; 2], BinaryAssociationRecord<P::BinaryRecord>)],
         component_index: Option<&Array1<usize>>,
-    ) -> Self {
+    ) -> FeosResult<Self> {
         let mut sites_a = Vec::new();
         let mut sites_b = Vec::new();
         let mut sites_c = Vec::new();
 
         for (i, record) in records.iter().enumerate() {
-            for (s, site) in record.iter().enumerate() {
+            for site in record.iter() {
                 if site.na > 0.0 {
-                    sites_a.push(AssociationSite::new(i, s, site.na, site.parameters));
+                    sites_a.push(AssociationSite::new(i, site.id, site.na, site.parameters));
                 }
                 if site.nb > 0.0 {
-                    sites_b.push(AssociationSite::new(i, s, site.nb, site.parameters));
+                    sites_b.push(AssociationSite::new(i, site.id, site.nb, site.parameters));
                 }
                 if site.nc > 0.0 {
-                    sites_c.push(AssociationSite::new(i, s, site.nc, site.parameters));
+                    sites_c.push(AssociationSite::new(i, site.id, site.nc, site.parameters));
                 }
             }
         }
@@ -143,19 +183,19 @@ impl<P: AssociationStrength> AssociationParameters<P> {
         let indices_a: HashMap<_, _> = sites_a
             .iter()
             .enumerate()
-            .map(|(i, site)| ((site.assoc_comp, site.site_index), i))
+            .map(|(i, site)| ((site.assoc_comp, &site.id), i))
             .collect();
 
         let indices_b: HashMap<_, _> = sites_b
             .iter()
             .enumerate()
-            .map(|(i, site)| ((site.assoc_comp, site.site_index), i))
+            .map(|(i, site)| ((site.assoc_comp, &site.id), i))
             .collect();
 
         let indices_c: HashMap<_, _> = sites_c
             .iter()
             .enumerate()
-            .map(|(i, site)| ((site.assoc_comp, site.site_index), i))
+            .map(|(i, site)| ((site.assoc_comp, &site.id), i))
             .collect();
 
         let mut parameters_ab = Array2::from_shape_fn([sites_a.len(), sites_b.len()], |(i, j)| {
@@ -165,21 +205,39 @@ impl<P: AssociationStrength> AssociationParameters<P> {
             P::combining_rule(sites_c[i].parameters, sites_c[j].parameters)
         });
 
-        for &([i, j], record) in binary_records.iter() {
-            let [a, b] = record.site_indices;
-            if let (Some(x), Some(y)) = (indices_a.get(&(i, a)), indices_b.get(&(j, b))) {
+        let index_set: HashSet<_> = indices_a
+            .keys()
+            .chain(indices_b.keys())
+            .chain(indices_c.keys())
+            .copied()
+            .collect();
+
+        for ([i, j], record) in binary_records.iter() {
+            let a = &record.id1;
+            let b = &record.id2;
+            if !index_set.contains(&(*i, a)) {
+                return Err(FeosError::IncompatibleParameters(format!(
+                    "No association site {a} on component {i}"
+                )));
+            }
+            if !index_set.contains(&(*j, b)) {
+                return Err(FeosError::IncompatibleParameters(format!(
+                    "No association site {b} on component {j}"
+                )));
+            }
+            if let (Some(x), Some(y)) = (indices_a.get(&(*i, a)), indices_b.get(&(*j, b))) {
                 P::update_binary(&mut parameters_ab[[*x, *y]], record.parameters);
             }
-            if let (Some(y), Some(x)) = (indices_b.get(&(i, a)), indices_a.get(&(j, b))) {
+            if let (Some(y), Some(x)) = (indices_b.get(&(*i, a)), indices_a.get(&(*j, b))) {
                 P::update_binary(&mut parameters_ab[[*x, *y]], record.parameters);
             }
-            if let (Some(x), Some(y)) = (indices_c.get(&(i, a)), indices_c.get(&(j, b))) {
+            if let (Some(x), Some(y)) = (indices_c.get(&(*i, a)), indices_c.get(&(*j, b))) {
                 P::update_binary(&mut parameters_cc[[*x, *y]], record.parameters);
                 P::update_binary(&mut parameters_cc[[*y, *x]], record.parameters);
             }
         }
 
-        Self {
+        Ok(Self {
             component_index: component_index
                 .cloned()
                 .unwrap_or_else(|| Array1::from_shape_fn(records.len(), |i| i)),
@@ -188,7 +246,7 @@ impl<P: AssociationStrength> AssociationParameters<P> {
             sites_c: Array1::from_vec(sites_c),
             parameters_ab,
             parameters_cc,
-        }
+        })
     }
 
     pub fn is_empty(&self) -> bool {
@@ -531,37 +589,46 @@ mod tests_pcsaft {
     use feos_core::parameter::Parameter;
 
     fn record(
+        id: &'static str,
         kappa_ab: f64,
         epsilon_k_ab: f64,
         na: f64,
         nb: f64,
     ) -> AssociationRecord<PcSaftAssociationRecord> {
         let pcsaft = PcSaftAssociationRecord::new(Some(kappa_ab), Some(epsilon_k_ab));
-        AssociationRecord::new(pcsaft, na, nb, 0.0)
+        AssociationRecord::with_id(id.try_into().unwrap(), pcsaft, na, nb, 0.0)
     }
 
     fn binary_record(
+        id1: &'static str,
+        id2: &'static str,
         kappa_ab: f64,
         epsilon_k_ab: f64,
-        indices: Option<[usize; 2]>,
     ) -> BinaryAssociationRecord<PcSaftAssociationRecord> {
         let pcsaft = PcSaftAssociationRecord::new(Some(kappa_ab), Some(epsilon_k_ab));
-        BinaryAssociationRecord::new(pcsaft, indices)
+        BinaryAssociationRecord {
+            id1: id1.try_into().unwrap(),
+            id2: id2.try_into().unwrap(),
+            parameters: pcsaft,
+        }
     }
 
     #[test]
-    fn test_binary_parameters() {
-        let comp1 = vec![record(0.1, 2500., 1.0, 1.0)];
-        let comp2 = vec![record(0.2, 1500., 1.0, 1.0)];
-        let comp3 = vec![record(0.3, 500., 0.0, 1.0)];
-        let comp4 = vec![record(0.3, 1000., 1.0, 0.0), record(0.3, 2000., 0.0, 1.0)];
+    fn test_binary_parameters() -> FeosResult<()> {
+        let comp1 = vec![record("0", 0.1, 2500., 1.0, 1.0)];
+        let comp2 = vec![record("0", 0.2, 1500., 1.0, 1.0)];
+        let comp3 = vec![record("0", 0.3, 500., 0.0, 1.0)];
+        let comp4 = vec![
+            record("0", 0.3, 1000., 1.0, 0.0),
+            record("1", 0.3, 2000., 0.0, 1.0),
+        ];
         let records = [comp1, comp2, comp3, comp4];
         let binary = [
-            ([0, 1], binary_record(3.5, 1234., Some([0, 0]))),
-            ([0, 2], binary_record(3.5, 3140., Some([0, 0]))),
-            ([1, 3], binary_record(3.5, 3333., Some([0, 1]))),
+            ([0, 1], binary_record("0", "0", 3.5, 1234.)),
+            ([0, 2], binary_record("0", "0", 3.5, 3140.)),
+            ([1, 3], binary_record("0", "1", 3.5, 3333.)),
         ];
-        let assoc = AssociationParameters::<PcSaftParameters>::new(&records, &binary, None);
+        let assoc = AssociationParameters::<PcSaftParameters>::new(&records, &binary, None)?;
         println!("{}", assoc.parameters_ab);
         let epsilon_k_ab = arr2(&[
             [2500., 1234., 3140., 2250.],
@@ -572,17 +639,19 @@ mod tests_pcsaft {
             assoc.parameters_ab.mapv(|p| p.epsilon_k_ab.unwrap()),
             epsilon_k_ab
         );
+        Ok(())
     }
 
     #[test]
-    fn test_induced_association() {
-        let comp1 = vec![record(0.1, 2500., 1.0, 1.0)];
-        let comp2 = vec![record(0.1, -500., 0.0, 1.0)];
-        let comp3 = vec![record(0.0, 0.0, 0.0, 1.0)];
-        let binary = [([0, 1], binary_record(0.1, 1000., None))];
+    fn test_induced_association() -> FeosResult<()> {
+        let comp1 = vec![record("", 0.1, 2500., 1.0, 1.0)];
+        let comp2 = vec![record("", 0.1, -500., 0.0, 1.0)];
+        let comp3 = vec![record("", 0.0, 0.0, 0.0, 1.0)];
+        let binary = [([0, 1], binary_record("", "", 0.1, 1000.))];
         let assoc1 =
-            AssociationParameters::<PcSaftParameters>::new(&[comp1.clone(), comp2], &[], None);
-        let assoc2 = AssociationParameters::<PcSaftParameters>::new(&[comp1, comp3], &binary, None);
+            AssociationParameters::<PcSaftParameters>::new(&[comp1.clone(), comp2], &[], None)?;
+        let assoc2 =
+            AssociationParameters::<PcSaftParameters>::new(&[comp1, comp3], &binary, None)?;
         println!("{}", assoc1.parameters_ab);
         println!("{}", assoc2.parameters_ab);
         assert_eq!(
@@ -593,6 +662,7 @@ mod tests_pcsaft {
             assoc1.parameters_ab.mapv(|p| p.kappa_ab),
             assoc2.parameters_ab.mapv(|p| p.kappa_ab)
         );
+        Ok(())
     }
 
     #[test]
@@ -625,9 +695,7 @@ mod tests_pcsaft {
     fn helmholtz_energy_cross_3b() -> FeosResult<()> {
         let mut params = water_parameters();
         let mut record = params.pure_records.pop().unwrap();
-        let mut association_record = record.model_record.association_record.unwrap();
-        association_record.na = 2.0;
-        record.model_record.association_record = Some(association_record);
+        record.model_record.association_records[0].na = 2.0;
         let params = Arc::new(PcSaftParameters::new_pure(record)?);
         let assoc = Association::new(&params, &params.association, 50, 1e-10);
         let cross_assoc =

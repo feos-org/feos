@@ -2,7 +2,7 @@
 
 use crate::errors::*;
 use indexmap::{IndexMap, IndexSet};
-use ndarray::Array2;
+use itertools::Itertools;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -36,12 +36,12 @@ where
     /// Creates parameters from records for pure substances and possibly binary parameters.
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Option<Array2<Self::Binary>>,
+        binary_records: Vec<([usize; 2], Self::Binary)>,
     ) -> FeosResult<Self>;
 
     /// Creates parameters for a pure component from a pure record.
     fn new_pure(pure_record: PureRecord<Self::Pure>) -> FeosResult<Self> {
-        Self::from_records(vec![pure_record], None)
+        Self::from_records(vec![pure_record], vec![])
     }
 
     /// Creates parameters for a binary system from pure records and an optional
@@ -50,15 +50,7 @@ where
         pure_records: Vec<PureRecord<Self::Pure>>,
         binary_record: Option<Self::Binary>,
     ) -> FeosResult<Self> {
-        let binary_record = binary_record.map(|br| {
-            Array2::from_shape_fn([2, 2], |(i, j)| {
-                if i == j {
-                    Self::Binary::default()
-                } else {
-                    br.clone()
-                }
-            })
-        });
+        let binary_record = binary_record.into_iter().map(|r| ([0, 0], r)).collect();
         Self::from_records(pure_records, binary_record)
     }
 
@@ -69,27 +61,22 @@ where
             .into_iter()
             .map(|r| PureRecord::new(Default::default(), Default::default(), r))
             .collect();
-        Self::from_records(pure_records, None)
+        Self::from_records(pure_records, vec![])
     }
 
     /// Return the original pure and binary records that were used to construct the parameters.
     #[expect(clippy::type_complexity)]
-    fn records(&self) -> (&[PureRecord<Self::Pure>], Option<&Array2<Self::Binary>>);
+    fn records(&self) -> (&[PureRecord<Self::Pure>], &[([usize; 2], Self::Binary)]);
 
     /// Helper function to build matrix from list of records in correct order.
     ///
     /// If the identifiers in `binary_records` are not a subset of those in
     /// `pure_records`, the `Default` implementation of Self::Binary is used.
-    #[expect(clippy::expect_fun_call)]
     fn binary_matrix_from_records(
         pure_records: &[PureRecord<Self::Pure>],
         binary_records: &[BinaryRecord<Self::Binary>],
         identifier_option: IdentifierOption,
-    ) -> Option<Array2<Self::Binary>> {
-        if binary_records.is_empty() {
-            return None;
-        }
-
+    ) -> Vec<([usize; 2], Self::Binary)> {
         // Build Hashmap (id, id) -> BinaryRecord
         let binary_map: HashMap<_, _> = {
             binary_records
@@ -101,28 +88,31 @@ where
                 })
                 .collect()
         };
-        let n = pure_records.len();
-        Some(Array2::from_shape_fn([n, n], |(i, j)| {
-            let id1 = pure_records[i]
-                .identifier
-                .as_str(identifier_option)
-                .expect(&format!(
-                    "No identifier for given identifier_option for pure record {}.",
-                    i
-                ));
-            let id2 = pure_records[j]
-                .identifier
-                .as_str(identifier_option)
-                .expect(&format!(
-                    "No identifier for given identifier_option for pure record {}.",
-                    j
-                ));
-            binary_map
-                .get(&(id1, id2))
-                .or_else(|| binary_map.get(&(id2, id1)))
-                .cloned()
-                .unwrap_or_default()
-        }))
+
+        // look up pure records in Hashmap
+        pure_records
+            .iter()
+            .enumerate()
+            .array_combinations()
+            .filter_map(|[(i1, p1), (i2, p2)]| {
+                let id1 = p1.identifier.as_str(identifier_option).unwrap_or_else(|| {
+                    panic!(
+                        "No {} for pure record {} ({}).",
+                        identifier_option, i1, p1.identifier
+                    )
+                });
+                let id2 = p2.identifier.as_str(identifier_option).unwrap_or_else(|| {
+                    panic!(
+                        "No {} for pure record {} ({}).",
+                        identifier_option, i2, p2.identifier
+                    )
+                });
+                binary_map
+                    .get(&(id1, id2))
+                    .or_else(|| binary_map.get(&(id2, id1)))
+                    .map(|br| ([i1, i2], br.clone()))
+            })
+            .collect()
     }
 
     /// Creates parameters from substance information stored in json files.
@@ -230,13 +220,14 @@ where
         // full matrix of binary records from the gc method.
         // If a specific segment-segment interaction is not in the binary map,
         // the default value is used.
-        let n = pure_records.len();
-        let mut binary_records = Array2::default([n, n]);
-        for i in 0..n {
-            for j in i + 1..n {
+        let x = segment_counts
+            .iter()
+            .enumerate()
+            .array_combinations()
+            .map(|[(i, sc1), (j, sc2)]| {
                 let mut vec = Vec::new();
-                for (id1, &n1) in segment_counts[i].iter() {
-                    for (id2, &n2) in segment_counts[j].iter() {
+                for (id1, &n1) in sc1.iter() {
+                    for (id2, &n2) in sc2.iter() {
                         let binary = binary_map
                             .get(&(id1.clone(), id2.clone()))
                             .or_else(|| binary_map.get(&(id2.clone(), id1.clone())))
@@ -245,13 +236,11 @@ where
                         vec.push((binary, n1, n2));
                     }
                 }
-                let kij = Self::Binary::from_segments_binary(&vec)?;
-                binary_records[(i, j)] = kij.clone();
-                binary_records[(j, i)] = kij;
-            }
-        }
+                Self::Binary::from_segments_binary(&vec).map(|kij| ([i, j], kij))
+            })
+            .collect::<Result<_, _>>()?;
 
-        Self::from_records(pure_records, Some(binary_records))
+        Self::from_records(pure_records, x)
     }
 
     /// Creates parameters from segment information stored in json files.
@@ -332,12 +321,9 @@ where
             .iter()
             .map(|&i| pure_records[i].clone())
             .collect();
-        let n = component_list.len();
-        let binary_records = binary_records.map(|br| {
-            Array2::from_shape_fn([n, n], |(i, j)| {
-                br[(component_list[i], component_list[j])].clone()
-            })
-        });
+        let mut binary_records = binary_records.to_vec();
+        binary_records
+            .retain(|([i, j], _)| component_list.contains(i) && component_list.contains(j));
 
         Self::from_records(pure_records, binary_records)
             .expect("failed to create subset from parameters.")
