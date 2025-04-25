@@ -22,6 +22,7 @@ indexmap = { workspace = true }
 rayon = { workspace = true, optional = true }
 itertools = { workspace = true }
 typenum = { workspace = true }
+arrayvec = { workspace = true, features = ["serde"] }
 
 feos-core = { workspace = true }
 feos-derive = { workspace = true }

@@ -62,6 +62,8 @@ pub struct PengRobinsonParameters {
     molarweight: Array1<f64>,
     /// List of pure component records
     pure_records: Vec<PureRecord<PengRobinsonRecord>>,
+    /// List of binary records
+    binary_records: Vec<([usize; 2], f64)>,
 }
 
 impl std::fmt::Display for PengRobinsonParameters {
@@ -100,7 +102,7 @@ impl PengRobinsonParameters {
                 PureRecord::new(id, molarweight[i], record)
             })
             .collect();
-        PengRobinsonParameters::from_records(records, None)
+        PengRobinsonParameters::from_records(records, vec![])
     }
 }
 
@@ -111,7 +113,7 @@ impl Parameter for PengRobinsonParameters {
     /// Creates parameters from pure component records.
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Option<Array2<Self::Binary>>,
+        binary_records: Vec<([usize; 2], Self::Binary)>,
     ) -> FeosResult<Self> {
         let n = pure_records.len();
 
@@ -130,7 +132,11 @@ impl Parameter for PengRobinsonParameters {
             kappa[i] = 0.37464 + (1.54226 - 0.26992 * r.acentric_factor) * r.acentric_factor;
         }
 
-        let k_ij = binary_records.unwrap_or_else(|| Array2::zeros([n; 2]));
+        let mut k_ij = Array2::zeros([n; 2]);
+        for &([i, j], r) in &binary_records {
+            k_ij[[i, j]] = r;
+            k_ij[[j, i]] = r;
+        }
 
         Ok(Self {
             tc,
@@ -140,11 +146,12 @@ impl Parameter for PengRobinsonParameters {
             kappa,
             molarweight,
             pure_records,
+            binary_records,
         })
     }
 
-    fn records(&self) -> (&[PureRecord<PengRobinsonRecord>], Option<&Array2<f64>>) {
-        (&self.pure_records, Some(&self.k_ij))
+    fn records(&self) -> (&[PureRecord<PengRobinsonRecord>], &[([usize; 2], f64)]) {
+        (&self.pure_records, &self.binary_records)
     }
 }
 
