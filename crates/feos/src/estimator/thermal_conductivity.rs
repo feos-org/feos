@@ -1,8 +1,8 @@
 use super::{DataSet, FeosError, Phase};
 use feos_core::{DensityInitialization, EntropyScaling, ReferenceSystem, Residual, State};
 use itertools::izip;
-use ndarray::{arr1, Array1};
-use quantity::{self, Moles, Pressure, Temperature, KELVIN, METER, WATT};
+use ndarray::{Array1, arr1};
+use quantity::{self, KELVIN, METER, Moles, Pressure, Temperature, WATT};
 use std::sync::Arc;
 
 /// Store experimental thermal conductivity data.
@@ -67,7 +67,6 @@ impl<E: Residual + EntropyScaling> DataSet<E> for ThermalConductivity {
                 State::new_npt(eos, t, p, &moles, initial_density)?
                     .thermal_conductivity()
                     .map(|lambda| lambda.convert_to(self.unit))
-                    .map_err(FeosError::from)
             })
             .collect()
     }

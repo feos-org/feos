@@ -1,8 +1,8 @@
 use super::{DataSet, FeosError, Phase};
 use feos_core::{DensityInitialization, EntropyScaling, ReferenceSystem, Residual, State};
 use itertools::izip;
-use ndarray::{arr1, Array1};
-use quantity::{Moles, Pressure, Temperature, MILLI, PASCAL, SECOND};
+use ndarray::{Array1, arr1};
+use quantity::{MILLI, Moles, PASCAL, Pressure, SECOND, Temperature};
 use std::sync::Arc;
 
 /// Store experimental viscosity data.
@@ -67,7 +67,6 @@ impl<E: Residual + EntropyScaling> DataSet<E> for Viscosity {
                 State::new_npt(eos, t, p, &moles, initial_density)?
                     .viscosity()
                     .map(|viscosity| viscosity.convert_to(self.unit))
-                    .map_err(FeosError::from)
             })
             .collect()
     }

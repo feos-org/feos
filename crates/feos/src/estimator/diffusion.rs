@@ -1,8 +1,8 @@
 use super::{DataSet, FeosError, Phase};
 use feos_core::{DensityInitialization, EntropyScaling, ReferenceSystem, Residual, State};
 use itertools::izip;
-use ndarray::{arr1, Array1};
-use quantity::{self, Moles, Pressure, Temperature, CENTI, METER, SECOND};
+use ndarray::{Array1, arr1};
+use quantity::{self, CENTI, METER, Moles, Pressure, SECOND, Temperature};
 use std::sync::Arc;
 use typenum::P2;
 
@@ -69,7 +69,6 @@ impl<E: Residual + EntropyScaling> DataSet<E> for Diffusion {
                 State::new_npt(eos, t, p, &moles, initial_density)?
                     .diffusion()
                     .map(|lambda| lambda.convert_to(self.unit))
-                    .map_err(FeosError::from)
             })
             .collect()
     }

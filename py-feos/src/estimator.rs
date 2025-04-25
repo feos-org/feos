@@ -617,12 +617,7 @@ impl PyEstimator {
     /// List[DataSet]
     #[getter]
     fn get_datasets(&self) -> Vec<PyDataSet> {
-        self.0
-            .datasets()
-            .iter()
-            .cloned()
-            .map(|ds| PyDataSet(ds))
-            .collect()
+        self.0.datasets().iter().cloned().map(PyDataSet).collect()
     }
 
     fn _repr_markdown_(&self) -> String {
