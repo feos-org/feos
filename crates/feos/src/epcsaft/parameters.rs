@@ -209,24 +209,6 @@ impl ElectrolytePcSaftBinaryRecord {
     }
 }
 
-impl From<f64> for ElectrolytePcSaftBinaryRecord {
-    fn from(k_ij: f64) -> Self {
-        Self {
-            k_ij: vec![k_ij, 0., 0., 0.],
-            association: None,
-        }
-    }
-}
-
-impl From<Vec<f64>> for ElectrolytePcSaftBinaryRecord {
-    fn from(k_ij: Vec<f64>) -> Self {
-        Self {
-            k_ij,
-            association: None,
-        }
-    }
-}
-
 impl From<ElectrolytePcSaftBinaryRecord> for f64 {
     fn from(binary_record: ElectrolytePcSaftBinaryRecord) -> Self {
         match binary_record.k_ij.first() {
