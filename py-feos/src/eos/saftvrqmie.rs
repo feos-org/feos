@@ -27,7 +27,6 @@ impl PyEquationOfState {
     /// EquationOfState
     ///     The SAFT-VRQ Mie equation of state that can be used to compute thermodynamic
     ///     states.
-    #[cfg(feature = "saftvrqmie")]
     #[staticmethod]
     #[pyo3(
         signature = (parameters, max_eta=0.5, inc_nonadd_term=true),
@@ -66,7 +65,6 @@ impl PyHelmholtzEnergyFunctional {
     /// Returns
     /// -------
     /// HelmholtzEnergyFunctional
-    #[cfg(feature = "saftvrqmie")]
     #[staticmethod]
     #[pyo3(
         signature = (parameters, fmt_version=PyFMTVersion::WhiteBear, max_eta=0.5, inc_nonadd_term=true),

@@ -25,7 +25,6 @@ impl PyEquationOfState {
     /// EquationOfState
     ///     The SAFT-VR Mie equation of state that can be used to compute thermodynamic
     ///     states.
-    #[cfg(feature = "saftvrmie")]
     #[staticmethod]
     #[pyo3(
         signature = (parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10),
