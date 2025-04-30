@@ -177,22 +177,6 @@ impl SaftVRMieBinaryRecord {
     }
 }
 
-impl From<f64> for SaftVRMieBinaryRecord {
-    fn from(k_ij: f64) -> Self {
-        Self {
-            k_ij,
-            gamma_ij: f64::default(),
-            association: None,
-        }
-    }
-}
-
-impl From<SaftVRMieBinaryRecord> for f64 {
-    fn from(binary_record: SaftVRMieBinaryRecord) -> Self {
-        binary_record.k_ij
-    }
-}
-
 impl std::fmt::Display for SaftVRMieBinaryRecord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut tokens = vec![];

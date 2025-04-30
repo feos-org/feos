@@ -50,7 +50,7 @@ where
         pure_records: Vec<PureRecord<Self::Pure>>,
         binary_record: Option<Self::Binary>,
     ) -> FeosResult<Self> {
-        let binary_record = binary_record.into_iter().map(|r| ([0, 0], r)).collect();
+        let binary_record = binary_record.into_iter().map(|r| ([0, 1], r)).collect();
         Self::from_records(pure_records, binary_record)
     }
 

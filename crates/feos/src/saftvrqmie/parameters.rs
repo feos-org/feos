@@ -109,26 +109,6 @@ impl std::fmt::Display for SaftVRQMieBinaryRecord {
     }
 }
 
-impl TryFrom<f64> for SaftVRQMieBinaryRecord {
-    type Error = FeosError;
-
-    fn try_from(_f: f64) -> Result<Self, Self::Error> {
-        Err(FeosError::IncompatibleParameters(
-            "Cannot infer k_ij and l_ij from single float.".to_string(),
-        ))
-    }
-}
-
-impl TryFrom<SaftVRQMieBinaryRecord> for f64 {
-    type Error = FeosError;
-
-    fn try_from(_f: SaftVRQMieBinaryRecord) -> Result<Self, Self::Error> {
-        Err(FeosError::IncompatibleParameters(
-            "Cannot infer k_ij and l_ij from single float.".to_string(),
-        ))
-    }
-}
-
 /// Parameter set required for the SAFT-VRQ Mie equation of state and Helmholtz energy functional.
 pub struct SaftVRQMieParameters {
     pub molarweight: Array1<f64>,
