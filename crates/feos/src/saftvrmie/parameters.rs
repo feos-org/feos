@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use super::eos::association::{AssociationParameters, AssociationRecord, BinaryAssociationRecord};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::{parameter::{Parameter, PureRecord}, FeosResult};
+use feos_core::{
+    FeosResult,
+    parameter::{Parameter, PureRecord},
+};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;
@@ -231,7 +234,7 @@ pub struct SaftVRMieParameters {
     pub diffusion: Option<Array2<f64>>,
     pub thermal_conductivity: Option<Array2<f64>>,
     pub pure_records: Vec<PureRecord<SaftVRMieRecord>>,
-    pub binary_records: Option<Array2<SaftVRMieBinaryRecord>>,
+    pub binary_records: Vec<([usize; 2], SaftVRMieBinaryRecord)>,
 }
 
 impl Parameter for SaftVRMieParameters {
@@ -240,7 +243,7 @@ impl Parameter for SaftVRMieParameters {
 
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Option<Array2<SaftVRMieBinaryRecord>>,
+        binary_records: Vec<([usize; 2], SaftVRMieBinaryRecord)>,
     ) -> FeosResult<Self> {
         let n = pure_records.len();
 
@@ -272,19 +275,21 @@ impl Parameter for SaftVRMieParameters {
             molarweight[i] = record.molarweight;
         }
 
+        let mut k_ij = Array2::zeros((n, n));
+        let mut gamma_ij = Array2::zeros((n, n));
         let binary_association: Vec<_> = binary_records
             .iter()
-            .flat_map(|r| {
-                r.indexed_iter()
-                    .filter_map(|(i, record)| record.association.map(|r| (i, r)))
+            .flat_map(|([i, j], br)| {
+                k_ij[[*i, *j]] = br.k_ij;
+                k_ij[[*j, *i]] = br.k_ij;
+                gamma_ij[[*i, *j]] = br.gamma_ij;
+                gamma_ij[[*j, *i]] = br.gamma_ij;
+                br.association.iter().map(|&a| ((*i, *j), a))
             })
             .collect();
         let association =
             AssociationParameters::new(&association_records, &sigma, &binary_association, None);
 
-        let br = binary_records.as_ref();
-        let k_ij = br.map_or_else(|| Array2::zeros([n; 2]), |br| br.mapv(|br| br.k_ij));
-        let gamma_ij = br.map_or_else(|| Array2::zeros([n; 2]), |br| br.mapv(|br| br.gamma_ij));
         let mut sigma_ij = Array::zeros((n, n));
         let mut e_k_ij = Array::zeros((n, n));
         let mut epsilon_k_ij = Array::zeros((n, n));
@@ -368,9 +373,9 @@ impl Parameter for SaftVRMieParameters {
         &self,
     ) -> (
         &[PureRecord<SaftVRMieRecord>],
-        Option<&Array2<SaftVRMieBinaryRecord>>,
+        &[([usize; 2], SaftVRMieBinaryRecord)],
     ) {
-        (&self.pure_records, self.binary_records.as_ref())
+        (&self.pure_records, &self.binary_records)
     }
 }
 

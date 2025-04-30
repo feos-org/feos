@@ -128,7 +128,7 @@ impl ParameterHetero for GcPcSaftFunctionalParameters {
         let sigma = Array1::from_vec(sigma);
         let component_index = Array1::from_vec(component_index);
         let association =
-            AssociationParameters::new(&association_records, &[], Some(&component_index));
+            AssociationParameters::new(&association_records, &[], Some(&component_index))?;
 
         Ok(Self {
             molarweight,

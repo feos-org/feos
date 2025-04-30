@@ -1,6 +1,6 @@
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::parameter::{Parameter, PureRecord};
 use feos_core::FeosResult;
+use feos_core::parameter::{Parameter, PureRecord};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
@@ -71,21 +71,9 @@ impl PetsRecord {
 /// Parameters that modify binary interactions.
 ///
 /// $\varepsilon_{k,ij} = (1 - k_{ij})\sqrt{\varepsilon_{k,i} \varepsilon_{k,j}}$
-#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Default, Debug)]
 pub struct PetsBinaryRecord {
     k_ij: f64,
-}
-
-impl From<f64> for PetsBinaryRecord {
-    fn from(k_ij: f64) -> Self {
-        Self { k_ij }
-    }
-}
-
-impl From<PetsBinaryRecord> for f64 {
-    fn from(binary_record: PetsBinaryRecord) -> Self {
-        binary_record.k_ij
-    }
 }
 
 impl std::fmt::Display for PetsBinaryRecord {
@@ -103,8 +91,8 @@ pub struct PetsParameters {
     pub sigma: Array1<f64>,
     /// Lennard-Jones energy parameter in Kelvin
     pub epsilon_k: Array1<f64>,
-    /// binary interaction parameter
-    pub k_ij: Option<Array2<f64>>,
+    // /// binary interaction parameter
+    // pub k_ij: Option<Array2<f64>>,
     /// diameter matrix
     pub sigma_ij: Array2<f64>,
     /// energy parameter matrix including k_ij
@@ -120,7 +108,7 @@ pub struct PetsParameters {
     /// records of all pure substances of the system
     pub pure_records: Vec<PureRecord<PetsRecord>>,
     /// records of all binary interaction parameters
-    pub binary_records: Option<Array2<PetsBinaryRecord>>,
+    pub binary_records: Vec<([usize; 2], PetsBinaryRecord)>,
 }
 
 impl Parameter for PetsParameters {
@@ -129,7 +117,7 @@ impl Parameter for PetsParameters {
 
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Option<Array2<PetsBinaryRecord>>,
+        binary_records: Vec<([usize; 2], PetsBinaryRecord)>,
     ) -> FeosResult<Self> {
         let n = pure_records.len();
 
@@ -153,7 +141,6 @@ impl Parameter for PetsParameters {
             molarweight[i] = record.molarweight;
         }
 
-        let k_ij = binary_records.as_ref().map(|br| br.map(|br| br.k_ij));
         let mut sigma_ij = Array::zeros((n, n));
         let mut e_k_ij = Array::zeros((n, n));
         for i in 0..n {
@@ -163,8 +150,9 @@ impl Parameter for PetsParameters {
             }
         }
         let mut epsilon_k_ij = e_k_ij.clone();
-        if let Some(k_ij) = k_ij.as_ref() {
-            epsilon_k_ij *= &(1.0 - k_ij);
+        for &([i, j], r) in &binary_records {
+            epsilon_k_ij[[i, j]] *= 1.0 - r.k_ij;
+            epsilon_k_ij[[j, i]] *= 1.0 - r.k_ij;
         }
 
         let viscosity_coefficients = if viscosity.iter().any(|v| v.is_none()) {
@@ -202,7 +190,6 @@ impl Parameter for PetsParameters {
             molarweight,
             sigma,
             epsilon_k,
-            k_ij,
             sigma_ij,
             epsilon_k_ij,
             e_k_ij,
@@ -214,8 +201,8 @@ impl Parameter for PetsParameters {
         })
     }
 
-    fn records(&self) -> (&[PureRecord<PetsRecord>], Option<&Array2<PetsBinaryRecord>>) {
-        (&self.pure_records, self.binary_records.as_ref())
+    fn records(&self) -> (&[PureRecord<PetsRecord>], &[([usize; 2], PetsBinaryRecord)]) {
+        (&self.pure_records, &self.binary_records)
     }
 }
 
@@ -262,9 +249,6 @@ impl std::fmt::Display for PetsParameters {
         write!(f, "\n\tmolarweight={}", self.molarweight)?;
         write!(f, "\n\tsigma={}", self.sigma)?;
         write!(f, "\n\tepsilon_k={}", self.epsilon_k)?;
-        if let Some(k_ij) = self.k_ij.as_ref() {
-            write!(f, "\n\tk_ij=\n{}", k_ij)?;
-        }
         write!(f, "\n)")
     }
 }
