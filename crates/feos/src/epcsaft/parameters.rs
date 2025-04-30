@@ -300,7 +300,7 @@ pub struct ElectrolytePcSaftParameters {
     pub solvent_comp: Array1<usize>,
     pub permittivity: Array1<Option<PermittivityRecord>>,
     pub pure_records: Vec<PureRecord<ElectrolytePcSaftRecord>>,
-    pub binary_records: Option<Array2<ElectrolytePcSaftBinaryRecord>>,
+    pub binary_records: Vec<([usize; 2], ElectrolytePcSaftBinaryRecord)>,
 }
 
 impl ElectrolytePcSaftParameters {
@@ -336,7 +336,7 @@ impl Parameter for ElectrolytePcSaftParameters {
 
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Option<Array2<Self::Binary>>,
+        binary_records: Vec<([usize; 2], Self::Binary)>,
     ) -> FeosResult<Self> {
         let n = pure_records.len();
 
@@ -373,13 +373,10 @@ impl Parameter for ElectrolytePcSaftParameters {
 
         let binary_association: Vec<_> = binary_records
             .iter()
-            .flat_map(|r| {
-                r.indexed_iter()
-                    .filter_map(|((i, j), record)| record.association.map(|r| ([i, j], r)))
-            })
+            .filter_map(|([i, j], br)| br.association.map(|a| ([*i, *j], a)))
             .collect();
         let association =
-            AssociationParameters::new(&association_records, &binary_association, None);
+            AssociationParameters::new(&association_records, &binary_association, None)?;
 
         let ionic_comp: Array1<usize> = z
             .iter()
@@ -398,22 +395,24 @@ impl Parameter for ElectrolytePcSaftParameters {
 
         let mut k_ij: Array2<Vec<f64>> = Array2::from_elem((n, n), vec![0., 0., 0., 0.]);
 
-        if let Some(binary_records) = binary_records.as_ref() {
-            for i in 0..n {
-                for j in 0..n {
-                    let temp_kij = binary_records[[i, j]].k_ij.clone();
-                    if temp_kij.len() > 4 {
-                        return Err(FeosError::IncompatibleParameters(format!(
-                            "Binary interaction for component {} with {} is parametrized with more than 4 k_ij coefficients.",
-                            i, j
-                        )));
-                    } else {
-                        (0..temp_kij.len()).for_each(|k| {
-                            k_ij[[i, j]][k] = temp_kij[k];
-                        });
-                    }
-                }
+        // if let Some(binary_records) = binary_records.as_ref() {
+        //     for i in 0..n {
+        //         for j in 0..n {
+        for ([i, j], r) in &binary_records {
+            let temp_kij = r.k_ij.clone();
+            if temp_kij.len() > 4 {
+                return Err(FeosError::IncompatibleParameters(format!(
+                    "Binary interaction for component {} with {} is parametrized with more than 4 k_ij coefficients.",
+                    i, j
+                )));
+            } else {
+                (0..temp_kij.len()).for_each(|k| {
+                    k_ij[[*i, *j]][k] = temp_kij[k];
+                    k_ij[[*j, *i]][k] = temp_kij[k];
+                });
             }
+            //     }
+            // }
 
             // No binary interaction between charged species of same kind (+/+ and -/-)
             ionic_comp.iter().for_each(|ai| {
@@ -538,9 +537,9 @@ impl Parameter for ElectrolytePcSaftParameters {
         &self,
     ) -> (
         &[PureRecord<ElectrolytePcSaftRecord>],
-        Option<&Array2<ElectrolytePcSaftBinaryRecord>>,
+        &[([usize; 2], ElectrolytePcSaftBinaryRecord)],
     ) {
-        (&self.pure_records, self.binary_records.as_ref())
+        (&self.pure_records, &self.binary_records)
     }
 }
 
@@ -854,11 +853,8 @@ pub mod utils {
             &pure_records,
             &binary_records,
             feos_core::parameter::IdentifierOption::Name,
-        )
-        .unwrap();
-        Arc::new(
-            ElectrolytePcSaftParameters::from_records(pure_records, Some(binary_matrix)).unwrap(),
-        )
+        );
+        Arc::new(ElectrolytePcSaftParameters::from_records(pure_records, binary_matrix).unwrap())
     }
 
     pub fn water_nacl_parameters() -> Arc<ElectrolytePcSaftParameters> {
@@ -1028,11 +1024,8 @@ pub mod utils {
             &pure_records,
             &binary_records,
             feos_core::parameter::IdentifierOption::Name,
-        )
-        .unwrap();
-        Arc::new(
-            ElectrolytePcSaftParameters::from_records(pure_records, Some(binary_matrix)).unwrap(),
-        )
+        );
+        Arc::new(ElectrolytePcSaftParameters::from_records(pure_records, binary_matrix).unwrap())
     }
 
     pub fn water_parameters() -> Arc<ElectrolytePcSaftParameters> {

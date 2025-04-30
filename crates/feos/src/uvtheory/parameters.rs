@@ -51,30 +51,6 @@ impl std::fmt::Display for UVTheoryRecord {
     }
 }
 
-/// Binary interaction parameters
-#[derive(Serialize, Deserialize, Clone, Default, Debug)]
-pub struct UVTheoryBinaryRecord {
-    pub k_ij: f64,
-}
-
-impl From<f64> for UVTheoryBinaryRecord {
-    fn from(k_ij: f64) -> Self {
-        Self { k_ij }
-    }
-}
-
-impl From<UVTheoryBinaryRecord> for f64 {
-    fn from(binary_record: UVTheoryBinaryRecord) -> Self {
-        binary_record.k_ij
-    }
-}
-
-impl std::fmt::Display for UVTheoryBinaryRecord {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "UVBinaryRecord(k_ij={})", self.k_ij)
-    }
-}
-
 /// Constants for BH temperature dependent HS diameter.
 static CD_BH: LazyLock<Array2<f64>> = LazyLock::new(|| {
     arr2(&[
@@ -112,7 +88,6 @@ pub struct UVTheoryParameters {
     pub sigma: Array1<f64>,
     pub epsilon_k: Array1<f64>,
     pub molarweight: Array1<f64>,
-    pub k_ij: Option<Array2<f64>>,
     pub rep_ij: Array2<f64>,
     pub att_ij: Array2<f64>,
     pub sigma_ij: Array2<f64>,
@@ -120,16 +95,16 @@ pub struct UVTheoryParameters {
     pub cd_bh_pure: Vec<Array1<f64>>,
     pub cd_bh_binary: Array2<Array1<f64>>,
     pub pure_records: Vec<PureRecord<UVTheoryRecord>>,
-    pub binary_records: Option<Array2<UVTheoryBinaryRecord>>,
+    pub binary_records: Vec<([usize; 2], f64)>,
 }
 
 impl Parameter for UVTheoryParameters {
     type Pure = UVTheoryRecord;
-    type Binary = UVTheoryBinaryRecord;
+    type Binary = f64;
 
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Option<Array2<Self::Binary>>,
+        binary_records: Vec<([usize; 2], Self::Binary)>,
     ) -> FeosResult<Self> {
         let n = pure_records.len();
 
@@ -155,7 +130,11 @@ impl Parameter for UVTheoryParameters {
         let mut att_ij = Array2::zeros((n, n));
         let mut sigma_ij = Array2::zeros((n, n));
         let mut eps_k_ij = Array2::zeros((n, n));
-        let k_ij = binary_records.as_ref().map(|br| br.map(|br| br.k_ij));
+        let mut k_ij = Array2::zeros((n, n));
+        binary_records.iter().for_each(|&([i, j], br)| {
+            k_ij[[i, j]] = br;
+            k_ij[[j, i]] = br;
+        });
 
         for i in 0..n {
             rep_ij[[i, i]] = rep[i];
@@ -169,8 +148,7 @@ impl Parameter for UVTheoryParameters {
                 att_ij[[j, i]] = att_ij[[i, j]];
                 sigma_ij[[i, j]] = 0.5 * (sigma[i] + sigma[j]);
                 sigma_ij[[j, i]] = sigma_ij[[i, j]];
-                eps_k_ij[[i, j]] = (1.0 - k_ij.as_ref().map_or(0.0, |k_ij| k_ij[[i, j]]))
-                    * (epsilon_k[i] * epsilon_k[j]).sqrt();
+                eps_k_ij[[i, j]] = (1.0 - k_ij[[i, j]]) * (epsilon_k[i] * epsilon_k[j]).sqrt();
                 eps_k_ij[[j, i]] = eps_k_ij[[i, j]];
             }
         }
@@ -187,7 +165,6 @@ impl Parameter for UVTheoryParameters {
             sigma,
             epsilon_k,
             molarweight,
-            k_ij,
             rep_ij,
             att_ij,
             sigma_ij,
@@ -199,13 +176,8 @@ impl Parameter for UVTheoryParameters {
         })
     }
 
-    fn records(
-        &self,
-    ) -> (
-        &[PureRecord<UVTheoryRecord>],
-        Option<&Array2<UVTheoryBinaryRecord>>,
-    ) {
-        (&self.pure_records, self.binary_records.as_ref())
+    fn records(&self) -> (&[PureRecord<UVTheoryRecord>], &[([usize; 2], f64)]) {
+        (&self.pure_records, &self.binary_records)
     }
 }
 
