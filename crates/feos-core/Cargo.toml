@@ -26,6 +26,8 @@ serde_json = { workspace = true, features = ["preserve_order"] }
 indexmap = { workspace = true, features = ["serde"] }
 rayon = { workspace = true, optional = true }
 typenum = { workspace = true }
+itertools = { workspace = true }
+arrayvec = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
 approx = { workspace = true }

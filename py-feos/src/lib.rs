@@ -84,8 +84,12 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<estimator::PyLoss>()?;
     m.add_class::<estimator::PyPhase>()?;
 
+    #[cfg(not(feature = "dft"))]
+    m.add("__dft__", false)?;
+
     #[cfg(feature = "dft")]
     {
+        m.add("__dft__", true)?;
         m.add_class::<dft::PyHelmholtzEnergyFunctional>()?;
         m.add_class::<dft::PyFMTVersion>()?;
         m.add_class::<dft::PyGeometry>()?;

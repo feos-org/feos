@@ -4,11 +4,9 @@
 //! on the dual number type used without the overhead of the `State`
 //! creation.
 use criterion::{Criterion, criterion_group, criterion_main};
-use feos::core::{
-    Derivative, Residual, State, StateHD,
-    parameter::{IdentifierOption, Parameter},
-};
-use feos::pcsaft::{PcSaft, PcSaftParameters};
+use feos::core::parameter::{IdentifierOption, Parameter};
+use feos::core::{Derivative, Residual, State, StateHD};
+use feos::pcsaft::{PcSaft, PcSaftBinaryRecord, PcSaftParameters};
 use ndarray::{Array, ScalarOperand, arr1};
 use num_dual::DualNum;
 use quantity::*;
@@ -115,8 +113,10 @@ fn methane_co2_pcsaft(c: &mut Criterion) {
     )
     .unwrap();
     let k_ij = -0.0192211646;
-    let parameters =
-        PcSaftParameters::new_binary(parameters.pure_records, Some(k_ij.into())).unwrap();
+    let pr = parameters.pure_records;
+    let pr = [pr[0].clone(), pr[1].clone()];
+    let br = PcSaftBinaryRecord::new(k_ij);
+    let parameters = PcSaftParameters::new_binary(pr, Some(br), vec![]).unwrap();
     let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
 
     // 230 K, 50 bar, x0 = 0.15

@@ -1,11 +1,10 @@
 use crate::association::{AssociationParameters, AssociationStrength};
 use crate::gc_pcsaft::record::{GcPcSaftAssociationRecord, GcPcSaftRecord};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::parameter::{
-    BinarySegmentRecord, ChemicalRecord, Identifier, ParameterHetero, SegmentCount,
-    SegmentRecord,
-};
 use feos_core::FeosResult;
+use feos_core::parameter::{
+    BinarySegmentRecord, ChemicalRecord, Identifier, ParameterHetero, SegmentCount, SegmentRecord,
+};
 use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
@@ -225,7 +224,7 @@ impl ParameterHetero for GcPcSaftEosParameters {
         let sigma = Array1::from_vec(sigma);
         let component_index = Array1::from_vec(component_index);
         let association =
-            AssociationParameters::new(&association_records, &[], Some(&component_index));
+            AssociationParameters::new(&association_records, &[], Some(&component_index))?;
 
         Ok(Self {
             molarweight,
@@ -353,7 +352,7 @@ impl GcPcSaftEosParameters {
                 )
             };
             let record = gorup_dict[&self.identifiers[i]];
-            let association = if let Some(a) = record.association_record {
+            let association = if let Some(a) = record.association_record.as_ref() {
                 format!(
                     "{}|{}|{}|{}|{}",
                     a.parameters.kappa_ab, a.parameters.epsilon_k_ab, a.na, a.nb, a.nc

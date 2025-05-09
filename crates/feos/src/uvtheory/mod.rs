@@ -67,4 +67,4 @@ mod eos;
 mod parameters;
 
 pub use eos::{Perturbation, UVTheory, UVTheoryOptions};
-pub use parameters::{UVTheoryBinaryRecord, UVTheoryParameters, UVTheoryRecord};
+pub use parameters::{UVTheoryParameters, UVTheoryRecord};

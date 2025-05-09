@@ -1,8 +1,6 @@
 use crate::association::AssociationParameters;
 use crate::gc_pcsaft::record::GcPcSaftRecord;
-use feos_core::parameter::{
-    BinarySegmentRecord, ChemicalRecord, ParameterHetero, SegmentRecord,
-};
+use feos_core::parameter::{BinarySegmentRecord, ChemicalRecord, ParameterHetero, SegmentRecord};
 use feos_core::{FeosError, FeosResult};
 use indexmap::IndexMap;
 use ndarray::{Array1, Array2};
@@ -83,7 +81,8 @@ impl ParameterHetero for GcPcSaftFunctionalParameters {
                     segment
                         .model_record
                         .association_record
-                        .into_iter()
+                        .iter()
+                        .cloned()
                         .collect(),
                 );
 
@@ -129,7 +128,7 @@ impl ParameterHetero for GcPcSaftFunctionalParameters {
         let sigma = Array1::from_vec(sigma);
         let component_index = Array1::from_vec(component_index);
         let association =
-            AssociationParameters::new(&association_records, &[], Some(&component_index));
+            AssociationParameters::new(&association_records, &[], Some(&component_index))?;
 
         Ok(Self {
             molarweight,
@@ -166,51 +165,6 @@ impl ParameterHetero for GcPcSaftFunctionalParameters {
 }
 
 impl GcPcSaftFunctionalParameters {
-    // pub fn to_markdown(&self) -> String {
-    //     let mut output = String::new();
-    //     let o = &mut output;
-    //     write!(
-    //         o,
-    //         "|component|molarweight|segment|$m$|$\\sigma$|$\\varepsilon$|$\\kappa_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|\n|-|-|-|-|-|-|-|-|-|-|"
-    //     )
-    //     .unwrap();
-    //     for i in 0..self.m.len() {
-    //         let component = if i > 0 && self.component_index[i] == self.component_index[i - 1] {
-    //             "|".to_string()
-    //         } else {
-    //             let pure = &self.chemical_records[self.component_index[i]].identifier;
-    //             format!(
-    //                 "{}|{}",
-    //                 pure.name
-    //                     .as_ref()
-    //                     .unwrap_or(&format!("Component {}", i + 1)),
-    //                 self.molarweight[self.component_index[i]]
-    //             )
-    //         };
-    //         let association = if let Some(a) = self.assoc_segment.iter().position(|&a| a == i) {
-    //             format!(
-    //                 "{}|{}|{}|{}",
-    //                 self.kappa_ab[a], self.epsilon_k_ab[a], self.na[a], self.nb[a]
-    //             )
-    //         } else {
-    //             "|||".to_string()
-    //         };
-    //         write!(
-    //             o,
-    //             "\n|{}|{}|{}|{}|{}|{}|||",
-    //             component,
-    //             self.identifiers[i],
-    //             self.m[i],
-    //             self.sigma[i],
-    //             self.epsilon_k[i],
-    //             association
-    //         )
-    //         .unwrap();
-    //     }
-
-    //     output
-    // }
-
     pub fn graph(&self) -> String {
         let graph = self
             .bonds

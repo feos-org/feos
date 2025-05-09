@@ -109,26 +109,6 @@ impl std::fmt::Display for SaftVRQMieBinaryRecord {
     }
 }
 
-impl TryFrom<f64> for SaftVRQMieBinaryRecord {
-    type Error = FeosError;
-
-    fn try_from(_f: f64) -> Result<Self, Self::Error> {
-        Err(FeosError::IncompatibleParameters(
-            "Cannot infer k_ij and l_ij from single float.".to_string(),
-        ))
-    }
-}
-
-impl TryFrom<SaftVRQMieBinaryRecord> for f64 {
-    type Error = FeosError;
-
-    fn try_from(_f: SaftVRQMieBinaryRecord) -> Result<Self, Self::Error> {
-        Err(FeosError::IncompatibleParameters(
-            "Cannot infer k_ij and l_ij from single float.".to_string(),
-        ))
-    }
-}
-
 /// Parameter set required for the SAFT-VRQ Mie equation of state and Helmholtz energy functional.
 pub struct SaftVRQMieParameters {
     pub molarweight: Array1<f64>,
@@ -151,7 +131,7 @@ pub struct SaftVRQMieParameters {
     pub diffusion: Option<Array2<f64>>,
     pub thermal_conductivity: Option<Array2<f64>>,
     pub pure_records: Vec<PureRecord<SaftVRQMieRecord>>,
-    pub binary_records: Option<Array2<SaftVRQMieBinaryRecord>>,
+    pub binary_records: Vec<([usize; 2], SaftVRQMieBinaryRecord)>,
     pub fh_ij: Array2<FeynmanHibbsOrder>,
 }
 
@@ -161,7 +141,7 @@ impl Parameter for SaftVRQMieParameters {
 
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Option<Array2<SaftVRQMieBinaryRecord>>,
+        binary_records: Vec<([usize; 2], SaftVRQMieBinaryRecord)>,
     ) -> FeosResult<Self> {
         let n = pure_records.len();
 
@@ -201,9 +181,14 @@ impl Parameter for SaftVRQMieParameters {
 
         let mut fh_ij: Array2<FeynmanHibbsOrder> =
             Array2::from_shape_fn((n, n), |(_i, _j)| FeynmanHibbsOrder::FH0);
-        let br = binary_records.as_ref();
-        let k_ij = br.map_or_else(|| Array2::zeros([n; 2]), |br| br.mapv(|br| br.k_ij));
-        let l_ij = br.map_or_else(|| Array2::zeros([n; 2]), |br| br.mapv(|br| br.l_ij));
+        let mut k_ij = Array2::zeros((n, n));
+        let mut l_ij = Array2::zeros((n, n));
+        binary_records.iter().for_each(|([i, j], br)| {
+            k_ij[[*i, *j]] = br.k_ij;
+            k_ij[[*j, *i]] = br.k_ij;
+            l_ij[[*i, *j]] = br.l_ij;
+            l_ij[[*j, *i]] = br.l_ij;
+        });
         let mut epsilon_k_ij = Array::zeros((n, n));
         let mut sigma_ij = Array::zeros((n, n));
         let mut e_k_ij = Array::zeros((n, n));
@@ -298,9 +283,9 @@ impl Parameter for SaftVRQMieParameters {
         &self,
     ) -> (
         &[PureRecord<SaftVRQMieRecord>],
-        Option<&Array2<SaftVRQMieBinaryRecord>>,
+        &[([usize; 2], SaftVRQMieBinaryRecord)],
     ) {
-        (&self.pure_records, self.binary_records.as_ref())
+        (&self.pure_records, &self.binary_records)
     }
 }
 
