@@ -1,12 +1,9 @@
-use super::identifier::Identifier;
-use super::segment::SegmentRecord;
+use super::{Identifier, SegmentRecord};
 use crate::{FeosError, FeosResult};
 use num_traits::NumAssign;
 use serde::{Deserialize, Serialize};
-use std::{
-    borrow::Cow,
-    collections::{HashMap, HashSet},
-};
+use std::borrow::Cow;
+use std::collections::{HashMap, HashSet};
 
 // Auxiliary structure used to deserialize chemical records without explicit bond information.
 #[derive(Serialize, Deserialize)]
@@ -135,19 +132,20 @@ pub trait SegmentCount {
     /// molecule.
     ///
     /// The map contains the segment record as key and the count as value.
-    fn segment_map<M: Clone>(
+    #[expect(clippy::type_complexity)]
+    fn segment_map<M: Clone, A: Clone>(
         &self,
-        segment_records: &[SegmentRecord<M>],
-    ) -> FeosResult<HashMap<SegmentRecord<M>, Self::Count>> {
+        segment_records: &[SegmentRecord<M, A>],
+    ) -> FeosResult<Vec<(SegmentRecord<M, A>, Self::Count)>> {
         let count = self.segment_count();
-        let queried: HashSet<_> = count.keys().cloned().collect();
-        let mut segments: HashMap<String, SegmentRecord<M>> = segment_records
+        let queried: HashSet<_> = count.keys().collect();
+        let mut segments: HashMap<_, SegmentRecord<M, A>> = segment_records
             .iter()
-            .map(|r| (r.identifier.clone(), r.clone()))
+            .map(|r| (&r.identifier, r.clone()))
             .collect();
-        let available = segments.keys().cloned().collect();
+        let available = segments.keys().copied().collect();
         if !queried.is_subset(&available) {
-            let missing: Vec<String> = queried.difference(&available).cloned().collect();
+            let missing: Vec<_> = queried.difference(&available).collect();
             let msg = format!("{:?}", missing);
             return Err(FeosError::ComponentsNotFound(msg));
         };

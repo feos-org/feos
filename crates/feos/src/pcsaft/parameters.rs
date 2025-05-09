@@ -1,8 +1,8 @@
-use crate::association::{
-    AssociationParameters, AssociationRecord, AssociationStrength, BinaryAssociationRecord,
-};
+use crate::association::{AssociationParameters, AssociationStrength};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::parameter::{CountType, FromSegments, FromSegmentsBinary, Parameter, PureRecord};
+use feos_core::parameter::{
+    BinaryRecord, CountType, FromSegments, FromSegmentsBinary, Parameter, PureRecord,
+};
 use feos_core::{FeosError, FeosResult};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
@@ -12,60 +12,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[derive(Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct PcSaftRecordSerde {
-    /// Segment number
-    pub m: f64,
-    /// Segment diameter in units of Angstrom
-    pub sigma: f64,
-    /// Energetic parameter in units of Kelvin
-    pub epsilon_k: f64,
-    /// Dipole moment in units of Debye
-    #[serde(skip_serializing_if = "f64::is_zero")]
-    #[serde(default)]
-    pub mu: f64,
-    /// Quadrupole moment in units of Debye * Angstrom
-    #[serde(skip_serializing_if = "f64::is_zero")]
-    #[serde(default)]
-    pub q: f64,
-    /// Association volume parameter
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kappa_ab: Option<f64>,
-    /// Association energy parameter in units of Kelvin
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub epsilon_k_ab: Option<f64>,
-    /// \# of association sites of type A
-    #[serde(skip_serializing_if = "f64::is_zero")]
-    #[serde(default)]
-    pub na: f64,
-    /// \# of association sites of type B
-    #[serde(skip_serializing_if = "f64::is_zero")]
-    #[serde(default)]
-    pub nb: f64,
-    /// \# of association sites of type C
-    #[serde(skip_serializing_if = "f64::is_zero")]
-    #[serde(default)]
-    pub nc: f64,
-    /// Association parameters
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    #[serde(default)]
-    pub association_records: Vec<AssociationRecord<PcSaftAssociationRecord>>,
-    /// Entropy scaling coefficients for the viscosity
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub viscosity: Option<[f64; 4]>,
-    /// Entropy scaling coefficients for the diffusion coefficient
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub diffusion: Option<[f64; 5]>,
-    /// Entropy scaling coefficients for the thermal conductivity
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub thermal_conductivity: Option<[f64; 4]>,
-}
-
 /// PC-SAFT pure-component parameters.
 #[derive(Serialize, Deserialize, Clone, Default)]
-#[serde(from = "PcSaftRecordSerde")]
-#[serde(into = "PcSaftRecordSerde")]
+#[serde(deny_unknown_fields)]
 pub struct PcSaftRecord {
     /// Segment number
     pub m: f64,
@@ -74,71 +23,22 @@ pub struct PcSaftRecord {
     /// Energetic parameter in units of Kelvin
     pub epsilon_k: f64,
     /// Dipole moment in units of Debye
+    #[serde(skip_serializing_if = "f64::is_zero")]
+    #[serde(default)]
     pub mu: f64,
     /// Quadrupole moment in units of Debye * Angstrom
+    #[serde(skip_serializing_if = "f64::is_zero")]
+    #[serde(default)]
     pub q: f64,
-    /// Association parameters
-    pub association_records: Vec<AssociationRecord<PcSaftAssociationRecord>>,
     /// Entropy scaling coefficients for the viscosity
-    pub viscosity: Option<[f64; 4]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    viscosity: Option<[f64; 4]>,
     /// Entropy scaling coefficients for the diffusion coefficient
-    pub diffusion: Option<[f64; 5]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    diffusion: Option<[f64; 5]>,
     /// Entropy scaling coefficients for the thermal conductivity
-    pub thermal_conductivity: Option<[f64; 4]>,
-}
-
-impl From<PcSaftRecordSerde> for PcSaftRecord {
-    fn from(value: PcSaftRecordSerde) -> Self {
-        Self::new(
-            value.m,
-            value.sigma,
-            value.epsilon_k,
-            value.mu,
-            value.q,
-            value.kappa_ab,
-            value.epsilon_k_ab,
-            value.na,
-            value.nb,
-            value.nc,
-            value.association_records,
-            value.viscosity,
-            value.diffusion,
-            value.thermal_conductivity,
-        )
-    }
-}
-
-impl From<PcSaftRecord> for PcSaftRecordSerde {
-    fn from(mut value: PcSaftRecord) -> Self {
-        let (kappa_ab, epsilon_k_ab, na, nb, nc) = if value.association_records.len() == 1 {
-            let r = value.association_records.pop().unwrap();
-            (
-                r.parameters.kappa_ab,
-                r.parameters.epsilon_k_ab,
-                r.na,
-                r.nb,
-                r.nc,
-            )
-        } else {
-            (None, None, 0.0, 0.0, 0.0)
-        };
-        Self {
-            m: value.m,
-            sigma: value.sigma,
-            epsilon_k: value.epsilon_k,
-            mu: value.mu,
-            q: value.q,
-            kappa_ab,
-            epsilon_k_ab,
-            na,
-            nb,
-            nc,
-            association_records: value.association_records,
-            viscosity: value.viscosity,
-            diffusion: value.diffusion,
-            thermal_conductivity: value.thermal_conductivity,
-        }
-    }
+    #[serde(skip_serializing_if = "Option::is_none")]
+    thermal_conductivity: Option<[f64; 4]>,
 }
 
 impl FromSegments<f64> for PcSaftRecord {
@@ -156,21 +56,6 @@ impl FromSegments<f64> for PcSaftRecord {
             mu += s.mu * n;
             q += s.q * n;
         });
-
-        let association_records = segments
-            .iter()
-            .flat_map(|(s, n)| {
-                s.association_records.iter().map(move |record| {
-                    AssociationRecord::with_id(
-                        record.id,
-                        record.parameters,
-                        record.na * n,
-                        record.nb * n,
-                        record.nc * n,
-                    )
-                })
-            })
-            .collect();
 
         // entropy scaling
         let mut viscosity = if segments
@@ -232,7 +117,6 @@ impl FromSegments<f64> for PcSaftRecord {
             epsilon_k: epsilon_k / m,
             mu,
             q,
-            association_records,
             viscosity,
             diffusion,
             thermal_conductivity,
@@ -275,60 +159,29 @@ impl FromSegments<usize> for PcSaftRecord {
     }
 }
 
-impl std::fmt::Display for PcSaftRecord {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PcSaftRecord(m={}", self.m)?;
-        write!(f, ", sigma={}", self.sigma)?;
-        write!(f, ", epsilon_k={}", self.epsilon_k)?;
-        if self.mu > 0.0 {
-            write!(f, ", mu={}", self.mu)?;
-        }
-        if self.q > 0.0 {
-            write!(f, ", q={}", self.q)?;
-        }
-        match self.association_records.len() {
-            0 => (),
-            1 => {
-                let r = &self.association_records[0];
-                if let Some(kappa_ab) = r.parameters.kappa_ab {
-                    write!(f, ", kappa_ab={}", kappa_ab)?;
-                }
-                if let Some(epsilon_k_ab) = r.parameters.epsilon_k_ab {
-                    write!(f, ", epsilon_k_ab={}", epsilon_k_ab)?;
-                }
-                if !r.na.is_zero() {
-                    write!(f, ", na={}", r.na)?;
-                }
-                if !r.nb.is_zero() {
-                    write!(f, ", nb={}", r.nb)?;
-                }
-                if !r.nc.is_zero() {
-                    write!(f, ", nc={}", r.nc)?;
-                }
-            }
-            _ => {
-                write!(f, ", association_records=[")?;
-                for (i, record) in self.association_records.iter().enumerate() {
-                    write!(f, "{record}")?;
-                    if i < self.association_records.len() - 1 {
-                        write!(f, ", ")?;
-                    }
-                }
-                write!(f, "]")?;
-            }
-        }
-        if let Some(n) = &self.viscosity {
-            write!(f, ", viscosity={:?}", n)?;
-        }
-        if let Some(n) = &self.diffusion {
-            write!(f, ", diffusion={:?}", n)?;
-        }
-        if let Some(n) = &self.thermal_conductivity {
-            write!(f, ", thermal_conductivity={:?}", n)?;
-        }
-        write!(f, ")")
-    }
-}
+// impl std::fmt::Display for PcSaftRecord {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "PcSaftRecord(m={}", self.m)?;
+//         write!(f, ", sigma={}", self.sigma)?;
+//         write!(f, ", epsilon_k={}", self.epsilon_k)?;
+//         if self.mu > 0.0 {
+//             write!(f, ", mu={}", self.mu)?;
+//         }
+//         if self.q > 0.0 {
+//             write!(f, ", q={}", self.q)?;
+//         }
+//         if let Some(n) = &self.viscosity {
+//             write!(f, ", viscosity={:?}", n)?;
+//         }
+//         if let Some(n) = &self.diffusion {
+//             write!(f, ", diffusion={:?}", n)?;
+//         }
+//         if let Some(n) = &self.thermal_conductivity {
+//             write!(f, ", thermal_conductivity={:?}", n)?;
+//         }
+//         write!(f, ")")
+//     }
+// }
 
 impl PcSaftRecord {
     #[expect(clippy::too_many_arguments)]
@@ -338,31 +191,16 @@ impl PcSaftRecord {
         epsilon_k: f64,
         mu: f64,
         q: f64,
-        kappa_ab: Option<f64>,
-        epsilon_k_ab: Option<f64>,
-        na: f64,
-        nb: f64,
-        nc: f64,
-        mut association_records: Vec<AssociationRecord<PcSaftAssociationRecord>>,
         viscosity: Option<[f64; 4]>,
         diffusion: Option<[f64; 5]>,
         thermal_conductivity: Option<[f64; 4]>,
     ) -> PcSaftRecord {
-        if na > 0.0 || nb > 0.0 || nc > 0.0 {
-            association_records.push(AssociationRecord::new(
-                PcSaftAssociationRecord::new(kappa_ab, epsilon_k_ab),
-                na,
-                nb,
-                nc,
-            ))
-        }
         PcSaftRecord {
             m,
             sigma,
             epsilon_k,
             mu,
             q,
-            association_records,
             viscosity,
             diffusion,
             thermal_conductivity,
@@ -373,15 +211,13 @@ impl PcSaftRecord {
 #[derive(Serialize, Deserialize, Clone, Copy, Default)]
 pub struct PcSaftAssociationRecord {
     /// Association volume parameter
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kappa_ab: Option<f64>,
+    pub kappa_ab: f64,
     /// Association energy parameter in units of Kelvin
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub epsilon_k_ab: Option<f64>,
+    pub epsilon_k_ab: f64,
 }
 
 impl PcSaftAssociationRecord {
-    pub fn new(kappa_ab: Option<f64>, epsilon_k_ab: Option<f64>) -> Self {
+    pub fn new(kappa_ab: f64, epsilon_k_ab: f64) -> Self {
         Self {
             kappa_ab,
             epsilon_k_ab,
@@ -391,141 +227,46 @@ impl PcSaftAssociationRecord {
 
 impl std::fmt::Display for PcSaftAssociationRecord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut params = vec![];
-        if let Some(kappa_ab) = self.kappa_ab {
-            params.push(format!("kappa_ab={}", kappa_ab));
-        }
-        if let Some(epsilon_k_ab) = self.epsilon_k_ab {
-            params.push(format!("epsilon_k_ab={}", epsilon_k_ab));
-        }
-        write!(f, "{}", params.join(", "))
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct PcSaftBinaryRecordSerde {
-    #[serde(skip_serializing_if = "f64::is_zero")]
-    #[serde(default)]
-    k_ij: f64,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    kappa_ab: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    epsilon_k_ab: Option<f64>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    #[serde(default)]
-    association_records: Vec<BinaryAssociationRecord<PcSaftAssociationRecord>>,
-}
-
-/// PC-SAFT binary interaction parameters.
-#[derive(Serialize, Deserialize, Clone, Default)]
-#[serde(from = "PcSaftBinaryRecordSerde")]
-#[serde(into = "PcSaftBinaryRecordSerde")]
-pub struct PcSaftBinaryRecord {
-    /// Binary dispersion interaction parameter
-    pub k_ij: f64,
-    /// Binary association parameters
-    association_records: Vec<BinaryAssociationRecord<PcSaftAssociationRecord>>,
-}
-
-impl From<PcSaftBinaryRecordSerde> for PcSaftBinaryRecord {
-    fn from(value: PcSaftBinaryRecordSerde) -> Self {
-        Self::new(
-            value.k_ij,
-            value.kappa_ab,
-            value.epsilon_k_ab,
-            value.association_records,
+        write!(
+            f,
+            "kappa_ab={}, epsilon_k_ab={}",
+            self.kappa_ab, self.epsilon_k_ab
         )
     }
 }
 
-impl From<PcSaftBinaryRecord> for PcSaftBinaryRecordSerde {
-    fn from(mut value: PcSaftBinaryRecord) -> Self {
-        let [kappa_ab, epsilon_k_ab] = if value.association_records.len() == 1
-            && value.association_records[0].id1.is_empty()
-            && value.association_records[0].id2.is_empty()
-        {
-            let record = value.association_records.pop().unwrap().parameters;
-            [record.kappa_ab, record.epsilon_k_ab]
-        } else {
-            [None; 2]
-        };
-        Self {
-            k_ij: value.k_ij,
-            kappa_ab,
-            epsilon_k_ab,
-            association_records: value.association_records,
-        }
-    }
+/// PC-SAFT binary interaction parameters.
+#[derive(Serialize, Deserialize, Clone, Copy, Default)]
+pub struct PcSaftBinaryRecord {
+    /// Binary dispersion interaction parameter
+    pub k_ij: f64,
 }
 
 impl PcSaftBinaryRecord {
-    pub fn new(
-        k_ij: f64,
-        kappa_ab: Option<f64>,
-        epsilon_k_ab: Option<f64>,
-        mut association_records: Vec<BinaryAssociationRecord<PcSaftAssociationRecord>>,
-    ) -> Self {
-        if kappa_ab.is_some() || epsilon_k_ab.is_some() {
-            association_records.push(BinaryAssociationRecord::new(PcSaftAssociationRecord::new(
-                kappa_ab,
-                epsilon_k_ab,
-            )));
-        }
-        Self {
-            k_ij,
-            association_records,
-        }
+    pub fn new(k_ij: f64) -> Self {
+        Self { k_ij }
     }
 }
 
 impl<T: CountType> FromSegmentsBinary<T> for PcSaftBinaryRecord {
-    fn from_segments_binary(segments: &[(f64, T, T)]) -> FeosResult<Self> {
+    fn from_segments_binary(segments: &[(Self, T, T)]) -> FeosResult<Self> {
         let (k_ij, n) = segments.iter().fold((0.0, 0.0), |(k_ij, n), (br, n1, n2)| {
             let nab = n1.apply_count(1.0) * n2.apply_count(1.0);
-            (k_ij + br * nab, n + nab)
+            (k_ij + br.k_ij * nab, n + nab)
         });
-        Ok(Self {
-            k_ij: k_ij / n,
-            association_records: Vec::with_capacity(0),
-        })
+        Ok(Self { k_ij: k_ij / n })
     }
 }
 
-impl std::fmt::Display for PcSaftBinaryRecord {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut tokens = vec![];
-        if !self.k_ij.is_zero() {
-            tokens.push(format!("k_ij={}", self.k_ij));
-        }
-        match self.association_records.len() {
-            0 => (),
-            1 => {
-                let r = &self.association_records[0];
-                if r.id1.is_empty() && r.id2.is_empty() {
-                    if let Some(kappa_ab) = r.parameters.kappa_ab {
-                        tokens.push(format!("kappa_ab={}", kappa_ab));
-                    }
-                    if let Some(epsilon_k_ab) = r.parameters.epsilon_k_ab {
-                        tokens.push(format!("epsilon_k_ab={}", epsilon_k_ab));
-                    }
-                } else {
-                    tokens.push(format!("association_records=[{r}]"));
-                }
-            }
-            _ => {
-                let ass = self
-                    .association_records
-                    .iter()
-                    .map(|r| r.to_string())
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                tokens.push(format!("association_records=[{}]", ass));
-            }
-        }
-        write!(f, "PcSaftBinaryRecord({})", tokens.join(", "))
-    }
-}
+// impl std::fmt::Display for PcSaftBinaryRecord {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         let mut tokens = vec![];
+//         if !self.k_ij.is_zero() {
+//             tokens.push(format!("k_ij={}", self.k_ij));
+//         }
+//         write!(f, "PcSaftBinaryRecord({})", tokens.join(", "))
+//     }
+// }
 
 /// Parameter set required for the PC-SAFT equation of state and Helmholtz energy functional.
 pub struct PcSaftParameters {
@@ -548,17 +289,18 @@ pub struct PcSaftParameters {
     pub viscosity: Option<Array2<f64>>,
     pub diffusion: Option<Array2<f64>>,
     pub thermal_conductivity: Option<Array2<f64>>,
-    pub pure_records: Vec<PureRecord<PcSaftRecord>>,
-    pub binary_records: Vec<([usize; 2], PcSaftBinaryRecord)>,
+    pub pure_records: Vec<PureRecord<PcSaftRecord, PcSaftAssociationRecord>>,
+    pub binary_records: Vec<BinaryRecord<usize, PcSaftBinaryRecord, PcSaftAssociationRecord>>,
 }
 
 impl Parameter for PcSaftParameters {
     type Pure = PcSaftRecord;
     type Binary = PcSaftBinaryRecord;
+    type Association = PcSaftAssociationRecord;
 
     fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Vec<([usize; 2], Self::Binary)>,
+        pure_records: Vec<PureRecord<Self::Pure, Self::Association>>,
+        binary_records: Vec<BinaryRecord<usize, Self::Binary, Self::Association>>,
     ) -> FeosResult<Self> {
         let n = pure_records.len();
 
@@ -568,7 +310,7 @@ impl Parameter for PcSaftParameters {
         let mut epsilon_k = Array::zeros(n);
         let mut mu = Array::zeros(n);
         let mut q = Array::zeros(n);
-        let mut association_records = Vec::with_capacity(n);
+        let mut association_sites = Vec::with_capacity(n);
         let mut viscosity = Vec::with_capacity(n);
         let mut diffusion = Vec::with_capacity(n);
         let mut thermal_conductivity = Vec::with_capacity(n);
@@ -583,7 +325,7 @@ impl Parameter for PcSaftParameters {
             epsilon_k[i] = r.epsilon_k;
             mu[i] = r.mu;
             q[i] = r.q;
-            association_records.push(r.association_records.clone());
+            association_sites.push(record.association_sites.clone());
             viscosity.push(r.viscosity);
             diffusion.push(r.diffusion);
             thermal_conductivity.push(r.thermal_conductivity);
@@ -612,14 +354,14 @@ impl Parameter for PcSaftParameters {
         let mut k_ij = Array2::zeros((n, n));
         let binary_association: Vec<_> = binary_records
             .iter()
-            .flat_map(|([i, j], br)| {
-                k_ij[[*i, *j]] = br.k_ij;
-                k_ij[[*j, *i]] = br.k_ij;
-                br.association_records.iter().map(|&a| ([*i, *j], a))
+            .flat_map(|br| {
+                k_ij[[br.id1, br.id2]] = br.model_record.unwrap_or_default().k_ij;
+                k_ij[[br.id2, br.id1]] = br.model_record.unwrap_or_default().k_ij;
+                br.association_sites.iter().map(|&a| ([br.id1, br.id2], a))
             })
             .collect();
         let association =
-            AssociationParameters::new(&association_records, &binary_association, None)?;
+            AssociationParameters::new(&association_sites, &binary_association, None)?;
 
         let mut sigma_ij = Array::zeros((n, n));
         let mut e_k_ij = Array::zeros((n, n));
@@ -687,7 +429,12 @@ impl Parameter for PcSaftParameters {
         })
     }
 
-    fn records(&self) -> (&[PureRecord<PcSaftRecord>], &[([usize; 2], Self::Binary)]) {
+    fn records(
+        &self,
+    ) -> (
+        &[PureRecord<Self::Pure, Self::Association>],
+        &[BinaryRecord<usize, Self::Binary, Self::Association>],
+    ) {
         (&self.pure_records, &self.binary_records)
     }
 }
@@ -707,7 +454,6 @@ impl HardSphereProperties for PcSaftParameters {
 
 impl AssociationStrength for PcSaftParameters {
     type Record = PcSaftAssociationRecord;
-    type BinaryRecord = PcSaftAssociationRecord;
 
     fn association_strength<D: DualNum<f64> + Copy>(
         &self,
@@ -716,42 +462,19 @@ impl AssociationStrength for PcSaftParameters {
         comp_j: usize,
         assoc_ij: Self::Record,
     ) -> D {
-        if let (Some(kappa_ab), Some(epsilon_k_ab)) = (assoc_ij.kappa_ab, assoc_ij.epsilon_k_ab) {
-            let si = self.sigma[comp_i];
-            let sj = self.sigma[comp_j];
-            (temperature.recip() * epsilon_k_ab).exp_m1() * kappa_ab * (si * sj).powf(1.5)
-        } else {
-            D::zero()
-        }
+        let si = self.sigma[comp_i];
+        let sj = self.sigma[comp_j];
+        (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
+            * assoc_ij.kappa_ab
+            * (si * sj).powf(1.5)
     }
 
     fn combining_rule(parameters_i: Self::Record, parameters_j: Self::Record) -> Self::Record {
-        let kappa_ab = if let (Some(kappa_ab_i), Some(kappa_ab_j)) =
-            (parameters_i.kappa_ab, parameters_j.kappa_ab)
-        {
-            Some((kappa_ab_i * kappa_ab_j).sqrt())
-        } else {
-            None
-        };
-        let epsilon_k_ab = if let (Some(epsilon_k_ab_i), Some(epsilon_k_ab_j)) =
-            (parameters_i.epsilon_k_ab, parameters_j.epsilon_k_ab)
-        {
-            Some(0.5 * (epsilon_k_ab_i + epsilon_k_ab_j))
-        } else {
-            None
-        };
+        let kappa_ab = (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt();
+        let epsilon_k_ab = 0.5 * (parameters_i.epsilon_k_ab + parameters_j.epsilon_k_ab);
         Self::Record {
             kappa_ab,
             epsilon_k_ab,
-        }
-    }
-
-    fn update_binary(parameters_ij: &mut Self::Record, binary_parameters: Self::BinaryRecord) {
-        if let Some(kappa_ab) = binary_parameters.kappa_ab {
-            parameters_ij.kappa_ab = Some(kappa_ab)
-        }
-        if let Some(epsilon_k_ab) = binary_parameters.epsilon_k_ab {
-            parameters_ij.epsilon_k_ab = Some(epsilon_k_ab)
         }
     }
 }
@@ -773,17 +496,15 @@ pub mod utils {
                     "inchi": "InChI=1/C3H8/c1-3-2/h3H2,1-2H3",
                     "formula": "C3H8"
                 },
-                "model_record": {
-                    "m": 2.001829,
-                    "sigma": 3.618353,
-                    "epsilon_k": 208.1101,
-                    "viscosity": [-0.8013, -1.9972,-0.2907, -0.0467],
-                    "thermal_conductivity": [-0.15348,  -0.6388, 1.21342, -0.01664],
-                    "diffusion": [-0.675163251512047, 0.3212017677695878, 0.100175249144429, 0.0, 0.0]
-                },
+                "m": 2.001829,
+                "sigma": 3.618353,
+                "epsilon_k": 208.1101,
+                "viscosity": [-0.8013, -1.9972,-0.2907, -0.0467],
+                "thermal_conductivity": [-0.15348,  -0.6388, 1.21342, -0.01664],
+                "diffusion": [-0.675163251512047, 0.3212017677695878, 0.100175249144429, 0.0, 0.0],
                 "molarweight": 44.0962
             }"#;
-        let propane_record: PureRecord<PcSaftRecord> =
+        let propane_record: PureRecord<PcSaftRecord, PcSaftAssociationRecord> =
             serde_json::from_str(propane_json).expect("Unable to parse json.");
         Arc::new(PcSaftParameters::new_pure(propane_record).unwrap())
     }
@@ -800,14 +521,12 @@ pub mod utils {
                 "formula": "CO2"
             },
             "molarweight": 44.0098,
-            "model_record": {
-                "m": 1.5131,
-                "sigma": 3.1869,
-                "epsilon_k": 163.333,
-                "q": 4.4
-            }
+            "m": 1.5131,
+            "sigma": 3.1869,
+            "epsilon_k": 163.333,
+            "q": 4.4
         }"#;
-        let co2_record: PureRecord<PcSaftRecord> =
+        let co2_record: PureRecord<PcSaftRecord, PcSaftAssociationRecord> =
             serde_json::from_str(co2_json).expect("Unable to parse json.");
         PcSaftParameters::new_pure(co2_record).unwrap()
     }
@@ -823,14 +542,12 @@ pub mod utils {
                     "inchi": "InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3",
                     "formula": "C4H10"
                 },
-                "model_record": {
-                    "m": 2.331586,
-                    "sigma": 3.7086010000000003,
-                    "epsilon_k": 222.8774
-                },
+                "m": 2.331586,
+                "sigma": 3.7086010000000003,
+                "epsilon_k": 222.8774,
                 "molarweight": 58.123
             }"#;
-        let butane_record: PureRecord<PcSaftRecord> =
+        let butane_record: PureRecord<PcSaftRecord, PcSaftAssociationRecord> =
             serde_json::from_str(butane_json).expect("Unable to parse json.");
         Arc::new(PcSaftParameters::new_pure(butane_record).unwrap())
     }
@@ -846,15 +563,13 @@ pub mod utils {
                     "inchi": "InChI=1/C2H6O/c1-3-2/h1-2H3",
                     "formula": "C2H6O"
                 },
-                "model_record": {
-                    "m": 2.2634,
-                    "sigma": 3.2723,
-                    "epsilon_k": 210.29,
-                    "mu": 1.3
-                },
+                "m": 2.2634,
+                "sigma": 3.2723,
+                "epsilon_k": 210.29,
+                "mu": 1.3,
                 "molarweight": 46.0688
             }"#;
-        let dme_record: PureRecord<PcSaftRecord> =
+        let dme_record: PureRecord<PcSaftRecord, PcSaftAssociationRecord> =
             serde_json::from_str(dme_json).expect("Unable to parse json.");
         PcSaftParameters::new_pure(dme_record).unwrap()
     }
@@ -870,18 +585,20 @@ pub mod utils {
                     "inchi": "InChI=1/H2O/h1H2",
                     "formula": "H2O"
                 },
-                "model_record": {
-                    "m": 1.065587,
-                    "sigma": 3.000683,
-                    "epsilon_k": 366.5121,
-                    "kappa_ab": 0.034867983,
-                    "epsilon_k_ab": 2500.6706,
-                    "na": 1.0,
-                    "nb": 1.0
-                },
-                "molarweight": 18.0152
+                "m": 1.065587,
+                "sigma": 3.000683,
+                "epsilon_k": 366.5121,
+                "molarweight": 18.0152,
+                "association_sites": [
+                    {
+                        "kappa_ab": 0.034867983,
+                        "epsilon_k_ab": 2500.6706,
+                        "na": 1.0,
+                        "nb": 1.0
+                    }
+                ]
             }"#;
-        let water_record: PureRecord<PcSaftRecord> =
+        let water_record: PureRecord<PcSaftRecord, PcSaftAssociationRecord> =
             serde_json::from_str(water_json).expect("Unable to parse json.");
         PcSaftParameters::new_pure(water_record).unwrap()
     }
@@ -898,12 +615,10 @@ pub mod utils {
                     "formula": "C2H6O"
                 },
                 "molarweight": 46.0688,
-                "model_record": {
-                    "m": 2.2634,
-                    "sigma": 3.2723,
-                    "epsilon_k": 210.29,
-                    "mu": 1.3
-                }
+                "m": 2.2634,
+                "sigma": 3.2723,
+                "epsilon_k": 210.29,
+                "mu": 1.3
             },
             {
                 "identifier": {
@@ -915,17 +630,15 @@ pub mod utils {
                     "formula": "CO2"
                 },
                 "molarweight": 44.0098,
-                "model_record": {
-                    "m": 1.5131,
-                    "sigma": 3.1869,
-                    "epsilon_k": 163.333,
-                    "q": 4.4
-                }
+                "m": 1.5131,
+                "sigma": 3.1869,
+                "epsilon_k": 163.333,
+                "q": 4.4
             }
         ]"#;
-        let binary_record: Vec<PureRecord<PcSaftRecord>> =
+        let binary_record: [PureRecord<PcSaftRecord, PcSaftAssociationRecord>; 2] =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
-        PcSaftParameters::new_binary(binary_record, None).unwrap()
+        PcSaftParameters::new_binary(binary_record, None, vec![]).unwrap()
     }
 
     pub fn propane_butane_parameters() -> Arc<PcSaftParameters> {
@@ -939,14 +652,12 @@ pub mod utils {
                     "inchi": "InChI=1/C3H8/c1-3-2/h3H2,1-2H3",
                     "formula": "C3H8"
                 },
-                "model_record": {
-                    "m": 2.0018290000000003,
-                    "sigma": 3.618353,
-                    "epsilon_k": 208.1101,
-                    "viscosity": [-0.8013, -1.9972, -0.2907, -0.0467],
-                    "thermal_conductivity": [-0.15348, -0.6388, 1.21342, -0.01664],
-                    "diffusion": [-0.675163251512047, 0.3212017677695878, 0.100175249144429, 0.0, 0.0]
-                },
+                "m": 2.0018290000000003,
+                "sigma": 3.618353,
+                "epsilon_k": 208.1101,
+                "viscosity": [-0.8013, -1.9972, -0.2907, -0.0467],
+                "thermal_conductivity": [-0.15348, -0.6388, 1.21342, -0.01664],
+                "diffusion": [-0.675163251512047, 0.3212017677695878, 0.100175249144429, 0.0, 0.0],
                 "molarweight": 44.0962
             },
             {
@@ -958,19 +669,17 @@ pub mod utils {
                     "inchi": "InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3",
                     "formula": "C4H10"
                 },
-                "model_record": {
-                    "m": 2.331586,
-                    "sigma": 3.7086010000000003,
-                    "epsilon_k": 222.8774,
-                    "viscosity": [-0.9763, -2.2413, -0.3690, -0.0605],
-                    "diffusion": [-0.8985872992958458, 0.3428584416613513, 0.10236616087103916, 0.0, 0.0]
-                },
+                "m": 2.331586,
+                "sigma": 3.7086010000000003,
+                "epsilon_k": 222.8774,
+                "viscosity": [-0.9763, -2.2413, -0.3690, -0.0605],
+                "diffusion": [-0.8985872992958458, 0.3428584416613513, 0.10236616087103916, 0.0, 0.0],
                 "molarweight": 58.123
             }
         ]"#;
-        let binary_record: Vec<PureRecord<PcSaftRecord>> =
+        let binary_record: [PureRecord<PcSaftRecord, PcSaftAssociationRecord>; 2] =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
-        Arc::new(PcSaftParameters::new_binary(binary_record, None).unwrap())
+        Arc::new(PcSaftParameters::new_binary(binary_record, None, vec![]).unwrap())
     }
 
     #[test]
@@ -989,17 +698,26 @@ pub mod utils {
         let kij = [("CH3", "OH", -0.2), ("CH2", "OH", -0.1)];
         let binary_segment_records = kij
             .iter()
-            .map(|&(id1, id2, k_ij)| BinarySegmentRecord::new(id1.into(), id2.into(), k_ij))
+            .map(|&(id1, id2, k_ij)| {
+                BinarySegmentRecord::new(
+                    id1.into(),
+                    id2.into(),
+                    Some(PcSaftBinaryRecord { k_ij }),
+                    vec![],
+                )
+            })
             .collect();
         let params = PcSaftParameters::from_segments(
             vec![propane, ethanol],
             segment_records,
             Some(binary_segment_records),
         )?;
-        let ([i, j], k_ij) = &params.binary_records[0];
-        assert_eq!(*i, 0);
-        assert_eq!(*j, 1);
-        assert_eq!(k_ij.k_ij, -0.5 / 9.);
+        assert_eq!(params.binary_records[0].id1, 0);
+        assert_eq!(params.binary_records[0].id2, 1);
+        assert_eq!(
+            params.binary_records[0].model_record.unwrap().k_ij,
+            -0.5 / 9.
+        );
 
         Ok(())
     }
@@ -1011,124 +729,54 @@ pub mod utils {
                 "identifier": {
                     "name": "comp1"
                 },
-                "model_record": {
-                    "m": 1.065587,
-                    "sigma": 3.000683,
-                    "epsilon_k": 366.5121,
-                    "kappa_ab": 0.034867983,
-                    "epsilon_k_ab": 2500.6706,
-                    "na": 1.0,
-                    "nb": 1.0
-                }
+                "m": 1.065587,
+                "sigma": 3.000683,
+                "epsilon_k": 366.5121,
+                "association_sites": [
+                    {
+                        "kappa_ab": 0.034867983,
+                        "epsilon_k_ab": 2500.6706,
+                        "na": 1.0,
+                        "nb": 1.0
+                    }
+                ]
             }"#;
-        let record1: PureRecord<PcSaftRecord> = serde_json::from_str(json1)?;
+        let record1: PureRecord<PcSaftRecord, PcSaftAssociationRecord> =
+            serde_json::from_str(json1)?;
 
         let json2 = r#"
             {
                 "identifier": {
                     "name": "comp2"
                 },
-                "model_record": {
-                    "m": 1.065587,
-                    "sigma": 3.000683,
-                    "epsilon_k": 366.5121,
-                    "association_records": [
-                        {
-                            "id": "site1",
-                            "kappa_ab": 0.034867983,
-                            "epsilon_k_ab": 2500.6706,
-                            "na": 1.0,
-                            "nb": 1.0
-                        },
-                        {
-                            "id": "site2",
-                            "kappa_ab": 0.01,
-                            "epsilon_k_ab": 2200.0,
-                            "nb": 1.0
-                        }
-                    ]
-                }
-            }"#;
-        let record2: PureRecord<PcSaftRecord> = serde_json::from_str(json2)?;
-
-        println!("{record1}");
-        println!("{record2}");
-
-        assert_eq!(
-            record1.model_record.association_records[0]
-                .parameters
-                .kappa_ab,
-            record2.model_record.association_records[0]
-                .parameters
-                .kappa_ab
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_association_binary_json() -> FeosResult<()> {
-        let binary_json1 = r#"
-            {
-                "k_ij": 0.2,
-                "epsilon_k_ab": 1234.5,
-                "association_records": [
+                "m": 1.065587,
+                "sigma": 3.000683,
+                "epsilon_k": 366.5121,
+                "association_sites": [
                     {
-                        "id2": "site2",
-                        "kappa_ab": 0.1
+                        "id": "site1",
+                        "kappa_ab": 0.034867983,
+                        "epsilon_k_ab": 2500.6706,
+                        "na": 1.0,
+                        "nb": 1.0
+                    },
+                    {
+                        "id": "site2",
+                        "kappa_ab": 0.01,
+                        "epsilon_k_ab": 2200.0,
+                        "nb": 1.0
                     }
                 ]
             }"#;
-        let binary_record1: PcSaftBinaryRecord = serde_json::from_str(binary_json1)?;
+        let record2: PureRecord<PcSaftRecord, PcSaftAssociationRecord> =
+            serde_json::from_str(json2)?;
 
-        let binary_json2 = r#"
-            {
-                "epsilon_k_ab": 1234.5
-            }"#;
-        let binary_record2: PcSaftBinaryRecord = serde_json::from_str(binary_json2)?;
-
-        let binary_json3 = r#"
-            {
-                "association_records": [
-                    {
-                        "id2": "site2",
-                        "kappa_ab": 0.1
-                    }
-                ]
-            }"#;
-        let binary_record3: PcSaftBinaryRecord = serde_json::from_str(binary_json3)?;
-
-        let binary_json4 = r#"
-            {
-                "k_ij": -0.3,
-                "association_records": [
-                    {
-                        "kappa_ab": 0.1
-                    }
-                ]
-            }"#;
-        let binary_record4: PcSaftBinaryRecord = serde_json::from_str(binary_json4)?;
-
-        println!("{binary_record1}");
-        println!("{binary_record2}");
-        println!("{binary_record3}");
-        println!("{binary_record4}");
+        // println!("{record1}");
+        // println!("{record2}");
 
         assert_eq!(
-            binary_record1.to_string(),
-            "PcSaftBinaryRecord(k_ij=0.2, association_records=[BinaryAssociationRecord(id2=site2, kappa_ab=0.1), BinaryAssociationRecord(epsilon_k_ab=1234.5)])"
-        );
-        assert_eq!(
-            binary_record2.to_string(),
-            "PcSaftBinaryRecord(epsilon_k_ab=1234.5)"
-        );
-        assert_eq!(
-            binary_record3.to_string(),
-            "PcSaftBinaryRecord(association_records=[BinaryAssociationRecord(id2=site2, kappa_ab=0.1)])"
-        );
-        assert_eq!(
-            binary_record4.to_string(),
-            "PcSaftBinaryRecord(k_ij=-0.3, kappa_ab=0.1)"
+            record1.association_sites[0].parameters.unwrap().kappa_ab,
+            record2.association_sites[0].parameters.unwrap().kappa_ab
         );
 
         Ok(())

@@ -7,7 +7,7 @@
 use crate::FeosError;
 use crate::equation_of_state::{Components, Molarweight, Residual};
 use crate::errors::FeosResult;
-use crate::parameter::{Identifier, Parameter, PureRecord};
+use crate::parameter::{BinaryRecord, Identifier, Parameter, PureRecord};
 use crate::state::StateHD;
 use ndarray::{Array1, Array2, ScalarOperand};
 use num_dual::DualNum;
@@ -61,9 +61,9 @@ pub struct PengRobinsonParameters {
     /// Molar weight in units of g/mol
     molarweight: Array1<f64>,
     /// List of pure component records
-    pure_records: Vec<PureRecord<PengRobinsonRecord>>,
+    pure_records: Vec<PureRecord<PengRobinsonRecord, ()>>,
     /// List of binary records
-    binary_records: Vec<([usize; 2], f64)>,
+    binary_records: Vec<BinaryRecord<usize, f64, ()>>,
 }
 
 impl std::fmt::Display for PengRobinsonParameters {
@@ -109,11 +109,12 @@ impl PengRobinsonParameters {
 impl Parameter for PengRobinsonParameters {
     type Pure = PengRobinsonRecord;
     type Binary = f64;
+    type Association = ();
 
     /// Creates parameters from pure component records.
     fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Vec<([usize; 2], Self::Binary)>,
+        pure_records: Vec<PureRecord<Self::Pure, ()>>,
+        binary_records: Vec<BinaryRecord<usize, Self::Binary, ()>>,
     ) -> FeosResult<Self> {
         let n = pure_records.len();
 
@@ -133,9 +134,9 @@ impl Parameter for PengRobinsonParameters {
         }
 
         let mut k_ij = Array2::zeros([n; 2]);
-        for &([i, j], r) in &binary_records {
-            k_ij[[i, j]] = r;
-            k_ij[[j, i]] = r;
+        for r in &binary_records {
+            k_ij[[r.id1, r.id2]] = r.model_record.unwrap_or_default();
+            k_ij[[r.id2, r.id1]] = r.model_record.unwrap_or_default();
         }
 
         Ok(Self {
@@ -150,7 +151,12 @@ impl Parameter for PengRobinsonParameters {
         })
     }
 
-    fn records(&self) -> (&[PureRecord<PengRobinsonRecord>], &[([usize; 2], f64)]) {
+    fn records(
+        &self,
+    ) -> (
+        &[PureRecord<PengRobinsonRecord, ()>],
+        &[BinaryRecord<usize, f64, ()>],
+    ) {
         (&self.pure_records, &self.binary_records)
     }
 }
@@ -240,7 +246,7 @@ mod tests {
     use quantity::{KELVIN, PASCAL};
     use std::sync::Arc;
 
-    fn pure_record_vec() -> Vec<PureRecord<PengRobinsonRecord>> {
+    fn pure_record_vec() -> Vec<PureRecord<PengRobinsonRecord, ()>> {
         let records = r#"[
             {
                 "identifier": {
@@ -251,11 +257,9 @@ mod tests {
                     "inchi": "InChI=1/C3H8/c1-3-2/h3H2,1-2H3",
                     "formula": "C3H8"
                 },
-                "model_record": {
-                    "tc": 369.96,
-                    "pc": 4250000.0,
-                    "acentric_factor": 0.153
-                },
+                "tc": 369.96,
+                "pc": 4250000.0,
+                "acentric_factor": 0.153,
                 "molarweight": 44.0962
             },
             {
@@ -267,11 +271,9 @@ mod tests {
                     "inchi": "InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3",
                     "formula": "C4H10"
                 },
-                "model_record": {
-                    "tc": 425.2,
-                    "pc": 3800000.0,
-                    "acentric_factor": 0.199
-                },
+                "tc": 425.2,
+                "pc": 3800000.0,
+                "acentric_factor": 0.199,
                 "molarweight": 58.123
             }
         ]"#;

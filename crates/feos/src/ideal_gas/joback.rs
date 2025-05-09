@@ -69,20 +69,26 @@ impl<T: CountType> FromSegments<T> for JobackRecord {
 /// - T = 289.15 K
 /// - p = 1e5 Pa
 /// - V = 1e-30 A³
-pub struct Joback(Vec<PureRecord<JobackRecord>>);
+pub struct Joback(Vec<PureRecord<JobackRecord, ()>>);
 
 impl Parameter for Joback {
     type Pure = JobackRecord;
     type Binary = NoBinaryModelRecord;
+    type Association = ();
 
     fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure>>,
-        _binary_records: Vec<([usize; 2], Self::Binary)>,
+        pure_records: Vec<PureRecord<Self::Pure, ()>>,
+        _binary_records: Vec<BinaryRecord<usize, Self::Binary, ()>>,
     ) -> FeosResult<Self> {
         Ok(Self(pure_records))
     }
 
-    fn records(&self) -> (&[PureRecord<Self::Pure>], &[([usize; 2], Self::Binary)]) {
+    fn records(
+        &self,
+    ) -> (
+        &[PureRecord<Self::Pure, ()>],
+        &[BinaryRecord<usize, Self::Binary, ()>],
+    ) {
         (&self.0, &[])
     }
 }
@@ -174,39 +180,33 @@ mod tests {
         let segments_json = r#"[
         {
           "identifier": "-Cl",
-          "model_record": {
-            "a": 33.3,
-            "b": -0.0963,
-            "c": 0.000187,
-            "d": -9.96e-8,
-            "e": 0.0
-          },
+          "a": 33.3,
+          "b": -0.0963,
+          "c": 0.000187,
+          "d": -9.96e-8,
+          "e": 0.0,
           "molarweight": 35.453
         },
         {
           "identifier": "-CH=(ring)",
-          "model_record": {
-            "a": -2.14,
-            "b": 5.74e-2,
-            "c": -1.64e-6,
-            "d": -1.59e-8,
-            "e": 0.0
-          },
+          "a": -2.14,
+          "b": 5.74e-2,
+          "c": -1.64e-6,
+          "d": -1.59e-8,
+          "e": 0.0,
           "molarweight": 13.01864
         },
         {
           "identifier": "=CH<(ring)",
-          "model_record": {
-            "a": -8.25,
-            "b": 1.01e-1,
-            "c": -1.42e-4,
-            "d": 6.78e-8,
-            "e": 0.0
-          },
+          "a": -8.25,
+          "b": 1.01e-1,
+          "c": -1.42e-4,
+          "d": 6.78e-8,
+          "e": 0.0,
           "molarweight": 13.01864
         }
         ]"#;
-        let segment_records: Vec<SegmentRecord<JobackRecord>> =
+        let segment_records: Vec<SegmentRecord<JobackRecord, ()>> =
             serde_json::from_str(segments_json).expect("Unable to parse json.");
         let segments = ChemicalRecord::new(
             Identifier::default(),
@@ -223,12 +223,9 @@ mod tests {
             None,
         )
         .segment_map(&segment_records)?;
-        assert_eq!(segments.get(&segment_records[0]), Some(&2));
-        assert_eq!(segments.get(&segment_records[1]), Some(&4));
-        assert_eq!(segments.get(&segment_records[2]), Some(&2));
         let joback_segments: Vec<_> = segments
-            .iter()
-            .map(|(s, &n)| (s.model_record.clone(), n))
+            .into_iter()
+            .map(|(s, n)| (s.model_record.clone(), n))
             .collect();
         let jr = JobackRecord::from_segments(&joback_segments)?;
         assert_relative_eq!(
@@ -285,7 +282,7 @@ mod tests {
             1.0,
             JobackRecord::new(-5.0, 0.4, 0.03, 0.002, 0.001),
         );
-        let joback = Arc::new(Joback::new_binary(vec![record1, record2], None)?);
+        let joback = Arc::new(Joback::new_binary([record1, record2], None, vec![])?);
         let eos = Arc::new(EquationOfState::ideal_gas(joback.clone()));
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi::<P3>();
