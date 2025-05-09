@@ -104,7 +104,7 @@ impl Parameter for UVTheoryParameters {
 
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Vec<([usize; 2], Self::Binary)>,
+        binary_records: Vec<BinaryRecord<usize, Self::Binary, Self::Association>>,
     ) -> FeosResult<Self> {
         let n = pure_records.len();
 
