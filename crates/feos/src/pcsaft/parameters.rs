@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 /// PC-SAFT pure-component parameters.
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct PcSaftRecord {
     /// Segment number
@@ -159,30 +159,6 @@ impl FromSegments<usize> for PcSaftRecord {
     }
 }
 
-// impl std::fmt::Display for PcSaftRecord {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "PcSaftRecord(m={}", self.m)?;
-//         write!(f, ", sigma={}", self.sigma)?;
-//         write!(f, ", epsilon_k={}", self.epsilon_k)?;
-//         if self.mu > 0.0 {
-//             write!(f, ", mu={}", self.mu)?;
-//         }
-//         if self.q > 0.0 {
-//             write!(f, ", q={}", self.q)?;
-//         }
-//         if let Some(n) = &self.viscosity {
-//             write!(f, ", viscosity={:?}", n)?;
-//         }
-//         if let Some(n) = &self.diffusion {
-//             write!(f, ", diffusion={:?}", n)?;
-//         }
-//         if let Some(n) = &self.thermal_conductivity {
-//             write!(f, ", thermal_conductivity={:?}", n)?;
-//         }
-//         write!(f, ")")
-//     }
-// }
-
 impl PcSaftRecord {
     #[expect(clippy::too_many_arguments)]
     pub fn new(
@@ -225,16 +201,6 @@ impl PcSaftAssociationRecord {
     }
 }
 
-impl std::fmt::Display for PcSaftAssociationRecord {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "kappa_ab={}, epsilon_k_ab={}",
-            self.kappa_ab, self.epsilon_k_ab
-        )
-    }
-}
-
 /// PC-SAFT binary interaction parameters.
 #[derive(Serialize, Deserialize, Clone, Copy, Default)]
 pub struct PcSaftBinaryRecord {
@@ -257,16 +223,6 @@ impl<T: CountType> FromSegmentsBinary<T> for PcSaftBinaryRecord {
         Ok(Self { k_ij: k_ij / n })
     }
 }
-
-// impl std::fmt::Display for PcSaftBinaryRecord {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         let mut tokens = vec![];
-//         if !self.k_ij.is_zero() {
-//             tokens.push(format!("k_ij={}", self.k_ij));
-//         }
-//         write!(f, "PcSaftBinaryRecord({})", tokens.join(", "))
-//     }
-// }
 
 /// Parameter set required for the PC-SAFT equation of state and Helmholtz energy functional.
 pub struct PcSaftParameters {
