@@ -537,7 +537,7 @@ mod tests_pcsaft {
             ([1, 3], binary_record("0", "1", 3.5, 3333.)),
         ];
         let assoc = AssociationParameters::<PcSaftParameters>::new(&records, &binary, None)?;
-        println!("{}", assoc.parameters_ab.mapv(Option::unwrap));
+        println!("{}", assoc.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab));
         let epsilon_k_ab = arr2(&[
             [2500., 1234., 3140., 2250.],
             [1234., 1500., 1000., 3333.],
@@ -560,8 +560,10 @@ mod tests_pcsaft {
             AssociationParameters::<PcSaftParameters>::new(&[comp1.clone(), comp2], &[], None)?;
         let assoc2 =
             AssociationParameters::<PcSaftParameters>::new(&[comp1, comp3], &binary, None)?;
-        println!("{}", assoc1.parameters_ab.mapv(Option::unwrap));
-        println!("{}", assoc2.parameters_ab.mapv(Option::unwrap));
+        println!("{}", assoc1.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab));
+        println!("{}", assoc2.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab));
+        println!("{}", assoc1.parameters_ab.mapv(|p| p.unwrap().kappa_ab));
+        println!("{}", assoc2.parameters_ab.mapv(|p| p.unwrap().kappa_ab));
         assert_eq!(
             assoc1.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab),
             assoc2.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab)
