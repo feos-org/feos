@@ -1,4 +1,4 @@
-use feos_core::parameter::{Identifier, Parameter, PureRecord}; // whereis ParameterError?
+use feos_core::parameter::{Identifier, Parameter, PureRecord};
 use feos_core::{FeosError, FeosResult};
 use ndarray::{Array1, Array2};
 use num_traits::Zero;

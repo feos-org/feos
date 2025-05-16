@@ -16,6 +16,7 @@
 ### Finding Problems:
 [ ] use feos_core::{EoSresult}
 
+
 ### Still to implement:
 [ ] mod alpha;
 [ ] use alpha::{Alpha, AlphaFunction, PengRobinson1976, RedlichKwong1972};
@@ -29,9 +30,6 @@
 [x] use ndarray::{Array1, Array2};
 [x] use num_traits::Zero;
 [x] use serde::{Deserialize, Serialize};
-
-### Finding Problems:
-[ ] use feos_core::parameter::ParameterError
 
 
 ## src/cubic/alpha
