@@ -44,6 +44,7 @@ uvtheory = []
 pets = []
 saftvrqmie = []
 saftvrmie = []
+cubic = []
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 all_models = [
     "dft",
@@ -54,6 +55,7 @@ all_models = [
     "pets",
     "saftvrqmie",
     "saftvrmie",
+    "cubic"
 ]
 
 [[bench]]

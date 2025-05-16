@@ -3,7 +3,7 @@ use crate::hard_sphere::HardSphere;
 use feos_core::parameter::Parameter;
 use feos_core::{Components, Molarweight, Residual};
 use ndarray::Array1;
-use quantity::{MolarWeight, GRAM, MOL};
+use quantity::{GRAM, MOL, MolarWeight};
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
