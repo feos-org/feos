@@ -7,6 +7,9 @@ use std::f64::consts::SQRT_2;
 use std::fmt;
 use std::sync::Arc;
 
+mod parameters;
+use parameters::CubicParameters;
+
 /// To learn some testing setup.
 pub fn dumb_sum(a: f64, b: f64) -> f64 {
     // This is a dumb function that just adds two numbers together.
