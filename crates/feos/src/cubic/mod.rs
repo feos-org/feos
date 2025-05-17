@@ -1,5 +1,7 @@
+use feos_core::FeosResult;
 use feos_core::parameter::Parameter;
-use feos_core::{Components, FeosResult, Residual, StateHD}; // Whereis EosResult?
+use feos_core::{Components, Residual};
+use feos_core::{Molarweight, StateHD};
 use ndarray::{Array1, ScalarOperand, Zip};
 use num_dual::DualNum;
 use quantity::{GRAM, MOL, MolarWeight};
@@ -130,190 +132,153 @@ impl Cubic {
             critical_parameters: p,
         })
     }
+
+    /// Peng Robinson equation of state.
+    ///
+    /// Universal constants:
+    /// - $\delta_1 = 1 + \sqrt{2}$
+    /// - $\delta_2 = 1 - \sqrt{2}$
+    ///
+    /// If no options are supplied, the following is used:
+    /// - alpha function: Peng Robinson (1976)
+    /// - mixing rules: quadratic mixing
+    pub fn peng_robinson(
+        parameters: Arc<CubicParameters>,
+        alpha: Option<Alpha>,
+        mixing: Option<MixingRule>,
+    ) -> FeosResult<Self> {
+        let delta: Delta = (1.0 + SQRT_2, 1.0 - SQRT_2).into();
+        let p = CriticalParameters::new(&parameters, &delta);
+        let options = CubicOptions {
+            alpha: alpha.unwrap_or(PengRobinson1976.into()),
+            mixing: mixing.unwrap_or(Quadratic.into()),
+            delta,
+        };
+        options.alpha.validate(&parameters)?;
+        Ok(Self {
+            parameters,
+            options,
+            critical_parameters: p,
+        })
+    }
+
+    /// Create equation of state of (Suave) Redlich Kwong.
+    ///
+    /// Universal constants:
+    /// - $\delta_1 = 1$
+    /// - $\delta_2 = 0$
+    ///
+    /// If no options are supplied, the following is used:
+    /// - alpha function: Soave (1972)
+    /// - mixing rules: quadratic mixing
+    pub fn redlich_kwong(
+        parameters: Arc<CubicParameters>,
+        alpha: Option<Alpha>,
+        mixing: Option<MixingRule>,
+    ) -> FeosResult<Self> {
+        let delta: Delta = (1.0, 0.0).into();
+        let p = CriticalParameters::new(&parameters, &delta);
+        let options = CubicOptions {
+            alpha: alpha.unwrap_or(RedlichKwong1972.into()),
+            mixing: mixing.unwrap_or(Quadratic.into()),
+            delta,
+        };
+        options.alpha.validate(&parameters)?;
+        Ok(Self {
+            parameters,
+            options,
+            critical_parameters: p,
+        })
+    }
 }
 
-//     /// Peng Robinson equation of state.
-//     ///
-//     /// Universal constants:
-//     /// - $\delta_1 = 1 + \sqrt{2}$
-//     /// - $\delta_2 = 1 - \sqrt{2}$
-//     ///
-//     /// If no options are supplied, the following is used:
-//     /// - alpha function: Peng Robinson (1976)
-//     /// - mixing rules: quadratic mixing
-//     pub fn peng_robinson(
-//         parameters: Arc<CubicParameters>,
-//         alpha: Option<Alpha>,
-//         mixing: Option<MixingRule>,
-//     ) -> EosResult<Self> {
-//         let delta: Delta = (1.0 + SQRT_2, 1.0 - SQRT_2).into();
-//         let p = CriticalParameters::new(&parameters, &delta);
-//         let options = CubicOptions {
-//             alpha: alpha.unwrap_or(PengRobinson1976.into()),
-//             mixing: mixing.unwrap_or(Quadratic.into()),
-//             delta,
-//         };
-//         options.alpha.validate(&parameters)?;
-//         Ok(Self {
-//             parameters,
-//             options,
-//             critical_parameters: p,
-//         })
-//     }
+impl fmt::Display for Cubic {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "cubic")
+    }
+}
 
-//     /// Create equation of state of (Suave) Redlich Kwong.
-//     ///
-//     /// Universal constants:
-//     /// - $\delta_1 = 1$
-//     /// - $\delta_2 = 0$
-//     ///
-//     /// If no options are supplied, the following is used:
-//     /// - alpha function: Soave (1972)
-//     /// - mixing rules: quadratic mixing
-//     pub fn redlich_kwong(
-//         parameters: Arc<CubicParameters>,
-//         alpha: Option<Alpha>,
-//         mixing: Option<MixingRule>,
-//     ) -> EosResult<Self> {
-//         let delta: Delta = (1.0, 0.0).into();
-//         let p = CriticalParameters::new(&parameters, &delta);
-//         let options = CubicOptions {
-//             alpha: alpha.unwrap_or(RedlichKwong1972.into()),
-//             mixing: mixing.unwrap_or(Quadratic.into()),
-//             delta,
-//         };
-//         options.alpha.validate(&parameters)?;
-//         Ok(Self {
-//             parameters,
-//             options,
-//             critical_parameters: p,
-//         })
-//     }
-// }
+impl Components for Cubic {
+    fn components(&self) -> usize {
+        self.parameters.tc.len()
+    }
 
-// impl fmt::Display for Cubic {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         write!(f, "cubic")
-//     }
-// }
+    fn subset(&self, component_list: &[usize]) -> Self {
+        Self {
+            parameters: Arc::new(self.parameters.subset(component_list)),
+            options: self.options.subset(component_list),
+            critical_parameters: self.critical_parameters.subset(component_list),
+        }
+    }
+}
 
-// impl Components for Cubic {
-//     fn components(&self) -> usize {
-//         self.parameters.tc.len()
-//     }
+impl Residual for Cubic {
+    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
+        let b = (moles * &self.critical_parameters.bc).sum() / moles.sum();
+        0.9 / b
+    }
 
-//     fn subset(&self, component_list: &[usize]) -> Self {
-//         Self {
-//             parameters: Arc::new(self.parameters.subset(component_list)),
-//             options: self.options.subset(component_list),
-//             critical_parameters: self.critical_parameters.subset(component_list),
-//         }
-//     }
-// }
+    fn residual_helmholtz_energy<D: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        state: &StateHD<D>,
+    ) -> D {
+        let MixtureParameters { a, b, c: _ } = self.options.mixing.apply(self, state);
+        let n = state.moles.sum();
+        let v = state.volume;
+        let bn = b * n;
+        n * ((v / (v - bn)).ln()
+            - a / (b * self.options.delta.d12 * state.temperature)
+                * ((v + bn * self.options.delta.d1) / (v + bn * self.options.delta.d2)).ln())
+    }
 
-// impl Residual for Cubic {
-//     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-//         let b = (moles * &self.critical_parameters.bc).sum() / moles.sum();
-//         0.9 / b
-//     }
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        state: &StateHD<D>,
+    ) -> Vec<(String, D)> {
+        vec![("cubic".to_string(), self.residual_helmholtz_energy(state))]
+    }
+}
 
-//     fn residual_helmholtz_energy<D: DualNum<f64> + Copy + ScalarOperand>(
-//         &self,
-//         state: &StateHD<D>,
-//     ) -> D {
-//         let MixtureParameters { a, b, c: _ } = self.options.mixing.apply(self, state);
-//         let n = state.moles.sum();
-//         let v = state.volume;
-//         let bn = b * n;
-//         n * ((v / (v - bn)).ln()
-//             - a / (b * self.options.delta.d12 * state.temperature)
-//                 * ((v + bn * self.options.delta.d1) / (v + bn * self.options.delta.d2)).ln())
-//     }
-
-//     fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
-//         &self,
-//         state: &StateHD<D>,
-//     ) -> Vec<(String, D)> {
-//         vec![("cubic".to_string(), self.residual_helmholtz_energy(state))]
-//     }
-
-//     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-//         &self.parameters.molarweight * (GRAM / MOL)
-//     }
-// }
-
-// #[cfg(test)]
-// mod tests {
-//     use feos_core::{
-//         cubic::{PengRobinson, PengRobinsonParameters, PengRobinsonRecord},
-//         parameter::{Identifier, PureRecord},
-//     };
-//     use ndarray::arr1;
-//     use parameters::CubicRecord;
-
-//     use super::*;
-
-//     #[test]
-//     fn a_res() {
-//         let propane = PureRecord::new(
-//             Identifier::new(None, Some("propane"), None, None, None, None),
-//             44.0962,
-//             CubicRecord::new(369.96, 4250000.0, 0.153),
-//         );
-//         let parameters = Arc::new(CubicParameters::new_pure(propane).unwrap());
-//         let eos = Cubic::peng_robinson(parameters, None, None).unwrap();
-//         dbg!(&eos.critical_parameters);
-//         let state = StateHD::new(300.0, 1e5, arr1(&[5.0]));
-
-//         let propane = PureRecord::new(
-//             Identifier::new(None, Some("propane"), None, None, None, None),
-//             44.0962,
-//             PengRobinsonRecord::new(369.96, 4250000.0, 0.153),
-//         );
-//         let parameters = PengRobinsonParameters::new_pure(propane).unwrap();
-//         let pr = Arc::new(PengRobinson::new(Arc::new(parameters)));
-
-//         assert_eq!(
-//             pr.residual_helmholtz_energy(&state),
-//             eos.residual_helmholtz_energy(&state)
-//         )
-//     }
-// }
-
-// BAD STUF BELOW
-/// To learn some testing setup.
-pub fn dumb_sum(a: f64, b: f64) -> f64 {
-    // This is a dumb function that just adds two numbers together.
-    println!("we are in the dumb function");
-    println!("Adding {} and {}", a, b);
-    let c = a + b;
-    println!("Result: {}", c);
-    c
+impl Molarweight for Cubic {
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+        &self.parameters.molarweight * (GRAM / MOL)
+    }
 }
 
 #[cfg(test)]
-#[cfg(feature = "cubic")]
 mod tests {
-    use crate::cubic; // Import from parent module
-    use approx::assert_relative_eq;
+    use feos_core::{
+        cubic::{PengRobinson, PengRobinsonParameters, PengRobinsonRecord},
+        parameter::{Identifier, PureRecord},
+    };
+    use ndarray::arr1;
+    use parameters::CubicRecord;
+
+    use super::*;
 
     #[test]
-    fn test_dumb_equation() {
-        let a = 1.0;
-        let b = 2.0;
+    fn a_res() {
+        let propane = PureRecord::new(
+            Identifier::new(None, Some("propane"), None, None, None, None),
+            44.0962,
+            CubicRecord::new(369.96, 4250000.0, 0.153),
+        );
+        let parameters = Arc::new(CubicParameters::new_pure(propane).unwrap());
+        let eos = Cubic::peng_robinson(parameters, None, None).unwrap();
+        dbg!(&eos.critical_parameters);
+        let state = StateHD::new(300.0, 1e5, arr1(&[5.0]));
 
-        let result = cubic::dumb_sum(a, b);
-        assert_relative_eq!(result, a + b, epsilon = 1e-10);
-    }
+        let propane = PureRecord::new(
+            Identifier::new(None, Some("propane"), None, None, None, None),
+            44.0962,
+            PengRobinsonRecord::new(369.96, 4250000.0, 0.153),
+        );
+        let parameters = PengRobinsonParameters::new_pure(propane).unwrap();
+        let pr = Arc::new(PengRobinson::new(Arc::new(parameters)));
 
-    #[test]
-    fn fail_dumb_equation() {
-        let a = 1.0;
-        let b = 2.0;
-
-        let deviation = 1.0;
-
-        let result = cubic::dumb_sum(a, b);
-        assert_ne!(result, a + b + deviation);
+        assert_eq!(
+            pr.residual_helmholtz_energy(&state),
+            eos.residual_helmholtz_energy(&state)
+        )
     }
 }

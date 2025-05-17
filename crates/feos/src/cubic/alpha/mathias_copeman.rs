@@ -36,7 +36,7 @@ impl AlphaFunction for MathiasCopeman {
         if self.0.len() == parameters.tc.len() {
             Ok(())
         } else {
-            Err(ParameterError::IncompatibleParameters(
+            Err(FeosError::IncompatibleParameters(
                 format!(
                     "Mathias Copeman alpha function was initialized for {} components, but the equation of state contains {}.",
                     self.0.len(), parameters.tc.len()

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use feos_core::{FeosError, FeosResult};
+use feos_core::FeosResult;
 use ndarray::{Array1, Zip};
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};

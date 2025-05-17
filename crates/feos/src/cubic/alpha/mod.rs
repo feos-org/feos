@@ -1,13 +1,11 @@
-use std::sync::Arc;
-
+use super::parameters::CubicParameters;
 use enum_dispatch::enum_dispatch;
-use feos_core::{FeosError, FeosResult};
+use feos_core::FeosResult;
 use ndarray::{Array1, ScalarOperand};
 use num_dual::DualNum;
-
-use super::parameters::CubicParameters;
-
+use std::sync::Arc;
 mod soave;
+
 pub use soave::{
     PengRobinson1976, PengRobinson1978, PengRobinson2019, RedlichKwong1972, RedlichKwong2019, Soave,
 };
