@@ -22,7 +22,6 @@
 [ ] use alpha::{Alpha, AlphaFunction, PengRobinson1976, RedlichKwong1972};
 [ ] mod mixing_rules;
 [ ] use mixing_rules::{MixingRule, MixingRuleFunction, MixtureParameters, Quadratic};
-[ ] use parameters::CubicParameters;
 
 
 ## src/cubic/mod.rs
