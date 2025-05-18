@@ -1,9 +1,8 @@
+use super::{Cubic, alpha::AlphaFunction};
 use enum_dispatch::enum_dispatch;
 use feos_core::StateHD;
 use ndarray::ScalarOperand;
 use num_dual::DualNum;
-
-use super::{Cubic, alpha::AlphaFunction};
 
 /// Parameters of cubics
 pub struct MixtureParameters<D> {

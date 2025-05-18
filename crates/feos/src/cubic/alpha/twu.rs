@@ -1,14 +1,11 @@
-use std::sync::Arc;
-
+use super::AlphaFunction;
+use crate::cubic::parameters::CubicParameters;
 use feos_core::{FeosError, FeosResult};
 use itertools::izip;
 use ndarray::{Array1, Zip};
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
-
-use crate::cubic::parameters::CubicParameters;
-
-use super::AlphaFunction;
+use std::sync::Arc;
 
 /// Generalized version of the Twu alpha function (1995).
 ///

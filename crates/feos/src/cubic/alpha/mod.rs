@@ -1,18 +1,18 @@
 use super::parameters::CubicParameters;
 use enum_dispatch::enum_dispatch;
 use feos_core::FeosResult;
+pub use mathias_copeman::MathiasCopeman;
 use ndarray::{Array1, ScalarOperand};
 use num_dual::DualNum;
-use std::sync::Arc;
-mod soave;
-
 pub use soave::{
     PengRobinson1976, PengRobinson1978, PengRobinson2019, RedlichKwong1972, RedlichKwong2019, Soave,
 };
-mod mathias_copeman;
-pub use mathias_copeman::MathiasCopeman;
-mod twu;
+use std::sync::Arc;
 pub use twu::{GeneralizedTwu, Twu};
+
+mod mathias_copeman;
+mod soave;
+mod twu;
 
 #[enum_dispatch]
 pub trait AlphaFunction {

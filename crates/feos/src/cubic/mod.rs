@@ -1,20 +1,20 @@
+use alpha::{Alpha, AlphaFunction, PengRobinson1976, RedlichKwong1972};
 use feos_core::FeosResult;
 use feos_core::parameter::Parameter;
 use feos_core::{Components, Residual};
 use feos_core::{Molarweight, StateHD};
+use mixing_rules::{MixingRule, MixingRuleFunction, MixtureParameters, Quadratic};
 use ndarray::{Array1, ScalarOperand, Zip};
 use num_dual::DualNum;
+use parameters::CubicParameters;
 use quantity::{GRAM, MOL, MolarWeight};
 use std::f64::consts::SQRT_2;
 use std::fmt;
 use std::sync::Arc;
 
-mod parameters;
-use parameters::CubicParameters;
 mod alpha;
-use alpha::{Alpha, AlphaFunction, PengRobinson1976, RedlichKwong1972};
 mod mixing_rules;
-use mixing_rules::{MixingRule, MixingRuleFunction, MixtureParameters, Quadratic};
+mod parameters;
 
 const KB_A3: f64 = 13806490.0;
 

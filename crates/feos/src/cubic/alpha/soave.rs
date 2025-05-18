@@ -1,16 +1,13 @@
-use std::sync::Arc;
-
+use super::AlphaFunction;
+use crate::cubic::parameters::CubicParameters;
 use feos_core::FeosResult;
 use ndarray::{Array1, Zip};
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
-use crate::cubic::parameters::CubicParameters;
-
-use super::AlphaFunction;
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
 /// Generic version of Soave's function using 3rd order polynomial.
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Soave {
     /// coefficients for m-polynomial
     mi: Array1<f64>,

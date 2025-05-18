@@ -1,13 +1,10 @@
-use std::sync::Arc;
-
+use super::AlphaFunction;
+use crate::cubic::parameters::CubicParameters;
 use feos_core::{FeosError, FeosResult};
 use ndarray::{Array1, Zip};
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
-
-use crate::cubic::parameters::CubicParameters;
-
-use super::AlphaFunction;
+use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MathiasCopeman(pub Vec<[f64; 3]>);
