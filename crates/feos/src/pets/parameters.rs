@@ -1,6 +1,6 @@
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::parameter::{Parameter, PureRecord};
 use feos_core::FeosResult;
+use feos_core::parameter::{BinaryRecord, Collate, Parameter, PureRecord};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
@@ -71,21 +71,9 @@ impl PetsRecord {
 /// Parameters that modify binary interactions.
 ///
 /// $\varepsilon_{k,ij} = (1 - k_{ij})\sqrt{\varepsilon_{k,i} \varepsilon_{k,j}}$
-#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Default, Debug)]
 pub struct PetsBinaryRecord {
     k_ij: f64,
-}
-
-impl From<f64> for PetsBinaryRecord {
-    fn from(k_ij: f64) -> Self {
-        Self { k_ij }
-    }
-}
-
-impl From<PetsBinaryRecord> for f64 {
-    fn from(binary_record: PetsBinaryRecord) -> Self {
-        binary_record.k_ij
-    }
 }
 
 impl std::fmt::Display for PetsBinaryRecord {
@@ -95,7 +83,7 @@ impl std::fmt::Display for PetsBinaryRecord {
 }
 
 /// Parameter set for the PeTS equation of state and Helmholtz energy functional.
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct PetsParameters {
     /// molar weight in gram per mole
     pub molarweight: Array1<f64>,
@@ -103,8 +91,8 @@ pub struct PetsParameters {
     pub sigma: Array1<f64>,
     /// Lennard-Jones energy parameter in Kelvin
     pub epsilon_k: Array1<f64>,
-    /// binary interaction parameter
-    pub k_ij: Option<Array2<f64>>,
+    // /// binary interaction parameter
+    // pub k_ij: Option<Array2<f64>>,
     /// diameter matrix
     pub sigma_ij: Array2<f64>,
     /// energy parameter matrix including k_ij
@@ -118,18 +106,19 @@ pub struct PetsParameters {
     /// thermal conductivity parameters for entropy scaling
     pub thermal_conductivity: Option<Array2<f64>>,
     /// records of all pure substances of the system
-    pub pure_records: Vec<PureRecord<PetsRecord>>,
+    pub pure_records: Vec<PureRecord<PetsRecord, ()>>,
     /// records of all binary interaction parameters
-    pub binary_records: Option<Array2<PetsBinaryRecord>>,
+    pub binary_records: Vec<BinaryRecord<usize, PetsBinaryRecord, ()>>,
 }
 
 impl Parameter for PetsParameters {
     type Pure = PetsRecord;
     type Binary = PetsBinaryRecord;
+    type Association = ();
 
     fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Option<Array2<PetsBinaryRecord>>,
+        pure_records: Vec<PureRecord<Self::Pure, ()>>,
+        binary_records: Vec<BinaryRecord<usize, PetsBinaryRecord, ()>>,
     ) -> FeosResult<Self> {
         let n = pure_records.len();
 
@@ -153,7 +142,6 @@ impl Parameter for PetsParameters {
             molarweight[i] = record.molarweight;
         }
 
-        let k_ij = binary_records.as_ref().map(|br| br.map(|br| br.k_ij));
         let mut sigma_ij = Array::zeros((n, n));
         let mut e_k_ij = Array::zeros((n, n));
         for i in 0..n {
@@ -162,10 +150,8 @@ impl Parameter for PetsParameters {
                 sigma_ij[[i, j]] = 0.5 * (sigma[i] + sigma[j]);
             }
         }
-        let mut epsilon_k_ij = e_k_ij.clone();
-        if let Some(k_ij) = k_ij.as_ref() {
-            epsilon_k_ij *= &(1.0 - k_ij);
-        }
+        let [k_ij] = binary_records.collate(n, |b| [b.unwrap_or_default().k_ij]);
+        let epsilon_k_ij = (1.0 - k_ij) * &e_k_ij;
 
         let viscosity_coefficients = if viscosity.iter().any(|v| v.is_none()) {
             None
@@ -202,7 +188,6 @@ impl Parameter for PetsParameters {
             molarweight,
             sigma,
             epsilon_k,
-            k_ij,
             sigma_ij,
             epsilon_k_ij,
             e_k_ij,
@@ -214,8 +199,13 @@ impl Parameter for PetsParameters {
         })
     }
 
-    fn records(&self) -> (&[PureRecord<PetsRecord>], Option<&Array2<PetsBinaryRecord>>) {
-        (&self.pure_records, self.binary_records.as_ref())
+    fn records(
+        &self,
+    ) -> (
+        &[PureRecord<PetsRecord, ()>],
+        &[BinaryRecord<usize, PetsBinaryRecord, ()>],
+    ) {
+        (&self.pure_records, &self.binary_records)
     }
 }
 
@@ -262,9 +252,6 @@ impl std::fmt::Display for PetsParameters {
         write!(f, "\n\tmolarweight={}", self.molarweight)?;
         write!(f, "\n\tsigma={}", self.sigma)?;
         write!(f, "\n\tepsilon_k={}", self.epsilon_k)?;
-        if let Some(k_ij) = self.k_ij.as_ref() {
-            write!(f, "\n\tk_ij=\n{}", k_ij)?;
-        }
         write!(f, "\n)")
     }
 }
@@ -272,9 +259,8 @@ impl std::fmt::Display for PetsParameters {
 #[cfg(test)]
 pub mod utils {
     use super::*;
-    use std::sync::Arc;
 
-    pub fn argon_parameters() -> Arc<PetsParameters> {
+    pub fn argon_parameters() -> PetsParameters {
         let argon_json = r#"
             {
                 "identifier": {
@@ -294,12 +280,12 @@ pub mod utils {
                 },
                 "molarweight": 39.948
             }"#;
-        let argon_record: PureRecord<PetsRecord> =
+        let argon_record: PureRecord<PetsRecord, ()> =
             serde_json::from_str(argon_json).expect("Unable to parse json.");
-        Arc::new(PetsParameters::new_pure(argon_record).unwrap())
+        PetsParameters::new_pure(argon_record).unwrap()
     }
 
-    pub fn krypton_parameters() -> Arc<PetsParameters> {
+    pub fn krypton_parameters() -> PetsParameters {
         let krypton_json = r#"
             {
                 "identifier": {
@@ -316,12 +302,12 @@ pub mod utils {
                 },
                 "molarweight": 83.798
             }"#;
-        let krypton_record: PureRecord<PetsRecord> =
+        let krypton_record: PureRecord<PetsRecord, ()> =
             serde_json::from_str(krypton_json).expect("Unable to parse json.");
-        Arc::new(PetsParameters::new_pure(krypton_record).unwrap())
+        PetsParameters::new_pure(krypton_record).unwrap()
     }
 
-    pub fn argon_krypton_parameters() -> Arc<PetsParameters> {
+    pub fn argon_krypton_parameters() -> PetsParameters {
         let binary_json = r#"[
             {
                 "identifier": {
@@ -360,8 +346,8 @@ pub mod utils {
                 "molarweight": 83.798
             }
         ]"#;
-        let binary_record: Vec<PureRecord<PetsRecord>> =
+        let binary_record: [PureRecord<PetsRecord, ()>; 2] =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
-        Arc::new(PetsParameters::new_binary(binary_record, None).unwrap())
+        PetsParameters::new_binary(binary_record, None, vec![]).unwrap()
     }
 }

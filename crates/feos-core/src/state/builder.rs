@@ -18,7 +18,7 @@ use std::sync::Arc;
 /// # use typenum::P3;
 /// # fn main() -> FeosResult<()> {
 /// // Create a state for given T,V,N
-/// let eos = Arc::new(PengRobinson::new(Arc::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0])?)));
+/// let eos = Arc::new(PengRobinson::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0])?));
 /// let state = StateBuilder::new(&eos)
 ///                 .temperature(300.0 * KELVIN)
 ///                 .volume(12.5 * METER.powi::<P3>())
@@ -27,7 +27,7 @@ use std::sync::Arc;
 /// assert_eq!(state.density, 0.2 * MOL / METER.powi::<P3>());
 ///
 /// // For a pure component, the composition does not need to be specified.
-/// let eos = Arc::new(PengRobinson::new(Arc::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0])?)));
+/// let eos = Arc::new(PengRobinson::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0])?));
 /// let state = StateBuilder::new(&eos)
 ///                 .temperature(300.0 * KELVIN)
 ///                 .volume(12.5 * METER.powi::<P3>())
@@ -37,12 +37,12 @@ use std::sync::Arc;
 ///
 /// // The state can be constructed without providing any extensive property.
 /// let eos = Arc::new(PengRobinson::new(
-///     Arc::new(PengRobinsonParameters::new_simple(
+///     PengRobinsonParameters::new_simple(
 ///         &[369.8, 305.4],
 ///         &[41.9 * 1e5, 48.2 * 1e5],
 ///         &[0.15, 0.10],
 ///         &[15.0, 30.0]
-///     )?)
+///     )?
 /// ));
 /// let state = StateBuilder::new(&eos)
 ///                 .temperature(300.0 * KELVIN)

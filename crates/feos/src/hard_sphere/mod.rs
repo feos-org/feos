@@ -3,9 +3,8 @@
 use feos_core::StateHD;
 use ndarray::*;
 use num_dual::DualNum;
+use std::borrow::Cow;
 use std::f64::consts::FRAC_PI_6;
-use std::fmt;
-use std::{borrow::Cow, sync::Arc};
 
 #[cfg(feature = "dft")]
 mod dft;
@@ -87,26 +86,17 @@ pub trait HardSphereProperties {
 /// $$\zeta_k=\frac{\pi}{6}\sum_\alpha C_{k,\alpha}\rho_\alpha d_\alpha^k,~~~~~~~~k=0\ldots 3.$$
 ///
 /// The geometry coefficients $C_{k,\alpha}$ and the segment diameters $d_\alpha$ are specified via the [HardSphereProperties] trait.
-pub struct HardSphere<P> {
-    parameters: Arc<P>,
-}
+pub struct HardSphere;
 
-impl<P> HardSphere<P> {
-    pub fn new(parameters: &Arc<P>) -> Self {
-        Self {
-            parameters: parameters.clone(),
-        }
-    }
-}
-
-impl<P: HardSphereProperties> HardSphere<P> {
+impl HardSphere {
     /// Returns the Helmholtz energy, packing fractions, and temperature dependent diameters without redundant calculations.
     #[inline]
-    pub fn helmholtz_energy_and_properties<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_and_properties<D: DualNum<f64> + Copy, P: HardSphereProperties>(
         &self,
+        parameters: &P,
         state: &StateHD<D>,
     ) -> (D, [D; 4], Array1<D>) {
-        let p = &self.parameters;
+        let p = parameters;
         let diameter = p.hs_diameter(state.temperature);
 
         let component_index = p.component_index();
@@ -131,13 +121,11 @@ impl<P: HardSphereProperties> HardSphere<P> {
     }
 
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
-        self.helmholtz_energy_and_properties(state).0
-    }
-}
-
-impl<P> fmt::Display for HardSphere<P> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Hard Sphere")
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy, P: HardSphereProperties>(
+        &self,
+        parameters: &P,
+        state: &StateHD<D>,
+    ) -> D {
+        self.helmholtz_energy_and_properties(parameters, state).0
     }
 }

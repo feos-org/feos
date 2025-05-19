@@ -24,9 +24,9 @@ impl PyEquationOfState {
     ///     states.
     #[staticmethod]
     pub fn peng_robinson(parameters: PyParameters) -> PyResult<Self> {
-        let residual = Arc::new(ResidualModel::PengRobinson(PengRobinson::new(Arc::new(
+        let residual = Arc::new(ResidualModel::PengRobinson(PengRobinson::new(
             parameters.try_convert()?,
-        ))));
+        )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }

@@ -1,6 +1,6 @@
-use feos_core::parameter::{NoBinaryModelRecord, Parameter, PureRecord};
+use feos_core::parameter::{BinaryRecord, NoBinaryModelRecord, Parameter, PureRecord};
 use feos_core::{Components, FeosResult, IdealGas};
-use ndarray::{Array1, Array2};
+use ndarray::Array1;
 use num_dual::DualNum;
 use quantity::{JOULE, KELVIN, KILO, MOL, MolarEntropy, Temperature};
 use serde::{Deserialize, Serialize};
@@ -131,21 +131,27 @@ impl fmt::Display for DipprRecord {
 
 /// Ideal gas equations of state based on DIPPR equations for
 /// ideal gas heat capacities.
-pub struct Dippr(Vec<PureRecord<DipprRecord>>);
+pub struct Dippr(Vec<PureRecord<DipprRecord, ()>>);
 
 impl Parameter for Dippr {
     type Pure = DipprRecord;
     type Binary = NoBinaryModelRecord;
+    type Association = ();
 
     fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure>>,
-        _binary_records: Option<Array2<Self::Binary>>,
+        pure_records: Vec<PureRecord<Self::Pure, ()>>,
+        _binary_records: Vec<BinaryRecord<usize, Self::Binary, ()>>,
     ) -> FeosResult<Self> {
         Ok(Self(pure_records))
     }
 
-    fn records(&self) -> (&[PureRecord<Self::Pure>], Option<&Array2<Self::Binary>>) {
-        (&self.0, None)
+    fn records(
+        &self,
+    ) -> (
+        &[PureRecord<Self::Pure, ()>],
+        &[BinaryRecord<usize, Self::Binary, ()>],
+    ) {
+        (&self.0, &[])
     }
 }
 
@@ -176,7 +182,7 @@ impl Components for Dippr {
         component_list
             .iter()
             .for_each(|&i| records.push(self.0[i].clone()));
-        Self::from_records(records, None).unwrap()
+        Self::from_records(records, vec![]).unwrap()
     }
 }
 

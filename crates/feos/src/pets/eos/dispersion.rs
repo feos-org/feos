@@ -4,7 +4,6 @@ use feos_core::StateHD;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 use std::fmt;
-use std::sync::Arc;
 
 pub const A: [f64; 7] = [
     0.690603404,
@@ -26,15 +25,17 @@ pub const B: [f64; 7] = [
 ];
 
 #[derive(Debug, Clone)]
-pub(super) struct Dispersion {
-    pub parameters: Arc<PetsParameters>,
-}
+pub(super) struct Dispersion;
 
 impl Dispersion {
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        parameters: &PetsParameters,
+        state: &StateHD<D>,
+    ) -> D {
         // auxiliary variables
-        let n = self.parameters.sigma.len();
-        let p = &self.parameters;
+        let n = parameters.sigma.len();
+        let p = &parameters;
         let rho = &state.partial_density;
 
         // temperature dependent segment radius
@@ -101,25 +102,19 @@ mod tests {
 
     #[test]
     fn mix() {
-        let c1 = Dispersion {
-            parameters: argon_parameters(),
-        };
-        let c2 = Dispersion {
-            parameters: krypton_parameters(),
-        };
-        let c12 = Dispersion {
-            parameters: argon_krypton_parameters(),
-        };
+        let argon = argon_parameters();
+        let krypton = krypton_parameters();
+        let mix = argon_krypton_parameters();
         let t = 250.0;
         let v = 2.5e28;
         let n = 1.0;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a1 = c1.helmholtz_energy(&s);
-        let a2 = c2.helmholtz_energy(&s);
+        let a1 = Dispersion.helmholtz_energy(&argon, &s);
+        let a2 = Dispersion.helmholtz_energy(&krypton, &s);
         let s1m = StateHD::new(t, v, arr1(&[n, 0.0]));
-        let a1m = c12.helmholtz_energy(&s1m);
+        let a1m = Dispersion.helmholtz_energy(&mix, &s1m);
         let s2m = StateHD::new(t, v, arr1(&[0.0, n]));
-        let a2m = c12.helmholtz_energy(&s2m);
+        let a2m = Dispersion.helmholtz_energy(&mix, &s2m);
         assert_relative_eq!(a1, a1m, epsilon = 1e-14);
         assert_relative_eq!(a2, a2m, epsilon = 1e-14);
     }
