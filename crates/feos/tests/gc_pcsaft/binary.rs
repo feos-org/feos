@@ -28,7 +28,7 @@ fn test_binary() -> FeosResult<()> {
         IdentifierOption::Name,
     )
     .unwrap();
-    let eos = Arc::new(GcPcSaft::new(Arc::new(parameters)));
+    let eos = Arc::new(GcPcSaft::new(parameters));
     #[cfg(feature = "dft")]
     let func = Arc::new(GcPcSaftFunctional::new(Arc::new(parameters_func)));
     let moles = arr1(&[0.5, 0.5]) * MOL;
@@ -68,8 +68,8 @@ fn test_polar_term() -> FeosResult<()> {
         None,
         IdentifierOption::Smiles,
     )?;
-    let eos1 = Arc::new(GcPcSaft::new(Arc::new(parameters1)));
-    let eos2 = Arc::new(GcPcSaft::new(Arc::new(parameters2)));
+    let eos1 = Arc::new(GcPcSaft::new(parameters1));
+    let eos2 = Arc::new(GcPcSaft::new(parameters2));
     let moles = arr1(&[0.5, 0.5]) * MOL;
     let p1 = State::new_nvt(&eos1, 300.0 * KELVIN, METER.powi::<P3>(), &moles)?
         .pressure(Contributions::Total);

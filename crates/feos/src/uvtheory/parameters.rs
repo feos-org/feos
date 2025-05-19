@@ -1,5 +1,5 @@
 use feos_core::FeosResult;
-use feos_core::parameter::Identifier;
+use feos_core::parameter::{BinaryRecord, Collate, Identifier};
 use feos_core::parameter::{Parameter, PureRecord};
 use ndarray::Array2;
 use ndarray::concatenate;
@@ -94,16 +94,17 @@ pub struct UVTheoryParameters {
     pub eps_k_ij: Array2<f64>,
     pub cd_bh_pure: Vec<Array1<f64>>,
     pub cd_bh_binary: Array2<Array1<f64>>,
-    pub pure_records: Vec<PureRecord<UVTheoryRecord>>,
-    pub binary_records: Vec<([usize; 2], f64)>,
+    pub pure_records: Vec<PureRecord<UVTheoryRecord, ()>>,
+    pub binary_records: Vec<BinaryRecord<usize, f64, ()>>,
 }
 
 impl Parameter for UVTheoryParameters {
     type Pure = UVTheoryRecord;
     type Binary = f64;
+    type Association = ();
 
     fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure>>,
+        pure_records: Vec<PureRecord<Self::Pure, Self::Association>>,
         binary_records: Vec<BinaryRecord<usize, Self::Binary, Self::Association>>,
     ) -> FeosResult<Self> {
         let n = pure_records.len();
@@ -130,11 +131,7 @@ impl Parameter for UVTheoryParameters {
         let mut att_ij = Array2::zeros((n, n));
         let mut sigma_ij = Array2::zeros((n, n));
         let mut eps_k_ij = Array2::zeros((n, n));
-        let mut k_ij = Array2::zeros((n, n));
-        binary_records.iter().for_each(|&([i, j], br)| {
-            k_ij[[i, j]] = br;
-            k_ij[[j, i]] = br;
-        });
+        let [k_ij] = binary_records.collate(n, |r| [r.unwrap_or_default()]);
 
         for i in 0..n {
             rep_ij[[i, i]] = rep[i];
@@ -176,7 +173,12 @@ impl Parameter for UVTheoryParameters {
         })
     }
 
-    fn records(&self) -> (&[PureRecord<UVTheoryRecord>], &[([usize; 2], f64)]) {
+    fn records(
+        &self,
+    ) -> (
+        &[PureRecord<UVTheoryRecord, ()>],
+        &[BinaryRecord<usize, f64, ()>],
+    ) {
         (&self.pure_records, &self.binary_records)
     }
 }
@@ -251,8 +253,7 @@ pub mod utils {
         let identifier2 = Identifier::new(Some("1"), None, None, None, None, None);
         let model_record2 = UVTheoryRecord::new(rep[1], att[1], sigma[1], epsilon[1]);
         let pr2 = PureRecord::new(identifier2, 1.0, model_record2);
-        let pure_records = vec![pr1, pr2];
-        UVTheoryParameters::new_binary(pure_records, None).unwrap()
+        UVTheoryParameters::new_binary([pr1, pr2], None, vec![]).unwrap()
     }
 
     pub fn methane_parameters(rep: f64, att: f64) -> UVTheoryParameters {

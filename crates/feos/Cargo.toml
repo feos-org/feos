@@ -35,7 +35,15 @@ criterion = { workspace = true }
 serde_json = { workspace = true }
 
 [features]
-default = ["pcsaft"]
+default = [
+    "pcsaft",
+    # "epcsaft",
+    # "gc_pcsaft",
+    # "uvtheory",
+    # "pets",
+    # "saftvrqmie",
+    # "saftvrmie",
+]
 dft = ["feos-dft", "petgraph"]
 association = []
 pcsaft = ["association"]

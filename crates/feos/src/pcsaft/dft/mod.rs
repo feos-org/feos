@@ -11,7 +11,7 @@ use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape}
 use ndarray::{Array1, Array2, ScalarOperand};
 use num_dual::DualNum;
 use num_traits::One;
-use quantity::{MolarWeight, GRAM, MOL};
+use quantity::{GRAM, MOL, MolarWeight};
 use std::f64::consts::FRAC_PI_6;
 use std::sync::Arc;
 
@@ -118,8 +118,6 @@ impl HelmholtzEnergyFunctional for PcSaftFunctional {
             // Association
             if !self.parameters.association.is_empty() {
                 let assoc = Association::new(
-                    &self.parameters,
-                    &self.parameters.association,
                     self.options.max_iter_cross_assoc,
                     self.options.tol_cross_assoc,
                 );
@@ -170,5 +168,5 @@ pub enum PcSaftFunctionalContribution {
     Fmt(FMTContribution<PcSaftParameters>),
     Chain(ChainFunctional),
     Attractive(AttractiveFunctional),
-    Association(Association<PcSaftParameters>),
+    Association(Association),
 }

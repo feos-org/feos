@@ -1,9 +1,11 @@
 use super::{AssociationRecord, BinaryAssociationRecord, CountType, Identifier, IdentifierOption};
 use crate::FeosResult;
 use crate::errors::FeosError;
+use ndarray::Array2;
 use num_traits::Zero;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use std::array;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::BufReader;
@@ -11,8 +13,8 @@ use std::ops::Deref;
 use std::path::Path;
 
 /// A collection of parameters with an arbitrary identifier.
-#[derive(Serialize, Deserialize, Clone)]
-pub struct Record<I, M, A> {
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ModelRecord<I, M, A> {
     pub identifier: I,
     #[serde(skip_serializing_if = "f64::is_zero")]
     #[serde(default)]
@@ -25,12 +27,12 @@ pub struct Record<I, M, A> {
 }
 
 /// A collection of parameters of a pure substance.
-pub type PureRecord<M, A> = Record<Identifier, M, A>;
+pub type PureRecord<M, A> = ModelRecord<Identifier, M, A>;
 
 /// Parameters describing an individual segment of a molecule.
-pub type SegmentRecord<M, A> = Record<String, M, A>;
+pub type SegmentRecord<M, A> = ModelRecord<String, M, A>;
 
-impl<I, M, A> Record<I, M, A> {
+impl<I, M, A> ModelRecord<I, M, A> {
     /// Create a new `PureRecord`.
     pub fn new(identifier: I, molarweight: f64, model_record: M) -> Self {
         Self {
@@ -58,8 +60,7 @@ impl<I, M, A> Record<I, M, A> {
 
     /// Update the `PureRecord` from segment counts.
     ///
-    /// The [FromSegments] trait needs to be implemented for both the model record
-    /// and the ideal gas record.
+    /// The [FromSegments] trait needs to be implemented for the model record.
     pub fn from_segments<S, T>(identifier: I, segments: S) -> FeosResult<Self>
     where
         T: CountType,
@@ -158,11 +159,19 @@ impl<M, A> SegmentRecord<M, A> {
     }
 }
 
-impl<I: Serialize, M: Serialize, A: Serialize> std::fmt::Display for Record<I, M, A> {
+impl<M: Serialize, A: Serialize> std::fmt::Display for PureRecord<M, A> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = serde_json::to_string(self).unwrap().replace("\"", "");
         let s = s.replace(",", ", ").replace(":", ": ");
         write!(f, "PureRecord({})", &s[1..s.len() - 1])
+    }
+}
+
+impl<M: Serialize, A: Serialize> std::fmt::Display for SegmentRecord<M, A> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = serde_json::to_string(self).unwrap().replace("\"", "");
+        let s = s.replace(",", ", ").replace(":", ": ");
+        write!(f, "SegmentRecord({})", &s[1..s.len() - 1])
     }
 }
 
@@ -183,7 +192,7 @@ pub trait FromSegmentsBinary<T>: Clone {
 }
 
 /// A collection of parameters that model interactions between two substances.
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BinaryRecord<I, B, A> {
     /// Identifier of the first component
     pub id1: I,
@@ -235,6 +244,29 @@ impl<I: Serialize + Clone, B: Serialize + Clone, A: Serialize + Clone> std::fmt:
         let s = serde_json::to_string(self).unwrap().replace("\"", "");
         let s = s.replace(",", ", ").replace(":", ": ");
         write!(f, "BinaryRecord({})", &s[1..s.len() - 1])
+    }
+}
+
+pub trait Collate<B> {
+    fn collate<F, T: Default + Copy, const N: usize>(&self, n: usize, f: F) -> [Array2<T>; N]
+    where
+        F: Fn(&Option<B>) -> [T; N];
+}
+
+impl<B, A> Collate<B> for Vec<BinaryRecord<usize, B, A>> {
+    fn collate<F, T: Default + Copy, const N: usize>(&self, n: usize, f: F) -> [Array2<T>; N]
+    where
+        F: Fn(&Option<B>) -> [T; N],
+    {
+        array::from_fn(|i| {
+            let mut b_mat = Array2::default((n, n));
+            for br in self {
+                let b = f(&br.model_record)[i];
+                b_mat[[br.id1, br.id2]] = b;
+                b_mat[[br.id2, br.id1]] = b;
+            }
+            b_mat
+        })
     }
 }
 

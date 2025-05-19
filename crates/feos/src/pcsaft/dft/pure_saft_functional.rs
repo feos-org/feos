@@ -1,5 +1,5 @@
-use super::polar::{pair_integral_ij, triplet_integral_ijk};
 use super::PcSaftParameters;
+use super::polar::{pair_integral_ij, triplet_integral_ijk};
 use crate::association::Association;
 use crate::hard_sphere::{FMTVersion, HardSphereProperties};
 use crate::pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
@@ -18,13 +18,13 @@ const N0_CUTOFF: f64 = 1e-9;
 
 pub struct PureFMTAssocFunctional {
     parameters: Arc<PcSaftParameters>,
-    association: Association<PcSaftParameters>,
+    association: Association,
     version: FMTVersion,
 }
 
 impl PureFMTAssocFunctional {
     pub fn new(parameters: Arc<PcSaftParameters>, version: FMTVersion) -> Self {
-        let association = Association::new(&parameters, &parameters.association, 50, 1e-10);
+        let association = Association::new(50, 1e-10);
         Self {
             parameters,
             association,

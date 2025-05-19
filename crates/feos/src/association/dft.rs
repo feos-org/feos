@@ -7,12 +7,20 @@ use std::ops::MulAssign;
 
 pub const N0_CUTOFF: f64 = 1e-9;
 
-impl<P: AssociationStrength + Sync + Send> FunctionalContribution for Association<P>
+pub struct AssociationFunctional<P>(P, bool);
+
+impl<P> fmt::Display for AssociationFunctional<P> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Association")
+    }
+}
+
+impl<P: AssociationStrength + Sync + Send> FunctionalContribution for AssociationFunctional<P>
 where
     P::Record: Sync + Send,
 {
     fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
-        let p = &self.parameters;
+        let p = &self.0;
         let r = p.hs_diameter(temperature) * 0.5;
         let [_, _, _, c3] = p.geometry_coefficients(temperature);
         WeightFunctionInfo::new(p.component_index().into_owned(), false)
@@ -43,10 +51,10 @@ where
         temperature: N,
         weighted_densities: ArrayView2<N>,
     ) -> FeosResult<Array1<N>> {
-        let p = &self.parameters;
+        let p = &self.0;
 
         // number of segments
-        let n = self.association_parameters.component_index.len();
+        let n = self.0.association_parameters().component_index.len();
 
         // number of dimensions
         let dim = (weighted_densities.shape()[0] - 1) / n - 1;
@@ -105,7 +113,7 @@ where
     }
 }
 
-impl<P: AssociationStrength> Association<P> {
+impl<P: AssociationStrength> AssociationFunctional<P> {
     pub fn _helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand, S: Data<Elem = N>>(
         &self,
         temperature: N,
@@ -114,15 +122,11 @@ impl<P: AssociationStrength> Association<P> {
         n3i: &Array1<N>,
         xi: &Array1<N>,
     ) -> FeosResult<Array1<N>> {
-        let a = &self.association_parameters;
+        let a = &self.0.association_parameters();
 
-        let d = self.parameters.hs_diameter(temperature);
+        let d = self.0.hs_diameter(temperature);
 
-        match (
-            a.sites_a.len() * a.sites_b.len(),
-            a.sites_c.len(),
-            self.force_cross_association,
-        ) {
+        match (a.sites_a.len() * a.sites_b.len(), a.sites_c.len(), self.1) {
             (0, 0, _) => Ok(Array::zeros(n3i.len())),
             (1, 0, false) => {
                 Ok(self.helmholtz_energy_density_ab_analytic(temperature, rho0, &d, n2, n3i, xi))

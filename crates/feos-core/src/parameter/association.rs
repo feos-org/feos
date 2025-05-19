@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 type SiteId = ArrayString<8>;
 
 /// Pure component association parameters.
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct AssociationRecord<A> {
     #[serde(skip_serializing_if = "SiteId::is_empty")]
     #[serde(default)]
@@ -43,7 +43,7 @@ impl<A> AssociationRecord<A> {
 }
 
 /// Binary association parameters.
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct BinaryAssociationRecord<A> {
     // Identifier of the association site on the first molecule.
     #[serde(skip_serializing_if = "SiteId::is_empty")]

@@ -2,7 +2,7 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use feos::core::{
     Contributions, DensityInitialization, PhaseEquilibrium, Residual, State, TemperatureOrPressure,
-    parameter::{IdentifierOption, Parameter},
+    parameter::IdentifierOption,
 };
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use ndarray::{Array, Array1};
@@ -157,7 +157,7 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
+    let eos = Arc::new(PcSaft::new(parameters));
     bench_states(c, "state_creation_pcsaft_methane", &eos);
 
     let parameters = PcSaftParameters::from_json(
@@ -167,7 +167,7 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
+    let eos = Arc::new(PcSaft::new(parameters));
     bench_states(c, "state_creation_pcsaft_methane_ethane", &eos);
 
     let parameters = PcSaftParameters::from_json(
@@ -177,7 +177,7 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
+    let eos = Arc::new(PcSaft::new(parameters));
     bench_states(c, "state_creation_pcsaft_methane_ethane_propane", &eos);
 }
 
