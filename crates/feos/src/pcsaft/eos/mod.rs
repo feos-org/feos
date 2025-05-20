@@ -4,7 +4,7 @@ use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::parameter::Parameter;
 use feos_core::{
     Components, EntropyScaling, FeosError, FeosResult, Molarweight, ReferenceSystem, Residual, State,
-    StateHD
+    StateHD,
 };
 use ndarray::Array1;
 use num_dual::DualNum;
