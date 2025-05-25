@@ -3,9 +3,8 @@ use crate::hard_sphere::HardSphere;
 use feos_core::parameter::Parameter;
 use feos_core::{Components, Molarweight, Residual};
 use ndarray::Array1;
-use quantity::{MolarWeight, GRAM, MOL};
+use quantity::{GRAM, MOL, MolarWeight};
 use std::f64::consts::FRAC_PI_6;
-use std::sync::Arc;
 
 pub(crate) mod dispersion;
 use dispersion::Dispersion;
@@ -28,29 +27,21 @@ impl Default for PetsOptions {
 
 /// PeTS equation of state.
 pub struct Pets {
-    parameters: Arc<PetsParameters>,
+    parameters: PetsParameters,
     options: PetsOptions,
-    hard_sphere: HardSphere<PetsParameters>,
-    dispersion: Dispersion,
 }
 
 impl Pets {
     /// PeTS equation of state with default options.
-    pub fn new(parameters: Arc<PetsParameters>) -> Self {
+    pub fn new(parameters: PetsParameters) -> Self {
         Self::with_options(parameters, PetsOptions::default())
     }
 
     /// PeTS equation of state with provided options.
-    pub fn with_options(parameters: Arc<PetsParameters>, options: PetsOptions) -> Self {
-        let hard_sphere = HardSphere::new(&parameters);
-        let dispersion = Dispersion {
-            parameters: parameters.clone(),
-        };
+    pub fn with_options(parameters: PetsParameters, options: PetsOptions) -> Self {
         Self {
             parameters,
             options,
-            hard_sphere,
-            dispersion,
         }
     }
 }
@@ -61,10 +52,7 @@ impl Components for Pets {
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
-        Self::with_options(
-            Arc::new(self.parameters.subset(component_list)),
-            self.options,
-        )
+        Self::with_options(self.parameters.subset(component_list), self.options)
     }
 }
 
@@ -80,12 +68,12 @@ impl Residual for Pets {
     ) -> Vec<(String, D)> {
         vec![
             (
-                "Hard Sphere".to_string(),
-                self.hard_sphere.helmholtz_energy(state),
+                HardSphere.to_string(),
+                HardSphere.helmholtz_energy(&self.parameters, state),
             ),
             (
-                "Dispersion".to_string(),
-                self.dispersion.helmholtz_energy(state),
+                Dispersion.to_string(),
+                Dispersion.helmholtz_energy(&self.parameters, state),
             ),
         ]
     }
@@ -319,6 +307,7 @@ mod tests {
     use feos_core::{Contributions, DensityInitialization, PhaseEquilibrium, State, StateHD};
     use ndarray::arr1;
     use quantity::{BAR, KELVIN, METER, PASCAL, RGAS};
+    use std::sync::Arc;
     use typenum::P3;
 
     #[test]
@@ -339,19 +328,19 @@ mod tests {
 
     #[test]
     fn hard_sphere_mix() {
-        let c1 = HardSphere::new(&argon_parameters());
-        let c2 = HardSphere::new(&krypton_parameters());
-        let c12 = HardSphere::new(&argon_krypton_parameters());
+        let argon = argon_parameters();
+        let krypton = krypton_parameters();
+        let mix = argon_krypton_parameters();
         let t = 250.0;
         let v = 2.5e28;
         let n = 1.0;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a1 = c1.helmholtz_energy(&s);
-        let a2 = c2.helmholtz_energy(&s);
+        let a1 = HardSphere.helmholtz_energy(&argon, &s);
+        let a2 = HardSphere.helmholtz_energy(&krypton, &s);
         let s1m = StateHD::new(t, v, arr1(&[n, 0.0]));
-        let a1m = c12.helmholtz_energy(&s1m);
+        let a1m = HardSphere.helmholtz_energy(&mix, &s1m);
         let s2m = StateHD::new(t, v, arr1(&[0.0, n]));
-        let a2m = c12.helmholtz_energy(&s2m);
+        let a2m = HardSphere.helmholtz_energy(&mix, &s2m);
         assert_relative_eq!(a1, a1m, epsilon = 1e-14);
         assert_relative_eq!(a2, a2m, epsilon = 1e-14);
     }

@@ -3,28 +3,395 @@
 use crate::errors::*;
 use indexmap::{IndexMap, IndexSet};
 use itertools::Itertools;
+use ndarray::{Array1, Array2};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt;
 use std::fs::File;
 use std::io::BufReader;
 use std::ops::Deref;
 use std::path::Path;
+use std::{array, fmt};
 
 mod association;
 mod chemical_record;
 mod identifier;
 mod model_record;
-// mod segment;
 
 pub use association::{AssociationRecord, BinaryAssociationRecord};
 pub use chemical_record::{ChemicalRecord, CountType, SegmentCount};
 pub use identifier::{Identifier, IdentifierOption};
 pub use model_record::{
-    BinaryRecord, BinarySegmentRecord, FromSegments, FromSegmentsBinary, PureRecord, SegmentRecord,
+    BinaryRecord, BinarySegmentRecord, Collate, FromSegments, FromSegmentsBinary, ModelRecord,
+    PureRecord, SegmentRecord,
 };
-// pub use segment::{BinarySegmentRecord, SegmentRecord};
+
+pub struct ParameterStruct<P, B, A> {
+    pub pure_records: Vec<PureRecord<P, A>>,
+    pub binary_records: Vec<BinaryRecord<usize, B, A>>,
+}
+
+impl<P: Clone, B: Clone, A: Clone> ParameterStruct<P, B, A> {
+    pub fn new(
+        pure_records: Vec<PureRecord<P, A>>,
+        binary_records: Vec<BinaryRecord<usize, B, A>>,
+    ) -> Self {
+        Self {
+            pure_records,
+            binary_records,
+        }
+    }
+
+    /// Creates parameters for a pure component from a pure record.
+    pub fn new_pure(pure_record: PureRecord<P, A>) -> Self {
+        Self::new(vec![pure_record], vec![])
+    }
+
+    /// Creates parameters for a binary system from pure records and an optional
+    /// binary interaction parameter.
+    pub fn new_binary(
+        pure_records: [PureRecord<P, A>; 2],
+        binary_record: Option<B>,
+        binary_association_records: Vec<BinaryAssociationRecord<A>>,
+    ) -> Self {
+        let binary_record = vec![BinaryRecord::new(
+            0,
+            1,
+            binary_record,
+            binary_association_records,
+        )];
+        Self::new(pure_records.to_vec(), binary_record)
+    }
+
+    /// Creates parameters from records for pure substances and possibly binary parameters.
+    pub fn from_records(
+        pure_records: Vec<PureRecord<P, A>>,
+        binary_records: Vec<BinaryRecord<Identifier, B, A>>,
+        identifier_option: IdentifierOption,
+    ) -> Self {
+        let binary_records =
+            Self::binary_matrix_from_records(&pure_records, &binary_records, identifier_option);
+        Self::new(pure_records, binary_records)
+    }
+
+    /// Creates parameters from model records with default values for the molar weight,
+    /// identifiers, association sites, and binary interaction parameters.
+    pub fn from_model_records(model_records: Vec<P>) -> Self {
+        let pure_records = model_records
+            .into_iter()
+            .map(|r| PureRecord::new(Default::default(), Default::default(), r))
+            .collect();
+        Self::new(pure_records, vec![])
+    }
+
+    /// Helper function to build matrix from list of records in correct order.
+    fn binary_matrix_from_records(
+        pure_records: &[PureRecord<P, A>],
+        binary_records: &[BinaryRecord<Identifier, B, A>],
+        identifier_option: IdentifierOption,
+    ) -> Vec<BinaryRecord<usize, B, A>> {
+        // Build Hashmap (id, id) -> BinaryRecord
+        let binary_map: HashMap<_, _> = {
+            binary_records
+                .iter()
+                .filter_map(|br| {
+                    let id1 = br.id1.as_str(identifier_option);
+                    let id2 = br.id2.as_str(identifier_option);
+                    id1.and_then(|id1| {
+                        id2.map(|id2| ((id1, id2), (&br.model_record, &br.association_sites)))
+                    })
+                })
+                .collect()
+        };
+
+        // look up pure records in Hashmap
+        pure_records
+            .iter()
+            .enumerate()
+            .array_combinations()
+            .filter_map(|[(i1, p1), (i2, p2)]| {
+                let id1 = p1.identifier.as_str(identifier_option).unwrap_or_else(|| {
+                    panic!(
+                        "No {} for pure record {} ({}).",
+                        identifier_option, i1, p1.identifier
+                    )
+                });
+                let id2 = p2.identifier.as_str(identifier_option).unwrap_or_else(|| {
+                    panic!(
+                        "No {} for pure record {} ({}).",
+                        identifier_option, i2, p2.identifier
+                    )
+                });
+
+                let records = if let Some(&(b, a)) = binary_map.get(&(id1, id2)) {
+                    Some((b, a.clone()))
+                } else if let Some(&(b, a)) = binary_map.get(&(id2, id1)) {
+                    let a = a
+                        .iter()
+                        .cloned()
+                        .map(|a| BinaryAssociationRecord::with_id(a.id2, a.id1, a.parameters))
+                        .collect();
+                    Some((b, a))
+                } else {
+                    None
+                };
+                records.map(|(b, a)| BinaryRecord::new(i1, i2, b.clone(), a))
+            })
+            .collect()
+    }
+
+    /// Creates parameters from substance information stored in json files.
+    pub fn from_json<F, S>(
+        substances: Vec<S>,
+        file_pure: F,
+        file_binary: Option<F>,
+        identifier_option: IdentifierOption,
+    ) -> FeosResult<Self>
+    where
+        F: AsRef<Path>,
+        S: Deref<Target = str>,
+        P: DeserializeOwned,
+        B: DeserializeOwned,
+        A: DeserializeOwned,
+    {
+        Self::from_multiple_json(&[(substances, file_pure)], file_binary, identifier_option)
+    }
+
+    /// Creates parameters from substance information stored in multiple json files.
+    pub fn from_multiple_json<F, S>(
+        input: &[(Vec<S>, F)],
+        file_binary: Option<F>,
+        identifier_option: IdentifierOption,
+    ) -> FeosResult<Self>
+    where
+        F: AsRef<Path>,
+        S: Deref<Target = str>,
+        P: DeserializeOwned,
+        B: DeserializeOwned,
+        A: DeserializeOwned,
+    {
+        // total number of substances queried
+        let nsubstances = input
+            .iter()
+            .fold(0, |acc, (substances, _)| acc + substances.len());
+
+        // queried substances with removed duplicates
+        let queried: IndexSet<String> = input
+            .iter()
+            .flat_map(|(substances, _)| substances)
+            .map(|substance| substance.to_string())
+            .collect();
+
+        // check if there are duplicates
+        if queried.len() != nsubstances {
+            return Err(FeosError::IncompatibleParameters(
+                "A substance was defined more than once.".to_string(),
+            ));
+        }
+
+        let mut records: Vec<PureRecord<P, A>> = Vec::with_capacity(nsubstances);
+
+        // collect parameters from files into single map
+        for (substances, file) in input {
+            records.extend(PureRecord::<P, A>::from_json(
+                substances,
+                file,
+                identifier_option,
+            )?);
+        }
+
+        let binary_records = if let Some(path) = file_binary {
+            let file = File::open(path)?;
+            let reader = BufReader::new(file);
+            serde_json::from_reader(reader)?
+        } else {
+            Vec::new()
+        };
+        Ok(Self::from_records(
+            records,
+            binary_records,
+            identifier_option,
+        ))
+    }
+
+    /// Creates parameters from the molecular structure and segment information.
+    ///
+    /// The [FromSegments] trait needs to be implemented for both the model record
+    /// and the ideal gas record.
+    pub fn from_segments<C: SegmentCount>(
+        chemical_records: Vec<C>,
+        segment_records: Vec<SegmentRecord<P, A>>,
+        binary_segment_records: Option<Vec<BinarySegmentRecord<B, A>>>,
+    ) -> FeosResult<Self>
+    where
+        P: FromSegments<C::Count>,
+        B: FromSegmentsBinary<C::Count> + Default,
+    {
+        // Calculate the pure records from the GC method.
+        let pure_records = chemical_records
+            .iter()
+            .map(|cr| {
+                cr.segment_map(&segment_records).and_then(|segments| {
+                    PureRecord::from_segments(cr.identifier().into_owned(), segments)
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        // Map: (id1, id2) -> model_record
+        // empty, if no binary segment records are provided
+        let binary_map: HashMap<_, _> = binary_segment_records
+            .into_iter()
+            .flat_map(|seg| seg.into_iter())
+            .filter_map(|br| br.model_record.map(|b| ((br.id1, br.id2), b)))
+            .collect();
+
+        // For every component:  map: id -> count
+        let segment_counts: Vec<_> = chemical_records
+            .iter()
+            .map(|cr| cr.segment_count())
+            .collect();
+
+        // full matrix of binary records from the gc method.
+        // If a specific segment-segment interaction is not in the binary map,
+        // the default value is used.
+        let binary_records = segment_counts
+            .iter()
+            .enumerate()
+            .array_combinations()
+            .map(|[(i, sc1), (j, sc2)]| {
+                let mut vec = Vec::new();
+                for (id1, &n1) in sc1.iter() {
+                    for (id2, &n2) in sc2.iter() {
+                        let binary = binary_map
+                            .get(&(id1.clone(), id2.clone()))
+                            .or_else(|| binary_map.get(&(id2.clone(), id1.clone())))
+                            .cloned()
+                            .unwrap_or_default();
+                        vec.push((binary, n1, n2));
+                    }
+                }
+                B::from_segments_binary(&vec).map(|br| BinaryRecord::new(i, j, Some(br), vec![]))
+            })
+            .collect::<Result<_, _>>()?;
+
+        Ok(Self::new(pure_records, binary_records))
+    }
+
+    /// Creates parameters from segment information stored in json files.
+    ///
+    /// The [FromSegments] trait needs to be implemented for both the model record
+    /// and the ideal gas record.
+    pub fn from_json_segments<F>(
+        substances: &[&str],
+        file_pure: F,
+        file_segments: F,
+        file_binary: Option<F>,
+        identifier_option: IdentifierOption,
+    ) -> FeosResult<Self>
+    where
+        F: AsRef<Path>,
+        P: FromSegments<usize> + DeserializeOwned,
+        B: FromSegmentsBinary<usize> + DeserializeOwned + Default,
+        A: DeserializeOwned,
+    {
+        let queried: IndexSet<_> = substances.iter().copied().collect();
+
+        let file = File::open(file_pure)?;
+        let reader = BufReader::new(file);
+        let chemical_records: Vec<ChemicalRecord> = serde_json::from_reader(reader)?;
+        let mut record_map: HashMap<_, _> = chemical_records
+            .into_iter()
+            .filter_map(|record| {
+                record
+                    .identifier
+                    .as_str(identifier_option)
+                    .map(|i| i.to_owned())
+                    .map(|i| (i, record))
+            })
+            .collect();
+
+        // Compare queried components and available components
+        let available: IndexSet<_> = record_map
+            .keys()
+            .map(|identifier| identifier as &str)
+            .collect();
+        if !queried.is_subset(&available) {
+            let missing: Vec<_> = queried.difference(&available).cloned().collect();
+            let msg = format!("{:?}", missing);
+            return Err(FeosError::ComponentsNotFound(msg));
+        };
+
+        // collect all pure records that were queried
+        let chemical_records: Vec<_> = queried
+            .into_iter()
+            .filter_map(|identifier| record_map.remove(identifier))
+            .collect();
+
+        // Read segment records
+        let segment_records: Vec<SegmentRecord<P, A>> = SegmentRecord::from_json(file_segments)?;
+
+        // Read binary records
+        let binary_records = file_binary
+            .map(|file_binary| {
+                let reader = BufReader::new(File::open(file_binary)?);
+                let binary_records: FeosResult<Vec<BinarySegmentRecord<B, A>>> =
+                    Ok(serde_json::from_reader(reader)?);
+                binary_records
+            })
+            .transpose()?;
+
+        Self::from_segments(chemical_records, segment_records, binary_records)
+    }
+
+    /// Return a parameter set containing the subset of components specified in `component_list`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if index in `component_list` is out of bounds or if
+    /// [Parameter::from_records] fails.
+    pub fn subset(&self, component_list: &[usize]) -> Self {
+        let pure_records = component_list
+            .iter()
+            .map(|&i| self.pure_records[i].clone())
+            .collect();
+        let mut binary_records = self.binary_records.to_vec();
+        binary_records
+            .retain(|r| component_list.contains(&r.id1) && component_list.contains(&r.id2));
+
+        Self::new(pure_records, binary_records)
+    }
+
+    pub fn molar_weight(&self) -> Array1<f64> {
+        self.pure_records.iter().map(|pr| pr.molarweight).collect()
+    }
+
+    pub fn collate<F, T: Default + Copy, const N: usize>(&self, f: F) -> [Array1<T>; N]
+    where
+        F: Fn(&P) -> [T; N],
+    {
+        array::from_fn(|i| {
+            self.pure_records
+                .iter()
+                .map(|pr| f(&pr.model_record)[i])
+                .collect()
+        })
+    }
+
+    pub fn collate_binary<F, T: Default + Copy, const N: usize>(&self, f: F) -> [Array2<T>; N]
+    where
+        F: Fn(&Option<B>) -> [T; N],
+    {
+        array::from_fn(|i| {
+            let mut b_mat = Array2::default([self.pure_records.len(); 2]);
+            for br in &self.binary_records {
+                let b = f(&br.model_record)[i];
+                b_mat[[br.id1, br.id2]] = b;
+                b_mat[[br.id2, br.id1]] = b;
+            }
+            b_mat
+        })
+    }
+}
 
 /// Constructor methods for parameters.
 ///

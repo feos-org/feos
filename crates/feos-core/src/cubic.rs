@@ -4,18 +4,16 @@
 //! of state - with a single contribution to the Helmholtz energy - can be implemented.
 //! The implementation closely follows the form of the equations given in
 //! [this wikipedia article](https://en.wikipedia.org/wiki/Cubic_equations_of_state#Peng%E2%80%93Robinson_equation_of_state).
-use crate::FeosError;
 use crate::equation_of_state::{Components, Molarweight, Residual};
-use crate::errors::FeosResult;
-use crate::parameter::{BinaryRecord, Identifier, Parameter, PureRecord};
+use crate::parameter::{Identifier, ParameterStruct, PureRecord};
 use crate::state::StateHD;
+use crate::{FeosError, FeosResult};
 use ndarray::{Array1, Array2, ScalarOperand};
 use num_dual::DualNum;
 use quantity::{GRAM, MOL, MolarWeight};
 use serde::{Deserialize, Serialize};
 use std::f64::consts::SQRT_2;
 use std::fmt;
-use std::sync::Arc;
 
 const KB_A3: f64 = 13806490.0;
 
@@ -50,30 +48,33 @@ impl std::fmt::Display for PengRobinsonRecord {
 }
 
 /// Peng-Robinson parameters for one ore more substances.
-pub struct PengRobinsonParameters {
-    /// Critical temperature in Kelvin
-    tc: Array1<f64>,
-    a: Array1<f64>,
-    b: Array1<f64>,
-    /// Binary interaction parameter
-    k_ij: Array2<f64>,
-    kappa: Array1<f64>,
-    /// Molar weight in units of g/mol
-    molarweight: Array1<f64>,
-    /// List of pure component records
-    pure_records: Vec<PureRecord<PengRobinsonRecord, ()>>,
-    /// List of binary records
-    binary_records: Vec<BinaryRecord<usize, f64, ()>>,
-}
+pub type PengRobinsonParameters = ParameterStruct<PengRobinsonRecord, f64, ()>;
 
-impl std::fmt::Display for PengRobinsonParameters {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.pure_records
-            .iter()
-            .try_for_each(|pr| writeln!(f, "{}", pr))?;
-        writeln!(f, "\nk_ij:\n{}", self.k_ij)
-    }
-}
+// /// Peng-Robinson parameters for one ore more substances.
+// pub struct PengRobinsonParameters {
+//     /// Critical temperature in Kelvin
+//     tc: Array1<f64>,
+//     a: Array1<f64>,
+//     b: Array1<f64>,
+//     /// Binary interaction parameter
+//     k_ij: Array2<f64>,
+//     kappa: Array1<f64>,
+//     /// Molar weight in units of g/mol
+//     molarweight: Array1<f64>,
+//     /// List of pure component records
+//     pure_records: Vec<PureRecord<PengRobinsonRecord, ()>>,
+//     /// List of binary records
+//     binary_records: Vec<BinaryRecord<usize, f64, ()>>,
+// }
+
+// impl std::fmt::Display for PengRobinsonParameters {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         self.pure_records
+//             .iter()
+//             .try_for_each(|pr| writeln!(f, "{}", pr))?;
+//         writeln!(f, "\nk_ij:\n{}", self.k_ij)
+//     }
+// }
 
 impl PengRobinsonParameters {
     /// Build a simple parameter set without binary interaction parameters.
@@ -102,75 +103,99 @@ impl PengRobinsonParameters {
                 PureRecord::new(id, molarweight[i], record)
             })
             .collect();
-        PengRobinsonParameters::from_records(records, vec![])
+        Ok(PengRobinsonParameters::new(records, vec![]))
     }
 }
 
-impl Parameter for PengRobinsonParameters {
-    type Pure = PengRobinsonRecord;
-    type Binary = f64;
-    type Association = ();
+// impl Parameter for PengRobinsonParameters {
+//     type Pure = PengRobinsonRecord;
+//     type Binary = f64;
+//     type Association = ();
 
-    /// Creates parameters from pure component records.
-    fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure, ()>>,
-        binary_records: Vec<BinaryRecord<usize, Self::Binary, ()>>,
-    ) -> FeosResult<Self> {
-        let n = pure_records.len();
+//     /// Creates parameters from pure component records.
+//     fn from_records(
+//         pure_records: Vec<PureRecord<Self::Pure, ()>>,
+//         binary_records: Vec<BinaryRecord<usize, Self::Binary, ()>>,
+//     ) -> FeosResult<Self> {
+//         let n = pure_records.len();
 
-        let mut tc = Array1::zeros(n);
-        let mut a = Array1::zeros(n);
-        let mut b = Array1::zeros(n);
-        let mut molarweight = Array1::zeros(n);
-        let mut kappa = Array1::zeros(n);
+//         let mut tc = Array1::zeros(n);
+//         let mut a = Array1::zeros(n);
+//         let mut b = Array1::zeros(n);
+//         let mut molarweight = Array1::zeros(n);
+//         let mut kappa = Array1::zeros(n);
 
-        for (i, record) in pure_records.iter().enumerate() {
-            molarweight[i] = record.molarweight;
-            let r = &record.model_record;
-            tc[i] = r.tc;
-            a[i] = 0.45724 * r.tc.powi(2) * KB_A3 / r.pc;
-            b[i] = 0.07780 * r.tc * KB_A3 / r.pc;
-            kappa[i] = 0.37464 + (1.54226 - 0.26992 * r.acentric_factor) * r.acentric_factor;
-        }
+//         for (i, record) in pure_records.iter().enumerate() {
+//             molarweight[i] = record.molarweight;
+//             let r = &record.model_record;
+//             tc[i] = r.tc;
+//             a[i] = 0.45724 * r.tc.powi(2) * KB_A3 / r.pc;
+//             b[i] = 0.07780 * r.tc * KB_A3 / r.pc;
+//             kappa[i] = 0.37464 + (1.54226 - 0.26992 * r.acentric_factor) * r.acentric_factor;
+//         }
 
-        let mut k_ij = Array2::zeros([n; 2]);
-        for r in &binary_records {
-            k_ij[[r.id1, r.id2]] = r.model_record.unwrap_or_default();
-            k_ij[[r.id2, r.id1]] = r.model_record.unwrap_or_default();
-        }
+//         let mut k_ij = Array2::zeros([n; 2]);
+//         for r in &binary_records {
+//             k_ij[[r.id1, r.id2]] = r.model_record.unwrap_or_default();
+//             k_ij[[r.id2, r.id1]] = r.model_record.unwrap_or_default();
+//         }
 
-        Ok(Self {
+//         Ok(Self {
+//             tc,
+//             a,
+//             b,
+//             k_ij,
+//             kappa,
+//             molarweight,
+//             pure_records,
+//             binary_records,
+//         })
+//     }
+
+//     fn records(
+//         &self,
+//     ) -> (
+//         &[PureRecord<PengRobinsonRecord, ()>],
+//         &[BinaryRecord<usize, f64, ()>],
+//     ) {
+//         (&self.pure_records, &self.binary_records)
+//     }
+// }
+
+/// A simple version of the Peng-Robinson equation of state.
+pub struct PengRobinson {
+    /// Parameters
+    parameters: PengRobinsonParameters,
+    /// Critical temperature in Kelvin
+    tc: Array1<f64>,
+    a: Array1<f64>,
+    b: Array1<f64>,
+    /// Binary interaction parameter
+    k_ij: Array2<f64>,
+    kappa: Array1<f64>,
+    /// Molar weight in units of g/mol
+    molarweight: Array1<f64>,
+}
+
+impl PengRobinson {
+    /// Create a new equation of state from a set of parameters.
+    pub fn new(parameters: PengRobinsonParameters) -> Self {
+        let [tc, pc, ac] = parameters.collate(|r| [r.tc, r.pc, r.acentric_factor]);
+        let molarweight = parameters.molar_weight();
+        let [k_ij] = parameters.collate_binary(|br| [br.unwrap_or_default()]);
+
+        let a = 0.45724 * tc.powi(2) * KB_A3 / &pc;
+        let b = 0.07780 * &tc * KB_A3 / pc;
+        let kappa = 0.37464 + (1.54226 - 0.26992 * &ac) * ac;
+        Self {
+            parameters,
             tc,
             a,
             b,
             k_ij,
             kappa,
             molarweight,
-            pure_records,
-            binary_records,
-        })
-    }
-
-    fn records(
-        &self,
-    ) -> (
-        &[PureRecord<PengRobinsonRecord, ()>],
-        &[BinaryRecord<usize, f64, ()>],
-    ) {
-        (&self.pure_records, &self.binary_records)
-    }
-}
-
-/// A simple version of the Peng-Robinson equation of state.
-pub struct PengRobinson {
-    /// Parameters
-    parameters: Arc<PengRobinsonParameters>,
-}
-
-impl PengRobinson {
-    /// Create a new equation of state from a set of parameters.
-    pub fn new(parameters: Arc<PengRobinsonParameters>) -> Self {
-        Self { parameters }
+        }
     }
 }
 
@@ -182,35 +207,38 @@ impl fmt::Display for PengRobinson {
 
 impl Components for PengRobinson {
     fn components(&self) -> usize {
-        self.parameters.b.len()
+        self.parameters.pure_records.len()
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
-        Self::new(Arc::new(self.parameters.subset(component_list)))
+        Self::new(self.parameters.subset(component_list))
     }
 }
 
 impl Residual for PengRobinson {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        let b = (moles * &self.parameters.b).sum() / moles.sum();
+        let b = (moles * &self.b).sum() / moles.sum();
         0.9 / b
     }
 
     fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
-        let p = &self.parameters;
         let x = &state.molefracs;
-        let ak = (&p.tc.mapv(|tc| (D::one() - (state.temperature / tc).sqrt())) * &p.kappa + 1.0)
+        let ak = (&self
+            .tc
+            .mapv(|tc| (D::one() - (state.temperature / tc).sqrt()))
+            * &self.kappa
+            + 1.0)
             .mapv(|x| x.powi(2))
-            * &p.a;
+            * &self.a;
 
         // Mixing rules
         let mut ak_mix = D::zero();
         for i in 0..ak.len() {
             for j in 0..ak.len() {
-                ak_mix += (ak[i] * ak[j]).sqrt() * (x[i] * x[j] * (1.0 - p.k_ij[(i, j)]));
+                ak_mix += (ak[i] * ak[j]).sqrt() * (x[i] * x[j] * (1.0 - self.k_ij[(i, j)]));
             }
         }
-        let b = (x * &p.b).sum();
+        let b = (x * &self.b).sum();
 
         // Helmholtz energy
         let n = state.moles.sum();
@@ -233,13 +261,14 @@ impl Residual for PengRobinson {
 
 impl Molarweight for PengRobinson {
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        &self.parameters.molarweight * (GRAM / MOL)
+        &self.molarweight * (GRAM / MOL)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::parameter::PureRecord;
     use crate::state::{Contributions, State};
     use crate::{FeosResult, SolverOptions, Verbosity};
     use approx::*;
@@ -286,8 +315,8 @@ mod tests {
         let propane = mixture[0].clone();
         let tc = propane.model_record.tc;
         let pc = propane.model_record.pc;
-        let parameters = PengRobinsonParameters::new_pure(propane)?;
-        let pr = Arc::new(PengRobinson::new(Arc::new(parameters)));
+        let parameters = PengRobinsonParameters::new_pure(propane);
+        let pr = Arc::new(PengRobinson::new(parameters));
         let options = SolverOptions::new().verbosity(Verbosity::Iter);
         let cp = State::critical_point(&pr, None, None, options)?;
         println!("{} {}", cp.temperature, cp.pressure(Contributions::Total));

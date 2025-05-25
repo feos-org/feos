@@ -4,7 +4,7 @@
 //! on the dual number type used without the overhead of the `State`
 //! creation.
 use criterion::{Criterion, criterion_group, criterion_main};
-use feos::core::parameter::{IdentifierOption, Parameter};
+use feos::core::parameter::IdentifierOption;
 use feos::core::{Derivative, Residual, State, StateHD};
 use feos::pcsaft::{PcSaft, PcSaftBinaryRecord, PcSaftParameters};
 use ndarray::{Array, ScalarOperand, arr1};
@@ -19,7 +19,7 @@ use typenum::P3;
 /// - molefracs (or moles) for equimolar mixture.
 fn state_pcsaft(parameters: PcSaftParameters) -> State<PcSaft> {
     let n = parameters.pure_records.len();
-    let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
+    let eos = Arc::new(PcSaft::new(parameters));
     let moles = Array::from_elem(n, 1.0 / n as f64) * 10.0 * MOL;
     let cp = State::critical_point(&eos, Some(&moles), None, Default::default()).unwrap();
     let temperature = 0.8 * cp.temperature;
@@ -116,8 +116,8 @@ fn methane_co2_pcsaft(c: &mut Criterion) {
     let pr = parameters.pure_records;
     let pr = [pr[0].clone(), pr[1].clone()];
     let br = PcSaftBinaryRecord::new(k_ij);
-    let parameters = PcSaftParameters::new_binary(pr, Some(br), vec![]).unwrap();
-    let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
+    let parameters = PcSaftParameters::new_binary(pr, Some(br), vec![]);
+    let eos = Arc::new(PcSaft::new(parameters));
 
     // 230 K, 50 bar, x0 = 0.15
     let temperature = 230.0 * KELVIN;

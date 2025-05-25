@@ -1,6 +1,6 @@
 #![allow(clippy::type_complexity)]
 use criterion::{Criterion, criterion_group, criterion_main};
-use feos::core::parameter::{IdentifierOption, Parameter};
+use feos::core::parameter::IdentifierOption;
 use feos::core::{Contributions, Residual, State};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use ndarray::{Array1, arr1};
@@ -43,7 +43,7 @@ fn properties_pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
+    let eos = Arc::new(PcSaft::new(parameters));
     let t = 300.0 * KELVIN;
     let density = 71.18 * KILO * MOL / METER.powi::<P3>();
     let v = 100.0 * MOL / density;
@@ -78,7 +78,7 @@ fn properties_pcsaft_polar(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
+    let eos = Arc::new(PcSaft::new(parameters));
     let t = 300.0 * KELVIN;
     let density = 71.18 * KILO * MOL / METER.powi::<P3>();
     let v = 100.0 * MOL / density;

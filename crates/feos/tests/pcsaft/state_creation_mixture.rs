@@ -3,20 +3,20 @@ use feos::ideal_gas::Joback;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::{IdentifierOption, Parameter};
 use feos_core::{Contributions, EquationOfState, FeosResult, StateBuilder};
-use ndarray::prelude::*;
 use ndarray::Zip;
+use ndarray::prelude::*;
 use quantity::*;
 use std::error::Error;
 use std::sync::Arc;
 use typenum::P3;
 
-fn propane_butane_parameters() -> FeosResult<(Arc<PcSaftParameters>, Arc<Joback>)> {
-    let saft = Arc::new(PcSaftParameters::from_json(
+fn propane_butane_parameters() -> FeosResult<(PcSaftParameters, Arc<Joback>)> {
+    let saft = PcSaftParameters::from_json(
         vec!["propane", "butane"],
         "tests/pcsaft/test_parameters.json",
         None,
         IdentifierOption::Name,
-    )?);
+    )?;
     let joback = Arc::new(Joback::from_json(
         vec!["propane", "butane"],
         "tests/pcsaft/test_parameters_joback.json",

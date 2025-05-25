@@ -1,6 +1,6 @@
 use crate::saftvrqmie::eos::FeynmanHibbsOrder;
 use core::cmp::max;
-use feos_core::parameter::{Parameter, PureRecord};
+use feos_core::parameter::{BinaryRecord, Collate, Parameter, PureRecord};
 use feos_core::{FeosError, FeosResult, ReferenceSystem};
 use ndarray::{Array, Array1, Array2};
 use num_traits::Zero;
@@ -92,7 +92,7 @@ impl SaftVRQMieRecord {
 }
 
 /// SAFT-VRQ Mie binary mixture parameters.
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Copy, Default)]
 pub struct SaftVRQMieBinaryRecord {
     /// correction to energy parameters
     pub k_ij: f64,
@@ -130,18 +130,19 @@ pub struct SaftVRQMieParameters {
     pub viscosity: Option<Array2<f64>>,
     pub diffusion: Option<Array2<f64>>,
     pub thermal_conductivity: Option<Array2<f64>>,
-    pub pure_records: Vec<PureRecord<SaftVRQMieRecord>>,
-    pub binary_records: Vec<([usize; 2], SaftVRQMieBinaryRecord)>,
+    pub pure_records: Vec<PureRecord<SaftVRQMieRecord, ()>>,
+    pub binary_records: Vec<BinaryRecord<usize, SaftVRQMieBinaryRecord, ()>>,
     pub fh_ij: Array2<FeynmanHibbsOrder>,
 }
 
 impl Parameter for SaftVRQMieParameters {
     type Pure = SaftVRQMieRecord;
     type Binary = SaftVRQMieBinaryRecord;
+    type Association = ();
 
     fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Vec<([usize; 2], SaftVRQMieBinaryRecord)>,
+        pure_records: Vec<PureRecord<Self::Pure, Self::Association>>,
+        binary_records: Vec<BinaryRecord<usize, Self::Binary, Self::Association>>,
     ) -> FeosResult<Self> {
         let n = pure_records.len();
 
@@ -181,13 +182,9 @@ impl Parameter for SaftVRQMieParameters {
 
         let mut fh_ij: Array2<FeynmanHibbsOrder> =
             Array2::from_shape_fn((n, n), |(_i, _j)| FeynmanHibbsOrder::FH0);
-        let mut k_ij = Array2::zeros((n, n));
-        let mut l_ij = Array2::zeros((n, n));
-        binary_records.iter().for_each(|([i, j], br)| {
-            k_ij[[*i, *j]] = br.k_ij;
-            k_ij[[*j, *i]] = br.k_ij;
-            l_ij[[*i, *j]] = br.l_ij;
-            l_ij[[*j, *i]] = br.l_ij;
+        let [k_ij, l_ij] = binary_records.collate(n, |b| {
+            let b = b.unwrap_or_default();
+            [b.k_ij, b.l_ij]
         });
         let mut epsilon_k_ij = Array::zeros((n, n));
         let mut sigma_ij = Array::zeros((n, n));
@@ -282,8 +279,8 @@ impl Parameter for SaftVRQMieParameters {
     fn records(
         &self,
     ) -> (
-        &[PureRecord<SaftVRQMieRecord>],
-        &[([usize; 2], SaftVRQMieBinaryRecord)],
+        &[PureRecord<SaftVRQMieRecord, ()>],
+        &[BinaryRecord<usize, SaftVRQMieBinaryRecord, ()>],
     ) {
         (&self.pure_records, &self.binary_records)
     }
@@ -444,7 +441,7 @@ pub mod utils {
                 },
                 "molarweight": 2.0157309551872
             }"#);
-        let hydrogen_record: PureRecord<SaftVRQMieRecord> =
+        let hydrogen_record: PureRecord<SaftVRQMieRecord, ()> =
             serde_json::from_str(hydrogen_json).expect("Unable to parse json.");
         Arc::new(SaftVRQMieParameters::new_pure(hydrogen_record).unwrap())
     }
@@ -470,7 +467,7 @@ pub mod utils {
                 },
                 "molarweight": 4.002601643881807
             }"#;
-        let helium_record: PureRecord<SaftVRQMieRecord> =
+        let helium_record: PureRecord<SaftVRQMieRecord, ()> =
             serde_json::from_str(helium_json).expect("Unable to parse json.");
         Arc::new(SaftVRQMieParameters::new_pure(helium_record).unwrap())
     }
@@ -497,7 +494,7 @@ pub mod utils {
                 },
                 "molarweight": 20.17969806457545
             }"#;
-        let neon_record: PureRecord<SaftVRQMieRecord> =
+        let neon_record: PureRecord<SaftVRQMieRecord, ()> =
             serde_json::from_str(neon_json).expect("Unable to parse json.");
         Arc::new(SaftVRQMieParameters::new_pure(neon_record).unwrap())
     }
@@ -548,7 +545,7 @@ pub mod utils {
                 "molarweight": 20.17969806457545
             }
         ]"#);
-        let binary_record: Vec<PureRecord<SaftVRQMieRecord>> =
+        let binary_record: [PureRecord<SaftVRQMieRecord, ()>; 2] =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
         Arc::new(
             SaftVRQMieParameters::new_binary(
@@ -557,6 +554,7 @@ pub mod utils {
                     k_ij: 0.105,
                     l_ij: 0.0,
                 }),
+                vec![],
             )
             .unwrap(),
         )
@@ -577,11 +575,12 @@ mod test {
         let order1 = helium_fh1();
         let order2 = hydrogen_fh("2");
         SaftVRQMieParameters::new_binary(
-            vec![
+            [
                 order1.pure_records[0].clone(),
                 order2.pure_records[0].clone(),
             ],
             None,
+            vec![],
         )
         .unwrap();
     }

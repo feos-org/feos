@@ -11,13 +11,13 @@ use std::error::Error;
 use std::sync::Arc;
 use typenum::P3;
 
-fn propane_parameters() -> FeosResult<(Arc<PcSaftParameters>, Arc<Joback>)> {
-    let saft = Arc::new(PcSaftParameters::from_json(
+fn propane_parameters() -> FeosResult<(PcSaftParameters, Arc<Joback>)> {
+    let saft = PcSaftParameters::from_json(
         vec!["propane"],
         "tests/pcsaft/test_parameters.json",
         None,
         IdentifierOption::Name,
-    )?);
+    )?;
     let joback = Arc::new(Joback::from_json(
         vec!["propane"],
         "tests/pcsaft/test_parameters_joback.json",
