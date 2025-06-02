@@ -247,38 +247,150 @@ impl Molarweight for Cubic {
 
 #[cfg(test)]
 mod tests {
+    // general import
+    use super::{
+        Cubic, PengRobinson1976,
+        alpha::Alpha,
+        mixing_rules::{MixingRule, Quadratic},
+        parameters::{CubicParameters, CubicRecord},
+    };
     use feos_core::{
+        Contributions::{IdealGas, Total},
+        StateBuilder, StateHD,
         cubic::{PengRobinson, PengRobinsonParameters, PengRobinsonRecord},
-        parameter::{Identifier, PureRecord},
+        parameter::{Identifier, Parameter, PureRecord},
     };
     use ndarray::arr1;
-    use parameters::CubicRecord;
+    use quantity::*;
+    use std::sync::Arc;
+    use typenum::P3;
 
     use super::*;
 
     #[test]
     fn a_res() {
-        let propane = PureRecord::new(
-            Identifier::new(None, Some("propane"), None, None, None, None),
-            44.0962,
-            CubicRecord::new(369.96, 4250000.0, 0.153),
-        );
-        let parameters = Arc::new(CubicParameters::new_pure(propane).unwrap());
-        let eos = Cubic::peng_robinson(parameters, None, None).unwrap();
-        dbg!(&eos.critical_parameters);
-        let state = StateHD::new(300.0, 1e5, arr1(&[5.0]));
+        println!("PengRobinson Propane Residual Helmholtz Free Energy Test");
 
-        let propane = PureRecord::new(
+        let pc = 4.21e6; // Pa
+        let tc = 369.83; // K
+        let mw = 44.1; // g/mol
+        let omega = 0.153; // dimensionless
+
+        // Create the newly implemented PR record
+        let propane_implemented = PureRecord::new(
             Identifier::new(None, Some("propane"), None, None, None, None),
-            44.0962,
-            PengRobinsonRecord::new(369.96, 4250000.0, 0.153),
+            mw,
+            CubicRecord::new(tc, pc, omega),
         );
-        let parameters = PengRobinsonParameters::new_pure(propane).unwrap();
-        let pr = Arc::new(PengRobinson::new(Arc::new(parameters)));
+
+        let parameters_implemented =
+            Arc::new(CubicParameters::new_pure(propane_implemented).unwrap());
+
+        let eos_implemented = Cubic::peng_robinson(
+            parameters_implemented,
+            Some(Alpha::PengRobinson1976(PengRobinson1976)),
+            Some(MixingRule::Quadratic(Quadratic)),
+        )
+        .unwrap();
+
+        dbg!(&eos_implemented.critical_parameters);
+
+        // Create the original PR record for comparison from feos-core.
+        let propane_compare = PureRecord::new(
+            Identifier::new(None, Some("propane"), None, None, None, None),
+            mw,
+            PengRobinsonRecord::new(tc, pc, omega),
+        );
+
+        let parameters_compare = PengRobinsonParameters::new_pure(propane_compare).unwrap();
+        let eos_compare = Arc::new(PengRobinson::new(Arc::new(parameters_compare)));
+
+        // Test state. Residual Helmholtz energy of both eos will be used to test.
+        let state = StateHD::new(300.0, 1.0e5, arr1(&[5.0]));
+
+        dbg!(&state);
 
         assert_eq!(
-            pr.residual_helmholtz_energy(&state),
-            eos.residual_helmholtz_energy(&state)
+            eos_implemented.residual_helmholtz_energy(&state),
+            eos_compare.residual_helmholtz_energy(&state)
         )
+    }
+
+    #[test]
+    fn pressure() {
+        let pc = 4.21e6; // Pa
+        let tc = 369.83; // K
+        let mw = 44.1; // g/mol
+        let omega = 0.153; // dimensionless
+
+        // Create the newly implemented PR record
+        let propane_implemented = PureRecord::new(
+            Identifier::new(None, Some("propane"), None, None, None, None),
+            mw,
+            CubicRecord::new(tc, pc, omega),
+        );
+
+        let parameters_implemented =
+            Arc::new(CubicParameters::new_pure(propane_implemented).unwrap());
+
+        let eos_implemented = Arc::new(
+            Cubic::peng_robinson(
+                parameters_implemented,
+                Some(Alpha::PengRobinson1976(PengRobinson1976)),
+                Some(MixingRule::Quadratic(Quadratic)),
+            )
+            .unwrap(),
+        );
+
+        // Create the original PR record for comparison from feos-core.
+        let propane_compare = PureRecord::new(
+            Identifier::new(None, Some("propane"), None, None, None, None),
+            mw,
+            PengRobinsonRecord::new(tc, pc, omega),
+        );
+
+        let parameters_compare = PengRobinsonParameters::new_pure(propane_compare).unwrap();
+        let eos_compare = Arc::new(PengRobinson::new(Arc::new(parameters_compare)));
+
+        // Build the test state
+        // Set volume and moles to define the state
+        let temp = 300.0 * KELVIN;
+        let vol = 8.7e-5 * METER.powi::<P3>();
+        let mol = arr1(&[1.0]) * MOL;
+
+        // Build the state with implemented pr eos
+        let state_implemented = StateBuilder::new(&eos_implemented)
+            .temperature(temp)
+            .volume(vol)
+            .moles(&mol)
+            .build()
+            .unwrap();
+
+        // Build the state with compare eos
+        let state_compare = StateBuilder::new(&eos_compare)
+            .temperature(temp)
+            .volume(vol)
+            .moles(&mol)
+            .build()
+            .unwrap();
+
+        // Pressure
+        println!(
+            "Implemented Total pressure {}",
+            state_compare.pressure(Total)
+        );
+
+        println!("Compare Total pressure {}", state_compare.pressure(Total));
+
+        // // other properties:
+        // // feos-core::state -> residual_properties.rs work fine to get from the state
+        // let a_r = state_implemented.residual_helmholtz_energy();
+        // // feos-core::state --> properties.rs complain that IdeaGas was not implemented correctly
+        // let a = state_implemented.helmholtz_energy();
+
+        assert_eq!(
+            state_implemented.pressure(Total),
+            state_compare.pressure(Total)
+        );
     }
 }
