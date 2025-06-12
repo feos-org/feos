@@ -35,7 +35,7 @@ criterion = { workspace = true }
 serde_json = { workspace = true }
 
 [features]
-default = ["all_models"]
+default = []
 dft = ["feos-dft", "petgraph"]
 association = []
 pcsaft = ["association"]
