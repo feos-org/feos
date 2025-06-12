@@ -1,12 +1,11 @@
-use super::{AssociationRecord, BinaryAssociationRecord, CountType, Identifier, IdentifierOption};
-use crate::FeosResult;
+use super::{AssociationRecord, BinaryAssociationRecord, Identifier, IdentifierOption};
 use crate::errors::FeosError;
-use ndarray::Array2;
+use crate::FeosResult;
 use num_traits::Zero;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use std::array;
 use std::collections::{HashMap, HashSet};
+use std::fmt;
 use std::fs::File;
 use std::io::BufReader;
 use std::ops::Deref;
@@ -24,6 +23,10 @@ pub struct ModelRecord<I, M, A> {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default = "Vec::new")]
     pub association_sites: Vec<AssociationRecord<A>>,
+    #[serde(skip)]
+    pub count: f64,
+    #[serde(skip)]
+    pub component_index: usize,
 }
 
 /// A collection of parameters of a pure substance.
@@ -33,17 +36,12 @@ pub type PureRecord<M, A> = ModelRecord<Identifier, M, A>;
 pub type SegmentRecord<M, A> = ModelRecord<String, M, A>;
 
 impl<I, M, A> ModelRecord<I, M, A> {
-    /// Create a new `PureRecord`.
+    /// Create a new `ModelRecord`.
     pub fn new(identifier: I, molarweight: f64, model_record: M) -> Self {
-        Self {
-            identifier,
-            molarweight,
-            model_record,
-            association_sites: Vec::new(),
-        }
+        Self::with_association(identifier, molarweight, model_record, vec![])
     }
 
-    /// Create a new `PureRecord` including association information.
+    /// Create a new `ModelRecord` including association information.
     pub fn with_association(
         identifier: I,
         molarweight: f64,
@@ -55,32 +53,33 @@ impl<I, M, A> ModelRecord<I, M, A> {
             molarweight,
             model_record,
             association_sites,
+            count: 0.0,
+            component_index: 0,
         }
     }
 
     /// Update the `PureRecord` from segment counts.
     ///
     /// The [FromSegments] trait needs to be implemented for the model record.
-    pub fn from_segments<S, T>(identifier: I, segments: S) -> FeosResult<Self>
+    pub fn from_segments<S>(identifier: I, segments: S) -> FeosResult<Self>
     where
-        T: CountType,
-        M: FromSegments<T>,
-        S: IntoIterator<Item = (SegmentRecord<M, A>, T)>,
+        M: FromSegments,
+        S: IntoIterator<Item = (SegmentRecord<M, A>, f64)>,
     {
         let mut molarweight = 0.0;
         let mut model_segments = Vec::new();
         let association_sites = segments
             .into_iter()
             .flat_map(|(s, n)| {
-                molarweight += n.apply_count(s.molarweight);
+                molarweight += s.molarweight * n;
                 model_segments.push((s.model_record, n));
                 s.association_sites.into_iter().map(move |record| {
                     AssociationRecord::with_id(
                         record.id,
                         record.parameters,
-                        n.apply_count(record.na),
-                        n.apply_count(record.nb),
-                        n.apply_count(record.nc),
+                        record.na * n,
+                        record.nb * n,
+                        record.nc * n,
                     )
                 })
             })
@@ -159,16 +158,16 @@ impl<M, A> SegmentRecord<M, A> {
     }
 }
 
-impl<M: Serialize, A: Serialize> std::fmt::Display for PureRecord<M, A> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<M: Serialize, A: Serialize> fmt::Display for PureRecord<M, A> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = serde_json::to_string(self).unwrap().replace("\"", "");
         let s = s.replace(",", ", ").replace(":", ": ");
         write!(f, "PureRecord({})", &s[1..s.len() - 1])
     }
 }
 
-impl<M: Serialize, A: Serialize> std::fmt::Display for SegmentRecord<M, A> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<M: Serialize, A: Serialize> fmt::Display for SegmentRecord<M, A> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = serde_json::to_string(self).unwrap().replace("\"", "");
         let s = s.replace(",", ", ").replace(":", ": ");
         write!(f, "SegmentRecord({})", &s[1..s.len() - 1])
@@ -177,18 +176,24 @@ impl<M: Serialize, A: Serialize> std::fmt::Display for SegmentRecord<M, A> {
 
 /// Trait for models that implement a homosegmented group contribution
 /// method
-pub trait FromSegments<T>: Clone {
+pub trait FromSegments: Clone {
     /// Constructs the record from a list of segment records with their
     /// number of occurences.
-    fn from_segments(segments: &[(Self, T)]) -> FeosResult<Self>;
+    fn from_segments(segments: &[(Self, f64)]) -> FeosResult<Self>;
 }
 
 /// Trait for models that implement a homosegmented group contribution
 /// method and have a combining rule for binary interaction parameters.
-pub trait FromSegmentsBinary<T>: Clone {
+pub trait FromSegmentsBinary: Clone {
     /// Constructs the binary record from a list of segment records with
     /// their number of occurences.
-    fn from_segments_binary(segments: &[(Self, T, T)]) -> FeosResult<Self>;
+    fn from_segments_binary(segments: &[(Self, f64, f64)]) -> FeosResult<Self>;
+}
+
+impl FromSegmentsBinary for () {
+    fn from_segments_binary(_: &[(Self, f64, f64)]) -> FeosResult<Self> {
+        Ok(())
+    }
 }
 
 /// A collection of parameters that model interactions between two substances.
@@ -212,7 +217,12 @@ pub type BinarySegmentRecord<M, A> = BinaryRecord<String, M, A>;
 
 impl<I, B, A> BinaryRecord<I, B, A> {
     /// Crates a new `BinaryRecord`.
-    pub fn new(
+    pub fn new(id1: I, id2: I, model_record: Option<B>) -> Self {
+        Self::with_association(id1, id2, model_record, vec![])
+    }
+
+    /// Crates a new `BinaryRecord` including association sites.
+    pub fn with_association(
         id1: I,
         id2: I,
         model_record: Option<B>,
@@ -237,36 +247,54 @@ impl<I, B, A> BinaryRecord<I, B, A> {
     }
 }
 
-impl<I: Serialize + Clone, B: Serialize + Clone, A: Serialize + Clone> std::fmt::Display
+impl<I: Serialize + Clone, B: Serialize + Clone, A: Serialize + Clone> fmt::Display
     for BinaryRecord<I, B, A>
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = serde_json::to_string(self).unwrap().replace("\"", "");
         let s = s.replace(",", ", ").replace(":", ": ");
         write!(f, "BinaryRecord({})", &s[1..s.len() - 1])
     }
 }
 
-pub trait Collate<B> {
-    fn collate<F, T: Default + Copy, const N: usize>(&self, n: usize, f: F) -> [Array2<T>; N]
-    where
-        F: Fn(&Option<B>) -> [T; N];
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct BondRecord<Bo> {
+    pub id1: usize,
+    pub id2: usize,
+    pub model_record: Bo,
+    #[serde(skip)]
+    pub count: f64,
 }
 
-impl<B, A> Collate<B> for Vec<BinaryRecord<usize, B, A>> {
-    fn collate<F, T: Default + Copy, const N: usize>(&self, n: usize, f: F) -> [Array2<T>; N]
+impl<Bo> BondRecord<Bo> {
+    /// Crates a new `BondRecord`.
+    pub fn new(id1: usize, id2: usize, model_record: Bo) -> Self {
+        Self::with_count(id1, id2, model_record, 0.0)
+    }
+
+    pub fn with_count(id1: usize, id2: usize, model_record: Bo, count: f64) -> Self {
+        Self {
+            id1,
+            id2,
+            model_record,
+            count,
+        }
+    }
+
+    /// Read a list of `BondRecord`s from a JSON file.
+    pub fn from_json<P: AsRef<Path>>(file: P) -> FeosResult<Vec<Self>>
     where
-        F: Fn(&Option<B>) -> [T; N],
+        Bo: DeserializeOwned,
     {
-        array::from_fn(|i| {
-            let mut b_mat = Array2::default((n, n));
-            for br in self {
-                let b = f(&br.model_record)[i];
-                b_mat[[br.id1, br.id2]] = b;
-                b_mat[[br.id2, br.id1]] = b;
-            }
-            b_mat
-        })
+        Ok(serde_json::from_reader(BufReader::new(File::open(file)?))?)
+    }
+}
+
+impl<Bo: Serialize + Clone> fmt::Display for BondRecord<Bo> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = serde_json::to_string(self).unwrap().replace("\"", "");
+        let s = s.replace(",", ", ").replace(":", ": ");
+        write!(f, "BondRecord({})", &s[1..s.len() - 1])
     }
 }
 

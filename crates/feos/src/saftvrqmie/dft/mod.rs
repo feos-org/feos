@@ -1,9 +1,9 @@
+use super::SaftVRQMie;
 use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use crate::saftvrqmie::eos::SaftVRQMieOptions;
-use crate::saftvrqmie::parameters::SaftVRQMieParameters;
+use crate::saftvrqmie::parameters::{SaftVRQMieParameters, SaftVRQMiePars};
 use dispersion::AttractiveFunctional;
-use feos_core::parameter::Parameter;
-use feos_core::{Components, FeosResult, Molarweight, Residual, StateHD};
+use feos_core::FeosResult;
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
@@ -11,110 +11,53 @@ use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape}
 use ndarray::{Array, Array1, Array2, ScalarOperand};
 use non_additive_hs::NonAddHardSphereFunctional;
 use num_dual::DualNum;
-use quantity::{MolarWeight, GRAM, MOL};
-use std::f64::consts::FRAC_PI_6;
-use std::sync::Arc;
 
 mod dispersion;
 mod non_additive_hs;
 
-/// SAFT-VRQ Mie Helmholtz energy functional.
-pub struct SaftVRQMieFunctional {
-    pub parameters: Arc<SaftVRQMieParameters>,
-    fmt_version: FMTVersion,
-    options: SaftVRQMieOptions,
-}
-
-impl SaftVRQMieFunctional {
-    pub fn new(parameters: Arc<SaftVRQMieParameters>) -> Self {
-        Self::with_options(
-            parameters,
-            FMTVersion::WhiteBear,
-            SaftVRQMieOptions::default(),
-        )
-    }
-
-    pub fn new_full(parameters: Arc<SaftVRQMieParameters>, fmt_version: FMTVersion) -> Self {
-        Self::with_options(parameters, fmt_version, SaftVRQMieOptions::default())
-    }
-
-    pub fn with_options(
-        parameters: Arc<SaftVRQMieParameters>,
+impl SaftVRQMie {
+    /// SAFT-VRQ Mie model with default options and provided FMT version.
+    pub fn with_fmt_version(
+        parameters: SaftVRQMieParameters,
         fmt_version: FMTVersion,
-        saft_options: SaftVRQMieOptions,
-    ) -> Self {
-        Self {
-            parameters,
+    ) -> FeosResult<Self> {
+        let options = SaftVRQMieOptions {
             fmt_version,
-            options: saft_options,
-        }
+            ..Default::default()
+        };
+        Self::with_options(parameters, options)
     }
 }
 
-impl Components for SaftVRQMieFunctional {
-    fn components(&self) -> usize {
-        self.parameters.pure_records.len()
-    }
+impl HelmholtzEnergyFunctional for SaftVRQMie {
+    type Contribution<'a> = SaftVRQMieFunctionalContribution<'a>;
 
-    fn subset(&self, component_list: &[usize]) -> Self {
-        Self::with_options(
-            Arc::new(self.parameters.subset(component_list)),
-            self.fmt_version,
-            self.options,
-        )
-    }
-}
-
-impl Residual for SaftVRQMieFunctional {
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
-                .sum()
-    }
-
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
-        self.evaluate_bulk(state)
-    }
-}
-
-impl HelmholtzEnergyFunctional for SaftVRQMieFunctional {
-    type Contribution = SaftVRQMieFunctionalContribution;
-
-    fn contributions(&self) -> Box<(dyn Iterator<Item = SaftVRQMieFunctionalContribution>)> {
+    fn contributions<'a>(&'a self) -> Vec<SaftVRQMieFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(3);
 
         // Hard sphere contribution
-        let hs = FMTContribution::new(&self.parameters, self.fmt_version);
+        let hs = FMTContribution::new(&self.params, self.options.fmt_version);
         contributions.push(hs.into());
 
         // Non-additive hard-sphere contribution
         if self.options.inc_nonadd_term {
-            let non_add_hs = NonAddHardSphereFunctional::new(self.parameters.clone());
+            let non_add_hs = NonAddHardSphereFunctional::new(&self.params);
             contributions.push(non_add_hs.into());
         }
 
         // Dispersion
-        let att = AttractiveFunctional::new(self.parameters.clone());
+        let att = AttractiveFunctional::new(&self.params);
         contributions.push(att.into());
 
-        Box::new(contributions.into_iter())
+        contributions
     }
 
     fn molecule_shape(&self) -> MoleculeShape {
-        MoleculeShape::NonSpherical(&self.parameters.m)
+        MoleculeShape::NonSpherical(&self.params.m)
     }
 }
 
-impl Molarweight for SaftVRQMieFunctional {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        self.parameters.molarweight.clone() * GRAM / MOL
-    }
-}
-
-impl HardSphereProperties for SaftVRQMieParameters {
+impl HardSphereProperties for SaftVRQMiePars {
     fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
         MonomerShape::Spherical(self.m.len())
     }
@@ -124,28 +67,28 @@ impl HardSphereProperties for SaftVRQMieParameters {
     }
 }
 
-impl FluidParameters for SaftVRQMieFunctional {
+impl FluidParameters for SaftVRQMie {
     fn epsilon_k_ff(&self) -> Array1<f64> {
-        self.parameters.epsilon_k.clone()
+        self.params.epsilon_k.clone()
     }
 
     fn sigma_ff(&self) -> &Array1<f64> {
-        &self.parameters.sigma
+        &self.params.sigma
     }
 }
 
-impl PairPotential for SaftVRQMieFunctional {
+impl PairPotential for SaftVRQMie {
     fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64> {
-        Array::from_shape_fn((self.parameters.m.len(), r.len()), |(j, k)| {
-            self.parameters.qmie_potential_ij(i, j, r[k], temperature)[0]
+        Array::from_shape_fn((self.params.m.len(), r.len()), |(j, k)| {
+            self.params.qmie_potential_ij(i, j, r[k], temperature)[0]
         })
     }
 }
 
 /// Individual contributions for the SAFT-VRQ Mie Helmholtz energy functional.
 #[derive(FunctionalContribution)]
-pub enum SaftVRQMieFunctionalContribution {
-    Fmt(FMTContribution<SaftVRQMieParameters>),
-    NonAddHardSphere(NonAddHardSphereFunctional),
-    Attractive(AttractiveFunctional),
+pub enum SaftVRQMieFunctionalContribution<'a> {
+    Fmt(FMTContribution<'a, SaftVRQMiePars>),
+    NonAddHardSphere(NonAddHardSphereFunctional<'a>),
+    Attractive(AttractiveFunctional<'a>),
 }

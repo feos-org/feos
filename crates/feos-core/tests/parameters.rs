@@ -1,5 +1,4 @@
 use feos_core::FeosError;
-use feos_core::FeosResult;
 use feos_core::parameter::*;
 use serde::{Deserialize, Serialize};
 
@@ -13,37 +12,10 @@ struct MyBinaryModel {
     b: f64,
 }
 
-struct MyParameter {
-    pure_records: Vec<PureRecord<MyPureModel, ()>>,
-    binary_records: Vec<BinaryRecord<usize, MyBinaryModel, ()>>,
-}
-
-impl Parameter for MyParameter {
-    type Pure = MyPureModel;
-    type Binary = MyBinaryModel;
-    type Association = ();
-    fn from_records(
-        pure_records: Vec<PureRecord<MyPureModel, ()>>,
-        binary_records: Vec<BinaryRecord<usize, MyBinaryModel, ()>>,
-    ) -> FeosResult<Self> {
-        Ok(Self {
-            pure_records,
-            binary_records,
-        })
-    }
-
-    fn records(
-        &self,
-    ) -> (
-        &[PureRecord<MyPureModel, ()>],
-        &[BinaryRecord<usize, MyBinaryModel, ()>],
-    ) {
-        (&self.pure_records, &self.binary_records)
-    }
-}
+type MyParameters = Parameters<MyPureModel, MyBinaryModel, ()>;
 
 #[test]
-fn from_records() -> FeosResult<()> {
+fn from_records() {
     let pr_json = r#"
         [
             {
@@ -77,17 +49,16 @@ fn from_records() -> FeosResult<()> {
         "#;
     let pure_records: Vec<_> = serde_json::from_str(pr_json).expect("Unable to parse json.");
     let binary_records: Vec<_> = serde_json::from_str(br_json).expect("Unable to parse json.");
-    let binary_matrix = MyParameter::binary_matrix_from_records(
+    let binary_matrix = MyParameters::binary_matrix_from_records(
         &pure_records,
         &binary_records,
         IdentifierOption::Cas,
     );
-    let p = MyParameter::from_records(pure_records, binary_matrix)?;
+    let p = MyParameters::new(pure_records, binary_matrix);
 
     assert_eq!(p.pure_records[0].identifier.cas, Some("123-4-5".into()));
     assert_eq!(p.pure_records[1].identifier.cas, Some("678-9-1".into()));
     assert_eq!(p.binary_records[0].model_record.unwrap().b, 12.0);
-    Ok(())
 }
 
 #[test]
@@ -106,7 +77,7 @@ fn from_json_duplicates_input() {
 
 #[test]
 fn from_multiple_json_files_duplicates() {
-    let my_parameters = MyParameter::from_multiple_json(
+    let my_parameters = MyParameters::from_multiple_json(
         &[
             (vec!["123-4-5"], "tests/test_parameters1.json"),
             (vec!["678-9-1", "123-4-5"], "tests/test_parameters2.json"),
@@ -120,7 +91,7 @@ fn from_multiple_json_files_duplicates() {
         if t == "A substance was defined more than once."
     ));
 
-    let my_parameters = MyParameter::from_multiple_json(
+    let my_parameters = MyParameters::from_multiple_json(
         &[
             (vec!["123-4-5"], "tests/test_parameters1.json"),
             (vec!["678-9-1"], "tests/test_parameters2.json"),
@@ -137,7 +108,7 @@ fn from_multiple_json_files_duplicates() {
 
 #[test]
 fn from_multiple_json_files() {
-    let p = MyParameter::from_multiple_json(
+    let p = MyParameters::from_multiple_json(
         &[
             (vec!["678-9-1"], "tests/test_parameters2.json"),
             (vec!["123-4-5"], "tests/test_parameters1.json"),
@@ -155,7 +126,7 @@ fn from_multiple_json_files() {
 }
 
 #[test]
-fn from_records_missing_binary() -> FeosResult<()> {
+fn from_records_missing_binary() {
     let pr_json = r#"
         [
             {
@@ -189,22 +160,21 @@ fn from_records_missing_binary() -> FeosResult<()> {
         "#;
     let pure_records: Vec<_> = serde_json::from_str(pr_json).expect("Unable to parse json.");
     let binary_records: Vec<_> = serde_json::from_str(br_json).expect("Unable to parse json.");
-    let binary_matrix = MyParameter::binary_matrix_from_records(
+    let binary_matrix = MyParameters::binary_matrix_from_records(
         &pure_records,
         &binary_records,
         IdentifierOption::Cas,
     );
-    let p = MyParameter::from_records(pure_records, binary_matrix)?;
+    let p = MyParameters::new(pure_records, binary_matrix);
 
     assert_eq!(p.pure_records[0].identifier.cas, Some("123-4-5".into()));
     assert_eq!(p.pure_records[1].identifier.cas, Some("678-9-1".into()));
     let br = p.binary_records;
     assert_eq!(br.len(), 0);
-    Ok(())
 }
 
 #[test]
-fn from_records_correct_binary_order() -> FeosResult<()> {
+fn from_records_correct_binary_order() {
     let pr_json = r#"
         [
             {
@@ -245,12 +215,12 @@ fn from_records_correct_binary_order() -> FeosResult<()> {
         "#;
     let pure_records: Vec<_> = serde_json::from_str(pr_json).expect("Unable to parse json.");
     let binary_records: Vec<_> = serde_json::from_str(br_json).expect("Unable to parse json.");
-    let binary_matrix = MyParameter::binary_matrix_from_records(
+    let binary_matrix = MyParameters::binary_matrix_from_records(
         &pure_records,
         &binary_records,
         IdentifierOption::Cas,
     );
-    let p = MyParameter::from_records(pure_records, binary_matrix)?;
+    let p = MyParameters::new(pure_records, binary_matrix);
 
     assert_eq!(p.pure_records[0].identifier.cas, Some("000-0-0".into()));
     assert_eq!(p.pure_records[1].identifier.cas, Some("123-4-5".into()));
@@ -258,5 +228,4 @@ fn from_records_correct_binary_order() -> FeosResult<()> {
     assert_eq!(p.binary_records[0].id1, 1);
     assert_eq!(p.binary_records[0].id2, 2);
     assert_eq!(p.binary_records[0].model_record.unwrap().b, 12.0);
-    Ok(())
 }

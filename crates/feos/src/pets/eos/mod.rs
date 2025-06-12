@@ -1,13 +1,14 @@
 use super::parameters::PetsParameters;
-use crate::hard_sphere::HardSphere;
-use feos_core::parameter::Parameter;
+#[cfg(feature = "dft")]
+use crate::hard_sphere::FMTVersion;
+use crate::hard_sphere::{HardSphere, HardSphereProperties, MonomerShape};
 use feos_core::{Components, Molarweight, Residual};
-use ndarray::Array1;
-use quantity::{GRAM, MOL, MolarWeight};
+use ndarray::{Array1, Array2};
+use num_dual::DualNum;
+use quantity::MolarWeight;
 use std::f64::consts::FRAC_PI_6;
 
 pub(crate) mod dispersion;
-use dispersion::Dispersion;
 
 /// Configuration options for the PeTS equation of state and Helmholtz energy functional.
 ///
@@ -17,31 +18,61 @@ use dispersion::Dispersion;
 pub struct PetsOptions {
     /// maximum packing fraction
     pub max_eta: f64,
+    /// The version of the FMT functional to use
+    #[cfg(feature = "dft")]
+    pub fmt_version: FMTVersion,
 }
 
 impl Default for PetsOptions {
     fn default() -> Self {
-        Self { max_eta: 0.5 }
+        Self {
+            max_eta: 0.5,
+            #[cfg(feature = "dft")]
+            fmt_version: FMTVersion::WhiteBear,
+        }
     }
 }
 
-/// PeTS equation of state.
+/// PeTS Helmholtz energy model.
 pub struct Pets {
-    parameters: PetsParameters,
-    options: PetsOptions,
+    pub parameters: PetsParameters,
+    pub options: PetsOptions,
+    pub sigma: Array1<f64>,
+    pub epsilon_k: Array1<f64>,
+    pub sigma_ij: Array2<f64>,
+    pub epsilon_k_ij: Array2<f64>,
 }
 
 impl Pets {
-    /// PeTS equation of state with default options.
+    /// PeTS model with default options.
     pub fn new(parameters: PetsParameters) -> Self {
         Self::with_options(parameters, PetsOptions::default())
     }
 
-    /// PeTS equation of state with provided options.
+    /// PeTS model with provided options.
     pub fn with_options(parameters: PetsParameters, options: PetsOptions) -> Self {
+        let [sigma, epsilon_k] = parameters.collate(|pr| [pr.sigma, pr.epsilon_k]);
+
+        let n = parameters.pure_records.len();
+
+        let mut sigma_ij = Array2::zeros((n, n));
+        let mut epsilon_k_ij = Array2::zeros((n, n));
+        for i in 0..n {
+            for j in 0..n {
+                epsilon_k_ij[[i, j]] = (epsilon_k[i] * epsilon_k[j]).sqrt();
+                sigma_ij[[i, j]] = 0.5 * (sigma[i] + sigma[j]);
+            }
+        }
+        let [k_ij] = parameters.collate_binary(|b| [b.unwrap_or_default().k_ij]);
+        epsilon_k_ij *= &(1.0 - k_ij);
+
         Self {
             parameters,
             options,
+            sigma,
+            epsilon_k,
+            sigma_ij,
+            epsilon_k_ij,
         }
     }
 }
@@ -59,7 +90,7 @@ impl Components for Pets {
 impl Residual for Pets {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * self.parameters.sigma.mapv(|v| v.powi(3)) * moles).sum()
+            / (FRAC_PI_6 * self.sigma.mapv(|v| v.powi(3)) * moles).sum()
     }
 
     fn residual_helmholtz_energy_contributions<D: num_dual::DualNum<f64> + Copy>(
@@ -68,234 +99,35 @@ impl Residual for Pets {
     ) -> Vec<(String, D)> {
         vec![
             (
-                HardSphere.to_string(),
-                HardSphere.helmholtz_energy(&self.parameters, state),
+                "Hard Sphere".to_string(),
+                HardSphere.helmholtz_energy(self, state),
             ),
             (
-                Dispersion.to_string(),
-                Dispersion.helmholtz_energy(&self.parameters, state),
+                "Dispersion".to_string(),
+                self.dispersion_helmholtz_energy(state),
             ),
         ]
     }
 }
 
 impl Molarweight for Pets {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        self.parameters.molarweight.clone() * GRAM / MOL
+    fn molar_weight(&self) -> &MolarWeight<Array1<f64>> {
+        &self.parameters.molar_weight
     }
 }
 
-// fn omega11(t: f64) -> f64 {
-//     1.06036 * t.powf(-0.15610)
-//         + 0.19300 * (-0.47635 * t).exp()
-//         + 1.03587 * (-1.52996 * t).exp()
-//         + 1.76474 * (-3.89411 * t).exp()
-// }
+impl HardSphereProperties for Pets {
+    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
+        MonomerShape::Spherical(self.sigma.len())
+    }
 
-// fn omega22(t: f64) -> f64 {
-//     1.16145 * t.powf(-0.14874) + 0.52487 * (-0.77320 * t).exp() + 2.16178 * (-2.43787 * t).exp()
-//         - 6.435e-4 * t.powf(0.14874) * (18.0323 * t.powf(-0.76830) - 7.27371).sin()
-// }
-
-// impl EntropyScaling for Pets {
-//     fn viscosity_reference(
-//         &self,
-//         temperature: SINumber,
-//         _: SINumber,
-//         moles: &SIArray1,
-//     ) -> EosResult<SINumber> {
-//         let x = moles.to_reduced(moles.sum())?;
-//         let p = &self.parameters;
-//         let mw = &p.molarweight;
-//         let ce: Array1<SINumber> = (0..self.components())
-//             .map(|i| {
-//                 let tr = (temperature / p.epsilon_k[i] / KELVIN)
-//                     .into_value()
-//                     .unwrap();
-//                 5.0 / 16.0
-//                     * (mw[i] * GRAM / MOL * KB / NAV * temperature / PI)
-//                         .sqrt()
-//                         .unwrap()
-//                     / omega22(tr)
-//                     / (p.sigma[i] * ANGSTROM).powi(2)
-//             })
-//             .collect();
-//         let mut ce_mix = 0.0 * MILLI * PASCAL * SECOND;
-//         for i in 0..self.components() {
-//             let denom: f64 = (0..self.components())
-//                 .map(|j| {
-//                     x[j] * (1.0
-//                         + (ce[i] / ce[j]).into_value().unwrap().sqrt()
-//                             * (mw[j] / mw[i]).powf(1.0 / 4.0))
-//                     .powi(2)
-//                         / (8.0 * (1.0 + mw[i] / mw[j])).sqrt()
-//                 })
-//                 .sum();
-//             ce_mix += ce[i] * x[i] / denom
-//         }
-//         Ok(ce_mix)
-//     }
-
-//     fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
-//         let coefficients = self
-//             .parameters
-//             .viscosity
-//             .as_ref()
-//             .expect("Missing viscosity coefficients.");
-//         let a: f64 = (&coefficients.row(0) * x).sum();
-//         let b: f64 = (&coefficients.row(1) * x).sum();
-//         let c: f64 = (&coefficients.row(2) * x).sum();
-//         let d: f64 = (&coefficients.row(3) * x).sum();
-//         Ok(a + b * s_res + c * s_res.powi(2) + d * s_res.powi(3))
-//     }
-
-//     fn diffusion_reference(
-//         &self,
-//         temperature: SINumber,
-//         volume: SINumber,
-//         moles: &SIArray1,
-//     ) -> EosResult<SINumber> {
-//         if self.components() != 1 {
-//             return Err(EosError::IncompatibleComponents(self.components(), 1));
-//         }
-//         let p = &self.parameters;
-//         let density = moles.sum() / volume;
-//         let res: Array1<SINumber> = (0..self.components())
-//             .map(|i| {
-//                 let tr = (temperature / p.epsilon_k[i] / KELVIN)
-//                     .into_value()
-//                     .unwrap();
-//                 3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi(2) / omega11(tr) / (density * NAV)
-//                     * (temperature * RGAS / PI / (p.molarweight[i] * GRAM / MOL))
-//                         .sqrt()
-//                         .unwrap()
-//             })
-//             .collect();
-//         Ok(res[0])
-//     }
-
-//     fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
-//         if self.components() != 1 {
-//             return Err(EosError::IncompatibleComponents(self.components(), 1));
-//         }
-//         let coefficients = self
-//             .parameters
-//             .diffusion
-//             .as_ref()
-//             .expect("Missing diffusion coefficients.");
-//         let a: f64 = (&coefficients.row(0) * x).sum();
-//         let b: f64 = (&coefficients.row(1) * x).sum();
-//         let c: f64 = (&coefficients.row(2) * x).sum();
-//         let d: f64 = (&coefficients.row(3) * x).sum();
-//         let e: f64 = (&coefficients.row(4) * x).sum();
-//         Ok(a + b * s_res
-//             - c * (1.0 - s_res.exp()) * s_res.powi(2)
-//             - d * s_res.powi(4)
-//             - e * s_res.powi(8))
-//     }
-
-//     // fn thermal_conductivity_reference(
-//     //     &self,
-//     //     state: &State<E>,
-//     // ) -> EosResult<SINumber> {
-//     //     if self.components() != 1 {
-//     //         return Err(EosError::IncompatibleComponents(self.components(), 1));
-//     //     }
-//     //     let p = &self.parameters;
-//     //     let res: Array1<SINumber> = (0..self.components())
-//     //         .map(|i| {
-//     //             let tr = (state.temperature / p.epsilon_k[i] / KELVIN)
-//     //                 .into_value()
-//     //                 .unwrap();
-//     //             let cp = State::critical_point_pure(&state.eos, Some(state.temperature)).unwrap();
-//     //             let s_res_cp_reduced = cp
-//     //                 .entropy(Contributions::Residual)
-//     //                 .to_reduced(SIUnit::reference_entropy())
-//     //                 .unwrap();
-//     //             let s_res_reduced = cp
-//     //                 .entropy(Contributions::Residual)
-//     //                 .to_reduced(SIUnit::reference_entropy())
-//     //                 .unwrap();
-//     //             let ref_ce = 0.083235
-//     //                 * ((state.temperature / KELVIN).into_value().unwrap()
-//     //                     / (p.molarweight[0]))
-//     //                     .sqrt()
-//     //                 / p.sigma[0]
-//     //                 / p.sigma[0]
-//     //                 / omega22(tr);
-//     //             let alpha_visc = (-s_res_reduced / s_res_cp_reduced).exp();
-//     //             let ref_ts = (-0.0167141 * tr + 0.0470581 * (tr).powi(2))
-//     //                 * (p.sigma[i].powi(3) * p.epsilon_k[0])
-//     //                 / 100000.0;
-//     //             (ref_ce + ref_ts * alpha_visc) * WATT / METER / KELVIN
-//     //         })
-//     //         .collect();
-//     //     Ok(res[0])
-//     // }
-
-//     // Equation 11 of DOI: 10.1021/acs.iecr.9b03998
-//     fn thermal_conductivity_reference(
-//         &self,
-//         temperature: SINumber,
-//         volume: SINumber,
-//         moles: &SIArray1,
-//     ) -> EosResult<SINumber> {
-//         if self.components() != 1 {
-//             return Err(EosError::IncompatibleComponents(self.components(), 1));
-//         }
-//         let p = &self.parameters;
-//         let state = State::new_nvt(
-//             &Arc::new(Self::new(self.parameters.clone())),
-//             temperature,
-//             volume,
-//             moles,
-//         )?;
-//         let res: Array1<SINumber> = (0..self.components())
-//             .map(|i| {
-//                 let tr = (temperature / p.epsilon_k[i] / KELVIN)
-//                     .into_value()
-//                     .unwrap();
-//                 let ce = 83.235
-//                     * f64::powf(10.0, -1.5)
-//                     * ((temperature / KELVIN).into_value().unwrap() / p.molarweight[0]).sqrt()
-//                     / (p.sigma[0] * p.sigma[0])
-//                     / omega22(tr);
-//                 ce * WATT / METER / KELVIN
-//                     + state.density
-//                         * self
-//                             .diffusion_reference(temperature, volume, moles)
-//                             .unwrap()
-//                         * self
-//                             .diffusion_correlation(
-//                                 state
-//                                     .residual_molar_entropy()
-//                                     .to_reduced(SIUnit::reference_molar_entropy())
-//                                     .unwrap(),
-//                                 &state.molefracs,
-//                             )
-//                             .unwrap()
-//                         * (state.c_v(Contributions::Total) - 1.5 * RGAS)
-//             })
-//             .collect();
-//         Ok(res[0])
-//     }
-
-//     fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64> {
-//         if self.components() != 1 {
-//             return Err(EosError::IncompatibleComponents(self.components(), 1));
-//         }
-//         let coefficients = self
-//             .parameters
-//             .thermal_conductivity
-//             .as_ref()
-//             .expect("Missing thermal conductivity coefficients");
-//         let a: f64 = (&coefficients.row(0) * x).sum();
-//         let b: f64 = (&coefficients.row(1) * x).sum();
-//         let c: f64 = (&coefficients.row(2) * x).sum();
-//         let d: f64 = (&coefficients.row(3) * x).sum();
-//         Ok(a + b * s_res + c * (1.0 - s_res.exp()) + d * s_res.powi(2))
-//     }
-// }
+    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+        let ti = temperature.recip() * -3.052785558;
+        Array1::from_shape_fn(self.sigma.len(), |i| {
+            -((ti * self.epsilon_k[i]).exp() * 0.127112544 - 1.0) * self.sigma[i]
+        })
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -306,7 +138,7 @@ mod tests {
     use approx::assert_relative_eq;
     use feos_core::{Contributions, DensityInitialization, PhaseEquilibrium, State, StateHD};
     use ndarray::arr1;
-    use quantity::{BAR, KELVIN, METER, PASCAL, RGAS};
+    use quantity::{BAR, KELVIN, METER, MOL, RGAS};
     use std::sync::Arc;
     use typenum::P3;
 
@@ -328,9 +160,9 @@ mod tests {
 
     #[test]
     fn hard_sphere_mix() {
-        let argon = argon_parameters();
-        let krypton = krypton_parameters();
-        let mix = argon_krypton_parameters();
+        let argon = Pets::new(argon_parameters());
+        let krypton = Pets::new(krypton_parameters());
+        let mix = Pets::new(argon_krypton_parameters());
         let t = 250.0;
         let v = 2.5e28;
         let n = 1.0;
@@ -351,12 +183,8 @@ mod tests {
         let t = 300.0 * KELVIN;
         let p = BAR;
         let m = arr1(&[1.0]) * MOL;
-        let s = State::new_npt(&e, t, p, &m, DensityInitialization::None);
-        let p_calc = if let Ok(state) = s {
-            state.pressure(Contributions::Total)
-        } else {
-            0.0 * PASCAL
-        };
+        let s = State::new_npt(&e, t, p, &m, DensityInitialization::None).unwrap();
+        let p_calc = s.pressure(Contributions::Total);
         assert_relative_eq!(p, p_calc, epsilon = 1e-6);
     }
 
@@ -373,30 +201,6 @@ mod tests {
             )
         }
     }
-
-    // #[test]
-    // fn critical_point() {
-    //     let e = Arc::new(Pets::new(argon_parameters()));
-    //     let t = 300.0 * KELVIN;
-    //     let cp = State::critical_point(&e, None, Some(t), Default::default());
-    //     if let Ok(v) = cp {
-    //         assert_relative_eq!(v.temperature, 375.1244078318015 * KELVIN, epsilon = 1e-8)
-    //     }
-    // }
-
-    // #[test]
-    // fn speed_of_sound() {
-    //     let e = Arc::new(Pets::new(argon_parameters()));
-    //     let t = 300.0 * KELVIN;
-    //     let p = BAR;
-    //     let m = arr1(&[1.0]) * MOL;
-    //     let s = State::new_npt(&e, t, p, &m, DensityInitialization::None).unwrap();
-    //     assert_relative_eq!(
-    //         s.speed_of_sound(),
-    //         245.00185709137546 * METER / SECOND,
-    //         epsilon = 1e-4
-    //     )
-    // }
 
     #[test]
     fn mix_single() {
@@ -423,50 +227,4 @@ mod tests {
             epsilon = 1e-12
         )
     }
-
-    // #[test]
-    // fn viscosity() -> EosResult<()> {
-    //     let e = Arc::new(Pets::new(argon_parameters()));
-    //     let t = 300.0 * KELVIN;
-    //     let p = BAR;
-    //     let n = arr1(&[1.0]) * MOL;
-    //     let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
-    //     assert_relative_eq!(
-    //         s.viscosity()?,
-    //         0.00797 * MILLI * PASCAL * SECOND,
-    //         epsilon = 1e-5
-    //     );
-    //     assert_relative_eq!(
-    //         s.ln_viscosity_reduced()?,
-    //         (s.viscosity()? / e.viscosity_reference(s.temperature, s.volume, &s.moles)?)
-    //             .into_value()
-    //             .unwrap()
-    //             .ln(),
-    //         epsilon = 1e-15
-    //     );
-    //     Ok(())
-    // }
-
-    // #[test]
-    // fn diffusion() -> EosResult<()> {
-    //     let e = Arc::new(Pets::new(argon_parameters()));
-    //     let t = 300.0 * KELVIN;
-    //     let p = BAR;
-    //     let n = arr1(&[1.0]) * MOL;
-    //     let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
-    //     assert_relative_eq!(
-    //         s.diffusion()?,
-    //         0.01505 * (CENTI * METER).powi(2) / SECOND,
-    //         epsilon = 1e-5
-    //     );
-    //     assert_relative_eq!(
-    //         s.ln_diffusion_reduced()?,
-    //         (s.diffusion()? / e.diffusion_reference(s.temperature, s.volume, &s.moles)?)
-    //             .into_value()
-    //             .unwrap()
-    //             .ln(),
-    //         epsilon = 1e-15
-    //     );
-    //     Ok(())
-    // }
 }

@@ -1,15 +1,12 @@
 use crate::association::Association;
-use crate::epcsaft::parameters::ElectrolytePcSaftParameters;
+use crate::epcsaft::parameters::{ElectrolytePcSaftParameters, ElectrolytePcSaftPars};
 use crate::hard_sphere::{HardSphere, HardSphereProperties};
-use feos_core::parameter::Parameter;
-use feos_core::{Components, Residual};
+use feos_core::{Components, FeosResult, Residual};
 use feos_core::{Molarweight, StateHD};
 use ndarray::Array1;
 use num_dual::DualNum;
 use quantity::*;
 use std::f64::consts::FRAC_PI_6;
-use std::fmt;
-use std::sync::Arc;
 
 pub(crate) mod born;
 pub(crate) mod dispersion;
@@ -50,87 +47,45 @@ impl Default for ElectrolytePcSaftOptions {
 
 /// electrolyte PC-SAFT (ePC-SAFT) equation of state.
 pub struct ElectrolytePcSaft {
-    pub parameters: Arc<ElectrolytePcSaftParameters>,
+    pub parameters: ElectrolytePcSaftParameters,
+    pub params: ElectrolytePcSaftPars,
     pub options: ElectrolytePcSaftOptions,
-    hard_sphere: HardSphere<ElectrolytePcSaftParameters>,
-    hard_chain: Option<HardChain>,
-    dispersion: Dispersion,
-    association: Option<Association<ElectrolytePcSaftParameters>>,
-    ionic: Option<Ionic>,
-    born: Option<Born>,
+    hard_chain: bool,
+    association: Option<Association<ElectrolytePcSaftPars>>,
+    ionic: bool,
+    born: bool,
 }
 
 impl ElectrolytePcSaft {
-    pub fn new(parameters: Arc<ElectrolytePcSaftParameters>) -> Self {
+    pub fn new(parameters: ElectrolytePcSaftParameters) -> FeosResult<Self> {
         Self::with_options(parameters, ElectrolytePcSaftOptions::default())
     }
 
     pub fn with_options(
-        parameters: Arc<ElectrolytePcSaftParameters>,
+        parameters: ElectrolytePcSaftParameters,
         options: ElectrolytePcSaftOptions,
-    ) -> Self {
-        let hard_sphere = HardSphere::new(&parameters);
-        let dispersion = Dispersion {
-            parameters: parameters.clone(),
-        };
-        let hard_chain = if parameters.m.iter().any(|m| (m - 1.0).abs() > 1e-15) {
-            Some(HardChain {
-                parameters: parameters.clone(),
-            })
-        } else {
-            None
-        };
+    ) -> FeosResult<Self> {
+        let params = ElectrolytePcSaftPars::new(&parameters)?;
+        let hard_chain = params.m.iter().any(|m| (m - 1.0).abs() > 1e-15);
 
-        let association = if !parameters.association.is_empty() {
-            Some(Association::new(
-                &parameters,
-                &parameters.association,
-                options.max_iter_cross_assoc,
-                options.tol_cross_assoc,
-            ))
-        } else {
-            None
-        };
+        let association = Association::new(
+            &parameters,
+            options.max_iter_cross_assoc,
+            options.tol_cross_assoc,
+        )?;
 
-        let ionic = if parameters.nionic > 0 {
-            Some(Ionic {
-                parameters: parameters.clone(),
-                variant: options.epcsaft_variant,
-            })
-        } else {
-            None
-        };
+        let ionic = params.nionic > 0;
+        let born = ionic && matches!(options.epcsaft_variant, ElectrolytePcSaftVariants::Advanced);
 
-        let born = if parameters.nionic > 0 {
-            match options.epcsaft_variant {
-                ElectrolytePcSaftVariants::Revised => None,
-                ElectrolytePcSaftVariants::Advanced => Some(Born {
-                    parameters: parameters.clone(),
-                }),
-            }
-        } else {
-            None
-        };
-
-        match options.epcsaft_variant {
-            ElectrolytePcSaftVariants::Revised => {
-                if ionic.is_some() {
-                    panic!("Ionic contribution is not available in the revised ePC-SAFT variant.")
-                }
-            }
-            ElectrolytePcSaftVariants::Advanced => (),
-        }
-
-        Self {
+        Ok(Self {
             parameters,
+            params,
             options,
-            hard_sphere,
             hard_chain,
-            dispersion,
             association,
             ionic,
             born,
-        }
+        })
     }
 }
 
@@ -140,18 +95,14 @@ impl Components for ElectrolytePcSaft {
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
-        Self::with_options(
-            Arc::new(self.parameters.subset(component_list)),
-            self.options,
-        )
+        Self::with_options(self.parameters.subset(component_list), self.options).unwrap()
     }
 }
 
 impl Residual for ElectrolytePcSaft {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
-                .sum()
+            / (FRAC_PI_6 * &self.params.m * self.params.sigma.mapv(|v| v.powi(3)) * moles).sum()
     }
 
     fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
@@ -159,44 +110,47 @@ impl Residual for ElectrolytePcSaft {
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
         let mut v = Vec::with_capacity(7);
-        let d = self.parameters.hs_diameter(state.temperature);
+        let d = self.params.hs_diameter(state.temperature);
 
         v.push((
-            self.hard_sphere.to_string(),
-            self.hard_sphere.helmholtz_energy(state),
+            "Hard Sphere".to_string(),
+            HardSphere.helmholtz_energy(&self.params, state),
         ));
-        if let Some(hc) = self.hard_chain.as_ref() {
-            v.push((hc.to_string(), hc.helmholtz_energy(state)))
+        if self.hard_chain {
+            v.push((
+                "Hard Chain".to_string(),
+                HardChain.helmholtz_energy(&self.params, state),
+            ))
         }
         v.push((
-            self.dispersion.to_string(),
-            self.dispersion.helmholtz_energy(state, &d),
+            "Dispersion".to_string(),
+            Dispersion.helmholtz_energy(&self.params, state, &d),
         ));
         if let Some(association) = self.association.as_ref() {
             v.push((
-                association.to_string(),
-                association.helmholtz_energy(state, &d),
+                "Association".to_string(),
+                association.helmholtz_energy(&self.params, state, &d),
             ))
         }
-        if let Some(ionic) = self.ionic.as_ref() {
-            v.push((ionic.to_string(), ionic.helmholtz_energy(state, &d)))
+        if self.ionic {
+            v.push((
+                "Ionic".to_string(),
+                Ionic.helmholtz_energy(&self.params, state, &d, self.options.epcsaft_variant),
+            ))
         };
-        if let Some(born) = self.born.as_ref() {
-            v.push((born.to_string(), born.helmholtz_energy(state, &d)))
+        if self.born {
+            v.push((
+                "Born".to_string(),
+                Born.helmholtz_energy(&self.params, state, &d),
+            ))
         };
         v
     }
 }
 
 impl Molarweight for ElectrolytePcSaft {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        self.parameters.molarweight.clone() * GRAM / MOL
-    }
-}
-
-impl fmt::Display for ElectrolytePcSaft {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ePC-SAFT")
+    fn molar_weight(&self) -> &MolarWeight<Array1<f64>> {
+        &self.parameters.molar_weight
     }
 }
 
@@ -204,16 +158,17 @@ impl fmt::Display for ElectrolytePcSaft {
 mod tests {
     use super::*;
     use crate::epcsaft::parameters::utils::{
-        butane_parameters, propane_butane_parameters, propane_parameters, water_parameters,
+        butane_parameters, propane_butane_parameters, propane_parameters,
     };
     use approx::assert_relative_eq;
     use feos_core::*;
     use ndarray::arr1;
+    use std::sync::Arc;
     use typenum::P3;
 
     #[test]
     fn ideal_gas_pressure() {
-        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()));
+        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<P3>();
         let n = arr1(&[1.0]) * MOL;
@@ -229,7 +184,7 @@ mod tests {
 
     #[test]
     fn ideal_gas_heat_capacity_joback() {
-        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()));
+        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<P3>();
         let n = arr1(&[1.0]) * MOL;
@@ -245,64 +200,37 @@ mod tests {
 
     #[test]
     fn hard_sphere() {
-        let hs = HardSphere::new(&propane_parameters());
+        let p = ElectrolytePcSaftPars::new(&propane_parameters()).unwrap();
         let t = 250.0;
         let v = 1000.0;
         let n = 1.0;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a_rust = hs.helmholtz_energy(&s);
+        let a_rust = HardSphere.helmholtz_energy(&p, &s);
         assert_relative_eq!(a_rust, 0.410610492598808, epsilon = 1e-10);
     }
 
     #[test]
     fn hard_sphere_mix() {
-        let c1 = HardSphere::new(&propane_parameters());
-        let c2 = HardSphere::new(&butane_parameters());
-        let c12 = HardSphere::new(&propane_butane_parameters());
+        let p1 = ElectrolytePcSaftPars::new(&propane_parameters()).unwrap();
+        let p2 = ElectrolytePcSaftPars::new(&butane_parameters()).unwrap();
+        let p12 = ElectrolytePcSaftPars::new(&propane_butane_parameters()).unwrap();
         let t = 250.0;
         let v = 2.5e28;
         let n = 1.0;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a1 = c1.helmholtz_energy(&s);
-        let a2 = c2.helmholtz_energy(&s);
+        let a1 = HardSphere.helmholtz_energy(&p1, &s);
+        let a2 = HardSphere.helmholtz_energy(&p2, &s);
         let s1m = StateHD::new(t, v, arr1(&[n, 0.0]));
-        let a1m = c12.helmholtz_energy(&s1m);
+        let a1m = HardSphere.helmholtz_energy(&p12, &s1m);
         let s2m = StateHD::new(t, v, arr1(&[0.0, n]));
-        let a2m = c12.helmholtz_energy(&s2m);
+        let a2m = HardSphere.helmholtz_energy(&p12, &s2m);
         assert_relative_eq!(a1, a1m, epsilon = 1e-14);
         assert_relative_eq!(a2, a2m, epsilon = 1e-14);
     }
 
     #[test]
-    fn association() {
-        let parameters = water_parameters();
-        let assoc = Association::new(&parameters, &parameters.association, 50, 1e-10);
-        let t = 350.0;
-        let v = 41.248289328513216;
-        let n = 1.23;
-        let s = StateHD::new(t, v, arr1(&[n]));
-        let d = parameters.hs_diameter(t);
-        let a_rust = assoc.helmholtz_energy(&s, &d) / n;
-        assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
-    }
-
-    #[test]
-    fn cross_association() {
-        let parameters = water_parameters();
-        let assoc =
-            Association::new_cross_association(&parameters, &parameters.association, 50, 1e-10);
-        let t = 350.0;
-        let v = 41.248289328513216;
-        let n = 1.23;
-        let s = StateHD::new(t, v, arr1(&[n]));
-        let d = parameters.hs_diameter(t);
-        let a_rust = assoc.helmholtz_energy(&s, &d) / n;
-        assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
-    }
-
-    #[test]
     fn new_tpn() {
-        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()));
+        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
         let t = 300.0 * KELVIN;
         let p = BAR;
         let m = arr1(&[1.0]) * MOL;
@@ -317,7 +245,7 @@ mod tests {
 
     #[test]
     fn vle_pure() {
-        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()));
+        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
         let t = 300.0 * KELVIN;
         let vle = PhaseEquilibrium::pure(&e, t, None, Default::default());
         if let Ok(v) = vle {
@@ -331,7 +259,7 @@ mod tests {
 
     #[test]
     fn critical_point() {
-        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()));
+        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
         let t = 300.0 * KELVIN;
         let cp = State::critical_point(&e, None, Some(t), Default::default());
         if let Ok(v) = cp {
@@ -341,9 +269,9 @@ mod tests {
 
     #[test]
     fn mix_single() {
-        let e1 = Arc::new(ElectrolytePcSaft::new(propane_parameters()));
-        let e2 = Arc::new(ElectrolytePcSaft::new(butane_parameters()));
-        let e12 = Arc::new(ElectrolytePcSaft::new(propane_butane_parameters()));
+        let e1 = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
+        let e2 = Arc::new(ElectrolytePcSaft::new(butane_parameters()).unwrap());
+        let e12 = Arc::new(ElectrolytePcSaft::new(propane_butane_parameters()).unwrap());
         let t = 300.0 * KELVIN;
         let v = 0.02456883872966545 * METER.powi::<P3>();
         let m1 = arr1(&[2.0]) * MOL;

@@ -1,15 +1,18 @@
-use super::parameters::SaftVRQMieParameters;
-use feos_core::parameter::Parameter;
+#[cfg(feature = "dft")]
+use crate::hard_sphere::FMTVersion;
+
+use super::parameters::{SaftVRQMieParameters, SaftVRQMiePars};
 use feos_core::{
     Components, EntropyScaling, FeosError, FeosResult, Molarweight, ReferenceSystem, Residual,
-    State,
+    StateHD,
 };
 use ndarray::{Array1, Array2};
-use num_dual::DualNum;
+use num_dual::{Dual64, DualNum};
 use quantity::*;
 use std::convert::TryFrom;
 use std::f64::consts::{FRAC_PI_6, PI};
-use std::sync::Arc;
+use std::fs::File;
+use std::io::BufWriter;
 use typenum::P2;
 
 pub(crate) mod dispersion;
@@ -24,6 +27,8 @@ use non_additive_hs::NonAddHardSphere;
 pub struct SaftVRQMieOptions {
     pub max_eta: f64,
     pub inc_nonadd_term: bool,
+    #[cfg(feature = "dft")]
+    pub fmt_version: FMTVersion,
 }
 
 impl Default for SaftVRQMieOptions {
@@ -31,6 +36,8 @@ impl Default for SaftVRQMieOptions {
         Self {
             max_eta: 0.5,
             inc_nonadd_term: true,
+            #[cfg(feature = "dft")]
+            fmt_version: FMTVersion::WhiteBear,
         }
     }
 }
@@ -70,7 +77,7 @@ pub(crate) struct TemperatureDependentProperties<D> {
 }
 
 impl<D: DualNum<f64> + Copy> TemperatureDependentProperties<D> {
-    fn new(parameters: &SaftVRQMieParameters, temperature: D) -> Self {
+    fn new(parameters: &SaftVRQMiePars, temperature: D) -> Self {
         let n = parameters.m.len();
         let sigma_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| -> D {
             parameters.calc_sigma_eff_ij(i, j, temperature)
@@ -99,45 +106,35 @@ impl<D: DualNum<f64> + Copy> TemperatureDependentProperties<D> {
     }
 }
 
-/// SAFT-VRQ Mie equation of state.
+/// SAFT-VRQ Mie Helmholtz energy model.
 ///
 /// # Note
 /// Currently, only the first-order Feynman-Hibbs term is implemented.
 pub struct SaftVRQMie {
-    parameters: Arc<SaftVRQMieParameters>,
-    options: SaftVRQMieOptions,
-    hard_sphere: HardSphere,
-    dispersion: Dispersion,
-    non_additive_hard_sphere: Option<NonAddHardSphere>,
+    pub parameters: SaftVRQMieParameters,
+    pub params: SaftVRQMiePars,
+    pub options: SaftVRQMieOptions,
+    pub non_additive_hard_sphere: bool,
 }
 
 impl SaftVRQMie {
-    pub fn new(parameters: Arc<SaftVRQMieParameters>) -> Self {
+    pub fn new(parameters: SaftVRQMieParameters) -> FeosResult<Self> {
         Self::with_options(parameters, SaftVRQMieOptions::default())
     }
 
-    pub fn with_options(parameters: Arc<SaftVRQMieParameters>, options: SaftVRQMieOptions) -> Self {
-        let hard_sphere = HardSphere {
-            parameters: parameters.clone(),
-        };
-        let dispersion = Dispersion {
-            parameters: parameters.clone(),
-        };
-        let non_additive_hard_sphere = if parameters.m.len() > 1 && options.inc_nonadd_term {
-            Some(NonAddHardSphere {
-                parameters: parameters.clone(),
-            })
-        } else {
-            None
-        };
+    pub fn with_options(
+        parameters: SaftVRQMieParameters,
+        options: SaftVRQMieOptions,
+    ) -> FeosResult<Self> {
+        let params = SaftVRQMiePars::new(&parameters)?;
+        let non_additive_hard_sphere = params.m.len() > 1 && options.inc_nonadd_term;
 
-        Self {
+        Ok(Self {
             parameters,
+            params,
             options,
-            hard_sphere,
-            dispersion,
             non_additive_hard_sphere,
-        }
+        })
     }
 }
 
@@ -147,18 +144,14 @@ impl Components for SaftVRQMie {
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
-        Self::with_options(
-            Arc::new(self.parameters.subset(component_list)),
-            self.options,
-        )
+        Self::with_options(self.parameters.subset(component_list), self.options).unwrap()
     }
 }
 
 impl Residual for SaftVRQMie {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
-                .sum()
+            / (FRAC_PI_6 * &self.params.m * self.params.sigma.mapv(|v| v.powi(3)) * moles).sum()
     }
 
     fn residual_helmholtz_energy_contributions<D: num_dual::DualNum<f64> + Copy>(
@@ -166,20 +159,20 @@ impl Residual for SaftVRQMie {
         state: &feos_core::StateHD<D>,
     ) -> Vec<(String, D)> {
         let mut v = Vec::with_capacity(7);
-        let properties = TemperatureDependentProperties::new(&self.parameters, state.temperature);
+        let properties = TemperatureDependentProperties::new(&self.params, state.temperature);
 
         v.push((
             "Hard Sphere".to_string(),
-            self.hard_sphere.helmholtz_energy(state, &properties),
+            HardSphere.helmholtz_energy(&self.params, state, &properties),
         ));
         v.push((
             "Dispersion".to_string(),
-            self.dispersion.helmholtz_energy(state, &properties),
+            Dispersion.helmholtz_energy(&self.params, state, &properties),
         ));
-        if let Some(non_additive_hard_sphere) = self.non_additive_hard_sphere.as_ref() {
+        if self.non_additive_hard_sphere {
             v.push((
                 "Non additive Hard Sphere".to_string(),
-                non_additive_hard_sphere.helmholtz_energy(state, &properties),
+                NonAddHardSphere.helmholtz_energy(&self.params, state, &properties),
             ))
         }
         v
@@ -187,8 +180,8 @@ impl Residual for SaftVRQMie {
 }
 
 impl Molarweight for SaftVRQMie {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        self.parameters.molarweight.clone() * GRAM / MOL
+    fn molar_weight(&self) -> &MolarWeight<Array1<f64>> {
+        &self.parameters.molar_weight
     }
 }
 
@@ -228,17 +221,15 @@ impl EntropyScaling for SaftVRQMie {
         _: Volume,
         moles: &Moles<Array1<f64>>,
     ) -> FeosResult<Viscosity> {
-        let p = &self.parameters;
-        let mw = &p.molarweight;
+        let p = &self.params;
+        let mw = &self.parameters.molar_weight;
         let x = (moles / moles.sum()).into_value();
-        let sigma_eff = p.sigma_eff(temperature.to_reduced());
-        let epsilon_k_eff = p.epsilon_k_eff(temperature.to_reduced());
         let ce: Array1<_> = (0..self.components())
             .map(|i| {
-                let tr = (temperature / epsilon_k_eff[i] / KELVIN).into_value();
-                5.0 / 16.0 * (mw[i] * GRAM / MOL * KB / NAV * temperature / PI).sqrt()
+                let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
+                5.0 / 16.0 * (mw.get(i) * KB / NAV * temperature / PI).sqrt()
                     / omega22(tr)
-                    / (sigma_eff[i] * ANGSTROM).powi::<P2>()
+                    / (p.sigma[i] * ANGSTROM).powi::<P2>()
             })
             .collect();
         let mut ce_mix = 0.0 * MILLI * PASCAL * SECOND;
@@ -246,9 +237,10 @@ impl EntropyScaling for SaftVRQMie {
             let denom: f64 = (0..self.components())
                 .map(|j| {
                     x[j] * (1.0
-                        + (ce[i] / ce[j]).into_value().sqrt() * (mw[j] / mw[i]).powf(1.0 / 4.0))
+                        + (ce[i] / ce[j]).into_value().sqrt()
+                            * (mw.get(j) / mw.get(i)).powf(1.0 / 4.0))
                     .powi(2)
-                        / (8.0 * (1.0 + mw[i] / mw[j])).sqrt()
+                        / (8.0 * (1.0 + (mw.get(i) / mw.get(j)).into_value())).sqrt()
                 })
                 .sum();
             ce_mix += ce[i] * x[i] / denom
@@ -258,13 +250,13 @@ impl EntropyScaling for SaftVRQMie {
 
     fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
         let coefficients = self
-            .parameters
+            .params
             .viscosity
             .as_ref()
             .expect("Missing viscosity coefficients.");
-        let m = (x * &self.parameters.m).sum();
+        let m = (x * &self.params.m).sum();
         let s = s_res / m;
-        let pref = (x * &self.parameters.m) / m;
+        let pref = (x * &self.params.m) / m;
         let a: f64 = (&coefficients.row(0) * x).sum();
         let b: f64 = (&coefficients.row(1) * &pref).sum();
         let c: f64 = (&coefficients.row(2) * &pref).sum();
@@ -281,13 +273,14 @@ impl EntropyScaling for SaftVRQMie {
         if self.components() != 1 {
             return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
-        let p = &self.parameters;
+        let p = &self.params;
+        let mw = &self.parameters.molar_weight;
         let density = moles.sum() / volume;
         let res: Array1<_> = (0..self.components())
             .map(|i| {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
                 3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi::<P2>() / omega11(tr) / (density * NAV)
-                    * (temperature * RGAS / PI / (p.molarweight[i] * GRAM / MOL)).sqrt()
+                    * (temperature * RGAS / PI / mw.get(i) / p.m[i]).sqrt()
             })
             .collect();
         Ok(res[0])
@@ -298,13 +291,13 @@ impl EntropyScaling for SaftVRQMie {
             return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
         let coefficients = self
-            .parameters
+            .params
             .diffusion
             .as_ref()
             .expect("Missing diffusion coefficients.");
-        let m = (x * &self.parameters.m).sum();
+        let m = (x * &self.params.m).sum();
         let s = s_res / m;
-        let pref = (x * &self.parameters.m).mapv(|v| v / m);
+        let pref = (x * &self.params.m).mapv(|v| v / m);
         let a: f64 = (&coefficients.row(0) * x).sum();
         let b: f64 = (&coefficients.row(1) * &pref).sum();
         let c: f64 = (&coefficients.row(2) * &pref).sum();
@@ -323,13 +316,18 @@ impl EntropyScaling for SaftVRQMie {
         if self.components() != 1 {
             return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
-        let p = &self.parameters;
+        let p = &self.params;
         let mws = self.molar_weight();
-        let state = State::new_nvt(&Arc::new(Self::new(p.clone())), temperature, volume, moles)?;
+        let t = Dual64::from(temperature.into_reduced()).derivative();
+        let v = Dual64::from(volume.into_reduced());
+        let n = moles.to_reduced().mapv(Dual64::from);
+        let n_tot = n.sum();
+        let state = StateHD::new(t, v, n);
+        let s_res = -(self.residual_helmholtz_energy(&state) * t / n_tot).eps;
         let res: Array1<_> = (0..self.components())
             .map(|i| {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
-                let s_res_reduced = (state.residual_molar_entropy() / RGAS).into_value() / p.m[i];
+                let s_res_reduced = s_res / p.m[i];
                 let ref_ce = chapman_enskog_thermal_conductivity(
                     temperature,
                     mws.get(i),
@@ -355,17 +353,98 @@ impl EntropyScaling for SaftVRQMie {
             return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
         let coefficients = self
-            .parameters
+            .params
             .thermal_conductivity
             .as_ref()
             .expect("Missing thermal conductivity coefficients");
-        let m = (x * &self.parameters.m).sum();
+        let m = (x * &self.params.m).sum();
         let s = s_res / m;
-        let pref = (x * &self.parameters.m).mapv(|v| v / m);
+        let pref = (x * &self.params.m).mapv(|v| v / m);
         let a: f64 = (&coefficients.row(0) * x).sum();
         let b: f64 = (&coefficients.row(1) * &pref).sum();
         let c: f64 = (&coefficients.row(2) * &pref).sum();
         let d: f64 = (&coefficients.row(3) * &pref).sum();
         Ok(a + b * s + c * (1.0 - s.exp()) + d * s.powi(2))
+    }
+}
+
+impl SaftVRQMie {
+    /// Generate energy and force tables to be used with LAMMPS' `pair_style table` command.
+    ///
+    /// For a given `temperature`, `n` values between `r_min` and `r_max` (both including) are tabulated.
+    ///
+    /// Files for all pure substances and all unique pairs are generated,
+    /// where filenames use either the "name" field of the identifier or the index if no name is present.
+    ///
+    /// # Example
+    ///
+    /// For a hydrogen-neon mixture at 30 K, three files will be created.
+    ///
+    /// - "hydrogen_30K.table" for H-H interactions,
+    /// - "neon_30K.table" for Ne-Ne interactions,
+    /// - "hydrogen_neon_30K.table" for H-Ne interactions.
+    pub fn lammps_tables(
+        &self,
+        temperature: Temperature,
+        n: usize,
+        r_min: Length,
+        r_max: Length,
+    ) -> std::io::Result<()> {
+        let t = temperature.to_reduced();
+        let rs = Array1::linspace(r_min.to_reduced(), r_max.to_reduced(), n);
+        let energy_conversion = (KELVIN * RGAS / (KILO * CALORIE / MOL)).into_value();
+        let force_conversion = (KELVIN * RGAS / (KILO * CALORIE / MOL)).into_value();
+
+        let n_components = self.params.sigma.len();
+        for i in 0..n_components {
+            for j in i..n_components {
+                let name_i = self.parameters.pure_records[i]
+                    .identifier
+                    .name
+                    .clone()
+                    .unwrap_or_else(|| i.to_string());
+                let name_j = self.parameters.pure_records[j]
+                    .identifier
+                    .name
+                    .clone()
+                    .unwrap_or_else(|| j.to_string());
+
+                let name = if i == j {
+                    name_i
+                } else {
+                    format!("{}_{}", name_i, name_j)
+                };
+                let f = File::create(format!("{}_{}K.table", name, t))?;
+                let mut stream = BufWriter::new(f);
+
+                std::io::Write::write(
+                    &mut stream,
+                    b"# DATE: YYYY-MM-DD UNITS: real CONTRIBUTOR: YOUR NAME\n",
+                )?;
+                std::io::Write::write(
+                    &mut stream,
+                    format!("# FH1 potential for {} at T = {}\n", name, temperature).as_bytes(),
+                )?;
+                std::io::Write::write(&mut stream, format!("FH1_{}\n", name).as_bytes())?;
+                std::io::Write::write(&mut stream, format!("N {}\n\n", n).as_bytes())?;
+
+                for (k, &r) in rs.iter().enumerate() {
+                    let [u, du, _] = self.params.qmie_potential_ij(i, j, r, t);
+                    std::io::Write::write(
+                        &mut stream,
+                        format!(
+                            "{} {:12.8} {:12.8} {:12.8}\n",
+                            k + 1,
+                            r,
+                            u * energy_conversion,
+                            -du * force_conversion
+                        )
+                        .as_bytes(),
+                    )?;
+                }
+                std::io::Write::flush(&mut stream)?;
+            }
+        }
+        Ok(())
     }
 }

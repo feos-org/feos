@@ -1,17 +1,15 @@
-use super::parameters::PcSaftParameters;
-use crate::association::Association;
-use crate::hard_sphere::{HardSphere, HardSphereProperties};
-use feos_core::parameter::Parameter;
+use super::parameters::{PcSaftAssociationRecord, PcSaftParameters, PcSaftPars};
+use crate::association::{Association, AssociationStrength};
+use crate::hard_sphere::{HardSphere, HardSphereProperties, MonomerShape};
+use crate::pcsaft::PcSaftRecord;
 use feos_core::{
     Components, EntropyScaling, FeosError, FeosResult, Molarweight, ReferenceSystem, Residual,
-    State, StateHD,
+    StateHD,
 };
 use ndarray::Array1;
-use num_dual::DualNum;
+use num_dual::{Dual64, DualNum};
 use quantity::*;
 use std::f64::consts::{FRAC_PI_6, PI};
-use std::fmt;
-use std::sync::Arc;
 use typenum::P2;
 
 pub(crate) mod dispersion;
@@ -44,74 +42,41 @@ impl Default for PcSaftOptions {
 
 /// PC-SAFT equation of state.
 pub struct PcSaft {
-    parameters: Arc<PcSaftParameters>,
+    parameters: PcSaftParameters,
+    params: PcSaftPars,
     options: PcSaftOptions,
-    hard_sphere: HardSphere<PcSaftParameters>,
-    hard_chain: Option<HardChain>,
-    dispersion: Dispersion,
-    dipole: Option<Dipole>,
-    quadrupole: Option<Quadrupole>,
-    dipole_quadrupole: Option<DipoleQuadrupole>,
-    association: Option<Association<PcSaftParameters>>,
+    hard_chain: bool,
+    dipole: bool,
+    quadrupole: bool,
+    dipole_quadrupole: bool,
+    association: Option<Association<PcSaftPars>>,
 }
 
 impl PcSaft {
-    pub fn new(parameters: Arc<PcSaftParameters>) -> Self {
+    pub fn new(parameters: PcSaftParameters) -> Self {
         Self::with_options(parameters, PcSaftOptions::default())
     }
 
-    pub fn with_options(parameters: Arc<PcSaftParameters>, options: PcSaftOptions) -> Self {
-        let hard_sphere = HardSphere::new(&parameters);
-        let dispersion = Dispersion {
-            parameters: parameters.clone(),
-        };
-        let hard_chain = if parameters.m.iter().any(|m| (m - 1.0).abs() > 1e-15) {
-            Some(HardChain {
-                parameters: parameters.clone(),
-            })
-        } else {
-            None
-        };
+    pub fn with_options(parameters: PcSaftParameters, options: PcSaftOptions) -> Self {
+        let params = PcSaftPars::new(&parameters);
+        let hard_chain = params.m.iter().any(|m| (m - 1.0).abs() > 1e-15);
 
-        let dipole = if parameters.ndipole > 0 {
-            Some(Dipole {
-                parameters: parameters.clone(),
-            })
-        } else {
-            None
-        };
-        let quadrupole = if parameters.nquadpole > 0 {
-            Some(Quadrupole {
-                parameters: parameters.clone(),
-            })
-        } else {
-            None
-        };
-        let dipole_quadrupole = if parameters.ndipole > 0 && parameters.nquadpole > 0 {
-            Some(DipoleQuadrupole {
-                parameters: parameters.clone(),
-                variant: options.dq_variant,
-            })
-        } else {
-            None
-        };
-        let association = if !parameters.association.is_empty() {
-            Some(Association::new(
-                &parameters,
-                &parameters.association,
-                options.max_iter_cross_assoc,
-                options.tol_cross_assoc,
-            ))
-        } else {
-            None
-        };
+        let dipole = params.ndipole > 0;
+        let quadrupole = params.nquadpole > 0;
+        let dipole_quadrupole = params.ndipole > 0 && params.nquadpole > 0;
+
+        let association = Association::new(
+            &parameters,
+            options.max_iter_cross_assoc,
+            options.tol_cross_assoc,
+        )
+        .unwrap();
 
         Self {
             parameters,
+            params,
             options,
-            hard_sphere,
             hard_chain,
-            dispersion,
             dipole,
             quadrupole,
             dipole_quadrupole,
@@ -126,18 +91,14 @@ impl Components for PcSaft {
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
-        Self::with_options(
-            Arc::new(self.parameters.subset(component_list)),
-            self.options,
-        )
+        Self::with_options(self.parameters.subset(component_list), self.options)
     }
 }
 
 impl Residual for PcSaft {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
-                .sum()
+            / (FRAC_PI_6 * &self.params.m * self.params.sigma.mapv(|v| v.powi(3)) * moles).sum()
     }
 
     fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
@@ -145,38 +106,44 @@ impl Residual for PcSaft {
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
         let mut v = Vec::with_capacity(7);
-        let d = self.parameters.hs_diameter(state.temperature);
+        let d = self.params.hs_diameter(state.temperature);
 
         v.push((
-            self.hard_sphere.to_string(),
-            self.hard_sphere.helmholtz_energy(state),
+            "Hard Sphere".to_string(),
+            HardSphere.helmholtz_energy(&self.params, state),
         ));
-        if let Some(hc) = self.hard_chain.as_ref() {
-            v.push((hc.to_string(), hc.helmholtz_energy(state)))
-        }
-        v.push((
-            self.dispersion.to_string(),
-            self.dispersion.helmholtz_energy(state, &d),
-        ));
-        if let Some(dipole) = self.dipole.as_ref() {
-            v.push((dipole.to_string(), dipole.helmholtz_energy(state, &d)))
-        }
-        if let Some(quadrupole) = self.quadrupole.as_ref() {
+        if self.hard_chain {
             v.push((
-                quadrupole.to_string(),
-                quadrupole.helmholtz_energy(state, &d),
+                "Hard Chain".to_string(),
+                HardChain.helmholtz_energy(&self.params, state),
             ))
         }
-        if let Some(dipole_quadrupole) = self.dipole_quadrupole.as_ref() {
+        v.push((
+            "Dispersion".to_string(),
+            Dispersion.helmholtz_energy(&self.params, state, &d),
+        ));
+        if self.dipole {
             v.push((
-                dipole_quadrupole.to_string(),
-                dipole_quadrupole.helmholtz_energy(state, &d),
+                "Dipole".to_string(),
+                Dipole.helmholtz_energy(&self.params, state, &d),
+            ))
+        }
+        if self.quadrupole {
+            v.push((
+                "Quadrupole".to_string(),
+                Quadrupole.helmholtz_energy(&self.params, state, &d),
+            ))
+        }
+        if self.dipole_quadrupole {
+            v.push((
+                "DipoleQuadrupole".to_string(),
+                DipoleQuadrupole.helmholtz_energy(&self.params, state, &d, self.options.dq_variant),
             ))
         }
         if let Some(association) = self.association.as_ref() {
             v.push((
-                association.to_string(),
-                association.helmholtz_energy(state, &d),
+                "Association".to_string(),
+                association.helmholtz_energy(&self.params, state, &d),
             ))
         }
         v
@@ -184,14 +151,54 @@ impl Residual for PcSaft {
 }
 
 impl Molarweight for PcSaft {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        self.parameters.molarweight.clone() * GRAM / MOL
+    fn molar_weight(&self) -> &MolarWeight<Array1<f64>> {
+        &self.parameters.molar_weight
     }
 }
 
-impl fmt::Display for PcSaft {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PC-SAFT")
+impl HardSphereProperties for PcSaftPars {
+    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
+        MonomerShape::NonSpherical(self.m.mapv(N::from))
+    }
+
+    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+        let ti = temperature.recip() * -3.0;
+        Array1::from_shape_fn(self.sigma.len(), |i| {
+            -((ti * self.epsilon_k[i]).exp() * 0.12 - 1.0) * self.sigma[i]
+        })
+    }
+}
+
+impl AssociationStrength for PcSaftPars {
+    type Pure = PcSaftRecord;
+    type Record = PcSaftAssociationRecord;
+
+    fn association_strength<D: DualNum<f64> + Copy>(
+        &self,
+        temperature: D,
+        comp_i: usize,
+        comp_j: usize,
+        assoc_ij: Self::Record,
+    ) -> D {
+        let si = self.sigma[comp_i];
+        let sj = self.sigma[comp_j];
+        (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
+            * assoc_ij.kappa_ab
+            * (si * sj).powf(1.5)
+    }
+
+    fn combining_rule(
+        _: &Self::Pure,
+        _: &Self::Pure,
+        parameters_i: Self::Record,
+        parameters_j: Self::Record,
+    ) -> Self::Record {
+        let kappa_ab = (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt();
+        let epsilon_k_ab = 0.5 * (parameters_i.epsilon_k_ab + parameters_j.epsilon_k_ab);
+        Self::Record {
+            kappa_ab,
+            epsilon_k_ab,
+        }
     }
 }
 
@@ -231,13 +238,13 @@ impl EntropyScaling for PcSaft {
         _: Volume,
         moles: &Moles<Array1<f64>>,
     ) -> FeosResult<Viscosity> {
-        let p = &self.parameters;
-        let mw = &p.molarweight;
+        let p = &self.params;
+        let mw = &self.parameters.molar_weight;
         let x = (moles / moles.sum()).into_value();
         let ce: Array1<_> = (0..self.components())
             .map(|i| {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
-                5.0 / 16.0 * (mw[i] * GRAM / MOL * KB / NAV * temperature / PI).sqrt()
+                5.0 / 16.0 * (mw.get(i) * KB / NAV * temperature / PI).sqrt()
                     / omega22(tr)
                     / (p.sigma[i] * ANGSTROM).powi::<P2>()
             })
@@ -247,9 +254,10 @@ impl EntropyScaling for PcSaft {
             let denom: f64 = (0..self.components())
                 .map(|j| {
                     x[j] * (1.0
-                        + (ce[i] / ce[j]).into_value().sqrt() * (mw[j] / mw[i]).powf(1.0 / 4.0))
+                        + (ce[i] / ce[j]).into_value().sqrt()
+                            * (mw.get(j) / mw.get(i)).powf(1.0 / 4.0))
                     .powi(2)
-                        / (8.0 * (1.0 + mw[i] / mw[j])).sqrt()
+                        / (8.0 * (1.0 + (mw.get(i) / mw.get(j)).into_value())).sqrt()
                 })
                 .sum();
             ce_mix += ce[i] * x[i] / denom
@@ -259,13 +267,13 @@ impl EntropyScaling for PcSaft {
 
     fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
         let coefficients = self
-            .parameters
+            .params
             .viscosity
             .as_ref()
             .expect("Missing viscosity coefficients.");
-        let m = (x * &self.parameters.m).sum();
+        let m = (x * &self.params.m).sum();
         let s = s_res / m;
-        let pref = (x * &self.parameters.m) / m;
+        let pref = (x * &self.params.m) / m;
         let a: f64 = (&coefficients.row(0) * x).sum();
         let b: f64 = (&coefficients.row(1) * &pref).sum();
         let c: f64 = (&coefficients.row(2) * &pref).sum();
@@ -282,13 +290,14 @@ impl EntropyScaling for PcSaft {
         if self.components() != 1 {
             return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
-        let p = &self.parameters;
+        let p = &self.params;
+        let mw = &self.parameters.molar_weight;
         let density = moles.sum() / volume;
         let res: Array1<_> = (0..self.components())
             .map(|i| {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
                 3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi::<P2>() / omega11(tr) / (density * NAV)
-                    * (temperature * RGAS / PI / (p.molarweight[i] * GRAM / MOL) / p.m[i]).sqrt()
+                    * (temperature * RGAS / PI / mw.get(i) / p.m[i]).sqrt()
             })
             .collect();
         Ok(res[0])
@@ -299,13 +308,13 @@ impl EntropyScaling for PcSaft {
             return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
         let coefficients = self
-            .parameters
+            .params
             .diffusion
             .as_ref()
             .expect("Missing diffusion coefficients.");
-        let m = (x * &self.parameters.m).sum();
+        let m = (x * &self.params.m).sum();
         let s = s_res / m;
-        let pref = (x * &self.parameters.m).mapv(|v| v / m);
+        let pref = (x * &self.params.m).mapv(|v| v / m);
         let a: f64 = (&coefficients.row(0) * x).sum();
         let b: f64 = (&coefficients.row(1) * &pref).sum();
         let c: f64 = (&coefficients.row(2) * &pref).sum();
@@ -324,13 +333,18 @@ impl EntropyScaling for PcSaft {
         if self.components() != 1 {
             return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
-        let p = &self.parameters;
+        let p = &self.params;
         let mws = self.molar_weight();
-        let state = State::new_nvt(&Arc::new(Self::new(p.clone())), temperature, volume, moles)?;
+        let t = Dual64::from(temperature.into_reduced()).derivative();
+        let v = Dual64::from(volume.into_reduced());
+        let n = moles.to_reduced().mapv(Dual64::from);
+        let n_tot = n.sum();
+        let state = StateHD::new(t, v, n);
+        let s_res = -(self.residual_helmholtz_energy(&state) * t / n_tot).eps;
         let res: Array1<_> = (0..self.components())
             .map(|i| {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
-                let s_res_reduced = state.residual_molar_entropy().to_reduced() / p.m[i];
+                let s_res_reduced = s_res / p.m[i];
                 let ref_ce = chapman_enskog_thermal_conductivity(
                     temperature,
                     mws.get(i),
@@ -356,13 +370,13 @@ impl EntropyScaling for PcSaft {
             return Err(FeosError::IncompatibleComponents(self.components(), 1));
         }
         let coefficients = self
-            .parameters
+            .params
             .thermal_conductivity
             .as_ref()
             .expect("Missing thermal conductivity coefficients");
-        let m = (x * &self.parameters.m).sum();
+        let m = (x * &self.params.m).sum();
         let s = s_res / m;
-        let pref = (x * &self.parameters.m).mapv(|v| v / m);
+        let pref = (x * &self.params.m).mapv(|v| v / m);
         let a: f64 = (&coefficients.row(0) * x).sum();
         let b: f64 = (&coefficients.row(1) * &pref).sum();
         let c: f64 = (&coefficients.row(2) * &pref).sum();
@@ -375,7 +389,7 @@ impl EntropyScaling for PcSaft {
 mod tests {
     use super::*;
     use crate::pcsaft::parameters::utils::{
-        butane_parameters, propane_butane_parameters, propane_parameters, water_parameters,
+        butane_parameters, propane_butane_parameters, propane_parameters,
     };
     use approx::assert_relative_eq;
     use feos_core::*;
@@ -385,7 +399,7 @@ mod tests {
 
     #[test]
     fn ideal_gas_pressure() {
-        let e = Arc::new(PcSaft::new(propane_parameters()));
+        let e = propane_parameters();
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<P3>();
         let n = arr1(&[1.0]) * MOL;
@@ -401,7 +415,7 @@ mod tests {
 
     #[test]
     fn ideal_gas_heat_capacity_joback() {
-        let e = Arc::new(PcSaft::new(propane_parameters()));
+        let e = propane_parameters();
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<P3>();
         let n = arr1(&[1.0]) * MOL;
@@ -417,64 +431,35 @@ mod tests {
 
     #[test]
     fn hard_sphere() {
-        let hs = HardSphere::new(&propane_parameters());
         let t = 250.0;
         let v = 1000.0;
         let n = 1.0;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a_rust = hs.helmholtz_energy(&s);
+        let a_rust = HardSphere.helmholtz_energy(&propane_parameters().params as &PcSaftPars, &s);
         assert_relative_eq!(a_rust, 0.410610492598808, epsilon = 1e-10);
     }
 
     #[test]
     fn hard_sphere_mix() {
-        let c1 = HardSphere::new(&propane_parameters());
-        let c2 = HardSphere::new(&butane_parameters());
-        let c12 = HardSphere::new(&propane_butane_parameters());
         let t = 250.0;
         let v = 2.5e28;
         let n = 1.0;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a1 = c1.helmholtz_energy(&s);
-        let a2 = c2.helmholtz_energy(&s);
+        let a1 = HardSphere.helmholtz_energy(&propane_parameters().params as &PcSaftPars, &s);
+        let a2 = HardSphere.helmholtz_energy(&butane_parameters().params as &PcSaftPars, &s);
         let s1m = StateHD::new(t, v, arr1(&[n, 0.0]));
-        let a1m = c12.helmholtz_energy(&s1m);
+        let a1m =
+            HardSphere.helmholtz_energy(&propane_butane_parameters().params as &PcSaftPars, &s1m);
         let s2m = StateHD::new(t, v, arr1(&[0.0, n]));
-        let a2m = c12.helmholtz_energy(&s2m);
+        let a2m =
+            HardSphere.helmholtz_energy(&propane_butane_parameters().params as &PcSaftPars, &s2m);
         assert_relative_eq!(a1, a1m, epsilon = 1e-14);
         assert_relative_eq!(a2, a2m, epsilon = 1e-14);
     }
 
     #[test]
-    fn association() {
-        let parameters = Arc::new(water_parameters());
-        let assoc = Association::new(&parameters, &parameters.association, 50, 1e-10);
-        let t = 350.0;
-        let v = 41.248289328513216;
-        let n = 1.23;
-        let s = StateHD::new(t, v, arr1(&[n]));
-        let d = parameters.hs_diameter(t);
-        let a_rust = assoc.helmholtz_energy(&s, &d) / n;
-        assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
-    }
-
-    #[test]
-    fn cross_association() {
-        let parameters = Arc::new(water_parameters());
-        let assoc =
-            Association::new_cross_association(&parameters, &parameters.association, 50, 1e-10);
-        let t = 350.0;
-        let v = 41.248289328513216;
-        let n = 1.23;
-        let s = StateHD::new(t, v, arr1(&[n]));
-        let d = parameters.hs_diameter(t);
-        let a_rust = assoc.helmholtz_energy(&s, &d) / n;
-        assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
-    }
-
-    #[test]
     fn new_tpn() {
-        let e = Arc::new(PcSaft::new(propane_parameters()));
+        let e = propane_parameters();
         let t = 300.0 * KELVIN;
         let p = BAR;
         let m = arr1(&[1.0]) * MOL;
@@ -489,7 +474,7 @@ mod tests {
 
     #[test]
     fn vle_pure() {
-        let e = Arc::new(PcSaft::new(propane_parameters()));
+        let e = propane_parameters();
         let t = 300.0 * KELVIN;
         let vle = PhaseEquilibrium::pure(&e, t, None, Default::default());
         if let Ok(v) = vle {
@@ -503,7 +488,7 @@ mod tests {
 
     #[test]
     fn critical_point() {
-        let e = Arc::new(PcSaft::new(propane_parameters()));
+        let e = propane_parameters();
         let t = 300.0 * KELVIN;
         let cp = State::critical_point(&e, None, Some(t), Default::default());
         if let Ok(v) = cp {
@@ -513,9 +498,9 @@ mod tests {
 
     #[test]
     fn mix_single() {
-        let e1 = Arc::new(PcSaft::new(propane_parameters()));
-        let e2 = Arc::new(PcSaft::new(butane_parameters()));
-        let e12 = Arc::new(PcSaft::new(propane_butane_parameters()));
+        let e1 = propane_parameters();
+        let e2 = butane_parameters();
+        let e12 = propane_butane_parameters();
         let t = 300.0 * KELVIN;
         let v = 0.02456883872966545 * METER.powi::<P3>();
         let m1 = arr1(&[2.0]) * MOL;
@@ -539,7 +524,7 @@ mod tests {
 
     #[test]
     fn viscosity() -> FeosResult<()> {
-        let e = Arc::new(PcSaft::new(propane_parameters()));
+        let e = propane_parameters();
         let t = 300.0 * KELVIN;
         let p = BAR;
         let n = arr1(&[1.0]) * MOL;
@@ -561,7 +546,7 @@ mod tests {
 
     #[test]
     fn diffusion() -> FeosResult<()> {
-        let e = Arc::new(PcSaft::new(propane_parameters()));
+        let e = propane_parameters();
         let t = 300.0 * KELVIN;
         let p = BAR;
         let n = arr1(&[1.0]) * MOL;

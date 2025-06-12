@@ -1,8 +1,8 @@
 use approx::assert_relative_eq;
-use feos::gc_pcsaft::{GcPcSaft, GcPcSaftEosParameters};
 #[cfg(feature = "dft")]
-use feos::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftFunctionalParameters};
-use feos_core::parameter::{IdentifierOption, ParameterHetero};
+use feos::gc_pcsaft::GcPcSaftFunctional;
+use feos::gc_pcsaft::{GcPcSaft, GcPcSaftParameters};
+use feos_core::parameter::IdentifierOption;
 use feos_core::{Contributions, FeosResult, State};
 use ndarray::arr1;
 use quantity::{KELVIN, METER, MOL};
@@ -11,7 +11,7 @@ use typenum::P3;
 
 #[test]
 fn test_binary() -> FeosResult<()> {
-    let parameters = GcPcSaftEosParameters::from_json_segments(
+    let parameters = GcPcSaftParameters::from_json_segments(
         &["ethanol", "methanol"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",
@@ -20,7 +20,7 @@ fn test_binary() -> FeosResult<()> {
     )
     .unwrap();
     #[cfg(feature = "dft")]
-    let parameters_func = GcPcSaftFunctionalParameters::from_json_segments(
+    let parameters_func = GcPcSaftParameters::from_json_segments(
         &["ethanol", "methanol"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",
@@ -30,7 +30,7 @@ fn test_binary() -> FeosResult<()> {
     .unwrap();
     let eos = Arc::new(GcPcSaft::new(parameters));
     #[cfg(feature = "dft")]
-    let func = Arc::new(GcPcSaftFunctional::new(Arc::new(parameters_func)));
+    let func = Arc::new(GcPcSaftFunctional::new(parameters_func));
     let moles = arr1(&[0.5, 0.5]) * MOL;
     let cp = State::critical_point(&eos, Some(&moles), None, Default::default())?;
     #[cfg(feature = "dft")]
@@ -54,14 +54,14 @@ fn test_binary() -> FeosResult<()> {
 
 #[test]
 fn test_polar_term() -> FeosResult<()> {
-    let parameters1 = GcPcSaftEosParameters::from_json_segments(
+    let parameters1 = GcPcSaftParameters::from_json_segments(
         &["CCCOC(C)=O", "CCCO"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",
         None,
         IdentifierOption::Smiles,
     )?;
-    let parameters2 = GcPcSaftEosParameters::from_json_segments(
+    let parameters2 = GcPcSaftParameters::from_json_segments(
         &["CCCO", "CCCOC(C)=O"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",

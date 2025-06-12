@@ -32,7 +32,7 @@ pub(crate) fn impl_helmholtz_energy_functional(
                 Self::#name(functional) => functional.molecule_shape()
             });
             contributions.push(quote! {
-                Self::#name(functional) => Box::new(functional.contributions().map(FunctionalContributionVariant::from))
+                Self::#name(functional) => functional.contributions().into_iter().map(FunctionalContributionVariant::from).collect()
             });
         } else {
             molecule_shape.push(quote! {
@@ -56,13 +56,13 @@ pub(crate) fn impl_helmholtz_energy_functional(
 
     Ok(quote! {
         impl HelmholtzEnergyFunctional for #ident {
-            type Contribution = FunctionalContributionVariant;
+            type Contribution<'a> = FunctionalContributionVariant<'a>;
             fn molecule_shape(&self) -> feos_dft::MoleculeShape {
                 match self {
                     #(#molecule_shape,)*
                 }
             }
-            fn contributions(&self) -> Box<dyn Iterator<Item = FunctionalContributionVariant>> {
+            fn contributions<'a>(&'a self) -> Vec<Self::Contribution<'a>> {
                 match self {
                     #(#contributions,)*
                 }

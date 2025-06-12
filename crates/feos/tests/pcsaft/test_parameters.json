@@ -11,14 +11,7 @@
         "m": 2.0018290000000003,
         "sigma": 3.618353,
         "epsilon_k": 208.1101,
-        "molarweight": 44.0962,
-        "chemical_record": {
-            "segments": [
-                "CH3",
-                "CH2",
-                "CH3"
-            ]
-        }
+        "molarweight": 44.0962
     },
     {
         "identifier": {
@@ -32,15 +25,7 @@
         "m": 2.331586,
         "sigma": 3.7086010000000003,
         "epsilon_k": 222.8774,
-        "molarweight": 58.123,
-        "chemical_record": {
-            "segments": [
-                "CH3",
-                "CH2",
-                "CH2",
-                "CH3"
-            ]
-        }
+        "molarweight": 58.123
     },
     {
         "identifier": {
@@ -83,10 +68,14 @@
         "m": 1.065587,
         "sigma": 3.000683,
         "epsilon_k": 366.5121,
-        "kappa_ab": 0.034867983,
-        "epsilon_k_ab": 2500.6706,
-        "na": 1.0,
-        "nb": 1.0,
+        "association_sites": [
+            {
+                "kappa_ab": 0.034867983,
+                "epsilon_k_ab": 2500.6706,
+                "na": 1.0,
+                "nb": 1.0
+            }
+        ],
         "molarweight": 18.0152
     },
     {
@@ -101,16 +90,6 @@
         "m": 3.0576,
         "sigma": 3.7983,
         "epsilon_k": 236.77,
-        "chemical_record": {
-            "segments": [
-                "CH3",
-                "CH2",
-                "CH2",
-                "CH2",
-                "CH2",
-                "CH3"
-            ]
-        },
         "molarweight": 86.177
     }
 ]

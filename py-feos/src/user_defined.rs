@@ -194,7 +194,7 @@ macro_rules! impl_residual {
         }
 
         impl Molarweight for PyResidual {
-            fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+            fn molar_weight(&self) -> &MolarWeight<Array1<f64>> {
                 Python::with_gil(|py| {
                     let py_result = self.0.bind(py).call_method0("molar_weight").unwrap();
                     py_result

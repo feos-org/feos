@@ -6,7 +6,7 @@
 //! performance when more complex physical interactions are
 //! modeled.
 use criterion::{Criterion, criterion_group, criterion_main};
-use feos::core::parameter::{IdentifierOption, Parameter};
+use feos::core::parameter::IdentifierOption;
 use feos::core::{DensityInitialization, Derivative, Residual, State};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use ndarray::arr1;
@@ -70,9 +70,8 @@ fn pcsaft(c: &mut Criterion) {
     let moles = arr1(&[1.0, 1.0]) * MOL;
     for comp1 in &[hexane, acetone, co2, ethanol] {
         for comp2 in [&heptane, &dme, &acetylene, &propanol] {
-            let params =
-                PcSaftParameters::new_binary(vec![comp1.clone(), comp2.clone()], None).unwrap();
-            let eos = Arc::new(PcSaft::new(Arc::new(params)));
+            let params = PcSaftParameters::new_binary([comp1.clone(), comp2.clone()], None, vec![]);
+            let eos = Arc::new(PcSaft::new(params));
             let state = State::new_npt(&eos, t, p, &moles, DensityInitialization::Liquid).unwrap();
             let state_hd = state.derive1(Derivative::DT);
             let name1 = comp1.identifier.name.as_deref().unwrap();

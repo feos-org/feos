@@ -1,11 +1,9 @@
-use std::f64::consts::{FRAC_PI_6, PI};
-
+use crate::saftvrmie::parameters::SaftVRMiePars;
 use feos_core::StateHD;
 use ndarray::{Array1, Array2, ScalarOperand};
 use num_dual::{Dual, DualNum};
 use num_traits::Zero;
-
-use super::SaftVRMieParameters;
+use std::f64::consts::{FRAC_PI_6, PI};
 
 #[derive(Debug)]
 pub struct Properties<D> {
@@ -27,7 +25,7 @@ pub struct Properties<D> {
 
 impl<D: DualNum<f64> + Copy + Zero + ScalarOperand> Properties<D> {
     pub(super) fn new(
-        parameters: &SaftVRMieParameters,
+        parameters: &SaftVRMiePars,
         state: &StateHD<D>,
         diameter: &Array1<D>,
     ) -> Self {
@@ -99,7 +97,7 @@ pub(super) const PHI: [[f64; 7]; 6] = [
 
 /// First, second and third order perturbations for dispersive interactions
 pub fn a_disp<D: DualNum<f64> + Copy + ScalarOperand>(
-    parameters: &SaftVRMieParameters,
+    parameters: &SaftVRMiePars,
     properties: &Properties<D>,
     state: &StateHD<D>,
 ) -> D {
@@ -195,7 +193,7 @@ pub fn a_disp<D: DualNum<f64> + Copy + ScalarOperand>(
 
 /// Combine dispersion and chain contributions
 pub fn a_disp_chain<D: DualNum<f64> + Copy + ScalarOperand>(
-    parameters: &SaftVRMieParameters,
+    parameters: &SaftVRMiePars,
     properties: &Properties<D>,
     state: &StateHD<D>,
 ) -> D {

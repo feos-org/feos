@@ -12,7 +12,7 @@ use typenum::Quot;
 ///
 /// Enables calculation of (mass) specific properties.
 pub trait Molarweight {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>>;
+    fn molar_weight(&self) -> &MolarWeight<Array1<f64>>;
 }
 
 /// A residual Helmholtz energy model.

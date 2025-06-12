@@ -79,7 +79,7 @@ fn impl_molar_weight(
 
     Ok(quote! {
         impl Molarweight for #ident {
-            fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+            fn molar_weight(&self) -> &MolarWeight<Array1<f64>> {
                 match self {
                     #(#molar_weight,)*
                 }

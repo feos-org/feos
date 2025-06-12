@@ -8,8 +8,6 @@ use feos_dft::{
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::PI;
-use std::fmt;
-use std::sync::Arc;
 
 use super::{HardSphereProperties, MonomerShape};
 
@@ -60,30 +58,29 @@ pub enum FMTVersion {
 /// |$\vec\omega_2^\alpha(\mathbf{r})$|$C_{3,\alpha}\frac{\mathbf{r}}{\|\mathbf{r}\|}\\,\delta\\!\left(\frac{d_\alpha}{2}-\|\mathbf{r}\|\right)$|-|
 ///
 /// The geometry coefficients $C_{k,\alpha}$ and the segment diameters $d_\alpha$ are specified via the [HardSphereProperties] trait.
-pub struct FMTContribution<P> {
-    pub properties: Arc<P>,
+pub struct FMTContribution<'p, P> {
+    pub properties: &'p P,
     version: FMTVersion,
 }
 
-impl<P> Clone for FMTContribution<P> {
-    fn clone(&self) -> Self {
+impl<'p, P> FMTContribution<'p, P> {
+    pub fn new(properties: &'p P, version: FMTVersion) -> Self {
         Self {
-            properties: self.properties.clone(),
-            version: self.version,
-        }
-    }
-}
-
-impl<P> FMTContribution<P> {
-    pub fn new(properties: &Arc<P>, version: FMTVersion) -> Self {
-        Self {
-            properties: properties.clone(),
+            properties,
             version,
         }
     }
 }
 
-impl<P: HardSphereProperties + Send + Sync> FunctionalContribution for FMTContribution<P> {
+impl<'p, P: HardSphereProperties + Send + Sync> FunctionalContribution for FMTContribution<'p, P> {
+    fn name(&self) -> &'static str {
+        match self.version {
+            FMTVersion::WhiteBear => "FMT functional (WB)",
+            FMTVersion::KierlikRosinberg => "FMT functional (KR)",
+            FMTVersion::AntiSymWhiteBear => "FMT functional (AntiSymWB)",
+        }
+    }
+
     fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let r = self.properties.hs_diameter(temperature) * 0.5;
         let [c0, c1, c2, c3] = self.properties.geometry_coefficients(temperature);
@@ -280,17 +277,6 @@ impl<P: HardSphereProperties + Send + Sync> FunctionalContribution for FMTContri
     }
 }
 
-impl<P: HardSphereProperties> fmt::Display for FMTContribution<P> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let ver = match self.version {
-            FMTVersion::WhiteBear => "WB",
-            FMTVersion::KierlikRosinberg => "KR",
-            FMTVersion::AntiSymWhiteBear => "AntiSymWB",
-        };
-        write!(f, "FMT functional ({})", ver)
-    }
-}
-
 pub struct HardSphereParameters {
     sigma: Array1<f64>,
 }
@@ -307,15 +293,15 @@ impl HardSphereProperties for HardSphereParameters {
 
 /// [HelmholtzEnergyFunctional] for hard sphere systems.
 pub struct FMTFunctional {
-    properties: Arc<HardSphereParameters>,
+    properties: HardSphereParameters,
     version: FMTVersion,
 }
 
 impl FMTFunctional {
     pub fn new(sigma: &Array1<f64>, version: FMTVersion) -> Self {
-        let properties = Arc::new(HardSphereParameters {
+        let properties = HardSphereParameters {
             sigma: sigma.clone(),
-        });
+        };
         Self {
             properties,
             version,
@@ -351,13 +337,10 @@ impl Residual for FMTFunctional {
 }
 
 impl HelmholtzEnergyFunctional for FMTFunctional {
-    type Contribution = FMTContribution<HardSphereParameters>;
+    type Contribution<'a> = FMTContribution<'a, HardSphereParameters>;
 
-    fn contributions(&self) -> Box<dyn Iterator<Item = FMTContribution<HardSphereParameters>>> {
-        Box::new(std::iter::once(FMTContribution::new(
-            &self.properties,
-            self.version,
-        )))
+    fn contributions<'a>(&'a self) -> Vec<FMTContribution<'a, HardSphereParameters>> {
+        vec![FMTContribution::new(&self.properties, self.version)]
     }
 
     fn molecule_shape(&self) -> MoleculeShape {

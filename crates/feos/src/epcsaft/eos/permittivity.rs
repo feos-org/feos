@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
 
 use crate::epcsaft::eos::ElectrolytePcSaftVariants;
-use crate::epcsaft::parameters::ElectrolytePcSaftParameters;
+use crate::epcsaft::parameters::ElectrolytePcSaftPars;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum PermittivityRecord {
@@ -20,31 +20,6 @@ pub enum PermittivityRecord {
     },
 }
 
-impl std::fmt::Display for PermittivityRecord {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            PermittivityRecord::ExperimentalData { data } => {
-                write!(f, "PermittivityRecord(data={:?}", data)?;
-                write!(f, ")")
-            }
-            PermittivityRecord::PerturbationTheory {
-                dipole_scaling,
-                polarizability_scaling,
-                correlation_integral_parameter,
-            } => {
-                write!(f, "PermittivityRecord(dipole_scaling={}", dipole_scaling)?;
-                write!(f, ", polarizability_scaling={}", polarizability_scaling)?;
-                write!(
-                    f,
-                    ", correlation_integral_parameter={}",
-                    correlation_integral_parameter
-                )?;
-                write!(f, ")")
-            }
-        }
-    }
-}
-
 #[derive(Clone)]
 pub struct Permittivity<D: DualNum<f64>> {
     pub permittivity: D,
@@ -53,7 +28,7 @@ pub struct Permittivity<D: DualNum<f64>> {
 impl<D: DualNum<f64> + Copy> Permittivity<D> {
     pub fn new(
         state: &StateHD<D>,
-        parameters: &ElectrolytePcSaftParameters,
+        parameters: &ElectrolytePcSaftPars,
         epcsaft_variant: &ElectrolytePcSaftVariants,
     ) -> FeosResult<Self> {
         // Set permittivity to an arbitrary value of 1 if system contains no ions
@@ -63,12 +38,7 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
                 permittivity: D::one() * 1.,
             });
         }
-        let all_comp: Array1<usize> = parameters
-            .pure_records
-            .iter()
-            .enumerate()
-            .map(|(i, _pr)| i)
-            .collect();
+        let all_comp = (0..parameters.m.len()).collect();
 
         if let ElectrolytePcSaftVariants::Advanced = epcsaft_variant {
             // check if permittivity is Some for all components

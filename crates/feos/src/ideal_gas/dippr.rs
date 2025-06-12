@@ -1,10 +1,9 @@
-use feos_core::parameter::{BinaryRecord, NoBinaryModelRecord, Parameter, PureRecord};
+use feos_core::parameter::{Parameters, PureRecord};
 use feos_core::{Components, FeosResult, IdealGas};
 use ndarray::Array1;
 use num_dual::DualNum;
 use quantity::{JOULE, KELVIN, KILO, MOL, MolarEntropy, Temperature};
 use serde::{Deserialize, Serialize};
-use std::fmt;
 
 /// Parameters for DIPPR equations # 100, 107, and 127 for isobaric
 /// heat capacities of ideal gases.
@@ -114,48 +113,17 @@ impl DipprRecord {
     }
 }
 
-impl fmt::Display for DipprRecord {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::DIPPR100(coefs) => write!(fmt, "DipprRecord(EQ100, coefs={coefs:?})"),
-            Self::DIPPR107([a, b, c, d, e]) => {
-                write!(fmt, "DipprRecord(EQ107, a={a}, b={b}, c={c}, d={d}, e={e})")
-            }
-            Self::DIPPR127([a, b, c, d, e, f, g]) => write!(
-                fmt,
-                "DipprRecord(EQ127, a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g})"
-            ),
-        }
-    }
-}
+pub type DipprParameters = Parameters<DipprRecord, (), ()>;
 
 /// Ideal gas equations of state based on DIPPR equations for
 /// ideal gas heat capacities.
 pub struct Dippr(Vec<PureRecord<DipprRecord, ()>>);
 
-impl Parameter for Dippr {
-    type Pure = DipprRecord;
-    type Binary = NoBinaryModelRecord;
-    type Association = ();
-
-    fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure, ()>>,
-        _binary_records: Vec<BinaryRecord<usize, Self::Binary, ()>>,
-    ) -> FeosResult<Self> {
-        Ok(Self(pure_records))
-    }
-
-    fn records(
-        &self,
-    ) -> (
-        &[PureRecord<Self::Pure, ()>],
-        &[BinaryRecord<usize, Self::Binary, ()>],
-    ) {
-        (&self.0, &[])
-    }
-}
-
 impl Dippr {
+    pub fn new(parameters: DipprParameters) -> Self {
+        Self(parameters.pure_records)
+    }
+
     /// Directly calculates the molar ideal gas heat capacity from the DIPPR equations.
     pub fn molar_isobaric_heat_capacity(
         &self,
@@ -182,7 +150,7 @@ impl Components for Dippr {
         component_list
             .iter()
             .for_each(|&i| records.push(self.0[i].clone()));
-        Self::from_records(records, vec![]).unwrap()
+        Self(records)
     }
 }
 
@@ -227,7 +195,7 @@ mod tests {
             0.0,
             DipprRecord::eq100(&[276370., -2090.1, 8.125, -0.014116, 0.0000093701]),
         );
-        let dippr = Arc::new(Dippr::new_pure(record.clone())?);
+        let dippr = Arc::new(Dippr::new(DipprParameters::new_pure(record.clone())));
         let eos = Arc::new(EquationOfState::ideal_gas(dippr.clone()));
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi::<P3>();
@@ -271,7 +239,7 @@ mod tests {
             0.0,
             DipprRecord::eq107(33363., 26790., 2610.5, 8896., 1169.),
         );
-        let dippr = Arc::new(Dippr::new_pure(record.clone())?);
+        let dippr = Arc::new(Dippr::new(DipprParameters::new_pure(record.clone())));
         let eos = Arc::new(EquationOfState::ideal_gas(dippr.clone()));
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi::<P3>();
@@ -317,7 +285,7 @@ mod tests {
                 3.3258E4, 3.6199E4, 1.2057E3, 1.5373E7, 3.2122E3, -1.5318E7, 3.2122E3,
             ),
         );
-        let dippr = Arc::new(Dippr::new_pure(record.clone())?);
+        let dippr = Arc::new(Dippr::new(DipprParameters::new_pure(record.clone())));
         let eos = Arc::new(EquationOfState::ideal_gas(dippr.clone()));
         let temperature = 20.0 * KELVIN;
         let volume = METER.powi::<P3>();

@@ -94,7 +94,7 @@ impl<I: IdealGas, R: Residual> Residual for EquationOfState<I, R> {
 }
 
 impl<I, R: Molarweight> Molarweight for EquationOfState<I, R> {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+    fn molar_weight(&self) -> &MolarWeight<Array1<f64>> {
         self.residual.molar_weight()
     }
 }

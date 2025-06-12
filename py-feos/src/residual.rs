@@ -63,7 +63,7 @@ pub enum ResidualModel {
 
     #[cfg(all(feature = "dft", feature = "pets"))]
     #[implement(molar_weight, functional, fluid_parameters, pair_potential)]
-    PetsFunctional(feos::pets::PetsFunctional),
+    PetsFunctional(feos::pets::Pets),
 
     #[cfg(feature = "dft")]
     #[implement(functional, fluid_parameters, pair_potential)]
@@ -71,19 +71,19 @@ pub enum ResidualModel {
 
     #[cfg(all(feature = "dft", feature = "saftvrqmie"))]
     #[implement(molar_weight, functional, fluid_parameters, pair_potential)]
-    SaftVRQMieFunctional(feos::saftvrqmie::SaftVRQMieFunctional),
+    SaftVRQMieFunctional(feos::saftvrqmie::SaftVRQMie),
 }
 
 #[cfg(feature = "dft")]
 #[derive(FunctionalContribution)]
-pub enum FunctionalContributionVariant {
+pub enum FunctionalContributionVariant<'a> {
     #[cfg(feature = "pcsaft")]
-    PcSaftFunctional(feos::pcsaft::PcSaftFunctionalContribution),
+    PcSaftFunctional(feos::pcsaft::PcSaftFunctionalContribution<'a>),
     #[cfg(feature = "gc_pcsaft")]
-    GcPcSaftFunctional(feos::gc_pcsaft::GcPcSaftFunctionalContribution),
+    GcPcSaftFunctional(feos::gc_pcsaft::GcPcSaftFunctionalContribution<'a>),
     #[cfg(feature = "pets")]
-    PetsFunctional(feos::pets::PetsFunctionalContribution),
-    Fmt(feos::hard_sphere::FMTContribution<feos::hard_sphere::HardSphereParameters>),
+    PetsFunctional(feos::pets::PetsFunctionalContribution<'a>),
+    Fmt(feos::hard_sphere::FMTContribution<'a, feos::hard_sphere::HardSphereParameters>),
     #[cfg(feature = "saftvrqmie")]
-    SaftVRQMieFunctional(feos::saftvrqmie::SaftVRQMieFunctionalContribution),
+    SaftVRQMieFunctional(feos::saftvrqmie::SaftVRQMieFunctionalContribution<'a>),
 }

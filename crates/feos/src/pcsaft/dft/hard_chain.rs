@@ -1,24 +1,26 @@
-use super::PcSaftParameters;
 use crate::hard_sphere::HardSphereProperties;
+use crate::pcsaft::parameters::PcSaftPars;
 use feos_core::FeosError;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::DualNum;
-use std::fmt;
-use std::sync::Arc;
 
 #[derive(Clone)]
-pub struct ChainFunctional {
-    parameters: Arc<PcSaftParameters>,
+pub(crate) struct ChainFunctional<'a> {
+    parameters: &'a PcSaftPars,
 }
 
-impl ChainFunctional {
-    pub fn new(parameters: Arc<PcSaftParameters>) -> Self {
+impl<'a> ChainFunctional<'a> {
+    pub(crate) fn new(parameters: &'a PcSaftPars) -> Self {
         Self { parameters }
     }
 }
 
-impl FunctionalContribution for ChainFunctional {
+impl<'a> FunctionalContribution for ChainFunctional<'a> {
+    fn name(&self) -> &'static str {
+        "Hard chain functional"
+    }
+
     fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
@@ -80,11 +82,5 @@ impl FunctionalContribution for ChainFunctional {
             phi = phi - (yi * lambdai).mapv(|x| x.ln() - 1.0) * rhoi * (p.m[i] - 1.0);
         }
         Ok(phi)
-    }
-}
-
-impl fmt::Display for ChainFunctional {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Hard chain functional")
     }
 }

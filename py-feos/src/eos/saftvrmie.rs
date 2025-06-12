@@ -42,7 +42,7 @@ impl PyEquationOfState {
             tol_cross_assoc,
         };
         let residual = Arc::new(ResidualModel::SaftVRMie(SaftVRMie::with_options(
-            Arc::new(parameters.try_convert()?),
+            parameters.try_convert()?,
             options,
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
