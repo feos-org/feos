@@ -1,13 +1,11 @@
 #![allow(clippy::excessive_precision)]
-use crate::saftvrqmie::parameters::SaftVRQMieParameters;
+use super::TemperatureDependentProperties;
+use crate::saftvrqmie::parameters::SaftVRQMiePars;
 use feos_core::StateHD;
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::TAU;
 use std::fmt;
-use std::sync::Arc;
-
-use super::TemperatureDependentProperties;
 
 /// Boltzmann's constant in J/K
 const KB: f64 = 1.380649e-23;
@@ -62,7 +60,7 @@ const W_K21: [f64; 21] = [
     0.011694638867371874278064396062192,
 ];
 
-impl SaftVRQMieParameters {
+impl SaftVRQMiePars {
     #[inline]
     pub fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
         Array1::from_shape_fn(self.m.len(), |i| -> D {
@@ -238,22 +236,19 @@ pub fn quantum_d_mass<D: DualNum<f64>>(mass: f64, temperature: D) -> D {
     temperature.recip() / mass * D_QM_PREFACTOR
 }
 
-pub struct HardSphere {
-    pub parameters: Arc<SaftVRQMieParameters>,
-}
+pub struct HardSphere;
 
 impl HardSphere {
     pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
         &self,
+        parameters: &SaftVRQMiePars,
         state: &StateHD<D>,
         properties: &TemperatureDependentProperties<D>,
     ) -> D {
-        let d = Array1::from_shape_fn(self.parameters.m.len(), |i| {
-            properties.hs_diameter_ij[[i, i]]
-        });
-        let zeta = zeta(&self.parameters.m, &state.partial_density, &d);
+        let d = Array1::from_shape_fn(parameters.m.len(), |i| properties.hs_diameter_ij[[i, i]]);
+        let zeta = zeta(&parameters.m, &state.partial_density, &d);
         let frac_1mz3 = -(zeta[3] - 1.0).recip();
-        let zeta_23 = zeta_23(&self.parameters.m, &state.molefracs, &d);
+        let zeta_23 = zeta_23(&parameters.m, &state.molefracs, &d);
         state.volume * 6.0 / std::f64::consts::PI
             * (zeta[1] * zeta[2] * frac_1mz3 * 3.0
                 + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
@@ -361,48 +356,42 @@ mod tests {
 
     #[test]
     fn test_hs_helmholtz_energy() {
-        let hs = HardSphere {
-            parameters: hydrogen_fh("1"),
-        };
+        let parameters = hydrogen_fh("1");
         let na = 6.02214076e23;
         let t = 26.7060;
         let v = 1.0e26;
         let n = na * 1.1;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let properties = TemperatureDependentProperties::new(&hs.parameters, s.temperature);
-        let a_rust = hs.helmholtz_energy(&s, &properties);
+        let properties = TemperatureDependentProperties::new(&parameters, s.temperature);
+        let a_rust = HardSphere.helmholtz_energy(&parameters, &s, &properties);
         dbg!(a_rust / na);
         assert_relative_eq!(a_rust / na, 0.54586730268029837, epsilon = 5e-7);
     }
 
     #[test]
     fn test_hs_helmholtz_energy_fh2() {
-        let hs = HardSphere {
-            parameters: hydrogen_fh("2"),
-        };
+        let parameters = hydrogen_fh("2");
         let na = 6.02214076e23;
         let t = 26.7060;
         let v = 1.0e26;
         let n = na * 1.1;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let properties = TemperatureDependentProperties::new(&hs.parameters, s.temperature);
-        let a_rust = hs.helmholtz_energy(&s, &properties);
+        let properties = TemperatureDependentProperties::new(&parameters, s.temperature);
+        let a_rust = HardSphere.helmholtz_energy(&parameters, &s, &properties);
         dbg!(a_rust / na);
         assert_relative_eq!(a_rust / na, 0.5934447545083482, epsilon = 5e-7);
     }
 
     #[test]
     fn test_hs_helmholtz_energy_mix() {
-        let hs = HardSphere {
-            parameters: h2_ne_fh("1"),
-        };
+        let parameters = h2_ne_fh("1");
         let na = 6.02214076e23;
         let t = 30.0;
         let v = 1.0e26;
         let n = [na * 1.1, na * 1.0];
         let s = StateHD::new(t, v, arr1(&n));
-        let properties = TemperatureDependentProperties::new(&hs.parameters, s.temperature);
-        let a_rust = hs.helmholtz_energy(&s, &properties);
+        let properties = TemperatureDependentProperties::new(&parameters, s.temperature);
+        let a_rust = HardSphere.helmholtz_energy(&parameters, &s, &properties);
         dbg!(a_rust / na);
         // non-additive: 1.8249307925054206
         assert_relative_eq!(a_rust / na, 1.8074833133403905, epsilon = 5e-7);
@@ -410,16 +399,14 @@ mod tests {
 
     #[test]
     fn test_hs_helmholtz_energy_mix_fh2() {
-        let hs = HardSphere {
-            parameters: h2_ne_fh("2"),
-        };
+        let parameters = h2_ne_fh("2");
         let na = 6.02214076e23;
         let t = 30.0;
         let v = 1.0e26;
         let n = [na * 1.1, na * 1.0];
         let s = StateHD::new(t, v, arr1(&n));
-        let properties = TemperatureDependentProperties::new(&hs.parameters, s.temperature);
-        let a_rust = hs.helmholtz_energy(&s, &properties);
+        let properties = TemperatureDependentProperties::new(&parameters, s.temperature);
+        let a_rust = HardSphere.helmholtz_energy(&parameters, &s, &properties);
         dbg!(a_rust / na);
         assert_relative_eq!(a_rust / na, 1.898534632022848, epsilon = 5e-7);
     }

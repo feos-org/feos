@@ -1,12 +1,8 @@
 #![allow(clippy::excessive_precision)]
 #![cfg(feature = "dft")]
 use approx::assert_relative_eq;
-use feos::gc_pcsaft::{
-    GcPcSaft, GcPcSaftEosParameters, GcPcSaftFunctional, GcPcSaftFunctionalParameters,
-};
-use feos_core::parameter::{
-    ChemicalRecord, Identifier, IdentifierOption, ParameterHetero, SegmentRecord,
-};
+use feos::gc_pcsaft::{GcPcSaft, GcPcSaftFunctional, GcPcSaftParameters};
+use feos_core::parameter::{ChemicalRecord, Identifier, IdentifierOption, SegmentRecord};
 use feos_core::{PhaseEquilibrium, State, StateBuilder, Verbosity};
 use feos_dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
 use feos_dft::interface::PlanarInterface;
@@ -24,7 +20,7 @@ fn test_bulk_implementation() -> Result<(), Box<dyn Error>> {
     let KB_old = 1.38064852e-23 * JOULE / KELVIN;
     let NAV_old = 6.022140857e23 / MOL;
 
-    let parameters = GcPcSaftEosParameters::from_json_segments(
+    let parameters = GcPcSaftParameters::from_json_segments(
         &["propane"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",
@@ -33,7 +29,7 @@ fn test_bulk_implementation() -> Result<(), Box<dyn Error>> {
     )
     .unwrap();
 
-    let parameters_func = GcPcSaftFunctionalParameters::from_json_segments(
+    let parameters_func = GcPcSaftParameters::from_json_segments(
         &["propane"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",
@@ -42,8 +38,8 @@ fn test_bulk_implementation() -> Result<(), Box<dyn Error>> {
     )
     .unwrap();
 
-    let eos = Arc::new(GcPcSaft::new(Arc::new(parameters)));
-    let func = Arc::new(GcPcSaftFunctional::new(Arc::new(parameters_func)));
+    let eos = Arc::new(GcPcSaft::new(parameters));
+    let func = Arc::new(GcPcSaftFunctional::new(parameters_func));
     let t = 200.0 * KELVIN;
     let v = 0.002 * METER.powi::<P3>() * NAV / NAV_old;
     let n = arr1(&[1.5]) * MOL;
@@ -117,17 +113,11 @@ fn test_bulk_association() -> Result<(), Box<dyn Error>> {
         vec!["OH".into(), "CH2".into(), "CH2".into(), "OH".into()],
         None,
     );
-    let eos_parameters = Arc::new(GcPcSaftEosParameters::from_segments(
-        vec![ethylene_glycol.clone()],
-        segment_records.clone(),
-        None,
-    )?);
+    let eos_parameters =
+        GcPcSaftParameters::from_segments(vec![ethylene_glycol.clone()], &segment_records, None);
     let eos = Arc::new(GcPcSaft::new(eos_parameters));
-    let func_parameters = Arc::new(GcPcSaftFunctionalParameters::from_segments(
-        vec![ethylene_glycol],
-        segment_records,
-        None,
-    )?);
+    let func_parameters =
+        GcPcSaftParameters::from_segments(vec![ethylene_glycol], &segment_records, None);
     let func = Arc::new(GcPcSaftFunctional::new(func_parameters));
 
     let t = 200.0 * KELVIN;
@@ -154,7 +144,7 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
     let KB_old = 1.38064852e-23 * JOULE / KELVIN;
     let NAV_old = 6.022140857e23 / MOL;
 
-    let parameters = GcPcSaftFunctionalParameters::from_json_segments(
+    let parameters = GcPcSaftParameters::from_json_segments(
         &["propane"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",
@@ -163,7 +153,7 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
     )
     .unwrap();
 
-    let func = Arc::new(GcPcSaftFunctional::new(Arc::new(parameters)));
+    let func = Arc::new(GcPcSaftFunctional::new(parameters));
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 2048;
@@ -200,7 +190,7 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
 #[test]
 #[allow(non_snake_case)]
 fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
-    let parameters = GcPcSaftFunctionalParameters::from_json_segments(
+    let parameters = GcPcSaftParameters::from_json_segments(
         &["1-pentanol"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",
@@ -209,7 +199,7 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
     )
     .unwrap();
 
-    let func = Arc::new(GcPcSaftFunctional::new(Arc::new(parameters)));
+    let func = Arc::new(GcPcSaftFunctional::new(parameters));
     let t = 300.0 * KELVIN;
     let w = 100.0 * ANGSTROM;
     let points = 4096;
@@ -249,13 +239,14 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
 #[test]
 #[allow(non_snake_case)]
 fn test_dft_newton() -> Result<(), Box<dyn Error>> {
-    let params = Arc::new(GcPcSaftFunctionalParameters::from_json_segments(
+    let params = GcPcSaftParameters::from_json_segments(
         &["propane"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",
         None,
         IdentifierOption::Name,
-    )?);
+    )
+    .unwrap();
     let func = Arc::new(GcPcSaftFunctional::new(params));
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;

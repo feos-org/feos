@@ -1,10 +1,8 @@
-use crate::uvtheory::parameters::UVTheoryParameters;
-use feos_core::StateHD;
+use crate::uvtheory::WeeksChandlerAndersen;
+use crate::uvtheory::parameters::UVTheoryPars;
 use ndarray::prelude::*;
 use num_dual::DualNum;
 use std::f64::consts::PI;
-use std::fmt;
-use std::sync::Arc;
 
 pub(super) const WCA_CONSTANTS_Q: [[f64; 4]; 3] = [
     [1.92840364363978, 4.43165896265079E-01, 0.0, 0.0],
@@ -49,52 +47,29 @@ pub(super) const WCA_CONSTANTS_ETA_B_UVB3: [[f64; 2]; 3] = [
     [12.90119266, -42.71680606],
 ];
 
-#[derive(Debug, Clone)]
-pub(super) struct HardSphere {
-    pub parameters: Arc<UVTheoryParameters>,
-}
-
-impl HardSphere {
-    /// Helmholtz energy for hard spheres, eq. 19 (check Volume)
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
-        let d = diameter_wca(&self.parameters, state.temperature);
-        let zeta = zeta(&state.partial_density, &d);
-        let frac_1mz3 = -(zeta[3] - 1.0).recip();
-        let zeta_23 = zeta_23(&state.molefracs, &d);
-        state.volume * 6.0 / std::f64::consts::PI
-            * (zeta[1] * zeta[2] * frac_1mz3 * 3.0
-                + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
-                + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (zeta[3] * (-1.0)).ln_1p())
-    }
-}
-
-impl fmt::Display for HardSphere {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Hard Sphere")
-    }
-}
-
 /// Dimensionless Hard-sphere diameter according to Weeks-Chandler-Andersen division.
-pub(super) fn diameter_wca<D: DualNum<f64> + Copy>(
-    parameters: &UVTheoryParameters,
-    temperature: D,
-) -> Array1<D> {
-    parameters
-        .sigma
-        .iter()
-        .enumerate()
-        .map(|(i, _b)| {
-            let t = temperature / parameters.epsilon_k[i];
-            let rm = (parameters.rep[i] / parameters.att[i])
-                .powf(1.0 / (parameters.rep[i] - parameters.att[i]));
-            let c = (parameters.rep[i] / 6.0)
-                .powf(-parameters.rep[i] / (12.0 - 2.0 * parameters.rep[i]))
-                - 1.0;
+impl WeeksChandlerAndersen {
+    pub fn diameter_wca<D: DualNum<f64> + Copy>(
+        parameters: &UVTheoryPars,
+        temperature: D,
+    ) -> Array1<D> {
+        parameters
+            .sigma
+            .iter()
+            .enumerate()
+            .map(|(i, _b)| {
+                let t = temperature / parameters.epsilon_k[i];
+                let rm = (parameters.rep[i] / parameters.att[i])
+                    .powf(1.0 / (parameters.rep[i] - parameters.att[i]));
+                let c = (parameters.rep[i] / 6.0)
+                    .powf(-parameters.rep[i] / (12.0 - 2.0 * parameters.rep[i]))
+                    - 1.0;
 
-            (((t.sqrt() * c + 1.0).powf(2.0 / parameters.rep[i])).recip() * rm)
-                * parameters.sigma[i]
-        })
-        .collect()
+                (((t.sqrt() * c + 1.0).powf(2.0 / parameters.rep[i])).recip() * rm)
+                    * parameters.sigma[i]
+            })
+            .collect()
+    }
 }
 
 pub(super) fn dimensionless_diameter_q_wca<D: DualNum<f64> + Copy>(
@@ -127,20 +102,6 @@ pub(super) fn dimensionless_diameter_q_wca<D: DualNum<f64> + Copy>(
         * rs
 }
 
-pub(super) fn zeta<D: DualNum<f64> + Copy>(
-    partial_density: &Array1<D>,
-    diameter: &Array1<D>,
-) -> [D; 4] {
-    let mut zeta: [D; 4] = [D::zero(), D::zero(), D::zero(), D::zero()];
-    for i in 0..partial_density.len() {
-        for k in 0..4 {
-            zeta[k] +=
-                partial_density[i] * diameter[i].powi(k as i32) * (std::f64::consts::PI / 6.0);
-        }
-    }
-    zeta
-}
-
 pub(super) fn packing_fraction<D: DualNum<f64> + Copy>(
     partial_density: &Array1<D>,
     diameter: &Array1<D>,
@@ -150,19 +111,9 @@ pub(super) fn packing_fraction<D: DualNum<f64> + Copy>(
     })
 }
 
-pub(super) fn zeta_23<D: DualNum<f64> + Copy>(molefracs: &Array1<D>, diameter: &Array1<D>) -> D {
-    let mut zeta: [D; 2] = [D::zero(), D::zero()];
-    for i in 0..molefracs.len() {
-        for k in 0..2 {
-            zeta[k] += molefracs[i] * diameter[i].powi((k + 2) as i32);
-        }
-    }
-    zeta[0] / zeta[1]
-}
-
 #[inline]
 pub(super) fn dimensionless_length_scale<D: DualNum<f64> + Copy>(
-    parameters: &UVTheoryParameters,
+    parameters: &UVTheoryPars,
     temperature: D,
 ) -> Array1<D> {
     parameters
@@ -172,7 +123,8 @@ pub(super) fn dimensionless_length_scale<D: DualNum<f64> + Copy>(
         .map(|(i, _c)| {
             let rs = (parameters.rep[i] / parameters.att[i])
                 .powf(1.0 / (parameters.rep[i] - parameters.att[i]));
-            -diameter_wca(parameters, temperature)[i] + rs * parameters.sigma[i]
+            -WeeksChandlerAndersen::diameter_wca(parameters, temperature)[i]
+                + rs * parameters.sigma[i]
             // parameters.sigma[i]
         })
         .collect()
@@ -180,7 +132,7 @@ pub(super) fn dimensionless_length_scale<D: DualNum<f64> + Copy>(
 
 #[inline]
 pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
-    parameters: &UVTheoryParameters,
+    parameters: &UVTheoryPars,
     eta: D,
     temperature: D,
 ) -> Array2<D> {
@@ -202,7 +154,7 @@ pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
 }
 
 pub(super) fn packing_fraction_b_uvb3<D: DualNum<f64> + Copy>(
-    parameters: &UVTheoryParameters,
+    parameters: &UVTheoryPars,
     eta: D,
     temperature: D,
 ) -> Array2<D> {
@@ -224,7 +176,7 @@ pub(super) fn packing_fraction_b_uvb3<D: DualNum<f64> + Copy>(
 }
 
 pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
-    parameters: &UVTheoryParameters,
+    parameters: &UVTheoryPars,
     eta: D,
     temperature: D,
 ) -> Array2<D> {
@@ -253,7 +205,7 @@ pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
 }
 
 pub(super) fn packing_fraction_a_uvb3<D: DualNum<f64> + Copy>(
-    parameters: &UVTheoryParameters,
+    parameters: &UVTheoryPars,
     eta: D,
     temperature: D,
 ) -> Array2<D> {
@@ -285,27 +237,35 @@ pub(super) fn packing_fraction_a_uvb3<D: DualNum<f64> + Copy>(
 }
 
 #[cfg(test)]
+#[expect(clippy::excessive_precision)]
 mod test {
     use super::*;
+    use crate::hard_sphere::HardSphere;
+    use crate::uvtheory::Perturbation::WeeksChandlerAndersen as WCA;
     use crate::uvtheory::parameters::utils::{
         methane_parameters, test_parameters, test_parameters_mixture,
     };
     use approx::assert_relative_eq;
+    use feos_core::StateHD;
+
     #[test]
     fn test_wca_diameter() {
-        let p = test_parameters(24.0, 6.0, 2.0, 1.0);
+        let p = test_parameters(24.0, 6.0, 2.0, 1.0, WCA);
         let temp = 4.0;
-        assert_eq!(diameter_wca(&p, temp)[0] / p.sigma[0], 0.9614325601663462);
+        assert_eq!(
+            WeeksChandlerAndersen::diameter_wca(&p, temp)[0] / p.sigma[0],
+            0.9614325601663462
+        );
 
         // Methane
-        let p = methane_parameters(24.0, 6.0);
+        let p = UVTheoryPars::new(&methane_parameters(24.0, 6.0), WCA);
 
         assert_eq!(
-            diameter_wca(&p, 4.0 * p.epsilon_k[0])[0] / p.sigma[0],
+            WeeksChandlerAndersen::diameter_wca(&p, 4.0 * p.epsilon_k[0])[0] / p.sigma[0],
             0.9614325601663462
         );
         assert_eq!(
-            diameter_wca(&p, 4.0 * p.epsilon_k[0])[0] / p.sigma[0],
+            WeeksChandlerAndersen::diameter_wca(&p, 4.0 * p.epsilon_k[0])[0] / p.sigma[0],
             0.9614325601663462
         );
 
@@ -329,18 +289,18 @@ mod test {
         let reduced_density = 0.90000000000000002;
         let reduced_volume = (moles[0] + moles[1]) / reduced_density;
 
-        let p = test_parameters_mixture(
-            arr1(&[12.0, 12.0]),
-            arr1(&[6.0, 6.0]),
-            arr1(&[1.0, 1.0]),
-            arr1(&[1.0, 0.5]),
+        let p = UVTheoryPars::new(
+            &test_parameters_mixture(
+                arr1(&[12.0, 12.0]),
+                arr1(&[6.0, 6.0]),
+                arr1(&[1.0, 1.0]),
+                arr1(&[1.0, 0.5]),
+            ),
+            WCA,
         );
 
-        let pt = HardSphere {
-            parameters: Arc::new(p),
-        };
         let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());
-        let a = pt.helmholtz_energy(&state) / (moles[0] + moles[1]);
+        let a = HardSphere.helmholtz_energy(&p, &state) / (moles[0] + moles[1]);
         assert_relative_eq!(a, 3.8636904888563084, epsilon = 1e-10);
     }
 }

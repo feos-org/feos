@@ -1,26 +1,28 @@
-use crate::saftvrqmie::parameters::SaftVRQMieParameters;
+use crate::saftvrqmie::parameters::SaftVRQMiePars;
 use feos_core::FeosResult;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::PI;
-use std::fmt;
-use std::sync::Arc;
 
 pub const N0_CUTOFF: f64 = 1e-9;
 
 #[derive(Clone)]
-pub struct NonAddHardSphereFunctional {
-    parameters: Arc<SaftVRQMieParameters>,
+pub struct NonAddHardSphereFunctional<'a> {
+    parameters: &'a SaftVRQMiePars,
 }
 
-impl NonAddHardSphereFunctional {
-    pub fn new(parameters: Arc<SaftVRQMieParameters>) -> Self {
+impl<'a> NonAddHardSphereFunctional<'a> {
+    pub fn new(parameters: &'a SaftVRQMiePars) -> Self {
         Self { parameters }
     }
 }
 
-impl FunctionalContribution for NonAddHardSphereFunctional {
+impl<'a> FunctionalContribution for NonAddHardSphereFunctional<'a> {
+    fn name(&self) -> &'static str {
+        "Non-additive hard-sphere functional"
+    }
+
     fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
@@ -144,7 +146,7 @@ impl FunctionalContribution for NonAddHardSphereFunctional {
 }
 
 pub fn non_additive_hs_energy_density<S, N: DualNum<f64> + Copy + ScalarOperand>(
-    parameters: &SaftVRQMieParameters,
+    parameters: &SaftVRQMiePars,
     d_hs_ij: &Array2<N>,
     d_hs_add_ij: &Array2<N>,
     rho0: &ArrayBase<S, Ix1>,
@@ -177,10 +179,4 @@ where
             * PI
     })
     .sum()
-}
-
-impl fmt::Display for NonAddHardSphereFunctional {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Non-additive hard-sphere functional")
-    }
 }

@@ -69,8 +69,7 @@ impl PyEquationOfState {
             todo!()
         }?;
         let residual = Arc::new(ResidualModel::PcSaft(PcSaft::with_options(
-            Arc::new(parameters),
-            options,
+            parameters, options,
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
@@ -130,11 +129,7 @@ impl PyHelmholtzEnergyFunctional {
             dq_variant,
         };
         let func = Arc::new(ResidualModel::PcSaftFunctional(
-            PcSaftFunctional::with_options(
-                Arc::new(parameters.try_convert()?),
-                fmt_version.into(),
-                options,
-            ),
+            PcSaftFunctional::with_options(parameters.try_convert()?, fmt_version.into(), options),
         ));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
         Ok(PyEquationOfState(Arc::new(EquationOfState::new(

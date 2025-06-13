@@ -1,31 +1,26 @@
+use super::WeeksChandlerAndersen;
 use super::hard_sphere::{
-    diameter_wca, dimensionless_diameter_q_wca, packing_fraction, packing_fraction_a,
-    packing_fraction_b,
+    dimensionless_diameter_q_wca, packing_fraction, packing_fraction_a, packing_fraction_b,
 };
 use crate::uvtheory::parameters::*;
 use feos_core::StateHD;
 use num_dual::DualNum;
-use std::fmt;
-use std::{f64::consts::PI, sync::Arc};
+use std::f64::consts::PI;
 
 #[derive(Debug, Clone)]
-pub(super) struct ReferencePerturbation {
-    pub parameters: Arc<UVTheoryParameters>,
-}
-
-impl fmt::Display for ReferencePerturbation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Reference Perturbation")
-    }
-}
+pub(super) struct ReferencePerturbation;
 
 impl ReferencePerturbation {
     /// Helmholtz energy for perturbation reference (Mayer-f), eq. 29
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
-        let p = &self.parameters;
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        parameters: &UVTheoryPars,
+        state: &StateHD<D>,
+    ) -> D {
+        let p = parameters;
         let n = p.sigma.len();
         let x = &state.molefracs;
-        let d = diameter_wca(p, state.temperature);
+        let d = WeeksChandlerAndersen::diameter_wca(p, state.temperature);
         //let q = diameter_q_wca(&p, state.temperature);
         let eta = packing_fraction(&state.partial_density, &d);
         let eta_a = packing_fraction_a(p, eta, state.temperature);
@@ -59,8 +54,10 @@ impl ReferencePerturbation {
 }
 
 #[cfg(test)]
+#[expect(clippy::excessive_precision)]
 mod test {
     use super::*;
+    use crate::uvtheory::Perturbation::WeeksChandlerAndersen as WCA;
     use crate::uvtheory::parameters::utils::{test_parameters, test_parameters_mixture};
     use approx::assert_relative_eq;
     use ndarray::arr1;
@@ -75,12 +72,9 @@ mod test {
         let reduced_density = 1.0;
         let reduced_volume = moles[0] / reduced_density;
 
-        let p = test_parameters(24.0, 6.0, 1.0, 1.0);
-        let pt = ReferencePerturbation {
-            parameters: Arc::new(p),
-        };
+        let p = test_parameters(24.0, 6.0, 1.0, 1.0, WCA);
         let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());
-        let a = pt.helmholtz_energy(&state) / moles[0];
+        let a = ReferencePerturbation.helmholtz_energy(&p, &state) / moles[0];
         assert_relative_eq!(a, 0.258690311450425, epsilon = 1e-10);
     }
     #[test]
@@ -90,18 +84,18 @@ mod test {
         let reduced_density = 0.90000000000000002;
         let reduced_volume = (moles[0] + moles[1]) / reduced_density;
 
-        let p = test_parameters_mixture(
-            arr1(&[12.0, 12.0]),
-            arr1(&[6.0, 6.0]),
-            arr1(&[1.0, 1.0]),
-            arr1(&[1.0, 0.5]),
+        let p = UVTheoryPars::new(
+            &test_parameters_mixture(
+                arr1(&[12.0, 12.0]),
+                arr1(&[6.0, 6.0]),
+                arr1(&[1.0, 1.0]),
+                arr1(&[1.0, 0.5]),
+            ),
+            WCA,
         );
 
-        let pt = ReferencePerturbation {
-            parameters: Arc::new(p),
-        };
         let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());
-        let a = pt.helmholtz_energy(&state) / (moles[0] + moles[1]);
+        let a = ReferencePerturbation.helmholtz_energy(&p, &state) / (moles[0] + moles[1]);
 
         assert_relative_eq!(a, 0.308268896386771, epsilon = 1e-6);
     }

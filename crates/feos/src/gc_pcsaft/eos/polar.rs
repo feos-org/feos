@@ -4,8 +4,6 @@ use feos_core::StateHD;
 use ndarray::prelude::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
-use std::fmt;
-use std::sync::Arc;
 
 // Dipole parameters
 pub const AD: [[f64; 3]; 5] = [
@@ -54,7 +52,6 @@ fn triplet_integral_ijk<D: DualNum<f64> + Copy>(mijk1: f64, mijk2: f64, eta: D) 
 }
 
 pub(super) struct Dipole {
-    parameters: Arc<GcPcSaftEosParameters>,
     mij1: Array2<f64>,
     mij2: Array2<f64>,
     mijk1: Array3<f64>,
@@ -64,7 +61,7 @@ pub(super) struct Dipole {
 }
 
 impl Dipole {
-    pub fn new(parameters: &Arc<GcPcSaftEosParameters>) -> Self {
+    pub fn new(parameters: &GcPcSaftEosParameters) -> Self {
         let ndipole = parameters.dipole_comp.len();
 
         let f2_term = Array2::from_shape_fn([ndipole; 2], |(i, j)| {
@@ -107,7 +104,6 @@ impl Dipole {
             }
         }
         Self {
-            parameters: parameters.clone(),
             mij1,
             mij2,
             mijk1,
@@ -119,8 +115,12 @@ impl Dipole {
 }
 
 impl Dipole {
-    pub(super) fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
-        let p = &self.parameters;
+    pub(super) fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        parameters: &GcPcSaftEosParameters,
+        state: &StateHD<D>,
+    ) -> D {
+        let p = parameters;
         let ndipole = p.dipole_comp.len();
 
         let t_inv = state.temperature.inv();
@@ -163,11 +163,5 @@ impl Dipole {
             result = phi2 * state.volume
         }
         result
-    }
-}
-
-impl fmt::Display for Dipole {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Dipole")
     }
 }

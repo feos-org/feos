@@ -1,10 +1,9 @@
-use crate::saftvrqmie::parameters::SaftVRQMieParameters;
+use crate::saftvrqmie::parameters::SaftVRQMiePars;
 use feos_core::StateHD;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use std::f64::consts::FRAC_PI_6;
 use std::fmt;
-use std::sync::Arc;
 
 use super::TemperatureDependentProperties;
 
@@ -38,7 +37,7 @@ pub struct Alpha<D: DualNum<f64>> {
 
 impl<D: DualNum<f64> + Copy> Alpha<D> {
     pub fn new(
-        parameters: &SaftVRQMieParameters,
+        parameters: &SaftVRQMiePars,
         sigma_eff_ij: &Array2<D>,
         epsilon_k_eff_ij: &Array2<D>,
         temperature: D,
@@ -88,19 +87,18 @@ impl<D: DualNum<f64> + Copy> Alpha<D> {
     }
 }
 
-pub struct Dispersion {
-    pub parameters: Arc<SaftVRQMieParameters>,
-}
+pub struct Dispersion;
 
 impl Dispersion {
     pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
         &self,
+        parameters: &SaftVRQMiePars,
         state: &StateHD<D>,
         properties: &TemperatureDependentProperties<D>,
     ) -> D {
         // auxiliary variables
-        let n = self.parameters.m.len();
-        let p = &self.parameters;
+        let n = parameters.m.len();
+        let p = parameters;
         let rho = &state.partial_density;
 
         // temperature dependent segment radius
@@ -151,7 +149,7 @@ impl Dispersion {
 #[cfg(feature = "dft")]
 #[expect(clippy::too_many_arguments)]
 pub fn dispersion_energy_density<D: DualNum<f64> + Copy>(
-    parameters: &SaftVRQMieParameters,
+    parameters: &SaftVRQMiePars,
     d_hs_ij: &Array2<D>,
     s_eff_ij: &Array2<D>,
     epsilon_k_eff_ij: &Array2<D>,
@@ -202,7 +200,7 @@ fn zeta_saft_vrq_mie<D: DualNum<f64> + Copy>(
 }
 
 fn first_order_perturbation<D: DualNum<f64> + Copy>(
-    parameters: &SaftVRQMieParameters,
+    parameters: &SaftVRQMiePars,
     x_s: &Array1<D>,
     zeta: D,
     rho_s: D,
@@ -332,7 +330,7 @@ fn combine_sutherland_and_b<D: DualNum<f64> + Copy>(
 
 #[expect(clippy::too_many_arguments)]
 fn second_order_perturbation<D: DualNum<f64> + Copy>(
-    parameters: &SaftVRQMieParameters,
+    parameters: &SaftVRQMiePars,
     alpha: &Alpha<D>,
     x_s: &Array1<D>,
     zeta: D,
@@ -455,7 +453,7 @@ fn second_order_perturbation_ij<D: DualNum<f64> + Copy>(
 }
 
 fn third_order_perturbation<D: DualNum<f64> + Copy>(
-    parameters: &SaftVRQMieParameters,
+    parameters: &SaftVRQMiePars,
     alpha: &Alpha<D>,
     x_s: &Array1<D>,
     zeta_bar: D,
@@ -826,9 +824,7 @@ mod tests {
 
     #[test]
     fn test_dispersion() {
-        let disp = Dispersion {
-            parameters: hydrogen_fh("1"),
-        };
+        let parameters = hydrogen_fh("1");
         let a_ref = [
             -1.2683816065838103,
             -0.61628364979962436,
@@ -841,26 +837,22 @@ mod tests {
             let t = 26.7060 * (it + 1) as f64;
             let v = 1.0e26;
             let state = StateHD::new(t, v, arr1(&[na]));
-            let properties =
-                TemperatureDependentProperties::new(&disp.parameters, state.temperature);
-            let a_disp = disp.helmholtz_energy(&state, &properties) / na;
+            let properties = TemperatureDependentProperties::new(&parameters, state.temperature);
+            let a_disp = Dispersion.helmholtz_energy(&parameters, &state, &properties) / na;
             assert_relative_eq!(a_disp, a, epsilon = 1e-7);
         }
         let t = 26.7060;
         let v = 1.0e26 * 2.0;
         let n = na * 2.0;
         let state = StateHD::new(t, v, arr1(&[n]));
-        let properties = TemperatureDependentProperties::new(&disp.parameters, state.temperature);
-        let a_disp = disp.helmholtz_energy(&state, &properties) / na;
+        let properties = TemperatureDependentProperties::new(&parameters, state.temperature);
+        let a_disp = Dispersion.helmholtz_energy(&parameters, &state, &properties) / na;
         assert_relative_eq!(a_disp, a_ref[0] * 2.0, epsilon = 1e-7);
     }
 
     #[test]
     fn test_parameters_mix() {
-        let disp = Dispersion {
-            parameters: h2_ne_fh("1"),
-        };
-        let p = disp.parameters;
+        let p = h2_ne_fh("1");
         assert_relative_eq!(p.c_ij[[0, 1]], 4.7303195840057679, epsilon = 1e-7);
         assert_relative_eq!(p.epsilon_k_ij[[0, 1]], 28.246978839971383, epsilon = 1e-7);
         assert_relative_eq!(p.lambda_a_ij[[0, 1]], 6.0, epsilon = 1e-7);
@@ -869,9 +861,7 @@ mod tests {
 
     #[test]
     fn test_dispersion_mix() {
-        let disp = Dispersion {
-            parameters: h2_ne_fh("1"),
-        };
+        let parameters = h2_ne_fh("1");
         let a_ref = [
             -4.4340438372333235,
             -2.1563424617699911,
@@ -885,9 +875,8 @@ mod tests {
         for (it, &a) in a_ref.iter().enumerate() {
             let t = 30.0 * (it + 1) as f64;
             let state = StateHD::new(t, v, arr1(&n));
-            let properties =
-                TemperatureDependentProperties::new(&disp.parameters, state.temperature);
-            let a_disp = disp.helmholtz_energy(&state, &properties) / na;
+            let properties = TemperatureDependentProperties::new(&parameters, state.temperature);
+            let a_disp = Dispersion.helmholtz_energy(&parameters, &state, &properties) / na;
             dbg!(it);
             assert_relative_eq!(a_disp, a, epsilon = 5e-7);
         }
@@ -895,16 +884,14 @@ mod tests {
         let v = 1.0e26 * 2.0;
         let n = [2.2 * na, 2.0 * na];
         let state = StateHD::new(t, v, arr1(&n));
-        let properties = TemperatureDependentProperties::new(&disp.parameters, state.temperature);
-        let a_disp = disp.helmholtz_energy(&state, &properties) / na;
+        let properties = TemperatureDependentProperties::new(&parameters, state.temperature);
+        let a_disp = Dispersion.helmholtz_energy(&parameters, &state, &properties) / na;
         assert_relative_eq!(a_disp, a_ref[0] * 2.0, epsilon = 5e-7);
     }
 
     #[test]
     fn test_dispersion_mix_fh2() {
-        let disp = Dispersion {
-            parameters: h2_ne_fh("2"),
-        };
+        let parameters = h2_ne_fh("2");
         let a_ref = [
             -4.319932383710704,
             -2.138549258896613,
@@ -918,9 +905,8 @@ mod tests {
         for (it, &a) in a_ref.iter().enumerate() {
             let t = 30.0 * (it + 1) as f64;
             let state = StateHD::new(t, v, arr1(&n));
-            let properties =
-                TemperatureDependentProperties::new(&disp.parameters, state.temperature);
-            let a_disp = disp.helmholtz_energy(&state, &properties) / na;
+            let properties = TemperatureDependentProperties::new(&parameters, state.temperature);
+            let a_disp = Dispersion.helmholtz_energy(&parameters, &state, &properties) / na;
             dbg!(it);
             assert_relative_eq!(a_disp, a, epsilon = 5e-7);
         }
@@ -928,18 +914,15 @@ mod tests {
         let v = 1.0e26 * 2.0;
         let n = [2.2 * na, 2.0 * na];
         let state = StateHD::new(t, v, arr1(&n));
-        let properties = TemperatureDependentProperties::new(&disp.parameters, state.temperature);
-        let a_disp = disp.helmholtz_energy(&state, &properties) / na;
+        let properties = TemperatureDependentProperties::new(&parameters, state.temperature);
+        let a_disp = Dispersion.helmholtz_energy(&parameters, &state, &properties) / na;
         assert_relative_eq!(a_disp, a_ref[0] * 2.0, epsilon = 5e-7);
     }
 
     #[cfg(feature = "dft")]
     #[test]
     fn test_dispersion_energy_density() {
-        let disp = Dispersion {
-            parameters: hydrogen_fh("1"),
-        };
-        let p = &disp.parameters;
+        let p = hydrogen_fh("1");
         let n = p.m.len();
         let rho = Array1::from_shape_fn(n, |_i| 0.01);
         let t = 25.0;
@@ -958,9 +941,9 @@ mod tests {
         let dq_ij = Array2::from_shape_fn((n, n), |(i, j)| p.quantum_d_ij(i, j, t));
 
         // alphas .... // calc & store this in struct
-        let alpha = Alpha::new(p, &s_eff_ij, &epsilon_k_eff_ij, t);
+        let alpha = Alpha::new(&p, &s_eff_ij, &epsilon_k_eff_ij, t);
         let a_disp = dispersion_energy_density(
-            p,
+            &p,
             &d_hs_ij,
             &s_eff_ij,
             &epsilon_k_eff_ij,

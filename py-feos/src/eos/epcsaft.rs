@@ -1,6 +1,8 @@
 use super::PyEquationOfState;
+use crate::error::PyFeosError;
+use crate::ideal_gas::IdealGasModel;
 use crate::parameter::PyParameters;
-use crate::{ideal_gas::IdealGasModel, residual::ResidualModel};
+use crate::residual::ResidualModel;
 use feos::epcsaft::{ElectrolytePcSaft, ElectrolytePcSaftOptions, ElectrolytePcSaftVariants};
 use feos_core::{Components, EquationOfState};
 use pyo3::exceptions::PyValueError;
@@ -50,6 +52,7 @@ impl PyEquationOfState {
                 ))
             }
         };
+
         let options = ElectrolytePcSaftOptions {
             max_eta,
             max_iter_cross_assoc,
@@ -57,7 +60,8 @@ impl PyEquationOfState {
             epcsaft_variant,
         };
         let residual = Arc::new(ResidualModel::ElectrolytePcSaft(
-            ElectrolytePcSaft::with_options(Arc::new(parameters.try_convert()?), options),
+            ElectrolytePcSaft::with_options(parameters.try_convert()?, options)
+                .map_err(PyFeosError::from)?,
         ));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))

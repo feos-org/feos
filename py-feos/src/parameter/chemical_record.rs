@@ -1,9 +1,9 @@
-use super::{
-    fragmentation::{fragment_molecule, PySmartsRecord},
-    identifier::PyIdentifier,
-};
+use super::fragmentation::{fragment_molecule, PySmartsRecord};
+use super::identifier::{PyIdentifier, PyIdentifierOption};
+use crate::error::PyFeosError;
 use feos_core::parameter::{ChemicalRecord, Identifier};
-use pyo3::{exceptions::PyValueError, prelude::*};
+use pyo3::exceptions::PyValueError;
+use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[pyclass(name = "ChemicalRecord")]
@@ -38,6 +38,35 @@ impl PyChemicalRecord {
         Ok(self.0.to_string())
     }
 
+    /// Read a list of `ChemicalRecord`s from a JSON file.
+    ///
+    /// Parameters
+    /// ----------
+    /// substances : list[str]
+    ///     List of component identifiers.
+    /// path : str
+    ///     Path to file containing the segment records.
+    /// identifier_option : IdentifierOption
+    ///     The type of identifier used in the substance list.
+    ///
+    /// Returns
+    /// -------
+    /// [SegmentRecord]
+    #[staticmethod]
+    pub fn from_json(
+        substances: Vec<String>,
+        file: &str,
+        identifier_option: PyIdentifierOption,
+    ) -> PyResult<Vec<Self>> {
+        Ok(
+            ChemicalRecord::from_json(&substances, file, identifier_option.into())
+                .map_err(PyFeosError::from)?
+                .into_iter()
+                .map(|r| r.into())
+                .collect(),
+        )
+    }
+
     #[staticmethod]
     pub fn from_smiles(
         identifier: &Bound<'_, PyAny>,
@@ -62,14 +91,14 @@ impl PyChemicalRecord {
         Ok(Self(ChemicalRecord::new(identifier, segments, Some(bonds))))
     }
 
-    // /// Creates record from json string.
-    // #[staticmethod]
-    // fn from_json_str(json: &str) -> FeosResult<Self> {
-    //     Ok(serde_json::from_str(json)?)
-    // }
+    /// Creates record from json string.
+    #[staticmethod]
+    fn from_json_str(json: &str) -> PyResult<Self> {
+        Ok(serde_json::from_str(json).map_err(PyFeosError::from)?)
+    }
 
-    // /// Creates a json string from record.
-    // fn to_json_str(&self) -> Result<String, ParameterError> {
-    //     Ok(serde_json::to_string(&self)?)
-    // }
+    /// Creates a json string from record.
+    fn to_json_str(&self) -> PyResult<String> {
+        Ok(serde_json::to_string(&self).map_err(PyFeosError::from)?)
+    }
 }

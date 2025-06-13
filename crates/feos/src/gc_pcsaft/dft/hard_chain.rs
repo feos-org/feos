@@ -5,23 +5,23 @@ use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, Weigh
 use ndarray::*;
 use num_dual::DualNum;
 use petgraph::visit::EdgeRef;
-use std::fmt;
-use std::sync::Arc;
 
 #[derive(Clone)]
-pub struct ChainFunctional {
-    parameters: Arc<GcPcSaftFunctionalParameters>,
+pub struct ChainFunctional<'a> {
+    parameters: &'a GcPcSaftFunctionalParameters,
 }
 
-impl ChainFunctional {
-    pub fn new(parameters: &Arc<GcPcSaftFunctionalParameters>) -> Self {
-        Self {
-            parameters: parameters.clone(),
-        }
+impl<'a> ChainFunctional<'a> {
+    pub fn new(parameters: &'a GcPcSaftFunctionalParameters) -> Self {
+        Self { parameters }
     }
 }
 
-impl FunctionalContribution for ChainFunctional {
+impl<'a> FunctionalContribution for ChainFunctional<'a> {
+    fn name(&self) -> &'static str {
+        "Hard chain functional (GC)"
+    }
+
     fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
@@ -86,11 +86,5 @@ impl FunctionalContribution for ChainFunctional {
         }
 
         Ok(phi)
-    }
-}
-
-impl fmt::Display for ChainFunctional {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Hard chain functional (GC)")
     }
 }

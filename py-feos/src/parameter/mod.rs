@@ -1,17 +1,12 @@
 use crate::error::PyFeosError;
-use feos_core::{parameter::*, FeosError};
-use indexmap::{IndexMap, IndexSet};
-use itertools::Itertools;
-use ndarray::Array2;
+use feos_core::parameter::*;
+use indexmap::IndexSet;
 use pyo3::prelude::*;
-use pyo3::pybacked::PyBackedStr;
-use pythonize::{pythonize, PythonizeError};
+use pyo3::types::PyDict;
+use pythonize::{depythonize, pythonize, PythonizeError};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
-use std::fs::File;
-use std::io::BufReader;
 
 mod chemical_record;
 mod fragmentation;
@@ -27,34 +22,47 @@ pub(crate) use model_record::{PyBinaryRecord, PyPureRecord};
 pub(crate) use segment::{PyBinarySegmentRecord, PySegmentRecord};
 
 #[pyclass(name = "Parameters")]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct PyParameters {
-    #[pyo3(get)]
-    pub pure_records: Vec<PyPureRecord>,
-    pub binary_records: Vec<([usize; 2], Value)>,
+    pub pure_records: Vec<PureRecord<Value, Value>>,
+    pub binary_records: Vec<BinaryRecord<usize, Value, Value>>,
+    pub bond_records: Vec<BondRecord<Value, ()>>,
+}
+
+impl From<PyParameters> for Parameters<Value, Value, Value> {
+    fn from(value: PyParameters) -> Self {
+        Self::new(value.pure_records, value.binary_records)
+    }
+}
+
+impl From<Parameters<Value, Value, Value>> for PyParameters {
+    fn from(value: Parameters<Value, Value, Value>) -> Self {
+        Self {
+            pure_records: value.pure_records,
+            binary_records: value.binary_records,
+            bond_records: vec![],
+        }
+    }
 }
 
 impl PyParameters {
-    pub fn try_convert<P: Parameter>(self) -> PyResult<P> {
-        let n = self.pure_records.len();
+    pub fn try_convert<P, B, A>(self) -> PyResult<Parameters<P, B, A>>
+    where
+        for<'de> P: Deserialize<'de> + Clone,
+        for<'de> B: Deserialize<'de> + Clone,
+        for<'de> A: Deserialize<'de> + Clone,
+    {
         let pure_records = self
             .pure_records
             .into_iter()
-            .map(|r| r.try_into())
-            .collect::<Result<_, _>>()
-            .map_err(PyFeosError::from)?;
-        let binary_records = if self.binary_records.is_empty() {
-            None
-        } else {
-            let mut br = Array2::default((n, n));
-            for ([i, j], r) in self.binary_records {
-                let r: P::Binary = serde_json::from_value(r).map_err(PyFeosError::from)?;
-                br[[i, j]] = r.clone();
-                br[[j, i]] = r;
-            }
-            Some(br)
-        };
-        Ok(P::from_records(pure_records, binary_records).map_err(PyFeosError::from)?)
+            .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
+            .collect::<Result<_, PyFeosError>>()?;
+        let binary_records = self
+            .binary_records
+            .into_iter()
+            .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
+            .collect::<Result<_, PyFeosError>>()?;
+        Ok(Parameters::new(pure_records, binary_records))
     }
 }
 
@@ -79,52 +87,10 @@ impl PyParameters {
         pure_records: Vec<PyPureRecord>,
         binary_records: Vec<PyBinaryRecord>,
         identifier_option: PyIdentifierOption,
-    ) -> PyResult<Self> {
-        // Build Hashmap (id, id) -> BinaryRecord
-        let binary_map: HashMap<_, _> = {
-            binary_records
-                .iter()
-                .filter_map(|br| {
-                    let id1 = br.id1.as_str(identifier_option);
-                    let id2 = br.id2.as_str(identifier_option);
-                    id1.and_then(|id1| id2.map(|id2| ((id1, id2), br.model_record.clone())))
-                })
-                .collect()
-        };
-
-        // look up pure records in Hashmap
-        let binary_records = pure_records
-            .iter()
-            .enumerate()
-            .array_combinations()
-            .filter_map(|[(i1, p1), (i2, p2)]| {
-                let id1 = p1.identifier.as_str(identifier_option).unwrap_or_else(|| {
-                    panic!(
-                        "No {} for pure record {} ({}).",
-                        IdentifierOption::from(identifier_option),
-                        i1,
-                        p1.identifier.0
-                    )
-                });
-                let id2 = p2.identifier.as_str(identifier_option).unwrap_or_else(|| {
-                    panic!(
-                        "No {} for pure record {} ({}).",
-                        IdentifierOption::from(identifier_option),
-                        i2,
-                        p2.identifier.0
-                    )
-                });
-                binary_map
-                    .get(&(id1, id2))
-                    .or_else(|| binary_map.get(&(id2, id1)))
-                    .map(|br| ([i1, i2], br.clone()))
-            })
-            .collect();
-
-        Ok(Self {
-            pure_records,
-            binary_records,
-        })
+    ) -> Self {
+        let pure_records = pure_records.into_iter().map(|r| r.into()).collect();
+        let binary_records = binary_records.into_iter().map(|r| r.into()).collect();
+        Parameters::from_records(pure_records, binary_records, identifier_option.into()).into()
     }
 
     /// Creates parameters for a pure component from a pure record.
@@ -135,10 +101,7 @@ impl PyParameters {
     ///     The pure component parameters.
     #[staticmethod]
     fn new_pure(pure_record: PyPureRecord) -> Self {
-        Self {
-            pure_records: vec![pure_record],
-            binary_records: vec![],
-        }
+        Parameters::new_pure(pure_record.into()).into()
     }
 
     /// Creates parameters for a binary system from pure records and an optional
@@ -148,19 +111,29 @@ impl PyParameters {
     /// ----------
     /// pure_records : [PureRecord]
     ///     A list of pure component parameters.
-    /// binary_record : float or BinaryRecord, optional
+    /// binary_parameters : float or BinaryRecord, optional
     ///     The binary interaction parameter or binary interaction record.
     #[staticmethod]
-    #[pyo3(text_signature = "(pure_records, binary_record=None)", signature = (pure_records, binary_record=None))]
-    fn new_binary(pure_records: Vec<PyPureRecord>, binary_record: Option<PyBinaryRecord>) -> Self {
-        let binary_records = binary_record
-            .into_iter()
-            .map(|r| ([0, 1], r.model_record))
-            .collect();
-        Self {
-            pure_records,
-            binary_records,
-        }
+    #[pyo3(signature = (pure_records, **binary_parameters))]
+    fn new_binary(
+        py: Python,
+        pure_records: [PyPureRecord; 2],
+        binary_parameters: Option<&Bound<'_, PyDict>>,
+    ) -> PyResult<Self> {
+        let pure_records = pure_records.map(|r| r.into());
+        let (binary_record, binary_association_parameters) = binary_parameters.map_or_else(
+            || Ok::<_, PythonizeError>((None, vec![])),
+            |binary_parameters| {
+                binary_parameters.set_item("id1", pythonize(py, &Identifier::default())?)?;
+                binary_parameters.set_item("id2", pythonize(py, &Identifier::default())?)?;
+                let binary_record: PyBinaryRecord = depythonize(binary_parameters)?;
+                Ok((binary_record.model_record, binary_record.association_sites))
+            },
+        )?;
+        Ok(
+            Parameters::new_binary(pure_records, binary_record, binary_association_parameters)
+                .into(),
+        )
     }
 
     /// Creates parameters from json files.
@@ -181,16 +154,15 @@ impl PyParameters {
         text_signature = "(substances, pure_path, binary_path=None, identifier_option)"
     )]
     fn from_json(
-        substances: Vec<PyBackedStr>,
-        pure_path: PyBackedStr,
-        binary_path: Option<PyBackedStr>,
+        substances: Vec<String>,
+        pure_path: String,
+        binary_path: Option<String>,
         identifier_option: PyIdentifierOption,
     ) -> PyResult<Self> {
-        Self::from_multiple_json(
-            vec![(substances, pure_path)],
-            binary_path,
-            identifier_option,
-        )
+        Parameters::from_json(substances, pure_path, binary_path, identifier_option.into())
+            .map_err(PyFeosError::from)
+            .map_err(PyErr::from)
+            .map(|p| p.into())
     }
 
     /// Creates parameters from json files.
@@ -210,45 +182,14 @@ impl PyParameters {
         text_signature = "(input, binary_path=None, identifier_option)"
     )]
     fn from_multiple_json(
-        input: Vec<(Vec<PyBackedStr>, PyBackedStr)>,
-        binary_path: Option<PyBackedStr>,
+        input: Vec<(Vec<String>, String)>,
+        binary_path: Option<String>,
         identifier_option: PyIdentifierOption,
     ) -> PyResult<Self> {
-        // total number of substances queried
-        let nsubstances = input.iter().map(|(substances, _)| substances.len()).sum();
-
-        // queried substances with removed duplicates
-        let queried: HashSet<_> = input
-            .iter()
-            .flat_map(|(substances, _)| substances)
-            .collect();
-
-        // check if there are duplicates
-        if queried.len() != nsubstances {
-            return Err(PyFeosError::from(FeosError::IncompatibleParameters(
-                "A substance was defined more than once.".to_string(),
-            ))
-            .into());
-        }
-
-        let mut pure_records = Vec::with_capacity(nsubstances);
-
-        // collect parameters from files into single map
-        for (substances, file) in input {
-            pure_records.extend(
-                PyPureRecord::from_json(&substances, &file, identifier_option)
-                    .map_err(PyFeosError::from)?,
-            );
-        }
-
-        let binary_records = if let Some(path) = binary_path {
-            let reader = BufReader::new(File::open::<&str>(path.as_ref())?);
-            serde_json::from_reader(reader).map_err(PyFeosError::from)?
-        } else {
-            Vec::new()
-        };
-
-        Self::from_records(pure_records, binary_records, identifier_option)
+        Parameters::from_multiple_json(&input, binary_path, identifier_option.into())
+            .map_err(PyFeosError::from)
+            .map_err(PyErr::from)
+            .map(|p| p.into())
     }
 
     /// Generates JSON-formatted string for pure and binary records (if initialized).
@@ -286,6 +227,11 @@ impl PyParameters {
     }
 
     #[getter]
+    fn get_pure_records<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyAny>, PythonizeError> {
+        pythonize(py, &self.pure_records)
+    }
+
+    #[getter]
     fn get_binary_records<'py>(
         &self,
         py: Python<'py>,
@@ -310,7 +256,6 @@ impl PyParameters {
             .enumerate()
             .map(|(i, r)| {
                 r.identifier
-                    .0
                     .as_readable_str()
                     .map_or_else(|| format!("Component {}", i + 1), |s| s.to_owned())
             })
@@ -320,12 +265,22 @@ impl PyParameters {
         let params: IndexSet<_> = self
             .pure_records
             .iter()
-            .flat_map(|r| {
-                serde_json::from_value::<IndexMap<String, Value>>(r.model_record.clone())
-                    .unwrap()
-                    .into_keys()
-            })
+            .flat_map(|r| r.model_record.as_object().unwrap().keys())
             .collect();
+
+        // collect association parameters and count the association sites
+        let [mut na, mut nb, mut nc] = [0.0; 3];
+        let mut assoc_params = IndexSet::new();
+        for r in &self.pure_records {
+            for s in &r.association_sites {
+                na += s.na;
+                nb += s.nb;
+                nc += s.nc;
+                if let Some(p) = &s.parameters {
+                    assoc_params.extend(p.as_object().unwrap().keys());
+                }
+            }
+        }
 
         let mut output = String::new();
         let o = &mut output;
@@ -335,22 +290,105 @@ impl PyParameters {
         for p in &params {
             write!(o, "{}|", p).unwrap();
         }
+        if na + nb + nc > 0.0 {
+            write!(o, "sites|").unwrap();
+            if na > 0.0 {
+                write!(o, "na|").unwrap();
+            }
+            if nb > 0.0 {
+                write!(o, "nb|").unwrap();
+            }
+            if nc > 0.0 {
+                write!(o, "nc|").unwrap();
+            }
+            for p in &assoc_params {
+                write!(o, "{}|", p).unwrap();
+            }
+        }
         write!(o, "\n|-|-|").unwrap();
         for _ in &params {
             write!(o, "-|").unwrap();
         }
+        if na + nb + nc > 0.0 {
+            write!(o, "-|").unwrap();
+            if na > 0.0 {
+                write!(o, "-|").unwrap();
+            }
+            if nb > 0.0 {
+                write!(o, "-|").unwrap();
+            }
+            if nc > 0.0 {
+                write!(o, "-|").unwrap();
+            }
+            for _ in &assoc_params {
+                write!(o, "-|").unwrap();
+            }
+        }
         for (record, comp) in self.pure_records.iter().zip(&component_names) {
             write!(o, "\n|{}|{}|", comp, record.molarweight).unwrap();
-            let model_record =
-                serde_json::from_value::<IndexMap<String, Value>>(record.model_record.clone())
-                    .unwrap();
-            for p in &params {
+            let model_record = record.model_record.as_object().unwrap();
+            for &p in &params {
                 if let Some(val) = model_record.get(p) {
                     write!(o, "{}|", val)
                 } else {
                     write!(o, "-|")
                 }
                 .unwrap();
+            }
+            if !record.association_sites.is_empty() {
+                let s = &record.association_sites[0];
+                if na + nb + nc > 0.0 {
+                    write!(o, "{}|", s.id).unwrap();
+                    if na > 0.0 {
+                        write!(o, "{}|", s.na).unwrap();
+                    }
+                    if nb > 0.0 {
+                        write!(o, "{}|", s.nb).unwrap();
+                    }
+                    if nc > 0.0 {
+                        write!(o, "{}|", s.nc).unwrap();
+                    }
+                    for &p in &assoc_params {
+                        if let Some(par) = &s.parameters {
+                            let assoc_record = par.as_object().unwrap();
+                            if let Some(val) = assoc_record.get(p) {
+                                write!(o, "{}|", val)
+                            } else {
+                                write!(o, "-|")
+                            }
+                            .unwrap();
+                        }
+                    }
+                }
+            }
+            for s in record.association_sites.iter().skip(1) {
+                write!(o, "\n|||").unwrap();
+                for &_ in &params {
+                    write!(o, "|").unwrap();
+                }
+                if na + nb + nc > 0.0 {
+                    write!(o, "{}|", s.id).unwrap();
+                    if na > 0.0 {
+                        write!(o, "{}|", s.na).unwrap();
+                    }
+                    if nb > 0.0 {
+                        write!(o, "{}|", s.nb).unwrap();
+                    }
+                    if nc > 0.0 {
+                        write!(o, "{}|", s.nc).unwrap();
+                    }
+                    for &p in &assoc_params {
+                        if let Some(par) = &s.parameters {
+                            let assoc_record = par.as_object().unwrap();
+                            if let Some(val) = assoc_record.get(p) {
+                                write!(o, "{}|", val)
+                            } else {
+                                write!(o, "-|")
+                            }
+                            .unwrap();
+                        }
+                    }
+                }
             }
         }
 
@@ -359,10 +397,20 @@ impl PyParameters {
             let params: IndexSet<_> = self
                 .binary_records
                 .iter()
-                .flat_map(|(_, r)| {
-                    serde_json::from_value::<IndexMap<String, Value>>(r.clone())
-                        .unwrap()
-                        .into_keys()
+                .flat_map(|r| {
+                    r.model_record
+                        .iter()
+                        .flat_map(|r| r.as_object().unwrap().keys())
+                })
+                .collect();
+            // collect all binary association parameters
+            let assoc_params: IndexSet<_> = self
+                .binary_records
+                .iter()
+                .flat_map(|r| {
+                    r.association_sites
+                        .iter()
+                        .flat_map(|s| s.parameters.as_object().unwrap().keys())
                 })
                 .collect();
 
@@ -371,21 +419,64 @@ impl PyParameters {
             for p in &params {
                 write!(o, "{}|", p).unwrap();
             }
+            if !assoc_params.is_empty() {
+                write!(o, "site 1| site 2|").unwrap();
+                for p in &assoc_params {
+                    write!(o, "{}|", p).unwrap();
+                }
+            }
             write!(o, "\n|-|-|").unwrap();
             for _ in &params {
                 write!(o, "-|").unwrap();
             }
-            for ([i, j], r) in &self.binary_records {
-                write!(o, "\n|{}|{}|", component_names[*i], component_names[*j]).unwrap();
-                let model_record =
-                    serde_json::from_value::<IndexMap<String, Value>>(r.clone()).unwrap();
-                for p in &params {
-                    if let Some(val) = model_record.get(p) {
-                        write!(o, "{}|", val)
-                    } else {
-                        write!(o, "-|")
+            if !assoc_params.is_empty() {
+                write!(o, "-|-|").unwrap();
+                for _ in &assoc_params {
+                    write!(o, "-|").unwrap();
+                }
+            }
+            for r in &self.binary_records {
+                write!(o, "\n|{}|", component_names[r.id1]).unwrap();
+                write!(o, "{}|", component_names[r.id2]).unwrap();
+                if let Some(m) = &r.model_record {
+                    let model_record = m.as_object().unwrap();
+                    for &p in &params {
+                        if let Some(val) = model_record.get(p) {
+                            write!(o, "{}|", val)
+                        } else {
+                            write!(o, "-|")
+                        }
+                        .unwrap();
                     }
-                    .unwrap();
+                }
+                if !r.association_sites.is_empty() {
+                    let s = &r.association_sites[0];
+                    write!(o, "{}|{}|", s.id1, s.id2).unwrap();
+                    for &p in &assoc_params {
+                        let assoc_record = s.parameters.as_object().unwrap();
+                        if let Some(val) = assoc_record.get(p) {
+                            write!(o, "{}|", val)
+                        } else {
+                            write!(o, "-|")
+                        }
+                        .unwrap();
+                    }
+                }
+                for s in r.association_sites.iter().skip(1) {
+                    write!(o, "\n|||").unwrap();
+                    for &_ in &params {
+                        write!(o, "|").unwrap();
+                    }
+                    write!(o, "{}|{}|", s.id1, s.id2).unwrap();
+                    for &p in &assoc_params {
+                        let assoc_record = s.parameters.as_object().unwrap();
+                        if let Some(val) = assoc_record.get(p) {
+                            write!(o, "{}|", val)
+                        } else {
+                            write!(o, "-|")
+                        }
+                        .unwrap();
+                    }
                 }
             }
         }
@@ -394,62 +485,68 @@ impl PyParameters {
     }
 }
 
-#[pyclass(name = "GcParameters", get_all)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[pyclass(name = "GcParameters")]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct PyGcParameters {
-    chemical_records: Vec<PyChemicalRecord>,
-    segment_records: Vec<PySegmentRecord>,
-    binary_segment_records: Option<Vec<PyBinarySegmentRecord>>,
+    chemical_records: Vec<ChemicalRecord>,
+    segment_records: Vec<SegmentRecord<Value, Value>>,
+    binary_segment_records: Option<Vec<BinaryRecord<String, Value, Value>>>,
 }
 
 impl PyGcParameters {
-    pub fn try_convert_homosegmented<P: Parameter>(self) -> PyResult<P>
+    pub fn try_convert_homosegmented<P, B, A>(self) -> PyResult<Parameters<P, B, A>>
     where
-        P::Pure: FromSegments<usize>,
-        P::Binary: FromSegmentsBinary<usize>,
+        for<'de> P: Deserialize<'de> + Clone + FromSegments,
+        for<'de> B: Deserialize<'de> + Clone + FromSegmentsBinary + Default,
+        for<'de> A: Deserialize<'de> + Clone,
     {
-        let segment_records = self
+        let segment_records: Vec<_> = self
             .segment_records
             .into_iter()
-            .map(|r| r.try_into())
-            .collect::<Result<_, _>>()
-            .map_err(PyFeosError::from)?;
-        let chemical_records: Vec<ChemicalRecord> = self
-            .chemical_records
-            .into_iter()
-            .map(|r| r.into())
-            .collect();
+            .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
+            .collect::<Result<_, PyFeosError>>()?;
         let binary_segment_records = self
             .binary_segment_records
-            .map(|bsr| bsr.into_iter().map(|r| r.into()).collect());
-        Ok(
-            P::from_segments(chemical_records, segment_records, binary_segment_records)
-                .map_err(PyFeosError::from)?,
+            .map(|bsr| {
+                bsr.into_iter()
+                    .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
+                    .collect::<Result<Vec<_>, PyFeosError>>()
+            })
+            .transpose()?;
+        Ok(Parameters::from_segments(
+            self.chemical_records,
+            &segment_records,
+            binary_segment_records.as_deref(),
         )
+        .map_err(PyFeosError::from)?)
     }
 
-    pub fn try_convert_heterosegmented<P: ParameterHetero>(self) -> PyResult<P>
+    pub fn try_convert_heterosegmented<P, B, A, C: GroupCount + Default>(
+        self,
+    ) -> PyResult<ParametersHetero<P, B, A, (), C>>
     where
-        P::Chemical: From<ChemicalRecord>,
+        for<'de> P: Deserialize<'de> + Clone,
+        for<'de> B: Deserialize<'de> + Clone,
+        for<'de> A: Deserialize<'de> + Clone,
     {
         let segment_records = self
             .segment_records
             .into_iter()
-            .map(|r| r.try_into())
-            .collect::<Result<_, _>>()
-            .map_err(PyFeosError::from)?;
-        let chemical_records: Vec<ChemicalRecord> = self
-            .chemical_records
-            .into_iter()
-            .map(|r| r.into())
-            .collect();
+            .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
+            .collect::<Result<Vec<_>, PyFeosError>>()?;
         let binary_segment_records = self
             .binary_segment_records
-            .map(|bsr| bsr.into_iter().map(|r| r.into()).collect());
-        Ok(
-            P::from_segments(chemical_records, segment_records, binary_segment_records)
-                .map_err(PyFeosError::from)?,
-        )
+            .map(|bsr| {
+                bsr.into_iter()
+                    .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
+                    .collect::<Result<Vec<_>, PyFeosError>>()
+            })
+            .transpose()?;
+        Ok(ParametersBase::<String, P, B, A, (), C>::from_segments(
+            self.chemical_records,
+            &segment_records,
+            binary_segment_records.as_deref(),
+        ))
     }
 }
 
@@ -474,6 +571,10 @@ impl PyGcParameters {
         segment_records: Vec<PySegmentRecord>,
         binary_segment_records: Option<Vec<PyBinarySegmentRecord>>,
     ) -> Self {
+        let chemical_records = chemical_records.into_iter().map(|r| r.into()).collect();
+        let segment_records = segment_records.into_iter().map(|r| r.into()).collect();
+        let binary_segment_records =
+            binary_segment_records.map(|bsr| bsr.into_iter().map(|r| r.into()).collect());
         Self {
             chemical_records,
             segment_records,
@@ -501,70 +602,27 @@ impl PyGcParameters {
         text_signature = "(substances, pure_path, segments_path, binary_path=None, identifier_option=IdentiferOption.Name)"
     )]
     fn from_json_segments(
-        substances: Vec<PyBackedStr>,
-        pure_path: PyBackedStr,
-        segments_path: PyBackedStr,
-        binary_path: Option<PyBackedStr>,
+        substances: Vec<String>,
+        pure_path: &str,
+        segments_path: &str,
+        binary_path: Option<&str>,
         identifier_option: PyIdentifierOption,
     ) -> PyResult<Self> {
-        let queried: IndexSet<_> = substances
-            .iter()
-            .map(|identifier| identifier as &str)
-            .collect();
-
-        let reader = BufReader::new(File::open(&pure_path as &str)?);
-        let chemical_records: Vec<ChemicalRecord> =
-            serde_json::from_reader(reader).map_err(PyFeosError::from)?;
-        let mut record_map: IndexMap<_, _> = chemical_records
-            .into_iter()
-            .filter_map(|record| {
-                record
-                    .identifier
-                    .as_str(identifier_option.into())
-                    .map(|i| i.to_owned())
-                    .map(|i| (i, record))
-            })
-            .collect();
-
-        // Compare queried components and available components
-        let available: IndexSet<_> = record_map
-            .keys()
-            .map(|identifier| identifier as &str)
-            .collect();
-        if !queried.is_subset(&available) {
-            let missing: Vec<_> = queried.difference(&available).cloned().collect();
-            return Err(PyFeosError::FeosError(FeosError::ComponentsNotFound(
-                format!("{:?}", missing),
-            )))?;
-        };
-
-        // Collect all pure records that were queried
-        let chemical_records: Vec<_> = queried
-            .into_iter()
-            .filter_map(|identifier| record_map.shift_remove(identifier))
-            .map(|r| r.into())
-            .collect();
-
-        // Read segment records
-        let segment_records: Vec<PySegmentRecord> =
-            PySegmentRecord::from_json(&segments_path as &str)?;
-
-        // Read binary records
-        let binary_records = binary_path
+        let chemical_records =
+            PyChemicalRecord::from_json(substances, pure_path, identifier_option)?;
+        let segment_records = PySegmentRecord::from_json(segments_path)?;
+        let binary_segment_records = binary_path
             .as_ref()
-            .map(|file_binary| {
-                let reader = BufReader::new(File::open(file_binary as &str)?);
-                let binary_records: Result<Vec<PyBinarySegmentRecord>, FeosError> =
-                    Ok(serde_json::from_reader(reader)?);
-                binary_records
+            .map(|p| {
+                BinarySegmentRecord::from_json(p as &str)
+                    .map(|brs| brs.into_iter().map(|r| r.into()).collect())
             })
             .transpose()
             .map_err(PyFeosError::from)?;
-
         Ok(Self::from_segments(
             chemical_records,
             segment_records,
-            binary_records,
+            binary_segment_records,
         ))
     }
 
@@ -627,12 +685,12 @@ impl PyGcParameters {
     )]
     fn from_json_smiles(
         identifier: Vec<Bound<'_, PyAny>>,
-        smarts_path: PyBackedStr,
-        segments_path: PyBackedStr,
-        binary_path: Option<PyBackedStr>,
+        smarts_path: &str,
+        segments_path: &str,
+        binary_path: Option<&str>,
     ) -> PyResult<Self> {
-        let smarts_records = PySmartsRecord::from_json(&smarts_path)?;
-        let segment_records = PySegmentRecord::from_json(&segments_path)?;
+        let smarts_records = PySmartsRecord::from_json(smarts_path)?;
+        let segment_records = PySegmentRecord::from_json(segments_path)?;
         let binary_segment_records = binary_path
             .as_ref()
             .map(|p| {

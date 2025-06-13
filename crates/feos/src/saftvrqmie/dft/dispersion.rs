@@ -1,11 +1,9 @@
-use crate::saftvrqmie::eos::dispersion::{dispersion_energy_density, Alpha};
-use crate::saftvrqmie::parameters::SaftVRQMieParameters;
+use crate::saftvrqmie::eos::dispersion::{Alpha, dispersion_energy_density};
+use crate::saftvrqmie::parameters::SaftVRQMiePars;
 use feos_core::FeosResult;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::DualNum;
-use std::fmt;
-use std::sync::Arc;
 
 /// psi Parameter for DFT (Sauer2017)
 const PSI_DFT: f64 = 1.3862;
@@ -13,19 +11,18 @@ const PSI_DFT: f64 = 1.3862;
 const PSI_PDGT: f64 = 1.3286;
 
 #[derive(Clone)]
-pub struct AttractiveFunctional {
-    parameters: Arc<SaftVRQMieParameters>,
-    // Store stuff here
+pub struct AttractiveFunctional<'a> {
+    parameters: &'a SaftVRQMiePars,
 }
 
-impl AttractiveFunctional {
-    pub fn new(parameters: Arc<SaftVRQMieParameters>) -> Self {
+impl<'a> AttractiveFunctional<'a> {
+    pub fn new(parameters: &'a SaftVRQMiePars) -> Self {
         Self { parameters }
     }
 }
 
 fn att_weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-    p: &SaftVRQMieParameters,
+    p: &SaftVRQMiePars,
     psi: f64,
     temperature: N,
 ) -> WeightFunctionInfo<N> {
@@ -36,19 +33,23 @@ fn att_weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
     )
 }
 
-impl FunctionalContribution for AttractiveFunctional {
+impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
+    fn name(&self) -> &'static str {
+        "Attractive functional"
+    }
+
     fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
     ) -> WeightFunctionInfo<N> {
-        att_weight_functions(&self.parameters, PSI_DFT, temperature)
+        att_weight_functions(self.parameters, PSI_DFT, temperature)
     }
 
     fn weight_functions_pdgt<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
     ) -> WeightFunctionInfo<N> {
-        att_weight_functions(&self.parameters, PSI_PDGT, temperature)
+        att_weight_functions(self.parameters, PSI_PDGT, temperature)
     }
 
     fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
@@ -95,11 +96,5 @@ impl FunctionalContribution for AttractiveFunctional {
             })
             .collect();
         Ok(phi)
-    }
-}
-
-impl fmt::Display for AttractiveFunctional {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Attractive functional")
     }
 }

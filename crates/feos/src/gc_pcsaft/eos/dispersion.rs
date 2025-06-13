@@ -3,8 +3,6 @@ use crate::hard_sphere::HardSphereProperties;
 use feos_core::StateHD;
 use num_dual::DualNum;
 use std::f64::consts::PI;
-use std::fmt;
-use std::sync::Arc;
 
 pub const A0: [f64; 7] = [
     0.91056314451539,
@@ -61,15 +59,16 @@ pub const B2: [f64; 7] = [
     -29.66690558514725,
 ];
 
-#[derive(Clone)]
-pub(super) struct Dispersion {
-    pub parameters: Arc<GcPcSaftEosParameters>,
-}
+pub(super) struct Dispersion;
 
 impl Dispersion {
-    pub(super) fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
+    pub(super) fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        parameters: &GcPcSaftEosParameters,
+        state: &StateHD<D>,
+    ) -> D {
         // auxiliary variables
-        let p = &self.parameters;
+        let p = parameters;
         let n = p.m.len();
         let rho = &state.partial_density;
 
@@ -88,8 +87,8 @@ impl Dispersion {
         let mut rho2mix = D::zero();
         for i in 0..n {
             for j in 0..n {
-                let eps_ij = state.temperature.recip() * self.parameters.epsilon_k_ij[(i, j)];
-                let sigma_ij = self.parameters.sigma_ij[(i, j)].powi(3);
+                let eps_ij = state.temperature.recip() * p.epsilon_k_ij[(i, j)];
+                let sigma_ij = p.sigma_ij[(i, j)].powi(3);
                 let rho1 = rho[p.component_index[i]]
                     * rho[p.component_index[j]]
                     * (eps_ij * p.m[i] * p.m[j] * sigma_ij);
@@ -121,12 +120,6 @@ impl Dispersion {
     }
 }
 
-impl fmt::Display for Dispersion {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Dispersion (GC)")
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -135,15 +128,12 @@ mod test {
     use feos_core::ReferenceSystem;
     use ndarray::arr1;
     use num_dual::Dual64;
-    use quantity::{Pressure, METER, MOL, PASCAL};
+    use quantity::{METER, MOL, PASCAL, Pressure};
     use typenum::P3;
 
     #[test]
     fn test_dispersion_propane() {
         let parameters = propane();
-        let contrib = Dispersion {
-            parameters: Arc::new(parameters),
-        };
         let temperature = 300.0;
         let volume = METER.powi::<P3>().to_reduced();
         let moles = (1.5 * MOL).to_reduced();
@@ -152,16 +142,15 @@ mod test {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = Pressure::from_reduced(-contrib.helmholtz_energy(&state).eps * temperature);
+        let pressure = Pressure::from_reduced(
+            -Dispersion.helmholtz_energy(&parameters, &state).eps * temperature,
+        );
         assert_relative_eq!(pressure, -2.846724434944439 * PASCAL, max_relative = 1e-10);
     }
 
     #[test]
     fn test_dispersion_propanol() {
-        let parameters = propanol();
-        let contrib = Dispersion {
-            parameters: Arc::new(parameters),
-        };
+        let parameters = GcPcSaftEosParameters::new(&propanol());
         let temperature = 300.0;
         let volume = METER.powi::<P3>().to_reduced();
         let moles = (1.5 * MOL).to_reduced();
@@ -170,7 +159,9 @@ mod test {
             Dual64::from_re(volume).derivative(),
             arr1(&[Dual64::from_re(moles)]),
         );
-        let pressure = Pressure::from_reduced(-contrib.helmholtz_energy(&state).eps * temperature);
+        let pressure = Pressure::from_reduced(
+            -Dispersion.helmholtz_energy(&parameters, &state).eps * temperature,
+        );
         assert_relative_eq!(pressure, -5.432173507270732 * PASCAL, max_relative = 1e-10);
     }
 }

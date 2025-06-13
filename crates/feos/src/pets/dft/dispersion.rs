@@ -1,13 +1,11 @@
 use crate::hard_sphere::HardSphereProperties;
+use crate::pets::Pets;
 use crate::pets::eos::dispersion::{A, B};
-use crate::pets::parameters::PetsParameters;
 use feos_core::FeosError;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
-use std::fmt;
-use std::sync::Arc;
 
 /// psi Parameter for DFT (Heier2018)
 const PSI_DFT: f64 = 1.21;
@@ -15,41 +13,45 @@ const PSI_DFT: f64 = 1.21;
 const PSI_PDGT: f64 = 1.21;
 
 #[derive(Clone)]
-pub struct AttractiveFunctional {
-    parameters: Arc<PetsParameters>,
+pub struct AttractiveFunctional<'a> {
+    parameters: &'a Pets,
 }
 
-impl AttractiveFunctional {
-    pub fn new(parameters: Arc<PetsParameters>) -> Self {
+impl<'a> AttractiveFunctional<'a> {
+    pub fn new(parameters: &'a Pets) -> Self {
         Self { parameters }
+    }
+
+    fn att_weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
+        &self,
+        psi: f64,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
+        let d = self.parameters.hs_diameter(temperature);
+        WeightFunctionInfo::new(Array1::from_shape_fn(d.len(), |i| i), false).add(
+            WeightFunction::new_scaled(d * psi, WeightFunctionShape::Theta),
+            false,
+        )
     }
 }
 
-fn att_weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-    p: &PetsParameters,
-    psi: f64,
-    temperature: N,
-) -> WeightFunctionInfo<N> {
-    let d = p.hs_diameter(temperature);
-    WeightFunctionInfo::new(Array1::from_shape_fn(d.len(), |i| i), false).add(
-        WeightFunction::new_scaled(d * psi, WeightFunctionShape::Theta),
-        false,
-    )
-}
+impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
+    fn name(&self) -> &'static str {
+        "Attractive functional"
+    }
 
-impl FunctionalContribution for AttractiveFunctional {
     fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
     ) -> WeightFunctionInfo<N> {
-        att_weight_functions(&self.parameters, PSI_DFT, temperature)
+        self.att_weight_functions(PSI_DFT, temperature)
     }
 
     fn weight_functions_pdgt<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
     ) -> WeightFunctionInfo<N> {
-        att_weight_functions(&self.parameters, PSI_PDGT, temperature)
+        self.att_weight_functions(PSI_PDGT, temperature)
     }
 
     fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
@@ -103,11 +105,5 @@ impl FunctionalContribution for AttractiveFunctional {
 
         // Helmholtz energy density
         Ok((-rho1mix * i1 * 2.0 - rho2mix * c1 * i2) * PI)
-    }
-}
-
-impl fmt::Display for AttractiveFunctional {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Attractive functional")
     }
 }

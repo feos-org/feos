@@ -4,12 +4,12 @@ use crate::functional_contribution::*;
 use crate::ideal_chain_contribution::IdealChainContribution;
 use crate::solvation::PairPotential;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
-use feos_core::{FeosResult, EquationOfState, IdealGas, Residual, StateHD};
+use feos_core::{EquationOfState, FeosResult, IdealGas, Residual, StateHD};
 use ndarray::*;
 use num_dual::*;
+use petgraph::Directed;
 use petgraph::graph::{Graph, UnGraph};
 use petgraph::visit::EdgeRef;
-use petgraph::Directed;
 use std::borrow::Cow;
 use std::ops::MulAssign;
 use std::sync::Arc;
@@ -17,9 +17,12 @@ use std::sync::Arc;
 impl<I: IdealGas, F: HelmholtzEnergyFunctional> HelmholtzEnergyFunctional
     for EquationOfState<I, F>
 {
-    type Contribution = F::Contribution;
+    type Contribution<'a>
+        = F::Contribution<'a>
+    where
+        Self: 'a;
 
-    fn contributions(&self) -> Box<dyn Iterator<Item = Self::Contribution>> {
+    fn contributions<'a>(&'a self) -> Vec<Self::Contribution<'a>> {
         self.residual.contributions()
     }
 
@@ -62,10 +65,12 @@ pub enum MoleculeShape<'a> {
 
 /// A general Helmholtz energy functional.
 pub trait HelmholtzEnergyFunctional: Residual + Sized {
-    type Contribution: FunctionalContribution;
+    type Contribution<'a>: FunctionalContribution
+    where
+        Self: 'a;
 
     /// Return a slice of [FunctionalContribution]s.
-    fn contributions(&self) -> Box<dyn Iterator<Item = Self::Contribution>>;
+    fn contributions<'a>(&'a self) -> Vec<Self::Contribution<'a>>;
 
     /// Return the shape of the molecules and the necessary specifications.
     fn molecule_shape(&self) -> MoleculeShape;
@@ -77,6 +82,7 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
 
     fn weight_functions(&self, temperature: f64) -> Vec<WeightFunctionInfo<f64>> {
         self.contributions()
+            .into_iter()
             .map(|c| c.weight_functions(temperature))
             .collect()
     }
@@ -119,7 +125,7 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
         let contributions = self.contributions();
         let mut partial_derivatives = Vec::new();
         let mut helmholtz_energy_density = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
-        for (c, wd) in contributions.zip(weighted_densities) {
+        for (c, wd) in contributions.into_iter().zip(weighted_densities) {
             let nwd = wd.shape()[0];
             let ngrid = wd.len() / nwd;
             let mut phi = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
@@ -227,10 +233,11 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
     ) -> Vec<(String, D)> {
         let mut res: Vec<(String, D)> = self
             .contributions()
-            .map(|c| (c.to_string(), c.helmholtz_energy(state)))
+            .into_iter()
+            .map(|c| (c.name().to_string(), c.helmholtz_energy(state)))
             .collect();
         res.push((
-            self.ideal_chain_contribution().to_string(),
+            self.ideal_chain_contribution().name(),
             self.ideal_chain_contribution().helmholtz_energy(state),
         ));
         res

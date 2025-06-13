@@ -1,10 +1,8 @@
-use super::PcSaftParameters;
+use super::PcSaftPars;
 use feos_core::StateHD;
 use ndarray::Array1;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
-use std::fmt;
-use std::sync::Arc;
 
 pub const A0: [f64; 7] = [
     0.91056314451539,
@@ -61,19 +59,18 @@ pub const B2: [f64; 7] = [
     -29.66690558514725,
 ];
 
-pub struct Dispersion {
-    pub parameters: Arc<PcSaftParameters>,
-}
+pub struct Dispersion;
 
 impl Dispersion {
     pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
         &self,
+        parameters: &PcSaftPars,
         state: &StateHD<D>,
         diameter: &Array1<D>,
     ) -> D {
         // auxiliary variables
-        let n = self.parameters.m.len();
-        let p = &self.parameters;
+        let n = parameters.m.len();
+        let p = parameters;
         let rho = &state.partial_density;
 
         // temperature dependent segment radius
@@ -123,12 +120,6 @@ impl Dispersion {
     }
 }
 
-impl fmt::Display for Dispersion {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Dispersion")
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -141,39 +132,31 @@ mod tests {
 
     #[test]
     fn helmholtz_energy() {
-        let disp = Dispersion {
-            parameters: propane_parameters(),
-        };
+        let params = &propane_parameters().params;
         let t = 250.0;
         let v = 1000.0;
         let n = 1.0;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let d = disp.parameters.hs_diameter(t);
-        let a_rust = disp.helmholtz_energy(&s, &d);
+        let d = params.hs_diameter(t);
+        let a_rust = Dispersion.helmholtz_energy(params, &s, &d);
         assert_relative_eq!(a_rust, -1.0622531100351962, epsilon = 1e-10);
     }
 
     #[test]
     fn mix() {
-        let c1 = Dispersion {
-            parameters: propane_parameters(),
-        };
-        let c2 = Dispersion {
-            parameters: butane_parameters(),
-        };
-        let c12 = Dispersion {
-            parameters: propane_butane_parameters(),
-        };
+        let propane = &propane_parameters().params;
+        let butane = &butane_parameters().params;
+        let mix = &propane_butane_parameters().params;
         let t = 250.0;
         let v = 2.5e28;
         let n = 1.0;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a1 = c1.helmholtz_energy(&s, &c1.parameters.hs_diameter(t));
-        let a2 = c2.helmholtz_energy(&s, &c2.parameters.hs_diameter(t));
+        let a1 = Dispersion.helmholtz_energy(propane, &s, &propane.hs_diameter(t));
+        let a2 = Dispersion.helmholtz_energy(butane, &s, &butane.hs_diameter(t));
         let s1m = StateHD::new(t, v, arr1(&[n, 0.0]));
-        let a1m = c12.helmholtz_energy(&s1m, &c12.parameters.hs_diameter(t));
+        let a1m = Dispersion.helmholtz_energy(mix, &s1m, &mix.hs_diameter(t));
         let s2m = StateHD::new(t, v, arr1(&[0.0, n]));
-        let a2m = c12.helmholtz_energy(&s2m, &c12.parameters.hs_diameter(t));
+        let a2m = Dispersion.helmholtz_energy(mix, &s2m, &mix.hs_diameter(t));
         assert_relative_eq!(a1, a1m, epsilon = 1e-14);
         assert_relative_eq!(a2, a2m, epsilon = 1e-14);
     }

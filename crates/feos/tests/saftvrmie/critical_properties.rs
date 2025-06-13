@@ -1,4 +1,4 @@
-use feos::saftvrmie::{test_utils, SaftVRMie};
+use feos::saftvrmie::{SaftVRMie, test_utils};
 use feos_core::{SolverOptions, State};
 use quantity::*;
 use std::collections::HashMap;
@@ -52,8 +52,9 @@ fn critical_properties_pure() {
         let mut parameters = test_utils::test_parameters();
         let option = SolverOptions::default();
         let p = parameters.remove(name).unwrap();
-        let eos = Arc::new(SaftVRMie::new(Arc::new(p)));
+        let eos = Arc::new(SaftVRMie::new(p));
         let cp = State::critical_point(&eos, None, t0, option).unwrap();
+        dbg!(cp.pressure_contributions());
         dbg!(((data.0 - cp.temperature) / data.0).into_value() * 100.0);
         // temperature within 0.2%
         assert!(((data.0 - cp.temperature).abs() / data.0).into_value() * 100.0 < 0.2);

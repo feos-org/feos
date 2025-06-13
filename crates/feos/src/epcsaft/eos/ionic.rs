@@ -1,11 +1,9 @@
 use crate::epcsaft::eos::permittivity::Permittivity;
-use crate::epcsaft::parameters::ElectrolytePcSaftParameters;
+use crate::epcsaft::parameters::ElectrolytePcSaftPars;
 use feos_core::StateHD;
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::PI;
-use std::fmt;
-use std::sync::Arc;
 
 use super::ElectrolytePcSaftVariants;
 
@@ -13,7 +11,7 @@ const EPSILON_0: f64 = 8.85416e-12;
 const QE: f64 = 1.602176634e-19f64;
 const BOLTZMANN: f64 = 1.380649e-23;
 
-impl ElectrolytePcSaftParameters {
+impl ElectrolytePcSaftPars {
     pub fn bjerrum_length<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
@@ -35,19 +33,18 @@ impl ElectrolytePcSaftParameters {
     }
 }
 
-pub struct Ionic {
-    pub parameters: Arc<ElectrolytePcSaftParameters>,
-    pub variant: ElectrolytePcSaftVariants,
-}
+pub struct Ionic;
 
 impl Ionic {
     pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
         &self,
+        parameters: &ElectrolytePcSaftPars,
         state: &StateHD<D>,
         diameter: &Array1<D>,
+        variant: ElectrolytePcSaftVariants,
     ) -> D {
         // Extract parameters
-        let p = &self.parameters;
+        let p = parameters;
 
         // Set to zero if one of the ions is 0
         let sum_mole_fraction: f64 = p.ionic_comp.iter().map(|&i| state.molefracs[i].re()).sum();
@@ -56,7 +53,7 @@ impl Ionic {
         }
 
         // Calculate Bjerrum length
-        let lambda_b = p.bjerrum_length(state, self.variant);
+        let lambda_b = p.bjerrum_length(state, variant);
 
         // Calculate inverse Debye length
         let mut sum_dens_z = D::zero();
@@ -86,14 +83,9 @@ impl Ionic {
     }
 }
 
-impl fmt::Display for Ionic {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Ionic")
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use super::ElectrolytePcSaftVariants::Advanced;
     use super::*;
     use crate::epcsaft::parameters::utils::{water_nacl_parameters, water_nacl_parameters_perturb};
     use crate::hard_sphere::HardSphereProperties;
@@ -102,32 +94,26 @@ mod tests {
 
     #[test]
     fn helmholtz_energy_perturb() {
-        let ionic = Ionic {
-            parameters: water_nacl_parameters_perturb(),
-            variant: ElectrolytePcSaftVariants::Advanced,
-        };
+        let p = ElectrolytePcSaftPars::new(&water_nacl_parameters_perturb()).unwrap();
         let t = 298.0;
         let v = 31.875;
 
         let s = StateHD::new(t, v, arr1(&[0.9, 0.05, 0.05]));
 
-        let d = ionic.parameters.hs_diameter(t);
-        let a_rust = ionic.helmholtz_energy(&s, &d);
+        let d = p.hs_diameter(t);
+        let a_rust = Ionic.helmholtz_energy(&p, &s, &d, Advanced);
 
         assert_relative_eq!(a_rust, -0.07775796084032328, epsilon = 1e-10);
     }
 
     #[test]
     fn helmholtz_energy() {
-        let ionic = Ionic {
-            parameters: water_nacl_parameters(),
-            variant: ElectrolytePcSaftVariants::Advanced,
-        };
+        let p = ElectrolytePcSaftPars::new(&water_nacl_parameters()).unwrap();
         let t = 298.0;
         let v = 31.875;
         let s = StateHD::new(t, v, arr1(&[0.9, 0.05, 0.05]));
-        let d = ionic.parameters.hs_diameter(t);
-        let a_rust = ionic.helmholtz_energy(&s, &d);
+        let d = p.hs_diameter(t);
+        let a_rust = Ionic.helmholtz_energy(&p, &s, &d, Advanced);
 
         assert_relative_eq!(a_rust, -0.07341337106244776, epsilon = 1e-10);
     }

@@ -11,11 +11,11 @@ pub(crate) fn expand_functional_contribution(
     };
 
     let functional_contribution = impl_functional_contribution(&ident, variants);
-    let display = impl_display(&ident, variants);
+    // let display = impl_display(&ident, variants);
     let from = impl_from(&ident, variants);
     Ok(quote! {
         #functional_contribution
-        #display
+        // #display
         #from
     })
 }
@@ -24,6 +24,12 @@ fn impl_functional_contribution(
     ident: &Ident,
     variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
 ) -> proc_macro2::TokenStream {
+    let name = variants.iter().map(|v| {
+        let name = &v.ident;
+        quote! {
+            Self::#name(functional_contribution) => functional_contribution.name()
+        }
+    });
     let weight_functions = variants.iter().map(|v| {
         let name = &v.ident;
         quote! {
@@ -44,7 +50,12 @@ fn impl_functional_contribution(
     });
 
     quote! {
-        impl FunctionalContribution for #ident {
+        impl<'a> FunctionalContribution for #ident<'a> {
+            fn name(&self) -> &'static str {
+                match self {
+                    #(#name,)*
+                }
+            }
             fn weight_functions<N: DualNum<f64> + Copy+ScalarOperand>(&self, temperature: N) -> feos_dft::WeightFunctionInfo<N> {
                 match self {
                     #(#weight_functions,)*
@@ -68,27 +79,27 @@ fn impl_functional_contribution(
     }
 }
 
-fn impl_display(
-    ident: &Ident,
-    variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
-) -> proc_macro2::TokenStream {
-    let fmt = variants.iter().map(|v| {
-        let name = &v.ident;
-        quote! {
-            Self::#name(functional_contribution) => functional_contribution.fmt(f)
-        }
-    });
+// fn impl_display(
+//     ident: &Ident,
+//     variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
+// ) -> proc_macro2::TokenStream {
+//     let fmt = variants.iter().map(|v| {
+//         let name = &v.ident;
+//         quote! {
+//             Self::#name(functional_contribution) => functional_contribution.fmt(f)
+//         }
+//     });
 
-    quote! {
-        impl std::fmt::Display for #ident {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self {
-                    #(#fmt,)*
-                }
-            }
-        }
-    }
-}
+//     quote! {
+//         impl std::fmt::Display for #ident {
+//             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//                 match self {
+//                     #(#fmt,)*
+//                 }
+//             }
+//         }
+//     }
+// }
 
 fn impl_from(
     ident: &Ident,
@@ -101,7 +112,7 @@ fn impl_from(
         };
         let inner = &unnamed.first().unwrap().ty;
         quote! {
-            impl From<#inner> for #ident {
+            impl<'a> From<#inner> for #ident<'a> {
                 fn from(variant: #inner) -> Self {
                     Self::#name(variant)
                 }

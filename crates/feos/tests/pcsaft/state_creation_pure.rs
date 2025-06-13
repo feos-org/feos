@@ -1,7 +1,7 @@
 use approx::assert_relative_eq;
-use feos::ideal_gas::Joback;
+use feos::ideal_gas::{Joback, JobackParameters};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
-use feos_core::parameter::{IdentifierOption, Parameter};
+use feos_core::parameter::IdentifierOption;
 use feos_core::{
     Contributions, DensityInitialization, EquationOfState, FeosResult, IdealGas, PhaseEquilibrium,
     Residual, State, StateBuilder,
@@ -11,19 +11,19 @@ use std::error::Error;
 use std::sync::Arc;
 use typenum::P3;
 
-fn propane_parameters() -> FeosResult<(Arc<PcSaftParameters>, Arc<Joback>)> {
-    let saft = Arc::new(PcSaftParameters::from_json(
+fn propane_parameters() -> FeosResult<(PcSaftParameters, Arc<Joback>)> {
+    let saft = PcSaftParameters::from_json(
         vec!["propane"],
         "tests/pcsaft/test_parameters.json",
         None,
         IdentifierOption::Name,
-    )?);
-    let joback = Arc::new(Joback::from_json(
+    )?;
+    let joback = Arc::new(Joback::new(JobackParameters::from_json(
         vec!["propane"],
         "tests/pcsaft/test_parameters_joback.json",
         None,
         IdentifierOption::Name,
-    )?);
+    )?));
     Ok((saft, joback))
 }
 

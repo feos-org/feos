@@ -8,7 +8,6 @@ use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use quantity::MolarWeight;
 use std::any::Any;
-use std::fmt;
 
 pub struct PyIdealGas(Py<PyAny>);
 
@@ -89,20 +88,8 @@ macro_rules! impl_ideal_gas {
     };
 }
 
-impl fmt::Display for PyIdealGas {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Ideal gas (Python)")
-    }
-}
-
 /// Struct containing pointer to Python Class that implements Helmholtz energy.
 pub struct PyResidual(Py<PyAny>);
-
-impl fmt::Display for PyResidual {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Python residual")
-    }
-}
 
 impl PyResidual {
     pub fn new(obj: Bound<'_, PyAny>) -> PyResult<Self> {
@@ -347,9 +334,9 @@ impl_ideal_gas!(
     PyDualDualVec3,
     Dual<DualSVec64<3>, f64>;
     PyHyperDual64, HyperDual64;
-     PyDual2_64, Dual2_64;
-     PyDual3_64, Dual3_64;
-     PyHyperDualDual64, HyperDual<Dual64, f64>;
+    PyDual2_64, Dual2_64;
+    PyDual3_64, Dual3_64;
+    PyHyperDualDual64, HyperDual<Dual64, f64>;
     PyHyperDualVec2,
     HyperDual<DualSVec64<2>, f64>;
     PyHyperDualVec3,

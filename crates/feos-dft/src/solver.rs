@@ -2,14 +2,14 @@ use crate::{
     DFTProfile, FunctionalContribution, HelmholtzEnergyFunctional, WeightFunction,
     WeightFunctionShape,
 };
-use feos_core::{log_iter, log_result, FeosError, FeosResult, ReferenceSystem, Verbosity};
+use feos_core::{FeosError, FeosResult, ReferenceSystem, Verbosity, log_iter, log_result};
 use nalgebra::{DMatrix, DVector};
-use ndarray::prelude::*;
 use ndarray::RemoveAxis;
+use ndarray::prelude::*;
+use petgraph::Directed;
 use petgraph::graph::Graph;
 use petgraph::visit::EdgeRef;
-use petgraph::Directed;
-use quantity::{Time, SECOND};
+use quantity::{SECOND, Time};
 use std::collections::VecDeque;
 use std::fmt;
 use std::ops::AddAssign;
@@ -563,7 +563,7 @@ where
         let contributions = self.dft.contributions();
         let weighted_densities = self.convolver.weighted_densities(density);
         let mut second_partial_derivatives = Vec::new();
-        for (c, wd) in contributions.zip(&weighted_densities) {
+        for (c, wd) in contributions.into_iter().zip(&weighted_densities) {
             let nwd = wd.shape()[0];
             let ngrid = wd.len() / nwd;
             let mut phi = Array::zeros(density.raw_dim().remove_axis(Axis(0)));

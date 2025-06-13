@@ -87,7 +87,7 @@ where
             .dft
             .ideal_chain_contribution()
             .helmholtz_energy_density(&density.mapv(N::from))?;
-        for (c, wd) in functional_contributions.zip(weighted_densities) {
+        for (c, wd) in functional_contributions.into_iter().zip(weighted_densities) {
             let nwd = wd.shape()[0];
             let ngrid = wd.len() / nwd;
             helmholtz_energy_density
@@ -111,6 +111,7 @@ where
         let temperature_dual = Dual64::from(temperature).derivative();
         let functional_contributions = self.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
+            .into_iter()
             .map(|c| c.weight_functions(temperature_dual))
             .collect();
         let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, self.lanczos);
@@ -144,7 +145,7 @@ where
                 .helmholtz_energy_density(&density.mapv(Dual64::from))?,
         );
 
-        for (c, wd) in functional_contributions.zip(weighted_densities) {
+        for (c, wd) in functional_contributions.into_iter().zip(weighted_densities) {
             let nwd = wd.shape()[0];
             let ngrid = wd.len() / nwd;
             helmholtz_energy_density.push(
@@ -194,6 +195,7 @@ where
         let temperature_dual = Dual64::from(temperature).derivative();
         let functional_contributions = self.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
+            .into_iter()
             .map(|c| c.weight_functions(temperature_dual))
             .collect();
         let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, self.lanczos);
@@ -203,12 +205,15 @@ where
         let mut helmholtz_energy_density =
             self.intrinsic_helmholtz_energy_density(temperature_dual, &density, &convolver)?;
         match contributions {
-                Contributions::Total => {
-                    helmholtz_energy_density += &self.ideal_gas_contribution_dual(temperature_dual, &density);
-                },
-                Contributions::IdealGas => panic!("Entropy density can only be calculated for Contributions::Residual or Contributions::Total"),
-                Contributions::Residual => (),
+            Contributions::Total => {
+                helmholtz_energy_density +=
+                    &self.ideal_gas_contribution_dual(temperature_dual, &density);
             }
+            Contributions::IdealGas => panic!(
+                "Entropy density can only be calculated for Contributions::Residual or Contributions::Total"
+            ),
+            Contributions::Residual => (),
+        }
         Ok(EntropyDensity::from_reduced(
             helmholtz_energy_density.mapv(|f| -f.eps),
         ))
@@ -237,6 +242,7 @@ where
         let temperature_dual = Dual64::from(temperature).derivative();
         let functional_contributions = self.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
+            .into_iter()
             .map(|c| c.weight_functions(temperature_dual))
             .collect();
         let convolver = ConvolverFFT::plan(&self.grid, &weight_functions, self.lanczos);
@@ -246,12 +252,15 @@ where
         let mut helmholtz_energy_density_dual =
             self.intrinsic_helmholtz_energy_density(temperature_dual, &density, &convolver)?;
         match contributions {
-                    Contributions::Total => {
-                        helmholtz_energy_density_dual += &self.ideal_gas_contribution_dual(temperature_dual, &density);
-                    },
-                    Contributions::IdealGas => panic!("Internal energy density can only be calculated for Contributions::Residual or Contributions::Total"),
-                    Contributions::Residual => (),
-                }
+            Contributions::Total => {
+                helmholtz_energy_density_dual +=
+                    &self.ideal_gas_contribution_dual(temperature_dual, &density);
+            }
+            Contributions::IdealGas => panic!(
+                "Internal energy density can only be calculated for Contributions::Residual or Contributions::Total"
+            ),
+            Contributions::Residual => (),
+        }
         let helmholtz_energy_density = helmholtz_energy_density_dual
             .mapv(|f| f.re - f.eps * temperature)
             + (&self.external_potential * density).sum_axis(Axis(0)) * temperature;
@@ -355,6 +364,7 @@ where
         // calculate intrinsic functional derivative
         let functional_contributions = self.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
+            .into_iter()
             .map(|c| c.weight_functions(t_dual))
             .collect();
         let convolver: Arc<dyn Convolver<_, D>> =

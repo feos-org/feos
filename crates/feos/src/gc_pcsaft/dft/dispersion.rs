@@ -6,23 +6,23 @@ use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, Weigh
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_6, PI};
-use std::fmt;
-use std::sync::Arc;
 
 #[derive(Clone)]
-pub struct AttractiveFunctional {
-    parameters: Arc<GcPcSaftFunctionalParameters>,
+pub struct AttractiveFunctional<'a> {
+    parameters: &'a GcPcSaftFunctionalParameters,
 }
 
-impl AttractiveFunctional {
-    pub fn new(parameters: &Arc<GcPcSaftFunctionalParameters>) -> Self {
-        Self {
-            parameters: parameters.clone(),
-        }
+impl<'a> AttractiveFunctional<'a> {
+    pub fn new(parameters: &'a GcPcSaftFunctionalParameters) -> Self {
+        Self { parameters }
     }
 }
 
-impl FunctionalContribution for AttractiveFunctional {
+impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
+    fn name(&self) -> &'static str {
+        "Attractive functional (GC)"
+    }
+
     fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
@@ -115,11 +115,5 @@ impl FunctionalContribution for AttractiveFunctional {
 
         // Helmholtz energy density
         Ok((-rho1mix * i1 * 2.0 - rho2mix * m_bar * c1 * i2) * PI)
-    }
-}
-
-impl fmt::Display for AttractiveFunctional {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Attractive functional (GC)")
     }
 }

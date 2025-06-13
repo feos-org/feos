@@ -1,25 +1,23 @@
 use crate::hard_sphere::{FMTVersion, HardSphereProperties};
+use crate::pets::Pets;
 use crate::pets::eos::dispersion::{A, B};
-use crate::pets::parameters::PetsParameters;
 use feos_core::{FeosError, FeosResult};
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::*;
 use std::f64::consts::{FRAC_PI_6, PI};
-use std::fmt;
-use std::sync::Arc;
 
 const PI36M1: f64 = 1.0 / (36.0 * PI);
 const N3_CUTOFF: f64 = 1e-5;
 
 #[derive(Clone)]
-pub struct PureFMTFunctional {
-    parameters: Arc<PetsParameters>,
+pub struct PureFMTFunctional<'a> {
+    parameters: &'a Pets,
     version: FMTVersion,
 }
 
-impl PureFMTFunctional {
-    pub fn new(parameters: Arc<PetsParameters>, version: FMTVersion) -> Self {
+impl<'a> PureFMTFunctional<'a> {
+    pub fn new(parameters: &'a Pets, version: FMTVersion) -> Self {
         Self {
             parameters,
             version,
@@ -27,7 +25,11 @@ impl PureFMTFunctional {
     }
 }
 
-impl FunctionalContribution for PureFMTFunctional {
+impl<'a> FunctionalContribution for PureFMTFunctional<'a> {
+    fn name(&self) -> &'static str {
+        "Pure FMT"
+    }
+
     fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
@@ -65,7 +67,9 @@ impl FunctionalContribution for PureFMTFunctional {
 
         // Auxiliary variables
         if n3.iter().any(|n3| n3.re() > 1.0) {
-            return Err(FeosError::IterationFailed(String::from("PureFMTFunctional")));
+            return Err(FeosError::IterationFailed(String::from(
+                "PureFMTFunctional",
+            )));
         }
         let ln31 = n3.mapv(|n3| (-n3).ln_1p());
         let n3rec = n3.mapv(|n3| n3.recip());
@@ -109,24 +113,22 @@ impl FunctionalContribution for PureFMTFunctional {
     }
 }
 
-impl fmt::Display for PureFMTFunctional {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Pure FMT")
-    }
-}
-
 #[derive(Clone)]
-pub struct PureAttFunctional {
-    parameters: Arc<PetsParameters>,
+pub struct PureAttFunctional<'a> {
+    parameters: &'a Pets,
 }
 
-impl PureAttFunctional {
-    pub fn new(parameters: Arc<PetsParameters>) -> Self {
+impl<'a> PureAttFunctional<'a> {
+    pub fn new(parameters: &'a Pets) -> Self {
         Self { parameters }
     }
 }
 
-impl FunctionalContribution for PureAttFunctional {
+impl<'a> FunctionalContribution for PureAttFunctional<'a> {
+    fn name(&self) -> &'static str {
+        "Pure attractive"
+    }
+
     fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
@@ -179,11 +181,5 @@ impl FunctionalContribution for PureAttFunctional {
             rho.mapv(|rho| -(rho).powi(2) * e * s3 * PI) * (i1 * 2.0 + c1 * i2.mapv(|i2| i2 * e));
 
         Ok(phi)
-    }
-}
-
-impl fmt::Display for PureAttFunctional {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Pure attractive")
     }
 }

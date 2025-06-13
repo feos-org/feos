@@ -1,28 +1,24 @@
-use super::hard_sphere::{diameter_bh, packing_fraction, packing_fraction_a, packing_fraction_b};
-use crate::uvtheory::parameters::*;
+use super::BarkerHenderson;
+use super::hard_sphere::{packing_fraction, packing_fraction_a, packing_fraction_b};
+use crate::uvtheory::parameters::UVTheoryPars;
 use feos_core::StateHD;
 use num_dual::DualNum;
-use std::fmt;
-use std::{f64::consts::PI, sync::Arc};
+use std::f64::consts::PI;
 
 #[derive(Debug, Clone)]
-pub(super) struct ReferencePerturbation {
-    pub parameters: Arc<UVTheoryParameters>,
-}
-
-impl fmt::Display for ReferencePerturbation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Reference Perturbation")
-    }
-}
+pub(super) struct ReferencePerturbation;
 
 impl ReferencePerturbation {
     /// Helmholtz energy for perturbation reference (Mayer-f), eq. 29
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
-        let p = &self.parameters;
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        parameters: &UVTheoryPars,
+        state: &StateHD<D>,
+    ) -> D {
+        let p = parameters;
         let n = p.sigma.len();
         let x = &state.molefracs;
-        let d = diameter_bh(p, state.temperature);
+        let d = BarkerHenderson::diameter_bh(p, state.temperature);
         let eta = packing_fraction(&state.partial_density, &d);
         let eta_a = packing_fraction_a(p, &d, eta);
         let eta_b = packing_fraction_b(p, &d, eta);
@@ -45,7 +41,7 @@ impl ReferencePerturbation {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::uvtheory::parameters::utils::test_parameters;
+    use crate::uvtheory::{Perturbation, parameters::utils::test_parameters};
     use approx::assert_relative_eq;
     use ndarray::arr1;
 
@@ -58,12 +54,9 @@ mod test {
         let reduced_density = 1.0;
         let reduced_volume = moles[0] / reduced_density;
 
-        let p = test_parameters(24.0, 6.0, 1.0, 1.0);
-        let pt = ReferencePerturbation {
-            parameters: Arc::new(p),
-        };
+        let p = test_parameters(24.0, 6.0, 1.0, 1.0, Perturbation::BarkerHenderson);
         let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());
-        let a = pt.helmholtz_energy(&state) / moles[0];
+        let a = ReferencePerturbation.helmholtz_energy(&p, &state) / moles[0];
         assert_relative_eq!(a, -0.0611105573289734, epsilon = 1e-10);
     }
 }

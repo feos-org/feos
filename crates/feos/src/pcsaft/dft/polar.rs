@@ -1,15 +1,15 @@
-use super::PcSaftParameters;
 use crate::hard_sphere::HardSphereProperties;
 use crate::pcsaft::eos::polar::{
-    MeanSegmentNumbers, Multipole, AD, ADQ, ALPHA, AQ, BD, BDQ, BQ, CD, CDQ, CQ, PI_SQ_43,
+    AD, ADQ, ALPHA, AQ, BD, BDQ, BQ, CD, CDQ, CQ, MeanSegmentNumbers, Multipole, PI_SQ_43,
 };
+use crate::pcsaft::parameters::PcSaftPars;
 use feos_core::FeosError;
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 
 pub(super) fn helmholtz_energy_density_polar<N: DualNum<f64> + Copy + ScalarOperand>(
-    parameters: &PcSaftParameters,
+    parameters: &PcSaftPars,
     temperature: N,
     density: ArrayView2<N>,
 ) -> Result<Array1<N>, FeosError> {
@@ -94,7 +94,7 @@ fn triplet_integral_ijk_dq<N: DualNum<f64> + ScalarOperand>(
 }
 
 fn phi_polar_dipole<N: DualNum<f64> + Copy + ScalarOperand>(
-    p: &PcSaftParameters,
+    p: &PcSaftPars,
     temperature: N,
     density: ArrayView2<N>,
     eta: &Array1<N>,
@@ -182,7 +182,7 @@ fn phi_polar_dipole<N: DualNum<f64> + Copy + ScalarOperand>(
 }
 
 fn phi_polar_quadrupole<N: DualNum<f64> + Copy + ScalarOperand>(
-    p: &PcSaftParameters,
+    p: &PcSaftPars,
     temperature: N,
     density: ArrayView2<N>,
     eta: &Array1<N>,
@@ -270,7 +270,7 @@ fn phi_polar_quadrupole<N: DualNum<f64> + Copy + ScalarOperand>(
 }
 
 fn phi_polar_dipole_quadrupole<N: DualNum<f64> + Copy + ScalarOperand>(
-    p: &PcSaftParameters,
+    p: &PcSaftPars,
     temperature: N,
     density: ArrayView2<N>,
     eta: &Array1<N>,
