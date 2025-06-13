@@ -38,7 +38,7 @@ impl Default for GcPcSaftOptions {
 
 /// gc-PC-SAFT equation of state
 pub struct GcPcSaft {
-    parameters: GcPcSaftParameters,
+    parameters: GcPcSaftParameters<f64>,
     params: GcPcSaftEosParameters,
     options: GcPcSaftOptions,
     association: Option<Association<GcPcSaftEosParameters>>,
@@ -46,11 +46,11 @@ pub struct GcPcSaft {
 }
 
 impl GcPcSaft {
-    pub fn new(parameters: GcPcSaftParameters) -> Self {
+    pub fn new(parameters: GcPcSaftParameters<f64>) -> Self {
         Self::with_options(parameters, GcPcSaftOptions::default())
     }
 
-    pub fn with_options(parameters: GcPcSaftParameters, options: GcPcSaftOptions) -> Self {
+    pub fn with_options(parameters: GcPcSaftParameters<f64>, options: GcPcSaftOptions) -> Self {
         let params = GcPcSaftEosParameters::new(&parameters);
         let association = Association::new(
             &parameters,
@@ -127,8 +127,8 @@ impl Residual for GcPcSaft {
 }
 
 impl Molarweight for GcPcSaft {
-    fn molar_weight(&self) -> &MolarWeight<Array1<f64>> {
-        &self.parameters.molar_weight
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+        self.parameters.molar_weight.clone()
     }
 }
 

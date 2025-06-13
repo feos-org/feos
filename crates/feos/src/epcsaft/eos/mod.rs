@@ -149,8 +149,8 @@ impl Residual for ElectrolytePcSaft {
 }
 
 impl Molarweight for ElectrolytePcSaft {
-    fn molar_weight(&self) -> &MolarWeight<Array1<f64>> {
-        &self.parameters.molar_weight
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+        self.parameters.molar_weight.clone()
     }
 }
 

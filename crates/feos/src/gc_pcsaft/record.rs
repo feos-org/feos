@@ -50,4 +50,5 @@ impl GcPcSaftAssociationRecord {
 }
 
 /// Parameter set required for the gc-PC-SAFT equation of state.
-pub type GcPcSaftParameters = ParametersHetero<GcPcSaftRecord, f64, GcPcSaftAssociationRecord, ()>;
+pub type GcPcSaftParameters<C> =
+    ParametersHetero<GcPcSaftRecord, f64, GcPcSaftAssociationRecord, (), C>;

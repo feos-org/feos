@@ -143,7 +143,7 @@ mod tests {
     use approx::assert_relative_eq;
     use feos_core::{
         Contributions, EquationOfState, State, StateBuilder,
-        parameter::{ChemicalRecord, Identifier, SegmentRecord},
+        parameter::{ChemicalRecord, GroupCount, Identifier, SegmentRecord},
     };
     use ndarray::arr1;
     use quantity::*;
@@ -187,7 +187,7 @@ mod tests {
             serde_json::from_str(segments_json).expect("Unable to parse json.");
         let segment_map: HashMap<_, _> =
             segment_records.iter().map(|s| (&s.identifier, s)).collect();
-        let (_, segments, _) = ChemicalRecord::new(
+        let (_, segments, _) = GroupCount::into_groups(ChemicalRecord::new(
             Identifier::default(),
             vec![
                 String::from("-Cl"),
@@ -200,8 +200,7 @@ mod tests {
                 String::from("=CH<(ring)"),
             ],
             None,
-        )
-        .into_groups();
+        ));
         // .segment_map(&segment_records)?;
         let joback_segments: Vec<_> = segments
             .into_iter()

@@ -26,6 +26,8 @@ impl From<PySegmentRecord> for SegmentRecord<Value, Value> {
             molarweight: value.molarweight,
             model_record: value.model_record,
             association_sites: value.association_sites,
+            count: (),
+            component_index: 0,
         }
     }
 }

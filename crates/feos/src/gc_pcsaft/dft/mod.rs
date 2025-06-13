@@ -22,7 +22,7 @@ pub use parameter::GcPcSaftFunctionalParameters;
 
 /// gc-PC-SAFT Helmholtz energy functional.
 pub struct GcPcSaftFunctional {
-    parameters: GcPcSaftParameters,
+    parameters: GcPcSaftParameters<()>,
     association_parameters: AssociationParameters<GcPcSaftFunctionalParameters>,
     params: GcPcSaftFunctionalParameters,
     fmt_version: FMTVersion,
@@ -30,7 +30,7 @@ pub struct GcPcSaftFunctional {
 }
 
 impl GcPcSaftFunctional {
-    pub fn new(parameters: GcPcSaftParameters) -> Self {
+    pub fn new(parameters: GcPcSaftParameters<()>) -> Self {
         Self::with_options(
             parameters,
             FMTVersion::WhiteBear,
@@ -39,7 +39,7 @@ impl GcPcSaftFunctional {
     }
 
     pub fn with_options(
-        parameters: GcPcSaftParameters,
+        parameters: GcPcSaftParameters<()>,
         fmt_version: FMTVersion,
         saft_options: GcPcSaftOptions,
     ) -> Self {
@@ -139,8 +139,8 @@ impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
 }
 
 impl Molarweight for GcPcSaftFunctional {
-    fn molar_weight(&self) -> &MolarWeight<Array1<f64>> {
-        &self.parameters.molar_weight
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+        self.parameters.molar_weight.clone()
     }
 }
 

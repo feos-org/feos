@@ -140,8 +140,8 @@ impl HelmholtzEnergyFunctional for PcSaftFunctional {
 }
 
 impl Molarweight for PcSaftFunctional {
-    fn molar_weight(&self) -> &MolarWeight<Array1<f64>> {
-        &self.parameters.molar_weight
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+        self.parameters.molar_weight.clone()
     }
 }
 

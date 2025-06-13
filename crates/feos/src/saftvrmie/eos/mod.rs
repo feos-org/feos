@@ -110,8 +110,8 @@ impl Residual for SaftVRMie {
 }
 
 impl Molarweight for SaftVRMie {
-    fn molar_weight(&self) -> &MolarWeight<Array1<f64>> {
-        &self.parameters.molar_weight
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+        self.parameters.molar_weight.clone()
     }
 }
 

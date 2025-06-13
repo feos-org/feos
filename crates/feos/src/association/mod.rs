@@ -2,7 +2,7 @@
 //! that can be used across models.
 use crate::hard_sphere::HardSphereProperties;
 use arrayvec::ArrayString;
-use feos_core::parameter::ParametersBase;
+use feos_core::parameter::{GroupCount, ParametersBase};
 use feos_core::{FeosError, FeosResult, StateHD};
 use ndarray::*;
 use num_dual::linalg::{LU, norm};
@@ -48,8 +48,8 @@ pub struct AssociationParameters<A: AssociationStrength> {
 }
 
 impl<A: AssociationStrength> AssociationParameters<A> {
-    pub fn new<I, B, Bo>(
-        parameters: &ParametersBase<I, A::Pure, B, A::Record, Bo>,
+    pub fn new<I, B, Bo, C: GroupCount>(
+        parameters: &ParametersBase<I, A::Pure, B, A::Record, Bo, C>,
     ) -> FeosResult<Self> {
         let mut sites_a = Vec::new();
         let mut sites_b = Vec::new();
@@ -58,7 +58,7 @@ impl<A: AssociationStrength> AssociationParameters<A> {
         for (i, record) in parameters.pure_records.iter().enumerate() {
             for site in record.association_sites.iter() {
                 if site.na > 0.0 {
-                    let na = site.na * record.count;
+                    let na = site.na * record.count.into_f64();
                     sites_a.push(AssociationSite::new(i, site.id, na, site.parameters));
                 }
                 if site.nb > 0.0 {
@@ -180,8 +180,8 @@ pub struct Association<A: AssociationStrength> {
 }
 
 impl<A: AssociationStrength> Association<A> {
-    pub fn new<I, B, Bo>(
-        parameters: &ParametersBase<I, A::Pure, B, A::Record, Bo>,
+    pub fn new<I, B, Bo, C: GroupCount>(
+        parameters: &ParametersBase<I, A::Pure, B, A::Record, Bo, C>,
         max_iter: usize,
         tol: f64,
     ) -> FeosResult<Option<Self>> {
@@ -194,8 +194,8 @@ impl<A: AssociationStrength> Association<A> {
         }))
     }
 
-    pub fn new_cross_association<I, B, Bo>(
-        parameters: &ParametersBase<I, A::Pure, B, A::Record, Bo>,
+    pub fn new_cross_association<I, B, Bo, C: GroupCount>(
+        parameters: &ParametersBase<I, A::Pure, B, A::Record, Bo, C>,
         max_iter: usize,
         tol: f64,
     ) -> FeosResult<Option<Self>> {

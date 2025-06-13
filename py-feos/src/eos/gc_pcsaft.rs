@@ -47,7 +47,7 @@ impl PyEquationOfState {
             tol_cross_assoc,
         };
         let residual = Arc::new(ResidualModel::GcPcSaft(GcPcSaft::with_options(
-            Arc::new(parameters.try_convert_heterosegmented()?),
+            parameters.try_convert_heterosegmented()?,
             options,
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
@@ -96,7 +96,7 @@ impl PyHelmholtzEnergyFunctional {
         };
         let func = Arc::new(ResidualModel::GcPcSaftFunctional(
             GcPcSaftFunctional::with_options(
-                Arc::new(parameters.try_convert_heterosegmented()?),
+                parameters.try_convert_heterosegmented()?,
                 fmt_version.into(),
                 options,
             ),

@@ -95,8 +95,8 @@ impl Residual for UVTheory {
 }
 
 impl Molarweight for UVTheory {
-    fn molar_weight(&self) -> &MolarWeight<Array1<f64>> {
-        &self.parameters.molar_weight
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+        self.parameters.molar_weight.clone()
     }
 }
 

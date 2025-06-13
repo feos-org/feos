@@ -31,6 +31,8 @@ impl From<PyPureRecord> for PureRecord<Value, Value> {
             molarweight: value.molarweight,
             model_record: value.model_record,
             association_sites: value.association_sites,
+            count: (),
+            component_index: 0,
         }
     }
 }
@@ -45,50 +47,6 @@ impl From<PureRecord<Value, Value>> for PyPureRecord {
         }
     }
 }
-
-// impl PyPureRecord {
-//     pub(crate) fn from_json(
-//         substances: &[String],
-//         file: &String,
-//         identifier_option: PyIdentifierOption,
-//     ) -> FeosResult<Vec<Self>> {
-//         let pure_records = PureRecord::from_json(substances, file, identifier_option.0)?;
-//         // create list of substances
-//         let mut queried: HashSet<_> = substances.iter().map(|s| s.to_string()).collect();
-//         // raise error on duplicate detection
-//         if queried.len() != substances.len() {
-//             return Err(FeosError::IncompatibleParameters(
-//                 "A substance was defined more than once.".to_string(),
-//             ));
-//         }
-
-//         let reader = BufReader::new(File::open::<&str>(file.as_ref())?);
-//         let file_records: Vec<Self> = serde_json::from_reader(reader)?;
-//         let mut records: HashMap<_, _> = HashMap::with_capacity(substances.len());
-
-//         // build map, draining list of queried substances in the process
-//         for record in file_records {
-//             if let Some(id) = record.identifier.as_str(identifier_option) {
-//                 queried.take(id).map(|id| records.insert(id, record));
-//             }
-//             // all parameters parsed
-//             if queried.is_empty() {
-//                 break;
-//             }
-//         }
-
-//         // report missing parameters
-//         if !queried.is_empty() {
-//             return Err(FeosError::ComponentsNotFound(format!("{:?}", queried)));
-//         };
-
-//         // collect into vec in correct order
-//         Ok(substances
-//             .iter()
-//             .map(|s| records.get(&s.to_string()).unwrap().clone())
-//             .collect())
-//     }
-// }
 
 #[pymethods]
 impl PyPureRecord {
@@ -165,21 +123,6 @@ impl PyPureRecord {
 
     fn __repr__(&self) -> String {
         PureRecord::from(self.clone()).to_string()
-        // Ok(self
-        //     .try_into()
-        //     .map_err(PyFeosError::from)
-        //     .map(|r: PureRecord<Value, Value>| r.to_string())?)
-
-        // let params = self
-        //     .get_model_record(py)?
-        //     .iter()
-        //     .map(|(p, v)| format!(", {p}={v}"))
-        //     .collect::<Vec<_>>()
-        //     .join("");
-        // Ok(format!(
-        //     "PureRecord(identifier={}, molarweight={}{})",
-        //     self.identifier.0, self.molarweight, params
-        // ))
     }
 }
 
@@ -259,17 +202,5 @@ impl PyBinaryRecord {
 
     fn __repr__(&self) -> String {
         BinaryRecord::from(self.clone()).to_string()
-        // let params: PyResult<String> = Python::with_gil(|py| {
-        //     Ok(self
-        //         .get_model_record(py)?
-        //         .iter()
-        //         .map(|(p, v)| format!(", {p}={v}"))
-        //         .collect::<Vec<_>>()
-        //         .join(""))
-        // });
-        // Ok(format!(
-        //     "BinaryRecord(id1={}, id2={}{})",
-        //     self.id1.0, self.id2.0, params?
-        // ))
     }
 }

@@ -19,7 +19,7 @@ pub struct GcPcSaftFunctionalParameters {
 }
 
 impl GcPcSaftFunctionalParameters {
-    pub fn new(parameters: &GcPcSaftParameters) -> Self {
+    pub fn new(parameters: &GcPcSaftParameters<()>) -> Self {
         let component_index = parameters.component_index();
 
         let [m, sigma, epsilon_k] = parameters.collate(|pr| [pr.m, pr.sigma, pr.epsilon_k]);

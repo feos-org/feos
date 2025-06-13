@@ -160,8 +160,8 @@ impl Residual for PengRobinson {
 }
 
 impl Molarweight for PengRobinson {
-    fn molar_weight(&self) -> &MolarWeight<Array1<f64>> {
-        &self.parameters.molar_weight
+    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+        self.parameters.molar_weight.clone()
     }
 }
 

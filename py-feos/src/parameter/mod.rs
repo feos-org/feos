@@ -1,6 +1,5 @@
 use crate::error::PyFeosError;
 use feos_core::parameter::*;
-use feos_core::FeosResult;
 use indexmap::IndexSet;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -27,14 +26,12 @@ pub(crate) use segment::{PyBinarySegmentRecord, PySegmentRecord};
 pub struct PyParameters {
     pub pure_records: Vec<PureRecord<Value, Value>>,
     pub binary_records: Vec<BinaryRecord<usize, Value, Value>>,
+    pub bond_records: Vec<BondRecord<Value, ()>>,
 }
 
 impl From<PyParameters> for Parameters<Value, Value, Value> {
     fn from(value: PyParameters) -> Self {
-        Self {
-            pure_records: value.pure_records,
-            binary_records: value.binary_records,
-        }
+        Self::new(value.pure_records, value.binary_records)
     }
 }
 
@@ -43,6 +40,7 @@ impl From<Parameters<Value, Value, Value>> for PyParameters {
         Self {
             pure_records: value.pure_records,
             binary_records: value.binary_records,
+            bond_records: vec![],
         }
     }
 }
@@ -495,93 +493,60 @@ pub struct PyGcParameters {
     binary_segment_records: Option<Vec<BinaryRecord<String, Value, Value>>>,
 }
 
-impl ParameterHetero for PyGcParameters {
-    type Chemical = ChemicalRecord;
-    type Pure = Value;
-    type Binary = Value;
-    type Association = Value;
-
-    fn from_segments<C: Clone + Into<Self::Chemical>>(
-        chemical_records: Vec<C>,
-        segment_records: Vec<SegmentRecord<Self::Pure, Self::Association>>,
-        binary_segment_records: Option<Vec<BinarySegmentRecord<Self::Binary, Self::Association>>>,
-    ) -> FeosResult<Self> {
-        let chemical_records = chemical_records.into_iter().map(|cr| cr.into()).collect();
-        Ok(Self {
-            chemical_records,
-            segment_records,
-            binary_segment_records,
-        })
-    }
-
-    fn records(
-        &self,
-    ) -> (
-        &[Self::Chemical],
-        &[SegmentRecord<Self::Pure, Self::Association>],
-        &Option<Vec<BinarySegmentRecord<Self::Binary, Self::Association>>>,
-    ) {
-        (
-            &self.chemical_records,
-            &self.segment_records,
-            &self.binary_segment_records,
-        )
-    }
-}
-
 impl PyGcParameters {
     pub fn try_convert_homosegmented<P, B, A>(self) -> PyResult<Parameters<P, B, A>>
     where
-        for<'de> P: Deserialize<'de> + Clone + FromSegments<usize>,
-        for<'de> B: Deserialize<'de> + Clone + FromSegmentsBinary<usize> + Default,
+        for<'de> P: Deserialize<'de> + Clone + FromSegments,
+        for<'de> B: Deserialize<'de> + Clone + FromSegmentsBinary + Default,
+        for<'de> A: Deserialize<'de> + Clone,
+    {
+        let segment_records: Vec<_> = self
+            .segment_records
+            .into_iter()
+            .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
+            .collect::<Result<_, PyFeosError>>()?;
+        let binary_segment_records = self
+            .binary_segment_records
+            .map(|bsr| {
+                bsr.into_iter()
+                    .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
+                    .collect::<Result<Vec<_>, PyFeosError>>()
+            })
+            .transpose()?;
+        Ok(Parameters::from_segments(
+            self.chemical_records,
+            &segment_records,
+            binary_segment_records.as_deref(),
+        )
+        .map_err(PyFeosError::from)?)
+    }
+
+    pub fn try_convert_heterosegmented<P, B, A, C: GroupCount + Default>(
+        self,
+    ) -> PyResult<ParametersHetero<P, B, A, (), C>>
+    where
+        for<'de> P: Deserialize<'de> + Clone,
+        for<'de> B: Deserialize<'de> + Clone,
         for<'de> A: Deserialize<'de> + Clone,
     {
         let segment_records = self
             .segment_records
             .into_iter()
             .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
-            .collect::<Result<_, PyFeosError>>()?;
+            .collect::<Result<Vec<_>, PyFeosError>>()?;
         let binary_segment_records = self
             .binary_segment_records
             .map(|bsr| {
                 bsr.into_iter()
-                    .map(|r| serde_json::from_value(serde_json::to_value(r)?))
-                    .collect()
+                    .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
+                    .collect::<Result<Vec<_>, PyFeosError>>()
             })
-            .transpose()
-            .map_err(PyFeosError::from)?;
-        Ok(Parameters::from_segments(
+            .transpose()?;
+        Ok(ParametersBase::<String, P, B, A, (), C>::from_segments(
             self.chemical_records,
-            segment_records,
-            binary_segment_records,
-        )
-        .map_err(PyFeosError::from)?)
-    }
-
-    pub fn try_convert_heterosegmented<P: ParameterHetero>(self) -> PyResult<P>
-    where
-        P::Chemical: From<ChemicalRecord>,
-    {
-        let segment_records = self
-            .segment_records
-            .into_iter()
-            .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
-            .collect::<Result<_, PyFeosError>>()?;
-        let binary_segment_records = self
-            .binary_segment_records
-            .map(|bsr| {
-                bsr.into_iter()
-                    .map(|r| serde_json::from_value(serde_json::to_value(r)?))
-                    .collect()
-            })
-            .transpose()
-            .map_err(PyFeosError::from)?;
-        Ok(P::from_segments(
-            self.chemical_records,
-            segment_records,
-            binary_segment_records,
-        )
-        .map_err(PyFeosError::from)?)
+            &segment_records,
+            binary_segment_records.as_deref(),
+        ))
     }
 }
 
@@ -643,16 +608,22 @@ impl PyGcParameters {
         binary_path: Option<&str>,
         identifier_option: PyIdentifierOption,
     ) -> PyResult<Self> {
-        let substances: Vec<_> = substances.iter().map(|s| s as &str).collect();
-        ParameterHetero::from_json_segments(
-            &substances,
-            pure_path,
-            segments_path,
-            binary_path,
-            identifier_option.into(),
-        )
-        .map_err(PyFeosError::from)
-        .map_err(PyErr::from)
+        let chemical_records =
+            PyChemicalRecord::from_json(substances, pure_path, identifier_option)?;
+        let segment_records = PySegmentRecord::from_json(segments_path)?;
+        let binary_segment_records = binary_path
+            .as_ref()
+            .map(|p| {
+                BinarySegmentRecord::from_json(p as &str)
+                    .map(|brs| brs.into_iter().map(|r| r.into()).collect())
+            })
+            .transpose()
+            .map_err(PyFeosError::from)?;
+        Ok(Self::from_segments(
+            chemical_records,
+            segment_records,
+            binary_segment_records,
+        ))
     }
 
     /// Creates parameters from SMILES and segment records.

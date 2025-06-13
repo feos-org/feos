@@ -25,7 +25,7 @@ pub struct GcPcSaftEosParameters {
 
 // The gc-PC-SAFT parameters in an easier accessible format.
 impl GcPcSaftEosParameters {
-    pub fn new(parameters: &GcPcSaftParameters) -> Self {
+    pub fn new(parameters: &GcPcSaftParameters<f64>) -> Self {
         let component_index = parameters.component_index();
 
         let [m, sigma, epsilon_k] = parameters.collate(|pr| [pr.m, pr.sigma, pr.epsilon_k]);
@@ -204,7 +204,7 @@ pub mod test {
         GcPcSaftEosParameters::new(&params)
     }
 
-    pub fn propanol() -> GcPcSaftParameters {
+    pub fn propanol() -> GcPcSaftParameters<f64> {
         let pure = ChemicalRecord::new(
             Identifier::new(Some("71-23-8"), Some("1-propanol"), None, None, None, None),
             vec!["CH3".into(), "CH2".into(), "CH2".into(), "OH".into()],
@@ -213,7 +213,7 @@ pub mod test {
         GcPcSaftParameters::from_segments(vec![pure], &[ch3(), ch2(), oh()], None)
     }
 
-    pub fn ethanol_propanol(binary: bool) -> GcPcSaftParameters {
+    pub fn ethanol_propanol(binary: bool) -> GcPcSaftParameters<f64> {
         let ethanol = ChemicalRecord::new(
             Identifier::new(Some("64-17-5"), Some("ethanol"), None, None, None, None),
             vec!["CH3".into(), "CH2".into(), "OH".into()],

@@ -18,70 +18,27 @@ mod identifier;
 mod model_record;
 
 pub use association::{AssociationRecord, BinaryAssociationRecord};
-pub use chemical_record::ChemicalRecord;
+pub use chemical_record::{ChemicalRecord, GroupCount};
 pub use identifier::{Identifier, IdentifierOption};
 pub use model_record::{
     BinaryRecord, BinarySegmentRecord, BondRecord, FromSegments, FromSegmentsBinary, ModelRecord,
     PureRecord, SegmentRecord,
 };
 
-pub struct ParametersBase<I, P, B, A, Bo> {
-    pub pure_records: Vec<ModelRecord<I, P, A>>,
+pub struct ParametersBase<I, P, B, A, Bo, C> {
+    pub pure_records: Vec<ModelRecord<I, P, A, C>>,
     pub binary_records: Vec<BinaryRecord<usize, B, A>>,
-    pub bond_records: Vec<BondRecord<Bo>>,
+    pub bond_records: Vec<BondRecord<Bo, C>>,
     pub molar_weight: MolarWeight<Array1<f64>>,
 }
 
-pub type Parameters<P, B, A> = ParametersBase<Identifier, P, B, A, ()>;
-pub type ParametersHetero<P, B, A, Bo> = ParametersBase<String, P, B, A, Bo>;
+pub type Parameters<P, B, A> = ParametersBase<Identifier, P, B, A, (), ()>;
+pub type ParametersHetero<P, B, A, Bo, C> = ParametersBase<String, P, B, A, Bo, C>;
 pub type IdealGasParameters<I> = Parameters<I, (), ()>;
 
-impl<I: Clone, P: Clone, B: Clone, A: Clone, Bo: Clone> ParametersBase<I, P, B, A, Bo> {
-    fn _new(
-        pure_records: Vec<ModelRecord<I, P, A>>,
-        binary_records: Vec<BinaryRecord<usize, B, A>>,
-        bond_records: Vec<BondRecord<Bo>>,
-    ) -> Self {
-        // // assign segments to molecules
-        // let mut component_index: Vec<_> = (0..pure_records.len()).collect();
-        // for bo in &bond_records {
-        //     let i1 = component_index[bo.id1];
-        //     let i2 = component_index[bo.id2];
-        //     let t = if i1 < i2 {
-        //         component_index[bo.id2] = i1;
-        //         i2
-        //     } else if i2 < i1 {
-        //         component_index[bo.id1] = i2;
-        //         i1
-        //     } else {
-        //         panic!("The heterosegmented approach is not available for molecules with cycles!")
-        //     };
-        //     component_index.iter_mut().for_each(|c| {
-        //         if *c >= t {
-        //             *c -= 1
-        //         }
-        //     });
-        // }
-
-        // calculate molar weight
-        let n = pure_records
-            .iter()
-            .fold(0, |acc, r| acc.max(r.component_index))
-            + 1;
-        let mut molar_weight = Array1::zeros(n);
-        for r in &pure_records {
-            molar_weight[r.component_index] += r.molarweight;
-        }
-        let molar_weight = molar_weight * (GRAM / MOL);
-
-        Self {
-            pure_records,
-            binary_records,
-            bond_records,
-            molar_weight,
-        }
-    }
-
+impl<I: Clone, P: Clone, B: Clone, A: Clone, Bo: Clone, C: Clone>
+    ParametersBase<I, P, B, A, Bo, C>
+{
     /// Return a parameter set containing the subset of components specified in `component_list`.
     ///
     /// # Panics
@@ -99,19 +56,17 @@ impl<I: Clone, P: Clone, B: Clone, A: Clone, Bo: Clone> ParametersBase<I, P, B, 
         binary_records.retain(|r| segment_list.contains(&r.id1) && segment_list.contains(&r.id2));
         let mut bond_records = self.bond_records.clone();
         bond_records.retain(|r| segment_list.contains(&r.id1));
-
-        Self::_new(pure_records, binary_records, bond_records)
-    }
-
-    pub fn segment_counts(&self) -> Array1<f64> {
-        self.pure_records.iter().map(|pr| pr.count).collect()
-    }
-
-    pub fn component_index(&self) -> Array1<usize> {
-        self.pure_records
+        let molar_weight = component_list
             .iter()
-            .map(|pr| pr.component_index)
-            .collect()
+            .map(|&i| self.molar_weight.get(i))
+            .collect();
+
+        Self {
+            pure_records,
+            binary_records,
+            bond_records,
+            molar_weight,
+        }
     }
 
     pub fn collate<F, T: Default + Copy, const N: usize>(&self, f: F) -> [Array1<T>; N]
@@ -149,9 +104,18 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
     ) -> Self {
         pure_records.iter_mut().enumerate().for_each(|(i, p)| {
             p.component_index = i;
-            p.count = 1.0
         });
-        Self::_new(pure_records, binary_records, vec![])
+        let molar_weight = pure_records
+            .iter()
+            .map(|pr| pr.molarweight)
+            .collect::<Array1<f64>>()
+            * (GRAM / MOL);
+        Self {
+            pure_records,
+            binary_records,
+            bond_records: vec![],
+            molar_weight,
+        }
     }
 
     /// Creates parameters for a pure component from a pure record.
@@ -346,7 +310,7 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
         let (group_counts, pure_records): (Vec<_>, _) = chemical_records
             .into_iter()
             .map(|cr| {
-                let (identifier, group_counts, _) = cr.into_groups();
+                let (identifier, group_counts, _) = GroupCount::into_groups(cr);
                 let groups = group_counts.iter().map(|(s, c)| {
                     let Some(&x) = segment_map.get(s) else {
                         panic!("No segment record found for {s}");
@@ -466,67 +430,114 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
     }
 }
 
-impl<P: Clone, B: Clone, A: Clone> ParametersHetero<P, B, A, ()> {
-    pub fn from_chemical_records(
-        chemical_records: Vec<ChemicalRecord>,
-        segment_records: &[SegmentRecord<P, A>],
-        binary_segment_records: Option<&[BinarySegmentRecord<B, A>]>,
-    ) -> Self {
-        let segment_map: HashMap<_, _> =
-            segment_records.iter().map(|s| (&s.identifier, s)).collect();
-
-        let mut segments = Vec::new();
-        let mut bonds = Vec::new();
-        for (i, cr) in chemical_records.into_iter().enumerate() {
-            let n = segments.len();
-            for s in cr.segments {
-                let Some(&segment) = segment_map.get(&s) else {
-                    panic!("No segment record found for {s}");
-                };
-                let mut segment = segment.clone();
-                segment.component_index = i;
-                segments.push(segment)
-            }
-            for &[a, b] in &cr.bonds {
-                bonds.push(BondRecord::new(a + n, b + n, ()));
-            }
-        }
-
-        let binary_records = Self::binary_records(&segments, binary_segment_records);
-
-        Self::_new(segments, binary_records, bonds)
+impl<P: Clone, B: Clone, A: Clone, Bo: Clone> ParametersHetero<P, B, A, Bo, f64> {
+    pub fn segment_counts(&self) -> Array1<f64> {
+        self.pure_records.iter().map(|pr| pr.count).collect()
     }
+}
 
+impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
+    ParametersHetero<P, B, A, Bo, C>
+{
     pub fn from_segments(
         chemical_records: Vec<ChemicalRecord>,
         segment_records: &[SegmentRecord<P, A>],
         binary_segment_records: Option<&[BinarySegmentRecord<B, A>]>,
+    ) -> Self
+    where
+        Bo: Default,
+    {
+        let mut bond_records = Vec::new();
+        for s1 in segment_records.iter() {
+            for s2 in segment_records.iter() {
+                bond_records.push(BinarySegmentRecord::new(
+                    s1.identifier.clone(),
+                    s2.identifier.clone(),
+                    Some(Bo::default()),
+                ));
+            }
+        }
+        Self::from_segments_with_bonds(
+            chemical_records,
+            segment_records,
+            binary_segment_records,
+            &bond_records,
+        )
+    }
+
+    pub fn from_segments_with_bonds(
+        chemical_records: Vec<ChemicalRecord>,
+        segment_records: &[SegmentRecord<P, A>],
+        binary_segment_records: Option<&[BinarySegmentRecord<B, A>]>,
+        bond_records: &[BinarySegmentRecord<Bo, ()>],
     ) -> Self {
         let segment_map: HashMap<_, _> =
             segment_records.iter().map(|s| (&s.identifier, s)).collect();
 
+        let mut bond_records_map = HashMap::new();
+        for bond_record in bond_records {
+            bond_records_map.insert((&bond_record.id1, &bond_record.id2), bond_record);
+            bond_records_map.insert((&bond_record.id2, &bond_record.id1), bond_record);
+        }
+
         let mut groups = Vec::new();
         let mut bonds = Vec::new();
+        let mut molar_weight: Array1<f64> = Array1::zeros(chemical_records.len());
         for (i, cr) in chemical_records.into_iter().enumerate() {
-            let (identifier, group_counts, bond_counts) = cr.into_groups();
+            let (identifier, group_counts, bond_counts) = C::into_groups(cr);
             let n = groups.len();
-            for (s, c) in group_counts {
-                let Some(&segment) = segment_map.get(&s) else {
+            for (s, c) in &group_counts {
+                let Some(&segment) = segment_map.get(s) else {
                     panic!("No segment record found for {s}");
                 };
-                let mut group = segment.clone();
-                group.component_index = i;
-                group.count = c;
-                groups.push(group)
+                molar_weight[i] += segment.molarweight * c.into_f64();
+                groups.push(segment.apply_count(*c, i))
             }
             for ([a, b], c) in bond_counts {
-                bonds.push(BondRecord::with_count(a + n, b + n, (), c));
+                let id1 = &group_counts[a].0;
+                let id2 = &group_counts[b].0;
+                let Some(&bond) = bond_records_map.get(&(id1, id2)) else {
+                    panic!("No bond record found for {id1}-{id2}");
+                };
+                let Some(bond) = bond.model_record.as_ref() else {
+                    panic!("No bond record found for {id1}-{id2}");
+                };
+                bonds.push(BondRecord::with_count(a + n, b + n, bond.clone(), c));
             }
         }
 
-        let binary_records = Self::binary_records(&groups, binary_segment_records);
+        let mut binary_records = Vec::new();
+        if let Some(binary_segment_records) = binary_segment_records {
+            let mut binary_segment_records_map = HashMap::new();
+            for binary_record in binary_segment_records {
+                binary_segment_records_map
+                    .insert((&binary_record.id1, &binary_record.id2), binary_record);
+                binary_segment_records_map
+                    .insert((&binary_record.id2, &binary_record.id1), binary_record);
+            }
 
-        Self::_new(groups, binary_records, bonds)
+            for [(i1, s1), (i2, s2)] in groups.iter().enumerate().array_combinations() {
+                if s1.component_index != s2.component_index {
+                    let id1 = &s1.identifier;
+                    let id2 = &s2.identifier;
+                    if let Some(br) = binary_segment_records_map.get(&(id1, id2)) {
+                        binary_records.push(BinaryRecord::with_association(
+                            i1,
+                            i2,
+                            br.model_record.clone(),
+                            br.association_sites.clone(),
+                        ));
+                    }
+                }
+            }
+        }
+
+        Self {
+            pure_records: groups,
+            binary_records,
+            bond_records: bonds,
+            molar_weight: molar_weight * (GRAM / MOL),
+        }
     }
 
     /// Creates parameters from segment information stored in json files.
@@ -540,6 +551,78 @@ impl<P: Clone, B: Clone, A: Clone> ParametersHetero<P, B, A, ()> {
         file_binary: Option<F>,
         identifier_option: IdentifierOption,
     ) -> FeosResult<Self>
+    where
+        F: AsRef<Path>,
+        P: DeserializeOwned,
+        B: DeserializeOwned + Default,
+        A: DeserializeOwned,
+        Bo: Default,
+    {
+        let (chemical_records, segment_records, binary_records) = Self::read_json(
+            substances,
+            file_pure,
+            file_segments,
+            file_binary,
+            identifier_option,
+        )?;
+
+        Ok(Self::from_segments(
+            chemical_records,
+            &segment_records,
+            binary_records.as_deref(),
+        ))
+    }
+
+    /// Creates parameters from segment information stored in json files.
+    ///
+    /// The [FromSegments] trait needs to be implemented for both the model record
+    /// and the ideal gas record.
+    pub fn from_json_segments_with_bonds<F>(
+        substances: &[&str],
+        file_pure: F,
+        file_segments: F,
+        file_binary: Option<F>,
+        file_bonds: F,
+        identifier_option: IdentifierOption,
+    ) -> FeosResult<Self>
+    where
+        F: AsRef<Path>,
+        P: DeserializeOwned,
+        B: DeserializeOwned + Default,
+        A: DeserializeOwned,
+        Bo: DeserializeOwned,
+    {
+        let (chemical_records, segment_records, binary_records) = Self::read_json(
+            substances,
+            file_pure,
+            file_segments,
+            file_binary,
+            identifier_option,
+        )?;
+
+        // Read bond records
+        let bond_records: Vec<_> = BinaryRecord::from_json(file_bonds)?;
+
+        Ok(Self::from_segments_with_bonds(
+            chemical_records,
+            &segment_records,
+            binary_records.as_deref(),
+            &bond_records,
+        ))
+    }
+
+    #[expect(clippy::type_complexity)]
+    fn read_json<F>(
+        substances: &[&str],
+        file_pure: F,
+        file_segments: F,
+        file_binary: Option<F>,
+        identifier_option: IdentifierOption,
+    ) -> FeosResult<(
+        Vec<ChemicalRecord>,
+        Vec<SegmentRecord<P, A>>,
+        Option<Vec<BinarySegmentRecord<B, A>>>,
+    )>
     where
         F: AsRef<Path>,
         P: DeserializeOwned,
@@ -574,108 +657,27 @@ impl<P: Clone, B: Clone, A: Clone> ParametersHetero<P, B, A, ()> {
         };
 
         // collect all pure records that were queried
-        let chemical_records: Vec<_> = queried
+        let chemical_records = queried
             .into_iter()
             .filter_map(|identifier| record_map.remove(identifier))
             .collect();
 
         // Read segment records
-        let segment_records: Vec<SegmentRecord<P, A>> = SegmentRecord::from_json(file_segments)?;
+        let segment_records = SegmentRecord::from_json(file_segments)?;
 
         // Read binary records
         let binary_records = file_binary
-            .map(|file_binary| {
-                let reader = BufReader::new(File::open(file_binary)?);
-                let binary_records: FeosResult<Vec<BinarySegmentRecord<B, A>>> =
-                    Ok(serde_json::from_reader(reader)?);
-                binary_records
-            })
+            .map(|file_binary| BinaryRecord::from_json(file_binary))
             .transpose()?;
 
-        Ok(Self::from_segments(
-            chemical_records,
-            &segment_records,
-            binary_records.as_deref(),
-        ))
-    }
-}
-
-impl<P: Clone, B: Clone, A: Clone, Bo: Clone> ParametersHetero<P, B, A, Bo> {
-    pub fn from_chemical_records_with_bonds(
-        chemical_records: &[ChemicalRecord],
-        segment_records: &[SegmentRecord<P, A>],
-        binary_segment_records: Option<&[BinarySegmentRecord<B, A>]>,
-        bond_records: &[BinarySegmentRecord<Bo, ()>],
-    ) -> Self {
-        let segment_map: HashMap<_, _> =
-            segment_records.iter().map(|s| (&s.identifier, s)).collect();
-
-        let mut bond_records_map = HashMap::new();
-        for bond_record in bond_records {
-            bond_records_map.insert((&bond_record.id1, &bond_record.id2), bond_record);
-            bond_records_map.insert((&bond_record.id2, &bond_record.id1), bond_record);
-        }
-
-        let mut segments = Vec::new();
-        let mut bonds = Vec::new();
-        for (i, cr) in chemical_records.iter().enumerate() {
-            let n = segments.len();
-            for s in &cr.segments {
-                let Some(&segment) = segment_map.get(s) else {
-                    panic!("No segment record found for {s}");
-                };
-                let mut segment = segment.clone();
-                segment.component_index = i;
-                segments.push(segment)
-            }
-            for &[a, b] in &cr.bonds {
-                let id1 = &cr.segments[a];
-                let id2 = &cr.segments[b];
-                let Some(&bond) = bond_records_map.get(&(id1, id2)) else {
-                    panic!("No bond record found for {id1}-{id2}");
-                };
-                let Some(bond) = bond.model_record.as_ref() else {
-                    panic!("No bond record found for {id1}-{id2}");
-                };
-                bonds.push(BondRecord::new(a + n, b + n, bond.clone()));
-            }
-        }
-
-        let binary_records = Self::binary_records(&segments, binary_segment_records);
-
-        Self::_new(segments, binary_records, bonds)
+        Ok((chemical_records, segment_records, binary_records))
     }
 
-    fn binary_records(
-        segments_records: &[SegmentRecord<P, A>],
-        binary_segment_records: Option<&[BinarySegmentRecord<B, A>]>,
-    ) -> Vec<BinaryRecord<usize, B, A>> {
-        let mut binary_records = Vec::new();
-        if let Some(binary_segment_records) = binary_segment_records {
-            let mut binary_segment_records_map = HashMap::new();
-            for binary_record in binary_segment_records {
-                binary_segment_records_map
-                    .insert((&binary_record.id1, &binary_record.id2), binary_record);
-                binary_segment_records_map
-                    .insert((&binary_record.id2, &binary_record.id1), binary_record);
-            }
-
-            for [(i1, s1), (i2, s2)] in segments_records.iter().enumerate().array_combinations() {
-                if s1.component_index != s2.component_index {
-                    let id1 = &s1.identifier;
-                    let id2 = &s2.identifier;
-                    if let Some(br) = binary_segment_records_map.get(&(id1, id2)) {
-                        binary_records.push(BinaryRecord::with_association(
-                            i1,
-                            i2,
-                            br.model_record.clone(),
-                            br.association_sites.clone(),
-                        ));
-                    }
-                }
-            }
-        }
-        binary_records
+    pub fn component_index(&self) -> Array1<usize> {
+        self.pure_records
+            .iter()
+            .map(|pr| pr.component_index)
+            .collect()
     }
 }
 
