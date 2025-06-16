@@ -57,7 +57,7 @@ pub mod utils {
             }"#;
         let argon_record: PureRecord<PetsRecord, ()> =
             serde_json::from_str(argon_json).expect("Unable to parse json.");
-        PetsParameters::new_pure(argon_record)
+        PetsParameters::new_pure(argon_record).unwrap()
     }
 
     pub fn krypton_parameters() -> PetsParameters {
@@ -77,7 +77,7 @@ pub mod utils {
             }"#;
         let krypton_record: PureRecord<PetsRecord, ()> =
             serde_json::from_str(krypton_json).expect("Unable to parse json.");
-        PetsParameters::new_pure(krypton_record)
+        PetsParameters::new_pure(krypton_record).unwrap()
     }
 
     pub fn argon_krypton_parameters() -> PetsParameters {
@@ -111,6 +111,6 @@ pub mod utils {
         ]"#;
         let binary_record: [PureRecord<PetsRecord, ()>; 2] =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
-        PetsParameters::new_binary(binary_record, None, vec![])
+        PetsParameters::new_binary(binary_record, None, vec![]).unwrap()
     }
 }

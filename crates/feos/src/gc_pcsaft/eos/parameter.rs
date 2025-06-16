@@ -200,7 +200,8 @@ pub mod test {
             vec!["CH3".into(), "CH2".into(), "CH3".into()],
             None,
         );
-        let params = GcPcSaftParameters::from_segments_hetero(vec![pure], &[ch3(), ch2()], None);
+        let params =
+            GcPcSaftParameters::from_segments_hetero(vec![pure], &[ch3(), ch2()], None).unwrap();
         GcPcSaftEosParameters::new(&params)
     }
 
@@ -210,7 +211,7 @@ pub mod test {
             vec!["CH3".into(), "CH2".into(), "CH2".into(), "OH".into()],
             None,
         );
-        GcPcSaftParameters::from_segments_hetero(vec![pure], &[ch3(), ch2(), oh()], None)
+        GcPcSaftParameters::from_segments_hetero(vec![pure], &[ch3(), ch2(), oh()], None).unwrap()
     }
 
     pub fn ethanol_propanol(binary: bool) -> GcPcSaftParameters<f64> {
@@ -230,6 +231,7 @@ pub mod test {
             &[ch3(), ch2(), oh()],
             binary.as_deref(),
         )
+        .unwrap()
     }
 
     #[test]

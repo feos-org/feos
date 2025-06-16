@@ -117,10 +117,10 @@ fn test_bulk_association() -> Result<(), Box<dyn Error>> {
         vec![ethylene_glycol.clone()],
         &segment_records,
         None,
-    );
+    )?;
     let eos = Arc::new(GcPcSaft::new(eos_parameters));
     let func_parameters =
-        GcPcSaftParameters::from_segments_hetero(vec![ethylene_glycol], &segment_records, None);
+        GcPcSaftParameters::from_segments_hetero(vec![ethylene_glycol], &segment_records, None)?;
     let func = Arc::new(GcPcSaftFunctional::new(func_parameters));
 
     let t = 200.0 * KELVIN;

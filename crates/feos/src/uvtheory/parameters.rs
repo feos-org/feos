@@ -165,6 +165,7 @@ pub mod utils {
             0.0,
             UVTheoryRecord::new(rep, att, sigma, epsilon_k),
         ))
+        .unwrap()
     }
 
     pub fn test_parameters(
@@ -177,7 +178,7 @@ pub mod utils {
         let identifier = Identifier::new(Some("1"), None, None, None, None, None);
         let model_record = UVTheoryRecord::new(rep, att, sigma, epsilon);
         let pr = PureRecord::new(identifier, 1.0, model_record);
-        UVTheoryPars::new(&UVTheoryParameters::new_pure(pr), p)
+        UVTheoryPars::new(&UVTheoryParameters::new_pure(pr).unwrap(), p)
     }
 
     pub fn test_parameters_mixture(
@@ -193,13 +194,13 @@ pub mod utils {
         let identifier2 = Identifier::new(Some("1"), None, None, None, None, None);
         let model_record2 = UVTheoryRecord::new(rep[1], att[1], sigma[1], epsilon[1]);
         let pr2 = PureRecord::new(identifier2, 1.0, model_record2);
-        UVTheoryParameters::new_binary([pr1, pr2], None, vec![])
+        UVTheoryParameters::new_binary([pr1, pr2], None, vec![]).unwrap()
     }
 
     pub fn methane_parameters(rep: f64, att: f64) -> UVTheoryParameters {
         let identifier = Identifier::new(Some("1"), None, None, None, None, None);
         let model_record = UVTheoryRecord::new(rep, att, 3.7039, 150.03);
         let pr = PureRecord::new(identifier, 1.0, model_record);
-        UVTheoryParameters::new_pure(pr)
+        UVTheoryParameters::new_pure(pr).unwrap()
     }
 }

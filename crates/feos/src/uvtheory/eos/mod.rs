@@ -202,7 +202,7 @@ mod test {
 
         let pr1 = PureRecord::new(i, 1.0, r1);
         let pr2 = PureRecord::new(j, 1.0, r2);
-        let uv_parameters = UVTheoryParameters::new_binary([pr1, pr2], None, vec![]);
+        let uv_parameters = UVTheoryParameters::new_binary([pr1, pr2], None, vec![])?;
         // state
         let reduced_temperature = 4.0;
         let eps_k_x = (eps_k1 + eps_k2) / 2.0; // Check rule!!

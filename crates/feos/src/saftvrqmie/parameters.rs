@@ -230,7 +230,7 @@ pub mod utils {
             }"#);
         let hydrogen_record: PureRecord<SaftVRQMieRecord, ()> =
             serde_json::from_str(hydrogen_json).expect("Unable to parse json.");
-        SaftVRQMiePars::new(&SaftVRQMieParameters::new_pure(hydrogen_record)).unwrap()
+        SaftVRQMiePars::new(&SaftVRQMieParameters::new_pure(hydrogen_record).unwrap()).unwrap()
     }
 
     pub fn helium_fh1() -> PureRecord<SaftVRQMieRecord, ()> {
@@ -299,7 +299,7 @@ pub mod utils {
             }"#;
         let neon_record: PureRecord<SaftVRQMieRecord, ()> =
             serde_json::from_str(neon_json).expect("Unable to parse json.");
-        SaftVRQMieParameters::new_pure(neon_record)
+        SaftVRQMieParameters::new_pure(neon_record).unwrap()
     }
 
     pub fn h2_ne_fh(fh: &str) -> SaftVRQMiePars {
@@ -346,14 +346,17 @@ pub mod utils {
         ]"#);
         let binary_record: [PureRecord<SaftVRQMieRecord, ()>; 2] =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
-        SaftVRQMiePars::new(&SaftVRQMieParameters::new_binary(
-            binary_record,
-            Some(SaftVRQMieBinaryRecord {
-                k_ij: 0.105,
-                l_ij: 0.0,
-            }),
-            vec![],
-        ))
+        SaftVRQMiePars::new(
+            &SaftVRQMieParameters::new_binary(
+                binary_record,
+                Some(SaftVRQMieBinaryRecord {
+                    k_ij: 0.105,
+                    l_ij: 0.0,
+                }),
+                vec![],
+            )
+            .unwrap(),
+        )
         .unwrap()
     }
 }
@@ -371,11 +374,7 @@ mod test {
     fn incompatible_order() {
         let order1 = helium_fh1();
         let order2 = hydrogen_fh2();
-        SaftVRQMie::new(SaftVRQMieParameters::new_binary(
-            [order1, order2],
-            None,
-            vec![],
-        ))
-        .unwrap();
+        SaftVRQMie::new(SaftVRQMieParameters::new_binary([order1, order2], None, vec![]).unwrap())
+            .unwrap();
     }
 }

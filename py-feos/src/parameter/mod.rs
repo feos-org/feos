@@ -1,5 +1,6 @@
 use crate::error::PyFeosError;
 use feos_core::parameter::*;
+use feos_core::{FeosError, FeosResult};
 use indexmap::IndexSet;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -28,8 +29,9 @@ pub struct PyParameters {
     pub binary_records: Vec<BinaryRecord<usize, Value, Value>>,
 }
 
-impl From<PyParameters> for Parameters<Value, Value, Value> {
-    fn from(value: PyParameters) -> Self {
+impl TryFrom<PyParameters> for Parameters<Value, Value, Value> {
+    type Error = FeosError;
+    fn try_from(value: PyParameters) -> FeosResult<Self> {
         Self::new(value.pure_records, value.binary_records)
     }
 }
@@ -60,7 +62,7 @@ impl PyParameters {
             .into_iter()
             .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
             .collect::<Result<_, PyFeosError>>()?;
-        Ok(Parameters::new(pure_records, binary_records))
+        Ok(Parameters::new(pure_records, binary_records).map_err(PyFeosError::from)?)
     }
 }
 
@@ -85,18 +87,19 @@ impl PyParameters {
         pure_records: Vec<PyPureRecord>,
         binary_records: Vec<PyBinaryRecord>,
         identifier_option: PyIdentifierOption,
-    ) -> Self {
+    ) -> PyResult<Self> {
         let pure_records: Vec<_> = pure_records.into_iter().map(PureRecord::from).collect();
         let binary_records: Vec<_> = binary_records.into_iter().map(BinaryRecord::from).collect();
         let binary_records = Parameters::binary_matrix_from_records(
             &pure_records,
             &binary_records,
             identifier_option.into(),
-        );
-        Self {
+        )
+        .map_err(PyFeosError::from)?;
+        Ok(Self {
             pure_records,
             binary_records,
-        }
+        })
     }
 
     /// Creates parameters for a pure component from a pure record.
@@ -203,7 +206,8 @@ impl PyParameters {
             &pure_records,
             &binary_records,
             identifier_option.into(),
-        );
+        )
+        .map_err(PyFeosError::from)?;
         Ok(Self {
             pure_records,
             binary_records,
@@ -564,7 +568,8 @@ impl PyGcParameters {
             self.chemical_records,
             &segment_records,
             binary_segment_records.as_deref(),
-        ))
+        )
+        .map_err(PyFeosError::from)?)
     }
 }
 

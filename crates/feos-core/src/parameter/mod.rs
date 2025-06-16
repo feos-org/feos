@@ -155,9 +155,8 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
     pub fn new(
         pure_records: Vec<PureRecord<P, A>>,
         binary_records: Vec<BinaryRecord<usize, B, A>>,
-    ) -> Self {
-        let association_parameters =
-            AssociationParameters::new(&pure_records, &binary_records).unwrap();
+    ) -> FeosResult<Self> {
+        let association_parameters = AssociationParameters::new(&pure_records, &binary_records)?;
         let (identifiers, pure_records): (Vec<_>, _) = pure_records
             .into_iter()
             .enumerate()
@@ -174,18 +173,18 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
             .filter_map(|br| br.model_record.map(|m| Binary::new(br.id1, br.id2, m, ())))
             .collect();
 
-        Self {
+        Ok(Self {
             pure: pure_records,
             binary: binary_records,
             bonds: vec![],
             association: association_parameters,
             identifiers,
             molar_weight: Array1::from_vec(molar_weight) * (GRAM / MOL),
-        }
+        })
     }
 
     /// Creates parameters for a pure component from a pure record.
-    pub fn new_pure(pure_record: PureRecord<P, A>) -> Self {
+    pub fn new_pure(pure_record: PureRecord<P, A>) -> FeosResult<Self> {
         Self::new(vec![pure_record], vec![])
     }
 
@@ -195,7 +194,7 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
         pure_records: [PureRecord<P, A>; 2],
         binary_record: Option<B>,
         binary_association_records: Vec<BinaryAssociationRecord<A>>,
-    ) -> Self {
+    ) -> FeosResult<Self> {
         let binary_record = vec![BinaryRecord::with_association(
             0,
             1,
@@ -210,15 +209,15 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
         pure_records: Vec<PureRecord<P, A>>,
         binary_records: Vec<BinaryRecord<Identifier, B, A>>,
         identifier_option: IdentifierOption,
-    ) -> Self {
+    ) -> FeosResult<Self> {
         let binary_records =
-            Self::binary_matrix_from_records(&pure_records, &binary_records, identifier_option);
+            Self::binary_matrix_from_records(&pure_records, &binary_records, identifier_option)?;
         Self::new(pure_records, binary_records)
     }
 
     /// Creates parameters from model records with default values for the molar weight,
     /// identifiers, association sites, and binary interaction parameters.
-    pub fn from_model_records(model_records: Vec<P>) -> Self {
+    pub fn from_model_records(model_records: Vec<P>) -> FeosResult<Self> {
         let pure_records = model_records
             .into_iter()
             .map(|r| PureRecord::new(Default::default(), Default::default(), r))
@@ -231,7 +230,7 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
         pure_records: &[PureRecord<P, A>],
         binary_records: &[BinaryRecord<Identifier, B, A>],
         identifier_option: IdentifierOption,
-    ) -> Vec<BinaryRecord<usize, B, A>> {
+    ) -> FeosResult<Vec<BinaryRecord<usize, B, A>>> {
         // Build Hashmap (id, id) -> BinaryRecord
         let binary_map: HashMap<_, _> = {
             binary_records
@@ -251,33 +250,38 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
             .iter()
             .enumerate()
             .array_combinations()
-            .filter_map(|[(i1, p1), (i2, p2)]| {
-                let id1 = p1.identifier.as_str(identifier_option).unwrap_or_else(|| {
-                    panic!(
+            .map(|[(i1, p1), (i2, p2)]| {
+                let Some(id1) = p1.identifier.as_str(identifier_option) else {
+                    return Err(FeosError::MissingParameters(format!(
                         "No {} for pure record {} ({}).",
                         identifier_option, i1, p1.identifier
-                    )
-                });
-                let id2 = p2.identifier.as_str(identifier_option).unwrap_or_else(|| {
-                    panic!(
+                    )));
+                };
+                let Some(id2) = p2.identifier.as_str(identifier_option) else {
+                    return Err(FeosError::MissingParameters(format!(
                         "No {} for pure record {} ({}).",
                         identifier_option, i2, p2.identifier
-                    )
-                });
-
-                let records = if let Some(&(b, a)) = binary_map.get(&(id1, id2)) {
-                    Some((b, a.clone()))
-                } else if let Some(&(b, a)) = binary_map.get(&(id2, id1)) {
-                    let a = a
-                        .iter()
-                        .cloned()
-                        .map(|a| BinaryAssociationRecord::with_id(a.id2, a.id1, a.parameters))
-                        .collect();
-                    Some((b, a))
-                } else {
-                    None
+                    )));
                 };
-                records.map(|(b, a)| BinaryRecord::with_association(i1, i2, b.clone(), a))
+                Ok([(i1, id1), (i2, id2)])
+            })
+            .filter_map(|x| {
+                x.map(|[(i1, id1), (i2, id2)]| {
+                    let records = if let Some(&(b, a)) = binary_map.get(&(id1, id2)) {
+                        Some((b, a.clone()))
+                    } else if let Some(&(b, a)) = binary_map.get(&(id2, id1)) {
+                        let a = a
+                            .iter()
+                            .cloned()
+                            .map(|a| BinaryAssociationRecord::with_id(a.id2, a.id1, a.parameters))
+                            .collect();
+                        Some((b, a))
+                    } else {
+                        None
+                    };
+                    records.map(|(b, a)| BinaryRecord::with_association(i1, i2, b.clone(), a))
+                })
+                .transpose()
             })
             .collect()
     }
@@ -322,11 +326,7 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
             Vec::new()
         };
 
-        Ok(Self::from_records(
-            records,
-            binary_records,
-            identifier_option,
-        ))
+        Self::from_records(records, binary_records, identifier_option)
     }
 
     /// Creates parameters from the molecular structure and segment information.
@@ -350,12 +350,14 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
             .into_iter()
             .map(|cr| {
                 let (identifier, group_counts, _) = GroupCount::into_groups(cr);
-                let groups = group_counts.iter().map(|(s, c)| {
-                    let Some(&x) = segment_map.get(s) else {
-                        panic!("No segment record found for {s}");
-                    };
-                    (x.clone(), *c)
-                });
+                let groups = group_counts
+                    .iter()
+                    .map(|(s, c)| {
+                        segment_map.get(s).map(|&x| (x.clone(), *c)).ok_or_else(|| {
+                            FeosError::MissingParameters(format!("No segment record found for {s}"))
+                        })
+                    })
+                    .collect::<FeosResult<Vec<_>>>()?;
                 let pure_record = PureRecord::from_segments(identifier, groups)?;
                 Ok::<_, FeosError>((group_counts, pure_record))
             })
@@ -395,7 +397,7 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
             })
             .collect::<Result<_, _>>()?;
 
-        Ok(Self::new(pure_records, binary_records))
+        Self::new(pure_records, binary_records)
     }
 
     /// Creates parameters from segment information stored in json files.
@@ -482,7 +484,7 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
         chemical_records: Vec<ChemicalRecord>,
         segment_records: &[SegmentRecord<P, A>],
         binary_segment_records: Option<&[BinarySegmentRecord<B, A>]>,
-    ) -> Self
+    ) -> FeosResult<Self>
     where
         Bo: Default,
     {
@@ -509,7 +511,7 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
         segment_records: &[SegmentRecord<P, A>],
         binary_segment_records: Option<&[BinarySegmentRecord<B, A>]>,
         bond_records: &[BinarySegmentRecord<Bo, ()>],
-    ) -> Self {
+    ) -> FeosResult<Self> {
         let segment_map: HashMap<_, _> =
             segment_records.iter().map(|s| (&s.identifier, s)).collect();
 
@@ -530,7 +532,9 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
             identifiers.push(identifier);
             for (s, c) in &group_counts {
                 let Some(&segment) = segment_map.get(s) else {
-                    panic!("No segment record found for {s}");
+                    return Err(FeosError::MissingParameters(format!(
+                        "No segment record found for {s}"
+                    )));
                 };
                 molar_weight[i] += segment.molarweight * c.into_f64();
                 groups.push(Pure::from_segment_record(segment, *c, i));
@@ -540,10 +544,14 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
                 let id1 = &group_counts[a].0;
                 let id2 = &group_counts[b].0;
                 let Some(&bond) = bond_records_map.get(&(id1, id2)) else {
-                    panic!("No bond record found for {id1}-{id2}");
+                    return Err(FeosError::MissingParameters(format!(
+                        "No bond record found for {id1}-{id2}"
+                    )));
                 };
                 let Some(bond) = bond.model_record.as_ref() else {
-                    panic!("No bond record found for {id1}-{id2}");
+                    return Err(FeosError::MissingParameters(format!(
+                        "No bond record found for {id1}-{id2}"
+                    )));
                 };
                 bonds.push(Binary::new(a + n, b + n, bond.clone(), c));
             }
@@ -585,17 +593,16 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
             &groups,
             &association_sites,
             &binary_association_records,
-        )
-        .unwrap();
+        )?;
 
-        Self {
+        Ok(Self {
             pure: groups,
             binary: binary_records,
             bonds,
             association: association_parameters,
             identifiers,
             molar_weight: molar_weight * (GRAM / MOL),
-        }
+        })
     }
 
     /// Creates parameters from segment information stored in json files.
@@ -624,11 +631,11 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
             identifier_option,
         )?;
 
-        Ok(Self::from_segments_hetero(
+        Self::from_segments_hetero(
             chemical_records,
             &segment_records,
             binary_records.as_deref(),
-        ))
+        )
     }
 
     /// Creates parameters from segment information stored in json files.
@@ -661,12 +668,12 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
         // Read bond records
         let bond_records: Vec<_> = BinaryRecord::from_json(file_bonds)?;
 
-        Ok(Self::from_segments_with_bonds(
+        Self::from_segments_with_bonds(
             chemical_records,
             &segment_records,
             binary_records.as_deref(),
             &bond_records,
-        ))
+        )
     }
 
     #[expect(clippy::type_complexity)]

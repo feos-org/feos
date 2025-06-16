@@ -105,18 +105,6 @@ impl PySegmentRecord {
 
     fn __repr__(&self) -> String {
         SegmentRecord::from(self.clone()).to_string()
-        // let params: PyResult<String> = Python::with_gil(|py| {
-        //     Ok(self
-        //         .get_model_record(py)?
-        //         .iter()
-        //         .map(|(p, v)| format!(", {p}={v}"))
-        //         .collect::<Vec<_>>()
-        //         .join(""))
-        // });
-        // Ok(format!(
-        //     "SegmentRecord(identifier={}, molarweight={}{})",
-        //     self.identifier, self.molarweight, params?
-        // ))
     }
 }
 

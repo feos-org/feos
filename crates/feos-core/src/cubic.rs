@@ -68,7 +68,7 @@ impl PengRobinsonParameters {
                 PureRecord::new(id, molarweight[i], record)
             })
             .collect();
-        Ok(PengRobinsonParameters::new(records, vec![]))
+        PengRobinsonParameters::new(records, vec![])
     }
 }
 
@@ -215,7 +215,7 @@ mod tests {
         let propane = mixture[0].clone();
         let tc = propane.model_record.tc;
         let pc = propane.model_record.pc;
-        let parameters = PengRobinsonParameters::new_pure(propane);
+        let parameters = PengRobinsonParameters::new_pure(propane)?;
         let pr = Arc::new(PengRobinson::new(parameters));
         let options = SolverOptions::new().verbosity(Verbosity::Iter);
         let cp = State::critical_point(&pr, None, None, options)?;

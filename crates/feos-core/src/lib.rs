@@ -267,7 +267,7 @@ mod tests {
     fn validate_residual_properties() -> FeosResult<()> {
         let mixture = pure_record_vec();
         let propane = mixture[0].clone();
-        let parameters = PengRobinsonParameters::new_pure(propane);
+        let parameters = PengRobinsonParameters::new_pure(propane)?;
         let residual = Arc::new(PengRobinson::new(parameters));
         let eos = Arc::new(EquationOfState::new(Arc::new(NoIdealGas), residual.clone()));
 

@@ -230,7 +230,7 @@ mod tests {
         assert_relative_eq!(jr.e, 0.0);
 
         let pr = PureRecord::new(Identifier::default(), 1.0, jr);
-        let joback = Arc::new(Joback::new(JobackParameters::new_pure(pr)));
+        let joback = Arc::new(Joback::new(JobackParameters::new_pure(pr)?));
         let eos = Arc::new(EquationOfState::ideal_gas(joback));
         let state = State::new_nvt(
             &eos,
@@ -265,7 +265,7 @@ mod tests {
             [record1, record2],
             None,
             vec![],
-        )));
+        )?));
         let eos = Arc::new(EquationOfState::ideal_gas(joback.clone()));
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi::<P3>();

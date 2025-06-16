@@ -195,7 +195,7 @@ mod tests {
             0.0,
             DipprRecord::eq100(&[276370., -2090.1, 8.125, -0.014116, 0.0000093701]),
         );
-        let dippr = Arc::new(Dippr::new(DipprParameters::new_pure(record.clone())));
+        let dippr = Arc::new(Dippr::new(DipprParameters::new_pure(record.clone())?));
         let eos = Arc::new(EquationOfState::ideal_gas(dippr.clone()));
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi::<P3>();
@@ -239,7 +239,7 @@ mod tests {
             0.0,
             DipprRecord::eq107(33363., 26790., 2610.5, 8896., 1169.),
         );
-        let dippr = Arc::new(Dippr::new(DipprParameters::new_pure(record.clone())));
+        let dippr = Arc::new(Dippr::new(DipprParameters::new_pure(record.clone())?));
         let eos = Arc::new(EquationOfState::ideal_gas(dippr.clone()));
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi::<P3>();
@@ -285,7 +285,7 @@ mod tests {
                 3.3258E4, 3.6199E4, 1.2057E3, 1.5373E7, 3.2122E3, -1.5318E7, 3.2122E3,
             ),
         );
-        let dippr = Arc::new(Dippr::new(DipprParameters::new_pure(record.clone())));
+        let dippr = Arc::new(Dippr::new(DipprParameters::new_pure(record.clone())?));
         let eos = Arc::new(EquationOfState::ideal_gas(dippr.clone()));
         let temperature = 20.0 * KELVIN;
         let volume = METER.powi::<P3>();

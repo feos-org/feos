@@ -401,7 +401,7 @@ pub mod utils {
             }"#;
         let propane_record: Pure =
             serde_json::from_str(propane_json).expect("Unable to parse json.");
-        ElectrolytePcSaftParameters::new_pure(propane_record)
+        ElectrolytePcSaftParameters::new_pure(propane_record).unwrap()
     }
 
     pub fn butane_parameters() -> ElectrolytePcSaftParameters {
@@ -421,7 +421,7 @@ pub mod utils {
                 "molarweight": 58.123
             }"#;
         let butane_record: Pure = serde_json::from_str(butane_json).expect("Unable to parse json.");
-        ElectrolytePcSaftParameters::new_pure(butane_record)
+        ElectrolytePcSaftParameters::new_pure(butane_record).unwrap()
     }
 
     pub fn water_nacl_parameters_perturb() -> ElectrolytePcSaftParameters {
@@ -572,6 +572,7 @@ pub mod utils {
             binary_records,
             IdentifierOption::Name,
         )
+        .unwrap()
     }
 
     pub fn water_nacl_parameters() -> ElectrolytePcSaftParameters {
@@ -730,6 +731,7 @@ pub mod utils {
             binary_records,
             IdentifierOption::Name,
         )
+        .unwrap()
     }
 
     pub fn propane_butane_parameters() -> ElectrolytePcSaftParameters {
@@ -764,6 +766,6 @@ pub mod utils {
             }
         ]"#;
         let records: [Pure; 2] = serde_json::from_str(records_json).expect("Unable to parse json.");
-        ElectrolytePcSaftParameters::new_binary(records, None, vec![])
+        ElectrolytePcSaftParameters::new_binary(records, None, vec![]).unwrap()
     }
 }

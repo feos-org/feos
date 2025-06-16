@@ -255,7 +255,8 @@ pub mod test_utils {
                 id.clone(),
                 16.031,
                 SaftVRMieRecord::new(1.0, 3.7412, 153.36, 12.65, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -264,7 +265,8 @@ pub mod test_utils {
                 id.clone(),
                 30.047,
                 SaftVRMieRecord::new(1.4373, 3.7257, 206.12, 12.4, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -273,7 +275,8 @@ pub mod test_utils {
                 id.clone(),
                 44.063,
                 SaftVRMieRecord::new(1.6845, 3.9056, 239.89, 13.006, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -282,7 +285,8 @@ pub mod test_utils {
                 id.clone(),
                 58.078,
                 SaftVRMieRecord::new(1.8514, 4.0887, 273.64, 13.65, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -291,7 +295,8 @@ pub mod test_utils {
                 id.clone(),
                 72.094,
                 SaftVRMieRecord::new(1.9606, 4.2928, 321.94, 15.847, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -300,7 +305,8 @@ pub mod test_utils {
                 id.clone(),
                 86.11,
                 SaftVRMieRecord::new(2.1097, 4.423, 354.38, 17.203, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -309,7 +315,8 @@ pub mod test_utils {
                 id.clone(),
                 100.125,
                 SaftVRMieRecord::new(2.3949, 4.4282, 358.51, 17.092, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -318,7 +325,8 @@ pub mod test_utils {
                 id.clone(),
                 114.141,
                 SaftVRMieRecord::new(2.6253, 4.4696, 369.18, 17.378, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -327,7 +335,8 @@ pub mod test_utils {
                 id.clone(),
                 128.157,
                 SaftVRMieRecord::new(2.8099, 4.5334, 387.55, 18.324, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -336,7 +345,8 @@ pub mod test_utils {
                 id.clone(),
                 142.172,
                 SaftVRMieRecord::new(2.9976, 4.589, 400.79, 18.885, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -345,7 +355,8 @@ pub mod test_utils {
                 id.clone(),
                 170.203,
                 SaftVRMieRecord::new(3.2519, 4.7484, 437.72, 20.862, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -354,7 +365,8 @@ pub mod test_utils {
                 id.clone(),
                 212.25,
                 SaftVRMieRecord::new(3.9325, 4.7738, 444.51, 20.822, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -363,7 +375,8 @@ pub mod test_utils {
                 id.clone(),
                 282.329,
                 SaftVRMieRecord::new(4.8794, 4.8788, 475.76, 22.926, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -378,7 +391,8 @@ pub mod test_utils {
                     1.0,
                     0.0,
                 )],
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -393,7 +407,8 @@ pub mod test_utils {
                     1.0,
                     0.0,
                 )],
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -408,7 +423,8 @@ pub mod test_utils {
                     1.0,
                     0.0,
                 )],
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -423,7 +439,8 @@ pub mod test_utils {
                     1.0,
                     0.0,
                 )],
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -432,7 +449,8 @@ pub mod test_utils {
                 id.clone(),
                 87.994,
                 SaftVRMieRecord::new(1.0, 4.3372, 232.62, 42.553, 5.1906),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -441,7 +459,8 @@ pub mod test_utils {
                 id.clone(),
                 137.99,
                 SaftVRMieRecord::new(1.8529, 3.9336, 211.46, 19.192, 5.7506),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -450,7 +469,8 @@ pub mod test_utils {
                 id.clone(),
                 187.987,
                 SaftVRMieRecord::new(1.9401, 4.2983, 263.26, 22.627, 5.7506),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -459,7 +479,8 @@ pub mod test_utils {
                 id.clone(),
                 237.984,
                 SaftVRMieRecord::new(2.1983, 4.4495, 290.49, 24.761, 5.7506),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -468,7 +489,8 @@ pub mod test_utils {
                 id.clone(),
                 287.981,
                 SaftVRMieRecord::new(2.3783, 4.6132, 328.56, 29.75, 5.7506),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -477,7 +499,8 @@ pub mod test_utils {
                 id.clone(),
                 337.978,
                 SaftVRMieRecord::new(2.5202, 4.7885, 349.3, 30.741, 5.7506),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -486,7 +509,8 @@ pub mod test_utils {
                 id.clone(),
                 37.997,
                 SaftVRMieRecord::new(1.3211, 2.9554, 96.268, 11.606, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -495,7 +519,8 @@ pub mod test_utils {
                 id.clone(),
                 43.99,
                 SaftVRMieRecord::new(1.5, 3.1916, 231.88, 27.557, 5.1646),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -504,7 +529,8 @@ pub mod test_utils {
                 id.clone(),
                 78.047,
                 SaftVRMieRecord::new(1.9163, 4.0549, 372.59, 14.798, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters.insert(
@@ -513,7 +539,8 @@ pub mod test_utils {
                 id.clone(),
                 92.063,
                 SaftVRMieRecord::new(1.9977, 4.2777, 409.73, 16.334, 6.0),
-            )),
+            ))
+            .unwrap(),
         );
 
         parameters

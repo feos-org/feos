@@ -82,7 +82,10 @@ impl<A: AssociationStrength> Association<A> {
                     p2,
                 )
             } else {
-                panic!("TODO");
+                panic!(
+                    "No association parameters found for sites {} and {}",
+                    a.sites_a[i].id, a.sites_b[j].id
+                )
             }
         });
         let parameters_cc = Array2::from_shape_fn([a.sites_c.len(); 2], |(i, j)| {
@@ -98,7 +101,10 @@ impl<A: AssociationStrength> Association<A> {
                     p2,
                 )
             } else {
-                panic!("TODO");
+                panic!(
+                    "No association parameters found for sites {} and  {}",
+                    a.sites_a[i].id, a.sites_b[j].id
+                );
             }
         });
 
@@ -330,7 +336,7 @@ impl<A: AssociationStrength> Association<A> {
 
         // split arrays
         let &[a, b] = delta_ab.shape() else {
-            panic!("wrong shape!")
+            unreachable!()
         };
         let c = delta_cc.shape()[0];
         let (xa, xc) = x.view().split_at(Axis(0), a + b);
@@ -450,9 +456,8 @@ mod tests_pcsaft {
         let binary_records = binary
             .map(|([i, j], br)| BinaryRecord::with_association(i, j, Some(NoRecord), vec![br]))
             .to_vec();
-        let params = Parameters::new(pure_records, binary_records);
-        let assoc: Association<PcSaftPars> =
-            Association::new(&params, 100, 1e-10).unwrap().unwrap();
+        let params = Parameters::new(pure_records, binary_records)?;
+        let assoc: Association<PcSaftPars> = Association::new(&params, 100, 1e-10)?.unwrap();
         println!("{}", assoc.parameters_ab.mapv(|p| p.epsilon_k_ab));
         let epsilon_k_ab = arr2(&[
             [2500., 1234., 3140., 2250.],
@@ -472,8 +477,8 @@ mod tests_pcsaft {
             .map(|r| PureRecord::with_association(Default::default(), 0.0, pcsaft(), r));
         let br = vec![binary_record("", "", 0.1, 1000.)];
 
-        let params1 = Parameters::new_binary([pr1.clone(), pr2], Some(NoRecord), vec![]);
-        let params2 = Parameters::new_binary([pr1, pr3], Some(NoRecord), br);
+        let params1 = Parameters::new_binary([pr1.clone(), pr2], Some(NoRecord), vec![])?;
+        let params2 = Parameters::new_binary([pr1, pr3], Some(NoRecord), br)?;
         let assoc1: Association<PcSaftPars> = Association::new(&params1, 100, 1e-15)?.unwrap();
         let assoc2: Association<PcSaftPars> = Association::new(&params2, 100, 1e-15)?.unwrap();
         println!("{}", assoc1.parameters_ab.mapv(|p| p.epsilon_k_ab));

@@ -51,7 +51,7 @@ impl PyEquationOfState {
             "dq44" => DQVariants::DQ44,
             _ => {
                 return Err(PyErr::new::<PyValueError, _>(
-                    r#"dq_variant must be "dq35" or "dq44""#.to_string(),
+                    r#"dq_variant must be "dq35" or "dq44""#,
                 ))
             }
         };
@@ -66,7 +66,9 @@ impl PyEquationOfState {
         } else if let Ok(parameters) = parameters.extract::<PyGcParameters>() {
             parameters.try_convert_homosegmented()
         } else {
-            todo!()
+            return Err(PyErr::new::<PyValueError, _>(
+                "Argument `parameters` must by Parameters or GcParameters",
+            ));
         }?;
         let residual = Arc::new(ResidualModel::PcSaft(PcSaft::with_options(
             parameters, options,
