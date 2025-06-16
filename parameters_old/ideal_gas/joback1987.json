@@ -1,0 +1,244 @@
+[
+    {
+        "identifier": "CH3",
+        "model_record": {
+            "a": 19.5,
+            "b": -0.00808,
+            "c": 0.000153,
+            "d": -9.67e-08,
+            "e": 0.0
+        },
+        "molarweight": 15.0345
+    },
+    {
+        "identifier": "CH2",
+        "model_record": {
+            "a": -0.909,
+            "b": 0.095,
+            "c": -5.44e-05,
+            "d": 1.19e-08,
+            "e": 0.0
+        },
+        "molarweight": 14.02658
+    },
+    {
+        "identifier": ">CH",
+        "model_record": {
+            "a": -23.0,
+            "b": 0.204,
+            "c": -0.000265,
+            "d": 1.2e-07,
+            "e": 0.0
+        },
+        "molarweight": 13.01854
+    },
+    {
+        "identifier": ">C<",
+        "model_record": {
+            "a": -66.2,
+            "b": 0.427,
+            "c": -0.000641,
+            "d": 3.01e-07,
+            "e": 0.0
+        },
+        "molarweight": 12.0107
+    },
+    {
+        "identifier": "=CH2",
+        "model_record": {
+            "a": 23.6,
+            "b": -0.0381,
+            "c": 0.000172,
+            "d": -1.03e-07,
+            "e": 0.0
+        },
+        "molarweight": 14.02658
+    },
+    {
+        "identifier": "=CH",
+        "model_record": {
+            "a": -8.0,
+            "b": 0.105,
+            "c": -9.63e-05,
+            "d": 3.56e-08,
+            "e": 0.0
+        },
+        "molarweight": 13.01854
+    },
+    {
+        "identifier": "=C<",
+        "model_record": {
+            "a": -28.0,
+            "b": 0.208,
+            "c": -0.000306,
+            "d": 1.46e-07,
+            "e": 0.0
+        },
+        "molarweight": 12.0107
+    },
+    {
+        "identifier": "C≡CH",
+        "model_record": {
+            "a": 32.37,
+            "b": -0.006999999999999999,
+            "c": 0.00010267,
+            "d": -6.641e-08,
+            "e": 0.0
+        },
+        "molarweight": 25.02924
+    },
+    {
+        "identifier": "CH2_hex",
+        "model_record": {
+            "a": -6.03,
+            "b": 0.0854,
+            "c": -8e-06,
+            "d": -1.8e-08,
+            "e": 0.0
+        },
+        "molarweight": 14.02658
+    },
+    {
+        "identifier": "CH_hex",
+        "model_record": {
+            "a": -20.5,
+            "b": 0.162,
+            "c": -0.00016,
+            "d": 6.24e-08,
+            "e": 0.0
+        },
+        "molarweight": 13.01854
+    },
+    {
+        "identifier": "CH2_pent",
+        "model_record": {
+            "a": -6.03,
+            "b": 0.0854,
+            "c": -8e-06,
+            "d": -1.8e-08,
+            "e": 0.0
+        },
+        "molarweight": 14.02658
+    },
+    {
+        "identifier": "CH_pent",
+        "model_record": {
+            "a": -20.5,
+            "b": 0.162,
+            "c": -0.00016,
+            "d": 6.24e-08,
+            "e": 0.0
+        },
+        "molarweight": 13.01854
+    },
+    {
+        "identifier": "CH_arom",
+        "model_record": {
+            "a": -2.14,
+            "b": 0.0574,
+            "c": -1.64e-06,
+            "d": -1.59e-08,
+            "e": 0.0
+        },
+        "molarweight": 13.01854
+    },
+    {
+        "identifier": "C_arom",
+        "model_record": {
+            "a": -8.25,
+            "b": 0.101,
+            "c": -0.000142,
+            "d": 6.78e-08,
+            "e": 0.0
+        },
+        "molarweight": 12.0107
+    },
+    {
+        "identifier": "CH=O",
+        "model_record": {
+            "a": 30.9,
+            "b": -0.0336,
+            "c": 0.00016,
+            "d": -9.88e-08,
+            "e": 0.0
+        },
+        "molarweight": 29.01754
+    },
+    {
+        "identifier": ">C=O",
+        "model_record": {
+            "a": 6.45,
+            "b": 0.067,
+            "c": -3.57e-05,
+            "d": 2.86e-09,
+            "e": 0.0
+        },
+        "molarweight": 28.0097
+    },
+    {
+        "identifier": "OCH3",
+        "model_record": {
+            "a": 45.0,
+            "b": -0.07128000000000001,
+            "c": 0.000264,
+            "d": -1.515e-07,
+            "e": 0.0
+        },
+        "molarweight": 31.03322
+    },
+    {
+        "identifier": "OCH2",
+        "model_record": {
+            "a": 24.591,
+            "b": 0.031799999999999995,
+            "c": 5.66e-05,
+            "d": -4.29e-08,
+            "e": 0.0
+        },
+        "molarweight": 30.02538
+    },
+    {
+        "identifier": "HCOO",
+        "model_record": {
+            "a": 24.1,
+            "b": 0.0427,
+            "c": 8.04e-05,
+            "d": -6.87e-08,
+            "e": 0.0
+        },
+        "molarweight": 45.01654
+    },
+    {
+        "identifier": "COO",
+        "model_record": {
+            "a": 24.5,
+            "b": 0.0402,
+            "c": 4.02e-05,
+            "d": -4.52e-08,
+            "e": 0.0
+        },
+        "molarweight": 44.0087
+    },
+    {
+        "identifier": "OH",
+        "model_record": {
+            "a": 25.7,
+            "b": -0.0691,
+            "c": 0.000177,
+            "d": -9.88e-08,
+            "e": 0.0
+        },
+        "molarweight": 17.00734
+    },
+    {
+        "identifier": "NH2",
+        "model_record": {
+            "a": 26.9,
+            "b": -0.0412,
+            "c": 0.000164,
+            "d": -9.76e-08,
+            "e": 0.0
+        },
+        "molarweight": 16.02238
+    }
+]

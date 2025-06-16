@@ -6,7 +6,7 @@
 #![cfg_attr(feature = "pcsaft", doc = "```")]
 //! # use feos_core::FeosError;
 //! use feos::pcsaft::{PcSaft, PcSaftParameters};
-//! use feos_core::parameter::{IdentifierOption, Parameter};
+//! use feos_core::parameter::{IdentifierOption};
 //! use feos_core::{Contributions, State};
 //! use quantity::KELVIN;
 //! use std::sync::Arc;

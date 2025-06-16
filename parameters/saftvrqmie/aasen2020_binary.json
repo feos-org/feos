@@ -16,10 +16,8 @@
             "inchi": "InChI=1S/Ne",
             "formula": "Ne"
         },
-        "model_record": {
-            "k_ij": 0.105,
-            "l_ij": 0.0
-        }
+        "k_ij": 0.105,
+        "l_ij": 0.0
     },
     {
         "id1": {
@@ -38,10 +36,8 @@
             "inchi": "InChI=1S/He",
             "formula": "He"
         },
-        "model_record": {
-            "k_ij": 0.08,
-            "l_ij": -0.05
-        }
+        "k_ij": 0.08,
+        "l_ij": -0.05
     },
     {
         "id1": {
@@ -60,10 +56,8 @@
             "inchi": "InChI=1S/H2/h1H/i1+1D",
             "formula": "D2"
         },
-        "model_record": {
-            "k_ij": 0.0,
-            "l_ij": 0.0
-        }
+        "k_ij": 0.0,
+        "l_ij": 0.0
     },
     {
         "id1": {
@@ -82,10 +76,8 @@
             "inchi": "InChI=1S/Ne",
             "formula": "Ne"
         },
-        "model_record": {
-            "k_ij": 0.105,
-            "l_ij": 0.0
-        }
+        "k_ij": 0.105,
+        "l_ij": 0.0
     },
     {
         "id1": {
@@ -104,10 +96,8 @@
             "inchi": "InChI=1S/He",
             "formula": "He"
         },
-        "model_record": {
-            "k_ij": 0.08,
-            "l_ij": -0.05
-        }
+        "k_ij": 0.08,
+        "l_ij": -0.05
     },
     {
         "id1": {
@@ -126,10 +116,8 @@
             "inchi": "InChI=1S/H2/h1H/i1+1D",
             "formula": "D2"
         },
-        "model_record": {
-            "k_ij": 0.0,
-            "l_ij": 0.0
-        }
+        "k_ij": 0.0,
+        "l_ij": 0.0
     },
     {
         "id1": {
@@ -148,10 +136,8 @@
             "inchi": "InChI=1S/Ne",
             "formula": "Ne"
         },
-        "model_record": {
-            "k_ij": 0.105,
-            "l_ij": 0.0
-        }
+        "k_ij": 0.105,
+        "l_ij": 0.0
     },
     {
         "id1": {
@@ -170,10 +156,8 @@
             "inchi": "InChI=1S/He",
             "formula": "He"
         },
-        "model_record": {
-            "k_ij": 0.08,
-            "l_ij": -0.05
-        }
+        "k_ij": 0.08,
+        "l_ij": -0.05
     },
     {
         "id1": {
@@ -192,10 +176,8 @@
             "inchi": "InChI=1S/H2/h1H/i1+1D",
             "formula": "D2"
         },
-        "model_record": {
-            "k_ij": 0.0,
-            "l_ij": 0.0
-        }
+        "k_ij": 0.0,
+        "l_ij": 0.0
     },
     {
         "id1": {
@@ -207,17 +189,15 @@
             "formula": "H2"
         },
         "id2": {
-	    "cas": "1333-74-0",
+            "cas": "1333-74-0",
             "name": "ortho-hydrogen",
             "iupac_name": "ortho-hydrogen",
             "smiles": "[HH]",
             "inchi": "InChI=1S/H2/h1H",
             "formula": "H2"
         },
-        "model_record": {
-            "k_ij": 0.0,
-            "l_ij": 0.0
-        }
+        "k_ij": 0.0,
+        "l_ij": 0.0
     },
     {
         "id1": {
@@ -236,10 +216,8 @@
             "inchi": "InChI=1S/H2/h1H/i1+1D",
             "formula": "D2"
         },
-        "model_record": {
-            "k_ij": 0.0,
-            "l_ij": -0.05
-        }
+        "k_ij": 0.0,
+        "l_ij": -0.05
     },
     {
         "id1": {
@@ -258,10 +236,8 @@
             "inchi": "InChI=1S/Ne",
             "formula": "Ne"
         },
-        "model_record": {
-            "k_ij": -0.22,
-            "l_ij": 0.0
-        }
+        "k_ij": -0.22,
+        "l_ij": 0.0
     },
     {
         "id1": {
@@ -280,9 +256,7 @@
             "inchi": "InChI=1S/H2/h1H/i1+1D",
             "formula": "D2"
         },
-        "model_record": {
-            "k_ij": 0.13,
-            "l_ij": 0.0
-        }
+        "k_ij": 0.13,
+        "l_ij": 0.0
     }
 ]

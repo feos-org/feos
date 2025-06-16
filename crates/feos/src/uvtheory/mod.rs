@@ -19,10 +19,10 @@
 //!     perturbation: Perturbation::WeeksChandlerAndersen,
 //! };
 //! // Define equation of state.
-//! let uv_wca = Arc::new(UVTheory::new(UVTheoryParameters::from_model_records(vec![params])));
+//! let uv_wca = Arc::new(UVTheory::new(UVTheoryParameters::from_model_records(vec![params])?));
 //! // this is identical to above
 //! let uv_wca = Arc::new(
-//!     UVTheory::with_options(UVTheoryParameters::from_model_records(vec![params]), default_options)
+//!     UVTheory::with_options(UVTheoryParameters::from_model_records(vec![params])?, default_options)
 //! );
 //!
 //! // use Barker-Henderson perturbation
@@ -31,7 +31,7 @@
 //!     perturbation: Perturbation::BarkerHenderson,
 //! };
 //! let uv_bh = Arc::new(
-//!     UVTheory::with_options(UVTheoryParameters::from_model_records(vec![params]), options)
+//!     UVTheory::with_options(UVTheoryParameters::from_model_records(vec![params])?, options)
 //! );
 //! # Ok::<(), FeosError>(())
 //! ```
@@ -48,7 +48,7 @@
 //!
 //! let params = UVTheoryRecord::new(24.0, 6.0, 3.0, 150.0);
 //!
-//! let parameters = UVTheoryParameters::from_model_records(vec![params]);
+//! let parameters = UVTheoryParameters::from_model_records(vec![params])?;
 //!
 //! // use uv-B3-theory
 //! let options = UVTheoryOptions {

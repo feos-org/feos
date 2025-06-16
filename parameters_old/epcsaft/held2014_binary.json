@@ -1,0 +1,1264 @@
+[
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "7440-23-5",
+            "name": "sodium ion",
+            "formula": "Na",
+            "smiles": "[Na+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.0045,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "16887-00-6",
+            "name": "chloride ion",
+            "formula": "Cl",
+            "smiles": "[Cl-]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.25,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "3812-32-6",
+            "name": "carbonate",
+            "formula": "CO3",
+            "smiles": "O=C([O-])[O-]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.25,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "13968-08-6",
+            "name": "hydronium",
+            "formula": "H",
+            "smiles": "[H+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.25,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "17341-24-1",
+            "name": "lithium ion",
+            "formula": "Li",
+            "smiles": "[Li+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.25,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "24203-36-9",
+            "name": "potassium ion",
+            "formula": "K",
+            "smiles": "[K+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.1997,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "18459-37-5",
+            "name": "cesium ion",
+            "formula": "Cs",
+            "smiles": "[Cs+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.081,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "14798-03-9",
+            "name": "ammonium ion",
+            "formula": "NH4",
+            "smiles": "[NH4+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.064,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "16887-00-6",
+            "name": "chloride ion",
+            "formula": "Cl",
+            "smiles": "[Cl-]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.25,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "24959-67-9",
+            "name": "bromide ion",
+            "formula": "Br",
+            "smiles": "[Br-]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.25,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "20461-54-5",
+            "name": "iodide ion",
+            "formula": "I",
+            "smiles": "[I-]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.25,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "14797-55-8",
+            "name": "nitrate ion",
+            "formula": "NO3",
+            "smiles": "[N+](=O)([O-])[O-]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.098,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "14280-30-9",
+            "name": "hydroxide",
+            "formula": "OH",
+            "smiles": "[OH-]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.25,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "14797-73-0",
+            "name": "perchlorate ion",
+            "formula": "ClO4",
+            "smiles": "[O-]Cl(=O)(=O)=O"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.25,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7732-18-5",
+            "name": "water",
+            "iupac_name": "oxidane",
+            "smiles": "O",
+            "inchi": "InChI=1/H2O/h1H2",
+            "formula": "H2O"
+        },
+        "id2": {
+            "cas": "14066-20-7",
+            "name": "dihydrogenphosphate ion",
+            "formula": "H2PO4",
+            "smiles": "OP(=O)(O)[O-]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.25,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "16887-00-6",
+            "name": "chloride ion",
+            "formula": "Cl",
+            "smiles": "[Cl-]"
+        },
+        "id2": {
+            "cas": "13968-08-6",
+            "name": "hydronium",
+            "formula": "H",
+            "smiles": "[H+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.654,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "24959-67-9",
+            "name": "bromide ion",
+            "formula": "Br",
+            "smiles": "[Br-]"
+        },
+        "id2": {
+            "cas": "13968-08-6",
+            "name": "hydronium",
+            "formula": "H",
+            "smiles": "[H+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.645,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "20461-54-5",
+            "name": "iodide ion",
+            "formula": "I",
+            "smiles": "[I-]"
+        },
+        "id2": {
+            "cas": "13968-08-6",
+            "name": "hydronium",
+            "formula": "H",
+            "smiles": "[H+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.497,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "14797-73-0",
+            "name": "perchlorate ion",
+            "formula": "ClO4",
+            "smiles": "[O-]Cl(=O)(=O)=O"
+        },
+        "id2": {
+            "cas": "13968-08-6",
+            "name": "hydronium",
+            "formula": "H",
+            "smiles": "[H+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.861,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "16887-00-6",
+            "name": "chloride ion",
+            "formula": "Cl",
+            "smiles": "[Cl-]"
+        },
+        "id2": {
+            "cas": "17341-24-1",
+            "name": "lithium ion",
+            "formula": "Li",
+            "smiles": "[Li+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.669,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "24959-67-9",
+            "name": "bromide ion",
+            "formula": "Br",
+            "smiles": "[Br-]"
+        },
+        "id2": {
+            "cas": "17341-24-1",
+            "name": "lithium ion",
+            "formula": "Li",
+            "smiles": "[Li+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.591,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "20461-54-5",
+            "name": "iodide ion",
+            "formula": "I",
+            "smiles": "[I-]"
+        },
+        "id2": {
+            "cas": "17341-24-1",
+            "name": "lithium ion",
+            "formula": "Li",
+            "smiles": "[Li+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.002,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "14797-73-0",
+            "name": "perchlorate ion",
+            "formula": "ClO4",
+            "smiles": "[O-]Cl(=O)(=O)=O"
+        },
+        "id2": {
+            "cas": "17341-24-1",
+            "name": "lithium ion",
+            "formula": "Li",
+            "smiles": "[Li+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.406,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "14797-55-8",
+            "name": "nitrate ion",
+            "formula": "NO3",
+            "smiles": "[N+](=O)([O-])[O-]"
+        },
+        "id2": {
+            "cas": "17341-24-1",
+            "name": "lithium ion",
+            "formula": "Li",
+            "smiles": "[Li+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.364,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "14280-30-9",
+            "name": "hydroxide",
+            "formula": "OH",
+            "smiles": "[OH-]"
+        },
+        "id2": {
+            "cas": "17341-24-1",
+            "name": "lithium ion",
+            "formula": "Li",
+            "smiles": "[Li+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.566,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "16984-48-8",
+            "name": "fluoride ion",
+            "formula": "F",
+            "smiles": "[F-]"
+        },
+        "id2": {
+            "cas": "7440-23-5",
+            "name": "sodium ion",
+            "formula": "Na",
+            "smiles": "[Na+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.665,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "16887-00-6",
+            "name": "chloride ion",
+            "formula": "Cl",
+            "smiles": "[Cl-]"
+        },
+        "id2": {
+            "cas": "7440-23-5",
+            "name": "sodium ion",
+            "formula": "Na",
+            "smiles": "[Na+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.317,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "24959-67-9",
+            "name": "bromide ion",
+            "formula": "Br",
+            "smiles": "[Br-]"
+        },
+        "id2": {
+            "cas": "7440-23-5",
+            "name": "sodium ion",
+            "formula": "Na",
+            "smiles": "[Na+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.290,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "20461-54-5",
+            "name": "iodide ion",
+            "formula": "I",
+            "smiles": "[I-]"
+        },
+        "id2": {
+            "cas": "7440-23-5",
+            "name": "sodium ion",
+            "formula": "Na",
+            "smiles": "[Na+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.018,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "14797-73-0",
+            "name": "perchlorate ion",
+            "formula": "ClO4",
+            "smiles": "[O-]Cl(=O)(=O)=O"
+        },
+        "id2": {
+            "cas": "7440-23-5",
+            "name": "sodium ion",
+            "formula": "Na",
+            "smiles": "[Na+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.118,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "14797-55-8",
+            "name": "nitrate ion",
+            "formula": "NO3",
+            "smiles": "[N+](=O)([O-])[O-]"
+        },
+        "id2": {
+            "cas": "7440-23-5",
+            "name": "sodium ion",
+            "formula": "Na",
+            "smiles": "[Na+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.300,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7440-23-5",
+            "name": "sodium ion",
+            "formula": "Na",
+            "smiles": "[Na+]"
+        },
+        "id2": {
+            "cas": "14066-20-7",
+            "name": "dihydrogenphosphate ion",
+            "formula": "H2PO4",
+            "smiles": "OP(=O)(O)[O-]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.071,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "14280-30-9",
+            "name": "hydroxide",
+            "formula": "OH",
+            "smiles": "[OH-]"
+        },
+        "id2": {
+            "cas": "7440-23-5",
+            "name": "sodium ion",
+            "formula": "Na",
+            "smiles": "[Na+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.649,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7440-23-5",
+            "name": "sodium ion",
+            "formula": "Na",
+            "smiles": "[Na+]"
+        },
+        "id2": {
+            "cas": "3812-32-6",
+            "name": "carbonate",
+            "formula": "CO3",
+            "smiles": "O=C([O-])[O-]"
+        },
+        "model_record": {
+            "k_ij": [
+                -1.0,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "7440-23-5",
+            "name": "sodium ion",
+            "formula": "Na",
+            "smiles": "[Na+]"
+        },
+        "id2": {
+            "cas": "72-52-3",
+            "name": "hydrogen-carbonate",
+            "formula": "HCO3",
+            "smiles": "C(=O)(O)[O-]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.514,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "16984-48-8",
+            "name": "fluoride ion",
+            "formula": "F",
+            "smiles": "[F-]"
+        },
+        "id2": {
+            "cas": "24203-36-9",
+            "name": "potassium ion",
+            "formula": "K",
+            "smiles": "[K+]"
+        },
+        "model_record": {
+            "k_ij": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "16887-00-6",
+            "name": "chloride ion",
+            "formula": "Cl",
+            "smiles": "[Cl-]"
+        },
+        "id2": {
+            "cas": "24203-36-9",
+            "name": "potassium ion",
+            "formula": "K",
+            "smiles": "[K+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.064,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "24959-67-9",
+            "name": "bromide ion",
+            "formula": "Br",
+            "smiles": "[Br-]"
+        },
+        "id2": {
+            "cas": "24203-36-9",
+            "name": "potassium ion",
+            "formula": "K",
+            "smiles": "[K+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.102,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "20461-54-5",
+            "name": "iodide ion",
+            "formula": "I",
+            "smiles": "[I-]"
+        },
+        "id2": {
+            "cas": "24203-36-9",
+            "name": "potassium ion",
+            "formula": "K",
+            "smiles": "[K+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.312,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "14797-55-8",
+            "name": "nitrate ion",
+            "formula": "NO3",
+            "smiles": "[N+](=O)([O-])[O-]"
+        },
+        "id2": {
+            "cas": "24203-36-9",
+            "name": "potassium ion",
+            "formula": "K",
+            "smiles": "[K+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.585,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "24203-36-9",
+            "name": "potassium ion",
+            "formula": "K",
+            "smiles": "[K+]"
+        },
+        "id2": {
+            "cas": "14066-20-7",
+            "name": "dihydrogenphosphate ion",
+            "formula": "H2PO4",
+            "smiles": "OP(=O)(O)[O-]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.018,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "14280-30-9",
+            "name": "hydroxide",
+            "formula": "OH",
+            "smiles": "[OH-]"
+        },
+        "id2": {
+            "cas": "24203-36-9",
+            "name": "potassium ion",
+            "formula": "K",
+            "smiles": "[K+]"
+        },
+        "model_record": {
+            "k_ij": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "24203-36-9",
+            "name": "potassium ion",
+            "formula": "K",
+            "smiles": "[K+]"
+        },
+        "id2": {
+            "cas": "3812-32-6",
+            "name": "carbonate",
+            "formula": "CO3",
+            "smiles": "O=C([O-])[O-]"
+        },
+        "model_record": {
+            "k_ij": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "24203-36-9",
+            "name": "potassium ion",
+            "formula": "K",
+            "smiles": "[K+]"
+        },
+        "id2": {
+            "cas": "72-52-3",
+            "name": "hydrogen-carbonate",
+            "formula": "HCO3",
+            "smiles": "C(=O)(O)[O-]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.476,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "16984-48-8",
+            "name": "fluoride ion",
+            "formula": "F",
+            "smiles": "[F-]"
+        },
+        "id2": {
+            "cas": "18459-37-5",
+            "name": "cesium ion",
+            "formula": "Cs",
+            "smiles": "[Cs+]"
+        },
+        "model_record": {
+            "k_ij": [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "16887-00-6",
+            "name": "chloride ion",
+            "formula": "Cl",
+            "smiles": "[Cl-]"
+        },
+        "id2": {
+            "cas": "18459-37-5",
+            "name": "cesium ion",
+            "formula": "Cs",
+            "smiles": "[Cs+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.417,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "24959-67-9",
+            "name": "bromide ion",
+            "formula": "Br",
+            "smiles": "[Br-]"
+        },
+        "id2": {
+            "cas": "18459-37-5",
+            "name": "cesium ion",
+            "formula": "Cs",
+            "smiles": "[Cs+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.67,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "20461-54-5",
+            "name": "iodide ion",
+            "formula": "I",
+            "smiles": "[I-]"
+        },
+        "id2": {
+            "cas": "18459-37-5",
+            "name": "cesium ion",
+            "formula": "Cs",
+            "smiles": "[Cs+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -1.0,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "14797-55-8",
+            "name": "nitrate ion",
+            "formula": "NO3",
+            "smiles": "[N+](=O)([O-])[O-]"
+        },
+        "id2": {
+            "cas": "18459-37-5",
+            "name": "cesium ion",
+            "formula": "Cs",
+            "smiles": "[Cs+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.855,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "14280-30-9",
+            "name": "hydroxide",
+            "formula": "OH",
+            "smiles": "[OH-]"
+        },
+        "id2": {
+            "cas": "18459-37-5",
+            "name": "cesium ion",
+            "formula": "Cs",
+            "smiles": "[Cs+]"
+        },
+        "model_record": {
+            "k_ij": [
+                0.564,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "16887-00-6",
+            "name": "chloride ion",
+            "formula": "Cl",
+            "smiles": "[Cl-]"
+        },
+        "id2": {
+            "cas": "14798-03-9",
+            "name": "ammonium ion",
+            "formula": "NH4",
+            "smiles": "[NH4+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.566,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "24959-67-9",
+            "name": "bromide ion",
+            "formula": "Br",
+            "smiles": "[Br-]"
+        },
+        "id2": {
+            "cas": "14798-03-9",
+            "name": "ammonium ion",
+            "formula": "NH4",
+            "smiles": "[NH4+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.639,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "20461-54-5",
+            "name": "iodide ion",
+            "formula": "I",
+            "smiles": "[I-]"
+        },
+        "id2": {
+            "cas": "14798-03-9",
+            "name": "ammonium ion",
+            "formula": "NH4",
+            "smiles": "[NH4+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.787,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "14797-73-0",
+            "name": "perchlorate ion",
+            "formula": "ClO4",
+            "smiles": "[O-]Cl(=O)(=O)=O"
+        },
+        "id2": {
+            "cas": "14798-03-9",
+            "name": "ammonium ion",
+            "formula": "NH4",
+            "smiles": "[NH4+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -1.0,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "14797-55-8",
+            "name": "nitrate ion",
+            "formula": "NO3",
+            "smiles": "[N+](=O)([O-])[O-]"
+        },
+        "id2": {
+            "cas": "14798-03-9",
+            "name": "ammonium ion",
+            "formula": "NH4",
+            "smiles": "[NH4+]"
+        },
+        "model_record": {
+            "k_ij": [
+                -0.419,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    },
+    {
+        "id1": {
+            "cas": "14798-03-9",
+            "name": "ammonium ion",
+            "formula": "NH4",
+            "smiles": "[NH4+]"
+        },
+        "id2": {
+            "cas": "14066-20-7",
+            "name": "dihydrogenphosphate ion",
+            "formula": "H2PO4",
+            "smiles": "OP(=O)(O)[O-]"
+        },
+        "model_record": {
+            "k_ij": [
+                -1.0,
+                0.0,
+                0.0,
+                0.0
+            ]
+        }
+    }
+]
