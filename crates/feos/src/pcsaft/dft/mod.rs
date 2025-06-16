@@ -1,6 +1,6 @@
 use super::PcSaftParameters;
 use super::parameters::PcSaftPars;
-use crate::association::{AssociationFunctional, AssociationParameters};
+use crate::association::{Association, AssociationFunctional};
 use crate::hard_sphere::{FMTContribution, FMTVersion};
 use crate::pcsaft::eos::PcSaftOptions;
 use feos_core::{Components, FeosResult, Molarweight, Residual, StateHD};
@@ -25,7 +25,7 @@ use pure_saft_functional::*;
 /// PC-SAFT Helmholtz energy functional.
 pub struct PcSaftFunctional {
     parameters: PcSaftParameters,
-    association_parameters: AssociationParameters<PcSaftPars>,
+    association: Option<Association<PcSaftPars>>,
     params: PcSaftPars,
     fmt_version: FMTVersion,
     options: PcSaftOptions,
@@ -46,10 +46,15 @@ impl PcSaftFunctional {
         saft_options: PcSaftOptions,
     ) -> Self {
         let params = PcSaftPars::new(&parameters);
-        let association_parameters = AssociationParameters::new(&parameters).unwrap();
+        let association = Association::new(
+            &parameters,
+            saft_options.max_iter_cross_assoc,
+            saft_options.tol_cross_assoc,
+        )
+        .unwrap();
         Self {
             parameters,
-            association_parameters,
+            association,
             params,
             fmt_version,
             options: saft_options,
@@ -59,7 +64,7 @@ impl PcSaftFunctional {
 
 impl Components for PcSaftFunctional {
     fn components(&self) -> usize {
-        self.parameters.pure_records.len()
+        self.parameters.pure.len()
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
@@ -91,12 +96,7 @@ impl HelmholtzEnergyFunctional for PcSaftFunctional {
     fn contributions<'a>(&'a self) -> Vec<PcSaftFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(4);
 
-        let assoc = AssociationFunctional::new(
-            &self.params,
-            &self.association_parameters,
-            self.options.max_iter_cross_assoc,
-            self.options.tol_cross_assoc,
-        );
+        let assoc = AssociationFunctional::new(&self.params, &self.parameters, &self.association);
 
         if matches!(
             self.fmt_version,

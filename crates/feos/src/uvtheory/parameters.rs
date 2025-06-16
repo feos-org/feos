@@ -78,7 +78,7 @@ pub struct UVTheoryPars {
 
 impl UVTheoryPars {
     pub fn new(parameters: &UVTheoryParameters, perturbation: Perturbation) -> Self {
-        let n = parameters.pure_records.len();
+        let n = parameters.pure.len();
 
         let [rep, att, sigma, epsilon_k] =
             parameters.collate(|pr| [pr.rep, pr.att, pr.sigma, pr.epsilon_k]);
@@ -87,7 +87,7 @@ impl UVTheoryPars {
         let mut att_ij = Array2::zeros((n, n));
         let mut sigma_ij = Array2::zeros((n, n));
         let mut eps_k_ij = Array2::zeros((n, n));
-        let [k_ij] = parameters.collate_binary(|br| [br.unwrap_or_default()]);
+        let [k_ij] = parameters.collate_binary(|&br| [br]);
 
         for i in 0..n {
             rep_ij[[i, i]] = rep[i];

@@ -241,14 +241,14 @@ pub struct PcSaftPars {
 
 impl PcSaftPars {
     pub fn new(parameters: &PcSaftParameters) -> Self {
-        let n = parameters.pure_records.len();
+        let n = parameters.pure.len();
 
         let [m, sigma, epsilon_k] = parameters.collate(|pr| [pr.m, pr.sigma, pr.epsilon_k]);
         let [mu, q] = parameters.collate(|pr| [pr.mu, pr.q]);
         let [viscosity, thermal_conductivity] =
             parameters.collate(|pr| [pr.viscosity, pr.thermal_conductivity]);
         let [diffusion] = parameters.collate(|pr| [pr.diffusion]);
-        let [k_ij] = parameters.collate_binary(|br| [br.unwrap_or_default().k_ij]);
+        let [k_ij] = parameters.collate_binary(|br| [br.k_ij]);
 
         let mu2 = &mu * &mu / (&m * &sigma * &sigma * &sigma * &epsilon_k)
             * 1e-19
@@ -425,7 +425,7 @@ pub mod utils {
         PcSaftPars::new(&PcSaftParameters::new_pure(dme_record))
     }
 
-    pub fn water_parameters() -> PcSaftParameters {
+    pub fn water_parameters(na: f64) -> PcSaftParameters {
         let water_json = r#"
             {
                 "identifier": {
@@ -449,8 +449,9 @@ pub mod utils {
                     }
                 ]
             }"#;
-        let water_record: PureRecord<PcSaftRecord, PcSaftAssociationRecord> =
+        let mut water_record: PureRecord<PcSaftRecord, PcSaftAssociationRecord> =
             serde_json::from_str(water_json).expect("Unable to parse json.");
+        water_record.association_sites[0].na = na;
         PcSaftParameters::new_pure(water_record)
     }
 
@@ -562,12 +563,9 @@ pub mod utils {
             &segment_records,
             Some(&binary_segment_records),
         )?;
-        assert_eq!(params.binary_records[0].id1, 0);
-        assert_eq!(params.binary_records[0].id2, 1);
-        assert_eq!(
-            params.binary_records[0].model_record.unwrap().k_ij,
-            -0.5 / 9.
-        );
+        assert_eq!(params.binary[0].id1, 0);
+        assert_eq!(params.binary[0].id2, 1);
+        assert_eq!(params.binary[0].model_record.k_ij, -0.5 / 9.);
 
         Ok(())
     }

@@ -62,7 +62,7 @@ impl UVTheory {
 
 impl Components for UVTheory {
     fn components(&self) -> usize {
-        self.parameters.pure_records.len()
+        self.parameters.pure.len()
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {

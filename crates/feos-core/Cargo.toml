@@ -28,7 +28,6 @@ rayon = { workspace = true, optional = true }
 typenum = { workspace = true }
 itertools = { workspace = true }
 arrayvec = { workspace = true, features = ["serde"] }
-petgraph = { workspace = true }
 
 [dev-dependencies]
 approx = { workspace = true }

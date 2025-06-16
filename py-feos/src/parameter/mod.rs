@@ -26,7 +26,6 @@ pub(crate) use segment::{PyBinarySegmentRecord, PySegmentRecord};
 pub struct PyParameters {
     pub pure_records: Vec<PureRecord<Value, Value>>,
     pub binary_records: Vec<BinaryRecord<usize, Value, Value>>,
-    pub bond_records: Vec<BondRecord<Value, ()>>,
 }
 
 impl From<PyParameters> for Parameters<Value, Value, Value> {
@@ -35,15 +34,14 @@ impl From<PyParameters> for Parameters<Value, Value, Value> {
     }
 }
 
-impl From<Parameters<Value, Value, Value>> for PyParameters {
-    fn from(value: Parameters<Value, Value, Value>) -> Self {
-        Self {
-            pure_records: value.pure_records,
-            binary_records: value.binary_records,
-            bond_records: vec![],
-        }
-    }
-}
+// impl From<Parameters<Value, Value, Value>> for PyParameters {
+//     fn from(value: Parameters<Value, Value, Value>) -> Self {
+//         Self {
+//             pure_records: value.pure,
+//             binary_records: value.binary,
+//         }
+//     }
+// }
 
 impl PyParameters {
     pub fn try_convert<P, B, A>(self) -> PyResult<Parameters<P, B, A>>
@@ -88,9 +86,17 @@ impl PyParameters {
         binary_records: Vec<PyBinaryRecord>,
         identifier_option: PyIdentifierOption,
     ) -> Self {
-        let pure_records = pure_records.into_iter().map(|r| r.into()).collect();
-        let binary_records = binary_records.into_iter().map(|r| r.into()).collect();
-        Parameters::from_records(pure_records, binary_records, identifier_option.into()).into()
+        let pure_records: Vec<_> = pure_records.into_iter().map(PureRecord::from).collect();
+        let binary_records: Vec<_> = binary_records.into_iter().map(BinaryRecord::from).collect();
+        let binary_records = Parameters::binary_matrix_from_records(
+            &pure_records,
+            &binary_records,
+            identifier_option.into(),
+        );
+        Self {
+            pure_records,
+            binary_records,
+        }
     }
 
     /// Creates parameters for a pure component from a pure record.
@@ -101,7 +107,10 @@ impl PyParameters {
     ///     The pure component parameters.
     #[staticmethod]
     fn new_pure(pure_record: PyPureRecord) -> Self {
-        Parameters::new_pure(pure_record.into()).into()
+        Self {
+            pure_records: vec![pure_record.into()],
+            binary_records: vec![],
+        }
     }
 
     /// Creates parameters for a binary system from pure records and an optional
@@ -116,24 +125,22 @@ impl PyParameters {
     #[staticmethod]
     #[pyo3(signature = (pure_records, **binary_parameters))]
     fn new_binary(
-        py: Python,
         pure_records: [PyPureRecord; 2],
         binary_parameters: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
-        let pure_records = pure_records.map(|r| r.into());
-        let (binary_record, binary_association_parameters) = binary_parameters.map_or_else(
-            || Ok::<_, PythonizeError>((None, vec![])),
-            |binary_parameters| {
-                binary_parameters.set_item("id1", pythonize(py, &Identifier::default())?)?;
-                binary_parameters.set_item("id2", pythonize(py, &Identifier::default())?)?;
-                let binary_record: PyBinaryRecord = depythonize(binary_parameters)?;
-                Ok((binary_record.model_record, binary_record.association_sites))
-            },
-        )?;
-        Ok(
-            Parameters::new_binary(pure_records, binary_record, binary_association_parameters)
-                .into(),
-        )
+        let pure_records = pure_records.into_iter().map(|r| r.into()).collect();
+        let binary_records = binary_parameters
+            .iter()
+            .map(|binary_parameters| {
+                binary_parameters.set_item("id1", 0)?;
+                binary_parameters.set_item("id2", 1)?;
+                depythonize(binary_parameters)
+            })
+            .collect::<Result<_, _>>()?;
+        Ok(Self {
+            pure_records,
+            binary_records,
+        })
     }
 
     /// Creates parameters from json files.
@@ -159,10 +166,11 @@ impl PyParameters {
         binary_path: Option<String>,
         identifier_option: PyIdentifierOption,
     ) -> PyResult<Self> {
-        Parameters::from_json(substances, pure_path, binary_path, identifier_option.into())
-            .map_err(PyFeosError::from)
-            .map_err(PyErr::from)
-            .map(|p| p.into())
+        Self::from_multiple_json(
+            vec![(substances, pure_path)],
+            binary_path,
+            identifier_option,
+        )
     }
 
     /// Creates parameters from json files.
@@ -186,10 +194,20 @@ impl PyParameters {
         binary_path: Option<String>,
         identifier_option: PyIdentifierOption,
     ) -> PyResult<Self> {
-        Parameters::from_multiple_json(&input, binary_path, identifier_option.into())
-            .map_err(PyFeosError::from)
-            .map_err(PyErr::from)
-            .map(|p| p.into())
+        let pure_records = PureRecord::from_multiple_json(&input, identifier_option.into())
+            .map_err(PyFeosError::from)?;
+        let binary_records: Vec<_> = binary_path
+            .map_or_else(|| Ok(Vec::new()), BinaryRecord::from_json)
+            .map_err(PyFeosError::from)?;
+        let binary_records = Parameters::binary_matrix_from_records(
+            &pure_records,
+            &binary_records,
+            identifier_option.into(),
+        );
+        Ok(Self {
+            pure_records,
+            binary_records,
+        })
     }
 
     /// Generates JSON-formatted string for pure and binary records (if initialized).
@@ -542,7 +560,7 @@ impl PyGcParameters {
                     .collect::<Result<Vec<_>, PyFeosError>>()
             })
             .transpose()?;
-        Ok(ParametersBase::<String, P, B, A, (), C>::from_segments(
+        Ok(ParametersBase::<P, B, A, (), C>::from_segments_hetero(
             self.chemical_records,
             &segment_records,
             binary_segment_records.as_deref(),

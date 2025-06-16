@@ -1,4 +1,4 @@
-use feos_core::parameter::{Parameters, PureRecord};
+use feos_core::parameter::{Parameters, Pure};
 use feos_core::{Components, FeosResult, IdealGas};
 use ndarray::Array1;
 use num_dual::DualNum;
@@ -117,11 +117,11 @@ pub type DipprParameters = Parameters<DipprRecord, (), ()>;
 
 /// Ideal gas equations of state based on DIPPR equations for
 /// ideal gas heat capacities.
-pub struct Dippr(Vec<PureRecord<DipprRecord, ()>>);
+pub struct Dippr(Vec<Pure<DipprRecord, ()>>);
 
 impl Dippr {
     pub fn new(parameters: DipprParameters) -> Self {
-        Self(parameters.pure_records)
+        Self(parameters.pure)
     }
 
     /// Directly calculates the molar ideal gas heat capacity from the DIPPR equations.
@@ -179,7 +179,7 @@ impl IdealGas for Dippr {
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
-    use feos_core::parameter::Identifier;
+    use feos_core::parameter::{Identifier, PureRecord};
     use feos_core::{Contributions, EquationOfState, StateBuilder};
     use num_dual::first_derivative;
     use quantity::*;

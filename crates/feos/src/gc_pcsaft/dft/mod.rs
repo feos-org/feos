@@ -1,6 +1,6 @@
 use super::eos::GcPcSaftOptions;
 use super::record::GcPcSaftAssociationRecord;
-use crate::association::{AssociationFunctional, AssociationParameters, AssociationStrength};
+use crate::association::{Association, AssociationFunctional, AssociationStrength};
 use crate::gc_pcsaft::{GcPcSaftParameters, GcPcSaftRecord};
 use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use feos_core::{Components, FeosResult, Molarweight, Residual, StateHD};
@@ -23,8 +23,8 @@ pub use parameter::GcPcSaftFunctionalParameters;
 /// gc-PC-SAFT Helmholtz energy functional.
 pub struct GcPcSaftFunctional {
     parameters: GcPcSaftParameters<()>,
-    association_parameters: AssociationParameters<GcPcSaftFunctionalParameters>,
     params: GcPcSaftFunctionalParameters,
+    association: Option<Association<GcPcSaftFunctionalParameters>>,
     fmt_version: FMTVersion,
     options: GcPcSaftOptions,
 }
@@ -44,11 +44,16 @@ impl GcPcSaftFunctional {
         saft_options: GcPcSaftOptions,
     ) -> Self {
         let params = GcPcSaftFunctionalParameters::new(&parameters);
-        let association_parameters = AssociationParameters::new(&parameters).unwrap();
+        let association = Association::new(
+            &parameters,
+            saft_options.max_iter_cross_assoc,
+            saft_options.tol_cross_assoc,
+        )
+        .unwrap();
         Self {
             parameters,
-            association_parameters,
             params,
+            association,
             fmt_version,
             options: saft_options,
         }
@@ -95,12 +100,7 @@ impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
     fn contributions<'a>(&'a self) -> Vec<GcPcSaftFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(4);
 
-        let assoc = AssociationFunctional::new(
-            &self.params,
-            &self.association_parameters,
-            self.options.max_iter_cross_assoc,
-            self.options.tol_cross_assoc,
-        );
+        let assoc = AssociationFunctional::new(&self.params, &self.parameters, &self.association);
 
         // Hard sphere contribution
         let hs = FMTContribution::new(&self.params, self.fmt_version);
@@ -167,7 +167,7 @@ impl AssociationStrength for GcPcSaftFunctionalParameters {
         temperature: D,
         comp_i: usize,
         comp_j: usize,
-        assoc_ij: Self::Record,
+        assoc_ij: &Self::Record,
     ) -> D {
         let si = self.sigma[comp_i];
         let sj = self.sigma[comp_j];
@@ -179,8 +179,8 @@ impl AssociationStrength for GcPcSaftFunctionalParameters {
     fn combining_rule(
         _: &Self::Pure,
         _: &Self::Pure,
-        parameters_i: Self::Record,
-        parameters_j: Self::Record,
+        parameters_i: &Self::Record,
+        parameters_j: &Self::Record,
     ) -> Self::Record {
         Self::Record {
             kappa_ab: (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt(),

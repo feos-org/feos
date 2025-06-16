@@ -96,7 +96,7 @@ fn gc_pcsaft(c: &mut Criterion) {
     let mut group = c.benchmark_group("DFT_pore_gc_pcsaft");
     group.sample_size(20);
 
-    let parameters = GcPcSaftParameters::from_json_segments(
+    let parameters = GcPcSaftParameters::from_json_segments_hetero(
         &["butane"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",

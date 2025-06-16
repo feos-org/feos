@@ -32,7 +32,7 @@ impl GcPcSaftEosParameters {
         let m = m * parameters.segment_counts();
 
         let bonds = parameters
-            .bond_records
+            .bonds
             .iter()
             .map(|b| ([b.id1, b.id2], b.count))
             .collect();
@@ -47,7 +47,7 @@ impl GcPcSaftEosParameters {
         let mut sigma_i: Array1<f64> = Array1::zeros(parameters.molar_weight.len());
         let mut epsilon_k_i: Array1<f64> = Array1::zeros(parameters.molar_weight.len());
         let mut mu2_i: Array1<f64> = Array1::zeros(parameters.molar_weight.len());
-        for p in &parameters.pure_records {
+        for p in &parameters.pure {
             m_i[p.component_index] += p.model_record.m * p.count;
             sigma_i += p.model_record.m * p.model_record.sigma.powi(3) * p.count;
             epsilon_k_i += p.model_record.m * p.model_record.epsilon_k * p.count;
@@ -64,7 +64,7 @@ impl GcPcSaftEosParameters {
         }
 
         // Combining rules dispersion
-        let [k_ij] = parameters.collate_binary(|br| [br.unwrap_or_default()]);
+        let [k_ij] = parameters.collate_binary(|&br| [br]);
         let sigma_ij =
             Array2::from_shape_fn([sigma.len(); 2], |(i, j)| 0.5 * (sigma[i] + sigma[j]));
         let epsilon_k_ij = Array2::from_shape_fn([epsilon_k.len(); 2], |(i, j)| {
@@ -128,7 +128,7 @@ impl AssociationStrength for GcPcSaftEosParameters {
         temperature: D,
         comp_i: usize,
         comp_j: usize,
-        assoc_ij: Self::Record,
+        assoc_ij: &Self::Record,
     ) -> D {
         let si = self.sigma[comp_i];
         let sj = self.sigma[comp_j];
@@ -140,8 +140,8 @@ impl AssociationStrength for GcPcSaftEosParameters {
     fn combining_rule(
         _: &Self::Pure,
         _: &Self::Pure,
-        parameters_i: Self::Record,
-        parameters_j: Self::Record,
+        parameters_i: &Self::Record,
+        parameters_j: &Self::Record,
     ) -> Self::Record {
         Self::Record {
             kappa_ab: (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt(),
@@ -200,7 +200,7 @@ pub mod test {
             vec!["CH3".into(), "CH2".into(), "CH3".into()],
             None,
         );
-        let params = GcPcSaftParameters::from_segments(vec![pure], &[ch3(), ch2()], None);
+        let params = GcPcSaftParameters::from_segments_hetero(vec![pure], &[ch3(), ch2()], None);
         GcPcSaftEosParameters::new(&params)
     }
 
@@ -210,7 +210,7 @@ pub mod test {
             vec!["CH3".into(), "CH2".into(), "CH2".into(), "OH".into()],
             None,
         );
-        GcPcSaftParameters::from_segments(vec![pure], &[ch3(), ch2(), oh()], None)
+        GcPcSaftParameters::from_segments_hetero(vec![pure], &[ch3(), ch2(), oh()], None)
     }
 
     pub fn ethanol_propanol(binary: bool) -> GcPcSaftParameters<f64> {
@@ -225,7 +225,7 @@ pub mod test {
             None,
         );
         let binary = if binary { Some(vec![ch3_oh()]) } else { None };
-        GcPcSaftParameters::from_segments(
+        GcPcSaftParameters::from_segments_hetero(
             vec![ethanol, propanol],
             &[ch3(), ch2(), oh()],
             binary.as_deref(),
@@ -236,7 +236,7 @@ pub mod test {
     fn test_kij() {
         let params = ethanol_propanol(true);
         let identifiers: Vec<_> = params
-            .pure_records
+            .pure
             .iter()
             .map(|r| &r.identifier)
             .enumerate()

@@ -13,7 +13,6 @@ pub struct GcPcSaftFunctionalParameters {
     pub epsilon_k: Array1<f64>,
     pub bonds: UnGraph<(), ()>,
     pub psi_dft: Array1<f64>,
-    // pub k_ij: Array2<f64>,
     pub sigma_ij: Array2<f64>,
     pub epsilon_k_ij: Array2<f64>,
 }
@@ -27,13 +26,13 @@ impl GcPcSaftFunctionalParameters {
 
         let bonds = Graph::from_edges(
             parameters
-                .bond_records
+                .bonds
                 .iter()
                 .map(|b| (b.id1 as u32, b.id2 as u32)),
         );
 
         // Combining rules dispersion
-        let [k_ij] = parameters.collate_binary(|br| [br.unwrap_or_default()]);
+        let [k_ij] = parameters.collate_binary(|&br| [br]);
         let sigma_ij =
             Array2::from_shape_fn([sigma.len(); 2], |(i, j)| 0.5 * (sigma[i] + sigma[j]));
         let epsilon_k_ij = Array2::from_shape_fn([epsilon_k.len(); 2], |(i, j)| {
@@ -51,12 +50,3 @@ impl GcPcSaftFunctionalParameters {
         }
     }
 }
-
-// impl GcPcSaftFunctionalParameters {
-//     pub fn graph(&self) -> String {
-//         let graph = self
-//             .bonds
-//             .map(|i, _| &self.identifiers[i.index()], |_, _| ());
-//         format!("{:?}", Dot::with_config(&graph, &[Config::EdgeNoLabel]))
-//     }
-// }

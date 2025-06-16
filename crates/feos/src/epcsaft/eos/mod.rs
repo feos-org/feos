@@ -91,7 +91,7 @@ impl ElectrolytePcSaft {
 
 impl Components for ElectrolytePcSaft {
     fn components(&self) -> usize {
-        self.parameters.pure_records.len()
+        self.parameters.pure.len()
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
@@ -129,7 +129,7 @@ impl Residual for ElectrolytePcSaft {
         if let Some(association) = self.association.as_ref() {
             v.push((
                 "Association".to_string(),
-                association.helmholtz_energy(&self.params, state, &d),
+                association.helmholtz_energy(&self.params, &self.parameters.association, state, &d),
             ))
         }
         if self.ionic {

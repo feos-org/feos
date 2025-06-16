@@ -10,25 +10,20 @@ pub const N0_CUTOFF: f64 = 1e-9;
 /// Implementation of the SAFT association Helmholtz energy functional.
 pub struct AssociationFunctional<'a, A: AssociationStrength> {
     model: &'a A,
-    association_parameters: &'a AssociationParameters<A>,
-    max_iter: usize,
-    tol: f64,
-    force_cross_association: bool,
+    association_parameters: &'a AssociationParameters<A::Record>,
+    association: &'a Association<A>,
 }
 
 impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
-    pub fn new(
+    pub fn new<P, B, Bo, C>(
         model: &'a A,
-        association_parameters: &'a AssociationParameters<A>,
-        max_iter: usize,
-        tol: f64,
+        parameters: &'a ParametersBase<P, B, A::Record, Bo, C>,
+        association: &'a Option<Association<A>>,
     ) -> Option<Self> {
-        (!association_parameters.is_empty()).then_some(Self {
+        association.as_ref().map(|a| Self {
             model,
-            association_parameters,
-            max_iter,
-            tol,
-            force_cross_association: false,
+            association_parameters: &parameters.association,
+            association: a,
         })
     }
 }
@@ -150,7 +145,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         match (
             a.sites_a.len() * a.sites_b.len(),
             a.sites_c.len(),
-            self.force_cross_association,
+            self.association.force_cross_association,
         ) {
             (0, 0, _) => Ok(Array::zeros(n3i.len())),
             (1, 0, false) => {
@@ -189,7 +184,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
                     .zip(n3i.iter())
                     .zip(xi.iter())
                     .map(|(((rho, &n2), &n3i), &xi)| {
-                        let [delta_ab, delta_cc] = Association::association_strength(
+                        let [delta_ab, delta_cc] = self.association.association_strength(
                             self.association_parameters,
                             self.model,
                             temperature,
@@ -198,12 +193,10 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
                             n3i,
                             xi,
                         );
-                        Association::<A>::helmholtz_energy_density_cross_association(
+                        self.association.helmholtz_energy_density_cross_association(
                             &rho,
                             &delta_ab,
                             &delta_cc,
-                            self.max_iter,
-                            self.tol,
                             Some(&mut x),
                         )
                     })
@@ -236,12 +229,13 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         let di = diameter[i];
         let dj = diameter[j];
         let k = n2 * n3i * (di * dj / (di + dj));
-        let delta = if let Some(p) = a.parameters_ab[(0, 0)] {
-            (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i)
-                * self.model.association_strength(temperature, 0, 0, p)
-        } else {
-            Array1::zeros(n2.len())
-        };
+        let delta = (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i)
+            * self.model.association_strength(
+                temperature,
+                0,
+                0,
+                &self.association.parameters_ab[(0, 0)],
+            );
 
         // no cross association, two association sites
         let aux = &delta * (&rhob - &rhoa) + 1.0;
@@ -274,12 +268,13 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         // association strength
         let di = diameter[i];
         let k = n2 * n3i * (di * 0.5);
-        let delta = if let Some(p) = a.parameters_cc[(0, 0)] {
-            (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i)
-                * self.model.association_strength(temperature, 0, 0, p)
-        } else {
-            Array1::zeros(n2.len())
-        };
+        let delta = (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i)
+            * self.model.association_strength(
+                temperature,
+                0,
+                0,
+                &self.association.parameters_cc[(0, 0)],
+            );
 
         // no cross association, two association sites
         let xc = ((delta * 4.0 * &rhoc + 1.0).map(N::sqrt) + 1.0).map(N::recip) * 2.0;

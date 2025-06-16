@@ -53,7 +53,7 @@ impl Pets {
     pub fn with_options(parameters: PetsParameters, options: PetsOptions) -> Self {
         let [sigma, epsilon_k] = parameters.collate(|pr| [pr.sigma, pr.epsilon_k]);
 
-        let n = parameters.pure_records.len();
+        let n = parameters.pure.len();
 
         let mut sigma_ij = Array2::zeros((n, n));
         let mut epsilon_k_ij = Array2::zeros((n, n));
@@ -63,7 +63,7 @@ impl Pets {
                 sigma_ij[[i, j]] = 0.5 * (sigma[i] + sigma[j]);
             }
         }
-        let [k_ij] = parameters.collate_binary(|b| [b.unwrap_or_default().k_ij]);
+        let [k_ij] = parameters.collate_binary(|b| [b.k_ij]);
         epsilon_k_ij *= &(1.0 - k_ij);
 
         Self {
@@ -79,7 +79,7 @@ impl Pets {
 
 impl Components for Pets {
     fn components(&self) -> usize {
-        self.parameters.pure_records.len()
+        self.parameters.pure.len()
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {

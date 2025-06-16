@@ -105,14 +105,11 @@ pub struct SaftVRMiePars {
 
 impl SaftVRMiePars {
     pub fn new(parameters: &SaftVRMieParameters) -> Self {
-        let n = parameters.pure_records.len();
+        let n = parameters.pure.len();
 
         let [m, sigma, epsilon_k] = parameters.collate(|pr| [pr.m, pr.sigma, pr.epsilon_k]);
         let [lr, la] = parameters.collate(|pr| [pr.lr, pr.la]);
-        let [k_ij, gamma_ij] = parameters.collate_binary(|br| {
-            let br = br.unwrap_or_default();
-            [br.k_ij, br.gamma_ij]
-        });
+        let [k_ij, gamma_ij] = parameters.collate_binary(|br| [br.k_ij, br.gamma_ij]);
 
         let mut sigma_ij = Array::zeros((n, n));
         let mut e_k_ij = Array::zeros((n, n));

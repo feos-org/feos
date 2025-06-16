@@ -140,7 +140,7 @@ impl SaftVRQMie {
 
 impl Components for SaftVRQMie {
     fn components(&self) -> usize {
-        self.parameters.pure_records.len()
+        self.parameters.pure.len()
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
@@ -398,13 +398,11 @@ impl SaftVRQMie {
         let n_components = self.params.sigma.len();
         for i in 0..n_components {
             for j in i..n_components {
-                let name_i = self.parameters.pure_records[i]
-                    .identifier
+                let name_i = self.parameters.identifiers[i]
                     .name
                     .clone()
                     .unwrap_or_else(|| i.to_string());
-                let name_j = self.parameters.pure_records[j]
-                    .identifier
+                let name_j = self.parameters.identifiers[j]
                     .name
                     .clone()
                     .unwrap_or_else(|| j.to_string());

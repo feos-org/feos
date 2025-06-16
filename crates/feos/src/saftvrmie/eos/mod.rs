@@ -102,7 +102,7 @@ impl Residual for SaftVRMie {
         if let Some(assoc) = self.association.as_ref() {
             a.push((
                 "Association".to_string(),
-                assoc.helmholtz_energy(&self.params, state, &d),
+                assoc.helmholtz_energy(&self.params, &self.parameters.association, state, &d),
             ));
         }
         a
@@ -124,7 +124,7 @@ impl AssociationStrength for SaftVRMiePars {
         temperature: D,
         comp_i: usize,
         comp_j: usize,
-        assoc_ij: Self::Record,
+        assoc_ij: &Self::Record,
     ) -> D {
         let diameter = self.hs_diameter(temperature);
         let di = diameter[comp_i];
@@ -150,8 +150,8 @@ impl AssociationStrength for SaftVRMiePars {
     fn combining_rule(
         pure_i: &Self::Pure,
         pure_j: &Self::Pure,
-        parameters_i: Self::Record,
-        parameters_j: Self::Record,
+        parameters_i: &Self::Record,
+        parameters_j: &Self::Record,
     ) -> Self::Record {
         let rc_ab = (parameters_i.rc_ab * pure_i.sigma + parameters_j.rc_ab * pure_j.sigma) * 0.5;
         let epsilon_k_ab = (parameters_i.epsilon_k_ab * parameters_j.epsilon_k_ab).sqrt();

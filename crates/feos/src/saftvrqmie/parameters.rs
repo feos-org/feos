@@ -97,7 +97,7 @@ pub struct SaftVRQMiePars {
 
 impl SaftVRQMiePars {
     pub fn new(parameters: &SaftVRQMieParameters) -> FeosResult<Self> {
-        let n = parameters.pure_records.len();
+        let n = parameters.pure.len();
 
         let [fh] = parameters.collate(|pr| [pr.fh]);
         let [m, sigma, epsilon_k] = parameters.collate(|pr| [pr.m, pr.sigma, pr.epsilon_k]);
@@ -118,10 +118,7 @@ impl SaftVRQMiePars {
 
         let mut fh_ij: Array2<FeynmanHibbsOrder> =
             Array2::from_elem((n, n), FeynmanHibbsOrder::FH0);
-        let [k_ij, l_ij] = parameters.collate_binary(|b| {
-            let b = b.unwrap_or_default();
-            [b.k_ij, b.l_ij]
-        });
+        let [k_ij, l_ij] = parameters.collate_binary(|b| [b.k_ij, b.l_ij]);
         let mut epsilon_k_ij = Array::zeros((n, n));
         let mut sigma_ij = Array::zeros((n, n));
         let mut e_k_ij = Array::zeros((n, n));

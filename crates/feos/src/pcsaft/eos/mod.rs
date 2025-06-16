@@ -87,7 +87,7 @@ impl PcSaft {
 
 impl Components for PcSaft {
     fn components(&self) -> usize {
-        self.parameters.pure_records.len()
+        self.parameters.pure.len()
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
@@ -143,7 +143,7 @@ impl Residual for PcSaft {
         if let Some(association) = self.association.as_ref() {
             v.push((
                 "Association".to_string(),
-                association.helmholtz_energy(&self.params, state, &d),
+                association.helmholtz_energy(&self.params, &self.parameters.association, state, &d),
             ))
         }
         v
@@ -178,7 +178,7 @@ impl AssociationStrength for PcSaftPars {
         temperature: D,
         comp_i: usize,
         comp_j: usize,
-        assoc_ij: Self::Record,
+        assoc_ij: &Self::Record,
     ) -> D {
         let si = self.sigma[comp_i];
         let sj = self.sigma[comp_j];
@@ -190,8 +190,8 @@ impl AssociationStrength for PcSaftPars {
     fn combining_rule(
         _: &Self::Pure,
         _: &Self::Pure,
-        parameters_i: Self::Record,
-        parameters_j: Self::Record,
+        parameters_i: &Self::Record,
+        parameters_j: &Self::Record,
     ) -> Self::Record {
         let kappa_ab = (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt();
         let epsilon_k_ab = 0.5 * (parameters_i.epsilon_k_ab + parameters_j.epsilon_k_ab);

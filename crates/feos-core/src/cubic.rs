@@ -89,7 +89,7 @@ impl PengRobinson {
     /// Create a new equation of state from a set of parameters.
     pub fn new(parameters: PengRobinsonParameters) -> Self {
         let [tc, pc, ac] = parameters.collate(|r| [r.tc, r.pc, r.acentric_factor]);
-        let [k_ij] = parameters.collate_binary(|br| [br.unwrap_or_default()]);
+        let [k_ij] = parameters.collate_binary(|&br| [br]);
 
         let a = 0.45724 * tc.powi(2) * KB_A3 / &pc;
         let b = 0.07780 * &tc * KB_A3 / pc;
@@ -107,7 +107,7 @@ impl PengRobinson {
 
 impl Components for PengRobinson {
     fn components(&self) -> usize {
-        self.parameters.pure_records.len()
+        self.tc.len()
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {

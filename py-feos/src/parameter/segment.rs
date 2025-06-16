@@ -26,8 +26,6 @@ impl From<PySegmentRecord> for SegmentRecord<Value, Value> {
             molarweight: value.molarweight,
             model_record: value.model_record,
             association_sites: value.association_sites,
-            count: (),
-            component_index: 0,
         }
     }
 }
@@ -194,17 +192,5 @@ impl PyBinarySegmentRecord {
 
     fn __repr__(&self) -> String {
         BinaryRecord::from(self.clone()).to_string()
-        // let params: PyResult<String> = Python::with_gil(|py| {
-        //     Ok(self
-        //         .get_model_record(py)?
-        //         .iter()
-        //         .map(|(p, v)| format!(", {p}={v}"))
-        //         .collect::<Vec<_>>()
-        //         .join(""))
-        // });
-        // Ok(format!(
-        //     "BinaryRecord(id1={}, id2={}{})",
-        //     self.id1.0, self.id2.0, params?
-        // ))
     }
 }

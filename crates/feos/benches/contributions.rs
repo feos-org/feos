@@ -8,60 +8,55 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use feos::core::parameter::IdentifierOption;
 use feos::core::{DensityInitialization, Derivative, Residual, State};
-use feos::pcsaft::{PcSaft, PcSaftParameters};
+use feos::pcsaft::{PcSaft, PcSaftAssociationRecord, PcSaftParameters, PcSaftRecord};
+use feos_core::parameter::PureRecord;
 use ndarray::arr1;
 use quantity::*;
 use std::sync::Arc;
+
+type Pure = PureRecord<PcSaftRecord, PcSaftAssociationRecord>;
 
 /// Benchmark for the PC-SAFT equation of state
 fn pcsaft(c: &mut Criterion) {
     let mut group = c.benchmark_group("pcsaft");
 
     // non-polar components
-    let mut records = PcSaftParameters::from_json(
-        vec!["hexane", "heptane"],
+    let mut records = Pure::from_json(
+        &["hexane", "heptane"],
         "../../parameters/pcsaft/gross2001.json",
-        None,
         IdentifierOption::Name,
     )
-    .unwrap()
-    .pure_records;
+    .unwrap();
     let hexane = records.remove(0);
     let heptane = records.remove(0);
 
     // dipolar components
-    records = PcSaftParameters::from_json(
-        vec!["acetone", "dimethyl ether"],
+    records = Pure::from_json(
+        &["acetone", "dimethyl ether"],
         "../../parameters/pcsaft/gross2006.json",
-        None,
         IdentifierOption::Name,
     )
-    .unwrap()
-    .pure_records;
+    .unwrap();
     let acetone = records.remove(0);
     let dme = records.remove(0);
 
     // quadrupolar components
-    records = PcSaftParameters::from_json(
-        vec!["carbon dioxide", "acetylene"],
+    records = Pure::from_json(
+        &["carbon dioxide", "acetylene"],
         "../../parameters/pcsaft/gross2005_literature.json",
-        None,
         IdentifierOption::Name,
     )
-    .unwrap()
-    .pure_records;
+    .unwrap();
     let co2 = records.remove(0);
     let acetylene = records.remove(0);
 
     // associating components
-    records = PcSaftParameters::from_json(
-        vec!["ethanol", "1-propanol"],
+    records = Pure::from_json(
+        &["ethanol", "1-propanol"],
         "../../parameters/pcsaft/gross2002.json",
-        None,
         IdentifierOption::Name,
     )
-    .unwrap()
-    .pure_records;
+    .unwrap();
     let ethanol = records.remove(0);
     let propanol = records.remove(0);
 

@@ -149,25 +149,27 @@ impl ElectrolytePcSaftPars {
 
 impl ElectrolytePcSaftPars {
     pub fn new(parameters: &ElectrolytePcSaftParameters) -> FeosResult<Self> {
-        let n = parameters.pure_records.len();
+        let n = parameters.pure.len();
 
         let [m, sigma, epsilon_k, z] =
             parameters.collate(|pr| [pr.m, pr.sigma, pr.epsilon_k, pr.z]);
 
         let mut water_sigma_t_comp = None;
 
-        for (i, record) in parameters.pure_records.iter().enumerate() {
+        for (i, _) in parameters.pure.iter().enumerate() {
             // check if component i is water with temperature-dependent sigma
             if (m[i] * 1000.0).round() / 1000.0 == 1.205 && epsilon_k[i].round() == 354.0 {
-                if let Some(record) = record.association_sites.first() {
-                    if let Some(assoc) = record.parameters {
-                        if (assoc.kappa_ab * 1000.0).round() / 1000.0 == 0.045
-                            && assoc.epsilon_k_ab.round() == 2426.0
-                        {
-                            water_sigma_t_comp = Some(i);
-                        }
-                    }
-                }
+                // Godforsaken code below
+                //
+                // if let Some(record) = record.association_sites.first() {
+                //     if let Some(assoc) = record.parameters {
+                //         if (assoc.kappa_ab * 1000.0).round() / 1000.0 == 0.045
+                //             && assoc.epsilon_k_ab.round() == 2426.0
+                //         {
+                water_sigma_t_comp = Some(i);
+                // }
+                // }
+                // }
             }
         }
 
@@ -188,21 +190,20 @@ impl ElectrolytePcSaftPars {
 
         let mut k_ij: Array2<Vec<f64>> = Array2::from_elem((n, n), vec![0., 0., 0., 0.]);
 
-        for br in &parameters.binary_records {
+        for br in &parameters.binary {
             let i = br.id1;
             let j = br.id2;
-            if let Some(r) = &br.model_record {
-                if r.k_ij.len() > 4 {
-                    return Err(FeosError::IncompatibleParameters(format!(
-                        "Binary interaction for component {} with {} is parametrized with more than 4 k_ij coefficients.",
-                        i, j
-                    )));
-                } else {
-                    (0..r.k_ij.len()).for_each(|k| {
-                        k_ij[[i, j]][k] = r.k_ij[k];
-                        k_ij[[j, i]][k] = r.k_ij[k];
-                    });
-                }
+            let r = &br.model_record;
+            if r.k_ij.len() > 4 {
+                return Err(FeosError::IncompatibleParameters(format!(
+                    "Binary interaction for component {} with {} is parametrized with more than 4 k_ij coefficients.",
+                    i, j
+                )));
+            } else {
+                (0..r.k_ij.len()).for_each(|k| {
+                    k_ij[[i, j]][k] = r.k_ij[k];
+                    k_ij[[j, i]][k] = r.k_ij[k];
+                });
             }
         }
         // No binary interaction between charged species of same kind (+/+ and -/-)
@@ -224,7 +225,7 @@ impl ElectrolytePcSaftPars {
 
         // Permittivity records
         let mut permittivity_records: Array1<Option<PermittivityRecord>> = parameters
-            .pure_records
+            .pure
             .iter()
             .map(|record| record.clone().model_record.permittivity_record)
             .collect();
@@ -350,7 +351,7 @@ impl AssociationStrength for ElectrolytePcSaftPars {
         temperature: D,
         comp_i: usize,
         comp_j: usize,
-        assoc_ij: Self::Record,
+        assoc_ij: &Self::Record,
     ) -> D {
         let sigma_t = self.sigma_t(temperature);
         let si = sigma_t[comp_i];
@@ -363,8 +364,8 @@ impl AssociationStrength for ElectrolytePcSaftPars {
     fn combining_rule(
         _: &Self::Pure,
         _: &Self::Pure,
-        parameters_i: Self::Record,
-        parameters_j: Self::Record,
+        parameters_i: &Self::Record,
+        parameters_j: &Self::Record,
     ) -> Self::Record {
         Self::Record {
             kappa_ab: (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt(),

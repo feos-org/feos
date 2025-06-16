@@ -119,7 +119,7 @@ impl Residual for GcPcSaft {
         if let Some(association) = self.association.as_ref() {
             v.push((
                 "Association".to_string(),
-                association.helmholtz_energy(&self.params, state, &d),
+                association.helmholtz_energy(&self.params, &self.parameters.association, state, &d),
             ))
         }
         v

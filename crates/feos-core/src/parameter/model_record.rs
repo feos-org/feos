@@ -1,6 +1,7 @@
 use super::{AssociationRecord, BinaryAssociationRecord, Identifier, IdentifierOption};
 use crate::FeosResult;
 use crate::errors::FeosError;
+use indexmap::IndexSet;
 use num_traits::Zero;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -13,7 +14,7 @@ use std::path::Path;
 
 /// A collection of parameters with an arbitrary identifier.
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ModelRecord<I, M, A, C> {
+pub struct ModelRecord<I, M, A> {
     pub identifier: I,
     #[serde(skip_serializing_if = "f64::is_zero")]
     #[serde(default)]
@@ -23,19 +24,15 @@ pub struct ModelRecord<I, M, A, C> {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default = "Vec::new")]
     pub association_sites: Vec<AssociationRecord<A>>,
-    #[serde(skip)]
-    pub count: C,
-    #[serde(skip)]
-    pub component_index: usize,
 }
 
 /// A collection of parameters of a pure substance.
-pub type PureRecord<M, A> = ModelRecord<Identifier, M, A, ()>;
+pub type PureRecord<M, A> = ModelRecord<Identifier, M, A>;
 
 /// Parameters describing an individual segment of a molecule.
-pub type SegmentRecord<M, A> = ModelRecord<String, M, A, ()>;
+pub type SegmentRecord<M, A> = ModelRecord<String, M, A>;
 
-impl<I, M, A, C: Default> ModelRecord<I, M, A, C> {
+impl<I, M, A> ModelRecord<I, M, A> {
     /// Create a new `ModelRecord`.
     pub fn new(identifier: I, molarweight: f64, model_record: M) -> Self {
         Self::with_association(identifier, molarweight, model_record, vec![])
@@ -53,8 +50,6 @@ impl<I, M, A, C: Default> ModelRecord<I, M, A, C> {
             molarweight,
             model_record,
             association_sites,
-            count: C::default(),
-            component_index: 0,
         }
     }
 
@@ -145,6 +140,46 @@ impl<M, A> PureRecord<M, A> {
             .map(|s| records.remove(s.deref()).unwrap())
             .collect())
     }
+
+    /// Creates parameters from substance information stored in multiple json files.
+    pub fn from_multiple_json<P, S>(
+        input: &[(Vec<S>, P)],
+        identifier_option: IdentifierOption,
+    ) -> FeosResult<Vec<Self>>
+    where
+        P: AsRef<Path>,
+        S: Deref<Target = str>,
+        M: DeserializeOwned,
+        A: DeserializeOwned,
+    {
+        // total number of substances queried
+        let nsubstances = input
+            .iter()
+            .fold(0, |acc, (substances, _)| acc + substances.len());
+
+        // queried substances with removed duplicates
+        let queried: IndexSet<String> = input
+            .iter()
+            .flat_map(|(substances, _)| substances)
+            .map(|substance| substance.to_string())
+            .collect();
+
+        // check if there are duplicates
+        if queried.len() != nsubstances {
+            return Err(FeosError::IncompatibleParameters(
+                "A substance was defined more than once.".to_string(),
+            ));
+        }
+
+        let mut records: Vec<Self> = Vec::with_capacity(nsubstances);
+
+        // collect parameters from files into single map
+        for (substances, file) in input {
+            records.extend(Self::from_json(substances, file, identifier_option)?);
+        }
+
+        Ok(records)
+    }
 }
 
 impl<M, A> SegmentRecord<M, A> {
@@ -155,21 +190,6 @@ impl<M, A> SegmentRecord<M, A> {
         A: DeserializeOwned,
     {
         Ok(serde_json::from_reader(BufReader::new(File::open(file)?))?)
-    }
-
-    pub fn apply_count<C>(&self, count: C, component_index: usize) -> ModelRecord<String, M, A, C>
-    where
-        M: Clone,
-        A: Clone,
-    {
-        ModelRecord {
-            identifier: self.identifier.clone(),
-            molarweight: self.molarweight,
-            model_record: self.model_record.clone(),
-            association_sites: self.association_sites.clone(),
-            count,
-            component_index,
-        }
     }
 }
 
@@ -269,48 +289,6 @@ impl<I: Serialize + Clone, B: Serialize + Clone, A: Serialize + Clone> fmt::Disp
         let s = serde_json::to_string(self).unwrap().replace("\"", "");
         let s = s.replace(",", ", ").replace(":", ": ");
         write!(f, "BinaryRecord({})", &s[1..s.len() - 1])
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct BondRecord<Bo, C> {
-    pub id1: usize,
-    pub id2: usize,
-    pub model_record: Bo,
-    #[serde(skip)]
-    pub count: C,
-}
-
-impl<Bo, C: Default> BondRecord<Bo, C> {
-    /// Crates a new `BondRecord`.
-    pub fn new(id1: usize, id2: usize, model_record: Bo) -> Self {
-        Self::with_count(id1, id2, model_record, C::default())
-    }
-
-    pub fn with_count(id1: usize, id2: usize, model_record: Bo, count: C) -> Self {
-        Self {
-            id1,
-            id2,
-            model_record,
-            count,
-        }
-    }
-
-    /// Read a list of `BondRecord`s from a JSON file.
-    pub fn from_json<P: AsRef<Path>>(file: P) -> FeosResult<Vec<Self>>
-    where
-        Bo: DeserializeOwned,
-        C: DeserializeOwned,
-    {
-        Ok(serde_json::from_reader(BufReader::new(File::open(file)?))?)
-    }
-}
-
-impl<Bo: Serialize + Clone, C> fmt::Display for BondRecord<Bo, C> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = serde_json::to_string(self).unwrap().replace("\"", "");
-        let s = s.replace(",", ", ").replace(":", ": ");
-        write!(f, "BondRecord({})", &s[1..s.len() - 1])
     }
 }
 

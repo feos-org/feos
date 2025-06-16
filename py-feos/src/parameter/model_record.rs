@@ -5,8 +5,8 @@
 use super::identifier::{PyIdentifier, PyIdentifierOption};
 use crate::error::PyFeosError;
 use feos_core::parameter::*;
-use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use pyo3::{exceptions::PyValueError, prelude::*};
 use pythonize::{depythonize, pythonize};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -31,8 +31,6 @@ impl From<PyPureRecord> for PureRecord<Value, Value> {
             molarweight: value.molarweight,
             model_record: value.model_record,
             association_sites: value.association_sites,
-            count: (),
-            component_index: 0,
         }
     }
 }
@@ -59,10 +57,9 @@ impl PyPureRecord {
         parameters: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
         let Some(parameters) = parameters else {
-            return Err(PyFeosError::Error(
-                "No model parameters provided for PureRecord".to_string(),
-            )
-            .into());
+            return Err(PyErr::new::<PyValueError, _>(
+                "No model parameters provided for PureRecord",
+            ));
         };
         parameters.set_item("identifier", pythonize(py, &identifier)?)?;
         parameters.set_item("molarweight", molarweight)?;

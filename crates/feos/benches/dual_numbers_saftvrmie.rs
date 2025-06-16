@@ -17,7 +17,7 @@ use std::sync::Arc;
 /// - volume is critical volume,
 /// - molefracs (or moles) for equimolar mixture.
 fn state_saftvrmie(parameters: SaftVRMieParameters) -> State<SaftVRMie> {
-    let n = parameters.pure_records.len();
+    let n = parameters.pure.len();
     let eos = Arc::new(SaftVRMie::new(parameters));
     let moles = Array::from_elem(n, 1.0 / n as f64) * 10.0 * MOL;
     let cp = State::critical_point(&eos, Some(&moles), None, Default::default()).unwrap();

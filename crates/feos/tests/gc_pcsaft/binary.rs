@@ -11,7 +11,7 @@ use typenum::P3;
 
 #[test]
 fn test_binary() -> FeosResult<()> {
-    let parameters = GcPcSaftParameters::from_json_segments(
+    let parameters = GcPcSaftParameters::from_json_segments_hetero(
         &["ethanol", "methanol"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",
@@ -20,7 +20,7 @@ fn test_binary() -> FeosResult<()> {
     )
     .unwrap();
     #[cfg(feature = "dft")]
-    let parameters_func = GcPcSaftParameters::from_json_segments(
+    let parameters_func = GcPcSaftParameters::from_json_segments_hetero(
         &["ethanol", "methanol"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",
@@ -54,14 +54,14 @@ fn test_binary() -> FeosResult<()> {
 
 #[test]
 fn test_polar_term() -> FeosResult<()> {
-    let parameters1 = GcPcSaftParameters::from_json_segments(
+    let parameters1 = GcPcSaftParameters::from_json_segments_hetero(
         &["CCCOC(C)=O", "CCCO"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",
         None,
         IdentifierOption::Smiles,
     )?;
-    let parameters2 = GcPcSaftParameters::from_json_segments(
+    let parameters2 = GcPcSaftParameters::from_json_segments_hetero(
         &["CCCO", "CCCOC(C)=O"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",

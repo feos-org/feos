@@ -56,9 +56,9 @@ fn from_records() {
     );
     let p = MyParameters::new(pure_records, binary_matrix);
 
-    assert_eq!(p.pure_records[0].identifier.cas, Some("123-4-5".into()));
-    assert_eq!(p.pure_records[1].identifier.cas, Some("678-9-1".into()));
-    assert_eq!(p.binary_records[0].model_record.unwrap().b, 12.0);
+    assert_eq!(p.identifiers[0].cas, Some("123-4-5".into()));
+    assert_eq!(p.identifiers[1].cas, Some("678-9-1".into()));
+    assert_eq!(p.binary[0].model_record.b, 12.0);
 }
 
 #[test]
@@ -103,7 +103,7 @@ fn from_multiple_json_files_duplicates() {
 
     // test_parameters1: a = 0.5
     // test_parameters2: a = 0.1 or 0.3
-    assert_eq!(my_parameters.pure_records[0].model_record.a, 0.5);
+    assert_eq!(my_parameters.pure[0].model_record.a, 0.5);
 }
 
 #[test]
@@ -120,9 +120,9 @@ fn from_multiple_json_files() {
 
     // test_parameters1: a = 0.5
     // test_parameters2: a = 0.1 or 0.3
-    assert_eq!(p.pure_records[1].model_record.a, 0.5);
-    let br = p.binary_records;
-    assert_eq!(br[0].model_record.unwrap().b, 12.0);
+    assert_eq!(p.pure[1].model_record.a, 0.5);
+    let br = p.binary;
+    assert_eq!(br[0].model_record.b, 12.0);
 }
 
 #[test]
@@ -167,9 +167,9 @@ fn from_records_missing_binary() {
     );
     let p = MyParameters::new(pure_records, binary_matrix);
 
-    assert_eq!(p.pure_records[0].identifier.cas, Some("123-4-5".into()));
-    assert_eq!(p.pure_records[1].identifier.cas, Some("678-9-1".into()));
-    let br = p.binary_records;
+    assert_eq!(p.identifiers[0].cas, Some("123-4-5".into()));
+    assert_eq!(p.identifiers[1].cas, Some("678-9-1".into()));
+    let br = p.binary;
     assert_eq!(br.len(), 0);
 }
 
@@ -222,10 +222,10 @@ fn from_records_correct_binary_order() {
     );
     let p = MyParameters::new(pure_records, binary_matrix);
 
-    assert_eq!(p.pure_records[0].identifier.cas, Some("000-0-0".into()));
-    assert_eq!(p.pure_records[1].identifier.cas, Some("123-4-5".into()));
-    assert_eq!(p.pure_records[2].identifier.cas, Some("678-9-1".into()));
-    assert_eq!(p.binary_records[0].id1, 1);
-    assert_eq!(p.binary_records[0].id2, 2);
-    assert_eq!(p.binary_records[0].model_record.unwrap().b, 12.0);
+    assert_eq!(p.identifiers[0].cas, Some("000-0-0".into()));
+    assert_eq!(p.identifiers[1].cas, Some("123-4-5".into()));
+    assert_eq!(p.identifiers[2].cas, Some("678-9-1".into()));
+    assert_eq!(p.binary[0].id1, 1);
+    assert_eq!(p.binary[0].id2, 2);
+    assert_eq!(p.binary[0].model_record.b, 12.0);
 }
