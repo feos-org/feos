@@ -429,12 +429,14 @@ impl DipoleQuadrupole {
 mod tests {
     use super::*;
     use crate::hard_sphere::HardSphereProperties;
+    use crate::pcsaft::PcSaftParameters;
     use crate::pcsaft::eos::dispersion::Dispersion;
     use crate::pcsaft::parameters::utils::{
         carbon_dioxide_parameters, dme_co2_parameters, dme_parameters,
     };
     use approx::assert_relative_eq;
     use feos_core::StateHD;
+    use feos_core::parameter::IdentifierOption;
 
     #[test]
     fn test_dipolar_contribution() {
@@ -448,27 +450,25 @@ mod tests {
         assert_relative_eq!(a, -1.40501033595417E-002, epsilon = 1e-6);
     }
 
-    // #[test]
-    // fn test_dipolar_contribution_mix() {
-    //     let dp = Dipole {
-    //         parameters: Arc::new(PcSaftPars::new(
-    //             &PcSaftParameters::from_json(
-    //                 vec!["acetone", "butanal", "dimethyl ether"],
-    //                 "../../parameters/pcsaft/gross2006.json",
-    //                 None,
-    //                 IdentifierOption::Name,
-    //             )
-    //             .unwrap(),
-    //         )),
-    //     };
-    //     let t = 350.0;
-    //     let v = 1000.0;
-    //     let n = [1.0, 2.0, 3.0];
-    //     let s = StateHD::new(t, v, arr1(&n));
-    //     let d = dp.parameters.hs_diameter(t);
-    //     let a = dp.helmholtz_energy(&s, &d);
-    //     assert_relative_eq!(a, -1.4126308106201688, epsilon = 1e-10);
-    // }
+    #[test]
+    fn test_dipolar_contribution_mix() {
+        let parameters = PcSaftPars::new(
+            &PcSaftParameters::from_json(
+                vec!["acetone", "butanal", "dimethyl ether"],
+                "../../parameters/pcsaft/gross2006.json",
+                None,
+                IdentifierOption::Name,
+            )
+            .unwrap(),
+        );
+        let t = 350.0;
+        let v = 1000.0;
+        let n = [1.0, 2.0, 3.0];
+        let s = StateHD::new(t, v, arr1(&n));
+        let d = parameters.hs_diameter(t);
+        let a = Dipole.helmholtz_energy(&parameters, &s, &d);
+        assert_relative_eq!(a, -1.4126308106201688, epsilon = 1e-10);
+    }
 
     #[test]
     fn test_quadrupolar_contribution() {
@@ -482,27 +482,25 @@ mod tests {
         assert_relative_eq!(a, -4.38559558854186E-002, epsilon = 1e-6);
     }
 
-    // #[test]
-    // fn test_quadrupolar_contribution_mix() {
-    //     let qp = Quadrupole {
-    //         parameters: Arc::new(PcSaftPars::new(
-    //             &PcSaftParameters::from_json(
-    //                 vec!["carbon dioxide", "chlorine", "ethylene"],
-    //                 "../../parameters/pcsaft/gross2005_literature.json",
-    //                 None,
-    //                 IdentifierOption::Name,
-    //             )
-    //             .unwrap(),
-    //         )),
-    //     };
-    //     let t = 350.0;
-    //     let v = 1000.0;
-    //     let n = [1.0, 2.0, 3.0];
-    //     let s = StateHD::new(t, v, arr1(&n));
-    //     let d = qp.parameters.hs_diameter(t);
-    //     let a = qp.helmholtz_energy(&s, &d);
-    //     assert_relative_eq!(a, -0.327493924806138, epsilon = 1e-10);
-    // }
+    #[test]
+    fn test_quadrupolar_contribution_mix() {
+        let parameters = PcSaftPars::new(
+            &PcSaftParameters::from_json(
+                vec!["carbon dioxide", "chlorine", "ethylene"],
+                "../../parameters/pcsaft/gross2005_literature.json",
+                None,
+                IdentifierOption::Name,
+            )
+            .unwrap(),
+        );
+        let t = 350.0;
+        let v = 1000.0;
+        let n = [1.0, 2.0, 3.0];
+        let s = StateHD::new(t, v, arr1(&n));
+        let d = parameters.hs_diameter(t);
+        let a = Quadrupole.helmholtz_energy(&parameters, &s, &d);
+        assert_relative_eq!(a, -0.327493924806138, epsilon = 1e-10);
+    }
 
     #[test]
     fn test_dipolar_quadrupolar_contribution() {
