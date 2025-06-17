@@ -41,8 +41,8 @@ pub struct Association<A: AssociationStrength> {
     max_iter: usize,
     tol: f64,
     force_cross_association: bool,
-    parameters_ab: Array2<A::Record>,
-    parameters_cc: Array2<A::Record>,
+    parameters_ab: Array2<Option<A::Record>>,
+    parameters_cc: Array2<Option<A::Record>>,
 }
 
 impl<A: AssociationStrength> Association<A> {
@@ -71,40 +71,34 @@ impl<A: AssociationStrength> Association<A> {
 
         let parameters_ab = Array2::from_shape_fn([a.sites_a.len(), a.sites_b.len()], |(i, j)| {
             if let Some(&record) = binary_ab.get(&(i, j)) {
-                record.clone()
+                Some(record.clone())
             } else if let (Some(p1), Some(p2)) =
                 (&a.sites_a[i].parameters, &a.sites_b[j].parameters)
             {
-                A::combining_rule(
+                Some(A::combining_rule(
                     &parameters.pure[a.sites_a[i].assoc_comp].model_record,
                     &parameters.pure[a.sites_b[j].assoc_comp].model_record,
                     p1,
                     p2,
-                )
+                ))
             } else {
-                panic!(
-                    "No association parameters found for sites {} and {}",
-                    a.sites_a[i].id, a.sites_b[j].id
-                )
+                None
             }
         });
         let parameters_cc = Array2::from_shape_fn([a.sites_c.len(); 2], |(i, j)| {
             if let Some(&record) = binary_cc.get(&(i, j)) {
-                record.clone()
+                Some(record.clone())
             } else if let (Some(p1), Some(p2)) =
                 (&a.sites_c[i].parameters, &a.sites_c[j].parameters)
             {
-                A::combining_rule(
+                Some(A::combining_rule(
                     &parameters.pure[a.sites_c[i].assoc_comp].model_record,
                     &parameters.pure[a.sites_c[j].assoc_comp].model_record,
                     p1,
                     p2,
-                )
+                ))
             } else {
-                panic!(
-                    "No association parameters found for sites {} and  {}",
-                    a.sites_a[i].id, a.sites_b[j].id
-                );
+                None
             }
         });
 
@@ -199,28 +193,36 @@ impl<A: AssociationStrength> Association<A> {
         let p = parameters;
 
         let delta_ab = Array2::from_shape_fn([p.sites_a.len(), p.sites_b.len()], |(i, j)| {
-            let di = diameter[p.sites_a[i].assoc_comp];
-            let dj = diameter[p.sites_b[j].assoc_comp];
-            let k = di * dj / (di + dj) * (n2 * n3i);
-            n3i * (k * xi * (k / 18.0 + 0.5) + 1.0)
-                * model.association_strength(
-                    temperature,
-                    p.sites_a[i].assoc_comp,
-                    p.sites_b[j].assoc_comp,
-                    &self.parameters_ab[(i, j)],
-                )
+            if let Some(par) = &self.parameters_ab[(i, j)] {
+                let di = diameter[p.sites_a[i].assoc_comp];
+                let dj = diameter[p.sites_b[j].assoc_comp];
+                let k = di * dj / (di + dj) * (n2 * n3i);
+                n3i * (k * xi * (k / 18.0 + 0.5) + 1.0)
+                    * model.association_strength(
+                        temperature,
+                        p.sites_a[i].assoc_comp,
+                        p.sites_b[j].assoc_comp,
+                        par,
+                    )
+            } else {
+                D::zero()
+            }
         });
         let delta_cc = Array2::from_shape_fn([p.sites_c.len(); 2], |(i, j)| {
-            let di = diameter[p.sites_c[i].assoc_comp];
-            let dj = diameter[p.sites_c[j].assoc_comp];
-            let k = di * dj / (di + dj) * (n2 * n3i);
-            n3i * (k * xi * (k / 18.0 + 0.5) + 1.0)
-                * model.association_strength(
-                    temperature,
-                    p.sites_c[i].assoc_comp,
-                    p.sites_c[j].assoc_comp,
-                    &self.parameters_cc[(i, j)],
-                )
+            if let Some(par) = &self.parameters_cc[(i, j)] {
+                let di = diameter[p.sites_c[i].assoc_comp];
+                let dj = diameter[p.sites_c[j].assoc_comp];
+                let k = di * dj / (di + dj) * (n2 * n3i);
+                n3i * (k * xi * (k / 18.0 + 0.5) + 1.0)
+                    * model.association_strength(
+                        temperature,
+                        p.sites_c[i].assoc_comp,
+                        p.sites_c[j].assoc_comp,
+                        par,
+                    )
+            } else {
+                D::zero()
+            }
         });
         [delta_ab, delta_cc]
     }
@@ -458,13 +460,16 @@ mod tests_pcsaft {
             .to_vec();
         let params = Parameters::new(pure_records, binary_records)?;
         let assoc: Association<PcSaftPars> = Association::new(&params, 100, 1e-10)?.unwrap();
-        println!("{}", assoc.parameters_ab.mapv(|p| p.epsilon_k_ab));
+        println!("{}", assoc.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab));
         let epsilon_k_ab = arr2(&[
             [2500., 1234., 3140., 2250.],
             [1234., 1500., 1000., 3333.],
             [1750., 1250., 750., 1500.],
         ]);
-        assert_eq!(assoc.parameters_ab.mapv(|p| p.epsilon_k_ab), epsilon_k_ab);
+        assert_eq!(
+            assoc.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab),
+            epsilon_k_ab
+        );
         Ok(())
     }
 
@@ -481,17 +486,17 @@ mod tests_pcsaft {
         let params2 = Parameters::new_binary([pr1, pr3], Some(NoRecord), br)?;
         let assoc1: Association<PcSaftPars> = Association::new(&params1, 100, 1e-15)?.unwrap();
         let assoc2: Association<PcSaftPars> = Association::new(&params2, 100, 1e-15)?.unwrap();
-        println!("{}", assoc1.parameters_ab.mapv(|p| p.epsilon_k_ab));
-        println!("{}", assoc2.parameters_ab.mapv(|p| p.epsilon_k_ab));
-        println!("{}", assoc1.parameters_ab.mapv(|p| p.kappa_ab));
-        println!("{}", assoc2.parameters_ab.mapv(|p| p.kappa_ab));
+        println!("{}", assoc1.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab));
+        println!("{}", assoc2.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab));
+        println!("{}", assoc1.parameters_ab.mapv(|p| p.unwrap().kappa_ab));
+        println!("{}", assoc2.parameters_ab.mapv(|p| p.unwrap().kappa_ab));
         assert_eq!(
-            assoc1.parameters_ab.mapv(|p| p.epsilon_k_ab),
-            assoc2.parameters_ab.mapv(|p| p.epsilon_k_ab)
+            assoc1.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab),
+            assoc2.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab)
         );
         assert_eq!(
-            assoc1.parameters_ab.mapv(|p| p.kappa_ab),
-            assoc2.parameters_ab.mapv(|p| p.kappa_ab)
+            assoc1.parameters_ab.mapv(|p| p.unwrap().kappa_ab),
+            assoc2.parameters_ab.mapv(|p| p.unwrap().kappa_ab)
         );
         Ok(())
     }

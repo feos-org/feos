@@ -117,41 +117,6 @@ impl FromSegments for PcSaftRecord {
     }
 }
 
-// impl FromSegments<usize> for PcSaftRecord {
-//     fn from_segments(segments: &[(Self, usize)]) -> FeosResult<Self> {
-//         // We do not allow more than one polar segment
-//         let polar_segments: usize = segments
-//             .iter()
-//             .filter_map(|(s, n)| {
-//                 if s.q > 0.0 || s.mu > 0.0 {
-//                     Some(n)
-//                 } else {
-//                     None
-//                 }
-//             })
-//             .sum();
-//         let quadpole_segments: usize = segments
-//             .iter()
-//             .filter_map(|(s, n)| (s.q > 0.0).then_some(n))
-//             .sum();
-//         let dipole_segments: usize = segments
-//             .iter()
-//             .filter_map(|(s, n)| (s.mu > 0.0).then_some(n))
-//             .sum();
-//         if polar_segments > 1 {
-//             return Err(FeosError::IncompatibleParameters(format!(
-//                 "Too many polar segments (dipolar: {dipole_segments}, quadrupolar {quadpole_segments})."
-//             )));
-//         }
-//         let segments: Vec<_> = segments
-//             .iter()
-//             .cloned()
-//             .map(|(s, c)| (s, c as f64))
-//             .collect();
-//         Self::from_segments(&segments)
-//     }
-// }
-
 impl PcSaftRecord {
     #[expect(clippy::too_many_arguments)]
     pub fn new(
