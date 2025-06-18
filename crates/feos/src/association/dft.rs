@@ -218,6 +218,9 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         xi: &Array1<N>,
     ) -> Array1<N> {
         let a = &self.association_parameters;
+        let Some(par) = &self.association.parameters_ab[(0, 0)] else {
+            return Array1::zeros(xi.len());
+        };
 
         // site densities
         let i = a.sites_a[0].assoc_comp;
@@ -230,12 +233,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         let dj = diameter[j];
         let k = n2 * n3i * (di * dj / (di + dj));
         let delta = (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i)
-            * self.model.association_strength(
-                temperature,
-                0,
-                0,
-                &self.association.parameters_ab[(0, 0)],
-            );
+            * self.model.association_strength(temperature, 0, 0, par);
 
         // no cross association, two association sites
         let aux = &delta * (&rhob - &rhoa) + 1.0;
@@ -260,6 +258,9 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         xi: &Array1<N>,
     ) -> Array1<N> {
         let a = &self.association_parameters;
+        let Some(par) = &self.association.parameters_cc[(0, 0)] else {
+            return Array1::zeros(xi.len());
+        };
 
         // site densities
         let i = a.sites_c[0].assoc_comp;
@@ -269,12 +270,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         let di = diameter[i];
         let k = n2 * n3i * (di * 0.5);
         let delta = (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i)
-            * self.model.association_strength(
-                temperature,
-                0,
-                0,
-                &self.association.parameters_cc[(0, 0)],
-            );
+            * self.model.association_strength(temperature, 0, 0, par);
 
         // no cross association, two association sites
         let xc = ((delta * 4.0 * &rhoc + 1.0).map(N::sqrt) + 1.0).map(N::recip) * 2.0;
