@@ -2,7 +2,6 @@ use feos_core::{FeosResult, ReferenceSystem, StateHD};
 use ndarray::*;
 use num_dual::DualNum;
 use quantity::{Density, Pressure, Temperature};
-use std::fmt;
 
 #[derive(Clone)]
 pub struct IdealChainContribution {
@@ -17,15 +16,11 @@ impl IdealChainContribution {
             m: m.clone(),
         }
     }
-}
 
-impl fmt::Display for IdealChainContribution {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Ideal chain")
+    pub fn name(&self) -> String {
+        "Ideal chain".to_string()
     }
-}
 
-impl IdealChainContribution {
     pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let segments = self.component_index.len();
         if self.component_index[segments - 1] + 1 != segments {

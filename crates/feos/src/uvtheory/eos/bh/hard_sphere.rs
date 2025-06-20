@@ -1,9 +1,7 @@
-use crate::uvtheory::parameters::UVTheoryParameters;
-use feos_core::StateHD;
+use super::BarkerHenderson;
+use crate::uvtheory::parameters::UVTheoryPars;
 use ndarray::prelude::*;
 use num_dual::DualNum;
-use std::fmt;
-use std::sync::Arc;
 
 const BH_CONSTANTS_ETA_B: [[f64; 2]; 3] = [
     [-0.960919783, -0.921097447],
@@ -18,64 +16,26 @@ const BH_CONSTANTS_ETA_A: [[f64; 4]; 4] = [
     [0.0, 0.0, 0.0, 0.0],
 ];
 
-/// Hard sphere contribution using Barker-Henderson separation.
-#[derive(Debug, Clone)]
-pub(super) struct HardSphere {
-    pub parameters: Arc<UVTheoryParameters>,
-}
-
-impl HardSphere {
-    /// Helmholtz energy for hard spheres, eq. 19 (check Volume)
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
-        let d = diameter_bh(&self.parameters, state.temperature);
-        let zeta = zeta(&state.partial_density, &d);
-        let frac_1mz3 = -(zeta[3] - 1.0).recip();
-        let zeta_23 = zeta_23(&state.molefracs, &d);
-        state.volume * 6.0 / std::f64::consts::PI
-            * (zeta[1] * zeta[2] * frac_1mz3 * 3.0
-                + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
-                + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (zeta[3] * (-1.0)).ln_1p())
-    }
-}
-
-impl fmt::Display for HardSphere {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Hard Sphere")
-    }
-}
-
 /// Dimensionless Hard-sphere diameter according to Barker-Henderson division.
 /// Eq. S23 and S24.
-///
-pub(super) fn diameter_bh<D: DualNum<f64> + Copy>(
-    parameters: &UVTheoryParameters,
-    temperature: D,
-) -> Array1<D> {
-    parameters
-        .cd_bh_pure
-        .iter()
-        .enumerate()
-        .map(|(i, c)| {
-            let t = temperature / parameters.epsilon_k[i];
-            let d = t.powf(0.25) * c[1] + t.powf(0.75) * c[2] + t.powf(1.25) * c[3];
-            (t * c[0] + d * (t + 1.0).ln() + t.powi(2) * c[4] + 1.0).powf(-0.5 / parameters.rep[i])
-                * parameters.sigma[i]
-        })
-        .collect()
-}
-
-pub(super) fn zeta<D: DualNum<f64> + Copy>(
-    partial_density: &Array1<D>,
-    diameter: &Array1<D>,
-) -> [D; 4] {
-    let mut zeta: [D; 4] = [D::zero(), D::zero(), D::zero(), D::zero()];
-    for i in 0..partial_density.len() {
-        for k in 0..4 {
-            zeta[k] +=
-                partial_density[i] * diameter[i].powi(k as i32) * (std::f64::consts::PI / 6.0);
-        }
+impl BarkerHenderson {
+    pub fn diameter_bh<D: DualNum<f64> + Copy>(
+        parameters: &UVTheoryPars,
+        temperature: D,
+    ) -> Array1<D> {
+        parameters
+            .cd_bh_pure
+            .iter()
+            .enumerate()
+            .map(|(i, c)| {
+                let t = temperature / parameters.epsilon_k[i];
+                let d = t.powf(0.25) * c[1] + t.powf(0.75) * c[2] + t.powf(1.25) * c[3];
+                (t * c[0] + d * (t + 1.0).ln() + t.powi(2) * c[4] + 1.0)
+                    .powf(-0.5 / parameters.rep[i])
+                    * parameters.sigma[i]
+            })
+            .collect()
     }
-    zeta
 }
 
 pub(super) fn packing_fraction<D: DualNum<f64> + Copy>(
@@ -87,18 +47,8 @@ pub(super) fn packing_fraction<D: DualNum<f64> + Copy>(
     })
 }
 
-pub(super) fn zeta_23<D: DualNum<f64> + Copy>(molefracs: &Array1<D>, diameter: &Array1<D>) -> D {
-    let mut zeta: [D; 2] = [D::zero(), D::zero()];
-    for i in 0..molefracs.len() {
-        for k in 0..2 {
-            zeta[k] += molefracs[i] * diameter[i].powi((k + 2) as i32);
-        }
-    }
-    zeta[0] / zeta[1]
-}
-
 pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
-    parameters: &UVTheoryParameters,
+    parameters: &UVTheoryPars,
     diameter: &Array1<D>,
     eta: D,
 ) -> Array2<D> {
@@ -118,7 +68,7 @@ pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
 }
 
 pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
-    parameters: &UVTheoryParameters,
+    parameters: &UVTheoryPars,
     diameter: &Array1<D>,
     eta: D,
 ) -> Array2<D> {
@@ -145,26 +95,36 @@ pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
 }
 
 #[cfg(test)]
+#[expect(clippy::excessive_precision)]
 mod test {
     use super::*;
-    use crate::uvtheory::parameters::utils::{methane_parameters, test_parameters};
+    use crate::uvtheory::{
+        Perturbation::BarkerHenderson as BH,
+        parameters::utils::{methane_parameters, test_parameters},
+    };
 
     #[test]
     fn test_bh_diameter() {
-        let p = test_parameters(12.0, 6.0, 1.0, 1.0);
-        assert_eq!(diameter_bh(&p, 2.0)[0], 0.95777257352360246);
-        let p = test_parameters(24.0, 6.0, 1.0, 1.0);
-        assert_eq!(diameter_bh(&p, 5.0)[0], 0.95583586434435486);
-
-        // Methane
-        let p = methane_parameters(12.0, 6.0);
+        let p = test_parameters(12.0, 6.0, 1.0, 1.0, BH);
         assert_eq!(
-            diameter_bh(&p, 2.0 * p.epsilon_k[0])[0] / p.sigma[0],
+            BarkerHenderson::diameter_bh(&p, 2.0)[0],
             0.95777257352360246
         );
-        let p = methane_parameters(24.0, 6.0);
+        let p = test_parameters(24.0, 6.0, 1.0, 1.0, BH);
         assert_eq!(
-            diameter_bh(&p, 5.0 * p.epsilon_k[0])[0] / p.sigma[0],
+            BarkerHenderson::diameter_bh(&p, 5.0)[0],
+            0.95583586434435486
+        );
+
+        // Methane
+        let p = UVTheoryPars::new(&methane_parameters(12.0, 6.0), BH);
+        assert_eq!(
+            BarkerHenderson::diameter_bh(&p, 2.0 * p.epsilon_k[0])[0] / p.sigma[0],
+            0.95777257352360246
+        );
+        let p = UVTheoryPars::new(&methane_parameters(24.0, 6.0), BH);
+        assert_eq!(
+            BarkerHenderson::diameter_bh(&p, 5.0 * p.epsilon_k[0])[0] / p.sigma[0],
             0.95583586434435486
         );
     }

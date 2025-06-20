@@ -1,0 +1,104 @@
+[
+    {
+        "identifier": {
+            "cas": "124-38-9",
+            "name": "carbon dioxide",
+            "iupac_name": "carbon dioxide",
+            "smiles": "O=C=O",
+            "inchi": "InChI=1/CO2/c2-1-3",
+            "formula": "CO2"
+        },
+        "model_record": {
+            "m": 1.5131,
+            "sigma": 3.1869,
+            "epsilon_k": 163.33,
+            "q": 4.4
+        },
+        "molarweight": 44.01
+    },
+    {
+        "identifier": {
+            "cas": "75-15-0",
+            "name": "carbon disulfide",
+            "iupac_name": "carbon disulfide",
+            "smiles": "S=C=S",
+            "inchi": "InChI=1/CS2/c2-1-3",
+            "formula": "CS2"
+        },
+        "model_record": {
+            "m": 1.5876,
+            "sigma": 3.7106,
+            "epsilon_k": 342.08,
+            "q": 4.26
+        },
+        "molarweight": 76.143
+    },
+    {
+        "identifier": {
+            "cas": "74-85-1",
+            "name": "ethylene",
+            "iupac_name": "ethene",
+            "smiles": "C=C",
+            "inchi": "InChI=1/C2H4/c1-2/h1-2H2",
+            "formula": "C2H4"
+        },
+        "model_record": {
+            "m": 1.5425,
+            "sigma": 3.4523,
+            "epsilon_k": 179.37,
+            "q": 2.0
+        },
+        "molarweight": 28.05
+    },
+    {
+        "identifier": {
+            "cas": "74-86-2",
+            "name": "acetylene",
+            "iupac_name": "acetylene",
+            "smiles": "C#C",
+            "inchi": "InChI=1/C2H2/c1-2/h1-2H",
+            "formula": "C2H2"
+        },
+        "model_record": {
+            "m": 1.5477,
+            "sigma": 3.3428,
+            "epsilon_k": 174.48,
+            "q": 4.6
+        },
+        "molarweight": 26.04
+    },
+    {
+        "identifier": {
+            "cas": "7727-37-9",
+            "name": "nitrogen",
+            "iupac_name": "molecular nitrogen",
+            "smiles": "N#N",
+            "inchi": "InChI=1/N2/c1-2",
+            "formula": "N2"
+        },
+        "model_record": {
+            "m": 1.1504,
+            "sigma": 3.3848,
+            "epsilon_k": 91.4,
+            "q": 1.43
+        },
+        "molarweight": 28.01
+    },
+    {
+        "identifier": {
+            "cas": "7782-50-5",
+            "name": "chlorine",
+            "iupac_name": "molecular chlorine",
+            "smiles": "ClCl",
+            "inchi": "InChI=1/Cl2/c1-2",
+            "formula": "Cl2"
+        },
+        "model_record": {
+            "m": 1.3934,
+            "sigma": 3.5339,
+            "epsilon_k": 270.49,
+            "q": 4.1
+        },
+        "molarweight": 70.905
+    }
+]

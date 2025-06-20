@@ -1,0 +1,116 @@
+[
+    {
+        "identifier": {
+            "cas": "1333-74-0",
+            "name": "hydrogen",
+            "iupac_name": "hydrogen",
+            "smiles": "[HH]",
+            "inchi": "InChI=1S/H2/h1H",
+            "formula": "H2"
+        },
+        "model_record": {
+            "m": 1.0,
+            "sigma": 3.0243,
+            "epsilon_k": 26.706,
+            "lr": 9.0,
+            "la": 6.0,
+            "fh": 1
+        },
+        "molarweight": 2.0157309551872
+    },
+    {
+        "identifier": {
+            "cas": "1333-74-0",
+            "name": "para-hydrogen",
+            "iupac_name": "para-hydrogen",
+            "smiles": "[HH]",
+            "inchi": "InChI=1S/H2/h1H",
+            "formula": "H2"
+        },
+        "model_record": {
+            "m": 1.0,
+            "sigma": 3.0235,
+            "epsilon_k": 26.5860,
+            "lr": 9.0,
+            "la": 6.0,
+            "fh": 1
+        },
+        "molarweight": 2.0157309551872
+    },
+    {
+        "identifier": {
+            "cas": "1333-74-0",
+            "name": "ortho-hydrogen",
+            "iupac_name": "ortho-hydrogen",
+            "smiles": "[HH]",
+            "inchi": "InChI=1S/H2/h1H",
+            "formula": "H2"
+        },
+        "model_record": {
+            "m": 1.0,
+            "sigma": 3.0239,
+            "epsilon_k": 26.7160,
+            "lr": 9.0,
+            "la": 6.0,
+            "fh": 1
+        },
+        "molarweight": 2.0157309551872
+    },
+    {
+        "identifier": {
+            "cas": "7440-01-9",
+            "name": "neon",
+            "iupac_name": "neon",
+            "smiles": "[Ne]",
+            "inchi": "InChI=1S/Ne",
+            "formula": "Ne"
+        },
+        "model_record": {
+            "m": 1.0,
+            "sigma": 2.7778,
+            "epsilon_k": 37.501,
+            "lr": 13.0,
+            "la": 6.0,
+            "fh": 1
+        },
+        "molarweight": 20.17969806457545
+    },
+    {
+        "identifier": {
+            "cas": "7440-59-7",
+            "name": "helium",
+            "iupac_name": "helium",
+            "smiles": "[He]",
+            "inchi": "InChI=1S/He",
+            "formula": "He"
+        },
+        "model_record": {
+            "m": 1.0,
+            "sigma": 2.7443,
+            "epsilon_k": 5.4195,
+            "lr": 9.0,
+            "la": 6.0,
+            "fh": 1
+        },
+        "molarweight": 4.002601643881807
+    },
+    {
+        "identifier": {
+            "cas": "7782-39-0",
+            "name": "deuterium",
+            "iupac_name": "deuterium",
+            "smiles": "[HH]",
+            "inchi": "InChI=1S/H2/h1H/i1+1D",
+            "formula": "D2"
+        },
+        "model_record": {
+            "m": 1.0,
+            "sigma": 3.0203,
+            "epsilon_k": 30.273,
+            "lr": 10.0,
+            "la": 6.0,
+            "fh": 1
+        },
+        "molarweight": 4.028209954364
+    }
+]

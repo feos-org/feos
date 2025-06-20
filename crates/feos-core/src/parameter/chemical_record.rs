@@ -1,12 +1,13 @@
-use super::identifier::Identifier;
-use super::segment::SegmentRecord;
+use super::{Identifier, IdentifierOption};
 use crate::{FeosError, FeosResult};
-use num_traits::NumAssign;
+use indexmap::IndexMap;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::{
-    borrow::Cow,
-    collections::{HashMap, HashSet},
-};
+use std::collections::{HashMap, HashSet};
+use std::fs::File;
+use std::io::BufReader;
+use std::ops::Deref;
+use std::path::Path;
 
 // Auxiliary structure used to deserialize chemical records without explicit bond information.
 #[derive(Serialize, Deserialize)]
@@ -64,33 +65,52 @@ impl ChemicalRecord {
         }
     }
 
-    /// Count the number of occurences of each individual segment identifier in the
-    /// chemical record.
-    ///
-    /// The map contains the segment identifier as key and the count as value.
-    pub fn segment_count<T: NumAssign>(&self) -> HashMap<String, T> {
-        let mut counts = HashMap::with_capacity(self.segments.len());
-        for si in &self.segments {
-            let entry = counts.entry(si.clone()).or_insert_with(|| T::zero());
-            *entry += T::one();
+    /// Create chemical records from a json file.
+    pub fn from_json<P, S>(
+        substances: &[S],
+        file: P,
+        identifier_option: IdentifierOption,
+    ) -> FeosResult<Vec<Self>>
+    where
+        P: AsRef<Path>,
+        S: Deref<Target = str>,
+    {
+        // create list of substances
+        let mut queried: HashSet<&str> = substances.iter().map(|s| s.deref()).collect();
+        // raise error on duplicate detection
+        if queried.len() != substances.len() {
+            return Err(FeosError::IncompatibleParameters(
+                "A substance was defined more than once.".to_string(),
+            ));
         }
-        counts
-    }
 
-    /// Count the number of occurences of bonds between each pair of segment identifiers
-    /// in the chemical record.
-    ///
-    /// The map contains the segment identifiers as key and the count as value.
-    pub fn bond_count<T: NumAssign>(&self) -> HashMap<[String; 2], T> {
-        let mut bond_counts = HashMap::new();
-        for b in &self.bonds {
-            let s1 = self.segments[b[0]].clone();
-            let s2 = self.segments[b[1]].clone();
-            let indices = if s1 > s2 { [s2, s1] } else { [s1, s2] };
-            let entry = bond_counts.entry(indices).or_insert_with(|| T::zero());
-            *entry += T::one();
+        let f = File::open(file)?;
+        let reader = BufReader::new(f);
+        // use stream in the future
+        let file_records: Vec<Self> = serde_json::from_reader(reader)?;
+        let mut records: HashMap<&str, Self> = HashMap::with_capacity(substances.len());
+
+        // build map, draining list of queried substances in the process
+        for record in file_records {
+            if let Some(id) = record.identifier.as_str(identifier_option) {
+                queried.take(id).map(|id| records.insert(id, record));
+            }
+            // all parameters parsed
+            if queried.is_empty() {
+                break;
+            }
         }
-        bond_counts
+
+        // report missing parameters
+        if !queried.is_empty() {
+            return Err(FeosError::ComponentsNotFound(format!("{:?}", queried)));
+        };
+
+        // collect into vec in correct order
+        Ok(substances
+            .iter()
+            .map(|s| records.remove(s.deref()).unwrap())
+            .collect())
     }
 }
 
@@ -102,70 +122,68 @@ impl std::fmt::Display for ChemicalRecord {
         write!(f, "\n\tbonds={:?}\n)", self.bonds)
     }
 }
+pub trait GroupCount: Copy {
+    #[expect(clippy::type_complexity)]
+    fn into_groups(
+        chemical_record: ChemicalRecord,
+    ) -> (Identifier, Vec<(String, Self)>, Vec<([usize; 2], Self)>);
 
-pub trait CountType: Copy {
-    fn apply_count(self, x: f64) -> f64;
+    fn into_f64(self) -> f64;
 }
 
-impl CountType for usize {
-    fn apply_count(self, x: f64) -> f64 {
-        self as f64 * x
-    }
-}
-
-impl CountType for f64 {
-    fn apply_count(self, x: f64) -> f64 {
-        self * x
-    }
-}
-
-/// Trait that enables parameter generation from generic molecular representations.
-pub trait SegmentCount {
-    type Count: CountType;
-
-    fn identifier(&self) -> Cow<Identifier>;
-
-    /// Count the number of occurences of each individual segment identifier in the
-    /// molecule.
-    ///
-    /// The map contains the segment identifier as key and the count as value.
-    fn segment_count(&self) -> Cow<HashMap<String, Self::Count>>;
-
-    /// Count the number of occurences of each individual segment in the
-    /// molecule.
-    ///
-    /// The map contains the segment record as key and the count as value.
-    fn segment_map<M: Clone>(
-        &self,
-        segment_records: &[SegmentRecord<M>],
-    ) -> FeosResult<HashMap<SegmentRecord<M>, Self::Count>> {
-        let count = self.segment_count();
-        let queried: HashSet<_> = count.keys().cloned().collect();
-        let mut segments: HashMap<String, SegmentRecord<M>> = segment_records
-            .iter()
-            .map(|r| (r.identifier.clone(), r.clone()))
+impl GroupCount for f64 {
+    fn into_groups(
+        chemical_record: ChemicalRecord,
+    ) -> (Identifier, Vec<(String, f64)>, Vec<([usize; 2], f64)>) {
+        let mut group_counts = IndexMap::with_capacity(chemical_record.segments.len());
+        let segment_to_group: Vec<_> = chemical_record
+            .segments
+            .into_iter()
+            .map(|si| {
+                let entry = group_counts.entry(si);
+                let index = entry.index();
+                *entry.or_insert(0.0) += 1.0;
+                index
+            })
             .collect();
-        let available = segments.keys().cloned().collect();
-        if !queried.is_subset(&available) {
-            let missing: Vec<String> = queried.difference(&available).cloned().collect();
-            let msg = format!("{:?}", missing);
-            return Err(FeosError::ComponentsNotFound(msg));
-        };
-        Ok(count
-            .iter()
-            .map(|(s, c)| (segments.remove(s).unwrap(), *c))
-            .collect())
+
+        let mut bond_counts: IndexMap<_, _> = (0..group_counts.len())
+            .array_combinations()
+            .chain((0..group_counts.len()).map(|i| [i, i]))
+            .map(|g| (g, 0.0))
+            .collect();
+        for [i, j] in chemical_record.bonds {
+            let [s1, s2] = [segment_to_group[i], segment_to_group[j]];
+            bond_counts.entry([s1, s2]).and_modify(|x| *x += 1.0);
+            if s1 != s2 {
+                bond_counts.entry([s2, s1]).and_modify(|x| *x += 1.0);
+            }
+        }
+        let group_counts = group_counts.into_iter().collect();
+        let bond_counts = bond_counts.into_iter().filter(|(_, c)| *c > 0.0).collect();
+
+        (chemical_record.identifier, group_counts, bond_counts)
+    }
+
+    fn into_f64(self) -> f64 {
+        self
     }
 }
 
-impl SegmentCount for ChemicalRecord {
-    type Count = usize;
-
-    fn identifier(&self) -> Cow<Identifier> {
-        Cow::Borrowed(&self.identifier)
+impl GroupCount for () {
+    fn into_groups(
+        chemical_record: ChemicalRecord,
+    ) -> (Identifier, Vec<(String, ())>, Vec<([usize; 2], ())>) {
+        let segments = chemical_record
+            .segments
+            .into_iter()
+            .map(|s| (s, ()))
+            .collect();
+        let bonds = chemical_record.bonds.into_iter().map(|b| (b, ())).collect();
+        (chemical_record.identifier, segments, bonds)
     }
 
-    fn segment_count(&self) -> Cow<HashMap<String, usize>> {
-        Cow::Owned(self.segment_count())
+    fn into_f64(self) -> f64 {
+        1.0
     }
 }

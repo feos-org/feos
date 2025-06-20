@@ -1,3 +1,4 @@
+use crate::WeightFunctionInfo;
 use crate::adsorption::{ExternalPotential, FluidParameters};
 use crate::convolver::ConvolverFFT;
 use crate::functional::{HelmholtzEnergyFunctional, MoleculeShape};
@@ -5,20 +6,18 @@ use crate::functional_contribution::FunctionalContribution;
 use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
-use crate::WeightFunctionInfo;
 use feos_core::{
     Components, Contributions, FeosResult, ReferenceSystem, Residual, State, StateBuilder, StateHD,
 };
-use ndarray::{prelude::*, ScalarOperand};
 use ndarray::{Axis as Axis_nd, RemoveAxis};
+use ndarray::{ScalarOperand, prelude::*};
 use num_dual::linalg::LU;
 use num_dual::{Dual64, DualNum};
 use quantity::{
-    Density, Dimensionless, Energy, Length, MolarEnergy, Quantity, Temperature, Volume, _Moles,
-    _Pressure, KELVIN, RGAS,
+    _Moles, _Pressure, Density, Dimensionless, Energy, KELVIN, Length, MolarEnergy, Quantity, RGAS,
+    Temperature, Volume,
 };
 use rustdct::DctNum;
-use std::fmt::Display;
 use std::sync::Arc;
 use typenum::Diff;
 
@@ -159,7 +158,9 @@ where
         temperature: N,
     ) -> Array1<N> {
         if self.profile.dft.m().iter().any(|&m| m != 1.0) {
-            panic!("Henry coefficients can only be calculated for spherical and heterosegmented molecules!")
+            panic!(
+                "Henry coefficients can only be calculated for spherical and heterosegmented molecules!"
+            )
         };
         let pot = self.profile.external_potential.mapv(N::from)
             * self.profile.temperature.to_reduced()
@@ -167,6 +168,7 @@ where
         let exp_pot = pot.mapv(|v| (-v).exp());
         let functional_contributions = self.profile.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<N>> = functional_contributions
+            .into_iter()
             .map(|c| c.weight_functions(temperature))
             .collect();
         let convolver =
@@ -341,10 +343,10 @@ impl Residual for Helium {
 }
 
 impl HelmholtzEnergyFunctional for Helium {
-    type Contribution = HeliumContribution;
+    type Contribution<'a> = HeliumContribution;
 
-    fn contributions(&self) -> Box<dyn Iterator<Item = Self::Contribution>> {
-        Box::new([].into_iter())
+    fn contributions<'a>(&'a self) -> Vec<Self::Contribution<'a>> {
+        vec![]
     }
 
     fn molecule_shape(&self) -> MoleculeShape {
@@ -376,10 +378,8 @@ impl FunctionalContribution for HeliumContribution {
     ) -> FeosResult<Array1<N>> {
         unreachable!()
     }
-}
 
-impl Display for HeliumContribution {
-    fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn name(&self) -> &'static str {
         unreachable!()
     }
 }

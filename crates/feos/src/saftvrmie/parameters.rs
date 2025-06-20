@@ -1,13 +1,9 @@
-use std::collections::HashMap;
-
-use super::eos::association::{AssociationParameters, AssociationRecord, BinaryAssociationRecord};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::{parameter::{Parameter, PureRecord}, FeosResult};
+use feos_core::parameter::{Parameters, PureRecord};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
-use std::fmt::Write;
 
 /// 10-point Gauss-Legendre quadrature [position, weight]
 const GLQ10: [[f64; 2]; 10] = [
@@ -36,108 +32,39 @@ pub struct SaftVRMieRecord {
     pub lr: f64,
     /// Attractive Mie exponent
     pub la: f64,
-    /// Association
-    #[serde(flatten)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub association_record: Option<AssociationRecord>,
-    /// Entropy scaling coefficients for the viscosity
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub viscosity: Option<[f64; 4]>,
-    /// Entropy scaling coefficients for the diffusion coefficient
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub diffusion: Option<[f64; 5]>,
-    /// Entropy scaling coefficients for the thermal conductivity
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub thermal_conductivity: Option<[f64; 4]>,
 }
 
 impl SaftVRMieRecord {
-    #[expect(clippy::too_many_arguments)]
-    pub fn new(
-        m: f64,
-        sigma: f64,
-        epsilon_k: f64,
-        lr: f64,
-        la: f64,
-        rc_ab: Option<f64>,
-        epsilon_k_ab: Option<f64>,
-        na: Option<f64>,
-        nb: Option<f64>,
-        nc: Option<f64>,
-        viscosity: Option<[f64; 4]>,
-        diffusion: Option<[f64; 5]>,
-        thermal_conductivity: Option<[f64; 4]>,
-    ) -> Self {
-        let association_record = if rc_ab.is_none()
-            && epsilon_k_ab.is_none()
-            && na.is_none()
-            && nb.is_none()
-            && nc.is_none()
-        {
-            None
-        } else {
-            Some(AssociationRecord::new(
-                rc_ab.unwrap_or_default(),
-                epsilon_k_ab.unwrap_or_default(),
-                na.unwrap_or_default(),
-                nb.unwrap_or_default(),
-                nc.unwrap_or_default(),
-            ))
-        };
+    pub fn new(m: f64, sigma: f64, epsilon_k: f64, lr: f64, la: f64) -> Self {
         Self {
             m,
             sigma,
             epsilon_k,
             lr,
             la,
-            association_record,
-            viscosity,
-            diffusion,
-            thermal_conductivity,
-        }
-    }
-
-    /// A record without parameters for association and entropy scaling.
-    pub fn new_simple(m: f64, sigma: f64, epsilon_k: f64, lr: f64, la: f64) -> Self {
-        Self {
-            m,
-            sigma,
-            epsilon_k,
-            lr,
-            la,
-            association_record: None,
-            viscosity: None,
-            diffusion: None,
-            thermal_conductivity: None,
         }
     }
 }
 
-impl std::fmt::Display for SaftVRMieRecord {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "SaftVRMieRecord(m={}", self.m)?;
-        write!(f, ", sigma={}", self.sigma)?;
-        write!(f, ", epsilon_k={}", self.epsilon_k)?;
-        write!(f, ", lr={}", self.lr)?;
-        write!(f, ", la={}", self.la)?;
-        if let Some(n) = &self.association_record {
-            write!(f, ", association_record={}", n)?;
+#[derive(Serialize, Deserialize, Clone, Copy)]
+pub struct SaftVRMieAssociationRecord {
+    /// Association radius parameter
+    pub rc_ab: f64,
+    /// Association energy parameter in units of Kelvin
+    pub epsilon_k_ab: f64,
+}
+
+impl SaftVRMieAssociationRecord {
+    pub fn new(rc_ab: f64, epsilon_k_ab: f64) -> Self {
+        Self {
+            rc_ab,
+            epsilon_k_ab,
         }
-        if let Some(n) = &self.viscosity {
-            write!(f, ", viscosity={:?}", n)?;
-        }
-        if let Some(n) = &self.diffusion {
-            write!(f, ", diffusion={:?}", n)?;
-        }
-        if let Some(n) = &self.thermal_conductivity {
-            write!(f, ", thermal_conductivity={:?}", n)?;
-        }
-        write!(f, ")")
     }
 }
 
 /// SAFT-VR Mie binary interaction parameters.
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Copy, Default)]
 pub struct SaftVRMieBinaryRecord {
     /// Binary dispersion energy interaction parameter
     #[serde(skip_serializing_if = "f64::is_zero")]
@@ -147,144 +74,43 @@ pub struct SaftVRMieBinaryRecord {
     #[serde(skip_serializing_if = "f64::is_zero")]
     #[serde(default)]
     pub gamma_ij: f64,
-    /// Binary association parameters
-    #[serde(flatten)]
-    association: Option<BinaryAssociationRecord>,
 }
 
 impl SaftVRMieBinaryRecord {
-    pub fn new(
-        k_ij: Option<f64>,
-        gamma_ij: Option<f64>,
-        rc_ab: Option<f64>,
-        epsilon_k_ab: Option<f64>,
-    ) -> Self {
+    pub fn new(k_ij: Option<f64>, gamma_ij: Option<f64>) -> Self {
         let k_ij = k_ij.unwrap_or_default();
         let gamma_ij = gamma_ij.unwrap_or_default();
-        let association = if rc_ab.is_none() && epsilon_k_ab.is_none() {
-            None
-        } else {
-            Some(BinaryAssociationRecord::new(rc_ab, epsilon_k_ab, None))
-        };
-        Self {
-            k_ij,
-            gamma_ij,
-            association,
-        }
-    }
-}
-
-impl From<f64> for SaftVRMieBinaryRecord {
-    fn from(k_ij: f64) -> Self {
-        Self {
-            k_ij,
-            gamma_ij: f64::default(),
-            association: None,
-        }
-    }
-}
-
-impl From<SaftVRMieBinaryRecord> for f64 {
-    fn from(binary_record: SaftVRMieBinaryRecord) -> Self {
-        binary_record.k_ij
-    }
-}
-
-impl std::fmt::Display for SaftVRMieBinaryRecord {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut tokens = vec![];
-        if !self.k_ij.is_zero() {
-            tokens.push(format!("k_ij={}", self.k_ij));
-        }
-        if !self.gamma_ij.is_zero() {
-            tokens.push(format!("gamma_ij={}", self.gamma_ij));
-        }
-        if let Some(association) = self.association {
-            if let Some(rc_ab) = association.rc_ab {
-                tokens.push(format!("rc_ab={}", rc_ab));
-            }
-            if let Some(epsilon_k_ab) = association.epsilon_k_ab {
-                tokens.push(format!("epsilon_k_ab={}", epsilon_k_ab));
-            }
-        }
-        write!(f, "SaftVRMieBinaryRecord({})", tokens.join(", "))
+        Self { k_ij, gamma_ij }
     }
 }
 
 /// Parameter set required for the SAFT-VR Mie equation of state.
-pub struct SaftVRMieParameters {
-    pub molarweight: Array1<f64>,
+pub type SaftVRMieParameters =
+    Parameters<SaftVRMieRecord, SaftVRMieBinaryRecord, SaftVRMieAssociationRecord>;
+
+/// The SAFT-VR Mie parameters in an easier accessible format.
+pub struct SaftVRMiePars {
     pub m: Array1<f64>,
     pub sigma: Array1<f64>,
     pub epsilon_k: Array1<f64>,
     pub lr: Array1<f64>,
     pub la: Array1<f64>,
-    pub association: AssociationParameters,
     pub sigma_ij: Array2<f64>,
     pub epsilon_k_ij: Array2<f64>,
-    pub e_k_ij: Array2<f64>,
     pub lr_ij: Array2<f64>,
     pub la_ij: Array2<f64>,
     pub c_ij: Array2<f64>,
     pub alpha_ij: Array2<f64>,
-    pub viscosity: Option<Array2<f64>>,
-    pub diffusion: Option<Array2<f64>>,
-    pub thermal_conductivity: Option<Array2<f64>>,
-    pub pure_records: Vec<PureRecord<SaftVRMieRecord>>,
-    pub binary_records: Option<Array2<SaftVRMieBinaryRecord>>,
 }
 
-impl Parameter for SaftVRMieParameters {
-    type Pure = SaftVRMieRecord;
-    type Binary = SaftVRMieBinaryRecord;
+impl SaftVRMiePars {
+    pub fn new(parameters: &SaftVRMieParameters) -> Self {
+        let n = parameters.pure.len();
 
-    fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Option<Array2<SaftVRMieBinaryRecord>>,
-    ) -> FeosResult<Self> {
-        let n = pure_records.len();
+        let [m, sigma, epsilon_k] = parameters.collate(|pr| [pr.m, pr.sigma, pr.epsilon_k]);
+        let [lr, la] = parameters.collate(|pr| [pr.lr, pr.la]);
+        let [k_ij, gamma_ij] = parameters.collate_binary(|br| [br.k_ij, br.gamma_ij]);
 
-        let mut molarweight = Array::zeros(n);
-        let mut m = Array::zeros(n);
-        let mut sigma = Array::zeros(n);
-        let mut epsilon_k = Array::zeros(n);
-        let mut lr = Array::zeros(n);
-        let mut la = Array::zeros(n);
-        let mut association_records = Vec::with_capacity(n);
-        let mut viscosity = Vec::with_capacity(n);
-        let mut diffusion = Vec::with_capacity(n);
-        let mut thermal_conductivity = Vec::with_capacity(n);
-
-        let mut component_index = HashMap::with_capacity(n);
-
-        for (i, record) in pure_records.iter().enumerate() {
-            component_index.insert(record.identifier.clone(), i);
-            let r = &record.model_record;
-            m[i] = r.m;
-            sigma[i] = r.sigma;
-            epsilon_k[i] = r.epsilon_k;
-            lr[i] = r.lr;
-            la[i] = r.la;
-            association_records.push(r.association_record.into_iter().collect());
-            viscosity.push(r.viscosity);
-            diffusion.push(r.diffusion);
-            thermal_conductivity.push(r.thermal_conductivity);
-            molarweight[i] = record.molarweight;
-        }
-
-        let binary_association: Vec<_> = binary_records
-            .iter()
-            .flat_map(|r| {
-                r.indexed_iter()
-                    .filter_map(|(i, record)| record.association.map(|r| (i, r)))
-            })
-            .collect();
-        let association =
-            AssociationParameters::new(&association_records, &sigma, &binary_association, None);
-
-        let br = binary_records.as_ref();
-        let k_ij = br.map_or_else(|| Array2::zeros([n; 2]), |br| br.mapv(|br| br.k_ij));
-        let gamma_ij = br.map_or_else(|| Array2::zeros([n; 2]), |br| br.mapv(|br| br.gamma_ij));
         let mut sigma_ij = Array::zeros((n, n));
         let mut e_k_ij = Array::zeros((n, n));
         let mut epsilon_k_ij = Array::zeros((n, n));
@@ -310,110 +136,23 @@ impl Parameter for SaftVRMieParameters {
             }
         }
 
-        let viscosity_coefficients = if viscosity.iter().any(|v| v.is_none()) {
-            None
-        } else {
-            let mut v = Array2::zeros((4, viscosity.len()));
-            for (i, vi) in viscosity.iter().enumerate() {
-                v.column_mut(i).assign(&Array1::from(vi.unwrap().to_vec()));
-            }
-            Some(v)
-        };
-
-        let diffusion_coefficients = if diffusion.iter().any(|v| v.is_none()) {
-            None
-        } else {
-            let mut v = Array2::zeros((5, diffusion.len()));
-            for (i, vi) in diffusion.iter().enumerate() {
-                v.column_mut(i).assign(&Array1::from(vi.unwrap().to_vec()));
-            }
-            Some(v)
-        };
-
-        let thermal_conductivity_coefficients = if thermal_conductivity.iter().any(|v| v.is_none())
-        {
-            None
-        } else {
-            let mut v = Array2::zeros((4, thermal_conductivity.len()));
-            for (i, vi) in thermal_conductivity.iter().enumerate() {
-                v.column_mut(i).assign(&Array1::from(vi.unwrap().to_vec()));
-            }
-            Some(v)
-        };
-
-        Ok(Self {
-            molarweight,
+        Self {
             m,
             sigma,
             epsilon_k,
             lr,
             la,
-            association,
             sigma_ij,
             epsilon_k_ij,
-            e_k_ij,
             lr_ij,
             la_ij,
             c_ij,
             alpha_ij,
-            viscosity: viscosity_coefficients,
-            diffusion: diffusion_coefficients,
-            thermal_conductivity: thermal_conductivity_coefficients,
-            pure_records,
-            binary_records,
-        })
-    }
-
-    fn records(
-        &self,
-    ) -> (
-        &[PureRecord<SaftVRMieRecord>],
-        Option<&Array2<SaftVRMieBinaryRecord>>,
-    ) {
-        (&self.pure_records, self.binary_records.as_ref())
-    }
-}
-
-impl SaftVRMieParameters {
-    pub fn to_markdown(&self) -> String {
-        let mut output = String::new();
-        let o = &mut output;
-        write!(
-            o,
-            "|component|molarweight|$m$|$\\lambda_r$|$\\lambda_a$|$\\sigma$|$\\varepsilon$|$r^c_{{AB}}$|$\\varepsilon_{{AB}}$|$N_A$|$N_B$|$N_C$|\n|-|-|-|-|-|-|-|-|-|-|-|-|"
-        )
-        .unwrap();
-        for (i, record) in self.pure_records.iter().enumerate() {
-            let component = record.identifier.name.clone();
-            let component = component.unwrap_or(format!("Component {}", i + 1));
-            let association = record
-                .model_record
-                .association_record
-                .unwrap_or_else(|| AssociationRecord::new(0.0, 0.0, 0.0, 0.0, 0.0));
-            write!(
-                o,
-                "\n|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|",
-                component,
-                record.molarweight,
-                record.model_record.m,
-                record.model_record.lr,
-                record.model_record.la,
-                record.model_record.sigma,
-                record.model_record.epsilon_k,
-                association.rc_ab,
-                association.epsilon_k_ab,
-                association.na,
-                association.nb,
-                association.nc
-            )
-            .unwrap();
         }
-
-        output
     }
 }
 
-impl SaftVRMieParameters {
+impl SaftVRMiePars {
     #[inline]
     pub fn hs_diameter_ij<D: DualNum<f64> + Copy>(
         &self,
@@ -487,7 +226,7 @@ fn beta_u_mie<D: DualNum<f64> + Copy>(r: D, la: f64, lr: f64, sigma: f64, c_eps_
     (ri.powf(lr) - ri.powf(la)) * c_eps_t
 }
 
-impl HardSphereProperties for SaftVRMieParameters {
+impl HardSphereProperties for SaftVRMiePars {
     fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
         MonomerShape::NonSpherical(self.m.mapv(N::from))
     }
@@ -502,7 +241,7 @@ impl HardSphereProperties for SaftVRMieParameters {
 #[doc(hidden)]
 pub mod test_utils {
     use super::*;
-    use feos_core::parameter::Identifier;
+    use feos_core::parameter::{AssociationRecord, Identifier};
     use std::collections::HashMap;
 
     /// Parameters from Lafitte et al. (2013)
@@ -515,7 +254,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 16.031,
-                SaftVRMieRecord::new_simple(1.0, 3.7412, 153.36, 12.65, 6.0),
+                SaftVRMieRecord::new(1.0, 3.7412, 153.36, 12.65, 6.0),
             ))
             .unwrap(),
         );
@@ -525,7 +264,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 30.047,
-                SaftVRMieRecord::new_simple(1.4373, 3.7257, 206.12, 12.4, 6.0),
+                SaftVRMieRecord::new(1.4373, 3.7257, 206.12, 12.4, 6.0),
             ))
             .unwrap(),
         );
@@ -535,7 +274,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 44.063,
-                SaftVRMieRecord::new_simple(1.6845, 3.9056, 239.89, 13.006, 6.0),
+                SaftVRMieRecord::new(1.6845, 3.9056, 239.89, 13.006, 6.0),
             ))
             .unwrap(),
         );
@@ -545,7 +284,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 58.078,
-                SaftVRMieRecord::new_simple(1.8514, 4.0887, 273.64, 13.65, 6.0),
+                SaftVRMieRecord::new(1.8514, 4.0887, 273.64, 13.65, 6.0),
             ))
             .unwrap(),
         );
@@ -555,7 +294,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 72.094,
-                SaftVRMieRecord::new_simple(1.9606, 4.2928, 321.94, 15.847, 6.0),
+                SaftVRMieRecord::new(1.9606, 4.2928, 321.94, 15.847, 6.0),
             ))
             .unwrap(),
         );
@@ -565,7 +304,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 86.11,
-                SaftVRMieRecord::new_simple(2.1097, 4.423, 354.38, 17.203, 6.0),
+                SaftVRMieRecord::new(2.1097, 4.423, 354.38, 17.203, 6.0),
             ))
             .unwrap(),
         );
@@ -575,7 +314,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 100.125,
-                SaftVRMieRecord::new_simple(2.3949, 4.4282, 358.51, 17.092, 6.0),
+                SaftVRMieRecord::new(2.3949, 4.4282, 358.51, 17.092, 6.0),
             ))
             .unwrap(),
         );
@@ -585,7 +324,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 114.141,
-                SaftVRMieRecord::new_simple(2.6253, 4.4696, 369.18, 17.378, 6.0),
+                SaftVRMieRecord::new(2.6253, 4.4696, 369.18, 17.378, 6.0),
             ))
             .unwrap(),
         );
@@ -595,7 +334,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 128.157,
-                SaftVRMieRecord::new_simple(2.8099, 4.5334, 387.55, 18.324, 6.0),
+                SaftVRMieRecord::new(2.8099, 4.5334, 387.55, 18.324, 6.0),
             ))
             .unwrap(),
         );
@@ -605,7 +344,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 142.172,
-                SaftVRMieRecord::new_simple(2.9976, 4.589, 400.79, 18.885, 6.0),
+                SaftVRMieRecord::new(2.9976, 4.589, 400.79, 18.885, 6.0),
             ))
             .unwrap(),
         );
@@ -615,7 +354,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 170.203,
-                SaftVRMieRecord::new_simple(3.2519, 4.7484, 437.72, 20.862, 6.0),
+                SaftVRMieRecord::new(3.2519, 4.7484, 437.72, 20.862, 6.0),
             ))
             .unwrap(),
         );
@@ -625,7 +364,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 212.25,
-                SaftVRMieRecord::new_simple(3.9325, 4.7738, 444.51, 20.822, 6.0),
+                SaftVRMieRecord::new(3.9325, 4.7738, 444.51, 20.822, 6.0),
             ))
             .unwrap(),
         );
@@ -635,103 +374,71 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 282.329,
-                SaftVRMieRecord::new_simple(4.8794, 4.8788, 475.76, 22.926, 6.0),
+                SaftVRMieRecord::new(4.8794, 4.8788, 475.76, 22.926, 6.0),
             ))
             .unwrap(),
         );
 
         parameters.insert(
             "methanol",
-            SaftVRMieParameters::new_pure(PureRecord::new(
+            SaftVRMieParameters::new_pure(PureRecord::with_association(
                 id.clone(),
                 32.026,
-                SaftVRMieRecord::new(
-                    1.5283,
-                    3.3063,
-                    167.72,
-                    8.6556,
-                    6.0,
-                    Some(0.41314),
-                    Some(2904.7),
-                    Some(1.0),
-                    Some(1.0),
-                    None,
-                    None,
-                    None,
-                    None,
-                ),
+                SaftVRMieRecord::new(1.5283, 3.3063, 167.72, 8.6556, 6.0),
+                vec![AssociationRecord::new(
+                    Some(SaftVRMieAssociationRecord::new(0.41314, 2904.7)),
+                    1.0,
+                    1.0,
+                    0.0,
+                )],
             ))
             .unwrap(),
         );
 
         parameters.insert(
             "ethanol",
-            SaftVRMieParameters::new_pure(PureRecord::new(
+            SaftVRMieParameters::new_pure(PureRecord::with_association(
                 id.clone(),
                 46.042,
-                SaftVRMieRecord::new(
-                    1.96,
-                    3.4914,
-                    168.15,
-                    7.6134,
-                    6.0,
-                    Some(0.34558),
-                    Some(2833.7),
-                    Some(1.0),
-                    Some(1.0),
-                    None,
-                    None,
-                    None,
-                    None,
-                ),
+                SaftVRMieRecord::new(1.96, 3.4914, 168.15, 7.6134, 6.0),
+                vec![AssociationRecord::new(
+                    Some(SaftVRMieAssociationRecord::new(0.34558, 2833.7)),
+                    1.0,
+                    1.0,
+                    0.0,
+                )],
             ))
             .unwrap(),
         );
 
         parameters.insert(
             "1-propanol",
-            SaftVRMieParameters::new_pure(PureRecord::new(
+            SaftVRMieParameters::new_pure(PureRecord::with_association(
                 id.clone(),
                 60.058,
-                SaftVRMieRecord::new(
-                    2.3356,
-                    3.5612,
-                    227.66,
-                    10.179,
-                    6.0,
-                    Some(0.35377),
-                    Some(2746.2),
-                    Some(1.0),
-                    Some(1.0),
-                    None,
-                    None,
-                    None,
-                    None,
-                ),
+                SaftVRMieRecord::new(2.3356, 3.5612, 227.66, 10.179, 6.0),
+                vec![AssociationRecord::new(
+                    Some(SaftVRMieAssociationRecord::new(0.35377, 2746.2)),
+                    1.0,
+                    1.0,
+                    0.0,
+                )],
             ))
             .unwrap(),
         );
 
         parameters.insert(
             "1-butanol",
-            SaftVRMieParameters::new_pure(PureRecord::new(
+            SaftVRMieParameters::new_pure(PureRecord::with_association(
                 id.clone(),
                 74.073,
-                SaftVRMieRecord::new(
-                    2.4377,
-                    3.7856,
-                    278.92,
-                    11.66,
-                    6.0,
-                    Some(0.32449),
-                    Some(2728.1),
-                    Some(1.0),
-                    Some(1.0),
-                    None,
-                    None,
-                    None,
-                    None,
-                ),
+                SaftVRMieRecord::new(2.4377, 3.7856, 278.92, 11.66, 6.0),
+                vec![AssociationRecord::new(
+                    Some(SaftVRMieAssociationRecord::new(0.32449, 2728.1)),
+                    1.0,
+                    1.0,
+                    0.0,
+                )],
             ))
             .unwrap(),
         );
@@ -741,7 +448,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 87.994,
-                SaftVRMieRecord::new_simple(1.0, 4.3372, 232.62, 42.553, 5.1906),
+                SaftVRMieRecord::new(1.0, 4.3372, 232.62, 42.553, 5.1906),
             ))
             .unwrap(),
         );
@@ -751,7 +458,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 137.99,
-                SaftVRMieRecord::new_simple(1.8529, 3.9336, 211.46, 19.192, 5.7506),
+                SaftVRMieRecord::new(1.8529, 3.9336, 211.46, 19.192, 5.7506),
             ))
             .unwrap(),
         );
@@ -761,7 +468,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 187.987,
-                SaftVRMieRecord::new_simple(1.9401, 4.2983, 263.26, 22.627, 5.7506),
+                SaftVRMieRecord::new(1.9401, 4.2983, 263.26, 22.627, 5.7506),
             ))
             .unwrap(),
         );
@@ -771,7 +478,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 237.984,
-                SaftVRMieRecord::new_simple(2.1983, 4.4495, 290.49, 24.761, 5.7506),
+                SaftVRMieRecord::new(2.1983, 4.4495, 290.49, 24.761, 5.7506),
             ))
             .unwrap(),
         );
@@ -781,7 +488,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 287.981,
-                SaftVRMieRecord::new_simple(2.3783, 4.6132, 328.56, 29.75, 5.7506),
+                SaftVRMieRecord::new(2.3783, 4.6132, 328.56, 29.75, 5.7506),
             ))
             .unwrap(),
         );
@@ -791,7 +498,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 337.978,
-                SaftVRMieRecord::new_simple(2.5202, 4.7885, 349.3, 30.741, 5.7506),
+                SaftVRMieRecord::new(2.5202, 4.7885, 349.3, 30.741, 5.7506),
             ))
             .unwrap(),
         );
@@ -801,7 +508,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 37.997,
-                SaftVRMieRecord::new_simple(1.3211, 2.9554, 96.268, 11.606, 6.0),
+                SaftVRMieRecord::new(1.3211, 2.9554, 96.268, 11.606, 6.0),
             ))
             .unwrap(),
         );
@@ -811,7 +518,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 43.99,
-                SaftVRMieRecord::new_simple(1.5, 3.1916, 231.88, 27.557, 5.1646),
+                SaftVRMieRecord::new(1.5, 3.1916, 231.88, 27.557, 5.1646),
             ))
             .unwrap(),
         );
@@ -821,7 +528,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 78.047,
-                SaftVRMieRecord::new_simple(1.9163, 4.0549, 372.59, 14.798, 6.0),
+                SaftVRMieRecord::new(1.9163, 4.0549, 372.59, 14.798, 6.0),
             ))
             .unwrap(),
         );
@@ -831,7 +538,7 @@ pub mod test_utils {
             SaftVRMieParameters::new_pure(PureRecord::new(
                 id.clone(),
                 92.063,
-                SaftVRMieRecord::new_simple(1.9977, 4.2777, 409.73, 16.334, 6.0),
+                SaftVRMieRecord::new(1.9977, 4.2777, 409.73, 16.334, 6.0),
             ))
             .unwrap(),
         );
@@ -864,7 +571,7 @@ mod test {
     #[test]
     fn hs_diameter_ethane() {
         let temperature = 50.0;
-        let ethane = test_parameters().remove("ethane").unwrap();
+        let ethane = SaftVRMiePars::new(&test_parameters()["ethane"]);
         let d_hs = ethane.hs_diameter(temperature);
         dbg!(&d_hs);
         assert_relative_eq!(
@@ -878,7 +585,7 @@ mod test {
     #[test]
     fn test_zero_integrant() {
         let temperature = 50.0;
-        let ethane = test_parameters().remove("ethane").unwrap();
+        let ethane = SaftVRMiePars::new(&test_parameters()["ethane"]);
         let la = ethane.la[0];
         let lr = ethane.lr[0];
         let c_eps_t = ethane.c_ij[[0, 0]] * ethane.epsilon_k[0] / temperature;

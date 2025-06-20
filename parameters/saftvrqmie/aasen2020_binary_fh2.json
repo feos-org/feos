@@ -16,10 +16,8 @@
             "inchi": "InChI=1S/Ne",
             "formula": "Ne"
         },
-        "model_record": {
-            "k_ij": 0.105,
-            "l_ij": 0.0
-        }
+        "k_ij": 0.105,
+        "l_ij": 0.0
     },
     {
         "id1": {
@@ -38,10 +36,8 @@
             "inchi": "InChI=1S/He",
             "formula": "He"
         },
-        "model_record": {
-            "k_ij": 0.15,
-            "l_ij": -0.025
-        }
+        "k_ij": 0.15,
+        "l_ij": -0.025
     },
     {
         "id1": {
@@ -60,10 +56,8 @@
             "inchi": "InChI=1S/H2/h1H/i1+1D",
             "formula": "D2"
         },
-        "model_record": {
-            "k_ij": -0.04,
-            "l_ij": 0.0
-        }
+        "k_ij": -0.04,
+        "l_ij": 0.0
     },
     {
         "id1": {
@@ -82,10 +76,8 @@
             "inchi": "InChI=1S/H2/h1H/i1+1D",
             "formula": "D2"
         },
-        "model_record": {
-            "k_ij": 0.12,
-            "l_ij": -0.05
-        }
+        "k_ij": 0.12,
+        "l_ij": -0.05
     },
     {
         "id1": {
@@ -104,10 +96,8 @@
             "inchi": "InChI=1S/Ne",
             "formula": "Ne"
         },
-        "model_record": {
-            "k_ij": -0.06,
-            "l_ij": 0.0
-        }
+        "k_ij": -0.06,
+        "l_ij": 0.0
     },
     {
         "id1": {
@@ -126,9 +116,7 @@
             "inchi": "InChI=1S/H2/h1H/i1+1D",
             "formula": "D2"
         },
-        "model_record": {
-            "k_ij": 0.14,
-            "l_ij": 0.0
-        }
+        "k_ij": 0.14,
+        "l_ij": 0.0
     }
 ]

@@ -1,14 +1,9 @@
-//use super::attractive_perturbation_wca::one_fluid_properties;
-use super::hard_sphere::diameter_bh;
+use super::BarkerHenderson;
 use crate::uvtheory::parameters::*;
 use feos_core::StateHD;
 use ndarray::Array1;
 use num_dual::DualNum;
-use std::{
-    f64::consts::{FRAC_PI_3, PI},
-    fmt,
-    sync::Arc,
-};
+use std::f64::consts::{FRAC_PI_3, PI};
 
 const C_BH: [[f64; 4]; 2] = [
     [
@@ -41,20 +36,16 @@ const C2: [[f64; 2]; 3] = [
 ];
 
 #[derive(Debug, Clone)]
-pub(super) struct AttractivePerturbation {
-    pub parameters: Arc<UVTheoryParameters>,
-}
-
-impl fmt::Display for AttractivePerturbation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Attractive Perturbation")
-    }
-}
+pub(super) struct AttractivePerturbation;
 
 impl AttractivePerturbation {
     /// Helmholtz energy for attractive perturbation, eq. 52
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
-        let p = &self.parameters;
+    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        parameters: &UVTheoryPars,
+        state: &StateHD<D>,
+    ) -> D {
+        let p = parameters;
         let x = &state.molefracs;
         let t = state.temperature;
         let density = state.partial_density.sum();
@@ -87,17 +78,12 @@ fn delta_b12u<D: DualNum<f64>>(t_x: D, mean_field_constant_x: D, weighted_sigma3
     -mean_field_constant_x / t_x * 2.0 * PI * weighted_sigma3_ij
 }
 
-fn residual_virial_coefficient<D: DualNum<f64> + Copy>(
-    p: &UVTheoryParameters,
-    x: &Array1<D>,
-    t: D,
-) -> D {
+fn residual_virial_coefficient<D: DualNum<f64> + Copy>(p: &UVTheoryPars, x: &Array1<D>, t: D) -> D {
     let mut delta_b2bar = D::zero();
-    for i in 0..p.ncomponents {
-        let xi = x[i];
-        for j in 0..p.ncomponents {
-            delta_b2bar += xi
-                * x[j]
+    for (i, xi) in x.iter().enumerate() {
+        for (j, xj) in x.iter().enumerate() {
+            delta_b2bar += *xi
+                * *xj
                 * p.sigma_ij[[i, j]].powi(3)
                 * delta_b2(t / p.eps_k_ij[[i, j]], p.rep_ij[[i, j]], p.att_ij[[i, j]]);
         }
@@ -139,28 +125,26 @@ fn activation<D: DualNum<f64> + Copy>(c: D, one_fluid_beta: D) -> D {
 }
 
 fn one_fluid_properties<D: DualNum<f64> + Copy>(
-    p: &UVTheoryParameters,
+    p: &UVTheoryPars,
     x: &Array1<D>,
     t: D,
 ) -> (D, D, D, D, D, D) {
-    let d = diameter_bh(p, t);
+    let d = BarkerHenderson::diameter_bh(p, t);
     // &p.sigma;
     let mut epsilon_k = D::zero();
     let mut weighted_sigma3_ij = D::zero();
     let mut rep = D::zero();
     let mut att = D::zero();
     let mut d_x_3 = D::zero();
-    for i in 0..p.ncomponents {
-        let xi = x[i];
-
-        d_x_3 += x[i] * d[i].powi(3);
-        for j in 0..p.ncomponents {
-            let _y = xi * x[j] * p.sigma_ij[[i, j]].powi(3);
+    for (i, xi) in x.iter().enumerate() {
+        d_x_3 += *xi * d[i].powi(3);
+        for (j, xj) in x.iter().enumerate() {
+            let _y = *xi * *xj * p.sigma_ij[[i, j]].powi(3);
             weighted_sigma3_ij += _y;
             epsilon_k += _y * p.eps_k_ij[[i, j]];
 
-            rep += xi * x[j] * p.rep_ij[[i, j]];
-            att += xi * x[j] * p.att_ij[[i, j]];
+            rep += *xi * *xj * p.rep_ij[[i, j]];
+            att += *xi * *xj * p.att_ij[[i, j]];
         }
     }
     let sigma_x = (x * &p.sigma.mapv(|v| v.powi(3))).sum().powf(1.0 / 3.0);
@@ -220,6 +204,7 @@ fn y_eff<D: DualNum<f64> + Copy>(reduced_temperature: D, rep: f64, att: f64) -> 
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::uvtheory::Perturbation::BarkerHenderson as BH;
     use crate::uvtheory::parameters::utils::methane_parameters;
     use approx::assert_relative_eq;
     use ndarray::arr1;
@@ -232,10 +217,7 @@ mod test {
         let reduced_density = 1.0;
         let reduced_volume = moles[0] / reduced_density;
 
-        let p = methane_parameters(24.0, 6.0);
-        let pt = AttractivePerturbation {
-            parameters: Arc::new(p.clone()),
-        };
+        let p = UVTheoryPars::new(&methane_parameters(24.0, 6.0), BH);
         let state = StateHD::new(
             reduced_temperature * p.epsilon_k[0],
             reduced_volume * p.sigma[0].powi(3),
@@ -280,7 +262,7 @@ mod test {
 
         //let a_test = state.moles.sum()
         //  * (delta_a1u + (-u_fraction_bh + 1.0) * (b2bar - b21u) * state.partial_density.sum());
-        let a = pt.helmholtz_energy(&state) / moles[0];
+        let a = AttractivePerturbation.helmholtz_energy(&p, &state) / moles[0];
         dbg!(a.re());
         //assert!(-1.16124062615291 == a.re())
         assert_relative_eq!(-1.16124062615291, a.re(), epsilon = 1e-5);

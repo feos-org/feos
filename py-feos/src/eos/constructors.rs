@@ -3,6 +3,7 @@ use crate::ideal_gas::IdealGasModel;
 use crate::parameter::{PyGcParameters, PyParameters};
 use crate::residual::ResidualModel;
 use crate::user_defined::{PyIdealGas, PyResidual};
+use feos::ideal_gas::{Dippr, Joback};
 use feos_core::cubic::PengRobinson;
 use feos_core::*;
 use pyo3::prelude::*;
@@ -24,9 +25,9 @@ impl PyEquationOfState {
     ///     states.
     #[staticmethod]
     pub fn peng_robinson(parameters: PyParameters) -> PyResult<Self> {
-        let residual = Arc::new(ResidualModel::PengRobinson(PengRobinson::new(Arc::new(
+        let residual = Arc::new(ResidualModel::PengRobinson(PengRobinson::new(
             parameters.try_convert()?,
-        ))));
+        )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
@@ -87,9 +88,11 @@ impl PyEquationOfState {
     /// -------
     /// EquationOfState
     fn joback(&self, joback: PyGcParameters) -> PyResult<Self> {
-        Ok(self.add_ideal_gas(IdealGasModel::Joback(Arc::new(
-            joback.try_convert_homosegmented()?,
-        ))))
+        Ok(
+            self.add_ideal_gas(IdealGasModel::Joback(Arc::new(Joback::new(
+                joback.try_convert_homosegmented()?,
+            )))),
+        )
     }
 
     /// Ideal gas model based on DIPPR equations for the ideal
@@ -104,6 +107,8 @@ impl PyEquationOfState {
     /// -------
     /// EquationOfState
     fn dippr(&self, dippr: PyParameters) -> PyResult<Self> {
-        Ok(self.add_ideal_gas(IdealGasModel::Dippr(Arc::new(dippr.try_convert()?))))
+        Ok(self.add_ideal_gas(IdealGasModel::Dippr(Arc::new(Dippr::new(
+            dippr.try_convert()?,
+        )))))
     }
 }

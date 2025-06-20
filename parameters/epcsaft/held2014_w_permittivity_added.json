@@ -8,34 +8,36 @@
             "inchi": "InChI=1/H2O/h1H2",
             "formula": "H2O"
         },
-        "model_record": {
-            "m": 1.2047,
-            "sigma": 2.7927,
-            "epsilon_k": 353.95,
-            "kappa_ab": 0.04509,
-            "epsilon_k_ab": 2425.7,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            280.15,
-                            84.89
-                        ],
-                        [
-                            298.15,
-                            78.39
-                        ],
-                        [
-                            360.15,
-                            58.73
-                        ]
+        "molarweight": 18.0152,
+        "m": 1.2047,
+        "sigma": 2.7927,
+        "epsilon_k": 353.95,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        280.15,
+                        84.89
+                    ],
+                    [
+                        298.15,
+                        78.39
+                    ],
+                    [
+                        360.15,
+                        58.73
                     ]
-                }
-            },
-            "na": 1.0,
-            "nb": 1.0
+                ]
+            }
         },
-        "molarweight": 18.0152
+        "association_sites": [
+            {
+                "na": 1.0,
+                "nb": 1.0,
+                "kappa_ab": 0.04509,
+                "epsilon_k_ab": 2425.7
+            }
+        ]
     },
     {
         "identifier": {
@@ -45,20 +47,18 @@
             "smiles": "[Br-]"
         },
         "molarweight": 79.9,
-        "model_record": {
-            "m": 1,
-            "sigma": 3.0707,
-            "epsilon_k": 190,
-            "z": -1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 3.0707,
+        "epsilon_k": 190,
+        "z": -1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -70,20 +70,18 @@
             "smiles": "O=C([O-])[O-]"
         },
         "molarweight": 60.009,
-        "model_record": {
-            "m": 1,
-            "sigma": 2.4422,
-            "epsilon_k": 249.26,
-            "z": -2,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 2.4422,
+        "epsilon_k": 249.26,
+        "z": -2,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -95,20 +93,18 @@
             "smiles": "[Cl-]"
         },
         "molarweight": 35.45,
-        "model_record": {
-            "m": 1,
-            "sigma": 2.756,
-            "epsilon_k": 170,
-            "z": -1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 2.756,
+        "epsilon_k": 170,
+        "z": -1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -120,20 +116,18 @@
             "smiles": "[F-]"
         },
         "molarweight": 18.9984,
-        "model_record": {
-            "m": 1,
-            "sigma": 1.7712,
-            "epsilon_k": 275,
-            "z": -1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 1.7712,
+        "epsilon_k": 275,
+        "z": -1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -145,20 +139,18 @@
             "smiles": "C(=O)(O)[O-]"
         },
         "molarweight": 61.0168,
-        "model_record": {
-            "m": 1,
-            "sigma": 2.9296,
-            "epsilon_k": 70,
-            "z": -1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 2.9296,
+        "epsilon_k": 70,
+        "z": -1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -170,20 +162,18 @@
             "smiles": "[H+]"
         },
         "molarweight": 1.0074,
-        "model_record": {
-            "m": 1,
-            "sigma": 3.4654,
-            "epsilon_k": 500,
-            "z": 1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 3.4654,
+        "epsilon_k": 500,
+        "z": 1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -195,20 +185,18 @@
             "smiles": "[OH-]"
         },
         "molarweight": 17.0073,
-        "model_record": {
-            "m": 1,
-            "sigma": 2.0177,
-            "epsilon_k": 650,
-            "z": -1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 2.0177,
+        "epsilon_k": 650,
+        "z": -1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -220,20 +208,18 @@
             "smiles": "[I-]"
         },
         "molarweight": 126.9045,
-        "model_record": {
-            "m": 1,
-            "sigma": 3.6672,
-            "epsilon_k": 200,
-            "z": -1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 3.6672,
+        "epsilon_k": 200,
+        "z": -1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -245,20 +231,18 @@
             "smiles": "[Li+]"
         },
         "molarweight": 7,
-        "model_record": {
-            "m": 1,
-            "sigma": 2.8449,
-            "epsilon_k": 360,
-            "z": 1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 2.8449,
+        "epsilon_k": 360,
+        "z": 1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -270,20 +254,18 @@
             "smiles": "[K+]"
         },
         "molarweight": 39.098,
-        "model_record": {
-            "m": 1,
-            "sigma": 3.3417,
-            "epsilon_k": 200,
-            "z": 1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 3.3417,
+        "epsilon_k": 200,
+        "z": 1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -295,20 +277,18 @@
             "smiles": "[Na+]"
         },
         "molarweight": 22.98977,
-        "model_record": {
-            "m": 1,
-            "sigma": 2.8232,
-            "epsilon_k": 230,
-            "z": 1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 2.8232,
+        "epsilon_k": 230,
+        "z": 1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -320,20 +300,18 @@
             "smiles": "[Cs+]"
         },
         "molarweight": 132.905,
-        "model_record": {
-            "m": 1,
-            "sigma": 3.9246,
-            "epsilon_k": 180,
-            "z": 1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 3.9246,
+        "epsilon_k": 180,
+        "z": 1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -345,20 +323,18 @@
             "smiles": "[NH4+]"
         },
         "molarweight": 18.04,
-        "model_record": {
-            "m": 1,
-            "sigma": 3.5740,
-            "epsilon_k": 230,
-            "z": 1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 3.574,
+        "epsilon_k": 230,
+        "z": 1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -370,20 +346,18 @@
             "smiles": "[N+](=O)([O-])[O-]"
         },
         "molarweight": 62.0049,
-        "model_record": {
-            "m": 1,
-            "sigma": 3.2988,
-            "epsilon_k": 130,
-            "z": -1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 3.2988,
+        "epsilon_k": 130,
+        "z": -1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -395,20 +369,18 @@
             "smiles": "[O-]Cl(=O)(=O)=O"
         },
         "molarweight": 99.45,
-        "model_record": {
-            "m": 1,
-            "sigma": 4.0186,
-            "epsilon_k": 104.16,
-            "z": -1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 4.0186,
+        "epsilon_k": 104.16,
+        "z": -1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     },
@@ -420,20 +392,18 @@
             "smiles": "OP(=O)(O)[O-]"
         },
         "molarweight": 96.986,
-        "model_record": {
-            "m": 1,
-            "sigma": 3.6505,
-            "epsilon_k": 95.0,
-            "z": -1,
-            "permittivity_record": {
-                "ExperimentalData": {
-                    "data": [
-                        [
-                            298.15,
-                            8.0
-                        ]
+        "m": 1,
+        "sigma": 3.6505,
+        "epsilon_k": 95.0,
+        "z": -1,
+        "permittivity_record": {
+            "ExperimentalData": {
+                "data": [
+                    [
+                        298.15,
+                        8.0
                     ]
-                }
+                ]
             }
         }
     }

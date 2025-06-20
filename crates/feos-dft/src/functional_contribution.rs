@@ -4,10 +4,12 @@ use ndarray::prelude::*;
 use ndarray::{RemoveAxis, ScalarOperand};
 use num_dual::*;
 use num_traits::Zero;
-use std::fmt::Display;
 
 /// Individual functional contribution that can be evaluated using generalized (hyper) dual numbers.
-pub trait FunctionalContribution: Display + Sync + Send {
+pub trait FunctionalContribution: Sync + Send {
+    /// Return the name of the contribution.
+    fn name(&self) -> &'static str;
+
     /// Return the weight functions required in this contribution.
     fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,

@@ -50,6 +50,8 @@ pub enum FeosError {
     InsufficientInformation,
     #[error("Incompatible parameters: {0}")]
     IncompatibleParameters(String),
+    #[error("Missing parameters: {0}")]
+    MissingParameters(String),
 
     // other errors
     #[error(transparent)]

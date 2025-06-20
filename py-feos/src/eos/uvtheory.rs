@@ -1,5 +1,7 @@
 use super::PyEquationOfState;
-use crate::{ideal_gas::IdealGasModel, parameter::PyParameters, residual::ResidualModel};
+use crate::ideal_gas::IdealGasModel;
+use crate::parameter::PyParameters;
+use crate::residual::ResidualModel;
 use feos::uvtheory::{Perturbation, UVTheory, UVTheoryOptions};
 use feos_core::{Components, EquationOfState};
 use pyo3::exceptions::PyValueError;
@@ -45,7 +47,7 @@ impl PyEquationOfState {
             perturbation,
         };
         let residual = Arc::new(ResidualModel::UVTheory(UVTheory::with_options(
-            Arc::new(parameters.try_convert()?),
+            parameters.try_convert()?,
             options,
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));

@@ -3,10 +3,10 @@
 //! These should give an idea about the expected slow-down depending
 //! on the dual number type used without the overhead of the `State`
 //! creation.
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use feos::core::{Derivative, Residual, State, StateHD};
 use feos::hard_sphere::HardSphereProperties;
-use feos::saftvrmie::{test_utils::test_parameters, SaftVRMie, SaftVRMieParameters};
+use feos::saftvrmie::{SaftVRMie, SaftVRMieParameters, test_utils::test_parameters};
 use ndarray::{Array, ScalarOperand};
 use num_dual::DualNum;
 use quantity::*;
@@ -16,9 +16,9 @@ use std::sync::Arc;
 /// - temperature is 80% of critical temperature,
 /// - volume is critical volume,
 /// - molefracs (or moles) for equimolar mixture.
-fn state_saftvrmie(parameters: &Arc<SaftVRMieParameters>) -> State<SaftVRMie> {
-    let n = parameters.pure_records.len();
-    let eos = Arc::new(SaftVRMie::new(parameters.clone()));
+fn state_saftvrmie(parameters: SaftVRMieParameters) -> State<SaftVRMie> {
+    let n = parameters.pure.len();
+    let eos = Arc::new(SaftVRMie::new(parameters));
     let moles = Array::from_elem(n, 1.0 / n as f64) * 10.0 * MOL;
     let cp = State::critical_point(&eos, Some(&moles), None, Default::default()).unwrap();
     let temperature = 0.8 * cp.temperature;
@@ -30,31 +30,26 @@ fn a_res<D: DualNum<f64> + Copy + ScalarOperand, E: Residual>(inp: (&Arc<E>, &St
     inp.0.residual_helmholtz_energy(inp.1)
 }
 
-fn d_hs<D: DualNum<f64> + Copy>(inp: (&SaftVRMieParameters, D)) -> D {
-    inp.0.hs_diameter(inp.1)[0]
+fn d_hs<D: DualNum<f64> + Copy>(inp: (&SaftVRMie, D)) -> D {
+    inp.0.params.hs_diameter(inp.1)[0]
 }
 
 /// Benchmark for evaluation of the Helmholtz energy for different dual number types.
-fn bench_dual_numbers<E: Residual>(
-    c: &mut Criterion,
-    group_name: &str,
-    state: State<E>,
-    parameters: &SaftVRMieParameters,
-) {
+fn bench_dual_numbers(c: &mut Criterion, group_name: &str, state: State<SaftVRMie>) {
     let mut group = c.benchmark_group(group_name);
     group.bench_function("d_f64", |b| {
-        b.iter(|| d_hs((parameters, state.derive0().temperature)))
+        b.iter(|| d_hs((&state.eos, state.derive0().temperature)))
     });
     group.bench_function("d_dual", |b| {
-        b.iter(|| d_hs((parameters, state.derive1(Derivative::DT).temperature)))
+        b.iter(|| d_hs((&state.eos, state.derive1(Derivative::DT).temperature)))
     });
     group.bench_function("d_dual2", |b| {
-        b.iter(|| d_hs((parameters, state.derive2(Derivative::DT).temperature)))
+        b.iter(|| d_hs((&state.eos, state.derive2(Derivative::DT).temperature)))
     });
     group.bench_function("d_hyperdual", |b| {
         b.iter(|| {
             d_hs((
-                parameters,
+                &state.eos,
                 state
                     .derive2_mixed(Derivative::DT, Derivative::DT)
                     .temperature,
@@ -62,7 +57,7 @@ fn bench_dual_numbers<E: Residual>(
         })
     });
     group.bench_function("d_dual3", |b| {
-        b.iter(|| d_hs((parameters, state.derive3(Derivative::DT).temperature)))
+        b.iter(|| d_hs((&state.eos, state.derive3(Derivative::DT).temperature)))
     });
 
     group.bench_function("a_f64", |b| {
@@ -89,12 +84,11 @@ fn bench_dual_numbers<E: Residual>(
 
 /// Benchmark for the SAFT VR Mie equation of state
 fn saftvrmie(c: &mut Criterion) {
-    let parameters = Arc::new(test_parameters().remove("ethane").unwrap());
+    let parameters = test_parameters().remove("ethane").unwrap();
     bench_dual_numbers(
         c,
         "dual_numbers_saftvrmie_ethane",
-        state_saftvrmie(&parameters),
-        &parameters,
+        state_saftvrmie(parameters),
     );
 }
 

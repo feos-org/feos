@@ -1,9 +1,10 @@
 use super::PyEquationOfState;
 #[cfg(feature = "dft")]
 use crate::dft::{PyFMTVersion, PyHelmholtzEnergyFunctional};
-use crate::{ideal_gas::IdealGasModel, parameter::PyParameters, residual::ResidualModel};
-#[cfg(feature = "dft")]
-use feos::saftvrqmie::SaftVRQMieFunctional;
+use crate::error::PyFeosError;
+use crate::ideal_gas::IdealGasModel;
+use crate::parameter::PyParameters;
+use crate::residual::ResidualModel;
 use feos::saftvrqmie::{SaftVRQMie, SaftVRQMieOptions};
 use feos_core::{Components, EquationOfState};
 use pyo3::prelude::*;
@@ -36,11 +37,12 @@ impl PyEquationOfState {
         let options = SaftVRQMieOptions {
             max_eta,
             inc_nonadd_term,
+            ..Default::default()
         };
-        let residual = Arc::new(ResidualModel::SaftVRQMie(SaftVRQMie::with_options(
-            Arc::new(parameters.try_convert()?),
-            options,
-        )));
+        let residual = Arc::new(ResidualModel::SaftVRQMie(
+            SaftVRQMie::with_options(parameters.try_convert()?, options)
+                .map_err(PyFeosError::from)?,
+        ));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
@@ -76,16 +78,16 @@ impl PyHelmholtzEnergyFunctional {
         max_eta: f64,
         inc_nonadd_term: bool,
     ) -> PyResult<PyEquationOfState> {
+        use crate::error::PyFeosError;
+
         let options = SaftVRQMieOptions {
             max_eta,
             inc_nonadd_term,
+            fmt_version: fmt_version.into(),
         };
         let func = Arc::new(ResidualModel::SaftVRQMieFunctional(
-            SaftVRQMieFunctional::with_options(
-                Arc::new(parameters.try_convert()?),
-                fmt_version.into(),
-                options,
-            ),
+            SaftVRQMie::with_options(parameters.try_convert()?, options)
+                .map_err(PyFeosError::from)?,
         ));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
         Ok(PyEquationOfState(Arc::new(EquationOfState::new(

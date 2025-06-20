@@ -1,6 +1,6 @@
 use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
-use feos_core::parameter::{IdentifierOption, Parameter};
+use feos_core::parameter::IdentifierOption;
 use feos_core::{Residual, StateBuilder};
 use ndarray::*;
 use quantity::*;
@@ -15,7 +15,7 @@ fn test_dln_phi_dp() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let saft = Arc::new(PcSaft::new(Arc::new(params)));
+    let saft = Arc::new(PcSaft::new(params));
     let t = 300.0 * KELVIN;
     let p = BAR;
     let h = 1e-1 * PASCAL;
@@ -48,7 +48,7 @@ fn test_virial_is_not_nan() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let saft = Arc::new(PcSaft::new(Arc::new(params)));
+    let saft = Arc::new(PcSaft::new(params));
     let virial_b = saft.second_virial_coefficient(300.0 * KELVIN, None)?;
     assert!(!virial_b.is_nan());
     Ok(())

@@ -8,13 +8,11 @@
             "inchi": "InChI=1/CO2/c2-1-3",
             "formula": "CO2"
         },
-        "model_record": {
-            "m": 1.6298,
-            "sigma": 3.0867,
-            "epsilon_k": 163.34,
-            "q": 3.9546
-        },
-        "molarweight": 44.01
+        "molarweight": 44.01,
+        "m": 1.6298,
+        "sigma": 3.0867,
+        "epsilon_k": 163.34,
+        "q": 3.9546
     },
     {
         "identifier": {
@@ -25,13 +23,11 @@
             "inchi": "InChI=1/CS2/c2-1-3",
             "formula": "CS2"
         },
-        "model_record": {
-            "m": 1.3906,
-            "sigma": 3.9453,
-            "epsilon_k": 344.25,
-            "q": 7.3662
-        },
-        "molarweight": 76.143
+        "molarweight": 76.143,
+        "m": 1.3906,
+        "sigma": 3.9453,
+        "epsilon_k": 344.25,
+        "q": 7.3662
     },
     {
         "identifier": {
@@ -42,13 +38,11 @@
             "inchi": "InChI=1/C2H4/c1-2/h1-2H2",
             "formula": "C2H4"
         },
-        "model_record": {
-            "m": 1.5477,
-            "sigma": 3.4475,
-            "epsilon_k": 179.19,
-            "q": 1.9155
-        },
-        "molarweight": 28.05
+        "molarweight": 28.05,
+        "m": 1.5477,
+        "sigma": 3.4475,
+        "epsilon_k": 179.19,
+        "q": 1.9155
     },
     {
         "identifier": {
@@ -59,13 +53,11 @@
             "inchi": "InChI=1/C2H2/c1-2/h1-2H",
             "formula": "C2H2"
         },
-        "model_record": {
-            "m": 1.5587,
-            "sigma": 3.3325,
-            "epsilon_k": 174.68,
-            "q": 4.5415
-        },
-        "molarweight": 26.04
+        "molarweight": 26.04,
+        "m": 1.5587,
+        "sigma": 3.3325,
+        "epsilon_k": 174.68,
+        "q": 4.5415
     },
     {
         "identifier": {
@@ -76,13 +68,11 @@
             "inchi": "InChI=1/N2/c1-2",
             "formula": "N2"
         },
-        "model_record": {
-            "m": 1.1879,
-            "sigma": 3.3353,
-            "epsilon_k": 90.99,
-            "q": 1.1151
-        },
-        "molarweight": 28.01
+        "molarweight": 28.01,
+        "m": 1.1879,
+        "sigma": 3.3353,
+        "epsilon_k": 90.99,
+        "q": 1.1151
     },
     {
         "identifier": {
@@ -93,13 +83,11 @@
             "inchi": "InChI=1/Cl2/c1-2",
             "formula": "Cl2"
         },
-        "model_record": {
-            "m": 1.4682,
-            "sigma": 3.448,
-            "epsilon_k": 269.67,
-            "q": 3.0724
-        },
-        "molarweight": 70.905
+        "molarweight": 70.905,
+        "m": 1.4682,
+        "sigma": 3.448,
+        "epsilon_k": 269.67,
+        "q": 3.0724
     },
     {
         "identifier": {
@@ -110,12 +98,10 @@
             "inchi": "InChI=1/C6H6/c1-2-4-6-5-3-1/h1-6H",
             "formula": "C6H6"
         },
-        "model_record": {
-            "m": 2.2463,
-            "sigma": 3.7852,
-            "epsilon_k": 296.24,
-            "q": 5.5907
-        },
-        "molarweight": 78.114
+        "molarweight": 78.114,
+        "m": 2.2463,
+        "sigma": 3.7852,
+        "epsilon_k": 296.24,
+        "q": 5.5907
     }
 ]
