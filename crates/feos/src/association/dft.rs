@@ -17,7 +17,7 @@ pub struct AssociationFunctional<'a, A: AssociationStrength> {
 impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
     pub fn new<P, B, Bo, C>(
         model: &'a A,
-        parameters: &'a ParametersBase<P, B, A::Record, Bo, C>,
+        parameters: &'a GcParameters<P, B, A::Record, Bo, C>,
         association: &'a Option<Association<A>>,
     ) -> Option<Self> {
         association.as_ref().map(|a| Self {

@@ -540,7 +540,7 @@ impl PyGcParameters {
 
     pub fn try_convert_heterosegmented<P, B, A, C: GroupCount + Default>(
         self,
-    ) -> PyResult<ParametersHetero<P, B, A, (), C>>
+    ) -> PyResult<GcParameters<P, B, A, (), C>>
     where
         for<'de> P: Deserialize<'de> + Clone,
         for<'de> B: Deserialize<'de> + Clone,
@@ -559,7 +559,7 @@ impl PyGcParameters {
                     .collect::<Result<Vec<_>, PyFeosError>>()
             })
             .transpose()?;
-        Ok(ParametersBase::<P, B, A, (), C>::from_segments_hetero(
+        Ok(GcParameters::<P, B, A, (), C>::from_segments_hetero(
             self.chemical_records,
             &segment_records,
             binary_segment_records.as_deref(),

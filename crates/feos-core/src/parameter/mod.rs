@@ -78,7 +78,7 @@ impl<B, C> BinaryParameters<B, C> {
     }
 }
 
-pub struct ParametersBase<P, B, A, Bo, C> {
+pub struct GcParameters<P, B, A, Bo, C> {
     pub pure: Vec<PureParameters<P, C>>,
     pub binary: Vec<BinaryParameters<B, ()>>,
     pub bonds: Vec<BinaryParameters<Bo, C>>,
@@ -87,11 +87,10 @@ pub struct ParametersBase<P, B, A, Bo, C> {
     pub molar_weight: MolarWeight<Array1<f64>>,
 }
 
-pub type Parameters<P, B, A> = ParametersBase<P, B, A, (), ()>;
-pub type ParametersHetero<P, B, A, Bo, C> = ParametersBase<P, B, A, Bo, C>;
+pub type Parameters<P, B, A> = GcParameters<P, B, A, (), ()>;
 pub type IdealGasParameters<I> = Parameters<I, (), ()>;
 
-impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: Clone> ParametersBase<P, B, A, Bo, C> {
+impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: Clone> GcParameters<P, B, A, Bo, C> {
     /// Return a parameter set containing the subset of components specified in `component_list`.
     ///
     /// # Panics
@@ -474,14 +473,14 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
     }
 }
 
-impl<P, B, A, Bo> ParametersHetero<P, B, A, Bo, f64> {
+impl<P, B, A, Bo> GcParameters<P, B, A, Bo, f64> {
     pub fn segment_counts(&self) -> Array1<f64> {
         self.pure.iter().map(|pr| pr.count).collect()
     }
 }
 
 impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
-    ParametersHetero<P, B, A, Bo, C>
+    GcParameters<P, B, A, Bo, C>
 {
     pub fn from_segments_hetero(
         chemical_records: Vec<ChemicalRecord>,

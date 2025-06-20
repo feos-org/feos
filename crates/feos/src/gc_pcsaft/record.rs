@@ -1,4 +1,4 @@
-use feos_core::parameter::ParametersHetero;
+use feos_core::parameter::GcParameters;
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 
@@ -51,4 +51,4 @@ impl GcPcSaftAssociationRecord {
 
 /// Parameter set required for the gc-PC-SAFT equation of state.
 pub type GcPcSaftParameters<C> =
-    ParametersHetero<GcPcSaftRecord, f64, GcPcSaftAssociationRecord, (), C>;
+    GcParameters<GcPcSaftRecord, f64, GcPcSaftAssociationRecord, (), C>;
