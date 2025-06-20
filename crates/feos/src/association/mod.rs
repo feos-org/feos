@@ -554,7 +554,7 @@ mod tests_pcsaft {
 #[cfg(feature = "gc_pcsaft")]
 mod tests_gc_pcsaft {
     use super::*;
-    use crate::gc_pcsaft::{GcPcSaftEosParameters, eos::parameter::test::*};
+    use crate::gc_pcsaft::eos::parameter::{GcPcSaftEosParameters, test::*};
     use approx::assert_relative_eq;
     use feos_core::ReferenceSystem;
     use ndarray::arr1;

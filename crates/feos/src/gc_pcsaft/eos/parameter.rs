@@ -96,14 +96,14 @@ impl GcPcSaftEosParameters {
     }
 }
 
-impl GcPcSaftEosParameters {
-    pub fn phi(mut self, phi: &[f64]) -> Self {
-        for ((i, j), e) in self.epsilon_k_ij.indexed_iter_mut() {
-            *e *= (phi[self.component_index[i]] * phi[self.component_index[j]]).sqrt();
-        }
-        self
-    }
-}
+// impl GcPcSaftEosParameters {
+//     pub fn phi(mut self, phi: &[f64]) -> Self {
+//         for ((i, j), e) in self.epsilon_k_ij.indexed_iter_mut() {
+//             *e *= (phi[self.component_index[i]] * phi[self.component_index[j]]).sqrt();
+//         }
+//         self
+//     }
+// }
 
 impl HardSphereProperties for GcPcSaftEosParameters {
     fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
