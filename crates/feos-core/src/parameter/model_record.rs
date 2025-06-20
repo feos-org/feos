@@ -14,7 +14,7 @@ use std::path::Path;
 
 /// A collection of parameters with an arbitrary identifier.
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ModelRecord<I, M, A> {
+pub struct Record<I, M, A> {
     pub identifier: I,
     #[serde(skip_serializing_if = "f64::is_zero")]
     #[serde(default)]
@@ -27,12 +27,12 @@ pub struct ModelRecord<I, M, A> {
 }
 
 /// A collection of parameters of a pure substance.
-pub type PureRecord<M, A> = ModelRecord<Identifier, M, A>;
+pub type PureRecord<M, A> = Record<Identifier, M, A>;
 
 /// Parameters describing an individual segment of a molecule.
-pub type SegmentRecord<M, A> = ModelRecord<String, M, A>;
+pub type SegmentRecord<M, A> = Record<String, M, A>;
 
-impl<I, M, A> ModelRecord<I, M, A> {
+impl<I, M, A> Record<I, M, A> {
     /// Create a new `ModelRecord`.
     pub fn new(identifier: I, molarweight: f64, model_record: M) -> Self {
         Self::with_association(identifier, molarweight, model_record, vec![])

@@ -1,6 +1,6 @@
 //! Implementation of the ideal gas heat capacity (de Broglie wavelength)
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
-use feos_core::parameter::{FromSegments, Parameters, Pure};
+use feos_core::parameter::{FromSegments, Parameters, PureParameters};
 use feos_core::{Components, FeosResult, IdealGas, ReferenceSystem};
 use ndarray::Array1;
 use num_dual::*;
@@ -59,7 +59,7 @@ pub type JobackParameters = Parameters<JobackRecord, (), ()>;
 /// - T = 289.15 K
 /// - p = 1e5 Pa
 /// - V = 1e-30 A³
-pub struct Joback(Vec<Pure<JobackRecord, ()>>);
+pub struct Joback(Vec<PureParameters<JobackRecord, ()>>);
 
 impl Joback {
     pub fn new(parameters: JobackParameters) -> Self {

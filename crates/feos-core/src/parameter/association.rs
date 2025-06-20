@@ -1,4 +1,4 @@
-use super::{Binary, BinaryRecord, GroupCount, Pure};
+use super::{BinaryParameters, BinaryRecord, GroupCount, PureParameters};
 use crate::{FeosError, FeosResult, parameter::PureRecord};
 use arrayvec::ArrayString;
 use ndarray::Array1;
@@ -103,8 +103,8 @@ pub struct AssociationParameters<A> {
     pub sites_a: Array1<AssociationSite<Option<A>>>,
     pub sites_b: Array1<AssociationSite<Option<A>>>,
     pub sites_c: Array1<AssociationSite<Option<A>>>,
-    pub binary_ab: Vec<Binary<A, ()>>,
-    pub binary_cc: Vec<Binary<A, ()>>,
+    pub binary_ab: Vec<BinaryParameters<A, ()>>,
+    pub binary_cc: Vec<BinaryParameters<A, ()>>,
 }
 
 impl<A: Clone> AssociationParameters<A> {
@@ -175,14 +175,14 @@ impl<A: Clone> AssociationParameters<A> {
                     )));
                 }
                 if let (Some(x), Some(y)) = (indices_a.get(&(i, a)), indices_b.get(&(j, b))) {
-                    binary_ab.push(Binary::new(*x, *y, record.parameters.clone(), ()));
+                    binary_ab.push(BinaryParameters::new(*x, *y, record.parameters.clone(), ()));
                 }
                 if let (Some(y), Some(x)) = (indices_b.get(&(i, a)), indices_a.get(&(j, b))) {
-                    binary_ab.push(Binary::new(*x, *y, record.parameters.clone(), ()));
+                    binary_ab.push(BinaryParameters::new(*x, *y, record.parameters.clone(), ()));
                 }
                 if let (Some(x), Some(y)) = (indices_c.get(&(i, a)), indices_c.get(&(j, b))) {
-                    binary_cc.push(Binary::new(*x, *y, record.parameters.clone(), ()));
-                    binary_cc.push(Binary::new(*y, *x, record.parameters.clone(), ()));
+                    binary_cc.push(BinaryParameters::new(*x, *y, record.parameters.clone(), ()));
+                    binary_cc.push(BinaryParameters::new(*y, *x, record.parameters.clone(), ()));
                 }
             }
         }
@@ -199,9 +199,9 @@ impl<A: Clone> AssociationParameters<A> {
     }
 
     pub fn new_hetero<P, C: GroupCount>(
-        pure_records: &[Pure<P, C>],
+        pure_records: &[PureParameters<P, C>],
         association_sites: &[Vec<AssociationRecord<A>>],
-        binary_records: &[Binary<Vec<BinaryAssociationRecord<A>>, ()>],
+        binary_records: &[BinaryParameters<Vec<BinaryAssociationRecord<A>>, ()>],
     ) -> FeosResult<Self> {
         let mut sites_a = Vec::new();
         let mut sites_b = Vec::new();
@@ -269,14 +269,14 @@ impl<A: Clone> AssociationParameters<A> {
                     )));
                 }
                 if let (Some(x), Some(y)) = (indices_a.get(&(i, a)), indices_b.get(&(j, b))) {
-                    binary_ab.push(Binary::new(*x, *y, record.parameters.clone(), ()));
+                    binary_ab.push(BinaryParameters::new(*x, *y, record.parameters.clone(), ()));
                 }
                 if let (Some(y), Some(x)) = (indices_b.get(&(i, a)), indices_a.get(&(j, b))) {
-                    binary_ab.push(Binary::new(*x, *y, record.parameters.clone(), ()));
+                    binary_ab.push(BinaryParameters::new(*x, *y, record.parameters.clone(), ()));
                 }
                 if let (Some(x), Some(y)) = (indices_c.get(&(i, a)), indices_c.get(&(j, b))) {
-                    binary_cc.push(Binary::new(*x, *y, record.parameters.clone(), ()));
-                    binary_cc.push(Binary::new(*y, *x, record.parameters.clone(), ()));
+                    binary_cc.push(BinaryParameters::new(*x, *y, record.parameters.clone(), ()));
+                    binary_cc.push(BinaryParameters::new(*y, *x, record.parameters.clone(), ()));
                 }
             }
         }

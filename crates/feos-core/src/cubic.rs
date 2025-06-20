@@ -17,7 +17,7 @@ use std::f64::consts::SQRT_2;
 const KB_A3: f64 = 13806490.0;
 
 /// Peng-Robinson parameters for a single substance.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PengRobinsonRecord {
     /// critical temperature in Kelvin
     tc: f64,

@@ -1,4 +1,4 @@
-use feos_core::parameter::{Parameters, Pure};
+use feos_core::parameter::{Parameters, PureParameters};
 use feos_core::{Components, FeosResult, IdealGas};
 use ndarray::Array1;
 use num_dual::DualNum;
@@ -117,7 +117,7 @@ pub type DipprParameters = Parameters<DipprRecord, (), ()>;
 
 /// Ideal gas equations of state based on DIPPR equations for
 /// ideal gas heat capacities.
-pub struct Dippr(Vec<Pure<DipprRecord, ()>>);
+pub struct Dippr(Vec<PureParameters<DipprRecord, ()>>);
 
 impl Dippr {
     pub fn new(parameters: DipprParameters) -> Self {

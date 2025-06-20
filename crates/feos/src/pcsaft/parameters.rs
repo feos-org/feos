@@ -185,7 +185,7 @@ impl FromSegmentsBinary for PcSaftBinaryRecord {
 /// Parameter set required for the PC-SAFT equation of state and Helmholtz energy functional.
 pub type PcSaftParameters = Parameters<PcSaftRecord, PcSaftBinaryRecord, PcSaftAssociationRecord>;
 
-// The PC-SAFT parameters in an easier accessible format.
+/// The PC-SAFT parameters in an easier accessible format.
 pub struct PcSaftPars {
     pub m: Array1<f64>,
     pub sigma: Array1<f64>,

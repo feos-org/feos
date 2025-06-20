@@ -21,38 +21,19 @@ pub use association::{AssociationParameters, AssociationRecord, BinaryAssociatio
 pub use chemical_record::{ChemicalRecord, GroupCount};
 pub use identifier::{Identifier, IdentifierOption};
 pub use model_record::{
-    BinaryRecord, BinarySegmentRecord, FromSegments, FromSegmentsBinary, ModelRecord, PureRecord,
+    BinaryRecord, BinarySegmentRecord, FromSegments, FromSegmentsBinary, PureRecord, Record,
     SegmentRecord,
 };
 
 #[derive(Clone)]
-pub struct Pure<M, C> {
+pub struct PureParameters<M, C> {
     pub identifier: String,
     pub model_record: M,
     pub count: C,
     pub component_index: usize,
 }
 
-#[derive(Clone, Copy)]
-pub struct Binary<B, C> {
-    pub id1: usize,
-    pub id2: usize,
-    pub model_record: B,
-    pub count: C,
-}
-
-impl<B, C> Binary<B, C> {
-    pub fn new(id1: usize, id2: usize, model_record: B, count: C) -> Self {
-        Self {
-            id1,
-            id2,
-            model_record,
-            count,
-        }
-    }
-}
-
-impl<M: Clone> Pure<M, ()> {
+impl<M: Clone> PureParameters<M, ()> {
     fn from_pure_record(model_record: M, component_index: usize) -> Self {
         Self {
             identifier: "".into(),
@@ -63,7 +44,7 @@ impl<M: Clone> Pure<M, ()> {
     }
 }
 
-impl<M: Clone, C> Pure<M, C> {
+impl<M: Clone, C> PureParameters<M, C> {
     fn from_segment_record<A>(
         segment: &SegmentRecord<M, A>,
         count: C,
@@ -78,10 +59,29 @@ impl<M: Clone, C> Pure<M, C> {
     }
 }
 
+#[derive(Clone, Copy)]
+pub struct BinaryParameters<B, C> {
+    pub id1: usize,
+    pub id2: usize,
+    pub model_record: B,
+    pub count: C,
+}
+
+impl<B, C> BinaryParameters<B, C> {
+    pub fn new(id1: usize, id2: usize, model_record: B, count: C) -> Self {
+        Self {
+            id1,
+            id2,
+            model_record,
+            count,
+        }
+    }
+}
+
 pub struct ParametersBase<P, B, A, Bo, C> {
-    pub pure: Vec<Pure<P, C>>,
-    pub binary: Vec<Binary<B, ()>>,
-    pub bonds: Vec<Binary<Bo, C>>,
+    pub pure: Vec<PureParameters<P, C>>,
+    pub binary: Vec<BinaryParameters<B, ()>>,
+    pub bonds: Vec<BinaryParameters<Bo, C>>,
     pub association: AssociationParameters<A>,
     pub identifiers: Vec<Identifier>,
     pub molar_weight: MolarWeight<Array1<f64>>,
@@ -163,14 +163,17 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
             .map(|(i, pr)| {
                 (
                     (pr.identifier, pr.molarweight),
-                    Pure::from_pure_record(pr.model_record, i),
+                    PureParameters::from_pure_record(pr.model_record, i),
                 )
             })
             .unzip();
         let (identifiers, molar_weight): (_, Vec<_>) = identifiers.into_iter().unzip();
         let binary_records = binary_records
             .into_iter()
-            .filter_map(|br| br.model_record.map(|m| Binary::new(br.id1, br.id2, m, ())))
+            .filter_map(|br| {
+                br.model_record
+                    .map(|m| BinaryParameters::new(br.id1, br.id2, m, ()))
+            })
             .collect();
 
         Ok(Self {
@@ -537,7 +540,7 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
                     )));
                 };
                 molar_weight[i] += segment.molarweight * c.into_f64();
-                groups.push(Pure::from_segment_record(segment, *c, i));
+                groups.push(PureParameters::from_segment_record(segment, *c, i));
                 association_sites.push(segment.association_sites.clone());
             }
             for ([a, b], c) in bond_counts {
@@ -553,7 +556,7 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
                         "No bond record found for {id1}-{id2}"
                     )));
                 };
-                bonds.push(Binary::new(a + n, b + n, bond.clone(), c));
+                bonds.push(BinaryParameters::new(a + n, b + n, bond.clone(), c));
             }
         }
 
@@ -574,10 +577,10 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
                     let id2 = &s2.identifier;
                     if let Some(&br) = binary_segment_records_map.get(&(id1, id2)) {
                         if let Some(br) = &br.model_record {
-                            binary_records.push(Binary::new(i1, i2, br.clone(), ()));
+                            binary_records.push(BinaryParameters::new(i1, i2, br.clone(), ()));
                         }
                         if !br.association_sites.is_empty() {
-                            binary_association_records.push(Binary::new(
+                            binary_association_records.push(BinaryParameters::new(
                                 i1,
                                 i2,
                                 br.association_sites.clone(),

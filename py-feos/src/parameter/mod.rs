@@ -4,7 +4,7 @@ use feos_core::{FeosError, FeosResult};
 use indexmap::IndexSet;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use pythonize::{depythonize, pythonize, PythonizeError};
+use pythonize::depythonize;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt::Write;
@@ -249,16 +249,11 @@ impl PyParameters {
     }
 
     #[getter]
-    fn get_pure_records<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyAny>, PythonizeError> {
-        pythonize(py, &self.pure_records)
-    }
-
-    #[getter]
-    fn get_binary_records<'py>(
-        &self,
-        py: Python<'py>,
-    ) -> Result<Bound<'py, PyAny>, PythonizeError> {
-        pythonize(py, &self.binary_records)
+    fn get_pure_records(&self) -> Vec<PyPureRecord> {
+        self.pure_records
+            .iter()
+            .map(|pr| PyPureRecord::from(pr.clone()))
+            .collect()
     }
 
     fn __repr__(&self) -> PyResult<String> {
