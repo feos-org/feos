@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        crate: [feos-core, feos-dft]
+        crate: [feos-core, feos-ad, feos-dft]
     steps:
       - uses: actions/checkout@v4
       - name: Build

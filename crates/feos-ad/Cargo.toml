@@ -1,0 +1,33 @@
+[package]
+name = "feos-ad"
+version = "0.2.3"
+authors = ["Philipp Rehner <prehner@ethz.ch"]
+edition = "2021"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+description = "FeOs-AD - Implicit automatic differentiation of equations of state and phase equilibria."
+homepage = "https://github.com/feos-org"
+repository = "https://github.com/feos-org/feos-ad"
+keywords = [
+    "thermodynamics",
+    "equations_of_state",
+    "phase_equilibria",
+    "autodiff",
+]
+categories = ["science"]
+
+[dependencies]
+num-dual = { workspace = true }
+quantity = { workspace = true, features = ["num-dual"] }
+nalgebra = { workspace = true }
+feos-core = { workspace = true }
+ndarray = { workspace = true }
+
+[dev-dependencies]
+feos = { workspace = true, features = ["pcsaft", "gc_pcsaft"] }
+approx = { workspace = true }
+quantity = { workspace = true, features = ["num-dual", "approx"] }
+
+[features]
+default = []
+parameter_fit = []
