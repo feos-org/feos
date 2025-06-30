@@ -24,7 +24,6 @@ impl HardChain {
             .bonds
             .iter()
             .map(|&([i, j], count)| {
-                println!("{i} {j} {count}");
                 let (di, dj) = (diameter[i], diameter[j]);
                 let cdij = c * di * dj / (di + dj);
                 let g = frac_1mz3 + cdij * 3.0 - cdij * cdij * (zeta3 - 1.0) * 2.0;
