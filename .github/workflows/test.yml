@@ -61,6 +61,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        run: cargo build --release -p feos-ad --features "${{ matrix.model }} dft"
+        run: cargo build --release -p feos-ad --features ${{ matrix.model }}
       - name: Run tests
-        run: cargo test --release -p feos-ad --features "${{ matrix.model }} dft"
+        run: cargo test --release -p feos-ad --features ${{ matrix.model }}
