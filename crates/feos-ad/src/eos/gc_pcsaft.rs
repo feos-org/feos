@@ -1,4 +1,4 @@
-use super::pcsaft::{A0, A1, A2, AD, B0, B1, B2, BD, CD};
+use super::pcsaft::{A0, A1, A2, AD, B0, B1, B2, BD, CD, MAX_ETA};
 use crate::{ParametersAD, ResidualHelmholtzEnergy};
 use nalgebra::{SMatrix, SVector};
 use num_dual::DualNum;
@@ -8,8 +8,6 @@ use std::f64::consts::{FRAC_PI_6, PI};
 use std::sync::LazyLock;
 
 const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
-
-const MAX_ETA: f64 = 0.5;
 
 const N_GROUPS: usize = 20;
 const GROUPS: [&str; N_GROUPS] = [
@@ -463,8 +461,8 @@ fn triplet_integral<D: DualNum<f64> + Copy>(mij1: D, mij2: D, eta: D) -> D {
 #[cfg(test)]
 pub mod test {
     use super::{
-        GcPcSaft as GcPcSaftAD, GcPcSaftParameters, ResidualHelmholtzEnergy, EPSILON_K, GROUPS, M,
-        MU, SIGMA,
+        EPSILON_K, GROUPS, GcPcSaft as GcPcSaftAD, GcPcSaftParameters, M, MU,
+        ResidualHelmholtzEnergy, SIGMA,
     };
     use approx::assert_relative_eq;
     use feos::gc_pcsaft::{GcPcSaft, GcPcSaftParameters as GcPcSaftEosParameters, GcPcSaftRecord};

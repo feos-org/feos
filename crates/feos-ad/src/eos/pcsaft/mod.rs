@@ -1,9 +1,13 @@
+#[cfg(feature = "pcsaft")]
 mod pcsaft_binary;
+#[cfg(feature = "pcsaft")]
 mod pcsaft_pure;
+#[cfg(feature = "pcsaft")]
 pub use pcsaft_binary::PcSaftBinary;
+#[cfg(feature = "pcsaft")]
 pub use pcsaft_pure::PcSaftPure;
 
-const MAX_ETA: f64 = 0.5;
+pub const MAX_ETA: f64 = 0.5;
 
 pub const A0: [f64; 7] = [
     0.91056314451539,
@@ -85,6 +89,7 @@ pub const CD: [[f64; 3]; 4] = [
 ];
 
 #[cfg(test)]
+#[cfg(feature = "pcsaft")]
 pub mod test {
     use super::{PcSaftBinary, PcSaftPure};
     use feos::pcsaft::{
