@@ -262,16 +262,13 @@ impl<'a, R: ResidualHelmholtzEnergy<N>, D: DualNum<f64> + Copy, const N: usize>
 
 #[cfg(test)]
 #[cfg(feature = "pcsaft")]
-mod test {
+mod test_pcsaft {
     use super::*;
-    use crate::EquationOfStateAD;
     use crate::eos::pcsaft::test::pcsaft;
-    use crate::eos::{GcPcSaft, GcPcSaftParameters, Joback};
     use approx::assert_relative_eq;
-    use feos_core::{Contributions, DensityInitialization, FeosResult, PhaseEquilibrium};
+    use feos_core::{Contributions, FeosResult, PhaseEquilibrium};
     use num_dual::{Dual, Dual64};
     use quantity::KELVIN;
-    use std::collections::HashMap;
 
     #[test]
     fn test_phase_equilibrium() -> FeosResult<()> {
@@ -283,7 +280,7 @@ mod test {
         let rho_v = 1.0 / vle.vapor.molar_volume;
         let vle_feos = PhaseEquilibrium::pure(&eos, temperature, None, Default::default())?;
         let p_feos = vle_feos.vapor().pressure(Contributions::Total);
-        println!("{:.5} {:.5} {:.5}", rho_l, rho_v, p);
+        println!("{rho_l:.5} {rho_v:.5} {p:.5}");
         println!(
             "{:.5} {:.5} {:.5}",
             vle_feos.liquid().density,
@@ -317,7 +314,7 @@ mod test {
             / h)
             .to_reduced();
         println!("{:11.5e} {:11.5e} {:11.5e}", rho_l.eps, rho_v.eps, p.eps);
-        println!("{:11.5e} {:11.5e} {:11.5e}", drho_l, drho_v, dp,);
+        println!("{drho_l:11.5e} {drho_v:11.5e} {dp:11.5e}");
         println!(
             "{} {}",
             vle.liquid.pressure().into_reduced(),
@@ -328,6 +325,18 @@ mod test {
         assert_relative_eq!(p.eps, dp, max_relative = 1e-5);
         Ok(())
     }
+}
+
+#[cfg(test)]
+#[cfg(feature = "gc_pcsaft")]
+mod test_gc_pcsaft {
+    use super::*;
+    use crate::EquationOfStateAD;
+    use crate::eos::{GcPcSaft, GcPcSaftParameters, Joback};
+    use approx::assert_relative_eq;
+    use feos_core::{DensityInitialization, FeosResult};
+    use num_dual::{Dual, Dual64};
+    use std::collections::HashMap;
 
     fn acetone_pentane_parameters() -> GcPcSaftParameters<f64, 2> {
         let mut groups1 = HashMap::new();

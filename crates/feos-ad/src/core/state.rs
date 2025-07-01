@@ -314,7 +314,7 @@ mod test {
         let state = StateAD::critical_point_pure(&pcsaft)?;
         let t = state.temperature.re();
         let rho = 1.0 / state.molar_volume.re();
-        println!("{:.5} {:.5}", t, rho);
+        println!("{t:.5} {rho:.5}");
         println!("{:.5} {:.5}", cp.temperature, cp.density);
         assert_relative_eq!(t, cp.temperature, max_relative = 1e-10);
         assert_relative_eq!(rho, cp.density, max_relative = 1e-10);
@@ -331,7 +331,7 @@ mod test {
             state.reduced_temperature.eps,
             state.reduced_molar_volume.recip().eps
         );
-        println!("{:.5e} {:.5e}", dt, drho);
+        println!("{dt:.5e} {drho:.5e}");
         assert_relative_eq!(state.reduced_temperature.eps, dt, max_relative = 1e-6);
         assert_relative_eq!(
             state.reduced_molar_volume.recip().eps,
@@ -362,7 +362,7 @@ mod test {
             DensityInitialization::Liquid,
         )?;
         let density = 1.0 / state.molar_volume;
-        println!("{:.5}", density);
+        println!("{density:.5}");
         println!("{:.5}", state_feos.density);
         assert_relative_eq!(density, state_feos.density, max_relative = 1e-10);
         Ok(())

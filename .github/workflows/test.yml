@@ -50,3 +50,17 @@ jobs:
         run: cargo build --release --features "${{ matrix.model }} dft"
       - name: Run tests
         run: cargo test --release --features "${{ matrix.model }} dft"
+
+  test_models_ad:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [pcsaft, gc_pcsaft]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: cargo build --release -p feos-ad --features "${{ matrix.model }} dft"
+      - name: Run tests
+        run: cargo test --release -p feos-ad --features "${{ matrix.model }} dft"
