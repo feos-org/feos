@@ -1030,8 +1030,8 @@ impl PyPhaseDiagram {
             let xs = self.0.liquid().molefracs();
             let ys = self.0.vapor().molefracs();
             for i in 0..n {
-                dict.insert(format!("x{}", i), xs.column(i).to_vec());
-                dict.insert(format!("y{}", i), ys.column(i).to_vec());
+                dict.insert(format!("x{i}"), xs.column(i).to_vec());
+                dict.insert(format!("y{i}"), ys.column(i).to_vec());
             }
         }
         dict.insert(

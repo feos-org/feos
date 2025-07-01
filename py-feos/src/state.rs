@@ -1494,7 +1494,7 @@ impl PyStateVec {
         if n != 1 {
             let xs = states.molefracs();
             for i in 0..n {
-                dict.insert(format!("x{}", i), xs.column(i).to_vec());
+                dict.insert(format!("x{i}"), xs.column(i).to_vec());
             }
         }
         dict.insert(

@@ -23,7 +23,7 @@ impl fmt::Display for IdentifierOption {
             IdentifierOption::Inchi => "InChI",
             IdentifierOption::Formula => "formula",
         };
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }
 
@@ -117,22 +117,22 @@ impl std::fmt::Display for Identifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut ids = Vec::new();
         if let Some(n) = &self.cas {
-            ids.push(format!("cas={}", n));
+            ids.push(format!("cas={n}"));
         }
         if let Some(n) = &self.name {
-            ids.push(format!("name={}", n));
+            ids.push(format!("name={n}"));
         }
         if let Some(n) = &self.iupac_name {
-            ids.push(format!("iupac_name={}", n));
+            ids.push(format!("iupac_name={n}"));
         }
         if let Some(n) = &self.smiles {
-            ids.push(format!("smiles={}", n));
+            ids.push(format!("smiles={n}"));
         }
         if let Some(n) = &self.inchi {
-            ids.push(format!("inchi={}", n));
+            ids.push(format!("inchi={n}"));
         }
         if let Some(n) = &self.formula {
-            ids.push(format!("formula={}", n));
+            ids.push(format!("formula={n}"));
         }
         write!(f, "Identifier({})", ids.join(", "))
     }

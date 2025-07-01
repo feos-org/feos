@@ -131,7 +131,7 @@ impl<M, A> PureRecord<M, A> {
 
         // report missing parameters
         if !queried.is_empty() {
-            return Err(FeosError::ComponentsNotFound(format!("{:?}", queried)));
+            return Err(FeosError::ComponentsNotFound(format!("{queried:?}")));
         };
 
         // collect into vec in correct order

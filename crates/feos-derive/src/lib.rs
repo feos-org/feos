@@ -39,7 +39,7 @@ fn implement(name: &str, variant: &syn::Variant, opts: &[&'static str]) -> syn::
                             let opts = opts.join(", ");
                             return Err(syn::Error::new_spanned(
                                 path,
-                                format!("expected one of: {}", opts),
+                                format!("expected one of: {opts}"),
                             ));
                         }
 

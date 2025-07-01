@@ -305,7 +305,7 @@ impl PyParameters {
         // print pure component parameters in a table
         write!(o, "|component|molarweight|").unwrap();
         for p in &params {
-            write!(o, "{}|", p).unwrap();
+            write!(o, "{p}|").unwrap();
         }
         if na + nb + nc > 0.0 {
             write!(o, "sites|").unwrap();
@@ -319,7 +319,7 @@ impl PyParameters {
                 write!(o, "nc|").unwrap();
             }
             for p in &assoc_params {
-                write!(o, "{}|", p).unwrap();
+                write!(o, "{p}|").unwrap();
             }
         }
         write!(o, "\n|-|-|").unwrap();
@@ -346,7 +346,7 @@ impl PyParameters {
             let model_record = record.model_record.as_object().unwrap();
             for &p in &params {
                 if let Some(val) = model_record.get(p) {
-                    write!(o, "{}|", val)
+                    write!(o, "{val}|")
                 } else {
                     write!(o, "-|")
                 }
@@ -369,7 +369,7 @@ impl PyParameters {
                         if let Some(par) = &s.parameters {
                             let assoc_record = par.as_object().unwrap();
                             if let Some(val) = assoc_record.get(p) {
-                                write!(o, "{}|", val)
+                                write!(o, "{val}|")
                             } else {
                                 write!(o, "-|")
                             }
@@ -398,7 +398,7 @@ impl PyParameters {
                         if let Some(par) = &s.parameters {
                             let assoc_record = par.as_object().unwrap();
                             if let Some(val) = assoc_record.get(p) {
-                                write!(o, "{}|", val)
+                                write!(o, "{val}|")
                             } else {
                                 write!(o, "-|")
                             }
@@ -434,12 +434,12 @@ impl PyParameters {
             // print binary interaction parameters
             write!(o, "\n\n|component 1|component 2|").unwrap();
             for p in &params {
-                write!(o, "{}|", p).unwrap();
+                write!(o, "{p}|").unwrap();
             }
             if !assoc_params.is_empty() {
                 write!(o, "site 1| site 2|").unwrap();
                 for p in &assoc_params {
-                    write!(o, "{}|", p).unwrap();
+                    write!(o, "{p}|").unwrap();
                 }
             }
             write!(o, "\n|-|-|").unwrap();
@@ -459,7 +459,7 @@ impl PyParameters {
                     let model_record = m.as_object().unwrap();
                     for &p in &params {
                         if let Some(val) = model_record.get(p) {
-                            write!(o, "{}|", val)
+                            write!(o, "{val}|")
                         } else {
                             write!(o, "-|")
                         }
@@ -472,7 +472,7 @@ impl PyParameters {
                     for &p in &assoc_params {
                         let assoc_record = s.parameters.as_object().unwrap();
                         if let Some(val) = assoc_record.get(p) {
-                            write!(o, "{}|", val)
+                            write!(o, "{val}|")
                         } else {
                             write!(o, "-|")
                         }
@@ -488,7 +488,7 @@ impl PyParameters {
                     for &p in &assoc_params {
                         let assoc_record = s.parameters.as_object().unwrap();
                         if let Some(val) = assoc_record.get(p) {
-                            write!(o, "{}|", val)
+                            write!(o, "{val}|")
                         } else {
                             write!(o, "-|")
                         }

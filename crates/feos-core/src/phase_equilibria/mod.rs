@@ -43,7 +43,7 @@ impl<E, const N: usize> Clone for PhaseEquilibrium<E, N> {
 impl<E: Residual, const N: usize> fmt::Display for PhaseEquilibrium<E, N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (i, s) in self.0.iter().enumerate() {
-            writeln!(f, "phase {}: {}", i, s)?;
+            writeln!(f, "phase {i}: {s}")?;
         }
         Ok(())
     }
