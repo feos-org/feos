@@ -336,7 +336,7 @@ fn assert_multiple_states<E: Residual + IdealGas>(
     max_relative: f64,
 ) {
     for (s, name) in states {
-        println!("State: {}", name);
+        println!("State: {name}");
         assert_relative_eq!(s.density, density, max_relative = max_relative);
         assert_relative_eq!(
             s.pressure(Contributions::Total),

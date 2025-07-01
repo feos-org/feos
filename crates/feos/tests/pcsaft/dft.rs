@@ -345,13 +345,13 @@ fn test_entropy_bulk_values() -> Result<(), Box<dyn Error>> {
         profile.vle.liquid().density,
         profile.vle.vapor().density
     );
-    println!("\nResidual:\n{:?}", s_res);
+    println!("\nResidual:\n{s_res:?}");
     println!(
         "liquid: {:?}, vapor: {:?}",
         profile.vle.liquid().entropy(Contributions::Residual) / profile.vle.liquid().volume,
         profile.vle.vapor().entropy(Contributions::Residual) / profile.vle.vapor().volume
     );
-    println!("\nTotal:\n{:?}", s_tot);
+    println!("\nTotal:\n{s_tot:?}");
     println!(
         "liquid: {:?}, vapor: {:?}",
         profile.vle.liquid().entropy(Contributions::Total) / profile.vle.liquid().volume,

@@ -62,8 +62,7 @@ impl TryFrom<usize> for FeynmanHibbsOrder {
             1 => Ok(Self::FH1),
             2 => Ok(Self::FH2),
             _ => Err(FeosError::IncompatibleParameters(format!(
-                "failed to parse value '{}' as FeynmanHibbsOrder. Has to be one of '0, 1, or 2'.",
-                u
+                "failed to parse value '{u}' as FeynmanHibbsOrder. Has to be one of '0, 1, or 2'."
             ))),
         }
     }
@@ -410,9 +409,9 @@ impl SaftVRQMie {
                 let name = if i == j {
                     name_i
                 } else {
-                    format!("{}_{}", name_i, name_j)
+                    format!("{name_i}_{name_j}")
                 };
-                let f = File::create(format!("{}_{}K.table", name, t))?;
+                let f = File::create(format!("{name}_{t}K.table"))?;
                 let mut stream = BufWriter::new(f);
 
                 std::io::Write::write(
@@ -421,10 +420,10 @@ impl SaftVRQMie {
                 )?;
                 std::io::Write::write(
                     &mut stream,
-                    format!("# FH1 potential for {} at T = {}\n", name, temperature).as_bytes(),
+                    format!("# FH1 potential for {name} at T = {temperature}\n").as_bytes(),
                 )?;
-                std::io::Write::write(&mut stream, format!("FH1_{}\n", name).as_bytes())?;
-                std::io::Write::write(&mut stream, format!("N {}\n\n", n).as_bytes())?;
+                std::io::Write::write(&mut stream, format!("FH1_{name}\n").as_bytes())?;
+                std::io::Write::write(&mut stream, format!("N {n}\n\n").as_bytes())?;
 
                 for (k, &r) in rs.iter().enumerate() {
                     let [u, du, _] = self.params.qmie_potential_ij(i, j, r, t);

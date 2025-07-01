@@ -196,8 +196,7 @@ impl ElectrolytePcSaftPars {
             let r = &br.model_record;
             if r.k_ij.len() > 4 {
                 return Err(FeosError::IncompatibleParameters(format!(
-                    "Binary interaction for component {} with {} is parametrized with more than 4 k_ij coefficients.",
-                    i, j
+                    "Binary interaction for component {i} with {j} is parametrized with more than 4 k_ij coefficients."
                 )));
             } else {
                 (0..r.k_ij.len()).for_each(|k| {
