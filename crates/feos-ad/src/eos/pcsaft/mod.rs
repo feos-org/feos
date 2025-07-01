@@ -90,8 +90,8 @@ pub mod test {
     use feos::pcsaft::{
         PcSaft, PcSaftAssociationRecord, PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord,
     };
-    use feos_core::parameter::{AssociationRecord, PureRecord};
     use feos_core::FeosResult;
+    use feos_core::parameter::{AssociationRecord, PureRecord};
     use std::sync::Arc;
 
     pub fn pcsaft() -> FeosResult<(PcSaftPure<8>, Arc<PcSaft>)> {
@@ -150,22 +150,12 @@ pub mod test {
         let sigma = 3.4;
         let epsilon_k = 180.0;
         let mu = 2.2;
-        let params = PcSaftParameters::from_model_records(vec![PcSaftRecord::new(
-            m,
-            sigma,
-            epsilon_k,
-            Some(mu),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )])?;
-        let eos = Arc::new(PcSaft::new(Arc::new(params)));
+        let params = PcSaftParameters::new_pure(PureRecord::new(
+            Default::default(),
+            0.0,
+            PcSaftRecord::new(m, sigma, epsilon_k, mu, 0.0, None, None, None),
+        ))?;
+        let eos = Arc::new(PcSaft::new(params));
         let params = [m, sigma, epsilon_k, mu];
         Ok((PcSaftPure(params), eos))
     }

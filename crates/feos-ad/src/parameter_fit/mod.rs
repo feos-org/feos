@@ -1,6 +1,6 @@
 use crate::{HelmholtzEnergyWrapper, ResidualHelmholtzEnergy};
 use feos_core::{
-    DensityInitialization::Liquid, EosResult, PhaseEquilibrium, ReferenceSystem, State,
+    DensityInitialization::Liquid, FeosResult, PhaseEquilibrium, ReferenceSystem, State,
 };
 use nalgebra::{Const, SVector};
 use ndarray::arr1;
@@ -12,7 +12,7 @@ type Gradient<const P: usize> = DualVec<f64, f64, Const<P>>;
 pub fn vapor_pressure<R: ResidualHelmholtzEnergy<1>, const P: usize>(
     eos: &HelmholtzEnergyWrapper<R, Gradient<P>, 1>,
     temperature: Temperature,
-) -> EosResult<Pressure<Gradient<P>>> {
+) -> FeosResult<Pressure<Gradient<P>>> {
     let vle = PhaseEquilibrium::pure(&eos.eos, temperature, None, Default::default())?;
 
     let v1 = 1.0 / vle.liquid().density.to_reduced();
@@ -36,7 +36,7 @@ pub fn vapor_pressure<R: ResidualHelmholtzEnergy<1>, const P: usize>(
 pub fn equilibrium_liquid_density<R: ResidualHelmholtzEnergy<1>, const P: usize>(
     eos: &HelmholtzEnergyWrapper<R, Gradient<P>, 1>,
     temperature: Temperature,
-) -> EosResult<(Pressure<Gradient<P>>, Density<Gradient<P>>)> {
+) -> FeosResult<(Pressure<Gradient<P>>, Density<Gradient<P>>)> {
     let vle = PhaseEquilibrium::pure(&eos.eos, temperature, None, Default::default())?;
 
     let v_l = 1.0 / vle.liquid().density.to_reduced();
@@ -62,7 +62,7 @@ pub fn liquid_density<R: ResidualHelmholtzEnergy<1>, const P: usize>(
     eos: &HelmholtzEnergyWrapper<R, Gradient<P>, 1>,
     temperature: Temperature,
     pressure: Pressure,
-) -> EosResult<Density<Gradient<P>>> {
+) -> FeosResult<Density<Gradient<P>>> {
     let moles = Moles::from_reduced(arr1(&[1.0]));
     let state = State::new_npt(&eos.eos, temperature, pressure, &moles, Liquid)?;
 
@@ -87,7 +87,7 @@ pub fn bubble_point_pressure<R: ResidualHelmholtzEnergy<2>, const P: usize>(
     temperature: Temperature,
     pressure: Option<Pressure>,
     liquid_molefracs: SVector<f64, 2>,
-) -> EosResult<Pressure<Gradient<P>>> {
+) -> FeosResult<Pressure<Gradient<P>>> {
     let x = arr1(liquid_molefracs.as_slice());
     let vle = PhaseEquilibrium::bubble_point(
         &eos.eos,
@@ -132,7 +132,7 @@ pub fn dew_point_pressure<R: ResidualHelmholtzEnergy<2>, const P: usize>(
     temperature: Temperature,
     pressure: Option<Pressure>,
     vapor_molefracs: SVector<f64, 2>,
-) -> EosResult<Pressure<Gradient<P>>> {
+) -> FeosResult<Pressure<Gradient<P>>> {
     let y = arr1(vapor_molefracs.as_slice());
     let vle = PhaseEquilibrium::dew_point(
         &eos.eos,
@@ -183,7 +183,7 @@ mod test {
     use quantity::{BAR, KELVIN, LITER, MOL, PASCAL};
 
     #[test]
-    fn test_vapor_pressure_derivatives() -> EosResult<()> {
+    fn test_vapor_pressure_derivatives() -> FeosResult<()> {
         let pcsaft_params = [
             "m",
             "sigma",
@@ -202,8 +202,8 @@ mod test {
         let p = p.convert_into(PASCAL);
         let (p, grad) = (p.re, p.eps.unwrap_generic(Const::<8>, U1));
 
-        println!("{:.5}", p);
-        println!("{:.5?}", grad);
+        println!("{p:.5}");
+        println!("{grad:.5?}");
 
         for (i, par) in pcsaft_params.into_iter().enumerate() {
             let mut params = pcsaft.parameters;
@@ -225,7 +225,7 @@ mod test {
     }
 
     #[test]
-    fn test_vapor_pressure_derivatives_fit() -> EosResult<()> {
+    fn test_vapor_pressure_derivatives_fit() -> FeosResult<()> {
         let (pcsaft, _) = pcsaft_non_assoc()?;
         let pcsaft = pcsaft.wrap();
         let pcsaft_ad = pcsaft.named_derivatives(["m", "sigma", "epsilon_k"]);
@@ -234,8 +234,8 @@ mod test {
         let p = p.convert_into(PASCAL);
         let (p, grad) = (p.re, p.eps.unwrap_generic(Const::<3>, U1));
 
-        println!("{:.5}", p);
-        println!("{:.5?}", grad);
+        println!("{p:.5}");
+        println!("{grad:.5?}");
 
         for (i, par) in ["m", "sigma", "epsilon_k"].into_iter().enumerate() {
             let mut params = pcsaft.parameters;
@@ -257,7 +257,7 @@ mod test {
     }
 
     #[test]
-    fn test_equilibrium_liquid_density_derivatives_fit() -> EosResult<()> {
+    fn test_equilibrium_liquid_density_derivatives_fit() -> FeosResult<()> {
         let (pcsaft, _) = pcsaft_non_assoc()?;
         let pcsaft = pcsaft.wrap();
         let pcsaft_ad = pcsaft.named_derivatives(["m", "sigma", "epsilon_k"]);
@@ -268,9 +268,9 @@ mod test {
         let (p, p_grad) = (p.re, p.eps.unwrap_generic(Const::<3>, U1));
         let (rho, rho_grad) = (rho.re, rho.eps.unwrap_generic(Const::<3>, U1));
 
-        println!("{:.5} {:.5}", p, rho);
-        println!("{:.5?}", p_grad);
-        println!("{:.5?}", rho_grad);
+        println!("{p:.5} {rho:.5}");
+        println!("{p_grad:.5?}");
+        println!("{rho_grad:.5?}");
 
         for (i, par) in ["m", "sigma", "epsilon_k"].into_iter().enumerate() {
             let mut params = pcsaft.parameters;
@@ -298,7 +298,7 @@ mod test {
     }
 
     #[test]
-    fn test_liquid_density_derivatives_fit() -> EosResult<()> {
+    fn test_liquid_density_derivatives_fit() -> FeosResult<()> {
         let (pcsaft, _) = pcsaft_non_assoc()?;
         let pcsaft = pcsaft.wrap();
         let pcsaft_ad = pcsaft.named_derivatives(["m", "sigma", "epsilon_k"]);
@@ -308,8 +308,8 @@ mod test {
         let rho = rho.convert_into(MOL / LITER);
         let (rho, grad) = (rho.re, rho.eps.unwrap_generic(Const::<3>, U1));
 
-        println!("{:.5}", rho);
-        println!("{:.5?}", grad);
+        println!("{rho:.5}");
+        println!("{grad:.5?}");
 
         for (i, par) in ["m", "sigma", "epsilon_k"].into_iter().enumerate() {
             let mut params = pcsaft.parameters;
@@ -338,7 +338,7 @@ mod test {
     }
 
     #[test]
-    fn test_bubble_point_pressure() -> EosResult<()> {
+    fn test_bubble_point_pressure() -> FeosResult<()> {
         let (pcsaft, _) = pcsaft_binary()?;
         let pcsaft = pcsaft.wrap();
         let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
@@ -348,8 +348,8 @@ mod test {
         let p = p.convert_into(BAR);
         let (p, [[grad]]) = (p.re, p.eps.unwrap_generic(U1, U1).data.0);
 
-        println!("{:.5}", p);
-        println!("{:.5?}", grad);
+        println!("{p:.5}");
+        println!("{grad:.5?}");
 
         let (params, mut kij) = pcsaft.parameters;
         let h = 1e-7;
@@ -368,7 +368,7 @@ mod test {
     }
 
     #[test]
-    fn test_dew_point_pressure() -> EosResult<()> {
+    fn test_dew_point_pressure() -> FeosResult<()> {
         let (pcsaft, _) = pcsaft_binary()?;
         let pcsaft = pcsaft.wrap();
         let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
@@ -378,8 +378,8 @@ mod test {
         let p = p.convert_into(BAR);
         let (p, [[grad]]) = (p.re, p.eps.unwrap_generic(U1, U1).data.0);
 
-        println!("{:.5}", p);
-        println!("{:.5?}", grad);
+        println!("{p:.5}");
+        println!("{grad:.5?}");
 
         let (params, mut kij) = pcsaft.parameters;
         let h = 1e-7;
