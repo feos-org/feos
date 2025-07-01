@@ -52,7 +52,10 @@ impl PySmartsRecord {
     #[staticmethod]
     #[pyo3(text_signature = "(path)")]
     pub fn from_json(path: &str) -> PyResult<Vec<Self>> {
-        Ok(serde_json::from_reader(BufReader::new(File::open(path)?)).map_err(PyFeosError::from)?)
+        Ok(
+            serde_json::from_reader(BufReader::new(File::open(path)?))
+                .map_err(PyFeosError::from)?,
+        )
     }
 }
 
@@ -64,7 +67,7 @@ impl std::fmt::Display for PySmartsRecord {
             self.group, self.smarts
         )?;
         if let Some(max) = self.max {
-            write!(f, ", max={}", max)?;
+            write!(f, ", max={max}")?;
         }
         write!(f, ")")
     }

@@ -442,7 +442,7 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
             .collect();
         if !queried.is_subset(&available) {
             let missing: Vec<_> = queried.difference(&available).cloned().collect();
-            let msg = format!("{:?}", missing);
+            let msg = format!("{missing:?}");
             return Err(FeosError::ComponentsNotFound(msg));
         };
 
@@ -719,7 +719,7 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
             .collect();
         if !queried.is_subset(&available) {
             let missing: Vec<_> = queried.difference(&available).cloned().collect();
-            let msg = format!("{:?}", missing);
+            let msg = format!("{missing:?}");
             return Err(FeosError::ComponentsNotFound(msg));
         };
 
