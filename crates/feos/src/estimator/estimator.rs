@@ -2,7 +2,7 @@
 //! optimization.
 use super::{DataSet, FeosError, Loss};
 use feos_core::Residual;
-use ndarray::{Array1, ArrayView1, Axis, arr1, concatenate};
+use ndarray::{arr1, concatenate, Array1, ArrayView1, Axis};
 // use quantity::si::SIArray1;
 use std::fmt;
 use std::fmt::Display;
