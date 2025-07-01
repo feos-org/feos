@@ -2,6 +2,8 @@ use crate::error::PyFeosError;
 use feos_core::parameter::*;
 use feos_core::{FeosError, FeosResult};
 use indexmap::IndexSet;
+use numpy::IntoPyArray;
+use pyo3::exceptions::PyKeyError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use pythonize::depythonize;
@@ -265,6 +267,34 @@ impl PyParameters {
         Ok(pr)
     }
 
+    fn __getitem__<'py>(&self, py: Python<'py>, obj: String) -> PyResult<Bound<'py, PyAny>> {
+        let params = Parameters::new(self.pure_records.clone(), self.binary_records.clone())
+            .map_err(PyFeosError::from)?;
+        let [pure] = params.collate(|pr| {
+            [pr.as_object()
+                .and_then(|o| o.get(&obj))
+                .and_then(|v| v.as_f64())]
+        });
+        if pure.iter().any(|p| p.is_some()) {
+            return Ok(pure
+                .mapv(|x| x.unwrap_or_default())
+                .into_pyarray(py)
+                .into_any());
+        }
+        let [binary] = params.collate_binary(|br| {
+            [br.as_object()
+                .and_then(|o| o.get(&obj))
+                .and_then(|v| v.as_f64())]
+        });
+        if binary.iter().any(|p| p.is_some()) {
+            return Ok(binary
+                .mapv(|x| x.unwrap_or_default())
+                .into_pyarray(py)
+                .into_any());
+        }
+        Err(PyErr::new::<PyKeyError, _>(obj))
+    }
+
     fn _repr_markdown_(&self) -> String {
         // crate consistent list of component names
         let component_names: Vec<_> = self
@@ -278,6 +308,15 @@ impl PyParameters {
             })
             .collect();
 
+        let format_optional = |o: &mut String, val| {
+            if let Some(val) = val {
+                write!(o, "{val}|")
+            } else {
+                write!(o, "|")
+            }
+            .unwrap();
+        };
+
         // collect all pure component parameters
         let params: IndexSet<_> = self
             .pure_records
@@ -288,8 +327,10 @@ impl PyParameters {
         // collect association parameters and count the association sites
         let [mut na, mut nb, mut nc] = [0.0; 3];
         let mut assoc_params = IndexSet::new();
+        let mut site_names = false;
         for r in &self.pure_records {
             for s in &r.association_sites {
+                site_names |= !s.id.is_empty();
                 na += s.na;
                 nb += s.nb;
                 nc += s.nc;
@@ -308,7 +349,9 @@ impl PyParameters {
             write!(o, "{p}|").unwrap();
         }
         if na + nb + nc > 0.0 {
-            write!(o, "sites|").unwrap();
+            if site_names {
+                write!(o, "sites|").unwrap();
+            }
             if na > 0.0 {
                 write!(o, "na|").unwrap();
             }
@@ -327,7 +370,9 @@ impl PyParameters {
             write!(o, "-|").unwrap();
         }
         if na + nb + nc > 0.0 {
-            write!(o, "-|").unwrap();
+            if site_names {
+                write!(o, "-|").unwrap();
+            }
             if na > 0.0 {
                 write!(o, "-|").unwrap();
             }
@@ -345,35 +390,39 @@ impl PyParameters {
             write!(o, "\n|{}|{}|", comp, record.molarweight).unwrap();
             let model_record = record.model_record.as_object().unwrap();
             for &p in &params {
-                if let Some(val) = model_record.get(p) {
-                    write!(o, "{val}|")
-                } else {
-                    write!(o, "-|")
-                }
-                .unwrap();
+                format_optional(o, model_record.get(p));
             }
             if !record.association_sites.is_empty() {
                 let s = &record.association_sites[0];
                 if na + nb + nc > 0.0 {
-                    write!(o, "{}|", s.id).unwrap();
+                    if site_names {
+                        write!(o, "{}|", s.id).unwrap();
+                    }
                     if na > 0.0 {
-                        write!(o, "{}|", s.na).unwrap();
+                        if s.na > 0.0 {
+                            write!(o, "{}|", s.na).unwrap();
+                        } else {
+                            write!(o, "|").unwrap();
+                        }
                     }
                     if nb > 0.0 {
-                        write!(o, "{}|", s.nb).unwrap();
+                        if s.nb > 0.0 {
+                            write!(o, "{}|", s.nb).unwrap();
+                        } else {
+                            write!(o, "|").unwrap();
+                        }
                     }
                     if nc > 0.0 {
-                        write!(o, "{}|", s.nc).unwrap();
+                        if s.nc > 0.0 {
+                            write!(o, "{}|", s.nc).unwrap();
+                        } else {
+                            write!(o, "|").unwrap();
+                        }
                     }
                     for &p in &assoc_params {
                         if let Some(par) = &s.parameters {
                             let assoc_record = par.as_object().unwrap();
-                            if let Some(val) = assoc_record.get(p) {
-                                write!(o, "{val}|")
-                            } else {
-                                write!(o, "-|")
-                            }
-                            .unwrap();
+                            format_optional(o, assoc_record.get(p));
                         }
                     }
                 }
@@ -384,7 +433,9 @@ impl PyParameters {
                     write!(o, "|").unwrap();
                 }
                 if na + nb + nc > 0.0 {
-                    write!(o, "{}|", s.id).unwrap();
+                    if site_names {
+                        write!(o, "{}|", s.id).unwrap();
+                    }
                     if na > 0.0 {
                         write!(o, "{}|", s.na).unwrap();
                     }
@@ -397,12 +448,7 @@ impl PyParameters {
                     for &p in &assoc_params {
                         if let Some(par) = &s.parameters {
                             let assoc_record = par.as_object().unwrap();
-                            if let Some(val) = assoc_record.get(p) {
-                                write!(o, "{val}|")
-                            } else {
-                                write!(o, "-|")
-                            }
-                            .unwrap();
+                            format_optional(o, assoc_record.get(p));
                         }
                     }
                 }
@@ -437,7 +483,9 @@ impl PyParameters {
                 write!(o, "{p}|").unwrap();
             }
             if !assoc_params.is_empty() {
-                write!(o, "site 1| site 2|").unwrap();
+                if site_names {
+                    write!(o, "site 1| site 2|").unwrap();
+                }
                 for p in &assoc_params {
                     write!(o, "{p}|").unwrap();
                 }
@@ -447,7 +495,9 @@ impl PyParameters {
                 write!(o, "-|").unwrap();
             }
             if !assoc_params.is_empty() {
-                write!(o, "-|-|").unwrap();
+                if site_names {
+                    write!(o, "-|-|").unwrap();
+                }
                 for _ in &assoc_params {
                     write!(o, "-|").unwrap();
                 }
@@ -458,25 +508,17 @@ impl PyParameters {
                 if let Some(m) = &r.model_record {
                     let model_record = m.as_object().unwrap();
                     for &p in &params {
-                        if let Some(val) = model_record.get(p) {
-                            write!(o, "{val}|")
-                        } else {
-                            write!(o, "-|")
-                        }
-                        .unwrap();
+                        format_optional(o, model_record.get(p));
                     }
                 }
                 if !r.association_sites.is_empty() {
                     let s = &r.association_sites[0];
-                    write!(o, "{}|{}|", s.id1, s.id2).unwrap();
+                    if site_names {
+                        write!(o, "{}|{}|", s.id1, s.id2).unwrap();
+                    }
                     for &p in &assoc_params {
                         let assoc_record = s.parameters.as_object().unwrap();
-                        if let Some(val) = assoc_record.get(p) {
-                            write!(o, "{val}|")
-                        } else {
-                            write!(o, "-|")
-                        }
-                        .unwrap();
+                        format_optional(o, assoc_record.get(p));
                     }
                 }
                 for s in r.association_sites.iter().skip(1) {
@@ -484,15 +526,12 @@ impl PyParameters {
                     for &_ in &params {
                         write!(o, "|").unwrap();
                     }
-                    write!(o, "{}|{}|", s.id1, s.id2).unwrap();
+                    if site_names {
+                        write!(o, "{}|{}|", s.id1, s.id2).unwrap();
+                    }
                     for &p in &assoc_params {
                         let assoc_record = s.parameters.as_object().unwrap();
-                        if let Some(val) = assoc_record.get(p) {
-                            write!(o, "{val}|")
-                        } else {
-                            write!(o, "-|")
-                        }
-                        .unwrap();
+                        format_optional(o, assoc_record.get(p));
                     }
                 }
             }
