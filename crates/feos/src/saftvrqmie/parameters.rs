@@ -110,8 +110,7 @@ impl SaftVRQMiePars {
         for (i, m) in m.iter().enumerate() {
             if *m != 1.0 {
                 return Err(FeosError::IncompatibleParameters(format!(
-                    "Segment number `m` for component {} is not one. Chain-contributions are currently not supported.",
-                    i
+                    "Segment number `m` for component {i} is not one. Chain-contributions are currently not supported."
                 )));
             }
         }

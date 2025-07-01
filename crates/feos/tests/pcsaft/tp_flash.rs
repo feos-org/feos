@@ -31,7 +31,7 @@ fn test_tp_flash() -> Result<(), Box<dyn Error>> {
     let p = x1 * p_propane + (1.0 - x1) * p_butane;
     let y1 = (x1 * p_propane / p).into_value();
     let z1 = 0.5 * (x1 + y1);
-    println!("{} {} {} {} {}", p_propane, p_butane, x1, y1, z1);
+    println!("{p_propane} {p_butane} {x1} {y1} {z1}");
     let mix = Arc::new(PcSaft::new(read_params(vec!["propane", "butane"])?));
     let options = SolverOptions::new().max_iter(100).tol(1e-12);
     let vle = PhaseEquilibrium::tp_flash(
