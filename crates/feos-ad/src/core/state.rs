@@ -5,7 +5,7 @@ use super::{
 use feos_core::{DensityInitialization, FeosResult, ReferenceSystem, State};
 use nalgebra::{Const, SMatrix, SVector};
 use ndarray::arr1;
-use num_dual::{hessian, jacobian, third_derivative, Dual2Vec, Dual3, DualNum, DualVec};
+use num_dual::{Dual2Vec, Dual3, DualNum, DualVec, hessian, jacobian, third_derivative};
 use quantity::{MolarEnergy, MolarEntropy, MolarVolume, Moles, Pressure, Temperature};
 
 /// An (intensive) thermodynamic state representing a single phase.
@@ -290,12 +290,13 @@ impl Eigen<2> for Const<2> {
 }
 
 #[cfg(test)]
+#[cfg(feature = "pcsaft")]
 mod test {
     use super::*;
+    use crate::EquationOfStateAD;
+    use crate::eos::PcSaftPure;
     use crate::eos::ideal_gas::test::joback;
     use crate::eos::pcsaft::test::pcsaft;
-    use crate::eos::PcSaftPure;
-    use crate::EquationOfStateAD;
     use approx::assert_relative_eq;
     use feos_core::{Contributions, EquationOfState, FeosResult, PhaseEquilibrium};
     use num_dual::{Dual, Dual64};

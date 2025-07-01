@@ -18,10 +18,12 @@ feos-core = { workspace = true }
 ndarray = { workspace = true }
 
 [dev-dependencies]
-feos = { workspace = true, features = ["pcsaft", "gc_pcsaft"] }
+feos = { workspace = true }
 approx = { workspace = true }
 quantity = { workspace = true, features = ["num-dual", "approx"] }
 
 [features]
 default = []
+pcsaft = ["feos/pcsaft"]
+gc_pcsaft = ["feos/gc_pcsaft"]
 parameter_fit = []

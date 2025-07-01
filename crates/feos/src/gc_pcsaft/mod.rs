@@ -11,6 +11,6 @@ pub(crate) mod eos;
 pub mod micelles;
 mod record;
 #[cfg(feature = "dft")]
-pub use dft::{GcPcSaftFunctional, GcPcSaftFunctionalContribution};
-pub use eos::{GcPcSaft, GcPcSaftOptions};
+pub use dft::{GcPcSaftFunctional, GcPcSaftFunctionalContribution, GcPcSaftFunctionalParameters};
+pub use eos::{GcPcSaft, GcPcSaftEosParameters, GcPcSaftOptions};
 pub use record::{GcPcSaftParameters, GcPcSaftRecord};

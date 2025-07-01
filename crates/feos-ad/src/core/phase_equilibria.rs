@@ -1,8 +1,8 @@
 use super::{HelmholtzEnergyWrapper, ParametersAD, ResidualHelmholtzEnergy, StateAD};
 use feos_core::{Contributions, FeosResult, PhaseEquilibrium, ReferenceSystem};
 use nalgebra::SVector;
-use ndarray::{arr1, Array};
-use num_dual::{linalg::LU, DualNum};
+use ndarray::{Array, arr1};
+use num_dual::{DualNum, linalg::LU};
 use quantity::{Dimensionless, Moles, Pressure, Temperature};
 
 impl<'a, R: ResidualHelmholtzEnergy<N>, D: DualNum<f64> + Copy, const N: usize>
@@ -261,11 +261,12 @@ impl<'a, R: ResidualHelmholtzEnergy<N>, D: DualNum<f64> + Copy, const N: usize>
 }
 
 #[cfg(test)]
+#[cfg(feature = "pcsaft")]
 mod test {
     use super::*;
+    use crate::EquationOfStateAD;
     use crate::eos::pcsaft::test::pcsaft;
     use crate::eos::{GcPcSaft, GcPcSaftParameters, Joback};
-    use crate::EquationOfStateAD;
     use approx::assert_relative_eq;
     use feos_core::{Contributions, DensityInitialization, FeosResult, PhaseEquilibrium};
     use num_dual::{Dual, Dual64};

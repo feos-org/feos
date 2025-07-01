@@ -1,8 +1,14 @@
 //! A collection of equation of state models.
 
-mod gc_pcsaft;
 pub(crate) mod ideal_gas;
-pub(crate) mod pcsaft;
-pub use gc_pcsaft::{GcPcSaft, GcPcSaftParameters};
 pub use ideal_gas::Joback;
+
+#[cfg(feature = "gc_pcsaft")]
+mod gc_pcsaft;
+#[cfg(feature = "gc_pcsaft")]
+pub use gc_pcsaft::{GcPcSaft, GcPcSaftParameters};
+
+#[cfg(feature = "pcsaft")]
+pub(crate) mod pcsaft;
+#[cfg(feature = "pcsaft")]
 pub use pcsaft::{PcSaftBinary, PcSaftPure};
