@@ -45,6 +45,7 @@ criterion = "0.5"
 arrayvec = "0.7"
 
 feos-core = { version = "0.8", path = "crates/feos-core" }
+feos-ad = { version = "0.2", path = "crates/feos-ad" }
 feos-dft = { version = "0.8", path = "crates/feos-dft" }
 feos-derive = { version = "0.6", path = "crates/feos-derive" }
 feos = { version = "0.8", path = "crates/feos" }
