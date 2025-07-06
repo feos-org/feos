@@ -10,6 +10,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/feos/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/feos/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/py-feos/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/feos-ad/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

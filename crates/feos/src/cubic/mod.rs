@@ -1,6 +1,6 @@
 use alpha::{Alpha, AlphaFunction, PengRobinson1976, RedlichKwong1972};
 use feos_core::FeosResult;
-use feos_core::parameter::Parameter;
+use feos_core::parameter::Parameters;
 use feos_core::{Components, Residual};
 use feos_core::{Molarweight, StateHD};
 use mixing_rules::{MixingRule, MixingRuleFunction, MixtureParameters, Quadratic};
