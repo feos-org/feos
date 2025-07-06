@@ -1,17 +1,18 @@
-use crate::hard_sphere::HardSphere;
-
 use super::SaftVRMieParameters;
-use association::Association;
-use feos_core::parameter::Parameter;
+use crate::association::{Association, AssociationStrength};
+use crate::hard_sphere::HardSphereProperties;
+use crate::saftvrmie::SaftVRMieRecord;
+use crate::saftvrmie::parameters::SaftVRMieAssociationRecord;
+use crate::{hard_sphere::HardSphere, saftvrmie::parameters::SaftVRMiePars};
 use feos_core::{Components, Molarweight, Residual, StateHD};
 use ndarray::{Array1, ScalarOperand};
 use num_dual::DualNum;
-use quantity::{MolarWeight, GRAM, MOL};
-use std::{f64::consts::FRAC_PI_6, sync::Arc};
+use quantity::MolarWeight;
+use std::f64::consts::{FRAC_PI_6, PI};
 
-pub(super) mod association;
+// pub(super) mod association;
 pub(crate) mod dispersion;
-use dispersion::{a_disp, a_disp_chain, Properties};
+use dispersion::{Properties, a_disp, a_disp_chain};
 
 /// Customization options for the SAFT-VR Mie equation of state.
 #[derive(Copy, Clone)]
@@ -33,34 +34,33 @@ impl Default for SaftVRMieOptions {
 
 /// SAFT-VR Mie equation of state.
 pub struct SaftVRMie {
-    parameters: Arc<SaftVRMieParameters>,
-    options: SaftVRMieOptions,
-    hard_sphere: HardSphere<SaftVRMieParameters>,
-    chain: bool,
-    association: Option<Association<SaftVRMieParameters>>,
+    pub parameters: SaftVRMieParameters,
+    pub params: SaftVRMiePars,
+    pub options: SaftVRMieOptions,
+    pub chain: bool,
+    pub association: Option<Association<SaftVRMiePars>>,
 }
 
 impl SaftVRMie {
-    pub fn new(parameters: Arc<SaftVRMieParameters>) -> Self {
+    pub fn new(parameters: SaftVRMieParameters) -> Self {
         Self::with_options(parameters, SaftVRMieOptions::default())
     }
 
-    pub fn with_options(parameters: Arc<SaftVRMieParameters>, options: SaftVRMieOptions) -> Self {
-        let association = if !parameters.association.is_empty() {
-            Some(Association::new(
-                &parameters,
-                &parameters.association,
-                options.max_iter_cross_assoc,
-                options.tol_cross_assoc,
-            ))
-        } else {
-            None
-        };
+    pub fn with_options(parameters: SaftVRMieParameters, options: SaftVRMieOptions) -> Self {
+        let params = SaftVRMiePars::new(&parameters);
+        let chain = params.m.iter().any(|&m| m > 1.0);
+
+        let association = Association::new(
+            &parameters,
+            options.max_iter_cross_assoc,
+            options.tol_cross_assoc,
+        )
+        .unwrap();
         Self {
-            parameters: parameters.clone(),
+            parameters,
+            params,
             options,
-            hard_sphere: HardSphere::new(&parameters),
-            chain: parameters.m.iter().any(|&m| m > 1.0),
+            chain,
             association,
         }
     }
@@ -68,40 +68,42 @@ impl SaftVRMie {
 
 impl Components for SaftVRMie {
     fn components(&self) -> usize {
-        self.parameters.m.len()
+        self.params.m.len()
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
-        Self::new(Arc::new(self.parameters.subset(component_list)))
+        Self::new(self.parameters.subset(component_list))
     }
 }
 
 impl Residual for SaftVRMie {
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
         self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * &self.parameters.m * self.parameters.sigma.mapv(|v| v.powi(3)) * moles)
-                .sum()
+            / (FRAC_PI_6 * &self.params.m * self.params.sigma.mapv(|v| v.powi(3)) * moles).sum()
     }
 
     fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
-        let mut a = Vec::with_capacity(7);
+        let mut a = Vec::with_capacity(4);
 
-        let (a_hs, _, d) = self.hard_sphere.helmholtz_energy_and_properties(state);
+        let (a_hs, _, d) = HardSphere.helmholtz_energy_and_properties(&self.params, state);
         a.push(("Hard Sphere".to_string(), a_hs));
 
-        let properties = Properties::new(&self.parameters, state, &d);
+        let properties = Properties::new(&self.params, state, &d);
         if self.chain {
-            let a_disp_chain = a_disp_chain(&self.parameters, &properties, state);
+            let a_disp_chain = a_disp_chain(&self.params, &properties, state);
             a.push(("Dispersion + Chain".to_string(), a_disp_chain));
         } else {
-            let a_disp = a_disp(&self.parameters, &properties, state);
+            let a_disp = a_disp(&self.params, &properties, state);
             a.push(("Dispersion".to_string(), a_disp));
         }
         if let Some(assoc) = self.association.as_ref() {
-            a.push(("Association".to_string(), assoc.helmholtz_energy(state, &d)));
+            a.push((
+                "Association".to_string(),
+                assoc.helmholtz_energy(&self.params, &self.parameters.association, state, &d),
+            ));
         }
         a
     }
@@ -109,6 +111,53 @@ impl Residual for SaftVRMie {
 
 impl Molarweight for SaftVRMie {
     fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-        self.parameters.molarweight.clone() * GRAM / MOL
+        self.parameters.molar_weight.clone()
+    }
+}
+
+impl AssociationStrength for SaftVRMiePars {
+    type Pure = SaftVRMieRecord;
+    type Record = SaftVRMieAssociationRecord;
+
+    fn association_strength<D: DualNum<f64> + Copy>(
+        &self,
+        temperature: D,
+        comp_i: usize,
+        comp_j: usize,
+        assoc_ij: &Self::Record,
+    ) -> D {
+        let diameter = self.hs_diameter(temperature);
+        let di = diameter[comp_i];
+        let dj = diameter[comp_j];
+        let d = (di + dj) * 0.5;
+        // temperature dependent association volume
+        // rc and rd are dimensioned in units of Angstrom
+        let rc = assoc_ij.rc_ab;
+        // rd is the distance between an association site and the segment centre.
+        // It is fixed at 0.4 sigma, leading to 0.4 * 0.5 = 0.2 in the combining rule.
+        let rd = (self.sigma[comp_i] + self.sigma[comp_j]) * 0.2;
+        let v = d * d * PI * 4.0 / (72.0 * rd.powi(2))
+            * ((d.recip() * (rc + 2.0 * rd)).ln()
+                * (6.0 * rc.powi(3) + 18.0 * rc.powi(2) * rd - 24.0 * rd.powi(3))
+                + (-d + rc + 2.0 * rd)
+                    * (d.powi(2) + d * rc + 22.0 * rd.powi(2)
+                        - 5.0 * rc * rd
+                        - d * 7.0 * rd
+                        - 8.0 * rc.powi(2)));
+        v * (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
+    }
+
+    fn combining_rule(
+        pure_i: &Self::Pure,
+        pure_j: &Self::Pure,
+        parameters_i: &Self::Record,
+        parameters_j: &Self::Record,
+    ) -> Self::Record {
+        let rc_ab = (parameters_i.rc_ab * pure_i.sigma + parameters_j.rc_ab * pure_j.sigma) * 0.5;
+        let epsilon_k_ab = (parameters_i.epsilon_k_ab * parameters_j.epsilon_k_ab).sqrt();
+        Self::Record {
+            rc_ab,
+            epsilon_k_ab,
+        }
     }
 }

@@ -1,39 +1,44 @@
 use super::polar::{pair_integral_ij, triplet_integral_ijk};
-use super::PcSaftParameters;
-use crate::association::Association;
+use crate::association::AssociationFunctional;
 use crate::hard_sphere::{FMTVersion, HardSphereProperties};
 use crate::pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
 use crate::pcsaft::eos::polar::{AD, AQ, BD, BQ, CD, CQ, PI_SQ_43};
+use crate::pcsaft::parameters::PcSaftPars;
 use feos_core::{FeosError, FeosResult};
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::*;
 use num_dual::*;
 use std::f64::consts::{FRAC_PI_6, PI};
-use std::fmt;
-use std::sync::Arc;
 
 const PI36M1: f64 = 1.0 / (36.0 * PI);
 const N3_CUTOFF: f64 = 1e-5;
 const N0_CUTOFF: f64 = 1e-9;
 
-pub struct PureFMTAssocFunctional {
-    parameters: Arc<PcSaftParameters>,
-    association: Association<PcSaftParameters>,
+pub(crate) struct PureFMTAssocFunctional<'a> {
+    parameters: &'a PcSaftPars,
+    association: Option<AssociationFunctional<'a, PcSaftPars>>,
     version: FMTVersion,
 }
 
-impl PureFMTAssocFunctional {
-    pub fn new(parameters: Arc<PcSaftParameters>, version: FMTVersion) -> Self {
-        let association = Association::new(&parameters, &parameters.association, 50, 1e-10);
+impl<'a> PureFMTAssocFunctional<'a> {
+    pub(crate) fn new(
+        params: &'a PcSaftPars,
+        association: Option<AssociationFunctional<'a, PcSaftPars>>,
+        version: FMTVersion,
+    ) -> Self {
         Self {
-            parameters,
+            parameters: params,
             association,
             version,
         }
     }
 }
 
-impl FunctionalContribution for PureFMTAssocFunctional {
+impl<'a> FunctionalContribution for PureFMTAssocFunctional<'a> {
+    fn name(&self) -> &'static str {
+        "Pure FMT+association"
+    }
+
     fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
@@ -115,8 +120,7 @@ impl FunctionalContribution for PureFMTAssocFunctional {
         let mut phi = -(&n0 * &ln31) + n1n2 * &n3m1rec + n2n2 * n2 * PI36M1 * f3;
 
         // association
-        let a = &p.association;
-        if !a.is_empty() {
+        if let Some(a) = self.association.as_ref() {
             let mut xi = -(&n2v * &n2v).sum_axis(Axis(0)) / (&n2 * &n2) + 1.0;
             xi.iter_mut().zip(&n2).for_each(|(xi, &n2)| {
                 if n2.re() < N0_CUTOFF * 4.0 * PI * p.m[0] * r.re().powi(2) {
@@ -125,37 +129,29 @@ impl FunctionalContribution for PureFMTAssocFunctional {
             });
             let rho0 = (&n0 / p.m[0] * &xi).insert_axis(Axis(0));
 
-            phi += &(self.association._helmholtz_energy_density(
-                temperature,
-                &rho0,
-                &n2,
-                &n3m1rec,
-                &xi,
-            ))?;
+            phi += &(a._helmholtz_energy_density(temperature, &rho0, &n2, &n3m1rec, &xi))?;
         }
 
         Ok(phi)
     }
 }
 
-impl fmt::Display for PureFMTAssocFunctional {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Pure FMT+association")
-    }
-}
-
 #[derive(Clone)]
-pub struct PureChainFunctional {
-    parameters: Arc<PcSaftParameters>,
+pub(crate) struct PureChainFunctional<'a> {
+    parameters: &'a PcSaftPars,
 }
 
-impl PureChainFunctional {
-    pub fn new(parameters: Arc<PcSaftParameters>) -> Self {
+impl<'a> PureChainFunctional<'a> {
+    pub(crate) fn new(parameters: &'a PcSaftPars) -> Self {
         Self { parameters }
     }
 }
 
-impl FunctionalContribution for PureChainFunctional {
+impl<'a> FunctionalContribution for PureChainFunctional<'a> {
+    fn name(&self) -> &'static str {
+        "Pure chain"
+    }
+
     fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
@@ -193,24 +189,22 @@ impl FunctionalContribution for PureChainFunctional {
     }
 }
 
-impl fmt::Display for PureChainFunctional {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Pure chain")
-    }
-}
-
 #[derive(Clone)]
-pub struct PureAttFunctional {
-    parameters: Arc<PcSaftParameters>,
+pub(crate) struct PureAttFunctional<'a> {
+    parameters: &'a PcSaftPars,
 }
 
-impl PureAttFunctional {
-    pub fn new(parameters: Arc<PcSaftParameters>) -> Self {
+impl<'a> PureAttFunctional<'a> {
+    pub(crate) fn new(parameters: &'a PcSaftPars) -> Self {
         Self { parameters }
     }
 }
 
-impl FunctionalContribution for PureAttFunctional {
+impl<'a> FunctionalContribution for PureAttFunctional<'a> {
+    fn name(&self) -> &'static str {
+        "Pure attractive"
+    }
+
     fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
         &self,
         temperature: N,
@@ -317,11 +311,5 @@ impl FunctionalContribution for PureAttFunctional {
         }
 
         Ok(phi)
-    }
-}
-
-impl fmt::Display for PureAttFunctional {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Pure attractive")
     }
 }

@@ -1,0 +1,18 @@
+[
+    {
+        "identifier": {
+            "cas": "1333-74-0",
+            "name": "hydrogen",
+            "iupac_name": "molecular hydrogen",
+            "smiles": "[HH]",
+            "inchi": "InChI=1S/H2/h1H",
+            "formula": "H2"
+        },
+        "model_record": {
+            "m": 1.0,
+            "sigma": 3.002,
+            "epsilon_k": 51.343
+        },
+        "molarweight": 2.016
+    }
+]

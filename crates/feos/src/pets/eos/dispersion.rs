@@ -1,10 +1,8 @@
+use super::Pets;
 use crate::hard_sphere::HardSphereProperties;
-use crate::pets::parameters::PetsParameters;
 use feos_core::StateHD;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
-use std::fmt;
-use std::sync::Arc;
 
 pub const A: [f64; 7] = [
     0.690603404,
@@ -25,20 +23,14 @@ pub const B: [f64; 7] = [
     -353.2743581,
 ];
 
-#[derive(Debug, Clone)]
-pub(super) struct Dispersion {
-    pub parameters: Arc<PetsParameters>,
-}
-
-impl Dispersion {
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
+impl Pets {
+    pub fn dispersion_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         // auxiliary variables
-        let n = self.parameters.sigma.len();
-        let p = &self.parameters;
+        let n = self.sigma.len();
         let rho = &state.partial_density;
 
         // temperature dependent segment radius
-        let r = p.hs_diameter(state.temperature) * 0.5;
+        let r = self.hs_diameter(state.temperature) * 0.5;
 
         // packing fraction
         let eta = (rho * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
@@ -48,8 +40,8 @@ impl Dispersion {
         let mut rho2mix = D::zero();
         for i in 0..n {
             for j in 0..n {
-                let eps_ij = state.temperature.recip() * p.epsilon_k_ij[(i, j)];
-                let sigma_ij = p.sigma_ij[[i, j]].powi(3);
+                let eps_ij = state.temperature.recip() * self.epsilon_k_ij[(i, j)];
+                let sigma_ij = self.sigma_ij[[i, j]].powi(3);
                 rho1mix += rho[i] * rho[j] * eps_ij * sigma_ij;
                 rho2mix += rho[i] * rho[j] * eps_ij * eps_ij * sigma_ij;
             }
@@ -71,12 +63,6 @@ impl Dispersion {
     }
 }
 
-impl fmt::Display for Dispersion {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Dispersion")
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -86,40 +72,21 @@ mod tests {
     use approx::assert_relative_eq;
     use ndarray::arr1;
 
-    // #[test]
-    // fn helmholtz_energy() {
-    //     let disp = Dispersion {
-    //         parameters: argon_parameters(),
-    //     };
-    //     let t = 250.0;
-    //     let v = 1000.0;
-    //     let n = 1.0;
-    //     let s = StateHD::new(t, v, arr1(&[n]));
-    //     let a_rust = disp.helmholtz_energy(&s);
-    //     assert_relative_eq!(a_rust, -1.0622531100351962, epsilon = 1e-10);
-    // }
-
     #[test]
     fn mix() {
-        let c1 = Dispersion {
-            parameters: argon_parameters(),
-        };
-        let c2 = Dispersion {
-            parameters: krypton_parameters(),
-        };
-        let c12 = Dispersion {
-            parameters: argon_krypton_parameters(),
-        };
+        let argon = Pets::new(argon_parameters());
+        let krypton = Pets::new(krypton_parameters());
+        let mix = Pets::new(argon_krypton_parameters());
         let t = 250.0;
         let v = 2.5e28;
         let n = 1.0;
         let s = StateHD::new(t, v, arr1(&[n]));
-        let a1 = c1.helmholtz_energy(&s);
-        let a2 = c2.helmholtz_energy(&s);
+        let a1 = argon.dispersion_helmholtz_energy(&s);
+        let a2 = krypton.dispersion_helmholtz_energy(&s);
         let s1m = StateHD::new(t, v, arr1(&[n, 0.0]));
-        let a1m = c12.helmholtz_energy(&s1m);
+        let a1m = mix.dispersion_helmholtz_energy(&s1m);
         let s2m = StateHD::new(t, v, arr1(&[0.0, n]));
-        let a2m = c12.helmholtz_energy(&s2m);
+        let a2m = mix.dispersion_helmholtz_energy(&s2m);
         assert_relative_eq!(a1, a1m, epsilon = 1e-14);
         assert_relative_eq!(a2, a2m, epsilon = 1e-14);
     }

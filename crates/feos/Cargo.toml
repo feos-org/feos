@@ -13,7 +13,7 @@ description = "FeOs - A framework for equations of state and classical density f
 [dependencies]
 quantity = { workspace = true }
 num-dual = { workspace = true }
-ndarray = { workspace = true, features = ["serde"] }
+ndarray = { workspace = true} # updated without this feature?, features = ["serde"] }
 petgraph = { workspace = true, optional = true }
 thiserror = { workspace = true }
 num-traits = { workspace = true }
@@ -22,7 +22,7 @@ indexmap = { workspace = true }
 rayon = { workspace = true, optional = true }
 itertools = { workspace = true }
 typenum = { workspace = true }
-enum_dispatch = { workspace = true }
+arrayvec = { workspace = true, features = ["serde"] }
 
 feos-core = { workspace = true }
 feos-derive = { workspace = true }
@@ -44,8 +44,7 @@ gc_pcsaft = ["association"]
 uvtheory = []
 pets = []
 saftvrqmie = []
-saftvrmie = []
-cubic = []
+saftvrmie = ["association"]
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 all_models = [
     "dft",
@@ -82,7 +81,7 @@ harness = false
 [[bench]]
 name = "contributions"
 harness = false
-required-features = ["saftvrmie"]
+required-features = ["pcsaft"]
 
 [[bench]]
 name = "dft_pore"

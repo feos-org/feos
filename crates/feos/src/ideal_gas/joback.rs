@@ -1,13 +1,11 @@
 //! Implementation of the ideal gas heat capacity (de Broglie wavelength)
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
-
-use feos_core::parameter::*;
+use feos_core::parameter::{FromSegments, Parameters, PureParameters};
 use feos_core::{Components, FeosResult, IdealGas, ReferenceSystem};
-use ndarray::{Array1, Array2};
+use ndarray::Array1;
 use num_dual::*;
 use quantity::{MolarEntropy, Temperature};
 use serde::{Deserialize, Serialize};
-use std::fmt;
 
 /// Coefficients used in the Joback model.
 ///
@@ -30,35 +28,27 @@ impl JobackRecord {
     }
 }
 
-impl fmt::Display for JobackRecord {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "JobackRecord(a={}, b={}, c={}, d={}, e={})",
-            self.a, self.b, self.c, self.d, self.e
-        )
-    }
-}
-
 /// Implementation of the combining rules as described in
 /// [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
-impl<T: CountType> FromSegments<T> for JobackRecord {
-    fn from_segments(segments: &[(Self, T)]) -> FeosResult<Self> {
+impl FromSegments for JobackRecord {
+    fn from_segments(segments: &[(Self, f64)]) -> FeosResult<Self> {
         let mut a = -37.93;
         let mut b = 0.21;
         let mut c = -3.91e-4;
         let mut d = 2.06e-7;
         let mut e = 0.0;
         segments.iter().for_each(|(s, n)| {
-            a += n.apply_count(s.a);
-            b += n.apply_count(s.b);
-            c += n.apply_count(s.c);
-            d += n.apply_count(s.d);
-            e += n.apply_count(s.e);
+            a += s.a * n;
+            b += s.b * n;
+            c += s.c * n;
+            d += s.d * n;
+            e += s.e * n;
         });
         Ok(Self { a, b, c, d, e })
     }
 }
+
+pub type JobackParameters = Parameters<JobackRecord, (), ()>;
 
 /// The ideal gas contribution according to
 /// [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
@@ -69,21 +59,11 @@ impl<T: CountType> FromSegments<T> for JobackRecord {
 /// - T = 289.15 K
 /// - p = 1e5 Pa
 /// - V = 1e-30 A³
-pub struct Joback(Vec<PureRecord<JobackRecord>>);
+pub struct Joback(Vec<PureParameters<JobackRecord, ()>>);
 
-impl Parameter for Joback {
-    type Pure = JobackRecord;
-    type Binary = NoBinaryModelRecord;
-
-    fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure>>,
-        _binary_records: Option<Array2<Self::Binary>>,
-    ) -> FeosResult<Self> {
-        Ok(Self(pure_records))
-    }
-
-    fn records(&self) -> (&[PureRecord<Self::Pure>], Option<&Array2<Self::Binary>>) {
-        (&self.0, None)
+impl Joback {
+    pub fn new(parameters: JobackParameters) -> Self {
+        Self(parameters.pure)
     }
 }
 
@@ -117,7 +97,7 @@ impl Components for Joback {
         component_list
             .iter()
             .for_each(|&i| records.push(self.0[i].clone()));
-        Self::from_records(records, None).unwrap()
+        Self(records)
     }
 }
 
@@ -161,10 +141,13 @@ const KB: f64 = 1.38064852e-23;
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
-    use feos_core::{Contributions, EquationOfState, State, StateBuilder};
+    use feos_core::{
+        Contributions, EquationOfState, State, StateBuilder,
+        parameter::{ChemicalRecord, GroupCount, Identifier, PureRecord, SegmentRecord},
+    };
     use ndarray::arr1;
     use quantity::*;
-    use std::sync::Arc;
+    use std::{collections::HashMap, sync::Arc};
     use typenum::P3;
 
     use super::*;
@@ -174,41 +157,37 @@ mod tests {
         let segments_json = r#"[
         {
           "identifier": "-Cl",
-          "model_record": {
-            "a": 33.3,
-            "b": -0.0963,
-            "c": 0.000187,
-            "d": -9.96e-8,
-            "e": 0.0
-          },
+          "a": 33.3,
+          "b": -0.0963,
+          "c": 0.000187,
+          "d": -9.96e-8,
+          "e": 0.0,
           "molarweight": 35.453
         },
         {
           "identifier": "-CH=(ring)",
-          "model_record": {
-            "a": -2.14,
-            "b": 5.74e-2,
-            "c": -1.64e-6,
-            "d": -1.59e-8,
-            "e": 0.0
-          },
+          "a": -2.14,
+          "b": 5.74e-2,
+          "c": -1.64e-6,
+          "d": -1.59e-8,
+          "e": 0.0,
           "molarweight": 13.01864
         },
         {
           "identifier": "=CH<(ring)",
-          "model_record": {
-            "a": -8.25,
-            "b": 1.01e-1,
-            "c": -1.42e-4,
-            "d": 6.78e-8,
-            "e": 0.0
-          },
+          "a": -8.25,
+          "b": 1.01e-1,
+          "c": -1.42e-4,
+          "d": 6.78e-8,
+          "e": 0.0,
           "molarweight": 13.01864
         }
         ]"#;
-        let segment_records: Vec<SegmentRecord<JobackRecord>> =
+        let segment_records: Vec<SegmentRecord<JobackRecord, ()>> =
             serde_json::from_str(segments_json).expect("Unable to parse json.");
-        let segments = ChemicalRecord::new(
+        let segment_map: HashMap<_, _> =
+            segment_records.iter().map(|s| (&s.identifier, s)).collect();
+        let (_, segments, _) = GroupCount::into_groups(ChemicalRecord::new(
             Identifier::default(),
             vec![
                 String::from("-Cl"),
@@ -221,14 +200,11 @@ mod tests {
                 String::from("=CH<(ring)"),
             ],
             None,
-        )
-        .segment_map(&segment_records)?;
-        assert_eq!(segments.get(&segment_records[0]), Some(&2));
-        assert_eq!(segments.get(&segment_records[1]), Some(&4));
-        assert_eq!(segments.get(&segment_records[2]), Some(&2));
+        ));
+        // .segment_map(&segment_records)?;
         let joback_segments: Vec<_> = segments
-            .iter()
-            .map(|(s, &n)| (s.model_record.clone(), n))
+            .into_iter()
+            .map(|(s, n)| (segment_map[&s].model_record.clone(), n))
             .collect();
         let jr = JobackRecord::from_segments(&joback_segments)?;
         assert_relative_eq!(
@@ -254,7 +230,7 @@ mod tests {
         assert_relative_eq!(jr.e, 0.0);
 
         let pr = PureRecord::new(Identifier::default(), 1.0, jr);
-        let joback = Arc::new(Joback::new_pure(pr)?);
+        let joback = Arc::new(Joback::new(JobackParameters::new_pure(pr)?));
         let eos = Arc::new(EquationOfState::ideal_gas(joback));
         let state = State::new_nvt(
             &eos,
@@ -285,7 +261,11 @@ mod tests {
             1.0,
             JobackRecord::new(-5.0, 0.4, 0.03, 0.002, 0.001),
         );
-        let joback = Arc::new(Joback::new_binary(vec![record1, record2], None)?);
+        let joback = Arc::new(Joback::new(JobackParameters::new_binary(
+            [record1, record2],
+            None,
+            vec![],
+        )?));
         let eos = Arc::new(EquationOfState::ideal_gas(joback.clone()));
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi::<P3>();

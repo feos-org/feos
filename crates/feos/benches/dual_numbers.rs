@@ -4,11 +4,12 @@
 //! on the dual number type used without the overhead of the `State`
 //! creation.
 use criterion::{Criterion, criterion_group, criterion_main};
-use feos::core::{
-    Derivative, Residual, State, StateHD,
-    parameter::{IdentifierOption, Parameter},
+use feos::core::parameter::IdentifierOption;
+use feos::core::{Derivative, Residual, State, StateHD};
+use feos::pcsaft::{
+    PcSaft, PcSaftAssociationRecord, PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord,
 };
-use feos::pcsaft::{PcSaft, PcSaftParameters};
+use feos_core::parameter::PureRecord;
 use ndarray::{Array, ScalarOperand, arr1};
 use num_dual::DualNum;
 use quantity::*;
@@ -20,8 +21,8 @@ use typenum::P3;
 /// - volume is critical volume,
 /// - molefracs (or moles) for equimolar mixture.
 fn state_pcsaft(parameters: PcSaftParameters) -> State<PcSaft> {
-    let n = parameters.pure_records.len();
-    let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
+    let n = parameters.pure.len();
+    let eos = Arc::new(PcSaft::new(parameters));
     let moles = Array::from_elem(n, 1.0 / n as f64) * 10.0 * MOL;
     let cp = State::critical_point(&eos, Some(&moles), None, Default::default()).unwrap();
     let temperature = 0.8 * cp.temperature;
@@ -102,22 +103,28 @@ fn pcsaft(c: &mut Criterion) {
 /// Benchmark for the PC-SAFT equation of state.
 /// Binary system of methane and co2 used to model biogas.
 fn methane_co2_pcsaft(c: &mut Criterion) {
-    let parameters = PcSaftParameters::from_multiple_json(
-        &[
-            (vec!["methane"], "../../parameters/pcsaft/gross2001.json"),
-            (
-                vec!["carbon dioxide"],
-                "../../parameters/pcsaft/gross2005_fit.json",
-            ),
-        ],
-        None,
+    type Pure = PureRecord<PcSaftRecord, PcSaftAssociationRecord>;
+    let methane = Pure::from_json(
+        &["methane"],
+        "../../parameters/pcsaft/gross2001.json",
         IdentifierOption::Name,
     )
+    .unwrap()
+    .pop()
     .unwrap();
+    let co2 = Pure::from_json(
+        &["carbon dioxide"],
+        "../../parameters/pcsaft/gross2005_fit.json",
+        IdentifierOption::Name,
+    )
+    .unwrap()
+    .pop()
+    .unwrap();
+
     let k_ij = -0.0192211646;
-    let parameters =
-        PcSaftParameters::new_binary(parameters.pure_records, Some(k_ij.into())).unwrap();
-    let eos = Arc::new(PcSaft::new(Arc::new(parameters)));
+    let br = PcSaftBinaryRecord::new(k_ij);
+    let parameters = PcSaftParameters::new_binary([methane, co2], Some(br), vec![]).unwrap();
+    let eos = Arc::new(PcSaft::new(parameters));
 
     // 230 K, 50 bar, x0 = 0.15
     let temperature = 230.0 * KELVIN;

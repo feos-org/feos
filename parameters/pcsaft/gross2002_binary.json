@@ -16,9 +16,7 @@
             "inchi": "InChI=1/C6H12/c1-2-4-6-5-3-1/h1-6H2",
             "formula": "C6H12"
         },
-        "model_record": {
-            "k_ij": 0.051
-        }
+        "k_ij": 0.051
     },
     {
         "id1": {
@@ -37,9 +35,7 @@
             "inchi": "InChI=1/C8H18O/c1-2-3-4-5-6-7-8-9/h9H,2-8H2,1H3",
             "formula": "C8H18O"
         },
-        "model_record": {
-            "k_ij": 0.02
-        }
+        "k_ij": 0.02
     },
     {
         "id1": {
@@ -58,9 +54,7 @@
             "inchi": "InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3",
             "formula": "C4H10"
         },
-        "model_record": {
-            "k_ij": 0.028
-        }
+        "k_ij": 0.028
     },
     {
         "id1": {
@@ -79,9 +73,7 @@
             "inchi": "InChI=1/C6H6/c1-2-4-6-5-3-1/h1-6H",
             "formula": "C6H6"
         },
-        "model_record": {
-            "k_ij": 0.02
-        }
+        "k_ij": 0.02
     },
     {
         "id1": {
@@ -100,9 +92,7 @@
             "inchi": "InChI=1/C8H10/c1-2-8-6-4-3-5-7-8/h3-7H,2H2,1H3",
             "formula": "C8H10"
         },
-        "model_record": {
-            "k_ij": 0.023
-        }
+        "k_ij": 0.023
     },
     {
         "id1": {
@@ -121,9 +111,7 @@
             "inchi": "InChI=1/C6H6/c1-2-4-6-5-3-1/h1-6H",
             "formula": "C6H6"
         },
-        "model_record": {
-            "k_ij": 0.021
-        }
+        "k_ij": 0.021
     },
     {
         "id1": {
@@ -142,9 +130,7 @@
             "inchi": "InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3",
             "formula": "C4H10"
         },
-        "model_record": {
-            "k_ij": 0.015
-        }
+        "k_ij": 0.015
     },
     {
         "id1": {
@@ -163,9 +149,7 @@
             "inchi": "InChI=1/C6H6/c1-2-4-6-5-3-1/h1-6H",
             "formula": "C6H6"
         },
-        "model_record": {
-            "k_ij": 0.0135
-        }
+        "k_ij": 0.0135
     },
     {
         "id1": {
@@ -184,8 +168,6 @@
             "inchi": "InChI=1/C5H12O/c1-2-3-4-5-6/h6H,2-5H2,1H3",
             "formula": "C5H12O"
         },
-        "model_record": {
-            "k_ij": 0.016
-        }
+        "k_ij": 0.016
     }
 ]

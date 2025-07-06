@@ -1,0 +1,672 @@
+[
+  {
+    "id1": ">CH",
+    "id2": "C≡CH",
+    "model_record": -0.18371738189391876
+  },
+  {
+    "id1": "CH2",
+    "id2": "C≡CH",
+    "model_record": 0.06723310157310154
+  },
+  {
+    "id1": "CH3",
+    "id2": "C≡CH",
+    "model_record": 0.1511413084403949
+  },
+  {
+    "id1": ">C<",
+    "id2": "C_arom",
+    "model_record": -0.30968501322545716
+  },
+  {
+    "id1": ">C<",
+    "id2": "CH_arom",
+    "model_record": -0.040269683728406204
+  },
+  {
+    "id1": "CH3",
+    "id2": "CH_arom",
+    "model_record": 0.045398744853650204
+  },
+  {
+    "id1": "CH2",
+    "id2": "C_arom",
+    "model_record": -0.06242075545369085
+  },
+  {
+    "id1": "CH3",
+    "id2": "C_arom",
+    "model_record": 0.11447930753452223
+  },
+  {
+    "id1": ">CH",
+    "id2": "C_arom",
+    "model_record": -0.4158624775122392
+  },
+  {
+    "id1": "CH2",
+    "id2": "CH_arom",
+    "model_record": 0.0037160477290278044
+  },
+  {
+    "id1": ">CH",
+    "id2": "CH_arom",
+    "model_record": -0.0367766719917285
+  },
+  {
+    "id1": "CH2",
+    "id2": "CH=O",
+    "model_record": 0.12305359647909934
+  },
+  {
+    "id1": "CH3",
+    "id2": "CH=O",
+    "model_record": 0.10187469034871167
+  },
+  {
+    "id1": ">C=O",
+    "id2": "CH2",
+    "model_record": 0.046191053863637005
+  },
+  {
+    "id1": ">C<",
+    "id2": ">C=O",
+    "model_record": 0.24968925951397747
+  },
+  {
+    "id1": ">C=O",
+    "id2": "CH3",
+    "model_record": 0.07726883079913838
+  },
+  {
+    "id1": ">C=O",
+    "id2": ">CH",
+    "model_record": -0.00045276712110988197
+  },
+  {
+    "id1": "CH3",
+    "id2": "OCH3",
+    "model_record": 0.08814654061145145
+  },
+  {
+    "id1": ">C<",
+    "id2": "OCH2",
+    "model_record": 0.21912131451666356
+  },
+  {
+    "id1": "CH2",
+    "id2": "OCH3",
+    "model_record": 0.037965107676736554
+  },
+  {
+    "id1": "CH2",
+    "id2": "OCH2",
+    "model_record": -0.03712493649357425
+  },
+  {
+    "id1": "CH3",
+    "id2": "OCH2",
+    "model_record": 0.04716136386377694
+  },
+  {
+    "id1": ">CH",
+    "id2": "OCH3",
+    "model_record": -0.03323101683228677
+  },
+  {
+    "id1": ">CH",
+    "id2": "OCH2",
+    "model_record": -0.22046996759454948
+  },
+  {
+    "id1": ">C<",
+    "id2": "OCH3",
+    "model_record": 0.03790972682658586
+  },
+  {
+    "id1": "CH3",
+    "id2": "HCOO",
+    "model_record": 0.045977954235034764
+  },
+  {
+    "id1": "CH2",
+    "id2": "HCOO",
+    "model_record": 0.11244290547170076
+  },
+  {
+    "id1": ">CH",
+    "id2": "COO",
+    "model_record": 0.1801469645626566
+  },
+  {
+    "id1": "CH2",
+    "id2": "COO",
+    "model_record": 0.08394999787145262
+  },
+  {
+    "id1": ">C<",
+    "id2": "COO",
+    "model_record": 0.21416752231606875
+  },
+  {
+    "id1": "CH3",
+    "id2": "COO",
+    "model_record": 0.04317047138905919
+  },
+  {
+    "id1": "=CH",
+    "id2": "C≡CH",
+    "model_record": -0.0423021283854757
+  },
+  {
+    "id1": "=C<",
+    "id2": "C≡CH",
+    "model_record": -0.3679698871258342
+  },
+  {
+    "id1": "=CH2",
+    "id2": "C≡CH",
+    "model_record": 0.12850802400950342
+  },
+  {
+    "id1": "=CH2",
+    "id2": "CH_arom",
+    "model_record": 0.07134226132398278
+  },
+  {
+    "id1": "=C<",
+    "id2": "C_arom",
+    "model_record": -0.2659542702867626
+  },
+  {
+    "id1": "=C<",
+    "id2": "CH_arom",
+    "model_record": -0.1210112284636777
+  },
+  {
+    "id1": "=CH",
+    "id2": "C_arom",
+    "model_record": -0.06577965904642215
+  },
+  {
+    "id1": "=CH2",
+    "id2": "C_arom",
+    "model_record": -0.08233061709834949
+  },
+  {
+    "id1": "=CH",
+    "id2": "CH_arom",
+    "model_record": -0.02777227236233225
+  },
+  {
+    "id1": "=CH2",
+    "id2": ">C=O",
+    "model_record": 0.01870397276432888
+  },
+  {
+    "id1": "=CH",
+    "id2": ">C=O",
+    "model_record": -0.07924746094295501
+  },
+  {
+    "id1": "=C<",
+    "id2": ">C=O",
+    "model_record": -0.3890984918446064
+  },
+  {
+    "id1": "=C<",
+    "id2": "OCH3",
+    "model_record": -0.26406219612376053
+  },
+  {
+    "id1": "=CH",
+    "id2": "OCH3",
+    "model_record": 0.08211035721381005
+  },
+  {
+    "id1": "=C<",
+    "id2": "OCH2",
+    "model_record": -0.22103185453388233
+  },
+  {
+    "id1": "=CH2",
+    "id2": "OCH3",
+    "model_record": -0.05488229227924732
+  },
+  {
+    "id1": "=CH",
+    "id2": "OCH2",
+    "model_record": 0.12042046990948997
+  },
+  {
+    "id1": "=CH2",
+    "id2": "OCH2",
+    "model_record": -0.16082219040056
+  },
+  {
+    "id1": "=CH",
+    "id2": "HCOO",
+    "model_record": -0.04924693944343094
+  },
+  {
+    "id1": "=C<",
+    "id2": "HCOO",
+    "model_record": -0.04924693944343094
+  },
+  {
+    "id1": "=CH",
+    "id2": "COO",
+    "model_record": -0.07465466121913379
+  },
+  {
+    "id1": "=C<",
+    "id2": "COO",
+    "model_record": -0.20912851003958197
+  },
+  {
+    "id1": "=CH2",
+    "id2": "COO",
+    "model_record": -0.1873284020798118
+  },
+  {
+    "id1": "C_arom",
+    "id2": "C≡CH",
+    "model_record": -0.06996738062245225
+  },
+  {
+    "id1": "CH_arom",
+    "id2": "C≡CH",
+    "model_record": -0.06997816145785027
+  },
+  {
+    "id1": "CH=O",
+    "id2": "C≡CH",
+    "model_record": -0.8036084995749746
+  },
+  {
+    "id1": ">C=O",
+    "id2": "C≡CH",
+    "model_record": -0.7245616793983386
+  },
+  {
+    "id1": "C≡CH",
+    "id2": "OCH3",
+    "model_record": -0.6973014503254631
+  },
+  {
+    "id1": "C≡CH",
+    "id2": "OCH2",
+    "model_record": -0.7124635912791397
+  },
+  {
+    "id1": "C≡CH",
+    "id2": "HCOO",
+    "model_record": -0.6491906341393756
+  },
+  {
+    "id1": "COO",
+    "id2": "C≡CH",
+    "model_record": -0.7706507183991701
+  },
+  {
+    "id1": "C≡CH",
+    "id2": "OH",
+    "model_record": -0.3953272203288893
+  },
+  {
+    "id1": "CH_arom",
+    "id2": "C_arom",
+    "model_record": -0.03992936106292302
+  },
+  {
+    "id1": "C_arom",
+    "id2": "C_arom",
+    "model_record": -0.24630026810220787
+  },
+  {
+    "id1": "CH_arom",
+    "id2": "CH_arom",
+    "model_record": -0.0017874528445781402
+  },
+  {
+    "id1": "CH2_hex",
+    "id2": "CH_arom",
+    "model_record": 0.016756385671790754
+  },
+  {
+    "id1": "CH_hex",
+    "id2": "C_arom",
+    "model_record": -0.2096597639152752
+  },
+  {
+    "id1": "CH2_hex",
+    "id2": "C_arom",
+    "model_record": 0.012541534230376803
+  },
+  {
+    "id1": "CH_arom",
+    "id2": "CH_hex",
+    "model_record": -0.005184457928999869
+  },
+  {
+    "id1": "CH_pent",
+    "id2": "C_arom",
+    "model_record": -0.030135433813644724
+  },
+  {
+    "id1": "CH2_pent",
+    "id2": "CH_arom",
+    "model_record": 0.016163719207036752
+  },
+  {
+    "id1": "CH2_pent",
+    "id2": "C_arom",
+    "model_record": -0.03015381422551497
+  },
+  {
+    "id1": "CH_arom",
+    "id2": "CH_pent",
+    "model_record": -0.0012280619452513725
+  },
+  {
+    "id1": "CH=O",
+    "id2": "CH_arom",
+    "model_record": -0.07298686010226767
+  },
+  {
+    "id1": "CH=O",
+    "id2": "C_arom",
+    "model_record": -0.03477418604459808
+  },
+  {
+    "id1": ">C=O",
+    "id2": "CH_arom",
+    "model_record": -0.17737259526633692
+  },
+  {
+    "id1": ">C=O",
+    "id2": "C_arom",
+    "model_record": -0.20890507062777522
+  },
+  {
+    "id1": "CH_arom",
+    "id2": "OCH2",
+    "model_record": -0.16191196233780558
+  },
+  {
+    "id1": "C_arom",
+    "id2": "OCH3",
+    "model_record": -0.17062941897764702
+  },
+  {
+    "id1": "C_arom",
+    "id2": "OCH2",
+    "model_record": -0.1143281639880095
+  },
+  {
+    "id1": "CH_arom",
+    "id2": "OCH3",
+    "model_record": -0.05806913031673688
+  },
+  {
+    "id1": "C_arom",
+    "id2": "HCOO",
+    "model_record": 0.05952617082632797
+  },
+  {
+    "id1": "CH_arom",
+    "id2": "HCOO",
+    "model_record": -0.07251503775066634
+  },
+  {
+    "id1": "COO",
+    "id2": "C_arom",
+    "model_record": -0.20843873998066137
+  },
+  {
+    "id1": "CH_arom",
+    "id2": "COO",
+    "model_record": -0.1466481167221345
+  },
+  {
+    "id1": "CH_arom",
+    "id2": "OH",
+    "model_record": -0.04264238269571497
+  },
+  {
+    "id1": "C_arom",
+    "id2": "OH",
+    "model_record": 0.0955212536852117
+  },
+  {
+    "id1": "CH_arom",
+    "id2": "NH2",
+    "model_record": -0.13578656303759865
+  },
+  {
+    "id1": "C_arom",
+    "id2": "NH2",
+    "model_record": 0.3245677118846664
+  },
+  {
+    "id1": "CH=O",
+    "id2": "CH_hex",
+    "model_record": 0.18126133081773227
+  },
+  {
+    "id1": "CH2_hex",
+    "id2": "CH=O",
+    "model_record": 0.15242908803430827
+  },
+  {
+    "id1": ">C=O",
+    "id2": "CH_hex",
+    "model_record": 0.20715143616696932
+  },
+  {
+    "id1": ">C=O",
+    "id2": "CH2_hex",
+    "model_record": 0.10105082239249716
+  },
+  {
+    "id1": "CH_hex",
+    "id2": "OCH3",
+    "model_record": 0.21758560291856807
+  },
+  {
+    "id1": "CH2_hex",
+    "id2": "OCH3",
+    "model_record": 0.038851491234467544
+  },
+  {
+    "id1": "CH_hex",
+    "id2": "OCH2",
+    "model_record": 0.12641108333024728
+  },
+  {
+    "id1": "CH2_hex",
+    "id2": "OCH2",
+    "model_record": -0.029859981746856126
+  },
+  {
+    "id1": "CH2_hex",
+    "id2": "HCOO",
+    "model_record": 0.13536601201087417
+  },
+  {
+    "id1": "CH2_hex",
+    "id2": "COO",
+    "model_record": 0.09766270569304139
+  },
+  {
+    "id1": "CH_hex",
+    "id2": "COO",
+    "model_record": 0.23359111174440955
+  },
+  {
+    "id1": "CH_hex",
+    "id2": "OH",
+    "model_record": 0.3012959587428203
+  },
+  {
+    "id1": "CH2_hex",
+    "id2": "OH",
+    "model_record": 0.06145194047695637
+  },
+  {
+    "id1": "CH2_pent",
+    "id2": "COO",
+    "model_record": 0.0591958981494055
+  },
+  {
+    "id1": "CH_pent",
+    "id2": "OH",
+    "model_record": 0.05049513358443987
+  },
+  {
+    "id1": "CH2_pent",
+    "id2": "OH",
+    "model_record": 0.06365860079027498
+  },
+  {
+    "id1": "CH=O",
+    "id2": "CH=O",
+    "model_record": -0.5266119495933976
+  },
+  {
+    "id1": ">C=O",
+    "id2": "CH=O",
+    "model_record": -0.3487549151972326
+  },
+  {
+    "id1": "CH=O",
+    "id2": "OCH2",
+    "model_record": -0.11976891848704076
+  },
+  {
+    "id1": "CH=O",
+    "id2": "HCOO",
+    "model_record": -0.1498229825699716
+  },
+  {
+    "id1": "CH=O",
+    "id2": "COO",
+    "model_record": -0.40091742710072753
+  },
+  {
+    "id1": "CH=O",
+    "id2": "OH",
+    "model_record": -0.3422480720079449
+  },
+  {
+    "id1": ">C=O",
+    "id2": ">C=O",
+    "model_record": -0.38212098851262305
+  },
+  {
+    "id1": ">C=O",
+    "id2": "OCH3",
+    "model_record": -0.40877394973926423
+  },
+  {
+    "id1": ">C=O",
+    "id2": "OCH2",
+    "model_record": -0.04638327660766271
+  },
+  {
+    "id1": ">C=O",
+    "id2": "HCOO",
+    "model_record": -0.2798038394521561
+  },
+  {
+    "id1": ">C=O",
+    "id2": "COO",
+    "model_record": -0.2616088977640821
+  },
+  {
+    "id1": ">C=O",
+    "id2": "OH",
+    "model_record": -0.21837396735346676
+  },
+  {
+    "id1": ">C=O",
+    "id2": "NH2",
+    "model_record": -0.6476561622488226
+  },
+  {
+    "id1": "OCH2",
+    "id2": "OCH3",
+    "model_record": -0.6939950193693598
+  },
+  {
+    "id1": "OCH3",
+    "id2": "OCH3",
+    "model_record": -0.380719319099956
+  },
+  {
+    "id1": "OCH2",
+    "id2": "OCH2",
+    "model_record": -0.1458789755687414
+  },
+  {
+    "id1": "HCOO",
+    "id2": "OCH3",
+    "model_record": -0.20616518678486087
+  },
+  {
+    "id1": "COO",
+    "id2": "OCH2",
+    "model_record": -0.1629180563538049
+  },
+  {
+    "id1": "COO",
+    "id2": "OCH3",
+    "model_record": -0.41914105984269306
+  },
+  {
+    "id1": "OCH2",
+    "id2": "OH",
+    "model_record": 0.01827388783404827
+  },
+  {
+    "id1": "OCH3",
+    "id2": "OH",
+    "model_record": -0.18820563057725898
+  },
+  {
+    "id1": "HCOO",
+    "id2": "HCOO",
+    "model_record": -0.43266513835360754
+  },
+  {
+    "id1": "COO",
+    "id2": "HCOO",
+    "model_record": -0.3051378987235245
+  },
+  {
+    "id1": "HCOO",
+    "id2": "OH",
+    "model_record": -0.21531477125536244
+  },
+  {
+    "id1": "COO",
+    "id2": "COO",
+    "model_record": -0.45645793824438036
+  },
+  {
+    "id1": "COO",
+    "id2": "OH",
+    "model_record": -0.2042011918642914
+  },
+  {
+    "id1": "COO",
+    "id2": "NH2",
+    "model_record": -0.4441846238871141
+  },
+  {
+    "id1": "NH2",
+    "id2": "OH",
+    "model_record": -0.7754077243242464
+  }
+]

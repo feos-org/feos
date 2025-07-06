@@ -10,12 +10,12 @@ from feos.feos import (
     PhaseDiagramHetero,
     PhaseEquilibrium,
     EquationOfState,
+    __dft__,
 )
 
 __version__ = version
 
 __all__ = [
-    "dft",
     "parameters",
     "estimator",
     "Verbosity",
@@ -27,3 +27,5 @@ __all__ = [
     "PhaseEquilibrium",
     "EquationOfState",
 ]
+if __dft__:
+    __all__ = ["dft"] + __all__

@@ -1,5 +1,5 @@
 use feos::pcsaft::{PcSaft, PcSaftParameters};
-use feos_core::parameter::{IdentifierOption, Parameter};
+use feos_core::parameter::IdentifierOption;
 use feos_core::{DensityInitialization, PhaseEquilibrium, State};
 use ndarray::arr1;
 use quantity::*;
@@ -14,7 +14,7 @@ fn test_stability_analysis() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let mix = Arc::new(PcSaft::new(Arc::new(params)));
+    let mix = Arc::new(PcSaft::new(params));
     let unstable = State::new_npt(
         &mix,
         300.0 * KELVIN,
@@ -31,7 +31,7 @@ fn test_stability_analysis() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let mix = Arc::new(PcSaft::new(Arc::new(params)));
+    let mix = Arc::new(PcSaft::new(params));
     let vle = PhaseEquilibrium::bubble_point(
         &mix,
         300.0 * KELVIN,

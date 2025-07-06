@@ -6,7 +6,7 @@
 #![cfg_attr(feature = "pcsaft", doc = "```")]
 //! # use feos_core::FeosError;
 //! use feos::pcsaft::{PcSaft, PcSaftParameters};
-//! use feos_core::parameter::{IdentifierOption, Parameter};
+//! use feos_core::parameter::{IdentifierOption};
 //! use feos_core::{Contributions, State};
 //! use quantity::KELVIN;
 //! use std::sync::Arc;
@@ -20,7 +20,7 @@
 //! )?;
 //!
 //! // Define equation of state.
-//! let saft = Arc::new(PcSaft::new(Arc::new(parameters)));
+//! let saft = Arc::new(PcSaft::new(parameters));
 //!
 //! // Define thermodynamic conditions.
 //! let critical_point = State::critical_point(&saft, None, None, Default::default())?;

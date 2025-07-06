@@ -51,7 +51,7 @@ impl PyEquationOfState {
             "dq44" => DQVariants::DQ44,
             _ => {
                 return Err(PyErr::new::<PyValueError, _>(
-                    r#"dq_variant must be "dq35" or "dq44""#.to_string(),
+                    r#"dq_variant must be "dq35" or "dq44""#,
                 ))
             }
         };
@@ -66,11 +66,12 @@ impl PyEquationOfState {
         } else if let Ok(parameters) = parameters.extract::<PyGcParameters>() {
             parameters.try_convert_homosegmented()
         } else {
-            todo!()
+            return Err(PyErr::new::<PyValueError, _>(
+                "Argument `parameters` must by Parameters or GcParameters",
+            ));
         }?;
         let residual = Arc::new(ResidualModel::PcSaft(PcSaft::with_options(
-            Arc::new(parameters),
-            options,
+            parameters, options,
         )));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
@@ -130,11 +131,7 @@ impl PyHelmholtzEnergyFunctional {
             dq_variant,
         };
         let func = Arc::new(ResidualModel::PcSaftFunctional(
-            PcSaftFunctional::with_options(
-                Arc::new(parameters.try_convert()?),
-                fmt_version.into(),
-                options,
-            ),
+            PcSaftFunctional::with_options(parameters.try_convert()?, fmt_version.into(), options),
         ));
         let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
         Ok(PyEquationOfState(Arc::new(EquationOfState::new(

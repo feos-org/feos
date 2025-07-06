@@ -10,4 +10,4 @@ pub(crate) mod parameters;
 #[cfg(feature = "dft")]
 pub use dft::{PcSaftFunctional, PcSaftFunctionalContribution};
 pub use eos::{DQVariants, PcSaft, PcSaftOptions};
-pub use parameters::{PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord};
+pub use parameters::{PcSaftAssociationRecord, PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord};

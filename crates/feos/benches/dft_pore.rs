@@ -1,11 +1,11 @@
 //! Benchmarks for the calculation of density profiles
 //! in pores at different conditions.
 use criterion::{Criterion, criterion_group, criterion_main};
-use feos::core::parameter::{IdentifierOption, Parameter, ParameterHetero};
+use feos::core::parameter::IdentifierOption;
 use feos::core::{PhaseEquilibrium, State, StateBuilder};
 use feos::dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
 use feos::dft::{DFTSolver, Geometry};
-use feos::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftFunctionalParameters};
+use feos::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftParameters};
 use feos::hard_sphere::{FMTFunctional, FMTVersion};
 use feos::pcsaft::{PcSaftFunctional, PcSaftParameters};
 use ndarray::arr1;
@@ -39,7 +39,7 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let func = Arc::new(PcSaftFunctional::new(Arc::new(parameters)));
+    let func = Arc::new(PcSaftFunctional::new(parameters));
     let pore = Pore1D::new(
         Geometry::Cartesian,
         20.0 * ANGSTROM,
@@ -68,7 +68,7 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let func = Arc::new(PcSaftFunctional::new(Arc::new(parameters)));
+    let func = Arc::new(PcSaftFunctional::new(parameters));
     let vle = PhaseEquilibrium::bubble_point(
         &func,
         300.0 * KELVIN,
@@ -96,7 +96,7 @@ fn gc_pcsaft(c: &mut Criterion) {
     let mut group = c.benchmark_group("DFT_pore_gc_pcsaft");
     group.sample_size(20);
 
-    let parameters = GcPcSaftFunctionalParameters::from_json_segments(
+    let parameters = GcPcSaftParameters::from_json_segments_hetero(
         &["butane"],
         "../../parameters/pcsaft/gc_substances.json",
         "../../parameters/pcsaft/sauer2014_hetero.json",
@@ -104,7 +104,7 @@ fn gc_pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let func = Arc::new(GcPcSaftFunctional::new(Arc::new(parameters)));
+    let func = Arc::new(GcPcSaftFunctional::new(parameters));
     let pore = Pore1D::new(
         Geometry::Cartesian,
         20.0 * ANGSTROM,

@@ -43,7 +43,6 @@ pub use state::{
     Contributions, DensityInitialization, Derivative, State, StateBuilder, StateHD, StateVec,
 };
 
-
 /// Level of detail in the iteration output.
 #[derive(Copy, Clone, PartialOrd, PartialEq, Eq)]
 pub enum Verbosity {
@@ -167,16 +166,8 @@ pub trait ReferenceSystem<
 }
 
 /// Conversion to and from reduced units
-impl<
-        Inner,
-        T: Integer,
-        L: Integer,
-        M: Integer,
-        I: Integer,
-        THETA: Integer,
-        N: Integer,
-        J: Integer,
-    > ReferenceSystem<Inner, T, L, M, I, THETA, N, J>
+impl<Inner, T: Integer, L: Integer, M: Integer, I: Integer, THETA: Integer, N: Integer, J: Integer>
+    ReferenceSystem<Inner, T, L, M, I, THETA, N, J>
     for Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>
 {
     fn from_reduced(value: Inner) -> Self
@@ -203,12 +194,12 @@ impl<
 
 #[cfg(test)]
 mod tests {
-    use crate::cubic::*;
-    use crate::equation_of_state::{Components, EquationOfState, IdealGas};
-    use crate::parameter::*;
     use crate::Contributions;
     use crate::FeosResult;
     use crate::StateBuilder;
+    use crate::cubic::*;
+    use crate::equation_of_state::{Components, EquationOfState, IdealGas};
+    use crate::parameter::*;
     use approx::*;
     use ndarray::Array1;
     use num_dual::DualNum;
@@ -238,7 +229,7 @@ mod tests {
         }
     }
 
-    fn pure_record_vec() -> Vec<PureRecord<PengRobinsonRecord>> {
+    fn pure_record_vec() -> Vec<PureRecord<PengRobinsonRecord, ()>> {
         let records = r#"[
             {
                 "identifier": {
@@ -249,11 +240,9 @@ mod tests {
                     "inchi": "InChI=1/C3H8/c1-3-2/h3H2,1-2H3",
                     "formula": "C3H8"
                 },
-                "model_record": {
-                    "tc": 369.96,
-                    "pc": 4250000.0,
-                    "acentric_factor": 0.153
-                },
+                "tc": 369.96,
+                "pc": 4250000.0,
+                "acentric_factor": 0.153,
                 "molarweight": 44.0962
             },
             {
@@ -265,11 +254,9 @@ mod tests {
                     "inchi": "InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3",
                     "formula": "C4H10"
                 },
-                "model_record": {
-                    "tc": 425.2,
-                    "pc": 3800000.0,
-                    "acentric_factor": 0.199
-                },
+                "tc": 425.2,
+                "pc": 3800000.0,
+                "acentric_factor": 0.199,
                 "molarweight": 58.123
             }
         ]"#;
@@ -281,7 +268,7 @@ mod tests {
         let mixture = pure_record_vec();
         let propane = mixture[0].clone();
         let parameters = PengRobinsonParameters::new_pure(propane)?;
-        let residual = Arc::new(PengRobinson::new(Arc::new(parameters)));
+        let residual = Arc::new(PengRobinson::new(parameters));
         let eos = Arc::new(EquationOfState::new(Arc::new(NoIdealGas), residual.clone()));
 
         let sr = StateBuilder::new(&residual)

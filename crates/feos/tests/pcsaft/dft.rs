@@ -2,17 +2,26 @@
 #![cfg(feature = "dft")]
 use approx::assert_relative_eq;
 use feos::hard_sphere::FMTVersion;
-use feos::ideal_gas::Joback;
+use feos::ideal_gas::{Joback, JobackParameters};
 use feos::pcsaft::{PcSaft, PcSaftFunctional, PcSaftParameters};
-use feos_core::parameter::{IdentifierOption, Parameter};
-use feos_core::{Contributions, EquationOfState, PhaseEquilibrium, State, Verbosity};
+use feos_core::parameter::IdentifierOption;
+use feos_core::{Contributions, EquationOfState, FeosResult, PhaseEquilibrium, State, Verbosity};
 use feos_dft::interface::PlanarInterface;
 use feos_dft::{DFTSolver, PdgtFunctionalProperties};
-use ndarray::{arr1, Axis};
+use ndarray::{Axis, arr1};
 use quantity::*;
 use std::error::Error;
 use std::sync::Arc;
 use typenum::P3;
+
+fn parameters(comp: &str) -> FeosResult<PcSaftParameters> {
+    PcSaftParameters::from_json(
+        vec![comp],
+        "tests/pcsaft/test_parameters.json",
+        None,
+        IdentifierOption::Name,
+    )
+}
 
 #[test]
 #[allow(non_snake_case)]
@@ -21,16 +30,10 @@ fn test_bulk_implementations() -> Result<(), Box<dyn Error>> {
     let KB_old = 1.38064852e-23 * JOULE / KELVIN;
     let NAV_old = 6.022140857e23 / MOL;
 
-    let params = Arc::new(PcSaftParameters::from_json(
-        vec!["water_np"],
-        "tests/pcsaft/test_parameters.json",
-        None,
-        IdentifierOption::Name,
-    )?);
-    let eos = Arc::new(PcSaft::new(params.clone()));
-    let func_pure = Arc::new(PcSaftFunctional::new(params.clone()));
+    let eos = Arc::new(PcSaft::new(parameters("water_np")?));
+    let func_pure = Arc::new(PcSaftFunctional::new(parameters("water_np")?));
     let func_full = Arc::new(PcSaftFunctional::new_full(
-        params,
+        parameters("water_np")?,
         FMTVersion::KierlikRosinberg,
     ));
     let t = 300.0 * KELVIN;
@@ -96,18 +99,15 @@ fn test_dft_propane() -> Result<(), Box<dyn Error>> {
     let KB_old = 1.38064852e-23 * JOULE / KELVIN;
     let NAV_old = 6.022140857e23 / MOL;
 
-    let params = Arc::new(PcSaftParameters::from_json(
-        vec!["propane"],
-        "tests/pcsaft/test_parameters.json",
-        None,
-        IdentifierOption::Name,
-    )?);
-    let func_pure = Arc::new(PcSaftFunctional::new(params.clone()));
+    let func_pure = Arc::new(PcSaftFunctional::new(parameters("propane")?));
     let func_full = Arc::new(PcSaftFunctional::new_full(
-        params.clone(),
+        parameters("propane")?,
         FMTVersion::KierlikRosinberg,
     ));
-    let func_full_vec = Arc::new(PcSaftFunctional::new_full(params, FMTVersion::WhiteBear));
+    let func_full_vec = Arc::new(PcSaftFunctional::new_full(
+        parameters("propane")?,
+        FMTVersion::WhiteBear,
+    ));
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 2048;
@@ -217,13 +217,7 @@ fn test_dft_propane() -> Result<(), Box<dyn Error>> {
 #[test]
 #[allow(non_snake_case)]
 fn test_dft_propane_newton() -> Result<(), Box<dyn Error>> {
-    let params = Arc::new(PcSaftParameters::from_json(
-        vec!["propane"],
-        "tests/pcsaft/test_parameters.json",
-        None,
-        IdentifierOption::Name,
-    )?);
-    let func = Arc::new(PcSaftFunctional::new(params));
+    let func = Arc::new(PcSaftFunctional::new(parameters("propane")?));
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 512;
@@ -243,14 +237,11 @@ fn test_dft_water() -> Result<(), Box<dyn Error>> {
     let KB_old = 1.38064852e-23 * JOULE / KELVIN;
     let NAV_old = 6.022140857e23 / MOL;
 
-    let params = Arc::new(PcSaftParameters::from_json(
-        vec!["water_np"],
-        "tests/pcsaft/test_parameters.json",
-        None,
-        IdentifierOption::Name,
-    )?);
-    let func_pure = Arc::new(PcSaftFunctional::new(params.clone()));
-    let func_full_vec = Arc::new(PcSaftFunctional::new_full(params, FMTVersion::WhiteBear));
+    let func_pure = Arc::new(PcSaftFunctional::new(parameters("water_np")?));
+    let func_full_vec = Arc::new(PcSaftFunctional::new_full(
+        parameters("water_np")?,
+        FMTVersion::WhiteBear,
+    ));
     let t = 400.0 * KELVIN;
     let w = 120.0 * ANGSTROM;
     let points = 2048;
@@ -331,15 +322,15 @@ fn test_entropy_bulk_values() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let joback = Joback::from_json(
+    let joback = Joback::new(JobackParameters::from_json(
         vec!["water_np"],
         "tests/pcsaft/test_parameters_joback.json",
         None,
         IdentifierOption::Name,
-    )?;
+    )?);
     let func = Arc::new(EquationOfState::new(
         Arc::new(joback),
-        Arc::new(PcSaftFunctional::new(Arc::new(params))),
+        Arc::new(PcSaftFunctional::new(params)),
     ));
     let vle = PhaseEquilibrium::pure(&func, 350.0 * KELVIN, None, Default::default())?;
     let profile = PlanarInterface::from_pdgt(&vle, 2048, false)?.solve(None)?;
@@ -354,13 +345,13 @@ fn test_entropy_bulk_values() -> Result<(), Box<dyn Error>> {
         profile.vle.liquid().density,
         profile.vle.vapor().density
     );
-    println!("\nResidual:\n{:?}", s_res);
+    println!("\nResidual:\n{s_res:?}");
     println!(
         "liquid: {:?}, vapor: {:?}",
         profile.vle.liquid().entropy(Contributions::Residual) / profile.vle.liquid().volume,
         profile.vle.vapor().entropy(Contributions::Residual) / profile.vle.vapor().volume
     );
-    println!("\nTotal:\n{:?}", s_tot);
+    println!("\nTotal:\n{s_tot:?}");
     println!(
         "liquid: {:?}, vapor: {:?}",
         profile.vle.liquid().entropy(Contributions::Total) / profile.vle.liquid().volume,

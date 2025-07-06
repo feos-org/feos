@@ -2,7 +2,7 @@
 //! optimization.
 use super::{DataSet, FeosError, Loss};
 use feos_core::Residual;
-use ndarray::{arr1, concatenate, Array1, ArrayView1, Axis};
+use ndarray::{Array1, ArrayView1, Axis, arr1, concatenate};
 // use quantity::si::SIArray1;
 use std::fmt;
 use std::fmt::Display;
@@ -102,7 +102,7 @@ impl<E: Residual> Estimator<E> {
 impl<E: Residual> Display for Estimator<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for d in self.data.iter() {
-            writeln!(f, "{}", d)?;
+            writeln!(f, "{d}")?;
         }
         Ok(())
     }

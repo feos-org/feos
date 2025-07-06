@@ -1,17 +1,14 @@
-use std::{fs::File, io::BufReader};
-
 use crate::error::PyFeosError;
-use feos_core::{
-    parameter::{BinarySegmentRecord, SegmentRecord},
-    FeosError, FeosResult,
-};
+use feos_core::parameter::*;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use pythonize::{depythonize, pythonize};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(from = "SegmentRecord<Value, Value>")]
+#[serde(into = "SegmentRecord<Value, Value>")]
 #[pyclass(name = "SegmentRecord")]
 pub struct PySegmentRecord {
     #[pyo3(get)]
@@ -19,15 +16,28 @@ pub struct PySegmentRecord {
     #[pyo3(get)]
     molarweight: f64,
     model_record: Value,
+    association_sites: Vec<AssociationRecord<Value>>,
 }
 
-impl<M> TryInto<SegmentRecord<M>> for PySegmentRecord
-where
-    for<'de> M: Deserialize<'de>,
-{
-    type Error = FeosError;
-    fn try_into(self) -> FeosResult<SegmentRecord<M>> {
-        Ok(serde_json::from_value(serde_json::to_value(self)?)?)
+impl From<PySegmentRecord> for SegmentRecord<Value, Value> {
+    fn from(value: PySegmentRecord) -> Self {
+        Self {
+            identifier: value.identifier,
+            molarweight: value.molarweight,
+            model_record: value.model_record,
+            association_sites: value.association_sites,
+        }
+    }
+}
+
+impl From<SegmentRecord<Value, Value>> for PySegmentRecord {
+    fn from(value: SegmentRecord<Value, Value>) -> Self {
+        Self {
+            identifier: value.identifier,
+            molarweight: value.molarweight,
+            model_record: value.model_record,
+            association_sites: value.association_sites,
+        }
     }
 }
 
@@ -40,31 +50,29 @@ impl PySegmentRecord {
         molarweight: f64,
         parameters: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
-        if parameters.is_none() {
+        let Some(parameters) = parameters else {
             return Err(PyFeosError::Error(
                 "No model parameters provided for SegmentRecord".to_string(),
             )
             .into());
-        }
-        let model_record = depythonize(parameters.unwrap())?;
-        Ok(Self {
-            identifier,
-            molarweight,
-            model_record,
-        })
+        };
+        parameters.set_item("identifier", identifier)?;
+        parameters.set_item("molarweight", molarweight)?;
+        Ok(depythonize(parameters)?)
     }
 
     #[getter]
-    fn get_model_record<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
-        pythonize(py, &self.model_record)
-            .map_err(PyErr::from)
-            .and_then(|d| d.downcast_into::<PyDict>().map_err(PyErr::from))
+    fn get_model_record<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        pythonize(py, &self.model_record).map_err(PyErr::from)
     }
 
-    pub fn to_dict<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
-        pythonize(py, &self)
-            .map_err(PyErr::from)
-            .and_then(|d| d.downcast_into::<PyDict>().map_err(PyErr::from))
+    #[getter]
+    fn get_association_sites<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        pythonize(py, &self.association_sites).map_err(PyErr::from)
+    }
+
+    pub fn to_dict<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        pythonize(py, &self).map_err(PyErr::from)
     }
 
     #[staticmethod]
@@ -74,21 +82,6 @@ impl PySegmentRecord {
 
     pub fn to_json_str(&self) -> PyResult<String> {
         Ok(serde_json::to_string(&self).map_err(PyFeosError::from)?)
-    }
-
-    fn __repr__(&self) -> PyResult<String> {
-        let params: PyResult<String> = Python::with_gil(|py| {
-            Ok(self
-                .get_model_record(py)?
-                .iter()
-                .map(|(p, v)| format!(", {p}={v}"))
-                .collect::<Vec<_>>()
-                .join(""))
-        });
-        Ok(format!(
-            "SegmentRecord(identifier={}, molarweight={}{})",
-            self.identifier, self.molarweight, params?
-        ))
     }
 
     /// Read a list of `SegmentRecord`s from a JSON file.
@@ -103,55 +96,50 @@ impl PySegmentRecord {
     /// [SegmentRecord]
     #[staticmethod]
     pub fn from_json(path: &str) -> PyResult<Vec<Self>> {
-        Ok(
-            serde_json::from_reader(BufReader::new(File::open(path)?))
-                .map_err(PyFeosError::from)?,
-        )
+        Ok(SegmentRecord::from_json(path)
+            .map_err(PyFeosError::from)?
+            .into_iter()
+            .map(|r| r.into())
+            .collect())
+    }
+
+    fn __repr__(&self) -> String {
+        SegmentRecord::from(self.clone()).to_string()
     }
 }
 
 /// A collection of parameters that model interactions between two segments.
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(from = "BinaryRecord<String, Value, Value>")]
+#[serde(into = "BinaryRecord<String, Value, Value>")]
 #[pyclass(name = "BinarySegmentRecord")]
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PyBinarySegmentRecord {
-    /// Identifier of the first component
     #[pyo3(get)]
     pub id1: String,
-    /// Identifier of the second component
     #[pyo3(get)]
     pub id2: String,
-    /// Binary interaction parameter(s)
-    #[pyo3(get)]
-    pub model_record: f64,
+    pub model_record: Option<Value>,
+    pub association_sites: Vec<BinaryAssociationRecord<Value>>,
 }
 
-// For future extennsion to generic model parameter M
-// impl<M> TryInto<BinarySegmentRecord<M>> for PyBinarySegmentRecord
-// where
-//     for<'de> M: Deserialize<'de>,
-// {
-//     type Error = FeosError;
-//     fn try_into(self) -> FeosResult<BinarySegmentRecord<M>> {
-//         Ok(serde_json::from_value(serde_json::to_value(self)?)?)
-//     }
-// }
-
-impl From<BinarySegmentRecord> for PyBinarySegmentRecord {
-    fn from(value: BinarySegmentRecord) -> Self {
-        Self {
-            id1: value.id1,
-            id2: value.id2,
-            model_record: value.model_record,
-        }
-    }
-}
-
-impl From<PyBinarySegmentRecord> for BinarySegmentRecord {
+impl From<PyBinarySegmentRecord> for BinaryRecord<String, Value, Value> {
     fn from(value: PyBinarySegmentRecord) -> Self {
         Self {
             id1: value.id1,
             id2: value.id2,
             model_record: value.model_record,
+            association_sites: value.association_sites,
+        }
+    }
+}
+
+impl From<BinaryRecord<String, Value, Value>> for PyBinarySegmentRecord {
+    fn from(value: BinaryRecord<String, Value, Value>) -> Self {
+        Self {
+            id1: value.id1,
+            id2: value.id2,
+            model_record: value.model_record,
+            association_sites: value.association_sites,
         }
     }
 }
@@ -159,29 +147,38 @@ impl From<PyBinarySegmentRecord> for BinarySegmentRecord {
 #[pymethods]
 impl PyBinarySegmentRecord {
     #[new]
-    fn py_new(id1: String, id2: String, model_record: f64) -> PyResult<Self> {
-        Ok(Self {
-            id1,
-            id2,
-            model_record,
-        })
+    #[pyo3(signature = (id1, id2, **parameters))]
+    fn new(id1: String, id2: String, parameters: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
+        let Some(parameters) = parameters else {
+            return Err(PyFeosError::Error(
+                "No model parameters provided for BinaryRecord".to_string(),
+            )
+            .into());
+        };
+        parameters.set_item("id1", id1)?;
+        parameters.set_item("id2", id2)?;
+        Ok(depythonize(parameters)?)
     }
 
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(format!(
-            "BinarySegmentRecord(id1={}, id2={}, model_record={})",
-            self.id1, self.id2, self.model_record
-        ))
+    #[getter]
+    fn get_model_record<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        pythonize(py, &self.model_record).map_err(PyErr::from)
     }
 
-    /// Creates record from json string.
+    pub fn to_dict<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        pythonize(py, &self).map_err(PyErr::from)
+    }
+
     #[staticmethod]
-    fn from_json_str(json: &str) -> PyResult<Self> {
-        Ok(serde_json::from_str(json).map_err(PyFeosError::from)?)
+    pub fn from_json_str(s: &str) -> PyResult<Self> {
+        Ok(serde_json::from_str(s).map_err(PyFeosError::from)?)
     }
 
-    /// Creates a json string from record.
-    fn to_json_str(&self) -> PyResult<String> {
+    pub fn to_json_str(&self) -> PyResult<String> {
         Ok(serde_json::to_string(&self).map_err(PyFeosError::from)?)
+    }
+
+    fn __repr__(&self) -> String {
+        BinaryRecord::from(self.clone()).to_string()
     }
 }

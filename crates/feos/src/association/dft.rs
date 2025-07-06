@@ -7,12 +7,38 @@ use std::ops::MulAssign;
 
 pub const N0_CUTOFF: f64 = 1e-9;
 
-impl<P: AssociationStrength + Sync + Send> FunctionalContribution for Association<P>
+/// Implementation of the SAFT association Helmholtz energy functional.
+pub struct AssociationFunctional<'a, A: AssociationStrength> {
+    model: &'a A,
+    association_parameters: &'a AssociationParameters<A::Record>,
+    association: &'a Association<A>,
+}
+
+impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
+    pub fn new<P, B, Bo, C>(
+        model: &'a A,
+        parameters: &'a GcParameters<P, B, A::Record, Bo, C>,
+        association: &'a Option<Association<A>>,
+    ) -> Option<Self> {
+        association.as_ref().map(|a| Self {
+            model,
+            association_parameters: &parameters.association,
+            association: a,
+        })
+    }
+}
+
+impl<'a, A: AssociationStrength + Sync + Send> FunctionalContribution
+    for AssociationFunctional<'a, A>
 where
-    P::Record: Sync + Send,
+    A::Record: Sync + Send,
 {
+    fn name(&self) -> &'static str {
+        "Association"
+    }
+
     fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
-        let p = &self.parameters;
+        let p = self.model;
         let r = p.hs_diameter(temperature) * 0.5;
         let [_, _, _, c3] = p.geometry_coefficients(temperature);
         WeightFunctionInfo::new(p.component_index().into_owned(), false)
@@ -43,8 +69,6 @@ where
         temperature: N,
         weighted_densities: ArrayView2<N>,
     ) -> FeosResult<Array1<N>> {
-        let p = &self.parameters;
-
         // number of segments
         let n = self.association_parameters.component_index.len();
 
@@ -64,8 +88,8 @@ where
         let n3 = weighted_densities.index_axis(Axis(0), n * (dim + 1));
 
         // calculate rho0
-        let [_, _, c2, _] = p.geometry_coefficients(temperature);
-        let diameter = p.hs_diameter(temperature);
+        let [_, _, c2, _] = self.model.geometry_coefficients(temperature);
+        let diameter = self.model.hs_diameter(temperature);
         let mut n2i = n0i.to_owned();
         for (i, mut n2i) in n2i.outer_iter_mut().enumerate() {
             n2i.mul_assign(diameter[i].powi(2) * c2[i] * PI);
@@ -105,7 +129,7 @@ where
     }
 }
 
-impl<P: AssociationStrength> Association<P> {
+impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
     pub fn _helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand, S: Data<Elem = N>>(
         &self,
         temperature: N,
@@ -116,12 +140,12 @@ impl<P: AssociationStrength> Association<P> {
     ) -> FeosResult<Array1<N>> {
         let a = &self.association_parameters;
 
-        let d = self.parameters.hs_diameter(temperature);
+        let d = self.model.hs_diameter(temperature);
 
         match (
             a.sites_a.len() * a.sites_b.len(),
             a.sites_c.len(),
-            self.force_cross_association,
+            self.association.force_cross_association,
         ) {
             (0, 0, _) => Ok(Array::zeros(n3i.len())),
             (1, 0, false) => {
@@ -160,14 +184,19 @@ impl<P: AssociationStrength> Association<P> {
                     .zip(n3i.iter())
                     .zip(xi.iter())
                     .map(|(((rho, &n2), &n3i), &xi)| {
-                        let [delta_ab, delta_cc] =
-                            self.association_strength(temperature, &d, n2, n3i, xi);
-                        Self::helmholtz_energy_density_cross_association(
+                        let [delta_ab, delta_cc] = self.association.association_strength(
+                            self.association_parameters,
+                            self.model,
+                            temperature,
+                            &d,
+                            n2,
+                            n3i,
+                            xi,
+                        );
+                        self.association.helmholtz_energy_density_cross_association(
                             &rho,
                             &delta_ab,
                             &delta_cc,
-                            self.max_iter,
-                            self.tol,
                             Some(&mut x),
                         )
                     })
@@ -189,6 +218,9 @@ impl<P: AssociationStrength> Association<P> {
         xi: &Array1<N>,
     ) -> Array1<N> {
         let a = &self.association_parameters;
+        let Some(par) = &self.association.parameters_ab[(0, 0)] else {
+            return Array1::zeros(xi.len());
+        };
 
         // site densities
         let i = a.sites_a[0].assoc_comp;
@@ -201,9 +233,7 @@ impl<P: AssociationStrength> Association<P> {
         let dj = diameter[j];
         let k = n2 * n3i * (di * dj / (di + dj));
         let delta = (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i)
-            * self
-                .parameters
-                .association_strength(temperature, 0, 0, a.parameters_ab[(0, 0)]);
+            * self.model.association_strength(temperature, 0, 0, par);
 
         // no cross association, two association sites
         let aux = &delta * (&rhob - &rhoa) + 1.0;
@@ -228,6 +258,9 @@ impl<P: AssociationStrength> Association<P> {
         xi: &Array1<N>,
     ) -> Array1<N> {
         let a = &self.association_parameters;
+        let Some(par) = &self.association.parameters_cc[(0, 0)] else {
+            return Array1::zeros(xi.len());
+        };
 
         // site densities
         let i = a.sites_c[0].assoc_comp;
@@ -237,9 +270,7 @@ impl<P: AssociationStrength> Association<P> {
         let di = diameter[i];
         let k = n2 * n3i * (di * 0.5);
         let delta = (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i)
-            * self
-                .parameters
-                .association_strength(temperature, 0, 0, a.parameters_cc[(0, 0)]);
+            * self.model.association_strength(temperature, 0, 0, par);
 
         // no cross association, two association sites
         let xc = ((delta * 4.0 * &rhoc + 1.0).map(N::sqrt) + 1.0).map(N::recip) * 2.0;
