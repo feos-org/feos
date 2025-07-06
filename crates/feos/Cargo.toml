@@ -23,6 +23,7 @@ rayon = { workspace = true, optional = true }
 itertools = { workspace = true }
 typenum = { workspace = true }
 arrayvec = { workspace = true, features = ["serde"] }
+enum_dispatch = {workspace = true, optional = true}
 
 feos-core = { workspace = true }
 feos-derive = { workspace = true }
@@ -46,7 +47,7 @@ pets = []
 saftvrqmie = []
 saftvrmie = ["association"]
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
-cubic = []
+cubic = ["enum_dispatch"]
 all_models = [
     "dft",
     "pcsaft",

@@ -1,4 +1,4 @@
-use feos_core::parameter::{Identifier, Parameter, PureRecord};
+use feos_core::parameter::{Identifier, Parameters, PureRecord};
 use feos_core::{FeosError, FeosResult};
 use ndarray::{Array1, Array2};
 use num_traits::Zero;
@@ -109,8 +109,10 @@ impl std::fmt::Display for CubicBinaryRecord {
     }
 }
 
-/// Cubic parameters for one ore more substances.
-pub struct CubicParameters {
+/// Cubic EoS parameters for one ore more substances.
+pub type CubicParameters = Parameters<CubicRecord, CubicBinaryRecord, ()>;
+
+pub struct CubicPars {
     /// Critical temperature in Kelvin
     pub(super) tc: Array1<f64>,
     pub(super) pc: Array1<f64>,
@@ -122,12 +124,12 @@ pub struct CubicParameters {
     /// Molar weight in units of g/mol
     pub(super) molarweight: Array1<f64>,
     /// List of pure component records
-    pub(super) pure_records: Vec<PureRecord<CubicRecord>>,
+    pub(super) pure_records: Vec<PureRecord<CubicRecord, ()>>,
     /// List of binary records
     pub binary_records: Option<Array2<CubicBinaryRecord>>,
 }
 
-impl std::fmt::Display for CubicParameters {
+impl std::fmt::Display for CubicPars {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.pure_records
             .iter()
@@ -136,7 +138,7 @@ impl std::fmt::Display for CubicParameters {
     }
 }
 
-impl CubicParameters {
+impl CubicPars {
     /// Build a simple parameter set without binary interaction parameters.
     pub fn new_simple(
         tc: &[f64],
@@ -163,56 +165,85 @@ impl CubicParameters {
                 PureRecord::new(id, molarweight[i], record)
             })
             .collect();
-        CubicParameters::from_records(records, None)
+        CubicPars::new(records, vec![])
     }
 }
 
-impl Parameter for CubicParameters {
-    type Pure = CubicRecord;
-    type Binary = CubicBinaryRecord;
 
-    /// Creates parameters from pure component records.
-    fn from_records(
-        pure_records: Vec<PureRecord<Self::Pure>>,
-        binary_records: Option<Array2<Self::Binary>>,
-    ) -> FeosResult<Self> {
-        let n = pure_records.len();
+//// Origional CubicParameters struct instead of the Parameters type implementation
+// pub struct CubicParameters {
+//     /// Critical temperature in Kelvin
+//     pub(super) tc: Array1<f64>,
+//     pub(super) pc: Array1<f64>,
+//     pub(super) acentric_factor: Array1<f64>,
+//     /// Binary interaction parameter for a
+//     pub(super) k_ij: Array2<f64>,
+//     /// Binary interaction parameter for b
+//     pub(super) l_ij: Array2<f64>,
+//     /// Molar weight in units of g/mol
+//     pub(super) molarweight: Array1<f64>,
+//     /// List of pure component records
+//     pub(super) pure_records: Vec<PureRecord<CubicRecord, ()>>,
+//     /// List of binary records
+//     pub binary_records: Option<Array2<CubicBinaryRecord>>,
+// }
 
-        let mut tc = Array1::zeros(n);
-        let mut pc = Array1::zeros(n);
-        let mut acentric_factor = Array1::zeros(n);
-        let mut molarweight = Array1::zeros(n);
+// impl std::fmt::Display for CubicParameters {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         self.pure_records
+//             .iter()
+//             .try_for_each(|pr| writeln!(f, "{}", pr))?;
+//         writeln!(f, "\nk_ij:\n{}", self.k_ij)
+//     }
+// }
 
-        for (i, record) in pure_records.iter().enumerate() {
-            molarweight[i] = record.molarweight;
-            let r = &record.model_record;
-            tc[i] = r.tc;
-            pc[i] = r.pc;
-            acentric_factor[i] = r.acentric_factor;
-        }
 
-        let br = binary_records.as_ref();
-        let k_ij = br.map_or_else(|| Array2::zeros([n; 2]), |br| br.mapv(|br| br.k_ij));
-        let l_ij = br.map_or_else(|| Array2::zeros([n; 2]), |br| br.mapv(|br| br.l_ij));
-
-        Ok(Self {
-            tc,
-            pc,
-            acentric_factor,
-            k_ij,
-            l_ij,
-            molarweight,
-            pure_records,
-            binary_records,
-        })
-    }
-
-    fn records(
-        &self,
-    ) -> (
-        &[PureRecord<CubicRecord>],
-        Option<&Array2<CubicBinaryRecord>>,
-    ) {
-        (&self.pure_records, self.binary_records.as_ref())
-    }
-}
+// impl Parameter for CubicParameters {
+//     type Pure = CubicRecord;
+//     type Binary = CubicBinaryRecord;
+//
+//     /// Creates parameters from pure component records.
+//     fn from_records(
+//         pure_records: Vec<PureRecord<Self::Pure>>,
+//         binary_records: Option<Array2<Self::Binary>>,
+//     ) -> FeosResult<Self> {
+//         let n = pure_records.len();
+//
+//         let mut tc = Array1::zeros(n);
+//         let mut pc = Array1::zeros(n);
+//         let mut acentric_factor = Array1::zeros(n);
+//         let mut molarweight = Array1::zeros(n);
+//
+//         for (i, record) in pure_records.iter().enumerate() {
+//             molarweight[i] = record.molarweight;
+//             let r = &record.model_record;
+//             tc[i] = r.tc;
+//             pc[i] = r.pc;
+//             acentric_factor[i] = r.acentric_factor;
+//         }
+//
+//         let br = binary_records.as_ref();
+//         let k_ij = br.map_or_else(|| Array2::zeros([n; 2]), |br| br.mapv(|br| br.k_ij));
+//         let l_ij = br.map_or_else(|| Array2::zeros([n; 2]), |br| br.mapv(|br| br.l_ij));
+//
+//         Ok(Self {
+//             tc,
+//             pc,
+//             acentric_factor,
+//             k_ij,
+//             l_ij,
+//             molarweight,
+//             pure_records,
+//             binary_records,
+//         })
+//     }
+//
+//     fn records(
+//         &self,
+//     ) -> (
+//         &[PureRecord<CubicRecord>],
+//         Option<&Array2<CubicBinaryRecord>>,
+//     ) {
+//         (&self.pure_records, self.binary_records.as_ref())
+//     }
+// }
