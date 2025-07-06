@@ -468,7 +468,7 @@ impl Parameter for PcSaftParameters {
         let mut e_k_ij = Array::zeros((n, n));
         for i in 0..n {
             for j in 0..n {
-                e_k_ij[[i, j]] = (epsilon_k[i] * epsilon_k[j]).sqrt();
+                e_k_ij[[i, j]] = (epsilon_k[i] * epsilon_k[j]).sqrt;
                 sigma_ij[[i, j]] = 0.5 * (sigma[i] + sigma[j]);
             }
         }
