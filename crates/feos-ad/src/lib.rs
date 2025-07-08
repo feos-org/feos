@@ -9,7 +9,4 @@ pub use core::{
 #[cfg(feature = "parameter_fit")]
 mod parameter_fit;
 #[cfg(feature = "parameter_fit")]
-pub use parameter_fit::{
-    bubble_point_pressure, dew_point_pressure, equilibrium_liquid_density, liquid_density,
-    vapor_pressure,
-};
+pub use parameter_fit::{BinaryProperty, Property, PureProperty};
