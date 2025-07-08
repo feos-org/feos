@@ -173,6 +173,7 @@ pub fn dew_point_pressure<R: ResidualHelmholtzEnergy<2>, const P: usize>(
 }
 
 #[cfg(test)]
+#[cfg(feature = "pcsaft")]
 mod test {
     use super::*;
     use crate::eos::pcsaft::test::{pcsaft, pcsaft_binary, pcsaft_non_assoc};

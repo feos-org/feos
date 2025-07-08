@@ -1,6 +1,6 @@
 use feos_core::{Components, IdealGas, Residual, StateHD};
 use nalgebra::{Const, SVector, U1};
-use ndarray::{arr1, Array1, ScalarOperand};
+use ndarray::{Array1, ScalarOperand, arr1};
 use num_dual::{Derivative, DualNum, DualVec};
 use std::sync::Arc;
 
@@ -78,7 +78,7 @@ impl<E: ParametersAD, const N: usize> HelmholtzEnergyWrapper<E, f64, N> {
 }
 
 /// Models for which derivatives with respect to individual parameters can be calculated.
-pub trait NamedParameters: ParametersAD {
+pub trait NamedParameters: ParametersAD + for<'a> From<&'a [f64]> {
     /// Return a mutable reference to the parameter named by `index` from the parameter set.
     fn index_parameters_mut<'a, D: DualNum<f64> + Copy>(
         parameters: &'a mut Self::Parameters<D>,
