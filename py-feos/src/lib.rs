@@ -88,8 +88,10 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     // AD
     #[cfg(feature = "ad")]
-    m.add_class::<ad::PyEstimator>()?;
-    m.add_class::<ad::PyProperty>()?;
+    {
+        m.add_class::<ad::PyEstimator>()?;
+        m.add_class::<ad::PyProperty>()?;
+    }
 
     #[cfg(not(feature = "dft"))]
     m.add("__dft__", false)?;

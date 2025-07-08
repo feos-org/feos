@@ -178,7 +178,7 @@ impl Property {
         let status = value_dual.iter().map(|p| p.is_ok()).collect();
         let value_dual: Array1<_> = value_dual.into_iter().flatten().collect();
         let mut value = Array1::zeros(value_dual.len());
-        let mut grad = Array2::zeros([value_dual.len(), 8]);
+        let mut grad = Array2::zeros([value_dual.len(), P]);
         Zip::from(grad.rows_mut())
             .and(&mut value)
             .and(&value_dual)
