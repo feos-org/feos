@@ -11,7 +11,7 @@ from feos.feos import (
     PhaseEquilibrium,
     EquationOfState,
     Estimator,
-    Property,
+    Model,
     __dft__,
 )
 
@@ -29,7 +29,7 @@ __all__ = [
     "PhaseEquilibrium",
     "EquationOfState",
     "Estimator",
-    "Property"
+    "Model"
 ]
 if __dft__:
     __all__ = ["dft"] + __all__

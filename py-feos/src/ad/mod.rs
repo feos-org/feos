@@ -1,98 +1,76 @@
 #[cfg(feature = "pcsaft")]
 use feos_ad::eos::{PcSaftBinary, PcSaftPure};
-use feos_ad::{BinaryProperty, NamedParameters, Property, PureProperty, ResidualHelmholtzEnergy};
+use feos_ad::{BinaryModel, NamedParameters, PureModel, ResidualHelmholtzEnergy};
 use numpy::{PyArray1, PyArray2, PyReadonlyArray2, ToPyArray};
+use paste::paste;
 use pyo3::prelude::*;
 
-#[pyclass(name = "Property")]
-#[derive(Clone, Copy)]
-pub struct PyProperty(Property);
+#[pyclass(name = "Model", eq, eq_int)]
+#[derive(Clone, Copy, PartialEq)]
+pub enum PyModel {
+    PcSaftNonAssoc,
+    PcSaftFull,
+}
 
-#[pymethods]
-#[expect(non_snake_case)]
-impl PyProperty {
-    #[classattr]
-    fn VaporPressure() -> Self {
-        Self(Property::Pure(PureProperty::VaporPressure))
-    }
+enum BinaryModels {
+    PcSaftNonAssoc,
+    PcSaftFull,
+}
 
-    #[classattr]
-    fn LiquidDensity() -> Self {
-        Self(Property::Pure(PureProperty::LiquidDensity))
-    }
-
-    #[classattr]
-    fn EquilibriumLiquidDensity() -> Self {
-        Self(Property::Pure(PureProperty::EquilibriumLiquidDensity))
-    }
-
-    #[classattr]
-    fn BubblePointPressure() -> Self {
-        Self(Property::Binary(BinaryProperty::BubblePointPressure))
-    }
-
-    #[classattr]
-    fn DewPointPressure() -> Self {
-        Self(Property::Binary(BinaryProperty::DewPointPressure))
+impl From<PyModel> for BinaryModels {
+    fn from(value: PyModel) -> Self {
+        match value {
+            PyModel::PcSaftNonAssoc => Self::PcSaftNonAssoc,
+            PyModel::PcSaftFull => Self::PcSaftFull,
+        }
     }
 }
 
 #[pyclass(name = "Estimator")]
 pub struct PyEstimator;
 
-#[pymethods]
-impl PyEstimator {
-    #[cfg(feature = "pcsaft")]
-    #[staticmethod]
-    #[expect(clippy::type_complexity)]
-    fn pcsaft_non_assoc<'py>(
-        property: PyProperty,
-        parameter_names: Bound<'py, PyAny>,
-        parameters: PyReadonlyArray2<f64>,
-        input: PyReadonlyArray2<f64>,
-    ) -> (
-        Bound<'py, PyArray1<f64>>,
-        Bound<'py, PyArray2<f64>>,
-        Bound<'py, PyArray1<bool>>,
-    ) {
-        evaluate_gradients::<PcSaftPure<4>, PcSaftBinary<4>>(
-            property.0,
-            parameter_names,
-            parameters,
-            input,
-        )
-    }
+type GradResult<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray1<bool>>,
+);
 
-    #[cfg(feature = "pcsaft")]
-    #[staticmethod]
-    #[expect(clippy::type_complexity)]
-    fn pcsaft_full<'py>(
-        property: PyProperty,
-        parameter_names: Bound<'py, PyAny>,
-        parameters: PyReadonlyArray2<f64>,
-        input: PyReadonlyArray2<f64>,
-    ) -> (
-        Bound<'py, PyArray1<f64>>,
-        Bound<'py, PyArray2<f64>>,
-        Bound<'py, PyArray1<bool>>,
-    ) {
-        evaluate_gradients::<PcSaftPure<8>, PcSaftBinary<8>>(
-            property.0,
-            parameter_names,
-            parameters,
-            input,
-        )
-    }
+macro_rules! expand_models {
+    ($enum:ty, $prop:ident, $($model:ident: $type:ty),*) => {
+        #[pymethods]
+        impl PyEstimator {
+            #[staticmethod]
+            fn $prop<'py>(
+                model: PyModel,
+                parameter_names: Bound<'py, PyAny>,
+                parameters: PyReadonlyArray2<f64>,
+                input: PyReadonlyArray2<f64>,
+            ) -> GradResult<'py> {
+                match <$enum>::from(model) {
+                    $(
+                    <$enum>::$model => {
+                        $prop::<$type>(parameter_names, parameters, input)
+                    })*
+                }
+            }
+        }
+    };
 }
 
 macro_rules! impl_evaluate_gradients {
-    ($($p:literal),*) => {
-        fn evaluate_gradients<
+    (pure, [$($prop:ident),*], $models:tt) => {
+        $(impl_evaluate_gradients!(1,PyModel,$prop,$models,1,2,3,4,5,max:6);)*
+    };
+    (binary, [$($prop:ident),*], $models:tt) => {
+        $(impl_evaluate_gradients!(2,BinaryModels,$prop,$models,1,2,3,4,5,6,7,8,9,10,11,12,13,14,max:15);)*
+    };
+    ($n:literal, $enum:ty, $prop:ident, {$($model:ident: $type:ty),*}, $($p:literal,)* max: $max:literal) => {
+        expand_models!($enum, $prop, $($model: $type),*);
+        paste!(
+        fn $prop<
             'py,
-            Pure: ResidualHelmholtzEnergy<1> + NamedParameters,
-            Binary: ResidualHelmholtzEnergy<2> + NamedParameters,
+            R: ResidualHelmholtzEnergy<$n> + NamedParameters,
         >(
-            property: Property,
             parameter_names: Bound<'py, PyAny>,
             parameters: PyReadonlyArray2<f64>,
             input: PyReadonlyArray2<f64>,
@@ -104,17 +82,29 @@ macro_rules! impl_evaluate_gradients {
             let (value, grad, status) =
             $(
             if let Ok(p) = parameter_names.extract::<[String; $p]>() {
-                property.evaluate_parallel::<Pure, Binary, $p>(p, parameters.as_array(), input.as_array())
-            } else)* {
-                panic!("Gradients can only be evaluated for up to 15 parameters!")
+                R::[<$prop _parallel>](p, parameters.as_array(), input.as_array())
+            } else)* if let Ok(p) = parameter_names.extract::<[String; $max]>() {
+                R::[<$prop _parallel>](p, parameters.as_array(), input.as_array())
+            } else {
+                panic!("Gradients can only be evaluated for up to {} parameters!", $max)
             };
             (
                 value.to_pyarray(parameter_names.py()),
                 grad.to_pyarray(parameter_names.py()),
                 status.to_pyarray(parameter_names.py()),
             )
-        }
+        });
     };
 }
 
-impl_evaluate_gradients!(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
+impl_evaluate_gradients!(
+    pure,
+    [vapor_pressure, liquid_density, equilibrium_liquid_density],
+    {PcSaftNonAssoc: PcSaftPure<4>, PcSaftFull: PcSaftPure<8>}
+);
+
+impl_evaluate_gradients!(
+    binary,
+    [bubble_point_pressure, dew_point_pressure],
+    {PcSaftNonAssoc: PcSaftBinary<4>, PcSaftFull: PcSaftBinary<8>}
+);

@@ -29,14 +29,13 @@ indexmap = { workspace = true }
 rayon = { workspace = true, optional = true }
 itertools = { workspace = true }
 typenum = { workspace = true }
+paste = { workspace = true }
 
 feos = { workspace = true }
 feos-core = { workspace = true }
 feos-derive = { workspace = true }
 feos-dft = { workspace = true, optional = true }
 feos-ad = { workspace = true, optional = true }
-
-nalgebra = { workspace = true, optional = true }
 
 [features]
 default = []
@@ -49,7 +48,7 @@ pets = ["feos/pets"]
 saftvrqmie = ["feos/saftvrqmie"]
 saftvrmie = ["feos/saftvrmie"]
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
-ad = ["feos-ad/parameter_fit", "rayon", "nalgebra"]
+ad = ["feos-ad/parameter_fit"]
 all_models = [
     "dft",
     "pcsaft",

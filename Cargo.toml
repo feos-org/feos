@@ -43,6 +43,7 @@ gauss-quad = "0.2"
 approx = "0.5"
 criterion = "0.5"
 arrayvec = "0.7"
+paste = "1.0"
 
 feos-core = { version = "0.8", path = "crates/feos-core" }
 feos-ad = { version = "0.2", path = "crates/feos-ad" }
