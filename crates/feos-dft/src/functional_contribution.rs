@@ -1,7 +1,7 @@
 use crate::weight_functions::WeightFunctionInfo;
 use feos_core::{FeosResult, StateHD};
+use ndarray::RemoveAxis;
 use ndarray::prelude::*;
-use ndarray::{RemoveAxis, ScalarOperand};
 use num_dual::*;
 use num_traits::Zero;
 
@@ -14,7 +14,7 @@ pub trait FunctionalContribution: Sync + Send {
     fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N>;
 
     /// Overwrite this if the weight functions in pDGT are different than for DFT.
-    fn weight_functions_pdgt<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn weight_functions_pdgt<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
     ) -> WeightFunctionInfo<N> {

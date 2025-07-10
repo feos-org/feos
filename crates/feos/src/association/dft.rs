@@ -3,7 +3,6 @@ use feos_core::FeosResult;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use num_dual::DualNum;
 use std::f64::consts::PI;
-use std::ops::MulAssign;
 
 pub const N0_CUTOFF: f64 = 1e-9;
 
@@ -64,7 +63,7 @@ where
             )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
@@ -92,7 +91,7 @@ where
         let diameter = self.model.hs_diameter(temperature);
         let mut n2i = n0i.to_owned();
         for (i, mut n2i) in n2i.outer_iter_mut().enumerate() {
-            n2i.mul_assign(diameter[i].powi(2) * c2[i] * PI);
+            n2i.map_inplace(|n2i| *n2i *= diameter[i].powi(2) * c2[i] * PI);
         }
         let mut rho0: Array2<N> = (n2vi
             .iter()
@@ -130,7 +129,7 @@ where
 }
 
 impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
-    pub fn _helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand, S: Data<Elem = N>>(
+    pub fn _helmholtz_energy_density<N: DualNum<f64> + Copy, S: Data<Elem = N>>(
         &self,
         temperature: N,
         rho0: &Array2<N>,
@@ -205,10 +204,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         }
     }
 
-    fn helmholtz_energy_density_ab_analytic<
-        N: DualNum<f64> + Copy + ScalarOperand,
-        S: Data<Elem = N>,
-    >(
+    fn helmholtz_energy_density_ab_analytic<N: DualNum<f64> + Copy, S: Data<Elem = N>>(
         &self,
         temperature: N,
         rho0: &Array2<N>,
@@ -231,9 +227,10 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         // association strength
         let di = diameter[i];
         let dj = diameter[j];
-        let k = n2 * n3i * (di * dj / (di + dj));
-        let delta = (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i)
-            * self.model.association_strength(temperature, 0, 0, par);
+        let dij = di * dj / (di + dj);
+        let k = (n2 * n3i).mapv(|x| x * dij);
+        let assoc_strength = self.model.association_strength(temperature, 0, 0, par);
+        let delta = (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i).mapv(|d| d * assoc_strength);
 
         // no cross association, two association sites
         let aux = &delta * (&rhob - &rhoa) + 1.0;
@@ -245,10 +242,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         rhoa * xa.mapv(f) + rhob * xb.mapv(f)
     }
 
-    fn helmholtz_energy_density_cc_analytic<
-        N: DualNum<f64> + Copy + ScalarOperand,
-        S: Data<Elem = N>,
-    >(
+    fn helmholtz_energy_density_cc_analytic<N: DualNum<f64> + Copy, S: Data<Elem = N>>(
         &self,
         temperature: N,
         rho0: &Array2<N>,
@@ -267,10 +261,10 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         let rhoc = &rho0.index_axis(Axis(0), i) * a.sites_c[0].n;
 
         // association strength
-        let di = diameter[i];
-        let k = n2 * n3i * (di * 0.5);
-        let delta = (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i)
-            * self.model.association_strength(temperature, 0, 0, par);
+        let ri = diameter[i] * 0.5;
+        let k = (n2 * n3i).mapv(|x| x * ri);
+        let association_strength = self.model.association_strength(temperature, 0, 0, par);
+        let delta = (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i).mapv(|d| d * association_strength);
 
         // no cross association, two association sites
         let xc = ((delta * 4.0 * &rhoc + 1.0).map(N::sqrt) + 1.0).map(N::recip) * 2.0;

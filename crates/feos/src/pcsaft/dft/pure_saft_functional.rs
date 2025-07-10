@@ -39,10 +39,7 @@ impl<'a> FunctionalContribution for PureFMTAssocFunctional<'a> {
         "Pure FMT+association"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let r = self.parameters.hs_diameter(temperature) * 0.5;
         WeightFunctionInfo::new(arr1(&[0]), false).extend(
             vec![
@@ -61,7 +58,7 @@ impl<'a> FunctionalContribution for PureFMTAssocFunctional<'a> {
         )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
@@ -152,10 +149,7 @@ impl<'a> FunctionalContribution for PureChainFunctional<'a> {
         "Pure chain"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
         WeightFunctionInfo::new(arr1(&[0]), true)
             .add(
@@ -172,7 +166,7 @@ impl<'a> FunctionalContribution for PureChainFunctional<'a> {
             )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         _: N,
         weighted_densities: ArrayView2<N>,
@@ -205,10 +199,7 @@ impl<'a> FunctionalContribution for PureAttFunctional<'a> {
         "Pure attractive"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
         const PSI: f64 = 1.3862; // Homosegmented DFT (Sauer2017)
         WeightFunctionInfo::new(arr1(&[0]), false).add(
@@ -217,7 +208,7 @@ impl<'a> FunctionalContribution for PureAttFunctional<'a> {
         )
     }
 
-    fn weight_functions_pdgt<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn weight_functions_pdgt<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
     ) -> WeightFunctionInfo<N> {
@@ -229,7 +220,7 @@ impl<'a> FunctionalContribution for PureAttFunctional<'a> {
         )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
@@ -271,12 +262,11 @@ impl<'a> FunctionalContribution for PureAttFunctional<'a> {
             let m1 = (m - 1.0) / m;
             let m2 = m1 * (m - 2.0) / m;
 
-            let phi2 = -(&rho * &rho)
-                * pair_integral_ij(m1, m2, &eta, &AD, &BD, e)
-                * (mu2_term * mu2_term / s3 * PI);
-            let phi3 = -(&rho * &rho * rho)
-                * triplet_integral_ijk(m1, m2, &eta, &CD)
-                * (mu2_term * mu2_term * mu2_term / s3 * PI_SQ_43);
+            let x = mu2_term * mu2_term / s3 * PI;
+            let phi2 = -(&rho * &rho) * pair_integral_ij(m1, m2, &eta, &AD, &BD, e).mapv(|i| i * x);
+            let x = mu2_term * mu2_term * mu2_term / s3 * PI_SQ_43;
+            let phi3 =
+                -(&rho * &rho * rho) * triplet_integral_ijk(m1, m2, &eta, &CD).mapv(|i| i * x);
 
             let mut phi_d = &phi2 * &phi2 / (&phi2 - &phi3);
             phi_d.iter_mut().zip(phi2.iter()).for_each(|(p, &p2)| {
@@ -294,12 +284,11 @@ impl<'a> FunctionalContribution for PureAttFunctional<'a> {
             let m1 = (m - 1.0) / m;
             let m2 = m1 * (m - 2.0) / m;
 
-            let phi2 = -(&rho * &rho)
-                * pair_integral_ij(m1, m2, &eta, &AQ, &BQ, e)
-                * (q2_term * q2_term / p.sigma[0].powi(7) * PI * 0.5625);
-            let phi3 = (&rho * &rho * rho)
-                * triplet_integral_ijk(m1, m2, &eta, &CQ)
-                * (q2_term * q2_term * q2_term / s3.powi(3) * PI * PI * 0.5625);
+            let x = q2_term * q2_term / p.sigma[0].powi(7) * PI * 0.5625;
+            let phi2 = -(&rho * &rho) * pair_integral_ij(m1, m2, &eta, &AQ, &BQ, e).mapv(|i| i * x);
+            let x = q2_term * q2_term * q2_term / s3.powi(3) * PI * PI * 0.5625;
+            let phi3 =
+                (&rho * &rho * rho) * triplet_integral_ijk(m1, m2, &eta, &CQ).mapv(|i| i * x);
 
             let mut phi_q = &phi2 * &phi2 / (&phi2 - &phi3);
             phi_q.iter_mut().zip(phi2.iter()).for_each(|(p, &p2)| {

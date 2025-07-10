@@ -3,11 +3,11 @@ use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
 use crate::{ReferenceSystem, SolverOptions, TemperatureOrPressure, Verbosity};
 use nalgebra::SVector;
-use ndarray::{arr1, Array1, Array2};
+use ndarray::{Array1, Array2, arr1};
 use num_dual::linalg::smallest_ev;
 use num_dual::{
-    first_derivative, try_first_derivative, try_jacobian, Dual, Dual3, Dual64, DualNum, DualSVec64,
-    DualVec, HyperDual,
+    Dual, Dual3, Dual64, DualNum, DualSVec64, DualVec, HyperDual, first_derivative,
+    try_first_derivative, try_jacobian,
 };
 use num_traits::{One, Zero};
 use quantity::{Density, Moles, Pressure, Temperature, Volume};
@@ -571,9 +571,5 @@ fn spinodal_objective<R: Residual>(
 }
 
 fn kronecker(i: usize, j: usize) -> f64 {
-    if i == j {
-        1.0
-    } else {
-        0.0
-    }
+    if i == j { 1.0 } else { 0.0 }
 }

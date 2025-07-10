@@ -8,7 +8,7 @@ use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 
-pub(super) fn helmholtz_energy_density_polar<N: DualNum<f64> + Copy + ScalarOperand>(
+pub(super) fn helmholtz_energy_density_polar<N: DualNum<f64> + Copy>(
     parameters: &PcSaftPars,
     temperature: N,
     density: ArrayView2<N>,
@@ -22,7 +22,7 @@ pub(super) fn helmholtz_energy_density_polar<N: DualNum<f64> + Copy + ScalarOper
         .zip(&r * &r * &r * &parameters.m * 4.0 * FRAC_PI_3)
         .fold(
             Array::zeros(density.raw_dim().remove_axis(Axis(0))),
-            |acc: Array1<N>, (rho, r3m)| acc + &rho * r3m,
+            |acc: Array1<N>, (rho, r3m)| acc + &rho.mapv(|r| r * r3m),
         );
 
     let mut phi = Array::zeros(eta.raw_dim());
@@ -38,7 +38,7 @@ pub(super) fn helmholtz_energy_density_polar<N: DualNum<f64> + Copy + ScalarOper
     Ok(phi)
 }
 
-pub fn pair_integral_ij<N: DualNum<f64> + Copy + ScalarOperand>(
+pub fn pair_integral_ij<N: DualNum<f64> + Copy>(
     mij1: f64,
     mij2: f64,
     eta: &Array1<N>,
@@ -56,16 +56,14 @@ pub fn pair_integral_ij<N: DualNum<f64> + Copy + ScalarOperand>(
     ];
     let mut integral = Array::zeros(eta.raw_dim());
     for i in 0..a.len() {
-        integral += &(etas[i]
-            * (eps_ij_t * (b[i][0] + mij1 * b[i][1] + mij2 * b[i][2])
-                + a[i][0]
-                + mij1 * a[i][1]
-                + mij2 * a[i][2]));
+        let x = eps_ij_t * (b[i][0] + mij1 * b[i][1] + mij2 * b[i][2])
+            + (a[i][0] + mij1 * a[i][1] + mij2 * a[i][2]);
+        integral += &etas[i].mapv(|e| e * x);
     }
     integral
 }
 
-pub fn triplet_integral_ijk<N: DualNum<f64> + ScalarOperand>(
+pub fn triplet_integral_ijk<N: DualNum<f64>>(
     mijk1: f64,
     mijk2: f64,
     eta: &Array1<N>,
@@ -80,7 +78,7 @@ pub fn triplet_integral_ijk<N: DualNum<f64> + ScalarOperand>(
     integral
 }
 
-fn triplet_integral_ijk_dq<N: DualNum<f64> + ScalarOperand>(
+fn triplet_integral_ijk_dq<N: DualNum<f64>>(
     mijk: f64,
     eta: &Array1<N>,
     c: &[[f64; 2]],
@@ -93,7 +91,7 @@ fn triplet_integral_ijk_dq<N: DualNum<f64> + ScalarOperand>(
     integral
 }
 
-fn phi_polar_dipole<N: DualNum<f64> + Copy + ScalarOperand>(
+fn phi_polar_dipole<N: DualNum<f64> + Copy>(
     p: &PcSaftPars,
     temperature: N,
     density: ArrayView2<N>,
@@ -125,12 +123,12 @@ fn phi_polar_dipole<N: DualNum<f64> + Copy + ScalarOperand>(
                 &BD,
                 eps_ij_t[[di, di]],
             )
-            * (mu2_term[i] * mu2_term[i] / sig_ij_3[[di, di]]));
+            .mapv(|pi| pi * (mu2_term[i] * mu2_term[i] / sig_ij_3[[di, di]])));
         phi3 -= &(&density.index_axis(Axis(0), di)
             * &density.index_axis(Axis(0), di)
             * density.index_axis(Axis(0), di)
             * triplet_integral_ijk(m.mijk1[[i, i, i]], m.mijk2[[i, i, i]], eta, &CD)
-            * (mu2_term[i] * mu2_term[i] * mu2_term[i] / sig_ij_3[[di, di]]));
+                .mapv(|ti| ti * (mu2_term[i] * mu2_term[i] * mu2_term[i] / sig_ij_3[[di, di]])));
         for j in i + 1..p.ndipole {
             let dj = p.dipole_comp[j];
             phi2 -= &(&density.index_axis(Axis(0), di)
@@ -143,30 +141,41 @@ fn phi_polar_dipole<N: DualNum<f64> + Copy + ScalarOperand>(
                     &BD,
                     eps_ij_t[[di, dj]],
                 )
-                * (mu2_term[i] * mu2_term[j] / sig_ij_3[[di, dj]] * 2.0));
+                .mapv(|pi| pi * (mu2_term[i] * mu2_term[j] / sig_ij_3[[di, dj]] * 2.0)));
             phi3 -= &(&density.index_axis(Axis(0), di)
                 * &density.index_axis(Axis(0), di)
                 * density.index_axis(Axis(0), dj)
-                * triplet_integral_ijk(m.mijk1[[i, i, j]], m.mijk2[[i, i, j]], eta, &CD)
-                * (mu2_term[i] * mu2_term[i] * mu2_term[j]
-                    / (p.sigma_ij[[di, di]] * p.sigma_ij[[di, dj]] * p.sigma_ij[[di, dj]])
-                    * 3.0));
+                * triplet_integral_ijk(m.mijk1[[i, i, j]], m.mijk2[[i, i, j]], eta, &CD).mapv(
+                    |ti| {
+                        ti * (mu2_term[i] * mu2_term[i] * mu2_term[j]
+                            / (p.sigma_ij[[di, di]] * p.sigma_ij[[di, dj]] * p.sigma_ij[[di, dj]])
+                            * 3.0)
+                    },
+                ));
             phi3 -= &(&density.index_axis(Axis(0), di)
                 * &density.index_axis(Axis(0), dj)
                 * density.index_axis(Axis(0), dj)
-                * triplet_integral_ijk(m.mijk1[[i, j, j]], m.mijk2[[i, j, j]], eta, &CD)
-                * (mu2_term[i] * mu2_term[j] * mu2_term[j]
-                    / (p.sigma_ij[[di, dj]] * p.sigma_ij[[di, dj]] * p.sigma_ij[[dj, dj]])
-                    * 3.0));
+                * triplet_integral_ijk(m.mijk1[[i, j, j]], m.mijk2[[i, j, j]], eta, &CD).mapv(
+                    |ti| {
+                        ti * (mu2_term[i] * mu2_term[j] * mu2_term[j]
+                            / (p.sigma_ij[[di, dj]] * p.sigma_ij[[di, dj]] * p.sigma_ij[[dj, dj]])
+                            * 3.0)
+                    },
+                ));
             for k in j + 1..p.ndipole {
                 let dk = p.dipole_comp[k];
                 phi3 -= &(&density.index_axis(Axis(0), di)
                     * &density.index_axis(Axis(0), dj)
                     * density.index_axis(Axis(0), dk)
-                    * triplet_integral_ijk(m.mijk1[[i, j, k]], m.mijk2[[i, j, k]], eta, &CD)
-                    * (mu2_term[i] * mu2_term[j] * mu2_term[k]
-                        / (p.sigma_ij[[di, dj]] * p.sigma_ij[[di, dk]] * p.sigma_ij[[dj, dk]])
-                        * 6.0));
+                    * triplet_integral_ijk(m.mijk1[[i, j, k]], m.mijk2[[i, j, k]], eta, &CD).mapv(
+                        |ti| {
+                            ti * (mu2_term[i] * mu2_term[j] * mu2_term[k]
+                                / (p.sigma_ij[[di, dj]]
+                                    * p.sigma_ij[[di, dk]]
+                                    * p.sigma_ij[[dj, dk]])
+                                * 6.0)
+                        },
+                    ));
             }
         }
     }
@@ -181,7 +190,7 @@ fn phi_polar_dipole<N: DualNum<f64> + Copy + ScalarOperand>(
     Ok(result)
 }
 
-fn phi_polar_quadrupole<N: DualNum<f64> + Copy + ScalarOperand>(
+fn phi_polar_quadrupole<N: DualNum<f64> + Copy>(
     p: &PcSaftPars,
     temperature: N,
     density: ArrayView2<N>,
@@ -213,12 +222,13 @@ fn phi_polar_quadrupole<N: DualNum<f64> + Copy + ScalarOperand>(
                 &BQ,
                 eps_ij_t[[di, di]],
             )
-            * (q2_term[i] * q2_term[i] / p.sigma_ij[[di, di]].powi(7)));
+            .mapv(|pi| pi * (q2_term[i] * q2_term[i] / p.sigma_ij[[di, di]].powi(7))));
         phi3 += &(&density.index_axis(Axis(0), di)
             * &density.index_axis(Axis(0), di)
             * density.index_axis(Axis(0), di)
-            * triplet_integral_ijk(m.mijk1[[i, i, i]], m.mijk2[[i, i, i]], eta, &CQ)
-            * (q2_term[i] * q2_term[i] * q2_term[i] / sig_ij_3[[di, di]].powi(3)));
+            * triplet_integral_ijk(m.mijk1[[i, i, i]], m.mijk2[[i, i, i]], eta, &CQ).mapv(|ti| {
+                ti * (q2_term[i] * q2_term[i] * q2_term[i] / sig_ij_3[[di, di]].powi(3))
+            }));
         for j in i + 1..p.nquadpole {
             let dj = p.quadpole_comp[j];
             phi2 -= &(&density.index_axis(Axis(0), di)
@@ -231,30 +241,39 @@ fn phi_polar_quadrupole<N: DualNum<f64> + Copy + ScalarOperand>(
                     &BQ,
                     eps_ij_t[[di, dj]],
                 )
-                * (q2_term[i] * q2_term[j] / p.sigma_ij[[di, dj]].powi(7)));
+                .mapv(|pi| pi * (q2_term[i] * q2_term[j] / p.sigma_ij[[di, dj]].powi(7))));
             phi3 += &(&density.index_axis(Axis(0), di)
                 * &density.index_axis(Axis(0), di)
                 * density.index_axis(Axis(0), dj)
-                * triplet_integral_ijk(m.mijk1[[i, i, j]], m.mijk2[[i, i, j]], eta, &CQ)
-                * (q2_term[i] * q2_term[i] * q2_term[j]
-                    / (sig_ij_3[[di, di]] * sig_ij_3[[di, dj]] * sig_ij_3[[di, dj]])
-                    * 3.0));
+                * triplet_integral_ijk(m.mijk1[[i, i, j]], m.mijk2[[i, i, j]], eta, &CQ).mapv(
+                    |ti| {
+                        ti * (q2_term[i] * q2_term[i] * q2_term[j]
+                            / (sig_ij_3[[di, di]] * sig_ij_3[[di, dj]] * sig_ij_3[[di, dj]])
+                            * 3.0)
+                    },
+                ));
             phi3 += &(&density.index_axis(Axis(0), di)
                 * &density.index_axis(Axis(0), dj)
                 * density.index_axis(Axis(0), dj)
-                * triplet_integral_ijk(m.mijk1[[i, j, j]], m.mijk2[[i, j, j]], eta, &CQ)
-                * (q2_term[i] * q2_term[j] * q2_term[j]
-                    / (sig_ij_3[[di, dj]] * sig_ij_3[[di, dj]] * sig_ij_3[[dj, dj]])
-                    * 3.0));
+                * triplet_integral_ijk(m.mijk1[[i, j, j]], m.mijk2[[i, j, j]], eta, &CQ).mapv(
+                    |ti| {
+                        ti * (q2_term[i] * q2_term[j] * q2_term[j]
+                            / (sig_ij_3[[di, dj]] * sig_ij_3[[di, dj]] * sig_ij_3[[dj, dj]])
+                            * 3.0)
+                    },
+                ));
             for k in j + 1..p.nquadpole {
                 let dk = p.quadpole_comp[k];
                 phi3 += &(&density.index_axis(Axis(0), di)
                     * &density.index_axis(Axis(0), dj)
                     * density.index_axis(Axis(0), dk)
-                    * triplet_integral_ijk(m.mijk1[[i, j, k]], m.mijk2[[i, j, k]], eta, &CQ)
-                    * (q2_term[i] * q2_term[j] * q2_term[k]
-                        / (sig_ij_3[[di, dj]] * sig_ij_3[[di, dk]] * sig_ij_3[[dj, dk]])
-                        * 6.0));
+                    * triplet_integral_ijk(m.mijk1[[i, j, k]], m.mijk2[[i, j, k]], eta, &CQ).mapv(
+                        |ti| {
+                            ti * (q2_term[i] * q2_term[j] * q2_term[k]
+                                / (sig_ij_3[[di, dj]] * sig_ij_3[[di, dk]] * sig_ij_3[[dj, dk]])
+                                * 6.0)
+                        },
+                    ));
             }
         }
     }
@@ -269,7 +288,7 @@ fn phi_polar_quadrupole<N: DualNum<f64> + Copy + ScalarOperand>(
     Ok(result)
 }
 
-fn phi_polar_dipole_quadrupole<N: DualNum<f64> + Copy + ScalarOperand>(
+fn phi_polar_dipole_quadrupole<N: DualNum<f64> + Copy>(
     p: &PcSaftPars,
     temperature: N,
     density: ArrayView2<N>,
@@ -333,28 +352,32 @@ fn phi_polar_dipole_quadrupole<N: DualNum<f64> + Copy + ScalarOperand>(
                     &BDQ,
                     eps_ij_t[[di, qj]],
                 )
-                * (mu2_term[i] / p.sigma[di] * q2_term[j] * p.sigma[qj]
-                    / p.sigma_ij[[di, qj]].powi(5)));
+                .mapv(|pi| {
+                    pi * (mu2_term[i] / p.sigma[di] * q2_term[j] * p.sigma[qj]
+                        / p.sigma_ij[[di, qj]].powi(5))
+                }));
             for k in 0..p.ndipole {
                 let dk = p.dipole_comp[k];
                 phi3 += &(&density.index_axis(Axis(0), di)
                     * &density.index_axis(Axis(0), qj)
                     * density.index_axis(Axis(0), dk)
-                    * triplet_integral_ijk_dq(mdqd[[i, j, k]], eta, &CDQ)
-                    * (mu2_term[i] * q2_term[j] * mu2_term[k]
-                        / (p.sigma_ij[[di, qj]] * p.sigma_ij[[di, dk]] * p.sigma_ij[[qj, dk]])
-                            .powi(2)));
+                    * triplet_integral_ijk_dq(mdqd[[i, j, k]], eta, &CDQ).mapv(|ti| {
+                        ti * (mu2_term[i] * q2_term[j] * mu2_term[k]
+                            / (p.sigma_ij[[di, qj]] * p.sigma_ij[[di, dk]] * p.sigma_ij[[qj, dk]])
+                                .powi(2))
+                    }));
             }
             for k in 0..p.nquadpole {
                 let qk = p.quadpole_comp[k];
                 phi3 += &(&density.index_axis(Axis(0), di)
                     * &density.index_axis(Axis(0), qj)
                     * density.index_axis(Axis(0), qk)
-                    * triplet_integral_ijk_dq(mdqq[[i, j, k]], eta, &CDQ)
-                    * (mu2_term[i] * q2_term[j] * q2_term[k]
-                        / (p.sigma_ij[[di, qj]] * p.sigma_ij[[di, qk]] * p.sigma_ij[[qj, qk]])
-                            .powi(2)
-                        * ALPHA));
+                    * triplet_integral_ijk_dq(mdqq[[i, j, k]], eta, &CDQ).mapv(|ti| {
+                        ti * (mu2_term[i] * q2_term[j] * q2_term[k]
+                            / (p.sigma_ij[[di, qj]] * p.sigma_ij[[di, qk]] * p.sigma_ij[[qj, qk]])
+                                .powi(2)
+                            * ALPHA)
+                    }));
             }
         }
     }
