@@ -8,7 +8,7 @@ use crate::equation_of_state::{Components, Molarweight, Residual};
 use crate::parameter::{Identifier, Parameters, PureRecord};
 use crate::state::StateHD;
 use crate::{FeosError, FeosResult};
-use ndarray::{Array1, Array2, ScalarOperand};
+use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use quantity::MolarWeight;
 use serde::{Deserialize, Serialize};
@@ -148,7 +148,7 @@ impl Residual for PengRobinson {
                 * ((v + b * n * (1.0 + SQRT_2)) / (v + b * n * (1.0 - SQRT_2))).ln())
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {

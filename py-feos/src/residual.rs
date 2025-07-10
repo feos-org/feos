@@ -5,7 +5,7 @@ use feos_derive::{Components, Residual};
 use feos_derive::{FunctionalContribution, HelmholtzEnergyFunctional};
 #[cfg(feature = "dft")]
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional};
-use ndarray::{Array1, ScalarOperand};
+use ndarray::Array1;
 use num_dual::DualNum;
 use quantity::*;
 

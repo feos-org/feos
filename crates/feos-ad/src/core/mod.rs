@@ -1,6 +1,6 @@
 use feos_core::{Components, IdealGas, Residual, StateHD};
 use nalgebra::{Const, SVector, U1};
-use ndarray::{Array1, ScalarOperand, arr1};
+use ndarray::{Array1, arr1};
 use num_dual::{Derivative, DualNum, DualVec};
 use std::sync::Arc;
 
@@ -33,7 +33,7 @@ impl<R: ResidualHelmholtzEnergy<N>, const N: usize> Residual for FeOsWrapper<R, 
         self.0.compute_max_density(&molefracs)
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {

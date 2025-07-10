@@ -32,12 +32,13 @@ mod errors;
 pub mod parameter;
 mod phase_equilibria;
 mod state;
+pub use density_iteration::DensityIteration;
 pub use equation_of_state::{
     Components, EntropyScaling, EquationOfState, IdealGas, Molarweight, NoResidual, Residual,
 };
 pub use errors::{FeosError, FeosResult};
 pub use phase_equilibria::{
-    PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, TemperatureOrPressure,
+    PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, PhaseEquilibriumPure, TemperatureOrPressure,
 };
 pub use state::{
     Contributions, DensityInitialization, Derivative, State, StateBuilder, StateHD, StateVec,

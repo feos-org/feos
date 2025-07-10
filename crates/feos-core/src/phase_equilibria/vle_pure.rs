@@ -2,9 +2,9 @@ use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
 use crate::state::{Contributions, DensityInitialization, State, TPSpec};
-use crate::{ReferenceSystem, SolverOptions, TemperatureOrPressure, Verbosity};
-use ndarray::{arr1, Array1};
-use quantity::{Moles, Pressure, Temperature, RGAS};
+use crate::{DensityIteration, ReferenceSystem, SolverOptions, TemperatureOrPressure, Verbosity};
+use ndarray::{Array1, arr1};
+use quantity::{Density, Moles, Pressure, RGAS, Temperature};
 use std::sync::Arc;
 
 const SCALE_T_NEW: f64 = 0.7;
@@ -21,139 +21,148 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         options: SolverOptions,
     ) -> FeosResult<Self> {
         match temperature_or_pressure.into() {
-            TPSpec::Temperature(t) => Self::pure_t(eos, t, initial_state, options),
+            TPSpec::Temperature(t) => {
+                let initial_state =
+                    initial_state.map(|PhaseEquilibrium([v, l])| [v.density, l.density]);
+                let (_, [v, l]) = eos.pure_t(t, initial_state, options)?;
+                Ok(Self([
+                    State::new_pure(eos, t, v)?,
+                    State::new_pure(eos, t, l)?,
+                ]))
+            }
             TPSpec::Pressure(p) => Self::pure_p(eos, p, initial_state, options),
         }
     }
 
-    /// Calculate a phase equilibrium for a pure component
-    /// and given temperature.
-    fn pure_t(
-        eos: &Arc<E>,
-        temperature: Temperature,
-        initial_state: Option<&PhaseEquilibrium<E, 2>>,
-        options: SolverOptions,
-    ) -> FeosResult<Self> {
-        let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_PURE, TOL_PURE);
+    // /// Calculate a phase equilibrium for a pure component
+    // /// and given temperature.
+    // fn pure_t(
+    //     eos: &Arc<E>,
+    //     temperature: Temperature,
+    //     initial_state: Option<&PhaseEquilibrium<E, 2>>,
+    //     options: SolverOptions,
+    // ) -> FeosResult<Self> {
+    //     let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_PURE, TOL_PURE);
 
-        // First use given initial state if applicable
-        let mut vle = initial_state.and_then(|init| {
-            Self::init_pure_state(init, temperature)
-                .and_then(|vle| vle.iterate_pure_t(max_iter, tol, verbosity))
-                .ok()
-        });
+    //     // First use given initial state if applicable
+    //     let mut vle = initial_state.and_then(|init| {
+    //         Self::init_pure_state(init, temperature)
+    //             .and_then(|vle| vle.iterate_pure_t(max_iter, tol, verbosity))
+    //             .ok()
+    //     });
 
-        // Next try to initialize with an ideal gas assumption
-        vle = vle.or_else(|| {
-            Self::init_pure_ideal_gas(eos, temperature)
-                .and_then(|vle| vle.iterate_pure_t(max_iter, tol, verbosity))
-                .ok()
-        });
+    //     // Next try to initialize with an ideal gas assumption
+    //     vle = vle.or_else(|| {
+    //         Self::init_pure_ideal_gas(eos, temperature)
+    //             .and_then(|vle| vle.iterate_pure_t(max_iter, tol, verbosity))
+    //             .ok()
+    //     });
 
-        // Finally use the spinodal to initialize the calculation
-        vle.map_or_else(
-            || {
-                Self::init_pure_spinodal(eos, temperature)
-                    .and_then(|vle| vle.iterate_pure_t(max_iter, tol, verbosity))
-            },
-            Ok,
-        )
-    }
+    //     // Finally use the spinodal to initialize the calculation
+    //     vle.map_or_else(
+    //         || {
+    //             Self::init_pure_spinodal(eos, temperature)
+    //                 .and_then(|vle| vle.iterate_pure_t(max_iter, tol, verbosity))
+    //         },
+    //         Ok,
+    //     )
+    // }
 
-    fn iterate_pure_t(self, max_iter: usize, tol: f64, verbosity: Verbosity) -> FeosResult<Self> {
-        let mut p_old = self.vapor().pressure(Contributions::Total);
-        let [mut vapor, mut liquid] = self.0;
+    // fn iterate_pure_t(self, max_iter: usize, tol: f64, verbosity: Verbosity) -> FeosResult<Self> {
+    //     let mut p_old = self.vapor().pressure(Contributions::Total);
+    //     let [mut vapor, mut liquid] = self.0;
 
-        log_iter!(verbosity,
-            " iter |     residual      |     pressure     |    liquid density    |    vapor density     | Newton steps"
-        );
-        log_iter!(verbosity, "{:-<106}", "");
-        log_iter!(
-            verbosity,
-            " {:4} |                   | {:12.8} | {:12.8} | {:12.8} |",
-            0,
-            p_old,
-            liquid.density,
-            vapor.density
-        );
+    //     log_iter!(
+    //         verbosity,
+    //         " iter |     residual      |     pressure     |    liquid density    |    vapor density     | Newton steps"
+    //     );
+    //     log_iter!(verbosity, "{:-<106}", "");
+    //     log_iter!(
+    //         verbosity,
+    //         " {:4} |                   | {:12.8} | {:12.8} | {:12.8} |",
+    //         0,
+    //         p_old,
+    //         liquid.density,
+    //         vapor.density
+    //     );
 
-        for i in 1..=max_iter {
-            // calculate the pressures and derivatives
-            let (p_l, p_rho_l) = liquid.p_dpdrho();
-            let (p_v, p_rho_v) = vapor.p_dpdrho();
-            // calculate the molar Helmholtz energies (already cached)
-            let a_l_res = liquid.residual_molar_helmholtz_energy();
-            let a_v_res = vapor.residual_molar_helmholtz_energy();
+    //     for i in 1..=max_iter {
+    //         // calculate the pressures and derivatives
+    //         let (p_l, p_rho_l) = liquid.p_dpdrho();
+    //         let (p_v, p_rho_v) = vapor.p_dpdrho();
+    //         // calculate the molar Helmholtz energies (already cached)
+    //         let a_l_res = liquid.residual_molar_helmholtz_energy();
+    //         let a_v_res = vapor.residual_molar_helmholtz_energy();
 
-            // Estimate the new pressure
-            let kt = RGAS * vapor.temperature;
-            let delta_v = 1.0 / vapor.density - 1.0 / liquid.density;
-            let delta_a =
-                a_v_res - a_l_res + kt * (vapor.density / liquid.density).into_value().ln();
-            let mut p_new = -delta_a / delta_v;
+    //         // Estimate the new pressure
+    //         let kt = RGAS * vapor.temperature;
+    //         let delta_v = 1.0 / vapor.density - 1.0 / liquid.density;
+    //         let delta_a =
+    //             a_v_res - a_l_res + kt * (vapor.density / liquid.density).into_value().ln();
+    //         let mut p_new = -delta_a / delta_v;
 
-            // If the pressure becomes negative, assume the gas phase is ideal. The
-            // resulting pressure is always positive.
-            if p_new.is_sign_negative() {
-                p_new = p_v
-                    * ((-delta_a - p_v * vapor.volume / vapor.total_moles) / kt)
-                        .into_value()
-                        .exp();
-            }
+    //         // If the pressure becomes negative, assume the gas phase is ideal. The
+    //         // resulting pressure is always positive.
+    //         if p_new.is_sign_negative() {
+    //             p_new = p_v
+    //                 * ((-delta_a - p_v * vapor.volume / vapor.total_moles) / kt)
+    //                     .into_value()
+    //                     .exp();
+    //         }
 
-            // Improve the estimate by exploiting the almost ideal behavior of the gas phase
-            let kt = RGAS * vapor.temperature;
-            let mut newton_iter = 0;
-            let newton_tol = p_old * delta_v * tol;
-            for _ in 0..20 {
-                let p_frac = (p_new / p_old).into_value();
-                let f = p_new * delta_v + delta_a + (p_frac.ln() + 1.0 - p_frac) * kt;
-                let df_dp = delta_v + (1.0 / p_new - 1.0 / p_old) * kt;
-                p_new -= f / df_dp;
-                newton_iter += 1;
-                if f.abs() < newton_tol {
-                    break;
-                }
-            }
+    //         // Improve the estimate by exploiting the almost ideal behavior of the gas phase
+    //         let kt = RGAS * vapor.temperature;
+    //         let mut newton_iter = 0;
+    //         let newton_tol = p_old * delta_v * tol;
+    //         for _ in 0..20 {
+    //             let p_frac = (p_new / p_old).into_value();
+    //             let f = p_new * delta_v + delta_a + (p_frac.ln() + 1.0 - p_frac) * kt;
+    //             let df_dp = delta_v + (1.0 / p_new - 1.0 / p_old) * kt;
+    //             p_new -= f / df_dp;
+    //             newton_iter += 1;
+    //             if f.abs() < newton_tol {
+    //                 break;
+    //             }
+    //         }
 
-            // Emergency brake if the implementation of the EOS is not safe.
-            if p_new.is_nan() {
-                return Err(FeosError::IterationFailed("pure_t".to_owned()));
-            }
+    //         // Emergency brake if the implementation of the EOS is not safe.
+    //         if p_new.is_nan() {
+    //             return Err(FeosError::IterationFailed("pure_t".to_owned()));
+    //         }
 
-            // Calculate Newton steps for the densities and update state.
-            let rho_l = liquid.density + (p_new - p_l) / p_rho_l;
-            let rho_v = vapor.density + (p_new - p_v) / p_rho_v;
-            liquid = State::new_pure(&liquid.eos, liquid.temperature, rho_l)?;
-            vapor = State::new_pure(&vapor.eos, vapor.temperature, rho_v)?;
-            if Self::is_trivial_solution(&vapor, &liquid) {
-                return Err(FeosError::TrivialSolution);
-            }
+    //         // Calculate Newton steps for the densities and update state.
+    //         let rho_l = liquid.density + (p_new - p_l) / p_rho_l;
+    //         let rho_v = vapor.density + (p_new - p_v) / p_rho_v;
+    //         liquid = State::new_pure(&liquid.eos, liquid.temperature, rho_l)?;
+    //         vapor = State::new_pure(&vapor.eos, vapor.temperature, rho_v)?;
+    //         if Self::is_trivial_solution(&vapor, &liquid) {
+    //             return Err(FeosError::TrivialSolution);
+    //         }
 
-            // Check for convergence
-            let res = (p_new - p_old).abs();
-            log_iter!(
-                verbosity,
-                " {:4} | {:14.8e} | {:12.8} | {:12.8} | {:12.8} | {}",
-                i,
-                res,
-                p_new,
-                liquid.density,
-                vapor.density,
-                newton_iter
-            );
-            if res < p_old * tol {
-                log_result!(
-                    verbosity,
-                    "PhaseEquilibrium::pure_t: calculation converged in {} step(s)\n",
-                    i
-                );
-                return Ok(Self([vapor, liquid]));
-            }
-            p_old = p_new;
-        }
-        Err(FeosError::NotConverged("pure_t".to_owned()))
-    }
+    //         // Check for convergence
+    //         let res = (p_new - p_old).abs();
+    //         log_iter!(
+    //             verbosity,
+    //             " {:4} | {:14.8e} | {:12.8} | {:12.8} | {:12.8} | {}",
+    //             i,
+    //             res,
+    //             p_new,
+    //             liquid.density,
+    //             vapor.density,
+    //             newton_iter
+    //         );
+    //         if res < p_old * tol {
+    //             log_result!(
+    //                 verbosity,
+    //                 "PhaseEquilibrium::pure_t: calculation converged in {} step(s)\n",
+    //                 i
+    //             );
+    //             return Ok(Self([vapor, liquid]));
+    //         }
+    //         p_old = p_new;
+    //     }
+    //     Err(FeosError::NotConverged("pure_t".to_owned()))
+    // }
 
     /// Calculate a phase equilibrium for a pure component
     /// and given pressure.
@@ -255,23 +264,23 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         Err(FeosError::NotConverged("pure_p".to_owned()))
     }
 
-    fn init_pure_state(initial_state: &Self, temperature: Temperature) -> FeosResult<Self> {
-        let vapor = initial_state.vapor().update_temperature(temperature)?;
-        let liquid = initial_state.liquid().update_temperature(temperature)?;
-        Ok(Self([vapor, liquid]))
-    }
+    // fn init_pure_state(initial_state: &Self, temperature: Temperature) -> FeosResult<Self> {
+    //     let vapor = initial_state.vapor().update_temperature(temperature)?;
+    //     let liquid = initial_state.liquid().update_temperature(temperature)?;
+    //     Ok(Self([vapor, liquid]))
+    // }
 
-    fn init_pure_ideal_gas(eos: &Arc<E>, temperature: Temperature) -> FeosResult<Self> {
-        let m = Moles::from_reduced(arr1(&[1.0]));
-        let p = Self::starting_pressure_ideal_gas_bubble(eos, temperature, &arr1(&[1.0]))?.0;
-        PhaseEquilibrium::new_npt(eos, temperature, p, &m, &m)?.check_trivial_solution()
-    }
+    // fn init_pure_ideal_gas(eos: &Arc<E>, temperature: Temperature) -> FeosResult<Self> {
+    //     let m = Moles::from_reduced(arr1(&[1.0]));
+    //     let p = Self::starting_pressure_ideal_gas_bubble(eos, temperature, &arr1(&[1.0]))?.0;
+    //     PhaseEquilibrium::new_npt(eos, temperature, p, &m, &m)?.check_trivial_solution()
+    // }
 
-    fn init_pure_spinodal(eos: &Arc<E>, temperature: Temperature) -> FeosResult<Self> {
-        let p = Self::starting_pressure_spinodal(eos, temperature, &arr1(&[1.0]))?;
-        let m = Moles::from_reduced(arr1(&[1.0]));
-        PhaseEquilibrium::new_npt(eos, temperature, p, &m, &m)
-    }
+    // fn init_pure_spinodal(eos: &Arc<E>, temperature: Temperature) -> FeosResult<Self> {
+    //     let p = Self::starting_pressure_spinodal(eos, temperature, &arr1(&[1.0]))?;
+    //     let m = Moles::from_reduced(arr1(&[1.0]));
+    //     PhaseEquilibrium::new_npt(eos, temperature, p, &m, &m)
+    // }
 
     /// Initialize a new VLE for a pure substance for a given pressure.
     fn init_pure_p(eos: &Arc<E>, pressure: Pressure) -> FeosResult<Self> {
@@ -353,8 +362,9 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Arc::new(eos.subset(&[i]));
-                PhaseEquilibrium::pure_t(&pure_eos, temperature, None, SolverOptions::default())
-                    .map(|vle| vle.vapor().pressure(Contributions::Total))
+                pure_eos
+                    .pure_t(temperature, None, SolverOptions::default())
+                    .map(|(p, _)| p)
                     .ok()
             })
             .collect()
@@ -412,5 +422,171 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
                 })
             })
             .collect()
+    }
+}
+
+pub trait PhaseEquilibriumPure<M>: DensityIteration<M> {
+    fn moles_pure() -> M;
+
+    /// Calculate a phase equilibrium for a pure component
+    /// and given temperature.
+    fn pure_t(
+        &self,
+        temperature: Temperature,
+        initial_state: Option<[Density; 2]>,
+        options: SolverOptions,
+    ) -> FeosResult<(Pressure, [Density; 2])> {
+        let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_PURE, TOL_PURE);
+        let t = temperature.into_reduced();
+
+        // First use given initial state if applicable
+        let vle = initial_state.and_then(|[vapor_density, liquid_density]| {
+            let m = Self::moles_pure();
+            let v = vapor_density.into_reduced();
+            let l = liquid_density.into_reduced();
+            let (p_v, _) = self.p_dpdrho(t, v, &m);
+            let (p_l, _) = self.p_dpdrho(t, l, &m);
+            self.iterate_pure_t(t, 0.5 * (p_v + p_l), [v, l], max_iter, tol, verbosity)
+                .ok()
+        });
+
+        // Next try to initialize with an ideal gas assumption
+        let vle = vle.map_or_else(
+            || {
+                let m = Self::moles_pure();
+                let density = 0.75 * self.compute_max_density2(&m);
+                let a_res = self.residual_molar_helmholtz_energy(t, 1.0 / density, &m);
+                let p = t * density * (a_res / t - 1.0).exp();
+                let v = self.density_iteration(t, p, &m, p / t)?;
+                let l = self.density_iteration(t, p, &m, density)?;
+                self.iterate_pure_t(t, p, [v, l], max_iter, tol, verbosity)
+            },
+            Ok,
+        );
+
+        // Finally use the spinodal to initialize the calculation
+        vle.or_else(|_| {
+            let m = Self::moles_pure();
+            let max_density = self.compute_max_density2(&m);
+            let (p_vapor, _) = self.pressure_spinodal(t, 1e-5 * max_density, &m)?;
+            let (p_liquid, _) = self.pressure_spinodal(t, max_density, &m)?;
+            let p = 0.5 * (p_vapor + p_liquid);
+            let v = self.density_iteration(t, p, &m, p / t)?;
+            let l = self.density_iteration(t, p, &m, max_density)?;
+            self.iterate_pure_t(t, p, [v, l], max_iter, tol, verbosity)
+        })
+        .map(|(p, [v, l])| {
+            (
+                Pressure::from_reduced(p),
+                [Density::from_reduced(v), Density::from_reduced(l)],
+            )
+        })
+    }
+
+    fn iterate_pure_t(
+        &self,
+        temperature: f64,
+        mut pressure: f64,
+        [mut vapor_density, mut liquid_density]: [f64; 2],
+        max_iter: usize,
+        tol: f64,
+        verbosity: Verbosity,
+    ) -> FeosResult<(f64, [f64; 2])> {
+        let moles = Self::moles_pure();
+        // let (mut p_old, _) = self.p_dpdrho(temperature, vapor_density, &moles);
+        // let [mut vapor, mut liquid] = self.0;
+
+        log_iter!(
+            verbosity,
+            " iter |     residual      |     pressure     |    liquid density    |    vapor density     | Newton steps"
+        );
+        log_iter!(verbosity, "{:-<106}", "");
+        log_iter!(
+            verbosity,
+            " {:4} |                   | {:12.8} | {:12.8} | {:12.8} |",
+            0,
+            pressure,
+            liquid_density,
+            vapor_density
+        );
+
+        for i in 1..=max_iter {
+            // calculate the pressures and derivatives
+            let (p_l, p_rho_l) = self.p_dpdrho(temperature, liquid_density, &moles);
+            let (p_v, p_rho_v) = self.p_dpdrho(temperature, vapor_density, &moles);
+            // calculate the molar Helmholtz energies (already cached)
+            let a_l_res =
+                self.residual_molar_helmholtz_energy(temperature, 1.0 / liquid_density, &moles);
+            let a_v_res =
+                self.residual_molar_helmholtz_energy(temperature, 1.0 / vapor_density, &moles);
+            // let a_l_res = liquid.residual_molar_helmholtz_energy();
+            // let a_v_res = vapor.residual_molar_helmholtz_energy();
+
+            // Estimate the new pressure
+            let delta_v = 1.0 / vapor_density - 1.0 / liquid_density;
+            let delta_a = a_v_res - a_l_res + temperature * (vapor_density / liquid_density).ln();
+            let mut p_new = -delta_a / delta_v;
+
+            // If the pressure becomes negative, assume the gas phase is ideal. The
+            // resulting pressure is always positive.
+            if p_new.is_sign_negative() {
+                p_new = p_v * ((-delta_a - p_v / vapor_density) / temperature).exp();
+            }
+
+            // Improve the estimate by exploiting the almost ideal behavior of the gas phase
+            let mut newton_iter = 0;
+            let newton_tol = pressure * delta_v * tol;
+            for _ in 0..20 {
+                let p_frac = p_new / pressure;
+                let f = p_new * delta_v + delta_a + (p_frac.ln() + 1.0 - p_frac) * temperature;
+                let df_dp = delta_v + (1.0 / p_new - 1.0 / pressure) * temperature;
+                p_new -= f / df_dp;
+                newton_iter += 1;
+                if f.abs() < newton_tol {
+                    break;
+                }
+            }
+
+            // Emergency brake if the implementation of the EOS is not safe.
+            if p_new.is_nan() {
+                return Err(FeosError::IterationFailed("pure_t".to_owned()));
+            }
+
+            // Calculate Newton steps for the densities.
+            liquid_density += (p_new - p_l) / p_rho_l;
+            vapor_density += (p_new - p_v) / p_rho_v;
+            // if Self::is_trivial_solution(vapor_density, liquid_density) {
+            //     return Err(FeosError::TrivialSolution);
+            // }
+
+            // Check for convergence
+            let res = (p_new - pressure).abs();
+            log_iter!(
+                verbosity,
+                " {:4} | {:14.8e} | {:12.8} | {:12.8} | {:12.8} | {}",
+                i,
+                res,
+                p_new,
+                liquid_density,
+                vapor_density,
+                newton_iter
+            );
+            if res < pressure * tol {
+                log_result!(
+                    verbosity,
+                    "PhaseEquilibrium::pure_t: calculation converged in {} step(s)\n",
+                    i
+                );
+                return Ok((p_new, [vapor_density, liquid_density]));
+            }
+            pressure = p_new;
+        }
+        Err(FeosError::NotConverged("pure_t".to_owned()))
+    }
+}
+
+impl<T: DensityIteration<Array1<f64>>> PhaseEquilibriumPure<Array1<f64>> for T {
+    fn moles_pure() -> Array1<f64> {
+        arr1(&[1.0])
     }
 }

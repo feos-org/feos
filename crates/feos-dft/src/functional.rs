@@ -227,10 +227,7 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
         i
     }
 
-    fn evaluate_bulk<D: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
+    fn evaluate_bulk<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> Vec<(String, D)> {
         let mut res: Vec<(String, D)> = self
             .contributions()
             .into_iter()

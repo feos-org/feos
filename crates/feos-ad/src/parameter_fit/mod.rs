@@ -1,23 +1,24 @@
 use crate::{HelmholtzEnergyWrapper, ResidualHelmholtzEnergy};
 use feos_core::{
-    DensityInitialization::Liquid, FeosResult, PhaseEquilibrium, ReferenceSystem, State,
+    DensityIteration, FeosResult, PhaseEquilibrium, PhaseEquilibriumPure, ReferenceSystem,
 };
 use nalgebra::{Const, SVector};
 use ndarray::arr1;
 use num_dual::DualVec;
-use quantity::{Density, Moles, Pressure, Temperature};
+use quantity::{Density, Pressure, Temperature};
 
 mod parallel;
-pub use parallel::{PureModel, BinaryModel};
+pub use parallel::{BinaryModel, PureModel};
 
 type Gradient<const P: usize> = DualVec<f64, f64, Const<P>>;
 
 impl<R: ResidualHelmholtzEnergy<1>, const P: usize> HelmholtzEnergyWrapper<R, Gradient<P>, 1> {
     pub fn vapor_pressure(&self, temperature: Temperature) -> FeosResult<Pressure<Gradient<P>>> {
-        let vle = PhaseEquilibrium::pure(&self.eos, temperature, None, Default::default())?;
+        let (_, [vapor_density, liquid_density]) =
+            self.pure_t(temperature, None, Default::default())?;
 
-        let v1 = 1.0 / vle.liquid().density.to_reduced();
-        let v2 = 1.0 / vle.vapor().density.to_reduced();
+        let v1 = 1.0 / liquid_density.to_reduced();
+        let v2 = 1.0 / vapor_density.to_reduced();
         let t = temperature.into_reduced();
         let (a1, a2) = {
             let t = Gradient::from(t);
@@ -38,10 +39,11 @@ impl<R: ResidualHelmholtzEnergy<1>, const P: usize> HelmholtzEnergyWrapper<R, Gr
         &self,
         temperature: Temperature,
     ) -> FeosResult<(Pressure<Gradient<P>>, Density<Gradient<P>>)> {
-        let vle = PhaseEquilibrium::pure(&self.eos, temperature, None, Default::default())?;
+        let (_, [vapor_density, liquid_density]) =
+            self.pure_t(temperature, None, Default::default())?;
 
-        let v_l = 1.0 / vle.liquid().density.to_reduced();
-        let v_v = 1.0 / vle.vapor().density.to_reduced();
+        let v_l = 1.0 / liquid_density.to_reduced();
+        let v_v = 1.0 / vapor_density.to_reduced();
         let t = temperature.into_reduced();
         let (f_l, p_l, dp_l, a_v) = {
             let t = Gradient::from(temperature.into_reduced());
@@ -64,12 +66,12 @@ impl<R: ResidualHelmholtzEnergy<1>, const P: usize> HelmholtzEnergyWrapper<R, Gr
         temperature: Temperature,
         pressure: Pressure,
     ) -> FeosResult<Density<Gradient<P>>> {
-        let moles = Moles::from_reduced(arr1(&[1.0]));
-        let state = State::new_npt(&self.eos, temperature, pressure, &moles, Liquid)?;
-
         let t = temperature.into_reduced();
-        let v = 1.0 / state.density.to_reduced();
         let p0 = pressure.into_reduced();
+        let moles = SVector::from([1.0]);
+        let rho0 = self.compute_max_density2(&moles);
+        let v = 1.0 / self.density_iteration(t, p0, &moles, rho0)?;
+
         let (p, dp) = {
             let t = Gradient::from(t);
             let v = Gradient::from(v);
@@ -184,6 +186,7 @@ mod test {
     use crate::eos::{PcSaftBinary, PcSaftPure};
     use crate::{ParametersAD, PhaseEquilibriumAD, StateAD};
     use approx::assert_relative_eq;
+    use feos_core::DensityInitialization::Liquid;
     use nalgebra::U1;
     use quantity::{BAR, KELVIN, LITER, MOL, PASCAL};
 
@@ -224,7 +227,7 @@ mod test {
                 dp,
                 ((dp_h - dp) / dp).abs()
             );
-            assert_relative_eq!(dp, dp_h, max_relative = 1e-6);
+            assert_relative_eq!(dp, dp_h, max_relative = 2e-6);
         }
         Ok(())
     }

@@ -1,6 +1,5 @@
 use super::Components;
 use crate::{FeosError, FeosResult, ReferenceSystem, StateHD};
-use ndarray::ScalarOperand;
 use ndarray::prelude::*;
 use num_dual::*;
 use num_traits::{One, Zero};
@@ -27,16 +26,13 @@ pub trait Residual: Components + Send + Sync {
 
     /// Evaluate the reduced Helmholtz energy of each individual contribution
     /// and return them together with a string representation of the contribution.
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)>;
 
     /// Evaluate the residual reduced Helmholtz energy $\beta A^\mathrm{res}$.
-    fn residual_helmholtz_energy<D: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        state: &StateHD<D>,
-    ) -> D {
+    fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         self.residual_helmholtz_energy_contributions(state)
             .iter()
             .fold(D::zero(), |acc, (_, a)| acc + a)

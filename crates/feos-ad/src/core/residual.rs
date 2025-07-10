@@ -1,8 +1,9 @@
 use super::{FeOsWrapper, HelmholtzEnergyWrapper};
+use feos_core::{DensityIteration, PhaseEquilibriumPure};
 use nalgebra::{SMatrix, SVector};
 use num_dual::{
-    first_derivative, gradient, hessian, partial_hessian, second_derivative, Dual, Dual2, Dual2Vec,
-    DualNum, DualVec, HyperDualVec,
+    Dual, Dual2, Dual2Vec, DualNum, DualVec, HyperDualVec, first_derivative, gradient, hessian,
+    partial_hessian, second_derivative,
 };
 use std::sync::Arc;
 
@@ -198,5 +199,32 @@ pub trait ResidualHelmholtzEnergy<const N: usize>: ParametersAD {
         let mu_v = mu_res_v.map(|m| m - temperature / molar_volume);
         let p_v = mu_v.dot(molefracs) / molar_volume;
         (p, mu_res, p_v, mu_v)
+    }
+}
+
+impl<R: ResidualHelmholtzEnergy<N>, D2: DualNum<f64> + Copy, const N: usize>
+    DensityIteration<SVector<f64, N>> for HelmholtzEnergyWrapper<R, D2, N>
+{
+    fn compute_max_density2(&self, moles: &SVector<f64, N>) -> f64 {
+        R::compute_max_density(&self.eos.0, moles)
+    }
+
+    fn residual_molar_helmholtz_energy<D: DualNum<f64> + Copy>(
+        &self,
+        temperature: D,
+        molar_volume: D,
+        molefracs: &SVector<f64, N>,
+    ) -> D {
+        let x = molefracs.map(D::from);
+        let params = self.eos.0.params();
+        R::residual_molar_helmholtz_energy(&params, temperature, molar_volume, &x)
+    }
+}
+
+impl<R: ResidualHelmholtzEnergy<1>, D2: DualNum<f64> + Copy> PhaseEquilibriumPure<SVector<f64, 1>>
+    for HelmholtzEnergyWrapper<R, D2, 1>
+{
+    fn moles_pure() -> SVector<f64, 1> {
+        SVector::from([1.0])
     }
 }

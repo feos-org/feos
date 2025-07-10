@@ -11,10 +11,7 @@ pub trait FunctionalContribution: Sync + Send {
     fn name(&self) -> &'static str;
 
     /// Return the weight functions required in this contribution.
-    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N>;
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N>;
 
     /// Overwrite this if the weight functions in pDGT are different than for DFT.
     fn weight_functions_pdgt<N: DualNum<f64> + Copy + ScalarOperand>(
@@ -25,13 +22,13 @@ pub trait FunctionalContribution: Sync + Send {
     }
 
     /// Return the Helmholtz energy density for the given temperature and weighted densities.
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
     ) -> FeosResult<Array1<N>>;
 
-    fn helmholtz_energy<N: DualNum<f64> + Copy + ScalarOperand>(&self, state: &StateHD<N>) -> N {
+    fn helmholtz_energy<N: DualNum<f64> + Copy>(&self, state: &StateHD<N>) -> N {
         // calculate weight functions
         let weight_functions = self.weight_functions(state.temperature);
 
