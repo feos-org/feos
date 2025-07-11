@@ -1,6 +1,7 @@
 use crate::{HelmholtzEnergyWrapper, ResidualHelmholtzEnergy};
 use feos_core::{
-    DensityIteration, FeosResult, PhaseEquilibrium, PhaseEquilibriumPure, ReferenceSystem,
+    DensityInitialization::Liquid, DensityIteration, FeosResult, PhaseEquilibrium,
+    PhaseEquilibriumPure, ReferenceSystem,
 };
 use nalgebra::{Const, SVector};
 use ndarray::arr1;
@@ -68,9 +69,7 @@ impl<R: ResidualHelmholtzEnergy<1>, const P: usize> HelmholtzEnergyWrapper<R, Gr
     ) -> FeosResult<Density<Gradient<P>>> {
         let t = temperature.into_reduced();
         let p0 = pressure.into_reduced();
-        let moles = SVector::from([1.0]);
-        let rho0 = self.compute_max_density2(&moles);
-        let v = 1.0 / self.density_iteration(t, p0, &moles, rho0)?;
+        let v = 1.0 / self.density_iteration(t, p0, &SVector::from([1.0]), Liquid)?;
 
         let (p, dp) = {
             let t = Gradient::from(t);

@@ -1,7 +1,9 @@
 use crate::errors::{FeosError, FeosResult};
-use crate::{Residual, StateHD};
+use crate::{DensityInitialization, ReferenceSystem, Residual, StateHD};
 use ndarray::Array1;
-use num_dual::{Dual2, Dual3, DualNum, second_derivative, third_derivative};
+use num_dual::{
+    Dual, Dual2, Dual3, DualNum, first_derivative, second_derivative, third_derivative,
+};
 
 pub trait DensityIteration<M> {
     fn compute_max_density2(&self, moles: &M) -> f64;
@@ -10,27 +12,38 @@ pub trait DensityIteration<M> {
         &self,
         temperature: D,
         molar_volume: D,
-        moles: &M,
+        molefracs: &M,
     ) -> D;
 
-    fn p_dpdrho(&self, temperature: f64, density: f64, moles: &M) -> (f64, f64) {
+    fn pressure(&self, temperature: f64, density: f64, molefracs: &M) -> (f64, f64) {
+        let molar_volume = density.recip();
+        let t = Dual::from_re(temperature);
+        let (a_res, da) = first_derivative(
+            |molar_volume| self.residual_molar_helmholtz_energy(t, molar_volume, molefracs),
+            molar_volume,
+        );
+        (a_res, -da + temperature * density)
+    }
+
+    fn p_dpdrho(&self, temperature: f64, density: f64, molefracs: &M) -> (f64, f64, f64) {
         let molar_volume = density.recip();
         let t = Dual2::from_re(temperature);
-        let (_, da, d2a) = second_derivative(
-            |molar_volume| self.residual_molar_helmholtz_energy(t, molar_volume, moles),
+        let (a_res, da, d2a) = second_derivative(
+            |molar_volume| self.residual_molar_helmholtz_energy(t, molar_volume, molefracs),
             molar_volume,
         );
         (
+            a_res,
             -da + temperature * density,
             molar_volume * molar_volume * d2a + temperature,
         )
     }
 
-    fn p_dpdrho_d2pdrho2(&self, temperature: f64, density: f64, moles: &M) -> (f64, f64, f64) {
+    fn p_dpdrho_d2pdrho2(&self, temperature: f64, density: f64, molefracs: &M) -> (f64, f64, f64) {
         let molar_volume = density.recip();
         let t = Dual3::from_re(temperature);
         let (_, da, d2a, d3a) = third_derivative(
-            |molar_volume| self.residual_molar_helmholtz_energy(t, molar_volume, moles),
+            |molar_volume| self.residual_molar_helmholtz_energy(t, molar_volume, molefracs),
             molar_volume,
         );
         (
@@ -40,14 +53,89 @@ pub trait DensityIteration<M> {
         )
     }
 
+    fn residual_molar_gibbs_energy(&self, temperature: f64, density: f64, molefracs: &M) -> f64 {
+        let molar_volume = density.recip();
+        let t = Dual::from_re(temperature);
+        let (a_res, da_res) = first_derivative(
+            |molar_volume| self.residual_molar_helmholtz_energy(t, molar_volume, molefracs),
+            molar_volume,
+        );
+        let z = 1.0 - da_res * molar_volume / temperature;
+        a_res - da_res * molar_volume - temperature * z.ln()
+    }
+
     fn density_iteration(
         &self,
         temperature: f64,
         pressure: f64,
-        moles: &M,
+        molefracs: &M,
+        density_initialization: DensityInitialization,
+    ) -> FeosResult<f64> {
+        // calculate state from initial density or given phase
+        match density_initialization {
+            DensityInitialization::InitialDensity(rho0) => {
+                return self._density_iteration(
+                    temperature,
+                    pressure,
+                    molefracs,
+                    rho0.into_reduced(),
+                );
+            }
+            DensityInitialization::Vapor => {
+                return self._density_iteration(
+                    temperature,
+                    pressure,
+                    molefracs,
+                    pressure / temperature,
+                );
+            }
+            DensityInitialization::Liquid => {
+                return self._density_iteration(
+                    temperature,
+                    pressure,
+                    molefracs,
+                    self.compute_max_density2(molefracs),
+                );
+            }
+            DensityInitialization::None => (),
+        };
+
+        // calculate stable phase
+        let max_density = self.compute_max_density2(molefracs);
+        let liquid = self._density_iteration(temperature, pressure, molefracs, max_density);
+
+        if pressure < max_density * temperature {
+            let vapor =
+                self._density_iteration(temperature, pressure, molefracs, pressure / temperature);
+            match (&liquid, &vapor) {
+                (Ok(_), Err(_)) => liquid,
+                (Err(_), Ok(_)) => vapor,
+                (Ok(l), Ok(v)) => {
+                    if self.residual_molar_gibbs_energy(temperature, *l, molefracs)
+                        > self.residual_molar_gibbs_energy(temperature, *v, molefracs)
+                    {
+                        vapor
+                    } else {
+                        liquid
+                    }
+                }
+                _ => Err(FeosError::UndeterminedState(String::from(
+                    "Density iteration did not find a solution.",
+                ))),
+            }
+        } else {
+            liquid
+        }
+    }
+
+    fn _density_iteration(
+        &self,
+        temperature: f64,
+        pressure: f64,
+        molefracs: &M,
         initial_density: f64,
     ) -> FeosResult<f64> {
-        let maxdensity = self.compute_max_density2(moles);
+        let maxdensity = self.compute_max_density2(molefracs);
         let (abstol, reltol) = (1e-12, 1e-14);
 
         let mut rho = initial_density;
@@ -63,7 +151,7 @@ pub trait DensityIteration<M> {
         let mut iterations = 0;
         'iteration: for k in 0..maxiter {
             iterations += 1;
-            let (mut p, mut dp_drho) = self.p_dpdrho(temperature, rho, moles);
+            let (_, mut p, mut dp_drho) = self.p_dpdrho(temperature, rho, molefracs);
 
             // attempt to correct for poor initial density rho_init
             if dp_drho.is_sign_negative() && k == 0 {
@@ -72,7 +160,7 @@ pub trait DensityIteration<M> {
                 } else {
                     (1.1 * initial_density).min(maxdensity)
                 };
-                let p_ = self.p_dpdrho(temperature, rho, moles);
+                let p_ = self.p_dpdrho(temperature, rho, molefracs);
                 p = p_.0;
                 dp_drho = p_.1;
             }
@@ -87,11 +175,11 @@ pub trait DensityIteration<M> {
 
             // correction for instable region
             if dp_drho.is_sign_negative() && k < maxiter {
-                let d2pdrho2 = self.p_dpdrho_d2pdrho2(temperature, rho, moles).2;
+                let d2pdrho2 = self.p_dpdrho_d2pdrho2(temperature, rho, molefracs).2;
 
                 if rho > 0.85 * maxdensity {
                     let (sp_p, sp_rho) =
-                        self.pressure_spinodal(temperature, initial_density, moles)?;
+                        self.pressure_spinodal(temperature, initial_density, molefracs)?;
                     rho = sp_rho;
                     error = sp_p - pressure;
                     if rho > 0.85 * maxdensity {
@@ -109,7 +197,7 @@ pub trait DensityIteration<M> {
                     }
                 } else if error.is_sign_positive() && d2pdrho2.is_sign_positive() {
                     let (sp_p, sp_rho) =
-                        self.pressure_spinodal(temperature, initial_density, moles)?;
+                        self.pressure_spinodal(temperature, initial_density, molefracs)?;
                     rho = sp_rho;
                     error = sp_p - pressure;
                     if error.is_sign_positive() {
@@ -119,7 +207,7 @@ pub trait DensityIteration<M> {
                     }
                 } else if error.is_sign_negative() && d2pdrho2.is_sign_negative() {
                     let (sp_p, sp_rho) =
-                        self.pressure_spinodal(temperature, initial_density, moles)?;
+                        self.pressure_spinodal(temperature, initial_density, molefracs)?;
                     rho = sp_rho;
                     error = sp_p - pressure;
                     if error.is_sign_negative() {
@@ -129,9 +217,9 @@ pub trait DensityIteration<M> {
                     }
                 } else if error.is_sign_negative() && d2pdrho2.is_sign_positive() {
                     let (_, rho_l) =
-                        self.pressure_spinodal(temperature, 0.8 * maxdensity, moles)?;
+                        self.pressure_spinodal(temperature, 0.8 * maxdensity, molefracs)?;
                     let (sp_v_p, rho_v) =
-                        self.pressure_spinodal(temperature, 0.001 * maxdensity, moles)?;
+                        self.pressure_spinodal(temperature, 0.001 * maxdensity, molefracs)?;
                     error = sp_v_p - pressure;
                     if error.is_sign_positive()
                         && (initial_density - rho_v).abs() < (initial_density - rho_l).abs()
@@ -142,9 +230,9 @@ pub trait DensityIteration<M> {
                     }
                 } else if error.is_sign_positive() && d2pdrho2.is_sign_negative() {
                     let (_, rho_l) =
-                        self.pressure_spinodal(temperature, 0.8 * maxdensity, moles)?;
+                        self.pressure_spinodal(temperature, 0.8 * maxdensity, molefracs)?;
                     let (sp_v_p, rho_v) =
-                        self.pressure_spinodal(temperature, 0.001 * maxdensity, moles)?;
+                        self.pressure_spinodal(temperature, 0.001 * maxdensity, molefracs)?;
                     error = sp_v_p - pressure;
                     if error.is_sign_negative()
                         && (initial_density - rho_v).abs() > (initial_density - rho_l).abs()
@@ -178,12 +266,12 @@ pub trait DensityIteration<M> {
         &self,
         temperature: f64,
         rho_init: f64,
-        moles: &M,
+        molefracs: &M,
     ) -> FeosResult<(f64, f64)> {
         let maxiter = 30;
         let abstol = 1e-8;
 
-        let maxdensity = self.compute_max_density2(moles);
+        let maxdensity = self.compute_max_density2(molefracs);
         let mut rho = rho_init;
 
         if rho <= 0.0 {
@@ -195,7 +283,7 @@ pub trait DensityIteration<M> {
         }
 
         for _ in 0..maxiter {
-            let (p, dpdrho, d2pdrho2) = self.p_dpdrho_d2pdrho2(temperature, rho, moles);
+            let (p, dpdrho, d2pdrho2) = self.p_dpdrho_d2pdrho2(temperature, rho, molefracs);
 
             let mut delta_rho = -dpdrho / d2pdrho2;
             if delta_rho.abs() > 0.05 * maxdensity {
@@ -214,17 +302,17 @@ pub trait DensityIteration<M> {
 }
 
 impl<T: Residual> DensityIteration<Array1<f64>> for T {
-    fn compute_max_density2(&self, moles: &Array1<f64>) -> f64 {
-        self.compute_max_density(moles)
+    fn compute_max_density2(&self, molefracs: &Array1<f64>) -> f64 {
+        self.compute_max_density(molefracs)
     }
 
     fn residual_molar_helmholtz_energy<D: DualNum<f64> + Copy>(
         &self,
         temperature: D,
         molar_volume: D,
-        moles: &Array1<f64>,
+        molefracs: &Array1<f64>,
     ) -> D {
-        let x = (moles / moles.sum()).mapv(D::from);
+        let x = molefracs.mapv(D::from);
         let state = StateHD::new(temperature, molar_volume, x);
         self.residual_helmholtz_energy(&state) * temperature
     }

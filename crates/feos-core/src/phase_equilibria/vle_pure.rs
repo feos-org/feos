@@ -444,8 +444,8 @@ pub trait PhaseEquilibriumPure<M>: DensityIteration<M> {
             let m = Self::moles_pure();
             let v = vapor_density.into_reduced();
             let l = liquid_density.into_reduced();
-            let (p_v, _) = self.p_dpdrho(t, v, &m);
-            let (p_l, _) = self.p_dpdrho(t, l, &m);
+            let (_, p_v) = self.pressure(t, v, &m);
+            let (_, p_l) = self.pressure(t, l, &m);
             self.iterate_pure_t(t, 0.5 * (p_v + p_l), [v, l], max_iter, tol, verbosity)
                 .ok()
         });
@@ -457,8 +457,8 @@ pub trait PhaseEquilibriumPure<M>: DensityIteration<M> {
                 let density = 0.75 * self.compute_max_density2(&m);
                 let a_res = self.residual_molar_helmholtz_energy(t, 1.0 / density, &m);
                 let p = t * density * (a_res / t - 1.0).exp();
-                let v = self.density_iteration(t, p, &m, p / t)?;
-                let l = self.density_iteration(t, p, &m, density)?;
+                let v = self.density_iteration(t, p, &m, DensityInitialization::Vapor)?;
+                let l = self.density_iteration(t, p, &m, DensityInitialization::Liquid)?;
                 self.iterate_pure_t(t, p, [v, l], max_iter, tol, verbosity)
             },
             Ok,
@@ -471,8 +471,8 @@ pub trait PhaseEquilibriumPure<M>: DensityIteration<M> {
             let (p_vapor, _) = self.pressure_spinodal(t, 1e-5 * max_density, &m)?;
             let (p_liquid, _) = self.pressure_spinodal(t, max_density, &m)?;
             let p = 0.5 * (p_vapor + p_liquid);
-            let v = self.density_iteration(t, p, &m, p / t)?;
-            let l = self.density_iteration(t, p, &m, max_density)?;
+            let v = self.density_iteration(t, p, &m, DensityInitialization::Vapor)?;
+            let l = self.density_iteration(t, p, &m, DensityInitialization::Liquid)?;
             self.iterate_pure_t(t, p, [v, l], max_iter, tol, verbosity)
         })
         .map(|(p, [v, l])| {
@@ -512,15 +512,8 @@ pub trait PhaseEquilibriumPure<M>: DensityIteration<M> {
 
         for i in 1..=max_iter {
             // calculate the pressures and derivatives
-            let (p_l, p_rho_l) = self.p_dpdrho(temperature, liquid_density, &moles);
-            let (p_v, p_rho_v) = self.p_dpdrho(temperature, vapor_density, &moles);
-            // calculate the molar Helmholtz energies (already cached)
-            let a_l_res =
-                self.residual_molar_helmholtz_energy(temperature, 1.0 / liquid_density, &moles);
-            let a_v_res =
-                self.residual_molar_helmholtz_energy(temperature, 1.0 / vapor_density, &moles);
-            // let a_l_res = liquid.residual_molar_helmholtz_energy();
-            // let a_v_res = vapor.residual_molar_helmholtz_energy();
+            let (a_l_res, p_l, p_rho_l) = self.p_dpdrho(temperature, liquid_density, &moles);
+            let (a_v_res, p_v, p_rho_v) = self.p_dpdrho(temperature, vapor_density, &moles);
 
             // Estimate the new pressure
             let delta_v = 1.0 / vapor_density - 1.0 / liquid_density;

@@ -409,22 +409,6 @@ impl<E: Residual> State<E> {
         Ok(Err(n_i.to_owned()))
     }
 
-    fn density_iteration(
-        eos: &Arc<E>,
-        temperature: Temperature,
-        pressure: Pressure,
-        moles: &Moles<Array1<f64>>,
-        initial_density: Density,
-    ) -> FeosResult<Self> {
-        let density = Density::from_reduced(eos.density_iteration(
-            temperature.into_reduced(),
-            pressure.into_reduced(),
-            &moles.to_reduced(),
-            initial_density.into_reduced(),
-        )?);
-        State::new_nvt(eos, temperature, moles.sum() / density, moles)
-    }
-
     /// Return a new `State` using a density iteration. [DensityInitialization] is used to
     /// influence the calculation with respect to the possible solutions.
     pub fn new_npt(
@@ -434,61 +418,14 @@ impl<E: Residual> State<E> {
         moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
     ) -> FeosResult<Self> {
-        // calculate state from initial density or given phase
-        match density_initialization {
-            DensityInitialization::InitialDensity(rho0) => {
-                return Self::density_iteration(eos, temperature, pressure, moles, rho0);
-            }
-            DensityInitialization::Vapor => {
-                return Self::density_iteration(
-                    eos,
-                    temperature,
-                    pressure,
-                    moles,
-                    pressure / temperature / RGAS,
-                );
-            }
-            DensityInitialization::Liquid => {
-                return Self::density_iteration(
-                    eos,
-                    temperature,
-                    pressure,
-                    moles,
-                    eos.max_density(Some(moles))?,
-                );
-            }
-            DensityInitialization::None => (),
-        }
-
-        // calculate stable phase
-        let max_density = eos.max_density(Some(moles))?;
-        let liquid = Self::density_iteration(eos, temperature, pressure, moles, max_density);
-
-        if pressure < max_density * temperature * RGAS {
-            let vapor = Self::density_iteration(
-                eos,
-                temperature,
-                pressure,
-                moles,
-                pressure / temperature / RGAS,
-            );
-            match (&liquid, &vapor) {
-                (Ok(_), Err(_)) => liquid,
-                (Err(_), Ok(_)) => vapor,
-                (Ok(l), Ok(v)) => {
-                    if l.residual_gibbs_energy() > v.residual_gibbs_energy() {
-                        vapor
-                    } else {
-                        liquid
-                    }
-                }
-                _ => Err(FeosError::UndeterminedState(String::from(
-                    "Density iteration did not find a solution.",
-                ))),
-            }
-        } else {
-            liquid
-        }
+        let molefracs = moles.convert_to(moles.sum());
+        let density = Density::from_reduced(eos.density_iteration(
+            temperature.into_reduced(),
+            pressure.into_reduced(),
+            &molefracs,
+            density_initialization,
+        )?);
+        State::new_nvt(eos, temperature, moles.sum() / density, moles)
     }
 
     /// Return a new `State` for given pressure $p$, volume $V$, temperature $T$ and composition $x_i$.

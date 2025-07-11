@@ -82,14 +82,8 @@ impl<'a, E: ResidualHelmholtzEnergy<N>, D: DualNum<f64> + Copy, const N: usize>
         let t = temperature.into_reduced();
         let pressure = pressure.into_reduced();
         let x = molefracs.map(|x| x.re());
-        let initial_density = match density_initialization {
-            DensityInitialization::Vapor => pressure.re() / t.re(),
-            DensityInitialization::Liquid => eos.compute_max_density2(&x),
-            DensityInitialization::InitialDensity(d) => d.into_reduced(),
-            DensityInitialization::None => panic!("An initial value for the density is required!"),
-        };
         let mut density =
-            D::from(eos.density_iteration(t.re(), pressure.re(), &x, initial_density)?);
+            D::from(eos.density_iteration(t.re(), pressure.re(), &x, density_initialization)?);
         for _ in 0..D::NDERIV {
             let (_, p, dp_drho) = E::dp_drho(&eos.parameters, t, density.recip(), &molefracs);
             density -= (p - pressure) / dp_drho;
