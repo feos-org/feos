@@ -7,7 +7,7 @@
 //!
 //! Internally, all properties are computed using such states as input.
 use crate::ReferenceSystem;
-use crate::density_iteration::density_iteration;
+use crate::density_iteration::DensityIteration;
 use crate::equation_of_state::{IdealGas, Residual};
 use crate::errors::{FeosError, FeosResult};
 use cache::Cache;
@@ -418,61 +418,14 @@ impl<E: Residual> State<E> {
         moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
     ) -> FeosResult<Self> {
-        // calculate state from initial density or given phase
-        match density_initialization {
-            DensityInitialization::InitialDensity(rho0) => {
-                return density_iteration(eos, temperature, pressure, moles, rho0);
-            }
-            DensityInitialization::Vapor => {
-                return density_iteration(
-                    eos,
-                    temperature,
-                    pressure,
-                    moles,
-                    pressure / temperature / RGAS,
-                );
-            }
-            DensityInitialization::Liquid => {
-                return density_iteration(
-                    eos,
-                    temperature,
-                    pressure,
-                    moles,
-                    eos.max_density(Some(moles))?,
-                );
-            }
-            DensityInitialization::None => (),
-        }
-
-        // calculate stable phase
-        let max_density = eos.max_density(Some(moles))?;
-        let liquid = density_iteration(eos, temperature, pressure, moles, max_density);
-
-        if pressure < max_density * temperature * RGAS {
-            let vapor = density_iteration(
-                eos,
-                temperature,
-                pressure,
-                moles,
-                pressure / temperature / RGAS,
-            );
-            match (&liquid, &vapor) {
-                (Ok(_), Err(_)) => liquid,
-                (Err(_), Ok(_)) => vapor,
-                (Ok(l), Ok(v)) => {
-                    if l.residual_gibbs_energy() > v.residual_gibbs_energy() {
-                        vapor
-                    } else {
-                        liquid
-                    }
-                }
-                _ => Err(FeosError::UndeterminedState(String::from(
-                    "Density iteration did not find a solution.",
-                ))),
-            }
-        } else {
-            liquid
-        }
+        let molefracs = moles.convert_to(moles.sum());
+        let density = Density::from_reduced(eos.density_iteration(
+            temperature.into_reduced(),
+            pressure.into_reduced(),
+            &molefracs,
+            density_initialization,
+        )?);
+        State::new_nvt(eos, temperature, moles.sum() / density, moles)
     }
 
     /// Return a new `State` for given pressure $p$, volume $V$, temperature $T$ and composition $x_i$.
@@ -798,7 +751,11 @@ where
 ///
 /// There is no validation of the physical state, e.g.
 /// if resulting densities are below maximum packing fraction.
-fn validate(temperature: Temperature, volume: Volume, moles: &Moles<Array1<f64>>) -> FeosResult<()> {
+fn validate(
+    temperature: Temperature,
+    volume: Volume,
+    moles: &Moles<Array1<f64>>,
+) -> FeosResult<()> {
     let t = temperature.to_reduced();
     let v = volume.to_reduced();
     let m = moles.to_reduced();

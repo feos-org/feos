@@ -3,7 +3,7 @@ use crate::errors::{FeosError, FeosResult};
 use crate::state::{DensityInitialization, State};
 use crate::{Contributions, ReferenceSystem};
 use ndarray::Array1;
-use quantity::{Dimensionless, Energy, Moles, Pressure, Temperature, RGAS};
+use quantity::{Dimensionless, Energy, Moles, Pressure, RGAS, Temperature};
 use std::fmt;
 use std::fmt::Write;
 use std::sync::Arc;
@@ -18,6 +18,7 @@ mod vle_pure;
 pub use bubble_dew::TemperatureOrPressure;
 pub use phase_diagram_binary::PhaseDiagramHetero;
 pub use phase_diagram_pure::PhaseDiagram;
+pub use vle_pure::PhaseEquilibriumPure;
 
 /// A thermodynamic equilibrium state.
 ///

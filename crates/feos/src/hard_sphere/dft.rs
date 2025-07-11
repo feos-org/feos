@@ -328,7 +328,7 @@ impl Residual for FMTFunctional {
         moles.sum() / (moles * &self.properties.sigma).sum() * 1.2
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {

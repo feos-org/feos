@@ -23,10 +23,7 @@ impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
         "Attractive functional (GC)"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
 
         let d = p.hs_diameter(temperature);
@@ -36,7 +33,7 @@ impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
         )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         density: ArrayView2<N>,
@@ -52,7 +49,7 @@ impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
         let eta = density
             .outer_iter()
             .zip(&d * &d * &d * &p.m * FRAC_PI_6)
-            .map(|(rho, d3m)| &rho * d3m)
+            .map(|(rho, d3m)| rho.mapv(|rho| rho * d3m))
             .reduce(|a, b| a + b)
             .unwrap();
 

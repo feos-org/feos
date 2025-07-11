@@ -23,10 +23,7 @@ impl<'a> FunctionalContribution for NonAddHardSphereFunctional<'a> {
         "Non-additive hard-sphere functional"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
         let r = p.hs_diameter(temperature) * 0.5;
         WeightFunctionInfo::new(Array1::from_shape_fn(r.len(), |i| i), false)
@@ -52,7 +49,7 @@ impl<'a> FunctionalContribution for NonAddHardSphereFunctional<'a> {
             )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
@@ -79,8 +76,10 @@ impl<'a> FunctionalContribution for NonAddHardSphereFunctional<'a> {
         let r = p.hs_diameter(temperature) * 0.5;
         let mut n2i = Array::zeros(n0i.raw_dim());
         for i in 0..n {
-            n2i.index_axis_mut(Axis(0), i)
-                .assign(&(&n0i.index_axis(Axis(0), i) * (r[i].powi(2) * (p.m[i] * 4.0 * PI))));
+            n2i.index_axis_mut(Axis(0), i).assign(
+                &n0i.index_axis(Axis(0), i)
+                    .mapv(|n| n * (r[i].powi(2) * (p.m[i] * 4.0 * PI))),
+            );
         }
         let mut rho0: Array2<N> = (n2vi
             .iter()
@@ -145,7 +144,7 @@ impl<'a> FunctionalContribution for NonAddHardSphereFunctional<'a> {
     }
 }
 
-pub fn non_additive_hs_energy_density<S, N: DualNum<f64> + Copy + ScalarOperand>(
+pub fn non_additive_hs_energy_density<S, N: DualNum<f64> + Copy>(
     parameters: &SaftVRQMiePars,
     d_hs_ij: &Array2<N>,
     d_hs_add_ij: &Array2<N>,

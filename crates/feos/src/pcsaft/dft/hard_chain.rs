@@ -21,10 +21,7 @@ impl<'a> FunctionalContribution for ChainFunctional<'a> {
         "Hard chain functional"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
         let d = p.hs_diameter(temperature);
         WeightFunctionInfo::new(p.component_index().into_owned(), true)
@@ -50,7 +47,7 @@ impl<'a> FunctionalContribution for ChainFunctional<'a> {
             )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,

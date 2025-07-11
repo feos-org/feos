@@ -3,6 +3,8 @@
 use feos_core::Verbosity;
 use pyo3::prelude::*;
 
+#[cfg(feature = "ad")]
+pub(crate) mod ad;
 #[cfg(feature = "dft")]
 pub(crate) mod dft;
 pub(crate) mod eos;
@@ -83,6 +85,13 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<estimator::PyEstimator>()?;
     m.add_class::<estimator::PyLoss>()?;
     m.add_class::<estimator::PyPhase>()?;
+
+    // AD
+    #[cfg(feature = "ad")]
+    {
+        m.add_class::<ad::PyEstimator>()?;
+        m.add_class::<ad::PyModel>()?;
+    }
 
     #[cfg(not(feature = "dft"))]
     m.add("__dft__", false)?;

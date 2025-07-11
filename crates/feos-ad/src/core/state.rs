@@ -2,7 +2,7 @@ use super::{
     FeOsWrapper, HelmholtzEnergyWrapper, ParametersAD, ResidualHelmholtzEnergy,
     TotalHelmholtzEnergy,
 };
-use feos_core::{DensityInitialization, FeosResult, ReferenceSystem, State};
+use feos_core::{DensityInitialization, DensityIteration, FeosResult, ReferenceSystem, State};
 use nalgebra::{Const, SMatrix, SVector};
 use ndarray::arr1;
 use num_dual::{Dual2Vec, Dual3, DualNum, DualVec, hessian, jacobian, third_derivative};
@@ -79,15 +79,14 @@ impl<'a, E: ResidualHelmholtzEnergy<N>, D: DualNum<f64> + Copy, const N: usize>
         molefracs: SVector<D, N>,
         density_initialization: DensityInitialization,
     ) -> FeosResult<Self> {
-        let t = temperature.re();
-        let p = pressure.re();
-        let moles = Moles::from_reduced(arr1(&molefracs.data.0[0].map(|x| x.re())));
-        let state = State::new_npt(&eos.eos, t, p, &moles, density_initialization)?;
-        let mut density = D::from(state.density.to_reduced());
         let t = temperature.into_reduced();
+        let pressure = pressure.into_reduced();
+        let x = molefracs.map(|x| x.re());
+        let mut density =
+            D::from(eos.density_iteration(t.re(), pressure.re(), &x, density_initialization)?);
         for _ in 0..D::NDERIV {
             let (_, p, dp_drho) = E::dp_drho(&eos.parameters, t, density.recip(), &molefracs);
-            density -= (p - pressure.into_reduced()) / dp_drho;
+            density -= (p - pressure) / dp_drho;
         }
         Ok(Self::new(eos, t, density.recip(), molefracs))
     }

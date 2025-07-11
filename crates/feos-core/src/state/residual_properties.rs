@@ -234,24 +234,6 @@ impl<E: Residual> State<E> {
         })
     }
 
-    // This function is designed specifically for use in spinodal iterations
-    #[expect(clippy::type_complexity)]
-    pub(crate) fn d2pdrho2(
-        &self,
-    ) -> (
-        Pressure,
-        <Pressure as Div<Density>>::Output,
-        <<Pressure as Div<Density>>::Output as Div<Density>>::Output,
-    ) {
-        let d2p_dv2 = self.d2p_dv2(Contributions::Total);
-        let dp_dv = self.dp_dv(Contributions::Total);
-        (
-            self.pressure(Contributions::Total),
-            (-self.volume * dp_dv / self.density),
-            (self.volume / (self.density * self.density) * (2.0 * dp_dv + self.volume * d2p_dv2)),
-        )
-    }
-
     /// Isothermal compressibility: $\kappa_T=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{T,N_i}$
     pub fn isothermal_compressibility(&self) -> <f64 as Div<Pressure>>::Output {
         -1.0 / (self.dp_dv(Contributions::Total) * self.volume)

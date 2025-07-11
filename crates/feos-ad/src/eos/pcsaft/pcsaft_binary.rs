@@ -1,7 +1,7 @@
 use super::{A0, A1, A2, AD, B0, B1, B2, BD, CD, MAX_ETA};
 use crate::{NamedParameters, ParametersAD, ResidualHelmholtzEnergy};
 use nalgebra::SVector;
-use num_dual::{jacobian, DualNum, DualVec};
+use num_dual::{DualNum, DualVec, jacobian};
 use std::f64::consts::{FRAC_PI_6, PI};
 
 const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
@@ -32,6 +32,22 @@ impl<const N: usize> ParametersAD for PcSaftBinary<N> {
             parameters.map(|p| p.map(D2::from_inner)),
             D2::from_inner(kij),
         )
+    }
+}
+
+impl<const N: usize> From<&[f64]> for PcSaftBinary<N> {
+    fn from(parameters: &[f64]) -> Self {
+        if parameters.len() != 2 * N + 1 {
+            panic!(
+                "This version of PC-SAFT requires exactly {} parameters!",
+                2 * N + 1
+            )
+        }
+        let (Ok(p1), Ok(p2)) = (parameters[..N].try_into(), parameters[N..2 * N].try_into()) else {
+            unreachable!()
+        };
+        let kij = parameters[2 * N];
+        Self::new([p1, p2], kij)
     }
 }
 
@@ -222,7 +238,10 @@ fn association<D: DualNum<f64> + Copy>(
     zeta2: D,
     frac_1mz3: D,
 ) -> D {
-    let [[kappa_ab1, epsilon_k_ab1, na1, nb1], [kappa_ab2, epsilon_k_ab2, na2, nb2]] = assoc_params;
+    let [
+        [kappa_ab1, epsilon_k_ab1, na1, nb1],
+        [kappa_ab2, epsilon_k_ab2, na2, nb2],
+    ] = assoc_params;
 
     let d11 = d1 * 0.5;
     let d12 = d1 * d2 / (d1 + d2);
@@ -390,8 +409,26 @@ impl ResidualHelmholtzEnergy<2> for PcSaftBinary<8> {
         temperature: D,
         partial_density: &SVector<D, 2>,
     ) -> D {
-        let [m1, sigma1, epsilon_k1, mu1, kappa_ab1, epsilon_k_ab1, na1, nb1] = p1;
-        let [m2, sigma2, epsilon_k2, mu2, kappa_ab2, epsilon_k_ab2, na2, nb2] = p2;
+        let [
+            m1,
+            sigma1,
+            epsilon_k1,
+            mu1,
+            kappa_ab1,
+            epsilon_k_ab1,
+            na1,
+            nb1,
+        ] = p1;
+        let [
+            m2,
+            sigma2,
+            epsilon_k2,
+            mu2,
+            kappa_ab2,
+            epsilon_k_ab2,
+            na2,
+            nb2,
+        ] = p2;
         let m = [m1, m2];
         let sigma = [sigma1, sigma2];
         let epsilon_k = [epsilon_k1, epsilon_k2];

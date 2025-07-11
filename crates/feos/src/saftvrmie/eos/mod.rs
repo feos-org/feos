@@ -5,7 +5,7 @@ use crate::saftvrmie::SaftVRMieRecord;
 use crate::saftvrmie::parameters::SaftVRMieAssociationRecord;
 use crate::{hard_sphere::HardSphere, saftvrmie::parameters::SaftVRMiePars};
 use feos_core::{Components, Molarweight, Residual, StateHD};
-use ndarray::{Array1, ScalarOperand};
+use ndarray::Array1;
 use num_dual::DualNum;
 use quantity::MolarWeight;
 use std::f64::consts::{FRAC_PI_6, PI};
@@ -82,7 +82,7 @@ impl Residual for SaftVRMie {
             / (FRAC_PI_6 * &self.params.m * self.params.sigma.mapv(|v| v.powi(3)) * moles).sum()
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {

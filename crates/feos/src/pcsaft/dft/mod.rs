@@ -8,7 +8,7 @@ use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape};
-use ndarray::{Array1, Array2, ScalarOperand};
+use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use num_traits::One;
 use quantity::MolarWeight;
@@ -82,7 +82,7 @@ impl Residual for PcSaftFunctional {
             / (FRAC_PI_6 * &self.params.m * self.params.sigma.mapv(|v| v.powi(3)) * moles).sum()
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {

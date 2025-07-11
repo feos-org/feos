@@ -1,6 +1,6 @@
 use crate::saftvrmie::parameters::SaftVRMiePars;
 use feos_core::StateHD;
-use ndarray::{Array1, Array2, ScalarOperand};
+use ndarray::{Array1, Array2};
 use num_dual::{Dual, DualNum};
 use num_traits::Zero;
 use std::f64::consts::{FRAC_PI_6, PI};
@@ -23,7 +23,7 @@ pub struct Properties<D> {
     k0: [D; 4],
 }
 
-impl<D: DualNum<f64> + Copy + Zero + ScalarOperand> Properties<D> {
+impl<D: DualNum<f64> + Copy + Zero> Properties<D> {
     pub(super) fn new(
         parameters: &SaftVRMiePars,
         state: &StateHD<D>,
@@ -33,7 +33,7 @@ impl<D: DualNum<f64> + Copy + Zero + ScalarOperand> Properties<D> {
         let x = &state.molefracs;
 
         let mean_segment_number = (x * &parameters.m).sum();
-        let xs = x * &parameters.m / mean_segment_number;
+        let xs = (x * &parameters.m).mapv(|x| x / mean_segment_number);
 
         // Set eps to one -> get partial derivatives w.r.t segment density
         let segment_density = (&state.partial_density * &parameters.m).sum();
@@ -96,7 +96,7 @@ pub(super) const PHI: [[f64; 7]; 6] = [
 ];
 
 /// First, second and third order perturbations for dispersive interactions
-pub fn a_disp<D: DualNum<f64> + Copy + ScalarOperand>(
+pub fn a_disp<D: DualNum<f64> + Copy>(
     parameters: &SaftVRMiePars,
     properties: &Properties<D>,
     state: &StateHD<D>,
@@ -192,7 +192,7 @@ pub fn a_disp<D: DualNum<f64> + Copy + ScalarOperand>(
 }
 
 /// Combine dispersion and chain contributions
-pub fn a_disp_chain<D: DualNum<f64> + Copy + ScalarOperand>(
+pub fn a_disp_chain<D: DualNum<f64> + Copy>(
     parameters: &SaftVRMiePars,
     properties: &Properties<D>,
     state: &StateHD<D>,

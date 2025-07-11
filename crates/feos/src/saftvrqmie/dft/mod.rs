@@ -8,7 +8,7 @@ use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape};
-use ndarray::{Array, Array1, Array2, ScalarOperand};
+use ndarray::{Array, Array1, Array2};
 use non_additive_hs::NonAddHardSphereFunctional;
 use num_dual::DualNum;
 

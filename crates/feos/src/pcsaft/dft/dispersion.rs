@@ -24,7 +24,7 @@ impl<'a> AttractiveFunctional<'a> {
     }
 }
 
-fn att_weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
+fn att_weight_functions<N: DualNum<f64> + Copy>(
     p: &PcSaftPars,
     psi: f64,
     temperature: N,
@@ -41,21 +41,18 @@ impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
         "Attractive functional"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         att_weight_functions(self.parameters, PSI_DFT, temperature)
     }
 
-    fn weight_functions_pdgt<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn weight_functions_pdgt<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
     ) -> WeightFunctionInfo<N> {
         att_weight_functions(self.parameters, PSI_PDGT, temperature)
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         density: ArrayView2<N>,
@@ -73,7 +70,7 @@ impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
             .zip(&r * &r * &r * &p.m * 4.0 * FRAC_PI_3)
             .fold(
                 Array::zeros(density.raw_dim().remove_axis(Axis(0))),
-                |acc: Array1<N>, (rho, r3m)| acc + &rho * r3m,
+                |acc: Array1<N>, (rho, r3m)| acc + &rho.mapv(|r| r * r3m),
             );
 
         // mean segment number

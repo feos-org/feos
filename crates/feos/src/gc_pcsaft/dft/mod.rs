@@ -7,7 +7,7 @@ use feos_core::{Components, FeosResult, Molarweight, Residual, StateHD};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape};
-use ndarray::{Array1, ScalarOperand};
+use ndarray::Array1;
 use num_dual::DualNum;
 use petgraph::graph::UnGraph;
 use quantity::MolarWeight;
@@ -82,7 +82,7 @@ impl Residual for GcPcSaftFunctional {
             / (FRAC_PI_6 * &p.m * p.sigma.mapv(|v| v.powi(3)) * moles_segments).sum()
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {

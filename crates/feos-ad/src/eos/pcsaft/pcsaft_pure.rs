@@ -162,6 +162,15 @@ impl ResidualHelmholtzEnergy<1> for PcSaftPure<4> {
     }
 }
 
+impl<const N: usize> From<&[f64]> for PcSaftPure<N> {
+    fn from(parameters: &[f64]) -> Self {
+        let Ok(parameters) = parameters.try_into() else {
+            panic!("This version of PC-SAFT requires exactly {N} parameters!")
+        };
+        Self(parameters)
+    }
+}
+
 impl<const N: usize> NamedParameters for PcSaftPure<N> {
     fn index_parameters_mut<'a, D: DualNum<f64> + Copy>(
         parameters: &'a mut [D; N],
