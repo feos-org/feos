@@ -252,6 +252,15 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
             .iter()
             .enumerate()
             .array_combinations()
+            .chain(
+                // Somehow there is no array_combinations_with_replacement in itertools
+                // ii combinations are not intuitive here, but potentially needed for
+                // molecules with multiple association sites.
+                pure_records
+                    .iter()
+                    .enumerate()
+                    .map(|(i, p)| [(i, p), (i, p)]),
+            )
             .map(|[(i1, p1), (i2, p2)]| {
                 let Some(id1) = p1.identifier.as_str(identifier_option) else {
                     return Err(FeosError::MissingParameters(format!(
