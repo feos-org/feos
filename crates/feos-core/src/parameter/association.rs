@@ -1,19 +1,16 @@
 use super::{BinaryParameters, BinaryRecord, GroupCount, PureParameters};
 use crate::{FeosError, FeosResult, parameter::PureRecord};
-use arrayvec::ArrayString;
 use ndarray::Array1;
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
-type SiteId = ArrayString<8>;
-
 /// Pure component association parameters.
-#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AssociationRecord<A> {
-    #[serde(skip_serializing_if = "SiteId::is_empty")]
+    #[serde(skip_serializing_if = "String::is_empty")]
     #[serde(default)]
-    pub id: SiteId,
+    pub id: String,
     #[serde(flatten)]
     pub parameters: Option<A>,
     /// \# of association sites of type A
@@ -35,7 +32,7 @@ impl<A> AssociationRecord<A> {
         Self::with_id(Default::default(), parameters, na, nb, nc)
     }
 
-    pub fn with_id(id: SiteId, parameters: Option<A>, na: f64, nb: f64, nc: f64) -> Self {
+    pub fn with_id(id: String, parameters: Option<A>, na: f64, nb: f64, nc: f64) -> Self {
         Self {
             id,
             parameters,
@@ -47,16 +44,16 @@ impl<A> AssociationRecord<A> {
 }
 
 /// Binary association parameters.
-#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BinaryAssociationRecord<A> {
     // Identifier of the association site on the first molecule.
-    #[serde(skip_serializing_if = "SiteId::is_empty")]
+    #[serde(skip_serializing_if = "String::is_empty")]
     #[serde(default)]
-    pub id1: SiteId,
+    pub id1: String,
     // Identifier of the association site on the second molecule.
-    #[serde(skip_serializing_if = "SiteId::is_empty")]
+    #[serde(skip_serializing_if = "String::is_empty")]
     #[serde(default)]
-    pub id2: SiteId,
+    pub id2: String,
     // Binary association parameters
     #[serde(flatten)]
     pub parameters: A,
@@ -67,7 +64,7 @@ impl<A> BinaryAssociationRecord<A> {
         Self::with_id(Default::default(), Default::default(), parameters)
     }
 
-    pub fn with_id(id1: SiteId, id2: SiteId, parameters: A) -> Self {
+    pub fn with_id(id1: String, id2: String, parameters: A) -> Self {
         Self {
             id1,
             id2,
@@ -76,16 +73,16 @@ impl<A> BinaryAssociationRecord<A> {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct AssociationSite<A> {
     pub assoc_comp: usize,
-    pub id: SiteId,
+    pub id: String,
     pub n: f64,
     pub parameters: A,
 }
 
 impl<A> AssociationSite<A> {
-    fn new(assoc_comp: usize, id: SiteId, n: f64, parameters: A) -> Self {
+    fn new(assoc_comp: usize, id: String, n: f64, parameters: A) -> Self {
         Self {
             assoc_comp,
             id,
@@ -120,13 +117,28 @@ impl<A: Clone> AssociationParameters<A> {
             for site in record.association_sites.iter() {
                 let par = &site.parameters;
                 if site.na > 0.0 {
-                    sites_a.push(AssociationSite::new(i, site.id, site.na, par.clone()));
+                    sites_a.push(AssociationSite::new(
+                        i,
+                        site.id.clone(),
+                        site.na,
+                        par.clone(),
+                    ));
                 }
                 if site.nb > 0.0 {
-                    sites_b.push(AssociationSite::new(i, site.id, site.nb, par.clone()));
+                    sites_b.push(AssociationSite::new(
+                        i,
+                        site.id.clone(),
+                        site.nb,
+                        par.clone(),
+                    ));
                 }
                 if site.nc > 0.0 {
-                    sites_c.push(AssociationSite::new(i, site.id, site.nc, par.clone()));
+                    sites_c.push(AssociationSite::new(
+                        i,
+                        site.id.clone(),
+                        site.nc,
+                        par.clone(),
+                    ));
                 }
             }
         }
@@ -212,15 +224,15 @@ impl<A: Clone> AssociationParameters<A> {
                 let par = &site.parameters;
                 if site.na > 0.0 {
                     let na = site.na * record.count.into_f64();
-                    sites_a.push(AssociationSite::new(i, site.id, na, par.clone()));
+                    sites_a.push(AssociationSite::new(i, site.id.clone(), na, par.clone()));
                 }
                 if site.nb > 0.0 {
                     let nb = site.nb * record.count.into_f64();
-                    sites_b.push(AssociationSite::new(i, site.id, nb, par.clone()));
+                    sites_b.push(AssociationSite::new(i, site.id.clone(), nb, par.clone()));
                 }
                 if site.nc > 0.0 {
                     let nc = site.nc * record.count.into_f64();
-                    sites_c.push(AssociationSite::new(i, site.id, nc, par.clone()));
+                    sites_c.push(AssociationSite::new(i, site.id.clone(), nc, par.clone()));
                 }
             }
         }
