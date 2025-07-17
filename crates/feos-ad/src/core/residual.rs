@@ -1,34 +1,9 @@
-use super::{FeOsWrapper, HelmholtzEnergyWrapper};
+use crate::ParametersAD;
 use nalgebra::{SMatrix, SVector};
 use num_dual::{
-    first_derivative, gradient, hessian, partial_hessian, second_derivative, Dual, Dual2, Dual2Vec,
-    DualNum, DualVec, HyperDualVec,
+    Dual, Dual2, Dual2Vec, DualNum, DualVec, HyperDualVec, first_derivative, gradient, hessian,
+    partial_hessian, second_derivative,
 };
-use std::sync::Arc;
-
-/// A model that can be evaluated with derivatives of its parameters.
-pub trait ParametersAD: Send + Sync + Sized {
-    /// The type of the structure that stores the parameters internally.
-    type Parameters<D: DualNum<f64> + Copy>: Clone;
-
-    /// Return the parameters in the given data type.
-    fn params<D: DualNum<f64> + Copy>(&self) -> Self::Parameters<D>;
-
-    /// Lift the parameters to the given type of dual number.
-    fn params_from_inner<D: DualNum<f64> + Copy, D2: DualNum<f64, Inner = D> + Copy>(
-        parameters: &Self::Parameters<D>,
-    ) -> Self::Parameters<D2>;
-
-    /// Wraps the model in the [HelmholtzEnergyWrapper] struct, so that it can be used
-    /// as an argument to [StateAD](crate::StateAD) and [PhaseEquilibriumAD](crate::PhaseEquilibriumAD) constructors.
-    fn wrap<const N: usize>(self) -> HelmholtzEnergyWrapper<Self, f64, N> {
-        let parameters = self.params();
-        HelmholtzEnergyWrapper {
-            eos: Arc::new(FeOsWrapper(self)),
-            parameters,
-        }
-    }
-}
 
 /// Implementation of a residual Helmholtz energy model.
 pub trait ResidualHelmholtzEnergy<const N: usize>: ParametersAD {
@@ -36,7 +11,10 @@ pub trait ResidualHelmholtzEnergy<const N: usize>: ParametersAD {
     const RESIDUAL: &str;
 
     /// Return a density (in reduced units) that corresponds to a dense liquid phase.
-    fn compute_max_density(&self, molefracs: &SVector<f64, N>) -> f64;
+    fn compute_max_density<D: DualNum<f64> + Copy>(
+        parameters: &Self::Parameters<D>,
+        molefracs: &SVector<D, N>,
+    ) -> D;
 
     fn residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
         parameters: &Self::Parameters<D>,

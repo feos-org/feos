@@ -1,5 +1,5 @@
 use crate::FeosResult;
-use ndarray::{Array1, ScalarOperand};
+use ndarray::Array1;
 use quantity::{
     Diffusivity, MolarWeight, Moles, Temperature, ThermalConductivity, Viscosity, Volume,
 };
@@ -85,7 +85,7 @@ impl<I: IdealGas, R: Residual> Residual for EquationOfState<I, R> {
         self.residual.compute_max_density(moles)
     }
 
-    fn residual_helmholtz_energy_contributions<D: num_dual::DualNum<f64> + Copy + ScalarOperand>(
+    fn residual_helmholtz_energy_contributions<D: num_dual::DualNum<f64> + Copy>(
         &self,
         state: &crate::StateHD<D>,
     ) -> Vec<(String, D)> {

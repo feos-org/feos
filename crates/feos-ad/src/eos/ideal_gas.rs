@@ -1,6 +1,7 @@
 use crate::{IdealGasAD, ParametersAD};
 use num_dual::DualNum;
 use std::collections::HashMap;
+use std::ops::Deref;
 
 const RGAS: f64 = 6.022140857 * 1.38064852;
 const T0: f64 = 298.15;
@@ -39,6 +40,14 @@ const GROUPS: [&str; 22] = [
 #[derive(Clone, Copy)]
 pub struct Joback(pub [f64; 5]);
 
+impl Deref for Joback {
+    type Target = [f64; 5];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl Joback {
     pub fn from_groups<D: DualNum<f64> + Copy>(group_counts: [D; 22]) -> [D; 5] {
         let a: D = A.into_iter().zip(group_counts).map(|(a, g)| g * a).sum();
@@ -56,10 +65,6 @@ impl Joback {
 
 impl ParametersAD for Joback {
     type Parameters<D: DualNum<f64> + Copy> = [D; 5];
-
-    fn params<D: DualNum<f64> + Copy>(&self) -> [D; 5] {
-        self.0.map(D::from)
-    }
 
     fn params_from_inner<D: DualNum<f64> + Copy, D2: DualNum<f64, Inner = D> + Copy>(
         parameters: &[D; 5],
@@ -106,7 +111,7 @@ pub mod test {
     use ndarray::arr1;
     use num_dual::DualNum;
     use quantity::{KELVIN, KILO, METER, MOL};
-    use std::sync::Arc;
+    use std::{ops::Deref, sync::Arc};
 
     pub fn joback() -> FeosResult<(JobackAD, Arc<Joback>)> {
         let a = 1.5;
@@ -123,12 +128,14 @@ pub mod test {
     }
 
     struct NoResidual;
+    impl Deref for NoResidual {
+        type Target = [f64; 0];
+        fn deref(&self) -> &[f64; 0] {
+            &[]
+        }
+    }
     impl ParametersAD for NoResidual {
         type Parameters<D: DualNum<f64> + Copy> = [D; 0];
-
-        fn params<D: DualNum<f64> + Copy>(&self) -> Self::Parameters<D> {
-            []
-        }
 
         fn params_from_inner<D: DualNum<f64> + Copy, D2: DualNum<f64, Inner = D> + Copy>(
             _: &Self::Parameters<D>,
@@ -139,8 +146,8 @@ pub mod test {
     impl<const N: usize> ResidualHelmholtzEnergy<N> for NoResidual {
         const RESIDUAL: &str = "No residual";
 
-        fn compute_max_density(&self, _: &SVector<f64, N>) -> f64 {
-            1.0
+        fn compute_max_density<D: DualNum<f64> + Copy>(_: &[D; 0], _: &SVector<D, N>) -> D {
+            D::from(1.0)
         }
 
         fn residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
@@ -175,11 +182,11 @@ pub mod test {
         let t = temperature.to_reduced();
         let v = (volume / total_moles).to_reduced();
         let x = SVector::from_fn(|i, _| moles.get(i).convert_into(total_moles));
-        let a_ad = JobackEos::molar_helmholtz_energy(&eos_ad.params(), t, v, &x);
-        let mu_ad = JobackEos::chemical_potential(&eos_ad.params(), t, v, &x);
-        let p_ad = JobackEos::pressure(&eos_ad.params(), t, v, &x);
-        let s_ad = JobackEos::molar_entropy(&eos_ad.params(), t, v, &x);
-        let h_ad = JobackEos::molar_enthalpy(&eos_ad.params(), t, v, &x);
+        let a_ad = JobackEos::molar_helmholtz_energy(&eos_ad, t, v, &x);
+        let mu_ad = JobackEos::chemical_potential(&eos_ad, t, v, &x);
+        let p_ad = JobackEos::pressure(&eos_ad, t, v, &x);
+        let s_ad = JobackEos::molar_entropy(&eos_ad, t, v, &x);
+        let h_ad = JobackEos::molar_enthalpy(&eos_ad, t, v, &x);
 
         println!("\nMolar Helmholtz energy:\n{}", a_feos.to_reduced());
         println!("{a_ad}");

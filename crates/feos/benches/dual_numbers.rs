@@ -24,7 +24,8 @@ fn state_pcsaft(parameters: PcSaftParameters) -> State<PcSaft> {
     let n = parameters.pure.len();
     let eos = Arc::new(PcSaft::new(parameters));
     let moles = Array::from_elem(n, 1.0 / n as f64) * 10.0 * MOL;
-    let cp = State::critical_point(&eos, Some(&moles), None, Default::default()).unwrap();
+    let molefracs = (&moles / moles.sum()).into_value();
+    let cp = State::critical_point(&eos, Some(&molefracs), None, Default::default()).unwrap();
     let temperature = 0.8 * cp.temperature;
     State::new_nvt(&eos, temperature, cp.volume, &moles).unwrap()
 }

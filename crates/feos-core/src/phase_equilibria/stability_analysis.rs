@@ -4,8 +4,8 @@ use crate::errors::{FeosError, FeosResult};
 use crate::state::{Contributions, DensityInitialization, State};
 use crate::{ReferenceSystem, SolverOptions, Verbosity};
 use ndarray::*;
-use num_dual::linalg::smallest_ev;
 use num_dual::linalg::LU;
+use num_dual::linalg::smallest_ev;
 use quantity::Moles;
 use std::ops::MulAssign;
 
@@ -162,7 +162,7 @@ impl<E: Residual> State<E> {
         // calculate residual and ideal hesse matrix
         let mut hesse = (self.dln_phi_dnj() * Moles::from_reduced(1.0)).into_value();
         let lnphi = self.ln_phi();
-        let y = self.moles.to_reduced();
+        let y = self.molefracs.clone();
         let ln_y = Zip::from(&y).map_collect(|&y| if y > f64::EPSILON { y.ln() } else { 0.0 });
         let sq_y = y.mapv(f64::sqrt);
         let gradient = (&ln_y + &lnphi - di) * &sq_y;
@@ -220,11 +220,11 @@ impl<E: Residual> State<E> {
             }
 
             // accept step and update state
-            *self = State::new_npt(
+            *self = State::new_xpt(
                 &self.eos,
                 self.temperature,
                 self.pressure(Contributions::Total),
-                &Moles::from_reduced(y),
+                &y,
                 DensityInitialization::InitialDensity(self.density),
             )?;
         }

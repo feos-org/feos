@@ -4,7 +4,7 @@ use std::cmp::{max, min};
 use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
-pub(crate) struct Cache {
+pub struct Cache {
     pub map: HashMap<PartialDerivative, f64>,
     pub hit: u64,
     pub miss: u64,

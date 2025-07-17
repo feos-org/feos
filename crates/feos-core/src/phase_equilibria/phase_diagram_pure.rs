@@ -1,15 +1,15 @@
 use super::PhaseEquilibrium;
+#[cfg(feature = "rayon")]
+use crate::ReferenceSystem;
+use crate::SolverOptions;
 use crate::equation_of_state::Residual;
 use crate::errors::FeosResult;
 use crate::state::{State, StateVec};
 #[cfg(feature = "rayon")]
-use crate::ReferenceSystem;
-use crate::SolverOptions;
-#[cfg(feature = "rayon")]
 use ndarray::{Array1, ArrayView1, Axis};
 use quantity::Temperature;
 #[cfg(feature = "rayon")]
-use rayon::{prelude::*, ThreadPool};
+use rayon::{ThreadPool, prelude::*};
 use std::sync::Arc;
 
 /// Pure component and binary mixture phase diagrams.

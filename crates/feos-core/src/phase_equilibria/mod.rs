@@ -1,12 +1,13 @@
 use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
-use crate::state::{DensityInitialization, State};
-use crate::{Contributions, ReferenceSystem};
+use crate::state::{Cache, DensityInitialization, State};
+use crate::{Contributions, HelmholtzEnergyDerivatives, ReferenceSystem, StateGeneric};
 use ndarray::Array1;
-use quantity::{Dimensionless, Energy, Moles, Pressure, Temperature, RGAS};
+use num_dual::DualNum;
+use quantity::{Dimensionless, Energy, Moles, Pressure, RGAS, Temperature};
 use std::fmt;
 use std::fmt::Write;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 mod bubble_dew;
 mod phase_diagram_binary;
@@ -32,7 +33,11 @@ pub use phase_diagram_pure::PhaseDiagram;
 /// + [Pure component phase equilibria](#pure-component-phase-equilibria)
 /// + [Utility functions](#utility-functions)
 #[derive(Debug)]
-pub struct PhaseEquilibrium<E, const N: usize>([State<E>; N]);
+pub struct PhaseEquilibriumGeneric<E, D: DualNum<f64> + Copy, M, C, const N: usize>(
+    [StateGeneric<E, D, M, C>; N],
+);
+pub type PhaseEquilibrium<E, const N: usize> =
+    PhaseEquilibriumGeneric<Arc<E>, f64, Array1<f64>, Mutex<Cache>, N>;
 
 impl<E, const N: usize> Clone for PhaseEquilibrium<E, N> {
     fn clone(&self) -> Self {
@@ -82,12 +87,14 @@ impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
     }
 }
 
-impl<E> PhaseEquilibrium<E, 2> {
-    pub fn vapor(&self) -> &State<E> {
+impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
+    PhaseEquilibriumGeneric<E, D, E::Molefracs, E::Cache, 2>
+{
+    pub fn vapor(&self) -> &StateGeneric<E, D, E::Molefracs, E::Cache> {
         &self.0[0]
     }
 
-    pub fn liquid(&self) -> &State<E> {
+    pub fn liquid(&self) -> &StateGeneric<E, D, E::Molefracs, E::Cache> {
         &self.0[1]
     }
 }
@@ -106,9 +113,14 @@ impl<E> PhaseEquilibrium<E, 3> {
     }
 }
 
-impl<E: Residual> PhaseEquilibrium<E, 2> {
-    pub(super) fn from_states(state1: State<E>, state2: State<E>) -> Self {
-        let (vapor, liquid) = if state1.density < state2.density {
+impl<E: HelmholtzEnergyDerivatives<f64>>
+    PhaseEquilibriumGeneric<E, f64, E::Molefracs, E::Cache, 2>
+{
+    pub(super) fn from_states(
+        state1: StateGeneric<E, f64, E::Molefracs, E::Cache>,
+        state2: StateGeneric<E, f64, E::Molefracs, E::Cache>,
+    ) -> Self {
+        let (vapor, liquid) = if state1.density.re() < state2.density.re() {
             (state1, state2)
         } else {
             (state2, state1)
@@ -117,30 +129,30 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
     }
 
     /// Creates a new PhaseEquilibrium that contains two states at the
-    /// specified temperature, pressure and moles.
+    /// specified temperature, pressure and molefracs.
     ///
     /// The constructor can be used in custom phase equilibrium solvers or,
     /// e.g., to generate initial guesses for an actual VLE solver.
     /// In general, the two states generated are NOT in an equilibrium.
-    pub fn new_npt(
-        eos: &Arc<E>,
+    pub fn new_xpt(
+        eos: &E,
         temperature: Temperature,
         pressure: Pressure,
-        vapor_moles: &Moles<Array1<f64>>,
-        liquid_moles: &Moles<Array1<f64>>,
+        vapor_molefracs: &E::Molefracs,
+        liquid_molefracs: &E::Molefracs,
     ) -> FeosResult<Self> {
-        let liquid = State::new_npt(
+        let liquid = StateGeneric::new_xpt(
             eos,
             temperature,
             pressure,
-            liquid_moles,
+            liquid_molefracs,
             DensityInitialization::Liquid,
         )?;
-        let vapor = State::new_npt(
+        let vapor = StateGeneric::new_xpt(
             eos,
             temperature,
             pressure,
-            vapor_moles,
+            vapor_molefracs,
             DensityInitialization::Vapor,
         )?;
         Ok(Self([vapor, liquid]))
@@ -201,7 +213,9 @@ impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
 const TRIVIAL_REL_DEVIATION: f64 = 1e-5;
 
 /// # Utility functions
-impl<E: Residual> PhaseEquilibrium<E, 2> {
+impl<E: HelmholtzEnergyDerivatives<f64>>
+    PhaseEquilibriumGeneric<E, f64, E::Molefracs, E::Cache, 2>
+{
     pub(super) fn check_trivial_solution(self) -> FeosResult<Self> {
         if Self::is_trivial_solution(self.vapor(), self.liquid()) {
             Err(FeosError::TrivialSolution)
@@ -211,15 +225,16 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
     }
 
     /// Check if the two states form a trivial solution
-    pub fn is_trivial_solution(state1: &State<E>, state2: &State<E>) -> bool {
-        let rho1 = state1.partial_density.to_reduced();
-        let rho2 = state2.partial_density.to_reduced();
+    pub fn is_trivial_solution(
+        state1: &StateGeneric<E, f64, E::Molefracs, E::Cache>,
+        state2: &StateGeneric<E, f64, E::Molefracs, E::Cache>,
+    ) -> bool {
+        let rho1 = state1.molefracs.clone() * state1.density.into_reduced();
+        let rho2 = state2.molefracs.clone() * state2.density.into_reduced();
 
-        rho1.iter()
-            .zip(rho2.iter())
-            .fold(0.0, |acc, (&rho1, &rho2)| {
-                (rho2 / rho1 - 1.0).abs().max(acc)
-            })
+        E::iter_molefracs(&rho1)
+            .zip(E::iter_molefracs(&rho2))
+            .fold(0.0, |acc, (rho1, rho2)| (rho2 / rho1 - 1.0).abs().max(acc))
             < TRIVIAL_REL_DEVIATION
     }
 }

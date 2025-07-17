@@ -1,12 +1,13 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
+use crate::phase_equilibria::PhaseEquilibriumGeneric;
 use crate::state::{
     Contributions,
     DensityInitialization::{InitialDensity, Liquid, Vapor},
     State, StateBuilder, TPSpec,
 };
-use crate::{ReferenceSystem, SolverOptions, Verbosity};
+use crate::{HelmholtzEnergyDerivatives, ReferenceSystem, SolverOptions, StateGeneric, Verbosity};
 use ndarray::*;
 use num_dual::linalg::{LU, norm};
 use quantity::{Density, Dimensionless, Moles, Pressure, Quantity, RGAS, SIUnit, Temperature};
@@ -197,18 +198,20 @@ impl TemperatureOrPressure for Temperature {
             .to_reduced()
             .dot(&state1.molefracs);
         let dmu_drho_2 = (state2.dmu_dni(Contributions::Total) * state2.volume).to_reduced();
-        let dp_drho_1 = (state1.dp_dni(Contributions::Total) * state1.volume)
+        let dp_drho_1 = (state1.dp_dni() * state1.volume)
             .to_reduced()
             .dot(&state1.molefracs);
-        let dp_drho_2 = (state2.dp_dni(Contributions::Total) * state2.volume).to_reduced();
+        let dp_drho_2 = (state2.dp_dni() * state2.volume).to_reduced();
         let mu_1_res = state1.residual_chemical_potential().to_reduced();
         let mu_2_res = state2.residual_chemical_potential().to_reduced();
         let p_1 = state1.pressure(Contributions::Total).to_reduced();
         let p_2 = state2.pressure(Contributions::Total).to_reduced();
 
         // calculate residual
+        let state1_partial_density = state1.density * Dimensionless::new(&state1.molefracs);
+        let state2_partial_density = state2.density * Dimensionless::new(&state2.molefracs);
         let dmu_ig = (RGAS * state1.temperature).to_reduced()
-            * (&state1.partial_density / &state2.partial_density)
+            * (&state1_partial_density / &state2_partial_density)
                 .into_value()
                 .mapv(f64::ln);
         let res = concatenate![Axis(0), mu_1_res - mu_2_res + dmu_ig, arr1(&[p_1 - p_2])];
@@ -231,7 +234,7 @@ impl TemperatureOrPressure for Temperature {
         // apply Newton step
         let rho_l1 = state1.density - Density::from_reduced(dx[dx.len() - 1]);
         let rho_l2 =
-            state2.partial_density.clone() - Density::from_reduced(dx.slice(s![0..-1]).to_owned());
+            state2_partial_density.clone() - Density::from_reduced(dx.slice(s![0..-1]).to_owned());
 
         // update states
         *state1 = StateBuilder::new(&state1.eos)
@@ -364,12 +367,12 @@ impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
         let dmu_drho_2 = (state2.dmu_dni(Contributions::Total) * state2.volume).to_reduced();
         let dmu_res_dt_1 = state1.dmu_res_dt().to_reduced();
         let dmu_res_dt_2 = state2.dmu_res_dt().to_reduced();
-        let dp_drho_1 = (state1.dp_dni(Contributions::Total) * state1.volume)
+        let dp_drho_1 = (state1.dp_dni() * state1.volume)
             .to_reduced()
             .dot(&state1.molefracs);
         let dp_dt_1 = state1.dp_dt(Contributions::Total).to_reduced();
         let dp_dt_2 = state2.dp_dt(Contributions::Total).to_reduced();
-        let dp_drho_2 = (state2.dp_dni(Contributions::Total) * state2.volume).to_reduced();
+        let dp_drho_2 = (state2.dp_dni() * state2.volume).to_reduced();
         let mu_1_res = state1.residual_chemical_potential().to_reduced();
         let mu_2_res = state2.residual_chemical_potential().to_reduced();
         let p_1 = state1.pressure(Contributions::Total).to_reduced();
@@ -377,7 +380,9 @@ impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
         let p = pressure.to_reduced();
 
         // calculate residual
-        let delta_dmu_ig_dt = (&state1.partial_density / &state2.partial_density)
+        let state1_partial_density = state1.density * Dimensionless::new(&state1.molefracs);
+        let state2_partial_density = state2.density * Dimensionless::new(&state2.molefracs);
+        let delta_dmu_ig_dt = (&state1_partial_density / &state2_partial_density)
             .into_value()
             .mapv(f64::ln);
         let delta_mu_ig = (RGAS * state1.temperature).to_reduced() * &delta_dmu_ig_dt;
@@ -416,7 +421,7 @@ impl TemperatureOrPressure for Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
         // apply Newton step
         let rho_l1 = state1.density - Density::from_reduced(dx[dx.len() - 2]);
         let rho_l2 =
-            state2.partial_density.clone() - Density::from_reduced(dx.slice(s![0..-2]).to_owned());
+            state2_partial_density.clone() - Density::from_reduced(dx.slice(s![0..-2]).to_owned());
         let t = state1.temperature - Temperature::from_reduced(dx[dx.len() - 1]);
 
         // update states
@@ -523,13 +528,17 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         }?;
         bubble_dew(tp_spec, tp_init, state1, state2, bubble, options)
     }
+}
 
+impl<E: HelmholtzEnergyDerivatives<f64>>
+    PhaseEquilibriumGeneric<E, f64, E::Molefracs, E::Cache, 2>
+{
     fn starting_pressure_ideal_gas(
-        eos: &Arc<E>,
+        eos: &E,
         temperature: Temperature,
-        molefracs_spec: &Array1<f64>,
+        molefracs_spec: &E::Molefracs,
         bubble: bool,
-    ) -> FeosResult<(Pressure, Array1<f64>)> {
+    ) -> FeosResult<(Pressure, E::Molefracs)> {
         if bubble {
             Self::starting_pressure_ideal_gas_bubble(eos, temperature, molefracs_spec)
         } else {
@@ -538,66 +547,69 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
     }
 
     pub(super) fn starting_pressure_ideal_gas_bubble(
-        eos: &Arc<E>,
+        eos: &E,
         temperature: Temperature,
-        liquid_molefracs: &Array1<f64>,
-    ) -> FeosResult<(Pressure, Array1<f64>)> {
-        let m = Moles::from_reduced(liquid_molefracs.to_owned());
-        let density = 0.75 * eos.max_density(Some(&m))?;
-        let liquid = State::new_nvt(eos, temperature, m.sum() / density, &m)?;
+        liquid_molefracs: &E::Molefracs,
+    ) -> FeosResult<(Pressure, E::Molefracs)> {
+        let density = Density::from_reduced(eos.compute_max_density(liquid_molefracs));
+        let total_moles = Moles::new(1.0);
+        let liquid =
+            StateGeneric::new_unchecked(eos, temperature, density, total_moles, liquid_molefracs);
         let v_l = liquid.partial_molar_volume();
         let p_l = liquid.pressure(Contributions::Total);
         let mu_l = liquid.residual_chemical_potential();
-        let p_i = (liquid_molefracs * temperature * density * RGAS)
-            * Dimensionless::new(
-                ((mu_l - p_l * v_l) / (RGAS * temperature))
-                    .into_value()
-                    .mapv(f64::exp),
-            );
-        let p = p_i.sum();
-        let y = (p_i / p).into_value();
-        Ok((p, y))
+        todo!();
+        // let p_i = (Dimensionless::new(liquid_molefracs.clone()) * temperature * density * RGAS)
+        //     * Dimensionless::new(
+        //         ((mu_l - p_l * v_l) / (RGAS * temperature))
+        //             .into_value()
+        //             .mapv(f64::exp),
+        //     );
+        // let p = p_i.sum();
+        // let y = (p_i / p).into_value();
+        // Ok((p, y))
     }
 
     fn starting_pressure_ideal_gas_dew(
-        eos: &Arc<E>,
+        eos: &E,
         temperature: Temperature,
-        vapor_molefracs: &Array1<f64>,
-    ) -> FeosResult<(Pressure, Array1<f64>)> {
+        vapor_molefracs: &E::Molefracs,
+    ) -> FeosResult<(Pressure, E::Molefracs)> {
         let mut p: Option<Pressure> = None;
 
         let mut x = vapor_molefracs.clone();
-        for _ in 0..5 {
-            let m = Moles::from_reduced(x);
-            let density = 0.75 * eos.max_density(Some(&m))?;
-            let liquid = State::new_nvt(eos, temperature, m.sum() / density, &m)?;
-            let v_l = liquid.partial_molar_volume();
-            let p_l = liquid.pressure(Contributions::Total);
-            let mu_l = liquid.residual_chemical_potential();
-            let k = vapor_molefracs
-                / ((mu_l - p_l * v_l) / (RGAS * temperature))
-                    .into_value()
-                    .mapv(f64::exp);
-            let p_new = RGAS * temperature * density / k.sum();
-            x = &k / k.sum();
-            if let Some(p_old) = p {
-                if ((p_new - p_old) / p_old).into_value().abs() < 1e-5 {
-                    p = Some(p_new);
-                    break;
-                }
-            }
-            p = Some(p_new);
-        }
-        Ok((p.unwrap(), x))
+        todo!()
+        // for _ in 0..5 {
+        //     let m = Moles::from_reduced(x);
+        //     let density = 0.75 * eos.max_density(Some(&m))?;
+        //     let liquid = State::new_nvt(eos, temperature, m.sum() / density, &m)?;
+        //     let v_l = liquid.partial_molar_volume();
+        //     let p_l = liquid.pressure(Contributions::Total);
+        //     let mu_l = liquid.residual_chemical_potential();
+        //     let k = vapor_molefracs
+        //         / ((mu_l - p_l * v_l) / (RGAS * temperature))
+        //             .into_value()
+        //             .mapv(f64::exp);
+        //     let p_new = RGAS * temperature * density / k.sum();
+        //     x = &k / k.sum();
+        //     if let Some(p_old) = p {
+        //         if ((p_new - p_old) / p_old).into_value().abs() < 1e-5 {
+        //             p = Some(p_new);
+        //             break;
+        //         }
+        //     }
+        //     p = Some(p_new);
+        // }
+        // Ok((p.unwrap(), x))
     }
 
     pub(super) fn starting_pressure_spinodal(
-        eos: &Arc<E>,
+        eos: &E,
         temperature: Temperature,
-        molefracs: &Array1<f64>,
+        molefracs: &E::Molefracs,
     ) -> FeosResult<Pressure> {
-        let moles = Moles::from_reduced(molefracs.clone());
-        let [sp_v, sp_l] = State::spinodal(eos, temperature, Some(&moles), Default::default())?;
+        let [sp_v, sp_l] =
+            StateGeneric::spinodal(eos, temperature, Some(molefracs), Default::default())?;
         let pv = sp_v.pressure(Contributions::Total);
         let pl = sp_l.pressure(Contributions::Total);
         Ok(0.5 * (Pressure::from_reduced(0.0).max(pl) + pv))
@@ -734,9 +746,9 @@ fn bubble_dew<E: Residual, TP: TemperatureOrPressure>(
             k_out
         );
         if bubble {
-            Ok(PhaseEquilibrium([state2, state1]))
+            Ok(PhaseEquilibriumGeneric([state2, state1]))
         } else {
-            Ok(PhaseEquilibrium([state1, state2]))
+            Ok(PhaseEquilibriumGeneric([state1, state2]))
         }
     } else {
         // not converged, return error

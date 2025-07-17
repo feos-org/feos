@@ -3,12 +3,20 @@ use crate::{NamedParameters, ParametersAD, ResidualHelmholtzEnergy};
 use nalgebra::SVector;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_6, PI};
+use std::ops::Deref;
 
 const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
 
 /// Optimized implementation of PC-SAFT for a single component.
 #[derive(Clone, Copy)]
 pub struct PcSaftPure<const N: usize>(pub [f64; N]);
+
+impl<const N: usize> Deref for PcSaftPure<N> {
+    type Target = [f64; N];
+    fn deref(&self) -> &[f64; N] {
+        &self.0
+    }
+}
 
 fn helmholtz_energy_density_non_assoc<D: DualNum<f64> + Copy>(
     m: D,
@@ -112,10 +120,6 @@ fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
 impl<const N: usize> ParametersAD for PcSaftPure<N> {
     type Parameters<D: DualNum<f64> + Copy> = [D; N];
 
-    fn params<D: DualNum<f64> + Copy>(&self) -> Self::Parameters<D> {
-        self.0.map(D::from)
-    }
-
     fn params_from_inner<D: DualNum<f64> + Copy, D2: DualNum<f64, Inner = D> + Copy>(
         parameters: &Self::Parameters<D>,
     ) -> Self::Parameters<D2> {
@@ -126,10 +130,11 @@ impl<const N: usize> ParametersAD for PcSaftPure<N> {
 impl ResidualHelmholtzEnergy<1> for PcSaftPure<8> {
     const RESIDUAL: &str = "PC-SAFT (pure)";
 
-    fn compute_max_density(&self, _: &SVector<f64, 1>) -> f64 {
-        let m = self.0[0];
-        let sigma = self.0[1];
-        MAX_ETA / (FRAC_PI_6 * m * sigma.powi(3))
+    fn compute_max_density<D: DualNum<f64> + Copy>(
+        &[m, sigma, ..]: &Self::Parameters<D>,
+        _: &SVector<D, 1>,
+    ) -> D {
+        (m * sigma.powi(3) * FRAC_PI_6).recip() * MAX_ETA
     }
 
     fn residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
@@ -145,10 +150,11 @@ impl ResidualHelmholtzEnergy<1> for PcSaftPure<8> {
 impl ResidualHelmholtzEnergy<1> for PcSaftPure<4> {
     const RESIDUAL: &str = "PC-SAFT (pure)";
 
-    fn compute_max_density(&self, _: &SVector<f64, 1>) -> f64 {
-        let m = self.0[0];
-        let sigma = self.0[1];
-        MAX_ETA / (FRAC_PI_6 * m * sigma.powi(3))
+    fn compute_max_density<D: DualNum<f64> + Copy>(
+        &[m, sigma, ..]: &Self::Parameters<D>,
+        _: &SVector<D, 1>,
+    ) -> D {
+        (m * sigma.powi(3) * FRAC_PI_6).recip() * MAX_ETA
     }
 
     fn residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(

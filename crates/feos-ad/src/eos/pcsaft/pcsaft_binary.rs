@@ -3,27 +3,28 @@ use crate::{NamedParameters, ParametersAD, ResidualHelmholtzEnergy};
 use nalgebra::SVector;
 use num_dual::{DualNum, DualVec, jacobian};
 use std::f64::consts::{FRAC_PI_6, PI};
+use std::ops::Deref;
 
 const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
 
 /// Optimized implementation of PC-SAFT for a binary mixture.
-pub struct PcSaftBinary<const N: usize> {
-    parameters: [[f64; N]; 2],
-    kij: f64,
+pub struct PcSaftBinary<const N: usize>(([[f64; N]; 2], f64));
+
+impl<const N: usize> Deref for PcSaftBinary<N> {
+    type Target = ([[f64; N]; 2], f64);
+    fn deref(&self) -> &([[f64; N]; 2], f64) {
+        &self.0
+    }
 }
 
 impl<const N: usize> PcSaftBinary<N> {
     pub fn new(parameters: [[f64; N]; 2], kij: f64) -> Self {
-        Self { parameters, kij }
+        Self((parameters, kij))
     }
 }
 
 impl<const N: usize> ParametersAD for PcSaftBinary<N> {
     type Parameters<D: DualNum<f64> + Copy> = ([[D; N]; 2], D);
-
-    fn params<D: DualNum<f64> + Copy>(&self) -> Self::Parameters<D> {
-        (self.parameters.map(|p| p.map(D::from)), D::from(self.kij))
-    }
 
     fn params_from_inner<D: DualNum<f64> + Copy, D2: DualNum<f64, Inner = D> + Copy>(
         &(parameters, kij): &Self::Parameters<D>,
@@ -366,12 +367,14 @@ fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
 impl ResidualHelmholtzEnergy<2> for PcSaftBinary<4> {
     const RESIDUAL: &str = "PC-SAFT (binary)";
 
-    fn compute_max_density(&self, molefracs: &SVector<f64, 2>) -> f64 {
-        let [p1, p2] = self.parameters;
+    fn compute_max_density<D: DualNum<f64> + Copy>(
+        &([p1, p2], _): &Self::Parameters<D>,
+        molefracs: &SVector<D, 2>,
+    ) -> D {
         let [x1, x2] = molefracs.data.0[0];
         let [m1, sigma1, ..] = p1;
         let [m2, sigma2, ..] = p2;
-        MAX_ETA / (FRAC_PI_6 * (m1 * sigma1.powi(3) * x1 + m2 * sigma2.powi(3) * x2))
+        ((m1 * sigma1.powi(3) * x1 + m2 * sigma2.powi(3) * x2) * FRAC_PI_6).recip() * MAX_ETA
     }
 
     fn residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
@@ -396,12 +399,14 @@ impl ResidualHelmholtzEnergy<2> for PcSaftBinary<4> {
 impl ResidualHelmholtzEnergy<2> for PcSaftBinary<8> {
     const RESIDUAL: &str = "PC-SAFT (binary)";
 
-    fn compute_max_density(&self, molefracs: &SVector<f64, 2>) -> f64 {
-        let [p1, p2] = self.parameters;
+    fn compute_max_density<D: DualNum<f64> + Copy>(
+        &([p1, p2], _): &Self::Parameters<D>,
+        molefracs: &SVector<D, 2>,
+    ) -> D {
         let [x1, x2] = molefracs.data.0[0];
         let [m1, sigma1, ..] = p1;
         let [m2, sigma2, ..] = p2;
-        MAX_ETA / (FRAC_PI_6 * (m1 * sigma1.powi(3) * x1 + m2 * sigma2.powi(3) * x2))
+        ((m1 * sigma1.powi(3) * x1 + m2 * sigma2.powi(3) * x2) * FRAC_PI_6).recip() * MAX_ETA
     }
 
     fn residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
@@ -458,7 +463,7 @@ pub mod test {
     #[test]
     fn test_pcsaft_binary() -> FeosResult<()> {
         let (pcsaft, eos) = pcsaft_binary()?;
-        let pcsaft = (pcsaft.parameters, pcsaft.kij);
+        let pcsaft = pcsaft.0;
 
         let temperature = 300.0 * KELVIN;
         let volume = 2.3 * METER * METER * METER;

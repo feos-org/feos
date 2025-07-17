@@ -8,7 +8,7 @@ use ndarray::{
     RemoveAxis,
 };
 use num_dual::DualNum;
-use quantity::{Density, Length, Moles, Quantity, Temperature, Volume, _Volume, DEGREES};
+use quantity::{_Volume, DEGREES, Density, Length, Moles, Quantity, Temperature, Volume};
 use std::ops::{Add, MulAssign};
 use std::sync::Arc;
 use typenum::Sum;

@@ -5,7 +5,7 @@ use crate::state::{Contributions, DensityInitialization, State};
 use crate::{SolverOptions, Verbosity};
 use ndarray::*;
 use num_dual::linalg::norm;
-use quantity::{Dimensionless, Moles, Pressure, Temperature};
+use quantity::{Moles, Pressure, Temperature};
 use std::sync::Arc;
 
 const MAX_ITER_TP: usize = 400;
@@ -272,13 +272,8 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
             // check for convergence
             *iter += 1;
             let mut res_vec = ln_phi_l - ln_phi_v
-                + (&self.liquid().molefracs / &self.vapor().molefracs).map(|&i| {
-                    if i > 0.0 {
-                        i.ln()
-                    } else {
-                        0.0
-                    }
-                });
+                + (&self.liquid().molefracs / &self.vapor().molefracs)
+                    .map(|&i| if i > 0.0 { i.ln() } else { 0.0 });
 
             // Set residuum to 0 for non-volatile components
             if let Some(nvc) = non_volatile_components.as_ref() {
@@ -315,9 +310,9 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         beta = rachford_rice(&feed_state.molefracs, k, Some(beta))?;
 
         // update VLE
-        let v = feed_state.moles.clone() * Dimensionless::new(beta * k / (1.0 - beta + beta * k));
+        let v = &feed_state.molefracs * beta * k / (1.0 - beta + beta * k) * feed_state.total_moles;
         let l =
-            feed_state.moles.clone() * Dimensionless::new((1.0 - beta) / (1.0 - beta + beta * k));
+            &feed_state.molefracs * (1.0 - beta) / (1.0 - beta + beta * k) * feed_state.total_moles;
         self.update_moles(feed_state.pressure(Contributions::Total), [&v, &l])?;
         Ok(())
     }

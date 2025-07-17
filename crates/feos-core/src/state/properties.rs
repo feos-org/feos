@@ -1,6 +1,6 @@
 use super::{Contributions, Derivative::*, PartialDerivative, State};
-use crate::equation_of_state::{IdealGas, Molarweight, Residual};
 use crate::ReferenceSystem;
+use crate::equation_of_state::{IdealGas, Molarweight, Residual};
 use ndarray::Array1;
 use quantity::*;
 use std::ops::Div;
@@ -110,7 +110,7 @@ impl<E: Residual + IdealGas> State<E> {
     /// Partial molar entropy: $s_i=\left(\frac{\partial S}{\partial N_i}\right)_{T,p,N_j}$
     pub fn partial_molar_entropy(&self) -> MolarEntropy<Array1<f64>> {
         let c = Contributions::Total;
-        -(self.dmu_dt(c) + self.dp_dni(c) * (self.dp_dt(c) / self.dp_dv(c)))
+        -(self.dmu_dt(c) + self.dp_dni() * (self.dp_dt(c) / self.dp_dv(c)))
     }
 
     /// Partial derivative of the entropy w.r.t. temperature: $\left(\frac{\partial S}{\partial T}\right)_{V,N_i}$

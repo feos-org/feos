@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 use feos_core::{Components, IdealGas, Molarweight, Residual, StateHD};
-use ndarray::{Array1, ScalarOperand};
+use ndarray::Array1;
 use num_dual::*;
 use numpy::convert::IntoPyArray;
 use numpy::{PyArray, PyReadonlyArray1, PyReadonlyArrayDyn, PyReadwriteArrayDyn};
@@ -172,7 +172,7 @@ macro_rules! impl_residual {
                 panic!("helmholtz_energy: input data type not understood")
             }
 
-            fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+            fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + >(
                     &self,
                     state: &StateHD<D>,
                 ) -> Vec<(String, D)> {

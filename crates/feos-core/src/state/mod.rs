@@ -7,10 +7,9 @@
 //!
 //! Internally, all properties are computed using such states as input.
 use crate::ReferenceSystem;
-use crate::density_iteration::density_iteration;
+use crate::density_iteration::density_iteration_stable;
 use crate::equation_of_state::{IdealGas, Residual};
 use crate::errors::{FeosError, FeosResult};
-use cache::Cache;
 use ndarray::prelude::*;
 use num_dual::*;
 use quantity::*;
@@ -25,6 +24,8 @@ mod properties;
 mod residual_properties;
 mod statevec;
 pub use builder::StateBuilder;
+pub(crate) use cache::Cache;
+pub use residual_properties::HelmholtzEnergyDerivatives;
 pub use statevec::StateVec;
 
 /// Possible contributions that can be computed.
@@ -60,7 +61,7 @@ pub enum DensityInitialization {
 /// Properties are stored as generalized (hyper) dual numbers which allows
 /// for automatic differentiation.
 #[derive(Clone, Debug)]
-pub struct StateHD<D: DualNum<f64>> {
+pub struct StateHD<D> {
     /// temperature in Kelvin
     pub temperature: D,
     /// volume in Angstrom^3
@@ -135,47 +136,40 @@ impl<D: DualNum<f64> + Copy> StateHD<D> {
 /// + [Stability analysis](#stability-analysis)
 /// + [Flash calculations](#flash-calculations)
 #[derive(Debug)]
-pub struct State<E> {
+pub struct StateGeneric<E, D: DualNum<f64> + Copy, M, C> {
     /// Equation of state
-    pub eos: Arc<E>,
+    pub eos: E,
     /// Temperature $T$
-    pub temperature: Temperature,
+    pub temperature: Temperature<D>,
     /// Volume $V$
-    pub volume: Volume,
+    pub volume: Volume<D>,
     /// Mole numbers $N_i$
-    pub moles: Moles<Array1<f64>>,
+    pub moles: Moles<M>,
     /// Total number of moles $N=\sum_iN_i$
-    pub total_moles: Moles,
+    pub total_moles: Moles<D>,
     /// Partial densities $\rho_i=\frac{N_i}{V}$
-    pub partial_density: Density<Array1<f64>>,
+    pub partial_density: Density<M>,
     /// Total density $\rho=\frac{N}{V}=\sum_i\rho_i$
-    pub density: Density,
+    pub density: Density<D>,
     /// Mole fractions $x_i=\frac{N_i}{N}=\frac{\rho_i}{\rho}$
-    pub molefracs: Array1<f64>,
-    /// Reduced temperature
-    reduced_temperature: f64,
-    /// Reduced volume,
-    reduced_volume: f64,
-    /// Reduced moles
-    reduced_moles: Array1<f64>,
+    pub molefracs: M,
     /// Cache
-    cache: Mutex<Cache>,
+    cache: C,
 }
+
+pub type State<E> = StateGeneric<Arc<E>, f64, Array1<f64>, Mutex<Cache>>;
 
 impl<E> Clone for State<E> {
     fn clone(&self) -> Self {
         Self {
             eos: self.eos.clone(),
-            total_moles: self.total_moles,
             temperature: self.temperature,
             volume: self.volume,
             moles: self.moles.clone(),
+            total_moles: self.total_moles,
             partial_density: self.partial_density.clone(),
             density: self.density,
             molefracs: self.molefracs.clone(),
-            reduced_temperature: self.reduced_temperature,
-            reduced_volume: self.reduced_volume,
-            reduced_moles: self.reduced_moles.clone(),
             cache: Mutex::new(self.cache.lock().unwrap().clone()),
         }
     }
@@ -207,7 +201,7 @@ pub enum Derivative {
 }
 
 #[derive(Clone, Copy, Eq, Hash, PartialEq, Debug)]
-pub(crate) enum PartialDerivative {
+pub enum PartialDerivative {
     Zeroth,
     First(Derivative),
     Second(Derivative),
@@ -215,7 +209,6 @@ pub(crate) enum PartialDerivative {
     Third(Derivative),
 }
 
-/// # State constructors
 impl<E: Residual> State<E> {
     /// Return a new `State` given a temperature, an array of mole numbers and a volume.
     ///
@@ -228,41 +221,56 @@ impl<E: Residual> State<E> {
         volume: Volume,
         moles: &Moles<Array1<f64>>,
     ) -> FeosResult<Self> {
-        eos.validate_moles(Some(moles))?;
         validate(temperature, volume, moles)?;
-
-        Ok(Self::new_nvt_unchecked(eos, temperature, volume, moles))
-    }
-
-    pub(super) fn new_nvt_unchecked(
-        eos: &Arc<E>,
-        temperature: Temperature,
-        volume: Volume,
-        moles: &Moles<Array1<f64>>,
-    ) -> Self {
-        let t = temperature.to_reduced();
-        let v = volume.to_reduced();
-        let m = moles.to_reduced();
-
         let total_moles = moles.sum();
-        let partial_density = moles / volume;
+        let molefracs = (moles / total_moles).into_value();
         let density = total_moles / volume;
-        let molefracs = &m / total_moles.to_reduced();
 
-        State {
-            eos: eos.clone(),
+        Ok(Self::new_unchecked(
+            eos,
+            temperature,
+            density,
             total_moles,
+            &molefracs,
+        ))
+    }
+}
+
+impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
+    StateGeneric<E, D, E::Molefracs, E::Cache>
+{
+    pub(super) fn new_unchecked(
+        eos: &E,
+        temperature: Temperature<D>,
+        density: Density<D>,
+        total_moles: Moles<D>,
+        molefracs: &E::Molefracs,
+    ) -> Self {
+        let volume = total_moles / density;
+        let moles = Dimensionless::new(molefracs.clone()) * total_moles;
+        let partial_density = moles.clone() / volume;
+
+        StateGeneric {
+            eos: eos.clone(),
             temperature,
             volume,
-            moles: moles.to_owned(),
+            moles,
+            total_moles,
             partial_density,
             density,
-            molefracs,
-            reduced_temperature: t,
-            reduced_volume: v,
-            reduced_moles: m,
-            cache: Mutex::new(Cache::with_capacity(eos.components())),
+            molefracs: molefracs.clone(),
+            cache: eos.new_cache(),
         }
+    }
+
+    pub(super) fn new_t_rho_x(
+        eos: &E,
+        temperature: Temperature<D>,
+        density: Density<D>,
+        molefracs: &E::Molefracs,
+    ) -> Self {
+        let total_moles = Moles::new(D::one());
+        Self::new_unchecked(eos, temperature, density, total_moles, molefracs)
     }
 
     /// Return a new `State` for a pure component given a temperature and a density. The moles
@@ -271,11 +279,14 @@ impl<E: Residual> State<E> {
     /// This function will perform a validation of the given properties, i.e. test for signs
     /// and if values are finite. It will **not** validate physics, i.e. if the resulting
     /// densities are below the maximum packing fraction.
-    pub fn new_pure(eos: &Arc<E>, temperature: Temperature, density: Density) -> FeosResult<Self> {
-        let moles = Moles::from_reduced(arr1(&[1.0]));
-        Self::new_nvt(eos, temperature, Moles::from_reduced(1.0) / density, &moles)
+    pub fn new_pure(eos: &E, temperature: Temperature<D>, density: Density<D>) -> Self {
+        let total_moles = Moles::from_reduced(D::from(1.0));
+        let molefracs = E::pure_molefracs();
+        Self::new_unchecked(eos, temperature, density, total_moles, &molefracs)
     }
+}
 
+impl<E: Residual> State<E> {
     /// Return a new `State` for the combination of inputs.
     ///
     /// The function attempts to create a new state using the given input values. If the state
@@ -408,7 +419,9 @@ impl<E: Residual> State<E> {
         }
         Ok(Err(n_i.to_owned()))
     }
+}
 
+impl<E: Residual> State<E> {
     /// Return a new `State` using a density iteration. [DensityInitialization] is used to
     /// influence the calculation with respect to the possible solutions.
     pub fn new_npt(
@@ -418,76 +431,85 @@ impl<E: Residual> State<E> {
         moles: &Moles<Array1<f64>>,
         density_initialization: DensityInitialization,
     ) -> FeosResult<Self> {
-        // calculate state from initial density or given phase
-        match density_initialization {
-            DensityInitialization::InitialDensity(rho0) => {
-                return density_iteration(eos, temperature, pressure, moles, rho0);
-            }
-            DensityInitialization::Vapor => {
-                return density_iteration(
-                    eos,
-                    temperature,
-                    pressure,
-                    moles,
-                    pressure / temperature / RGAS,
-                );
-            }
-            DensityInitialization::Liquid => {
-                return density_iteration(
-                    eos,
-                    temperature,
-                    pressure,
-                    moles,
-                    eos.max_density(Some(moles))?,
-                );
-            }
-            DensityInitialization::None => (),
-        }
+        let total_moles = moles.sum();
+        let molefracs = (moles / total_moles).into_value();
+        let density = Self::new_xpt(
+            eos,
+            temperature,
+            pressure,
+            &molefracs,
+            density_initialization,
+        )?
+        .density;
+        Ok(Self::new_unchecked(
+            eos,
+            temperature,
+            density,
+            total_moles,
+            &molefracs,
+        ))
+    }
+}
 
-        // calculate stable phase
-        let max_density = eos.max_density(Some(moles))?;
-        let liquid = density_iteration(eos, temperature, pressure, moles, max_density);
-
-        if pressure < max_density * temperature * RGAS {
-            let vapor = density_iteration(
-                eos,
-                temperature,
-                pressure,
-                moles,
-                pressure / temperature / RGAS,
-            );
-            match (&liquid, &vapor) {
-                (Ok(_), Err(_)) => liquid,
-                (Err(_), Ok(_)) => vapor,
-                (Ok(l), Ok(v)) => {
-                    if l.residual_gibbs_energy() > v.residual_gibbs_energy() {
-                        vapor
-                    } else {
-                        liquid
-                    }
-                }
-                _ => Err(FeosError::UndeterminedState(String::from(
-                    "Density iteration did not find a solution.",
-                ))),
-            }
-        } else {
-            liquid
+impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
+    StateGeneric<E, D, E::Molefracs, E::Cache>
+{
+    /// Return a new `State` using a density iteration. [DensityInitialization] is used to
+    /// influence the calculation with respect to the possible solutions.
+    pub fn new_xpt(
+        eos: &E,
+        temperature: Temperature<D>,
+        pressure: Pressure<D>,
+        molefracs: &E::Molefracs,
+        density_initialization: DensityInitialization,
+    ) -> FeosResult<Self> {
+        let eos_re = eos.re();
+        let state_re = density_iteration_stable(
+            &eos_re,
+            temperature.re(),
+            pressure.re(),
+            &E::molefracs_re(molefracs),
+            density_initialization,
+        )?;
+        let mut density = D::from(state_re.density.to_reduced());
+        let t = temperature.into_reduced();
+        for _ in 0..D::NDERIV {
+            let (_, p, dp_drho) = eos._p_dpdrho(t, density, molefracs);
+            density -= (p - pressure.into_reduced()) / dp_drho;
         }
+        Ok(Self::new_t_rho_x(
+            eos,
+            temperature,
+            Density::from_reduced(density),
+            molefracs,
+        ))
     }
 
     /// Return a new `State` for given pressure $p$, volume $V$, temperature $T$ and composition $x_i$.
     pub fn new_npvx(
-        eos: &Arc<E>,
-        temperature: Temperature,
-        pressure: Pressure,
-        volume: Volume,
-        molefracs: &Array1<f64>,
+        eos: &E,
+        temperature: Temperature<D>,
+        pressure: Pressure<D>,
+        volume: Volume<D>,
+        molefracs: &E::Molefracs,
         density_initialization: DensityInitialization,
     ) -> FeosResult<Self> {
-        let moles = molefracs * Moles::from_reduced(1.0);
-        let state = Self::new_npt(eos, temperature, pressure, &moles, density_initialization)?;
-        let moles = state.partial_density * volume;
-        Self::new_nvt(eos, temperature, volume, &moles)
+        let density = Self::new_xpt(
+            eos,
+            temperature,
+            pressure,
+            molefracs,
+            density_initialization,
+        )?
+        .density;
+        let total_moles = density * volume;
+        Ok(Self::new_unchecked(
+            eos,
+            temperature,
+            density,
+            total_moles,
+            molefracs,
+        ))
     }
 }
 
@@ -675,26 +697,37 @@ impl<E: Residual + IdealGas> State<E> {
     }
 }
 
-impl<E: Residual> State<E> {
+impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
+    StateGeneric<E, D, E::Molefracs, E::Cache>
+{
     /// Update the state with the given temperature
-    pub fn update_temperature(&self, temperature: Temperature) -> FeosResult<Self> {
-        Self::new_nvt(&self.eos, temperature, self.volume, &self.moles)
+    pub fn update_temperature(&self, temperature: Temperature<D>) -> Self {
+        Self::new_unchecked(
+            &self.eos,
+            temperature,
+            self.density,
+            self.total_moles,
+            &self.molefracs,
+        )
     }
+}
 
+impl<E: Residual> State<E> {
     /// Creates a [StateHD] cloning temperature, volume and moles.
     pub fn derive0(&self) -> StateHD<f64> {
+        let moles = &self.molefracs * self.total_moles.into_reduced();
         StateHD::new(
-            self.reduced_temperature,
-            self.reduced_volume,
-            self.reduced_moles.clone(),
+            self.temperature.into_reduced(),
+            self.volume.into_reduced(),
+            moles,
         )
     }
 
     /// Creates a [StateHD] taking the first derivative.
     pub fn derive1(&self, derivative: Derivative) -> StateHD<Dual64> {
-        let mut t = Dual64::from(self.reduced_temperature);
-        let mut v = Dual64::from(self.reduced_volume);
-        let mut n = self.reduced_moles.mapv(Dual64::from);
+        let mut t = Dual64::from(self.temperature.into_reduced());
+        let mut v = Dual64::from(self.volume.into_reduced());
+        let mut n = (&self.molefracs * self.total_moles.into_reduced()).mapv(Dual64::from);
         match derivative {
             Derivative::DT => t = t.derivative(),
             Derivative::DV => v = v.derivative(),
@@ -705,9 +738,9 @@ impl<E: Residual> State<E> {
 
     /// Creates a [StateHD] taking the first and second (partial) derivatives.
     pub fn derive2(&self, derivative: Derivative) -> StateHD<Dual2_64> {
-        let mut t = Dual2_64::from(self.reduced_temperature);
-        let mut v = Dual2_64::from(self.reduced_volume);
-        let mut n = self.reduced_moles.mapv(Dual2_64::from);
+        let mut t = Dual2_64::from(self.temperature.into_reduced());
+        let mut v = Dual2_64::from(self.volume.into_reduced());
+        let mut n = (&self.molefracs * self.total_moles.into_reduced()).mapv(Dual2_64::from);
         match derivative {
             Derivative::DT => t = t.derivative(),
             Derivative::DV => v = v.derivative(),
@@ -722,9 +755,9 @@ impl<E: Residual> State<E> {
         derivative1: Derivative,
         derivative2: Derivative,
     ) -> StateHD<HyperDual64> {
-        let mut t = HyperDual64::from(self.reduced_temperature);
-        let mut v = HyperDual64::from(self.reduced_volume);
-        let mut n = self.reduced_moles.mapv(HyperDual64::from);
+        let mut t = HyperDual64::from(self.temperature.into_reduced());
+        let mut v = HyperDual64::from(self.volume.into_reduced());
+        let mut n = (&self.molefracs * self.total_moles.into_reduced()).mapv(HyperDual64::from);
         match derivative1 {
             Derivative::DT => t = t.derivative1(),
             Derivative::DV => v = v.derivative1(),
@@ -740,9 +773,9 @@ impl<E: Residual> State<E> {
 
     /// Creates a [StateHD] taking the first, second, and third derivative with respect to a single property.
     pub fn derive3(&self, derivative: Derivative) -> StateHD<Dual3_64> {
-        let mut t = Dual3_64::from(self.reduced_temperature);
-        let mut v = Dual3_64::from(self.reduced_volume);
-        let mut n = self.reduced_moles.mapv(Dual3_64::from);
+        let mut t = Dual3_64::from(self.temperature.into_reduced());
+        let mut v = Dual3_64::from(self.volume.into_reduced());
+        let mut n = (&self.molefracs * self.total_moles.into_reduced()).mapv(Dual3_64::from);
         match derivative {
             Derivative::DT => t = t.derivative(),
             Derivative::DV => v = v.derivative(),
@@ -798,7 +831,11 @@ where
 ///
 /// There is no validation of the physical state, e.g.
 /// if resulting densities are below maximum packing fraction.
-fn validate(temperature: Temperature, volume: Volume, moles: &Moles<Array1<f64>>) -> FeosResult<()> {
+fn validate(
+    temperature: Temperature,
+    volume: Volume,
+    moles: &Moles<Array1<f64>>,
+) -> FeosResult<()> {
     let t = temperature.to_reduced();
     let v = volume.to_reduced();
     let m = moles.to_reduced();

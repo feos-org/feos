@@ -4,9 +4,9 @@ use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
 use crate::state::{Contributions, DensityInitialization, State, StateBuilder, TPSpec};
 use crate::{ReferenceSystem, SolverOptions};
-use ndarray::{arr1, arr2, concatenate, s, Array1, Array2, Axis};
-use num_dual::linalg::{norm, LU};
-use quantity::{Density, Moles, Pressure, Temperature, RGAS};
+use ndarray::{Array1, Array2, Axis, arr1, arr2, concatenate, s};
+use num_dual::linalg::{LU, norm};
+use quantity::{Density, Moles, Pressure, RGAS, Temperature};
 use std::sync::Arc;
 
 const DEFAULT_POINTS: usize = 51;
@@ -397,9 +397,9 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
             let dmu_drho_l1 = (l1.dmu_dni(Contributions::Total) * l1.volume).to_reduced();
             let dmu_drho_l2 = (l2.dmu_dni(Contributions::Total) * l2.volume).to_reduced();
             let dmu_drho_v = (v.dmu_dni(Contributions::Total) * v.volume).to_reduced();
-            let dp_drho_l1 = (l1.dp_dni(Contributions::Total) * l1.volume).to_reduced();
-            let dp_drho_l2 = (l2.dp_dni(Contributions::Total) * l2.volume).to_reduced();
-            let dp_drho_v = (v.dp_dni(Contributions::Total) * v.volume).to_reduced();
+            let dp_drho_l1 = (l1.dp_dni() * l1.volume).to_reduced();
+            let dp_drho_l2 = (l2.dp_dni() * l2.volume).to_reduced();
+            let dp_drho_v = (v.dp_dni() * v.volume).to_reduced();
             let mu_l1_res = l1.residual_chemical_potential().to_reduced();
             let mu_l2_res = l2.residual_chemical_potential().to_reduced();
             let mu_v_res = v.residual_chemical_potential().to_reduced();
@@ -529,9 +529,9 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
             let dmu_res_dt_l1 = (l1.dmu_res_dt()).to_reduced();
             let dmu_res_dt_l2 = (l2.dmu_res_dt()).to_reduced();
             let dmu_res_dt_v = (v.dmu_res_dt()).to_reduced();
-            let dp_drho_l1 = (l1.dp_dni(Contributions::Total) * l1.volume).to_reduced();
-            let dp_drho_l2 = (l2.dp_dni(Contributions::Total) * l2.volume).to_reduced();
-            let dp_drho_v = (v.dp_dni(Contributions::Total) * v.volume).to_reduced();
+            let dp_drho_l1 = (l1.dp_dni() * l1.volume).to_reduced();
+            let dp_drho_l2 = (l2.dp_dni() * l2.volume).to_reduced();
+            let dp_drho_v = (v.dp_dni() * v.volume).to_reduced();
             let dp_dt_l1 = (l1.dp_dt(Contributions::Total)).to_reduced();
             let dp_dt_l2 = (l2.dp_dt(Contributions::Total)).to_reduced();
             let dp_dt_v = (v.dp_dt(Contributions::Total)).to_reduced();

@@ -37,10 +37,12 @@ pub use equation_of_state::{
 };
 pub use errors::{FeosError, FeosResult};
 pub use phase_equilibria::{
-    PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, TemperatureOrPressure,
+    PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, PhaseEquilibriumGeneric,
+    TemperatureOrPressure,
 };
 pub use state::{
-    Contributions, DensityInitialization, Derivative, State, StateBuilder, StateHD, StateVec,
+    Contributions, DensityInitialization, Derivative, HelmholtzEnergyDerivatives, State,
+    StateBuilder, StateGeneric, StateHD, StateVec,
 };
 
 /// Level of detail in the iteration output.
@@ -423,16 +425,7 @@ mod tests {
             sr.d2p_drho2(Contributions::Residual),
             max_relative = 1e-15
         );
-        assert_relative_eq!(
-            s.dp_dni(Contributions::Total),
-            sr.dp_dni(Contributions::Total),
-            max_relative = 1e-15
-        );
-        assert_relative_eq!(
-            s.dp_dni(Contributions::Residual),
-            sr.dp_dni(Contributions::Residual),
-            max_relative = 1e-15
-        );
+        assert_relative_eq!(s.dp_dni(), sr.dp_dni(), max_relative = 1e-15);
 
         // entropy
         assert_relative_eq!(
