@@ -111,7 +111,8 @@ pub mod test {
     use ndarray::arr1;
     use num_dual::DualNum;
     use quantity::{KELVIN, KILO, METER, MOL};
-    use std::{ops::Deref, sync::Arc};
+    use std::ops::Deref;
+    use std::sync::Arc;
 
     pub fn joback() -> FeosResult<(JobackAD, Arc<Joback>)> {
         let a = 1.5;

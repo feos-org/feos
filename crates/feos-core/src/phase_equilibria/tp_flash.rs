@@ -5,7 +5,7 @@ use crate::state::{Contributions, DensityInitialization, State};
 use crate::{SolverOptions, Verbosity};
 use ndarray::*;
 use num_dual::linalg::norm;
-use quantity::{Moles, Pressure, Temperature};
+use quantity::{Dimensionless, Moles, Pressure, Temperature};
 use std::sync::Arc;
 
 const MAX_ITER_TP: usize = 400;
@@ -310,9 +310,9 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         beta = rachford_rice(&feed_state.molefracs, k, Some(beta))?;
 
         // update VLE
-        let v = &feed_state.molefracs * beta * k / (1.0 - beta + beta * k) * feed_state.total_moles;
+        let v = feed_state.moles.clone() * Dimensionless::new(beta * k / (1.0 - beta + beta * k));
         let l =
-            &feed_state.molefracs * (1.0 - beta) / (1.0 - beta + beta * k) * feed_state.total_moles;
+            feed_state.moles.clone() * Dimensionless::new((1.0 - beta) / (1.0 - beta + beta * k));
         self.update_moles(feed_state.pressure(Contributions::Total), [&v, &l])?;
         Ok(())
     }
