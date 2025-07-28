@@ -5,7 +5,7 @@ use feos::core::{
     parameter::IdentifierOption,
 };
 use feos::pcsaft::{PcSaft, PcSaftParameters};
-use ndarray::{Array, Array1};
+use nalgebra::DVector;
 use quantity::*;
 use std::sync::Arc;
 
@@ -15,7 +15,7 @@ fn npt<E: Residual>(
         &Arc<E>,
         Temperature,
         Pressure,
-        &Moles<Array1<f64>>,
+        &Moles<DVector<f64>>,
         DensityInitialization,
     ),
 ) {
@@ -23,7 +23,7 @@ fn npt<E: Residual>(
 }
 
 /// Evaluate critical point constructor
-fn critical_point<E: Residual>((eos, n): (&Arc<E>, Option<&Array1<f64>>)) {
+fn critical_point<E: Residual>((eos, n): (&Arc<E>, Option<&DVector<f64>>)) {
     State::critical_point(eos, n, None, Default::default()).unwrap();
 }
 
@@ -38,11 +38,13 @@ fn pure<E: Residual, TP: TemperatureOrPressure>((eos, t_or_p): (&Arc<E>, TP)) {
 }
 
 /// Evaluate temperature, pressure flash.
-fn tp_flash<E: Residual>((eos, t, p, feed): (&Arc<E>, Temperature, Pressure, &Moles<Array1<f64>>)) {
+fn tp_flash<E: Residual>(
+    (eos, t, p, feed): (&Arc<E>, Temperature, Pressure, &Moles<DVector<f64>>),
+) {
     PhaseEquilibrium::tp_flash(eos, t, p, feed, None, Default::default(), None).unwrap();
 }
 
-fn bubble_point<E: Residual>((eos, t, x): (&Arc<E>, Temperature, &Array1<f64>)) {
+fn bubble_point<E: Residual>((eos, t, x): (&Arc<E>, Temperature, &DVector<f64>)) {
     PhaseEquilibrium::bubble_point(
         eos,
         t,
@@ -54,7 +56,7 @@ fn bubble_point<E: Residual>((eos, t, x): (&Arc<E>, Temperature, &Array1<f64>)) 
     .unwrap();
 }
 
-fn dew_point<E: Residual>((eos, t, y): (&Arc<E>, Temperature, &Array1<f64>)) {
+fn dew_point<E: Residual>((eos, t, y): (&Arc<E>, Temperature, &DVector<f64>)) {
     PhaseEquilibrium::dew_point(
         eos,
         t,
@@ -68,7 +70,7 @@ fn dew_point<E: Residual>((eos, t, y): (&Arc<E>, Temperature, &Array1<f64>)) {
 
 fn bench_states<E: Residual>(c: &mut Criterion, group_name: &str, eos: &Arc<E>) {
     let ncomponents = eos.components();
-    let x = Array::from_elem(ncomponents, 1.0 / ncomponents as f64);
+    let x = DVector::from_element(ncomponents, 1.0 / ncomponents as f64);
     let n = &x * 100.0 * MOL;
     let crit = State::critical_point(eos, Some(&x), None, Default::default()).unwrap();
     let vle = if ncomponents == 1 {

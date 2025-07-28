@@ -3,6 +3,7 @@ use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::Grid;
 use crate::solver::{DFTSolver, DFTSolverLog};
 use feos_core::{FeosError, FeosResult, ReferenceSystem, State};
+use nalgebra::DVector;
 use ndarray::{
     Array, Array1, Array2, Array3, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3,
     RemoveAxis,
@@ -285,9 +286,9 @@ where
     pub(crate) fn integrate_reduced_segments<S: Data<Elem = N>, N: DualNum<f64> + Copy>(
         &self,
         profile: &ArrayBase<S, D::Larger>,
-    ) -> Array1<N> {
+    ) -> DVector<N> {
         let integral = self.integrate_reduced_comp(profile);
-        let mut integral_comp = Array1::zeros(self.dft.components());
+        let mut integral_comp = DVector::zeros(self.dft.components());
         for (i, &j) in self.dft.component_index().iter().enumerate() {
             integral_comp[j] = integral[i];
         }
@@ -324,11 +325,11 @@ where
     pub fn integrate_comp<S: Data<Elem = f64>, U>(
         &self,
         profile: &Quantity<ArrayBase<S, D::Larger>, U>,
-    ) -> Quantity<Array1<f64>, Sum<_Volume, U>>
+    ) -> Quantity<DVector<f64>, Sum<_Volume, U>>
     where
         _Volume: Add<U>,
     {
-        Quantity::from_shape_fn(profile.shape()[0], |i| {
+        Quantity::from_fn1(profile.shape()[0], |i, _| {
             self.integrate(&profile.index_axis(Axis_nd(0), i))
         })
     }
@@ -337,12 +338,12 @@ where
     pub fn integrate_segments<S: Data<Elem = f64>, U>(
         &self,
         profile: &Quantity<ArrayBase<S, D::Larger>, U>,
-    ) -> Quantity<Array1<f64>, Sum<_Volume, U>>
+    ) -> Quantity<DVector<f64>, Sum<_Volume, U>>
     where
         _Volume: Add<U>,
     {
         let integral = self.integrate_comp(profile);
-        let mut integral_comp = Quantity::zeros(self.dft.components());
+        let mut integral_comp = Quantity::new(DVector::zeros(self.dft.components()));
         for (i, &j) in self.dft.component_index().iter().enumerate() {
             integral_comp.set(j, integral.get(i));
         }
@@ -350,7 +351,7 @@ where
     }
 
     /// Return the number of moles of each component in the system.
-    pub fn moles(&self) -> Moles<Array1<f64>> {
+    pub fn moles(&self) -> Moles<DVector<f64>> {
         self.integrate_segments(&self.density)
     }
 

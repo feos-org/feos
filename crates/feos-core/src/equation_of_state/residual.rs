@@ -1,6 +1,6 @@
 use super::Components;
 use crate::{FeosError, FeosResult, ReferenceSystem, StateHD};
-use ndarray::prelude::*;
+use nalgebra::DVector;
 use num_dual::*;
 use num_traits::{One, Zero};
 use quantity::*;
@@ -11,7 +11,7 @@ use typenum::Quot;
 ///
 /// Enables calculation of (mass) specific properties.
 pub trait Molarweight {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>>;
+    fn molar_weight(&self) -> MolarWeight<DVector<f64>>;
 }
 
 /// A residual Helmholtz energy model.
@@ -22,7 +22,7 @@ pub trait Residual: Components + Send + Sync {
     /// equilibria and other iterations. It is not explicitly meant to
     /// be a mathematical limit for the density (if those exist in the
     /// equation of state anyways).
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64;
+    fn compute_max_density(&self, moles: &DVector<f64>) -> f64;
 
     /// Evaluate the reduced Helmholtz energy of each individual contribution
     /// and return them together with a string representation of the contribution.
@@ -45,12 +45,15 @@ pub trait Residual: Components + Send + Sync {
     /// of components of the equation of state. For a pure component, however,
     /// no moles need to be provided. In that case, it is set to the constant
     /// reference value.
-    fn validate_moles(&self, moles: Option<&Moles<Array1<f64>>>) -> FeosResult<Moles<Array1<f64>>> {
+    fn validate_moles(
+        &self,
+        moles: Option<&Moles<DVector<f64>>>,
+    ) -> FeosResult<Moles<DVector<f64>>> {
         let l = moles.map_or(1, |m| m.len());
         if self.components() == l {
             match moles {
                 Some(m) => Ok(m.to_owned()),
-                None => Ok(Moles::from_reduced(Array::ones(1))),
+                None => Ok(Moles::from_reduced(DVector::from_element(1, 1.0))),
             }
         } else {
             Err(FeosError::IncompatibleComponents(self.components(), l))
@@ -63,7 +66,7 @@ pub trait Residual: Components + Send + Sync {
     /// equilibria and other iterations. It is not explicitly meant to
     /// be a mathematical limit for the density (if those exist in the
     /// equation of state anyways).
-    fn max_density(&self, moles: Option<&Moles<Array1<f64>>>) -> FeosResult<Density> {
+    fn max_density(&self, moles: Option<&Moles<DVector<f64>>>) -> FeosResult<Density> {
         let mr = self.validate_moles(moles)?.to_reduced();
         Ok(Density::from_reduced(self.compute_max_density(&mr)))
     }
@@ -72,7 +75,7 @@ pub trait Residual: Components + Send + Sync {
     fn second_virial_coefficient(
         &self,
         temperature: Temperature,
-        moles: Option<&Moles<Array1<f64>>>,
+        moles: Option<&Moles<DVector<f64>>>,
     ) -> FeosResult<Quot<f64, Density>> {
         let mr = self.validate_moles(moles)?;
         let x = (&mr / mr.sum()).into_value();
@@ -90,7 +93,7 @@ pub trait Residual: Components + Send + Sync {
     fn third_virial_coefficient(
         &self,
         temperature: Temperature,
-        moles: Option<&Moles<Array1<f64>>>,
+        moles: Option<&Moles<DVector<f64>>>,
     ) -> FeosResult<<<f64 as Div<Density>>::Output as Div<Density>>::Output> {
         let mr = self.validate_moles(moles)?;
         let x = (&mr / mr.sum()).into_value();
@@ -106,7 +109,7 @@ pub trait Residual: Components + Send + Sync {
     fn second_virial_coefficient_temperature_derivative(
         &self,
         temperature: Temperature,
-        moles: Option<&Moles<Array1<f64>>>,
+        moles: Option<&Moles<DVector<f64>>>,
     ) -> FeosResult<<<f64 as Div<Density>>::Output as Div<Temperature>>::Output> {
         let mr = self.validate_moles(moles)?;
         let x = (&mr / mr.sum()).into_value();
@@ -125,7 +128,7 @@ pub trait Residual: Components + Send + Sync {
     fn third_virial_coefficient_temperature_derivative(
         &self,
         temperature: Temperature,
-        moles: Option<&Moles<Array1<f64>>>,
+        moles: Option<&Moles<DVector<f64>>>,
     ) -> FeosResult<
         <<<f64 as Div<Density>>::Output as Div<Density>>::Output as Div<Temperature>>::Output,
     > {
@@ -146,23 +149,23 @@ pub trait EntropyScaling {
         &self,
         temperature: Temperature,
         volume: Volume,
-        moles: &Moles<Array1<f64>>,
+        moles: &Moles<DVector<f64>>,
     ) -> FeosResult<Viscosity>;
-    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64>;
+    fn viscosity_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64>;
     fn diffusion_reference(
         &self,
         temperature: Temperature,
         volume: Volume,
-        moles: &Moles<Array1<f64>>,
+        moles: &Moles<DVector<f64>>,
     ) -> FeosResult<Diffusivity>;
-    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64>;
+    fn diffusion_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64>;
     fn thermal_conductivity_reference(
         &self,
         temperature: Temperature,
         volume: Volume,
-        moles: &Moles<Array1<f64>>,
+        moles: &Moles<DVector<f64>>,
     ) -> FeosResult<ThermalConductivity>;
-    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64>;
+    fn thermal_conductivity_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64>;
 }
 
 /// Dummy implementation for [EquationOfState](super::EquationOfState)s that only contain an ideal gas contribution.
@@ -179,7 +182,7 @@ impl Components for NoResidual {
 }
 
 impl Residual for NoResidual {
-    fn compute_max_density(&self, _: &Array1<f64>) -> f64 {
+    fn compute_max_density(&self, _: &DVector<f64>) -> f64 {
         1.0
     }
 

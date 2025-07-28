@@ -2,7 +2,7 @@
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 use feos_core::parameter::{FromSegments, Parameters, PureParameters};
 use feos_core::{Components, FeosResult, IdealGas, ReferenceSystem};
-use ndarray::Array1;
+use nalgebra::DVector;
 use num_dual::*;
 use quantity::{MolarEntropy, Temperature};
 use serde::{Deserialize, Serialize};
@@ -72,7 +72,7 @@ impl Joback {
     pub fn molar_isobaric_heat_capacity(
         &self,
         temperature: Temperature,
-        molefracs: &Array1<f64>,
+        molefracs: &DVector<f64>,
     ) -> FeosResult<MolarEntropy> {
         let t = temperature.to_reduced();
         let c_p: f64 = molefracs
@@ -102,12 +102,12 @@ impl Components for Joback {
 }
 
 impl IdealGas for Joback {
-    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
         let t = temperature;
         let t2 = t * t;
         let t4 = t2 * t2;
         let f = (temperature * KB / (P0 * A3)).ln();
-        Array1::from_shape_fn(self.0.len(), |i| {
+        DVector::from_fn(self.0.len(), |i, _| {
             let j = &self.0[i].model_record;
             let h = (t2 - T0_2) * 0.5 * j.b
                 + (t * t2 - T0_3) * j.c / 3.0
@@ -145,7 +145,7 @@ mod tests {
         Contributions, EquationOfState, State, StateBuilder,
         parameter::{ChemicalRecord, GroupCount, Identifier, PureRecord, SegmentRecord},
     };
-    use ndarray::arr1;
+    use nalgebra::dvector;
     use quantity::*;
     use std::{collections::HashMap, sync::Arc};
     use typenum::P3;
@@ -236,7 +236,7 @@ mod tests {
             &eos,
             1000.0 * KELVIN,
             1.0 * ANGSTROM.powi::<P3>(),
-            &(&arr1(&[1.0]) * MOL),
+            &(dvector![1.0] * MOL),
         )?;
         assert!(
             ((state.molar_isobaric_heat_capacity(Contributions::IdealGas)
@@ -269,7 +269,7 @@ mod tests {
         let eos = Arc::new(EquationOfState::ideal_gas(joback.clone()));
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi::<P3>();
-        let moles = &arr1(&[1.0, 3.0]) * MOL;
+        let moles = &dvector![1.0, 3.0] * MOL;
         let state = StateBuilder::new(&eos)
             .temperature(temperature)
             .volume(volume)

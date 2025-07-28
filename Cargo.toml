@@ -22,8 +22,10 @@ keywords = [
 categories = ["science"]
 
 [workspace.dependencies]
-quantity = "0.10"
-num-dual = "0.11"
+#quantity = "0.10"
+quantity = { path = "../../quantity" }
+#num-dual = "0.11"
+num-dual = { path = "../../num-dual" }
 ndarray = "0.16"
 nalgebra = "0.33"
 thiserror = "2.0"

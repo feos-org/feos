@@ -2,7 +2,7 @@
 use crate::errors::*;
 use indexmap::IndexSet;
 use itertools::Itertools;
-use ndarray::{Array1, Array2};
+use nalgebra::{DMatrix, DVector, Scalar};
 use quantity::{GRAM, MOL, MolarWeight};
 use serde::de::DeserializeOwned;
 use std::array;
@@ -84,7 +84,7 @@ pub struct GcParameters<P, B, A, Bo, C> {
     pub bonds: Vec<BinaryParameters<Bo, C>>,
     pub association: AssociationParameters<A>,
     pub identifiers: Vec<Identifier>,
-    pub molar_weight: MolarWeight<Array1<f64>>,
+    pub molar_weight: MolarWeight<DVector<f64>>,
 }
 
 pub type Parameters<P, B, A> = GcParameters<P, B, A, (), ()>;
@@ -112,10 +112,8 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: Clone> GcParameters<P, B, A, Bo
             .iter()
             .map(|&i| self.identifiers[i].clone())
             .collect();
-        let molar_weight = component_list
-            .iter()
-            .map(|&i| self.molar_weight.get(i))
-            .collect();
+        let mw = self.molar_weight.convert_to(GRAM / MOL);
+        let molar_weight = DVector::from_vec(component_list.iter().map(|&i| mw[i]).collect());
 
         Self {
             pure: pure_records,
@@ -123,27 +121,32 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: Clone> GcParameters<P, B, A, Bo
             bonds: bond_records,
             association: association_parameters,
             identifiers,
-            molar_weight,
+            molar_weight: molar_weight * (GRAM / MOL),
         }
     }
 
-    pub fn collate<F, T: Default + Copy, const N: usize>(&self, f: F) -> [Array1<T>; N]
+    pub fn collate<F, T: Scalar + Copy, const N: usize>(&self, f: F) -> [DVector<T>; N]
     where
         F: Fn(&P) -> [T; N],
     {
-        array::from_fn(|i| self.pure.iter().map(|pr| f(&pr.model_record)[i]).collect())
+        array::from_fn(|i| {
+            DVector::from_vec(self.pure.iter().map(|pr| f(&pr.model_record)[i]).collect())
+        })
     }
 
-    pub fn collate_binary<F, T: Default + Copy, const N: usize>(&self, f: F) -> [Array2<T>; N]
+    pub fn collate_binary<F, T: Scalar + Default + Copy, const N: usize>(
+        &self,
+        f: F,
+    ) -> [DMatrix<T>; N]
     where
         F: Fn(&B) -> [T; N],
     {
         array::from_fn(|i| {
-            let mut b_mat = Array2::default([self.pure.len(); 2]);
+            let mut b_mat = DMatrix::from_element(self.pure.len(), self.pure.len(), T::default());
             for br in &self.binary {
                 let b = f(&br.model_record)[i];
-                b_mat[[br.id1, br.id2]] = b;
-                b_mat[[br.id2, br.id1]] = b;
+                b_mat[(br.id1, br.id2)] = b;
+                b_mat[(br.id2, br.id1)] = b;
             }
             b_mat
         })
@@ -181,7 +184,7 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
             bonds: vec![],
             association: association_parameters,
             identifiers,
-            molar_weight: Array1::from_vec(molar_weight) * (GRAM / MOL),
+            molar_weight: DVector::from_vec(molar_weight) * (GRAM / MOL),
         })
     }
 
@@ -474,7 +477,7 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
 }
 
 impl<P, B, A, Bo> GcParameters<P, B, A, Bo, f64> {
-    pub fn segment_counts(&self) -> Array1<f64> {
+    pub fn segment_counts(&self) -> Vec<f64> {
         self.pure.iter().map(|pr| pr.count).collect()
     }
 }
@@ -527,7 +530,7 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
         let mut association_sites = Vec::new();
         let mut bonds = Vec::new();
         let mut identifiers = Vec::new();
-        let mut molar_weight: Array1<f64> = Array1::zeros(chemical_records.len());
+        let mut molar_weight: DVector<f64> = DVector::zeros(chemical_records.len());
         for (i, cr) in chemical_records.into_iter().enumerate() {
             let (identifier, group_counts, bond_counts) = C::into_groups(cr);
             let n = groups.len();
@@ -740,7 +743,7 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
         Ok((chemical_records, segment_records, binary_records))
     }
 
-    pub fn component_index(&self) -> Array1<usize> {
+    pub fn component_index(&self) -> Vec<usize> {
         self.pure.iter().map(|pr| pr.component_index).collect()
     }
 }

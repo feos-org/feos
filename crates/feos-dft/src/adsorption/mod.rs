@@ -5,6 +5,7 @@ use feos_core::{
     Contributions, DensityInitialization, FeosError, FeosResult, ReferenceSystem, SolverOptions,
     State, StateBuilder,
 };
+use nalgebra::{DMatrix, DVector};
 use ndarray::{Array1, Array2, Dimension, Ix1, Ix3, RemoveAxis};
 use quantity::{Energy, MolarEnergy, Moles, Pressure, Temperature};
 use std::iter;
@@ -58,7 +59,7 @@ where
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
-        molefracs: Option<&Array1<f64>>,
+        molefracs: Option<&DVector<f64>>,
         solver: Option<&DFTSolver>,
     ) -> FeosResult<Adsorption<D, F>> {
         Self::isotherm(
@@ -78,7 +79,7 @@ where
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
-        molefracs: Option<&Array1<f64>>,
+        molefracs: Option<&DVector<f64>>,
         solver: Option<&DFTSolver>,
     ) -> FeosResult<Adsorption<D, F>> {
         let pressure = pressure.into_iter().rev().collect();
@@ -103,7 +104,7 @@ where
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
-        molefracs: Option<&Array1<f64>>,
+        molefracs: Option<&DVector<f64>>,
         solver: Option<&DFTSolver>,
     ) -> FeosResult<Adsorption<D, F>> {
         let (p_min, p_max) = (pressure.get(0), pressure.get(pressure.len() - 1));
@@ -186,7 +187,7 @@ where
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
-        molefracs: Option<&Array1<f64>>,
+        molefracs: Option<&DVector<f64>>,
         density_initialization: DensityInitialization,
         solver: Option<&DFTSolver>,
     ) -> FeosResult<Adsorption<D, F>> {
@@ -250,7 +251,7 @@ where
         p_min: Pressure,
         p_max: Pressure,
         pore: &S,
-        molefracs: Option<&Array1<f64>>,
+        molefracs: Option<&DVector<f64>>,
         solver: Option<&DFTSolver>,
         options: SolverOptions,
     ) -> FeosResult<Adsorption<D, F>> {
@@ -377,7 +378,7 @@ where
         })
     }
 
-    pub fn partial_molar_enthalpy_of_adsorption(&self) -> MolarEnergy<Array2<f64>> {
+    pub fn partial_molar_enthalpy_of_adsorption(&self) -> MolarEnergy<DMatrix<f64>> {
         let h_ads: Vec<_> = self
             .profiles
             .iter()
@@ -388,13 +389,13 @@ where
                     .and_then(|p| p.partial_molar_enthalpy_of_adsorption().ok())
                 {
                     Some(p) => p,
-                    None => MolarEnergy::from_reduced(f64::NAN * Array1::ones(self.components)),
+                    None => {
+                        MolarEnergy::from_reduced(DVector::from_element(self.components, f64::NAN))
+                    }
                 }
             })
             .collect();
-        MolarEnergy::from_shape_fn((self.components, self.profiles.len()), |(j, i)| {
-            h_ads[i].get(j)
-        })
+        MolarEnergy::from_fn(self.components, self.profiles.len(), |j, i| h_ads[i].get(j))
     }
 
     pub fn enthalpy_of_adsorption(&self) -> MolarEnergy<Array1<f64>> {

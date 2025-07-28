@@ -1,7 +1,7 @@
 use super::{DensityInitialization, State};
 use crate::equation_of_state::{IdealGas, Residual};
 use crate::errors::FeosResult;
-use ndarray::Array1;
+use nalgebra::DVector;
 use quantity::*;
 use std::sync::Arc;
 
@@ -13,7 +13,7 @@ use std::sync::Arc;
 /// # use feos_core::cubic::{PengRobinson, PengRobinsonParameters};
 /// # use quantity::*;
 /// # use std::sync::Arc;
-/// # use ndarray::arr1;
+/// # use nalgebra::dvector;
 /// # use approx::assert_relative_eq;
 /// # use typenum::P3;
 /// # fn main() -> FeosResult<()> {
@@ -22,7 +22,7 @@ use std::sync::Arc;
 /// let state = StateBuilder::new(&eos)
 ///                 .temperature(300.0 * KELVIN)
 ///                 .volume(12.5 * METER.powi::<P3>())
-///                 .moles(&(arr1(&[2.5]) * MOL))
+///                 .moles(&(dvector![2.5] * MOL))
 ///                 .build()?;
 /// assert_eq!(state.density, 0.2 * MOL / METER.powi::<P3>());
 ///
@@ -46,9 +46,9 @@ use std::sync::Arc;
 /// ));
 /// let state = StateBuilder::new(&eos)
 ///                 .temperature(300.0 * KELVIN)
-///                 .partial_density(&(arr1(&[0.2, 0.6]) * MOL / METER.powi::<P3>()))
+///                 .partial_density(&(dvector![0.2, 0.6] * MOL / METER.powi::<P3>()))
 ///                 .build()?;
-/// assert_relative_eq!(state.molefracs, arr1(&[0.25, 0.75]));
+/// assert_relative_eq!(state.molefracs, dvector![0.25, 0.75]);
 /// assert_relative_eq!(state.density, 0.8 * MOL / METER.powi::<P3>());
 /// # Ok(())
 /// # }
@@ -58,10 +58,10 @@ pub struct StateBuilder<'a, E, const IG: bool> {
     temperature: Option<Temperature>,
     volume: Option<Volume>,
     density: Option<Density>,
-    partial_density: Option<&'a Density<Array1<f64>>>,
+    partial_density: Option<&'a Density<DVector<f64>>>,
     total_moles: Option<Moles>,
-    moles: Option<&'a Moles<Array1<f64>>>,
-    molefracs: Option<&'a Array1<f64>>,
+    moles: Option<&'a Moles<DVector<f64>>>,
+    molefracs: Option<&'a DVector<f64>>,
     pressure: Option<Pressure>,
     molar_enthalpy: Option<MolarEnergy>,
     molar_entropy: Option<MolarEntropy>,
@@ -112,7 +112,7 @@ impl<'a, E: Residual, const IG: bool> StateBuilder<'a, E, IG> {
     }
 
     /// Provide partial densities for the new state.
-    pub fn partial_density(mut self, partial_density: &'a Density<Array1<f64>>) -> Self {
+    pub fn partial_density(mut self, partial_density: &'a Density<DVector<f64>>) -> Self {
         self.partial_density = Some(partial_density);
         self
     }
@@ -124,13 +124,13 @@ impl<'a, E: Residual, const IG: bool> StateBuilder<'a, E, IG> {
     }
 
     /// Provide the moles for the new state.
-    pub fn moles(mut self, moles: &'a Moles<Array1<f64>>) -> Self {
+    pub fn moles(mut self, moles: &'a Moles<DVector<f64>>) -> Self {
         self.moles = Some(moles);
         self
     }
 
     /// Provide the molefracs for the new state.
-    pub fn molefracs(mut self, molefracs: &'a Array1<f64>) -> Self {
+    pub fn molefracs(mut self, molefracs: &'a DVector<f64>) -> Self {
         self.molefracs = Some(molefracs);
         self
     }

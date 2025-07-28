@@ -5,7 +5,7 @@ use feos_derive::{Components, Residual};
 use feos_derive::{FunctionalContribution, HelmholtzEnergyFunctional};
 #[cfg(feature = "dft")]
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional};
-use ndarray::Array1;
+use nalgebra::DVector;
 use num_dual::DualNum;
 use quantity::*;
 
@@ -20,7 +20,7 @@ pub enum ResidualModel {
     // Equations of state
     NoResidual(NoResidual),
     #[cfg(feature = "pcsaft")]
-    #[implement(entropy_scaling, molar_weight)]
+    #[implement(molar_weight)]
     PcSaft(feos::pcsaft::PcSaft),
 
     #[cfg(feature = "epcsaft")]

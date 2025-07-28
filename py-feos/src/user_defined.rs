@@ -1,6 +1,8 @@
 #![allow(non_snake_case)]
 use feos_core::{Components, IdealGas, Molarweight, Residual, StateHD};
+use nalgebra::DVector;
 use ndarray::Array1;
+use nshare::{AsNdarray1, IntoNalgebra, IntoNdarray1};
 use num_dual::*;
 use numpy::convert::IntoPyArray;
 use numpy::{PyArray, PyReadonlyArray1, PyReadonlyArrayDyn, PyReadwriteArrayDyn};
@@ -56,8 +58,8 @@ macro_rules! impl_ideal_gas {
                 "Ideal gas (Python)".to_string()
             }
 
-            fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
-                let mut result = Array1::from_elem((self.components(),), D::zero());
+            fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+                let mut result = Array1::from_elem(self.components(), D::zero());
 
                 $(
                     if let Some(t) = (&temperature as &dyn Any).downcast_ref::<$hd_ty>() {
@@ -79,7 +81,7 @@ macro_rules! impl_ideal_gas {
                                     panic!("ln_lambda3: data type of result must be one-dimensional numpy ndarray")
                             }
                         });
-                        return result
+                        return result.into_nalgebra()
                     }
                 )*
                 panic!("ln_lambda3: input data type not understood")
@@ -140,12 +142,12 @@ impl Components for PyResidual {
 macro_rules! impl_residual {
     ($($py_state_id:ident, $py_hd_id:ident, $hd_ty:ty);*) => {
         impl Residual for PyResidual {
-            fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
+            fn compute_max_density(&self, moles: &DVector<f64>) -> f64 {
                 Python::with_gil(|py| {
                     let py_result = self
                         .0
                         .bind(py)
-                        .call_method1("max_density", (moles.to_owned().into_pyarray(py),))
+                        .call_method1("max_density", (moles.clone().into_ndarray1().into_pyarray(py),))
                         .unwrap();
                     py_result.extract().unwrap()
                 })
@@ -181,11 +183,11 @@ macro_rules! impl_residual {
         }
 
         impl Molarweight for PyResidual {
-            fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+            fn molar_weight(&self) -> MolarWeight<DVector<f64>> {
                 Python::with_gil(|py| {
                     let py_result = self.0.bind(py).call_method0("molar_weight").unwrap();
                     py_result
-                        .extract::<MolarWeight<Array1<f64>>>()
+                        .extract::<MolarWeight<DVector<f64>>>()
                         .unwrap()
                 })
             }
@@ -210,7 +212,11 @@ macro_rules! state {
             #[new]
             pub fn new(temperature: $py_hd_id, volume: $py_hd_id, moles: Vec<$py_hd_id>) -> Self {
                 let m = Array1::from(moles).mapv(<$hd_ty>::from);
-                Self(StateHD::<$hd_ty>::new(temperature.into(), volume.into(), m))
+                Self(StateHD::<$hd_ty>::new(
+                    temperature.into(),
+                    volume.into(),
+                    m.into_nalgebra(),
+                ))
             }
 
             #[getter]
@@ -227,6 +233,7 @@ macro_rules! state {
             pub fn get_moles(&self) -> Vec<$py_hd_id> {
                 self.0
                     .moles
+                    .as_ndarray1()
                     .mapv(<$py_hd_id>::from)
                     .into_raw_vec_and_offset()
                     .0
@@ -236,6 +243,7 @@ macro_rules! state {
             pub fn get_partial_density(&self) -> Vec<$py_hd_id> {
                 self.0
                     .partial_density
+                    .as_ndarray1()
                     .mapv(<$py_hd_id>::from)
                     .into_raw_vec_and_offset()
                     .0
@@ -245,6 +253,7 @@ macro_rules! state {
             pub fn get_molefracs(&self) -> Vec<$py_hd_id> {
                 self.0
                     .molefracs
+                    .as_ndarray1()
                     .mapv(<$py_hd_id>::from)
                     .into_raw_vec_and_offset()
                     .0

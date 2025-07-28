@@ -4,7 +4,7 @@ use crate::equation_of_state::Residual;
 use crate::errors::FeosResult;
 use crate::phase_equilibria::PhaseEquilibriumGeneric;
 use crate::state::{Contributions, State};
-use ndarray::Array1;
+use nalgebra::DVector;
 use quantity::{Pressure, Temperature};
 use std::sync::Arc;
 
@@ -12,7 +12,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     /// Calculate the bubble point line of a mixture with given composition.
     pub fn bubble_point_line(
         eos: &Arc<E>,
-        molefracs: &Array1<f64>,
+        molefracs: &DVector<f64>,
         min_temperature: Temperature,
         npoints: usize,
         critical_temperature: Option<Temperature>,
@@ -60,7 +60,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     /// Calculate the dew point line of a mixture with given composition.
     pub fn dew_point_line(
         eos: &Arc<E>,
-        molefracs: &Array1<f64>,
+        molefracs: &DVector<f64>,
         min_temperature: Temperature,
         npoints: usize,
         critical_temperature: Option<Temperature>,
@@ -124,7 +124,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     /// Calculate the spinodal lines for a mixture with fixed composition.
     pub fn spinodal(
         eos: &Arc<E>,
-        molefracs: &Array1<f64>,
+        molefracs: &DVector<f64>,
         min_temperature: Temperature,
         npoints: usize,
         critical_temperature: Option<Temperature>,

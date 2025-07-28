@@ -135,43 +135,48 @@ const fn powi(x: f64, n: i32) -> f64 {
     }
 }
 
-pub trait ReferenceSystem<
-    Inner,
-    T: Integer,
-    L: Integer,
-    M: Integer,
-    I: Integer,
-    THETA: Integer,
-    N: Integer,
-    J: Integer,
->
-{
-    const FACTOR: f64 = powi(REFERENCE_VALUES[0], T::I32)
-        * powi(REFERENCE_VALUES[1], L::I32)
-        * powi(REFERENCE_VALUES[2], M::I32)
-        * powi(REFERENCE_VALUES[3], I::I32)
-        * powi(REFERENCE_VALUES[4], THETA::I32)
-        * powi(REFERENCE_VALUES[5], N::I32)
-        * powi(REFERENCE_VALUES[6], J::I32);
+pub trait ReferenceSystem {
+    type Inner;
+    type T: Integer;
+    type L: Integer;
+    type M: Integer;
+    type I: Integer;
+    type THETA: Integer;
+    type N: Integer;
+    type J: Integer;
+    const FACTOR: f64 = powi(REFERENCE_VALUES[0], Self::T::I32)
+        * powi(REFERENCE_VALUES[1], Self::L::I32)
+        * powi(REFERENCE_VALUES[2], Self::M::I32)
+        * powi(REFERENCE_VALUES[3], Self::I::I32)
+        * powi(REFERENCE_VALUES[4], Self::THETA::I32)
+        * powi(REFERENCE_VALUES[5], Self::N::I32)
+        * powi(REFERENCE_VALUES[6], Self::J::I32);
 
-    fn from_reduced(value: Inner) -> Self
+    fn from_reduced(value: Self::Inner) -> Self
     where
-        Inner: Mul<f64, Output = Inner>;
+        Self::Inner: Mul<f64, Output = Self::Inner>;
 
-    fn to_reduced(&self) -> Inner
+    fn to_reduced(&self) -> Self::Inner
     where
-        for<'a> &'a Inner: Div<f64, Output = Inner>;
+        for<'a> &'a Self::Inner: Div<f64, Output = Self::Inner>;
 
-    fn into_reduced(self) -> Inner
+    fn into_reduced(self) -> Self::Inner
     where
-        Inner: Div<f64, Output = Inner>;
+        Self::Inner: Div<f64, Output = Self::Inner>;
 }
 
 /// Conversion to and from reduced units
 impl<Inner, T: Integer, L: Integer, M: Integer, I: Integer, THETA: Integer, N: Integer, J: Integer>
-    ReferenceSystem<Inner, T, L, M, I, THETA, N, J>
-    for Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>
+    ReferenceSystem for Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>
 {
+    type Inner = Inner;
+    type T = T;
+    type L = L;
+    type M = M;
+    type I = I;
+    type THETA = THETA;
+    type N = N;
+    type J = J;
     fn from_reduced(value: Inner) -> Self
     where
         Inner: Mul<f64, Output = Inner>,
@@ -203,7 +208,7 @@ mod tests {
     use crate::equation_of_state::{Components, EquationOfState, IdealGas};
     use crate::parameter::*;
     use approx::*;
-    use ndarray::Array1;
+    use nalgebra::DVector;
     use num_dual::DualNum;
     use quantity::{BAR, KELVIN, MOL, RGAS};
     use std::sync::Arc;
@@ -222,7 +227,7 @@ mod tests {
     }
 
     impl IdealGas for NoIdealGas {
-        fn ln_lambda3<D: DualNum<f64> + Copy>(&self, _: D) -> Array1<D> {
+        fn ln_lambda3<D: DualNum<f64> + Copy>(&self, _: D) -> DVector<D> {
             unreachable!()
         }
 
@@ -425,7 +430,16 @@ mod tests {
             sr.d2p_drho2(Contributions::Residual),
             max_relative = 1e-15
         );
-        assert_relative_eq!(s.dp_dni(), sr.dp_dni(), max_relative = 1e-15);
+        assert_relative_eq!(
+            s.dp_dni(Contributions::Total),
+            sr.dp_dni(Contributions::Total),
+            max_relative = 1e-15
+        );
+        assert_relative_eq!(
+            s.dp_dni(Contributions::Residual),
+            sr.dp_dni(Contributions::Residual),
+            max_relative = 1e-15
+        );
 
         // entropy
         assert_relative_eq!(

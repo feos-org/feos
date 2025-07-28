@@ -1,6 +1,6 @@
 use feos_core::parameter::{Parameters, PureParameters};
 use feos_core::{Components, FeosResult, IdealGas};
-use ndarray::Array1;
+use nalgebra::DVector;
 use num_dual::DualNum;
 use quantity::{JOULE, KELVIN, KILO, MOL, MolarEntropy, Temperature};
 use serde::{Deserialize, Serialize};
@@ -128,7 +128,7 @@ impl Dippr {
     pub fn molar_isobaric_heat_capacity(
         &self,
         temperature: Temperature,
-        molefracs: &Array1<f64>,
+        molefracs: &DVector<f64>,
     ) -> FeosResult<MolarEntropy> {
         let t = temperature.convert_to(KELVIN);
         let c_p: f64 = molefracs
@@ -158,17 +158,19 @@ const RGAS: f64 = 8.31446261815324 * 1000.0;
 const T0: f64 = 298.15;
 
 impl IdealGas for Dippr {
-    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
         let t = temperature;
-        self.0
-            .iter()
-            .map(|r| {
-                let m = &r.model_record;
-                let h = m.c_p_integral(t) - m.c_p_integral(T0);
-                let s = m.c_p_t_integral(t) - m.c_p_t_integral(T0);
-                (h - t * s) / (t * RGAS) + temperature.ln()
-            })
-            .collect()
+        DVector::from_vec(
+            self.0
+                .iter()
+                .map(|r| {
+                    let m = &r.model_record;
+                    let h = m.c_p_integral(t) - m.c_p_integral(T0);
+                    let s = m.c_p_t_integral(t) - m.c_p_t_integral(T0);
+                    (h - t * s) / (t * RGAS) + temperature.ln()
+                })
+                .collect(),
+        )
     }
 
     fn ideal_gas_model(&self) -> String {

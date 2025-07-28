@@ -10,13 +10,13 @@ use crate::ReferenceSystem;
 use crate::density_iteration::density_iteration_stable;
 use crate::equation_of_state::{IdealGas, Residual};
 use crate::errors::{FeosError, FeosResult};
-use ndarray::prelude::*;
+use nalgebra::allocator::Allocator;
+use nalgebra::{DVector, DefaultAllocator, Dim, Dyn, OVector, dvector};
 use num_dual::*;
 use quantity::*;
 use std::fmt;
 use std::ops::Sub;
 use std::sync::{Arc, Mutex};
-use typenum::{N1, N2, P1, Z0};
 
 mod builder;
 mod cache;
@@ -67,19 +67,19 @@ pub struct StateHD<D> {
     /// volume in Angstrom^3
     pub volume: D,
     /// number of particles
-    pub moles: Array1<D>,
+    pub moles: DVector<D>,
     /// mole fractions
-    pub molefracs: Array1<D>,
+    pub molefracs: DVector<D>,
     /// partial number densities in Angstrom^-3
-    pub partial_density: Array1<D>,
+    pub partial_density: DVector<D>,
 }
 
 impl<D: DualNum<f64> + Copy> StateHD<D> {
     /// Create a new `StateHD` for given temperature volume and moles.
-    pub fn new(temperature: D, volume: D, moles: Array1<D>) -> Self {
+    pub fn new(temperature: D, volume: D, moles: DVector<D>) -> Self {
         let total_moles = moles.sum();
-        let partial_density = moles.mapv(|n| n / volume);
-        let molefracs = moles.mapv(|n| n / total_moles);
+        let partial_density = moles.map(|n| n / volume);
+        let molefracs = moles.map(|n| n / total_moles);
 
         Self {
             temperature,
@@ -92,11 +92,11 @@ impl<D: DualNum<f64> + Copy> StateHD<D> {
 
     // Since the molefracs can not be reproduced from moles if the density is zero,
     // this constructor exists specifically for these cases.
-    pub(crate) fn new_virial(temperature: D, density: D, molefracs: Array1<f64>) -> Self {
+    pub(crate) fn new_virial(temperature: D, density: D, molefracs: DVector<f64>) -> Self {
         let volume = D::one();
-        let partial_density = molefracs.mapv(|x| density * x);
-        let moles = partial_density.mapv(|pd| pd * volume);
-        let molefracs = molefracs.mapv(D::from);
+        let partial_density = molefracs.map(|x| density * x);
+        let moles = partial_density.map(|pd| pd * volume);
+        let molefracs = molefracs.map(D::from);
         Self {
             temperature,
             volume,
@@ -136,7 +136,10 @@ impl<D: DualNum<f64> + Copy> StateHD<D> {
 /// + [Stability analysis](#stability-analysis)
 /// + [Flash calculations](#flash-calculations)
 #[derive(Debug)]
-pub struct StateGeneric<E, D: DualNum<f64> + Copy, M, C> {
+pub struct StateGeneric<E, D: DualNum<f64> + Copy, N: Dim, C>
+where
+    DefaultAllocator: Allocator<N>,
+{
     /// Equation of state
     pub eos: E,
     /// Temperature $T$
@@ -144,20 +147,20 @@ pub struct StateGeneric<E, D: DualNum<f64> + Copy, M, C> {
     /// Volume $V$
     pub volume: Volume<D>,
     /// Mole numbers $N_i$
-    pub moles: Moles<M>,
+    pub moles: Moles<OVector<D, N>>,
     /// Total number of moles $N=\sum_iN_i$
     pub total_moles: Moles<D>,
     /// Partial densities $\rho_i=\frac{N_i}{V}$
-    pub partial_density: Density<M>,
+    pub partial_density: Density<OVector<D, N>>,
     /// Total density $\rho=\frac{N}{V}=\sum_i\rho_i$
     pub density: Density<D>,
     /// Mole fractions $x_i=\frac{N_i}{N}=\frac{\rho_i}{\rho}$
-    pub molefracs: M,
+    pub molefracs: OVector<D, N>,
     /// Cache
     cache: C,
 }
 
-pub type State<E> = StateGeneric<Arc<E>, f64, Array1<f64>, Mutex<Cache>>;
+pub type State<E> = StateGeneric<Arc<E>, f64, Dyn, Mutex<Cache>>;
 
 impl<E> Clone for State<E> {
     fn clone(&self) -> Self {
@@ -219,7 +222,7 @@ impl<E: Residual> State<E> {
         eos: &Arc<E>,
         temperature: Temperature,
         volume: Volume,
-        moles: &Moles<Array1<f64>>,
+        moles: &Moles<DVector<f64>>,
     ) -> FeosResult<Self> {
         validate(temperature, volume, moles)?;
         let total_moles = moles.sum();
@@ -237,14 +240,16 @@ impl<E: Residual> State<E> {
 }
 
 impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
-    StateGeneric<E, D, E::Molefracs, E::Cache>
+    StateGeneric<E, D, E::Components, E::Cache>
+where
+    DefaultAllocator: Allocator<E::Components>,
 {
     pub(super) fn new_unchecked(
         eos: &E,
         temperature: Temperature<D>,
         density: Density<D>,
         total_moles: Moles<D>,
-        molefracs: &E::Molefracs,
+        molefracs: &OVector<D, E::Components>,
     ) -> Self {
         let volume = total_moles / density;
         let moles = Dimensionless::new(molefracs.clone()) * total_moles;
@@ -263,11 +268,11 @@ impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
         }
     }
 
-    pub(super) fn new_t_rho_x(
+    pub fn new_intensive(
         eos: &E,
         temperature: Temperature<D>,
         density: Density<D>,
-        molefracs: &E::Molefracs,
+        molefracs: &OVector<D, E::Components>,
     ) -> Self {
         let total_moles = Moles::new(D::one());
         Self::new_unchecked(eos, temperature, density, total_moles, molefracs)
@@ -306,10 +311,10 @@ impl<E: Residual> State<E> {
         temperature: Option<Temperature>,
         volume: Option<Volume>,
         density: Option<Density>,
-        partial_density: Option<&Density<Array1<f64>>>,
+        partial_density: Option<&Density<DVector<f64>>>,
         total_moles: Option<Moles>,
-        moles: Option<&Moles<Array1<f64>>>,
-        molefracs: Option<&Array1<f64>>,
+        moles: Option<&Moles<DVector<f64>>>,
+        molefracs: Option<&DVector<f64>>,
         pressure: Option<Pressure>,
         density_initialization: DensityInitialization,
     ) -> FeosResult<Self> {
@@ -334,13 +339,13 @@ impl<E: Residual> State<E> {
         temperature: Option<Temperature>,
         volume: Option<Volume>,
         density: Option<Density>,
-        partial_density: Option<&Density<Array1<f64>>>,
+        partial_density: Option<&Density<DVector<f64>>>,
         total_moles: Option<Moles>,
-        moles: Option<&Moles<Array1<f64>>>,
-        molefracs: Option<&Array1<f64>>,
+        moles: Option<&Moles<DVector<f64>>>,
+        molefracs: Option<&DVector<f64>>,
         pressure: Option<Pressure>,
         density_initialization: DensityInitialization,
-    ) -> FeosResult<Result<Self, Option<Moles<Array1<f64>>>>> {
+    ) -> FeosResult<Result<Self, Option<Moles<DVector<f64>>>>> {
         // check for density
         if density.and(partial_density).is_some() {
             return Err(FeosError::UndeterminedState(String::from(
@@ -383,7 +388,7 @@ impl<E: Residual> State<E> {
             }
             (Some(x), None, _) => x,
             (None, Some(x), _) => x.clone(),
-            (None, None, 1) => arr1(&[1.0]),
+            (None, None, 1) => dvector![1.0],
             _ => {
                 return Err(FeosError::UndeterminedState(String::from(
                     "Missing composition.",
@@ -421,14 +426,17 @@ impl<E: Residual> State<E> {
     }
 }
 
-impl<E: Residual> State<E> {
+impl<E: HelmholtzEnergyDerivatives<f64>> StateGeneric<E, f64, E::Components, E::Cache>
+where
+    DefaultAllocator: Allocator<E::Components>,
+{
     /// Return a new `State` using a density iteration. [DensityInitialization] is used to
     /// influence the calculation with respect to the possible solutions.
     pub fn new_npt(
-        eos: &Arc<E>,
+        eos: &E,
         temperature: Temperature,
         pressure: Pressure,
-        moles: &Moles<Array1<f64>>,
+        moles: &Moles<OVector<f64, E::Components>>,
         density_initialization: DensityInitialization,
     ) -> FeosResult<Self> {
         let total_moles = moles.sum();
@@ -452,7 +460,9 @@ impl<E: Residual> State<E> {
 }
 
 impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
-    StateGeneric<E, D, E::Molefracs, E::Cache>
+    StateGeneric<E, D, E::Components, E::Cache>
+where
+    DefaultAllocator: Allocator<E::Components>,
 {
     /// Return a new `State` using a density iteration. [DensityInitialization] is used to
     /// influence the calculation with respect to the possible solutions.
@@ -460,7 +470,7 @@ impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
         eos: &E,
         temperature: Temperature<D>,
         pressure: Pressure<D>,
-        molefracs: &E::Molefracs,
+        molefracs: &OVector<D, E::Components>,
         density_initialization: DensityInitialization,
     ) -> FeosResult<Self> {
         let eos_re = eos.re();
@@ -468,7 +478,7 @@ impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
             &eos_re,
             temperature.re(),
             pressure.re(),
-            &E::molefracs_re(molefracs),
+            &molefracs.map(|x| x.re()),
             density_initialization,
         )?;
         let mut density = D::from(state_re.density.to_reduced());
@@ -477,7 +487,7 @@ impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
             let (_, p, dp_drho) = eos._p_dpdrho(t, density, molefracs);
             density -= (p - pressure.into_reduced()) / dp_drho;
         }
-        Ok(Self::new_t_rho_x(
+        Ok(Self::new_intensive(
             eos,
             temperature,
             Density::from_reduced(density),
@@ -491,7 +501,7 @@ impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
         temperature: Temperature<D>,
         pressure: Pressure<D>,
         volume: Volume<D>,
-        molefracs: &E::Molefracs,
+        molefracs: &OVector<D, E::Components>,
         density_initialization: DensityInitialization,
     ) -> FeosResult<Self> {
         let density = Self::new_xpt(
@@ -534,10 +544,10 @@ impl<E: Residual + IdealGas> State<E> {
         temperature: Option<Temperature>,
         volume: Option<Volume>,
         density: Option<Density>,
-        partial_density: Option<&Density<Array1<f64>>>,
+        partial_density: Option<&Density<DVector<f64>>>,
         total_moles: Option<Moles>,
-        moles: Option<&Moles<Array1<f64>>>,
-        molefracs: Option<&Array1<f64>>,
+        moles: Option<&Moles<DVector<f64>>>,
+        molefracs: Option<&DVector<f64>>,
         pressure: Option<Pressure>,
         molar_enthalpy: Option<MolarEnergy>,
         molar_entropy: Option<MolarEntropy>,
@@ -590,7 +600,7 @@ impl<E: Residual + IdealGas> State<E> {
         eos: &Arc<E>,
         pressure: Pressure,
         molar_enthalpy: MolarEnergy,
-        moles: &Moles<Array1<f64>>,
+        moles: &Moles<DVector<f64>>,
         density_initialization: DensityInitialization,
         initial_temperature: Option<Temperature>,
     ) -> FeosResult<Self> {
@@ -611,7 +621,7 @@ impl<E: Residual + IdealGas> State<E> {
         eos: &Arc<E>,
         temperature: Temperature,
         molar_enthalpy: MolarEnergy,
-        moles: &Moles<Array1<f64>>,
+        moles: &Moles<DVector<f64>>,
         density_initialization: DensityInitialization,
     ) -> FeosResult<Self> {
         let rho0 = match density_initialization {
@@ -638,7 +648,7 @@ impl<E: Residual + IdealGas> State<E> {
         eos: &Arc<E>,
         temperature: Temperature,
         molar_entropy: MolarEntropy,
-        moles: &Moles<Array1<f64>>,
+        moles: &Moles<DVector<f64>>,
         density_initialization: DensityInitialization,
     ) -> FeosResult<Self> {
         let rho0 = match density_initialization {
@@ -662,7 +672,7 @@ impl<E: Residual + IdealGas> State<E> {
         eos: &Arc<E>,
         pressure: Pressure,
         molar_entropy: MolarEntropy,
-        moles: &Moles<Array1<f64>>,
+        moles: &Moles<DVector<f64>>,
         density_initialization: DensityInitialization,
         initial_temperature: Option<Temperature>,
     ) -> FeosResult<Self> {
@@ -683,7 +693,7 @@ impl<E: Residual + IdealGas> State<E> {
         eos: &Arc<E>,
         volume: Volume,
         molar_internal_energy: MolarEnergy,
-        moles: &Moles<Array1<f64>>,
+        moles: &Moles<DVector<f64>>,
         initial_temperature: Option<Temperature>,
     ) -> FeosResult<Self> {
         let t0 = initial_temperature.unwrap_or(Temperature::from_reduced(298.15));
@@ -698,7 +708,9 @@ impl<E: Residual + IdealGas> State<E> {
 }
 
 impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
-    StateGeneric<E, D, E::Molefracs, E::Cache>
+    StateGeneric<E, D, E::Components, E::Cache>
+where
+    DefaultAllocator: Allocator<E::Components>,
 {
     /// Update the state with the given temperature
     pub fn update_temperature(&self, temperature: Temperature<D>) -> Self {
@@ -727,7 +739,7 @@ impl<E: Residual> State<E> {
     pub fn derive1(&self, derivative: Derivative) -> StateHD<Dual64> {
         let mut t = Dual64::from(self.temperature.into_reduced());
         let mut v = Dual64::from(self.volume.into_reduced());
-        let mut n = (&self.molefracs * self.total_moles.into_reduced()).mapv(Dual64::from);
+        let mut n = (&self.molefracs * self.total_moles.into_reduced()).map(Dual64::from);
         match derivative {
             Derivative::DT => t = t.derivative(),
             Derivative::DV => v = v.derivative(),
@@ -740,7 +752,7 @@ impl<E: Residual> State<E> {
     pub fn derive2(&self, derivative: Derivative) -> StateHD<Dual2_64> {
         let mut t = Dual2_64::from(self.temperature.into_reduced());
         let mut v = Dual2_64::from(self.volume.into_reduced());
-        let mut n = (&self.molefracs * self.total_moles.into_reduced()).mapv(Dual2_64::from);
+        let mut n = (&self.molefracs * self.total_moles.into_reduced()).map(Dual2_64::from);
         match derivative {
             Derivative::DT => t = t.derivative(),
             Derivative::DV => v = v.derivative(),
@@ -757,7 +769,7 @@ impl<E: Residual> State<E> {
     ) -> StateHD<HyperDual64> {
         let mut t = HyperDual64::from(self.temperature.into_reduced());
         let mut v = HyperDual64::from(self.volume.into_reduced());
-        let mut n = (&self.molefracs * self.total_moles.into_reduced()).mapv(HyperDual64::from);
+        let mut n = (&self.molefracs * self.total_moles.into_reduced()).map(HyperDual64::from);
         match derivative1 {
             Derivative::DT => t = t.derivative1(),
             Derivative::DV => v = v.derivative1(),
@@ -775,7 +787,7 @@ impl<E: Residual> State<E> {
     pub fn derive3(&self, derivative: Derivative) -> StateHD<Dual3_64> {
         let mut t = Dual3_64::from(self.temperature.into_reduced());
         let mut v = Dual3_64::from(self.volume.into_reduced());
-        let mut n = (&self.molefracs * self.total_moles.into_reduced()).mapv(Dual3_64::from);
+        let mut n = (&self.molefracs * self.total_moles.into_reduced()).map(Dual3_64::from);
         match derivative {
             Derivative::DT => t = t.derivative(),
             Derivative::DV => v = v.derivative(),
@@ -834,7 +846,7 @@ where
 fn validate(
     temperature: Temperature,
     volume: Volume,
-    moles: &Moles<Array1<f64>>,
+    moles: &Moles<DVector<f64>>,
 ) -> FeosResult<()> {
     let t = temperature.to_reduced();
     let v = volume.to_reduced();
@@ -865,27 +877,6 @@ fn validate(
     Ok(())
 }
 
-#[derive(Clone, Copy)]
-pub enum TPSpec {
-    Temperature(Temperature),
-    Pressure(Pressure),
-}
-
-impl From<Temperature> for TPSpec {
-    fn from(temperature: Temperature) -> Self {
-        Self::Temperature(temperature)
-    }
-}
-
-// For some inexplicable reason this does not compile if the `Pressure` type is
-// used instead of the explicit unit. Maybe the type is too complicated for the
-// compiler?
-impl From<Quantity<f64, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>> for TPSpec {
-    fn from(pressure: Pressure) -> Self {
-        Self::Pressure(pressure)
-    }
-}
-
 mod critical_point;
 
 #[cfg(test)]
@@ -897,7 +888,7 @@ mod tests {
     fn test_validate() {
         let temperature = 298.15 * KELVIN;
         let volume = 3000.0 * METER.powi::<P3>();
-        let moles = &arr1(&[0.03, 0.02, 0.05]) * MOL;
+        let moles = dvector![0.03, 0.02, 0.05] * MOL;
         assert!(validate(temperature, volume, &moles).is_ok());
     }
 
@@ -905,7 +896,7 @@ mod tests {
     fn test_negative_temperature() {
         let temperature = -298.15 * KELVIN;
         let volume = 3000.0 * METER.powi::<P3>();
-        let moles = &arr1(&[0.03, 0.02, 0.05]) * MOL;
+        let moles = dvector![0.03, 0.02, 0.05] * MOL;
         assert!(validate(temperature, volume, &moles).is_err());
     }
 
@@ -913,7 +904,7 @@ mod tests {
     fn test_nan_temperature() {
         let temperature = f64::NAN * KELVIN;
         let volume = 3000.0 * METER.powi::<P3>();
-        let moles = &arr1(&[0.03, 0.02, 0.05]) * MOL;
+        let moles = dvector![0.03, 0.02, 0.05] * MOL;
         assert!(validate(temperature, volume, &moles).is_err());
     }
 
@@ -921,7 +912,7 @@ mod tests {
     fn test_negative_mole_number() {
         let temperature = 298.15 * KELVIN;
         let volume = 3000.0 * METER.powi::<P3>();
-        let moles = &arr1(&[-0.03, 0.02, 0.05]) * MOL;
+        let moles = dvector![-0.03, 0.02, 0.05] * MOL;
         assert!(validate(temperature, volume, &moles).is_err());
     }
 
@@ -929,7 +920,7 @@ mod tests {
     fn test_nan_mole_number() {
         let temperature = 298.15 * KELVIN;
         let volume = 3000.0 * METER.powi::<P3>();
-        let moles = &arr1(&[f64::NAN, 0.02, 0.05]) * MOL;
+        let moles = dvector![f64::NAN, 0.02, 0.05] * MOL;
         assert!(validate(temperature, volume, &moles).is_err());
     }
 
@@ -937,7 +928,7 @@ mod tests {
     fn test_negative_volume() {
         let temperature = 298.15 * KELVIN;
         let volume = -3000.0 * METER.powi::<P3>();
-        let moles = &arr1(&[0.01, 0.02, 0.05]) * MOL;
+        let moles = dvector![0.01, 0.02, 0.05] * MOL;
         assert!(validate(temperature, volume, &moles).is_err());
     }
 }

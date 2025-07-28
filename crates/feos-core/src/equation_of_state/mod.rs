@@ -1,5 +1,5 @@
 use crate::FeosResult;
-use ndarray::Array1;
+use nalgebra::DVector;
 use quantity::{
     Diffusivity, MolarWeight, Moles, Temperature, ThermalConductivity, Viscosity, Volume,
 };
@@ -71,7 +71,7 @@ impl<I: Components, R: Components> Components for EquationOfState<I, R> {
 }
 
 impl<I: IdealGas, R: Components + Sync + Send> IdealGas for EquationOfState<I, R> {
-    fn ln_lambda3<D: num_dual::DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+    fn ln_lambda3<D: num_dual::DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
         self.ideal_gas.ln_lambda3(temperature)
     }
 
@@ -81,7 +81,7 @@ impl<I: IdealGas, R: Components + Sync + Send> IdealGas for EquationOfState<I, R
 }
 
 impl<I: IdealGas, R: Residual> Residual for EquationOfState<I, R> {
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
+    fn compute_max_density(&self, moles: &DVector<f64>) -> f64 {
         self.residual.compute_max_density(moles)
     }
 
@@ -94,7 +94,7 @@ impl<I: IdealGas, R: Residual> Residual for EquationOfState<I, R> {
 }
 
 impl<I, R: Molarweight> Molarweight for EquationOfState<I, R> {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+    fn molar_weight(&self) -> MolarWeight<DVector<f64>> {
         self.residual.molar_weight()
     }
 }
@@ -104,36 +104,36 @@ impl<I: IdealGas, R: Residual + EntropyScaling> EntropyScaling for EquationOfSta
         &self,
         temperature: Temperature,
         volume: Volume,
-        moles: &Moles<Array1<f64>>,
+        moles: &Moles<DVector<f64>>,
     ) -> FeosResult<Viscosity> {
         self.residual
             .viscosity_reference(temperature, volume, moles)
     }
-    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
+    fn viscosity_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64> {
         self.residual.viscosity_correlation(s_res, x)
     }
     fn diffusion_reference(
         &self,
         temperature: Temperature,
         volume: Volume,
-        moles: &Moles<Array1<f64>>,
+        moles: &Moles<DVector<f64>>,
     ) -> FeosResult<Diffusivity> {
         self.residual
             .diffusion_reference(temperature, volume, moles)
     }
-    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
+    fn diffusion_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64> {
         self.residual.diffusion_correlation(s_res, x)
     }
     fn thermal_conductivity_reference(
         &self,
         temperature: Temperature,
         volume: Volume,
-        moles: &Moles<Array1<f64>>,
+        moles: &Moles<DVector<f64>>,
     ) -> FeosResult<ThermalConductivity> {
         self.residual
             .thermal_conductivity_reference(temperature, volume, moles)
     }
-    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
+    fn thermal_conductivity_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64> {
         self.residual.thermal_conductivity_correlation(s_res, x)
     }
 }

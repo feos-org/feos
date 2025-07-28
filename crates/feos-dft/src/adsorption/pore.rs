@@ -9,8 +9,9 @@ use crate::solver::DFTSolver;
 use feos_core::{
     Components, Contributions, FeosResult, ReferenceSystem, Residual, State, StateBuilder, StateHD,
 };
+use nalgebra::DVector;
+use ndarray::prelude::*;
 use ndarray::{Axis as Axis_nd, RemoveAxis};
-use ndarray::{ScalarOperand, prelude::*};
 use num_dual::linalg::LU;
 use num_dual::{Dual64, DualNum};
 use quantity::{
@@ -137,9 +138,9 @@ where
         self
     }
 
-    pub fn partial_molar_enthalpy_of_adsorption(&self) -> FeosResult<MolarEnergy<Array1<f64>>> {
+    pub fn partial_molar_enthalpy_of_adsorption(&self) -> FeosResult<MolarEnergy<DVector<f64>>> {
         let a = self.profile.dn_dmu()?;
-        let a_unit = a.get((0, 0));
+        let a_unit = a.get2(0, 0);
         let b = -self.profile.temperature * self.profile.dn_dt()?;
         let b_unit = b.get(0);
 
@@ -153,18 +154,15 @@ where
         .sum())
     }
 
-    fn _henry_coefficients<N: DualNum<f64> + Copy + ScalarOperand + DctNum>(
-        &self,
-        temperature: N,
-    ) -> Array1<N> {
+    fn _henry_coefficients<N: DualNum<f64> + Copy + DctNum>(&self, temperature: N) -> DVector<N> {
         if self.profile.dft.m().iter().any(|&m| m != 1.0) {
             panic!(
                 "Henry coefficients can only be calculated for spherical and heterosegmented molecules!"
             )
         };
-        let pot = self.profile.external_potential.mapv(N::from)
-            * self.profile.temperature.to_reduced()
-            / temperature;
+        let pot = (self.profile.external_potential.mapv(N::from)
+            * self.profile.temperature.to_reduced())
+        .mapv(|v| v / temperature);
         let exp_pot = pot.mapv(|v| (-v).exp());
         let functional_contributions = self.profile.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<N>> = functional_contributions
@@ -180,18 +178,19 @@ where
         self.profile.integrate_reduced_segments(&(exp_pot * bonds))
     }
 
-    pub fn henry_coefficients(&self) -> HenryCoefficient<Array1<f64>> {
+    pub fn henry_coefficients(&self) -> HenryCoefficient<DVector<f64>> {
         let t = self.profile.temperature.to_reduced();
         Volume::from_reduced(self._henry_coefficients(t)) / (RGAS * self.profile.temperature)
     }
 
-    pub fn ideal_gas_enthalpy_of_adsorption(&self) -> MolarEnergy<Array1<f64>> {
+    pub fn ideal_gas_enthalpy_of_adsorption(&self) -> MolarEnergy<DVector<f64>> {
         let t = Dual64::from(self.profile.temperature.to_reduced()).derivative();
         let h_dual = self._henry_coefficients(t);
-        let h = h_dual.mapv(|h| h.re);
-        let dh = h_dual.mapv(|h| h.eps);
+        let h = h_dual.map(|h| h.re);
+        let dh = h_dual.map(|h| h.eps);
         let t = self.profile.temperature.to_reduced();
-        RGAS * self.profile.temperature * Dimensionless::from_reduced((&h - t * dh) / h)
+        RGAS * self.profile.temperature
+            * Dimensionless::from_reduced((&h - t * dh).component_div(&h))
     }
 }
 
@@ -330,7 +329,7 @@ impl Components for Helium {
 }
 
 impl Residual for Helium {
-    fn compute_max_density(&self, _: &Array1<f64>) -> f64 {
+    fn compute_max_density(&self, _: &DVector<f64>) -> f64 {
         1.0
     }
 

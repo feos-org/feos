@@ -37,7 +37,7 @@ fn impl_residual(
 
     quote! {
         impl Residual for #ident {
-            fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
+            fn compute_max_density(&self, moles: &DVector<f64>) -> f64 {
                 match self {
                     #(#compute_max_density,)*
                 }
@@ -79,7 +79,7 @@ fn impl_molar_weight(
 
     Ok(quote! {
         impl Molarweight for #ident {
-            fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+            fn molar_weight(&self) -> MolarWeight<DVector<f64>> {
                 match self {
                     #(#molar_weight,)*
                 }
@@ -156,14 +156,14 @@ fn impl_entropy_scaling(
                 &self,
                 temperature: Temperature,
                 volume: Volume,
-                moles: &Moles<Array1<f64>>,
+                moles: &Moles<DVector<f64>>,
             ) -> FeosResult<Viscosity> {
                 match self {
                     #(#etar,)*
                 }
             }
 
-            fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
+            fn viscosity_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64> {
                 match self {
                     #(#etac,)*
                 }
@@ -173,14 +173,14 @@ fn impl_entropy_scaling(
                 &self,
                 temperature: Temperature,
                 volume: Volume,
-                moles: &Moles<Array1<f64>>,
+                moles: &Moles<DVector<f64>>,
             ) -> FeosResult<Diffusivity> {
                 match self {
                     #(#dr,)*
                 }
             }
 
-            fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
+            fn diffusion_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64> {
                 match self {
                     #(#dc,)*
                 }
@@ -190,14 +190,14 @@ fn impl_entropy_scaling(
                 &self,
                 temperature: Temperature,
                 volume: Volume,
-                moles: &Moles<Array1<f64>>,
+                moles: &Moles<DVector<f64>>,
             ) -> FeosResult<ThermalConductivity> {
                 match self {
                     #(#thcr,)*
                 }
             }
 
-            fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
+            fn thermal_conductivity_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64> {
                 match self {
                     #(#thcc,)*
                 }

@@ -58,45 +58,45 @@ pub trait PureModel: ResidualHelmholtzEnergy<1> + NamedParameters {
 impl<T: ResidualHelmholtzEnergy<1> + NamedParameters> PureModel for T {}
 
 pub trait BinaryModel: ResidualHelmholtzEnergy<2> + NamedParameters {
-    // fn bubble_point_pressure_parallel<const P: usize>(
-    //     parameter_names: [String; P],
-    //     parameters: ArrayView2<f64>,
-    //     input: ArrayView2<f64>,
-    // ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
-    //     parallelize(
-    //         parameter_names,
-    //         parameters,
-    //         input,
-    //         |eos: &HelmholtzEnergyWrapper<Self, Gradient<P>, 2>, inp| {
-    //             eos.bubble_point_pressure(
-    //                 inp[0] * KELVIN,
-    //                 Some(inp[2] * PASCAL),
-    //                 SVector::from([inp[1], 1.0 - inp[1]]),
-    //             )
-    //             .map(|p| p.convert_into(PASCAL))
-    //         },
-    //     )
-    // }
+    fn bubble_point_pressure_parallel<const P: usize>(
+        parameter_names: [String; P],
+        parameters: ArrayView2<f64>,
+        input: ArrayView2<f64>,
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
+        parallelize(
+            parameter_names,
+            parameters,
+            input,
+            |eos: &HelmholtzEnergyWrapper<Self, Gradient<P>, 2>, inp| {
+                eos.bubble_point_pressure(
+                    inp[0] * KELVIN,
+                    Some(inp[2] * PASCAL),
+                    SVector::from([inp[1], 1.0 - inp[1]]),
+                )
+                .map(|p| p.convert_into(PASCAL))
+            },
+        )
+    }
 
-    // fn dew_point_pressure_parallel<const P: usize>(
-    //     parameter_names: [String; P],
-    //     parameters: ArrayView2<f64>,
-    //     input: ArrayView2<f64>,
-    // ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
-    //     parallelize(
-    //         parameter_names,
-    //         parameters,
-    //         input,
-    //         |eos: &HelmholtzEnergyWrapper<Self, Gradient<P>, 2>, inp| {
-    //             eos.dew_point_pressure(
-    //                 inp[0] * KELVIN,
-    //                 Some(inp[2] * PASCAL),
-    //                 SVector::from([inp[1], 1.0 - inp[1]]),
-    //             )
-    //             .map(|p| p.convert_into(PASCAL))
-    //         },
-    //     )
-    // }
+    fn dew_point_pressure_parallel<const P: usize>(
+        parameter_names: [String; P],
+        parameters: ArrayView2<f64>,
+        input: ArrayView2<f64>,
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
+        parallelize(
+            parameter_names,
+            parameters,
+            input,
+            |eos: &HelmholtzEnergyWrapper<Self, Gradient<P>, 2>, inp| {
+                eos.dew_point_pressure(
+                    inp[0] * KELVIN,
+                    Some(inp[2] * PASCAL),
+                    SVector::from([inp[1], 1.0 - inp[1]]),
+                )
+                .map(|p| p.convert_into(PASCAL))
+            },
+        )
+    }
 }
 
 impl<T: ResidualHelmholtzEnergy<2> + NamedParameters> BinaryModel for T {}

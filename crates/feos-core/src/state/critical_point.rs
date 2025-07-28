@@ -1,16 +1,16 @@
-use super::{DensityInitialization, State, StateHD, TPSpec};
+use super::{DensityInitialization, State, StateHD};
 use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
 use crate::{
     HelmholtzEnergyDerivatives, ReferenceSystem, SolverOptions, StateGeneric,
     TemperatureOrPressure, Verbosity,
 };
-use nalgebra::SVector;
-use ndarray::{Array1, Array2, arr1};
+use nalgebra::allocator::Allocator;
+use nalgebra::{DMatrix, DVector, DefaultAllocator, OVector, SVector, U1, U2, dvector};
 use num_dual::linalg::smallest_ev;
 use num_dual::{Dual, Dual3, DualNum, DualSVec64, DualVec, HyperDual, first_derivative, jacobian};
 use num_traits::{One, Zero};
-use quantity::{Density, Moles, Pressure, Temperature, Volume};
+use quantity::{Density, Pressure, Temperature};
 use std::sync::Arc;
 
 const MAX_ITER_CRIT_POINT: usize = 50;
@@ -44,40 +44,37 @@ impl<R: Residual> State<R> {
         initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
     ) -> FeosResult<Self> {
-        match temperature_or_pressure.into() {
-            TPSpec::Temperature(t) => {
-                Self::critical_point_binary_t(eos, t, initial_molefracs, options)
-            }
-            TPSpec::Pressure(p) => Self::critical_point_binary_p(
-                eos,
-                p,
-                initial_temperature,
-                initial_molefracs,
-                options,
-            ),
+        if let Some(t) = temperature_or_pressure.temperature() {
+            Self::critical_point_binary_t(eos, t, initial_molefracs, options)
+        } else if let Some(p) = temperature_or_pressure.pressure() {
+            Self::critical_point_binary_p(eos, p, initial_temperature, initial_molefracs, options)
+        } else {
+            unreachable!()
         }
     }
 }
 
 impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
-    StateGeneric<E, D, E::Molefracs, E::Cache>
+    StateGeneric<E, D, E::Components, E::Cache>
+where
+    DefaultAllocator: Allocator<E::Components>,
 {
     /// Calculate the critical point of a system for given moles.
     pub fn critical_point(
         eos: &E,
-        molefracs: Option<&E::Molefracs>,
+        molefracs: Option<&OVector<D, E::Components>>,
         initial_temperature: Option<Temperature>,
         options: SolverOptions,
     ) -> FeosResult<Self> {
         let eos_re = eos.re();
         let molefracs = molefracs.map_or_else(E::pure_molefracs, |x| x.clone());
-        let x = E::molefracs_re(&molefracs);
+        let x = &molefracs.map(|x| x.re());
         let trial_temperatures = [300.0, 700.0, 500.0];
         let mut t_rho = None;
         if let Some(t) = initial_temperature {
             t_rho = Some(StateGeneric::critical_point_hkm(
                 &eos_re,
-                &x,
+                x,
                 t.into_reduced(),
                 options,
             )?);
@@ -86,7 +83,7 @@ impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
             if t_rho.is_some() {
                 break;
             }
-            t_rho = StateGeneric::critical_point_hkm(&eos_re, &x, t, options).ok();
+            t_rho = StateGeneric::critical_point_hkm(&eos_re, x, t, options).ok();
         }
         let Some(t_rho) = t_rho else {
             return Err(FeosError::NotConverged(String::from("Critical point")));
@@ -94,7 +91,7 @@ impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
 
         let mut t_rho = SVector::from(t_rho.map(D::from));
         for _ in 0..D::NDERIV {
-            let (f, jac) = jacobian(
+            let (f, jac) = jacobian::<_, _, _, U2, U2>(
                 |t_rho| eos.criticality_conditions(t_rho[0], t_rho[1], &molefracs),
                 t_rho,
             );
@@ -103,7 +100,7 @@ impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
             t_rho[1] -= det * (jac[(0, 0)] * f[1] - jac[(1, 0)] * f[0]);
         }
         let [temperature, density] = t_rho.data.0[0];
-        Ok(Self::new_t_rho_x(
+        Ok(Self::new_intensive(
             eos,
             Temperature::from_reduced(temperature),
             Density::from_reduced(density),
@@ -112,13 +109,19 @@ impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
     }
 }
 
-impl<E: HelmholtzEnergyDerivatives<f64>> StateGeneric<E, f64, E::Molefracs, E::Cache> {
+impl<E: HelmholtzEnergyDerivatives<f64>> StateGeneric<E, f64, E::Components, E::Cache>
+where
+    DefaultAllocator: Allocator<E::Components>,
+{
     fn critical_point_hkm(
         eos: &E,
-        molefracs: &E::Molefracs,
+        molefracs: &OVector<f64, E::Components>,
         initial_temperature: f64,
         options: SolverOptions,
-    ) -> FeosResult<[f64; 2]> {
+    ) -> FeosResult<[f64; 2]>
+    where
+        DefaultAllocator: Allocator<E::Components>,
+    {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_CRIT_POINT, TOL_CRIT_POINT);
 
         let mut t = initial_temperature;
@@ -142,10 +145,10 @@ impl<E: HelmholtzEnergyDerivatives<f64>> StateGeneric<E, f64, E::Molefracs, E::C
             // calculate residuals and derivatives w.r.t. temperature and density
             let res =
                 |x: SVector<DualSVec64<2>, 2>| eos.criticality_conditions(x[0], x[1], molefracs);
-            let (res, jac) = jacobian(res, SVector::from([t, rho]));
+            let (res, jac) = jacobian::<_, _, _, U2, U2>(res, SVector::from([t, rho]));
 
             // calculate Newton step
-            let delta = jac.lu().solve(&res);
+            let delta = jac.lu().solve::<U2, U1, _>(&res);
             let mut delta = delta.ok_or(FeosError::IterationFailed("Critical point".into()))?;
 
             // reduce step if necessary
@@ -197,9 +200,7 @@ impl<R: Residual> State<R> {
 
         let t = temperature.to_reduced();
         let x = SVector::from(initial_molefracs.unwrap_or([0.5, 0.5]));
-        let max_density = eos
-            .max_density(Some(&Moles::from_reduced(arr1(&x.data.0[0]))))?
-            .to_reduced();
+        let max_density = eos.compute_max_density(&DVector::from(x.data.0[0].to_vec()));
         let mut rho = x * 0.3 * max_density;
 
         log_iter!(
@@ -251,12 +252,14 @@ impl<R: Residual> State<R> {
                     "Critical point calculation converged in {} step(s)\n",
                     i
                 );
-                return State::new_nvt(
+                let rho_total = rho[0] + rho[1];
+                let x = dvector![rho[0] / rho_total, rho[1] / rho_total];
+                return Ok(State::new_intensive(
                     eos,
                     Temperature::from_reduced(t),
-                    Volume::from_reduced(1.0),
-                    &Moles::from_reduced(arr1(&rho.data.0[0])),
-                );
+                    Density::from_reduced(rho_total),
+                    &x,
+                ));
             }
         }
         Err(FeosError::NotConverged(String::from("Critical point")))
@@ -276,9 +279,7 @@ impl<R: Residual> State<R> {
         let p = pressure.to_reduced();
         let mut t = initial_temperature.map(|t| t.to_reduced()).unwrap_or(300.0);
         let x = SVector::from(initial_molefracs.unwrap_or([0.5, 0.5]));
-        let max_density = eos
-            .max_density(Some(&Moles::from_reduced(arr1(&x.data.0[0]))))?
-            .to_reduced();
+        let max_density = eos.compute_max_density(&DVector::from(x.data.0[0].to_vec()));
         let mut rho = x * 0.3 * max_density;
 
         log_iter!(
@@ -342,23 +343,28 @@ impl<R: Residual> State<R> {
                     "Critical point calculation converged in {} step(s)\n",
                     i
                 );
-                return State::new_nvt(
+                let rho_total = rho[0] + rho[1];
+                let x = dvector![rho[0] / rho_total, rho[1] / rho_total];
+                return Ok(State::new_intensive(
                     eos,
                     Temperature::from_reduced(t),
-                    Volume::from_reduced(1.0),
-                    &Moles::from_reduced(arr1(&rho.data.0[0])),
-                );
+                    Density::from_reduced(rho_total),
+                    &x,
+                ));
             }
         }
         Err(FeosError::NotConverged(String::from("Critical point")))
     }
 }
 
-impl<E: HelmholtzEnergyDerivatives<f64>> StateGeneric<E, f64, E::Molefracs, E::Cache> {
+impl<E: HelmholtzEnergyDerivatives<f64>> StateGeneric<E, f64, E::Components, E::Cache>
+where
+    DefaultAllocator: Allocator<E::Components>,
+{
     pub fn spinodal(
         eos: &E,
         temperature: Temperature,
-        molefracs: Option<&E::Molefracs>,
+        molefracs: Option<&OVector<f64, E::Components>>,
         options: SolverOptions,
     ) -> FeosResult<[Self; 2]> {
         let critical_point = Self::critical_point(eos, molefracs, None, options)?;
@@ -384,7 +390,7 @@ impl<E: HelmholtzEnergyDerivatives<f64>> StateGeneric<E, f64, E::Molefracs, E::C
     fn calculate_spinodal(
         eos: &E,
         temperature: Temperature,
-        molefracs: &E::Molefracs,
+        molefracs: &OVector<f64, E::Components>,
         density_initialization: DensityInitialization,
         options: SolverOptions,
     ) -> FeosResult<Self> {
@@ -440,7 +446,7 @@ impl<E: HelmholtzEnergyDerivatives<f64>> StateGeneric<E, f64, E::Molefracs, E::C
                     "Spinodal calculation converged in {} step(s)\n",
                     i
                 );
-                return Ok(Self::new_t_rho_x(
+                return Ok(Self::new_intensive(
                     eos,
                     temperature,
                     Density::from_reduced(rho),
@@ -462,7 +468,7 @@ impl<E: HelmholtzEnergyDerivatives<f64>> StateGeneric<E, f64, E::Molefracs, E::C
 //     let t = HyperDual::from_re(temperature);
 //     let v = HyperDual::from_re(density.recip() * moles.sum());
 //     let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
-//         let mut m = moles.mapv(HyperDual::from);
+//         let mut m = moles.map(HyperDual::from);
 //         m[i].eps1 = DualSVec64::one();
 //         m[j].eps2 = DualSVec64::one();
 //         let state = StateHD::new(t, v, m);
@@ -474,7 +480,7 @@ impl<E: HelmholtzEnergyDerivatives<f64>> StateGeneric<E, f64, E::Molefracs, E::C
 //     let (eval, evec) = smallest_ev(qij);
 
 //     // evaluate third partial derivative w.r.t. s
-//     let moles_hd = Array1::from_shape_fn(eos.components(), |i| {
+//     let moles_hd = DVector::from_fn(eos.components(), |i| {
 //         Dual3::new(
 //             DualSVec64::from(moles[i]),
 //             evec[i] * moles[i].sqrt(),
@@ -487,7 +493,7 @@ impl<E: HelmholtzEnergyDerivatives<f64>> StateGeneric<E, f64, E::Molefracs, E::C
 //         Dual3::from_re(density.recip() * moles.sum()),
 //         moles_hd,
 //     );
-//     let ig = (&state_s.moles * (state_s.partial_density.mapv(|x| x.ln()) - 1.0)).sum();
+//     let ig = (&state_s.moles * (state_s.partial_density.map(|x| x.ln()) - 1.0)).sum();
 //     let res = eos.residual_helmholtz_energy(&state_s);
 //     Ok(SVector::from([eval, (res + ig).v3]))
 // }
@@ -500,11 +506,11 @@ fn critical_point_objective_t<R: Residual>(
     // calculate second partial derivatives w.r.t. moles
     let t = HyperDual::from(temperature);
     let v = HyperDual::from(1.0);
-    let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
+    let qij = DMatrix::from_fn(eos.components(), eos.components(), |i, j| {
         let mut m = density.map(HyperDual::from_re);
         m[i].eps1 = DualSVec64::one();
         m[j].eps2 = DualSVec64::one();
-        let state = StateHD::new(t, v, arr1(&[m[0], m[1]]));
+        let state = StateHD::new(t, v, dvector![m[0], m[1]]);
         eos.residual_helmholtz_energy(&state).eps1eps2 * (density[i] * density[j]).sqrt()
             + kronecker(i, j)
     });
@@ -513,7 +519,7 @@ fn critical_point_objective_t<R: Residual>(
     let (eval, evec) = smallest_ev(qij);
 
     // evaluate third partial derivative w.r.t. s
-    let moles_hd = Array1::from_shape_fn(eos.components(), |i| {
+    let moles_hd = DVector::from_fn(eos.components(), |i, _| {
         Dual3::new(
             density[i],
             evec[i] * density[i].sqrt(),
@@ -522,7 +528,9 @@ fn critical_point_objective_t<R: Residual>(
         )
     });
     let state_s = StateHD::new(Dual3::from(temperature), Dual3::from(1.0), moles_hd);
-    let ig = (&state_s.moles * (state_s.partial_density.mapv(|x| x.ln()) - 1.0)).sum();
+    let ig = state_s
+        .moles
+        .dot(&state_s.partial_density.map(|x| x.ln() - 1.0));
     let res = eos.residual_helmholtz_energy(&state_s);
     SVector::from([eval, (res + ig).v3])
 }
@@ -536,11 +544,11 @@ fn critical_point_objective_p<R: Residual>(
     // calculate second partial derivatives w.r.t. moles
     let t = HyperDual::from_re(temperature);
     let v = HyperDual::from(1.0);
-    let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
+    let qij = DMatrix::from_fn(eos.components(), eos.components(), |i, j| {
         let mut m = density.map(HyperDual::from_re);
         m[i].eps1 = DualSVec64::one();
         m[j].eps2 = DualSVec64::one();
-        let state = StateHD::new(t, v, arr1(&[m[0], m[1]]));
+        let state = StateHD::new(t, v, dvector![m[0], m[1]]);
         eos.residual_helmholtz_energy(&state).eps1eps2 * (density[i] * density[j]).sqrt()
             + kronecker(i, j)
     });
@@ -549,7 +557,7 @@ fn critical_point_objective_p<R: Residual>(
     let (eval, evec) = smallest_ev(qij);
 
     // evaluate third partial derivative w.r.t. s
-    let moles_hd = Array1::from_shape_fn(eos.components(), |i| {
+    let moles_hd = DVector::from_fn(eos.components(), |i, _| {
         Dual3::new(
             density[i],
             evec[i] * density[i].sqrt(),
@@ -558,12 +566,14 @@ fn critical_point_objective_p<R: Residual>(
         )
     });
     let state_s = StateHD::new(Dual3::from_re(temperature), Dual3::from(1.0), moles_hd);
-    let ig = (&state_s.moles * (state_s.partial_density.mapv(|x| x.ln()) - 1.0)).sum();
+    let ig = state_s
+        .moles
+        .dot(&state_s.partial_density.map(|x| x.ln() - 1.0));
     let res = eos.residual_helmholtz_energy(&state_s);
 
     // calculate pressure
     let a = |v| {
-        let m = arr1(&[Dual::from_re(density[0]), Dual::from_re(density[1])]);
+        let m = dvector![Dual::from_re(density[0]), Dual::from_re(density[1])];
         let state_p = StateHD::new(Dual::from_re(temperature), v, m);
         eos.residual_helmholtz_energy(&state_p)
     };
@@ -583,7 +593,7 @@ fn critical_point_objective_p<R: Residual>(
 //     let t = HyperDual::from_re(temperature);
 //     let v = HyperDual::from_re(density.recip() * moles.sum());
 //     let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
-//         let mut m = moles.mapv(HyperDual::from);
+//         let mut m = moles.map(HyperDual::from);
 //         m[i].eps1 = Dual64::one();
 //         m[j].eps2 = Dual64::one();
 //         let state = StateHD::new(t, v, m);

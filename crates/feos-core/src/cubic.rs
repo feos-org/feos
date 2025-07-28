@@ -8,7 +8,7 @@ use crate::equation_of_state::{Components, Molarweight, Residual};
 use crate::parameter::{Identifier, Parameters, PureRecord};
 use crate::state::StateHD;
 use crate::{FeosError, FeosResult};
-use ndarray::{Array1, Array2};
+use nalgebra::{DMatrix, DVector};
 use num_dual::DualNum;
 use quantity::MolarWeight;
 use serde::{Deserialize, Serialize};
@@ -77,12 +77,12 @@ pub struct PengRobinson {
     /// Parameters
     parameters: PengRobinsonParameters,
     /// Critical temperature in Kelvin
-    tc: Array1<f64>,
-    a: Array1<f64>,
-    b: Array1<f64>,
+    tc: DVector<f64>,
+    a: DVector<f64>,
+    b: DVector<f64>,
     /// Binary interaction parameter
-    k_ij: Array2<f64>,
-    kappa: Array1<f64>,
+    k_ij: DMatrix<f64>,
+    kappa: DVector<f64>,
 }
 
 impl PengRobinson {
@@ -91,9 +91,9 @@ impl PengRobinson {
         let [tc, pc, ac] = parameters.collate(|r| [r.tc, r.pc, r.acentric_factor]);
         let [k_ij] = parameters.collate_binary(|&br| [br]);
 
-        let a = 0.45724 * tc.powi(2) * KB_A3 / &pc;
-        let b = 0.07780 * &tc * KB_A3 / pc;
-        let kappa = 0.37464 + (1.54226 - 0.26992 * &ac) * ac;
+        let a = 0.45724 * KB_A3 * tc.component_mul(&tc).component_div(&pc);
+        let b = 0.07780 * KB_A3 * &tc.component_div(&pc);
+        let kappa = ac.map(|ac| 0.37464 + (1.54226 - 0.26992 * &ac) * ac);
         Self {
             parameters,
             tc,
@@ -116,20 +116,20 @@ impl Components for PengRobinson {
 }
 
 impl Residual for PengRobinson {
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
+    fn compute_max_density(&self, moles: &DVector<f64>) -> f64 {
         let b = (moles * &self.b).sum() / moles.sum();
         0.9 / b
     }
 
     fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
         let x = &state.molefracs;
-        let ak = (&self
+        let ak = &self
             .tc
-            .mapv(|tc| (D::one() - (state.temperature / tc).sqrt()))
-            * &self.kappa
-            + 1.0)
-            .mapv(|x| x.powi(2))
-            * &self.a;
+            .map(|tc| (D::one() - (state.temperature / tc).sqrt()))
+            .component_mul(&self.kappa.map(D::from))
+            .add_scalar(D::from(1.0))
+            .map(|x| x.powi(2))
+            .component_mul(&self.a.map(D::from));
 
         // Mixing rules
         let mut ak_mix = D::zero();
@@ -138,7 +138,7 @@ impl Residual for PengRobinson {
                 ak_mix += (ak[i] * ak[j]).sqrt() * (x[i] * x[j] * (1.0 - self.k_ij[(i, j)]));
             }
         }
-        let b = (x * &self.b).sum();
+        let b = x.dot(&self.b.map(D::from));
 
         // Helmholtz energy
         let n = state.moles.sum();
@@ -160,7 +160,7 @@ impl Residual for PengRobinson {
 }
 
 impl Molarweight for PengRobinson {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+    fn molar_weight(&self) -> MolarWeight<DVector<f64>> {
         self.parameters.molar_weight.clone()
     }
 }

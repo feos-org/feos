@@ -2,9 +2,10 @@ use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
 use crate::state::{Cache, DensityInitialization, State};
 use crate::{Contributions, HelmholtzEnergyDerivatives, ReferenceSystem, StateGeneric};
-use ndarray::Array1;
+use nalgebra::allocator::Allocator;
+use nalgebra::{DVector, DefaultAllocator, Dim, Dyn, OVector};
 use num_dual::DualNum;
-use quantity::{Dimensionless, Energy, Moles, Pressure, RGAS, Temperature};
+use quantity::{Energy, Moles, Pressure, RGAS, Temperature};
 use std::fmt;
 use std::fmt::Write;
 use std::sync::{Arc, Mutex};
@@ -33,19 +34,22 @@ pub use phase_diagram_pure::PhaseDiagram;
 /// + [Pure component phase equilibria](#pure-component-phase-equilibria)
 /// + [Utility functions](#utility-functions)
 #[derive(Debug)]
-pub struct PhaseEquilibriumGeneric<E, D: DualNum<f64> + Copy, M, C, const N: usize>(
-    [StateGeneric<E, D, M, C>; N],
-);
-pub type PhaseEquilibrium<E, const N: usize> =
-    PhaseEquilibriumGeneric<Arc<E>, f64, Array1<f64>, Mutex<Cache>, N>;
+pub struct PhaseEquilibriumGeneric<E, D: DualNum<f64> + Copy, N: Dim, C, const P: usize>(
+    [StateGeneric<E, D, N, C>; P],
+)
+where
+    DefaultAllocator: Allocator<N>;
 
-impl<E, const N: usize> Clone for PhaseEquilibrium<E, N> {
+pub type PhaseEquilibrium<E, const P: usize> =
+    PhaseEquilibriumGeneric<Arc<E>, f64, Dyn, Mutex<Cache>, P>;
+
+impl<E, const P: usize> Clone for PhaseEquilibrium<E, P> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }
 }
 
-impl<E: Residual, const N: usize> fmt::Display for PhaseEquilibrium<E, N> {
+impl<E: Residual, const P: usize> fmt::Display for PhaseEquilibrium<E, P> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (i, s) in self.0.iter().enumerate() {
             writeln!(f, "phase {i}: {s}")?;
@@ -54,7 +58,7 @@ impl<E: Residual, const N: usize> fmt::Display for PhaseEquilibrium<E, N> {
     }
 }
 
-impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
+impl<E: Residual, const P: usize> PhaseEquilibrium<E, P> {
     pub fn _repr_markdown_(&self) -> String {
         if self.0[0].eos.components() == 1 {
             let mut res = "||temperature|density|\n|-|-|-|\n".to_string();
@@ -88,13 +92,15 @@ impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
 }
 
 impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
-    PhaseEquilibriumGeneric<E, D, E::Molefracs, E::Cache, 2>
+    PhaseEquilibriumGeneric<E, D, E::Components, E::Cache, 2>
+where
+    DefaultAllocator: Allocator<E::Components>,
 {
-    pub fn vapor(&self) -> &StateGeneric<E, D, E::Molefracs, E::Cache> {
+    pub fn vapor(&self) -> &StateGeneric<E, D, E::Components, E::Cache> {
         &self.0[0]
     }
 
-    pub fn liquid(&self) -> &StateGeneric<E, D, E::Molefracs, E::Cache> {
+    pub fn liquid(&self) -> &StateGeneric<E, D, E::Components, E::Cache> {
         &self.0[1]
     }
 }
@@ -113,12 +119,13 @@ impl<E> PhaseEquilibrium<E, 3> {
     }
 }
 
-impl<E: HelmholtzEnergyDerivatives<f64>>
-    PhaseEquilibriumGeneric<E, f64, E::Molefracs, E::Cache, 2>
+impl<E: HelmholtzEnergyDerivatives<f64>> PhaseEquilibriumGeneric<E, f64, E::Components, E::Cache, 2>
+where
+    DefaultAllocator: Allocator<E::Components>,
 {
     pub(super) fn from_states(
-        state1: StateGeneric<E, f64, E::Molefracs, E::Cache>,
-        state2: StateGeneric<E, f64, E::Molefracs, E::Cache>,
+        state1: StateGeneric<E, f64, E::Components, E::Cache>,
+        state2: StateGeneric<E, f64, E::Components, E::Cache>,
     ) -> Self {
         let (vapor, liquid) = if state1.density.re() < state2.density.re() {
             (state1, state2)
@@ -138,8 +145,8 @@ impl<E: HelmholtzEnergyDerivatives<f64>>
         eos: &E,
         temperature: Temperature,
         pressure: Pressure,
-        vapor_molefracs: &E::Molefracs,
-        liquid_molefracs: &E::Molefracs,
+        vapor_molefracs: &OVector<f64, E::Components>,
+        liquid_molefracs: &OVector<f64, E::Components>,
     ) -> FeosResult<Self> {
         let liquid = StateGeneric::new_xpt(
             eos,
@@ -164,7 +171,7 @@ impl<E: HelmholtzEnergyDerivatives<f64>>
     }
 }
 
-impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
+impl<E: Residual, const P: usize> PhaseEquilibrium<E, P> {
     pub(super) fn update_pressure(
         mut self,
         temperature: Temperature,
@@ -185,7 +192,7 @@ impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
     pub(super) fn update_moles(
         &mut self,
         pressure: Pressure,
-        moles: [&Moles<Array1<f64>>; N],
+        moles: [&Moles<DVector<f64>>; P],
     ) -> FeosResult<()> {
         for (i, s) in self.0.iter_mut().enumerate() {
             *s = State::new_npt(
@@ -202,10 +209,10 @@ impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
     // Total Gibbs energy excluding the constant contribution RT sum_i N_i ln(\Lambda_i^3)
     pub(super) fn total_gibbs_energy(&self) -> Energy {
         self.0.iter().fold(Energy::from_reduced(0.0), |acc, s| {
-            let ln_rho = s.partial_density.to_reduced().mapv(f64::ln);
+            let ln_rho_m1 = s.partial_density.to_reduced().map(|r| r.ln() - 1.0);
             acc + s.residual_helmholtz_energy()
                 + s.pressure(Contributions::Total) * s.volume
-                + RGAS * s.temperature * (s.moles.clone() * Dimensionless::new(ln_rho - 1.0)).sum()
+                + RGAS * s.temperature * s.total_moles * s.molefracs.dot(&ln_rho_m1)
         })
     }
 }
@@ -213,8 +220,9 @@ impl<E: Residual, const N: usize> PhaseEquilibrium<E, N> {
 const TRIVIAL_REL_DEVIATION: f64 = 1e-5;
 
 /// # Utility functions
-impl<E: HelmholtzEnergyDerivatives<f64>>
-    PhaseEquilibriumGeneric<E, f64, E::Molefracs, E::Cache, 2>
+impl<E: HelmholtzEnergyDerivatives<f64>> PhaseEquilibriumGeneric<E, f64, E::Components, E::Cache, 2>
+where
+    DefaultAllocator: Allocator<E::Components>,
 {
     pub(super) fn check_trivial_solution(self) -> FeosResult<Self> {
         if Self::is_trivial_solution(self.vapor(), self.liquid()) {
@@ -226,14 +234,14 @@ impl<E: HelmholtzEnergyDerivatives<f64>>
 
     /// Check if the two states form a trivial solution
     pub fn is_trivial_solution(
-        state1: &StateGeneric<E, f64, E::Molefracs, E::Cache>,
-        state2: &StateGeneric<E, f64, E::Molefracs, E::Cache>,
+        state1: &StateGeneric<E, f64, E::Components, E::Cache>,
+        state2: &StateGeneric<E, f64, E::Components, E::Cache>,
     ) -> bool {
         let rho1 = state1.molefracs.clone() * state1.density.into_reduced();
         let rho2 = state2.molefracs.clone() * state2.density.into_reduced();
 
-        E::iter_molefracs(&rho1)
-            .zip(E::iter_molefracs(&rho2))
+        rho1.into_iter()
+            .zip(&rho2)
             .fold(0.0, |acc, (rho1, rho2)| (rho2 / rho1 - 1.0).abs().max(acc))
             < TRIVIAL_REL_DEVIATION
     }

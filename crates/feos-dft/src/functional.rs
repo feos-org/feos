@@ -111,7 +111,7 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
 
     /// Calculate the (residual) intrinsic functional derivative $\frac{\delta\mathcal{\beta F}}{\delta\rho_i(\mathbf{r})}$.
     #[expect(clippy::type_complexity)]
-    fn functional_derivative<D, N: DualNum<f64> + Copy + ScalarOperand>(
+    fn functional_derivative<D, N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         density: &Array<N, D::Larger>,

@@ -202,7 +202,7 @@ pub mod test {
     use crate::eos::pcsaft::test::pcsaft;
     use approx::assert_relative_eq;
     use feos_core::{Contributions::Total, FeosResult, ReferenceSystem, State};
-    use nalgebra::SVector;
+    use nalgebra::{SVector, dvector};
     use ndarray::arr1;
     use quantity::{KELVIN, KILO, METER, MOL};
 
@@ -213,7 +213,7 @@ pub mod test {
 
         let temperature = 300.0 * KELVIN;
         let volume = 2.3 * METER * METER * METER;
-        let moles = arr1(&[1.3]) * KILO * MOL;
+        let moles = dvector![1.3] * KILO * MOL;
 
         let state = State::new_nvt(&eos, temperature, volume, &moles)?;
         let a_feos = state.residual_molar_helmholtz_energy();

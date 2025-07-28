@@ -2,7 +2,7 @@ use super::{HelmholtzEnergyWrapper, ResidualHelmholtzEnergy};
 use feos_core::{
     HelmholtzEnergyDerivatives, PhaseEquilibriumGeneric, ReferenceSystem, StateGeneric,
 };
-use nalgebra::{Const, SMatrix, SVector};
+use nalgebra::{Const, OMatrix, SMatrix, SVector};
 use num_dual::{
     Dual, Dual2, Dual2Vec, Dual3, DualNum, DualVec, HyperDual, HyperDualVec, first_derivative,
     gradient, hessian, partial_hessian, second_derivative, second_partial_derivative,
@@ -10,10 +10,10 @@ use num_dual::{
 };
 
 pub type StateAD<'a, E, D, const N: usize> =
-    StateGeneric<HelmholtzEnergyWrapper<'a, E, D, N>, D, SVector<D, N>, ()>;
+    StateGeneric<HelmholtzEnergyWrapper<'a, E, D, N>, D, Const<N>, ()>;
 
 pub type PhaseEquilibriumAD<'a, E, D, const N: usize> =
-    PhaseEquilibriumGeneric<HelmholtzEnergyWrapper<'a, E, D, N>, D, SVector<D, N>, (), 2>;
+    PhaseEquilibriumGeneric<HelmholtzEnergyWrapper<'a, E, D, N>, D, Const<N>, (), 2>;
 
 impl<'a, E: ResidualHelmholtzEnergy<N>, D: DualNum<f64> + Copy, const N: usize>
     HelmholtzEnergyDerivatives<D> for HelmholtzEnergyWrapper<'a, E, D, N>
@@ -28,16 +28,16 @@ where
         self.eos.wrap()
     }
 
-    type Molefracs = SVector<D, N>;
-    fn pure_molefracs() -> SVector<D, N> {
-        SVector::from([D::one(); N])
-    }
-    fn molefracs_re(molefracs: &SVector<D, N>) -> SVector<f64, N> {
-        molefracs.map(|x| x.re())
-    }
-    fn iter_molefracs(molefracs: &SVector<D, N>) -> impl Iterator<Item = D> {
-        molefracs.into_iter().copied()
-    }
+    type Components = Const<N>;
+    // fn pure_molefracs() -> SVector<D, N> {
+    //     SVector::from([D::one(); N])
+    // }
+    // fn molefracs_re(molefracs: &SVector<D, N>) -> SVector<f64, N> {
+    //     molefracs.map(|x| x.re())
+    // }
+    // fn iter_molefracs(molefracs: &SVector<D, N>) -> impl Iterator<Item = D> {
+    //     molefracs.into_iter().copied()
+    // }
     fn compute_max_density(&self, molefracs: &SVector<D, N>) -> D {
         E::compute_max_density(self.parameters, molefracs)
     }
@@ -116,12 +116,12 @@ where
         -d2a_dtdv
     }
 
-    fn _dp_dn(state: &StateAD<'a, E, D, N>) -> SVector<D, N> {
+    fn _dp_res_dn(state: &StateAD<'a, E, D, N>) -> SVector<D, N> {
         let params = E::params_from_inner(state.eos.parameters);
         let t = state.temperature.into_reduced();
         let v = state.volume.into_reduced();
         let temperature = HyperDualVec::from_re(t);
-        let (_, _, _, d2a_dtdn) = partial_hessian(
+        let (_, _, _, d2a_dndv) = partial_hessian(
             |molefracs, molar_volume| {
                 let [[molar_volume]] = molar_volume.data.0;
                 E::residual_molar_helmholtz_energy(&params, temperature, molar_volume, &molefracs)
@@ -129,7 +129,7 @@ where
             state.molefracs,
             SVector::from([v]),
         );
-        d2a_dtdn.map(|da| -da + t / v)
+        -d2a_dndv
     }
 
     fn _d2p_res_dv2(state: &StateAD<'a, E, D, N>) -> D {
@@ -171,15 +171,30 @@ where
         -d3a_dt3
     }
 
+    fn _dmu_res_dt(state: &StateAD<'a, E, D, N>) -> SVector<D, N> {
+        let params = E::params_from_inner(state.eos.parameters);
+        let t = state.temperature.into_reduced();
+        let v = state.volume.into_reduced();
+        let molar_volume = HyperDualVec::from_re(v);
+        let (_, _, _, d2a_dtdn) = partial_hessian(
+            |molefracs, temperature| {
+                let [[temperature]] = temperature.data.0;
+                E::residual_molar_helmholtz_energy(&params, temperature, molar_volume, &molefracs)
+            },
+            state.molefracs,
+            SVector::from([t]),
+        );
+        d2a_dtdn
+    }
+
     fn _residual_molar_helmholtz_energy<D2: DualNum<f64, Inner = D> + Copy>(
         &self,
         temperature: D2,
         molar_volume: D2,
-        molefracs: &SVector<D, N>,
+        molefracs: &SVector<D2, N>,
     ) -> D2 {
         let parameters = E::params_from_inner(self.parameters);
-        let molefracs = molefracs.map(D2::from_inner);
-        E::residual_molar_helmholtz_energy(&parameters, temperature, molar_volume, &molefracs)
+        E::residual_molar_helmholtz_energy(&parameters, temperature, molar_volume, molefracs)
     }
 
     fn stability_condition(
@@ -251,6 +266,28 @@ where
         );
 
         SVector::from([l, c2])
+    }
+
+    fn dmu_drho(
+        &self,
+        temperature: D,
+        partial_density: &SVector<D, N>,
+    ) -> (
+        D,
+        SVector<D, N>,
+        SVector<D, N>,
+        OMatrix<D, Const<N>, Const<N>>,
+    ) {
+        todo!()
+    }
+
+    fn dmu_dv(
+        &self,
+        temperature: D,
+        molar_volume: D,
+        molefracs: &SVector<D, N>,
+    ) -> (D, SVector<D, N>, D, SVector<D, N>) {
+        todo!()
     }
 }
 
@@ -537,6 +574,7 @@ mod test {
     use feos_core::{
         Contributions, DensityInitialization, EquationOfState, FeosResult, PhaseEquilibrium, State,
     };
+    use nalgebra::dvector;
     use ndarray::arr1;
     use num_dual::{Dual, Dual64};
     use quantity::{BAR, JOULE, KELVIN, MOL, PASCAL, Pressure, Temperature};
@@ -585,7 +623,7 @@ mod test {
             &eos,
             t,
             p,
-            &(arr1(&[1.0]) * MOL),
+            &(dvector![1.0] * MOL),
             DensityInitialization::Liquid,
         )?;
         let state = StateAD::new_xpt(
@@ -611,7 +649,7 @@ mod test {
             &residual,
             t,
             p,
-            &(arr1(&[1.0]) * MOL),
+            &(dvector![1.0] * MOL),
             DensityInitialization::Liquid,
         )?;
         let h = 1e2 * PASCAL;
@@ -619,7 +657,7 @@ mod test {
             &residual,
             t,
             p + h,
-            &(arr1(&[1.0]) * MOL),
+            &(dvector![1.0] * MOL),
             DensityInitialization::Liquid,
         )?;
         let params: [Dual64; 8] = pcsaft.map(Dual64::from);
@@ -839,7 +877,7 @@ mod test {
     //         &eos,
     //         temperature,
     //         pressure,
-    //         &(arr1(&[1.0]) * MOL),
+    //         &(dvector![1.0] * MOL),
     //         DensityInitialization::None,
     //     )?;
     //     let state_ad = StateAD::new_tp(

@@ -3,7 +3,7 @@ use crate::user_defined::PyIdealGas;
 use feos::ideal_gas::{Dippr, Joback};
 use feos_core::{Components, IdealGas};
 use feos_derive::{Components, IdealGas};
-use ndarray::Array1;
+use nalgebra::DVector;
 use num_dual::DualNum;
 use std::sync::Arc;
 

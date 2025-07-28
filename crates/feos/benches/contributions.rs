@@ -10,7 +10,7 @@ use feos::core::parameter::IdentifierOption;
 use feos::core::{DensityInitialization, Derivative, Residual, State};
 use feos::pcsaft::{PcSaft, PcSaftAssociationRecord, PcSaftParameters, PcSaftRecord};
 use feos_core::parameter::PureRecord;
-use ndarray::arr1;
+use nalgebra::dvector;
 use quantity::*;
 use std::sync::Arc;
 
@@ -62,7 +62,7 @@ fn pcsaft(c: &mut Criterion) {
 
     let t = 300.0 * KELVIN;
     let p = BAR;
-    let moles = arr1(&[1.0, 1.0]) * MOL;
+    let moles = dvector![1.0, 1.0] * MOL;
     for comp1 in &[hexane, acetone, co2, ethanol] {
         for comp2 in [&heptane, &dme, &acetylene, &propanol] {
             let params =

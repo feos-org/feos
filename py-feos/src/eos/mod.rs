@@ -3,7 +3,7 @@ use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
 
 use feos_core::*;
-use ndarray::Array1;
+use nalgebra::DVector;
 use pyo3::prelude::*;
 use quantity::*;
 use std::sync::Arc;
@@ -43,7 +43,7 @@ impl PyEquationOfState {
     /// -------
     /// SINumber
     #[pyo3(text_signature = "(moles=None)", signature = (moles=None))]
-    fn max_density(&self, moles: Option<Moles<Array1<f64>>>) -> PyResult<Density> {
+    fn max_density(&self, moles: Option<Moles<DVector<f64>>>) -> PyResult<Density> {
         Ok(self
             .0
             .max_density(moles.as_ref())
@@ -66,7 +66,7 @@ impl PyEquationOfState {
     fn second_virial_coefficient(
         &self,
         temperature: Temperature,
-        moles: Option<Moles<Array1<f64>>>,
+        moles: Option<Moles<DVector<f64>>>,
     ) -> PyResult<Quot<f64, Density>> {
         Ok(self
             .0
@@ -90,7 +90,7 @@ impl PyEquationOfState {
     fn third_virial_coefficient(
         &self,
         temperature: Temperature,
-        moles: Option<Moles<Array1<f64>>>,
+        moles: Option<Moles<DVector<f64>>>,
     ) -> PyResult<Quot<Quot<f64, Density>, Density>> {
         Ok(self
             .0
@@ -115,7 +115,7 @@ impl PyEquationOfState {
     fn second_virial_coefficient_temperature_derivative(
         &self,
         temperature: Temperature,
-        moles: Option<Moles<Array1<f64>>>,
+        moles: Option<Moles<DVector<f64>>>,
     ) -> PyResult<Quot<Quot<f64, Density>, Temperature>> {
         Ok(self
             .0
@@ -141,7 +141,7 @@ impl PyEquationOfState {
     fn third_virial_coefficient_temperature_derivative(
         &self,
         temperature: Temperature,
-        moles: Option<Moles<Array1<f64>>>,
+        moles: Option<Moles<DVector<f64>>>,
     ) -> PyResult<Quot<Quot<Quot<f64, Density>, Density>, Temperature>> {
         Ok(self
             .0

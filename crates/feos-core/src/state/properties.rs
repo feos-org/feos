@@ -1,7 +1,7 @@
 use super::{Contributions, Derivative::*, PartialDerivative, State};
 use crate::ReferenceSystem;
 use crate::equation_of_state::{IdealGas, Molarweight, Residual};
-use ndarray::Array1;
+use nalgebra::DVector;
 use quantity::*;
 use std::ops::Div;
 use typenum::P2;
@@ -53,8 +53,8 @@ impl<E: Residual + IdealGas> State<E> {
     }
 
     /// Chemical potential: $\mu_i=\left(\frac{\partial A}{\partial N_i}\right)_{T,V,N_j}$
-    pub fn chemical_potential(&self, contributions: Contributions) -> MolarEnergy<Array1<f64>> {
-        Quantity::from_reduced(Array1::from_shape_fn(self.eos.components(), |i| {
+    pub fn chemical_potential(&self, contributions: Contributions) -> MolarEnergy<DVector<f64>> {
+        Quantity::from_reduced(DVector::from_fn(self.eos.components(), |i, _| {
             self.get_or_compute_derivative(PartialDerivative::First(DN(i)), contributions)
         }))
     }
@@ -63,8 +63,8 @@ impl<E: Residual + IdealGas> State<E> {
     pub fn dmu_dt(
         &self,
         contributions: Contributions,
-    ) -> <MolarEnergy<Array1<f64>> as Div<Temperature>>::Output {
-        Quantity::from_reduced(Array1::from_shape_fn(self.eos.components(), |i| {
+    ) -> <MolarEnergy<DVector<f64>> as Div<Temperature>>::Output {
+        Quantity::from_reduced(DVector::from_fn(self.eos.components(), |i, _| {
             self.get_or_compute_derivative(PartialDerivative::SecondMixed(DT, DN(i)), contributions)
         }))
     }
@@ -108,9 +108,9 @@ impl<E: Residual + IdealGas> State<E> {
     }
 
     /// Partial molar entropy: $s_i=\left(\frac{\partial S}{\partial N_i}\right)_{T,p,N_j}$
-    pub fn partial_molar_entropy(&self) -> MolarEntropy<Array1<f64>> {
+    pub fn partial_molar_entropy(&self) -> MolarEntropy<DVector<f64>> {
         let c = Contributions::Total;
-        -(self.dmu_dt(c) + self.dp_dni() * (self.dp_dt(c) / self.dp_dv(c)))
+        -(self.dmu_dt(c) + self.dp_dni(c) * (self.dp_dt(c) / self.dp_dv(c)))
     }
 
     /// Partial derivative of the entropy w.r.t. temperature: $\left(\frac{\partial S}{\partial T}\right)_{V,N_i}$
@@ -143,7 +143,7 @@ impl<E: Residual + IdealGas> State<E> {
     }
 
     /// Partial molar enthalpy: $h_i=\left(\frac{\partial H}{\partial N_i}\right)_{T,p,N_j}$
-    pub fn partial_molar_enthalpy(&self) -> MolarEnergy<Array1<f64>> {
+    pub fn partial_molar_enthalpy(&self) -> MolarEnergy<DVector<f64>> {
         let s = self.partial_molar_entropy();
         let mu = self.chemical_potential(Contributions::Total);
         s * self.temperature + mu

@@ -12,12 +12,15 @@ pyo3 = { version = "0.23", features = [
     "extension-module",
     "abi3-py39",
     "multiple-pymethods",
+    "indexmap"
 ] }
 pythonize = "0.23"
 numpy = { version = "0.23" }
+nshare = "0.10"
 
 quantity = { workspace = true, features = ["python", "python_numpy"] }
 num-dual = { workspace = true, features = ["python_macro"] }
+nalgebra = { workspace = true }
 ndarray = { workspace = true }
 petgraph = { workspace = true, optional = true }
 thiserror = { workspace = true }

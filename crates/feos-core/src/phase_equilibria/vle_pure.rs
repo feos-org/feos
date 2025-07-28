@@ -2,13 +2,14 @@ use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
 use crate::phase_equilibria::PhaseEquilibriumGeneric;
-use crate::state::{Contributions, DensityInitialization, State, TPSpec};
+use crate::state::{Contributions, DensityInitialization, State};
 use crate::{
     HelmholtzEnergyDerivatives, ReferenceSystem, SolverOptions, StateGeneric,
     TemperatureOrPressure, Verbosity,
 };
-use ndarray::{Array1, arr1};
-use quantity::{Moles, Pressure, RGAS, Temperature};
+use nalgebra::allocator::Allocator;
+use nalgebra::{DVector, DefaultAllocator, dvector};
+use quantity::{Pressure, RGAS, Temperature};
 use std::sync::Arc;
 
 const SCALE_T_NEW: f64 = 0.7;
@@ -24,15 +25,19 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         initial_state: Option<&Self>,
         options: SolverOptions,
     ) -> FeosResult<Self> {
-        match temperature_or_pressure.into() {
-            TPSpec::Temperature(t) => Self::pure_t(eos, t, initial_state, options),
-            TPSpec::Pressure(p) => Self::pure_p(eos, p, initial_state, options),
+        if let Some(t) = temperature_or_pressure.temperature() {
+            Self::pure_t(eos, t, initial_state, options)
+        } else if let Some(p) = temperature_or_pressure.pressure() {
+            Self::pure_p(eos, p, initial_state, options)
+        } else {
+            unreachable!()
         }
     }
 }
 
-impl<E: HelmholtzEnergyDerivatives<f64>>
-    PhaseEquilibriumGeneric<E, f64, E::Molefracs, E::Cache, 2>
+impl<E: HelmholtzEnergyDerivatives<f64>> PhaseEquilibriumGeneric<E, f64, E::Components, E::Cache, 2>
+where
+    DefaultAllocator: Allocator<E::Components> + Allocator<E::Components, E::Components>,
 {
     fn new_pt(eos: &E, temperature: Temperature, pressure: Pressure) -> FeosResult<Self> {
         let liquid = StateGeneric::new_xpt(
@@ -60,6 +65,7 @@ impl<E: HelmholtzEnergyDerivatives<f64>>
         initial_state: Option<&Self>,
         options: SolverOptions,
     ) -> FeosResult<Self> {
+        println!("{temperature}");
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_PURE, TOL_PURE);
 
         // First use given initial state if applicable
@@ -108,9 +114,13 @@ impl<E: HelmholtzEnergyDerivatives<f64>>
             // calculate the pressures and derivatives
             let (p_l, p_rho_l) = liquid.p_dpdrho();
             let (p_v, p_rho_v) = vapor.p_dpdrho();
+            println!("{p_l} {p_rho_l}");
+            println!("{p_v} {p_rho_v}");
             // calculate the molar Helmholtz energies (already cached)
             let a_l_res = liquid.residual_molar_helmholtz_energy();
             let a_v_res = vapor.residual_molar_helmholtz_energy();
+            println!("{a_l_res} {}", vapor.density);
+            println!("{a_v_res} {}", liquid.density);
 
             // Estimate the new pressure
             let kt = RGAS * vapor.temperature;
@@ -118,6 +128,7 @@ impl<E: HelmholtzEnergyDerivatives<f64>>
             let delta_a =
                 a_v_res - a_l_res + kt * (vapor.density / liquid.density).into_value().ln();
             let mut p_new = -delta_a / delta_v;
+            println!("{p_new}");
 
             // If the pressure becomes negative, assume the gas phase is ideal. The
             // resulting pressure is always positive.
@@ -137,6 +148,7 @@ impl<E: HelmholtzEnergyDerivatives<f64>>
                 let f = p_new * delta_v + delta_a + (p_frac.ln() + 1.0 - p_frac) * kt;
                 let df_dp = delta_v + (1.0 / p_new - 1.0 / p_old) * kt;
                 p_new -= f / df_dp;
+                println!("{p_new}");
                 newton_iter += 1;
                 if f.abs() < newton_tol {
                     break;
@@ -194,6 +206,7 @@ impl<E: HelmholtzEnergyDerivatives<f64>>
         let t = temperature.into_reduced();
         let a_res = eos._residual_molar_helmholtz_energy(t, v, &x);
         let p = Pressure::from_reduced(t / v * (a_res / t).exp());
+        println!("{p}");
         Self::new_pt(eos, temperature, p)?.check_trivial_solution()
     }
 
@@ -311,7 +324,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
             Temperature::from_reduced(500.0),
             Temperature::from_reduced(200.0),
         ];
-        let x = arr1(&[1.0]);
+        let x = dvector![1.0];
         let mut vle = None;
         let mut t0 = Temperature::from_reduced(1.0);
         for t in trial_temperatures.iter() {
@@ -421,24 +434,22 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
                 )
                 .ok()
                 .map(|vle_pure| {
-                    let mut moles_vapor = Moles::from_reduced(Array1::zeros(eos.components()));
-                    let mut moles_liquid = moles_vapor.clone();
-                    moles_vapor.set(i, vle_pure.vapor().total_moles);
-                    moles_liquid.set(i, vle_pure.liquid().total_moles);
-                    let vapor = State::new_nvt(
+                    let mut molefracs_vapor = DVector::zeros(eos.components());
+                    let mut molefracs_liquid = molefracs_vapor.clone();
+                    molefracs_vapor[i] = 1.0;
+                    molefracs_liquid[i] = 1.0;
+                    let vapor = State::new_intensive(
                         eos,
                         vle_pure.vapor().temperature,
-                        vle_pure.vapor().volume,
-                        &moles_vapor,
-                    )
-                    .unwrap();
-                    let liquid = State::new_nvt(
+                        vle_pure.vapor().density,
+                        &molefracs_vapor,
+                    );
+                    let liquid = State::new_intensive(
                         eos,
                         vle_pure.liquid().temperature,
-                        vle_pure.liquid().volume,
-                        &moles_liquid,
-                    )
-                    .unwrap();
+                        vle_pure.liquid().density,
+                        &molefracs_liquid,
+                    );
                     PhaseEquilibrium::from_states(vapor, liquid)
                 })
             })

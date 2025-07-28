@@ -3,7 +3,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use feos::core::parameter::IdentifierOption;
 use feos::core::{Contributions, Residual, State};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
-use ndarray::{Array1, arr1};
+use nalgebra::{DVector, dvector};
 use quantity::*;
 use std::sync::Arc;
 use typenum::P3;
@@ -18,7 +18,7 @@ fn property<E: Residual, T, F: Fn(&State<E>, Contributions) -> T>(
         F,
         Temperature,
         Volume,
-        &Moles<Array1<f64>>,
+        &Moles<DVector<f64>>,
         Contributions,
     ),
 ) -> T {
@@ -29,7 +29,7 @@ fn property<E: Residual, T, F: Fn(&State<E>, Contributions) -> T>(
 /// Evaluate a property with of a state given the EoS, the property to compute,
 /// temperature, volume, moles.
 fn property_no_contributions<E: Residual, T, F: Fn(&State<E>) -> T>(
-    (eos, property, t, v, n): (&Arc<E>, F, Temperature, Volume, &Moles<Array1<f64>>),
+    (eos, property, t, v, n): (&Arc<E>, F, Temperature, Volume, &Moles<DVector<f64>>),
 ) -> T {
     let state = State::new_nvt(eos, t, v, n).unwrap();
     property(&state)
@@ -47,7 +47,7 @@ fn properties_pcsaft(c: &mut Criterion) {
     let t = 300.0 * KELVIN;
     let density = 71.18 * KILO * MOL / METER.powi::<P3>();
     let v = 100.0 * MOL / density;
-    let x = arr1(&[1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]);
+    let x = dvector![1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0];
     let m = &x * 100.0 * MOL;
 
     let mut group = c.benchmark_group("state_properties_pcsaft_methane_ethane_propane");
@@ -82,7 +82,7 @@ fn properties_pcsaft_polar(c: &mut Criterion) {
     let t = 300.0 * KELVIN;
     let density = 71.18 * KILO * MOL / METER.powi::<P3>();
     let v = 100.0 * MOL / density;
-    let x = arr1(&[1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]);
+    let x = dvector![1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0];
     let m = &x * 100.0 * MOL;
 
     let mut group = c.benchmark_group("state_properties_pcsaft_polar");

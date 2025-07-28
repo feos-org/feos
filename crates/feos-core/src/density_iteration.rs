@@ -1,14 +1,19 @@
 use crate::errors::{FeosError, FeosResult};
 use crate::{DensityInitialization, HelmholtzEnergyDerivatives, ReferenceSystem, StateGeneric};
+use nalgebra::allocator::Allocator;
+use nalgebra::{DefaultAllocator, OVector};
 use quantity::{Density, Moles, Pressure, RGAS, Temperature};
 
 pub fn density_iteration_stable<E: HelmholtzEnergyDerivatives<f64>>(
     eos: &E,
     temperature: Temperature,
     pressure: Pressure,
-    molefracs: &E::Molefracs,
+    molefracs: &OVector<f64, E::Components>,
     density_initialization: DensityInitialization,
-) -> FeosResult<StateGeneric<E, f64, E::Molefracs, E::Cache>> {
+) -> FeosResult<StateGeneric<E, f64, E::Components, E::Cache>>
+where
+    DefaultAllocator: Allocator<E::Components>,
+{
     // calculate state from initial density or given phase
     match density_initialization {
         DensityInitialization::InitialDensity(rho0) => {
@@ -70,9 +75,12 @@ pub fn density_iteration<E: HelmholtzEnergyDerivatives<f64>>(
     eos: &E,
     temperature: Temperature,
     pressure: Pressure,
-    molefracs: &E::Molefracs,
+    molefracs: &OVector<f64, E::Components>,
     initial_density: Density,
-) -> FeosResult<StateGeneric<E, f64, E::Molefracs, E::Cache>> {
+) -> FeosResult<StateGeneric<E, f64, E::Components, E::Cache>>
+where
+    DefaultAllocator: Allocator<E::Components>,
+{
     let rho = Density::from_reduced(_density_iteration(
         eos,
         temperature.into_reduced(),
@@ -94,9 +102,12 @@ fn _density_iteration<E: HelmholtzEnergyDerivatives<f64>>(
     eos: &E,
     temperature: f64,
     pressure: f64,
-    molefracs: &E::Molefracs,
+    molefracs: &OVector<f64, E::Components>,
     initial_density: f64,
-) -> FeosResult<f64> {
+) -> FeosResult<f64>
+where
+    DefaultAllocator: Allocator<E::Components>,
+{
     let maxdensity = eos.compute_max_density(molefracs);
     let (abstol, reltol) = (1e-12, 1e-14);
 
@@ -226,8 +237,11 @@ fn pressure_spinodal<E: HelmholtzEnergyDerivatives<f64>>(
     eos: &E,
     temperature: f64,
     rho_init: f64,
-    molefracs: &E::Molefracs,
-) -> FeosResult<(f64, f64)> {
+    molefracs: &OVector<f64, E::Components>,
+) -> FeosResult<(f64, f64)>
+where
+    DefaultAllocator: Allocator<E::Components>,
+{
     let maxiter = 30;
     let abstol = 1e-8;
 
