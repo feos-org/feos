@@ -2,7 +2,7 @@ use super::parameters::{PcSaftAssociationRecord, PcSaftParameters, PcSaftPars};
 use crate::association::{Association, AssociationStrength};
 use crate::hard_sphere::{HardSphere, HardSphereProperties, MonomerShape};
 use crate::pcsaft::PcSaftRecord;
-use feos_core::{Components, Molarweight, Residual, StateHD};
+use feos_core::{Molarweight, ResidualDyn, StateHD, Subset};
 use nalgebra::DVector;
 use num_dual::DualNum;
 use quantity::*;
@@ -81,26 +81,20 @@ impl PcSaft {
     }
 }
 
-impl Components for PcSaft {
+impl ResidualDyn for PcSaft {
     fn components(&self) -> usize {
         self.parameters.pure.len()
     }
 
-    fn subset(&self, component_list: &[usize]) -> Self {
-        Self::with_options(self.parameters.subset(component_list), self.options)
-    }
-}
-
-impl Residual for PcSaft {
-    fn compute_max_density(&self, moles: &DVector<f64>) -> f64 {
+    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
         let msigma3 = self
             .params
             .m
             .component_mul(&self.params.sigma.map(|v| v.powi(3)));
-        self.options.max_eta * moles.sum() / (FRAC_PI_6 * msigma3.dot(moles))
+        (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
@@ -109,43 +103,58 @@ impl Residual for PcSaft {
 
         v.push((
             "Hard Sphere".to_string(),
-            HardSphere.helmholtz_energy(&self.params, state),
+            HardSphere.helmholtz_energy_density(&self.params, state),
         ));
         if self.hard_chain {
             v.push((
                 "Hard Chain".to_string(),
-                HardChain.helmholtz_energy(&self.params, state),
+                HardChain.helmholtz_energy_density(&self.params, state),
             ))
         }
         v.push((
             "Dispersion".to_string(),
-            Dispersion.helmholtz_energy(&self.params, state),
+            Dispersion.helmholtz_energy_density(&self.params, state),
         ));
         if self.dipole {
             v.push((
                 "Dipole".to_string(),
-                Dipole.helmholtz_energy(&self.params, state),
+                Dipole.helmholtz_energy_density(&self.params, state),
             ))
         }
         if self.quadrupole {
             v.push((
                 "Quadrupole".to_string(),
-                Quadrupole.helmholtz_energy(&self.params, state),
+                Quadrupole.helmholtz_energy_density(&self.params, state),
             ))
         }
         if self.dipole_quadrupole {
             v.push((
                 "DipoleQuadrupole".to_string(),
-                DipoleQuadrupole.helmholtz_energy(&self.params, state, self.options.dq_variant),
+                DipoleQuadrupole.helmholtz_energy_density(
+                    &self.params,
+                    state,
+                    self.options.dq_variant,
+                ),
             ))
         }
         if let Some(association) = self.association.as_ref() {
             v.push((
                 "Association".to_string(),
-                association.helmholtz_energy(&self.params, &self.parameters.association, state, &d),
+                association.helmholtz_energy_density(
+                    &self.params,
+                    &self.parameters.association,
+                    state,
+                    &d,
+                ),
             ))
         }
         v
+    }
+}
+
+impl Subset for PcSaft {
+    fn subset(&self, component_list: &[usize]) -> Self {
+        Self::with_options(self.parameters.subset(component_list), self.options)
     }
 }
 
@@ -433,25 +442,29 @@ mod tests {
         let t = 250.0;
         let v = 1000.0;
         let n = 1.0;
-        let s = StateHD::new(t, v, dvector![n]);
-        let a_rust = HardSphere.helmholtz_energy(&propane_parameters().params as &PcSaftPars, &s);
+        let s = StateHD::new(t, v, &dvector![n]);
+        let a_rust = HardSphere
+            .helmholtz_energy_density(&propane_parameters().params as &PcSaftPars, &s)
+            * v;
         assert_relative_eq!(a_rust, 0.410610492598808, epsilon = 1e-10);
     }
 
     #[test]
     fn hard_sphere_mix() {
         let t = 250.0;
-        let v = 2.5e28;
+        let v = 1000.0;
         let n = 1.0;
-        let s = StateHD::new(t, v, dvector![n]);
-        let a1 = HardSphere.helmholtz_energy(&propane_parameters().params as &PcSaftPars, &s);
-        let a2 = HardSphere.helmholtz_energy(&butane_parameters().params as &PcSaftPars, &s);
-        let s1m = StateHD::new(t, v, dvector![n, 0.0]);
-        let a1m =
-            HardSphere.helmholtz_energy(&propane_butane_parameters().params as &PcSaftPars, &s1m);
-        let s2m = StateHD::new(t, v, dvector![0.0, n]);
-        let a2m =
-            HardSphere.helmholtz_energy(&propane_butane_parameters().params as &PcSaftPars, &s2m);
+        let s = StateHD::new(t, v, &dvector![n]);
+        let a1 =
+            HardSphere.helmholtz_energy_density(&propane_parameters().params as &PcSaftPars, &s);
+        let a2 =
+            HardSphere.helmholtz_energy_density(&butane_parameters().params as &PcSaftPars, &s);
+        let s1m = StateHD::new(t, v, &dvector![n, 0.0]);
+        let a1m = HardSphere
+            .helmholtz_energy_density(&propane_butane_parameters().params as &PcSaftPars, &s1m);
+        let s2m = StateHD::new(t, v, &dvector![0.0, n]);
+        let a2m = HardSphere
+            .helmholtz_energy_density(&propane_butane_parameters().params as &PcSaftPars, &s2m);
         assert_relative_eq!(a1, a1m, epsilon = 1e-14);
         assert_relative_eq!(a2, a2m, epsilon = 1e-14);
     }
@@ -462,7 +475,7 @@ mod tests {
         let t = 300.0 * KELVIN;
         let p = BAR;
         let m = dvector![1.5] * MOL;
-        let s = State::new_npt(&e, t, p, &m, DensityInitialization::None);
+        let s = State::new_npt(&e, t, p, &m, None);
         let p_calc = if let Ok(state) = s {
             state.pressure(Contributions::Total)
         } else {

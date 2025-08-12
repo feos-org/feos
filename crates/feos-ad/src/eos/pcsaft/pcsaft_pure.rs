@@ -1,22 +1,14 @@
 use super::{A0, A1, A2, AD, B0, B1, B2, BD, CD, MAX_ETA};
-use crate::{NamedParameters, ParametersAD, ResidualHelmholtzEnergy};
-use nalgebra::SVector;
-use num_dual::DualNum;
+use feos_core::{ParametersAD, ResidualConst, StateHD};
+use nalgebra::{SVector, U1};
+use num_dual::{DualNum, DualSVec};
 use std::f64::consts::{FRAC_PI_6, PI};
-use std::ops::Deref;
 
 const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
 
 /// Optimized implementation of PC-SAFT for a single component.
 #[derive(Clone, Copy)]
-pub struct PcSaftPure<const N: usize>(pub [f64; N]);
-
-impl<const N: usize> Deref for PcSaftPure<N> {
-    type Target = [f64; N];
-    fn deref(&self) -> &[f64; N] {
-        &self.0
-    }
-}
+pub struct PcSaftPure<D: DualNum<f64> + Copy, const N: usize>(pub [D; N]);
 
 fn helmholtz_energy_density_non_assoc<D: DualNum<f64> + Copy>(
     m: D,
@@ -90,7 +82,7 @@ fn helmholtz_energy_density_non_assoc<D: DualNum<f64> + Copy>(
     let phi3 = -density * density * density * j2 / s3 * PI_SQ_43;
     let dipole = phi2 * phi2 * mu2 * mu2 / (phi2 - phi3 * mu2);
 
-    ((hs + hc + disp + dipole) * temperature, [eta, eta_m1])
+    (hs + hc + disp + dipole, [eta, eta_m1])
 }
 
 fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
@@ -114,83 +106,74 @@ fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
     let xb = (sqrt + 1.0 - (rhob - rhoa) * delta).recip() * 2.0;
     let assoc = rhoa * (xa.ln() - xa * 0.5 + 0.5) + rhob * (xb.ln() - xb * 0.5 + 0.5);
 
-    non_assoc + assoc * temperature
+    non_assoc + assoc
 }
 
-impl<const N: usize> ParametersAD for PcSaftPure<N> {
-    type Parameters<D: DualNum<f64> + Copy> = [D; N];
-
-    fn params_from_inner<D: DualNum<f64> + Copy, D2: DualNum<f64, Inner = D> + Copy>(
-        parameters: &Self::Parameters<D>,
-    ) -> Self::Parameters<D2> {
-        parameters.map(D2::from_inner)
+impl<D: DualNum<f64> + Copy> ResidualConst<1, D> for PcSaftPure<D, 8> {
+    const NAME: &str = "PC-SAFT (pure)";
+    type Real = PcSaftPure<f64, 8>;
+    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = PcSaftPure<D2, 8>;
+    fn re(&self) -> Self::Real {
+        PcSaftPure(self.0.each_ref().map(D::re))
     }
-}
+    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+        PcSaftPure(self.0.each_ref().map(D2::from_inner))
+    }
 
-impl ResidualHelmholtzEnergy<1> for PcSaftPure<8> {
-    const RESIDUAL: &str = "PC-SAFT (pure)";
-
-    fn compute_max_density<D: DualNum<f64> + Copy>(
-        &[m, sigma, ..]: &Self::Parameters<D>,
-        _: &SVector<D, 1>,
-    ) -> D {
+    fn compute_max_density(&self, _: &SVector<D, 1>) -> D {
+        let &[m, sigma, ..] = &self.0;
         (m * sigma.powi(3) * FRAC_PI_6).recip() * MAX_ETA
     }
 
-    fn residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
-        parameters: &Self::Parameters<D>,
-        temperature: D,
-        partial_density: &SVector<D, 1>,
-    ) -> D {
-        let density = partial_density.data.0[0][0];
-        helmholtz_energy_density(parameters, temperature, density)
+    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, U1>) -> D {
+        let density = state.partial_density.data.0[0][0];
+        helmholtz_energy_density(&self.0, state.temperature, density)
     }
 }
 
-impl ResidualHelmholtzEnergy<1> for PcSaftPure<4> {
-    const RESIDUAL: &str = "PC-SAFT (pure)";
+impl<D: DualNum<f64> + Copy> ResidualConst<1, D> for PcSaftPure<D, 4> {
+    const NAME: &str = "PC-SAFT (pure, non-assoc)";
+    type Real = PcSaftPure<f64, 4>;
+    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = PcSaftPure<D2, 4>;
+    fn re(&self) -> Self::Real {
+        PcSaftPure(self.0.each_ref().map(D::re))
+    }
+    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+        PcSaftPure(self.0.each_ref().map(D2::from_inner))
+    }
 
-    fn compute_max_density<D: DualNum<f64> + Copy>(
-        &[m, sigma, ..]: &Self::Parameters<D>,
-        _: &SVector<D, 1>,
-    ) -> D {
+    fn compute_max_density(&self, _: &SVector<D, 1>) -> D {
+        let &[m, sigma, ..] = &self.0;
         (m * sigma.powi(3) * FRAC_PI_6).recip() * MAX_ETA
     }
 
-    fn residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
-        parameters: &Self::Parameters<D>,
-        temperature: D,
-        partial_density: &SVector<D, 1>,
-    ) -> D {
-        let density = partial_density.data.0[0][0];
-        let [m, sigma, epsilon_k, mu] = *parameters;
-        helmholtz_energy_density_non_assoc(m, sigma, epsilon_k, mu, temperature, density).0
+    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, U1>) -> D {
+        let density = state.partial_density.data.0[0][0];
+        let [m, sigma, epsilon_k, mu] = self.0;
+        helmholtz_energy_density_non_assoc(m, sigma, epsilon_k, mu, state.temperature, density).0
     }
 }
 
-impl<const N: usize> From<&[f64]> for PcSaftPure<N> {
+impl<D: DualNum<f64> + Copy, const N: usize> From<&[f64]> for PcSaftPure<D, N> {
     fn from(parameters: &[f64]) -> Self {
-        let Ok(parameters) = parameters.try_into() else {
+        let Ok(parameters): Result<[f64; N], _> = parameters.try_into() else {
             panic!("This version of PC-SAFT requires exactly {N} parameters!")
         };
-        Self(parameters)
+        Self(parameters.map(D::from))
     }
 }
 
-impl<const N: usize> NamedParameters for PcSaftPure<N> {
-    fn index_parameters_mut<'a, D: DualNum<f64> + Copy>(
-        parameters: &'a mut [D; N],
-        index: &str,
-    ) -> &'a mut D {
+impl<const N: usize, const P: usize> ParametersAD<P> for PcSaftPure<DualSVec<f64, f64, P>, N> {
+    fn index_parameters_mut<'a>(&'a mut self, index: &str) -> &'a mut DualSVec<f64, f64, P> {
         match index {
-            "m" => &mut parameters[0],
-            "sigma" => &mut parameters[1],
-            "epsilon_k" => &mut parameters[2],
-            "mu" => &mut parameters[3],
-            "kappa_ab" => &mut parameters[4],
-            "epsilon_k_ab" => &mut parameters[5],
-            "na" => &mut parameters[6],
-            "nb" => &mut parameters[7],
+            "m" => &mut self.0[0],
+            "sigma" => &mut self.0[1],
+            "epsilon_k" => &mut self.0[2],
+            "mu" => &mut self.0[3],
+            "kappa_ab" => &mut self.0[4],
+            "epsilon_k_ab" => &mut self.0[5],
+            "na" => &mut self.0[6],
+            "nb" => &mut self.0[7],
             _ => panic!("{index} is not a valid PC-SAFT parameter!"),
         }
     }
@@ -198,18 +181,15 @@ impl<const N: usize> NamedParameters for PcSaftPure<N> {
 
 #[cfg(test)]
 pub mod test {
-    use super::{PcSaftPure, ResidualHelmholtzEnergy};
     use crate::eos::pcsaft::test::pcsaft;
     use approx::assert_relative_eq;
-    use feos_core::{Contributions::Total, FeosResult, ReferenceSystem, State};
-    use nalgebra::{SVector, dvector};
-    use ndarray::arr1;
+    use feos_core::{Contributions::Total, FeosResult, State};
+    use nalgebra::{dvector, vector};
     use quantity::{KELVIN, KILO, METER, MOL};
 
     #[test]
     fn test_pcsaft_pure() -> FeosResult<()> {
         let (pcsaft, eos) = pcsaft()?;
-        let pcsaft = pcsaft.0;
 
         let temperature = 300.0 * KELVIN;
         let volume = 2.3 * METER * METER * METER;
@@ -222,35 +202,33 @@ pub mod test {
         let s_feos = state.residual_molar_entropy();
         let h_feos = state.residual_molar_enthalpy();
 
-        let total_moles = moles.sum();
-        let t = temperature.to_reduced();
-        let v = (volume / total_moles).to_reduced();
-        let x = SVector::from_fn(|i, _| moles.get(i).convert_into(total_moles));
-        let a_ad = PcSaftPure::residual_molar_helmholtz_energy(&pcsaft, t, v, &x);
-        let mu_ad = PcSaftPure::residual_chemical_potential(&pcsaft, t, v, &x);
-        let p_ad = PcSaftPure::pressure(&pcsaft, t, v, &x);
-        let s_ad = PcSaftPure::residual_molar_entropy(&pcsaft, t, v, &x);
-        let h_ad = PcSaftPure::residual_molar_enthalpy(&pcsaft, t, v, &x);
+        let moles = vector![1.3] * KILO * MOL;
+        let state = State::new_nvt(&pcsaft, temperature, volume, &moles)?;
+        let a_ad = state.residual_molar_helmholtz_energy();
+        let mu_ad = state.residual_chemical_potential();
+        let p_ad = state.pressure(Total);
+        let s_ad = state.residual_molar_entropy();
+        let h_ad = state.residual_molar_enthalpy();
 
-        println!("\nMolar Helmholtz energy:\n{}", a_feos.to_reduced(),);
+        println!("\nMolar Helmholtz energy:\n{a_feos}");
         println!("{a_ad}");
-        assert_relative_eq!(a_feos.to_reduced(), a_ad, max_relative = 1e-14);
+        assert_relative_eq!(a_feos, a_ad, max_relative = 1e-14);
 
-        println!("\nChemical potential:\n{}", mu_feos.get(0).to_reduced());
-        println!("{}", mu_ad[0]);
-        assert_relative_eq!(mu_feos.get(0).to_reduced(), mu_ad[0], max_relative = 1e-14);
+        println!("\nChemical potential:\n{}", mu_feos.get(0));
+        println!("{}", mu_ad.get(0));
+        assert_relative_eq!(mu_feos.get(0), mu_ad.get(0), max_relative = 1e-14);
 
-        println!("\nPressure:\n{}", p_feos.to_reduced());
+        println!("\nPressure:\n{p_feos}");
         println!("{p_ad}");
-        assert_relative_eq!(p_feos.to_reduced(), p_ad, max_relative = 1e-14);
+        assert_relative_eq!(p_feos, p_ad, max_relative = 1e-14);
 
-        println!("\nMolar entropy:\n{}", s_feos.to_reduced());
+        println!("\nMolar entropy:\n{s_feos}");
         println!("{s_ad}");
-        assert_relative_eq!(s_feos.to_reduced(), s_ad, max_relative = 1e-14);
+        assert_relative_eq!(s_feos, s_ad, max_relative = 1e-14);
 
-        println!("\nMolar enthalpy:\n{}", h_feos.to_reduced());
+        println!("\nMolar enthalpy:\n{h_feos}");
         println!("{h_ad}");
-        assert_relative_eq!(h_feos.to_reduced(), h_ad, max_relative = 1e-14);
+        assert_relative_eq!(h_feos, h_ad, max_relative = 1e-14);
 
         Ok(())
     }

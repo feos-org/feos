@@ -1,9 +1,9 @@
-use crate::{HelmholtzEnergyWrapper, PhaseEquilibriumAD, ResidualHelmholtzEnergy, StateAD};
 use feos_core::{
-    DensityInitialization::Liquid, FeosResult, HelmholtzEnergyDerivatives, ReferenceSystem,
+    DensityInitialization::Liquid, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual,
+    density_iteration,
 };
-use nalgebra::{Const, SVector};
-use num_dual::{DualNum, DualVec};
+use nalgebra::{Const, SVector, U1};
+use num_dual::{DualStruct, DualVec};
 use quantity::{Density, Pressure, Temperature};
 
 mod parallel;
@@ -11,172 +11,143 @@ pub use parallel::{BinaryModel, PureModel};
 
 type Gradient<const P: usize> = DualVec<f64, f64, Const<P>>;
 
-impl<R: ResidualHelmholtzEnergy<1>, const P: usize> HelmholtzEnergyWrapper<'_, R, Gradient<P>, 1> {
-    pub fn vapor_pressure(&self, temperature: Temperature) -> FeosResult<Pressure<Gradient<P>>> {
-        let eos_f64 = self.eos.wrap();
-        let vle = PhaseEquilibriumAD::pure_t(&eos_f64, temperature, None, Default::default())?;
+// impl<R: Residual<U1, Gradient<P>>, const P: usize> HelmholtzEnergyWrapper<'_, R, Gradient<P>, 1> {
+//     pub fn vapor_pressure(&self, temperature: Temperature) -> FeosResult<Pressure<Gradient<P>>> {
+//         let eos_f64 = self.eos.wrap();
+//         let (_, [vapor_density, liquid_density]) =
+//             PhaseEquilibriumAD::pure_t(&eos_f64, temperature, None, Default::default())?;
 
-        let v1 = 1.0 / vle.liquid().density.to_reduced();
-        let v2 = 1.0 / vle.vapor().density.to_reduced();
-        let t = temperature.into_reduced();
-        let (a1, a2) = {
-            let t = Gradient::from(t);
-            let v1 = Gradient::from(v1);
-            let v2 = Gradient::from(v2);
-            let x = SVector::from([Gradient::from(1.0)]);
+//         // implicit differentiation is implemented here instead of just calling pure_t with dual
+//         // numbers, because for the first derivative, we can avoid calculating density derivatives.
+//         let v1 = 1.0 / liquid_density.to_reduced();
+//         let v2 = 1.0 / vapor_density.to_reduced();
+//         let t = temperature.into_reduced();
+//         let (a1, a2) = {
+//             let t = Gradient::from(t);
+//             let v1 = Gradient::from(v1);
+//             let v2 = Gradient::from(v2);
+//             let x = SVector::from([Gradient::from(1.0)]);
 
-            let a1 = R::residual_molar_helmholtz_energy(self.parameters, t, v1, &x);
-            let a2 = R::residual_molar_helmholtz_energy(self.parameters, t, v2, &x);
-            (a1, a2)
-        };
+//             let a1 = R::residual_molar_helmholtz_energy(self.parameters, t, v1, &x);
+//             let a2 = R::residual_molar_helmholtz_energy(self.parameters, t, v2, &x);
+//             (a1, a2)
+//         };
 
-        let p = -(a1 - a2 + t * (v2 / v1).ln()) / (v1 - v2);
-        Ok(Pressure::from_reduced(p))
-    }
+//         let p = -(a1 - a2 + t * (v2 / v1).ln()) / (v1 - v2);
+//         Ok(Pressure::from_reduced(p))
+//     }
 
-    pub fn equilibrium_liquid_density(
-        &self,
-        temperature: Temperature,
-    ) -> FeosResult<(Pressure<Gradient<P>>, Density<Gradient<P>>)> {
-        let eos_f64 = self.eos.wrap();
-        let vle = PhaseEquilibriumAD::pure_t(&eos_f64, temperature, None, Default::default())?;
+//     pub fn equilibrium_liquid_density(
+//         &self,
+//         temperature: Temperature,
+//     ) -> FeosResult<Density<Gradient<P>>> {
+//         let t = Temperature::from_inner(&temperature);
+//         PhaseEquilibriumAD::pure_t(self, t, None, Default::default()).map(|(_, [_, rho])| rho)
+//     }
 
-        let v_l = 1.0 / vle.liquid().density.to_reduced();
-        let v_v = 1.0 / vle.vapor().density.to_reduced();
-        let t = temperature.into_reduced();
-        let (f_l, p_l, dp_l, a_v) = {
-            let t = Gradient::from(temperature.into_reduced());
-            let v_l = Gradient::from(v_l);
-            let v_v = Gradient::from(v_v);
-            let x = SVector::from([Gradient::from(1.0)]);
+//     pub fn liquid_density(
+//         &self,
+//         temperature: Temperature,
+//         pressure: Pressure,
+//     ) -> FeosResult<Density<Gradient<P>>> {
+//         let x = Self::pure_molefracs();
+//         let t = Temperature::from_inner(&temperature);
+//         let p = Pressure::from_inner(&pressure);
+//         density_iteration(self, t, p, &x, Some(Liquid))
+//     }
+// }
 
-            let (f_l, p_l, dp_l) = self._p_dpdrho(t, v_l.recip(), &x);
-            let a_v = R::residual_molar_helmholtz_energy(self.parameters, t, v_v, &x);
-            (f_l, p_l, dp_l, a_v)
-        };
+// impl<R: ResidualHelmholtzEnergy<2>, const P: usize> HelmholtzEnergyWrapper<'_, R, Gradient<P>, 2> {
+//     pub fn bubble_point_pressure(
+//         &self,
+//         temperature: Temperature,
+//         pressure: Option<Pressure>,
+//         liquid_molefracs: SVector<f64, 2>,
+//     ) -> FeosResult<Pressure<Gradient<P>>> {
+//         let eos_f64 = self.eos.wrap();
+//         let vle = PhaseEquilibriumAD::bubble_point(
+//             &eos_f64,
+//             temperature,
+//             &liquid_molefracs,
+//             pressure,
+//             None,
+//             Default::default(),
+//         )?;
 
-        let p = -(f_l * v_l - a_v + t * (v_v / v_l).ln()) / (v_l - v_v);
-        let rho = (p - p_l) / dp_l + 1.0 / v_l;
-        Ok((Pressure::from_reduced(p), Density::from_reduced(rho)))
-    }
+//         let v_l = 1.0 / vle.liquid().density.to_reduced();
+//         let v_v = 1.0 / vle.vapor().density.to_reduced();
+//         let y = &vle.vapor().molefracs;
+//         let y: SVector<_, 2> = SVector::from_fn(|i, _| y[i]);
+//         let t = temperature.into_reduced();
+//         let (a_l, a_v, v_l, v_v) = {
+//             let t = Gradient::from(t);
+//             let v_l = Gradient::from(v_l);
+//             let v_v = Gradient::from(v_v);
+//             let y = y.map(Gradient::from);
+//             let x = liquid_molefracs.map(Gradient::from);
 
-    pub fn liquid_density(
-        &self,
-        temperature: Temperature,
-        pressure: Pressure,
-    ) -> FeosResult<Density<Gradient<P>>> {
-        let molefracs = SVector::from([1.0]);
-        let eos_f64 = self.eos.wrap();
-        let state = StateAD::new_xpt(&eos_f64, temperature, pressure, &molefracs, Liquid)?;
+//             let a_v = R::residual_molar_helmholtz_energy(self.parameters, t, v_v, &y);
+//             let (p_l, mu_res_l, dp_l, dmu_l) = self.dmu_dv(t, v_l, &x);
+//             let vi_l = dmu_l / dp_l;
+//             let v_l = vi_l.dot(&y);
+//             let a_l = (mu_res_l - vi_l * p_l).dot(&y);
+//             (a_l, a_v, v_l, v_v)
+//         };
+//         let rho_l = vle.liquid().partial_density.to_reduced();
+//         let rho_l = [rho_l[0], rho_l[1]];
+//         let rho_v = vle.vapor().partial_density.to_reduced();
+//         let rho_v = [rho_v[0], rho_v[1]];
+//         let p = -(a_v - a_l
+//             + t * (y[0] * (rho_v[0] / rho_l[0]).ln() + y[1] * (rho_v[1] / rho_l[1]).ln() - 1.0))
+//             / (v_v - v_l);
+//         Ok(Pressure::from_reduced(p))
+//     }
 
-        let t = temperature.into_reduced();
-        let v = 1.0 / state.density.to_reduced();
-        let p0 = pressure.into_reduced();
-        let (p, dp) = {
-            let t = Gradient::from(t);
-            let v = Gradient::from(v);
-            let x = SVector::from([Gradient::from(1.0)]);
-            let (_, p, dp) = self._p_dpdrho(t, v, &x);
+//     pub fn dew_point_pressure(
+//         &self,
+//         temperature: Temperature,
+//         pressure: Option<Pressure>,
+//         vapor_molefracs: SVector<f64, 2>,
+//     ) -> FeosResult<Pressure<Gradient<P>>> {
+//         let eos_f64 = self.eos.wrap();
+//         let vle = PhaseEquilibriumAD::dew_point(
+//             &eos_f64,
+//             temperature,
+//             &vapor_molefracs,
+//             pressure,
+//             None,
+//             Default::default(),
+//         )?;
 
-            (p, dp)
-        };
+//         let v_l = 1.0 / vle.liquid().density.to_reduced();
+//         let v_v = 1.0 / vle.vapor().density.to_reduced();
+//         let x = &vle.liquid().molefracs;
+//         let x: SVector<_, 2> = SVector::from_fn(|i, _| x[i]);
+//         let t = temperature.into_reduced();
+//         let (a_l, a_v, v_l, v_v) = {
+//             let t = Gradient::from(t);
+//             let v_l = Gradient::from(v_l);
+//             let v_v = Gradient::from(v_v);
+//             let x = x.map(Gradient::from);
+//             let y = vapor_molefracs.map(Gradient::from);
 
-        let rho = -(p - p0) / dp + 1.0 / v;
-        Ok(Density::from_reduced(rho))
-    }
-}
-
-impl<R: ResidualHelmholtzEnergy<2>, const P: usize> HelmholtzEnergyWrapper<'_, R, Gradient<P>, 2> {
-    pub fn bubble_point_pressure(
-        &self,
-        temperature: Temperature,
-        pressure: Option<Pressure>,
-        liquid_molefracs: SVector<f64, 2>,
-    ) -> FeosResult<Pressure<Gradient<P>>> {
-        let eos_f64 = self.eos.wrap();
-        let vle = PhaseEquilibriumAD::bubble_point(
-            &eos_f64,
-            temperature,
-            &liquid_molefracs,
-            pressure,
-            None,
-            Default::default(),
-        )?;
-
-        let v_l = 1.0 / vle.liquid().density.to_reduced();
-        let v_v = 1.0 / vle.vapor().density.to_reduced();
-        let y = &vle.vapor().molefracs;
-        let y: SVector<_, 2> = SVector::from_fn(|i, _| y[i]);
-        let t = temperature.into_reduced();
-        let (a_l, a_v, v_l, v_v) = {
-            let t = Gradient::from(t);
-            let v_l = Gradient::from(v_l);
-            let v_v = Gradient::from(v_v);
-            let y = y.map(Gradient::from);
-            let x = liquid_molefracs.map(Gradient::from);
-
-            let a_v = R::residual_molar_helmholtz_energy(self.parameters, t, v_v, &y);
-            let (p_l, mu_res_l, dp_l, dmu_l) = self.dmu_dv(t, v_l, &x);
-            let vi_l = dmu_l / dp_l;
-            let v_l = vi_l.dot(&y);
-            let a_l = (mu_res_l - vi_l * p_l).dot(&y);
-            (a_l, a_v, v_l, v_v)
-        };
-        let rho_l = vle.liquid().partial_density.to_reduced();
-        let rho_l = [rho_l[0], rho_l[1]];
-        let rho_v = vle.vapor().partial_density.to_reduced();
-        let rho_v = [rho_v[0], rho_v[1]];
-        let p = -(a_v - a_l
-            + t * (y[0] * (rho_v[0] / rho_l[0]).ln() + y[1] * (rho_v[1] / rho_l[1]).ln() - 1.0))
-            / (v_v - v_l);
-        Ok(Pressure::from_reduced(p))
-    }
-
-    pub fn dew_point_pressure(
-        &self,
-        temperature: Temperature,
-        pressure: Option<Pressure>,
-        vapor_molefracs: SVector<f64, 2>,
-    ) -> FeosResult<Pressure<Gradient<P>>> {
-        let eos_f64 = self.eos.wrap();
-        let vle = PhaseEquilibriumAD::dew_point(
-            &eos_f64,
-            temperature,
-            &vapor_molefracs,
-            pressure,
-            None,
-            Default::default(),
-        )?;
-
-        let v_l = 1.0 / vle.liquid().density.to_reduced();
-        let v_v = 1.0 / vle.vapor().density.to_reduced();
-        let x = &vle.liquid().molefracs;
-        let x: SVector<_, 2> = SVector::from_fn(|i, _| x[i]);
-        let t = temperature.into_reduced();
-        let (a_l, a_v, v_l, v_v) = {
-            let t = Gradient::from(t);
-            let v_l = Gradient::from(v_l);
-            let v_v = Gradient::from(v_v);
-            let x = x.map(Gradient::from);
-            let y = vapor_molefracs.map(Gradient::from);
-
-            let a_l = R::residual_molar_helmholtz_energy(self.parameters, t, v_l, &x);
-            let (p_v, mu_res_v, dp_v, dmu_v) = self.dmu_dv(t, v_v, &y);
-            let vi_v = dmu_v / dp_v;
-            let v_v = vi_v.dot(&x);
-            let a_v = (mu_res_v - vi_v * p_v).dot(&x);
-            (a_l, a_v, v_l, v_v)
-        };
-        let rho_l = vle.liquid().partial_density.to_reduced();
-        let rho_l = [rho_l[0], rho_l[1]];
-        let rho_v = vle.vapor().partial_density.to_reduced();
-        let rho_v = [rho_v[0], rho_v[1]];
-        let p = -(a_l - a_v
-            + t * (x[0] * (rho_l[0] / rho_v[0]).ln() + x[1] * (rho_l[1] / rho_v[1]).ln() - 1.0))
-            / (v_l - v_v);
-        Ok(Pressure::from_reduced(p))
-    }
-}
+//             let a_l = R::residual_molar_helmholtz_energy(self.parameters, t, v_l, &x);
+//             let (p_v, mu_res_v, dp_v, dmu_v) = self.dmu_dv(t, v_v, &y);
+//             let vi_v = dmu_v / dp_v;
+//             let v_v = vi_v.dot(&x);
+//             let a_v = (mu_res_v - vi_v * p_v).dot(&x);
+//             (a_l, a_v, v_l, v_v)
+//         };
+//         let rho_l = vle.liquid().partial_density.to_reduced();
+//         let rho_l = [rho_l[0], rho_l[1]];
+//         let rho_v = vle.vapor().partial_density.to_reduced();
+//         let rho_v = [rho_v[0], rho_v[1]];
+//         let p = -(a_l - a_v
+//             + t * (x[0] * (rho_l[0] / rho_v[0]).ln() + x[1] * (rho_l[1] / rho_v[1]).ln() - 1.0))
+//             / (v_l - v_v);
+//         Ok(Pressure::from_reduced(p))
+//     }
+// }
 
 #[cfg(test)]
 #[cfg(feature = "pcsaft")]

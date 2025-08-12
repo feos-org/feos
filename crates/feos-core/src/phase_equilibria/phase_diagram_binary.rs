@@ -1,18 +1,16 @@
 use super::bubble_dew::TemperatureOrPressure;
 use super::{PhaseDiagram, PhaseEquilibrium};
-use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
-use crate::state::{Contributions, DensityInitialization, State, StateBuilder};
-use crate::{ReferenceSystem, SolverOptions};
+use crate::state::{Contributions, DensityInitialization::Vapor, State, StateBuilder};
+use crate::{ReferenceSystem, Residual, SolverOptions, Subset};
 use nalgebra::{DVector, dvector, stack, vector};
 use ndarray::{Array1, s};
 use num_dual::linalg::LU;
 use quantity::{Density, Moles, Pressure, RGAS, Temperature};
-use std::sync::Arc;
 
 const DEFAULT_POINTS: usize = 51;
 
-impl<E: Residual> PhaseDiagram<E, 2> {
+impl<E: Residual + Subset> PhaseDiagram<E, 2> {
     /// Create a new binary phase diagram exhibiting a
     /// vapor/liquid equilibrium.
     ///
@@ -20,7 +18,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     /// phases are known, they can be passed as `x_lle` to avoid
     /// the calculation of unstable branches.
     pub fn binary_vle<TP: TemperatureOrPressure>(
-        eos: &Arc<E>,
+        eos: &E,
         temperature_or_pressure: TP,
         npoints: Option<usize>,
         x_lle: Option<(f64, f64)>,
@@ -99,7 +97,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
     #[expect(clippy::type_complexity)]
     fn calculate_vlle<TP: TemperatureOrPressure>(
-        eos: &Arc<E>,
+        eos: &E,
         tp: TP,
         npoints: usize,
         x_lle: (f64, f64),
@@ -141,7 +139,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     /// liquid diagrams as well, as long as the feed composition is
     /// in a two phase region.
     pub fn lle<TP: TemperatureOrPressure>(
-        eos: &Arc<E>,
+        eos: &E,
         temperature_or_pressure: TP,
         feed: &Moles<DVector<f64>>,
         min_tp: TP::Other,
@@ -174,8 +172,8 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 }
 
 #[expect(clippy::too_many_arguments)]
-fn iterate_vle<E: Residual, TP: TemperatureOrPressure>(
-    eos: &Arc<E>,
+fn iterate_vle<E: Residual + Subset, TP: TemperatureOrPressure>(
+    eos: &E,
     tp: TP,
     x_lim: &[f64],
     vle_0: PhaseEquilibrium<E, 2>,
@@ -235,7 +233,7 @@ pub struct PhaseDiagramHetero<E> {
     pub lle: Option<PhaseDiagram<E, 2>>,
 }
 
-impl<E: Residual> PhaseDiagram<E, 2> {
+impl<E: Residual + Subset> PhaseDiagram<E, 2> {
     /// Create a new binary phase diagram exhibiting a
     /// vapor/liquid/liquid equilibrium.
     ///
@@ -243,7 +241,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     /// of the heteroazeotrope.
     #[expect(clippy::too_many_arguments)]
     pub fn binary_vlle<TP: TemperatureOrPressure>(
-        eos: &Arc<E>,
+        eos: &E,
         temperature_or_pressure: TP,
         x_lle: (f64, f64),
         tp_lim_lle: Option<TP::Other>,
@@ -304,7 +302,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     }
 }
 
-impl<E> PhaseDiagramHetero<E> {
+impl<E: Clone> PhaseDiagramHetero<E> {
     pub fn vle(&self) -> PhaseDiagram<E, 2> {
         PhaseDiagram::new(
             self.vle1
@@ -325,7 +323,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
     /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
     /// system and given temperature or pressure.
     pub fn heteroazeotrope<TP: TemperatureOrPressure>(
-        eos: &Arc<E>,
+        eos: &E,
         temperature_or_pressure: TP,
         x_init: (f64, f64),
         tp_init: Option<TP::Other>,
@@ -360,7 +358,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
     /// system and given temperature.
     #[expect(clippy::toplevel_ref_arg)]
     fn heteroazeotrope_t(
-        eos: &Arc<E>,
+        eos: &E,
         temperature: Temperature,
         x_init: (f64, f64),
         p_init: Option<Pressure>,
@@ -392,7 +390,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
             + vle2.vapor().pressure(Contributions::Total))
             * 0.5;
         let nv0 = (&vle1.vapor().moles + &vle2.vapor().moles) * 0.5;
-        let mut v = State::new_npt(eos, temperature, p0, &nv0, DensityInitialization::Vapor)?;
+        let mut v = State::new_npt(eos, temperature, p0, &nv0, Some(Vapor))?;
 
         for _ in 0..options.max_iter.unwrap_or(MAX_ITER_HETERO) {
             // calculate properties
@@ -494,7 +492,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
     /// system and given pressure.
     #[expect(clippy::toplevel_ref_arg)]
     fn heteroazeotrope_p(
-        eos: &Arc<E>,
+        eos: &E,
         pressure: Pressure,
         x_init: (f64, f64),
         t_init: Option<Temperature>,
@@ -514,7 +512,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
         let mut l2 = vle2.liquid().clone();
         let t0 = (vle1.vapor().temperature + vle2.vapor().temperature) * 0.5;
         let nv0 = (&vle1.vapor().moles + &vle2.vapor().moles) * 0.5;
-        let mut v = State::new_npt(eos, t0, pressure, &nv0, DensityInitialization::Vapor)?;
+        let mut v = State::new_npt(eos, t0, pressure, &nv0, Some(Vapor))?;
 
         for _ in 0..options.max_iter.unwrap_or(MAX_ITER_HETERO) {
             // calculate properties

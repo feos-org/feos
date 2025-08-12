@@ -7,7 +7,7 @@ use crate::{
     PyVerbosity,
 };
 use feos_core::{
-    Components, Contributions, EquationOfState, PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium,
+    Contributions, EquationOfState, PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, ResidualDyn,
 };
 use indexmap::IndexMap;
 use nalgebra::DVector;
@@ -16,13 +16,15 @@ use numpy::{PyArray1, PyArrayMethods};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use quantity::*;
+use std::ops::Deref;
+use std::sync::Arc;
 use typenum::P3;
 
 /// A thermodynamic two phase equilibrium state.
 #[pyclass(name = "PhaseEquilibrium")]
 #[derive(Clone)]
 pub struct PyPhaseEquilibrium(
-    pub PhaseEquilibrium<EquationOfState<IdealGasModel, ResidualModel>, 2>,
+    pub PhaseEquilibrium<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>, 2>,
 );
 
 #[pymethods]
@@ -60,7 +62,7 @@ impl PyPhaseEquilibrium {
     )]
     #[pyo3(signature = (eos, temperature_or_pressure, initial_state=None, max_iter=None, tol=None, verbosity=None))]
     pub(crate) fn pure(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         temperature_or_pressure: Bound<'_, PyAny>,
         initial_state: Option<&PyPhaseEquilibrium>,
         max_iter: Option<usize>,
@@ -135,7 +137,7 @@ impl PyPhaseEquilibrium {
     #[pyo3(signature = (eos, temperature, pressure, feed, initial_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None))]
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn tp_flash(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         temperature: Temperature,
         pressure: Pressure,
         feed: Moles<DVector<f64>>,
@@ -197,7 +199,7 @@ impl PyPhaseEquilibrium {
     #[pyo3(signature = (eos, temperature_or_pressure, liquid_molefracs, tp_init=None, vapor_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn bubble_point<'py>(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         temperature_or_pressure: Bound<'_, PyAny>,
         liquid_molefracs: &Bound<'py, PyArray1<f64>>,
         tp_init: Option<Bound<'_, PyAny>>,
@@ -285,7 +287,7 @@ impl PyPhaseEquilibrium {
     #[pyo3(signature = (eos, temperature_or_pressure, vapor_molefracs, tp_init=None, liquid_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn dew_point<'py>(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         temperature_or_pressure: Bound<'_, PyAny>,
         vapor_molefracs: &Bound<'py, PyArray1<f64>>,
         tp_init: Option<Bound<'_, PyAny>>,
@@ -360,7 +362,7 @@ impl PyPhaseEquilibrium {
     // /// PhaseEquilibrium
     // #[staticmethod]
     // pub(crate) fn new_npt(
-    //     eos: PyEquationOfState,
+    //     eos: &PyEquationOfState,
     //     temperature: Temperature,
     //     pressure: Pressure,
     //     vapor_moles: Moles<DVector<f64>>,
@@ -397,7 +399,7 @@ impl PyPhaseEquilibrium {
     /// list[PhaseEquilibrium]
     #[staticmethod]
     fn vle_pure_comps(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         temperature_or_pressure: Bound<'_, PyAny>,
     ) -> PyResult<Vec<Option<Self>>> {
         if let Ok(t) = temperature_or_pressure.extract::<Temperature>() {
@@ -432,7 +434,7 @@ impl PyPhaseEquilibrium {
     /// -------
     /// list[SINumber]
     #[staticmethod]
-    fn vapor_pressure(eos: PyEquationOfState, temperature: Temperature) -> Vec<Option<Pressure>> {
+    fn vapor_pressure(eos: &PyEquationOfState, temperature: Temperature) -> Vec<Option<Pressure>> {
         PhaseEquilibrium::vapor_pressure(&eos.0, temperature)
     }
 
@@ -450,7 +452,10 @@ impl PyPhaseEquilibrium {
     /// -------
     /// list[SINumber]
     #[staticmethod]
-    fn boiling_temperature(eos: PyEquationOfState, pressure: Pressure) -> Vec<Option<Temperature>> {
+    fn boiling_temperature(
+        eos: &PyEquationOfState,
+        pressure: Pressure,
+    ) -> Vec<Option<Temperature>> {
         PhaseEquilibrium::boiling_temperature(&eos.0, pressure)
     }
 
@@ -466,7 +471,9 @@ impl PyPhaseEquilibrium {
 /// A thermodynamic three phase equilibrium state.
 #[pyclass(name = "ThreePhaseEquilibrium")]
 #[derive(Clone)]
-struct PyThreePhaseEquilibrium(PhaseEquilibrium<EquationOfState<IdealGasModel, ResidualModel>, 3>);
+struct PyThreePhaseEquilibrium(
+    PhaseEquilibrium<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>, 3>,
+);
 
 #[pymethods]
 impl PyPhaseEquilibrium {
@@ -508,7 +515,7 @@ impl PyPhaseEquilibrium {
     #[pyo3(signature = (eos, temperature_or_pressure, x_init, tp_init=None, max_iter=None, tol=None, verbosity=None, max_iter_bd_inner=None, max_iter_bd_outer=None, tol_bd_inner=None, tol_bd_outer=None, verbosity_bd=None))]
     #[expect(clippy::too_many_arguments)]
     fn heteroazeotrope(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         temperature_or_pressure: Bound<'_, PyAny>,
         x_init: (f64, f64),
         tp_init: Option<Bound<'_, PyAny>>,
@@ -665,7 +672,7 @@ impl PyState {
 /// -------
 /// PhaseDiagram : the resulting phase diagram
 #[pyclass(name = "PhaseDiagram")]
-pub struct PyPhaseDiagram(PhaseDiagram<EquationOfState<IdealGasModel, ResidualModel>, 2>);
+pub struct PyPhaseDiagram(PhaseDiagram<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>, 2>);
 
 #[pymethods]
 impl PyPhaseDiagram {
@@ -1024,7 +1031,7 @@ impl PyPhaseDiagram {
     /// - component index `i` matches to order of components in parameters.
     #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
     pub(crate) fn to_dict(&self, contributions: PyContributions) -> IndexMap<String, Vec<f64>> {
-        let n = self.0.states[0].liquid().eos.components();
+        let n = self.0.states[0].liquid().eos.deref().components();
         let c = Contributions::from(contributions);
         let mut dict = IndexMap::with_capacity(16 + 2 * n);
         if n != 1 {
@@ -1218,7 +1225,7 @@ impl PyPhaseDiagram {
     #[pyo3(signature = (eos, temperature_or_pressure, npoints=None, x_lle=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn binary_vle(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         temperature_or_pressure: Bound<'_, PyAny>,
         npoints: Option<usize>,
         x_lle: Option<(f64, f64)>,
@@ -1293,7 +1300,7 @@ impl PyPhaseDiagram {
     #[pyo3(text_signature = "(eos, temperature_or_pressure, feed, min_tp, max_tp, npoints=None)")]
     #[pyo3(signature = (eos, temperature_or_pressure, feed, min_tp, max_tp, npoints=None))]
     pub(crate) fn lle(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         temperature_or_pressure: Bound<'_, PyAny>,
         feed: Moles<DVector<f64>>,
         min_tp: Bound<'_, PyAny>,
@@ -1335,7 +1342,9 @@ impl PyPhaseDiagram {
 
 /// Phase diagram for a binary mixture exhibiting a heteroazeotrope.
 #[pyclass(name = "PhaseDiagramHetero")]
-pub struct PyPhaseDiagramHetero(PhaseDiagramHetero<EquationOfState<IdealGasModel, ResidualModel>>);
+pub struct PyPhaseDiagramHetero(
+    PhaseDiagramHetero<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
+);
 
 #[pymethods]
 impl PyPhaseDiagram {
@@ -1380,7 +1389,7 @@ impl PyPhaseDiagram {
     #[pyo3(signature = (eos, temperature_or_pressure, x_lle, tp_lim_lle=None, tp_init_vlle=None, npoints_vle=None, npoints_lle=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn binary_vlle(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         temperature_or_pressure: Bound<'_, PyAny>,
         x_lle: (f64, f64),
         tp_lim_lle: Option<Bound<'_, PyAny>>,

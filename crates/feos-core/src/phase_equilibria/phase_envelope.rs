@@ -2,16 +2,14 @@ use super::{PhaseDiagram, PhaseEquilibrium};
 use crate::SolverOptions;
 use crate::equation_of_state::Residual;
 use crate::errors::FeosResult;
-use crate::phase_equilibria::PhaseEquilibriumGeneric;
 use crate::state::{Contributions, State};
 use nalgebra::DVector;
 use quantity::{Pressure, Temperature};
-use std::sync::Arc;
 
 impl<E: Residual> PhaseDiagram<E, 2> {
     /// Calculate the bubble point line of a mixture with given composition.
     pub fn bubble_point_line(
-        eos: &Arc<E>,
+        eos: &E,
         molefracs: &DVector<f64>,
         min_temperature: Temperature,
         npoints: usize,
@@ -59,7 +57,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
     /// Calculate the dew point line of a mixture with given composition.
     pub fn dew_point_line(
-        eos: &Arc<E>,
+        eos: &E,
         molefracs: &DVector<f64>,
         min_temperature: Temperature,
         npoints: usize,
@@ -123,7 +121,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
     /// Calculate the spinodal lines for a mixture with fixed composition.
     pub fn spinodal(
-        eos: &Arc<E>,
+        eos: &E,
         molefracs: &DVector<f64>,
         min_temperature: Temperature,
         npoints: usize,
@@ -146,7 +144,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         for ti in &temperatures {
             let spinodal = State::spinodal(eos, ti, Some(molefracs), options).ok();
             if let Some(spinodal) = spinodal {
-                states.push(PhaseEquilibriumGeneric(spinodal));
+                states.push(PhaseEquilibrium(spinodal));
             }
         }
         states.push(PhaseEquilibrium::from_states(sc.clone(), sc));

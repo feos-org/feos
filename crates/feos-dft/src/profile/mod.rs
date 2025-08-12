@@ -99,10 +99,11 @@ impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTSpecification<D, F> for DFTS
 }
 
 /// A one-, two-, or three-dimensional density profile.
+#[derive(Clone)]
 pub struct DFTProfile<D: Dimension, F> {
     pub grid: Grid,
     pub convolver: Arc<dyn Convolver<f64, D>>,
-    pub dft: Arc<F>,
+    pub dft: F,
     pub temperature: Temperature,
     pub density: Density<Array<f64, D::Larger>>,
     pub specification: Arc<dyn DFTSpecification<D, F>>,
@@ -358,23 +359,6 @@ where
     /// Return the total number of moles in the system.
     pub fn total_moles(&self) -> Moles {
         self.moles().sum()
-    }
-}
-
-impl<D: Dimension + Clone, F> Clone for DFTProfile<D, F> {
-    fn clone(&self) -> Self {
-        Self {
-            grid: self.grid.clone(),
-            convolver: self.convolver.clone(),
-            dft: self.dft.clone(),
-            temperature: self.temperature,
-            density: self.density.clone(),
-            specification: self.specification.clone(),
-            external_potential: self.external_potential.clone(),
-            bulk: self.bulk.clone(),
-            solver_log: self.solver_log.clone(),
-            lanczos: self.lanczos,
-        }
     }
 }
 

@@ -86,7 +86,7 @@ impl<E: Residual> State<E> {
             self.temperature,
             self.pressure(Contributions::Total),
             &Moles::from_reduced(x_trial),
-            phase,
+            Some(phase),
         )
     }
 
@@ -117,7 +117,7 @@ impl<E: Residual> State<E> {
                     trial.temperature,
                     trial.pressure(Contributions::Total),
                     &Moles::from_reduced(y),
-                    DensityInitialization::InitialDensity(trial.density),
+                    Some(DensityInitialization::InitialDensity(trial.density)),
                 )?;
                 if (i > 4 && error > scaled_tol) || (tpd > tpd_old + 1E-05 && i > 2) {
                     newton = true; // switch to newton scheme
@@ -222,7 +222,7 @@ impl<E: Residual> State<E> {
                 self.temperature,
                 self.pressure(Contributions::Total),
                 &y,
-                DensityInitialization::InitialDensity(self.density),
+                Some(DensityInitialization::InitialDensity(self.density)),
             )?;
         }
         Ok(gradient.map(f64::abs).sum())

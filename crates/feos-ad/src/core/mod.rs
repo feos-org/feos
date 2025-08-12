@@ -1,21 +1,21 @@
 use std::ops::Deref;
 
 use nalgebra::{Const, U1};
-use num_dual::{Derivative, DualNum, DualSVec};
+use num_dual::{Derivative, DualNum, DualSVec, DualStruct};
 
 // mod phase_equilibria;
-mod residual;
-mod state;
-mod total;
+// mod residual;
+// mod state;
+// mod total;
 // pub use phase_equilibria::PhaseEquilibriumAD;
-pub use residual::ResidualHelmholtzEnergy;
-pub use state::{Eigen, PhaseEquilibriumAD, StateAD};
-pub use total::{EquationOfStateAD, IdealGasAD, TotalHelmholtzEnergy};
+// pub use residual::ResidualHelmholtzEnergy;
+// pub use state::{PhaseEquilibriumAD, StateAD};
+// pub use total::{EquationOfStateAD, IdealGasAD, TotalHelmholtzEnergy};
 
 /// A model that can be evaluated with derivatives of its parameters.
 pub trait ParametersAD: Sized + Deref<Target = Self::Parameters<f64>> {
     /// The type of the structure that stores the parameters internally.
-    type Parameters<D: DualNum<f64> + Copy>: Clone;
+    type Parameters<D: DualNum<f64> + Copy>: DualStruct<D, f64> + Clone;
 
     // /// Return a reference to the parameters.
     // fn params(&self) -> &Self::Parameters<f64>;
@@ -44,6 +44,9 @@ pub trait ParametersAD: Sized + Deref<Target = Self::Parameters<f64>> {
             parameters,
         }
     }
+
+    /// Manually set the parameters and their derivatives.
+    fn derivatives2<D: DualNum<f64> + Copy>(parameters: Self::Parameters<D>) -> Self;
 }
 
 /// Struct that stores the reference to the equation of state together with the (possibly) dual parameters.

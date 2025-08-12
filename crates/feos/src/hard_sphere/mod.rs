@@ -91,7 +91,10 @@ pub struct HardSphere;
 impl HardSphere {
     /// Returns the Helmholtz energy, packing fractions, and temperature dependent diameters without redundant calculations.
     #[inline]
-    pub fn helmholtz_energy_and_properties<D: DualNum<f64> + Copy, P: HardSphereProperties>(
+    pub fn helmholtz_energy_density_and_properties<
+        D: DualNum<f64> + Copy,
+        P: HardSphereProperties,
+    >(
         &self,
         parameters: &P,
         state: &StateHD<D>,
@@ -113,19 +116,20 @@ impl HardSphere {
         let density = state.partial_density.sum();
         zeta.iter_mut().for_each(|z| *z *= density);
         let frac_1mz3 = -(zeta[3] - 1.0).recip();
-        let a = state.volume / std::f64::consts::FRAC_PI_6
-            * (zeta[1] * zeta[2] * frac_1mz3 * 3.0
-                + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
-                + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (zeta[3] * (-1.0)).ln_1p());
+        let a = (zeta[1] * zeta[2] * frac_1mz3 * 3.0
+            + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
+            + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (zeta[3] * (-1.0)).ln_1p())
+            / std::f64::consts::FRAC_PI_6;
         (a, zeta, diameter)
     }
 
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy, P: HardSphereProperties>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy, P: HardSphereProperties>(
         &self,
         parameters: &P,
         state: &StateHD<D>,
     ) -> D {
-        self.helmholtz_energy_and_properties(parameters, state).0
+        self.helmholtz_energy_density_and_properties(parameters, state)
+            .0
     }
 }

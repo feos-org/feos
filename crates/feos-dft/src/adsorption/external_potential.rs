@@ -69,7 +69,7 @@ pub enum ExternalPotential {
 /// Parameters of the fluid required to evaluate the external potential.
 pub trait FluidParameters: HelmholtzEnergyFunctional {
     fn epsilon_k_ff(&self) -> Array1<f64>;
-    fn sigma_ff(&self) -> &Array1<f64>;
+    fn sigma_ff(&self) -> Array1<f64>;
 }
 
 impl ExternalPotential {

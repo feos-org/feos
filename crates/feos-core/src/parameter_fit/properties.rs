@@ -1,15 +1,19 @@
-use super::Gradient;
-use crate::NamedParameters;
-use feos_core::{
+use super::{Gradient, ParametersAD};
+use crate::density_iteration::density_iteration;
+use crate::{
     DensityInitialization::Liquid, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual,
-    density_iteration,
 };
-use nalgebra::{Const, SVector, U1, U2};
+#[cfg(feature = "rayon")]
+use nalgebra::Const;
+use nalgebra::{SVector, U1, U2};
+#[cfg(feature = "rayon")]
 use ndarray::{Array1, Array2, ArrayView2, Zip};
 use num_dual::DualStruct;
-use quantity::{Density, KELVIN, KILO, METER, MOL, PASCAL, Pressure, Temperature};
+use quantity::{Density, Pressure, Temperature};
+#[cfg(feature = "rayon")]
+use quantity::{KELVIN, KILO, METER, MOL, PASCAL};
 
-pub trait PureModel<const P: usize>: Residual<U1, Gradient<P>> + NamedParameters {
+pub trait PureModel<const P: usize>: Residual<U1, Gradient<P>> + ParametersAD<P> {
     fn vapor_pressure(eos: &Self, temperature: Temperature) -> FeosResult<Pressure<Gradient<P>>> {
         let eos_f64 = eos.re();
         let (_, [vapor_density, liquid_density]) =
@@ -54,6 +58,7 @@ pub trait PureModel<const P: usize>: Residual<U1, Gradient<P>> + NamedParameters
         density_iteration(eos, t, p, &x, Some(Liquid))
     }
 
+    #[cfg(feature = "rayon")]
     fn vapor_pressure_parallel(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
@@ -64,6 +69,7 @@ pub trait PureModel<const P: usize>: Residual<U1, Gradient<P>> + NamedParameters
         })
     }
 
+    #[cfg(feature = "rayon")]
     fn liquid_density_parallel(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
@@ -75,6 +81,7 @@ pub trait PureModel<const P: usize>: Residual<U1, Gradient<P>> + NamedParameters
         })
     }
 
+    #[cfg(feature = "rayon")]
     fn equilibrium_liquid_density_parallel(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
@@ -87,15 +94,18 @@ pub trait PureModel<const P: usize>: Residual<U1, Gradient<P>> + NamedParameters
     }
 }
 
-impl<T: Residual<U1, Gradient<P>> + NamedParameters, const P: usize> PureModel<P> for T {}
+impl<T: Residual<U1, Gradient<P>> + ParametersAD<P>, const P: usize> PureModel<P> for T {}
 
-pub trait BinaryModel<const P: usize>: Residual<U2, Gradient<P>> + NamedParameters {
+pub trait BinaryModel<const P: usize>: Residual<U2, Gradient<P>> + ParametersAD<P> {
     fn bubble_point_pressure(
         eos: &Self,
         temperature: Temperature,
         pressure: Option<Pressure>,
         liquid_molefracs: SVector<f64, 2>,
-    ) -> FeosResult<Pressure<Gradient<P>>> {
+    ) -> FeosResult<Pressure<Gradient<P>>>
+    where
+        Self::Real: Clone,
+    {
         let eos_f64 = eos.re();
         let vle = PhaseEquilibrium::bubble_point(
             &eos_f64,
@@ -142,7 +152,10 @@ pub trait BinaryModel<const P: usize>: Residual<U2, Gradient<P>> + NamedParamete
         temperature: Temperature,
         pressure: Option<Pressure>,
         vapor_molefracs: SVector<f64, 2>,
-    ) -> FeosResult<Pressure<Gradient<P>>> {
+    ) -> FeosResult<Pressure<Gradient<P>>>
+    where
+        Self::Real: Clone,
+    {
         let eos_f64 = eos.re();
         let vle = PhaseEquilibrium::dew_point(
             &eos_f64,
@@ -183,6 +196,8 @@ pub trait BinaryModel<const P: usize>: Residual<U2, Gradient<P>> + NamedParamete
             / (v_l - v_v);
         Ok(Pressure::from_reduced(p))
     }
+
+    #[cfg(feature = "rayon")]
     fn bubble_point_pressure_parallel(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
@@ -199,6 +214,7 @@ pub trait BinaryModel<const P: usize>: Residual<U2, Gradient<P>> + NamedParamete
         })
     }
 
+    #[cfg(feature = "rayon")]
     fn dew_point_pressure_parallel(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
@@ -216,14 +232,10 @@ pub trait BinaryModel<const P: usize>: Residual<U2, Gradient<P>> + NamedParamete
     }
 }
 
-// impl<T: ResidualHelmholtzEnergy<2> + NamedParameters> BinaryModel for T {}
+impl<T: Residual<U2, Gradient<P>> + ParametersAD<P>, const P: usize> BinaryModel<P> for T {}
 
-fn parallelize<
-    F,
-    E: Residual<Const<N>, Gradient<P>> + NamedParameters,
-    const N: usize,
-    const P: usize,
->(
+#[cfg(feature = "rayon")]
+fn parallelize<F, E: ParametersAD<P>, const P: usize>(
     parameter_names: [String; P],
     parameters: ArrayView2<f64>,
     input: ArrayView2<f64>,
@@ -238,9 +250,7 @@ where
         .par_map_collect(|par, inp| {
             let par = par.as_slice().expect("Parameter array is not contiguous!");
             let inp = inp.as_slice().expect("Input array is not contiguous!");
-            let eos = E::from(par);
-            let deriv = eos.named_derivatives(parameter_names);
-            let eos = E::derivatives2(deriv);
+            let eos = E::named_derivatives(par, parameter_names);
             f(&eos, inp)
         });
     let status = value_dual.iter().map(|p| p.is_ok()).collect();

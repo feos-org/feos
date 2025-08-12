@@ -8,7 +8,7 @@ pub struct HardChain;
 
 impl HardChain {
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,
@@ -22,7 +22,6 @@ impl HardChain {
             state.partial_density[i] * (1.0 - parameters.m[i]) * g_hs[i].ln()
         })
         .sum()
-            * state.volume
     }
 }
 
@@ -40,23 +39,23 @@ mod tests {
         let t = 250.0;
         let v = 1000.0;
         let n = 1.0;
-        let s = StateHD::new(t, v, dvector![n]);
-        let a_rust = HardChain.helmholtz_energy(&propane_parameters().params, &s);
+        let s = StateHD::new(t, v, &dvector![n]);
+        let a_rust = HardChain.helmholtz_energy_density(&propane_parameters().params, &s) * v;
         assert_relative_eq!(a_rust, -0.12402626171926148, epsilon = 1e-10);
     }
 
     #[test]
     fn mix() {
         let t = 250.0;
-        let v = 2.5e28;
+        let v = 2.5;
         let n = 1.0;
-        let s = StateHD::new(t, v, dvector![n]);
-        let a1 = HardChain.helmholtz_energy(&propane_parameters().params, &s);
-        let a2 = HardChain.helmholtz_energy(&butane_parameters().params, &s);
-        let s1m = StateHD::new(t, v, dvector![n, 0.0]);
-        let a1m = HardChain.helmholtz_energy(&propane_butane_parameters().params, &s1m);
-        let s2m = StateHD::new(t, v, dvector![0.0, n]);
-        let a2m = HardChain.helmholtz_energy(&propane_butane_parameters().params, &s2m);
+        let s = StateHD::new(t, v, &dvector![n]);
+        let a1 = HardChain.helmholtz_energy_density(&propane_parameters().params, &s);
+        let a2 = HardChain.helmholtz_energy_density(&butane_parameters().params, &s);
+        let s1m = StateHD::new(t, v, &dvector![n, 0.0]);
+        let a1m = HardChain.helmholtz_energy_density(&propane_butane_parameters().params, &s1m);
+        let s2m = StateHD::new(t, v, &dvector![0.0, n]);
+        let a2m = HardChain.helmholtz_energy_density(&propane_butane_parameters().params, &s2m);
         assert_relative_eq!(a1, a1m, epsilon = 1e-14);
         assert_relative_eq!(a2, a2m, epsilon = 1e-14);
     }

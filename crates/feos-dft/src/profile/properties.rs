@@ -3,7 +3,7 @@ use super::DFTProfile;
 use crate::convolver::{BulkConvolver, Convolver};
 use crate::functional_contribution::FunctionalContribution;
 use crate::{ConvolverFFT, DFTSolverLog, HelmholtzEnergyFunctional, WeightFunctionInfo};
-use feos_core::{Contributions, FeosResult, IdealGas, ReferenceSystem, Verbosity};
+use feos_core::{Contributions, FeosResult, ReferenceSystem, Total, Verbosity};
 use nalgebra::{DMatrix, DVector};
 use ndarray::{Array, Axis, Dimension, RemoveAxis};
 use num_dual::{Dual64, DualNum};
@@ -165,7 +165,7 @@ where
     }
 }
 
-impl<D: Dimension + RemoveAxis + 'static, F: HelmholtzEnergyFunctional + IdealGas> DFTProfile<D, F>
+impl<D: Dimension + RemoveAxis + 'static, F: HelmholtzEnergyFunctional + Total> DFTProfile<D, F>
 where
     D::Larger: Dimension<Smaller = D>,
     D::Smaller: Dimension<Larger = D>,

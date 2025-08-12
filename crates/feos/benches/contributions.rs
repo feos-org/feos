@@ -68,7 +68,8 @@ fn pcsaft(c: &mut Criterion) {
             let params =
                 PcSaftParameters::new_binary([comp1.clone(), comp2.clone()], None, vec![]).unwrap();
             let eos = Arc::new(PcSaft::new(params));
-            let state = State::new_npt(&eos, t, p, &moles, DensityInitialization::Liquid).unwrap();
+            let state =
+                State::new_npt(&eos, t, p, &moles, Some(DensityInitialization::Liquid)).unwrap();
             let state_hd = state.derive1(Derivative::DT);
             let name1 = comp1.identifier.name.as_deref().unwrap();
             let name2 = comp2.identifier.name.as_deref().unwrap();

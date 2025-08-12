@@ -28,7 +28,7 @@ pub trait FunctionalContribution: Sync + Send {
         weighted_densities: ArrayView2<N>,
     ) -> FeosResult<Array1<N>>;
 
-    fn helmholtz_energy<N: DualNum<f64> + Copy>(&self, state: &StateHD<N>) -> N {
+    fn bulk_helmholtz_energy_density<N: DualNum<f64> + Copy>(&self, state: &StateHD<N>) -> N {
         // calculate weight functions
         let weight_functions = self.weight_functions(state.temperature);
 
@@ -42,7 +42,6 @@ pub trait FunctionalContribution: Sync + Send {
         let weighted_densities = weight_constants.dot(&density).insert_axis(Axis(1));
         self.helmholtz_energy_density(state.temperature, weighted_densities.view())
             .unwrap()[0]
-            * state.volume
     }
 
     fn first_partial_derivatives<N: DualNum<f64> + Copy>(

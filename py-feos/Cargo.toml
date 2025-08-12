@@ -35,13 +35,13 @@ typenum = { workspace = true }
 paste = { workspace = true }
 
 feos = { workspace = true }
-feos-core = { workspace = true }
+feos-core = { workspace = true, features = ["ndarray"] }
 feos-derive = { workspace = true }
 feos-dft = { workspace = true, optional = true }
 feos-ad = { workspace = true, optional = true }
 
 [features]
-default = []
+default = ["pcsaft"]
 dft = ["feos/dft", "feos-dft", "petgraph", "rayon"]
 pcsaft = ["feos/pcsaft", "feos-ad?/pcsaft"]
 epcsaft = ["feos/epcsaft"]

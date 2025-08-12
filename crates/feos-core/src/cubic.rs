@@ -4,10 +4,8 @@
 //! of state - with a single contribution to the Helmholtz energy - can be implemented.
 //! The implementation closely follows the form of the equations given in
 //! [this wikipedia article](https://en.wikipedia.org/wiki/Cubic_equations_of_state#Peng%E2%80%93Robinson_equation_of_state).
-use crate::equation_of_state::{Components, Molarweight, Residual};
 use crate::parameter::{Identifier, Parameters, PureRecord};
-use crate::state::StateHD;
-use crate::{FeosError, FeosResult};
+use crate::{FeosError, FeosResult, Molarweight, ResidualDyn, StateHD, Subset};
 use nalgebra::{DMatrix, DVector};
 use num_dual::DualNum;
 use quantity::MolarWeight;
@@ -105,30 +103,26 @@ impl PengRobinson {
     }
 }
 
-impl Components for PengRobinson {
+impl ResidualDyn for PengRobinson {
     fn components(&self) -> usize {
         self.tc.len()
     }
 
-    fn subset(&self, component_list: &[usize]) -> Self {
-        Self::new(self.parameters.subset(component_list))
-    }
-}
-
-impl Residual for PengRobinson {
-    fn compute_max_density(&self, moles: &DVector<f64>) -> f64 {
-        let b = (moles * &self.b).sum() / moles.sum();
-        0.9 / b
+    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+        D::from(0.9) / molefracs.dot(&self.b.map(D::from))
     }
 
-    fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+    ) -> Vec<(String, D)> {
+        let density = state.partial_density.sum();
         let x = &state.molefracs;
         let ak = &self
             .tc
             .map(|tc| (D::one() - (state.temperature / tc).sqrt()))
             .component_mul(&self.kappa.map(D::from))
-            .add_scalar(D::from(1.0))
-            .map(|x| x.powi(2))
+            .map(|x| (x + 1.0).powi(2))
             .component_mul(&self.a.map(D::from));
 
         // Mixing rules
@@ -141,21 +135,18 @@ impl Residual for PengRobinson {
         let b = x.dot(&self.b.map(D::from));
 
         // Helmholtz energy
-        let n = state.moles.sum();
-        let v = state.volume;
-        n * ((v / (v - b * n)).ln()
-            - ak_mix / (b * SQRT_2 * 2.0 * state.temperature)
-                * ((v + b * n * (1.0 + SQRT_2)) / (v + b * n * (1.0 - SQRT_2))).ln())
+        let v = density.recip();
+        let f = density
+            * ((v / (v - b)).ln()
+                - ak_mix / (b * SQRT_2 * 2.0 * state.temperature)
+                    * ((v + b * (1.0 + SQRT_2)) / (v + b * (1.0 - SQRT_2))).ln());
+        vec![("Peng Robinson".to_string(), f)]
     }
+}
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
-        &self,
-        state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
-        vec![(
-            "Peng Robinson".to_string(),
-            self.residual_helmholtz_energy(state),
-        )]
+impl Subset for PengRobinson {
+    fn subset(&self, component_list: &[usize]) -> Self {
+        Self::new(self.parameters.subset(component_list))
     }
 }
 
@@ -173,7 +164,6 @@ mod tests {
     use crate::{FeosResult, SolverOptions, Verbosity};
     use approx::*;
     use quantity::{KELVIN, PASCAL};
-    use std::sync::Arc;
 
     fn pure_record_vec() -> Vec<PureRecord<PengRobinsonRecord, ()>> {
         let records = r#"[
@@ -216,9 +206,9 @@ mod tests {
         let tc = propane.model_record.tc;
         let pc = propane.model_record.pc;
         let parameters = PengRobinsonParameters::new_pure(propane)?;
-        let pr = Arc::new(PengRobinson::new(parameters));
+        let pr = PengRobinson::new(parameters);
         let options = SolverOptions::new().verbosity(Verbosity::Iter);
-        let cp = State::critical_point(&pr, None, None, options)?;
+        let cp = State::critical_point(&&pr, None, None, options)?;
         println!("{} {}", cp.temperature, cp.pressure(Contributions::Total));
         assert_relative_eq!(cp.temperature, tc * KELVIN, max_relative = 1e-4);
         assert_relative_eq!(

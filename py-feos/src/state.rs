@@ -3,7 +3,7 @@ use crate::{
     PyVerbosity,
 };
 use feos_core::{
-    Components, Contributions, DensityInitialization, EquationOfState, FeosError, State, StateVec,
+    Contributions, DensityInitialization, EquationOfState, FeosError, ResidualDyn, State, StateVec,
 };
 use ndarray::{Array1, Array2};
 use nshare::{AsNdarray1, IntoNalgebra, IntoNdarray1, IntoNdarray2};
@@ -13,7 +13,8 @@ use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
 use quantity::*;
 use std::collections::HashMap;
-use std::ops::{Neg, Sub};
+use std::ops::{Deref, Neg, Sub};
+use std::sync::Arc;
 use typenum::{Quot, P3};
 
 type DpDn<T> = Quantity<T, <_Pressure as Sub<_Moles>>::Output>;
@@ -104,7 +105,7 @@ impl From<PyContributions> for Contributions {
 ///     When the state cannot be created using the combination of input.
 #[pyclass(name = "State")]
 #[derive(Clone)]
-pub struct PyState(pub State<EquationOfState<IdealGasModel, ResidualModel>>);
+pub struct PyState(pub State<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>);
 
 #[pymethods]
 impl PyState {
@@ -115,7 +116,7 @@ impl PyState {
     #[pyo3(signature = (eos, temperature=None, volume=None, density=None, partial_density=None, total_moles=None, moles=None, molefracs=None, pressure=None, molar_enthalpy=None, molar_entropy=None, molar_internal_energy=None, density_initialization=None, initial_temperature=None))]
     #[expect(clippy::too_many_arguments)]
     pub fn new<'py>(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         temperature: Option<Temperature>,
         volume: Option<Volume>,
         density: Option<Density>,
@@ -134,19 +135,19 @@ impl PyState {
         let density_init = if let Some(di) = density_initialization {
             if let Ok(d) = di.extract::<String>().as_deref() {
                 match d {
-                    "vapor" => Ok(DensityInitialization::Vapor),
-                    "liquid" => Ok(DensityInitialization::Liquid),
+                    "vapor" => Ok(Some(DensityInitialization::Vapor)),
+                    "liquid" => Ok(Some(DensityInitialization::Liquid)),
                     _ => Err(PyErr::new::<PyValueError, _>(
                         "`density_initialization` must be 'vapor' or 'liquid'.".to_string(),
                     )),
                 }
             } else if let Ok(d) = di.extract::<Density>() {
-                Ok(DensityInitialization::InitialDensity(d))
+                Ok(Some(DensityInitialization::InitialDensity(d)))
             } else {
                 Err(PyErr::new::<PyValueError, _>("`density_initialization` must be 'vapor' or 'liquid' or a molar density as `SINumber` has to be provided.".to_string()))
             }
         } else {
-            Ok(DensityInitialization::None)
+            Ok(None)
         };
         let s = State::new_full(
             &eos.0,
@@ -193,7 +194,7 @@ impl PyState {
     )]
     #[pyo3(signature = (eos, initial_temperature=None, max_iter=None, tol=None, verbosity=None))]
     fn critical_point_pure(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         initial_temperature: Option<Temperature>,
         max_iter: Option<usize>,
         tol: Option<f64>,
@@ -235,7 +236,7 @@ impl PyState {
     )]
     #[pyo3(signature = (eos, molefracs=None, initial_temperature=None, max_iter=None, tol=None, verbosity=None))]
     fn critical_point<'py>(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         molefracs: Option<&Bound<'py, PyArray1<f64>>>,
         initial_temperature: Option<Temperature>,
         max_iter: Option<usize>,
@@ -283,7 +284,7 @@ impl PyState {
     )]
     #[pyo3(signature = (eos, temperature_or_pressure, initial_temperature=None, initial_molefracs=None, max_iter=None, tol=None, verbosity=None))]
     fn critical_point_binary(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         temperature_or_pressure: Bound<'_, PyAny>,
         initial_temperature: Option<Temperature>,
         initial_molefracs: Option<[f64; 2]>,
@@ -351,7 +352,7 @@ impl PyState {
     )]
     #[pyo3(signature = (eos, temperature, molefracs=None, max_iter=None, tol=None, verbosity=None))]
     fn spinodal<'py>(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         temperature: Temperature,
         molefracs: Option<&Bound<'py, PyArray1<f64>>>,
         max_iter: Option<usize>,
@@ -709,7 +710,7 @@ impl PyState {
     /// SIArray1
     #[staticmethod]
     fn henrys_law_constant(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         temperature: Temperature,
         molefracs: &Bound<'_, PyArray1<f64>>,
     ) -> PyResult<Vec<Pressure>> {
@@ -736,7 +737,7 @@ impl PyState {
     /// SIArray1
     #[staticmethod]
     fn henrys_law_constant_binary(
-        eos: PyEquationOfState,
+        eos: &PyEquationOfState,
         temperature: Temperature,
     ) -> PyResult<Pressure> {
         Ok(State::henrys_law_constant_binary(&eos.0, temperature).map_err(PyFeosError::from)?)
@@ -964,8 +965,8 @@ impl PyState {
     /// Returns
     /// -------
     /// List[Tuple[str, SINumber]]
-    fn residual_helmholtz_energy_contributions(&self) -> Vec<(String, Energy)> {
-        self.0.residual_helmholtz_energy_contributions()
+    fn residual_molar_helmholtz_energy_contributions(&self) -> Vec<(String, MolarEnergy)> {
+        self.0.residual_molar_helmholtz_energy_contributions()
     }
 
     /// Return Gibbs energy.
@@ -1298,7 +1299,7 @@ impl PyState {
     }
 
     fn _repr_markdown_(&self) -> String {
-        if self.0.eos.components() == 1 {
+        if self.0.eos.deref().components() == 1 {
             format!(
                 "|temperature|density|\n|-|-|\n|{:.5}|{:.5}|",
                 self.0.temperature, self.0.density
@@ -1328,15 +1329,18 @@ impl PyState {
 /// -------
 /// StateVec
 #[pyclass(name = "StateVec")]
-pub struct PyStateVec(Vec<State<EquationOfState<IdealGasModel, ResidualModel>>>);
+#[expect(clippy::type_complexity)]
+pub struct PyStateVec(Vec<State<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>>);
 
-impl From<StateVec<'_, EquationOfState<IdealGasModel, ResidualModel>>> for PyStateVec {
-    fn from(vec: StateVec<EquationOfState<IdealGasModel, ResidualModel>>) -> Self {
+impl From<StateVec<'_, Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>> for PyStateVec {
+    fn from(vec: StateVec<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>) -> Self {
         Self(vec.into_iter().cloned().collect())
     }
 }
 
-impl<'a> From<&'a PyStateVec> for StateVec<'a, EquationOfState<IdealGasModel, ResidualModel>> {
+impl<'a> From<&'a PyStateVec>
+    for StateVec<'a, Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>
+{
     fn from(vec: &'a PyStateVec) -> Self {
         Self(vec.0.iter().collect())
     }
@@ -1508,7 +1512,7 @@ impl PyStateVec {
     #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
     pub fn to_dict(&self, contributions: PyContributions) -> HashMap<String, Vec<f64>> {
         let states = StateVec::from(self);
-        let n = states.0[0].eos.components();
+        let n = states.0[0].eos.deref().components();
         let mut dict = HashMap::with_capacity(8 + n);
         if n != 1 {
             let xs = states.molefracs();
@@ -1588,7 +1592,7 @@ impl PyStateVec {
 
 #[macro_export]
 macro_rules! impl_state_entropy_scaling {
-    (EquationOfState<IdealGasModel, ResidualModel>:ty, PyEquationOfState:ty) => {
+    (EquationOfState<Vec<IdealGasModel>, ResidualModel>:ty, PyEquationOfState:ty) => {
         #[pymethods]
         impl PyState {
             /// Return viscosity via entropy scaling.

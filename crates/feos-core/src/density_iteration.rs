@@ -1,62 +1,62 @@
+use crate::DensityInitialization::{self, InitialDensity, Liquid, Vapor};
 use crate::errors::{FeosError, FeosResult};
-use crate::{DensityInitialization, HelmholtzEnergyDerivatives, ReferenceSystem, StateGeneric};
+use crate::{ReferenceSystem, Residual};
 use nalgebra::allocator::Allocator;
-use nalgebra::{DefaultAllocator, OVector};
-use quantity::{Density, Moles, Pressure, RGAS, Temperature};
+use nalgebra::{DefaultAllocator, Dim, OVector};
+use num_dual::{Dual, DualNum, first_derivative};
+use quantity::{Density, Pressure, Temperature};
 
-pub fn density_iteration_stable<E: HelmholtzEnergyDerivatives<f64>>(
+pub fn density_iteration<E: Residual<N, D>, N: Dim, D: DualNum<f64> + Copy>(
     eos: &E,
-    temperature: Temperature,
-    pressure: Pressure,
-    molefracs: &OVector<f64, E::Components>,
-    density_initialization: DensityInitialization,
-) -> FeosResult<StateGeneric<E, f64, E::Components, E::Cache>>
+    temperature: Temperature<D>,
+    pressure: Pressure<D>,
+    molefracs: &OVector<D, N>,
+    initial_density: Option<DensityInitialization>,
+) -> FeosResult<Density<D>>
 where
-    DefaultAllocator: Allocator<E::Components>,
+    DefaultAllocator: Allocator<N>,
 {
-    // calculate state from initial density or given phase
-    match density_initialization {
-        DensityInitialization::InitialDensity(rho0) => {
-            return density_iteration(eos, temperature, pressure, molefracs, rho0);
-        }
-        DensityInitialization::Vapor => {
-            return density_iteration(
-                eos,
-                temperature,
-                pressure,
-                molefracs,
-                pressure / temperature / RGAS,
-            );
-        }
-        DensityInitialization::Liquid => {
-            return density_iteration(
-                eos,
-                temperature,
-                pressure,
-                molefracs,
-                Density::from_reduced(eos.compute_max_density(molefracs)),
-            );
-        }
-        DensityInitialization::None => (),
+    let eos_f64 = eos.re();
+    let t = temperature.into_reduced();
+    let pressure = pressure.into_reduced();
+    let x = molefracs.map(|x| x.re());
+    let density = if let Some(initial_density) = initial_density {
+        _density_iteration(&eos_f64, t.re(), pressure.re(), &x, initial_density)
+    } else {
+        _density_iteration_stable(&eos_f64, t.re(), pressure.re(), &x)
+    }?;
+
+    // Implicit differentiation
+    let mut density = D::from(density);
+    for _ in 0..D::NDERIV {
+        let (_, p, dp_drho) = eos._p_dpdrho(t, density, molefracs);
+        density -= (p - pressure) / dp_drho;
     }
+    Ok(Density::from_reduced(density))
+}
 
+fn _density_iteration_stable<E: Residual<N>, N: Dim>(
+    eos: &E,
+    temperature: f64,
+    pressure: f64,
+    molefracs: &OVector<f64, N>,
+) -> FeosResult<f64>
+where
+    DefaultAllocator: Allocator<N>,
+{
     // calculate stable phase
-    let max_density = Density::from_reduced(eos.compute_max_density(molefracs));
-    let liquid = density_iteration(eos, temperature, pressure, molefracs, max_density);
+    let max_density = eos.compute_max_density(molefracs);
+    let liquid = _density_iteration(eos, temperature, pressure, molefracs, Liquid);
 
-    if pressure < max_density * temperature * RGAS {
-        let vapor = density_iteration(
-            eos,
-            temperature,
-            pressure,
-            molefracs,
-            pressure / temperature / RGAS,
-        );
+    if pressure < max_density * temperature {
+        let vapor = _density_iteration(eos, temperature, pressure, molefracs, Vapor);
         match (&liquid, &vapor) {
             (Ok(_), Err(_)) => liquid,
             (Err(_), Ok(_)) => vapor,
             (Ok(l), Ok(v)) => {
-                if l.residual_gibbs_energy() > v.residual_gibbs_energy() {
+                if _chemical_potential(eos, temperature, *l, molefracs)
+                    > _chemical_potential(eos, temperature, *v, molefracs)
+                {
                     vapor
                 } else {
                     liquid
@@ -71,44 +71,44 @@ where
     }
 }
 
-pub fn density_iteration<E: HelmholtzEnergyDerivatives<f64>>(
+fn _chemical_potential<E: Residual<N, f64>, N: Dim>(
     eos: &E,
-    temperature: Temperature,
-    pressure: Pressure,
-    molefracs: &OVector<f64, E::Components>,
-    initial_density: Density,
-) -> FeosResult<StateGeneric<E, f64, E::Components, E::Cache>>
+    temperature: f64,
+    density: f64,
+    molefracs: &OVector<f64, N>,
+) -> f64
 where
-    DefaultAllocator: Allocator<E::Components>,
+    DefaultAllocator: Allocator<N>,
 {
-    let rho = Density::from_reduced(_density_iteration(
-        eos,
-        temperature.into_reduced(),
-        pressure.into_reduced(),
-        molefracs,
-        initial_density.into_reduced(),
-    )?);
-    let total_moles = Moles::new(1.0);
-    Ok(StateGeneric::new_unchecked(
-        eos,
-        temperature,
-        rho,
-        total_moles,
-        molefracs,
-    ))
+    let molar_volume = density.recip();
+    let t = Dual::from_re(temperature);
+    let x = molefracs.map(Dual::from);
+    let (a_res, da_res) = first_derivative(
+        |molar_volume| {
+            eos.lift()
+                .residual_molar_helmholtz_energy(t, molar_volume, &x)
+        },
+        molar_volume,
+    );
+    a_res - da_res * molar_volume + temperature * density.ln()
 }
 
-fn _density_iteration<E: HelmholtzEnergyDerivatives<f64>>(
+pub(crate) fn _density_iteration<E: Residual<N>, N: Dim>(
     eos: &E,
     temperature: f64,
     pressure: f64,
-    molefracs: &OVector<f64, E::Components>,
-    initial_density: f64,
+    molefracs: &OVector<f64, N>,
+    initial_density: DensityInitialization,
 ) -> FeosResult<f64>
 where
-    DefaultAllocator: Allocator<E::Components>,
+    DefaultAllocator: Allocator<N>,
 {
     let maxdensity = eos.compute_max_density(molefracs);
+    let initial_density = match initial_density {
+        Vapor => pressure / temperature,
+        Liquid => maxdensity,
+        InitialDensity(d) => d.into_reduced(),
+    };
     let (abstol, reltol) = (1e-12, 1e-14);
 
     let mut rho = initial_density;
@@ -152,7 +152,7 @@ where
 
             if rho > 0.85 * maxdensity {
                 let (sp_p, sp_rho) =
-                    pressure_spinodal(eos, temperature, initial_density, molefracs)?;
+                    _pressure_spinodal(eos, temperature, initial_density, molefracs)?;
                 rho = sp_rho;
                 error = sp_p - pressure;
                 if rho > 0.85 * maxdensity {
@@ -170,7 +170,7 @@ where
                 }
             } else if error.is_sign_positive() && d2pdrho2.is_sign_positive() {
                 let (sp_p, sp_rho) =
-                    pressure_spinodal(eos, temperature, initial_density, molefracs)?;
+                    _pressure_spinodal(eos, temperature, initial_density, molefracs)?;
                 rho = sp_rho;
                 error = sp_p - pressure;
                 if error.is_sign_positive() {
@@ -180,7 +180,7 @@ where
                 }
             } else if error.is_sign_negative() && d2pdrho2.is_sign_negative() {
                 let (sp_p, sp_rho) =
-                    pressure_spinodal(eos, temperature, initial_density, molefracs)?;
+                    _pressure_spinodal(eos, temperature, initial_density, molefracs)?;
                 rho = sp_rho;
                 error = sp_p - pressure;
                 if error.is_sign_negative() {
@@ -189,9 +189,9 @@ where
                     rho *= 0.8
                 }
             } else if error.is_sign_negative() && d2pdrho2.is_sign_positive() {
-                let (_, rho_l) = pressure_spinodal(eos, temperature, 0.8 * maxdensity, molefracs)?;
+                let (_, rho_l) = _pressure_spinodal(eos, temperature, 0.8 * maxdensity, molefracs)?;
                 let (sp_v_p, rho_v) =
-                    pressure_spinodal(eos, temperature, 0.001 * maxdensity, molefracs)?;
+                    _pressure_spinodal(eos, temperature, 0.001 * maxdensity, molefracs)?;
                 error = sp_v_p - pressure;
                 if error.is_sign_positive()
                     && (initial_density - rho_v).abs() < (initial_density - rho_l).abs()
@@ -201,9 +201,9 @@ where
                     rho = (rho_l * 1.1).min(maxdensity)
                 }
             } else if error.is_sign_positive() && d2pdrho2.is_sign_negative() {
-                let (_, rho_l) = pressure_spinodal(eos, temperature, 0.8 * maxdensity, molefracs)?;
+                let (_, rho_l) = _pressure_spinodal(eos, temperature, 0.8 * maxdensity, molefracs)?;
                 let (sp_v_p, rho_v) =
-                    pressure_spinodal(eos, temperature, 0.001 * maxdensity, molefracs)?;
+                    _pressure_spinodal(eos, temperature, 0.001 * maxdensity, molefracs)?;
                 error = sp_v_p - pressure;
                 if error.is_sign_negative()
                     && (initial_density - rho_v).abs() > (initial_density - rho_l).abs()
@@ -233,14 +233,14 @@ where
     }
 }
 
-fn pressure_spinodal<E: HelmholtzEnergyDerivatives<f64>>(
+pub(crate) fn _pressure_spinodal<E: Residual<N>, N: Dim>(
     eos: &E,
     temperature: f64,
     rho_init: f64,
-    molefracs: &OVector<f64, E::Components>,
+    molefracs: &OVector<f64, N>,
 ) -> FeosResult<(f64, f64)>
 where
-    DefaultAllocator: Allocator<E::Components>,
+    DefaultAllocator: Allocator<N>,
 {
     let maxiter = 30;
     let abstol = 1e-8;

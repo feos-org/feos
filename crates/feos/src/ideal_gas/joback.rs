@@ -1,7 +1,7 @@
 //! Implementation of the ideal gas heat capacity (de Broglie wavelength)
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 use feos_core::parameter::{FromSegments, Parameters, PureParameters};
-use feos_core::{Components, FeosResult, IdealGas, ReferenceSystem};
+use feos_core::{FeosResult, IdealGasDyn, ReferenceSystem};
 use nalgebra::DVector;
 use num_dual::*;
 use quantity::{MolarEntropy, Temperature};
@@ -59,27 +59,28 @@ pub type JobackParameters = Parameters<JobackRecord, (), ()>;
 /// - T = 289.15 K
 /// - p = 1e5 Pa
 /// - V = 1e-30 A³
-pub struct Joback(Vec<PureParameters<JobackRecord, ()>>);
+#[derive(Clone)]
+pub struct Joback(PureParameters<JobackRecord, ()>);
 
 impl Joback {
-    pub fn new(parameters: JobackParameters) -> Self {
-        Self(parameters.pure)
+    pub fn new(parameters: JobackParameters) -> Vec<Self> {
+        parameters.pure.into_iter().map(Self).collect()
     }
 }
 
 impl Joback {
     /// Directly calculates the molar ideal gas heat capacity from the Joback model.
     pub fn molar_isobaric_heat_capacity(
-        &self,
+        joback: &[Joback],
         temperature: Temperature,
         molefracs: &DVector<f64>,
     ) -> FeosResult<MolarEntropy> {
         let t = temperature.to_reduced();
         let c_p: f64 = molefracs
             .iter()
-            .zip(&self.0)
+            .zip(joback)
             .map(|(x, p)| {
-                let m = &p.model_record;
+                let m = &p.0.model_record;
                 x * (m.a + m.b * t + m.c * t.powi(2) + m.d * t.powi(3) + m.e * t.powi(4))
             })
             .sum();
@@ -87,44 +88,28 @@ impl Joback {
     }
 }
 
-impl Components for Joback {
-    fn components(&self) -> usize {
-        self.0.len()
-    }
-
-    fn subset(&self, component_list: &[usize]) -> Self {
-        let mut records = Vec::with_capacity(component_list.len());
-        component_list
-            .iter()
-            .for_each(|&i| records.push(self.0[i].clone()));
-        Self(records)
-    }
-}
-
-impl IdealGas for Joback {
-    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+impl IdealGasDyn for Joback {
+    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
         let t = temperature;
         let t2 = t * t;
         let t4 = t2 * t2;
         let f = (temperature * KB / (P0 * A3)).ln();
-        DVector::from_fn(self.0.len(), |i, _| {
-            let j = &self.0[i].model_record;
-            let h = (t2 - T0_2) * 0.5 * j.b
-                + (t * t2 - T0_3) * j.c / 3.0
-                + (t4 - T0_4) * j.d / 4.0
-                + (t4 * t - T0_5) * j.e / 5.0
-                + (t - T0) * j.a;
-            let s = (t - T0) * j.b
-                + (t2 - T0_2) * 0.5 * j.c
-                + (t2 * t - T0_3) * j.d / 3.0
-                + (t4 - T0_4) * j.e / 4.0
-                + (t / T0).ln() * j.a;
-            (h - t * s) / (t * RGAS) + f
-        })
+        let j = &self.0.model_record;
+        let h = (t2 - T0_2) * 0.5 * j.b
+            + (t * t2 - T0_3) * j.c / 3.0
+            + (t4 - T0_4) * j.d / 4.0
+            + (t4 * t - T0_5) * j.e / 5.0
+            + (t - T0) * j.a;
+        let s = (t - T0) * j.b
+            + (t2 - T0_2) * 0.5 * j.c
+            + (t2 * t - T0_3) * j.d / 3.0
+            + (t4 - T0_4) * j.e / 4.0
+            + (t / T0).ln() * j.a;
+        (h - t * s) / (t * RGAS) + f
     }
 
-    fn ideal_gas_model(&self) -> String {
-        "Ideal gas (Joback)".into()
+    fn ideal_gas_model(&self) -> &'static str {
+        "Ideal gas (Joback)"
     }
 }
 
@@ -147,7 +132,7 @@ mod tests {
     };
     use nalgebra::dvector;
     use quantity::*;
-    use std::{collections::HashMap, sync::Arc};
+    use std::collections::HashMap;
     use typenum::P3;
 
     use super::*;
@@ -230,14 +215,9 @@ mod tests {
         assert_relative_eq!(jr.e, 0.0);
 
         let pr = PureRecord::new(Identifier::default(), 1.0, jr);
-        let joback = Arc::new(Joback::new(JobackParameters::new_pure(pr)?));
-        let eos = Arc::new(EquationOfState::ideal_gas(joback));
-        let state = State::new_nvt(
-            &eos,
-            1000.0 * KELVIN,
-            1.0 * ANGSTROM.powi::<P3>(),
-            &(dvector![1.0] * MOL),
-        )?;
+        let joback = Joback::new(JobackParameters::new_pure(pr)?);
+        let eos = EquationOfState::ideal_gas(joback);
+        let state = State::new_pure(&&eos, 1000.0 * KELVIN, 1.0 * MOL / METER.powi::<P3>())?;
         assert!(
             ((state.molar_isobaric_heat_capacity(Contributions::IdealGas)
                 / (JOULE / MOL / KELVIN))
@@ -261,27 +241,27 @@ mod tests {
             1.0,
             JobackRecord::new(-5.0, 0.4, 0.03, 0.002, 0.001),
         );
-        let joback = Arc::new(Joback::new(JobackParameters::new_binary(
+        let joback = Joback::new(JobackParameters::new_binary(
             [record1, record2],
             None,
             vec![],
-        )?));
-        let eos = Arc::new(EquationOfState::ideal_gas(joback.clone()));
+        )?);
+        let eos = EquationOfState::ideal_gas(joback.clone());
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi::<P3>();
         let moles = &dvector![1.0, 3.0] * MOL;
-        let state = StateBuilder::new(&eos)
+        let state = StateBuilder::new(&&eos)
             .temperature(temperature)
             .volume(volume)
             .moles(&moles)
             .build()?;
         println!(
             "{} {}",
-            joback.molar_isobaric_heat_capacity(temperature, &state.molefracs)?,
+            Joback::molar_isobaric_heat_capacity(&joback, temperature, &state.molefracs)?,
             state.molar_isobaric_heat_capacity(Contributions::IdealGas)
         );
         assert_relative_eq!(
-            joback.molar_isobaric_heat_capacity(temperature, &state.molefracs)?,
+            Joback::molar_isobaric_heat_capacity(&joback, temperature, &state.molefracs)?,
             state.molar_isobaric_heat_capacity(Contributions::IdealGas),
             max_relative = 1e-10
         );

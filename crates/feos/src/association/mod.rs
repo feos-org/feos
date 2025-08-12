@@ -124,7 +124,7 @@ impl<A: AssociationStrength> Association<A> {
     }
 
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         model: &A,
         parameters: &AssociationParameters<A::Record>,
@@ -155,11 +155,11 @@ impl<A: AssociationStrength> Association<A> {
             self.force_cross_association,
         ) {
             (0, 0, _) => D::zero(),
-            (1, 0, false) => self.helmholtz_energy_ab_analytic(a, state, delta_ab[(0, 0)]),
-            (0, 1, false) => self.helmholtz_energy_cc_analytic(a, state, delta_cc[(0, 0)]),
+            (1, 0, false) => self.helmholtz_energy_density_ab_analytic(a, state, delta_ab[(0, 0)]),
+            (0, 1, false) => self.helmholtz_energy_density_cc_analytic(a, state, delta_cc[(0, 0)]),
             (1, 1, false) => {
-                self.helmholtz_energy_ab_analytic(a, state, delta_ab[(0, 0)])
-                    + self.helmholtz_energy_cc_analytic(a, state, delta_cc[(0, 0)])
+                self.helmholtz_energy_density_ab_analytic(a, state, delta_ab[(0, 0)])
+                    + self.helmholtz_energy_density_cc_analytic(a, state, delta_cc[(0, 0)])
             }
             _ => {
                 // extract site densities of associating segments
@@ -175,7 +175,6 @@ impl<A: AssociationStrength> Association<A> {
                 // Helmholtz energy
                 self.helmholtz_energy_density_cross_association(&rho, &delta_ab, &delta_cc, None)
                     .unwrap_or_else(|_| D::from(f64::NAN))
-                    * state.volume
             }
         }
     }
@@ -228,7 +227,7 @@ impl<A: AssociationStrength> Association<A> {
         [delta_ab, delta_cc]
     }
 
-    fn helmholtz_energy_ab_analytic<D: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density_ab_analytic<D: DualNum<f64> + Copy>(
         &self,
         parameters: &AssociationParameters<A::Record>,
         state: &StateHD<D>,
@@ -247,10 +246,10 @@ impl<A: AssociationStrength> Association<A> {
         let xa = (sqrt + (delta * (rhob - rhoa) + 1.0)).recip() * 2.0;
         let xb = (sqrt + (delta * (rhoa - rhob) + 1.0)).recip() * 2.0;
 
-        (rhoa * (xa.ln() - xa * 0.5 + 0.5) + rhob * (xb.ln() - xb * 0.5 + 0.5)) * state.volume
+        rhoa * (xa.ln() - xa * 0.5 + 0.5) + rhob * (xb.ln() - xb * 0.5 + 0.5)
     }
 
-    fn helmholtz_energy_cc_analytic<D: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density_cc_analytic<D: DualNum<f64> + Copy>(
         &self,
         parameters: &AssociationParameters<A::Record>,
         state: &StateHD<D>,
@@ -265,7 +264,7 @@ impl<A: AssociationStrength> Association<A> {
         // fraction of non-bonded association sites
         let xc = ((delta * 4.0 * rhoc + 1.0).sqrt() + 1.0).recip() * 2.0;
 
-        rhoc * (xc.ln() - xc * 0.5 + 0.5) * state.volume
+        rhoc * (xc.ln() - xc * 0.5 + 0.5)
     }
 
     fn helmholtz_energy_density_cross_association<D: DualNum<f64> + Copy>(
@@ -347,15 +346,15 @@ impl<A: AssociationStrength> Association<A> {
 
         for i in 0..nassoc {
             // calculate gradients
-            let (d, dnx) = if i < a {
-                let d = delta_ab.row(i);
-                (d, (xb * rhob * d).sum() + 1.0)
+            let dnx = if i < a {
+                let d = delta_ab.row(i).transpose();
+                xb.component_mul(&rhob).dot(&d) + 1.0
             } else if i < a + b {
-                let d = delta_ab.row(i - a);
-                (d, (xa * rhoa * d).sum() + 1.0)
+                let d = delta_ab.column(i - a);
+                xa.component_mul(&rhoa).dot(&d) + 1.0
             } else {
-                let d = delta_cc.row(i - a - b);
-                (d, (xc * rhoc * d).sum() + 1.0)
+                let d = delta_cc.column(i - a - b);
+                xc.component_mul(&rhoc).dot(&d) + 1.0
             };
             g[i] -= dnx;
 
@@ -363,15 +362,15 @@ impl<A: AssociationStrength> Association<A> {
             h[(i, i)] = -dnx / x[i];
             if i < a {
                 for j in 0..b {
-                    h[(i, a + j)] = -d[j] * rhob[j];
+                    h[(i, a + j)] = -delta_ab[(i, j)] * rhob[j];
                 }
             } else if i < a + b {
                 for j in 0..a {
-                    h[(i, j)] = -d[j] * rhoa[j];
+                    h[(i, j)] = -delta_ab[(j, i - a)] * rhoa[j];
                 }
             } else {
                 for j in 0..c {
-                    h[(i, a + b + j)] -= d[j] * rhoc[j];
+                    h[(i, a + b + j)] -= delta_cc[(i - a - b, j)] * rhoc[j];
                 }
             }
         }
@@ -509,9 +508,10 @@ mod tests_pcsaft {
         let t = 350.0;
         let v = 41.248289328513216;
         let n = 1.23;
-        let s = StateHD::new(t, v, dvector![n]);
+        let s = StateHD::new(t, v, &dvector![n]);
         let d = params.hs_diameter(t);
-        let a_rust = assoc.helmholtz_energy(&params, &parameters.association, &s, &d) / n;
+        let a_rust =
+            assoc.helmholtz_energy_density(&params, &parameters.association, &s, &d) * v / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 
@@ -523,9 +523,10 @@ mod tests_pcsaft {
         let t = 350.0;
         let v = 41.248289328513216;
         let n = 1.23;
-        let s = StateHD::new(t, v, dvector![n]);
+        let s = StateHD::new(t, v, &dvector![n]);
         let d = params.hs_diameter(t);
-        let a_rust = assoc.helmholtz_energy(&params, &parameters.association, &s, &d) / n;
+        let a_rust =
+            assoc.helmholtz_energy_density(&params, &parameters.association, &s, &d) * v / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 
@@ -540,11 +541,11 @@ mod tests_pcsaft {
         let t = 350.0;
         let v = 41.248289328513216;
         let n = 1.23;
-        let s = StateHD::new(t, v, dvector![n]);
+        let s = StateHD::new(t, v, &dvector![n]);
         let d = params.hs_diameter(t);
-        let a_assoc = assoc.helmholtz_energy(&params, &parameters.association, &s, &d) / n;
+        let a_assoc = assoc.helmholtz_energy_density(&params, &parameters.association, &s, &d);
         let a_cross_assoc =
-            cross_assoc.helmholtz_energy(&params, &parameters.association, &s, &d) / n;
+            cross_assoc.helmholtz_energy_density(&params, &parameters.association, &s, &d);
         assert_relative_eq!(a_assoc, a_cross_assoc, epsilon = 1e-10);
         Ok(())
     }

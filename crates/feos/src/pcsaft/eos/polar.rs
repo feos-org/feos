@@ -163,7 +163,7 @@ pub struct Dipole;
 
 impl Dipole {
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,
@@ -224,9 +224,9 @@ impl Dipole {
         }
         phi2 *= PI;
         phi3 *= PI_SQ_43;
-        let mut result = phi2 * phi2 / (phi2 - phi3) * state.volume;
+        let mut result = phi2 * phi2 / (phi2 - phi3);
         if result.re().is_nan() {
-            result = phi2 * state.volume
+            result = phi2
         }
         result
     }
@@ -236,7 +236,7 @@ pub struct Quadrupole;
 
 impl Quadrupole {
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,
@@ -298,9 +298,9 @@ impl Quadrupole {
 
         phi2 *= PI * 0.5625;
         phi3 *= PI * PI * 0.5625;
-        let mut result = phi2 * phi2 / (phi2 - phi3) * state.volume;
+        let mut result = phi2 * phi2 / (phi2 - phi3);
         if result.re().is_nan() {
-            result = phi2 * state.volume
+            result = phi2
         }
         result
     }
@@ -317,7 +317,7 @@ pub struct DipoleQuadrupole;
 
 impl DipoleQuadrupole {
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,
@@ -412,9 +412,9 @@ impl DipoleQuadrupole {
 
         phi2 *= PI * 2.25;
         phi3 *= PI * PI;
-        let mut result = phi2 * phi2 / (phi2 - phi3) * state.volume;
+        let mut result = phi2 * phi2 / (phi2 - phi3);
         if result.re().is_nan() {
-            result = phi2 * state.volume
+            result = phi2
         }
         result
     }
@@ -439,8 +439,8 @@ mod tests {
         let t = 350.0;
         let v = 1000.0;
         let n = 1.0;
-        let s = StateHD::new(t, v, dvector![n]);
-        let a = Dipole.helmholtz_energy(&dme, &s);
+        let s = StateHD::new(t, v, &dvector![n]);
+        let a = Dipole.helmholtz_energy_density(&dme, &s) * v;
         assert_relative_eq!(a, -1.40501033595417E-002, epsilon = 1e-6);
     }
 
@@ -457,8 +457,8 @@ mod tests {
         );
         let t = 350.0;
         let v = 1000.0;
-        let s = StateHD::new(t, v, dvector![1.0, 2.0, 3.0]);
-        let a = Dipole.helmholtz_energy(&parameters, &s);
+        let s = StateHD::new(t, v, &dvector![1.0, 2.0, 3.0]);
+        let a = Dipole.helmholtz_energy_density(&parameters, &s) * v;
         assert_relative_eq!(a, -1.4126308106201688, epsilon = 1e-10);
     }
 
@@ -468,8 +468,8 @@ mod tests {
         let t = 350.0;
         let v = 1000.0;
         let n = 1.0;
-        let s = StateHD::new(t, v, dvector![n]);
-        let a = Quadrupole.helmholtz_energy(&co2, &s);
+        let s = StateHD::new(t, v, &dvector![n]);
+        let a = Quadrupole.helmholtz_energy_density(&co2, &s) * v;
         assert_relative_eq!(a, -4.38559558854186E-002, epsilon = 1e-6);
     }
 
@@ -486,8 +486,8 @@ mod tests {
         );
         let t = 350.0;
         let v = 1000.0;
-        let s = StateHD::new(t, v, dvector![1.0, 2.0, 3.0]);
-        let a = Quadrupole.helmholtz_energy(&parameters, &s);
+        let s = StateHD::new(t, v, &dvector![1.0, 2.0, 3.0]);
+        let a = Quadrupole.helmholtz_energy_density(&parameters, &s) * v;
         assert_relative_eq!(a, -0.327493924806138, epsilon = 1e-10);
     }
 
@@ -502,11 +502,12 @@ mod tests {
         let v = 1000.0;
         let n_dme = 1.0;
         let n_co2 = 1.0;
-        let s = StateHD::new(t, v, dvector![n_dme, n_co2]);
-        // let a_dpqp = dpqp.helmholtz_energy(&s);
-        let a_disp = Dispersion.helmholtz_energy(&mix, &s);
-        let a_qp = Quadrupole.helmholtz_energy(&mix, &s);
-        let a_dp = Dipole.helmholtz_energy(&mix, &s);
+        let n = n_dme + n_co2;
+        let s = StateHD::new(t, v / n, &(dvector![n_dme, n_co2] / n));
+        // let a_dpqp = dpqp.helmholtz_energy_density(&s)*v;
+        let a_disp = Dispersion.helmholtz_energy_density(&mix, &s) * v;
+        let a_qp = Quadrupole.helmholtz_energy_density(&mix, &s) * v;
+        let a_dp = Dipole.helmholtz_energy_density(&mix, &s) * v;
         assert_relative_eq!(a_disp, -1.6283622072860044, epsilon = 1e-6);
         assert_relative_eq!(a_dp, -1.35361827881345E-002, epsilon = 1e-6);
         assert_relative_eq!(a_qp, -4.20168059082731E-002, epsilon = 1e-6);

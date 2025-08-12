@@ -25,10 +25,8 @@ impl PyEquationOfState {
     ///     states.
     #[staticmethod]
     pub fn peng_robinson(parameters: PyParameters) -> PyResult<Self> {
-        let residual = Arc::new(ResidualModel::PengRobinson(PengRobinson::new(
-            parameters.try_convert()?,
-        )));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        let residual = ResidualModel::PengRobinson(PengRobinson::new(parameters.try_convert()?));
+        let ideal_gas = vec![IdealGasModel::NoModel; residual.components()];
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 
@@ -45,8 +43,8 @@ impl PyEquationOfState {
     /// EquationOfState
     #[staticmethod]
     fn python_residual(residual: Bound<'_, PyAny>) -> PyResult<Self> {
-        let residual = Arc::new(ResidualModel::Python(PyResidual::new(residual)?));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        let residual = ResidualModel::Python(PyResidual::new(residual)?);
+        let ideal_gas = vec![IdealGasModel::NoModel; residual.components()];
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 
@@ -57,8 +55,8 @@ impl PyEquationOfState {
     /// EquationOfState
     #[staticmethod]
     fn ideal_gas() -> Self {
-        let residual = Arc::new(ResidualModel::NoResidual(NoResidual(0)));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(0));
+        let residual = ResidualModel::NoResidual(NoResidual(0));
+        let ideal_gas = vec![IdealGasModel::NoModel; 0];
         Self(Arc::new(EquationOfState::new(ideal_gas, residual)))
     }
 
@@ -73,8 +71,14 @@ impl PyEquationOfState {
     /// Returns
     /// -------
     /// EquationOfState
-    fn python_ideal_gas(&self, ideal_gas: Bound<'_, PyAny>) -> PyResult<Self> {
-        Ok(self.add_ideal_gas(IdealGasModel::Python(PyIdealGas::new(ideal_gas)?)))
+    fn python_ideal_gas(&mut self, ideal_gas: Vec<Bound<'_, PyAny>>) -> PyResult<()> {
+        self.add_ideal_gas(
+            ideal_gas
+                .into_iter()
+                .map(|i| Ok(IdealGasModel::Python(Arc::new(PyIdealGas::new(i)?))))
+                .collect::<PyResult<_>>()?,
+        );
+        Ok(())
     }
 
     /// Ideal gas model of Joback and Reid.
@@ -87,12 +91,14 @@ impl PyEquationOfState {
     /// Returns
     /// -------
     /// EquationOfState
-    fn joback(&self, joback: PyGcParameters) -> PyResult<Self> {
-        Ok(
-            self.add_ideal_gas(IdealGasModel::Joback(Arc::new(Joback::new(
-                joback.try_convert_homosegmented()?,
-            )))),
-        )
+    fn joback(&mut self, joback: PyGcParameters) -> PyResult<()> {
+        self.add_ideal_gas(
+            Joback::new(joback.try_convert_homosegmented()?)
+                .into_iter()
+                .map(IdealGasModel::Joback)
+                .collect(),
+        );
+        Ok(())
     }
 
     /// Ideal gas model based on DIPPR equations for the ideal
@@ -106,9 +112,13 @@ impl PyEquationOfState {
     /// Returns
     /// -------
     /// EquationOfState
-    fn dippr(&self, dippr: PyParameters) -> PyResult<Self> {
-        Ok(self.add_ideal_gas(IdealGasModel::Dippr(Arc::new(Dippr::new(
-            dippr.try_convert()?,
-        )))))
+    fn dippr(&mut self, dippr: PyParameters) -> PyResult<()> {
+        self.add_ideal_gas(
+            Dippr::new(dippr.try_convert()?)
+                .into_iter()
+                .map(IdealGasModel::Dippr)
+                .collect(),
+        );
+        Ok(())
     }
 }

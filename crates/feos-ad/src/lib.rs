@@ -1,10 +1,7 @@
 pub mod eos;
 
 mod core;
-pub use core::{
-    Eigen, EquationOfStateAD, HelmholtzEnergyWrapper, IdealGasAD, NamedParameters, ParametersAD,
-    PhaseEquilibriumAD, ResidualHelmholtzEnergy, StateAD, TotalHelmholtzEnergy,
-};
+pub use core::{HelmholtzEnergyWrapper, NamedParameters, ParametersAD};
 
 #[cfg(feature = "parameter_fit")]
 mod parameter_fit;

@@ -1,9 +1,9 @@
 use super::{DensityInitialization, State};
-use crate::equation_of_state::{IdealGas, Residual};
+use crate::Total;
+use crate::equation_of_state::Residual;
 use crate::errors::FeosResult;
 use nalgebra::DVector;
 use quantity::*;
-use std::sync::Arc;
 
 /// A simple tool to construct [State]s with arbitrary input parameters.
 ///
@@ -18,7 +18,7 @@ use std::sync::Arc;
 /// # use typenum::P3;
 /// # fn main() -> FeosResult<()> {
 /// // Create a state for given T,V,N
-/// let eos = Arc::new(PengRobinson::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0])?));
+/// let eos = &PengRobinson::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0])?);
 /// let state = StateBuilder::new(&eos)
 ///                 .temperature(300.0 * KELVIN)
 ///                 .volume(12.5 * METER.powi::<P3>())
@@ -27,7 +27,7 @@ use std::sync::Arc;
 /// assert_eq!(state.density, 0.2 * MOL / METER.powi::<P3>());
 ///
 /// // For a pure component, the composition does not need to be specified.
-/// let eos = Arc::new(PengRobinson::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0])?));
+/// let eos = &PengRobinson::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0])?);
 /// let state = StateBuilder::new(&eos)
 ///                 .temperature(300.0 * KELVIN)
 ///                 .volume(12.5 * METER.powi::<P3>())
@@ -36,14 +36,14 @@ use std::sync::Arc;
 /// assert_eq!(state.density, 0.2 * MOL / METER.powi::<P3>());
 ///
 /// // The state can be constructed without providing any extensive property.
-/// let eos = Arc::new(PengRobinson::new(
+/// let eos = &PengRobinson::new(
 ///     PengRobinsonParameters::new_simple(
 ///         &[369.8, 305.4],
 ///         &[41.9 * 1e5, 48.2 * 1e5],
 ///         &[0.15, 0.10],
 ///         &[15.0, 30.0]
 ///     )?
-/// ));
+/// );
 /// let state = StateBuilder::new(&eos)
 ///                 .temperature(300.0 * KELVIN)
 ///                 .partial_density(&(dvector![0.2, 0.6] * MOL / METER.powi::<P3>()))
@@ -53,8 +53,9 @@ use std::sync::Arc;
 /// # Ok(())
 /// # }
 /// ```
+#[derive(Clone)]
 pub struct StateBuilder<'a, E, const IG: bool> {
-    eos: Arc<E>,
+    eos: &'a E,
     temperature: Option<Temperature>,
     volume: Option<Volume>,
     density: Option<Density>,
@@ -66,15 +67,15 @@ pub struct StateBuilder<'a, E, const IG: bool> {
     molar_enthalpy: Option<MolarEnergy>,
     molar_entropy: Option<MolarEntropy>,
     molar_internal_energy: Option<MolarEnergy>,
-    density_initialization: DensityInitialization,
+    density_initialization: Option<DensityInitialization>,
     initial_temperature: Option<Temperature>,
 }
 
-impl<E: Residual> StateBuilder<'_, E, false> {
+impl<'a, E: Residual> StateBuilder<'a, E, false> {
     /// Create a new `StateBuilder` for the given equation of state.
-    pub fn new(eos: &Arc<E>) -> Self {
+    pub fn new(eos: &'a E) -> Self {
         StateBuilder {
-            eos: eos.clone(),
+            eos,
             temperature: None,
             volume: None,
             density: None,
@@ -86,7 +87,7 @@ impl<E: Residual> StateBuilder<'_, E, false> {
             molar_enthalpy: None,
             molar_entropy: None,
             molar_internal_energy: None,
-            density_initialization: DensityInitialization::None,
+            density_initialization: None,
             initial_temperature: None,
         }
     }
@@ -143,24 +144,24 @@ impl<'a, E: Residual, const IG: bool> StateBuilder<'a, E, IG> {
 
     /// Specify a vapor state.
     pub fn vapor(mut self) -> Self {
-        self.density_initialization = DensityInitialization::Vapor;
+        self.density_initialization = Some(DensityInitialization::Vapor);
         self
     }
 
     /// Specify a liquid state.
     pub fn liquid(mut self) -> Self {
-        self.density_initialization = DensityInitialization::Liquid;
+        self.density_initialization = Some(DensityInitialization::Liquid);
         self
     }
 
     /// Provide an initial density used in density iterations.
     pub fn initial_density(mut self, initial_density: Density) -> Self {
-        self.density_initialization = DensityInitialization::InitialDensity(initial_density);
+        self.density_initialization = Some(DensityInitialization::InitialDensity(initial_density));
         self
     }
 }
 
-impl<'a, E: Residual + IdealGas, const IG: bool> StateBuilder<'a, E, IG> {
+impl<'a, E: Total, const IG: bool> StateBuilder<'a, E, IG> {
     /// Provide the molar enthalpy for the new state.
     pub fn molar_enthalpy(mut self, molar_enthalpy: MolarEnergy) -> StateBuilder<'a, E, true> {
         self.molar_enthalpy = Some(molar_enthalpy);
@@ -215,7 +216,7 @@ impl<E: Residual> StateBuilder<'_, E, false> {
     /// Try to build the state with the given inputs.
     pub fn build(self) -> FeosResult<State<E>> {
         State::new(
-            &self.eos,
+            self.eos,
             self.temperature,
             self.volume,
             self.density,
@@ -229,11 +230,11 @@ impl<E: Residual> StateBuilder<'_, E, false> {
     }
 }
 
-impl<E: Residual + IdealGas> StateBuilder<'_, E, true> {
+impl<E: Total> StateBuilder<'_, E, true> {
     /// Try to build the state with the given inputs.
     pub fn build(self) -> FeosResult<State<E>> {
         State::new_full(
-            &self.eos,
+            self.eos,
             self.temperature,
             self.volume,
             self.density,
@@ -248,26 +249,5 @@ impl<E: Residual + IdealGas> StateBuilder<'_, E, true> {
             self.density_initialization,
             self.initial_temperature,
         )
-    }
-}
-
-impl<E, const IG: bool> Clone for StateBuilder<'_, E, IG> {
-    fn clone(&self) -> Self {
-        Self {
-            eos: self.eos.clone(),
-            temperature: self.temperature,
-            volume: self.volume,
-            density: self.density,
-            partial_density: self.partial_density,
-            total_moles: self.total_moles,
-            moles: self.moles,
-            molefracs: self.molefracs,
-            pressure: self.pressure,
-            molar_enthalpy: self.molar_enthalpy,
-            molar_entropy: self.molar_entropy,
-            molar_internal_energy: self.molar_internal_energy,
-            density_initialization: self.density_initialization,
-            initial_temperature: self.initial_temperature,
-        }
     }
 }

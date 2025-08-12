@@ -30,20 +30,19 @@ mod density_iteration;
 mod equation_of_state;
 mod errors;
 pub mod parameter;
+mod parameter_fit;
 mod phase_equilibria;
 mod state;
 pub use equation_of_state::{
-    Components, EntropyScaling, EquationOfState, IdealGas, Molarweight, NoResidual, Residual,
+    EquationOfState, IdealGas, IdealGasDyn, Molarweight, NoResidual, Residual, ResidualConst,
+    ResidualDyn, Subset, Total,
 };
 pub use errors::{FeosError, FeosResult};
-pub use phase_equilibria::{
-    PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, PhaseEquilibriumGeneric,
-    TemperatureOrPressure,
-};
-pub use state::{
-    Contributions, DensityInitialization, Derivative, HelmholtzEnergyDerivatives, State,
-    StateBuilder, StateGeneric, StateHD, StateVec,
-};
+pub use parameter_fit::{BinaryModel, ParametersAD, PureModel};
+#[cfg(feature = "ndarray")]
+pub use phase_equilibria::{PhaseDiagram, PhaseDiagramHetero};
+pub use phase_equilibria::{PhaseEquilibrium, TemperatureOrPressure};
+pub use state::{Contributions, DensityInitialization, State, StateBuilder, StateHD, StateVec};
 
 /// Level of detail in the iteration output.
 #[derive(Copy, Clone, PartialOrd, PartialEq, Eq)]
@@ -205,34 +204,23 @@ mod tests {
     use crate::FeosResult;
     use crate::StateBuilder;
     use crate::cubic::*;
-    use crate::equation_of_state::{Components, EquationOfState, IdealGas};
+    use crate::equation_of_state::{EquationOfState, IdealGasDyn};
     use crate::parameter::*;
     use approx::*;
-    use nalgebra::DVector;
     use num_dual::DualNum;
     use quantity::{BAR, KELVIN, MOL, RGAS};
-    use std::sync::Arc;
 
     // Only to be able to instantiate an `EquationOfState`
+    #[derive(Clone, Copy)]
     struct NoIdealGas;
 
-    impl Components for NoIdealGas {
-        fn components(&self) -> usize {
-            1
+    impl IdealGasDyn for NoIdealGas {
+        fn ideal_gas_model(&self) -> &'static str {
+            "NoIdealGas"
         }
 
-        fn subset(&self, _: &[usize]) -> Self {
-            Self
-        }
-    }
-
-    impl IdealGas for NoIdealGas {
-        fn ln_lambda3<D: DualNum<f64> + Copy>(&self, _: D) -> DVector<D> {
+        fn ln_lambda3<D: DualNum<f64> + Copy>(&self, _: D) -> D {
             unreachable!()
-        }
-
-        fn ideal_gas_model(&self) -> String {
-            "NoIdealGas".into()
         }
     }
 
@@ -273,18 +261,20 @@ mod tests {
     #[test]
     fn validate_residual_properties() -> FeosResult<()> {
         let mixture = pure_record_vec();
-        let propane = mixture[0].clone();
-        let parameters = PengRobinsonParameters::new_pure(propane)?;
-        let residual = Arc::new(PengRobinson::new(parameters));
-        let eos = Arc::new(EquationOfState::new(Arc::new(NoIdealGas), residual.clone()));
+        let propane = &mixture[0];
+        let parameters = PengRobinsonParameters::new_pure(propane.clone())?;
+        let residual = PengRobinson::new(parameters);
 
-        let sr = StateBuilder::new(&residual)
+        let sr = StateBuilder::new(&&residual)
             .temperature(300.0 * KELVIN)
             .pressure(1.0 * BAR)
             .total_moles(2.0 * MOL)
             .build()?;
 
-        let s = StateBuilder::new(&eos)
+        let parameters = PengRobinsonParameters::new_pure(propane.clone())?;
+        let residual = PengRobinson::new(parameters);
+        let eos = EquationOfState::new(vec![NoIdealGas], residual);
+        let s = StateBuilder::new(&&eos)
             .temperature(300.0 * KELVIN)
             .pressure(1.0 * BAR)
             .total_moles(2.0 * MOL)

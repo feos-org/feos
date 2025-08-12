@@ -7,9 +7,9 @@ use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
 use feos_core::{
-    Components, Contributions, FeosResult, ReferenceSystem, Residual, State, StateBuilder, StateHD,
+    Contributions, FeosResult, ReferenceSystem, Residual, State, StateBuilder, StateHD,
 };
-use nalgebra::DVector;
+use nalgebra::{DVector, Dyn};
 use ndarray::prelude::*;
 use ndarray::{Axis as Axis_nd, RemoveAxis};
 use num_dual::linalg::LU;
@@ -19,7 +19,6 @@ use quantity::{
     Temperature, Volume,
 };
 use rustdct::DctNum;
-use std::sync::Arc;
 use typenum::Diff;
 
 const POTENTIAL_OFFSET: f64 = 2.0;
@@ -70,7 +69,7 @@ pub trait PoreSpecification<D: Dimension> {
     where
         D::Larger: Dimension<Smaller = D>,
     {
-        let bulk = StateBuilder::new(&Arc::new(Helium::new()))
+        let bulk = StateBuilder::new(&Helium)
             .temperature(298.0 * KELVIN)
             .density(Density::from_reduced(1.0))
             .build()?;
@@ -86,6 +85,7 @@ pub trait PoreSpecification<D: Dimension> {
 }
 
 /// Density profile and properties of a confined system in arbitrary dimensions.
+#[derive(Clone)]
 pub struct PoreProfile<D: Dimension, F> {
     pub profile: DFTProfile<D, F>,
     pub grand_potential: Option<Energy>,
@@ -94,16 +94,6 @@ pub struct PoreProfile<D: Dimension, F> {
 
 /// Density profile and properties of a 1D confined system.
 pub type PoreProfile1D<F> = PoreProfile<Ix1, F>;
-
-impl<D: Dimension, F> Clone for PoreProfile<D, F> {
-    fn clone(&self) -> Self {
-        Self {
-            profile: self.profile.clone(),
-            grand_potential: self.grand_potential,
-            interfacial_tension: self.interfacial_tension,
-        }
-    }
-}
 
 impl<D: Dimension + RemoveAxis + 'static, F: HelmholtzEnergyFunctional> PoreProfile<D, F>
 where
@@ -304,36 +294,48 @@ fn external_potential_1d<P: FluidParameters>(
 const EPSILON_HE: f64 = 10.9;
 const SIGMA_HE: f64 = 2.64;
 
-#[derive(Clone)]
-struct Helium {
-    epsilon: Array1<f64>,
-    sigma: Array1<f64>,
-}
+#[derive(Clone, Copy)]
+struct Helium;
+//  {
+//     epsilon: Array1<f64>,
+//     sigma: Array1<f64>,
+// }
 
-impl Helium {
-    fn new() -> Self {
-        let epsilon = arr1(&[EPSILON_HE]);
-        let sigma = arr1(&[SIGMA_HE]);
-        Self { epsilon, sigma }
+// impl Helium {
+//     fn new() -> Self {
+//         let epsilon = arr1(&[EPSILON_HE]);
+//         let sigma = arr1(&[SIGMA_HE]);
+//         Self { epsilon, sigma }
+//     }
+// }
+
+// impl Components for Helium {
+//     fn components(&self) -> usize {
+//         1
+//     }
+
+//     fn subset(&self, _: &[usize]) -> Self {
+//         self.clone()
+//     }
+// }
+
+impl<D: DualNum<f64> + Copy> Residual<Dyn, D> for Helium {
+    type Real = Self;
+    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = Self;
+    fn re(&self) -> Self::Real {
+        *self
     }
-}
-
-impl Components for Helium {
+    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+        *self
+    }
     fn components(&self) -> usize {
         1
     }
-
-    fn subset(&self, _: &[usize]) -> Self {
-        self.clone()
-    }
-}
-
-impl Residual for Helium {
-    fn compute_max_density(&self, _: &DVector<f64>) -> f64 {
-        1.0
+    fn compute_max_density(&self, _: &DVector<D>) -> D {
+        D::from(1.0)
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
@@ -355,11 +357,11 @@ impl HelmholtzEnergyFunctional for Helium {
 
 impl FluidParameters for Helium {
     fn epsilon_k_ff(&self) -> Array1<f64> {
-        self.epsilon.clone()
+        arr1(&[EPSILON_HE])
     }
 
-    fn sigma_ff(&self) -> &Array1<f64> {
-        &self.sigma
+    fn sigma_ff(&self) -> Array1<f64> {
+        arr1(&[SIGMA_HE])
     }
 }
 

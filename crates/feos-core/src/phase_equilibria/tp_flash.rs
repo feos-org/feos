@@ -1,12 +1,11 @@
 use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
-use crate::state::{Contributions, DensityInitialization, State};
+use crate::state::{Contributions, State};
 use crate::{SolverOptions, Verbosity};
 use nalgebra::{DVector, Matrix3, Matrix4xX};
 use num_dual::{Dual, DualNum, first_derivative};
 use quantity::{Dimensionless, Moles, Pressure, Temperature};
-use std::sync::Arc;
 
 const MAX_ITER_TP: usize = 400;
 const TOL_TP: f64 = 1e-8;
@@ -19,7 +18,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
     /// The algorithm can be use to calculate phase equilibria of systems
     /// containing non-volatile components (e.g. ions).
     pub fn tp_flash(
-        eos: &Arc<E>,
+        eos: &E,
         temperature: Temperature,
         pressure: Pressure,
         feed: &Moles<DVector<f64>>,
@@ -27,14 +26,11 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
     ) -> FeosResult<Self> {
-        State::new_npt(
-            eos,
-            temperature,
-            pressure,
-            feed,
-            DensityInitialization::None,
-        )?
-        .tp_flash(initial_state, options, non_volatile_components)
+        State::new_npt(eos, temperature, pressure, feed, None)?.tp_flash(
+            initial_state,
+            options,
+            non_volatile_components,
+        )
     }
 }
 

@@ -1,7 +1,7 @@
 use super::{BinaryParameters, BinaryRecord, GroupCount, PureParameters};
 use crate::{FeosError, FeosResult, parameter::PureRecord};
 use arrayvec::ArrayString;
-use ndarray::Array1;
+use nalgebra::DVector;
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -99,10 +99,10 @@ impl<A> AssociationSite<A> {
 /// contribution and functional.
 #[derive(Clone)]
 pub struct AssociationParameters<A> {
-    pub component_index: Array1<usize>,
-    pub sites_a: Array1<AssociationSite<Option<A>>>,
-    pub sites_b: Array1<AssociationSite<Option<A>>>,
-    pub sites_c: Array1<AssociationSite<Option<A>>>,
+    pub component_index: DVector<usize>,
+    pub sites_a: Vec<AssociationSite<Option<A>>>,
+    pub sites_b: Vec<AssociationSite<Option<A>>>,
+    pub sites_c: Vec<AssociationSite<Option<A>>>,
     pub binary_ab: Vec<BinaryParameters<A, ()>>,
     pub binary_cc: Vec<BinaryParameters<A, ()>>,
 }
@@ -186,13 +186,13 @@ impl<A: Clone> AssociationParameters<A> {
                 }
             }
         }
-        let component_index = (0..pure_records.len()).collect();
+        let component_index = DVector::from_vec((0..pure_records.len()).collect());
 
         Ok(Self {
             component_index,
-            sites_a: Array1::from_vec(sites_a),
-            sites_b: Array1::from_vec(sites_b),
-            sites_c: Array1::from_vec(sites_c),
+            sites_a,
+            sites_b,
+            sites_c,
             binary_ab,
             binary_cc,
         })
@@ -281,13 +281,14 @@ impl<A: Clone> AssociationParameters<A> {
             }
         }
 
-        let component_index = pure_records.iter().map(|pr| pr.component_index).collect();
+        let component_index =
+            DVector::from_vec(pure_records.iter().map(|pr| pr.component_index).collect());
 
         Ok(Self {
             component_index,
-            sites_a: Array1::from_vec(sites_a),
-            sites_b: Array1::from_vec(sites_b),
-            sites_c: Array1::from_vec(sites_c),
+            sites_a,
+            sites_b,
+            sites_c,
             binary_ab,
             binary_cc,
         })
@@ -298,9 +299,9 @@ impl<A: Clone> AssociationParameters<A> {
     }
 
     pub fn subset(&self, component_list: &[usize]) -> Self {
-        let keep_group = self.component_index.map(|i| component_list.contains(i));
+        let keep_group = self.component_index.map(|i| component_list.contains(&i));
 
-        let filter = |x: &Array1<AssociationSite<Option<A>>>| {
+        let filter = |x: &[AssociationSite<Option<A>>]| {
             x.iter()
                 .filter(|&s| keep_group[s.assoc_comp])
                 .cloned()
@@ -328,14 +329,15 @@ impl<A: Clone> AssociationParameters<A> {
             })
             .cloned()
             .collect();
-        let component_index = self
-            .component_index
-            .iter()
-            .zip(keep_group)
-            .filter(|&(_, k)| k)
-            .map(|(c, _)| c)
-            .copied()
-            .collect();
+        let component_index = DVector::from_vec(
+            self.component_index
+                .iter()
+                .zip(&keep_group)
+                .filter(|&(_, &k)| k)
+                .map(|(c, _)| c)
+                .copied()
+                .collect(),
+        );
         Self {
             component_index,
             sites_a,

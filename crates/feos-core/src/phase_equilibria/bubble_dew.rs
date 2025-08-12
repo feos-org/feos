@@ -1,15 +1,16 @@
 use crate::errors::{FeosError, FeosResult};
-use crate::phase_equilibria::PhaseEquilibriumGeneric;
+use crate::phase_equilibria::PhaseEquilibrium;
 use crate::state::{
     Contributions,
     DensityInitialization::{InitialDensity, Liquid, Vapor},
 };
-use crate::{HelmholtzEnergyDerivatives, ReferenceSystem, SolverOptions, StateGeneric, Verbosity};
+use crate::{ReferenceSystem, Residual, SolverOptions, State, Verbosity};
 use nalgebra::allocator::Allocator;
-use nalgebra::{DMatrix, DVector, DefaultAllocator, Dyn, OVector};
+use nalgebra::{DMatrix, DVector, DefaultAllocator, Dim, Dyn, OVector, U1};
+#[cfg(feature = "ndarray")]
 use ndarray::Array1;
-use num_dual::DualNum;
 use num_dual::linalg::LU;
+use num_dual::{DualNum, Gradients};
 use quantity::{Density, Dimensionless, Moles, Pressure, Quantity, RGAS, SIUnit, Temperature};
 use typenum::{N1, N2, P1, Z0};
 
@@ -36,12 +37,11 @@ pub trait TemperatureOrPressure<D: DualNum<f64> + Copy = f64>: Copy {
         tp_init: Option<Self::Other>,
     ) -> (Option<Temperature<D>>, Option<Pressure<D>>, bool);
 
-    fn from_state<E: HelmholtzEnergyDerivatives<D>>(
-        state: &StateGeneric<E, D, E::Components, E::Cache>,
-    ) -> Self::Other
+    fn from_state<E: Residual<N, D>, N: Gradients>(state: &State<E, N, D>) -> Self::Other
     where
-        DefaultAllocator: Allocator<E::Components>;
+        DefaultAllocator: Allocator<N>;
 
+    #[cfg(feature = "ndarray")]
     fn linspace(
         &self,
         start: Self::Other,
@@ -69,15 +69,14 @@ impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D> for Temperature<D> {
         (Some(*self), tp_init, true)
     }
 
-    fn from_state<E: HelmholtzEnergyDerivatives<D>>(
-        state: &StateGeneric<E, D, E::Components, E::Cache>,
-    ) -> Self::Other
+    fn from_state<E: Residual<N, D>, N: Gradients>(state: &State<E, N, D>) -> Self::Other
     where
-        DefaultAllocator: Allocator<E::Components>,
+        DefaultAllocator: Allocator<N>,
     {
         state.pressure(Contributions::Total)
     }
 
+    #[cfg(feature = "ndarray")]
     fn linspace(
         &self,
         start: Pressure<D>,
@@ -115,15 +114,14 @@ impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D>
         (tp_init, Some(*self), false)
     }
 
-    fn from_state<E: HelmholtzEnergyDerivatives<D>>(
-        state: &StateGeneric<E, D, E::Components, E::Cache>,
-    ) -> Self::Other
+    fn from_state<E: Residual<N, D>, N: Dim>(state: &State<E, N, D>) -> Self::Other
     where
-        DefaultAllocator: Allocator<E::Components>,
+        DefaultAllocator: Allocator<N>,
     {
         state.temperature
     }
 
+    #[cfg(feature = "ndarray")]
     fn linspace(
         &self,
         start: Temperature<D>,
@@ -138,21 +136,23 @@ impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D>
 }
 
 /// # Bubble and dew point calculations
-impl<E: HelmholtzEnergyDerivatives<D>, D: DualNum<f64> + Copy>
-    PhaseEquilibriumGeneric<E, D, E::Components, E::Cache, 2>
+impl<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, N, D>
 where
-    DefaultAllocator: Allocator<E::Components> + Allocator<E::Components, E::Components>,
+    DefaultAllocator: Allocator<N> + Allocator<N, N> + Allocator<U1, N>,
 {
     /// Calculate a phase equilibrium for a given temperature
     /// or pressure and composition of the liquid phase.
     pub fn bubble_point<TP: TemperatureOrPressure<D>>(
         eos: &E,
         temperature_or_pressure: TP,
-        liquid_molefracs: &OVector<D, E::Components>,
+        liquid_molefracs: &OVector<D, N>,
         tp_init: Option<TP::Other>,
-        vapor_molefracs: Option<&OVector<f64, E::Components>>,
+        vapor_molefracs: Option<&OVector<f64, N>>,
         options: (SolverOptions, SolverOptions),
-    ) -> FeosResult<Self> {
+    ) -> FeosResult<Self>
+    where
+        E: Clone,
+    {
         Self::bubble_dew_point(
             eos,
             temperature_or_pressure,
@@ -169,11 +169,14 @@ where
     pub fn dew_point<TP: TemperatureOrPressure<D>>(
         eos: &E,
         temperature_or_pressure: TP,
-        vapor_molefracs: &OVector<D, E::Components>,
+        vapor_molefracs: &OVector<D, N>,
         tp_init: Option<TP::Other>,
-        liquid_molefracs: Option<&OVector<f64, E::Components>>,
+        liquid_molefracs: Option<&OVector<f64, N>>,
         options: (SolverOptions, SolverOptions),
-    ) -> FeosResult<Self> {
+    ) -> FeosResult<Self>
+    where
+        E: Clone,
+    {
         Self::bubble_dew_point(
             eos,
             temperature_or_pressure,
@@ -188,12 +191,15 @@ where
     pub(super) fn bubble_dew_point<TP: TemperatureOrPressure<D>>(
         eos: &E,
         temperature_or_pressure: TP,
-        vapor_molefracs: &OVector<D, E::Components>,
+        vapor_molefracs: &OVector<D, N>,
         tp_init: Option<TP::Other>,
-        liquid_molefracs: Option<&OVector<f64, E::Components>>,
+        liquid_molefracs: Option<&OVector<f64, N>>,
         bubble: bool,
         options: (SolverOptions, SolverOptions),
-    ) -> FeosResult<Self> {
+    ) -> FeosResult<Self>
+    where
+        E: Clone,
+    {
         let (temperature, pressure, iterate_p) =
             temperature_or_pressure.temperature_pressure(tp_init);
         Self::bubble_dew_point_tp(
@@ -213,12 +219,15 @@ where
         eos: &E,
         temperature: Option<Temperature<D>>,
         pressure: Option<Pressure<D>>,
-        molefracs_spec: &OVector<D, E::Components>,
-        molefracs_init: Option<&OVector<f64, E::Components>>,
+        molefracs_spec: &OVector<D, N>,
+        molefracs_init: Option<&OVector<f64, N>>,
         bubble: bool,
         iterate_p: bool,
         options: (SolverOptions, SolverOptions),
-    ) -> FeosResult<Self> {
+    ) -> FeosResult<Self>
+    where
+        E: Clone,
+    {
         let eos_re = eos.re();
         let mut temperature_re = temperature.map(|t| t.re());
         let mut pressure_re = pressure.map(|p| p.re());
@@ -229,7 +238,7 @@ where
 
             // First use given initial pressure if applicable
             if let Some(p) = pressure_re.as_mut() {
-                PhaseEquilibriumGeneric::iterate_bubble_dew(
+                PhaseEquilibrium::iterate_bubble_dew(
                     &eos_re,
                     temperature_re,
                     p,
@@ -241,7 +250,7 @@ where
                 )?
             } else {
                 // Next try to initialize with an ideal gas assumption
-                let x2 = PhaseEquilibriumGeneric::starting_pressure_ideal_gas(
+                let x2 = PhaseEquilibrium::starting_pressure_ideal_gas(
                     &eos_re,
                     *temperature_re,
                     &molefracs_spec_re,
@@ -249,7 +258,7 @@ where
                 )
                 .and_then(|(p, x)| {
                     pressure_re = Some(p);
-                    PhaseEquilibriumGeneric::iterate_bubble_dew(
+                    PhaseEquilibrium::iterate_bubble_dew(
                         &eos_re,
                         temperature_re,
                         pressure_re.as_mut().unwrap(),
@@ -263,14 +272,14 @@ where
 
                 // Finally use the spinodal to initialize the calculation
                 x2.or_else(|_| {
-                    PhaseEquilibriumGeneric::starting_pressure_spinodal(
+                    PhaseEquilibrium::starting_pressure_spinodal(
                         &eos_re,
                         *temperature_re,
                         &molefracs_spec_re,
                     )
                     .and_then(|p| {
                         pressure_re = Some(p);
-                        PhaseEquilibriumGeneric::iterate_bubble_dew(
+                        PhaseEquilibrium::iterate_bubble_dew(
                             &eos_re,
                             temperature_re,
                             pressure_re.as_mut().unwrap(),
@@ -288,7 +297,7 @@ where
             let pressure_re = pressure_re.as_mut().unwrap();
 
             let temperature_re = temperature_re.as_mut().expect("An initial temperature is required for the calculation of bubble/dew points at given pressure!");
-            PhaseEquilibriumGeneric::iterate_bubble_dew(
+            PhaseEquilibrium::iterate_bubble_dew(
                 &eos.re(),
                 temperature_re,
                 pressure_re,
@@ -328,22 +337,22 @@ where
                 )
             };
         }
-        let state1 = StateGeneric::new_intensive(
+        let state1 = State::new_intensive(
             eos,
             Temperature::from_reduced(t),
             Density::from_reduced(molar_volume.recip()),
             molefracs_spec,
-        );
+        )?;
         let rho2_total = rho2.sum();
         let x2 = rho2 / rho2_total;
-        let state2 = StateGeneric::new_intensive(
+        let state2 = State::new_intensive(
             eos,
             Temperature::from_reduced(t),
             Density::from_reduced(rho2_total),
             &x2,
-        );
+        )?;
 
-        Ok(PhaseEquilibriumGeneric(if bubble {
+        Ok(PhaseEquilibrium(if bubble {
             [state2, state1]
         } else {
             [state1, state2]
@@ -353,14 +362,19 @@ where
     fn newton_step_t(
         eos: &E,
         temperature: D,
-        molefracs: &OVector<D, E::Components>,
+        molefracs: &OVector<D, N>,
         pressure: &mut D,
         molar_volume: &mut D,
-        partial_density_other_phase: &mut OVector<D, E::Components>,
+        partial_density_other_phase: &mut OVector<D, N>,
         verbosity: Verbosity,
     ) -> f64 {
         // calculate properties
         let (p_1, mu_res_1, dp_1, dmu_1) = eos.dmu_drho(temperature, partial_density_other_phase);
+        eos.dmu_dv(
+            temperature,
+            partial_density_other_phase.sum().recip(),
+            &(partial_density_other_phase.clone() / partial_density_other_phase.sum()),
+        );
         let (p_2, mu_res_2, dp_2, dmu_2) = eos.dmu_dv(temperature, *molar_volume, molefracs);
 
         // calculate residual
@@ -415,13 +429,13 @@ where
 
         let x = partial_density_other_phase.map(|r| r.re());
         let x = &x / x.sum();
-        log_iter!(
+        log_iteration(
             verbosity,
-            "{:<14.8e} | {:14} | {:12.8} | {:.8} NEWTON",
-            error,
-            "",
-            pressure.re(),
-            x
+            Some(error),
+            Temperature::from_reduced(temperature.re()),
+            Pressure::from_reduced(pressure.re()),
+            x.as_slice(),
+            true,
         );
         error
     }
@@ -429,10 +443,10 @@ where
     fn newton_step_p(
         eos: &E,
         temperature: &mut D,
-        molefracs: &OVector<D, E::Components>,
+        molefracs: &OVector<D, N>,
         pressure: D,
         molar_volume: &mut D,
-        partial_density_other_phase: &mut OVector<D, E::Components>,
+        partial_density_other_phase: &mut OVector<D, N>,
         verbosity: Verbosity,
     ) -> f64 {
         // calculate properties
@@ -484,34 +498,34 @@ where
 
         let x = partial_density_other_phase.map(|r| r.re());
         let x = &x / x.sum();
-        log_iter!(
+        log_iteration(
             verbosity,
-            "{:<14.8e} | {:14} | {:12.8} | {:.8} NEWTON",
-            error,
-            "",
-            pressure.re(),
-            x
+            Some(error),
+            Temperature::from_reduced(temperature.re()),
+            Pressure::from_reduced(pressure.re()),
+            x.as_slice(),
+            true,
         );
         error
     }
 }
 
 /// # Bubble and dew point calculations
-impl<E: HelmholtzEnergyDerivatives<f64>> PhaseEquilibriumGeneric<E, f64, E::Components, E::Cache, 2>
+impl<E: Residual<N>, N: Gradients> PhaseEquilibrium<E, 2, N>
 where
-    DefaultAllocator: Allocator<E::Components> + Allocator<E::Components, E::Components>,
+    DefaultAllocator: Allocator<N> + Allocator<N, N> + Allocator<U1, N>,
 {
     #[expect(clippy::too_many_arguments)]
     fn iterate_bubble_dew(
         eos: &E,
         temperature: &mut Temperature,
         pressure: &mut Pressure,
-        molefracs_spec: &OVector<f64, E::Components>,
-        molefracs_init: Option<&OVector<f64, E::Components>>,
+        molefracs_spec: &OVector<f64, N>,
+        molefracs_init: Option<&OVector<f64, N>>,
         bubble: bool,
         iterate_p: bool,
         options: (SolverOptions, SolverOptions),
-    ) -> FeosResult<(f64, OVector<f64, E::Components>)> {
+    ) -> FeosResult<(f64, OVector<f64, N>)> {
         let [mut state1, mut state2] = if bubble {
             Self::starting_x2_bubble(eos, *temperature, *pressure, molefracs_spec, molefracs_init)
         } else {
@@ -523,24 +537,23 @@ where
         let mut err_out = 1.0;
         let mut k_out = 0;
 
-        if PhaseEquilibriumGeneric::is_trivial_solution(&state1, &state2) {
+        if PhaseEquilibrium::is_trivial_solution(&state1, &state2) {
             log_iter!(options_outer.verbosity, "Trivial solution encountered!");
             return Err(FeosError::TrivialSolution);
         }
 
         log_iter!(
             options_outer.verbosity,
-            "res outer loop | res inner loop |   temperature   |     pressure     | molefracs second phase",
+            "res outer loop | res inner loop |   temperature  |     pressure     | molefracs second phase",
         );
         log_iter!(options_outer.verbosity, "{:-<104}", "");
-        log_iter!(
+        log_iteration(
             options_outer.verbosity,
-            "{:14} | {:14} | {:12.8} | {:12.8} | {:.8}",
-            "",
-            "",
-            temperature,
-            pressure,
-            state2.molefracs
+            None,
+            *temperature,
+            *pressure,
+            state2.molefracs.as_slice(),
+            false,
         );
 
         // Outer loop for finding x2
@@ -636,8 +649,8 @@ where
     fn adjust_p(
         temperature: Temperature,
         pressure: &mut Pressure,
-        state1: &mut StateGeneric<E, f64, E::Components, E::Cache>,
-        state2: &mut StateGeneric<E, f64, E::Components, E::Cache>,
+        state1: &mut State<E, N>,
+        state2: &mut State<E, N>,
         verbosity: Verbosity,
     ) -> FeosResult<f64> {
         // calculate K = phi_1/phi_2 = x_2/x_1
@@ -668,14 +681,13 @@ where
         Self::adjust_states(temperature, *pressure, state1, state2, None)?;
 
         // log
-        log_iter!(
+        log_iteration(
             verbosity,
-            "{:14} | {:<14.8e} | {:12.8} | {:12.8} | {:.8}",
-            "",
-            f.abs(),
+            Some(f),
             temperature,
-            pressure,
-            state2.molefracs
+            *pressure,
+            state2.molefracs.as_slice(),
+            false,
         );
 
         Ok(f.abs())
@@ -684,8 +696,8 @@ where
     fn adjust_t(
         temperature: &mut Temperature,
         pressure: Pressure,
-        state1: &mut StateGeneric<E, f64, E::Components, E::Cache>,
-        state2: &mut StateGeneric<E, f64, E::Components, E::Cache>,
+        state1: &mut State<E, N>,
+        state2: &mut State<E, N>,
         verbosity: Verbosity,
     ) -> FeosResult<f64> {
         // calculate K = phi_1/phi_2 = x_2/x_1
@@ -718,14 +730,13 @@ where
         Self::adjust_states(*temperature, pressure, state1, state2, None)?;
 
         // log
-        log_iter!(
+        log_iteration(
             verbosity,
-            "{:14} | {:<14.8e} | {:12.8} | {:12.8} | {:.8}",
-            "",
-            f.abs(),
-            temperature,
+            Some(f),
+            *temperature,
             pressure,
-            state2.molefracs
+            state2.molefracs.as_slice(),
+            false,
         );
 
         Ok(f.abs())
@@ -734,9 +745,9 @@ where
     fn starting_pressure_ideal_gas(
         eos: &E,
         temperature: Temperature,
-        molefracs_spec: &OVector<f64, E::Components>,
+        molefracs_spec: &OVector<f64, N>,
         bubble: bool,
-    ) -> FeosResult<(Pressure, OVector<f64, E::Components>)> {
+    ) -> FeosResult<(Pressure, OVector<f64, N>)> {
         if bubble {
             Self::starting_pressure_ideal_gas_bubble(eos, temperature, molefracs_spec)
         } else {
@@ -747,10 +758,10 @@ where
     pub(super) fn starting_pressure_ideal_gas_bubble(
         eos: &E,
         temperature: Temperature,
-        liquid_molefracs: &OVector<f64, E::Components>,
-    ) -> FeosResult<(Pressure, OVector<f64, E::Components>)> {
+        liquid_molefracs: &OVector<f64, N>,
+    ) -> FeosResult<(Pressure, OVector<f64, N>)> {
         let density = 0.75 * Density::from_reduced(eos.compute_max_density(liquid_molefracs));
-        let liquid = StateGeneric::new_intensive(eos, temperature, density, liquid_molefracs);
+        let liquid = State::new_intensive(eos, temperature, density, liquid_molefracs)?;
         let v_l = liquid.partial_molar_volume();
         let p_l = liquid.pressure(Contributions::Total);
         let mu_l = liquid.residual_chemical_potential();
@@ -767,14 +778,14 @@ where
     fn starting_pressure_ideal_gas_dew(
         eos: &E,
         temperature: Temperature,
-        vapor_molefracs: &OVector<f64, E::Components>,
-    ) -> FeosResult<(Pressure, OVector<f64, E::Components>)> {
+        vapor_molefracs: &OVector<f64, N>,
+    ) -> FeosResult<(Pressure, OVector<f64, N>)> {
         let mut p: Option<Pressure> = None;
 
         let mut x = vapor_molefracs.clone();
         for _ in 0..5 {
             let density = Density::from_reduced(0.75 * eos.compute_max_density(&x));
-            let liquid = StateGeneric::new_intensive(eos, temperature, density, &x);
+            let liquid = State::new_intensive(eos, temperature, density, &x)?;
             let v_l = liquid.partial_molar_volume();
             let p_l = liquid.pressure(Contributions::Total);
             let mu_l = liquid.residual_chemical_potential();
@@ -800,25 +811,23 @@ where
     pub(super) fn starting_pressure_spinodal(
         eos: &E,
         temperature: Temperature,
-        molefracs: &OVector<f64, E::Components>,
+        molefracs: &OVector<f64, N>,
     ) -> FeosResult<Pressure> {
-        let [sp_v, sp_l] =
-            StateGeneric::spinodal(eos, temperature, Some(molefracs), Default::default())?;
+        let [sp_v, sp_l] = State::spinodal(eos, temperature, Some(molefracs), Default::default())?;
         let pv = sp_v.pressure(Contributions::Total);
         let pl = sp_l.pressure(Contributions::Total);
         Ok(0.5 * (Pressure::from_reduced(0.0).max(pl) + pv))
     }
 
-    #[expect(clippy::type_complexity)]
     fn starting_x2_bubble(
         eos: &E,
         temperature: Temperature,
         pressure: Pressure,
-        liquid_molefracs: &OVector<f64, E::Components>,
-        vapor_molefracs: Option<&OVector<f64, E::Components>>,
-    ) -> FeosResult<[StateGeneric<E, f64, E::Components, E::Cache>; 2]> {
+        liquid_molefracs: &OVector<f64, N>,
+        vapor_molefracs: Option<&OVector<f64, N>>,
+    ) -> FeosResult<[State<E, N>; 2]> {
         let liquid_state =
-            StateGeneric::new_xpt(eos, temperature, pressure, liquid_molefracs, Liquid)?;
+            State::new_xpt(eos, temperature, pressure, liquid_molefracs, Some(Liquid))?;
         let xv = match vapor_molefracs {
             Some(xv) => xv.clone(),
             None => liquid_state
@@ -826,24 +835,23 @@ where
                 .map(f64::exp)
                 .component_mul(liquid_molefracs),
         };
-        let vapor_state = StateGeneric::new_xpt(eos, temperature, pressure, &xv, Vapor)?;
+        let vapor_state = State::new_xpt(eos, temperature, pressure, &xv, Some(Vapor))?;
         Ok([liquid_state, vapor_state])
     }
 
-    #[expect(clippy::type_complexity)]
     fn starting_x2_dew(
         eos: &E,
         temperature: Temperature,
         pressure: Pressure,
-        vapor_molefracs: &OVector<f64, E::Components>,
-        liquid_molefracs: Option<&OVector<f64, E::Components>>,
-    ) -> FeosResult<[StateGeneric<E, f64, E::Components, E::Cache>; 2]> {
-        let vapor_state = StateGeneric::new_npt(
+        vapor_molefracs: &OVector<f64, N>,
+        liquid_molefracs: Option<&OVector<f64, N>>,
+    ) -> FeosResult<[State<E, N>; 2]> {
+        let vapor_state = State::new_npt(
             eos,
             temperature,
             pressure,
             &Moles::from_reduced(vapor_molefracs.clone()),
-            Vapor,
+            Some(Vapor),
         )?;
         let xl = match liquid_molefracs {
             Some(xl) => xl.clone(),
@@ -852,138 +860,43 @@ where
                     .ln_phi()
                     .map(f64::exp)
                     .component_mul(vapor_molefracs);
-                let liquid_state = StateGeneric::new_xpt(eos, temperature, pressure, &xl, Liquid)?;
+                let liquid_state = State::new_xpt(eos, temperature, pressure, &xl, Some(Liquid))?;
                 (vapor_state.ln_phi() - liquid_state.ln_phi())
                     .map(f64::exp)
                     .component_mul(vapor_molefracs)
             }
         };
-        let liquid_state = StateGeneric::new_xpt(eos, temperature, pressure, &xl, Liquid)?;
+        let liquid_state = State::new_xpt(eos, temperature, pressure, &xl, Some(Liquid))?;
         Ok([vapor_state, liquid_state])
     }
-
-    // fn bubble_dew<E: Residual, TP: TemperatureOrPressure>(
-    //     tp_spec: TP,
-    //     mut var_tp: TP::Other,
-    //     mut state1: State<E>,
-    //     mut state2: State<E>,
-    //     bubble: bool,
-    //     options: (SolverOptions, SolverOptions),
-    // ) -> FeosResult<PhaseEquilibrium<E, 2>> {
-    //     let (options_inner, options_outer) = options;
-
-    //     // initialize variables
-    //     let mut err_out = 1.0;
-    //     let mut k_out = 0;
-
-    //     if PhaseEquilibrium::is_trivial_solution(&state1, &state2) {
-    //         log_iter!(options_outer.verbosity, "Trivial solution encountered!");
-    //         return Err(FeosError::TrivialSolution);
-    //     }
-
-    //     log_iter!(
-    //         options_outer.verbosity,
-    //         "res outer loop | res inner loop | {:^16} | molefracs second phase",
-    //         TP::IDENTIFIER
-    //     );
-    //     log_iter!(options_outer.verbosity, "{:-<85}", "");
-    //     log_iter!(
-    //         options_outer.verbosity,
-    //         "{:14} | {:14} | {:12.8} | {:.8}",
-    //         "",
-    //         "",
-    //         var_tp,
-    //         state2.molefracs
-    //     );
-
-    //     // Outer loop for finding x2
-    //     for ko in 0..options_outer.max_iter.unwrap_or(MAX_ITER_OUTER) {
-    //         // Iso-Fugacity equation
-    //         err_out = if err_out > NEWTON_TOL {
-    //             // Inner loop for finding T or p
-    //             for _ in 0..options_inner.max_iter.unwrap_or(MAX_ITER_INNER) {
-    //                 if TP::adjust_t_p(
-    //                     tp_spec,
-    //                     &mut var_tp,
-    //                     &mut state1,
-    //                     &mut state2,
-    //                     options_inner.verbosity,
-    //                 )? < options_inner.tol.unwrap_or(TOL_INNER)
-    //                 {
-    //                     break;
-    //                 }
-    //             }
-    //             adjust_x2(&state1, &mut state2, options_outer.verbosity)
-    //         } else {
-    //             let mut var_tp_r = var_tp.to_reduced();
-    //             TP::newton_step(
-    //                 &state1.eos,
-    //                 tp_spec.to_reduced(),
-    //                 &state1.molefracs,
-    //                 &mut var_tp,
-    //                 &mut molar_volume,
-    //                 &mut partial_density_other_phase,
-    //                 options_outer.verbosity,
-    //             )
-    //         }?;
-
-    //         if PhaseEquilibrium::is_trivial_solution(&state1, &state2) {
-    //             log_iter!(options_outer.verbosity, "Trivial solution encountered!");
-    //             return Err(FeosError::TrivialSolution);
-    //         }
-
-    //         if err_out < options_outer.tol.unwrap_or(TOL_OUTER) {
-    //             k_out = ko + 1;
-    //             break;
-    //         }
-    //     }
-
-    //     if err_out < options_outer.tol.unwrap_or(TOL_OUTER) {
-    //         log_result!(
-    //             options_outer.verbosity,
-    //             "Bubble/dew point: calculation converged in {} step(s)\n",
-    //             k_out
-    //         );
-    //         if bubble {
-    //             Ok(PhaseEquilibriumGeneric([state2, state1]))
-    //         } else {
-    //             Ok(PhaseEquilibriumGeneric([state1, state2]))
-    //         }
-    //     } else {
-    //         // not converged, return error
-    //         Err(FeosError::NotConverged(String::from(
-    //             "bubble-dew-iteration",
-    //         )))
-    //     }
-    // }
 
     fn adjust_states(
         temperature: Temperature,
         pressure: Pressure,
-        state1: &mut StateGeneric<E, f64, E::Components, E::Cache>,
-        state2: &mut StateGeneric<E, f64, E::Components, E::Cache>,
-        moles_state2: Option<&Moles<OVector<f64, E::Components>>>,
+        state1: &mut State<E, N>,
+        state2: &mut State<E, N>,
+        moles_state2: Option<&Moles<OVector<f64, N>>>,
     ) -> FeosResult<()> {
-        *state1 = StateGeneric::new_npt(
+        *state1 = State::new_npt(
             &state1.eos,
             temperature,
             pressure,
             &state1.moles,
-            InitialDensity(state1.density),
+            Some(InitialDensity(state1.density)),
         )?;
-        *state2 = StateGeneric::new_npt(
+        *state2 = State::new_npt(
             &state2.eos,
             temperature,
             pressure,
             moles_state2.unwrap_or(&state2.moles),
-            InitialDensity(state2.density),
+            Some(InitialDensity(state2.density)),
         )?;
         Ok(())
     }
 
     fn adjust_x2(
-        state1: &StateGeneric<E, f64, E::Components, E::Cache>,
-        state2: &mut StateGeneric<E, f64, E::Components, E::Cache>,
+        state1: &State<E, N>,
+        state2: &mut State<E, N>,
         verbosity: Verbosity,
     ) -> FeosResult<f64> {
         let x1 = &state1.molefracs;
@@ -996,14 +909,42 @@ where
             .map(|e| (e - 1.0).abs())
             .sum();
         let x2 = &kx1 / kx1.sum();
-        log_iter!(verbosity, "{:<14.8e} | {:14} | {:16} |", err_out, "", "");
-        *state2 = StateGeneric::new_npt(
+        log_iter!(
+            verbosity,
+            "{:<14.8e} | {:14} | {:14} | {:16} |",
+            err_out,
+            "",
+            "",
+            ""
+        );
+        *state2 = State::new_xpt(
             &state2.eos,
             state2.temperature,
             state2.pressure(Contributions::Total),
-            &Moles::from_reduced(x2),
-            InitialDensity(state2.density),
+            &x2,
+            Some(InitialDensity(state2.density)),
         )?;
         Ok(err_out)
     }
+}
+
+fn log_iteration(
+    verbosity: Verbosity,
+    error: Option<f64>,
+    temperature: Temperature,
+    pressure: Pressure,
+    x2: &[f64],
+    newton: bool,
+) {
+    let error = error.map_or_else(|| format!("{:14}", ""), |e| format!("{:<14.8e}", e.abs()));
+    log_iter!(
+        verbosity,
+        "{:14} | {} | {:12.8} | {:12.8} | {:.8?} {}",
+        "",
+        error,
+        temperature,
+        pressure,
+        x2,
+        if newton { "NEWTON" } else { "" }
+    );
 }

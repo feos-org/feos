@@ -43,7 +43,7 @@ rustfft = "6.0"
 libm = "0.2"
 gauss-quad = "0.2"
 approx = "0.5"
-criterion = "0.5"
+criterion = "0.7"
 arrayvec = "0.7"
 paste = "1.0"
 
