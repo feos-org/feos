@@ -280,7 +280,7 @@ impl Quadrupole {
                         &BQ,
                         eps_ij_t[[di, dj]],
                     ))
-                    / p.sigma_ij[[di, di]].powi(7)
+                    / p.sigma_ij[[di, dj]].powi(7)
                     * c;
                 for k in j..p.nquadpole {
                     let dk = p.quadpole_comp[k];
