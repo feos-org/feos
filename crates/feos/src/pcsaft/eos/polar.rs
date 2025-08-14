@@ -437,6 +437,7 @@ mod tests {
     use approx::assert_relative_eq;
     use feos_core::StateHD;
     use feos_core::parameter::IdentifierOption;
+    use itertools::Itertools;
 
     #[test]
     fn test_dipolar_contribution() {
@@ -471,6 +472,36 @@ mod tests {
     }
 
     #[test]
+    fn test_dipolar_contribution_order() {
+        let a: Vec<_> = ["acetone", "butanal", "dimethyl ether"]
+            .into_iter()
+            .permutations(3)
+            .zip([1.0, 2.0, 3.0].into_iter().permutations(3))
+            .map(|(components, n)| {
+                let parameters = PcSaftPars::new(
+                    &PcSaftParameters::from_json(
+                        components.clone(),
+                        "../../parameters/pcsaft/gross2006.json",
+                        None,
+                        IdentifierOption::Name,
+                    )
+                    .unwrap(),
+                );
+                let t = 350.0;
+                let v = 1000.0;
+                let s = StateHD::new(t, v, arr1(&n));
+                let d = parameters.hs_diameter(t);
+                let a = Dipole.helmholtz_energy(&parameters, &s, &d);
+                println!("{components:?}: {a}");
+                a
+            })
+            .collect();
+        for (a, b) in a.into_iter().tuple_windows() {
+            assert_relative_eq!(a, b, epsilon = 1e-10);
+        }
+    }
+
+    #[test]
     fn test_quadrupolar_contribution() {
         let co2 = carbon_dioxide_parameters();
         let t = 350.0;
@@ -500,6 +531,36 @@ mod tests {
         let d = parameters.hs_diameter(t);
         let a = Quadrupole.helmholtz_energy(&parameters, &s, &d);
         assert_relative_eq!(a, -0.327493924806138, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn test_quadrupolar_contribution_order() {
+        let a: Vec<_> = ["carbon dioxide", "chlorine", "ethylene"]
+            .into_iter()
+            .permutations(3)
+            .zip([1.0, 2.0, 3.0].into_iter().permutations(3))
+            .map(|(components, n)| {
+                let parameters = PcSaftPars::new(
+                    &PcSaftParameters::from_json(
+                        components.clone(),
+                        "../../parameters/pcsaft/gross2005_literature.json",
+                        None,
+                        IdentifierOption::Name,
+                    )
+                    .unwrap(),
+                );
+                let t = 350.0;
+                let v = 1000.0;
+                let s = StateHD::new(t, v, arr1(&n));
+                let d = parameters.hs_diameter(t);
+                let a = Quadrupole.helmholtz_energy(&parameters, &s, &d);
+                println!("{components:?}: {a}");
+                a
+            })
+            .collect();
+        for (a, b) in a.into_iter().tuple_windows() {
+            assert_relative_eq!(a, b, epsilon = 1e-10);
+        }
     }
 
     #[test]
