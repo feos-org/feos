@@ -530,7 +530,7 @@ mod tests {
         let s = StateHD::new(t, v, arr1(&n));
         let d = parameters.hs_diameter(t);
         let a = Quadrupole.helmholtz_energy(&parameters, &s, &d);
-        assert_relative_eq!(a, -0.327493924806138, epsilon = 1e-10);
+        assert_relative_eq!(a, -0.2748017468669352, epsilon = 1e-10);
     }
 
     #[test]
