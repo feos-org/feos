@@ -432,7 +432,7 @@ mod tests {
     use feos_core::StateHD;
     use feos_core::parameter::IdentifierOption;
     use itertools::Itertools;
-    use nalgebra::dvector;
+    use nalgebra::{DVector, dvector};
 
     #[test]
     fn test_dipolar_contribution() {
@@ -481,9 +481,8 @@ mod tests {
                 );
                 let t = 350.0;
                 let v = 1000.0;
-                let s = StateHD::new(t, v, arr1(&n));
-                let d = parameters.hs_diameter(t);
-                let a = Dipole.helmholtz_energy(&parameters, &s, &d);
+                let s = StateHD::new(t, v, &DVector::from(n));
+                let a = Dipole.helmholtz_energy_density(&parameters, &s) * v;
                 println!("{components:?}: {a}");
                 a
             })
@@ -540,9 +539,8 @@ mod tests {
                 );
                 let t = 350.0;
                 let v = 1000.0;
-                let s = StateHD::new(t, v, arr1(&n));
-                let d = parameters.hs_diameter(t);
-                let a = Quadrupole.helmholtz_energy(&parameters, &s, &d);
+                let s = StateHD::new(t, v, &DVector::from(n));
+                let a = Quadrupole.helmholtz_energy_density(&parameters, &s) * v;
                 println!("{components:?}: {a}");
                 a
             })
