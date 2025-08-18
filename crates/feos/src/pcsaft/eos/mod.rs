@@ -582,3 +582,257 @@ mod tests {
     //     Ok(())
     // }
 }
+
+#[cfg(test)]
+mod tests_parameter_fit {
+    use super::pcsaft_binary::test::pcsaft_binary;
+    use super::pcsaft_pure::test::pcsaft;
+    use super::*;
+    use approx::assert_relative_eq;
+    use feos_core::Contributions;
+    use feos_core::DensityInitialization::Liquid;
+    use feos_core::{BinaryModel, FeosResult, ParametersAD, PhaseEquilibrium, PureModel, State};
+    use nalgebra::{U1, U3, U8, vector};
+    use quantity::{BAR, KELVIN, LITER, MOL, PASCAL};
+
+    fn pcsaft_non_assoc() -> FeosResult<PcSaftPure<f64, 4>> {
+        let m = 1.5;
+        let sigma = 3.4;
+        let epsilon_k = 180.0;
+        let mu = 2.2;
+        let params = [m, sigma, epsilon_k, mu];
+        Ok(PcSaftPure(params))
+    }
+
+    #[test]
+    fn test_vapor_pressure_derivatives() -> FeosResult<()> {
+        let pcsaft_params = [
+            "m",
+            "sigma",
+            "epsilon_k",
+            "mu",
+            "kappa_ab",
+            "epsilon_k_ab",
+            "na",
+            "nb",
+        ];
+        let (pcsaft, _) = pcsaft()?;
+        let pcsaft_ad = PcSaftPure::<_, 8>::from_parameter_slice(&pcsaft.0, pcsaft_params);
+        let temperature = 250.0 * KELVIN;
+        let p = PcSaftPure::<_, 8>::vapor_pressure(&pcsaft_ad, temperature)?;
+        let p = p.convert_into(PASCAL);
+        let (p, grad) = (p.re, p.eps.unwrap_generic(U8, U1));
+
+        println!("{p:.5}");
+        println!("{grad:.5?}");
+
+        for (i, par) in pcsaft_params.into_iter().enumerate() {
+            let mut params = pcsaft.0;
+            let h = params[i] * 1e-7;
+            params[i] += h;
+            let pcsaft_h = PcSaftPure(params);
+            let (p_h, _) =
+                PhaseEquilibrium::pure_t(&pcsaft_h, temperature, None, Default::default())?;
+            let dp_h = (p_h.convert_into(PASCAL) - p) / h;
+            let dp = grad[i];
+            println!(
+                "{par:12}: {:11.5} {:11.5} {:.3e}",
+                dp_h,
+                dp,
+                ((dp_h - dp) / dp).abs()
+            );
+            assert_relative_eq!(dp, dp_h, max_relative = 1e-6);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_vapor_pressure_derivatives_fit() -> FeosResult<()> {
+        let pcsaft = pcsaft_non_assoc()?;
+        let pcsaft_ad =
+            PcSaftPure::<_, 4>::from_parameter_slice(&pcsaft.0, ["m", "sigma", "epsilon_k"]);
+        let temperature = 150.0 * KELVIN;
+        let p = PcSaftPure::<_, 4>::vapor_pressure(&pcsaft_ad, temperature)?;
+        let p = p.convert_into(PASCAL);
+        let (p, grad) = (p.re, p.eps.unwrap_generic(U3, U1));
+
+        println!("{p:.5}");
+        println!("{grad:.5?}");
+
+        for (i, par) in ["m", "sigma", "epsilon_k"].into_iter().enumerate() {
+            let mut params = pcsaft.0;
+            let h = params[i] * 1e-7;
+            params[i] += h;
+            let pcsaft_h = PcSaftPure(params);
+            let (p_h, _) =
+                PhaseEquilibrium::pure_t(&pcsaft_h, temperature, None, Default::default())?;
+            let dp_h = (p_h.convert_into(PASCAL) - p) / h;
+            let dp = grad[i];
+            println!(
+                "{par:12}: {:11.5} {:11.5} {:.3e}",
+                dp_h,
+                dp,
+                ((dp_h - dp) / dp).abs()
+            );
+            assert_relative_eq!(dp, dp_h, max_relative = 1e-6);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_equilibrium_liquid_density_derivatives_fit() -> FeosResult<()> {
+        let pcsaft = pcsaft_non_assoc()?;
+        let pcsaft_ad =
+            PcSaftPure::<_, 4>::from_parameter_slice(&pcsaft.0, ["m", "sigma", "epsilon_k"]);
+        let temperature = 150.0 * KELVIN;
+        let (p, rho) = PcSaftPure::<_, 4>::equilibrium_liquid_density(&pcsaft_ad, temperature)?;
+        let p = p.convert_into(PASCAL);
+        let rho = rho.convert_into(MOL / LITER);
+        let (p, p_grad) = (p.re, p.eps.unwrap_generic(U3, U1));
+        let (rho, rho_grad) = (rho.re, rho.eps.unwrap_generic(U3, U1));
+
+        println!("{p:.5} {rho:.5}");
+        println!("{p_grad:.5?}");
+        println!("{rho_grad:.5?}");
+
+        for (i, par) in ["m", "sigma", "epsilon_k"].into_iter().enumerate() {
+            let mut params = pcsaft.0;
+            let h = params[i] * 1e-7;
+            params[i] += h;
+            let pcsaft_h = PcSaftPure(params);
+            let (p_h, [_, rho_h]) =
+                PhaseEquilibrium::pure_t(&pcsaft_h, temperature, None, Default::default())?;
+            let dp_h = (p_h.convert_into(PASCAL) - p) / h;
+            let drho_h = (rho_h.convert_into(MOL / LITER) - rho) / h;
+            let dp = p_grad[i];
+            let drho = rho_grad[i];
+            println!(
+                "{par:12}: {:11.5} {:11.5} {:.3e} {:11.5} {:11.5} {:.3e}",
+                dp_h,
+                dp,
+                ((dp_h - dp) / dp).abs(),
+                drho_h,
+                drho,
+                ((drho_h - drho) / drho).abs()
+            );
+            assert_relative_eq!(dp, dp_h, max_relative = 1e-6);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_liquid_density_derivatives_fit() -> FeosResult<()> {
+        let pcsaft = pcsaft_non_assoc()?;
+        let pcsaft_ad =
+            PcSaftPure::<_, 4>::from_parameter_slice(&pcsaft.0, ["m", "sigma", "epsilon_k"]);
+        let temperature = 150.0 * KELVIN;
+        let pressure = BAR;
+        let rho = PcSaftPure::<_, 4>::liquid_density(&pcsaft_ad, temperature, pressure)?;
+        let rho = rho.convert_into(MOL / LITER);
+        let (rho, grad) = (rho.re, rho.eps.unwrap_generic(U3, U1));
+
+        println!("{rho:.5}");
+        println!("{grad:.5?}");
+
+        for (i, par) in ["m", "sigma", "epsilon_k"].into_iter().enumerate() {
+            let mut params = pcsaft.0;
+            let h = params[i] * 1e-7;
+            params[i] += h;
+            let pcsaft_h = PcSaftPure(params);
+            let rho_h = State::new_xpt(
+                &pcsaft_h,
+                temperature,
+                pressure,
+                &vector![1.0],
+                Some(Liquid),
+            )?
+            .density;
+            let drho_h = (rho_h.convert_into(MOL / LITER) - rho) / h;
+            let drho = grad[i];
+            println!(
+                "{par:12}: {:11.5} {:11.5} {:.3e}",
+                drho_h,
+                drho,
+                ((drho_h - drho) / drho).abs()
+            );
+            assert_relative_eq!(drho, drho_h, max_relative = 1e-6);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_bubble_point_pressure() -> FeosResult<()> {
+        let (pcsaft, _) = pcsaft_binary()?;
+        let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
+        let temperature = 500.0 * KELVIN;
+        let x = vector![0.5, 0.5];
+        let p = PcSaftBinary::<_, 8>::bubble_point_pressure(&pcsaft_ad, temperature, None, x)?;
+        let p = p.convert_into(BAR);
+        let (p, [[grad]]) = (p.re, p.eps.unwrap_generic(U1, U1).data.0);
+
+        println!("{p:.5}");
+        println!("{grad:.5?}");
+
+        let (params, mut kij) = pcsaft.0;
+        let h = 1e-7;
+        kij += h;
+        let pcsaft_h = PcSaftBinary::new(params, kij);
+        let p_h = PhaseEquilibrium::bubble_point(
+            &pcsaft_h,
+            temperature,
+            &x,
+            None,
+            None,
+            Default::default(),
+        )?
+        .vapor()
+        .pressure(Contributions::Total);
+        let dp_h = (p_h.convert_into(BAR) - p) / h;
+        println!(
+            "k_ij: {:11.5} {:11.5} {:.3e}",
+            dp_h,
+            grad,
+            ((dp_h - grad) / grad).abs()
+        );
+        assert_relative_eq!(grad, dp_h, max_relative = 1e-6);
+        Ok(())
+    }
+
+    #[test]
+    fn test_dew_point_pressure() -> FeosResult<()> {
+        let (pcsaft, _) = pcsaft_binary()?;
+        let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
+        let temperature = 500.0 * KELVIN;
+        let y = vector![0.5, 0.5];
+        let p = PcSaftBinary::<_, 8>::dew_point_pressure(&pcsaft_ad, temperature, None, y)?;
+        let p = p.convert_into(BAR);
+        let (p, [[grad]]) = (p.re, p.eps.unwrap_generic(U1, U1).data.0);
+
+        println!("{p:.5}");
+        println!("{grad:.5?}");
+
+        let (params, mut kij) = pcsaft.0;
+        let h = 1e-7;
+        kij += h;
+        let pcsaft_h = PcSaftBinary::new(params, kij);
+        let p_h = PhaseEquilibrium::dew_point(
+            &pcsaft_h,
+            temperature,
+            &y,
+            None,
+            None,
+            Default::default(),
+        )?
+        .vapor()
+        .pressure(Contributions::Total);
+        let dp_h = (p_h.convert_into(BAR) - p) / h;
+        println!(
+            "k_ij: {:11.5} {:11.5} {:.3e}",
+            dp_h,
+            grad,
+            ((dp_h - grad) / grad).abs()
+        );
+        assert_relative_eq!(grad, dp_h, max_relative = 1e-6);
+        Ok(())
+    }
+}

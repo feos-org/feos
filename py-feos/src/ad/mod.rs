@@ -1,6 +1,6 @@
 #[cfg(feature = "pcsaft")]
-use feos_ad::eos::{PcSaftBinary, PcSaftPure};
-use feos_ad::{BinaryModel, NamedParameters, PureModel, ResidualHelmholtzEnergy};
+use feos::pcsaft::{PcSaftBinary, PcSaftPure};
+use feos_core::{BinaryModel, ParametersAD, PureModel};
 use numpy::{PyArray1, PyArray2, PyReadonlyArray2, ToPyArray};
 use paste::paste;
 use pyo3::prelude::*;
@@ -59,18 +59,15 @@ macro_rules! expand_models {
 
 macro_rules! impl_evaluate_gradients {
     (pure, [$($prop:ident),*], $models:tt) => {
-        $(impl_evaluate_gradients!(1,PyModel,$prop,$models,1,2,3,4,5,max:6);)*
+        $(impl_evaluate_gradients!(1,PyModel,$prop,$models,0,1,2,3,4,5,max:6);)*
     };
     (binary, [$($prop:ident),*], $models:tt) => {
-        $(impl_evaluate_gradients!(2,BinaryModels,$prop,$models,1,2,3,4,5,6,7,8,9,10,11,12,13,14,max:15);)*
+        $(impl_evaluate_gradients!(2,BinaryModels,$prop,$models,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,max:15);)*
     };
     ($n:literal, $enum:ty, $prop:ident, {$($model:ident: $type:ty),*}, $($p:literal,)* max: $max:literal) => {
         expand_models!($enum, $prop, $($model: $type),*);
         paste!(
-        fn $prop<
-            'py,
-            R: ResidualHelmholtzEnergy<$n> + NamedParameters,
-        >(
+        fn $prop<'py, R: ParametersAD<$n>>(
             parameter_names: Bound<'py, PyAny>,
             parameters: PyReadonlyArray2<f64>,
             input: PyReadonlyArray2<f64>,
@@ -100,11 +97,11 @@ macro_rules! impl_evaluate_gradients {
 impl_evaluate_gradients!(
     pure,
     [vapor_pressure, liquid_density, equilibrium_liquid_density],
-    {PcSaftNonAssoc: PcSaftPure<4>, PcSaftFull: PcSaftPure<8>}
+    {PcSaftNonAssoc: PcSaftPure<f64, 4>, PcSaftFull: PcSaftPure<f64, 8>}
 );
 
 impl_evaluate_gradients!(
     binary,
     [bubble_point_pressure, dew_point_pressure],
-    {PcSaftNonAssoc: PcSaftBinary<4>, PcSaftFull: PcSaftBinary<8>}
+    {PcSaftNonAssoc: PcSaftBinary<f64, 4>, PcSaftFull: PcSaftBinary<f64, 8>}
 );

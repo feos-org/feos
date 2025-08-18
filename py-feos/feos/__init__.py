@@ -10,8 +10,8 @@ from feos.feos import (
     PhaseDiagramHetero,
     PhaseEquilibrium,
     EquationOfState,
-    # Estimator,
-    # Model,
+    Estimator,
+    Model,
     __dft__,
 )
 
@@ -28,8 +28,8 @@ __all__ = [
     "PhaseDiagramHetero",
     "PhaseEquilibrium",
     "EquationOfState",
-    # "Estimator",
-    # "Model"
+    "Estimator",
+    "Model"
 ]
 if __dft__:
     __all__ = ["dft"] + __all__

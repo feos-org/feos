@@ -2,7 +2,7 @@ use super::dispersion::{A0, A1, A2, B0, B1, B2};
 use super::polar::{AD, BD, CD};
 use feos_core::{ParametersAD, ResidualConst, StateHD};
 use nalgebra::{SVector, U1};
-use num_dual::{DualNum, DualSVec};
+use num_dual::{DualNum, DualSVec64};
 use std::f64::consts::{FRAC_PI_6, PI};
 
 const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
@@ -166,17 +166,39 @@ impl<D: DualNum<f64> + Copy, const N: usize> From<&[f64]> for PcSaftPure<D, N> {
     }
 }
 
-impl<const N: usize, const P: usize> ParametersAD<P> for PcSaftPure<DualSVec<f64, f64, P>, N> {
-    fn index_parameters_mut<'a>(&'a mut self, index: &str) -> &'a mut DualSVec<f64, f64, P> {
+impl ParametersAD<1> for PcSaftPure<f64, 4> {
+    type Eos<const P: usize> = PcSaftPure<DualSVec64<P>, 4>;
+
+    fn index_parameters_mut<'a, const P: usize>(
+        eos: &'a mut Self::Eos<P>,
+        index: &str,
+    ) -> &'a mut DualSVec64<P> {
         match index {
-            "m" => &mut self.0[0],
-            "sigma" => &mut self.0[1],
-            "epsilon_k" => &mut self.0[2],
-            "mu" => &mut self.0[3],
-            "kappa_ab" => &mut self.0[4],
-            "epsilon_k_ab" => &mut self.0[5],
-            "na" => &mut self.0[6],
-            "nb" => &mut self.0[7],
+            "m" => &mut eos.0[0],
+            "sigma" => &mut eos.0[1],
+            "epsilon_k" => &mut eos.0[2],
+            "mu" => &mut eos.0[3],
+            _ => panic!("{index} is not a valid PC-SAFT parameter!"),
+        }
+    }
+}
+
+impl ParametersAD<1> for PcSaftPure<f64, 8> {
+    type Eos<const P: usize> = PcSaftPure<DualSVec64<P>, 8>;
+
+    fn index_parameters_mut<'a, const P: usize>(
+        eos: &'a mut Self::Eos<P>,
+        index: &str,
+    ) -> &'a mut DualSVec64<P> {
+        match index {
+            "m" => &mut eos.0[0],
+            "sigma" => &mut eos.0[1],
+            "epsilon_k" => &mut eos.0[2],
+            "mu" => &mut eos.0[3],
+            "kappa_ab" => &mut eos.0[4],
+            "epsilon_k_ab" => &mut eos.0[5],
+            "na" => &mut eos.0[6],
+            "nb" => &mut eos.0[7],
             _ => panic!("{index} is not a valid PC-SAFT parameter!"),
         }
     }
@@ -221,7 +243,7 @@ pub mod test {
     fn test_pcsaft_pure() -> FeosResult<()> {
         let (pcsaft, eos) = pcsaft()?;
 
-        let temperature = 300.0 * KELVIN;
+        let temperature = 350.0 * KELVIN;
         let volume = 2.3 * METER * METER * METER;
         let moles = dvector![1.3] * KILO * MOL;
 

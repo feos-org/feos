@@ -2,7 +2,7 @@ use super::dispersion::{A0, A1, A2, B0, B1, B2};
 use super::polar::{AD, BD, CD};
 use feos_core::{ParametersAD, ResidualConst, StateHD};
 use nalgebra::{SVector, U2};
-use num_dual::{DualNum, DualSVec, DualVec, jacobian};
+use num_dual::{DualNum, DualSVec, DualSVec64, DualVec, jacobian};
 use std::f64::consts::{FRAC_PI_6, PI};
 
 const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
@@ -11,7 +11,7 @@ const MAX_ETA: f64 = 0.5;
 
 /// Optimized implementation of PC-SAFT for a binary mixture.
 #[derive(Clone, Copy)]
-pub struct PcSaftBinary<D, const N: usize>(([[D; N]; 2], D));
+pub struct PcSaftBinary<D, const N: usize>(pub ([[D; N]; 2], D));
 
 impl<D, const N: usize> PcSaftBinary<D, N> {
     pub fn new(parameters: [[D; N]; 2], kij: D) -> Self {
@@ -37,10 +37,27 @@ impl<D: DualNum<f64> + Copy, const N: usize> From<&[f64]> for PcSaftBinary<D, N>
     }
 }
 
-impl<const N: usize, const P: usize> ParametersAD<P> for PcSaftBinary<DualSVec<f64, f64, P>, N> {
-    fn index_parameters_mut<'a>(&'a mut self, index: &str) -> &'a mut DualSVec<f64, f64, P> {
+impl ParametersAD<2> for PcSaftBinary<f64, 4> {
+    type Eos<const P: usize> = PcSaftBinary<DualSVec64<P>, 4>;
+    fn index_parameters_mut<'a, const P: usize>(
+        eos: &'a mut Self::Eos<P>,
+        index: &str,
+    ) -> &'a mut DualSVec<f64, f64, P> {
         match index {
-            "k_ij" => &mut self.0.1,
+            "k_ij" => &mut eos.0.1,
+            _ => panic!("{index} is not a valid binary PC-SAFT parameter!"),
+        }
+    }
+}
+
+impl ParametersAD<2> for PcSaftBinary<f64, 8> {
+    type Eos<const P: usize> = PcSaftBinary<DualSVec64<P>, 8>;
+    fn index_parameters_mut<'a, const P: usize>(
+        eos: &'a mut Self::Eos<P>,
+        index: &str,
+    ) -> &'a mut DualSVec<f64, f64, P> {
+        match index {
+            "k_ij" => &mut eos.0.1,
             _ => panic!("{index} is not a valid binary PC-SAFT parameter!"),
         }
     }

@@ -42,13 +42,23 @@ pub enum Contributions {
 
 /// Initial values in a density iteration.
 #[derive(Clone, Copy)]
-pub enum DensityInitialization {
+pub enum DensityInitialization<D = Density> {
     /// Calculate a vapor phase by initializing using the ideal gas.
     Vapor,
     /// Calculate a liquid phase by using the `max_density`.
     Liquid,
     /// Use the given density as initial value.
-    InitialDensity(Density),
+    InitialDensity(D),
+}
+
+impl DensityInitialization {
+    pub fn into_reduced(self) -> DensityInitialization<f64> {
+        match self {
+            Self::Vapor => DensityInitialization::Vapor,
+            Self::Liquid => DensityInitialization::Liquid,
+            Self::InitialDensity(d) => DensityInitialization::InitialDensity(d.into_reduced()),
+        }
+    }
 }
 
 /// Thermodynamic state of the system in reduced variables
