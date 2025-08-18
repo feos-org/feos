@@ -21,7 +21,8 @@ where
     let pressure = pressure.into_reduced();
     let x = molefracs.map(|x| x.re());
     let density = if let Some(initial_density) = initial_density {
-        _density_iteration(&eos_f64, t.re(), pressure.re(), &x, initial_density)
+        let rho_init = initial_density.into_reduced();
+        _density_iteration(&eos_f64, t.re(), pressure.re(), &x, rho_init)
     } else {
         _density_iteration_stable(&eos_f64, t.re(), pressure.re(), &x)
     }?;
@@ -98,7 +99,7 @@ pub(crate) fn _density_iteration<E: Residual<N>, N: Dim>(
     temperature: f64,
     pressure: f64,
     molefracs: &OVector<f64, N>,
-    initial_density: DensityInitialization,
+    initial_density: DensityInitialization<f64>,
 ) -> FeosResult<f64>
 where
     DefaultAllocator: Allocator<N>,
@@ -107,7 +108,7 @@ where
     let initial_density = match initial_density {
         Vapor => pressure / temperature,
         Liquid => maxdensity,
-        InitialDensity(d) => d.into_reduced(),
+        InitialDensity(d) => d,
     };
     let (abstol, reltol) = (1e-12, 1e-14);
 

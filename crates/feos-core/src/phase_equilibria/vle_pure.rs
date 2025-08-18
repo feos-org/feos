@@ -67,8 +67,9 @@ where
 
         // Next try to initialize with an ideal gas assumption
         vle = vle.or_else(|| {
-            let vle = _init_pure_ideal_gas(&eos_f64, temperature.re());
-            iterate_pure_t(&eos_f64, t.re(), vle, options).ok()
+            _init_pure_ideal_gas(&eos_f64, temperature.re())
+                .and_then(|vle| iterate_pure_t(&eos_f64, t.re(), vle, options))
+                .ok()
         });
 
         // Finally use the spinodal to initialize the calculation
@@ -203,7 +204,7 @@ where
 fn _init_pure_ideal_gas<E: Residual<N>, N: Dim>(
     eos: &E,
     temperature: Temperature,
-) -> (f64, [f64; 2])
+) -> FeosResult<(f64, [f64; 2])>
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -214,7 +215,9 @@ where
     let p = t / v * (a_res / t - 1.0).exp();
     let rho_v = p / t;
     let rho_l = v.recip();
-    (p, [rho_v, rho_l])
+    let rho_v = _density_iteration(eos, t, p, &x, DensityInitialization::InitialDensity(rho_v))?;
+    let rho_l = _density_iteration(eos, t, p, &x, DensityInitialization::InitialDensity(rho_l))?;
+    Ok((p, [rho_v, rho_l]))
 }
 
 fn _init_pure_spinodal<E: Residual<N>, N: Dim>(

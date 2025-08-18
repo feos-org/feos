@@ -9,7 +9,6 @@
 //! use feos_core::parameter::{IdentifierOption};
 //! use feos_core::{Contributions, State};
 //! use quantity::KELVIN;
-//! use std::sync::Arc;
 //!
 //! // Read parameters from json file.
 //! let parameters = PcSaftParameters::from_json(
@@ -20,10 +19,10 @@
 //! )?;
 //!
 //! // Define equation of state.
-//! let saft = Arc::new(PcSaft::new(parameters));
+//! let saft = PcSaft::new(parameters);
 //!
 //! // Define thermodynamic conditions.
-//! let critical_point = State::critical_point(&saft, None, None, Default::default())?;
+//! let critical_point = State::critical_point(&&saft, None, None, Default::default())?;
 //!
 //! // Compute properties.
 //! let p = critical_point.pressure(Contributions::Total);

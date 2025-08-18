@@ -38,12 +38,11 @@ feos = { workspace = true }
 feos-core = { workspace = true, features = ["ndarray"] }
 feos-derive = { workspace = true }
 feos-dft = { workspace = true, optional = true }
-feos-ad = { workspace = true, optional = true }
 
 [features]
-default = ["pcsaft"]
+default = []
 dft = ["feos/dft", "feos-dft", "petgraph", "rayon"]
-pcsaft = ["feos/pcsaft", "feos-ad?/pcsaft"]
+pcsaft = ["feos/pcsaft"]
 epcsaft = ["feos/epcsaft"]
 gc_pcsaft = ["feos/gc_pcsaft"]
 uvtheory = ["feos/uvtheory"]
@@ -51,7 +50,7 @@ pets = ["feos/pets"]
 saftvrqmie = ["feos/saftvrqmie"]
 saftvrmie = ["feos/saftvrmie"]
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
-ad = ["feos-ad/parameter_fit"]
+ad = []
 all_models = [
     "dft",
     "pcsaft",
