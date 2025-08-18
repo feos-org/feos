@@ -7,10 +7,11 @@ use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
 use feos_core::{
-    Components, Contributions, FeosResult, ReferenceSystem, Residual, State, StateBuilder, StateHD,
+    Contributions, FeosResult, ReferenceSystem, Residual, State, StateBuilder, StateHD,
 };
+use nalgebra::{DVector, Dyn};
+use ndarray::prelude::*;
 use ndarray::{Axis as Axis_nd, RemoveAxis};
-use ndarray::{ScalarOperand, prelude::*};
 use num_dual::linalg::LU;
 use num_dual::{Dual64, DualNum};
 use quantity::{
@@ -18,7 +19,6 @@ use quantity::{
     Temperature, Volume,
 };
 use rustdct::DctNum;
-use std::sync::Arc;
 use typenum::Diff;
 
 const POTENTIAL_OFFSET: f64 = 2.0;
@@ -69,7 +69,7 @@ pub trait PoreSpecification<D: Dimension> {
     where
         D::Larger: Dimension<Smaller = D>,
     {
-        let bulk = StateBuilder::new(&Arc::new(Helium::new()))
+        let bulk = StateBuilder::new(&Helium)
             .temperature(298.0 * KELVIN)
             .density(Density::from_reduced(1.0))
             .build()?;
@@ -85,6 +85,7 @@ pub trait PoreSpecification<D: Dimension> {
 }
 
 /// Density profile and properties of a confined system in arbitrary dimensions.
+#[derive(Clone)]
 pub struct PoreProfile<D: Dimension, F> {
     pub profile: DFTProfile<D, F>,
     pub grand_potential: Option<Energy>,
@@ -93,16 +94,6 @@ pub struct PoreProfile<D: Dimension, F> {
 
 /// Density profile and properties of a 1D confined system.
 pub type PoreProfile1D<F> = PoreProfile<Ix1, F>;
-
-impl<D: Dimension, F> Clone for PoreProfile<D, F> {
-    fn clone(&self) -> Self {
-        Self {
-            profile: self.profile.clone(),
-            grand_potential: self.grand_potential,
-            interfacial_tension: self.interfacial_tension,
-        }
-    }
-}
 
 impl<D: Dimension + RemoveAxis + 'static, F: HelmholtzEnergyFunctional> PoreProfile<D, F>
 where
@@ -137,9 +128,9 @@ where
         self
     }
 
-    pub fn partial_molar_enthalpy_of_adsorption(&self) -> FeosResult<MolarEnergy<Array1<f64>>> {
+    pub fn partial_molar_enthalpy_of_adsorption(&self) -> FeosResult<MolarEnergy<DVector<f64>>> {
         let a = self.profile.dn_dmu()?;
-        let a_unit = a.get((0, 0));
+        let a_unit = a.get2(0, 0);
         let b = -self.profile.temperature * self.profile.dn_dt()?;
         let b_unit = b.get(0);
 
@@ -153,18 +144,15 @@ where
         .sum())
     }
 
-    fn _henry_coefficients<N: DualNum<f64> + Copy + ScalarOperand + DctNum>(
-        &self,
-        temperature: N,
-    ) -> Array1<N> {
+    fn _henry_coefficients<N: DualNum<f64> + Copy + DctNum>(&self, temperature: N) -> DVector<N> {
         if self.profile.dft.m().iter().any(|&m| m != 1.0) {
             panic!(
                 "Henry coefficients can only be calculated for spherical and heterosegmented molecules!"
             )
         };
-        let pot = self.profile.external_potential.mapv(N::from)
-            * self.profile.temperature.to_reduced()
-            / temperature;
+        let pot = (self.profile.external_potential.mapv(N::from)
+            * self.profile.temperature.to_reduced())
+        .mapv(|v| v / temperature);
         let exp_pot = pot.mapv(|v| (-v).exp());
         let functional_contributions = self.profile.dft.contributions();
         let weight_functions: Vec<WeightFunctionInfo<N>> = functional_contributions
@@ -180,18 +168,19 @@ where
         self.profile.integrate_reduced_segments(&(exp_pot * bonds))
     }
 
-    pub fn henry_coefficients(&self) -> HenryCoefficient<Array1<f64>> {
+    pub fn henry_coefficients(&self) -> HenryCoefficient<DVector<f64>> {
         let t = self.profile.temperature.to_reduced();
         Volume::from_reduced(self._henry_coefficients(t)) / (RGAS * self.profile.temperature)
     }
 
-    pub fn ideal_gas_enthalpy_of_adsorption(&self) -> MolarEnergy<Array1<f64>> {
+    pub fn ideal_gas_enthalpy_of_adsorption(&self) -> MolarEnergy<DVector<f64>> {
         let t = Dual64::from(self.profile.temperature.to_reduced()).derivative();
         let h_dual = self._henry_coefficients(t);
-        let h = h_dual.mapv(|h| h.re);
-        let dh = h_dual.mapv(|h| h.eps);
+        let h = h_dual.map(|h| h.re);
+        let dh = h_dual.map(|h| h.eps);
         let t = self.profile.temperature.to_reduced();
-        RGAS * self.profile.temperature * Dimensionless::from_reduced((&h - t * dh) / h)
+        RGAS * self.profile.temperature
+            * Dimensionless::from_reduced((&h - t * dh).component_div(&h))
     }
 }
 
@@ -305,36 +294,48 @@ fn external_potential_1d<P: FluidParameters>(
 const EPSILON_HE: f64 = 10.9;
 const SIGMA_HE: f64 = 2.64;
 
-#[derive(Clone)]
-struct Helium {
-    epsilon: Array1<f64>,
-    sigma: Array1<f64>,
-}
+#[derive(Clone, Copy)]
+struct Helium;
+//  {
+//     epsilon: Array1<f64>,
+//     sigma: Array1<f64>,
+// }
 
-impl Helium {
-    fn new() -> Self {
-        let epsilon = arr1(&[EPSILON_HE]);
-        let sigma = arr1(&[SIGMA_HE]);
-        Self { epsilon, sigma }
+// impl Helium {
+//     fn new() -> Self {
+//         let epsilon = arr1(&[EPSILON_HE]);
+//         let sigma = arr1(&[SIGMA_HE]);
+//         Self { epsilon, sigma }
+//     }
+// }
+
+// impl Components for Helium {
+//     fn components(&self) -> usize {
+//         1
+//     }
+
+//     fn subset(&self, _: &[usize]) -> Self {
+//         self.clone()
+//     }
+// }
+
+impl<D: DualNum<f64> + Copy> Residual<Dyn, D> for Helium {
+    type Real = Self;
+    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = Self;
+    fn re(&self) -> Self::Real {
+        *self
     }
-}
-
-impl Components for Helium {
+    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+        *self
+    }
     fn components(&self) -> usize {
         1
     }
-
-    fn subset(&self, _: &[usize]) -> Self {
-        self.clone()
-    }
-}
-
-impl Residual for Helium {
-    fn compute_max_density(&self, _: &Array1<f64>) -> f64 {
-        1.0
+    fn compute_max_density(&self, _: &DVector<D>) -> D {
+        D::from(1.0)
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+    fn reduced_helmholtz_energy_density_contributions(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
@@ -356,11 +357,11 @@ impl HelmholtzEnergyFunctional for Helium {
 
 impl FluidParameters for Helium {
     fn epsilon_k_ff(&self) -> Array1<f64> {
-        self.epsilon.clone()
+        arr1(&[EPSILON_HE])
     }
 
-    fn sigma_ff(&self) -> &Array1<f64> {
-        &self.sigma
+    fn sigma_ff(&self) -> Array1<f64> {
+        arr1(&[SIGMA_HE])
     }
 }
 

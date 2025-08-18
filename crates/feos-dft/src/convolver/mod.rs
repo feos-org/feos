@@ -2,7 +2,7 @@ use crate::geometry::{Axis, Geometry, Grid};
 use crate::weight_functions::*;
 use ndarray::linalg::Dot;
 use ndarray::prelude::*;
-use ndarray::{Axis as Axis_nd, RemoveAxis, ScalarOperand, Slice};
+use ndarray::{Axis as Axis_nd, RemoveAxis, Slice};
 use num_dual::*;
 use num_traits::Zero;
 use rustdct::DctNum;
@@ -128,7 +128,7 @@ pub struct ConvolverFFT<T, D: Dimension> {
 
 impl<T, D: Dimension + RemoveAxis + 'static> ConvolverFFT<T, D>
 where
-    T: DctNum + DualNum<f64> + ScalarOperand,
+    T: DctNum + DualNum<f64>,
     D::Larger: Dimension<Smaller = D>,
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
@@ -160,7 +160,7 @@ where
 
 impl<T, D: Dimension + 'static> ConvolverFFT<T, D>
 where
-    T: DctNum + DualNum<f64> + ScalarOperand,
+    T: DctNum + DualNum<f64>,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
@@ -279,7 +279,7 @@ where
 
 impl<T, D: Dimension> ConvolverFFT<T, D>
 where
-    T: DctNum + DualNum<f64> + ScalarOperand,
+    T: DctNum + DualNum<f64>,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
@@ -371,7 +371,7 @@ where
 
 impl<T, D: Dimension> Convolver<T, D> for ConvolverFFT<T, D>
 where
-    T: DctNum + ScalarOperand + DualNum<f64>,
+    T: DctNum + DualNum<f64>,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
@@ -556,7 +556,7 @@ struct CurvilinearConvolver<T, D> {
 
 impl<T, D: Dimension + RemoveAxis + 'static> CurvilinearConvolver<T, D>
 where
-    T: DctNum + ScalarOperand + DualNum<f64>,
+    T: DctNum + DualNum<f64>,
     D::Larger: Dimension<Smaller = D>,
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
@@ -577,7 +577,7 @@ where
 
 impl<T, D: Dimension + RemoveAxis> Convolver<T, D> for CurvilinearConvolver<T, D>
 where
-    T: DctNum + ScalarOperand + DualNum<f64>,
+    T: DctNum + DualNum<f64>,
     D::Smaller: Dimension<Larger = D>,
     D::Larger: Dimension<Smaller = D>,
 {

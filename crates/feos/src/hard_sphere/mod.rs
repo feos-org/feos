@@ -1,7 +1,7 @@
 //! Generic implementation of the hard-sphere contribution
 //! that can be used across models.
 use feos_core::StateHD;
-use ndarray::*;
+use nalgebra::DVector;
 use num_dual::DualNum;
 use std::borrow::Cow;
 use std::f64::consts::FRAC_PI_6;
@@ -17,11 +17,11 @@ pub enum MonomerShape<'a, D> {
     Spherical(usize),
     /// For non-spherical molecules in a homosegmented approach, the
     /// chain length parameter $m$.
-    NonSpherical(Array1<D>),
+    NonSpherical(DVector<D>),
     /// For non-spherical molecules in a heterosegmented approach,
     /// the geometry factors for every segment and the component
     /// index for every segment.
-    Heterosegmented([Array1<D>; 4], &'a Array1<usize>),
+    Heterosegmented([DVector<D>; 4], &'a DVector<usize>),
 }
 
 /// Properties of (generalized) hard sphere systems.
@@ -30,22 +30,22 @@ pub trait HardSphereProperties {
     fn monomer_shape<D: DualNum<f64> + Copy>(&self, temperature: D) -> MonomerShape<D>;
 
     /// The temperature dependent hard-sphere diameters of every segment.
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D>;
+    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D>;
 
     /// For every segment, the index of the component that it is on.
-    fn component_index(&self) -> Cow<Array1<usize>> {
+    fn component_index(&self) -> Cow<DVector<usize>> {
         match self.monomer_shape(1.0) {
-            MonomerShape::Spherical(n) => Cow::Owned(Array1::from_shape_fn(n, |i| i)),
-            MonomerShape::NonSpherical(m) => Cow::Owned(Array1::from_shape_fn(m.len(), |i| i)),
+            MonomerShape::Spherical(n) => Cow::Owned(DVector::from_fn(n, |i, _| i)),
+            MonomerShape::NonSpherical(m) => Cow::Owned(DVector::from_fn(m.len(), |i, _| i)),
             MonomerShape::Heterosegmented(_, component_index) => Cow::Borrowed(component_index),
         }
     }
 
     /// The geometry coefficients $C_{k,\alpha}$ for every segment.
-    fn geometry_coefficients<D: DualNum<f64> + Copy>(&self, temperature: D) -> [Array1<D>; 4] {
+    fn geometry_coefficients<D: DualNum<f64> + Copy>(&self, temperature: D) -> [DVector<D>; 4] {
         match self.monomer_shape(temperature) {
             MonomerShape::Spherical(n) => {
-                let m = Array1::ones(n);
+                let m = DVector::from_element(n, D::from(1.0));
                 [m.clone(), m.clone(), m.clone(), m]
             }
             MonomerShape::NonSpherical(m) => [m.clone(), m.clone(), m.clone(), m],
@@ -57,7 +57,7 @@ pub trait HardSphereProperties {
     fn zeta<D: DualNum<f64> + Copy, const N: usize>(
         &self,
         temperature: D,
-        partial_density: &Array1<D>,
+        partial_density: &DVector<D>,
         k: [i32; N],
     ) -> [D; N] {
         let component_index = self.component_index();
@@ -91,11 +91,14 @@ pub struct HardSphere;
 impl HardSphere {
     /// Returns the Helmholtz energy, packing fractions, and temperature dependent diameters without redundant calculations.
     #[inline]
-    pub fn helmholtz_energy_and_properties<D: DualNum<f64> + Copy, P: HardSphereProperties>(
+    pub fn helmholtz_energy_density_and_properties<
+        D: DualNum<f64> + Copy,
+        P: HardSphereProperties,
+    >(
         &self,
         parameters: &P,
         state: &StateHD<D>,
-    ) -> (D, [D; 4], Array1<D>) {
+    ) -> (D, [D; 4], DVector<D>) {
         let p = parameters;
         let diameter = p.hs_diameter(state.temperature);
 
@@ -113,19 +116,20 @@ impl HardSphere {
         let density = state.partial_density.sum();
         zeta.iter_mut().for_each(|z| *z *= density);
         let frac_1mz3 = -(zeta[3] - 1.0).recip();
-        let a = state.volume / std::f64::consts::FRAC_PI_6
-            * (zeta[1] * zeta[2] * frac_1mz3 * 3.0
-                + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
-                + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (zeta[3] * (-1.0)).ln_1p());
+        let a = (zeta[1] * zeta[2] * frac_1mz3 * 3.0
+            + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
+            + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (zeta[3] * (-1.0)).ln_1p())
+            / std::f64::consts::FRAC_PI_6;
         (a, zeta, diameter)
     }
 
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy, P: HardSphereProperties>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy, P: HardSphereProperties>(
         &self,
         parameters: &P,
         state: &StateHD<D>,
     ) -> D {
-        self.helmholtz_energy_and_properties(parameters, state).0
+        self.helmholtz_energy_density_and_properties(parameters, state)
+            .0
     }
 }

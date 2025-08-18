@@ -1,17 +1,16 @@
 use super::bubble_dew::TemperatureOrPressure;
 use super::{PhaseDiagram, PhaseEquilibrium};
-use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
-use crate::state::{Contributions, DensityInitialization, State, StateBuilder, TPSpec};
-use crate::{ReferenceSystem, SolverOptions};
-use ndarray::{arr1, arr2, concatenate, s, Array1, Array2, Axis};
-use num_dual::linalg::{norm, LU};
-use quantity::{Density, Moles, Pressure, Temperature, RGAS};
-use std::sync::Arc;
+use crate::state::{Contributions, DensityInitialization::Vapor, State, StateBuilder};
+use crate::{ReferenceSystem, Residual, SolverOptions, Subset};
+use nalgebra::{DVector, dvector, stack, vector};
+use ndarray::{Array1, s};
+use num_dual::linalg::LU;
+use quantity::{Density, Moles, Pressure, RGAS, Temperature};
 
 const DEFAULT_POINTS: usize = 51;
 
-impl<E: Residual> PhaseDiagram<E, 2> {
+impl<E: Residual + Subset> PhaseDiagram<E, 2> {
     /// Create a new binary phase diagram exhibiting a
     /// vapor/liquid equilibrium.
     ///
@@ -19,7 +18,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     /// phases are known, they can be passed as `x_lle` to avoid
     /// the calculation of unstable branches.
     pub fn binary_vle<TP: TemperatureOrPressure>(
-        eos: &Arc<E>,
+        eos: &E,
         temperature_or_pressure: TP,
         npoints: Option<usize>,
         x_lle: Option<(f64, f64)>,
@@ -50,10 +49,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         }
 
         // use dew point when calculating a supercritical tx diagram
-        let bubble = match temperature_or_pressure.into() {
-            TPSpec::Temperature(_) => true,
-            TPSpec::Pressure(_) => false,
-        };
+        let bubble = temperature_or_pressure.temperature().is_some();
 
         // look for supercritical components
         let (x_lim, vle_lim, bubble) = match vle_sat {
@@ -101,7 +97,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
     #[expect(clippy::type_complexity)]
     fn calculate_vlle<TP: TemperatureOrPressure>(
-        eos: &Arc<E>,
+        eos: &E,
         tp: TP,
         npoints: usize,
         x_lle: (f64, f64),
@@ -143,9 +139,9 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     /// liquid diagrams as well, as long as the feed composition is
     /// in a two phase region.
     pub fn lle<TP: TemperatureOrPressure>(
-        eos: &Arc<E>,
+        eos: &E,
         temperature_or_pressure: TP,
-        feed: &Moles<Array1<f64>>,
+        feed: &Moles<DVector<f64>>,
         min_tp: TP::Other,
         max_tp: TP::Other,
         npoints: Option<usize>,
@@ -176,8 +172,8 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 }
 
 #[expect(clippy::too_many_arguments)]
-fn iterate_vle<E: Residual, TP: TemperatureOrPressure>(
-    eos: &Arc<E>,
+fn iterate_vle<E: Residual + Subset, TP: TemperatureOrPressure>(
+    eos: &E,
     tp: TP,
     x_lim: &[f64],
     vle_0: PhaseEquilibrium<E, 2>,
@@ -203,8 +199,8 @@ fn iterate_vle<E: Residual, TP: TemperatureOrPressure>(
         let vle = PhaseEquilibrium::bubble_dew_point(
             eos,
             tp,
+            &dvector![*xi, 1.0 - xi],
             tp_old,
-            &arr1(&[*xi, 1.0 - xi]),
             y_old.as_ref(),
             bubble,
             bubble_dew_options,
@@ -237,7 +233,7 @@ pub struct PhaseDiagramHetero<E> {
     pub lle: Option<PhaseDiagram<E, 2>>,
 }
 
-impl<E: Residual> PhaseDiagram<E, 2> {
+impl<E: Residual + Subset> PhaseDiagram<E, 2> {
     /// Create a new binary phase diagram exhibiting a
     /// vapor/liquid/liquid equilibrium.
     ///
@@ -245,7 +241,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     /// of the heteroazeotrope.
     #[expect(clippy::too_many_arguments)]
     pub fn binary_vlle<TP: TemperatureOrPressure>(
-        eos: &Arc<E>,
+        eos: &E,
         temperature_or_pressure: TP,
         x_lle: (f64, f64),
         tp_lim_lle: Option<TP::Other>,
@@ -286,7 +282,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
             .map(|tp_lim| {
                 let tp_hetero = TP::from_state(vlle.vapor());
                 let x_feed = 0.5 * (x_hetero.0 + x_hetero.1);
-                let feed = Moles::from_reduced(arr1(&[x_feed, 1.0 - x_feed]));
+                let feed = Moles::from_reduced(dvector![x_feed, 1.0 - x_feed]);
                 PhaseDiagram::lle(
                     eos,
                     temperature_or_pressure,
@@ -306,7 +302,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     }
 }
 
-impl<E> PhaseDiagramHetero<E> {
+impl<E: Clone> PhaseDiagramHetero<E> {
     pub fn vle(&self) -> PhaseDiagram<E, 2> {
         PhaseDiagram::new(
             self.vle1
@@ -327,38 +323,42 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
     /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
     /// system and given temperature or pressure.
     pub fn heteroazeotrope<TP: TemperatureOrPressure>(
-        eos: &Arc<E>,
+        eos: &E,
         temperature_or_pressure: TP,
         x_init: (f64, f64),
         tp_init: Option<TP::Other>,
         options: SolverOptions,
         bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> FeosResult<Self> {
-        let tp_init = tp_init.map(|tp_init| temperature_or_pressure.temperature_pressure(tp_init));
-        match temperature_or_pressure.into() {
-            TPSpec::Temperature(t) => PhaseEquilibrium::heteroazeotrope_t(
+        let (temperature, pressure, iterate_p) =
+            temperature_or_pressure.temperature_pressure(tp_init);
+        // let tp_init = tp_init.map(|tp_init| temperature_or_pressure.temperature_pressure(tp_init));
+        if iterate_p {
+            PhaseEquilibrium::heteroazeotrope_t(
                 eos,
-                t,
+                temperature.unwrap(),
                 x_init,
-                tp_init.map(|tp| tp.1),
+                pressure,
                 options,
                 bubble_dew_options,
-            ),
-            TPSpec::Pressure(p) => PhaseEquilibrium::heteroazeotrope_p(
+            )
+        } else {
+            PhaseEquilibrium::heteroazeotrope_p(
                 eos,
-                p,
+                pressure.unwrap(),
                 x_init,
-                tp_init.map(|tp| tp.0),
+                temperature,
                 options,
                 bubble_dew_options,
-            ),
+            )
         }
     }
 
     /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
     /// system and given temperature.
+    #[expect(clippy::toplevel_ref_arg)]
     fn heteroazeotrope_t(
-        eos: &Arc<E>,
+        eos: &E,
         temperature: Temperature,
         x_init: (f64, f64),
         p_init: Option<Pressure>,
@@ -366,8 +366,8 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
         bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> FeosResult<Self> {
         // calculate initial values using bubble point
-        let x1 = arr1(&[x_init.0, 1.0 - x_init.0]);
-        let x2 = arr1(&[x_init.1, 1.0 - x_init.1]);
+        let x1 = dvector![x_init.0, 1.0 - x_init.0];
+        let x2 = dvector![x_init.1, 1.0 - x_init.1];
         let vle1 = PhaseEquilibrium::bubble_point(
             eos,
             temperature,
@@ -390,16 +390,22 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
             + vle2.vapor().pressure(Contributions::Total))
             * 0.5;
         let nv0 = (&vle1.vapor().moles + &vle2.vapor().moles) * 0.5;
-        let mut v = State::new_npt(eos, temperature, p0, &nv0, DensityInitialization::Vapor)?;
+        let mut v = State::new_npt(eos, temperature, p0, &nv0, Some(Vapor))?;
 
         for _ in 0..options.max_iter.unwrap_or(MAX_ITER_HETERO) {
             // calculate properties
             let dmu_drho_l1 = (l1.dmu_dni(Contributions::Total) * l1.volume).to_reduced();
             let dmu_drho_l2 = (l2.dmu_dni(Contributions::Total) * l2.volume).to_reduced();
             let dmu_drho_v = (v.dmu_dni(Contributions::Total) * v.volume).to_reduced();
-            let dp_drho_l1 = (l1.dp_dni(Contributions::Total) * l1.volume).to_reduced();
-            let dp_drho_l2 = (l2.dp_dni(Contributions::Total) * l2.volume).to_reduced();
-            let dp_drho_v = (v.dp_dni(Contributions::Total) * v.volume).to_reduced();
+            let dp_drho_l1 = (l1.dp_dni(Contributions::Total) * l1.volume)
+                .to_reduced()
+                .transpose();
+            let dp_drho_l2 = (l2.dp_dni(Contributions::Total) * l2.volume)
+                .to_reduced()
+                .transpose();
+            let dp_drho_v = (v.dp_dni(Contributions::Total) * v.volume)
+                .to_reduced()
+                .transpose();
             let mu_l1_res = l1.residual_chemical_potential().to_reduced();
             let mu_l2_res = l2.residual_chemical_potential().to_reduced();
             let mu_v_res = v.residual_chemical_potential().to_reduced();
@@ -409,50 +415,35 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
 
             // calculate residual
             let delta_l1v_mu_ig = (RGAS * v.temperature).to_reduced()
-                * (&l1.partial_density / &v.partial_density)
-                    .into_value()
-                    .mapv(f64::ln);
+                * (l1
+                    .partial_density
+                    .to_reduced()
+                    .component_div(&v.partial_density.to_reduced()))
+                .map(f64::ln);
             let delta_l2v_mu_ig = (RGAS * v.temperature).to_reduced()
-                * (&l2.partial_density / &v.partial_density)
-                    .into_value()
-                    .mapv(f64::ln);
-            let res = concatenate![
-                Axis(0),
-                mu_l1_res - &mu_v_res + delta_l1v_mu_ig,
-                mu_l2_res - &mu_v_res + delta_l2v_mu_ig,
-                arr1(&[p_l1 - p_v]),
-                arr1(&[p_l2 - p_v])
+                * (l2
+                    .partial_density
+                    .to_reduced()
+                    .component_div(&v.partial_density.to_reduced()))
+                .map(f64::ln);
+            let res = stack![
+                mu_l1_res - &mu_v_res + delta_l1v_mu_ig;
+                mu_l2_res - &mu_v_res + delta_l2v_mu_ig;
+                vector![p_l1 - p_v];
+                vector![p_l2 - p_v]
             ];
 
             // check for convergence
-            if norm(&res) < options.tol.unwrap_or(TOL_HETERO) {
+            if res.norm() < options.tol.unwrap_or(TOL_HETERO) {
                 return Ok(Self([v, l1, l2]));
             }
 
             // calculate Jacobian
-            let jacobian = concatenate![
-                Axis(1),
-                concatenate![
-                    Axis(0),
-                    dmu_drho_l1,
-                    Array2::zeros((2, 2)),
-                    dp_drho_l1.insert_axis(Axis(0)),
-                    Array2::zeros((1, 2))
-                ],
-                concatenate![
-                    Axis(0),
-                    Array2::zeros((2, 2)),
-                    dmu_drho_l2,
-                    Array2::zeros((1, 2)),
-                    dp_drho_l2.insert_axis(Axis(0))
-                ],
-                concatenate![
-                    Axis(0),
-                    -&dmu_drho_v,
-                    -dmu_drho_v,
-                    -dp_drho_v.clone().insert_axis(Axis(0)),
-                    -dp_drho_v.insert_axis(Axis(0))
-                ]
+            let jacobian = stack![
+                    dmu_drho_l1, 0, 0;
+                    0, dmu_drho_l2, -dmu_drho_v;
+                    dp_drho_l1, 0, -&dp_drho_v;
+                    0, dp_drho_l2, -dp_drho_v
             ];
 
             // calculate Newton step
@@ -460,10 +451,11 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
 
             // apply Newton step
             let rho_l1 =
-                &l1.partial_density - &Density::from_reduced(dx.slice(s![0..2]).to_owned());
+                &l1.partial_density - &Density::from_reduced(dx.rows_range(0..2).into_owned());
             let rho_l2 =
-                &l2.partial_density - &Density::from_reduced(dx.slice(s![2..4]).to_owned());
-            let rho_v = &v.partial_density - &Density::from_reduced(dx.slice(s![4..6]).to_owned());
+                &l2.partial_density - &Density::from_reduced(dx.rows_range(2..4).into_owned());
+            let rho_v =
+                &v.partial_density - &Density::from_reduced(dx.rows_range(4..6).into_owned());
 
             // check for negative densities
             for i in 0..2 {
@@ -498,8 +490,9 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
 
     /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
     /// system and given pressure.
+    #[expect(clippy::toplevel_ref_arg)]
     fn heteroazeotrope_p(
-        eos: &Arc<E>,
+        eos: &E,
         pressure: Pressure,
         x_init: (f64, f64),
         t_init: Option<Temperature>,
@@ -509,8 +502,8 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
         let p = pressure.to_reduced();
 
         // calculate initial values using bubble point
-        let x1 = arr1(&[x_init.0, 1.0 - x_init.0]);
-        let x2 = arr1(&[x_init.1, 1.0 - x_init.1]);
+        let x1 = dvector![x_init.0, 1.0 - x_init.0];
+        let x2 = dvector![x_init.1, 1.0 - x_init.1];
         let vle1 =
             PhaseEquilibrium::bubble_point(eos, pressure, &x1, t_init, None, bubble_dew_options)?;
         let vle2 =
@@ -519,7 +512,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
         let mut l2 = vle2.liquid().clone();
         let t0 = (vle1.vapor().temperature + vle2.vapor().temperature) * 0.5;
         let nv0 = (&vle1.vapor().moles + &vle2.vapor().moles) * 0.5;
-        let mut v = State::new_npt(eos, t0, pressure, &nv0, DensityInitialization::Vapor)?;
+        let mut v = State::new_npt(eos, t0, pressure, &nv0, Some(Vapor))?;
 
         for _ in 0..options.max_iter.unwrap_or(MAX_ITER_HETERO) {
             // calculate properties
@@ -529,9 +522,15 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
             let dmu_res_dt_l1 = (l1.dmu_res_dt()).to_reduced();
             let dmu_res_dt_l2 = (l2.dmu_res_dt()).to_reduced();
             let dmu_res_dt_v = (v.dmu_res_dt()).to_reduced();
-            let dp_drho_l1 = (l1.dp_dni(Contributions::Total) * l1.volume).to_reduced();
-            let dp_drho_l2 = (l2.dp_dni(Contributions::Total) * l2.volume).to_reduced();
-            let dp_drho_v = (v.dp_dni(Contributions::Total) * v.volume).to_reduced();
+            let dp_drho_l1 = (l1.dp_dni(Contributions::Total) * l1.volume)
+                .to_reduced()
+                .transpose();
+            let dp_drho_l2 = (l2.dp_dni(Contributions::Total) * l2.volume)
+                .to_reduced()
+                .transpose();
+            let dp_drho_v = (v.dp_dni(Contributions::Total) * v.volume)
+                .to_reduced()
+                .transpose();
             let dp_dt_l1 = (l1.dp_dt(Contributions::Total)).to_reduced();
             let dp_dt_l2 = (l2.dp_dt(Contributions::Total)).to_reduced();
             let dp_dt_v = (v.dp_dt(Contributions::Total)).to_reduced();
@@ -543,72 +542,48 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
             let p_v = v.pressure(Contributions::Total).to_reduced();
 
             // calculate residual
-            let delta_l1v_dmu_ig_dt = (&l1.partial_density / &v.partial_density)
-                .into_value()
-                .mapv(f64::ln);
-            let delta_l2v_dmu_ig_dt = (&l2.partial_density / &v.partial_density)
-                .into_value()
-                .mapv(f64::ln);
+            let delta_l1v_dmu_ig_dt = l1
+                .partial_density
+                .to_reduced()
+                .component_div(&v.partial_density.to_reduced())
+                .map(f64::ln);
+            let delta_l2v_dmu_ig_dt = l2
+                .partial_density
+                .to_reduced()
+                .component_div(&v.partial_density.to_reduced())
+                .map(f64::ln);
             let delta_l1v_mu_ig = (RGAS * v.temperature).to_reduced() * &delta_l1v_dmu_ig_dt;
             let delta_l2v_mu_ig = (RGAS * v.temperature).to_reduced() * &delta_l2v_dmu_ig_dt;
-            let res = concatenate![
-                Axis(0),
-                mu_l1_res - &mu_v_res + delta_l1v_mu_ig,
-                mu_l2_res - &mu_v_res + delta_l2v_mu_ig,
-                arr1(&[p_l1 - p]),
-                arr1(&[p_l2 - p]),
-                arr1(&[p_v - p])
+            let res = stack![
+                mu_l1_res - &mu_v_res + delta_l1v_mu_ig;
+                mu_l2_res - &mu_v_res + delta_l2v_mu_ig;
+                vector![p_l1 - p];
+                vector![p_l2 - p];
+                vector![p_v - p]
             ];
 
             // check for convergence
-            if norm(&res) < options.tol.unwrap_or(TOL_HETERO) {
+            if res.norm() < options.tol.unwrap_or(TOL_HETERO) {
                 return Ok(Self([v, l1, l2]));
             }
 
-            // calculate Jacobian
-            let jacobian = concatenate![
-                Axis(1),
-                concatenate![
-                    Axis(0),
-                    dmu_drho_l1,
-                    Array2::zeros((2, 2)),
-                    dp_drho_l1.insert_axis(Axis(0)),
-                    Array2::zeros((1, 2)),
-                    Array2::zeros((1, 2))
-                ],
-                concatenate![
-                    Axis(0),
-                    Array2::zeros((2, 2)),
-                    dmu_drho_l2,
-                    Array2::zeros((1, 2)),
-                    dp_drho_l2.insert_axis(Axis(0)),
-                    Array2::zeros((1, 2))
-                ],
-                concatenate![
-                    Axis(0),
-                    -&dmu_drho_v,
-                    -dmu_drho_v,
-                    Array2::zeros((1, 2)),
-                    Array2::zeros((1, 2)),
-                    dp_drho_v.insert_axis(Axis(0))
-                ],
-                concatenate![
-                    Axis(0),
-                    (dmu_res_dt_l1 - &dmu_res_dt_v + delta_l1v_dmu_ig_dt).insert_axis(Axis(1)),
-                    (dmu_res_dt_l2 - &dmu_res_dt_v + delta_l2v_dmu_ig_dt).insert_axis(Axis(1)),
-                    arr2(&[[dp_dt_l1]]),
-                    arr2(&[[dp_dt_l2]]),
-                    arr2(&[[dp_dt_v]])
-                ]
+            let jacobian = stack![
+                dmu_drho_l1, 0, -&dmu_drho_v, dmu_res_dt_l1 - &dmu_res_dt_v + delta_l1v_dmu_ig_dt;
+                0, dmu_drho_l2, -dmu_drho_v, dmu_res_dt_l2 - &dmu_res_dt_v + delta_l2v_dmu_ig_dt;
+                dp_drho_l1, 0, 0, vector![dp_dt_l1];
+                0, dp_drho_l2, 0, vector![dp_dt_l2];
+                0, 0, dp_drho_v, vector![dp_dt_v]
             ];
 
             // calculate Newton step
             let dx = LU::new(jacobian)?.solve(&res);
 
             // apply Newton step
-            let rho_l1 = l1.partial_density - Density::from_reduced(dx.slice(s![0..2]).to_owned());
-            let rho_l2 = l2.partial_density - Density::from_reduced(dx.slice(s![2..4]).to_owned());
-            let rho_v = v.partial_density - Density::from_reduced(dx.slice(s![4..6]).to_owned());
+            let rho_l1 =
+                l1.partial_density - Density::from_reduced(dx.rows_range(0..2).into_owned());
+            let rho_l2 =
+                l2.partial_density - Density::from_reduced(dx.rows_range(2..4).into_owned());
+            let rho_v = v.partial_density - Density::from_reduced(dx.rows_range(4..6).into_owned());
             let t = v.temperature - Temperature::from_reduced(dx[6]);
 
             // check for negative densities and temperatures

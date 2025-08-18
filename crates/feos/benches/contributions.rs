@@ -5,14 +5,16 @@
 //! It is supposed to demonstrate the expected reduction in
 //! performance when more complex physical interactions are
 //! modeled.
+use ::num_dual::Dual64;
 use criterion::{Criterion, criterion_group, criterion_main};
 use feos::core::parameter::IdentifierOption;
-use feos::core::{DensityInitialization, Derivative, Residual, State};
+use feos::core::{DensityInitialization, Residual, State};
 use feos::pcsaft::{PcSaft, PcSaftAssociationRecord, PcSaftParameters, PcSaftRecord};
+use feos_core::ReferenceSystem;
 use feos_core::parameter::PureRecord;
-use ndarray::arr1;
+use nalgebra::dvector;
+use num_dual::Dual;
 use quantity::*;
-use std::sync::Arc;
 
 type Pure = PureRecord<PcSaftRecord, PcSaftAssociationRecord>;
 
@@ -62,18 +64,24 @@ fn pcsaft(c: &mut Criterion) {
 
     let t = 300.0 * KELVIN;
     let p = BAR;
-    let moles = arr1(&[1.0, 1.0]) * MOL;
+    let moles = dvector![1.0, 1.0] * MOL;
     for comp1 in &[hexane, acetone, co2, ethanol] {
         for comp2 in [&heptane, &dme, &acetylene, &propanol] {
             let params =
                 PcSaftParameters::new_binary([comp1.clone(), comp2.clone()], None, vec![]).unwrap();
-            let eos = Arc::new(PcSaft::new(params));
-            let state = State::new_npt(&eos, t, p, &moles, DensityInitialization::Liquid).unwrap();
-            let state_hd = state.derive1(Derivative::DT);
+            let eos = PcSaft::new(params);
+            let state =
+                State::new_npt(&&eos, t, p, &moles, Some(DensityInitialization::Liquid)).unwrap();
+            let temperature = Dual64::from(state.temperature.into_reduced()).derivative();
+            let molar_volume = Dual::from(1.0 / state.density.into_reduced());
+            let moles = state.moles.to_reduced().map(Dual::from);
+            // let state_hd = state.derive1(Derivative::DT);
             let name1 = comp1.identifier.name.as_deref().unwrap();
             let name2 = comp2.identifier.name.as_deref().unwrap();
             let mix = format!("{name1}_{name2}");
-            group.bench_function(mix, |b| b.iter(|| eos.residual_helmholtz_energy(&state_hd)));
+            group.bench_function(mix, |b| {
+                b.iter(|| (&eos).residual_helmholtz_energy(temperature, molar_volume, &moles))
+            });
         }
     }
 }

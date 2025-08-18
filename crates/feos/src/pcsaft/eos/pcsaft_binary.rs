@@ -1,10 +1,13 @@
-use super::{A0, A1, A2, AD, B0, B1, B2, BD, CD, MAX_ETA};
+use super::dispersion::{A0, A1, A2, B0, B1, B2};
+use super::polar::{AD, BD, CD};
 use feos_core::{ParametersAD, ResidualConst, StateHD};
 use nalgebra::{SVector, U2};
 use num_dual::{DualNum, DualSVec, DualVec, jacobian};
 use std::f64::consts::{FRAC_PI_6, PI};
 
 const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
+
+const MAX_ETA: f64 = 0.5;
 
 /// Optimized implementation of PC-SAFT for a binary mixture.
 #[derive(Clone, Copy)]
@@ -462,11 +465,40 @@ impl<D: DualNum<f64> + Copy> ResidualConst<2, D> for PcSaftBinary<D, 8> {
 
 #[cfg(test)]
 pub mod test {
-    use crate::eos::pcsaft::test::pcsaft_binary;
+    use super::PcSaftBinary;
+    use crate::pcsaft::{
+        PcSaft, PcSaftAssociationRecord, PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord,
+    };
     use approx::assert_relative_eq;
+    use feos_core::parameter::{AssociationRecord, PureRecord};
     use feos_core::{Contributions::Total, FeosResult, State};
     use nalgebra::{dvector, vector};
     use quantity::{KELVIN, KILO, METER, MOL};
+
+    pub fn pcsaft_binary() -> FeosResult<(PcSaftBinary<f64, 8>, PcSaft)> {
+        let params = [
+            [1.5, 3.4, 180.0, 2.2, 0.03, 2500., 2.0, 1.0],
+            [2.5, 3.6, 250.0, 1.2, 0.015, 1500., 1.0, 2.0],
+        ];
+        let kij = 0.15;
+        let records = params.map(|p| {
+            PureRecord::with_association(
+                Default::default(),
+                0.0,
+                PcSaftRecord::new(p[0], p[1], p[2], p[3], 0.0, None, None, None),
+                vec![AssociationRecord::new(
+                    Some(PcSaftAssociationRecord::new(p[4], p[5])),
+                    p[6],
+                    p[7],
+                    0.0,
+                )],
+            )
+        });
+        let params_feos =
+            PcSaftParameters::new_binary(records, Some(PcSaftBinaryRecord::new(kij)), vec![])?;
+        let eos = PcSaft::new(params_feos);
+        Ok((PcSaftBinary::new(params, kij), eos))
+    }
 
     #[test]
     fn test_pcsaft_binary() -> FeosResult<()> {
@@ -476,7 +508,7 @@ pub mod test {
         let volume = 2.3 * METER * METER * METER;
         let moles = dvector![1.3, 2.5] * KILO * MOL;
 
-        let state = State::new_nvt(&eos, temperature, volume, &moles)?;
+        let state = State::new_nvt(&&eos, temperature, volume, &moles)?;
         let a_feos = state.residual_molar_helmholtz_energy();
         let mu_feos = state.residual_chemical_potential();
         let p_feos = state.pressure(Total);

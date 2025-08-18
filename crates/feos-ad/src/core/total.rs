@@ -1,7 +1,9 @@
+use std::ops::Deref;
+
 use super::{ParametersAD, ResidualHelmholtzEnergy};
 use nalgebra::SVector;
 use num_dual::{
-    first_derivative, gradient, hessian, second_derivative, Dual, Dual2, Dual2Vec, DualNum, DualVec,
+    Dual, Dual2, Dual2Vec, DualNum, DualVec, first_derivative, gradient, hessian, second_derivative,
 };
 
 /// Implementation of an ideal gas Helmholtz energy contribution.
@@ -17,29 +19,32 @@ pub trait IdealGasAD: ParametersAD {
 }
 
 /// An equation of state consisting of a residual model and an ideal gas model.
-pub struct EquationOfStateAD<I, R, const N: usize> {
-    ideal_gas: [I; N],
-    residual: R,
+pub struct EquationOfStateAD<I: ParametersAD, R: ParametersAD, const N: usize>(
+    ([I::Parameters<f64>; N], R::Parameters<f64>),
+);
+
+impl<I: ParametersAD, R: ParametersAD, const N: usize> Deref for EquationOfStateAD<I, R, N> {
+    type Target = ([I::Parameters<f64>; N], R::Parameters<f64>);
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
-impl<I, R, const N: usize> EquationOfStateAD<I, R, N> {
+impl<I: ParametersAD, R: ParametersAD, const N: usize> EquationOfStateAD<I, R, N> {
     pub fn new(ideal_gas: [I; N], residual: R) -> Self {
-        Self {
-            ideal_gas,
-            residual,
-        }
+        let parameters = (
+            ideal_gas
+                .each_ref()
+                .map(|i| (i as &I::Parameters<f64>).clone()),
+            (&residual as &R::Parameters<f64>).clone(),
+        );
+        Self(parameters)
     }
 }
 
 impl<I: ParametersAD, R: ParametersAD, const N: usize> ParametersAD for EquationOfStateAD<I, R, N> {
     type Parameters<D: DualNum<f64> + Copy> = ([I::Parameters<D>; N], R::Parameters<D>);
-
-    fn params<D: DualNum<f64> + Copy>(&self) -> Self::Parameters<D> {
-        (
-            self.ideal_gas.each_ref().map(I::params),
-            self.residual.params(),
-        )
-    }
 
     fn params_from_inner<D: DualNum<f64> + Copy, D2: DualNum<f64, Inner = D> + Copy>(
         (ideal_gas, residual): &([I::Parameters<D>; N], R::Parameters<D>),
@@ -56,8 +61,11 @@ impl<I: ParametersAD, R: ResidualHelmholtzEnergy<N>, const N: usize> ResidualHel
 {
     const RESIDUAL: &str = R::RESIDUAL;
 
-    fn compute_max_density(&self, molefracs: &SVector<f64, N>) -> f64 {
-        self.residual.compute_max_density(molefracs)
+    fn compute_max_density<D: DualNum<f64> + Copy>(
+        (_, residual): &Self::Parameters<D>,
+        molefracs: &SVector<D, N>,
+    ) -> D {
+        R::compute_max_density(residual, molefracs)
     }
 
     fn residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
