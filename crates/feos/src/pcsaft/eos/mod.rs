@@ -2,21 +2,21 @@ use super::parameters::{PcSaftAssociationRecord, PcSaftParameters, PcSaftPars};
 use crate::association::{Association, AssociationStrength};
 use crate::hard_sphere::{HardSphere, HardSphereProperties, MonomerShape};
 use crate::pcsaft::PcSaftRecord;
-use feos_core::{
-    Components, EntropyScaling, FeosError, FeosResult, Molarweight, ReferenceSystem, Residual,
-    StateHD,
-};
-use ndarray::Array1;
-use num_dual::{Dual64, DualNum};
+use feos_core::{Molarweight, ResidualDyn, StateHD, Subset};
+use nalgebra::DVector;
+use num_dual::DualNum;
 use quantity::*;
-use std::f64::consts::{FRAC_PI_6, PI};
-use typenum::P2;
+use std::f64::consts::FRAC_PI_6;
 
 pub(crate) mod dispersion;
 pub(crate) mod hard_chain;
+mod pcsaft_binary;
+mod pcsaft_pure;
 pub(crate) mod polar;
 use dispersion::Dispersion;
 use hard_chain::HardChain;
+pub use pcsaft_binary::PcSaftBinary;
+pub use pcsaft_pure::PcSaftPure;
 pub use polar::DQVariants;
 use polar::{Dipole, DipoleQuadrupole, Quadrupole};
 
@@ -85,23 +85,20 @@ impl PcSaft {
     }
 }
 
-impl Components for PcSaft {
+impl ResidualDyn for PcSaft {
     fn components(&self) -> usize {
         self.parameters.pure.len()
     }
 
-    fn subset(&self, component_list: &[usize]) -> Self {
-        Self::with_options(self.parameters.subset(component_list), self.options)
-    }
-}
-
-impl Residual for PcSaft {
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * &self.params.m * self.params.sigma.mapv(|v| v.powi(3)) * moles).sum()
+    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+        let msigma3 = self
+            .params
+            .m
+            .component_mul(&self.params.sigma.map(|v| v.powi(3)));
+        (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
@@ -110,60 +107,75 @@ impl Residual for PcSaft {
 
         v.push((
             "Hard Sphere".to_string(),
-            HardSphere.helmholtz_energy(&self.params, state),
+            HardSphere.helmholtz_energy_density(&self.params, state),
         ));
         if self.hard_chain {
             v.push((
                 "Hard Chain".to_string(),
-                HardChain.helmholtz_energy(&self.params, state),
+                HardChain.helmholtz_energy_density(&self.params, state),
             ))
         }
         v.push((
             "Dispersion".to_string(),
-            Dispersion.helmholtz_energy(&self.params, state, &d),
+            Dispersion.helmholtz_energy_density(&self.params, state),
         ));
         if self.dipole {
             v.push((
                 "Dipole".to_string(),
-                Dipole.helmholtz_energy(&self.params, state, &d),
+                Dipole.helmholtz_energy_density(&self.params, state),
             ))
         }
         if self.quadrupole {
             v.push((
                 "Quadrupole".to_string(),
-                Quadrupole.helmholtz_energy(&self.params, state, &d),
+                Quadrupole.helmholtz_energy_density(&self.params, state),
             ))
         }
         if self.dipole_quadrupole {
             v.push((
                 "DipoleQuadrupole".to_string(),
-                DipoleQuadrupole.helmholtz_energy(&self.params, state, &d, self.options.dq_variant),
+                DipoleQuadrupole.helmholtz_energy_density(
+                    &self.params,
+                    state,
+                    self.options.dq_variant,
+                ),
             ))
         }
         if let Some(association) = self.association.as_ref() {
             v.push((
                 "Association".to_string(),
-                association.helmholtz_energy(&self.params, &self.parameters.association, state, &d),
+                association.helmholtz_energy_density(
+                    &self.params,
+                    &self.parameters.association,
+                    state,
+                    &d,
+                ),
             ))
         }
         v
     }
 }
 
+impl Subset for PcSaft {
+    fn subset(&self, component_list: &[usize]) -> Self {
+        Self::with_options(self.parameters.subset(component_list), self.options)
+    }
+}
+
 impl Molarweight for PcSaft {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+    fn molar_weight(&self) -> MolarWeight<DVector<f64>> {
         self.parameters.molar_weight.clone()
     }
 }
 
 impl HardSphereProperties for PcSaftPars {
     fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
-        MonomerShape::NonSpherical(self.m.mapv(N::from))
+        MonomerShape::NonSpherical(self.m.map(N::from))
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
         let ti = temperature.recip() * -3.0;
-        Array1::from_shape_fn(self.sigma.len(), |i| {
+        DVector::from_fn(self.sigma.len(), |i, _| {
             -((ti * self.epsilon_k[i]).exp() * 0.12 - 1.0) * self.sigma[i]
         })
     }
@@ -202,188 +214,188 @@ impl AssociationStrength for PcSaftPars {
     }
 }
 
-fn omega11(t: f64) -> f64 {
-    1.06036 * t.powf(-0.15610)
-        + 0.19300 * (-0.47635 * t).exp()
-        + 1.03587 * (-1.52996 * t).exp()
-        + 1.76474 * (-3.89411 * t).exp()
-}
+// fn omega11(t: f64) -> f64 {
+//     1.06036 * t.powf(-0.15610)
+//         + 0.19300 * (-0.47635 * t).exp()
+//         + 1.03587 * (-1.52996 * t).exp()
+//         + 1.76474 * (-3.89411 * t).exp()
+// }
 
-fn omega22(t: f64) -> f64 {
-    1.16145 * t.powf(-0.14874) + 0.52487 * (-0.77320 * t).exp() + 2.16178 * (-2.43787 * t).exp()
-        - 6.435e-4 * t.powf(0.14874) * (18.0323 * t.powf(-0.76830) - 7.27371).sin()
-}
+// fn omega22(t: f64) -> f64 {
+//     1.16145 * t.powf(-0.14874) + 0.52487 * (-0.77320 * t).exp() + 2.16178 * (-2.43787 * t).exp()
+//         - 6.435e-4 * t.powf(0.14874) * (18.0323 * t.powf(-0.76830) - 7.27371).sin()
+// }
 
-#[inline]
-fn chapman_enskog_thermal_conductivity(
-    temperature: Temperature,
-    molarweight: MolarWeight,
-    m: f64,
-    sigma: f64,
-    epsilon_k: f64,
-) -> ThermalConductivity {
-    let t = temperature.to_reduced();
-    0.083235 * (t * m / molarweight.convert_to(GRAM / MOL)).sqrt()
-        / sigma.powi(2)
-        / omega22(t / epsilon_k)
-        * WATT
-        / METER
-        / KELVIN
-}
+// #[inline]
+// fn chapman_enskog_thermal_conductivity(
+//     temperature: Temperature,
+//     molarweight: MolarWeight,
+//     m: f64,
+//     sigma: f64,
+//     epsilon_k: f64,
+// ) -> ThermalConductivity {
+//     let t = temperature.to_reduced();
+//     0.083235 * (t * m / molarweight.convert_to(GRAM / MOL)).sqrt()
+//         / sigma.powi(2)
+//         / omega22(t / epsilon_k)
+//         * WATT
+//         / METER
+//         / KELVIN
+// }
 
-impl EntropyScaling for PcSaft {
-    fn viscosity_reference(
-        &self,
-        temperature: Temperature,
-        _: Volume,
-        moles: &Moles<Array1<f64>>,
-    ) -> FeosResult<Viscosity> {
-        let p = &self.params;
-        let mw = &self.parameters.molar_weight;
-        let x = (moles / moles.sum()).into_value();
-        let ce: Array1<_> = (0..self.components())
-            .map(|i| {
-                let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
-                5.0 / 16.0 * (mw.get(i) * KB / NAV * temperature / PI).sqrt()
-                    / omega22(tr)
-                    / (p.sigma[i] * ANGSTROM).powi::<P2>()
-            })
-            .collect();
-        let mut ce_mix = 0.0 * MILLI * PASCAL * SECOND;
-        for i in 0..self.components() {
-            let denom: f64 = (0..self.components())
-                .map(|j| {
-                    x[j] * (1.0
-                        + (ce[i] / ce[j]).into_value().sqrt()
-                            * (mw.get(j) / mw.get(i)).powf(1.0 / 4.0))
-                    .powi(2)
-                        / (8.0 * (1.0 + (mw.get(i) / mw.get(j)).into_value())).sqrt()
-                })
-                .sum();
-            ce_mix += ce[i] * x[i] / denom
-        }
-        Ok(ce_mix)
-    }
+// impl EntropyScaling for PcSaft {
+//     fn viscosity_reference(
+//         &self,
+//         temperature: Temperature,
+//         _: Volume,
+//         moles: &Moles<DVector<f64>>,
+//     ) -> FeosResult<Viscosity> {
+//         let p = &self.params;
+//         let mw = &self.parameters.molar_weight;
+//         let x = (moles / moles.sum()).into_value();
+//         let ce: Vec<_> = (0..self.components())
+//             .map(|i| {
+//                 let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
+//                 5.0 / 16.0 * (mw.get(i) * KB / NAV * temperature / PI).sqrt()
+//                     / omega22(tr)
+//                     / (p.sigma[i] * ANGSTROM).powi::<P2>()
+//             })
+//             .collect();
+//         let mut ce_mix = 0.0 * MILLI * PASCAL * SECOND;
+//         for i in 0..self.components() {
+//             let denom: f64 = (0..self.components())
+//                 .map(|j| {
+//                     x[j] * (1.0
+//                         + (ce[i] / ce[j]).into_value().sqrt()
+//                             * (mw.get(j) / mw.get(i)).powf(1.0 / 4.0))
+//                     .powi(2)
+//                         / (8.0 * (1.0 + (mw.get(i) / mw.get(j)).into_value())).sqrt()
+//                 })
+//                 .sum();
+//             ce_mix += ce[i] * x[i] / denom
+//         }
+//         Ok(ce_mix)
+//     }
 
-    fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
-        let coefficients = self
-            .params
-            .viscosity
-            .as_ref()
-            .expect("Missing viscosity coefficients.");
-        let m = (x * &self.params.m).sum();
-        let s = s_res / m;
-        let pref = (x * &self.params.m) / m;
-        let a: f64 = (&coefficients.row(0) * x).sum();
-        let b: f64 = (&coefficients.row(1) * &pref).sum();
-        let c: f64 = (&coefficients.row(2) * &pref).sum();
-        let d: f64 = (&coefficients.row(3) * &pref).sum();
-        Ok(a + b * s + c * s.powi(2) + d * s.powi(3))
-    }
+//     fn viscosity_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64> {
+//         let coefficients = self
+//             .params
+//             .viscosity
+//             .as_ref()
+//             .expect("Missing viscosity coefficients.");
+//         let m = (x * &self.params.m).sum();
+//         let s = s_res / m;
+//         let pref = (x * &self.params.m) / m;
+//         let a: f64 = (&coefficients.row(0) * x).sum();
+//         let b: f64 = (&coefficients.row(1) * &pref).sum();
+//         let c: f64 = (&coefficients.row(2) * &pref).sum();
+//         let d: f64 = (&coefficients.row(3) * &pref).sum();
+//         Ok(a + b * s + c * s.powi(2) + d * s.powi(3))
+//     }
 
-    fn diffusion_reference(
-        &self,
-        temperature: Temperature,
-        volume: Volume,
-        moles: &Moles<Array1<f64>>,
-    ) -> FeosResult<Diffusivity> {
-        if self.components() != 1 {
-            return Err(FeosError::IncompatibleComponents(self.components(), 1));
-        }
-        let p = &self.params;
-        let mw = &self.parameters.molar_weight;
-        let density = moles.sum() / volume;
-        let res: Array1<_> = (0..self.components())
-            .map(|i| {
-                let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
-                3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi::<P2>() / omega11(tr) / (density * NAV)
-                    * (temperature * RGAS / PI / mw.get(i) / p.m[i]).sqrt()
-            })
-            .collect();
-        Ok(res[0])
-    }
+//     fn diffusion_reference(
+//         &self,
+//         temperature: Temperature,
+//         volume: Volume,
+//         moles: &Moles<DVector<f64>>,
+//     ) -> FeosResult<Diffusivity> {
+//         if self.components() != 1 {
+//             return Err(FeosError::IncompatibleComponents(self.components(), 1));
+//         }
+//         let p = &self.params;
+//         let mw = &self.parameters.molar_weight;
+//         let density = moles.sum() / volume;
+//         let res: Vec<_> = (0..self.components())
+//             .map(|i| {
+//                 let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
+//                 3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi::<P2>() / omega11(tr) / (density * NAV)
+//                     * (temperature * RGAS / PI / mw.get(i) / p.m[i]).sqrt()
+//             })
+//             .collect();
+//         Ok(res[0])
+//     }
 
-    fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
-        if self.components() != 1 {
-            return Err(FeosError::IncompatibleComponents(self.components(), 1));
-        }
-        let coefficients = self
-            .params
-            .diffusion
-            .as_ref()
-            .expect("Missing diffusion coefficients.");
-        let m = (x * &self.params.m).sum();
-        let s = s_res / m;
-        let pref = (x * &self.params.m).mapv(|v| v / m);
-        let a: f64 = (&coefficients.row(0) * x).sum();
-        let b: f64 = (&coefficients.row(1) * &pref).sum();
-        let c: f64 = (&coefficients.row(2) * &pref).sum();
-        let d: f64 = (&coefficients.row(3) * &pref).sum();
-        let e: f64 = (&coefficients.row(4) * &pref).sum();
-        Ok(a + b * s - c * (1.0 - s.exp()) * s.powi(2) - d * s.powi(4) - e * s.powi(8))
-    }
+//     fn diffusion_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64> {
+//         if self.components() != 1 {
+//             return Err(FeosError::IncompatibleComponents(self.components(), 1));
+//         }
+//         let coefficients = self
+//             .params
+//             .diffusion
+//             .as_ref()
+//             .expect("Missing diffusion coefficients.");
+//         let m = (x * &self.params.m).sum();
+//         let s = s_res / m;
+//         let pref = (x * &self.params.m).map(|v| v / m);
+//         let a: f64 = (&coefficients.row(0) * x).sum();
+//         let b: f64 = (&coefficients.row(1) * &pref).sum();
+//         let c: f64 = (&coefficients.row(2) * &pref).sum();
+//         let d: f64 = (&coefficients.row(3) * &pref).sum();
+//         let e: f64 = (&coefficients.row(4) * &pref).sum();
+//         Ok(a + b * s - c * (1.0 - s.exp()) * s.powi(2) - d * s.powi(4) - e * s.powi(8))
+//     }
 
-    // Equation 4 of DOI: 10.1021/acs.iecr.9b04289
-    fn thermal_conductivity_reference(
-        &self,
-        temperature: Temperature,
-        volume: Volume,
-        moles: &Moles<Array1<f64>>,
-    ) -> FeosResult<ThermalConductivity> {
-        if self.components() != 1 {
-            return Err(FeosError::IncompatibleComponents(self.components(), 1));
-        }
-        let p = &self.params;
-        let mws = self.molar_weight();
-        let t = Dual64::from(temperature.into_reduced()).derivative();
-        let v = Dual64::from(volume.into_reduced());
-        let n = moles.to_reduced().mapv(Dual64::from);
-        let n_tot = n.sum();
-        let state = StateHD::new(t, v, n);
-        let s_res = -(self.residual_helmholtz_energy(&state) * t / n_tot).eps;
-        let res: Array1<_> = (0..self.components())
-            .map(|i| {
-                let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
-                let s_res_reduced = s_res / p.m[i];
-                let ref_ce = chapman_enskog_thermal_conductivity(
-                    temperature,
-                    mws.get(i),
-                    p.m[i],
-                    p.sigma[i],
-                    p.epsilon_k[i],
-                );
-                let alpha_visc = (-s_res_reduced / -0.5).exp();
-                let ref_ts = (-0.0167141 * tr / p.m[i] + 0.0470581 * (tr / p.m[i]).powi(2))
-                    * (p.m[i] * p.m[i] * p.sigma[i].powi(3) * p.epsilon_k[i])
-                    * 1e-5
-                    * WATT
-                    / METER
-                    / KELVIN;
-                ref_ce + ref_ts * alpha_visc
-            })
-            .collect();
-        Ok(res[0])
-    }
+//     // Equation 4 of DOI: 10.1021/acs.iecr.9b04289
+//     fn thermal_conductivity_reference(
+//         &self,
+//         temperature: Temperature,
+//         volume: Volume,
+//         moles: &Moles<DVector<f64>>,
+//     ) -> FeosResult<ThermalConductivity> {
+//         if self.components() != 1 {
+//             return Err(FeosError::IncompatibleComponents(self.components(), 1));
+//         }
+//         let p = &self.params;
+//         let mws = self.molar_weight();
+//         let t = Dual64::from(temperature.into_reduced()).derivative();
+//         let v = Dual64::from(volume.into_reduced());
+//         let n = moles.to_reduced().map(Dual64::from);
+//         let n_tot = n.sum();
+//         let state = StateHD::new(t, v, n);
+//         let s_res = -(self.residual_helmholtz_energy(&state) * t / n_tot).eps;
+//         let res: Vec<_> = (0..self.components())
+//             .map(|i| {
+//                 let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
+//                 let s_res_reduced = s_res / p.m[i];
+//                 let ref_ce = chapman_enskog_thermal_conductivity(
+//                     temperature,
+//                     mws.get(i),
+//                     p.m[i],
+//                     p.sigma[i],
+//                     p.epsilon_k[i],
+//                 );
+//                 let alpha_visc = (-s_res_reduced / -0.5).exp();
+//                 let ref_ts = (-0.0167141 * tr / p.m[i] + 0.0470581 * (tr / p.m[i]).powi(2))
+//                     * (p.m[i] * p.m[i] * p.sigma[i].powi(3) * p.epsilon_k[i])
+//                     * 1e-5
+//                     * WATT
+//                     / METER
+//                     / KELVIN;
+//                 ref_ce + ref_ts * alpha_visc
+//             })
+//             .collect();
+//         Ok(res[0])
+//     }
 
-    fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> FeosResult<f64> {
-        if self.components() != 1 {
-            return Err(FeosError::IncompatibleComponents(self.components(), 1));
-        }
-        let coefficients = self
-            .params
-            .thermal_conductivity
-            .as_ref()
-            .expect("Missing thermal conductivity coefficients");
-        let m = (x * &self.params.m).sum();
-        let s = s_res / m;
-        let pref = (x * &self.params.m).mapv(|v| v / m);
-        let a: f64 = (&coefficients.row(0) * x).sum();
-        let b: f64 = (&coefficients.row(1) * &pref).sum();
-        let c: f64 = (&coefficients.row(2) * &pref).sum();
-        let d: f64 = (&coefficients.row(3) * &pref).sum();
-        Ok(a + b * s + c * (1.0 - s.exp()) + d * s.powi(2))
-    }
-}
+//     fn thermal_conductivity_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64> {
+//         if self.components() != 1 {
+//             return Err(FeosError::IncompatibleComponents(self.components(), 1));
+//         }
+//         let coefficients = self
+//             .params
+//             .thermal_conductivity
+//             .as_ref()
+//             .expect("Missing thermal conductivity coefficients");
+//         let m = (x * &self.params.m).sum();
+//         let s = s_res / m;
+//         let pref = (x * &self.params.m).map(|v| v / m);
+//         let a: f64 = (&coefficients.row(0) * x).sum();
+//         let b: f64 = (&coefficients.row(1) * &pref).sum();
+//         let c: f64 = (&coefficients.row(2) * &pref).sum();
+//         let d: f64 = (&coefficients.row(3) * &pref).sum();
+//         Ok(a + b * s + c * (1.0 - s.exp()) + d * s.powi(2))
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -393,8 +405,8 @@ mod tests {
     };
     use approx::assert_relative_eq;
     use feos_core::*;
-    use ndarray::arr1;
-    use quantity::{BAR, KELVIN, METER, MILLI, PASCAL, RGAS, SECOND};
+    use nalgebra::dvector;
+    use quantity::{BAR, KELVIN, METER, PASCAL, RGAS};
     use typenum::P3;
 
     #[test]
@@ -402,7 +414,7 @@ mod tests {
         let e = propane_parameters();
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<P3>();
-        let n = arr1(&[1.0]) * MOL;
+        let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&e, t, v, &n).unwrap();
         let p_ig = s.total_moles * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
@@ -418,7 +430,7 @@ mod tests {
         let e = propane_parameters();
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<P3>();
-        let n = arr1(&[1.0]) * MOL;
+        let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&e, t, v, &n).unwrap();
         let p_ig = s.total_moles * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
@@ -434,25 +446,29 @@ mod tests {
         let t = 250.0;
         let v = 1000.0;
         let n = 1.0;
-        let s = StateHD::new(t, v, arr1(&[n]));
-        let a_rust = HardSphere.helmholtz_energy(&propane_parameters().params as &PcSaftPars, &s);
+        let s = StateHD::new(t, v, &dvector![n]);
+        let a_rust = HardSphere
+            .helmholtz_energy_density(&propane_parameters().params as &PcSaftPars, &s)
+            * v;
         assert_relative_eq!(a_rust, 0.410610492598808, epsilon = 1e-10);
     }
 
     #[test]
     fn hard_sphere_mix() {
         let t = 250.0;
-        let v = 2.5e28;
+        let v = 1000.0;
         let n = 1.0;
-        let s = StateHD::new(t, v, arr1(&[n]));
-        let a1 = HardSphere.helmholtz_energy(&propane_parameters().params as &PcSaftPars, &s);
-        let a2 = HardSphere.helmholtz_energy(&butane_parameters().params as &PcSaftPars, &s);
-        let s1m = StateHD::new(t, v, arr1(&[n, 0.0]));
-        let a1m =
-            HardSphere.helmholtz_energy(&propane_butane_parameters().params as &PcSaftPars, &s1m);
-        let s2m = StateHD::new(t, v, arr1(&[0.0, n]));
-        let a2m =
-            HardSphere.helmholtz_energy(&propane_butane_parameters().params as &PcSaftPars, &s2m);
+        let s = StateHD::new(t, v, &dvector![n]);
+        let a1 =
+            HardSphere.helmholtz_energy_density(&propane_parameters().params as &PcSaftPars, &s);
+        let a2 =
+            HardSphere.helmholtz_energy_density(&butane_parameters().params as &PcSaftPars, &s);
+        let s1m = StateHD::new(t, v, &dvector![n, 0.0]);
+        let a1m = HardSphere
+            .helmholtz_energy_density(&propane_butane_parameters().params as &PcSaftPars, &s1m);
+        let s2m = StateHD::new(t, v, &dvector![0.0, n]);
+        let a2m = HardSphere
+            .helmholtz_energy_density(&propane_butane_parameters().params as &PcSaftPars, &s2m);
         assert_relative_eq!(a1, a1m, epsilon = 1e-14);
         assert_relative_eq!(a2, a2m, epsilon = 1e-14);
     }
@@ -462,8 +478,8 @@ mod tests {
         let e = propane_parameters();
         let t = 300.0 * KELVIN;
         let p = BAR;
-        let m = arr1(&[1.0]) * MOL;
-        let s = State::new_npt(&e, t, p, &m, DensityInitialization::None);
+        let m = dvector![1.5] * MOL;
+        let s = State::new_npt(&e, t, p, &m, None);
         let p_calc = if let Ok(state) = s {
             state.pressure(Contributions::Total)
         } else {
@@ -503,9 +519,9 @@ mod tests {
         let e12 = propane_butane_parameters();
         let t = 300.0 * KELVIN;
         let v = 0.02456883872966545 * METER.powi::<P3>();
-        let m1 = arr1(&[2.0]) * MOL;
-        let m1m = arr1(&[2.0, 0.0]) * MOL;
-        let m2m = arr1(&[0.0, 2.0]) * MOL;
+        let m1 = dvector![2.0] * MOL;
+        let m1m = dvector![2.0, 0.0] * MOL;
+        let m2m = dvector![0.0, 2.0] * MOL;
         let s1 = State::new_nvt(&e1, t, v, &m1).unwrap();
         let s2 = State::new_nvt(&e2, t, v, &m1).unwrap();
         let s1m = State::new_nvt(&e12, t, v, &m1m).unwrap();
@@ -522,47 +538,47 @@ mod tests {
         )
     }
 
-    #[test]
-    fn viscosity() -> FeosResult<()> {
-        let e = propane_parameters();
-        let t = 300.0 * KELVIN;
-        let p = BAR;
-        let n = arr1(&[1.0]) * MOL;
-        let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
-        assert_relative_eq!(
-            s.viscosity()?,
-            0.00797 * MILLI * PASCAL * SECOND,
-            epsilon = 1e-5
-        );
-        assert_relative_eq!(
-            s.ln_viscosity_reduced()?,
-            (s.viscosity()? / e.viscosity_reference(s.temperature, s.volume, &s.moles)?)
-                .into_value()
-                .ln(),
-            epsilon = 1e-15
-        );
-        Ok(())
-    }
+    // #[test]
+    // fn viscosity() -> FeosResult<()> {
+    //     let e = propane_parameters();
+    //     let t = 300.0 * KELVIN;
+    //     let p = BAR;
+    //     let n = dvector![1.0] * MOL;
+    //     let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
+    //     assert_relative_eq!(
+    //         s.viscosity()?,
+    //         0.00797 * MILLI * PASCAL * SECOND,
+    //         epsilon = 1e-5
+    //     );
+    //     assert_relative_eq!(
+    //         s.ln_viscosity_reduced()?,
+    //         (s.viscosity()? / e.viscosity_reference(s.temperature, s.volume, &s.moles)?)
+    //             .into_value()
+    //             .ln(),
+    //         epsilon = 1e-15
+    //     );
+    //     Ok(())
+    // }
 
-    #[test]
-    fn diffusion() -> FeosResult<()> {
-        let e = propane_parameters();
-        let t = 300.0 * KELVIN;
-        let p = BAR;
-        let n = arr1(&[1.0]) * MOL;
-        let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
-        assert_relative_eq!(
-            s.diffusion()?,
-            0.01505 * (CENTI * METER).powi::<P2>() / SECOND,
-            epsilon = 1e-5
-        );
-        assert_relative_eq!(
-            s.ln_diffusion_reduced()?,
-            (s.diffusion()? / e.diffusion_reference(s.temperature, s.volume, &s.moles)?)
-                .into_value()
-                .ln(),
-            epsilon = 1e-15
-        );
-        Ok(())
-    }
+    // #[test]
+    // fn diffusion() -> FeosResult<()> {
+    //     let e = propane_parameters();
+    //     let t = 300.0 * KELVIN;
+    //     let p = BAR;
+    //     let n = dvector![1.0] * MOL;
+    //     let s = State::new_npt(&e, t, p, &n, DensityInitialization::None).unwrap();
+    //     assert_relative_eq!(
+    //         s.diffusion()?,
+    //         0.01505 * (CENTI * METER).powi::<P2>() / SECOND,
+    //         epsilon = 1e-5
+    //     );
+    //     assert_relative_eq!(
+    //         s.ln_diffusion_reduced()?,
+    //         (s.diffusion()? / e.diffusion_reference(s.temperature, s.volume, &s.moles)?)
+    //             .into_value()
+    //             .ln(),
+    //         epsilon = 1e-15
+    //     );
+    //     Ok(())
+    // }
 }

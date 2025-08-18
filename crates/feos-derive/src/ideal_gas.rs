@@ -20,7 +20,7 @@ fn impl_ideal_gas(
         let name = &v.ident;
         if name == "NoModel" {
             quote! {
-                Self::#name(_) => panic!("No ideal gas model initialized!")
+                Self::#name => panic!("No ideal gas model initialized!")
             }
         } else {
             quote! {
@@ -32,7 +32,7 @@ fn impl_ideal_gas(
         let name = &v.ident;
         if name == "NoModel" {
             quote! {
-                Self::#name(_) => panic!("No ideal gas model initialized!")
+                Self::#name => panic!("No ideal gas model initialized!")
             }
         } else {
             quote! {
@@ -41,14 +41,14 @@ fn impl_ideal_gas(
         }
     });
     quote! {
-        impl IdealGas for IdealGasModel {
-            fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+        impl IdealGasDyn for IdealGasModel {
+            fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
                 match self {
                     #(#ln_lambda3,)*
                 }
             }
 
-            fn ideal_gas_model(&self) -> String {
+            fn ideal_gas_model(&self) -> &'static str {
                 match self {
                     #(#string,)*
                 }

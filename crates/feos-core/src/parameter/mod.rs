@@ -2,7 +2,7 @@
 use crate::errors::*;
 use indexmap::IndexSet;
 use itertools::Itertools;
-use ndarray::{Array1, Array2};
+use nalgebra::{DMatrix, DVector, Scalar};
 use quantity::{GRAM, MOL, MolarWeight};
 use serde::de::DeserializeOwned;
 use std::array;
@@ -83,7 +83,7 @@ pub struct GenericParameters<P, B, A, Bo, C, Data> {
     pub binary: Vec<BinaryParameters<B, ()>>,
     pub bonds: Vec<BinaryParameters<Bo, C>>,
     pub association: AssociationParameters<A>,
-    pub molar_weight: MolarWeight<Array1<f64>>,
+    pub molar_weight: MolarWeight<DVector<f64>>,
     data: Data,
 }
 
@@ -105,23 +105,28 @@ pub type GcParameters<P, B, A, Bo, C> = GenericParameters<
 pub type IdealGasParameters<I> = Parameters<I, (), ()>;
 
 impl<P, B, A, Bo, C, Data> GenericParameters<P, B, A, Bo, C, Data> {
-    pub fn collate<F, T: Default + Copy, const N: usize>(&self, f: F) -> [Array1<T>; N]
+    pub fn collate<F, T: Scalar + Copy, const N: usize>(&self, f: F) -> [DVector<T>; N]
     where
         F: Fn(&P) -> [T; N],
     {
-        array::from_fn(|i| self.pure.iter().map(|pr| f(&pr.model_record)[i]).collect())
+        array::from_fn(|i| {
+            DVector::from_vec(self.pure.iter().map(|pr| f(&pr.model_record)[i]).collect())
+        })
     }
 
-    pub fn collate_binary<F, T: Default + Copy, const N: usize>(&self, f: F) -> [Array2<T>; N]
+    pub fn collate_binary<F, T: Scalar + Default + Copy, const N: usize>(
+        &self,
+        f: F,
+    ) -> [DMatrix<T>; N]
     where
         F: Fn(&B) -> [T; N],
     {
         array::from_fn(|i| {
-            let mut b_mat = Array2::default([self.pure.len(); 2]);
+            let mut b_mat = DMatrix::from_element(self.pure.len(), self.pure.len(), T::default());
             for br in &self.binary {
                 let b = f(&br.model_record)[i];
-                b_mat[[br.id1, br.id2]] = b;
-                b_mat[[br.id2, br.id1]] = b;
+                b_mat[(br.id1, br.id2)] = b;
+                b_mat[(br.id2, br.id1)] = b;
             }
             b_mat
         })
@@ -158,7 +163,7 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
             binary,
             bonds: vec![],
             association: association_parameters,
-            molar_weight: Array1::from_vec(molar_weight) * (GRAM / MOL),
+            molar_weight: DVector::from_vec(molar_weight) * (GRAM / MOL),
             data: (pure_records, binary_records),
         })
     }
@@ -495,7 +500,7 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
 }
 
 impl<P, B, A, Bo> GcParameters<P, B, A, Bo, f64> {
-    pub fn segment_counts(&self) -> Array1<f64> {
+    pub fn segment_counts(&self) -> Vec<f64> {
         self.pure.iter().map(|pr| pr.count).collect()
     }
 }
@@ -547,7 +552,7 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
         let mut groups = Vec::new();
         let mut association_sites = Vec::new();
         let mut bonds = Vec::new();
-        let mut molar_weight: Array1<f64> = Array1::zeros(chemical_records.len());
+        let mut molar_weight: DVector<f64> = DVector::zeros(chemical_records.len());
         for (i, cr) in chemical_records.iter().enumerate() {
             let (_, group_counts, bond_counts) = C::into_groups(cr.clone());
             let n = groups.len();
@@ -764,7 +769,7 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
         Ok((chemical_records, segment_records, binary_records))
     }
 
-    pub fn component_index(&self) -> Array1<usize> {
+    pub fn component_index(&self) -> Vec<usize> {
         self.pure.iter().map(|pr| pr.component_index).collect()
     }
 

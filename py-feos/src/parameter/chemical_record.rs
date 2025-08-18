@@ -31,7 +31,7 @@ impl PyChemicalRecord {
         segments: Vec<String>,
         bonds: Option<Vec<[usize; 2]>>,
     ) -> Self {
-        Self(ChemicalRecord::new(identifier.0, segments, bonds))
+        Self(ChemicalRecord::new(identifier.into(), segments, bonds))
     }
 
     fn __repr__(&self) -> PyResult<String> {
@@ -76,7 +76,7 @@ impl PyChemicalRecord {
         let identifier = if let Ok(smiles) = identifier.extract::<String>() {
             Identifier::new(None, None, None, Some(&smiles), None, None)
         } else if let Ok(identifier) = identifier.extract::<PyIdentifier>() {
-            identifier.0
+            identifier.into()
         } else {
             return Err(PyErr::new::<PyValueError, _>(
                 "`identifier` must be a SMILES code or `Identifier` object.".to_string(),

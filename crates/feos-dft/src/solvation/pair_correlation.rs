@@ -15,22 +15,12 @@ pub trait PairPotential {
 }
 
 /// Density profile and properties of a test particle system.
+#[derive(Clone)]
 pub struct PairCorrelation<F> {
     pub profile: DFTProfile<Ix1, F>,
     pub pair_correlation_function: Option<Array2<f64>>,
     pub self_solvation_free_energy: Option<Energy>,
     pub structure_factor: Option<f64>,
-}
-
-impl<F> Clone for PairCorrelation<F> {
-    fn clone(&self) -> Self {
-        Self {
-            profile: self.profile.clone(),
-            pair_correlation_function: self.pair_correlation_function.clone(),
-            self_solvation_free_energy: self.self_solvation_free_energy,
-            structure_factor: self.structure_factor,
-        }
-    }
 }
 
 impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {

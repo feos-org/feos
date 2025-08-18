@@ -1,4 +1,4 @@
-use super::{HelmholtzEnergyWrapper, ParametersAD, ResidualHelmholtzEnergy, StateAD};
+use super::{HelmholtzEnergyWrapper, ParametersAD, ResidualHelmholtzEnergy, StateAD2};
 use feos_core::{Contributions, FeosResult, PhaseEquilibrium, ReferenceSystem};
 use nalgebra::SVector;
 use ndarray::{Array, arr1};
@@ -6,7 +6,7 @@ use num_dual::{DualNum, linalg::LU};
 use quantity::{Dimensionless, Moles, Pressure, Temperature};
 
 impl<'a, R: ResidualHelmholtzEnergy<N>, D: DualNum<f64> + Copy, const N: usize>
-    StateAD<'a, R, D, N>
+    StateAD2<'a, R, D, N>
 {
     /// Perform a Tp-flash calculation. Returns the [PhaseEquilibriumAD] and the vapor fraction.
     pub fn tp_flash(&self) -> FeosResult<(PhaseEquilibriumAD<'a, R, D, N>, Dimensionless<D>)> {
@@ -94,8 +94,8 @@ impl<'a, R: ResidualHelmholtzEnergy<N>, D: DualNum<f64> + Copy, const N: usize>
         let molefracs_v = rho_v * molar_volume_v;
         Ok((
             PhaseEquilibriumAD {
-                liquid: StateAD::new(self.eos, t, molar_volume_l, molefracs_l),
-                vapor: StateAD::new(self.eos, t, molar_volume_v, molefracs_v),
+                liquid: StateAD2::new(self.eos, t, molar_volume_l, molefracs_l),
+                vapor: StateAD2::new(self.eos, t, molar_volume_v, molefracs_v),
             },
             Dimensionless::from_reduced(v_v / molar_volume_v / self.molefracs.sum()),
         ))
@@ -104,8 +104,8 @@ impl<'a, R: ResidualHelmholtzEnergy<N>, D: DualNum<f64> + Copy, const N: usize>
 
 /// An equilibrium state consisting of a vapor and a liquid phase.
 pub struct PhaseEquilibriumAD<'a, E: ParametersAD, D: DualNum<f64> + Copy, const N: usize> {
-    pub liquid: StateAD<'a, E, D, N>,
-    pub vapor: StateAD<'a, E, D, N>,
+    pub liquid: StateAD2<'a, E, D, N>,
+    pub vapor: StateAD2<'a, E, D, N>,
 }
 
 impl<'a, R: ResidualHelmholtzEnergy<1>, D: DualNum<f64> + Copy> PhaseEquilibriumAD<'a, R, D, 1> {
@@ -132,8 +132,8 @@ impl<'a, R: ResidualHelmholtzEnergy<1>, D: DualNum<f64> + Copy> PhaseEquilibrium
         }
         Ok((
             Self {
-                liquid: StateAD::new(eos, t, density1.recip(), molefracs),
-                vapor: StateAD::new(eos, t, density2.recip(), molefracs),
+                liquid: StateAD2::new(eos, t, density1.recip(), molefracs),
+                vapor: StateAD2::new(eos, t, density2.recip(), molefracs),
             },
             Pressure::from_reduced(p),
         ))
@@ -207,7 +207,7 @@ impl<'a, R: ResidualHelmholtzEnergy<N>, D: DualNum<f64> + Copy, const N: usize>
         pressure: f64,
         density: f64,
         partial_density_other_phase: SVector<f64, N>,
-    ) -> FeosResult<(StateAD<'a, R, D, N>, StateAD<'a, R, D, N>, Pressure<D>)> {
+    ) -> FeosResult<(StateAD2<'a, R, D, N>, StateAD2<'a, R, D, N>, Pressure<D>)> {
         let mut rho = SVector::from_fn(|i, _| D::from(partial_density_other_phase[i]));
         let mut v = D::from(density.recip());
         let t = temperature.into_reduced();
@@ -253,8 +253,8 @@ impl<'a, R: ResidualHelmholtzEnergy<N>, D: DualNum<f64> + Copy, const N: usize>
         let v_o = rho.sum().recip();
         let molefracs_other_phase = rho * v_o;
         Ok((
-            StateAD::new(eos, t, v, molefracs),
-            StateAD::new(eos, t, v_o, molefracs_other_phase),
+            StateAD2::new(eos, t, v, molefracs),
+            StateAD2::new(eos, t, v_o, molefracs_other_phase),
             Pressure::from_reduced(p),
         ))
     }
@@ -545,7 +545,7 @@ mod test_gc_pcsaft {
         let temperature = Temperature::from_reduced(Dual::from(300.0));
         let pressure = Pressure::from_reduced(Dual::from(0.005));
         let molefracs = SVector::from([Dual::from(0.5); 2]);
-        let (vle_dual, phi_dual) = StateAD::new_tp(
+        let (vle_dual, phi_dual) = StateAD2::new_tp(
             &eos_dual,
             temperature,
             pressure,
@@ -553,7 +553,7 @@ mod test_gc_pcsaft {
             DensityInitialization::None,
         )?
         .tp_flash()?;
-        let (vle, phi) = StateAD::new_tp(
+        let (vle, phi) = StateAD2::new_tp(
             &eos,
             Temperature::from_reduced(300.0),
             Pressure::from_reduced(0.005),
@@ -561,7 +561,7 @@ mod test_gc_pcsaft {
             DensityInitialization::None,
         )?
         .tp_flash()?;
-        let (vle_h, phi_h) = StateAD::new_tp(
+        let (vle_h, phi_h) = StateAD2::new_tp(
             &eos_h,
             Temperature::from_reduced(300.0),
             Pressure::from_reduced(0.005),

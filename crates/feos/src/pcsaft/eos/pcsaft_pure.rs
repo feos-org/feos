@@ -1,10 +1,13 @@
-use super::{A0, A1, A2, AD, B0, B1, B2, BD, CD, MAX_ETA};
+use super::dispersion::{A0, A1, A2, B0, B1, B2};
+use super::polar::{AD, BD, CD};
 use feos_core::{ParametersAD, ResidualConst, StateHD};
 use nalgebra::{SVector, U1};
 use num_dual::{DualNum, DualSVec};
 use std::f64::consts::{FRAC_PI_6, PI};
 
 const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
+
+const MAX_ETA: f64 = 0.5;
 
 /// Optimized implementation of PC-SAFT for a single component.
 #[derive(Clone, Copy)]
@@ -181,11 +184,38 @@ impl<const N: usize, const P: usize> ParametersAD<P> for PcSaftPure<DualSVec<f64
 
 #[cfg(test)]
 pub mod test {
-    use crate::eos::pcsaft::test::pcsaft;
+    use super::super::{PcSaft, PcSaftAssociationRecord, PcSaftParameters, PcSaftRecord};
+    use super::*;
     use approx::assert_relative_eq;
+    use feos_core::parameter::{AssociationRecord, PureRecord};
     use feos_core::{Contributions::Total, FeosResult, State};
     use nalgebra::{dvector, vector};
     use quantity::{KELVIN, KILO, METER, MOL};
+
+    pub fn pcsaft() -> FeosResult<(PcSaftPure<f64, 8>, PcSaft)> {
+        let m = 1.5;
+        let sigma = 3.4;
+        let epsilon_k = 180.0;
+        let mu = 2.2;
+        let kappa_ab = 0.03;
+        let epsilon_k_ab = 2500.;
+        let na = 2.0;
+        let nb = 1.0;
+        let params = PcSaftParameters::new_pure(PureRecord::with_association(
+            Default::default(),
+            0.0,
+            PcSaftRecord::new(m, sigma, epsilon_k, mu, 0.0, None, None, None),
+            vec![AssociationRecord::new(
+                Some(PcSaftAssociationRecord::new(kappa_ab, epsilon_k_ab)),
+                na,
+                nb,
+                0.0,
+            )],
+        ))?;
+        let eos = PcSaft::new(params);
+        let params = [m, sigma, epsilon_k, mu, kappa_ab, epsilon_k_ab, na, nb];
+        Ok((PcSaftPure(params), eos))
+    }
 
     #[test]
     fn test_pcsaft_pure() -> FeosResult<()> {
@@ -195,7 +225,7 @@ pub mod test {
         let volume = 2.3 * METER * METER * METER;
         let moles = dvector![1.3] * KILO * MOL;
 
-        let state = State::new_nvt(&eos, temperature, volume, &moles)?;
+        let state = State::new_nvt(&&eos, temperature, volume, &moles)?;
         let a_feos = state.residual_molar_helmholtz_energy();
         let mu_feos = state.residual_chemical_potential();
         let p_feos = state.pressure(Total);

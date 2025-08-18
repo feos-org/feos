@@ -3,8 +3,9 @@ use super::DFTProfile;
 use crate::convolver::{BulkConvolver, Convolver};
 use crate::functional_contribution::FunctionalContribution;
 use crate::{ConvolverFFT, DFTSolverLog, HelmholtzEnergyFunctional, WeightFunctionInfo};
-use feos_core::{Contributions, FeosResult, IdealGas, ReferenceSystem, Verbosity};
-use ndarray::{Array, Array1, Array2, Axis, Dimension, RemoveAxis, ScalarOperand};
+use feos_core::{Contributions, FeosResult, ReferenceSystem, Total, Verbosity};
+use nalgebra::{DMatrix, DVector};
+use ndarray::{Array, Axis, Dimension, RemoveAxis};
 use num_dual::{Dual64, DualNum};
 use quantity::{
     Density, Energy, Entropy, EntropyDensity, MolarEnergy, Moles, Pressure, Quantity, Temperature,
@@ -14,11 +15,11 @@ use std::sync::Arc;
 
 type DrhoDmu<D: Dimension> =
     <Density<Array<f64, <D::Larger as Dimension>::Larger>> as Div<MolarEnergy>>::Output;
-type DnDmu = <Moles<Array2<f64>> as Div<MolarEnergy>>::Output;
+type DnDmu = <Moles<DMatrix<f64>> as Div<MolarEnergy>>::Output;
 type DrhoDp<D: Dimension> = <Density<Array<f64, D::Larger>> as Div<Pressure>>::Output;
-type DnDp = <Moles<Array1<f64>> as Div<Pressure>>::Output;
+type DnDp = <Moles<DVector<f64>> as Div<Pressure>>::Output;
 type DrhoDT<D: Dimension> = <Density<Array<f64, D::Larger>> as Div<Temperature>>::Output;
-type DnDT = <Moles<Array1<f64>> as Div<Temperature>>::Output;
+type DnDT = <Moles<DVector<f64>> as Div<Temperature>>::Output;
 
 impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTProfile<D, F>
 where
@@ -78,7 +79,7 @@ where
         convolver: &Arc<dyn Convolver<N, D>>,
     ) -> FeosResult<Array<N, D>>
     where
-        N: DualNum<f64> + Copy + ScalarOperand,
+        N: DualNum<f64> + Copy,
     {
         let density_dual = density.mapv(N::from);
         let weighted_densities = convolver.weighted_densities(&density_dual);
@@ -99,7 +100,7 @@ where
                     wd.into_shape_with_order((nwd, ngrid)).unwrap().view(),
                 )?);
         }
-        Ok(helmholtz_energy_density * temperature)
+        Ok(helmholtz_energy_density.mapv(|a| a * temperature))
     }
 
     /// Calculate the residual entropy density $s^\mathrm{res}(\mathbf{r})$.
@@ -164,7 +165,7 @@ where
     }
 }
 
-impl<D: Dimension + RemoveAxis + 'static, F: HelmholtzEnergyFunctional + IdealGas> DFTProfile<D, F>
+impl<D: Dimension + RemoveAxis + 'static, F: HelmholtzEnergyFunctional + Total> DFTProfile<D, F>
 where
     D::Larger: Dimension<Smaller = D>,
     D::Smaller: Dimension<Larger = D>,
@@ -180,7 +181,7 @@ where
         for (i, rhoi) in density.outer_iter().enumerate() {
             phi += &rhoi.mapv(|rhoi| (lambda[i] + rhoi.ln() - 1.0) * rhoi);
         }
-        phi * temperature
+        phi.map(|p| p * temperature)
     }
 
     /// Calculate the entropy density $s(\mathbf{r})$.
@@ -329,11 +330,11 @@ where
     pub fn dn_dmu(&self) -> FeosResult<DnDmu> {
         let drho_dmu = self.drho_dmu()?.into_reduced();
         let n = drho_dmu.shape()[0];
-        let mut dn_dmu = Array2::zeros([n; 2]);
+        let mut dn_dmu = DMatrix::zeros(n, n);
         dn_dmu
-            .outer_iter_mut()
+            .row_iter_mut()
             .zip(drho_dmu.outer_iter())
-            .for_each(|(mut dn, drho)| dn.assign(&self.integrate_reduced_segments(&drho)));
+            .for_each(|(mut dn, drho)| dn.add_assign(&self.integrate_reduced_segments(&drho)));
         Ok(DnDmu::from_reduced(dn_dmu))
     }
 
@@ -374,7 +375,7 @@ where
             .functional_derivative(t_dual, &rho_dual, &convolver)?;
 
         // calculate total functional derivative
-        dfdrho += &((&self.external_potential * t).mapv(Dual64::from) / t_dual);
+        dfdrho += &(&self.external_potential * t).mapv(|v| Dual64::from(v) / t_dual);
 
         // calculate bulk functional derivative
         let partial_density = self.bulk.partial_density.to_reduced();
@@ -389,8 +390,7 @@ where
             .zip(dfdrho_bulk)
             .zip(self.dft.m().iter())
             .for_each(|((mut df, df_b), &m)| {
-                df -= df_b;
-                df /= Dual64::from(m)
+                df.map_inplace(|df| *df = (*df - df_b) / Dual64::from(m));
             });
 
         // calculate bond integrals
@@ -398,7 +398,7 @@ where
         let bonds = self.dft.bond_integrals(t_dual, &exp_dfdrho, &convolver);
 
         // solve for drho_dt
-        let mut lhs = ((exp_dfdrho * bonds).mapv(|x| -x.ln()) * t_dual).mapv(|d| d.eps);
+        let mut lhs = (exp_dfdrho * bonds).mapv(|x| (-x.ln() * t_dual).eps);
         let x =
             (self.bulk.partial_molar_volume() * self.bulk.dp_dt(Contributions::Total)).to_reduced();
         let x = self.dft.component_index().mapv(|i| x[i]);

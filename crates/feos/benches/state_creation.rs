@@ -5,44 +5,43 @@ use feos::core::{
     parameter::IdentifierOption,
 };
 use feos::pcsaft::{PcSaft, PcSaftParameters};
-use ndarray::{Array, Array1};
+use nalgebra::DVector;
 use quantity::*;
-use std::sync::Arc;
 
 /// Evaluate NPT constructor
 fn npt<E: Residual>(
     (eos, t, p, n, rho0): (
-        &Arc<E>,
+        &E,
         Temperature,
         Pressure,
-        &Moles<Array1<f64>>,
+        &Moles<DVector<f64>>,
         DensityInitialization,
     ),
 ) {
-    State::new_npt(eos, t, p, n, rho0).unwrap();
+    State::new_npt(eos, t, p, n, Some(rho0)).unwrap();
 }
 
 /// Evaluate critical point constructor
-fn critical_point<E: Residual>((eos, n): (&Arc<E>, Option<&Moles<Array1<f64>>>)) {
+fn critical_point<E: Residual>((eos, n): (&E, Option<&DVector<f64>>)) {
     State::critical_point(eos, n, None, Default::default()).unwrap();
 }
 
 /// Evaluate critical point constructor for binary systems at given T or p
-fn critical_point_binary<E: Residual, TP: TemperatureOrPressure>((eos, tp): (&Arc<E>, TP)) {
+fn critical_point_binary<E: Residual, TP: TemperatureOrPressure>((eos, tp): (&E, TP)) {
     State::critical_point_binary(eos, tp, None, None, Default::default()).unwrap();
 }
 
 /// VLE for pure substance for given temperature or pressure
-fn pure<E: Residual, TP: TemperatureOrPressure>((eos, t_or_p): (&Arc<E>, TP)) {
+fn pure<E: Residual, TP: TemperatureOrPressure>((eos, t_or_p): (&E, TP)) {
     PhaseEquilibrium::pure(eos, t_or_p, None, Default::default()).unwrap();
 }
 
 /// Evaluate temperature, pressure flash.
-fn tp_flash<E: Residual>((eos, t, p, feed): (&Arc<E>, Temperature, Pressure, &Moles<Array1<f64>>)) {
+fn tp_flash<E: Residual>((eos, t, p, feed): (&E, Temperature, Pressure, &Moles<DVector<f64>>)) {
     PhaseEquilibrium::tp_flash(eos, t, p, feed, None, Default::default(), None).unwrap();
 }
 
-fn bubble_point<E: Residual>((eos, t, x): (&Arc<E>, Temperature, &Array1<f64>)) {
+fn bubble_point<E: Residual>((eos, t, x): (&E, Temperature, &DVector<f64>)) {
     PhaseEquilibrium::bubble_point(
         eos,
         t,
@@ -54,7 +53,7 @@ fn bubble_point<E: Residual>((eos, t, x): (&Arc<E>, Temperature, &Array1<f64>)) 
     .unwrap();
 }
 
-fn dew_point<E: Residual>((eos, t, y): (&Arc<E>, Temperature, &Array1<f64>)) {
+fn dew_point<E: Residual>((eos, t, y): (&E, Temperature, &DVector<f64>)) {
     PhaseEquilibrium::dew_point(
         eos,
         t,
@@ -66,11 +65,11 @@ fn dew_point<E: Residual>((eos, t, y): (&Arc<E>, Temperature, &Array1<f64>)) {
     .unwrap();
 }
 
-fn bench_states<E: Residual>(c: &mut Criterion, group_name: &str, eos: &Arc<E>) {
+fn bench_states<E: Residual>(c: &mut Criterion, group_name: &str, eos: &E) {
     let ncomponents = eos.components();
-    let x = Array::from_elem(ncomponents, 1.0 / ncomponents as f64);
+    let x = DVector::from_element(ncomponents, 1.0 / ncomponents as f64);
     let n = &x * 100.0 * MOL;
-    let crit = State::critical_point(eos, Some(&n), None, Default::default()).unwrap();
+    let crit = State::critical_point(eos, Some(&x), None, Default::default()).unwrap();
     let vle = if ncomponents == 1 {
         PhaseEquilibrium::pure(eos, crit.temperature * 0.95, None, Default::default()).unwrap()
     } else {
@@ -110,7 +109,7 @@ fn bench_states<E: Residual>(c: &mut Criterion, group_name: &str, eos: &Arc<E>) 
         })
     });
     group.bench_function("critical_point", |b| {
-        b.iter(|| critical_point((eos, Some(&n))))
+        b.iter(|| critical_point((eos, Some(&x))))
     });
     if ncomponents == 2 {
         group.bench_function("critical_point_binary_t", |b| {
@@ -157,8 +156,8 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let eos = Arc::new(PcSaft::new(parameters));
-    bench_states(c, "state_creation_pcsaft_methane", &eos);
+    let eos = PcSaft::new(parameters);
+    bench_states(c, "state_creation_pcsaft_methane", &&eos);
 
     let parameters = PcSaftParameters::from_json(
         vec!["methane", "ethane"],
@@ -167,8 +166,8 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let eos = Arc::new(PcSaft::new(parameters));
-    bench_states(c, "state_creation_pcsaft_methane_ethane", &eos);
+    let eos = PcSaft::new(parameters);
+    bench_states(c, "state_creation_pcsaft_methane_ethane", &&eos);
 
     let parameters = PcSaftParameters::from_json(
         vec!["methane", "ethane", "propane"],
@@ -177,8 +176,8 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let eos = Arc::new(PcSaft::new(parameters));
-    bench_states(c, "state_creation_pcsaft_methane_ethane_propane", &eos);
+    let eos = PcSaft::new(parameters);
+    bench_states(c, "state_creation_pcsaft_methane_ethane_propane", &&eos);
 }
 
 criterion_group!(bench, pcsaft);

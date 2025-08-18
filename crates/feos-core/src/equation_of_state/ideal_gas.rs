@@ -1,30 +1,47 @@
-use super::Components;
-use crate::StateHD;
-use ndarray::Array1;
 use num_dual::DualNum;
+use std::ops::Deref;
 
 /// Ideal gas Helmholtz energy contribution.
-pub trait IdealGas: Components + Sync + Send {
+pub trait IdealGas<D = f64>: Clone {
+    type Real: IdealGas;
+    type Lifted<D2: DualNum<f64, Inner = D> + Copy>: IdealGas<D2>;
+    fn re(&self) -> Self::Real;
+    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2>;
+
     /// Implementation of an ideal gas model in terms of the
     /// logarithm of the cubic thermal de Broglie wavelength
     /// in units ln(A³) for each component in the system.
-    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D>;
+    fn ln_lambda3(&self, temperature: D) -> D;
 
-    /// Short description (usually the name) of the model.
-    fn ideal_gas_model(&self) -> String;
+    /// The name of the ideal gas model.
+    fn ideal_gas_model(&self) -> &'static str;
+}
 
-    /// Evaluate the ideal gas Helmholtz energy contribution for a given state.
-    fn ideal_gas_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
-        let ln_lambda3 = self.ln_lambda3(state.temperature);
-        ((ln_lambda3
-            + state.partial_density.mapv(|x| {
-                if x.re() == 0.0 {
-                    D::from(0.0)
-                } else {
-                    x.ln() - 1.0
-                }
-            }))
-            * &state.moles)
-            .sum()
+pub trait IdealGasDyn {
+    /// Implementation of an ideal gas model in terms of the
+    /// logarithm of the cubic thermal de Broglie wavelength
+    /// in units ln(A³) for each component in the system.
+    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D;
+
+    /// The name of the ideal gas model.
+    fn ideal_gas_model(&self) -> &'static str;
+}
+
+impl<C: Deref<Target = T> + Clone, T: IdealGasDyn, D: DualNum<f64> + Copy> IdealGas<D> for C {
+    type Real = Self;
+    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = Self;
+    fn re(&self) -> Self::Real {
+        self.clone()
+    }
+    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+        self.clone()
+    }
+
+    fn ln_lambda3(&self, temperature: D) -> D {
+        IdealGasDyn::ln_lambda3(self.deref(), temperature)
+    }
+
+    fn ideal_gas_model(&self) -> &'static str {
+        T::ideal_gas_model(self)
     }
 }

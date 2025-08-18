@@ -1,6 +1,12 @@
-use super::{Contributions, State};
-use crate::equation_of_state::{IdealGas, Molarweight, Residual};
+#[cfg(feature = "ndarray")]
+use super::Contributions;
+use super::State;
+#[cfg(feature = "ndarray")]
+use crate::equation_of_state::{Molarweight, Residual, Total};
+#[cfg(feature = "ndarray")]
 use ndarray::{Array1, Array2};
+
+#[cfg(feature = "ndarray")]
 use quantity::{
     Density, MassDensity, MolarEnergy, MolarEntropy, Moles, Pressure, SpecificEnergy,
     SpecificEntropy, Temperature,
@@ -35,6 +41,7 @@ impl<'a, E> Deref for StateVec<'a, E> {
     }
 }
 
+#[cfg(feature = "ndarray")]
 impl<E: Residual> StateVec<'_, E> {
     pub fn temperature(&self) -> Temperature<Array1<f64>> {
         Temperature::from_shape_fn(self.0.len(), |i| self.0[i].temperature)
@@ -67,6 +74,7 @@ impl<E: Residual> StateVec<'_, E> {
     }
 }
 
+#[cfg(feature = "ndarray")]
 impl<E: Residual + Molarweight> StateVec<'_, E> {
     pub fn mass_density(&self) -> MassDensity<Array1<f64>> {
         MassDensity::from_shape_fn(self.0.len(), |i| self.0[i].mass_density())
@@ -79,7 +87,8 @@ impl<E: Residual + Molarweight> StateVec<'_, E> {
     }
 }
 
-impl<E: Residual + IdealGas> StateVec<'_, E> {
+#[cfg(feature = "ndarray")]
+impl<E: Total> StateVec<'_, E> {
     pub fn molar_enthalpy(&self, contributions: Contributions) -> MolarEnergy<Array1<f64>> {
         MolarEnergy::from_shape_fn(self.0.len(), |i| self.0[i].molar_enthalpy(contributions))
     }
@@ -89,7 +98,8 @@ impl<E: Residual + IdealGas> StateVec<'_, E> {
     }
 }
 
-impl<E: Residual + Molarweight + IdealGas> StateVec<'_, E> {
+#[cfg(feature = "ndarray")]
+impl<E: Total + Molarweight> StateVec<'_, E> {
     pub fn specific_enthalpy(&self, contributions: Contributions) -> SpecificEnergy<Array1<f64>> {
         SpecificEnergy::from_shape_fn(self.0.len(), |i| self.0[i].specific_enthalpy(contributions))
     }

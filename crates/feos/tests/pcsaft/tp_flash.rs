@@ -2,7 +2,7 @@ use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::IdentifierOption;
 use feos_core::{Contributions, FeosResult, PhaseEquilibrium, SolverOptions};
-use ndarray::*;
+use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
 use std::sync::Arc;
@@ -38,7 +38,7 @@ fn test_tp_flash() -> Result<(), Box<dyn Error>> {
         &mix,
         t,
         p,
-        &(arr1(&[z1, 1.0 - z1]) * MOL),
+        &(dvector![z1, 1.0 - z1] * MOL),
         None,
         options,
         None,
@@ -54,8 +54,12 @@ fn test_tp_flash() -> Result<(), Box<dyn Error>> {
         max_relative = 1e-10
     );
     assert_relative_eq!(
-        &vle.vapor().molefracs * &vle.vapor().ln_phi().mapv(f64::exp),
-        &vle.liquid().molefracs * &vle.liquid().ln_phi().mapv(f64::exp),
+        &vle.vapor()
+            .molefracs
+            .component_mul(&vle.vapor().ln_phi().map(f64::exp)),
+        &vle.liquid()
+            .molefracs
+            .component_mul(&vle.liquid().ln_phi().map(f64::exp)),
         max_relative = 1e-10
     );
     Ok(())

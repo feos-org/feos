@@ -5,7 +5,7 @@ use crate::pdgt::PdgtFunctionalProperties;
 use crate::profile::{DFTProfile, DFTSpecifications};
 use crate::solver::DFTSolver;
 use feos_core::{Contributions, FeosError, FeosResult, PhaseEquilibrium, ReferenceSystem};
-use ndarray::{s, Array1, Array2, Axis as Axis_nd, Ix1};
+use ndarray::{Array1, Array2, Axis as Axis_nd, Ix1, s};
 use quantity::{Area, Density, Length, Moles, SurfaceTension, Temperature};
 
 mod surface_tension_diagram;

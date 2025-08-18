@@ -26,4 +26,4 @@ quantity = { workspace = true, features = ["num-dual", "approx"] }
 default = []
 pcsaft = ["feos/pcsaft"]
 gc_pcsaft = ["feos/gc_pcsaft"]
-parameter_fit = []
+parameter_fit = ["ndarray/rayon"]

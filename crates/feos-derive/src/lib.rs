@@ -2,24 +2,24 @@
 //! FunctionalVariant enums in FeOs. The macros implement
 //! the boilerplate for the EquationOfState and HelmholtzEnergyFunctional traits.
 #![warn(clippy::all)]
-use components::expand_components;
 use dft::expand_helmholtz_energy_functional;
 use functional_contribution::expand_functional_contribution;
 use ideal_gas::expand_ideal_gas;
 use proc_macro::TokenStream;
 use residual::expand_residual;
+use subset::expand_subset;
 use syn::{parse_macro_input, DeriveInput};
 
-mod components;
 mod dft;
 mod functional_contribution;
 mod ideal_gas;
 mod residual;
+mod subset;
 
 // possible additional traits to implement
-const OPT_IMPLS: [&str; 6] = [
+const OPT_IMPLS: [&str; 5] = [
     "molar_weight",
-    "entropy_scaling",
+    // "entropy_scaling",
     "functional",
     "bond_lengths",
     "fluid_parameters",
@@ -60,15 +60,15 @@ fn implement(name: &str, variant: &syn::Variant, opts: &[&'static str]) -> syn::
     implement
 }
 
-#[proc_macro_derive(Components)]
+#[proc_macro_derive(Subset)]
 pub fn derive_components(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    expand_components(input)
+    expand_subset(input)
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }
 
-#[proc_macro_derive(IdealGas)]
+#[proc_macro_derive(IdealGasDyn)]
 pub fn derive_ideal_gas(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     expand_ideal_gas(input)
@@ -76,7 +76,7 @@ pub fn derive_ideal_gas(input: TokenStream) -> TokenStream {
         .into()
 }
 
-#[proc_macro_derive(Residual, attributes(implement))]
+#[proc_macro_derive(ResidualDyn, attributes(implement))]
 pub fn derive_residual(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     expand_residual(input)

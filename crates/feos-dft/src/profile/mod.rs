@@ -3,12 +3,13 @@ use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::Grid;
 use crate::solver::{DFTSolver, DFTSolverLog};
 use feos_core::{FeosError, FeosResult, ReferenceSystem, State};
+use nalgebra::{DVector, Dyn, U1};
 use ndarray::{
     Array, Array1, Array2, Array3, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3,
     RemoveAxis,
 };
 use num_dual::DualNum;
-use quantity::{Density, Length, Moles, Quantity, Temperature, Volume, _Volume, DEGREES};
+use quantity::{_Volume, DEGREES, Density, Length, Moles, Quantity, Temperature, Volume};
 use std::ops::{Add, MulAssign};
 use std::sync::Arc;
 use typenum::Sum;
@@ -98,10 +99,11 @@ impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTSpecification<D, F> for DFTS
 }
 
 /// A one-, two-, or three-dimensional density profile.
+#[derive(Clone)]
 pub struct DFTProfile<D: Dimension, F> {
     pub grid: Grid,
     pub convolver: Arc<dyn Convolver<f64, D>>,
-    pub dft: Arc<F>,
+    pub dft: F,
     pub temperature: Temperature,
     pub density: Density<Array<f64, D::Larger>>,
     pub specification: Arc<dyn DFTSpecification<D, F>>,
@@ -285,9 +287,9 @@ where
     pub(crate) fn integrate_reduced_segments<S: Data<Elem = N>, N: DualNum<f64> + Copy>(
         &self,
         profile: &ArrayBase<S, D::Larger>,
-    ) -> Array1<N> {
+    ) -> DVector<N> {
         let integral = self.integrate_reduced_comp(profile);
-        let mut integral_comp = Array1::zeros(self.dft.components());
+        let mut integral_comp = DVector::zeros(self.dft.components());
         for (i, &j) in self.dft.component_index().iter().enumerate() {
             integral_comp[j] = integral[i];
         }
@@ -324,11 +326,11 @@ where
     pub fn integrate_comp<S: Data<Elem = f64>, U>(
         &self,
         profile: &Quantity<ArrayBase<S, D::Larger>, U>,
-    ) -> Quantity<Array1<f64>, Sum<_Volume, U>>
+    ) -> Quantity<DVector<f64>, Sum<_Volume, U>>
     where
         _Volume: Add<U>,
     {
-        Quantity::from_shape_fn(profile.shape()[0], |i| {
+        Quantity::from_fn_generic(Dyn(profile.shape()[0]), U1, |i, _| {
             self.integrate(&profile.index_axis(Axis_nd(0), i))
         })
     }
@@ -337,12 +339,12 @@ where
     pub fn integrate_segments<S: Data<Elem = f64>, U>(
         &self,
         profile: &Quantity<ArrayBase<S, D::Larger>, U>,
-    ) -> Quantity<Array1<f64>, Sum<_Volume, U>>
+    ) -> Quantity<DVector<f64>, Sum<_Volume, U>>
     where
         _Volume: Add<U>,
     {
         let integral = self.integrate_comp(profile);
-        let mut integral_comp = Quantity::zeros(self.dft.components());
+        let mut integral_comp = Quantity::new(DVector::zeros(self.dft.components()));
         for (i, &j) in self.dft.component_index().iter().enumerate() {
             integral_comp.set(j, integral.get(i));
         }
@@ -350,30 +352,13 @@ where
     }
 
     /// Return the number of moles of each component in the system.
-    pub fn moles(&self) -> Moles<Array1<f64>> {
+    pub fn moles(&self) -> Moles<DVector<f64>> {
         self.integrate_segments(&self.density)
     }
 
     /// Return the total number of moles in the system.
     pub fn total_moles(&self) -> Moles {
         self.moles().sum()
-    }
-}
-
-impl<D: Dimension + Clone, F> Clone for DFTProfile<D, F> {
-    fn clone(&self) -> Self {
-        Self {
-            grid: self.grid.clone(),
-            convolver: self.convolver.clone(),
-            dft: self.dft.clone(),
-            temperature: self.temperature,
-            density: self.density.clone(),
-            specification: self.specification.clone(),
-            external_potential: self.external_potential.clone(),
-            bulk: self.bulk.clone(),
-            solver_log: self.solver_log.clone(),
-            lanczos: self.lanczos,
-        }
     }
 }
 

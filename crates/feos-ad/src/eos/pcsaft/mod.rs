@@ -99,7 +99,7 @@ pub mod test {
     use feos_core::parameter::{AssociationRecord, PureRecord};
     use std::sync::Arc;
 
-    pub fn pcsaft() -> FeosResult<(PcSaftPure<8>, Arc<PcSaft>)> {
+    pub fn pcsaft() -> FeosResult<(PcSaftPure<f64, 8>, Arc<PcSaft>)> {
         let m = 1.5;
         let sigma = 3.4;
         let epsilon_k = 180.0;
@@ -124,7 +124,7 @@ pub mod test {
         Ok((PcSaftPure(params), eos))
     }
 
-    pub fn pcsaft_binary() -> FeosResult<(PcSaftBinary<8>, Arc<PcSaft>)> {
+    pub fn pcsaft_binary() -> FeosResult<(PcSaftBinary<f64, 8>, Arc<PcSaft>)> {
         let params = [
             [1.5, 3.4, 180.0, 2.2, 0.03, 2500., 2.0, 1.0],
             [2.5, 3.6, 250.0, 1.2, 0.015, 1500., 1.0, 2.0],

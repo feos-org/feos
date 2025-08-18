@@ -1,10 +1,8 @@
-use crate::adsorption::FluidParameters;
 use crate::convolver::Convolver;
 use crate::functional_contribution::*;
 use crate::ideal_chain_contribution::IdealChainContribution;
-use crate::solvation::PairPotential;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
-use feos_core::{EquationOfState, FeosResult, IdealGas, Residual, StateHD};
+use feos_core::{FeosResult, Residual, StateHD};
 use ndarray::*;
 use num_dual::*;
 use petgraph::Directed;
@@ -13,43 +11,6 @@ use petgraph::visit::EdgeRef;
 use std::borrow::Cow;
 use std::ops::MulAssign;
 use std::sync::Arc;
-
-impl<I: IdealGas, F: HelmholtzEnergyFunctional> HelmholtzEnergyFunctional
-    for EquationOfState<I, F>
-{
-    type Contribution<'a>
-        = F::Contribution<'a>
-    where
-        Self: 'a;
-
-    fn contributions<'a>(&'a self) -> Vec<Self::Contribution<'a>> {
-        self.residual.contributions()
-    }
-
-    fn molecule_shape(&self) -> MoleculeShape {
-        self.residual.molecule_shape()
-    }
-
-    fn bond_lengths<N: DualNum<f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
-        self.residual.bond_lengths(temperature)
-    }
-}
-
-impl<I, F: PairPotential> PairPotential for EquationOfState<I, F> {
-    fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64> {
-        self.residual.pair_potential(i, r, temperature)
-    }
-}
-
-impl<I: IdealGas, F: FluidParameters> FluidParameters for EquationOfState<I, F> {
-    fn epsilon_k_ff(&self) -> Array1<f64> {
-        self.residual.epsilon_k_ff()
-    }
-
-    fn sigma_ff(&self) -> &Array1<f64> {
-        self.residual.sigma_ff()
-    }
-}
 
 /// Different representations for molecules within DFT.
 pub enum MoleculeShape<'a> {
@@ -111,7 +72,7 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
 
     /// Calculate the (residual) intrinsic functional derivative $\frac{\delta\mathcal{\beta F}}{\delta\rho_i(\mathbf{r})}$.
     #[expect(clippy::type_complexity)]
-    fn functional_derivative<D, N: DualNum<f64> + Copy + ScalarOperand>(
+    fn functional_derivative<D, N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         density: &Array<N, D::Larger>,
@@ -227,18 +188,16 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
         i
     }
 
-    fn evaluate_bulk<D: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
+    fn evaluate_bulk<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> Vec<(String, D)> {
         let mut res: Vec<(String, D)> = self
             .contributions()
             .into_iter()
-            .map(|c| (c.name().to_string(), c.helmholtz_energy(state)))
+            .map(|c| (c.name().to_string(), c.bulk_helmholtz_energy_density(state)))
             .collect();
         res.push((
             self.ideal_chain_contribution().name(),
-            self.ideal_chain_contribution().helmholtz_energy(state),
+            self.ideal_chain_contribution()
+                .bulk_helmholtz_energy_density(&state.partial_density),
         ));
         res
     }

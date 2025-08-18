@@ -3,8 +3,8 @@ use feos::ideal_gas::{Joback, JobackParameters};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::IdentifierOption;
 use feos_core::{
-    Contributions, DensityInitialization, EquationOfState, FeosResult, IdealGas, PhaseEquilibrium,
-    Residual, State, StateBuilder,
+    Contributions, EquationOfState, FeosResult, IdealGas, PhaseEquilibrium, Residual, State,
+    StateBuilder,
 };
 use quantity::*;
 use std::error::Error;
@@ -316,7 +316,7 @@ fn temperature_entropy_vapor() -> Result<(), Box<dyn Error>> {
         temperature,
         state.molar_entropy(Contributions::Total),
         &state.moles,
-        DensityInitialization::None,
+        None,
     )?;
     assert_relative_eq!(
         state.molar_entropy(Contributions::Total),

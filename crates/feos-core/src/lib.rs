@@ -30,18 +30,19 @@ mod density_iteration;
 mod equation_of_state;
 mod errors;
 pub mod parameter;
+mod parameter_fit;
 mod phase_equilibria;
 mod state;
 pub use equation_of_state::{
-    Components, EntropyScaling, EquationOfState, IdealGas, Molarweight, NoResidual, Residual,
+    EquationOfState, IdealGas, IdealGasDyn, Molarweight, NoResidual, Residual, ResidualConst,
+    ResidualDyn, Subset, Total,
 };
 pub use errors::{FeosError, FeosResult};
-pub use phase_equilibria::{
-    PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, TemperatureOrPressure,
-};
-pub use state::{
-    Contributions, DensityInitialization, Derivative, State, StateBuilder, StateHD, StateVec,
-};
+pub use parameter_fit::{BinaryModel, ParametersAD, PureModel};
+#[cfg(feature = "ndarray")]
+pub use phase_equilibria::{PhaseDiagram, PhaseDiagramHetero};
+pub use phase_equilibria::{PhaseEquilibrium, TemperatureOrPressure};
+pub use state::{Contributions, DensityInitialization, State, StateBuilder, StateHD, StateVec};
 
 /// Level of detail in the iteration output.
 #[derive(Copy, Clone, PartialOrd, PartialEq, Eq)]
@@ -133,43 +134,48 @@ const fn powi(x: f64, n: i32) -> f64 {
     }
 }
 
-pub trait ReferenceSystem<
-    Inner,
-    T: Integer,
-    L: Integer,
-    M: Integer,
-    I: Integer,
-    THETA: Integer,
-    N: Integer,
-    J: Integer,
->
-{
-    const FACTOR: f64 = powi(REFERENCE_VALUES[0], T::I32)
-        * powi(REFERENCE_VALUES[1], L::I32)
-        * powi(REFERENCE_VALUES[2], M::I32)
-        * powi(REFERENCE_VALUES[3], I::I32)
-        * powi(REFERENCE_VALUES[4], THETA::I32)
-        * powi(REFERENCE_VALUES[5], N::I32)
-        * powi(REFERENCE_VALUES[6], J::I32);
+pub trait ReferenceSystem {
+    type Inner;
+    type T: Integer;
+    type L: Integer;
+    type M: Integer;
+    type I: Integer;
+    type THETA: Integer;
+    type N: Integer;
+    type J: Integer;
+    const FACTOR: f64 = powi(REFERENCE_VALUES[0], Self::T::I32)
+        * powi(REFERENCE_VALUES[1], Self::L::I32)
+        * powi(REFERENCE_VALUES[2], Self::M::I32)
+        * powi(REFERENCE_VALUES[3], Self::I::I32)
+        * powi(REFERENCE_VALUES[4], Self::THETA::I32)
+        * powi(REFERENCE_VALUES[5], Self::N::I32)
+        * powi(REFERENCE_VALUES[6], Self::J::I32);
 
-    fn from_reduced(value: Inner) -> Self
+    fn from_reduced(value: Self::Inner) -> Self
     where
-        Inner: Mul<f64, Output = Inner>;
+        Self::Inner: Mul<f64, Output = Self::Inner>;
 
-    fn to_reduced(&self) -> Inner
+    fn to_reduced(&self) -> Self::Inner
     where
-        for<'a> &'a Inner: Div<f64, Output = Inner>;
+        for<'a> &'a Self::Inner: Div<f64, Output = Self::Inner>;
 
-    fn into_reduced(self) -> Inner
+    fn into_reduced(self) -> Self::Inner
     where
-        Inner: Div<f64, Output = Inner>;
+        Self::Inner: Div<f64, Output = Self::Inner>;
 }
 
 /// Conversion to and from reduced units
 impl<Inner, T: Integer, L: Integer, M: Integer, I: Integer, THETA: Integer, N: Integer, J: Integer>
-    ReferenceSystem<Inner, T, L, M, I, THETA, N, J>
-    for Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>
+    ReferenceSystem for Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>
 {
+    type Inner = Inner;
+    type T = T;
+    type L = L;
+    type M = M;
+    type I = I;
+    type THETA = THETA;
+    type N = N;
+    type J = J;
     fn from_reduced(value: Inner) -> Self
     where
         Inner: Mul<f64, Output = Inner>,
@@ -198,34 +204,23 @@ mod tests {
     use crate::FeosResult;
     use crate::StateBuilder;
     use crate::cubic::*;
-    use crate::equation_of_state::{Components, EquationOfState, IdealGas};
+    use crate::equation_of_state::{EquationOfState, IdealGasDyn};
     use crate::parameter::*;
     use approx::*;
-    use ndarray::Array1;
     use num_dual::DualNum;
     use quantity::{BAR, KELVIN, MOL, RGAS};
-    use std::sync::Arc;
 
     // Only to be able to instantiate an `EquationOfState`
+    #[derive(Clone, Copy)]
     struct NoIdealGas;
 
-    impl Components for NoIdealGas {
-        fn components(&self) -> usize {
-            1
+    impl IdealGasDyn for NoIdealGas {
+        fn ideal_gas_model(&self) -> &'static str {
+            "NoIdealGas"
         }
 
-        fn subset(&self, _: &[usize]) -> Self {
-            Self
-        }
-    }
-
-    impl IdealGas for NoIdealGas {
-        fn ln_lambda3<D: DualNum<f64> + Copy>(&self, _: D) -> Array1<D> {
+        fn ln_lambda3<D: DualNum<f64> + Copy>(&self, _: D) -> D {
             unreachable!()
-        }
-
-        fn ideal_gas_model(&self) -> String {
-            "NoIdealGas".into()
         }
     }
 
@@ -266,18 +261,20 @@ mod tests {
     #[test]
     fn validate_residual_properties() -> FeosResult<()> {
         let mixture = pure_record_vec();
-        let propane = mixture[0].clone();
-        let parameters = PengRobinsonParameters::new_pure(propane)?;
-        let residual = Arc::new(PengRobinson::new(parameters));
-        let eos = Arc::new(EquationOfState::new(Arc::new(NoIdealGas), residual.clone()));
+        let propane = &mixture[0];
+        let parameters = PengRobinsonParameters::new_pure(propane.clone())?;
+        let residual = PengRobinson::new(parameters);
 
-        let sr = StateBuilder::new(&residual)
+        let sr = StateBuilder::new(&&residual)
             .temperature(300.0 * KELVIN)
             .pressure(1.0 * BAR)
             .total_moles(2.0 * MOL)
             .build()?;
 
-        let s = StateBuilder::new(&eos)
+        let parameters = PengRobinsonParameters::new_pure(propane.clone())?;
+        let residual = PengRobinson::new(parameters);
+        let eos = EquationOfState::new(vec![NoIdealGas], residual);
+        let s = StateBuilder::new(&&eos)
             .temperature(300.0 * KELVIN)
             .pressure(1.0 * BAR)
             .total_moles(2.0 * MOL)

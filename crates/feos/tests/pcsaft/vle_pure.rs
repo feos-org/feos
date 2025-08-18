@@ -1,7 +1,7 @@
 use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::IdentifierOption;
-use feos_core::{Contributions, PhaseEquilibrium};
+use feos_core::{Contributions, PhaseEquilibrium, SolverOptions};
 use quantity::*;
 use std::error::Error;
 use std::sync::Arc;
@@ -22,8 +22,12 @@ fn vle_pure_temperature() -> Result<(), Box<dyn Error>> {
         300.0 * KELVIN,
         350.0 * KELVIN,
     ];
+    let options = SolverOptions {
+        verbosity: feos_core::Verbosity::Iter,
+        ..Default::default()
+    };
     for &t in temperatures.iter() {
-        let state = PhaseEquilibrium::pure(&saft, t, None, Default::default())?;
+        let state = PhaseEquilibrium::pure(&saft, t, None, options)?;
         assert_relative_eq!(state.vapor().temperature, t, max_relative = 1e-10);
         assert_relative_eq!(
             state.vapor().pressure(Contributions::Total),

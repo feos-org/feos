@@ -10,7 +10,7 @@ use feos::pcsaft::{
     PcSaft, PcSaftAssociationRecord, PcSaftBinaryRecord, PcSaftParameters, PcSaftRecord,
 };
 use feos_core::parameter::PureRecord;
-use ndarray::{Array, ScalarOperand, arr1};
+use nalgebra::{DVector, dvector};
 use num_dual::DualNum;
 use quantity::*;
 use std::sync::Arc;
@@ -23,14 +23,15 @@ use typenum::P3;
 fn state_pcsaft(parameters: PcSaftParameters) -> State<PcSaft> {
     let n = parameters.pure.len();
     let eos = Arc::new(PcSaft::new(parameters));
-    let moles = Array::from_elem(n, 1.0 / n as f64) * 10.0 * MOL;
-    let cp = State::critical_point(&eos, Some(&moles), None, Default::default()).unwrap();
+    let moles = DVector::from_element(n, 1.0 / n as f64) * 10.0 * MOL;
+    let molefracs = (&moles / moles.sum()).into_value();
+    let cp = State::critical_point(&eos, Some(&molefracs), None, Default::default()).unwrap();
     let temperature = 0.8 * cp.temperature;
     State::new_nvt(&eos, temperature, cp.volume, &moles).unwrap()
 }
 
 /// Residual Helmholtz energy given an equation of state and a StateHD.
-fn a_res<D: DualNum<f64> + Copy + ScalarOperand, E: Residual>(inp: (&Arc<E>, &StateHD<D>)) -> D {
+fn a_res<D: DualNum<f64> + Copy, E: Residual>(inp: (&Arc<E>, &StateHD<D>)) -> D {
     inp.0.residual_helmholtz_energy(inp.1)
 }
 
@@ -130,7 +131,7 @@ fn methane_co2_pcsaft(c: &mut Criterion) {
     let temperature = 230.0 * KELVIN;
     let density = 24.16896 * KILO * MOL / METER.powi::<P3>();
     let volume = 10.0 * MOL / density;
-    let x = arr1(&[0.15, 0.85]);
+    let x = dvector![0.15, 0.85];
     let moles = &x * 10.0 * MOL;
     let state = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
     bench_dual_numbers(c, "dual_numbers_pcsaft_methane_co2", state);

@@ -1,4 +1,5 @@
-use feos_core::{FeosResult, ReferenceSystem, StateHD};
+use feos_core::{FeosResult, ReferenceSystem};
+use nalgebra::DVector;
 use ndarray::*;
 use num_dual::DualNum;
 use quantity::{Density, Pressure, Temperature};
@@ -21,21 +22,23 @@ impl IdealChainContribution {
         "Ideal chain".to_string()
     }
 
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
+    pub fn bulk_helmholtz_energy_density<D: DualNum<f64> + Copy>(
+        &self,
+        partial_density: &DVector<D>,
+    ) -> D {
         let segments = self.component_index.len();
         if self.component_index[segments - 1] + 1 != segments {
             return D::zero();
         }
 
         // calculate segment density
-        let density = self.component_index.mapv(|c| state.partial_density[c]);
+        let density = self.component_index.mapv(|c| partial_density[c]);
 
         // calculate Helmholtz energy
         (&density
             * &(&self.m - 1.0)
             * density.mapv(|r| (r.abs() + D::from(f64::EPSILON)).ln() - 1.0))
         .sum()
-            * state.volume
     }
 
     pub fn helmholtz_energy_density<D, N>(

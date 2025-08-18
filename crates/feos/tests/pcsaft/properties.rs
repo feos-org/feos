@@ -2,7 +2,7 @@ use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::IdentifierOption;
 use feos_core::{Residual, StateBuilder};
-use ndarray::*;
+use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
 use std::sync::Arc;
@@ -22,13 +22,13 @@ fn test_dln_phi_dp() -> Result<(), Box<dyn Error>> {
     let s = StateBuilder::new(&saft)
         .temperature(t)
         .pressure(p)
-        .molefracs(&arr1(&[0.5, 0.5]))
+        .molefracs(&dvector![0.5, 0.5])
         .vapor()
         .build()?;
     let sh = StateBuilder::new(&saft)
         .temperature(t)
         .pressure(p + h)
-        .molefracs(&arr1(&[0.5, 0.5]))
+        .molefracs(&dvector![0.5, 0.5])
         .vapor()
         .build()?;
 

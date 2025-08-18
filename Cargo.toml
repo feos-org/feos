@@ -22,8 +22,10 @@ keywords = [
 categories = ["science"]
 
 [workspace.dependencies]
-quantity = "0.10"
-num-dual = "0.11"
+#quantity = "0.10"
+quantity = { git = "https://github.com/itt-ustutt/quantity", branch = "num_dual" }
+#num-dual = "0.11"
+num-dual = { git = "https://github.com/itt-ustutt/num-dual", branch = "linalg_nalgebra" }
 ndarray = "0.16"
 nalgebra = "0.33"
 thiserror = "2.0"
@@ -34,16 +36,18 @@ serde_json = "1.0"
 indexmap = "2.0"
 itertools = "0.14"
 typenum = "1.16"
-rayon = "1.5"
+rayon = "1.11"
 petgraph = "0.8"
 rustdct = "0.7"
 rustfft = "6.0"
 libm = "0.2"
 gauss-quad = "0.2"
 approx = "0.5"
-criterion = "0.5"
+criterion = "0.7"
+paste = "1.0"
 
 feos-core = { version = "0.8", path = "crates/feos-core" }
+feos-ad = { version = "0.2", path = "crates/feos-ad" }
 feos-dft = { version = "0.8", path = "crates/feos-dft" }
 feos-derive = { version = "0.6", path = "crates/feos-derive" }
 feos = { version = "0.8", path = "crates/feos" }

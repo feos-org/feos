@@ -1,102 +1,90 @@
-use feos_core::{Components, IdealGas, Residual, StateHD};
-use nalgebra::{Const, SVector, U1};
-use ndarray::{arr1, Array1, ScalarOperand};
-use num_dual::{Derivative, DualNum, DualVec};
-use std::sync::Arc;
+use std::ops::Deref;
 
-mod phase_equilibria;
-mod residual;
-mod state;
-mod total;
-pub use phase_equilibria::PhaseEquilibriumAD;
-pub use residual::{ParametersAD, ResidualHelmholtzEnergy};
-pub use state::{Eigen, StateAD};
-pub use total::{EquationOfStateAD, IdealGasAD, TotalHelmholtzEnergy};
+use nalgebra::{Const, U1};
+use num_dual::{Derivative, DualNum, DualSVec, DualStruct};
 
-/// Used internally to implement the [Residual] and [IdealGas] traits from FeOs.
-pub struct FeOsWrapper<E, const N: usize>(E);
+// mod phase_equilibria;
+// mod residual;
+// mod state;
+// mod total;
+// pub use phase_equilibria::PhaseEquilibriumAD;
+// pub use residual::ResidualHelmholtzEnergy;
+// pub use state::{PhaseEquilibriumAD, StateAD};
+// pub use total::{EquationOfStateAD, IdealGasAD, TotalHelmholtzEnergy};
 
-impl<R: ParametersAD, const N: usize> Components for FeOsWrapper<R, N> {
-    fn components(&self) -> usize {
-        N
+/// A model that can be evaluated with derivatives of its parameters.
+pub trait ParametersAD: Sized + Deref<Target = Self::Parameters<f64>> {
+    /// The type of the structure that stores the parameters internally.
+    type Parameters<D: DualNum<f64> + Copy>: DualStruct<D, f64> + Clone;
+
+    // /// Return a reference to the parameters.
+    // fn params(&self) -> &Self::Parameters<f64>;
+
+    /// Lift the parameters to the given type of dual number.
+    fn params_from_inner<D: DualNum<f64> + Copy, D2: DualNum<f64, Inner = D> + Copy>(
+        parameters: &Self::Parameters<D>,
+    ) -> Self::Parameters<D2>;
+
+    /// Wraps the model in the [HelmholtzEnergyWrapper] struct, so that it can be used
+    /// as an argument to [StateAD](crate::StateAD) and [PhaseEquilibriumAD](crate::PhaseEquilibriumAD) constructors.
+    fn wrap<'a, const N: usize>(&'a self) -> HelmholtzEnergyWrapper<'a, Self, f64, N> {
+        HelmholtzEnergyWrapper {
+            eos: self,
+            parameters: self,
+        }
     }
 
-    fn subset(&self, _: &[usize]) -> Self {
-        panic!("Calculating properties of subsets of models is not possible with AD.")
-    }
-}
-
-impl<R: ResidualHelmholtzEnergy<N>, const N: usize> Residual for FeOsWrapper<R, N> {
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        let total_moles = moles.sum();
-        let molefracs = SVector::from_fn(|i, _| moles[i] / total_moles);
-        self.0.compute_max_density(&molefracs)
-    }
-
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
-        let temperature = state.temperature;
-        let volume = state.volume;
-        let density = SVector::from_column_slice(state.partial_density.as_slice().unwrap());
-        let parameters = self.0.params();
-        let a = R::residual_helmholtz_energy_density(&parameters, temperature, &density) * volume
-            / temperature;
-        vec![(R::RESIDUAL.into(), a)]
-    }
-}
-
-impl<E: TotalHelmholtzEnergy<N>, const N: usize> IdealGas for FeOsWrapper<E, N> {
-    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
-        let parameters = self.0.params();
-        arr1(&E::ln_lambda3(&parameters, temperature).data.0[0])
+    /// Manually set the parameters and their derivatives.
+    fn derivatives<'a, D: DualNum<f64> + Copy, const N: usize>(
+        &'a self,
+        parameters: &'a Self::Parameters<D>,
+    ) -> HelmholtzEnergyWrapper<'a, Self, D, N> {
+        HelmholtzEnergyWrapper {
+            eos: self,
+            parameters,
+        }
     }
 
-    fn ideal_gas_model(&self) -> String {
-        E::IDEAL_GAS.into()
-    }
+    /// Manually set the parameters and their derivatives.
+    fn derivatives2<D: DualNum<f64> + Copy>(parameters: Self::Parameters<D>) -> Self;
 }
 
 /// Struct that stores the reference to the equation of state together with the (possibly) dual parameters.
-pub struct HelmholtzEnergyWrapper<E: ParametersAD, D: DualNum<f64> + Copy, const N: usize> {
-    pub eos: Arc<FeOsWrapper<E, N>>,
-    pub parameters: E::Parameters<D>,
+#[derive(Copy)]
+pub struct HelmholtzEnergyWrapper<'a, E: ParametersAD, D: DualNum<f64> + Copy, const N: usize> {
+    pub eos: &'a E,
+    pub parameters: &'a E::Parameters<D>,
 }
 
-impl<E: ParametersAD, const N: usize> HelmholtzEnergyWrapper<E, f64, N> {
-    /// Manually set the parameters and their derivatives.
-    pub fn derivatives<D: DualNum<f64> + Copy>(
-        &self,
-        parameters: E::Parameters<D>,
-    ) -> HelmholtzEnergyWrapper<E, D, N> {
-        HelmholtzEnergyWrapper {
-            eos: self.eos.clone(),
-            parameters,
+impl<'a, E: ParametersAD, D: DualNum<f64> + Copy, const N: usize> Clone
+    for HelmholtzEnergyWrapper<'a, E, D, N>
+{
+    fn clone(&self) -> Self {
+        Self {
+            eos: self.eos,
+            parameters: self.parameters,
         }
     }
 }
 
 /// Models for which derivatives with respect to individual parameters can be calculated.
-pub trait NamedParameters: ParametersAD {
+pub trait NamedParameters: ParametersAD + for<'a> From<&'a [f64]> {
     /// Return a mutable reference to the parameter named by `index` from the parameter set.
     fn index_parameters_mut<'a, D: DualNum<f64> + Copy>(
         parameters: &'a mut Self::Parameters<D>,
         index: &str,
     ) -> &'a mut D;
-}
 
-impl<E: NamedParameters, const N: usize> HelmholtzEnergyWrapper<E, f64, N> {
-    /// Initialize the parameters to calculate their derivatives.
-    pub fn named_derivatives<const P: usize>(
+    /// Return the parameters with the appropriate derivatives.
+    fn named_derivatives<const P: usize>(
         &self,
         parameters: [&str; P],
-    ) -> HelmholtzEnergyWrapper<E, DualVec<f64, f64, Const<P>>, N> {
-        let mut params: E::Parameters<DualVec<f64, f64, Const<P>>> = self.eos.0.params();
+    ) -> Self::Parameters<DualSVec<f64, f64, P>> {
+        let mut params: Self::Parameters<DualSVec<f64, f64, P>> = Self::params_from_inner(self);
         for (i, p) in parameters.into_iter().enumerate() {
-            E::index_parameters_mut(&mut params, p).eps =
+            Self::index_parameters_mut(&mut params, p).eps =
                 Derivative::derivative_generic(Const::<P>, U1, i)
         }
-        self.derivatives(params)
+        params
     }
 }

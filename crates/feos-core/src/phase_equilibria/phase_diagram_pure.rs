@@ -1,28 +1,20 @@
 use super::PhaseEquilibrium;
+#[cfg(feature = "rayon")]
+use crate::ReferenceSystem;
+use crate::SolverOptions;
 use crate::equation_of_state::Residual;
 use crate::errors::FeosResult;
 use crate::state::{State, StateVec};
 #[cfg(feature = "rayon")]
-use crate::ReferenceSystem;
-use crate::SolverOptions;
-#[cfg(feature = "rayon")]
 use ndarray::{Array1, ArrayView1, Axis};
 use quantity::Temperature;
 #[cfg(feature = "rayon")]
-use rayon::{prelude::*, ThreadPool};
-use std::sync::Arc;
+use rayon::{ThreadPool, prelude::*};
 
 /// Pure component and binary mixture phase diagrams.
+#[derive(Clone)]
 pub struct PhaseDiagram<E, const N: usize> {
     pub states: Vec<PhaseEquilibrium<E, N>>,
-}
-
-impl<E, const N: usize> Clone for PhaseDiagram<E, N> {
-    fn clone(&self) -> Self {
-        Self {
-            states: self.states.clone(),
-        }
-    }
 }
 
 impl<E, const N: usize> PhaseDiagram<E, N> {
@@ -35,7 +27,7 @@ impl<E, const N: usize> PhaseDiagram<E, N> {
 impl<E: Residual> PhaseDiagram<E, 2> {
     /// Calculate a phase diagram for a pure component.
     pub fn pure(
-        eos: &Arc<E>,
+        eos: &E,
         min_temperature: Temperature,
         npoints: usize,
         critical_temperature: Option<Temperature>,
@@ -75,7 +67,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 #[cfg(feature = "rayon")]
 impl<E: Residual> PhaseDiagram<E, 2> {
     fn solve_temperatures(
-        eos: &Arc<E>,
+        eos: &E,
         temperatures: ArrayView1<f64>,
         options: SolverOptions,
     ) -> FeosResult<Vec<PhaseEquilibrium<E, 2>>> {
@@ -93,14 +85,17 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     }
 
     pub fn par_pure(
-        eos: &Arc<E>,
+        eos: &E,
         min_temperature: Temperature,
         npoints: usize,
         chunksize: usize,
         thread_pool: ThreadPool,
         critical_temperature: Option<Temperature>,
         options: SolverOptions,
-    ) -> FeosResult<Self> {
+    ) -> FeosResult<Self>
+    where
+        E: Send + Sync,
+    {
         let sc = State::critical_point(eos, None, critical_temperature, SolverOptions::default())?;
 
         let max_temperature = min_temperature

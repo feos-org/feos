@@ -1,13 +1,13 @@
 //! Generic implementation of the SAFT association contribution
 //! that can be used across models.
-use std::collections::HashMap;
-
 use crate::hard_sphere::HardSphereProperties;
 use feos_core::parameter::{AssociationParameters, GenericParameters};
 use feos_core::{FeosError, FeosResult, StateHD};
-use ndarray::*;
-use num_dual::linalg::{LU, norm};
+use nalgebra::{DMatrix, DVector};
+use num_dual::linalg::LU;
 use num_dual::*;
+use std::collections::HashMap;
+use std::fmt::Debug;
 
 #[cfg(feature = "dft")]
 mod dft;
@@ -17,7 +17,7 @@ pub use dft::AssociationFunctional;
 /// Implementation of the association strength in the SAFT association model.
 pub trait AssociationStrength: HardSphereProperties {
     type Pure;
-    type Record: Clone;
+    type Record: Clone + Debug + PartialEq + 'static;
 
     fn association_strength<D: DualNum<f64> + Copy>(
         &self,
@@ -41,8 +41,8 @@ pub struct Association<A: AssociationStrength> {
     max_iter: usize,
     tol: f64,
     force_cross_association: bool,
-    parameters_ab: Array2<Option<A::Record>>,
-    parameters_cc: Array2<Option<A::Record>>,
+    parameters_ab: DMatrix<Option<A::Record>>,
+    parameters_cc: DMatrix<Option<A::Record>>,
 }
 
 impl<A: AssociationStrength> Association<A> {
@@ -69,7 +69,7 @@ impl<A: AssociationStrength> Association<A> {
             .map(|br| ((br.id1, br.id2), &br.model_record))
             .collect();
 
-        let parameters_ab = Array2::from_shape_fn([a.sites_a.len(), a.sites_b.len()], |(i, j)| {
+        let parameters_ab = DMatrix::from_fn(a.sites_a.len(), a.sites_b.len(), |i, j| {
             if let Some(&record) = binary_ab.get(&(i, j)) {
                 Some(record.clone())
             } else if let (Some(p1), Some(p2)) =
@@ -85,7 +85,7 @@ impl<A: AssociationStrength> Association<A> {
                 None
             }
         });
-        let parameters_cc = Array2::from_shape_fn([a.sites_c.len(); 2], |(i, j)| {
+        let parameters_cc = DMatrix::from_fn(a.sites_c.len(), a.sites_c.len(), |i, j| {
             if let Some(&record) = binary_cc.get(&(i, j)) {
                 Some(record.clone())
             } else if let (Some(p1), Some(p2)) =
@@ -124,12 +124,12 @@ impl<A: AssociationStrength> Association<A> {
     }
 
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         model: &A,
         parameters: &AssociationParameters<A::Record>,
         state: &StateHD<D>,
-        diameter: &Array1<D>,
+        diameter: &DVector<D>,
     ) -> D {
         let a = parameters;
 
@@ -155,26 +155,26 @@ impl<A: AssociationStrength> Association<A> {
             self.force_cross_association,
         ) {
             (0, 0, _) => D::zero(),
-            (1, 0, false) => self.helmholtz_energy_ab_analytic(a, state, delta_ab[(0, 0)]),
-            (0, 1, false) => self.helmholtz_energy_cc_analytic(a, state, delta_cc[(0, 0)]),
+            (1, 0, false) => self.helmholtz_energy_density_ab_analytic(a, state, delta_ab[(0, 0)]),
+            (0, 1, false) => self.helmholtz_energy_density_cc_analytic(a, state, delta_cc[(0, 0)]),
             (1, 1, false) => {
-                self.helmholtz_energy_ab_analytic(a, state, delta_ab[(0, 0)])
-                    + self.helmholtz_energy_cc_analytic(a, state, delta_cc[(0, 0)])
+                self.helmholtz_energy_density_ab_analytic(a, state, delta_ab[(0, 0)])
+                    + self.helmholtz_energy_density_cc_analytic(a, state, delta_cc[(0, 0)])
             }
             _ => {
                 // extract site densities of associating segments
-                let rho: Array1<_> = a
+                let rho: Vec<_> = a
                     .sites_a
                     .iter()
                     .chain(a.sites_b.iter())
                     .chain(a.sites_c.iter())
                     .map(|s| state.partial_density[a.component_index[s.assoc_comp]] * s.n)
                     .collect();
+                let rho = DVector::from(rho);
 
                 // Helmholtz energy
                 self.helmholtz_energy_density_cross_association(&rho, &delta_ab, &delta_cc, None)
                     .unwrap_or_else(|_| D::from(f64::NAN))
-                    * state.volume
             }
         }
     }
@@ -185,14 +185,14 @@ impl<A: AssociationStrength> Association<A> {
         parameters: &AssociationParameters<A::Record>,
         model: &A,
         temperature: D,
-        diameter: &Array1<D>,
+        diameter: &DVector<D>,
         n2: D,
         n3i: D,
         xi: D,
-    ) -> [Array2<D>; 2] {
+    ) -> [DMatrix<D>; 2] {
         let p = parameters;
 
-        let delta_ab = Array2::from_shape_fn([p.sites_a.len(), p.sites_b.len()], |(i, j)| {
+        let delta_ab = DMatrix::from_fn(p.sites_a.len(), p.sites_b.len(), |i, j| {
             if let Some(par) = &self.parameters_ab[(i, j)] {
                 let di = diameter[p.sites_a[i].assoc_comp];
                 let dj = diameter[p.sites_b[j].assoc_comp];
@@ -208,7 +208,7 @@ impl<A: AssociationStrength> Association<A> {
                 D::zero()
             }
         });
-        let delta_cc = Array2::from_shape_fn([p.sites_c.len(); 2], |(i, j)| {
+        let delta_cc = DMatrix::from_fn(p.sites_c.len(), p.sites_c.len(), |i, j| {
             if let Some(par) = &self.parameters_cc[(i, j)] {
                 let di = diameter[p.sites_c[i].assoc_comp];
                 let dj = diameter[p.sites_c[j].assoc_comp];
@@ -227,7 +227,7 @@ impl<A: AssociationStrength> Association<A> {
         [delta_ab, delta_cc]
     }
 
-    fn helmholtz_energy_ab_analytic<D: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density_ab_analytic<D: DualNum<f64> + Copy>(
         &self,
         parameters: &AssociationParameters<A::Record>,
         state: &StateHD<D>,
@@ -246,10 +246,10 @@ impl<A: AssociationStrength> Association<A> {
         let xa = (sqrt + (delta * (rhob - rhoa) + 1.0)).recip() * 2.0;
         let xb = (sqrt + (delta * (rhoa - rhob) + 1.0)).recip() * 2.0;
 
-        (rhoa * (xa.ln() - xa * 0.5 + 0.5) + rhob * (xb.ln() - xb * 0.5 + 0.5)) * state.volume
+        rhoa * (xa.ln() - xa * 0.5 + 0.5) + rhob * (xb.ln() - xb * 0.5 + 0.5)
     }
 
-    fn helmholtz_energy_cc_analytic<D: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density_cc_analytic<D: DualNum<f64> + Copy>(
         &self,
         parameters: &AssociationParameters<A::Record>,
         state: &StateHD<D>,
@@ -264,15 +264,15 @@ impl<A: AssociationStrength> Association<A> {
         // fraction of non-bonded association sites
         let xc = ((delta * 4.0 * rhoc + 1.0).sqrt() + 1.0).recip() * 2.0;
 
-        rhoc * (xc.ln() - xc * 0.5 + 0.5) * state.volume
+        rhoc * (xc.ln() - xc * 0.5 + 0.5)
     }
 
-    fn helmholtz_energy_density_cross_association<D: DualNum<f64> + Copy, S: Data<Elem = D>>(
+    fn helmholtz_energy_density_cross_association<D: DualNum<f64> + Copy>(
         &self,
-        rho: &ArrayBase<S, Ix1>,
-        delta_ab: &Array2<D>,
-        delta_cc: &Array2<D>,
-        x0: Option<&mut Array1<f64>>,
+        rho: &DVector<D>,
+        delta_ab: &DMatrix<D>,
+        delta_cc: &DMatrix<D>,
+        x0: Option<&mut DVector<f64>>,
     ) -> FeosResult<D> {
         // check if density is close to 0
         if rho.sum().re() < f64::EPSILON {
@@ -286,12 +286,12 @@ impl<A: AssociationStrength> Association<A> {
         // initialize monomer fraction
         let mut x = match &x0 {
             Some(x0) => (*x0).clone(),
-            None => Array::from_elem(rho.len(), 0.2),
+            None => DVector::from_element(rho.len(), 0.2),
         };
 
-        let delta_ab_re = delta_ab.map(D::re);
-        let delta_cc_re = delta_cc.map(D::re);
-        let rho_re = rho.map(D::re);
+        let delta_ab_re = delta_ab.map(|d| d.re());
+        let delta_cc_re = delta_cc.map(|d| d.re());
+        let rho_re = rho.map(|r| r.re());
         for k in 0..self.max_iter {
             if Self::newton_step_cross_association(
                 &mut x,
@@ -308,7 +308,7 @@ impl<A: AssociationStrength> Association<A> {
         }
 
         // calculate derivatives
-        let mut x_dual = x.mapv(D::from);
+        let mut x_dual = x.map(D::from);
         for _ in 0..D::NDERIV {
             Self::newton_step_cross_association(&mut x_dual, delta_ab, delta_cc, rho, self.tol)?;
         }
@@ -320,43 +320,41 @@ impl<A: AssociationStrength> Association<A> {
 
         // Helmholtz energy density
         let f = |x: D| x.ln() - x * 0.5 + 0.5;
-        Ok((rho * x_dual.mapv(f)).sum())
+        Ok(rho.dot(&x_dual.map(f)))
     }
 
-    fn newton_step_cross_association<D: DualNum<f64> + Copy, S: Data<Elem = D>>(
-        x: &mut Array1<D>,
-        delta_ab: &Array2<D>,
-        delta_cc: &Array2<D>,
-        rho: &ArrayBase<S, Ix1>,
+    fn newton_step_cross_association<D: DualNum<f64> + Copy>(
+        x: &mut DVector<D>,
+        delta_ab: &DMatrix<D>,
+        delta_cc: &DMatrix<D>,
+        rho: &DVector<D>,
         tol: f64,
     ) -> FeosResult<bool> {
         let nassoc = x.len();
         // gradient
-        let mut g = x.map(D::recip);
+        let mut g = x.map(|x| x.recip());
         // Hessian
-        let mut h: Array2<D> = Array::zeros([nassoc; 2]);
+        let mut h: DMatrix<D> = DMatrix::zeros(nassoc, nassoc);
 
         // split arrays
-        let &[a, b] = delta_ab.shape() else {
-            unreachable!()
-        };
-        let c = delta_cc.shape()[0];
-        let (xa, xc) = x.view().split_at(Axis(0), a + b);
-        let (xa, xb) = xa.split_at(Axis(0), a);
-        let (rhoa, rhoc) = rho.view().split_at(Axis(0), a + b);
-        let (rhoa, rhob) = rhoa.split_at(Axis(0), a);
+        let (a, b) = delta_ab.shape();
+        let (c, _) = delta_cc.shape();
+        let (xa, xc) = x.rows_range_pair(..a + b, a + b..);
+        let (xa, xb) = xa.rows_range_pair(..a, a..);
+        let (rhoa, rhoc) = rho.rows_range_pair(..a + b, a + b..);
+        let (rhoa, rhob) = rhoa.rows_range_pair(..a, a..);
 
         for i in 0..nassoc {
             // calculate gradients
-            let (d, dnx) = if i < a {
-                let d = delta_ab.index_axis(Axis(0), i);
-                (d, (&xb * &rhob * d).sum() + 1.0)
+            let dnx = if i < a {
+                let d = delta_ab.row(i).transpose();
+                xb.component_mul(&rhob).dot(&d) + 1.0
             } else if i < a + b {
-                let d = delta_ab.index_axis(Axis(1), i - a);
-                (d, (&xa * &rhoa * d).sum() + 1.0)
+                let d = delta_ab.column(i - a);
+                xa.component_mul(&rhoa).dot(&d) + 1.0
             } else {
-                let d = delta_cc.index_axis(Axis(0), i - a - b);
-                (d, (&xc * &rhoc * d).sum() + 1.0)
+                let d = delta_cc.column(i - a - b);
+                xc.component_mul(&rhoc).dot(&d) + 1.0
             };
             g[i] -= dnx;
 
@@ -364,15 +362,15 @@ impl<A: AssociationStrength> Association<A> {
             h[(i, i)] = -dnx / x[i];
             if i < a {
                 for j in 0..b {
-                    h[(i, a + j)] = -d[j] * rhob[j];
+                    h[(i, a + j)] = -delta_ab[(i, j)] * rhob[j];
                 }
             } else if i < a + b {
                 for j in 0..a {
-                    h[(i, j)] = -d[j] * rhoa[j];
+                    h[(i, j)] = -delta_ab[(j, i - a)] * rhoa[j];
                 }
             } else {
                 for j in 0..c {
-                    h[(i, a + b + j)] -= d[j] * rhoc[j];
+                    h[(i, a + b + j)] -= delta_cc[(i - a - b, j)] * rhoc[j];
                 }
             }
         }
@@ -380,7 +378,7 @@ impl<A: AssociationStrength> Association<A> {
         // Newton step
         // avoid stepping to negative values for x (see Michelsen 2006)
         let delta_x = LU::new(h)?.solve(&g);
-        Zip::from(x).and(&delta_x).for_each(|x, &delta_x| {
+        x.iter_mut().zip(&delta_x).for_each(|(x, &delta_x)| {
             if delta_x.re() < x.re() * 0.8 {
                 *x -= delta_x
             } else {
@@ -389,7 +387,7 @@ impl<A: AssociationStrength> Association<A> {
         });
 
         // check convergence
-        Ok(norm(&g.map(D::re)) < tol)
+        Ok(g.map(|g| g.re()).norm() < tol)
     }
 }
 
@@ -405,6 +403,7 @@ mod tests_pcsaft {
     use feos_core::parameter::{
         AssociationRecord, BinaryAssociationRecord, BinaryRecord, Parameters, PureRecord,
     };
+    use nalgebra::{dmatrix, dvector};
 
     fn pcsaft() -> PcSaftRecord {
         PcSaftRecord::new(1.2, 3.5, 245.0, 2.3, 4.4, None, None, None)
@@ -460,14 +459,14 @@ mod tests_pcsaft {
             .to_vec();
         let params = Parameters::new(pure_records, binary_records)?;
         let assoc: Association<PcSaftPars> = Association::new(&params, 100, 1e-10)?.unwrap();
-        println!("{}", assoc.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab));
-        let epsilon_k_ab = arr2(&[
-            [2500., 1234., 3140., 2250.],
-            [1234., 1500., 1000., 3333.],
-            [1750., 1250., 750., 1500.],
-        ]);
+        println!("{}", assoc.parameters_ab.map(|p| p.unwrap().epsilon_k_ab));
+        let epsilon_k_ab = dmatrix![
+            2500., 1234., 3140., 2250.;
+            1234., 1500., 1000., 3333.;
+            1750., 1250., 750., 1500.;
+        ];
         assert_eq!(
-            assoc.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab),
+            assoc.parameters_ab.map(|p| p.unwrap().epsilon_k_ab),
             epsilon_k_ab
         );
         Ok(())
@@ -486,17 +485,17 @@ mod tests_pcsaft {
         let params2 = Parameters::new_binary([pr1, pr3], Some(NoRecord), br)?;
         let assoc1: Association<PcSaftPars> = Association::new(&params1, 100, 1e-15)?.unwrap();
         let assoc2: Association<PcSaftPars> = Association::new(&params2, 100, 1e-15)?.unwrap();
-        println!("{}", assoc1.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab));
-        println!("{}", assoc2.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab));
-        println!("{}", assoc1.parameters_ab.mapv(|p| p.unwrap().kappa_ab));
-        println!("{}", assoc2.parameters_ab.mapv(|p| p.unwrap().kappa_ab));
+        println!("{}", assoc1.parameters_ab.map(|p| p.unwrap().epsilon_k_ab));
+        println!("{}", assoc2.parameters_ab.map(|p| p.unwrap().epsilon_k_ab));
+        println!("{}", assoc1.parameters_ab.map(|p| p.unwrap().kappa_ab));
+        println!("{}", assoc2.parameters_ab.map(|p| p.unwrap().kappa_ab));
         assert_eq!(
-            assoc1.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab),
-            assoc2.parameters_ab.mapv(|p| p.unwrap().epsilon_k_ab)
+            assoc1.parameters_ab.map(|p| p.unwrap().epsilon_k_ab),
+            assoc2.parameters_ab.map(|p| p.unwrap().epsilon_k_ab)
         );
         assert_eq!(
-            assoc1.parameters_ab.mapv(|p| p.unwrap().kappa_ab),
-            assoc2.parameters_ab.mapv(|p| p.unwrap().kappa_ab)
+            assoc1.parameters_ab.map(|p| p.unwrap().kappa_ab),
+            assoc2.parameters_ab.map(|p| p.unwrap().kappa_ab)
         );
         Ok(())
     }
@@ -509,9 +508,10 @@ mod tests_pcsaft {
         let t = 350.0;
         let v = 41.248289328513216;
         let n = 1.23;
-        let s = StateHD::new(t, v, arr1(&[n]));
+        let s = StateHD::new(t, v, &dvector![n]);
         let d = params.hs_diameter(t);
-        let a_rust = assoc.helmholtz_energy(&params, &parameters.association, &s, &d) / n;
+        let a_rust =
+            assoc.helmholtz_energy_density(&params, &parameters.association, &s, &d) * v / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 
@@ -523,9 +523,10 @@ mod tests_pcsaft {
         let t = 350.0;
         let v = 41.248289328513216;
         let n = 1.23;
-        let s = StateHD::new(t, v, arr1(&[n]));
+        let s = StateHD::new(t, v, &dvector![n]);
         let d = params.hs_diameter(t);
-        let a_rust = assoc.helmholtz_energy(&params, &parameters.association, &s, &d) / n;
+        let a_rust =
+            assoc.helmholtz_energy_density(&params, &parameters.association, &s, &d) * v / n;
         assert_relative_eq!(a_rust, -4.229878997054543, epsilon = 1e-10);
     }
 
@@ -540,11 +541,11 @@ mod tests_pcsaft {
         let t = 350.0;
         let v = 41.248289328513216;
         let n = 1.23;
-        let s = StateHD::new(t, v, arr1(&[n]));
+        let s = StateHD::new(t, v, &dvector![n]);
         let d = params.hs_diameter(t);
-        let a_assoc = assoc.helmholtz_energy(&params, &parameters.association, &s, &d) / n;
+        let a_assoc = assoc.helmholtz_energy_density(&params, &parameters.association, &s, &d);
         let a_cross_assoc =
-            cross_assoc.helmholtz_energy(&params, &parameters.association, &s, &d) / n;
+            cross_assoc.helmholtz_energy_density(&params, &parameters.association, &s, &d);
         assert_relative_eq!(a_assoc, a_cross_assoc, epsilon = 1e-10);
         Ok(())
     }
@@ -621,7 +622,7 @@ mod tests_gc_pcsaft {
         let state = StateHD::new(
             Dual64::from_re(temperature),
             Dual64::from_re(volume).derivative(),
-            moles.mapv(Dual64::from_re),
+            moles.map(Dual64::from_re),
         );
         let diameter = params.hs_diameter(state.temperature);
         let pressure = Pressure::from_reduced(

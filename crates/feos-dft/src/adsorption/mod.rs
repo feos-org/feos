@@ -5,10 +5,10 @@ use feos_core::{
     Contributions, DensityInitialization, FeosError, FeosResult, ReferenceSystem, SolverOptions,
     State, StateBuilder,
 };
+use nalgebra::{DMatrix, DVector};
 use ndarray::{Array1, Array2, Dimension, Ix1, Ix3, RemoveAxis};
 use quantity::{Energy, MolarEnergy, Moles, Pressure, Temperature};
 use std::iter;
-use std::sync::Arc;
 
 mod external_potential;
 #[cfg(feature = "rayon")]
@@ -45,7 +45,7 @@ where
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
-    fn new(functional: &Arc<F>, profiles: Vec<FeosResult<PoreProfile<D, F>>>) -> Self {
+    fn new(functional: &F, profiles: Vec<FeosResult<PoreProfile<D, F>>>) -> Self {
         Self {
             components: functional.components(),
             profiles,
@@ -54,11 +54,11 @@ where
 
     /// Calculate an adsorption isotherm (starting at low pressure)
     pub fn adsorption_isotherm<S: PoreSpecification<D>>(
-        functional: &Arc<F>,
+        functional: &F,
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
-        molefracs: Option<&Array1<f64>>,
+        molefracs: &Option<DVector<f64>>,
         solver: Option<&DFTSolver>,
     ) -> FeosResult<Adsorption<D, F>> {
         Self::isotherm(
@@ -74,11 +74,11 @@ where
 
     /// Calculate an desorption isotherm (starting at high pressure)
     pub fn desorption_isotherm<S: PoreSpecification<D>>(
-        functional: &Arc<F>,
+        functional: &F,
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
-        molefracs: Option<&Array1<f64>>,
+        molefracs: &Option<DVector<f64>>,
         solver: Option<&DFTSolver>,
     ) -> FeosResult<Adsorption<D, F>> {
         let pressure = pressure.into_iter().rev().collect();
@@ -99,11 +99,11 @@ where
 
     /// Calculate an equilibrium isotherm
     pub fn equilibrium_isotherm<S: PoreSpecification<D>>(
-        functional: &Arc<F>,
+        functional: &F,
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
-        molefracs: Option<&Array1<f64>>,
+        molefracs: &Option<DVector<f64>>,
         solver: Option<&DFTSolver>,
     ) -> FeosResult<Adsorption<D, F>> {
         let (p_min, p_max) = (pressure.get(0), pressure.get(pressure.len() - 1));
@@ -182,26 +182,25 @@ where
     }
 
     fn isotherm<S: PoreSpecification<D>>(
-        functional: &Arc<F>,
+        functional: &F,
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
         pore: &S,
-        molefracs: Option<&Array1<f64>>,
+        molefracs: &Option<DVector<f64>>,
         density_initialization: DensityInitialization,
         solver: Option<&DFTSolver>,
     ) -> FeosResult<Adsorption<D, F>> {
-        let moles = functional
-            .validate_moles(molefracs.map(|x| Moles::from_reduced(x.clone())).as_ref())?;
+        let x = functional.validate_molefracs(molefracs)?;
         let mut profiles: Vec<FeosResult<PoreProfile<D, F>>> = Vec::with_capacity(pressure.len());
 
         // On the first iteration, initialize the density profile according to the direction
         // and calculate the external potential once.
-        let mut bulk = State::new_npt(
+        let mut bulk = State::new_xpt(
             functional,
             temperature,
             pressure.get(0),
-            &moles,
-            density_initialization,
+            &x,
+            Some(density_initialization),
         )?;
         if functional.components() > 1 && !bulk.is_stable(SolverOptions::default())? {
             let vle = bulk.tp_flash(None, SolverOptions::default(), None)?;
@@ -219,7 +218,7 @@ where
             let mut bulk = StateBuilder::new(functional)
                 .temperature(temperature)
                 .pressure(pressure.get(i))
-                .moles(&moles)
+                .molefracs(&x)
                 .build()?;
             if functional.components() > 1 && !bulk.is_stable(SolverOptions::default())? {
                 bulk = bulk
@@ -245,35 +244,34 @@ where
     /// Calculate the phase transition from an empty to a filled pore.
     #[expect(clippy::too_many_arguments)]
     pub fn phase_equilibrium<S: PoreSpecification<D>>(
-        functional: &Arc<F>,
+        functional: &F,
         temperature: Temperature,
         p_min: Pressure,
         p_max: Pressure,
         pore: &S,
-        molefracs: Option<&Array1<f64>>,
+        molefracs: &Option<DVector<f64>>,
         solver: Option<&DFTSolver>,
         options: SolverOptions,
     ) -> FeosResult<Adsorption<D, F>> {
-        let moles = functional
-            .validate_moles(molefracs.map(|x| Moles::from_reduced(x.clone())).as_ref())?;
+        let x = functional.validate_molefracs(molefracs)?;
 
         // calculate density profiles for the minimum and maximum pressure
         let vapor_bulk = StateBuilder::new(functional)
             .temperature(temperature)
             .pressure(p_min)
-            .moles(&moles)
+            .molefracs(&x)
             .vapor()
             .build()?;
         let bulk_init = StateBuilder::new(functional)
             .temperature(temperature)
             .pressure(p_max)
-            .moles(&moles)
+            .molefracs(&x)
             .liquid()
             .build()?;
         let liquid_bulk = StateBuilder::new(functional)
             .temperature(temperature)
             .pressure(p_max)
-            .moles(&moles)
+            .molefracs(&x)
             .vapor()
             .build()?;
 
@@ -292,7 +290,7 @@ where
         let mut bulk = StateBuilder::new(functional)
             .temperature(temperature)
             .pressure(p_max)
-            .moles(&moles)
+            .molefracs(&x)
             .vapor()
             .build()?;
         let rho0 = liquid_bulk.density;
@@ -300,7 +298,7 @@ where
         let delta_rho = (rho - rho0) / steps as f64;
         for i in 1..=steps {
             let rho_i = rho0 + i as f64 * delta_rho;
-            bulk = State::new_nvt(functional, temperature, moles.sum() / rho_i, &moles)?;
+            bulk = State::new_intensive(functional, temperature, rho_i, &x)?;
             liquid = liquid.update_bulk(&bulk).solve(solver)?;
         }
 
@@ -326,7 +324,7 @@ where
             rho += delta_rho;
 
             // update bulk phase
-            bulk = State::new_nvt(functional, temperature, moles.sum() / rho, &moles)?;
+            bulk = State::new_intensive(functional, temperature, rho, &x)?;
         }
         Err(FeosError::NotConverged(
             "Adsorption::phase_equilibrium".into(),
@@ -377,7 +375,7 @@ where
         })
     }
 
-    pub fn partial_molar_enthalpy_of_adsorption(&self) -> MolarEnergy<Array2<f64>> {
+    pub fn partial_molar_enthalpy_of_adsorption(&self) -> MolarEnergy<DMatrix<f64>> {
         let h_ads: Vec<_> = self
             .profiles
             .iter()
@@ -388,13 +386,13 @@ where
                     .and_then(|p| p.partial_molar_enthalpy_of_adsorption().ok())
                 {
                     Some(p) => p,
-                    None => MolarEnergy::from_reduced(f64::NAN * Array1::ones(self.components)),
+                    None => {
+                        MolarEnergy::from_reduced(DVector::from_element(self.components, f64::NAN))
+                    }
                 }
             })
             .collect();
-        MolarEnergy::from_shape_fn((self.components, self.profiles.len()), |(j, i)| {
-            h_ads[i].get(j)
-        })
+        MolarEnergy::from_fn(self.components, self.profiles.len(), |j, i| h_ads[i].get(j))
     }
 
     pub fn enthalpy_of_adsorption(&self) -> MolarEnergy<Array1<f64>> {
