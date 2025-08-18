@@ -2,9 +2,8 @@ use crate::{FeosError, FeosResult, ReferenceSystem, state::StateHD};
 use nalgebra::{
     Const, DVector, DefaultAllocator, Dim, Dyn, OMatrix, OVector, SVector, U1, allocator::Allocator,
 };
-use num_dual::{
-    DualNum, Gradients, first_derivative, partial, partial2, second_derivative, third_derivative,
-};
+use num_dual::{DualNum, Gradients, partial, partial2, second_derivative, third_derivative};
+use quantity::ad::first_derivative;
 use quantity::*;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -238,8 +237,8 @@ where
         &self,
         temperature: Temperature<D>,
         molefracs: &Option<OVector<D, N>>,
-    ) -> FeosResult<MolarVolume<D>> {
-        let x = self.validate_molefracs(molefracs)?;
+    ) -> MolarVolume<D> {
+        let x = self.validate_molefracs(molefracs).unwrap();
         let (_, _, d2f) = second_derivative(
             partial2(
                 |rho, &t, x| {
@@ -253,7 +252,7 @@ where
             D::from(0.0),
         );
 
-        Ok(Quantity::from_reduced(d2f * 0.5))
+        Quantity::from_reduced(d2f * 0.5)
     }
 
     /// Calculate the third virial coefficient $C(T)$
@@ -261,8 +260,8 @@ where
         &self,
         temperature: Temperature<D>,
         molefracs: &Option<OVector<D, N>>,
-    ) -> FeosResult<Quot<MolarVolume<D>, Density<D>>> {
-        let x = self.validate_molefracs(molefracs)?;
+    ) -> Quot<MolarVolume<D>, Density<D>> {
+        let x = self.validate_molefracs(molefracs).unwrap();
         let (_, _, _, d3f) = third_derivative(
             partial2(
                 |rho, &t, x| {
@@ -276,7 +275,7 @@ where
             D::from(0.0),
         );
 
-        Ok(Quantity::from_reduced(d3f / 3.0))
+        Quantity::from_reduced(d3f / 3.0)
     }
 
     /// Calculate the temperature derivative of the second virial coefficient $B'(T)$
@@ -284,40 +283,28 @@ where
         &self,
         temperature: Temperature<D>,
         molefracs: &Option<OVector<D, N>>,
-    ) -> FeosResult<Quot<MolarVolume<D>, Temperature<D>>> {
+    ) -> Quot<MolarVolume<D>, Temperature<D>> {
         let (_, db_dt) = first_derivative(
             partial(
-                |t, x| {
-                    self.lift()
-                        .second_virial_coefficient(Temperature::from_reduced(t), x)
-                        .map(|b| b.into_reduced())
-                },
+                |t, x| self.lift().second_virial_coefficient(t, x),
                 molefracs,
             ),
-            temperature.into_reduced(),
-        )?;
-        Ok(Quantity::from_reduced(db_dt))
+            temperature,
+        );
+        db_dt
     }
 
     /// Calculate the temperature derivative of the third virial coefficient $C'(T)$
-    #[expect(clippy::type_complexity)]
     fn third_virial_coefficient_temperature_derivative(
         &self,
         temperature: Temperature<D>,
         molefracs: &Option<OVector<D, N>>,
-    ) -> FeosResult<Quot<Quot<MolarVolume<D>, Density<D>>, Temperature<D>>> {
-        let (_, db_dt) = first_derivative(
-            partial(
-                |t, x| {
-                    self.lift()
-                        .third_virial_coefficient(Temperature::from_reduced(t), x)
-                        .map(|b| b.into_reduced())
-                },
-                molefracs,
-            ),
-            temperature.into_reduced(),
-        )?;
-        Ok(Quantity::from_reduced(db_dt))
+    ) -> Quot<Quot<MolarVolume<D>, Density<D>>, Temperature<D>> {
+        let (_, dc_dt) = first_derivative(
+            partial(|t, x| self.lift().third_virial_coefficient(t, x), molefracs),
+            temperature,
+        );
+        dc_dt
     }
 
     fn _p_dpdrho(&self, temperature: D, density: D, molefracs: &OVector<D, N>) -> (D, D, D) {

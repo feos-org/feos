@@ -67,14 +67,11 @@ impl PyEquationOfState {
         &self,
         temperature: Temperature,
         molefracs: Option<Bound<'py, PyArray1<f64>>>,
-    ) -> PyResult<Quot<f64, Density>> {
-        Ok(self
-            .0
-            .second_virial_coefficient(
-                temperature,
-                &molefracs.map(|x| x.to_owned_array().into_nalgebra()),
-            )
-            .map_err(PyFeosError::from)?)
+    ) -> Quot<f64, Density> {
+        self.0.second_virial_coefficient(
+            temperature,
+            &molefracs.map(|x| x.to_owned_array().into_nalgebra()),
+        )
     }
 
     /// Calculate the third Virial coefficient C(T,x).
@@ -94,14 +91,11 @@ impl PyEquationOfState {
         &self,
         temperature: Temperature,
         molefracs: Option<Bound<'py, PyArray1<f64>>>,
-    ) -> PyResult<Quot<Quot<f64, Density>, Density>> {
-        Ok(self
-            .0
-            .third_virial_coefficient(
-                temperature,
-                &molefracs.map(|x| x.to_owned_array().into_nalgebra()),
-            )
-            .map_err(PyFeosError::from)?)
+    ) -> Quot<Quot<f64, Density>, Density> {
+        self.0.third_virial_coefficient(
+            temperature,
+            &molefracs.map(|x| x.to_owned_array().into_nalgebra()),
+        )
     }
 
     /// Calculate the derivative of the second Virial coefficient B(T,x)
@@ -122,14 +116,11 @@ impl PyEquationOfState {
         &self,
         temperature: Temperature,
         molefracs: Option<Bound<'py, PyArray1<f64>>>,
-    ) -> PyResult<Quot<Quot<f64, Density>, Temperature>> {
-        Ok(self
-            .0
-            .second_virial_coefficient_temperature_derivative(
-                temperature,
-                &molefracs.map(|x| x.to_owned_array().into_nalgebra()),
-            )
-            .map_err(PyFeosError::from)?)
+    ) -> Quot<Quot<f64, Density>, Temperature> {
+        self.0.second_virial_coefficient_temperature_derivative(
+            temperature,
+            &molefracs.map(|x| x.to_owned_array().into_nalgebra()),
+        )
     }
 
     /// Calculate the derivative of the third Virial coefficient C(T,x)
@@ -146,19 +137,15 @@ impl PyEquationOfState {
     /// -------
     /// SINumber
     #[pyo3(text_signature = "(temperature, molefracs=None)", signature = (temperature, molefracs=None))]
-    #[expect(clippy::type_complexity)]
     fn third_virial_coefficient_temperature_derivative<'py>(
         &self,
         temperature: Temperature,
         molefracs: Option<Bound<'py, PyArray1<f64>>>,
-    ) -> PyResult<Quot<Quot<Quot<f64, Density>, Density>, Temperature>> {
-        Ok(self
-            .0
-            .third_virial_coefficient_temperature_derivative(
-                temperature,
-                &molefracs.map(|x| x.to_owned_array().into_nalgebra()),
-            )
-            .map_err(PyFeosError::from)?)
+    ) -> Quot<Quot<Quot<f64, Density>, Density>, Temperature> {
+        self.0.third_virial_coefficient_temperature_derivative(
+            temperature,
+            &molefracs.map(|x| x.to_owned_array().into_nalgebra()),
+        )
     }
 }
 
