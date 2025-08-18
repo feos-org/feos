@@ -1,4 +1,4 @@
-use feos_core::parameter::{Parameters, PureParameters};
+use feos_core::parameter::Parameters;
 use feos_core::{FeosResult, IdealGasDyn};
 use nalgebra::DVector;
 use num_dual::DualNum;
@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// All equations use units $\[T\]=\text{K}$ and $\[c_p\]=\text{J/kmol/K}$.
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum DipprRecord {
+pub enum Dippr {
     /// Technically, DIPPR eq. # 100 is
     /// $$c_p = A + BT + CT^2 + DT^3 + ET^4 + FT^5 + GT^6$$
     /// This implementation works with an arbitrary number of expansion terms.
@@ -21,7 +21,7 @@ pub enum DipprRecord {
     DIPPR127([f64; 7]),
 }
 
-impl DipprRecord {
+impl Dippr {
     /// Create parameters for Eq. # 100.
     pub fn eq100(coefs: &[f64]) -> Self {
         Self::DIPPR100(coefs.to_vec())
@@ -113,16 +113,15 @@ impl DipprRecord {
     }
 }
 
-pub type DipprParameters = Parameters<DipprRecord, (), ()>;
-
-/// Ideal gas equations of state based on DIPPR equations for
-/// ideal gas heat capacities.
-#[derive(Clone)]
-pub struct Dippr(PureParameters<DipprRecord, ()>);
+pub type DipprParameters = Parameters<Dippr, (), ()>;
 
 impl Dippr {
     pub fn new(parameters: DipprParameters) -> Vec<Self> {
-        parameters.pure.into_iter().map(Self).collect()
+        parameters
+            .pure
+            .into_iter()
+            .map(|p| p.model_record)
+            .collect()
     }
 
     /// Directly calculates the molar ideal gas heat capacity from the DIPPR equations.
@@ -132,11 +131,7 @@ impl Dippr {
         molefracs: &DVector<f64>,
     ) -> FeosResult<MolarEntropy> {
         let t = temperature.convert_to(KELVIN);
-        let c_p: f64 = molefracs
-            .iter()
-            .zip(dippr)
-            .map(|(x, r)| x * r.0.model_record.c_p(t))
-            .sum();
+        let c_p: f64 = molefracs.iter().zip(dippr).map(|(x, r)| x * r.c_p(t)).sum();
         Ok(c_p * (JOULE / (KILO * MOL * KELVIN)))
     }
 }
@@ -147,9 +142,8 @@ const T0: f64 = 298.15;
 impl IdealGasDyn for Dippr {
     fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
         let t = temperature;
-        let m = &self.0.model_record;
-        let h = m.c_p_integral(t) - m.c_p_integral(T0);
-        let s = m.c_p_t_integral(t) - m.c_p_t_integral(T0);
+        let h = self.c_p_integral(t) - self.c_p_integral(T0);
+        let s = self.c_p_t_integral(t) - self.c_p_t_integral(T0);
         (h - t * s) / (t * RGAS) + temperature.ln()
     }
 
@@ -174,7 +168,7 @@ mod tests {
         let record = PureRecord::new(
             Identifier::default(),
             0.0,
-            DipprRecord::eq100(&[276370., -2090.1, 8.125, -0.014116, 0.0000093701]),
+            Dippr::eq100(&[276370., -2090.1, 8.125, -0.014116, 0.0000093701]),
         );
         let dippr = Dippr::new(DipprParameters::new_pure(record.clone())?);
         let eos = EquationOfState::ideal_gas(dippr.clone());
@@ -218,7 +212,7 @@ mod tests {
         let record = PureRecord::new(
             Identifier::default(),
             0.0,
-            DipprRecord::eq107(33363., 26790., 2610.5, 8896., 1169.),
+            Dippr::eq107(33363., 26790., 2610.5, 8896., 1169.),
         );
         let dippr = Dippr::new(DipprParameters::new_pure(record.clone())?);
         let eos = EquationOfState::ideal_gas(dippr.clone());
@@ -262,7 +256,7 @@ mod tests {
         let record = PureRecord::new(
             Identifier::default(),
             0.0,
-            DipprRecord::eq127(
+            Dippr::eq127(
                 3.3258E4, 3.6199E4, 1.2057E3, 1.5373E7, 3.2122E3, -1.5318E7, 3.2122E3,
             ),
         );

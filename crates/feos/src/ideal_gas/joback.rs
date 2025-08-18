@@ -7,6 +7,7 @@ use num_dual::*;
 use quantity::{MolarEntropy, Temperature};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::ops::Mul;
 
 /// Coefficients used in the Joback model.
 ///
@@ -94,15 +95,15 @@ impl Joback {
             .sum();
         Ok(c_p / RGAS * quantity::RGAS)
     }
-}
 
-impl IdealGasDyn for Joback {
-    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
+    fn ln_lambda3<D: DualNum<f64> + Copy + Mul<D1, Output = D>, D1: Copy>(
+        [a, b, c, d, e]: [D1; 5],
+        temperature: D,
+    ) -> D {
         let t = temperature;
         let t2 = t * t;
         let t4 = t2 * t2;
         let f = (temperature * KB / (P0 * A3)).ln();
-        let [a, b, c, d, e] = self.0;
         let h = (t2 - T0_2) * 0.5 * b
             + (t * t2 - T0_3) * c / 3.0
             + (t4 - T0_4) * d / 4.0
@@ -114,6 +115,12 @@ impl IdealGasDyn for Joback {
             + (t4 - T0_4) * e / 4.0
             + (t / T0).ln() * a;
         (h - t * s) / (t * RGAS) + f
+    }
+}
+
+impl IdealGasDyn for Joback {
+    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
+        Self::ln_lambda3(self.0, temperature)
     }
 
     fn ideal_gas_model(&self) -> &'static str {
@@ -173,22 +180,7 @@ impl<D: DualNum<f64> + Copy> IdealGas<D> for Joback<D> {
     }
 
     fn ln_lambda3(&self, temperature: D) -> D {
-        let t = temperature;
-        let t2 = t * t;
-        let t4 = t2 * t2;
-        let f = (temperature * KB / (P0 * A3)).ln();
-        let [a, b, c, d, e] = self.0;
-        let h = (t2 - T0_2) * 0.5 * b
-            + (t * t2 - T0_3) * c / 3.0
-            + (t4 - T0_4) * d / 4.0
-            + (t4 * t - T0_5) * e / 5.0
-            + (t - T0) * a;
-        let s = (t - T0) * b
-            + (t2 - T0_2) * 0.5 * c
-            + (t2 * t - T0_3) * d / 3.0
-            + (t4 - T0_4) * e / 4.0
-            + (t / T0).ln() * a;
-        (h - t * s) / (t * RGAS) + f
+        Joback::ln_lambda3(self.0, temperature)
     }
 
     fn ideal_gas_model(&self) -> &'static str {
