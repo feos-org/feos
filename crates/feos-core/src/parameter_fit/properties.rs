@@ -3,9 +3,9 @@ use crate::density_iteration::density_iteration;
 use crate::{
     DensityInitialization::Liquid, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual,
 };
+use nalgebra::SVector;
 #[cfg(feature = "rayon")]
-use nalgebra::Const;
-use nalgebra::{SVector, U1};
+use nalgebra::{Const, U1};
 #[cfg(feature = "rayon")]
 use ndarray::{Array1, Array2, ArrayView2, Zip};
 use num_dual::DualStruct;
