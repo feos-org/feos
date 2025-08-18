@@ -417,7 +417,7 @@ mod tests_pcsaft {
         nb: f64,
     ) -> AssociationRecord<PcSaftAssociationRecord> {
         let pcsaft = PcSaftAssociationRecord::new(kappa_ab, epsilon_k_ab);
-        AssociationRecord::with_id(id.try_into().unwrap(), Some(pcsaft), na, nb, 0.0)
+        AssociationRecord::with_id(id.into(), Some(pcsaft), na, nb, 0.0)
     }
 
     fn binary_record(
@@ -428,8 +428,8 @@ mod tests_pcsaft {
     ) -> BinaryAssociationRecord<PcSaftAssociationRecord> {
         let pcsaft = PcSaftAssociationRecord::new(kappa_ab, epsilon_k_ab);
         BinaryAssociationRecord {
-            id1: id1.try_into().unwrap(),
-            id2: id2.try_into().unwrap(),
+            id1: id1.into(),
+            id2: id2.into(),
             parameters: pcsaft,
         }
     }
