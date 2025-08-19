@@ -50,7 +50,7 @@ pets = ["feos/pets"]
 saftvrqmie = ["feos/saftvrqmie"]
 saftvrmie = ["feos/saftvrmie"]
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
-ad = []
+ad = ["feos-core/rayon"]
 all_models = [
     "dft",
     "pcsaft",
