@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        crate: [feos-core, feos-ad, feos-dft]
+        crate: [feos-core, feos-dft]
     steps:
       - uses: actions/checkout@v4
       - name: Build
@@ -50,15 +50,3 @@ jobs:
         run: cargo build --release --features "${{ matrix.model }} dft"
       - name: Run tests
         run: cargo test --release --features "${{ matrix.model }} dft"
-
-  test_models_ad:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        model: [pcsaft, gc_pcsaft]
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run tests
-        run: cargo test --release -p feos-ad --features ${{ matrix.model }}
