@@ -500,8 +500,8 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
 }
 
 impl<P, B, A, Bo> GcParameters<P, B, A, Bo, f64> {
-    pub fn segment_counts(&self) -> Vec<f64> {
-        self.pure.iter().map(|pr| pr.count).collect()
+    pub fn segment_counts(&self) -> DVector<f64> {
+        DVector::from_vec(self.pure.iter().map(|pr| pr.count).collect())
     }
 }
 

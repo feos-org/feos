@@ -1,26 +1,27 @@
 use crate::association::AssociationStrength;
 use crate::gc_pcsaft::record::{GcPcSaftAssociationRecord, GcPcSaftParameters, GcPcSaftRecord};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use ndarray::{Array1, Array2};
+use itertools::Itertools;
+use nalgebra::{DMatrix, DVector};
 use num_dual::DualNum;
 use quantity::{JOULE, KB, KELVIN};
 
 /// Parameter set required for the gc-PC-SAFT equation of state.
 #[derive(Clone)]
 pub struct GcPcSaftEosParameters {
-    pub component_index: Array1<usize>,
-    pub m: Array1<f64>,
-    pub sigma: Array1<f64>,
-    pub epsilon_k: Array1<f64>,
+    pub component_index: Vec<usize>,
+    pub m: DVector<f64>,
+    pub sigma: DVector<f64>,
+    pub epsilon_k: DVector<f64>,
     pub bonds: Vec<([usize; 2], f64)>,
-    pub dipole_comp: Array1<usize>,
-    pub mu2: Array1<f64>,
-    pub m_mix: Array1<f64>,
-    pub s_ij: Array2<f64>,
-    pub e_k_ij: Array2<f64>,
+    pub dipole_comp: DVector<usize>,
+    pub mu2: DVector<f64>,
+    pub m_mix: DVector<f64>,
+    pub s_ij: DMatrix<f64>,
+    pub e_k_ij: DMatrix<f64>,
 
-    pub sigma_ij: Array2<f64>,
-    pub epsilon_k_ij: Array2<f64>,
+    pub sigma_ij: DMatrix<f64>,
+    pub epsilon_k_ij: DMatrix<f64>,
 }
 
 // The gc-PC-SAFT parameters in an easier accessible format.
@@ -29,7 +30,7 @@ impl GcPcSaftEosParameters {
         let component_index = parameters.component_index();
 
         let [m, sigma, epsilon_k] = parameters.collate(|pr| [pr.m, pr.sigma, pr.epsilon_k]);
-        let m = m * parameters.segment_counts();
+        let m = m.component_mul(&parameters.segment_counts());
 
         let bonds = parameters
             .bonds
@@ -43,17 +44,17 @@ impl GcPcSaftEosParameters {
         let mut sigma_mix = Vec::new();
         let mut epsilon_k_mix = Vec::new();
 
-        let mut m_i: Array1<f64> = Array1::zeros(parameters.molar_weight.len());
-        let mut sigma_i: Array1<f64> = Array1::zeros(parameters.molar_weight.len());
-        let mut epsilon_k_i: Array1<f64> = Array1::zeros(parameters.molar_weight.len());
-        let mut mu2_i: Array1<f64> = Array1::zeros(parameters.molar_weight.len());
+        let mut m_i: DVector<f64> = DVector::zeros(parameters.molar_weight.len());
+        let mut sigma_i: DVector<f64> = DVector::zeros(parameters.molar_weight.len());
+        let mut epsilon_k_i: DVector<f64> = DVector::zeros(parameters.molar_weight.len());
+        let mut mu2_i: DVector<f64> = DVector::zeros(parameters.molar_weight.len());
         for p in &parameters.pure {
             m_i[p.component_index] += p.model_record.m * p.count;
-            sigma_i += p.model_record.m * p.model_record.sigma.powi(3) * p.count;
-            epsilon_k_i += p.model_record.m * p.model_record.epsilon_k * p.count;
+            sigma_i[p.component_index] += p.model_record.m * p.model_record.sigma.powi(3) * p.count;
+            epsilon_k_i[p.component_index] += p.model_record.m * p.model_record.epsilon_k * p.count;
             mu2_i[p.component_index] += p.model_record.mu.powi(2);
         }
-        for (i, mu2_i) in mu2_i.into_iter().enumerate() {
+        for (i, &mu2_i) in mu2_i.iter().enumerate() {
             if mu2_i > 0.0 {
                 dipole_comp.push(i);
                 mu2.push(mu2_i / m_i[i] * (1e-19 * (JOULE / KELVIN / KB).into_value()));
@@ -66,16 +67,17 @@ impl GcPcSaftEosParameters {
         // Combining rules dispersion
         let [k_ij] = parameters.collate_binary(|&br| [br]);
         let sigma_ij =
-            Array2::from_shape_fn([sigma.len(); 2], |(i, j)| 0.5 * (sigma[i] + sigma[j]));
-        let epsilon_k_ij = Array2::from_shape_fn([epsilon_k.len(); 2], |(i, j)| {
+            DMatrix::from_fn(sigma.len(), sigma.len(), |i, j| 0.5 * (sigma[i] + sigma[j]));
+        let epsilon_k_ij = DMatrix::from_fn(epsilon_k.len(), epsilon_k.len(), |i, j| {
             (epsilon_k[i] * epsilon_k[j]).sqrt()
-        }) * (1.0 - &k_ij);
+        })
+        .component_mul(&((-k_ij).add_scalar(1.0)));
 
         // Combining rules polar
-        let s_ij = Array2::from_shape_fn([dipole_comp.len(); 2], |(i, j)| {
+        let s_ij = DMatrix::from_fn(dipole_comp.len(), dipole_comp.len(), |i, j| {
             0.5 * (sigma_mix[i] + sigma_mix[j])
         });
-        let e_k_ij = Array2::from_shape_fn([dipole_comp.len(); 2], |(i, j)| {
+        let e_k_ij = DMatrix::from_fn(dipole_comp.len(), dipole_comp.len(), |i, j| {
             (epsilon_k_mix[i] * epsilon_k_mix[j]).sqrt()
         });
 
@@ -85,9 +87,9 @@ impl GcPcSaftEosParameters {
             sigma,
             epsilon_k,
             bonds,
-            dipole_comp: Array1::from_vec(dipole_comp),
-            mu2: Array1::from_vec(mu2),
-            m_mix: Array1::from_vec(m_mix),
+            dipole_comp: DVector::from_vec(dipole_comp),
+            mu2: DVector::from_vec(mu2),
+            m_mix: DVector::from_vec(m_mix),
             s_ij,
             e_k_ij,
             sigma_ij,
@@ -98,8 +100,10 @@ impl GcPcSaftEosParameters {
 
 impl GcPcSaftEosParameters {
     pub fn phi(mut self, phi: &[f64]) -> Self {
-        for ((i, j), e) in self.epsilon_k_ij.indexed_iter_mut() {
-            *e *= (phi[self.component_index[i]] * phi[self.component_index[j]]).sqrt();
+        for i in (0..self.m.len()).combinations_with_replacement(2) {
+            let (i, j) = (i[0], i[1]);
+            self.epsilon_k_ij[(i, j)] *=
+                (phi[self.component_index[i]] * phi[self.component_index[j]]).sqrt();
         }
         self
     }
@@ -107,13 +111,13 @@ impl GcPcSaftEosParameters {
 
 impl HardSphereProperties for GcPcSaftEosParameters {
     fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
-        let m = self.m.mapv(N::from);
+        let m = self.m.map(N::from);
         MonomerShape::Heterosegmented([m.clone(), m.clone(), m.clone(), m], &self.component_index)
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
         let ti = temperature.recip() * -3.0;
-        Array1::from_shape_fn(self.sigma.len(), |i| {
+        DVector::from_fn(self.sigma.len(), |i, _| {
             -((ti * self.epsilon_k[i]).exp() * 0.12 - 1.0) * self.sigma[i]
         })
     }

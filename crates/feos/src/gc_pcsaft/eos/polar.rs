@@ -65,12 +65,12 @@ impl Dipole {
         let ndipole = parameters.dipole_comp.len();
 
         let f2_term = Array2::from_shape_fn([ndipole; 2], |(i, j)| {
-            parameters.mu2[i] * parameters.mu2[j] / parameters.s_ij[[i, j]].powi(3)
+            parameters.mu2[i] * parameters.mu2[j] / parameters.s_ij[(i, j)].powi(3)
         });
 
         let f3_term = Array3::from_shape_fn([ndipole; 3], |(i, j, k)| {
             parameters.mu2[i] * parameters.mu2[j] * parameters.mu2[k]
-                / (parameters.s_ij[[i, j]] * parameters.s_ij[[i, k]] * parameters.s_ij[[j, k]])
+                / (parameters.s_ij[(i, j)] * parameters.s_ij[(i, k)] * parameters.s_ij[(j, k)])
         });
 
         let mut mij1 = Array2::zeros((ndipole, ndipole));
@@ -115,7 +115,7 @@ impl Dipole {
 }
 
 impl Dipole {
-    pub(super) fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub(super) fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &GcPcSaftEosParameters,
         state: &StateHD<D>,
@@ -124,7 +124,7 @@ impl Dipole {
         let ndipole = p.dipole_comp.len();
 
         let t_inv = state.temperature.inv();
-        let eps_ij_t = Array2::from_shape_fn([ndipole; 2], |(i, j)| t_inv * p.e_k_ij[[i, j]]);
+        let eps_ij_t = Array2::from_shape_fn([ndipole; 2], |(i, j)| t_inv * p.e_k_ij[(i, j)]);
 
         let rho = &state.partial_density;
         let eta = p.zeta(state.temperature, &state.partial_density, [3])[0];
@@ -158,9 +158,9 @@ impl Dipole {
         }
         phi2 *= t_inv * t_inv * PI;
         phi3 *= t_inv.powi(3) * PI_SQ_43;
-        let mut result = phi2 * phi2 / (phi2 - phi3) * state.volume;
+        let mut result = phi2 * phi2 / (phi2 - phi3);
         if result.re().is_nan() {
-            result = phi2 * state.volume
+            result = phi2
         }
         result
     }

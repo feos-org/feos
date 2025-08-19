@@ -558,7 +558,7 @@ mod tests_gc_pcsaft {
     use crate::gc_pcsaft::{GcPcSaftEosParameters, eos::parameter::test::*};
     use approx::assert_relative_eq;
     use feos_core::ReferenceSystem;
-    use ndarray::arr1;
+    use nalgebra::dvector;
     use num_dual::Dual64;
     use quantity::{METER, MOL, PASCAL, Pressure};
     use typenum::P3;
@@ -569,17 +569,22 @@ mod tests_gc_pcsaft {
         let params = GcPcSaftEosParameters::new(&parameters);
         let contrib = Association::new(&parameters, 50, 1e-10).unwrap().unwrap();
         let temperature = 300.0;
-        let volume = METER.powi::<P3>().to_reduced();
-        let moles = (1.5 * MOL).to_reduced();
+        let volume = Dual64::from_re(METER.powi::<P3>().to_reduced()).derivative();
+        let moles = Dual64::from_re((1.5 * MOL).to_reduced());
+        let molar_volume = volume / moles;
         let state = StateHD::new(
             Dual64::from_re(temperature),
-            Dual64::from_re(volume).derivative(),
-            arr1(&[Dual64::from_re(moles)]),
+            molar_volume,
+            &dvector![Dual64::from_re(1.0)],
         );
         let diameter = params.hs_diameter(state.temperature);
         let pressure = Pressure::from_reduced(
-            -contrib
-                .helmholtz_energy(&params, &parameters.association, &state, &diameter)
+            -(contrib.helmholtz_energy_density(
+                &params,
+                &parameters.association,
+                &state,
+                &diameter,
+            ) * volume)
                 .eps
                 * temperature,
         );
@@ -594,17 +599,22 @@ mod tests_gc_pcsaft {
             .unwrap()
             .unwrap();
         let temperature = 300.0;
-        let volume = METER.powi::<P3>().to_reduced();
-        let moles = (1.5 * MOL).to_reduced();
+        let volume = Dual64::from_re(METER.powi::<P3>().to_reduced()).derivative();
+        let moles = Dual64::from_re((1.5 * MOL).to_reduced());
+        let molar_volume = volume / moles;
         let state = StateHD::new(
             Dual64::from_re(temperature),
-            Dual64::from_re(volume).derivative(),
-            arr1(&[Dual64::from_re(moles)]),
+            molar_volume,
+            &dvector![Dual64::from_re(1.0)],
         );
         let diameter = params.hs_diameter(state.temperature);
         let pressure = Pressure::from_reduced(
-            -contrib
-                .helmholtz_energy(&params, &parameters.association, &state, &diameter)
+            -(contrib.helmholtz_energy_density(
+                &params,
+                &parameters.association,
+                &state,
+                &diameter,
+            ) * volume)
                 .eps
                 * temperature,
         );
@@ -617,17 +627,20 @@ mod tests_gc_pcsaft {
         let params = GcPcSaftEosParameters::new(&parameters);
         let contrib = Association::new(&parameters, 50, 1e-10).unwrap().unwrap();
         let temperature = 300.0;
-        let volume = METER.powi::<P3>().to_reduced();
-        let moles = (arr1(&[1.5, 2.5]) * MOL).to_reduced();
-        let state = StateHD::new(
-            Dual64::from_re(temperature),
-            Dual64::from_re(volume).derivative(),
-            moles.map(Dual64::from_re),
-        );
+        let volume = Dual64::from_re(METER.powi::<P3>().to_reduced()).derivative();
+        let moles = (dvector![1.5, 2.5] * MOL).to_reduced().map(Dual64::from_re);
+        let total_moles = moles.sum();
+        let molar_volume = volume / total_moles;
+        let molefracs = moles / total_moles;
+        let state = StateHD::new(Dual64::from_re(temperature), molar_volume, &molefracs);
         let diameter = params.hs_diameter(state.temperature);
         let pressure = Pressure::from_reduced(
-            -contrib
-                .helmholtz_energy(&params, &parameters.association, &state, &diameter)
+            -(contrib.helmholtz_energy_density(
+                &params,
+                &parameters.association,
+                &state,
+                &diameter,
+            ) * volume)
                 .eps
                 * temperature,
         );
