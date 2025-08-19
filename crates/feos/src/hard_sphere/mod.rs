@@ -21,7 +21,7 @@ pub enum MonomerShape<'a, D> {
     /// For non-spherical molecules in a heterosegmented approach,
     /// the geometry factors for every segment and the component
     /// index for every segment.
-    Heterosegmented([DVector<D>; 4], &'a DVector<usize>),
+    Heterosegmented([DVector<D>; 4], &'a Vec<usize>),
 }
 
 /// Properties of (generalized) hard sphere systems.
@@ -33,10 +33,10 @@ pub trait HardSphereProperties {
     fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D>;
 
     /// For every segment, the index of the component that it is on.
-    fn component_index(&self) -> Cow<DVector<usize>> {
+    fn component_index(&self) -> Cow<Vec<usize>> {
         match self.monomer_shape(1.0) {
-            MonomerShape::Spherical(n) => Cow::Owned(DVector::from_fn(n, |i, _| i)),
-            MonomerShape::NonSpherical(m) => Cow::Owned(DVector::from_fn(m.len(), |i, _| i)),
+            MonomerShape::Spherical(n) => Cow::Owned((0..n).collect()),
+            MonomerShape::NonSpherical(m) => Cow::Owned((0..m.len()).collect()),
             MonomerShape::Heterosegmented(_, component_index) => Cow::Borrowed(component_index),
         }
     }
@@ -118,7 +118,7 @@ impl HardSphere {
         let frac_1mz3 = -(zeta[3] - 1.0).recip();
         let a = (zeta[1] * zeta[2] * frac_1mz3 * 3.0
             + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
-            + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (zeta[3] * (-1.0)).ln_1p())
+            + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (-zeta[3]).ln_1p())
             / std::f64::consts::FRAC_PI_6;
         (a, zeta, diameter)
     }

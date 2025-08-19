@@ -6,7 +6,7 @@ use num_dual::*;
 pub(super) struct HardChain;
 
 impl HardChain {
-    pub(super) fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub(super) fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &GcPcSaftEosParameters,
         state: &StateHD<D>,
@@ -27,7 +27,7 @@ impl HardChain {
                 let (di, dj) = (diameter[i], diameter[j]);
                 let cdij = c * di * dj / (di + dj);
                 let g = frac_1mz3 + cdij * 3.0 - cdij * cdij * (zeta3 - 1.0) * 2.0;
-                -state.moles[parameters.component_index[i]] * count * g.ln()
+                -state.partial_density[parameters.component_index[i]] * count * g.ln()
             })
             .sum()
     }
@@ -39,7 +39,7 @@ mod test {
     use crate::gc_pcsaft::eos::parameter::test::*;
     use approx::assert_relative_eq;
     use feos_core::ReferenceSystem;
-    use ndarray::arr1;
+    use nalgebra::dvector;
     use num_dual::Dual64;
     use quantity::{METER, MOL, PASCAL, Pressure};
     use typenum::P3;
@@ -49,14 +49,15 @@ mod test {
         let parameters = propane();
         let temperature = 300.0;
         let volume = METER.powi::<P3>().to_reduced();
+        let volume = Dual64::from_re(volume).derivative();
         let moles = (1.5 * MOL).to_reduced();
         let state = StateHD::new(
             Dual64::from_re(temperature),
-            Dual64::from_re(volume).derivative(),
-            arr1(&[Dual64::from_re(moles)]),
+            volume,
+            &dvector![Dual64::from_re(moles)],
         );
         let pressure = Pressure::from_reduced(
-            -HardChain.helmholtz_energy(&parameters, &state).eps * temperature,
+            -(HardChain.helmholtz_energy_density(&parameters, &state) * volume).eps * temperature,
         );
         assert_relative_eq!(
             pressure,
@@ -70,14 +71,15 @@ mod test {
         let parameters = GcPcSaftEosParameters::new(&propanol());
         let temperature = 300.0;
         let volume = METER.powi::<P3>().to_reduced();
+        let volume = Dual64::from_re(volume).derivative();
         let moles = (1.5 * MOL).to_reduced();
         let state = StateHD::new(
             Dual64::from_re(temperature),
-            Dual64::from_re(volume).derivative(),
-            arr1(&[Dual64::from_re(moles)]),
+            volume,
+            &dvector![Dual64::from_re(moles)],
         );
         let pressure = Pressure::from_reduced(
-            -HardChain.helmholtz_energy(&parameters, &state).eps * temperature,
+            -(HardChain.helmholtz_energy_density(&parameters, &state) * volume).eps * temperature,
         );
         assert_relative_eq!(pressure, -1.2831486124723626 * PASCAL, max_relative = 1e-10);
     }
