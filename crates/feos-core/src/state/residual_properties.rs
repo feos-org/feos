@@ -1,12 +1,9 @@
-use super::{Contributions, Derivative, PartialDerivative, State, VectorPartialDerivative};
+use super::{Contributions, State};
 use crate::equation_of_state::{Molarweight, Residual, Subset};
 use crate::{FeosResult, PhaseEquilibrium, ReferenceSystem};
 use nalgebra::allocator::Allocator;
 use nalgebra::{DMatrix, DVector, DefaultAllocator, OMatrix, OVector, dvector};
-use num_dual::{
-    Dual, DualNum, Gradients, first_derivative, partial, partial2, second_derivative,
-    second_partial_derivative, third_derivative,
-};
+use num_dual::{Dual, DualNum, Gradients, partial, partial2};
 use quantity::*;
 use std::ops::{Add, Div, Neg, Sub};
 
@@ -22,198 +19,29 @@ impl<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy> State<E, N, D>
 where
     DefaultAllocator: Allocator<N>,
 {
-    pub(super) fn get_or_compute_scalar_derivative_residual(
-        &self,
-        derivative: PartialDerivative,
-    ) -> D {
-        let mut cache = self.cache.lock().unwrap();
-        let t = self.temperature.into_reduced();
-        let v = self.volume.into_reduced();
-        let n = &self.molefracs * self.total_moles.into_reduced();
-
-        match derivative {
-            PartialDerivative::Zeroth => {
-                let computation = || self.eos.residual_helmholtz_energy(t, v, &n);
-                cache.get_or_insert_with_zeroth(computation)
-            }
-            PartialDerivative::First(Derivative::DV) => {
-                let computation = || {
-                    first_derivative(
-                        partial2(
-                            |v, &t, n| self.eos.lift().residual_helmholtz_energy(t, v, n),
-                            &t,
-                            &n,
-                        ),
-                        v,
-                    )
-                };
-                cache.get_or_insert_with_first_scalar(Derivative::DV, computation)
-            }
-            PartialDerivative::First(Derivative::DT) => {
-                let computation = || {
-                    first_derivative(
-                        partial2(
-                            |t, &v, n| self.eos.lift().residual_helmholtz_energy(t, v, n),
-                            &v,
-                            &n,
-                        ),
-                        t,
-                    )
-                };
-                cache.get_or_insert_with_first_scalar(Derivative::DT, computation)
-            }
-            PartialDerivative::Second(Derivative::DV) => {
-                let computation = || {
-                    second_derivative(
-                        partial2(
-                            |v, &t, n| self.eos.lift().residual_helmholtz_energy(t, v, n),
-                            &t,
-                            &n,
-                        ),
-                        v,
-                    )
-                };
-                cache.get_or_insert_with_second(Derivative::DV, computation)
-            }
-            PartialDerivative::Second(Derivative::DT) => {
-                let computation = || {
-                    second_derivative(
-                        partial2(
-                            |t, &v, n| self.eos.lift().residual_helmholtz_energy(t, v, n),
-                            &v,
-                            &n,
-                        ),
-                        t,
-                    )
-                };
-                cache.get_or_insert_with_second(Derivative::DT, computation)
-            }
-            PartialDerivative::SecondMixed => {
-                let computation = || {
-                    second_partial_derivative(
-                        partial(
-                            |(t, v), n| self.eos.lift().residual_helmholtz_energy(t, v, n),
-                            &n,
-                        ),
-                        (t, v),
-                    )
-                };
-                cache.get_or_insert_with_second_mixed_scalar(
-                    Derivative::DT,
-                    Derivative::DV,
-                    computation,
-                )
-            }
-            PartialDerivative::Third(Derivative::DV) => {
-                let computation = || {
-                    third_derivative(
-                        partial2(
-                            |v, &t, n| self.eos.lift().residual_helmholtz_energy(t, v, n),
-                            &t,
-                            &n,
-                        ),
-                        v,
-                    )
-                };
-                cache.get_or_insert_with_third(Derivative::DV, computation)
-            }
-            PartialDerivative::Third(Derivative::DT) => {
-                let computation = || {
-                    third_derivative(
-                        partial2(
-                            |t, &v, n| self.eos.lift().residual_helmholtz_energy(t, v, n),
-                            &v,
-                            &n,
-                        ),
-                        t,
-                    )
-                };
-                cache.get_or_insert_with_third(Derivative::DT, computation)
-            }
-        }
-    }
-
-    pub(super) fn get_or_compute_vector_derivative_residual(
-        &self,
-        derivative: VectorPartialDerivative,
-    ) -> OVector<D, N> {
-        let mut cache = self.cache.lock().unwrap();
-        let t = self.temperature.into_reduced();
-        let v = self.volume.into_reduced();
-        let n = &self.molefracs * self.total_moles.into_reduced();
-
-        match derivative {
-            VectorPartialDerivative::First => {
-                let computation = || {
-                    N::gradient(
-                        |n, &(t, v)| self.eos.lift().residual_helmholtz_energy(t, v, &n),
-                        &n,
-                        &(t, v),
-                    )
-                };
-                cache.get_or_insert_with_first_vector(computation)
-            }
-            VectorPartialDerivative::SecondMixed(Derivative::DV) => {
-                let computation = || {
-                    N::partial_hessian(
-                        |n, v, &t| self.eos.lift().residual_helmholtz_energy(t, v, &n),
-                        &n,
-                        v,
-                        &t,
-                    )
-                };
-                cache.get_or_insert_with_second_mixed_vector(Derivative::DV, computation)
-            }
-            VectorPartialDerivative::SecondMixed(Derivative::DT) => {
-                let computation = || {
-                    N::partial_hessian(
-                        |n, t, &v| self.eos.lift().residual_helmholtz_energy(t, v, &n),
-                        &n,
-                        t,
-                        &v,
-                    )
-                };
-                cache.get_or_insert_with_second_mixed_vector(Derivative::DT, computation)
-            }
-        }
-    }
-
-    pub(super) fn get_or_compute_matrix_derivative_residual(&self) -> OMatrix<D, N, N>
-    where
-        DefaultAllocator: Allocator<N, N>,
-    {
-        let mut cache = self.cache.lock().unwrap();
-        let t = self.temperature.into_reduced();
-        let v = self.density.into_reduced().recip();
-        let x = &self.molefracs;
-
-        let computation = || {
-            N::hessian(
-                |x, &(t, v)| self.eos.lift().residual_helmholtz_energy(t, v, &x),
-                x,
-                &(t, v),
-            )
-        };
-        cache.get_or_insert_with_second_vector(computation)
-    }
-
-    fn contributions<T: Add<T, Output = T>, U>(
-        ideal_gas: Quantity<T, U>,
-        residual: Quantity<T, U>,
+    pub(super) fn contributions<
+        T: Add<T, Output = T>,
+        U,
+        I: FnOnce() -> Quantity<T, U>,
+        R: FnOnce() -> Quantity<T, U>,
+    >(
+        ideal_gas: I,
+        residual: R,
         contributions: Contributions,
     ) -> Quantity<T, U> {
         match contributions {
-            Contributions::IdealGas => ideal_gas,
-            Contributions::Total => ideal_gas + residual,
-            Contributions::Residual => residual,
+            Contributions::IdealGas => ideal_gas(),
+            Contributions::Total => ideal_gas() + residual(),
+            Contributions::Residual => residual(),
         }
     }
 
     /// Residual Helmholtz energy $A^\text{res}$
     pub fn residual_helmholtz_energy(&self) -> Energy<D> {
-        Energy::from_reduced(
-            self.get_or_compute_scalar_derivative_residual(PartialDerivative::Zeroth),
-        )
+        *self.cache.a.get_or_init(|| {
+            self.eos
+                .residual_helmholtz_energy_unit(self.temperature, self.volume, &self.moles)
+        })
     }
 
     /// Residual molar Helmholtz energy $a^\text{res}$
@@ -223,11 +51,18 @@ where
 
     /// Residual entropy $S^\text{res}=\left(\frac{\partial A^\text{res}}{\partial T}\right)_{V,N_i}$
     pub fn residual_entropy(&self) -> Entropy<D> {
-        Entropy::from_reduced(
-            -self.get_or_compute_scalar_derivative_residual(PartialDerivative::First(
-                Derivative::DT,
-            )),
-        )
+        -*self.cache.da_dt.get_or_init(|| {
+            let (a, da_dt) = quantity::ad::first_derivative(
+                partial2(
+                    |t, &v, n| self.eos.lift().residual_helmholtz_energy_unit(t, v, n),
+                    &self.volume,
+                    &self.moles,
+                ),
+                self.temperature,
+            );
+            let _ = self.cache.a.set(a);
+            da_dt
+        })
     }
 
     /// Residual entropy $s^\text{res}=\left(\frac{\partial a^\text{res}}{\partial T}\right)_{V,N_i}$
@@ -237,20 +72,41 @@ where
 
     /// Pressure: $p=-\left(\frac{\partial A}{\partial V}\right)_{T,N_i}$
     pub fn pressure(&self, contributions: Contributions) -> Pressure<D> {
-        let ideal_gas = self.density * RGAS * self.temperature;
-        let residual =
-            Pressure::from_reduced(-self.get_or_compute_scalar_derivative_residual(
-                PartialDerivative::First(Derivative::DV),
-            ));
+        let ideal_gas = || self.density * RGAS * self.temperature;
+        let residual = || {
+            -*self.cache.da_dv.get_or_init(|| {
+                let (a, da_dv) = quantity::ad::first_derivative(
+                    partial2(
+                        |v, &t, n| self.eos.lift().residual_helmholtz_energy_unit(t, v, n),
+                        &self.temperature,
+                        &self.moles,
+                    ),
+                    self.volume,
+                );
+                let _ = self.cache.a.set(a);
+                da_dv
+            })
+        };
         Self::contributions(ideal_gas, residual, contributions)
     }
 
     /// Residual chemical potential: $\mu_i^\text{res}=\left(\frac{\partial A^\text{res}}{\partial N_i}\right)_{T,V,N_j}$
     pub fn residual_chemical_potential(&self) -> MolarEnergy<OVector<D, N>> {
-        MolarEnergy::new(
-            self.get_or_compute_vector_derivative_residual(VectorPartialDerivative::First)
-                * D::from(MolarEnergy::<f64>::FACTOR),
-        )
+        self.cache
+            .da_dn
+            .get_or_init(|| {
+                let (a, mu) = quantity::ad::gradient_copy(
+                    partial2(
+                        |n, &t, &v| self.eos.lift().residual_helmholtz_energy_unit(t, v, &n),
+                        &self.temperature,
+                        &self.volume,
+                    ),
+                    &self.moles,
+                );
+                let _ = self.cache.a.set(a);
+                mu
+            })
+            .clone()
     }
 
     /// Compressibility factor: $Z=\frac{pV}{NRT}$
@@ -262,11 +118,22 @@ where
 
     /// Partial derivative of pressure w.r.t. volume: $\left(\frac{\partial p}{\partial V}\right)_{T,N_i}$
     pub fn dp_dv(&self, contributions: Contributions) -> <Pressure<D> as Div<Volume<D>>>::Output {
-        let ideal_gas = -self.density * RGAS * self.temperature / self.volume;
-        let residual =
-            Quantity::from_reduced(-self.get_or_compute_scalar_derivative_residual(
-                PartialDerivative::Second(Derivative::DV),
-            ));
+        let ideal_gas = || -self.density * RGAS * self.temperature / self.volume;
+        let residual = || {
+            -*self.cache.d2a_dv2.get_or_init(|| {
+                let (a, da_dv, d2a_dv2) = quantity::ad::second_derivative(
+                    partial2(
+                        |v, &t, n| self.eos.lift().residual_helmholtz_energy_unit(t, v, n),
+                        &self.temperature,
+                        &self.moles,
+                    ),
+                    self.volume,
+                );
+                let _ = self.cache.a.set(a);
+                let _ = self.cache.da_dv.set(da_dv);
+                d2a_dv2
+            })
+        };
         Self::contributions(ideal_gas, residual, contributions)
     }
 
@@ -280,26 +147,48 @@ where
 
     /// Partial derivative of pressure w.r.t. temperature: $\left(\frac{\partial p}{\partial T}\right)_{V,N_i}$
     pub fn dp_dt(&self, contributions: Contributions) -> POverT<D> {
-        let ideal_gas = self.density * RGAS;
-        let residual = Quantity::from_reduced(
-            -self.get_or_compute_scalar_derivative_residual(PartialDerivative::SecondMixed),
-        );
+        let ideal_gas = || self.density * RGAS;
+        let residual = || {
+            -*self.cache.d2a_dtdv.get_or_init(|| {
+                let (a, da_dt, da_dv, d2a_dtdv) = quantity::ad::second_partial_derivative(
+                    partial(
+                        |(t, v), n| self.eos.lift().residual_helmholtz_energy_unit(t, v, n),
+                        &self.moles,
+                    ),
+                    (self.temperature, self.volume),
+                );
+                let _ = self.cache.a.set(a);
+                let _ = self.cache.da_dt.set(da_dt);
+                let _ = self.cache.da_dv.set(da_dv);
+                d2a_dtdv
+            })
+        };
         Self::contributions(ideal_gas, residual, contributions)
     }
 
     /// Partial derivative of pressure w.r.t. moles: $\left(\frac{\partial p}{\partial N_i}\right)_{T,V,N_j}$
     pub fn dp_dni(&self, contributions: Contributions) -> DpDn<OVector<D, N>> {
-        let residual = -self.get_or_compute_vector_derivative_residual(
-            VectorPartialDerivative::SecondMixed(super::Derivative::DV),
-        );
+        let residual = -self
+            .cache
+            .d2a_dndv
+            .get_or_init(|| {
+                let (a, da_dn, da_dv, dmu_dv) = quantity::ad::partial_hessian_copy(
+                    partial(
+                        |(n, v), &t| self.eos.lift().residual_helmholtz_energy_unit(t, v, &n),
+                        &self.temperature,
+                    ),
+                    (&self.moles, self.volume),
+                );
+                let _ = self.cache.a.set(a);
+                let _ = self.cache.da_dn.set(da_dn);
+                let _ = self.cache.da_dv.set(da_dv);
+                dmu_dv
+            })
+            .clone();
         let (r, c) = residual.shape_generic();
-        let ideal_gas = self.temperature / self.volume * RGAS;
+        let ideal_gas = || self.temperature / self.volume * RGAS;
         Quantity::from_fn_generic(r, c, |i, _| {
-            Self::contributions(
-                ideal_gas,
-                Quantity::from_reduced(residual[i]),
-                contributions,
-            )
+            Self::contributions(ideal_gas, || residual.get(i), contributions)
         })
     }
 
@@ -308,11 +197,24 @@ where
         &self,
         contributions: Contributions,
     ) -> <<Pressure<D> as Div<Volume<D>>>::Output as Div<Volume<D>>>::Output {
-        let ideal_gas = self.density * RGAS * self.temperature / (self.volume * self.volume) * 2.0;
-        let residual =
-            Quantity::from_reduced(-self.get_or_compute_scalar_derivative_residual(
-                PartialDerivative::Third(Derivative::DV),
-            ));
+        let ideal_gas =
+            || self.density * RGAS * self.temperature / (self.volume * self.volume) * 2.0;
+        let residual = || {
+            -*self.cache.d3a_dv3.get_or_init(|| {
+                let (a, da_dv, d2a_dv2, d3a_dv3) = quantity::ad::third_derivative(
+                    partial2(
+                        |v, &t, n| self.eos.lift().residual_helmholtz_energy_unit(t, v, n),
+                        &self.temperature,
+                        &self.moles,
+                    ),
+                    self.volume,
+                );
+                let _ = self.cache.a.set(a);
+                let _ = self.cache.da_dv.set(da_dv);
+                let _ = self.cache.d2a_dv2.set(d2a_dv2);
+                d3a_dv3
+            })
+        };
         Self::contributions(ideal_gas, residual, contributions)
     }
 
@@ -350,16 +252,22 @@ where
     where
         DefaultAllocator: Allocator<N, N>,
     {
-        let residual = self.get_or_compute_matrix_derivative_residual();
-        let (r, c) = residual.shape_generic();
-        Quantity::from_fn_generic(r, c, |i, j| {
-            Self::contributions(
-                self.temperature * RGAS
-                    / (self.total_moles * Dimensionless::new(self.molefracs[0])),
-                Quantity::from_reduced(residual[(i, j)]),
-                contributions,
-            )
-        })
+        let (a, da_dn, d2a_dn2) = quantity::ad::hessian_copy(
+            partial2(
+                |n, &t, &v| self.eos.lift().residual_helmholtz_energy_unit(t, v, &n),
+                &self.temperature,
+                &self.volume,
+            ),
+            &self.moles,
+        );
+        let _ = self.cache.a.set(a);
+        let _ = self.cache.da_dn.set(da_dn);
+        let residual = || d2a_dn2;
+        let ideal_gas = || {
+            Dimensionless::new(OMatrix::from_diagonal(&self.molefracs.map(|x| x.recip())))
+                * (self.temperature * RGAS / self.total_moles)
+        };
+        Self::contributions(ideal_gas, residual, contributions)
     }
 
     /// Isothermal compressibility: $\kappa_T=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{T,N_i}$
@@ -371,27 +279,59 @@ where
 
     /// Partial derivative of the residual entropy w.r.t. temperature: $\left(\frac{\partial S^\text{res}}{\partial T}\right)_{V,N_i}$
     pub fn ds_res_dt(&self) -> <Entropy<D> as Div<Temperature<D>>>::Output {
-        Quantity::from_reduced(-self.get_or_compute_scalar_derivative_residual(
-            PartialDerivative::Second(super::Derivative::DT),
-        ))
+        -*self.cache.d2a_dt2.get_or_init(|| {
+            let (a, da_dt, d2a_dt2) = quantity::ad::second_derivative(
+                partial2(
+                    |t, &v, n| self.eos.lift().residual_helmholtz_energy_unit(t, v, n),
+                    &self.volume,
+                    &self.moles,
+                ),
+                self.temperature,
+            );
+            let _ = self.cache.a.set(a);
+            let _ = self.cache.da_dt.set(da_dt);
+            d2a_dt2
+        })
     }
 
     /// Second partial derivative of the residual entropy w.r.t. temperature: $\left(\frac{\partial^2S^\text{res}}{\partial T^2}\right)_{V,N_i}$
     pub fn d2s_res_dt2(
         &self,
     ) -> <<Entropy<D> as Div<Temperature<D>>>::Output as Div<Temperature<D>>>::Output {
-        Quantity::from_reduced(-self.get_or_compute_scalar_derivative_residual(
-            PartialDerivative::Third(super::Derivative::DT),
-        ))
+        -*self.cache.d3a_dt3.get_or_init(|| {
+            let (a, da_dt, d2a_dt2, d3a_dt3) = quantity::ad::third_derivative(
+                partial2(
+                    |t, &v, n| self.eos.lift().residual_helmholtz_energy_unit(t, v, n),
+                    &self.volume,
+                    &self.moles,
+                ),
+                self.temperature,
+            );
+            let _ = self.cache.a.set(a);
+            let _ = self.cache.da_dt.set(da_dt);
+            let _ = self.cache.d2a_dt2.set(d2a_dt2);
+            d3a_dt3
+        })
     }
 
     /// Partial derivative of chemical potential w.r.t. temperature: $\left(\frac{\partial\mu_i}{\partial T}\right)_{V,N_i}$
     pub fn dmu_res_dt(&self) -> MolarEntropy<OVector<D, N>> {
-        Quantity::new(
-            self.get_or_compute_vector_derivative_residual(VectorPartialDerivative::SecondMixed(
-                Derivative::DT,
-            )) * D::from(MolarEntropy::<f64>::FACTOR),
-        )
+        self.cache
+            .d2a_dndt
+            .get_or_init(|| {
+                let (a, da_dn, da_dt, d2a_dndt) = quantity::ad::partial_hessian_copy(
+                    partial(
+                        |(n, t), &v| self.eos.lift().residual_helmholtz_energy_unit(t, v, &n),
+                        &self.volume,
+                    ),
+                    (&self.moles, self.temperature),
+                );
+                let _ = self.cache.a.set(a);
+                let _ = self.cache.da_dn.set(da_dn);
+                let _ = self.cache.da_dt.set(da_dt);
+                d2a_dndt
+            })
+            .clone()
     }
 
     /// Logarithm of the fugacity coefficient: $\ln\varphi_i=\beta\mu_i^\mathrm{res}\left(T,p,\lbrace N_i\rbrace\right)$
