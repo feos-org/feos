@@ -1,5 +1,5 @@
 use crate::{
-    eos::PyEquationOfState,
+    eos::{parse_molefracs, PyEquationOfState},
     error::PyFeosError,
     ideal_gas::IdealGasModel,
     residual::ResidualModel,
@@ -11,8 +11,7 @@ use feos_core::{
 };
 use indexmap::IndexMap;
 use nalgebra::DVector;
-use nshare::IntoNalgebra;
-use numpy::{PyArray1, PyArrayMethods};
+use numpy::PyReadonlyArray1;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use quantity::*;
@@ -201,22 +200,22 @@ impl PyPhaseEquilibrium {
     pub(crate) fn bubble_point<'py>(
         eos: &PyEquationOfState,
         temperature_or_pressure: Bound<'_, PyAny>,
-        liquid_molefracs: &Bound<'py, PyArray1<f64>>,
+        liquid_molefracs: PyReadonlyArray1<'py, f64>,
         tp_init: Option<Bound<'_, PyAny>>,
-        vapor_molefracs: Option<&Bound<'py, PyArray1<f64>>>,
+        vapor_molefracs: Option<PyReadonlyArray1<'py, f64>>,
         max_iter_inner: Option<usize>,
         max_iter_outer: Option<usize>,
         tol_inner: Option<f64>,
         tol_outer: Option<f64>,
         verbosity: Option<PyVerbosity>,
     ) -> PyResult<Self> {
-        let x = vapor_molefracs.map(|m| m.to_owned_array().into_nalgebra());
+        let x = parse_molefracs(vapor_molefracs);
         if let Ok(t) = temperature_or_pressure.extract::<Temperature>() {
             Ok(Self(
                 PhaseEquilibrium::bubble_point(
                     &eos.0,
                     t,
-                    &liquid_molefracs.to_owned_array().into_nalgebra(),
+                    &parse_molefracs(Some(liquid_molefracs)).unwrap(),
                     tp_init.map(|p| p.extract()).transpose()?,
                     x.as_ref(),
                     (
@@ -231,7 +230,7 @@ impl PyPhaseEquilibrium {
                 PhaseEquilibrium::bubble_point(
                     &eos.0,
                     p,
-                    &liquid_molefracs.to_owned_array().into_nalgebra(),
+                    &parse_molefracs(Some(liquid_molefracs)).unwrap(),
                     tp_init.map(|p| p.extract()).transpose()?,
                     x.as_ref(),
                     (
@@ -289,22 +288,22 @@ impl PyPhaseEquilibrium {
     pub(crate) fn dew_point<'py>(
         eos: &PyEquationOfState,
         temperature_or_pressure: Bound<'_, PyAny>,
-        vapor_molefracs: &Bound<'py, PyArray1<f64>>,
+        vapor_molefracs: PyReadonlyArray1<'py, f64>,
         tp_init: Option<Bound<'_, PyAny>>,
-        liquid_molefracs: Option<&Bound<'py, PyArray1<f64>>>,
+        liquid_molefracs: Option<PyReadonlyArray1<'py, f64>>,
         max_iter_inner: Option<usize>,
         max_iter_outer: Option<usize>,
         tol_inner: Option<f64>,
         tol_outer: Option<f64>,
         verbosity: Option<PyVerbosity>,
     ) -> PyResult<Self> {
-        let x = liquid_molefracs.map(|m| m.to_owned_array().into_nalgebra());
+        let x = parse_molefracs(liquid_molefracs);
         if let Ok(t) = temperature_or_pressure.extract::<Temperature>() {
             Ok(Self(
                 PhaseEquilibrium::dew_point(
                     &eos.0,
                     t,
-                    &vapor_molefracs.to_owned_array().into_nalgebra(),
+                    &parse_molefracs(Some(vapor_molefracs)).unwrap(),
                     tp_init.map(|p| p.extract()).transpose()?,
                     x.as_ref(),
                     (
@@ -319,7 +318,7 @@ impl PyPhaseEquilibrium {
                 PhaseEquilibrium::dew_point(
                     &eos.0,
                     p,
-                    &vapor_molefracs.to_owned_array().into_nalgebra(),
+                    &parse_molefracs(Some(vapor_molefracs)).unwrap(),
                     tp_init.map(|p| p.extract()).transpose()?,
                     x.as_ref(),
                     (
@@ -838,7 +837,7 @@ impl PyPhaseDiagram {
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn bubble_point_line<'py>(
         eos: &PyEquationOfState,
-        molefracs: &Bound<'py, PyArray1<f64>>,
+        molefracs: PyReadonlyArray1<'py, f64>,
         min_temperature: Temperature,
         npoints: usize,
         critical_temperature: Option<Temperature>,
@@ -850,7 +849,7 @@ impl PyPhaseDiagram {
     ) -> PyResult<Self> {
         let dia = PhaseDiagram::bubble_point_line(
             &eos.0,
-            &molefracs.to_owned_array().into_nalgebra(),
+            &parse_molefracs(Some(molefracs)).unwrap(),
             min_temperature,
             npoints,
             critical_temperature,
@@ -905,7 +904,7 @@ impl PyPhaseDiagram {
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn dew_point_line<'py>(
         eos: &PyEquationOfState,
-        molefracs: &Bound<'py, PyArray1<f64>>,
+        molefracs: PyReadonlyArray1<'py, f64>,
         min_temperature: Temperature,
         npoints: usize,
         critical_temperature: Option<Temperature>,
@@ -917,7 +916,7 @@ impl PyPhaseDiagram {
     ) -> PyResult<Self> {
         let dia = PhaseDiagram::dew_point_line(
             &eos.0,
-            &molefracs.to_owned_array().into_nalgebra(),
+            &parse_molefracs(Some(molefracs)).unwrap(),
             min_temperature,
             npoints,
             critical_temperature,
@@ -964,7 +963,7 @@ impl PyPhaseDiagram {
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn spinodal<'py>(
         eos: &PyEquationOfState,
-        molefracs: &Bound<'py, PyArray1<f64>>,
+        molefracs: PyReadonlyArray1<'py, f64>,
         min_temperature: Temperature,
         npoints: usize,
         critical_temperature: Option<Temperature>,
@@ -974,7 +973,7 @@ impl PyPhaseDiagram {
     ) -> PyResult<Self> {
         let dia = PhaseDiagram::spinodal(
             &eos.0,
-            &molefracs.to_owned_array().into_nalgebra(),
+            &parse_molefracs(Some(molefracs)).unwrap(),
             min_temperature,
             npoints,
             critical_temperature,

@@ -1,8 +1,6 @@
 #![allow(non_snake_case)]
 use feos_core::{IdealGasDyn, Molarweight, ResidualDyn, StateHD, Subset};
 use nalgebra::DVector;
-use ndarray::Array1;
-use nshare::{AsNdarray1, IntoNalgebra};
 use num_dual::*;
 use numpy::{PyArray, PyReadonlyArrayDyn, PyReadwriteArrayDyn};
 use pyo3::exceptions::PyTypeError;
@@ -29,26 +27,6 @@ impl PyIdealGas {
         Ok(Self(obj.unbind()))
     }
 }
-
-// impl Components for PyIdealGas {
-//     fn components(&self) -> usize {
-//         Python::with_gil(|py| {
-//             let py_result = self.0.bind(py).call_method0("components").unwrap();
-//             py_result.extract().unwrap()
-//         })
-//     }
-
-//     fn subset(&self, component_list: &[usize]) -> Self {
-//         Python::with_gil(|py| {
-//             let py_result = self
-//                 .0
-//                 .bind(py)
-//                 .call_method1("subset", (component_list.to_vec(),))
-//                 .unwrap();
-//             Self::new(py_result.extract().unwrap()).unwrap()
-//         })
-//     }
-// }
 
 macro_rules! impl_ideal_gas {
     ($($py_hd_id:ident, $hd_ty:ty);*) => {
@@ -247,11 +225,11 @@ macro_rules! state {
         impl $py_state_id {
             #[new]
             pub fn new(temperature: $py_hd_id, volume: $py_hd_id, moles: Vec<$py_hd_id>) -> Self {
-                let m = Array1::from(moles).mapv(<$hd_ty>::from);
+                let moles = moles.into_iter().map(<$hd_ty>::from).collect();
                 Self(StateHD::<$hd_ty>::new(
                     temperature.into(),
                     volume.into(),
-                    &m.into_nalgebra(),
+                    &DVector::from_vec(moles),
                 ))
             }
 
@@ -279,20 +257,20 @@ macro_rules! state {
             pub fn get_partial_density(&self) -> Vec<$py_hd_id> {
                 self.0
                     .partial_density
-                    .as_ndarray1()
-                    .mapv(<$py_hd_id>::from)
-                    .into_raw_vec_and_offset()
-                    .0
+                    .iter()
+                    .copied()
+                    .map(<$py_hd_id>::from)
+                    .collect()
             }
 
             #[getter]
             pub fn get_molefracs(&self) -> Vec<$py_hd_id> {
                 self.0
                     .molefracs
-                    .as_ndarray1()
-                    .mapv(<$py_hd_id>::from)
-                    .into_raw_vec_and_offset()
-                    .0
+                    .iter()
+                    .copied()
+                    .map(<$py_hd_id>::from)
+                    .collect()
             }
 
             #[getter]

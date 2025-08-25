@@ -3,8 +3,8 @@ use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
 
 use feos_core::*;
-use nshare::IntoNalgebra;
-use numpy::{PyArray1, PyArrayMethods};
+use nalgebra::{DVector, DVectorView, Dyn};
+use numpy::PyReadonlyArray1;
 use pyo3::prelude::*;
 use quantity::*;
 use std::sync::Arc;
@@ -43,10 +43,10 @@ impl PyEquationOfState {
     /// -------
     /// SINumber
     #[pyo3(text_signature = "(molefracs=None)", signature = (molefracs=None))]
-    fn max_density<'py>(&self, molefracs: Option<Bound<'py, PyArray1<f64>>>) -> PyResult<Density> {
+    fn max_density(&self, molefracs: Option<PyReadonlyArray1<f64>>) -> PyResult<Density> {
         Ok(self
             .0
-            .max_density(&molefracs.map(|x| x.to_owned_array().into_nalgebra()))
+            .max_density(&parse_molefracs(molefracs))
             .map_err(PyFeosError::from)?)
     }
 
@@ -63,15 +63,13 @@ impl PyEquationOfState {
     /// -------
     /// SINumber
     #[pyo3(text_signature = "(temperature, molefracs=None)", signature = (temperature, molefracs=None))]
-    fn second_virial_coefficient<'py>(
+    fn second_virial_coefficient(
         &self,
         temperature: Temperature,
-        molefracs: Option<Bound<'py, PyArray1<f64>>>,
+        molefracs: Option<PyReadonlyArray1<f64>>,
     ) -> Quot<f64, Density> {
-        self.0.second_virial_coefficient(
-            temperature,
-            &molefracs.map(|x| x.to_owned_array().into_nalgebra()),
-        )
+        self.0
+            .second_virial_coefficient(temperature, &parse_molefracs(molefracs))
     }
 
     /// Calculate the third Virial coefficient C(T,x).
@@ -87,15 +85,13 @@ impl PyEquationOfState {
     /// -------
     /// SINumber
     #[pyo3(text_signature = "(temperature, molefracs=None)", signature = (temperature, molefracs=None))]
-    fn third_virial_coefficient<'py>(
+    fn third_virial_coefficient(
         &self,
         temperature: Temperature,
-        molefracs: Option<Bound<'py, PyArray1<f64>>>,
+        molefracs: Option<PyReadonlyArray1<f64>>,
     ) -> Quot<Quot<f64, Density>, Density> {
-        self.0.third_virial_coefficient(
-            temperature,
-            &molefracs.map(|x| x.to_owned_array().into_nalgebra()),
-        )
+        self.0
+            .third_virial_coefficient(temperature, &parse_molefracs(molefracs))
     }
 
     /// Calculate the derivative of the second Virial coefficient B(T,x)
@@ -112,14 +108,14 @@ impl PyEquationOfState {
     /// -------
     /// SINumber
     #[pyo3(text_signature = "(temperature, molefracs=None)", signature = (temperature, molefracs=None))]
-    fn second_virial_coefficient_temperature_derivative<'py>(
+    fn second_virial_coefficient_temperature_derivative(
         &self,
         temperature: Temperature,
-        molefracs: Option<Bound<'py, PyArray1<f64>>>,
+        molefracs: Option<PyReadonlyArray1<f64>>,
     ) -> Quot<Quot<f64, Density>, Temperature> {
         self.0.second_virial_coefficient_temperature_derivative(
             temperature,
-            &molefracs.map(|x| x.to_owned_array().into_nalgebra()),
+            &parse_molefracs(molefracs),
         )
     }
 
@@ -137,14 +133,14 @@ impl PyEquationOfState {
     /// -------
     /// SINumber
     #[pyo3(text_signature = "(temperature, molefracs=None)", signature = (temperature, molefracs=None))]
-    fn third_virial_coefficient_temperature_derivative<'py>(
+    fn third_virial_coefficient_temperature_derivative(
         &self,
         temperature: Temperature,
-        molefracs: Option<Bound<'py, PyArray1<f64>>>,
+        molefracs: Option<PyReadonlyArray1<f64>>,
     ) -> Quot<Quot<Quot<f64, Density>, Density>, Temperature> {
         self.0.third_virial_coefficient_temperature_derivative(
             temperature,
-            &molefracs.map(|x| x.to_owned_array().into_nalgebra()),
+            &parse_molefracs(molefracs),
         )
     }
 }
@@ -159,6 +155,15 @@ impl PyEquationOfState {
         }
         eos.ideal_gas = ideal_gas;
     }
+}
+
+pub(crate) fn parse_molefracs(molefracs: Option<PyReadonlyArray1<f64>>) -> Option<DVector<f64>> {
+    molefracs.map(|x| {
+        let x: DVectorView<f64, Dyn, Dyn> = x
+            .try_as_matrix()
+            .expect("molefracs are in an invalid format!");
+        x.clone_owned()
+    })
 }
 
 // impl_state_entropy_scaling!(EquationOfState<Vec<IdealGasModel>, ResidualModel>, PyEquationOfState);
