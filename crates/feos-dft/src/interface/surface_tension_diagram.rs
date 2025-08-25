@@ -49,12 +49,11 @@ impl<F: HelmholtzEnergyFunctional> SurfaceTensionDiagram<F> {
                     ))
                 }
                 .map(|mut profile| {
-                    if let Some(init) = profiles.last() {
-                        if init.profile.density.shape() == profile.profile.density.shape() {
-                            if let Some(scale) = init_densities {
-                                profile.set_density_inplace(&init.profile.density, scale)
-                            }
-                        }
+                    if let Some(init) = profiles.last()
+                        && init.profile.density.shape() == profile.profile.density.shape()
+                        && let Some(scale) = init_densities
+                    {
+                        profile.set_density_inplace(&init.profile.density, scale)
                     }
                     profile
                 })

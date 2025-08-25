@@ -290,13 +290,13 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
             }
 
             self.update_states(feed_state, &k)?;
-            if let Some(k_vec) = k_vec {
-                if i >= iterations - 3 {
-                    k_vec.set_row(
-                        i + 3 - iterations,
-                        &k.map(|ki| if ki > 0.0 { ki.ln() } else { 0.0 }).transpose(),
-                    );
-                }
+            if let Some(k_vec) = k_vec
+                && i >= iterations - 3
+            {
+                k_vec.set_row(
+                    i + 3 - iterations,
+                    &k.map(|ki| if ki > 0.0 { ki.ln() } else { 0.0 }).transpose(),
+                );
             }
         }
         Ok(false)
@@ -371,10 +371,11 @@ fn rachford_rice(feed: &DVector<f64>, k: &DVector<f64>, beta_in: Option<f64>) ->
 
     // initialize
     let mut beta = 0.5 * (beta_min + beta_max);
-    if let Some(b) = beta_in {
-        if b > beta_min && b < beta_max {
-            beta = b;
-        }
+    if let Some(b) = beta_in
+        && b > beta_min
+        && b < beta_max
+    {
+        beta = b;
     }
     let g = feed.dot(&k.map(|k| (k - 1.0) / (1.0 - beta + beta * k)));
     if g > 0.0 {
