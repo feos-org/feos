@@ -34,7 +34,7 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
     fn contributions<'a>(&'a self) -> Vec<Self::Contribution<'a>>;
 
     /// Return the shape of the molecules and the necessary specifications.
-    fn molecule_shape(&self) -> MoleculeShape;
+    fn molecule_shape(&self) -> MoleculeShape<'_>;
 
     /// Overwrite this, if the functional consists of heterosegmented chains.
     fn bond_lengths<N: DualNum<f64> + Copy>(&self, _temperature: N) -> UnGraph<(), N> {
@@ -48,7 +48,7 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
             .collect()
     }
 
-    fn m(&self) -> Cow<Array1<f64>> {
+    fn m(&self) -> Cow<'_, Array1<f64>> {
         match self.molecule_shape() {
             MoleculeShape::Spherical(n) => Cow::Owned(Array1::ones(n)),
             MoleculeShape::NonSpherical(m) => Cow::Borrowed(m),
@@ -58,7 +58,7 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
         }
     }
 
-    fn component_index(&self) -> Cow<Array1<usize>> {
+    fn component_index(&self) -> Cow<'_, Array1<usize>> {
         match self.molecule_shape() {
             MoleculeShape::Spherical(n) => Cow::Owned(Array1::from_shape_fn(n, |i| i)),
             MoleculeShape::NonSpherical(m) => Cow::Owned(Array1::from_shape_fn(m.len(), |i| i)),

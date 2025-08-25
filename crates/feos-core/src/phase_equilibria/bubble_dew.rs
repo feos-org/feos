@@ -797,11 +797,11 @@ where
             let k_sum = k.sum();
             let p_new = RGAS * temperature * density / k_sum;
             x = k / k_sum;
-            if let Some(p_old) = p {
-                if ((p_new - p_old) / p_old).into_value().abs() < 1e-5 {
-                    p = Some(p_new);
-                    break;
-                }
+            if let Some(p_old) = p
+                && ((p_new - p_old) / p_old).into_value().abs() < 1e-5
+            {
+                p = Some(p_new);
+                break;
             }
             p = Some(p_new);
         }

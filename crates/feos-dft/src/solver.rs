@@ -195,7 +195,7 @@ impl DFTSolverLog {
         );
     }
 
-    pub fn residual(&self) -> ArrayView1<f64> {
+    pub fn residual(&self) -> ArrayView1<'_, f64> {
         (&self.residual).into()
     }
 

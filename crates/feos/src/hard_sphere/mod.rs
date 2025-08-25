@@ -27,13 +27,13 @@ pub enum MonomerShape<'a, D> {
 /// Properties of (generalized) hard sphere systems.
 pub trait HardSphereProperties {
     /// The [MonomerShape] used in the model.
-    fn monomer_shape<D: DualNum<f64> + Copy>(&self, temperature: D) -> MonomerShape<D>;
+    fn monomer_shape<D: DualNum<f64> + Copy>(&self, temperature: D) -> MonomerShape<'_, D>;
 
     /// The temperature dependent hard-sphere diameters of every segment.
     fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D>;
 
     /// For every segment, the index of the component that it is on.
-    fn component_index(&self) -> Cow<Vec<usize>> {
+    fn component_index(&self) -> Cow<'_, Vec<usize>> {
         match self.monomer_shape(1.0) {
             MonomerShape::Spherical(n) => Cow::Owned((0..n).collect()),
             MonomerShape::NonSpherical(m) => Cow::Owned((0..m.len()).collect()),

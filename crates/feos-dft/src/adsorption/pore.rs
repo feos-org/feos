@@ -296,28 +296,6 @@ const SIGMA_HE: f64 = 2.64;
 
 #[derive(Clone, Copy)]
 struct Helium;
-//  {
-//     epsilon: Array1<f64>,
-//     sigma: Array1<f64>,
-// }
-
-// impl Helium {
-//     fn new() -> Self {
-//         let epsilon = arr1(&[EPSILON_HE]);
-//         let sigma = arr1(&[SIGMA_HE]);
-//         Self { epsilon, sigma }
-//     }
-// }
-
-// impl Components for Helium {
-//     fn components(&self) -> usize {
-//         1
-//     }
-
-//     fn subset(&self, _: &[usize]) -> Self {
-//         self.clone()
-//     }
-// }
 
 impl<D: DualNum<f64> + Copy> Residual<Dyn, D> for Helium {
     type Real = Self;
@@ -350,7 +328,7 @@ impl HelmholtzEnergyFunctional for Helium {
         vec![]
     }
 
-    fn molecule_shape(&self) -> MoleculeShape {
+    fn molecule_shape(&self) -> MoleculeShape<'_> {
         MoleculeShape::Spherical(1)
     }
 }
