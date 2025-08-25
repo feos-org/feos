@@ -1,3 +1,4 @@
+use crate::eos::parse_molefracs;
 use crate::{
     eos::PyEquationOfState, error::PyFeosError, ideal_gas::IdealGasModel, residual::ResidualModel,
     PyVerbosity,
@@ -6,9 +7,8 @@ use feos_core::{
     Contributions, DensityInitialization, EquationOfState, FeosError, ResidualDyn, State, StateVec,
 };
 use ndarray::{Array1, Array2};
-use nshare::{AsNdarray1, IntoNalgebra, IntoNdarray1, IntoNdarray2};
 use numpy::nalgebra::{DMatrix, DVector};
-use numpy::{IntoPyArray, PyArray1, PyArray2, PyArrayMethods, ToPyArray};
+use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, ToPyArray};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
 use quantity::*;
@@ -123,7 +123,7 @@ impl PyState {
         partial_density: Option<Density<DVector<f64>>>,
         total_moles: Option<Moles>,
         moles: Option<Moles<DVector<f64>>>,
-        molefracs: Option<&Bound<'py, PyArray1<f64>>>,
+        molefracs: Option<PyReadonlyArray1<'py, f64>>,
         pressure: Option<Pressure>,
         molar_enthalpy: Option<MolarEnergy>,
         molar_entropy: Option<MolarEntropy>,
@@ -131,7 +131,7 @@ impl PyState {
         density_initialization: Option<&Bound<'py, PyAny>>,
         initial_temperature: Option<Temperature>,
     ) -> PyResult<Self> {
-        let x = molefracs.map(|m| m.to_owned_array().into_nalgebra());
+        let x = parse_molefracs(molefracs);
         let density_init = if let Some(di) = density_initialization {
             if let Ok(d) = di.extract::<String>().as_deref() {
                 match d {
@@ -237,7 +237,7 @@ impl PyState {
     #[pyo3(signature = (eos, molefracs=None, initial_temperature=None, max_iter=None, tol=None, verbosity=None))]
     fn critical_point<'py>(
         eos: &PyEquationOfState,
-        molefracs: Option<&Bound<'py, PyArray1<f64>>>,
+        molefracs: Option<PyReadonlyArray1<'py, f64>>,
         initial_temperature: Option<Temperature>,
         max_iter: Option<usize>,
         tol: Option<f64>,
@@ -246,9 +246,7 @@ impl PyState {
         Ok(PyState(
             State::critical_point(
                 &eos.0,
-                molefracs
-                    .map(|x| x.to_owned_array().into_nalgebra())
-                    .as_ref(),
+                parse_molefracs(molefracs).as_ref(),
                 initial_temperature,
                 (max_iter, tol, verbosity.map(|v| v.into())).into(),
             )
@@ -354,7 +352,7 @@ impl PyState {
     fn spinodal<'py>(
         eos: &PyEquationOfState,
         temperature: Temperature,
-        molefracs: Option<&Bound<'py, PyArray1<f64>>>,
+        molefracs: Option<PyReadonlyArray1<'py, f64>>,
         max_iter: Option<usize>,
         tol: Option<f64>,
         verbosity: Option<PyVerbosity>,
@@ -362,9 +360,7 @@ impl PyState {
         let [state1, state2] = State::spinodal(
             &eos.0,
             temperature,
-            molefracs
-                .map(|x| x.to_owned_array().into_nalgebra())
-                .as_ref(),
+            parse_molefracs(molefracs).as_ref(),
             (max_iter, tol, verbosity.map(|v| v.into())).into(),
         )
         .map_err(PyFeosError::from)?;
@@ -659,7 +655,7 @@ impl PyState {
     /// -------
     /// numpy.ndarray
     fn ln_phi<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-        self.0.ln_phi().into_ndarray1().into_pyarray(py)
+        PyArray1::from_slice(py, self.0.ln_phi().as_slice())
     }
 
     /// Return logarithmic fugacity coefficient of all components treated as
@@ -669,12 +665,13 @@ impl PyState {
     /// -------
     /// numpy.ndarray
     fn ln_phi_pure_liquid<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray1<f64>>> {
-        Ok(self
-            .0
-            .ln_phi_pure_liquid()
-            .map_err(PyFeosError::from)?
-            .into_ndarray1()
-            .into_pyarray(py))
+        Ok(PyArray1::from_slice(
+            py,
+            self.0
+                .ln_phi_pure_liquid()
+                .map_err(PyFeosError::from)?
+                .as_slice(),
+        ))
     }
 
     /// Return logarithmic symmetric activity coefficient.
@@ -686,12 +683,13 @@ impl PyState {
         &self,
         py: Python<'py>,
     ) -> PyResult<Bound<'py, PyArray1<f64>>> {
-        Ok(self
-            .0
-            .ln_symmetric_activity_coefficient()
-            .map_err(PyFeosError::from)?
-            .into_ndarray1()
-            .into_pyarray(py))
+        Ok(PyArray1::from_slice(
+            py,
+            self.0
+                .ln_symmetric_activity_coefficient()
+                .map_err(PyFeosError::from)?
+                .as_slice(),
+        ))
     }
 
     /// Return Henry's law constant of every solute (x_i=0) for a given solvent (x_i>0).
@@ -712,12 +710,12 @@ impl PyState {
     fn henrys_law_constant(
         eos: &PyEquationOfState,
         temperature: Temperature,
-        molefracs: &Bound<'_, PyArray1<f64>>,
+        molefracs: PyReadonlyArray1<f64>,
     ) -> PyResult<Vec<Pressure>> {
         Ok(State::henrys_law_constant(
             &eos.0,
             temperature,
-            &molefracs.to_owned_array().into_nalgebra(),
+            &parse_molefracs(Some(molefracs)).unwrap(),
         )
         .map_err(PyFeosError::from)?)
     }
@@ -776,10 +774,7 @@ impl PyState {
     /// -------
     /// numpy.ndarray
     fn thermodynamic_factor<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray2<f64>> {
-        self.0
-            .thermodynamic_factor()
-            .into_ndarray2()
-            .into_pyarray(py)
+        self.0.thermodynamic_factor().to_pyarray(py)
     }
 
     /// Return molar isochoric heat capacity.
@@ -1147,7 +1142,7 @@ impl PyState {
     /// -------
     /// numpy.ndarray[Float64]
     fn massfracs<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-        self.0.massfracs().into_ndarray1().into_pyarray(py)
+        PyArray1::from_slice(py, self.0.massfracs().as_slice())
     }
 
     /// Return mass specific Helmholtz energy.
@@ -1295,7 +1290,7 @@ impl PyState {
 
     #[getter]
     fn get_molefracs<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
-        self.0.molefracs.as_ndarray1().to_pyarray(py)
+        PyArray1::from_slice(py, self.0.molefracs.as_slice())
     }
 
     fn _repr_markdown_(&self) -> String {

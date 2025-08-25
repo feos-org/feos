@@ -15,8 +15,8 @@ pyo3 = { version = "0.25", features = [
     "indexmap"
 ] }
 pythonize = "0.25"
-numpy = { version = "0.25" }
-nshare = "0.10"
+#numpy = { version = "0.26" }
+numpy = { git = "https://github.com/PyO3/rust-numpy" }
 
 quantity = { workspace = true, features = ["python", "python_numpy"] }
 num-dual = { workspace = true, features = ["python_macro"] }

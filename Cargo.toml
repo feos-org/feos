@@ -27,7 +27,7 @@ quantity = { git = "https://github.com/itt-ustutt/quantity", branch = "num_dual"
 #num-dual = "0.11"
 num-dual = { git = "https://github.com/itt-ustutt/num-dual", branch = "linalg_nalgebra" }
 ndarray = "0.16"
-nalgebra = "0.33"
+nalgebra = "0.34"
 thiserror = "2.0"
 conv = "0.3"
 num-traits = "0.2"
