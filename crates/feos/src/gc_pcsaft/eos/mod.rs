@@ -12,7 +12,7 @@ pub(crate) mod dispersion;
 mod hard_chain;
 pub(crate) mod parameter;
 mod polar;
-pub use ad::GcPcSaftAD;
+pub use ad::{GcPcSaftAD, GcPcSaftADParameters};
 use dispersion::Dispersion;
 use hard_chain::HardChain;
 pub use parameter::GcPcSaftEosParameters;

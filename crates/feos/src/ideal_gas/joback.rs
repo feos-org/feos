@@ -62,7 +62,7 @@ pub type JobackParameters = Parameters<JobackRecord, (), ()>;
 /// - p = 1e5 Pa
 /// - V = 1e-30 A³
 #[derive(Clone)]
-pub struct Joback<D = f64>([D; 5]);
+pub struct Joback<D = f64>(pub [D; 5]);
 
 impl Joback<f64> {
     pub fn new(parameters: JobackParameters) -> Vec<Self> {

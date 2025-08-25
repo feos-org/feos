@@ -179,23 +179,23 @@ static K_AB: LazyLock<SMatrix<f64, N_GROUPS, N_GROUPS>> = LazyLock::new(|| {
 
 /// Parameters used to instantiate [GcPcSaft].
 #[derive(Clone)]
-pub struct GcPcSaftParameters<D, const N: usize> {
+pub struct GcPcSaftADParameters<D, const N: usize> {
     pub groups: SMatrix<D, N_GROUPS, N>,
     pub bonds: [Vec<([usize; 2], D)>; N],
 }
 
-impl<D: DualNum<f64> + Copy, const N: usize> GcPcSaftParameters<D, N> {
-    pub fn re(&self) -> GcPcSaftParameters<f64, N> {
+impl<D: DualNum<f64> + Copy, const N: usize> GcPcSaftADParameters<D, N> {
+    pub fn re(&self) -> GcPcSaftADParameters<f64, N> {
         let Self { groups, bonds } = self;
         let groups = groups.map(|g| g.re());
         let bonds = bonds
             .each_ref()
             .map(|b| b.iter().map(|&(b, v)| (b, v.re())).collect());
-        GcPcSaftParameters { groups, bonds }
+        GcPcSaftADParameters { groups, bonds }
     }
 }
 
-impl<D: DualNum<f64> + Copy, const N: usize> GcPcSaftParameters<D, N> {
+impl<D: DualNum<f64> + Copy, const N: usize> GcPcSaftADParameters<D, N> {
     pub fn from_groups(
         group_map: [&HashMap<&'static str, D>; N],
         bond_map: [&HashMap<[&'static str; 2], D>; N],
@@ -218,7 +218,7 @@ impl<D: DualNum<f64> + Copy, const N: usize> GcPcSaftParameters<D, N> {
 
 /// The heterosegmented GC model for PC-SAFT by Sauer et al.
 #[derive(Clone)]
-pub struct GcPcSaftAD<D, const N: usize>(pub GcPcSaftParameters<D, N>);
+pub struct GcPcSaftAD<D, const N: usize>(pub GcPcSaftADParameters<D, N>);
 
 impl<D: DualNum<f64> + Copy, const N: usize> ResidualConst<N, D> for GcPcSaftAD<D, N> {
     const NAME: &str = "gc-PC-SAFT";
@@ -229,25 +229,25 @@ impl<D: DualNum<f64> + Copy, const N: usize> ResidualConst<N, D> for GcPcSaftAD<
         GcPcSaftAD(self.0.re())
     }
     fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
-        let GcPcSaftParameters { groups, bonds } = &self.0;
+        let GcPcSaftADParameters { groups, bonds } = &self.0;
         let groups = groups.map(|x| D2::from_inner(&x));
         let bonds = bonds
             .each_ref()
             .map(|b| b.iter().map(|&(b, v)| (b, D2::from_inner(&v))).collect());
-        GcPcSaftAD(GcPcSaftParameters { groups, bonds })
+        GcPcSaftAD(GcPcSaftADParameters { groups, bonds })
     }
 
     fn compute_max_density(&self, molefracs: &SVector<D, N>) -> D {
         let msigma3: SVector<f64, N_GROUPS> = SVector::from_fn(|i, _| M[i] * SIGMA[i].powi(3));
         let msigma3 = msigma3.map(D::from);
-        let GcPcSaftParameters { groups, bonds: _ } = &self.0;
+        let GcPcSaftADParameters { groups, bonds: _ } = &self.0;
         let msigma3 = apply_group_count(groups, &msigma3).row_sum();
         // let x: f64 = msigma3.iter().zip(molefracs).map(|&(ms3, x)| x * ms3).sum();
         ((msigma3 * molefracs).into_scalar() * FRAC_PI_6).recip() * MAX_ETA
     }
 
     fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, Const<N>>) -> D {
-        let GcPcSaftParameters { groups, bonds } = &self.0;
+        let GcPcSaftADParameters { groups, bonds } = &self.0;
         let density = &state.partial_density;
 
         // convert parameters
@@ -438,7 +438,7 @@ fn triplet_integral<D: DualNum<f64> + Copy>(mij1: D, mij2: D, eta: D) -> D {
 
 #[cfg(test)]
 pub mod test {
-    use super::{EPSILON_K, GROUPS, GcPcSaftAD, GcPcSaftParameters, M, MU, SIGMA};
+    use super::{EPSILON_K, GROUPS, GcPcSaftAD, GcPcSaftADParameters, M, MU, SIGMA};
     use crate::gc_pcsaft::{GcPcSaft, GcPcSaftParameters as GcPcSaftEosParameters, GcPcSaftRecord};
     use approx::assert_relative_eq;
     use feos_core::parameter::{ChemicalRecord, SegmentRecord};
@@ -448,7 +448,7 @@ pub mod test {
     use std::collections::HashMap;
     use std::sync::Arc;
 
-    pub fn gcpcsaft() -> FeosResult<(GcPcSaftParameters<f64, 1>, Arc<GcPcSaft>)> {
+    pub fn gcpcsaft() -> FeosResult<(GcPcSaftADParameters<f64, 1>, Arc<GcPcSaft>)> {
         let cr = ChemicalRecord::new(
             Default::default(),
             vec!["CH3".into(), ">C=O".into(), "CH2".into(), "CH3".into()],
@@ -478,7 +478,7 @@ pub mod test {
         bonds.insert(["CH3", ">C=O"], 1.0);
         bonds.insert([">C=O", "CH2"], 1.0);
         bonds.insert(["CH2", "CH3"], 1.0);
-        let params = GcPcSaftParameters::from_groups([&groups], [&bonds]);
+        let params = GcPcSaftADParameters::from_groups([&groups], [&bonds]);
         Ok((params, eos))
     }
 
