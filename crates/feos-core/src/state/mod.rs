@@ -16,7 +16,6 @@ use num_dual::*;
 use quantity::*;
 use std::fmt;
 use std::ops::Sub;
-use std::sync::Mutex;
 
 mod builder;
 mod cache;
@@ -176,7 +175,7 @@ where
     /// Mole fractions $x_i=\frac{N_i}{N}=\frac{\rho_i}{\rho}$
     pub molefracs: OVector<D, N>,
     /// Cache
-    cache: Mutex<Cache<D, N>>,
+    cache: Cache<D, N>,
 }
 
 impl<E: Clone, N: Dim, D: DualNum<f64> + Copy> Clone for State<E, N, D>
@@ -193,7 +192,7 @@ where
             partial_density: self.partial_density.clone(),
             density: self.density,
             molefracs: self.molefracs.clone(),
-            cache: Mutex::new(self.cache.lock().unwrap().clone()),
+            cache: self.cache.clone(),
         }
     }
 }
@@ -221,47 +220,6 @@ where
         }
     }
 }
-
-#[derive(Clone, Copy, Eq, Hash, PartialEq, Debug, PartialOrd, Ord)]
-pub(crate) enum Derivative {
-    DV,
-    DT,
-}
-
-#[derive(Clone, Copy, Eq, Hash, PartialEq, Debug, PartialOrd, Ord)]
-pub(crate) enum PartialDerivative {
-    Zeroth,
-    First(Derivative),
-    Second(Derivative),
-    SecondMixed,
-    Third(Derivative),
-}
-
-#[derive(Clone, Copy, Eq, Hash, PartialEq, Debug, PartialOrd, Ord)]
-pub(crate) enum VectorPartialDerivative {
-    First,
-    SecondMixed(Derivative),
-}
-
-// /// Derivatives of the helmholtz energy.
-// #[derive(Clone, Copy, Eq, Hash, PartialEq, Debug, PartialOrd, Ord)]
-// pub enum Derivative {
-//     /// Derivative with respect to system volume.
-//     DV,
-//     /// Derivative with respect to temperature.
-//     DT,
-//     /// Derivative with respect to component `i`.
-//     DN(usize),
-// }
-
-// #[derive(Clone, Copy, Eq, Hash, PartialEq, Debug)]
-// pub enum PartialDerivative {
-//     Zeroth,
-//     First(Derivative),
-//     Second(Derivative),
-//     SecondMixed(Derivative, Derivative),
-//     Third(Derivative),
-// }
 
 impl<E: Residual<N, D>, N: Dim, D: DualNum<f64> + Copy> State<E, N, D>
 where
@@ -336,7 +294,7 @@ where
             partial_density,
             density,
             molefracs: molefracs.clone(),
-            cache: Mutex::new(Cache::new()),
+            cache: Cache::new(),
         }
     }
 

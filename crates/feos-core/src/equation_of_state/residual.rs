@@ -198,6 +198,22 @@ where
         self.reduced_residual_helmholtz_energy_density(&state) * temperature * volume
     }
 
+    /// Evaluate the residual Helmholtz energy $A^\mathrm{res}$.
+    fn residual_helmholtz_energy_unit(
+        &self,
+        temperature: Temperature<D>,
+        volume: Volume<D>,
+        moles: &Moles<OVector<D, N>>,
+    ) -> Energy<D> {
+        let temperature = temperature.into_reduced();
+        let total_moles = moles.sum();
+        let molar_volume = (volume / total_moles).into_reduced();
+        let molefracs = moles / total_moles;
+        let state = StateHD::new(temperature, molar_volume, &molefracs);
+        Pressure::from_reduced(self.reduced_residual_helmholtz_energy_density(&state) * temperature)
+            * volume
+    }
+
     /// Check if the provided optional mole number is consistent with the
     /// equation of state.
     ///

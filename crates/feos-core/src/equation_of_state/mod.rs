@@ -1,11 +1,11 @@
 use std::ops::Deref;
 
-use crate::state::StateHD;
+use crate::{ReferenceSystem, state::StateHD};
 use nalgebra::{
     Const, DVector, DefaultAllocator, Dim, Dyn, OVector, SVector, U1, allocator::Allocator,
 };
 use num_dual::DualNum;
-use quantity::MolarWeight;
+use quantity::{Energy, MolarEnergy, MolarWeight, Moles, Temperature, Volume};
 
 mod ideal_gas;
 mod residual;
@@ -129,13 +129,13 @@ where
         )
     }
 
-    fn ideal_gas_helmholtz_energy<D2: DualNum<f64, Inner = D> + Copy>(
+    fn ideal_gas_molar_helmholtz_energy<D2: DualNum<f64, Inner = D> + Copy>(
         &self,
         temperature: D2,
-        volume: D2,
-        moles: &OVector<D2, N>,
+        molar_volume: D2,
+        molefracs: &OVector<D2, N>,
     ) -> D2 {
-        let partial_density = moles / volume;
+        let partial_density = molefracs / molar_volume;
         let mut res = D2::from(0.0);
         for (i, &r) in self.ideal_gas().zip(partial_density.iter()) {
             let ln_rho_m1 = if r.re() == 0.0 {
@@ -145,11 +145,32 @@ where
             };
             res += r * (i.lift().ln_lambda3(temperature) + ln_rho_m1)
         }
-        res * volume * temperature
+        res * molar_volume * temperature
     }
 
-    fn ideal_gas_helmholtz_energy_0(&self, temperature: D, volume: D, moles: &OVector<D, N>) -> D {
-        let partial_density = moles / volume;
+    fn ideal_gas_helmholtz_energy_unit<D2: DualNum<f64, Inner = D> + Copy>(
+        &self,
+        temperature: Temperature<D2>,
+        volume: Volume<D2>,
+        moles: &Moles<OVector<D2, N>>,
+    ) -> Energy<D2> {
+        let total_moles = moles.sum();
+        let molefracs = moles / total_moles;
+        let molar_volume = volume / total_moles;
+        MolarEnergy::from_reduced(self.ideal_gas_molar_helmholtz_energy(
+            temperature.into_reduced(),
+            molar_volume.into_reduced(),
+            &molefracs,
+        )) * total_moles
+    }
+
+    fn ideal_gas_molar_helmholtz_energy_0(
+        &self,
+        temperature: D,
+        molar_volume: D,
+        molefracs: &OVector<D, N>,
+    ) -> D {
+        let partial_density = molefracs / molar_volume;
         let mut res = D::from(0.0);
         for (i, &r) in self.ideal_gas().zip(partial_density.iter()) {
             let ln_rho_m1 = if r.re() == 0.0 {
@@ -159,7 +180,23 @@ where
             };
             res += r * (i.ln_lambda3(temperature) + ln_rho_m1)
         }
-        res * volume * temperature
+        res * molar_volume * temperature
+    }
+
+    fn ideal_gas_helmholtz_energy_0(
+        &self,
+        temperature: Temperature<D>,
+        volume: Volume<D>,
+        moles: &Moles<OVector<D, N>>,
+    ) -> Energy<D> {
+        let total_moles = moles.sum();
+        let molefracs = moles / total_moles;
+        let molar_volume = volume / total_moles;
+        MolarEnergy::from_reduced(self.ideal_gas_molar_helmholtz_energy_0(
+            temperature.into_reduced(),
+            molar_volume.into_reduced(),
+            &molefracs,
+        )) * total_moles
     }
 }
 
