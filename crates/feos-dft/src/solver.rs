@@ -3,7 +3,7 @@ use crate::{
     WeightFunctionShape,
 };
 use feos_core::{FeosError, FeosResult, ReferenceSystem, Verbosity, log_iter, log_result};
-use nalgebra::{DMatrix, DVector};
+use nalgebra::{DMatrix, DVector, dvector};
 use ndarray::RemoveAxis;
 use ndarray::prelude::*;
 use petgraph::Directed;
@@ -465,7 +465,7 @@ where
                     self.delta_functional_derivative(delta_rho, &second_partial_derivatives);
                 delta_functional_derivative
                     .outer_iter_mut()
-                    .zip(self.dft.m().iter())
+                    .zip(self.bulk.eos.m().iter())
                     .for_each(|(mut q, &m)| q /= m);
                 let delta_i = self.delta_bond_integrals(&exp_dfdrho, &delta_functional_derivative);
                 let rho = if newton.log { &*rho } else { &rho_p };
@@ -560,7 +560,7 @@ where
         density: &Array<f64, D::Larger>,
     ) -> FeosResult<Vec<Array<f64, <D::Larger as Dimension>::Larger>>> {
         let temperature = self.temperature.to_reduced();
-        let contributions = self.dft.contributions();
+        let contributions = self.bulk.eos.contributions();
         let weighted_densities = self.convolver.weighted_densities(density);
         let mut second_partial_derivatives = Vec::new();
         for (c, wd) in contributions.into_iter().zip(&weighted_densities) {
@@ -623,17 +623,17 @@ where
         let temperature = self.temperature.to_reduced();
 
         // calculate weight functions
-        let bond_lengths = self.dft.bond_lengths(temperature).into_edge_type();
+        let bond_lengths = self.bulk.eos.bond_lengths(temperature).into_edge_type();
         let mut bond_weight_functions = bond_lengths.map(
             |_, _| (),
-            |_, &l| WeightFunction::new_scaled(arr1(&[l]), WeightFunctionShape::Delta),
+            |_, &l| WeightFunction::new_scaled(dvector![l], WeightFunctionShape::Delta),
         );
         for n in bond_lengths.node_indices() {
             for e in bond_lengths.edges(n) {
                 bond_weight_functions.add_edge(
                     e.target(),
                     e.source(),
-                    WeightFunction::new_scaled(arr1(&[*e.weight()]), WeightFunctionShape::Delta),
+                    WeightFunction::new_scaled(dvector![*e.weight()], WeightFunctionShape::Delta),
                 );
             }
         }

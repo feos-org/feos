@@ -1,10 +1,11 @@
-use feos_core::{Components, FeosResult, Residual, StateHD};
+use feos_core::{FeosResult, ResidualDyn, StateHD, Subset};
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{
-    FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape, WeightFunction,
-    WeightFunctionInfo, WeightFunctionShape,
+    FunctionalContribution, HelmholtzEnergyFunctional, HelmholtzEnergyFunctionalDyn, MoleculeShape,
+    WeightFunction, WeightFunctionInfo, WeightFunctionShape,
 };
+use nalgebra::DVector;
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::PI;
@@ -82,7 +83,7 @@ impl<'p, P: HardSphereProperties + Send + Sync> FunctionalContribution for FMTCo
     }
 
     fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
-        let r = self.properties.hs_diameter(temperature) * 0.5;
+        let r = self.properties.hs_diameter(temperature) * N::from(0.5);
         let [c0, c1, c2, c3] = self.properties.geometry_coefficients(temperature);
         match (self.version, r.len()) {
             (FMTVersion::WhiteBear | FMTVersion::AntiSymWhiteBear, 1) => {
@@ -108,9 +109,7 @@ impl<'p, P: HardSphereProperties + Send + Sync> FunctionalContribution for FMTCo
                 WeightFunctionInfo::new(self.properties.component_index().into_owned(), false)
                     .add(
                         WeightFunction {
-                            prefactor: Zip::from(&c0)
-                                .and(&r)
-                                .map_collect(|&c, &r| r.powi(-2) * c / (4.0 * PI)),
+                            prefactor: c0.zip_map(&r, |c, r| r.powi(-2) * c / (4.0 * PI)),
                             kernel_radius: r.clone(),
                             shape: WeightFunctionShape::Delta,
                         },
@@ -118,9 +117,7 @@ impl<'p, P: HardSphereProperties + Send + Sync> FunctionalContribution for FMTCo
                     )
                     .add(
                         WeightFunction {
-                            prefactor: Zip::from(&c1)
-                                .and(&r)
-                                .map_collect(|&c, &r| r.recip() * c / (4.0 * PI)),
+                            prefactor: c1.zip_map(&r, |c, r| r.recip() * c / (4.0 * PI)),
                             kernel_radius: r.clone(),
                             shape: WeightFunctionShape::Delta,
                         },
@@ -144,9 +141,7 @@ impl<'p, P: HardSphereProperties + Send + Sync> FunctionalContribution for FMTCo
                     )
                     .add(
                         WeightFunction {
-                            prefactor: Zip::from(&c3)
-                                .and(&r)
-                                .map_collect(|&c, &r| r.recip() * c / (4.0 * PI)),
+                            prefactor: c3.zip_map(&r, |c, r| r.recip() * c / (4.0 * PI)),
                             kernel_radius: r.clone(),
                             shape: WeightFunctionShape::DeltaVec,
                         },
@@ -278,16 +273,16 @@ impl<'p, P: HardSphereProperties + Send + Sync> FunctionalContribution for FMTCo
 }
 
 pub struct HardSphereParameters {
-    sigma: Array1<f64>,
+    sigma: DVector<f64>,
 }
 
 impl HardSphereProperties for HardSphereParameters {
-    fn monomer_shape<N>(&self, _: N) -> MonomerShape<N> {
+    fn monomer_shape<N>(&self, _: N) -> MonomerShape<'_, N> {
         MonomerShape::Spherical(self.sigma.len())
     }
 
-    fn hs_diameter<N: DualNum<f64>>(&self, _: N) -> Array1<N> {
-        self.sigma.mapv(N::from)
+    fn hs_diameter<N: DualNum<f64>>(&self, _: N) -> DVector<N> {
+        self.sigma.map(N::from)
     }
 }
 
@@ -298,10 +293,8 @@ pub struct FMTFunctional {
 }
 
 impl FMTFunctional {
-    pub fn new(sigma: &Array1<f64>, version: FMTVersion) -> Self {
-        let properties = HardSphereParameters {
-            sigma: sigma.clone(),
-        };
+    pub fn new(sigma: DVector<f64>, version: FMTVersion) -> Self {
+        let properties = HardSphereParameters { sigma };
         Self {
             properties,
             version,
@@ -309,26 +302,28 @@ impl FMTFunctional {
     }
 }
 
-impl Components for FMTFunctional {
+impl Subset for FMTFunctional {
+    fn subset(&self, component_list: &[usize]) -> Self {
+        let sigma = DVector::from_vec(
+            component_list
+                .iter()
+                .map(|&c| self.properties.sigma[c])
+                .collect(),
+        );
+        Self::new(sigma, self.version)
+    }
+}
+
+impl ResidualDyn for FMTFunctional {
     fn components(&self) -> usize {
         self.properties.sigma.len()
     }
 
-    fn subset(&self, component_list: &[usize]) -> Self {
-        let sigma = component_list
-            .iter()
-            .map(|&c| self.properties.sigma[c])
-            .collect();
-        Self::new(&sigma, self.version)
-    }
-}
-
-impl Residual for FMTFunctional {
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        moles.sum() / (moles * &self.properties.sigma).sum() * 1.2
+    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+        molefracs.dot(&self.properties.sigma.map(D::from)).recip() * 1.2
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
@@ -336,14 +331,19 @@ impl Residual for FMTFunctional {
     }
 }
 
-impl HelmholtzEnergyFunctional for FMTFunctional {
-    type Contribution<'a> = FMTContribution<'a, HardSphereParameters>;
+impl HelmholtzEnergyFunctionalDyn for FMTFunctional {
+    type Contribution<'a>
+        = FMTContribution<'a, HardSphereParameters>
+    where
+        Self: 'a;
 
-    fn contributions<'a>(&'a self) -> Vec<FMTContribution<'a, HardSphereParameters>> {
-        vec![FMTContribution::new(&self.properties, self.version)]
+    fn contributions<'a>(
+        &'a self,
+    ) -> impl Iterator<Item = FMTContribution<'a, HardSphereParameters>> {
+        std::iter::once(FMTContribution::new(&self.properties, self.version))
     }
 
-    fn molecule_shape(&self) -> MoleculeShape {
+    fn molecule_shape(&self) -> MoleculeShape<'_> {
         MoleculeShape::Spherical(self.properties.sigma.len())
     }
 }
@@ -362,11 +362,11 @@ impl PairPotential for FMTFunctional {
 }
 
 impl FluidParameters for FMTFunctional {
-    fn epsilon_k_ff(&self) -> Array1<f64> {
-        Array::zeros(self.properties.sigma.len())
+    fn epsilon_k_ff(&self) -> DVector<f64> {
+        DVector::zeros(self.properties.sigma.len())
     }
 
-    fn sigma_ff(&self) -> &Array1<f64> {
-        &self.properties.sigma
+    fn sigma_ff(&self) -> DVector<f64> {
+        self.properties.sigma.clone()
     }
 }

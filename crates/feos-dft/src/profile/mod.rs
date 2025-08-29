@@ -103,7 +103,6 @@ impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTSpecification<D, F> for DFTS
 pub struct DFTProfile<D: Dimension, F> {
     pub grid: Grid,
     pub convolver: Arc<dyn Convolver<f64, D>>,
-    pub dft: F,
     pub temperature: Temperature,
     pub density: Density<Array<f64, D::Larger>>,
     pub specification: Arc<dyn DFTSpecification<D, F>>,
@@ -212,16 +211,14 @@ where
         density: Option<&Density<Array<f64, D::Larger>>>,
         lanczos: Option<i32>,
     ) -> Self {
-        let dft = bulk.eos.clone();
-
         // initialize convolver
         let t = bulk.temperature.to_reduced();
-        let weight_functions = dft.weight_functions(t);
+        let weight_functions = bulk.eos.weight_functions(t);
         let convolver = ConvolverFFT::plan(&grid, &weight_functions, lanczos);
 
         // initialize external potential
         let external_potential = external_potential.unwrap_or_else(|| {
-            let mut n_grid = vec![dft.component_index().len()];
+            let mut n_grid = vec![bulk.eos.component_index().len()];
             grid.axes()
                 .iter()
                 .for_each(|&ax| n_grid.push(ax.grid.len()));
@@ -233,11 +230,11 @@ where
             density.to_owned()
         } else {
             let exp_dfdrho = (-&external_potential).mapv(f64::exp);
-            let mut bonds = dft.bond_integrals(t, &exp_dfdrho, &convolver);
+            let mut bonds = bulk.eos.bond_integrals(t, &exp_dfdrho, &convolver);
             bonds *= &exp_dfdrho;
             let mut density = Array::zeros(external_potential.raw_dim());
             let bulk_density = bulk.partial_density.to_reduced();
-            for (s, &c) in dft.component_index().iter().enumerate() {
+            for (s, &c) in bulk.eos.component_index().iter().enumerate() {
                 density.index_axis_mut(Axis_nd(0), s).assign(
                     &(bonds.index_axis(Axis_nd(0), s).map(|is| is.min(1.0)) * bulk_density[c]),
                 );
@@ -248,7 +245,6 @@ where
         Self {
             grid,
             convolver,
-            dft: bulk.eos.clone(),
             temperature: bulk.temperature,
             density,
             specification: Arc::new(DFTSpecifications::ChemicalPotential),
@@ -289,8 +285,8 @@ where
         profile: &ArrayBase<S, D::Larger>,
     ) -> DVector<N> {
         let integral = self.integrate_reduced_comp(profile);
-        let mut integral_comp = DVector::zeros(self.dft.components());
-        for (i, &j) in self.dft.component_index().iter().enumerate() {
+        let mut integral_comp = DVector::zeros(self.bulk.eos.components());
+        for (i, &j) in self.bulk.eos.component_index().iter().enumerate() {
             integral_comp[j] = integral[i];
         }
         integral_comp
@@ -344,8 +340,8 @@ where
         _Volume: Add<U>,
     {
         let integral = self.integrate_comp(profile);
-        let mut integral_comp = Quantity::new(DVector::zeros(self.dft.components()));
-        for (i, &j) in self.dft.component_index().iter().enumerate() {
+        let mut integral_comp = Quantity::new(DVector::zeros(self.bulk.eos.components()));
+        for (i, &j) in self.bulk.eos.component_index().iter().enumerate() {
             integral_comp.set(j, integral.get(i));
         }
         integral_comp
@@ -379,7 +375,13 @@ where
         // Read from profile
         let density = self.density.to_reduced();
         let partial_density = self.bulk.partial_density.to_reduced();
-        let bulk_density = self.dft.component_index().mapv(|i| partial_density[i]);
+        let bulk_density = self
+            .bulk
+            .eos
+            .component_index()
+            .iter()
+            .map(|&i| partial_density[i])
+            .collect();
 
         let (res, res_bulk, res_norm, _, _) =
             self.euler_lagrange_equation(&density, &bulk_density, log)?;
@@ -404,21 +406,23 @@ where
 
         // calculate intrinsic functional derivative
         let (_, mut dfdrho) =
-            self.dft
+            self.bulk
+                .eos
                 .functional_derivative(temperature, density, &self.convolver)?;
 
         // calculate total functional derivative
         dfdrho += &self.external_potential;
 
         // calculate bulk functional derivative
-        let bulk_convolver = BulkConvolver::new(self.dft.weight_functions(temperature));
+        let bulk_convolver = BulkConvolver::new(self.bulk.eos.weight_functions(temperature));
         let (_, dfdrho_bulk) =
-            self.dft
+            self.bulk
+                .eos
                 .functional_derivative(temperature, bulk_density, &bulk_convolver)?;
         dfdrho
             .outer_iter_mut()
             .zip(dfdrho_bulk)
-            .zip(self.dft.m().iter())
+            .zip(self.bulk.eos.m().iter())
             .for_each(|((mut df, df_b), &m)| {
                 df -= df_b;
                 df /= m
@@ -427,7 +431,8 @@ where
         // calculate bond integrals
         let exp_dfdrho = dfdrho.mapv(|x| (-x).exp());
         let bonds = self
-            .dft
+            .bulk
+            .eos
             .bond_integrals(temperature, &exp_dfdrho, &self.convolver);
         let mut rho_projected = &exp_dfdrho * bonds;
 
@@ -477,10 +482,13 @@ where
         let solver = solver.cloned().unwrap_or_default();
 
         // Read from profile
-        let component_index = self.dft.component_index().into_owned();
+        let component_index = self.bulk.eos.component_index().into_owned();
         let mut density = self.density.to_reduced();
         let partial_density = self.bulk.partial_density.to_reduced();
-        let mut bulk_density = component_index.mapv(|i| partial_density[i]);
+        let mut bulk_density = component_index
+            .iter()
+            .map(|&i| partial_density[i])
+            .collect();
 
         // Call solver(s)
         self.call_solver(&mut density, &mut bulk_density, &solver, debug)?;

@@ -1,15 +1,15 @@
 use crate::WeightFunctionInfo;
 use crate::adsorption::{ExternalPotential, FluidParameters};
 use crate::convolver::ConvolverFFT;
-use crate::functional::{HelmholtzEnergyFunctional, MoleculeShape};
+use crate::functional::{HelmholtzEnergyFunctional, HelmholtzEnergyFunctionalDyn, MoleculeShape};
 use crate::functional_contribution::FunctionalContribution;
 use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
 use feos_core::{
-    Contributions, FeosResult, ReferenceSystem, Residual, State, StateBuilder, StateHD,
+    Contributions, FeosResult, ReferenceSystem, ResidualDyn, State, StateBuilder, StateHD,
 };
-use nalgebra::{DVector, Dyn};
+use nalgebra::{DVector, dvector};
 use ndarray::prelude::*;
 use ndarray::{Axis as Axis_nd, RemoveAxis};
 use num_dual::linalg::LU;
@@ -69,7 +69,7 @@ pub trait PoreSpecification<D: Dimension> {
     where
         D::Larger: Dimension<Smaller = D>,
     {
-        let bulk = StateBuilder::new(&Helium)
+        let bulk = StateBuilder::new(&&Helium)
             .temperature(298.0 * KELVIN)
             .density(Density::from_reduced(1.0))
             .build()?;
@@ -145,7 +145,7 @@ where
     }
 
     fn _henry_coefficients<N: DualNum<f64> + Copy + DctNum>(&self, temperature: N) -> DVector<N> {
-        if self.profile.dft.m().iter().any(|&m| m != 1.0) {
+        if self.profile.bulk.eos.m().iter().any(|&m| m != 1.0) {
             panic!(
                 "Henry coefficients can only be calculated for spherical and heterosegmented molecules!"
             )
@@ -154,7 +154,7 @@ where
             * self.profile.temperature.to_reduced())
         .mapv(|v| v / temperature);
         let exp_pot = pot.mapv(|v| (-v).exp());
-        let functional_contributions = self.profile.dft.contributions();
+        let functional_contributions = self.profile.bulk.eos.contributions();
         let weight_functions: Vec<WeightFunctionInfo<N>> = functional_contributions
             .into_iter()
             .map(|c| c.weight_functions(temperature))
@@ -163,7 +163,8 @@ where
             ConvolverFFT::<_, D>::plan(&self.profile.grid, &weight_functions, self.profile.lanczos);
         let bonds = self
             .profile
-            .dft
+            .bulk
+            .eos
             .bond_integrals(temperature, &exp_pot, &convolver);
         self.profile.integrate_reduced_segments(&(exp_pot * bonds))
     }
@@ -235,7 +236,7 @@ impl PoreSpecification<Ix1> for Pore1D {
     }
 }
 
-fn external_potential_1d<P: FluidParameters>(
+fn external_potential_1d<P: HelmholtzEnergyFunctional + FluidParameters>(
     pore_width: Length,
     temperature: Temperature,
     potential: &ExternalPotential,
@@ -297,23 +298,15 @@ const SIGMA_HE: f64 = 2.64;
 #[derive(Clone, Copy)]
 struct Helium;
 
-impl<D: DualNum<f64> + Copy> Residual<Dyn, D> for Helium {
-    type Real = Self;
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = Self;
-    fn re(&self) -> Self::Real {
-        *self
-    }
-    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
-        *self
-    }
+impl ResidualDyn for Helium {
     fn components(&self) -> usize {
         1
     }
-    fn compute_max_density(&self, _: &DVector<D>) -> D {
+    fn compute_max_density<D: DualNum<f64> + Copy>(&self, _: &DVector<D>) -> D {
         D::from(1.0)
     }
 
-    fn reduced_helmholtz_energy_density_contributions(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
@@ -321,11 +314,14 @@ impl<D: DualNum<f64> + Copy> Residual<Dyn, D> for Helium {
     }
 }
 
-impl HelmholtzEnergyFunctional for Helium {
-    type Contribution<'a> = HeliumContribution;
+impl HelmholtzEnergyFunctionalDyn for Helium {
+    type Contribution<'a>
+        = HeliumContribution
+    where
+        Self: 'a;
 
-    fn contributions<'a>(&'a self) -> Vec<Self::Contribution<'a>> {
-        vec![]
+    fn contributions<'a>(&'a self) -> impl Iterator<Item = Self::Contribution<'a>> {
+        std::iter::empty()
     }
 
     fn molecule_shape(&self) -> MoleculeShape<'_> {
@@ -333,13 +329,13 @@ impl HelmholtzEnergyFunctional for Helium {
     }
 }
 
-impl FluidParameters for Helium {
-    fn epsilon_k_ff(&self) -> Array1<f64> {
-        arr1(&[EPSILON_HE])
+impl FluidParameters for &Helium {
+    fn epsilon_k_ff(&self) -> DVector<f64> {
+        dvector![EPSILON_HE]
     }
 
-    fn sigma_ff(&self) -> Array1<f64> {
-        arr1(&[SIGMA_HE])
+    fn sigma_ff(&self) -> DVector<f64> {
+        dvector![SIGMA_HE]
     }
 }
 

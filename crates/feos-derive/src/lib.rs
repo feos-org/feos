@@ -84,7 +84,7 @@ pub fn derive_residual(input: TokenStream) -> TokenStream {
         .into()
 }
 
-#[proc_macro_derive(HelmholtzEnergyFunctional, attributes(implement))]
+#[proc_macro_derive(HelmholtzEnergyFunctionalDyn, attributes(implement))]
 pub fn derive_helmholtz_energy_functional(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     expand_helmholtz_energy_functional(input)

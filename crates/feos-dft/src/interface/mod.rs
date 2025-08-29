@@ -85,7 +85,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         let mut profile = Self::new(vle, n_grid, l_grid);
 
         // calculate segment indices
-        let indices = &profile.profile.dft.component_index();
+        let indices = &profile.profile.bulk.eos.component_index();
 
         // calculate density profile
         let z0 = 0.5 * l_grid.to_reduced();
@@ -164,7 +164,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
 impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
     pub fn shift_equimolar_inplace(&mut self) {
         let s = self.profile.density.shape();
-        let m = &self.profile.dft.m();
+        let m = &self.profile.bulk.eos.m();
         let mut rho_l = Density::from_reduced(0.0);
         let mut rho_v = Density::from_reduced(0.0);
         let mut rho = Density::zeros(s[1]);

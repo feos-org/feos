@@ -169,7 +169,7 @@ impl Molarweight for PcSaft {
 }
 
 impl HardSphereProperties for PcSaftPars {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
+    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
         MonomerShape::NonSpherical(self.m.map(N::from))
     }
 

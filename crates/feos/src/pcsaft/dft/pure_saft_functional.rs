@@ -39,12 +39,9 @@ impl<'a> FunctionalContribution for PureFMTAssocFunctional<'a> {
         "Pure FMT+association"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
-        let r = self.parameters.hs_diameter(temperature) * 0.5;
-        WeightFunctionInfo::new(arr1(&[0]), false).extend(
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
+        let r = self.parameters.hs_diameter(temperature) * N::from(0.5);
+        WeightFunctionInfo::new(vec![0], false).extend(
             vec![
                 WeightFunctionShape::Delta,
                 WeightFunctionShape::Theta,
@@ -52,7 +49,7 @@ impl<'a> FunctionalContribution for PureFMTAssocFunctional<'a> {
             ]
             .into_iter()
             .map(|s| WeightFunction {
-                prefactor: self.parameters.m.mapv(|m| m.into()),
+                prefactor: self.parameters.m.map(|m| m.into()),
                 kernel_radius: r.clone(),
                 shape: s,
             })
@@ -61,7 +58,7 @@ impl<'a> FunctionalContribution for PureFMTAssocFunctional<'a> {
         )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
@@ -152,19 +149,16 @@ impl<'a> FunctionalContribution for PureChainFunctional<'a> {
         "Pure chain"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
-        WeightFunctionInfo::new(arr1(&[0]), true)
+        WeightFunctionInfo::new(vec![0], true)
             .add(
                 WeightFunction::new_scaled(d.clone(), WeightFunctionShape::Delta),
                 false,
             )
             .add(
                 WeightFunction {
-                    prefactor: (&self.parameters.m / 8.0).mapv(|x| x.into()),
+                    prefactor: (&self.parameters.m / 8.0).map(|x| x.into()),
                     kernel_radius: d,
                     shape: WeightFunctionShape::Theta,
                 },
@@ -172,7 +166,7 @@ impl<'a> FunctionalContribution for PureChainFunctional<'a> {
             )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         _: N,
         weighted_densities: ArrayView2<N>,
@@ -205,31 +199,30 @@ impl<'a> FunctionalContribution for PureAttFunctional<'a> {
         "Pure attractive"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
         const PSI: f64 = 1.3862; // Homosegmented DFT (Sauer2017)
-        WeightFunctionInfo::new(arr1(&[0]), false).add(
-            WeightFunction::new_scaled(d * PSI, WeightFunctionShape::Theta),
+        let psi = N::from(PSI);
+        WeightFunctionInfo::new(vec![0], false).add(
+            WeightFunction::new_scaled(d * psi, WeightFunctionShape::Theta),
             false,
         )
     }
 
-    fn weight_functions_pdgt<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn weight_functions_pdgt<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
     ) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
         const PSI: f64 = 1.3286; // pDGT (Rehner2018)
-        WeightFunctionInfo::new(arr1(&[0]), false).add(
-            WeightFunction::new_scaled(d * PSI, WeightFunctionShape::Theta),
+        let psi = N::from(PSI);
+        WeightFunctionInfo::new(vec![0], false).add(
+            WeightFunction::new_scaled(d * psi, WeightFunctionShape::Theta),
             false,
         )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,

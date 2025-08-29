@@ -24,13 +24,14 @@ impl<'a> AttractiveFunctional<'a> {
     }
 }
 
-fn att_weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
+fn att_weight_functions<N: DualNum<f64> + Copy>(
     p: &PcSaftPars,
     psi: f64,
     temperature: N,
 ) -> WeightFunctionInfo<N> {
     let d = p.hs_diameter(temperature);
-    WeightFunctionInfo::new(Array1::from_shape_fn(d.len(), |i| i), false).add(
+    let psi = N::from(psi);
+    WeightFunctionInfo::new((0..d.len()).collect(), false).add(
         WeightFunction::new_scaled(d * psi, WeightFunctionShape::Theta),
         false,
     )
@@ -41,21 +42,18 @@ impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
         "Attractive functional"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         att_weight_functions(self.parameters, PSI_DFT, temperature)
     }
 
-    fn weight_functions_pdgt<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn weight_functions_pdgt<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
     ) -> WeightFunctionInfo<N> {
         att_weight_functions(self.parameters, PSI_PDGT, temperature)
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         density: ArrayView2<N>,
@@ -65,16 +63,14 @@ impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
         let n = p.m.len();
 
         // temperature dependent segment radius
-        let r = p.hs_diameter(temperature) * 0.5;
+        let r = p.hs_diameter(temperature) * N::from(0.5);
 
         // packing fraction
-        let eta = density
-            .outer_iter()
-            .zip(&r * &r * &r * &p.m * 4.0 * FRAC_PI_3)
-            .fold(
-                Array::zeros(density.raw_dim().remove_axis(Axis(0))),
-                |acc: Array1<N>, (rho, r3m)| acc + &rho * r3m,
-            );
+        let r3m = r.zip_map(&p.m, |r, m| r * r * r * (m * 4.0 * FRAC_PI_3));
+        let eta = density.outer_iter().zip(&r3m).fold(
+            Array::zeros(density.raw_dim().remove_axis(Axis(0))),
+            |acc: Array1<N>, (rho, &r3m)| acc + &rho * r3m,
+        );
 
         // mean segment number
         let mut rhog = Array::zeros(eta.raw_dim());
