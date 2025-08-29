@@ -26,7 +26,7 @@ fn state_saftvrmie(parameters: SaftVRMieParameters) -> State<SaftVRMie> {
 }
 
 /// Residual Helmholtz energy given an equation of state and a StateHD.
-fn a_res<D: DualNum<f64> + Copy + ScalarOperand, E: Residual>(inp: (&Arc<E>, &StateHD<D>)) -> D {
+fn a_res<D: DualNum<f64> + Copy, E: Residual>(inp: (&Arc<E>, &StateHD<D>)) -> D {
     inp.0.residual_helmholtz_energy(inp.1)
 }
 

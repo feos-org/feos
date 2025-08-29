@@ -12,7 +12,7 @@ description = "FeOs - A framework for equations of state and classical density f
 
 [dependencies]
 quantity = { workspace = true }
-num-dual = { workspace = true }
+num-dual = { workspace = true, features = ["ndarray"] }
 ndarray = { workspace = true }
 nalgebra = { workspace = true }
 petgraph = { workspace = true, optional = true }

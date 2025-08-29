@@ -32,7 +32,7 @@ pub(crate) fn impl_helmholtz_energy_functional(
                 Self::#name(functional) => functional.molecule_shape()
             });
             contributions.push(quote! {
-                Self::#name(functional) => functional.contributions().into_iter().map(FunctionalContributionVariant::from).collect()
+                Self::#name(functional) => functional.contributions().map(FunctionalContributionVariant::from).collect::<Vec<_>>().into_iter()
             });
         } else {
             molecule_shape.push(quote! {
@@ -55,14 +55,14 @@ pub(crate) fn impl_helmholtz_energy_functional(
     }
 
     Ok(quote! {
-        impl HelmholtzEnergyFunctional for #ident {
+        impl HelmholtzEnergyFunctionalDyn for #ident {
             type Contribution<'a> = FunctionalContributionVariant<'a>;
-            fn molecule_shape(&self) -> feos_dft::MoleculeShape {
+            fn molecule_shape(&self) -> feos_dft::MoleculeShape<'_> {
                 match self {
                     #(#molecule_shape,)*
                 }
             }
-            fn contributions<'a>(&'a self) -> Vec<Self::Contribution<'a>> {
+            fn contributions<'a>(&'a self) -> impl Iterator<Item = Self::Contribution<'a>> {
                 match self {
                     #(#contributions,)*
                 }
@@ -104,13 +104,13 @@ fn impl_fluid_parameters(
     }
     Ok(quote! {
         impl feos_dft::adsorption::FluidParameters for #ident {
-            fn epsilon_k_ff(&self) -> Array1<f64> {
+            fn epsilon_k_ff(&self) -> DVector<f64> {
                 match self {
                     #(#epsilon_k_ff,)*
                 }
             }
 
-            fn sigma_ff(&self) -> &Array1<f64> {
+            fn sigma_ff(&self) -> DVector<f64> {
                 match self {
                     #(#sigma_ff,)*
                 }

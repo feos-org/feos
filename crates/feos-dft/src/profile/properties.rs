@@ -5,7 +5,7 @@ use crate::functional_contribution::FunctionalContribution;
 use crate::{ConvolverFFT, DFTSolverLog, HelmholtzEnergyFunctional, WeightFunctionInfo};
 use feos_core::{Contributions, FeosResult, ReferenceSystem, Total, Verbosity};
 use nalgebra::{DMatrix, DVector};
-use ndarray::{Array, Axis, Dimension, RemoveAxis};
+use ndarray::{Array, Array1, Axis, Dimension, RemoveAxis};
 use num_dual::{Dual64, DualNum};
 use quantity::{
     Density, Energy, Entropy, EntropyDensity, MolarEnergy, Moles, Pressure, Quantity, Temperature,
@@ -30,18 +30,21 @@ where
         // Calculate residual Helmholtz energy density and functional derivative
         let t = self.temperature.to_reduced();
         let rho = self.density.to_reduced();
-        let (mut f, dfdrho) = self.dft.functional_derivative(t, &rho, &self.convolver)?;
+        let (mut f, dfdrho) = self
+            .bulk
+            .eos
+            .functional_derivative(t, &rho, &self.convolver)?;
 
         // Calculate the grand potential density
         for ((rho, dfdrho), &m) in rho
             .outer_iter()
             .zip(dfdrho.outer_iter())
-            .zip(self.dft.m().iter())
+            .zip(self.bulk.eos.m().iter())
         {
             f -= &((&dfdrho + m) * &rho);
         }
 
-        let bond_lengths = self.dft.bond_lengths(t);
+        let bond_lengths = self.bulk.eos.bond_lengths(t);
         for segment in bond_lengths.node_indices() {
             let n = bond_lengths.neighbors(segment).count();
             f += &(&rho.index_axis(Axis(0), segment.index()) * (0.5 * n as f64));
@@ -57,7 +60,7 @@ where
 
     /// Calculate the (residual) intrinsic functional derivative $\frac{\delta\mathcal{F}}{\delta\rho_i(\mathbf{r})}$.
     pub fn functional_derivative(&self) -> FeosResult<Array<f64, D::Larger>> {
-        let (_, dfdrho) = self.dft.functional_derivative(
+        let (_, dfdrho) = self.bulk.eos.functional_derivative(
             self.temperature.to_reduced(),
             &self.density.to_reduced(),
             &self.convolver,
@@ -83,9 +86,10 @@ where
     {
         let density_dual = density.mapv(N::from);
         let weighted_densities = convolver.weighted_densities(&density_dual);
-        let functional_contributions = self.dft.contributions();
+        let functional_contributions = self.bulk.eos.contributions();
         let mut helmholtz_energy_density: Array<N, D> = self
-            .dft
+            .bulk
+            .eos
             .ideal_chain_contribution()
             .helmholtz_energy_density(&density.mapv(N::from))?;
         for (c, wd) in functional_contributions.into_iter().zip(weighted_densities) {
@@ -110,7 +114,7 @@ where
         // initialize convolver
         let temperature = self.temperature.to_reduced();
         let temperature_dual = Dual64::from(temperature).derivative();
-        let functional_contributions = self.dft.contributions();
+        let functional_contributions = self.bulk.eos.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
             .into_iter()
             .map(|c| c.weight_functions(temperature_dual))
@@ -138,10 +142,11 @@ where
         let density_dual = density.mapv(Dual64::from);
         let temperature_dual = Dual64::from(temperature).derivative();
         let weighted_densities = convolver.weighted_densities(&density_dual);
-        let functional_contributions = self.dft.contributions();
+        let functional_contributions = self.bulk.eos.contributions();
         let mut helmholtz_energy_density: Vec<Array<Dual64, _>> = Vec::new();
         helmholtz_energy_density.push(
-            self.dft
+            self.bulk
+                .eos
                 .ideal_chain_contribution()
                 .helmholtz_energy_density(&density.mapv(Dual64::from))?,
         );
@@ -176,7 +181,7 @@ where
         temperature: Dual64,
         density: &Array<f64, D::Larger>,
     ) -> Array<Dual64, D> {
-        let lambda = self.dft.ln_lambda3(temperature);
+        let lambda = self.bulk.eos.ln_lambda3(temperature);
         let mut phi = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
         for (i, rhoi) in density.outer_iter().enumerate() {
             phi += &rhoi.mapv(|rhoi| (lambda[i] + rhoi.ln() - 1.0) * rhoi);
@@ -194,7 +199,7 @@ where
         // initialize convolver
         let temperature = self.temperature.to_reduced();
         let temperature_dual = Dual64::from(temperature).derivative();
-        let functional_contributions = self.dft.contributions();
+        let functional_contributions = self.bulk.eos.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
             .into_iter()
             .map(|c| c.weight_functions(temperature_dual))
@@ -241,7 +246,7 @@ where
         // initialize convolver
         let temperature = self.temperature.to_reduced();
         let temperature_dual = Dual64::from(temperature).derivative();
-        let functional_contributions = self.dft.contributions();
+        let functional_contributions = self.bulk.eos.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
             .into_iter()
             .map(|c| c.weight_functions(temperature_dual))
@@ -285,7 +290,13 @@ where
     fn density_derivative(&self, lhs: &Array<f64, D::Larger>) -> FeosResult<Array<f64, D::Larger>> {
         let rho = self.density.to_reduced();
         let partial_density = self.bulk.partial_density.to_reduced();
-        let rho_bulk = self.dft.component_index().mapv(|i| partial_density[i]);
+        let rho_bulk = self
+            .bulk
+            .eos
+            .component_index()
+            .iter()
+            .map(|&i| partial_density[i])
+            .collect();
 
         let second_partial_derivatives = self.second_partial_derivatives(&rho)?;
         let (_, _, _, exp_dfdrho, _) = self.euler_lagrange_equation(&rho, &rho_bulk, false)?;
@@ -295,7 +306,7 @@ where
                 self.delta_functional_derivative(x, &second_partial_derivatives);
             let mut xm = x.clone();
             xm.outer_iter_mut()
-                .zip(self.dft.m().iter())
+                .zip(self.bulk.eos.m().iter())
                 .for_each(|(mut x, &m)| x *= m);
             let delta_i = self.delta_bond_integrals(&exp_dfdrho, &delta_functional_derivative);
             xm + (delta_functional_derivative - delta_i) * &rho
@@ -306,12 +317,12 @@ where
 
     /// Return the partial derivatives of the density profiles w.r.t. the chemical potentials $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial\mu_k}\right)_T$
     pub fn drho_dmu(&self) -> FeosResult<DrhoDmu<D>> {
-        let shape: Vec<_> = std::iter::once(&self.dft.components())
+        let shape: Vec<_> = std::iter::once(&self.bulk.eos.components())
             .chain(self.density.shape())
             .copied()
             .collect();
         let mut drho_dmu = Array::zeros(shape).into_dimensionality().unwrap();
-        let component_index = self.dft.component_index();
+        let component_index = self.bulk.eos.component_index();
         for (k, mut d) in drho_dmu.outer_iter_mut().enumerate() {
             let mut lhs = self.density.to_reduced();
             for (i, mut l) in lhs.outer_iter_mut().enumerate() {
@@ -342,7 +353,10 @@ where
     pub fn drho_dp(&self) -> FeosResult<DrhoDp<D>> {
         let mut lhs = self.density.to_reduced();
         let v = self.bulk.partial_molar_volume().to_reduced();
-        for (mut l, &c) in lhs.outer_iter_mut().zip(self.dft.component_index().iter()) {
+        for (mut l, &c) in lhs
+            .outer_iter_mut()
+            .zip(self.bulk.eos.component_index().iter())
+        {
             l *= v[c];
         }
         Ok(Quantity::from_reduced(
@@ -363,7 +377,7 @@ where
         let t_dual = Dual64::from(t).derivative();
 
         // calculate intrinsic functional derivative
-        let functional_contributions = self.dft.contributions();
+        let functional_contributions = self.bulk.eos.contributions();
         let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
             .into_iter()
             .map(|c| c.weight_functions(t_dual))
@@ -371,7 +385,8 @@ where
         let convolver: Arc<dyn Convolver<_, D>> =
             ConvolverFFT::plan(&self.grid, &weight_functions, self.lanczos);
         let (_, mut dfdrho) = self
-            .dft
+            .bulk
+            .eos
             .functional_derivative(t_dual, &rho_dual, &convolver)?;
 
         // calculate total functional derivative
@@ -379,33 +394,49 @@ where
 
         // calculate bulk functional derivative
         let partial_density = self.bulk.partial_density.to_reduced();
-        let rho_bulk = self.dft.component_index().mapv(|i| partial_density[i]);
+        let rho_bulk: Array1<_> = self
+            .bulk
+            .eos
+            .component_index()
+            .iter()
+            .map(|&i| partial_density[i])
+            .collect();
         let rho_bulk_dual = rho_bulk.mapv(Dual64::from);
         let bulk_convolver = BulkConvolver::new(weight_functions);
         let (_, dfdrho_bulk) =
-            self.dft
+            self.bulk
+                .eos
                 .functional_derivative(t_dual, &rho_bulk_dual, &bulk_convolver)?;
         dfdrho
             .outer_iter_mut()
             .zip(dfdrho_bulk)
-            .zip(self.dft.m().iter())
+            .zip(self.bulk.eos.m().iter())
             .for_each(|((mut df, df_b), &m)| {
                 df.map_inplace(|df| *df = (*df - df_b) / Dual64::from(m));
             });
 
         // calculate bond integrals
         let exp_dfdrho = dfdrho.mapv(|x| (-x).exp());
-        let bonds = self.dft.bond_integrals(t_dual, &exp_dfdrho, &convolver);
+        let bonds = self
+            .bulk
+            .eos
+            .bond_integrals(t_dual, &exp_dfdrho, &convolver);
 
         // solve for drho_dt
         let mut lhs = (exp_dfdrho * bonds).mapv(|x| (-x.ln() * t_dual).eps);
         let x =
             (self.bulk.partial_molar_volume() * self.bulk.dp_dt(Contributions::Total)).to_reduced();
-        let x = self.dft.component_index().mapv(|i| x[i]);
+        let x: Array1<_> = self
+            .bulk
+            .eos
+            .component_index()
+            .iter()
+            .map(|&i| x[i])
+            .collect();
         lhs.outer_iter_mut()
             .zip(rho.outer_iter())
             .zip(rho_bulk)
-            .zip(self.dft.m().iter())
+            .zip(self.bulk.eos.m().iter())
             .zip(x)
             .for_each(|((((mut lhs, rho), rho_b), &m), x)| {
                 lhs += &(&rho / rho_b).mapv(f64::ln);

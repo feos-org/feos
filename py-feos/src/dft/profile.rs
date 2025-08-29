@@ -62,7 +62,7 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_moles(&self) -> Moles<Array1<f64>> {
+            fn get_moles(&self) -> Moles<DVector<f64>> {
                 self.0.profile.moles()
             }
 
@@ -172,7 +172,7 @@ macro_rules! impl_profile {
             )?
 
             #[getter]
-            fn get_dn_dmu(&self) -> PyResult<typenum::Quot<Moles<Array2<f64>>, MolarEnergy>> {
+            fn get_dn_dmu(&self) -> PyResult<typenum::Quot<Moles<DMatrix<f64>>, MolarEnergy>> {
                 Ok(self.0.profile.dn_dmu().map_err(PyFeosError::from)?)
             }
 
@@ -182,7 +182,7 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_dn_dp(&self) -> PyResult<typenum::Quot<Moles<Array1<f64>>, Pressure>> {
+            fn get_dn_dp(&self) -> PyResult<typenum::Quot<Moles<DVector<f64>>, Pressure>> {
                 Ok(self.0.profile.dn_dp().map_err(PyFeosError::from)?)
             }
 
@@ -192,7 +192,7 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_dn_dt(&self) -> PyResult<typenum::Quot<Moles<Array1<f64>>, Temperature>> {
+            fn get_dn_dt(&self) -> PyResult<typenum::Quot<Moles<DVector<f64>>, Temperature>> {
                 Ok(self.0.profile.dn_dt().map_err(PyFeosError::from)?)
             }
         }

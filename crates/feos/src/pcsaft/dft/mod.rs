@@ -3,12 +3,15 @@ use super::parameters::PcSaftPars;
 use crate::association::{Association, AssociationFunctional};
 use crate::hard_sphere::{FMTContribution, FMTVersion};
 use crate::pcsaft::eos::PcSaftOptions;
-use feos_core::{Components, FeosResult, Molarweight, Residual, StateHD};
+use feos_core::{FeosResult, Molarweight, ResidualDyn, StateHD, Subset};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
-use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape};
-use ndarray::{Array1, Array2, ScalarOperand};
+use feos_dft::{
+    FunctionalContribution, HelmholtzEnergyFunctional, HelmholtzEnergyFunctionalDyn, MoleculeShape,
+};
+use nalgebra::DVector;
+use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use num_traits::One;
 use quantity::MolarWeight;
@@ -62,11 +65,7 @@ impl PcSaftFunctional {
     }
 }
 
-impl Components for PcSaftFunctional {
-    fn components(&self) -> usize {
-        self.parameters.pure.len()
-    }
-
+impl Subset for PcSaftFunctional {
     fn subset(&self, component_list: &[usize]) -> Self {
         Self::with_options(
             self.parameters.subset(component_list),
@@ -76,13 +75,20 @@ impl Components for PcSaftFunctional {
     }
 }
 
-impl Residual for PcSaftFunctional {
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * &self.params.m * self.params.sigma.mapv(|v| v.powi(3)) * moles).sum()
+impl ResidualDyn for PcSaftFunctional {
+    fn components(&self) -> usize {
+        self.parameters.pure.len()
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
+    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+        let msigma3 = self
+            .params
+            .m
+            .component_mul(&self.params.sigma.map(|v| v.powi(3)));
+        (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
+    }
+
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
@@ -90,10 +96,13 @@ impl Residual for PcSaftFunctional {
     }
 }
 
-impl HelmholtzEnergyFunctional for PcSaftFunctional {
-    type Contribution<'a> = PcSaftFunctionalContribution<'a>;
+impl HelmholtzEnergyFunctionalDyn for PcSaftFunctional {
+    type Contribution<'a>
+        = PcSaftFunctionalContribution<'a>
+    where
+        Self: 'a;
 
-    fn contributions<'a>(&'a self) -> Vec<PcSaftFunctionalContribution<'a>> {
+    fn contributions<'a>(&'a self) -> impl Iterator<Item = PcSaftFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(4);
 
         let assoc = AssociationFunctional::new(&self.params, &self.parameters, &self.association);
@@ -131,27 +140,27 @@ impl HelmholtzEnergyFunctional for PcSaftFunctional {
                 contributions.push(assoc.into());
             }
         }
-        contributions
+        contributions.into_iter()
     }
 
-    fn molecule_shape(&self) -> MoleculeShape {
+    fn molecule_shape(&self) -> MoleculeShape<'_> {
         MoleculeShape::NonSpherical(&self.params.m)
     }
 }
 
 impl Molarweight for PcSaftFunctional {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+    fn molar_weight(&self) -> MolarWeight<DVector<f64>> {
         self.parameters.molar_weight.clone()
     }
 }
 
-impl FluidParameters for PcSaftFunctional {
-    fn epsilon_k_ff(&self) -> Array1<f64> {
+impl FluidParameters for &PcSaftFunctional {
+    fn epsilon_k_ff(&self) -> DVector<f64> {
         self.params.epsilon_k.clone()
     }
 
-    fn sigma_ff(&self) -> &Array1<f64> {
-        &self.params.sigma
+    fn sigma_ff(&self) -> DVector<f64> {
+        self.params.sigma.clone()
     }
 }
 
@@ -160,8 +169,8 @@ impl PairPotential for PcSaftFunctional {
         let sigma_ij = &self.params.sigma_ij;
         let eps_ij_4 = 4.0 * &self.params.epsilon_k_ij;
         Array2::from_shape_fn((self.params.m.len(), r.len()), |(j, k)| {
-            let att = (sigma_ij[[i, j]] / r[k]).powi(6);
-            eps_ij_4[[i, j]] * att * (att - 1.0)
+            let att = (sigma_ij[(i, j)] / r[k]).powi(6);
+            eps_ij_4[(i, j)] * att * (att - 1.0)
         })
     }
 }

@@ -1,6 +1,7 @@
 use super::*;
 use feos_core::FeosResult;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
+use ndarray::{Array1, Array2, ArrayBase, ArrayView2, Axis, Data, Ix1, Slice};
 use num_dual::DualNum;
 use std::f64::consts::PI;
 use std::ops::MulAssign;
@@ -39,7 +40,7 @@ where
 
     fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let p = self.model;
-        let r = p.hs_diameter(temperature) * 0.5;
+        let r = p.hs_diameter(temperature) * N::from(0.5);
         let [_, _, _, c3] = p.geometry_coefficients(temperature);
         WeightFunctionInfo::new(p.component_index().into_owned(), false)
             .add(
@@ -64,7 +65,7 @@ where
             )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
@@ -96,7 +97,7 @@ where
         }
         let mut rho0: Array2<N> = (n2vi
             .iter()
-            .fold(Array::zeros(n0i.raw_dim()), |acc, n2vi| acc + n2vi * n2vi)
+            .fold(Array2::zeros(n0i.raw_dim()), |acc, n2vi| acc + n2vi * n2vi)
             / -(&n2i * &n2i)
             + 1.0)
             * n0i;
@@ -111,7 +112,7 @@ where
         let n2 = n2i.sum_axis(Axis(0));
         let mut xi = n2v
             .iter()
-            .fold(Array::zeros(n2.raw_dim()), |acc, n2v| acc + n2v * n2v)
+            .fold(Array1::zeros(n2.raw_dim()), |acc, n2v| acc + n2v * n2v)
             / -(&n2 * &n2)
             + 1.0;
         xi.iter_mut()
@@ -130,7 +131,7 @@ where
 }
 
 impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
-    pub fn _helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand, S: Data<Elem = N>>(
+    pub fn _helmholtz_energy_density<N: DualNum<f64> + Copy, S: Data<Elem = N>>(
         &self,
         temperature: N,
         rho0: &Array2<N>,
@@ -147,7 +148,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
             a.sites_c.len(),
             self.association.force_cross_association,
         ) {
-            (0, 0, _) => Ok(Array::zeros(n3i.len())),
+            (0, 0, _) => Ok(Array1::zeros(n3i.len())),
             (1, 0, false) => {
                 Ok(self.helmholtz_energy_density_ab_analytic(temperature, rho0, &d, n2, n3i, xi))
             }
@@ -168,7 +169,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
                 )
             }
             _ => {
-                let mut x: Array1<f64> = Array::from_elem(a.sites_a.len() + a.sites_b.len(), 0.2);
+                let mut x = DVector::from_element(a.sites_a.len() + a.sites_b.len(), 0.2);
                 let (assoc_comp_ab, n_ab): (Vec<_>, Vec<_>) = a
                     .sites_a
                     .iter()
@@ -193,6 +194,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
                             n3i,
                             xi,
                         );
+                        let rho = DVector::from(rho.to_vec());
                         self.association.helmholtz_energy_density_cross_association(
                             &rho,
                             &delta_ab,
@@ -205,14 +207,11 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         }
     }
 
-    fn helmholtz_energy_density_ab_analytic<
-        N: DualNum<f64> + Copy + ScalarOperand,
-        S: Data<Elem = N>,
-    >(
+    fn helmholtz_energy_density_ab_analytic<N: DualNum<f64> + Copy, S: Data<Elem = N>>(
         &self,
         temperature: N,
         rho0: &Array2<N>,
-        diameter: &Array1<N>,
+        diameter: &DVector<N>,
         n2: &ArrayBase<S, Ix1>,
         n3i: &Array1<N>,
         xi: &Array1<N>,
@@ -245,14 +244,11 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         rhoa * xa.mapv(f) + rhob * xb.mapv(f)
     }
 
-    fn helmholtz_energy_density_cc_analytic<
-        N: DualNum<f64> + Copy + ScalarOperand,
-        S: Data<Elem = N>,
-    >(
+    fn helmholtz_energy_density_cc_analytic<N: DualNum<f64> + Copy, S: Data<Elem = N>>(
         &self,
         temperature: N,
         rho0: &Array2<N>,
-        diameter: &Array1<N>,
+        diameter: &DVector<N>,
         n2: &ArrayBase<S, Ix1>,
         n3i: &Array1<N>,
         xi: &Array1<N>,

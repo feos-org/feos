@@ -6,12 +6,12 @@ use quantity::{Density, Pressure, Temperature};
 
 #[derive(Clone)]
 pub struct IdealChainContribution {
-    component_index: Array1<usize>,
-    m: Array1<f64>,
+    component_index: DVector<usize>,
+    m: DVector<f64>,
 }
 
 impl IdealChainContribution {
-    pub fn new(component_index: &Array1<usize>, m: &Array1<f64>) -> Self {
+    pub fn new(component_index: &DVector<usize>, m: &DVector<f64>) -> Self {
         Self {
             component_index: component_index.clone(),
             m: m.clone(),
@@ -32,13 +32,12 @@ impl IdealChainContribution {
         }
 
         // calculate segment density
-        let density = self.component_index.mapv(|c| partial_density[c]);
+        let density = self.component_index.map(|c| partial_density[c]);
 
         // calculate Helmholtz energy
-        (&density
-            * &(&self.m - 1.0)
-            * density.mapv(|r| (r.abs() + D::from(f64::EPSILON)).ln() - 1.0))
-        .sum()
+        density
+            .component_mul(&self.m.add_scalar(-1.0).map(D::from))
+            .dot(&density.map(|r| (r.abs() + D::from(f64::EPSILON)).ln() - 1.0))
     }
 
     pub fn helmholtz_energy_density<D, N>(

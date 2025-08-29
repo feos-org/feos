@@ -1,3 +1,4 @@
+use nalgebra::DVector;
 use ndarray::*;
 use num_dual::DualNum;
 // use rustfft::num_complex::Complex;
@@ -8,29 +9,30 @@ use std::ops::Mul;
 #[derive(Clone)]
 pub struct WeightFunction<T> {
     /// Factor in front of normalized weight function
-    pub prefactor: Array1<T>,
+    pub prefactor: DVector<T>,
     /// Kernel radius of the convolution
-    pub kernel_radius: Array1<T>,
+    pub kernel_radius: DVector<T>,
     /// Shape of the weight function (Dirac delta, Heaviside, etc.)
     pub shape: WeightFunctionShape,
 }
 
 impl<T: DualNum<f64> + Copy> WeightFunction<T> {
     /// Create a new weight function without prefactor
-    pub fn new_unscaled(kernel_radius: Array1<T>, shape: WeightFunctionShape) -> Self {
+    pub fn new_unscaled(kernel_radius: DVector<T>, shape: WeightFunctionShape) -> Self {
         Self {
-            prefactor: Array::ones(kernel_radius.raw_dim()),
+            prefactor: DVector::from_element(kernel_radius.len(), T::one()),
             kernel_radius,
             shape,
         }
     }
 
     /// Create a new weight function with weight constant = 1
-    pub fn new_scaled(kernel_radius: Array1<T>, shape: WeightFunctionShape) -> Self {
+    pub fn new_scaled(kernel_radius: DVector<T>, shape: WeightFunctionShape) -> Self {
         let unscaled = Self::new_unscaled(kernel_radius, shape);
         let weight_constants = unscaled.scalar_weight_constants(T::zero());
+        let weight_constants = DVector::from(weight_constants.to_vec());
         Self {
-            prefactor: weight_constants.mapv(|w| w.recip()),
+            prefactor: weight_constants.map(|w| w.recip()),
             kernel_radius: unscaled.kernel_radius,
             shape,
         }
@@ -167,7 +169,7 @@ pub enum WeightFunctionShape {
 /// Information about weight functions
 pub struct WeightFunctionInfo<T> {
     /// Index of the component that each individual segment belongs to.
-    pub(crate) component_index: Array1<usize>,
+    pub(crate) component_index: Vec<usize>,
     /// Flag if local density is required in the functional
     pub(crate) local_density: bool,
     /// Container for scalar component-wise weighted densities
@@ -195,7 +197,7 @@ impl<T> WeightFunctionInfo<T> {
 
 impl<T> WeightFunctionInfo<T> {
     /// Initializing empty `WeightFunctionInfo`.
-    pub fn new(component_index: Array1<usize>, local_density: bool) -> Self {
+    pub fn new(component_index: Vec<usize>, local_density: bool) -> Self {
         Self {
             component_index,
             local_density,

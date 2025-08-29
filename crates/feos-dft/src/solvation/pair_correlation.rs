@@ -14,6 +14,12 @@ pub trait PairPotential {
     fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64>;
 }
 
+impl<T: PairPotential> PairPotential for std::sync::Arc<T> {
+    fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64> {
+        T::pair_potential(self, i, r, temperature)
+    }
+}
+
 /// Density profile and properties of a test particle system.
 #[derive(Clone)]
 pub struct PairCorrelation<F> {

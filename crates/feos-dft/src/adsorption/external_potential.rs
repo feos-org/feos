@@ -4,6 +4,7 @@ use crate::functional::HelmholtzEnergyFunctional;
 #[cfg(feature = "rayon")]
 use crate::geometry::Geometry;
 use libm::tgamma;
+use nalgebra::DVector;
 use ndarray::{Array1, Array2, Axis as Axis_nd};
 #[cfg(feature = "rayon")]
 use quantity::Length;
@@ -67,14 +68,23 @@ pub enum ExternalPotential {
 }
 
 /// Parameters of the fluid required to evaluate the external potential.
-pub trait FluidParameters: HelmholtzEnergyFunctional {
-    fn epsilon_k_ff(&self) -> Array1<f64>;
-    fn sigma_ff(&self) -> Array1<f64>;
+pub trait FluidParameters {
+    fn epsilon_k_ff(&self) -> DVector<f64>;
+    fn sigma_ff(&self) -> DVector<f64>;
+}
+
+impl<T: FluidParameters> FluidParameters for std::sync::Arc<T> {
+    fn epsilon_k_ff(&self) -> DVector<f64> {
+        T::epsilon_k_ff(self)
+    }
+    fn sigma_ff(&self) -> DVector<f64> {
+        T::sigma_ff(self)
+    }
 }
 
 impl ExternalPotential {
     // Evaluate the external potential in cartesian coordinates for a given grid and fluid parameters.
-    pub fn calculate_cartesian_potential<P: FluidParameters>(
+    pub fn calculate_cartesian_potential<P: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
         z_grid: &Array1<f64>,
         fluid_parameters: &P,
@@ -101,8 +111,8 @@ impl ExternalPotential {
                 } => {
                     // combining rules
                     let epsilon_k_sf =
-                        (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).mapv(|e| e.sqrt());
-                    let sigma_sf = (fluid_parameters.sigma_ff() + *sigma_ss) * 0.5;
+                        (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).map(|e| e.sqrt());
+                    let sigma_sf = fluid_parameters.sigma_ff().add_scalar(*sigma_ss) * 0.5;
 
                     2.0 * PI * mi * epsilon_k_sf[i] * sigma_sf[i].powi(3) * rho_s / 45.0
                         * (2.0 * (sigma_sf[i] / z_grid).mapv(|x| x.powi(9))
@@ -114,8 +124,8 @@ impl ExternalPotential {
                 } => {
                     // combining rules
                     let epsilon_k_sf =
-                        (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).mapv(|e| e.sqrt());
-                    let sigma_sf = (fluid_parameters.sigma_ff() + *sigma_ss) * 0.5;
+                        (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).map(|e| e.sqrt());
+                    let sigma_sf = fluid_parameters.sigma_ff().add_scalar(*sigma_ss) * 0.5;
 
                     epsilon_k_sf[i]
                         * ((sigma_sf[i] / z_grid).mapv(|x| x.powi(9))
@@ -137,8 +147,8 @@ impl ExternalPotential {
                 } => {
                     // combining rules
                     let epsilon_k_sf =
-                        (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).mapv(|e| e.sqrt());
-                    let sigma_sf = (fluid_parameters.sigma_ff() + *sigma_ss) * 0.5;
+                        (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).map(|e| e.sqrt());
+                    let sigma_sf = fluid_parameters.sigma_ff().add_scalar(*sigma_ss) * 0.5;
 
                     (2.0 * PI * mi * xi.unwrap_or(1.0) * epsilon_k_sf[i])
                         * (sigma_sf[i].powi(2) * DELTA_STEELE * rho_s)
@@ -170,10 +180,10 @@ impl ExternalPotential {
                 } => {
                     // combining rules
                     let epsilon1_k_sf =
-                        (fluid_parameters.epsilon_k_ff() * *epsilon1_k_ss).mapv(|e| e.sqrt());
+                        (fluid_parameters.epsilon_k_ff() * *epsilon1_k_ss).map(|e| e.sqrt());
                     let epsilon2_k_sf =
-                        (fluid_parameters.epsilon_k_ff() * *epsilon2_k_ss).mapv(|e| e.sqrt());
-                    let sigma_sf = (fluid_parameters.sigma_ff() + *sigma_ss) * 0.5;
+                        (fluid_parameters.epsilon_k_ff() * *epsilon2_k_ss).map(|e| e.sqrt());
+                    let sigma_sf = fluid_parameters.sigma_ff().add_scalar(*sigma_ss) * 0.5;
 
                     let bh_tail = (2.0 * PI * mi * epsilon2_k_sf[i] * sigma_sf[i].powi(3) * rho_s
                         / 45.0
@@ -198,7 +208,7 @@ impl ExternalPotential {
                 } => {
                     // combining rules
                     let epsilon_k_sf =
-                        (fluid_parameters.epsilon_k_ff()[i] * epsilon_k_ss).mapv(|e| e.sqrt());
+                        (fluid_parameters.epsilon_k_ff()[i] * epsilon_k_ss).map(|e| e.sqrt());
                     let sigma_sf = (fluid_parameters.sigma_ff()[i] + sigma_ss) * 0.5;
 
                     calculate_fea_potential(
@@ -222,7 +232,7 @@ impl ExternalPotential {
     }
 
     // Evaluate the external potential in cylindrical coordinates for a given grid and fluid parameters.
-    pub fn calculate_cylindrical_potential<P: FluidParameters>(
+    pub fn calculate_cylindrical_potential<P: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
         r_grid: &Array1<f64>,
         pore_size: f64,
@@ -256,8 +266,8 @@ impl ExternalPotential {
                 } => {
                     // combining rules
                     let epsilon_k_sf =
-                        (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).mapv(|e| e.sqrt());
-                    let sigma_sf = (fluid_parameters.sigma_ff() + *sigma_ss) * 0.5;
+                        (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).map(|e| e.sqrt());
+                    let sigma_sf = fluid_parameters.sigma_ff().add_scalar(*sigma_ss) * 0.5;
 
                     (phi(6, &(r_grid / pore_size), sigma_sf[i] / pore_size)
                         - phi(3, &(r_grid / pore_size), sigma_sf[i] / pore_size))
@@ -288,8 +298,8 @@ impl ExternalPotential {
                 } => {
                     // combining rules
                     let epsilon_k_sf =
-                        (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).mapv(|e| e.sqrt());
-                    let sigma_sf = (fluid_parameters.sigma_ff() + *sigma_ss) * 0.5;
+                        (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).map(|e| e.sqrt());
+                    let sigma_sf = fluid_parameters.sigma_ff().add_scalar(*sigma_ss) * 0.5;
 
                     (2.0 * PI * mi * xi.unwrap_or(1.0) * epsilon_k_sf[i])
                         * (sigma_sf[i].powi(2) * DELTA_STEELE * rho_s)
@@ -327,10 +337,10 @@ impl ExternalPotential {
                 } => {
                     // combining rules
                     let epsilon1_k_sf =
-                        (fluid_parameters.epsilon_k_ff() * *epsilon1_k_ss).mapv(|e| e.sqrt());
+                        (fluid_parameters.epsilon_k_ff() * *epsilon1_k_ss).map(|e| e.sqrt());
                     let epsilon2_k_sf =
-                        (fluid_parameters.epsilon_k_ff() * *epsilon2_k_ss).mapv(|e| e.sqrt());
-                    let sigma_sf = (fluid_parameters.sigma_ff() + *sigma_ss) * 0.5;
+                        (fluid_parameters.epsilon_k_ff() * *epsilon2_k_ss).map(|e| e.sqrt());
+                    let sigma_sf = fluid_parameters.sigma_ff().add_scalar(*sigma_ss) * 0.5;
 
                     let bh_tail = ((phi(6, &(r_grid / pore_size), 2.0 * sigma_sf[i] / pore_size)
                         - phi(3, &(r_grid / pore_size), 2.0 * sigma_sf[i] / pore_size))
@@ -364,7 +374,7 @@ impl ExternalPotential {
                 } => {
                     // combining rules
                     let epsilon_k_sf =
-                        (fluid_parameters.epsilon_k_ff()[i] * epsilon_k_ss).mapv(|e| e.sqrt());
+                        (fluid_parameters.epsilon_k_ff()[i] * epsilon_k_ss).map(|e| e.sqrt());
                     let sigma_sf = (fluid_parameters.sigma_ff()[i] + sigma_ss) * 0.5;
 
                     calculate_fea_potential(
@@ -388,7 +398,7 @@ impl ExternalPotential {
     }
 
     // Evaluate the external potential in spherical coordinates for a given grid and fluid parameters.
-    pub fn calculate_spherical_potential<P: FluidParameters>(
+    pub fn calculate_spherical_potential<P: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
         r_grid: &Array1<f64>,
         pore_size: f64,
@@ -422,8 +432,8 @@ impl ExternalPotential {
                 } => {
                     // combining rules
                     let epsilon_k_sf =
-                        (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).mapv(|e| e.sqrt());
-                    let sigma_sf = (fluid_parameters.sigma_ff() + *sigma_ss) * 0.5;
+                        (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).map(|e| e.sqrt());
+                    let sigma_sf = fluid_parameters.sigma_ff().add_scalar(*sigma_ss) * 0.5;
 
                     PI * mi
                         * epsilon_k_sf[i]
@@ -460,8 +470,8 @@ impl ExternalPotential {
                 } => {
                     // combining rules
                     let epsilon_k_sf =
-                        (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).mapv(|e| e.sqrt());
-                    let sigma_sf = (fluid_parameters.sigma_ff() + *sigma_ss) * 0.5;
+                        (fluid_parameters.epsilon_k_ff() * *epsilon_k_ss).map(|e| e.sqrt());
+                    let sigma_sf = fluid_parameters.sigma_ff().add_scalar(*sigma_ss) * 0.5;
 
                     (2.0 * PI * mi * xi.unwrap_or(1.0) * epsilon_k_sf[i])
                         * (sigma_sf[i].powi(2) * DELTA_STEELE * rho_s)
@@ -517,10 +527,10 @@ impl ExternalPotential {
                 } => {
                     // combining rules
                     let epsilon1_k_sf =
-                        (fluid_parameters.epsilon_k_ff() * *epsilon1_k_ss).mapv(|e| e.sqrt());
+                        (fluid_parameters.epsilon_k_ff() * *epsilon1_k_ss).map(|e| e.sqrt());
                     let epsilon2_k_sf =
-                        (fluid_parameters.epsilon_k_ff() * *epsilon2_k_ss).mapv(|e| e.sqrt());
-                    let sigma_sf = (fluid_parameters.sigma_ff() + *sigma_ss) * 0.5;
+                        (fluid_parameters.epsilon_k_ff() * *epsilon2_k_ss).map(|e| e.sqrt());
+                    let sigma_sf = fluid_parameters.sigma_ff().add_scalar(*sigma_ss) * 0.5;
 
                     let bh_tail = (2.0
                         * PI
@@ -554,7 +564,7 @@ impl ExternalPotential {
                 } => {
                     // combining rules
                     let epsilon_k_sf =
-                        (fluid_parameters.epsilon_k_ff()[i] * epsilon_k_ss).mapv(|e| e.sqrt());
+                        (fluid_parameters.epsilon_k_ff()[i] * epsilon_k_ss).map(|e| e.sqrt());
                     let sigma_sf = (fluid_parameters.sigma_ff()[i] + sigma_ss) * 0.5;
 
                     calculate_fea_potential(

@@ -103,7 +103,7 @@ impl PoreSpecification<Ix3> for Pore3D {
 }
 
 #[expect(clippy::too_many_arguments)]
-pub fn external_potential_3d<F: FluidParameters>(
+pub fn external_potential_3d<F: HelmholtzEnergyFunctional + FluidParameters>(
     functional: &F,
     axis: [&Axis; 3],
     system_size: [Length; 3],

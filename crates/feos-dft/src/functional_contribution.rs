@@ -33,9 +33,11 @@ pub trait FunctionalContribution: Sync + Send {
         let weight_functions = self.weight_functions(state.temperature);
 
         // calculate segment density
-        let density = weight_functions
+        let density: Array1<_> = weight_functions
             .component_index
-            .mapv(|c| state.partial_density[c]);
+            .iter()
+            .map(|&c| state.partial_density[c])
+            .collect();
 
         // calculate weighted density and Helmholtz energy
         let weight_constants = weight_functions.weight_constants(Zero::zero(), 0);
