@@ -4,15 +4,15 @@ use crate::hard_sphere::HardSphereProperties;
 use crate::saftvrmie::SaftVRMieRecord;
 use crate::saftvrmie::parameters::SaftVRMieAssociationRecord;
 use crate::{hard_sphere::HardSphere, saftvrmie::parameters::SaftVRMiePars};
-use feos_core::{Components, Molarweight, Residual, StateHD};
-use ndarray::{Array1, ScalarOperand};
+use feos_core::{Molarweight, ResidualDyn, StateHD, Subset};
+use nalgebra::DVector;
 use num_dual::DualNum;
 use quantity::MolarWeight;
 use std::f64::consts::{FRAC_PI_6, PI};
 
 // pub(super) mod association;
 pub(crate) mod dispersion;
-use dispersion::{Properties, a_disp, a_disp_chain};
+use dispersion::{Properties, helmholtz_energy_density_disp, helmholtz_energy_density_disp_chain};
 
 /// Customization options for the SAFT-VR Mie equation of state.
 #[derive(Copy, Clone)]
@@ -66,51 +66,73 @@ impl SaftVRMie {
     }
 }
 
-impl Components for SaftVRMie {
+// impl Components for SaftVRMie {
+//     fn components(&self) -> usize {
+//         self.params.m.len()
+//     }
+
+//     fn subset(&self, component_list: &[usize]) -> Self {
+//         Self::new(self.parameters.subset(component_list))
+//     }
+// }
+
+impl ResidualDyn for SaftVRMie {
     fn components(&self) -> usize {
         self.params.m.len()
     }
 
-    fn subset(&self, component_list: &[usize]) -> Self {
-        Self::new(self.parameters.subset(component_list))
-    }
-}
+    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+        let msigma3 = self
+            .params
+            .m
+            .component_mul(&self.params.sigma.map(|v| v.powi(3)));
+        (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
 
-impl Residual for SaftVRMie {
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * &self.params.m * self.params.sigma.mapv(|v| v.powi(3)) * moles).sum()
+        // self.options.max_eta * moles.sum()
+        //     / (FRAC_PI_6 * &self.params.m * self.params.sigma.mapv(|v| v.powi(3)) * moles).sum()
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
         let mut a = Vec::with_capacity(4);
 
-        let (a_hs, _, d) = HardSphere.helmholtz_energy_and_properties(&self.params, state);
+        let (a_hs, _, d) = HardSphere.helmholtz_energy_density_and_properties(&self.params, state);
         a.push(("Hard Sphere".to_string(), a_hs));
 
         let properties = Properties::new(&self.params, state, &d);
         if self.chain {
-            let a_disp_chain = a_disp_chain(&self.params, &properties, state);
+            let a_disp_chain =
+                helmholtz_energy_density_disp_chain(&self.params, &properties, state);
             a.push(("Dispersion + Chain".to_string(), a_disp_chain));
         } else {
-            let a_disp = a_disp(&self.params, &properties, state);
+            let a_disp = helmholtz_energy_density_disp(&self.params, &properties, state);
             a.push(("Dispersion".to_string(), a_disp));
         }
         if let Some(assoc) = self.association.as_ref() {
             a.push((
                 "Association".to_string(),
-                assoc.helmholtz_energy(&self.params, &self.parameters.association, state, &d),
+                assoc.helmholtz_energy_density(
+                    &self.params,
+                    &self.parameters.association,
+                    state,
+                    &d,
+                ),
             ));
         }
         a
     }
 }
 
+impl Subset for SaftVRMie {
+    fn subset(&self, component_list: &[usize]) -> Self {
+        Self::with_options(self.parameters.subset(component_list), self.options)
+    }
+}
+
 impl Molarweight for SaftVRMie {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+    fn molar_weight(&self) -> MolarWeight<DVector<f64>> {
         self.parameters.molar_weight.clone()
     }
 }

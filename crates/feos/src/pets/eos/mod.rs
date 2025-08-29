@@ -2,7 +2,8 @@ use super::parameters::PetsParameters;
 #[cfg(feature = "dft")]
 use crate::hard_sphere::FMTVersion;
 use crate::hard_sphere::{HardSphere, HardSphereProperties, MonomerShape};
-use feos_core::{Components, Molarweight, Residual};
+use feos_core::{Molarweight, ResidualDyn, Subset};
+use nalgebra::{DMatrix, DVector};
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use quantity::MolarWeight;
@@ -37,10 +38,10 @@ impl Default for PetsOptions {
 pub struct Pets {
     pub parameters: PetsParameters,
     pub options: PetsOptions,
-    pub sigma: Array1<f64>,
-    pub epsilon_k: Array1<f64>,
-    pub sigma_ij: Array2<f64>,
-    pub epsilon_k_ij: Array2<f64>,
+    pub sigma: DVector<f64>,
+    pub epsilon_k: DVector<f64>,
+    pub sigma_ij: DMatrix<f64>,
+    pub epsilon_k_ij: DMatrix<f64>,
 }
 
 impl Pets {
@@ -55,16 +56,15 @@ impl Pets {
 
         let n = parameters.pure.len();
 
-        let mut sigma_ij = Array2::zeros((n, n));
-        let mut epsilon_k_ij = Array2::zeros((n, n));
+        let mut sigma_ij = DMatrix::zeros(n, n);
+        let mut epsilon_k_ij = DMatrix::zeros(n, n);
+        let [k_ij] = parameters.collate_binary(|b| [b.k_ij]);
         for i in 0..n {
             for j in 0..n {
-                epsilon_k_ij[[i, j]] = (epsilon_k[i] * epsilon_k[j]).sqrt();
-                sigma_ij[[i, j]] = 0.5 * (sigma[i] + sigma[j]);
+                epsilon_k_ij[(i, j)] = (epsilon_k[i] * epsilon_k[j]).sqrt() * (1.0 - k_ij[(i, j)]);
+                sigma_ij[(i, j)] = 0.5 * (sigma[i] + sigma[j]);
             }
         }
-        let [k_ij] = parameters.collate_binary(|b| [b.k_ij]);
-        epsilon_k_ij *= &(1.0 - k_ij);
 
         Self {
             parameters,
@@ -77,41 +77,47 @@ impl Pets {
     }
 }
 
-impl Components for Pets {
-    fn components(&self) -> usize {
-        self.parameters.pure.len()
-    }
+// impl Components for Pets {
+//     fn components(&self) -> usize {
+//         self.parameters.pure.len()
+//     }
 
+impl Subset for Pets {
     fn subset(&self, component_list: &[usize]) -> Self {
         Self::with_options(self.parameters.subset(component_list), self.options)
     }
 }
 
-impl Residual for Pets {
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * self.sigma.mapv(|v| v.powi(3)) * moles).sum()
+impl ResidualDyn for Pets {
+    fn components(&self) -> usize {
+        self.parameters.pure.len()
     }
 
-    fn residual_helmholtz_energy_contributions<D: num_dual::DualNum<f64> + Copy>(
+    fn compute_max_density<D: num_dual::DualNum<f64> + Copy>(&self, moles: &DVector<D>) -> D {
+        moles.sum() * self.options.max_eta
+            / (self.sigma.map(|v| D::from(v.powi(3))).component_mul(moles)).sum()
+            / FRAC_PI_6
+    }
+
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &feos_core::StateHD<D>,
     ) -> Vec<(String, D)> {
         vec![
             (
                 "Hard Sphere".to_string(),
-                HardSphere.helmholtz_energy(self, state),
+                HardSphere.helmholtz_energy_density(self, state),
             ),
             (
                 "Dispersion".to_string(),
-                self.dispersion_helmholtz_energy(state),
+                self.dispersion_helmholtz_energy_density(state),
             ),
         ]
     }
 }
 
 impl Molarweight for Pets {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+    fn molar_weight(&self) -> MolarWeight<DVector<f64>> {
         self.parameters.molar_weight.clone()
     }
 }
@@ -121,9 +127,9 @@ impl HardSphereProperties for Pets {
         MonomerShape::Spherical(self.sigma.len())
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
         let ti = temperature.recip() * -3.052785558;
-        Array1::from_shape_fn(self.sigma.len(), |i| {
+        DVector::from_fn(self.sigma.len(), |i, _| {
             -((ti * self.epsilon_k[i]).exp() * 0.127112544 - 1.0) * self.sigma[i]
         })
     }
@@ -137,6 +143,7 @@ mod tests {
     };
     use approx::assert_relative_eq;
     use feos_core::{Contributions, DensityInitialization, PhaseEquilibrium, State, StateHD};
+    use nalgebra::dvector;
     use ndarray::arr1;
     use quantity::{BAR, KELVIN, METER, MOL, RGAS};
     use std::sync::Arc;
@@ -147,7 +154,7 @@ mod tests {
         let e = Arc::new(Pets::new(argon_parameters()));
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<P3>();
-        let n = arr1(&[1.0]) * MOL;
+        let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&e, t, v, &n).unwrap();
         let p_ig = s.total_moles * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
@@ -166,13 +173,13 @@ mod tests {
         let t = 250.0;
         let v = 2.5e28;
         let n = 1.0;
-        let s = StateHD::new(t, v, arr1(&[n]));
-        let a1 = HardSphere.helmholtz_energy(&argon, &s);
-        let a2 = HardSphere.helmholtz_energy(&krypton, &s);
-        let s1m = StateHD::new(t, v, arr1(&[n, 0.0]));
-        let a1m = HardSphere.helmholtz_energy(&mix, &s1m);
-        let s2m = StateHD::new(t, v, arr1(&[0.0, n]));
-        let a2m = HardSphere.helmholtz_energy(&mix, &s2m);
+        let s = StateHD::new(t, v, &dvector![n]);
+        let a1 = HardSphere.helmholtz_energy_density(&argon, &s);
+        let a2 = HardSphere.helmholtz_energy_density(&krypton, &s);
+        let s1m = StateHD::new(t, v, &dvector![n, 0.0]);
+        let a1m = HardSphere.helmholtz_energy_density(&mix, &s1m);
+        let s2m = StateHD::new(t, v, &dvector![0.0, n]);
+        let a2m = HardSphere.helmholtz_energy_density(&mix, &s2m);
         assert_relative_eq!(a1, a1m, epsilon = 1e-14);
         assert_relative_eq!(a2, a2m, epsilon = 1e-14);
     }
@@ -182,8 +189,8 @@ mod tests {
         let e = Arc::new(Pets::new(argon_parameters()));
         let t = 300.0 * KELVIN;
         let p = BAR;
-        let m = arr1(&[1.0]) * MOL;
-        let s = State::new_npt(&e, t, p, &m, DensityInitialization::None).unwrap();
+        let m = dvector![1.0] * MOL;
+        let s = State::new_npt(&e, t, p, &m, None).unwrap();
         let p_calc = s.pressure(Contributions::Total);
         assert_relative_eq!(p, p_calc, epsilon = 1e-6);
     }
@@ -209,9 +216,9 @@ mod tests {
         let e12 = Arc::new(Pets::new(argon_krypton_parameters()));
         let t = 300.0 * KELVIN;
         let v = 0.02456883872966545 * METER.powi::<P3>();
-        let m1 = arr1(&[2.0]) * MOL;
-        let m1m = arr1(&[2.0, 0.0]) * MOL;
-        let m2m = arr1(&[0.0, 2.0]) * MOL;
+        let m1 = dvector![2.0] * MOL;
+        let m1m = dvector![2.0, 0.0] * MOL;
+        let m2m = dvector![0.0, 2.0] * MOL;
         let s1 = State::new_nvt(&e1, t, v, &m1).unwrap();
         let s2 = State::new_nvt(&e2, t, v, &m1).unwrap();
         let s1m = State::new_nvt(&e12, t, v, &m1m).unwrap();
