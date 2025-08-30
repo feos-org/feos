@@ -3,6 +3,7 @@ use crate::pets::Pets;
 use crate::pets::eos::dispersion::{A, B};
 use feos_core::{FeosError, FeosResult};
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
+use nalgebra::dvector;
 use ndarray::*;
 use num_dual::*;
 use std::f64::consts::{FRAC_PI_6, PI};
@@ -31,19 +32,15 @@ impl<'a> FunctionalContribution for PureFMTFunctional<'a> {
     }
 
     fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
-        let r = self.parameters.hs_diameter(temperature) * 0.5;
-        WeightFunctionInfo::new(arr1(&[0]), false).extend(
+        let r = self.parameters.hs_diameter(temperature) * N::from(0.5);
+        WeightFunctionInfo::new(dvector![0], false).extend(
             vec![
                 WeightFunctionShape::Delta,
                 WeightFunctionShape::Theta,
                 WeightFunctionShape::DeltaVec,
             ]
             .into_iter()
-            .map(|s| WeightFunction {
-                prefactor: Array1::<N>::ones(self.parameters.sigma.len()),
-                kernel_radius: r.clone(),
-                shape: s,
-            })
+            .map(|s| WeightFunction::new_unscaled(r.clone(), s))
             .collect(),
             false,
         )
@@ -129,20 +126,8 @@ impl<'a> FunctionalContribution for PureAttFunctional<'a> {
     fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
         const PSI: f64 = 1.21; // Homosegmented DFT (Heier2018)
-        WeightFunctionInfo::new(arr1(&[0]), false).add(
-            WeightFunction::new_scaled(d * PSI, WeightFunctionShape::Theta),
-            false,
-        )
-    }
-
-    fn weight_functions_pdgt<N: DualNum<f64> + Copy>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
-        let d = self.parameters.hs_diameter(temperature);
-        const PSI: f64 = 1.21; // pDGT (not yet determined)
-        WeightFunctionInfo::new(arr1(&[0]), false).add(
-            WeightFunction::new_scaled(d * PSI, WeightFunctionShape::Theta),
+        WeightFunctionInfo::new(dvector![0], false).add(
+            WeightFunction::new_scaled(d * N::from(PSI), WeightFunctionShape::Theta),
             false,
         )
     }

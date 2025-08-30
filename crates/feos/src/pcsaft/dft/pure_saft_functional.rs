@@ -6,6 +6,7 @@ use crate::pcsaft::eos::polar::{AD, AQ, BD, BQ, CD, CQ, PI_SQ_43};
 use crate::pcsaft::parameters::PcSaftPars;
 use feos_core::{FeosError, FeosResult};
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
+use nalgebra::dvector;
 use ndarray::*;
 use num_dual::*;
 use std::f64::consts::{FRAC_PI_6, PI};
@@ -41,7 +42,7 @@ impl<'a> FunctionalContribution for PureFMTAssocFunctional<'a> {
 
     fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let r = self.parameters.hs_diameter(temperature) * N::from(0.5);
-        WeightFunctionInfo::new(vec![0], false).extend(
+        WeightFunctionInfo::new(dvector![0], false).extend(
             vec![
                 WeightFunctionShape::Delta,
                 WeightFunctionShape::Theta,
@@ -151,7 +152,7 @@ impl<'a> FunctionalContribution for PureChainFunctional<'a> {
 
     fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
-        WeightFunctionInfo::new(vec![0], true)
+        WeightFunctionInfo::new(dvector![0], true)
             .add(
                 WeightFunction::new_scaled(d.clone(), WeightFunctionShape::Delta),
                 false,
@@ -203,7 +204,7 @@ impl<'a> FunctionalContribution for PureAttFunctional<'a> {
         let d = self.parameters.hs_diameter(temperature);
         const PSI: f64 = 1.3862; // Homosegmented DFT (Sauer2017)
         let psi = N::from(PSI);
-        WeightFunctionInfo::new(vec![0], false).add(
+        WeightFunctionInfo::new(dvector![0], false).add(
             WeightFunction::new_scaled(d * psi, WeightFunctionShape::Theta),
             false,
         )
@@ -216,7 +217,7 @@ impl<'a> FunctionalContribution for PureAttFunctional<'a> {
         let d = self.parameters.hs_diameter(temperature);
         const PSI: f64 = 1.3286; // pDGT (Rehner2018)
         let psi = N::from(PSI);
-        WeightFunctionInfo::new(vec![0], false).add(
+        WeightFunctionInfo::new(dvector![0], false).add(
             WeightFunction::new_scaled(d * psi, WeightFunctionShape::Theta),
             false,
         )

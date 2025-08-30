@@ -11,10 +11,10 @@ pub struct IdealChainContribution {
 }
 
 impl IdealChainContribution {
-    pub fn new(component_index: &DVector<usize>, m: &DVector<f64>) -> Self {
+    pub fn new(component_index: &[usize], m: &[f64]) -> Self {
         Self {
-            component_index: component_index.clone(),
-            m: m.clone(),
+            component_index: DVector::from_column_slice(component_index),
+            m: DVector::from_column_slice(m),
         }
     }
 

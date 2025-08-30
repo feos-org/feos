@@ -34,7 +34,7 @@ fn test_binary() -> FeosResult<()> {
     let molefracs = dvector![0.5, 0.5];
     let cp = State::critical_point(&eos, Some(&molefracs), None, Default::default())?;
     #[cfg(feature = "dft")]
-    let cp_func = State::critical_point(&func, Some(&moles), None, Default::default())?;
+    let cp_func = State::critical_point(&func, Some(&molefracs), None, Default::default())?;
     println!("{}", cp.temperature);
     #[cfg(feature = "dft")]
     println!("{}", cp_func.temperature);

@@ -3,11 +3,14 @@ use super::record::GcPcSaftAssociationRecord;
 use crate::association::{Association, AssociationFunctional, AssociationStrength};
 use crate::gc_pcsaft::{GcPcSaftParameters, GcPcSaftRecord};
 use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
-use feos_core::{Components, FeosResult, Molarweight, Residual, StateHD};
+use feos_core::{FeosResult, Molarweight, ResidualDyn, StateHD, Subset};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
-use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape};
-use ndarray::{Array1, ScalarOperand};
+use feos_dft::{
+    FunctionalContribution, HelmholtzEnergyFunctional, HelmholtzEnergyFunctionalDyn, MoleculeShape,
+};
+use nalgebra::DVector;
+use ndarray::Array1;
 use num_dual::DualNum;
 use petgraph::graph::UnGraph;
 use quantity::MolarWeight;
@@ -60,11 +63,7 @@ impl GcPcSaftFunctional {
     }
 }
 
-impl Components for GcPcSaftFunctional {
-    fn components(&self) -> usize {
-        self.parameters.molar_weight.len()
-    }
-
+impl Subset for GcPcSaftFunctional {
     fn subset(&self, component_list: &[usize]) -> Self {
         Self::with_options(
             self.parameters.subset(component_list),
@@ -74,15 +73,24 @@ impl Components for GcPcSaftFunctional {
     }
 }
 
-impl Residual for GcPcSaftFunctional {
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        let p = &self.params;
-        let moles_segments: Array1<f64> = p.component_index.iter().map(|&i| moles[i]).collect();
-        self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * &p.m * p.sigma.mapv(|v| v.powi(3)) * moles_segments).sum()
+impl ResidualDyn for GcPcSaftFunctional {
+    fn components(&self) -> usize {
+        self.parameters.molar_weight.len()
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
+    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+        let p = &self.params;
+        let msigma3 = p.m.zip_map(&p.sigma, |m, s| m * s.powi(3) * m);
+        let molefracs_segments: DVector<_> = p
+            .component_index
+            .iter()
+            .map(|&i| molefracs[i])
+            .collect::<Vec<_>>()
+            .into();
+        (msigma3.map(D::from).dot(&molefracs_segments) * FRAC_PI_6).recip() * self.options.max_eta
+    }
+
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
@@ -90,14 +98,14 @@ impl Residual for GcPcSaftFunctional {
     }
 }
 
-impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
+impl HelmholtzEnergyFunctionalDyn for GcPcSaftFunctional {
     type Contribution<'a> = GcPcSaftFunctionalContribution<'a>;
 
-    fn molecule_shape(&self) -> MoleculeShape {
+    fn molecule_shape(&self) -> MoleculeShape<'_> {
         MoleculeShape::Heterosegmented(&self.params.component_index)
     }
 
-    fn contributions<'a>(&'a self) -> Vec<GcPcSaftFunctionalContribution<'a>> {
+    fn contributions<'a>(&'a self) -> impl Iterator<Item = GcPcSaftFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(4);
 
         let assoc = AssociationFunctional::new(&self.params, &self.parameters, &self.association);
@@ -119,7 +127,7 @@ impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
             contributions.push(assoc.into());
         }
 
-        contributions
+        contributions.into_iter()
     }
 
     fn bond_lengths<N: DualNum<f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
@@ -139,20 +147,20 @@ impl HelmholtzEnergyFunctional for GcPcSaftFunctional {
 }
 
 impl Molarweight for GcPcSaftFunctional {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+    fn molar_weight(&self) -> MolarWeight<DVector<f64>> {
         self.parameters.molar_weight.clone()
     }
 }
 
 impl HardSphereProperties for GcPcSaftFunctionalParameters {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
-        let m = self.m.mapv(N::from);
+    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
+        let m = self.m.map(N::from);
         MonomerShape::Heterosegmented([m.clone(), m.clone(), m.clone(), m], &self.component_index)
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
         let ti = temperature.recip() * -3.0;
-        Array1::from_shape_fn(self.sigma.len(), |i| {
+        DVector::from_fn(self.sigma.len(), |i, _| {
             -((ti * self.epsilon_k[i]).exp() * 0.12 - 1.0) * self.sigma[i]
         })
     }
@@ -190,12 +198,12 @@ impl AssociationStrength for GcPcSaftFunctionalParameters {
 }
 
 impl FluidParameters for GcPcSaftFunctional {
-    fn epsilon_k_ff(&self) -> Array1<f64> {
+    fn epsilon_k_ff(&self) -> DVector<f64> {
         self.params.epsilon_k.clone()
     }
 
-    fn sigma_ff(&self) -> &Array1<f64> {
-        &self.params.sigma
+    fn sigma_ff(&self) -> DVector<f64> {
+        self.params.sigma.clone()
     }
 }
 
