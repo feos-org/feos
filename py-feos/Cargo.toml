@@ -8,15 +8,14 @@ name = "feos"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.25", features = [
+pyo3 = { version = "0.26", features = [
     "extension-module",
     "abi3-py39",
     "multiple-pymethods",
     "indexmap"
 ] }
-pythonize = "0.25"
-#numpy = { version = "0.26" }
-numpy = { git = "https://github.com/PyO3/rust-numpy" }
+pythonize = "0.26"
+numpy = { version = "0.26" }
 
 quantity = { workspace = true, features = ["python", "python_numpy"] }
 num-dual = { workspace = true, features = ["python_macro"] }

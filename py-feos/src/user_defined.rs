@@ -41,7 +41,7 @@ macro_rules! impl_ideal_gas {
                 $(
                     if let Some(t) = (&temperature as &dyn Any).downcast_ref::<$hd_ty>() {
                         let l3_any = (&mut result as &mut dyn Any).downcast_mut::<$hd_ty>().unwrap();
-                        *l3_any = Python::with_gil(|py| {
+                        *l3_any = Python::attach(|py| {
                             let py_result = self
                                 .0
                                 .bind(py)
@@ -89,14 +89,14 @@ impl PyResidual {
 
 // impl Components for PyResidual {
 //     fn components(&self) -> usize {
-//         Python::with_gil(|py| {
+//         Python::attach(|py| {
 //             let py_result = self.0.bind(py).call_method0("components").unwrap();
 //             py_result.extract().unwrap()
 //         })
 //     }
 
 //     fn subset(&self, component_list: &[usize]) -> Self {
-//         Python::with_gil(|py| {
+//         Python::attach(|py| {
 //             let py_result = self
 //                 .0
 //                 .bind(py)
@@ -111,7 +111,7 @@ macro_rules! impl_residual {
     ($($py_state_id:ident, $py_hd_id:ident, $hd_ty:ty);*) => {
         impl ResidualDyn for PyResidual {
             fn components(&self) -> usize {
-                Python::with_gil(|py| {
+                Python::attach(|py| {
                     let py_result = self.0.bind(py).call_method0("components").unwrap();
                     py_result.extract().unwrap()
                 })
@@ -123,7 +123,7 @@ macro_rules! impl_residual {
                 $(
                     if let Some(x) = (molefracs as &dyn Any).downcast_ref::<DVector<$hd_ty>>() {
                         let r = (&mut rho as &mut dyn Any).downcast_mut::<$hd_ty>().unwrap();
-                        *r = Python::with_gil(|py| {
+                        *r = Python::attach(|py| {
                             let py_result = self
                                 .0
                                 .bind(py)
@@ -144,7 +144,7 @@ macro_rules! impl_residual {
             //     $(
             //         if let Some(s) = (state as &dyn Any).downcast_ref::<StateHD<$hd_ty>>() {
             //             let d = (&mut a as &mut dyn Any).downcast_mut::<$hd_ty>().unwrap();
-            //             *d = Python::with_gil(|py| {
+            //             *d = Python::attach(|py| {
             //                 let py_result = self
             //                     .0
             //                     .bind(py)
@@ -168,7 +168,7 @@ macro_rules! impl_residual {
                 $(
                     if let Some(s) = (state as &dyn Any).downcast_ref::<StateHD<$hd_ty>>() {
                         let d = (&mut a as &mut dyn Any).downcast_mut::<$hd_ty>().unwrap();
-                        *d = Python::with_gil(|py| {
+                        *d = Python::attach(|py| {
                             let py_result = self
                                 .0
                                 .bind(py)
@@ -185,7 +185,7 @@ macro_rules! impl_residual {
 
         impl Molarweight for PyResidual {
             fn molar_weight(&self) -> MolarWeight<DVector<f64>> {
-                Python::with_gil(|py| {
+                Python::attach(|py| {
                     let py_result = self.0.bind(py).call_method0("molar_weight").unwrap();
                     py_result
                         .extract::<MolarWeight<DVector<f64>>>()
@@ -196,7 +196,7 @@ macro_rules! impl_residual {
 
         impl Subset for PyResidual {
             fn subset(&self, component_list: &[usize]) -> Self {
-                Python::with_gil(|py| {
+                Python::attach(|py| {
                     let py_result = self
                         .0
                         .bind(py)
