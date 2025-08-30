@@ -4,7 +4,6 @@ use crate::hard_sphere::FMTVersion;
 use crate::hard_sphere::{HardSphere, HardSphereProperties, MonomerShape};
 use feos_core::{Molarweight, ResidualDyn, Subset};
 use nalgebra::{DMatrix, DVector};
-use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use quantity::MolarWeight;
 use std::f64::consts::FRAC_PI_6;
@@ -123,7 +122,7 @@ impl Molarweight for Pets {
 }
 
 impl HardSphereProperties for Pets {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
+    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
         MonomerShape::Spherical(self.sigma.len())
     }
 
@@ -142,9 +141,8 @@ mod tests {
         argon_krypton_parameters, argon_parameters, krypton_parameters,
     };
     use approx::assert_relative_eq;
-    use feos_core::{Contributions, DensityInitialization, PhaseEquilibrium, State, StateHD};
+    use feos_core::{Contributions, PhaseEquilibrium, State, StateHD};
     use nalgebra::dvector;
-    use ndarray::arr1;
     use quantity::{BAR, KELVIN, METER, MOL, RGAS};
     use std::sync::Arc;
     use typenum::P3;

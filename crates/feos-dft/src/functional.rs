@@ -105,21 +105,23 @@ pub trait HelmholtzEnergyFunctional: Residual {
             .collect()
     }
 
-    fn m(&self) -> Cow<'_, DVector<f64>> {
+    fn m(&self) -> Cow<'_, [f64]> {
         match self.molecule_shape() {
-            MoleculeShape::Spherical(n) => Cow::Owned(DVector::from_element(n, 1.0)),
-            MoleculeShape::NonSpherical(m) => Cow::Borrowed(m),
+            MoleculeShape::Spherical(n) => Cow::Owned(vec![1.0; n]),
+            MoleculeShape::NonSpherical(m) => Cow::Borrowed(m.as_slice()),
             MoleculeShape::Heterosegmented(component_index) => {
-                Cow::Owned(DVector::from_element(component_index.len(), 1.0))
+                Cow::Owned(vec![1.0; component_index.len()])
             }
         }
     }
 
-    fn component_index(&self) -> Cow<'_, DVector<usize>> {
+    fn component_index(&self) -> Cow<'_, [usize]> {
         match self.molecule_shape() {
-            MoleculeShape::Spherical(n) => Cow::Owned(DVector::from_fn(n, |i, _| i)),
-            MoleculeShape::NonSpherical(m) => Cow::Owned(DVector::from_fn(m.len(), |i, _| i)),
-            MoleculeShape::Heterosegmented(component_index) => Cow::Borrowed(component_index),
+            MoleculeShape::Spherical(n) => Cow::Owned((0..n).collect()),
+            MoleculeShape::NonSpherical(m) => Cow::Owned((0..m.len()).collect()),
+            MoleculeShape::Heterosegmented(component_index) => {
+                Cow::Borrowed(component_index.as_slice())
+            }
         }
     }
 

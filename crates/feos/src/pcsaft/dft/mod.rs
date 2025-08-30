@@ -81,10 +81,8 @@ impl ResidualDyn for PcSaftFunctional {
     }
 
     fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
-        let msigma3 = self
-            .params
-            .m
-            .component_mul(&self.params.sigma.map(|v| v.powi(3)));
+        let p = &self.params;
+        let msigma3 = p.m.zip_map(&p.sigma, |m, s| m * s.powi(3) * m);
         (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
     }
 

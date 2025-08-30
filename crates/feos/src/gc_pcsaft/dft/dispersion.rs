@@ -23,15 +23,15 @@ impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
         "Attractive functional (GC)"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
 
         let d = p.hs_diameter(temperature);
         WeightFunctionInfo::new(p.component_index.clone(), false).add(
-            WeightFunction::new_scaled(d * &p.psi_dft, WeightFunctionShape::Theta),
+            WeightFunction::new_scaled(
+                d.zip_map(&p.psi_dft, |d, p| d * p),
+                WeightFunctionShape::Theta,
+            ),
             false,
         )
     }
@@ -49,10 +49,11 @@ impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
         let d = p.hs_diameter(temperature);
 
         // packing fraction
+        let d3m = d.zip_map(&p.m, |d, m| d.powi(3) * (m * FRAC_PI_6));
         let eta = density
             .outer_iter()
-            .zip(&d * &d * &d * &p.m * FRAC_PI_6)
-            .map(|(rho, d3m)| &rho * d3m)
+            .zip(&d3m)
+            .map(|(rho, &d3m)| &rho * d3m)
             .reduce(|a, b| a + b)
             .unwrap();
 

@@ -74,7 +74,6 @@ mod tests {
     };
     use approx::assert_relative_eq;
     use nalgebra::dvector;
-    use ndarray::arr1;
 
     #[test]
     fn mix() {

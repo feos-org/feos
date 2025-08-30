@@ -169,7 +169,7 @@ pub enum WeightFunctionShape {
 /// Information about weight functions
 pub struct WeightFunctionInfo<T> {
     /// Index of the component that each individual segment belongs to.
-    pub(crate) component_index: Vec<usize>,
+    pub(crate) component_index: DVector<usize>,
     /// Flag if local density is required in the functional
     pub(crate) local_density: bool,
     /// Container for scalar component-wise weighted densities
@@ -197,7 +197,7 @@ impl<T> WeightFunctionInfo<T> {
 
 impl<T> WeightFunctionInfo<T> {
     /// Initializing empty `WeightFunctionInfo`.
-    pub fn new(component_index: Vec<usize>, local_density: bool) -> Self {
+    pub fn new(component_index: DVector<usize>, local_density: bool) -> Self {
         Self {
             component_index,
             local_density,

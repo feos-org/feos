@@ -7,8 +7,9 @@ use feos_core::FeosResult;
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
-use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape};
-use ndarray::{Array1, Array2, ScalarOperand};
+use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctionalDyn, MoleculeShape};
+use nalgebra::DVector;
+use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use pure_pets_functional::*;
 
@@ -26,14 +27,14 @@ impl Pets {
     }
 }
 
-impl HelmholtzEnergyFunctional for Pets {
+impl HelmholtzEnergyFunctionalDyn for Pets {
     type Contribution<'a> = PetsFunctionalContribution<'a>;
 
-    fn molecule_shape(&self) -> MoleculeShape {
+    fn molecule_shape(&self) -> MoleculeShape<'_> {
         MoleculeShape::Spherical(self.sigma.len())
     }
 
-    fn contributions<'a>(&'a self) -> Vec<PetsFunctionalContribution<'a>> {
+    fn contributions<'a>(&'a self) -> impl Iterator<Item = PetsFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(2);
 
         if matches!(
@@ -59,17 +60,17 @@ impl HelmholtzEnergyFunctional for Pets {
             contributions.push(att.into());
         }
 
-        contributions
+        contributions.into_iter()
     }
 }
 
 impl FluidParameters for Pets {
-    fn epsilon_k_ff(&self) -> Array1<f64> {
+    fn epsilon_k_ff(&self) -> DVector<f64> {
         self.epsilon_k.clone()
     }
 
-    fn sigma_ff(&self) -> &Array1<f64> {
-        &self.sigma
+    fn sigma_ff(&self) -> DVector<f64> {
+        self.sigma.clone()
     }
 }
 
@@ -79,11 +80,11 @@ impl PairPotential for Pets {
         let shift_ij = &eps_ij_4 * (2.5.powi(-12) - 2.5.powi(-6));
         let rc_ij = 2.5 * &self.sigma_ij;
         Array2::from_shape_fn((self.sigma.len(), r.len()), |(j, k)| {
-            if r[k] > rc_ij[[i, j]] {
+            if r[k] > rc_ij[(i, j)] {
                 0.0
             } else {
-                let att = (self.sigma_ij[[i, j]] / r[k]).powi(6);
-                eps_ij_4[[i, j]] * att * (att - 1.0) - shift_ij[[i, j]]
+                let att = (self.sigma_ij[(i, j)] / r[k]).powi(6);
+                eps_ij_4[(i, j)] * att * (att - 1.0) - shift_ij[(i, j)]
             }
         })
     }

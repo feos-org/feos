@@ -578,7 +578,7 @@ where
     /// Pressure $p$ evaluated for each contribution of the equation of state.
     pub fn pressure_contributions(&self) -> Vec<(String, Pressure<D>)> {
         let t = Dual::from_re(self.temperature.into_reduced());
-        let v = Dual::from_re(self.temperature.into_reduced()).derivative();
+        let v = Dual::from_re(self.density.into_reduced().recip()).derivative();
         let x = self.molefracs.map(Dual::from_re);
         let contributions = self
             .eos

@@ -7,7 +7,7 @@ use feos_core::{PhaseEquilibrium, State, StateBuilder, Verbosity};
 use feos_dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
 use feos_dft::interface::PlanarInterface;
 use feos_dft::{DFTSolver, Geometry};
-use ndarray::arr1;
+use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
 use std::sync::Arc;
@@ -38,13 +38,13 @@ fn test_bulk_implementation() -> Result<(), Box<dyn Error>> {
     )
     .unwrap();
 
-    let eos = Arc::new(GcPcSaft::new(parameters));
-    let func = Arc::new(GcPcSaftFunctional::new(parameters_func));
+    let eos = GcPcSaft::new(parameters);
+    let func = GcPcSaftFunctional::new(parameters_func);
     let t = 200.0 * KELVIN;
     let v = 0.002 * METER.powi::<P3>() * NAV / NAV_old;
-    let n = arr1(&[1.5]) * MOL;
-    let state_eos = State::new_nvt(&eos, t, v, &n)?;
-    let state_func = State::new_nvt(&func, t, v, &n)?;
+    let n = dvector![1.5] * MOL;
+    let state_eos = State::new_nvt(&&eos, t, v, &n)?;
+    let state_func = State::new_nvt(&&func, t, v, &n)?;
     let p_eos = state_eos.pressure_contributions();
     let p_func = state_func.pressure_contributions();
 
@@ -118,16 +118,16 @@ fn test_bulk_association() -> Result<(), Box<dyn Error>> {
         &segment_records,
         None,
     )?;
-    let eos = Arc::new(GcPcSaft::new(eos_parameters));
+    let eos = GcPcSaft::new(eos_parameters);
     let func_parameters =
         GcPcSaftParameters::from_segments_hetero(vec![ethylene_glycol], &segment_records, None)?;
-    let func = Arc::new(GcPcSaftFunctional::new(func_parameters));
+    let func = GcPcSaftFunctional::new(func_parameters);
 
     let t = 200.0 * KELVIN;
     let v = 0.002 * METER.powi::<P3>();
-    let n = arr1(&[1.5]) * MOL;
-    let state_eos = State::new_nvt(&eos, t, v, &n)?;
-    let state_func = State::new_nvt(&func, t, v, &n)?;
+    let n = dvector![1.5] * MOL;
+    let state_eos = State::new_nvt(&&eos, t, v, &n)?;
+    let state_func = State::new_nvt(&&func, t, v, &n)?;
     let p_eos = state_eos.pressure_contributions();
     let p_func = state_func.pressure_contributions();
     for (s, x) in &p_eos {
@@ -156,12 +156,12 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
     )
     .unwrap();
 
-    let func = Arc::new(GcPcSaftFunctional::new(parameters));
+    let func = GcPcSaftFunctional::new(parameters);
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 2048;
-    let tc = State::critical_point(&func, None, None, Default::default())?.temperature;
-    let vle = PhaseEquilibrium::pure(&func, t, None, Default::default())?;
+    let tc = State::critical_point(&&func, None, None, Default::default())?.temperature;
+    let vle = PhaseEquilibrium::pure(&&func, t, None, Default::default())?;
     let profile = PlanarInterface::from_tanh(&vle, points, w, tc, false).solve(None)?;
     println!(
         "hetero {} {} {}",
@@ -250,12 +250,12 @@ fn test_dft_newton() -> Result<(), Box<dyn Error>> {
         IdentifierOption::Name,
     )
     .unwrap();
-    let func = Arc::new(GcPcSaftFunctional::new(params));
+    let func = GcPcSaftFunctional::new(params);
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 512;
-    let tc = State::critical_point(&func, None, None, Default::default())?.temperature;
-    let vle = PhaseEquilibrium::pure(&func, t, None, Default::default())?;
+    let tc = State::critical_point(&&func, None, None, Default::default())?.temperature;
+    let vle = PhaseEquilibrium::pure(&&func, t, None, Default::default())?;
     let solver = DFTSolver::new(Some(Verbosity::Iter))
         .picard_iteration(None, Some(10), None, None)
         .newton(None, None, None, None);

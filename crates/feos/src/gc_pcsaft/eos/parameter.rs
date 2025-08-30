@@ -9,7 +9,7 @@ use quantity::{JOULE, KB, KELVIN};
 /// Parameter set required for the gc-PC-SAFT equation of state.
 #[derive(Clone)]
 pub struct GcPcSaftEosParameters {
-    pub component_index: Vec<usize>,
+    pub component_index: DVector<usize>,
     pub m: DVector<f64>,
     pub sigma: DVector<f64>,
     pub epsilon_k: DVector<f64>,
@@ -27,7 +27,7 @@ pub struct GcPcSaftEosParameters {
 // The gc-PC-SAFT parameters in an easier accessible format.
 impl GcPcSaftEosParameters {
     pub fn new(parameters: &GcPcSaftParameters<f64>) -> Self {
-        let component_index = parameters.component_index();
+        let component_index = parameters.component_index().into();
 
         let [m, sigma, epsilon_k] = parameters.collate(|pr| [pr.m, pr.sigma, pr.epsilon_k]);
         let m = m.component_mul(&parameters.segment_counts());
@@ -110,7 +110,7 @@ impl GcPcSaftEosParameters {
 }
 
 impl HardSphereProperties for GcPcSaftEosParameters {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
+    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
         let m = self.m.map(N::from);
         MonomerShape::Heterosegmented([m.clone(), m.clone(), m.clone(), m], &self.component_index)
     }

@@ -42,7 +42,7 @@ where
         let p = self.model;
         let r = p.hs_diameter(temperature) * N::from(0.5);
         let [_, _, _, c3] = p.geometry_coefficients(temperature);
-        WeightFunctionInfo::new(p.component_index().into_owned(), false)
+        WeightFunctionInfo::new(p.component_index().into_owned().into(), false)
             .add(
                 WeightFunction::new_scaled(r.clone(), WeightFunctionShape::Delta),
                 false,
