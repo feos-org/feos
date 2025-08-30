@@ -94,14 +94,12 @@ impl PyHelmholtzEnergyFunctional {
             max_iter_cross_assoc,
             tol_cross_assoc,
         };
-        let func = Arc::new(ResidualModel::GcPcSaftFunctional(
-            GcPcSaftFunctional::with_options(
-                parameters.try_convert_heterosegmented()?,
-                fmt_version.into(),
-                options,
-            ),
+        let func = ResidualModel::GcPcSaftFunctional(GcPcSaftFunctional::with_options(
+            parameters.try_convert_heterosegmented()?,
+            fmt_version.into(),
+            options,
         ));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
+        let ideal_gas = vec![IdealGasModel::NoModel; func.components()];
         Ok(PyEquationOfState(Arc::new(EquationOfState::new(
             ideal_gas, func,
         ))))
