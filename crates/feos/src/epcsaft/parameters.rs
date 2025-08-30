@@ -3,6 +3,7 @@ use crate::epcsaft::eos::permittivity::PermittivityRecord;
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use feos_core::parameter::{FromSegments, Parameters};
 use feos_core::{FeosError, FeosResult};
+use nalgebra::{DMatrix, DVector};
 use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;
@@ -66,7 +67,7 @@ impl ElectrolytePcSaftRecord {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Debug)]
 pub struct ElectrolytePcSaftAssociationRecord {
     /// Association volume parameter
     pub kappa_ab: f64,
@@ -105,19 +106,19 @@ pub type ElectrolytePcSaftParameters = Parameters<
 
 /// Parameter set required for the ePC-SAFT equation of state.
 pub struct ElectrolytePcSaftPars {
-    pub m: Array1<f64>,
-    pub sigma: Array1<f64>,
-    pub epsilon_k: Array1<f64>,
-    pub z: Array1<f64>,
-    pub k_ij: Array2<Vec<f64>>,
-    pub sigma_ij: Array2<f64>,
-    pub e_k_ij: Array2<f64>,
+    pub m: DVector<f64>,
+    pub sigma: DVector<f64>,
+    pub epsilon_k: DVector<f64>,
+    pub z: DVector<f64>,
+    pub k_ij: DMatrix<Vec<f64>>,
+    pub sigma_ij: DMatrix<f64>,
+    pub e_k_ij: DMatrix<f64>,
     pub nionic: usize,
     pub nsolvent: usize,
     pub water_sigma_t_comp: Option<usize>,
-    pub ionic_comp: Array1<usize>,
-    pub solvent_comp: Array1<usize>,
-    pub permittivity: Array1<Option<PermittivityRecord>>,
+    pub ionic_comp: DVector<usize>,
+    pub solvent_comp: DVector<usize>,
+    pub permittivity: Vec<Option<PermittivityRecord>>,
 }
 
 impl ElectrolytePcSaftPars {
@@ -125,9 +126,8 @@ impl ElectrolytePcSaftPars {
         let mut sigma_t: Array1<f64> = Array::from_shape_fn(self.sigma.len(), |i| self.sigma[i]);
 
         if let Some(i) = self.water_sigma_t_comp {
-            sigma_t[i] = (sigma_t[i] + (temperature.re() * -0.01775).exp() * 10.11
-                - (temperature.re() * -0.01146).exp() * 1.417)
-                .re();
+            sigma_t[i] = sigma_t[i] + (temperature.re() * -0.01775).exp() * 10.11
+                - (temperature.re() * -0.01146).exp() * 1.417;
         }
 
         sigma_t
@@ -173,22 +173,24 @@ impl ElectrolytePcSaftPars {
             }
         }
 
-        let ionic_comp: Array1<usize> = z
+        let ionic_comp: DVector<usize> = z
             .iter()
             .enumerate()
             .filter_map(|(i, &zi)| (zi.abs() > 0.0).then_some(i))
-            .collect();
+            .collect::<Vec<_>>()
+            .into();
 
         let nionic = ionic_comp.len();
 
-        let solvent_comp: Array1<usize> = z
+        let solvent_comp: DVector<usize> = z
             .iter()
             .enumerate()
             .filter_map(|(i, &zi)| (zi.abs() == 0.0).then_some(i))
-            .collect();
+            .collect::<Vec<_>>()
+            .into();
         let nsolvent = solvent_comp.len();
 
-        let mut k_ij: Array2<Vec<f64>> = Array2::from_elem((n, n), vec![0., 0., 0., 0.]);
+        let mut k_ij: DMatrix<Vec<f64>> = DMatrix::from_element(n, n, vec![0., 0., 0., 0.]);
 
         for br in &parameters.binary {
             let i = br.id1;
@@ -200,30 +202,30 @@ impl ElectrolytePcSaftPars {
                 )));
             } else {
                 (0..r.k_ij.len()).for_each(|k| {
-                    k_ij[[i, j]][k] = r.k_ij[k];
-                    k_ij[[j, i]][k] = r.k_ij[k];
+                    k_ij[(i, j)][k] = r.k_ij[k];
+                    k_ij[(j, i)][k] = r.k_ij[k];
                 });
             }
         }
         // No binary interaction between charged species of same kind (+/+ and -/-)
         ionic_comp.iter().for_each(|&ai| {
-            k_ij[[ai, ai]][0] = 1.0;
+            k_ij[(ai, ai)][0] = 1.0;
             for k in 1..4usize {
-                k_ij[[ai, ai]][k] = 0.0;
+                k_ij[(ai, ai)][k] = 0.0;
             }
         });
 
-        let mut sigma_ij = Array::zeros((n, n));
-        let mut e_k_ij = Array::zeros((n, n));
+        let mut sigma_ij = DMatrix::zeros(n, n);
+        let mut e_k_ij = DMatrix::zeros(n, n);
         for i in 0..n {
             for j in 0..n {
-                e_k_ij[[i, j]] = (epsilon_k[i] * epsilon_k[j]).sqrt();
-                sigma_ij[[i, j]] = 0.5 * (sigma[i] + sigma[j]);
+                e_k_ij[(i, j)] = (epsilon_k[i] * epsilon_k[j]).sqrt();
+                sigma_ij[(i, j)] = 0.5 * (sigma[i] + sigma[j]);
             }
         }
 
         // Permittivity records
-        let mut permittivity_records: Array1<Option<PermittivityRecord>> = parameters
+        let mut permittivity_records: Vec<Option<PermittivityRecord>> = parameters
             .pure
             .iter()
             .map(|record| record.clone().model_record.permittivity_record)
@@ -322,15 +324,15 @@ impl ElectrolytePcSaftPars {
 }
 
 impl HardSphereProperties for ElectrolytePcSaftPars {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
-        MonomerShape::NonSpherical(self.m.mapv(N::from))
+    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
+        MonomerShape::NonSpherical(self.m.map(N::from))
     }
 
-    fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> Array1<D> {
+    fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> DVector<D> {
         let sigma_t = self.sigma_t(temperature.clone());
 
         let ti = temperature.recip() * -3.0;
-        let mut d = Array::from_shape_fn(sigma_t.len(), |i| {
+        let mut d = DVector::from_fn(sigma_t.len(), |i, _| {
             -((ti.clone() * self.epsilon_k[i]).exp() * 0.12 - 1.0) * sigma_t[i]
         });
         for i in 0..self.nionic {

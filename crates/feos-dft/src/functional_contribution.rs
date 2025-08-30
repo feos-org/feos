@@ -1,7 +1,7 @@
 use crate::weight_functions::WeightFunctionInfo;
 use feos_core::{FeosResult, StateHD};
+use ndarray::RemoveAxis;
 use ndarray::prelude::*;
-use ndarray::{RemoveAxis, ScalarOperand};
 use num_dual::*;
 use num_traits::Zero;
 
@@ -11,13 +11,10 @@ pub trait FunctionalContribution: Sync + Send {
     fn name(&self) -> &'static str;
 
     /// Return the weight functions required in this contribution.
-    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N>;
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N>;
 
     /// Overwrite this if the weight functions in pDGT are different than for DFT.
-    fn weight_functions_pdgt<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn weight_functions_pdgt<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
     ) -> WeightFunctionInfo<N> {
@@ -25,27 +22,28 @@ pub trait FunctionalContribution: Sync + Send {
     }
 
     /// Return the Helmholtz energy density for the given temperature and weighted densities.
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
     ) -> FeosResult<Array1<N>>;
 
-    fn helmholtz_energy<N: DualNum<f64> + Copy + ScalarOperand>(&self, state: &StateHD<N>) -> N {
+    fn bulk_helmholtz_energy_density<N: DualNum<f64> + Copy>(&self, state: &StateHD<N>) -> N {
         // calculate weight functions
         let weight_functions = self.weight_functions(state.temperature);
 
         // calculate segment density
-        let density = weight_functions
+        let density: Array1<_> = weight_functions
             .component_index
-            .mapv(|c| state.partial_density[c]);
+            .iter()
+            .map(|&c| state.partial_density[c])
+            .collect();
 
         // calculate weighted density and Helmholtz energy
         let weight_constants = weight_functions.weight_constants(Zero::zero(), 0);
         let weighted_densities = weight_constants.dot(&density).insert_axis(Axis(1));
         self.helmholtz_energy_density(state.temperature, weighted_densities.view())
             .unwrap()[0]
-            * state.volume
     }
 
     fn first_partial_derivatives<N: DualNum<f64> + Copy>(

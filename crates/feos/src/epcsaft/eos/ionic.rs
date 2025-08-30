@@ -1,7 +1,7 @@
 use crate::epcsaft::eos::permittivity::Permittivity;
 use crate::epcsaft::parameters::ElectrolytePcSaftPars;
 use feos_core::StateHD;
-use ndarray::*;
+use nalgebra::DVector;
 use num_dual::DualNum;
 use std::f64::consts::PI;
 
@@ -36,11 +36,11 @@ impl ElectrolytePcSaftPars {
 pub struct Ionic;
 
 impl Ionic {
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &ElectrolytePcSaftPars,
         state: &StateHD<D>,
-        diameter: &Array1<D>,
+        diameter: &DVector<D>,
         variant: ElectrolytePcSaftVariants,
     ) -> D {
         // Extract parameters
@@ -64,7 +64,7 @@ impl Ionic {
 
         let kappa = (lambda_b * sum_dens_z * 4.0 * PI).sqrt();
 
-        let chi: Array1<D> = diameter
+        let chi: Vec<D> = diameter
             .iter()
             .map(|&d| {
                 (kappa * d).powi(3).recip()
@@ -74,12 +74,12 @@ impl Ionic {
             })
             .collect();
 
-        let mut sum_x_z_chi = D::zero();
-        for i in 0..state.molefracs.len() {
-            sum_x_z_chi += chi[i] * state.molefracs[i] * p.z[i].powi(2);
+        let mut sum_rho_z_chi = D::zero();
+        for (i, chi) in chi.into_iter().enumerate() {
+            sum_rho_z_chi += chi * state.partial_density[i] * p.z[i].powi(2);
         }
 
-        -kappa * lambda_b * sum_x_z_chi * state.moles.sum()
+        -kappa * lambda_b * sum_rho_z_chi
     }
 }
 
@@ -90,7 +90,7 @@ mod tests {
     use crate::epcsaft::parameters::utils::{water_nacl_parameters, water_nacl_parameters_perturb};
     use crate::hard_sphere::HardSphereProperties;
     use approx::assert_relative_eq;
-    use ndarray::arr1;
+    use nalgebra::dvector;
 
     #[test]
     fn helmholtz_energy_perturb() {
@@ -98,10 +98,10 @@ mod tests {
         let t = 298.0;
         let v = 31.875;
 
-        let s = StateHD::new(t, v, arr1(&[0.9, 0.05, 0.05]));
+        let s = StateHD::new(t, v, &dvector![0.9, 0.05, 0.05]);
 
         let d = p.hs_diameter(t);
-        let a_rust = Ionic.helmholtz_energy(&p, &s, &d, Advanced);
+        let a_rust = Ionic.helmholtz_energy_density(&p, &s, &d, Advanced) * v;
 
         assert_relative_eq!(a_rust, -0.07775796084032328, epsilon = 1e-10);
     }
@@ -111,9 +111,9 @@ mod tests {
         let p = ElectrolytePcSaftPars::new(&water_nacl_parameters()).unwrap();
         let t = 298.0;
         let v = 31.875;
-        let s = StateHD::new(t, v, arr1(&[0.9, 0.05, 0.05]));
+        let s = StateHD::new(t, v, &dvector![0.9, 0.05, 0.05]);
         let d = p.hs_diameter(t);
-        let a_rust = Ionic.helmholtz_energy(&p, &s, &d, Advanced);
+        let a_rust = Ionic.helmholtz_energy_density(&p, &s, &d, Advanced) * v;
 
         assert_relative_eq!(a_rust, -0.07341337106244776, epsilon = 1e-10);
     }

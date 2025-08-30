@@ -1,3 +1,4 @@
+use approx::assert_relative_eq;
 use feos::saftvrmie::{SaftVRMie, test_utils};
 use feos_core::{SolverOptions, State};
 use quantity::*;
@@ -54,17 +55,12 @@ fn critical_properties_pure() {
         let p = parameters.remove(name).unwrap();
         let eos = Arc::new(SaftVRMie::new(p));
         let cp = State::critical_point(&eos, None, t0, option).unwrap();
-        dbg!(cp.pressure_contributions());
-        dbg!(((data.0 - cp.temperature) / data.0).into_value() * 100.0);
-        // temperature within 0.2%
-        assert!(((data.0 - cp.temperature).abs() / data.0).into_value() * 100.0 < 0.2);
-        // pressure within 0.5%
-        assert!(
-            ((data.1 - cp.pressure(feos_core::Contributions::Total)).abs() / data.1).into_value()
-                * 100.0
-                < 0.5
+        assert_relative_eq!(cp.temperature, data.0, max_relative = 2e-3);
+        assert_relative_eq!(
+            cp.pressure(feos_core::Contributions::Total),
+            data.1,
+            max_relative = 5e-3
         );
-        // density within 1%
-        assert!(((data.2 - cp.mass_density()).abs() / data.2).into_value() * 100.0 < 1.0);
+        assert_relative_eq!(cp.mass_density(), data.2, max_relative = 1e-2);
     })
 }

@@ -1,9 +1,9 @@
 use crate::association::Association;
 use crate::epcsaft::parameters::{ElectrolytePcSaftParameters, ElectrolytePcSaftPars};
 use crate::hard_sphere::{HardSphere, HardSphereProperties};
-use feos_core::{Components, FeosResult, Residual};
+use feos_core::{FeosResult, ResidualDyn, Subset};
 use feos_core::{Molarweight, StateHD};
-use ndarray::Array1;
+use nalgebra::DVector;
 use num_dual::DualNum;
 use quantity::*;
 use std::f64::consts::FRAC_PI_6;
@@ -89,23 +89,26 @@ impl ElectrolytePcSaft {
     }
 }
 
-impl Components for ElectrolytePcSaft {
-    fn components(&self) -> usize {
-        self.parameters.pure.len()
-    }
-
+impl Subset for ElectrolytePcSaft {
     fn subset(&self, component_list: &[usize]) -> Self {
         Self::with_options(self.parameters.subset(component_list), self.options).unwrap()
     }
 }
 
-impl Residual for ElectrolytePcSaft {
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * &self.params.m * self.params.sigma.mapv(|v| v.powi(3)) * moles).sum()
+impl ResidualDyn for ElectrolytePcSaft {
+    fn components(&self) -> usize {
+        self.parameters.pure.len()
     }
 
-    fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
+    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+        let msigma3 = self
+            .params
+            .m
+            .component_mul(&self.params.sigma.map(|v| v.powi(3)));
+        (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
+    }
+
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(String, D)> {
@@ -114,34 +117,44 @@ impl Residual for ElectrolytePcSaft {
 
         v.push((
             "Hard Sphere".to_string(),
-            HardSphere.helmholtz_energy(&self.params, state),
+            HardSphere.helmholtz_energy_density(&self.params, state),
         ));
         if self.hard_chain {
             v.push((
                 "Hard Chain".to_string(),
-                HardChain.helmholtz_energy(&self.params, state),
+                HardChain.helmholtz_energy_density(&self.params, state),
             ))
         }
         v.push((
             "Dispersion".to_string(),
-            Dispersion.helmholtz_energy(&self.params, state, &d),
+            Dispersion.helmholtz_energy_density(&self.params, state, &d),
         ));
         if let Some(association) = self.association.as_ref() {
             v.push((
                 "Association".to_string(),
-                association.helmholtz_energy(&self.params, &self.parameters.association, state, &d),
+                association.helmholtz_energy_density(
+                    &self.params,
+                    &self.parameters.association,
+                    state,
+                    &d,
+                ),
             ))
         }
         if self.ionic {
             v.push((
                 "Ionic".to_string(),
-                Ionic.helmholtz_energy(&self.params, state, &d, self.options.epcsaft_variant),
+                Ionic.helmholtz_energy_density(
+                    &self.params,
+                    state,
+                    &d,
+                    self.options.epcsaft_variant,
+                ),
             ))
         };
         if self.born {
             v.push((
                 "Born".to_string(),
-                Born.helmholtz_energy(&self.params, state, &d),
+                Born.helmholtz_energy_density(&self.params, state, &d),
             ))
         };
         v
@@ -149,7 +162,7 @@ impl Residual for ElectrolytePcSaft {
 }
 
 impl Molarweight for ElectrolytePcSaft {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+    fn molar_weight(&self) -> MolarWeight<DVector<f64>> {
         self.parameters.molar_weight.clone()
     }
 }
@@ -162,7 +175,7 @@ mod tests {
     };
     use approx::assert_relative_eq;
     use feos_core::*;
-    use ndarray::arr1;
+    use nalgebra::dvector;
     use std::sync::Arc;
     use typenum::P3;
 
@@ -171,7 +184,7 @@ mod tests {
         let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<P3>();
-        let n = arr1(&[1.0]) * MOL;
+        let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&e, t, v, &n).unwrap();
         let p_ig = s.total_moles * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
@@ -187,7 +200,7 @@ mod tests {
         let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<P3>();
-        let n = arr1(&[1.0]) * MOL;
+        let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&e, t, v, &n).unwrap();
         let p_ig = s.total_moles * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
@@ -204,8 +217,8 @@ mod tests {
         let t = 250.0;
         let v = 1000.0;
         let n = 1.0;
-        let s = StateHD::new(t, v, arr1(&[n]));
-        let a_rust = HardSphere.helmholtz_energy(&p, &s);
+        let s = StateHD::new(t, v, &dvector![n]);
+        let a_rust = HardSphere.helmholtz_energy_density(&p, &s) * v;
         assert_relative_eq!(a_rust, 0.410610492598808, epsilon = 1e-10);
     }
 
@@ -217,13 +230,13 @@ mod tests {
         let t = 250.0;
         let v = 2.5e28;
         let n = 1.0;
-        let s = StateHD::new(t, v, arr1(&[n]));
-        let a1 = HardSphere.helmholtz_energy(&p1, &s);
-        let a2 = HardSphere.helmholtz_energy(&p2, &s);
-        let s1m = StateHD::new(t, v, arr1(&[n, 0.0]));
-        let a1m = HardSphere.helmholtz_energy(&p12, &s1m);
-        let s2m = StateHD::new(t, v, arr1(&[0.0, n]));
-        let a2m = HardSphere.helmholtz_energy(&p12, &s2m);
+        let s = StateHD::new(t, v, &dvector![n]);
+        let a1 = HardSphere.helmholtz_energy_density(&p1, &s);
+        let a2 = HardSphere.helmholtz_energy_density(&p2, &s);
+        let s1m = StateHD::new(t, v, &dvector![n, 0.0]);
+        let a1m = HardSphere.helmholtz_energy_density(&p12, &s1m);
+        let s2m = StateHD::new(t, v, &dvector![0.0, n]);
+        let a2m = HardSphere.helmholtz_energy_density(&p12, &s2m);
         assert_relative_eq!(a1, a1m, epsilon = 1e-14);
         assert_relative_eq!(a2, a2m, epsilon = 1e-14);
     }
@@ -233,8 +246,8 @@ mod tests {
         let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
         let t = 300.0 * KELVIN;
         let p = BAR;
-        let m = arr1(&[1.0]) * MOL;
-        let s = State::new_npt(&e, t, p, &m, DensityInitialization::None);
+        let m = dvector![1.0] * MOL;
+        let s = State::new_npt(&e, t, p, &m, None);
         let p_calc = if let Ok(state) = s {
             state.pressure(Contributions::Total)
         } else {
@@ -274,9 +287,9 @@ mod tests {
         let e12 = Arc::new(ElectrolytePcSaft::new(propane_butane_parameters()).unwrap());
         let t = 300.0 * KELVIN;
         let v = 0.02456883872966545 * METER.powi::<P3>();
-        let m1 = arr1(&[2.0]) * MOL;
-        let m1m = arr1(&[2.0, 0.0]) * MOL;
-        let m2m = arr1(&[0.0, 2.0]) * MOL;
+        let m1 = dvector![2.0] * MOL;
+        let m1m = dvector![2.0, 0.0] * MOL;
+        let m2m = dvector![0.0, 2.0] * MOL;
         let s1 = State::new_nvt(&e1, t, v, &m1).unwrap();
         let s2 = State::new_nvt(&e2, t, v, &m1).unwrap();
         let s1m = State::new_nvt(&e12, t, v, &m1m).unwrap();

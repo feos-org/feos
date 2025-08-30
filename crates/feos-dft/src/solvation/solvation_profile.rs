@@ -113,7 +113,7 @@ impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
 }
 
 #[expect(clippy::too_many_arguments)]
-fn external_potential_3d<F: FluidParameters>(
+fn external_potential_3d<F: HelmholtzEnergyFunctional + FluidParameters>(
     functional: &F,
     axis: [&Axis; 3],
     coordinates: Array2<f64>,

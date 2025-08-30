@@ -1,8 +1,8 @@
 use crate::epcsaft::parameters::ElectrolytePcSaftPars;
 use feos_core::StateHD;
-use ndarray::{Array, Array1, Array2};
+use nalgebra::{DMatrix, DVector};
 use num_dual::DualNum;
-use std::f64::consts::{FRAC_PI_3, PI};
+use std::f64::consts::{FRAC_PI_6, PI};
 
 pub const A0: [f64; 7] = [
     0.91056314451539,
@@ -62,34 +62,34 @@ pub const B2: [f64; 7] = [
 pub const T_REF: f64 = 298.15;
 
 impl ElectrolytePcSaftPars {
-    pub fn k_ij_t<D: DualNum<f64>>(&self, temperature: D) -> Array2<f64> {
+    pub fn k_ij_t<D: DualNum<f64>>(&self, temperature: D) -> DMatrix<f64> {
         let k_ij = &self.k_ij;
         let n = self.m.len();
 
-        let mut k_ij_t = Array::zeros((n, n));
+        let mut k_ij_t = DMatrix::zeros(n, n);
 
         for i in 0..n {
             for j in 0..n {
                 // Calculate k_ij(T)
-                k_ij_t[[i, j]] = (temperature.re() - T_REF) * k_ij[[i, j]][1]
-                    + (temperature.re() - T_REF).powi(2) * k_ij[[i, j]][2]
-                    + (temperature.re() - T_REF).powi(3) * k_ij[[i, j]][3]
-                    + k_ij[[i, j]][0];
+                k_ij_t[(i, j)] = (temperature.re() - T_REF) * k_ij[(i, j)][1]
+                    + (temperature.re() - T_REF).powi(2) * k_ij[(i, j)][2]
+                    + (temperature.re() - T_REF).powi(3) * k_ij[(i, j)][3]
+                    + k_ij[(i, j)][0];
             }
         }
         //println!("k_ij_t: {}", k_ij_t);
         k_ij_t
     }
 
-    pub fn epsilon_k_ij_t<D: DualNum<f64>>(&self, temperature: D) -> Array2<f64> {
+    pub fn epsilon_k_ij_t<D: DualNum<f64>>(&self, temperature: D) -> DMatrix<f64> {
         let k_ij_t = self.k_ij_t(temperature);
         let n = self.m.len();
 
-        let mut epsilon_k_ij_t = Array::zeros((n, n));
+        let mut epsilon_k_ij_t = DMatrix::zeros(n, n);
 
         for i in 0..n {
             for j in 0..n {
-                epsilon_k_ij_t[[i, j]] = (1.0 - k_ij_t[[i, j]]) * self.e_k_ij[[i, j]];
+                epsilon_k_ij_t[(i, j)] = (1.0 - k_ij_t[(i, j)]) * self.e_k_ij[(i, j)];
             }
         }
         epsilon_k_ij_t
@@ -99,19 +99,16 @@ impl ElectrolytePcSaftPars {
 pub struct Dispersion;
 
 impl Dispersion {
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &ElectrolytePcSaftPars,
         state: &StateHD<D>,
-        diameter: &Array1<D>,
+        diameter: &DVector<D>,
     ) -> D {
         // auxiliary variables
         let n = parameters.m.len();
         let p = parameters;
         let rho = &state.partial_density;
-
-        // temperature dependent segment radius
-        let r = diameter * 0.5;
 
         // convert sigma_ij
         let sigma_ij_t = p.sigma_ij_t(state.temperature);
@@ -120,10 +117,10 @@ impl Dispersion {
         let epsilon_k_ij_t = p.epsilon_k_ij_t(state.temperature);
 
         // packing fraction
-        let eta = (rho * &p.m * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
+        let eta = rho.dot(&diameter.zip_map(&p.m, |d, m| d.powi(3) * m)) * FRAC_PI_6;
 
         // mean segment number
-        let m = (&state.molefracs * &p.m).sum();
+        let m = state.molefracs.dot(&p.m.map(D::from));
 
         // mixture densities, crosswise interactions of all segments on all chains
         let mut rho1mix = D::zero();
@@ -154,7 +151,7 @@ impl Dispersion {
             .recip();
 
         // Helmholtz energy
-        (-rho1mix * i1 * 2.0 - rho2mix * m * c1 * i2) * PI * state.volume
+        (-rho1mix * i1 * 2.0 - rho2mix * m * c1 * i2) * PI
     }
 }
 
@@ -166,7 +163,7 @@ mod tests {
     };
     use crate::hard_sphere::HardSphereProperties;
     use approx::assert_relative_eq;
-    use ndarray::arr1;
+    use nalgebra::dvector;
 
     #[test]
     fn helmholtz_energy() {
@@ -174,9 +171,9 @@ mod tests {
         let t = 250.0;
         let v = 1000.0;
         let n = 1.0;
-        let s = StateHD::new(t, v, arr1(&[n]));
+        let s = StateHD::new(t, v, &dvector![n]);
         let d = p.hs_diameter(t);
-        let a_rust = Dispersion.helmholtz_energy(&p, &s, &d);
+        let a_rust = Dispersion.helmholtz_energy_density(&p, &s, &d) * v;
         assert_relative_eq!(a_rust, -1.0622531100351962, epsilon = 1e-10);
     }
 
@@ -188,13 +185,13 @@ mod tests {
         let t = 250.0;
         let v = 2.5e28;
         let n = 1.0;
-        let s = StateHD::new(t, v, arr1(&[n]));
-        let a1 = Dispersion.helmholtz_energy(&p1, &s, &p1.hs_diameter(t));
-        let a2 = Dispersion.helmholtz_energy(&p2, &s, &p2.hs_diameter(t));
-        let s1m = StateHD::new(t, v, arr1(&[n, 0.0]));
-        let a1m = Dispersion.helmholtz_energy(&p12, &s1m, &p12.hs_diameter(t));
-        let s2m = StateHD::new(t, v, arr1(&[0.0, n]));
-        let a2m = Dispersion.helmholtz_energy(&p12, &s2m, &p12.hs_diameter(t));
+        let s = StateHD::new(t, v, &dvector![n]);
+        let a1 = Dispersion.helmholtz_energy_density(&p1, &s, &p1.hs_diameter(t));
+        let a2 = Dispersion.helmholtz_energy_density(&p2, &s, &p2.hs_diameter(t));
+        let s1m = StateHD::new(t, v, &dvector![n, 0.0]);
+        let a1m = Dispersion.helmholtz_energy_density(&p12, &s1m, &p12.hs_diameter(t));
+        let s2m = StateHD::new(t, v, &dvector![0.0, n]);
+        let a2m = Dispersion.helmholtz_energy_density(&p12, &s2m, &p12.hs_diameter(t));
         assert_relative_eq!(a1, a1m, epsilon = 1e-14);
         assert_relative_eq!(a2, a2m, epsilon = 1e-14);
     }

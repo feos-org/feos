@@ -15,7 +15,7 @@ mod solver;
 mod weight_functions;
 
 pub use convolver::{Convolver, ConvolverFFT};
-pub use functional::{HelmholtzEnergyFunctional, MoleculeShape};
+pub use functional::{HelmholtzEnergyFunctional, HelmholtzEnergyFunctionalDyn, MoleculeShape};
 pub use functional_contribution::FunctionalContribution;
 pub use geometry::{Axis, Geometry, Grid};
 pub use pdgt::PdgtFunctionalProperties;

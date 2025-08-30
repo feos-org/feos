@@ -1,7 +1,7 @@
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::IdentifierOption;
-use feos_core::{DensityInitialization, PhaseEquilibrium, State};
-use ndarray::arr1;
+use feos_core::{DensityInitialization, PhaseEquilibrium, SolverOptions, State};
+use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
 use std::sync::Arc;
@@ -19,10 +19,14 @@ fn test_stability_analysis() -> Result<(), Box<dyn Error>> {
         &mix,
         300.0 * KELVIN,
         1.0 * BAR,
-        &(arr1(&[0.5, 0.5]) * MOL),
-        DensityInitialization::Liquid,
+        &(dvector![0.5, 0.5] * MOL),
+        Some(DensityInitialization::Liquid),
     )?;
-    let check = unstable.stability_analysis(Default::default())?;
+    let options = SolverOptions {
+        verbosity: feos_core::Verbosity::Iter,
+        ..Default::default()
+    };
+    let check = unstable.stability_analysis(options)?;
     assert!(!check.is_empty());
 
     let params = PcSaftParameters::from_json(
@@ -35,13 +39,13 @@ fn test_stability_analysis() -> Result<(), Box<dyn Error>> {
     let vle = PhaseEquilibrium::bubble_point(
         &mix,
         300.0 * KELVIN,
-        &arr1(&[0.5, 0.5]),
+        &dvector![0.5, 0.5],
         Some(6.0 * BAR),
         None,
-        Default::default(),
+        (options, options),
     )?;
-    let vapor_check = vle.vapor().stability_analysis(Default::default())?;
-    let liquid_check = vle.liquid().stability_analysis(Default::default())?;
+    let vapor_check = vle.vapor().stability_analysis(options)?;
+    let liquid_check = vle.liquid().stability_analysis(options)?;
     assert!(vapor_check.is_empty());
     assert!(liquid_check.is_empty());
     Ok(())
