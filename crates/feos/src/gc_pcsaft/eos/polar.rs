@@ -1,7 +1,7 @@
 use super::GcPcSaftEosParameters;
 use crate::hard_sphere::HardSphereProperties;
 use feos_core::StateHD;
-use ndarray::prelude::*;
+use nalgebra::DMatrix;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 
@@ -52,54 +52,60 @@ fn triplet_integral_ijk<D: DualNum<f64> + Copy>(mijk1: f64, mijk2: f64, eta: D) 
 }
 
 pub(super) struct Dipole {
-    mij1: Array2<f64>,
-    mij2: Array2<f64>,
-    mijk1: Array3<f64>,
-    mijk2: Array3<f64>,
-    f2_term: Array2<f64>,
-    f3_term: Array3<f64>,
+    mij1: DMatrix<f64>,
+    mij2: DMatrix<f64>,
+    mijk1: Vec<DMatrix<f64>>,
+    mijk2: Vec<DMatrix<f64>>,
+    f2_term: DMatrix<f64>,
+    f3_term: Vec<DMatrix<f64>>,
 }
 
 impl Dipole {
     pub fn new(parameters: &GcPcSaftEosParameters) -> Self {
         let ndipole = parameters.dipole_comp.len();
 
-        let f2_term = Array2::from_shape_fn([ndipole; 2], |(i, j)| {
+        let f2_term = DMatrix::from_fn(ndipole, ndipole, |i, j| {
             parameters.mu2[i] * parameters.mu2[j] / parameters.s_ij[(i, j)].powi(3)
         });
 
-        let f3_term = Array3::from_shape_fn([ndipole; 3], |(i, j, k)| {
-            parameters.mu2[i] * parameters.mu2[j] * parameters.mu2[k]
-                / (parameters.s_ij[(i, j)] * parameters.s_ij[(i, k)] * parameters.s_ij[(j, k)])
-        });
+        let f3_term = (0..ndipole)
+            .map(|i| {
+                DMatrix::from_fn(ndipole, ndipole, |j, k| {
+                    parameters.mu2[i] * parameters.mu2[j] * parameters.mu2[k]
+                        / (parameters.s_ij[(i, j)]
+                            * parameters.s_ij[(i, k)]
+                            * parameters.s_ij[(j, k)])
+                })
+            })
+            .collect();
 
-        let mut mij1 = Array2::zeros((ndipole, ndipole));
-        let mut mij2 = Array2::zeros((ndipole, ndipole));
-        let mut mijk1 = Array3::zeros((ndipole, ndipole, ndipole));
-        let mut mijk2 = Array3::zeros((ndipole, ndipole, ndipole));
+        let mut mij1 = DMatrix::zeros(ndipole, ndipole);
+        let mut mij2 = DMatrix::zeros(ndipole, ndipole);
+        let mut mijk1 = vec![DMatrix::zeros(ndipole, ndipole); ndipole];
+        let mut mijk2 = vec![DMatrix::zeros(ndipole, ndipole); ndipole];
         for i in 0..ndipole {
             let mi = parameters.m_mix[i].min(2.0);
-            mij1[[i, i]] = (mi - 1.0) / mi;
-            mij2[[i, i]] = mij1[[i, i]] * (mi - 2.0) / mi;
+            mij1[(i, i)] = (mi - 1.0) / mi;
+            mij2[(i, i)] = mij1[(i, i)] * (mi - 2.0) / mi;
 
-            mijk1[[i, i, i]] = mij1[[i, i]];
-            mijk2[[i, i, i]] = mij2[[i, i]];
+            mijk1[i][(i, i)] = mij1[(i, i)];
+            mijk2[i][(i, i)] = mij2[(i, i)];
             for j in i + 1..ndipole {
                 let mj = parameters.m_mix[j].min(2.0);
                 let mij = (mi * mj).sqrt();
-                mij1[[i, j]] = (mij - 1.0) / mij;
-                mij2[[i, j]] = mij1[[i, j]] * (mij - 2.0) / mij;
+                mij1[(i, j)] = (mij - 1.0) / mij;
+                mij2[(i, j)] = mij1[(i, j)] * (mij - 2.0) / mij;
                 let mijk = (mi * mi * mj).cbrt();
-                mijk1[[i, i, j]] = (mijk - 1.0) / mijk;
-                mijk2[[i, i, j]] = mijk1[[i, i, j]] * (mijk - 2.0) / mijk;
+                mijk1[i][(i, j)] = (mijk - 1.0) / mijk;
+                mijk2[i][(i, j)] = mijk1[i][(i, j)] * (mijk - 2.0) / mijk;
                 let mijk = (mi * mj * mj).cbrt();
-                mijk1[[i, j, j]] = (mijk - 1.0) / mijk;
-                mijk2[[i, j, j]] = mijk1[[i, j, j]] * (mijk - 2.0) / mijk;
+                mijk1[i][(j, j)] = (mijk - 1.0) / mijk;
+                mijk2[i][(j, j)] = mijk1[i][(j, j)] * (mijk - 2.0) / mijk;
                 for k in j + 1..ndipole {
                     let mk = parameters.m_mix[k].min(2.0);
                     let mijk = (mi * mj * mk).cbrt();
-                    mijk1[[i, j, k]] = (mijk - 1.0) / mijk;
-                    mijk2[[i, j, k]] = mijk1[[i, j, k]] * (mijk - 2.0) / mijk;
+                    mijk1[i][(j, k)] = (mijk - 1.0) / mijk;
+                    mijk2[i][(j, k)] = mijk1[i][(j, k)] * (mijk - 2.0) / mijk;
                 }
             }
         }
@@ -124,7 +130,7 @@ impl Dipole {
         let ndipole = p.dipole_comp.len();
 
         let t_inv = state.temperature.inv();
-        let eps_ij_t = Array2::from_shape_fn([ndipole; 2], |(i, j)| t_inv * p.e_k_ij[(i, j)]);
+        let eps_ij_t = DMatrix::from_fn(ndipole, ndipole, |i, j| t_inv * p.e_k_ij[(i, j)]);
 
         let rho = &state.partial_density;
         let eta = p.zeta(state.temperature, &state.partial_density, [3])[0];
@@ -133,25 +139,25 @@ impl Dipole {
         let mut phi3 = D::zero();
         for i in 0..ndipole {
             let di = p.dipole_comp[i];
-            phi2 -= (rho[di] * rho[di] * self.f2_term[[i, i]])
-                * pair_integral_ij(self.mij1[[i, i]], self.mij2[[i, i]], eta, eps_ij_t[[i, i]]);
-            phi3 -= (rho[di] * rho[di] * rho[di] * self.f3_term[[i, i, i]])
-                * triplet_integral_ijk(self.mijk1[[i, i, i]], self.mijk2[[i, i, i]], eta);
+            phi2 -= (rho[di] * rho[di] * self.f2_term[(i, i)])
+                * pair_integral_ij(self.mij1[(i, i)], self.mij2[(i, i)], eta, eps_ij_t[(i, i)]);
+            phi3 -= (rho[di] * rho[di] * rho[di] * self.f3_term[i][(i, i)])
+                * triplet_integral_ijk(self.mijk1[i][(i, i)], self.mijk2[i][(i, i)], eta);
             for j in (i + 1)..ndipole {
                 let dj = p.dipole_comp[j];
-                phi2 -= (rho[di] * rho[dj] * self.f2_term[[i, j]])
-                    * pair_integral_ij(self.mij1[[i, j]], self.mij2[[i, j]], eta, eps_ij_t[[i, j]])
+                phi2 -= (rho[di] * rho[dj] * self.f2_term[(i, j)])
+                    * pair_integral_ij(self.mij1[(i, j)], self.mij2[(i, j)], eta, eps_ij_t[(i, j)])
                     * 2.0;
-                phi3 -= (rho[di] * rho[di] * rho[dj] * self.f3_term[[i, i, j]])
-                    * triplet_integral_ijk(self.mijk1[[i, i, j]], self.mijk2[[i, i, j]], eta)
+                phi3 -= (rho[di] * rho[di] * rho[dj] * self.f3_term[i][(i, j)])
+                    * triplet_integral_ijk(self.mijk1[i][(i, j)], self.mijk2[i][(i, j)], eta)
                     * 3.0;
-                phi3 -= (rho[di] * rho[dj] * rho[dj] * self.f3_term[[i, j, j]])
-                    * triplet_integral_ijk(self.mijk1[[i, j, j]], self.mijk2[[i, j, j]], eta)
+                phi3 -= (rho[di] * rho[dj] * rho[dj] * self.f3_term[i][(j, j)])
+                    * triplet_integral_ijk(self.mijk1[i][(j, j)], self.mijk2[i][(j, j)], eta)
                     * 3.0;
                 for k in (j + 1)..ndipole {
                     let dk = p.dipole_comp[k];
-                    phi3 -= (rho[di] * rho[dj] * rho[dk] * self.f3_term[[i, j, k]])
-                        * triplet_integral_ijk(self.mijk1[[i, j, k]], self.mijk2[[i, j, k]], eta)
+                    phi3 -= (rho[di] * rho[dj] * rho[dk] * self.f3_term[i][(j, k)])
+                        * triplet_integral_ijk(self.mijk1[i][(j, k)], self.mijk2[i][(j, k)], eta)
                         * 6.0;
                 }
             }

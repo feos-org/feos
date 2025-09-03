@@ -128,7 +128,7 @@ impl Dispersion {
         for i in 0..n {
             for j in 0..n {
                 let eps_ij = state.temperature.recip() * epsilon_k_ij_t[(i, j)];
-                let sigma_ij = sigma_ij_t[[i, j]].powi(3);
+                let sigma_ij = sigma_ij_t[(i, j)].powi(3);
                 rho1mix += rho[i] * rho[j] * p.m[i] * p.m[j] * eps_ij * sigma_ij;
                 rho2mix += rho[i] * rho[j] * p.m[i] * p.m[j] * eps_ij * eps_ij * sigma_ij;
             }

@@ -4,7 +4,6 @@ use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use feos_core::parameter::{FromSegments, Parameters};
 use feos_core::{FeosError, FeosResult};
 use nalgebra::{DMatrix, DVector};
-use ndarray::{Array, Array1, Array2};
 use num_dual::DualNum;
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
@@ -122,8 +121,8 @@ pub struct ElectrolytePcSaftPars {
 }
 
 impl ElectrolytePcSaftPars {
-    pub fn sigma_t<D: DualNum<f64>>(&self, temperature: D) -> Array1<f64> {
-        let mut sigma_t: Array1<f64> = Array::from_shape_fn(self.sigma.len(), |i| self.sigma[i]);
+    pub fn sigma_t<D: DualNum<f64>>(&self, temperature: D) -> DVector<f64> {
+        let mut sigma_t: DVector<f64> = DVector::from_fn(self.sigma.len(), |i, _| self.sigma[i]);
 
         if let Some(i) = self.water_sigma_t_comp {
             sigma_t[i] = sigma_t[i] + (temperature.re() * -0.01775).exp() * 10.11
@@ -133,14 +132,14 @@ impl ElectrolytePcSaftPars {
         sigma_t
     }
 
-    pub fn sigma_ij_t<D: DualNum<f64>>(&self, temperature: D) -> Array2<f64> {
+    pub fn sigma_ij_t<D: DualNum<f64>>(&self, temperature: D) -> DMatrix<f64> {
         let diameter = self.sigma_t(temperature);
         let n = diameter.len();
 
-        let mut sigma_ij_t = Array::zeros((n, n));
+        let mut sigma_ij_t = DMatrix::zeros(n, n);
         for i in 0..n {
             for j in 0..n {
-                sigma_ij_t[[i, j]] = (diameter[i] + diameter[j]) * 0.5;
+                sigma_ij_t[(i, j)] = (diameter[i] + diameter[j]) * 0.5;
             }
         }
         sigma_ij_t

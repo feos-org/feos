@@ -1,7 +1,7 @@
 use super::PcSaftPars;
 use crate::hard_sphere::HardSphereProperties;
 use feos_core::StateHD;
-use ndarray::prelude::*;
+use nalgebra::DMatrix;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 
@@ -79,10 +79,10 @@ pub const CDQ: [[f64; 2]; 3] = [
 pub const PI_SQ_43: f64 = 4.0 * PI * FRAC_PI_3;
 
 pub struct MeanSegmentNumbers {
-    pub mij1: Array2<f64>,
-    pub mij2: Array2<f64>,
-    pub mijk1: Array3<f64>,
-    pub mijk2: Array3<f64>,
+    pub mij1: DMatrix<f64>,
+    pub mij2: DMatrix<f64>,
+    pub mijk1: Vec<DMatrix<f64>>,
+    pub mijk2: Vec<DMatrix<f64>>,
 }
 
 pub enum Multipole {
@@ -91,28 +91,29 @@ pub enum Multipole {
 }
 
 impl MeanSegmentNumbers {
+    #[expect(clippy::needless_range_loop)]
     pub fn new(parameters: &PcSaftPars, polarity: Multipole) -> Self {
         let (npoles, comp) = match polarity {
             Multipole::Dipole => (parameters.ndipole, &parameters.dipole_comp),
             Multipole::Quadrupole => (parameters.nquadpole, &parameters.quadpole_comp),
         };
 
-        let mut mij1 = Array2::zeros((npoles, npoles));
-        let mut mij2 = Array2::zeros((npoles, npoles));
-        let mut mijk1 = Array3::zeros((npoles, npoles, npoles));
-        let mut mijk2 = Array3::zeros((npoles, npoles, npoles));
+        let mut mij1 = DMatrix::zeros(npoles, npoles);
+        let mut mij2 = DMatrix::zeros(npoles, npoles);
+        let mut mijk1 = vec![DMatrix::zeros(npoles, npoles); npoles];
+        let mut mijk2 = vec![DMatrix::zeros(npoles, npoles); npoles];
         for i in 0..npoles {
             let mi = parameters.m[comp[i]].min(2.0);
             for j in i..npoles {
                 let mj = parameters.m[comp[j]].min(2.0);
                 let mij = (mi * mj).sqrt();
-                mij1[[i, j]] = (mij - 1.0) / mij;
-                mij2[[i, j]] = mij1[[i, j]] * (mij - 2.0) / mij;
+                mij1[(i, j)] = (mij - 1.0) / mij;
+                mij2[(i, j)] = mij1[(i, j)] * (mij - 2.0) / mij;
                 for k in j..npoles {
                     let mk = parameters.m[comp[k]].min(2.0);
                     let mijk = (mi * mj * mk).cbrt();
-                    mijk1[[i, j, k]] = (mijk - 1.0) / mijk;
-                    mijk2[[i, j, k]] = mijk1[[i, j, k]] * (mijk - 2.0) / mijk;
+                    mijk1[i][(j, k)] = (mijk - 1.0) / mijk;
+                    mijk2[i][(j, k)] = mijk1[i][(j, k)] * (mijk - 2.0) / mijk;
                 }
             }
         }
@@ -197,8 +198,8 @@ impl Dipole {
                     * mu2_term[i]
                     * mu2_term[j]
                     * pair_integral_ij(
-                        m.mij1[[i, j]],
-                        m.mij2[[i, j]],
+                        m.mij1[(i, j)],
+                        m.mij2[(i, j)],
                         &etas,
                         &AD,
                         &BD,
@@ -217,7 +218,7 @@ impl Dipole {
                     };
                     phi3 -= rho[di] * rho[dj] * rho[dk] * mu2_term[i] * mu2_term[j] * mu2_term[k]
                         / (p.sigma_ij[(di, dj)] * p.sigma_ij[(di, dk)] * p.sigma_ij[(dj, dk)])
-                        * triplet_integral_ijk(m.mijk1[[i, j, k]], m.mijk2[[i, j, k]], &etas, &CD)
+                        * triplet_integral_ijk(m.mijk1[i][(j, k)], m.mijk2[i][(j, k)], &etas, &CD)
                         * c;
                 }
             }
@@ -270,8 +271,8 @@ impl Quadrupole {
                     * q2_term[i]
                     * q2_term[j]
                     * pair_integral_ij(
-                        m.mij1[[i, j]],
-                        m.mij2[[i, j]],
+                        m.mij1[(i, j)],
+                        m.mij2[(i, j)],
                         &etas,
                         &AQ,
                         &BQ,
@@ -290,7 +291,7 @@ impl Quadrupole {
                     };
                     phi3 += rho[di] * rho[dj] * rho[dk] * q2_term[i] * q2_term[j] * q2_term[k]
                         / (sig_ij_3[(di, dj)] * sig_ij_3[(di, dk)] * sig_ij_3[(dj, dk)])
-                        * triplet_integral_ijk(m.mijk1[[i, j, k]], m.mijk2[[i, j, k]], &etas, &CQ)
+                        * triplet_integral_ijk(m.mijk1[i][(j, k)], m.mijk2[i][(j, k)], &etas, &CQ)
                         * c;
                 }
             }
@@ -345,10 +346,10 @@ impl DipoleQuadrupole {
         let etas = [D::one(), eta, eta2, eta2 * eta, eta2 * eta2];
 
         // mean segment number
-        let mut mdq1 = Array2::zeros((p.ndipole, p.nquadpole));
-        let mut mdq2 = Array2::zeros((p.ndipole, p.nquadpole));
-        let mut mdqd = Array3::zeros((p.ndipole, p.nquadpole, p.ndipole));
-        let mut mdqq = Array3::zeros((p.ndipole, p.nquadpole, p.nquadpole));
+        let mut mdq1 = DMatrix::zeros(p.ndipole, p.nquadpole);
+        let mut mdq2 = DMatrix::zeros(p.ndipole, p.nquadpole);
+        let mut mdqd = vec![DMatrix::zeros(p.nquadpole, p.ndipole); p.ndipole];
+        let mut mdqq = vec![DMatrix::zeros(p.nquadpole, p.nquadpole); p.ndipole];
         for i in 0..p.ndipole {
             let di = p.dipole_comp[i];
             let mi = p.m[di].min(2.0);
@@ -356,19 +357,19 @@ impl DipoleQuadrupole {
                 let qj = p.quadpole_comp[j];
                 let mj = p.m[qj].min(2.0);
                 let m = (mi * mj).sqrt();
-                mdq1[[i, j]] = (m - 1.0) / m;
-                mdq2[[i, j]] = mdq1[[i, j]] * (m - 2.0) / m;
+                mdq1[(i, j)] = (m - 1.0) / m;
+                mdq2[(i, j)] = mdq1[(i, j)] * (m - 2.0) / m;
                 for k in 0..p.ndipole {
                     let dk = p.dipole_comp[k];
                     let mk = p.m[dk].min(2.0);
                     let m = (mi * mj * mk).cbrt();
-                    mdqd[[i, j, k]] = (m - 1.0) / m;
+                    mdqd[i][(j, k)] = (m - 1.0) / m;
                 }
                 for k in 0..p.nquadpole {
                     let qk = p.quadpole_comp[k];
                     let mk = p.m[qk].min(2.0);
                     let m = (mi * mj * mk).cbrt();
-                    mdqq[[i, j, k]] = (m - 1.0) / m;
+                    mdqq[i][(j, k)] = (m - 1.0) / m;
                 }
             }
         }
@@ -385,8 +386,8 @@ impl DipoleQuadrupole {
                 };
                 phi2 -= rho[di] * rho[qj] * mu2_q2_term / p.sigma_ij[(di, qj)].powi(5)
                     * pair_integral_ij(
-                        mdq1[[i, j]],
-                        mdq2[[i, j]],
+                        mdq1[(i, j)],
+                        mdq2[(i, j)],
                         &etas,
                         &ADQ,
                         &BDQ,
@@ -397,7 +398,7 @@ impl DipoleQuadrupole {
                     phi3 += rho[di] * rho[qj] * rho[dk] * mu2_term[i] * q2_term[j] * mu2_term[k]
                         / (p.sigma_ij[(di, qj)] * p.sigma_ij[(di, dk)] * p.sigma_ij[(qj, dk)])
                             .powi(2)
-                        * triplet_integral_ijk_dq(mdqd[[i, j, k]], &etas, &CDQ);
+                        * triplet_integral_ijk_dq(mdqd[i][(j, k)], &etas, &CDQ);
                 }
                 for k in 0..p.nquadpole {
                     let qk = p.quadpole_comp[k];
@@ -405,7 +406,7 @@ impl DipoleQuadrupole {
                         / (p.sigma_ij[(di, qj)] * p.sigma_ij[(di, qk)] * p.sigma_ij[(qj, qk)])
                             .powi(2)
                         * ALPHA
-                        * triplet_integral_ijk_dq(mdqq[[i, j, k]], &etas, &CDQ);
+                        * triplet_integral_ijk_dq(mdqq[i][(j, k)], &etas, &CDQ);
                 }
             }
         }
