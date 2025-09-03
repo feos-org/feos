@@ -20,7 +20,7 @@ impl HardChain {
         state
             .partial_density
             .component_mul(&g_hs.map(|g| g.ln()))
-            .dot(&(-parameters.m.map(|m| D::from(1.0 - m))))
+            .dot(&(-parameters.m.map(|m| D::from(m - 1.0))))
     }
 }
 
