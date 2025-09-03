@@ -39,7 +39,7 @@ pub use phase_diagram_pure::PhaseDiagram;
 /// + [Utility functions](#utility-functions)
 #[derive(Debug, Clone)]
 pub struct PhaseEquilibrium<E, const P: usize, N: Dim = Dyn, D: DualNum<f64> + Copy = f64>(
-    [State<E, N, D>; P],
+    pub [State<E, N, D>; P],
 )
 where
     DefaultAllocator: Allocator<N>;
