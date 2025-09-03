@@ -12,8 +12,8 @@ description = "FeOs - A framework for equations of state and classical density f
 
 [dependencies]
 quantity = { workspace = true }
-num-dual = { workspace = true, features = ["ndarray"] }
-ndarray = { workspace = true }
+num-dual = { workspace = true }
+ndarray = { workspace = true, optional = true }
 nalgebra = { workspace = true }
 petgraph = { workspace = true, optional = true }
 thiserror = { workspace = true }
@@ -25,7 +25,6 @@ itertools = { workspace = true }
 typenum = { workspace = true }
 
 feos-core = { workspace = true }
-feos-derive = { workspace = true }
 feos-dft = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -35,8 +34,8 @@ criterion = { workspace = true }
 serde_json = { workspace = true }
 
 [features]
-default = []
-dft = ["feos-dft", "petgraph"]
+default = ["pcsaft", "saftvrmie", "pets", "epcsaft", "gc_pcsaft"]
+dft = ["feos-dft", "petgraph", "ndarray"]
 association = []
 pcsaft = ["association"]
 epcsaft = ["association"]

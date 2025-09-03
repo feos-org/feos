@@ -1,7 +1,6 @@
 use crate::hard_sphere::HardSphereProperties;
 use crate::pcsaft::parameters::PcSaftPars;
 use feos_core::StateHD;
-use ndarray::Array;
 use num_dual::*;
 
 pub struct HardChain;
@@ -18,10 +17,10 @@ impl HardChain {
         let frac_1mz3 = -(zeta3 - 1.0).recip();
         let c = zeta2 * frac_1mz3 * frac_1mz3;
         let g_hs = d.map(|d| frac_1mz3 + d * c * 1.5 - d.powi(2) * c.powi(2) * (zeta3 - 1.0) * 0.5);
-        Array::from_shape_fn(parameters.m.len(), |i| {
-            state.partial_density[i] * (1.0 - parameters.m[i]) * g_hs[i].ln()
-        })
-        .sum()
+        state
+            .partial_density
+            .component_mul(&g_hs.map(|g| g.ln()))
+            .dot(&(-parameters.m.map(|m| D::from(1.0 - m))))
     }
 }
 
