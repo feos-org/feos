@@ -25,6 +25,7 @@ itertools = { workspace = true }
 typenum = { workspace = true }
 
 feos-core = { workspace = true }
+feos-derive = { workspace = true, optional = true }
 feos-dft = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -34,8 +35,8 @@ criterion = { workspace = true }
 serde_json = { workspace = true }
 
 [features]
-default = ["pcsaft", "saftvrmie", "pets", "epcsaft", "gc_pcsaft"]
-dft = ["feos-dft", "petgraph", "ndarray"]
+default = []
+dft = ["feos-dft", "petgraph", "ndarray", "num-dual/ndarray", "feos-derive"]
 association = []
 pcsaft = ["association"]
 epcsaft = ["association"]

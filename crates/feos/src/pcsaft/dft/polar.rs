@@ -116,8 +116,8 @@ fn phi_polar_dipole<N: DualNum<f64> + Copy>(
         phi2 -= &(&density.index_axis(Axis(0), di)
             * &density.index_axis(Axis(0), di)
             * pair_integral_ij(
-                m.mij1[[i, i]],
-                m.mij2[[i, i]],
+                m.mij1[(i, i)],
+                m.mij2[(i, i)],
                 eta,
                 &AD,
                 &BD,
@@ -127,15 +127,15 @@ fn phi_polar_dipole<N: DualNum<f64> + Copy>(
         phi3 -= &(&density.index_axis(Axis(0), di)
             * &density.index_axis(Axis(0), di)
             * density.index_axis(Axis(0), di)
-            * triplet_integral_ijk(m.mijk1[[i, i, i]], m.mijk2[[i, i, i]], eta, &CD)
+            * triplet_integral_ijk(m.mijk1[i][(i, i)], m.mijk2[i][(i, i)], eta, &CD)
             * (mu2_term[i] * mu2_term[i] * mu2_term[i] / sig_ij_3[(di, di)]));
         for j in i + 1..p.ndipole {
             let dj = p.dipole_comp[j];
             phi2 -= &(&density.index_axis(Axis(0), di)
                 * &density.index_axis(Axis(0), dj)
                 * pair_integral_ij(
-                    m.mij1[[i, j]],
-                    m.mij2[[i, j]],
+                    m.mij1[(i, j)],
+                    m.mij2[(i, j)],
                     eta,
                     &AD,
                     &BD,
@@ -145,14 +145,14 @@ fn phi_polar_dipole<N: DualNum<f64> + Copy>(
             phi3 -= &(&density.index_axis(Axis(0), di)
                 * &density.index_axis(Axis(0), di)
                 * density.index_axis(Axis(0), dj)
-                * triplet_integral_ijk(m.mijk1[[i, i, j]], m.mijk2[[i, i, j]], eta, &CD)
+                * triplet_integral_ijk(m.mijk1[i][(i, j)], m.mijk2[i][(i, j)], eta, &CD)
                 * (mu2_term[i] * mu2_term[i] * mu2_term[j]
                     / (p.sigma_ij[(di, di)] * p.sigma_ij[(di, dj)] * p.sigma_ij[(di, dj)])
                     * 3.0));
             phi3 -= &(&density.index_axis(Axis(0), di)
                 * &density.index_axis(Axis(0), dj)
                 * density.index_axis(Axis(0), dj)
-                * triplet_integral_ijk(m.mijk1[[i, j, j]], m.mijk2[[i, j, j]], eta, &CD)
+                * triplet_integral_ijk(m.mijk1[i][(j, j)], m.mijk2[i][(j, j)], eta, &CD)
                 * (mu2_term[i] * mu2_term[j] * mu2_term[j]
                     / (p.sigma_ij[(di, dj)] * p.sigma_ij[(di, dj)] * p.sigma_ij[(dj, dj)])
                     * 3.0));
@@ -161,7 +161,7 @@ fn phi_polar_dipole<N: DualNum<f64> + Copy>(
                 phi3 -= &(&density.index_axis(Axis(0), di)
                     * &density.index_axis(Axis(0), dj)
                     * density.index_axis(Axis(0), dk)
-                    * triplet_integral_ijk(m.mijk1[[i, j, k]], m.mijk2[[i, j, k]], eta, &CD)
+                    * triplet_integral_ijk(m.mijk1[i][(j, k)], m.mijk2[i][(j, k)], eta, &CD)
                     * (mu2_term[i] * mu2_term[j] * mu2_term[k]
                         / (p.sigma_ij[(di, dj)] * p.sigma_ij[(di, dk)] * p.sigma_ij[(dj, dk)])
                         * 6.0));
@@ -204,8 +204,8 @@ fn phi_polar_quadrupole<N: DualNum<f64> + Copy>(
         phi2 -= &(&density.index_axis(Axis(0), di)
             * &density.index_axis(Axis(0), di)
             * pair_integral_ij(
-                m.mij1[[i, i]],
-                m.mij2[[i, i]],
+                m.mij1[(i, i)],
+                m.mij2[(i, i)],
                 eta,
                 &AQ,
                 &BQ,
@@ -215,15 +215,15 @@ fn phi_polar_quadrupole<N: DualNum<f64> + Copy>(
         phi3 += &(&density.index_axis(Axis(0), di)
             * &density.index_axis(Axis(0), di)
             * density.index_axis(Axis(0), di)
-            * triplet_integral_ijk(m.mijk1[[i, i, i]], m.mijk2[[i, i, i]], eta, &CQ)
+            * triplet_integral_ijk(m.mijk1[i][(i, i)], m.mijk2[i][(i, i)], eta, &CQ)
             * (q2_term[i] * q2_term[i] * q2_term[i] / sig_ij_3[(di, di)].powi(3)));
         for j in i + 1..p.nquadpole {
             let dj = p.quadpole_comp[j];
             phi2 -= &(&density.index_axis(Axis(0), di)
                 * &density.index_axis(Axis(0), dj)
                 * pair_integral_ij(
-                    m.mij1[[i, j]],
-                    m.mij2[[i, j]],
+                    m.mij1[(i, j)],
+                    m.mij2[(i, j)],
                     eta,
                     &AQ,
                     &BQ,
@@ -233,14 +233,14 @@ fn phi_polar_quadrupole<N: DualNum<f64> + Copy>(
             phi3 += &(&density.index_axis(Axis(0), di)
                 * &density.index_axis(Axis(0), di)
                 * density.index_axis(Axis(0), dj)
-                * triplet_integral_ijk(m.mijk1[[i, i, j]], m.mijk2[[i, i, j]], eta, &CQ)
+                * triplet_integral_ijk(m.mijk1[i][(i, j)], m.mijk2[i][(i, j)], eta, &CQ)
                 * (q2_term[i] * q2_term[i] * q2_term[j]
                     / (sig_ij_3[(di, di)] * sig_ij_3[(di, dj)] * sig_ij_3[(di, dj)])
                     * 3.0));
             phi3 += &(&density.index_axis(Axis(0), di)
                 * &density.index_axis(Axis(0), dj)
                 * density.index_axis(Axis(0), dj)
-                * triplet_integral_ijk(m.mijk1[[i, j, j]], m.mijk2[[i, j, j]], eta, &CQ)
+                * triplet_integral_ijk(m.mijk1[i][(j, j)], m.mijk2[i][(j, j)], eta, &CQ)
                 * (q2_term[i] * q2_term[j] * q2_term[j]
                     / (sig_ij_3[(di, dj)] * sig_ij_3[(di, dj)] * sig_ij_3[(dj, dj)])
                     * 3.0));
@@ -249,7 +249,7 @@ fn phi_polar_quadrupole<N: DualNum<f64> + Copy>(
                 phi3 += &(&density.index_axis(Axis(0), di)
                     * &density.index_axis(Axis(0), dj)
                     * density.index_axis(Axis(0), dk)
-                    * triplet_integral_ijk(m.mijk1[[i, j, k]], m.mijk2[[i, j, k]], eta, &CQ)
+                    * triplet_integral_ijk(m.mijk1[i][(j, k)], m.mijk2[i][(j, k)], eta, &CQ)
                     * (q2_term[i] * q2_term[j] * q2_term[k]
                         / (sig_ij_3[(di, dj)] * sig_ij_3[(di, dk)] * sig_ij_3[(dj, dk)])
                         * 6.0));
@@ -298,19 +298,19 @@ fn phi_polar_dipole_quadrupole<N: DualNum<f64> + Copy>(
             let qj = p.quadpole_comp[j];
             let mj = p.m[qj].min(2.0);
             let m = (mi * mj).sqrt();
-            mdq1[[i, j]] = (m - 1.0) / m;
-            mdq2[[i, j]] = mdq1[[i, j]] * (m - 2.0) / m;
+            mdq1[(i, j)] = (m - 1.0) / m;
+            mdq2[(i, j)] = mdq1[(i, j)] * (m - 2.0) / m;
             for k in 0..p.ndipole {
                 let dk = p.dipole_comp[k];
                 let mk = p.m[dk].min(2.0);
                 let m = (mi * mj * mk).cbrt();
-                mdqd[[i, j, k]] = (m - 1.0) / m;
+                mdqd[(i, j, k)] = (m - 1.0) / m;
             }
             for k in 0..p.nquadpole {
                 let qk = p.quadpole_comp[k];
                 let mk = p.m[qk].min(2.0);
                 let m = (mi * mj * mk).cbrt();
-                mdqq[[i, j, k]] = (m - 1.0) / m;
+                mdqq[(i, j, k)] = (m - 1.0) / m;
             }
         }
     }
@@ -324,8 +324,8 @@ fn phi_polar_dipole_quadrupole<N: DualNum<f64> + Copy>(
             phi2 -= &(&density.index_axis(Axis(0), di)
                 * &density.index_axis(Axis(0), qj)
                 * pair_integral_ij(
-                    mdq1[[i, j]],
-                    mdq2[[i, j]],
+                    mdq1[(i, j)],
+                    mdq2[(i, j)],
                     eta,
                     &ADQ,
                     &BDQ,
@@ -338,7 +338,7 @@ fn phi_polar_dipole_quadrupole<N: DualNum<f64> + Copy>(
                 phi3 += &(&density.index_axis(Axis(0), di)
                     * &density.index_axis(Axis(0), qj)
                     * density.index_axis(Axis(0), dk)
-                    * triplet_integral_ijk_dq(mdqd[[i, j, k]], eta, &CDQ)
+                    * triplet_integral_ijk_dq(mdqd[(i, j, k)], eta, &CDQ)
                     * (mu2_term[i] * q2_term[j] * mu2_term[k]
                         / (p.sigma_ij[(di, qj)] * p.sigma_ij[(di, dk)] * p.sigma_ij[(qj, dk)])
                             .powi(2)));
@@ -348,7 +348,7 @@ fn phi_polar_dipole_quadrupole<N: DualNum<f64> + Copy>(
                 phi3 += &(&density.index_axis(Axis(0), di)
                     * &density.index_axis(Axis(0), qj)
                     * density.index_axis(Axis(0), qk)
-                    * triplet_integral_ijk_dq(mdqq[[i, j, k]], eta, &CDQ)
+                    * triplet_integral_ijk_dq(mdqq[(i, j, k)], eta, &CDQ)
                     * (mu2_term[i] * q2_term[j] * q2_term[k]
                         / (p.sigma_ij[(di, qj)] * p.sigma_ij[(di, qk)] * p.sigma_ij[(qj, qk)])
                             .powi(2)
