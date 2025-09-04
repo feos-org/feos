@@ -2,6 +2,7 @@ use crate::saftvrqmie::eos::dispersion::{Alpha, dispersion_energy_density};
 use crate::saftvrqmie::parameters::SaftVRQMiePars;
 use feos_core::FeosResult;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
+use nalgebra::{DMatrix, DVector};
 use ndarray::*;
 use num_dual::DualNum;
 
@@ -27,8 +28,8 @@ fn att_weight_functions<N: DualNum<f64> + Copy>(
     temperature: N,
 ) -> WeightFunctionInfo<N> {
     let d = p.hs_diameter(temperature);
-    WeightFunctionInfo::new(Array1::from_shape_fn(d.len(), |i| i), false).add(
-        WeightFunction::new_scaled(d * psi, WeightFunctionShape::Theta),
+    WeightFunctionInfo::new(DVector::from_fn(d.len(), |i, _| i), false).add(
+        WeightFunction::new_scaled(d * N::from(psi), WeightFunctionShape::Theta),
         false,
     )
 }
@@ -38,10 +39,7 @@ impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
         "Attractive functional"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         att_weight_functions(self.parameters, PSI_DFT, temperature)
     }
 
@@ -62,20 +60,19 @@ impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
         let n = p.m.len();
 
         // temperature dependent segment radius // calc & store this in struct
-        let s_eff_ij =
-            Array2::from_shape_fn((n, n), |(i, j)| p.calc_sigma_eff_ij(i, j, temperature));
+        let s_eff_ij = DMatrix::from_fn(n, n, |i, j| p.calc_sigma_eff_ij(i, j, temperature));
 
         // temperature dependent segment radius // calc & store this in struct
-        let d_hs_ij = Array2::from_shape_fn((n, n), |(i, j)| {
-            p.hs_diameter_ij(i, j, temperature, s_eff_ij[[i, j]])
+        let d_hs_ij = DMatrix::from_fn(n, n, |i, j| {
+            p.hs_diameter_ij(i, j, temperature, s_eff_ij[(i, j)])
         });
 
         // temperature dependent well depth // calc & store this in struct
         let epsilon_k_eff_ij =
-            Array2::from_shape_fn((n, n), |(i, j)| p.calc_epsilon_k_eff_ij(i, j, temperature));
+            DMatrix::from_fn(n, n, |i, j| p.calc_epsilon_k_eff_ij(i, j, temperature));
 
         // temperature dependent well depth // calc & store this in struct
-        let dq_ij = Array2::from_shape_fn((n, n), |(i, j)| p.quantum_d_ij(i, j, temperature));
+        let dq_ij = DMatrix::from_fn(n, n, |i, j| p.quantum_d_ij(i, j, temperature));
 
         // alphas .... // calc & store this in struct
         let alpha = Alpha::new(p, &s_eff_ij, &epsilon_k_eff_ij, temperature);
@@ -90,7 +87,7 @@ impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
                     &epsilon_k_eff_ij,
                     &dq_ij,
                     &alpha,
-                    &rho_lane.into_owned(),
+                    rho_lane,
                     temperature,
                 )
             })

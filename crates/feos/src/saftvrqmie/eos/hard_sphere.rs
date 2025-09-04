@@ -2,7 +2,7 @@
 use super::TemperatureDependentProperties;
 use crate::saftvrqmie::parameters::SaftVRQMiePars;
 use feos_core::StateHD;
-use ndarray::*;
+use nalgebra::DVector;
 use num_dual::DualNum;
 use std::f64::consts::TAU;
 use std::fmt;
@@ -62,8 +62,8 @@ const W_K21: [f64; 21] = [
 
 impl SaftVRQMiePars {
     #[inline]
-    pub fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
-        Array1::from_shape_fn(self.m.len(), |i| -> D {
+    pub fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+        DVector::from_fn(self.m.len(), |i, _| -> D {
             let sigma_eff = self.calc_sigma_eff_ij(i, i, temperature);
             self.hs_diameter_ij(i, i, temperature, sigma_eff)
         })
@@ -118,8 +118,8 @@ impl SaftVRQMiePars {
     }
 
     #[inline]
-    pub fn epsilon_k_eff<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
-        Array1::from_shape_fn(self.m.len(), |i| -> D {
+    pub fn epsilon_k_eff<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+        DVector::from_fn(self.m.len(), |i, _| -> D {
             self.calc_epsilon_k_eff_ij(i, i, temperature)
         })
     }
@@ -130,7 +130,7 @@ impl SaftVRQMiePars {
         j: usize,
         temperature: D,
     ) -> D {
-        let mut r = D::one() * self.sigma_ij[[i, j]];
+        let mut r = D::one() * self.sigma_ij[(i, j)];
         let mut u_vec = [D::zero(), D::zero(), D::zero()];
         for _k in 1..20 {
             u_vec = self.qmie_potential_ij(i, j, r, temperature);
@@ -146,8 +146,8 @@ impl SaftVRQMiePars {
     }
 
     #[inline]
-    pub fn sigma_eff<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
-        Array1::from_shape_fn(self.m.len(), |i| -> D {
+    pub fn sigma_eff<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+        DVector::from_fn(self.m.len(), |i, _| -> D {
             self.calc_sigma_eff_ij(i, i, temperature)
         })
     }
@@ -158,7 +158,7 @@ impl SaftVRQMiePars {
         j: usize,
         temperature: D,
     ) -> D {
-        let mut r = D::one() * self.sigma_ij[[i, j]];
+        let mut r = D::one() * self.sigma_ij[(i, j)];
         let mut u_vec = [D::zero(), D::zero(), D::zero()];
         for _k in 1..20 {
             u_vec = self.qmie_potential_ij(i, j, r, temperature);
@@ -175,7 +175,7 @@ impl SaftVRQMiePars {
 
     #[inline]
     pub fn quantum_d_ij<D: DualNum<f64>>(&self, i: usize, j: usize, temperature: D) -> D {
-        quantum_d_mass(self.mass_ij[[i, j]], temperature)
+        quantum_d_mass(self.mass_ij[(i, j)], temperature)
     }
 
     /// Feynman-Hibbs corrected potential
@@ -186,11 +186,11 @@ impl SaftVRQMiePars {
         r: D,
         temperature: D,
     ) -> [D; 3] {
-        let lr = self.lambda_r_ij[[i, j]];
-        let la = self.lambda_a_ij[[i, j]];
-        let s = self.sigma_ij[[i, j]];
-        let eps = self.epsilon_k_ij[[i, j]];
-        let c = self.c_ij[[i, j]];
+        let lr = self.lambda_r_ij[(i, j)];
+        let la = self.lambda_a_ij[(i, j)];
+        let s = self.sigma_ij[(i, j)];
+        let eps = self.epsilon_k_ij[(i, j)];
+        let c = self.c_ij[(i, j)];
 
         let q1r = lr * (lr - 1.0);
         let q1a = la * (la - 1.0);
@@ -202,7 +202,7 @@ impl SaftVRQMiePars {
             + r.powf(la + 1.0).recip() * la * s.powf(la);
         let mut u_rr = r.powf(lr + 2.0).recip() * lr * (lr + 1.0) * s.powf(lr)
             - r.powf(la + 2.0).recip() * la * (la + 1.0) * s.powf(la);
-        if self.fh_ij[[i, j]] as usize > 0 {
+        if self.fh_ij[(i, j)] as usize > 0 {
             u += d
                 * (r.powf(lr + 2.0).recip() * q1r * s.powf(lr)
                     - r.powf(la + 2.0).recip() * q1a * s.powf(la));
@@ -213,7 +213,7 @@ impl SaftVRQMiePars {
                 * (r.powf(lr + 4.0).recip() * q1r * (lr + 2.0) * (lr + 3.0) * s.powf(lr)
                     - r.powf(la + 4.0).recip() * q1a * (la + 2.0) * (la + 3.0) * s.powf(la));
         }
-        if self.fh_ij[[i, j]] as usize > 1 {
+        if self.fh_ij[(i, j)] as usize > 1 {
             u += d.powi(2)
                 * (r.powf(lr + 4.0).recip() * q2r * s.powf(lr)
                     - r.powf(la + 4.0).recip() * q2a * s.powf(la));
@@ -239,20 +239,21 @@ pub fn quantum_d_mass<D: DualNum<f64>>(mass: f64, temperature: D) -> D {
 pub struct HardSphere;
 
 impl HardSphere {
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &SaftVRQMiePars,
         state: &StateHD<D>,
         properties: &TemperatureDependentProperties<D>,
     ) -> D {
-        let d = Array1::from_shape_fn(parameters.m.len(), |i| properties.hs_diameter_ij[[i, i]]);
+        let d = DVector::from_fn(parameters.m.len(), |i, _| properties.hs_diameter_ij[(i, i)]);
         let zeta = zeta(&parameters.m, &state.partial_density, &d);
         let frac_1mz3 = -(zeta[3] - 1.0).recip();
         let zeta_23 = zeta_23(&parameters.m, &state.molefracs, &d);
-        state.volume * 6.0 / std::f64::consts::PI
-            * (zeta[1] * zeta[2] * frac_1mz3 * 3.0
-                + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
-                + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (zeta[3] * (-1.0)).ln_1p())
+        (zeta[1] * zeta[2] * frac_1mz3 * 3.0
+            + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
+            + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (zeta[3] * (-1.0)).ln_1p())
+            * 6.0
+            / std::f64::consts::PI
     }
 }
 
@@ -263,9 +264,9 @@ impl fmt::Display for HardSphere {
 }
 
 pub fn zeta<D: DualNum<f64> + Copy>(
-    m: &Array1<f64>,
-    partial_density: &Array1<D>,
-    diameter: &Array1<D>,
+    m: &DVector<f64>,
+    partial_density: &DVector<D>,
+    diameter: &DVector<D>,
 ) -> [D; 4] {
     let mut zeta: [D; 4] = [D::zero(), D::zero(), D::zero(), D::zero()];
     for i in 0..m.len() {
@@ -279,9 +280,9 @@ pub fn zeta<D: DualNum<f64> + Copy>(
 }
 
 pub fn zeta_23<D: DualNum<f64> + Copy>(
-    m: &Array1<f64>,
-    molefracs: &Array1<D>,
-    diameter: &Array1<D>,
+    m: &DVector<f64>,
+    molefracs: &DVector<D>,
+    diameter: &DVector<D>,
 ) -> D {
     let mut zeta: [D; 2] = [D::zero(), D::zero()];
     for i in 0..m.len() {
@@ -298,7 +299,7 @@ mod tests {
     use crate::saftvrqmie::parameters::utils::h2_ne_fh;
     use crate::saftvrqmie::parameters::utils::hydrogen_fh;
     use approx::assert_relative_eq;
-    use ndarray::arr1;
+    use nalgebra::dvector;
     use num_dual::Dual64;
 
     #[test]
@@ -361,9 +362,9 @@ mod tests {
         let t = 26.7060;
         let v = 1.0e26;
         let n = na * 1.1;
-        let s = StateHD::new(t, v, arr1(&[n]));
+        let s = StateHD::new(t, v / n, &dvector![1.0]);
         let properties = TemperatureDependentProperties::new(&parameters, s.temperature);
-        let a_rust = HardSphere.helmholtz_energy(&parameters, &s, &properties);
+        let a_rust = HardSphere.helmholtz_energy_density(&parameters, &s, &properties) * v;
         dbg!(a_rust / na);
         assert_relative_eq!(a_rust / na, 0.54586730268029837, epsilon = 5e-7);
     }
@@ -375,9 +376,9 @@ mod tests {
         let t = 26.7060;
         let v = 1.0e26;
         let n = na * 1.1;
-        let s = StateHD::new(t, v, arr1(&[n]));
+        let s = StateHD::new(t, v / n, &dvector![1.0]);
         let properties = TemperatureDependentProperties::new(&parameters, s.temperature);
-        let a_rust = HardSphere.helmholtz_energy(&parameters, &s, &properties);
+        let a_rust = HardSphere.helmholtz_energy_density(&parameters, &s, &properties) * v;
         dbg!(a_rust / na);
         assert_relative_eq!(a_rust / na, 0.5934447545083482, epsilon = 5e-7);
     }
@@ -388,10 +389,10 @@ mod tests {
         let na = 6.02214076e23;
         let t = 30.0;
         let v = 1.0e26;
-        let n = [na * 1.1, na * 1.0];
-        let s = StateHD::new(t, v, arr1(&n));
+        let n = dvector![na * 1.1, na * 1.0];
+        let s = StateHD::new(t, v / n.sum(), &(&n / n.sum()));
         let properties = TemperatureDependentProperties::new(&parameters, s.temperature);
-        let a_rust = HardSphere.helmholtz_energy(&parameters, &s, &properties);
+        let a_rust = HardSphere.helmholtz_energy_density(&parameters, &s, &properties) * v;
         dbg!(a_rust / na);
         // non-additive: 1.8249307925054206
         assert_relative_eq!(a_rust / na, 1.8074833133403905, epsilon = 5e-7);
@@ -403,10 +404,10 @@ mod tests {
         let na = 6.02214076e23;
         let t = 30.0;
         let v = 1.0e26;
-        let n = [na * 1.1, na * 1.0];
-        let s = StateHD::new(t, v, arr1(&n));
+        let n = dvector![na * 1.1, na * 1.0];
+        let s = StateHD::new(t, v / n.sum(), &(&n / n.sum()));
         let properties = TemperatureDependentProperties::new(&parameters, s.temperature);
-        let a_rust = HardSphere.helmholtz_energy(&parameters, &s, &properties);
+        let a_rust = HardSphere.helmholtz_energy_density(&parameters, &s, &properties) * v;
         dbg!(a_rust / na);
         assert_relative_eq!(a_rust / na, 1.898534632022848, epsilon = 5e-7);
     }
