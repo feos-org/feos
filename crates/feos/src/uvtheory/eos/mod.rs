@@ -1,8 +1,9 @@
 use crate::uvtheory::parameters::UVTheoryPars;
 
 use super::parameters::UVTheoryParameters;
-use feos_core::{Components, Molarweight, Residual};
-use ndarray::Array1;
+use feos_core::{Molarweight, ResidualDyn, Subset};
+use nalgebra::DVector;
+use num_dual::DualNum;
 use quantity::MolarWeight;
 use std::f64::consts::FRAC_PI_6;
 
@@ -60,23 +61,23 @@ impl UVTheory {
     }
 }
 
-impl Components for UVTheory {
-    fn components(&self) -> usize {
-        self.parameters.pure.len()
-    }
-
+impl Subset for UVTheory {
     fn subset(&self, component_list: &[usize]) -> Self {
         Self::with_options(self.parameters.subset(component_list), self.options.clone())
     }
 }
 
-impl Residual for UVTheory {
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        self.options.max_eta * moles.sum()
-            / (FRAC_PI_6 * self.params.sigma.mapv(|v| v.powi(3)) * moles).sum()
+impl ResidualDyn for UVTheory {
+    fn components(&self) -> usize {
+        self.parameters.pure.len()
     }
 
-    fn residual_helmholtz_energy_contributions<D: num_dual::DualNum<f64> + Copy>(
+    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+        let sigma3 = self.params.sigma.map(|v| v.powi(3));
+        (sigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
+    }
+
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &feos_core::StateHD<D>,
     ) -> Vec<(String, D)> {
@@ -95,7 +96,7 @@ impl Residual for UVTheory {
 }
 
 impl Molarweight for UVTheory {
-    fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
+    fn molar_weight(&self) -> MolarWeight<DVector<f64>> {
         self.parameters.molar_weight.clone()
     }
 }
@@ -109,7 +110,7 @@ mod test {
     use approx::assert_relative_eq;
     use feos_core::parameter::{Identifier, PureRecord};
     use feos_core::{FeosResult, State};
-    use ndarray::arr1;
+    use nalgebra::dvector;
     use quantity::{ANGSTROM, KELVIN, MOL, NAV, RGAS};
     use std::sync::Arc;
     use typenum::P3;
@@ -124,7 +125,7 @@ mod test {
         let reduced_temperature = 4.0;
         let reduced_density = 1.0;
         let temperature = reduced_temperature * eps_k * KELVIN;
-        let moles = arr1(&[2.0]) * MOL;
+        let moles = dvector![2.0] * MOL;
         let volume = (sig * ANGSTROM).powi::<P3>() / reduced_density * NAV * 2.0 * MOL;
         let s = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
         let a = (s.residual_molar_helmholtz_energy() / (RGAS * temperature)).into_value();
@@ -148,7 +149,7 @@ mod test {
         let reduced_temperature = 4.0;
         let reduced_density = 1.0;
         let temperature = reduced_temperature * eps_k * KELVIN;
-        let moles = arr1(&[2.0]) * MOL;
+        let moles = dvector![2.0] * MOL;
         let volume = (sig * ANGSTROM).powi::<P3>() / reduced_density * NAV * 2.0 * MOL;
         let s = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
 
@@ -174,7 +175,7 @@ mod test {
         let reduced_temperature = 4.0;
         let reduced_density = 0.5;
         let temperature = reduced_temperature * eps_k * KELVIN;
-        let moles = arr1(&[2.0]) * MOL;
+        let moles = dvector![2.0] * MOL;
         let volume = (sig * ANGSTROM).powi::<P3>() / reduced_density * NAV * 2.0 * MOL;
         let s = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
         let a = (s.residual_molar_helmholtz_energy() / (RGAS * temperature)).into_value();
@@ -209,7 +210,7 @@ mod test {
         let t_x = reduced_temperature * eps_k_x * KELVIN;
         let sig_x = (sig1 + sig2) / 2.0; // Check rule!!
         let reduced_density = 1.0;
-        let moles = arr1(&[1.7, 0.3]) * MOL;
+        let moles = dvector![1.7, 0.3] * MOL;
         let total_moles = moles.sum();
         let volume = (sig_x * ANGSTROM).powi::<P3>() / reduced_density * NAV * total_moles;
 
@@ -231,10 +232,10 @@ mod test {
     #[test]
     fn helmholtz_energy_wca_mixture() -> FeosResult<()> {
         let parameters = test_parameters_mixture(
-            arr1(&[12.0, 12.0]),
-            arr1(&[6.0, 6.0]),
-            arr1(&[1.0, 1.0]),
-            arr1(&[1.0, 0.5]),
+            dvector![12.0, 12.0],
+            dvector![6.0, 6.0],
+            dvector![1.0, 1.0],
+            dvector![1.0, 0.5],
         );
         let p = UVTheoryPars::new(&parameters, Perturbation::WeeksChandlerAndersen);
 
@@ -242,7 +243,7 @@ mod test {
         let reduced_temperature = 1.0;
         let t_x = reduced_temperature * p.epsilon_k[0] * KELVIN;
         let reduced_density = 0.9;
-        let moles = arr1(&[0.4, 0.6]) * MOL;
+        let moles = dvector![0.4, 0.6] * MOL;
         let total_moles = moles.sum();
         let volume = (p.sigma[0] * ANGSTROM).powi::<P3>() / reduced_density * NAV * total_moles;
 
@@ -259,10 +260,10 @@ mod test {
     #[test]
     fn helmholtz_energy_wca_mixture_different_sigma() -> FeosResult<()> {
         let parameters = test_parameters_mixture(
-            arr1(&[12.0, 12.0]),
-            arr1(&[6.0, 6.0]),
-            arr1(&[1.0, 2.0]),
-            arr1(&[1.0, 0.5]),
+            dvector![12.0, 12.0],
+            dvector![6.0, 6.0],
+            dvector![1.0, 2.0],
+            dvector![1.0, 0.5],
         );
         let p = UVTheoryPars::new(&parameters, Perturbation::WeeksChandlerAndersen);
 
@@ -271,7 +272,7 @@ mod test {
         let t_x = reduced_temperature * p.epsilon_k[0] * KELVIN;
         let sigma_x_3 = (0.4 + 0.6 * 8.0) * ANGSTROM.powi::<P3>();
         let density = 0.52000000000000002 / sigma_x_3;
-        let moles = arr1(&[0.4, 0.6]) * MOL;
+        let moles = dvector![0.4, 0.6] * MOL;
         let total_moles = moles.sum();
         let volume = NAV * total_moles / density;
 
