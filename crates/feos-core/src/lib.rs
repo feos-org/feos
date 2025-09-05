@@ -34,8 +34,8 @@ mod parameter_fit;
 mod phase_equilibria;
 mod state;
 pub use equation_of_state::{
-    EquationOfState, IdealGas, IdealGasAD, Molarweight, NoResidual, Residual, ResidualConst,
-    ResidualDyn, Subset, Total,
+    EquationOfState, IdealGas, Molarweight, NoResidual, Residual, ResidualConst, ResidualDyn,
+    Subset, Total,
 };
 pub use errors::{FeosError, FeosResult};
 pub use parameter_fit::{BinaryModel, ParametersAD, PureModel};

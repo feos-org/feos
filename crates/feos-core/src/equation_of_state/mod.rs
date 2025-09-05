@@ -10,7 +10,7 @@ use quantity::{Energy, MolarEnergy, MolarWeight, Moles, Temperature, Volume};
 mod ideal_gas;
 mod residual;
 
-pub use ideal_gas::{IdealGas, IdealGasAD};
+pub use ideal_gas::IdealGas;
 pub use residual::{Molarweight, NoResidual, Residual, ResidualConst, ResidualDyn, Subset};
 
 /// An equation of state consisting of an ideal gas model
@@ -112,19 +112,17 @@ pub trait Total<N: Dim = Dyn, D: DualNum<f64> + Copy = f64>: Residual<N, D>
 where
     DefaultAllocator: Allocator<N>,
 {
-    type IdealGas<'a>: IdealGasAD<D>
-    where
-        Self: 'a;
+    type IdealGas: IdealGas<D>;
 
     fn ideal_gas_model(&self) -> &'static str;
 
-    fn ideal_gas<'a>(&'a self) -> impl Iterator<Item = Self::IdealGas<'a>>;
+    fn ideal_gas(&self) -> impl Iterator<Item = &Self::IdealGas>;
 
     fn ln_lambda3<D2: DualNum<f64, Inner = D> + Copy>(&self, temperature: D2) -> OVector<D2, N> {
         OVector::from_iterator_generic(
             N::from_usize(self.components()),
             U1,
-            self.ideal_gas().map(|i| i.ln_lambda3_ad(temperature)),
+            self.ideal_gas().map(|i| i.ln_lambda3(temperature)),
         )
     }
 
@@ -142,12 +140,12 @@ where
             } else {
                 r.ln() - 1.0
             };
-            res += r * (i.ln_lambda3_ad(temperature) + ln_rho_m1)
+            res += r * (i.ln_lambda3(temperature) + ln_rho_m1)
         }
         res * molar_volume * temperature
     }
 
-    fn ideal_gas_helmholtz_energy_unit<D2: DualNum<f64, Inner = D> + Copy>(
+    fn ideal_gas_helmholtz_energy<D2: DualNum<f64, Inner = D> + Copy>(
         &self,
         temperature: Temperature<D2>,
         volume: Volume<D2>,
@@ -162,78 +160,40 @@ where
             &molefracs,
         )) * total_moles
     }
-
-    fn ideal_gas_molar_helmholtz_energy_0(
-        &self,
-        temperature: D,
-        molar_volume: D,
-        molefracs: &OVector<D, N>,
-    ) -> D {
-        let partial_density = molefracs / molar_volume;
-        let mut res = D::from(0.0);
-        for (i, &r) in self.ideal_gas().zip(partial_density.iter()) {
-            let ln_rho_m1 = if r.re() == 0.0 {
-                D::from(0.0)
-            } else {
-                r.ln() - 1.0
-            };
-            res += r * (i.ln_lambda3(temperature) + ln_rho_m1)
-        }
-        res * molar_volume * temperature
-    }
-
-    fn ideal_gas_helmholtz_energy_0(
-        &self,
-        temperature: Temperature<D>,
-        volume: Volume<D>,
-        moles: &Moles<OVector<D, N>>,
-    ) -> Energy<D> {
-        let total_moles = moles.sum();
-        let molefracs = moles / total_moles;
-        let molar_volume = volume / total_moles;
-        MolarEnergy::from_reduced(self.ideal_gas_molar_helmholtz_energy_0(
-            temperature.into_reduced(),
-            molar_volume.into_reduced(),
-            &molefracs,
-        )) * total_moles
-    }
 }
 
 impl<
     I: IdealGas + Clone + 'static,
     C: Deref<Target = EquationOfState<Vec<I>, R>> + Clone,
     R: ResidualDyn + 'static,
-    D: DualNum<f64> + Copy,
-> Total<Dyn, D> for C
+> Total<Dyn, f64> for C
 {
-    type IdealGas<'a>
-        = &'a I
-    where
-        Self: 'a;
+    type IdealGas = I;
 
     fn ideal_gas_model(&self) -> &'static str {
         self.ideal_gas[0].ideal_gas_model()
     }
 
-    fn ideal_gas<'a>(&'a self) -> impl Iterator<Item = Self::IdealGas<'a>> {
+    fn ideal_gas(&self) -> impl Iterator<Item = &Self::IdealGas> {
         self.ideal_gas.iter()
     }
 }
 
-impl<I: IdealGasAD<D>, R: ResidualConst<N, D> + 'static, D: DualNum<f64> + Copy, const N: usize>
-    Total<Const<N>, D> for EquationOfState<[I; N], R>
+impl<
+    I: IdealGas<D> + Clone,
+    R: ResidualConst<N, D> + 'static,
+    D: DualNum<f64> + Copy,
+    const N: usize,
+> Total<Const<N>, D> for EquationOfState<[I; N], R>
 {
-    type IdealGas<'a>
-        = I
-    where
-        I: 'a;
+    type IdealGas = I;
 
     fn ideal_gas_model(&self) -> &'static str {
         self.ideal_gas[0].ideal_gas_model()
     }
 
-    fn ideal_gas<'a>(&'a self) -> impl Iterator<Item = Self::IdealGas<'a>> {
-        self.ideal_gas.clone().into_iter()
+    fn ideal_gas(&self) -> impl Iterator<Item = &Self::IdealGas> {
+        self.ideal_gas.iter()
     }
 }
 

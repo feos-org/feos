@@ -20,7 +20,7 @@ where
         let ideal_gas = || {
             quantity::ad::gradient_copy(
                 partial2(
-                    |n, &t, &v| self.eos.ideal_gas_helmholtz_energy_unit(t, v, &n),
+                    |n, &t, &v| self.eos.ideal_gas_helmholtz_energy(t, v, &n),
                     &self.temperature,
                     &self.volume,
                 ),
@@ -37,7 +37,7 @@ where
         let ideal_gas = || {
             quantity::ad::partial_hessian_copy(
                 partial(
-                    |(n, t), &v| self.eos.ideal_gas_helmholtz_energy_unit(t, v, &n),
+                    |(n, t), &v| self.eos.ideal_gas_helmholtz_energy(t, v, &n),
                     &self.volume,
                 ),
                 (&self.moles, self.temperature),
@@ -80,7 +80,7 @@ where
         let ideal_gas = || {
             -quantity::ad::first_derivative(
                 partial2(
-                    |t, &v, n| self.eos.ideal_gas_helmholtz_energy_unit(t, v, n),
+                    |t, &v, n| self.eos.ideal_gas_helmholtz_energy(t, v, n),
                     &self.volume,
                     &self.moles,
                 ),
@@ -111,7 +111,7 @@ where
         let ideal_gas = || {
             -quantity::ad::second_derivative(
                 partial2(
-                    |t, &v, n| self.eos.ideal_gas_helmholtz_energy_unit(t, v, n),
+                    |t, &v, n| self.eos.ideal_gas_helmholtz_energy(t, v, n),
                     &self.volume,
                     &self.moles,
                 ),
@@ -131,7 +131,7 @@ where
         let ideal_gas = || {
             -quantity::ad::third_derivative(
                 partial2(
-                    |t, &v, n| self.eos.ideal_gas_helmholtz_energy_unit(t, v, n),
+                    |t, &v, n| self.eos.ideal_gas_helmholtz_energy(t, v, n),
                     &self.volume,
                     &self.moles,
                 ),
@@ -165,8 +165,14 @@ where
     pub fn helmholtz_energy(&self, contributions: Contributions) -> Energy<D> {
         let residual = || self.residual_helmholtz_energy();
         let ideal_gas = || {
-            self.eos
-                .ideal_gas_helmholtz_energy_0(self.temperature, self.volume, &self.moles)
+            quantity::ad::zeroth_derivative(
+                partial2(
+                    |t, &v, n| self.eos.ideal_gas_helmholtz_energy(t, v, n),
+                    &self.volume,
+                    &self.moles,
+                ),
+                self.temperature,
+            )
         };
         Self::contributions(ideal_gas, residual, contributions)
     }
