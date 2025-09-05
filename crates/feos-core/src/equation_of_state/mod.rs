@@ -10,7 +10,7 @@ use quantity::{Energy, MolarEnergy, MolarWeight, Moles, Temperature, Volume};
 mod ideal_gas;
 mod residual;
 
-pub use ideal_gas::{IdealGas, IdealGasDyn};
+pub use ideal_gas::{IdealGas, IdealGasAD};
 pub use residual::{Molarweight, NoResidual, Residual, ResidualConst, ResidualDyn, Subset};
 
 /// An equation of state consisting of an ideal gas model
@@ -75,18 +75,17 @@ impl<I: Clone, R: Subset> Subset for EquationOfState<Vec<I>, R> {
     }
 }
 
-impl<I: IdealGas<D>, R: ResidualConst<N, D>, D: DualNum<f64> + Copy, const N: usize>
-    ResidualConst<N, D> for EquationOfState<[I; N], R>
+impl<I: Clone, R: ResidualConst<N, D>, D: DualNum<f64> + Copy, const N: usize> ResidualConst<N, D>
+    for EquationOfState<[I; N], R>
 {
     const NAME: &str = R::NAME;
-    type Real = EquationOfState<[I::Real; N], R::Real>;
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy> =
-        EquationOfState<[I::Lifted<D2>; N], R::Lifted<D2>>;
+    type Real = EquationOfState<[I; N], R::Real>;
+    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = EquationOfState<[I; N], R::Lifted<D2>>;
     fn re(&self) -> Self::Real {
-        EquationOfState::new(self.ideal_gas.each_ref().map(I::re), self.residual.re())
+        EquationOfState::new(self.ideal_gas.clone(), self.residual.re())
     }
     fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
-        EquationOfState::new(self.ideal_gas.each_ref().map(I::lift), self.residual.lift())
+        EquationOfState::new(self.ideal_gas.clone(), self.residual.lift())
     }
 
     fn compute_max_density(&self, molefracs: &SVector<D, N>) -> D {
@@ -113,7 +112,7 @@ pub trait Total<N: Dim = Dyn, D: DualNum<f64> + Copy = f64>: Residual<N, D>
 where
     DefaultAllocator: Allocator<N>,
 {
-    type IdealGas<'a>: IdealGas<D>
+    type IdealGas<'a>: IdealGasAD<D>
     where
         Self: 'a;
 
@@ -125,7 +124,7 @@ where
         OVector::from_iterator_generic(
             N::from_usize(self.components()),
             U1,
-            self.ideal_gas().map(|i| i.lift().ln_lambda3(temperature)),
+            self.ideal_gas().map(|i| i.ln_lambda3_ad(temperature)),
         )
     }
 
@@ -143,7 +142,7 @@ where
             } else {
                 r.ln() - 1.0
             };
-            res += r * (i.lift().ln_lambda3(temperature) + ln_rho_m1)
+            res += r * (i.ln_lambda3_ad(temperature) + ln_rho_m1)
         }
         res * molar_volume * temperature
     }
@@ -201,7 +200,7 @@ where
 }
 
 impl<
-    I: IdealGasDyn + Clone + 'static,
+    I: IdealGas + Clone + 'static,
     C: Deref<Target = EquationOfState<Vec<I>, R>> + Clone,
     R: ResidualDyn + 'static,
     D: DualNum<f64> + Copy,
@@ -221,7 +220,7 @@ impl<
     }
 }
 
-impl<I: IdealGas<D>, R: ResidualConst<N, D> + 'static, D: DualNum<f64> + Copy, const N: usize>
+impl<I: IdealGasAD<D>, R: ResidualConst<N, D> + 'static, D: DualNum<f64> + Copy, const N: usize>
     Total<Const<N>, D> for EquationOfState<[I; N], R>
 {
     type IdealGas<'a>

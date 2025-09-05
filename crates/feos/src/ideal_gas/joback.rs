@@ -1,7 +1,7 @@
 //! Implementation of the ideal gas heat capacity (de Broglie wavelength)
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 use feos_core::parameter::{FromSegments, Parameters};
-use feos_core::{FeosResult, IdealGas, IdealGasDyn, ReferenceSystem};
+use feos_core::{FeosResult, IdealGas, IdealGasAD, ReferenceSystem};
 use nalgebra::DVector;
 use num_dual::*;
 use quantity::{MolarEntropy, Temperature};
@@ -118,7 +118,7 @@ impl Joback {
     }
 }
 
-impl IdealGasDyn for Joback {
+impl IdealGas for Joback {
     fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
         Self::ln_lambda3(self.0, temperature)
     }
@@ -166,17 +166,9 @@ impl<D: DualNum<f64> + Copy> Joback<D> {
     }
 }
 
-impl<D: DualNum<f64> + Copy> IdealGas<D> for Joback<D> {
-    type Real = Joback;
-
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = Joback<D2>;
-
-    fn re(&self) -> Self::Real {
-        Joback(self.0.map(|x| x.re()))
-    }
-
-    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
-        Joback(self.0.each_ref().map(D2::from_inner))
+impl<D: DualNum<f64> + Copy> IdealGasAD<D> for Joback<D> {
+    fn ln_lambda3_ad<D2: DualNum<f64, Inner = D> + Copy>(&self, temperature: D2) -> D2 {
+        Joback::ln_lambda3(self.0.each_ref().map(D2::from_inner), temperature)
     }
 
     fn ln_lambda3(&self, temperature: D) -> D {

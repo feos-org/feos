@@ -68,7 +68,7 @@ pub fn derive_components(input: TokenStream) -> TokenStream {
         .into()
 }
 
-#[proc_macro_derive(IdealGasDyn)]
+#[proc_macro_derive(IdealGas)]
 pub fn derive_ideal_gas(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     expand_ideal_gas(input)

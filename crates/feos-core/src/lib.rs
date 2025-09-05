@@ -34,7 +34,7 @@ mod parameter_fit;
 mod phase_equilibria;
 mod state;
 pub use equation_of_state::{
-    EquationOfState, IdealGas, IdealGasDyn, Molarweight, NoResidual, Residual, ResidualConst,
+    EquationOfState, IdealGas, IdealGasAD, Molarweight, NoResidual, Residual, ResidualConst,
     ResidualDyn, Subset, Total,
 };
 pub use errors::{FeosError, FeosResult};
@@ -204,7 +204,7 @@ mod tests {
     use crate::FeosResult;
     use crate::StateBuilder;
     use crate::cubic::*;
-    use crate::equation_of_state::{EquationOfState, IdealGasDyn};
+    use crate::equation_of_state::{EquationOfState, IdealGas};
     use crate::parameter::*;
     use approx::*;
     use num_dual::DualNum;
@@ -214,7 +214,7 @@ mod tests {
     #[derive(Clone, Copy)]
     struct NoIdealGas;
 
-    impl IdealGasDyn for NoIdealGas {
+    impl IdealGas for NoIdealGas {
         fn ideal_gas_model(&self) -> &'static str {
             "NoIdealGas"
         }

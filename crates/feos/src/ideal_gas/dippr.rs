@@ -1,5 +1,5 @@
 use feos_core::parameter::Parameters;
-use feos_core::{FeosResult, IdealGasDyn};
+use feos_core::{FeosResult, IdealGas};
 use nalgebra::DVector;
 use num_dual::DualNum;
 use quantity::{JOULE, KELVIN, KILO, MOL, MolarEntropy, Temperature};
@@ -139,7 +139,7 @@ impl Dippr {
 const RGAS: f64 = 8.31446261815324 * 1000.0;
 const T0: f64 = 298.15;
 
-impl IdealGasDyn for Dippr {
+impl IdealGas for Dippr {
     fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
         let t = temperature;
         let h = self.c_p_integral(t) - self.c_p_integral(T0);
