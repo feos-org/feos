@@ -145,16 +145,16 @@ const GROUPS: [&str; 22] = [
 ];
 
 impl<D: DualNum<f64> + Copy> Joback<D> {
-    pub fn from_groups(group_counts: [D; 22]) -> [D; 5] {
+    pub fn from_groups(group_counts: [D; 22]) -> Self {
         let a: D = A.into_iter().zip(group_counts).map(|(a, g)| g * a).sum();
         let b: D = B.into_iter().zip(group_counts).map(|(b, g)| g * b).sum();
         let c: D = C.into_iter().zip(group_counts).map(|(c, g)| g * c).sum();
         let d: D = D.into_iter().zip(group_counts).map(|(d, g)| g * d).sum();
 
-        [a - 37.93, b + 0.21, c - 3.91e-4, d + 2.06e-7, D::zero()]
+        Self([a - 37.93, b + 0.21, c - 3.91e-4, d + 2.06e-7, D::zero()])
     }
 
-    pub fn from_group_counts(group_counts: &HashMap<&str, D>) -> [D; 5] {
+    pub fn from_group_counts(group_counts: &HashMap<&str, D>) -> Self {
         Self::from_groups(GROUPS.map(|g| *group_counts.get(g).unwrap_or(&D::zero())))
     }
 }
