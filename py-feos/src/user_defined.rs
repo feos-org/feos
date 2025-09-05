@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use feos_core::{IdealGasDyn, Molarweight, ResidualDyn, StateHD, Subset};
+use feos_core::{IdealGas, Molarweight, ResidualDyn, StateHD, Subset};
 use nalgebra::DVector;
 use num_dual::*;
 use numpy::{PyArray, PyReadonlyArrayDyn, PyReadwriteArrayDyn};
@@ -30,7 +30,7 @@ impl PyIdealGas {
 
 macro_rules! impl_ideal_gas {
     ($($py_hd_id:ident, $hd_ty:ty);*) => {
-        impl IdealGasDyn for PyIdealGas {
+        impl IdealGas for PyIdealGas {
             fn ideal_gas_model(&self) -> &'static str {
                 "Ideal gas (Python)"
             }

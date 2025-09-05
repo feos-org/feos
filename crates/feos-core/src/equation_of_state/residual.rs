@@ -140,7 +140,6 @@ where
 
     type Real: Residual<N>;
     type Lifted<D2: DualNum<f64, Inner = D> + Copy>: Residual<N, D2>;
-    // type Parameters: DualStruct<D, f64>;
     fn re(&self) -> Self::Real;
     fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2>;
 
@@ -214,13 +213,12 @@ where
             * volume
     }
 
-    /// Check if the provided optional mole number is consistent with the
+    /// Check if the provided optional molar concentration is consistent with the
     /// equation of state.
     ///
-    /// In general, the number of elements in `moles` needs to match the number
+    /// In general, the number of elements in `molefracs` needs to match the number
     /// of components of the equation of state. For a pure component, however,
-    /// no moles need to be provided. In that case, it is set to the constant
-    /// reference value.
+    /// no molefracs need to be provided.
     fn validate_molefracs(&self, molefracs: &Option<OVector<D, N>>) -> FeosResult<OVector<D, N>> {
         let l = molefracs.as_ref().map_or(1, |m| m.len());
         if self.components() == l {

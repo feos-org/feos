@@ -1,12 +1,12 @@
 use num_dual::DualNum;
-use std::ops::Deref;
 
-/// Ideal gas Helmholtz energy contribution.
-pub trait IdealGas<D = f64>: Clone {
-    type Real: IdealGas;
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy>: IdealGas<D2>;
-    fn re(&self) -> Self::Real;
-    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2>;
+/// Ideal gas Helmholtz energy contribution that allows calculating derivatives
+/// with respect to model parameters.
+pub trait IdealGasAD<D>: Clone {
+    /// Implementation of an ideal gas model in terms of the
+    /// logarithm of the cubic thermal de Broglie wavelength
+    /// in units ln(A³) for each component in the system.
+    fn ln_lambda3_ad<D2: DualNum<f64, Inner = D> + Copy>(&self, temperature: D2) -> D2;
 
     /// Implementation of an ideal gas model in terms of the
     /// logarithm of the cubic thermal de Broglie wavelength
@@ -17,7 +17,8 @@ pub trait IdealGas<D = f64>: Clone {
     fn ideal_gas_model(&self) -> &'static str;
 }
 
-pub trait IdealGasDyn {
+/// Ideal gas Helmholtz energy contribution without automatic differentiation.
+pub trait IdealGas {
     /// Implementation of an ideal gas model in terms of the
     /// logarithm of the cubic thermal de Broglie wavelength
     /// in units ln(A³) for each component in the system.
@@ -27,18 +28,13 @@ pub trait IdealGasDyn {
     fn ideal_gas_model(&self) -> &'static str;
 }
 
-impl<C: Deref<Target = T> + Clone, T: IdealGasDyn, D: DualNum<f64> + Copy> IdealGas<D> for C {
-    type Real = Self;
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = Self;
-    fn re(&self) -> Self::Real {
-        self.clone()
-    }
-    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
-        self.clone()
+impl<T: IdealGas, D: DualNum<f64> + Copy> IdealGasAD<D> for &T {
+    fn ln_lambda3_ad<D2: DualNum<f64> + Copy>(&self, temperature: D2) -> D2 {
+        IdealGas::ln_lambda3(*self, temperature)
     }
 
     fn ln_lambda3(&self, temperature: D) -> D {
-        IdealGasDyn::ln_lambda3(self.deref(), temperature)
+        IdealGas::ln_lambda3(*self, temperature)
     }
 
     fn ideal_gas_model(&self) -> &'static str {
