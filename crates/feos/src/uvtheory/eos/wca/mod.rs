@@ -25,15 +25,15 @@ impl WeeksChandlerAndersen {
         vec![
             (
                 "Hard Sphere (WCA)".to_string(),
-                HardSphere.helmholtz_energy(parameters, state),
+                HardSphere.helmholtz_energy_density(parameters, state),
             ),
             (
                 "Reference Perturbation (WCA)".to_string(),
-                ReferencePerturbation.helmholtz_energy(parameters, state),
+                ReferencePerturbation.helmholtz_energy_density(parameters, state),
             ),
             (
                 "Attractive Perturbation (WCA)".to_string(),
-                AttractivePerturbation.helmholtz_energy(parameters, state),
+                AttractivePerturbation.helmholtz_energy_density(parameters, state),
             ),
         ]
     }
@@ -50,15 +50,15 @@ impl WeeksChandlerAndersenB3 {
         vec![
             (
                 "Hard Sphere (WCA)".to_string(),
-                HardSphere.helmholtz_energy(parameters, state),
+                HardSphere.helmholtz_energy_density(parameters, state),
             ),
             (
                 "Reference Perturbation (WCA B3)".to_string(),
-                ReferencePerturbationB3.helmholtz_energy(parameters, state),
+                ReferencePerturbationB3.helmholtz_energy_density(parameters, state),
             ),
             (
                 "Attractive Perturbation (WCA B3)".to_string(),
-                AttractivePerturbationB3.helmholtz_energy(parameters, state),
+                AttractivePerturbationB3.helmholtz_energy_density(parameters, state),
             ),
         ]
     }

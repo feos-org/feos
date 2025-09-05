@@ -7,17 +7,21 @@ use crate::residual::ResidualModel;
 use crate::state::{PyContributions, PyState};
 use feos_core::{EquationOfState, ReferenceSystem};
 use feos_dft::interface::PlanarInterface;
+use nalgebra::{DMatrix, DVector};
 use ndarray::*;
 use numpy::*;
 use pyo3::*;
 use quantity::*;
+use std::sync::Arc;
 
 mod surface_tension_diagram;
 pub use surface_tension_diagram::PySurfaceTensionDiagram;
 
 /// A one-dimensional density profile of a vapor-liquid or liquid-liquid interface.
 #[pyclass(name = "PlanarInterface")]
-pub struct PyPlanarInterface(PlanarInterface<EquationOfState<IdealGasModel, ResidualModel>>);
+pub struct PyPlanarInterface(
+    PlanarInterface<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
+);
 
 impl_1d_profile!(PyPlanarInterface, [get_z]);
 

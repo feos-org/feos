@@ -1,11 +1,13 @@
 use feos_core::cubic::PengRobinson;
 use feos_core::*;
-use feos_derive::{Components, Residual};
 #[cfg(feature = "dft")]
-use feos_derive::{FunctionalContribution, HelmholtzEnergyFunctional};
+use feos_derive::{FunctionalContribution, HelmholtzEnergyFunctionalDyn};
+use feos_derive::{ResidualDyn, Subset};
 #[cfg(feature = "dft")]
-use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional};
-use ndarray::{Array1, ScalarOperand};
+use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctionalDyn};
+use nalgebra::DVector;
+#[cfg(feature = "dft")]
+use ndarray::Array1;
 use num_dual::DualNum;
 use quantity::*;
 
@@ -13,14 +15,14 @@ use quantity::*;
 ///
 /// Particularly relevant for situations in which generic types
 /// are undesirable (e.g. FFI).
-#[cfg_attr(feature = "dft", derive(HelmholtzEnergyFunctional))]
-#[derive(Components, Residual)]
+#[cfg_attr(feature = "dft", derive(HelmholtzEnergyFunctionalDyn))]
+#[derive(ResidualDyn, Subset)]
 #[expect(clippy::large_enum_variant)]
 pub enum ResidualModel {
     // Equations of state
     NoResidual(NoResidual),
     #[cfg(feature = "pcsaft")]
-    #[implement(entropy_scaling, molar_weight)]
+    #[implement(molar_weight)]
     PcSaft(feos::pcsaft::PcSaft),
 
     #[cfg(feature = "epcsaft")]
@@ -38,7 +40,7 @@ pub enum ResidualModel {
     Python(crate::user_defined::PyResidual),
 
     #[cfg(feature = "saftvrqmie")]
-    #[implement(entropy_scaling, molar_weight)]
+    #[implement(molar_weight)]
     SaftVRQMie(feos::saftvrqmie::SaftVRQMie),
 
     #[cfg(feature = "saftvrmie")]

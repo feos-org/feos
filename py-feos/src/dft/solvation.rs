@@ -5,10 +5,12 @@ use crate::state::{PyContributions, PyState};
 use crate::{error::PyFeosError, ideal_gas::IdealGasModel};
 use feos_core::{EquationOfState, ReferenceSystem};
 use feos_dft::solvation::{PairCorrelation, SolvationProfile};
+use nalgebra::{DMatrix, DVector};
 use ndarray::*;
 use numpy::*;
 use pyo3::*;
 use quantity::*;
+use std::sync::Arc;
 
 /// Density profile and properties of a solute in an inhomogeneous fluid.
 ///
@@ -36,7 +38,9 @@ use quantity::*;
 /// SolvationProfile
 ///
 #[pyclass(name = "SolvationProfile")]
-pub struct PySolvationProfile(SolvationProfile<EquationOfState<IdealGasModel, ResidualModel>>);
+pub struct PySolvationProfile(
+    SolvationProfile<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
+);
 
 impl_3d_profile!(PySolvationProfile, get_x, get_y, get_z);
 
@@ -102,7 +106,9 @@ impl PySolvationProfile {
 /// PairCorrelation
 ///
 #[pyclass(name = "PairCorrelation")]
-pub struct PyPairCorrelation(PairCorrelation<EquationOfState<IdealGasModel, ResidualModel>>);
+pub struct PyPairCorrelation(
+    PairCorrelation<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
+);
 
 impl_1d_profile!(PyPairCorrelation, [get_r]);
 

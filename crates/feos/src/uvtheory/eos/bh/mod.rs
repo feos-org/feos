@@ -20,15 +20,15 @@ impl BarkerHenderson {
         vec![
             (
                 "Hard Sphere (BH)".to_string(),
-                HardSphere.helmholtz_energy(parameters, state),
+                HardSphere.helmholtz_energy_density(parameters, state),
             ),
             (
                 "Reference Perturbation (BH)".to_string(),
-                ReferencePerturbation.helmholtz_energy(parameters, state),
+                ReferencePerturbation.helmholtz_energy_density(parameters, state),
             ),
             (
                 "Attractive Perturbation (BH)".to_string(),
-                AttractivePerturbation.helmholtz_energy(parameters, state),
+                AttractivePerturbation.helmholtz_energy_density(parameters, state),
             ),
         ]
     }

@@ -3,7 +3,7 @@ use super::PyEquationOfState;
 use crate::dft::{PyFMTVersion, PyHelmholtzEnergyFunctional};
 use crate::{ideal_gas::IdealGasModel, parameter::PyParameters, residual::ResidualModel};
 use feos::pets::{Pets, PetsOptions};
-use feos_core::{Components, EquationOfState};
+use feos_core::{EquationOfState, ResidualDyn};
 use pyo3::prelude::*;
 use std::sync::Arc;
 
@@ -30,11 +30,8 @@ impl PyEquationOfState {
             max_eta,
             ..Default::default()
         };
-        let residual = Arc::new(ResidualModel::Pets(Pets::with_options(
-            parameters.try_convert()?,
-            options,
-        )));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        let residual = ResidualModel::Pets(Pets::with_options(parameters.try_convert()?, options));
+        let ideal_gas = vec![IdealGasModel::NoModel; residual.components()];
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 }
@@ -71,11 +68,9 @@ impl PyHelmholtzEnergyFunctional {
             max_eta,
             fmt_version: fmt_version.into(),
         };
-        let func = Arc::new(ResidualModel::PetsFunctional(Pets::with_options(
-            parameters.try_convert()?,
-            options,
-        )));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
+        let func =
+            ResidualModel::PetsFunctional(Pets::with_options(parameters.try_convert()?, options));
+        let ideal_gas = vec![IdealGasModel::NoModel; func.components()];
         Ok(PyEquationOfState(Arc::new(EquationOfState::new(
             ideal_gas, func,
         ))))

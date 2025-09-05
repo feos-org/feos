@@ -1,6 +1,6 @@
 use super::BarkerHenderson;
 use crate::uvtheory::parameters::UVTheoryPars;
-use ndarray::prelude::*;
+use nalgebra::{DMatrix, DVector, dvector};
 use num_dual::DualNum;
 
 const BH_CONSTANTS_ETA_B: [[f64; 2]; 3] = [
@@ -22,7 +22,7 @@ impl BarkerHenderson {
     pub fn diameter_bh<D: DualNum<f64> + Copy>(
         parameters: &UVTheoryPars,
         temperature: D,
-    ) -> Array1<D> {
+    ) -> DVector<D> {
         parameters
             .cd_bh_pure
             .iter()
@@ -34,13 +34,14 @@ impl BarkerHenderson {
                     .powf(-0.5 / parameters.rep[i])
                     * parameters.sigma[i]
             })
-            .collect()
+            .collect::<Vec<_>>()
+            .into()
     }
 }
 
 pub(super) fn packing_fraction<D: DualNum<f64> + Copy>(
-    partial_density: &Array1<D>,
-    diameter: &Array1<D>,
+    partial_density: &DVector<D>,
+    diameter: &DVector<D>,
 ) -> D {
     (0..partial_density.len()).fold(D::zero(), |acc, i| {
         acc + partial_density[i] * diameter[i].powi(3) * (std::f64::consts::PI / 6.0)
@@ -49,37 +50,37 @@ pub(super) fn packing_fraction<D: DualNum<f64> + Copy>(
 
 pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
     parameters: &UVTheoryPars,
-    diameter: &Array1<D>,
+    diameter: &DVector<D>,
     eta: D,
-) -> Array2<D> {
+) -> DMatrix<D> {
     let n = parameters.att.len();
-    Array2::from_shape_fn((n, n), |(i, j)| {
+    DMatrix::from_fn(n, n, |i, j| {
         let tau =
             -(diameter[i] / parameters.sigma[i] + diameter[j] / parameters.sigma[j]) * 0.5 + 1.0; //dimensionless
         let tau2 = tau * tau;
 
-        let c = arr1(&[
+        let c = dvector![
             tau * BH_CONSTANTS_ETA_B[0][0] + tau2 * BH_CONSTANTS_ETA_B[0][1],
             tau * BH_CONSTANTS_ETA_B[1][0] + tau2 * BH_CONSTANTS_ETA_B[1][1],
             tau * BH_CONSTANTS_ETA_B[2][0] + tau2 * BH_CONSTANTS_ETA_B[2][1],
-        ]);
+        ];
         eta + eta * c[0] + eta * eta * c[1] + eta.powi(3) * c[2]
     })
 }
 
 pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
     parameters: &UVTheoryPars,
-    diameter: &Array1<D>,
+    diameter: &DVector<D>,
     eta: D,
-) -> Array2<D> {
+) -> DMatrix<D> {
     let n = parameters.att.len();
-    Array2::from_shape_fn((n, n), |(i, j)| {
+    DMatrix::from_fn(n, n, |i, j| {
         let tau =
             -(diameter[i] / parameters.sigma[i] + diameter[j] / parameters.sigma[j]) * 0.5 + 1.0;
         let tau2 = tau * tau;
-        let rep_inv = 1.0 / parameters.rep_ij[[i, j]];
+        let rep_inv = 1.0 / parameters.rep_ij[(i, j)];
 
-        let c = arr1(&[
+        let c = dvector![
             tau * (BH_CONSTANTS_ETA_A[0][0] + BH_CONSTANTS_ETA_A[0][1] * rep_inv)
                 + tau2 * (BH_CONSTANTS_ETA_A[0][2] + BH_CONSTANTS_ETA_A[0][3] * rep_inv),
             tau * (BH_CONSTANTS_ETA_A[1][0] + BH_CONSTANTS_ETA_A[1][1] * rep_inv)
@@ -88,7 +89,7 @@ pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
                 + tau2 * (BH_CONSTANTS_ETA_A[2][2] + BH_CONSTANTS_ETA_A[2][3] * rep_inv),
             tau * (BH_CONSTANTS_ETA_A[3][0] + BH_CONSTANTS_ETA_A[3][1] * rep_inv)
                 + tau2 * (BH_CONSTANTS_ETA_A[3][2] + BH_CONSTANTS_ETA_A[3][3] * rep_inv),
-        ]);
+        ];
 
         eta + eta * c[0] + eta * eta * c[1] + eta.powi(3) * c[2] + eta.powi(4) * c[3]
     })
