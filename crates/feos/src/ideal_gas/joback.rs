@@ -1,13 +1,12 @@
 //! Implementation of the ideal gas heat capacity (de Broglie wavelength)
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 use feos_core::parameter::{FromSegments, Parameters};
-use feos_core::{FeosResult, IdealGas, IdealGasAD, ReferenceSystem};
+use feos_core::{FeosResult, IdealGas, ReferenceSystem};
 use nalgebra::DVector;
 use num_dual::*;
 use quantity::{MolarEntropy, Temperature};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::ops::Mul;
 
 /// Coefficients used in the Joback model.
 ///
@@ -95,11 +94,11 @@ impl Joback {
             .sum();
         Ok(c_p / RGAS * quantity::RGAS)
     }
+}
 
-    fn ln_lambda3<D: DualNum<f64> + Copy + Mul<D1, Output = D>, D1: Copy>(
-        [a, b, c, d, e]: [D1; 5],
-        temperature: D,
-    ) -> D {
+impl<D: DualNum<f64> + Copy> IdealGas<D> for Joback<D> {
+    fn ln_lambda3<D2: DualNum<f64, Inner = D> + Copy>(&self, temperature: D2) -> D2 {
+        let [a, b, c, d, e] = self.0.each_ref().map(D2::from_inner);
         let t = temperature;
         let t2 = t * t;
         let t4 = t2 * t2;
@@ -115,12 +114,6 @@ impl Joback {
             + (t4 - T0_4) * e / 4.0
             + (t / T0).ln() * a;
         (h - t * s) / (t * RGAS) + f
-    }
-}
-
-impl IdealGas for Joback {
-    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
-        Self::ln_lambda3(self.0, temperature)
     }
 
     fn ideal_gas_model(&self) -> &'static str {
@@ -163,20 +156,6 @@ impl<D: DualNum<f64> + Copy> Joback<D> {
 
     pub fn from_group_counts(group_counts: &HashMap<&str, D>) -> [D; 5] {
         Self::from_groups(GROUPS.map(|g| *group_counts.get(g).unwrap_or(&D::zero())))
-    }
-}
-
-impl<D: DualNum<f64> + Copy> IdealGasAD<D> for Joback<D> {
-    fn ln_lambda3_ad<D2: DualNum<f64, Inner = D> + Copy>(&self, temperature: D2) -> D2 {
-        Joback::ln_lambda3(self.0.each_ref().map(D2::from_inner), temperature)
-    }
-
-    fn ln_lambda3(&self, temperature: D) -> D {
-        Joback::ln_lambda3(self.0, temperature)
-    }
-
-    fn ideal_gas_model(&self) -> &'static str {
-        "Ideal gas (Joback)"
     }
 }
 

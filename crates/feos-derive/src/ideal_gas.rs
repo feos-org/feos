@@ -42,7 +42,7 @@ fn impl_ideal_gas(
     });
     quote! {
         impl IdealGas for IdealGasModel {
-            fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
+            fn ln_lambda3<D: DualNum<f64, Inner=f64> + Copy>(&self, temperature: D) -> D {
                 match self {
                     #(#ln_lambda3,)*
                 }
