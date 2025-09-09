@@ -1301,8 +1301,10 @@ impl PyState {
             )
         } else {
             format!(
-                "|temperature|density|molefracs\n|-|-|-|\n|{:.5}|{:.5}|{:.5}|",
-                self.0.temperature, self.0.density, self.0.molefracs
+                "|temperature|density|molefracs\n|-|-|-|\n|{:.5}|{:.5}|{:.5?}|",
+                self.0.temperature,
+                self.0.density,
+                self.0.molefracs.as_slice()
             )
         }
     }
