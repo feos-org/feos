@@ -65,6 +65,36 @@ impl PyIdentifier {
         ))
     }
 
+    #[getter]
+    fn get_cas(&self) -> Option<String> {
+        self.0.cas.clone()
+    }
+
+    #[getter]
+    fn get_name(&self) -> Option<String> {
+        self.0.name.clone()
+    }
+
+    #[getter]
+    fn get_iupac_name(&self) -> Option<String> {
+        self.0.iupac_name.clone()
+    }
+
+    #[getter]
+    fn get_smiles(&self) -> Option<String> {
+        self.0.smiles.clone()
+    }
+
+    #[getter]
+    fn get_inchi(&self) -> Option<String> {
+        self.0.inchi.clone()
+    }
+
+    #[getter]
+    fn get_formula(&self) -> Option<String> {
+        self.0.formula.clone()
+    }
+
     fn __repr__(&self) -> String {
         self.0.to_string()
     }
