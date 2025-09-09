@@ -449,7 +449,7 @@ impl PyState {
     /// Returns
     /// -------
     /// List[Tuple[str, SINumber]]
-    fn pressure_contributions(&self) -> Vec<(String, Pressure)> {
+    fn pressure_contributions(&self) -> Vec<(&'static str, Pressure)> {
         self.0.pressure_contributions()
     }
 
@@ -609,7 +609,7 @@ impl PyState {
         &self,
         component: usize,
         contributions: PyContributions,
-    ) -> Vec<(String, MolarEnergy)> {
+    ) -> Vec<(&'static str, MolarEnergy)> {
         self.0
             .chemical_potential_contributions(component, contributions.into())
     }
@@ -960,7 +960,7 @@ impl PyState {
     /// Returns
     /// -------
     /// List[Tuple[str, SINumber]]
-    fn residual_molar_helmholtz_energy_contributions(&self) -> Vec<(String, MolarEnergy)> {
+    fn residual_molar_helmholtz_energy_contributions(&self) -> Vec<(&'static str, MolarEnergy)> {
         self.0.residual_molar_helmholtz_energy_contributions()
     }
 

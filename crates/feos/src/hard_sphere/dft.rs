@@ -329,7 +329,7 @@ impl ResidualDyn for FMTFunctional {
     fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         self.evaluate_bulk(state)
     }
 }

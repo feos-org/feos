@@ -542,7 +542,9 @@ where
     }
 
     /// Molar Helmholtz energy $a^\text{res}$ evaluated for each residual contribution of the equation of state.
-    pub fn residual_molar_helmholtz_energy_contributions(&self) -> Vec<(String, MolarEnergy<D>)> {
+    pub fn residual_molar_helmholtz_energy_contributions(
+        &self,
+    ) -> Vec<(&'static str, MolarEnergy<D>)> {
         let residual_contributions = self.eos.molar_helmholtz_energy_contributions(
             self.temperature.into_reduced(),
             self.density.into_reduced().recip(),
@@ -559,7 +561,7 @@ where
     pub fn residual_chemical_potential_contributions(
         &self,
         component: usize,
-    ) -> Vec<(String, MolarEnergy<D>)> {
+    ) -> Vec<(&'static str, MolarEnergy<D>)> {
         let t = Dual::from_re(self.temperature.into_reduced());
         let v = Dual::from_re(self.temperature.into_reduced());
         let mut x = self.molefracs.map(Dual::from_re);
@@ -576,7 +578,7 @@ where
     }
 
     /// Pressure $p$ evaluated for each contribution of the equation of state.
-    pub fn pressure_contributions(&self) -> Vec<(String, Pressure<D>)> {
+    pub fn pressure_contributions(&self) -> Vec<(&'static str, Pressure<D>)> {
         let t = Dual::from_re(self.temperature.into_reduced());
         let v = Dual::from_re(self.density.into_reduced().recip()).derivative();
         let x = self.molefracs.map(Dual::from_re);
@@ -585,7 +587,7 @@ where
             .lift()
             .molar_helmholtz_energy_contributions(t, v, &x);
         let mut res = Vec::with_capacity(contributions.len() + 1);
-        res.push(("Ideal gas".into(), self.density * RGAS * self.temperature));
+        res.push(("Ideal gas", self.density * RGAS * self.temperature));
         for (s, v) in contributions {
             res.push((s, Pressure::from_reduced(-v.eps)));
         }

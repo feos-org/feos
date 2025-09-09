@@ -5,7 +5,7 @@ use crate::errors::{FeosError, FeosResult};
 use crate::state::{Contributions, DensityInitialization, State};
 use crate::{ReferenceSystem, SolverOptions, TemperatureOrPressure, Verbosity};
 use nalgebra::allocator::Allocator;
-use nalgebra::{DVector, DefaultAllocator, Dim, U1, dvector};
+use nalgebra::{DVector, DefaultAllocator, Dim, dvector};
 use num_dual::{DualNum, DualStruct, Gradients};
 use quantity::{Density, Pressure, RGAS, Temperature};
 
@@ -37,7 +37,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 
 impl<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, N, D>
 where
-    DefaultAllocator: Allocator<N> + Allocator<N, N> + Allocator<U1, N>,
+    DefaultAllocator: Allocator<N>,
 {
     /// Calculate a phase equilibrium for a pure component
     /// and given temperature.
@@ -89,8 +89,8 @@ where
         for _ in 0..D::NDERIV {
             let v_l = liquid_density.recip();
             let v_v = vapor_density.recip();
-            let (f_l, p_l, dp_l) = eos._p_dpdrho(t, liquid_density, &x);
-            let (f_v, p_v, dp_v) = eos._p_dpdrho(t, vapor_density, &x);
+            let (f_l, p_l, dp_l) = eos.p_dpdrho(t, liquid_density, &x);
+            let (f_v, p_v, dp_v) = eos.p_dpdrho(t, vapor_density, &x);
             pressure = -(f_l * v_l - f_v * v_v + t * (v_v / v_l).ln()) / (v_l - v_v);
             liquid_density += (pressure - p_l) / dp_l;
             vapor_density += (pressure - p_v) / dp_v;
@@ -133,8 +133,8 @@ where
 
     for i in 1..=max_iter {
         // calculate properties
-        let (f_l_res, p_l, p_rho_l) = eos._p_dpdrho(temperature, liquid_density, &x);
-        let (f_v_res, p_v, p_rho_v) = eos._p_dpdrho(temperature, vapor_density, &x);
+        let (f_l_res, p_l, p_rho_l) = eos.p_dpdrho(temperature, liquid_density, &x);
+        let (f_v_res, p_v, p_rho_v) = eos.p_dpdrho(temperature, vapor_density, &x);
 
         // Estimate the new pressure
         let v_v = vapor_density.recip();

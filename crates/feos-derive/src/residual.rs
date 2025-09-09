@@ -59,7 +59,7 @@ fn impl_residual(
                     #(#compute_max_density,)*
                 }
             }
-            fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> Vec<(String, D)> {
+            fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> Vec<(&'static str, D)> {
                 match self {
                     #(#reduced_helmholtz_energy_density_contributions,)*
                 }

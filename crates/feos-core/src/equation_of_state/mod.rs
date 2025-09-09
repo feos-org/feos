@@ -53,7 +53,7 @@ impl<I: Clone, R: ResidualDyn> ResidualDyn for EquationOfState<Vec<I>, R> {
     fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         self.residual
             .reduced_helmholtz_energy_density_contributions(state)
     }
@@ -105,8 +105,7 @@ where
     }
 }
 
-/// Ideal gas Helmholtz energy contribution that allows calculating derivatives
-/// with respect to model parameters.
+/// Ideal gas Helmholtz energy contribution.
 pub trait IdealGas<D = f64> {
     /// Implementation of an ideal gas model in terms of the
     /// logarithm of the cubic thermal de Broglie wavelength

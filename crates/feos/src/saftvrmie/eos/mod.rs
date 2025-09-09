@@ -95,24 +95,24 @@ impl ResidualDyn for SaftVRMie {
     fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         let mut a = Vec::with_capacity(4);
 
         let (a_hs, _, d) = HardSphere.helmholtz_energy_density_and_properties(&self.params, state);
-        a.push(("Hard Sphere".to_string(), a_hs));
+        a.push(("Hard Sphere", a_hs));
 
         let properties = Properties::new(&self.params, state, &d);
         if self.chain {
             let a_disp_chain =
                 helmholtz_energy_density_disp_chain(&self.params, &properties, state);
-            a.push(("Dispersion + Chain".to_string(), a_disp_chain));
+            a.push(("Dispersion + Chain", a_disp_chain));
         } else {
             let a_disp = helmholtz_energy_density_disp(&self.params, &properties, state);
-            a.push(("Dispersion".to_string(), a_disp));
+            a.push(("Dispersion", a_disp));
         }
         if let Some(assoc) = self.association.as_ref() {
             a.push((
-                "Association".to_string(),
+                "Association",
                 assoc.helmholtz_energy_density(
                     &self.params,
                     &self.parameters.association,

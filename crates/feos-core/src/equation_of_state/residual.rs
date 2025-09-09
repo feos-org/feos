@@ -56,7 +56,7 @@ pub trait ResidualDyn {
     fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(String, D)>;
+    ) -> Vec<(&'static str, D)>;
 }
 
 impl<C: Deref<Target = T> + Clone, T: ResidualDyn, D: DualNum<f64> + Copy> Residual<Dyn, D> for C {
@@ -77,7 +77,7 @@ impl<C: Deref<Target = T> + Clone, T: ResidualDyn, D: DualNum<f64> + Copy> Resid
     fn reduced_helmholtz_energy_density_contributions(
         &self,
         state: &StateHD<D, Dyn>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         ResidualDyn::reduced_helmholtz_energy_density_contributions(self.deref(), state)
     }
 }
@@ -116,9 +116,9 @@ impl<T: ResidualConst<N, D>, const N: usize, D: DualNum<f64> + Copy> Residual<Co
     fn reduced_helmholtz_energy_density_contributions(
         &self,
         state: &StateHD<D, Const<N>>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         vec![(
-            T::NAME.into(),
+            T::NAME,
             T::reduced_residual_helmholtz_energy_density(self, state),
         )]
     }
@@ -156,7 +156,7 @@ where
     fn reduced_helmholtz_energy_density_contributions(
         &self,
         state: &StateHD<D, N>,
-    ) -> Vec<(String, D)>;
+    ) -> Vec<(&'static str, D)>;
 
     /// Evaluate the residual reduced Helmholtz energy density $\beta f^\mathrm{res}$.
     fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, N>) -> D {
@@ -172,7 +172,7 @@ where
         temperature: D,
         molar_volume: D,
         molefracs: &OVector<D, N>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         let state = StateHD::new(temperature, molar_volume, molefracs);
         self.reduced_helmholtz_energy_density_contributions(&state)
             .into_iter()
@@ -321,7 +321,7 @@ where
         dc_dt
     }
 
-    fn _p_dpdrho(&self, temperature: D, density: D, molefracs: &OVector<D, N>) -> (D, D, D) {
+    fn p_dpdrho(&self, temperature: D, density: D, molefracs: &OVector<D, N>) -> (D, D, D) {
         let molar_volume = density.recip();
         let (a, da, d2a) = second_derivative(
             partial2(
@@ -341,7 +341,7 @@ where
         )
     }
 
-    fn _p_dpdrho_d2pdrho2(
+    fn p_dpdrho_d2pdrho2(
         &self,
         temperature: D,
         density: D,
@@ -375,7 +375,7 @@ where
     ) -> (D, OVector<D, N>, OVector<D, N>, OMatrix<D, N, N>)
     where
         N: Gradients,
-        DefaultAllocator: Allocator<N> + Allocator<N, N>,
+        DefaultAllocator: Allocator<N, N>,
     {
         let (f_res, mu_res, dmu_res) = N::hessian(
             |rho, &t| {
@@ -402,7 +402,6 @@ where
     ) -> (D, OVector<D, N>, D, OVector<D, N>)
     where
         N: Gradients,
-        DefaultAllocator: Allocator<N> + Allocator<N, N>,
     {
         let (_, mu_res, a_res_v, mu_res_v) = N::partial_hessian(
             |x, v, &t| self.lift().residual_molar_helmholtz_energy(t, v, &x),
@@ -463,7 +462,7 @@ impl ResidualDyn for NoResidual {
     fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         _: &StateHD<D>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         vec![]
     }
 }

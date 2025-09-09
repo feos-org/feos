@@ -101,39 +101,39 @@ impl ResidualDyn for PcSaft {
     fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         let mut v = Vec::with_capacity(7);
         let d = self.params.hs_diameter(state.temperature);
 
         v.push((
-            "Hard Sphere".to_string(),
+            "Hard Sphere",
             HardSphere.helmholtz_energy_density(&self.params, state),
         ));
         if self.hard_chain {
             v.push((
-                "Hard Chain".to_string(),
+                "Hard Chain",
                 HardChain.helmholtz_energy_density(&self.params, state),
             ))
         }
         v.push((
-            "Dispersion".to_string(),
+            "Dispersion",
             Dispersion.helmholtz_energy_density(&self.params, state),
         ));
         if self.dipole {
             v.push((
-                "Dipole".to_string(),
+                "Dipole",
                 Dipole.helmholtz_energy_density(&self.params, state),
             ))
         }
         if self.quadrupole {
             v.push((
-                "Quadrupole".to_string(),
+                "Quadrupole",
                 Quadrupole.helmholtz_energy_density(&self.params, state),
             ))
         }
         if self.dipole_quadrupole {
             v.push((
-                "DipoleQuadrupole".to_string(),
+                "DipoleQuadrupole",
                 DipoleQuadrupole.helmholtz_energy_density(
                     &self.params,
                     state,
@@ -143,7 +143,7 @@ impl ResidualDyn for PcSaft {
         }
         if let Some(association) = self.association.as_ref() {
             v.push((
-                "Association".to_string(),
+                "Association",
                 association.helmholtz_energy_density(
                     &self.params,
                     &self.parameters.association,

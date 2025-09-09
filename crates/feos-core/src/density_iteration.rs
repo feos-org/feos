@@ -30,7 +30,7 @@ where
     // Implicit differentiation
     let mut density = D::from(density);
     for _ in 0..D::NDERIV {
-        let (_, p, dp_drho) = eos._p_dpdrho(t, density, molefracs);
+        let (_, p, dp_drho) = eos.p_dpdrho(t, density, molefracs);
         density -= (p - pressure) / dp_drho;
     }
     Ok(Density::from_reduced(density))
@@ -125,7 +125,7 @@ where
     let mut iterations = 0;
     'iteration: for k in 0..maxiter {
         iterations += 1;
-        let (_, mut p, mut dp_drho) = eos._p_dpdrho(temperature, rho, molefracs);
+        let (_, mut p, mut dp_drho) = eos.p_dpdrho(temperature, rho, molefracs);
 
         // attempt to correct for poor initial density rho_init
         if dp_drho.is_sign_negative() && k == 0 {
@@ -134,7 +134,7 @@ where
             } else {
                 (1.1 * initial_density).min(maxdensity)
             };
-            let p_ = eos._p_dpdrho(temperature, rho, molefracs);
+            let p_ = eos.p_dpdrho(temperature, rho, molefracs);
             p = p_.0;
             dp_drho = p_.1;
         }
@@ -149,7 +149,7 @@ where
 
         // correction for instable region
         if dp_drho.is_sign_negative() && k < maxiter {
-            let (_, _, d2pdrho2) = eos._p_dpdrho_d2pdrho2(temperature, rho, molefracs);
+            let (_, _, d2pdrho2) = eos.p_dpdrho_d2pdrho2(temperature, rho, molefracs);
 
             if rho > 0.85 * maxdensity {
                 let (sp_p, sp_rho) =
@@ -258,7 +258,7 @@ where
     }
 
     for _ in 0..maxiter {
-        let (p, dpdrho, d2pdrho2) = eos._p_dpdrho_d2pdrho2(temperature, rho, molefracs);
+        let (p, dpdrho, d2pdrho2) = eos.p_dpdrho_d2pdrho2(temperature, rho, molefracs);
 
         let mut delta_rho = -dpdrho / d2pdrho2;
         if delta_rho.abs() > 0.05 * maxdensity {

@@ -157,21 +157,21 @@ impl ResidualDyn for SaftVRQMie {
     fn reduced_helmholtz_energy_density_contributions<D: num_dual::DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         let mut v = Vec::with_capacity(7);
         let properties = TemperatureDependentProperties::new(&self.params, state.temperature);
 
         v.push((
-            "Hard Sphere".to_string(),
+            "Hard Sphere",
             HardSphere.helmholtz_energy_density(&self.params, state, &properties),
         ));
         v.push((
-            "Dispersion".to_string(),
+            "Dispersion",
             Dispersion.helmholtz_energy_density(&self.params, state, &properties),
         ));
         if self.non_additive_hard_sphere {
             v.push((
-                "Non additive Hard Sphere".to_string(),
+                "Non additive Hard Sphere",
                 NonAddHardSphere.helmholtz_energy_density(&self.params, state, &properties),
             ))
         }

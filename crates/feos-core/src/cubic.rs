@@ -115,7 +115,7 @@ impl ResidualDyn for PengRobinson {
     fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         let density = state.partial_density.sum();
         let x = &state.molefracs;
         let ak = &self
@@ -140,7 +140,7 @@ impl ResidualDyn for PengRobinson {
             * ((v / (v - b)).ln()
                 - ak_mix / (b * SQRT_2 * 2.0 * state.temperature)
                     * ((v + b * (1.0 + SQRT_2)) / (v + b * (1.0 - SQRT_2))).ln());
-        vec![("Peng Robinson".to_string(), f)]
+        vec![("Peng Robinson", f)]
     }
 }
 
