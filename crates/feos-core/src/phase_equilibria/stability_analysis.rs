@@ -161,7 +161,7 @@ impl<E: Residual> State<E> {
         // calculate residual and ideal hesse matrix
         let mut hesse = (self.dln_phi_dnj() * Moles::from_reduced(1.0)).into_value();
         let lnphi = self.ln_phi();
-        let y = self.molefracs.clone();
+        let y = self.moles.to_reduced();
         let ln_y = y.map(|y| if y > f64::EPSILON { y.ln() } else { 0.0 });
         let sq_y = y.map(f64::sqrt);
         let gradient = (&ln_y + &lnphi - di).component_mul(&sq_y);
@@ -217,11 +217,11 @@ impl<E: Residual> State<E> {
             }
 
             // accept step and update state
-            *self = State::new_xpt(
+            *self = State::new_npt(
                 &self.eos,
                 self.temperature,
                 self.pressure(Contributions::Total),
-                &y,
+                &Moles::from_reduced(y),
                 Some(DensityInitialization::InitialDensity(self.density)),
             )?;
         }
