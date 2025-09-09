@@ -80,7 +80,7 @@ impl ResidualDyn for UVTheory {
     fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &feos_core::StateHD<D>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         match &self.options.perturbation {
             Perturbation::BarkerHenderson => {
                 BarkerHenderson.residual_helmholtz_energy_contributions(&self.params, state)

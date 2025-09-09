@@ -161,7 +161,7 @@ macro_rules! impl_residual {
             fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy + >(
                     &self,
                     state: &StateHD<D>,
-                ) -> Vec<(String, D)> {
+                ) -> Vec<(&'static str, D)> {
                 // result to write to
                 let mut a = D::zero();
 
@@ -176,7 +176,7 @@ macro_rules! impl_residual {
                                 .unwrap();
                             <$hd_ty>::from(py_result.extract::<$py_hd_id>().unwrap())
                         });
-                        return vec![("Python".to_string(), a)]
+                        return vec![("Python", a)]
                     }
                 )*
                 panic!("helmholtz_energy: input data type not understood")

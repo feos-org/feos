@@ -101,14 +101,14 @@ impl ResidualDyn for Pets {
     fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &feos_core::StateHD<D>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         vec![
             (
-                "Hard Sphere".to_string(),
+                "Hard Sphere",
                 HardSphere.helmholtz_energy_density(self, state),
             ),
             (
-                "Dispersion".to_string(),
+                "Dispersion",
                 self.dispersion_helmholtz_energy_density(state),
             ),
         ]

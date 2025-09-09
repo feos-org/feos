@@ -238,7 +238,7 @@ where
         &self,
         component: usize,
         contributions: Contributions,
-    ) -> Vec<(String, MolarEnergy<D>)> {
+    ) -> Vec<(&'static str, MolarEnergy<D>)> {
         let t = Dual::from_re(self.temperature.into_reduced());
         let v = Dual::from_re(self.density.into_reduced().recip());
         let mut x = self.molefracs.map(Dual::from_re);
@@ -246,7 +246,7 @@ where
         let mut res = Vec::new();
         if let Contributions::IdealGas | Contributions::Total = contributions {
             res.push((
-                self.eos.ideal_gas_model().into(),
+                self.eos.ideal_gas_model(),
                 self.eos.ideal_gas_molar_helmholtz_energy(t, v, &x),
             ));
         }

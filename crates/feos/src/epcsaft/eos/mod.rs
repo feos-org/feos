@@ -111,27 +111,27 @@ impl ResidualDyn for ElectrolytePcSaft {
     fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         let mut v = Vec::with_capacity(7);
         let d = self.params.hs_diameter(state.temperature);
 
         v.push((
-            "Hard Sphere".to_string(),
+            "Hard Sphere",
             HardSphere.helmholtz_energy_density(&self.params, state),
         ));
         if self.hard_chain {
             v.push((
-                "Hard Chain".to_string(),
+                "Hard Chain",
                 HardChain.helmholtz_energy_density(&self.params, state),
             ))
         }
         v.push((
-            "Dispersion".to_string(),
+            "Dispersion",
             Dispersion.helmholtz_energy_density(&self.params, state, &d),
         ));
         if let Some(association) = self.association.as_ref() {
             v.push((
-                "Association".to_string(),
+                "Association",
                 association.helmholtz_energy_density(
                     &self.params,
                     &self.parameters.association,
@@ -142,7 +142,7 @@ impl ResidualDyn for ElectrolytePcSaft {
         }
         if self.ionic {
             v.push((
-                "Ionic".to_string(),
+                "Ionic",
                 Ionic.helmholtz_energy_density(
                     &self.params,
                     state,
@@ -153,7 +153,7 @@ impl ResidualDyn for ElectrolytePcSaft {
         };
         if self.born {
             v.push((
-                "Born".to_string(),
+                "Born",
                 Born.helmholtz_energy_density(&self.params, state, &d),
             ))
         };

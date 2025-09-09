@@ -18,10 +18,6 @@ impl IdealChainContribution {
         }
     }
 
-    pub fn name(&self) -> String {
-        "Ideal chain".to_string()
-    }
-
     pub fn bulk_helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         partial_density: &DVector<D>,
