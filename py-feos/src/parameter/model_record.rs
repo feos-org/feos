@@ -27,7 +27,7 @@ pub struct PyPureRecord {
 impl From<PyPureRecord> for PureRecord<Value, Value> {
     fn from(value: PyPureRecord) -> Self {
         Self {
-            identifier: value.identifier.into(),
+            identifier: value.identifier.0,
             molarweight: value.molarweight,
             model_record: value.model_record,
             association_sites: value.association_sites,
@@ -38,7 +38,7 @@ impl From<PyPureRecord> for PureRecord<Value, Value> {
 impl From<PureRecord<Value, Value>> for PyPureRecord {
     fn from(value: PureRecord<Value, Value>) -> Self {
         Self {
-            identifier: value.identifier.into(),
+            identifier: PyIdentifier(value.identifier),
             molarweight: value.molarweight,
             model_record: value.model_record,
             association_sites: value.association_sites,
@@ -51,6 +51,7 @@ impl PyPureRecord {
     #[new]
     #[pyo3(signature = (identifier, molarweight, **parameters))]
     fn new(
+        py: Python,
         identifier: PyIdentifier,
         molarweight: f64,
         parameters: Option<&Bound<'_, PyDict>>,
@@ -60,7 +61,7 @@ impl PyPureRecord {
                 "No model parameters provided for PureRecord",
             ));
         };
-        parameters.set_item("identifier", identifier)?;
+        parameters.set_item("identifier", pythonize(py, &identifier)?)?;
         parameters.set_item("molarweight", molarweight)?;
         Ok(depythonize(parameters)?)
     }
@@ -138,8 +139,8 @@ pub struct PyBinaryRecord {
 impl From<PyBinaryRecord> for BinaryRecord<Identifier, Value, Value> {
     fn from(value: PyBinaryRecord) -> Self {
         Self {
-            id1: value.id1.into(),
-            id2: value.id2.into(),
+            id1: value.id1.0,
+            id2: value.id2.0,
             model_record: value.model_record,
             association_sites: value.association_sites,
         }
@@ -149,8 +150,8 @@ impl From<PyBinaryRecord> for BinaryRecord<Identifier, Value, Value> {
 impl From<BinaryRecord<Identifier, Value, Value>> for PyBinaryRecord {
     fn from(value: BinaryRecord<Identifier, Value, Value>) -> Self {
         Self {
-            id1: value.id1.into(),
-            id2: value.id2.into(),
+            id1: PyIdentifier(value.id1),
+            id2: PyIdentifier(value.id2),
             model_record: value.model_record,
             association_sites: value.association_sites,
         }
@@ -162,6 +163,7 @@ impl PyBinaryRecord {
     #[new]
     #[pyo3(signature = (id1, id2, **parameters))]
     fn new(
+        py: Python,
         id1: PyIdentifier,
         id2: PyIdentifier,
         parameters: Option<&Bound<'_, PyDict>>,
@@ -172,8 +174,8 @@ impl PyBinaryRecord {
             )
             .into());
         };
-        parameters.set_item("id1", id1)?;
-        parameters.set_item("id2", id2)?;
+        parameters.set_item("id1", pythonize(py, &id1)?)?;
+        parameters.set_item("id2", pythonize(py, &id2)?)?;
         Ok(depythonize(parameters)?)
     }
 

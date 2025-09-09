@@ -31,11 +31,26 @@ impl PyChemicalRecord {
         segments: Vec<String>,
         bonds: Option<Vec<[usize; 2]>>,
     ) -> Self {
-        Self(ChemicalRecord::new(identifier.into(), segments, bonds))
+        Self(ChemicalRecord::new(identifier.0, segments, bonds))
     }
 
     fn __repr__(&self) -> PyResult<String> {
         Ok(self.0.to_string())
+    }
+
+    #[getter]
+    fn get_identifier(&self) -> PyIdentifier {
+        PyIdentifier(self.0.identifier.clone())
+    }
+
+    #[getter]
+    fn get_segments(&self) -> Vec<String> {
+        self.0.segments.clone()
+    }
+
+    #[getter]
+    fn get_bonds(&self) -> Vec<[usize; 2]> {
+        self.0.bonds.clone()
     }
 
     /// Read a list of `ChemicalRecord`s from a JSON file.
@@ -76,7 +91,7 @@ impl PyChemicalRecord {
         let identifier = if let Ok(smiles) = identifier.extract::<String>() {
             Identifier::new(None, None, None, Some(&smiles), None, None)
         } else if let Ok(identifier) = identifier.extract::<PyIdentifier>() {
-            identifier.into()
+            identifier.0
         } else {
             return Err(PyErr::new::<PyValueError, _>(
                 "`identifier` must be a SMILES code or `Identifier` object.".to_string(),
