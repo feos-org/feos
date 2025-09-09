@@ -79,11 +79,11 @@ impl<E: Residual, const P: usize> PhaseEquilibrium<E, P> {
             for (i, s) in self.0.iter().enumerate() {
                 writeln!(
                     res,
-                    "|phase {}|{:.5}|{:.5}|{:.5}|",
+                    "|phase {}|{:.5}|{:.5}|{:.5?}|",
                     i + 1,
                     s.temperature,
                     s.density,
-                    s.molefracs
+                    s.molefracs.as_slice()
                 )
                 .unwrap();
             }

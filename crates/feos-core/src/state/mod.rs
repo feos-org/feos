@@ -210,10 +210,10 @@ where
         } else {
             write!(
                 f,
-                "T = {:.5}, ρ = {:.5}, x = {:.5}",
+                "T = {:.5}, ρ = {:.5}, x = {:.5?}",
                 self.temperature.re(),
                 self.density.re(),
-                self.molefracs.map(|x| x.re())
+                self.molefracs.map(|x| x.re()).as_slice()
             )
         }
     }
