@@ -78,55 +78,33 @@ impl<B, C> BinaryParameters<B, C> {
     }
 }
 
-pub struct GcParameters<P, B, A, Bo, C> {
+pub struct GenericParameters<P, B, A, Bo, C, Data> {
     pub pure: Vec<PureParameters<P, C>>,
     pub binary: Vec<BinaryParameters<B, ()>>,
     pub bonds: Vec<BinaryParameters<Bo, C>>,
     pub association: AssociationParameters<A>,
-    pub identifiers: Vec<Identifier>,
     pub molar_weight: MolarWeight<Array1<f64>>,
+    data: Data,
 }
 
-pub type Parameters<P, B, A> = GcParameters<P, B, A, (), ()>;
+pub type Parameters<P, B, A> =
+    GenericParameters<P, B, A, (), (), (Vec<PureRecord<P, A>>, Vec<BinaryRecord<usize, B, A>>)>;
+pub type GcParameters<P, B, A, Bo, C> = GenericParameters<
+    P,
+    B,
+    A,
+    Bo,
+    C,
+    (
+        Vec<ChemicalRecord>,
+        Vec<SegmentRecord<P, A>>,
+        Option<Vec<BinarySegmentRecord<B, A>>>,
+        Vec<BinarySegmentRecord<Bo, ()>>,
+    ),
+>;
 pub type IdealGasParameters<I> = Parameters<I, (), ()>;
 
-impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: Clone> GcParameters<P, B, A, Bo, C> {
-    /// Return a parameter set containing the subset of components specified in `component_list`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if index in `component_list` is out of bounds
-    pub fn subset(&self, component_list: &[usize]) -> Self {
-        let segment_list: Vec<_> = (0..self.pure.len())
-            .filter(|&i| component_list.contains(&self.pure[i].component_index))
-            .collect();
-        let pure_records = segment_list.iter().map(|&i| self.pure[i].clone()).collect();
-        let mut binary_records = self.binary.clone();
-        binary_records.retain(|r| segment_list.contains(&r.id1) && segment_list.contains(&r.id2));
-
-        let mut bond_records = self.bonds.clone();
-        bond_records.retain(|r| segment_list.contains(&r.id1));
-
-        let association_parameters = self.association.subset(component_list);
-        let identifiers = component_list
-            .iter()
-            .map(|&i| self.identifiers[i].clone())
-            .collect();
-        let molar_weight = component_list
-            .iter()
-            .map(|&i| self.molar_weight.get(i))
-            .collect();
-
-        Self {
-            pure: pure_records,
-            binary: binary_records,
-            bonds: bond_records,
-            association: association_parameters,
-            identifiers,
-            molar_weight,
-        }
-    }
-
+impl<P, B, A, Bo, C, Data> GenericParameters<P, B, A, Bo, C, Data> {
     pub fn collate<F, T: Default + Copy, const N: usize>(&self, f: F) -> [Array1<T>; N]
     where
         F: Fn(&P) -> [T; N],
@@ -156,32 +134,32 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
         binary_records: Vec<BinaryRecord<usize, B, A>>,
     ) -> FeosResult<Self> {
         let association_parameters = AssociationParameters::new(&pure_records, &binary_records)?;
-        let (identifiers, pure_records): (Vec<_>, _) = pure_records
-            .into_iter()
+        let (molar_weight, pure) = pure_records
+            .iter()
             .enumerate()
             .map(|(i, pr)| {
                 (
-                    (pr.identifier, pr.molarweight),
-                    PureParameters::from_pure_record(pr.model_record, i),
+                    pr.molarweight,
+                    PureParameters::from_pure_record(pr.model_record.clone(), i),
                 )
             })
             .unzip();
-        let (identifiers, molar_weight): (_, Vec<_>) = identifiers.into_iter().unzip();
-        let binary_records = binary_records
-            .into_iter()
+        let binary = binary_records
+            .iter()
             .filter_map(|br| {
                 br.model_record
+                    .clone()
                     .map(|m| BinaryParameters::new(br.id1, br.id2, m, ()))
             })
             .collect();
 
         Ok(Self {
-            pure: pure_records,
-            binary: binary_records,
+            pure,
+            binary,
             bonds: vec![],
             association: association_parameters,
-            identifiers,
             molar_weight: Array1::from_vec(molar_weight) * (GRAM / MOL),
+            data: (pure_records, binary_records),
         })
     }
 
@@ -480,6 +458,40 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
             binary_records.as_deref(),
         )
     }
+
+    pub fn identifiers(&self) -> Vec<&Identifier> {
+        self.data.0.iter().map(|pr| &pr.identifier).collect()
+    }
+
+    /// Return a parameter set containing the subset of components specified in `component_list`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if index in `component_list` is out of bounds
+    pub fn subset(&self, component_list: &[usize]) -> Self {
+        let (pure_records, binary_records) = &self.data;
+        let pure_records = component_list
+            .iter()
+            .map(|&i| pure_records[i].clone())
+            .collect();
+        let comp_map: HashMap<_, _> = component_list
+            .iter()
+            .enumerate()
+            .map(|(i, &c)| (c, i))
+            .collect();
+        let binary_records = binary_records
+            .iter()
+            .filter_map(|br| {
+                let id1 = comp_map.get(&br.id1);
+                let id2 = comp_map.get(&br.id2);
+                id1.and_then(|&id1| {
+                    id2.map(|&id2| BinaryRecord::new(id1, id2, br.model_record.clone()))
+                })
+            })
+            .collect();
+
+        Self::new(pure_records, binary_records).unwrap()
+    }
 }
 
 impl<P, B, A, Bo> GcParameters<P, B, A, Bo, f64> {
@@ -535,12 +547,10 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
         let mut groups = Vec::new();
         let mut association_sites = Vec::new();
         let mut bonds = Vec::new();
-        let mut identifiers = Vec::new();
         let mut molar_weight: Array1<f64> = Array1::zeros(chemical_records.len());
-        for (i, cr) in chemical_records.into_iter().enumerate() {
-            let (identifier, group_counts, bond_counts) = C::into_groups(cr);
+        for (i, cr) in chemical_records.iter().enumerate() {
+            let (_, group_counts, bond_counts) = C::into_groups(cr.clone());
             let n = groups.len();
-            identifiers.push(identifier);
             for (s, c) in &group_counts {
                 let Some(&segment) = segment_map.get(s) else {
                     return Err(FeosError::MissingParameters(format!(
@@ -611,8 +621,13 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
             binary: binary_records,
             bonds,
             association: association_parameters,
-            identifiers,
             molar_weight: molar_weight * (GRAM / MOL),
+            data: (
+                chemical_records,
+                segment_records.to_vec(),
+                binary_segment_records.map(|b| b.to_vec()),
+                bond_records.to_vec(),
+            ),
         })
     }
 
@@ -751,5 +766,29 @@ impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
 
     pub fn component_index(&self) -> Array1<usize> {
         self.pure.iter().map(|pr| pr.component_index).collect()
+    }
+
+    pub fn identifiers(&self) -> Vec<&Identifier> {
+        self.data.0.iter().map(|cr| &cr.identifier).collect()
+    }
+
+    /// Return a parameter set containing the subset of components specified in `component_list`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if index in `component_list` is out of bounds
+    pub fn subset(&self, component_list: &[usize]) -> Self {
+        let (chemical_records, segment_records, binary_segment_records, bond_records) = &self.data;
+        let chemical_records = component_list
+            .iter()
+            .map(|&i| chemical_records[i].clone())
+            .collect();
+        Self::from_segments_with_bonds(
+            chemical_records,
+            segment_records,
+            binary_segment_records.as_deref(),
+            bond_records,
+        )
+        .unwrap()
     }
 }

@@ -57,8 +57,8 @@ fn from_records() {
     .unwrap();
     let p = MyParameters::new(pure_records, binary_matrix).unwrap();
 
-    assert_eq!(p.identifiers[0].cas, Some("123-4-5".into()));
-    assert_eq!(p.identifiers[1].cas, Some("678-9-1".into()));
+    assert_eq!(p.identifiers()[0].cas, Some("123-4-5".into()));
+    assert_eq!(p.identifiers()[1].cas, Some("678-9-1".into()));
     assert_eq!(p.binary[0].model_record.b, 12.0);
 }
 
@@ -169,8 +169,8 @@ fn from_records_missing_binary() {
     .unwrap();
     let p = MyParameters::new(pure_records, binary_matrix).unwrap();
 
-    assert_eq!(p.identifiers[0].cas, Some("123-4-5".into()));
-    assert_eq!(p.identifiers[1].cas, Some("678-9-1".into()));
+    assert_eq!(p.identifiers()[0].cas, Some("123-4-5".into()));
+    assert_eq!(p.identifiers()[1].cas, Some("678-9-1".into()));
     let br = p.binary;
     assert_eq!(br.len(), 0);
 }
@@ -225,9 +225,9 @@ fn from_records_correct_binary_order() {
     .unwrap();
     let p = MyParameters::new(pure_records, binary_matrix).unwrap();
 
-    assert_eq!(p.identifiers[0].cas, Some("000-0-0".into()));
-    assert_eq!(p.identifiers[1].cas, Some("123-4-5".into()));
-    assert_eq!(p.identifiers[2].cas, Some("678-9-1".into()));
+    assert_eq!(p.identifiers()[0].cas, Some("000-0-0".into()));
+    assert_eq!(p.identifiers()[1].cas, Some("123-4-5".into()));
+    assert_eq!(p.identifiers()[2].cas, Some("678-9-1".into()));
     assert_eq!(p.binary[0].id1, 1);
     assert_eq!(p.binary[0].id2, 2);
     assert_eq!(p.binary[0].model_record.b, 12.0);

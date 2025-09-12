@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::parameter::{AssociationParameters, GcParameters};
+use feos_core::parameter::{AssociationParameters, GenericParameters};
 use feos_core::{FeosError, FeosResult, StateHD};
 use ndarray::*;
 use num_dual::linalg::{LU, norm};
@@ -46,8 +46,8 @@ pub struct Association<A: AssociationStrength> {
 }
 
 impl<A: AssociationStrength> Association<A> {
-    pub fn new<B, Bo, C>(
-        parameters: &GcParameters<A::Pure, B, A::Record, Bo, C>,
+    pub fn new<B, Bo, C, Data>(
+        parameters: &GenericParameters<A::Pure, B, A::Record, Bo, C, Data>,
         max_iter: usize,
         tol: f64,
     ) -> FeosResult<Option<Self>> {
@@ -111,8 +111,8 @@ impl<A: AssociationStrength> Association<A> {
         }))
     }
 
-    pub fn new_cross_association<B, Bo, C>(
-        parameters: &GcParameters<A::Pure, B, A::Record, Bo, C>,
+    pub fn new_cross_association<B, Bo, C, Data>(
+        parameters: &GenericParameters<A::Pure, B, A::Record, Bo, C, Data>,
         max_iter: usize,
         tol: f64,
     ) -> FeosResult<Option<Self>> {
