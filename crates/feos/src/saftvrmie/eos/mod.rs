@@ -66,16 +66,6 @@ impl SaftVRMie {
     }
 }
 
-// impl Components for SaftVRMie {
-//     fn components(&self) -> usize {
-//         self.params.m.len()
-//     }
-
-//     fn subset(&self, component_list: &[usize]) -> Self {
-//         Self::new(self.parameters.subset(component_list))
-//     }
-// }
-
 impl ResidualDyn for SaftVRMie {
     fn components(&self) -> usize {
         self.params.m.len()
@@ -87,9 +77,6 @@ impl ResidualDyn for SaftVRMie {
             .m
             .component_mul(&self.params.sigma.map(|v| v.powi(3)));
         (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
-
-        // self.options.max_eta * moles.sum()
-        //     / (FRAC_PI_6 * &self.params.m * self.params.sigma.mapv(|v| v.powi(3)) * moles).sum()
     }
 
     fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
