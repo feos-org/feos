@@ -404,7 +404,7 @@ where
         N: Gradients,
     {
         let (_, mu_res, a_res_v, mu_res_v) = N::partial_hessian(
-            |x, v, &t| self.lift().residual_molar_helmholtz_energy(t, v, &x),
+            |x, v, &t| self.lift().residual_helmholtz_energy(t, v, &x),
             molefracs,
             molar_volume,
             &temperature,

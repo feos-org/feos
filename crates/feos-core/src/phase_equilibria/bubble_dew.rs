@@ -370,11 +370,6 @@ where
     ) -> f64 {
         // calculate properties
         let (p_1, mu_res_1, dp_1, dmu_1) = eos.dmu_drho(temperature, partial_density_other_phase);
-        eos.dmu_dv(
-            temperature,
-            partial_density_other_phase.sum().recip(),
-            &(partial_density_other_phase.clone() / partial_density_other_phase.sum()),
-        );
         let (p_2, mu_res_2, dp_2, dmu_2) = eos.dmu_dv(temperature, *molar_volume, molefracs);
 
         // calculate residual
@@ -401,14 +396,7 @@ where
                 dp_1[j]
             } else if i == n + 1 && j == n {
                 dp_2
-            } else if i < n && j == n + 1 {
-                //d dmu/dT
-                -D::one()
-            } else if i == n && j == n + 1 {
-                //dp1/dT
-                -D::one()
-            } else if i == n + 1 && j == n + 1 {
-                //dp2/dT
+            } else if i >= n && j == n + 1 {
                 -D::one()
             } else {
                 D::zero()
@@ -466,6 +454,7 @@ where
                         * *temperature
             }
         });
+        todo!();
 
         // calculate Jacobian
         let jac = DMatrix::from_fn(n + 2, n + 2, |i, j| {
@@ -765,7 +754,7 @@ where
         let v_l = liquid.partial_molar_volume();
         let p_l = liquid.pressure(Contributions::Total);
         let mu_l = liquid.residual_chemical_potential();
-        let k_i = (liquid_molefracs.clone()).component_mul(
+        let k_i = liquid_molefracs.component_mul(
             &((mu_l - v_l * p_l) / (RGAS * temperature))
                 .into_value()
                 .map(f64::exp),
