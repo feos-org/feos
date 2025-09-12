@@ -1,6 +1,7 @@
 use super::PcSaftPars;
+use crate::hard_sphere::HardSphereProperties;
 use feos_core::StateHD;
-use ndarray::prelude::*;
+use nalgebra::DMatrix;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 
@@ -78,10 +79,10 @@ pub const CDQ: [[f64; 2]; 3] = [
 pub const PI_SQ_43: f64 = 4.0 * PI * FRAC_PI_3;
 
 pub struct MeanSegmentNumbers {
-    pub mij1: Array2<f64>,
-    pub mij2: Array2<f64>,
-    pub mijk1: Array3<f64>,
-    pub mijk2: Array3<f64>,
+    pub mij1: DMatrix<f64>,
+    pub mij2: DMatrix<f64>,
+    pub mijk1: Vec<DMatrix<f64>>,
+    pub mijk2: Vec<DMatrix<f64>>,
 }
 
 pub enum Multipole {
@@ -90,28 +91,29 @@ pub enum Multipole {
 }
 
 impl MeanSegmentNumbers {
+    #[expect(clippy::needless_range_loop)]
     pub fn new(parameters: &PcSaftPars, polarity: Multipole) -> Self {
         let (npoles, comp) = match polarity {
             Multipole::Dipole => (parameters.ndipole, &parameters.dipole_comp),
             Multipole::Quadrupole => (parameters.nquadpole, &parameters.quadpole_comp),
         };
 
-        let mut mij1 = Array2::zeros((npoles, npoles));
-        let mut mij2 = Array2::zeros((npoles, npoles));
-        let mut mijk1 = Array3::zeros((npoles, npoles, npoles));
-        let mut mijk2 = Array3::zeros((npoles, npoles, npoles));
+        let mut mij1 = DMatrix::zeros(npoles, npoles);
+        let mut mij2 = DMatrix::zeros(npoles, npoles);
+        let mut mijk1 = vec![DMatrix::zeros(npoles, npoles); npoles];
+        let mut mijk2 = vec![DMatrix::zeros(npoles, npoles); npoles];
         for i in 0..npoles {
             let mi = parameters.m[comp[i]].min(2.0);
             for j in i..npoles {
                 let mj = parameters.m[comp[j]].min(2.0);
                 let mij = (mi * mj).sqrt();
-                mij1[[i, j]] = (mij - 1.0) / mij;
-                mij2[[i, j]] = mij1[[i, j]] * (mij - 2.0) / mij;
+                mij1[(i, j)] = (mij - 1.0) / mij;
+                mij2[(i, j)] = mij1[(i, j)] * (mij - 2.0) / mij;
                 for k in j..npoles {
                     let mk = parameters.m[comp[k]].min(2.0);
                     let mijk = (mi * mj * mk).cbrt();
-                    mijk1[[i, j, k]] = (mijk - 1.0) / mijk;
-                    mijk2[[i, j, k]] = mijk1[[i, j, k]] * (mijk - 2.0) / mijk;
+                    mijk1[i][(j, k)] = (mijk - 1.0) / mijk;
+                    mijk2[i][(j, k)] = mijk1[i][(j, k)] * (mijk - 2.0) / mijk;
                 }
             }
         }
@@ -162,27 +164,25 @@ pub struct Dipole;
 
 impl Dipole {
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,
-        diameter: &Array1<D>,
     ) -> D {
         let m = MeanSegmentNumbers::new(parameters, Multipole::Dipole);
         let p = parameters;
 
         let t_inv = state.temperature.inv();
-        let eps_ij_t = p.e_k_ij.mapv(|v| t_inv * v);
-        let sig_ij_3 = p.sigma_ij.mapv(|v| v.powi(3));
-        let mu2_term: Array1<D> = p
+        let eps_ij_t = p.e_k_ij.map(|v| t_inv * v);
+        let sig_ij_3 = p.sigma_ij.map(|v| v.powi(3));
+        let mu2_term: Vec<D> = p
             .dipole_comp
             .iter()
-            .map(|&i| t_inv * sig_ij_3[[i, i]] * p.epsilon_k[i] * p.mu2[i])
+            .map(|&i| t_inv * sig_ij_3[(i, i)] * p.epsilon_k[i] * p.mu2[i])
             .collect();
 
         let rho = &state.partial_density;
-        let r = diameter * 0.5;
-        let eta = (rho * &p.m * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
+        let [eta] = parameters.zeta(state.temperature, rho, [3]);
         let eta2 = eta * eta;
         let etas = [D::one(), eta, eta2, eta2 * eta, eta2 * eta2];
 
@@ -198,14 +198,14 @@ impl Dipole {
                     * mu2_term[i]
                     * mu2_term[j]
                     * pair_integral_ij(
-                        m.mij1[[i, j]],
-                        m.mij2[[i, j]],
+                        m.mij1[(i, j)],
+                        m.mij2[(i, j)],
                         &etas,
                         &AD,
                         &BD,
-                        eps_ij_t[[di, dj]],
+                        eps_ij_t[(di, dj)],
                     )
-                    / sig_ij_3[[di, dj]]
+                    / sig_ij_3[(di, dj)]
                     * c;
                 for k in j..p.ndipole {
                     let dk = p.dipole_comp[k];
@@ -217,17 +217,17 @@ impl Dipole {
                         6.0
                     };
                     phi3 -= rho[di] * rho[dj] * rho[dk] * mu2_term[i] * mu2_term[j] * mu2_term[k]
-                        / (p.sigma_ij[[di, dj]] * p.sigma_ij[[di, dk]] * p.sigma_ij[[dj, dk]])
-                        * triplet_integral_ijk(m.mijk1[[i, j, k]], m.mijk2[[i, j, k]], &etas, &CD)
+                        / (p.sigma_ij[(di, dj)] * p.sigma_ij[(di, dk)] * p.sigma_ij[(dj, dk)])
+                        * triplet_integral_ijk(m.mijk1[i][(j, k)], m.mijk2[i][(j, k)], &etas, &CD)
                         * c;
                 }
             }
         }
         phi2 *= PI;
         phi3 *= PI_SQ_43;
-        let mut result = phi2 * phi2 / (phi2 - phi3) * state.volume;
+        let mut result = phi2 * phi2 / (phi2 - phi3);
         if result.re().is_nan() {
-            result = phi2 * state.volume
+            result = phi2
         }
         result
     }
@@ -237,27 +237,25 @@ pub struct Quadrupole;
 
 impl Quadrupole {
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,
-        diameter: &Array1<D>,
     ) -> D {
         let m = MeanSegmentNumbers::new(parameters, Multipole::Quadrupole);
         let p = parameters;
 
         let t_inv = state.temperature.inv();
-        let eps_ij_t = p.e_k_ij.mapv(|v| t_inv * v);
-        let sig_ij_3 = p.sigma_ij.mapv(|v| v.powi(3));
-        let q2_term: Array1<D> = p
+        let eps_ij_t = p.e_k_ij.map(|v| t_inv * v);
+        let sig_ij_3 = p.sigma_ij.map(|v| v.powi(3));
+        let q2_term: Vec<D> = p
             .quadpole_comp
             .iter()
             .map(|&i| t_inv * p.sigma[i].powi(5) * p.epsilon_k[i] * p.q2[i])
             .collect();
 
         let rho = &state.partial_density;
-        let r = diameter * 0.5;
-        let eta = (rho * &p.m * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
+        let [eta] = parameters.zeta(state.temperature, rho, [3]);
         let eta2 = eta * eta;
         let etas = [D::one(), eta, eta2, eta2 * eta, eta2 * eta2];
 
@@ -273,14 +271,14 @@ impl Quadrupole {
                     * q2_term[i]
                     * q2_term[j]
                     * pair_integral_ij(
-                        m.mij1[[i, j]],
-                        m.mij2[[i, j]],
+                        m.mij1[(i, j)],
+                        m.mij2[(i, j)],
                         &etas,
                         &AQ,
                         &BQ,
-                        eps_ij_t[[di, dj]],
+                        eps_ij_t[(di, dj)],
                     ))
-                    / p.sigma_ij[[di, dj]].powi(7)
+                    / p.sigma_ij[(di, dj)].powi(7)
                     * c;
                 for k in j..p.nquadpole {
                     let dk = p.quadpole_comp[k];
@@ -292,8 +290,8 @@ impl Quadrupole {
                         6.0
                     };
                     phi3 += rho[di] * rho[dj] * rho[dk] * q2_term[i] * q2_term[j] * q2_term[k]
-                        / (sig_ij_3[[di, dj]] * sig_ij_3[[di, dk]] * sig_ij_3[[dj, dk]])
-                        * triplet_integral_ijk(m.mijk1[[i, j, k]], m.mijk2[[i, j, k]], &etas, &CQ)
+                        / (sig_ij_3[(di, dj)] * sig_ij_3[(di, dk)] * sig_ij_3[(dj, dk)])
+                        * triplet_integral_ijk(m.mijk1[i][(j, k)], m.mijk2[i][(j, k)], &etas, &CQ)
                         * c;
                 }
             }
@@ -301,9 +299,9 @@ impl Quadrupole {
 
         phi2 *= PI * 0.5625;
         phi3 *= PI * PI * 0.5625;
-        let mut result = phi2 * phi2 / (phi2 - phi3) * state.volume;
+        let mut result = phi2 * phi2 / (phi2 - phi3);
         if result.re().is_nan() {
-            result = phi2 * state.volume
+            result = phi2
         }
         result
     }
@@ -320,40 +318,38 @@ pub struct DipoleQuadrupole;
 
 impl DipoleQuadrupole {
     #[inline]
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,
-        diameter: &Array1<D>,
         variant: DQVariants,
     ) -> D {
         let p = parameters;
 
         let t_inv = state.temperature.inv();
-        let eps_ij_t = p.e_k_ij.mapv(|v| t_inv * v);
+        let eps_ij_t = p.e_k_ij.map(|v| t_inv * v);
 
-        let q2_term: Array1<D> = p
+        let q2_term: Vec<D> = p
             .quadpole_comp
             .iter()
             .map(|&i| t_inv * p.sigma[i].powi(4) * p.epsilon_k[i] * p.q2[i])
             .collect();
-        let mu2_term: Array1<D> = p
+        let mu2_term: Vec<D> = p
             .dipole_comp
             .iter()
             .map(|&i| t_inv * p.sigma[i].powi(4) * p.epsilon_k[i] * p.mu2[i])
             .collect();
 
         let rho = &state.partial_density;
-        let r = diameter * 0.5;
-        let eta = (rho * &p.m * &r * &r * &r).sum() * 4.0 * FRAC_PI_3;
+        let [eta] = parameters.zeta(state.temperature, rho, [3]);
         let eta2 = eta * eta;
         let etas = [D::one(), eta, eta2, eta2 * eta, eta2 * eta2];
 
         // mean segment number
-        let mut mdq1 = Array2::zeros((p.ndipole, p.nquadpole));
-        let mut mdq2 = Array2::zeros((p.ndipole, p.nquadpole));
-        let mut mdqd = Array3::zeros((p.ndipole, p.nquadpole, p.ndipole));
-        let mut mdqq = Array3::zeros((p.ndipole, p.nquadpole, p.nquadpole));
+        let mut mdq1 = DMatrix::zeros(p.ndipole, p.nquadpole);
+        let mut mdq2 = DMatrix::zeros(p.ndipole, p.nquadpole);
+        let mut mdqd = vec![DMatrix::zeros(p.nquadpole, p.ndipole); p.ndipole];
+        let mut mdqq = vec![DMatrix::zeros(p.nquadpole, p.nquadpole); p.ndipole];
         for i in 0..p.ndipole {
             let di = p.dipole_comp[i];
             let mi = p.m[di].min(2.0);
@@ -361,19 +357,19 @@ impl DipoleQuadrupole {
                 let qj = p.quadpole_comp[j];
                 let mj = p.m[qj].min(2.0);
                 let m = (mi * mj).sqrt();
-                mdq1[[i, j]] = (m - 1.0) / m;
-                mdq2[[i, j]] = mdq1[[i, j]] * (m - 2.0) / m;
+                mdq1[(i, j)] = (m - 1.0) / m;
+                mdq2[(i, j)] = mdq1[(i, j)] * (m - 2.0) / m;
                 for k in 0..p.ndipole {
                     let dk = p.dipole_comp[k];
                     let mk = p.m[dk].min(2.0);
                     let m = (mi * mj * mk).cbrt();
-                    mdqd[[i, j, k]] = (m - 1.0) / m;
+                    mdqd[i][(j, k)] = (m - 1.0) / m;
                 }
                 for k in 0..p.nquadpole {
                     let qk = p.quadpole_comp[k];
                     let mk = p.m[qk].min(2.0);
                     let m = (mi * mj * mk).cbrt();
-                    mdqq[[i, j, k]] = (m - 1.0) / m;
+                    mdqq[i][(j, k)] = (m - 1.0) / m;
                 }
             }
         }
@@ -388,38 +384,38 @@ impl DipoleQuadrupole {
                     DQVariants::DQ35 => mu2_term[i] / p.sigma[di] * q2_term[j] * p.sigma[qj],
                     DQVariants::DQ44 => mu2_term[i] * q2_term[j],
                 };
-                phi2 -= rho[di] * rho[qj] * mu2_q2_term / p.sigma_ij[[di, qj]].powi(5)
+                phi2 -= rho[di] * rho[qj] * mu2_q2_term / p.sigma_ij[(di, qj)].powi(5)
                     * pair_integral_ij(
-                        mdq1[[i, j]],
-                        mdq2[[i, j]],
+                        mdq1[(i, j)],
+                        mdq2[(i, j)],
                         &etas,
                         &ADQ,
                         &BDQ,
-                        eps_ij_t[[di, qj]],
+                        eps_ij_t[(di, qj)],
                     );
                 for k in 0..p.ndipole {
                     let dk = p.dipole_comp[k];
                     phi3 += rho[di] * rho[qj] * rho[dk] * mu2_term[i] * q2_term[j] * mu2_term[k]
-                        / (p.sigma_ij[[di, qj]] * p.sigma_ij[[di, dk]] * p.sigma_ij[[qj, dk]])
+                        / (p.sigma_ij[(di, qj)] * p.sigma_ij[(di, dk)] * p.sigma_ij[(qj, dk)])
                             .powi(2)
-                        * triplet_integral_ijk_dq(mdqd[[i, j, k]], &etas, &CDQ);
+                        * triplet_integral_ijk_dq(mdqd[i][(j, k)], &etas, &CDQ);
                 }
                 for k in 0..p.nquadpole {
                     let qk = p.quadpole_comp[k];
                     phi3 += rho[di] * rho[qj] * rho[qk] * mu2_term[i] * q2_term[j] * q2_term[k]
-                        / (p.sigma_ij[[di, qj]] * p.sigma_ij[[di, qk]] * p.sigma_ij[[qj, qk]])
+                        / (p.sigma_ij[(di, qj)] * p.sigma_ij[(di, qk)] * p.sigma_ij[(qj, qk)])
                             .powi(2)
                         * ALPHA
-                        * triplet_integral_ijk_dq(mdqq[[i, j, k]], &etas, &CDQ);
+                        * triplet_integral_ijk_dq(mdqq[i][(j, k)], &etas, &CDQ);
                 }
             }
         }
 
         phi2 *= PI * 2.25;
         phi3 *= PI * PI;
-        let mut result = phi2 * phi2 / (phi2 - phi3) * state.volume;
+        let mut result = phi2 * phi2 / (phi2 - phi3);
         if result.re().is_nan() {
-            result = phi2 * state.volume
+            result = phi2
         }
         result
     }
@@ -428,7 +424,6 @@ impl DipoleQuadrupole {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::hard_sphere::HardSphereProperties;
     use crate::pcsaft::PcSaftParameters;
     use crate::pcsaft::eos::dispersion::Dispersion;
     use crate::pcsaft::parameters::utils::{
@@ -438,6 +433,7 @@ mod tests {
     use feos_core::StateHD;
     use feos_core::parameter::IdentifierOption;
     use itertools::Itertools;
+    use nalgebra::{DVector, dvector};
 
     #[test]
     fn test_dipolar_contribution() {
@@ -445,9 +441,8 @@ mod tests {
         let t = 350.0;
         let v = 1000.0;
         let n = 1.0;
-        let s = StateHD::new(t, v, arr1(&[n]));
-        let d = dme.hs_diameter(t);
-        let a = Dipole.helmholtz_energy(&dme, &s, &d);
+        let s = StateHD::new(t, v, &dvector![n]);
+        let a = Dipole.helmholtz_energy_density(&dme, &s) * v;
         assert_relative_eq!(a, -1.40501033595417E-002, epsilon = 1e-6);
     }
 
@@ -464,10 +459,8 @@ mod tests {
         );
         let t = 350.0;
         let v = 1000.0;
-        let n = [1.0, 2.0, 3.0];
-        let s = StateHD::new(t, v, arr1(&n));
-        let d = parameters.hs_diameter(t);
-        let a = Dipole.helmholtz_energy(&parameters, &s, &d);
+        let s = StateHD::new(t, v, &dvector![1.0, 2.0, 3.0]);
+        let a = Dipole.helmholtz_energy_density(&parameters, &s) * v;
         assert_relative_eq!(a, -1.4126308106201688, epsilon = 1e-10);
     }
 
@@ -489,9 +482,8 @@ mod tests {
                 );
                 let t = 350.0;
                 let v = 1000.0;
-                let s = StateHD::new(t, v, arr1(&n));
-                let d = parameters.hs_diameter(t);
-                let a = Dipole.helmholtz_energy(&parameters, &s, &d);
+                let s = StateHD::new(t, v, &DVector::from(n));
+                let a = Dipole.helmholtz_energy_density(&parameters, &s) * v;
                 println!("{components:?}: {a}");
                 a
             })
@@ -507,9 +499,8 @@ mod tests {
         let t = 350.0;
         let v = 1000.0;
         let n = 1.0;
-        let s = StateHD::new(t, v, arr1(&[n]));
-        let d = co2.hs_diameter(t);
-        let a = Quadrupole.helmholtz_energy(&co2, &s, &d);
+        let s = StateHD::new(t, v, &dvector![n]);
+        let a = Quadrupole.helmholtz_energy_density(&co2, &s) * v;
         assert_relative_eq!(a, -4.38559558854186E-002, epsilon = 1e-6);
     }
 
@@ -526,10 +517,8 @@ mod tests {
         );
         let t = 350.0;
         let v = 1000.0;
-        let n = [1.0, 2.0, 3.0];
-        let s = StateHD::new(t, v, arr1(&n));
-        let d = parameters.hs_diameter(t);
-        let a = Quadrupole.helmholtz_energy(&parameters, &s, &d);
+        let s = StateHD::new(t, v, &dvector![1.0, 2.0, 3.0]);
+        let a = Quadrupole.helmholtz_energy_density(&parameters, &s) * v;
         assert_relative_eq!(a, -0.2748017468669352, epsilon = 1e-10);
     }
 
@@ -551,9 +540,8 @@ mod tests {
                 );
                 let t = 350.0;
                 let v = 1000.0;
-                let s = StateHD::new(t, v, arr1(&n));
-                let d = parameters.hs_diameter(t);
-                let a = Quadrupole.helmholtz_energy(&parameters, &s, &d);
+                let s = StateHD::new(t, v, &DVector::from(n));
+                let a = Quadrupole.helmholtz_energy_density(&parameters, &s) * v;
                 println!("{components:?}: {a}");
                 a
             })
@@ -574,12 +562,12 @@ mod tests {
         let v = 1000.0;
         let n_dme = 1.0;
         let n_co2 = 1.0;
-        let s = StateHD::new(t, v, arr1(&[n_dme, n_co2]));
-        // let a_dpqp = dpqp.helmholtz_energy(&s);
-        let d = mix.hs_diameter(t);
-        let a_disp = Dispersion.helmholtz_energy(&mix, &s, &d);
-        let a_qp = Quadrupole.helmholtz_energy(&mix, &s, &d);
-        let a_dp = Dipole.helmholtz_energy(&mix, &s, &d);
+        let n = n_dme + n_co2;
+        let s = StateHD::new(t, v / n, &(dvector![n_dme, n_co2] / n));
+        // let a_dpqp = dpqp.helmholtz_energy_density(&s)*v;
+        let a_disp = Dispersion.helmholtz_energy_density(&mix, &s) * v;
+        let a_qp = Quadrupole.helmholtz_energy_density(&mix, &s) * v;
+        let a_dp = Dipole.helmholtz_energy_density(&mix, &s) * v;
         assert_relative_eq!(a_disp, -1.6283622072860044, epsilon = 1e-6);
         assert_relative_eq!(a_dp, -1.35361827881345E-002, epsilon = 1e-6);
         assert_relative_eq!(a_qp, -4.20168059082731E-002, epsilon = 1e-6);

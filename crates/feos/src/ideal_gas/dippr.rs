@@ -1,6 +1,6 @@
-use feos_core::parameter::{Parameters, PureParameters};
-use feos_core::{Components, FeosResult, IdealGas};
-use ndarray::Array1;
+use feos_core::parameter::Parameters;
+use feos_core::{FeosResult, IdealGas};
+use nalgebra::DVector;
 use num_dual::DualNum;
 use quantity::{JOULE, KELVIN, KILO, MOL, MolarEntropy, Temperature};
 use serde::{Deserialize, Serialize};
@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// All equations use units $\[T\]=\text{K}$ and $\[c_p\]=\text{J/kmol/K}$.
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum DipprRecord {
+pub enum Dippr {
     /// Technically, DIPPR eq. # 100 is
     /// $$c_p = A + BT + CT^2 + DT^3 + ET^4 + FT^5 + GT^6$$
     /// This implementation works with an arbitrary number of expansion terms.
@@ -21,7 +21,7 @@ pub enum DipprRecord {
     DIPPR127([f64; 7]),
 }
 
-impl DipprRecord {
+impl Dippr {
     /// Create parameters for Eq. # 100.
     pub fn eq100(coefs: &[f64]) -> Self {
         Self::DIPPR100(coefs.to_vec())
@@ -113,44 +113,26 @@ impl DipprRecord {
     }
 }
 
-pub type DipprParameters = Parameters<DipprRecord, (), ()>;
-
-/// Ideal gas equations of state based on DIPPR equations for
-/// ideal gas heat capacities.
-pub struct Dippr(Vec<PureParameters<DipprRecord, ()>>);
+pub type DipprParameters = Parameters<Dippr, (), ()>;
 
 impl Dippr {
-    pub fn new(parameters: DipprParameters) -> Self {
-        Self(parameters.pure)
+    pub fn new(parameters: DipprParameters) -> Vec<Self> {
+        parameters
+            .pure
+            .into_iter()
+            .map(|p| p.model_record)
+            .collect()
     }
 
     /// Directly calculates the molar ideal gas heat capacity from the DIPPR equations.
     pub fn molar_isobaric_heat_capacity(
-        &self,
+        dippr: &[Dippr],
         temperature: Temperature,
-        molefracs: &Array1<f64>,
+        molefracs: &DVector<f64>,
     ) -> FeosResult<MolarEntropy> {
         let t = temperature.convert_to(KELVIN);
-        let c_p: f64 = molefracs
-            .iter()
-            .zip(&self.0)
-            .map(|(x, r)| x * r.model_record.c_p(t))
-            .sum();
+        let c_p: f64 = molefracs.iter().zip(dippr).map(|(x, r)| x * r.c_p(t)).sum();
         Ok(c_p * (JOULE / (KILO * MOL * KELVIN)))
-    }
-}
-
-impl Components for Dippr {
-    fn components(&self) -> usize {
-        self.0.len()
-    }
-
-    fn subset(&self, component_list: &[usize]) -> Self {
-        let mut records = Vec::with_capacity(component_list.len());
-        component_list
-            .iter()
-            .for_each(|&i| records.push(self.0[i].clone()));
-        Self(records)
     }
 }
 
@@ -158,21 +140,15 @@ const RGAS: f64 = 8.31446261815324 * 1000.0;
 const T0: f64 = 298.15;
 
 impl IdealGas for Dippr {
-    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
         let t = temperature;
-        self.0
-            .iter()
-            .map(|r| {
-                let m = &r.model_record;
-                let h = m.c_p_integral(t) - m.c_p_integral(T0);
-                let s = m.c_p_t_integral(t) - m.c_p_t_integral(T0);
-                (h - t * s) / (t * RGAS) + temperature.ln()
-            })
-            .collect()
+        let h = self.c_p_integral(t) - self.c_p_integral(T0);
+        let s = self.c_p_t_integral(t) - self.c_p_t_integral(T0);
+        (h - t * s) / (t * RGAS) + temperature.ln()
     }
 
-    fn ideal_gas_model(&self) -> String {
-        "Ideal gas (DIPPR)".into()
+    fn ideal_gas_model(&self) -> &'static str {
+        "Ideal gas (DIPPR)"
     }
 }
 
@@ -183,7 +159,6 @@ mod tests {
     use feos_core::{Contributions, EquationOfState, StateBuilder};
     use num_dual::first_derivative;
     use quantity::*;
-    use std::sync::Arc;
     use typenum::P3;
 
     use super::*;
@@ -193,13 +168,13 @@ mod tests {
         let record = PureRecord::new(
             Identifier::default(),
             0.0,
-            DipprRecord::eq100(&[276370., -2090.1, 8.125, -0.014116, 0.0000093701]),
+            Dippr::eq100(&[276370., -2090.1, 8.125, -0.014116, 0.0000093701]),
         );
-        let dippr = Arc::new(Dippr::new(DipprParameters::new_pure(record.clone())?));
-        let eos = Arc::new(EquationOfState::ideal_gas(dippr.clone()));
+        let dippr = Dippr::new(DipprParameters::new_pure(record.clone())?);
+        let eos = EquationOfState::ideal_gas(dippr.clone());
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi::<P3>();
-        let state = StateBuilder::new(&eos)
+        let state = StateBuilder::new(&&eos)
             .temperature(temperature)
             .volume(volume)
             .total_moles(MOL)
@@ -215,13 +190,13 @@ mod tests {
 
         println!(
             "{} {}",
-            dippr.molar_isobaric_heat_capacity(temperature, &state.molefracs)?,
+            Dippr::molar_isobaric_heat_capacity(&dippr, temperature, &state.molefracs)?,
             state.molar_isobaric_heat_capacity(Contributions::IdealGas)
         );
         let reference = 75355.81000000003 * JOULE / (KILO * MOL * KELVIN);
         assert_relative_eq!(
             reference,
-            dippr.molar_isobaric_heat_capacity(temperature, &state.molefracs)?,
+            Dippr::molar_isobaric_heat_capacity(&dippr, temperature, &state.molefracs)?,
             max_relative = 1e-10
         );
         assert_relative_eq!(
@@ -237,13 +212,13 @@ mod tests {
         let record = PureRecord::new(
             Identifier::default(),
             0.0,
-            DipprRecord::eq107(33363., 26790., 2610.5, 8896., 1169.),
+            Dippr::eq107(33363., 26790., 2610.5, 8896., 1169.),
         );
-        let dippr = Arc::new(Dippr::new(DipprParameters::new_pure(record.clone())?));
-        let eos = Arc::new(EquationOfState::ideal_gas(dippr.clone()));
+        let dippr = Dippr::new(DipprParameters::new_pure(record.clone())?);
+        let eos = EquationOfState::ideal_gas(dippr.clone());
         let temperature = 300.0 * KELVIN;
         let volume = METER.powi::<P3>();
-        let state = StateBuilder::new(&eos)
+        let state = StateBuilder::new(&&eos)
             .temperature(temperature)
             .volume(volume)
             .total_moles(MOL)
@@ -259,13 +234,13 @@ mod tests {
 
         println!(
             "{} {}",
-            dippr.molar_isobaric_heat_capacity(temperature, &state.molefracs)?,
+            Dippr::molar_isobaric_heat_capacity(&dippr, temperature, &state.molefracs)?,
             state.molar_isobaric_heat_capacity(Contributions::IdealGas)
         );
         let reference = 33585.90452768923 * JOULE / (KILO * MOL * KELVIN);
         assert_relative_eq!(
             reference,
-            dippr.molar_isobaric_heat_capacity(temperature, &state.molefracs)?,
+            Dippr::molar_isobaric_heat_capacity(&dippr, temperature, &state.molefracs)?,
             max_relative = 1e-10
         );
         assert_relative_eq!(
@@ -281,15 +256,15 @@ mod tests {
         let record = PureRecord::new(
             Identifier::default(),
             0.0,
-            DipprRecord::eq127(
+            Dippr::eq127(
                 3.3258E4, 3.6199E4, 1.2057E3, 1.5373E7, 3.2122E3, -1.5318E7, 3.2122E3,
             ),
         );
-        let dippr = Arc::new(Dippr::new(DipprParameters::new_pure(record.clone())?));
-        let eos = Arc::new(EquationOfState::ideal_gas(dippr.clone()));
+        let dippr = Dippr::new(DipprParameters::new_pure(record.clone())?);
+        let eos = EquationOfState::ideal_gas(dippr.clone());
         let temperature = 20.0 * KELVIN;
         let volume = METER.powi::<P3>();
-        let state = StateBuilder::new(&eos)
+        let state = StateBuilder::new(&&eos)
             .temperature(temperature)
             .volume(volume)
             .total_moles(MOL)
@@ -305,13 +280,13 @@ mod tests {
 
         println!(
             "{} {}",
-            dippr.molar_isobaric_heat_capacity(temperature, &state.molefracs)?,
+            Dippr::molar_isobaric_heat_capacity(&dippr, temperature, &state.molefracs)?,
             state.molar_isobaric_heat_capacity(Contributions::IdealGas)
         );
         let reference = 33258.0 * JOULE / (KILO * MOL * KELVIN);
         assert_relative_eq!(
             reference,
-            dippr.molar_isobaric_heat_capacity(temperature, &state.molefracs)?,
+            Dippr::molar_isobaric_heat_capacity(&dippr, temperature, &state.molefracs)?,
             max_relative = 1e-10
         );
         assert_relative_eq!(

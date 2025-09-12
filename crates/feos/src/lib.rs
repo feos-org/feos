@@ -9,7 +9,7 @@
 //! use feos_core::parameter::{IdentifierOption};
 //! use feos_core::{Contributions, State};
 //! use quantity::KELVIN;
-//! use std::sync::Arc;
+//! use nalgebra::dvector;
 //!
 //! // Read parameters from json file.
 //! let parameters = PcSaftParameters::from_json(
@@ -20,10 +20,10 @@
 //! )?;
 //!
 //! // Define equation of state.
-//! let saft = Arc::new(PcSaft::new(parameters));
+//! let saft = PcSaft::new(parameters);
 //!
 //! // Define thermodynamic conditions.
-//! let critical_point = State::critical_point(&saft, None, None, Default::default())?;
+//! let critical_point = State::critical_point(&&saft, Some(&dvector![1.0]), None, Default::default())?;
 //!
 //! // Compute properties.
 //! let p = critical_point.pressure(Contributions::Total);
@@ -35,7 +35,7 @@
 #![warn(clippy::all)]
 #![warn(clippy::allow_attributes)]
 
-pub mod estimator;
+// pub mod estimator;
 
 #[cfg(feature = "association")]
 pub mod association;

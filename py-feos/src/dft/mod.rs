@@ -1,10 +1,10 @@
-use crate::eos::PyEquationOfState;
+use crate::eos::{parse_molefracs, PyEquationOfState};
 use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
 use feos::hard_sphere::{FMTFunctional, FMTVersion};
-use feos_core::{Components, EquationOfState};
+use feos_core::{EquationOfState, ResidualDyn};
 use feos_dft::Geometry;
-use numpy::{PyArray1, PyArrayMethods};
+use numpy::PyReadonlyArray1;
 use pyo3::prelude::*;
 use pyo3::pyclass;
 use std::sync::Arc;
@@ -102,15 +102,12 @@ impl PyHelmholtzEnergyFunctional {
     /// -------
     /// HelmholtzEnergyFunctional
     #[staticmethod]
-    fn fmt(
-        sigma: &Bound<'_, PyArray1<f64>>,
-        fmt_version: PyFMTVersion,
-    ) -> PyResult<PyEquationOfState> {
-        let func = Arc::new(ResidualModel::FmtFunctional(FMTFunctional::new(
-            &sigma.to_owned_array(),
+    fn fmt(sigma: PyReadonlyArray1<f64>, fmt_version: PyFMTVersion) -> PyResult<PyEquationOfState> {
+        let func = ResidualModel::FmtFunctional(FMTFunctional::new(
+            parse_molefracs(Some(sigma)).unwrap(),
             fmt_version.into(),
-        )));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
+        ));
+        let ideal_gas = vec![IdealGasModel::NoModel; func.components()];
         Ok(PyEquationOfState(Arc::new(EquationOfState::new(
             ideal_gas, func,
         ))))

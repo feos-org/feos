@@ -8,16 +8,18 @@ name = "feos"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.23", features = [
+pyo3 = { version = "0.26", features = [
     "extension-module",
     "abi3-py39",
     "multiple-pymethods",
+    "indexmap"
 ] }
-pythonize = "0.23"
-numpy = { version = "0.23" }
+pythonize = "0.26"
+numpy = { version = "0.26" }
 
 quantity = { workspace = true, features = ["python", "python_numpy"] }
 num-dual = { workspace = true, features = ["python_macro"] }
+nalgebra = { workspace = true }
 ndarray = { workspace = true }
 petgraph = { workspace = true, optional = true }
 thiserror = { workspace = true }
@@ -29,9 +31,10 @@ indexmap = { workspace = true }
 rayon = { workspace = true, optional = true }
 itertools = { workspace = true }
 typenum = { workspace = true }
+paste = { workspace = true }
 
 feos = { workspace = true }
-feos-core = { workspace = true }
+feos-core = { workspace = true, features = ["ndarray"] }
 feos-derive = { workspace = true }
 feos-dft = { workspace = true, optional = true }
 
@@ -46,6 +49,7 @@ pets = ["feos/pets"]
 saftvrqmie = ["feos/saftvrqmie"]
 saftvrmie = ["feos/saftvrmie"]
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
+ad = ["feos-core/rayon"]
 all_models = [
     "dft",
     "pcsaft",

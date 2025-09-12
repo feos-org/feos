@@ -1,7 +1,7 @@
 use super::PyEquationOfState;
 use crate::{ideal_gas::IdealGasModel, parameter::PyParameters, residual::ResidualModel};
 use feos::saftvrmie::{SaftVRMie, SaftVRMieOptions};
-use feos_core::{Components, EquationOfState};
+use feos_core::{EquationOfState, ResidualDyn};
 use pyo3::prelude::*;
 use std::sync::Arc;
 
@@ -41,11 +41,9 @@ impl PyEquationOfState {
             max_iter_cross_assoc,
             tol_cross_assoc,
         };
-        let residual = Arc::new(ResidualModel::SaftVRMie(SaftVRMie::with_options(
-            parameters.try_convert()?,
-            options,
-        )));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        let residual =
+            ResidualModel::SaftVRMie(SaftVRMie::with_options(parameters.try_convert()?, options));
+        let ideal_gas = vec![IdealGasModel::NoModel; residual.components()];
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 }

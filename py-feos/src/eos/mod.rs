@@ -3,7 +3,8 @@ use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
 
 use feos_core::*;
-use ndarray::Array1;
+use nalgebra::{DVector, DVectorView, Dyn};
+use numpy::PyReadonlyArray1;
 use pyo3::prelude::*;
 use quantity::*;
 use std::sync::Arc;
@@ -27,8 +28,7 @@ mod uvtheory;
 
 /// Collection of equations of state.
 #[pyclass(name = "EquationOfState")]
-#[derive(Clone)]
-pub struct PyEquationOfState(pub Arc<EquationOfState<IdealGasModel, ResidualModel>>);
+pub struct PyEquationOfState(pub Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>);
 
 #[pymethods]
 impl PyEquationOfState {
@@ -36,17 +36,17 @@ impl PyEquationOfState {
     ///
     /// Parameters
     /// ----------
-    /// moles : SIArray1, optional
-    ///     The amount of substance in mol for each component.
+    /// molefracs : np.ndarray[float], optional
+    ///     The composition of the mixture.
     ///
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(text_signature = "(moles=None)", signature = (moles=None))]
-    fn max_density(&self, moles: Option<Moles<Array1<f64>>>) -> PyResult<Density> {
+    #[pyo3(text_signature = "(molefracs=None)", signature = (molefracs=None))]
+    fn max_density(&self, molefracs: Option<PyReadonlyArray1<f64>>) -> PyResult<Density> {
         Ok(self
             .0
-            .max_density(moles.as_ref())
+            .max_density(&parse_molefracs(molefracs))
             .map_err(PyFeosError::from)?)
     }
 
@@ -56,22 +56,20 @@ impl PyEquationOfState {
     /// ----------
     /// temperature : SINumber
     ///     The temperature for which B should be computed.
-    /// moles : SIArray1, optional
-    ///     The amount of substance in mol for each component.
+    /// molefracs : np.ndarray[float], optional
+    ///     The composition of the mixture.
     ///
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(text_signature = "(temperature, moles=None)", signature = (temperature, moles=None))]
+    #[pyo3(text_signature = "(temperature, molefracs=None)", signature = (temperature, molefracs=None))]
     fn second_virial_coefficient(
         &self,
         temperature: Temperature,
-        moles: Option<Moles<Array1<f64>>>,
-    ) -> PyResult<Quot<f64, Density>> {
-        Ok(self
-            .0
-            .second_virial_coefficient(temperature, moles.as_ref())
-            .map_err(PyFeosError::from)?)
+        molefracs: Option<PyReadonlyArray1<f64>>,
+    ) -> Quot<f64, Density> {
+        self.0
+            .second_virial_coefficient(temperature, &parse_molefracs(molefracs))
     }
 
     /// Calculate the third Virial coefficient C(T,x).
@@ -80,22 +78,20 @@ impl PyEquationOfState {
     /// ----------
     /// temperature : SINumber
     ///     The temperature for which C should be computed.
-    /// moles : SIArray1, optional
-    ///     The amount of substance in mol for each component.
+    /// molefracs : np.ndarray[float], optional
+    ///     The composition of the mixture.
     ///
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(text_signature = "(temperature, moles=None)", signature = (temperature, moles=None))]
+    #[pyo3(text_signature = "(temperature, molefracs=None)", signature = (temperature, molefracs=None))]
     fn third_virial_coefficient(
         &self,
         temperature: Temperature,
-        moles: Option<Moles<Array1<f64>>>,
-    ) -> PyResult<Quot<Quot<f64, Density>, Density>> {
-        Ok(self
-            .0
-            .third_virial_coefficient(temperature, moles.as_ref())
-            .map_err(PyFeosError::from)?)
+        molefracs: Option<PyReadonlyArray1<f64>>,
+    ) -> Quot<Quot<f64, Density>, Density> {
+        self.0
+            .third_virial_coefficient(temperature, &parse_molefracs(molefracs))
     }
 
     /// Calculate the derivative of the second Virial coefficient B(T,x)
@@ -105,22 +101,22 @@ impl PyEquationOfState {
     /// ----------
     /// temperature : SINumber
     ///     The temperature for which B' should be computed.
-    /// moles : SIArray1, optional
-    ///     The amount of substance in mol for each component.
+    /// molefracs : np.ndarray[float], optional
+    ///     The composition of the mixture.
     ///
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(text_signature = "(temperature, moles=None)", signature = (temperature, moles=None))]
+    #[pyo3(text_signature = "(temperature, molefracs=None)", signature = (temperature, molefracs=None))]
     fn second_virial_coefficient_temperature_derivative(
         &self,
         temperature: Temperature,
-        moles: Option<Moles<Array1<f64>>>,
-    ) -> PyResult<Quot<Quot<f64, Density>, Temperature>> {
-        Ok(self
-            .0
-            .second_virial_coefficient_temperature_derivative(temperature, moles.as_ref())
-            .map_err(PyFeosError::from)?)
+        molefracs: Option<PyReadonlyArray1<f64>>,
+    ) -> Quot<Quot<f64, Density>, Temperature> {
+        self.0.second_virial_coefficient_temperature_derivative(
+            temperature,
+            &parse_molefracs(molefracs),
+        )
     }
 
     /// Calculate the derivative of the third Virial coefficient C(T,x)
@@ -130,48 +126,53 @@ impl PyEquationOfState {
     /// ----------
     /// temperature : SINumber
     ///     The temperature for which C' should be computed.
-    /// moles : SIArray1, optional
-    ///     The amount of substance in mol for each component.
+    /// molefracs : np.ndarray[float], optional
+    ///     The composition of the mixture.
     ///
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(text_signature = "(temperature, moles=None)", signature = (temperature, moles=None))]
-    #[expect(clippy::type_complexity)]
+    #[pyo3(text_signature = "(temperature, molefracs=None)", signature = (temperature, molefracs=None))]
     fn third_virial_coefficient_temperature_derivative(
         &self,
         temperature: Temperature,
-        moles: Option<Moles<Array1<f64>>>,
-    ) -> PyResult<Quot<Quot<Quot<f64, Density>, Density>, Temperature>> {
-        Ok(self
-            .0
-            .third_virial_coefficient_temperature_derivative(temperature, moles.as_ref())
-            .map_err(PyFeosError::from)?)
+        molefracs: Option<PyReadonlyArray1<f64>>,
+    ) -> Quot<Quot<Quot<f64, Density>, Density>, Temperature> {
+        self.0.third_virial_coefficient_temperature_derivative(
+            temperature,
+            &parse_molefracs(molefracs),
+        )
     }
 }
 
 impl PyEquationOfState {
-    fn add_ideal_gas(&self, ideal_gas: IdealGasModel) -> Self {
-        let residual = match self.0.residual.as_ref() {
-            ResidualModel::NoResidual(_) => Arc::new(ResidualModel::NoResidual(NoResidual(
-                ideal_gas.components(),
-            ))),
-            _ => self.0.residual.clone(),
+    fn add_ideal_gas(&mut self, ideal_gas: Vec<IdealGasModel>) {
+        let Some(eos) = Arc::get_mut(&mut self.0) else {
+            panic!("Cannot change equation of state after using it!")
         };
-        Self(Arc::new(EquationOfState::new(
-            Arc::new(ideal_gas),
-            residual,
-        )))
+        if let ResidualModel::NoResidual(c) = &mut eos.residual {
+            c.0 = ideal_gas.len()
+        }
+        eos.ideal_gas = ideal_gas;
     }
 }
 
-// impl_state_entropy_scaling!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
-// impl_phase_equilibrium!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
+pub(crate) fn parse_molefracs(molefracs: Option<PyReadonlyArray1<f64>>) -> Option<DVector<f64>> {
+    molefracs.map(|x| {
+        let x: DVectorView<f64, Dyn, Dyn> = x
+            .try_as_matrix()
+            .expect("molefracs are in an invalid format!");
+        x.clone_owned()
+    })
+}
+
+// impl_state_entropy_scaling!(EquationOfState<Vec<IdealGasModel>, ResidualModel>, PyEquationOfState);
+// impl_phase_equilibrium!(EquationOfState<Vec<IdealGasModel>, ResidualModel>, PyEquationOfState);
 
 // #[cfg(feature = "estimator")]
-// impl_estimator!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
+// impl_estimator!(EquationOfState<Vec<IdealGasModel>, ResidualModel>, PyEquationOfState);
 // #[cfg(all(feature = "estimator", feature = "pcsaft"))]
-// impl_estimator_entropy_scaling!(EquationOfState<IdealGasModel, ResidualModel>, PyEquationOfState);
+// impl_estimator_entropy_scaling!(EquationOfState<Vec<IdealGasModel>, ResidualModel>, PyEquationOfState);
 
 // #[pymodule]
 // pub fn eos(m: &Bound<'_, PyModule>) -> PyResult<()> {

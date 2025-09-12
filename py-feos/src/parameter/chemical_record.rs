@@ -38,6 +38,21 @@ impl PyChemicalRecord {
         Ok(self.0.to_string())
     }
 
+    #[getter]
+    fn get_identifier(&self) -> PyIdentifier {
+        PyIdentifier(self.0.identifier.clone())
+    }
+
+    #[getter]
+    fn get_segments(&self) -> Vec<String> {
+        self.0.segments.clone()
+    }
+
+    #[getter]
+    fn get_bonds(&self) -> Vec<[usize; 2]> {
+        self.0.bonds.clone()
+    }
+
     /// Read a list of `ChemicalRecord`s from a JSON file.
     ///
     /// Parameters

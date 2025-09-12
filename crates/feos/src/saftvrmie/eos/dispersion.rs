@@ -1,6 +1,6 @@
 use crate::saftvrmie::parameters::SaftVRMiePars;
 use feos_core::StateHD;
-use ndarray::{Array1, Array2, ScalarOperand};
+use nalgebra::{DMatrix, DVector};
 use num_dual::{Dual, DualNum};
 use num_traits::Zero;
 use std::f64::consts::{FRAC_PI_6, PI};
@@ -8,11 +8,11 @@ use std::f64::consts::{FRAC_PI_6, PI};
 #[derive(Debug)]
 pub struct Properties<D> {
     /// Temperature dependent diameter
-    diameter: Array1<D>,
+    diameter: DVector<D>,
     /// total number density of segments
     pub segment_density: D,
     /// mole fraction of segments
-    pub segment_molefracs: Array1<D>,
+    pub segment_molefracs: DVector<D>,
     /// mean segment number
     mean_segment_number: D,
     /// mixture packing fraction using d(T)
@@ -23,34 +23,37 @@ pub struct Properties<D> {
     k0: [D; 4],
 }
 
-impl<D: DualNum<f64> + Copy + Zero + ScalarOperand> Properties<D> {
+impl<D: DualNum<f64> + Copy + Zero> Properties<D> {
     pub(super) fn new(
         parameters: &SaftVRMiePars,
         state: &StateHD<D>,
-        diameter: &Array1<D>,
+        diameter: &DVector<D>,
     ) -> Self {
         let n = parameters.m.len();
         let x = &state.molefracs;
 
-        let mean_segment_number = (x * &parameters.m).sum();
-        let xs = x * &parameters.m / mean_segment_number;
+        let mean_segment_number: D = x.component_mul(&parameters.m.map(D::from)).sum();
+        let xs = x.component_mul(&parameters.m.map(D::from)) / mean_segment_number;
 
         // Set eps to one -> get partial derivatives w.r.t segment density
-        let segment_density = (&state.partial_density * &parameters.m).sum();
+        let segment_density = state
+            .partial_density
+            .component_mul(&parameters.m.map(D::from))
+            .sum();
 
         // diameter
-        let d_ij = Array2::from_shape_fn((n, n), |(i, j)| (diameter[i] + diameter[j]) * 0.5);
-        let d3_ij = d_ij.mapv(|d| d.powi(3));
+        let d_ij = DMatrix::from_fn(n, n, |i, j| (diameter[i] + diameter[j]) * 0.5);
+        let d3_ij = d_ij.map(|d| d.powi(3));
 
         // segment packing fraction
         let mut zeta_x = D::zero();
         let mut zeta_x_bar = D::zero();
         for i in 0..n {
-            zeta_x += xs[i].powi(2) * d3_ij[[i, i]];
-            zeta_x_bar += xs[i].powi(2) * parameters.sigma_ij[[i, i]].powi(3);
+            zeta_x += xs[i].powi(2) * d3_ij[(i, i)];
+            zeta_x_bar += xs[i].powi(2) * parameters.sigma_ij[(i, i)].powi(3);
             for j in i + 1..n {
-                zeta_x += xs[i] * xs[j] * d3_ij[[i, j]] * 2.0;
-                zeta_x_bar += xs[i] * xs[j] * parameters.sigma_ij[[i, j]].powi(3) * 2.0;
+                zeta_x += xs[i] * xs[j] * d3_ij[(i, j)] * 2.0;
+                zeta_x_bar += xs[i] * xs[j] * parameters.sigma_ij[(i, j)].powi(3) * 2.0;
             }
         }
         zeta_x *= segment_density * FRAC_PI_6;
@@ -96,7 +99,7 @@ pub(super) const PHI: [[f64; 7]; 6] = [
 ];
 
 /// First, second and third order perturbations for dispersive interactions
-pub fn a_disp<D: DualNum<f64> + Copy + ScalarOperand>(
+pub fn helmholtz_energy_density_disp<D: DualNum<f64> + Copy>(
     parameters: &SaftVRMiePars,
     properties: &Properties<D>,
     state: &StateHD<D>,
@@ -122,7 +125,7 @@ pub fn a_disp<D: DualNum<f64> + Copy + ScalarOperand>(
         let sig = p.sigma[i];
         let la = p.la[i];
         let lr = p.lr[i];
-        let c = p.c_ij[[i, i]];
+        let c = p.c_ij[(i, i)];
 
         let di = properties.diameter[i];
         let d3 = di.powi(3);
@@ -137,7 +140,7 @@ pub fn a_disp<D: DualNum<f64> + Copy + ScalarOperand>(
         let a2_ii = pref * eps_k * c * k_hs * 0.5 * (a1s_b_2la - a1s_b_lalr * 2.0 + a1s_b_2lr);
 
         // note indices of f(i, alpha) are shifted due to 0-indexing.
-        let alpha = parameters.alpha_ij[[i, i]];
+        let alpha = parameters.alpha_ij[(i, i)];
         let a3_ii = -zeta_x_bar
             * f(3, alpha)
             * (zeta_x_bar * (zeta_x_bar * f(5, alpha) + f(4, alpha))).exp()
@@ -153,11 +156,11 @@ pub fn a_disp<D: DualNum<f64> + Copy + ScalarOperand>(
 
         for j in i + 1..n {
             // parameters
-            let eps_k = p.epsilon_k_ij[[i, j]];
-            let sig = p.sigma_ij[[i, j]];
-            let la = p.la_ij[[i, j]];
-            let lr = p.lr_ij[[i, j]];
-            let c = p.c_ij[[i, j]];
+            let eps_k = p.epsilon_k_ij[(i, j)];
+            let sig = p.sigma_ij[(i, j)];
+            let la = p.la_ij[(i, j)];
+            let lr = p.lr_ij[(i, j)];
+            let c = p.c_ij[(i, j)];
 
             let dij = (di + properties.diameter[j]) * 0.5;
             let d3 = dij.powi(3);
@@ -172,7 +175,7 @@ pub fn a_disp<D: DualNum<f64> + Copy + ScalarOperand>(
             let a2_ij = pref * eps_k * c * k_hs * 0.5 * (a1s_b_2la - a1s_b_lalr * 2.0 + a1s_b_2lr);
 
             // note indices of f(i, alpha) are shifted due to 0-indexing.
-            let alpha = parameters.alpha_ij[[i, j]];
+            let alpha = parameters.alpha_ij[(i, j)];
             let a3_ij = -zeta_x_bar
                 * f(3, alpha)
                 * (zeta_x_bar * (zeta_x_bar * f(5, alpha) + f(4, alpha))).exp()
@@ -186,13 +189,13 @@ pub fn a_disp<D: DualNum<f64> + Copy + ScalarOperand>(
             a3 += a3_ij * xs_ij * 2.0;
         }
     }
-    state.moles.sum()
+    state.partial_density.sum()
         * properties.mean_segment_number
         * (a1 * t_inv + a2 * t_inv.powi(2) + a3 * t_inv.powi(3))
 }
 
 /// Combine dispersion and chain contributions
-pub fn a_disp_chain<D: DualNum<f64> + Copy + ScalarOperand>(
+pub fn helmholtz_energy_density_disp_chain<D: DualNum<f64> + Copy>(
     parameters: &SaftVRMiePars,
     properties: &Properties<D>,
     state: &StateHD<D>,
@@ -236,7 +239,7 @@ pub fn a_disp_chain<D: DualNum<f64> + Copy + ScalarOperand>(
         let sig = p.sigma[i];
         let la = p.la[i];
         let lr = p.lr[i];
-        let c = p.c_ij[[i, i]];
+        let c = p.c_ij[(i, i)];
 
         let di = properties.diameter[i];
 
@@ -254,7 +257,7 @@ pub fn a_disp_chain<D: DualNum<f64> + Copy + ScalarOperand>(
         let a2_ii = pref * eps_k * c * k_hs_dual * 0.5 * (a1s_b_2la - a1s_b_lalr * 2.0 + a1s_b_2lr);
 
         // note indices of f(i, alpha) are shifted due to 0-indexing.
-        let alpha = parameters.alpha_ij[[i, i]];
+        let alpha = parameters.alpha_ij[(i, i)];
         let a3_ii = -zeta_x_bar
             * f(3, alpha)
             * (zeta_x_bar * (zeta_x_bar * f(5, alpha) + f(4, alpha))).exp()
@@ -292,11 +295,11 @@ pub fn a_disp_chain<D: DualNum<f64> + Copy + ScalarOperand>(
 
         for j in i + 1..n {
             // parameters
-            let eps_k = p.epsilon_k_ij[[i, j]];
-            let sig = p.sigma_ij[[i, j]];
-            let la = p.la_ij[[i, j]];
-            let lr = p.lr_ij[[i, j]];
-            let c = p.c_ij[[i, j]];
+            let eps_k = p.epsilon_k_ij[(i, j)];
+            let sig = p.sigma_ij[(i, j)];
+            let la = p.la_ij[(i, j)];
+            let lr = p.lr_ij[(i, j)];
+            let c = p.c_ij[(i, j)];
 
             let dij = (di + properties.diameter[j]) * 0.5;
             let d3 = dij.powi(3);
@@ -311,7 +314,7 @@ pub fn a_disp_chain<D: DualNum<f64> + Copy + ScalarOperand>(
             let a2_ij = pref * eps_k * c * k_hs * 0.5 * (a1s_b_2la - a1s_b_lalr * 2.0 + a1s_b_2lr);
 
             // note indices of f(i, alpha) are shifted due to 0-indexing.
-            let alpha = parameters.alpha_ij[[i, j]];
+            let alpha = parameters.alpha_ij[(i, j)];
             let a3_ij = -zeta_x_bar
                 * f(3, alpha)
                 * (zeta_x_bar * (zeta_x_bar * f(5, alpha) + f(4, alpha))).exp()
@@ -325,7 +328,7 @@ pub fn a_disp_chain<D: DualNum<f64> + Copy + ScalarOperand>(
             a3 += a3_ij * xs_ij * 2.0;
         }
     }
-    state.moles.sum()
+    state.partial_density.sum()
         * (properties.mean_segment_number * (a1 * t_inv + a2 * t_inv.powi(2) + a3 * t_inv.powi(3))
             + a_chain)
 }

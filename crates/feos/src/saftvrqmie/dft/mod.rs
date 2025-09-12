@@ -7,8 +7,9 @@ use feos_core::FeosResult;
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
-use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctional, MoleculeShape};
-use ndarray::{Array, Array1, Array2, ScalarOperand};
+use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctionalDyn, MoleculeShape};
+use nalgebra::DVector;
+use ndarray::{Array, Array1, Array2};
 use non_additive_hs::NonAddHardSphereFunctional;
 use num_dual::DualNum;
 
@@ -29,10 +30,10 @@ impl SaftVRQMie {
     }
 }
 
-impl HelmholtzEnergyFunctional for SaftVRQMie {
+impl HelmholtzEnergyFunctionalDyn for SaftVRQMie {
     type Contribution<'a> = SaftVRQMieFunctionalContribution<'a>;
 
-    fn contributions<'a>(&'a self) -> Vec<SaftVRQMieFunctionalContribution<'a>> {
+    fn contributions<'a>(&'a self) -> impl Iterator<Item = SaftVRQMieFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(3);
 
         // Hard sphere contribution
@@ -49,31 +50,31 @@ impl HelmholtzEnergyFunctional for SaftVRQMie {
         let att = AttractiveFunctional::new(&self.params);
         contributions.push(att.into());
 
-        contributions
+        contributions.into_iter()
     }
 
-    fn molecule_shape(&self) -> MoleculeShape {
+    fn molecule_shape(&self) -> MoleculeShape<'_> {
         MoleculeShape::NonSpherical(&self.params.m)
     }
 }
 
 impl HardSphereProperties for SaftVRQMiePars {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
+    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
         MonomerShape::Spherical(self.m.len())
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
         self.hs_diameter(temperature)
     }
 }
 
 impl FluidParameters for SaftVRQMie {
-    fn epsilon_k_ff(&self) -> Array1<f64> {
+    fn epsilon_k_ff(&self) -> DVector<f64> {
         self.params.epsilon_k.clone()
     }
 
-    fn sigma_ff(&self) -> &Array1<f64> {
-        &self.params.sigma
+    fn sigma_ff(&self) -> DVector<f64> {
+        self.params.sigma.clone()
     }
 }
 

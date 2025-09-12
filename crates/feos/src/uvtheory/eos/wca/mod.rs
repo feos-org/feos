@@ -21,19 +21,19 @@ impl WeeksChandlerAndersen {
         &self,
         parameters: &UVTheoryPars,
         state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         vec![
             (
-                "Hard Sphere (WCA)".to_string(),
-                HardSphere.helmholtz_energy(parameters, state),
+                "Hard Sphere (WCA)",
+                HardSphere.helmholtz_energy_density(parameters, state),
             ),
             (
-                "Reference Perturbation (WCA)".to_string(),
-                ReferencePerturbation.helmholtz_energy(parameters, state),
+                "Reference Perturbation (WCA)",
+                ReferencePerturbation.helmholtz_energy_density(parameters, state),
             ),
             (
-                "Attractive Perturbation (WCA)".to_string(),
-                AttractivePerturbation.helmholtz_energy(parameters, state),
+                "Attractive Perturbation (WCA)",
+                AttractivePerturbation.helmholtz_energy_density(parameters, state),
             ),
         ]
     }
@@ -46,19 +46,19 @@ impl WeeksChandlerAndersenB3 {
         &self,
         parameters: &UVTheoryPars,
         state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         vec![
             (
-                "Hard Sphere (WCA)".to_string(),
-                HardSphere.helmholtz_energy(parameters, state),
+                "Hard Sphere (WCA)",
+                HardSphere.helmholtz_energy_density(parameters, state),
             ),
             (
-                "Reference Perturbation (WCA B3)".to_string(),
-                ReferencePerturbationB3.helmholtz_energy(parameters, state),
+                "Reference Perturbation (WCA B3)",
+                ReferencePerturbationB3.helmholtz_energy_density(parameters, state),
             ),
             (
-                "Attractive Perturbation (WCA B3)".to_string(),
-                AttractivePerturbationB3.helmholtz_energy(parameters, state),
+                "Attractive Perturbation (WCA B3)",
+                AttractivePerturbationB3.helmholtz_energy_density(parameters, state),
             ),
         ]
     }

@@ -13,7 +13,7 @@ pub(super) struct ReferencePerturbationB3;
 
 impl ReferencePerturbationB3 {
     /// Helmholtz energy for perturbation reference (Mayer-f), eq. 29
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &UVTheoryPars,
         state: &StateHD<D>,
@@ -35,22 +35,22 @@ impl ReferencePerturbationB3 {
                     * 0.5; // MIXING RULE not clear!!!
                 let d_ij = (d[i] + d[j]) * 0.5; // (d[i] * p.sigma[i] + d[j] * p.sigma[j]) * 0.5;
 
-                let t_ij = state.temperature / p.eps_k_ij[[i, j]];
-                let rep_ij = p.rep_ij[[i, j]];
-                let att_ij = p.att_ij[[i, j]];
+                let t_ij = state.temperature / p.eps_k_ij[(i, j)];
+                let rep_ij = p.rep_ij[(i, j)];
+                let att_ij = p.att_ij[(i, j)];
                 let q_ij = dimensionless_diameter_q_wca(t_ij, D::from(rep_ij), D::from(att_ij))
-                    * p.sigma_ij[[i, j]];
+                    * p.sigma_ij[(i, j)];
 
                 a += x[i]
                     * x[j]
-                    * ((-eta_a[[i, j]] * 0.5 + 1.0) / (-eta_a[[i, j]] + 1.0).powi(3)
-                        * (-q_ij.powi(3) + (rs_ij * p.sigma_ij[[i, j]]).powi(3))
-                        - ((-eta_b[[i, j]] * 0.5 + 1.0) / (-eta_b[[i, j]] + 1.0).powi(3))
-                            * (-d_ij.powi(3) + (rs_ij * p.sigma_ij[[i, j]]).powi(3)))
+                    * ((-eta_a[(i, j)] * 0.5 + 1.0) / (-eta_a[(i, j)] + 1.0).powi(3)
+                        * (-q_ij.powi(3) + (rs_ij * p.sigma_ij[(i, j)]).powi(3))
+                        - ((-eta_b[(i, j)] * 0.5 + 1.0) / (-eta_b[(i, j)] + 1.0).powi(3))
+                            * (-d_ij.powi(3) + (rs_ij * p.sigma_ij[(i, j)]).powi(3)))
             }
         }
 
-        -a * state.moles.sum().powi(2) * 2.0 / 3.0 / state.volume * PI
+        -a * state.partial_density.sum().powi(2) * 2.0 / 3.0 * PI
     }
 }
 
@@ -60,23 +60,21 @@ mod test {
     use crate::uvtheory::Perturbation::WeeksChandlerAndersenB3 as WCAB3;
     use crate::uvtheory::parameters::utils::test_parameters;
     use approx::assert_relative_eq;
-    use ndarray::arr1;
+    use nalgebra::dvector;
 
     #[test]
     fn test_delta_a0_uvb3_pure() {
-        let moles = arr1(&[2.0]);
         // #temp = 2.0, rho = 0.5, nu = 12
         // Hard sphere adhs  1.3491645849732654
         // Delta a0           0.1130778070897391
 
         let reduced_temperature = 2.0;
         let reduced_density = 0.5;
-        let reduced_volume = moles[0] / reduced_density;
 
         let p = test_parameters(12.0, 6.0, 1.0, 1.0, WCAB3);
-        let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());
-        let a = ReferencePerturbationB3.helmholtz_energy(&p, &state) / moles[0];
-        dbg!(a.re());
+        let state = StateHD::new(reduced_temperature, 1.0 / reduced_density, &dvector![1.0]);
+        let a = ReferencePerturbationB3.helmholtz_energy_density(&p, &state) / reduced_density;
+        dbg!(a);
         assert_relative_eq!(a, 0.1130778070897391, epsilon = 1e-10);
 
         // #temp = 3.0, rho = 1.1, nu = 20
@@ -84,11 +82,10 @@ mod test {
         //Delta a0  0.3405167374787895
         let reduced_temperature = 3.0;
         let reduced_density = 1.1;
-        let reduced_volume = moles[0] / reduced_density;
 
         let p = test_parameters(20.0, 6.0, 1.0, 1.0, WCAB3);
-        let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());
-        let a = ReferencePerturbationB3.helmholtz_energy(&p, &state) / moles[0];
+        let state = StateHD::new(reduced_temperature, 1.0 / reduced_density, &dvector![1.0]);
+        let a = ReferencePerturbationB3.helmholtz_energy_density(&p, &state) / reduced_density;
 
         assert_relative_eq!(a, 0.3405167374787895, epsilon = 1e-10);
     }
