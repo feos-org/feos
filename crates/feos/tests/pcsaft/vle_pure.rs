@@ -4,7 +4,6 @@ use feos_core::parameter::IdentifierOption;
 use feos_core::{Contributions, PhaseEquilibrium, SolverOptions};
 use quantity::*;
 use std::error::Error;
-use std::sync::Arc;
 
 #[test]
 fn vle_pure_temperature() -> Result<(), Box<dyn Error>> {
@@ -14,7 +13,7 @@ fn vle_pure_temperature() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let saft = Arc::new(PcSaft::new(params));
+    let saft = PcSaft::new(params);
     let temperatures = [
         170.0 * KELVIN,
         200.0 * KELVIN,
@@ -27,7 +26,7 @@ fn vle_pure_temperature() -> Result<(), Box<dyn Error>> {
         ..Default::default()
     };
     for &t in temperatures.iter() {
-        let state = PhaseEquilibrium::pure(&saft, t, None, options)?;
+        let state = PhaseEquilibrium::pure(&&saft, t, None, options)?;
         assert_relative_eq!(state.vapor().temperature, t, max_relative = 1e-10);
         assert_relative_eq!(
             state.vapor().pressure(Contributions::Total),
@@ -46,10 +45,10 @@ fn vle_pure_pressure() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let saft = Arc::new(PcSaft::new(params));
+    let saft = PcSaft::new(params);
     let pressures = [0.1 * BAR, 1.0 * BAR, 10.0 * BAR, 30.0 * BAR, 44.0 * BAR];
     for &p in pressures.iter() {
-        let state = PhaseEquilibrium::pure(&saft, p, None, Default::default())?;
+        let state = PhaseEquilibrium::pure(&&saft, p, None, Default::default())?;
         println!(
             "liquid-p: {} vapor-p: {} p:{}",
             state.liquid().pressure(Contributions::Total),

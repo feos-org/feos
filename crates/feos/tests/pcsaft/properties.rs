@@ -49,7 +49,7 @@ fn test_virial_is_not_nan() -> Result<(), Box<dyn Error>> {
         IdentifierOption::Name,
     )?;
     let saft = Arc::new(PcSaft::new(params));
-    let virial_b = saft.second_virial_coefficient(300.0 * KELVIN, None)?;
+    let virial_b = saft.second_virial_coefficient(300.0 * KELVIN, &None);
     assert!(!virial_b.is_nan());
     Ok(())
 }

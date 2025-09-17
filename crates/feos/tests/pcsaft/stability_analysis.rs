@@ -4,7 +4,6 @@ use feos_core::{DensityInitialization, PhaseEquilibrium, SolverOptions, State};
 use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
-use std::sync::Arc;
 
 #[test]
 fn test_stability_analysis() -> Result<(), Box<dyn Error>> {
@@ -14,9 +13,9 @@ fn test_stability_analysis() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let mix = Arc::new(PcSaft::new(params));
+    let mix = PcSaft::new(params);
     let unstable = State::new_npt(
-        &mix,
+        &&mix,
         300.0 * KELVIN,
         1.0 * BAR,
         &(dvector![0.5, 0.5] * MOL),
@@ -35,9 +34,9 @@ fn test_stability_analysis() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let mix = Arc::new(PcSaft::new(params));
+    let mix = PcSaft::new(params);
     let vle = PhaseEquilibrium::bubble_point(
-        &mix,
+        &&mix,
         300.0 * KELVIN,
         &dvector![0.5, 0.5],
         Some(6.0 * BAR),

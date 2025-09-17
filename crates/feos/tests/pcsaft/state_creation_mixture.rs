@@ -9,37 +9,37 @@ use std::error::Error;
 use std::sync::Arc;
 use typenum::P3;
 
-fn propane_butane_parameters() -> FeosResult<(PcSaftParameters, Arc<Joback>)> {
+fn propane_butane_parameters() -> FeosResult<(PcSaftParameters, Vec<Joback>)> {
     let saft = PcSaftParameters::from_json(
         vec!["propane", "butane"],
         "tests/pcsaft/test_parameters.json",
         None,
         IdentifierOption::Name,
     )?;
-    let joback = Arc::new(Joback::new(JobackParameters::from_json(
+    let joback = Joback::new(JobackParameters::from_json(
         vec!["propane", "butane"],
         "tests/pcsaft/test_parameters_joback.json",
         None,
         IdentifierOption::Name,
-    )?));
+    )?);
     Ok((saft, joback))
 }
 
 #[test]
 fn pressure_entropy_molefracs() -> Result<(), Box<dyn Error>> {
     let (saft_params, joback) = propane_butane_parameters()?;
-    let saft = Arc::new(PcSaft::new(saft_params));
-    let eos = Arc::new(EquationOfState::new(joback, saft));
+    let saft = PcSaft::new(saft_params);
+    let eos = EquationOfState::new(joback, saft);
     let pressure = BAR;
     let temperature = 300.0 * KELVIN;
     let x = dvector![0.3, 0.7];
-    let state = StateBuilder::new(&eos)
+    let state = StateBuilder::new(&&eos)
         .temperature(temperature)
         .pressure(pressure)
         .molefracs(&x)
         .build()?;
     let molar_entropy = state.molar_entropy(Contributions::Total);
-    let state = StateBuilder::new(&eos)
+    let state = StateBuilder::new(&&eos)
         .pressure(pressure)
         .molar_entropy(molar_entropy)
         .molefracs(&x)
