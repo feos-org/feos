@@ -149,10 +149,7 @@ where
         tp_init: Option<TP::Other>,
         vapor_molefracs: Option<&OVector<f64, N>>,
         options: (SolverOptions, SolverOptions),
-    ) -> FeosResult<Self>
-    where
-        E: Clone,
-    {
+    ) -> FeosResult<Self> {
         Self::bubble_dew_point(
             eos,
             temperature_or_pressure,
@@ -173,10 +170,7 @@ where
         tp_init: Option<TP::Other>,
         liquid_molefracs: Option<&OVector<f64, N>>,
         options: (SolverOptions, SolverOptions),
-    ) -> FeosResult<Self>
-    where
-        E: Clone,
-    {
+    ) -> FeosResult<Self> {
         Self::bubble_dew_point(
             eos,
             temperature_or_pressure,
@@ -196,10 +190,7 @@ where
         liquid_molefracs: Option<&OVector<f64, N>>,
         bubble: bool,
         options: (SolverOptions, SolverOptions),
-    ) -> FeosResult<Self>
-    where
-        E: Clone,
-    {
+    ) -> FeosResult<Self> {
         let (temperature, pressure, iterate_p) =
             temperature_or_pressure.temperature_pressure(tp_init);
         Self::bubble_dew_point_tp(
@@ -224,10 +215,7 @@ where
         bubble: bool,
         iterate_p: bool,
         options: (SolverOptions, SolverOptions),
-    ) -> FeosResult<Self>
-    where
-        E: Clone,
-    {
+    ) -> FeosResult<Self> {
         let eos_re = eos.re();
         let mut temperature_re = temperature.map(|t| t.re());
         let mut pressure_re = pressure.map(|p| p.re());
@@ -440,6 +428,8 @@ where
         // calculate properties
         let (p_1, mu_res_1, dp_1, dmu_1) = eos.dmu_drho(*temperature, partial_density_other_phase);
         let (p_2, mu_res_2, dp_2, dmu_2) = eos.dmu_dv(*temperature, *molar_volume, molefracs);
+        let (dp_dt_1, dmu_res_dt_1) = eos.dmu_dt(*temperature, partial_density_other_phase);
+        let (dp_dt_2, dmu_res_dt_2) = eos.dmu_dt(*temperature, &(molefracs / *molar_volume));
 
         // calculate residual
         let n = molefracs.len();
@@ -454,7 +444,6 @@ where
                         * *temperature
             }
         });
-        todo!();
 
         // calculate Jacobian
         let jac = DMatrix::from_fn(n + 2, n + 2, |i, j| {
@@ -462,12 +451,17 @@ where
                 dmu_1[(i, j)]
             } else if i < n && j == n {
                 -dmu_2[i]
+            } else if i < n && j == n + 1 {
+                dmu_res_dt_1[i] - dmu_res_dt_2[i]
+                    + (partial_density_other_phase[i] * *molar_volume / molefracs[i]).ln()
             } else if i == n && j < n {
                 dp_1[j]
+            } else if i == n && j == n + 1 {
+                dp_dt_1
             } else if i == n + 1 && j == n {
                 dp_2
-            } else if i >= n && j == n + 1 {
-                -D::one()
+            } else if i == n + 1 && j == n + 1 {
+                dp_dt_2
             } else {
                 D::zero()
             }

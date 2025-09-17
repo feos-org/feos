@@ -417,7 +417,7 @@ where
     }
 
     /// calculates dp_dt, dmu_res_dt
-    fn dmu_dt1(&self, temperature: D, partial_density: &OVector<D, N>) -> (D, OVector<D, N>)
+    fn dmu_dt(&self, temperature: D, partial_density: &OVector<D, N>) -> (D, OVector<D, N>)
     where
         N: Gradients,
     {
@@ -433,26 +433,6 @@ where
             &(),
         );
         let p_t = -f_res_t + partial_density.dot(&mu_res_t) + partial_density.sum();
-        (p_t, mu_res_t)
-    }
-
-    /// calculates dp_dt, dmu_res_dt
-    fn dmu_dt(
-        &self,
-        temperature: D,
-        molar_volume: D,
-        molefracs: &OVector<D, N>,
-    ) -> (D, OVector<D, N>)
-    where
-        N: Gradients,
-    {
-        let (_, _, a_res_t, mu_res_t) = N::partial_hessian(
-            |x, t, &v| self.lift().residual_helmholtz_energy(t, v, &x),
-            molefracs,
-            temperature,
-            &molar_volume,
-        );
-        let p_t = (-a_res_t + molefracs.dot(&mu_res_t) + 1.0) / molar_volume;
         (p_t, mu_res_t)
     }
 }
