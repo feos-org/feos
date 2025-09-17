@@ -589,10 +589,11 @@ mod tests_parameter_fit {
     use super::pcsaft_pure::test::pcsaft;
     use super::*;
     use approx::assert_relative_eq;
-    use feos_core::Contributions;
     use feos_core::DensityInitialization::Liquid;
     use feos_core::{BinaryModel, FeosResult, ParametersAD, PhaseEquilibrium, PureModel, State};
+    use feos_core::{Contributions, ReferenceSystem};
     use nalgebra::{U1, U3, U8, vector};
+    use num_dual::{DualStruct, DualVec};
     use quantity::{BAR, KELVIN, LITER, MOL, PASCAL};
 
     fn pcsaft_non_assoc() -> FeosResult<PcSaftPure<f64, 4>> {
@@ -833,6 +834,102 @@ mod tests_parameter_fit {
             ((dp_h - grad) / grad).abs()
         );
         assert_relative_eq!(grad, dp_h, max_relative = 1e-6);
+        Ok(())
+    }
+
+    #[test]
+    fn test_bubble_point_temperature() -> FeosResult<()> {
+        let (pcsaft, _) = pcsaft_binary()?;
+        let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
+        let pressure = Pressure::from_reduced(DualVec::from(45. * BAR.into_reduced()));
+        let t_init = Temperature::from_reduced(DualVec::from(500.0));
+        let x = vector![0.5, 0.5].map(DualVec::from);
+        let t = PhaseEquilibrium::bubble_point(
+            &pcsaft_ad,
+            pressure,
+            &x,
+            Some(t_init),
+            None,
+            Default::default(),
+        )?
+        .vapor()
+        .temperature;
+        let t = t.convert_into(KELVIN);
+        let (t, [[grad]]) = (t.re, t.eps.unwrap_generic(U1, U1).data.0);
+
+        println!("{t:.5}");
+        println!("{grad:.5?}");
+
+        let (params, mut kij) = pcsaft.0;
+        let h = 1e-7;
+        kij += h;
+        let pcsaft_h = PcSaftBinary::new(params, kij);
+        let t_h = PhaseEquilibrium::bubble_point(
+            &pcsaft_h,
+            pressure.re(),
+            &x.map(|x| x.re()),
+            Some(t_init.re()),
+            None,
+            Default::default(),
+        )?
+        .vapor()
+        .temperature;
+        let dt_h = (t_h.convert_into(KELVIN) - t) / h;
+        println!(
+            "k_ij: {:11.5} {:11.5} {:.3e}",
+            dt_h,
+            grad,
+            ((dt_h - grad) / grad).abs()
+        );
+        assert_relative_eq!(grad, dt_h, max_relative = 1e-6);
+        Ok(())
+    }
+
+    #[test]
+    fn test_dew_point_temperature() -> FeosResult<()> {
+        let (pcsaft, _) = pcsaft_binary()?;
+        let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
+        let pressure = Pressure::from_reduced(DualVec::from(45. * BAR.into_reduced()));
+        let t_init = Temperature::from_reduced(DualVec::from(500.0));
+        let x = vector![0.5, 0.5].map(DualVec::from);
+        let t = PhaseEquilibrium::dew_point(
+            &pcsaft_ad,
+            pressure,
+            &x,
+            Some(t_init),
+            None,
+            Default::default(),
+        )?
+        .vapor()
+        .temperature;
+        let t = t.convert_into(KELVIN);
+        let (t, [[grad]]) = (t.re, t.eps.unwrap_generic(U1, U1).data.0);
+
+        println!("{t:.5}");
+        println!("{grad:.5?}");
+
+        let (params, mut kij) = pcsaft.0;
+        let h = 1e-7;
+        kij += h;
+        let pcsaft_h = PcSaftBinary::new(params, kij);
+        let t_h = PhaseEquilibrium::dew_point(
+            &pcsaft_h,
+            pressure.re(),
+            &x.map(|x| x.re()),
+            Some(t_init.re()),
+            None,
+            Default::default(),
+        )?
+        .vapor()
+        .temperature;
+        let dt_h = (t_h.convert_into(KELVIN) - t) / h;
+        println!(
+            "k_ij: {:11.5} {:11.5} {:.3e}",
+            dt_h,
+            grad,
+            ((dt_h - grad) / grad).abs()
+        );
+        assert_relative_eq!(grad, dt_h, max_relative = 1e-6);
         Ok(())
     }
 }
