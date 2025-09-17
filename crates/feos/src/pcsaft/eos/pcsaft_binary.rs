@@ -283,7 +283,7 @@ fn association<D: DualNum<f64> + Copy>(
 
                 SVector::from([f1, f2])
             },
-            SVector::from([xa1, xa2]),
+            &SVector::from([xa1, xa2]),
         );
 
         let [g1, g2] = g.data.0[0];

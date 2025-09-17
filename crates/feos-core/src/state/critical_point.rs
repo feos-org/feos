@@ -173,7 +173,7 @@ where
                     &molefracs.map(DualSVec::from_re),
                 ))
             },
-            SVector::from([t, rho]),
+            &SVector::from([t, rho]),
         );
 
         // calculate Newton step
@@ -255,7 +255,7 @@ where
                 let t = DualSVec::from_re(t);
                 SVector::from(criticality_conditions(&eos.lift(), t, density, &molefracs))
             },
-            rho,
+            &rho,
         );
 
         // calculate Newton step
@@ -336,7 +336,7 @@ where
             let p = DualSVec::from_re(p);
             criticality_conditions_p(&eos.lift(), p, t, partial_density)
         };
-        let (res, jac) = jacobian::<_, _, _, U3, U3, _>(res, SVector::from([t, rho[0], rho[1]]));
+        let (res, jac) = jacobian::<_, _, _, U3, U3, _>(res, &SVector::from([t, rho[0], rho[1]]));
 
         // calculate Newton step
         let delta = jac.lu().solve(&res);

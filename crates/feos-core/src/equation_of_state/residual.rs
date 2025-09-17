@@ -19,7 +19,8 @@ where
     fn molar_weight(&self) -> MolarWeight<OVector<D, N>>;
 }
 
-impl<T: Molarweight<N, D>, N: Dim, D: DualNum<f64> + Copy> Molarweight<N, D> for Arc<T>
+impl<C: Deref<Target = T>, T: Molarweight<N, D>, N: Dim, D: DualNum<f64> + Copy> Molarweight<N, D>
+    for C
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -413,6 +414,46 @@ where
         let mu_v = mu_res_v.map(|m| m - temperature / molar_volume);
         let p_v = mu_v.dot(molefracs) / molar_volume;
         (p, mu_res, p_v, mu_v)
+    }
+
+    /// calculates dp_dt, dmu_res_dt
+    fn dmu_dt1(&self, temperature: D, partial_density: &OVector<D, N>) -> (D, OVector<D, N>)
+    where
+        N: Gradients,
+    {
+        let (_, _, f_res_t, mu_res_t) = N::partial_hessian(
+            |rho, t, _: &()| {
+                let state = StateHD::new_density(t, &rho);
+                self.lift()
+                    .reduced_residual_helmholtz_energy_density(&state)
+                    * t
+            },
+            partial_density,
+            temperature,
+            &(),
+        );
+        let p_t = -f_res_t + partial_density.dot(&mu_res_t) + partial_density.sum();
+        (p_t, mu_res_t)
+    }
+
+    /// calculates dp_dt, dmu_res_dt
+    fn dmu_dt(
+        &self,
+        temperature: D,
+        molar_volume: D,
+        molefracs: &OVector<D, N>,
+    ) -> (D, OVector<D, N>)
+    where
+        N: Gradients,
+    {
+        let (_, _, a_res_t, mu_res_t) = N::partial_hessian(
+            |x, t, &v| self.lift().residual_helmholtz_energy(t, v, &x),
+            molefracs,
+            temperature,
+            &molar_volume,
+        );
+        let p_t = (-a_res_t + molefracs.dot(&mu_res_t) + 1.0) / molar_volume;
+        (p_t, mu_res_t)
     }
 }
 
