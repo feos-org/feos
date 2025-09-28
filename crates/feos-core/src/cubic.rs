@@ -120,7 +120,7 @@ impl ResidualDyn for PengRobinson {
         let x = &state.molefracs;
         let ak = &self
             .tc
-            .map(|tc| (D::one() - (state.temperature / tc).sqrt()))
+            .map(|tc| D::one() - (state.temperature / tc).sqrt())
             .component_mul(&self.kappa.map(D::from))
             .map(|x| (x + 1.0).powi(2))
             .component_mul(&self.a.map(D::from));

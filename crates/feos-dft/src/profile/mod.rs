@@ -11,7 +11,6 @@ use ndarray::{
 use num_dual::DualNum;
 use quantity::{_Volume, DEGREES, Density, Length, Moles, Quantity, Temperature, Volume};
 use std::ops::{Add, MulAssign};
-use std::sync::Arc;
 use typenum::Sum;
 
 mod properties;
@@ -55,14 +54,14 @@ impl DFTSpecifications {
     /// particles constant in systems, where the number itself is difficult to obtain.
     pub fn moles_from_profile<D: Dimension, F: HelmholtzEnergyFunctional>(
         profile: &DFTProfile<D, F>,
-    ) -> Arc<Self>
+    ) -> Self
     where
         D::Larger: Dimension<Smaller = D>,
     {
         let rho = profile.density.to_reduced();
-        Arc::new(Self::Moles {
+        Self::Moles {
             moles: profile.integrate_reduced_comp(&rho),
-        })
+        }
     }
 
     /// Calculate the number of particles from the profile.
@@ -71,13 +70,13 @@ impl DFTSpecifications {
     /// particles constant in systems, e.g. to fix the equimolar dividing surface.
     pub fn total_moles_from_profile<D: Dimension, F: HelmholtzEnergyFunctional>(
         profile: &DFTProfile<D, F>,
-    ) -> Arc<Self>
+    ) -> Self
     where
         D::Larger: Dimension<Smaller = D>,
     {
         let rho = profile.density.to_reduced();
         let moles = profile.integrate_reduced_comp(&rho).sum();
-        Arc::new(Self::TotalMoles { total_moles: moles })
+        Self::TotalMoles { total_moles: moles }
     }
 }
 
@@ -99,13 +98,12 @@ impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTSpecification<D, F> for DFTS
 }
 
 /// A one-, two-, or three-dimensional density profile.
-#[derive(Clone)]
 pub struct DFTProfile<D: Dimension, F> {
     pub grid: Grid,
-    pub convolver: Arc<dyn Convolver<f64, D>>,
+    pub convolver: Box<dyn Convolver<f64, D>>,
     pub temperature: Temperature,
     pub density: Density<Array<f64, D::Larger>>,
-    pub specification: Arc<dyn DFTSpecification<D, F>>,
+    pub specification: Box<dyn DFTSpecification<D, F>>,
     pub external_potential: Array<f64, D::Larger>,
     pub bulk: State<F>,
     pub solver_log: Option<DFTSolverLog>,
@@ -230,7 +228,7 @@ where
             density.to_owned()
         } else {
             let exp_dfdrho = (-&external_potential).mapv(f64::exp);
-            let mut bonds = bulk.eos.bond_integrals(t, &exp_dfdrho, &convolver);
+            let mut bonds = bulk.eos.bond_integrals(t, &exp_dfdrho, convolver.as_ref());
             bonds *= &exp_dfdrho;
             let mut density = Array::zeros(external_potential.raw_dim());
             let bulk_density = bulk.partial_density.to_reduced();
@@ -247,7 +245,7 @@ where
             convolver,
             temperature: bulk.temperature,
             density,
-            specification: Arc::new(DFTSpecifications::ChemicalPotential),
+            specification: Box::new(DFTSpecifications::ChemicalPotential),
             external_potential,
             bulk: bulk.clone(),
             solver_log: None,
@@ -408,17 +406,18 @@ where
         let (_, mut dfdrho) =
             self.bulk
                 .eos
-                .functional_derivative(temperature, density, &self.convolver)?;
+                .functional_derivative(temperature, density, self.convolver.as_ref())?;
 
         // calculate total functional derivative
         dfdrho += &self.external_potential;
 
         // calculate bulk functional derivative
         let bulk_convolver = BulkConvolver::new(self.bulk.eos.weight_functions(temperature));
-        let (_, dfdrho_bulk) =
-            self.bulk
-                .eos
-                .functional_derivative(temperature, bulk_density, &bulk_convolver)?;
+        let (_, dfdrho_bulk) = self.bulk.eos.functional_derivative(
+            temperature,
+            bulk_density,
+            bulk_convolver.as_ref(),
+        )?;
         dfdrho
             .outer_iter_mut()
             .zip(dfdrho_bulk)
@@ -433,7 +432,7 @@ where
         let bonds = self
             .bulk
             .eos
-            .bond_integrals(temperature, &exp_dfdrho, &self.convolver);
+            .bond_integrals(temperature, &exp_dfdrho, self.convolver.as_ref());
         let mut rho_projected = &exp_dfdrho * bonds;
 
         // multiply bulk density

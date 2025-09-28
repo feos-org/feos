@@ -10,7 +10,6 @@ use feos_dft::{DFTSolver, Geometry};
 use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
-use std::sync::Arc;
 use typenum::P3;
 
 #[test]
@@ -202,7 +201,7 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
     )
     .unwrap();
 
-    let func = Arc::new(GcPcSaftFunctional::new(parameters));
+    let func = &GcPcSaftFunctional::new(parameters);
     let t = 300.0 * KELVIN;
     let w = 100.0 * ANGSTROM;
     let points = 4096;

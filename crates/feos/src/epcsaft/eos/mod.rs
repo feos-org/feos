@@ -176,16 +176,15 @@ mod tests {
     use approx::assert_relative_eq;
     use feos_core::*;
     use nalgebra::dvector;
-    use std::sync::Arc;
     use typenum::P3;
 
     #[test]
     fn ideal_gas_pressure() {
-        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
+        let e = ElectrolytePcSaft::new(propane_parameters()).unwrap();
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<P3>();
         let n = dvector![1.0] * MOL;
-        let s = State::new_nvt(&e, t, v, &n).unwrap();
+        let s = State::new_nvt(&&e, t, v, &n).unwrap();
         let p_ig = s.total_moles * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
@@ -197,11 +196,11 @@ mod tests {
 
     #[test]
     fn ideal_gas_heat_capacity_joback() {
-        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
+        let e = ElectrolytePcSaft::new(propane_parameters()).unwrap();
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<P3>();
         let n = dvector![1.0] * MOL;
-        let s = State::new_nvt(&e, t, v, &n).unwrap();
+        let s = State::new_nvt(&&e, t, v, &n).unwrap();
         let p_ig = s.total_moles * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
@@ -243,11 +242,11 @@ mod tests {
 
     #[test]
     fn new_tpn() {
-        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
+        let e = ElectrolytePcSaft::new(propane_parameters()).unwrap();
         let t = 300.0 * KELVIN;
         let p = BAR;
         let m = dvector![1.0] * MOL;
-        let s = State::new_npt(&e, t, p, &m, None);
+        let s = State::new_npt(&&e, t, p, &m, None);
         let p_calc = if let Ok(state) = s {
             state.pressure(Contributions::Total)
         } else {
@@ -258,9 +257,9 @@ mod tests {
 
     #[test]
     fn vle_pure() {
-        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
+        let e = ElectrolytePcSaft::new(propane_parameters()).unwrap();
         let t = 300.0 * KELVIN;
-        let vle = PhaseEquilibrium::pure(&e, t, None, Default::default());
+        let vle = PhaseEquilibrium::pure(&&e, t, None, Default::default());
         if let Ok(v) = vle {
             assert_relative_eq!(
                 v.vapor().pressure(Contributions::Total),
@@ -272,9 +271,9 @@ mod tests {
 
     #[test]
     fn critical_point() {
-        let e = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
+        let e = ElectrolytePcSaft::new(propane_parameters()).unwrap();
         let t = 300.0 * KELVIN;
-        let cp = State::critical_point(&e, None, Some(t), Default::default());
+        let cp = State::critical_point(&&e, None, Some(t), Default::default());
         if let Ok(v) = cp {
             assert_relative_eq!(v.temperature, 375.1244078318015 * KELVIN, epsilon = 1e-8)
         }
@@ -282,18 +281,18 @@ mod tests {
 
     #[test]
     fn mix_single() {
-        let e1 = Arc::new(ElectrolytePcSaft::new(propane_parameters()).unwrap());
-        let e2 = Arc::new(ElectrolytePcSaft::new(butane_parameters()).unwrap());
-        let e12 = Arc::new(ElectrolytePcSaft::new(propane_butane_parameters()).unwrap());
+        let e1 = ElectrolytePcSaft::new(propane_parameters()).unwrap();
+        let e2 = ElectrolytePcSaft::new(butane_parameters()).unwrap();
+        let e12 = ElectrolytePcSaft::new(propane_butane_parameters()).unwrap();
         let t = 300.0 * KELVIN;
         let v = 0.02456883872966545 * METER.powi::<P3>();
         let m1 = dvector![2.0] * MOL;
         let m1m = dvector![2.0, 0.0] * MOL;
         let m2m = dvector![0.0, 2.0] * MOL;
-        let s1 = State::new_nvt(&e1, t, v, &m1).unwrap();
-        let s2 = State::new_nvt(&e2, t, v, &m1).unwrap();
-        let s1m = State::new_nvt(&e12, t, v, &m1m).unwrap();
-        let s2m = State::new_nvt(&e12, t, v, &m2m).unwrap();
+        let s1 = State::new_nvt(&&e1, t, v, &m1).unwrap();
+        let s2 = State::new_nvt(&&e2, t, v, &m1).unwrap();
+        let s1m = State::new_nvt(&&e12, t, v, &m1m).unwrap();
+        let s2m = State::new_nvt(&&e12, t, v, &m2m).unwrap();
         assert_relative_eq!(
             s1.pressure(Contributions::Total),
             s1m.pressure(Contributions::Total),

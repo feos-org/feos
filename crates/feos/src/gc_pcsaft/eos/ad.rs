@@ -446,9 +446,8 @@ pub mod test {
     use nalgebra::{dvector, vector};
     use quantity::{KELVIN, KILO, METER, MOL};
     use std::collections::HashMap;
-    use std::sync::Arc;
 
-    pub fn gcpcsaft() -> FeosResult<(GcPcSaftADParameters<f64, 1>, Arc<GcPcSaft>)> {
+    pub fn gcpcsaft() -> FeosResult<(GcPcSaftADParameters<f64, 1>, GcPcSaft)> {
         let cr = ChemicalRecord::new(
             Default::default(),
             vec!["CH3".into(), ">C=O".into(), "CH2".into(), "CH3".into()],
@@ -469,7 +468,7 @@ pub mod test {
             })
             .collect();
         let params = GcPcSaftEosParameters::from_segments_hetero(vec![cr], &segment_records, None)?;
-        let eos = Arc::new(GcPcSaft::new(params));
+        let eos = GcPcSaft::new(params);
         let mut groups = HashMap::new();
         groups.insert("CH3", 2.0);
         groups.insert(">C=O", 1.0);
@@ -490,7 +489,7 @@ pub mod test {
         let volume = 2.3 * METER * METER * METER;
         let moles = dvector![1.3] * KILO * MOL;
 
-        let state = State::new_nvt(&eos, temperature, volume, &moles)?;
+        let state = State::new_nvt(&&eos, temperature, volume, &moles)?;
         let a_feos = state.residual_molar_helmholtz_energy();
         let mu_feos = state.residual_chemical_potential();
         let p_feos = state.pressure(Total);

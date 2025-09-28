@@ -144,12 +144,11 @@ mod tests {
     use feos_core::{Contributions, PhaseEquilibrium, State, StateHD};
     use nalgebra::dvector;
     use quantity::{BAR, KELVIN, METER, MOL, RGAS};
-    use std::sync::Arc;
     use typenum::P3;
 
     #[test]
     fn ideal_gas_pressure() {
-        let e = Arc::new(Pets::new(argon_parameters()));
+        let e = &Pets::new(argon_parameters());
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<P3>();
         let n = dvector![1.0] * MOL;
@@ -184,7 +183,7 @@ mod tests {
 
     #[test]
     fn new_tpn() {
-        let e = Arc::new(Pets::new(argon_parameters()));
+        let e = &Pets::new(argon_parameters());
         let t = 300.0 * KELVIN;
         let p = BAR;
         let m = dvector![1.0] * MOL;
@@ -195,7 +194,7 @@ mod tests {
 
     #[test]
     fn vle_pure_t() {
-        let e = Arc::new(Pets::new(argon_parameters()));
+        let e = &Pets::new(argon_parameters());
         let t = 300.0 * KELVIN;
         let vle = PhaseEquilibrium::pure(&e, t, None, Default::default());
         if let Ok(v) = vle {
@@ -209,9 +208,9 @@ mod tests {
 
     #[test]
     fn mix_single() {
-        let e1 = Arc::new(Pets::new(argon_parameters()));
-        let e2 = Arc::new(Pets::new(krypton_parameters()));
-        let e12 = Arc::new(Pets::new(argon_krypton_parameters()));
+        let e1 = &Pets::new(argon_parameters());
+        let e2 = &Pets::new(krypton_parameters());
+        let e12 = &Pets::new(argon_krypton_parameters());
         let t = 300.0 * KELVIN;
         let v = 0.02456883872966545 * METER.powi::<P3>();
         let m1 = dvector![2.0] * MOL;

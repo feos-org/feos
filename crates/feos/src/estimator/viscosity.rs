@@ -3,7 +3,6 @@ use feos_core::{DensityInitialization, EntropyScaling, ReferenceSystem, Residual
 use itertools::izip;
 use ndarray::{Array1, arr1};
 use quantity::{MILLI, Moles, PASCAL, Pressure, SECOND, Temperature};
-use std::sync::Arc;
 
 /// Store experimental viscosity data.
 #[derive(Clone)]

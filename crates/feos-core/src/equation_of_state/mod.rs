@@ -5,7 +5,7 @@ use nalgebra::{
     Const, DVector, DefaultAllocator, Dim, Dyn, OVector, SVector, U1, allocator::Allocator,
 };
 use num_dual::DualNum;
-use quantity::{Energy, MolarEnergy, MolarWeight, Moles, Temperature, Volume};
+use quantity::{Energy, MolarEnergy, Moles, Temperature, Volume};
 
 mod residual;
 pub use residual::{Molarweight, NoResidual, Residual, ResidualConst, ResidualDyn, Subset};
@@ -16,6 +16,13 @@ pub use residual::{Molarweight, NoResidual, Residual, ResidualConst, ResidualDyn
 pub struct EquationOfState<I, R> {
     pub ideal_gas: I,
     pub residual: R,
+}
+
+impl<I, R> Deref for EquationOfState<I, R> {
+    type Target = R;
+    fn deref(&self) -> &R {
+        &self.residual
+    }
 }
 
 impl<I, R> EquationOfState<I, R> {
@@ -92,16 +99,6 @@ impl<I: Clone, R: ResidualConst<N, D>, D: DualNum<f64> + Copy, const N: usize> R
     fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, Const<N>>) -> D {
         self.residual
             .reduced_residual_helmholtz_energy_density(state)
-    }
-}
-
-impl<I, R: Molarweight<N, D>, N: Dim, D: DualNum<f64> + Copy> Molarweight<N, D>
-    for EquationOfState<I, R>
-where
-    DefaultAllocator: Allocator<N>,
-{
-    fn molar_weight(&self) -> MolarWeight<OVector<D, N>> {
-        self.residual.molar_weight()
     }
 }
 

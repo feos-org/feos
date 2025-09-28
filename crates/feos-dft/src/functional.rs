@@ -1,8 +1,6 @@
-use crate::adsorption::FluidParameters;
 use crate::convolver::Convolver;
 use crate::functional_contribution::*;
 use crate::ideal_chain_contribution::IdealChainContribution;
-use crate::solvation::PairPotential;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use feos_core::{EquationOfState, FeosResult, Residual, ResidualDyn, StateHD};
 use nalgebra::{DVector, dvector};
@@ -13,7 +11,6 @@ use petgraph::graph::{Graph, UnGraph};
 use petgraph::visit::EdgeRef;
 use std::borrow::Cow;
 use std::ops::{Deref, MulAssign};
-use std::sync::Arc;
 
 impl<I: Clone, F: HelmholtzEnergyFunctionalDyn> HelmholtzEnergyFunctionalDyn
     for EquationOfState<Vec<I>, F>
@@ -33,22 +30,6 @@ impl<I: Clone, F: HelmholtzEnergyFunctionalDyn> HelmholtzEnergyFunctionalDyn
 
     fn bond_lengths<N: DualNum<f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
         self.residual.bond_lengths(temperature)
-    }
-}
-
-impl<I, F: PairPotential> PairPotential for EquationOfState<I, F> {
-    fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64> {
-        self.residual.pair_potential(i, r, temperature)
-    }
-}
-
-impl<I, F: FluidParameters> FluidParameters for EquationOfState<I, F> {
-    fn epsilon_k_ff(&self) -> DVector<f64> {
-        self.residual.epsilon_k_ff()
-    }
-
-    fn sigma_ff(&self) -> DVector<f64> {
-        self.residual.sigma_ff()
     }
 }
 
@@ -135,7 +116,7 @@ pub trait HelmholtzEnergyFunctional: Residual {
         &self,
         temperature: N,
         density: &Array<N, D::Larger>,
-        convolver: &Arc<dyn Convolver<N, D>>,
+        convolver: &dyn Convolver<N, D>,
     ) -> FeosResult<(Array<N, D>, Array<N, D::Larger>)>
     where
         D: Dimension,
@@ -170,7 +151,7 @@ pub trait HelmholtzEnergyFunctional: Residual {
         &self,
         temperature: N,
         exponential: &Array<N, D::Larger>,
-        convolver: &Arc<dyn Convolver<N, D>>,
+        convolver: &dyn Convolver<N, D>,
     ) -> Array<N, D::Larger>
     where
         D: Dimension,

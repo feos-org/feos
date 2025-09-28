@@ -12,7 +12,6 @@ use quantity::*;
 /// # use feos_core::{FeosResult, StateBuilder};
 /// # use feos_core::cubic::{PengRobinson, PengRobinsonParameters};
 /// # use quantity::*;
-/// # use std::sync::Arc;
 /// # use nalgebra::dvector;
 /// # use approx::assert_relative_eq;
 /// # use typenum::P3;

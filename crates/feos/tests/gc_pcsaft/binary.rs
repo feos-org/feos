@@ -6,7 +6,6 @@ use feos_core::parameter::IdentifierOption;
 use feos_core::{Contributions, FeosResult, State};
 use nalgebra::dvector;
 use quantity::{KELVIN, METER, MOL};
-use std::sync::Arc;
 use typenum::P3;
 
 #[test]
@@ -28,9 +27,9 @@ fn test_binary() -> FeosResult<()> {
         IdentifierOption::Name,
     )
     .unwrap();
-    let eos = Arc::new(GcPcSaft::new(parameters));
+    let eos = &GcPcSaft::new(parameters);
     #[cfg(feature = "dft")]
-    let func = Arc::new(GcPcSaftFunctional::new(parameters_func));
+    let func = &GcPcSaftFunctional::new(parameters_func);
     let molefracs = dvector![0.5, 0.5];
     let cp = State::critical_point(&eos, Some(&molefracs), None, Default::default())?;
     #[cfg(feature = "dft")]
@@ -68,8 +67,8 @@ fn test_polar_term() -> FeosResult<()> {
         None,
         IdentifierOption::Smiles,
     )?;
-    let eos1 = Arc::new(GcPcSaft::new(parameters1));
-    let eos2 = Arc::new(GcPcSaft::new(parameters2));
+    let eos1 = &GcPcSaft::new(parameters1);
+    let eos2 = &GcPcSaft::new(parameters2);
     let moles = dvector![0.5, 0.5] * MOL;
     let p1 = State::new_nvt(&eos1, 300.0 * KELVIN, METER.powi::<P3>(), &moles)?
         .pressure(Contributions::Total);

@@ -152,7 +152,7 @@ impl Molarweight for PcSaftFunctional {
     }
 }
 
-impl FluidParameters for &PcSaftFunctional {
+impl FluidParameters for PcSaftFunctional {
     fn epsilon_k_ff(&self) -> DVector<f64> {
         self.params.epsilon_k.clone()
     }

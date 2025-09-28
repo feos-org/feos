@@ -3,7 +3,6 @@ use feos_core::{DensityInitialization, EntropyScaling, ReferenceSystem, Residual
 use itertools::izip;
 use ndarray::{Array1, arr1};
 use quantity::{self, CENTI, METER, Moles, Pressure, SECOND, Temperature};
-use std::sync::Arc;
 use typenum::P2;
 
 /// Store experimental diffusion data.

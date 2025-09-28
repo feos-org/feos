@@ -3,9 +3,8 @@ use feos_core::{
     DensityInitialization, Molarweight, PhaseEquilibrium, ReferenceSystem, Residual, SolverOptions,
     State,
 };
-use ndarray::{arr1, Array1};
-use quantity::{MassDensity, Moles, Pressure, Temperature, KILOGRAM, METER};
-use std::sync::Arc;
+use ndarray::{Array1, arr1};
+use quantity::{KILOGRAM, METER, MassDensity, Moles, Pressure, Temperature};
 use typenum::P3;
 
 /// Liquid mass density data as function of pressure and temperature.

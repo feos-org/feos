@@ -88,7 +88,6 @@ where
 
         Self {
             temperature,
-            // molar_volume,
             molefracs: molefracs.clone(),
             partial_density,
         }
@@ -100,7 +99,6 @@ where
 
         Self {
             temperature,
-            // molar_volume,
             molefracs,
             partial_density: partial_density.clone(),
         }
@@ -109,14 +107,9 @@ where
     // Since the molefracs can not be reproduced from moles if the density is zero,
     // this constructor exists specifically for these cases.
     pub(crate) fn new_virial(temperature: D, density: D, molefracs: &OVector<D, N>) -> Self {
-        // let volume = D::one();
         let partial_density = molefracs * density;
-        // let moles = partial_density.map(|pd| pd * volume);
-        // let molefracs = molefracs.map(D::from);
         Self {
             temperature,
-            // volume,
-            // moles,
             molefracs: molefracs.clone(),
             partial_density,
         }

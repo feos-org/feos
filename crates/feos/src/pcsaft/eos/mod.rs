@@ -411,7 +411,7 @@ mod tests {
 
     #[test]
     fn ideal_gas_pressure() {
-        let e = propane_parameters();
+        let e = &propane_parameters();
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<P3>();
         let n = dvector![1.0] * MOL;
@@ -427,7 +427,7 @@ mod tests {
 
     #[test]
     fn ideal_gas_heat_capacity_joback() {
-        let e = propane_parameters();
+        let e = &propane_parameters();
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<P3>();
         let n = dvector![1.0] * MOL;
@@ -475,7 +475,7 @@ mod tests {
 
     #[test]
     fn new_tpn() {
-        let e = propane_parameters();
+        let e = &propane_parameters();
         let t = 300.0 * KELVIN;
         let p = BAR;
         let m = dvector![1.5] * MOL;
@@ -490,7 +490,7 @@ mod tests {
 
     #[test]
     fn vle_pure() {
-        let e = propane_parameters();
+        let e = &propane_parameters();
         let t = 300.0 * KELVIN;
         let vle = PhaseEquilibrium::pure(&e, t, None, Default::default());
         if let Ok(v) = vle {
@@ -504,7 +504,7 @@ mod tests {
 
     #[test]
     fn critical_point() {
-        let e = propane_parameters();
+        let e = &propane_parameters();
         let t = 300.0 * KELVIN;
         let cp = State::critical_point(&e, None, Some(t), Default::default());
         if let Ok(v) = cp {
@@ -514,9 +514,9 @@ mod tests {
 
     #[test]
     fn mix_single() {
-        let e1 = propane_parameters();
-        let e2 = butane_parameters();
-        let e12 = propane_butane_parameters();
+        let e1 = &propane_parameters();
+        let e2 = &butane_parameters();
+        let e12 = &propane_butane_parameters();
         let t = 300.0 * KELVIN;
         let v = 0.02456883872966545 * METER.powi::<P3>();
         let m1 = dvector![2.0] * MOL;

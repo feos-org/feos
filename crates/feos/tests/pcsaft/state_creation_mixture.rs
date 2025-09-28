@@ -6,7 +6,6 @@ use feos_core::{Contributions, EquationOfState, FeosResult, StateBuilder};
 use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
-use std::sync::Arc;
 use typenum::P3;
 
 fn propane_butane_parameters() -> FeosResult<(PcSaftParameters, Vec<Joback>)> {
@@ -60,12 +59,12 @@ fn pressure_entropy_molefracs() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn volume_temperature_molefracs() -> Result<(), Box<dyn Error>> {
-    let saft = Arc::new(PcSaft::new(propane_butane_parameters()?.0));
+    let saft = PcSaft::new(propane_butane_parameters()?.0);
     let temperature = 300.0 * KELVIN;
     let volume = 1.5e-3 * METER.powi::<P3>();
     let moles = MOL;
     let x = dvector![0.3, 0.7];
-    let state = StateBuilder::new(&saft)
+    let state = StateBuilder::new(&&saft)
         .temperature(temperature)
         .volume(volume)
         .total_moles(moles)
@@ -77,12 +76,12 @@ fn volume_temperature_molefracs() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn temperature_partial_density() -> Result<(), Box<dyn Error>> {
-    let saft = Arc::new(PcSaft::new(propane_butane_parameters()?.0));
+    let saft = PcSaft::new(propane_butane_parameters()?.0);
     let temperature = 300.0 * KELVIN;
     let x = dvector![0.3, 0.7];
     let partial_density = x.clone() * MOL / METER.powi::<P3>();
     let density = partial_density.sum();
-    let state = StateBuilder::new(&saft)
+    let state = StateBuilder::new(&&saft)
         .temperature(temperature)
         .partial_density(&partial_density)
         .build()?;
@@ -96,11 +95,11 @@ fn temperature_partial_density() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn temperature_density_molefracs() -> Result<(), Box<dyn Error>> {
-    let saft = Arc::new(PcSaft::new(propane_butane_parameters()?.0));
+    let saft = PcSaft::new(propane_butane_parameters()?.0);
     let temperature = 300.0 * KELVIN;
     let x = dvector![0.3, 0.7];
     let density = MOL / METER.powi::<P3>();
-    let state = StateBuilder::new(&saft)
+    let state = StateBuilder::new(&&saft)
         .temperature(temperature)
         .density(density)
         .molefracs(&x)
@@ -116,11 +115,11 @@ fn temperature_density_molefracs() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn temperature_pressure_molefracs() -> Result<(), Box<dyn Error>> {
-    let saft = Arc::new(PcSaft::new(propane_butane_parameters()?.0));
+    let saft = PcSaft::new(propane_butane_parameters()?.0);
     let temperature = 300.0 * KELVIN;
     let pressure = BAR;
     let x = dvector![0.3, 0.7];
-    let state = StateBuilder::new(&saft)
+    let state = StateBuilder::new(&&saft)
         .temperature(temperature)
         .pressure(pressure)
         .molefracs(&x)

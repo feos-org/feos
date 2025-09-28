@@ -8,15 +8,14 @@ use feos::dft::{DFTSolver, Geometry};
 use feos::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftParameters};
 use feos::hard_sphere::{FMTFunctional, FMTVersion};
 use feos::pcsaft::{PcSaftFunctional, PcSaftParameters};
-use ndarray::arr1;
+use nalgebra::dvector;
 use quantity::{ANGSTROM, KELVIN, NAV};
-use std::sync::Arc;
 use typenum::P3;
 
 fn fmt(c: &mut Criterion) {
     let mut group = c.benchmark_group("DFT_pore_fmt");
 
-    let func = Arc::new(FMTFunctional::new(&arr1(&[1.0]), FMTVersion::WhiteBear));
+    let func = &FMTFunctional::new(dvector![1.0], FMTVersion::WhiteBear);
     let pore = Pore1D::new(
         Geometry::Cartesian,
         10.0 * ANGSTROM,
@@ -39,7 +38,7 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let func = Arc::new(PcSaftFunctional::new(parameters));
+    let func = &PcSaftFunctional::new(parameters);
     let pore = Pore1D::new(
         Geometry::Cartesian,
         20.0 * ANGSTROM,
@@ -68,11 +67,11 @@ fn pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let func = Arc::new(PcSaftFunctional::new(parameters));
+    let func = &PcSaftFunctional::new(parameters);
     let vle = PhaseEquilibrium::bubble_point(
         &func,
         300.0 * KELVIN,
-        &arr1(&[0.5, 0.5]),
+        &dvector![0.5, 0.5],
         None,
         None,
         Default::default(),
@@ -104,7 +103,7 @@ fn gc_pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let func = Arc::new(GcPcSaftFunctional::new(parameters));
+    let func = GcPcSaftFunctional::new(parameters);
     let pore = Pore1D::new(
         Geometry::Cartesian,
         20.0 * ANGSTROM,
@@ -116,7 +115,7 @@ fn gc_pcsaft(c: &mut Criterion) {
         None,
         None,
     );
-    let vle = PhaseEquilibrium::pure(&func, 300.0 * KELVIN, None, Default::default()).unwrap();
+    let vle = PhaseEquilibrium::pure(&&func, 300.0 * KELVIN, None, Default::default()).unwrap();
     let bulk = vle.liquid();
     let solver = DFTSolver::new(None)
         .picard_iteration(None, None, Some(1e-5), None)

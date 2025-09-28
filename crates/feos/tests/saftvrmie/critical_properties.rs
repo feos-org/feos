@@ -3,7 +3,6 @@ use feos::saftvrmie::{SaftVRMie, test_utils};
 use feos_core::{SolverOptions, State};
 use quantity::*;
 use std::collections::HashMap;
-use std::sync::Arc;
 use typenum::P3;
 
 /// Critical data reported in Lafitte et al.
@@ -53,8 +52,8 @@ fn critical_properties_pure() {
         let mut parameters = test_utils::test_parameters();
         let option = SolverOptions::default();
         let p = parameters.remove(name).unwrap();
-        let eos = Arc::new(SaftVRMie::new(p));
-        let cp = State::critical_point(&eos, None, t0, option).unwrap();
+        let eos = SaftVRMie::new(p);
+        let cp = State::critical_point(&&eos, None, t0, option).unwrap();
         assert_relative_eq!(cp.temperature, data.0, max_relative = 2e-3);
         assert_relative_eq!(
             cp.pressure(feos_core::Contributions::Total),

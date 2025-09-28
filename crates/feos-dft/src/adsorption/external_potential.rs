@@ -9,6 +9,7 @@ use ndarray::{Array1, Array2, Axis as Axis_nd};
 #[cfg(feature = "rayon")]
 use quantity::Length;
 use std::f64::consts::PI;
+use std::ops::Deref;
 
 const DELTA_STEELE: f64 = 3.35;
 
@@ -73,7 +74,7 @@ pub trait FluidParameters {
     fn sigma_ff(&self) -> DVector<f64>;
 }
 
-impl<T: FluidParameters> FluidParameters for std::sync::Arc<T> {
+impl<C: Deref<Target = T>, T: FluidParameters> FluidParameters for C {
     fn epsilon_k_ff(&self) -> DVector<f64> {
         T::epsilon_k_ff(self)
     }

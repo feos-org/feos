@@ -7,7 +7,6 @@ use ndarray::{Array1, ArrayView1, Axis, arr1, concatenate};
 use std::fmt;
 use std::fmt::Display;
 use std::fmt::Write;
-use std::sync::Arc;
 
 /// A collection of [`DataSet`]s and weights that can be used to
 /// evaluate an equation of state versus experimental data.

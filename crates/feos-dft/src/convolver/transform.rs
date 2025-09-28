@@ -36,14 +36,14 @@ pub(super) struct CartesianTransform<T> {
 
 impl<T: DualNum<f64> + DctNum> CartesianTransform<T> {
     #[expect(clippy::new_ret_no_self)]
-    pub(super) fn new(axis: &Axis) -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
+    pub(super) fn new(axis: &Axis) -> (Box<dyn FourierTransform<T>>, Array1<f64>) {
         let (s, k) = Self::init(axis);
-        (Arc::new(s), k)
+        (Box::new(s), k)
     }
 
-    pub(super) fn new_cartesian(axis: &Axis) -> (Arc<Self>, Array1<f64>) {
+    pub(super) fn new_cartesian(axis: &Axis) -> (Self, Array1<f64>) {
         let (s, k) = Self::init(axis);
-        (Arc::new(s), k)
+        (s, k)
     }
 
     fn init(axis: &Axis) -> (Self, Array1<f64>) {
@@ -132,12 +132,12 @@ pub(super) struct SphericalTransform<T> {
 
 impl<T: DualNum<f64> + DctNum> SphericalTransform<T> {
     #[expect(clippy::new_ret_no_self)]
-    pub(super) fn new(axis: &Axis) -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
+    pub(super) fn new(axis: &Axis) -> (Box<dyn FourierTransform<T>>, Array1<f64>) {
         let points = axis.grid.len();
         let length = axis.length();
         let k_grid: Array1<_> = (0..=points).map(|v| PI * v as f64 / length).collect();
         (
-            Arc::new(Self {
+            Box::new(Self {
                 r_grid: axis.grid.clone(),
                 k_grid: k_grid.clone(),
                 dct: DctPlanner::new().plan_dct2(points),
@@ -229,7 +229,7 @@ pub(super) struct PolarTransform<T: DctNum> {
 
 impl<T: DualNum<f64> + DctNum> PolarTransform<T> {
     #[expect(clippy::new_ret_no_self)]
-    pub(super) fn new(axis: &Axis) -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
+    pub(super) fn new(axis: &Axis) -> (Box<dyn FourierTransform<T>>, Array1<f64>) {
         let points = axis.grid.len();
 
         let mut alpha = 0.002_f64;
@@ -268,7 +268,7 @@ impl<T: DualNum<f64> + DctNum> PolarTransform<T> {
         ifft.process(jv.as_slice_mut().unwrap());
 
         (
-            Arc::new(Self {
+            Box::new(Self {
                 r_grid: axis.grid.clone(),
                 k_grid: k_grid.clone(),
                 fft,
@@ -335,8 +335,8 @@ pub(super) struct NoTransform();
 
 impl NoTransform {
     #[expect(clippy::new_ret_no_self)]
-    pub(super) fn new<T: DualNum<f64>>() -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
-        (Arc::new(Self()), arr1(&[0.0]))
+    pub(super) fn new<T: DualNum<f64>>() -> (Box<dyn FourierTransform<T>>, Array1<f64>) {
+        (Box::new(Self()), arr1(&[0.0]))
     }
 }
 

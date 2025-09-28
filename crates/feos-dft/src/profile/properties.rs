@@ -11,7 +11,6 @@ use quantity::{
     Density, Energy, Entropy, EntropyDensity, MolarEnergy, Moles, Pressure, Quantity, Temperature,
 };
 use std::ops::{AddAssign, Div};
-use std::sync::Arc;
 
 type DrhoDmu<D: Dimension> =
     <Density<Array<f64, <D::Larger as Dimension>::Larger>> as Div<MolarEnergy>>::Output;
@@ -30,10 +29,10 @@ where
         // Calculate residual Helmholtz energy density and functional derivative
         let t = self.temperature.to_reduced();
         let rho = self.density.to_reduced();
-        let (mut f, dfdrho) = self
-            .bulk
-            .eos
-            .functional_derivative(t, &rho, &self.convolver)?;
+        let (mut f, dfdrho) =
+            self.bulk
+                .eos
+                .functional_derivative(t, &rho, self.convolver.as_ref())?;
 
         // Calculate the grand potential density
         for ((rho, dfdrho), &m) in rho
@@ -63,7 +62,7 @@ where
         let (_, dfdrho) = self.bulk.eos.functional_derivative(
             self.temperature.to_reduced(),
             &self.density.to_reduced(),
-            &self.convolver,
+            self.convolver.as_ref(),
         )?;
         Ok(dfdrho)
     }
@@ -79,7 +78,7 @@ where
         &self,
         temperature: N,
         density: &Array<f64, D::Larger>,
-        convolver: &Arc<dyn Convolver<N, D>>,
+        convolver: &dyn Convolver<N, D>,
     ) -> FeosResult<Array<N, D>>
     where
         N: DualNum<f64> + Copy,
@@ -123,8 +122,11 @@ where
 
         let density = self.density.to_reduced();
 
-        let helmholtz_energy_density =
-            self.intrinsic_helmholtz_energy_density(temperature_dual, &density, &convolver)?;
+        let helmholtz_energy_density = self.intrinsic_helmholtz_energy_density(
+            temperature_dual,
+            &density,
+            convolver.as_ref(),
+        )?;
         Ok(EntropyDensity::from_reduced(
             helmholtz_energy_density.mapv(|f| -f.eps),
         ))
@@ -137,7 +139,7 @@ where
         &self,
         temperature: f64,
         density: &Array<f64, D::Larger>,
-        convolver: &Arc<dyn Convolver<Dual64, D>>,
+        convolver: &dyn Convolver<Dual64, D>,
     ) -> FeosResult<Vec<Array<f64, D>>> {
         let density_dual = density.mapv(Dual64::from);
         let temperature_dual = Dual64::from(temperature).derivative();
@@ -208,8 +210,11 @@ where
 
         let density = self.density.to_reduced();
 
-        let mut helmholtz_energy_density =
-            self.intrinsic_helmholtz_energy_density(temperature_dual, &density, &convolver)?;
+        let mut helmholtz_energy_density = self.intrinsic_helmholtz_energy_density(
+            temperature_dual,
+            &density,
+            convolver.as_ref(),
+        )?;
         match contributions {
             Contributions::Total => {
                 helmholtz_energy_density +=
@@ -255,8 +260,11 @@ where
 
         let density = self.density.to_reduced();
 
-        let mut helmholtz_energy_density_dual =
-            self.intrinsic_helmholtz_energy_density(temperature_dual, &density, &convolver)?;
+        let mut helmholtz_energy_density_dual = self.intrinsic_helmholtz_energy_density(
+            temperature_dual,
+            &density,
+            convolver.as_ref(),
+        )?;
         match contributions {
             Contributions::Total => {
                 helmholtz_energy_density_dual +=
@@ -382,12 +390,12 @@ where
             .into_iter()
             .map(|c| c.weight_functions(t_dual))
             .collect();
-        let convolver: Arc<dyn Convolver<_, D>> =
+        let convolver: Box<dyn Convolver<_, D>> =
             ConvolverFFT::plan(&self.grid, &weight_functions, self.lanczos);
-        let (_, mut dfdrho) = self
-            .bulk
-            .eos
-            .functional_derivative(t_dual, &rho_dual, &convolver)?;
+        let (_, mut dfdrho) =
+            self.bulk
+                .eos
+                .functional_derivative(t_dual, &rho_dual, convolver.as_ref())?;
 
         // calculate total functional derivative
         dfdrho += &(&self.external_potential * t).mapv(|v| Dual64::from(v) / t_dual);
@@ -406,7 +414,7 @@ where
         let (_, dfdrho_bulk) =
             self.bulk
                 .eos
-                .functional_derivative(t_dual, &rho_bulk_dual, &bulk_convolver)?;
+                .functional_derivative(t_dual, &rho_bulk_dual, bulk_convolver.as_ref())?;
         dfdrho
             .outer_iter_mut()
             .zip(dfdrho_bulk)
@@ -420,7 +428,7 @@ where
         let bonds = self
             .bulk
             .eos
-            .bond_integrals(t_dual, &exp_dfdrho, &convolver);
+            .bond_integrals(t_dual, &exp_dfdrho, convolver.as_ref());
 
         // solve for drho_dt
         let mut lhs = (exp_dfdrho * bonds).mapv(|x| (-x.ln() * t_dual).eps);

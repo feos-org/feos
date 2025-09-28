@@ -303,9 +303,8 @@ pub mod utils {
     use super::*;
     use crate::pcsaft::PcSaft;
     use feos_core::parameter::{BinarySegmentRecord, ChemicalRecord, PureRecord, SegmentRecord};
-    use std::sync::Arc;
 
-    pub fn propane_parameters() -> Arc<PcSaft> {
+    pub fn propane_parameters() -> PcSaft {
         let propane_json = r#"
             {
                 "identifier": {
@@ -326,9 +325,7 @@ pub mod utils {
             }"#;
         let propane_record: PureRecord<PcSaftRecord, PcSaftAssociationRecord> =
             serde_json::from_str(propane_json).expect("Unable to parse json.");
-        Arc::new(PcSaft::new(
-            PcSaftParameters::new_pure(propane_record).unwrap(),
-        ))
+        PcSaft::new(PcSaftParameters::new_pure(propane_record).unwrap())
     }
 
     pub fn carbon_dioxide_parameters() -> PcSaftPars {
@@ -353,7 +350,7 @@ pub mod utils {
         PcSaftPars::new(&PcSaftParameters::new_pure(co2_record).unwrap())
     }
 
-    pub fn butane_parameters() -> Arc<PcSaft> {
+    pub fn butane_parameters() -> PcSaft {
         let butane_json = r#"
             {
                 "identifier": {
@@ -371,9 +368,7 @@ pub mod utils {
             }"#;
         let butane_record: PureRecord<PcSaftRecord, PcSaftAssociationRecord> =
             serde_json::from_str(butane_json).expect("Unable to parse json.");
-        Arc::new(PcSaft::new(
-            PcSaftParameters::new_pure(butane_record).unwrap(),
-        ))
+        PcSaft::new(PcSaftParameters::new_pure(butane_record).unwrap())
     }
 
     pub fn dme_parameters() -> PcSaftPars {
@@ -466,7 +461,7 @@ pub mod utils {
         PcSaftPars::new(&PcSaftParameters::new_binary(binary_record, None, vec![]).unwrap())
     }
 
-    pub fn propane_butane_parameters() -> Arc<PcSaft> {
+    pub fn propane_butane_parameters() -> PcSaft {
         let binary_json = r#"[
             {
                 "identifier": {
@@ -504,9 +499,7 @@ pub mod utils {
         ]"#;
         let binary_record: [PureRecord<PcSaftRecord, PcSaftAssociationRecord>; 2] =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
-        Arc::new(PcSaft::new(
-            PcSaftParameters::new_binary(binary_record, None, vec![]).unwrap(),
-        ))
+        PcSaft::new(PcSaftParameters::new_binary(binary_record, None, vec![]).unwrap())
     }
 
     #[test]

@@ -223,18 +223,18 @@ macro_rules! impl_adsorption_isotherm {
                 ).map_err(PyFeosError::from)?))
             }
 
-            #[getter]
-            fn get_profiles(&self) -> Vec<$py_pore_profile> {
-                self.0
-                    .profiles
-                    .iter()
-                    .filter_map(|p| {
-                        p.as_ref()
-                            .ok()
-                            .map(|p| $py_pore_profile(p.clone()))
-                    })
-                    .collect()
-            }
+            // #[getter]
+            // fn get_profiles(&self) -> Vec<$py_pore_profile> {
+            //     self.0
+            //         .profiles
+            //         .iter()
+            //         .filter_map(|p| {
+            //             p.as_ref()
+            //                 .ok()
+            //                 .map(|p| $py_pore_profile(p.clone()))
+            //         })
+            //         .collect()
+            // }
 
             #[getter]
             fn get_pressure(&self) -> Pressure<Array1<f64>> {

@@ -121,18 +121,18 @@ pub struct ElectrolytePcSaftPars {
 }
 
 impl ElectrolytePcSaftPars {
-    pub fn sigma_t<D: DualNum<f64>>(&self, temperature: D) -> DVector<f64> {
-        let mut sigma_t: DVector<f64> = DVector::from_fn(self.sigma.len(), |i, _| self.sigma[i]);
+    pub fn sigma_t<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+        let mut sigma_t = DVector::from_fn(self.sigma.len(), |i, _| D::from(self.sigma[i]));
 
         if let Some(i) = self.water_sigma_t_comp {
-            sigma_t[i] = sigma_t[i] + (temperature.re() * -0.01775).exp() * 10.11
-                - (temperature.re() * -0.01146).exp() * 1.417;
+            sigma_t[i] +=
+                (temperature * -0.01775).exp() * 10.11 - (temperature * -0.01146).exp() * 1.417;
         }
 
         sigma_t
     }
 
-    pub fn sigma_ij_t<D: DualNum<f64>>(&self, temperature: D) -> DMatrix<f64> {
+    pub fn sigma_ij_t<D: DualNum<f64> + Copy>(&self, temperature: D) -> DMatrix<D> {
         let diameter = self.sigma_t(temperature);
         let n = diameter.len();
 
@@ -247,7 +247,7 @@ impl ElectrolytePcSaftPars {
 
         permittivity_records
             .iter()
-            .filter(|&record| (record.is_some()))
+            .filter(|&record| record.is_some())
             .for_each(|record| match record.as_ref().unwrap() {
                 PermittivityRecord::PerturbationTheory { .. } => {
                     modeltypes.push(1);
@@ -284,7 +284,7 @@ impl ElectrolytePcSaftPars {
             let mut permittivity_records_clone = permittivity_records.clone();
             permittivity_records_clone
                 .iter_mut()
-                .filter(|record| (record.is_some()))
+                .filter(|record| record.is_some())
                 .enumerate()
                 .for_each(|(i, record)| {
                     if let PermittivityRecord::ExperimentalData { data } = record.as_mut().unwrap()
@@ -327,12 +327,12 @@ impl HardSphereProperties for ElectrolytePcSaftPars {
         MonomerShape::NonSpherical(self.m.map(N::from))
     }
 
-    fn hs_diameter<D: DualNum<f64>>(&self, temperature: D) -> DVector<D> {
-        let sigma_t = self.sigma_t(temperature.clone());
+    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+        let sigma_t = self.sigma_t(temperature);
 
         let ti = temperature.recip() * -3.0;
         let mut d = DVector::from_fn(sigma_t.len(), |i, _| {
-            -((ti.clone() * self.epsilon_k[i]).exp() * 0.12 - 1.0) * sigma_t[i]
+            -((ti * self.epsilon_k[i]).exp() * 0.12 - 1.0) * sigma_t[i]
         });
         for i in 0..self.nionic {
             let ai = self.ionic_comp[i];

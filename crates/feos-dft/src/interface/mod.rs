@@ -22,17 +22,6 @@ pub struct PlanarInterface<F: HelmholtzEnergyFunctional> {
     pub equimolar_radius: Option<Length>,
 }
 
-impl<F: HelmholtzEnergyFunctional> Clone for PlanarInterface<F> {
-    fn clone(&self) -> Self {
-        Self {
-            profile: self.profile.clone(),
-            vle: self.vle.clone(),
-            surface_tension: self.surface_tension,
-            equimolar_radius: self.equimolar_radius,
-        }
-    }
-}
-
 impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
     pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> FeosResult<()> {
         // Solve the profile
@@ -104,8 +93,9 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
 
         // specify specification
         if fix_equimolar_surface {
-            profile.profile.specification =
-                DFTSpecifications::total_moles_from_profile(&profile.profile);
+            profile.profile.specification = Box::new(DFTSpecifications::total_moles_from_profile(
+                &profile.profile,
+            ));
         }
 
         profile
@@ -153,8 +143,9 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
 
         // specify specification
         if fix_equimolar_surface {
-            profile.profile.specification =
-                DFTSpecifications::total_moles_from_profile(&profile.profile);
+            profile.profile.specification = Box::new(DFTSpecifications::total_moles_from_profile(
+                &profile.profile,
+            ));
         }
 
         Ok(profile)

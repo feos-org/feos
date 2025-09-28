@@ -5,7 +5,6 @@ use feos_core::{Residual, StateBuilder};
 use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
-use std::sync::Arc;
 
 #[test]
 fn test_dln_phi_dp() -> Result<(), Box<dyn Error>> {
@@ -15,17 +14,17 @@ fn test_dln_phi_dp() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let saft = Arc::new(PcSaft::new(params));
+    let saft = PcSaft::new(params);
     let t = 300.0 * KELVIN;
     let p = BAR;
     let h = 1e-1 * PASCAL;
-    let s = StateBuilder::new(&saft)
+    let s = StateBuilder::new(&&saft)
         .temperature(t)
         .pressure(p)
         .molefracs(&dvector![0.5, 0.5])
         .vapor()
         .build()?;
-    let sh = StateBuilder::new(&saft)
+    let sh = StateBuilder::new(&&saft)
         .temperature(t)
         .pressure(p + h)
         .molefracs(&dvector![0.5, 0.5])
@@ -48,7 +47,7 @@ fn test_virial_is_not_nan() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let saft = Arc::new(PcSaft::new(params));
+    let saft = &PcSaft::new(params);
     let virial_b = saft.second_virial_coefficient(300.0 * KELVIN, &None);
     assert!(!virial_b.is_nan());
     Ok(())
