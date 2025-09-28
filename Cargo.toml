@@ -22,10 +22,8 @@ keywords = [
 categories = ["science"]
 
 [workspace.dependencies]
-#quantity = "0.10"
-quantity = { git = "https://github.com/itt-ustutt/quantity", branch = "num_dual" }
-#num-dual = "0.11"
-num-dual = { git = "https://github.com/itt-ustutt/num-dual", branch = "linalg_nalgebra" }
+quantity = "0.11"
+num-dual = "0.12"
 ndarray = "0.16"
 nalgebra = "0.34"
 thiserror = "2.0"
