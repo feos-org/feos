@@ -1,6 +1,6 @@
 use super::dispersion::{A0, A1, A2, B0, B1, B2};
 use super::polar::{AD, BD, CD};
-use feos_core::{ResidualConst, StateHD};
+use feos_core::{Residual, StateHD};
 use nalgebra::{Const, SMatrix, SVector};
 use num_dual::DualNum;
 use quantity::{JOULE, KB, KELVIN};
@@ -220,8 +220,10 @@ impl<D: DualNum<f64> + Copy, const N: usize> GcPcSaftADParameters<D, N> {
 #[derive(Clone)]
 pub struct GcPcSaftAD<D, const N: usize>(pub GcPcSaftADParameters<D, N>);
 
-impl<D: DualNum<f64> + Copy, const N: usize> ResidualConst<N, D> for GcPcSaftAD<D, N> {
-    const NAME: &str = "gc-PC-SAFT";
+impl<D: DualNum<f64> + Copy, const N: usize> Residual<Const<N>, D> for GcPcSaftAD<D, N> {
+    fn components(&self) -> usize {
+        N
+    }
 
     type Real = GcPcSaftAD<f64, N>;
     type Lifted<D2: DualNum<f64, Inner = D> + Copy> = GcPcSaftAD<D2, N>;
@@ -244,6 +246,16 @@ impl<D: DualNum<f64> + Copy, const N: usize> ResidualConst<N, D> for GcPcSaftAD<
         let msigma3 = apply_group_count(groups, &msigma3).row_sum();
         // let x: f64 = msigma3.iter().zip(molefracs).map(|&(ms3, x)| x * ms3).sum();
         ((msigma3 * molefracs).into_scalar() * FRAC_PI_6).recip() * MAX_ETA
+    }
+
+    fn reduced_helmholtz_energy_density_contributions(
+        &self,
+        state: &StateHD<D, Const<N>>,
+    ) -> Vec<(&'static str, D)> {
+        vec![(
+            "gc-PC-SAFT",
+            self.reduced_residual_helmholtz_energy_density(state),
+        )]
     }
 
     fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, Const<N>>) -> D {

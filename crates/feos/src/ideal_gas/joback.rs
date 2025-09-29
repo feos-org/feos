@@ -320,7 +320,7 @@ pub mod test_ad {
     use super::{Joback, JobackParameters, JobackRecord};
     use approx::assert_relative_eq;
     use feos_core::{Contributions::IdealGas, EquationOfState, FeosResult, State};
-    use feos_core::{ResidualConst, StateHD};
+    use feos_core::{Residual, StateHD};
     use nalgebra::{SVector, U1};
     use num_dual::DualNum;
     use quantity::{KELVIN, KILO, METER, MOL};
@@ -342,8 +342,10 @@ pub mod test_ad {
     #[derive(Clone, Copy)]
     struct NoResidual;
 
-    impl<D: DualNum<f64> + Copy> ResidualConst<1, D> for NoResidual {
-        const NAME: &str = "";
+    impl<D: DualNum<f64> + Copy> Residual<U1, D> for NoResidual {
+        fn components(&self) -> usize {
+            1
+        }
 
         type Real = Self;
 
@@ -359,6 +361,13 @@ pub mod test_ad {
 
         fn compute_max_density(&self, _: &SVector<D, 1>) -> D {
             D::from(1.0)
+        }
+
+        fn reduced_helmholtz_energy_density_contributions(
+            &self,
+            _: &StateHD<D, U1>,
+        ) -> Vec<(&'static str, D)> {
+            vec![]
         }
 
         fn reduced_residual_helmholtz_energy_density(&self, _: &StateHD<D, U1>) -> D {

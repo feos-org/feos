@@ -1,7 +1,5 @@
 use crate::{FeosError, FeosResult, ReferenceSystem, state::StateHD};
-use nalgebra::{
-    Const, DVector, DefaultAllocator, Dim, Dyn, OMatrix, OVector, SVector, U1, allocator::Allocator,
-};
+use nalgebra::{DVector, DefaultAllocator, Dim, Dyn, OMatrix, OVector, U1, allocator::Allocator};
 use num_dual::{DualNum, Gradients, partial, partial2, second_derivative, third_derivative};
 use quantity::ad::first_derivative;
 use quantity::*;
@@ -80,52 +78,6 @@ impl<C: Deref<Target = T> + Clone, T: ResidualDyn, D: DualNum<f64> + Copy> Resid
         state: &StateHD<D, Dyn>,
     ) -> Vec<(&'static str, D)> {
         ResidualDyn::reduced_helmholtz_energy_density_contributions(self.deref(), state)
-    }
-}
-
-pub trait ResidualConst<const N: usize, D: DualNum<f64> + Copy>: Clone {
-    const NAME: &str;
-    type Real: ResidualConst<N, f64>;
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy>: ResidualConst<N, D2>;
-    fn re(&self) -> Self::Real;
-    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2>;
-    fn compute_max_density(&self, molefracs: &SVector<D, N>) -> D;
-    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, Const<N>>) -> D;
-}
-
-impl<T: ResidualConst<N, D>, const N: usize, D: DualNum<f64> + Copy> Residual<Const<N>, D> for T {
-    fn components(&self) -> usize {
-        N
-    }
-
-    type Real = T::Real;
-
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = T::Lifted<D2>;
-
-    fn re(&self) -> Self::Real {
-        T::re(self)
-    }
-
-    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
-        T::lift(self)
-    }
-
-    fn compute_max_density(&self, molefracs: &SVector<D, N>) -> D {
-        T::compute_max_density(self, molefracs)
-    }
-
-    fn reduced_helmholtz_energy_density_contributions(
-        &self,
-        state: &StateHD<D, Const<N>>,
-    ) -> Vec<(&'static str, D)> {
-        vec![(
-            T::NAME,
-            T::reduced_residual_helmholtz_energy_density(self, state),
-        )]
-    }
-
-    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, Const<N>>) -> D {
-        T::reduced_residual_helmholtz_energy_density(self, state)
     }
 }
 

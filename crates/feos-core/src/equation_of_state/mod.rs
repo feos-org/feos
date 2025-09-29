@@ -8,7 +8,7 @@ use num_dual::DualNum;
 use quantity::{Energy, MolarEnergy, Moles, Temperature, Volume};
 
 mod residual;
-pub use residual::{Molarweight, NoResidual, Residual, ResidualConst, ResidualDyn, Subset};
+pub use residual::{Molarweight, NoResidual, Residual, ResidualDyn, Subset};
 
 /// An equation of state consisting of an ideal gas model
 /// and a residual Helmholtz energy model.
@@ -79,10 +79,13 @@ impl<I: Clone, R: Subset> Subset for EquationOfState<Vec<I>, R> {
     }
 }
 
-impl<I: Clone, R: ResidualConst<N, D>, D: DualNum<f64> + Copy, const N: usize> ResidualConst<N, D>
-    for EquationOfState<[I; N], R>
+impl<I: Clone, R: Residual<Const<N>, D>, D: DualNum<f64> + Copy, const N: usize>
+    Residual<Const<N>, D> for EquationOfState<[I; N], R>
 {
-    const NAME: &str = R::NAME;
+    fn components(&self) -> usize {
+        N
+    }
+
     type Real = EquationOfState<[I; N], R::Real>;
     type Lifted<D2: DualNum<f64, Inner = D> + Copy> = EquationOfState<[I; N], R::Lifted<D2>>;
     fn re(&self) -> Self::Real {
@@ -94,6 +97,14 @@ impl<I: Clone, R: ResidualConst<N, D>, D: DualNum<f64> + Copy, const N: usize> R
 
     fn compute_max_density(&self, molefracs: &SVector<D, N>) -> D {
         self.residual.compute_max_density(molefracs)
+    }
+
+    fn reduced_helmholtz_energy_density_contributions(
+        &self,
+        state: &StateHD<D, Const<N>>,
+    ) -> Vec<(&'static str, D)> {
+        self.residual
+            .reduced_helmholtz_energy_density_contributions(state)
     }
 
     fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, Const<N>>) -> D {
@@ -184,12 +195,8 @@ impl<
     }
 }
 
-impl<
-    I: IdealGas<D> + Clone,
-    R: ResidualConst<N, D> + 'static,
-    D: DualNum<f64> + Copy,
-    const N: usize,
-> Total<Const<N>, D> for EquationOfState<[I; N], R>
+impl<I: IdealGas<D> + Clone, R: Residual<Const<N>, D>, D: DualNum<f64> + Copy, const N: usize>
+    Total<Const<N>, D> for EquationOfState<[I; N], R>
 {
     type IdealGas = I;
 

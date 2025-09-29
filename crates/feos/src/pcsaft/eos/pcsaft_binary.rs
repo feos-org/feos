@@ -1,6 +1,6 @@
 use super::dispersion::{A0, A1, A2, B0, B1, B2};
 use super::polar::{AD, BD, CD};
-use feos_core::{ParametersAD, ResidualConst, StateHD};
+use feos_core::{ParametersAD, Residual, StateHD};
 use nalgebra::{SVector, U2};
 use num_dual::{DualNum, DualSVec, DualSVec64, DualVec, jacobian};
 use std::f64::consts::{FRAC_PI_6, PI};
@@ -361,8 +361,11 @@ fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
     }
 }
 
-impl<D: DualNum<f64> + Copy> ResidualConst<2, D> for PcSaftBinary<D, 4> {
-    const NAME: &str = "PC-SAFT (binary, non-assoc)";
+impl<D: DualNum<f64> + Copy> Residual<U2, D> for PcSaftBinary<D, 4> {
+    fn components(&self) -> usize {
+        2
+    }
+
     type Real = PcSaftBinary<f64, 4>;
     type Lifted<D2: DualNum<f64, Inner = D> + Copy> = PcSaftBinary<D2, 4>;
     fn re(&self) -> Self::Real {
@@ -389,6 +392,16 @@ impl<D: DualNum<f64> + Copy> ResidualConst<2, D> for PcSaftBinary<D, 4> {
         ((m1 * sigma1.powi(3) * x1 + m2 * sigma2.powi(3) * x2) * FRAC_PI_6).recip() * MAX_ETA
     }
 
+    fn reduced_helmholtz_energy_density_contributions(
+        &self,
+        state: &StateHD<D, U2>,
+    ) -> Vec<(&'static str, D)> {
+        vec![(
+            "PC-SAFT (binary, non-assoc)",
+            self.reduced_residual_helmholtz_energy_density(state),
+        )]
+    }
+
     fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, U2>) -> D {
         let ([p1, p2], kij) = self.0;
         let [m1, sigma1, epsilon_k1, mu1] = p1;
@@ -405,8 +418,11 @@ impl<D: DualNum<f64> + Copy> ResidualConst<2, D> for PcSaftBinary<D, 4> {
     }
 }
 
-impl<D: DualNum<f64> + Copy> ResidualConst<2, D> for PcSaftBinary<D, 8> {
-    const NAME: &str = "PC-SAFT (binary)";
+impl<D: DualNum<f64> + Copy> Residual<U2, D> for PcSaftBinary<D, 8> {
+    fn components(&self) -> usize {
+        2
+    }
+
     type Real = PcSaftBinary<f64, 8>;
     type Lifted<D2: DualNum<f64, Inner = D> + Copy> = PcSaftBinary<D2, 8>;
     fn re(&self) -> Self::Real {
@@ -431,6 +447,16 @@ impl<D: DualNum<f64> + Copy> ResidualConst<2, D> for PcSaftBinary<D, 8> {
         let [m1, sigma1, ..] = p1;
         let [m2, sigma2, ..] = p2;
         ((m1 * sigma1.powi(3) * x1 + m2 * sigma2.powi(3) * x2) * FRAC_PI_6).recip() * MAX_ETA
+    }
+
+    fn reduced_helmholtz_energy_density_contributions(
+        &self,
+        state: &StateHD<D, U2>,
+    ) -> Vec<(&'static str, D)> {
+        vec![(
+            "PC-SAFT (binary)",
+            self.reduced_residual_helmholtz_energy_density(state),
+        )]
     }
 
     fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, U2>) -> D {
