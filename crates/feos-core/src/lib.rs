@@ -37,7 +37,7 @@ pub use equation_of_state::{
     EquationOfState, IdealGas, Molarweight, NoResidual, Residual, ResidualDyn, Subset, Total,
 };
 pub use errors::{FeosError, FeosResult};
-pub use parameter_fit::{BinaryModel, ParametersAD, PureModel};
+pub use parameter_fit::{Estimator, ParametersAD};
 #[cfg(feature = "ndarray")]
 pub use phase_equilibria::{PhaseDiagram, PhaseDiagramHetero};
 pub use phase_equilibria::{PhaseEquilibrium, TemperatureOrPressure};

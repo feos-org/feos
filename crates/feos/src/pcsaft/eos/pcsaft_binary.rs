@@ -38,9 +38,8 @@ impl<D: DualNum<f64> + Copy, const N: usize> From<&[f64]> for PcSaftBinary<D, N>
 }
 
 impl ParametersAD<2> for PcSaftBinary<f64, 4> {
-    type Eos<const P: usize> = PcSaftBinary<DualSVec64<P>, 4>;
     fn index_parameters_mut<'a, const P: usize>(
-        eos: &'a mut Self::Eos<P>,
+        eos: &'a mut Self::Lifted<DualSVec64<P>>,
         index: &str,
     ) -> &'a mut DualSVec<f64, f64, P> {
         match index {
@@ -51,9 +50,8 @@ impl ParametersAD<2> for PcSaftBinary<f64, 4> {
 }
 
 impl ParametersAD<2> for PcSaftBinary<f64, 8> {
-    type Eos<const P: usize> = PcSaftBinary<DualSVec64<P>, 8>;
     fn index_parameters_mut<'a, const P: usize>(
-        eos: &'a mut Self::Eos<P>,
+        eos: &'a mut Self::Lifted<DualSVec64<P>>,
         index: &str,
     ) -> &'a mut DualSVec<f64, f64, P> {
         match index {

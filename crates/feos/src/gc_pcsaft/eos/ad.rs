@@ -177,7 +177,7 @@ static K_AB: LazyLock<SMatrix<f64, N_GROUPS, N_GROUPS>> = LazyLock::new(|| {
     SMatrix::from_fn(|i, j| *K_AB_MAP.get(&(GROUPS[i], GROUPS[j])).unwrap_or(&0.0))
 });
 
-/// Parameters used to instantiate [GcPcSaft].
+/// Parameters used to instantiate [GcPcSaftAD].
 #[derive(Clone)]
 pub struct GcPcSaftADParameters<D, const N: usize> {
     pub groups: SMatrix<D, N_GROUPS, N>,

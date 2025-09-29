@@ -590,8 +590,8 @@ mod tests_parameter_fit {
     use super::*;
     use approx::assert_relative_eq;
     use feos_core::DensityInitialization::Liquid;
-    use feos_core::{BinaryModel, FeosResult, ParametersAD, PhaseEquilibrium, PureModel, State};
     use feos_core::{Contributions, ReferenceSystem};
+    use feos_core::{Estimator, FeosResult, ParametersAD, PhaseEquilibrium, State};
     use nalgebra::{U1, U3, U8, vector};
     use num_dual::{DualStruct, DualVec};
     use quantity::{BAR, KELVIN, LITER, MOL, PASCAL};
@@ -620,7 +620,7 @@ mod tests_parameter_fit {
         let (pcsaft, _) = pcsaft()?;
         let pcsaft_ad = PcSaftPure::<_, 8>::from_parameter_slice(&pcsaft.0, pcsaft_params);
         let temperature = 250.0 * KELVIN;
-        let p = PcSaftPure::<_, 8>::vapor_pressure(&pcsaft_ad, temperature)?;
+        let p = Estimator::vapor_pressure(&pcsaft_ad, temperature)?;
         let p = p.convert_into(PASCAL);
         let (p, grad) = (p.re, p.eps.unwrap_generic(U8, U1));
 
@@ -653,7 +653,7 @@ mod tests_parameter_fit {
         let pcsaft_ad =
             PcSaftPure::<_, 4>::from_parameter_slice(&pcsaft.0, ["m", "sigma", "epsilon_k"]);
         let temperature = 150.0 * KELVIN;
-        let p = PcSaftPure::<_, 4>::vapor_pressure(&pcsaft_ad, temperature)?;
+        let p = Estimator::vapor_pressure(&pcsaft_ad, temperature)?;
         let p = p.convert_into(PASCAL);
         let (p, grad) = (p.re, p.eps.unwrap_generic(U3, U1));
 
@@ -686,7 +686,7 @@ mod tests_parameter_fit {
         let pcsaft_ad =
             PcSaftPure::<_, 4>::from_parameter_slice(&pcsaft.0, ["m", "sigma", "epsilon_k"]);
         let temperature = 150.0 * KELVIN;
-        let (p, rho) = PcSaftPure::<_, 4>::equilibrium_liquid_density(&pcsaft_ad, temperature)?;
+        let (p, rho) = Estimator::equilibrium_liquid_density(&pcsaft_ad, temperature)?;
         let p = p.convert_into(PASCAL);
         let rho = rho.convert_into(MOL / LITER);
         let (p, p_grad) = (p.re, p.eps.unwrap_generic(U3, U1));
@@ -728,7 +728,7 @@ mod tests_parameter_fit {
             PcSaftPure::<_, 4>::from_parameter_slice(&pcsaft.0, ["m", "sigma", "epsilon_k"]);
         let temperature = 150.0 * KELVIN;
         let pressure = BAR;
-        let rho = PcSaftPure::<_, 4>::liquid_density(&pcsaft_ad, temperature, pressure)?;
+        let rho = Estimator::liquid_density(&pcsaft_ad, temperature, pressure)?;
         let rho = rho.convert_into(MOL / LITER);
         let (rho, grad) = (rho.re, rho.eps.unwrap_generic(U3, U1));
 
@@ -767,7 +767,7 @@ mod tests_parameter_fit {
         let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
         let temperature = 500.0 * KELVIN;
         let x = vector![0.5, 0.5];
-        let p = PcSaftBinary::<_, 8>::bubble_point_pressure(&pcsaft_ad, temperature, None, x)?;
+        let p = Estimator::bubble_point_pressure(&pcsaft_ad, temperature, None, x)?;
         let p = p.convert_into(BAR);
         let (p, [[grad]]) = (p.re, p.eps.unwrap_generic(U1, U1).data.0);
 
@@ -802,10 +802,10 @@ mod tests_parameter_fit {
     #[test]
     fn test_dew_point_pressure() -> FeosResult<()> {
         let (pcsaft, _) = pcsaft_binary()?;
-        let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
+        let pcsaft_ad: PcSaftBinary<_, 8> = PcSaftBinary::named_derivatives(&pcsaft, ["k_ij"]);
         let temperature = 500.0 * KELVIN;
         let y = vector![0.5, 0.5];
-        let p = PcSaftBinary::<_, 8>::dew_point_pressure(&pcsaft_ad, temperature, None, y)?;
+        let p = Estimator::dew_point_pressure(&pcsaft_ad, temperature, None, y)?;
         let p = p.convert_into(BAR);
         let (p, [[grad]]) = (p.re, p.eps.unwrap_generic(U1, U1).data.0);
 
@@ -840,7 +840,7 @@ mod tests_parameter_fit {
     #[test]
     fn test_bubble_point_temperature() -> FeosResult<()> {
         let (pcsaft, _) = pcsaft_binary()?;
-        let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
+        let pcsaft_ad = PcSaftBinary::named_derivatives(&pcsaft, ["k_ij"]);
         let pressure = Pressure::from_reduced(DualVec::from(45. * BAR.into_reduced()));
         let t_init = Temperature::from_reduced(DualVec::from(500.0));
         let x = vector![0.5, 0.5].map(DualVec::from);
@@ -888,7 +888,7 @@ mod tests_parameter_fit {
     #[test]
     fn test_dew_point_temperature() -> FeosResult<()> {
         let (pcsaft, _) = pcsaft_binary()?;
-        let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
+        let pcsaft_ad = PcSaftBinary::named_derivatives(&pcsaft, ["k_ij"]);
         let pressure = Pressure::from_reduced(DualVec::from(45. * BAR.into_reduced()));
         let t_init = Temperature::from_reduced(DualVec::from(500.0));
         let x = vector![0.5, 0.5].map(DualVec::from);

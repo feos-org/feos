@@ -39,7 +39,15 @@ impl<T: Subset> Subset for Arc<T> {
     }
 }
 
+/// A simple residual Helmholtz energy model for arbitrary many components
+/// and no automatic differentiation of model parameters.
+///
+/// This is a shortcut to implementing `Residual<Dyn, f64>`. To avoid unnecessary
+/// cloning, `Residual<Dyn, f64>` is automatically implemented for all pointer
+/// types that deref to the struct implementing `ResidualDyn` and are `Clone`
+/// (i.e., `Rc<T>`, `Arc<T>`, `&T`, ...).
 pub trait ResidualDyn {
+    /// Return the number of components in the system.
     fn components(&self) -> usize;
 
     /// Return the maximum density in Angstrom^-3.
@@ -86,14 +94,26 @@ pub trait Residual<N: Dim = Dyn, D: DualNum<f64> + Copy = f64>: Clone
 where
     DefaultAllocator: Allocator<N>,
 {
+    /// Return the number of components in the system.
     fn components(&self) -> usize;
+
+    /// Return a generic composition vector for a pure component.
+    ///
+    /// Panics if N is not Dyn(1) or Const<1>.
     fn pure_molefracs() -> OVector<D, N> {
         OVector::from_element_generic(N::from_usize(1), U1, D::one())
     }
 
+    /// The residual model with only the real parts of the model parameters.
     type Real: Residual<N>;
+
+    /// The residual model with the model parameters lifted to a higher dual number.
     type Lifted<D2: DualNum<f64, Inner = D> + Copy>: Residual<N, D2>;
+
+    /// Return the real part of the residual model.
     fn re(&self) -> Self::Real;
+
+    /// Return the lifted residual model.
     fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2>;
 
     /// Return the maximum density in Angstrom^-3.
@@ -274,6 +294,9 @@ where
         dc_dt
     }
 
+    // The following methods are used in phase equilibrium algorithms
+
+    /// calculates a_res, p, dp_drho
     fn p_dpdrho(&self, temperature: D, density: D, molefracs: &OVector<D, N>) -> (D, D, D) {
         let molar_volume = density.recip();
         let (a, da, d2a) = second_derivative(
@@ -294,6 +317,7 @@ where
         )
     }
 
+    /// calculates p, dp_drho, d2p_drho2
     fn p_dpdrho_d2pdrho2(
         &self,
         temperature: D,

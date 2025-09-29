@@ -1,11 +1,13 @@
-use super::{Gradient, ParametersAD};
+use super::Gradient;
+#[cfg(feature = "rayon")]
+use super::ParametersAD;
 use crate::density_iteration::density_iteration;
 use crate::{
     DensityInitialization::Liquid, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual,
 };
-use nalgebra::SVector;
 #[cfg(feature = "rayon")]
-use nalgebra::{Const, U1};
+use nalgebra::Const;
+use nalgebra::{SVector, U1, U2};
 #[cfg(feature = "rayon")]
 use ndarray::{Array1, Array2, ArrayView2, Zip};
 use num_dual::DualStruct;
@@ -13,9 +15,11 @@ use quantity::{Density, Pressure, Temperature};
 #[cfg(feature = "rayon")]
 use quantity::{KELVIN, KILO, METER, MOL, PASCAL};
 
-pub trait PureModel: ParametersAD<1> {
-    fn vapor_pressure<const P: usize>(
-        eos: &Self::Eos<P>,
+pub struct Estimator;
+
+impl Estimator {
+    pub fn vapor_pressure<E: Residual<U1, Gradient<P>>, const P: usize>(
+        eos: &E,
         temperature: Temperature,
     ) -> FeosResult<Pressure<Gradient<P>>> {
         let eos_f64 = eos.re();
@@ -42,52 +46,52 @@ pub trait PureModel: ParametersAD<1> {
         Ok(Pressure::from_reduced(p))
     }
 
-    fn equilibrium_liquid_density<const P: usize>(
-        eos: &Self::Eos<P>,
+    pub fn equilibrium_liquid_density<E: Residual<U1, Gradient<P>>, const P: usize>(
+        eos: &E,
         temperature: Temperature,
     ) -> FeosResult<(Pressure<Gradient<P>>, Density<Gradient<P>>)> {
         let t = Temperature::from_inner(&temperature);
         PhaseEquilibrium::pure_t(eos, t, None, Default::default()).map(|(p, [_, rho])| (p, rho))
     }
 
-    fn liquid_density<const P: usize>(
-        eos: &Self::Eos<P>,
+    pub fn liquid_density<E: Residual<U1, Gradient<P>>, const P: usize>(
+        eos: &E,
         temperature: Temperature,
         pressure: Pressure,
     ) -> FeosResult<Density<Gradient<P>>> {
-        let x = Self::Eos::pure_molefracs();
+        let x = E::pure_molefracs();
         let t = Temperature::from_inner(&temperature);
         let p = Pressure::from_inner(&pressure);
         density_iteration(eos, t, p, &x, Some(Liquid))
     }
 
     #[cfg(feature = "rayon")]
-    fn vapor_pressure_parallel<const P: usize>(
+    pub fn vapor_pressure_parallel<E: ParametersAD<1>, const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
         input: ArrayView2<f64>,
     ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
-        parallelize::<_, Self, 1, P>(
+        parallelize::<_, E, _, _>(
             parameter_names,
             parameters,
             input,
-            |eos: &Self::Eos<P>, inp| {
+            |eos: &E::Lifted<Gradient<P>>, inp| {
                 Self::vapor_pressure(eos, inp[0] * KELVIN).map(|p| p.convert_into(PASCAL))
             },
         )
     }
 
     #[cfg(feature = "rayon")]
-    fn liquid_density_parallel<const P: usize>(
+    pub fn liquid_density_parallel<E: ParametersAD<1>, const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
         input: ArrayView2<f64>,
     ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
-        parallelize::<_, Self, 1, P>(
+        parallelize::<_, E, _, _>(
             parameter_names,
             parameters,
             input,
-            |eos: &Self::Eos<P>, inp| {
+            |eos: &E::Lifted<Gradient<P>>, inp| {
                 Self::liquid_density(eos, inp[0] * KELVIN, inp[1] * PASCAL)
                     .map(|d| d.convert_into(KILO * MOL / (METER * METER * METER)))
             },
@@ -95,28 +99,24 @@ pub trait PureModel: ParametersAD<1> {
     }
 
     #[cfg(feature = "rayon")]
-    fn equilibrium_liquid_density_parallel<const P: usize>(
+    pub fn equilibrium_liquid_density_parallel<E: ParametersAD<1>, const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
         input: ArrayView2<f64>,
     ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
-        parallelize::<_, Self, 1, P>(
+        parallelize::<_, E, _, _>(
             parameter_names,
             parameters,
             input,
-            |eos: &Self::Eos<P>, inp| {
+            |eos: &E::Lifted<Gradient<P>>, inp| {
                 Self::equilibrium_liquid_density(eos, inp[0] * KELVIN)
                     .map(|(_, d)| d.convert_into(KILO * MOL / (METER * METER * METER)))
             },
         )
     }
-}
 
-impl<T: ParametersAD<1>> PureModel for T {}
-
-pub trait BinaryModel: ParametersAD<2> {
-    fn bubble_point_pressure<const P: usize>(
-        eos: &Self::Eos<P>,
+    pub fn bubble_point_pressure<E: Residual<U2, Gradient<P>>, const P: usize>(
+        eos: &E,
         temperature: Temperature,
         pressure: Option<Pressure>,
         liquid_molefracs: SVector<f64, 2>,
@@ -162,8 +162,8 @@ pub trait BinaryModel: ParametersAD<2> {
         Ok(Pressure::from_reduced(p))
     }
 
-    fn dew_point_pressure<const P: usize>(
-        eos: &Self::Eos<P>,
+    pub fn dew_point_pressure<E: Residual<U2, Gradient<P>>, const P: usize>(
+        eos: &E,
         temperature: Temperature,
         pressure: Option<Pressure>,
         vapor_molefracs: SVector<f64, 2>,
@@ -210,16 +210,16 @@ pub trait BinaryModel: ParametersAD<2> {
     }
 
     #[cfg(feature = "rayon")]
-    fn bubble_point_pressure_parallel<const P: usize>(
+    pub fn bubble_point_pressure_parallel<E: ParametersAD<2>, const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
         input: ArrayView2<f64>,
     ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
-        parallelize::<_, Self, 2, P>(
+        parallelize::<_, E, _, _>(
             parameter_names,
             parameters,
             input,
-            |eos: &Self::Eos<P>, inp| {
+            |eos: &E::Lifted<Gradient<P>>, inp| {
                 Self::bubble_point_pressure(
                     eos,
                     inp[0] * KELVIN,
@@ -232,16 +232,16 @@ pub trait BinaryModel: ParametersAD<2> {
     }
 
     #[cfg(feature = "rayon")]
-    fn dew_point_pressure_parallel<const P: usize>(
+    pub fn dew_point_pressure_parallel<E: ParametersAD<2>, const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
         input: ArrayView2<f64>,
     ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
-        parallelize::<_, Self, 2, P>(
+        parallelize::<_, E, _, _>(
             parameter_names,
             parameters,
             input,
-            |eos: &Self::Eos<P>, inp| {
+            |eos: &E::Lifted<Gradient<P>>, inp| {
                 Self::dew_point_pressure(
                     eos,
                     inp[0] * KELVIN,
@@ -254,17 +254,15 @@ pub trait BinaryModel: ParametersAD<2> {
     }
 }
 
-impl<T: ParametersAD<2>> BinaryModel for T {}
-
 #[cfg(feature = "rayon")]
-fn parallelize<F, E: ParametersAD<N> + ?Sized, const N: usize, const P: usize>(
+fn parallelize<F, E: ParametersAD<N>, const N: usize, const P: usize>(
     parameter_names: [String; P],
     parameters: ArrayView2<f64>,
     input: ArrayView2<f64>,
     f: F,
 ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
 where
-    F: Fn(&E::Eos<P>, &[f64]) -> FeosResult<Gradient<P>> + Sync,
+    F: Fn(&E::Lifted<Gradient<P>>, &[f64]) -> FeosResult<Gradient<P>> + Sync,
 {
     let parameter_names = parameter_names.each_ref().map(|s| s as &str);
     let value_dual = Zip::from(parameters.rows())

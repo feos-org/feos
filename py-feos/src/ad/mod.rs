@@ -1,6 +1,6 @@
 #[cfg(feature = "pcsaft")]
 use feos::pcsaft::{PcSaftBinary, PcSaftPure};
-use feos_core::{BinaryModel, ParametersAD, PureModel};
+use feos_core::{Estimator, ParametersAD};
 use numpy::{PyArray1, PyArray2, PyReadonlyArray2, ToPyArray};
 use paste::paste;
 use pyo3::prelude::*;
@@ -79,9 +79,9 @@ macro_rules! impl_evaluate_gradients {
             let (value, grad, status) =
             $(
             if let Ok(p) = parameter_names.extract::<[String; $p]>() {
-                R::[<$prop _parallel>](p, parameters.as_array(), input.as_array())
+                Estimator::[<$prop _parallel>]::<R, $p>(p, parameters.as_array(), input.as_array())
             } else)* if let Ok(p) = parameter_names.extract::<[String; $max]>() {
-                R::[<$prop _parallel>](p, parameters.as_array(), input.as_array())
+                Estimator::[<$prop _parallel>]::<R, $max>(p, parameters.as_array(), input.as_array())
             } else {
                 panic!("Gradients can only be evaluated for up to {} parameters!", $max)
             };
