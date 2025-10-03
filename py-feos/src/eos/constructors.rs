@@ -3,6 +3,8 @@ use crate::ideal_gas::IdealGasModel;
 use crate::parameter::{PyGcParameters, PyParameters};
 use crate::residual::ResidualModel;
 use crate::user_defined::{PyIdealGas, PyResidual};
+#[cfg(feature = "fundamental")]
+use feos::fundamental::IAPWS;
 use feos::ideal_gas::{Dippr, Joback};
 use feos_core::cubic::PengRobinson;
 use feos_core::*;
@@ -27,6 +29,30 @@ impl PyEquationOfState {
     pub fn peng_robinson(parameters: PyParameters) -> PyResult<Self> {
         let residual = ResidualModel::PengRobinson(PengRobinson::new(parameters.try_convert()?));
         let ideal_gas = vec![IdealGasModel::NoModel; residual.components()];
+        Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
+    }
+
+    #[staticmethod]
+    #[cfg(feature = "fundamental")]
+    #[pyo3(signature = (extrapolation=None, t_stb=None, d=None))]
+    pub fn iapws(
+        extrapolation: Option<&str>,
+        t_stb: Option<f64>,
+        d: Option<f64>,
+    ) -> PyResult<Self> {
+        let iapws = match (extrapolation, t_stb, d) {
+            (Some("smooth"), Some(t), Some(d)) => IAPWS::Smooth(t, d),
+            (Some("extrapolated"), Some(t), None) => IAPWS::Extrapolated(t),
+            (None, None, None) => IAPWS::Base,
+            _ => {
+                return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                    "Invalid input for IAPWS.",
+                ));
+            }
+        };
+        // let iapws = IAPWS::new(extrapolate);
+        let residual = ResidualModel::Iapws(iapws);
+        let ideal_gas = vec![IdealGasModel::Iapws(iapws)];
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 

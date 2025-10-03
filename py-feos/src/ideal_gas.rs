@@ -1,5 +1,7 @@
 //! Collection of ideal gas models.
 use crate::user_defined::PyIdealGas;
+#[cfg(feature = "fundamental")]
+use feos::fundamental::IAPWS;
 use feos::ideal_gas::{Dippr, Joback};
 use feos_core::IdealGas;
 use feos_derive::IdealGas;
@@ -16,4 +18,6 @@ pub enum IdealGasModel {
     Joback(Joback),
     Dippr(Dippr),
     Python(Arc<PyIdealGas>),
+    #[cfg(feature = "fundamental")]
+    Iapws(IAPWS),
 }

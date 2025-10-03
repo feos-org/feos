@@ -21,6 +21,7 @@ use quantity::*;
 pub enum ResidualModel {
     // Equations of state
     NoResidual(NoResidual),
+
     #[cfg(feature = "pcsaft")]
     #[implement(molar_weight)]
     PcSaft(feos::pcsaft::PcSaft),
@@ -35,6 +36,10 @@ pub enum ResidualModel {
 
     #[implement(molar_weight)]
     PengRobinson(PengRobinson),
+
+    #[cfg(feature = "fundamental")]
+    #[implement(molar_weight)]
+    Iapws(feos::fundamental::IAPWS),
 
     #[implement(molar_weight)]
     Python(crate::user_defined::PyResidual),

@@ -1,6 +1,7 @@
-use feos_core::{IdealGas, ResidualDyn, StateHD};
-use nalgebra::DVector;
-use num_dual::DualNum;
+use feos_core::{IdealGas, Molarweight, ResidualDyn, StateHD, Subset};
+use nalgebra::{DVector, dvector};
+use num_dual::{Dual2, DualNum, partial, second_derivative};
+use quantity::{GRAM, JOULE, KELVIN, MOL, MolarWeight, RGAS};
 use std::f64::consts::E;
 
 const TC: f64 = 647.096;
@@ -87,6 +88,45 @@ const I4_8: [[f64; 2]; 5] = [
     [0.24873, 27.5075105],
 ];
 
+const SAT_LIQ: [f64; 6] = [
+    1.99274064,
+    1.09965342,
+    -0.510839303,
+    -1.75493479,
+    -45.5170352,
+    -6.74694450e5,
+];
+
+const SAT_VAP: [f64; 6] = [
+    -2.03105240,
+    -2.68302940,
+    -5.38626492,
+    -17.2991605,
+    -44.7586581,
+    -63.9201063,
+];
+
+fn delta_sat<D: DualNum<f64> + Copy>(temperature: D) -> [D; 2] {
+    let tau = -temperature / TC + 1.0;
+    let tau_6 = tau.powf(1.0 / 6.0);
+    let rho_liquid = tau_6.powi(2) * SAT_LIQ[0]
+        + tau_6.powi(4) * SAT_LIQ[1]
+        + tau_6.powi(10) * SAT_LIQ[2]
+        + tau_6.powi(32) * SAT_LIQ[3]
+        + tau_6.powi(86) * SAT_LIQ[4]
+        + tau_6.powi(220) * SAT_LIQ[5]
+        + 1.0;
+    let rho_vapor = (tau_6.powi(2) * SAT_VAP[0]
+        + tau_6.powi(4) * SAT_VAP[1]
+        + tau_6.powi(8) * SAT_VAP[2]
+        + tau_6.powi(18) * SAT_VAP[3]
+        + tau_6.powi(37) * SAT_VAP[4]
+        + tau_6.powi(71) * SAT_VAP[5])
+        .exp();
+
+    [rho_liquid, rho_vapor]
+}
+
 fn phi_r<D: DualNum<f64> + Copy>(delta: D, tau: D) -> D {
     let delta_2 = (delta - 1.0).powi(2);
     let mut phi = D::zero();
@@ -117,8 +157,28 @@ fn phi_o<D: DualNum<f64> + Copy>(delta: D, tau: D) -> D {
     phi
 }
 
+fn phi_extrapolated<D: DualNum<f64> + Copy>(delta: D, t: D, t_stb: f64) -> D {
+    let (a, at, att) = second_derivative(
+        partial(
+            |t: Dual2<D, f64>, &delta| {
+                let tau = t.recip() * TC;
+                phi_r(delta, tau) * t
+            },
+            &delta,
+        ),
+        D::from(t_stb * TC),
+    );
+    let dt = t - t_stb * TC;
+
+    (a + at * dt + att * dt * dt * 0.5) / t
+}
+
 #[derive(Clone, Copy)]
-pub struct IAPWS;
+pub enum IAPWS {
+    Base,
+    Smooth(f64, f64),
+    Extrapolated(f64),
+}
 
 impl ResidualDyn for IAPWS {
     fn components(&self) -> usize {
@@ -134,10 +194,41 @@ impl ResidualDyn for IAPWS {
         &self,
         state: &StateHD<D>,
     ) -> Vec<(&'static str, D)> {
-        let tau = state.temperature.recip() * TC;
         let rho = state.partial_density.sum();
         let delta = rho * DELTA_OVER_RHO;
-        vec![("IAPWS95", phi_r(delta, tau) * rho)]
+        match *self {
+            Self::Extrapolated(t_stb) => {
+                vec![(
+                    "IAPWS95 (Extrapolated)",
+                    phi_extrapolated(delta, state.temperature, t_stb) * rho,
+                )]
+            }
+            Self::Smooth(t_stb, d) => {
+                let [delta_liq, delta_vap] = delta_sat(state.temperature);
+                fn f<D: DualNum<f64> + Copy>(x: D) -> D {
+                    if x.re() > 0.0 {
+                        (-x.recip()).exp()
+                    } else {
+                        D::zero()
+                    }
+                }
+                fn g<D: DualNum<f64> + Copy>(x: D) -> D {
+                    f(x) / (f(x) + f(-x + 1.0))
+                }
+                let bump = g((delta - delta_vap) / d) * g((delta_liq - delta) / d);
+                let ex = phi_extrapolated(delta, state.temperature, t_stb);
+                let tau = state.temperature.recip() * TC;
+                let phi = phi_r(delta, tau);
+                vec![(
+                    "IAPWS95 (Smoothed)",
+                    (ex * bump - phi * (bump - 1.0) * 0.0) * rho,
+                )]
+            }
+            Self::Base => {
+                let tau = state.temperature.recip() * TC;
+                vec![("IAPWS95", phi_r(delta, tau) * rho)]
+            }
+        }
     }
 }
 
@@ -150,6 +241,18 @@ impl IdealGas for IAPWS {
 
     fn ideal_gas_model(&self) -> &'static str {
         "IAPWS95"
+    }
+}
+
+impl Subset for IAPWS {
+    fn subset(&self, _: &[usize]) -> Self {
+        *self
+    }
+}
+
+impl Molarweight for IAPWS {
+    fn molar_weight(&self) -> MolarWeight<DVector<f64>> {
+        dvector![RGAS.convert_into(JOULE / (KELVIN * MOL)) / R] * GRAM / MOL
     }
 }
 
@@ -257,7 +360,7 @@ mod test {
         let rho = 358. * KILOGRAM / METER.powi::<P3>();
         let mw = RGAS / (R * KILO * JOULE / (KILOGRAM * KELVIN));
         let moles = dvector![1.8] * MOL;
-        let eos = &EquationOfState::ideal_gas(vec![IAPWS]);
+        let eos = &EquationOfState::ideal_gas(vec![IAPWS::Base]);
         let a_feos = eos.ideal_gas_helmholtz_energy(t, moles.sum() * mw / rho, &moles);
         let phi_feos = (a_feos / RGAS / moles.sum() / t).into_value();
         println!("A:          {a_feos}");
@@ -280,15 +383,15 @@ mod test {
         // assert_eq!(format!("{:.8}", d2phi[(0, 0)]), "-0.80899473");
         // assert_eq!(format!("{:.8}", d2phi[(0, 1)]), "-0.00000000");
         // assert_eq!(format!("{:.8}", d2phi[(1, 1)]), "-3.43316334");
-
+        let iapws = &IAPWS::Base;
         let cp: State<_, _, f64> =
-            State::critical_point(&&IAPWS, None, Some(TC * KELVIN), Default::default()).unwrap();
+            State::critical_point(&iapws, None, Some(TC * KELVIN), Default::default()).unwrap();
         println!("{cp}");
         let cp: State<_, _, f64> =
-            State::critical_point(&&IAPWS, None, None, Default::default()).unwrap();
+            State::critical_point(&iapws, None, None, Default::default()).unwrap();
         println!("{cp}");
         let cp: State<_, _, f64> =
-            State::critical_point(&&IAPWS, None, Some(700.0 * KELVIN), Default::default()).unwrap();
+            State::critical_point(&iapws, None, Some(700.0 * KELVIN), Default::default()).unwrap();
         println!("{cp}");
     }
 }

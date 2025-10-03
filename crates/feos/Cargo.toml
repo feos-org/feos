@@ -35,7 +35,7 @@ criterion = { workspace = true }
 serde_json = { workspace = true }
 
 [features]
-default = ["fundamental"]
+default = []
 dft = ["feos-dft", "petgraph", "ndarray", "num-dual/ndarray", "feos-derive"]
 association = []
 pcsaft = ["association"]
@@ -56,6 +56,7 @@ all_models = [
     "pets",
     "saftvrqmie",
     "saftvrmie",
+    "fundamental",
 ]
 
 [[bench]]
