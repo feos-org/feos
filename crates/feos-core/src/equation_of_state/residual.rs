@@ -27,6 +27,7 @@ where
     }
 }
 
+/// A model from which models for subsets of its components can be extracted.
 pub trait Subset {
     /// Return a model consisting of the components
     /// contained in component_list.

@@ -2,7 +2,7 @@ use nalgebra::{Const, U1};
 use num_dual::{Derivative, DualSVec};
 
 mod properties;
-pub use properties::Estimator;
+pub use properties::ParameterFit;
 
 use crate::Residual;
 

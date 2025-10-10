@@ -15,9 +15,11 @@ use quantity::{Density, Pressure, Temperature};
 #[cfg(feature = "rayon")]
 use quantity::{KELVIN, KILO, METER, MOL, PASCAL};
 
-pub struct Estimator;
+/// A collection of functions that calculate fit properties and their derivatives
+/// with respect to model parameters.
+pub struct ParameterFit;
 
-impl Estimator {
+impl ParameterFit {
     pub fn vapor_pressure<E: Residual<U1, Gradient<P>>, const P: usize>(
         eos: &E,
         temperature: Temperature,

@@ -1,6 +1,6 @@
 #[cfg(feature = "pcsaft")]
 use feos::pcsaft::{PcSaftBinary, PcSaftPure};
-use feos_core::{Estimator, ParametersAD};
+use feos_core::{ParameterFit, ParametersAD};
 use numpy::{PyArray1, PyArray2, PyReadonlyArray2, ToPyArray};
 use paste::paste;
 use pyo3::prelude::*;
@@ -26,8 +26,8 @@ impl From<PyModel> for BinaryModels {
     }
 }
 
-#[pyclass(name = "Estimator")]
-pub struct PyEstimator;
+#[pyclass(name = "ParameterFit")]
+pub struct PyParameterFit;
 
 type GradResult<'py> = (
     Bound<'py, PyArray1<f64>>,
@@ -38,7 +38,7 @@ type GradResult<'py> = (
 macro_rules! expand_models {
     ($enum:ty, $prop:ident, $($model:ident: $type:ty),*) => {
         #[pymethods]
-        impl PyEstimator {
+        impl PyParameterFit {
             #[staticmethod]
             fn $prop<'py>(
                 model: PyModel,
@@ -79,9 +79,9 @@ macro_rules! impl_evaluate_gradients {
             let (value, grad, status) =
             $(
             if let Ok(p) = parameter_names.extract::<[String; $p]>() {
-                Estimator::[<$prop _parallel>]::<R, $p>(p, parameters.as_array(), input.as_array())
+                ParameterFit::[<$prop _parallel>]::<R, $p>(p, parameters.as_array(), input.as_array())
             } else)* if let Ok(p) = parameter_names.extract::<[String; $max]>() {
-                Estimator::[<$prop _parallel>]::<R, $max>(p, parameters.as_array(), input.as_array())
+                ParameterFit::[<$prop _parallel>]::<R, $max>(p, parameters.as_array(), input.as_array())
             } else {
                 panic!("Gradients can only be evaluated for up to {} parameters!", $max)
             };

@@ -37,7 +37,7 @@ pub use equation_of_state::{
     EquationOfState, IdealGas, Molarweight, NoResidual, Residual, ResidualDyn, Subset, Total,
 };
 pub use errors::{FeosError, FeosResult};
-pub use parameter_fit::{Estimator, ParametersAD};
+pub use parameter_fit::{ParameterFit, ParametersAD};
 #[cfg(feature = "ndarray")]
 pub use phase_equilibria::{PhaseDiagram, PhaseDiagramHetero};
 pub use phase_equilibria::{PhaseEquilibrium, TemperatureOrPressure};
@@ -133,6 +133,7 @@ const fn powi(x: f64, n: i32) -> f64 {
     }
 }
 
+/// Conversion between reduced units and SI units.
 pub trait ReferenceSystem {
     type Inner;
     type T: Integer;

@@ -124,6 +124,7 @@ pub trait IdealGas<D = f64> {
     fn ideal_gas_model(&self) -> &'static str;
 }
 
+/// A total Helmholtz energy model consisting of a [Residual] model and an [IdealGas] part.
 pub trait Total<N: Dim = Dyn, D: DualNum<f64> + Copy = f64>: Residual<N, D>
 where
     DefaultAllocator: Allocator<N>,
