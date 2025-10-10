@@ -25,6 +25,9 @@ pub enum ResidualModel {
     #[implement(molar_weight)]
     PcSaft(feos::pcsaft::PcSaft),
 
+    #[cfg(feature = "pcsaft")]
+    PcSaftIAPWS(feos::pcsaft::PcSaftIAPWS),
+
     #[cfg(feature = "epcsaft")]
     #[implement(molar_weight)]
     ElectrolytePcSaft(feos::epcsaft::ElectrolytePcSaft),

@@ -1,9 +1,10 @@
 use super::parameters::{PcSaftAssociationRecord, PcSaftParameters, PcSaftPars};
 use crate::association::{Association, AssociationStrength};
+use crate::fundamental::IAPWS;
 use crate::hard_sphere::{HardSphere, HardSphereProperties, MonomerShape};
 use crate::pcsaft::PcSaftRecord;
-use feos_core::{Molarweight, ResidualDyn, StateHD, Subset};
-use nalgebra::DVector;
+use feos_core::{Molarweight, Residual, ResidualDyn, StateHD, Subset};
+use nalgebra::{DVector, dvector};
 use num_dual::DualNum;
 use quantity::*;
 use std::f64::consts::FRAC_PI_6;
@@ -211,6 +212,68 @@ impl AssociationStrength for PcSaftPars {
             kappa_ab,
             epsilon_k_ab,
         }
+    }
+}
+
+pub struct PcSaftIAPWS {
+    pcsaft: PcSaft,
+    pure: PcSaft,
+    iapws: IAPWS,
+}
+
+impl PcSaftIAPWS {
+    pub fn new(pcsaft: PcSaft) -> Self {
+        let pure = pcsaft.subset(&[0]);
+        let iapws = IAPWS::Base;
+        Self {
+            pcsaft,
+            pure,
+            iapws,
+        }
+    }
+}
+
+impl ResidualDyn for PcSaftIAPWS {
+    fn components(&self) -> usize {
+        self.pcsaft.components()
+    }
+
+    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+        self.pcsaft.compute_max_density(molefracs)
+    }
+
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+    ) -> Vec<(&'static str, D)> {
+        let mut contributions = self
+            .pcsaft
+            .reduced_helmholtz_energy_density_contributions(state);
+
+        let d = self.pcsaft.params.hs_diameter(state.temperature);
+        let m = &self.pcsaft.params.m;
+        let md3 = m.zip_map(&d, |m, d| d.powi(3) * m);
+        let rho_i = md3.map(|x| x.recip()) * md3.dot(&state.partial_density);
+        let a_iapws = (&self.iapws).residual_molar_helmholtz_energy(
+            state.temperature,
+            rho_i[0].recip(),
+            &dvector![D::from(1.0)],
+        );
+        let a_pure = (&self.pure).residual_molar_helmholtz_energy(
+            state.temperature,
+            rho_i[0].recip(),
+            &dvector![D::from(1.0)],
+        );
+        let phi = state.partial_density[0] * (a_iapws - a_pure) / state.temperature;
+        contributions.push(("IAPWS", phi));
+
+        contributions
+    }
+}
+
+impl Subset for PcSaftIAPWS {
+    fn subset(&self, component_list: &[usize]) -> Self {
+        Self::new(self.pcsaft.subset(component_list))
     }
 }
 
