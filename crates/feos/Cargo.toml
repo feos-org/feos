@@ -35,17 +35,16 @@ criterion = { workspace = true }
 serde_json = { workspace = true }
 
 [features]
-default = ["pcsaft"]
+default = []
 dft = ["feos-dft", "petgraph", "ndarray", "num-dual/ndarray", "feos-derive"]
 association = []
-pcsaft = ["association", "fundamental"]
+pcsaft = ["association"]
 epcsaft = ["association"]
 gc_pcsaft = ["association"]
 uvtheory = []
 pets = []
 saftvrqmie = []
 saftvrmie = ["association"]
-fundamental = []
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 all_models = [
     "dft",
@@ -56,7 +55,6 @@ all_models = [
     "pets",
     "saftvrqmie",
     "saftvrmie",
-    "fundamental"
 ]
 
 [[bench]]

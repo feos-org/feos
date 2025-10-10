@@ -44,8 +44,6 @@ pub mod hard_sphere;
 // models
 #[cfg(feature = "epcsaft")]
 pub mod epcsaft;
-#[cfg(feature = "fundamental")]
-pub mod fundamental;
 #[cfg(feature = "gc_pcsaft")]
 pub mod gc_pcsaft;
 #[cfg(feature = "pcsaft")]
