@@ -1,6 +1,6 @@
 """Feos."""
 
-from feos.feos import (
+from .feos import (
     version,
     Verbosity,
     Contributions,
@@ -10,26 +10,16 @@ from feos.feos import (
     PhaseDiagramHetero,
     PhaseEquilibrium,
     EquationOfState,
-    Estimator,
-    Model,
-    __dft__,
 )
 
 __version__ = version
 
-__all__ = [
-    "parameters",
-    # "estimator",
-    "Verbosity",
-    "Contributions",
-    "State",
-    "StateVec",
-    "PhaseDiagram",
-    "PhaseDiagramHetero",
-    "PhaseEquilibrium",
-    "EquationOfState",
-    "Estimator",
-    "Model"
-]
-if __dft__:
-    __all__ = ["dft"] + __all__
+try:
+    from .feos import ParameterFit, Model
+except:
+    pass
+
+try:
+    from .feos import HelmholtzEnergyFunctional
+except:
+    pass
