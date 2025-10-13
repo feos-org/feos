@@ -1,8 +1,7 @@
 use feos_core::{FeosError, FeosResult, StateHD};
-use ndarray::Array1;
+use nalgebra::DVector;
 use num_dual::DualNum;
 use serde::{Deserialize, Serialize};
-
 use std::f64::consts::PI;
 
 use crate::epcsaft::eos::ElectrolytePcSaftVariants;
@@ -38,7 +37,7 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
                 permittivity: D::one() * 1.,
             });
         }
-        let all_comp = (0..parameters.m.len()).collect();
+        let all_comp: Vec<_> = (0..parameters.m.len()).collect();
 
         if let ElectrolytePcSaftVariants::Advanced = epcsaft_variant {
             // check if permittivity is Some for all components
@@ -153,8 +152,7 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
         let beta = (state.temperature * boltzmann).recip();
 
         // Density
-        // let total_moles = state.moles.sum();
-        let density = state.moles.mapv(|n| n / state.volume).sum();
+        let density = state.partial_density.sum();
 
         // dipole density y -> scaled dipole density y_star
         let y_star =
@@ -177,7 +175,7 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
     pub fn from_experimental_data(
         data: &[Vec<(f64, f64)>],
         temperature: D,
-        molefracs: &Array1<D>,
+        molefracs: &DVector<D>,
     ) -> Self {
         let permittivity = data
             .iter()
@@ -192,7 +190,7 @@ impl<D: DualNum<f64> + Copy> Permittivity<D> {
         dipole_scaling: &[&f64],
         polarizability_scaling: &[&f64],
         correlation_integral_parameter: &[&f64],
-        comp: &Array1<usize>,
+        comp: &[usize],
     ) -> Self {
         //let nsolvent = comp.len();
         // reciprocal thermodynamic temperature

@@ -2,17 +2,17 @@ use super::ElectrolytePcSaftVariants;
 use crate::epcsaft::eos::permittivity::Permittivity;
 use crate::epcsaft::parameters::ElectrolytePcSaftPars;
 use feos_core::StateHD;
-use ndarray::Array1;
+use nalgebra::DVector;
 use num_dual::DualNum;
 
 pub struct Born;
 
 impl Born {
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &ElectrolytePcSaftPars,
         state: &StateHD<D>,
-        diameter: &Array1<D>,
+        diameter: &DVector<D>,
     ) -> D {
         // Parameters
         let p = parameters;
@@ -25,14 +25,14 @@ impl Born {
             .unwrap()
             .permittivity;
 
-        // Calculate sum xi zi^2 / di
-        let mut sum_xi_zi_ai = D::zero();
+        // Calculate sum rhoi zi^2 / di
+        let mut sum_rhoi_zi_ai = D::zero();
         for i in 0..state.molefracs.len() {
-            sum_xi_zi_ai += state.molefracs[i] * p.z[i].powi(2) / diameter[i];
+            sum_rhoi_zi_ai += state.partial_density[i] * p.z[i].powi(2) / diameter[i];
         }
 
         // Calculate born contribution
-        -lambda_b * (epsilon_r - 1.) * sum_xi_zi_ai * state.moles.sum()
+        -lambda_b * (epsilon_r - 1.) * sum_rhoi_zi_ai
     }
 }
 
@@ -42,7 +42,7 @@ mod tests {
     use crate::epcsaft::parameters::utils::{water_nacl_parameters, water_nacl_parameters_perturb};
     use crate::hard_sphere::HardSphereProperties;
     use approx::assert_relative_eq;
-    use ndarray::arr1;
+    use nalgebra::dvector;
 
     #[test]
     fn helmholtz_energy_perturb() {
@@ -50,9 +50,9 @@ mod tests {
 
         let t = 298.0;
         let v = 31.875;
-        let s = StateHD::new(t, v, arr1(&[0.9, 0.05, 0.05]));
+        let s = StateHD::new(t, v, &dvector![0.9, 0.05, 0.05]);
         let d = p.hs_diameter(t);
-        let a_rust = Born.helmholtz_energy(&p, &s, &d);
+        let a_rust = Born.helmholtz_energy_density(&p, &s, &d) * v;
 
         assert_relative_eq!(a_rust, -22.51064553710294, epsilon = 1e-10);
     }
@@ -63,9 +63,9 @@ mod tests {
 
         let t = 298.0;
         let v = 31.875;
-        let s = StateHD::new(t, v, arr1(&[0.9, 0.05, 0.05]));
+        let s = StateHD::new(t, v, &dvector![0.9, 0.05, 0.05]);
         let d = p.hs_diameter(t);
-        let a_rust = Born.helmholtz_energy(&p, &s, &d);
+        let a_rust = Born.helmholtz_energy_density(&p, &s, &d) * v;
 
         assert_relative_eq!(a_rust, -22.525624511559244, epsilon = 1e-10);
     }

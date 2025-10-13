@@ -8,10 +8,10 @@ use feos_core::parameter::IdentifierOption;
 use feos_core::{Contributions, EquationOfState, FeosResult, PhaseEquilibrium, State, Verbosity};
 use feos_dft::interface::PlanarInterface;
 use feos_dft::{DFTSolver, PdgtFunctionalProperties};
-use ndarray::{Axis, arr1};
+use nalgebra::dvector;
+use ndarray::Axis;
 use quantity::*;
 use std::error::Error;
-use std::sync::Arc;
 use typenum::P3;
 
 fn parameters(comp: &str) -> FeosResult<PcSaftParameters> {
@@ -30,18 +30,16 @@ fn test_bulk_implementations() -> Result<(), Box<dyn Error>> {
     let KB_old = 1.38064852e-23 * JOULE / KELVIN;
     let NAV_old = 6.022140857e23 / MOL;
 
-    let eos = Arc::new(PcSaft::new(parameters("water_np")?));
-    let func_pure = Arc::new(PcSaftFunctional::new(parameters("water_np")?));
-    let func_full = Arc::new(PcSaftFunctional::new_full(
-        parameters("water_np")?,
-        FMTVersion::KierlikRosinberg,
-    ));
+    let eos = PcSaft::new(parameters("water_np")?);
+    let func_pure = PcSaftFunctional::new(parameters("water_np")?);
+    let func_full =
+        PcSaftFunctional::new_full(parameters("water_np")?, FMTVersion::KierlikRosinberg);
     let t = 300.0 * KELVIN;
     let v = 0.002 * METER.powi::<P3>() * NAV / NAV_old;
-    let n = arr1(&[1.5]) * MOL;
-    let state = State::new_nvt(&eos, t, v, &n)?;
-    let state_pure = State::new_nvt(&func_pure, t, v, &n)?;
-    let state_full = State::new_nvt(&func_full, t, v, &n)?;
+    let n = dvector![1.5] * MOL;
+    let state = State::new_nvt(&&eos, t, v, &n)?;
+    let state_pure = State::new_nvt(&&func_pure, t, v, &n)?;
+    let state_full = State::new_nvt(&&func_full, t, v, &n)?;
     let p = state.pressure_contributions();
     let p_pure = state_pure.pressure_contributions();
     let p_full = state_full.pressure_contributions();
@@ -99,47 +97,42 @@ fn test_dft_propane() -> Result<(), Box<dyn Error>> {
     let KB_old = 1.38064852e-23 * JOULE / KELVIN;
     let NAV_old = 6.022140857e23 / MOL;
 
-    let func_pure = Arc::new(PcSaftFunctional::new(parameters("propane")?));
-    let func_full = Arc::new(PcSaftFunctional::new_full(
-        parameters("propane")?,
-        FMTVersion::KierlikRosinberg,
-    ));
-    let func_full_vec = Arc::new(PcSaftFunctional::new_full(
-        parameters("propane")?,
-        FMTVersion::WhiteBear,
-    ));
+    let func_pure = PcSaftFunctional::new(parameters("propane")?);
+    let func_full =
+        PcSaftFunctional::new_full(parameters("propane")?, FMTVersion::KierlikRosinberg);
+    let func_full_vec = PcSaftFunctional::new_full(parameters("propane")?, FMTVersion::WhiteBear);
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 2048;
-    let tc = State::critical_point(&func_pure, None, None, Default::default())?.temperature;
-    let vle_pure = PhaseEquilibrium::pure(&func_pure, t, None, Default::default())?;
-    let vle_full = PhaseEquilibrium::pure(&func_full, t, None, Default::default())?;
-    let vle_full_vec = PhaseEquilibrium::pure(&func_full_vec, t, None, Default::default())?;
+    let tc = State::critical_point(&&func_pure, None, None, Default::default())?.temperature;
+    let vle_pure = PhaseEquilibrium::pure(&&func_pure, t, None, Default::default())?;
+    let vle_full = PhaseEquilibrium::pure(&&func_full, t, None, Default::default())?;
+    let vle_full_vec = PhaseEquilibrium::pure(&&func_full_vec, t, None, Default::default())?;
     let profile_pure = PlanarInterface::from_tanh(&vle_pure, points, w, tc, false).solve(None)?;
     let profile_full = PlanarInterface::from_tanh(&vle_full, points, w, tc, false).solve(None)?;
     let profile_full_vec =
         PlanarInterface::from_tanh(&vle_full_vec, points, w, tc, false).solve(None)?;
-    let _ = func_pure.solve_pdgt(&vle_pure, 198, 0, None)?;
+    let _ = (&func_pure).solve_pdgt(&vle_pure, 198, 0, None)?;
     println!(
         "pure {} {} {} {}",
         profile_pure.surface_tension.unwrap(),
         vle_pure.vapor().density,
         vle_pure.liquid().density,
-        func_pure.solve_pdgt(&vle_pure, 198, 0, None)?.1
+        (&func_pure).solve_pdgt(&vle_pure, 198, 0, None)?.1
     );
     println!(
         "full {} {} {} {}",
         profile_full.surface_tension.unwrap(),
         vle_full.vapor().density,
         vle_full.liquid().density,
-        func_full.solve_pdgt(&vle_full, 198, 0, None)?.1
+        (&func_full).solve_pdgt(&vle_full, 198, 0, None)?.1
     );
     println!(
         "vec  {} {} {} {}",
         profile_full_vec.surface_tension.unwrap(),
         vle_full_vec.vapor().density,
         vle_full_vec.liquid().density,
-        func_full_vec.solve_pdgt(&vle_full_vec, 198, 0, None)?.1
+        (&func_full_vec).solve_pdgt(&vle_full_vec, 198, 0, None)?.1
     );
 
     let vapor_density = 12.2557486248527745 * MOL / METER.powi::<P3>() * NAV_old / NAV;
@@ -197,17 +190,17 @@ fn test_dft_propane() -> Result<(), Box<dyn Error>> {
     let surface_tension_pdgt = 20.2849756479219039 * MILLI * NEWTON / METER * KB / KB_old;
     let surface_tension_pdgt_kr = 20.2785079953823342 * MILLI * NEWTON / METER * KB / KB_old;
     assert_relative_eq!(
-        func_pure.solve_pdgt(&vle_pure, 198, 0, None)?.1,
+        (&func_pure).solve_pdgt(&vle_pure, 198, 0, None)?.1,
         surface_tension_pdgt,
         max_relative = 1e-10,
     );
     assert_relative_eq!(
-        func_full.solve_pdgt(&vle_full, 198, 0, None)?.1,
+        (&func_full).solve_pdgt(&vle_full, 198, 0, None)?.1,
         surface_tension_pdgt_kr,
         max_relative = 1e-10,
     );
     assert_relative_eq!(
-        func_full_vec.solve_pdgt(&vle_full_vec, 198, 0, None)?.1,
+        (&func_full_vec).solve_pdgt(&vle_full_vec, 198, 0, None)?.1,
         surface_tension_pdgt,
         max_relative = 1e-10,
     );
@@ -217,12 +210,12 @@ fn test_dft_propane() -> Result<(), Box<dyn Error>> {
 #[test]
 #[allow(non_snake_case)]
 fn test_dft_propane_newton() -> Result<(), Box<dyn Error>> {
-    let func = Arc::new(PcSaftFunctional::new(parameters("propane")?));
+    let func = PcSaftFunctional::new(parameters("propane")?);
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 512;
-    let tc = State::critical_point(&func, None, None, Default::default())?.temperature;
-    let vle = PhaseEquilibrium::pure(&func, t, None, Default::default())?;
+    let tc = State::critical_point(&&func, None, None, Default::default())?.temperature;
+    let vle = PhaseEquilibrium::pure(&&func, t, None, Default::default())?;
     let solver = DFTSolver::new(Some(Verbosity::Iter)).newton(None, None, None, None);
     PlanarInterface::from_tanh(&vle, points, w, tc, false).solve(Some(&solver))?;
     let solver = DFTSolver::new(Some(Verbosity::Iter)).newton(Some(true), None, None, None);
@@ -237,17 +230,14 @@ fn test_dft_water() -> Result<(), Box<dyn Error>> {
     let KB_old = 1.38064852e-23 * JOULE / KELVIN;
     let NAV_old = 6.022140857e23 / MOL;
 
-    let func_pure = Arc::new(PcSaftFunctional::new(parameters("water_np")?));
-    let func_full_vec = Arc::new(PcSaftFunctional::new_full(
-        parameters("water_np")?,
-        FMTVersion::WhiteBear,
-    ));
+    let func_pure = PcSaftFunctional::new(parameters("water_np")?);
+    let func_full_vec = PcSaftFunctional::new_full(parameters("water_np")?, FMTVersion::WhiteBear);
     let t = 400.0 * KELVIN;
     let w = 120.0 * ANGSTROM;
     let points = 2048;
-    let tc = State::critical_point(&func_pure, None, None, Default::default())?.temperature;
-    let vle_pure = PhaseEquilibrium::pure(&func_pure, t, None, Default::default())?;
-    let vle_full_vec = PhaseEquilibrium::pure(&func_full_vec, t, None, Default::default())?;
+    let tc = State::critical_point(&&func_pure, None, None, Default::default())?.temperature;
+    let vle_pure = PhaseEquilibrium::pure(&&func_pure, t, None, Default::default())?;
+    let vle_full_vec = PhaseEquilibrium::pure(&&func_full_vec, t, None, Default::default())?;
     let profile_pure = PlanarInterface::from_tanh(&vle_pure, points, w, tc, false).solve(None)?;
     let profile_full_vec =
         PlanarInterface::from_tanh(&vle_full_vec, points, w, tc, false).solve(None)?;
@@ -302,12 +292,12 @@ fn test_dft_water() -> Result<(), Box<dyn Error>> {
 
     let surface_tension_pdgt = 72.9496195135527188 * MILLI * NEWTON / METER * KB / KB_old;
     assert_relative_eq!(
-        func_pure.solve_pdgt(&vle_pure, 198, 0, None)?.1,
+        (&func_pure).solve_pdgt(&vle_pure, 198, 0, None)?.1,
         surface_tension_pdgt,
         max_relative = 1e-10,
     );
     assert_relative_eq!(
-        func_full_vec.solve_pdgt(&vle_full_vec, 198, 0, None)?.1,
+        (&func_full_vec).solve_pdgt(&vle_full_vec, 198, 0, None)?.1,
         surface_tension_pdgt,
         max_relative = 1e-10,
     );
@@ -328,11 +318,8 @@ fn test_entropy_bulk_values() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?);
-    let func = Arc::new(EquationOfState::new(
-        Arc::new(joback),
-        Arc::new(PcSaftFunctional::new(params)),
-    ));
-    let vle = PhaseEquilibrium::pure(&func, 350.0 * KELVIN, None, Default::default())?;
+    let func = EquationOfState::new(joback, PcSaftFunctional::new(params));
+    let vle = PhaseEquilibrium::pure(&&func, 350.0 * KELVIN, None, Default::default())?;
     let profile = PlanarInterface::from_pdgt(&vle, 2048, false)?.solve(None)?;
     let s_res = profile.profile.entropy_density(Contributions::Residual)?;
     let s_tot = profile.profile.entropy_density(Contributions::Total)?;

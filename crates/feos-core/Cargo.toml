@@ -15,9 +15,9 @@ rustdoc-args = ["--html-in-header", "./docs-header.html"]
 features = ["rayon"]
 
 [dependencies]
-quantity = { workspace = true, features = ["ndarray"] }
-num-dual = { workspace = true, features = ["linalg"] }
-ndarray = { workspace = true }
+quantity = { workspace = true, features = ["nalgebra", "num-dual"] }
+num-dual = { workspace = true }
+ndarray = { workspace = true, optional = true }
 nalgebra = { workspace = true }
 num-traits = { workspace = true }
 thiserror = { workspace = true }
@@ -34,4 +34,5 @@ quantity = { workspace = true, features = ["approx"] }
 
 [features]
 default = []
+ndarray = ["dep:ndarray", "quantity/ndarray"]
 rayon = ["dep:rayon", "ndarray/rayon"]

@@ -9,6 +9,7 @@ use ndarray::*;
 use numpy::*;
 use pyo3::*;
 use quantity::*;
+use std::sync::Arc;
 
 /// Container structure for the efficient calculation of surface tension diagrams.
 ///
@@ -40,7 +41,7 @@ use quantity::*;
 /// SurfaceTensionDiagram
 #[pyclass(name = "SurfaceTensionDiagram")]
 pub struct PySurfaceTensionDiagram(
-    SurfaceTensionDiagram<EquationOfState<IdealGasModel, ResidualModel>>,
+    SurfaceTensionDiagram<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
 );
 
 #[pymethods]
@@ -71,14 +72,14 @@ impl PySurfaceTensionDiagram {
         )))
     }
 
-    #[getter]
-    fn get_profiles(&self) -> Vec<PyPlanarInterface> {
-        self.0
-            .profiles
-            .iter()
-            .map(|p| PyPlanarInterface(p.clone()))
-            .collect()
-    }
+    // #[getter]
+    // fn get_profiles(&self) -> Vec<PyPlanarInterface> {
+    //     self.0
+    //         .profiles
+    //         .iter()
+    //         .map(|p| PyPlanarInterface(p.clone()))
+    //         .collect()
+    // }
 
     #[getter]
     pub fn get_vapor(&self) -> PyStateVec {

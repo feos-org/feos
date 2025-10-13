@@ -1,8 +1,7 @@
 use super::{DataSet, FeosError};
 use feos_core::{Contributions, PhaseEquilibrium, ReferenceSystem, Residual, SolverOptions, State};
-use ndarray::{arr1, Array1};
-use quantity::{Pressure, Temperature, PASCAL};
-use std::sync::Arc;
+use ndarray::{Array1, arr1};
+use quantity::{PASCAL, Pressure, Temperature};
 
 /// Store experimental vapor pressure data.
 #[derive(Clone)]

@@ -1,6 +1,6 @@
 use feos_core::FeosResult;
 use feos_core::parameter::{FromSegments, FromSegmentsBinary, Parameters};
-use ndarray::{Array, Array1, Array2};
+use nalgebra::{DMatrix, DVector};
 use num_traits::Zero;
 use quantity::{JOULE, KB, KELVIN};
 use serde::{Deserialize, Serialize};
@@ -142,7 +142,7 @@ impl PcSaftRecord {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq)]
 pub struct PcSaftAssociationRecord {
     /// Association volume parameter
     pub kappa_ab: f64,
@@ -187,21 +187,21 @@ pub type PcSaftParameters = Parameters<PcSaftRecord, PcSaftBinaryRecord, PcSaftA
 
 /// The PC-SAFT parameters in an easier accessible format.
 pub struct PcSaftPars {
-    pub m: Array1<f64>,
-    pub sigma: Array1<f64>,
-    pub epsilon_k: Array1<f64>,
-    pub mu2: Array1<f64>,
-    pub q2: Array1<f64>,
-    pub sigma_ij: Array2<f64>,
-    pub epsilon_k_ij: Array2<f64>,
-    pub e_k_ij: Array2<f64>,
+    pub m: DVector<f64>,
+    pub sigma: DVector<f64>,
+    pub epsilon_k: DVector<f64>,
+    pub mu2: DVector<f64>,
+    pub q2: DVector<f64>,
+    pub sigma_ij: DMatrix<f64>,
+    pub epsilon_k_ij: DMatrix<f64>,
+    pub e_k_ij: DMatrix<f64>,
     pub ndipole: usize,
     pub nquadpole: usize,
-    pub dipole_comp: Array1<usize>,
-    pub quadpole_comp: Array1<usize>,
-    pub viscosity: Option<Array2<f64>>,
-    pub diffusion: Option<Array2<f64>>,
-    pub thermal_conductivity: Option<Array2<f64>>,
+    pub dipole_comp: Vec<usize>,
+    pub quadpole_comp: Vec<usize>,
+    // pub viscosity: Option<DMatrix<f64>>,
+    // pub diffusion: Option<DMatrix<f64>>,
+    // pub thermal_conductivity: Option<DMatrix<f64>>,
 }
 
 impl PcSaftPars {
@@ -209,70 +209,74 @@ impl PcSaftPars {
         let n = parameters.pure.len();
 
         let [m, sigma, epsilon_k] = parameters.collate(|pr| [pr.m, pr.sigma, pr.epsilon_k]);
-        let [mu, q] = parameters.collate(|pr| [pr.mu, pr.q]);
-        let [viscosity, thermal_conductivity] =
-            parameters.collate(|pr| [pr.viscosity, pr.thermal_conductivity]);
-        let [diffusion] = parameters.collate(|pr| [pr.diffusion]);
+        // let [mu, q] = parameters.collate(|pr| [pr.mu, pr.q]);
+        // let [viscosity, thermal_conductivity] =
+        //     parameters.collate(|pr| [pr.viscosity, pr.thermal_conductivity]);
+        // let [diffusion] = parameters.collate(|pr| [pr.diffusion]);
         let [k_ij] = parameters.collate_binary(|br| [br.k_ij]);
 
-        let mu2 = &mu * &mu / (&m * &sigma * &sigma * &sigma * &epsilon_k)
-            * 1e-19
-            * (JOULE / KELVIN / KB).into_value();
-        let q2 = &q * &q / (&m * &sigma.mapv(|s| s.powi(5)) * &epsilon_k)
-            * 1e-19
-            * (JOULE / KELVIN / KB).into_value();
-        let dipole_comp: Array1<usize> = mu2
+        let [mu2, q2] = parameters.collate(|pr| {
+            [
+                pr.mu * pr.mu / (pr.m * pr.sigma.powi(3) * pr.epsilon_k)
+                    * 1e-19
+                    * (JOULE / KELVIN / KB).into_value(),
+                pr.q * pr.q / (pr.m * pr.sigma.powi(5) * pr.epsilon_k)
+                    * 1e-19
+                    * (JOULE / KELVIN / KB).into_value(),
+            ]
+        });
+        let dipole_comp: Vec<usize> = mu2
             .iter()
             .enumerate()
             .filter_map(|(i, &mu2)| (mu2.abs() > 0.0).then_some(i))
             .collect();
         let ndipole = dipole_comp.len();
-        let quadpole_comp: Array1<usize> = q2
+        let quadpole_comp: Vec<usize> = q2
             .iter()
             .enumerate()
             .filter_map(|(i, &q2)| (q2.abs() > 0.0).then_some(i))
             .collect();
         let nquadpole = quadpole_comp.len();
 
-        let mut sigma_ij = Array::zeros((n, n));
-        let mut e_k_ij = Array::zeros((n, n));
+        let mut sigma_ij = DMatrix::zeros(n, n);
+        let mut e_k_ij = DMatrix::zeros(n, n);
         for i in 0..n {
             for j in 0..n {
-                e_k_ij[[i, j]] = (epsilon_k[i] * epsilon_k[j]).sqrt();
-                sigma_ij[[i, j]] = 0.5 * (sigma[i] + sigma[j]);
+                e_k_ij[(i, j)] = (epsilon_k[i] * epsilon_k[j]).sqrt();
+                sigma_ij[(i, j)] = 0.5 * (sigma[i] + sigma[j]);
             }
         }
-        let epsilon_k_ij = (1.0 - k_ij) * &e_k_ij;
+        let epsilon_k_ij = (-k_ij).add_scalar(1.0).component_mul(&e_k_ij);
 
-        let viscosity = if viscosity.iter().any(|v| v.is_none()) {
-            None
-        } else {
-            let mut v = Array2::zeros((4, viscosity.len()));
-            for (i, vi) in viscosity.iter().enumerate() {
-                v.column_mut(i).assign(&Array1::from(vi.unwrap().to_vec()));
-            }
-            Some(v)
-        };
+        // let viscosity = if viscosity.iter().any(|v| v.is_none()) {
+        //     None
+        // } else {
+        //     let mut v = DMatrix::zeros((4, viscosity.len()));
+        //     for (i, vi) in viscosity.iter().enumerate() {
+        //         v.column_mut(i).assign(&DVector::from(vi.unwrap().to_vec()));
+        //     }
+        //     Some(v)
+        // };
 
-        let diffusion = if diffusion.iter().any(|v| v.is_none()) {
-            None
-        } else {
-            let mut v = Array2::zeros((5, diffusion.len()));
-            for (i, vi) in diffusion.iter().enumerate() {
-                v.column_mut(i).assign(&Array1::from(vi.unwrap().to_vec()));
-            }
-            Some(v)
-        };
+        // let diffusion = if diffusion.iter().any(|v| v.is_none()) {
+        //     None
+        // } else {
+        //     let mut v = DMatrix::zeros((5, diffusion.len()));
+        //     for (i, vi) in diffusion.iter().enumerate() {
+        //         v.column_mut(i).assign(&DVector::from(vi.unwrap().to_vec()));
+        //     }
+        //     Some(v)
+        // };
 
-        let thermal_conductivity = if thermal_conductivity.iter().any(|v| v.is_none()) {
-            None
-        } else {
-            let mut v = Array2::zeros((4, thermal_conductivity.len()));
-            for (i, vi) in thermal_conductivity.iter().enumerate() {
-                v.column_mut(i).assign(&Array1::from(vi.unwrap().to_vec()));
-            }
-            Some(v)
-        };
+        // let thermal_conductivity = if thermal_conductivity.iter().any(|v| v.is_none()) {
+        //     None
+        // } else {
+        //     let mut v = DMatrix::zeros((4, thermal_conductivity.len()));
+        //     for (i, vi) in thermal_conductivity.iter().enumerate() {
+        //         v.column_mut(i).assign(&DVector::from(vi.unwrap().to_vec()));
+        //     }
+        //     Some(v)
+        // };
 
         Self {
             m,
@@ -287,9 +291,9 @@ impl PcSaftPars {
             nquadpole,
             dipole_comp,
             quadpole_comp,
-            viscosity,
-            diffusion,
-            thermal_conductivity,
+            // viscosity,
+            // diffusion,
+            // thermal_conductivity,
         }
     }
 }
@@ -299,9 +303,8 @@ pub mod utils {
     use super::*;
     use crate::pcsaft::PcSaft;
     use feos_core::parameter::{BinarySegmentRecord, ChemicalRecord, PureRecord, SegmentRecord};
-    use std::sync::Arc;
 
-    pub fn propane_parameters() -> Arc<PcSaft> {
+    pub fn propane_parameters() -> PcSaft {
         let propane_json = r#"
             {
                 "identifier": {
@@ -322,9 +325,7 @@ pub mod utils {
             }"#;
         let propane_record: PureRecord<PcSaftRecord, PcSaftAssociationRecord> =
             serde_json::from_str(propane_json).expect("Unable to parse json.");
-        Arc::new(PcSaft::new(
-            PcSaftParameters::new_pure(propane_record).unwrap(),
-        ))
+        PcSaft::new(PcSaftParameters::new_pure(propane_record).unwrap())
     }
 
     pub fn carbon_dioxide_parameters() -> PcSaftPars {
@@ -349,7 +350,7 @@ pub mod utils {
         PcSaftPars::new(&PcSaftParameters::new_pure(co2_record).unwrap())
     }
 
-    pub fn butane_parameters() -> Arc<PcSaft> {
+    pub fn butane_parameters() -> PcSaft {
         let butane_json = r#"
             {
                 "identifier": {
@@ -367,9 +368,7 @@ pub mod utils {
             }"#;
         let butane_record: PureRecord<PcSaftRecord, PcSaftAssociationRecord> =
             serde_json::from_str(butane_json).expect("Unable to parse json.");
-        Arc::new(PcSaft::new(
-            PcSaftParameters::new_pure(butane_record).unwrap(),
-        ))
+        PcSaft::new(PcSaftParameters::new_pure(butane_record).unwrap())
     }
 
     pub fn dme_parameters() -> PcSaftPars {
@@ -462,7 +461,7 @@ pub mod utils {
         PcSaftPars::new(&PcSaftParameters::new_binary(binary_record, None, vec![]).unwrap())
     }
 
-    pub fn propane_butane_parameters() -> Arc<PcSaft> {
+    pub fn propane_butane_parameters() -> PcSaft {
         let binary_json = r#"[
             {
                 "identifier": {
@@ -500,9 +499,7 @@ pub mod utils {
         ]"#;
         let binary_record: [PureRecord<PcSaftRecord, PcSaftAssociationRecord>; 2] =
             serde_json::from_str(binary_json).expect("Unable to parse json.");
-        Arc::new(PcSaft::new(
-            PcSaftParameters::new_binary(binary_record, None, vec![]).unwrap(),
-        ))
+        PcSaft::new(PcSaftParameters::new_binary(binary_record, None, vec![]).unwrap())
     }
 
     #[test]

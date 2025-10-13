@@ -2,6 +2,7 @@ use crate::hard_sphere::HardSphereProperties;
 use crate::pcsaft::parameters::PcSaftPars;
 use feos_core::FeosError;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
+use nalgebra::DVector;
 use ndarray::*;
 use num_dual::DualNum;
 
@@ -21,16 +22,13 @@ impl<'a> FunctionalContribution for ChainFunctional<'a> {
         "Hard chain functional"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        temperature: N,
-    ) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
         let d = p.hs_diameter(temperature);
-        WeightFunctionInfo::new(p.component_index().into_owned(), true)
+        WeightFunctionInfo::new(DVector::from_fn(d.len(), |i, _| i), true)
             .add(
                 WeightFunction {
-                    prefactor: p.m.mapv(|m| m.into()) / (&d * 8.0),
+                    prefactor: p.m.map(|m| (m / 8.0).into()).component_div(&d),
                     kernel_radius: d.clone(),
                     shape: WeightFunctionShape::Theta,
                 },
@@ -38,7 +36,7 @@ impl<'a> FunctionalContribution for ChainFunctional<'a> {
             )
             .add(
                 WeightFunction {
-                    prefactor: p.m.mapv(|m| (m / 8.0).into()),
+                    prefactor: p.m.map(|m| (m / 8.0).into()),
                     kernel_radius: d.clone(),
                     shape: WeightFunctionShape::Theta,
                 },
@@ -50,7 +48,7 @@ impl<'a> FunctionalContribution for ChainFunctional<'a> {
             )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy + ScalarOperand>(
+    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,

@@ -1,6 +1,7 @@
-use super::pcsaft::{A0, A1, A2, AD, B0, B1, B2, BD, CD, MAX_ETA};
-use crate::{ParametersAD, ResidualHelmholtzEnergy};
-use nalgebra::{SMatrix, SVector};
+use super::dispersion::{A0, A1, A2, B0, B1, B2};
+use super::polar::{AD, BD, CD};
+use feos_core::{Residual, StateHD};
+use nalgebra::{Const, SMatrix, SVector};
 use num_dual::DualNum;
 use quantity::{JOULE, KB, KELVIN};
 use std::collections::HashMap;
@@ -8,6 +9,8 @@ use std::f64::consts::{FRAC_PI_6, PI};
 use std::sync::LazyLock;
 
 const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
+
+const MAX_ETA: f64 = 0.5;
 
 const N_GROUPS: usize = 20;
 const GROUPS: [&str; N_GROUPS] = [
@@ -174,25 +177,25 @@ static K_AB: LazyLock<SMatrix<f64, N_GROUPS, N_GROUPS>> = LazyLock::new(|| {
     SMatrix::from_fn(|i, j| *K_AB_MAP.get(&(GROUPS[i], GROUPS[j])).unwrap_or(&0.0))
 });
 
-/// Parameters used to instantiate [GcPcSaft].
+/// Parameters used to instantiate [GcPcSaftAD].
 #[derive(Clone)]
-pub struct GcPcSaftParameters<D, const N: usize> {
+pub struct GcPcSaftADParameters<D, const N: usize> {
     pub groups: SMatrix<D, N_GROUPS, N>,
     pub bonds: [Vec<([usize; 2], D)>; N],
 }
 
-impl<D: DualNum<f64> + Copy, const N: usize> GcPcSaftParameters<D, N> {
-    pub fn re(&self) -> GcPcSaftParameters<f64, N> {
+impl<D: DualNum<f64> + Copy, const N: usize> GcPcSaftADParameters<D, N> {
+    pub fn re(&self) -> GcPcSaftADParameters<f64, N> {
         let Self { groups, bonds } = self;
         let groups = groups.map(|g| g.re());
         let bonds = bonds
             .each_ref()
             .map(|b| b.iter().map(|&(b, v)| (b, v.re())).collect());
-        GcPcSaftParameters { groups, bonds }
+        GcPcSaftADParameters { groups, bonds }
     }
 }
 
-impl<D: DualNum<f64> + Copy, const N: usize> GcPcSaftParameters<D, N> {
+impl<D: DualNum<f64> + Copy, const N: usize> GcPcSaftADParameters<D, N> {
     pub fn from_groups(
         group_map: [&HashMap<&'static str, D>; N],
         bond_map: [&HashMap<[&'static str; 2], D>; N],
@@ -214,15 +217,50 @@ impl<D: DualNum<f64> + Copy, const N: usize> GcPcSaftParameters<D, N> {
 }
 
 /// The heterosegmented GC model for PC-SAFT by Sauer et al.
-pub struct GcPcSaft<const N: usize>(pub GcPcSaftParameters<f64, N>);
+#[derive(Clone)]
+pub struct GcPcSaftAD<D, const N: usize>(pub GcPcSaftADParameters<D, N>);
 
-impl<const N: usize> GcPcSaft<N> {
-    fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
-        parameters: &GcPcSaftParameters<D, N>,
-        temperature: D,
-        density: &SVector<D, N>,
-    ) -> D {
-        let GcPcSaftParameters { groups, bonds } = parameters;
+impl<D: DualNum<f64> + Copy, const N: usize> Residual<Const<N>, D> for GcPcSaftAD<D, N> {
+    fn components(&self) -> usize {
+        N
+    }
+
+    type Real = GcPcSaftAD<f64, N>;
+    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = GcPcSaftAD<D2, N>;
+    fn re(&self) -> Self::Real {
+        GcPcSaftAD(self.0.re())
+    }
+    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+        let GcPcSaftADParameters { groups, bonds } = &self.0;
+        let groups = groups.map(|x| D2::from_inner(&x));
+        let bonds = bonds
+            .each_ref()
+            .map(|b| b.iter().map(|&(b, v)| (b, D2::from_inner(&v))).collect());
+        GcPcSaftAD(GcPcSaftADParameters { groups, bonds })
+    }
+
+    fn compute_max_density(&self, molefracs: &SVector<D, N>) -> D {
+        let msigma3: SVector<f64, N_GROUPS> = SVector::from_fn(|i, _| M[i] * SIGMA[i].powi(3));
+        let msigma3 = msigma3.map(D::from);
+        let GcPcSaftADParameters { groups, bonds: _ } = &self.0;
+        let msigma3 = apply_group_count(groups, &msigma3).row_sum();
+        // let x: f64 = msigma3.iter().zip(molefracs).map(|&(ms3, x)| x * ms3).sum();
+        ((msigma3 * molefracs).into_scalar() * FRAC_PI_6).recip() * MAX_ETA
+    }
+
+    fn reduced_helmholtz_energy_density_contributions(
+        &self,
+        state: &StateHD<D, Const<N>>,
+    ) -> Vec<(&'static str, D)> {
+        vec![(
+            "gc-PC-SAFT",
+            self.reduced_residual_helmholtz_energy_density(state),
+        )]
+    }
+
+    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, Const<N>>) -> D {
+        let GcPcSaftADParameters { groups, bonds } = &self.0;
+        let density = &state.partial_density;
 
         // convert parameters
         let m = apply_group_count(groups, &SVector::from(M.map(D::from)));
@@ -231,7 +269,7 @@ impl<const N: usize> GcPcSaft<N> {
         let mu = SVector::from(MU.map(D::from));
 
         // temperature dependent segment diameter
-        let t_inv = temperature.recip();
+        let t_inv = state.temperature.recip();
         let diameter = (epsilon_k * (t_inv * -3.0))
             .map(|x| -x.exp() * 0.12 + 1.0)
             .component_mul(&sigma);
@@ -286,7 +324,7 @@ impl<const N: usize> GcPcSaft<N> {
                 for i in 0..N_GROUPS {
                     for j in 0..N_GROUPS {
                         let k_ab = if m_i != m_j { K_AB[(i, j)] } else { 0.0 };
-                        let eps_ij_t = temperature.recip() * eps_ij[(i, j)] * (1.0 - k_ab);
+                        let eps_ij_t = state.temperature.recip() * eps_ij[(i, j)] * (1.0 - k_ab);
                         let sigma_ij = ((SIGMA[i] + SIGMA[j]) * 0.5).powi(3);
                         let rho1 = rho_i * rho_j * (eps_ij_t * m_i[i] * m_j[j] * sigma_ij);
                         rho1mix += rho1;
@@ -374,55 +412,7 @@ impl<const N: usize> GcPcSaft<N> {
             dipole = phi2
         }
 
-        (hs + hc + disp + dipole) * temperature
-    }
-}
-
-impl<const N: usize> ParametersAD for GcPcSaft<N> {
-    type Parameters<D: DualNum<f64> + Copy> = GcPcSaftParameters<D, N>;
-
-    fn params<D: DualNum<f64> + Copy>(&self) -> GcPcSaftParameters<D, N> {
-        let GcPcSaftParameters { groups, bonds } = &self.0;
-        let groups = groups.map(D::from);
-        let bonds = bonds
-            .each_ref()
-            .map(|b| b.iter().map(|&(b, v)| (b, D::from(v))).collect());
-        GcPcSaftParameters { groups, bonds }
-    }
-
-    fn params_from_inner<D: DualNum<f64> + Copy, D2: DualNum<f64, Inner = D> + Copy + Copy>(
-        parameters: &Self::Parameters<D>,
-    ) -> Self::Parameters<D2> {
-        let GcPcSaftParameters { groups, bonds } = parameters;
-        let groups = groups.map(D2::from_inner);
-        let bonds = bonds
-            .each_ref()
-            .map(|b| b.iter().map(|&(b, v)| (b, D2::from_inner(v))).collect());
-        GcPcSaftParameters { groups, bonds }
-    }
-}
-
-impl<const N: usize> ResidualHelmholtzEnergy<N> for GcPcSaft<N> {
-    const RESIDUAL: &str = "gc-PC-SAFT";
-
-    fn compute_max_density(&self, molefracs: &SVector<f64, N>) -> f64 {
-        let msigma3 = SVector::from_fn(|i, _| M[i] * SIGMA[i].powi(3));
-        let GcPcSaftParameters { groups, bonds: _ } = &self.0;
-        let msigma3 = apply_group_count(groups, &msigma3).row_sum();
-        let x: f64 = msigma3
-            .into_iter()
-            .zip(molefracs)
-            .map(|(ms3, x)| x * ms3)
-            .sum();
-        MAX_ETA / (x * FRAC_PI_6)
-    }
-
-    fn residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
-        parameters: &GcPcSaftParameters<D, N>,
-        temperature: D,
-        density: &SVector<D, N>,
-    ) -> D {
-        Self::helmholtz_energy_density(parameters, temperature, density)
+        hs + hc + disp + dipole
     }
 }
 
@@ -460,21 +450,16 @@ fn triplet_integral<D: DualNum<f64> + Copy>(mij1: D, mij2: D, eta: D) -> D {
 
 #[cfg(test)]
 pub mod test {
-    use super::{
-        EPSILON_K, GROUPS, GcPcSaft as GcPcSaftAD, GcPcSaftParameters, M, MU,
-        ResidualHelmholtzEnergy, SIGMA,
-    };
+    use super::{EPSILON_K, GROUPS, GcPcSaftAD, GcPcSaftADParameters, M, MU, SIGMA};
+    use crate::gc_pcsaft::{GcPcSaft, GcPcSaftParameters as GcPcSaftEosParameters, GcPcSaftRecord};
     use approx::assert_relative_eq;
-    use feos::gc_pcsaft::{GcPcSaft, GcPcSaftParameters as GcPcSaftEosParameters, GcPcSaftRecord};
     use feos_core::parameter::{ChemicalRecord, SegmentRecord};
-    use feos_core::{Contributions::Total, FeosResult, ReferenceSystem, State};
-    use nalgebra::SVector;
-    use ndarray::arr1;
+    use feos_core::{Contributions::Total, FeosResult, State};
+    use nalgebra::{dvector, vector};
     use quantity::{KELVIN, KILO, METER, MOL};
     use std::collections::HashMap;
-    use std::sync::Arc;
 
-    pub fn gcpcsaft() -> FeosResult<(GcPcSaftParameters<f64, 1>, Arc<GcPcSaft>)> {
+    pub fn gcpcsaft() -> FeosResult<(GcPcSaftADParameters<f64, 1>, GcPcSaft)> {
         let cr = ChemicalRecord::new(
             Default::default(),
             vec!["CH3".into(), ">C=O".into(), "CH2".into(), "CH3".into()],
@@ -495,7 +480,7 @@ pub mod test {
             })
             .collect();
         let params = GcPcSaftEosParameters::from_segments_hetero(vec![cr], &segment_records, None)?;
-        let eos = Arc::new(GcPcSaft::new(params));
+        let eos = GcPcSaft::new(params);
         let mut groups = HashMap::new();
         groups.insert("CH3", 2.0);
         groups.insert(">C=O", 1.0);
@@ -504,7 +489,7 @@ pub mod test {
         bonds.insert(["CH3", ">C=O"], 1.0);
         bonds.insert([">C=O", "CH2"], 1.0);
         bonds.insert(["CH2", "CH3"], 1.0);
-        let params = GcPcSaftParameters::from_groups([&groups], [&bonds]);
+        let params = GcPcSaftADParameters::from_groups([&groups], [&bonds]);
         Ok((params, eos))
     }
 
@@ -514,44 +499,43 @@ pub mod test {
 
         let temperature = 300.0 * KELVIN;
         let volume = 2.3 * METER * METER * METER;
-        let moles = arr1(&[1.3]) * KILO * MOL;
+        let moles = dvector![1.3] * KILO * MOL;
 
-        let state = State::new_nvt(&eos, temperature, volume, &moles)?;
+        let state = State::new_nvt(&&eos, temperature, volume, &moles)?;
         let a_feos = state.residual_molar_helmholtz_energy();
         let mu_feos = state.residual_chemical_potential();
         let p_feos = state.pressure(Total);
         let s_feos = state.residual_molar_entropy();
         let h_feos = state.residual_molar_enthalpy();
 
-        let total_moles = moles.sum();
-        let t = temperature.to_reduced();
-        let v = (volume / total_moles).to_reduced();
-        let x = SVector::from_fn(|i, _| moles.get(i).convert_into(total_moles));
-        let a_ad = GcPcSaftAD::residual_molar_helmholtz_energy(&params, t, v, &x);
-        let mu_ad = GcPcSaftAD::residual_chemical_potential(&params, t, v, &x);
-        let p_ad = GcPcSaftAD::pressure(&params, t, v, &x);
-        let s_ad = GcPcSaftAD::residual_molar_entropy(&params, t, v, &x);
-        let h_ad = GcPcSaftAD::residual_molar_enthalpy(&params, t, v, &x);
+        let eos_ad = GcPcSaftAD(params);
+        let moles = vector![1.3] * KILO * MOL;
+        let state = State::new_nvt(&eos_ad, temperature, volume, &moles)?;
+        let a_ad = state.residual_molar_helmholtz_energy();
+        let mu_ad = state.residual_chemical_potential();
+        let p_ad = state.pressure(Total);
+        let s_ad = state.residual_molar_entropy();
+        let h_ad = state.residual_molar_enthalpy();
 
-        println!("\nHelmholtz energy density:\n{}", a_feos.to_reduced(),);
+        println!("\nHelmholtz energy density:\n{a_feos}",);
         println!("{a_ad}");
-        assert_relative_eq!(a_feos.to_reduced(), a_ad, max_relative = 1e-14);
+        assert_relative_eq!(a_feos, a_ad, max_relative = 1e-14);
 
-        println!("\nChemical potential:\n{}", mu_feos.to_reduced());
-        println!("{mu_ad}");
-        assert_relative_eq!(mu_feos.get(0).to_reduced(), mu_ad[0], max_relative = 1e-14);
+        println!("\nChemical potential:\n{}", mu_feos.get(0));
+        println!("{}", mu_ad.get(0));
+        assert_relative_eq!(mu_feos.get(0), mu_ad.get(0), max_relative = 1e-14);
 
-        println!("\nPressure:\n{}", p_feos.to_reduced());
+        println!("\nPressure:\n{p_feos}");
         println!("{p_ad}");
-        assert_relative_eq!(p_feos.to_reduced(), p_ad, max_relative = 1e-14);
+        assert_relative_eq!(p_feos, p_ad, max_relative = 1e-14);
 
-        println!("\nMolar entropy:\n{}", s_feos.to_reduced());
+        println!("\nMolar entropy:\n{s_feos}");
         println!("{s_ad}");
-        assert_relative_eq!(s_feos.to_reduced(), s_ad, max_relative = 1e-14);
+        assert_relative_eq!(s_feos, s_ad, max_relative = 1e-14);
 
-        println!("\nMolar enthalpy:\n{}", h_feos.to_reduced());
+        println!("\nMolar enthalpy:\n{h_feos}");
         println!("{h_ad}");
-        assert_relative_eq!(h_feos.to_reduced(), h_ad, max_relative = 1e-14);
+        assert_relative_eq!(h_feos, h_ad, max_relative = 1e-14);
 
         Ok(())
     }

@@ -2,7 +2,7 @@ use crate::saftvrqmie::eos::FeynmanHibbsOrder;
 use core::cmp::max;
 use feos_core::parameter::Parameters;
 use feos_core::{FeosError, FeosResult};
-use ndarray::{Array, Array1, Array2};
+use nalgebra::{DMatrix, DVector};
 use quantity::{KILOGRAM, NAV};
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
@@ -22,19 +22,9 @@ pub struct SaftVRQMieRecord {
     pub la: f64,
     /// Feynman-Hibbs order
     pub fh: usize,
-    /// Entropy scaling coefficients for the viscosity
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub viscosity: Option<[f64; 4]>,
-    /// Entropy scaling coefficients for the diffusion coefficient
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub diffusion: Option<[f64; 5]>,
-    /// Entropy scaling coefficients for the thermal conductivity
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub thermal_conductivity: Option<[f64; 4]>,
 }
 
 impl SaftVRQMieRecord {
-    #[expect(clippy::too_many_arguments)]
     pub fn new(
         m: f64,
         sigma: f64,
@@ -42,9 +32,6 @@ impl SaftVRQMieRecord {
         lr: f64,
         la: f64,
         fh: usize,
-        viscosity: Option<[f64; 4]>,
-        diffusion: Option<[f64; 5]>,
-        thermal_conductivity: Option<[f64; 4]>,
     ) -> FeosResult<SaftVRQMieRecord> {
         if m != 1.0 {
             return Err(FeosError::IncompatibleParameters(
@@ -59,9 +46,6 @@ impl SaftVRQMieRecord {
             lr,
             la,
             fh,
-            viscosity,
-            diffusion,
-            thermal_conductivity,
         })
     }
 }
@@ -80,19 +64,16 @@ pub type SaftVRQMieParameters = Parameters<SaftVRQMieRecord, SaftVRQMieBinaryRec
 
 /// Parameter set required for the SAFT-VRQ Mie equation of state and Helmholtz energy functional.
 pub struct SaftVRQMiePars {
-    pub m: Array1<f64>,
-    pub sigma: Array1<f64>,
-    pub epsilon_k: Array1<f64>,
-    pub sigma_ij: Array2<f64>,
-    pub epsilon_k_ij: Array2<f64>,
-    pub c_ij: Array2<f64>,
-    pub lambda_r_ij: Array2<f64>,
-    pub lambda_a_ij: Array2<f64>,
-    pub mass_ij: Array2<f64>,
-    pub viscosity: Option<Array2<f64>>,
-    pub diffusion: Option<Array2<f64>>,
-    pub thermal_conductivity: Option<Array2<f64>>,
-    pub fh_ij: Array2<FeynmanHibbsOrder>,
+    pub m: DVector<f64>,
+    pub sigma: DVector<f64>,
+    pub epsilon_k: DVector<f64>,
+    pub sigma_ij: DMatrix<f64>,
+    pub epsilon_k_ij: DMatrix<f64>,
+    pub c_ij: DMatrix<f64>,
+    pub lambda_r_ij: DMatrix<f64>,
+    pub lambda_a_ij: DMatrix<f64>,
+    pub mass_ij: DMatrix<f64>,
+    pub fh_ij: DMatrix<FeynmanHibbsOrder>,
 }
 
 impl SaftVRQMiePars {
@@ -102,9 +83,6 @@ impl SaftVRQMiePars {
         let [fh] = parameters.collate(|pr| [pr.fh]);
         let [m, sigma, epsilon_k] = parameters.collate(|pr| [pr.m, pr.sigma, pr.epsilon_k]);
         let [lr, la] = parameters.collate(|pr| [pr.lr, pr.la]);
-        let [viscosity, thermal_conductivity] =
-            parameters.collate(|pr| [pr.viscosity, pr.thermal_conductivity]);
-        let [diffusion] = parameters.collate(|pr| [pr.diffusion]);
         let molarweight = &parameters.molar_weight;
 
         for (i, m) in m.iter().enumerate() {
@@ -115,32 +93,32 @@ impl SaftVRQMiePars {
             }
         }
 
-        let mut fh_ij: Array2<FeynmanHibbsOrder> =
-            Array2::from_elem((n, n), FeynmanHibbsOrder::FH0);
+        let mut fh_ij: DMatrix<FeynmanHibbsOrder> =
+            DMatrix::from_element(n, n, FeynmanHibbsOrder::FH0);
         let [k_ij, l_ij] = parameters.collate_binary(|b| [b.k_ij, b.l_ij]);
-        let mut epsilon_k_ij = Array::zeros((n, n));
-        let mut sigma_ij = Array::zeros((n, n));
-        let mut e_k_ij = Array::zeros((n, n));
-        let mut lambda_r_ij = Array::zeros((n, n));
-        let mut lambda_a_ij = Array::zeros((n, n));
-        let mut c_ij = Array::zeros((n, n));
-        let mut mass_ij = Array::zeros((n, n));
+        let mut epsilon_k_ij = DMatrix::zeros(n, n);
+        let mut sigma_ij = DMatrix::zeros(n, n);
+        let mut e_k_ij = DMatrix::zeros(n, n);
+        let mut lambda_r_ij = DMatrix::zeros(n, n);
+        let mut lambda_a_ij = DMatrix::zeros(n, n);
+        let mut c_ij = DMatrix::zeros(n, n);
+        let mut mass_ij = DMatrix::zeros(n, n);
         for i in 0..n {
             for j in 0..n {
-                sigma_ij[[i, j]] = (1.0 - l_ij[[i, j]]) * 0.5 * (sigma[i] + sigma[j]);
-                e_k_ij[[i, j]] = (sigma[i].powi(3) * sigma[j].powi(3)).sqrt()
-                    / sigma_ij[[i, j]].powi(3)
+                sigma_ij[(i, j)] = (1.0 - l_ij[(i, j)]) * 0.5 * (sigma[i] + sigma[j]);
+                e_k_ij[(i, j)] = (sigma[i].powi(3) * sigma[j].powi(3)).sqrt()
+                    / sigma_ij[(i, j)].powi(3)
                     * (epsilon_k[i] * epsilon_k[j]).sqrt();
-                epsilon_k_ij[[i, j]] = (1.0 - k_ij[[i, j]]) * e_k_ij[[i, j]];
-                lambda_r_ij[[i, j]] = ((lr[i] - 3.0) * (lr[j] - 3.0)).sqrt() + 3.0;
-                lambda_a_ij[[i, j]] = ((la[i] - 3.0) * (la[j] - 3.0)).sqrt() + 3.0;
-                c_ij[[i, j]] = lambda_r_ij[[i, j]] / (lambda_r_ij[[i, j]] - lambda_a_ij[[i, j]])
-                    * (lambda_r_ij[[i, j]] / lambda_a_ij[[i, j]])
-                        .powf(lambda_a_ij[[i, j]] / (lambda_r_ij[[i, j]] - lambda_a_ij[[i, j]]));
-                mass_ij[[i, j]] = (2.0 * molarweight.get(i) * molarweight.get(j)
+                epsilon_k_ij[(i, j)] = (1.0 - k_ij[(i, j)]) * e_k_ij[(i, j)];
+                lambda_r_ij[(i, j)] = ((lr[i] - 3.0) * (lr[j] - 3.0)).sqrt() + 3.0;
+                lambda_a_ij[(i, j)] = ((la[i] - 3.0) * (la[j] - 3.0)).sqrt() + 3.0;
+                c_ij[(i, j)] = lambda_r_ij[(i, j)] / (lambda_r_ij[(i, j)] - lambda_a_ij[(i, j)])
+                    * (lambda_r_ij[(i, j)] / lambda_a_ij[(i, j)])
+                        .powf(lambda_a_ij[(i, j)] / (lambda_r_ij[(i, j)] - lambda_a_ij[(i, j)]));
+                mass_ij[(i, j)] = (2.0 * molarweight.get(i) * molarweight.get(j)
                     / (molarweight.get(i) + molarweight.get(j)))
                 .convert_into(KILOGRAM * NAV);
-                fh_ij[[i, j]] = FeynmanHibbsOrder::try_from(max(fh[i], fh[j]))?;
+                fh_ij[(i, j)] = FeynmanHibbsOrder::try_from(max(fh[i], fh[j]))?;
                 if fh[i] * fh[j] == 2 {
                     return Err(FeosError::IncompatibleParameters(format!(
                         "cannot combine Feynman-Hibbs orders 1 and 2. Component {} has order {} and component {} has order {}.",
@@ -149,37 +127,6 @@ impl SaftVRQMiePars {
                 }
             }
         }
-
-        let viscosity_coefficients = if viscosity.iter().any(|v| v.is_none()) {
-            None
-        } else {
-            let mut v = Array2::zeros((4, viscosity.len()));
-            for (i, vi) in viscosity.iter().enumerate() {
-                v.column_mut(i).assign(&Array1::from(vi.unwrap().to_vec()));
-            }
-            Some(v)
-        };
-
-        let diffusion_coefficients = if diffusion.iter().any(|v| v.is_none()) {
-            None
-        } else {
-            let mut v = Array2::zeros((5, diffusion.len()));
-            for (i, vi) in diffusion.iter().enumerate() {
-                v.column_mut(i).assign(&Array1::from(vi.unwrap().to_vec()));
-            }
-            Some(v)
-        };
-
-        let thermal_conductivity_coefficients = if thermal_conductivity.iter().any(|v| v.is_none())
-        {
-            None
-        } else {
-            let mut v = Array2::zeros((4, thermal_conductivity.len()));
-            for (i, vi) in thermal_conductivity.iter().enumerate() {
-                v.column_mut(i).assign(&Array1::from(vi.unwrap().to_vec()));
-            }
-            Some(v)
-        };
 
         Ok(Self {
             m,
@@ -191,9 +138,6 @@ impl SaftVRQMiePars {
             lambda_r_ij,
             lambda_a_ij,
             mass_ij,
-            viscosity: viscosity_coefficients,
-            diffusion: diffusion_coefficients,
-            thermal_conductivity: thermal_conductivity_coefficients,
             fh_ij,
         })
     }

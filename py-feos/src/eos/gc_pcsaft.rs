@@ -2,10 +2,10 @@ use super::PyEquationOfState;
 #[cfg(feature = "dft")]
 use crate::dft::{PyFMTVersion, PyHelmholtzEnergyFunctional};
 use crate::{ideal_gas::IdealGasModel, parameter::PyGcParameters, residual::ResidualModel};
-#[cfg(feature = "gc_pcsaft")]
+#[cfg(feature = "dft")]
 use feos::gc_pcsaft::GcPcSaftFunctional;
 use feos::gc_pcsaft::{GcPcSaft, GcPcSaftOptions};
-use feos_core::{Components, EquationOfState};
+use feos_core::{EquationOfState, ResidualDyn};
 use pyo3::prelude::*;
 use std::sync::Arc;
 
@@ -46,11 +46,11 @@ impl PyEquationOfState {
             max_iter_cross_assoc,
             tol_cross_assoc,
         };
-        let residual = Arc::new(ResidualModel::GcPcSaft(GcPcSaft::with_options(
+        let residual = ResidualModel::GcPcSaft(GcPcSaft::with_options(
             parameters.try_convert_heterosegmented()?,
             options,
-        )));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        ));
+        let ideal_gas = vec![IdealGasModel::NoModel; residual.components()];
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 }
@@ -94,14 +94,12 @@ impl PyHelmholtzEnergyFunctional {
             max_iter_cross_assoc,
             tol_cross_assoc,
         };
-        let func = Arc::new(ResidualModel::GcPcSaftFunctional(
-            GcPcSaftFunctional::with_options(
-                parameters.try_convert_heterosegmented()?,
-                fmt_version.into(),
-                options,
-            ),
+        let func = ResidualModel::GcPcSaftFunctional(GcPcSaftFunctional::with_options(
+            parameters.try_convert_heterosegmented()?,
+            fmt_version.into(),
+            options,
         ));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
+        let ideal_gas = vec![IdealGasModel::NoModel; func.components()];
         Ok(PyEquationOfState(Arc::new(EquationOfState::new(
             ideal_gas, func,
         ))))

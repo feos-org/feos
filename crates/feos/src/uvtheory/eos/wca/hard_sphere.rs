@@ -1,6 +1,6 @@
 use crate::uvtheory::WeeksChandlerAndersen;
 use crate::uvtheory::parameters::UVTheoryPars;
-use ndarray::prelude::*;
+use nalgebra::{DMatrix, DVector, dvector};
 use num_dual::DualNum;
 use std::f64::consts::PI;
 
@@ -52,7 +52,7 @@ impl WeeksChandlerAndersen {
     pub fn diameter_wca<D: DualNum<f64> + Copy>(
         parameters: &UVTheoryPars,
         temperature: D,
-    ) -> Array1<D> {
+    ) -> DVector<D> {
         parameters
             .sigma
             .iter()
@@ -68,7 +68,8 @@ impl WeeksChandlerAndersen {
                 (((t.sqrt() * c + 1.0).powf(2.0 / parameters.rep[i])).recip() * rm)
                     * parameters.sigma[i]
             })
-            .collect()
+            .collect::<Vec<_>>()
+            .into()
     }
 }
 
@@ -80,7 +81,7 @@ pub(super) fn dimensionless_diameter_q_wca<D: DualNum<f64> + Copy>(
     let nu = rep_x;
     let n = att_x;
     let rs = (nu / n).powd((nu - n).recip());
-    let coeffs = arr1(&[
+    let coeffs = dvector![
         (nu * 2.0 * PI / n).sqrt(),
         (nu - 7.0) * WCA_CONSTANTS_Q[0][1] + WCA_CONSTANTS_Q[0][0],
         (nu - 7.0) * WCA_CONSTANTS_Q[1][1]
@@ -91,7 +92,7 @@ pub(super) fn dimensionless_diameter_q_wca<D: DualNum<f64> + Copy>(
             + (nu - 7.0).powi(2) * WCA_CONSTANTS_Q[2][2]
             + (nu - 7.0).powi(3) * WCA_CONSTANTS_Q[2][3]
             + WCA_CONSTANTS_Q[2][0],
-    ]);
+    ];
 
     (t_x.powf(2.0) * coeffs[3]
         + t_x.powf(3.0 / 2.0) * coeffs[2]
@@ -103,8 +104,8 @@ pub(super) fn dimensionless_diameter_q_wca<D: DualNum<f64> + Copy>(
 }
 
 pub(super) fn packing_fraction<D: DualNum<f64> + Copy>(
-    partial_density: &Array1<D>,
-    diameter: &Array1<D>,
+    partial_density: &DVector<D>,
+    diameter: &DVector<D>,
 ) -> D {
     (0..partial_density.len()).fold(D::zero(), |acc, i| {
         acc + partial_density[i] * diameter[i].powi(3) * (std::f64::consts::PI / 6.0)
@@ -115,7 +116,7 @@ pub(super) fn packing_fraction<D: DualNum<f64> + Copy>(
 pub(super) fn dimensionless_length_scale<D: DualNum<f64> + Copy>(
     parameters: &UVTheoryPars,
     temperature: D,
-) -> Array1<D> {
+) -> DVector<D> {
     parameters
         .sigma
         .iter()
@@ -127,7 +128,8 @@ pub(super) fn dimensionless_length_scale<D: DualNum<f64> + Copy>(
                 + rs * parameters.sigma[i]
             // parameters.sigma[i]
         })
-        .collect()
+        .collect::<Vec<_>>()
+        .into()
 }
 
 #[inline]
@@ -135,20 +137,20 @@ pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
     parameters: &UVTheoryPars,
     eta: D,
     temperature: D,
-) -> Array2<D> {
+) -> DMatrix<D> {
     let n = parameters.att.len();
     let dimensionless_lengths = dimensionless_length_scale(parameters, temperature);
-    Array2::from_shape_fn((n, n), |(i, j)| {
+    DMatrix::from_fn(n, n, |i, j| {
         let tau = (dimensionless_lengths[i] + dimensionless_lengths[j])
-            / parameters.sigma_ij[[i, j]]
+            / parameters.sigma_ij[(i, j)]
             * 0.5; //dimensionless
         let tau2 = tau * tau;
 
-        let c = arr1(&[
+        let c = dvector![
             tau * WCA_CONSTANTS_ETA_B[0][0] + tau2 * WCA_CONSTANTS_ETA_B[0][1],
             tau * WCA_CONSTANTS_ETA_B[1][0] + tau2 * WCA_CONSTANTS_ETA_B[1][1],
             tau * WCA_CONSTANTS_ETA_B[2][0] + tau2 * WCA_CONSTANTS_ETA_B[2][1],
-        ]);
+        ];
         eta + eta * c[0] + eta * eta * c[1] + eta.powi(3) * c[2]
     })
 }
@@ -157,20 +159,20 @@ pub(super) fn packing_fraction_b_uvb3<D: DualNum<f64> + Copy>(
     parameters: &UVTheoryPars,
     eta: D,
     temperature: D,
-) -> Array2<D> {
+) -> DMatrix<D> {
     let n = parameters.att.len();
     let dimensionless_lengths = dimensionless_length_scale(parameters, temperature);
-    Array2::from_shape_fn((n, n), |(i, j)| {
+    DMatrix::from_fn(n, n, |i, j| {
         let tau = (dimensionless_lengths[i] + dimensionless_lengths[j])
-            / parameters.sigma_ij[[i, j]]
+            / parameters.sigma_ij[(i, j)]
             * 0.5; //dimensionless
         let tau2 = tau * tau;
 
-        let c = arr1(&[
+        let c = dvector![
             tau * WCA_CONSTANTS_ETA_B_UVB3[0][0] + tau2 * WCA_CONSTANTS_ETA_B_UVB3[0][1],
             tau * WCA_CONSTANTS_ETA_B_UVB3[1][0] + tau2 * WCA_CONSTANTS_ETA_B_UVB3[1][1],
             tau * WCA_CONSTANTS_ETA_B_UVB3[2][0] + tau2 * WCA_CONSTANTS_ETA_B_UVB3[2][1],
-        ]);
+        ];
         eta + eta * c[0] + eta * eta * c[1] + eta.powi(3) * c[2]
     })
 }
@@ -179,18 +181,18 @@ pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
     parameters: &UVTheoryPars,
     eta: D,
     temperature: D,
-) -> Array2<D> {
+) -> DMatrix<D> {
     let dimensionless_lengths = dimensionless_length_scale(parameters, temperature);
     let n = parameters.att.len();
-    Array2::from_shape_fn((n, n), |(i, j)| {
+    DMatrix::from_fn(n, n, |i, j| {
         let tau = (dimensionless_lengths[i] + dimensionless_lengths[j])
-            / parameters.sigma_ij[[i, j]]
+            / parameters.sigma_ij[(i, j)]
             * 0.5; //dimensionless
 
         let tau2 = tau * tau;
-        let rep_inv = 1.0 / parameters.rep_ij[[i, j]];
+        let rep_inv = 1.0 / parameters.rep_ij[(i, j)];
 
-        let c = arr1(&[
+        let c = dvector![
             tau * (WCA_CONSTANTS_ETA_A[0][0] + WCA_CONSTANTS_ETA_A[0][1] * rep_inv)
                 + tau2 * (WCA_CONSTANTS_ETA_A[0][2] + WCA_CONSTANTS_ETA_A[0][3] * rep_inv),
             tau * (WCA_CONSTANTS_ETA_A[1][0] + WCA_CONSTANTS_ETA_A[1][1] * rep_inv)
@@ -199,7 +201,7 @@ pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
                 + tau2 * (WCA_CONSTANTS_ETA_A[2][2] + WCA_CONSTANTS_ETA_A[2][3] * rep_inv),
             tau * (WCA_CONSTANTS_ETA_A[3][0] + WCA_CONSTANTS_ETA_A[3][1] * rep_inv)
                 + tau2 * (WCA_CONSTANTS_ETA_A[3][2] + WCA_CONSTANTS_ETA_A[3][3] * rep_inv),
-        ]);
+        ];
         eta + eta * c[0] + eta * eta * c[1] + eta.powi(3) * c[2] + eta.powi(4) * c[3]
     })
 }
@@ -208,17 +210,17 @@ pub(super) fn packing_fraction_a_uvb3<D: DualNum<f64> + Copy>(
     parameters: &UVTheoryPars,
     eta: D,
     temperature: D,
-) -> Array2<D> {
+) -> DMatrix<D> {
     let dimensionless_lengths = dimensionless_length_scale(parameters, temperature);
     let n = parameters.att.len();
-    Array2::from_shape_fn((n, n), |(i, j)| {
+    DMatrix::from_fn(n, n, |i, j| {
         let tau = (dimensionless_lengths[i] + dimensionless_lengths[j])
-            / parameters.sigma_ij[[i, j]]
+            / parameters.sigma_ij[(i, j)]
             * 0.5; //dimensionless
 
         let tau2 = tau * tau;
-        let rep_inv = 1.0 / parameters.rep_ij[[i, j]];
-        let c = arr1(&[
+        let rep_inv = 1.0 / parameters.rep_ij[(i, j)];
+        let c = dvector![
             tau * (WCA_CONSTANTS_ETA_A_UVB3[0][0] + WCA_CONSTANTS_ETA_A_UVB3[0][1] * rep_inv)
                 + tau2
                     * (WCA_CONSTANTS_ETA_A_UVB3[0][2] + WCA_CONSTANTS_ETA_A_UVB3[0][3] * rep_inv),
@@ -231,7 +233,7 @@ pub(super) fn packing_fraction_a_uvb3<D: DualNum<f64> + Copy>(
             tau * (WCA_CONSTANTS_ETA_A_UVB3[3][0] + WCA_CONSTANTS_ETA_A_UVB3[3][1] * rep_inv)
                 + tau2
                     * (WCA_CONSTANTS_ETA_A_UVB3[3][2] + WCA_CONSTANTS_ETA_A_UVB3[3][3] * rep_inv),
-        ]);
+        ];
         eta + eta * c[0] + eta * eta * c[1] + eta.powi(3) * c[2] + eta.powi(4) * c[3]
     })
 }
@@ -284,23 +286,23 @@ mod test {
 
     #[test]
     fn test_hard_sphere_wca_mixture() {
-        let moles = arr1(&[0.40000000000000002, 0.59999999999999998]);
+        let molefracs = dvector![0.40000000000000002, 0.59999999999999998];
         let reduced_temperature = 1.0;
         let reduced_density = 0.90000000000000002;
-        let reduced_volume = (moles[0] + moles[1]) / reduced_density;
+        let reduced_volume = 1.0 / reduced_density;
 
         let p = UVTheoryPars::new(
             &test_parameters_mixture(
-                arr1(&[12.0, 12.0]),
-                arr1(&[6.0, 6.0]),
-                arr1(&[1.0, 1.0]),
-                arr1(&[1.0, 0.5]),
+                dvector![12.0, 12.0],
+                dvector![6.0, 6.0],
+                dvector![1.0, 1.0],
+                dvector![1.0, 0.5],
             ),
             WCA,
         );
 
-        let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());
-        let a = HardSphere.helmholtz_energy(&p, &state) / (moles[0] + moles[1]);
+        let state = StateHD::new(reduced_temperature, reduced_volume, &molefracs);
+        let a = HardSphere.helmholtz_energy_density(&p, &state) * reduced_volume;
         assert_relative_eq!(a, 3.8636904888563084, epsilon = 1e-10);
     }
 }

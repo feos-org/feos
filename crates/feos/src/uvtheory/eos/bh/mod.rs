@@ -16,19 +16,19 @@ impl BarkerHenderson {
         &self,
         parameters: &UVTheoryPars,
         state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
+    ) -> Vec<(&'static str, D)> {
         vec![
             (
-                "Hard Sphere (BH)".to_string(),
-                HardSphere.helmholtz_energy(parameters, state),
+                "Hard Sphere (BH)",
+                HardSphere.helmholtz_energy_density(parameters, state),
             ),
             (
-                "Reference Perturbation (BH)".to_string(),
-                ReferencePerturbation.helmholtz_energy(parameters, state),
+                "Reference Perturbation (BH)",
+                ReferencePerturbation.helmholtz_energy_density(parameters, state),
             ),
             (
-                "Attractive Perturbation (BH)".to_string(),
-                AttractivePerturbation.helmholtz_energy(parameters, state),
+                "Attractive Perturbation (BH)",
+                AttractivePerturbation.helmholtz_energy_density(parameters, state),
             ),
         ]
     }

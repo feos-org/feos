@@ -4,12 +4,11 @@ use feos_core::{
     Residual, State, TemperatureOrPressure,
 };
 use itertools::izip;
-use ndarray::{arr1, s, Array1, ArrayView1, Axis};
-use quantity::{MolarEnergy, Moles, Pressure, Quantity, Temperature, _Dimensionless, PASCAL, RGAS};
+use ndarray::{Array1, ArrayView1, Axis, arr1, s};
+use quantity::{_Dimensionless, MolarEnergy, Moles, PASCAL, Pressure, Quantity, RGAS, Temperature};
 use std::fmt;
 use std::iter::FromIterator;
 use std::ops::Sub;
-use std::sync::Arc;
 
 /// Store experimental binary VLE data for the calculation of chemical potential residuals.
 #[derive(Clone)]
@@ -229,11 +228,8 @@ impl<TP: TemperatureOrPressure, U> BinaryPhaseDiagram<TP, U> {
     }
 }
 
-impl<
-        TP: TemperatureOrPressure + Sync + Send + fmt::Display,
-        U: Copy + Sync + Send,
-        E: Residual,
-    > DataSet<E> for BinaryPhaseDiagram<TP, U>
+impl<TP: TemperatureOrPressure + Sync + Send + fmt::Display, U: Copy + Sync + Send, E: Residual>
+    DataSet<E> for BinaryPhaseDiagram<TP, U>
 where
     Quantity<Array1<f64>, U>: FromIterator<TP::Other>,
     U: Sub<U, Output = _Dimensionless>,

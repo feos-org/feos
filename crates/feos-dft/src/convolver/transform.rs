@@ -3,9 +3,8 @@ use ndarray::prelude::*;
 use ndarray::*;
 use num_dual::*;
 use rustdct::{DctNum, DctPlanner, TransformType2And3};
-use rustfft::{num_complex::Complex, Fft, FftPlanner};
+use rustfft::{Fft, FftPlanner, num_complex::Complex};
 use std::f64::consts::PI;
-use std::ops::DivAssign;
 use std::sync::Arc;
 
 #[derive(Clone, Copy)]
@@ -35,16 +34,16 @@ pub(super) struct CartesianTransform<T> {
     dct: Arc<dyn TransformType2And3<T>>,
 }
 
-impl<T: DualNum<f64> + DctNum + ScalarOperand> CartesianTransform<T> {
+impl<T: DualNum<f64> + DctNum> CartesianTransform<T> {
     #[expect(clippy::new_ret_no_self)]
-    pub(super) fn new(axis: &Axis) -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
+    pub(super) fn new(axis: &Axis) -> (Box<dyn FourierTransform<T>>, Array1<f64>) {
         let (s, k) = Self::init(axis);
-        (Arc::new(s), k)
+        (Box::new(s), k)
     }
 
-    pub(super) fn new_cartesian(axis: &Axis) -> (Arc<Self>, Array1<f64>) {
+    pub(super) fn new_cartesian(axis: &Axis) -> (Self, Array1<f64>) {
         let (s, k) = Self::init(axis);
-        (Arc::new(s), k)
+        (s, k)
     }
 
     fn init(axis: &Axis) -> (Self, Array1<f64>) {
@@ -82,7 +81,9 @@ impl<T: DualNum<f64> + DctNum + ScalarOperand> CartesianTransform<T> {
             }
         }
         if transform.is_reverse() {
-            f.div_assign(T::from_f64(0.5).unwrap() * T::from_usize(self.dct.len()).unwrap())
+            f.map_inplace(|f| {
+                *f /= T::from_f64(0.5).unwrap() * T::from_usize(self.dct.len()).unwrap()
+            })
         }
     }
 
@@ -103,7 +104,7 @@ impl<T: DualNum<f64> + DctNum + ScalarOperand> CartesianTransform<T> {
     }
 }
 
-impl<T: DualNum<f64> + DctNum + ScalarOperand> FourierTransform<T> for CartesianTransform<T> {
+impl<T: DualNum<f64> + DctNum> FourierTransform<T> for CartesianTransform<T> {
     fn forward_transform(&self, f_r: ArrayView1<T>, mut f_k: ArrayViewMut1<T>, scalar: bool) {
         if scalar {
             f_k.slice_mut(s![..-1]).assign(&f_r);
@@ -129,14 +130,14 @@ pub(super) struct SphericalTransform<T> {
     dct: Arc<dyn TransformType2And3<T>>,
 }
 
-impl<T: DualNum<f64> + DctNum + ScalarOperand> SphericalTransform<T> {
+impl<T: DualNum<f64> + DctNum> SphericalTransform<T> {
     #[expect(clippy::new_ret_no_self)]
-    pub(super) fn new(axis: &Axis) -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
+    pub(super) fn new(axis: &Axis) -> (Box<dyn FourierTransform<T>>, Array1<f64>) {
         let points = axis.grid.len();
         let length = axis.length();
         let k_grid: Array1<_> = (0..=points).map(|v| PI * v as f64 / length).collect();
         (
-            Arc::new(Self {
+            Box::new(Self {
                 r_grid: axis.grid.clone(),
                 k_grid: k_grid.clone(),
                 dct: DctPlanner::new().plan_dct2(points),
@@ -157,7 +158,8 @@ impl<T: DualNum<f64> + DctNum + ScalarOperand> SphericalTransform<T> {
         if reverse {
             f_out.assign(&f_in.slice(s![1..]));
             self.dct.process_dst3(f_out.as_slice_mut().unwrap());
-            f_out.div_assign(T::from_f64(0.5).unwrap() * T::from_usize(f_out.len()).unwrap());
+            let n = f_out.len();
+            f_out.map_inplace(|f| *f /= T::from_f64(0.5).unwrap() * T::from_usize(n).unwrap());
         } else {
             let mut f_slice = f_out.slice_mut(s![1..]);
             f_slice.assign(&f_in);
@@ -177,7 +179,8 @@ impl<T: DualNum<f64> + DctNum + ScalarOperand> SphericalTransform<T> {
         if reverse {
             f_out.assign(&f_in.slice(s![..-1]));
             self.dct.process_dct3(f_out.as_slice_mut().unwrap());
-            f_out.div_assign(T::from_f64(0.5).unwrap() * T::from_usize(f_out.len()).unwrap());
+            let n = f_out.len();
+            f_out.map_inplace(|f| *f /= T::from_f64(0.5).unwrap() * T::from_usize(n).unwrap());
         } else {
             let mut f_slice = f_out.slice_mut(s![..-1]);
             f_slice.assign(&f_in);
@@ -186,7 +189,7 @@ impl<T: DualNum<f64> + DctNum + ScalarOperand> SphericalTransform<T> {
     }
 }
 
-impl<T: DualNum<f64> + DctNum + ScalarOperand> FourierTransform<T> for SphericalTransform<T> {
+impl<T: DualNum<f64> + DctNum> FourierTransform<T> for SphericalTransform<T> {
     fn forward_transform(&self, f_r: ArrayView1<T>, mut f_k: ArrayViewMut1<T>, scalar: bool) {
         if scalar {
             self.sine_transform(&f_r * &self.r_grid, f_k.view_mut(), false);
@@ -224,9 +227,9 @@ pub(super) struct PolarTransform<T: DctNum> {
     l: f64,
 }
 
-impl<T: DualNum<f64> + DctNum + ScalarOperand> PolarTransform<T> {
+impl<T: DualNum<f64> + DctNum> PolarTransform<T> {
     #[expect(clippy::new_ret_no_self)]
-    pub(super) fn new(axis: &Axis) -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
+    pub(super) fn new(axis: &Axis) -> (Box<dyn FourierTransform<T>>, Array1<f64>) {
         let points = axis.grid.len();
 
         let mut alpha = 0.002_f64;
@@ -265,7 +268,7 @@ impl<T: DualNum<f64> + DctNum + ScalarOperand> PolarTransform<T> {
         ifft.process(jv.as_slice_mut().unwrap());
 
         (
-            Arc::new(Self {
+            Box::new(Self {
                 r_grid: axis.grid.clone(),
                 k_grid: k_grid.clone(),
                 fft,
@@ -311,7 +314,7 @@ impl<T: DualNum<f64> + DctNum + ScalarOperand> PolarTransform<T> {
     }
 }
 
-impl<T: DualNum<f64> + DctNum + ScalarOperand> FourierTransform<T> for PolarTransform<T> {
+impl<T: DualNum<f64> + DctNum> FourierTransform<T> for PolarTransform<T> {
     fn forward_transform(&self, f_r: ArrayView1<T>, f_k: ArrayViewMut1<T>, scalar: bool) {
         self.transform(f_r, f_k, scalar, &self.r_grid, &self.k_grid, self.l);
     }
@@ -332,8 +335,8 @@ pub(super) struct NoTransform();
 
 impl NoTransform {
     #[expect(clippy::new_ret_no_self)]
-    pub(super) fn new<T: DualNum<f64>>() -> (Arc<dyn FourierTransform<T>>, Array1<f64>) {
-        (Arc::new(Self()), arr1(&[0.0]))
+    pub(super) fn new<T: DualNum<f64>>() -> (Box<dyn FourierTransform<T>>, Array1<f64>) {
+        (Box::new(Self()), arr1(&[0.0]))
     }
 }
 

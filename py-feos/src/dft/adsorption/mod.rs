@@ -1,15 +1,17 @@
 use super::PyDFTSolver;
-use crate::eos::PyEquationOfState;
+use crate::eos::{parse_molefracs, PyEquationOfState};
 use crate::error::PyFeosError;
 use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
 use crate::PyVerbosity;
 use feos_core::EquationOfState;
 use feos_dft::adsorption::{Adsorption, Adsorption1D, Adsorption3D};
+use nalgebra::DMatrix;
 use ndarray::*;
 use numpy::*;
 use pyo3::prelude::*;
 use quantity::*;
+use std::sync::Arc;
 
 mod external_potential;
 mod pore;
@@ -19,11 +21,11 @@ pub use pore::{PyPore1D, PyPore2D, PyPore3D, PyPoreProfile1D, PyPoreProfile3D};
 
 /// Container structure for adsorption isotherms in 1D pores.
 #[pyclass(name = "Adsorption1D")]
-pub struct PyAdsorption1D(Adsorption1D<EquationOfState<IdealGasModel, ResidualModel>>);
+pub struct PyAdsorption1D(Adsorption1D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>);
 
 /// Container structure for adsorption isotherms in 3D pores.
 #[pyclass(name = "Adsorption3D")]
-pub struct PyAdsorption3D(Adsorption3D<EquationOfState<IdealGasModel, ResidualModel>>);
+pub struct PyAdsorption3D(Adsorption3D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>);
 
 macro_rules! impl_adsorption_isotherm {
     ($py_adsorption:ty, $py_pore:ty, $py_pore_profile:ident) => {
@@ -60,7 +62,7 @@ macro_rules! impl_adsorption_isotherm {
                 temperature: Temperature,
                 pressure: Pressure<Array1<f64>>,
                 pore: &$py_pore,
-                molefracs: Option<&Bound<'_, PyArray1<f64>>>,
+                molefracs: Option<PyReadonlyArray1<'_, f64>>,
                 solver: Option<PyDFTSolver>,
             ) -> PyResult<Self> {
                 Ok(Self(Adsorption::adsorption_isotherm(
@@ -68,7 +70,7 @@ macro_rules! impl_adsorption_isotherm {
                     temperature,
                     &pressure,
                     &pore.0,
-                    molefracs.map(|x| x.to_owned_array()).as_ref(),
+                    &parse_molefracs(molefracs),
                     solver.map(|s| s.0).as_ref(),
                 ).map_err(PyFeosError::from)?))
             }
@@ -104,7 +106,7 @@ macro_rules! impl_adsorption_isotherm {
                 temperature: Temperature,
                 pressure: Pressure<Array1<f64>>,
                 pore: &$py_pore,
-                molefracs: Option<&Bound<'_, PyArray1<f64>>>,
+                molefracs: Option<PyReadonlyArray1<'_, f64>>,
                 solver: Option<PyDFTSolver>,
             ) -> PyResult<Self> {
                 Ok(Self(Adsorption::desorption_isotherm(
@@ -112,7 +114,7 @@ macro_rules! impl_adsorption_isotherm {
                     temperature,
                     &pressure,
                     &pore.0,
-                    molefracs.map(|x| x.to_owned_array()).as_ref(),
+                    &parse_molefracs(molefracs),
                     solver.map(|s| s.0).as_ref(),
                 ).map_err(PyFeosError::from)?))
             }
@@ -151,7 +153,7 @@ macro_rules! impl_adsorption_isotherm {
                 temperature: Temperature,
                 pressure: Pressure<Array1<f64>>,
                 pore: &$py_pore,
-                molefracs: Option<&Bound<'_, PyArray1<f64>>>,
+                molefracs: Option<PyReadonlyArray1<'_, f64>>,
                 solver: Option<PyDFTSolver>,
             ) -> PyResult<Self> {
                 Ok(Self(Adsorption::equilibrium_isotherm(
@@ -159,7 +161,7 @@ macro_rules! impl_adsorption_isotherm {
                     temperature,
                     &pressure,
                     &pore.0,
-                    molefracs.map(|x| x.to_owned_array()).as_ref(),
+                    &parse_molefracs(molefracs),
                     solver.map(|s| s.0).as_ref(),
                 ).map_err(PyFeosError::from)?))
             }
@@ -203,7 +205,7 @@ macro_rules! impl_adsorption_isotherm {
                 p_min: Pressure,
                 p_max: Pressure,
                 pore: &$py_pore,
-                molefracs: Option<&Bound<'_, PyArray1<f64>>>,
+                molefracs: Option<PyReadonlyArray1<'_, f64>>,
                 solver: Option<PyDFTSolver>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
@@ -215,24 +217,24 @@ macro_rules! impl_adsorption_isotherm {
                     p_min,
                     p_max,
                     &pore.0,
-                    molefracs.map(|x| x.to_owned_array()).as_ref(),
+                    &parse_molefracs(molefracs),
                     solver.map(|s| s.0).as_ref(),
                     (max_iter, tol, verbosity.map(|v| v.into())).into(),
                 ).map_err(PyFeosError::from)?))
             }
 
-            #[getter]
-            fn get_profiles(&self) -> Vec<$py_pore_profile> {
-                self.0
-                    .profiles
-                    .iter()
-                    .filter_map(|p| {
-                        p.as_ref()
-                            .ok()
-                            .map(|p| $py_pore_profile(p.clone()))
-                    })
-                    .collect()
-            }
+            // #[getter]
+            // fn get_profiles(&self) -> Vec<$py_pore_profile> {
+            //     self.0
+            //         .profiles
+            //         .iter()
+            //         .filter_map(|p| {
+            //             p.as_ref()
+            //                 .ok()
+            //                 .map(|p| $py_pore_profile(p.clone()))
+            //         })
+            //         .collect()
+            // }
 
             #[getter]
             fn get_pressure(&self) -> Pressure<Array1<f64>> {
@@ -255,7 +257,7 @@ macro_rules! impl_adsorption_isotherm {
             }
 
             #[getter]
-            fn get_partial_molar_enthalpy_of_adsorption(&self) -> MolarEnergy<Array2<f64>> {
+            fn get_partial_molar_enthalpy_of_adsorption(&self) -> MolarEnergy<DMatrix<f64>> {
                 self.0.partial_molar_enthalpy_of_adsorption()
             }
 

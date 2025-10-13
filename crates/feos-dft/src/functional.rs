@@ -1,53 +1,35 @@
-use crate::adsorption::FluidParameters;
 use crate::convolver::Convolver;
 use crate::functional_contribution::*;
 use crate::ideal_chain_contribution::IdealChainContribution;
-use crate::solvation::PairPotential;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
-use feos_core::{EquationOfState, FeosResult, IdealGas, Residual, StateHD};
+use feos_core::{EquationOfState, FeosResult, Residual, ResidualDyn, StateHD};
+use nalgebra::{DVector, dvector};
 use ndarray::*;
 use num_dual::*;
 use petgraph::Directed;
 use petgraph::graph::{Graph, UnGraph};
 use petgraph::visit::EdgeRef;
 use std::borrow::Cow;
-use std::ops::MulAssign;
-use std::sync::Arc;
+use std::ops::{Deref, MulAssign};
 
-impl<I: IdealGas, F: HelmholtzEnergyFunctional> HelmholtzEnergyFunctional
-    for EquationOfState<I, F>
+impl<I: Clone, F: HelmholtzEnergyFunctionalDyn> HelmholtzEnergyFunctionalDyn
+    for EquationOfState<Vec<I>, F>
 {
     type Contribution<'a>
         = F::Contribution<'a>
     where
         Self: 'a;
 
-    fn contributions<'a>(&'a self) -> Vec<Self::Contribution<'a>> {
+    fn contributions<'a>(&'a self) -> impl Iterator<Item = Self::Contribution<'a>> {
         self.residual.contributions()
     }
 
-    fn molecule_shape(&self) -> MoleculeShape {
+    fn molecule_shape(&self) -> MoleculeShape<'_> {
         self.residual.molecule_shape()
     }
 
     fn bond_lengths<N: DualNum<f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
         self.residual.bond_lengths(temperature)
-    }
-}
-
-impl<I, F: PairPotential> PairPotential for EquationOfState<I, F> {
-    fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64> {
-        self.residual.pair_potential(i, r, temperature)
-    }
-}
-
-impl<I: IdealGas, F: FluidParameters> FluidParameters for EquationOfState<I, F> {
-    fn epsilon_k_ff(&self) -> Array1<f64> {
-        self.residual.epsilon_k_ff()
-    }
-
-    fn sigma_ff(&self) -> &Array1<f64> {
-        self.residual.sigma_ff()
     }
 }
 
@@ -57,23 +39,41 @@ pub enum MoleculeShape<'a> {
     Spherical(usize),
     /// For non-spherical molecules in a homosegmented approach, the
     /// chain length parameter $m$.
-    NonSpherical(&'a Array1<f64>),
+    NonSpherical(&'a DVector<f64>),
     /// For non-spherical molecules in a heterosegmented approach,
     /// the component index for every segment.
-    Heterosegmented(&'a Array1<usize>),
+    Heterosegmented(&'a DVector<usize>),
 }
 
 /// A general Helmholtz energy functional.
-pub trait HelmholtzEnergyFunctional: Residual + Sized {
+pub trait HelmholtzEnergyFunctionalDyn: ResidualDyn {
     type Contribution<'a>: FunctionalContribution
     where
         Self: 'a;
 
     /// Return a slice of [FunctionalContribution]s.
-    fn contributions<'a>(&'a self) -> Vec<Self::Contribution<'a>>;
+    fn contributions<'a>(&'a self) -> impl Iterator<Item = Self::Contribution<'a>>;
 
     /// Return the shape of the molecules and the necessary specifications.
-    fn molecule_shape(&self) -> MoleculeShape;
+    fn molecule_shape(&self) -> MoleculeShape<'_>;
+
+    /// Overwrite this, if the functional consists of heterosegmented chains.
+    fn bond_lengths<N: DualNum<f64> + Copy>(&self, _temperature: N) -> UnGraph<(), N> {
+        Graph::with_capacity(0, 0)
+    }
+}
+
+/// A general Helmholtz energy functional.
+pub trait HelmholtzEnergyFunctional: Residual {
+    type Contribution<'a>: FunctionalContribution
+    where
+        Self: 'a;
+
+    /// Return a slice of [FunctionalContribution]s.
+    fn contributions<'a>(&'a self) -> impl Iterator<Item = Self::Contribution<'a>>;
+
+    /// Return the shape of the molecules and the necessary specifications.
+    fn molecule_shape(&self) -> MoleculeShape<'_>;
 
     /// Overwrite this, if the functional consists of heterosegmented chains.
     fn bond_lengths<N: DualNum<f64> + Copy>(&self, _temperature: N) -> UnGraph<(), N> {
@@ -82,26 +82,27 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
 
     fn weight_functions(&self, temperature: f64) -> Vec<WeightFunctionInfo<f64>> {
         self.contributions()
-            .into_iter()
             .map(|c| c.weight_functions(temperature))
             .collect()
     }
 
-    fn m(&self) -> Cow<Array1<f64>> {
+    fn m(&self) -> Cow<'_, [f64]> {
         match self.molecule_shape() {
-            MoleculeShape::Spherical(n) => Cow::Owned(Array1::ones(n)),
-            MoleculeShape::NonSpherical(m) => Cow::Borrowed(m),
+            MoleculeShape::Spherical(n) => Cow::Owned(vec![1.0; n]),
+            MoleculeShape::NonSpherical(m) => Cow::Borrowed(m.as_slice()),
             MoleculeShape::Heterosegmented(component_index) => {
-                Cow::Owned(Array1::ones(component_index.len()))
+                Cow::Owned(vec![1.0; component_index.len()])
             }
         }
     }
 
-    fn component_index(&self) -> Cow<Array1<usize>> {
+    fn component_index(&self) -> Cow<'_, [usize]> {
         match self.molecule_shape() {
-            MoleculeShape::Spherical(n) => Cow::Owned(Array1::from_shape_fn(n, |i| i)),
-            MoleculeShape::NonSpherical(m) => Cow::Owned(Array1::from_shape_fn(m.len(), |i| i)),
-            MoleculeShape::Heterosegmented(component_index) => Cow::Borrowed(component_index),
+            MoleculeShape::Spherical(n) => Cow::Owned((0..n).collect()),
+            MoleculeShape::NonSpherical(m) => Cow::Owned((0..m.len()).collect()),
+            MoleculeShape::Heterosegmented(component_index) => {
+                Cow::Borrowed(component_index.as_slice())
+            }
         }
     }
 
@@ -111,11 +112,11 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
 
     /// Calculate the (residual) intrinsic functional derivative $\frac{\delta\mathcal{\beta F}}{\delta\rho_i(\mathbf{r})}$.
     #[expect(clippy::type_complexity)]
-    fn functional_derivative<D, N: DualNum<f64> + Copy + ScalarOperand>(
+    fn functional_derivative<D, N: DualNum<f64> + Copy>(
         &self,
         temperature: N,
         density: &Array<N, D::Larger>,
-        convolver: &Arc<dyn Convolver<N, D>>,
+        convolver: &dyn Convolver<N, D>,
     ) -> FeosResult<(Array<N, D>, Array<N, D::Larger>)>
     where
         D: Dimension,
@@ -150,7 +151,7 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
         &self,
         temperature: N,
         exponential: &Array<N, D::Larger>,
-        convolver: &Arc<dyn Convolver<N, D>>,
+        convolver: &dyn Convolver<N, D>,
     ) -> Array<N, D::Larger>
     where
         D: Dimension,
@@ -160,14 +161,14 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
         let bond_lengths = self.bond_lengths(temperature).into_edge_type();
         let mut bond_weight_functions = bond_lengths.map(
             |_, _| (),
-            |_, &l| WeightFunction::new_scaled(arr1(&[l]), WeightFunctionShape::Delta),
+            |_, &l| WeightFunction::new_scaled(dvector![l], WeightFunctionShape::Delta),
         );
         for n in bond_lengths.node_indices() {
             for e in bond_lengths.edges(n) {
                 bond_weight_functions.add_edge(
                     e.target(),
                     e.source(),
-                    WeightFunction::new_scaled(arr1(&[*e.weight()]), WeightFunctionShape::Delta),
+                    WeightFunction::new_scaled(dvector![*e.weight()], WeightFunctionShape::Delta),
                 );
             }
         }
@@ -227,19 +228,37 @@ pub trait HelmholtzEnergyFunctional: Residual + Sized {
         i
     }
 
-    fn evaluate_bulk<D: DualNum<f64> + Copy + ScalarOperand>(
-        &self,
-        state: &StateHD<D>,
-    ) -> Vec<(String, D)> {
-        let mut res: Vec<(String, D)> = self
+    fn evaluate_bulk<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> Vec<(&'static str, D)> {
+        let mut res: Vec<_> = self
             .contributions()
-            .into_iter()
-            .map(|c| (c.name().to_string(), c.helmholtz_energy(state)))
+            .map(|c| (c.name(), c.bulk_helmholtz_energy_density(state)))
             .collect();
         res.push((
-            self.ideal_chain_contribution().name(),
-            self.ideal_chain_contribution().helmholtz_energy(state),
+            "Ideal chain",
+            self.ideal_chain_contribution()
+                .bulk_helmholtz_energy_density(&state.partial_density),
         ));
         res
+    }
+}
+
+impl<C: Deref<Target = F> + Clone, F: HelmholtzEnergyFunctionalDyn + ResidualDyn + 'static>
+    HelmholtzEnergyFunctional for C
+{
+    type Contribution<'a>
+        = F::Contribution<'a>
+    where
+        Self: 'a;
+
+    fn contributions<'a>(&'a self) -> impl Iterator<Item = Self::Contribution<'a>> {
+        F::contributions(self.deref())
+    }
+
+    fn molecule_shape(&self) -> MoleculeShape<'_> {
+        F::molecule_shape(self.deref())
+    }
+
+    fn bond_lengths<N: DualNum<f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
+        F::bond_lengths(self.deref(), temperature)
     }
 }

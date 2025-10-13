@@ -6,6 +6,7 @@ use crate::{Axis, DFTProfile, Grid};
 use feos_core::{Contributions, FeosResult, ReferenceSystem, State};
 use ndarray::prelude::*;
 use quantity::{Energy, Length};
+use std::ops::Deref;
 
 /// The underlying pair potential, that the Helmholtz energy functional
 /// models.
@@ -14,23 +15,18 @@ pub trait PairPotential {
     fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64>;
 }
 
+impl<C: Deref<Target = T>, T: PairPotential> PairPotential for C {
+    fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64> {
+        T::pair_potential(self, i, r, temperature)
+    }
+}
+
 /// Density profile and properties of a test particle system.
 pub struct PairCorrelation<F> {
     pub profile: DFTProfile<Ix1, F>,
     pub pair_correlation_function: Option<Array2<f64>>,
     pub self_solvation_free_energy: Option<Energy>,
     pub structure_factor: Option<f64>,
-}
-
-impl<F> Clone for PairCorrelation<F> {
-    fn clone(&self) -> Self {
-        Self {
-            profile: self.profile.clone(),
-            pair_correlation_function: self.pair_correlation_function.clone(),
-            self_solvation_free_energy: self.self_solvation_free_energy,
-            structure_factor: self.structure_factor,
-        }
-    }
 }
 
 impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {

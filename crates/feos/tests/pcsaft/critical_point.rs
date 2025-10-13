@@ -2,10 +2,9 @@ use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::State;
 use feos_core::parameter::IdentifierOption;
-use ndarray::arr1;
+use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
-use std::sync::Arc;
 use typenum::P3;
 
 #[test]
@@ -16,9 +15,9 @@ fn test_critical_point_pure() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let saft = Arc::new(PcSaft::new(params));
+    let saft = PcSaft::new(params);
     let t = 300.0 * KELVIN;
-    let cp = State::critical_point(&saft, None, Some(t), Default::default())?;
+    let cp = State::critical_point(&&saft, None, Some(t), Default::default())?;
     assert_relative_eq!(cp.temperature, 375.12441 * KELVIN, max_relative = 1e-8);
     assert_relative_eq!(
         cp.density,
@@ -36,10 +35,10 @@ fn test_critical_point_mix() -> Result<(), Box<dyn Error>> {
         None,
         IdentifierOption::Name,
     )?;
-    let saft = Arc::new(PcSaft::new(params));
+    let saft = PcSaft::new(params);
     let t = 300.0 * KELVIN;
-    let moles = arr1(&[1.5, 1.5]) * MOL;
-    let cp = State::critical_point(&saft, Some(&moles), Some(t), Default::default())?;
+    let molefracs = dvector![0.5, 0.5];
+    let cp = State::critical_point(&&saft, Some(&molefracs), Some(t), Default::default())?;
     assert_relative_eq!(cp.temperature, 407.93481 * KELVIN, max_relative = 1e-8);
     assert_relative_eq!(
         cp.density,

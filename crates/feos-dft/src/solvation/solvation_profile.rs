@@ -15,16 +15,6 @@ pub struct SolvationProfile<F: HelmholtzEnergyFunctional> {
     pub solvation_free_energy: Option<MolarEnergy>,
 }
 
-impl<F: HelmholtzEnergyFunctional> Clone for SolvationProfile<F> {
-    fn clone(&self) -> Self {
-        Self {
-            profile: self.profile.clone(),
-            grand_potential: self.grand_potential,
-            solvation_free_energy: self.solvation_free_energy,
-        }
-    }
-}
-
 impl<F: HelmholtzEnergyFunctional> SolvationProfile<F> {
     pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> FeosResult<()> {
         // Solve the profile
@@ -113,7 +103,7 @@ impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
 }
 
 #[expect(clippy::too_many_arguments)]
-fn external_potential_3d<F: FluidParameters>(
+fn external_potential_3d<F: HelmholtzEnergyFunctional + FluidParameters>(
     functional: &F,
     axis: [&Axis; 3],
     coordinates: Array2<f64>,

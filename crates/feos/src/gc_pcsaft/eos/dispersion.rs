@@ -62,7 +62,7 @@ pub const B2: [f64; 7] = [
 pub(super) struct Dispersion;
 
 impl Dispersion {
-    pub(super) fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub(super) fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &GcPcSaftEosParameters,
         state: &StateHD<D>,
@@ -116,7 +116,7 @@ impl Dispersion {
             .recip();
 
         // Helmholtz energy
-        (-rho1mix * i1 * 2.0 - rho2mix * m * c1 * i2) * PI * state.volume
+        (-rho1mix * i1 * 2.0 - rho2mix * m * c1 * i2) * PI
     }
 }
 
@@ -126,7 +126,7 @@ mod test {
     use crate::gc_pcsaft::eos::parameter::test::*;
     use approx::assert_relative_eq;
     use feos_core::ReferenceSystem;
-    use ndarray::arr1;
+    use nalgebra::dvector;
     use num_dual::Dual64;
     use quantity::{METER, MOL, PASCAL, Pressure};
     use typenum::P3;
@@ -135,15 +135,16 @@ mod test {
     fn test_dispersion_propane() {
         let parameters = propane();
         let temperature = 300.0;
-        let volume = METER.powi::<P3>().to_reduced();
-        let moles = (1.5 * MOL).to_reduced();
+        let volume = Dual64::from_re(METER.powi::<P3>().to_reduced()).derivative();
+        let moles = Dual64::from_re((1.5 * MOL).to_reduced());
+        let molar_volume = volume / moles;
         let state = StateHD::new(
             Dual64::from_re(temperature),
-            Dual64::from_re(volume).derivative(),
-            arr1(&[Dual64::from_re(moles)]),
+            molar_volume,
+            &dvector![Dual64::from_re(1.0)],
         );
         let pressure = Pressure::from_reduced(
-            -Dispersion.helmholtz_energy(&parameters, &state).eps * temperature,
+            -(Dispersion.helmholtz_energy_density(&parameters, &state) * volume).eps * temperature,
         );
         assert_relative_eq!(pressure, -2.846724434944439 * PASCAL, max_relative = 1e-10);
     }
@@ -152,15 +153,16 @@ mod test {
     fn test_dispersion_propanol() {
         let parameters = GcPcSaftEosParameters::new(&propanol());
         let temperature = 300.0;
-        let volume = METER.powi::<P3>().to_reduced();
-        let moles = (1.5 * MOL).to_reduced();
+        let volume = Dual64::from_re(METER.powi::<P3>().to_reduced()).derivative();
+        let moles = Dual64::from_re((1.5 * MOL).to_reduced());
+        let molar_volume = volume / moles;
         let state = StateHD::new(
             Dual64::from_re(temperature),
-            Dual64::from_re(volume).derivative(),
-            arr1(&[Dual64::from_re(moles)]),
+            molar_volume,
+            &dvector![Dual64::from_re(1.0)],
         );
         let pressure = Pressure::from_reduced(
-            -Dispersion.helmholtz_energy(&parameters, &state).eps * temperature,
+            -(Dispersion.helmholtz_energy_density(&parameters, &state) * volume).eps * temperature,
         );
         assert_relative_eq!(pressure, -5.432173507270732 * PASCAL, max_relative = 1e-10);
     }

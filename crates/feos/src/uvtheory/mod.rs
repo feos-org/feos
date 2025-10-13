@@ -10,7 +10,6 @@
 #![cfg_attr(feature = "uvtheory", doc = "```")]
 //! # use feos_core::FeosError;
 //! use feos::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, UVTheoryParameters, UVTheoryRecord};
-//! use std::sync::Arc;
 //!
 //! let params = UVTheoryRecord::new(24.0, 7.0, 3.0, 150.0);
 //!
@@ -19,20 +18,16 @@
 //!     perturbation: Perturbation::WeeksChandlerAndersen,
 //! };
 //! // Define equation of state.
-//! let uv_wca = Arc::new(UVTheory::new(UVTheoryParameters::from_model_records(vec![params])?));
+//! let uv_wca = &UVTheory::new(UVTheoryParameters::from_model_records(vec![params])?);
 //! // this is identical to above
-//! let uv_wca = Arc::new(
-//!     UVTheory::with_options(UVTheoryParameters::from_model_records(vec![params])?, default_options)
-//! );
+//! let uv_wca = &UVTheory::with_options(UVTheoryParameters::from_model_records(vec![params])?, default_options);
 //!
 //! // use Barker-Henderson perturbation
 //! let options = UVTheoryOptions {
 //!     max_eta: 0.5,
 //!     perturbation: Perturbation::BarkerHenderson,
 //! };
-//! let uv_bh = Arc::new(
-//!     UVTheory::with_options(UVTheoryParameters::from_model_records(vec![params])?, options)
-//! );
+//! let uv_bh = UVTheory::with_options(UVTheoryParameters::from_model_records(vec![params])?, options);
 //! # Ok::<(), FeosError>(())
 //! ```
 //!
@@ -44,7 +39,6 @@
 #![cfg_attr(feature = "uvtheory", doc = "```")]
 //! # use feos_core::FeosError;
 //! use feos::uvtheory::{Perturbation, UVTheory, UVTheoryOptions, UVTheoryParameters, UVTheoryRecord};
-//! use std::sync::Arc;
 //!
 //! let params = UVTheoryRecord::new(24.0, 6.0, 3.0, 150.0);
 //!
@@ -56,9 +50,7 @@
 //!     perturbation: Perturbation::WeeksChandlerAndersenB3,
 //! };
 //! // Define equation of state.
-//! let uv_b3 = Arc::new(
-//!     UVTheory::with_options(parameters, options)
-//! );
+//! let uv_b3 = UVTheory::with_options(parameters, options);
 //! # Ok::<(), FeosError>(())
 //! ```
 mod eos;

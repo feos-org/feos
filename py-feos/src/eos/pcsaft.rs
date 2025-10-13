@@ -7,7 +7,7 @@ use crate::residual::ResidualModel;
 #[cfg(feature = "dft")]
 use feos::pcsaft::PcSaftFunctional;
 use feos::pcsaft::{DQVariants, PcSaft, PcSaftOptions};
-use feos_core::{Components, EquationOfState};
+use feos_core::{EquationOfState, ResidualDyn};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use std::sync::Arc;
@@ -70,10 +70,8 @@ impl PyEquationOfState {
                 "Argument `parameters` must by Parameters or GcParameters",
             ));
         }?;
-        let residual = Arc::new(ResidualModel::PcSaft(PcSaft::with_options(
-            parameters, options,
-        )));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(residual.components()));
+        let residual = ResidualModel::PcSaft(PcSaft::with_options(parameters, options));
+        let ideal_gas = vec![IdealGasModel::NoModel; residual.components()];
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
 }
@@ -130,10 +128,12 @@ impl PyHelmholtzEnergyFunctional {
             tol_cross_assoc,
             dq_variant,
         };
-        let func = Arc::new(ResidualModel::PcSaftFunctional(
-            PcSaftFunctional::with_options(parameters.try_convert()?, fmt_version.into(), options),
+        let func = ResidualModel::PcSaftFunctional(PcSaftFunctional::with_options(
+            parameters.try_convert()?,
+            fmt_version.into(),
+            options,
         ));
-        let ideal_gas = Arc::new(IdealGasModel::NoModel(func.components()));
+        let ideal_gas = vec![IdealGasModel::NoModel; func.components()];
         Ok(PyEquationOfState(Arc::new(EquationOfState::new(
             ideal_gas, func,
         ))))

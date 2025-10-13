@@ -1,11 +1,10 @@
 use feos_core::{Contributions, EosError, EosResult, EosUnit, SolverOptions, State, StateBuilder};
 use feos_dft::{
-    Axis, ConvolverFFT, DFTProfile, DFTSolver, DFTSpecification, Geometry, Grid,
-    HelmholtzEnergyFunctional, WeightFunctionInfo, DFT,
+    Axis, ConvolverFFT, DFT, DFTProfile, DFTSolver, DFTSpecification, Geometry, Grid,
+    HelmholtzEnergyFunctional, WeightFunctionInfo,
 };
 use ndarray::prelude::*;
 use quantity::{QuantityArray2, QuantityScalar, SIArray1};
-use std::sync::Arc;
 
 pub enum MicelleInitialization {
     ExternalPotential(f64, f64),

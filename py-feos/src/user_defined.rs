@@ -1,9 +1,8 @@
 #![allow(non_snake_case)]
-use feos_core::{Components, IdealGas, Molarweight, Residual, StateHD};
-use ndarray::{Array1, ScalarOperand};
+use feos_core::{IdealGas, Molarweight, ResidualDyn, StateHD, Subset};
+use nalgebra::DVector;
 use num_dual::*;
-use numpy::convert::IntoPyArray;
-use numpy::{PyArray, PyReadonlyArray1, PyReadonlyArrayDyn, PyReadwriteArrayDyn};
+use numpy::{PyArray, PyReadonlyArrayDyn, PyReadwriteArrayDyn};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use quantity::MolarWeight;
@@ -29,55 +28,26 @@ impl PyIdealGas {
     }
 }
 
-impl Components for PyIdealGas {
-    fn components(&self) -> usize {
-        Python::with_gil(|py| {
-            let py_result = self.0.bind(py).call_method0("components").unwrap();
-            py_result.extract().unwrap()
-        })
-    }
-
-    fn subset(&self, component_list: &[usize]) -> Self {
-        Python::with_gil(|py| {
-            let py_result = self
-                .0
-                .bind(py)
-                .call_method1("subset", (component_list.to_vec(),))
-                .unwrap();
-            Self::new(py_result.extract().unwrap()).unwrap()
-        })
-    }
-}
-
 macro_rules! impl_ideal_gas {
     ($($py_hd_id:ident, $hd_ty:ty);*) => {
         impl IdealGas for PyIdealGas {
-            fn ideal_gas_model(&self) -> String {
-                "Ideal gas (Python)".to_string()
+            fn ideal_gas_model(&self) -> &'static str {
+                "Ideal gas (Python)"
             }
 
-            fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
-                let mut result = Array1::from_elem((self.components(),), D::zero());
+            fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
+                let mut result = D::zero();
 
                 $(
                     if let Some(t) = (&temperature as &dyn Any).downcast_ref::<$hd_ty>() {
-                        let l3_any = (&mut result as &mut dyn Any).downcast_mut::<Array1<$hd_ty>>().unwrap();
-                        *l3_any = Python::with_gil(|py| {
+                        let l3_any = (&mut result as &mut dyn Any).downcast_mut::<$hd_ty>().unwrap();
+                        *l3_any = Python::attach(|py| {
                             let py_result = self
                                 .0
                                 .bind(py)
                                 .call_method1("ln_lambda3", (<$py_hd_id>::from(t.clone()),))
                                 .unwrap();
-
-                            // f64
-                            if let Ok(r) = py_result.extract::<PyReadonlyArray1<f64>>() {
-                                r.as_array().mapv(|ri| <$hd_ty>::from(ri))
-                            // anything but f64
-                            } else if let Ok(r) = py_result.extract::<PyReadonlyArray1<PyObject>>() {
-                                r.as_array().map(|ri| <$hd_ty>::from(ri.extract::<$py_hd_id>(py).unwrap()))
-                            } else {
-                                    panic!("ln_lambda3: data type of result must be one-dimensional numpy ndarray")
-                            }
+                            <$hd_ty>::from(py_result.extract::<$py_hd_id>().unwrap())
                         });
                         return result
                     }
@@ -117,48 +87,88 @@ impl PyResidual {
     }
 }
 
-impl Components for PyResidual {
-    fn components(&self) -> usize {
-        Python::with_gil(|py| {
-            let py_result = self.0.bind(py).call_method0("components").unwrap();
-            py_result.extract().unwrap()
-        })
-    }
+// impl Components for PyResidual {
+//     fn components(&self) -> usize {
+//         Python::attach(|py| {
+//             let py_result = self.0.bind(py).call_method0("components").unwrap();
+//             py_result.extract().unwrap()
+//         })
+//     }
 
-    fn subset(&self, component_list: &[usize]) -> Self {
-        Python::with_gil(|py| {
-            let py_result = self
-                .0
-                .bind(py)
-                .call_method1("subset", (component_list.to_vec(),))
-                .unwrap();
-            Self::new(py_result.extract().unwrap()).unwrap()
-        })
-    }
-}
+//     fn subset(&self, component_list: &[usize]) -> Self {
+//         Python::attach(|py| {
+//             let py_result = self
+//                 .0
+//                 .bind(py)
+//                 .call_method1("subset", (component_list.to_vec(),))
+//                 .unwrap();
+//             Self::new(py_result.extract().unwrap()).unwrap()
+//         })
+//     }
+// }
 
 macro_rules! impl_residual {
     ($($py_state_id:ident, $py_hd_id:ident, $hd_ty:ty);*) => {
-        impl Residual for PyResidual {
-            fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-                Python::with_gil(|py| {
-                    let py_result = self
-                        .0
-                        .bind(py)
-                        .call_method1("max_density", (moles.to_owned().into_pyarray(py),))
-                        .unwrap();
+        impl ResidualDyn for PyResidual {
+            fn components(&self) -> usize {
+                Python::attach(|py| {
+                    let py_result = self.0.bind(py).call_method0("components").unwrap();
                     py_result.extract().unwrap()
                 })
             }
 
-            fn residual_helmholtz_energy<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
+            fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+                let mut rho = D::zero();
+
+                $(
+                    if let Some(x) = (molefracs as &dyn Any).downcast_ref::<DVector<$hd_ty>>() {
+                        let r = (&mut rho as &mut dyn Any).downcast_mut::<$hd_ty>().unwrap();
+                        *r = Python::attach(|py| {
+                            let py_result = self
+                                .0
+                                .bind(py)
+                                .call_method1("max_density", (x.iter().copied().map(<$py_hd_id>::from).collect::<Vec<_>>(),))
+                                .unwrap();
+                            <$hd_ty>::from(py_result.extract::<$py_hd_id>().unwrap())
+                        });
+                        return rho
+                    }
+                )*
+                panic!("compute_max_density: input data type not understood")
+            }
+
+            // fn reduced_residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
+            //     // result to write to
+            //     let mut a = D::zero();
+
+            //     $(
+            //         if let Some(s) = (state as &dyn Any).downcast_ref::<StateHD<$hd_ty>>() {
+            //             let d = (&mut a as &mut dyn Any).downcast_mut::<$hd_ty>().unwrap();
+            //             *d = Python::attach(|py| {
+            //                 let py_result = self
+            //                     .0
+            //                     .bind(py)
+            //                     .call_method1("helmholtz_energy", (<$py_state_id>::from(s.clone()),))
+            //                     .unwrap();
+            //                 <$hd_ty>::from(py_result.extract::<$py_hd_id>().unwrap())
+            //             });
+            //             return a
+            //         }
+            //     )*
+            //     panic!("helmholtz_energy: input data type not understood")
+            // }
+
+            fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy + >(
+                    &self,
+                    state: &StateHD<D>,
+                ) -> Vec<(&'static str, D)> {
                 // result to write to
                 let mut a = D::zero();
 
                 $(
                     if let Some(s) = (state as &dyn Any).downcast_ref::<StateHD<$hd_ty>>() {
                         let d = (&mut a as &mut dyn Any).downcast_mut::<$hd_ty>().unwrap();
-                        *d = Python::with_gil(|py| {
+                        *d = Python::attach(|py| {
                             let py_result = self
                                 .0
                                 .bind(py)
@@ -166,27 +176,33 @@ macro_rules! impl_residual {
                                 .unwrap();
                             <$hd_ty>::from(py_result.extract::<$py_hd_id>().unwrap())
                         });
-                        return a
+                        return vec![("Python", a)]
                     }
                 )*
                 panic!("helmholtz_energy: input data type not understood")
             }
-
-            fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy + ScalarOperand>(
-                    &self,
-                    state: &StateHD<D>,
-                ) -> Vec<(String, D)> {
-                vec![("Python".to_string(), self.residual_helmholtz_energy(state))]
-            }
         }
 
         impl Molarweight for PyResidual {
-            fn molar_weight(&self) -> MolarWeight<Array1<f64>> {
-                Python::with_gil(|py| {
+            fn molar_weight(&self) -> MolarWeight<DVector<f64>> {
+                Python::attach(|py| {
                     let py_result = self.0.bind(py).call_method0("molar_weight").unwrap();
                     py_result
-                        .extract::<MolarWeight<Array1<f64>>>()
+                        .extract::<MolarWeight<DVector<f64>>>()
                         .unwrap()
+                })
+            }
+        }
+
+        impl Subset for PyResidual {
+            fn subset(&self, component_list: &[usize]) -> Self {
+                Python::attach(|py| {
+                    let py_result = self
+                        .0
+                        .bind(py)
+                        .call_method1("subset", (component_list.to_vec(),))
+                        .unwrap();
+                    Self::new(py_result.extract().unwrap()).unwrap()
                 })
             }
         }
@@ -209,8 +225,12 @@ macro_rules! state {
         impl $py_state_id {
             #[new]
             pub fn new(temperature: $py_hd_id, volume: $py_hd_id, moles: Vec<$py_hd_id>) -> Self {
-                let m = Array1::from(moles).mapv(<$hd_ty>::from);
-                Self(StateHD::<$hd_ty>::new(temperature.into(), volume.into(), m))
+                let moles = moles.into_iter().map(<$hd_ty>::from).collect();
+                Self(StateHD::<$hd_ty>::new(
+                    temperature.into(),
+                    volume.into(),
+                    &DVector::from_vec(moles),
+                ))
             }
 
             #[getter]
@@ -218,36 +238,39 @@ macro_rules! state {
                 <$py_hd_id>::from(self.0.temperature)
             }
 
-            #[getter]
-            pub fn get_volume(&self) -> $py_hd_id {
-                <$py_hd_id>::from(self.0.volume)
-            }
+            // #[getter]
+            // pub fn get_volume(&self) -> $py_hd_id {
+            //     <$py_hd_id>::from(self.0.volume)
+            // }
 
-            #[getter]
-            pub fn get_moles(&self) -> Vec<$py_hd_id> {
-                self.0
-                    .moles
-                    .mapv(<$py_hd_id>::from)
-                    .into_raw_vec_and_offset()
-                    .0
-            }
+            // #[getter]
+            // pub fn get_moles(&self) -> Vec<$py_hd_id> {
+            //     self.0
+            //         .moles
+            //         .as_ndarray1()
+            //         .mapv(<$py_hd_id>::from)
+            //         .into_raw_vec_and_offset()
+            //         .0
+            // }
 
             #[getter]
             pub fn get_partial_density(&self) -> Vec<$py_hd_id> {
                 self.0
                     .partial_density
-                    .mapv(<$py_hd_id>::from)
-                    .into_raw_vec_and_offset()
-                    .0
+                    .iter()
+                    .copied()
+                    .map(<$py_hd_id>::from)
+                    .collect()
             }
 
             #[getter]
             pub fn get_molefracs(&self) -> Vec<$py_hd_id> {
                 self.0
                     .molefracs
-                    .mapv(<$py_hd_id>::from)
-                    .into_raw_vec_and_offset()
-                    .0
+                    .iter()
+                    .copied()
+                    .map(<$py_hd_id>::from)
+                    .collect()
             }
 
             #[getter]

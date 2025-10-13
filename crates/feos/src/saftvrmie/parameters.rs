@@ -1,6 +1,6 @@
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use feos_core::parameter::{Parameters, PureRecord};
-use ndarray::{Array, Array1, Array2};
+use nalgebra::{DMatrix, DVector};
 use num_dual::DualNum;
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
@@ -46,7 +46,7 @@ impl SaftVRMieRecord {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
 pub struct SaftVRMieAssociationRecord {
     /// Association radius parameter
     pub rc_ab: f64,
@@ -90,17 +90,17 @@ pub type SaftVRMieParameters =
 
 /// The SAFT-VR Mie parameters in an easier accessible format.
 pub struct SaftVRMiePars {
-    pub m: Array1<f64>,
-    pub sigma: Array1<f64>,
-    pub epsilon_k: Array1<f64>,
-    pub lr: Array1<f64>,
-    pub la: Array1<f64>,
-    pub sigma_ij: Array2<f64>,
-    pub epsilon_k_ij: Array2<f64>,
-    pub lr_ij: Array2<f64>,
-    pub la_ij: Array2<f64>,
-    pub c_ij: Array2<f64>,
-    pub alpha_ij: Array2<f64>,
+    pub m: DVector<f64>,
+    pub sigma: DVector<f64>,
+    pub epsilon_k: DVector<f64>,
+    pub lr: DVector<f64>,
+    pub la: DVector<f64>,
+    pub sigma_ij: DMatrix<f64>,
+    pub epsilon_k_ij: DMatrix<f64>,
+    pub lr_ij: DMatrix<f64>,
+    pub la_ij: DMatrix<f64>,
+    pub c_ij: DMatrix<f64>,
+    pub alpha_ij: DMatrix<f64>,
 }
 
 impl SaftVRMiePars {
@@ -111,28 +111,28 @@ impl SaftVRMiePars {
         let [lr, la] = parameters.collate(|pr| [pr.lr, pr.la]);
         let [k_ij, gamma_ij] = parameters.collate_binary(|br| [br.k_ij, br.gamma_ij]);
 
-        let mut sigma_ij = Array::zeros((n, n));
-        let mut e_k_ij = Array::zeros((n, n));
-        let mut epsilon_k_ij = Array::zeros((n, n));
-        let mut lr_ij = Array::zeros((n, n));
-        let mut la_ij = Array::zeros((n, n));
-        let mut c_ij = Array::zeros((n, n));
-        let mut alpha_ij = Array::zeros((n, n));
+        let mut sigma_ij = DMatrix::zeros(n, n);
+        let mut e_k_ij = DMatrix::zeros(n, n);
+        let mut epsilon_k_ij = DMatrix::zeros(n, n);
+        let mut lr_ij = DMatrix::zeros(n, n);
+        let mut la_ij = DMatrix::zeros(n, n);
+        let mut c_ij = DMatrix::zeros(n, n);
+        let mut alpha_ij = DMatrix::zeros(n, n);
         for i in 0..n {
             for j in 0..n {
-                sigma_ij[[i, j]] = 0.5 * (sigma[i] + sigma[j]);
-                e_k_ij[[i, j]] = (sigma[i].powi(3) * sigma[j].powi(3)).sqrt()
-                    / sigma_ij[[i, j]].powi(3)
+                sigma_ij[(i, j)] = 0.5 * (sigma[i] + sigma[j]);
+                e_k_ij[(i, j)] = (sigma[i].powi(3) * sigma[j].powi(3)).sqrt()
+                    / sigma_ij[(i, j)].powi(3)
                     * (epsilon_k[i] * epsilon_k[j]).sqrt();
-                epsilon_k_ij[[i, j]] = (1.0 - k_ij[[i, j]]) * e_k_ij[[i, j]];
-                lr_ij[[i, j]] =
-                    (1.0 - gamma_ij[[i, j]]) * ((lr[i] - 3.0) * (lr[j] - 3.0)).sqrt() + 3.0;
-                la_ij[[i, j]] = ((la[i] - 3.0) * (la[j] - 3.0)).sqrt() + 3.0;
-                c_ij[[i, j]] = lr_ij[[i, j]] / (lr_ij[[i, j]] - la_ij[[i, j]])
-                    * (lr_ij[[i, j]] / la_ij[[i, j]])
-                        .powf(la_ij[[i, j]] / (lr_ij[[i, j]] - la_ij[[i, j]]));
-                alpha_ij[[i, j]] =
-                    c_ij[[i, j]] * ((la_ij[[i, j]] - 3.0).recip() - (lr_ij[[i, j]] - 3.0).recip())
+                epsilon_k_ij[(i, j)] = (1.0 - k_ij[(i, j)]) * e_k_ij[(i, j)];
+                lr_ij[(i, j)] =
+                    (1.0 - gamma_ij[(i, j)]) * ((lr[i] - 3.0) * (lr[j] - 3.0)).sqrt() + 3.0;
+                la_ij[(i, j)] = ((la[i] - 3.0) * (la[j] - 3.0)).sqrt() + 3.0;
+                c_ij[(i, j)] = lr_ij[(i, j)] / (lr_ij[(i, j)] - la_ij[(i, j)])
+                    * (lr_ij[(i, j)] / la_ij[(i, j)])
+                        .powf(la_ij[(i, j)] / (lr_ij[(i, j)] - la_ij[(i, j)]));
+                alpha_ij[(i, j)] =
+                    c_ij[(i, j)] * ((la_ij[(i, j)] - 3.0).recip() - (lr_ij[(i, j)] - 3.0).recip())
             }
         }
 
@@ -160,9 +160,9 @@ impl SaftVRMiePars {
         j: usize,
         inverse_temperature: D,
     ) -> D {
-        let lr = self.lr_ij[[i, j]];
-        let la = self.la_ij[[i, j]];
-        let c_eps_t = inverse_temperature * self.c_ij[[i, j]] * self.epsilon_k_ij[[i, j]];
+        let lr = self.lr_ij[(i, j)];
+        let la = self.la_ij[(i, j)];
+        let c_eps_t = inverse_temperature * self.c_ij[(i, j)] * self.epsilon_k_ij[(i, j)];
 
         // perform integration in reduced distances, then multiply sigma
         // r0 is dimensionless
@@ -173,7 +173,7 @@ impl SaftVRMiePars {
             let u = beta_u_mie(r, la, lr, 1.0, c_eps_t);
             let f_u = -(-u).exp_m1();
             d + width * f_u * w
-        }) * self.sigma_ij[[i, j]]
+        }) * self.sigma_ij[(i, j)]
     }
 }
 
@@ -227,13 +227,13 @@ fn beta_u_mie<D: DualNum<f64> + Copy>(r: D, la: f64, lr: f64, sigma: f64, c_eps_
 }
 
 impl HardSphereProperties for SaftVRMiePars {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<N> {
-        MonomerShape::NonSpherical(self.m.mapv(N::from))
+    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
+        MonomerShape::NonSpherical(self.m.map(N::from))
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> Array1<D> {
+    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
         let t_inv = temperature.recip();
-        Array1::from_shape_fn(self.m.len(), |i| -> D { self.hs_diameter_ij(i, i, t_inv) })
+        DVector::from_fn(self.m.len(), |i, _| self.hs_diameter_ij(i, i, t_inv))
     }
 }
 
@@ -588,7 +588,7 @@ mod test {
         let ethane = SaftVRMiePars::new(&test_parameters()["ethane"]);
         let la = ethane.la[0];
         let lr = ethane.lr[0];
-        let c_eps_t = ethane.c_ij[[0, 0]] * ethane.epsilon_k[0] / temperature;
+        let c_eps_t = ethane.c_ij[(0, 0)] * ethane.epsilon_k[0] / temperature;
         let r0 = lower_integratal_limit(la, lr, c_eps_t);
         assert_relative_eq!(
             (-beta_u_mie(r0, la, lr, 1.0, c_eps_t)).exp(),

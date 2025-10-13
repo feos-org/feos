@@ -6,7 +6,6 @@ use super::Loss;
 use feos_core::{FeosError, Residual};
 use ndarray::Array1;
 use std::fmt;
-use std::sync::Arc;
 
 /// Utilities for working with experimental data.
 ///

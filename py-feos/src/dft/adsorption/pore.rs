@@ -7,10 +7,12 @@ use crate::residual::ResidualModel;
 use crate::state::{PyContributions, PyState};
 use feos_core::{EquationOfState, ReferenceSystem};
 use feos_dft::adsorption::*;
+use nalgebra::{DMatrix, DVector};
 use ndarray::*;
 use numpy::*;
 use pyo3::prelude::*;
 use quantity::*;
+use std::sync::Arc;
 
 macro_rules! impl_pore_profile {
     ($py_profile:ty) => {
@@ -29,7 +31,7 @@ macro_rules! impl_pore_profile {
             #[getter]
             fn get_partial_molar_enthalpy_of_adsorption(
                 &self,
-            ) -> PyResult<MolarEnergy<Array1<f64>>> {
+            ) -> PyResult<MolarEnergy<DVector<f64>>> {
                 Ok(self
                     .0
                     .partial_molar_enthalpy_of_adsorption()
@@ -42,12 +44,12 @@ macro_rules! impl_pore_profile {
             }
 
             #[getter]
-            fn get_henry_coefficients(&self) -> HenryCoefficient<Array1<f64>> {
+            fn get_henry_coefficients(&self) -> HenryCoefficient<DVector<f64>> {
                 self.0.henry_coefficients()
             }
 
             #[getter]
-            fn get_ideal_gas_enthalpy_of_adsorption(&self) -> MolarEnergy<Array1<f64>> {
+            fn get_ideal_gas_enthalpy_of_adsorption(&self) -> MolarEnergy<DVector<f64>> {
                 self.0.ideal_gas_enthalpy_of_adsorption()
             }
         }
@@ -78,7 +80,9 @@ macro_rules! impl_pore_profile {
 pub struct PyPore1D(pub Pore1D);
 
 #[pyclass(name = "PoreProfile1D")]
-pub struct PyPoreProfile1D(pub PoreProfile1D<EquationOfState<IdealGasModel, ResidualModel>>);
+pub struct PyPoreProfile1D(
+    pub PoreProfile1D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
+);
 
 impl_1d_profile!(PyPoreProfile1D, [get_r, get_z]);
 impl_pore_profile!(PyPoreProfile1D);
@@ -175,7 +179,9 @@ impl PyPore1D {
 pub struct PyPore2D(pub Pore2D);
 
 #[pyclass(name = "PoreProfile2D")]
-pub struct PyPoreProfile2D(pub PoreProfile2D<EquationOfState<IdealGasModel, ResidualModel>>);
+pub struct PyPoreProfile2D(
+    pub PoreProfile2D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
+);
 
 impl_2d_profile!(PyPoreProfile2D, get_x, get_y);
 impl_pore_profile!(PyPoreProfile2D);
@@ -264,7 +270,9 @@ impl PyPore2D {
 pub struct PyPore3D(pub Pore3D);
 
 #[pyclass(name = "PoreProfile3D")]
-pub struct PyPoreProfile3D(pub PoreProfile3D<EquationOfState<IdealGasModel, ResidualModel>>);
+pub struct PyPoreProfile3D(
+    pub PoreProfile3D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
+);
 
 impl_3d_profile!(PyPoreProfile3D, get_x, get_y, get_z);
 impl_pore_profile!(PyPoreProfile3D);

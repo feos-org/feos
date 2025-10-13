@@ -11,7 +11,6 @@ use std::f64::consts::PI;
 use std::ops::AddAssign;
 use std::sync::Arc;
 
-#[derive(Clone)]
 pub struct PeriodicConvolver<T, D: Dimension> {
     /// k vectors
     k_abs: Array<f64, D>,
@@ -36,7 +35,7 @@ where
         angle: Angle,
         weight_functions: &[WeightFunctionInfo<T>],
         lanczos: Option<i32>,
-    ) -> Arc<dyn Convolver<T, D>> {
+    ) -> Box<dyn Convolver<T, D>> {
         let f = |k: &mut Array<f64, D::Larger>| {
             let k_y =
                 (&k.index_axis(Axis(0), 1) - &k.index_axis(Axis(0), 0) * angle.cos()) / angle.sin();
@@ -50,7 +49,7 @@ where
         angles: [Angle; 3],
         weight_functions: &[WeightFunctionInfo<T>],
         lanczos: Option<i32>,
-    ) -> Arc<dyn Convolver<T, D>> {
+    ) -> Box<dyn Convolver<T, D>> {
         let f = |k: &mut Array<f64, D::Larger>| {
             let [alpha, beta, gamma] = angles;
             let [k_u, k_v, k_w] = [0, 1, 2].map(|i| k.index_axis(Axis(0), i));
@@ -73,7 +72,7 @@ where
         non_orthogonal_correction: F,
         weight_functions: &[WeightFunctionInfo<T>],
         lanczos: Option<i32>,
-    ) -> Arc<dyn Convolver<T, D>> {
+    ) -> Box<dyn Convolver<T, D>> {
         // initialize the Fourier transform
         let mut planner = FftPlanner::new();
         let mut forward_transforms = Vec::with_capacity(axes.len());
@@ -175,7 +174,7 @@ where
             });
         }
 
-        Arc::new(Self {
+        Box::new(Self {
             k_abs,
             weight_functions: fft_weight_functions,
             lanczos_sigma,

@@ -5,7 +5,7 @@ use super::hard_sphere::{
 };
 use crate::uvtheory::parameters::*;
 use feos_core::StateHD;
-use ndarray::Array1;
+use nalgebra::DVector;
 use num_dual::DualNum;
 use std::f64::consts::PI;
 
@@ -85,7 +85,7 @@ pub(super) struct AttractivePerturbationB3;
 
 impl AttractivePerturbationB3 {
     /// Helmholtz energy for attractive perturbation
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &UVTheoryPars,
         state: &StateHD<D>,
@@ -110,7 +110,7 @@ impl AttractivePerturbationB3 {
 
         let u_fraction_wca = u_fraction_wca(
             rep_x,
-            density * (x * &p.sigma.mapv(|s| s.powi(3))).sum(),
+            density * x.dot(&p.sigma.map(|s| D::from(s.powi(3)))),
             t_x,
         );
 
@@ -121,7 +121,7 @@ impl AttractivePerturbationB3 {
         let db31u = delta_b31u(t_x, weighted_sigma3_ij, rm_x, rep_x, att_x, d_x);
         let alpha =
             (-rho_x * rep_x.recip() * CU_WCA[0] * (t_x.powi(2).recip() * CU_WCA[1] + 1.0)).exp();
-        state.moles.sum()
+        density
             * (delta_a1u
                 + (-u_fraction_wca + 1.0)
                     * ((b2bar - b21u) * density + density.powi(2) * alpha * (b3bar - db31u) * 0.5))
@@ -141,19 +141,23 @@ fn delta_b12u<D: DualNum<f64> + Copy>(
         * weighted_sigma3_ij
 }
 
-fn residual_virial_coefficient<D: DualNum<f64> + Copy>(p: &UVTheoryPars, x: &Array1<D>, t: D) -> D {
+fn residual_virial_coefficient<D: DualNum<f64> + Copy>(
+    p: &UVTheoryPars,
+    x: &DVector<D>,
+    t: D,
+) -> D {
     let mut delta_b2bar = D::zero();
 
     for (i, xi) in x.iter().enumerate() {
         for (j, xj) in x.iter().enumerate() {
-            let t_ij = t / p.eps_k_ij[[i, j]];
-            let rep_ij = p.rep_ij[[i, j]];
-            let att_ij = p.att_ij[[i, j]];
+            let t_ij = t / p.eps_k_ij[(i, j)];
+            let rep_ij = p.rep_ij[(i, j)];
+            let att_ij = p.att_ij[(i, j)];
 
             let q_ij = dimensionless_diameter_q_wca(t_ij, D::from(rep_ij), D::from(att_ij));
 
             delta_b2bar +=
-                *xi * *xj * p.sigma_ij[[i, j]].powi(3) * delta_b2(t_ij, rep_ij, att_ij, q_ij);
+                *xi * *xj * p.sigma_ij[(i, j)].powi(3) * delta_b2(t_ij, rep_ij, att_ij, q_ij);
         }
     }
     delta_b2bar
@@ -161,17 +165,17 @@ fn residual_virial_coefficient<D: DualNum<f64> + Copy>(p: &UVTheoryPars, x: &Arr
 
 fn residual_third_virial_coefficient<D: DualNum<f64> + Copy>(
     p: &UVTheoryPars,
-    x: &Array1<D>,
+    x: &DVector<D>,
     t: D,
-    d: &Array1<D>,
+    d: &DVector<D>,
 ) -> D {
     let mut delta_b3bar = D::zero();
 
     for (i, xi) in x.iter().enumerate() {
         for (j, xj) in x.iter().enumerate() {
-            let t_ij = t / p.eps_k_ij[[i, j]];
-            let rep_ij = p.rep_ij[[i, j]];
-            let att_ij = p.att_ij[[i, j]];
+            let t_ij = t / p.eps_k_ij[(i, j)];
+            let rep_ij = p.rep_ij[(i, j)];
+            let att_ij = p.att_ij[(i, j)];
             let q_ij = dimensionless_diameter_q_wca(t_ij, D::from(rep_ij), D::from(att_ij));
 
             // No mixing rule defined for B3 yet! The implemented rule is just taken from B2 and not correct!
@@ -180,7 +184,7 @@ fn residual_third_virial_coefficient<D: DualNum<f64> + Copy>(
             // Recheck mixing rule!
             delta_b3bar += *xi
                 * *xj
-                * p.sigma_ij[[i, j]].powi(6)
+                * p.sigma_ij[(i, j)].powi(6)
                 * delta_b3(t_ij, rm_ij, rep_ij, att_ij, d_ij, q_ij);
         }
     }
@@ -374,20 +378,18 @@ mod test {
     use crate::uvtheory::Perturbation::WeeksChandlerAndersenB3 as WCAB3;
     use crate::uvtheory::parameters::utils::methane_parameters;
     use approx::assert_relative_eq;
-    use ndarray::arr1;
+    use nalgebra::dvector;
 
     #[test]
     fn test_attractive_perturbation_uvb3() {
-        let moles = arr1(&[2.0]);
         let reduced_temperature = 4.0;
         let reduced_density = 0.5;
-        let reduced_volume = moles[0] / reduced_density;
 
         let p = UVTheoryPars::new(&methane_parameters(12.0, 6.0), WCAB3);
         let state = StateHD::new(
             reduced_temperature * p.epsilon_k[0],
-            reduced_volume * p.sigma[0].powi(3),
-            moles.clone(),
+            p.sigma[0].powi(3) / reduced_density,
+            &dvector![1.0],
         );
         let x = &state.molefracs;
         let (rep_x, att_x, sigma_x, weighted_sigma3_ij, epsilon_k_x, d_x) =
@@ -400,35 +402,36 @@ mod test {
 
         // Effective Diameters:
         let q_vdw = dimensionless_diameter_q_wca(t_x, rep_x, att_x);
-        assert_relative_eq!(q_vdw.re(), 0.9606854684075393, epsilon = 1e-10);
-        assert_relative_eq!(d_x.re(), 0.934655265184067, epsilon = 1e-10);
+        assert_relative_eq!(q_vdw, 0.9606854684075393, epsilon = 1e-10);
+        assert_relative_eq!(d_x, 0.934655265184067, epsilon = 1e-10);
 
         //u-fraction:
         let u_fraction_wca = u_fraction_wca(
             rep_x,
-            state.partial_density.sum() * (x * &p.sigma.mapv(|s| s.powi(3))).sum(),
+            state.partial_density.sum() * (x * &p.sigma.map(|s| s.powi(3))).sum(),
             t_x,
         );
-        assert_relative_eq!(u_fraction_wca.re(), 0.8852775506870431, epsilon = 1e-10);
+        assert_relative_eq!(u_fraction_wca, 0.8852775506870431, epsilon = 1e-10);
         // delta a1u
         let i_wca =
             correlation_integral_wca(rho_x, mean_field_constant_x, rep_x, att_x, d_x, q_vdw, rm_x);
         let delta_a1u = state.partial_density.sum() / t_x * i_wca * 2.0 * PI * weighted_sigma3_ij;
-        assert!(delta_a1u.re() == -0.8992910890819197);
+        assert!(delta_a1u == -0.8992910890819197);
         // Virial coeffecients:
         let b2bar = residual_virial_coefficient(&p, x, state.temperature) / p.sigma[0].powi(3);
-        assert_relative_eq!(b2bar.re(), -1.6142316456384618, epsilon = 1e-12);
+        assert_relative_eq!(b2bar, -1.6142316456384618, epsilon = 1e-12);
 
         let b21u = delta_b12u(t_x, mean_field_constant_x, weighted_sigma3_ij, q_vdw, rm_x)
             / p.sigma[0].powi(3);
-        assert_relative_eq!(b21u.re(), -1.5103749286162982, epsilon = 1e-10);
+        assert_relative_eq!(b21u, -1.5103749286162982, epsilon = 1e-10);
 
         let db3 = delta_b3(t_x, rm_x, rep_x, att_x, d_x, q_vdw);
-        assert_relative_eq!(db3.re(), -0.6591980196661884, epsilon = 1e-10);
+        assert_relative_eq!(db3, -0.6591980196661884, epsilon = 1e-10);
 
         // Full attractive perturbation:
-        let a = AttractivePerturbationB3.helmholtz_energy(&p, &state) / moles[0];
+        let a = AttractivePerturbationB3.helmholtz_energy_density(&p, &state)
+            / state.partial_density.sum();
 
-        assert_relative_eq!(-0.9027781694834115, a.re(), epsilon = 1e-5);
+        assert_relative_eq!(-0.9027781694834115, a, epsilon = 1e-5);
     }
 }

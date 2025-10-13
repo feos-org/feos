@@ -2,7 +2,7 @@ use super::WeeksChandlerAndersen;
 use super::hard_sphere::dimensionless_diameter_q_wca;
 use crate::uvtheory::parameters::*;
 use feos_core::StateHD;
-use ndarray::Array1;
+use nalgebra::DVector;
 use num_dual::DualNum;
 use std::f64::consts::PI;
 
@@ -72,7 +72,7 @@ pub struct AttractivePerturbation;
 
 impl AttractivePerturbation {
     /// Helmholtz energy for attractive perturbation, eq. 52
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &UVTheoryPars,
         state: &StateHD<D>,
@@ -97,12 +97,12 @@ impl AttractivePerturbation {
 
         //                 state.partial_density.sum() / t_x * i_wca * 2.0 * PI * weighted_sigma3_ij;
         let u_fraction_wca =
-            u_fraction_wca(rep_x, density * (x * &p.sigma.mapv(|s| s.powi(3))).sum());
+            u_fraction_wca(rep_x, density * x.dot(&p.sigma.map(|s| D::from(s.powi(3)))));
 
         let b21u = delta_b12u(t_x, mean_field_constant_x, weighted_sigma3_ij, q_vdw, rm_x);
         let b2bar = residual_virial_coefficient(p, x, state.temperature);
 
-        state.moles.sum() * (delta_a1u + (-u_fraction_wca + 1.0) * (b2bar - b21u) * density)
+        density * (delta_a1u + (-u_fraction_wca + 1.0) * (b2bar - b21u) * density)
     }
 }
 
@@ -120,21 +120,25 @@ fn delta_b12u<D: DualNum<f64> + Copy>(
         * weighted_sigma3_ij
 }
 
-fn residual_virial_coefficient<D: DualNum<f64> + Copy>(p: &UVTheoryPars, x: &Array1<D>, t: D) -> D {
+fn residual_virial_coefficient<D: DualNum<f64> + Copy>(
+    p: &UVTheoryPars,
+    x: &DVector<D>,
+    t: D,
+) -> D {
     let mut delta_b2bar = D::zero();
 
     for (i, xi) in x.iter().enumerate() {
         for (j, xj) in x.iter().enumerate() {
             //let q_ij = (q[i] / p.sigma[i] + q[j] / p.sigma[j]) * 0.5;
-            let t_ij = t / p.eps_k_ij[[i, j]];
-            let rep_ij = p.rep_ij[[i, j]];
-            let att_ij = p.att_ij[[i, j]];
+            let t_ij = t / p.eps_k_ij[(i, j)];
+            let rep_ij = p.rep_ij[(i, j)];
+            let att_ij = p.att_ij[(i, j)];
 
             let q_ij = dimensionless_diameter_q_wca(t_ij, D::from(rep_ij), D::from(att_ij));
 
             // Recheck mixing rule!
             delta_b2bar +=
-                *xi * *xj * p.sigma_ij[[i, j]].powi(3) * delta_b2(t_ij, rep_ij, att_ij, q_ij);
+                *xi * *xj * p.sigma_ij[(i, j)].powi(3) * delta_b2(t_ij, rep_ij, att_ij, q_ij);
         }
     }
     delta_b2bar
@@ -166,7 +170,7 @@ fn u_fraction_wca<D: DualNum<f64> + Copy>(rep_x: D, reduced_density: D) -> D {
 
 pub(super) fn one_fluid_properties<D: DualNum<f64> + Copy>(
     p: &UVTheoryPars,
-    x: &Array1<D>,
+    x: &DVector<D>,
     t: D,
 ) -> (D, D, D, D, D, D) {
     let d = WeeksChandlerAndersen::diameter_wca(p, t);
@@ -181,17 +185,17 @@ pub(super) fn one_fluid_properties<D: DualNum<f64> + Copy>(
     for (i, xi) in x.iter().enumerate() {
         d_x_3 += *xi * d[i].powi(3);
         for (j, xj) in x.iter().enumerate() {
-            let _y = *xi * *xj * p.sigma_ij[[i, j]].powi(3);
+            let _y = *xi * *xj * p.sigma_ij[(i, j)].powi(3);
             weighted_sigma3_ij += _y;
-            epsilon_k += _y * p.eps_k_ij[[i, j]];
+            epsilon_k += _y * p.eps_k_ij[(i, j)];
 
-            rep += *xi * *xj * p.rep_ij[[i, j]];
-            att += *xi * *xj * p.att_ij[[i, j]];
+            rep += *xi * *xj * p.rep_ij[(i, j)];
+            att += *xi * *xj * p.att_ij[(i, j)];
         }
     }
 
-    //let dx = (x * &d.mapv(|v| v.powi(3))).sum().powf(1.0 / 3.0);
-    let sigma_x = (x * &p.sigma.mapv(|v| v.powi(3))).sum().powf(1.0 / 3.0);
+    //let dx = (x * &d.map(|v| v.powi(3))).sum().powf(1.0 / 3.0);
+    let sigma_x = x.dot(&p.sigma.map(|v| D::from(v.powi(3)))).powf(1.0 / 3.0);
     let dx = d_x_3.powf(1.0 / 3.0) / sigma_x;
 
     (
@@ -278,21 +282,19 @@ mod test {
     use crate::uvtheory::Perturbation::WeeksChandlerAndersen as WCA;
     use crate::uvtheory::parameters::utils::{methane_parameters, test_parameters_mixture};
     use approx::assert_relative_eq;
-    use ndarray::arr1;
+    use nalgebra::dvector;
 
     #[test]
     fn test_attractive_perturbation() {
         // m = 24, t = 4.0, rho = 1.0
-        let moles = arr1(&[2.0]);
         let reduced_temperature = 4.0;
         let reduced_density = 1.0;
-        let reduced_volume = moles[0] / reduced_density;
 
         let p = UVTheoryPars::new(&methane_parameters(24.0, 6.0), WCA);
         let state = StateHD::new(
             reduced_temperature * p.epsilon_k[0],
-            reduced_volume * p.sigma[0].powi(3),
-            moles.clone(),
+            p.sigma[0].powi(3) / reduced_density,
+            &dvector![1.0],
         );
         let x = &state.molefracs;
 
@@ -307,26 +309,26 @@ mod test {
         let q_vdw = dimensionless_diameter_q_wca(t_x, rep_x, att_x);
         let b21u = delta_b12u(t_x, mean_field_constant_x, weighted_sigma3_ij, q_vdw, rm_x)
             / p.sigma[0].powi(3);
-        assert_relative_eq!(b21u.re(), -1.02233215790525, epsilon = 1e-12);
+        assert_relative_eq!(b21u, -1.02233215790525, epsilon = 1e-12);
 
         let i_wca =
             correlation_integral_wca(rho_x, mean_field_constant_x, rep_x, att_x, d_x, q_vdw, rm_x);
 
         let delta_a1u = state.partial_density.sum() / t_x * i_wca * 2.0 * PI * weighted_sigma3_ij;
 
-        assert_relative_eq!(delta_a1u.re(), -1.52406840346272, epsilon = 1e-6);
+        assert_relative_eq!(delta_a1u, -1.52406840346272, epsilon = 1e-6);
 
         let u_fraction_wca = u_fraction_wca(
             rep_x,
-            state.partial_density.sum() * (x * &p.sigma.mapv(|s| s.powi(3))).sum(),
+            state.partial_density.sum() * x.dot(&p.sigma.map(|s| s.powi(3))),
         );
 
         let b2bar = residual_virial_coefficient(&p, x, state.temperature) / p.sigma[0].powi(3);
         dbg!(b2bar);
-        assert_relative_eq!(b2bar.re(), -1.09102560732964, epsilon = 1e-12);
+        assert_relative_eq!(b2bar, -1.09102560732964, epsilon = 1e-12);
         dbg!(u_fraction_wca);
 
-        assert_relative_eq!(u_fraction_wca.re(), 0.997069754340431, epsilon = 1e-5);
+        assert_relative_eq!(u_fraction_wca, 0.997069754340431, epsilon = 1e-5);
 
         let a_test = delta_a1u
             + (-u_fraction_wca + 1.0)
@@ -334,30 +336,29 @@ mod test {
                 * p.sigma[0].powi(3)
                 * state.partial_density.sum();
         dbg!(a_test);
-        dbg!(state.moles.sum());
-        let a = AttractivePerturbation.helmholtz_energy(&p, &state) / moles[0];
-        dbg!(a.re());
+        let a = AttractivePerturbation.helmholtz_energy_density(&p, &state)
+            / state.partial_density.sum();
+        dbg!(a);
 
-        assert_relative_eq!(-1.5242697155023, a.re(), epsilon = 1e-5);
+        assert_relative_eq!(-1.5242697155023, a, epsilon = 1e-5);
     }
 
     #[test]
     fn test_attractive_perturbation_wca_mixture() {
-        let moles = arr1(&[0.40000000000000002, 0.59999999999999998]);
+        let molefracs = dvector![0.40000000000000002, 0.59999999999999998];
         let reduced_temperature = 1.0;
         let reduced_density = 0.90000000000000002;
-        let reduced_volume = (moles[0] + moles[1]) / reduced_density;
 
         let p = UVTheoryPars::new(
             &test_parameters_mixture(
-                arr1(&[12.0, 12.0]),
-                arr1(&[6.0, 6.0]),
-                arr1(&[1.0, 1.0]),
-                arr1(&[1.0, 0.5]),
+                dvector![12.0, 12.0],
+                dvector![6.0, 6.0],
+                dvector![1.0, 1.0],
+                dvector![1.0, 0.5],
             ),
             WCA,
         );
-        let state = StateHD::new(reduced_temperature, reduced_volume, moles.clone());
+        let state = StateHD::new(reduced_temperature, 1.0 / reduced_density, &molefracs);
         let (rep_x, att_x, sigma_x, weighted_sigma3_ij, epsilon_k_x, d_x) =
             one_fluid_properties(&p, &state.molefracs, state.temperature);
 
@@ -370,10 +371,10 @@ mod test {
         let mean_field_constant_x = mean_field_constant(rep_x, att_x, rm_x);
         let t_x = state.temperature / epsilon_k_x;
 
-        dbg!(t_x.re());
+        dbg!(t_x);
 
         let q_vdw = dimensionless_diameter_q_wca(t_x, rep_x, att_x);
-        dbg!(q_vdw.re());
+        dbg!(q_vdw);
         let delta_b21u = delta_b12u(t_x, mean_field_constant_x, weighted_sigma3_ij, q_vdw, rm_x);
         dbg!(delta_b21u);
         assert_relative_eq!(delta_b21u, -3.9309384983526585, epsilon = 1e-6);
@@ -401,39 +402,39 @@ mod test {
         dbg!(delta_b2);
         assert_relative_eq!(delta_b2, -4.7846399638747954, epsilon = 1e-6);
         // Full attractive contribution
-        let a = AttractivePerturbation.helmholtz_energy(&p, &state) / (moles[0] + moles[1]);
+        let a = AttractivePerturbation.helmholtz_energy_density(&p, &state) / reduced_density;
 
         assert_relative_eq!(a, -4.7697504236074844, epsilon = 1e-5);
     }
 
     #[test]
     fn test_attractive_perturbation_wca_mixture_different_sigma() {
-        let moles = arr1(&[0.40000000000000002, 0.59999999999999998]);
+        let molefracs = dvector![0.40000000000000002, 0.59999999999999998];
         let reduced_temperature = 1.5;
         let density = 0.10000000000000001;
         let volume = 1.0 / density;
         let p = UVTheoryPars::new(
             &test_parameters_mixture(
-                arr1(&[12.0, 12.0]),
-                arr1(&[6.0, 6.0]),
-                arr1(&[1.0, 2.0]),
-                arr1(&[1.0, 0.5]),
+                dvector![12.0, 12.0],
+                dvector![6.0, 6.0],
+                dvector![1.0, 2.0],
+                dvector![1.0, 0.5],
             ),
             WCA,
         );
 
-        let state = StateHD::new(reduced_temperature, volume, moles.clone());
+        let state = StateHD::new(reduced_temperature, volume, &molefracs);
         let (rep_x, att_x, sigma_x, weighted_sigma3_ij, epsilon_k_x, d_x) =
             one_fluid_properties(&p, &state.molefracs, state.temperature);
         // u-fraction
         let density = state.partial_density.sum();
         let x = &state.molefracs;
-        let phi_u = u_fraction_wca(rep_x, density * (x * &p.sigma.mapv(|s| s.powi(3))).sum());
+        let phi_u = u_fraction_wca(rep_x, density * x.dot(&p.sigma.map(|s| s.powi(3))));
         assert_relative_eq!(phi_u, 0.89210738762113795, epsilon = 1e-5);
         // delta b2
 
         let b2bar = residual_virial_coefficient(&p, x, state.temperature) / p.sigma[0].powi(3);
-        assert_relative_eq!(b2bar.re(), -12.106977583257606, epsilon = 1e-12);
+        assert_relative_eq!(b2bar, -12.106977583257606, epsilon = 1e-12);
 
         //delta b21u
         let rm_x = (rep_x / att_x).powd((rep_x - att_x).recip());
@@ -446,7 +447,7 @@ mod test {
         let a_ufrac = (-phi_u + 1.0) * (b2bar - delta_b21u) * density;
         assert_relative_eq!(a_ufrac, -0.0136498856091876, epsilon = 1e-6);
         // delta b20
-        dbg!(d_x.re());
+        dbg!(d_x);
 
         // delta a1u
         let rho_x = state.partial_density.sum() * sigma_x.powi(3);
@@ -454,7 +455,7 @@ mod test {
 
         let i_wca =
             correlation_integral_wca(rho_x, mean_field_constant_x, rep_x, att_x, d_x, q_vdw, rm_x);
-        dbg!(weighted_sigma3_ij.re());
+        dbg!(weighted_sigma3_ij);
         dbg!(epsilon_k_x);
         let delta_a1u = state.partial_density.sum() / state.temperature
             * i_wca
@@ -466,7 +467,7 @@ mod test {
         assert_relative_eq!(delta_a1u, -1.3182160310774731, epsilon = 1e-6);
 
         // Full attractive contribution
-        let a = AttractivePerturbation.helmholtz_energy(&p, &state) / (moles[0] + moles[1]);
+        let a = AttractivePerturbation.helmholtz_energy_density(&p, &state) * volume;
         assert_relative_eq!(a, -1.3318659166866607, epsilon = 1e-5);
     }
 }

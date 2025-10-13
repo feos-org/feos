@@ -32,7 +32,7 @@ impl GcPcSaftRecord {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Default)]
+#[derive(Serialize, Deserialize, Clone, Copy, Default, PartialEq, Debug)]
 pub struct GcPcSaftAssociationRecord {
     /// Association volume parameter
     pub kappa_ab: f64,

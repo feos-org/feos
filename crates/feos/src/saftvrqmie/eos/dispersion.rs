@@ -1,6 +1,6 @@
 use crate::saftvrqmie::parameters::SaftVRQMiePars;
 use feos_core::StateHD;
-use ndarray::{Array1, Array2};
+use nalgebra::{DMatrix, DVector};
 use num_dual::DualNum;
 use std::f64::consts::FRAC_PI_6;
 use std::fmt;
@@ -32,47 +32,47 @@ const PHI: [[f64; 7]; 6] = [
 ];
 
 pub struct Alpha<D: DualNum<f64>> {
-    alpha_ij: Array2<D>,
+    alpha_ij: DMatrix<D>,
 }
 
 impl<D: DualNum<f64> + Copy> Alpha<D> {
     pub fn new(
         parameters: &SaftVRQMiePars,
-        sigma_eff_ij: &Array2<D>,
-        epsilon_k_eff_ij: &Array2<D>,
+        sigma_eff_ij: &DMatrix<D>,
+        epsilon_k_eff_ij: &DMatrix<D>,
         temperature: D,
     ) -> Self {
         let p = parameters;
-        let nc = sigma_eff_ij.shape()[0];
-        let mut alpha_ij: Array2<D> = Array2::zeros((nc, nc));
+        let nc = sigma_eff_ij.shape().0;
+        let mut alpha_ij: DMatrix<D> = DMatrix::zeros(nc, nc);
 
         for i in 0..nc {
             for j in i..nc {
-                let sigma_ratio = D::one() * p.sigma_ij[[i, j]] / sigma_eff_ij[[i, j]];
-                let eps_ratio = D::one() * p.epsilon_k_ij[[i, j]] / epsilon_k_eff_ij[[i, j]];
-                let la = p.lambda_a_ij[[i, j]];
-                let lr = p.lambda_r_ij[[i, j]];
+                let sigma_ratio = D::one() * p.sigma_ij[(i, j)] / sigma_eff_ij[(i, j)];
+                let eps_ratio = D::one() * p.epsilon_k_ij[(i, j)] / epsilon_k_eff_ij[(i, j)];
+                let la = p.lambda_a_ij[(i, j)];
+                let lr = p.lambda_r_ij[(i, j)];
                 let sigma_ratio_a = sigma_ratio.powf(la);
                 let sigma_ratio_r = sigma_ratio.powf(lr);
-                let dmt = p.quantum_d_ij(i, j, temperature) / p.sigma_ij[[i, j]].powi(2);
+                let dmt = p.quantum_d_ij(i, j, temperature) / p.sigma_ij[(i, j)].powi(2);
                 let ma = sigma_ratio_a / (la - 3.0);
                 let mr = sigma_ratio_r / (lr - 3.0);
-                alpha_ij[[i, j]] = ma - mr;
-                if p.fh_ij[[i, j]] as usize > 0 {
+                alpha_ij[(i, j)] = ma - mr;
+                if p.fh_ij[(i, j)] as usize > 0 {
                     let q1a = sigma_ratio_a * sigma_ratio.powi(2) * la;
                     let q1r = sigma_ratio_r * sigma_ratio.powi(2) * lr;
-                    alpha_ij[[i, j]] += dmt * (q1a - q1r);
+                    alpha_ij[(i, j)] += dmt * (q1a - q1r);
                 }
-                if p.fh_ij[[i, j]] as usize > 1 {
+                if p.fh_ij[(i, j)] as usize > 1 {
                     let q2a =
                         sigma_ratio_a * sigma_ratio.powi(4) * (la + 2.0) * la * (la - 1.0) * 0.5;
                     let q2r =
                         sigma_ratio_r * sigma_ratio.powi(4) * (lr + 2.0) * lr * (lr - 1.0) * 0.5;
-                    alpha_ij[[i, j]] += dmt.powi(2) * (q2a - q2r);
+                    alpha_ij[(i, j)] += dmt.powi(2) * (q2a - q2r);
                 }
-                alpha_ij[[i, j]] *= eps_ratio * p.c_ij[[i, j]];
+                alpha_ij[(i, j)] *= eps_ratio * p.c_ij[(i, j)];
                 if i != j {
-                    alpha_ij[[j, i]] = alpha_ij[[i, j]];
+                    alpha_ij[(j, i)] = alpha_ij[(i, j)];
                 }
             }
         }
@@ -80,7 +80,7 @@ impl<D: DualNum<f64> + Copy> Alpha<D> {
     }
 
     fn f(&self, k: usize, i: usize, j: usize) -> D {
-        let a_ij = self.alpha_ij[[i, j]];
+        let a_ij = self.alpha_ij[(i, j)];
         let phi = PHI[k];
         (a_ij * phi[1] + a_ij.powi(2) * phi[2] + a_ij.powi(3) * phi[3] + phi[0])
             / (a_ij * phi[4] + a_ij.powi(2) * phi[5] + a_ij.powi(3) * phi[6] + 1.0)
@@ -90,7 +90,7 @@ impl<D: DualNum<f64> + Copy> Alpha<D> {
 pub struct Dispersion;
 
 impl Dispersion {
-    pub fn helmholtz_energy<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &SaftVRQMiePars,
         state: &StateHD<D>,
@@ -114,7 +114,7 @@ impl Dispersion {
         let dq_ij = &properties.quantum_d_ij;
 
         // segment fractions
-        let mut x_s = Array1::from_shape_fn(n, |i| -> D { state.molefracs[i] * p.m[i] });
+        let mut x_s = DVector::from_fn(n, |i, _| -> D { state.molefracs[i] * p.m[i] });
         let inv_x_s_sum = x_s.sum().recip();
         for i in 0..n {
             x_s[i] *= inv_x_s_sum;
@@ -139,7 +139,7 @@ impl Dispersion {
 
         let mut n_s = D::zero();
         for i in 0..n {
-            n_s += state.moles[i] * p.m[i];
+            n_s += state.partial_density[i] * p.m[i];
         }
         let inv_t = state.temperature.recip();
         n_s * (a1 * inv_t + a2 * inv_t.powi(2) + a3 * inv_t.powi(3))
@@ -150,12 +150,12 @@ impl Dispersion {
 #[expect(clippy::too_many_arguments)]
 pub fn dispersion_energy_density<D: DualNum<f64> + Copy>(
     parameters: &SaftVRQMiePars,
-    d_hs_ij: &Array2<D>,
-    s_eff_ij: &Array2<D>,
-    epsilon_k_eff_ij: &Array2<D>,
-    dq_ij: &Array2<D>,
+    d_hs_ij: &DMatrix<D>,
+    s_eff_ij: &DMatrix<D>,
+    epsilon_k_eff_ij: &DMatrix<D>,
+    dq_ij: &DMatrix<D>,
     alpha: &Alpha<D>,
-    rho: &Array1<D>,
+    rho: ndarray::ArrayView1<D>,
     temperature: D,
 ) -> D {
     // auxiliary variables
@@ -168,7 +168,7 @@ pub fn dispersion_energy_density<D: DualNum<f64> + Copy>(
         rho_s += rho[i] * p.m[i];
     }
     // segment fractions
-    let x_s = Array1::from_shape_fn(n, |i| -> D { rho[i] * p.m[i] * rho_s.recip() });
+    let x_s = DVector::from_fn(n, |i, _| -> D { rho[i] * p.m[i] * rho_s.recip() });
 
     // packing fractions
     let zeta = zeta_saft_vrq_mie(&p.m, &x_s, d_hs_ij, rho_s);
@@ -185,15 +185,15 @@ pub fn dispersion_energy_density<D: DualNum<f64> + Copy>(
 }
 
 fn zeta_saft_vrq_mie<D: DualNum<f64> + Copy>(
-    m: &Array1<f64>,
-    x_s: &Array1<D>,
-    diameter: &Array2<D>,
+    m: &DVector<f64>,
+    x_s: &DVector<D>,
+    diameter: &DMatrix<D>,
     rho_s: D,
 ) -> D {
     let mut zeta = D::zero();
     for i in 0..m.len() {
         for j in 0..m.len() {
-            zeta += x_s[i] * x_s[j] * diameter[[i, j]].powi(3);
+            zeta += x_s[i] * x_s[j] * diameter[(i, j)].powi(3);
         }
     }
     zeta * FRAC_PI_6 * rho_s
@@ -201,37 +201,37 @@ fn zeta_saft_vrq_mie<D: DualNum<f64> + Copy>(
 
 fn first_order_perturbation<D: DualNum<f64> + Copy>(
     parameters: &SaftVRQMiePars,
-    x_s: &Array1<D>,
+    x_s: &DVector<D>,
     zeta: D,
     rho_s: D,
-    d_hs_ij: &Array2<D>,
-    s_eff_ij: &Array2<D>,
-    dq_ij: &Array2<D>,
+    d_hs_ij: &DMatrix<D>,
+    s_eff_ij: &DMatrix<D>,
+    dq_ij: &DMatrix<D>,
 ) -> D {
     let n = parameters.sigma.len();
     let mut a1 = D::zero();
     for i in 0..n {
         for j in i..n {
-            let x0 = d_hs_ij[[i, j]].recip() * parameters.sigma_ij[[i, j]];
-            let x0_eff = s_eff_ij[[i, j]] / d_hs_ij[[i, j]];
-            let dq_div_sigma_2 = dq_ij[[i, j]] / parameters.sigma_ij[[i, j]].powi(2);
+            let x0 = d_hs_ij[(i, j)].recip() * parameters.sigma_ij[(i, j)];
+            let x0_eff = s_eff_ij[(i, j)] / d_hs_ij[(i, j)];
+            let dq_div_sigma_2 = dq_ij[(i, j)] / parameters.sigma_ij[(i, j)].powi(2);
             let fac = if i == j { 1.0 } else { 2.0 };
             a1 += x_s[i]
                 * x_s[j]
                 * fac
                 * FRAC_PI_6
                 * rho_s
-                * d_hs_ij[[i, j]].powi(3)
+                * d_hs_ij[(i, j)].powi(3)
                 * first_order_perturbation_ij(
-                    parameters.lambda_a_ij[[i, j]],
-                    parameters.lambda_r_ij[[i, j]],
-                    parameters.epsilon_k_ij[[i, j]],
+                    parameters.lambda_a_ij[(i, j)],
+                    parameters.lambda_r_ij[(i, j)],
+                    parameters.epsilon_k_ij[(i, j)],
                     zeta,
                     x0,
                     x0_eff,
-                    parameters.c_ij[[i, j]],
+                    parameters.c_ij[(i, j)],
                     dq_div_sigma_2,
-                    parameters.fh_ij[[i, j]] as usize,
+                    parameters.fh_ij[(i, j)] as usize,
                 )
         }
     }
@@ -272,13 +272,13 @@ fn first_order_perturbation_ij<D: DualNum<f64> + Copy>(
 }
 
 fn eta_eff<D: DualNum<f64> + Copy>(lambda: f64, zeta: D) -> D {
-    let inv_lambda = Array1::from(vec![
+    let inv_lambda = DVector::from(vec![
         1.0,
         1.0 / lambda,
         1.0 / lambda.powi(2),
         1.0 / lambda.powi(3),
     ]);
-    let c = Array1::from_shape_fn(4, |i| {
+    let c = DVector::from_fn(4, |i, _| {
         inv_lambda[0] * LAM_COEFF[i][0]
             + inv_lambda[1] * LAM_COEFF[i][1]
             + inv_lambda[2] * LAM_COEFF[i][2]
@@ -332,13 +332,13 @@ fn combine_sutherland_and_b<D: DualNum<f64> + Copy>(
 fn second_order_perturbation<D: DualNum<f64> + Copy>(
     parameters: &SaftVRQMiePars,
     alpha: &Alpha<D>,
-    x_s: &Array1<D>,
+    x_s: &DVector<D>,
     zeta: D,
     zeta_bar: D,
     rho_s: D,
-    d_hs_ij: &Array2<D>,
-    s_eff_ij: &Array2<D>,
-    dq_ij: &Array2<D>,
+    d_hs_ij: &DMatrix<D>,
+    s_eff_ij: &DMatrix<D>,
+    dq_ij: &DMatrix<D>,
 ) -> D {
     let n = parameters.sigma.len();
     let mut a2 = D::zero();
@@ -352,27 +352,27 @@ fn second_order_perturbation<D: DualNum<f64> + Copy>(
             let chi = alpha.f(0, i, j) * zeta_bar
                 + alpha.f(1, i, j) * zeta_bar.powi(5)
                 + alpha.f(2, i, j) * zeta_bar.powi(8);
-            let x0 = d_hs_ij[[i, j]].recip() * parameters.sigma_ij[[i, j]];
-            let x0_eff = s_eff_ij[[i, j]] / d_hs_ij[[i, j]];
-            let dq_div_sigma_2 = dq_ij[[i, j]] / parameters.sigma_ij[[i, j]].powi(2);
+            let x0 = d_hs_ij[(i, j)].recip() * parameters.sigma_ij[(i, j)];
+            let x0_eff = s_eff_ij[(i, j)] / d_hs_ij[(i, j)];
+            let dq_div_sigma_2 = dq_ij[(i, j)] / parameters.sigma_ij[(i, j)].powi(2);
             let fac = if i == j { 1.0 } else { 2.0 };
             a2 += x_s[i]
                 * x_s[j]
                 * fac
                 * FRAC_PI_6
                 * rho_s
-                * d_hs_ij[[i, j]].powi(3)
+                * d_hs_ij[(i, j)].powi(3)
                 * (chi + 1.0)
                 * second_order_perturbation_ij(
-                    parameters.lambda_a_ij[[i, j]],
-                    parameters.lambda_r_ij[[i, j]],
-                    parameters.epsilon_k_ij[[i, j]],
+                    parameters.lambda_a_ij[(i, j)],
+                    parameters.lambda_r_ij[(i, j)],
+                    parameters.epsilon_k_ij[(i, j)],
                     zeta,
                     x0,
                     x0_eff,
-                    parameters.c_ij[[i, j]],
+                    parameters.c_ij[(i, j)],
                     dq_div_sigma_2,
-                    parameters.fh_ij[[i, j]] as usize,
+                    parameters.fh_ij[(i, j)] as usize,
                 )
         }
     }
@@ -455,9 +455,9 @@ fn second_order_perturbation_ij<D: DualNum<f64> + Copy>(
 fn third_order_perturbation<D: DualNum<f64> + Copy>(
     parameters: &SaftVRQMiePars,
     alpha: &Alpha<D>,
-    x_s: &Array1<D>,
+    x_s: &DVector<D>,
     zeta_bar: D,
-    epsilon_k_eff_ij: &Array2<D>,
+    epsilon_k_eff_ij: &DMatrix<D>,
 ) -> D {
     let n = parameters.sigma.len();
     let mut a3 = D::zero();
@@ -465,7 +465,7 @@ fn third_order_perturbation<D: DualNum<f64> + Copy>(
         for j in 0..n {
             a3 += x_s[i]
                 * x_s[j]
-                * third_order_perturbation_ij(i, j, epsilon_k_eff_ij[[i, j]], alpha, zeta_bar)
+                * third_order_perturbation_ij(i, j, epsilon_k_eff_ij[(i, j)], alpha, zeta_bar)
         }
     }
     a3
@@ -497,7 +497,7 @@ mod tests {
     use crate::saftvrqmie::parameters::utils::h2_ne_fh;
     use crate::saftvrqmie::parameters::utils::hydrogen_fh;
     use approx::assert_relative_eq;
-    use ndarray::arr1;
+    use nalgebra::dvector;
 
     #[test]
     fn test_eta_eff() {
@@ -520,14 +520,13 @@ mod tests {
         let parameters = hydrogen_fh("1");
         let temperature = 26.7060;
         let n = 1;
-        let s_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| {
-            parameters.calc_sigma_eff_ij(i, j, temperature)
-        });
-        let epsilon_k_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| {
+        let s_eff_ij =
+            DMatrix::from_fn(n, n, |i, j| parameters.calc_sigma_eff_ij(i, j, temperature));
+        let epsilon_k_eff_ij = DMatrix::from_fn(n, n, |i, j| {
             parameters.calc_epsilon_k_eff_ij(i, j, temperature)
         });
         let alpha = Alpha::new(&parameters, &s_eff_ij, &epsilon_k_eff_ij, temperature);
-        assert_relative_eq!(alpha.alpha_ij[[0, 0]], 1.0239374984636636, epsilon = 5e-8);
+        assert_relative_eq!(alpha.alpha_ij[(0, 0)], 1.0239374984636636, epsilon = 5e-8);
     }
 
     #[test]
@@ -535,14 +534,13 @@ mod tests {
         let temperature = 26.7060;
         let parameters = hydrogen_fh("2");
         let n = 1;
-        let s_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| {
-            parameters.calc_sigma_eff_ij(i, j, temperature)
-        });
-        let epsilon_k_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| {
+        let s_eff_ij =
+            DMatrix::from_fn(n, n, |i, j| parameters.calc_sigma_eff_ij(i, j, temperature));
+        let epsilon_k_eff_ij = DMatrix::from_fn(n, n, |i, j| {
             parameters.calc_epsilon_k_eff_ij(i, j, temperature)
         });
         let alpha = Alpha::new(&parameters, &s_eff_ij, &epsilon_k_eff_ij, temperature);
-        assert_relative_eq!(alpha.alpha_ij[[0, 0]], 0.9918845918431217, epsilon = 5e-8);
+        assert_relative_eq!(alpha.alpha_ij[(0, 0)], 0.9918845918431217, epsilon = 5e-8);
     }
 
     #[test]
@@ -578,21 +576,21 @@ mod tests {
         let p = hydrogen_fh("1");
         let temperature = 26.7060;
         let zeta = 0.333;
-        let dq_div_s2 = p.quantum_d_ij(0, 0, temperature) / p.sigma_ij[[0, 0]].powi(2);
+        let dq_div_s2 = p.quantum_d_ij(0, 0, temperature) / p.sigma_ij[(0, 0)].powi(2);
         let s_eff = p.calc_sigma_eff_ij(0, 0, temperature);
         let d_hs = p.hs_diameter_ij(0, 0, temperature, s_eff);
-        let x0 = d_hs.recip() * p.sigma_ij[[0, 0]];
+        let x0 = d_hs.recip() * p.sigma_ij[(0, 0)];
         let x0_eff = s_eff / d_hs;
         let a1_ij = first_order_perturbation_ij(
-            p.lambda_a_ij[[0, 0]],
-            p.lambda_r_ij[[0, 0]],
-            p.epsilon_k_ij[[0, 0]],
+            p.lambda_a_ij[(0, 0)],
+            p.lambda_r_ij[(0, 0)],
+            p.epsilon_k_ij[(0, 0)],
             zeta,
             x0,
             x0_eff,
-            p.c_ij[[0, 0]],
+            p.c_ij[(0, 0)],
             dq_div_s2,
-            p.fh_ij[[0, 0]] as usize,
+            p.fh_ij[(0, 0)] as usize,
         );
         let rel_err = (a1_ij + 332.00915966785539) / 332.00915966785539;
         assert_relative_eq!(rel_err, 0.0, epsilon = 1e-7);
@@ -603,21 +601,21 @@ mod tests {
         let p = hydrogen_fh("2");
         let temperature = 26.7060;
         let zeta = 0.333;
-        let dq_div_s2 = p.quantum_d_ij(0, 0, temperature) / p.sigma_ij[[0, 0]].powi(2);
+        let dq_div_s2 = p.quantum_d_ij(0, 0, temperature) / p.sigma_ij[(0, 0)].powi(2);
         let s_eff = p.calc_sigma_eff_ij(0, 0, temperature);
         let d_hs = p.hs_diameter_ij(0, 0, temperature, s_eff);
-        let x0 = d_hs.recip() * p.sigma_ij[[0, 0]];
+        let x0 = d_hs.recip() * p.sigma_ij[(0, 0)];
         let x0_eff = s_eff / d_hs;
         let a1_ij = first_order_perturbation_ij(
-            p.lambda_a_ij[[0, 0]],
-            p.lambda_r_ij[[0, 0]],
-            p.epsilon_k_ij[[0, 0]],
+            p.lambda_a_ij[(0, 0)],
+            p.lambda_r_ij[(0, 0)],
+            p.epsilon_k_ij[(0, 0)],
             zeta,
             x0,
             x0_eff,
-            p.c_ij[[0, 0]],
+            p.c_ij[(0, 0)],
             dq_div_s2,
-            p.fh_ij[[0, 0]] as usize,
+            p.fh_ij[(0, 0)] as usize,
         );
         let rel_err = (a1_ij + 296.53213134819606) / 296.53213134819606;
         assert_relative_eq!(rel_err, 0.0, epsilon = 1e-7);
@@ -628,20 +626,20 @@ mod tests {
         let p = hydrogen_fh("1");
         let temperature = 26.7060;
         let zeta = 0.333;
-        let dq_div_s2 = p.quantum_d_ij(0, 0, temperature) / p.sigma_ij[[0, 0]].powi(2);
+        let dq_div_s2 = p.quantum_d_ij(0, 0, temperature) / p.sigma_ij[(0, 0)].powi(2);
         let s_eff = p.calc_sigma_eff_ij(0, 0, temperature);
         let d_hs = p.hs_diameter_ij(0, 0, temperature, s_eff);
-        let x0 = d_hs.recip() * p.sigma_ij[[0, 0]];
+        let x0 = d_hs.recip() * p.sigma_ij[(0, 0)];
         let x0_eff = s_eff / d_hs;
 
         let a2_ij = second_order_perturbation_ij(
-            p.lambda_a_ij[[0, 0]],
-            p.lambda_r_ij[[0, 0]],
-            p.epsilon_k_ij[[0, 0]],
+            p.lambda_a_ij[(0, 0)],
+            p.lambda_r_ij[(0, 0)],
+            p.epsilon_k_ij[(0, 0)],
             zeta,
             x0,
             x0_eff,
-            p.c_ij[[0, 0]],
+            p.c_ij[(0, 0)],
             dq_div_s2,
             1,
         );
@@ -655,13 +653,12 @@ mod tests {
         let temperature = 26.7060;
         let zeta_bar = 0.333;
         let n = 1;
-        let s_eff_ij =
-            Array2::from_shape_fn((n, n), |(i, j)| p.calc_sigma_eff_ij(i, j, temperature));
+        let s_eff_ij = DMatrix::from_fn(n, n, |i, j| p.calc_sigma_eff_ij(i, j, temperature));
         let epsilon_k_eff_ij =
-            Array2::from_shape_fn((n, n), |(i, j)| p.calc_epsilon_k_eff_ij(i, j, temperature));
+            DMatrix::from_fn(n, n, |i, j| p.calc_epsilon_k_eff_ij(i, j, temperature));
         let alpha = Alpha::new(&p, &s_eff_ij, &epsilon_k_eff_ij, temperature);
 
-        let a3_ij = third_order_perturbation_ij(0, 0, epsilon_k_eff_ij[[0, 0]], &alpha, zeta_bar);
+        let a3_ij = third_order_perturbation_ij(0, 0, epsilon_k_eff_ij[(0, 0)], &alpha, zeta_bar);
 
         let rel_err = (a3_ij + 25.807966819127916) / 25.807966819127916;
         assert_relative_eq!(rel_err, 0.0, epsilon = 5e-7);
@@ -673,19 +670,18 @@ mod tests {
         let t = 26.7060;
         let v = 1.0e26;
         let n = 6.02214076e23;
-        let state = StateHD::new(t, v, arr1(&[n]));
+        let state = StateHD::new(t, v, &dvector![n]);
         let nc = 1;
         // temperature dependent sigma
-        let s_eff_ij = Array2::from_shape_fn((nc, nc), |(i, j)| {
-            p.calc_sigma_eff_ij(i, j, state.temperature)
-        });
+        let s_eff_ij =
+            DMatrix::from_fn(nc, nc, |i, j| p.calc_sigma_eff_ij(i, j, state.temperature));
         // temperature dependent segment diameter
-        let d_hs_ij = Array2::from_shape_fn((nc, nc), |(i, j)| {
-            p.hs_diameter_ij(i, j, state.temperature, s_eff_ij[[i, j]])
+        let d_hs_ij = DMatrix::from_fn(nc, nc, |i, j| {
+            p.hs_diameter_ij(i, j, state.temperature, s_eff_ij[(i, j)])
         });
 
         // segment fractions
-        let mut x_s = Array1::from_shape_fn(nc, |i| state.molefracs[i] * p.m[i]);
+        let mut x_s = DVector::from_fn(nc, |i, _| state.molefracs[i] * p.m[i]);
         let inv_x_s_sum = x_s.sum().recip();
         for i in 0..nc {
             x_s[i] *= inv_x_s_sum;
@@ -708,19 +704,18 @@ mod tests {
         let t = 26.7060;
         let v = 1.0e26;
         let n = 6.02214076e23;
-        let state = StateHD::new(t, v, arr1(&[n]));
+        let state = StateHD::new(t, v, &dvector![n]);
         let nc = 1;
         // temperature dependent sigma
-        let s_eff_ij = Array2::from_shape_fn((nc, nc), |(i, j)| {
-            p.calc_sigma_eff_ij(i, j, state.temperature)
-        });
+        let s_eff_ij =
+            DMatrix::from_fn(nc, nc, |i, j| p.calc_sigma_eff_ij(i, j, state.temperature));
         // temperature dependent segment diameter
-        let d_hs_ij = Array2::from_shape_fn((nc, nc), |(i, j)| {
-            p.hs_diameter_ij(i, j, state.temperature, s_eff_ij[[i, j]])
+        let d_hs_ij = DMatrix::from_fn(nc, nc, |i, j| {
+            p.hs_diameter_ij(i, j, state.temperature, s_eff_ij[(i, j)])
         });
 
         // segment fractions
-        let mut x_s = Array1::from_shape_fn(nc, |i| state.molefracs[i] * p.m[i]);
+        let mut x_s = DVector::from_fn(nc, |i, _| state.molefracs[i] * p.m[i]);
         let inv_x_s_sum = x_s.sum().recip();
         for i in 0..nc {
             x_s[i] *= inv_x_s_sum;
@@ -737,7 +732,7 @@ mod tests {
         let zeta_bar = zeta_saft_vrq_mie(&p.m, &x_s, &s_eff_ij, rho_s);
 
         // temperature dependent well depth
-        let epsilon_k_eff_ij = Array2::from_shape_fn((nc, nc), |(i, j)| {
+        let epsilon_k_eff_ij = DMatrix::from_fn(nc, nc, |i, j| {
             p.calc_epsilon_k_eff_ij(i, j, state.temperature)
         });
 
@@ -745,8 +740,7 @@ mod tests {
         let alpha = Alpha::new(&p, &s_eff_ij, &epsilon_k_eff_ij, state.temperature);
 
         // temperature dependent well depth
-        let dq_ij =
-            Array2::from_shape_fn((nc, nc), |(i, j)| p.quantum_d_ij(i, j, state.temperature));
+        let dq_ij = DMatrix::from_fn(nc, nc, |i, j| p.quantum_d_ij(i, j, state.temperature));
 
         let a1 = first_order_perturbation(&p, &x_s, zeta, rho_s, &d_hs_ij, &s_eff_ij, &dq_ij);
         let a2 = second_order_perturbation(
@@ -768,19 +762,18 @@ mod tests {
         let t = 26.7060;
         let v = 1.0e26;
         let n = 6.02214076e23;
-        let state = StateHD::new(t, v, arr1(&[n]));
+        let state = StateHD::new(t, v, &dvector![n]);
         let nc = 1;
         // temperature dependent sigma
-        let s_eff_ij = Array2::from_shape_fn((nc, nc), |(i, j)| {
-            p.calc_sigma_eff_ij(i, j, state.temperature)
-        });
+        let s_eff_ij =
+            DMatrix::from_fn(nc, nc, |i, j| p.calc_sigma_eff_ij(i, j, state.temperature));
         // temperature dependent segment diameter
-        let d_hs_ij = Array2::from_shape_fn((nc, nc), |(i, j)| {
-            p.hs_diameter_ij(i, j, state.temperature, s_eff_ij[[i, j]])
+        let d_hs_ij = DMatrix::from_fn(nc, nc, |i, j| {
+            p.hs_diameter_ij(i, j, state.temperature, s_eff_ij[(i, j)])
         });
 
         // segment fractions
-        let mut x_s = Array1::from_shape_fn(nc, |i| state.molefracs[i] * p.m[i]);
+        let mut x_s = DVector::from_fn(nc, |i, _| state.molefracs[i] * p.m[i]);
         let inv_x_s_sum = x_s.sum().recip();
         for i in 0..nc {
             x_s[i] *= inv_x_s_sum;
@@ -797,7 +790,7 @@ mod tests {
         let zeta_bar = zeta_saft_vrq_mie(&p.m, &x_s, &s_eff_ij, rho_s);
 
         // temperature dependent well depth
-        let epsilon_k_eff_ij = Array2::from_shape_fn((nc, nc), |(i, j)| {
+        let epsilon_k_eff_ij = DMatrix::from_fn(nc, nc, |i, j| {
             p.calc_epsilon_k_eff_ij(i, j, state.temperature)
         });
 
@@ -805,8 +798,7 @@ mod tests {
         let alpha = Alpha::new(&p, &s_eff_ij, &epsilon_k_eff_ij, state.temperature);
 
         // temperature dependent well depth
-        let dq_ij =
-            Array2::from_shape_fn((nc, nc), |(i, j)| p.quantum_d_ij(i, j, state.temperature));
+        let dq_ij = DMatrix::from_fn(nc, nc, |i, j| p.quantum_d_ij(i, j, state.temperature));
 
         let a1 = first_order_perturbation(&p, &x_s, zeta, rho_s, &d_hs_ij, &s_eff_ij, &dq_ij);
         let a2 = second_order_perturbation(
@@ -836,27 +828,28 @@ mod tests {
         for (it, &a) in a_ref.iter().enumerate() {
             let t = 26.7060 * (it + 1) as f64;
             let v = 1.0e26;
-            let state = StateHD::new(t, v, arr1(&[na]));
+            let state = StateHD::new(t, v / na, &dvector![1.0]);
             let properties = TemperatureDependentProperties::new(&parameters, state.temperature);
-            let a_disp = Dispersion.helmholtz_energy(&parameters, &state, &properties) / na;
+            let a_disp =
+                Dispersion.helmholtz_energy_density(&parameters, &state, &properties) / na * v;
             assert_relative_eq!(a_disp, a, epsilon = 1e-7);
         }
         let t = 26.7060;
         let v = 1.0e26 * 2.0;
         let n = na * 2.0;
-        let state = StateHD::new(t, v, arr1(&[n]));
+        let state = StateHD::new(t, v / n, &dvector![1.0]);
         let properties = TemperatureDependentProperties::new(&parameters, state.temperature);
-        let a_disp = Dispersion.helmholtz_energy(&parameters, &state, &properties) / na;
+        let a_disp = Dispersion.helmholtz_energy_density(&parameters, &state, &properties) / na * v;
         assert_relative_eq!(a_disp, a_ref[0] * 2.0, epsilon = 1e-7);
     }
 
     #[test]
     fn test_parameters_mix() {
         let p = h2_ne_fh("1");
-        assert_relative_eq!(p.c_ij[[0, 1]], 4.7303195840057679, epsilon = 1e-7);
-        assert_relative_eq!(p.epsilon_k_ij[[0, 1]], 28.246978839971383, epsilon = 1e-7);
-        assert_relative_eq!(p.lambda_a_ij[[0, 1]], 6.0, epsilon = 1e-7);
-        assert_relative_eq!(p.lambda_r_ij[[0, 1]], 10.745966692414834, epsilon = 1e-7);
+        assert_relative_eq!(p.c_ij[(0, 1)], 4.7303195840057679, epsilon = 1e-7);
+        assert_relative_eq!(p.epsilon_k_ij[(0, 1)], 28.246978839971383, epsilon = 1e-7);
+        assert_relative_eq!(p.lambda_a_ij[(0, 1)], 6.0, epsilon = 1e-7);
+        assert_relative_eq!(p.lambda_r_ij[(0, 1)], 10.745966692414834, epsilon = 1e-7);
     }
 
     #[test]
@@ -870,22 +863,23 @@ mod tests {
             -0.84210863940206726,
         ];
         let na = 6.02214076e23;
-        let n = [1.1 * na, 1.0 * na];
+        let n = dvector![1.1 * na, 1.0 * na];
         let v = 1.0e26;
         for (it, &a) in a_ref.iter().enumerate() {
             let t = 30.0 * (it + 1) as f64;
-            let state = StateHD::new(t, v, arr1(&n));
+            let state = StateHD::new(t, v / n.sum(), &(&n / n.sum()));
             let properties = TemperatureDependentProperties::new(&parameters, state.temperature);
-            let a_disp = Dispersion.helmholtz_energy(&parameters, &state, &properties) / na;
+            let a_disp =
+                Dispersion.helmholtz_energy_density(&parameters, &state, &properties) / na * v;
             dbg!(it);
             assert_relative_eq!(a_disp, a, epsilon = 5e-7);
         }
         let t = 30.0;
         let v = 1.0e26 * 2.0;
-        let n = [2.2 * na, 2.0 * na];
-        let state = StateHD::new(t, v, arr1(&n));
+        let n = dvector![2.2 * na, 2.0 * na];
+        let state = StateHD::new(t, v / n.sum(), &(&n / n.sum()));
         let properties = TemperatureDependentProperties::new(&parameters, state.temperature);
-        let a_disp = Dispersion.helmholtz_energy(&parameters, &state, &properties) / na;
+        let a_disp = Dispersion.helmholtz_energy_density(&parameters, &state, &properties) / na * v;
         assert_relative_eq!(a_disp, a_ref[0] * 2.0, epsilon = 5e-7);
     }
 
@@ -900,22 +894,23 @@ mod tests {
             -0.840761876536818,
         ];
         let na = 6.02214076e23;
-        let n = [1.1 * na, 1.0 * na];
+        let n = dvector![1.1 * na, 1.0 * na];
         let v = 1.0e26;
         for (it, &a) in a_ref.iter().enumerate() {
             let t = 30.0 * (it + 1) as f64;
-            let state = StateHD::new(t, v, arr1(&n));
+            let state = StateHD::new(t, v / n.sum(), &(&n / n.sum()));
             let properties = TemperatureDependentProperties::new(&parameters, state.temperature);
-            let a_disp = Dispersion.helmholtz_energy(&parameters, &state, &properties) / na;
+            let a_disp =
+                Dispersion.helmholtz_energy_density(&parameters, &state, &properties) / na * v;
             dbg!(it);
             assert_relative_eq!(a_disp, a, epsilon = 5e-7);
         }
         let t = 30.0;
         let v = 1.0e26 * 2.0;
-        let n = [2.2 * na, 2.0 * na];
-        let state = StateHD::new(t, v, arr1(&n));
+        let n = dvector![2.2 * na, 2.0 * na];
+        let state = StateHD::new(t, v / n.sum(), &(&n / n.sum()));
         let properties = TemperatureDependentProperties::new(&parameters, state.temperature);
-        let a_disp = Dispersion.helmholtz_energy(&parameters, &state, &properties) / na;
+        let a_disp = Dispersion.helmholtz_energy_density(&parameters, &state, &properties) / na * v;
         assert_relative_eq!(a_disp, a_ref[0] * 2.0, epsilon = 5e-7);
     }
 
@@ -924,21 +919,19 @@ mod tests {
     fn test_dispersion_energy_density() {
         let p = hydrogen_fh("1");
         let n = p.m.len();
-        let rho = Array1::from_shape_fn(n, |_i| 0.01);
+        let rho = ndarray::Array1::from_elem(n, 0.01);
         let t = 25.0;
         // temperature dependent segment radius // calc & store this in struct
-        let s_eff_ij = Array2::from_shape_fn((n, n), |(i, j)| p.calc_sigma_eff_ij(i, j, t));
+        let s_eff_ij = DMatrix::from_fn(n, n, |i, j| p.calc_sigma_eff_ij(i, j, t));
 
         // temperature dependent segment radius // calc & store this in struct
-        let d_hs_ij =
-            Array2::from_shape_fn((n, n), |(i, j)| p.hs_diameter_ij(i, j, t, s_eff_ij[[i, j]]));
+        let d_hs_ij = DMatrix::from_fn(n, n, |i, j| p.hs_diameter_ij(i, j, t, s_eff_ij[(i, j)]));
 
         // temperature dependent well depth // calc & store this in struct
-        let epsilon_k_eff_ij =
-            Array2::from_shape_fn((n, n), |(i, j)| p.calc_epsilon_k_eff_ij(i, j, t));
+        let epsilon_k_eff_ij = DMatrix::from_fn(n, n, |i, j| p.calc_epsilon_k_eff_ij(i, j, t));
 
         // temperature dependent well depth // calc & store this in struct
-        let dq_ij = Array2::from_shape_fn((n, n), |(i, j)| p.quantum_d_ij(i, j, t));
+        let dq_ij = DMatrix::from_fn(n, n, |i, j| p.quantum_d_ij(i, j, t));
 
         // alphas .... // calc & store this in struct
         let alpha = Alpha::new(&p, &s_eff_ij, &epsilon_k_eff_ij, t);
@@ -949,7 +942,7 @@ mod tests {
             &epsilon_k_eff_ij,
             &dq_ij,
             &alpha,
-            &rho,
+            rho.view(),
             t,
         );
 

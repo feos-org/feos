@@ -2,12 +2,11 @@ use crate::geometry::{Axis, Geometry, Grid};
 use crate::weight_functions::*;
 use ndarray::linalg::Dot;
 use ndarray::prelude::*;
-use ndarray::{Axis as Axis_nd, RemoveAxis, ScalarOperand, Slice};
+use ndarray::{Axis as Axis_nd, RemoveAxis, Slice};
 use num_dual::*;
 use num_traits::Zero;
 use rustdct::DctNum;
 use std::ops::{AddAssign, MulAssign, SubAssign};
-use std::sync::Arc;
 
 mod periodic_convolver;
 mod transform;
@@ -42,12 +41,12 @@ pub(crate) struct BulkConvolver<T> {
 
 impl<T: DualNum<f64> + Copy + Send + Sync> BulkConvolver<T> {
     #[expect(clippy::new_ret_no_self)]
-    pub(crate) fn new(weight_functions: Vec<WeightFunctionInfo<T>>) -> Arc<dyn Convolver<T, Ix0>> {
+    pub(crate) fn new(weight_functions: Vec<WeightFunctionInfo<T>>) -> Box<dyn Convolver<T, Ix0>> {
         let weight_constants = weight_functions
             .into_iter()
             .map(|w| w.weight_constants(Zero::zero(), 0))
             .collect();
-        Arc::new(Self { weight_constants })
+        Box::new(Self { weight_constants })
     }
 }
 
@@ -112,7 +111,6 @@ impl<T, D: Dimension> FFTWeightFunctions<T, D> {
 /// compute convolutions in Fourier space.
 ///
 /// Parametrized over the data type `T` and the dimension `D`.
-#[derive(Clone)]
 pub struct ConvolverFFT<T, D: Dimension> {
     /// k vectors
     k_abs: Array<f64, D>,
@@ -121,14 +119,14 @@ pub struct ConvolverFFT<T, D: Dimension> {
     /// Lanczos sigma factor
     lanczos_sigma: Option<Array<f64, D>>,
     /// Possibly curvilinear Fourier transform in the first dimension
-    transform: Arc<dyn FourierTransform<T>>,
+    transform: Box<dyn FourierTransform<T>>,
     /// Vector of additional cartesian Fourier transforms in the other dimensions
-    cartesian_transforms: Vec<Arc<CartesianTransform<T>>>,
+    cartesian_transforms: Vec<CartesianTransform<T>>,
 }
 
 impl<T, D: Dimension + RemoveAxis + 'static> ConvolverFFT<T, D>
 where
-    T: DctNum + DualNum<f64> + ScalarOperand,
+    T: DctNum + DualNum<f64>,
     D::Larger: Dimension<Smaller = D>,
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
@@ -138,7 +136,7 @@ where
         grid: &Grid,
         weight_functions: &[WeightFunctionInfo<T>],
         lanczos: Option<i32>,
-    ) -> Arc<dyn Convolver<T, D>> {
+    ) -> Box<dyn Convolver<T, D>> {
         match grid {
             Grid::Polar(r) => CurvilinearConvolver::new(r, &[], weight_functions, lanczos),
             Grid::Spherical(r) => CurvilinearConvolver::new(r, &[], weight_functions, lanczos),
@@ -160,7 +158,7 @@ where
 
 impl<T, D: Dimension + 'static> ConvolverFFT<T, D>
 where
-    T: DctNum + DualNum<f64> + ScalarOperand,
+    T: DctNum + DualNum<f64>,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
@@ -170,7 +168,7 @@ where
         cartesian_axes: &[&Axis],
         weight_functions: &[WeightFunctionInfo<T>],
         lanczos: Option<i32>,
-    ) -> Arc<dyn Convolver<T, D>> {
+    ) -> Box<dyn Convolver<T, D>> {
         // initialize the Fourier transform
         let mut cartesian_transforms = Vec::with_capacity(cartesian_axes.len());
         let mut k_vec = Vec::with_capacity(cartesian_axes.len() + 1);
@@ -267,7 +265,7 @@ where
         }
 
         // Return `FFTConvolver<T, D>`
-        Arc::new(Self {
+        Box::new(Self {
             k_abs,
             weight_functions: fft_weight_functions,
             lanczos_sigma,
@@ -279,7 +277,7 @@ where
 
 impl<T, D: Dimension> ConvolverFFT<T, D>
 where
-    T: DctNum + DualNum<f64> + ScalarOperand,
+    T: DctNum + DualNum<f64>,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
@@ -371,7 +369,7 @@ where
 
 impl<T, D: Dimension> Convolver<T, D> for ConvolverFFT<T, D>
 where
-    T: DctNum + ScalarOperand + DualNum<f64>,
+    T: DctNum + DualNum<f64>,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
@@ -550,13 +548,13 @@ where
 /// The curvilinear convolver accounts for the shift that has to be performed
 /// for spherical and polar transforms.
 struct CurvilinearConvolver<T, D> {
-    convolver: Arc<dyn Convolver<T, D>>,
-    convolver_boundary: Arc<dyn Convolver<T, D>>,
+    convolver: Box<dyn Convolver<T, D>>,
+    convolver_boundary: Box<dyn Convolver<T, D>>,
 }
 
 impl<T, D: Dimension + RemoveAxis + 'static> CurvilinearConvolver<T, D>
 where
-    T: DctNum + ScalarOperand + DualNum<f64>,
+    T: DctNum + DualNum<f64>,
     D::Larger: Dimension<Smaller = D>,
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
@@ -567,8 +565,8 @@ where
         z: &[&Axis],
         weight_functions: &[WeightFunctionInfo<T>],
         lanczos: Option<i32>,
-    ) -> Arc<dyn Convolver<T, D>> {
-        Arc::new(Self {
+    ) -> Box<dyn Convolver<T, D>> {
+        Box::new(Self {
             convolver: ConvolverFFT::new(Some(r), z, weight_functions, lanczos),
             convolver_boundary: ConvolverFFT::new(None, z, weight_functions, lanczos),
         })
@@ -577,7 +575,7 @@ where
 
 impl<T, D: Dimension + RemoveAxis> Convolver<T, D> for CurvilinearConvolver<T, D>
 where
-    T: DctNum + ScalarOperand + DualNum<f64>,
+    T: DctNum + DualNum<f64>,
     D::Smaller: Dimension<Larger = D>,
     D::Larger: Dimension<Smaller = D>,
 {
