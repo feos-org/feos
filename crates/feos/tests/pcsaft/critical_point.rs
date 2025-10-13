@@ -17,7 +17,7 @@ fn test_critical_point_pure() -> Result<(), Box<dyn Error>> {
     )?;
     let saft = PcSaft::new(params);
     let t = 300.0 * KELVIN;
-    let cp = State::critical_point(&&saft, None, Some(t), Default::default())?;
+    let cp = State::critical_point(&&saft, None, Some(t), None, Default::default())?;
     assert_relative_eq!(cp.temperature, 375.12441 * KELVIN, max_relative = 1e-8);
     assert_relative_eq!(
         cp.density,
@@ -38,7 +38,7 @@ fn test_critical_point_mix() -> Result<(), Box<dyn Error>> {
     let saft = PcSaft::new(params);
     let t = 300.0 * KELVIN;
     let molefracs = dvector![0.5, 0.5];
-    let cp = State::critical_point(&&saft, Some(&molefracs), Some(t), Default::default())?;
+    let cp = State::critical_point(&&saft, Some(&molefracs), Some(t), None, Default::default())?;
     assert_relative_eq!(cp.temperature, 407.93481 * KELVIN, max_relative = 1e-8);
     assert_relative_eq!(
         cp.density,

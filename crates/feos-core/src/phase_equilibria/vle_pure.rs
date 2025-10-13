@@ -376,7 +376,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
             vle = Some(_vle);
         }
 
-        let cp = State::critical_point(eos, None, None, SolverOptions::default())?;
+        let cp = State::critical_point(eos, None, None, None, SolverOptions::default())?;
         if pressure > cp.pressure(Contributions::Total) {
             return Err(FeosError::SuperCritical);
         };

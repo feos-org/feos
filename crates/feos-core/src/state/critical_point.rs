@@ -22,12 +22,19 @@ impl<R: Residual + Subset> State<R> {
     pub fn critical_point_pure(
         eos: &R,
         initial_temperature: Option<Temperature>,
+        initial_density: Option<Density>,
         options: SolverOptions,
     ) -> FeosResult<Vec<Self>> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = eos.subset(&[i]);
-                let cp = State::critical_point(&pure_eos, None, initial_temperature, options)?;
+                let cp = State::critical_point(
+                    &pure_eos,
+                    None,
+                    initial_temperature,
+                    initial_density,
+                    options,
+                )?;
                 let mut molefracs = DVector::zeros(eos.components());
                 molefracs[i] = 1.0;
                 State::new_intensive(eos, cp.temperature, cp.density, &molefracs)
@@ -45,6 +52,7 @@ where
         temperature_or_pressure: TP,
         initial_temperature: Option<Temperature>,
         initial_molefracs: Option<[f64; 2]>,
+        initial_density: Option<Density>,
         options: SolverOptions,
     ) -> FeosResult<Self> {
         let eos_re = eos.re();
@@ -52,8 +60,13 @@ where
         let initial_molefracs = initial_molefracs.unwrap_or([0.5; 2]);
         let initial_molefracs = OVector::from_fn_generic(n, U1, |i, _| initial_molefracs[i]);
         if let Some(t) = temperature_or_pressure.temperature() {
-            let [rho0, rho1] =
-                critical_point_binary_t(&eos_re, t.re(), initial_molefracs, options)?;
+            let [rho0, rho1] = critical_point_binary_t(
+                &eos_re,
+                t.re(),
+                initial_molefracs,
+                initial_density,
+                options,
+            )?;
             let rho = implicit_derivative_binary(
                 |rho0, rho1, &temperature| {
                     let rho = [rho0, rho1];
@@ -74,6 +87,7 @@ where
                 p.re(),
                 initial_temperature,
                 initial_molefracs,
+                initial_density,
                 options,
             )?;
             let trho = implicit_derivative_vec::<_, _, _, _, U3>(
@@ -99,21 +113,24 @@ where
         eos: &E,
         molefracs: Option<&OVector<D, N>>,
         initial_temperature: Option<Temperature>,
+        initial_density: Option<Density>,
         options: SolverOptions,
     ) -> FeosResult<Self> {
         let eos_re = eos.re();
         let molefracs = molefracs.map_or_else(E::pure_molefracs, |x| x.clone());
         let x = &molefracs.map(|x| x.re());
+        let rho_init = initial_density.map(|r| r.into_reduced());
         let trial_temperatures = [300.0, 700.0, 500.0];
         let mut t_rho = None;
         if let Some(t) = initial_temperature {
-            t_rho = Some(critical_point_hkm(&eos_re, x, t.into_reduced(), options)?);
+            let t = t.into_reduced();
+            t_rho = Some(critical_point_hkm(&eos_re, x, t, rho_init, options)?);
         }
         for &t in trial_temperatures.iter() {
             if t_rho.is_some() {
                 break;
             }
-            t_rho = critical_point_hkm(&eos_re, x, t, options).ok();
+            t_rho = critical_point_hkm(&eos_re, x, t, rho_init, options).ok();
         }
         let Some(t_rho) = t_rho else {
             return Err(FeosError::NotConverged(String::from("Critical point")));
@@ -134,10 +151,12 @@ where
         )
     }
 }
+
 fn critical_point_hkm<E: Residual<N>, N: Gradients>(
     eos: &E,
     molefracs: &OVector<f64, N>,
     initial_temperature: f64,
+    initial_density: Option<f64>,
     options: SolverOptions,
 ) -> FeosResult<[f64; 2]>
 where
@@ -147,7 +166,7 @@ where
 
     let mut t = initial_temperature;
     let max_density = eos.compute_max_density(molefracs);
-    let mut rho = 0.3 * max_density;
+    let mut rho = initial_density.unwrap_or(0.3 * max_density);
 
     log_iter!(
         verbosity,
@@ -220,6 +239,7 @@ fn critical_point_binary_t<E: Residual<N>, N: Gradients>(
     eos: &E,
     temperature: Temperature,
     initial_molefracs: OVector<f64, N>,
+    initial_density: Option<Density>,
     options: SolverOptions,
 ) -> FeosResult<[f64; 2]>
 where
@@ -230,7 +250,8 @@ where
     let t = temperature.to_reduced();
     let n = N::from_usize(2);
     let max_density = eos.compute_max_density(&initial_molefracs);
-    let mut rho = SVector::from([initial_molefracs[0], initial_molefracs[1]]) * 0.3 * max_density;
+    let rho_init = initial_density.map_or(0.3 * max_density, |r| r.into_reduced());
+    let mut rho = SVector::from([initial_molefracs[0], initial_molefracs[1]]) * rho_init;
 
     log_iter!(
         verbosity,
@@ -302,6 +323,7 @@ fn critical_point_binary_p<E: Residual<N>, N: Gradients>(
     pressure: Pressure,
     initial_temperature: Option<Temperature>,
     initial_molefracs: OVector<f64, N>,
+    initial_density: Option<Density>,
     options: SolverOptions,
 ) -> FeosResult<[f64; 3]>
 where
@@ -312,7 +334,8 @@ where
     let p = pressure.to_reduced();
     let mut t = initial_temperature.map(|t| t.to_reduced()).unwrap_or(300.0);
     let max_density = eos.compute_max_density(&initial_molefracs);
-    let mut rho = SVector::from([initial_molefracs[0], initial_molefracs[1]]) * 0.3 * max_density;
+    let rho_init = initial_density.map_or(0.3 * max_density, |r| r.into_reduced());
+    let mut rho = SVector::from([initial_molefracs[0], initial_molefracs[1]]) * rho_init;
 
     log_iter!(
         verbosity,
@@ -393,7 +416,7 @@ where
         molefracs: Option<&OVector<f64, N>>,
         options: SolverOptions,
     ) -> FeosResult<[Self; 2]> {
-        let critical_point = Self::critical_point(eos, molefracs, None, options)?;
+        let critical_point = Self::critical_point(eos, molefracs, None, None, options)?;
         let molefracs = molefracs.map_or_else(E::pure_molefracs, |x| x.clone());
         let spinodal_vapor = Self::calculate_spinodal(
             eos,

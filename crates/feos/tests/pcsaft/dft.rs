@@ -104,7 +104,7 @@ fn test_dft_propane() -> Result<(), Box<dyn Error>> {
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 2048;
-    let tc = State::critical_point(&&func_pure, None, None, Default::default())?.temperature;
+    let tc = State::critical_point(&&func_pure, None, None, None, Default::default())?.temperature;
     let vle_pure = PhaseEquilibrium::pure(&&func_pure, t, None, Default::default())?;
     let vle_full = PhaseEquilibrium::pure(&&func_full, t, None, Default::default())?;
     let vle_full_vec = PhaseEquilibrium::pure(&&func_full_vec, t, None, Default::default())?;
@@ -214,7 +214,7 @@ fn test_dft_propane_newton() -> Result<(), Box<dyn Error>> {
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 512;
-    let tc = State::critical_point(&&func, None, None, Default::default())?.temperature;
+    let tc = State::critical_point(&&func, None, None, None, Default::default())?.temperature;
     let vle = PhaseEquilibrium::pure(&&func, t, None, Default::default())?;
     let solver = DFTSolver::new(Some(Verbosity::Iter)).newton(None, None, None, None);
     PlanarInterface::from_tanh(&vle, points, w, tc, false).solve(Some(&solver))?;
@@ -235,7 +235,7 @@ fn test_dft_water() -> Result<(), Box<dyn Error>> {
     let t = 400.0 * KELVIN;
     let w = 120.0 * ANGSTROM;
     let points = 2048;
-    let tc = State::critical_point(&&func_pure, None, None, Default::default())?.temperature;
+    let tc = State::critical_point(&&func_pure, None, None, None, Default::default())?.temperature;
     let vle_pure = PhaseEquilibrium::pure(&&func_pure, t, None, Default::default())?;
     let vle_full_vec = PhaseEquilibrium::pure(&&func_full_vec, t, None, Default::default())?;
     let profile_pure = PlanarInterface::from_tanh(&vle_pure, points, w, tc, false).solve(None)?;

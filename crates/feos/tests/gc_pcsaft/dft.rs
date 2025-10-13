@@ -159,7 +159,7 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 2048;
-    let tc = State::critical_point(&&func, None, None, Default::default())?.temperature;
+    let tc = State::critical_point(&&func, None, None, None, Default::default())?.temperature;
     let vle = PhaseEquilibrium::pure(&&func, t, None, Default::default())?;
     let profile = PlanarInterface::from_tanh(&vle, points, w, tc, false).solve(None)?;
     println!(
@@ -253,7 +253,7 @@ fn test_dft_newton() -> Result<(), Box<dyn Error>> {
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 512;
-    let tc = State::critical_point(&&func, None, None, Default::default())?.temperature;
+    let tc = State::critical_point(&&func, None, None, None, Default::default())?.temperature;
     let vle = PhaseEquilibrium::pure(&&func, t, None, Default::default())?;
     let solver = DFTSolver::new(Some(Verbosity::Iter))
         .picard_iteration(None, Some(10), None, None)

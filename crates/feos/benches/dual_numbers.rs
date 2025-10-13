@@ -22,7 +22,7 @@ use typenum::P3;
 fn state_pcsaft(n: usize, eos: &PcSaft) -> State<&PcSaft> {
     let moles = DVector::from_element(n, 1.0 / n as f64) * 10.0 * MOL;
     let molefracs = (&moles / moles.sum()).into_value();
-    let cp = State::critical_point(&eos, Some(&molefracs), None, Default::default()).unwrap();
+    let cp = State::critical_point(&eos, Some(&molefracs), None, None, Default::default()).unwrap();
     let temperature = 0.8 * cp.temperature;
     State::new_nvt(&eos, temperature, cp.volume, &moles).unwrap()
 }

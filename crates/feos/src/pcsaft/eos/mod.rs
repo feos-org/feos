@@ -506,7 +506,7 @@ mod tests {
     fn critical_point() {
         let e = &propane_parameters();
         let t = 300.0 * KELVIN;
-        let cp = State::critical_point(&e, None, Some(t), Default::default());
+        let cp = State::critical_point(&e, None, Some(t), None, Default::default());
         if let Ok(v) = cp {
             assert_relative_eq!(v.temperature, 375.1244078318015 * KELVIN, epsilon = 1e-8)
         }

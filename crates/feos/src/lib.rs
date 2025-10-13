@@ -23,7 +23,7 @@
 //! let saft = PcSaft::new(parameters);
 //!
 //! // Define thermodynamic conditions.
-//! let critical_point = State::critical_point(&&saft, Some(&dvector![1.0]), None, Default::default())?;
+//! let critical_point = State::critical_point(&&saft, Some(&dvector![1.0]), None, None, Default::default())?;
 //!
 //! // Compute properties.
 //! let p = critical_point.pressure(Contributions::Total);

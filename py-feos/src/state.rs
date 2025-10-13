@@ -190,12 +190,13 @@ impl PyState {
     /// State : State at critical conditions
     #[staticmethod]
     #[pyo3(
-        text_signature = "(eos, initial_temperature=None, max_iter=None, tol=None, verbosity=None)"
+        text_signature = "(eos, initial_temperature=None, initial_density=None, max_iter=None, tol=None, verbosity=None)"
     )]
-    #[pyo3(signature = (eos, initial_temperature=None, max_iter=None, tol=None, verbosity=None))]
+    #[pyo3(signature = (eos, initial_temperature=None, initial_density=None, max_iter=None, tol=None, verbosity=None))]
     fn critical_point_pure(
         eos: &PyEquationOfState,
         initial_temperature: Option<Temperature>,
+        initial_density: Option<Density>,
         max_iter: Option<usize>,
         tol: Option<f64>,
         verbosity: Option<PyVerbosity>,
@@ -203,6 +204,7 @@ impl PyState {
         let cp = State::critical_point_pure(
             &eos.0,
             initial_temperature,
+            initial_density,
             (max_iter, tol, verbosity.map(|v| v.into())).into(),
         )
         .map_err(PyFeosError::from)?;
@@ -232,13 +234,14 @@ impl PyState {
     /// State : State at critical conditions.
     #[staticmethod]
     #[pyo3(
-        text_signature = "(eos, molefracs=None, initial_temperature=None, max_iter=None, tol=None, verbosity=None)"
+        text_signature = "(eos, molefracs=None, initial_temperature=None, initial_density=None, max_iter=None, tol=None, verbosity=None)"
     )]
-    #[pyo3(signature = (eos, molefracs=None, initial_temperature=None, max_iter=None, tol=None, verbosity=None))]
+    #[pyo3(signature = (eos, molefracs=None, initial_temperature=None, initial_density=None, max_iter=None, tol=None, verbosity=None))]
     fn critical_point<'py>(
         eos: &PyEquationOfState,
         molefracs: Option<PyReadonlyArray1<'py, f64>>,
         initial_temperature: Option<Temperature>,
+        initial_density: Option<Density>,
         max_iter: Option<usize>,
         tol: Option<f64>,
         verbosity: Option<PyVerbosity>,
@@ -248,6 +251,7 @@ impl PyState {
                 &eos.0,
                 parse_molefracs(molefracs).as_ref(),
                 initial_temperature,
+                initial_density,
                 (max_iter, tol, verbosity.map(|v| v.into())).into(),
             )
             .map_err(PyFeosError::from)?,
@@ -278,14 +282,16 @@ impl PyState {
     /// State : State at critical conditions.
     #[staticmethod]
     #[pyo3(
-        text_signature = "(eos, temperature_or_pressure, initial_temperature=None, initial_molefracs=None, max_iter=None, tol=None, verbosity=None)"
+        text_signature = "(eos, temperature_or_pressure, initial_temperature=None, initial_molefracs=None, initial_density=None, max_iter=None, tol=None, verbosity=None)"
     )]
-    #[pyo3(signature = (eos, temperature_or_pressure, initial_temperature=None, initial_molefracs=None, max_iter=None, tol=None, verbosity=None))]
+    #[pyo3(signature = (eos, temperature_or_pressure, initial_temperature=None, initial_molefracs=None, initial_density=None, max_iter=None, tol=None, verbosity=None))]
+    #[expect(clippy::too_many_arguments)]
     fn critical_point_binary(
         eos: &PyEquationOfState,
         temperature_or_pressure: Bound<'_, PyAny>,
         initial_temperature: Option<Temperature>,
         initial_molefracs: Option<[f64; 2]>,
+        initial_density: Option<Density>,
         max_iter: Option<usize>,
         tol: Option<f64>,
         verbosity: Option<PyVerbosity>,
@@ -298,6 +304,7 @@ impl PyState {
                     t,
                     initial_temperature,
                     initial_molefracs,
+                    initial_density,
                     (max_iter, tol, v).into(),
                 )
                 .map_err(PyFeosError::from)?,
@@ -309,6 +316,7 @@ impl PyState {
                     p,
                     initial_temperature,
                     initial_molefracs,
+                    initial_density,
                     (max_iter, tol, v).into(),
                 )
                 .map_err(PyFeosError::from)?,

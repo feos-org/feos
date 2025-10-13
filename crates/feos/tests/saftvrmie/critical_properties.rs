@@ -53,7 +53,7 @@ fn critical_properties_pure() {
         let option = SolverOptions::default();
         let p = parameters.remove(name).unwrap();
         let eos = SaftVRMie::new(p);
-        let cp = State::critical_point(&&eos, None, t0, option).unwrap();
+        let cp = State::critical_point(&&eos, None, t0, None, option).unwrap();
         assert_relative_eq!(cp.temperature, data.0, max_relative = 2e-3);
         assert_relative_eq!(
             cp.pressure(feos_core::Contributions::Total),

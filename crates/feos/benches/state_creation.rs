@@ -23,12 +23,12 @@ fn npt<E: Residual>(
 
 /// Evaluate critical point constructor
 fn critical_point<E: Residual>((eos, n): (&E, Option<&DVector<f64>>)) {
-    State::critical_point(eos, n, None, Default::default()).unwrap();
+    State::critical_point(eos, n, None, None, Default::default()).unwrap();
 }
 
 /// Evaluate critical point constructor for binary systems at given T or p
 fn critical_point_binary<E: Residual, TP: TemperatureOrPressure>((eos, tp): (&E, TP)) {
-    State::critical_point_binary(eos, tp, None, None, Default::default()).unwrap();
+    State::critical_point_binary(eos, tp, None, None, None, Default::default()).unwrap();
 }
 
 /// VLE for pure substance for given temperature or pressure
@@ -69,7 +69,7 @@ fn bench_states<E: Residual>(c: &mut Criterion, group_name: &str, eos: &E) {
     let ncomponents = eos.components();
     let x = DVector::from_element(ncomponents, 1.0 / ncomponents as f64);
     let n = &x * 100.0 * MOL;
-    let crit = State::critical_point(eos, Some(&x), None, Default::default()).unwrap();
+    let crit = State::critical_point(eos, Some(&x), None, None, Default::default()).unwrap();
     let vle = if ncomponents == 1 {
         PhaseEquilibrium::pure(eos, crit.temperature * 0.95, None, Default::default()).unwrap()
     } else {
