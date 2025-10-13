@@ -60,6 +60,7 @@ impl<E: Residual + Subset> PhaseDiagram<E, 2> {
                     temperature_or_pressure,
                     None,
                     None,
+                    None,
                     SolverOptions::default(),
                 )?;
                 let cp_vle = PhaseEquilibrium::from_states(cp.clone(), cp.clone());
@@ -69,6 +70,7 @@ impl<E: Residual + Subset> PhaseDiagram<E, 2> {
                 let cp = State::critical_point_binary(
                     eos,
                     temperature_or_pressure,
+                    None,
                     None,
                     None,
                     SolverOptions::default(),

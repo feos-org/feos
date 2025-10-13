@@ -22,6 +22,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
             eos,
             Some(molefracs),
             critical_temperature,
+            None,
             SolverOptions::default(),
         )?;
 
@@ -70,6 +71,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
             eos,
             Some(molefracs),
             critical_temperature,
+            None,
             SolverOptions::default(),
         )?;
 
@@ -134,6 +136,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
             eos,
             Some(molefracs),
             critical_temperature,
+            None,
             SolverOptions::default(),
         )?;
 
