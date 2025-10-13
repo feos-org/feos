@@ -18,7 +18,7 @@ use quantity::*;
 /// - molefracs (or moles) for equimolar mixture.
 fn state_saftvrmie(n: usize, eos: &SaftVRMie) -> State<&SaftVRMie> {
     let molefracs = DVector::from_element(n, 1.0 / n as f64);
-    let cp = State::critical_point(&eos, Some(&molefracs), None, Default::default()).unwrap();
+    let cp = State::critical_point(&eos, Some(&molefracs), None, None, Default::default()).unwrap();
     let temperature = 0.8 * cp.temperature;
     State::new_nvt(&eos, temperature, cp.volume, &(molefracs * 10. * MOL)).unwrap()
 }

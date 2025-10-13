@@ -102,7 +102,13 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     where
         E: Send + Sync,
     {
-        let sc = State::critical_point(eos, None, critical_temperature, SolverOptions::default())?;
+        let sc = State::critical_point(
+            eos,
+            None,
+            critical_temperature,
+            None,
+            SolverOptions::default(),
+        )?;
 
         let max_temperature = min_temperature
             + (sc.temperature - min_temperature) * ((npoints - 2) as f64 / (npoints - 1) as f64);
