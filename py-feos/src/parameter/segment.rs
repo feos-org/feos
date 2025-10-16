@@ -6,6 +6,7 @@ use pythonize::{depythonize, pythonize};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+/// Parameters describing individual segments.
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(from = "SegmentRecord<Value, Value>")]
 #[serde(into = "SegmentRecord<Value, Value>")]
@@ -108,7 +109,7 @@ impl PySegmentRecord {
     }
 }
 
-/// A collection of parameters that model interactions between two segments.
+/// Binary segment/segment interaction parameters.
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(from = "BinaryRecord<String, Value, Value>")]
 #[serde(into = "BinaryRecord<String, Value, Value>")]

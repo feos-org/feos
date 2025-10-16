@@ -129,7 +129,6 @@ api/index
 :caption: Rust
 :hidden:
 
-rustguide/index
 rust_api
 ```
 

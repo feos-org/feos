@@ -27,17 +27,11 @@ Implementations of Helmholtz energy functionals for DFT.
 .. autosummary::
     :toctree: generated/
 
-    State
-    StateVec
-    PhaseEquilibrium
-    PhaseDiagram
-    Contributions
-    Verbosity
     FMTVersion
     DFTSolver
 ```
 
-## Interfaces
+## Vapor-liquid interfaces
 
 ```{eval-rst}
 .. autosummary::
