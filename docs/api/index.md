@@ -13,15 +13,6 @@ If you want to adjust parameters of a model to experimental data you can use cla
 .. currentmodule:: feos
 
 .. autosummary::
-    :toctree: generated/
-
-    EquationOfState
-```
-
-```{eval-rst}
-.. currentmodule:: feos
-
-.. autosummary::
     EquationOfState.pcsaft
     EquationOfState.epcsaft
     EquationOfState.gc_pcsaft
@@ -89,14 +80,14 @@ eos = EquationOfState.pcsaft(pc_saft_parameters).joback(joback_parameters)
     EquationOfState.python_ideal_gas
 ```
 
-## Other data types
+## Data types
 
 ```{eval-rst}
 .. currentmodule:: feos
 
 .. autosummary::
     :toctree: generated/
-
+    EquationOfState
     Contributions
     Verbosity
     State

@@ -12,11 +12,11 @@ It is written in **Rust** with a **Python** interface.
 `````{tab-set}
 ````{tab-item} Python
 ```python
-from feos.eos import EquationOfState, State
-from feos.pcsaft import PcSaftParameters
+from feos import EquationOfState, State
+from feos.parameters import Parameters
 
 # Build an equation of state
-parameters = PcSaftParameters.from_json(['methanol'], 'parameters.json')
+parameters = Parameters.from_json(['methanol'], 'parameters.json')
 eos = EquationOfState.pcsaft(parameters)
 
 # Define thermodynamic conditions
@@ -35,21 +35,21 @@ Critical point for methanol: T=531.5 K, p=10.7 MPa.
 ````{tab-item} Rust
 ```rust
 // some imports omitted
-use feos_core::{State, Contributions};
-use feos_core::parameter::{IdentifierOption, Parameter};
-use feos::pcsaft::{PcSaft, PcSaftParameters};
+use feos::core::parameter::{IdentifierOption, Parameters};
+use feos::core::{Contributions, State};
+use feos::pcsaft::PcSaft;
 
 // Build an equation of state
-let parameters = PcSaftParameters.from_json(
-    vec!["methanol"], 
+let parameters = Parameters::from_json(
+    vec!["methanol"],
     "parameters.json",
     None,
-    IdentifierOption::Name
+    IdentifierOption::Name,
 )?;
-let eos = Rc::new(PcSaft::new(Rc::new(parameters)));
+let eos = &PcSaft::new(parameters);
 
 // Define thermodynamic conditions
-let critical_point = State::critical_point(&eos, None, None, Default::default())?;
+let critical_point = State::critical_point(&eos, None, None, None, Default::default())?;
 
 // Compute properties
 let p = critical_point.pressure(Contributions::Total);
@@ -70,8 +70,8 @@ Critical point for methanol: T=531.5 K, p=10.7 MPa.
 - Questions or comments? [We are happy to hear from you](help_and_feedback)!
 
 ## Want to learn more?
-- Delve into the [python API](api/index).
-- Interested in extending the library? Check out our [Rust guide](rustguide/index)!
+- Delve into the [python](api/index) or [Rust API](rust_api).
+- Learn about the underlying theory in our [Theory guide](theory/eos/properties)!
 
 ## Features
 
@@ -86,7 +86,9 @@ Critical point for methanol: T=531.5 K, p=10.7 MPa.
 ---
 **Implemented equations of state**
 - PC-SAFT (incl. group contribution method)
+- ePC-SAFT
 - uv-Theory
+- SAFT-VR-Mie and the extension to quantum fluids SAFT-VRQ-Mie
 - PeTS
 ```
 
@@ -94,7 +96,7 @@ Critical point for methanol: T=531.5 K, p=10.7 MPa.
 :open:
 
 - **interfacial** properties,
-- properties in **pores** and at **walls**,
+- properties in **nanopores** and at **walls**,
 - **adsorption isotherms**,
 - **solvation free energies**,
 - different **dimensions** and **coordinate systems**
@@ -103,8 +105,8 @@ Critical point for methanol: T=531.5 K, p=10.7 MPa.
 ```{dropdown} Extensibility / Usability
 :open:
 
-- Helmholtz energy uses **generalized (hyper-) dual numbers** - **no analytical derivatives are needed**.
-- Interfaces use **dimensioned quantities**.
+- Helmholtz energy uses **generalized (hyper-) dual numbers** - no analytical derivatives are needed.
+- Interfaces use **dimensioned quantities** - never accidentally mix molar and mass-specific properties.
 - Python bindings are written in Rust - **robust type checking** and **error handling**.
 ```
 
