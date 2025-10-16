@@ -283,15 +283,16 @@ mod test {
             ..Default::default()
         };
         let cp: State<_, Dyn, f64> =
-            State::critical_point(&eos, None, Some(647. * KELVIN), options).unwrap();
+            State::critical_point(&eos, None, Some(647. * KELVIN), None, options).unwrap();
         println!("{cp}");
         assert_relative_eq!(cp.temperature, eos.tc * KELVIN, max_relative = 1e-13);
         let cp: State<_, Dyn, f64> =
-            State::critical_point(&eos, None, None, Default::default()).unwrap();
+            State::critical_point(&eos, None, None, None, Default::default()).unwrap();
         println!("{cp}");
         assert_relative_ne!(cp.temperature, eos.tc * KELVIN, max_relative = 1e-13);
         let cp: State<_, Dyn, f64> =
-            State::critical_point(&eos, None, Some(700.0 * KELVIN), Default::default()).unwrap();
+            State::critical_point(&eos, None, Some(700.0 * KELVIN), None, Default::default())
+                .unwrap();
         println!("{cp}");
         assert_relative_eq!(cp.temperature, eos.tc * KELVIN, max_relative = 1e-13)
     }
