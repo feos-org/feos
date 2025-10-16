@@ -1,4 +1,9 @@
-use std::f64::consts::E;
+//! High-precision multiparameter equations of state for common pure fluids.
+//!
+//! The residual and ideal gas contributions are always parametrized jointly for
+//! multiparameter equations of state. Construct the equation of state by reading
+//! parameters, e.g., [MultiParameterParameters::from_json], and passing them to
+//! the equation of state with [MultiParameter::new].
 
 use feos_core::parameter::Parameters;
 use feos_core::{EquationOfState, IdealGas, Molarweight, ResidualDyn, StateHD, Subset};
@@ -6,14 +11,15 @@ use nalgebra::DVector;
 use num_dual::DualNum;
 use quantity::MolarWeight;
 use serde::Deserialize;
+use std::f64::consts::E;
 
 mod ideal_gas_function;
 mod residual_function;
 use ideal_gas_function::{IdealGasFunction, IdealGasFunctionJson};
 use residual_function::{ResidualFunction, ResidualFunctionJson};
 
-// record
-
+/// Pure-component parameters for a multiparameter equation of state
+/// (residual and ideal gas contributions).
 #[derive(Clone, Deserialize)]
 pub struct MultiParameterRecord {
     tc: f64,
@@ -22,10 +28,10 @@ pub struct MultiParameterRecord {
     ideal_gas: Vec<IdealGasFunctionJson>,
 }
 
+/// Parameter set required for the multiparameter equation of state.
 pub type MultiParameterParameters = Parameters<MultiParameterRecord, (), ()>;
 
-// structs
-
+/// Residual contribution of the multiparameter equation of state.
 #[derive(Clone)]
 pub struct MultiParameter {
     tc: f64,
@@ -34,6 +40,7 @@ pub struct MultiParameter {
     molar_weight: MolarWeight<DVector<f64>>,
 }
 
+/// Ideal gas contribution of the multiparameter equation of state.
 #[derive(Clone)]
 pub struct MultiParameterIdealGas {
     tc: f64,
@@ -41,6 +48,7 @@ pub struct MultiParameterIdealGas {
     terms: Vec<IdealGasFunction>,
 }
 
+/// Multiparameter equation of state consisting of a residual and a corresponding ideal gas contribution.
 pub type MultiParameterEquationOfState =
     EquationOfState<Vec<MultiParameterIdealGas>, MultiParameter>;
 
@@ -69,8 +77,6 @@ impl MultiParameter {
         EquationOfState::new(vec![ideal_gas], residual)
     }
 }
-
-// eos trait implementations
 
 impl ResidualDyn for MultiParameter {
     fn components(&self) -> usize {
