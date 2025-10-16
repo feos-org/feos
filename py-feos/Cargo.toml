@@ -48,6 +48,7 @@ uvtheory = ["feos/uvtheory"]
 pets = ["feos/pets"]
 saftvrqmie = ["feos/saftvrqmie"]
 saftvrmie = ["feos/saftvrmie"]
+multiparameter = ["feos/multiparameter"]
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 ad = ["feos-core/rayon"]
 all_models = [

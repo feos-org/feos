@@ -15,6 +15,8 @@ mod constructors;
 mod epcsaft;
 #[cfg(feature = "gc_pcsaft")]
 mod gc_pcsaft;
+#[cfg(feature = "multiparameter")]
+mod multiparameter;
 #[cfg(feature = "pcsaft")]
 mod pcsaft;
 #[cfg(feature = "pets")]
