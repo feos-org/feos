@@ -155,7 +155,11 @@ impl PyEquationOfState {
         if let ResidualModel::NoResidual(c) = &mut eos.residual {
             c.0 = ideal_gas.len()
         }
-        eos.ideal_gas = ideal_gas;
+        if eos.ideal_gas.is_empty() || matches!(eos.ideal_gas[0], IdealGasModel::NoModel) {
+            eos.ideal_gas = ideal_gas;
+        } else {
+            panic!("There is already an ideal gas model initialized for the equation of state!")
+        }
     }
 }
 
