@@ -60,4 +60,5 @@ all_models = [
     "pets",
     "saftvrqmie",
     "saftvrmie",
+    "multiparameter"
 ]
