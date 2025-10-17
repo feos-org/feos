@@ -11,6 +11,7 @@ use pythonize::{depythonize, pythonize};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+/// Parameters that describe a pure component.
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(from = "PureRecord<Value, Value>")]
 #[serde(into = "PureRecord<Value, Value>")]
@@ -123,6 +124,7 @@ impl PyPureRecord {
     }
 }
 
+/// Binary interaction parameters.
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(from = "BinaryRecord<Identifier, Value, Value>")]
 #[serde(into = "BinaryRecord<Identifier, Value, Value>")]

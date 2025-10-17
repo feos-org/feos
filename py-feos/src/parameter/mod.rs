@@ -22,6 +22,7 @@ pub(crate) use identifier::{PyIdentifier, PyIdentifierOption};
 pub(crate) use model_record::{PyBinaryRecord, PyPureRecord};
 pub(crate) use segment::{PyBinarySegmentRecord, PySegmentRecord};
 
+/// Set of parameters that fully characterizes a mixture.
 #[pyclass(name = "Parameters")]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PyParameters {
@@ -35,15 +36,6 @@ impl TryFrom<PyParameters> for Parameters<Value, Value, Value> {
         Self::new(value.pure_records, value.binary_records)
     }
 }
-
-// impl From<Parameters<Value, Value, Value>> for PyParameters {
-//     fn from(value: Parameters<Value, Value, Value>) -> Self {
-//         Self {
-//             pure_records: value.pure,
-//             binary_records: value.binary,
-//         }
-//     }
-// }
 
 impl PyParameters {
     pub fn try_convert<P, B, A>(self) -> PyResult<Parameters<P, B, A>>
@@ -502,6 +494,8 @@ impl PyParameters {
     }
 }
 
+/// Combination of chemical information and segment parameters that is used to
+/// parametrize a group-contribution model.
 #[pyclass(name = "GcParameters")]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PyGcParameters {

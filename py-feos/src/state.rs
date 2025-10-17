@@ -30,8 +30,6 @@ pub enum PyContributions {
     IdealGas,
     /// Only compute the difference between the total and the ideal gas contribution
     Residual,
-    // /// Compute the differnce between the total and the ideal gas contribution for a (N,p,T) reference state
-    // ResidualNpt,
     /// Compute ideal gas and residual contributions
     Total,
 }

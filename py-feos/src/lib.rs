@@ -17,6 +17,7 @@ pub(crate) mod residual;
 pub(crate) mod state;
 pub(crate) mod user_defined;
 
+/// Output level for phase equilibrium solvers.
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[pyclass(name = "Verbosity", eq, eq_int)]
 pub(crate) enum PyVerbosity {

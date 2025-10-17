@@ -7,6 +7,7 @@ use std::io::BufReader;
 
 use crate::error::PyFeosError;
 
+/// SMARTS code, required to fragmentize molecules into segments.
 #[derive(Clone, Serialize, Deserialize)]
 #[pyclass(name = "SmartsRecord")]
 pub(crate) struct PySmartsRecord {

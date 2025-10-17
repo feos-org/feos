@@ -6,6 +6,7 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 
+/// Information about segments and bonds of a molecule.
 #[pyclass(name = "ChemicalRecord")]
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub(crate) struct PyChemicalRecord(ChemicalRecord);
