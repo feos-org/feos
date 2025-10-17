@@ -55,6 +55,10 @@ pub enum ResidualModel {
     #[implement(molar_weight)]
     UVTheory(feos::uvtheory::UVTheory),
 
+    #[cfg(feature = "multiparameter")]
+    #[implement(molar_weight)]
+    MultiParameter(feos::multiparameter::MultiParameter),
+
     // Helmholtz energy functionals
     #[cfg(all(feature = "dft", feature = "pcsaft"))]
     #[implement(molar_weight, functional, fluid_parameters, pair_potential)]

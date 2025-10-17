@@ -142,6 +142,7 @@ impl PcSaftRecord {
     }
 }
 
+/// Association parameters for the PC-SAFT equation of state.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq)]
 pub struct PcSaftAssociationRecord {
     /// Association volume parameter

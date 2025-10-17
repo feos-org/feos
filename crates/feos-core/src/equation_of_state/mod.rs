@@ -48,7 +48,7 @@ impl<I> EquationOfState<Vec<I>, NoResidual> {
     }
 }
 
-impl<I: Clone, R: ResidualDyn> ResidualDyn for EquationOfState<Vec<I>, R> {
+impl<I, R: ResidualDyn> ResidualDyn for EquationOfState<Vec<I>, R> {
     fn components(&self) -> usize {
         self.residual.components()
     }

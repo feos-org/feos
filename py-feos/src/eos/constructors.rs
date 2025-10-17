@@ -71,14 +71,17 @@ impl PyEquationOfState {
     /// Returns
     /// -------
     /// EquationOfState
-    fn python_ideal_gas(&mut self, ideal_gas: Vec<Bound<'_, PyAny>>) -> PyResult<()> {
-        self.add_ideal_gas(
+    fn python_ideal_gas<'py>(
+        slf: Bound<'py, Self>,
+        ideal_gas: Vec<Bound<'py, PyAny>>,
+    ) -> PyResult<Bound<'py, Self>> {
+        slf.borrow_mut().add_ideal_gas(
             ideal_gas
                 .into_iter()
                 .map(|i| Ok(IdealGasModel::Python(Arc::new(PyIdealGas::new(i)?))))
                 .collect::<PyResult<_>>()?,
         );
-        Ok(())
+        Ok(slf)
     }
 
     /// Ideal gas model of Joback and Reid.
@@ -91,14 +94,14 @@ impl PyEquationOfState {
     /// Returns
     /// -------
     /// EquationOfState
-    fn joback(&mut self, joback: PyGcParameters) -> PyResult<()> {
-        self.add_ideal_gas(
+    fn joback(slf: Bound<'_, Self>, joback: PyGcParameters) -> PyResult<Bound<'_, Self>> {
+        slf.borrow_mut().add_ideal_gas(
             Joback::new(joback.try_convert_homosegmented()?)
                 .into_iter()
                 .map(IdealGasModel::Joback)
                 .collect(),
         );
-        Ok(())
+        Ok(slf)
     }
 
     /// Ideal gas model based on DIPPR equations for the ideal
@@ -112,13 +115,13 @@ impl PyEquationOfState {
     /// Returns
     /// -------
     /// EquationOfState
-    fn dippr(&mut self, dippr: PyParameters) -> PyResult<()> {
-        self.add_ideal_gas(
+    fn dippr(slf: Bound<'_, Self>, dippr: PyParameters) -> PyResult<Bound<'_, Self>> {
+        slf.borrow_mut().add_ideal_gas(
             Dippr::new(dippr.try_convert()?)
                 .into_iter()
                 .map(IdealGasModel::Dippr)
                 .collect(),
         );
-        Ok(())
+        Ok(slf)
     }
 }

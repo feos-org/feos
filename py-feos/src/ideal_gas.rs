@@ -15,5 +15,7 @@ pub enum IdealGasModel {
     NoModel,
     Joback(Joback),
     Dippr(Dippr),
+    #[cfg(feature = "multiparameter")]
+    MultiParameter(feos::multiparameter::MultiParameterIdealGas),
     Python(Arc<PyIdealGas>),
 }

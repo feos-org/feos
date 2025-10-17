@@ -188,7 +188,7 @@ where
     }
 }
 
-impl<E: Residual, N: Dim, D: DualNum<f64> + Copy> fmt::Display for State<E, N, D>
+impl<E: Residual<N, D>, N: Dim, D: DualNum<f64> + Copy> fmt::Display for State<E, N, D>
 where
     DefaultAllocator: Allocator<N>,
 {

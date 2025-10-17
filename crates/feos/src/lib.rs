@@ -46,6 +46,8 @@ pub mod hard_sphere;
 pub mod epcsaft;
 #[cfg(feature = "gc_pcsaft")]
 pub mod gc_pcsaft;
+#[cfg(feature = "multiparameter")]
+pub mod multiparameter;
 #[cfg(feature = "pcsaft")]
 pub mod pcsaft;
 #[cfg(feature = "pets")]
