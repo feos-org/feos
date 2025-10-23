@@ -12,14 +12,6 @@ pub struct PyIdealGas(Py<PyAny>);
 
 impl PyIdealGas {
     pub fn new(obj: Bound<'_, PyAny>) -> PyResult<Self> {
-        let attr = obj.hasattr("components")?;
-        if !attr {
-            panic!("Python Class has to have a method 'components' with signature:\n\tdef signature(self) -> int")
-        }
-        let attr = obj.hasattr("subset")?;
-        if !attr {
-            panic!("Python Class has to have a method 'subset' with signature:\n\tdef subset(self, component_list: List[int]) -> Self")
-        }
         let attr = obj.hasattr("ln_lambda3")?;
         if !attr {
             panic!("{}", "Python Class has to have a method 'ln_lambda3' with signature:\n\tdef ln_lambda3(self, temperature: HD) -> HD\nwhere 'HD' has to be any (hyper-) dual number.")
@@ -39,13 +31,13 @@ macro_rules! impl_ideal_gas {
                 let mut result = D::zero();
 
                 $(
-                    if let Some(t) = (&temperature as &dyn Any).downcast_ref::<$hd_ty>() {
+                    if let Some(&t) = (&temperature as &dyn Any).downcast_ref::<$hd_ty>() {
                         let l3_any = (&mut result as &mut dyn Any).downcast_mut::<$hd_ty>().unwrap();
                         *l3_any = Python::attach(|py| {
                             let py_result = self
                                 .0
                                 .bind(py)
-                                .call_method1("ln_lambda3", (<$py_hd_id>::from(t.clone()),))
+                                .call_method1("ln_lambda3", (<$py_hd_id>::from(t),))
                                 .unwrap();
                             <$hd_ty>::from(py_result.extract::<$py_hd_id>().unwrap())
                         });
@@ -87,26 +79,6 @@ impl PyResidual {
     }
 }
 
-// impl Components for PyResidual {
-//     fn components(&self) -> usize {
-//         Python::attach(|py| {
-//             let py_result = self.0.bind(py).call_method0("components").unwrap();
-//             py_result.extract().unwrap()
-//         })
-//     }
-
-//     fn subset(&self, component_list: &[usize]) -> Self {
-//         Python::attach(|py| {
-//             let py_result = self
-//                 .0
-//                 .bind(py)
-//                 .call_method1("subset", (component_list.to_vec(),))
-//                 .unwrap();
-//             Self::new(py_result.extract().unwrap()).unwrap()
-//         })
-//     }
-// }
-
 macro_rules! impl_residual {
     ($($py_state_id:ident, $py_hd_id:ident, $hd_ty:ty);*) => {
         impl ResidualDyn for PyResidual {
@@ -136,27 +108,6 @@ macro_rules! impl_residual {
                 )*
                 panic!("compute_max_density: input data type not understood")
             }
-
-            // fn reduced_residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
-            //     // result to write to
-            //     let mut a = D::zero();
-
-            //     $(
-            //         if let Some(s) = (state as &dyn Any).downcast_ref::<StateHD<$hd_ty>>() {
-            //             let d = (&mut a as &mut dyn Any).downcast_mut::<$hd_ty>().unwrap();
-            //             *d = Python::attach(|py| {
-            //                 let py_result = self
-            //                     .0
-            //                     .bind(py)
-            //                     .call_method1("helmholtz_energy", (<$py_state_id>::from(s.clone()),))
-            //                     .unwrap();
-            //                 <$hd_ty>::from(py_result.extract::<$py_hd_id>().unwrap())
-            //             });
-            //             return a
-            //         }
-            //     )*
-            //     panic!("helmholtz_energy: input data type not understood")
-            // }
 
             fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy + >(
                     &self,
@@ -238,21 +189,6 @@ macro_rules! state {
                 <$py_hd_id>::from(self.0.temperature)
             }
 
-            // #[getter]
-            // pub fn get_volume(&self) -> $py_hd_id {
-            //     <$py_hd_id>::from(self.0.volume)
-            // }
-
-            // #[getter]
-            // pub fn get_moles(&self) -> Vec<$py_hd_id> {
-            //     self.0
-            //         .moles
-            //         .as_ndarray1()
-            //         .mapv(<$py_hd_id>::from)
-            //         .into_raw_vec_and_offset()
-            //         .0
-            // }
-
             #[getter]
             pub fn get_partial_density(&self) -> Vec<$py_hd_id> {
                 self.0
@@ -299,6 +235,8 @@ macro_rules! impl_dual_state_helmholtz_energy {
 
 // No definition of dual number necessary for f64
 state!(PyStateF, f64, f64);
+
+dual_number!(PyReal64, Real<f64, f64>, f64);
 
 impl_dual_state_helmholtz_energy!(PyStateD, PyDual64, Dual64, f64);
 
@@ -352,7 +290,7 @@ impl_dual_state_helmholtz_energy!(
 );
 
 impl_ideal_gas!(
-    f64, f64;
+    PyReal64, Real<f64, f64>;
     PyDual64, Dual64;
     PyDualDualVec3,
     Dual<DualSVec64<3>, f64>;

@@ -4,6 +4,7 @@ use nalgebra::{DMatrix, DVector};
 use num_traits::Zero;
 use quantity::{JOULE, KB, KELVIN};
 use serde::{Deserialize, Serialize};
+use std::ops::AddAssign;
 
 /// PC-SAFT pure-component parameters.
 #[derive(Serialize, Deserialize, Clone)]
@@ -216,9 +217,9 @@ pub struct PcSaftPars {
     pub nquadpole: usize,
     pub dipole_comp: Vec<usize>,
     pub quadpole_comp: Vec<usize>,
-    // pub viscosity: Option<DMatrix<f64>>,
-    // pub diffusion: Option<DMatrix<f64>>,
-    // pub thermal_conductivity: Option<DMatrix<f64>>,
+    pub viscosity: Option<DMatrix<f64>>,
+    pub diffusion: Option<DMatrix<f64>>,
+    pub thermal_conductivity: Option<DMatrix<f64>>,
 }
 
 impl PcSaftPars {
@@ -226,10 +227,9 @@ impl PcSaftPars {
         let n = parameters.pure.len();
 
         let [m, sigma, epsilon_k] = parameters.collate(|pr| [pr.m, pr.sigma, pr.epsilon_k]);
-        // let [mu, q] = parameters.collate(|pr| [pr.mu, pr.q]);
-        // let [viscosity, thermal_conductivity] =
-        //     parameters.collate(|pr| [pr.viscosity, pr.thermal_conductivity]);
-        // let [diffusion] = parameters.collate(|pr| [pr.diffusion]);
+        let [viscosity, thermal_conductivity] =
+            parameters.collate(|pr| [pr.viscosity, pr.thermal_conductivity]);
+        let [diffusion] = parameters.collate(|pr| [pr.diffusion]);
         let [k_ij] = parameters.collate_binary(|br| [br.k_ij]);
 
         let [mu2, q2] = parameters.collate(|pr| {
@@ -265,35 +265,38 @@ impl PcSaftPars {
         }
         let epsilon_k_ij = (-k_ij).add_scalar(1.0).component_mul(&e_k_ij);
 
-        // let viscosity = if viscosity.iter().any(|v| v.is_none()) {
-        //     None
-        // } else {
-        //     let mut v = DMatrix::zeros((4, viscosity.len()));
-        //     for (i, vi) in viscosity.iter().enumerate() {
-        //         v.column_mut(i).assign(&DVector::from(vi.unwrap().to_vec()));
-        //     }
-        //     Some(v)
-        // };
+        let viscosity = if viscosity.iter().any(|v| v.is_none()) {
+            None
+        } else {
+            let mut v = DMatrix::zeros(4, viscosity.len());
+            for (i, vi) in viscosity.iter().enumerate() {
+                v.column_mut(i)
+                    .add_assign(&DVector::from(vi.unwrap().to_vec()));
+            }
+            Some(v)
+        };
 
-        // let diffusion = if diffusion.iter().any(|v| v.is_none()) {
-        //     None
-        // } else {
-        //     let mut v = DMatrix::zeros((5, diffusion.len()));
-        //     for (i, vi) in diffusion.iter().enumerate() {
-        //         v.column_mut(i).assign(&DVector::from(vi.unwrap().to_vec()));
-        //     }
-        //     Some(v)
-        // };
+        let diffusion = if diffusion.iter().any(|v| v.is_none()) {
+            None
+        } else {
+            let mut v = DMatrix::zeros(5, diffusion.len());
+            for (i, vi) in diffusion.iter().enumerate() {
+                v.column_mut(i)
+                    .add_assign(&DVector::from(vi.unwrap().to_vec()));
+            }
+            Some(v)
+        };
 
-        // let thermal_conductivity = if thermal_conductivity.iter().any(|v| v.is_none()) {
-        //     None
-        // } else {
-        //     let mut v = DMatrix::zeros((4, thermal_conductivity.len()));
-        //     for (i, vi) in thermal_conductivity.iter().enumerate() {
-        //         v.column_mut(i).assign(&DVector::from(vi.unwrap().to_vec()));
-        //     }
-        //     Some(v)
-        // };
+        let thermal_conductivity = if thermal_conductivity.iter().any(|v| v.is_none()) {
+            None
+        } else {
+            let mut v = DMatrix::zeros(4, thermal_conductivity.len());
+            for (i, vi) in thermal_conductivity.iter().enumerate() {
+                v.column_mut(i)
+                    .add_assign(&DVector::from(vi.unwrap().to_vec()));
+            }
+            Some(v)
+        };
 
         Self {
             m,
@@ -308,9 +311,9 @@ impl PcSaftPars {
             nquadpole,
             dipole_comp,
             quadpole_comp,
-            // viscosity,
-            // diffusion,
-            // thermal_conductivity,
+            viscosity,
+            diffusion,
+            thermal_conductivity,
         }
     }
 }

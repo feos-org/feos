@@ -90,6 +90,7 @@ Critical point for methanol: T=531.5 K, p=10.7 MPa.
 - uv-Theory
 - SAFT-VR-Mie and the extension to quantum fluids SAFT-VRQ-Mie
 - PeTS
+- Multiparameter Helmholtz energy equations of state for common pure components
 ```
 
 ```{dropdown} Density Functional Theory

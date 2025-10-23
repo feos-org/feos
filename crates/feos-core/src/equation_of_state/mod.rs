@@ -1,14 +1,13 @@
-use std::ops::Deref;
-
-use crate::{ReferenceSystem, state::StateHD};
+use crate::{ReferenceSystem, StateHD};
 use nalgebra::{
     Const, DVector, DefaultAllocator, Dim, Dyn, OVector, SVector, U1, allocator::Allocator,
 };
 use num_dual::DualNum;
 use quantity::{Energy, MolarEnergy, Moles, Temperature, Volume};
+use std::ops::Deref;
 
 mod residual;
-pub use residual::{Molarweight, NoResidual, Residual, ResidualDyn, Subset};
+pub use residual::{EntropyScaling, Molarweight, NoResidual, Residual, ResidualDyn, Subset};
 
 /// An equation of state consisting of an ideal gas model
 /// and a residual Helmholtz energy model.
@@ -209,42 +208,3 @@ impl<I: IdealGas<D> + Clone, R: Residual<Const<N>, D>, D: DualNum<f64> + Copy, c
         self.ideal_gas.iter()
     }
 }
-
-// impl<I: IdealGas, R: Residual + EntropyScaling> EntropyScaling for EquationOfState<I, R> {
-//     fn viscosity_reference(
-//         &self,
-//         temperature: Temperature,
-//         volume: Volume,
-//         moles: &Moles<DVector<f64>>,
-//     ) -> FeosResult<Viscosity> {
-//         self.residual
-//             .viscosity_reference(temperature, volume, moles)
-//     }
-//     fn viscosity_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64> {
-//         self.residual.viscosity_correlation(s_res, x)
-//     }
-//     fn diffusion_reference(
-//         &self,
-//         temperature: Temperature,
-//         volume: Volume,
-//         moles: &Moles<DVector<f64>>,
-//     ) -> FeosResult<Diffusivity> {
-//         self.residual
-//             .diffusion_reference(temperature, volume, moles)
-//     }
-//     fn diffusion_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64> {
-//         self.residual.diffusion_correlation(s_res, x)
-//     }
-//     fn thermal_conductivity_reference(
-//         &self,
-//         temperature: Temperature,
-//         volume: Volume,
-//         moles: &Moles<DVector<f64>>,
-//     ) -> FeosResult<ThermalConductivity> {
-//         self.residual
-//             .thermal_conductivity_reference(temperature, volume, moles)
-//     }
-//     fn thermal_conductivity_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64> {
-//         self.residual.thermal_conductivity_correlation(s_res, x)
-//     }
-// }

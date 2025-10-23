@@ -4,5 +4,5 @@
 .. toctree::
    :maxdepth: 1
 
-   pcsaft/index
+   pcsaft_surface_tension
 ```
