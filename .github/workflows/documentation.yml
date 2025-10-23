@@ -9,13 +9,14 @@ env:
 
 jobs:
   build-documentation:
+    if: ${{ github.event.label.name == 'build_documentation' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Setup python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: 3.14
       - name: Install pandoc
         run: sudo apt-get install -y pandoc
       - name: Install python dependencies
@@ -26,7 +27,9 @@ jobs:
         with:
           manylinux: auto
           command: build
-          args: --release --out dist
+          args: >
+            --manifest-path py-feos/Cargo.toml
+            --out dist
       - name: Install module
         run: |
           pip install feos --no-index --find-links dist --force-reinstall
