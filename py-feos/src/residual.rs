@@ -22,8 +22,9 @@ use quantity::*;
 pub enum ResidualModel {
     // Equations of state
     NoResidual(NoResidual),
+
     #[cfg(feature = "pcsaft")]
-    #[implement(molar_weight, parameter_info)]
+    #[implement(molar_weight, parameter_info, entropy_scaling)]
     PcSaft(feos::pcsaft::PcSaft),
 
     #[cfg(feature = "epcsaft")]

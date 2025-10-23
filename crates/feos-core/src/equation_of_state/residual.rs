@@ -414,30 +414,74 @@ where
     }
 }
 
-// /// Reference values and residual entropy correlations for entropy scaling.
-// pub trait EntropyScaling {
-//     fn viscosity_reference(
-//         parameters: &Self::Parameters<D>,
-//         temperature: Temperature,
-//         volume: Volume,
-//         moles: &Moles<DVector<f64>>,
-//     ) -> FeosResult<Viscosity>;
-//     fn viscosity_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64>;
-//     fn diffusion_reference(
-//         parameters: &Self::Parameters<D>,
-//         temperature: Temperature,
-//         volume: Volume,
-//         moles: &Moles<DVector<f64>>,
-//     ) -> FeosResult<Diffusivity>;
-//     fn diffusion_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64>;
-//     fn thermal_conductivity_reference(
-//         parameters: &Self::Parameters<D>,
-//         temperature: Temperature,
-//         volume: Volume,
-//         moles: &Moles<DVector<f64>>,
-//     ) -> FeosResult<ThermalConductivity>;
-//     fn thermal_conductivity_correlation(&self, s_res: f64, x: &DVector<f64>) -> FeosResult<f64>;
-// }
+/// Reference values and residual entropy correlations for entropy scaling.
+pub trait EntropyScaling<N: Dim = Dyn, D: DualNum<f64> + Copy = f64>
+where
+    DefaultAllocator: Allocator<N>,
+{
+    fn viscosity_reference(
+        &self,
+        temperature: Temperature<D>,
+        volume: Volume<D>,
+        moles: &Moles<OVector<D, N>>,
+    ) -> Viscosity<D>;
+    fn viscosity_correlation(&self, s_res: D, x: &OVector<D, N>) -> D;
+    fn diffusion_reference(
+        &self,
+        temperature: Temperature<D>,
+        volume: Volume<D>,
+        moles: &Moles<OVector<D, N>>,
+    ) -> Diffusivity<D>;
+    fn diffusion_correlation(&self, s_res: D, x: &OVector<D, N>) -> D;
+    fn thermal_conductivity_reference(
+        &self,
+        temperature: Temperature<D>,
+        volume: Volume<D>,
+        moles: &Moles<OVector<D, N>>,
+    ) -> ThermalConductivity<D>;
+    fn thermal_conductivity_correlation(&self, s_res: D, x: &OVector<D, N>) -> D;
+}
+
+impl<C: Deref<Target = T>, T: EntropyScaling<N, D>, N: Dim, D: DualNum<f64> + Copy>
+    EntropyScaling<N, D> for C
+where
+    DefaultAllocator: Allocator<N>,
+{
+    fn viscosity_reference(
+        &self,
+        temperature: Temperature<D>,
+        volume: Volume<D>,
+        moles: &Moles<OVector<D, N>>,
+    ) -> Viscosity<D> {
+        self.deref().viscosity_reference(temperature, volume, moles)
+    }
+    fn viscosity_correlation(&self, s_res: D, x: &OVector<D, N>) -> D {
+        self.deref().viscosity_correlation(s_res, x)
+    }
+    fn diffusion_reference(
+        &self,
+        temperature: Temperature<D>,
+        volume: Volume<D>,
+        moles: &Moles<OVector<D, N>>,
+    ) -> Diffusivity<D> {
+        self.deref().diffusion_reference(temperature, volume, moles)
+    }
+    fn diffusion_correlation(&self, s_res: D, x: &OVector<D, N>) -> D {
+        self.deref().diffusion_correlation(s_res, x)
+    }
+    fn thermal_conductivity_reference(
+        &self,
+        temperature: Temperature<D>,
+        volume: Volume<D>,
+        moles: &Moles<OVector<D, N>>,
+    ) -> ThermalConductivity<D> {
+        self.deref()
+            .thermal_conductivity_reference(temperature, volume, moles)
+    }
+    fn thermal_conductivity_correlation(&self, s_res: D, x: &OVector<D, N>) -> D {
+        self.deref().thermal_conductivity_correlation(s_res, x)
+    }
+}
 
 /// Dummy implementation for [EquationOfState](super::EquationOfState)s that only contain an ideal gas contribution.
 pub struct NoResidual(pub usize);

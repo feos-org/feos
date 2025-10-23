@@ -1264,6 +1264,96 @@ impl PyState {
         self.0.specific_isobaric_heat_capacity(contributions.into())
     }
 
+    /// Return viscosity via entropy scaling.
+    ///
+    /// Returns
+    /// -------
+    /// SINumber
+    fn viscosity(&self) -> Viscosity {
+        self.0.viscosity()
+    }
+
+    /// Return reference viscosity for entropy scaling.
+    ///
+    /// Returns
+    /// -------
+    /// SINumber
+    fn viscosity_reference(&self) -> Viscosity {
+        self.0.viscosity_reference()
+    }
+
+    /// Return logarithmic reduced viscosity.
+    ///
+    /// This equals the viscosity correlation function
+    /// as used by entropy scaling.
+    ///
+    /// Returns
+    /// -------
+    /// float
+    fn ln_viscosity_reduced(&self) -> f64 {
+        self.0.ln_viscosity_reduced()
+    }
+
+    /// Return diffusion coefficient via entropy scaling.
+    ///
+    /// Returns
+    /// -------
+    /// SINumber
+    fn diffusion(&self) -> Diffusivity {
+        self.0.diffusion()
+    }
+
+    /// Return reference diffusion for entropy scaling.
+    ///
+    /// Returns
+    /// -------
+    /// SINumber
+    fn diffusion_reference(&self) -> Diffusivity {
+        self.0.diffusion_reference()
+    }
+
+    /// Return logarithmic reduced diffusion.
+    ///
+    /// This equals the diffusion correlation function
+    /// as used by entropy scaling.
+    ///
+    /// Returns
+    /// -------
+    /// float
+    fn ln_diffusion_reduced(&self) -> f64 {
+        self.0.ln_diffusion_reduced()
+    }
+
+    /// Return thermal conductivity via entropy scaling.
+    ///
+    /// Returns
+    /// -------
+    /// SINumber
+    fn thermal_conductivity(&self) -> ThermalConductivity {
+        self.0.thermal_conductivity()
+    }
+
+    /// Return reference thermal conductivity for entropy scaling.
+    ///
+    /// Returns
+    /// -------
+    /// SINumber
+    fn thermal_conductivity_reference(&self) -> ThermalConductivity {
+        self.0.thermal_conductivity_reference()
+    }
+
+    /// Return logarithmic reduced thermal conductivity.
+    ///
+    /// This equals the thermal conductivity correlation function
+    /// as used by entropy scaling.
+    ///
+    /// Returns
+    /// -------
+    /// float
+    fn ln_thermal_conductivity_reduced(&self) -> f64 {
+        self.0.ln_thermal_conductivity_reduced()
+    }
+
     #[getter]
     fn get_total_moles(&self) -> Moles {
         self.0.total_moles
@@ -1591,102 +1681,4 @@ impl PyStateVec {
         }
         dict
     }
-}
-
-#[macro_export]
-macro_rules! impl_state_entropy_scaling {
-    (EquationOfState<Vec<IdealGasModel>, ResidualModel>:ty, PyEquationOfState:ty) => {
-        #[pymethods]
-        impl PyState {
-            /// Return viscosity via entropy scaling.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            fn viscosity(&self) -> PyResult<quantity::Viscosity> {
-                Ok(self.0.viscosity()?)
-            }
-
-            /// Return reference viscosity for entropy scaling.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            fn viscosity_reference(&self) -> PyResult<quantity::Viscosity> {
-                Ok(self.0.viscosity_reference()?)
-            }
-
-            /// Return logarithmic reduced viscosity.
-            ///
-            /// This equals the viscosity correlation function
-            /// as used by entropy scaling.
-            ///
-            /// Returns
-            /// -------
-            /// float
-            fn ln_viscosity_reduced(&self) -> PyResult<f64> {
-                Ok(self.0.ln_viscosity_reduced()?)
-            }
-
-            /// Return diffusion coefficient via entropy scaling.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            fn diffusion(&self) -> PyResult<Diffusivity> {
-                Ok(self.0.diffusion()?)
-            }
-
-            /// Return reference diffusion for entropy scaling.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            fn diffusion_reference(&self) -> PyResult<Diffusivity> {
-                Ok(self.0.diffusion_reference()?)
-            }
-
-            /// Return logarithmic reduced diffusion.
-            ///
-            /// This equals the diffusion correlation function
-            /// as used by entropy scaling.
-            ///
-            /// Returns
-            /// -------
-            /// float
-            fn ln_diffusion_reduced(&self) -> PyResult<f64> {
-                Ok(self.0.ln_diffusion_reduced()?)
-            }
-
-            /// Return thermal conductivity via entropy scaling.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            fn thermal_conductivity(&self) -> PyResult<quantity::ThermalConductivity> {
-                Ok(self.0.thermal_conductivity()?)
-            }
-
-            /// Return reference thermal conductivity for entropy scaling.
-            ///
-            /// Returns
-            /// -------
-            /// SINumber
-            fn thermal_conductivity_reference(&self) -> PyResult<quantity::ThermalConductivity> {
-                Ok(self.0.thermal_conductivity_reference()?)
-            }
-
-            /// Return logarithmic reduced thermal conductivity.
-            ///
-            /// This equals the thermal conductivity correlation function
-            /// as used by entropy scaling.
-            ///
-            /// Returns
-            /// -------
-            /// float
-            fn ln_thermal_conductivity_reduced(&self) -> PyResult<f64> {
-                Ok(self.0.ln_thermal_conductivity_reduced()?)
-            }
-        }
-    };
 }
