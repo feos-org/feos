@@ -8,11 +8,9 @@
             "inchi": "InChI=1/C3H8/c1-3-2/h3H2,1-2H3",
             "formula": "C3H8"
         },
-        "model_record": {
-            "tc": 369.96,
-            "pc": 4250000.0,
-            "acentric_factor": 0.153
-        },
+        "tc": 369.96,
+        "pc": 4250000.0,
+        "acentric_factor": 0.153,
         "molarweight": 44.0962
     },
     {
@@ -24,11 +22,9 @@
             "inchi": "InChI=1/C4H10/c1-3-4-2/h3-4H2,1-2H3",
             "formula": "C4H10"
         },
-        "model_record": {
-            "tc": 425.2,
-            "pc": 3800000.0,
-            "acentric_factor": 0.199
-        },
+        "tc": 425.2,
+        "pc": 3800000.0,
+        "acentric_factor": 0.199,
         "molarweight": 58.123
     }
 ]
