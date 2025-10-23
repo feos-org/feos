@@ -1,7 +1,7 @@
 use crate::association::AssociationStrength;
 use crate::epcsaft::eos::permittivity::PermittivityRecord;
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::parameter::{FromSegments, Parameters};
+use feos_core::parameter::{CombiningRule, FromSegments, Parameters};
 use feos_core::{FeosError, FeosResult};
 use nalgebra::{DMatrix, DVector};
 use num_dual::DualNum;
@@ -79,6 +79,20 @@ impl ElectrolytePcSaftAssociationRecord {
         Self {
             kappa_ab,
             epsilon_k_ab,
+        }
+    }
+}
+
+impl CombiningRule<ElectrolytePcSaftRecord> for ElectrolytePcSaftAssociationRecord {
+    fn combining_rule(
+        _: &ElectrolytePcSaftRecord,
+        _: &ElectrolytePcSaftRecord,
+        parameters_i: &Self,
+        parameters_j: &Self,
+    ) -> Self {
+        Self {
+            kappa_ab: (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt(),
+            epsilon_k_ab: 0.5 * (parameters_i.epsilon_k_ab + parameters_j.epsilon_k_ab),
         }
     }
 }
@@ -359,18 +373,6 @@ impl AssociationStrength for ElectrolytePcSaftPars {
         (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
             * assoc_ij.kappa_ab
             * (si * sj).powf(1.5)
-    }
-
-    fn combining_rule(
-        _: &Self::Pure,
-        _: &Self::Pure,
-        parameters_i: &Self::Record,
-        parameters_j: &Self::Record,
-    ) -> Self::Record {
-        Self::Record {
-            kappa_ab: (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt(),
-            epsilon_k_ab: 0.5 * (parameters_i.epsilon_k_ab + parameters_j.epsilon_k_ab),
-        }
     }
 }
 

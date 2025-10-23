@@ -1,7 +1,6 @@
-use super::parameters::{PcSaftAssociationRecord, PcSaftParameters, PcSaftPars};
+use super::parameters::{PcSaftAssociationRecord, PcSaftParameters, PcSaftPars, PcSaftRecord};
 use crate::association::{Association, AssociationStrength};
 use crate::hard_sphere::{HardSphere, HardSphereProperties, MonomerShape};
-use crate::pcsaft::PcSaftRecord;
 use feos_core::{Molarweight, ResidualDyn, StateHD, Subset};
 use nalgebra::DVector;
 use num_dual::DualNum;
@@ -42,14 +41,14 @@ impl Default for PcSaftOptions {
 
 /// PC-SAFT equation of state.
 pub struct PcSaft {
-    parameters: PcSaftParameters,
+    pub parameters: PcSaftParameters,
     params: PcSaftPars,
     options: PcSaftOptions,
     hard_chain: bool,
     dipole: bool,
     quadrupole: bool,
     dipole_quadrupole: bool,
-    association: Option<Association<PcSaftPars>>,
+    association: Option<Association>,
 }
 
 impl PcSaft {
@@ -65,12 +64,8 @@ impl PcSaft {
         let quadrupole = params.nquadpole > 0;
         let dipole_quadrupole = params.ndipole > 0 && params.nquadpole > 0;
 
-        let association = Association::new(
-            &parameters,
-            options.max_iter_cross_assoc,
-            options.tol_cross_assoc,
-        )
-        .unwrap();
+        let association = (!parameters.association.is_empty())
+            .then(|| Association::new(options.max_iter_cross_assoc, options.tol_cross_assoc));
 
         Self {
             parameters,
@@ -197,20 +192,6 @@ impl AssociationStrength for PcSaftPars {
         (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
             * assoc_ij.kappa_ab
             * (si * sj).powf(1.5)
-    }
-
-    fn combining_rule(
-        _: &Self::Pure,
-        _: &Self::Pure,
-        parameters_i: &Self::Record,
-        parameters_j: &Self::Record,
-    ) -> Self::Record {
-        let kappa_ab = (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt();
-        let epsilon_k_ab = 0.5 * (parameters_i.epsilon_k_ab + parameters_j.epsilon_k_ab);
-        Self::Record {
-            kappa_ab,
-            epsilon_k_ab,
-        }
     }
 }
 

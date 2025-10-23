@@ -10,10 +10,12 @@ pub(crate) fn expand_residual(input: DeriveInput) -> syn::Result<proc_macro2::To
 
     let residual = impl_residual(&input.ident, variants);
     let molar_weight = impl_molar_weight(&input.ident, variants)?;
+    let parameter_info = impl_parameter_info(&input.ident, variants)?;
     // let entropy_scaling = impl_entropy_scaling(&input.ident, variants)?;
     Ok(quote! {
         #residual
         #molar_weight
+        #parameter_info
         // #entropy_scaling
     })
 }
@@ -112,6 +114,72 @@ fn impl_molar_weight(
             pub fn has_molar_weight(&self) -> bool {
                 match self {
                     #(#has_molar_weight,)*
+                }
+            }
+        }
+    })
+}
+
+fn impl_parameter_info(
+    ident: &syn::Ident,
+    variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
+) -> syn::Result<proc_macro2::TokenStream> {
+    let mut pure_parameters = Vec::new();
+    let mut binary_parameters = Vec::new();
+    let mut association_parameters_ab = Vec::new();
+    let mut association_parameters_cc = Vec::new();
+
+    for v in variants.iter() {
+        let name = &v.ident;
+        if implement("parameter_info", v, &OPT_IMPLS)? {
+            pure_parameters.push(quote! {
+                Self::#name(eos) => eos.parameters.pure_parameters()
+            });
+            binary_parameters.push(quote! {
+                Self::#name(eos) => eos.parameters.binary_parameters()
+            });
+            association_parameters_ab.push(quote! {
+                Self::#name(eos) => eos.parameters.association_parameters_ab()
+            });
+            association_parameters_cc.push(quote! {
+                Self::#name(eos) => eos.parameters.association_parameters_cc()
+            });
+        } else {
+            pure_parameters.push(quote! {
+                Self::#name(eos) => panic!("{} does not provide parameters", stringify!(#name))
+            });
+            binary_parameters.push(quote! {
+                Self::#name(eos) => panic!("{} does not provide parameters", stringify!(#name))
+            });
+            association_parameters_ab.push(quote! {
+                Self::#name(eos) => panic!("{} does not provide parameters", stringify!(#name))
+            });
+            association_parameters_cc.push(quote! {
+                Self::#name(eos) => panic!("{} does not provide parameters", stringify!(#name))
+            });
+        }
+    }
+
+    Ok(quote! {
+        impl #ident {
+            pub fn pure_parameters(&self) -> IndexMap<String, DVector<f64>> {
+                match self {
+                    #(#pure_parameters,)*
+                }
+            }
+            pub fn binary_parameters(&self) -> IndexMap<String, DMatrix<f64>> {
+                match self {
+                    #(#binary_parameters,)*
+                }
+            }
+            pub fn association_parameters_ab(&self) -> IndexMap<String, DMatrix<f64>> {
+                match self {
+                    #(#association_parameters_ab,)*
+                }
+            }
+            pub fn association_parameters_cc(&self) -> IndexMap<String, DMatrix<f64>> {
+                match self {
+                    #(#association_parameters_cc,)*
                 }
             }
         }

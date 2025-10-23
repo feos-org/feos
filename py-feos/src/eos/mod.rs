@@ -1,10 +1,10 @@
 use crate::error::PyFeosError;
 use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
-
 use feos_core::*;
+use indexmap::IndexMap;
 use nalgebra::{DVector, DVectorView, Dyn};
-use numpy::PyReadonlyArray1;
+use numpy::{PyArray1, PyReadonlyArray1, ToPyArray};
 use pyo3::prelude::*;
 use quantity::*;
 use std::sync::Arc;
@@ -34,6 +34,24 @@ pub struct PyEquationOfState(pub Arc<EquationOfState<Vec<IdealGasModel>, Residua
 
 #[pymethods]
 impl PyEquationOfState {
+    #[getter]
+    fn get_parameters<'py>(&self, py: Python<'py>) -> IndexMap<String, Bound<'py, PyAny>> {
+        let pure = self.0.pure_parameters();
+        let binary = self.0.binary_parameters();
+        let association_ab = self.0.association_parameters_ab();
+        let association_cc = self.0.association_parameters_cc();
+        pure.into_iter()
+            .map(|(k, v)| (k, PyArray1::from_slice(py, v.as_slice()).into_any()))
+            .chain(
+                binary
+                    .into_iter()
+                    .chain(association_ab)
+                    .chain(association_cc)
+                    .map(|(k, v)| (k, v.to_pyarray(py).into_any())),
+            )
+            .collect()
+    }
+
     /// Return maximum density for given amount of substance of each component.
     ///
     /// Parameters

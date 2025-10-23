@@ -17,8 +17,9 @@ mod residual;
 mod subset;
 
 // possible additional traits to implement
-const OPT_IMPLS: [&str; 5] = [
+const OPT_IMPLS: [&str; 6] = [
     "molar_weight",
+    "parameter_info",
     // "entropy_scaling",
     "functional",
     "bond_lengths",

@@ -1,5 +1,5 @@
 use feos_core::FeosResult;
-use feos_core::parameter::{FromSegments, FromSegmentsBinary, Parameters};
+use feos_core::parameter::{CombiningRule, FromSegments, FromSegmentsBinary, Parameters};
 use nalgebra::{DMatrix, DVector};
 use num_traits::Zero;
 use quantity::{JOULE, KB, KELVIN};
@@ -153,6 +153,22 @@ pub struct PcSaftAssociationRecord {
 
 impl PcSaftAssociationRecord {
     pub fn new(kappa_ab: f64, epsilon_k_ab: f64) -> Self {
+        Self {
+            kappa_ab,
+            epsilon_k_ab,
+        }
+    }
+}
+
+impl CombiningRule<PcSaftRecord> for PcSaftAssociationRecord {
+    fn combining_rule(
+        _: &PcSaftRecord,
+        _: &PcSaftRecord,
+        parameters_i: &Self,
+        parameters_j: &Self,
+    ) -> Self {
+        let kappa_ab = (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt();
+        let epsilon_k_ab = 0.5 * (parameters_i.epsilon_k_ab + parameters_j.epsilon_k_ab);
         Self {
             kappa_ab,
             epsilon_k_ab,

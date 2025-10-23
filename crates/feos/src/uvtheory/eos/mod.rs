@@ -1,6 +1,4 @@
-use crate::uvtheory::parameters::UVTheoryPars;
-
-use super::parameters::UVTheoryParameters;
+use super::parameters::{UVTheoryParameters, UVTheoryPars};
 use feos_core::{Molarweight, ResidualDyn, Subset};
 use nalgebra::DVector;
 use num_dual::DualNum;
@@ -38,7 +36,7 @@ impl Default for UVTheoryOptions {
 
 /// uv-theory equation of state
 pub struct UVTheory {
-    parameters: UVTheoryParameters,
+    pub parameters: UVTheoryParameters,
     params: UVTheoryPars,
     options: UVTheoryOptions,
 }

@@ -1,4 +1,4 @@
-use feos_core::parameter::GcParameters;
+use feos_core::parameter::{CombiningRule, GcParameters};
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 
@@ -45,6 +45,20 @@ impl GcPcSaftAssociationRecord {
         Self {
             kappa_ab,
             epsilon_k_ab,
+        }
+    }
+}
+
+impl CombiningRule<GcPcSaftRecord> for GcPcSaftAssociationRecord {
+    fn combining_rule(
+        _: &GcPcSaftRecord,
+        _: &GcPcSaftRecord,
+        parameters_i: &Self,
+        parameters_j: &Self,
+    ) -> Self {
+        Self {
+            kappa_ab: (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt(),
+            epsilon_k_ab: 0.5 * (parameters_i.epsilon_k_ab + parameters_j.epsilon_k_ab),
         }
     }
 }
