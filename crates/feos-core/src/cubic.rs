@@ -73,7 +73,7 @@ impl PengRobinsonParameters {
 /// A simple version of the Peng-Robinson equation of state.
 pub struct PengRobinson {
     /// Parameters
-    parameters: PengRobinsonParameters,
+    pub parameters: PengRobinsonParameters,
     /// Critical temperature in Kelvin
     tc: DVector<f64>,
     a: DVector<f64>,

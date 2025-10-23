@@ -1,12 +1,11 @@
 //! Generic implementation of the SAFT association contribution
 //! that can be used across models.
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::parameter::{AssociationParameters, GenericParameters};
+use feos_core::parameter::AssociationParameters;
 use feos_core::{FeosError, FeosResult, StateHD};
 use nalgebra::{DMatrix, DVector};
 use num_dual::linalg::LU;
 use num_dual::*;
-use std::collections::HashMap;
 use std::fmt::Debug;
 
 #[cfg(feature = "dft")]
@@ -26,105 +25,34 @@ pub trait AssociationStrength: HardSphereProperties {
         comp_j: usize,
         assoc_ij: &Self::Record,
     ) -> D;
-
-    fn combining_rule(
-        comp_i: &Self::Pure,
-        comp_j: &Self::Pure,
-        parameters_i: &Self::Record,
-        parameters_j: &Self::Record,
-    ) -> Self::Record;
 }
 
 /// Implementation of the SAFT association Helmholtz energy
 /// contribution and functional.
-pub struct Association<A: AssociationStrength> {
+#[derive(Clone, Copy)]
+pub struct Association {
     max_iter: usize,
     tol: f64,
     force_cross_association: bool,
-    parameters_ab: DMatrix<Option<A::Record>>,
-    parameters_cc: DMatrix<Option<A::Record>>,
 }
 
-impl<A: AssociationStrength> Association<A> {
-    pub fn new<B, Bo, C, Data>(
-        parameters: &GenericParameters<A::Pure, B, A::Record, Bo, C, Data>,
-        max_iter: usize,
-        tol: f64,
-    ) -> FeosResult<Option<Self>> {
-        if parameters.association.is_empty() {
-            return Ok(None);
-        };
-
-        let a = &parameters.association;
-
-        let binary_ab: HashMap<_, _> = a
-            .binary_ab
-            .iter()
-            .map(|br| ((br.id1, br.id2), &br.model_record))
-            .collect();
-
-        let binary_cc: HashMap<_, _> = a
-            .binary_cc
-            .iter()
-            .map(|br| ((br.id1, br.id2), &br.model_record))
-            .collect();
-
-        let parameters_ab = DMatrix::from_fn(a.sites_a.len(), a.sites_b.len(), |i, j| {
-            if let Some(&record) = binary_ab.get(&(i, j)) {
-                Some(record.clone())
-            } else if let (Some(p1), Some(p2)) =
-                (&a.sites_a[i].parameters, &a.sites_b[j].parameters)
-            {
-                Some(A::combining_rule(
-                    &parameters.pure[a.sites_a[i].assoc_comp].model_record,
-                    &parameters.pure[a.sites_b[j].assoc_comp].model_record,
-                    p1,
-                    p2,
-                ))
-            } else {
-                None
-            }
-        });
-        let parameters_cc = DMatrix::from_fn(a.sites_c.len(), a.sites_c.len(), |i, j| {
-            if let Some(&record) = binary_cc.get(&(i, j)) {
-                Some(record.clone())
-            } else if let (Some(p1), Some(p2)) =
-                (&a.sites_c[i].parameters, &a.sites_c[j].parameters)
-            {
-                Some(A::combining_rule(
-                    &parameters.pure[a.sites_c[i].assoc_comp].model_record,
-                    &parameters.pure[a.sites_c[j].assoc_comp].model_record,
-                    p1,
-                    p2,
-                ))
-            } else {
-                None
-            }
-        });
-
-        Ok(Some(Self {
+impl Association {
+    pub fn new(max_iter: usize, tol: f64) -> Self {
+        Self {
             max_iter,
             tol,
             force_cross_association: false,
-            parameters_ab,
-            parameters_cc,
-        }))
+        }
     }
 
-    pub fn new_cross_association<B, Bo, C, Data>(
-        parameters: &GenericParameters<A::Pure, B, A::Record, Bo, C, Data>,
-        max_iter: usize,
-        tol: f64,
-    ) -> FeosResult<Option<Self>> {
-        let mut res = Self::new(parameters, max_iter, tol)?;
-        if let Some(res) = &mut res {
-            res.force_cross_association = true;
-        }
-        Ok(res)
+    pub fn new_cross_association(max_iter: usize, tol: f64) -> Self {
+        let mut res = Self::new(max_iter, tol);
+        res.force_cross_association = true;
+        res
     }
 
     #[inline]
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<A: AssociationStrength, D: DualNum<f64> + Copy>(
         &self,
         model: &A,
         parameters: &AssociationParameters<A::Record>,
@@ -180,7 +108,7 @@ impl<A: AssociationStrength> Association<A> {
     }
 
     #[expect(clippy::too_many_arguments)]
-    fn association_strength<D: DualNum<f64> + Copy>(
+    fn association_strength<A: AssociationStrength, D: DualNum<f64> + Copy>(
         &self,
         parameters: &AssociationParameters<A::Record>,
         model: &A,
@@ -192,44 +120,42 @@ impl<A: AssociationStrength> Association<A> {
     ) -> [DMatrix<D>; 2] {
         let p = parameters;
 
-        let delta_ab = DMatrix::from_fn(p.sites_a.len(), p.sites_b.len(), |i, j| {
-            if let Some(par) = &self.parameters_ab[(i, j)] {
-                let di = diameter[p.sites_a[i].assoc_comp];
-                let dj = diameter[p.sites_b[j].assoc_comp];
-                let k = di * dj / (di + dj) * (n2 * n3i);
-                n3i * (k * xi * (k / 18.0 + 0.5) + 1.0)
-                    * model.association_strength(
-                        temperature,
-                        p.sites_a[i].assoc_comp,
-                        p.sites_b[j].assoc_comp,
-                        par,
-                    )
-            } else {
-                D::zero()
-            }
-        });
-        let delta_cc = DMatrix::from_fn(p.sites_c.len(), p.sites_c.len(), |i, j| {
-            if let Some(par) = &self.parameters_cc[(i, j)] {
-                let di = diameter[p.sites_c[i].assoc_comp];
-                let dj = diameter[p.sites_c[j].assoc_comp];
-                let k = di * dj / (di + dj) * (n2 * n3i);
-                n3i * (k * xi * (k / 18.0 + 0.5) + 1.0)
-                    * model.association_strength(
-                        temperature,
-                        p.sites_c[i].assoc_comp,
-                        p.sites_c[j].assoc_comp,
-                        par,
-                    )
-            } else {
-                D::zero()
-            }
-        });
+        let mut delta_ab = DMatrix::zeros(p.sites_a.len(), p.sites_b.len());
+        for b in &p.binary_ab {
+            let [i, j] = [b.id1, b.id2];
+            let di = diameter[p.sites_a[i].assoc_comp];
+            let dj = diameter[p.sites_b[j].assoc_comp];
+            let k = di * dj / (di + dj) * (n2 * n3i);
+            delta_ab[(i, j)] = n3i
+                * (k * xi * (k / 18.0 + 0.5) + 1.0)
+                * model.association_strength(
+                    temperature,
+                    p.sites_a[i].assoc_comp,
+                    p.sites_b[j].assoc_comp,
+                    &b.model_record,
+                )
+        }
+        let mut delta_cc = DMatrix::zeros(p.sites_c.len(), p.sites_c.len());
+        for b in &p.binary_cc {
+            let [i, j] = [b.id1, b.id2];
+            let di = diameter[p.sites_c[i].assoc_comp];
+            let dj = diameter[p.sites_c[j].assoc_comp];
+            let k = di * dj / (di + dj) * (n2 * n3i);
+            delta_cc[(i, j)] = n3i
+                * (k * xi * (k / 18.0 + 0.5) + 1.0)
+                * model.association_strength(
+                    temperature,
+                    p.sites_c[i].assoc_comp,
+                    p.sites_c[j].assoc_comp,
+                    &b.model_record,
+                )
+        }
         [delta_ab, delta_cc]
     }
 
-    fn helmholtz_energy_density_ab_analytic<D: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density_ab_analytic<A, D: DualNum<f64> + Copy>(
         &self,
-        parameters: &AssociationParameters<A::Record>,
+        parameters: &AssociationParameters<A>,
         state: &StateHD<D>,
         delta: D,
     ) -> D {
@@ -249,9 +175,9 @@ impl<A: AssociationStrength> Association<A> {
         rhoa * (xa.ln() - xa * 0.5 + 0.5) + rhob * (xb.ln() - xb * 0.5 + 0.5)
     }
 
-    fn helmholtz_energy_density_cc_analytic<D: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density_cc_analytic<A, D: DualNum<f64> + Copy>(
         &self,
-        parameters: &AssociationParameters<A::Record>,
+        parameters: &AssociationParameters<A>,
         state: &StateHD<D>,
         delta: D,
     ) -> D {
@@ -434,9 +360,6 @@ mod tests_pcsaft {
         }
     }
 
-    #[derive(Clone, Copy)]
-    struct NoRecord;
-
     #[test]
     fn test_binary_parameters() -> FeosResult<()> {
         let comp1 = vec![record("0", 0.1, 2500., 1.0, 1.0)];
@@ -455,20 +378,20 @@ mod tests_pcsaft {
             ([1, 3], binary_record("0", "1", 3.5, 3333.)),
         ];
         let binary_records = binary
-            .map(|([i, j], br)| BinaryRecord::with_association(i, j, Some(NoRecord), vec![br]))
+            .map(|([i, j], br)| BinaryRecord::with_association(i, j, Some(()), vec![br]))
             .to_vec();
         let params = Parameters::new(pure_records, binary_records)?;
-        let assoc: Association<PcSaftPars> = Association::new(&params, 100, 1e-10)?.unwrap();
-        println!("{}", assoc.parameters_ab.map(|p| p.unwrap().epsilon_k_ab));
-        let epsilon_k_ab = dmatrix![
+        let [epsilon_k_ab, kappa_ab] = params
+            .collate_ab(|p| [p.epsilon_k_ab, p.kappa_ab])
+            .map(|p| p.map(Option::unwrap));
+        println!("{epsilon_k_ab}");
+        println!("{kappa_ab}");
+        let epsilon_k_ab_ref = dmatrix![
             2500., 1234., 3140., 2250.;
             1234., 1500., 1000., 3333.;
             1750., 1250., 750., 1500.;
         ];
-        assert_eq!(
-            assoc.parameters_ab.map(|p| p.unwrap().epsilon_k_ab),
-            epsilon_k_ab
-        );
+        assert_eq!(epsilon_k_ab, epsilon_k_ab_ref);
         Ok(())
     }
 
@@ -481,22 +404,20 @@ mod tests_pcsaft {
             .map(|r| PureRecord::with_association(Default::default(), 0.0, pcsaft(), r));
         let br = vec![binary_record("", "", 0.1, 1000.)];
 
-        let params1 = Parameters::new_binary([pr1.clone(), pr2], Some(NoRecord), vec![])?;
-        let params2 = Parameters::new_binary([pr1, pr3], Some(NoRecord), br)?;
-        let assoc1: Association<PcSaftPars> = Association::new(&params1, 100, 1e-15)?.unwrap();
-        let assoc2: Association<PcSaftPars> = Association::new(&params2, 100, 1e-15)?.unwrap();
-        println!("{}", assoc1.parameters_ab.map(|p| p.unwrap().epsilon_k_ab));
-        println!("{}", assoc2.parameters_ab.map(|p| p.unwrap().epsilon_k_ab));
-        println!("{}", assoc1.parameters_ab.map(|p| p.unwrap().kappa_ab));
-        println!("{}", assoc2.parameters_ab.map(|p| p.unwrap().kappa_ab));
-        assert_eq!(
-            assoc1.parameters_ab.map(|p| p.unwrap().epsilon_k_ab),
-            assoc2.parameters_ab.map(|p| p.unwrap().epsilon_k_ab)
-        );
-        assert_eq!(
-            assoc1.parameters_ab.map(|p| p.unwrap().kappa_ab),
-            assoc2.parameters_ab.map(|p| p.unwrap().kappa_ab)
-        );
+        let params1 = Parameters::new_binary([pr1.clone(), pr2], Some(()), vec![])?;
+        let params2 = Parameters::new_binary([pr1, pr3], Some(()), br)?;
+        let [epsilon_k_ab1, kappa_ab1] = params1
+            .collate_ab(|p| [p.epsilon_k_ab, p.kappa_ab])
+            .map(|p| p.map(Option::unwrap));
+        let [epsilon_k_ab2, kappa_ab2] = params2
+            .collate_ab(|p| [p.epsilon_k_ab, p.kappa_ab])
+            .map(|p| p.map(Option::unwrap));
+        println!("{epsilon_k_ab1}");
+        println!("{epsilon_k_ab2}");
+        println!("{kappa_ab1}");
+        println!("{kappa_ab2}");
+        assert_eq!(epsilon_k_ab1, epsilon_k_ab2);
+        assert_eq!(kappa_ab1, kappa_ab2);
         Ok(())
     }
 
@@ -504,7 +425,7 @@ mod tests_pcsaft {
     fn helmholtz_energy() {
         let parameters = water_parameters(1.0);
         let params = PcSaftPars::new(&parameters);
-        let assoc = Association::new(&parameters, 50, 1e-10).unwrap().unwrap();
+        let assoc = Association::new(50, 1e-10);
         let t = 350.0;
         let v = 41.248289328513216;
         let n = 1.23;
@@ -519,7 +440,7 @@ mod tests_pcsaft {
     fn helmholtz_energy_cross() {
         let parameters = water_parameters(1.0);
         let params = PcSaftPars::new(&parameters);
-        let assoc = Association::new(&parameters, 50, 1e-10).unwrap().unwrap();
+        let assoc = Association::new(50, 1e-10);
         let t = 350.0;
         let v = 41.248289328513216;
         let n = 1.23;
@@ -534,10 +455,8 @@ mod tests_pcsaft {
     fn helmholtz_energy_cross_3b() -> FeosResult<()> {
         let parameters = water_parameters(2.0);
         let params = PcSaftPars::new(&parameters);
-        let assoc = Association::new(&parameters, 50, 1e-10).unwrap().unwrap();
-        let cross_assoc = Association::new_cross_association(&parameters, 50, 1e-10)
-            .unwrap()
-            .unwrap();
+        let assoc = Association::new(50, 1e-10);
+        let cross_assoc = Association::new_cross_association(50, 1e-10);
         let t = 350.0;
         let v = 41.248289328513216;
         let n = 1.23;
@@ -567,7 +486,7 @@ mod tests_gc_pcsaft {
     fn test_assoc_propanol() {
         let parameters = propanol();
         let params = GcPcSaftEosParameters::new(&parameters);
-        let contrib = Association::new(&parameters, 50, 1e-10).unwrap().unwrap();
+        let contrib = Association::new(50, 1e-10);
         let temperature = 300.0;
         let volume = Dual64::from_re(METER.powi::<P3>().to_reduced()).derivative();
         let moles = Dual64::from_re((1.5 * MOL).to_reduced());
@@ -595,9 +514,7 @@ mod tests_gc_pcsaft {
     fn test_cross_assoc_propanol() {
         let parameters = propanol();
         let params = GcPcSaftEosParameters::new(&parameters);
-        let contrib = Association::new_cross_association(&parameters, 50, 1e-10)
-            .unwrap()
-            .unwrap();
+        let contrib = Association::new_cross_association(50, 1e-10);
         let temperature = 300.0;
         let volume = Dual64::from_re(METER.powi::<P3>().to_reduced()).derivative();
         let moles = Dual64::from_re((1.5 * MOL).to_reduced());
@@ -625,7 +542,7 @@ mod tests_gc_pcsaft {
     fn test_cross_assoc_ethanol_propanol() {
         let parameters = ethanol_propanol(false);
         let params = GcPcSaftEosParameters::new(&parameters);
-        let contrib = Association::new(&parameters, 50, 1e-10).unwrap().unwrap();
+        let contrib = Association::new(50, 1e-10);
         let temperature = 300.0;
         let volume = Dual64::from_re(METER.powi::<P3>().to_reduced()).derivative();
         let moles = (dvector![1.5, 2.5] * MOL).to_reduced().map(Dual64::from_re);

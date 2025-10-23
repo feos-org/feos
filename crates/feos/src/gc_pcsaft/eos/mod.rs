@@ -44,7 +44,7 @@ pub struct GcPcSaft {
     parameters: GcPcSaftParameters<f64>,
     params: GcPcSaftEosParameters,
     options: GcPcSaftOptions,
-    association: Option<Association<GcPcSaftEosParameters>>,
+    association: Option<Association>,
     dipole: Option<Dipole>,
 }
 
@@ -55,12 +55,8 @@ impl GcPcSaft {
 
     pub fn with_options(parameters: GcPcSaftParameters<f64>, options: GcPcSaftOptions) -> Self {
         let params = GcPcSaftEosParameters::new(&parameters);
-        let association = Association::new(
-            &parameters,
-            options.max_iter_cross_assoc,
-            options.tol_cross_assoc,
-        )
-        .unwrap();
+        let association = (!parameters.association.is_empty())
+            .then(|| Association::new(options.max_iter_cross_assoc, options.tol_cross_assoc));
         let dipole = if !params.dipole_comp.is_empty() {
             Some(Dipole::new(&params))
         } else {

@@ -27,7 +27,7 @@ pub use parameter::GcPcSaftFunctionalParameters;
 pub struct GcPcSaftFunctional {
     parameters: GcPcSaftParameters<()>,
     params: GcPcSaftFunctionalParameters,
-    association: Option<Association<GcPcSaftFunctionalParameters>>,
+    association: Option<Association>,
     fmt_version: FMTVersion,
     options: GcPcSaftOptions,
 }
@@ -47,12 +47,12 @@ impl GcPcSaftFunctional {
         saft_options: GcPcSaftOptions,
     ) -> Self {
         let params = GcPcSaftFunctionalParameters::new(&parameters);
-        let association = Association::new(
-            &parameters,
-            saft_options.max_iter_cross_assoc,
-            saft_options.tol_cross_assoc,
-        )
-        .unwrap();
+        let association = (!parameters.association.is_empty()).then(|| {
+            Association::new(
+                saft_options.max_iter_cross_assoc,
+                saft_options.tol_cross_assoc,
+            )
+        });
         Self {
             parameters,
             params,
@@ -108,7 +108,7 @@ impl HelmholtzEnergyFunctionalDyn for GcPcSaftFunctional {
     fn contributions<'a>(&'a self) -> impl Iterator<Item = GcPcSaftFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(4);
 
-        let assoc = AssociationFunctional::new(&self.params, &self.parameters, &self.association);
+        let assoc = AssociationFunctional::new(&self.params, &self.parameters, self.association);
 
         // Hard sphere contribution
         let hs = FMTContribution::new(&self.params, self.fmt_version);
@@ -182,18 +182,6 @@ impl AssociationStrength for GcPcSaftFunctionalParameters {
         (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
             * assoc_ij.kappa_ab
             * (si * sj).powf(1.5)
-    }
-
-    fn combining_rule(
-        _: &Self::Pure,
-        _: &Self::Pure,
-        parameters_i: &Self::Record,
-        parameters_j: &Self::Record,
-    ) -> Self::Record {
-        Self::Record {
-            kappa_ab: (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt(),
-            epsilon_k_ab: 0.5 * (parameters_i.epsilon_k_ab + parameters_j.epsilon_k_ab),
-        }
     }
 }
 

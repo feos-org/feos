@@ -5,7 +5,8 @@ use feos_derive::{FunctionalContribution, HelmholtzEnergyFunctionalDyn};
 use feos_derive::{ResidualDyn, Subset};
 #[cfg(feature = "dft")]
 use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctionalDyn};
-use nalgebra::DVector;
+use indexmap::IndexMap;
+use nalgebra::{DMatrix, DVector};
 #[cfg(feature = "dft")]
 use ndarray::Array1;
 use num_dual::DualNum;
@@ -22,37 +23,37 @@ pub enum ResidualModel {
     // Equations of state
     NoResidual(NoResidual),
     #[cfg(feature = "pcsaft")]
-    #[implement(molar_weight)]
+    #[implement(molar_weight, parameter_info)]
     PcSaft(feos::pcsaft::PcSaft),
 
     #[cfg(feature = "epcsaft")]
-    #[implement(molar_weight)]
+    #[implement(molar_weight, parameter_info)]
     ElectrolytePcSaft(feos::epcsaft::ElectrolytePcSaft),
 
     #[cfg(feature = "gc_pcsaft")]
     #[implement(molar_weight)]
     GcPcSaft(feos::gc_pcsaft::GcPcSaft),
 
-    #[implement(molar_weight)]
+    #[implement(molar_weight, parameter_info)]
     PengRobinson(PengRobinson),
 
     #[implement(molar_weight)]
     Python(crate::user_defined::PyResidual),
 
     #[cfg(feature = "saftvrqmie")]
-    #[implement(molar_weight)]
+    #[implement(molar_weight, parameter_info)]
     SaftVRQMie(feos::saftvrqmie::SaftVRQMie),
 
     #[cfg(feature = "saftvrmie")]
-    #[implement(molar_weight)]
+    #[implement(molar_weight, parameter_info)]
     SaftVRMie(feos::saftvrmie::SaftVRMie),
 
     #[cfg(feature = "pets")]
-    #[implement(molar_weight)]
+    #[implement(molar_weight, parameter_info)]
     Pets(feos::pets::Pets),
 
     #[cfg(feature = "uvtheory")]
-    #[implement(molar_weight)]
+    #[implement(molar_weight, parameter_info)]
     UVTheory(feos::uvtheory::UVTheory),
 
     #[cfg(feature = "multiparameter")]
@@ -61,7 +62,13 @@ pub enum ResidualModel {
 
     // Helmholtz energy functionals
     #[cfg(all(feature = "dft", feature = "pcsaft"))]
-    #[implement(molar_weight, functional, fluid_parameters, pair_potential)]
+    #[implement(
+        molar_weight,
+        parameter_info,
+        functional,
+        fluid_parameters,
+        pair_potential
+    )]
     PcSaftFunctional(feos::pcsaft::PcSaftFunctional),
 
     #[cfg(all(feature = "dft", feature = "gc_pcsaft"))]
@@ -69,7 +76,13 @@ pub enum ResidualModel {
     GcPcSaftFunctional(feos::gc_pcsaft::GcPcSaftFunctional),
 
     #[cfg(all(feature = "dft", feature = "pets"))]
-    #[implement(molar_weight, functional, fluid_parameters, pair_potential)]
+    #[implement(
+        molar_weight,
+        parameter_info,
+        functional,
+        fluid_parameters,
+        pair_potential
+    )]
     PetsFunctional(feos::pets::Pets),
 
     #[cfg(feature = "dft")]
@@ -77,7 +90,13 @@ pub enum ResidualModel {
     FmtFunctional(feos::hard_sphere::FMTFunctional),
 
     #[cfg(all(feature = "dft", feature = "saftvrqmie"))]
-    #[implement(molar_weight, functional, fluid_parameters, pair_potential)]
+    #[implement(
+        molar_weight,
+        parameter_info,
+        functional,
+        fluid_parameters,
+        pair_potential
+    )]
     SaftVRQMieFunctional(feos::saftvrqmie::SaftVRQMie),
 }
 

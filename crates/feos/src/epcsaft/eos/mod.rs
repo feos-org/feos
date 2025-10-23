@@ -1,5 +1,5 @@
+use super::parameters::{ElectrolytePcSaftParameters, ElectrolytePcSaftPars};
 use crate::association::Association;
-use crate::epcsaft::parameters::{ElectrolytePcSaftParameters, ElectrolytePcSaftPars};
 use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::{FeosResult, ResidualDyn, Subset};
 use feos_core::{Molarweight, StateHD};
@@ -51,7 +51,7 @@ pub struct ElectrolytePcSaft {
     pub params: ElectrolytePcSaftPars,
     pub options: ElectrolytePcSaftOptions,
     hard_chain: bool,
-    association: Option<Association<ElectrolytePcSaftPars>>,
+    association: Option<Association>,
     ionic: bool,
     born: bool,
 }
@@ -68,11 +68,8 @@ impl ElectrolytePcSaft {
         let params = ElectrolytePcSaftPars::new(&parameters)?;
         let hard_chain = params.m.iter().any(|m| (m - 1.0).abs() > 1e-15);
 
-        let association = Association::new(
-            &parameters,
-            options.max_iter_cross_assoc,
-            options.tol_cross_assoc,
-        )?;
+        let association = (!parameters.association.is_empty())
+            .then(|| Association::new(options.max_iter_cross_assoc, options.tol_cross_assoc));
 
         let ionic = params.nionic > 0;
         let born = ionic && matches!(options.epcsaft_variant, ElectrolytePcSaftVariants::Advanced);

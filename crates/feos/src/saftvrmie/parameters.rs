@@ -1,5 +1,5 @@
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::parameter::{Parameters, PureRecord};
+use feos_core::parameter::{CombiningRule, Parameters, PureRecord};
 use nalgebra::{DMatrix, DVector};
 use num_dual::DualNum;
 use num_traits::Zero;
@@ -56,6 +56,22 @@ pub struct SaftVRMieAssociationRecord {
 
 impl SaftVRMieAssociationRecord {
     pub fn new(rc_ab: f64, epsilon_k_ab: f64) -> Self {
+        Self {
+            rc_ab,
+            epsilon_k_ab,
+        }
+    }
+}
+
+impl CombiningRule<SaftVRMieRecord> for SaftVRMieAssociationRecord {
+    fn combining_rule(
+        pure_i: &SaftVRMieRecord,
+        pure_j: &SaftVRMieRecord,
+        parameters_i: &Self,
+        parameters_j: &Self,
+    ) -> Self {
+        let rc_ab = (parameters_i.rc_ab * pure_i.sigma + parameters_j.rc_ab * pure_j.sigma) * 0.5;
+        let epsilon_k_ab = (parameters_i.epsilon_k_ab * parameters_j.epsilon_k_ab).sqrt();
         Self {
             rc_ab,
             epsilon_k_ab,

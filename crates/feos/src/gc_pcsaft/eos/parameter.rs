@@ -140,18 +140,6 @@ impl AssociationStrength for GcPcSaftEosParameters {
             * assoc_ij.kappa_ab
             * (si * sj).powf(1.5)
     }
-
-    fn combining_rule(
-        _: &Self::Pure,
-        _: &Self::Pure,
-        parameters_i: &Self::Record,
-        parameters_j: &Self::Record,
-    ) -> Self::Record {
-        Self::Record {
-            kappa_ab: (parameters_i.kappa_ab * parameters_j.kappa_ab).sqrt(),
-            epsilon_k_ab: 0.5 * (parameters_i.epsilon_k_ab + parameters_j.epsilon_k_ab),
-        }
-    }
 }
 
 #[cfg(test)]

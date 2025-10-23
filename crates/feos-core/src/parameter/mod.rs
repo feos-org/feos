@@ -1,9 +1,10 @@
 //! Structures and traits that can be used to build model parameters for equations of state.
 use crate::errors::*;
-use indexmap::IndexSet;
+use indexmap::{IndexMap, IndexSet};
 use itertools::Itertools;
 use nalgebra::{DMatrix, DVector, Scalar};
 use quantity::{GRAM, MOL, MolarWeight};
+use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::array;
 use std::collections::HashMap;
@@ -17,7 +18,9 @@ mod chemical_record;
 mod identifier;
 mod model_record;
 
-pub use association::{AssociationParameters, AssociationRecord, BinaryAssociationRecord};
+pub use association::{
+    AssociationParameters, AssociationRecord, BinaryAssociationRecord, CombiningRule,
+};
 pub use chemical_record::{ChemicalRecord, GroupCount};
 pub use identifier::{Identifier, IdentifierOption};
 pub use model_record::{
@@ -131,9 +134,37 @@ impl<P, B, A, Bo, C, Data> GenericParameters<P, B, A, Bo, C, Data> {
             b_mat
         })
     }
+
+    pub fn collate_ab<F, T: Scalar + Copy, const N: usize>(&self, f: F) -> [DMatrix<Option<T>>; N]
+    where
+        F: Fn(&A) -> [T; N],
+    {
+        let a = &self.association;
+        array::from_fn(|i| {
+            let mut b_mat = DMatrix::from_element(a.sites_a.len(), a.sites_b.len(), None);
+            for br in &a.binary_ab {
+                b_mat[(br.id1, br.id2)] = Some(f(&br.model_record)[i]);
+            }
+            b_mat
+        })
+    }
+
+    pub fn collate_cc<F, T: Scalar + Copy, const N: usize>(&self, f: F) -> [DMatrix<Option<T>>; N]
+    where
+        F: Fn(&A) -> [T; N],
+    {
+        let a = &self.association;
+        array::from_fn(|i| {
+            let mut b_mat = DMatrix::from_element(a.sites_c.len(), a.sites_c.len(), None);
+            for br in &a.binary_cc {
+                b_mat[(br.id1, br.id2)] = Some(f(&br.model_record)[i]);
+            }
+            b_mat
+        })
+    }
 }
 
-impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
+impl<P: Clone, B: Clone, A: CombiningRule<P> + Clone> Parameters<P, B, A> {
     pub fn new(
         pure_records: Vec<PureRecord<P, A>>,
         binary_records: Vec<BinaryRecord<usize, B, A>>,
@@ -209,7 +240,9 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
             .collect();
         Self::new(pure_records, vec![])
     }
+}
 
+impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
     /// Helper function to build matrix from list of records in correct order.
     pub fn binary_matrix_from_records(
         pure_records: &[PureRecord<P, A>],
@@ -279,7 +312,9 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
             })
             .collect()
     }
+}
 
+impl<P: Clone, B: Clone, A: CombiningRule<P> + Clone> Parameters<P, B, A> {
     /// Creates parameters from substance information stored in json files.
     pub fn from_json<F, S>(
         substances: Vec<S>,
@@ -497,6 +532,120 @@ impl<P: Clone, B: Clone, A: Clone> Parameters<P, B, A> {
 
         Self::new(pure_records, binary_records).unwrap()
     }
+
+    /// Return scalar pure parameters as map.
+    ///
+    /// This function is not particularly efficient and mostly relevant in situations
+    /// in which the type information is thrown away on purpose (i.e., FFI)
+    pub fn pure_parameters(&self) -> IndexMap<String, DVector<f64>>
+    where
+        P: Serialize,
+    {
+        let na: Vec<_> = self.association.sites_a.iter().map(|s| s.n).collect();
+        let nb: Vec<_> = self.association.sites_b.iter().map(|s| s.n).collect();
+        let nc: Vec<_> = self.association.sites_c.iter().map(|s| s.n).collect();
+        let pars: IndexSet<_> = self
+            .pure
+            .iter()
+            .flat_map(|p| to_map(&p.model_record).into_keys())
+            .collect();
+        pars.into_iter()
+            .map(|p| {
+                let [pars] = self.collate(|r| [to_map(r).get(&p).copied().unwrap_or_default()]);
+                (p, pars)
+            })
+            .chain(
+                na.iter()
+                    .any(|&n| n > 0.0)
+                    .then(|| ("na".into(), DVector::from(na))),
+            )
+            .chain(
+                nb.iter()
+                    .any(|&n| n > 0.0)
+                    .then(|| ("nb".into(), DVector::from(nb))),
+            )
+            .chain(
+                nc.iter()
+                    .any(|&n| n > 0.0)
+                    .then(|| ("nc".into(), DVector::from(nc))),
+            )
+            .collect()
+    }
+
+    /// Return scalar binary interaction parameters as map.
+    ///
+    /// This function is not particularly efficient and mostly relevant in situations
+    /// in which the type information is thrown away on purpose (i.e., FFI)
+    pub fn binary_parameters(&self) -> IndexMap<String, DMatrix<f64>>
+    where
+        B: Serialize,
+    {
+        let pars: IndexSet<String> = self
+            .binary
+            .iter()
+            .flat_map(|b| to_map(&b.model_record).into_keys())
+            .collect();
+        pars.into_iter()
+            .map(|p| {
+                let [pars] = self.collate_binary(|b| [to_map(b)[&p]]);
+                (p, pars)
+            })
+            .collect()
+    }
+
+    /// Return scalar association parameters (AB) as map.
+    ///
+    /// This function is not particularly efficient and mostly relevant in situations
+    /// in which the type information is thrown away on purpose (i.e., FFI)
+    pub fn association_parameters_ab(&self) -> IndexMap<String, DMatrix<f64>>
+    where
+        A: Serialize,
+    {
+        let pars: IndexSet<String> = self
+            .association
+            .binary_ab
+            .iter()
+            .flat_map(|a| to_map(&a.model_record).into_keys())
+            .collect();
+        pars.into_iter()
+            .map(|p| {
+                let [pars] = self.collate_ab(|a| [to_map(a).get(&p).copied().unwrap_or_default()]);
+                let pars = pars.map(|p| p.unwrap_or(f64::NAN));
+                (p, pars)
+            })
+            .collect()
+    }
+
+    /// Return scalar association parameters (CC) as map.
+    ///
+    /// This function is not particularly efficient and mostly relevant in situations
+    /// in which the type information is thrown away on purpose (i.e., FFI)
+    pub fn association_parameters_cc(&self) -> IndexMap<String, DMatrix<f64>>
+    where
+        A: Serialize,
+    {
+        let pars: IndexSet<String> = self
+            .association
+            .binary_cc
+            .iter()
+            .flat_map(|a| to_map(&a.model_record).into_keys())
+            .collect();
+        pars.into_iter()
+            .map(|mut p| {
+                let [pars] = self.collate_cc(|a| [to_map(a)[&p]]);
+                let pars = pars.map(|p| p.unwrap_or(f64::NAN));
+                if p.ends_with("ab") {
+                    let _ = p.split_off(p.len() - 2);
+                }
+                p.push_str("cc");
+                (p, pars)
+            })
+            .collect()
+    }
+}
+
+fn to_map<R: Serialize>(record: R) -> IndexMap<String, f64> {
+    serde_json::from_value(serde_json::to_value(&record).unwrap()).unwrap()
 }
 
 impl<P, B, A, Bo> GcParameters<P, B, A, Bo, f64> {
@@ -505,7 +654,7 @@ impl<P, B, A, Bo> GcParameters<P, B, A, Bo, f64> {
     }
 }
 
-impl<P: Clone, B: Clone, A: Clone, Bo: Clone, C: GroupCount + Default>
+impl<P: Clone, B: Clone, A: CombiningRule<P> + Clone, Bo: Clone, C: GroupCount + Default>
     GcParameters<P, B, A, Bo, C>
 {
     pub fn from_segments_hetero(

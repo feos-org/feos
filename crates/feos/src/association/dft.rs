@@ -1,5 +1,6 @@
 use super::*;
 use feos_core::FeosResult;
+use feos_core::parameter::GenericParameters;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::{Array1, Array2, ArrayBase, ArrayView2, Axis, Data, Ix1, Slice};
 use num_dual::DualNum;
@@ -12,16 +13,16 @@ pub const N0_CUTOFF: f64 = 1e-9;
 pub struct AssociationFunctional<'a, A: AssociationStrength> {
     model: &'a A,
     association_parameters: &'a AssociationParameters<A::Record>,
-    association: &'a Association<A>,
+    association: Association,
 }
 
 impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
     pub fn new<P, B, Bo, C, Data>(
         model: &'a A,
         parameters: &'a GenericParameters<P, B, A::Record, Bo, C, Data>,
-        association: &'a Option<Association<A>>,
+        association: Option<Association>,
     ) -> Option<Self> {
-        association.as_ref().map(|a| Self {
+        association.map(|a| Self {
             model,
             association_parameters: &parameters.association,
             association: a,
@@ -140,8 +141,9 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         xi: &Array1<N>,
     ) -> FeosResult<Array1<N>> {
         let a = &self.association_parameters;
+        let t = temperature;
 
-        let d = self.model.hs_diameter(temperature);
+        let d = self.model.hs_diameter(t);
 
         match (
             a.sites_a.len() * a.sites_b.len(),
@@ -150,21 +152,20 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         ) {
             (0, 0, _) => Ok(Array1::zeros(n3i.len())),
             (1, 0, false) => {
-                Ok(self.helmholtz_energy_density_ab_analytic(temperature, rho0, &d, n2, n3i, xi))
+                let params = a.binary_ab.first().map(|r| &r.model_record);
+                Ok(self.helmholtz_energy_density_ab_analytic(params, t, rho0, &d, n2, n3i, xi))
             }
             (0, 1, false) => {
-                Ok(self.helmholtz_energy_density_cc_analytic(temperature, rho0, &d, n2, n3i, xi))
+                let params = a.binary_cc.first().map(|r| &r.model_record);
+                Ok(self.helmholtz_energy_density_cc_analytic(params, t, rho0, &d, n2, n3i, xi))
             }
             (1, 1, false) => {
+                let params_ab = a.binary_ab.first().map(|r| &r.model_record);
+                let params_cc = a.binary_cc.first().map(|r| &r.model_record);
                 Ok(
-                    self.helmholtz_energy_density_ab_analytic(temperature, rho0, &d, n2, n3i, xi)
+                    self.helmholtz_energy_density_ab_analytic(params_ab, t, rho0, &d, n2, n3i, xi)
                         + self.helmholtz_energy_density_cc_analytic(
-                            temperature,
-                            rho0,
-                            &d,
-                            n2,
-                            n3i,
-                            xi,
+                            params_cc, t, rho0, &d, n2, n3i, xi,
                         ),
                 )
             }
@@ -188,7 +189,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
                         let [delta_ab, delta_cc] = self.association.association_strength(
                             self.association_parameters,
                             self.model,
-                            temperature,
+                            t,
                             &d,
                             n2,
                             n3i,
@@ -207,8 +208,10 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         }
     }
 
+    #[expect(clippy::too_many_arguments)]
     fn helmholtz_energy_density_ab_analytic<N: DualNum<f64> + Copy, S: Data<Elem = N>>(
         &self,
+        parameters: Option<&A::Record>,
         temperature: N,
         rho0: &Array2<N>,
         diameter: &DVector<N>,
@@ -217,7 +220,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         xi: &Array1<N>,
     ) -> Array1<N> {
         let a = &self.association_parameters;
-        let Some(par) = &self.association.parameters_ab[(0, 0)] else {
+        let Some(par) = parameters else {
             return Array1::zeros(xi.len());
         };
 
@@ -244,8 +247,10 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         rhoa * xa.mapv(f) + rhob * xb.mapv(f)
     }
 
+    #[expect(clippy::too_many_arguments)]
     fn helmholtz_energy_density_cc_analytic<N: DualNum<f64> + Copy, S: Data<Elem = N>>(
         &self,
+        parameters: Option<&A::Record>,
         temperature: N,
         rho0: &Array2<N>,
         diameter: &DVector<N>,
@@ -254,7 +259,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         xi: &Array1<N>,
     ) -> Array1<N> {
         let a = &self.association_parameters;
-        let Some(par) = &self.association.parameters_cc[(0, 0)] else {
+        let Some(par) = parameters else {
             return Array1::zeros(xi.len());
         };
 

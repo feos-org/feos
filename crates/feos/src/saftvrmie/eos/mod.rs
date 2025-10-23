@@ -1,9 +1,8 @@
-use super::SaftVRMieParameters;
+use super::parameters::{
+    SaftVRMieAssociationRecord, SaftVRMieParameters, SaftVRMiePars, SaftVRMieRecord,
+};
 use crate::association::{Association, AssociationStrength};
-use crate::hard_sphere::HardSphereProperties;
-use crate::saftvrmie::SaftVRMieRecord;
-use crate::saftvrmie::parameters::SaftVRMieAssociationRecord;
-use crate::{hard_sphere::HardSphere, saftvrmie::parameters::SaftVRMiePars};
+use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::{Molarweight, ResidualDyn, StateHD, Subset};
 use nalgebra::DVector;
 use num_dual::DualNum;
@@ -38,7 +37,7 @@ pub struct SaftVRMie {
     pub params: SaftVRMiePars,
     pub options: SaftVRMieOptions,
     pub chain: bool,
-    pub association: Option<Association<SaftVRMiePars>>,
+    pub association: Option<Association>,
 }
 
 impl SaftVRMie {
@@ -50,12 +49,8 @@ impl SaftVRMie {
         let params = SaftVRMiePars::new(&parameters);
         let chain = params.m.iter().any(|&m| m > 1.0);
 
-        let association = Association::new(
-            &parameters,
-            options.max_iter_cross_assoc,
-            options.tol_cross_assoc,
-        )
-        .unwrap();
+        let association = (!parameters.association.is_empty())
+            .then(|| Association::new(options.max_iter_cross_assoc, options.tol_cross_assoc));
         Self {
             parameters,
             params,
@@ -154,19 +149,5 @@ impl AssociationStrength for SaftVRMiePars {
                         - d * 7.0 * rd
                         - 8.0 * rc.powi(2)));
         v * (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
-    }
-
-    fn combining_rule(
-        pure_i: &Self::Pure,
-        pure_j: &Self::Pure,
-        parameters_i: &Self::Record,
-        parameters_j: &Self::Record,
-    ) -> Self::Record {
-        let rc_ab = (parameters_i.rc_ab * pure_i.sigma + parameters_j.rc_ab * pure_j.sigma) * 0.5;
-        let epsilon_k_ab = (parameters_i.epsilon_k_ab * parameters_j.epsilon_k_ab).sqrt();
-        Self::Record {
-            rc_ab,
-            epsilon_k_ab,
-        }
     }
 }

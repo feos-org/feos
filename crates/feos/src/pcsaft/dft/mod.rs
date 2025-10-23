@@ -27,8 +27,8 @@ use pure_saft_functional::*;
 
 /// PC-SAFT Helmholtz energy functional.
 pub struct PcSaftFunctional {
-    parameters: PcSaftParameters,
-    association: Option<Association<PcSaftPars>>,
+    pub parameters: PcSaftParameters,
+    association: Option<Association>,
     params: PcSaftPars,
     fmt_version: FMTVersion,
     options: PcSaftOptions,
@@ -49,12 +49,12 @@ impl PcSaftFunctional {
         saft_options: PcSaftOptions,
     ) -> Self {
         let params = PcSaftPars::new(&parameters);
-        let association = Association::new(
-            &parameters,
-            saft_options.max_iter_cross_assoc,
-            saft_options.tol_cross_assoc,
-        )
-        .unwrap();
+        let association = (!parameters.association.is_empty()).then(|| {
+            Association::new(
+                saft_options.max_iter_cross_assoc,
+                saft_options.tol_cross_assoc,
+            )
+        });
         Self {
             parameters,
             association,
@@ -103,7 +103,7 @@ impl HelmholtzEnergyFunctionalDyn for PcSaftFunctional {
     fn contributions<'a>(&'a self) -> impl Iterator<Item = PcSaftFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(4);
 
-        let assoc = AssociationFunctional::new(&self.params, &self.parameters, &self.association);
+        let assoc = AssociationFunctional::new(&self.params, &self.parameters, self.association);
 
         if matches!(
             self.fmt_version,
