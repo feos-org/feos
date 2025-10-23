@@ -54,7 +54,7 @@ impl PyChemicalRecord {
         self.0.bonds.clone()
     }
 
-    /// Read a list of `ChemicalRecord`s from a JSON file.
+    /// Read a list of [ChemicalRecord]s from a JSON file.
     ///
     /// Parameters
     /// ----------

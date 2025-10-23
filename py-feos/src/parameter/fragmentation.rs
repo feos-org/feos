@@ -40,7 +40,7 @@ impl PySmartsRecord {
         Ok(serde_json::to_string(&self).map_err(PyFeosError::from)?)
     }
 
-    /// Read a list of `SmartsRecord`s from a JSON file.
+    /// Read a list of [SmartsRecord]s from a JSON file.
     ///
     /// Parameters
     /// ----------

@@ -149,8 +149,8 @@ impl PyPlanarInterface {
         PyPhaseEquilibrium(self.0.vle.clone())
     }
 
-    /// Calculates the Gibbs' relative adsorption of component `i' with
-    /// respect to `j': \Gamma_i^(j)
+    /// Calculates the Gibbs relative adsorption of component i with
+    /// respect to j: \Gamma_i^(j)
     ///
     /// Returns
     /// -------

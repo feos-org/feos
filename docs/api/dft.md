@@ -9,9 +9,6 @@ Implementations of Helmholtz energy functionals for DFT.
 .. currentmodule:: feos.dft
 
 .. autosummary::
-    :toctree: generated/
-
-    HelmholtzEnergyFunctional
     HelmholtzEnergyFunctional.pcsaft
     HelmholtzEnergyFunctional.gc_pcsaft
     HelmholtzEnergyFunctional.pets
