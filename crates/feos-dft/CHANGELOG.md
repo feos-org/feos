@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+> :warning: This file contains changes up to `feos-dft` v0.8.0. For newer versions, changes are documented for the entire project rather than individual crates [here](../../CHANGELOG.md).
+
 ## [Unreleased]
 
 ## [0.8.0] - 2024-12-28

@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2025-??-??
+### Parameter rework
+
+
+### Python package rework
+### AD
+
+### Packaging
+- 
+
 ## [0.8.0] - 2024-12-28
 ### Fixed
 - Fixed the handling of association records in combination with induced association in PC-SAFT [#264](https://github.com/feos-org/feos/pull/264)
