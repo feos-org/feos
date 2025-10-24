@@ -16,7 +16,7 @@
     <img src="https://img.shields.io/badge/docs-github--pages-blue" alt="Documentation"/>
   </a>
   <a href="https://pubs.acs.org/doi/10.1021/acs.iecr.2c04561">
-    <img src="https://img.shields.io/badge/DOI-10.102-passing" alt="FeOs Publication"/>
+    <img src="https://img.shields.io/badge/DOI-10.1021/acs.iecr.2c04561-passing" alt="FeOs Publication"/>
   </a>
 </div>
 
@@ -133,7 +133,7 @@ See the *Building from source* section for information about building the wheel 
 
 ### Building from source
 
-To compile the code you need the Rust compiler and `maturin` (>=0.13,<0.14) installed.
+To compile the code you need the Rust compiler and `maturin` installed.
 To install the package directly into the active environment (virtualenv or conda), use
 
 ```

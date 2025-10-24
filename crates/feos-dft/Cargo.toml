@@ -9,7 +9,6 @@ repository.workspace = true
 keywords.workspace = true
 categories.workspace = true
 description = "Generic classical DFT implementations for the `feos` project."
-exclude = ["/.github/*", "*.ipynb"]
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "./docs-header.html"]
