@@ -3,8 +3,6 @@
 The key data structure in FeOs is the `EquationOfState` class that contains all implemented equations of state.
 The `State` and `PhaseEquilibrium` objects are used to define thermodynamic conditions and -- once created -- can be used to compute properties.
 
-If you want to adjust parameters of a model to experimental data you can use classes and utilities from the `estimator` module. (TODO)
-
 ## The `EquationOfState` class
 
 ### Residual Helmholtz energy models
@@ -87,6 +85,7 @@ eos = EquationOfState.pcsaft(pc_saft_parameters).joback(joback_parameters)
 
 .. autosummary::
     :toctree: generated/
+    
     EquationOfState
     Contributions
     Verbosity

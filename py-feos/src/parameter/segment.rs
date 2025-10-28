@@ -85,7 +85,7 @@ impl PySegmentRecord {
         Ok(serde_json::to_string(&self).map_err(PyFeosError::from)?)
     }
 
-    /// Read a list of `SegmentRecord`s from a JSON file.
+    /// Read a list of [SegmentRecord]s from a JSON file.
     ///
     /// Parameters
     /// ----------

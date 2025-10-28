@@ -42,6 +42,7 @@ The following models are currently published as part of the `FeOs` framework
 |`uvtheory`|equation of state for Mie fluids and mixtures|✓||
 |`saftvrqmie`|equation of state for quantum fluids and mixtures|✓|✓|
 |`saftvrmie`|statistical associating fluid theory for variable range interactions of Mie form|✓||
+|`multiparameter`| Multiparameter Helmholtz energy equations of state for common pure components|✓||
 
 The list is being expanded continuously. Currently under development are implementations of Helmholtz energy functionals for the UV theory and for SAFT-VR Mie.
 
