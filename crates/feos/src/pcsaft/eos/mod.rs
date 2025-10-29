@@ -1,8 +1,9 @@
-use super::parameters::{PcSaftAssociationRecord, PcSaftParameters, PcSaftPars, PcSaftRecord};
+use super::parameters::{PcSaftAssociationRecord, PcSaftParameters, PcSaftPars};
 use crate::association::{Association, AssociationStrength};
 use crate::hard_sphere::{HardSphere, HardSphereProperties, MonomerShape};
+use feos_core::parameter::AssociationParameters;
 use feos_core::{Molarweight, ResidualDyn, StateHD, Subset};
-use nalgebra::DVector;
+use nalgebra::{DMatrix, DVector};
 use num_dual::DualNum;
 use quantity::*;
 use std::f64::consts::FRAC_PI_6;
@@ -177,21 +178,55 @@ impl HardSphereProperties for PcSaftPars {
 }
 
 impl AssociationStrength for PcSaftPars {
-    type Pure = PcSaftRecord;
     type Record = PcSaftAssociationRecord;
 
     fn association_strength<D: DualNum<f64> + Copy>(
         &self,
-        temperature: D,
-        comp_i: usize,
-        comp_j: usize,
-        assoc_ij: &Self::Record,
-    ) -> D {
-        let si = self.sigma[comp_i];
-        let sj = self.sigma[comp_j];
-        (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
-            * assoc_ij.kappa_ab
-            * (si * sj).powf(1.5)
+        parameters: &AssociationParameters<Self::Record>,
+        state: &StateHD<D>,
+        diameter: &DVector<D>,
+        xi: D,
+    ) -> [DMatrix<D>; 2] {
+        let p = parameters;
+        let t_inv = state.temperature.recip();
+        let [zeta2, n3] = self.zeta(state.temperature, &state.partial_density, [2, 3]);
+        let n2 = zeta2 * 6.0;
+        let n3i = (-n3 + 1.0).recip();
+
+        let mut delta_ab = DMatrix::zeros(p.sites_a.len(), p.sites_b.len());
+        for b in &p.binary_ab {
+            let [i, j] = [b.id1, b.id2];
+            let [comp_i, comp_j] = [p.sites_a[i].assoc_comp, p.sites_b[j].assoc_comp];
+            let f_ab_ij = (t_inv * b.model_record.epsilon_k_ab).exp_m1();
+            let k_ab_ij =
+                b.model_record.kappa_ab * (self.sigma[comp_i] * self.sigma[comp_j]).powf(1.5);
+
+            // g_HS(d)
+            let di = diameter[comp_i];
+            let dj = diameter[comp_j];
+            let k = di * dj / (di + dj) * (n2 * n3i);
+            let g_contact = n3i * (k * xi * (k / 18.0 + 0.5) + 1.0);
+
+            delta_ab[(i, j)] = g_contact * f_ab_ij * k_ab_ij;
+        }
+
+        let mut delta_cc = DMatrix::zeros(p.sites_c.len(), p.sites_c.len());
+        for b in &p.binary_cc {
+            let [i, j] = [b.id1, b.id2];
+            let [comp_i, comp_j] = [p.sites_c[i].assoc_comp, p.sites_c[j].assoc_comp];
+            let f_ab_ij = (t_inv * b.model_record.epsilon_k_ab).exp_m1();
+            let k_ab_ij =
+                b.model_record.kappa_ab * (self.sigma[comp_i] * self.sigma[comp_j]).powf(1.5);
+
+            // g_HS(d)
+            let di = diameter[comp_i];
+            let dj = diameter[comp_j];
+            let k = di * dj / (di + dj) * (n2 * n3i);
+            let g_contact = n3i * (k * xi * (k / 18.0 + 0.5) + 1.0);
+
+            delta_cc[(i, j)] = g_contact * f_ab_ij * k_ab_ij;
+        }
+        [delta_ab, delta_cc]
     }
 }
 

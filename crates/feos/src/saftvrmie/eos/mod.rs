@@ -1,10 +1,9 @@
-use super::parameters::{
-    SaftVRMieAssociationRecord, SaftVRMieParameters, SaftVRMiePars, SaftVRMieRecord,
-};
+use super::parameters::{SaftVRMieAssociationRecord, SaftVRMieParameters, SaftVRMiePars};
 use crate::association::{Association, AssociationStrength};
 use crate::hard_sphere::{HardSphere, HardSphereProperties};
+use feos_core::parameter::AssociationParameters;
 use feos_core::{Molarweight, ResidualDyn, StateHD, Subset};
-use nalgebra::DVector;
+use nalgebra::{DMatrix, DVector};
 use num_dual::DualNum;
 use quantity::MolarWeight;
 use std::f64::consts::{FRAC_PI_6, PI};
@@ -120,34 +119,76 @@ impl Molarweight for SaftVRMie {
 }
 
 impl AssociationStrength for SaftVRMiePars {
-    type Pure = SaftVRMieRecord;
     type Record = SaftVRMieAssociationRecord;
 
     fn association_strength<D: DualNum<f64> + Copy>(
         &self,
-        temperature: D,
-        comp_i: usize,
-        comp_j: usize,
-        assoc_ij: &Self::Record,
-    ) -> D {
-        let diameter = self.hs_diameter(temperature);
-        let di = diameter[comp_i];
-        let dj = diameter[comp_j];
-        let d = (di + dj) * 0.5;
-        // temperature dependent association volume
-        // rc and rd are dimensioned in units of Angstrom
-        let rc = assoc_ij.rc_ab;
-        // rd is the distance between an association site and the segment centre.
-        // It is fixed at 0.4 sigma, leading to 0.4 * 0.5 = 0.2 in the combining rule.
-        let rd = (self.sigma[comp_i] + self.sigma[comp_j]) * 0.2;
-        let v = d * d * PI * 4.0 / (72.0 * rd.powi(2))
-            * ((d.recip() * (rc + 2.0 * rd)).ln()
-                * (6.0 * rc.powi(3) + 18.0 * rc.powi(2) * rd - 24.0 * rd.powi(3))
-                + (-d + rc + 2.0 * rd)
-                    * (d.powi(2) + d * rc + 22.0 * rd.powi(2)
-                        - 5.0 * rc * rd
-                        - d * 7.0 * rd
-                        - 8.0 * rc.powi(2)));
-        v * (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
+        parameters: &AssociationParameters<Self::Record>,
+        state: &StateHD<D>,
+        diameter: &DVector<D>,
+        xi: D,
+    ) -> [DMatrix<D>; 2] {
+        let p = parameters;
+        let t_inv = state.temperature.recip();
+        let [zeta2, n3] = self.zeta(state.temperature, &state.partial_density, [2, 3]);
+        let n2 = zeta2 * 6.0;
+        let n3i = (-n3 + 1.0).recip();
+
+        let mut delta_ab = DMatrix::zeros(p.sites_a.len(), p.sites_b.len());
+        for b in &p.binary_ab {
+            let [i, j] = [b.id1, b.id2];
+            let [comp_i, comp_j] = [p.sites_a[i].assoc_comp, p.sites_b[j].assoc_comp];
+
+            let f_ab_ij = (t_inv * b.model_record.epsilon_k_ab).exp_m1();
+
+            let di = diameter[comp_i];
+            let dj = diameter[comp_j];
+            let d = (di + dj) * 0.5;
+            let rd = (self.sigma[comp_i] + self.sigma[comp_j]) * 0.2;
+            let rc = b.model_record.rc_ab;
+            let k_ab_ij = d * d * PI * 4.0 / (72.0 * rd.powi(2))
+                * ((d.recip() * (rc + 2.0 * rd)).ln()
+                    * (6.0 * rc.powi(3) + 18.0 * rc.powi(2) * rd - 24.0 * rd.powi(3))
+                    + (-d + rc + 2.0 * rd)
+                        * (d.powi(2) + d * rc + 22.0 * rd.powi(2)
+                            - 5.0 * rc * rd
+                            - d * 7.0 * rd
+                            - 8.0 * rc.powi(2)));
+
+            // g_HS(d)
+            let k = di * dj / (di + dj) * (n2 * n3i);
+            let g_contact = n3i * (k * xi * (k / 18.0 + 0.5) + 1.0);
+
+            delta_ab[(i, j)] = g_contact * f_ab_ij * k_ab_ij;
+        }
+
+        let mut delta_cc = DMatrix::zeros(p.sites_c.len(), p.sites_c.len());
+        for b in &p.binary_cc {
+            let [i, j] = [b.id1, b.id2];
+            let [comp_i, comp_j] = [p.sites_c[i].assoc_comp, p.sites_c[j].assoc_comp];
+
+            let f_ab_ij = (t_inv * b.model_record.epsilon_k_ab).exp_m1();
+
+            let di = diameter[comp_i];
+            let dj = diameter[comp_j];
+            let d = (di + dj) * 0.5;
+            let rd = (self.sigma[comp_i] + self.sigma[comp_j]) * 0.2;
+            let rc = b.model_record.rc_ab;
+            let k_ab_ij = d * d * PI * 4.0 / (72.0 * rd.powi(2))
+                * ((d.recip() * (rc + 2.0 * rd)).ln()
+                    * (6.0 * rc.powi(3) + 18.0 * rc.powi(2) * rd - 24.0 * rd.powi(3))
+                    + (-d + rc + 2.0 * rd)
+                        * (d.powi(2) + d * rc + 22.0 * rd.powi(2)
+                            - 5.0 * rc * rd
+                            - d * 7.0 * rd
+                            - 8.0 * rc.powi(2)));
+
+            // g_HS(d)
+            let k = di * dj / (di + dj) * (n2 * n3i);
+            let g_contact = n3i * (k * xi * (k / 18.0 + 0.5) + 1.0);
+
+            delta_cc[(i, j)] = g_contact * f_ab_ij * k_ab_ij;
+        }
+        [delta_ab, delta_cc]
     }
 }
