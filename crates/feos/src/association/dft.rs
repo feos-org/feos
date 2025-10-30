@@ -15,7 +15,7 @@ impl Association {
     /// Uses the contact value of hard-sphere pair correlation function and model-specific
     /// implementations for the bonding volume.
     #[expect(clippy::too_many_arguments)]
-    fn association_strength_yu_wu<A: AssociationStrength, D: DualNum<f64> + Copy>(
+    fn yu_wu_association_strength<A: AssociationStrength, D: DualNum<f64> + Copy>(
         &self,
         parameters: &AssociationParameters<A::Record>,
         model: &A,
@@ -245,7 +245,7 @@ impl<'a, A: AssociationStrength> YuWuAssociationFunctional<'a, A> {
                     .zip(n3i.iter())
                     .zip(xi.iter())
                     .map(|(((rho, &n2), &n3i), &xi)| {
-                        let [delta_ab, delta_cc] = self.association.association_strength_yu_wu(
+                        let [delta_ab, delta_cc] = self.association.yu_wu_association_strength(
                             self.association_parameters,
                             self.model,
                             t,
