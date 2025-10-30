@@ -1,7 +1,7 @@
 use super::eos::GcPcSaftOptions;
 use super::record::GcPcSaftAssociationRecord;
-use crate::association::{Association, AssociationFunctional, AssociationStrength};
-use crate::gc_pcsaft::{GcPcSaftParameters, GcPcSaftRecord};
+use crate::association::{Association, YuWuAssociationFunctional, AssociationStrength};
+use crate::gc_pcsaft::GcPcSaftParameters;
 use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use feos_core::{FeosResult, Molarweight, ResidualDyn, StateHD, Subset};
 use feos_derive::FunctionalContribution;
@@ -108,7 +108,7 @@ impl HelmholtzEnergyFunctionalDyn for GcPcSaftFunctional {
     fn contributions<'a>(&'a self) -> impl Iterator<Item = GcPcSaftFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(4);
 
-        let assoc = AssociationFunctional::new(&self.params, &self.parameters, self.association);
+        let assoc = YuWuAssociationFunctional::new(&self.params, &self.parameters, self.association);
 
         // Hard sphere contribution
         let hs = FMTContribution::new(&self.params, self.fmt_version);
@@ -167,10 +167,9 @@ impl HardSphereProperties for GcPcSaftFunctionalParameters {
 }
 
 impl AssociationStrength for GcPcSaftFunctionalParameters {
-    type Pure = GcPcSaftRecord;
     type Record = GcPcSaftAssociationRecord;
 
-    fn association_strength<D: DualNum<f64> + Copy>(
+    fn association_strength_ij<D: DualNum<f64> + Copy>(
         &self,
         temperature: D,
         comp_i: usize,
@@ -201,5 +200,5 @@ pub enum GcPcSaftFunctionalContribution<'a> {
     Fmt(FMTContribution<'a, GcPcSaftFunctionalParameters>),
     Chain(ChainFunctional<'a>),
     Attractive(AttractiveFunctional<'a>),
-    Association(AssociationFunctional<'a, GcPcSaftFunctionalParameters>),
+    Association(YuWuAssociationFunctional<'a, GcPcSaftFunctionalParameters>),
 }

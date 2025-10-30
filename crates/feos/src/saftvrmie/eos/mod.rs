@@ -121,6 +121,34 @@ impl Molarweight for SaftVRMie {
 impl AssociationStrength for SaftVRMiePars {
     type Record = SaftVRMieAssociationRecord;
 
+    fn association_strength_ij<D: DualNum<f64> + Copy>(
+        &self,
+        temperature: D,
+        comp_i: usize,
+        comp_j: usize,
+        assoc_ij: &Self::Record,
+    ) -> D {
+        let diameter = self.hs_diameter(temperature);
+        let di = diameter[comp_i];
+        let dj = diameter[comp_j];
+        let d = (di + dj) * 0.5;
+        // temperature dependent association volume
+        // rc and rd are dimensioned in units of Angstrom
+        let rc = assoc_ij.rc_ab;
+        // rd is the distance between an association site and the segment centre.
+        // It is fixed at 0.4 sigma, leading to 0.4 * 0.5 = 0.2 in the combining rule.
+        let rd = (self.sigma[comp_i] + self.sigma[comp_j]) * 0.2;
+        let v = d * d * PI * 4.0 / (72.0 * rd.powi(2))
+            * ((d.recip() * (rc + 2.0 * rd)).ln()
+                * (6.0 * rc.powi(3) + 18.0 * rc.powi(2) * rd - 24.0 * rd.powi(3))
+                + (-d + rc + 2.0 * rd)
+                    * (d.powi(2) + d * rc + 22.0 * rd.powi(2)
+                        - 5.0 * rc * rd
+                        - d * 7.0 * rd
+                        - 8.0 * rc.powi(2)));
+        v * (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
+    }
+
     fn association_strength<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,

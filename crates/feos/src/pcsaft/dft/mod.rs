@@ -1,6 +1,6 @@
 use super::PcSaftParameters;
 use super::parameters::PcSaftPars;
-use crate::association::{Association, AssociationFunctional};
+use crate::association::{Association, YuWuAssociationFunctional};
 use crate::hard_sphere::{FMTContribution, FMTVersion};
 use crate::pcsaft::eos::PcSaftOptions;
 use feos_core::{FeosResult, Molarweight, ResidualDyn, StateHD, Subset};
@@ -103,7 +103,7 @@ impl HelmholtzEnergyFunctionalDyn for PcSaftFunctional {
     fn contributions<'a>(&'a self) -> impl Iterator<Item = PcSaftFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(4);
 
-        let assoc = AssociationFunctional::new(&self.params, &self.parameters, self.association);
+        let assoc = YuWuAssociationFunctional::new(&self.params, &self.parameters, self.association);
 
         if matches!(
             self.fmt_version,
@@ -183,5 +183,5 @@ pub enum PcSaftFunctionalContribution<'a> {
     Fmt(FMTContribution<'a, PcSaftPars>),
     Chain(ChainFunctional<'a>),
     Attractive(AttractiveFunctional<'a>),
-    Association(AssociationFunctional<'a, PcSaftPars>),
+    Association(YuWuAssociationFunctional<'a, PcSaftPars>),
 }

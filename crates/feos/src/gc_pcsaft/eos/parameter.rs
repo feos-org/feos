@@ -1,8 +1,6 @@
 use crate::association::AssociationStrength;
 use crate::gc_pcsaft::record::{GcPcSaftAssociationRecord, GcPcSaftParameters};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
-use feos_core::StateHD;
-use feos_core::parameter::{AssociationSite, BinaryParameters};
 use itertools::Itertools;
 use nalgebra::{DMatrix, DVector};
 use num_dual::DualNum;
@@ -128,39 +126,16 @@ impl HardSphereProperties for GcPcSaftEosParameters {
 impl AssociationStrength for GcPcSaftEosParameters {
     type Record = GcPcSaftAssociationRecord;
 
-    fn association_strength<D: DualNum<f64> + Copy>(
+    fn association_strength_ij<D: DualNum<f64> + Copy>(
         &self,
-        state: &StateHD<D>,
-        diameter: &DVector<D>,
-        (sites1, sites2): (&[AssociationSite], &[AssociationSite]),
-        association_parameters: &[BinaryParameters<Self::Record, ()>],
-    ) -> DMatrix<D> {
-        let mut delta = DMatrix::zeros(sites1.len(), sites2.len());
-        if sites1.len() * sites2.len() == 0 {
-            return delta;
-        }
-
-        let t_inv = state.temperature.recip();
-        let [zeta2, n3] = self.zeta(state.temperature, &state.partial_density, [2, 3]);
-        let n2 = zeta2 * 6.0;
-        let n3i = (-n3 + 1.0).recip();
-
-        for b in association_parameters {
-            let [i, j] = [b.id1, b.id2];
-            let [comp_i, comp_j] = [sites1[i].assoc_comp, sites2[j].assoc_comp];
-            let f_ab_ij = (t_inv * b.model_record.epsilon_k_ab).exp_m1();
-            let k_ab_ij =
-                b.model_record.kappa_ab * (self.sigma[comp_i] * self.sigma[comp_j]).powf(1.5);
-
-            // g_HS(d)
-            let di = diameter[comp_i];
-            let dj = diameter[comp_j];
-            let k = di * dj / (di + dj) * (n2 * n3i);
-            let g_contact = n3i * (k * (k / 18.0 + 0.5) + 1.0);
-
-            delta[(i, j)] = g_contact * f_ab_ij * k_ab_ij;
-        }
-        delta
+        temperature: D,
+        comp_i: usize,
+        comp_j: usize,
+        assoc_ij: &Self::Record,
+    ) -> D {
+        let f_ab = (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1();
+        let k_ab = assoc_ij.kappa_ab * (self.sigma[comp_i] * self.sigma[comp_j]).powf(1.5);
+        f_ab * k_ab
     }
 }
 
