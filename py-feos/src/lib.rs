@@ -90,8 +90,8 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // AD
     #[cfg(feature = "ad")]
     {
-        m.add_class::<ad::PyParameterFit>()?;
-        m.add_class::<ad::PyModel>()?;
+        m.add_class::<ad::PyPropertiesAD>()?;
+        m.add_class::<ad::PyModelAD>()?;
     }
 
     #[cfg(not(feature = "dft"))]

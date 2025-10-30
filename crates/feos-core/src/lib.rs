@@ -25,20 +25,20 @@ macro_rules! log_result {
     }
 }
 
+mod ad;
 pub mod cubic;
 mod density_iteration;
 mod equation_of_state;
 mod errors;
 pub mod parameter;
-mod parameter_fit;
 mod phase_equilibria;
 mod state;
+pub use ad::{ParametersAD, PropertiesAD};
 pub use equation_of_state::{
     EntropyScaling, EquationOfState, IdealGas, Molarweight, NoResidual, Residual, ResidualDyn,
     Subset, Total,
 };
 pub use errors::{FeosError, FeosResult};
-pub use parameter_fit::{ParameterFit, ParametersAD};
 #[cfg(feature = "ndarray")]
 pub use phase_equilibria::{PhaseDiagram, PhaseDiagramHetero};
 pub use phase_equilibria::{PhaseEquilibrium, TemperatureOrPressure};

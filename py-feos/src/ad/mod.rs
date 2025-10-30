@@ -1,13 +1,12 @@
-#[cfg(feature = "pcsaft")]
 use feos::pcsaft::{PcSaftBinary, PcSaftPure};
-use feos_core::{ParameterFit, ParametersAD};
+use feos_core::{ParametersAD, PropertiesAD};
 use numpy::{PyArray1, PyArray2, PyReadonlyArray2, ToPyArray};
 use paste::paste;
 use pyo3::prelude::*;
 
-#[pyclass(name = "Model", eq, eq_int)]
+#[pyclass(name = "ModelAD", eq, eq_int)]
 #[derive(Clone, Copy, PartialEq)]
-pub enum PyModel {
+pub enum PyModelAD {
     PcSaftNonAssoc,
     PcSaftFull,
 }
@@ -17,17 +16,17 @@ enum BinaryModels {
     PcSaftFull,
 }
 
-impl From<PyModel> for BinaryModels {
-    fn from(value: PyModel) -> Self {
+impl From<PyModelAD> for BinaryModels {
+    fn from(value: PyModelAD) -> Self {
         match value {
-            PyModel::PcSaftNonAssoc => Self::PcSaftNonAssoc,
-            PyModel::PcSaftFull => Self::PcSaftFull,
+            PyModelAD::PcSaftNonAssoc => Self::PcSaftNonAssoc,
+            PyModelAD::PcSaftFull => Self::PcSaftFull,
         }
     }
 }
 
-#[pyclass(name = "ParameterFit")]
-pub struct PyParameterFit;
+#[pyclass(name = "PropertiesAD")]
+pub struct PyPropertiesAD;
 
 type GradResult<'py> = (
     Bound<'py, PyArray1<f64>>,
@@ -38,10 +37,10 @@ type GradResult<'py> = (
 macro_rules! expand_models {
     ($enum:ty, $prop:ident, $($model:ident: $type:ty),*) => {
         #[pymethods]
-        impl PyParameterFit {
+        impl PyPropertiesAD {
             #[staticmethod]
             fn $prop<'py>(
-                model: PyModel,
+                model: PyModelAD,
                 parameter_names: Bound<'py, PyAny>,
                 parameters: PyReadonlyArray2<f64>,
                 input: PyReadonlyArray2<f64>,
@@ -59,7 +58,7 @@ macro_rules! expand_models {
 
 macro_rules! impl_evaluate_gradients {
     (pure, [$($prop:ident),*], $models:tt) => {
-        $(impl_evaluate_gradients!(1,PyModel,$prop,$models,0,1,2,3,4,5,max:6);)*
+        $(impl_evaluate_gradients!(1,PyModelAD,$prop,$models,0,1,2,3,4,5,max:6);)*
     };
     (binary, [$($prop:ident),*], $models:tt) => {
         $(impl_evaluate_gradients!(2,BinaryModels,$prop,$models,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,max:15);)*
@@ -79,9 +78,9 @@ macro_rules! impl_evaluate_gradients {
             let (value, grad, status) =
             $(
             if let Ok(p) = parameter_names.extract::<[String; $p]>() {
-                ParameterFit::[<$prop _parallel>]::<R, $p>(p, parameters.as_array(), input.as_array())
+                R::[<$prop _parallel>](p, parameters.as_array(), input.as_array())
             } else)* if let Ok(p) = parameter_names.extract::<[String; $max]>() {
-                ParameterFit::[<$prop _parallel>]::<R, $max>(p, parameters.as_array(), input.as_array())
+                R::[<$prop _parallel>](p, parameters.as_array(), input.as_array())
             } else {
                 panic!("Gradients can only be evaluated for up to {} parameters!", $max)
             };

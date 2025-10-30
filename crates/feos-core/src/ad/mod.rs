@@ -1,30 +1,48 @@
-use super::Gradient;
-#[cfg(feature = "rayon")]
-use super::ParametersAD;
+use crate::DensityInitialization::Liquid;
 use crate::density_iteration::density_iteration;
-use crate::{
-    DensityInitialization::Liquid, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual,
-};
-#[cfg(feature = "rayon")]
-use nalgebra::Const;
-use nalgebra::{SVector, U1, U2};
+use crate::{FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
+use nalgebra::{Const, SVector, U1, U2};
 #[cfg(feature = "rayon")]
 use ndarray::{Array1, Array2, ArrayView2, Zip};
-use num_dual::DualStruct;
+use num_dual::{Derivative, DualSVec, DualStruct};
 use quantity::{Density, Pressure, Temperature};
 #[cfg(feature = "rayon")]
 use quantity::{KELVIN, KILO, METER, MOL, PASCAL};
 
-/// A collection of functions that calculate fit properties and their derivatives
-/// with respect to model parameters.
-pub struct ParameterFit;
+type Gradient<const P: usize> = DualSVec<f64, f64, P>;
 
-impl ParameterFit {
-    pub fn vapor_pressure<E: Residual<U1, Gradient<P>>, const P: usize>(
-        eos: &E,
+/// A model that can be evaluated with derivatives of its parameters.
+pub trait ParametersAD<const N: usize>: for<'a> From<&'a [f64]> + Residual<Const<N>> {
+    /// Return a mutable reference to the parameter named by `index` from the parameter set.
+    fn index_parameters_mut<'a, const P: usize>(
+        eos: &'a mut Self::Lifted<Gradient<P>>,
+        index: &str,
+    ) -> &'a mut Gradient<P>;
+
+    /// Return the parameters with the appropriate derivatives.
+    fn named_derivatives<const P: usize>(
+        &self,
+        parameter_names: [&str; P],
+    ) -> Self::Lifted<Gradient<P>> {
+        let mut eos = self.lift::<Gradient<P>>();
+        for (i, p) in parameter_names.into_iter().enumerate() {
+            Self::index_parameters_mut(&mut eos, p).eps =
+                Derivative::derivative_generic(Const::<P>, U1, i)
+        }
+        eos
+    }
+}
+
+/// Properties that can be evaluated with derivatives of model parameters.
+pub trait PropertiesAD {
+    fn vapor_pressure<const P: usize>(
+        &self,
         temperature: Temperature,
-    ) -> FeosResult<Pressure<Gradient<P>>> {
-        let eos_f64 = eos.re();
+    ) -> FeosResult<Pressure<Gradient<P>>>
+    where
+        Self: Residual<U1, Gradient<P>>,
+    {
+        let eos_f64 = self.re();
         let (_, [vapor_density, liquid_density]) =
             PhaseEquilibrium::pure_t(&eos_f64, temperature, None, Default::default())?;
 
@@ -37,10 +55,10 @@ impl ParameterFit {
             let t = Gradient::from(t);
             let v1 = Gradient::from(v1);
             let v2 = Gradient::from(v2);
-            let x = SVector::from([Gradient::from(1.0)]);
+            let x = Self::pure_molefracs();
 
-            let a1 = eos.residual_molar_helmholtz_energy(t, v1, &x);
-            let a2 = eos.residual_molar_helmholtz_energy(t, v2, &x);
+            let a1 = self.residual_molar_helmholtz_energy(t, v1, &x);
+            let a2 = self.residual_molar_helmholtz_energy(t, v2, &x);
             (a1, a2)
         };
 
@@ -48,82 +66,101 @@ impl ParameterFit {
         Ok(Pressure::from_reduced(p))
     }
 
-    pub fn equilibrium_liquid_density<E: Residual<U1, Gradient<P>>, const P: usize>(
-        eos: &E,
+    fn equilibrium_liquid_density<const P: usize>(
+        &self,
         temperature: Temperature,
-    ) -> FeosResult<(Pressure<Gradient<P>>, Density<Gradient<P>>)> {
+    ) -> FeosResult<(Pressure<Gradient<P>>, Density<Gradient<P>>)>
+    where
+        Self: Residual<U1, Gradient<P>>,
+    {
         let t = Temperature::from_inner(&temperature);
-        PhaseEquilibrium::pure_t(eos, t, None, Default::default()).map(|(p, [_, rho])| (p, rho))
+        PhaseEquilibrium::pure_t(self, t, None, Default::default()).map(|(p, [_, rho])| (p, rho))
     }
 
-    pub fn liquid_density<E: Residual<U1, Gradient<P>>, const P: usize>(
-        eos: &E,
+    fn liquid_density<const P: usize>(
+        &self,
         temperature: Temperature,
         pressure: Pressure,
-    ) -> FeosResult<Density<Gradient<P>>> {
-        let x = E::pure_molefracs();
+    ) -> FeosResult<Density<Gradient<P>>>
+    where
+        Self: Residual<U1, Gradient<P>>,
+    {
+        let x = Self::pure_molefracs();
         let t = Temperature::from_inner(&temperature);
         let p = Pressure::from_inner(&pressure);
-        density_iteration(eos, t, p, &x, Some(Liquid))
+        density_iteration(self, t, p, &x, Some(Liquid))
     }
 
     #[cfg(feature = "rayon")]
-    pub fn vapor_pressure_parallel<E: ParametersAD<1>, const P: usize>(
+    fn vapor_pressure_parallel<const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
         input: ArrayView2<f64>,
-    ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
-        parallelize::<_, E, _, _>(
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+    where
+        Self: ParametersAD<1>,
+    {
+        parallelize::<_, Self, _, _>(
             parameter_names,
             parameters,
             input,
-            |eos: &E::Lifted<Gradient<P>>, inp| {
-                Self::vapor_pressure(eos, inp[0] * KELVIN).map(|p| p.convert_into(PASCAL))
+            |eos: &Self::Lifted<Gradient<P>>, inp| {
+                eos.vapor_pressure(inp[0] * KELVIN)
+                    .map(|p| p.convert_into(PASCAL))
             },
         )
     }
 
     #[cfg(feature = "rayon")]
-    pub fn liquid_density_parallel<E: ParametersAD<1>, const P: usize>(
+    fn liquid_density_parallel<const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
         input: ArrayView2<f64>,
-    ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
-        parallelize::<_, E, _, _>(
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+    where
+        Self: ParametersAD<1>,
+    {
+        parallelize::<_, Self, _, _>(
             parameter_names,
             parameters,
             input,
-            |eos: &E::Lifted<Gradient<P>>, inp| {
-                Self::liquid_density(eos, inp[0] * KELVIN, inp[1] * PASCAL)
+            |eos: &Self::Lifted<Gradient<P>>, inp| {
+                eos.liquid_density(inp[0] * KELVIN, inp[1] * PASCAL)
                     .map(|d| d.convert_into(KILO * MOL / (METER * METER * METER)))
             },
         )
     }
 
     #[cfg(feature = "rayon")]
-    pub fn equilibrium_liquid_density_parallel<E: ParametersAD<1>, const P: usize>(
+    fn equilibrium_liquid_density_parallel<const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
         input: ArrayView2<f64>,
-    ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
-        parallelize::<_, E, _, _>(
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+    where
+        Self: ParametersAD<1>,
+    {
+        parallelize::<_, Self, _, _>(
             parameter_names,
             parameters,
             input,
-            |eos: &E::Lifted<Gradient<P>>, inp| {
-                Self::equilibrium_liquid_density(eos, inp[0] * KELVIN)
+            |eos: &Self::Lifted<Gradient<P>>, inp| {
+                eos.equilibrium_liquid_density(inp[0] * KELVIN)
                     .map(|(_, d)| d.convert_into(KILO * MOL / (METER * METER * METER)))
             },
         )
     }
 
-    pub fn bubble_point_pressure<E: Residual<U2, Gradient<P>>, const P: usize>(
-        eos: &E,
+    fn bubble_point_pressure<const P: usize>(
+        &self,
         temperature: Temperature,
         pressure: Option<Pressure>,
         liquid_molefracs: SVector<f64, 2>,
-    ) -> FeosResult<Pressure<Gradient<P>>> {
-        let eos_f64 = eos.re();
+    ) -> FeosResult<Pressure<Gradient<P>>>
+    where
+        Self: Residual<U2, Gradient<P>>,
+    {
+        let eos_f64 = self.re();
         let vle = PhaseEquilibrium::bubble_point(
             &eos_f64,
             temperature,
@@ -147,8 +184,8 @@ impl ParameterFit {
             let y = y.map(Gradient::from);
             let x = liquid_molefracs.map(Gradient::from);
 
-            let a_v = eos.residual_molar_helmholtz_energy(t, v_v, &y);
-            let (p_l, mu_res_l, dp_l, dmu_l) = eos.dmu_dv(t, v_l, &x);
+            let a_v = self.residual_molar_helmholtz_energy(t, v_v, &y);
+            let (p_l, mu_res_l, dp_l, dmu_l) = self.dmu_dv(t, v_l, &x);
             let vi_l = dmu_l / dp_l;
             let v_l = vi_l.dot(&y);
             let a_l = (mu_res_l - vi_l * p_l).dot(&y);
@@ -164,13 +201,16 @@ impl ParameterFit {
         Ok(Pressure::from_reduced(p))
     }
 
-    pub fn dew_point_pressure<E: Residual<U2, Gradient<P>>, const P: usize>(
-        eos: &E,
+    fn dew_point_pressure<const P: usize>(
+        &self,
         temperature: Temperature,
         pressure: Option<Pressure>,
         vapor_molefracs: SVector<f64, 2>,
-    ) -> FeosResult<Pressure<Gradient<P>>> {
-        let eos_f64 = eos.re();
+    ) -> FeosResult<Pressure<Gradient<P>>>
+    where
+        Self: Residual<U2, Gradient<P>>,
+    {
+        let eos_f64 = self.re();
         let vle = PhaseEquilibrium::dew_point(
             &eos_f64,
             temperature,
@@ -194,8 +234,8 @@ impl ParameterFit {
             let x = x.map(Gradient::from);
             let y = vapor_molefracs.map(Gradient::from);
 
-            let a_l = eos.residual_molar_helmholtz_energy(t, v_l, &x);
-            let (p_v, mu_res_v, dp_v, dmu_v) = eos.dmu_dv(t, v_v, &y);
+            let a_l = self.residual_molar_helmholtz_energy(t, v_l, &x);
+            let (p_v, mu_res_v, dp_v, dmu_v) = self.dmu_dv(t, v_v, &y);
             let vi_v = dmu_v / dp_v;
             let v_v = vi_v.dot(&x);
             let a_v = (mu_res_v - vi_v * p_v).dot(&x);
@@ -212,18 +252,20 @@ impl ParameterFit {
     }
 
     #[cfg(feature = "rayon")]
-    pub fn bubble_point_pressure_parallel<E: ParametersAD<2>, const P: usize>(
+    fn bubble_point_pressure_parallel<const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
         input: ArrayView2<f64>,
-    ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
-        parallelize::<_, E, _, _>(
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+    where
+        Self: ParametersAD<2>,
+    {
+        parallelize::<_, Self, _, _>(
             parameter_names,
             parameters,
             input,
-            |eos: &E::Lifted<Gradient<P>>, inp| {
-                Self::bubble_point_pressure(
-                    eos,
+            |eos: &Self::Lifted<Gradient<P>>, inp| {
+                eos.bubble_point_pressure(
                     inp[0] * KELVIN,
                     Some(inp[2] * PASCAL),
                     SVector::from([inp[1], 1.0 - inp[1]]),
@@ -234,18 +276,20 @@ impl ParameterFit {
     }
 
     #[cfg(feature = "rayon")]
-    pub fn dew_point_pressure_parallel<E: ParametersAD<2>, const P: usize>(
+    fn dew_point_pressure_parallel<const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
         input: ArrayView2<f64>,
-    ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
-        parallelize::<_, E, _, _>(
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+    where
+        Self: ParametersAD<2>,
+    {
+        parallelize::<_, Self, _, _>(
             parameter_names,
             parameters,
             input,
-            |eos: &E::Lifted<Gradient<P>>, inp| {
-                Self::dew_point_pressure(
-                    eos,
+            |eos: &Self::Lifted<Gradient<P>>, inp| {
+                eos.dew_point_pressure(
                     inp[0] * KELVIN,
                     Some(inp[2] * PASCAL),
                     SVector::from([inp[1], 1.0 - inp[1]]),
@@ -255,6 +299,8 @@ impl ParameterFit {
         )
     }
 }
+
+impl<T> PropertiesAD for T {}
 
 #[cfg(feature = "rayon")]
 fn parallelize<F, E: ParametersAD<N>, const N: usize, const P: usize>(
@@ -272,7 +318,7 @@ where
         .par_map_collect(|par, inp| {
             let par = par.as_slice().expect("Parameter array is not contiguous!");
             let inp = inp.as_slice().expect("Input array is not contiguous!");
-            let eos = E::from_parameter_slice(par, parameter_names);
+            let eos = E::from(par).named_derivatives(parameter_names);
             f(&eos, inp)
         });
     let status = value_dual.iter().map(|p| p.is_ok()).collect();
