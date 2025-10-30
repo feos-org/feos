@@ -366,9 +366,12 @@ impl AssociationStrength for ElectrolytePcSaftPars {
         comp_j: usize,
         assoc_ij: &Self::Record,
     ) -> D {
-        let f_ab = (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1();
-        let k_ab = assoc_ij.kappa_ab * (self.sigma[comp_i] * self.sigma[comp_j]).powf(1.5);
-        f_ab * k_ab
+        let sigma_t = self.sigma_t(temperature);
+        let si = sigma_t[comp_i];
+        let sj = sigma_t[comp_j];
+        (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
+            * assoc_ij.kappa_ab
+            * (si * sj).powf(1.5)
     }
 }
 
