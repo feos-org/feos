@@ -11,6 +11,7 @@ use ndarray::{
 use num_dual::DualNum;
 use quantity::{_Volume, DEGREES, Density, Length, Moles, Quantity, Temperature, Volume};
 use std::ops::{Add, MulAssign};
+use std::sync::Arc;
 use typenum::Sum;
 
 mod properties;
@@ -97,13 +98,14 @@ impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTSpecification<D, F> for DFTS
     }
 }
 
+#[derive(Clone)]
 /// A one-, two-, or three-dimensional density profile.
 pub struct DFTProfile<D: Dimension, F> {
     pub grid: Grid,
-    pub convolver: Box<dyn Convolver<f64, D>>,
+    pub convolver: Arc<dyn Convolver<f64, D>>,
     pub temperature: Temperature,
     pub density: Density<Array<f64, D::Larger>>,
-    pub specification: Box<dyn DFTSpecification<D, F>>,
+    pub specification: Arc<dyn DFTSpecification<D, F>>,
     pub external_potential: Array<f64, D::Larger>,
     pub bulk: State<F>,
     pub solver_log: Option<DFTSolverLog>,
@@ -245,7 +247,7 @@ where
             convolver,
             temperature: bulk.temperature,
             density,
-            specification: Box::new(DFTSpecifications::ChemicalPotential),
+            specification: Arc::new(DFTSpecifications::ChemicalPotential),
             external_potential,
             bulk: bulk.clone(),
             solver_log: None,

@@ -72,14 +72,14 @@ impl PySurfaceTensionDiagram {
         )))
     }
 
-    // #[getter]
-    // fn get_profiles(&self) -> Vec<PyPlanarInterface> {
-    //     self.0
-    //         .profiles
-    //         .iter()
-    //         .map(|p| PyPlanarInterface(p.clone()))
-    //         .collect()
-    // }
+    #[getter]
+    fn get_profiles(&self) -> Vec<PyPlanarInterface> {
+        self.0
+            .profiles
+            .iter()
+            .map(|p| PyPlanarInterface(p.clone()))
+            .collect()
+    }
 
     #[getter]
     pub fn get_vapor(&self) -> PyStateVec {
