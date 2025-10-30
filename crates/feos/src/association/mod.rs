@@ -1,7 +1,7 @@
 //! Generic implementation of the SAFT association contribution
 //! that can be used across models.
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::parameter::AssociationParameters;
+use feos_core::parameter::{AssociationParameters, AssociationSite, BinaryParameters};
 use feos_core::{FeosError, FeosResult, StateHD};
 use nalgebra::{DMatrix, DVector};
 use num_dual::linalg::LU;
@@ -18,11 +18,11 @@ pub trait AssociationStrength: HardSphereProperties {
 
     fn association_strength<D: DualNum<f64> + Copy>(
         &self,
-        parameters: &AssociationParameters<Self::Record>,
         state: &StateHD<D>,
         diameter: &DVector<D>,
-        xi: D,
-    ) -> [DMatrix<D>; 2];
+        association_sites: (&[AssociationSite], &[AssociationSite]),
+        association_parameters: &[BinaryParameters<Self::Record, ()>],
+    ) -> DMatrix<D>;
 }
 
 /// Implementation of the SAFT association Helmholtz energy
@@ -60,8 +60,10 @@ impl Association {
         let a = parameters;
 
         // association strength
-        let [delta_ab, delta_cc] =
-            model.association_strength(parameters, state, diameter, D::one());
+        let delta_ab =
+            model.association_strength(state, diameter, (&a.sites_a, &a.sites_b), &a.binary_ab);
+        let delta_cc =
+            model.association_strength(state, diameter, (&a.sites_c, &a.sites_c), &a.binary_cc);
 
         match (
             a.sites_a.len() * a.sites_b.len(),

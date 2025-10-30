@@ -19,7 +19,8 @@ mod identifier;
 mod model_record;
 
 pub use association::{
-    AssociationParameters, AssociationRecord, BinaryAssociationRecord, CombiningRule,
+    AssociationParameters, AssociationRecord, AssociationSite, BinaryAssociationRecord,
+    CombiningRule,
 };
 pub use chemical_record::{ChemicalRecord, GroupCount};
 pub use identifier::{Identifier, IdentifierOption};
