@@ -11,6 +11,7 @@ use quantity::{
     Density, Energy, Entropy, EntropyDensity, MolarEnergy, Moles, Pressure, Quantity, Temperature,
 };
 use std::ops::{AddAssign, Div};
+use std::sync::Arc;
 
 type DrhoDmu<D: Dimension> =
     <Density<Array<f64, <D::Larger as Dimension>::Larger>> as Div<MolarEnergy>>::Output;
@@ -390,7 +391,7 @@ where
             .into_iter()
             .map(|c| c.weight_functions(t_dual))
             .collect();
-        let convolver: Box<dyn Convolver<_, D>> =
+        let convolver: Arc<dyn Convolver<_, D>> =
             ConvolverFFT::plan(&self.grid, &weight_functions, self.lanczos);
         let (_, mut dfdrho) =
             self.bulk

@@ -85,6 +85,7 @@ pub trait PoreSpecification<D: Dimension> {
 }
 
 /// Density profile and properties of a confined system in arbitrary dimensions.
+#[derive(Clone)]
 pub struct PoreProfile<D: Dimension, F> {
     pub profile: DFTProfile<D, F>,
     pub grand_potential: Option<Energy>,

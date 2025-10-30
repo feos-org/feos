@@ -7,6 +7,7 @@ use crate::solver::DFTSolver;
 use feos_core::{Contributions, FeosError, FeosResult, PhaseEquilibrium, ReferenceSystem};
 use ndarray::{Array1, Array2, Axis as Axis_nd, Ix1, s};
 use quantity::{Area, Density, Length, Moles, SurfaceTension, Temperature};
+use std::sync::Arc;
 
 mod surface_tension_diagram;
 pub use surface_tension_diagram::SurfaceTensionDiagram;
@@ -15,6 +16,7 @@ const RELATIVE_WIDTH: f64 = 6.0;
 const MIN_WIDTH: f64 = 100.0;
 
 /// Density profile and properties of a planar interface.
+#[derive(Clone)]
 pub struct PlanarInterface<F: HelmholtzEnergyFunctional> {
     pub profile: DFTProfile<Ix1, F>,
     pub vle: PhaseEquilibrium<F, 2>,
@@ -93,7 +95,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
 
         // specify specification
         if fix_equimolar_surface {
-            profile.profile.specification = Box::new(DFTSpecifications::total_moles_from_profile(
+            profile.profile.specification = Arc::new(DFTSpecifications::total_moles_from_profile(
                 &profile.profile,
             ));
         }
@@ -143,7 +145,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
 
         // specify specification
         if fix_equimolar_surface {
-            profile.profile.specification = Box::new(DFTSpecifications::total_moles_from_profile(
+            profile.profile.specification = Arc::new(DFTSpecifications::total_moles_from_profile(
                 &profile.profile,
             ));
         }
