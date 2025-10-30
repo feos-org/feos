@@ -1,5 +1,5 @@
 use super::polar::{pair_integral_ij, triplet_integral_ijk};
-use crate::association::AssociationFunctional;
+use crate::association::YuWuAssociationFunctional;
 use crate::hard_sphere::{FMTVersion, HardSphereProperties};
 use crate::pcsaft::eos::dispersion::{A0, A1, A2, B0, B1, B2};
 use crate::pcsaft::eos::polar::{AD, AQ, BD, BQ, CD, CQ, PI_SQ_43};
@@ -17,14 +17,14 @@ const N0_CUTOFF: f64 = 1e-9;
 
 pub(crate) struct PureFMTAssocFunctional<'a> {
     parameters: &'a PcSaftPars,
-    association: Option<AssociationFunctional<'a, PcSaftPars>>,
+    association: Option<YuWuAssociationFunctional<'a, PcSaftPars>>,
     version: FMTVersion,
 }
 
 impl<'a> PureFMTAssocFunctional<'a> {
     pub(crate) fn new(
         params: &'a PcSaftPars,
-        association: Option<AssociationFunctional<'a, PcSaftPars>>,
+        association: Option<YuWuAssociationFunctional<'a, PcSaftPars>>,
         version: FMTVersion,
     ) -> Self {
         Self {

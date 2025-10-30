@@ -1,5 +1,5 @@
 use crate::association::AssociationStrength;
-use crate::gc_pcsaft::record::{GcPcSaftAssociationRecord, GcPcSaftParameters, GcPcSaftRecord};
+use crate::gc_pcsaft::record::{GcPcSaftAssociationRecord, GcPcSaftParameters};
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use itertools::Itertools;
 use nalgebra::{DMatrix, DVector};
@@ -124,27 +124,25 @@ impl HardSphereProperties for GcPcSaftEosParameters {
 }
 
 impl AssociationStrength for GcPcSaftEosParameters {
-    type Pure = GcPcSaftRecord;
     type Record = GcPcSaftAssociationRecord;
 
-    fn association_strength<D: DualNum<f64> + Copy>(
+    fn association_strength_ij<D: DualNum<f64> + Copy>(
         &self,
         temperature: D,
         comp_i: usize,
         comp_j: usize,
         assoc_ij: &Self::Record,
     ) -> D {
-        let si = self.sigma[comp_i];
-        let sj = self.sigma[comp_j];
-        (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
-            * assoc_ij.kappa_ab
-            * (si * sj).powf(1.5)
+        let f_ab = (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1();
+        let k_ab = assoc_ij.kappa_ab * (self.sigma[comp_i] * self.sigma[comp_j]).powf(1.5);
+        f_ab * k_ab
     }
 }
 
 #[cfg(test)]
 pub mod test {
     use super::*;
+    use crate::gc_pcsaft::GcPcSaftRecord;
     use feos_core::parameter::{
         AssociationRecord, BinarySegmentRecord, ChemicalRecord, Identifier, SegmentRecord,
     };

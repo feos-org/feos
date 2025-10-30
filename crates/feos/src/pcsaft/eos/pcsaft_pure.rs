@@ -228,7 +228,8 @@ impl ParametersAD<1> for PcSaftPure<f64, 8> {
 
 #[cfg(test)]
 pub mod test {
-    use super::super::{PcSaft, PcSaftAssociationRecord, PcSaftParameters, PcSaftRecord};
+    use crate::pcsaft::PcSaftRecord;
+    use super::super::{PcSaft, PcSaftAssociationRecord, PcSaftParameters};
     use super::*;
     use approx::assert_relative_eq;
     use feos_core::parameter::{AssociationRecord, PureRecord};

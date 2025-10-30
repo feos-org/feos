@@ -357,10 +357,9 @@ impl HardSphereProperties for ElectrolytePcSaftPars {
 }
 
 impl AssociationStrength for ElectrolytePcSaftPars {
-    type Pure = ElectrolytePcSaftRecord;
     type Record = ElectrolytePcSaftAssociationRecord;
 
-    fn association_strength<D: DualNum<f64> + Copy>(
+    fn association_strength_ij<D: DualNum<f64> + Copy>(
         &self,
         temperature: D,
         comp_i: usize,

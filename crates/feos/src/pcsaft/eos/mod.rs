@@ -1,4 +1,4 @@
-use super::parameters::{PcSaftAssociationRecord, PcSaftParameters, PcSaftPars, PcSaftRecord};
+use super::parameters::{PcSaftAssociationRecord, PcSaftParameters, PcSaftPars};
 use crate::association::{Association, AssociationStrength};
 use crate::hard_sphere::{HardSphere, HardSphereProperties, MonomerShape};
 use feos_core::{
@@ -181,21 +181,19 @@ impl HardSphereProperties for PcSaftPars {
 }
 
 impl AssociationStrength for PcSaftPars {
-    type Pure = PcSaftRecord;
     type Record = PcSaftAssociationRecord;
 
-    fn association_strength<D: DualNum<f64> + Copy>(
+    fn association_strength_ij<D: DualNum<f64> + Copy>(
         &self,
         temperature: D,
         comp_i: usize,
         comp_j: usize,
-        assoc_ij: &Self::Record,
+        association_parameters_ij: &Self::Record,
     ) -> D {
-        let si = self.sigma[comp_i];
-        let sj = self.sigma[comp_j];
-        (temperature.recip() * assoc_ij.epsilon_k_ab).exp_m1()
-            * assoc_ij.kappa_ab
-            * (si * sj).powf(1.5)
+        let f_ab = (temperature.recip() * association_parameters_ij.epsilon_k_ab).exp_m1();
+        let k_ab = association_parameters_ij.kappa_ab
+            * (self.sigma[comp_i] * self.sigma[comp_j]).powf(1.5);
+        f_ab * k_ab
     }
 }
 

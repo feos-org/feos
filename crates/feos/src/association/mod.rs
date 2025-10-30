@@ -1,33 +1,72 @@
 //! Generic implementation of the SAFT association contribution
 //! that can be used across models.
 use crate::hard_sphere::HardSphereProperties;
-use feos_core::parameter::AssociationParameters;
+use feos_core::parameter::{AssociationParameters, AssociationSite, BinaryParameters};
 use feos_core::{FeosError, FeosResult, StateHD};
 use nalgebra::{DMatrix, DVector};
 use num_dual::linalg::LU;
 use num_dual::*;
-use std::fmt::Debug;
 
 #[cfg(feature = "dft")]
 mod dft;
 #[cfg(feature = "dft")]
-pub use dft::AssociationFunctional;
+pub use dft::YuWuAssociationFunctional;
 
-/// Implementation of the association strength in the SAFT association model.
+/// Calculation of association strength between association sites.
+///
+/// The default implementation for the association strength matrix
+/// [AssociationStrength::association_strength] multiplies the model-specific
+/// site-site association strength [AssociationStrength::association_strength_ij]
+/// with the contact value of the hard-sphere pair correlation function.
+/// 
+/// For implementations that require a different form,
+/// [AssociationStrength::association_strength] can be overwritten.
 pub trait AssociationStrength: HardSphereProperties {
-    type Pure;
-    type Record: Clone + Debug + PartialEq + 'static;
+    type Record;
 
-    fn association_strength<D: DualNum<f64> + Copy>(
+    /// Association strength excluding the contact value of the pair correlation function.
+    fn association_strength_ij<D: DualNum<f64> + Copy>(
         &self,
         temperature: D,
         comp_i: usize,
         comp_j: usize,
         assoc_ij: &Self::Record,
     ) -> D;
+
+    /// Association strength matrix for all association sites.
+    fn association_strength<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        diameter: &DVector<D>,
+        (sites1, sites2): (&[AssociationSite], &[AssociationSite]),
+        association_parameters: &[BinaryParameters<Self::Record, ()>],
+    ) -> DMatrix<D> {
+        let mut delta = DMatrix::zeros(sites1.len(), sites2.len());
+        if sites1.len() * sites2.len() == 0 {
+            return delta;
+        }
+
+        let [zeta2, n3] = self.zeta(state.temperature, &state.partial_density, [2, 3]);
+        let n2 = zeta2 * 6.0;
+        let n3i = (-n3 + 1.0).recip();
+
+        for b in association_parameters {
+            let [i, j] = [b.id1, b.id2];
+            let [comp_i, comp_j] = [sites1[i].assoc_comp, sites2[j].assoc_comp];
+            // g_HS(d)
+            let di = diameter[comp_i];
+            let dj = diameter[comp_j];
+            let k = di * dj / (di + dj) * (n2 * n3i);
+            let g_contact = n3i * (k * (k / 18.0 + 0.5) + 1.0);
+
+            delta[(i, j)] = g_contact
+                * self.association_strength_ij(state.temperature, comp_i, comp_j, &b.model_record);
+        }
+        delta
+    }
 }
 
-/// Implementation of the SAFT association Helmholtz energy
+/// Implementation of the association Helmholtz energy
 /// contribution and functional.
 #[derive(Clone, Copy)]
 pub struct Association {
@@ -61,21 +100,11 @@ impl Association {
     ) -> D {
         let a = parameters;
 
-        // auxiliary variables
-        let [zeta2, n3] = model.zeta(state.temperature, &state.partial_density, [2, 3]);
-        let n2 = zeta2 * 6.0;
-        let n3i = (-n3 + 1.0).recip();
-
         // association strength
-        let [delta_ab, delta_cc] = self.association_strength(
-            parameters,
-            model,
-            state.temperature,
-            diameter,
-            n2,
-            n3i,
-            D::one(),
-        );
+        let delta_ab =
+            model.association_strength(state, diameter, (&a.sites_a, &a.sites_b), &a.binary_ab);
+        let delta_cc =
+            model.association_strength(state, diameter, (&a.sites_c, &a.sites_c), &a.binary_cc);
 
         match (
             a.sites_a.len() * a.sites_b.len(),
@@ -105,52 +134,6 @@ impl Association {
                     .unwrap_or_else(|_| D::from(f64::NAN))
             }
         }
-    }
-
-    #[expect(clippy::too_many_arguments)]
-    fn association_strength<A: AssociationStrength, D: DualNum<f64> + Copy>(
-        &self,
-        parameters: &AssociationParameters<A::Record>,
-        model: &A,
-        temperature: D,
-        diameter: &DVector<D>,
-        n2: D,
-        n3i: D,
-        xi: D,
-    ) -> [DMatrix<D>; 2] {
-        let p = parameters;
-
-        let mut delta_ab = DMatrix::zeros(p.sites_a.len(), p.sites_b.len());
-        for b in &p.binary_ab {
-            let [i, j] = [b.id1, b.id2];
-            let di = diameter[p.sites_a[i].assoc_comp];
-            let dj = diameter[p.sites_b[j].assoc_comp];
-            let k = di * dj / (di + dj) * (n2 * n3i);
-            delta_ab[(i, j)] = n3i
-                * (k * xi * (k / 18.0 + 0.5) + 1.0)
-                * model.association_strength(
-                    temperature,
-                    p.sites_a[i].assoc_comp,
-                    p.sites_b[j].assoc_comp,
-                    &b.model_record,
-                )
-        }
-        let mut delta_cc = DMatrix::zeros(p.sites_c.len(), p.sites_c.len());
-        for b in &p.binary_cc {
-            let [i, j] = [b.id1, b.id2];
-            let di = diameter[p.sites_c[i].assoc_comp];
-            let dj = diameter[p.sites_c[j].assoc_comp];
-            let k = di * dj / (di + dj) * (n2 * n3i);
-            delta_cc[(i, j)] = n3i
-                * (k * xi * (k / 18.0 + 0.5) + 1.0)
-                * model.association_strength(
-                    temperature,
-                    p.sites_c[i].assoc_comp,
-                    p.sites_c[j].assoc_comp,
-                    &b.model_record,
-                )
-        }
-        [delta_ab, delta_cc]
     }
 
     fn helmholtz_energy_density_ab_analytic<A, D: DualNum<f64> + Copy>(

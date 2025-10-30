@@ -1,6 +1,4 @@
-use super::parameters::{
-    SaftVRMieAssociationRecord, SaftVRMieParameters, SaftVRMiePars, SaftVRMieRecord,
-};
+use super::parameters::{SaftVRMieAssociationRecord, SaftVRMieParameters, SaftVRMiePars};
 use crate::association::{Association, AssociationStrength};
 use crate::hard_sphere::{HardSphere, HardSphereProperties};
 use feos_core::{Molarweight, ResidualDyn, StateHD, Subset};
@@ -120,10 +118,9 @@ impl Molarweight for SaftVRMie {
 }
 
 impl AssociationStrength for SaftVRMiePars {
-    type Pure = SaftVRMieRecord;
     type Record = SaftVRMieAssociationRecord;
 
-    fn association_strength<D: DualNum<f64> + Copy>(
+    fn association_strength_ij<D: DualNum<f64> + Copy>(
         &self,
         temperature: D,
         comp_i: usize,

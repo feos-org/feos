@@ -9,14 +9,73 @@ use std::ops::MulAssign;
 
 pub const N0_CUTOFF: f64 = 1e-9;
 
-/// Implementation of the SAFT association Helmholtz energy functional.
-pub struct AssociationFunctional<'a, A: AssociationStrength> {
+impl Association {
+    /// Association strength for functional of Yu and Wu with xi parameter for inhomogeneity.
+    ///
+    /// Uses the contact value of hard-sphere pair correlation function and model-specific
+    /// implementations for the bonding volume.
+    #[expect(clippy::too_many_arguments)]
+    fn yu_wu_association_strength<A: AssociationStrength, D: DualNum<f64> + Copy>(
+        &self,
+        parameters: &AssociationParameters<A::Record>,
+        model: &A,
+        temperature: D,
+        diameter: &DVector<D>,
+        n2: D,
+        n3i: D,
+        xi: D,
+    ) -> [DMatrix<D>; 2] {
+        let p = parameters;
+
+        let mut delta_ab = DMatrix::zeros(p.sites_a.len(), p.sites_b.len());
+        for b in &p.binary_ab {
+            let [i, j] = [b.id1, b.id2];
+            let di = diameter[p.sites_a[i].assoc_comp];
+            let dj = diameter[p.sites_b[j].assoc_comp];
+            let k = di * dj / (di + dj) * (n2 * n3i);
+            delta_ab[(i, j)] = n3i
+                * (k * xi * (k / 18.0 + 0.5) + 1.0)
+                * model.association_strength_ij(
+                    temperature,
+                    p.sites_a[i].assoc_comp,
+                    p.sites_b[j].assoc_comp,
+                    &b.model_record,
+                )
+        }
+        let mut delta_cc = DMatrix::zeros(p.sites_c.len(), p.sites_c.len());
+        for b in &p.binary_cc {
+            let [i, j] = [b.id1, b.id2];
+            let di = diameter[p.sites_c[i].assoc_comp];
+            let dj = diameter[p.sites_c[j].assoc_comp];
+            let k = di * dj / (di + dj) * (n2 * n3i);
+            delta_cc[(i, j)] = n3i
+                * (k * xi * (k / 18.0 + 0.5) + 1.0)
+                * model.association_strength_ij(
+                    temperature,
+                    p.sites_c[i].assoc_comp,
+                    p.sites_c[j].assoc_comp,
+                    &b.model_record,
+                )
+        }
+        [delta_ab, delta_cc]
+    }
+}
+
+/// Implementation of the association Helmholtz energy functional of Yu and Wu.
+///
+/// [Yang-Xin Yu and Jianzhong Wu (2002)](https://aip.scitation.org/doi/abs/10.1063/1.1463435)
+///
+/// # Note
+///  
+/// Uses the contact value of the hard-sphere pair correlation function and model-specific
+/// implementations for the bonding volume.
+pub struct YuWuAssociationFunctional<'a, A: AssociationStrength> {
     model: &'a A,
     association_parameters: &'a AssociationParameters<A::Record>,
     association: Association,
 }
 
-impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
+impl<'a, A: AssociationStrength> YuWuAssociationFunctional<'a, A> {
     pub fn new<P, B, Bo, C, Data>(
         model: &'a A,
         parameters: &'a GenericParameters<P, B, A::Record, Bo, C, Data>,
@@ -31,7 +90,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
 }
 
 impl<'a, A: AssociationStrength + Sync + Send> FunctionalContribution
-    for AssociationFunctional<'a, A>
+    for YuWuAssociationFunctional<'a, A>
 where
     A::Record: Sync + Send,
 {
@@ -131,7 +190,7 @@ where
     }
 }
 
-impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
+impl<'a, A: AssociationStrength> YuWuAssociationFunctional<'a, A> {
     pub fn _helmholtz_energy_density<N: DualNum<f64> + Copy, S: Data<Elem = N>>(
         &self,
         temperature: N,
@@ -186,7 +245,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
                     .zip(n3i.iter())
                     .zip(xi.iter())
                     .map(|(((rho, &n2), &n3i), &xi)| {
-                        let [delta_ab, delta_cc] = self.association.association_strength(
+                        let [delta_ab, delta_cc] = self.association.yu_wu_association_strength(
                             self.association_parameters,
                             self.model,
                             t,
@@ -235,7 +294,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         let dj = diameter[j];
         let k = n2 * n3i * (di * dj / (di + dj));
         let delta = (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i)
-            * self.model.association_strength(temperature, 0, 0, par);
+            * self.model.association_strength_ij(temperature, 0, 0, par);
 
         // no cross association, two association sites
         let aux = &delta * (&rhob - &rhoa) + 1.0;
@@ -271,7 +330,7 @@ impl<'a, A: AssociationStrength> AssociationFunctional<'a, A> {
         let di = diameter[i];
         let k = n2 * n3i * (di * 0.5);
         let delta = (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i)
-            * self.model.association_strength(temperature, 0, 0, par);
+            * self.model.association_strength_ij(temperature, 0, 0, par);
 
         // no cross association, two association sites
         let xc = ((delta * 4.0 * &rhoc + 1.0).map(N::sqrt) + 1.0).map(N::recip) * 2.0;
