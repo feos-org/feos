@@ -33,13 +33,17 @@ Currently the following phase equilibrium properties are available in the AD int
 
 ## Examples
 The following example calculates pure-component vapor pressures including their derivatives with respect to the core PC-SAFT parameters for 10 Million temperatures in little more than two seconds.
+
 ```python
 import feos
 import numpy as np
-n = 10000000
+
+n = 10_000_000
 fit_params = ["m", "sigma", "epsilon_k"]
-parameters = np.array([[1.5,3.4,230.,2.3]]*n)
-temperature = np.expand_dims(np.linspace(250., 400.0, n),1)
+
+# order: m, sigma, epsilon_k, mu
+parameters = np.array([[1.5, 3.4, 230.0, 2.3]] * n)
+temperature = np.expand_dims(np.linspace(250.0, 400.0, n), 1)
 eos = feos.EquationOfStateAD.PcSaftNonAssoc
 %time feos.vapor_pressure_derivatives(eos, fit_params, parameters, temperature)
 ```
@@ -52,13 +56,21 @@ For the most complex case, a binary mixture of cross-associating mixtures, the f
 ```python
 import feos
 import numpy as np
-n = 100000
+
+n = 100_000
 fit_params = ["k_ij"]
-parameters = np.array([[1.5,3.4,230.,2.3,0.01,1200.,1.0,2.0,2.3,3.5,245.,1.4,0.005,500.,1.0,1.0,0.01]]*n)
-temperature = np.linspace(200., 388.0, n)
-molefracs = np.array([.5]*n)
-pressure = np.array([1e5]*n)
-input = np.stack((temperature, molefracs, pressure),axis=1)
+parameters = np.array([[
+    # Substance 1: m, sigma, epsilon_k, mu, kappa_ab, epsilon_k_ab, na, nb
+    1.5, 3.4, 230.0, 2.3, 0.01, 1200.0, 1.0, 2.0, 
+    # Substance 2: m, sigma, epsilon_k, mu, kappa_ab, epsilon_k_ab, na, nb
+    2.3, 3.5, 245.0, 1.4, 0.005, 500.0, 1.0, 1.0,
+    # k_ij
+    0.01,
+]] * n)
+temperature = np.linspace(200.0, 388.0, n)
+molefracs = np.array([0.5] * n)
+pressure = np.array([1e5] * n)
+input = np.stack((temperature, molefracs, pressure), axis=1)
 eos = feos.EquationOfStateAD.PcSaftFull
 %time feos.bubble_point_pressure_derivatives(eos, fit_params, parameters, input)
 ```
