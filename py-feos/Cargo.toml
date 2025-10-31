@@ -39,7 +39,7 @@ feos-derive = { workspace = true }
 feos-dft = { workspace = true, optional = true }
 
 [features]
-default = ["ad"]
+default = []
 dft = ["feos/dft", "feos-dft", "petgraph", "rayon"]
 pcsaft = ["feos/pcsaft"]
 epcsaft = ["feos/epcsaft"]
