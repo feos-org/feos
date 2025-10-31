@@ -1,15 +1,15 @@
 name: Deploy Documentation
 
 on:
-  push:
-    branches: [main]
+  pull_request:
+    types: [ closed ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build-documentation:
-    if: contains(github.event.pull_request.labels.*.name, 'build_documentation')
+    if: contains(github.event.pull_request.labels.*.name, 'build_documentation') && github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
