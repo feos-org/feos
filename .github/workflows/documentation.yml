@@ -9,7 +9,7 @@ env:
 
 jobs:
   build-documentation:
-    if: ${{ github.event.label.name == 'build_documentation' }}
+    if: contains(github.event.pull_request.labels.*.name, 'build_documentation')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
