@@ -53,7 +53,7 @@ impl From<PyVerbosity> for Verbosity {
 
 #[pymodule]
 fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add("version", env!("CARGO_PKG_VERSION"))?;
+    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
 
     // Utility
     m.add_class::<PyVerbosity>()?;
@@ -90,16 +90,19 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // AD
     #[cfg(feature = "ad")]
     {
-        m.add_class::<ad::PyParameterFit>()?;
-        m.add_class::<ad::PyModel>()?;
+        m.add_function(wrap_pyfunction!(ad::vapor_pressure_derivatives, m)?)?;
+        m.add_function(wrap_pyfunction!(ad::liquid_density_derivatives, m)?)?;
+        m.add_function(wrap_pyfunction!(
+            ad::equilibrium_liquid_density_derivatives,
+            m
+        )?)?;
+        m.add_function(wrap_pyfunction!(ad::bubble_point_pressure_derivatives, m)?)?;
+        m.add_function(wrap_pyfunction!(ad::dew_point_pressure_derivatives, m)?)?;
+        m.add_class::<ad::PyEquationOfStateAD>()?;
     }
-
-    #[cfg(not(feature = "dft"))]
-    m.add("__dft__", false)?;
 
     #[cfg(feature = "dft")]
     {
-        m.add("__dft__", true)?;
         m.add_class::<dft::PyHelmholtzEnergyFunctional>()?;
         m.add_class::<dft::PyFMTVersion>()?;
         m.add_class::<dft::PyGeometry>()?;

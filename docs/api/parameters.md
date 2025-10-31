@@ -1,5 +1,4 @@
-# `feos.parameters`
-All functionality regarding parameter handling is contained in the `feos.parameters` module.
+# Parameter handling
 
 In FeOs parameters can be read from JSON files or created manually by combining pure-component parameters and binary interaction parameters.
 
@@ -8,7 +7,7 @@ In FeOs parameters can be read from JSON files or created manually by combining 
 The core data types for parameter handling in FeOs are `Parameters` for regular component-specific parameters and `GcParameters` for group-contribution models.
 
 ```{eval-rst}
-.. currentmodule:: feos.parameters
+.. currentmodule:: feos
 
 .. autosummary::
     :toctree: generated/
@@ -19,7 +18,6 @@ The core data types for parameter handling in FeOs are `Parameters` for regular 
 
 ### Methods to build `Parameters`
 ```{eval-rst}
-.. currentmodule:: feos.parameters
 
 .. autosummary::
     Parameters.from_records
@@ -31,7 +29,6 @@ The core data types for parameter handling in FeOs are `Parameters` for regular 
 
 ### Methods to build `GcParameters`
 ```{eval-rst}
-.. currentmodule:: feos.parameters
 
 .. autosummary::
     GcParameters.from_segments
@@ -43,7 +40,6 @@ The core data types for parameter handling in FeOs are `Parameters` for regular 
 ## Other data types
 
 ```{eval-rst}
-.. currentmodule:: feos.parameters
 
 .. autosummary::
     :toctree: generated/

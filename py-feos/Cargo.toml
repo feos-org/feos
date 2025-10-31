@@ -50,7 +50,7 @@ saftvrqmie = ["feos/saftvrqmie"]
 saftvrmie = ["feos/saftvrmie"]
 multiparameter = ["feos/multiparameter"]
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
-ad = ["feos-core/rayon"]
+ad = ["feos-core/rayon", "feos/pcsaft"]
 all_models = [
     "dft",
     "pcsaft",
@@ -60,5 +60,6 @@ all_models = [
     "pets",
     "saftvrqmie",
     "saftvrmie",
-    "multiparameter"
+    "multiparameter",
+    "ad"
 ]

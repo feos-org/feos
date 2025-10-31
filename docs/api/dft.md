@@ -1,12 +1,21 @@
 
-# `feos.dft`
+# Classical density functional theory
 
-## `HelmholtzEnergyFunctional`
+## The `HelmholtzEnergyFunctional` class
 
 Implementations of Helmholtz energy functionals for DFT.
 
 ```{eval-rst}
-.. currentmodule:: feos.dft
+.. currentmodule:: feos
+
+.. autosummary::
+    :toctree: generated/
+
+    HelmholtzEnergyFunctional
+```
+
+```{eval-rst}
+.. currentmodule:: feos
 
 .. autosummary::
     HelmholtzEnergyFunctional.pcsaft
@@ -14,18 +23,6 @@ Implementations of Helmholtz energy functionals for DFT.
     HelmholtzEnergyFunctional.pets
     HelmholtzEnergyFunctional.saftvrqmie
     HelmholtzEnergyFunctional.fmt
-```
-
-## Other data types
-
-```{eval-rst}
-.. currentmodule:: feos.dft
-
-.. autosummary::
-    :toctree: generated/
-
-    FMTVersion
-    DFTSolver
 ```
 
 ## Vapor-liquid interfaces
@@ -61,4 +58,14 @@ Implementations of Helmholtz energy functionals for DFT.
 
     PairCorrelation
     SolvationProfile
+```
+
+## Other data types
+
+```{eval-rst}
+.. autosummary::
+    :toctree: generated/
+
+    FMTVersion
+    DFTSolver
 ```

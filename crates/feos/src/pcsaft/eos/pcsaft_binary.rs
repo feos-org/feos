@@ -2,7 +2,7 @@ use super::dispersion::{A0, A1, A2, B0, B1, B2};
 use super::polar::{AD, BD, CD};
 use feos_core::{ParametersAD, Residual, StateHD};
 use nalgebra::{SVector, U2};
-use num_dual::{DualNum, DualSVec, DualSVec64, DualVec, jacobian};
+use num_dual::{DualNum, DualSVec64, DualVec, jacobian};
 use std::f64::consts::{FRAC_PI_6, PI};
 
 const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
@@ -41,7 +41,7 @@ impl ParametersAD<2> for PcSaftBinary<f64, 4> {
     fn index_parameters_mut<'a, const P: usize>(
         eos: &'a mut Self::Lifted<DualSVec64<P>>,
         index: &str,
-    ) -> &'a mut DualSVec<f64, f64, P> {
+    ) -> &'a mut DualSVec64<P> {
         match index {
             "k_ij" => &mut eos.0.1,
             _ => panic!("{index} is not a valid binary PC-SAFT parameter!"),
@@ -53,7 +53,7 @@ impl ParametersAD<2> for PcSaftBinary<f64, 8> {
     fn index_parameters_mut<'a, const P: usize>(
         eos: &'a mut Self::Lifted<DualSVec64<P>>,
         index: &str,
-    ) -> &'a mut DualSVec<f64, f64, P> {
+    ) -> &'a mut DualSVec64<P> {
         match index {
             "k_ij" => &mut eos.0.1,
             _ => panic!("{index} is not a valid binary PC-SAFT parameter!"),
