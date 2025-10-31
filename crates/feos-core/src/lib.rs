@@ -45,20 +45,15 @@ pub use phase_equilibria::{PhaseEquilibrium, TemperatureOrPressure};
 pub use state::{Contributions, DensityInitialization, State, StateBuilder, StateHD, StateVec};
 
 /// Level of detail in the iteration output.
-#[derive(Copy, Clone, PartialOrd, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialOrd, PartialEq, Eq, Default)]
 pub enum Verbosity {
     /// Do not print output.
+    #[default]
     None,
     /// Print information about the success of failure of the iteration.
     Result,
     /// Print a detailed outpur for every iteration.
     Iter,
-}
-
-impl Default for Verbosity {
-    fn default() -> Self {
-        Self::None
-    }
 }
 
 /// Options for the various phase equilibria solvers.

@@ -9,6 +9,6 @@
 
 ## What it does
 
-The `feos-derive` crate contains two macros that provide boilerplate for the implementation of the `EquationOfState` and the `HelmholtzEnergyFunctional` trait for the `EosVariant` and `FunctionalVariant` enums of the `feos` crate. With these macros, new equations of state and functionals can be added to the variants without any further implementations needed.
+The `feos-derive` crate contains macros that provide boilerplate for the implementation of several traits from `feos-core` and `feos-dft` for the FFI conform enums in `feos`. With these macros, new equations of state and functionals can be added straightforwardly to the Python interface or other FFIs.
 
 

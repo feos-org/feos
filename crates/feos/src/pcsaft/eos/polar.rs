@@ -91,7 +91,6 @@ pub enum Multipole {
 }
 
 impl MeanSegmentNumbers {
-    #[expect(clippy::needless_range_loop)]
     pub fn new(parameters: &PcSaftPars, polarity: Multipole) -> Self {
         let (npoles, comp) = match polarity {
             Multipole::Dipole => (parameters.ndipole, &parameters.dipole_comp),

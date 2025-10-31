@@ -4,18 +4,29 @@
 [![documentation](https://docs.rs/feos/badge.svg)](https://docs.rs/feos)
 [![documentation](https://img.shields.io/badge/docs-github--pages-blue)](https://feos-org.github.io/feos/)
 [![repository](https://img.shields.io/pypi/v/feos)](https://pypi.org/project/feos/)
+[![FeOs Publication](https://img.shields.io/badge/DOI-10.1021/acs.iecr.2c04561-passing)](https://pubs.acs.org/doi/10.1021/acs.iecr.2c04561)
 
 The `FeOs` package provides Rust implementations of different equation of state and Helmholtz energy functional models and corresponding Python bindings.
 
 ```python
-from feos.eos import EquationOfState, State
-from feos.pcsaft import PcSaftParameters, PcSaftRecord
+from feos import EquationOfState, State
+from feos.parameters import PureRecord, Identifier, Parameters
 
 # PC-SAFT parameters for methanol (Gross and Sadowski 2002)
-record = PcSaftRecord(1.5255, 3.23, 188.9, kappa_ab=0.035176, epsilon_k_ab=2899.5, na=1, nb=1)
+record = PureRecord(
+    Identifier(name="methanol"),
+    molarweight=32.04,
+    m=1.5255,
+    sigma=3.23,
+    epsilon_k=188.9,
+    kappa_ab=0.035176,
+    epsilon_k_ab=2899.5,
+    na=1,
+    nb=1,
+)
 
 # Build an equation of state
-parameters = PcSaftParameters.from_model_records([record])
+parameters = Parameters.new_pure(record)
 eos = EquationOfState.pcsaft(parameters)
 
 # Define thermodynamic conditions
@@ -24,7 +35,7 @@ critical_point = State.critical_point(eos)
 # Compute properties
 p = critical_point.pressure()
 t = critical_point.temperature
-print(f'Critical point for methanol: T={t}, p={p}.')
+print(f"Critical point for methanol: T={t}, p={p}.")
 ```
 ```terminal
 Critical point for methanol: T=531.5 K, p=10.7 MPa.
@@ -107,7 +118,7 @@ See the *Building from source* section for information about building the wheel 
 
 ### Building from source
 
-To compile the code you need the Rust compiler and `maturin` (>=0.13,<0.14) installed.
+To compile the code you need the Rust compiler and `maturin` installed.
 To install the package directly into the active environment (virtualenv or conda), use
 
 ```
