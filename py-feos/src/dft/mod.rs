@@ -83,6 +83,7 @@ impl From<PyFMTVersion> for FMTVersion {
     }
 }
 
+/// Collection of Helmholtz energy functionals.
 #[pyclass(name = "HelmholtzEnergyFunctional")]
 #[derive(Clone)]
 pub struct PyHelmholtzEnergyFunctional;
