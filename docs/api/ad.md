@@ -48,8 +48,8 @@ eos = feos.EquationOfStateAD.PcSaftNonAssoc
 %time feos.vapor_pressure_derivatives(eos, fit_params, parameters, temperature)
 ```
 ```
-CPU times: user 1min 36s, sys: 850 ms, total: 1min 37s
-Wall time: 2.29 s
+CPU times: user 1min 39s, sys: 654 ms, total: 1min 40s
+Wall time: 2.3 s
 ```
 
 For the most complex case, a binary mixture of cross-associating mixtures, the following example calculates 100.000 bubble point pressures and their derivative with respect to the binary interaction parameter in 3 seconds.
@@ -75,6 +75,6 @@ eos = feos.EquationOfStateAD.PcSaftFull
 %time feos.bubble_point_pressure_derivatives(eos, fit_params, parameters, input)
 ```
 ```
-CPU times: user 3min 10s, sys: 16.3 ms, total: 3min 10s
-Wall time: 3.06 s
+CPU times: user 3min 11s, sys: 15.9 ms, total: 3min 11s
+Wall time: 3.17 s
 ```
