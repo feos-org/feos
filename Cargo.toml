@@ -44,10 +44,10 @@ approx = "0.5"
 criterion = "0.7"
 paste = "1.0"
 
-feos-core = { version = "0.8", path = "crates/feos-core" }
-feos-dft = { version = "0.8", path = "crates/feos-dft" }
-feos-derive = { version = "0.6", path = "crates/feos-derive" }
-feos = { version = "0.8", path = "crates/feos" }
+feos-core = { version = "0.9", path = "crates/feos-core" }
+feos-dft = { version = "0.9", path = "crates/feos-dft" }
+feos-derive = { version = "0.9", path = "crates/feos-derive" }
+feos = { version = "0.9", path = "crates/feos" }
 
 [profile.release-lto]
 inherits = "release"
