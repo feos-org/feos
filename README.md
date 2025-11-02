@@ -1,20 +1,19 @@
 # FeOs - A Framework for Equations of State and Classical Density Functional Theory
 
-[![crate](https://img.shields.io/crates/v/feos.svg)](https://crates.io/crates/feos)
-[![documentation](https://docs.rs/feos/badge.svg)](https://docs.rs/feos)
-[![documentation](https://img.shields.io/badge/docs-github--pages-blue)](https://feos-org.github.io/feos/)
-[![repository](https://img.shields.io/pypi/v/feos)](https://pypi.org/project/feos/)
+[![crate](https://img.shields.io/crates/v/feos?logo=rust)](https://crates.io/crates/feos)
+[![documentation](https://img.shields.io/docsrs/feos?logo=rust)](https://docs.rs/feos)
+[![repository](https://img.shields.io/pypi/v/feos?logo=python)](https://pypi.org/project/feos/)
+[![documentation](https://img.shields.io/badge/docs-github--pages-blue?logo=python)](https://feos-org.github.io/feos/)
 [![FeOs Publication](https://img.shields.io/badge/DOI-10.1021/acs.iecr.2c04561-passing)](https://pubs.acs.org/doi/10.1021/acs.iecr.2c04561)
 
 The `FeOs` package provides Rust implementations of different equation of state and Helmholtz energy functional models and corresponding Python bindings.
 
 ```python
-from feos import EquationOfState, State
-from feos.parameters import PureRecord, Identifier, Parameters
+import feos
 
 # PC-SAFT parameters for methanol (Gross and Sadowski 2002)
-record = PureRecord(
-    Identifier(name="methanol"),
+record = feos.PureRecord(
+    feos.Identifier(name="methanol"),
     molarweight=32.04,
     m=1.5255,
     sigma=3.23,
@@ -26,11 +25,11 @@ record = PureRecord(
 )
 
 # Build an equation of state
-parameters = Parameters.new_pure(record)
-eos = EquationOfState.pcsaft(parameters)
+parameters = feos.Parameters.new_pure(record)
+eos = feos.EquationOfState.pcsaft(parameters)
 
 # Define thermodynamic conditions
-critical_point = State.critical_point(eos)
+critical_point = feos.State.critical_point(eos)
 
 # Compute properties
 p = critical_point.pressure()
@@ -122,6 +121,7 @@ To compile the code you need the Rust compiler and `maturin` installed.
 To install the package directly into the active environment (virtualenv or conda), use
 
 ```
+cd py-feos
 maturin develop --release
 ```
 
@@ -130,7 +130,7 @@ which uses the `python` and `all_models` feature as specified in the `pyproject.
 Alternatively, you can specify the models or features that you want to include in the python package explicitly, e.g.
 
 ```
-maturin develop --release --features "python pcsaft dft"
+maturin develop --release --features "pcsaft dft"
 ```
 
 for the PC-SAFT equation of state and Helmholtz energy functional.
