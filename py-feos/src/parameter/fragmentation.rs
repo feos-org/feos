@@ -98,10 +98,10 @@ pub(crate) fn fragment_molecule(
             // Instead of just throwing an error at this point, just try to continue with the first max
             // occurrences. For some cases (the ethers) this just means that the symetry of C-O-C is broken.
             // If a necessary segment is eliminated the error will be thrown later.
-            if let Some(max) = s.max {
-                if matches.len() > max {
-                    matches = matches[..max].to_vec();
-                }
+            if let Some(max) = s.max
+                && matches.len() > max
+            {
+                matches = matches[..max].to_vec();
             }
             Ok((s.group, matches))
         })

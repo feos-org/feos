@@ -118,4 +118,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
+      - run: cargo publish --workspace --exclude py_feos --token ${{ secrets.CRATES_IO_TOKEN }}
