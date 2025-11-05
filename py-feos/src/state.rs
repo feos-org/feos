@@ -185,7 +185,7 @@ impl PyState {
     ///
     /// Returns
     /// -------
-    /// State : State at critical conditions
+    /// list[State] : List of pure-substance State objects at critical conditions.
     #[staticmethod]
     #[pyo3(
         text_signature = "(eos, initial_temperature=None, initial_density=None, max_iter=None, tol=None, verbosity=None)"
