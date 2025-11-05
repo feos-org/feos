@@ -1,8 +1,6 @@
 name: Deploy Documentation
 
 on:
-  pull_request:
-    types: [ closed ]
   workflow_dispatch:
 
 env:
@@ -10,7 +8,6 @@ env:
 
 jobs:
   build-documentation:
-    if: contains(github.event.pull_request.labels.*.name, 'build_documentation') && github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
