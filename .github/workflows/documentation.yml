@@ -16,7 +16,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.14
+          python-version: 3.13
       - name: Install pandoc
         run: sudo apt-get install -y pandoc
       - name: Install python dependencies
