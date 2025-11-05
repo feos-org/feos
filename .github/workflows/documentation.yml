@@ -19,7 +19,7 @@ jobs:
         run: sudo apt-get install -y pandoc
       - name: Install python dependencies
         run: |
-          pip install sphinx nbsphinx ipython pygments sphinx_inline_tabs sphinx_design sphinx_copybutton myst_parser furo
+          pip install sphinx nbsphinx ipython pygments sphinx_inline_tabs sphinx_design sphinx_copybutton myst_parser furo si-units
       - name: Build Wheels
         uses: PyO3/maturin-action@v1
         with:
