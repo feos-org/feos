@@ -1,0 +1,11 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.vapor\_pressure\_derivatives
+=================================
+
+.. currentmodule:: feos
+
+.. autofunction:: vapor_pressure_derivatives

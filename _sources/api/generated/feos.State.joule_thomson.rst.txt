@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.State.joule\_thomson
+=========================
+
+.. currentmodule:: feos
+
+.. automethod:: State.joule_thomson

@@ -1,0 +1,63 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PlanarInterface
+====================
+
+.. currentmodule:: feos
+
+.. autoclass:: PlanarInterface
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PlanarInterface.__init__
+      ~PlanarInterface.entropy
+      ~PlanarInterface.entropy_density
+      ~PlanarInterface.from_density_profile
+      ~PlanarInterface.from_pdgt
+      ~PlanarInterface.from_tanh
+      ~PlanarInterface.interfacial_enrichment
+      ~PlanarInterface.interfacial_thickness
+      ~PlanarInterface.internal_energy
+      ~PlanarInterface.relative_adsorption
+      ~PlanarInterface.residual
+      ~PlanarInterface.solve
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PlanarInterface.bulk
+      ~PlanarInterface.density
+      ~PlanarInterface.dn_dmu
+      ~PlanarInterface.dn_dp
+      ~PlanarInterface.dn_dt
+      ~PlanarInterface.drho_dmu
+      ~PlanarInterface.drho_dp
+      ~PlanarInterface.drho_dt
+      ~PlanarInterface.equimolar_radius
+      ~PlanarInterface.external_potential
+      ~PlanarInterface.functional_derivative
+      ~PlanarInterface.grand_potential_density
+      ~PlanarInterface.moles
+      ~PlanarInterface.solver_log
+      ~PlanarInterface.surface_tension
+      ~PlanarInterface.temperature
+      ~PlanarInterface.total_moles
+      ~PlanarInterface.vle
+      ~PlanarInterface.weighted_densities
+      ~PlanarInterface.z
+   
+   

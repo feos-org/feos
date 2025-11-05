@@ -1,0 +1,59 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.SolvationProfile
+=====================
+
+.. currentmodule:: feos
+
+.. autoclass:: SolvationProfile
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~SolvationProfile.__init__
+      ~SolvationProfile.entropy
+      ~SolvationProfile.entropy_density
+      ~SolvationProfile.internal_energy
+      ~SolvationProfile.residual
+      ~SolvationProfile.solve
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SolvationProfile.bulk
+      ~SolvationProfile.density
+      ~SolvationProfile.dn_dmu
+      ~SolvationProfile.dn_dp
+      ~SolvationProfile.dn_dt
+      ~SolvationProfile.drho_dp
+      ~SolvationProfile.drho_dt
+      ~SolvationProfile.edges
+      ~SolvationProfile.external_potential
+      ~SolvationProfile.functional_derivative
+      ~SolvationProfile.grand_potential
+      ~SolvationProfile.grand_potential_density
+      ~SolvationProfile.meshgrid
+      ~SolvationProfile.moles
+      ~SolvationProfile.solvation_free_energy
+      ~SolvationProfile.solver_log
+      ~SolvationProfile.temperature
+      ~SolvationProfile.total_moles
+      ~SolvationProfile.weighted_densities
+      ~SolvationProfile.x
+      ~SolvationProfile.y
+      ~SolvationProfile.z
+   
+   

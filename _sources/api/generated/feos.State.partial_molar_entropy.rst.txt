@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.State.partial\_molar\_entropy
+==================================
+
+.. currentmodule:: feos
+
+.. automethod:: State.partial_molar_entropy

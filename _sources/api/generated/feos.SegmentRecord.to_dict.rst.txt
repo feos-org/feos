@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.SegmentRecord.to\_dict
+===========================
+
+.. currentmodule:: feos
+
+.. automethod:: SegmentRecord.to_dict

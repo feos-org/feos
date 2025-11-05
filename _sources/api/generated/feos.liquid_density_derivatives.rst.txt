@@ -1,0 +1,11 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.liquid\_density\_derivatives
+=================================
+
+.. currentmodule:: feos
+
+.. autofunction:: liquid_density_derivatives

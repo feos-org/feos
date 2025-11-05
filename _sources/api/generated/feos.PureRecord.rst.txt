@@ -1,0 +1,40 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PureRecord
+===============
+
+.. currentmodule:: feos
+
+.. autoclass:: PureRecord
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PureRecord.__init__
+      ~PureRecord.from_json
+      ~PureRecord.from_json_str
+      ~PureRecord.to_dict
+      ~PureRecord.to_json_str
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PureRecord.association_sites
+      ~PureRecord.identifier
+      ~PureRecord.model_record
+      ~PureRecord.molarweight
+   
+   

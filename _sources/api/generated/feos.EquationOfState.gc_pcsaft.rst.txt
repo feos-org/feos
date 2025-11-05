@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.EquationOfState.gc\_pcsaft
+===============================
+
+.. currentmodule:: feos
+
+.. automethod:: EquationOfState.gc_pcsaft

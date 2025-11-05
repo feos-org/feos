@@ -1,31 +1,13 @@
 # API
 
-## Modules
+All functions and classes in FeOS are exported at the package root. Here, they are grouped by application:
 
 ```{eval-rst}
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
+   parameters
    eos
    dft
-```
-
-## Model specific modules
-
-These modules contain the objects to e.g. read parameters from files or build parameters from records in Python.
-
-```{eval-rst}
-.. toctree::
-   :maxdepth: 1
-
-   pcsaft
-   epcsaft
-   gc_pcsaft
-   peng_robinson
-   pets
-   uvtheory
-   saftvrmie
-   saftvrqmie
-   joback
-   dippr
+   ad
 ```

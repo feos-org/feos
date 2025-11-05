@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Parameters.new\_pure
+=========================
+
+.. currentmodule:: feos
+
+.. automethod:: Parameters.new_pure

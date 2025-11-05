@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.GcParameters.from\_json\_segments
+======================================
+
+.. currentmodule:: feos
+
+.. automethod:: GcParameters.from_json_segments

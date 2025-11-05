@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PhaseDiagram.binary\_vlle
+==============================
+
+.. currentmodule:: feos
+
+.. automethod:: PhaseDiagram.binary_vlle

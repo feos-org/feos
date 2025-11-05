@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Pore1D.initialize
+======================
+
+.. currentmodule:: feos
+
+.. automethod:: Pore1D.initialize

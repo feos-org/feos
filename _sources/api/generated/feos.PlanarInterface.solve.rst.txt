@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PlanarInterface.solve
+==========================
+
+.. currentmodule:: feos
+
+.. automethod:: PlanarInterface.solve

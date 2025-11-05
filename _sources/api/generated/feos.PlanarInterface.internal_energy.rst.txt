@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PlanarInterface.internal\_energy
+=====================================
+
+.. currentmodule:: feos
+
+.. automethod:: PlanarInterface.internal_energy

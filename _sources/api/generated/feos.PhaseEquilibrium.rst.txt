@@ -1,0 +1,42 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PhaseEquilibrium
+=====================
+
+.. currentmodule:: feos
+
+.. autoclass:: PhaseEquilibrium
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PhaseEquilibrium.__init__
+      ~PhaseEquilibrium.boiling_temperature
+      ~PhaseEquilibrium.bubble_point
+      ~PhaseEquilibrium.dew_point
+      ~PhaseEquilibrium.heteroazeotrope
+      ~PhaseEquilibrium.pure
+      ~PhaseEquilibrium.tp_flash
+      ~PhaseEquilibrium.vapor_pressure
+      ~PhaseEquilibrium.vle_pure_comps
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PhaseEquilibrium.liquid
+      ~PhaseEquilibrium.vapor
+   
+   

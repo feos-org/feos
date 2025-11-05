@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.HelmholtzEnergyFunctional.pcsaft
+=====================================
+
+.. currentmodule:: feos
+
+.. automethod:: HelmholtzEnergyFunctional.pcsaft

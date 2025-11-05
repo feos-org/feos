@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.State.critical\_point\_binary
+==================================
+
+.. currentmodule:: feos
+
+.. automethod:: State.critical_point_binary

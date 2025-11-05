@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.StateVec.molar\_entropy
+============================
+
+.. currentmodule:: feos
+
+.. automethod:: StateVec.molar_entropy

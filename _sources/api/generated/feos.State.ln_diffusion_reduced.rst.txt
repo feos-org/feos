@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.State.ln\_diffusion\_reduced
+=================================
+
+.. currentmodule:: feos
+
+.. automethod:: State.ln_diffusion_reduced

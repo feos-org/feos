@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.EquationOfState.max\_density
+=================================
+
+.. currentmodule:: feos
+
+.. automethod:: EquationOfState.max_density

@@ -1,0 +1,278 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "9767dd5f",
+   "metadata": {},
+   "source": [
+    "# Phase equilibria including derivatives"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "fb44d253",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import feos\n",
+    "import numpy as np"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a76652c9",
+   "metadata": {},
+   "source": [
+    "## Vapor pressure"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "ebabc49a",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "CPU times: user 1min 39s, sys: 654 ms, total: 1min 40s\n",
+      "Wall time: 2.3 s\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "(array([  99933.70173872,   99933.76369505,   99933.82565141, ...,\n",
+       "        4841855.06247647, 4841856.28251754, 4841857.50255883],\n",
+       "       shape=(10000000,)),\n",
+       " array([[-1.04684676e+05,  1.37290974e+05, -2.94409278e+03],\n",
+       "        [-1.04684730e+05,  1.37291045e+05, -2.94409438e+03],\n",
+       "        [-1.04684784e+05,  1.37291116e+05, -2.94409599e+03],\n",
+       "        ...,\n",
+       "        [-3.06545385e+06,  2.31346293e+06, -8.79512373e+04],\n",
+       "        [-3.06545458e+06,  2.31346323e+06, -8.79512573e+04],\n",
+       "        [-3.06545531e+06,  2.31346353e+06, -8.79512774e+04]],\n",
+       "       shape=(10000000, 3)),\n",
+       " array([ True,  True,  True, ...,  True,  True,  True], shape=(10000000,)))"
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "n = 10_000_000\n",
+    "fit_params = [\"m\", \"sigma\", \"epsilon_k\"]\n",
+    "\n",
+    "# order: m, sigma, epsilon_k, mu\n",
+    "parameters = np.array([[1.5, 3.4, 230.0, 2.3]] * n)\n",
+    "temperature = np.expand_dims(np.linspace(250.0, 400.0, n), 1)\n",
+    "eos = feos.EquationOfStateAD.PcSaftNonAssoc\n",
+    "%time feos.vapor_pressure_derivatives(eos, fit_params, parameters, temperature)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4cc06692",
+   "metadata": {},
+   "source": [
+    "## Liquid density"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "f86f8e3e",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "CPU times: user 1min 24s, sys: 716 ms, total: 1min 25s\n",
+      "Wall time: 2.1 s\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "(array([22.7191149 , 22.71911436, 22.71911382, ...,  0.03027266,\n",
+       "         0.03027266,  0.03027266], shape=(10000000,)),\n",
+       " array([[-1.68941171e+01, -2.24206688e+01,  2.73083514e-02],\n",
+       "        [-1.68941167e+01, -2.24206685e+01,  2.73083541e-02],\n",
+       "        [-1.68941164e+01, -2.24206681e+01,  2.73083568e-02],\n",
+       "        ...,\n",
+       "        [ 9.49488124e-05,  9.60641306e-06,  7.80107221e-07],\n",
+       "        [ 9.49487960e-05,  9.60641033e-06,  7.80107128e-07],\n",
+       "        [ 9.49487795e-05,  9.60640761e-06,  7.80107035e-07]],\n",
+       "       shape=(10000000, 3)),\n",
+       " array([ True,  True,  True, ...,  True,  True,  True], shape=(10000000,)))"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "n = 10_000_000\n",
+    "fit_params = [\"m\", \"sigma\", \"epsilon_k\"]\n",
+    "\n",
+    "# order: m, sigma, epsilon_k, mu\n",
+    "parameters = np.array([[1.5, 3.4, 230.0, 2.3]] * n)\n",
+    "temperature = np.linspace(250.0, 400.0, n)\n",
+    "pressure = np.array([1e5] * n)\n",
+    "input = np.stack((temperature, pressure), axis=1)\n",
+    "eos = feos.EquationOfStateAD.PcSaftNonAssoc\n",
+    "%time feos.liquid_density_derivatives(eos, fit_params, parameters, input)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0705a58a",
+   "metadata": {},
+   "source": [
+    "## Bubble points"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "bb548624",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "CPU times: user 11min 21s, sys: 122 ms, total: 11min 21s\n",
+      "Wall time: 11.3 s\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "(array([   5142.13808145,    5142.20830389,    5142.27852715, ...,\n",
+       "        3828278.20909898, 3828290.44546341, 3828302.68185363],\n",
+       "       shape=(1000000,)),\n",
+       " array([[   40721.23744125],\n",
+       "        [   40721.73456205],\n",
+       "        [   40722.23168782],\n",
+       "        ...,\n",
+       "        [10996502.56325178],\n",
+       "        [10996528.1146768 ],\n",
+       "        [10996553.66610128]], shape=(1000000, 1)),\n",
+       " array([ True,  True,  True, ...,  True,  True,  True], shape=(1000000,)))"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "n = 1_000_000\n",
+    "fit_params = [\"k_ij\"]\n",
+    "parameters = np.array([[\n",
+    "    # Substance 1: m, sigma, epsilon_k, mu\n",
+    "    1.5, 3.4, 230.0, 2.3, \n",
+    "    # Substance 2: m, sigma, epsilon_k, mu\n",
+    "    2.3, 3.5, 245.0, 1.4, \n",
+    "    # k_ij\n",
+    "    0.01 \n",
+    "]] * n)\n",
+    "temperature = np.linspace(200.0, 406.0, n)\n",
+    "molefracs = np.array([0.5] * n)\n",
+    "pressure = np.array([1e5] * n)\n",
+    "input = np.stack((temperature, molefracs, pressure), axis=1)\n",
+    "eos = feos.EquationOfStateAD.PcSaftNonAssoc\n",
+    "%time feos.bubble_point_pressure_derivatives(eos, fit_params, parameters, input)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a88f4a9e",
+   "metadata": {},
+   "source": [
+    "## Bubble points with cross-association"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "ca842395",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "CPU times: user 3min 11s, sys: 15.9 ms, total: 3min 11s\n",
+      "Wall time: 3.17 s\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "(array([7.34250975e+02, 7.34379943e+02, 7.34508930e+02, ...,\n",
+       "        2.34916950e+06, 2.34925463e+06, 2.34933975e+06], shape=(100000,)),\n",
+       " array([[4.64318575e+03],\n",
+       "        [4.64395838e+03],\n",
+       "        [4.64473112e+03],\n",
+       "        ...,\n",
+       "        [7.29257342e+06],\n",
+       "        [7.29279667e+06],\n",
+       "        [7.29301993e+06]], shape=(100000, 1)),\n",
+       " array([ True,  True,  True, ...,  True,  True,  True], shape=(100000,)))"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "n = 100_000\n",
+    "fit_params = [\"k_ij\"]\n",
+    "parameters = np.array([[\n",
+    "    # Substance 1: m, sigma, epsilon_k, mu, kappa_ab, epsilon_k_ab, na, nb\n",
+    "    1.5, 3.4, 230.0, 2.3, 0.01, 1200.0, 1.0, 2.0, \n",
+    "    # Substance 2: m, sigma, epsilon_k, mu, kappa_ab, epsilon_k_ab, na, nb\n",
+    "    2.3, 3.5, 245.0, 1.4, 0.005, 500.0, 1.0, 1.0,\n",
+    "    # k_ij\n",
+    "    0.01,\n",
+    "]] * n)\n",
+    "temperature = np.linspace(200.0, 388.0, n)\n",
+    "molefracs = np.array([0.5] * n)\n",
+    "pressure = np.array([1e5] * n)\n",
+    "input = np.stack((temperature, molefracs, pressure), axis=1)\n",
+    "eos = feos.EquationOfStateAD.PcSaftFull\n",
+    "%time feos.bubble_point_pressure_derivatives(eos, fit_params, parameters, input)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "feos",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.13.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

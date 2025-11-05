@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.State.ds\_dt
+=================
+
+.. currentmodule:: feos
+
+.. automethod:: State.ds_dt

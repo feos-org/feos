@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.State.thermal\_conductivity\_reference
+===========================================
+
+.. currentmodule:: feos
+
+.. automethod:: State.thermal_conductivity_reference

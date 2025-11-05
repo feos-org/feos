@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.EquationOfState.second\_virial\_coefficient\_temperature\_derivative
+=========================================================================
+
+.. currentmodule:: feos
+
+.. automethod:: EquationOfState.second_virial_coefficient_temperature_derivative

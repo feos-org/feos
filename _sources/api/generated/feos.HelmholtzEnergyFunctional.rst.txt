@@ -1,0 +1,32 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.HelmholtzEnergyFunctional
+==============================
+
+.. currentmodule:: feos
+
+.. autoclass:: HelmholtzEnergyFunctional
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~HelmholtzEnergyFunctional.__init__
+      ~HelmholtzEnergyFunctional.fmt
+      ~HelmholtzEnergyFunctional.gc_pcsaft
+      ~HelmholtzEnergyFunctional.pcsaft
+      ~HelmholtzEnergyFunctional.pets
+      ~HelmholtzEnergyFunctional.saftvrqmie
+   
+   
+
+   
+   
+   

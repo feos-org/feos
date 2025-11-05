@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Parameters.from\_json
+==========================
+
+.. currentmodule:: feos
+
+.. automethod:: Parameters.from_json

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.EquationOfState.ideal\_gas
+===============================
+
+.. currentmodule:: feos
+
+.. automethod:: EquationOfState.ideal_gas

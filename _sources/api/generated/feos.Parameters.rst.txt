@@ -1,0 +1,39 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Parameters
+===============
+
+.. currentmodule:: feos
+
+.. autoclass:: Parameters
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Parameters.__init__
+      ~Parameters.from_json
+      ~Parameters.from_multiple_json
+      ~Parameters.from_records
+      ~Parameters.new_binary
+      ~Parameters.new_pure
+      ~Parameters.to_json_str
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Parameters.pure_records
+   
+   

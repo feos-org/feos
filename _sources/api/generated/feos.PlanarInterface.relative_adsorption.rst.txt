@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PlanarInterface.relative\_adsorption
+=========================================
+
+.. currentmodule:: feos
+
+.. automethod:: PlanarInterface.relative_adsorption

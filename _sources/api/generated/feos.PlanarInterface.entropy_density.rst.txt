@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PlanarInterface.entropy\_density
+=====================================
+
+.. currentmodule:: feos
+
+.. automethod:: PlanarInterface.entropy_density

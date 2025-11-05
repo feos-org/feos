@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.State.residual\_molar\_helmholtz\_energy\_contributions
+============================================================
+
+.. currentmodule:: feos
+
+.. automethod:: State.residual_molar_helmholtz_energy_contributions

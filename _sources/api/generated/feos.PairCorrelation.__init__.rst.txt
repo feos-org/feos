@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PairCorrelation.\_\_init\_\_
+=================================
+
+.. currentmodule:: feos
+
+.. automethod:: PairCorrelation.__init__

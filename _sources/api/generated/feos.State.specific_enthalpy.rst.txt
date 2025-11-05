@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.State.specific\_enthalpy
+=============================
+
+.. currentmodule:: feos
+
+.. automethod:: State.specific_enthalpy

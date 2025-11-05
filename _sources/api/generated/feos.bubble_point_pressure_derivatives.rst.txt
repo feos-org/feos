@@ -1,0 +1,11 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.bubble\_point\_pressure\_derivatives
+=========================================
+
+.. currentmodule:: feos
+
+.. autofunction:: bubble_point_pressure_derivatives

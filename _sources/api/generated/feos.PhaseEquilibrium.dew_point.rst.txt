@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PhaseEquilibrium.dew\_point
+================================
+
+.. currentmodule:: feos
+
+.. automethod:: PhaseEquilibrium.dew_point

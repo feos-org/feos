@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.ChemicalRecord.to\_json\_str
+=================================
+
+.. currentmodule:: feos
+
+.. automethod:: ChemicalRecord.to_json_str

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.EquationOfState.third\_virial\_coefficient
+===============================================
+
+.. currentmodule:: feos
+
+.. automethod:: EquationOfState.third_virial_coefficient
