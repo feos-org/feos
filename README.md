@@ -68,7 +68,8 @@ Other public repositories that implement models within the `FeOs` framework, but
 ## Parameters
 In addition to the source code for the Rust and Python packages, this repository contains JSON files with previously published [parameters](https://github.com/feos-org/feos/tree/main/parameters) for the different models including group contribution methods. The parameter files can be read directly from Rust or Python.
 
-> :warning: The format for parameter files changed between releases `0.8.0` and `0.9.0`. You find parameters for new versions in the [parameters](https://github.com/feos-org/feos/tree/main/parameters) directory and for versions up to `0.8.0` in the [parameters_old](https://github.com/feos-org/feos/tree/main/parameters_old) directory.<br><br>
+> [!WARNING]
+> The format for parameter files changed between releases `0.8.0` and `0.9.0`. You find parameters for new versions in the [parameters](https://github.com/feos-org/feos/tree/main/parameters) directory and for versions up to `0.8.0` in the [parameters_old](https://github.com/feos-org/feos/tree/main/parameters_old) directory.<br><br>
 If you maintain your own parameter files, there are two adjustments you need to make when upgrading to `feos 0.9.0`:
 > - Flatten the contents of the `model_record` field directly into the pure or segment record.
 > - Move association parameters into a list called `association_sites`. The 
