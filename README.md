@@ -72,7 +72,7 @@ In addition to the source code for the Rust and Python packages, this repository
 > The format for parameter files changed between releases `0.8.0` and `0.9.0`. You find parameters for new versions in the [parameters](https://github.com/feos-org/feos/tree/main/parameters) directory and for versions up to `0.8.0` in the [parameters_old](https://github.com/feos-org/feos/tree/main/parameters_old) directory.<br><br>
 If you maintain your own parameter files, there are two adjustments you need to make when upgrading to `feos 0.9.0`:
 > - Flatten the contents of the `model_record` field directly into the pure or segment record.
-> - Move association parameters into a list called `association_sites`. The 
+> - Move association parameters into a list called `association_sites`.
 >
 > The structure of the JSON files and the `PureRecord` and `SegmentRecord` classes in Python is identical.
 
@@ -156,7 +156,7 @@ which will use the `python` and `all_models` features specified in the `pyprojec
 Use the following command to build a wheel with specific features:
 
 ```
-maturin build --profile="release-lto" --features "python ..."
+maturin build --profile="release-lto" --features "pcsaft ..."
 ```
 
 LTO increases compile times measurably but the resulting wheel is more performant and has a smaller size.
@@ -168,7 +168,7 @@ For a documentation of the Python API, Python examples, and a guide to the under
 
 ## Benchmarks
 
-Check out the [benches](https://github.com/feos-org/feos/tree/main/feos-benchmarks) directory for information about provided Rust benchmarks and how to run them.
+Check out the [benches](https://github.com/feos-org/feos/tree/main/crates/feos/benches) directory for information about provided Rust benchmarks and how to run them.
 
 ## Developers
 
