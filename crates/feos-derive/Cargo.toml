@@ -8,7 +8,7 @@ license.workspace = true
 repository.workspace = true
 keywords.workspace = true
 categories.workspace = true
-description = "Macros for the Residual and HelmholtzEnergyFunctional traits in FeOs"
+description = "Macros for the automatic implementation of traits in FeOs"
 
 [lib]
 proc-macro = true
