@@ -10,6 +10,7 @@ The `FeOs` package provides Rust implementations of different equation of state 
 
 ```python
 import feos
+import si_units as si
 
 # PC-SAFT parameters for methanol (Gross and Sadowski 2002)
 record = feos.PureRecord(
@@ -18,10 +19,12 @@ record = feos.PureRecord(
     m=1.5255,
     sigma=3.23,
     epsilon_k=188.9,
-    kappa_ab=0.035176,
-    epsilon_k_ab=2899.5,
-    na=1,
-    nb=1,
+    association_sites=[{
+      "kappa_ab": 0.035176,
+      "epsilon_k_ab": 2899.5,
+      "na": 1,
+      "nb": 1,
+    }]
 )
 
 # Build an equation of state
@@ -34,10 +37,10 @@ critical_point = feos.State.critical_point(eos)
 # Compute properties
 p = critical_point.pressure()
 t = critical_point.temperature
-print(f"Critical point for methanol: T={t}, p={p}.")
+print(f"Critical point for methanol: T={t/si.KELVIN:.1f} K, p={p/si.BAR:.1f} bar.")
 ```
 ```terminal
-Critical point for methanol: T=531.5 K, p=10.7 MPa.
+Critical point for methanol: T=531.5 K, p=106.5 bar.
 ```
 
 ## Models
@@ -64,6 +67,13 @@ Other public repositories that implement models within the `FeOs` framework, but
 
 ## Parameters
 In addition to the source code for the Rust and Python packages, this repository contains JSON files with previously published [parameters](https://github.com/feos-org/feos/tree/main/parameters) for the different models including group contribution methods. The parameter files can be read directly from Rust or Python.
+
+> :warning: The format for parameter files changed between releases `0.8.0` and `0.9.0`. You find parameters for new versions in the [parameters](https://github.com/feos-org/feos/tree/main/parameters) directory and for versions up to `0.8.0` in the [parameters_old](https://github.com/feos-org/feos/tree/main/parameters_old) directory.<br><br>
+If you maintain your own parameter files, there are two adjustments you need to make when upgrading to `feos 0.9.0`:
+> - Flatten the contents of the `model_record` field directly into the pure or segment record.
+> - Move association parameters into a list called `association_sites`. The 
+>
+> The structure of the JSON files and the `PureRecord` and `SegmentRecord` classes in Python is identical.
 
 ## Properties and phase equilibria
 
