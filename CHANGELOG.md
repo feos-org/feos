@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Packaging
 - Updated `quantity` dependency to 0.11.
 - Updated `num-dual` dependency to 0.12.
-- Updated `numpy` and `PyO3` dependencies to 0.26.
+- Updated `numpy`, `PyO3` and `pythonize` dependencies to 0.27.
 - Updated `nalgebra` dependency to 0.34.
 
 ## [0.8.0] - 2024-12-28
