@@ -42,9 +42,5 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '**.ipynb_checkpoints']
 
 # -- Options for HTML output -------------------------------------------------
 html_theme = 'furo'
-html_title = "FeOs"
-html_static_path = ['_static']
-html_css_files = [
-    'style.css',
-]
+html_title = f'FeOs v{feos.__version__}'
 

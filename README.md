@@ -1,33 +1,46 @@
 # FeOs - A Framework for Equations of State and Classical Density Functional Theory
 
-[![crate](https://img.shields.io/crates/v/feos.svg)](https://crates.io/crates/feos)
-[![documentation](https://docs.rs/feos/badge.svg)](https://docs.rs/feos)
-[![documentation](https://img.shields.io/badge/docs-github--pages-blue)](https://feos-org.github.io/feos/)
-[![repository](https://img.shields.io/pypi/v/feos)](https://pypi.org/project/feos/)
+[![crate](https://img.shields.io/crates/v/feos?logo=rust)](https://crates.io/crates/feos)
+[![documentation](https://img.shields.io/docsrs/feos?logo=rust)](https://docs.rs/feos)
+[![repository](https://img.shields.io/pypi/v/feos?logo=python)](https://pypi.org/project/feos/)
+[![documentation](https://img.shields.io/badge/docs-github--pages-blue?logo=python)](https://feos-org.github.io/feos/)
+[![FeOs Publication](https://img.shields.io/badge/DOI-10.1021/acs.iecr.2c04561-passing)](https://pubs.acs.org/doi/10.1021/acs.iecr.2c04561)
 
 The `FeOs` package provides Rust implementations of different equation of state and Helmholtz energy functional models and corresponding Python bindings.
 
 ```python
-from feos.eos import EquationOfState, State
-from feos.pcsaft import PcSaftParameters, PcSaftRecord
+import feos
+import si_units as si
 
 # PC-SAFT parameters for methanol (Gross and Sadowski 2002)
-record = PcSaftRecord(1.5255, 3.23, 188.9, kappa_ab=0.035176, epsilon_k_ab=2899.5, na=1, nb=1)
+record = feos.PureRecord(
+    feos.Identifier(name="methanol"),
+    molarweight=32.04,
+    m=1.5255,
+    sigma=3.23,
+    epsilon_k=188.9,
+    association_sites=[{
+      "kappa_ab": 0.035176,
+      "epsilon_k_ab": 2899.5,
+      "na": 1,
+      "nb": 1,
+    }]
+)
 
 # Build an equation of state
-parameters = PcSaftParameters.from_model_records([record])
-eos = EquationOfState.pcsaft(parameters)
+parameters = feos.Parameters.new_pure(record)
+eos = feos.EquationOfState.pcsaft(parameters)
 
 # Define thermodynamic conditions
-critical_point = State.critical_point(eos)
+critical_point = feos.State.critical_point(eos)
 
 # Compute properties
 p = critical_point.pressure()
 t = critical_point.temperature
-print(f'Critical point for methanol: T={t}, p={p}.')
+print(f"Critical point for methanol: T={t/si.KELVIN:.1f} K, p={p/si.BAR:.1f} bar.")
 ```
 ```terminal
-Critical point for methanol: T=531.5 K, p=10.7 MPa.
+Critical point for methanol: T=531.5 K, p=106.5 bar.
 ```
 
 ## Models
@@ -54,6 +67,14 @@ Other public repositories that implement models within the `FeOs` framework, but
 
 ## Parameters
 In addition to the source code for the Rust and Python packages, this repository contains JSON files with previously published [parameters](https://github.com/feos-org/feos/tree/main/parameters) for the different models including group contribution methods. The parameter files can be read directly from Rust or Python.
+
+> [!WARNING]
+> The format for parameter files changed between releases `0.8.0` and `0.9.0`. You find parameters for new versions in the [parameters](https://github.com/feos-org/feos/tree/main/parameters) directory and for versions up to `0.8.0` in the [parameters_old](https://github.com/feos-org/feos/tree/main/parameters_old) directory.<br><br>
+If you maintain your own parameter files, there are two adjustments you need to make when upgrading to `feos 0.9.0`:
+> - Flatten the contents of the `model_record` field directly into the pure or segment record.
+> - Move association parameters into a list called `association_sites`.
+>
+> The structure of the JSON files and the `PureRecord` and `SegmentRecord` classes in Python is identical.
 
 ## Properties and phase equilibria
 
@@ -107,10 +128,11 @@ See the *Building from source* section for information about building the wheel 
 
 ### Building from source
 
-To compile the code you need the Rust compiler and `maturin` (>=0.13,<0.14) installed.
+To compile the code you need the Rust compiler and `maturin` installed.
 To install the package directly into the active environment (virtualenv or conda), use
 
 ```
+cd py-feos
 maturin develop --release
 ```
 
@@ -119,7 +141,7 @@ which uses the `python` and `all_models` feature as specified in the `pyproject.
 Alternatively, you can specify the models or features that you want to include in the python package explicitly, e.g.
 
 ```
-maturin develop --release --features "python pcsaft dft"
+maturin develop --release --features "pcsaft dft"
 ```
 
 for the PC-SAFT equation of state and Helmholtz energy functional.
@@ -134,7 +156,7 @@ which will use the `python` and `all_models` features specified in the `pyprojec
 Use the following command to build a wheel with specific features:
 
 ```
-maturin build --profile="release-lto" --features "python ..."
+maturin build --profile="release-lto" --features "pcsaft ..."
 ```
 
 LTO increases compile times measurably but the resulting wheel is more performant and has a smaller size.
@@ -146,7 +168,7 @@ For a documentation of the Python API, Python examples, and a guide to the under
 
 ## Benchmarks
 
-Check out the [benches](https://github.com/feos-org/feos/tree/main/feos-benchmarks) directory for information about provided Rust benchmarks and how to run them.
+Check out the [benches](https://github.com/feos-org/feos/tree/main/crates/feos/benches) directory for information about provided Rust benchmarks and how to run them.
 
 ## Developers
 

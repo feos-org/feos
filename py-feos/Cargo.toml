@@ -1,21 +1,27 @@
 [package]
 name = "py_feos"
-version = "0.1.0"
-edition = "2021"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
 
 [lib]
 name = "feos"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.26", features = [
+pyo3 = { version = "0.27", features = [
     "extension-module",
-    "abi3-py39",
+    "abi3-py310",
     "multiple-pymethods",
     "indexmap"
 ] }
-pythonize = "0.26"
-numpy = { version = "0.26" }
+pythonize = "0.27"
+numpy = { version = "0.27" }
 
 quantity = { workspace = true, features = ["python", "python_numpy"] }
 num-dual = { workspace = true, features = ["python_macro"] }

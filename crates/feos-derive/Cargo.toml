@@ -1,22 +1,14 @@
 [package]
 name = "feos-derive"
-version = "0.6.0"
-authors = [
-    "Gernot Bauer <bauer@itt.uni-stuttgart.de>",
-    "Philipp Rehner <prehner@ethz.ch>",
-]
-edition = "2021"
-readme = "README.md"
-description = "Macros for the EquationOfState and HelmholtzEnergyFunctional traits in FeOs"
-license = "MIT OR Apache-2.0"
-homepage = "https://github.com/feos-org"
-repository = "https://github.com/feos-org/feos"
-keywords = [
-    "physics",
-    "thermodynamics",
-    "equations_of_state",
-    "phase_equilibria",
-]
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Macros for the automatic implementation of traits in FeOs"
 
 [lib]
 proc-macro = true

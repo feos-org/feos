@@ -6,6 +6,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2025-11-08
+### Added
+- Integrated the functionalities of [`feos-ad`](https://github.com/feos-org/feos-ad). [#289](https://github.com/feos-org/feos/pull/289)
+    - In Rust: Full access to arbitrary derivatives of properties and phase equilibria with respect to model parameters. See, e.g., [`feos-campd`](https://github.com/feos-org/feos-campd) for an application to molecular design.
+    - In Python: Specialized functions for the parallel evaluation of relevant properties (vapor pressure, liquid density, bubble/dew point pressure) including the gradients with respect to model parameters for parameter estimations or the inclusion in backpropagation frameworks.
+- Implement pure-component multiparameter equations of state from CoolProp. [#301](https://github.com/feos-org/feos/pull/301)
+
+### Changed
+- :warning: Changed the format of parameter files. The contents of the old `model_record` field are now flattened into the `PureRecord`/`SegmentRecord`. [#233](https://github.com/feos-org/feos/pull/233)
+- Generalized the implementation of association to allow for arbitrarily many association sites per molecule or group and full control over each interaction. [#233](https://github.com/feos-org/feos/pull/233) [#290](https://github.com/feos-org/feos/pull/290)
+- Reimplemented the Python interface to avoid the necessity of having multiple classes with the same name.
+    - `feos.eos.State` and `feos.dft.State` (and analogous classes) are combined into `feos.State`. [#274](https://github.com/feos-org/feos/pull/274)
+    - All `feos.<model>.PureRecord` (and similar classes) are combined into `feos.PureRecord`. [#271](https://github.com/feos-org/feos/pull/271)
+- All Python classes are exported at the package root. [#309](https://github.com/feos-org/feos/pull/309)
+- Add initial density as optional argument to critical point algorithms. [#300](https://github.com/feos-org/feos/pull/300)
+
+### Packaging
+- Updated `quantity` dependency to 0.12.
+- Updated `num-dual` dependency to 0.12.
+- Updated `numpy`, `PyO3` and `pythonize` dependencies to 0.27.
+- Updated `nalgebra` dependency to 0.34.
+
 ## [0.8.0] - 2024-12-28
 ### Fixed
 - Fixed the handling of association records in combination with induced association in PC-SAFT [#264](https://github.com/feos-org/feos/pull/264)
