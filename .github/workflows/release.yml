@@ -60,7 +60,10 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: aarch64
-          args: --profile release-lto-thin --out dist
+          args: >
+            --profile release-lto-thin
+            --manifest-path py-feos/Cargo.toml
+            --out dist
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
