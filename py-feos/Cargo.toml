@@ -51,6 +51,7 @@ pcsaft = ["feos/pcsaft"]
 epcsaft = ["feos/epcsaft"]
 gc_pcsaft = ["feos/gc_pcsaft"]
 uvtheory = ["feos/uvtheory"]
+uvcs = ["feos/uvcs"]
 pets = ["feos/pets"]
 saftvrqmie = ["feos/saftvrqmie"]
 saftvrmie = ["feos/saftvrmie"]
@@ -63,6 +64,7 @@ all_models = [
     "epcsaft",
     "gc_pcsaft",
     "uvtheory",
+    "uvcs",
     "pets",
     "saftvrqmie",
     "saftvrmie",

@@ -27,6 +27,8 @@ mod saftvrmie;
 mod saftvrqmie;
 #[cfg(feature = "uvtheory")]
 mod uvtheory;
+#[cfg(feature = "uvcs")]
+mod uvcs;
 
 /// Collection of equations of state.
 #[pyclass(name = "EquationOfState")]
@@ -34,7 +36,6 @@ pub struct PyEquationOfState(pub Arc<EquationOfState<Vec<IdealGasModel>, Residua
 
 #[pymethods]
 impl PyEquationOfState {
-    #[getter]
     fn get_parameters<'py>(&self, py: Python<'py>) -> IndexMap<String, Bound<'py, PyAny>> {
         let pure = self.0.pure_parameters();
         let binary = self.0.binary_parameters();

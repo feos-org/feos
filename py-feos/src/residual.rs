@@ -57,6 +57,10 @@ pub enum ResidualModel {
     #[implement(molar_weight, parameter_info)]
     UVTheory(feos::uvtheory::UVTheory),
 
+    #[cfg(feature = "uvcs")]
+    #[implement(molar_weight, parameter_info)]
+    UVCSTheory(feos::uvcs::UVCSTheory),
+
     #[cfg(feature = "multiparameter")]
     #[implement(molar_weight)]
     MultiParameter(feos::multiparameter::MultiParameter),
