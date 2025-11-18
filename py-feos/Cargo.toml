@@ -18,7 +18,8 @@ pyo3 = { version = "0.27", features = [
     "extension-module",
     "abi3-py310",
     "multiple-pymethods",
-    "indexmap"
+    "indexmap",
+    "experimental-inspect"
 ] }
 pythonize = "0.27"
 numpy = { version = "0.27" }
@@ -43,6 +44,7 @@ feos = { workspace = true }
 feos-core = { workspace = true, features = ["ndarray"] }
 feos-derive = { workspace = true }
 feos-dft = { workspace = true, optional = true }
+pyo3-introspection = "0.27.1"
 
 [features]
 default = []
