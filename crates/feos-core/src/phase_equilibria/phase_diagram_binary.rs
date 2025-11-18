@@ -442,10 +442,10 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
 
             // calculate Jacobian
             let jacobian = stack![
-                    dmu_drho_l1, 0, 0;
-                    0, dmu_drho_l2, -dmu_drho_v;
-                    dp_drho_l1, 0, -&dp_drho_v;
-                    0, dp_drho_l2, -dp_drho_v
+                dmu_drho_l1, 0          , -&dmu_drho_v;
+                0          , dmu_drho_l2, -dmu_drho_v;
+                dp_drho_l1 , 0          , -&dp_drho_v;
+                0          , dp_drho_l2 , -dp_drho_v
             ];
 
             // calculate Newton step
