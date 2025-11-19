@@ -52,80 +52,57 @@ impl From<PyVerbosity> for Verbosity {
 }
 
 #[pymodule]
-fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+pub mod feos {
+    pub const __version__: &'static str = env!("CARGO_PKG_VERSION");
 
-    // Utility
-    m.add_class::<PyVerbosity>()?;
+    #[pymodule_export]
+    use super::PyVerbosity;
+    #[pymodule_export]
+    use crate::phase_equilibria::{PyPhaseDiagram, PyPhaseDiagramHetero, PyPhaseEquilibrium};
+    #[pymodule_export]
+    use crate::state::{PyContributions, PyState, PyStateVec};
 
-    // State & phase equilibria.
-    m.add_class::<state::PyContributions>()?;
-    m.add_class::<state::PyState>()?;
-    m.add_class::<state::PyStateVec>()?;
-    m.add_class::<phase_equilibria::PyPhaseDiagram>()?;
-    m.add_class::<phase_equilibria::PyPhaseDiagramHetero>()?;
-    m.add_class::<phase_equilibria::PyPhaseEquilibrium>()?;
+    #[pymodule_export]
+    use crate::eos::PyEquationOfState;
+    #[pymodule_export]
+    use crate::parameter::{
+        PyBinaryRecord, PyBinarySegmentRecord, PyChemicalRecord, PyGcParameters, PyIdentifier,
+        PyIdentifierOption, PyParameters, PyPureRecord, PySegmentRecord, PySmartsRecord,
+    };
 
-    // Parameter
-    m.add_class::<parameter::PyIdentifier>()?;
-    m.add_class::<parameter::PyIdentifierOption>()?;
-    m.add_class::<parameter::PyChemicalRecord>()?;
-    m.add_class::<parameter::PySmartsRecord>()?;
-    m.add_class::<parameter::PyPureRecord>()?;
-    m.add_class::<parameter::PySegmentRecord>()?;
-    m.add_class::<parameter::PyBinaryRecord>()?;
-    m.add_class::<parameter::PyBinarySegmentRecord>()?;
-    m.add_class::<parameter::PyParameters>()?;
-    m.add_class::<parameter::PyGcParameters>()?;
-
-    // Equation of state
-    m.add_class::<eos::PyEquationOfState>()?;
-
-    // // Estimator
-    // m.add_class::<estimator::PyDataSet>()?;
-    // m.add_class::<estimator::PyEstimator>()?;
-    // m.add_class::<estimator::PyLoss>()?;
-    // m.add_class::<estimator::PyPhase>()?;
-
-    // AD
     #[cfg(feature = "ad")]
-    {
-        m.add_function(wrap_pyfunction!(ad::vapor_pressure_derivatives, m)?)?;
-        m.add_function(wrap_pyfunction!(ad::liquid_density_derivatives, m)?)?;
-        m.add_function(wrap_pyfunction!(
-            ad::equilibrium_liquid_density_derivatives,
-            m
-        )?)?;
-        m.add_function(wrap_pyfunction!(ad::bubble_point_pressure_derivatives, m)?)?;
-        m.add_function(wrap_pyfunction!(ad::dew_point_pressure_derivatives, m)?)?;
-        m.add_class::<ad::PyEquationOfStateAD>()?;
-    }
+    #[pymodule_export]
+    use crate::ad::{
+        bubble_point_pressure_derivatives, dew_point_pressure_derivatives,
+        equilibrium_liquid_density_derivatives, liquid_density_derivatives,
+        vapor_pressure_derivatives,
+    };
 
     #[cfg(feature = "dft")]
-    {
-        m.add_class::<dft::PyHelmholtzEnergyFunctional>()?;
-        m.add_class::<dft::PyFMTVersion>()?;
-        m.add_class::<dft::PyGeometry>()?;
-
-        // Solver
-        m.add_class::<dft::PyDFTSolver>()?;
-        m.add_class::<dft::PyDFTSolverLog>()?;
-
+    #[pymodule_export]
+    use crate::dft::{
         // Adsorption
-        m.add_class::<dft::PyAdsorption1D>()?;
-        m.add_class::<dft::PyAdsorption3D>()?;
-        m.add_class::<dft::PyExternalPotential>()?;
-        m.add_class::<dft::PyPore1D>()?;
-        m.add_class::<dft::PyPore2D>()?;
-        m.add_class::<dft::PyPore3D>()?;
+        PyAdsorption1D,
+        PyAdsorption3D,
+        // Solver
+        PyDFTSolver,
+        PyDFTSolverLog,
 
-        // Interface
-        m.add_class::<dft::PySurfaceTensionDiagram>()?;
-        m.add_class::<dft::PyPlanarInterface>()?;
+        PyExternalPotential,
+        PyFMTVersion,
+        PyGeometry,
 
+        PyHelmholtzEnergyFunctional,
         // Solvation
-        m.add_class::<dft::PyPairCorrelation>()?;
-        m.add_class::<dft::PySolvationProfile>()?;
-    }
-    Ok(())
+        PyPairCorrelation,
+        PyPlanarInterface,
+
+        PyPore1D,
+        PyPore2D,
+        PyPore3D,
+
+        PySolvationProfile,
+        // Interface
+        PySurfaceTensionDiagram,
+    };
 }
