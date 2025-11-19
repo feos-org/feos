@@ -1,4 +1,4 @@
-use crate::eos::{parse_molefracs, PyEquationOfState};
+use crate::eos::{PyEquationOfState, parse_molefracs};
 use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
 use feos::hard_sphere::{FMTFunctional, FMTVersion};
@@ -24,7 +24,7 @@ pub(crate) use solver::{PyDFTSolver, PyDFTSolverLog};
 
 /// Geometries of individual axes.
 #[derive(Clone, Copy, PartialEq)]
-#[pyclass(name = "Geometry", eq, eq_int)]
+#[pyclass(module = "feos.feos", name = "Geometry", eq, eq_int)]
 pub enum PyGeometry {
     Cartesian,
     Cylindrical,
@@ -53,7 +53,7 @@ impl From<PyGeometry> for Geometry {
 
 /// Different versions of fundamental measure theory.
 #[derive(Clone, Copy, PartialEq)]
-#[pyclass(name = "FMTVersion", eq, eq_int)]
+#[pyclass(module = "feos.feos", name = "FMTVersion", eq, eq_int)]
 pub enum PyFMTVersion {
     /// White Bear ([Roth et al., 2002](https://doi.org/10.1088/0953-8984/14/46/313)) or modified ([Yu and Wu, 2002](https://doi.org/10.1063/1.1520530)) fundamental measure theory
     WhiteBear,
@@ -84,7 +84,7 @@ impl From<PyFMTVersion> for FMTVersion {
 }
 
 /// Collection of Helmholtz energy functionals.
-#[pyclass(name = "HelmholtzEnergyFunctional")]
+#[pyclass(module = "feos.feos", name = "HelmholtzEnergyFunctional")]
 #[derive(Clone)]
 pub struct PyHelmholtzEnergyFunctional;
 

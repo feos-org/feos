@@ -19,7 +19,7 @@ pub(crate) mod user_defined;
 
 /// Output level for phase equilibrium solvers.
 #[derive(Debug, Clone, Copy, PartialEq)]
-#[pyclass(name = "Verbosity", eq, eq_int)]
+#[pyclass(module = "feos.feos", name = "Verbosity", eq, eq_int)]
 pub(crate) enum PyVerbosity {
     /// Do not print output.
     None,
@@ -53,7 +53,7 @@ impl From<PyVerbosity> for Verbosity {
 
 #[pymodule]
 pub mod feos {
-    pub const __version__: &'static str = env!("CARGO_PKG_VERSION");
+    use pyo3::prelude::*;
 
     #[pymodule_export]
     use super::PyVerbosity;
@@ -105,4 +105,9 @@ pub mod feos {
         // Interface
         PySurfaceTensionDiagram,
     };
+
+    #[pymodule_init]
+    fn module_init(m: &Bound<'_, PyModule>) -> PyResult<()> {
+        m.add("__version__", env!("CARGO_PKG_VERSION"))
+    }
 }

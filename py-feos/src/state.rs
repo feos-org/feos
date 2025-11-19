@@ -1,7 +1,7 @@
 use crate::eos::parse_molefracs;
 use crate::{
-    eos::PyEquationOfState, error::PyFeosError, ideal_gas::IdealGasModel, residual::ResidualModel,
-    PyVerbosity,
+    PyVerbosity, eos::PyEquationOfState, error::PyFeosError, ideal_gas::IdealGasModel,
+    residual::ResidualModel,
 };
 use feos_core::{
     Contributions, DensityInitialization, EquationOfState, FeosError, ResidualDyn, State, StateVec,
@@ -15,7 +15,7 @@ use quantity::*;
 use std::collections::HashMap;
 use std::ops::{Deref, Neg, Sub};
 use std::sync::Arc;
-use typenum::{Quot, P3};
+use typenum::{P3, Quot};
 
 type DpDn<T> = Quantity<T, <_Pressure as Sub<_Moles>>::Output>;
 type InvT<T> = Quantity<T, <_Temperature as Neg>::Output>;
@@ -24,7 +24,7 @@ type InvM<T> = Quantity<T, <_Moles as Neg>::Output>;
 
 /// Possible contributions that can be computed.
 #[derive(Clone, Copy, PartialEq)]
-#[pyclass(name = "Contributions", eq, eq_int)]
+#[pyclass(module = "feos.feos", name = "Contributions", eq, eq_int)]
 pub enum PyContributions {
     /// Only compute the ideal gas contribution
     IdealGas,
@@ -101,7 +101,7 @@ impl From<PyContributions> for Contributions {
 /// ------
 /// Error
 ///     When the state cannot be created using the combination of input.
-#[pyclass(name = "State")]
+#[pyclass(module = "feos.feos", name = "State")]
 #[derive(Clone)]
 pub struct PyState(pub State<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>);
 
@@ -1421,7 +1421,7 @@ impl PyState {
 /// Returns
 /// -------
 /// StateVec
-#[pyclass(name = "StateVec")]
+#[pyclass(module = "feos.feos", name = "StateVec")]
 #[expect(clippy::type_complexity)]
 pub struct PyStateVec(Vec<State<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>>);
 

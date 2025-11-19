@@ -1,10 +1,10 @@
 use crate::{
-    eos::{parse_molefracs, PyEquationOfState},
+    PyVerbosity,
+    eos::{PyEquationOfState, parse_molefracs},
     error::PyFeosError,
     ideal_gas::IdealGasModel,
     residual::ResidualModel,
     state::{PyContributions, PyState, PyStateVec},
-    PyVerbosity,
 };
 use feos_core::{
     Contributions, EquationOfState, PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, ResidualDyn,
@@ -20,7 +20,7 @@ use std::sync::Arc;
 use typenum::P3;
 
 /// A thermodynamic two phase equilibrium state.
-#[pyclass(name = "PhaseEquilibrium")]
+#[pyclass(module = "feos.feos", name = "PhaseEquilibrium")]
 #[derive(Clone)]
 pub struct PyPhaseEquilibrium(
     pub PhaseEquilibrium<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>, 2>,
@@ -670,7 +670,7 @@ impl PyState {
 /// Returns
 /// -------
 /// PhaseDiagram : the resulting phase diagram
-#[pyclass(name = "PhaseDiagram")]
+#[pyclass(module = "feos.feos", name = "PhaseDiagram")]
 pub struct PyPhaseDiagram(PhaseDiagram<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>, 2>);
 
 #[pymethods]
@@ -1340,7 +1340,7 @@ impl PyPhaseDiagram {
 }
 
 /// Phase diagram for a binary mixture exhibiting a heteroazeotrope.
-#[pyclass(name = "PhaseDiagramHetero")]
+#[pyclass(module = "feos.feos", name = "PhaseDiagramHetero")]
 pub struct PyPhaseDiagramHetero(
     PhaseDiagramHetero<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
 );

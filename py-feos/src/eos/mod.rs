@@ -29,7 +29,7 @@ mod saftvrqmie;
 mod uvtheory;
 
 /// Collection of equations of state.
-#[pyclass(name = "EquationOfState")]
+#[pyclass(module = "feos.feos", name = "EquationOfState")]
 pub struct PyEquationOfState(pub Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>);
 
 #[pymethods]

@@ -10,7 +10,7 @@ use serde_json::Value;
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(from = "SegmentRecord<Value, Value>")]
 #[serde(into = "SegmentRecord<Value, Value>")]
-#[pyclass(name = "SegmentRecord")]
+#[pyclass(module = "feos.feos", name = "SegmentRecord")]
 pub struct PySegmentRecord {
     #[pyo3(get)]
     identifier: String,
@@ -113,7 +113,7 @@ impl PySegmentRecord {
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(from = "BinaryRecord<String, Value, Value>")]
 #[serde(into = "BinaryRecord<String, Value, Value>")]
-#[pyclass(name = "BinarySegmentRecord")]
+#[pyclass(module = "feos.feos", name = "BinarySegmentRecord")]
 pub struct PyBinarySegmentRecord {
     #[pyo3(get)]
     pub id1: String,
