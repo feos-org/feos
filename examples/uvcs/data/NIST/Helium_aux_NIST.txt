@@ -1,0 +1,3 @@
+Critical temperature (Tc)	5.1953 K
+Critical pressure (Pc)	0.22832 MPa
+Critical density (Dc)	69.5800 kg/m3
