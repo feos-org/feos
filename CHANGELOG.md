@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2025-11-24
+### Fixed
+- Fixed a wrong Jacobian entry in `heteroazeotrope_t`. (Thanks to @ImagineBaggins for reporting the issue) [#320](https://github.com/feos-org/feos/pull/320)
+
 ## [0.9.0] - 2025-11-08
 ### Added
 - Integrated the functionalities of [`feos-ad`](https://github.com/feos-org/feos-ad). [#289](https://github.com/feos-org/feos/pull/289)
