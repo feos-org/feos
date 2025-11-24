@@ -10,6 +10,9 @@ keywords.workspace = true
 categories.workspace = true
 description = "FeOs - A framework for equations of state and classical density functional theory."
 
+[package.metadata.docs.rs]
+features = ["all_models"]
+
 [dependencies]
 quantity = { workspace = true }
 num-dual = { workspace = true }

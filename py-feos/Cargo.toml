@@ -8,6 +8,7 @@ license.workspace = true
 repository.workspace = true
 keywords.workspace = true
 categories.workspace = true
+description = "FeOs - A framework for equations of state and classical density functional theory."
 
 [lib]
 name = "feos"
