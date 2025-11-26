@@ -644,15 +644,14 @@ It is written in <strong>Rust</strong> with a <strong>Python</strong> interface.
 <input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
 <label class="sd-tab-label" for="sd-tab-item-0">
 Python</label><div class="sd-tab-content docutils">
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">feos</span><span class="w"> </span><span class="kn">import</span> <span class="n">EquationOfState</span><span class="p">,</span> <span class="n">State</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">feos.parameters</span><span class="w"> </span><span class="kn">import</span> <span class="n">Parameters</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">feos</span>
 
 <span class="c1"># Build an equation of state</span>
-<span class="n">parameters</span> <span class="o">=</span> <span class="n">Parameters</span><span class="o">.</span><span class="n">from_json</span><span class="p">([</span><span class="s1">&#39;methanol&#39;</span><span class="p">],</span> <span class="s1">&#39;parameters.json&#39;</span><span class="p">)</span>
-<span class="n">eos</span> <span class="o">=</span> <span class="n">EquationOfState</span><span class="o">.</span><span class="n">pcsaft</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+<span class="n">parameters</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">Parameters</span><span class="o">.</span><span class="n">from_json</span><span class="p">([</span><span class="s1">&#39;methanol&#39;</span><span class="p">],</span> <span class="s1">&#39;parameters.json&#39;</span><span class="p">)</span>
+<span class="n">eos</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">EquationOfState</span><span class="o">.</span><span class="n">pcsaft</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
 
 <span class="c1"># Define thermodynamic conditions</span>
-<span class="n">critical_point</span> <span class="o">=</span> <span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos</span><span class="p">)</span>
+<span class="n">critical_point</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos</span><span class="p">)</span>
 
 <span class="c1"># Compute properties</span>
 <span class="n">p</span> <span class="o">=</span> <span class="n">critical_point</span><span class="o">.</span><span class="n">pressure</span><span class="p">()</span>
