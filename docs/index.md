@@ -12,15 +12,14 @@ It is written in **Rust** with a **Python** interface.
 `````{tab-set}
 ````{tab-item} Python
 ```python
-from feos import EquationOfState, State
-from feos.parameters import Parameters
+import feos
 
 # Build an equation of state
-parameters = Parameters.from_json(['methanol'], 'parameters.json')
-eos = EquationOfState.pcsaft(parameters)
+parameters = feos.Parameters.from_json(['methanol'], 'parameters.json')
+eos = feos.EquationOfState.pcsaft(parameters)
 
 # Define thermodynamic conditions
-critical_point = State.critical_point(eos)
+critical_point = feos.State.critical_point(eos)
 
 # Compute properties
 p = critical_point.pressure()
