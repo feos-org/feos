@@ -625,9 +625,13 @@
     "    molarweight=74.123, \n",
     "    m=2.7515, \n",
     "    sigma=3.6139, \n",
-    "    epsilon_k=259.59, \n",
-    "    kappa_ab=0.006692, \n",
-    "    epsilon_k_ab=2544.6\n",
+    "    epsilon_k=259.59,\n",
+    "    association_sites=[{\n",
+    "        \"na\": 1,\n",
+    "        \"nb\": 1,\n",
+    "        \"kappa_ab\": 0.006692, \n",
+    "        \"epsilon_k_ab\": 2544.6\n",
+    "    }]\n",
     ")"
    ]
   },
@@ -639,10 +643,10 @@
     {
      "data": {
       "text/markdown": [
-       "|component|molarweight|m|sigma|epsilon_k|kappa_ab|epsilon_k_ab|\n",
-       "|-|-|-|-|-|-|-|\n",
-       "|butane|58.123|2.3316|3.7086|222.88|||\n",
-       "|1-butanol|74.123|2.7515|3.6139|259.59|0.006692|2544.6|\n",
+       "|component|molarweight|m|sigma|epsilon_k|na|nb|kappa_ab|epsilon_k_ab|\n",
+       "|-|-|-|-|-|-|-|-|-|\n",
+       "|butane|58.123|2.3316|3.7086|222.88|\n",
+       "|1-butanol|74.123|2.7515|3.6139|259.59|1|1|0.006692|2544.6|\n",
        "\n",
        "|component 1|component 2|k_ij|\n",
        "|-|-|-|\n",
@@ -677,8 +681,14 @@
        "    \"m\": 2.7515,\n",
        "    \"sigma\": 3.6139,\n",
        "    \"epsilon_k\": 259.59,\n",
-       "    \"kappa_ab\": 0.006692,\n",
-       "    \"epsilon_k_ab\": 2544.6\n",
+       "    \"association_sites\": [\n",
+       "      {\n",
+       "        \"kappa_ab\": 0.006692,\n",
+       "        \"epsilon_k_ab\": 2544.6,\n",
+       "        \"na\": 1.0,\n",
+       "        \"nb\": 1.0\n",
+       "      }\n",
+       "    ]\n",
        "  }\n",
        "]\n",
        "\n",
@@ -718,10 +728,10 @@
     {
      "data": {
       "text/markdown": [
-       "|component|molarweight|m|sigma|epsilon_k|kappa_ab|epsilon_k_ab|\n",
-       "|-|-|-|-|-|-|-|\n",
-       "|butane|58.123|2.3316|3.7086|222.88|||\n",
-       "|1-butanol|74.123|2.7515|3.6139|259.59|0.006692|2544.6|\n",
+       "|component|molarweight|m|sigma|epsilon_k|na|nb|kappa_ab|epsilon_k_ab|\n",
+       "|-|-|-|-|-|-|-|-|-|\n",
+       "|butane|58.123|2.3316|3.7086|222.88|\n",
+       "|1-butanol|74.123|2.7515|3.6139|259.59|1|1|0.006692|2544.6|\n",
        "\n",
        "|component 1|component 2|k_ij|\n",
        "|-|-|-|\n",
@@ -756,8 +766,14 @@
        "    \"m\": 2.7515,\n",
        "    \"sigma\": 3.6139,\n",
        "    \"epsilon_k\": 259.59,\n",
-       "    \"kappa_ab\": 0.006692,\n",
-       "    \"epsilon_k_ab\": 2544.6\n",
+       "    \"association_sites\": [\n",
+       "      {\n",
+       "        \"kappa_ab\": 0.006692,\n",
+       "        \"epsilon_k_ab\": 2544.6,\n",
+       "        \"na\": 1.0,\n",
+       "        \"nb\": 1.0\n",
+       "      }\n",
+       "    ]\n",
        "  }\n",
        "]\n",
        "\n",
@@ -817,7 +833,7 @@
     {
      "data": {
       "text/plain": [
-       "<GcParameters at 0x7fbbc8311d70>"
+       "<GcParameters at 0x7fb34959a6d0>"
       ]
      },
      "execution_count": 12,
@@ -929,7 +945,7 @@
     {
      "data": {
       "text/plain": [
-       "<GcParameters at 0x7fbbc8311590>"
+       "<GcParameters at 0x7fb3582d9470>"
       ]
      },
      "execution_count": 15,
@@ -1295,7 +1311,7 @@
     "\n",
     "## Further reading\n",
     "\n",
-    "- Files of published parameters and further explanations can be found [in the `feos` github repositoy](https://github.com/feos-org/feos/tree/main/parameters/pcsaft).\n",
+    "- Files of published parameters and further explanations can be found [in the feos github repositoy](https://github.com/feos-org/feos/tree/main/parameters/pcsaft).\n",
     "\n",
     "## Concluding remkars\n",
     "\n",
@@ -1319,7 +1335,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.13.5"
+   "version": "3.14.0"
   }
  },
  "nbformat": 4,

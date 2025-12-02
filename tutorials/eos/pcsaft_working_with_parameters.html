@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="Pure substance phase diagrams" href="pcsaft_phase_diagram.html"><link rel="prev" title="Equations of state" href="index.html">
 
-    <!-- Generated with Sphinx 8.1.3 and Furo 2025.09.25 -->
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
         <title>Working with parameters - FeOs v0.9.1</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=580074bf" />
@@ -1130,8 +1130,12 @@ PureRecord(identifier: {cas: 106-97-8, name: butane, iupac_name: butane, smiles:
     <span class="n">m</span><span class="o">=</span><span class="mf">2.7515</span><span class="p">,</span>
     <span class="n">sigma</span><span class="o">=</span><span class="mf">3.6139</span><span class="p">,</span>
     <span class="n">epsilon_k</span><span class="o">=</span><span class="mf">259.59</span><span class="p">,</span>
-    <span class="n">kappa_ab</span><span class="o">=</span><span class="mf">0.006692</span><span class="p">,</span>
-    <span class="n">epsilon_k_ab</span><span class="o">=</span><span class="mf">2544.6</span>
+    <span class="n">association_sites</span><span class="o">=</span><span class="p">[{</span>
+        <span class="s2">&quot;na&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;nb&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;kappa_ab&quot;</span><span class="p">:</span> <span class="mf">0.006692</span><span class="p">,</span>
+        <span class="s2">&quot;epsilon_k_ab&quot;</span><span class="p">:</span> <span class="mf">2544.6</span>
+    <span class="p">}]</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -1158,6 +1162,8 @@ PureRecord(identifier: {cas: 106-97-8, name: butane, iupac_name: butane, smiles:
 <th class="head"><p>m</p></th>
 <th class="head"><p>sigma</p></th>
 <th class="head"><p>epsilon_k</p></th>
+<th class="head"><p>na</p></th>
+<th class="head"><p>nb</p></th>
 <th class="head"><p>kappa_ab</p></th>
 <th class="head"><p>epsilon_k_ab</p></th>
 </tr>
@@ -1170,12 +1176,16 @@ PureRecord(identifier: {cas: 106-97-8, name: butane, iupac_name: butane, smiles:
 <td><p>222.88</p></td>
 <td></td>
 <td></td>
+<td></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>1-butanol</p></td>
 <td><p>74.123</p></td>
 <td><p>2.7515</p></td>
 <td><p>3.6139</p></td>
 <td><p>259.59</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
 <td><p>0.006692</p></td>
 <td><p>2544.6</p></td>
 </tr>
@@ -1231,6 +1241,8 @@ PureRecord(identifier: {cas: 106-97-8, name: butane, iupac_name: butane, smiles:
 <th class="head"><p>m</p></th>
 <th class="head"><p>sigma</p></th>
 <th class="head"><p>epsilon_k</p></th>
+<th class="head"><p>na</p></th>
+<th class="head"><p>nb</p></th>
 <th class="head"><p>kappa_ab</p></th>
 <th class="head"><p>epsilon_k_ab</p></th>
 </tr>
@@ -1243,12 +1255,16 @@ PureRecord(identifier: {cas: 106-97-8, name: butane, iupac_name: butane, smiles:
 <td><p>222.88</p></td>
 <td></td>
 <td></td>
+<td></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><p>1-butanol</p></td>
 <td><p>74.123</p></td>
 <td><p>2.7515</p></td>
 <td><p>3.6139</p></td>
 <td><p>259.59</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
 <td><p>0.006692</p></td>
 <td><p>2544.6</p></td>
 </tr>
@@ -1310,7 +1326,7 @@ PureRecord(identifier: {cas: 106-97-8, name: butane, iupac_name: butane, smiles:
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;GcParameters at 0x7fbbc8311d70&gt;
+&lt;GcParameters at 0x7fb34959a6d0&gt;
 </pre></div></div>
 </div>
 </section>
@@ -1401,7 +1417,7 @@ PureRecord(identifier: {cas: 106-97-8, name: butane, iupac_name: butane, smiles:
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;GcParameters at 0x7fbbc8311590&gt;
+&lt;GcParameters at 0x7fb3582d9470&gt;
 </pre></div></div>
 </div>
 </section>
@@ -1678,7 +1694,7 @@ Identifier(cas=74-82-8, name=methane, iupac_name=methane, smiles=C, inchi=InChI=
 <section id="Further-reading">
 <h2>Further reading<a class="headerlink" href="#Further-reading" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p>Files of published parameters and further explanations can be found <cite>in the ``feos`</cite> github repositoy &lt;<a class="reference external" href="https://github.com/feos-org/feos/tree/main/parameters/pcsaft">https://github.com/feos-org/feos/tree/main/parameters/pcsaft</a>&gt;`__.</p></li>
+<li><p>Files of published parameters and further explanations can be found <a class="reference external" href="https://github.com/feos-org/feos/tree/main/parameters/pcsaft">in the feos github repositoy</a>.</p></li>
 </ul>
 </section>
 <section id="Concluding-remkars">
