@@ -78,7 +78,8 @@ impl<T: DualNum<f64> + Copy> WeightFunction<T> {
 
             // Apply Lanczos sigma factor
             if let Some(l) = lanczos {
-                w_i.assign(&(&w_i * l));
+                let w_i_l = &w_i * l;
+                w_i.assign(&w_i_l);
             }
         }
 
@@ -126,7 +127,8 @@ impl<T: DualNum<f64> + Copy> WeightFunction<T> {
 
                 // Apply Lanczos sigma factor
                 if let Some(l) = lanczos {
-                    w_i.assign(&(&w_i * l));
+                    let w_i_l = &w_i * l;
+                    w_i.assign(&w_i_l)
                 }
             }
         }
