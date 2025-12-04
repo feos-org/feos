@@ -23,7 +23,7 @@ categories = ["science"]
 
 [workspace.dependencies]
 quantity = "0.12"
-num-dual = "0.12"
+num-dual = "0.13"
 ndarray = "0.17"
 nalgebra = "0.34"
 thiserror = "2.0"
