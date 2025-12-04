@@ -391,6 +391,33 @@ pub mod utils {
         PcSaft::new(PcSaftParameters::new_pure(butane_record).unwrap())
     }
 
+    pub fn nonane_parameters() -> PcSaft {
+        let nonane_json = r#"
+            {
+                "identifier": {
+                    "cas": "111-84-2",
+                    "name": "nonane",
+                    "iupac_name": "nonane",
+                    "smiles": "CCCCCCCCC",
+                    "inchi": "InChI=1S/C9H20/c1-3-5-7-9-8-6-4-2/h3-9H2,1-2H3",
+                    "formula": "C9H20"
+                },
+                "molarweight": 128.258,
+                "m": 4.2079,
+                "sigma": 3.8448,
+                "epsilon_k": 244.51,
+                "viscosity": [
+                    -1.4629,
+                    -3.0058,
+                    -0.5842,
+                    -0.1222
+                ]
+            }"#;
+        let nonane_record: PureRecord<PcSaftRecord, PcSaftAssociationRecord> =
+            serde_json::from_str(nonane_json).expect("Unable to parse json.");
+        PcSaft::new(PcSaftParameters::new_pure(nonane_record).unwrap())
+    }
+
     pub fn dme_parameters() -> PcSaftPars {
         let dme_json = r#"
             {
@@ -515,6 +542,54 @@ pub mod utils {
                 "viscosity": [-0.9763, -2.2413, -0.3690, -0.0605],
                 "diffusion": [-0.8985872992958458, 0.3428584416613513, 0.10236616087103916, 0.0, 0.0],
                 "molarweight": 58.123
+            }
+        ]"#;
+        let binary_record: [PureRecord<PcSaftRecord, PcSaftAssociationRecord>; 2] =
+            serde_json::from_str(binary_json).expect("Unable to parse json.");
+        PcSaft::new(PcSaftParameters::new_binary(binary_record, None, vec![]).unwrap())
+    }
+
+    pub fn nonane_heptane_parameters() -> PcSaft {
+        let binary_json = r#"[
+            {
+                "identifier": {
+                    "cas": "111-84-2",
+                    "name": "nonane",
+                    "iupac_name": "nonane",
+                    "smiles": "CCCCCCCCC",
+                    "inchi": "InChI=1S/C9H20/c1-3-5-7-9-8-6-4-2/h3-9H2,1-2H3",
+                    "formula": "C9H20"
+                },
+                "molarweight": 128.258,
+                "m": 4.2079,
+                "sigma": 3.8448,
+                "epsilon_k": 244.51,
+                "viscosity": [
+                    -1.4629,
+                    -3.0058,
+                    -0.5842,
+                    -0.1222
+                ]
+            },
+            {
+                "identifier": {
+                    "cas": "142-82-5",
+                    "name": "heptane",
+                    "iupac_name": "heptane",
+                    "smiles": "CCCCCCC",
+                    "inchi": "InChI=1S/C7H16/c1-3-5-7-6-4-2/h3-7H2,1-2H3",
+                    "formula": "C7H16"
+                },
+                "molarweight": 100.204,
+                "m": 3.4831,
+                "sigma": 3.8049,
+                "epsilon_k": 238.4,
+                "viscosity": [
+                    -1.2979,
+                    -2.6936,
+                    -0.4951,
+                    -0.0988
+                ]
             }
         ]"#;
         let binary_record: [PureRecord<PcSaftRecord, PcSaftAssociationRecord>; 2] =

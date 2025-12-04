@@ -266,13 +266,13 @@ impl EntropyScaling for PcSaft {
             .viscosity
             .as_ref()
             .expect("Missing viscosity coefficients.");
-        let m = (x * &self.params.m).sum();
+        let m = x.dot(&self.params.m);
         let s = s_res / m;
-        let pref = (x * &self.params.m) / m;
-        let a = coefficients.row(0).dot(x);
-        let b = coefficients.row(1).dot(&pref);
-        let c = coefficients.row(2).dot(&pref);
-        let d = coefficients.row(3).dot(&pref);
+        let pref = x.component_mul(&self.params.m) / m;
+        let a = coefficients.row(0).transpose().dot(x);
+        let b = coefficients.row(1).transpose().dot(&pref);
+        let c = coefficients.row(2).transpose().dot(&pref);
+        let d = coefficients.row(3).transpose().dot(&pref);
         a + b * s + c * s.powi(2) + d * s.powi(3)
     }
 
@@ -307,14 +307,14 @@ impl EntropyScaling for PcSaft {
             .diffusion
             .as_ref()
             .expect("Missing diffusion coefficients.");
-        let m = (x * &self.params.m).sum();
+        let m = x.dot(&self.params.m);
         let s = s_res / m;
-        let pref = (x * &self.params.m).map(|v| v / m);
-        let a = coefficients.row(0).dot(x);
-        let b = coefficients.row(1).dot(&pref);
-        let c = coefficients.row(2).dot(&pref);
-        let d = coefficients.row(3).dot(&pref);
-        let e = coefficients.row(4).dot(&pref);
+        let pref = x.component_mul(&self.params.m) / m;
+        let a = coefficients.row(0).transpose().dot(x);
+        let b = coefficients.row(1).transpose().dot(&pref);
+        let c = coefficients.row(2).transpose().dot(&pref);
+        let d = coefficients.row(3).transpose().dot(&pref);
+        let e = coefficients.row(4).transpose().dot(&pref);
         a + b * s - c * (1.0 - s.exp()) * s.powi(2) - d * s.powi(4) - e * s.powi(8)
     }
 
@@ -371,13 +371,13 @@ impl EntropyScaling for PcSaft {
             .thermal_conductivity
             .as_ref()
             .expect("Missing thermal conductivity coefficients");
-        let m = (x * &self.params.m).sum();
+        let m = x.dot(&self.params.m);
         let s = s_res / m;
-        let pref = (x * &self.params.m).map(|v| v / m);
-        let a = coefficients.row(0).dot(x);
-        let b = coefficients.row(1).dot(&pref);
-        let c = coefficients.row(2).dot(&pref);
-        let d = coefficients.row(3).dot(&pref);
+        let pref = x.component_mul(&self.params.m) / m;
+        let a = coefficients.row(0).transpose().dot(x);
+        let b = coefficients.row(1).transpose().dot(&pref);
+        let c = coefficients.row(2).transpose().dot(&pref);
+        let d = coefficients.row(3).transpose().dot(&pref);
         a + b * s + c * (1.0 - s.exp()) + d * s.powi(2)
     }
 }
@@ -386,7 +386,8 @@ impl EntropyScaling for PcSaft {
 mod tests {
     use super::*;
     use crate::pcsaft::parameters::utils::{
-        butane_parameters, propane_butane_parameters, propane_parameters,
+        butane_parameters, nonane_heptane_parameters, nonane_parameters, propane_butane_parameters,
+        propane_parameters,
     };
     use approx::assert_relative_eq;
     use feos_core::*;
@@ -542,6 +543,28 @@ mod tests {
                 .ln(),
             epsilon = 1e-15
         );
+        Ok(())
+    }
+
+    #[test]
+    fn viscosity_mix() -> FeosResult<()> {
+        // Test case: compare fig 15 of Lötgering-Lin 2018 (https://doi.org/10.1021/acs.iecr.7b04871)
+        let e = &nonane_heptane_parameters();
+        let nonane = &nonane_parameters();
+
+        let t = 303.15 * KELVIN;
+        let p = 500.0 * BAR;
+        let n = dvector![0.25, 0.75] * MOL;
+        let viscosity_mix = State::new_npt(&e, t, p, &n, None)?.viscosity();
+        let viscosity_paper = 0.68298 * MILLI * PASCAL * SECOND;
+        assert_relative_eq!(viscosity_paper, viscosity_mix, epsilon = 1e-8);
+
+        // Make sure pure substance case is recovered
+        let n_pseudo_mix = dvector![1.0, 0.0] * MOL;
+        let viscosity_pseudo_mix = State::new_npt(&e, t, p, &n_pseudo_mix, None)?.viscosity();
+        let n_nonane = dvector![1.0] * MOL;
+        let viscosity_nonane = State::new_npt(&nonane, t, p, &n_nonane, None)?.viscosity();
+        assert_relative_eq!(viscosity_pseudo_mix, viscosity_nonane, epsilon = 1e-15);
         Ok(())
     }
 
