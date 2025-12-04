@@ -24,7 +24,7 @@ categories = ["science"]
 [workspace.dependencies]
 quantity = "0.12"
 num-dual = "0.12"
-ndarray = "0.16"
+ndarray = "0.17"
 nalgebra = "0.34"
 thiserror = "2.0"
 conv = "0.3"
@@ -41,7 +41,7 @@ rustfft = "6.0"
 libm = "0.2"
 gauss-quad = "0.2"
 approx = "0.5"
-criterion = "0.7"
+criterion = "0.8"
 paste = "1.0"
 
 feos-core = { version = "0.9", path = "crates/feos-core" }
