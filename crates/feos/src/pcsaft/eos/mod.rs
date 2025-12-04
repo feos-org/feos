@@ -386,7 +386,8 @@ impl EntropyScaling for PcSaft {
 mod tests {
     use super::*;
     use crate::pcsaft::parameters::utils::{
-        butane_parameters, propane_butane_parameters, propane_parameters,
+        butane_parameters, nonane_heptane_parameters, nonane_parameters, propane_butane_parameters,
+        propane_parameters,
     };
     use approx::assert_relative_eq;
     use feos_core::*;
@@ -547,23 +548,23 @@ mod tests {
 
     #[test]
     fn viscosity_mix() -> FeosResult<()> {
-        let e = &propane_butane_parameters();
-        let t = 300.0 * KELVIN;
-        let p = 2.0 * BAR;
-        let n = dvector![1.0, 0.0] * MOL;
-        let s = State::new_npt(&e, t, p, &n, None)?;
-        assert_relative_eq!(
-            s.viscosity(),
-            0.00797 * MILLI * PASCAL * SECOND,
-            epsilon = 1e-5
-        );
-        assert_relative_eq!(
-            s.ln_viscosity_reduced(),
-            (s.viscosity() / e.viscosity_reference(s.temperature, s.volume, &s.moles))
-                .into_value()
-                .ln(),
-            epsilon = 1e-15
-        );
+        // Test case: compare fig 15 of Lötgering-Lin 2018 (https://doi.org/10.1021/acs.iecr.7b04871)
+        let e = &nonane_heptane_parameters();
+        let nonane = &nonane_parameters();
+
+        let t = 303.15 * KELVIN;
+        let p = 500.0 * BAR;
+        let n = dvector![0.25, 0.75] * MOL;
+        let viscosity_mix = State::new_npt(&e, t, p, &n, None)?.viscosity();
+        let viscosity_paper = 0.68298 * MILLI * PASCAL * SECOND;
+        assert_relative_eq!(viscosity_paper, viscosity_mix, epsilon = 1e-8);
+
+        // Make sure pure substance case is recovered
+        let n_pseudo_mix = dvector![1.0, 0.0] * MOL;
+        let viscosity_pseudo_mix = State::new_npt(&e, t, p, &n_pseudo_mix, None)?.viscosity();
+        let n_nonane = dvector![1.0] * MOL;
+        let viscosity_nonane = State::new_npt(&nonane, t, p, &n_nonane, None)?.viscosity();
+        assert_relative_eq!(viscosity_pseudo_mix, viscosity_nonane, epsilon = 1e-15);
         Ok(())
     }
 
