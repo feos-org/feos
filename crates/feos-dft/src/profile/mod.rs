@@ -312,7 +312,7 @@ where
         let mut value = profile.to_owned();
         for (i, &w) in integration_weights.iter().enumerate() {
             for mut l in value.lanes_mut(Axis_nd(i)) {
-                l.assign(&(&l * w));
+                l.mul_assign(w);
             }
         }
         Volume::from_reduced(functional_determinant) * value.sum()

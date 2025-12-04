@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- Updated to `ndarray` 0.17 and `num-dual`0.13 to fix a broken dependency resolution. [#324](https://github.com/feos-org/feos/pull/324)
 
 ## [0.9.1] - 2025-11-24
 ### Fixed

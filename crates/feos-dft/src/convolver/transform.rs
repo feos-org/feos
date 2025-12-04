@@ -197,9 +197,11 @@ impl<T: DualNum<f64> + DctNum> FourierTransform<T> for SphericalTransform<T> {
             let mut f_aux = Array::zeros(f_k.raw_dim());
             self.cosine_transform(&f_r * &self.r_grid, f_aux.view_mut(), false);
             self.sine_transform(f_r, f_k.view_mut(), false);
-            f_k.assign(&(&f_k / &self.k_grid - &f_aux));
+            let f_k_scaled = &f_k / &self.k_grid - &f_aux;
+            f_k.assign(&f_k_scaled);
         }
-        f_k.assign(&(&f_k / &self.k_grid));
+        let f_k_scaled = &f_k / &self.k_grid;
+        f_k.assign(&f_k_scaled);
         f_k[0] = T::zero();
     }
 
@@ -210,9 +212,11 @@ impl<T: DualNum<f64> + DctNum> FourierTransform<T> for SphericalTransform<T> {
             let mut f_aux = Array::zeros(f_r.raw_dim());
             self.cosine_transform(&f_k * &self.k_grid, f_aux.view_mut(), true);
             self.sine_transform(f_k, f_r.view_mut(), true);
-            f_r.assign(&(&f_r / &self.r_grid - &f_aux));
+            let f_r_scaled = &f_r / &self.r_grid - &f_aux;
+            f_r.assign(&f_r_scaled);
         }
-        f_r.assign(&(&f_r / &self.r_grid));
+        let f_r_scaled = &f_r / &self.r_grid;
+        f_r.assign(&f_r_scaled);
     }
 }
 
