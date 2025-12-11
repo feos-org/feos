@@ -6,7 +6,6 @@ use feos_core::parameter::IdentifierOption;
 use feos_core::{Contributions, FeosResult, State};
 use nalgebra::dvector;
 use quantity::{KELVIN, METER, MOL};
-use typenum::P3;
 
 #[test]
 fn test_binary() -> FeosResult<()> {
@@ -70,9 +69,9 @@ fn test_polar_term() -> FeosResult<()> {
     let eos1 = &GcPcSaft::new(parameters1);
     let eos2 = &GcPcSaft::new(parameters2);
     let moles = dvector![0.5, 0.5] * MOL;
-    let p1 = State::new_nvt(&eos1, 300.0 * KELVIN, METER.powi::<P3>(), &moles)?
+    let p1 = State::new_nvt(&eos1, 300.0 * KELVIN, METER.powi::<3>(), &moles)?
         .pressure(Contributions::Total);
-    let p2 = State::new_nvt(&eos2, 300.0 * KELVIN, METER.powi::<P3>(), &moles)?
+    let p2 = State::new_nvt(&eos2, 300.0 * KELVIN, METER.powi::<3>(), &moles)?
         .pressure(Contributions::Total);
     println!("{p1} {p2}");
     assert_eq!(p1, p2);

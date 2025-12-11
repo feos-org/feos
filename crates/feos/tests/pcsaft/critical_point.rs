@@ -5,7 +5,6 @@ use feos_core::parameter::IdentifierOption;
 use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
-use typenum::P3;
 
 #[test]
 fn test_critical_point_pure() -> Result<(), Box<dyn Error>> {
@@ -21,7 +20,7 @@ fn test_critical_point_pure() -> Result<(), Box<dyn Error>> {
     assert_relative_eq!(cp.temperature, 375.12441 * KELVIN, max_relative = 1e-8);
     assert_relative_eq!(
         cp.density,
-        4733.00377 * MOL / METER.powi::<P3>(),
+        4733.00377 * MOL / METER.powi::<3>(),
         max_relative = 1e-6
     );
     Ok(())
@@ -42,7 +41,7 @@ fn test_critical_point_mix() -> Result<(), Box<dyn Error>> {
     assert_relative_eq!(cp.temperature, 407.93481 * KELVIN, max_relative = 1e-8);
     assert_relative_eq!(
         cp.density,
-        4265.50745 * MOL / METER.powi::<P3>(),
+        4265.50745 * MOL / METER.powi::<3>(),
         max_relative = 1e-6
     );
     Ok(())
