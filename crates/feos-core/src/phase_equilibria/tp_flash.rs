@@ -90,10 +90,10 @@ impl<E: Residual> State<E> {
         log_iter!(verbosity, "{:-<77}", "");
         log_iter!(
             verbosity,
-            " {:4} |                | {:10.8} | {:10.8}",
+            " {:4} |                | {:10.8?} | {:10.8?}",
             0,
-            new_vle_state.vapor().molefracs,
-            new_vle_state.liquid().molefracs,
+            new_vle_state.vapor().molefracs.data.as_vec(),
+            new_vle_state.liquid().molefracs.data.as_vec(),
         );
 
         let mut iter = 0;
@@ -279,11 +279,11 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
             let res = res_vec.norm();
             log_iter!(
                 verbosity,
-                " {:4} | {:14.8e} | {:.8} | {:.8}",
+                " {:4} | {:14.8e} | {:.8?} | {:.8?}",
                 iter,
                 res,
-                self.vapor().molefracs,
-                self.liquid().molefracs,
+                self.vapor().molefracs.data.as_vec(),
+                self.liquid().molefracs.data.as_vec(),
             );
             if res < abs_tol {
                 return Ok(true);

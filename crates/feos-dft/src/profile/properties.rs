@@ -352,7 +352,7 @@ where
         let n = drho_dmu.shape()[0];
         let mut dn_dmu = DMatrix::zeros(n, n);
         dn_dmu
-            .row_iter_mut()
+            .column_iter_mut()
             .zip(drho_dmu.outer_iter())
             .for_each(|(mut dn, drho)| dn.add_assign(&self.integrate_reduced_segments(&drho)));
         Ok(DnDmu::from_reduced(dn_dmu))
