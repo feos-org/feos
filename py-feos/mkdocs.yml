@@ -1,0 +1,192 @@
+site_name: FeOs
+site_description: FeOs - framework for equations of state and classical density functional theory
+site_url: https://feos-org.github.io/feos/
+repo_url: https://github.com/feos-org/feos
+repo_name: feos-org/feos
+edit_uri: edit/main/py-feos/docs/
+
+extra_css:
+  - _static/custom_css.css
+  - _static/custom_css2.css
+
+theme:
+  name: material
+  font:
+    text: Fira Sans
+    code: Fira Sans Mono
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.action.edit
+    - toc.integrate
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: pink
+      accent: pink
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: feos
+      primary: black
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - autorefs
+  - mkdocstrings:
+      handlers:
+        python:
+          # paths: ["feos"]
+          options:
+            # docstrings options
+            docstring_style: google
+            docstring_section_style: table # spacy or list
+            merge_init_into_class: true # put __init__ into class signature
+            show_if_no_docstring: false
+            docstring_options:
+              ignore_init_summary: false
+              trim_doctest_flags: true
+
+            # general
+            find_stubs_package: true
+            show_source: false
+
+            # headings
+            heading_level: 4
+            show_root_heading: true
+            show_root_full_path: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+
+            # signatures
+            annotations_path: brief
+            show_signature_annotations: false
+            separate_signature: true
+
+markdown_extensions:
+  - pymdownx.arithmatex: # Render LaTeX via MathJax
+      generic: true
+  - pymdownx.superfences # Seems to enable syntax highlighting when used with the Material theme.
+  - pymdownx.details # Allowing hidden expandable regions denoted by ???
+  - pymdownx.snippets: # Include one Markdown file into another
+      base_path: docs
+  - admonition
+  - tables
+  - toc:
+      toc_depth: 4
+  - pymdownx.highlight:
+      pygments_lang_class: true
+  - pymdownx.extra
+  - pymdownx.tabbed:
+      alternate_style: true
+
+# Test: use typst
+# hooks:
+#   - docs/hooks/typst_math.py
+
+# markdown_extensions:
+#   - pymdownx.arithmatex: # Render LaTeX via MathJax
+#       generic: true
+#   - pymdownx.highlight:
+#       anchor_linenums: true
+#       line_spans: __span
+#       pygments_lang_class: true
+#   - pymdownx.inlinehilite
+#   - pymdownx.snippets
+#   - pymdownx.superfences
+#   - pymdownx.tabbed:
+#       alternate_style: true
+#   - pymdownx.tasklist:
+#       custom_checkbox: true
+#   - admonition
+#   - pymdownx.details
+#   - attr_list
+#   - md_in_html
+#   - tables
+#   - toc:
+#       permalink: true
+
+extra_javascript:
+  - javascript/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+      - Core Concepts: getting-started/concepts.md
+  - User Guide:
+      - Working with States: user-guide/working-with-states.md
+      - Equations of State: user-guide/equation-of-state.md
+      - Parameters: user-guide/parameters.md
+      - Phase Equilibria: user-guide/phase-equilibria.md
+      - Density Functional Theory: user-guide/density-functional-theory.md
+      - Parameter Estimation: user-guide/estimation.md
+  - Examples:
+      - Basic Properties: examples/basic-properties.md
+      - Pure Component VLE: examples/pure-component-vle.md
+      - Binary Mixtures: examples/binary-mixtures.md
+      - Parameter Loading: examples/parameter-loading.md
+      - DFT Profiles: examples/dft-profiles.md
+  - API Reference:
+      - api/index.md
+      - Misc:
+          - api/misc.md
+      - States:
+          - api/state/state.md
+          - api/state/phase_equilibrium.md
+      - Parameters:
+          - api/parameters/identifier.md
+          - api/parameters/records.md
+          - api/parameters/parameters.md
+      - Models:
+          - api/eos/eos.md
+          - SAFT-Type:
+              - api/eos/pcsaft.md
+              - api/eos/epcsaft.md
+              - api/eos/gc_pcsaft.md
+              - api/eos/saftvrmie.md
+              - api/eos/saftvrqmie.md
+          - Model Fluids:
+              - api/eos/uvtheory.md
+              - api/eos/pets.md
+  - Theory:
+      - Classical DFT:
+          - theory/dft/euler_lagrange_equation.md
+          - theory/dft/functional_derivatives.md
+          - theory/dft/solver.md
+          - theory/dft/derivatives.md
+          - theory/dft/enthalpy_of_adsorption.md
+          - theory/dft/ideal_gas.md
+          - theory/dft/pdgt.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/feos-org/feos
+    # - icon: fontawesome/solid/paper-plane
+    #   link: mailto:bauer@itt.uni-stuttgart.de
+
+copyright: Copyright &copy; 2025 Gernot Bauer, Philipp Rehner
