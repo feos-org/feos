@@ -139,9 +139,9 @@ where
     }
 
     pub fn enthalpy_of_adsorption(&self) -> FeosResult<MolarEnergy> {
-        Ok((self.partial_molar_enthalpy_of_adsorption()?
-            * Dimensionless::new(&self.profile.bulk.molefracs))
-        .sum())
+        Ok(self
+            .partial_molar_enthalpy_of_adsorption()?
+            .dot(&Dimensionless::new(self.profile.bulk.molefracs.clone())))
     }
 
     fn _henry_coefficients<N: DualNum<f64> + Copy + DctNum>(&self, temperature: N) -> DVector<N> {
