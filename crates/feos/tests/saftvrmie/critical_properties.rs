@@ -3,12 +3,11 @@ use feos::saftvrmie::{SaftVRMie, test_utils};
 use feos_core::{SolverOptions, State};
 use quantity::*;
 use std::collections::HashMap;
-use typenum::P3;
 
 /// Critical data reported in Lafitte et al.
 pub fn critical_data() -> HashMap<&'static str, (Temperature, Pressure, MassDensity)> {
     let mut data = HashMap::new();
-    let kg_m3 = KILOGRAM / METER.powi::<P3>();
+    let kg_m3 = KILOGRAM / METER.powi::<3>();
     let mpa = MEGA * PASCAL;
     let k = KELVIN;
 
