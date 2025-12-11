@@ -37,7 +37,6 @@ serde_json = { workspace = true }
 indexmap = { workspace = true }
 rayon = { workspace = true, optional = true }
 itertools = { workspace = true }
-typenum = { workspace = true }
 paste = { workspace = true }
 
 feos = { workspace = true }

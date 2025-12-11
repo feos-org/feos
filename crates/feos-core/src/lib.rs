@@ -3,7 +3,6 @@
 #![warn(clippy::allow_attributes)]
 use quantity::{Quantity, SIUnit};
 use std::ops::{Div, Mul};
-use typenum::Integer;
 
 /// Print messages with level `Verbosity::Iter` or higher.
 #[macro_export]
@@ -132,20 +131,20 @@ const fn powi(x: f64, n: i32) -> f64 {
 /// Conversion between reduced units and SI units.
 pub trait ReferenceSystem {
     type Inner;
-    type T: Integer;
-    type L: Integer;
-    type M: Integer;
-    type I: Integer;
-    type THETA: Integer;
-    type N: Integer;
-    type J: Integer;
-    const FACTOR: f64 = powi(REFERENCE_VALUES[0], Self::T::I32)
-        * powi(REFERENCE_VALUES[1], Self::L::I32)
-        * powi(REFERENCE_VALUES[2], Self::M::I32)
-        * powi(REFERENCE_VALUES[3], Self::I::I32)
-        * powi(REFERENCE_VALUES[4], Self::THETA::I32)
-        * powi(REFERENCE_VALUES[5], Self::N::I32)
-        * powi(REFERENCE_VALUES[6], Self::J::I32);
+    const T: i8;
+    const L: i8;
+    const M: i8;
+    const I: i8;
+    const THETA: i8;
+    const N: i8;
+    const J: i8;
+    const FACTOR: f64 = powi(REFERENCE_VALUES[0], Self::T as i32)
+        * powi(REFERENCE_VALUES[1], Self::L as i32)
+        * powi(REFERENCE_VALUES[2], Self::M as i32)
+        * powi(REFERENCE_VALUES[3], Self::I as i32)
+        * powi(REFERENCE_VALUES[4], Self::THETA as i32)
+        * powi(REFERENCE_VALUES[5], Self::N as i32)
+        * powi(REFERENCE_VALUES[6], Self::J as i32);
 
     fn from_reduced(value: Self::Inner) -> Self
     where
@@ -161,17 +160,25 @@ pub trait ReferenceSystem {
 }
 
 /// Conversion to and from reduced units
-impl<Inner, T: Integer, L: Integer, M: Integer, I: Integer, THETA: Integer, N: Integer, J: Integer>
-    ReferenceSystem for Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>
+impl<
+    Inner,
+    const T: i8,
+    const L: i8,
+    const M: i8,
+    const I: i8,
+    const THETA: i8,
+    const N: i8,
+    const J: i8,
+> ReferenceSystem for Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>
 {
     type Inner = Inner;
-    type T = T;
-    type L = L;
-    type M = M;
-    type I = I;
-    type THETA = THETA;
-    type N = N;
-    type J = J;
+    const T: i8 = T;
+    const L: i8 = L;
+    const M: i8 = M;
+    const I: i8 = I;
+    const THETA: i8 = THETA;
+    const N: i8 = N;
+    const J: i8 = J;
     fn from_reduced(value: Inner) -> Self
     where
         Inner: Mul<f64, Output = Inner>,
