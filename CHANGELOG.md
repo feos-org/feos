@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.9.2] - 2025-12-11
 ### Fixed
 - Fixed calculation of enthalpies of adsorption for mixtures. [#329](https://github.com/feos-org/feos/pull/329)
 - Updated to `ndarray` 0.17 and `num-dual`0.13 to fix a broken dependency resolution. [#327](https://github.com/feos-org/feos/pull/327)
