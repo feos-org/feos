@@ -10,6 +10,7 @@ use num_dual::{
     implicit_derivative_binary, implicit_derivative_vec, jacobian, partial, partial2,
     third_derivative,
 };
+use num_traits::Zero;
 use quantity::{Density, Pressure, Temperature};
 
 const MAX_ITER_CRIT_POINT: usize = 50;
@@ -537,7 +538,13 @@ where
             let n = n + sqrt_z.component_mul(&u).map(Dual3::from_re) * s;
             let t = Dual3::from_re(temperature);
             let v = Dual3::from_re(molar_volume);
-            let ig = n.dot(&n.map(|n| (n / v).ln() - 1.0));
+            let ig = n.dot(&n.map(|n| {
+                if n.is_zero() {
+                    Dual3::zero()
+                } else {
+                    (n / v).ln() - 1.0
+                }
+            }));
             eos.lift().residual_helmholtz_energy(t, v, &n) / t + ig
         },
         D::from(0.0),
