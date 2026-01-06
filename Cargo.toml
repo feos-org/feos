@@ -22,7 +22,7 @@ keywords = [
 categories = ["science"]
 
 [workspace.dependencies]
-quantity = { git = "https://github.com/itt-ustutt/quantity", branch = "consts_instead_of_typenum" }
+quantity = "0.13"
 num-dual = "0.13"
 ndarray = "0.17"
 nalgebra = "0.34"
