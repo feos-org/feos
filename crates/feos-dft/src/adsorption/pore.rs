@@ -19,12 +19,12 @@ use quantity::{
     Temperature, Volume,
 };
 use rustdct::DctNum;
-use typenum::Diff;
+use std::ops::Sub;
 
 const POTENTIAL_OFFSET: f64 = 2.0;
 const DEFAULT_GRID_POINTS: usize = 2048;
 
-pub type _HenryCoefficient = Diff<_Moles, _Pressure>;
+pub type _HenryCoefficient = <_Moles as Sub<_Pressure>>::Output;
 pub type HenryCoefficient<T> = Quantity<T, _HenryCoefficient>;
 
 /// Parameters required to specify a 1D pore.

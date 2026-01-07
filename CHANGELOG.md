@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Breaking]
+### Packaging
+- Updated `quantity` dependency to 0.13 and removed the `typenum` dependency. [#323](https://github.com/feos-org/feos/pull/323)
+
 ## [Unreleased]
 ### Added
 - Added `py-feos` tests to GitHub Actions and moved `pyo3/extension-module` feature to `pyproject.toml`. [#334](https://github.com/feos-org/feos/pull/334)
