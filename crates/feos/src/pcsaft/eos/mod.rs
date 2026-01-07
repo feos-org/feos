@@ -9,7 +9,6 @@ use num_dual::{DualNum, partial2};
 use quantity::ad::first_derivative;
 use quantity::*;
 use std::f64::consts::{FRAC_PI_6, PI};
-use typenum::P2;
 
 pub(crate) mod dispersion;
 pub(crate) mod hard_chain;
@@ -241,7 +240,7 @@ impl EntropyScaling for PcSaft {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
                 5.0 / 16.0 * (mw.get(i) * KB / NAV * temperature / PI).sqrt()
                     / omega22(tr)
-                    / (p.sigma[i] * ANGSTROM).powi::<P2>()
+                    / (p.sigma[i] * ANGSTROM).powi::<2>()
             })
             .collect();
         let mut ce_mix = 0.0 * MILLI * PASCAL * SECOND;
@@ -291,7 +290,7 @@ impl EntropyScaling for PcSaft {
         let res: Vec<_> = (0..self.components())
             .map(|i| {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
-                3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi::<P2>() / omega11(tr) / (density * NAV)
+                3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi::<2>() / omega11(tr) / (density * NAV)
                     * (temperature * RGAS / PI / mw.get(i) / p.m[i]).sqrt()
             })
             .collect();
@@ -393,13 +392,12 @@ mod tests {
     use feos_core::*;
     use nalgebra::dvector;
     use quantity::{BAR, KELVIN, METER, PASCAL, RGAS};
-    use typenum::{P2, P3};
 
     #[test]
     fn ideal_gas_pressure() {
         let e = &propane_parameters();
         let t = 200.0 * KELVIN;
-        let v = 1e-3 * METER.powi::<P3>();
+        let v = 1e-3 * METER.powi::<3>();
         let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&e, t, v, &n).unwrap();
         let p_ig = s.total_moles * RGAS * t / v;
@@ -415,7 +413,7 @@ mod tests {
     fn ideal_gas_heat_capacity_joback() {
         let e = &propane_parameters();
         let t = 200.0 * KELVIN;
-        let v = 1e-3 * METER.powi::<P3>();
+        let v = 1e-3 * METER.powi::<3>();
         let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&e, t, v, &n).unwrap();
         let p_ig = s.total_moles * RGAS * t / v;
@@ -504,7 +502,7 @@ mod tests {
         let e2 = &butane_parameters();
         let e12 = &propane_butane_parameters();
         let t = 300.0 * KELVIN;
-        let v = 0.02456883872966545 * METER.powi::<P3>();
+        let v = 0.02456883872966545 * METER.powi::<3>();
         let m1 = dvector![2.0] * MOL;
         let m1m = dvector![2.0, 0.0] * MOL;
         let m2m = dvector![0.0, 2.0] * MOL;
@@ -577,7 +575,7 @@ mod tests {
         let s = State::new_npt(&e, t, p, &n, None)?;
         assert_relative_eq!(
             s.diffusion(),
-            0.01505 * (CENTI * METER).powi::<P2>() / SECOND,
+            0.01505 * (CENTI * METER).powi::<2>() / SECOND,
             epsilon = 1e-5
         );
         assert_relative_eq!(
