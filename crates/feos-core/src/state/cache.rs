@@ -1,8 +1,10 @@
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, Dim, OVector, Scalar};
 use quantity::*;
+use std::ops::Sub;
 use std::sync::OnceLock;
-use typenum::Diff;
+
+type Diff<T1, T2> = <T1 as Sub<T2>>::Output;
 
 #[derive(Clone, Debug)]
 #[expect(clippy::type_complexity)]

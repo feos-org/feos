@@ -6,7 +6,6 @@ use feos_core::{Contributions, EquationOfState, FeosResult, StateBuilder};
 use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
-use typenum::P3;
 
 fn propane_butane_parameters() -> FeosResult<(PcSaftParameters, Vec<Joback>)> {
     let saft = PcSaftParameters::from_json(
@@ -61,7 +60,7 @@ fn pressure_entropy_molefracs() -> Result<(), Box<dyn Error>> {
 fn volume_temperature_molefracs() -> Result<(), Box<dyn Error>> {
     let saft = PcSaft::new(propane_butane_parameters()?.0);
     let temperature = 300.0 * KELVIN;
-    let volume = 1.5e-3 * METER.powi::<P3>();
+    let volume = 1.5e-3 * METER.powi::<3>();
     let moles = MOL;
     let x = dvector![0.3, 0.7];
     let state = StateBuilder::new(&&saft)
@@ -79,7 +78,7 @@ fn temperature_partial_density() -> Result<(), Box<dyn Error>> {
     let saft = PcSaft::new(propane_butane_parameters()?.0);
     let temperature = 300.0 * KELVIN;
     let x = dvector![0.3, 0.7];
-    let partial_density = x.clone() * MOL / METER.powi::<P3>();
+    let partial_density = x.clone() * MOL / METER.powi::<3>();
     let density = partial_density.sum();
     let state = StateBuilder::new(&&saft)
         .temperature(temperature)
@@ -98,7 +97,7 @@ fn temperature_density_molefracs() -> Result<(), Box<dyn Error>> {
     let saft = PcSaft::new(propane_butane_parameters()?.0);
     let temperature = 300.0 * KELVIN;
     let x = dvector![0.3, 0.7];
-    let density = MOL / METER.powi::<P3>();
+    let density = MOL / METER.powi::<3>();
     let state = StateBuilder::new(&&saft)
         .temperature(temperature)
         .density(density)

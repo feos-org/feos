@@ -12,7 +12,6 @@ use num_dual::DualNum;
 use quantity::{_Volume, DEGREES, Density, Length, Moles, Quantity, Temperature, Volume};
 use std::ops::{Add, MulAssign};
 use std::sync::Arc;
-use typenum::Sum;
 
 mod properties;
 
@@ -304,7 +303,7 @@ where
     pub fn integrate<S: Data<Elem = f64>, U>(
         &self,
         profile: &Quantity<ArrayBase<S, D>, U>,
-    ) -> Quantity<f64, Sum<_Volume, U>>
+    ) -> Quantity<f64, <_Volume as Add<U>>::Output>
     where
         _Volume: Add<U>,
     {
@@ -322,7 +321,7 @@ where
     pub fn integrate_comp<S: Data<Elem = f64>, U>(
         &self,
         profile: &Quantity<ArrayBase<S, D::Larger>, U>,
-    ) -> Quantity<DVector<f64>, Sum<_Volume, U>>
+    ) -> Quantity<DVector<f64>, <_Volume as Add<U>>::Output>
     where
         _Volume: Add<U>,
     {
@@ -335,7 +334,7 @@ where
     pub fn integrate_segments<S: Data<Elem = f64>, U>(
         &self,
         profile: &Quantity<ArrayBase<S, D::Larger>, U>,
-    ) -> Quantity<DVector<f64>, Sum<_Volume, U>>
+    ) -> Quantity<DVector<f64>, <_Volume as Add<U>>::Output>
     where
         _Volume: Add<U>,
     {
