@@ -18,7 +18,7 @@ pub use dft::YuWuAssociationFunctional;
 /// [AssociationStrength::association_strength] multiplies the model-specific
 /// site-site association strength [AssociationStrength::association_strength_ij]
 /// with the contact value of the hard-sphere pair correlation function.
-/// 
+///
 /// For implementations that require a different form,
 /// [AssociationStrength::association_strength] can be overwritten.
 pub trait AssociationStrength: HardSphereProperties {
@@ -463,7 +463,6 @@ mod tests_gc_pcsaft {
     use nalgebra::dvector;
     use num_dual::Dual64;
     use quantity::{METER, MOL, PASCAL, Pressure};
-    use typenum::P3;
 
     #[test]
     fn test_assoc_propanol() {
@@ -471,7 +470,7 @@ mod tests_gc_pcsaft {
         let params = GcPcSaftEosParameters::new(&parameters);
         let contrib = Association::new(50, 1e-10);
         let temperature = 300.0;
-        let volume = Dual64::from_re(METER.powi::<P3>().to_reduced()).derivative();
+        let volume = Dual64::from_re(METER.powi::<3>().to_reduced()).derivative();
         let moles = Dual64::from_re((1.5 * MOL).to_reduced());
         let molar_volume = volume / moles;
         let state = StateHD::new(
@@ -499,7 +498,7 @@ mod tests_gc_pcsaft {
         let params = GcPcSaftEosParameters::new(&parameters);
         let contrib = Association::new_cross_association(50, 1e-10);
         let temperature = 300.0;
-        let volume = Dual64::from_re(METER.powi::<P3>().to_reduced()).derivative();
+        let volume = Dual64::from_re(METER.powi::<3>().to_reduced()).derivative();
         let moles = Dual64::from_re((1.5 * MOL).to_reduced());
         let molar_volume = volume / moles;
         let state = StateHD::new(
@@ -527,7 +526,7 @@ mod tests_gc_pcsaft {
         let params = GcPcSaftEosParameters::new(&parameters);
         let contrib = Association::new(50, 1e-10);
         let temperature = 300.0;
-        let volume = Dual64::from_re(METER.powi::<P3>().to_reduced()).derivative();
+        let volume = Dual64::from_re(METER.powi::<3>().to_reduced()).derivative();
         let moles = (dvector![1.5, 2.5] * MOL).to_reduced().map(Dual64::from_re);
         let total_moles = moles.sum();
         let molar_volume = volume / total_moles;

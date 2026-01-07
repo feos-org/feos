@@ -138,7 +138,6 @@ mod test {
     use nalgebra::{Dyn, SVector, U2, dvector};
     use num_dual::{Dual2Vec, hessian};
     use quantity::{GRAM, KELVIN, KILO, KILOGRAM, METER, MOL, RGAS};
-    use typenum::P3;
 
     use super::*;
 
@@ -262,7 +261,7 @@ mod test {
     #[test]
     fn test_ideal_gas_hack() {
         let t = 647. * KELVIN;
-        let rho = 358. * KILOGRAM / METER.powi::<P3>();
+        let rho = 358. * KILOGRAM / METER.powi::<3>();
         let eos = &water();
         let mw = eos.molar_weight.get(0);
         let moles = dvector![1.8] * MOL;
@@ -270,7 +269,7 @@ mod test {
         let phi_feos = (a_feos / RGAS / moles.sum() / t).into_value();
         println!("A:          {a_feos}");
         println!("phi(feos):  {phi_feos}");
-        let delta = (rho / (eos.rhoc * MOL / METER.powi::<P3>() * mw)).into_value();
+        let delta = (rho / (eos.rhoc * MOL / METER.powi::<3>() * mw)).into_value();
         let tau = (eos.tc * KELVIN / t).into_value();
         let phi = eos.ideal_gas[0]
             .terms

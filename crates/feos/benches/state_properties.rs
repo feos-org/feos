@@ -5,7 +5,6 @@ use feos::core::{Contributions, Residual, State};
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use nalgebra::{DVector, dvector};
 use quantity::*;
-use typenum::P3;
 
 /// Evaluate a property of a state given the EoS, the property to compute,
 /// temperature, volume, moles, and the contributions to consider.
@@ -42,7 +41,7 @@ fn properties_pcsaft(c: &mut Criterion) {
     .unwrap();
     let eos = PcSaft::new(parameters);
     let t = 300.0 * KELVIN;
-    let density = 71.18 * KILO * MOL / METER.powi::<P3>();
+    let density = 71.18 * KILO * MOL / METER.powi::<3>();
     let v = 100.0 * MOL / density;
     let x = dvector![1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0];
     let m = &x * 100.0 * MOL;
@@ -92,7 +91,7 @@ fn properties_pcsaft_polar(c: &mut Criterion) {
     .unwrap();
     let eos = PcSaft::new(parameters);
     let t = 300.0 * KELVIN;
-    let density = 71.18 * KILO * MOL / METER.powi::<P3>();
+    let density = 71.18 * KILO * MOL / METER.powi::<3>();
     let v = 100.0 * MOL / density;
     let x = dvector![1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0];
     let m = &x * 100.0 * MOL;
