@@ -279,7 +279,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
             }
 
             // Set residuum to 0 for non-present components
-            for (i, &x) in self.liquid().molefracs.iter().enumerate() {
+            for (i, &x) in feed_state.molefracs.iter().enumerate() {
                 if x.is_zero() {
                     res_vec[i] = 0.0
                 }
