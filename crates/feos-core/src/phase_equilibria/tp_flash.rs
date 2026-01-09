@@ -5,6 +5,7 @@ use crate::state::{Contributions, State};
 use crate::{SolverOptions, Verbosity};
 use nalgebra::{DVector, Matrix3, Matrix4xX};
 use num_dual::{Dual, DualNum, first_derivative};
+use num_traits::Zero;
 use quantity::{Dimensionless, Moles, Pressure, Temperature};
 
 const MAX_ITER_TP: usize = 400;
@@ -270,12 +271,20 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
                     .liquid()
                     .molefracs
                     .component_div(&self.vapor().molefracs)
-                    .map(|i| if i > 0.0 { i.ln() } else { 0.0 });
+                    .map(|i| i.ln());
 
             // Set residuum to 0 for non-volatile components
             if let Some(nvc) = non_volatile_components.as_ref() {
                 nvc.iter().for_each(|&c| res_vec[c] = 0.0);
             }
+
+            // Set residuum to 0 for non-present components
+            for (i, &x) in self.liquid().molefracs.iter().enumerate() {
+                if x.is_zero() {
+                    res_vec[i] = 0.0
+                }
+            }
+
             let res = res_vec.norm();
             log_iter!(
                 verbosity,

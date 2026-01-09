@@ -4,7 +4,6 @@ use feos_core::parameter::IdentifierOption;
 use feos_core::{Contributions, FeosResult, PhaseEquilibrium, SolverOptions};
 use nalgebra::dvector;
 use quantity::*;
-use std::error::Error;
 
 fn read_params(components: Vec<&str>) -> FeosResult<PcSaftParameters> {
     PcSaftParameters::from_json(
@@ -16,7 +15,7 @@ fn read_params(components: Vec<&str>) -> FeosResult<PcSaftParameters> {
 }
 
 #[test]
-fn test_tp_flash() -> Result<(), Box<dyn Error>> {
+fn test_tp_flash() -> FeosResult<()> {
     let propane = PcSaft::new(read_params(vec!["propane"])?);
     let butane = PcSaft::new(read_params(vec!["butane"])?);
     let t = 250.0 * KELVIN;
@@ -60,6 +59,54 @@ fn test_tp_flash() -> Result<(), Box<dyn Error>> {
             .molefracs
             .component_mul(&vle.liquid().ln_phi().map(f64::exp)),
         max_relative = 1e-10
+    );
+    Ok(())
+}
+
+#[test]
+fn test_tp_flash_zero_component() -> FeosResult<()> {
+    let eos_full = PcSaft::new(PcSaftParameters::from_json(
+        vec!["propane", "butane", "hexane"],
+        "tests/pcsaft/test_parameters.json",
+        None,
+        IdentifierOption::Name,
+    )?);
+    let eos_binary = PcSaft::new(PcSaftParameters::from_json(
+        vec!["butane", "hexane"],
+        "tests/pcsaft/test_parameters.json",
+        None,
+        IdentifierOption::Name,
+    )?);
+    let options = SolverOptions {
+        verbosity: feos_core::Verbosity::Iter,
+        ..Default::default()
+    };
+    let vle_full = PhaseEquilibrium::tp_flash(
+        &&eos_full,
+        300.0 * KELVIN,
+        1.2 * BAR,
+        &(dvector![0.0, 0.5, 0.5] * MOL),
+        None,
+        options,
+        None,
+    )?;
+    let vle_binary = PhaseEquilibrium::tp_flash(
+        &&eos_binary,
+        300.0 * KELVIN,
+        1.2 * BAR,
+        &(dvector![0.5, 0.5] * MOL),
+        None,
+        options,
+        None,
+    )?;
+    println!("{vle_full}\n{vle_binary}");
+    assert_eq!(
+        vle_full.liquid().molefracs[1],
+        vle_binary.liquid().molefracs[0]
+    );
+    assert_eq!(
+        vle_full.vapor().molefracs[1],
+        vle_binary.vapor().molefracs[0]
     );
     Ok(())
 }
