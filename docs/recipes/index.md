@@ -24,4 +24,5 @@ If you are looking for tutorials with explanations, see the [tutorials](/tutoria
 
    recipes_surface_tension_pure
    recipes_surface_tension_diagram_pure
+   recipes_contact_angle
 ```
