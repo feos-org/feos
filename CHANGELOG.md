@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## Fixed
+- Fixed the calculation of critical points and tp-flashes when one or more of the mixture components have zero composition. [#331](https://github.com/feos-org/feos/pull/331)
 
 ## [0.9.2] - 2025-12-11
 ### Fixed

@@ -265,17 +265,13 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
 
             // check for convergence
             *iter += 1;
-            let mut res_vec = ln_phi_l - ln_phi_v
-                + self
-                    .liquid()
-                    .molefracs
-                    .component_div(&self.vapor().molefracs)
-                    .map(|i| if i > 0.0 { i.ln() } else { 0.0 });
+            let mut res_vec = k.component_mul(&self.liquid().molefracs) - &self.vapor().molefracs;
 
             // Set residuum to 0 for non-volatile components
             if let Some(nvc) = non_volatile_components.as_ref() {
                 nvc.iter().for_each(|&c| res_vec[c] = 0.0);
             }
+
             let res = res_vec.norm();
             log_iter!(
                 verbosity,

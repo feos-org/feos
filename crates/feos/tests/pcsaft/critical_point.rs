@@ -1,10 +1,11 @@
 use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
-use feos_core::State;
 use feos_core::parameter::IdentifierOption;
+use feos_core::{SolverOptions, State};
 use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
+use std::sync::Arc;
 use typenum::P3;
 
 #[test]
@@ -45,5 +46,33 @@ fn test_critical_point_mix() -> Result<(), Box<dyn Error>> {
         4265.50745 * MOL / METER.powi::<P3>(),
         max_relative = 1e-6
     );
+    Ok(())
+}
+
+#[test]
+fn test_critical_point_limits() -> Result<(), Box<dyn Error>> {
+    let params = PcSaftParameters::from_json(
+        vec!["propane", "butane"],
+        "tests/pcsaft/test_parameters.json",
+        None,
+        IdentifierOption::Name,
+    )?;
+    let options = SolverOptions {
+        verbosity: feos_core::Verbosity::Iter,
+        ..Default::default()
+    };
+    let saft = Arc::new(PcSaft::new(params));
+    let cp_pure = State::critical_point_pure(&saft, None, None, options)?;
+    println!("{} {}", cp_pure[0], cp_pure[1]);
+    let molefracs = dvector![0.0, 1.0];
+    let cp_2 = State::critical_point(&saft, Some(&molefracs), None, None, options)?;
+    println!("{}", cp_2);
+    let molefracs = dvector![1.0, 0.0];
+    let cp_1 = State::critical_point(&saft, Some(&molefracs), None, None, options)?;
+    println!("{}", cp_1);
+    assert_eq!(cp_pure[0].temperature, cp_1.temperature);
+    assert_eq!(cp_pure[0].density, cp_1.density);
+    assert_eq!(cp_pure[1].temperature, cp_2.temperature);
+    assert_eq!(cp_pure[1].density, cp_2.density);
     Ok(())
 }
