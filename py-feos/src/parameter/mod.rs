@@ -44,7 +44,31 @@ impl PyParameters {
         let binary_records = self
             .binary_records
             .into_iter()
-            .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
+            .map(|r| {
+                // Explicitly parse model record
+                // Needed for returning error if parsing fails instead of returning None
+                let model_record = match r.model_record {
+                    Some(v) => Some(serde_json::from_value::<B>(v)?),
+                    None => None,
+                };
+
+                let association_sites = r
+                    .association_sites
+                    .into_iter()
+                    .map(|site| {
+                        Ok(serde_json::from_value::<BinaryAssociationRecord<A>>(
+                            serde_json::to_value(site)?,
+                        )?)
+                    })
+                    .collect::<Result<Vec<_>, PyFeosError>>()?;
+
+                Ok(BinaryRecord {
+                    id1: r.id1,
+                    id2: r.id2,
+                    model_record,
+                    association_sites,
+                })
+            })
             .collect::<Result<_, PyFeosError>>()?;
         Ok(Parameters::new(pure_records, binary_records).map_err(PyFeosError::from)?)
     }
