@@ -36,8 +36,21 @@ impl PengRobinsonRecord {
     }
 }
 
+/// Peng-Robinson binary interaction parameters.
+#[derive(Serialize, Deserialize, Clone, Copy, Default, Debug)]
+pub struct PengRobinsonBinaryRecord {
+    /// Binary interaction parameter
+    pub k_ij: f64,
+}
+
+impl PengRobinsonBinaryRecord {
+    pub fn new(k_ij: f64) -> Self {
+        Self { k_ij }
+    }
+}
+
 /// Peng-Robinson parameters for one ore more substances.
-pub type PengRobinsonParameters = Parameters<PengRobinsonRecord, f64, ()>;
+pub type PengRobinsonParameters = Parameters<PengRobinsonRecord, PengRobinsonBinaryRecord, ()>;
 
 impl PengRobinsonParameters {
     /// Build a simple parameter set without binary interaction parameters.
@@ -87,7 +100,7 @@ impl PengRobinson {
     /// Create a new equation of state from a set of parameters.
     pub fn new(parameters: PengRobinsonParameters) -> Self {
         let [tc, pc, ac] = parameters.collate(|r| [r.tc, r.pc, r.acentric_factor]);
-        let [k_ij] = parameters.collate_binary(|&br| [br]);
+        let [k_ij] = parameters.collate_binary(|&br| [br.k_ij]);
 
         let a = 0.45724 * KB_A3 * tc.component_mul(&tc).component_div(&pc);
         let b = 0.07780 * KB_A3 * &tc.component_div(&pc);

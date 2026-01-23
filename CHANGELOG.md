@@ -5,7 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-## Fixed
+### Added
+- Added `py-feos` tests to GitHub Actions and moved `pyo3/extension-module` feature to `pyproject.toml`. [#334](https://github.com/feos-org/feos/pull/334)
+
+### Fixed
+- Fixed `None` transformation when binary parameters are provided to `PyParameters` to properly raise errors. [#334](https://github.com/feos-org/feos/pull/334)
 - Fixed the calculation of critical points and tp-flashes when one or more of the mixture components have zero composition. [#331](https://github.com/feos-org/feos/pull/331)
 
 ### Packaging
