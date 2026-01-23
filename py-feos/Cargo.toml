@@ -16,7 +16,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.27", features = [
-    "extension-module",
     "abi3-py310",
     "multiple-pymethods",
     "indexmap"
@@ -70,3 +69,6 @@ all_models = [
     "multiparameter",
     "ad"
 ]
+
+[dev-dependencies]
+tempfile = "3.24.0"
