@@ -23,6 +23,18 @@ jobs:
       - name: Run tests
         run: cargo test --release -p ${{ matrix.crate }}
 
+  test_python_bindings:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.14
+      - name: Build
+        run: cargo build --release --manifest-path py-feos/Cargo.toml
+      - name: Run tests
+        run: cargo test --release --manifest-path py-feos/Cargo.toml
+
   test_models:
     runs-on: ubuntu-latest
     strategy:

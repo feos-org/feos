@@ -744,3 +744,68 @@ impl PyGcParameters {
         )
     }
 }
+
+// Note: PyErr requires pyo3::Python::initialize().
+// If you see weird messages in your test-output (lifetime issue with PyO3),
+// consider initializing the Python interpreter. As long as no errors are raised, we don't need it.
+//
+// To check tempfiles directory, add:
+// println!("Storing tempfiles in: {:?}", std::env::temp_dir());
+#[cfg(test)]
+mod test {
+    use super::*;
+    use feos_core::cubic::{PengRobinsonBinaryRecord, PengRobinsonParameters, PengRobinsonRecord};
+    use tempfile::NamedTempFile;
+
+    // Helper trait to extract path as String
+    trait TempFileExt {
+        fn path_string(&self) -> String;
+    }
+
+    impl TempFileExt for NamedTempFile {
+        fn path_string(&self) -> String {
+            self.path().to_str().unwrap().to_string()
+        }
+    }
+
+    #[test]
+    fn test_pr_binary_parameter_from_json() {
+        pyo3::Python::initialize();
+
+        // Create pure substance parameter file
+        let params: Vec<PureRecord<PengRobinsonRecord, ()>> = vec![
+            PureRecord::new(
+                Identifier::new(None, Some("1"), None, None, None, None),
+                1.0,
+                PengRobinsonRecord::new(1.0, 1.0, 1.0),
+            ),
+            PureRecord::new(
+                Identifier::new(None, Some("2"), None, None, None, None),
+                2.0,
+                PengRobinsonRecord::new(2.0, 2.0, 2.0),
+            ),
+        ];
+        // Create pure parameter file
+        let pure_path = NamedTempFile::new().unwrap();
+        serde_json::to_writer(&pure_path, &params).unwrap();
+
+        let binary_params: Vec<BinaryRecord<_, PengRobinsonBinaryRecord, ()>> =
+            vec![BinaryRecord::new(
+                Identifier::new(None, Some("1"), None, None, None, None),
+                Identifier::new(None, Some("2"), None, None, None, None),
+                Some(PengRobinsonBinaryRecord::new(2.0)),
+            )];
+        // Create binary parameter file
+        let binary_path = NamedTempFile::new().unwrap();
+        serde_json::to_writer(&binary_path, &binary_params).unwrap();
+
+        let py_parameters = PyParameters::from_json(
+            vec!["1".to_string(), "2".to_string()],
+            pure_path.path_string(),
+            Some(binary_path.path_string()),
+            PyIdentifierOption::Name,
+        );
+        let parameter: PengRobinsonParameters = py_parameters.unwrap().try_convert().unwrap();
+        assert!(parameter.binary[0].model_record.k_ij == 2.0);
+    }
+}
