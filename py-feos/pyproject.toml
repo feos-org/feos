@@ -19,4 +19,4 @@ requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
 
 [tool.maturin]
-features = ["pyo3/extension-module", "all_models"]
+features = ["pyo3/extension-module", "pyo3/abi3-py310", "all_models"]
