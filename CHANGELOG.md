@@ -12,9 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `None` transformation when binary parameters are provided to `PyParameters` to properly raise errors. [#334](https://github.com/feos-org/feos/pull/334)
 - Fixed the calculation of critical points and tp-flashes when one or more of the mixture components have zero composition. [#331](https://github.com/feos-org/feos/pull/331)
 
-### Packaging
-- Updated `quantity` dependency to 0.13 and removed the `typenum` dependency. [#323](https://github.com/feos-org/feos/pull/323)
-
 ## [0.9.2] - 2025-12-11
 ### Fixed
 - Fixed calculation of enthalpies of adsorption for mixtures. [#329](https://github.com/feos-org/feos/pull/329)

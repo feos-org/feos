@@ -12,6 +12,7 @@ use nalgebra::dvector;
 use ndarray::Axis;
 use quantity::*;
 use std::error::Error;
+use typenum::P3;
 
 fn parameters(comp: &str) -> FeosResult<PcSaftParameters> {
     PcSaftParameters::from_json(
@@ -34,7 +35,7 @@ fn test_bulk_implementations() -> Result<(), Box<dyn Error>> {
     let func_full =
         PcSaftFunctional::new_full(parameters("water_np")?, FMTVersion::KierlikRosinberg);
     let t = 300.0 * KELVIN;
-    let v = 0.002 * METER.powi::<3>() * NAV / NAV_old;
+    let v = 0.002 * METER.powi::<P3>() * NAV / NAV_old;
     let n = dvector![1.5] * MOL;
     let state = State::new_nvt(&&eos, t, v, &n)?;
     let state_pure = State::new_nvt(&&func_pure, t, v, &n)?;
@@ -134,7 +135,7 @@ fn test_dft_propane() -> Result<(), Box<dyn Error>> {
         (&func_full_vec).solve_pdgt(&vle_full_vec, 198, 0, None)?.1
     );
 
-    let vapor_density = 12.2557486248527745 * MOL / METER.powi::<3>() * NAV_old / NAV;
+    let vapor_density = 12.2557486248527745 * MOL / METER.powi::<P3>() * NAV_old / NAV;
     assert_relative_eq!(
         vle_pure.vapor().density,
         vapor_density,
@@ -151,7 +152,7 @@ fn test_dft_propane() -> Result<(), Box<dyn Error>> {
         max_relative = 1e-13,
     );
 
-    let liquid_density = 13.8941749145544549 * KILO * MOL / METER.powi::<3>() * NAV_old / NAV;
+    let liquid_density = 13.8941749145544549 * KILO * MOL / METER.powi::<P3>() * NAV_old / NAV;
     assert_relative_eq!(
         vle_pure.liquid().density,
         liquid_density,
@@ -253,7 +254,7 @@ fn test_dft_water() -> Result<(), Box<dyn Error>> {
         vle_full_vec.liquid().density
     );
 
-    let vapor_density = 75.8045715345905222 * MOL / METER.powi::<3>() * NAV_old / NAV;
+    let vapor_density = 75.8045715345905222 * MOL / METER.powi::<P3>() * NAV_old / NAV;
     assert_relative_eq!(
         vle_pure.vapor().density,
         vapor_density,
@@ -265,7 +266,7 @@ fn test_dft_water() -> Result<(), Box<dyn Error>> {
         max_relative = 1e-13,
     );
 
-    let liquid_density = 47.8480850281608454 * KILO * MOL / METER.powi::<3>() * NAV_old / NAV;
+    let liquid_density = 47.8480850281608454 * KILO * MOL / METER.powi::<P3>() * NAV_old / NAV;
     assert_relative_eq!(
         vle_pure.liquid().density,
         liquid_density,

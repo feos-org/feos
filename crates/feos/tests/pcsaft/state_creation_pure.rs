@@ -7,6 +7,7 @@ use feos_core::{
 };
 use quantity::*;
 use std::error::Error;
+use typenum::P3;
 
 fn propane_parameters() -> FeosResult<(PcSaftParameters, Vec<Joback>)> {
     let saft = PcSaftParameters::from_json(
@@ -28,7 +29,7 @@ fn propane_parameters() -> FeosResult<(PcSaftParameters, Vec<Joback>)> {
 fn temperature_volume() -> Result<(), Box<dyn Error>> {
     let saft = PcSaft::new(propane_parameters()?.0);
     let temperature = 300.0 * KELVIN;
-    let volume = 1.5e-3 * METER.powi::<3>();
+    let volume = 1.5e-3 * METER.powi::<P3>();
     let moles = MOL;
     let state = StateBuilder::new(&&saft)
         .temperature(temperature)
@@ -43,7 +44,7 @@ fn temperature_volume() -> Result<(), Box<dyn Error>> {
 fn temperature_density() -> Result<(), Box<dyn Error>> {
     let saft = PcSaft::new(propane_parameters()?.0);
     let temperature = 300.0 * KELVIN;
-    let density = MOL / METER.powi::<3>();
+    let density = MOL / METER.powi::<P3>();
     let state = StateBuilder::new(&&saft)
         .temperature(temperature)
         .density(density)
@@ -57,7 +58,7 @@ fn temperature_total_moles_volume() -> Result<(), Box<dyn Error>> {
     let saft = PcSaft::new(propane_parameters()?.0);
     let temperature = 300.0 * KELVIN;
     let total_moles = MOL;
-    let volume = METER.powi::<3>();
+    let volume = METER.powi::<P3>();
     let state = StateBuilder::new(&&saft)
         .temperature(temperature)
         .volume(volume)
@@ -73,7 +74,7 @@ fn temperature_total_moles_density() -> Result<(), Box<dyn Error>> {
     let saft = PcSaft::new(propane_parameters()?.0);
     let temperature = 300.0 * KELVIN;
     let total_moles = MOL;
-    let density = MOL / METER.powi::<3>();
+    let density = MOL / METER.powi::<P3>();
     let state = StateBuilder::new(&&saft)
         .temperature(temperature)
         .density(density)
@@ -130,7 +131,7 @@ fn pressure_temperature_initial_density() -> Result<(), Box<dyn Error>> {
     let state = StateBuilder::new(&&saft)
         .temperature(temperature)
         .pressure(pressure)
-        .initial_density(MOL / METER.powi::<3>())
+        .initial_density(MOL / METER.powi::<P3>())
         .build()?;
     assert_relative_eq!(
         state.pressure(Contributions::Total),

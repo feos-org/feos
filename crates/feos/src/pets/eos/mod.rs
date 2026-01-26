@@ -144,12 +144,13 @@ mod tests {
     use feos_core::{Contributions, PhaseEquilibrium, State, StateHD};
     use nalgebra::dvector;
     use quantity::{BAR, KELVIN, METER, MOL, RGAS};
+    use typenum::P3;
 
     #[test]
     fn ideal_gas_pressure() {
         let e = &Pets::new(argon_parameters());
         let t = 200.0 * KELVIN;
-        let v = 1e-3 * METER.powi::<3>();
+        let v = 1e-3 * METER.powi::<P3>();
         let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&e, t, v, &n).unwrap();
         let p_ig = s.total_moles * RGAS * t / v;
@@ -211,7 +212,7 @@ mod tests {
         let e2 = &Pets::new(krypton_parameters());
         let e12 = &Pets::new(argon_krypton_parameters());
         let t = 300.0 * KELVIN;
-        let v = 0.02456883872966545 * METER.powi::<3>();
+        let v = 0.02456883872966545 * METER.powi::<P3>();
         let m1 = dvector![2.0] * MOL;
         let m1m = dvector![2.0, 0.0] * MOL;
         let m2m = dvector![0.0, 2.0] * MOL;

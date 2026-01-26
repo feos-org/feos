@@ -3,10 +3,9 @@ use nalgebra::{DVector, DefaultAllocator, Dim, Dyn, OMatrix, OVector, U1, alloca
 use num_dual::{DualNum, Gradients, partial, partial2, second_derivative, third_derivative};
 use quantity::ad::first_derivative;
 use quantity::*;
-use std::ops::{Deref, Div};
+use std::ops::Deref;
 use std::sync::Arc;
-
-type Quot<T1, T2> = <T1 as Div<T2>>::Output;
+use typenum::Quot;
 
 /// Molar weight of all components.
 ///

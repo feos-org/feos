@@ -1,10 +1,10 @@
 use crate::{
-    PyVerbosity,
-    eos::{PyEquationOfState, parse_molefracs},
+    eos::{parse_molefracs, PyEquationOfState},
     error::PyFeosError,
     ideal_gas::IdealGasModel,
     residual::ResidualModel,
     state::{PyContributions, PyState, PyStateVec},
+    PyVerbosity,
 };
 use feos_core::{
     Contributions, EquationOfState, PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, ResidualDyn,
@@ -17,6 +17,7 @@ use pyo3::prelude::*;
 use quantity::*;
 use std::ops::Deref;
 use std::sync::Arc;
+use typenum::P3;
 
 /// A thermodynamic two phase equilibrium state.
 #[pyclass(name = "PhaseEquilibrium")]
@@ -1081,7 +1082,7 @@ impl PyPhaseDiagram {
             self.0
                 .liquid()
                 .density()
-                .convert_to(MOL / METER.powi::<3>())
+                .convert_to(MOL / METER.powi::<P3>())
                 .into_raw_vec_and_offset()
                 .0,
         );
@@ -1090,7 +1091,7 @@ impl PyPhaseDiagram {
             self.0
                 .vapor()
                 .density()
-                .convert_to(MOL / METER.powi::<3>())
+                .convert_to(MOL / METER.powi::<P3>())
                 .into_raw_vec_and_offset()
                 .0,
         );
@@ -1136,7 +1137,7 @@ impl PyPhaseDiagram {
                 self.0
                     .liquid()
                     .mass_density()
-                    .convert_to(KILOGRAM / METER.powi::<3>())
+                    .convert_to(KILOGRAM / METER.powi::<P3>())
                     .into_raw_vec_and_offset()
                     .0,
             );
@@ -1145,7 +1146,7 @@ impl PyPhaseDiagram {
                 self.0
                     .vapor()
                     .mass_density()
-                    .convert_to(KILOGRAM / METER.powi::<3>())
+                    .convert_to(KILOGRAM / METER.powi::<P3>())
                     .into_raw_vec_and_offset()
                     .0,
             );

@@ -159,6 +159,7 @@ mod tests {
     use feos_core::{Contributions, EquationOfState, StateBuilder};
     use num_dual::first_derivative;
     use quantity::*;
+    use typenum::P3;
 
     use super::*;
 
@@ -172,7 +173,7 @@ mod tests {
         let dippr = Dippr::new(DipprParameters::new_pure(record.clone())?);
         let eos = EquationOfState::ideal_gas(dippr.clone());
         let temperature = 300.0 * KELVIN;
-        let volume = METER.powi::<3>();
+        let volume = METER.powi::<P3>();
         let state = StateBuilder::new(&&eos)
             .temperature(temperature)
             .volume(volume)
@@ -216,7 +217,7 @@ mod tests {
         let dippr = Dippr::new(DipprParameters::new_pure(record.clone())?);
         let eos = EquationOfState::ideal_gas(dippr.clone());
         let temperature = 300.0 * KELVIN;
-        let volume = METER.powi::<3>();
+        let volume = METER.powi::<P3>();
         let state = StateBuilder::new(&&eos)
             .temperature(temperature)
             .volume(volume)
@@ -262,7 +263,7 @@ mod tests {
         let dippr = Dippr::new(DipprParameters::new_pure(record.clone())?);
         let eos = EquationOfState::ideal_gas(dippr.clone());
         let temperature = 20.0 * KELVIN;
-        let volume = METER.powi::<3>();
+        let volume = METER.powi::<P3>();
         let state = StateBuilder::new(&&eos)
             .temperature(temperature)
             .volume(volume)

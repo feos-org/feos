@@ -10,9 +10,7 @@ use quantity::{
     Temperature,
 };
 use std::ops::{Add, AddAssign, Sub};
-
-type Sum<T1, T2> = <T1 as Add<T2>>::Output;
-type Diff<T1, T2> = <T1 as Sub<T2>>::Output;
+use typenum::{Diff, P2, Sum};
 
 type _InfluenceParameter = Diff<Sum<_MolarEnergy, _Area>, _Density>;
 type InfluenceParameter<T> = Quantity<T, _InfluenceParameter>;
@@ -220,7 +218,7 @@ pub trait PdgtFunctionalProperties: HelmholtzEnergyFunctional {
 
             // calculate interfacial width
             let w_temp = integrate_trapezoidal(&rho_r * &*z * z_int, dx);
-            *w = (24.0 * (w_temp - 0.5 * ze.powi::<2>())).sqrt();
+            *w = (24.0 * (w_temp - 0.5 * ze.powi::<P2>())).sqrt();
 
             // shift density profile
             *z -= ze;

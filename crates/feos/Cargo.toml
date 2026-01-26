@@ -26,6 +26,7 @@ serde_json = { workspace = true }
 indexmap = { workspace = true }
 rayon = { workspace = true, optional = true }
 itertools = { workspace = true }
+typenum = { workspace = true }
 
 feos-core = { workspace = true }
 feos-derive = { workspace = true, optional = true }

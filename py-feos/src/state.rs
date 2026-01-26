@@ -1,7 +1,7 @@
 use crate::eos::parse_molefracs;
 use crate::{
-    PyVerbosity, eos::PyEquationOfState, error::PyFeosError, ideal_gas::IdealGasModel,
-    residual::ResidualModel,
+    eos::PyEquationOfState, error::PyFeosError, ideal_gas::IdealGasModel, residual::ResidualModel,
+    PyVerbosity,
 };
 use feos_core::{
     Contributions, DensityInitialization, EquationOfState, FeosError, ResidualDyn, State, StateVec,
@@ -13,10 +13,9 @@ use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
 use quantity::*;
 use std::collections::HashMap;
-use std::ops::{Deref, Div, Neg, Sub};
+use std::ops::{Deref, Neg, Sub};
 use std::sync::Arc;
-
-type Quot<T1, T2> = <T1 as Div<T2>>::Output;
+use typenum::{Quot, P3};
 
 type DpDn<T> = Quantity<T, <_Pressure as Sub<_Moles>>::Output>;
 type InvT<T> = Quantity<T, <_Temperature as Neg>::Output>;
@@ -1634,7 +1633,7 @@ impl PyStateVec {
             String::from("density"),
             states
                 .density()
-                .convert_to(MOL / METER.powi::<3>())
+                .convert_to(MOL / METER.powi::<P3>())
                 .into_raw_vec_and_offset()
                 .0,
         );
@@ -1659,7 +1658,7 @@ impl PyStateVec {
                 String::from("mass density"),
                 states
                     .mass_density()
-                    .convert_to(KILOGRAM / METER.powi::<3>())
+                    .convert_to(KILOGRAM / METER.powi::<P3>())
                     .into_raw_vec_and_offset()
                     .0,
             );

@@ -42,12 +42,13 @@ mod test {
     use nalgebra::dvector;
     use num_dual::Dual64;
     use quantity::{METER, MOL, PASCAL, Pressure};
+    use typenum::P3;
 
     #[test]
     fn test_hc_propane() {
         let parameters = propane();
         let temperature = 300.0;
-        let volume = METER.powi::<3>().to_reduced();
+        let volume = METER.powi::<P3>().to_reduced();
         let volume = Dual64::from_re(volume).derivative();
         let moles = (1.5 * MOL).to_reduced();
         let state = StateHD::new(
@@ -69,7 +70,7 @@ mod test {
     fn test_hc_propanol() {
         let parameters = GcPcSaftEosParameters::new(&propanol());
         let temperature = 300.0;
-        let volume = METER.powi::<3>().to_reduced();
+        let volume = METER.powi::<P3>().to_reduced();
         let volume = Dual64::from_re(volume).derivative();
         let moles = (1.5 * MOL).to_reduced();
         let state = StateHD::new(

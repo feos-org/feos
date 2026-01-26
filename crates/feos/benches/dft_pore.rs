@@ -10,6 +10,7 @@ use feos::hard_sphere::{FMTFunctional, FMTVersion};
 use feos::pcsaft::{PcSaftFunctional, PcSaftParameters};
 use nalgebra::dvector;
 use quantity::{ANGSTROM, KELVIN, NAV};
+use typenum::P3;
 
 fn fmt(c: &mut Criterion) {
     let mut group = c.benchmark_group("DFT_pore_fmt");
@@ -22,7 +23,7 @@ fn fmt(c: &mut Criterion) {
         None,
         None,
     );
-    let bulk = State::new_pure(&func, KELVIN, 0.75 / NAV / ANGSTROM.powi::<3>()).unwrap();
+    let bulk = State::new_pure(&func, KELVIN, 0.75 / NAV / ANGSTROM.powi::<P3>()).unwrap();
     group.bench_function("liquid", |b| {
         b.iter(|| pore.initialize(&bulk, None, None).unwrap().solve(None))
     });

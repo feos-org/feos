@@ -798,11 +798,12 @@ mod critical_point;
 mod tests {
     use super::*;
     use nalgebra::dvector;
+    use typenum::P3;
 
     #[test]
     fn test_validate() {
         let temperature = 298.15 * KELVIN;
-        let density = 3000.0 * MOL / METER.powi::<3>();
+        let density = 3000.0 * MOL / METER.powi::<P3>();
         let molefracs = dvector![0.03, 0.02, 0.05];
         assert!(validate(temperature, density, &molefracs).is_ok());
     }
@@ -810,7 +811,7 @@ mod tests {
     #[test]
     fn test_negative_temperature() {
         let temperature = -298.15 * KELVIN;
-        let density = 3000.0 * MOL / METER.powi::<3>();
+        let density = 3000.0 * MOL / METER.powi::<P3>();
         let molefracs = dvector![0.03, 0.02, 0.05];
         assert!(validate(temperature, density, &molefracs).is_err());
     }
@@ -818,7 +819,7 @@ mod tests {
     #[test]
     fn test_nan_temperature() {
         let temperature = f64::NAN * KELVIN;
-        let density = 3000.0 * MOL / METER.powi::<3>();
+        let density = 3000.0 * MOL / METER.powi::<P3>();
         let molefracs = dvector![0.03, 0.02, 0.05];
         assert!(validate(temperature, density, &molefracs).is_err());
     }
@@ -826,7 +827,7 @@ mod tests {
     #[test]
     fn test_negative_mole_number() {
         let temperature = 298.15 * KELVIN;
-        let density = 3000.0 * MOL / METER.powi::<3>();
+        let density = 3000.0 * MOL / METER.powi::<P3>();
         let molefracs = dvector![-0.03, 0.02, 0.05];
         assert!(validate(temperature, density, &molefracs).is_err());
     }
@@ -834,7 +835,7 @@ mod tests {
     #[test]
     fn test_nan_mole_number() {
         let temperature = 298.15 * KELVIN;
-        let density = 3000.0 * MOL / METER.powi::<3>();
+        let density = 3000.0 * MOL / METER.powi::<P3>();
         let molefracs = dvector![f64::NAN, 0.02, 0.05];
         assert!(validate(temperature, density, &molefracs).is_err());
     }
@@ -842,7 +843,7 @@ mod tests {
     #[test]
     fn test_negative_density() {
         let temperature = 298.15 * KELVIN;
-        let density = -3000.0 * MOL / METER.powi::<3>();
+        let density = -3000.0 * MOL / METER.powi::<P3>();
         let molefracs = dvector![0.01, 0.02, 0.05];
         assert!(validate(temperature, density, &molefracs).is_err());
     }

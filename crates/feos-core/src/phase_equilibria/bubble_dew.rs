@@ -12,6 +12,7 @@ use ndarray::Array1;
 use num_dual::linalg::LU;
 use num_dual::{DualNum, DualStruct, Gradients};
 use quantity::{Density, Dimensionless, Moles, Pressure, Quantity, RGAS, SIUnit, Temperature};
+use typenum::{N1, N2, P1, Z0};
 
 const MAX_ITER_INNER: usize = 5;
 const TOL_INNER: f64 = 1e-9;
@@ -93,7 +94,7 @@ impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D> for Temperature<D> {
 // used instead of the explicit unit. Maybe the type is too complicated for the
 // compiler?
 impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D>
-    for Quantity<D, SIUnit<-2, -1, 1, 0, 0, 0, 0>>
+    for Quantity<D, SIUnit<N2, N1, P1, Z0, Z0, Z0, Z0>>
 {
     type Other = Temperature<D>;
     const IDENTIFIER: &'static str = "pressure";

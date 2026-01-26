@@ -7,10 +7,8 @@ use nalgebra::{DVector, DVectorView, Dyn};
 use numpy::{PyArray1, PyReadonlyArray1, ToPyArray};
 use pyo3::prelude::*;
 use quantity::*;
-use std::ops::Div;
 use std::sync::Arc;
-
-type Quot<T1, T2> = <T1 as Div<T2>>::Output;
+use typenum::Quot;
 
 mod constructors;
 #[cfg(feature = "epcsaft")]

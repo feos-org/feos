@@ -1,7 +1,5 @@
 macro_rules! impl_profile {
     ($struct:ident, $arr:ident, $arr2:ident, $si_arr:ident, $si_arr2:ident, $py_arr2:ident, [$([$ind:expr, $ax:ident]),+]$(, $si_arr3:ident)?) => {
-
-
         #[pymethods]
         impl $struct {
             /// Calculate the residual for the given profile.
@@ -120,7 +118,7 @@ macro_rules! impl_profile {
             fn entropy_density(
                 &mut self,
                 contributions: PyContributions,
-            ) -> PyResult<<Entropy<$si_arr<f64>> as std::ops::Div<Volume>>::Output> {
+            ) -> PyResult<typenum::Quot<Entropy<$si_arr<f64>>, Volume>> {
                 Ok(self.0.profile.entropy_density(contributions.into()).map_err(PyFeosError::from)?)
             }
 
@@ -168,33 +166,33 @@ macro_rules! impl_profile {
             }
             $(
                 #[getter]
-                fn get_drho_dmu(&self) -> PyResult<<Density<$si_arr3<f64>> as std::ops::Div<MolarEnergy>>::Output> {
+                fn get_drho_dmu(&self) -> PyResult<typenum::Quot<Density<$si_arr3<f64>>, MolarEnergy>> {
                     Ok(self.0.profile.drho_dmu().map_err(PyFeosError::from)?)
                 }
             )?
 
             #[getter]
-            fn get_dn_dmu(&self) -> PyResult<<Moles<DMatrix<f64>> as std::ops::Div<MolarEnergy>>::Output> {
+            fn get_dn_dmu(&self) -> PyResult<typenum::Quot<Moles<DMatrix<f64>>, MolarEnergy>> {
                 Ok(self.0.profile.dn_dmu().map_err(PyFeosError::from)?)
             }
 
             #[getter]
-            fn get_drho_dp(&self) -> PyResult<<Density<$si_arr2<f64>> as std::ops::Div<Pressure>>::Output> {
+            fn get_drho_dp(&self) -> PyResult<typenum::Quot<Density<$si_arr2<f64>>, Pressure>> {
                 Ok(self.0.profile.drho_dp().map_err(PyFeosError::from)?)
             }
 
             #[getter]
-            fn get_dn_dp(&self) -> PyResult<<Moles<DVector<f64>> as std::ops::Div<Pressure>>::Output> {
+            fn get_dn_dp(&self) -> PyResult<typenum::Quot<Moles<DVector<f64>>, Pressure>> {
                 Ok(self.0.profile.dn_dp().map_err(PyFeosError::from)?)
             }
 
             #[getter]
-            fn get_drho_dt(&self) -> PyResult<<Density<$si_arr2<f64>> as std::ops::Div<Temperature>>::Output> {
+            fn get_drho_dt(&self) -> PyResult<typenum::Quot<Density<$si_arr2<f64>>, Temperature>> {
                 Ok(self.0.profile.drho_dt().map_err(PyFeosError::from)?)
             }
 
             #[getter]
-            fn get_dn_dt(&self) -> PyResult<<Moles<DVector<f64>> as std::ops::Div<Temperature>>::Output> {
+            fn get_dn_dt(&self) -> PyResult<typenum::Quot<Moles<DVector<f64>>, Temperature>> {
                 Ok(self.0.profile.dn_dt().map_err(PyFeosError::from)?)
             }
         }

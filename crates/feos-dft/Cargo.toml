@@ -25,6 +25,7 @@ num-traits = { workspace = true }
 libm = { workspace = true }
 gauss-quad = { workspace = true, optional = true }
 petgraph = { workspace = true }
+typenum = { workspace = true }
 
 feos-core = { workspace = true }
 

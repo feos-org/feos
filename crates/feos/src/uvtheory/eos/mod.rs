@@ -110,6 +110,7 @@ mod test {
     use feos_core::{FeosResult, State};
     use nalgebra::dvector;
     use quantity::{ANGSTROM, KELVIN, MOL, NAV, RGAS};
+    use typenum::P3;
 
     #[test]
     fn helmholtz_energy_pure_wca() -> FeosResult<()> {
@@ -122,7 +123,7 @@ mod test {
         let reduced_density = 1.0;
         let temperature = reduced_temperature * eps_k * KELVIN;
         let moles = dvector![2.0] * MOL;
-        let volume = (sig * ANGSTROM).powi::<3>() / reduced_density * NAV * 2.0 * MOL;
+        let volume = (sig * ANGSTROM).powi::<P3>() / reduced_density * NAV * 2.0 * MOL;
         let s = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
         let a = (s.residual_molar_helmholtz_energy() / (RGAS * temperature)).into_value();
         assert_relative_eq!(a, 2.972986567516, max_relative = 1e-12); //wca
@@ -146,7 +147,7 @@ mod test {
         let reduced_density = 1.0;
         let temperature = reduced_temperature * eps_k * KELVIN;
         let moles = dvector![2.0] * MOL;
-        let volume = (sig * ANGSTROM).powi::<3>() / reduced_density * NAV * 2.0 * MOL;
+        let volume = (sig * ANGSTROM).powi::<P3>() / reduced_density * NAV * 2.0 * MOL;
         let s = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
 
         let a = (s.residual_molar_helmholtz_energy() / (RGAS * temperature)).into_value();
@@ -172,7 +173,7 @@ mod test {
         let reduced_density = 0.5;
         let temperature = reduced_temperature * eps_k * KELVIN;
         let moles = dvector![2.0] * MOL;
-        let volume = (sig * ANGSTROM).powi::<3>() / reduced_density * NAV * 2.0 * MOL;
+        let volume = (sig * ANGSTROM).powi::<P3>() / reduced_density * NAV * 2.0 * MOL;
         let s = State::new_nvt(&eos, temperature, volume, &moles).unwrap();
         let a = (s.residual_molar_helmholtz_energy() / (RGAS * temperature)).into_value();
         dbg!(a);
@@ -208,7 +209,7 @@ mod test {
         let reduced_density = 1.0;
         let moles = dvector![1.7, 0.3] * MOL;
         let total_moles = moles.sum();
-        let volume = (sig_x * ANGSTROM).powi::<3>() / reduced_density * NAV * total_moles;
+        let volume = (sig_x * ANGSTROM).powi::<P3>() / reduced_density * NAV * total_moles;
 
         // EoS
         let options = UVTheoryOptions {
@@ -241,7 +242,7 @@ mod test {
         let reduced_density = 0.9;
         let moles = dvector![0.4, 0.6] * MOL;
         let total_moles = moles.sum();
-        let volume = (p.sigma[0] * ANGSTROM).powi::<3>() / reduced_density * NAV * total_moles;
+        let volume = (p.sigma[0] * ANGSTROM).powi::<P3>() / reduced_density * NAV * total_moles;
 
         // EoS
         let eos_wca = &UVTheory::new(parameters);
@@ -266,7 +267,7 @@ mod test {
         // state
         let reduced_temperature = 1.5;
         let t_x = reduced_temperature * p.epsilon_k[0] * KELVIN;
-        let sigma_x_3 = (0.4 + 0.6 * 8.0) * ANGSTROM.powi::<3>();
+        let sigma_x_3 = (0.4 + 0.6 * 8.0) * ANGSTROM.powi::<P3>();
         let density = 0.52000000000000002 / sigma_x_3;
         let moles = dvector![0.4, 0.6] * MOL;
         let total_moles = moles.sum();
