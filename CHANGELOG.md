@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.9.3] - 2026-01-26
 ### Added
 - Added `py-feos` tests to GitHub Actions and moved `pyo3/extension-module` feature to `pyproject.toml`. [#334](https://github.com/feos-org/feos/pull/334)
 
