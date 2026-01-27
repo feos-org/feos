@@ -686,6 +686,50 @@ mod tests_parameter_fit {
     }
 
     #[test]
+    fn test_boiling_temperature_derivatives_fit() -> FeosResult<()> {
+        let pcsaft = pcsaft_non_assoc();
+        let pcsaft_ad = pcsaft.named_derivatives(["m", "sigma", "epsilon_k"]);
+        let pressure = BAR;
+        let t = pcsaft_ad.boiling_temperature(pressure)?;
+        let t = t.convert_into(KELVIN);
+        let (t, grad) = (t.re, t.eps.unwrap_generic(U3, U1));
+
+        println!("{t:.5}");
+        println!("{grad:.5?}");
+
+        let (t_check, _) = PhaseEquilibrium::pure_p(
+            &pcsaft_ad,
+            Pressure::from_inner(&pressure),
+            None,
+            Default::default(),
+        )?;
+        let t_check = t_check.convert_into(KELVIN);
+        let (t_check, grad_check) = (t_check.re, t_check.eps.unwrap_generic(U3, U1));
+        println!("{t_check:.5}");
+        println!("{grad_check:.5?}");
+        assert_relative_eq!(t, t_check, max_relative = 1e-15);
+        assert_relative_eq!(grad, grad_check, max_relative = 1e-15);
+
+        for (i, par) in ["m", "sigma", "epsilon_k"].into_iter().enumerate() {
+            let mut params = pcsaft.0;
+            let h = params[i] * 1e-8;
+            params[i] += h;
+            let pcsaft_h = PcSaftPure(params);
+            let (t_h, _) = PhaseEquilibrium::pure_p(&pcsaft_h, pressure, None, Default::default())?;
+            let dt_h = (t_h.convert_into(KELVIN) - t) / h;
+            let dt = grad[i];
+            println!(
+                "{par:12}: {:11.5} {:11.5} {:.3e}",
+                dt_h,
+                dt,
+                ((dt_h - dt) / dt).abs()
+            );
+            assert_relative_eq!(dt, dt_h, max_relative = 1e-6);
+        }
+        Ok(())
+    }
+
+    #[test]
     fn test_equilibrium_liquid_density_derivatives_fit() -> FeosResult<()> {
         let pcsaft = pcsaft_non_assoc();
         let pcsaft_ad = pcsaft.named_derivatives(["m", "sigma", "epsilon_k"]);

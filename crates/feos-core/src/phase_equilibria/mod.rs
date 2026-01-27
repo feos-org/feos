@@ -1,5 +1,5 @@
 use crate::equation_of_state::Residual;
-use crate::errors::{FeosError, FeosResult};
+use crate::errors::FeosResult;
 use crate::state::{DensityInitialization, State};
 use crate::{Contributions, ReferenceSystem};
 use nalgebra::allocator::Allocator;
@@ -43,12 +43,6 @@ pub struct PhaseEquilibrium<E, const P: usize, N: Dim = Dyn, D: DualNum<f64> + C
 )
 where
     DefaultAllocator: Allocator<N>;
-
-// impl<E, const P: usize> Clone for PhaseEquilibrium<E, P> {
-//     fn clone(&self) -> Self {
-//         Self(self.0.clone())
-//     }
-// }
 
 impl<E: Residual, const P: usize> fmt::Display for PhaseEquilibrium<E, P> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -224,14 +218,6 @@ impl<E: Residual<N>, N: Dim> PhaseEquilibrium<E, 2, N>
 where
     DefaultAllocator: Allocator<N>,
 {
-    pub(super) fn check_trivial_solution(self) -> FeosResult<Self> {
-        if Self::is_trivial_solution(self.vapor(), self.liquid()) {
-            Err(FeosError::TrivialSolution)
-        } else {
-            Ok(self)
-        }
-    }
-
     /// Check if the two states form a trivial solution
     pub fn is_trivial_solution(state1: &State<E, N>, state2: &State<E, N>) -> bool {
         let rho1 = state1.molefracs.clone() * state1.density.into_reduced();
