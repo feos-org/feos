@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Breaking]
 ### Added
 - Extended tp-flash algorithm to static numbers of components and enabled automatic differentiation for binary systems. [#336](https://github.com/feos-org/feos/pull/336)
+- Rewrote `PhaseEquilibrium::pure_p` to mirror `pure_t` and enable automatic differentiation. [#337](https://github.com/feos-org/feos/pull/337)
+- Added `boiling_temperature` to the list of properties for parallel evaluations of gradients. [#337](https://github.com/feos-org/feos/pull/337)
 
 ### Packaging
 - Updated `quantity` dependency to 0.13 and removed the `typenum` dependency. [#323](https://github.com/feos-org/feos/pull/323)
