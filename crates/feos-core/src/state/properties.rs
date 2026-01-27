@@ -1,6 +1,6 @@
 use super::{Contributions, State};
 use crate::equation_of_state::{Molarweight, Total};
-use crate::{ReferenceSystem, Residual};
+use crate::{FeosResult, ReferenceSystem, Residual};
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, OVector};
 use num_dual::{Dual, DualNum, Gradients, partial, partial2};
@@ -79,8 +79,8 @@ where
     }
 
     /// Entropy: $S=-\left(\frac{\partial A}{\partial T}\right)_{V,N_i}$
-    pub fn entropy(&self, contributions: Contributions) -> Entropy<D> {
-        self.molar_entropy(contributions) * self.total_moles()
+    pub fn entropy(&self, contributions: Contributions) -> FeosResult<Entropy<D>> {
+        Ok(self.molar_entropy(contributions) * self.total_moles()?)
     }
 
     /// Molar entropy: $s=\frac{S}{N}$
@@ -147,8 +147,8 @@ where
     }
 
     /// Enthalpy: $H=A+TS+pV$
-    pub fn enthalpy(&self, contributions: Contributions) -> Energy<D> {
-        self.molar_enthalpy(contributions) * self.total_moles()
+    pub fn enthalpy(&self, contributions: Contributions) -> FeosResult<Energy<D>> {
+        Ok(self.molar_enthalpy(contributions) * self.total_moles()?)
     }
 
     /// Molar enthalpy: $h=\frac{H}{N}$
@@ -166,8 +166,8 @@ where
     }
 
     /// Helmholtz energy: $A$
-    pub fn helmholtz_energy(&self, contributions: Contributions) -> Energy<D> {
-        self.molar_helmholtz_energy(contributions) * self.total_moles()
+    pub fn helmholtz_energy(&self, contributions: Contributions) -> FeosResult<Energy<D>> {
+        Ok(self.molar_helmholtz_energy(contributions) * self.total_moles()?)
     }
 
     /// Molar Helmholtz energy: $a=\frac{A}{N}$
@@ -187,8 +187,8 @@ where
     }
 
     /// Internal energy: $U=A+TS$
-    pub fn internal_energy(&self, contributions: Contributions) -> Energy<D> {
-        self.molar_internal_energy(contributions) * self.total_moles()
+    pub fn internal_energy(&self, contributions: Contributions) -> FeosResult<Energy<D>> {
+        Ok(self.molar_internal_energy(contributions) * self.total_moles()?)
     }
 
     /// Molar internal energy: $u=\frac{U}{N}$
@@ -198,8 +198,8 @@ where
     }
 
     /// Gibbs energy: $G=A+pV$
-    pub fn gibbs_energy(&self, contributions: Contributions) -> Energy<D> {
-        self.molar_gibbs_energy(contributions) * self.total_moles()
+    pub fn gibbs_energy(&self, contributions: Contributions) -> FeosResult<Energy<D>> {
+        Ok(self.molar_gibbs_energy(contributions) * self.total_moles()?)
     }
 
     /// Molar Gibbs energy: $g=\frac{G}{N}$

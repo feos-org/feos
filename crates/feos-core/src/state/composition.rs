@@ -4,7 +4,7 @@ use crate::{FeosError, FeosResult};
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, Dim, Dyn, OVector, U1, U2, dvector, vector};
 use num_dual::{DualNum, DualStruct};
-use quantity::{Density, Moles, Quantity, SIUnit};
+use quantity::Moles;
 
 pub trait Composition<D: DualNum<f64> + Copy, N: Dim>
 where
@@ -15,16 +15,6 @@ where
         self,
         eos: &E,
     ) -> FeosResult<(OVector<D, N>, Option<Moles<D>>)>;
-    fn density(&self) -> Option<Density<D>> {
-        None
-    }
-}
-
-pub trait FullComposition<D: DualNum<f64> + Copy, N: Dim>: Composition<D, N>
-where
-    DefaultAllocator: Allocator<N>,
-{
-    fn into_moles<E: Residual<N, D>>(self, eos: &E) -> FeosResult<(OVector<D, N>, Moles<D>)>;
 }
 
 // trivial implementations
@@ -37,15 +27,6 @@ where
         _: &E,
     ) -> FeosResult<(OVector<D, N>, Option<Moles<D>>)> {
         Ok((self.0, Some(self.1)))
-    }
-}
-
-impl<D: DualNum<f64> + Copy, N: Dim> FullComposition<D, N> for (OVector<D, N>, Moles<D>)
-where
-    DefaultAllocator: Allocator<N>,
-{
-    fn into_moles<E: Residual<N, D>>(self, _: &E) -> FeosResult<(OVector<D, N>, Moles<D>)> {
-        Ok((self.0, self.1))
     }
 }
 
@@ -136,12 +117,6 @@ impl<D: DualNum<f64> + Copy> Composition<D, U1> for Moles<D> {
     }
 }
 
-impl<D: DualNum<f64> + Copy> FullComposition<D, U1> for Moles<D> {
-    fn into_moles<E: Residual<U1, D>>(self, _: &E) -> FeosResult<(OVector<D, U1>, Moles<D>)> {
-        Ok(((vector![D::one()]), self))
-    }
-}
-
 impl<D: DualNum<f64> + Copy> Composition<D, Dyn> for Moles<D> {
     fn into_molefracs<E: Residual<Dyn, D>>(
         self,
@@ -149,19 +124,6 @@ impl<D: DualNum<f64> + Copy> Composition<D, Dyn> for Moles<D> {
     ) -> FeosResult<(OVector<D, Dyn>, Option<Moles<D>>)> {
         if eos.components() == 1 {
             Ok(((dvector![D::one()]), Some(self)))
-        } else {
-            Err(FeosError::UndeterminedState(format!(
-                "A single mole number ({}) can only be used to specify a pure component!",
-                self.re()
-            )))
-        }
-    }
-}
-
-impl<D: DualNum<f64> + Copy> FullComposition<D, Dyn> for Moles<D> {
-    fn into_moles<E: Residual<Dyn, D>>(self, eos: &E) -> FeosResult<(OVector<D, Dyn>, Moles<D>)> {
-        if eos.components() == 1 {
-            Ok(((dvector![D::one()]), self))
         } else {
             Err(FeosError::UndeterminedState(format!(
                 "A single mole number ({}) can only be used to specify a pure component!",
@@ -228,15 +190,6 @@ where
     }
 }
 
-impl<D: DualNum<f64> + Copy, N: Dim> FullComposition<D, N> for Moles<OVector<D, N>>
-where
-    DefaultAllocator: Allocator<N>,
-{
-    fn into_moles<E: Residual<N, D>>(self, eos: &E) -> FeosResult<(OVector<D, N>, Moles<D>)> {
-        (&self).into_moles(eos)
-    }
-}
-
 impl<D: DualNum<f64> + Copy, N: Dim> Composition<D, N> for &Moles<OVector<D, N>>
 where
     DefaultAllocator: Allocator<N>,
@@ -255,50 +208,5 @@ where
                 eos.components()
             )))
         }
-    }
-}
-
-impl<D: DualNum<f64> + Copy, N: Dim> FullComposition<D, N> for &Moles<OVector<D, N>>
-where
-    DefaultAllocator: Allocator<N>,
-{
-    fn into_moles<E: Residual<N, D>>(self, eos: &E) -> FeosResult<(OVector<D, N>, Moles<D>)> {
-        if eos.components() == self.len() {
-            let total_moles = self.sum();
-            Ok(((self.convert_to(total_moles)), total_moles))
-        } else {
-            Err(FeosError::UndeterminedState(format!(
-                "The length of the composition vector ({}) does not match the number of components ({})!",
-                self.len(),
-                eos.components()
-            )))
-        }
-    }
-}
-
-// the mixture can be specified with the partial density
-impl<D: DualNum<f64> + Copy, N: Dim> Composition<D, N>
-    for Quantity<OVector<D, N>, SIUnit<0, -3, 0, 0, 0, 1, 0>>
-where
-    DefaultAllocator: Allocator<N>,
-{
-    fn into_molefracs<E: Residual<N, D>>(
-        self,
-        eos: &E,
-    ) -> FeosResult<(OVector<D, N>, Option<Moles<D>>)> {
-        if eos.components() == self.len() {
-            let density = self.sum();
-            Ok(((self.convert_to(density)), None))
-        } else {
-            panic!(
-                "The length of the composition vector ({}) does not match the number of components ({})!",
-                self.len(),
-                eos.components()
-            )
-        }
-    }
-
-    fn density(&self) -> Option<Density<D>> {
-        Some(self.sum())
     }
 }
