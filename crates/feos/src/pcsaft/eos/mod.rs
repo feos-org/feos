@@ -596,7 +596,7 @@ mod tests_parameter_fit {
     use super::*;
     use approx::assert_relative_eq;
     use feos_core::DensityInitialization::Liquid;
-    use feos_core::{Contributions, PropertiesAD, ReferenceSystem};
+    use feos_core::{Contributions, PropertiesAD, ReferenceSystem, SolverOptions};
     use feos_core::{FeosResult, ParametersAD, PhaseEquilibrium, State};
     use nalgebra::{U1, U3, U8, vector};
     use num_dual::{DualStruct, DualVec};
@@ -933,6 +933,62 @@ mod tests_parameter_fit {
             ((dt_h - grad) / grad).abs()
         );
         assert_relative_eq!(grad, dt_h, max_relative = 1e-6);
+        Ok(())
+    }
+
+    #[test]
+    fn test_tp_flash() -> FeosResult<()> {
+        let (pcsaft, _) = pcsaft_binary()?;
+        let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
+        let temperature = 500.0 * KELVIN;
+        let pressure = 44.6 * BAR;
+        let x = vector![0.5, 0.5];
+        let vle = PhaseEquilibrium::tp_flash_binary(
+            &pcsaft_ad,
+            Temperature::from_inner(&temperature),
+            Pressure::from_inner(&pressure),
+            &Moles::from_inner(&(x * MOL)),
+            SolverOptions {
+                verbosity: feos_core::Verbosity::Iter,
+                tol: Some(1e-10),
+                ..Default::default()
+            },
+        )?;
+        let beta = vle
+            .vapor()
+            .total_moles
+            .convert_into(vle.vapor().total_moles + vle.liquid().total_moles);
+        let (beta, [[grad]]) = (beta.re, beta.eps.unwrap_generic(U1, U1).data.0);
+
+        println!("{beta:.5}");
+        println!("{grad:.5?}");
+
+        let (params, mut kij) = pcsaft.0;
+        let h = 1e-7;
+        kij += h;
+        let pcsaft_h = PcSaftBinary::new(params, kij);
+        let vle = PhaseEquilibrium::tp_flash_binary(
+            &pcsaft_h,
+            temperature,
+            pressure,
+            &(x * MOL),
+            SolverOptions {
+                tol: Some(1e-10),
+                ..Default::default()
+            },
+        )?;
+        let beta_h = vle
+            .vapor()
+            .total_moles
+            .convert_into(vle.vapor().total_moles + vle.liquid().total_moles);
+        let dbeta_h = (beta_h - beta) / h;
+        println!(
+            "k_ij: {:11.5} {:11.5} {:.3e}",
+            dbeta_h,
+            grad,
+            ((dbeta_h - grad) / grad).abs()
+        );
+        assert_relative_eq!(grad, dbeta_h, max_relative = 1e-4);
         Ok(())
     }
 }
