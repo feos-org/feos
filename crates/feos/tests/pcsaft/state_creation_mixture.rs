@@ -56,7 +56,7 @@ fn volume_temperature_molefracs() -> Result<(), Box<dyn Error>> {
     let moles = MOL;
     let x = dvector![0.3, 0.7];
     let state = State::new_nvt(&&saft, temperature, volume, (x, moles))?;
-    assert_relative_eq!(state.volume(), volume, max_relative = 1e-10);
+    assert_relative_eq!(state.volume()?, volume, max_relative = 1e-10);
     Ok(())
 }
 

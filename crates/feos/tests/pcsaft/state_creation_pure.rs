@@ -29,7 +29,7 @@ fn temperature_volume() -> FeosResult<()> {
     let volume = 1.5e-3 * METER.powi::<3>();
     let moles = MOL;
     let state = State::new_nvt(&&saft, temperature, volume, moles)?;
-    assert_relative_eq!(state.volume(), volume, max_relative = 1e-10);
+    assert_relative_eq!(state.volume()?, volume, max_relative = 1e-10);
     Ok(())
 }
 
@@ -50,8 +50,8 @@ fn temperature_total_moles_volume() -> FeosResult<()> {
     let total_moles = MOL;
     let volume = METER.powi::<3>();
     let state = State::new_nvt(&&saft, temperature, volume, total_moles)?;
-    assert_relative_eq!(state.volume(), volume, max_relative = 1e-10);
-    assert_relative_eq!(state.total_moles(), total_moles, max_relative = 1e-10);
+    assert_relative_eq!(state.volume()?, volume, max_relative = 1e-10);
+    assert_relative_eq!(state.total_moles()?, total_moles, max_relative = 1e-10);
     Ok(())
 }
 
@@ -63,8 +63,8 @@ fn temperature_total_moles_density() -> FeosResult<()> {
     let density = MOL / METER.powi::<3>();
     let state = State::new_pure(&&saft, temperature, density)?.set_total_moles(total_moles);
     assert_relative_eq!(state.density, density, max_relative = 1e-10);
-    assert_relative_eq!(state.total_moles(), total_moles, max_relative = 1e-10);
-    assert_relative_eq!(state.volume(), total_moles / density, max_relative = 1e-10);
+    assert_relative_eq!(state.total_moles()?, total_moles, max_relative = 1e-10);
+    assert_relative_eq!(state.volume()?, total_moles / density, max_relative = 1e-10);
     Ok(())
 }
 
@@ -158,7 +158,7 @@ fn density_internal_energy() -> FeosResult<()> {
     let molar_internal_energy = state.molar_internal_energy(Contributions::Total);
     let state_nvu = State::new_nvu(
         &&eos,
-        state.volume(),
+        state.volume()?,
         molar_internal_energy,
         total_moles,
         None,
@@ -203,8 +203,8 @@ fn pressure_enthalpy_total_moles_vapor() -> FeosResult<()> {
     let state = State::new_nvt(
         &&eos,
         state.temperature,
-        state.volume(),
-        state.total_moles(),
+        state.volume()?,
+        state.total_moles()?,
     )?;
     assert_relative_eq!(
         state.molar_enthalpy(Contributions::Total),
@@ -266,7 +266,7 @@ fn temperature_entropy_vapor() -> FeosResult<()> {
         &&eos,
         temperature,
         state.molar_entropy(Contributions::Total),
-        state.moles(),
+        state.moles()?,
         None,
     )?;
     assert_relative_eq!(

@@ -54,7 +54,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
                 states.push(vle.clone());
             }
         }
-        states.push(PhaseEquilibrium::from_states(sc.clone(), sc));
+        states.push(PhaseEquilibrium::single_phase(sc));
 
         Ok(PhaseDiagram::new(states))
     }
@@ -127,7 +127,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
                 .collect()
         });
 
-        states.push(PhaseEquilibrium::from_states(sc.clone(), sc));
+        states.push(PhaseEquilibrium::single_phase(sc));
         Ok(PhaseDiagram::new(states))
     }
 }

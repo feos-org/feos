@@ -67,15 +67,9 @@ fn pcsaft(c: &mut Criterion) {
     )
     .unwrap();
     let func = &PcSaftFunctional::new(parameters);
-    let vle = PhaseEquilibrium::bubble_point(
-        &func,
-        300.0 * KELVIN,
-        &dvector![0.5, 0.5],
-        None,
-        None,
-        Default::default(),
-    )
-    .unwrap();
+    let vle =
+        PhaseEquilibrium::bubble_point(&func, 300.0 * KELVIN, 0.5, None, None, Default::default())
+            .unwrap();
     let bulk = vle.liquid();
     group.bench_function("butane_pentane_liquid", |b| {
         b.iter(|| pore.initialize(bulk, None, None).unwrap().solve(None))

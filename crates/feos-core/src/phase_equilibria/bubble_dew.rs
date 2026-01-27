@@ -4,7 +4,7 @@ use crate::state::{
     Contributions,
     DensityInitialization::{InitialDensity, Liquid, Vapor},
 };
-use crate::{ReferenceSystem, Residual, SolverOptions, State, Verbosity};
+use crate::{Composition, ReferenceSystem, Residual, SolverOptions, State, Verbosity};
 use nalgebra::allocator::Allocator;
 use nalgebra::{DMatrix, DVector, DefaultAllocator, Dim, Dyn, OVector, U1};
 #[cfg(feature = "ndarray")]
@@ -141,10 +141,10 @@ where
 {
     /// Calculate a phase equilibrium for a given temperature
     /// or pressure and composition of the liquid phase.
-    pub fn bubble_point<TP: TemperatureOrPressure<D>>(
+    pub fn bubble_point<TP: TemperatureOrPressure<D>, X: Composition<D, N>>(
         eos: &E,
         temperature_or_pressure: TP,
-        liquid_molefracs: &OVector<D, N>,
+        liquid_molefracs: X,
         tp_init: Option<TP::Other>,
         vapor_molefracs: Option<&OVector<f64, N>>,
         options: (SolverOptions, SolverOptions),
@@ -162,10 +162,10 @@ where
 
     /// Calculate a phase equilibrium for a given temperature
     /// or pressure and composition of the vapor phase.
-    pub fn dew_point<TP: TemperatureOrPressure<D>>(
+    pub fn dew_point<TP: TemperatureOrPressure<D>, X: Composition<D, N>>(
         eos: &E,
         temperature_or_pressure: TP,
-        vapor_molefracs: &OVector<D, N>,
+        vapor_molefracs: X,
         tp_init: Option<TP::Other>,
         liquid_molefracs: Option<&OVector<f64, N>>,
         options: (SolverOptions, SolverOptions),
@@ -181,35 +181,43 @@ where
         )
     }
 
-    pub(super) fn bubble_dew_point<TP: TemperatureOrPressure<D>>(
+    pub(super) fn bubble_dew_point<TP: TemperatureOrPressure<D>, X: Composition<D, N>>(
         eos: &E,
         temperature_or_pressure: TP,
-        vapor_molefracs: &OVector<D, N>,
+        vapor_molefracs: X,
         tp_init: Option<TP::Other>,
         liquid_molefracs: Option<&OVector<f64, N>>,
         bubble: bool,
         options: (SolverOptions, SolverOptions),
     ) -> FeosResult<Self> {
-        let (temperature, pressure, iterate_p) =
-            temperature_or_pressure.temperature_pressure(tp_init);
-        Self::bubble_dew_point_tp(
-            eos,
-            temperature,
-            pressure,
-            vapor_molefracs,
-            liquid_molefracs,
-            bubble,
-            iterate_p,
-            options,
-        )
+        if eos.components() == 1 {
+            let mut vle = Self::pure(eos, temperature_or_pressure, None, options.1)?;
+            if bubble {
+                vle.phase_fractions = [D::from(0.0), D::from(1.0)];
+            }
+            Ok(vle)
+        } else {
+            let (temperature, pressure, iterate_p) =
+                temperature_or_pressure.temperature_pressure(tp_init);
+            Self::bubble_dew_point_tp(
+                eos,
+                temperature,
+                pressure,
+                vapor_molefracs,
+                liquid_molefracs,
+                bubble,
+                iterate_p,
+                options,
+            )
+        }
     }
 
     #[expect(clippy::too_many_arguments)]
-    fn bubble_dew_point_tp(
+    fn bubble_dew_point_tp<X: Composition<D, N>>(
         eos: &E,
         temperature: Option<Temperature<D>>,
         pressure: Option<Pressure<D>>,
-        molefracs_spec: &OVector<D, N>,
+        composition: X,
         molefracs_init: Option<&OVector<f64, N>>,
         bubble: bool,
         iterate_p: bool,
@@ -218,6 +226,7 @@ where
         let eos_re = eos.re();
         let mut temperature_re = temperature.map(|t| t.re());
         let mut pressure_re = pressure.map(|p| p.re());
+        let (molefracs_spec, total_moles) = composition.into_molefracs(eos)?;
         let molefracs_spec_re = molefracs_spec.map(|x| x.re());
         let (v1, rho2) = if iterate_p {
             // temperature is specified
@@ -306,7 +315,7 @@ where
                 Self::newton_step_t(
                     eos,
                     t,
-                    molefracs_spec,
+                    &molefracs_spec,
                     &mut p,
                     &mut molar_volume,
                     &mut rho2,
@@ -316,7 +325,7 @@ where
                 Self::newton_step_p(
                     eos,
                     &mut t,
-                    molefracs_spec,
+                    &molefracs_spec,
                     p,
                     &mut molar_volume,
                     &mut rho2,
@@ -339,11 +348,11 @@ where
             x2,
         )?;
 
-        Ok(PhaseEquilibrium(if bubble {
-            [state2, state1]
+        Ok(if bubble {
+            PhaseEquilibrium::with_vapor_phase_fraction(state2, state1, D::from(0.0), total_moles)
         } else {
-            [state1, state2]
-        }))
+            PhaseEquilibrium::with_vapor_phase_fraction(state1, state2, D::from(1.0), total_moles)
+        })
     }
 
     fn newton_step_t(

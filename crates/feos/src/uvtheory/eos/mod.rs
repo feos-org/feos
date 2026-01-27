@@ -246,9 +246,7 @@ mod test {
         // EoS
         let eos_wca = &UVTheory::new(parameters);
         let state_wca = State::new_nvt(&eos_wca, t_x, volume, &moles).unwrap();
-        let a_wca = (state_wca.residual_helmholtz_energy()
-            / (RGAS * t_x * state_wca.total_moles()))
-        .into_value();
+        let a_wca = (state_wca.residual_molar_helmholtz_energy() / (RGAS * t_x)).into_value();
 
         assert_relative_eq!(a_wca, -0.597791038364405, max_relative = 1e-5);
         Ok(())
