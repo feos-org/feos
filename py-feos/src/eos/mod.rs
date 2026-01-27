@@ -3,9 +3,9 @@ use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
 use feos_core::*;
 use indexmap::IndexMap;
-use nalgebra::{DVector, DVectorView, Dyn};
+use nalgebra::{DVector, DVectorView, Dyn, U1};
 use numpy::{PyArray1, PyReadonlyArray1, ToPyArray};
-use pyo3::prelude::*;
+use pyo3::{exceptions::PyValueError, prelude::*};
 use quantity::*;
 use std::ops::Div;
 use std::sync::Arc;
@@ -58,17 +58,17 @@ impl PyEquationOfState {
     ///
     /// Parameters
     /// ----------
-    /// molefracs : np.ndarray[float], optional
+    /// composition : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float], optional
     ///     The composition of the mixture.
     ///
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(text_signature = "(molefracs=None)", signature = (molefracs=None))]
-    fn max_density(&self, molefracs: Option<PyReadonlyArray1<f64>>) -> PyResult<Density> {
+    #[pyo3(text_signature = "(composition=None)", signature = (composition=None))]
+    fn max_density(&self, composition: Option<&Bound<'_, PyAny>>) -> PyResult<Density> {
         Ok(self
             .0
-            .max_density(&parse_molefracs(molefracs))
+            .max_density(Compositions::try_from(composition)?)
             .map_err(PyFeosError::from)?)
     }
 
@@ -78,20 +78,22 @@ impl PyEquationOfState {
     /// ----------
     /// temperature : SINumber
     ///     The temperature for which B should be computed.
-    /// molefracs : np.ndarray[float], optional
+    /// composition : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float], optional
     ///     The composition of the mixture.
     ///
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(text_signature = "(temperature, molefracs=None)", signature = (temperature, molefracs=None))]
+    #[pyo3(text_signature = "(temperature, composition=None)", signature = (temperature, composition=None))]
     fn second_virial_coefficient(
         &self,
         temperature: Temperature,
-        molefracs: Option<PyReadonlyArray1<f64>>,
-    ) -> Quot<f64, Density> {
-        self.0
-            .second_virial_coefficient(temperature, &parse_molefracs(molefracs))
+        composition: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<Quot<f64, Density>> {
+        Ok(self
+            .0
+            .second_virial_coefficient(temperature, Compositions::try_from(composition)?)
+            .map_err(PyFeosError::from)?)
     }
 
     /// Calculate the third Virial coefficient C(T,x).
@@ -100,20 +102,22 @@ impl PyEquationOfState {
     /// ----------
     /// temperature : SINumber
     ///     The temperature for which C should be computed.
-    /// molefracs : np.ndarray[float], optional
+    /// composition : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float], optional
     ///     The composition of the mixture.
     ///
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(text_signature = "(temperature, molefracs=None)", signature = (temperature, molefracs=None))]
+    #[pyo3(text_signature = "(temperature, composition=None)", signature = (temperature, composition=None))]
     fn third_virial_coefficient(
         &self,
         temperature: Temperature,
-        molefracs: Option<PyReadonlyArray1<f64>>,
-    ) -> Quot<Quot<f64, Density>, Density> {
-        self.0
-            .third_virial_coefficient(temperature, &parse_molefracs(molefracs))
+        composition: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<Quot<Quot<f64, Density>, Density>> {
+        Ok(self
+            .0
+            .third_virial_coefficient(temperature, Compositions::try_from(composition)?)
+            .map_err(PyFeosError::from)?)
     }
 
     /// Calculate the derivative of the second Virial coefficient B(T,x)
@@ -123,22 +127,25 @@ impl PyEquationOfState {
     /// ----------
     /// temperature : SINumber
     ///     The temperature for which B' should be computed.
-    /// molefracs : np.ndarray[float], optional
+    /// composition : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float], optional
     ///     The composition of the mixture.
     ///
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(text_signature = "(temperature, molefracs=None)", signature = (temperature, molefracs=None))]
+    #[pyo3(text_signature = "(temperature, composition=None)", signature = (temperature, composition=None))]
     fn second_virial_coefficient_temperature_derivative(
         &self,
         temperature: Temperature,
-        molefracs: Option<PyReadonlyArray1<f64>>,
-    ) -> Quot<Quot<f64, Density>, Temperature> {
-        self.0.second_virial_coefficient_temperature_derivative(
-            temperature,
-            &parse_molefracs(molefracs),
-        )
+        composition: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<Quot<Quot<f64, Density>, Temperature>> {
+        Ok(self
+            .0
+            .second_virial_coefficient_temperature_derivative(
+                temperature,
+                Compositions::try_from(composition)?,
+            )
+            .map_err(PyFeosError::from)?)
     }
 
     /// Calculate the derivative of the third Virial coefficient C(T,x)
@@ -148,22 +155,26 @@ impl PyEquationOfState {
     /// ----------
     /// temperature : SINumber
     ///     The temperature for which C' should be computed.
-    /// molefracs : np.ndarray[float], optional
+    /// composition : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float], optional
     ///     The composition of the mixture.
     ///
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(text_signature = "(temperature, molefracs=None)", signature = (temperature, molefracs=None))]
+    #[expect(clippy::type_complexity)]
+    #[pyo3(text_signature = "(temperature, composition=None)", signature = (temperature, composition=None))]
     fn third_virial_coefficient_temperature_derivative(
         &self,
         temperature: Temperature,
-        molefracs: Option<PyReadonlyArray1<f64>>,
-    ) -> Quot<Quot<Quot<f64, Density>, Density>, Temperature> {
-        self.0.third_virial_coefficient_temperature_derivative(
-            temperature,
-            &parse_molefracs(molefracs),
-        )
+        composition: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<Quot<Quot<Quot<f64, Density>, Density>, Temperature>> {
+        Ok(self
+            .0
+            .third_virial_coefficient_temperature_derivative(
+                temperature,
+                Compositions::try_from(composition)?,
+            )
+            .map_err(PyFeosError::from)?)
     }
 }
 
@@ -192,36 +203,64 @@ pub(crate) fn parse_molefracs(molefracs: Option<PyReadonlyArray1<f64>>) -> Optio
     })
 }
 
-// impl_state_entropy_scaling!(EquationOfState<Vec<IdealGasModel>, ResidualModel>, PyEquationOfState);
-// impl_phase_equilibrium!(EquationOfState<Vec<IdealGasModel>, ResidualModel>, PyEquationOfState);
+#[derive(Clone)]
+pub enum Compositions {
+    None,
+    Scalar(f64),
+    TotalMoles(Moles<f64>),
+    Molefracs(DVector<f64>),
+    Moles(Moles<DVector<f64>>),
+    PartialDensity(Density<DVector<f64>>),
+}
 
-// #[cfg(feature = "estimator")]
-// impl_estimator!(EquationOfState<Vec<IdealGasModel>, ResidualModel>, PyEquationOfState);
-// #[cfg(all(feature = "estimator", feature = "pcsaft"))]
-// impl_estimator_entropy_scaling!(EquationOfState<Vec<IdealGasModel>, ResidualModel>, PyEquationOfState);
+impl Composition<f64, Dyn> for Compositions {
+    fn into_molefracs<E: Residual<Dyn, f64>>(
+        self,
+        eos: &E,
+    ) -> FeosResult<(DVector<f64>, Option<Moles<f64>>)> {
+        match self {
+            Self::None => ().into_molefracs(eos),
+            Self::Scalar(x) => x.into_molefracs(eos),
+            Self::TotalMoles(total_moles) => total_moles.into_molefracs(eos),
+            Self::Molefracs(molefracs) => molefracs.into_molefracs(eos),
+            Self::Moles(moles) => moles.into_molefracs(eos),
+            Self::PartialDensity(partial_density) => partial_density.into_molefracs(eos),
+        }
+    }
 
-// #[pymodule]
-// pub fn eos(m: &Bound<'_, PyModule>) -> PyResult<()> {
-//     m.add_class::<Contributions>()?;
-//     m.add_class::<Verbosity>()?;
+    fn density(&self) -> Option<Density<f64>> {
+        if let Self::PartialDensity(partial_density) = self {
+            partial_density.density()
+        } else {
+            None
+        }
+    }
+}
 
-//     m.add_class::<PyEquationOfState>()?;
-//     m.add_class::<PyState>()?;
-//     m.add_class::<PyStateVec>()?;
-//     m.add_class::<PyPhaseDiagram>()?;
-//     m.add_class::<PyPhaseEquilibrium>()?;
-
-//     #[cfg(feature = "estimator")]
-//     m.add_wrapped(wrap_pymodule!(estimator_eos))?;
-
-//     Ok(())
-// }
-
-// #[cfg(feature = "estimator")]
-// #[pymodule]
-// pub fn estimator_eos(m: &Bound<'_, PyModule>) -> PyResult<()> {
-//     m.add_class::<PyDataSet>()?;
-//     m.add_class::<PyEstimator>()?;
-//     m.add_class::<PyLoss>()?;
-//     m.add_class::<Phase>()
-// }
+impl TryFrom<Option<&Bound<'_, PyAny>>> for Compositions {
+    type Error = PyErr;
+    fn try_from(composition: Option<&Bound<'_, PyAny>>) -> PyResult<Compositions> {
+        let Some(composition) = composition else {
+            return Ok(Compositions::None);
+        };
+        if let Ok(x) = composition.extract::<PyReadonlyArray1<f64>>()
+            && let Some(x) = x.try_as_matrix::<Dyn, U1, Dyn, Dyn>()
+        {
+            Ok(Compositions::Molefracs(x.clone_owned()))
+        } else if let Ok(x) = composition.extract::<Vec<f64>>() {
+            Ok(Compositions::Molefracs(DVector::from_vec(x)))
+        } else if let Ok(x) = composition.extract::<f64>() {
+            Ok(Compositions::Scalar(x))
+        } else if let Ok(n) = composition.extract::<Moles<DVector<f64>>>() {
+            Ok(Compositions::Moles(n))
+        } else if let Ok(n) = composition.extract::<Moles>() {
+            Ok(Compositions::TotalMoles(n))
+        } else if let Ok(rho) = composition.extract::<Density<DVector<f64>>>() {
+            Ok(Compositions::PartialDensity(rho))
+        } else {
+            Err(PyErr::new::<PyValueError, _>(format!(
+                "failed to parse value '{composition}' as composition."
+            )))
+        }
+    }
+}

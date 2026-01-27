@@ -6,9 +6,7 @@ use crate::functional_contribution::FunctionalContribution;
 use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
-use feos_core::{
-    Contributions, FeosResult, ReferenceSystem, ResidualDyn, State, StateBuilder, StateHD,
-};
+use feos_core::{Contributions, FeosResult, ReferenceSystem, ResidualDyn, State, StateHD};
 use nalgebra::{DVector, dvector};
 use ndarray::prelude::*;
 use ndarray::{Axis as Axis_nd, RemoveAxis};
@@ -69,10 +67,7 @@ pub trait PoreSpecification<D: Dimension> {
     where
         D::Larger: Dimension<Smaller = D>,
     {
-        let bulk = StateBuilder::new(&&Helium)
-            .temperature(298.0 * KELVIN)
-            .density(Density::from_reduced(1.0))
-            .build()?;
+        let bulk = State::new_pure(&&Helium, 298.0 * KELVIN, Density::from_reduced(1.0))?;
         let pore = self.initialize(&bulk, None, None)?;
         let pot = Dimensionless::from_reduced(
             pore.profile

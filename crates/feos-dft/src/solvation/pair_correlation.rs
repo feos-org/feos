@@ -59,12 +59,10 @@ impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
         self.profile.solve(solver, debug)?;
 
         // calculate pair correlation function
+        let partial_density = self.profile.bulk.partial_density();
         self.pair_correlation_function = Some(Array::from_shape_fn(
             self.profile.density.raw_dim(),
-            |(i, j)| {
-                (self.profile.density.get((i, j)) / self.profile.bulk.partial_density.get(i))
-                    .into_value()
-            },
+            |(i, j)| (self.profile.density.get((i, j)) / partial_density.get(i)).into_value(),
         ));
 
         // calculate self solvation free energy

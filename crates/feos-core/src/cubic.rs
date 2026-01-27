@@ -221,7 +221,7 @@ mod tests {
         let parameters = PengRobinsonParameters::new_pure(propane)?;
         let pr = PengRobinson::new(parameters);
         let options = SolverOptions::new().verbosity(Verbosity::Iter);
-        let cp = State::critical_point(&&pr, None, None, None, options)?;
+        let cp = State::critical_point(&&pr, (), None, None, options)?;
         println!("{} {}", cp.temperature, cp.pressure(Contributions::Total));
         assert_relative_eq!(cp.temperature, tc * KELVIN, max_relative = 1e-4);
         assert_relative_eq!(

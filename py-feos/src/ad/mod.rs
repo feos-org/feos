@@ -50,7 +50,7 @@ type GradResult<'py> = (
 #[pyfunction]
 pub fn vapor_pressure_derivatives<'py>(
     model: PyEquationOfStateAD,
-    parameter_names: Bound<'py, PyAny>,
+    parameter_names: &Bound<'py, PyAny>,
     parameters: PyReadonlyArray2<f64>,
     input: PyReadonlyArray2<f64>,
 ) -> GradResult<'py> {
@@ -102,7 +102,7 @@ pub fn boiling_temperature_derivatives<'py>(
 #[pyfunction]
 pub fn liquid_density_derivatives<'py>(
     model: PyEquationOfStateAD,
-    parameter_names: Bound<'py, PyAny>,
+    parameter_names: &Bound<'py, PyAny>,
     parameters: PyReadonlyArray2<f64>,
     input: PyReadonlyArray2<f64>,
 ) -> GradResult<'py> {
@@ -128,7 +128,7 @@ pub fn liquid_density_derivatives<'py>(
 #[pyfunction]
 pub fn equilibrium_liquid_density_derivatives<'py>(
     model: PyEquationOfStateAD,
-    parameter_names: Bound<'py, PyAny>,
+    parameter_names: &Bound<'py, PyAny>,
     parameters: PyReadonlyArray2<f64>,
     input: PyReadonlyArray2<f64>,
 ) -> GradResult<'py> {
@@ -155,7 +155,7 @@ pub fn equilibrium_liquid_density_derivatives<'py>(
 #[pyfunction]
 pub fn bubble_point_pressure_derivatives<'py>(
     model: PyEquationOfStateAD,
-    parameter_names: Bound<'py, PyAny>,
+    parameter_names: &Bound<'py, PyAny>,
     parameters: PyReadonlyArray2<f64>,
     input: PyReadonlyArray2<f64>,
 ) -> GradResult<'py> {
@@ -182,7 +182,7 @@ pub fn bubble_point_pressure_derivatives<'py>(
 #[pyfunction]
 pub fn dew_point_pressure_derivatives<'py>(
     model: PyEquationOfStateAD,
-    parameter_names: Bound<'py, PyAny>,
+    parameter_names: &Bound<'py, PyAny>,
     parameters: PyReadonlyArray2<f64>,
     input: PyReadonlyArray2<f64>,
 ) -> GradResult<'py> {
@@ -195,7 +195,7 @@ macro_rules! expand_models {
         #[pyfunction]
         fn [<_ $prop _derivatives>]<'py>(
             model: PyEquationOfStateAD,
-            parameter_names: Bound<'py, PyAny>,
+            parameter_names: &Bound<'py, PyAny>,
             parameters: PyReadonlyArray2<f64>,
             input: PyReadonlyArray2<f64>,
         ) -> GradResult<'py> {
@@ -220,7 +220,7 @@ macro_rules! impl_evaluate_gradients {
         expand_models!($enum, $prop, $($model: $type),*);
         paste!(
         fn $prop<'py, R: ParametersAD<$n>>(
-            parameter_names: Bound<'py, PyAny>,
+            parameter_names: &Bound<'py, PyAny>,
             parameters: PyReadonlyArray2<f64>,
             input: PyReadonlyArray2<f64>,
         ) -> (
