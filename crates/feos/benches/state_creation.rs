@@ -22,7 +22,7 @@ fn npt<E: Residual>(
 }
 
 /// Evaluate critical point constructor
-fn critical_point<E: Residual>((eos, n): (&E, Option<&DVector<f64>>)) {
+fn critical_point<E: Residual>((eos, n): (&E, &DVector<f64>)) {
     State::critical_point(eos, n, None, None, Default::default()).unwrap();
 }
 
@@ -69,7 +69,7 @@ fn bench_states<E: Residual>(c: &mut Criterion, group_name: &str, eos: &E) {
     let ncomponents = eos.components();
     let x = DVector::from_element(ncomponents, 1.0 / ncomponents as f64);
     let n = &x * 100.0 * MOL;
-    let crit = State::critical_point(eos, Some(&x), None, None, Default::default()).unwrap();
+    let crit = State::critical_point(eos, &x, None, None, Default::default()).unwrap();
     let vle = if ncomponents == 1 {
         PhaseEquilibrium::pure(eos, crit.temperature * 0.95, None, Default::default()).unwrap()
     } else {
@@ -77,7 +77,7 @@ fn bench_states<E: Residual>(c: &mut Criterion, group_name: &str, eos: &E) {
             eos,
             crit.temperature,
             crit.pressure(Contributions::Total) * 0.95,
-            &crit.moles,
+            &crit.moles(),
             None,
             Default::default(),
             None,
@@ -108,9 +108,7 @@ fn bench_states<E: Residual>(c: &mut Criterion, group_name: &str, eos: &E) {
             ))
         })
     });
-    group.bench_function("critical_point", |b| {
-        b.iter(|| critical_point((eos, Some(&x))))
-    });
+    group.bench_function("critical_point", |b| b.iter(|| critical_point((eos, &x))));
     if ncomponents == 2 {
         group.bench_function("critical_point_binary_t", |b| {
             b.iter(|| critical_point_binary((eos, crit.temperature)))

@@ -1,7 +1,7 @@
 use super::bubble_dew::TemperatureOrPressure;
 use super::{PhaseDiagram, PhaseEquilibrium};
 use crate::errors::{FeosError, FeosResult};
-use crate::state::{Contributions, DensityInitialization::Vapor, State, StateBuilder};
+use crate::state::{Contributions, DensityInitialization::Vapor, State};
 use crate::{ReferenceSystem, Residual, SolverOptions, Subset};
 use nalgebra::{DVector, dvector, stack, vector};
 use ndarray::{Array1, s};
@@ -391,21 +391,21 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
         let p0 = (vle1.vapor().pressure(Contributions::Total)
             + vle2.vapor().pressure(Contributions::Total))
             * 0.5;
-        let nv0 = (&vle1.vapor().moles + &vle2.vapor().moles) * 0.5;
-        let mut v = State::new_npt(eos, temperature, p0, &nv0, Some(Vapor))?;
+        let y0 = (&vle1.vapor().molefracs + &vle2.vapor().molefracs) * 0.5;
+        let mut v = State::new_npt(eos, temperature, p0, y0, Some(Vapor))?;
 
         for _ in 0..options.max_iter.unwrap_or(MAX_ITER_HETERO) {
             // calculate properties
-            let dmu_drho_l1 = (l1.dmu_dni(Contributions::Total) * l1.volume).to_reduced();
-            let dmu_drho_l2 = (l2.dmu_dni(Contributions::Total) * l2.volume).to_reduced();
-            let dmu_drho_v = (v.dmu_dni(Contributions::Total) * v.volume).to_reduced();
-            let dp_drho_l1 = (l1.dp_dni(Contributions::Total) * l1.volume)
+            let dmu_drho_l1 = (l1.n_dmu_dni(Contributions::Total) * l1.molar_volume).to_reduced();
+            let dmu_drho_l2 = (l2.n_dmu_dni(Contributions::Total) * l2.molar_volume).to_reduced();
+            let dmu_drho_v = (v.n_dmu_dni(Contributions::Total) * v.molar_volume).to_reduced();
+            let dp_drho_l1 = (l1.n_dp_dni(Contributions::Total) * l1.molar_volume)
                 .to_reduced()
                 .transpose();
-            let dp_drho_l2 = (l2.dp_dni(Contributions::Total) * l2.volume)
+            let dp_drho_l2 = (l2.n_dp_dni(Contributions::Total) * l2.molar_volume)
                 .to_reduced()
                 .transpose();
-            let dp_drho_v = (v.dp_dni(Contributions::Total) * v.volume)
+            let dp_drho_v = (v.n_dp_dni(Contributions::Total) * v.molar_volume)
                 .to_reduced()
                 .transpose();
             let mu_l1_res = l1.residual_chemical_potential().to_reduced();
@@ -418,15 +418,15 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
             // calculate residual
             let delta_l1v_mu_ig = (RGAS * v.temperature).to_reduced()
                 * (l1
-                    .partial_density
+                    .partial_density()
                     .to_reduced()
-                    .component_div(&v.partial_density.to_reduced()))
+                    .component_div(&v.partial_density().to_reduced()))
                 .map(f64::ln);
             let delta_l2v_mu_ig = (RGAS * v.temperature).to_reduced()
                 * (l2
-                    .partial_density
+                    .partial_density()
                     .to_reduced()
-                    .component_div(&v.partial_density.to_reduced()))
+                    .component_div(&v.partial_density().to_reduced()))
                 .map(f64::ln);
             let res = stack![
                 mu_l1_res - &mu_v_res + delta_l1v_mu_ig;
@@ -453,11 +453,11 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
 
             // apply Newton step
             let rho_l1 =
-                &l1.partial_density - &Density::from_reduced(dx.rows_range(0..2).into_owned());
+                &l1.partial_density() - &Density::from_reduced(dx.rows_range(0..2).into_owned());
             let rho_l2 =
-                &l2.partial_density - &Density::from_reduced(dx.rows_range(2..4).into_owned());
+                &l2.partial_density() - &Density::from_reduced(dx.rows_range(2..4).into_owned());
             let rho_v =
-                &v.partial_density - &Density::from_reduced(dx.rows_range(4..6).into_owned());
+                &v.partial_density() - &Density::from_reduced(dx.rows_range(4..6).into_owned());
 
             // check for negative densities
             for i in 0..2 {
@@ -472,18 +472,9 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
             }
 
             // update states
-            l1 = StateBuilder::new(eos)
-                .temperature(temperature)
-                .partial_density(&rho_l1)
-                .build()?;
-            l2 = StateBuilder::new(eos)
-                .temperature(temperature)
-                .partial_density(&rho_l2)
-                .build()?;
-            v = StateBuilder::new(eos)
-                .temperature(temperature)
-                .partial_density(&rho_v)
-                .build()?;
+            l1 = State::new_density(eos, temperature, rho_l1)?;
+            l2 = State::new_density(eos, temperature, rho_l2)?;
+            v = State::new_density(eos, temperature, rho_v)?;
         }
         Err(FeosError::NotConverged(String::from(
             "PhaseEquilibrium::heteroazeotrope_t",
@@ -513,24 +504,24 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
         let mut l1 = vle1.liquid().clone();
         let mut l2 = vle2.liquid().clone();
         let t0 = (vle1.vapor().temperature + vle2.vapor().temperature) * 0.5;
-        let nv0 = (&vle1.vapor().moles + &vle2.vapor().moles) * 0.5;
-        let mut v = State::new_npt(eos, t0, pressure, &nv0, Some(Vapor))?;
+        let y0 = (&vle1.vapor().molefracs + &vle2.vapor().molefracs) * 0.5;
+        let mut v = State::new_npt(eos, t0, pressure, y0, Some(Vapor))?;
 
         for _ in 0..options.max_iter.unwrap_or(MAX_ITER_HETERO) {
             // calculate properties
-            let dmu_drho_l1 = (l1.dmu_dni(Contributions::Total) * l1.volume).to_reduced();
-            let dmu_drho_l2 = (l2.dmu_dni(Contributions::Total) * l2.volume).to_reduced();
-            let dmu_drho_v = (v.dmu_dni(Contributions::Total) * v.volume).to_reduced();
+            let dmu_drho_l1 = (l1.n_dmu_dni(Contributions::Total) * l1.molar_volume).to_reduced();
+            let dmu_drho_l2 = (l2.n_dmu_dni(Contributions::Total) * l2.molar_volume).to_reduced();
+            let dmu_drho_v = (v.n_dmu_dni(Contributions::Total) * v.molar_volume).to_reduced();
             let dmu_res_dt_l1 = (l1.dmu_res_dt()).to_reduced();
             let dmu_res_dt_l2 = (l2.dmu_res_dt()).to_reduced();
             let dmu_res_dt_v = (v.dmu_res_dt()).to_reduced();
-            let dp_drho_l1 = (l1.dp_dni(Contributions::Total) * l1.volume)
+            let dp_drho_l1 = (l1.n_dp_dni(Contributions::Total) * l1.molar_volume)
                 .to_reduced()
                 .transpose();
-            let dp_drho_l2 = (l2.dp_dni(Contributions::Total) * l2.volume)
+            let dp_drho_l2 = (l2.n_dp_dni(Contributions::Total) * l2.molar_volume)
                 .to_reduced()
                 .transpose();
-            let dp_drho_v = (v.dp_dni(Contributions::Total) * v.volume)
+            let dp_drho_v = (v.n_dp_dni(Contributions::Total) * v.molar_volume)
                 .to_reduced()
                 .transpose();
             let dp_dt_l1 = (l1.dp_dt(Contributions::Total)).to_reduced();
@@ -545,14 +536,14 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
 
             // calculate residual
             let delta_l1v_dmu_ig_dt = l1
-                .partial_density
+                .partial_density()
                 .to_reduced()
-                .component_div(&v.partial_density.to_reduced())
+                .component_div(&v.partial_density().to_reduced())
                 .map(f64::ln);
             let delta_l2v_dmu_ig_dt = l2
-                .partial_density
+                .partial_density()
                 .to_reduced()
-                .component_div(&v.partial_density.to_reduced())
+                .component_div(&v.partial_density().to_reduced())
                 .map(f64::ln);
             let delta_l1v_mu_ig = (RGAS * v.temperature).to_reduced() * &delta_l1v_dmu_ig_dt;
             let delta_l2v_mu_ig = (RGAS * v.temperature).to_reduced() * &delta_l2v_dmu_ig_dt;
@@ -582,10 +573,11 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
 
             // apply Newton step
             let rho_l1 =
-                l1.partial_density - Density::from_reduced(dx.rows_range(0..2).into_owned());
+                l1.partial_density() - Density::from_reduced(dx.rows_range(0..2).into_owned());
             let rho_l2 =
-                l2.partial_density - Density::from_reduced(dx.rows_range(2..4).into_owned());
-            let rho_v = v.partial_density - Density::from_reduced(dx.rows_range(4..6).into_owned());
+                l2.partial_density() - Density::from_reduced(dx.rows_range(2..4).into_owned());
+            let rho_v =
+                v.partial_density() - Density::from_reduced(dx.rows_range(4..6).into_owned());
             let t = v.temperature - Temperature::from_reduced(dx[6]);
 
             // check for negative densities and temperatures
@@ -602,18 +594,9 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
             }
 
             // update states
-            l1 = StateBuilder::new(eos)
-                .temperature(t)
-                .partial_density(&rho_l1)
-                .build()?;
-            l2 = StateBuilder::new(eos)
-                .temperature(t)
-                .partial_density(&rho_l2)
-                .build()?;
-            v = StateBuilder::new(eos)
-                .temperature(t)
-                .partial_density(&rho_v)
-                .build()?;
+            l1 = State::new_density(eos, t, rho_l1)?;
+            l2 = State::new_density(eos, t, rho_l2)?;
+            v = State::new_density(eos, t, rho_v)?;
         }
         Err(FeosError::NotConverged(String::from(
             "PhaseEquilibrium::heteroazeotrope_p",

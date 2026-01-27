@@ -11,19 +11,19 @@ use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
 use crate::{ReferenceSystem, Total};
 use nalgebra::allocator::Allocator;
-use nalgebra::{DefaultAllocator, Dim, Dyn, OVector, U1};
+use nalgebra::{DefaultAllocator, Dim, Dyn, OVector};
 use num_dual::*;
 use quantity::*;
 use std::fmt;
 use std::ops::Sub;
 
-mod builder;
 mod cache;
+mod composition;
 mod properties;
 mod residual_properties;
 mod statevec;
-pub use builder::StateBuilder;
 pub(crate) use cache::Cache;
+pub use composition::{Composition, FullComposition};
 pub use statevec::StateVec;
 
 /// Possible contributions that can be computed.
@@ -70,8 +70,6 @@ where
 {
     /// temperature in Kelvin
     pub temperature: D,
-    // /// volume in Angstrom^3
-    // pub molar_volume: D,
     /// mole fractions
     pub molefracs: OVector<D, N>,
     /// partial number densities in Angstrom^-3
@@ -82,15 +80,9 @@ impl<N: Dim, D: DualNum<f64> + Copy> StateHD<D, N>
 where
     DefaultAllocator: Allocator<N>,
 {
-    /// Create a new `StateHD` for given temperature, molar volume and composition.
-    pub fn new(temperature: D, molar_volume: D, molefracs: &OVector<D, N>) -> Self {
-        let partial_density = molefracs / molar_volume;
-
-        Self {
-            temperature,
-            molefracs: molefracs.clone(),
-            partial_density,
-        }
+    /// Create a new `StateHD` for given temperature, volume and composition.
+    pub fn new(temperature: D, volume: D, moles: &OVector<D, N>) -> Self {
+        Self::new_density(temperature, &(moles / volume))
     }
 
     /// Create a new `StateHD` for given temperature and partial densities
@@ -144,7 +136,7 @@ where
 /// + [State constructors](#state-constructors)
 /// + [Stability analysis](#stability-analysis)
 /// + [Flash calculations](#flash-calculations)
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct State<E, N: Dim = Dyn, D: DualNum<f64> + Copy = f64>
 where
     DefaultAllocator: Allocator<N>,
@@ -153,14 +145,10 @@ where
     pub eos: E,
     /// Temperature $T$
     pub temperature: Temperature<D>,
-    /// Volume $V$
-    pub volume: Volume<D>,
-    /// Mole numbers $N_i$
-    pub moles: Moles<OVector<D, N>>,
+    /// Molar volume $v=\frac{V}{N}$
+    pub molar_volume: MolarVolume<D>,
     /// Total number of moles $N=\sum_iN_i$
-    pub total_moles: Moles<D>,
-    /// Partial densities $\rho_i=\frac{N_i}{V}$
-    pub partial_density: Density<OVector<D, N>>,
+    pub total_moles: Option<Moles<D>>,
     /// Total density $\rho=\frac{N}{V}=\sum_i\rho_i$
     pub density: Density<D>,
     /// Mole fractions $x_i=\frac{N_i}{N}=\frac{\rho_i}{\rho}$
@@ -169,22 +157,38 @@ where
     cache: Cache<D, N>,
 }
 
-impl<E: Clone, N: Dim, D: DualNum<f64> + Copy> Clone for State<E, N, D>
+impl<E, N: Dim, D: DualNum<f64> + Copy> State<E, N, D>
 where
     DefaultAllocator: Allocator<N>,
 {
-    fn clone(&self) -> Self {
-        Self {
-            eos: self.eos.clone(),
-            temperature: self.temperature,
-            volume: self.volume,
-            moles: self.moles.clone(),
-            total_moles: self.total_moles,
-            partial_density: self.partial_density.clone(),
-            density: self.density,
-            molefracs: self.molefracs.clone(),
-            cache: self.cache.clone(),
-        }
+    /// Set the total amount of substance to the given value.
+    ///
+    /// This method does not introduce inconsistencies, because the
+    /// total moles are the only field that stores information about
+    /// the size of the state.
+    pub fn set_total_moles(mut self, total_moles: Moles<D>) -> State<E, N, D> {
+        self.total_moles = Some(total_moles);
+        self
+    }
+
+    /// Partial densities $\rho_i=\frac{N_i}{V}$
+    pub fn partial_density(&self) -> Density<OVector<D, N>> {
+        Dimensionless::new(&self.molefracs) * self.density
+    }
+
+    /// Mole numbers $N_i$
+    pub fn moles(&self) -> Moles<OVector<D, N>> {
+        Dimensionless::new(&self.molefracs) * self.total_moles()
+    }
+
+    /// Total moles $N=\sum_iN_i$
+    pub fn total_moles(&self) -> Moles<D> {
+        self.total_moles.expect("Extensive properties can only be evaluated for states that are initialized with extensive properties!")
+    }
+
+    /// Volume $V$
+    pub fn volume(&self) -> Volume<D> {
+        self.molar_volume * self.total_moles()
     }
 }
 
@@ -221,83 +225,76 @@ where
     /// This function will perform a validation of the given properties, i.e. test for signs
     /// and if values are finite. It will **not** validate physics, i.e. if the resulting
     /// densities are below the maximum packing fraction.
-    pub fn new_nvt(
+    pub fn new_nvt<X: FullComposition<D, N>>(
         eos: &E,
         temperature: Temperature<D>,
         volume: Volume<D>,
-        moles: &Moles<OVector<D, N>>,
+        composition: X,
     ) -> FeosResult<Self> {
-        let total_moles = moles.sum();
-        let molefracs = (moles / total_moles).into_value();
+        let (molefracs, total_moles) = composition.into_moles(eos)?;
         let density = total_moles / volume;
-        validate(temperature, density, &molefracs)?;
-
-        Ok(Self::new_unchecked(
-            eos,
-            temperature,
-            density,
-            total_moles,
-            &molefracs,
-        ))
+        Self::new(eos, temperature, density, (molefracs, total_moles))
     }
 
-    /// Return a new `State` for which the total amount of substance is unspecified.
-    ///
-    /// Internally the total number of moles will be set to 1 mol.
+    /// Return a new `State` given a temperature and the partial density of all components.
     ///
     /// This function will perform a validation of the given properties, i.e. test for signs
     /// and if values are finite. It will **not** validate physics, i.e. if the resulting
     /// densities are below the maximum packing fraction.
-    pub fn new_intensive(
+    pub fn new_density(
         eos: &E,
         temperature: Temperature<D>,
-        density: Density<D>,
-        molefracs: &OVector<D, N>,
+        partial_density: Density<OVector<D, N>>,
     ) -> FeosResult<Self> {
-        validate(temperature, density, molefracs)?;
-        let total_moles = Moles::new(D::one());
-        Ok(Self::new_unchecked(
-            eos,
-            temperature,
-            density,
-            total_moles,
-            molefracs,
-        ))
+        let density = partial_density.sum();
+        Self::new(eos, temperature, density, partial_density)
     }
 
-    fn new_unchecked(
+    /// Return a new `State` for a pure component given a temperature and a density.
+    ///
+    /// This function will perform a validation of the given properties, i.e. test for signs
+    /// and if values are finite. It will **not** validate physics, i.e. if the resulting
+    /// densities are below the maximum packing fraction.
+    pub fn new_pure(eos: &E, temperature: Temperature<D>, density: Density<D>) -> FeosResult<Self>
+    where
+        (): Composition<D, N>,
+    {
+        Self::new(eos, temperature, density, ())
+    }
+
+    /// Return a new `State` given a temperature, a density and the composition.
+    ///
+    /// This function will perform a validation of the given properties, i.e. test for signs
+    /// and if values are finite. It will **not** validate physics, i.e. if the resulting
+    /// densities are below the maximum packing fraction.
+    pub fn new<X: Composition<D, N>>(
         eos: &E,
         temperature: Temperature<D>,
         density: Density<D>,
-        total_moles: Moles<D>,
-        molefracs: &OVector<D, N>,
-    ) -> Self {
-        let volume = total_moles / density;
-        let moles = Dimensionless::new(molefracs.clone()) * total_moles;
-        let partial_density = moles.clone() / volume;
+        composition: X,
+    ) -> FeosResult<Self> {
+        let (molefracs, total_moles) = composition.into_molefracs(eos)?;
+        Self::_new(eos, temperature, density, molefracs, total_moles)
+    }
 
-        State {
+    fn _new(
+        eos: &E,
+        temperature: Temperature<D>,
+        density: Density<D>,
+        molefracs: OVector<D, N>,
+        total_moles: Option<Moles<D>>,
+    ) -> FeosResult<Self> {
+        let molar_volume = density.inv();
+        validate(temperature, density, &molefracs)?;
+        Ok(State {
             eos: eos.clone(),
             temperature,
-            volume,
-            moles,
-            total_moles,
-            partial_density,
+            molar_volume,
             density,
-            molefracs: molefracs.clone(),
+            molefracs,
+            total_moles,
             cache: Cache::new(),
-        }
-    }
-
-    /// Return a new `State` for a pure component given a temperature and a density. The moles
-    /// are set to the reference value for each component.
-    ///
-    /// This function will perform a validation of the given properties, i.e. test for signs
-    /// and if values are finite. It will **not** validate physics, i.e. if the resulting
-    /// densities are below the maximum packing fraction.
-    pub fn new_pure(eos: &E, temperature: Temperature<D>, density: Density<D>) -> FeosResult<Self> {
-        let molefracs = OVector::from_element_generic(N::from_usize(1), U1, D::one());
-        Self::new_intensive(eos, temperature, density, &molefracs)
+        })
     }
 
     /// Return a new `State` for the combination of inputs.
@@ -313,200 +310,105 @@ where
     /// # Errors
     ///
     /// When the state cannot be created using the combination of inputs.
-    #[expect(clippy::too_many_arguments)]
-    pub fn new(
+    pub fn build<X: Composition<D, N>>(
         eos: &E,
-        temperature: Option<Temperature<D>>,
+        temperature: Temperature<D>,
         volume: Option<Volume<D>>,
         density: Option<Density<D>>,
-        partial_density: Option<&Density<OVector<D, N>>>,
-        total_moles: Option<Moles<D>>,
-        moles: Option<&Moles<OVector<D, N>>>,
-        molefracs: Option<&OVector<D, N>>,
+        composition: X,
         pressure: Option<Pressure<D>>,
         density_initialization: Option<DensityInitialization>,
     ) -> FeosResult<Self> {
-        Self::_new(
+        Self::_build(
             eos,
             temperature,
             volume,
             density,
-            partial_density,
-            total_moles,
-            moles,
-            molefracs,
+            composition,
             pressure,
             density_initialization,
         )?
-        .map_err(|_| FeosError::UndeterminedState(String::from("Missing input parameters.")))
+        .ok_or_else(|| FeosError::UndeterminedState(String::from("Missing input parameters.")))
     }
 
-    #[expect(clippy::too_many_arguments)]
-    #[expect(clippy::type_complexity)]
-    fn _new(
+    fn _build<X: Composition<D, N>>(
         eos: &E,
-        temperature: Option<Temperature<D>>,
+        temperature: Temperature<D>,
         volume: Option<Volume<D>>,
         density: Option<Density<D>>,
-        partial_density: Option<&Density<OVector<D, N>>>,
-        total_moles: Option<Moles<D>>,
-        moles: Option<&Moles<OVector<D, N>>>,
-        molefracs: Option<&OVector<D, N>>,
+        composition: X,
         pressure: Option<Pressure<D>>,
         density_initialization: Option<DensityInitialization>,
-    ) -> FeosResult<Result<Self, Option<Moles<OVector<D, N>>>>> {
-        // check for density
-        if density.and(partial_density).is_some() {
+    ) -> FeosResult<Option<Self>> {
+        // check if density is given twice
+        if density.and(composition.density()).is_some() {
             return Err(FeosError::UndeterminedState(String::from(
                 "Both density and partial density given.",
             )));
         }
-        let rho = density.or_else(|| partial_density.map(|pd| pd.sum()));
+        let density = density.or_else(|| composition.density());
 
-        // check for total moles
-        if moles.and(total_moles).is_some() {
-            return Err(FeosError::UndeterminedState(String::from(
-                "Both moles and total moles given.",
-            )));
-        }
-        let mut n = total_moles.or_else(|| moles.map(|m| m.sum()));
+        // unwrap composition
+        let (x, n) = composition.into_molefracs(eos)?;
 
-        // check if total moles can be inferred from volume
-        if rho.and(n).and(volume).is_some() {
-            return Err(FeosError::UndeterminedState(String::from(
+        let t = temperature;
+        let di = density_initialization;
+        // find the appropriate state constructor
+        match (volume, density, n, pressure) {
+            (None, None, None, None) => Ok(None),
+            (None, None, Some(_), None) => Ok(None),
+            (Some(_), None, None, None) => Ok(None),
+            (None, None, _, Some(p)) => State::new_npt(eos, t, p, (x, n), di).map(Some),
+            (None, Some(d), _, None) => State::new(eos, t, d, (x, n)).map(Some),
+            (Some(v), None, None, Some(p)) => State::new_tpvx(eos, t, p, v, x, di).map(Some),
+            (Some(v), None, Some(n), None) => State::new_nvt(eos, t, v, (x, n)).map(Some),
+            (Some(v), Some(d), None, None) => State::new_nvt(eos, t, v, (x, d * v)).map(Some),
+            (Some(_), Some(_), Some(_), _) => Err(FeosError::UndeterminedState(String::from(
                 "Density is overdetermined.",
-            )));
+            ))),
+            (_, _, _, Some(_)) => Err(FeosError::UndeterminedState(String::from(
+                "Pressure is overdetermined.",
+            ))),
         }
-        n = n.or_else(|| rho.and_then(|d| volume.map(|v| v * d)));
-
-        // check for composition
-        if partial_density.and(moles).is_some() {
-            return Err(FeosError::UndeterminedState(String::from(
-                "Composition is overdetermined.",
-            )));
-        }
-        let x = partial_density
-            .map(|pd| pd / pd.sum())
-            .or_else(|| moles.map(|ms| ms / ms.sum()))
-            .map(Quantity::into_value);
-        let x_u = match (x, molefracs, eos.components()) {
-            (Some(_), Some(_), _) => {
-                return Err(FeosError::UndeterminedState(String::from(
-                    "Composition is overdetermined.",
-                )));
-            }
-            (Some(x), None, _) => x,
-            (None, Some(x), _) => x.clone(),
-            (None, None, 1) => OVector::from_element_generic(N::from_usize(1), U1, D::from(1.0)),
-            _ => {
-                return Err(FeosError::UndeterminedState(String::from(
-                    "Missing composition.",
-                )));
-            }
-        };
-        let x_u = &x_u / x_u.sum();
-
-        // If no extensive property is given, moles is set to the reference value.
-        if let (None, None) = (volume, n) {
-            n = Some(Moles::from_reduced(D::from(1.0)))
-        }
-        let n_i = n.map(|n| Dimensionless::new(&x_u) * n);
-        let v = volume.or_else(|| rho.and_then(|d| n.map(|n| n / d)));
-
-        // check if new state can be created using default constructor
-        if let (Some(v), Some(t), Some(n_i)) = (v, temperature, &n_i) {
-            return Ok(Ok(State::new_nvt(eos, t, v, n_i)?));
-        }
-
-        // Check if new state can be created using density iteration
-        if let (Some(p), Some(t), Some(n_i)) = (pressure, temperature, &n_i) {
-            return Ok(Ok(State::new_npt(eos, t, p, n_i, density_initialization)?));
-        }
-        if let (Some(p), Some(t), Some(v)) = (pressure, temperature, v) {
-            return Ok(Ok(State::new_npvx(
-                eos,
-                t,
-                p,
-                v,
-                &x_u,
-                density_initialization,
-            )?));
-        }
-        Ok(Err(n_i.to_owned()))
     }
 
     /// Return a new `State` using a density iteration. [DensityInitialization] is used to
     /// influence the calculation with respect to the possible solutions.
-    pub fn new_npt(
+    pub fn new_npt<X: Composition<D, N>>(
         eos: &E,
         temperature: Temperature<D>,
         pressure: Pressure<D>,
-        moles: &Moles<OVector<D, N>>,
+        composition: X,
         density_initialization: Option<DensityInitialization>,
     ) -> FeosResult<Self> {
-        let total_moles = moles.sum();
-        let molefracs = (moles / total_moles).into_value();
-        let density = Self::new_xpt(
-            eos,
-            temperature,
-            pressure,
-            &molefracs,
-            density_initialization,
-        )?
-        .density;
-        Ok(Self::new_unchecked(
-            eos,
-            temperature,
-            density,
-            total_moles,
-            &molefracs,
-        ))
-    }
-
-    /// Return a new `State` using a density iteration. [DensityInitialization] is used to
-    /// influence the calculation with respect to the possible solutions.
-    pub fn new_xpt(
-        eos: &E,
-        temperature: Temperature<D>,
-        pressure: Pressure<D>,
-        molefracs: &OVector<D, N>,
-        density_initialization: Option<DensityInitialization>,
-    ) -> FeosResult<Self> {
+        let (molefracs, total_moles) = composition.into_molefracs(eos)?;
         density_iteration(
             eos,
             temperature,
             pressure,
-            molefracs,
+            &molefracs,
             density_initialization,
         )
-        .and_then(|density| Self::new_intensive(eos, temperature, density, molefracs))
+        .and_then(|density| Self::_new(eos, temperature, density, molefracs, total_moles))
     }
 
     /// Return a new `State` for given pressure $p$, volume $V$, temperature $T$ and composition $x_i$.
-    pub fn new_npvx(
+    pub fn new_tpvx(
         eos: &E,
         temperature: Temperature<D>,
         pressure: Pressure<D>,
         volume: Volume<D>,
-        molefracs: &OVector<D, N>,
+        molefracs: OVector<D, N>,
         density_initialization: Option<DensityInitialization>,
     ) -> FeosResult<Self> {
-        let density = Self::new_xpt(
+        let density = density_iteration(
             eos,
             temperature,
             pressure,
-            molefracs,
+            &molefracs,
             density_initialization,
-        )?
-        .density;
-        let total_moles = density * volume;
-        Ok(Self::new_unchecked(
-            eos,
-            temperature,
-            density,
-            total_moles,
-            molefracs,
-        ))
+        )?;
+        Self::new_nvt(eos, temperature, volume, (molefracs, density * volume))
     }
 }
 
@@ -529,15 +431,12 @@ where
     ///
     /// When the state cannot be created using the combination of inputs.
     #[expect(clippy::too_many_arguments)]
-    pub fn new_full(
+    pub fn build_full<X: Composition<D, N> + Clone>(
         eos: &E,
         temperature: Option<Temperature<D>>,
         volume: Option<Volume<D>>,
         density: Option<Density<D>>,
-        partial_density: Option<&Density<OVector<D, N>>>,
-        total_moles: Option<Moles<D>>,
-        moles: Option<&Moles<OVector<D, N>>>,
-        molefracs: Option<&OVector<D, N>>,
+        composition: X,
         pressure: Option<Pressure<D>>,
         molar_enthalpy: Option<MolarEnergy<D>>,
         molar_entropy: Option<MolarEntropy<D>>,
@@ -545,38 +444,42 @@ where
         density_initialization: Option<DensityInitialization>,
         initial_temperature: Option<Temperature<D>>,
     ) -> FeosResult<Self> {
-        let state = Self::_new(
-            eos,
-            temperature,
-            volume,
-            density,
-            partial_density,
-            total_moles,
-            moles,
-            molefracs,
-            pressure,
-            density_initialization,
-        )?;
+        let state = if let Some(temperature) = temperature {
+            Self::_build(
+                eos,
+                temperature,
+                volume,
+                density,
+                composition.clone(),
+                pressure,
+                density_initialization,
+            )?
+        } else {
+            None
+        };
 
         let ti = initial_temperature;
         match state {
-            Ok(state) => Ok(state),
-            Err(n_i) => {
+            Some(state) => Ok(state),
+            None => {
                 // Check if new state can be created using molar_enthalpy and temperature
-                if let (Some(p), Some(h), Some(n_i)) = (pressure, molar_enthalpy, &n_i) {
-                    return State::new_nph(eos, p, h, n_i, density_initialization, ti);
+                if let (Some(p), Some(h)) = (pressure, molar_enthalpy) {
+                    return State::new_nph(eos, p, h, composition, density_initialization, ti);
                 }
-                if let (Some(p), Some(s), Some(n_i)) = (pressure, molar_entropy, &n_i) {
-                    return State::new_nps(eos, p, s, n_i, density_initialization, ti);
+                if let (Some(p), Some(s)) = (pressure, molar_entropy) {
+                    return State::new_nps(eos, p, s, composition, density_initialization, ti);
                 }
-                if let (Some(t), Some(h), Some(n_i)) = (temperature, molar_enthalpy, &n_i) {
-                    return State::new_nth(eos, t, h, n_i, density_initialization);
+                if let (Some(t), Some(h)) = (temperature, molar_enthalpy) {
+                    return State::new_nth(eos, t, h, composition, density_initialization);
                 }
-                if let (Some(t), Some(s), Some(n_i)) = (temperature, molar_entropy, &n_i) {
-                    return State::new_nts(eos, t, s, n_i, density_initialization);
+                if let (Some(t), Some(s)) = (temperature, molar_entropy) {
+                    return State::new_nts(eos, t, s, composition, density_initialization);
                 }
-                if let (Some(u), Some(v), Some(n_i)) = (molar_internal_energy, volume, &n_i) {
-                    return State::new_nvu(eos, v, u, n_i, ti);
+                if let (Some(u), Some(v)) = (molar_internal_energy, volume) {
+                    let (molefracs, total_moles) = composition.into_molefracs(eos)?;
+                    if let Some(n) = total_moles {
+                        return State::new_nvu(eos, v, u, (molefracs, n), ti);
+                    }
                 }
                 Err(FeosError::UndeterminedState(String::from(
                     "Missing input parameters.",
@@ -586,18 +489,18 @@ where
     }
 
     /// Return a new `State` for given pressure $p$ and molar enthalpy $h$.
-    pub fn new_nph(
+    pub fn new_nph<X: Composition<D, N> + Clone>(
         eos: &E,
         pressure: Pressure<D>,
         molar_enthalpy: MolarEnergy<D>,
-        moles: &Moles<OVector<D, N>>,
+        composition: X,
         density_initialization: Option<DensityInitialization>,
         initial_temperature: Option<Temperature<D>>,
     ) -> FeosResult<Self> {
         let t0 = initial_temperature.unwrap_or(Temperature::from_reduced(D::from(298.15)));
         let mut density = density_initialization;
         let f = |x0| {
-            let s = State::new_npt(eos, x0, pressure, moles, density)?;
+            let s = State::new_npt(eos, x0, pressure, composition.clone(), density)?;
             let dfx = s.molar_isobaric_heat_capacity(Contributions::Total);
             let fx = s.molar_enthalpy(Contributions::Total) - molar_enthalpy;
             density = Some(DensityInitialization::InitialDensity(s.density.re()));
@@ -607,28 +510,27 @@ where
     }
 
     /// Return a new `State` for given temperature $T$ and molar enthalpy $h$.
-    pub fn new_nth(
+    pub fn new_nth<X: Composition<D, N> + Clone>(
         eos: &E,
         temperature: Temperature<D>,
         molar_enthalpy: MolarEnergy<D>,
-        moles: &Moles<OVector<D, N>>,
+        composition: X,
         density_initialization: Option<DensityInitialization>,
     ) -> FeosResult<Self> {
-        let x = moles.convert_to(moles.sum());
+        let (x, _) = composition.clone().into_molefracs(eos)?;
         let rho0 = match density_initialization {
             Some(DensityInitialization::InitialDensity(r)) => {
                 Density::from_reduced(D::from(r.into_reduced()))
             }
-            Some(DensityInitialization::Liquid) => eos.max_density(&Some(x))?,
-            Some(DensityInitialization::Vapor) => eos.max_density(&Some(x))? * 1.0e-5,
-            None => eos.max_density(&Some(x))? * 0.01,
+            Some(DensityInitialization::Liquid) => eos.max_density(&x)?,
+            Some(DensityInitialization::Vapor) => eos.max_density(&x)? * 1.0e-5,
+            None => eos.max_density(&x)? * 0.01,
         };
-        let n_inv = moles.sum().inv();
-        let f = |x0| {
-            let s = State::new_nvt(eos, temperature, moles.sum() / x0, moles)?;
-            let dfx = -s.volume / s.density
-                * n_inv
-                * (s.volume * s.dp_dv(Contributions::Total)
+        let f = |rho| {
+            let s = State::new(eos, temperature, rho, composition.clone())?;
+            let dfx = -s.molar_volume
+                * s.molar_volume
+                * (s.molar_volume * s.dp_dv(Contributions::Total)
                     + temperature * s.dp_dt(Contributions::Total));
             let fx = s.molar_enthalpy(Contributions::Total) - molar_enthalpy;
             Ok((fx, dfx, s))
@@ -637,26 +539,25 @@ where
     }
 
     /// Return a new `State` for given temperature $T$ and molar entropy $s$.
-    pub fn new_nts(
+    pub fn new_nts<X: Composition<D, N> + Clone>(
         eos: &E,
         temperature: Temperature<D>,
         molar_entropy: MolarEntropy<D>,
-        moles: &Moles<OVector<D, N>>,
+        composition: X,
         density_initialization: Option<DensityInitialization>,
     ) -> FeosResult<Self> {
-        let x = moles.convert_to(moles.sum());
+        let (x, _) = composition.clone().into_molefracs(eos)?;
         let rho0 = match density_initialization {
             Some(DensityInitialization::InitialDensity(r)) => {
                 Density::from_reduced(D::from(r.into_reduced()))
             }
-            Some(DensityInitialization::Liquid) => eos.max_density(&Some(x))?,
-            Some(DensityInitialization::Vapor) => eos.max_density(&Some(x))? * 1.0e-5,
-            None => eos.max_density(&Some(x))? * 0.01,
+            Some(DensityInitialization::Liquid) => eos.max_density(&x)?,
+            Some(DensityInitialization::Vapor) => eos.max_density(&x)? * 1.0e-5,
+            None => eos.max_density(&x)? * 0.01,
         };
-        let n_inv = moles.sum().inv();
-        let f = |x0| {
-            let s = State::new_nvt(eos, temperature, moles.sum() / x0, moles)?;
-            let dfx = -n_inv * s.volume / s.density * s.dp_dt(Contributions::Total);
+        let f = |rho| {
+            let s = State::new(eos, temperature, rho, composition.clone())?;
+            let dfx = -s.molar_volume * s.molar_volume * s.dp_dt(Contributions::Total);
             let fx = s.molar_entropy(Contributions::Total) - molar_entropy;
             Ok((fx, dfx, s))
         };
@@ -664,18 +565,18 @@ where
     }
 
     /// Return a new `State` for given pressure $p$ and molar entropy $s$.
-    pub fn new_nps(
+    pub fn new_nps<X: Composition<D, N> + Clone>(
         eos: &E,
         pressure: Pressure<D>,
         molar_entropy: MolarEntropy<D>,
-        moles: &Moles<OVector<D, N>>,
+        composition: X,
         density_initialization: Option<DensityInitialization>,
         initial_temperature: Option<Temperature<D>>,
     ) -> FeosResult<Self> {
         let t0 = initial_temperature.unwrap_or(Temperature::from_reduced(D::from(298.15)));
         let mut density = density_initialization;
         let f = |x0| {
-            let s = State::new_npt(eos, x0, pressure, moles, density)?;
+            let s = State::new_npt(eos, x0, pressure, composition.clone(), density)?;
             let dfx = s.molar_isobaric_heat_capacity(Contributions::Total) / s.temperature;
             let fx = s.molar_entropy(Contributions::Total) - molar_entropy;
             density = Some(DensityInitialization::InitialDensity(s.density.re()));
@@ -685,16 +586,16 @@ where
     }
 
     /// Return a new `State` for given volume $V$ and molar internal energy $u$.
-    pub fn new_nvu(
+    pub fn new_nvu<X: FullComposition<D, N> + Clone>(
         eos: &E,
         volume: Volume<D>,
         molar_internal_energy: MolarEnergy<D>,
-        moles: &Moles<OVector<D, N>>,
+        composition: X,
         initial_temperature: Option<Temperature<D>>,
     ) -> FeosResult<Self> {
         let t0 = initial_temperature.unwrap_or(Temperature::from_reduced(D::from(298.15)));
         let f = |x0| {
-            let s = State::new_nvt(eos, x0, volume, moles)?;
+            let s = State::new_nvt(eos, x0, volume, composition.clone())?;
             let fx = s.molar_internal_energy(Contributions::Total) - molar_internal_energy;
             let dfx = s.molar_isochoric_heat_capacity(Contributions::Total);
             Ok((fx, dfx, s))

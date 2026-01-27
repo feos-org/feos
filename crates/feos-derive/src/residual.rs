@@ -1,4 +1,4 @@
-use super::{implement, OPT_IMPLS};
+use super::{OPT_IMPLS, implement};
 use quote::quote;
 use syn::DeriveInput;
 
@@ -201,19 +201,19 @@ fn impl_entropy_scaling(
         let name = &v.ident;
         if implement("entropy_scaling", v, &OPT_IMPLS)? {
             etar.push(quote! {
-                Self::#name(eos) => eos.viscosity_reference(temperature, volume, moles)
+                Self::#name(eos) => eos.viscosity_reference(temperature, molar_volume, molefracs)
             });
             etac.push(quote! {
                 Self::#name(eos) => eos.viscosity_correlation(s_res, x)
             });
             dr.push(quote! {
-                Self::#name(eos) => eos.diffusion_reference(temperature, volume, moles)
+                Self::#name(eos) => eos.diffusion_reference(temperature, molar_volume, molefracs)
             });
             dc.push(quote! {
                 Self::#name(eos) => eos.diffusion_correlation(s_res, x)
             });
             thcr.push(quote! {
-                Self::#name(eos) => eos.thermal_conductivity_reference(temperature, volume, moles)
+                Self::#name(eos) => eos.thermal_conductivity_reference(temperature, molar_volume, molefracs)
             });
             thcc.push(quote! {
                 Self::#name(eos) => eos.thermal_conductivity_correlation(s_res, x)
@@ -245,8 +245,8 @@ fn impl_entropy_scaling(
             fn viscosity_reference(
                 &self,
                 temperature: Temperature,
-                volume: Volume,
-                moles: &Moles<DVector<f64>>,
+                molar_volume: MolarVolume,
+                molefracs: &DVector<f64>,
             ) -> Viscosity {
                 match self {
                     #(#etar,)*
@@ -262,8 +262,8 @@ fn impl_entropy_scaling(
             fn diffusion_reference(
                 &self,
                 temperature: Temperature,
-                volume: Volume,
-                moles: &Moles<DVector<f64>>,
+                molar_volume: MolarVolume,
+                molefracs: &DVector<f64>,
             ) -> Diffusivity {
                 match self {
                     #(#dr,)*
@@ -279,8 +279,8 @@ fn impl_entropy_scaling(
             fn thermal_conductivity_reference(
                 &self,
                 temperature: Temperature,
-                volume: Volume,
-                moles: &Moles<DVector<f64>>,
+                molar_volume: MolarVolume,
+                molefracs: &DVector<f64>,
             ) -> ThermalConductivity {
                 match self {
                     #(#thcr,)*

@@ -185,7 +185,7 @@ pub trait PdgtFunctionalProperties: HelmholtzEnergyFunctional {
         let mu_res = vle.vapor().residual_chemical_potential();
         for i in 0..self.components() {
             let rhoi = density.index_axis(Axis(0), i).to_owned();
-            let rhoi_b = vle.vapor().partial_density.get(i);
+            let rhoi_b = vle.vapor().partial_density().get(i);
             let mui_res = mu_res.get(i);
             let kt = RGAS * vle.vapor().temperature;
             delta_omega +=
@@ -198,8 +198,8 @@ pub trait PdgtFunctionalProperties: HelmholtzEnergyFunctional {
         let drho = gradient(
             &density,
             -dx,
-            &vle.liquid().partial_density,
-            &vle.vapor().partial_density,
+            &vle.liquid().partial_density(),
+            &vle.vapor().partial_density(),
         );
 
         // calculate integrand

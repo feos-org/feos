@@ -84,8 +84,8 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         let reduced_temperature = (vle.vapor().temperature / critical_temperature).into_value();
         profile.profile.density =
             Density::from_shape_fn(profile.profile.density.raw_dim(), |(i, z)| {
-                let rho_v = profile.vle.vapor().partial_density.get(indices[i]);
-                let rho_l = profile.vle.liquid().partial_density.get(indices[i]);
+                let rho_v = profile.vle.vapor().partial_density().get(indices[i]);
+                let rho_l = profile.vle.liquid().partial_density().get(indices[i]);
                 0.5 * (rho_l - rho_v)
                     * (sign * (profile.profile.grid.grids()[0][z] - z0) / 3.0
                         * (2.4728 - 2.3625 * reduced_temperature))
@@ -343,8 +343,9 @@ fn interp_symmetric<F: HelmholtzEnergyFunctional>(
     radius: Length,
 ) -> FeosResult<Density<Array2<f64>>> {
     let reduced_density = Array2::from_shape_fn(rho_pdgt.raw_dim(), |(i, j)| {
-        ((rho_pdgt.get((i, j)) - vle_pdgt.vapor().partial_density.get(i))
-            / (vle_pdgt.liquid().partial_density.get(i) - vle_pdgt.vapor().partial_density.get(i)))
+        ((rho_pdgt.get((i, j)) - vle_pdgt.vapor().partial_density().get(i))
+            / (vle_pdgt.liquid().partial_density().get(i)
+                - vle_pdgt.vapor().partial_density().get(i)))
         .into_value()
             - 0.5
     });
@@ -371,8 +372,8 @@ fn interp_symmetric<F: HelmholtzEnergyFunctional>(
         reduced_density.raw_dim(),
         |(i, j)| {
             reduced_density[(i, j)]
-                * (vle.liquid().partial_density.get(i) - vle.vapor().partial_density.get(i))
-                + vle.vapor().partial_density.get(i)
+                * (vle.liquid().partial_density().get(i) - vle.vapor().partial_density().get(i))
+                + vle.vapor().partial_density().get(i)
         },
     ))
 }
