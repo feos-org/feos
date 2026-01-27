@@ -1,6 +1,6 @@
 use crate::DensityInitialization::Liquid;
 use crate::density_iteration::density_iteration;
-use crate::{FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
+use crate::{Composition, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
 use nalgebra::{Const, SVector, U1, U2};
 #[cfg(feature = "rayon")]
 use ndarray::{Array1, Array2, ArrayView2, Zip};
@@ -215,20 +215,21 @@ pub trait PropertiesAD {
         )
     }
 
-    fn bubble_point_pressure<const P: usize>(
+    fn bubble_point_pressure<const P: usize, X: Composition<f64, U2>>(
         &self,
         temperature: Temperature,
         pressure: Option<Pressure>,
-        liquid_molefracs: SVector<f64, 2>,
+        liquid_molefracs: X,
     ) -> FeosResult<Pressure<Gradient<P>>>
     where
         Self: Residual<U2, Gradient<P>>,
     {
         let eos_f64 = self.re();
+        let (liquid_molefracs, _) = liquid_molefracs.into_molefracs(&eos_f64)?;
         let vle = PhaseEquilibrium::bubble_point(
             &eos_f64,
             temperature,
-            &liquid_molefracs,
+            liquid_molefracs,
             pressure,
             None,
             Default::default(),
@@ -265,20 +266,21 @@ pub trait PropertiesAD {
         Ok(Pressure::from_reduced(p))
     }
 
-    fn dew_point_pressure<const P: usize>(
+    fn dew_point_pressure<const P: usize, X: Composition<f64, U2>>(
         &self,
         temperature: Temperature,
         pressure: Option<Pressure>,
-        vapor_molefracs: SVector<f64, 2>,
+        vapor_molefracs: X,
     ) -> FeosResult<Pressure<Gradient<P>>>
     where
         Self: Residual<U2, Gradient<P>>,
     {
         let eos_f64 = self.re();
+        let (vapor_molefracs, _) = vapor_molefracs.into_molefracs(&eos_f64)?;
         let vle = PhaseEquilibrium::dew_point(
             &eos_f64,
             temperature,
-            &vapor_molefracs,
+            vapor_molefracs,
             pressure,
             None,
             Default::default(),
@@ -329,12 +331,8 @@ pub trait PropertiesAD {
             parameters,
             input,
             |eos: &Self::Lifted<Gradient<P>>, inp| {
-                eos.bubble_point_pressure(
-                    inp[0] * KELVIN,
-                    Some(inp[2] * PASCAL),
-                    SVector::from([inp[1], 1.0 - inp[1]]),
-                )
-                .map(|p| p.convert_into(PASCAL))
+                eos.bubble_point_pressure(inp[0] * KELVIN, Some(inp[2] * PASCAL), inp[1])
+                    .map(|p| p.convert_into(PASCAL))
             },
         )
     }
@@ -353,12 +351,8 @@ pub trait PropertiesAD {
             parameters,
             input,
             |eos: &Self::Lifted<Gradient<P>>, inp| {
-                eos.dew_point_pressure(
-                    inp[0] * KELVIN,
-                    Some(inp[2] * PASCAL),
-                    SVector::from([inp[1], 1.0 - inp[1]]),
-                )
-                .map(|p| p.convert_into(PASCAL))
+                eos.dew_point_pressure(inp[0] * KELVIN, Some(inp[2] * PASCAL), inp[1])
+                    .map(|p| p.convert_into(PASCAL))
             },
         )
     }

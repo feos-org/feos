@@ -1,16 +1,16 @@
 use super::{PhaseDiagram, PhaseEquilibrium};
-use crate::SolverOptions;
 use crate::equation_of_state::Residual;
 use crate::errors::FeosResult;
 use crate::state::{Contributions, State};
-use nalgebra::DVector;
+use crate::{Composition, SolverOptions};
+use nalgebra::Dyn;
 use quantity::{Pressure, Temperature};
 
 impl<E: Residual> PhaseDiagram<E, 2> {
     /// Calculate the bubble point line of a mixture with given composition.
-    pub fn bubble_point_line(
+    pub fn bubble_point_line<X: Composition<f64, Dyn> + Clone>(
         eos: &E,
-        molefracs: &DVector<f64>,
+        composition: X,
         min_temperature: Temperature,
         npoints: usize,
         critical_temperature: Option<Temperature>,
@@ -20,7 +20,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
         let sc = State::critical_point(
             eos,
-            molefracs,
+            composition.clone(),
             critical_temperature,
             None,
             SolverOptions::default(),
@@ -40,7 +40,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
             vle = PhaseEquilibrium::bubble_point(
                 eos,
                 ti,
-                molefracs,
+                composition.clone(),
                 p_init,
                 vapor_molefracs,
                 options,
@@ -51,15 +51,15 @@ impl<E: Residual> PhaseDiagram<E, 2> {
                 states.push(vle.clone());
             }
         }
-        states.push(PhaseEquilibrium::from_states(sc.clone(), sc));
+        states.push(PhaseEquilibrium::single_phase(sc));
 
         Ok(PhaseDiagram::new(states))
     }
 
     /// Calculate the dew point line of a mixture with given composition.
-    pub fn dew_point_line(
+    pub fn dew_point_line<X: Composition<f64, Dyn> + Clone>(
         eos: &E,
-        molefracs: &DVector<f64>,
+        composition: X,
         min_temperature: Temperature,
         npoints: usize,
         critical_temperature: Option<Temperature>,
@@ -69,7 +69,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
         let sc = State::critical_point(
             eos,
-            molefracs,
+            composition.clone(),
             critical_temperature,
             None,
             SolverOptions::default(),
@@ -86,9 +86,15 @@ impl<E: Residual> PhaseDiagram<E, 2> {
                 .as_ref()
                 .map(|vle| vle.vapor().pressure(Contributions::Total));
             let liquid_molefracs = vle.as_ref().map(|vle| &vle.liquid().molefracs);
-            vle =
-                PhaseEquilibrium::dew_point(eos, ti, molefracs, p_init, liquid_molefracs, options)
-                    .ok();
+            vle = PhaseEquilibrium::dew_point(
+                eos,
+                ti,
+                composition.clone(),
+                p_init,
+                liquid_molefracs,
+                options,
+            )
+            .ok();
             if let Some(vle) = vle.as_ref() {
                 states.push(vle.clone());
             }
@@ -108,23 +114,29 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         for pi in &pressures {
             let t_init = vle.as_ref().map(|vle| vle.vapor().temperature);
             let liquid_molefracs = vle.as_ref().map(|vle| &vle.liquid().molefracs);
-            vle =
-                PhaseEquilibrium::dew_point(eos, pi, molefracs, t_init, liquid_molefracs, options)
-                    .ok();
+            vle = PhaseEquilibrium::dew_point(
+                eos,
+                pi,
+                composition.clone(),
+                t_init,
+                liquid_molefracs,
+                options,
+            )
+            .ok();
             if let Some(vle) = vle.as_ref() {
                 states.push(vle.clone());
             }
         }
 
-        states.push(PhaseEquilibrium::from_states(sc.clone(), sc));
+        states.push(PhaseEquilibrium::single_phase(sc));
 
         Ok(PhaseDiagram::new(states))
     }
 
     /// Calculate the spinodal lines for a mixture with fixed composition.
-    pub fn spinodal(
+    pub fn spinodal<X: Composition<f64, Dyn> + Clone>(
         eos: &E,
-        molefracs: &DVector<f64>,
+        composition: X,
         min_temperature: Temperature,
         npoints: usize,
         critical_temperature: Option<Temperature>,
@@ -134,7 +146,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
         let sc = State::critical_point(
             eos,
-            molefracs,
+            composition.clone(),
             critical_temperature,
             None,
             SolverOptions::default(),
@@ -145,12 +157,12 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         let temperatures = Temperature::linspace(min_temperature, max_temperature, npoints - 1);
 
         for ti in &temperatures {
-            let spinodal = State::spinodal(eos, ti, molefracs, options).ok();
-            if let Some(spinodal) = spinodal {
-                states.push(PhaseEquilibrium(spinodal));
+            let spinodal = State::spinodal(eos, ti, composition.clone(), options).ok();
+            if let Some([sp_v, sp_l]) = spinodal {
+                states.push(PhaseEquilibrium::two_phase(sp_v, sp_l));
             }
         }
-        states.push(PhaseEquilibrium::from_states(sc.clone(), sc));
+        states.push(PhaseEquilibrium::single_phase(sc));
 
         Ok(PhaseDiagram::new(states))
     }

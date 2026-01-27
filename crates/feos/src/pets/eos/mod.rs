@@ -152,7 +152,7 @@ mod tests {
         let v = 1e-3 * METER.powi::<3>();
         let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&e, t, v, &n).unwrap();
-        let p_ig = s.total_moles() * RGAS * t / v;
+        let p_ig = s.total_moles().unwrap() * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
             s.pressure(Contributions::IdealGas) + s.pressure(Contributions::Residual),
