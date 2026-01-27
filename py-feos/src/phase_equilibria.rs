@@ -1,6 +1,6 @@
 use crate::{
     PyVerbosity,
-    eos::{PyEquationOfState, parse_molefracs},
+    eos::{Compositions, PyEquationOfState, parse_molefracs},
     error::PyFeosError,
     ideal_gas::IdealGasModel,
     residual::ResidualModel,
@@ -108,8 +108,8 @@ impl PyPhaseEquilibrium {
     ///     The system temperature.
     /// pressure : SINumber
     ///     The system pressure.
-    /// feed : SIArray1
-    ///     Feed composition (units of amount of substance).
+    /// feed : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float]
+    ///     Feed composition.
     /// initial_state : PhaseEquilibrium, optional
     ///     A phase equilibrium used as initial guess.
     ///     Can speed up convergence.
@@ -138,7 +138,7 @@ impl PyPhaseEquilibrium {
         eos: &PyEquationOfState,
         temperature: Temperature,
         pressure: Pressure,
-        feed: Moles<DVector<f64>>,
+        feed: &Bound<'_, PyAny>,
         initial_state: Option<&PyPhaseEquilibrium>,
         max_iter: Option<usize>,
         tol: Option<f64>,
@@ -150,7 +150,7 @@ impl PyPhaseEquilibrium {
                 &eos.0,
                 temperature,
                 pressure,
-                &feed,
+                Compositions::try_from(Some(feed))?,
                 initial_state.map(|s| &s.0),
                 (max_iter, tol, verbosity.map(|v| v.into())).into(),
                 non_volatile_components,
@@ -168,7 +168,7 @@ impl PyPhaseEquilibrium {
     ///     The equation of state.
     /// temperature_or_pressure : SINumber
     ///     The system temperature_or_pressure.
-    /// liquid_molefracs : numpy.ndarray
+    /// liquid_molefracs : float | numpy.ndarray[float] | SIArray1 | list[float]
     ///     The mole fraction of the liquid phase.
     /// tp_init : SINumber, optional
     ///     The system pressure/temperature used as starting
@@ -196,12 +196,12 @@ impl PyPhaseEquilibrium {
     )]
     #[pyo3(signature = (eos, temperature_or_pressure, liquid_molefracs, tp_init=None, vapor_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
     #[expect(clippy::too_many_arguments)]
-    pub(crate) fn bubble_point<'py>(
+    pub(crate) fn bubble_point(
         eos: &PyEquationOfState,
         temperature_or_pressure: &Bound<'_, PyAny>,
-        liquid_molefracs: PyReadonlyArray1<'py, f64>,
+        liquid_molefracs: &Bound<'_, PyAny>,
         tp_init: Option<&Bound<'_, PyAny>>,
-        vapor_molefracs: Option<PyReadonlyArray1<'py, f64>>,
+        vapor_molefracs: Option<PyReadonlyArray1<'_, f64>>,
         max_iter_inner: Option<usize>,
         max_iter_outer: Option<usize>,
         tol_inner: Option<f64>,
@@ -214,7 +214,7 @@ impl PyPhaseEquilibrium {
                 PhaseEquilibrium::bubble_point(
                     &eos.0,
                     t,
-                    &parse_molefracs(Some(liquid_molefracs)).unwrap(),
+                    Compositions::try_from(Some(liquid_molefracs))?,
                     tp_init.map(|p| p.extract()).transpose()?,
                     x.as_ref(),
                     (
@@ -229,7 +229,7 @@ impl PyPhaseEquilibrium {
                 PhaseEquilibrium::bubble_point(
                     &eos.0,
                     p,
-                    &parse_molefracs(Some(liquid_molefracs)).unwrap(),
+                    Compositions::try_from(Some(liquid_molefracs))?,
                     tp_init.map(|p| p.extract()).transpose()?,
                     x.as_ref(),
                     (
@@ -256,7 +256,7 @@ impl PyPhaseEquilibrium {
     ///     The equation of state.
     /// temperature_or_pressure : SINumber
     ///     The system temperature or pressure.
-    /// vapor_molefracs : numpy.ndarray
+    /// vapor_molefracs : float | numpy.ndarray[float] | SIArray1 | list[float]
     ///     The mole fraction of the vapor phase.
     /// tp_init : SINumber, optional
     ///     The system pressure/temperature used as starting
@@ -284,12 +284,12 @@ impl PyPhaseEquilibrium {
     )]
     #[pyo3(signature = (eos, temperature_or_pressure, vapor_molefracs, tp_init=None, liquid_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
     #[expect(clippy::too_many_arguments)]
-    pub(crate) fn dew_point<'py>(
+    pub(crate) fn dew_point(
         eos: &PyEquationOfState,
         temperature_or_pressure: &Bound<'_, PyAny>,
-        vapor_molefracs: PyReadonlyArray1<'py, f64>,
+        vapor_molefracs: &Bound<'_, PyAny>,
         tp_init: Option<&Bound<'_, PyAny>>,
-        liquid_molefracs: Option<PyReadonlyArray1<'py, f64>>,
+        liquid_molefracs: Option<PyReadonlyArray1<'_, f64>>,
         max_iter_inner: Option<usize>,
         max_iter_outer: Option<usize>,
         tol_inner: Option<f64>,
@@ -302,7 +302,7 @@ impl PyPhaseEquilibrium {
                 PhaseEquilibrium::dew_point(
                     &eos.0,
                     t,
-                    &parse_molefracs(Some(vapor_molefracs)).unwrap(),
+                    Compositions::try_from(Some(vapor_molefracs))?,
                     tp_init.map(|p| p.extract()).transpose()?,
                     x.as_ref(),
                     (
@@ -317,7 +317,7 @@ impl PyPhaseEquilibrium {
                 PhaseEquilibrium::dew_point(
                     &eos.0,
                     p,
-                    &parse_molefracs(Some(vapor_molefracs)).unwrap(),
+                    Compositions::try_from(Some(vapor_molefracs))?,
                     tp_init.map(|p| p.extract()).transpose()?,
                     x.as_ref(),
                     (
@@ -334,43 +334,6 @@ impl PyPhaseEquilibrium {
             )))
         }
     }
-
-    // /// Creates a new PhaseEquilibrium that contains two states at the
-    // /// specified temperature, pressure and moles.
-    // ///
-    // /// The constructor can be used in custom phase equilibrium solvers or,
-    // /// e.g., to generate initial guesses for an actual VLE solver.
-    // /// In general, the two states generated are NOT in an equilibrium.
-    // ///
-    // /// Parameters
-    // /// ----------
-    // /// eos : EquationOfState
-    // ///     The equation of state.
-    // /// temperature : SINumber
-    // ///     The system temperature.
-    // /// pressure : SINumber
-    // ///     The system pressure.
-    // /// vapor_moles : SIArray1
-    // ///     Amount of substance of the vapor phase.
-    // /// liquid_moles : SIArray1
-    // ///     Amount of substance of the liquid phase.
-    // ///
-    // /// Returns
-    // /// -------
-    // /// PhaseEquilibrium
-    // #[staticmethod]
-    // pub(crate) fn new_npt(
-    //     eos: &PyEquationOfState,
-    //     temperature: Temperature,
-    //     pressure: Pressure,
-    //     vapor_moles: Moles<DVector<f64>>,
-    //     liquid_moles: Moles<DVector<f64>>,
-    // ) -> PyResult<Self> {
-    //     Ok(Self(
-    //         PhaseEquilibrium::new_xpt(&eos.0, temperature, pressure, &vapor_moles, &liquid_moles)
-    //             .map_err(PyFeosError::from)?,
-    //     ))
-    // }
 
     #[getter]
     fn get_vapor(&self) -> PyState {
@@ -804,8 +767,8 @@ impl PyPhaseDiagram {
     /// ----------
     /// eos: Eos
     ///     The equation of state.
-    /// molefracs: np.ndarray[float]
-    ///     The composition of the liquid phase.
+    /// composition : float | numpy.ndarray[float] | SIArray1 | list[float]
+    ///     Composition of the mixture.
     /// min_temperature: SINumber
     ///     The lower limit for the temperature.
     /// npoints: int
@@ -830,13 +793,13 @@ impl PyPhaseDiagram {
     /// PhaseDiagram
     #[staticmethod]
     #[pyo3(
-        text_signature = "(eos, molefracs, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)"
+        text_signature = "(eos, composition, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)"
     )]
-    #[pyo3(signature = (eos, molefracs, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
+    #[pyo3(signature = (eos, composition, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn bubble_point_line<'py>(
         eos: &PyEquationOfState,
-        molefracs: PyReadonlyArray1<'py, f64>,
+        composition: &Bound<'py, PyAny>,
         min_temperature: Temperature,
         npoints: usize,
         critical_temperature: Option<Temperature>,
@@ -848,7 +811,7 @@ impl PyPhaseDiagram {
     ) -> PyResult<Self> {
         let dia = PhaseDiagram::bubble_point_line(
             &eos.0,
-            &parse_molefracs(Some(molefracs)).unwrap(),
+            Compositions::try_from(Some(composition))?,
             min_temperature,
             npoints,
             critical_temperature,
@@ -871,8 +834,8 @@ impl PyPhaseDiagram {
     /// ----------
     /// eos: Eos
     ///     The equation of state.
-    /// molefracs: np.ndarray[float]
-    ///     The composition of the vapor phase.
+    /// composition : float | numpy.ndarray[float] | SIArray1 | list[float]
+    ///     Composition of the mixture.
     /// min_temperature: SINumber
     ///     The lower limit for the temperature.
     /// npoints: int
@@ -897,13 +860,13 @@ impl PyPhaseDiagram {
     /// PhaseDiagram
     #[staticmethod]
     #[pyo3(
-        text_signature = "(eos, molefracs, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)"
+        text_signature = "(eos, composition, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)"
     )]
-    #[pyo3(signature = (eos, molefracs, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
+    #[pyo3(signature = (eos, composition, min_temperature, npoints, critical_temperature=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None))]
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn dew_point_line<'py>(
         eos: &PyEquationOfState,
-        molefracs: PyReadonlyArray1<'py, f64>,
+        composition: &Bound<'py, PyAny>,
         min_temperature: Temperature,
         npoints: usize,
         critical_temperature: Option<Temperature>,
@@ -915,7 +878,7 @@ impl PyPhaseDiagram {
     ) -> PyResult<Self> {
         let dia = PhaseDiagram::dew_point_line(
             &eos.0,
-            &parse_molefracs(Some(molefracs)).unwrap(),
+            Compositions::try_from(Some(composition))?,
             min_temperature,
             npoints,
             critical_temperature,
@@ -934,8 +897,8 @@ impl PyPhaseDiagram {
     /// ----------
     /// eos: Eos
     ///     The equation of state.
-    /// molefracs: np.ndarray[float]
-    ///     The composition of the mixture.
+    /// composition : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float]
+    ///     Composition of the mixture.
     /// min_temperature: SINumber
     ///     The lower limit for the temperature.
     /// npoints: int
@@ -956,13 +919,13 @@ impl PyPhaseDiagram {
     /// PhaseDiagram
     #[staticmethod]
     #[pyo3(
-        text_signature = "(eos, molefracs, min_temperature, npoints, critical_temperature=None, max_iter=None, tol=None, verbosity=None)"
+        text_signature = "(eos, composition, min_temperature, npoints, critical_temperature=None, max_iter=None, tol=None, verbosity=None)"
     )]
-    #[pyo3(signature = (eos, molefracs, min_temperature, npoints, critical_temperature=None, max_iter=None, tol=None, verbosity=None))]
+    #[pyo3(signature = (eos, composition, min_temperature, npoints, critical_temperature=None, max_iter=None, tol=None, verbosity=None))]
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn spinodal<'py>(
         eos: &PyEquationOfState,
-        molefracs: PyReadonlyArray1<'py, f64>,
+        composition: &Bound<'py, PyAny>,
         min_temperature: Temperature,
         npoints: usize,
         critical_temperature: Option<Temperature>,
@@ -972,7 +935,7 @@ impl PyPhaseDiagram {
     ) -> PyResult<Self> {
         let dia = PhaseDiagram::spinodal(
             &eos.0,
-            &parse_molefracs(Some(molefracs)).unwrap(),
+            Compositions::try_from(Some(composition))?,
             min_temperature,
             npoints,
             critical_temperature,

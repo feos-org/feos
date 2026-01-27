@@ -110,7 +110,7 @@ impl PyState {
         eos: &PyEquationOfState,
         temperature: Option<Temperature>,
         volume: Option<Volume>,
-        density: Option<Density>,
+        mut density: Option<Density>,
         composition: Option<&Bound<'py, PyAny>>,
         pressure: Option<Pressure>,
         molar_enthalpy: Option<MolarEnergy>,
@@ -119,7 +119,15 @@ impl PyState {
         density_initialization: Option<&Bound<'py, PyAny>>,
         initial_temperature: Option<Temperature>,
     ) -> PyResult<Self> {
-        let composition = Compositions::try_from(composition)?;
+        // partial density is supported here as a special case
+        let composition = if let Some(composition) = composition
+            && let Ok(rho) = composition.extract::<Density<DVector<f64>>>()
+        {
+            density = Some(rho.sum());
+            Compositions::Molefracs(rho.convert_into(density.unwrap()))
+        } else {
+            Compositions::try_from(composition)?
+        };
         let density_init = if let Some(di) = density_initialization {
             if let Ok(d) = di.extract::<String>().as_deref() {
                 match d {
@@ -203,9 +211,8 @@ impl PyState {
     /// ----------
     /// eos: EquationOfState
     ///     The equation of state to use.
-    /// molefracs: np.ndarray[float], optional
-    ///     Molar composition.
-    ///     Only optional for a pure component.
+    /// composition : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float], optional
+    ///     Composition of the mixture.
     /// initial_temperature: SINumber, optional
     ///     The initial temperature.
     /// max_iter : int, optional
@@ -325,9 +332,8 @@ impl PyState {
     ///     The equation of state to use.
     /// temperature: SINumber
     ///     The temperature.
-    /// molefracs: np.ndarray[float], optional
-    ///     Molar composition.
-    ///     Only optional for a pure component.
+    /// composition : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float], optional
+    ///     Composition of the mixture.
     /// max_iter : int, optional
     ///     The maximum number of iterations.
     /// tol: float, optional
@@ -834,8 +840,11 @@ impl PyState {
     /// -------
     /// SINumber
     #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
-    fn entropy(&self, contributions: PyContributions) -> Entropy {
-        self.0.entropy(contributions.into())
+    fn entropy(&self, contributions: PyContributions) -> PyResult<Entropy> {
+        self.0
+            .entropy(contributions.into())
+            .map_err(PyFeosError::from)
+            .map_err(PyErr::from)
     }
 
     /// Return derivative of molar entropy with respect to temperature.
@@ -891,8 +900,11 @@ impl PyState {
     /// -------
     /// SINumber
     #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
-    fn enthalpy(&self, contributions: PyContributions) -> Energy {
-        self.0.enthalpy(contributions.into())
+    fn enthalpy(&self, contributions: PyContributions) -> PyResult<Energy> {
+        self.0
+            .enthalpy(contributions.into())
+            .map_err(PyFeosError::from)
+            .map_err(PyErr::from)
     }
 
     /// Return molar enthalpy.
@@ -932,8 +944,11 @@ impl PyState {
     /// -------
     /// SINumber
     #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
-    fn helmholtz_energy(&self, contributions: PyContributions) -> Energy {
-        self.0.helmholtz_energy(contributions.into())
+    fn helmholtz_energy(&self, contributions: PyContributions) -> PyResult<Energy> {
+        self.0
+            .helmholtz_energy(contributions.into())
+            .map_err(PyFeosError::from)
+            .map_err(PyErr::from)
     }
 
     /// Return molar Helmholtz energy.
@@ -973,8 +988,11 @@ impl PyState {
     /// -------
     /// SINumber
     #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
-    fn gibbs_energy(&self, contributions: PyContributions) -> Energy {
-        self.0.gibbs_energy(contributions.into())
+    fn gibbs_energy(&self, contributions: PyContributions) -> PyResult<Energy> {
+        self.0
+            .gibbs_energy(contributions.into())
+            .map_err(PyFeosError::from)
+            .map_err(PyErr::from)
     }
 
     /// Return molar Gibbs energy.
@@ -1005,8 +1023,11 @@ impl PyState {
     /// -------
     /// SINumber
     #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
-    fn internal_energy(&self, contributions: PyContributions) -> Energy {
-        self.0.internal_energy(contributions.into())
+    fn internal_energy(&self, contributions: PyContributions) -> PyResult<Energy> {
+        self.0
+            .internal_energy(contributions.into())
+            .map_err(PyFeosError::from)
+            .map_err(PyErr::from)
     }
 
     /// Return molar internal energy.
@@ -1111,8 +1132,11 @@ impl PyState {
     /// Returns
     /// -------
     /// SIArray1
-    fn mass(&self) -> Mass<DVector<f64>> {
-        self.0.mass()
+    fn mass(&self) -> PyResult<Mass<DVector<f64>>> {
+        self.0
+            .mass()
+            .map_err(PyFeosError::from)
+            .map_err(PyErr::from)
     }
 
     /// Returns system's total mass.
@@ -1120,8 +1144,11 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    fn total_mass(&self) -> Mass {
-        self.0.total_mass()
+    fn total_mass(&self) -> PyResult<Mass> {
+        self.0
+            .total_mass()
+            .map_err(PyFeosError::from)
+            .map_err(PyErr::from)
     }
 
     /// Returns system's mass density.
@@ -1346,8 +1373,11 @@ impl PyState {
     }
 
     #[getter]
-    fn get_total_moles(&self) -> Moles {
-        self.0.total_moles()
+    fn get_total_moles(&self) -> PyResult<Moles> {
+        self.0
+            .total_moles()
+            .map_err(PyFeosError::from)
+            .map_err(PyErr::from)
     }
 
     #[getter]
@@ -1356,8 +1386,11 @@ impl PyState {
     }
 
     #[getter]
-    fn get_volume(&self) -> Volume {
-        self.0.volume()
+    fn get_volume(&self) -> PyResult<Volume> {
+        self.0
+            .volume()
+            .map_err(PyFeosError::from)
+            .map_err(PyErr::from)
     }
 
     #[getter]
@@ -1366,8 +1399,11 @@ impl PyState {
     }
 
     #[getter]
-    fn get_moles(&self) -> Moles<DVector<f64>> {
-        self.0.moles()
+    fn get_moles(&self) -> PyResult<Moles<DVector<f64>>> {
+        self.0
+            .moles()
+            .map_err(PyFeosError::from)
+            .map_err(PyErr::from)
     }
 
     #[getter]
@@ -1541,8 +1577,11 @@ impl PyStateVec {
     }
 
     #[getter]
-    fn get_moles(&self) -> Moles<Array2<f64>> {
-        StateVec::from(self).moles()
+    fn get_moles(&self) -> PyResult<Moles<Array2<f64>>> {
+        StateVec::from(self)
+            .moles()
+            .map_err(PyFeosError::from)
+            .map_err(PyErr::from)
     }
 
     #[getter]

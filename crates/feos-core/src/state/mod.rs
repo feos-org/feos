@@ -23,7 +23,7 @@ mod properties;
 mod residual_properties;
 mod statevec;
 pub(crate) use cache::Cache;
-pub use composition::{Composition, FullComposition};
+pub use composition::Composition;
 pub use statevec::StateVec;
 
 /// Possible contributions that can be computed.
@@ -177,18 +177,18 @@ where
     }
 
     /// Mole numbers $N_i$
-    pub fn moles(&self) -> Moles<OVector<D, N>> {
-        Dimensionless::new(&self.molefracs) * self.total_moles()
+    pub fn moles(&self) -> FeosResult<Moles<OVector<D, N>>> {
+        Ok(Dimensionless::new(&self.molefracs) * self.total_moles()?)
     }
 
     /// Total moles $N=\sum_iN_i$
-    pub fn total_moles(&self) -> Moles<D> {
-        self.total_moles.expect("Extensive properties can only be evaluated for states that are initialized with extensive properties!")
+    pub fn total_moles(&self) -> FeosResult<Moles<D>> {
+        self.total_moles.ok_or(FeosError::IntensiveState)
     }
 
     /// Volume $V$
-    pub fn volume(&self) -> Volume<D> {
-        self.molar_volume * self.total_moles()
+    pub fn volume(&self) -> FeosResult<Volume<D>> {
+        Ok(self.molar_volume * self.total_moles()?)
     }
 }
 
@@ -225,13 +225,19 @@ where
     /// This function will perform a validation of the given properties, i.e. test for signs
     /// and if values are finite. It will **not** validate physics, i.e. if the resulting
     /// densities are below the maximum packing fraction.
-    pub fn new_nvt<X: FullComposition<D, N>>(
+    pub fn new_nvt<X: Composition<D, N>>(
         eos: &E,
         temperature: Temperature<D>,
         volume: Volume<D>,
         composition: X,
     ) -> FeosResult<Self> {
-        let (molefracs, total_moles) = composition.into_moles(eos)?;
+        let (molefracs, total_moles) = composition.into_molefracs(eos)?;
+        let Some(total_moles) = total_moles else {
+            return Err(FeosError::UndeterminedState(
+                "Missing total mole number in the specification!".into(),
+            ));
+        };
+
         let density = total_moles / volume;
         Self::new(eos, temperature, density, (molefracs, total_moles))
     }
@@ -247,7 +253,8 @@ where
         partial_density: Density<OVector<D, N>>,
     ) -> FeosResult<Self> {
         let density = partial_density.sum();
-        Self::new(eos, temperature, density, partial_density)
+        let molefracs = partial_density.convert_into(density);
+        Self::new(eos, temperature, density, molefracs)
     }
 
     /// Return a new `State` for a pure component given a temperature and a density.
@@ -340,14 +347,6 @@ where
         pressure: Option<Pressure<D>>,
         density_initialization: Option<DensityInitialization>,
     ) -> FeosResult<Option<Self>> {
-        // check if density is given twice
-        if density.and(composition.density()).is_some() {
-            return Err(FeosError::UndeterminedState(String::from(
-                "Both density and partial density given.",
-            )));
-        }
-        let density = density.or_else(|| composition.density());
-
         // unwrap composition
         let (x, n) = composition.into_molefracs(eos)?;
 
@@ -586,7 +585,7 @@ where
     }
 
     /// Return a new `State` for given volume $V$ and molar internal energy $u$.
-    pub fn new_nvu<X: FullComposition<D, N> + Clone>(
+    pub fn new_nvu<X: Composition<D, N> + Clone>(
         eos: &E,
         volume: Volume<D>,
         molar_internal_energy: MolarEnergy<D>,

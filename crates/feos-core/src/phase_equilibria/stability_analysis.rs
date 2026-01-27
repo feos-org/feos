@@ -166,9 +166,11 @@ where
         let (n, _) = di.shape_generic();
 
         // calculate residual and ideal hesse matrix
-        let mut hesse = self.n_dln_phi_dnj() / self.total_moles().into_reduced();
+        // TODO: this should not require extensive properties, but I couldn't rewrite it
+        // quickly without breaking it.
+        let mut hesse = self.n_dln_phi_dnj() / self.total_moles().unwrap().into_reduced();
         let lnphi = self.ln_phi();
-        let y = self.moles().into_reduced();
+        let y = self.moles().unwrap().into_reduced();
         let ln_y = y.map(|y| if y > f64::EPSILON { y.ln() } else { 0.0 });
         let sq_y = y.map(f64::sqrt);
         let gradient = (&ln_y + &lnphi - di).component_mul(&sq_y);

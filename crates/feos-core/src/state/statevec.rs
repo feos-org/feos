@@ -2,6 +2,8 @@
 use super::Contributions;
 use super::State;
 #[cfg(feature = "ndarray")]
+use crate::FeosResult;
+#[cfg(feature = "ndarray")]
 use crate::equation_of_state::{Molarweight, Residual, Total};
 #[cfg(feature = "ndarray")]
 use ndarray::{Array1, Array2};
@@ -61,10 +63,15 @@ impl<E: Residual> StateVec<'_, E> {
         Density::from_shape_fn(self.0.len(), |i| self.0[i].density)
     }
 
-    pub fn moles(&self) -> Moles<Array2<f64>> {
-        Moles::from_shape_fn((self.0.len(), self.0[0].eos.components()), |(i, j)| {
-            self.0[i].moles().get(j)
-        })
+    pub fn moles(&self) -> FeosResult<Moles<Array2<f64>>> {
+        if let Err(e) = self.0[0].moles() {
+            Err(e)
+        } else {
+            Ok(Moles::from_shape_fn(
+                (self.0.len(), self.0[0].eos.components()),
+                |(i, j)| self.0[i].moles().unwrap().get(j),
+            ))
+        }
     }
 
     pub fn molefracs(&self) -> Array2<f64> {

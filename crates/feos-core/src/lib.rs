@@ -299,8 +299,8 @@ mod tests {
 
         // residual properties
         assert_relative_eq!(
-            s.helmholtz_energy(Contributions::Residual),
-            sr.residual_helmholtz_energy(),
+            s.helmholtz_energy(Contributions::Residual)?,
+            sr.residual_helmholtz_energy()?,
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -309,8 +309,8 @@ mod tests {
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.entropy(Contributions::Residual),
-            sr.residual_entropy(),
+            s.entropy(Contributions::Residual)?,
+            sr.residual_entropy()?,
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -319,8 +319,8 @@ mod tests {
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.enthalpy(Contributions::Residual),
-            sr.residual_enthalpy(),
+            s.enthalpy(Contributions::Residual)?,
+            sr.residual_enthalpy()?,
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -329,8 +329,8 @@ mod tests {
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.internal_energy(Contributions::Residual),
-            sr.residual_internal_energy(),
+            s.internal_energy(Contributions::Residual)?,
+            sr.residual_internal_energy()?,
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -339,12 +339,12 @@ mod tests {
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.gibbs_energy(Contributions::Residual)
-                - s.total_moles()
+            s.gibbs_energy(Contributions::Residual)?
+                - s.total_moles()?
                     * RGAS
                     * s.temperature
                     * s.compressibility(Contributions::Total).ln(),
-            sr.residual_gibbs_energy(),
+            sr.residual_gibbs_energy()?,
             max_relative = 1e-15
         );
         assert_relative_eq!(

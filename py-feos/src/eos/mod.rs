@@ -210,7 +210,6 @@ pub enum Compositions {
     TotalMoles(Moles<f64>),
     Molefracs(DVector<f64>),
     Moles(Moles<DVector<f64>>),
-    PartialDensity(Density<DVector<f64>>),
 }
 
 impl Composition<f64, Dyn> for Compositions {
@@ -224,15 +223,6 @@ impl Composition<f64, Dyn> for Compositions {
             Self::TotalMoles(total_moles) => total_moles.into_molefracs(eos),
             Self::Molefracs(molefracs) => molefracs.into_molefracs(eos),
             Self::Moles(moles) => moles.into_molefracs(eos),
-            Self::PartialDensity(partial_density) => partial_density.into_molefracs(eos),
-        }
-    }
-
-    fn density(&self) -> Option<Density<f64>> {
-        if let Self::PartialDensity(partial_density) = self {
-            partial_density.density()
-        } else {
-            None
         }
     }
 }
@@ -255,8 +245,6 @@ impl TryFrom<Option<&Bound<'_, PyAny>>> for Compositions {
             Ok(Compositions::Moles(n))
         } else if let Ok(n) = composition.extract::<Moles>() {
             Ok(Compositions::TotalMoles(n))
-        } else if let Ok(rho) = composition.extract::<Density<DVector<f64>>>() {
-            Ok(Compositions::PartialDensity(rho))
         } else {
             Err(PyErr::new::<PyValueError, _>(format!(
                 "failed to parse value '{composition}' as composition."
