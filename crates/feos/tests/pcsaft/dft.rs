@@ -103,7 +103,7 @@ fn test_dft_propane() -> Result<(), Box<dyn Error>> {
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 2048;
-    let tc = State::critical_point(&&func_pure, None, None, None, Default::default())?.temperature;
+    let tc = State::critical_point(&&func_pure, (), None, None, Default::default())?.temperature;
     let vle_pure = PhaseEquilibrium::pure(&&func_pure, t, None, Default::default())?;
     let vle_full = PhaseEquilibrium::pure(&&func_full, t, None, Default::default())?;
     let vle_full_vec = PhaseEquilibrium::pure(&&func_full_vec, t, None, Default::default())?;
@@ -213,7 +213,7 @@ fn test_dft_propane_newton() -> Result<(), Box<dyn Error>> {
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 512;
-    let tc = State::critical_point(&&func, None, None, None, Default::default())?.temperature;
+    let tc = State::critical_point(&&func, (), None, None, Default::default())?.temperature;
     let vle = PhaseEquilibrium::pure(&&func, t, None, Default::default())?;
     let solver = DFTSolver::new(Some(Verbosity::Iter)).newton(None, None, None, None);
     PlanarInterface::from_tanh(&vle, points, w, tc, false).solve(Some(&solver))?;
@@ -234,7 +234,7 @@ fn test_dft_water() -> Result<(), Box<dyn Error>> {
     let t = 400.0 * KELVIN;
     let w = 120.0 * ANGSTROM;
     let points = 2048;
-    let tc = State::critical_point(&&func_pure, None, None, None, Default::default())?.temperature;
+    let tc = State::critical_point(&&func_pure, (), None, None, Default::default())?.temperature;
     let vle_pure = PhaseEquilibrium::pure(&&func_pure, t, None, Default::default())?;
     let vle_full_vec = PhaseEquilibrium::pure(&&func_full_vec, t, None, Default::default())?;
     let profile_pure = PlanarInterface::from_tanh(&vle_pure, points, w, tc, false).solve(None)?;
@@ -334,33 +334,39 @@ fn test_entropy_bulk_values() -> Result<(), Box<dyn Error>> {
     println!("\nResidual:\n{s_res:?}");
     println!(
         "liquid: {:?}, vapor: {:?}",
-        profile.vle.liquid().entropy(Contributions::Residual) / profile.vle.liquid().volume,
-        profile.vle.vapor().entropy(Contributions::Residual) / profile.vle.vapor().volume
+        profile.vle.liquid().molar_entropy(Contributions::Residual)
+            / profile.vle.liquid().molar_volume,
+        profile.vle.vapor().molar_entropy(Contributions::Residual)
+            / profile.vle.vapor().molar_volume
     );
     println!("\nTotal:\n{s_tot:?}");
     println!(
         "liquid: {:?}, vapor: {:?}",
-        profile.vle.liquid().entropy(Contributions::Total) / profile.vle.liquid().volume,
-        profile.vle.vapor().entropy(Contributions::Total) / profile.vle.vapor().volume
+        profile.vle.liquid().molar_entropy(Contributions::Total)
+            / profile.vle.liquid().molar_volume,
+        profile.vle.vapor().molar_entropy(Contributions::Total) / profile.vle.vapor().molar_volume
     );
     assert_relative_eq!(
         s_res.get(0),
-        profile.vle.liquid().entropy(Contributions::Residual) / profile.vle.liquid().volume,
+        profile.vle.liquid().molar_entropy(Contributions::Residual)
+            / profile.vle.liquid().molar_volume,
         max_relative = 1e-8,
     );
     assert_relative_eq!(
         s_res.get(2047),
-        profile.vle.vapor().entropy(Contributions::Residual) / profile.vle.vapor().volume,
+        profile.vle.vapor().molar_entropy(Contributions::Residual)
+            / profile.vle.vapor().molar_volume,
         max_relative = 1e-8,
     );
     assert_relative_eq!(
         s_tot.get(0),
-        profile.vle.liquid().entropy(Contributions::Total) / profile.vle.liquid().volume,
+        profile.vle.liquid().molar_entropy(Contributions::Total)
+            / profile.vle.liquid().molar_volume,
         max_relative = 1e-8,
     );
     assert_relative_eq!(
         s_tot.get(2047),
-        profile.vle.vapor().entropy(Contributions::Total) / profile.vle.vapor().volume,
+        profile.vle.vapor().molar_entropy(Contributions::Total) / profile.vle.vapor().molar_volume,
         max_relative = 1e-8,
     );
     Ok(())

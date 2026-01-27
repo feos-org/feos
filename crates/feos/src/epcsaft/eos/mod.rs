@@ -181,7 +181,7 @@ mod tests {
         let v = 1e-3 * METER.powi::<3>();
         let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&&e, t, v, &n).unwrap();
-        let p_ig = s.total_moles * RGAS * t / v;
+        let p_ig = s.total_moles() * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
             s.pressure(Contributions::IdealGas) + s.pressure(Contributions::Residual),
@@ -197,7 +197,7 @@ mod tests {
         let v = 1e-3 * METER.powi::<3>();
         let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&&e, t, v, &n).unwrap();
-        let p_ig = s.total_moles * RGAS * t / v;
+        let p_ig = s.total_moles() * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
             s.pressure(Contributions::IdealGas) + s.pressure(Contributions::Residual),
@@ -269,7 +269,7 @@ mod tests {
     fn critical_point() {
         let e = ElectrolytePcSaft::new(propane_parameters()).unwrap();
         let t = 300.0 * KELVIN;
-        let cp = State::critical_point(&&e, None, Some(t), None, Default::default());
+        let cp = State::critical_point(&&e, (), Some(t), None, Default::default());
         if let Ok(v) = cp {
             assert_relative_eq!(v.temperature, 375.1244078318015 * KELVIN, epsilon = 1e-8)
         }

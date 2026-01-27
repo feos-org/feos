@@ -22,7 +22,7 @@ pub enum FeosError {
     IncompatibleComponents(usize, usize),
     #[error("Invalid state in {0}: {1} = {2}.")]
     InvalidState(String, String, f64),
-    #[error("Undetermined state: {0}.")]
+    #[error("Undetermined state: {0}")]
     UndeterminedState(String),
     #[error("System is supercritical.")]
     SuperCritical,

@@ -20,7 +20,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
         let sc = State::critical_point(
             eos,
-            Some(molefracs),
+            molefracs,
             critical_temperature,
             None,
             SolverOptions::default(),
@@ -69,7 +69,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
         let sc = State::critical_point(
             eos,
-            Some(molefracs),
+            molefracs,
             critical_temperature,
             None,
             SolverOptions::default(),
@@ -134,7 +134,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
         let sc = State::critical_point(
             eos,
-            Some(molefracs),
+            molefracs,
             critical_temperature,
             None,
             SolverOptions::default(),
@@ -145,7 +145,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
         let temperatures = Temperature::linspace(min_temperature, max_temperature, npoints - 1);
 
         for ti in &temperatures {
-            let spinodal = State::spinodal(eos, ti, Some(molefracs), options).ok();
+            let spinodal = State::spinodal(eos, ti, molefracs, options).ok();
             if let Some(spinodal) = spinodal {
                 states.push(PhaseEquilibrium(spinodal));
             }

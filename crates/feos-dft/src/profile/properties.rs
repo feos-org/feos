@@ -298,7 +298,7 @@ where
 {
     fn density_derivative(&self, lhs: &Array<f64, D::Larger>) -> FeosResult<Array<f64, D::Larger>> {
         let rho = self.density.to_reduced();
-        let partial_density = self.bulk.partial_density.to_reduced();
+        let partial_density = self.bulk.partial_density().into_reduced();
         let rho_bulk = self
             .bulk
             .eos
@@ -402,7 +402,7 @@ where
         dfdrho += &(&self.external_potential * t).mapv(|v| Dual64::from(v) / t_dual);
 
         // calculate bulk functional derivative
-        let partial_density = self.bulk.partial_density.to_reduced();
+        let partial_density = self.bulk.partial_density().into_reduced();
         let rho_bulk: Array1<_> = self
             .bulk
             .eos

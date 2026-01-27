@@ -228,9 +228,9 @@ impl ParametersAD<1> for PcSaftPure<f64, 8> {
 
 #[cfg(test)]
 pub mod test {
-    use crate::pcsaft::PcSaftRecord;
     use super::super::{PcSaft, PcSaftAssociationRecord, PcSaftParameters};
     use super::*;
+    use crate::pcsaft::PcSaftRecord;
     use approx::assert_relative_eq;
     use feos_core::parameter::{AssociationRecord, PureRecord};
     use feos_core::{Contributions::Total, FeosResult, State};
@@ -278,7 +278,7 @@ pub mod test {
         let h_feos = state.residual_molar_enthalpy();
 
         let moles = vector![1.3] * KILO * MOL;
-        let state = State::new_nvt(&pcsaft, temperature, volume, &moles)?;
+        let state = State::new_nvt(&pcsaft, temperature, volume, moles)?;
         let a_ad = state.residual_molar_helmholtz_energy();
         let mu_ad = state.residual_chemical_potential();
         let p_ad = state.pressure(Total);

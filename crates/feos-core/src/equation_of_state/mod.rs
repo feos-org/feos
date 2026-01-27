@@ -1,9 +1,10 @@
-use crate::{ReferenceSystem, StateHD};
+use crate::ReferenceSystem;
+use crate::state::StateHD;
 use nalgebra::{
     Const, DVector, DefaultAllocator, Dim, Dyn, OVector, SVector, U1, allocator::Allocator,
 };
 use num_dual::DualNum;
-use quantity::{Energy, MolarEnergy, Moles, Temperature, Volume};
+use quantity::{Dimensionless, MolarEnergy, MolarVolume, Temperature};
 use std::ops::Deref;
 
 mod residual;
@@ -164,17 +165,17 @@ where
     fn ideal_gas_helmholtz_energy<D2: DualNum<f64, Inner = D> + Copy>(
         &self,
         temperature: Temperature<D2>,
-        volume: Volume<D2>,
-        moles: &Moles<OVector<D2, N>>,
-    ) -> Energy<D2> {
+        volume: MolarVolume<D2>,
+        moles: &OVector<D2, N>,
+    ) -> MolarEnergy<D2> {
         let total_moles = moles.sum();
         let molefracs = moles / total_moles;
-        let molar_volume = volume / total_moles;
+        let molar_volume = volume.into_reduced() / total_moles;
         MolarEnergy::from_reduced(self.ideal_gas_molar_helmholtz_energy(
             temperature.into_reduced(),
-            molar_volume.into_reduced(),
+            molar_volume,
             &molefracs,
-        )) * total_moles
+        )) * Dimensionless::new(total_moles)
     }
 }
 

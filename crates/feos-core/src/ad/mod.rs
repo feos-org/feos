@@ -57,8 +57,8 @@ pub trait PropertiesAD {
             let v2 = Gradient::from(v2);
             let x = Self::pure_molefracs();
 
-            let a1 = self.residual_molar_helmholtz_energy(t, v1, &x);
-            let a2 = self.residual_molar_helmholtz_energy(t, v2, &x);
+            let a1 = self.residual_helmholtz_energy(t, v1, &x);
+            let a2 = self.residual_helmholtz_energy(t, v2, &x);
             (a1, a2)
         };
 
@@ -93,7 +93,7 @@ pub trait PropertiesAD {
             let residual_entropy = |v| {
                 let (a, s) = first_derivative(
                     partial2(
-                        |t, &v, x| self.lift().residual_molar_helmholtz_energy(t, v, x),
+                        |t, &v, x| self.lift().residual_helmholtz_energy(t, v, x),
                         &v,
                         &x,
                     ),
@@ -248,16 +248,16 @@ pub trait PropertiesAD {
             let y = y.map(Gradient::from);
             let x = liquid_molefracs.map(Gradient::from);
 
-            let a_v = self.residual_molar_helmholtz_energy(t, v_v, &y);
+            let a_v = self.residual_helmholtz_energy(t, v_v, &y);
             let (p_l, mu_res_l, dp_l, dmu_l) = self.dmu_dv(t, v_l, &x);
             let vi_l = dmu_l / dp_l;
             let v_l = vi_l.dot(&y);
             let a_l = (mu_res_l - vi_l * p_l).dot(&y);
             (a_l, a_v, v_l, v_v)
         };
-        let rho_l = vle.liquid().partial_density.to_reduced();
+        let rho_l = vle.liquid().partial_density().to_reduced();
         let rho_l = [rho_l[0], rho_l[1]];
-        let rho_v = vle.vapor().partial_density.to_reduced();
+        let rho_v = vle.vapor().partial_density().to_reduced();
         let rho_v = [rho_v[0], rho_v[1]];
         let p = -(a_v - a_l
             + t * (y[0] * (rho_v[0] / rho_l[0]).ln() + y[1] * (rho_v[1] / rho_l[1]).ln() - 1.0))
@@ -298,16 +298,16 @@ pub trait PropertiesAD {
             let x = x.map(Gradient::from);
             let y = vapor_molefracs.map(Gradient::from);
 
-            let a_l = self.residual_molar_helmholtz_energy(t, v_l, &x);
+            let a_l = self.residual_helmholtz_energy(t, v_l, &x);
             let (p_v, mu_res_v, dp_v, dmu_v) = self.dmu_dv(t, v_v, &y);
             let vi_v = dmu_v / dp_v;
             let v_v = vi_v.dot(&x);
             let a_v = (mu_res_v - vi_v * p_v).dot(&x);
             (a_l, a_v, v_l, v_v)
         };
-        let rho_l = vle.liquid().partial_density.to_reduced();
+        let rho_l = vle.liquid().partial_density().to_reduced();
         let rho_l = [rho_l[0], rho_l[1]];
-        let rho_v = vle.vapor().partial_density.to_reduced();
+        let rho_v = vle.vapor().partial_density().to_reduced();
         let rho_v = [rho_v[0], rho_v[1]];
         let p = -(a_l - a_v
             + t * (x[0] * (rho_l[0] / rho_v[0]).ln() + x[1] * (rho_l[1] / rho_v[1]).ln() - 1.0))

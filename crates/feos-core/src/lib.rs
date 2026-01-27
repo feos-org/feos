@@ -41,7 +41,7 @@ pub use errors::{FeosError, FeosResult};
 #[cfg(feature = "ndarray")]
 pub use phase_equilibria::{PhaseDiagram, PhaseDiagramHetero};
 pub use phase_equilibria::{PhaseEquilibrium, TemperatureOrPressure};
-pub use state::{Contributions, DensityInitialization, State, StateBuilder, StateHD, StateVec};
+pub use state::{Composition, Contributions, DensityInitialization, State, StateHD, StateVec};
 
 /// Level of detail in the iteration output.
 #[derive(Copy, Clone, PartialOrd, PartialEq, Eq, Default)]
@@ -205,7 +205,7 @@ impl<
 mod tests {
     use crate::Contributions;
     use crate::FeosResult;
-    use crate::StateBuilder;
+    use crate::State;
     use crate::cubic::*;
     use crate::equation_of_state::{EquationOfState, IdealGas};
     use crate::parameter::*;
@@ -268,20 +268,12 @@ mod tests {
         let parameters = PengRobinsonParameters::new_pure(propane.clone())?;
         let residual = PengRobinson::new(parameters);
 
-        let sr = StateBuilder::new(&&residual)
-            .temperature(300.0 * KELVIN)
-            .pressure(1.0 * BAR)
-            .total_moles(2.0 * MOL)
-            .build()?;
+        let sr = State::new_npt(&&residual, 300.0 * KELVIN, 1.0 * BAR, 2.0 * MOL, None)?;
 
         let parameters = PengRobinsonParameters::new_pure(propane.clone())?;
         let residual = PengRobinson::new(parameters);
         let eos = EquationOfState::new(vec![NoIdealGas], residual);
-        let s = StateBuilder::new(&&eos)
-            .temperature(300.0 * KELVIN)
-            .pressure(1.0 * BAR)
-            .total_moles(2.0 * MOL)
-            .build()?;
+        let s = State::new_npt(&&eos, 300.0 * KELVIN, 1.0 * BAR, 2.0 * MOL, None)?;
 
         // pressure
         assert_relative_eq!(
@@ -348,7 +340,7 @@ mod tests {
         );
         assert_relative_eq!(
             s.gibbs_energy(Contributions::Residual)
-                - s.total_moles
+                - s.total_moles()
                     * RGAS
                     * s.temperature
                     * s.compressibility(Contributions::Total).ln(),
@@ -424,13 +416,13 @@ mod tests {
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.dp_dni(Contributions::Total),
-            sr.dp_dni(Contributions::Total),
+            s.n_dp_dni(Contributions::Total),
+            sr.n_dp_dni(Contributions::Total),
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.dp_dni(Contributions::Residual),
-            sr.dp_dni(Contributions::Residual),
+            s.n_dp_dni(Contributions::Residual),
+            sr.n_dp_dni(Contributions::Residual),
             max_relative = 1e-15
         );
 
@@ -448,8 +440,8 @@ mod tests {
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.dmu_dni(Contributions::Residual),
-            sr.dmu_dni(Contributions::Residual),
+            s.n_dmu_dni(Contributions::Residual),
+            sr.n_dmu_dni(Contributions::Residual),
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -462,7 +454,7 @@ mod tests {
         assert_relative_eq!(s.ln_phi(), sr.ln_phi(), max_relative = 1e-15);
         assert_relative_eq!(s.dln_phi_dt(), sr.dln_phi_dt(), max_relative = 1e-15);
         assert_relative_eq!(s.dln_phi_dp(), sr.dln_phi_dp(), max_relative = 1e-15);
-        assert_relative_eq!(s.dln_phi_dnj(), sr.dln_phi_dnj(), max_relative = 1e-15);
+        assert_relative_eq!(s.n_dln_phi_dnj(), sr.n_dln_phi_dnj(), max_relative = 1e-15);
         assert_relative_eq!(
             s.thermodynamic_factor(),
             sr.thermodynamic_factor(),

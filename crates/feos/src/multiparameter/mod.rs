@@ -265,8 +265,13 @@ mod test {
         let eos = &water();
         let mw = eos.molar_weight.get(0);
         let moles = dvector![1.8] * MOL;
-        let a_feos = eos.ideal_gas_helmholtz_energy(t, moles.sum() * mw / rho, &moles);
-        let phi_feos = (a_feos / RGAS / moles.sum() / t).into_value();
+        let total_moles = moles.sum();
+        let a_feos = eos.ideal_gas_helmholtz_energy(
+            t,
+            moles.sum() * mw / rho / total_moles,
+            &moles.convert_into(total_moles),
+        );
+        let phi_feos = (a_feos / RGAS / t).into_value();
         println!("A:          {a_feos}");
         println!("phi(feos):  {phi_feos}");
         let delta = (rho / (eos.rhoc * MOL / METER.powi::<3>() * mw)).into_value();
@@ -288,15 +293,15 @@ mod test {
             ..Default::default()
         };
         let cp: State<_, Dyn, f64> =
-            State::critical_point(&eos, None, Some(647. * KELVIN), None, options).unwrap();
+            State::critical_point(&eos, (), Some(647. * KELVIN), None, options).unwrap();
         println!("{cp}");
         assert_relative_eq!(cp.temperature, eos.tc * KELVIN, max_relative = 1e-13);
         let cp: State<_, Dyn, f64> =
-            State::critical_point(&eos, None, None, None, Default::default()).unwrap();
+            State::critical_point(&eos, (), None, None, Default::default()).unwrap();
         println!("{cp}");
         assert_relative_ne!(cp.temperature, eos.tc * KELVIN, max_relative = 1e-13);
         let cp: State<_, Dyn, f64> =
-            State::critical_point(&eos, None, Some(700.0 * KELVIN), None, Default::default())
+            State::critical_point(&eos, (), Some(700.0 * KELVIN), None, Default::default())
                 .unwrap();
         println!("{cp}");
         assert_relative_eq!(cp.temperature, eos.tc * KELVIN, max_relative = 1e-13)

@@ -55,7 +55,7 @@ impl<E: Residual<U2, D>, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, U2, D> {
         let z = feed.get(0).convert_into(feed.get(0) + feed.get(1));
         let total_moles = feed.sum();
         let moles = vector![z.re(), 1.0 - z.re()] * MOL;
-        let vle_re = State::new_npt(&eos.re(), temperature.re(), pressure.re(), &moles, None)?
+        let vle_re = State::new_npt(&eos.re(), temperature.re(), pressure.re(), moles, None)?
             .tp_flash(None, options, None)?;
 
         // implicit differentiation
@@ -82,7 +82,7 @@ impl<E: Residual<U2, D>, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, U2, D> {
                 let eos = eos.lift();
                 let molar_gibbs_energy = |x: Dual2Vec<_, _, _>, v| {
                     let molefracs = vector![x, -x + 1.0];
-                    let a_res = eos.residual_molar_helmholtz_energy(t, v, &molefracs);
+                    let a_res = eos.residual_helmholtz_energy(t, v, &molefracs);
                     let a_ig = (x * (x / v).ln() - (x - 1.0) * ((-x + 1.0) / v).ln() - 1.0) * t;
                     a_res + a_ig + v * p
                 };
@@ -99,7 +99,7 @@ impl<E: Residual<U2, D>, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, U2, D> {
         let state = |x: D, v, phi| {
             let volume = MolarVolume::from_reduced(v * phi) * total_moles;
             let moles = Quantity::new(vector![x, -x + 1.0] * phi * total_moles.convert_into(MOL));
-            State::new_nvt(eos, temperature, volume, &moles)
+            State::new_nvt(eos, temperature, volume, moles)
         };
         Ok(Self([state(y, v_v, beta)?, state(x, v_l, -beta + 1.0)?]))
     }
@@ -184,7 +184,9 @@ where
             )?;
 
             // check convergence
-            let beta = new_vle_state.vapor_phase_fraction();
+            // unwrap is safe here, because after the first successive substitution step the
+            // phase amounts in new_vle_state are known.
+            let beta = new_vle_state.vapor_phase_fraction().unwrap();
             let tpd = [
                 self.tangent_plane_distance(new_vle_state.vapor()),
                 self.tangent_plane_distance(new_vle_state.liquid()),
@@ -377,16 +379,22 @@ where
 
     fn update_states(&mut self, feed_state: &State<E, N>, k: &OVector<f64, N>) -> FeosResult<()> {
         // calculate vapor phase fraction using Rachford-Rice algorithm
-        let mut beta = self.vapor_phase_fraction();
-        beta = rachford_rice(&feed_state.molefracs, k, Some(beta))?;
+        let beta = self.vapor_phase_fraction();
+        let beta = rachford_rice(&feed_state.molefracs, k, beta)?;
 
         // update VLE
-        let v = feed_state.moles.clone().component_mul(&Dimensionless::new(
-            k.map(|k| beta * k / (1.0 - beta + beta * k)),
-        ));
-        let l = feed_state.moles.clone().component_mul(&Dimensionless::new(
-            k.map(|k| (1.0 - beta) / (1.0 - beta + beta * k)),
-        ));
+        let v = feed_state
+            .moles()
+            .clone()
+            .component_mul(&Dimensionless::new(
+                k.map(|k| beta * k / (1.0 - beta + beta * k)),
+            ));
+        let l = feed_state
+            .moles()
+            .clone()
+            .component_mul(&Dimensionless::new(
+                k.map(|k| (1.0 - beta) / (1.0 - beta + beta * k)),
+            ));
         self.update_moles(feed_state.pressure(Contributions::Total), [&v, &l])?;
         Ok(())
     }

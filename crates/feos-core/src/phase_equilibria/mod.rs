@@ -126,39 +126,41 @@ where
         Self([vapor, liquid])
     }
 
-    /// Creates a new PhaseEquilibrium that contains two states at the
-    /// specified temperature, pressure and molefracs.
-    ///
-    /// The constructor can be used in custom phase equilibrium solvers or,
-    /// e.g., to generate initial guesses for an actual VLE solver.
-    /// In general, the two states generated are NOT in an equilibrium.
-    pub fn new_xpt(
-        eos: &E,
-        temperature: Temperature,
-        pressure: Pressure,
-        vapor_molefracs: &OVector<f64, N>,
-        liquid_molefracs: &OVector<f64, N>,
-    ) -> FeosResult<Self> {
-        let liquid = State::new_xpt(
-            eos,
-            temperature,
-            pressure,
-            liquid_molefracs,
-            Some(DensityInitialization::Liquid),
-        )?;
-        let vapor = State::new_xpt(
-            eos,
-            temperature,
-            pressure,
-            vapor_molefracs,
-            Some(DensityInitialization::Vapor),
-        )?;
-        Ok(Self([vapor, liquid]))
-    }
+    // /// Creates a new PhaseEquilibrium that contains two states at the
+    // /// specified temperature, pressure and molefracs.
+    // ///
+    // /// The constructor can be used in custom phase equilibrium solvers or,
+    // /// e.g., to generate initial guesses for an actual VLE solver.
+    // /// In general, the two states generated are NOT in an equilibrium.
+    // pub fn new_xpt(
+    //     eos: &E,
+    //     temperature: Temperature,
+    //     pressure: Pressure,
+    //     vapor_molefracs: &OVector<f64, N>,
+    //     liquid_molefracs: &OVector<f64, N>,
+    // ) -> FeosResult<Self> {
+    //     let liquid = State::new_xpt(
+    //         eos,
+    //         temperature,
+    //         pressure,
+    //         liquid_molefracs,
+    //         Some(DensityInitialization::Liquid),
+    //     )?;
+    //     let vapor = State::new_xpt(
+    //         eos,
+    //         temperature,
+    //         pressure,
+    //         vapor_molefracs,
+    //         Some(DensityInitialization::Vapor),
+    //     )?;
+    //     Ok(Self([vapor, liquid]))
+    // }
 
-    pub(super) fn vapor_phase_fraction(&self) -> f64 {
-        (self.vapor().total_moles / (self.vapor().total_moles + self.liquid().total_moles))
-            .into_value()
+    pub(super) fn vapor_phase_fraction(&self) -> Option<f64> {
+        self.vapor()
+            .total_moles
+            .zip(self.liquid().total_moles)
+            .map(|(v, l)| (v / (l + v)).into_value())
     }
 }
 
@@ -176,7 +178,7 @@ where
                 &s.eos,
                 temperature,
                 pressure,
-                &s.moles,
+                &*s,
                 Some(DensityInitialization::InitialDensity(s.density)),
             )?;
         }
@@ -203,10 +205,10 @@ where
     // Total Gibbs energy excluding the constant contribution RT sum_i N_i ln(\Lambda_i^3)
     pub(super) fn total_gibbs_energy(&self) -> Energy {
         self.0.iter().fold(Energy::from_reduced(0.0), |acc, s| {
-            let ln_rho_m1 = s.partial_density.to_reduced().map(|r| r.ln() - 1.0);
+            let ln_rho_m1 = s.partial_density().to_reduced().map(|r| r.ln() - 1.0);
             acc + s.residual_helmholtz_energy()
-                + s.pressure(Contributions::Total) * s.volume
-                + RGAS * s.temperature * s.total_moles * s.molefracs.dot(&ln_rho_m1)
+                + s.pressure(Contributions::Total) * s.volume()
+                + RGAS * s.temperature * s.total_moles() * s.molefracs.dot(&ln_rho_m1)
         })
     }
 }

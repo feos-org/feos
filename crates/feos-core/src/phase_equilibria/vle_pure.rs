@@ -3,7 +3,7 @@ use crate::density_iteration::{_density_iteration, _pressure_spinodal};
 use crate::equation_of_state::{Residual, Subset};
 use crate::errors::{FeosError, FeosResult};
 use crate::state::{Contributions, DensityInitialization, State};
-use crate::{ReferenceSystem, SolverOptions, TemperatureOrPressure, Verbosity};
+use crate::{Composition, ReferenceSystem, SolverOptions, TemperatureOrPressure, Verbosity};
 use nalgebra::allocator::Allocator;
 use nalgebra::{DVector, DefaultAllocator, Dim, SVector, U1, U2};
 use num_dual::{DualNum, DualStruct, Gradients, gradient, partial};
@@ -17,6 +17,7 @@ const TOL_PURE: f64 = 1e-12;
 impl<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, N, D>
 where
     DefaultAllocator: Allocator<N> + Allocator<U1, N> + Allocator<N, N>,
+    (): Composition<D, N> + Composition<f64, N>,
 {
     /// Calculate a phase equilibrium for a pure component.
     pub fn pure<TP: TemperatureOrPressure<D>>(
@@ -207,7 +208,7 @@ where
     let x = E::pure_molefracs();
     let v = (0.75 * eos.compute_max_density(&x)).recip();
     let t = temperature.into_reduced();
-    let a_res = eos.residual_molar_helmholtz_energy(t, v, &x);
+    let a_res = eos.residual_helmholtz_energy(t, v, &x);
     let p = t / v * (a_res / t - 1.0).exp();
     let rho_v = p / t;
     let rho_l = v.recip();
@@ -237,6 +238,7 @@ where
 impl<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, N, D>
 where
     DefaultAllocator: Allocator<N> + Allocator<U1, N> + Allocator<N, N>,
+    (): Composition<f64, N>,
 {
     /// Calculate a phase equilibrium for a pure component
     /// and given pressure.
@@ -394,6 +396,7 @@ fn init_pure_p<E: Residual<N>, N: Gradients>(
 ) -> FeosResult<(f64, [f64; 2])>
 where
     DefaultAllocator: Allocator<N> + Allocator<U1, N> + Allocator<N, N>,
+    (): Composition<f64, N>,
 {
     let trial_temperatures = [300.0, 500.0, 200.0];
     let p = pressure.into_reduced();
@@ -413,7 +416,7 @@ where
     };
     let [mut t_v, mut t_l] = [t0, t0];
 
-    let cp = State::critical_point(eos, None, None, None, SolverOptions::default())?;
+    let cp = State::critical_point(eos, (), None, None, SolverOptions::default())?;
     let cp_density = cp.density.into_reduced();
     if pressure > cp.pressure(Contributions::Total) {
         return Err(FeosError::SuperCritical);
@@ -447,7 +450,7 @@ where
                 partial(
                     |t_v: SVector<_, _>, x| {
                         let [[t, v]] = t_v.data.0;
-                        eos.lift().residual_molar_helmholtz_energy(t, v, x)
+                        eos.lift().residual_helmholtz_energy(t, v, x)
                     },
                     &x,
                 ),
@@ -525,17 +528,17 @@ impl<E: Residual + Subset> PhaseEquilibrium<E, 2> {
                     let mut molefracs_liquid = molefracs_vapor.clone();
                     molefracs_vapor[i] = 1.0;
                     molefracs_liquid[i] = 1.0;
-                    let vapor = State::new_intensive(
+                    let vapor = State::new(
                         eos,
                         vle_pure.vapor().temperature,
                         vle_pure.vapor().density,
-                        &molefracs_vapor,
+                        molefracs_vapor,
                     )?;
-                    let liquid = State::new_intensive(
+                    let liquid = State::new(
                         eos,
                         vle_pure.liquid().temperature,
                         vle_pure.liquid().density,
-                        &molefracs_liquid,
+                        molefracs_liquid,
                     )?;
                     Ok(PhaseEquilibrium::from_states(vapor, liquid))
                 })

@@ -61,7 +61,7 @@ impl PyPhaseEquilibrium {
     #[pyo3(signature = (eos, temperature_or_pressure, initial_state=None, max_iter=None, tol=None, verbosity=None))]
     pub(crate) fn pure(
         eos: &PyEquationOfState,
-        temperature_or_pressure: Bound<'_, PyAny>,
+        temperature_or_pressure: &Bound<'_, PyAny>,
         initial_state: Option<&PyPhaseEquilibrium>,
         max_iter: Option<usize>,
         tol: Option<f64>,
@@ -198,9 +198,9 @@ impl PyPhaseEquilibrium {
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn bubble_point<'py>(
         eos: &PyEquationOfState,
-        temperature_or_pressure: Bound<'_, PyAny>,
+        temperature_or_pressure: &Bound<'_, PyAny>,
         liquid_molefracs: PyReadonlyArray1<'py, f64>,
-        tp_init: Option<Bound<'_, PyAny>>,
+        tp_init: Option<&Bound<'_, PyAny>>,
         vapor_molefracs: Option<PyReadonlyArray1<'py, f64>>,
         max_iter_inner: Option<usize>,
         max_iter_outer: Option<usize>,
@@ -286,9 +286,9 @@ impl PyPhaseEquilibrium {
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn dew_point<'py>(
         eos: &PyEquationOfState,
-        temperature_or_pressure: Bound<'_, PyAny>,
+        temperature_or_pressure: &Bound<'_, PyAny>,
         vapor_molefracs: PyReadonlyArray1<'py, f64>,
-        tp_init: Option<Bound<'_, PyAny>>,
+        tp_init: Option<&Bound<'_, PyAny>>,
         liquid_molefracs: Option<PyReadonlyArray1<'py, f64>>,
         max_iter_inner: Option<usize>,
         max_iter_outer: Option<usize>,
@@ -398,7 +398,7 @@ impl PyPhaseEquilibrium {
     #[staticmethod]
     fn vle_pure_comps(
         eos: &PyEquationOfState,
-        temperature_or_pressure: Bound<'_, PyAny>,
+        temperature_or_pressure: &Bound<'_, PyAny>,
     ) -> PyResult<Vec<Option<Self>>> {
         if let Ok(t) = temperature_or_pressure.extract::<Temperature>() {
             Ok(PhaseEquilibrium::vle_pure_comps(&eos.0, t)
@@ -514,9 +514,9 @@ impl PyPhaseEquilibrium {
     #[expect(clippy::too_many_arguments)]
     fn heteroazeotrope(
         eos: &PyEquationOfState,
-        temperature_or_pressure: Bound<'_, PyAny>,
+        temperature_or_pressure: &Bound<'_, PyAny>,
         x_init: (f64, f64),
-        tp_init: Option<Bound<'_, PyAny>>,
+        tp_init: Option<&Bound<'_, PyAny>>,
         max_iter: Option<usize>,
         tol: Option<f64>,
         verbosity: Option<PyVerbosity>,
@@ -1224,7 +1224,7 @@ impl PyPhaseDiagram {
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn binary_vle(
         eos: &PyEquationOfState,
-        temperature_or_pressure: Bound<'_, PyAny>,
+        temperature_or_pressure: &Bound<'_, PyAny>,
         npoints: Option<usize>,
         x_lle: Option<(f64, f64)>,
         max_iter_inner: Option<usize>,
@@ -1299,7 +1299,7 @@ impl PyPhaseDiagram {
     #[pyo3(signature = (eos, temperature_or_pressure, feed, min_tp, max_tp, npoints=None))]
     pub(crate) fn lle(
         eos: &PyEquationOfState,
-        temperature_or_pressure: Bound<'_, PyAny>,
+        temperature_or_pressure: &Bound<'_, PyAny>,
         feed: Moles<DVector<f64>>,
         min_tp: Bound<'_, PyAny>,
         max_tp: Bound<'_, PyAny>,
@@ -1388,10 +1388,10 @@ impl PyPhaseDiagram {
     #[expect(clippy::too_many_arguments)]
     pub(crate) fn binary_vlle(
         eos: &PyEquationOfState,
-        temperature_or_pressure: Bound<'_, PyAny>,
+        temperature_or_pressure: &Bound<'_, PyAny>,
         x_lle: (f64, f64),
-        tp_lim_lle: Option<Bound<'_, PyAny>>,
-        tp_init_vlle: Option<Bound<'_, PyAny>>,
+        tp_lim_lle: Option<&Bound<'_, PyAny>>,
+        tp_init_vlle: Option<&Bound<'_, PyAny>>,
         npoints_vle: Option<usize>,
         npoints_lle: Option<usize>,
         max_iter_inner: Option<usize>,

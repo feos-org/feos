@@ -18,9 +18,9 @@ use quantity::*;
 /// - molefracs (or moles) for equimolar mixture.
 fn state_saftvrmie(n: usize, eos: &SaftVRMie) -> State<&SaftVRMie> {
     let molefracs = DVector::from_element(n, 1.0 / n as f64);
-    let cp = State::critical_point(&eos, Some(&molefracs), None, None, Default::default()).unwrap();
+    let cp = State::critical_point(&eos, &molefracs, None, None, Default::default()).unwrap();
     let temperature = 0.8 * cp.temperature;
-    State::new_nvt(&eos, temperature, cp.volume, &(molefracs * 10. * MOL)).unwrap()
+    State::new_nvt(&eos, temperature, cp.volume(), &(molefracs * 10. * MOL)).unwrap()
 }
 
 /// Residual Helmholtz energy given an equation of state and a StateHD.
@@ -100,11 +100,11 @@ enum Derivative {
 
 /// Creates a [StateHD] cloning temperature, volume and moles.
 fn derive0<E>(state: &State<E>) -> StateHD<f64> {
-    let total_moles = state.total_moles.into_reduced();
+    let total_moles = state.total_moles().into_reduced();
     StateHD::new(
         state.temperature.into_reduced(),
-        state.volume.into_reduced() / total_moles,
-        &(state.moles.to_reduced() / total_moles),
+        state.volume().into_reduced() / total_moles,
+        &(state.moles().to_reduced() / total_moles),
     )
 }
 
