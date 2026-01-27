@@ -3,8 +3,8 @@ use crate::errors::{FeosError, FeosResult};
 use crate::state::{DensityInitialization, State};
 use crate::{Contributions, ReferenceSystem};
 use nalgebra::allocator::Allocator;
-use nalgebra::{DVector, DefaultAllocator, Dim, Dyn, OVector};
-use num_dual::{DualNum, DualStruct};
+use nalgebra::{DefaultAllocator, Dim, Dyn, OVector};
+use num_dual::{DualNum, DualStruct, Gradients};
 use quantity::{Energy, Moles, Pressure, RGAS, Temperature};
 use std::fmt;
 use std::fmt::Write;
@@ -168,7 +168,10 @@ where
     }
 }
 
-impl<E: Residual, const P: usize> PhaseEquilibrium<E, P> {
+impl<E: Residual<N>, N: Gradients, const P: usize> PhaseEquilibrium<E, P, N>
+where
+    DefaultAllocator: Allocator<N>,
+{
     pub(super) fn update_pressure(
         mut self,
         temperature: Temperature,
@@ -189,7 +192,7 @@ impl<E: Residual, const P: usize> PhaseEquilibrium<E, P> {
     pub(super) fn update_moles(
         &mut self,
         pressure: Pressure,
-        moles: [&Moles<DVector<f64>>; P],
+        moles: [&Moles<OVector<f64, N>>; P],
     ) -> FeosResult<()> {
         for (i, s) in self.0.iter_mut().enumerate() {
             *s = State::new_npt(
