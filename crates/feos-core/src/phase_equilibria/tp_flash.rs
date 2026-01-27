@@ -2,16 +2,22 @@ use super::PhaseEquilibrium;
 use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
 use crate::state::{Contributions, State};
-use crate::{SolverOptions, Verbosity};
-use nalgebra::{DVector, Matrix3, Matrix4xX};
-use num_dual::{Dual, DualNum, first_derivative};
-use quantity::{Dimensionless, Moles, Pressure, Temperature};
+use crate::{ReferenceSystem, SolverOptions, Verbosity};
+use nalgebra::allocator::Allocator;
+use nalgebra::{DefaultAllocator, Dim, Matrix3, OVector, SVector, U1, U2, vector};
+use num_dual::{
+    Dual, Dual2Vec, DualNum, DualStruct, Gradients, first_derivative, implicit_derivative_sp,
+};
+use quantity::{Dimensionless, MOL, MolarVolume, Moles, Pressure, Quantity, Temperature};
 
 const MAX_ITER_TP: usize = 400;
 const TOL_TP: f64 = 1e-8;
 
 /// # Flash calculations
-impl<E: Residual> PhaseEquilibrium<E, 2> {
+impl<E: Residual<N>, N: Gradients> PhaseEquilibrium<E, 2, N>
+where
+    DefaultAllocator: Allocator<N> + Allocator<N, N>,
+{
     /// Perform a Tp-flash calculation. If no initial values are
     /// given, the solution is initialized using a stability analysis.
     ///
@@ -21,8 +27,8 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         eos: &E,
         temperature: Temperature,
         pressure: Pressure,
-        feed: &Moles<DVector<f64>>,
-        initial_state: Option<&PhaseEquilibrium<E, 2>>,
+        feed: &Moles<OVector<f64, N>>,
+        initial_state: Option<&PhaseEquilibrium<E, 2, N>>,
         options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
     ) -> FeosResult<Self> {
@@ -34,8 +40,76 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
     }
 }
 
+impl<E: Residual<U2, D>, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, U2, D> {
+    /// Perform a Tp-flash calculation for a binary mixture.
+    /// Compared to the version of the algorithm for a generic
+    /// number of components ([tp_flash](PhaseEquilibrium::tp_flash)),
+    /// this can be used in combination with automatic differentiation.
+    pub fn tp_flash_binary(
+        eos: &E,
+        temperature: Temperature<D>,
+        pressure: Pressure<D>,
+        feed: &Moles<SVector<D, 2>>,
+        options: SolverOptions,
+    ) -> FeosResult<Self> {
+        let z = feed.get(0).convert_into(feed.get(0) + feed.get(1));
+        let total_moles = feed.sum();
+        let moles = vector![z.re(), 1.0 - z.re()] * MOL;
+        let vle_re = State::new_npt(&eos.re(), temperature.re(), pressure.re(), &moles, None)?
+            .tp_flash(None, options, None)?;
+
+        // implicit differentiation
+
+        // specifications
+        let t = temperature.into_reduced();
+        let p = pressure.into_reduced();
+
+        // molar volume and composition of the two phases
+        let variables = SVector::from([
+            vle_re.liquid().density.into_reduced().recip(),
+            vle_re.vapor().density.into_reduced().recip(),
+            vle_re.liquid().molefracs[0],
+            vle_re.vapor().molefracs[0],
+        ]);
+
+        // calculate derivatives for molar volumes and compositions (first component)
+        // with respect to t, p, or z or equation of state parameters
+        // using implicit differentiation of the minimum in the Gibbs energy
+        let [[v_l, v_v, x, y]] = implicit_derivative_sp(
+            |variables, &[t, p, z]: &[_; 3]| {
+                let [[v_l, v_v, x, y]] = variables.data.0;
+                let beta = (z - x) / (y - x);
+                let eos = eos.lift();
+                let molar_gibbs_energy = |x: Dual2Vec<_, _, _>, v| {
+                    let molefracs = vector![x, -x + 1.0];
+                    let a_res = eos.residual_molar_helmholtz_energy(t, v, &molefracs);
+                    let a_ig = (x * (x / v).ln() - (x - 1.0) * ((-x + 1.0) / v).ln() - 1.0) * t;
+                    a_res + a_ig + v * p
+                };
+                // g = a + pv is the potential function for a tp flash using a Helmholtz energy model
+                // see https://www.sciencedirect.com/science/article/pii/S0378381299000928
+                molar_gibbs_energy(y, v_v) * beta - molar_gibbs_energy(x, v_l) * (beta - 1.0)
+            },
+            variables,
+            &[t, p, z],
+        )
+        .data
+        .0;
+        let beta = (z - x) / (y - x);
+        let state = |x: D, v, phi| {
+            let volume = MolarVolume::from_reduced(v * phi) * total_moles;
+            let moles = Quantity::new(vector![x, -x + 1.0] * phi * total_moles.convert_into(MOL));
+            State::new_nvt(eos, temperature, volume, &moles)
+        };
+        Ok(Self([state(y, v_v, beta)?, state(x, v_l, -beta + 1.0)?]))
+    }
+}
+
 /// # Flash calculations
-impl<E: Residual> State<E> {
+impl<E: Residual<N>, N: Gradients> State<E, N>
+where
+    DefaultAllocator: Allocator<N> + Allocator<N, N>,
+{
     /// Perform a Tp-flash calculation using the [State] as feed.
     /// If no initial values are given, the solution is initialized
     /// using a stability analysis.
@@ -44,10 +118,10 @@ impl<E: Residual> State<E> {
     /// containing non-volatile components (e.g. ions).
     pub fn tp_flash(
         &self,
-        initial_state: Option<&PhaseEquilibrium<E, 2>>,
+        initial_state: Option<&PhaseEquilibrium<E, 2, N>>,
         options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
-    ) -> FeosResult<PhaseEquilibrium<E, 2>> {
+    ) -> FeosResult<PhaseEquilibrium<E, 2, N>> {
         // initialization
         if let Some(init) = initial_state {
             let vle = self.tp_flash_(
@@ -76,10 +150,10 @@ impl<E: Residual> State<E> {
 
     pub fn tp_flash_(
         &self,
-        mut new_vle_state: PhaseEquilibrium<E, 2>,
+        mut new_vle_state: PhaseEquilibrium<E, 2, N>,
         options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
-    ) -> FeosResult<PhaseEquilibrium<E, 2>> {
+    ) -> FeosResult<PhaseEquilibrium<E, 2, N>> {
         // set options
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_TP, TOL_TP);
 
@@ -92,8 +166,8 @@ impl<E: Residual> State<E> {
             verbosity,
             " {:4} |                | {:10.8?} | {:10.8?}",
             0,
-            new_vle_state.vapor().molefracs.data.as_vec(),
-            new_vle_state.liquid().molefracs.data.as_vec(),
+            new_vle_state.vapor().molefracs.as_slice(),
+            new_vle_state.liquid().molefracs.as_slice(),
         );
 
         let mut iter = 0;
@@ -169,7 +243,7 @@ impl<E: Residual> State<E> {
         Ok(new_vle_state)
     }
 
-    fn tangent_plane_distance(&self, trial_state: &State<E>) -> f64 {
+    fn tangent_plane_distance(&self, trial_state: &State<E, N>) -> f64 {
         let ln_phi_z = self.ln_phi();
         let ln_phi_w = trial_state.ln_phi();
         let z = &self.molefracs;
@@ -178,20 +252,23 @@ impl<E: Residual> State<E> {
     }
 }
 
-impl<E: Residual> PhaseEquilibrium<E, 2> {
+impl<E: Residual<N>, N: Gradients> PhaseEquilibrium<E, 2, N>
+where
+    DefaultAllocator: Allocator<N> + Allocator<N, N>,
+{
     fn accelerated_successive_substitution(
         &mut self,
-        feed_state: &State<E>,
+        feed_state: &State<E, N>,
         iter: &mut usize,
         max_iter: usize,
         tol: f64,
         verbosity: Verbosity,
         non_volatile_components: &Option<Vec<usize>>,
     ) -> FeosResult<()> {
+        let (n, _) = feed_state.molefracs.shape_generic();
         for _ in 0..max_iter {
             // do 5 successive substitution steps and check for convergence
-            let mut k_vec = Matrix4xX::zeros(self.vapor().eos.components());
-            // let mut k_vec = Array::zeros((4, self.vapor().eos.components()));
+            let mut k_vec = std::array::repeat(OVector::zeros_generic(n, U1));
             if self.successive_substitution(
                 feed_state,
                 5,
@@ -213,16 +290,19 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
             let gibbs = self.total_gibbs_energy();
 
             // extrapolate K values
-            let delta_vec = k_vec.rows_range(1..) - k_vec.rows_range(..3);
-            let delta = Matrix3::from_fn(|i, j| delta_vec.row(i).dot(&delta_vec.row(j)));
+            let delta_vec = [
+                &k_vec[1] - &k_vec[0],
+                &k_vec[2] - &k_vec[1],
+                &k_vec[3] - &k_vec[2],
+            ];
+            let delta = Matrix3::from_fn(|i, j| delta_vec[i].dot(&delta_vec[j]));
             let d = delta[(0, 1)] * delta[(0, 1)] - delta[(0, 0)] * delta[(1, 1)];
             let a = (delta[(0, 2)] * delta[(0, 1)] - delta[(1, 2)] * delta[(0, 0)]) / d;
             let b = (delta[(1, 2)] * delta[(0, 1)] - delta[(0, 2)] * delta[(1, 1)]) / d;
 
-            let mut k = (k_vec.row(3)
-                + ((b * delta_vec.row(1) + (a + b) * delta_vec.row(2)) / (1.0 - a - b)))
-                .map(f64::exp)
-                .transpose();
+            let mut k = (&k_vec[3]
+                + ((b * &delta_vec[1] + (a + b) * &delta_vec[2]) / (1.0 - a - b)))
+                .map(f64::exp);
 
             // Set k = 0 for non-volatile components
             if let Some(nvc) = non_volatile_components.as_ref() {
@@ -245,10 +325,10 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
     #[expect(clippy::too_many_arguments)]
     fn successive_substitution(
         &mut self,
-        feed_state: &State<E>,
+        feed_state: &State<E, N>,
         iterations: usize,
         iter: &mut usize,
-        k_vec: &mut Option<&mut Matrix4xX<f64>>,
+        k_vec: &mut Option<&mut [OVector<f64, N>; 4]>,
         abs_tol: f64,
         verbosity: Verbosity,
         non_volatile_components: &Option<Vec<usize>>,
@@ -278,8 +358,8 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
                 " {:4} | {:14.8e} | {:.8?} | {:.8?}",
                 iter,
                 res,
-                self.vapor().molefracs.data.as_vec(),
-                self.liquid().molefracs.data.as_vec(),
+                self.vapor().molefracs.as_slice(),
+                self.liquid().molefracs.as_slice(),
             );
             if res < abs_tol {
                 return Ok(true);
@@ -289,16 +369,13 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
             if let Some(k_vec) = k_vec
                 && i >= iterations - 3
             {
-                k_vec.set_row(
-                    i + 3 - iterations,
-                    &k.map(|ki| if ki > 0.0 { ki.ln() } else { 0.0 }).transpose(),
-                );
+                k_vec[i + 3 - iterations] = k.map(|ki| if ki > 0.0 { ki.ln() } else { 0.0 });
             }
         }
         Ok(false)
     }
 
-    fn update_states(&mut self, feed_state: &State<E>, k: &DVector<f64>) -> FeosResult<()> {
+    fn update_states(&mut self, feed_state: &State<E, N>, k: &OVector<f64, N>) -> FeosResult<()> {
         // calculate vapor phase fraction using Rachford-Rice algorithm
         let mut beta = self.vapor_phase_fraction();
         beta = rachford_rice(&feed_state.molefracs, k, Some(beta))?;
@@ -314,7 +391,7 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
         Ok(())
     }
 
-    fn vle_init_stability(feed_state: &State<E>) -> FeosResult<(Self, Option<Self>)> {
+    fn vle_init_stability(feed_state: &State<E, N>) -> FeosResult<(Self, Option<Self>)> {
         let mut stable_states = feed_state.stability_analysis(SolverOptions::default())?;
         let state1 = stable_states.pop();
         let state2 = stable_states.pop();
@@ -331,7 +408,14 @@ impl<E: Residual> PhaseEquilibrium<E, 2> {
     }
 }
 
-fn rachford_rice(feed: &DVector<f64>, k: &DVector<f64>, beta_in: Option<f64>) -> FeosResult<f64> {
+fn rachford_rice<N: Dim>(
+    feed: &OVector<f64, N>,
+    k: &OVector<f64, N>,
+    beta_in: Option<f64>,
+) -> FeosResult<f64>
+where
+    DefaultAllocator: Allocator<N>,
+{
     const MAX_ITER: usize = 10;
     const ABS_TOL: f64 = 1e-6;
 
