@@ -74,7 +74,7 @@ fn pcsaft(c: &mut Criterion) {
                 State::new_npt(&&eos, t, p, &moles, Some(DensityInitialization::Liquid)).unwrap();
             let temperature = Dual64::from(state.temperature.into_reduced()).derivative();
             let molar_volume = Dual::from(1.0 / state.density.into_reduced());
-            let moles = state.moles.to_reduced().map(Dual::from);
+            let moles = state.moles().to_reduced().map(Dual::from);
             // let state_hd = state.derive1(Derivative::DT);
             let name1 = comp1.identifier.name.as_deref().unwrap();
             let name2 = comp2.identifier.name.as_deref().unwrap();

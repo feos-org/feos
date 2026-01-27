@@ -63,7 +63,7 @@ impl<E: Residual> StateVec<'_, E> {
 
     pub fn moles(&self) -> Moles<Array2<f64>> {
         Moles::from_shape_fn((self.0.len(), self.0[0].eos.components()), |(i, j)| {
-            self.0[i].moles.get(j)
+            self.0[i].moles().get(j)
         })
     }
 

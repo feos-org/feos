@@ -37,7 +37,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
         let sc = State::critical_point(
             eos,
-            None,
+            (),
             critical_temperature,
             None,
             SolverOptions::default(),
@@ -104,7 +104,7 @@ impl<E: Residual> PhaseDiagram<E, 2> {
     {
         let sc = State::critical_point(
             eos,
-            None,
+            (),
             critical_temperature,
             None,
             SolverOptions::default(),

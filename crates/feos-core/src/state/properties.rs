@@ -20,11 +20,11 @@ where
         let ideal_gas = || {
             quantity::ad::gradient_copy(
                 partial2(
-                    |n, &t, &v| self.eos.ideal_gas_helmholtz_energy(t, v, &n),
+                    |n: Dimensionless<_>, &t, &v| self.eos.ideal_gas_helmholtz_energy(t, v, &n),
                     &self.temperature,
-                    &self.volume,
+                    &self.molar_volume,
                 ),
-                &self.moles,
+                &Dimensionless::new(self.molefracs.clone()),
             )
             .1
         };
@@ -37,10 +37,15 @@ where
         let ideal_gas = || {
             quantity::ad::partial_hessian_copy(
                 partial(
-                    |(n, t), &v| self.eos.ideal_gas_helmholtz_energy(t, v, &n),
-                    &self.volume,
+                    |(n, t): (Dimensionless<_>, _), &v| {
+                        self.eos.ideal_gas_helmholtz_energy(t, v, &n)
+                    },
+                    &self.molar_volume,
                 ),
-                (&self.moles, self.temperature),
+                (
+                    &Dimensionless::new(self.molefracs.clone()),
+                    self.temperature,
+                ),
             )
             .3
         };
@@ -49,7 +54,7 @@ where
 
     /// Molar isochoric heat capacity: $c_v=\left(\frac{\partial u}{\partial T}\right)_{V,N_i}$
     pub fn molar_isochoric_heat_capacity(&self, contributions: Contributions) -> MolarEntropy<D> {
-        self.temperature * self.ds_dt(contributions) / self.total_moles
+        self.temperature * self.ds_dt(contributions)
     }
 
     /// Partial derivative of the molar isochoric heat capacity w.r.t. temperature: $\left(\frac{\partial c_V}{\partial T}\right)_{V,N_i}$
@@ -57,8 +62,7 @@ where
         &self,
         contributions: Contributions,
     ) -> <MolarEntropy<D> as Div<Temperature<D>>>::Output {
-        (self.temperature * self.d2s_dt2(contributions) + self.ds_dt(contributions))
-            / self.total_moles
+        self.temperature * self.d2s_dt2(contributions) + self.ds_dt(contributions)
     }
 
     /// Molar isobaric heat capacity: $c_p=\left(\frac{\partial h}{\partial T}\right)_{p,N_i}$
@@ -66,7 +70,7 @@ where
         match contributions {
             Contributions::Residual => self.residual_molar_isobaric_heat_capacity(),
             _ => {
-                self.temperature / self.total_moles
+                self.temperature
                     * (self.ds_dt(contributions)
                         - (self.dp_dt(contributions) * self.dp_dt(contributions))
                             / self.dp_dv(contributions))
@@ -76,13 +80,18 @@ where
 
     /// Entropy: $S=-\left(\frac{\partial A}{\partial T}\right)_{V,N_i}$
     pub fn entropy(&self, contributions: Contributions) -> Entropy<D> {
-        let residual = || self.residual_entropy();
+        self.molar_entropy(contributions) * self.total_moles()
+    }
+
+    /// Molar entropy: $s=\frac{S}{N}$
+    pub fn molar_entropy(&self, contributions: Contributions) -> MolarEntropy<D> {
+        let residual = || self.residual_molar_entropy();
         let ideal_gas = || {
             -quantity::ad::first_derivative(
                 partial2(
                     |t, &v, n| self.eos.ideal_gas_helmholtz_energy(t, v, n),
-                    &self.volume,
-                    &self.moles,
+                    &self.molar_volume,
+                    &self.molefracs,
                 ),
                 self.temperature,
             )
@@ -91,29 +100,24 @@ where
         Self::contributions(ideal_gas, residual, contributions)
     }
 
-    /// Molar entropy: $s=\frac{S}{N}$
-    pub fn molar_entropy(&self, contributions: Contributions) -> MolarEntropy<D> {
-        self.entropy(contributions) / self.total_moles
-    }
-
     /// Partial molar entropy: $s_i=\left(\frac{\partial S}{\partial N_i}\right)_{T,p,N_j}$
     pub fn partial_molar_entropy(&self) -> MolarEntropy<OVector<D, N>> {
         let c = Contributions::Total;
-        -(self.dmu_dt(c) + self.dp_dni(c) * (self.dp_dt(c) / self.dp_dv(c)))
+        -(self.dmu_dt(c) + self.n_dp_dni(c) * (self.dp_dt(c) / self.dp_dv(c)))
     }
 
-    /// Partial derivative of the entropy w.r.t. temperature: $\left(\frac{\partial S}{\partial T}\right)_{V,N_i}$
+    /// Partial derivative of the molar entropy w.r.t. temperature: $\left(\frac{\partial s}{\partial T}\right)_{V,N_i}$
     pub fn ds_dt(
         &self,
         contributions: Contributions,
-    ) -> <Entropy<D> as Div<Temperature<D>>>::Output {
+    ) -> <MolarEntropy<D> as Div<Temperature<D>>>::Output {
         let residual = || self.ds_res_dt();
         let ideal_gas = || {
             -quantity::ad::second_derivative(
                 partial2(
                     |t, &v, n| self.eos.ideal_gas_helmholtz_energy(t, v, n),
-                    &self.volume,
-                    &self.moles,
+                    &self.molar_volume,
+                    &self.molefracs,
                 ),
                 self.temperature,
             )
@@ -122,18 +126,18 @@ where
         Self::contributions(ideal_gas, residual, contributions)
     }
 
-    /// Second partial derivative of the entropy w.r.t. temperature: $\left(\frac{\partial^2 S}{\partial T^2}\right)_{V,N_i}$
+    /// Second partial derivative of the molar entropy w.r.t. temperature: $\left(\frac{\partial^2 s}{\partial T^2}\right)_{V,N_i}$
     pub fn d2s_dt2(
         &self,
         contributions: Contributions,
-    ) -> <<Entropy<D> as Div<Temperature<D>>>::Output as Div<Temperature<D>>>::Output {
+    ) -> <<MolarEntropy<D> as Div<Temperature<D>>>::Output as Div<Temperature<D>>>::Output {
         let residual = || self.d2s_res_dt2();
         let ideal_gas = || {
             -quantity::ad::third_derivative(
                 partial2(
                     |t, &v, n| self.eos.ideal_gas_helmholtz_energy(t, v, n),
-                    &self.volume,
-                    &self.moles,
+                    &self.molar_volume,
+                    &self.molefracs,
                 ),
                 self.temperature,
             )
@@ -144,14 +148,14 @@ where
 
     /// Enthalpy: $H=A+TS+pV$
     pub fn enthalpy(&self, contributions: Contributions) -> Energy<D> {
-        self.temperature * self.entropy(contributions)
-            + self.helmholtz_energy(contributions)
-            + self.pressure(contributions) * self.volume
+        self.molar_enthalpy(contributions) * self.total_moles()
     }
 
     /// Molar enthalpy: $h=\frac{H}{N}$
     pub fn molar_enthalpy(&self, contributions: Contributions) -> MolarEnergy<D> {
-        self.enthalpy(contributions) / self.total_moles
+        self.temperature * self.molar_entropy(contributions)
+            + self.molar_helmholtz_energy(contributions)
+            + self.pressure(contributions) * self.molar_volume
     }
 
     /// Partial molar enthalpy: $h_i=\left(\frac{\partial H}{\partial N_i}\right)_{T,p,N_j}$
@@ -163,13 +167,18 @@ where
 
     /// Helmholtz energy: $A$
     pub fn helmholtz_energy(&self, contributions: Contributions) -> Energy<D> {
-        let residual = || self.residual_helmholtz_energy();
+        self.molar_helmholtz_energy(contributions) * self.total_moles()
+    }
+
+    /// Molar Helmholtz energy: $a=\frac{A}{N}$
+    pub fn molar_helmholtz_energy(&self, contributions: Contributions) -> MolarEnergy<D> {
+        let residual = || self.residual_molar_helmholtz_energy();
         let ideal_gas = || {
             quantity::ad::zeroth_derivative(
                 partial2(
                     |t, &v, n| self.eos.ideal_gas_helmholtz_energy(t, v, n),
-                    &self.volume,
-                    &self.moles,
+                    &self.molar_volume,
+                    &self.molefracs,
                 ),
                 self.temperature,
             )
@@ -177,43 +186,40 @@ where
         Self::contributions(ideal_gas, residual, contributions)
     }
 
-    /// Molar Helmholtz energy: $a=\frac{A}{N}$
-    pub fn molar_helmholtz_energy(&self, contributions: Contributions) -> MolarEnergy<D> {
-        self.helmholtz_energy(contributions) / self.total_moles
-    }
-
     /// Internal energy: $U=A+TS$
     pub fn internal_energy(&self, contributions: Contributions) -> Energy<D> {
-        self.temperature * self.entropy(contributions) + self.helmholtz_energy(contributions)
+        self.molar_internal_energy(contributions) * self.total_moles()
     }
 
     /// Molar internal energy: $u=\frac{U}{N}$
     pub fn molar_internal_energy(&self, contributions: Contributions) -> MolarEnergy<D> {
-        self.internal_energy(contributions) / self.total_moles
+        self.temperature * self.molar_entropy(contributions)
+            + self.molar_helmholtz_energy(contributions)
     }
 
     /// Gibbs energy: $G=A+pV$
     pub fn gibbs_energy(&self, contributions: Contributions) -> Energy<D> {
-        self.pressure(contributions) * self.volume + self.helmholtz_energy(contributions)
+        self.molar_gibbs_energy(contributions) * self.total_moles()
     }
 
     /// Molar Gibbs energy: $g=\frac{G}{N}$
     pub fn molar_gibbs_energy(&self, contributions: Contributions) -> MolarEnergy<D> {
-        self.gibbs_energy(contributions) / self.total_moles
+        self.pressure(contributions) * self.molar_volume
+            + self.molar_helmholtz_energy(contributions)
     }
 
     /// Joule Thomson coefficient: $\mu_{JT}=\left(\frac{\partial T}{\partial p}\right)_{H,N_i}$
     pub fn joule_thomson(&self) -> <Temperature<D> as Div<Pressure<D>>>::Output {
         let c = Contributions::Total;
-        -(self.volume + self.temperature * self.dp_dt(c) / self.dp_dv(c))
-            / (self.total_moles * self.molar_isobaric_heat_capacity(c))
+        -(self.molar_volume + self.temperature * self.dp_dt(c) / self.dp_dv(c))
+            / self.molar_isobaric_heat_capacity(c)
     }
 
     /// Isentropic compressibility: $\kappa_s=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{S,N_i}$
     pub fn isentropic_compressibility(&self) -> InvP<D> {
         let c = Contributions::Total;
         -self.molar_isochoric_heat_capacity(c)
-            / (self.molar_isobaric_heat_capacity(c) * self.dp_dv(c) * self.volume)
+            / (self.molar_isobaric_heat_capacity(c) * self.dp_dv(c) * self.molar_volume)
     }
 
     /// Isenthalpic compressibility: $\kappa_H=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{H,N_i}$
@@ -224,7 +230,7 @@ where
     /// Thermal expansivity: $\alpha_p=-\frac{1}{V}\left(\frac{\partial V}{\partial T}\right)_{p,N_i}$
     pub fn thermal_expansivity(&self) -> InvT<D> {
         let c = Contributions::Total;
-        -self.dp_dt(c) / self.dp_dv(c) / self.volume
+        -self.dp_dt(c) / (self.dp_dv(c) * self.molar_volume)
     }
 
     /// Grueneisen parameter: $\phi=V\left(\frac{\partial p}{\partial U}\right)_{V,n_i}=\frac{v}{c_v}\left(\frac{\partial p}{\partial T}\right)_{v,n_i}=\frac{\rho}{T}\left(\frac{\partial T}{\partial \rho}\right)_{s, n_i}$
@@ -251,11 +257,7 @@ where
             ));
         }
         if let Contributions::Residual | Contributions::Total = contributions {
-            res.extend(
-                self.eos
-                    .lift()
-                    .molar_helmholtz_energy_contributions(t, v, &x),
-            );
+            res.extend(self.eos.lift().helmholtz_energy_contributions(t, v, &x));
         }
         res.into_iter()
             .map(|(s, v)| (s, MolarEnergy::from_reduced(v.eps)))

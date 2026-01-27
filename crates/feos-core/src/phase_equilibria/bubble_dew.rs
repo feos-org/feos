@@ -11,7 +11,7 @@ use nalgebra::{DMatrix, DVector, DefaultAllocator, Dim, Dyn, OVector, U1};
 use ndarray::Array1;
 use num_dual::linalg::LU;
 use num_dual::{DualNum, DualStruct, Gradients};
-use quantity::{Density, Dimensionless, Moles, Pressure, Quantity, RGAS, SIUnit, Temperature};
+use quantity::{Density, Dimensionless, Pressure, Quantity, RGAS, SIUnit, Temperature};
 
 const MAX_ITER_INNER: usize = 5;
 const TOL_INNER: f64 = 1e-9;
@@ -324,7 +324,7 @@ where
                 )
             };
         }
-        let state1 = State::new_intensive(
+        let state1 = State::new(
             eos,
             Temperature::from_reduced(t),
             Density::from_reduced(molar_volume.recip()),
@@ -332,11 +332,11 @@ where
         )?;
         let rho2_total = rho2.sum();
         let x2 = rho2 / rho2_total;
-        let state2 = State::new_intensive(
+        let state2 = State::new(
             eos,
             Temperature::from_reduced(t),
             Density::from_reduced(rho2_total),
-            &x2,
+            x2,
         )?;
 
         Ok(PhaseEquilibrium(if bubble {
@@ -569,8 +569,8 @@ where
             } else {
                 let mut t = temperature.into_reduced();
                 let mut p = pressure.into_reduced();
-                let mut molar_volume = state1.density.into_reduced().recip();
-                let mut rho2 = state2.partial_density.to_reduced();
+                let mut molar_volume = state1.molar_volume.into_reduced();
+                let mut rho2 = state2.partial_density().to_reduced();
                 let err = if iterate_p {
                     Self::newton_step_t(
                         &state1.eos,
@@ -594,8 +594,19 @@ where
                 };
                 *temperature = Temperature::from_reduced(t);
                 *pressure = Pressure::from_reduced(p);
-                state1.density = Density::from_reduced(molar_volume.recip());
-                state2.partial_density = Density::from_reduced(rho2);
+                state1 = State::new(
+                    &state1.eos,
+                    *temperature,
+                    Density::from_reduced(molar_volume.recip()),
+                    molefracs_spec,
+                )?;
+                let density = rho2.sum();
+                state2 = State::new(
+                    &state2.eos,
+                    *temperature,
+                    Density::from_reduced(density),
+                    rho2 / density,
+                )?;
                 Ok(err)
             }?;
 
@@ -618,7 +629,7 @@ where
             );
             Ok((
                 state1.density.into_reduced().recip(),
-                state2.partial_density.to_reduced(),
+                state2.partial_density().to_reduced(),
             ))
         } else {
             // not converged, return error
@@ -743,7 +754,7 @@ where
         liquid_molefracs: &OVector<f64, N>,
     ) -> FeosResult<(Pressure, OVector<f64, N>)> {
         let density = 0.75 * Density::from_reduced(eos.compute_max_density(liquid_molefracs));
-        let liquid = State::new_intensive(eos, temperature, density, liquid_molefracs)?;
+        let liquid = State::new(eos, temperature, density, liquid_molefracs)?;
         let v_l = liquid.partial_molar_volume();
         let p_l = liquid.pressure(Contributions::Total);
         let mu_l = liquid.residual_chemical_potential();
@@ -767,7 +778,7 @@ where
         let mut x = vapor_molefracs.clone();
         for _ in 0..5 {
             let density = Density::from_reduced(0.75 * eos.compute_max_density(&x));
-            let liquid = State::new_intensive(eos, temperature, density, &x)?;
+            let liquid = State::new(eos, temperature, density, x)?;
             let v_l = liquid.partial_molar_volume();
             let p_l = liquid.pressure(Contributions::Total);
             let mu_l = liquid.residual_chemical_potential();
@@ -795,7 +806,7 @@ where
         temperature: Temperature,
         molefracs: &OVector<f64, N>,
     ) -> FeosResult<Pressure> {
-        let [sp_v, sp_l] = State::spinodal(eos, temperature, Some(molefracs), Default::default())?;
+        let [sp_v, sp_l] = State::spinodal(eos, temperature, molefracs, Default::default())?;
         let pv = sp_v.pressure(Contributions::Total);
         let pl = sp_l.pressure(Contributions::Total);
         Ok(0.5 * (Pressure::from_reduced(0.0).max(pl) + pv))
@@ -809,7 +820,7 @@ where
         vapor_molefracs: Option<&OVector<f64, N>>,
     ) -> FeosResult<[State<E, N>; 2]> {
         let liquid_state =
-            State::new_xpt(eos, temperature, pressure, liquid_molefracs, Some(Liquid))?;
+            State::new_npt(eos, temperature, pressure, liquid_molefracs, Some(Liquid))?;
         let xv = match vapor_molefracs {
             Some(xv) => xv.clone(),
             None => liquid_state
@@ -817,7 +828,7 @@ where
                 .map(f64::exp)
                 .component_mul(liquid_molefracs),
         };
-        let vapor_state = State::new_xpt(eos, temperature, pressure, &xv, Some(Vapor))?;
+        let vapor_state = State::new_npt(eos, temperature, pressure, xv, Some(Vapor))?;
         Ok([liquid_state, vapor_state])
     }
 
@@ -828,13 +839,7 @@ where
         vapor_molefracs: &OVector<f64, N>,
         liquid_molefracs: Option<&OVector<f64, N>>,
     ) -> FeosResult<[State<E, N>; 2]> {
-        let vapor_state = State::new_npt(
-            eos,
-            temperature,
-            pressure,
-            &Moles::from_reduced(vapor_molefracs.clone()),
-            Some(Vapor),
-        )?;
+        let vapor_state = State::new_npt(eos, temperature, pressure, vapor_molefracs, Some(Vapor))?;
         let xl = match liquid_molefracs {
             Some(xl) => xl.clone(),
             None => {
@@ -842,13 +847,13 @@ where
                     .ln_phi()
                     .map(f64::exp)
                     .component_mul(vapor_molefracs);
-                let liquid_state = State::new_xpt(eos, temperature, pressure, &xl, Some(Liquid))?;
+                let liquid_state = State::new_npt(eos, temperature, pressure, xl, Some(Liquid))?;
                 (vapor_state.ln_phi() - liquid_state.ln_phi())
                     .map(f64::exp)
                     .component_mul(vapor_molefracs)
             }
         };
-        let liquid_state = State::new_xpt(eos, temperature, pressure, &xl, Some(Liquid))?;
+        let liquid_state = State::new_npt(eos, temperature, pressure, xl, Some(Liquid))?;
         Ok([vapor_state, liquid_state])
     }
 
@@ -857,20 +862,20 @@ where
         pressure: Pressure,
         state1: &mut State<E, N>,
         state2: &mut State<E, N>,
-        moles_state2: Option<&Moles<OVector<f64, N>>>,
+        molefracs_state2: Option<&OVector<f64, N>>,
     ) -> FeosResult<()> {
         *state1 = State::new_npt(
             &state1.eos,
             temperature,
             pressure,
-            &state1.moles,
+            &state1.molefracs,
             Some(InitialDensity(state1.density)),
         )?;
         *state2 = State::new_npt(
             &state2.eos,
             temperature,
             pressure,
-            moles_state2.unwrap_or(&state2.moles),
+            molefracs_state2.unwrap_or(&state2.molefracs),
             Some(InitialDensity(state2.density)),
         )?;
         Ok(())
@@ -899,11 +904,11 @@ where
             "",
             ""
         );
-        *state2 = State::new_xpt(
+        *state2 = State::new_npt(
             &state2.eos,
             state2.temperature,
             state2.pressure(Contributions::Total),
-            &x2,
+            x2,
             Some(InitialDensity(state2.density)),
         )?;
         Ok(err_out)

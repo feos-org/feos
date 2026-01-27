@@ -87,7 +87,7 @@ where
     let (a_res, da_res) = first_derivative(
         |molar_volume| {
             eos.lift()
-                .residual_molar_helmholtz_energy(t, molar_volume, &x)
+                .residual_helmholtz_energy(t, molar_volume, &x)
         },
         molar_volume,
     );
