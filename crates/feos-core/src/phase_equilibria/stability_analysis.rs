@@ -91,7 +91,7 @@ where
             &self.eos,
             self.temperature,
             self.pressure(Contributions::Total),
-            &Moles::from_reduced(x_trial),
+            Moles::from_reduced(x_trial),
             Some(phase),
         )
     }
@@ -122,7 +122,7 @@ where
                     &trial.eos,
                     trial.temperature,
                     trial.pressure(Contributions::Total),
-                    &Moles::from_reduced(y),
+                    Moles::from_reduced(y),
                     Some(DensityInitialization::InitialDensity(trial.density)),
                 )?;
                 if (i > 4 && error > scaled_tol) || (tpd > tpd_old + 1E-05 && i > 2) {
@@ -166,9 +166,9 @@ where
         let (n, _) = di.shape_generic();
 
         // calculate residual and ideal hesse matrix
-        let mut hesse = (self.dln_phi_dnj() * Moles::from_reduced(1.0)).into_value();
+        let mut hesse = self.n_dln_phi_dnj() / self.total_moles().into_reduced();
         let lnphi = self.ln_phi();
-        let y = self.moles.to_reduced();
+        let y = self.moles().into_reduced();
         let ln_y = y.map(|y| if y > f64::EPSILON { y.ln() } else { 0.0 });
         let sq_y = y.map(f64::sqrt);
         let gradient = (&ln_y + &lnphi - di).component_mul(&sq_y);
@@ -228,7 +228,7 @@ where
                 &self.eos,
                 self.temperature,
                 self.pressure(Contributions::Total),
-                &Moles::from_reduced(y),
+                Moles::from_reduced(y),
                 Some(DensityInitialization::InitialDensity(self.density)),
             )?;
         }

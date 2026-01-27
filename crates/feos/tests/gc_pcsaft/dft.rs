@@ -3,7 +3,7 @@
 use approx::assert_relative_eq;
 use feos::gc_pcsaft::{GcPcSaft, GcPcSaftFunctional, GcPcSaftParameters};
 use feos_core::parameter::{ChemicalRecord, Identifier, IdentifierOption, SegmentRecord};
-use feos_core::{PhaseEquilibrium, State, StateBuilder, Verbosity};
+use feos_core::{PhaseEquilibrium, State, Verbosity};
 use feos_dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
 use feos_dft::interface::PlanarInterface;
 use feos_dft::{DFTSolver, Geometry};
@@ -158,7 +158,7 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 2048;
-    let tc = State::critical_point(&&func, None, None, None, Default::default())?.temperature;
+    let tc = State::critical_point(&&func, (), None, None, Default::default())?.temperature;
     let vle = PhaseEquilibrium::pure(&&func, t, None, Default::default())?;
     let profile = PlanarInterface::from_tanh(&vle, points, w, tc, false).solve(None)?;
     println!(
@@ -216,10 +216,7 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
     let solver = DFTSolver::new(Some(Verbosity::Iter))
         .picard_iteration(None, None, Some(1e-5), Some(0.05))
         .anderson_mixing(None, None, None, None, None);
-    let bulk = StateBuilder::new(&func)
-        .temperature(t)
-        .pressure(5.0 * BAR)
-        .build()?;
+    let bulk = State::new_npt(&func, t, 5.0 * BAR, (), None)?;
     Pore1D::new(
         Geometry::Cartesian,
         20.0 * ANGSTROM,
@@ -252,7 +249,7 @@ fn test_dft_newton() -> Result<(), Box<dyn Error>> {
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 512;
-    let tc = State::critical_point(&&func, None, None, None, Default::default())?.temperature;
+    let tc = State::critical_point(&&func, (), None, None, Default::default())?.temperature;
     let vle = PhaseEquilibrium::pure(&&func, t, None, Default::default())?;
     let solver = DFTSolver::new(Some(Verbosity::Iter))
         .picard_iteration(None, Some(10), None, None)

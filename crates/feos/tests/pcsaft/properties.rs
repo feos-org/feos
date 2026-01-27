@@ -1,7 +1,7 @@
 use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::IdentifierOption;
-use feos_core::{Residual, StateBuilder};
+use feos_core::{DensityInitialization::Vapor, Residual, State};
 use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
@@ -18,18 +18,8 @@ fn test_dln_phi_dp() -> Result<(), Box<dyn Error>> {
     let t = 300.0 * KELVIN;
     let p = BAR;
     let h = 1e-1 * PASCAL;
-    let s = StateBuilder::new(&&saft)
-        .temperature(t)
-        .pressure(p)
-        .molefracs(&dvector![0.5, 0.5])
-        .vapor()
-        .build()?;
-    let sh = StateBuilder::new(&&saft)
-        .temperature(t)
-        .pressure(p + h)
-        .molefracs(&dvector![0.5, 0.5])
-        .vapor()
-        .build()?;
+    let s = State::new_npt(&&saft, t, p, dvector![0.5, 0.5], Some(Vapor))?;
+    let sh = State::new_npt(&&saft, t, p + h, dvector![0.5, 0.5], Some(Vapor))?;
 
     let ln_phi = s.ln_phi()[0];
     let ln_phi_h = sh.ln_phi()[0];
@@ -48,7 +38,7 @@ fn test_virial_is_not_nan() -> Result<(), Box<dyn Error>> {
         IdentifierOption::Name,
     )?;
     let saft = &PcSaft::new(params);
-    let virial_b = saft.second_virial_coefficient(300.0 * KELVIN, &None);
+    let virial_b = saft.second_virial_coefficient(300.0 * KELVIN, ())?;
     assert!(!virial_b.is_nan());
     Ok(())
 }

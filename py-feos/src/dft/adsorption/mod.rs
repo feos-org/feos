@@ -1,9 +1,9 @@
 use super::PyDFTSolver;
-use crate::eos::{parse_molefracs, PyEquationOfState};
+use crate::PyVerbosity;
+use crate::eos::{Compositions, PyEquationOfState};
 use crate::error::PyFeosError;
 use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
-use crate::PyVerbosity;
 use feos_core::EquationOfState;
 use feos_dft::adsorption::{Adsorption, Adsorption1D, Adsorption3D};
 use nalgebra::DMatrix;
@@ -45,8 +45,8 @@ macro_rules! impl_adsorption_isotherm {
             ///     The pressures for which the profiles are calculated.
             /// pore : Pore
             ///     The pore parameters.
-            /// molefracs: numpy.ndarray[float], optional
-            ///     For a mixture, the molefracs of the bulk system.
+            /// composition : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float], optional
+            ///     The composition of the mixture.
             /// solver: DFTSolver, optional
             ///     Custom solver options.
             ///
@@ -55,14 +55,14 @@ macro_rules! impl_adsorption_isotherm {
             /// Adsorption
             ///
             #[staticmethod]
-            #[pyo3(text_signature = "(functional, temperature, pressure, pore, molefracs=None, solver=None)")]
-            #[pyo3(signature = (functional, temperature, pressure, pore, molefracs=None, solver=None))]
+            #[pyo3(text_signature = "(functional, temperature, pressure, pore, composition=None, solver=None)")]
+            #[pyo3(signature = (functional, temperature, pressure, pore, composition=None, solver=None))]
             fn adsorption_isotherm(
                 functional: &PyEquationOfState,
                 temperature: Temperature,
                 pressure: Pressure<Array1<f64>>,
                 pore: &$py_pore,
-                molefracs: Option<PyReadonlyArray1<'_, f64>>,
+                composition: Option<&Bound<'_, PyAny>>,
                 solver: Option<PyDFTSolver>,
             ) -> PyResult<Self> {
                 Ok(Self(Adsorption::adsorption_isotherm(
@@ -70,7 +70,7 @@ macro_rules! impl_adsorption_isotherm {
                     temperature,
                     &pressure,
                     &pore.0,
-                    &parse_molefracs(molefracs),
+                    Compositions::try_from(composition)?,
                     solver.map(|s| s.0).as_ref(),
                 ).map_err(PyFeosError::from)?))
             }
@@ -89,8 +89,8 @@ macro_rules! impl_adsorption_isotherm {
             ///     The pressures for which the profiles are calculated.
             /// pore : Pore
             ///     The pore parameters.
-            /// molefracs: numpy.ndarray[float], optional
-            ///     For a mixture, the molefracs of the bulk system.
+            /// composition : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float], optional
+            ///     The composition of the mixture.
             /// solver: DFTSolver, optional
             ///     Custom solver options.
             ///
@@ -99,14 +99,14 @@ macro_rules! impl_adsorption_isotherm {
             /// Adsorption
             ///
             #[staticmethod]
-            #[pyo3(text_signature = "(functional, temperature, pressure, pore, molefracs=None, solver=None)")]
-            #[pyo3(signature = (functional, temperature, pressure, pore, molefracs=None, solver=None))]
+            #[pyo3(text_signature = "(functional, temperature, pressure, pore, composition=None, solver=None)")]
+            #[pyo3(signature = (functional, temperature, pressure, pore, composition=None, solver=None))]
             fn desorption_isotherm(
                 functional: &PyEquationOfState,
                 temperature: Temperature,
                 pressure: Pressure<Array1<f64>>,
                 pore: &$py_pore,
-                molefracs: Option<PyReadonlyArray1<'_, f64>>,
+                composition: Option<&Bound<'_, PyAny>>,
                 solver: Option<PyDFTSolver>,
             ) -> PyResult<Self> {
                 Ok(Self(Adsorption::desorption_isotherm(
@@ -114,7 +114,7 @@ macro_rules! impl_adsorption_isotherm {
                     temperature,
                     &pressure,
                     &pore.0,
-                    &parse_molefracs(molefracs),
+                    Compositions::try_from(composition)?,
                     solver.map(|s| s.0).as_ref(),
                 ).map_err(PyFeosError::from)?))
             }
@@ -136,8 +136,8 @@ macro_rules! impl_adsorption_isotherm {
             ///     The pressures for which the profiles are calculated.
             /// pore : Pore
             ///     The pore parameters.
-            /// molefracs: numpy.ndarray[float], optional
-            ///     For a mixture, the molefracs of the bulk system.
+            /// composition : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float], optional
+            ///     The composition of the mixture.
             /// solver: DFTSolver, optional
             ///     Custom solver options.
             ///
@@ -146,14 +146,14 @@ macro_rules! impl_adsorption_isotherm {
             /// Adsorption
             ///
             #[staticmethod]
-            #[pyo3(text_signature = "(functional, temperature, pressure, pore, molefracs=None, solver=None)")]
-            #[pyo3(signature = (functional, temperature, pressure, pore, molefracs=None, solver=None))]
+            #[pyo3(text_signature = "(functional, temperature, pressure, pore, composition=None, solver=None)")]
+            #[pyo3(signature = (functional, temperature, pressure, pore, composition=None, solver=None))]
             fn equilibrium_isotherm(
                 functional: &PyEquationOfState,
                 temperature: Temperature,
                 pressure: Pressure<Array1<f64>>,
                 pore: &$py_pore,
-                molefracs: Option<PyReadonlyArray1<'_, f64>>,
+                composition: Option<&Bound<'_, PyAny>>,
                 solver: Option<PyDFTSolver>,
             ) -> PyResult<Self> {
                 Ok(Self(Adsorption::equilibrium_isotherm(
@@ -161,7 +161,7 @@ macro_rules! impl_adsorption_isotherm {
                     temperature,
                     &pressure,
                     &pore.0,
-                    &parse_molefracs(molefracs),
+                    Compositions::try_from(composition)?,
                     solver.map(|s| s.0).as_ref(),
                 ).map_err(PyFeosError::from)?))
             }
@@ -180,8 +180,8 @@ macro_rules! impl_adsorption_isotherm {
             ///     A suitable upper limit for the pressure.
             /// pore : Pore
             ///     The pore parameters.
-            /// molefracs: numpy.ndarray[float], optional
-            ///     For a mixture, the molefracs of the bulk system.
+            /// composition : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float], optional
+            ///     The composition of the mixture.
             /// solver: DFTSolver, optional
             ///     Custom solver options.
             /// max_iter : int, optional
@@ -196,8 +196,8 @@ macro_rules! impl_adsorption_isotherm {
             /// Adsorption
             ///
             #[staticmethod]
-            #[pyo3(text_signature = "(functional, temperature, p_min, p_max, pore, molefracs=None, solver=None, max_iter=None, tol=None, verbosity=None)")]
-            #[pyo3(signature = (functional, temperature, p_min, p_max, pore, molefracs=None, solver=None, max_iter=None, tol=None, verbosity=None))]
+            #[pyo3(text_signature = "(functional, temperature, p_min, p_max, pore, composition=None, solver=None, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(signature = (functional, temperature, p_min, p_max, pore, composition=None, solver=None, max_iter=None, tol=None, verbosity=None))]
             #[expect(clippy::too_many_arguments)]
             fn phase_equilibrium(
                 functional: &PyEquationOfState,
@@ -205,7 +205,7 @@ macro_rules! impl_adsorption_isotherm {
                 p_min: Pressure,
                 p_max: Pressure,
                 pore: &$py_pore,
-                molefracs: Option<PyReadonlyArray1<'_, f64>>,
+                composition: Option<&Bound<'_, PyAny>>,
                 solver: Option<PyDFTSolver>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
@@ -217,7 +217,7 @@ macro_rules! impl_adsorption_isotherm {
                     p_min,
                     p_max,
                     &pore.0,
-                    &parse_molefracs(molefracs),
+                    Compositions::try_from(composition)?,
                     solver.map(|s| s.0).as_ref(),
                     (max_iter, tol, verbosity.map(|v| v.into())).into(),
                 ).map_err(PyFeosError::from)?))

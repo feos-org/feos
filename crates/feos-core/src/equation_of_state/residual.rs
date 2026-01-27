@@ -1,6 +1,7 @@
-use crate::{FeosError, FeosResult, ReferenceSystem, state::StateHD};
-use nalgebra::SVector;
-use nalgebra::{DVector, DefaultAllocator, Dim, Dyn, OMatrix, OVector, U1, allocator::Allocator};
+use crate::state::StateHD;
+use crate::{Composition, FeosResult, ReferenceSystem};
+use nalgebra::allocator::Allocator;
+use nalgebra::{DVector, DefaultAllocator, Dim, Dyn, OMatrix, OVector, SVector, U1, U2};
 use num_dual::{
     DualNum, Gradients, hessian, partial, partial2, second_derivative, third_derivative,
 };
@@ -143,74 +144,42 @@ where
             .fold(D::zero(), |acc, (_, a)| acc + a)
     }
 
-    /// Evaluate the molar Helmholtz energy of each individual contribution
-    /// and return them together with a string representation of the contribution.
-    fn molar_helmholtz_energy_contributions(
+    /// Evaluate the Helmholtz energy of each individual contribution and return them
+    /// together with a string representation of the contribution.
+    fn helmholtz_energy_contributions(
         &self,
         temperature: D,
-        molar_volume: D,
-        molefracs: &OVector<D, N>,
+        volume: D,
+        moles: &OVector<D, N>,
     ) -> Vec<(&'static str, D)> {
-        let state = StateHD::new(temperature, molar_volume, molefracs);
+        let state = StateHD::new(temperature, volume, moles);
         self.reduced_helmholtz_energy_density_contributions(&state)
             .into_iter()
-            .map(|(n, f)| (n, f * temperature * molar_volume))
+            .map(|(n, f)| (n, f * temperature * volume))
             .collect()
-    }
-
-    /// Evaluate the residual molar Helmholtz energy $a^\mathrm{res}$.
-    fn residual_molar_helmholtz_energy(
-        &self,
-        temperature: D,
-        molar_volume: D,
-        molefracs: &OVector<D, N>,
-    ) -> D {
-        let state = StateHD::new(temperature, molar_volume, molefracs);
-        self.reduced_residual_helmholtz_energy_density(&state) * temperature * molar_volume
     }
 
     /// Evaluate the residual Helmholtz energy $A^\mathrm{res}$.
     fn residual_helmholtz_energy(&self, temperature: D, volume: D, moles: &OVector<D, N>) -> D {
-        let state = StateHD::new_density(temperature, &(moles / volume));
+        let state = StateHD::new(temperature, volume, moles);
         self.reduced_residual_helmholtz_energy_density(&state) * temperature * volume
     }
 
-    /// Evaluate the residual Helmholtz energy $A^\mathrm{res}$.
-    fn residual_helmholtz_energy_unit(
+    /// Evaluate the residual molar Helmholtz energy $a^\mathrm{res}$.
+    ///
+    /// The molefracs are treated as independently variable in order to
+    /// calculate derivatives like the chemical potential.
+    fn residual_molar_helmholtz_energy(
         &self,
         temperature: Temperature<D>,
-        volume: Volume<D>,
-        moles: &Moles<OVector<D, N>>,
-    ) -> Energy<D> {
-        let temperature = temperature.into_reduced();
-        let total_moles = moles.sum();
-        let molar_volume = (volume / total_moles).into_reduced();
-        let molefracs = moles / total_moles;
-        let state = StateHD::new(temperature, molar_volume, &molefracs);
-        Pressure::from_reduced(self.reduced_residual_helmholtz_energy_density(&state) * temperature)
-            * volume
-    }
-
-    /// Check if the provided optional molar concentration is consistent with the
-    /// equation of state.
-    ///
-    /// In general, the number of elements in `molefracs` needs to match the number
-    /// of components of the equation of state. For a pure component, however,
-    /// no molefracs need to be provided.
-    fn validate_molefracs(&self, molefracs: &Option<OVector<D, N>>) -> FeosResult<OVector<D, N>> {
-        let l = molefracs.as_ref().map_or(1, |m| m.len());
-        if self.components() == l {
-            match molefracs {
-                Some(m) => Ok(m.clone()),
-                None => Ok(OVector::from_element_generic(
-                    N::from_usize(1),
-                    U1,
-                    D::one(),
-                )),
-            }
-        } else {
-            Err(FeosError::IncompatibleComponents(self.components(), l))
-        }
+        molar_volume: MolarVolume<D>,
+        molefracs: &OVector<D, N>,
+    ) -> MolarEnergy<D> {
+        MolarEnergy::from_reduced(self.residual_helmholtz_energy(
+            temperature.into_reduced(),
+            molar_volume.into_reduced(),
+            molefracs,
+        ))
     }
 
     /// Calculate the maximum density.
@@ -219,18 +188,18 @@ where
     /// equilibria and other iterations. It is not explicitly meant to
     /// be a mathematical limit for the density (if those exist in the
     /// equation of state anyways).
-    fn max_density(&self, molefracs: &Option<OVector<D, N>>) -> FeosResult<Density<D>> {
-        let x = self.validate_molefracs(molefracs)?;
+    fn max_density<X: Composition<D, N>>(&self, composition: X) -> FeosResult<Density<D>> {
+        let (x, _) = composition.into_molefracs(self)?;
         Ok(Density::from_reduced(self.compute_max_density(&x)))
     }
 
     /// Calculate the second virial coefficient $B(T)$
-    fn second_virial_coefficient(
+    fn second_virial_coefficient<X: Composition<D, N>>(
         &self,
         temperature: Temperature<D>,
-        molefracs: &Option<OVector<D, N>>,
-    ) -> MolarVolume<D> {
-        let x = self.validate_molefracs(molefracs).unwrap();
+        composition: X,
+    ) -> FeosResult<MolarVolume<D>> {
+        let (x, _) = composition.into_molefracs(self)?;
         let (_, _, d2f) = second_derivative(
             partial2(
                 |rho, &t, x| {
@@ -244,16 +213,16 @@ where
             D::from(0.0),
         );
 
-        Quantity::from_reduced(d2f * 0.5)
+        Ok(Quantity::from_reduced(d2f * 0.5))
     }
 
     /// Calculate the third virial coefficient $C(T)$
-    fn third_virial_coefficient(
+    fn third_virial_coefficient<X: Composition<D, N>>(
         &self,
         temperature: Temperature<D>,
-        molefracs: &Option<OVector<D, N>>,
-    ) -> Quot<MolarVolume<D>, Density<D>> {
-        let x = self.validate_molefracs(molefracs).unwrap();
+        composition: X,
+    ) -> FeosResult<Quot<MolarVolume<D>, Density<D>>> {
+        let (x, _) = composition.into_molefracs(self)?;
         let (_, _, _, d3f) = third_derivative(
             partial2(
                 |rho, &t, x| {
@@ -267,36 +236,43 @@ where
             D::from(0.0),
         );
 
-        Quantity::from_reduced(d3f / 3.0)
+        Ok(Quantity::from_reduced(d3f / 3.0))
     }
 
     /// Calculate the temperature derivative of the second virial coefficient $B'(T)$
-    fn second_virial_coefficient_temperature_derivative(
+    fn second_virial_coefficient_temperature_derivative<X: Composition<D, N>>(
         &self,
         temperature: Temperature<D>,
-        molefracs: &Option<OVector<D, N>>,
-    ) -> Quot<MolarVolume<D>, Temperature<D>> {
+        composition: X,
+    ) -> FeosResult<Quot<MolarVolume<D>, Temperature<D>>> {
+        let (molefracs, _) = composition.into_molefracs(self)?;
         let (_, db_dt) = first_derivative(
             partial(
-                |t, x| self.lift().second_virial_coefficient(t, x),
-                molefracs,
+                |t, x: &OVector<_, _>| self.lift().second_virial_coefficient(t, x).unwrap(),
+                &molefracs,
             ),
             temperature,
         );
-        db_dt
+        Ok(db_dt)
     }
 
     /// Calculate the temperature derivative of the third virial coefficient $C'(T)$
-    fn third_virial_coefficient_temperature_derivative(
+    #[expect(clippy::type_complexity)]
+    fn third_virial_coefficient_temperature_derivative<X: Composition<D, N>>(
         &self,
         temperature: Temperature<D>,
-        molefracs: &Option<OVector<D, N>>,
-    ) -> Quot<Quot<MolarVolume<D>, Density<D>>, Temperature<D>> {
+        composition: X,
+    ) -> FeosResult<Quot<Quot<MolarVolume<D>, Density<D>>, Temperature<D>>> {
+        let (molefracs, _) = composition.into_molefracs(self)?;
         let (_, dc_dt) = first_derivative(
-            partial(|t, x| self.lift().third_virial_coefficient(t, x), molefracs),
+            partial(
+                // TODO: Fallible partial would be nice here...
+                |t, x: &OVector<_, _>| self.lift().third_virial_coefficient(t, x).unwrap(),
+                &molefracs,
+            ),
             temperature,
         );
-        dc_dt
+        Ok(dc_dt)
     }
 
     // The following methods are used in phase equilibrium algorithms
@@ -306,10 +282,7 @@ where
         let molar_volume = density.recip();
         let (a, da, d2a) = second_derivative(
             partial2(
-                |molar_volume, &t, x| {
-                    self.lift()
-                        .residual_molar_helmholtz_energy(t, molar_volume, x)
-                },
+                |molar_volume, &t, x| self.lift().residual_helmholtz_energy(t, molar_volume, x),
                 &temperature,
                 molefracs,
             ),
@@ -330,11 +303,11 @@ where
         molefracs: &OVector<D, N>,
     ) -> (D, D, D, D, D) {
         let molar_volume = density.recip();
-        let (a, da, d2a) = hessian::<_, _, _, nalgebra::U2, _>(
+        let (a, da, d2a) = hessian::<_, _, _, U2, _>(
             partial(
                 |vt: SVector<_, 2>, x: &OVector<_, N>| {
                     let [[v, t]] = vt.data.0;
-                    self.lift().residual_molar_helmholtz_energy(t, v, x)
+                    self.lift().residual_helmholtz_energy(t, v, x)
                 },
                 molefracs,
             ),
@@ -361,10 +334,7 @@ where
         let molar_volume = density.recip();
         let (_, da, d2a, d3a) = third_derivative(
             partial2(
-                |molar_volume, &t, x| {
-                    self.lift()
-                        .residual_molar_helmholtz_energy(t, molar_volume, x)
-                },
+                |molar_volume, &t, x| self.lift().residual_helmholtz_energy(t, molar_volume, x),
                 &temperature,
                 molefracs,
             ),
@@ -455,22 +425,22 @@ where
     fn viscosity_reference(
         &self,
         temperature: Temperature<D>,
-        volume: Volume<D>,
-        moles: &Moles<OVector<D, N>>,
+        molar_volume: MolarVolume<D>,
+        molefracs: &OVector<D, N>,
     ) -> Viscosity<D>;
     fn viscosity_correlation(&self, s_res: D, x: &OVector<D, N>) -> D;
     fn diffusion_reference(
         &self,
         temperature: Temperature<D>,
-        volume: Volume<D>,
-        moles: &Moles<OVector<D, N>>,
+        molar_volume: MolarVolume<D>,
+        molefracs: &OVector<D, N>,
     ) -> Diffusivity<D>;
     fn diffusion_correlation(&self, s_res: D, x: &OVector<D, N>) -> D;
     fn thermal_conductivity_reference(
         &self,
         temperature: Temperature<D>,
-        volume: Volume<D>,
-        moles: &Moles<OVector<D, N>>,
+        molar_volume: MolarVolume<D>,
+        molefracs: &OVector<D, N>,
     ) -> ThermalConductivity<D>;
     fn thermal_conductivity_correlation(&self, s_res: D, x: &OVector<D, N>) -> D;
 }
@@ -483,10 +453,11 @@ where
     fn viscosity_reference(
         &self,
         temperature: Temperature<D>,
-        volume: Volume<D>,
-        moles: &Moles<OVector<D, N>>,
+        molar_volume: MolarVolume<D>,
+        molefracs: &OVector<D, N>,
     ) -> Viscosity<D> {
-        self.deref().viscosity_reference(temperature, volume, moles)
+        self.deref()
+            .viscosity_reference(temperature, molar_volume, molefracs)
     }
     fn viscosity_correlation(&self, s_res: D, x: &OVector<D, N>) -> D {
         self.deref().viscosity_correlation(s_res, x)
@@ -494,10 +465,11 @@ where
     fn diffusion_reference(
         &self,
         temperature: Temperature<D>,
-        volume: Volume<D>,
-        moles: &Moles<OVector<D, N>>,
+        molar_volume: MolarVolume<D>,
+        molefracs: &OVector<D, N>,
     ) -> Diffusivity<D> {
-        self.deref().diffusion_reference(temperature, volume, moles)
+        self.deref()
+            .diffusion_reference(temperature, molar_volume, molefracs)
     }
     fn diffusion_correlation(&self, s_res: D, x: &OVector<D, N>) -> D {
         self.deref().diffusion_correlation(s_res, x)
@@ -505,11 +477,11 @@ where
     fn thermal_conductivity_reference(
         &self,
         temperature: Temperature<D>,
-        volume: Volume<D>,
-        moles: &Moles<OVector<D, N>>,
+        molar_volume: MolarVolume<D>,
+        molefracs: &OVector<D, N>,
     ) -> ThermalConductivity<D> {
         self.deref()
-            .thermal_conductivity_reference(temperature, volume, moles)
+            .thermal_conductivity_reference(temperature, molar_volume, molefracs)
     }
     fn thermal_conductivity_correlation(&self, s_res: D, x: &OVector<D, N>) -> D {
         self.deref().thermal_conductivity_correlation(s_res, x)

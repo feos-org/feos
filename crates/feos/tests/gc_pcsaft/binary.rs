@@ -30,9 +30,9 @@ fn test_binary() -> FeosResult<()> {
     #[cfg(feature = "dft")]
     let func = &GcPcSaftFunctional::new(parameters_func);
     let molefracs = dvector![0.5, 0.5];
-    let cp = State::critical_point(&eos, Some(&molefracs), None, None, Default::default())?;
+    let cp = State::critical_point(&eos, &molefracs, None, None, Default::default())?;
     #[cfg(feature = "dft")]
-    let cp_func = State::critical_point(&func, Some(&molefracs), None, None, Default::default())?;
+    let cp_func = State::critical_point(&func, molefracs, None, None, Default::default())?;
     println!("{}", cp.temperature);
     #[cfg(feature = "dft")]
     println!("{}", cp_func.temperature);
