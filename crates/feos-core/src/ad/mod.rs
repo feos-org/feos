@@ -4,7 +4,7 @@ use crate::{FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
 use nalgebra::{Const, SVector, U1, U2};
 #[cfg(feature = "rayon")]
 use ndarray::{Array1, Array2, ArrayView2, Zip};
-use num_dual::{Derivative, DualSVec, DualStruct};
+use num_dual::{Derivative, DualNum, DualSVec, DualStruct, first_derivative, partial2};
 use quantity::{Density, Pressure, Temperature};
 #[cfg(feature = "rayon")]
 use quantity::{KELVIN, KILO, METER, MOL, PASCAL};
@@ -66,6 +66,50 @@ pub trait PropertiesAD {
         Ok(Pressure::from_reduced(p))
     }
 
+    fn boiling_temperature<const P: usize>(
+        &self,
+        pressure: Pressure,
+    ) -> FeosResult<Temperature<Gradient<P>>>
+    where
+        Self: Residual<U1, Gradient<P>>,
+    {
+        let eos_f64 = self.re();
+        let (temperature, [vapor_density, liquid_density]) =
+            PhaseEquilibrium::pure_p(&eos_f64, pressure, None, Default::default())?;
+
+        // implicit differentiation is implemented here instead of just calling pure_t with dual
+        // numbers, because for the first derivative, we can avoid calculating density derivatives.
+        let t = temperature.into_reduced();
+        let v1 = 1.0 / liquid_density.to_reduced();
+        let v2 = 1.0 / vapor_density.to_reduced();
+        let p = pressure.into_reduced();
+        let t = Gradient::from(t);
+        let t = t + {
+            let v1 = Gradient::from(v1);
+            let v2 = Gradient::from(v2);
+            let p = Gradient::from(p);
+            let x = Self::pure_molefracs();
+
+            let residual_entropy = |v| {
+                let (a, s) = first_derivative(
+                    partial2(
+                        |t, &v, x| self.lift().residual_molar_helmholtz_energy(t, v, x),
+                        &v,
+                        &x,
+                    ),
+                    t,
+                );
+                (a, -s)
+            };
+            let (a1, s1) = residual_entropy(v1);
+            let (a2, s2) = residual_entropy(v2);
+
+            let ln_rho = (v1 / v2).ln();
+            (p * (v2 - v1) + (a2 - a1 + t * ln_rho)) / (s2 - s1 - ln_rho)
+        };
+        Ok(Temperature::from_reduced(t))
+    }
+
     fn equilibrium_liquid_density<const P: usize>(
         &self,
         temperature: Temperature,
@@ -107,6 +151,26 @@ pub trait PropertiesAD {
             |eos: &Self::Lifted<Gradient<P>>, inp| {
                 eos.vapor_pressure(inp[0] * KELVIN)
                     .map(|p| p.convert_into(PASCAL))
+            },
+        )
+    }
+
+    #[cfg(feature = "rayon")]
+    fn boiling_temperature_parallel<const P: usize>(
+        parameter_names: [String; P],
+        parameters: ArrayView2<f64>,
+        input: ArrayView2<f64>,
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+    where
+        Self: ParametersAD<1>,
+    {
+        parallelize::<_, Self, _, _>(
+            parameter_names,
+            parameters,
+            input,
+            |eos: &Self::Lifted<Gradient<P>>, inp| {
+                eos.boiling_temperature(inp[0] * PASCAL)
+                    .map(|p| p.convert_into(KELVIN))
             },
         )
     }
