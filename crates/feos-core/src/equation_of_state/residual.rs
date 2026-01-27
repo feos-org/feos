@@ -1,6 +1,9 @@
 use crate::{FeosError, FeosResult, ReferenceSystem, state::StateHD};
+use nalgebra::SVector;
 use nalgebra::{DVector, DefaultAllocator, Dim, Dyn, OMatrix, OVector, U1, allocator::Allocator};
-use num_dual::{DualNum, Gradients, partial, partial2, second_derivative, third_derivative};
+use num_dual::{
+    DualNum, Gradients, hessian, partial, partial2, second_derivative, third_derivative,
+};
 use quantity::ad::first_derivative;
 use quantity::*;
 use std::ops::{Deref, Div};
@@ -313,9 +316,38 @@ where
             molar_volume,
         );
         (
-            a * density,
+            a,
             -da + temperature * density,
             molar_volume * molar_volume * d2a + temperature,
+        )
+    }
+
+    /// calculates a_res, p, s_res, dp_drho, dp_dt
+    fn p_dpdrho_dpdt(
+        &self,
+        temperature: D,
+        density: D,
+        molefracs: &OVector<D, N>,
+    ) -> (D, D, D, D, D) {
+        let molar_volume = density.recip();
+        let (a, da, d2a) = hessian::<_, _, _, nalgebra::U2, _>(
+            partial(
+                |vt: SVector<_, 2>, x: &OVector<_, N>| {
+                    let [[v, t]] = vt.data.0;
+                    self.lift().residual_molar_helmholtz_energy(t, v, x)
+                },
+                molefracs,
+            ),
+            &SVector::from([molar_volume, temperature]),
+        );
+        let [[da_dv, da_dt]] = da.data.0;
+        let [[d2a_dv2, d2a_dvdt], _] = d2a.data.0;
+        (
+            a,
+            -da_dv + temperature * density,
+            -da_dt,
+            molar_volume * molar_volume * d2a_dv2 + temperature,
+            -d2a_dvdt + density,
         )
     }
 

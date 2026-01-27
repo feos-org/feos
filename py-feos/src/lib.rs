@@ -189,6 +189,7 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     #[cfg(feature = "ad")]
     {
         m.add_function(wrap_pyfunction!(ad::vapor_pressure_derivatives, m)?)?;
+        m.add_function(wrap_pyfunction!(ad::boiling_temperature_derivatives, m)?)?;
         m.add_function(wrap_pyfunction!(ad::liquid_density_derivatives, m)?)?;
         m.add_function(wrap_pyfunction!(
             ad::equilibrium_liquid_density_derivatives,

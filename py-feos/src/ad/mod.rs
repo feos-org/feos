@@ -57,6 +57,32 @@ pub fn vapor_pressure_derivatives<'py>(
     _vapor_pressure_derivatives(model, parameter_names, parameters, input)
 }
 
+/// Calculate boiling temperatures and derivatives w.r.t. model parameters.
+///
+/// Parameters
+/// ----------
+/// model: EquationOfStateAD
+///     The equation of state to use.
+/// parameter_names: List[string]
+///     The name of the parameters for which derivatives are calculated.
+/// parameters: np.ndarray[float]
+///     The parameters for every data point.
+/// input: np.ndarray[float]
+///     The pressure (in Pa) for every data point.
+///
+/// Returns
+/// -------
+/// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]): The boiling temperature (in K), gradients, and convergence status.
+#[pyfunction]
+pub fn boiling_temperature_derivatives<'py>(
+    model: PyEquationOfStateAD,
+    parameter_names: Bound<'py, PyAny>,
+    parameters: PyReadonlyArray2<f64>,
+    input: PyReadonlyArray2<f64>,
+) -> GradResult<'py> {
+    _boiling_temperature_derivatives(model, parameter_names, parameters, input)
+}
+
 /// Calculate liquid densities and derivatives w.r.t. model parameters.
 ///
 /// Parameters
@@ -222,7 +248,7 @@ macro_rules! impl_evaluate_gradients {
 
 impl_evaluate_gradients!(
     pure,
-    [vapor_pressure, liquid_density, equilibrium_liquid_density],
+    [vapor_pressure, boiling_temperature, liquid_density, equilibrium_liquid_density],
     {PcSaftNonAssoc: PcSaftPure<f64, 4>, PcSaftFull: PcSaftPure<f64, 8>}
 );
 

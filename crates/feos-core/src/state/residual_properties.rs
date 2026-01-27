@@ -233,15 +233,6 @@ where
             .into_value()
     }
 
-    // This function is designed specifically for use in density iterations
-    pub(crate) fn p_dpdrho(&self) -> (Pressure<D>, <Pressure<D> as Div<Density<D>>>::Output) {
-        let dp_dv = self.dp_dv(Contributions::Total);
-        (
-            self.pressure(Contributions::Total),
-            (-self.volume * dp_dv / self.density),
-        )
-    }
-
     /// Partial molar volume: $v_i=\left(\frac{\partial V}{\partial N_i}\right)_{T,p,N_j}$
     pub fn partial_molar_volume(&self) -> MolarVolume<OVector<D, N>> {
         -self.dp_dni(Contributions::Total) / self.dp_dv(Contributions::Total)
