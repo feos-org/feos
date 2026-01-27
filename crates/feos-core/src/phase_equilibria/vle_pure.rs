@@ -3,7 +3,7 @@ use crate::density_iteration::{_density_iteration, _pressure_spinodal};
 use crate::equation_of_state::{Residual, Subset};
 use crate::errors::{FeosError, FeosResult};
 use crate::state::{Contributions, DensityInitialization, State};
-use crate::{Composition, ReferenceSystem, SolverOptions, TemperatureOrPressure, Verbosity};
+use crate::{ReferenceSystem, SolverOptions, TemperatureOrPressure, Verbosity};
 use nalgebra::allocator::Allocator;
 use nalgebra::{DVector, DefaultAllocator, Dim, SVector, U1, U2};
 use num_dual::{DualNum, DualStruct, Gradients, gradient, partial};
@@ -17,7 +17,6 @@ const TOL_PURE: f64 = 1e-12;
 impl<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, N, D>
 where
     DefaultAllocator: Allocator<N> + Allocator<U1, N> + Allocator<N, N>,
-    (): Composition<D, N> + Composition<f64, N>,
 {
     /// Calculate a phase equilibrium for a pure component.
     pub fn pure<TP: TemperatureOrPressure<D>>(
@@ -26,7 +25,7 @@ where
         initial_state: Option<&Self>,
         options: SolverOptions,
     ) -> FeosResult<Self> {
-        let (t, rho) = if let Some(t) = temperature_or_pressure.temperature() {
+        let (t, [rho_v, rho_l]) = if let Some(t) = temperature_or_pressure.temperature() {
             let (_, rho) = Self::pure_t(eos, t, initial_state, options)?;
             (t, rho)
         } else if let Some(p) = temperature_or_pressure.pressure() {
@@ -34,7 +33,11 @@ where
         } else {
             unreachable!()
         };
-        Ok(Self(rho.map(|r| State::new_pure(eos, t, r).unwrap())))
+        let x = E::pure_molefracs();
+        Ok(Self::two_phase(
+            State::new(eos, t, rho_v, &x)?,
+            State::new(eos, t, rho_l, x)?,
+        ))
     }
 
     /// Calculate a phase equilibrium for a pure component
@@ -238,7 +241,6 @@ where
 impl<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, N, D>
 where
     DefaultAllocator: Allocator<N> + Allocator<U1, N> + Allocator<N, N>,
-    (): Composition<f64, N>,
 {
     /// Calculate a phase equilibrium for a pure component
     /// and given pressure.
@@ -396,7 +398,6 @@ fn init_pure_p<E: Residual<N>, N: Gradients>(
 ) -> FeosResult<(f64, [f64; 2])>
 where
     DefaultAllocator: Allocator<N> + Allocator<U1, N> + Allocator<N, N>,
-    (): Composition<f64, N>,
 {
     let trial_temperatures = [300.0, 500.0, 200.0];
     let p = pressure.into_reduced();
@@ -416,7 +417,7 @@ where
     };
     let [mut t_v, mut t_l] = [t0, t0];
 
-    let cp = State::critical_point(eos, (), None, None, SolverOptions::default())?;
+    let cp = State::critical_point(eos, &x, None, None, SolverOptions::default())?;
     let cp_density = cp.density.into_reduced();
     if pressure > cp.pressure(Contributions::Total) {
         return Err(FeosError::SuperCritical);
@@ -540,7 +541,7 @@ impl<E: Residual + Subset> PhaseEquilibrium<E, 2> {
                         vle_pure.liquid().density,
                         molefracs_liquid,
                     )?;
-                    Ok(PhaseEquilibrium::from_states(vapor, liquid))
+                    Ok(PhaseEquilibrium::two_phase(vapor, liquid))
                 })
                 .ok()
             })

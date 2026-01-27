@@ -77,7 +77,7 @@ fn bench_states<E: Residual>(c: &mut Criterion, group_name: &str, eos: &E) {
             eos,
             crit.temperature,
             crit.pressure(Contributions::Total) * 0.95,
-            &crit.moles(),
+            &crit.molefracs,
             None,
             Default::default(),
             None,

@@ -34,8 +34,8 @@ where
     }
 
     /// Residual Helmholtz energy $A^\text{res}$
-    pub fn residual_helmholtz_energy(&self) -> Energy<D> {
-        self.residual_molar_helmholtz_energy() * self.total_moles()
+    pub fn residual_helmholtz_energy(&self) -> FeosResult<Energy<D>> {
+        Ok(self.residual_molar_helmholtz_energy() * self.total_moles()?)
     }
 
     /// Residual molar Helmholtz energy $a^\text{res}$
@@ -50,8 +50,8 @@ where
     }
 
     /// Residual entropy $S^\text{res}=\left(\frac{\partial A^\text{res}}{\partial T}\right)_{V,N_i}$
-    pub fn residual_entropy(&self) -> Entropy<D> {
-        self.residual_molar_entropy() * self.total_moles()
+    pub fn residual_entropy(&self) -> FeosResult<Entropy<D>> {
+        Ok(self.residual_molar_entropy() * self.total_moles()?)
     }
 
     /// Residual molar entropy $s^\text{res}=\left(\frac{\partial a^\text{res}}{\partial T}\right)_{V,N_i}$
@@ -431,18 +431,14 @@ impl<E: Residual + Subset> State<E> {
             .unzip();
         let solvent_molefracs = DVector::from_vec(solvent_molefracs);
         let solvent = eos.subset(&solvent_comps);
-        let vle = if solvent_comps.len() == 1 {
-            PhaseEquilibrium::pure(&solvent, temperature, None, Default::default())
-        } else {
-            PhaseEquilibrium::bubble_point(
-                &solvent,
-                temperature,
-                &solvent_molefracs,
-                None,
-                None,
-                Default::default(),
-            )
-        }?;
+        let vle = PhaseEquilibrium::bubble_point(
+            &solvent,
+            temperature,
+            &solvent_molefracs,
+            None,
+            None,
+            Default::default(),
+        )?;
 
         // Calculate the liquid state including the Henry components
         let liquid = State::new(eos, temperature, vle.liquid().density, molefracs.clone())?;
@@ -506,8 +502,8 @@ where
     }
 
     /// Residual enthalpy: $H^\text{res}(T,p,\mathbf{n})=A^\text{res}+TS^\text{res}+p^\text{res}V$
-    pub fn residual_enthalpy(&self) -> Energy<D> {
-        self.residual_molar_enthalpy() * self.total_moles()
+    pub fn residual_enthalpy(&self) -> FeosResult<Energy<D>> {
+        Ok(self.residual_molar_enthalpy() * self.total_moles()?)
     }
 
     /// Residual molar enthalpy: $h^\text{res}(T,p,\mathbf{n})=a^\text{res}+Ts^\text{res}+p^\text{res}v$
@@ -518,8 +514,8 @@ where
     }
 
     /// Residual internal energy: $U^\text{res}(T,V,\mathbf{n})=A^\text{res}+TS^\text{res}$
-    pub fn residual_internal_energy(&self) -> Energy<D> {
-        self.residual_molar_internal_energy() * self.total_moles()
+    pub fn residual_internal_energy(&self) -> FeosResult<Energy<D>> {
+        Ok(self.residual_molar_internal_energy() * self.total_moles()?)
     }
 
     /// Residual molar internal energy: $u^\text{res}(T,V,\mathbf{n})=a^\text{res}+Ts^\text{res}$
@@ -528,8 +524,8 @@ where
     }
 
     /// Residual Gibbs energy: $G^\text{res}(T,p,\mathbf{n})=A^\text{res}+p^\text{res}V-NRT \ln Z$
-    pub fn residual_gibbs_energy(&self) -> Energy<D> {
-        self.residual_molar_gibbs_energy() * self.total_moles()
+    pub fn residual_gibbs_energy(&self) -> FeosResult<Energy<D>> {
+        Ok(self.residual_molar_gibbs_energy() * self.total_moles()?)
     }
 
     /// Residual Gibbs energy: $g^\text{res}(T,p,\mathbf{n})=a^\text{res}+p^\text{res}v-RT \ln Z$
@@ -601,16 +597,17 @@ where
     }
 
     /// Mass of each component: $m_i=n_iMW_i$
-    pub fn mass(&self) -> Mass<OVector<D, N>> {
-        self.eos
+    pub fn mass(&self) -> FeosResult<Mass<OVector<D, N>>> {
+        Ok(self
+            .eos
             .molar_weight()
             .component_mul(&Dimensionless::new(self.molefracs.clone()))
-            * self.total_moles()
+            * self.total_moles()?)
     }
 
     /// Total mass: $m=\sum_im_i=nMW$
-    pub fn total_mass(&self) -> Mass<D> {
-        self.total_molar_weight() * self.total_moles()
+    pub fn total_mass(&self) -> FeosResult<Mass<D>> {
+        Ok(self.total_molar_weight() * self.total_moles()?)
     }
 
     /// Mass density: $\rho^{(m)}=\frac{m}{V}$

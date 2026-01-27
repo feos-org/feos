@@ -394,35 +394,37 @@ mod tests {
     use quantity::{BAR, KELVIN, METER, PASCAL, RGAS};
 
     #[test]
-    fn ideal_gas_pressure() {
+    fn ideal_gas_pressure() -> FeosResult<()> {
         let e = &propane_parameters();
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<3>();
         let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&e, t, v, n).unwrap();
-        let p_ig = s.total_moles() * RGAS * t / v;
+        let p_ig = s.total_moles()? * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
             s.pressure(Contributions::IdealGas) + s.pressure(Contributions::Residual),
             s.pressure(Contributions::Total),
             epsilon = 1e-10
         );
+        Ok(())
     }
 
     #[test]
-    fn ideal_gas_heat_capacity_joback() {
+    fn ideal_gas_heat_capacity_joback() -> FeosResult<()> {
         let e = &propane_parameters();
         let t = 200.0 * KELVIN;
         let v = 1e-3 * METER.powi::<3>();
         let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&e, t, v, n).unwrap();
-        let p_ig = s.total_moles() * RGAS * t / v;
+        let p_ig = s.total_moles()? * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
             s.pressure(Contributions::IdealGas) + s.pressure(Contributions::Residual),
             s.pressure(Contributions::Total),
             epsilon = 1e-10
         );
+        Ok(())
     }
 
     #[test]
@@ -787,9 +789,7 @@ mod tests_parameter_fit {
             let h = params[i] * 1e-7;
             params[i] += h;
             let pcsaft_h = PcSaftPure(params);
-            let rho_h =
-                State::new_npt(&pcsaft_h, temperature, pressure, vector![1.0], Some(Liquid))?
-                    .density;
+            let rho_h = State::new_npt(&pcsaft_h, temperature, pressure, (), Some(Liquid))?.density;
             let drho_h = (rho_h.convert_into(MOL / LITER) - rho) / h;
             let drho = grad[i];
             println!(
@@ -823,7 +823,7 @@ mod tests_parameter_fit {
         let p_h = PhaseEquilibrium::bubble_point(
             &pcsaft_h,
             temperature,
-            &x,
+            x,
             None,
             None,
             Default::default(),
@@ -846,7 +846,7 @@ mod tests_parameter_fit {
         let (pcsaft, _) = pcsaft_binary()?;
         let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
         let temperature = 500.0 * KELVIN;
-        let y = vector![0.5, 0.5];
+        let y = 0.5;
         let p = pcsaft_ad.dew_point_pressure(temperature, None, y)?;
         let p = p.convert_into(BAR);
         let (p, [[grad]]) = (p.re, p.eps.unwrap_generic(U1, U1).data.0);
@@ -858,16 +858,10 @@ mod tests_parameter_fit {
         let h = 1e-7;
         kij += h;
         let pcsaft_h = PcSaftBinary::new(params, kij);
-        let p_h = PhaseEquilibrium::dew_point(
-            &pcsaft_h,
-            temperature,
-            &y,
-            None,
-            None,
-            Default::default(),
-        )?
-        .vapor()
-        .pressure(Contributions::Total);
+        let p_h =
+            PhaseEquilibrium::dew_point(&pcsaft_h, temperature, y, None, None, Default::default())?
+                .vapor()
+                .pressure(Contributions::Total);
         let dp_h = (p_h.convert_into(BAR) - p) / h;
         println!(
             "k_ij: {:11.5} {:11.5} {:.3e}",
@@ -885,11 +879,11 @@ mod tests_parameter_fit {
         let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
         let pressure = Pressure::from_reduced(DualVec::from(45. * BAR.into_reduced()));
         let t_init = Temperature::from_reduced(DualVec::from(500.0));
-        let x = vector![0.5, 0.5].map(DualVec::from);
+        let x = DualVec::from(0.5);
         let t = PhaseEquilibrium::bubble_point(
             &pcsaft_ad,
             pressure,
-            &x,
+            x,
             Some(t_init),
             None,
             Default::default(),
@@ -909,7 +903,7 @@ mod tests_parameter_fit {
         let t_h = PhaseEquilibrium::bubble_point(
             &pcsaft_h,
             pressure.re(),
-            &x.map(|x| x.re()),
+            x.re(),
             Some(t_init.re()),
             None,
             Default::default(),
@@ -933,11 +927,11 @@ mod tests_parameter_fit {
         let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
         let pressure = Pressure::from_reduced(DualVec::from(45. * BAR.into_reduced()));
         let t_init = Temperature::from_reduced(DualVec::from(500.0));
-        let x = vector![0.5, 0.5].map(DualVec::from);
+        let x = DualVec::from(0.5);
         let t = PhaseEquilibrium::dew_point(
             &pcsaft_ad,
             pressure,
-            &x,
+            x,
             Some(t_init),
             None,
             Default::default(),
@@ -957,7 +951,7 @@ mod tests_parameter_fit {
         let t_h = PhaseEquilibrium::dew_point(
             &pcsaft_h,
             pressure.re(),
-            &x.map(|x| x.re()),
+            x.re(),
             Some(t_init.re()),
             None,
             Default::default(),
@@ -981,22 +975,19 @@ mod tests_parameter_fit {
         let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
         let temperature = 500.0 * KELVIN;
         let pressure = 44.6 * BAR;
-        let x = vector![0.5, 0.5];
+        let x = 0.5;
         let vle = PhaseEquilibrium::tp_flash_binary(
             &pcsaft_ad,
             Temperature::from_inner(&temperature),
             Pressure::from_inner(&pressure),
-            &Moles::from_inner(&(x * MOL)),
+            DualVec::from(x),
             SolverOptions {
                 verbosity: feos_core::Verbosity::Iter,
-                tol: Some(1e-10),
+                tol: Some(1e-12),
                 ..Default::default()
             },
         )?;
-        let beta = vle
-            .vapor()
-            .total_moles
-            .convert_into(vle.vapor().total_moles + vle.liquid().total_moles);
+        let beta = vle.vapor_phase_fraction();
         let (beta, [[grad]]) = (beta.re, beta.eps.unwrap_generic(U1, U1).data.0);
 
         println!("{beta:.5}");
@@ -1010,16 +1001,13 @@ mod tests_parameter_fit {
             &pcsaft_h,
             temperature,
             pressure,
-            &(x * MOL),
+            x,
             SolverOptions {
-                tol: Some(1e-10),
+                tol: Some(1e-12),
                 ..Default::default()
             },
         )?;
-        let beta_h = vle
-            .vapor()
-            .total_moles
-            .convert_into(vle.vapor().total_moles + vle.liquid().total_moles);
+        let beta_h = vle.vapor_phase_fraction();
         let dbeta_h = (beta_h - beta) / h;
         println!(
             "k_ij: {:11.5} {:11.5} {:.3e}",

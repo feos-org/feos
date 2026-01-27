@@ -63,8 +63,9 @@ impl<E: Residual + Subset> PhaseDiagram<E, 2> {
                     None,
                     SolverOptions::default(),
                 )?;
-                let cp_vle = PhaseEquilibrium::from_states(cp.clone(), cp.clone());
-                ([0.0, cp.molefracs[0]], (vle2, cp_vle), bubble)
+                let x_max = cp.molefracs[0];
+                let cp_vle = PhaseEquilibrium::single_phase(cp);
+                ([0.0, x_max], (vle2, cp_vle), bubble)
             }
             [None, Some(vle1)] => {
                 let cp = State::critical_point_binary(
@@ -75,8 +76,9 @@ impl<E: Residual + Subset> PhaseDiagram<E, 2> {
                     None,
                     SolverOptions::default(),
                 )?;
-                let cp_vle = PhaseEquilibrium::from_states(cp.clone(), cp.clone());
-                ([1.0, cp.molefracs[0]], (vle1, cp_vle), bubble)
+                let x_min = cp.molefracs[0];
+                let cp_vle = PhaseEquilibrium::single_phase(cp);
+                ([1.0, x_min], (vle1, cp_vle), bubble)
             }
             [Some(vle2), Some(vle1)] => ([0.0, 1.0], (vle2, vle1), true),
         };
@@ -201,7 +203,7 @@ fn iterate_vle<E: Residual + Subset, TP: TemperatureOrPressure>(
         let vle = PhaseEquilibrium::bubble_dew_point(
             eos,
             tp,
-            &dvector![*xi, 1.0 - xi],
+            dvector![*xi, 1.0 - xi],
             tp_old,
             y_old.as_ref(),
             bubble,
@@ -437,7 +439,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
 
             // check for convergence
             if res.norm() < options.tol.unwrap_or(TOL_HETERO) {
-                return Ok(Self([v, l1, l2]));
+                return Ok(Self::new(v, l1, l2));
             }
 
             // calculate Jacobian
@@ -557,7 +559,7 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
 
             // check for convergence
             if res.norm() < options.tol.unwrap_or(TOL_HETERO) {
-                return Ok(Self([v, l1, l2]));
+                return Ok(Self::new(v, l1, l2));
             }
 
             let jacobian = stack![
