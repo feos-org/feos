@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// Identifier to match on while reading parameters from files.
-#[pyclass(name = "IdentifierOption", eq, eq_int)]
+#[pyclass(module = "feos.feos", name = "IdentifierOption", eq, eq_int)]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub enum PyIdentifierOption {
     Cas,
@@ -43,7 +43,7 @@ impl From<PyIdentifierOption> for IdentifierOption {
 }
 
 /// Different common identifiers for chemicals.
-#[pyclass(name = "Identifier")]
+#[pyclass(module = "feos.feos", name = "Identifier")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PyIdentifier(pub Identifier);
 

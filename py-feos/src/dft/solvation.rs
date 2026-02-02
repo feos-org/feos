@@ -37,7 +37,7 @@ use std::sync::Arc;
 /// -------
 /// SolvationProfile
 ///
-#[pyclass(name = "SolvationProfile")]
+#[pyclass(module = "feos.feos", name = "SolvationProfile")]
 pub struct PySolvationProfile(
     SolvationProfile<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
 );
@@ -105,7 +105,7 @@ impl PySolvationProfile {
 /// -------
 /// PairCorrelation
 ///
-#[pyclass(name = "PairCorrelation")]
+#[pyclass(module = "feos.feos", name = "PairCorrelation")]
 pub struct PyPairCorrelation(
     PairCorrelation<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
 );

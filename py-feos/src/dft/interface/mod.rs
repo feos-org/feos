@@ -18,7 +18,7 @@ mod surface_tension_diagram;
 pub use surface_tension_diagram::PySurfaceTensionDiagram;
 
 /// A one-dimensional density profile of a vapor-liquid or liquid-liquid interface.
-#[pyclass(name = "PlanarInterface")]
+#[pyclass(module = "feos.feos", name = "PlanarInterface")]
 pub struct PyPlanarInterface(
     PlanarInterface<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
 );

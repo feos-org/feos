@@ -16,7 +16,7 @@ use quantity::Time;
 /// Returns
 /// -------
 /// DFTSolver
-#[pyclass(name = "DFTSolver")]
+#[pyclass(module = "feos.feos", name = "DFTSolver")]
 #[derive(Clone)]
 pub struct PyDFTSolver(pub DFTSolver);
 
@@ -160,7 +160,7 @@ impl PyDFTSolver {
     }
 }
 
-#[pyclass(name = "DFTSolverLog")]
+#[pyclass(module = "feos.feos", name = "DFTSolverLog")]
 #[derive(Clone)]
 pub struct PyDFTSolverLog(pub DFTSolverLog);
 
