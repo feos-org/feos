@@ -34,8 +34,8 @@ mod phase_equilibria;
 mod state;
 pub use ad::{ParametersAD, PropertiesAD};
 pub use equation_of_state::{
-    EntropyScaling, EquationOfState, IdealGas, Molarweight, NoResidual, Residual, ResidualDyn,
-    Subset, Total,
+    EntropyScaling, EquationOfState, IdealGas, IdealGasAD, Molarweight, NoResidual, Residual,
+    ResidualDyn, Subset, Total,
 };
 pub use errors::{FeosError, FeosResult};
 #[cfg(feature = "ndarray")]

@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed the `StateBuilder` struct, because it is mostly obsolete with the addition of the `Composition` trait. [#330](https://github.com/feos-org/feos/pull/330)
 
 ### Packaging
-- Updated `quantity` dependency to 0.13 and removed the `typenum` dependency. [#323](https://github.com/feos-org/feos/pull/323)
+- Updated `quantity` dependency to 0.13 and removed the `typenum` dependency. [#328](https://github.com/feos-org/feos/pull/328)
 
 ## [Unreleased]
 ### Added
