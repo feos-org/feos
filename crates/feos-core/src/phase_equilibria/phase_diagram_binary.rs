@@ -3,7 +3,7 @@ use super::{PhaseDiagram, PhaseEquilibrium};
 use crate::errors::{FeosError, FeosResult};
 use crate::state::{Contributions, DensityInitialization::Vapor, State, StateBuilder};
 use crate::{ReferenceSystem, Residual, SolverOptions, Subset};
-use nalgebra::{DVector, dvector, stack, vector};
+use nalgebra::{DVector, dvector, matrix, stack, vector};
 use ndarray::{Array1, s};
 use num_dual::linalg::LU;
 use quantity::{Density, Moles, Pressure, RGAS, Temperature};
@@ -32,7 +32,7 @@ impl<E: Residual + Subset> PhaseDiagram<E, 2> {
 
         // Only calculate up to specified compositions
         if let Some(x_lle) = x_lle {
-            let (states1, states2) = Self::calculate_vlle(
+            let [states1, states2] = Self::calculate_vlle(
                 eos,
                 temperature_or_pressure,
                 npoints,
@@ -94,10 +94,10 @@ impl<E: Residual + Subset> PhaseDiagram<E, 2> {
         if !bubble {
             states = states.into_iter().rev().collect();
         }
+        let states = check_for_vlle(temperature_or_pressure, states, npoints, bubble_dew_options);
         Ok(Self { states })
     }
 
-    #[expect(clippy::type_complexity)]
     fn calculate_vlle<TP: TemperatureOrPressure>(
         eos: &E,
         tp: TP,
@@ -105,7 +105,7 @@ impl<E: Residual + Subset> PhaseDiagram<E, 2> {
         x_lle: (f64, f64),
         vle_sat: [Option<PhaseEquilibrium<E, 2>>; 2],
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> FeosResult<(Vec<PhaseEquilibrium<E, 2>>, Vec<PhaseEquilibrium<E, 2>>)> {
+    ) -> FeosResult<[Vec<PhaseEquilibrium<E, 2>>; 2]> {
         match vle_sat {
             [Some(vle2), Some(vle1)] => {
                 let states1 = iterate_vle(
@@ -128,7 +128,7 @@ impl<E: Residual + Subset> PhaseDiagram<E, 2> {
                     true,
                     bubble_dew_options,
                 );
-                Ok((states1, states2))
+                Ok([states1, states2])
             }
             _ => Err(FeosError::SuperCritical),
         }
@@ -228,6 +228,174 @@ fn iterate_vle<E: Residual + Subset, TP: TemperatureOrPressure>(
     vle_vec
 }
 
+fn check_for_vlle<E: Residual + Subset, TP: TemperatureOrPressure>(
+    tp: TP,
+    states: Vec<PhaseEquilibrium<E, 2>>,
+    npoints: usize,
+    bubble_dew_options: (SolverOptions, SolverOptions),
+) -> Vec<PhaseEquilibrium<E, 2>> {
+    let n = states.len();
+    let p: Vec<_> = states
+        .iter()
+        .map(|s| s.vapor().pressure(Contributions::Total))
+        .collect();
+    let t: Vec<_> = states.iter().map(|s| s.vapor().temperature).collect();
+    let x: Vec<_> = states.iter().map(|s| s.liquid().molefracs[0]).collect();
+    let y: Vec<_> = states.iter().map(|s| s.vapor().molefracs[0]).collect();
+
+    // Determine if the dew line intersects with itself
+    if let Some(t) = tp.temperature()
+        && p[1] > p[0]
+        && p[n - 2] > p[n - 1]
+    {
+        let [mut i, mut j] = [0, n - 1];
+        while i != j {
+            if p[i] > p[j] {
+                j -= 1;
+            } else {
+                i += 1
+            }
+            if y[j] < y[i] {
+                // intersection found!
+                let (xj, yj, pj) = if j == n - 2 {
+                    // Use Henry constant of component 2
+                    let k_inf = (states[n - 1].liquid().ln_phi() - states[n - 1].vapor().ln_phi())
+                        .map(f64::exp)[1];
+                    (
+                        [1.0, 1.0 - 1.0 / k_inf],
+                        [1.0, 0.0],
+                        [p[n - 1], p[n - 1] * (2.0 - 1.0 / k_inf)],
+                    )
+                } else {
+                    // or interpolate linearly
+                    ([x[j + 1], x[j]], [y[j + 1], y[j]], [p[j + 1], p[j]])
+                };
+                let (xi, yi, pi) = if i == 1 {
+                    // Use Henry constant of component 1
+                    let k_inf =
+                        (states[0].liquid().ln_phi() - states[0].vapor().ln_phi()).map(f64::exp)[0];
+                    (
+                        [0.0, 1.0 / k_inf],
+                        [0.0, 1.0],
+                        [p[0], p[0] * (2.0 - 1.0 / k_inf)],
+                    )
+                } else {
+                    // or interpolate linearly
+                    ([x[i - 1], x[i]], [y[i - 1], y[i]], [p[i - 1], p[i]])
+                };
+                // calculate intersection
+                let a = matrix![yi[1] - yi[0], yj[0] - yj[1];
+                                (pi[1] - pi[0]).into_reduced(), (pj[0] - pj[1]).into_reduced()];
+                let b = vector![yj[0] - yi[0], (pj[0] - pi[0]).into_reduced()];
+                let [[r, s]] = LU::new(a).unwrap().solve(&b).data.0;
+                let (xi, xj, p) = (
+                    xi[0] + r * (xi[1] - xi[0]),
+                    xj[0] + s * (xj[1] - xj[0]),
+                    pi[0] + r * (pi[1] - pi[0]),
+                );
+                let Ok(vlle) = PhaseEquilibrium::heteroazeotrope(
+                    &states[0].liquid().eos,
+                    t,
+                    (xi, xj),
+                    Some(p),
+                    Default::default(),
+                    bubble_dew_options,
+                ) else {
+                    return states;
+                };
+                let x_hetero = (vlle.liquid1().molefracs[0], vlle.liquid2().molefracs[0]);
+                return PhaseDiagram::binary_vle(
+                    &states[0].liquid().eos,
+                    tp,
+                    Some(npoints),
+                    Some(x_hetero),
+                    bubble_dew_options,
+                )
+                .map_or(states, |dia| dia.states);
+            }
+        }
+    } else if let Some(p) = tp.pressure()
+        && t[1] < t[0]
+        && t[n - 2] < t[n - 1]
+    {
+        let [mut i, mut j] = [0, n - 1];
+        while i != j {
+            if t[i] < t[j] {
+                j -= 1;
+            } else {
+                i += 1
+            }
+            if y[j] < y[i] {
+                // intersection found!
+                let (xj, yj, tj) = if j == n - 2 {
+                    // Use Henry constant of component 2
+                    let vle = &states[n - 1];
+                    let k_inf = (vle.liquid().ln_phi() - vle.vapor().ln_phi()).map(f64::exp)[1];
+                    let dh = vle.vapor().residual_molar_enthalpy()
+                        - vle.liquid().residual_molar_enthalpy();
+                    let dv = 1.0 / vle.vapor().density - 1.0 / vle.liquid().density;
+                    let pdv_dh = (p * dv).convert_into(dh);
+                    (
+                        [1.0, 1.0 - 1.0 / k_inf],
+                        [1.0, 0.0],
+                        [t[n - 1], t[n - 1] * (1.0 - (k_inf - 1.0) / k_inf * pdv_dh)],
+                    )
+                } else {
+                    // or interpolate linearly
+                    ([x[j + 1], x[j]], [y[j + 1], y[j]], [t[j + 1], t[j]])
+                };
+                let (xi, yi, ti) = if i == 1 {
+                    // Use Henry constant of component 1
+                    let vle = &states[0];
+                    let k_inf = (vle.liquid().ln_phi() - vle.vapor().ln_phi()).map(f64::exp)[0];
+                    let dh = vle.vapor().residual_molar_enthalpy()
+                        - vle.liquid().residual_molar_enthalpy();
+                    let dv = 1.0 / vle.vapor().density - 1.0 / vle.liquid().density;
+                    let pdv_dh = (p * dv).convert_into(dh);
+                    (
+                        [0.0, 1.0 / k_inf],
+                        [0.0, 1.0],
+                        [t[0], t[0] * (1.0 - (k_inf - 1.0) / k_inf * pdv_dh)],
+                    )
+                } else {
+                    // or interpolate linearly
+                    ([x[i - 1], x[i]], [y[i - 1], y[i]], [t[i - 1], t[i]])
+                };
+                // calculate intersection
+                let a = matrix![yi[1] - yi[0], yj[0] - yj[1];
+                                (ti[1] - ti[0]).into_reduced(), (tj[0] - tj[1]).into_reduced()];
+                let b = vector![yj[0] - yi[0], (tj[0] - ti[0]).into_reduced()];
+                let [[r, s]] = LU::new(a).unwrap().solve(&b).data.0;
+                let (xi, xj, t) = (
+                    xi[0] + r * (xi[1] - xi[0]),
+                    xj[0] + s * (xj[1] - xj[0]),
+                    ti[0] + r * (ti[1] - ti[0]),
+                );
+                let Ok(vlle) = PhaseEquilibrium::heteroazeotrope(
+                    &states[0].liquid().eos,
+                    p,
+                    (xi, xj),
+                    Some(t),
+                    Default::default(),
+                    bubble_dew_options,
+                ) else {
+                    return states;
+                };
+                let x_hetero = (vlle.liquid1().molefracs[0], vlle.liquid2().molefracs[0]);
+                return PhaseDiagram::binary_vle(
+                    &states[0].liquid().eos,
+                    tp,
+                    Some(npoints),
+                    Some(x_hetero),
+                    bubble_dew_options,
+                )
+                .map_or(states, |dia| dia.states);
+            }
+        }
+    }
+    states
+}
+
 /// Phase diagram (Txy or pxy) for a system with heteroazeotropic phase behavior.
 pub struct PhaseDiagramHetero<E> {
     pub vle1: PhaseDiagram<E, 2>,
@@ -270,7 +438,7 @@ impl<E: Residual + Subset> PhaseDiagram<E, 2> {
         let x_hetero = (vlle.liquid1().molefracs[0], vlle.liquid2().molefracs[0]);
 
         // calculate vapor liquid equilibria
-        let (dia1, dia2) = PhaseDiagram::calculate_vlle(
+        let [dia1, dia2] = PhaseDiagram::calculate_vlle(
             eos,
             temperature_or_pressure,
             npoints_vle,
@@ -334,7 +502,6 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
     ) -> FeosResult<Self> {
         let (temperature, pressure, iterate_p) =
             temperature_or_pressure.temperature_pressure(tp_init);
-        // let tp_init = tp_init.map(|tp_init| temperature_or_pressure.temperature_pressure(tp_init));
         if iterate_p {
             PhaseEquilibrium::heteroazeotrope_t(
                 eos,
