@@ -118,7 +118,7 @@ impl Subset for MultiParameter {
 }
 
 impl IdealGas for MultiParameterIdealGas {
-    fn ln_lambda3<D2: DualNum<f64, Inner = f64> + Copy>(&self, temperature: D2) -> D2 {
+    fn ln_lambda3<D2: DualNum<f64> + Copy>(&self, temperature: D2) -> D2 {
         let tau = temperature.recip() * self.tc;
         // bit of a hack to convert from phi^0 into ln Lambda^3
         let delta = D2::from(E / (6.02214076e-7 * self.rhoc));

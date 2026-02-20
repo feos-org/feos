@@ -184,7 +184,7 @@ where
         temperature: Dual64,
         density: &Array<f64, D::Larger>,
     ) -> Array<Dual64, D> {
-        let lambda = self.bulk.eos.ln_lambda3(temperature);
+        let lambda = self.bulk.eos.lift_total().ln_lambda3(temperature);
         let mut phi = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
         for (i, rhoi) in density.outer_iter().enumerate() {
             phi += &rhoi.mapv(|rhoi| (lambda[i] + rhoi.ln() - 1.0) * rhoi);
