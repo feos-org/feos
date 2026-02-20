@@ -1,4 +1,4 @@
-use super::{DensityInitialization, State};
+use super::{Composition, DensityInitialization, State};
 use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
 use crate::{ReferenceSystem, SolverOptions, Subset, TemperatureOrPressure, Verbosity};
@@ -31,14 +31,14 @@ impl<R: Residual + Subset> State<R> {
                 let pure_eos = eos.subset(&[i]);
                 let cp = State::critical_point(
                     &pure_eos,
-                    None,
+                    (),
                     initial_temperature,
                     initial_density,
                     options,
                 )?;
                 let mut molefracs = DVector::zeros(eos.components());
                 molefracs[i] = 1.0;
-                State::new_intensive(eos, cp.temperature, cp.density, &molefracs)
+                State::new(eos, cp.temperature, cp.density, molefracs)
             })
             .collect()
     }
@@ -81,7 +81,7 @@ where
             );
             let density = rho[0] + rho[1];
             let molefracs = OVector::from_fn_generic(n, U1, |i, _| rho[i] / density);
-            Self::new_intensive(eos, t, Density::from_reduced(density), &molefracs)
+            Self::new(eos, t, Density::from_reduced(density), molefracs)
         } else if let Some(p) = temperature_or_pressure.pressure() {
             let x = critical_point_binary_p(
                 &eos_re,
@@ -103,22 +103,22 @@ where
             let density = trho[1] + trho[2];
             let molefracs = OVector::from_fn_generic(n, U1, |i, _| trho[i + 1] / density);
             let t = Temperature::from_reduced(trho[0]);
-            Self::new_intensive(eos, t, Density::from_reduced(density), &molefracs)
+            Self::new(eos, t, Density::from_reduced(density), molefracs)
         } else {
             unreachable!()
         }
     }
 
     /// Calculate the critical point of a system for given moles.
-    pub fn critical_point(
+    pub fn critical_point<X: Composition<D, N>>(
         eos: &E,
-        molefracs: Option<&OVector<D, N>>,
+        composition: X,
         initial_temperature: Option<Temperature>,
         initial_density: Option<Density>,
         options: SolverOptions,
     ) -> FeosResult<Self> {
         let eos_re = eos.re();
-        let molefracs = molefracs.map_or_else(E::pure_molefracs, |x| x.clone());
+        let (molefracs, total_moles) = composition.into_molefracs(eos)?;
         let x = &molefracs.map(|x| x.re());
         let rho_init = initial_density.map(|r| r.into_reduced());
         let trial_temperatures = [300.0, 700.0, 500.0];
@@ -144,11 +144,11 @@ where
             t_rho[1],
             &molefracs,
         );
-        Self::new_intensive(
+        Self::new(
             eos,
             Temperature::from_reduced(temperature),
             Density::from_reduced(density),
-            &molefracs,
+            (molefracs, total_moles),
         )
     }
 }
@@ -411,18 +411,18 @@ impl<E: Residual<N>, N: Gradients> State<E, N>
 where
     DefaultAllocator: Allocator<N> + Allocator<N, N> + Allocator<U1, N>,
 {
-    pub fn spinodal(
+    pub fn spinodal<X: Composition<f64, N> + Clone>(
         eos: &E,
         temperature: Temperature,
-        molefracs: Option<&OVector<f64, N>>,
+        composition: X,
         options: SolverOptions,
     ) -> FeosResult<[Self; 2]> {
-        let critical_point = Self::critical_point(eos, molefracs, None, None, options)?;
-        let molefracs = molefracs.map_or_else(E::pure_molefracs, |x| x.clone());
+        let critical_point = Self::critical_point(eos, composition, None, None, options)?;
+        let molefracs = &critical_point.molefracs;
         let spinodal_vapor = Self::calculate_spinodal(
             eos,
             temperature,
-            &molefracs,
+            molefracs,
             DensityInitialization::Vapor,
             options,
         )?;
@@ -430,7 +430,7 @@ where
         let spinodal_liquid = Self::calculate_spinodal(
             eos,
             temperature,
-            &molefracs,
+            molefracs,
             DensityInitialization::InitialDensity(rho),
             options,
         )?;
@@ -500,12 +500,7 @@ where
                     "Spinodal calculation converged in {} step(s)\n",
                     i
                 );
-                return Self::new_intensive(
-                    eos,
-                    temperature,
-                    Density::from_reduced(rho),
-                    molefracs,
-                );
+                return Self::new(eos, temperature, Density::from_reduced(rho), molefracs);
             }
         }
         Err(FeosError::SuperCritical)
@@ -571,7 +566,7 @@ where
 
     // calculate pressure
     let a = partial2(
-        |v, &t, x| eos.lift().residual_molar_helmholtz_energy(t, v, x),
+        |v, &t, x| eos.lift().residual_helmholtz_energy(t, v, x),
         &temperature,
         &molefracs,
     );

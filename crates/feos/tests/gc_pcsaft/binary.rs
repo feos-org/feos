@@ -6,7 +6,6 @@ use feos_core::parameter::IdentifierOption;
 use feos_core::{Contributions, FeosResult, State};
 use nalgebra::dvector;
 use quantity::{KELVIN, METER, MOL};
-use typenum::P3;
 
 #[test]
 fn test_binary() -> FeosResult<()> {
@@ -31,9 +30,9 @@ fn test_binary() -> FeosResult<()> {
     #[cfg(feature = "dft")]
     let func = &GcPcSaftFunctional::new(parameters_func);
     let molefracs = dvector![0.5, 0.5];
-    let cp = State::critical_point(&eos, Some(&molefracs), None, None, Default::default())?;
+    let cp = State::critical_point(&eos, &molefracs, None, None, Default::default())?;
     #[cfg(feature = "dft")]
-    let cp_func = State::critical_point(&func, Some(&molefracs), None, None, Default::default())?;
+    let cp_func = State::critical_point(&func, molefracs, None, None, Default::default())?;
     println!("{}", cp.temperature);
     #[cfg(feature = "dft")]
     println!("{}", cp_func.temperature);
@@ -70,9 +69,9 @@ fn test_polar_term() -> FeosResult<()> {
     let eos1 = &GcPcSaft::new(parameters1);
     let eos2 = &GcPcSaft::new(parameters2);
     let moles = dvector![0.5, 0.5] * MOL;
-    let p1 = State::new_nvt(&eos1, 300.0 * KELVIN, METER.powi::<P3>(), &moles)?
+    let p1 = State::new_nvt(&eos1, 300.0 * KELVIN, METER.powi::<3>(), &moles)?
         .pressure(Contributions::Total);
-    let p2 = State::new_nvt(&eos2, 300.0 * KELVIN, METER.powi::<P3>(), &moles)?
+    let p2 = State::new_nvt(&eos2, 300.0 * KELVIN, METER.powi::<3>(), &moles)?
         .pressure(Contributions::Total);
     println!("{p1} {p2}");
     assert_eq!(p1, p2);

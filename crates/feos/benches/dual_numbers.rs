@@ -13,7 +13,6 @@ use feos_core::parameter::PureRecord;
 use nalgebra::{DVector, Dyn, dvector};
 use num_dual::{Dual2_64, Dual3_64, Dual64, DualNum, HyperDual64};
 use quantity::*;
-use typenum::P3;
 
 /// Helper function to create a state for given parameters.
 /// - temperature is 80% of critical temperature,
@@ -21,10 +20,9 @@ use typenum::P3;
 /// - molefracs (or moles) for equimolar mixture.
 fn state_pcsaft(n: usize, eos: &PcSaft) -> State<&PcSaft> {
     let moles = DVector::from_element(n, 1.0 / n as f64) * 10.0 * MOL;
-    let molefracs = (&moles / moles.sum()).into_value();
-    let cp = State::critical_point(&eos, Some(&molefracs), None, None, Default::default()).unwrap();
+    let cp = State::critical_point(&eos, &moles, None, None, Default::default()).unwrap();
     let temperature = 0.8 * cp.temperature;
-    State::new_nvt(&eos, temperature, cp.volume, &moles).unwrap()
+    State::new_nvt(&eos, temperature, cp.volume().unwrap(), moles).unwrap()
 }
 
 /// Residual Helmholtz energy given an equation of state and a StateHD.
@@ -129,7 +127,7 @@ fn methane_co2_pcsaft(c: &mut Criterion) {
 
     // 230 K, 50 bar, x0 = 0.15
     let temperature = 230.0 * KELVIN;
-    let density = 24.16896 * KILO * MOL / METER.powi::<P3>();
+    let density = 24.16896 * KILO * MOL / METER.powi::<3>();
     let volume = 10.0 * MOL / density;
     let x = dvector![0.15, 0.85];
     let moles = &x * 10.0 * MOL;
@@ -153,11 +151,10 @@ enum Derivative {
 
 /// Creates a [StateHD] cloning temperature, volume and moles.
 fn derive0<E>(state: &State<E>) -> StateHD<f64> {
-    let total_moles = state.total_moles.into_reduced();
     StateHD::new(
         state.temperature.into_reduced(),
-        state.volume.into_reduced() / total_moles,
-        &(state.moles.to_reduced() / total_moles),
+        state.molar_volume.into_reduced(),
+        &state.molefracs,
     )
 }
 

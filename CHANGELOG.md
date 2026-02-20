@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Breaking]
+### Added
+- Extended tp-flash algorithm to static numbers of components and enabled automatic differentiation for binary systems. [#336](https://github.com/feos-org/feos/pull/336)
+- Rewrote `PhaseEquilibrium::pure_p` to mirror `pure_t` and enabled automatic differentiation. [#337](https://github.com/feos-org/feos/pull/337)
+- Added `boiling_temperature` to the list of properties for parallel evaluations of gradients. [#337](https://github.com/feos-org/feos/pull/337)
+- Added the `Composition` trait to allow more flexibility in the creation of states and phase equilibria. [#330](https://github.com/feos-org/feos/pull/330)
+
+### Changed
+- Removed any assumptions about the total number of moles in a `State` or `PhaseEquilibrium`. Evaluating extensive properties now returns a `Result`. [#330](https://github.com/feos-org/feos/pull/330)
+
+### Removed
+- Removed the `StateBuilder` struct, because it is mostly obsolete with the addition of the `Composition` trait. [#330](https://github.com/feos-org/feos/pull/330)
+
+### Packaging
+- Updated `quantity` dependency to 0.13 and removed the `typenum` dependency. [#323](https://github.com/feos-org/feos/pull/323)
+
 ## [Unreleased]
 ### Changed
 - Automatically detect VLLEs in `BinaryPhaseDiagram`. [#341](https://github.com/feos-org/feos/pull/341)

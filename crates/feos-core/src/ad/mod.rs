@@ -1,10 +1,10 @@
 use crate::DensityInitialization::Liquid;
 use crate::density_iteration::density_iteration;
-use crate::{FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
+use crate::{Composition, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
 use nalgebra::{Const, SVector, U1, U2};
 #[cfg(feature = "rayon")]
 use ndarray::{Array1, Array2, ArrayView2, Zip};
-use num_dual::{Derivative, DualSVec, DualStruct};
+use num_dual::{Derivative, DualNum, DualSVec, DualStruct, first_derivative, partial2};
 use quantity::{Density, Pressure, Temperature};
 #[cfg(feature = "rayon")]
 use quantity::{KELVIN, KILO, METER, MOL, PASCAL};
@@ -57,13 +57,57 @@ pub trait PropertiesAD {
             let v2 = Gradient::from(v2);
             let x = Self::pure_molefracs();
 
-            let a1 = self.residual_molar_helmholtz_energy(t, v1, &x);
-            let a2 = self.residual_molar_helmholtz_energy(t, v2, &x);
+            let a1 = self.residual_helmholtz_energy(t, v1, &x);
+            let a2 = self.residual_helmholtz_energy(t, v2, &x);
             (a1, a2)
         };
 
         let p = -(a1 - a2 + t * (v2 / v1).ln()) / (v1 - v2);
         Ok(Pressure::from_reduced(p))
+    }
+
+    fn boiling_temperature<const P: usize>(
+        &self,
+        pressure: Pressure,
+    ) -> FeosResult<Temperature<Gradient<P>>>
+    where
+        Self: Residual<U1, Gradient<P>>,
+    {
+        let eos_f64 = self.re();
+        let (temperature, [vapor_density, liquid_density]) =
+            PhaseEquilibrium::pure_p(&eos_f64, pressure, None, Default::default())?;
+
+        // implicit differentiation is implemented here instead of just calling pure_t with dual
+        // numbers, because for the first derivative, we can avoid calculating density derivatives.
+        let t = temperature.into_reduced();
+        let v1 = 1.0 / liquid_density.to_reduced();
+        let v2 = 1.0 / vapor_density.to_reduced();
+        let p = pressure.into_reduced();
+        let t = Gradient::from(t);
+        let t = t + {
+            let v1 = Gradient::from(v1);
+            let v2 = Gradient::from(v2);
+            let p = Gradient::from(p);
+            let x = Self::pure_molefracs();
+
+            let residual_entropy = |v| {
+                let (a, s) = first_derivative(
+                    partial2(
+                        |t, &v, x| self.lift().residual_helmholtz_energy(t, v, x),
+                        &v,
+                        &x,
+                    ),
+                    t,
+                );
+                (a, -s)
+            };
+            let (a1, s1) = residual_entropy(v1);
+            let (a2, s2) = residual_entropy(v2);
+
+            let ln_rho = (v1 / v2).ln();
+            (p * (v2 - v1) + (a2 - a1 + t * ln_rho)) / (s2 - s1 - ln_rho)
+        };
+        Ok(Temperature::from_reduced(t))
     }
 
     fn equilibrium_liquid_density<const P: usize>(
@@ -112,6 +156,26 @@ pub trait PropertiesAD {
     }
 
     #[cfg(feature = "rayon")]
+    fn boiling_temperature_parallel<const P: usize>(
+        parameter_names: [String; P],
+        parameters: ArrayView2<f64>,
+        input: ArrayView2<f64>,
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+    where
+        Self: ParametersAD<1>,
+    {
+        parallelize::<_, Self, _, _>(
+            parameter_names,
+            parameters,
+            input,
+            |eos: &Self::Lifted<Gradient<P>>, inp| {
+                eos.boiling_temperature(inp[0] * PASCAL)
+                    .map(|p| p.convert_into(KELVIN))
+            },
+        )
+    }
+
+    #[cfg(feature = "rayon")]
     fn liquid_density_parallel<const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
@@ -151,20 +215,21 @@ pub trait PropertiesAD {
         )
     }
 
-    fn bubble_point_pressure<const P: usize>(
+    fn bubble_point_pressure<const P: usize, X: Composition<f64, U2>>(
         &self,
         temperature: Temperature,
         pressure: Option<Pressure>,
-        liquid_molefracs: SVector<f64, 2>,
+        liquid_molefracs: X,
     ) -> FeosResult<Pressure<Gradient<P>>>
     where
         Self: Residual<U2, Gradient<P>>,
     {
         let eos_f64 = self.re();
+        let (liquid_molefracs, _) = liquid_molefracs.into_molefracs(&eos_f64)?;
         let vle = PhaseEquilibrium::bubble_point(
             &eos_f64,
             temperature,
-            &liquid_molefracs,
+            liquid_molefracs,
             pressure,
             None,
             Default::default(),
@@ -184,16 +249,16 @@ pub trait PropertiesAD {
             let y = y.map(Gradient::from);
             let x = liquid_molefracs.map(Gradient::from);
 
-            let a_v = self.residual_molar_helmholtz_energy(t, v_v, &y);
+            let a_v = self.residual_helmholtz_energy(t, v_v, &y);
             let (p_l, mu_res_l, dp_l, dmu_l) = self.dmu_dv(t, v_l, &x);
             let vi_l = dmu_l / dp_l;
             let v_l = vi_l.dot(&y);
             let a_l = (mu_res_l - vi_l * p_l).dot(&y);
             (a_l, a_v, v_l, v_v)
         };
-        let rho_l = vle.liquid().partial_density.to_reduced();
+        let rho_l = vle.liquid().partial_density().to_reduced();
         let rho_l = [rho_l[0], rho_l[1]];
-        let rho_v = vle.vapor().partial_density.to_reduced();
+        let rho_v = vle.vapor().partial_density().to_reduced();
         let rho_v = [rho_v[0], rho_v[1]];
         let p = -(a_v - a_l
             + t * (y[0] * (rho_v[0] / rho_l[0]).ln() + y[1] * (rho_v[1] / rho_l[1]).ln() - 1.0))
@@ -201,20 +266,21 @@ pub trait PropertiesAD {
         Ok(Pressure::from_reduced(p))
     }
 
-    fn dew_point_pressure<const P: usize>(
+    fn dew_point_pressure<const P: usize, X: Composition<f64, U2>>(
         &self,
         temperature: Temperature,
         pressure: Option<Pressure>,
-        vapor_molefracs: SVector<f64, 2>,
+        vapor_molefracs: X,
     ) -> FeosResult<Pressure<Gradient<P>>>
     where
         Self: Residual<U2, Gradient<P>>,
     {
         let eos_f64 = self.re();
+        let (vapor_molefracs, _) = vapor_molefracs.into_molefracs(&eos_f64)?;
         let vle = PhaseEquilibrium::dew_point(
             &eos_f64,
             temperature,
-            &vapor_molefracs,
+            vapor_molefracs,
             pressure,
             None,
             Default::default(),
@@ -234,16 +300,16 @@ pub trait PropertiesAD {
             let x = x.map(Gradient::from);
             let y = vapor_molefracs.map(Gradient::from);
 
-            let a_l = self.residual_molar_helmholtz_energy(t, v_l, &x);
+            let a_l = self.residual_helmholtz_energy(t, v_l, &x);
             let (p_v, mu_res_v, dp_v, dmu_v) = self.dmu_dv(t, v_v, &y);
             let vi_v = dmu_v / dp_v;
             let v_v = vi_v.dot(&x);
             let a_v = (mu_res_v - vi_v * p_v).dot(&x);
             (a_l, a_v, v_l, v_v)
         };
-        let rho_l = vle.liquid().partial_density.to_reduced();
+        let rho_l = vle.liquid().partial_density().to_reduced();
         let rho_l = [rho_l[0], rho_l[1]];
-        let rho_v = vle.vapor().partial_density.to_reduced();
+        let rho_v = vle.vapor().partial_density().to_reduced();
         let rho_v = [rho_v[0], rho_v[1]];
         let p = -(a_l - a_v
             + t * (x[0] * (rho_l[0] / rho_v[0]).ln() + x[1] * (rho_l[1] / rho_v[1]).ln() - 1.0))
@@ -265,12 +331,8 @@ pub trait PropertiesAD {
             parameters,
             input,
             |eos: &Self::Lifted<Gradient<P>>, inp| {
-                eos.bubble_point_pressure(
-                    inp[0] * KELVIN,
-                    Some(inp[2] * PASCAL),
-                    SVector::from([inp[1], 1.0 - inp[1]]),
-                )
-                .map(|p| p.convert_into(PASCAL))
+                eos.bubble_point_pressure(inp[0] * KELVIN, Some(inp[2] * PASCAL), inp[1])
+                    .map(|p| p.convert_into(PASCAL))
             },
         )
     }
@@ -289,12 +351,8 @@ pub trait PropertiesAD {
             parameters,
             input,
             |eos: &Self::Lifted<Gradient<P>>, inp| {
-                eos.dew_point_pressure(
-                    inp[0] * KELVIN,
-                    Some(inp[2] * PASCAL),
-                    SVector::from([inp[1], 1.0 - inp[1]]),
-                )
-                .map(|p| p.convert_into(PASCAL))
+                eos.dew_point_pressure(inp[0] * KELVIN, Some(inp[2] * PASCAL), inp[1])
+                    .map(|p| p.convert_into(PASCAL))
             },
         )
     }

@@ -22,8 +22,12 @@ pub enum FeosError {
     IncompatibleComponents(usize, usize),
     #[error("Invalid state in {0}: {1} = {2}.")]
     InvalidState(String, String, f64),
-    #[error("Undetermined state: {0}.")]
+    #[error("Undetermined state: {0}")]
     UndeterminedState(String),
+    #[error(
+        "Extensive properties can only be evaluated for states that are initialized with extensive properties."
+    )]
+    IntensiveState,
     #[error("System is supercritical.")]
     SuperCritical,
     #[error("No phase split according to stability analysis.")]

@@ -7,11 +7,8 @@ use num_dual::{Dual, DualNum, Gradients, partial, partial2};
 use quantity::*;
 use std::ops::{Add, Div, Neg, Sub};
 
-type DpDn<T> = Quantity<T, <_Pressure as Sub<_Moles>>::Output>;
-type DeDn<T> = Quantity<T, <_MolarEnergy as Sub<_Moles>>::Output>;
 type InvT<T> = Quantity<T, <_Temperature as Neg>::Output>;
 type InvP<T> = Quantity<T, <_Pressure as Neg>::Output>;
-type InvM<T> = Quantity<T, <_Moles as Neg>::Output>;
 type POverT<T> = Quantity<T, <_Pressure as Sub<_Temperature>>::Output>;
 
 /// # State properties
@@ -37,37 +34,40 @@ where
     }
 
     /// Residual Helmholtz energy $A^\text{res}$
-    pub fn residual_helmholtz_energy(&self) -> Energy<D> {
-        *self.cache.a.get_or_init(|| {
-            self.eos
-                .residual_helmholtz_energy_unit(self.temperature, self.volume, &self.moles)
-        })
+    pub fn residual_helmholtz_energy(&self) -> FeosResult<Energy<D>> {
+        Ok(self.residual_molar_helmholtz_energy() * self.total_moles()?)
     }
 
     /// Residual molar Helmholtz energy $a^\text{res}$
     pub fn residual_molar_helmholtz_energy(&self) -> MolarEnergy<D> {
-        self.residual_helmholtz_energy() / self.total_moles
+        *self.cache.a.get_or_init(|| {
+            self.eos.residual_molar_helmholtz_energy(
+                self.temperature,
+                self.molar_volume,
+                &self.molefracs,
+            )
+        })
     }
 
     /// Residual entropy $S^\text{res}=\left(\frac{\partial A^\text{res}}{\partial T}\right)_{V,N_i}$
-    pub fn residual_entropy(&self) -> Entropy<D> {
+    pub fn residual_entropy(&self) -> FeosResult<Entropy<D>> {
+        Ok(self.residual_molar_entropy() * self.total_moles()?)
+    }
+
+    /// Residual molar entropy $s^\text{res}=\left(\frac{\partial a^\text{res}}{\partial T}\right)_{V,N_i}$
+    pub fn residual_molar_entropy(&self) -> MolarEntropy<D> {
         -*self.cache.da_dt.get_or_init(|| {
             let (a, da_dt) = quantity::ad::first_derivative(
                 partial2(
-                    |t, &v, n| self.eos.lift().residual_helmholtz_energy_unit(t, v, n),
-                    &self.volume,
-                    &self.moles,
+                    |t, &v, n| self.eos.lift().residual_molar_helmholtz_energy(t, v, n),
+                    &self.molar_volume,
+                    &self.molefracs,
                 ),
                 self.temperature,
             );
             let _ = self.cache.a.set(a);
             da_dt
         })
-    }
-
-    /// Residual entropy $s^\text{res}=\left(\frac{\partial a^\text{res}}{\partial T}\right)_{V,N_i}$
-    pub fn residual_molar_entropy(&self) -> MolarEntropy<D> {
-        self.residual_entropy() / self.total_moles
     }
 
     /// Pressure: $p=-\left(\frac{\partial A}{\partial V}\right)_{T,N_i}$
@@ -77,11 +77,11 @@ where
             -*self.cache.da_dv.get_or_init(|| {
                 let (a, da_dv) = quantity::ad::first_derivative(
                     partial2(
-                        |v, &t, n| self.eos.lift().residual_helmholtz_energy_unit(t, v, n),
+                        |v, &t, n| self.eos.lift().residual_molar_helmholtz_energy(t, v, n),
                         &self.temperature,
-                        &self.moles,
+                        &self.molefracs,
                     ),
-                    self.volume,
+                    self.molar_volume,
                 );
                 let _ = self.cache.a.set(a);
                 da_dv
@@ -97,11 +97,13 @@ where
             .get_or_init(|| {
                 let (a, mu) = quantity::ad::gradient_copy(
                     partial2(
-                        |n, &t, &v| self.eos.lift().residual_helmholtz_energy_unit(t, v, &n),
+                        |n: Dimensionless<_>, &t, &v| {
+                            self.eos.lift().residual_molar_helmholtz_energy(t, v, &n)
+                        },
                         &self.temperature,
-                        &self.volume,
+                        &self.molar_volume,
                     ),
-                    &self.moles,
+                    &Dimensionless::new(self.molefracs.clone()),
                 );
                 let _ = self.cache.a.set(a);
                 mu
@@ -116,18 +118,21 @@ where
 
     // pressure derivatives
 
-    /// Partial derivative of pressure w.r.t. volume: $\left(\frac{\partial p}{\partial V}\right)_{T,N_i}$
-    pub fn dp_dv(&self, contributions: Contributions) -> <Pressure<D> as Div<Volume<D>>>::Output {
-        let ideal_gas = || -self.density * RGAS * self.temperature / self.volume;
+    /// Partial derivative of pressure w.r.t. molar volume: $\left(\frac{\partial p}{\partial v}\right)_{T,N_i}$
+    pub fn dp_dv(
+        &self,
+        contributions: Contributions,
+    ) -> <Pressure<D> as Div<MolarVolume<D>>>::Output {
+        let ideal_gas = || -self.density * RGAS * self.temperature / self.molar_volume;
         let residual = || {
             -*self.cache.d2a_dv2.get_or_init(|| {
                 let (a, da_dv, d2a_dv2) = quantity::ad::second_derivative(
                     partial2(
-                        |v, &t, n| self.eos.lift().residual_helmholtz_energy_unit(t, v, n),
+                        |v, &t, n| self.eos.lift().residual_molar_helmholtz_energy(t, v, n),
                         &self.temperature,
-                        &self.moles,
+                        &self.molefracs,
                     ),
-                    self.volume,
+                    self.molar_volume,
                 );
                 let _ = self.cache.a.set(a);
                 let _ = self.cache.da_dv.set(da_dv);
@@ -142,7 +147,7 @@ where
         &self,
         contributions: Contributions,
     ) -> <Pressure<D> as Div<Density<D>>>::Output {
-        -self.volume / self.density * self.dp_dv(contributions)
+        -self.molar_volume / self.density * self.dp_dv(contributions)
     }
 
     /// Partial derivative of pressure w.r.t. temperature: $\left(\frac{\partial p}{\partial T}\right)_{V,N_i}$
@@ -152,10 +157,10 @@ where
             -*self.cache.d2a_dtdv.get_or_init(|| {
                 let (a, da_dt, da_dv, d2a_dtdv) = quantity::ad::second_partial_derivative(
                     partial(
-                        |(t, v), n| self.eos.lift().residual_helmholtz_energy_unit(t, v, n),
-                        &self.moles,
+                        |(t, v), n| self.eos.lift().residual_molar_helmholtz_energy(t, v, n),
+                        &self.molefracs,
                     ),
-                    (self.temperature, self.volume),
+                    (self.temperature, self.molar_volume),
                 );
                 let _ = self.cache.a.set(a);
                 let _ = self.cache.da_dt.set(da_dt);
@@ -166,18 +171,23 @@ where
         Self::contributions(ideal_gas, residual, contributions)
     }
 
-    /// Partial derivative of pressure w.r.t. moles: $\left(\frac{\partial p}{\partial N_i}\right)_{T,V,N_j}$
-    pub fn dp_dni(&self, contributions: Contributions) -> DpDn<OVector<D, N>> {
+    /// Partial derivative of pressure w.r.t. moles: $N\left(\frac{\partial p}{\partial N_i}\right)_{T,V,N_j}$
+    pub fn n_dp_dni(&self, contributions: Contributions) -> Pressure<OVector<D, N>> {
         let residual = -self
             .cache
             .d2a_dndv
             .get_or_init(|| {
                 let (a, da_dn, da_dv, dmu_dv) = quantity::ad::partial_hessian_copy(
                     partial(
-                        |(n, v), &t| self.eos.lift().residual_helmholtz_energy_unit(t, v, &n),
+                        |(n, v): (Dimensionless<_>, _), &t| {
+                            self.eos.lift().residual_molar_helmholtz_energy(t, v, &n)
+                        },
                         &self.temperature,
                     ),
-                    (&self.moles, self.volume),
+                    (
+                        &Dimensionless::new(self.molefracs.clone()),
+                        self.molar_volume,
+                    ),
                 );
                 let _ = self.cache.a.set(a);
                 let _ = self.cache.da_dn.set(da_dn);
@@ -186,7 +196,7 @@ where
             })
             .clone();
         let (r, c) = residual.shape_generic();
-        let ideal_gas = || self.temperature / self.volume * RGAS;
+        let ideal_gas = || self.temperature * self.density * RGAS;
         Quantity::from_fn_generic(r, c, |i, _| {
             Self::contributions(ideal_gas, || residual.get(i), contributions)
         })
@@ -196,18 +206,19 @@ where
     pub fn d2p_dv2(
         &self,
         contributions: Contributions,
-    ) -> <<Pressure<D> as Div<Volume<D>>>::Output as Div<Volume<D>>>::Output {
-        let ideal_gas =
-            || self.density * RGAS * self.temperature / (self.volume * self.volume) * 2.0;
+    ) -> <<Pressure<D> as Div<MolarVolume<D>>>::Output as Div<MolarVolume<D>>>::Output {
+        let ideal_gas = || {
+            self.density * RGAS * self.temperature / (self.molar_volume * self.molar_volume) * 2.0
+        };
         let residual = || {
             -*self.cache.d3a_dv3.get_or_init(|| {
                 let (a, da_dv, d2a_dv2, d3a_dv3) = quantity::ad::third_derivative(
                     partial2(
-                        |v, &t, n| self.eos.lift().residual_helmholtz_energy_unit(t, v, n),
+                        |v, &t, n| self.eos.lift().residual_molar_helmholtz_energy(t, v, n),
                         &self.temperature,
-                        &self.moles,
+                        &self.molefracs,
                     ),
-                    self.volume,
+                    self.molar_volume,
                 );
                 let _ = self.cache.a.set(a);
                 let _ = self.cache.da_dv.set(da_dv);
@@ -223,68 +234,62 @@ where
         &self,
         contributions: Contributions,
     ) -> <<Pressure<D> as Div<Density<D>>>::Output as Div<Density<D>>>::Output {
-        self.volume / (self.density * self.density)
-            * (self.volume * self.d2p_dv2(contributions) + self.dp_dv(contributions) * 2.0)
+        self.molar_volume.powi::<3>()
+            * (self.molar_volume * self.d2p_dv2(contributions) + self.dp_dv(contributions) * 2.0)
     }
 
     /// Structure factor: $S(0)=k_BT\left(\frac{\partial\rho}{\partial p}\right)_{T,N_i}$
     pub fn structure_factor(&self) -> D {
-        -(self.temperature * self.density * RGAS / (self.volume * self.dp_dv(Contributions::Total)))
-            .into_value()
-    }
-
-    // This function is designed specifically for use in density iterations
-    pub(crate) fn p_dpdrho(&self) -> (Pressure<D>, <Pressure<D> as Div<Density<D>>>::Output) {
-        let dp_dv = self.dp_dv(Contributions::Total);
-        (
-            self.pressure(Contributions::Total),
-            (-self.volume * dp_dv / self.density),
-        )
+        -(self.temperature * self.density * RGAS
+            / (self.molar_volume * self.dp_dv(Contributions::Total)))
+        .into_value()
     }
 
     /// Partial molar volume: $v_i=\left(\frac{\partial V}{\partial N_i}\right)_{T,p,N_j}$
     pub fn partial_molar_volume(&self) -> MolarVolume<OVector<D, N>> {
-        -self.dp_dni(Contributions::Total) / self.dp_dv(Contributions::Total)
+        -self.n_dp_dni(Contributions::Total) / self.dp_dv(Contributions::Total)
     }
 
-    /// Partial derivative of chemical potential w.r.t. moles: $\left(\frac{\partial\mu_i}{\partial N_j}\right)_{T,V,N_k}$
-    pub fn dmu_dni(&self, contributions: Contributions) -> DeDn<OMatrix<D, N, N>>
+    /// Partial derivative of chemical potential w.r.t. moles: $N\left(\frac{\partial\mu_i}{\partial N_j}\right)_{T,V,N_k}$
+    pub fn n_dmu_dni(&self, contributions: Contributions) -> MolarEnergy<OMatrix<D, N, N>>
     where
         DefaultAllocator: Allocator<N, N>,
     {
         let (a, da_dn, d2a_dn2) = quantity::ad::hessian_copy(
             partial2(
-                |n, &t, &v| self.eos.lift().residual_helmholtz_energy_unit(t, v, &n),
+                |n: Dimensionless<_>, &t, &v| {
+                    self.eos.lift().residual_molar_helmholtz_energy(t, v, &n)
+                },
                 &self.temperature,
-                &self.volume,
+                &self.molar_volume,
             ),
-            &self.moles,
+            &Dimensionless::new(self.molefracs.clone()),
         );
         let _ = self.cache.a.set(a);
         let _ = self.cache.da_dn.set(da_dn);
         let residual = || d2a_dn2;
         let ideal_gas = || {
             Dimensionless::new(OMatrix::from_diagonal(&self.molefracs.map(|x| x.recip())))
-                * (self.temperature * RGAS / self.total_moles)
+                * (self.temperature * RGAS)
         };
         Self::contributions(ideal_gas, residual, contributions)
     }
 
     /// Isothermal compressibility: $\kappa_T=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{T,N_i}$
     pub fn isothermal_compressibility(&self) -> InvP<D> {
-        (self.dp_dv(Contributions::Total) * self.volume).inv()
+        (self.dp_dv(Contributions::Total) * self.molar_volume).inv()
     }
 
     // entropy derivatives
 
-    /// Partial derivative of the residual entropy w.r.t. temperature: $\left(\frac{\partial S^\text{res}}{\partial T}\right)_{V,N_i}$
-    pub fn ds_res_dt(&self) -> <Entropy<D> as Div<Temperature<D>>>::Output {
+    /// Partial derivative of the residual molar entropy w.r.t. temperature: $\left(\frac{\partial s^\text{res}}{\partial T}\right)_{V,N_i}$
+    pub fn ds_res_dt(&self) -> <MolarEntropy<D> as Div<Temperature<D>>>::Output {
         -*self.cache.d2a_dt2.get_or_init(|| {
             let (a, da_dt, d2a_dt2) = quantity::ad::second_derivative(
                 partial2(
-                    |t, &v, n| self.eos.lift().residual_helmholtz_energy_unit(t, v, n),
-                    &self.volume,
-                    &self.moles,
+                    |t, &v, n| self.eos.lift().residual_molar_helmholtz_energy(t, v, n),
+                    &self.molar_volume,
+                    &self.molefracs,
                 ),
                 self.temperature,
             );
@@ -294,16 +299,16 @@ where
         })
     }
 
-    /// Second partial derivative of the residual entropy w.r.t. temperature: $\left(\frac{\partial^2S^\text{res}}{\partial T^2}\right)_{V,N_i}$
+    /// Second partial derivative of the residual molar entropy w.r.t. temperature: $\left(\frac{\partial^2s^\text{res}}{\partial T^2}\right)_{V,N_i}$
     pub fn d2s_res_dt2(
         &self,
-    ) -> <<Entropy<D> as Div<Temperature<D>>>::Output as Div<Temperature<D>>>::Output {
+    ) -> <<MolarEntropy<D> as Div<Temperature<D>>>::Output as Div<Temperature<D>>>::Output {
         -*self.cache.d3a_dt3.get_or_init(|| {
             let (a, da_dt, d2a_dt2, d3a_dt3) = quantity::ad::third_derivative(
                 partial2(
-                    |t, &v, n| self.eos.lift().residual_helmholtz_energy_unit(t, v, n),
-                    &self.volume,
-                    &self.moles,
+                    |t, &v, n| self.eos.lift().residual_molar_helmholtz_energy(t, v, n),
+                    &self.molar_volume,
+                    &self.molefracs,
                 ),
                 self.temperature,
             );
@@ -321,10 +326,15 @@ where
             .get_or_init(|| {
                 let (a, da_dn, da_dt, d2a_dndt) = quantity::ad::partial_hessian_copy(
                     partial(
-                        |(n, t), &v| self.eos.lift().residual_helmholtz_energy_unit(t, v, &n),
-                        &self.volume,
+                        |(n, t): (Dimensionless<_>, _), &v| {
+                            self.eos.lift().residual_molar_helmholtz_energy(t, v, &n)
+                        },
+                        &self.molar_volume,
                     ),
-                    (&self.moles, self.temperature),
+                    (
+                        &Dimensionless::new(self.molefracs.clone()),
+                        self.temperature,
+                    ),
                 );
                 let _ = self.cache.a.set(a);
                 let _ = self.cache.da_dn.set(da_dn);
@@ -359,17 +369,19 @@ where
             .add_scalar(-self.pressure(Contributions::Total).inv())
     }
 
-    /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. moles: $\left(\frac{\partial\ln\varphi_i}{\partial N_j}\right)_{T,p,N_k}$
-    pub fn dln_phi_dnj(&self) -> InvM<OMatrix<D, N, N>>
+    /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. moles: $N\left(\frac{\partial\ln\varphi_i}{\partial N_j}\right)_{T,p,N_k}$
+    pub fn n_dln_phi_dnj(&self) -> OMatrix<D, N, N>
     where
         DefaultAllocator: Allocator<N, N>,
     {
-        let dmu_dni = self.dmu_dni(Contributions::Residual);
-        let dp_dni = self.dp_dni(Contributions::Total);
+        let dmu_dni = self.n_dmu_dni(Contributions::Residual);
+        let dp_dni = self.n_dp_dni(Contributions::Total);
         let dp_dv = self.dp_dv(Contributions::Total);
         let (r, c) = dmu_dni.shape_generic();
         let dp_dn_2 = Quantity::from_fn_generic(r, c, |i, j| dp_dni.get(i) * dp_dni.get(j));
-        ((dmu_dni + dp_dn_2 / dp_dv) / (self.temperature * RGAS)).add_scalar(self.total_moles.inv())
+        ((dmu_dni + dp_dn_2 / dp_dv) / (self.temperature * RGAS))
+            .into_value()
+            .add_scalar(D::from(1.0))
     }
 }
 
@@ -380,11 +392,11 @@ impl<E: Residual + Subset> State<E> {
         (0..self.eos.components())
             .map(|i| {
                 let eos = self.eos.subset(&[i]);
-                let state = State::new_xpt(
+                let state = State::new_npt(
                     &eos,
                     self.temperature,
                     pressure,
-                    &dvector![1.0],
+                    dvector![1.0],
                     Some(crate::DensityInitialization::Liquid),
                 )?;
                 Ok(state.ln_phi()[0])
@@ -419,26 +431,17 @@ impl<E: Residual + Subset> State<E> {
             .unzip();
         let solvent_molefracs = DVector::from_vec(solvent_molefracs);
         let solvent = eos.subset(&solvent_comps);
-        let vle = if solvent_comps.len() == 1 {
-            PhaseEquilibrium::pure(&solvent, temperature, None, Default::default())
-        } else {
-            PhaseEquilibrium::bubble_point(
-                &solvent,
-                temperature,
-                &solvent_molefracs,
-                None,
-                None,
-                Default::default(),
-            )
-        }?;
+        let vle = PhaseEquilibrium::bubble_point(
+            &solvent,
+            temperature,
+            &solvent_molefracs,
+            None,
+            None,
+            Default::default(),
+        )?;
 
         // Calculate the liquid state including the Henry components
-        let liquid = State::new_nvt(
-            eos,
-            temperature,
-            vle.liquid().volume,
-            &(molefracs * vle.liquid().total_moles),
-        )?;
+        let liquid = State::new(eos, temperature, vle.liquid().density, molefracs.clone())?;
 
         // Calculate the vapor state including the Henry components
         let mut molefracs_vapor = molefracs.clone();
@@ -446,12 +449,7 @@ impl<E: Residual + Subset> State<E> {
             .into_iter()
             .zip(&vle.vapor().molefracs)
             .for_each(|(i, &y)| molefracs_vapor[i] = y);
-        let vapor = State::new_nvt(
-            eos,
-            temperature,
-            vle.vapor().volume,
-            &(molefracs_vapor * vle.vapor().total_moles),
-        )?;
+        let vapor = State::new(eos, temperature, vle.vapor().density, molefracs.clone())?;
 
         // Determine the Henry's law coefficients and return only those of the Henry components
         let p = vle.vapor().pressure(Contributions::Total).into_reduced();
@@ -474,11 +472,10 @@ impl<E: Residual + Subset> State<E> {
 impl<E: Residual> State<E> {
     /// Thermodynamic factor: $\Gamma_{ij}=\delta_{ij}+x_i\left(\frac{\partial\ln\varphi_i}{\partial x_j}\right)_{T,p,\Sigma}$
     pub fn thermodynamic_factor(&self) -> DMatrix<f64> {
-        let dln_phi_dnj = (self.dln_phi_dnj() * Moles::from_reduced(1.0)).into_value();
-        let moles = &self.molefracs * self.total_moles.into_reduced();
+        let dln_phi_dnj = self.n_dln_phi_dnj();
         let n = self.eos.components() - 1;
         DMatrix::from_fn(n, n, |i, j| {
-            moles[i] * (dln_phi_dnj[(i, j)] - dln_phi_dnj[(i, n)]) + if i == j { 1.0 } else { 0.0 }
+            dln_phi_dnj[(i, j)] - dln_phi_dnj[(i, n)] + if i == j { 1.0 } else { 0.0 }
         })
     }
 }
@@ -489,63 +486,62 @@ where
 {
     /// Residual molar isochoric heat capacity: $c_v^\text{res}=\left(\frac{\partial u^\text{res}}{\partial T}\right)_{V,N_i}$
     pub fn residual_molar_isochoric_heat_capacity(&self) -> MolarEntropy<D> {
-        self.ds_res_dt() * self.temperature / self.total_moles
+        self.ds_res_dt() * self.temperature
     }
 
     /// Partial derivative of the residual molar isochoric heat capacity w.r.t. temperature: $\left(\frac{\partial c_V^\text{res}}{\partial T}\right)_{V,N_i}$
     pub fn dc_v_res_dt(&self) -> <MolarEntropy<D> as Div<Temperature<D>>>::Output {
-        (self.temperature * self.d2s_res_dt2() + self.ds_res_dt()) / self.total_moles
+        self.temperature * self.d2s_res_dt2() + self.ds_res_dt()
     }
 
     /// Residual molar isobaric heat capacity: $c_p^\text{res}=\left(\frac{\partial h^\text{res}}{\partial T}\right)_{p,N_i}$
     pub fn residual_molar_isobaric_heat_capacity(&self) -> MolarEntropy<D> {
         let dp_dt = self.dp_dt(Contributions::Total);
-        self.temperature / self.total_moles
-            * (self.ds_res_dt() - dp_dt * dp_dt / self.dp_dv(Contributions::Total))
+        self.temperature * (self.ds_res_dt() - dp_dt * dp_dt / self.dp_dv(Contributions::Total))
             - RGAS
     }
 
     /// Residual enthalpy: $H^\text{res}(T,p,\mathbf{n})=A^\text{res}+TS^\text{res}+p^\text{res}V$
-    pub fn residual_enthalpy(&self) -> Energy<D> {
-        self.temperature * self.residual_entropy()
-            + self.residual_helmholtz_energy()
-            + self.pressure(Contributions::Residual) * self.volume
+    pub fn residual_enthalpy(&self) -> FeosResult<Energy<D>> {
+        Ok(self.residual_molar_enthalpy() * self.total_moles()?)
     }
 
     /// Residual molar enthalpy: $h^\text{res}(T,p,\mathbf{n})=a^\text{res}+Ts^\text{res}+p^\text{res}v$
     pub fn residual_molar_enthalpy(&self) -> MolarEnergy<D> {
-        self.residual_enthalpy() / self.total_moles
+        self.temperature * self.residual_molar_entropy()
+            + self.residual_molar_helmholtz_energy()
+            + self.pressure(Contributions::Residual) * self.molar_volume
     }
 
     /// Residual internal energy: $U^\text{res}(T,V,\mathbf{n})=A^\text{res}+TS^\text{res}$
-    pub fn residual_internal_energy(&self) -> Energy<D> {
-        self.temperature * self.residual_entropy() + self.residual_helmholtz_energy()
+    pub fn residual_internal_energy(&self) -> FeosResult<Energy<D>> {
+        Ok(self.residual_molar_internal_energy() * self.total_moles()?)
     }
 
     /// Residual molar internal energy: $u^\text{res}(T,V,\mathbf{n})=a^\text{res}+Ts^\text{res}$
     pub fn residual_molar_internal_energy(&self) -> MolarEnergy<D> {
-        self.residual_internal_energy() / self.total_moles
+        self.temperature * self.residual_molar_entropy() + self.residual_molar_helmholtz_energy()
     }
 
     /// Residual Gibbs energy: $G^\text{res}(T,p,\mathbf{n})=A^\text{res}+p^\text{res}V-NRT \ln Z$
-    pub fn residual_gibbs_energy(&self) -> Energy<D> {
-        self.pressure(Contributions::Residual) * self.volume + self.residual_helmholtz_energy()
-            - self.total_moles
-                * RGAS
-                * self.temperature
-                * Dimensionless::new(self.compressibility(Contributions::Total).ln())
+    pub fn residual_gibbs_energy(&self) -> FeosResult<Energy<D>> {
+        Ok(self.residual_molar_gibbs_energy() * self.total_moles()?)
     }
 
     /// Residual Gibbs energy: $g^\text{res}(T,p,\mathbf{n})=a^\text{res}+p^\text{res}v-RT \ln Z$
     pub fn residual_molar_gibbs_energy(&self) -> MolarEnergy<D> {
-        self.residual_gibbs_energy() / self.total_moles
+        self.pressure(Contributions::Residual) * self.molar_volume
+            + self.residual_molar_helmholtz_energy()
+            - self.temperature
+                * RGAS
+                * Dimensionless::new(self.compressibility(Contributions::Total).ln())
     }
 
     /// Molar Helmholtz energy $a^\text{res}$ evaluated for each residual contribution of the equation of state.
     pub fn residual_molar_helmholtz_energy_contributions(
         &self,
     ) -> Vec<(&'static str, MolarEnergy<D>)> {
-        let residual_contributions = self.eos.molar_helmholtz_energy_contributions(
+        let residual_contributions = self.eos.helmholtz_energy_contributions(
             self.temperature.into_reduced(),
             self.density.into_reduced().recip(),
             &self.molefracs,
@@ -566,10 +562,7 @@ where
         let v = Dual::from_re(self.temperature.into_reduced());
         let mut x = self.molefracs.map(Dual::from_re);
         x[component].eps = D::one();
-        let contributions = self
-            .eos
-            .lift()
-            .molar_helmholtz_energy_contributions(t, v, &x);
+        let contributions = self.eos.lift().helmholtz_energy_contributions(t, v, &x);
         let mut res = Vec::with_capacity(contributions.len());
         for (s, v) in contributions {
             res.push((s, MolarEnergy::from_reduced(v.eps)));
@@ -582,10 +575,7 @@ where
         let t = Dual::from_re(self.temperature.into_reduced());
         let v = Dual::from_re(self.density.into_reduced().recip()).derivative();
         let x = self.molefracs.map(Dual::from_re);
-        let contributions = self
-            .eos
-            .lift()
-            .molar_helmholtz_energy_contributions(t, v, &x);
+        let contributions = self.eos.lift().helmholtz_energy_contributions(t, v, &x);
         let mut res = Vec::with_capacity(contributions.len() + 1);
         res.push(("Ideal gas", self.density * RGAS * self.temperature));
         for (s, v) in contributions {
@@ -607,13 +597,17 @@ where
     }
 
     /// Mass of each component: $m_i=n_iMW_i$
-    pub fn mass(&self) -> Mass<OVector<D, N>> {
-        self.eos.molar_weight().component_mul(&self.moles)
+    pub fn mass(&self) -> FeosResult<Mass<OVector<D, N>>> {
+        Ok(self
+            .eos
+            .molar_weight()
+            .component_mul(&Dimensionless::new(self.molefracs.clone()))
+            * self.total_moles()?)
     }
 
     /// Total mass: $m=\sum_im_i=nMW$
-    pub fn total_mass(&self) -> Mass<D> {
-        self.total_moles * self.total_molar_weight()
+    pub fn total_mass(&self) -> FeosResult<Mass<D>> {
+        Ok(self.total_molar_weight() * self.total_moles()?)
     }
 
     /// Mass density: $\rho^{(m)}=\frac{m}{V}$
@@ -623,7 +617,10 @@ where
 
     /// Mass fractions: $w_i=\frac{m_i}{m}$
     pub fn massfracs(&self) -> OVector<D, N> {
-        (self.mass() / self.total_mass()).into_value()
+        self.eos
+            .molar_weight()
+            .convert_into(self.total_molar_weight())
+            .component_mul(&self.molefracs)
     }
 }
 
@@ -639,7 +636,7 @@ where
     pub fn viscosity(&self) -> Viscosity<D> {
         let s = self.residual_molar_entropy().into_reduced();
         self.eos
-            .viscosity_reference(self.temperature, self.volume, &self.moles)
+            .viscosity_reference(self.temperature, self.molar_volume, &self.molefracs)
             * Dimensionless::new(self.eos.viscosity_correlation(s, &self.molefracs).exp())
     }
 
@@ -655,14 +652,14 @@ where
     /// Return the viscosity reference as used in entropy scaling.
     pub fn viscosity_reference(&self) -> Viscosity<D> {
         self.eos
-            .viscosity_reference(self.temperature, self.volume, &self.moles)
+            .viscosity_reference(self.temperature, self.molar_volume, &self.molefracs)
     }
 
     /// Return the diffusion via entropy scaling.
     pub fn diffusion(&self) -> Diffusivity<D> {
         let s = self.residual_molar_entropy().into_reduced();
         self.eos
-            .diffusion_reference(self.temperature, self.volume, &self.moles)
+            .diffusion_reference(self.temperature, self.molar_volume, &self.molefracs)
             * Dimensionless::new(self.eos.diffusion_correlation(s, &self.molefracs).exp())
     }
 
@@ -678,19 +675,21 @@ where
     /// Return the diffusion reference as used in entropy scaling.
     pub fn diffusion_reference(&self) -> Diffusivity<D> {
         self.eos
-            .diffusion_reference(self.temperature, self.volume, &self.moles)
+            .diffusion_reference(self.temperature, self.molar_volume, &self.molefracs)
     }
 
     /// Return the thermal conductivity via entropy scaling.
     pub fn thermal_conductivity(&self) -> ThermalConductivity<D> {
         let s = self.residual_molar_entropy().into_reduced();
-        self.eos
-            .thermal_conductivity_reference(self.temperature, self.volume, &self.moles)
-            * Dimensionless::new(
-                self.eos
-                    .thermal_conductivity_correlation(s, &self.molefracs)
-                    .exp(),
-            )
+        self.eos.thermal_conductivity_reference(
+            self.temperature,
+            self.molar_volume,
+            &self.molefracs,
+        ) * Dimensionless::new(
+            self.eos
+                .thermal_conductivity_correlation(s, &self.molefracs)
+                .exp(),
+        )
     }
 
     /// Return the logarithm of the reduced thermal conductivity.
@@ -705,7 +704,10 @@ where
 
     /// Return the thermal conductivity reference as used in entropy scaling.
     pub fn thermal_conductivity_reference(&self) -> ThermalConductivity<D> {
-        self.eos
-            .thermal_conductivity_reference(self.temperature, self.volume, &self.moles)
+        self.eos.thermal_conductivity_reference(
+            self.temperature,
+            self.molar_volume,
+            &self.molefracs,
+        )
     }
 }

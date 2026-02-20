@@ -3,7 +3,6 @@
 #![warn(clippy::allow_attributes)]
 use quantity::{Quantity, SIUnit};
 use std::ops::{Div, Mul};
-use typenum::Integer;
 
 /// Print messages with level `Verbosity::Iter` or higher.
 #[macro_export]
@@ -42,7 +41,7 @@ pub use errors::{FeosError, FeosResult};
 #[cfg(feature = "ndarray")]
 pub use phase_equilibria::{PhaseDiagram, PhaseDiagramHetero};
 pub use phase_equilibria::{PhaseEquilibrium, TemperatureOrPressure};
-pub use state::{Contributions, DensityInitialization, State, StateBuilder, StateHD, StateVec};
+pub use state::{Composition, Contributions, DensityInitialization, State, StateHD, StateVec};
 
 /// Level of detail in the iteration output.
 #[derive(Copy, Clone, PartialOrd, PartialEq, Eq, Default)]
@@ -132,20 +131,20 @@ const fn powi(x: f64, n: i32) -> f64 {
 /// Conversion between reduced units and SI units.
 pub trait ReferenceSystem {
     type Inner;
-    type T: Integer;
-    type L: Integer;
-    type M: Integer;
-    type I: Integer;
-    type THETA: Integer;
-    type N: Integer;
-    type J: Integer;
-    const FACTOR: f64 = powi(REFERENCE_VALUES[0], Self::T::I32)
-        * powi(REFERENCE_VALUES[1], Self::L::I32)
-        * powi(REFERENCE_VALUES[2], Self::M::I32)
-        * powi(REFERENCE_VALUES[3], Self::I::I32)
-        * powi(REFERENCE_VALUES[4], Self::THETA::I32)
-        * powi(REFERENCE_VALUES[5], Self::N::I32)
-        * powi(REFERENCE_VALUES[6], Self::J::I32);
+    const T: i8;
+    const L: i8;
+    const M: i8;
+    const I: i8;
+    const THETA: i8;
+    const N: i8;
+    const J: i8;
+    const FACTOR: f64 = powi(REFERENCE_VALUES[0], Self::T as i32)
+        * powi(REFERENCE_VALUES[1], Self::L as i32)
+        * powi(REFERENCE_VALUES[2], Self::M as i32)
+        * powi(REFERENCE_VALUES[3], Self::I as i32)
+        * powi(REFERENCE_VALUES[4], Self::THETA as i32)
+        * powi(REFERENCE_VALUES[5], Self::N as i32)
+        * powi(REFERENCE_VALUES[6], Self::J as i32);
 
     fn from_reduced(value: Self::Inner) -> Self
     where
@@ -161,17 +160,25 @@ pub trait ReferenceSystem {
 }
 
 /// Conversion to and from reduced units
-impl<Inner, T: Integer, L: Integer, M: Integer, I: Integer, THETA: Integer, N: Integer, J: Integer>
-    ReferenceSystem for Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>
+impl<
+    Inner,
+    const T: i8,
+    const L: i8,
+    const M: i8,
+    const I: i8,
+    const THETA: i8,
+    const N: i8,
+    const J: i8,
+> ReferenceSystem for Quantity<Inner, SIUnit<T, L, M, I, THETA, N, J>>
 {
     type Inner = Inner;
-    type T = T;
-    type L = L;
-    type M = M;
-    type I = I;
-    type THETA = THETA;
-    type N = N;
-    type J = J;
+    const T: i8 = T;
+    const L: i8 = L;
+    const M: i8 = M;
+    const I: i8 = I;
+    const THETA: i8 = THETA;
+    const N: i8 = N;
+    const J: i8 = J;
     fn from_reduced(value: Inner) -> Self
     where
         Inner: Mul<f64, Output = Inner>,
@@ -198,7 +205,7 @@ impl<Inner, T: Integer, L: Integer, M: Integer, I: Integer, THETA: Integer, N: I
 mod tests {
     use crate::Contributions;
     use crate::FeosResult;
-    use crate::StateBuilder;
+    use crate::State;
     use crate::cubic::*;
     use crate::equation_of_state::{EquationOfState, IdealGas};
     use crate::parameter::*;
@@ -261,20 +268,12 @@ mod tests {
         let parameters = PengRobinsonParameters::new_pure(propane.clone())?;
         let residual = PengRobinson::new(parameters);
 
-        let sr = StateBuilder::new(&&residual)
-            .temperature(300.0 * KELVIN)
-            .pressure(1.0 * BAR)
-            .total_moles(2.0 * MOL)
-            .build()?;
+        let sr = State::new_npt(&&residual, 300.0 * KELVIN, 1.0 * BAR, 2.0 * MOL, None)?;
 
         let parameters = PengRobinsonParameters::new_pure(propane.clone())?;
         let residual = PengRobinson::new(parameters);
         let eos = EquationOfState::new(vec![NoIdealGas], residual);
-        let s = StateBuilder::new(&&eos)
-            .temperature(300.0 * KELVIN)
-            .pressure(1.0 * BAR)
-            .total_moles(2.0 * MOL)
-            .build()?;
+        let s = State::new_npt(&&eos, 300.0 * KELVIN, 1.0 * BAR, 2.0 * MOL, None)?;
 
         // pressure
         assert_relative_eq!(
@@ -300,8 +299,8 @@ mod tests {
 
         // residual properties
         assert_relative_eq!(
-            s.helmholtz_energy(Contributions::Residual),
-            sr.residual_helmholtz_energy(),
+            s.helmholtz_energy(Contributions::Residual)?,
+            sr.residual_helmholtz_energy()?,
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -310,8 +309,8 @@ mod tests {
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.entropy(Contributions::Residual),
-            sr.residual_entropy(),
+            s.entropy(Contributions::Residual)?,
+            sr.residual_entropy()?,
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -320,8 +319,8 @@ mod tests {
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.enthalpy(Contributions::Residual),
-            sr.residual_enthalpy(),
+            s.enthalpy(Contributions::Residual)?,
+            sr.residual_enthalpy()?,
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -330,8 +329,8 @@ mod tests {
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.internal_energy(Contributions::Residual),
-            sr.residual_internal_energy(),
+            s.internal_energy(Contributions::Residual)?,
+            sr.residual_internal_energy()?,
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -340,12 +339,12 @@ mod tests {
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.gibbs_energy(Contributions::Residual)
-                - s.total_moles
+            s.gibbs_energy(Contributions::Residual)?
+                - s.total_moles()?
                     * RGAS
                     * s.temperature
                     * s.compressibility(Contributions::Total).ln(),
-            sr.residual_gibbs_energy(),
+            sr.residual_gibbs_energy()?,
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -417,13 +416,13 @@ mod tests {
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.dp_dni(Contributions::Total),
-            sr.dp_dni(Contributions::Total),
+            s.n_dp_dni(Contributions::Total),
+            sr.n_dp_dni(Contributions::Total),
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.dp_dni(Contributions::Residual),
-            sr.dp_dni(Contributions::Residual),
+            s.n_dp_dni(Contributions::Residual),
+            sr.n_dp_dni(Contributions::Residual),
             max_relative = 1e-15
         );
 
@@ -441,8 +440,8 @@ mod tests {
             max_relative = 1e-15
         );
         assert_relative_eq!(
-            s.dmu_dni(Contributions::Residual),
-            sr.dmu_dni(Contributions::Residual),
+            s.n_dmu_dni(Contributions::Residual),
+            sr.n_dmu_dni(Contributions::Residual),
             max_relative = 1e-15
         );
         assert_relative_eq!(
@@ -455,7 +454,7 @@ mod tests {
         assert_relative_eq!(s.ln_phi(), sr.ln_phi(), max_relative = 1e-15);
         assert_relative_eq!(s.dln_phi_dt(), sr.dln_phi_dt(), max_relative = 1e-15);
         assert_relative_eq!(s.dln_phi_dp(), sr.dln_phi_dp(), max_relative = 1e-15);
-        assert_relative_eq!(s.dln_phi_dnj(), sr.dln_phi_dnj(), max_relative = 1e-15);
+        assert_relative_eq!(s.n_dln_phi_dnj(), sr.n_dln_phi_dnj(), max_relative = 1e-15);
         assert_relative_eq!(
             s.thermodynamic_factor(),
             sr.thermodynamic_factor(),

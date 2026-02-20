@@ -173,16 +173,15 @@ mod tests {
     use approx::assert_relative_eq;
     use feos_core::*;
     use nalgebra::dvector;
-    use typenum::P3;
 
     #[test]
     fn ideal_gas_pressure() {
         let e = ElectrolytePcSaft::new(propane_parameters()).unwrap();
         let t = 200.0 * KELVIN;
-        let v = 1e-3 * METER.powi::<P3>();
+        let v = 1e-3 * METER.powi::<3>();
         let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&&e, t, v, &n).unwrap();
-        let p_ig = s.total_moles * RGAS * t / v;
+        let p_ig = s.total_moles().unwrap() * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
             s.pressure(Contributions::IdealGas) + s.pressure(Contributions::Residual),
@@ -195,10 +194,10 @@ mod tests {
     fn ideal_gas_heat_capacity_joback() {
         let e = ElectrolytePcSaft::new(propane_parameters()).unwrap();
         let t = 200.0 * KELVIN;
-        let v = 1e-3 * METER.powi::<P3>();
+        let v = 1e-3 * METER.powi::<3>();
         let n = dvector![1.0] * MOL;
         let s = State::new_nvt(&&e, t, v, &n).unwrap();
-        let p_ig = s.total_moles * RGAS * t / v;
+        let p_ig = s.total_moles().unwrap() * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
             s.pressure(Contributions::IdealGas) + s.pressure(Contributions::Residual),
@@ -270,7 +269,7 @@ mod tests {
     fn critical_point() {
         let e = ElectrolytePcSaft::new(propane_parameters()).unwrap();
         let t = 300.0 * KELVIN;
-        let cp = State::critical_point(&&e, None, Some(t), None, Default::default());
+        let cp = State::critical_point(&&e, (), Some(t), None, Default::default());
         if let Ok(v) = cp {
             assert_relative_eq!(v.temperature, 375.1244078318015 * KELVIN, epsilon = 1e-8)
         }
@@ -282,7 +281,7 @@ mod tests {
         let e2 = ElectrolytePcSaft::new(butane_parameters()).unwrap();
         let e12 = ElectrolytePcSaft::new(propane_butane_parameters()).unwrap();
         let t = 300.0 * KELVIN;
-        let v = 0.02456883872966545 * METER.powi::<P3>();
+        let v = 0.02456883872966545 * METER.powi::<3>();
         let m1 = dvector![2.0] * MOL;
         let m1m = dvector![2.0, 0.0] * MOL;
         let m2m = dvector![0.0, 2.0] * MOL;

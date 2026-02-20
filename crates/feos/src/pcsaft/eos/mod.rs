@@ -9,7 +9,6 @@ use num_dual::{DualNum, partial2};
 use quantity::ad::first_derivative;
 use quantity::*;
 use std::f64::consts::{FRAC_PI_6, PI};
-use typenum::P2;
 
 pub(crate) mod dispersion;
 pub(crate) mod hard_chain;
@@ -230,32 +229,32 @@ impl EntropyScaling for PcSaft {
     fn viscosity_reference(
         &self,
         temperature: Temperature,
-        _: Volume,
-        moles: &Moles<DVector<f64>>,
+        _: MolarVolume,
+        molefracs: &DVector<f64>,
     ) -> Viscosity {
         let p = &self.params;
         let mw = &self.parameters.molar_weight;
-        let x = (moles / moles.sum()).into_value();
         let ce: Vec<_> = (0..self.components())
             .map(|i| {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
                 5.0 / 16.0 * (mw.get(i) * KB / NAV * temperature / PI).sqrt()
                     / omega22(tr)
-                    / (p.sigma[i] * ANGSTROM).powi::<P2>()
+                    / (p.sigma[i] * ANGSTROM).powi::<2>()
             })
             .collect();
         let mut ce_mix = 0.0 * MILLI * PASCAL * SECOND;
         for i in 0..self.components() {
             let denom: f64 = (0..self.components())
                 .map(|j| {
-                    x[j] * (1.0
-                        + (ce[i] / ce[j]).into_value().sqrt()
-                            * (mw.get(j) / mw.get(i)).powf(1.0 / 4.0))
-                    .powi(2)
+                    molefracs[j]
+                        * (1.0
+                            + (ce[i] / ce[j]).into_value().sqrt()
+                                * (mw.get(j) / mw.get(i)).powf(1.0 / 4.0))
+                        .powi(2)
                         / (8.0 * (1.0 + (mw.get(i) / mw.get(j)).into_value())).sqrt()
                 })
                 .sum();
-            ce_mix += ce[i] * x[i] / denom
+            ce_mix += ce[i] * molefracs[i] / denom
         }
         ce_mix
     }
@@ -279,19 +278,19 @@ impl EntropyScaling for PcSaft {
     fn diffusion_reference(
         &self,
         temperature: Temperature,
-        volume: Volume,
-        moles: &Moles<DVector<f64>>,
+        molar_volume: MolarVolume,
+        _: &DVector<f64>,
     ) -> Diffusivity {
         if self.components() != 1 {
             panic!("Diffusion coefficients in PC-SAFT are only implemented for pure components!");
         }
         let p = &self.params;
         let mw = &self.parameters.molar_weight;
-        let density = moles.sum() / volume;
         let res: Vec<_> = (0..self.components())
             .map(|i| {
                 let tr = (temperature / p.epsilon_k[i] / KELVIN).into_value();
-                3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi::<P2>() / omega11(tr) / (density * NAV)
+                3.0 / 8.0 / (p.sigma[i] * ANGSTROM).powi::<2>() / omega11(tr)
+                    * (molar_volume / NAV)
                     * (temperature * RGAS / PI / mw.get(i) / p.m[i]).sqrt()
             })
             .collect();
@@ -322,8 +321,8 @@ impl EntropyScaling for PcSaft {
     fn thermal_conductivity_reference(
         &self,
         temperature: Temperature,
-        volume: Volume,
-        moles: &Moles<DVector<f64>>,
+        molar_volume: MolarVolume,
+        molefracs: &DVector<f64>,
     ) -> ThermalConductivity {
         if self.components() != 1 {
             panic!("Thermal conductivity in PC-SAFT is only implemented for pure components!");
@@ -332,9 +331,9 @@ impl EntropyScaling for PcSaft {
         let mws = self.molar_weight();
         let (_, s_res) = first_derivative(
             partial2(
-                |t, &v, n| -self.residual_helmholtz_energy_unit(t, v, n) / n.sum(),
-                &volume,
-                moles,
+                |t, &v, n| -self.residual_molar_helmholtz_energy(t, v, n),
+                &molar_volume,
+                molefracs,
             ),
             temperature,
         );
@@ -393,38 +392,39 @@ mod tests {
     use feos_core::*;
     use nalgebra::dvector;
     use quantity::{BAR, KELVIN, METER, PASCAL, RGAS};
-    use typenum::{P2, P3};
 
     #[test]
-    fn ideal_gas_pressure() {
+    fn ideal_gas_pressure() -> FeosResult<()> {
         let e = &propane_parameters();
         let t = 200.0 * KELVIN;
-        let v = 1e-3 * METER.powi::<P3>();
+        let v = 1e-3 * METER.powi::<3>();
         let n = dvector![1.0] * MOL;
-        let s = State::new_nvt(&e, t, v, &n).unwrap();
-        let p_ig = s.total_moles * RGAS * t / v;
+        let s = State::new_nvt(&e, t, v, n).unwrap();
+        let p_ig = s.total_moles()? * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
             s.pressure(Contributions::IdealGas) + s.pressure(Contributions::Residual),
             s.pressure(Contributions::Total),
             epsilon = 1e-10
         );
+        Ok(())
     }
 
     #[test]
-    fn ideal_gas_heat_capacity_joback() {
+    fn ideal_gas_heat_capacity_joback() -> FeosResult<()> {
         let e = &propane_parameters();
         let t = 200.0 * KELVIN;
-        let v = 1e-3 * METER.powi::<P3>();
+        let v = 1e-3 * METER.powi::<3>();
         let n = dvector![1.0] * MOL;
-        let s = State::new_nvt(&e, t, v, &n).unwrap();
-        let p_ig = s.total_moles * RGAS * t / v;
+        let s = State::new_nvt(&e, t, v, n).unwrap();
+        let p_ig = s.total_moles()? * RGAS * t / v;
         assert_relative_eq!(s.pressure(Contributions::IdealGas), p_ig, epsilon = 1e-10);
         assert_relative_eq!(
             s.pressure(Contributions::IdealGas) + s.pressure(Contributions::Residual),
             s.pressure(Contributions::Total),
             epsilon = 1e-10
         );
+        Ok(())
     }
 
     #[test]
@@ -465,7 +465,7 @@ mod tests {
         let t = 300.0 * KELVIN;
         let p = BAR;
         let m = dvector![1.5] * MOL;
-        let s = State::new_npt(&e, t, p, &m, None);
+        let s = State::new_npt(&e, t, p, m, None);
         let p_calc = if let Ok(state) = s {
             state.pressure(Contributions::Total)
         } else {
@@ -492,7 +492,7 @@ mod tests {
     fn critical_point() {
         let e = &propane_parameters();
         let t = 300.0 * KELVIN;
-        let cp = State::critical_point(&e, None, Some(t), None, Default::default());
+        let cp = State::critical_point(&e, (), Some(t), None, Default::default());
         if let Ok(v) = cp {
             assert_relative_eq!(v.temperature, 375.1244078318015 * KELVIN, epsilon = 1e-8)
         }
@@ -504,14 +504,14 @@ mod tests {
         let e2 = &butane_parameters();
         let e12 = &propane_butane_parameters();
         let t = 300.0 * KELVIN;
-        let v = 0.02456883872966545 * METER.powi::<P3>();
+        let v = 0.02456883872966545 * METER.powi::<3>();
         let m1 = dvector![2.0] * MOL;
         let m1m = dvector![2.0, 0.0] * MOL;
         let m2m = dvector![0.0, 2.0] * MOL;
         let s1 = State::new_nvt(&e1, t, v, &m1).unwrap();
-        let s2 = State::new_nvt(&e2, t, v, &m1).unwrap();
-        let s1m = State::new_nvt(&e12, t, v, &m1m).unwrap();
-        let s2m = State::new_nvt(&e12, t, v, &m2m).unwrap();
+        let s2 = State::new_nvt(&e2, t, v, m1).unwrap();
+        let s1m = State::new_nvt(&e12, t, v, m1m).unwrap();
+        let s2m = State::new_nvt(&e12, t, v, m2m).unwrap();
         assert_relative_eq!(
             s1.pressure(Contributions::Total),
             s1m.pressure(Contributions::Total),
@@ -530,7 +530,7 @@ mod tests {
         let t = 300.0 * KELVIN;
         let p = BAR;
         let n = dvector![1.0] * MOL;
-        let s = State::new_npt(&e, t, p, &n, None)?;
+        let s = State::new_npt(&e, t, p, n, None)?;
         assert_relative_eq!(
             s.viscosity(),
             0.00797 * MILLI * PASCAL * SECOND,
@@ -538,7 +538,7 @@ mod tests {
         );
         assert_relative_eq!(
             s.ln_viscosity_reduced(),
-            (s.viscosity() / e.viscosity_reference(s.temperature, s.volume, &s.moles))
+            (s.viscosity() / e.viscosity_reference(s.temperature, s.molar_volume, &s.molefracs))
                 .into_value()
                 .ln(),
             epsilon = 1e-15
@@ -555,15 +555,15 @@ mod tests {
         let t = 303.15 * KELVIN;
         let p = 500.0 * BAR;
         let n = dvector![0.25, 0.75] * MOL;
-        let viscosity_mix = State::new_npt(&e, t, p, &n, None)?.viscosity();
+        let viscosity_mix = State::new_npt(&e, t, p, n, None)?.viscosity();
         let viscosity_paper = 0.68298 * MILLI * PASCAL * SECOND;
         assert_relative_eq!(viscosity_paper, viscosity_mix, epsilon = 1e-8);
 
         // Make sure pure substance case is recovered
         let n_pseudo_mix = dvector![1.0, 0.0] * MOL;
-        let viscosity_pseudo_mix = State::new_npt(&e, t, p, &n_pseudo_mix, None)?.viscosity();
+        let viscosity_pseudo_mix = State::new_npt(&e, t, p, n_pseudo_mix, None)?.viscosity();
         let n_nonane = dvector![1.0] * MOL;
-        let viscosity_nonane = State::new_npt(&nonane, t, p, &n_nonane, None)?.viscosity();
+        let viscosity_nonane = State::new_npt(&nonane, t, p, n_nonane, None)?.viscosity();
         assert_relative_eq!(viscosity_pseudo_mix, viscosity_nonane, epsilon = 1e-15);
         Ok(())
     }
@@ -574,15 +574,15 @@ mod tests {
         let t = 300.0 * KELVIN;
         let p = BAR;
         let n = dvector![1.0] * MOL;
-        let s = State::new_npt(&e, t, p, &n, None)?;
+        let s = State::new_npt(&e, t, p, n, None)?;
         assert_relative_eq!(
             s.diffusion(),
-            0.01505 * (CENTI * METER).powi::<P2>() / SECOND,
+            0.01505 * (CENTI * METER).powi::<2>() / SECOND,
             epsilon = 1e-5
         );
         assert_relative_eq!(
             s.ln_diffusion_reduced(),
-            (s.diffusion() / e.diffusion_reference(s.temperature, s.volume, &s.moles))
+            (s.diffusion() / e.diffusion_reference(s.temperature, s.molar_volume, &s.molefracs))
                 .into_value()
                 .ln(),
             epsilon = 1e-15
@@ -598,7 +598,7 @@ mod tests_parameter_fit {
     use super::*;
     use approx::assert_relative_eq;
     use feos_core::DensityInitialization::Liquid;
-    use feos_core::{Contributions, PropertiesAD, ReferenceSystem};
+    use feos_core::{Contributions, PropertiesAD, ReferenceSystem, SolverOptions};
     use feos_core::{FeosResult, ParametersAD, PhaseEquilibrium, State};
     use nalgebra::{U1, U3, U8, vector};
     use num_dual::{DualStruct, DualVec};
@@ -688,6 +688,50 @@ mod tests_parameter_fit {
     }
 
     #[test]
+    fn test_boiling_temperature_derivatives_fit() -> FeosResult<()> {
+        let pcsaft = pcsaft_non_assoc();
+        let pcsaft_ad = pcsaft.named_derivatives(["m", "sigma", "epsilon_k"]);
+        let pressure = BAR;
+        let t = pcsaft_ad.boiling_temperature(pressure)?;
+        let t = t.convert_into(KELVIN);
+        let (t, grad) = (t.re, t.eps.unwrap_generic(U3, U1));
+
+        println!("{t:.5}");
+        println!("{grad:.5?}");
+
+        let (t_check, _) = PhaseEquilibrium::pure_p(
+            &pcsaft_ad,
+            Pressure::from_inner(&pressure),
+            None,
+            Default::default(),
+        )?;
+        let t_check = t_check.convert_into(KELVIN);
+        let (t_check, grad_check) = (t_check.re, t_check.eps.unwrap_generic(U3, U1));
+        println!("{t_check:.5}");
+        println!("{grad_check:.5?}");
+        assert_relative_eq!(t, t_check, max_relative = 1e-15);
+        assert_relative_eq!(grad, grad_check, max_relative = 1e-15);
+
+        for (i, par) in ["m", "sigma", "epsilon_k"].into_iter().enumerate() {
+            let mut params = pcsaft.0;
+            let h = params[i] * 1e-8;
+            params[i] += h;
+            let pcsaft_h = PcSaftPure(params);
+            let (t_h, _) = PhaseEquilibrium::pure_p(&pcsaft_h, pressure, None, Default::default())?;
+            let dt_h = (t_h.convert_into(KELVIN) - t) / h;
+            let dt = grad[i];
+            println!(
+                "{par:12}: {:11.5} {:11.5} {:.3e}",
+                dt_h,
+                dt,
+                ((dt_h - dt) / dt).abs()
+            );
+            assert_relative_eq!(dt, dt_h, max_relative = 1e-6);
+        }
+        Ok(())
+    }
+
+    #[test]
     fn test_equilibrium_liquid_density_derivatives_fit() -> FeosResult<()> {
         let pcsaft = pcsaft_non_assoc();
         let pcsaft_ad = pcsaft.named_derivatives(["m", "sigma", "epsilon_k"]);
@@ -745,14 +789,7 @@ mod tests_parameter_fit {
             let h = params[i] * 1e-7;
             params[i] += h;
             let pcsaft_h = PcSaftPure(params);
-            let rho_h = State::new_xpt(
-                &pcsaft_h,
-                temperature,
-                pressure,
-                &vector![1.0],
-                Some(Liquid),
-            )?
-            .density;
+            let rho_h = State::new_npt(&pcsaft_h, temperature, pressure, (), Some(Liquid))?.density;
             let drho_h = (rho_h.convert_into(MOL / LITER) - rho) / h;
             let drho = grad[i];
             println!(
@@ -786,7 +823,7 @@ mod tests_parameter_fit {
         let p_h = PhaseEquilibrium::bubble_point(
             &pcsaft_h,
             temperature,
-            &x,
+            x,
             None,
             None,
             Default::default(),
@@ -809,7 +846,7 @@ mod tests_parameter_fit {
         let (pcsaft, _) = pcsaft_binary()?;
         let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
         let temperature = 500.0 * KELVIN;
-        let y = vector![0.5, 0.5];
+        let y = 0.5;
         let p = pcsaft_ad.dew_point_pressure(temperature, None, y)?;
         let p = p.convert_into(BAR);
         let (p, [[grad]]) = (p.re, p.eps.unwrap_generic(U1, U1).data.0);
@@ -821,16 +858,10 @@ mod tests_parameter_fit {
         let h = 1e-7;
         kij += h;
         let pcsaft_h = PcSaftBinary::new(params, kij);
-        let p_h = PhaseEquilibrium::dew_point(
-            &pcsaft_h,
-            temperature,
-            &y,
-            None,
-            None,
-            Default::default(),
-        )?
-        .vapor()
-        .pressure(Contributions::Total);
+        let p_h =
+            PhaseEquilibrium::dew_point(&pcsaft_h, temperature, y, None, None, Default::default())?
+                .vapor()
+                .pressure(Contributions::Total);
         let dp_h = (p_h.convert_into(BAR) - p) / h;
         println!(
             "k_ij: {:11.5} {:11.5} {:.3e}",
@@ -848,11 +879,11 @@ mod tests_parameter_fit {
         let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
         let pressure = Pressure::from_reduced(DualVec::from(45. * BAR.into_reduced()));
         let t_init = Temperature::from_reduced(DualVec::from(500.0));
-        let x = vector![0.5, 0.5].map(DualVec::from);
+        let x = DualVec::from(0.5);
         let t = PhaseEquilibrium::bubble_point(
             &pcsaft_ad,
             pressure,
-            &x,
+            x,
             Some(t_init),
             None,
             Default::default(),
@@ -872,7 +903,7 @@ mod tests_parameter_fit {
         let t_h = PhaseEquilibrium::bubble_point(
             &pcsaft_h,
             pressure.re(),
-            &x.map(|x| x.re()),
+            x.re(),
             Some(t_init.re()),
             None,
             Default::default(),
@@ -896,11 +927,11 @@ mod tests_parameter_fit {
         let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
         let pressure = Pressure::from_reduced(DualVec::from(45. * BAR.into_reduced()));
         let t_init = Temperature::from_reduced(DualVec::from(500.0));
-        let x = vector![0.5, 0.5].map(DualVec::from);
+        let x = DualVec::from(0.5);
         let t = PhaseEquilibrium::dew_point(
             &pcsaft_ad,
             pressure,
-            &x,
+            x,
             Some(t_init),
             None,
             Default::default(),
@@ -920,7 +951,7 @@ mod tests_parameter_fit {
         let t_h = PhaseEquilibrium::dew_point(
             &pcsaft_h,
             pressure.re(),
-            &x.map(|x| x.re()),
+            x.re(),
             Some(t_init.re()),
             None,
             Default::default(),
@@ -935,6 +966,56 @@ mod tests_parameter_fit {
             ((dt_h - grad) / grad).abs()
         );
         assert_relative_eq!(grad, dt_h, max_relative = 1e-6);
+        Ok(())
+    }
+
+    #[test]
+    fn test_tp_flash() -> FeosResult<()> {
+        let (pcsaft, _) = pcsaft_binary()?;
+        let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
+        let temperature = 500.0 * KELVIN;
+        let pressure = 44.6 * BAR;
+        let x = 0.5;
+        let vle = PhaseEquilibrium::tp_flash_binary(
+            &pcsaft_ad,
+            Temperature::from_inner(&temperature),
+            Pressure::from_inner(&pressure),
+            DualVec::from(x),
+            SolverOptions {
+                verbosity: feos_core::Verbosity::Iter,
+                tol: Some(1e-12),
+                ..Default::default()
+            },
+        )?;
+        let beta = vle.vapor_phase_fraction();
+        let (beta, [[grad]]) = (beta.re, beta.eps.unwrap_generic(U1, U1).data.0);
+
+        println!("{beta:.5}");
+        println!("{grad:.5?}");
+
+        let (params, mut kij) = pcsaft.0;
+        let h = 1e-7;
+        kij += h;
+        let pcsaft_h = PcSaftBinary::new(params, kij);
+        let vle = PhaseEquilibrium::tp_flash_binary(
+            &pcsaft_h,
+            temperature,
+            pressure,
+            x,
+            SolverOptions {
+                tol: Some(1e-12),
+                ..Default::default()
+            },
+        )?;
+        let beta_h = vle.vapor_phase_fraction();
+        let dbeta_h = (beta_h - beta) / h;
+        println!(
+            "k_ij: {:11.5} {:11.5} {:.3e}",
+            dbeta_h,
+            grad,
+            ((dbeta_h - grad) / grad).abs()
+        );
+        assert_relative_eq!(grad, dbeta_h, max_relative = 1e-4);
         Ok(())
     }
 }
