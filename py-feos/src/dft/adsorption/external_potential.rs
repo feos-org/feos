@@ -1,12 +1,12 @@
 use feos_dft::adsorption::ExternalPotential;
 use ndarray::Array2;
-use numpy::prelude::*;
 use numpy::PyArray1;
+use numpy::prelude::*;
 use pyo3::prelude::*;
 use quantity::Length;
 
 /// A collection of external potentials.
-#[pyclass(name = "ExternalPotential")]
+#[pyclass(module = "feos.feos", name = "ExternalPotential")]
 #[derive(Clone)]
 pub struct PyExternalPotential(pub ExternalPotential);
 

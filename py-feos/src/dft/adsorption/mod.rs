@@ -1,9 +1,9 @@
 use super::PyDFTSolver;
-use crate::eos::{parse_molefracs, PyEquationOfState};
+use crate::PyVerbosity;
+use crate::eos::{PyEquationOfState, parse_molefracs};
 use crate::error::PyFeosError;
 use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
-use crate::PyVerbosity;
 use feos_core::EquationOfState;
 use feos_dft::adsorption::{Adsorption, Adsorption1D, Adsorption3D};
 use nalgebra::DMatrix;
@@ -20,11 +20,11 @@ pub use external_potential::PyExternalPotential;
 pub use pore::{PyPore1D, PyPore2D, PyPore3D, PyPoreProfile1D, PyPoreProfile3D};
 
 /// Container structure for adsorption isotherms in 1D pores.
-#[pyclass(name = "Adsorption1D")]
+#[pyclass(module = "feos.feos", name = "Adsorption1D")]
 pub struct PyAdsorption1D(Adsorption1D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>);
 
 /// Container structure for adsorption isotherms in 3D pores.
-#[pyclass(name = "Adsorption3D")]
+#[pyclass(module = "feos.feos", name = "Adsorption3D")]
 pub struct PyAdsorption3D(Adsorption3D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>);
 
 macro_rules! impl_adsorption_isotherm {

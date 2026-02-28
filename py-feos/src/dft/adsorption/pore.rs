@@ -76,10 +76,10 @@ macro_rules! impl_pore_profile {
 /// -------
 /// Pore1D
 ///
-#[pyclass(name = "Pore1D")]
+#[pyclass(module = "feos.feos", name = "Pore1D")]
 pub struct PyPore1D(pub Pore1D);
 
-#[pyclass(name = "PoreProfile1D")]
+#[pyclass(module = "feos.feos", name = "PoreProfile1D")]
 pub struct PyPoreProfile1D(
     pub PoreProfile1D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
 );
@@ -175,10 +175,10 @@ impl PyPore1D {
     }
 }
 
-#[pyclass(name = "Pore2D")]
+#[pyclass(module = "feos.feos", name = "Pore2D")]
 pub struct PyPore2D(pub Pore2D);
 
-#[pyclass(name = "PoreProfile2D")]
+#[pyclass(module = "feos.feos", name = "PoreProfile2D")]
 pub struct PyPoreProfile2D(
     pub PoreProfile2D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
 );
@@ -266,10 +266,10 @@ impl PyPore2D {
 /// -------
 /// Pore3D
 ///
-#[pyclass(name = "Pore3D")]
+#[pyclass(module = "feos.feos", name = "Pore3D")]
 pub struct PyPore3D(pub Pore3D);
 
-#[pyclass(name = "PoreProfile3D")]
+#[pyclass(module = "feos.feos", name = "PoreProfile3D")]
 pub struct PyPoreProfile3D(
     pub PoreProfile3D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
 );
