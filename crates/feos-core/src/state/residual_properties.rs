@@ -272,7 +272,7 @@ where
 
     /// Isothermal compressibility: $\kappa_T=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{T,N_i}$
     pub fn isothermal_compressibility(&self) -> InvP<D> {
-        (self.dp_dv(Contributions::Total) * self.volume).inv()
+        -(self.dp_dv(Contributions::Total) * self.volume).inv()
     }
 
     // entropy derivatives
