@@ -15,7 +15,6 @@ jobs:
       - name: Build Wheels
         uses: PyO3/maturin-action@v1
         with:
-          manylinux: auto
           command: build
           args: >
             --profile release-lto
