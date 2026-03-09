@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.4] - 2026-03-09
 ### Changed
 - Automatically detect VLLEs in `BinaryPhaseDiagram`. [#341](https://github.com/feos-org/feos/pull/341)
-- Correct missing minus sign for `isothermal_compressibility`. [#342](https://github.com/feos-org/feos/pull/342)
 
 ### Fixed
 - Fixed the sign of the isothermal compressibility. [#342](https://github.com/feos-org/feos/pull/342)
