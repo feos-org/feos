@@ -39,7 +39,7 @@ use std::sync::Arc;
 /// Returns
 /// -------
 /// SurfaceTensionDiagram
-#[pyclass(name = "SurfaceTensionDiagram")]
+#[pyclass(module = "feos.feos", name = "SurfaceTensionDiagram")]
 pub struct PySurfaceTensionDiagram(
     SurfaceTensionDiagram<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
 );

@@ -4,7 +4,7 @@ use numpy::{PyArray1, PyArray2, PyReadonlyArray2, ToPyArray};
 use paste::paste;
 use pyo3::prelude::*;
 
-#[pyclass(name = "EquationOfStateAD", eq, eq_int)]
+#[pyclass(module = "feos.feos", name = "EquationOfStateAD", eq, eq_int)]
 #[derive(Clone, Copy, PartialEq)]
 pub enum PyEquationOfStateAD {
     PcSaftNonAssoc,
