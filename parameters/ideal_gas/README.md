@@ -10,6 +10,7 @@ The parameters published in the DIPPR database itself are not publicly available
 |file|description|publication(s)|
 |-|-|:-:|
 [`poling2000.json`](poling2000.json) | correlation parameters published in "The Properties of Gases and Liquids, 5th edition" | |
+[`burkhardt2025.json`](burkhardt2025.json) | correlation parameters for equation DIPPR 107 | [&#128279;](https://doi.org/10.1021/acs.jced.5c00573)|
 
 ## Joback group-contribution model
 
