@@ -51,9 +51,107 @@ impl From<PyVerbosity> for Verbosity {
     }
 }
 
+#[cfg(feature = "rayon")]
+mod rayon_features {
+    use pyo3::exceptions::{PyRuntimeError, PyUserWarning};
+    use pyo3::prelude::*;
+    use std::ffi::CString;
+
+    /// Reads the `FEOS_MAX_THREADS` environment variable and, if present,
+    /// initializes the global Rayon thread pool with that many threads.
+    /// Called automatically at module import time.
+    pub fn rayon_threads_from_env() {
+        if let Some(n) = std::env::var("FEOS_MAX_THREADS")
+            .ok()
+            .and_then(|s| s.parse::<usize>().ok())
+        {
+            let _ = rayon::ThreadPoolBuilder::new()
+                .num_threads(n)
+                .build_global();
+        }
+    }
+
+    #[pyfunction]
+    /// Set the number of threads used for any parallel calculations.
+    ///
+    /// Must be called before any parallel computation is performed and
+    /// before the `FEOS_MAX_THREADS` environment variable takes effect.
+    /// If the thread pool has already been initialized — either
+    /// because `FEOS_MAX_THREADS` was set at import time or because a
+    /// parallel function has already run — this call has no effect and
+    /// a warning is emitted.
+    ///
+    /// Args:
+    ///     n (int): Number of threads. Pass `0` to use the default
+    ///         (number of logical CPUs).
+    ///
+    /// Example:
+    ///     >>> import feos
+    ///     >>> feos.set_num_threads(4)
+    pub fn set_num_threads(py: Python<'_>, n: usize) -> PyResult<()> {
+        match rayon::ThreadPoolBuilder::new()
+            .num_threads(n)
+            .build_global()
+        {
+            Ok(_) => Ok(()),
+            Err(_) => {
+                // build useful warning
+                let current = rayon::current_num_threads();
+                let reason = if std::env::var("FEOS_MAX_THREADS").is_ok() {
+                    format!(
+                        "FEOS_MAX_THREADS is set. \
+                        The thread pool was already initialized with {} thread(s) \
+                        (probably configured at import time). \
+                        To change this, set FEOS_MAX_THREADS before starting Python.",
+                        current
+                    )
+                } else {
+                    format!(
+                        "The thread pool was already initialized with {} thread(s) \
+                        Call set_num_threads() before any parallel work or set \
+                        FEOS_MAX_THREADS before starting Python.",
+                        current
+                    )
+                };
+
+                let msg =
+                    CString::new(format!("set_num_threads({}) without effect: {}", n, reason))
+                        .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+                PyErr::warn(py, &py.get_type::<PyUserWarning>(), &msg, 1)
+            }
+        }
+    }
+
+    #[pyfunction]
+    /// Return the number of threads in the thread pool.
+    ///
+    /// If the thread pool has not yet been initialized, calling this
+    /// function will trigger initialization with the default
+    /// (number of logical CPUs), making any subsequent call to
+    /// `set_num_threads()` ineffective.
+    ///
+    /// Returns:
+    ///     int: Number of threads currently configured.
+    ///
+    /// Example:
+    ///     >>> import feos
+    ///     >>> feos.get_num_threads()
+    ///     8
+    pub fn get_num_threads() -> usize {
+        rayon::current_num_threads()
+    }
+}
+
 #[pymodule]
 fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+
+    #[cfg(feature = "rayon")]
+    {
+        rayon_features::rayon_threads_from_env();
+        m.add_function(wrap_pyfunction!(rayon_features::set_num_threads, m)?)?;
+        m.add_function(wrap_pyfunction!(rayon_features::get_num_threads, m)?)?;
+    }
 
     // Utility
     m.add_class::<PyVerbosity>()?;
