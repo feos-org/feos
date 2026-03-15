@@ -298,8 +298,17 @@ where
         };
 
         // implicit differentiation
-        let mut t = D::from(temperature_re.unwrap().into_reduced());
-        let mut p = D::from(pressure_re.unwrap().into_reduced());
+        let (mut t, mut p) = if iterate_p {
+            (
+                temperature.unwrap().into_reduced(),
+                D::from(pressure_re.unwrap().into_reduced()),
+            )
+        } else {
+            (
+                D::from(temperature_re.unwrap().into_reduced()),
+                pressure.unwrap().into_reduced(),
+            )
+        };
         let mut molar_volume = D::from(v1);
         let mut rho2 = rho2.map(D::from);
         for _ in 0..D::NDERIV {

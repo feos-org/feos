@@ -601,7 +601,7 @@ mod tests_parameter_fit {
     use feos_core::{Contributions, PropertiesAD, ReferenceSystem};
     use feos_core::{FeosResult, ParametersAD, PhaseEquilibrium, State};
     use nalgebra::{U1, U3, U8, vector};
-    use num_dual::{DualStruct, DualVec};
+    use num_dual::{DualStruct, DualVec, partial};
     use quantity::{BAR, KELVIN, LITER, MOL, PASCAL};
 
     fn pcsaft_non_assoc() -> PcSaftPure<f64, 4> {
@@ -935,6 +935,94 @@ mod tests_parameter_fit {
             ((dt_h - grad) / grad).abs()
         );
         assert_relative_eq!(grad, dt_h, max_relative = 1e-6);
+        Ok(())
+    }
+
+    #[test]
+    fn test_bubble_point_temperature_derivative() -> FeosResult<()> {
+        let (pcsaft, _) = pcsaft_binary()?;
+        let pcsaft_ad = pcsaft;
+        let mut temperature = 500.0 * KELVIN;
+        let x = vector![0.5, 0.5];
+        let (p, grad) = first_derivative(
+            partial(
+                |t, x| {
+                    let eos = pcsaft_ad.lift();
+                    PhaseEquilibrium::bubble_point(&eos, t, x, None, None, Default::default())
+                        .unwrap()
+                        .vapor()
+                        .pressure(Contributions::Total)
+                },
+                &x,
+            ),
+            temperature,
+        );
+
+        println!("{p:.5}");
+        println!("{grad:.5?}");
+
+        let h = 1e-6 * KELVIN;
+        temperature += h;
+        let p_h = PhaseEquilibrium::bubble_point(
+            &pcsaft_ad,
+            temperature,
+            &x,
+            None,
+            None,
+            Default::default(),
+        )?
+        .vapor()
+        .pressure(Contributions::Total);
+        let dp_h = (p_h - p) / h;
+        println!(
+            "{:11.5?} {:11.5?} {:.3e}",
+            dp_h,
+            grad,
+            ((dp_h - grad).convert_into(grad)).abs()
+        );
+        assert_relative_eq!(grad, dp_h, max_relative = 1e-7);
+        Ok(())
+    }
+
+    #[test]
+    fn test_bubble_point_pressure_derivative() -> FeosResult<()> {
+        let (pcsaft, _) = pcsaft_binary()?;
+        let pcsaft_ad = pcsaft;
+        let mut pressure = 45. * BAR;
+        let t0 = Some(500. * KELVIN);
+        let x = vector![0.5, 0.5];
+        let (t, grad) = first_derivative(
+            partial2(
+                |p, x, &t0| {
+                    let eos = pcsaft_ad.lift();
+                    PhaseEquilibrium::bubble_point(&eos, p, x, t0, None, Default::default())
+                        .unwrap()
+                        .vapor()
+                        .temperature
+                },
+                &x,
+                &t0,
+            ),
+            pressure,
+        );
+
+        println!("{t:.5}");
+        println!("{grad:.5?}");
+
+        let h = 1e-5 * BAR;
+        pressure += h;
+        let t_h =
+            PhaseEquilibrium::bubble_point(&pcsaft_ad, pressure, &x, t0, None, Default::default())?
+                .vapor()
+                .temperature;
+        let dt_h = (t_h - t) / h;
+        println!(
+            "{:11.5?} {:11.5?} {:.3e}",
+            dt_h,
+            grad,
+            ((dt_h - grad).convert_into(grad)).abs()
+        );
+        assert_relative_eq!(grad, dt_h, max_relative = 1e-7);
         Ok(())
     }
 }
