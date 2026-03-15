@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Add Rayon global thread pool control via `FEOS_MAX_THREADS` and `set_num_threads()`/ `get_num_threads()` to Python. [#346](https://github.com/feos-org/feos/pull/346)
-- Added DIPPR107 parameterization for ideal gas heat capacities of Burkhardt et al.  [#344](https://github.com/feos-org/feos/pull/344)
+- Added DIPPR107 parameterization for ideal gas heat capacities of Burkhardt et al. [#344](https://github.com/feos-org/feos/pull/344)
+
+### Fixed
+- Fixed the calculation of temperature and pressure derivatives of dew and bubble points. [#347](https://github.com/feos-org/feos/pull/347)
 
 ## [0.9.4] - 2026-03-09
 ### Changed
