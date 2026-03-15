@@ -1,6 +1,7 @@
 mod critical_point;
 mod dft;
 mod properties;
+mod px_flashes;
 mod stability_analysis;
 mod state_creation_mixture;
 mod state_creation_pure;

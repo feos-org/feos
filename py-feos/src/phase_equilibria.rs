@@ -159,6 +159,128 @@ impl PyPhaseEquilibrium {
         ))
     }
 
+    /// Create a liquid and vapor state in equilibrium
+    /// for given pressure, enthalpy and feed composition.
+    ///
+    /// Can also be used to calculate liquid liquid phase separation.
+    ///
+    /// Parameters
+    /// ----------
+    /// eos : EquationOfState
+    ///     The equation of state.
+    /// pressure : SINumber
+    ///     The system pressure.
+    /// molar_enthalpy : SINumber
+    ///     The molar enthalpy of the system.
+    /// feed : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float]
+    ///     Feed composition.
+    /// initial_temperature : SINumber
+    ///     The system temperature.
+    /// max_iter : int, optional
+    ///     The maximum number of iterations.
+    /// tol: float, optional
+    ///     The solution tolerance.
+    /// verbosity : Verbosity, optional
+    ///     The verbosity.
+    ///
+    /// Returns
+    /// -------
+    /// PhaseEquilibrium
+    ///
+    /// Raises
+    /// ------
+    /// RuntimeError
+    ///     When pressure iteration fails or no phase equilibrium is found.
+    #[staticmethod]
+    #[pyo3(
+        text_signature = "(eos, pressure, molar_enthalpy, feed, initial_temperature, max_iter=None, tol=None, verbosity=None)"
+    )]
+    #[pyo3(signature = (eos, pressure, molar_enthalpy, feed, initial_temperature, max_iter=None, tol=None, verbosity=None))]
+    #[expect(clippy::too_many_arguments)]
+    pub(crate) fn ph_flash(
+        eos: &PyEquationOfState,
+        pressure: Pressure,
+        molar_enthalpy: MolarEnergy,
+        feed: &Bound<'_, PyAny>,
+        initial_temperature: Temperature,
+        max_iter: Option<usize>,
+        tol: Option<f64>,
+        verbosity: Option<PyVerbosity>,
+    ) -> PyResult<Self> {
+        Ok(Self(
+            PhaseEquilibrium::ph_flash(
+                &eos.0,
+                pressure,
+                molar_enthalpy,
+                Compositions::try_from(Some(feed))?,
+                initial_temperature,
+                (max_iter, tol, verbosity.map(|v| v.into())).into(),
+            )
+            .map_err(PyFeosError::from)?,
+        ))
+    }
+
+    /// Create a liquid and vapor state in equilibrium
+    /// for given pressure, entropy and feed composition.
+    ///
+    /// Can also be used to calculate liquid liquid phase separation.
+    ///
+    /// Parameters
+    /// ----------
+    /// eos : EquationOfState
+    ///     The equation of state.
+    /// pressure : SINumber
+    ///     The system pressure.
+    /// molar_entropy : SINumber
+    ///     The molar entropy of the system.
+    /// feed : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float]
+    ///     Feed composition.
+    /// initial_temperature : SINumber
+    ///     The system temperature.
+    /// max_iter : int, optional
+    ///     The maximum number of iterations.
+    /// tol: float, optional
+    ///     The solution tolerance.
+    /// verbosity : Verbosity, optional
+    ///     The verbosity.
+    ///
+    /// Returns
+    /// -------
+    /// PhaseEquilibrium
+    ///
+    /// Raises
+    /// ------
+    /// RuntimeError
+    ///     When pressure iteration fails or no phase equilibrium is found.
+    #[staticmethod]
+    #[pyo3(
+        text_signature = "(eos, pressure, molar_entropy, feed, initial_temperature, max_iter=None, tol=None, verbosity=None)"
+    )]
+    #[pyo3(signature = (eos, pressure, molar_entropy, feed, initial_temperature, max_iter=None, tol=None, verbosity=None))]
+    #[expect(clippy::too_many_arguments)]
+    pub(crate) fn ps_flash(
+        eos: &PyEquationOfState,
+        pressure: Pressure,
+        molar_entropy: MolarEntropy,
+        feed: &Bound<'_, PyAny>,
+        initial_temperature: Temperature,
+        max_iter: Option<usize>,
+        tol: Option<f64>,
+        verbosity: Option<PyVerbosity>,
+    ) -> PyResult<Self> {
+        Ok(Self(
+            PhaseEquilibrium::ps_flash(
+                &eos.0,
+                pressure,
+                molar_entropy,
+                Compositions::try_from(Some(feed))?,
+                initial_temperature,
+                (max_iter, tol, verbosity.map(|v| v.into())).into(),
+            )
+            .map_err(PyFeosError::from)?,
+        ))
+    }
+
     /// Compute a phase equilibrium for given temperature
     /// or pressure and liquid mole fractions.
     ///
@@ -343,6 +465,36 @@ impl PyPhaseEquilibrium {
     #[getter]
     fn get_liquid(&self) -> PyState {
         PyState(self.0.liquid().clone())
+    }
+
+    #[getter]
+    fn get_vapor_phase_fraction(&self) -> f64 {
+        self.0.vapor_phase_fraction()
+    }
+
+    #[getter]
+    fn get_total_moles(&self) -> PyResult<Moles> {
+        Ok(self.0.total_moles().map_err(PyFeosError::from)?)
+    }
+
+    #[getter]
+    fn get_molar_enthalpy(&self) -> MolarEnergy {
+        self.0.molar_enthalpy()
+    }
+
+    #[getter]
+    fn get_enthalpy(&self) -> PyResult<Energy> {
+        Ok(self.0.enthalpy().map_err(PyFeosError::from)?)
+    }
+
+    #[getter]
+    fn get_molar_entropy(&self) -> MolarEntropy {
+        self.0.molar_entropy()
+    }
+
+    #[getter]
+    fn get_entropy(&self) -> PyResult<Entropy> {
+        Ok(self.0.entropy().map_err(PyFeosError::from)?)
     }
 
     /// Calculate the pure component vapor-liquid equilibria for all
