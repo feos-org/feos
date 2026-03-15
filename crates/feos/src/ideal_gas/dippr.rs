@@ -156,10 +156,9 @@ impl IdealGas for Dippr {
 mod tests {
     use approx::assert_relative_eq;
     use feos_core::parameter::{Identifier, PureRecord};
-    use feos_core::{Contributions, EquationOfState, StateBuilder};
+    use feos_core::{Contributions, EquationOfState, State};
     use num_dual::first_derivative;
     use quantity::*;
-    use typenum::P3;
 
     use super::*;
 
@@ -173,12 +172,8 @@ mod tests {
         let dippr = Dippr::new(DipprParameters::new_pure(record.clone())?);
         let eos = EquationOfState::ideal_gas(dippr.clone());
         let temperature = 300.0 * KELVIN;
-        let volume = METER.powi::<P3>();
-        let state = StateBuilder::new(&&eos)
-            .temperature(temperature)
-            .volume(volume)
-            .total_moles(MOL)
-            .build()?;
+        let volume = METER.powi::<3>();
+        let state = State::new_nvt(&&eos, temperature, volume, MOL)?;
 
         let t = temperature.convert_to(KELVIN);
         let c_p_direct = record.model_record.c_p(t);
@@ -217,12 +212,8 @@ mod tests {
         let dippr = Dippr::new(DipprParameters::new_pure(record.clone())?);
         let eos = EquationOfState::ideal_gas(dippr.clone());
         let temperature = 300.0 * KELVIN;
-        let volume = METER.powi::<P3>();
-        let state = StateBuilder::new(&&eos)
-            .temperature(temperature)
-            .volume(volume)
-            .total_moles(MOL)
-            .build()?;
+        let volume = METER.powi::<3>();
+        let state = State::new_nvt(&&eos, temperature, volume, MOL)?;
 
         let t = temperature.convert_to(KELVIN);
         let c_p_direct = record.model_record.c_p(t);
@@ -263,12 +254,8 @@ mod tests {
         let dippr = Dippr::new(DipprParameters::new_pure(record.clone())?);
         let eos = EquationOfState::ideal_gas(dippr.clone());
         let temperature = 20.0 * KELVIN;
-        let volume = METER.powi::<P3>();
-        let state = StateBuilder::new(&&eos)
-            .temperature(temperature)
-            .volume(volume)
-            .total_moles(MOL)
-            .build()?;
+        let volume = METER.powi::<3>();
+        let state = State::new_nvt(&&eos, temperature, volume, MOL)?;
 
         let t = temperature.convert_to(KELVIN);
         let c_p_direct = record.model_record.c_p(t);

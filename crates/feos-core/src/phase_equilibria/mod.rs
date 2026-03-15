@@ -1,11 +1,12 @@
+use crate::FeosError;
 use crate::equation_of_state::Residual;
-use crate::errors::{FeosError, FeosResult};
-use crate::state::{DensityInitialization, State};
-use crate::{Contributions, ReferenceSystem};
+use crate::errors::FeosResult;
+use crate::state::State;
+use crate::{Contributions::Total as Tot, ReferenceSystem, Total};
 use nalgebra::allocator::Allocator;
-use nalgebra::{DVector, DefaultAllocator, Dim, Dyn, OVector};
-use num_dual::{DualNum, DualStruct};
-use quantity::{Energy, Moles, Pressure, RGAS, Temperature};
+use nalgebra::{DefaultAllocator, Dim, Dyn};
+use num_dual::{DualNum, Gradients};
+use quantity::{Dimensionless, Energy, Entropy, MolarEnergy, MolarEntropy, Moles};
 use std::fmt;
 use std::fmt::Write;
 
@@ -38,21 +39,18 @@ pub use phase_diagram_pure::PhaseDiagram;
 /// + [Pure component phase equilibria](#pure-component-phase-equilibria)
 /// + [Utility functions](#utility-functions)
 #[derive(Debug, Clone)]
-pub struct PhaseEquilibrium<E, const P: usize, N: Dim = Dyn, D: DualNum<f64> + Copy = f64>(
-    pub [State<E, N, D>; P],
-)
+pub struct PhaseEquilibrium<E, const P: usize, N: Dim = Dyn, D: DualNum<f64> + Copy = f64>
 where
-    DefaultAllocator: Allocator<N>;
-
-// impl<E, const P: usize> Clone for PhaseEquilibrium<E, P> {
-//     fn clone(&self) -> Self {
-//         Self(self.0.clone())
-//     }
-// }
+    DefaultAllocator: Allocator<N>,
+{
+    states: [State<E, N, D>; P],
+    pub phase_fractions: [D; P],
+    total_moles: Option<Moles<D>>,
+}
 
 impl<E: Residual, const P: usize> fmt::Display for PhaseEquilibrium<E, P> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (i, s) in self.0.iter().enumerate() {
+        for (i, s) in self.states.iter().enumerate() {
             writeln!(f, "phase {i}: {s}")?;
         }
         Ok(())
@@ -61,9 +59,9 @@ impl<E: Residual, const P: usize> fmt::Display for PhaseEquilibrium<E, P> {
 
 impl<E: Residual, const P: usize> PhaseEquilibrium<E, P> {
     pub fn _repr_markdown_(&self) -> String {
-        if self.0[0].eos.components() == 1 {
+        if self.states[0].eos.components() == 1 {
             let mut res = "||temperature|density|\n|-|-|-|\n".to_string();
-            for (i, s) in self.0.iter().enumerate() {
+            for (i, s) in self.states.iter().enumerate() {
                 writeln!(
                     res,
                     "|phase {}|{:.5}|{:.5}|",
@@ -76,7 +74,7 @@ impl<E: Residual, const P: usize> PhaseEquilibrium<E, P> {
             res
         } else {
             let mut res = "||temperature|density|molefracs|\n|-|-|-|-|\n".to_string();
-            for (i, s) in self.0.iter().enumerate() {
+            for (i, s) in self.states.iter().enumerate() {
                 writeln!(
                     res,
                     "|phase {}|{:.5}|{:.5}|{:.5?}|",
@@ -97,120 +95,115 @@ where
     DefaultAllocator: Allocator<N>,
 {
     pub fn vapor(&self) -> &State<E, N, D> {
-        &self.0[0]
+        &self.states[0]
     }
 
     pub fn liquid(&self) -> &State<E, N, D> {
-        &self.0[1]
+        &self.states[1]
+    }
+
+    pub fn vapor_phase_fraction(&self) -> D {
+        self.phase_fractions[0]
     }
 }
 
 impl<E> PhaseEquilibrium<E, 3> {
     pub fn vapor(&self) -> &State<E> {
-        &self.0[0]
+        &self.states[0]
     }
 
     pub fn liquid1(&self) -> &State<E> {
-        &self.0[1]
+        &self.states[1]
     }
 
     pub fn liquid2(&self) -> &State<E> {
-        &self.0[2]
+        &self.states[2]
     }
 }
 
-impl<E: Residual<N>, N: Dim> PhaseEquilibrium<E, 2, N>
+impl<E: Residual<N, D>, N: Dim, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, N, D>
 where
     DefaultAllocator: Allocator<N>,
 {
-    pub(super) fn from_states(state1: State<E, N>, state2: State<E, N>) -> Self {
-        let (vapor, liquid) = if state1.density.re() < state2.density.re() {
-            (state1, state2)
-        } else {
-            (state2, state1)
-        };
-        Self([vapor, liquid])
+    pub(super) fn single_phase(state: State<E, N, D>) -> Self {
+        let total_moles = state.total_moles;
+        Self::with_vapor_phase_fraction(state.clone(), state, D::from(1.0), total_moles)
     }
 
-    /// Creates a new PhaseEquilibrium that contains two states at the
-    /// specified temperature, pressure and molefracs.
-    ///
-    /// The constructor can be used in custom phase equilibrium solvers or,
-    /// e.g., to generate initial guesses for an actual VLE solver.
-    /// In general, the two states generated are NOT in an equilibrium.
-    pub fn new_xpt(
-        eos: &E,
-        temperature: Temperature,
-        pressure: Pressure,
-        vapor_molefracs: &OVector<f64, N>,
-        liquid_molefracs: &OVector<f64, N>,
-    ) -> FeosResult<Self> {
-        let liquid = State::new_xpt(
-            eos,
-            temperature,
-            pressure,
-            liquid_molefracs,
-            Some(DensityInitialization::Liquid),
-        )?;
-        let vapor = State::new_xpt(
-            eos,
-            temperature,
-            pressure,
-            vapor_molefracs,
-            Some(DensityInitialization::Vapor),
-        )?;
-        Ok(Self([vapor, liquid]))
+    pub(super) fn two_phase(vapor: State<E, N, D>, liquid: State<E, N, D>) -> Self {
+        let (beta, total_moles) =
+            if let (Some(nv), Some(nl)) = (vapor.total_moles, liquid.total_moles) {
+                (nv.convert_into(nl + nv), Some(nl + nv))
+            } else {
+                (D::from(1.0), None)
+            };
+        Self::with_vapor_phase_fraction(vapor, liquid, beta, total_moles)
     }
 
-    pub(super) fn vapor_phase_fraction(&self) -> f64 {
-        (self.vapor().total_moles / (self.vapor().total_moles + self.liquid().total_moles))
-            .into_value()
+    pub(super) fn with_vapor_phase_fraction(
+        vapor: State<E, N, D>,
+        liquid: State<E, N, D>,
+        vapor_phase_fraction: D,
+        total_moles: Option<Moles<D>>,
+    ) -> Self {
+        Self {
+            states: [vapor, liquid],
+            phase_fractions: [vapor_phase_fraction, -vapor_phase_fraction + 1.0],
+            total_moles,
+        }
     }
 }
 
-impl<E: Residual, const P: usize> PhaseEquilibrium<E, P> {
-    pub(super) fn update_pressure(
-        mut self,
-        temperature: Temperature,
-        pressure: Pressure,
-    ) -> FeosResult<Self> {
-        for s in self.0.iter_mut() {
-            *s = State::new_npt(
-                &s.eos,
-                temperature,
-                pressure,
-                &s.moles,
-                Some(DensityInitialization::InitialDensity(s.density)),
-            )?;
+impl<E: Residual<N, D>, N: Dim, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 3, N, D>
+where
+    DefaultAllocator: Allocator<N>,
+{
+    pub(super) fn new(
+        vapor: State<E, N, D>,
+        liquid1: State<E, N, D>,
+        liquid2: State<E, N, D>,
+    ) -> Self {
+        Self {
+            states: [vapor, liquid1, liquid2],
+            phase_fractions: [D::from(1.0), D::from(0.0), D::from(0.0)],
+            total_moles: None,
         }
-        Ok(self)
+    }
+}
+
+impl<E: Total<N, D>, N: Gradients, const P: usize, D: DualNum<f64> + Copy>
+    PhaseEquilibrium<E, P, N, D>
+where
+    DefaultAllocator: Allocator<N>,
+{
+    pub fn total_moles(&self) -> FeosResult<Moles<D>> {
+        self.total_moles.ok_or(FeosError::IntensiveState)
     }
 
-    pub(super) fn update_moles(
-        &mut self,
-        pressure: Pressure,
-        moles: [&Moles<DVector<f64>>; P],
-    ) -> FeosResult<()> {
-        for (i, s) in self.0.iter_mut().enumerate() {
-            *s = State::new_npt(
-                &s.eos,
-                s.temperature,
-                pressure,
-                moles[i],
-                Some(DensityInitialization::InitialDensity(s.density)),
-            )?;
-        }
-        Ok(())
+    pub fn molar_enthalpy(&self) -> MolarEnergy<D> {
+        self.states
+            .iter()
+            .zip(&self.phase_fractions)
+            .map(|(s, x)| s.molar_enthalpy(Tot) * Dimensionless::new(x))
+            .reduce(|a, b| a + b)
+            .unwrap()
     }
 
-    // Total Gibbs energy excluding the constant contribution RT sum_i N_i ln(\Lambda_i^3)
-    pub(super) fn total_gibbs_energy(&self) -> Energy {
-        self.0.iter().fold(Energy::from_reduced(0.0), |acc, s| {
-            let ln_rho_m1 = s.partial_density.to_reduced().map(|r| r.ln() - 1.0);
-            acc + s.residual_helmholtz_energy()
-                + s.pressure(Contributions::Total) * s.volume
-                + RGAS * s.temperature * s.total_moles * s.molefracs.dot(&ln_rho_m1)
-        })
+    pub fn enthalpy(&self) -> FeosResult<Energy<D>> {
+        Ok(self.total_moles()? * self.molar_enthalpy())
+    }
+
+    pub fn molar_entropy(&self) -> MolarEntropy<D> {
+        self.states
+            .iter()
+            .zip(&self.phase_fractions)
+            .map(|(s, x)| s.molar_entropy(Tot) * Dimensionless::new(x))
+            .reduce(|a, b| a + b)
+            .unwrap()
+    }
+
+    pub fn entropy(&self) -> FeosResult<Entropy<D>> {
+        Ok(self.total_moles()? * self.molar_entropy())
     }
 }
 
@@ -221,14 +214,6 @@ impl<E: Residual<N>, N: Dim> PhaseEquilibrium<E, 2, N>
 where
     DefaultAllocator: Allocator<N>,
 {
-    pub(super) fn check_trivial_solution(self) -> FeosResult<Self> {
-        if Self::is_trivial_solution(self.vapor(), self.liquid()) {
-            Err(FeosError::TrivialSolution)
-        } else {
-            Ok(self)
-        }
-    }
-
     /// Check if the two states form a trivial solution
     pub fn is_trivial_solution(state1: &State<E, N>, state2: &State<E, N>) -> bool {
         let rho1 = state1.molefracs.clone() * state1.density.into_reduced();

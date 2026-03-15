@@ -172,14 +172,11 @@ const KB: f64 = 1.38064852e-23;
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
-    use feos_core::{
-        Contributions, EquationOfState, State, StateBuilder,
-        parameter::{ChemicalRecord, GroupCount, Identifier, PureRecord, SegmentRecord},
-    };
+    use feos_core::parameter::{ChemicalRecord, GroupCount, Identifier, PureRecord, SegmentRecord};
+    use feos_core::{Contributions, EquationOfState, State};
     use nalgebra::dvector;
     use quantity::*;
     use std::collections::HashMap;
-    use typenum::P3;
 
     use super::*;
 
@@ -263,7 +260,7 @@ mod tests {
         let pr = PureRecord::new(Identifier::default(), 1.0, jr);
         let joback = Joback::new(JobackParameters::new_pure(pr)?);
         let eos = EquationOfState::ideal_gas(joback);
-        let state = State::new_pure(&&eos, 1000.0 * KELVIN, 1.0 * MOL / METER.powi::<P3>())?;
+        let state = State::new_pure(&&eos, 1000.0 * KELVIN, 1.0 * MOL / METER.powi::<3>())?;
         assert!(
             ((state.molar_isobaric_heat_capacity(Contributions::IdealGas)
                 / (JOULE / MOL / KELVIN))
@@ -294,13 +291,9 @@ mod tests {
         )?);
         let eos = EquationOfState::ideal_gas(joback.clone());
         let temperature = 300.0 * KELVIN;
-        let volume = METER.powi::<P3>();
+        let volume = METER.powi::<3>();
         let moles = &dvector![1.0, 3.0] * MOL;
-        let state = StateBuilder::new(&&eos)
-            .temperature(temperature)
-            .volume(volume)
-            .moles(&moles)
-            .build()?;
+        let state = State::new_nvt(&&eos, temperature, volume, moles)?;
         println!(
             "{} {}",
             Joback::molar_isobaric_heat_capacity(&joback, temperature, &state.molefracs)?,

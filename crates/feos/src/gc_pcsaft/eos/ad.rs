@@ -510,7 +510,7 @@ pub mod test {
 
         let eos_ad = GcPcSaftAD(params);
         let moles = vector![1.3] * KILO * MOL;
-        let state = State::new_nvt(&eos_ad, temperature, volume, &moles)?;
+        let state = State::new_nvt(&eos_ad, temperature, volume, moles)?;
         let a_ad = state.residual_molar_helmholtz_energy();
         let mu_ad = state.residual_chemical_potential();
         let p_ad = state.pressure(Total);

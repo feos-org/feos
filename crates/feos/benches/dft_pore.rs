@@ -2,7 +2,7 @@
 //! in pores at different conditions.
 use criterion::{Criterion, criterion_group, criterion_main};
 use feos::core::parameter::IdentifierOption;
-use feos::core::{PhaseEquilibrium, State, StateBuilder};
+use feos::core::{PhaseEquilibrium, State};
 use feos::dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
 use feos::dft::{DFTSolver, Geometry};
 use feos::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftParameters};
@@ -10,7 +10,6 @@ use feos::hard_sphere::{FMTFunctional, FMTVersion};
 use feos::pcsaft::{PcSaftFunctional, PcSaftParameters};
 use nalgebra::dvector;
 use quantity::{ANGSTROM, KELVIN, NAV};
-use typenum::P3;
 
 fn fmt(c: &mut Criterion) {
     let mut group = c.benchmark_group("DFT_pore_fmt");
@@ -23,7 +22,7 @@ fn fmt(c: &mut Criterion) {
         None,
         None,
     );
-    let bulk = State::new_pure(&func, KELVIN, 0.75 / NAV / ANGSTROM.powi::<P3>()).unwrap();
+    let bulk = State::new_pure(&func, KELVIN, 0.75 / NAV / ANGSTROM.powi::<3>()).unwrap();
     group.bench_function("liquid", |b| {
         b.iter(|| pore.initialize(&bulk, None, None).unwrap().solve(None))
     });
@@ -68,24 +67,15 @@ fn pcsaft(c: &mut Criterion) {
     )
     .unwrap();
     let func = &PcSaftFunctional::new(parameters);
-    let vle = PhaseEquilibrium::bubble_point(
-        &func,
-        300.0 * KELVIN,
-        &dvector![0.5, 0.5],
-        None,
-        None,
-        Default::default(),
-    )
-    .unwrap();
+    let vle =
+        PhaseEquilibrium::bubble_point(&func, 300.0 * KELVIN, 0.5, None, None, Default::default())
+            .unwrap();
     let bulk = vle.liquid();
     group.bench_function("butane_pentane_liquid", |b| {
         b.iter(|| pore.initialize(bulk, None, None).unwrap().solve(None))
     });
-    let bulk = StateBuilder::new(&func)
-        .temperature(300.0 * KELVIN)
-        .partial_density(&(&vle.vapor().partial_density * 0.2))
-        .build()
-        .unwrap();
+    let bulk =
+        State::new_density(&func, 300.0 * KELVIN, vle.vapor().partial_density() * 0.2).unwrap();
     group.bench_function("butane_pentane_vapor", |b| {
         b.iter(|| pore.initialize(&bulk, None, None).unwrap().solve(None))
     });

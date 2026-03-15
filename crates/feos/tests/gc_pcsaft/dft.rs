@@ -3,14 +3,13 @@
 use approx::assert_relative_eq;
 use feos::gc_pcsaft::{GcPcSaft, GcPcSaftFunctional, GcPcSaftParameters};
 use feos_core::parameter::{ChemicalRecord, Identifier, IdentifierOption, SegmentRecord};
-use feos_core::{PhaseEquilibrium, State, StateBuilder, Verbosity};
+use feos_core::{PhaseEquilibrium, State, Verbosity};
 use feos_dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
 use feos_dft::interface::PlanarInterface;
 use feos_dft::{DFTSolver, Geometry};
 use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
-use typenum::P3;
 
 #[test]
 #[allow(non_snake_case)]
@@ -40,7 +39,7 @@ fn test_bulk_implementation() -> Result<(), Box<dyn Error>> {
     let eos = GcPcSaft::new(parameters);
     let func = GcPcSaftFunctional::new(parameters_func);
     let t = 200.0 * KELVIN;
-    let v = 0.002 * METER.powi::<P3>() * NAV / NAV_old;
+    let v = 0.002 * METER.powi::<3>() * NAV / NAV_old;
     let n = dvector![1.5] * MOL;
     let state_eos = State::new_nvt(&&eos, t, v, &n)?;
     let state_func = State::new_nvt(&&func, t, v, &n)?;
@@ -123,7 +122,7 @@ fn test_bulk_association() -> Result<(), Box<dyn Error>> {
     let func = GcPcSaftFunctional::new(func_parameters);
 
     let t = 200.0 * KELVIN;
-    let v = 0.002 * METER.powi::<P3>();
+    let v = 0.002 * METER.powi::<3>();
     let n = dvector![1.5] * MOL;
     let state_eos = State::new_nvt(&&eos, t, v, &n)?;
     let state_func = State::new_nvt(&&func, t, v, &n)?;
@@ -159,7 +158,7 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 2048;
-    let tc = State::critical_point(&&func, None, None, None, Default::default())?.temperature;
+    let tc = State::critical_point(&&func, (), None, None, Default::default())?.temperature;
     let vle = PhaseEquilibrium::pure(&&func, t, None, Default::default())?;
     let profile = PlanarInterface::from_tanh(&vle, points, w, tc, false).solve(None)?;
     println!(
@@ -171,13 +170,13 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
 
     assert_relative_eq!(
         vle.vapor().density,
-        12.8820179191167643 * MOL / METER.powi::<P3>() * NAV_old / NAV,
+        12.8820179191167643 * MOL / METER.powi::<3>() * NAV_old / NAV,
         max_relative = 1e-13,
     );
 
     assert_relative_eq!(
         vle.liquid().density,
-        13.2705903446123212 * KILO * MOL / METER.powi::<P3>() * NAV_old / NAV,
+        13.2705903446123212 * KILO * MOL / METER.powi::<3>() * NAV_old / NAV,
         max_relative = 1e-13,
     );
 
@@ -217,10 +216,7 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
     let solver = DFTSolver::new(Some(Verbosity::Iter))
         .picard_iteration(None, None, Some(1e-5), Some(0.05))
         .anderson_mixing(None, None, None, None, None);
-    let bulk = StateBuilder::new(&func)
-        .temperature(t)
-        .pressure(5.0 * BAR)
-        .build()?;
+    let bulk = State::new_npt(&func, t, 5.0 * BAR, (), None)?;
     Pore1D::new(
         Geometry::Cartesian,
         20.0 * ANGSTROM,
@@ -253,7 +249,7 @@ fn test_dft_newton() -> Result<(), Box<dyn Error>> {
     let t = 200.0 * KELVIN;
     let w = 150.0 * ANGSTROM;
     let points = 512;
-    let tc = State::critical_point(&&func, None, None, None, Default::default())?.temperature;
+    let tc = State::critical_point(&&func, (), None, None, Default::default())?.temperature;
     let vle = PhaseEquilibrium::pure(&&func, t, None, Default::default())?;
     let solver = DFTSolver::new(Some(Verbosity::Iter))
         .picard_iteration(None, Some(10), None, None)
