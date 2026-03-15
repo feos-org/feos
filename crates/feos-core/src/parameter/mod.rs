@@ -15,6 +15,8 @@ use std::path::Path;
 
 mod association;
 mod chemical_record;
+#[cfg(feature = "rusqlite")]
+mod database;
 mod identifier;
 mod model_record;
 
@@ -349,9 +351,7 @@ impl<P: Clone, B: Clone, A: CombiningRule<P> + Clone> Parameters<P, B, A> {
         let records = PureRecord::from_multiple_json(input, identifier_option)?;
 
         let binary_records = if let Some(path) = file_binary {
-            let file = File::open(path)?;
-            let reader = BufReader::new(file);
-            serde_json::from_reader(reader)?
+            BinaryRecord::from_json(path)?
         } else {
             Vec::new()
         };

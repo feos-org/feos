@@ -37,9 +37,10 @@ rayon = { workspace = true, optional = true }
 itertools = { workspace = true }
 typenum = { workspace = true }
 paste = { workspace = true }
+rusqlite = { workspace = true, features = ["bundled"]}
 
 feos = { workspace = true }
-feos-core = { workspace = true, features = ["ndarray"] }
+feos-core = { workspace = true, features = ["ndarray", "rusqlite"] }
 feos-derive = { workspace = true }
 feos-dft = { workspace = true, optional = true }
 

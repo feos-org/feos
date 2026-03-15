@@ -27,6 +27,7 @@ indexmap = { workspace = true, features = ["serde"] }
 rayon = { workspace = true, optional = true }
 typenum = { workspace = true }
 itertools = { workspace = true }
+rusqlite = { workspace = true, features = ["bundled"], optional = true }
 
 [dev-dependencies]
 approx = { workspace = true }
