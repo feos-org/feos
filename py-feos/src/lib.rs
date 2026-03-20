@@ -179,12 +179,6 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Equation of state
     m.add_class::<eos::PyEquationOfState>()?;
 
-    // // Estimator
-    // m.add_class::<estimator::PyDataSet>()?;
-    // m.add_class::<estimator::PyEstimator>()?;
-    // m.add_class::<estimator::PyLoss>()?;
-    // m.add_class::<estimator::PyPhase>()?;
-
     // AD
     #[cfg(feature = "ad")]
     {
@@ -197,6 +191,21 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_function(wrap_pyfunction!(ad::bubble_point_pressure_derivatives, m)?)?;
         m.add_function(wrap_pyfunction!(ad::dew_point_pressure_derivatives, m)?)?;
         m.add_class::<ad::PyEquationOfStateAD>()?;
+
+        // Datasets
+        m.add_class::<ad::PyVaporPressureDataset>()?;
+        m.add_class::<ad::PyLiquidDensityDataset>()?;
+        m.add_class::<ad::PyEquilibriumLiquidDensityDataset>()?;
+        m.add_class::<ad::PyBubblePointDataset>()?;
+        m.add_class::<ad::PyDewPointDataset>()?;
+
+        // Regressor
+        m.add_class::<ad::PyLossFunction>()?;
+        m.add_class::<ad::PyNonConvergenceStrategy>()?;
+        m.add_class::<ad::PyFitConfig>()?;
+        m.add_class::<ad::PyFitResult>()?;
+        m.add_class::<ad::PyPureRegressor>()?;
+        m.add_class::<ad::PyBinaryRegressor>()?;
     }
 
     #[cfg(feature = "dft")]

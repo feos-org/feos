@@ -1,10 +1,13 @@
+#[cfg(feature = "rayon")]
+pub mod parameter_optimization;
+
 use crate::DensityInitialization::Liquid;
 use crate::density_iteration::density_iteration;
 use crate::{FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
 use nalgebra::{Const, SVector, U1, U2};
 #[cfg(feature = "rayon")]
 use ndarray::{Array1, Array2, ArrayView2, Zip};
-use num_dual::{Derivative, DualSVec, DualStruct};
+use num_dual::{Derivative, DualNum, DualSVec, DualStruct};
 use quantity::{Density, Pressure, Temperature};
 #[cfg(feature = "rayon")]
 use quantity::{KELVIN, KILO, METER, MOL, PASCAL};
@@ -12,24 +15,64 @@ use quantity::{KELVIN, KILO, METER, MOL, PASCAL};
 type Gradient<const P: usize> = DualSVec<f64, f64, P>;
 
 /// A model that can be evaluated with derivatives of its parameters.
-pub trait ParametersAD<const N: usize>: for<'a> From<&'a [f64]> + Residual<Const<N>> {
-    /// Return a mutable reference to the parameter named by `index` from the parameter set.
-    fn index_parameters_mut<'a, const P: usize>(
-        eos: &'a mut Self::Lifted<Gradient<P>>,
-        index: &str,
-    ) -> &'a mut Gradient<P>;
+pub trait ParametersAD<const N: usize>: Residual<Const<N>> {
+    /// Build the model by requesting each parameter by name.
+    ///
+    /// Call `f(name, differentiable)` for each parameter. The order of calls
+    /// defines the canonical parameter order. This is the single source of
+    /// truth for parameter names, ordering, differentiability, and mapping
+    /// to the internal model structure.
+    ///
+    /// Set `differentiable` to `false` for discrete or structurally fixed
+    /// parameters (e.g. critical parameters in cubics or association site counts).
+    fn build<D: DualNum<f64, Inner = f64> + Copy>(
+        f: impl FnMut(&'static str, bool) -> D,
+    ) -> Self::Lifted<D>;
 
-    /// Return the parameters with the appropriate derivatives.
-    fn named_derivatives<const P: usize>(
-        &self,
-        parameter_names: [&str; P],
+    /// Canonical parameter names in the order defined by [`build`](Self::build).
+    fn parameter_names() -> Vec<&'static str> {
+        let mut names = Vec::new();
+        let _ = Self::build(|name, _| {
+            names.push(name);
+            0.0_f64
+        });
+        names
+    }
+
+    /// Parameter names that can be differentiated, in canonical order.
+    fn differentiable_parameters() -> Vec<&'static str> {
+        let mut names = Vec::new();
+        let _ = Self::build(|name, differentiable| {
+            if differentiable {
+                names.push(name);
+            }
+            0.0_f64
+        });
+        names
+    }
+
+    /// Construct the model with derivative seeds for the `P` named parameters.
+    ///
+    /// - `parameter_values`: all parameter values in the canonical order
+    ///   defined by [`build`](Self::build).
+    /// - `derivative_names`: names of the parameters to differentiate with
+    ///   respect to. Gradient component `i` corresponds to
+    ///   `derivative_names[i]`.
+    ///
+    fn seed_derivatives<const P: usize>(
+        parameter_values: &[f64],
+        derivative_names: [&str; P],
     ) -> Self::Lifted<Gradient<P>> {
-        let mut eos = self.lift::<Gradient<P>>();
-        for (i, p) in parameter_names.into_iter().enumerate() {
-            Self::index_parameters_mut(&mut eos, p).eps =
-                Derivative::derivative_generic(Const::<P>, U1, i)
-        }
-        eos
+        let mut idx = 0;
+        Self::build(|name, _differentiable| {
+            let i = idx;
+            idx += 1;
+            let mut d = Gradient::<P>::from(parameter_values[i]);
+            if let Some(seed_idx) = derivative_names.iter().position(|&n| n == name) {
+                d.eps = Derivative::derivative_generic(Const::<P>, U1, seed_idx);
+            }
+            d
+        })
     }
 }
 
@@ -318,20 +361,21 @@ where
         .par_map_collect(|par, inp| {
             let par = par.as_slice().expect("Parameter array is not contiguous!");
             let inp = inp.as_slice().expect("Input array is not contiguous!");
-            let eos = E::from(par).named_derivatives(parameter_names);
+            let eos = E::seed_derivatives(par, parameter_names);
             f(&eos, inp)
         });
+    let n = parameters.nrows();
     let status = value_dual.iter().map(|p| p.is_ok()).collect();
-    let value_dual: Array1<_> = value_dual.into_iter().flatten().collect();
-    let mut value = Array1::zeros(value_dual.len());
-    let mut grad = Array2::zeros([value_dual.len(), P]);
-    Zip::from(grad.rows_mut())
-        .and(&mut value)
-        .and(&value_dual)
-        .for_each(|mut grad, p, p_dual| {
-            *p = p_dual.re;
-            let eps = p_dual.eps.unwrap_generic(Const::<P>, U1).data.0[0].to_vec();
-            grad.assign(&Array1::from(eps));
-        });
+    let mut value = Array1::from_elem(n, f64::NAN);
+    let mut grad = Array2::zeros([n, P]);
+    for (i, result) in value_dual.into_iter().enumerate() {
+        if let Ok(p_dual) = result {
+            value[i] = p_dual.re;
+            let eps = p_dual.eps.unwrap_generic(Const::<P>, U1);
+            for (g, &e) in grad.row_mut(i).iter_mut().zip(eps.data.0[0].iter()) {
+                *g = e;
+            }
+        }
+    }
     (value, grad, status)
 }

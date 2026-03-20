@@ -2,7 +2,7 @@ use super::dispersion::{A0, A1, A2, B0, B1, B2};
 use super::polar::{AD, BD, CD};
 use feos_core::{ParametersAD, Residual, StateHD};
 use nalgebra::{SVector, U1};
-use num_dual::{DualNum, DualSVec64};
+use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_6, PI};
 
 const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
@@ -193,36 +193,32 @@ impl<D: DualNum<f64> + Copy, const N: usize> From<&[f64]> for PcSaftPure<D, N> {
 }
 
 impl ParametersAD<1> for PcSaftPure<f64, 4> {
-    fn index_parameters_mut<'a, const P: usize>(
-        eos: &'a mut Self::Lifted<DualSVec64<P>>,
-        index: &str,
-    ) -> &'a mut DualSVec64<P> {
-        match index {
-            "m" => &mut eos.0[0],
-            "sigma" => &mut eos.0[1],
-            "epsilon_k" => &mut eos.0[2],
-            "mu" => &mut eos.0[3],
-            _ => panic!("{index} is not a valid PC-SAFT parameter!"),
-        }
+    fn build<D: DualNum<f64, Inner = f64> + Copy>(
+        mut f: impl FnMut(&'static str, bool) -> D,
+    ) -> PcSaftPure<D, 4> {
+        PcSaftPure([
+            f("m", true),
+            f("sigma", true),
+            f("epsilon_k", true),
+            f("mu", true),
+        ])
     }
 }
 
 impl ParametersAD<1> for PcSaftPure<f64, 8> {
-    fn index_parameters_mut<'a, const P: usize>(
-        eos: &'a mut Self::Lifted<DualSVec64<P>>,
-        index: &str,
-    ) -> &'a mut DualSVec64<P> {
-        match index {
-            "m" => &mut eos.0[0],
-            "sigma" => &mut eos.0[1],
-            "epsilon_k" => &mut eos.0[2],
-            "mu" => &mut eos.0[3],
-            "kappa_ab" => &mut eos.0[4],
-            "epsilon_k_ab" => &mut eos.0[5],
-            "na" => &mut eos.0[6],
-            "nb" => &mut eos.0[7],
-            _ => panic!("{index} is not a valid PC-SAFT parameter!"),
-        }
+    fn build<D: DualNum<f64, Inner = f64> + Copy>(
+        mut f: impl FnMut(&'static str, bool) -> D,
+    ) -> PcSaftPure<D, 8> {
+        PcSaftPure([
+            f("m", true),
+            f("sigma", true),
+            f("epsilon_k", true),
+            f("mu", true),
+            f("kappa_ab", true),
+            f("epsilon_k_ab", true),
+            f("na", false),
+            f("nb", false),
+        ])
     }
 }
 

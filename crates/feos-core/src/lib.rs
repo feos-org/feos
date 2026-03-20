@@ -34,6 +34,8 @@ pub mod parameter;
 mod phase_equilibria;
 mod state;
 pub use ad::{ParametersAD, PropertiesAD};
+#[cfg(feature = "rayon")]
+pub use ad::parameter_optimization;
 pub use equation_of_state::{
     EntropyScaling, EquationOfState, IdealGas, Molarweight, NoResidual, Residual, ResidualDyn,
     Subset, Total,
