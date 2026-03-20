@@ -1,7 +1,7 @@
 use crate::ReferenceSystem;
 use crate::state::StateHD;
 use nalgebra::{
-    Const, DVector, DefaultAllocator, Dim, Dyn, OVector, SVector, U1, allocator::Allocator,
+    Const, DVector, DefaultAllocator, Dim, Dyn, OVector, SVector, allocator::Allocator,
 };
 use num_dual::DualNum;
 use quantity::{Dimensionless, MolarEnergy, MolarVolume, Temperature};
@@ -114,11 +114,27 @@ impl<I: Clone, R: Residual<Const<N>, D>, D: DualNum<f64> + Copy, const N: usize>
 }
 
 /// Ideal gas Helmholtz energy contribution.
-pub trait IdealGas<D = f64> {
+pub trait IdealGas {
     /// Implementation of an ideal gas model in terms of the
     /// logarithm of the cubic thermal de Broglie wavelength
     /// in units ln(A³) for each component in the system.
-    fn ln_lambda3<D2: DualNum<f64, Inner = D> + Copy>(&self, temperature: D2) -> D2;
+    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D;
+
+    /// The name of the ideal gas model.
+    fn ideal_gas_model(&self) -> &'static str;
+}
+
+/// Ideal gas Helmholtz energy contribution.
+pub trait IdealGasAD<D = f64>: Clone {
+    type Real: IdealGasAD;
+    type Lifted<D2: DualNum<f64, Inner = D> + Copy>: IdealGasAD<D2>;
+    fn re(&self) -> Self::Real;
+    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2>;
+
+    /// Implementation of an ideal gas model in terms of the
+    /// logarithm of the cubic thermal de Broglie wavelength
+    /// in units ln(A³) for each component in the system.
+    fn ln_lambda3(&self, temperature: D) -> D;
 
     /// The name of the ideal gas model.
     fn ideal_gas_model(&self) -> &'static str;
@@ -129,45 +145,44 @@ pub trait Total<N: Dim = Dyn, D: DualNum<f64> + Copy = f64>: Residual<N, D>
 where
     DefaultAllocator: Allocator<N>,
 {
-    type IdealGas: IdealGas<D>;
+    type RealTotal: Total<N, f64>;
+    type LiftedTotal<D2: DualNum<f64, Inner = D> + Copy>: Total<N, D2>;
+    fn re_total(&self) -> Self::RealTotal;
+    fn lift_total<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::LiftedTotal<D2>;
 
     fn ideal_gas_model(&self) -> &'static str;
 
-    fn ideal_gas(&self) -> impl Iterator<Item = &Self::IdealGas>;
+    fn ln_lambda3(&self, temperature: D) -> OVector<D, N>;
 
-    fn ln_lambda3<D2: DualNum<f64, Inner = D> + Copy>(&self, temperature: D2) -> OVector<D2, N> {
-        OVector::from_iterator_generic(
-            N::from_usize(self.components()),
-            U1,
-            self.ideal_gas().map(|i| i.ln_lambda3(temperature)),
-        )
-    }
-
-    fn ideal_gas_molar_helmholtz_energy<D2: DualNum<f64, Inner = D> + Copy>(
+    fn ideal_gas_molar_helmholtz_energy(
         &self,
-        temperature: D2,
-        molar_volume: D2,
-        molefracs: &OVector<D2, N>,
-    ) -> D2 {
+        temperature: D,
+        molar_volume: D,
+        molefracs: &OVector<D, N>,
+    ) -> D {
         let partial_density = molefracs / molar_volume;
-        let mut res = D2::from(0.0);
-        for (i, &r) in self.ideal_gas().zip(partial_density.iter()) {
+        let mut res = D::from(0.0);
+        for (&l, &r) in self
+            .ln_lambda3(temperature)
+            .iter()
+            .zip(partial_density.iter())
+        {
             let ln_rho_m1 = if r.re() == 0.0 {
-                D2::from(0.0)
+                D::from(0.0)
             } else {
                 r.ln() - 1.0
             };
-            res += r * (i.ln_lambda3(temperature) + ln_rho_m1)
+            res += r * (l + ln_rho_m1)
         }
         res * molar_volume * temperature
     }
 
-    fn ideal_gas_helmholtz_energy<D2: DualNum<f64, Inner = D> + Copy>(
+    fn ideal_gas_helmholtz_energy(
         &self,
-        temperature: Temperature<D2>,
-        volume: MolarVolume<D2>,
-        moles: &OVector<D2, N>,
-    ) -> MolarEnergy<D2> {
+        temperature: Temperature<D>,
+        volume: MolarVolume<D>,
+        moles: &OVector<D, N>,
+    ) -> MolarEnergy<D> {
         let total_moles = moles.sum();
         let molefracs = moles / total_moles;
         let molar_volume = volume.into_reduced() / total_moles;
@@ -180,32 +195,59 @@ where
 }
 
 impl<
-    I: IdealGas + Clone + 'static,
+    I: IdealGas + 'static,
     C: Deref<Target = EquationOfState<Vec<I>, R>> + Clone,
     R: ResidualDyn + 'static,
-> Total<Dyn, f64> for C
+    D: DualNum<f64> + Copy,
+> Total<Dyn, D> for C
 {
-    type IdealGas = I;
+    type RealTotal = Self;
+    type LiftedTotal<D2: DualNum<f64, Inner = D> + Copy> = Self;
+    fn re_total(&self) -> Self::RealTotal {
+        self.clone()
+    }
+    fn lift_total<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::LiftedTotal<D2> {
+        self.clone()
+    }
 
     fn ideal_gas_model(&self) -> &'static str {
         self.ideal_gas[0].ideal_gas_model()
     }
 
-    fn ideal_gas(&self) -> impl Iterator<Item = &Self::IdealGas> {
-        self.ideal_gas.iter()
+    fn ln_lambda3(&self, temperature: D) -> DVector<D> {
+        DVector::from_vec(
+            self.ideal_gas
+                .iter()
+                .map(|i| i.ln_lambda3(temperature))
+                .collect(),
+        )
     }
 }
 
-impl<I: IdealGas<D> + Clone, R: Residual<Const<N>, D>, D: DualNum<f64> + Copy, const N: usize>
+impl<I: IdealGasAD<D>, R: Residual<Const<N>, D>, D: DualNum<f64> + Copy, const N: usize>
     Total<Const<N>, D> for EquationOfState<[I; N], R>
 {
-    type IdealGas = I;
+    type RealTotal = EquationOfState<[I::Real; N], R::Real>;
+    type LiftedTotal<D2: DualNum<f64, Inner = D> + Copy> =
+        EquationOfState<[I::Lifted<D2>; N], R::Lifted<D2>>;
+    fn re_total(&self) -> Self::RealTotal {
+        EquationOfState::new(
+            self.ideal_gas.each_ref().map(|i| i.re()),
+            self.residual.re(),
+        )
+    }
+    fn lift_total<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::LiftedTotal<D2> {
+        EquationOfState::new(
+            self.ideal_gas.each_ref().map(|i| i.lift()),
+            self.residual.lift(),
+        )
+    }
 
     fn ideal_gas_model(&self) -> &'static str {
         self.ideal_gas[0].ideal_gas_model()
     }
 
-    fn ideal_gas(&self) -> impl Iterator<Item = &Self::IdealGas> {
-        self.ideal_gas.iter()
+    fn ln_lambda3(&self, temperature: D) -> SVector<D, N> {
+        SVector::from(self.ideal_gas.each_ref().map(|i| i.ln_lambda3(temperature)))
     }
 }

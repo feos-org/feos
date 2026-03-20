@@ -32,15 +32,7 @@ fn test_tp_flash() -> FeosResult<()> {
     println!("{p_propane} {p_butane} {x1} {y1} {z1}");
     let mix = PcSaft::new(read_params(vec!["propane", "butane"])?);
     let options = SolverOptions::new().max_iter(100).tol(1e-12);
-    let vle = PhaseEquilibrium::tp_flash(
-        &&mix,
-        t,
-        p,
-        &(dvector![z1, 1.0 - z1] * MOL),
-        None,
-        options,
-        None,
-    )?;
+    let vle = PhaseEquilibrium::tp_flash(&&mix, t, p, z1, None, options, None)?;
     println!(
         "x1: {}, y1: {}",
         vle.liquid().molefracs[0],
@@ -85,7 +77,7 @@ fn test_tp_flash_zero_component() -> FeosResult<()> {
         &&eos_full,
         300.0 * KELVIN,
         1.2 * BAR,
-        &(dvector![0.0, 0.5, 0.5] * MOL),
+        dvector![0.0, 0.5, 0.5],
         None,
         options,
         None,
@@ -94,7 +86,7 @@ fn test_tp_flash_zero_component() -> FeosResult<()> {
         &&eos_binary,
         300.0 * KELVIN,
         1.2 * BAR,
-        &(dvector![0.5, 0.5] * MOL),
+        dvector![0.5, 0.5],
         None,
         options,
         None,
