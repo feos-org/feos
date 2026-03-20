@@ -25,8 +25,10 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order"] }
 indexmap = { workspace = true, features = ["serde"] }
 rayon = { workspace = true, optional = true }
+csv = { version = "1", optional = true }
 typenum = { workspace = true }
 itertools = { workspace = true }
+levenberg-marquardt = "0.15.0"
 
 [dev-dependencies]
 approx = { workspace = true }
@@ -35,4 +37,4 @@ quantity = { workspace = true, features = ["approx"] }
 [features]
 default = []
 ndarray = ["dep:ndarray", "quantity/ndarray"]
-rayon = ["dep:rayon", "ndarray/rayon"]
+rayon = ["dep:rayon", "ndarray/rayon", "dep:csv"]

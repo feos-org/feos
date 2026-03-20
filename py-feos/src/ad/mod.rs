@@ -4,6 +4,13 @@ use numpy::{PyArray1, PyArray2, PyReadonlyArray2, ToPyArray};
 use paste::paste;
 use pyo3::prelude::*;
 
+pub mod solver;
+pub use solver::{
+    PyBinaryRegressor, PyBubblePointDataset, PyDewPointDataset, PyEquilibriumLiquidDensityDataset,
+    PyLiquidDensityDataset, PyLossFunction, PyNonConvergenceStrategy, PyPureRegressor,
+    PyFitConfig, PyFitResult, PyVaporPressureDataset,
+};
+
 #[pyclass(name = "EquationOfStateAD", eq, eq_int)]
 #[derive(Clone, Copy, PartialEq)]
 pub enum PyEquationOfStateAD {
