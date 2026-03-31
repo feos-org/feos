@@ -1,4 +1,3 @@
-use super::State;
 use crate::equation_of_state::Residual;
 use crate::{FeosError, FeosResult};
 use nalgebra::allocator::Allocator;
@@ -6,10 +5,27 @@ use nalgebra::{DefaultAllocator, Dim, Dyn, OVector, U1, U2, dvector, vector};
 use num_dual::{DualNum, DualStruct};
 use quantity::Moles;
 
+/// Trait to generalize over different input types for the composition of
+/// a state.
+///
+/// The trait is implemented for the following data types:
+///
+/// |components|input|total_moles?|comment|
+/// |:-:|-|-|-|
+/// |1|`()`|-||
+/// |1|`Moles`|✅|
+/// |2|`f64`|-|
+/// |N|`OVector<f64,N>`|-|
+/// |N|`&OVector<f64,N>`|-|
+/// |N|`OVector<f64,N-1>`|-|`Dyn` only|
+/// |N|`&OVector<f64,N-1>`|-|`Dyn` only|
+/// |N|`Moles<OVector<f64,N>>`|✅|
+/// |N|`&Moles<OVector<f64,N>>`|✅|
 pub trait Composition<D: DualNum<f64> + Copy, N: Dim>
 where
     DefaultAllocator: Allocator<N>,
 {
+    /// Convert the composition into molefracs and total moles if possible.
     #[expect(clippy::type_complexity)]
     fn into_molefracs<E: Residual<N, D>>(
         self,
@@ -39,19 +55,6 @@ where
         _: &E,
     ) -> FeosResult<(OVector<D, N>, Option<Moles<D>>)> {
         Ok((self.0, self.1))
-    }
-}
-
-// copy the composition from a given state
-impl<E, D: DualNum<f64> + Copy, N: Dim> Composition<D, N> for &State<E, N, D>
-where
-    DefaultAllocator: Allocator<N>,
-{
-    fn into_molefracs<E1: Residual<N, D>>(
-        self,
-        _: &E1,
-    ) -> FeosResult<(OVector<D, N>, Option<Moles<D>>)> {
-        Ok(((self.molefracs.clone()), self.total_moles))
     }
 }
 

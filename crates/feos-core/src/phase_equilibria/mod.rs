@@ -10,7 +10,15 @@ use quantity::{Dimensionless, Energy, Entropy, MolarEnergy, MolarEntropy, Moles}
 use std::fmt;
 use std::fmt::Write;
 
+// with empty lines to not mess up the order in the documentation
+mod vle_pure;
+
 mod bubble_dew;
+
+mod tp_flash;
+
+mod px_flashes;
+
 #[cfg(feature = "ndarray")]
 mod phase_diagram_binary;
 #[cfg(feature = "ndarray")]
@@ -18,8 +26,7 @@ mod phase_diagram_pure;
 #[cfg(feature = "ndarray")]
 mod phase_envelope;
 mod stability_analysis;
-mod tp_flash;
-mod vle_pure;
+
 pub use bubble_dew::TemperatureOrPressure;
 #[cfg(feature = "ndarray")]
 pub use phase_diagram_binary::PhaseDiagramHetero;
@@ -33,22 +40,25 @@ pub use phase_diagram_pure::PhaseDiagram;
 ///
 /// ## Contents
 ///
-/// + [Bubble and dew point calculations](#bubble-and-dew-point-calculations)
-/// + [Heteroazeotropes](#heteroazeotropes)
-/// + [Flash calculations](#flash-calculations)
 /// + [Pure component phase equilibria](#pure-component-phase-equilibria)
+/// + [Bubble and dew point calculations](#bubble-and-dew-point-calculations)
+/// + [Flash calculations](#flash-calculations)
+/// + [Heteroazeotropes](#heteroazeotropes)
 /// + [Utility functions](#utility-functions)
 #[derive(Debug, Clone)]
 pub struct PhaseEquilibrium<E, const P: usize, N: Dim = Dyn, D: DualNum<f64> + Copy = f64>
 where
     DefaultAllocator: Allocator<N>,
 {
-    states: [State<E, N, D>; P],
+    pub states: [State<E, N, D>; P],
     pub phase_fractions: [D; P],
     total_moles: Option<Moles<D>>,
 }
 
-impl<E: Residual, const P: usize> fmt::Display for PhaseEquilibrium<E, P> {
+impl<E: Residual<N>, N: Dim, const P: usize> fmt::Display for PhaseEquilibrium<E, P, N>
+where
+    DefaultAllocator: Allocator<N>,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (i, s) in self.states.iter().enumerate() {
             writeln!(f, "phase {i}: {s}")?;
@@ -125,12 +135,12 @@ impl<E: Residual<N, D>, N: Dim, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, N
 where
     DefaultAllocator: Allocator<N>,
 {
-    pub(super) fn single_phase(state: State<E, N, D>) -> Self {
+    pub fn single_phase(state: State<E, N, D>) -> Self {
         let total_moles = state.total_moles;
         Self::with_vapor_phase_fraction(state.clone(), state, D::from(1.0), total_moles)
     }
 
-    pub(super) fn two_phase(vapor: State<E, N, D>, liquid: State<E, N, D>) -> Self {
+    pub fn two_phase(vapor: State<E, N, D>, liquid: State<E, N, D>) -> Self {
         let (beta, total_moles) =
             if let (Some(nv), Some(nl)) = (vapor.total_moles, liquid.total_moles) {
                 (nv.convert_into(nl + nv), Some(nl + nv))
@@ -140,7 +150,7 @@ where
         Self::with_vapor_phase_fraction(vapor, liquid, beta, total_moles)
     }
 
-    pub(super) fn with_vapor_phase_fraction(
+    pub fn with_vapor_phase_fraction(
         vapor: State<E, N, D>,
         liquid: State<E, N, D>,
         vapor_phase_fraction: D,
@@ -158,11 +168,7 @@ impl<E: Residual<N, D>, N: Dim, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 3, N
 where
     DefaultAllocator: Allocator<N>,
 {
-    pub(super) fn new(
-        vapor: State<E, N, D>,
-        liquid1: State<E, N, D>,
-        liquid2: State<E, N, D>,
-    ) -> Self {
+    pub fn new(vapor: State<E, N, D>, liquid1: State<E, N, D>, liquid2: State<E, N, D>) -> Self {
         Self {
             states: [vapor, liquid1, liquid2],
             phase_fractions: [D::from(1.0), D::from(0.0), D::from(0.0)],
@@ -171,7 +177,7 @@ where
     }
 }
 
-impl<E: Total<N, D>, N: Gradients, const P: usize, D: DualNum<f64> + Copy>
+impl<E: Residual<N, D>, N: Gradients, const P: usize, D: DualNum<f64> + Copy>
     PhaseEquilibrium<E, P, N, D>
 where
     DefaultAllocator: Allocator<N>,
@@ -179,7 +185,13 @@ where
     pub fn total_moles(&self) -> FeosResult<Moles<D>> {
         self.total_moles.ok_or(FeosError::IntensiveState)
     }
+}
 
+impl<E: Total<N, D>, N: Gradients, const P: usize, D: DualNum<f64> + Copy>
+    PhaseEquilibrium<E, P, N, D>
+where
+    DefaultAllocator: Allocator<N>,
+{
     pub fn molar_enthalpy(&self) -> MolarEnergy<D> {
         self.states
             .iter()

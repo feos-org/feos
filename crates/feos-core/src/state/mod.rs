@@ -306,17 +306,9 @@ where
 
     /// Return a new `State` for the combination of inputs.
     ///
-    /// The function attempts to create a new state using the given input values. If the state
-    /// is overdetermined, it will choose a method based on the following hierarchy.
-    /// 1. Create a state non-iteratively from the set of $T$, $V$, $\rho$, $\rho_i$, $N$, $N_i$ and $x_i$.
-    /// 2. Use a density iteration for a given pressure.
-    ///
-    /// The [StateBuilder] provides a convenient way of calling this function without the need to provide
-    /// all the optional input values.
-    ///
     /// # Errors
     ///
-    /// When the state cannot be created using the combination of inputs.
+    /// When the state cannot be created using the combination of inputs (is over- or underdetermined).
     pub fn build<X: Composition<D, N>>(
         eos: &E,
         temperature: Temperature<D>,
@@ -417,18 +409,9 @@ where
 {
     /// Return a new `State` for the combination of inputs.
     ///
-    /// The function attempts to create a new state using the given input values. If the state
-    /// is overdetermined, it will choose a method based on the following hierarchy.
-    /// 1. Create a state non-iteratively from the set of $T$, $V$, $\rho$, $\rho_i$, $N$, $N_i$ and $x_i$.
-    /// 2. Use a density iteration for a given pressure.
-    /// 3. Determine the state using a Newton iteration from (in this order): $(p, h)$, $(p, s)$, $(T, h)$, $(T, s)$, $(V, u)$
-    ///
-    /// The [StateBuilder] provides a convenient way of calling this function without the need to provide
-    /// all the optional input values.
-    ///
     /// # Errors
     ///
-    /// When the state cannot be created using the combination of inputs.
+    /// When the state cannot be created using the combination of inputs (is over- or underdetermined).
     #[expect(clippy::too_many_arguments)]
     pub fn build_full<X: Composition<D, N> + Clone>(
         eos: &E,
@@ -461,28 +444,33 @@ where
         match state {
             Some(state) => Ok(state),
             None => {
-                // Check if new state can be created using molar_enthalpy and temperature
-                if let (Some(p), Some(h)) = (pressure, molar_enthalpy) {
-                    return State::new_nph(eos, p, h, composition, density_initialization, ti);
-                }
-                if let (Some(p), Some(s)) = (pressure, molar_entropy) {
-                    return State::new_nps(eos, p, s, composition, density_initialization, ti);
-                }
-                if let (Some(t), Some(h)) = (temperature, molar_enthalpy) {
-                    return State::new_nth(eos, t, h, composition, density_initialization);
-                }
-                if let (Some(t), Some(s)) = (temperature, molar_entropy) {
-                    return State::new_nts(eos, t, s, composition, density_initialization);
-                }
-                if let (Some(u), Some(v)) = (molar_internal_energy, volume) {
-                    let (molefracs, total_moles) = composition.into_molefracs(eos)?;
-                    if let Some(n) = total_moles {
-                        return State::new_nvu(eos, v, u, (molefracs, n), ti);
+                match (
+                    temperature,
+                    pressure,
+                    volume,
+                    molar_enthalpy,
+                    molar_entropy,
+                    molar_internal_energy,
+                ) {
+                    (Some(t), None, None, Some(h), None, None) => {
+                        State::new_nth(eos, t, h, composition, density_initialization)
                     }
+                    (Some(t), None, None, None, Some(s), None) => {
+                        State::new_nts(eos, t, s, composition, density_initialization)
+                    }
+                    (None, Some(p), None, Some(h), None, None) => {
+                        State::new_nph(eos, p, h, composition, density_initialization, ti)
+                    }
+                    (None, Some(p), None, None, Some(s), None) => {
+                        State::new_nps(eos, p, s, composition, density_initialization, ti)
+                    }
+                    (None, None, Some(v), None, None, Some(u)) => {
+                        State::new_nvu(eos, v, u, composition, ti)
+                    }
+                    _ => Err(FeosError::UndeterminedState(String::from(
+                        "Missing input parameters.",
+                    ))),
                 }
-                Err(FeosError::UndeterminedState(String::from(
-                    "Missing input parameters.",
-                )))
             }
         }
     }
