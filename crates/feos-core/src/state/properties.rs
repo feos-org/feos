@@ -20,7 +20,9 @@ where
         let ideal_gas = || {
             quantity::ad::gradient_copy(
                 partial2(
-                    |n: Dimensionless<_>, &t, &v| self.eos.ideal_gas_helmholtz_energy(t, v, &n),
+                    |n: Dimensionless<_>, &t, &v| {
+                        self.eos.lift_total().ideal_gas_helmholtz_energy(t, v, &n)
+                    },
                     &self.temperature,
                     &self.molar_volume,
                 ),
@@ -38,7 +40,7 @@ where
             quantity::ad::partial_hessian_copy(
                 partial(
                     |(n, t): (Dimensionless<_>, _), &v| {
-                        self.eos.ideal_gas_helmholtz_energy(t, v, &n)
+                        self.eos.lift_total().ideal_gas_helmholtz_energy(t, v, &n)
                     },
                     &self.molar_volume,
                 ),
@@ -89,7 +91,7 @@ where
         let ideal_gas = || {
             -quantity::ad::first_derivative(
                 partial2(
-                    |t, &v, n| self.eos.ideal_gas_helmholtz_energy(t, v, n),
+                    |t, &v, n| self.eos.lift_total().ideal_gas_helmholtz_energy(t, v, n),
                     &self.molar_volume,
                     &self.molefracs,
                 ),
@@ -115,7 +117,7 @@ where
         let ideal_gas = || {
             -quantity::ad::second_derivative(
                 partial2(
-                    |t, &v, n| self.eos.ideal_gas_helmholtz_energy(t, v, n),
+                    |t, &v, n| self.eos.lift_total().ideal_gas_helmholtz_energy(t, v, n),
                     &self.molar_volume,
                     &self.molefracs,
                 ),
@@ -135,7 +137,7 @@ where
         let ideal_gas = || {
             -quantity::ad::third_derivative(
                 partial2(
-                    |t, &v, n| self.eos.ideal_gas_helmholtz_energy(t, v, n),
+                    |t, &v, n| self.eos.lift_total().ideal_gas_helmholtz_energy(t, v, n),
                     &self.molar_volume,
                     &self.molefracs,
                 ),
@@ -176,7 +178,7 @@ where
         let ideal_gas = || {
             quantity::ad::zeroth_derivative(
                 partial2(
-                    |t, &v, n| self.eos.ideal_gas_helmholtz_energy(t, v, n),
+                    |t, &v, n| self.eos.lift_total().ideal_gas_helmholtz_energy(t, v, n),
                     &self.molar_volume,
                     &self.molefracs,
                 ),
@@ -253,7 +255,9 @@ where
         if let Contributions::IdealGas | Contributions::Total = contributions {
             res.push((
                 self.eos.ideal_gas_model(),
-                self.eos.ideal_gas_molar_helmholtz_energy(t, v, &x),
+                self.eos
+                    .lift_total()
+                    .ideal_gas_molar_helmholtz_energy(t, v, &x),
             ));
         }
         if let Contributions::Residual | Contributions::Total = contributions {
