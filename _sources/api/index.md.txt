@@ -10,4 +10,5 @@ All functions and classes in FeOS are exported at the package root. Here, they a
    eos
    dft
    ad
+   thread_pool
 ```

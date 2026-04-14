@@ -1,0 +1,11 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.set\_num\_threads
+======================
+
+.. currentmodule:: feos
+
+.. autofunction:: set_num_threads
