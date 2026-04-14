@@ -3,6 +3,7 @@ use crate::epcsaft::eos::permittivity::PermittivityRecord;
 use crate::hard_sphere::{HardSphereProperties, MonomerShape};
 use feos_core::parameter::{CombiningRule, FromSegments, Parameters};
 use feos_core::{FeosError, FeosResult};
+use itertools::Itertools;
 use nalgebra::{DMatrix, DVector};
 use num_dual::DualNum;
 use num_traits::Zero;
@@ -101,12 +102,33 @@ impl CombiningRule<ElectrolytePcSaftRecord> for ElectrolytePcSaftAssociationReco
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct ElectrolytePcSaftBinaryRecord {
     /// Binary dispersion interaction parameter
-    pub k_ij: Vec<f64>,
+    pub k_ij: f64,
+    #[serde(skip_serializing_if = "f64::is_zero")]
+    #[serde(default)]
+    pub k_ij_1: f64,
+    #[serde(skip_serializing_if = "f64::is_zero")]
+    #[serde(default)]
+    pub k_ij_2: f64,
+    #[serde(skip_serializing_if = "f64::is_zero")]
+    #[serde(default)]
+    pub k_ij_3: f64,
 }
 
 impl ElectrolytePcSaftBinaryRecord {
-    pub fn new(k_ij: Vec<f64>) -> Self {
-        Self { k_ij }
+    pub fn new(k_ij: f64, k_ij_1: f64, k_ij_2: f64, k_ij_3: f64) -> Self {
+        Self {
+            k_ij,
+            k_ij_1,
+            k_ij_2,
+            k_ij_3,
+        }
+    }
+
+    pub fn constant(k_ij: f64) -> Self {
+        Self {
+            k_ij,
+            ..Default::default()
+        }
     }
 }
 
@@ -123,7 +145,10 @@ pub struct ElectrolytePcSaftPars {
     pub sigma: DVector<f64>,
     pub epsilon_k: DVector<f64>,
     pub z: DVector<f64>,
-    pub k_ij: DMatrix<Vec<f64>>,
+    pub k_ij: DMatrix<f64>,
+    pub k_ij_1: DMatrix<f64>,
+    pub k_ij_2: DMatrix<f64>,
+    pub k_ij_3: DMatrix<f64>,
     pub sigma_ij: DMatrix<f64>,
     pub e_k_ij: DMatrix<f64>,
     pub nionic: usize,
@@ -203,30 +228,22 @@ impl ElectrolytePcSaftPars {
             .into();
         let nsolvent = solvent_comp.len();
 
-        let mut k_ij: DMatrix<Vec<f64>> = DMatrix::from_element(n, n, vec![0., 0., 0., 0.]);
+        let [mut k_ij, mut k_ij_1, mut k_ij_2, mut k_ij_3] =
+            parameters.collate_binary(|br| [br.k_ij, br.k_ij_1, br.k_ij_2, br.k_ij_3]);
 
-        for br in &parameters.binary {
-            let i = br.id1;
-            let j = br.id2;
-            let r = &br.model_record;
-            if r.k_ij.len() > 4 {
-                return Err(FeosError::IncompatibleParameters(format!(
-                    "Binary interaction for component {i} with {j} is parametrized with more than 4 k_ij coefficients."
-                )));
-            } else {
-                (0..r.k_ij.len()).for_each(|k| {
-                    k_ij[(i, j)][k] = r.k_ij[k];
-                    k_ij[(j, i)][k] = r.k_ij[k];
-                });
+        // No binary interaction between charged species of same kind (+/+ and -/-)
+        for [&ai, &aj] in ionic_comp
+            .iter()
+            .array_combinations()
+            .chain(ionic_comp.iter().map(|ai| [ai, ai]))
+        {
+            if z[ai] * z[aj] > 0.0 {
+                k_ij[(ai, aj)] = 1.0;
+                k_ij_1[(ai, aj)] = 0.0;
+                k_ij_2[(ai, aj)] = 0.0;
+                k_ij_3[(ai, aj)] = 0.0;
             }
         }
-        // No binary interaction between charged species of same kind (+/+ and -/-)
-        ionic_comp.iter().for_each(|&ai| {
-            k_ij[(ai, ai)][0] = 1.0;
-            for k in 1..4usize {
-                k_ij[(ai, ai)][k] = 0.0;
-            }
-        });
 
         let mut sigma_ij = DMatrix::zeros(n, n);
         let mut e_k_ij = DMatrix::zeros(n, n);
@@ -324,6 +341,9 @@ impl ElectrolytePcSaftPars {
             epsilon_k,
             z,
             k_ij,
+            k_ij_1,
+            k_ij_2,
+            k_ij_3,
             sigma_ij,
             e_k_ij,
             nionic,
