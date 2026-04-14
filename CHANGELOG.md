@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed the calculation of temperature and pressure derivatives of dew and bubble points. [#347](https://github.com/feos-org/feos/pull/347)
+- Fixed the implementation of binary interaction parameters in ePC-SAFT. [#353](https://github.com/feos-org/feos/pull/353)
 
 ## [0.9.4] - 2026-03-09
 ### Changed

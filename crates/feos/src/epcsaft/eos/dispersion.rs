@@ -62,8 +62,7 @@ pub const B2: [f64; 7] = [
 pub const T_REF: f64 = 298.15;
 
 impl ElectrolytePcSaftPars {
-    pub fn k_ij_t<D: DualNum<f64>>(&self, temperature: D) -> DMatrix<f64> {
-        let k_ij = &self.k_ij;
+    pub fn k_ij_t<D: DualNum<f64> + Copy>(&self, temperature: D) -> DMatrix<D> {
         let n = self.m.len();
 
         let mut k_ij_t = DMatrix::zeros(n, n);
@@ -71,17 +70,16 @@ impl ElectrolytePcSaftPars {
         for i in 0..n {
             for j in 0..n {
                 // Calculate k_ij(T)
-                k_ij_t[(i, j)] = (temperature.re() - T_REF) * k_ij[(i, j)][1]
-                    + (temperature.re() - T_REF).powi(2) * k_ij[(i, j)][2]
-                    + (temperature.re() - T_REF).powi(3) * k_ij[(i, j)][3]
-                    + k_ij[(i, j)][0];
+                k_ij_t[(i, j)] = (temperature - T_REF) * self.k_ij_1[(i, j)]
+                    + (temperature - T_REF).powi(2) * self.k_ij_2[(i, j)]
+                    + (temperature - T_REF).powi(3) * self.k_ij_3[(i, j)]
+                    + self.k_ij[(i, j)];
             }
         }
-        //println!("k_ij_t: {}", k_ij_t);
         k_ij_t
     }
 
-    pub fn epsilon_k_ij_t<D: DualNum<f64>>(&self, temperature: D) -> DMatrix<f64> {
+    pub fn epsilon_k_ij_t<D: DualNum<f64> + Copy>(&self, temperature: D) -> DMatrix<D> {
         let k_ij_t = self.k_ij_t(temperature);
         let n = self.m.len();
 
@@ -89,7 +87,7 @@ impl ElectrolytePcSaftPars {
 
         for i in 0..n {
             for j in 0..n {
-                epsilon_k_ij_t[(i, j)] = (1.0 - k_ij_t[(i, j)]) * self.e_k_ij[(i, j)];
+                epsilon_k_ij_t[(i, j)] = (-k_ij_t[(i, j)] + 1.0) * self.e_k_ij[(i, j)];
             }
         }
         epsilon_k_ij_t
