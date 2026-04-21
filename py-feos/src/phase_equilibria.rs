@@ -572,6 +572,40 @@ impl PyPhaseEquilibrium {
         PhaseEquilibrium::boiling_temperature(&eos.0, pressure)
     }
 
+    /// Calculate the azeotropic state in a binary system. If no azeotrope is
+    /// expected, the function returns `None`.
+    ///
+    /// Parameters
+    /// ----------
+    /// eos : EquationOfState
+    ///     The equation of state.
+    /// temperature_or_pressure : SINumber
+    ///     The system temperature or pressure.
+    ///
+    /// Returns
+    /// -------
+    /// PhaseEquilibrium
+    #[staticmethod]
+    fn binary_azeotrope(
+        eos: &PyEquationOfState,
+        temperature_or_pressure: Bound<'_, PyAny>,
+    ) -> PyResult<Option<Self>> {
+        if let Ok(t) = temperature_or_pressure.extract::<Temperature>() {
+            Ok(PhaseEquilibrium::binary_azeotrope(&eos.0, t)
+                .map_err(PyFeosError::from)?
+                .map(Self))
+        } else if let Ok(p) = temperature_or_pressure.extract::<Pressure>() {
+            Ok(PhaseEquilibrium::binary_azeotrope(&eos.0, p)
+                .map_err(PyFeosError::from)?
+                .map(Self))
+        } else {
+            Err(PyErr::new::<PyValueError, _>(format!(
+                "Wrong units! Expected K or Pa, got {}.",
+                temperature_or_pressure.call_method0("__repr__")?
+            )))
+        }
+    }
+
     fn _repr_markdown_(&self) -> String {
         self.0._repr_markdown_()
     }
