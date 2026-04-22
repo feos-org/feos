@@ -26,7 +26,6 @@ serde_json = { workspace = true, features = ["preserve_order"] }
 indexmap = { workspace = true, features = ["serde"] }
 rayon = { workspace = true, optional = true }
 csv = { version = "1", optional = true }
-typenum = { workspace = true }
 itertools = { workspace = true }
 levenberg-marquardt = "0.15.0"
 

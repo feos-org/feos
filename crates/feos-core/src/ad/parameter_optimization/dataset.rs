@@ -333,6 +333,138 @@ impl Dataset<1> for EquilibriumLiquidDensityDataset {
     }
 }
 
+/// Record for enthalpy of vaporization data.
+///
+/// Expected column headers: `temperature_k`, `dh_j_mol`.
+#[derive(Deserialize, Serialize)]
+pub struct EnthalpyOfVaporizationRecord {
+    pub temperature_k: f64,
+    pub dh_vap_j_mol: f64,
+}
+
+/// Enthalpy of vaporization dataset for pure substances.
+///
+/// Inputs: `[[T1], [T2], ...]` (temperature in K)
+/// Target: enthalpy of vaporization in J/mol
+#[derive(Clone)]
+pub struct EnthalpyOfVaporizationDataset {
+    inputs: Array2<f64>,
+    target: Array1<f64>,
+    name: Option<String>,
+}
+
+impl Dataset<1> for EnthalpyOfVaporizationDataset {
+    type Record = EnthalpyOfVaporizationRecord;
+
+    fn from_records(records: Vec<Self::Record>) -> Self {
+        let n = records.len();
+        let inputs = Array2::from_shape_fn((n, 1), |(i, _)| records[i].temperature_k);
+        let target = Array1::from_iter(records.iter().map(|r| r.dh_vap_j_mol));
+        Self {
+            inputs,
+            target,
+            name: None,
+        }
+    }
+
+    fn inputs(&self) -> ArrayView2<'_, f64> {
+        self.inputs.view()
+    }
+
+    fn target(&self) -> ArrayView1<'_, f64> {
+        self.target.view()
+    }
+
+    fn name(&self) -> &str {
+        self.name.as_deref().unwrap_or("enthalpy of vaporization")
+    }
+
+    fn input_names() -> &'static [&'static str] {
+        &["temperature_k"]
+    }
+
+    fn target_name() -> &'static str {
+        "dh_vap_j_mol"
+    }
+
+    fn call_model<T: ParametersAD<1>, const P: usize>(
+        names: [String; P],
+        parameters: ArrayView2<f64>,
+        inputs: ArrayView2<f64>,
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
+        T::enthalpy_of_vaporization_parallel(names, parameters, inputs)
+    }
+}
+
+/// Record for residual isobaric molar heat capacity data (liquid phase).
+///
+/// Expected column headers: `temperature_k`, `pressure_pa`, `cp_res_j_molk`.
+#[derive(Deserialize, Serialize)]
+pub struct ResidualIsobaricHeatCapacityRecord {
+    pub temperature_k: f64,
+    pub pressure_pa: f64,
+    pub cp_res_j_molk: f64,
+}
+
+/// Residual isobaric molar heat capacity dataset (liquid phase).
+///
+/// Inputs: `[[T1, p1], [T2, p2], ...]` (K, Pa)
+/// Target: residual molar isobaric heat capacity in J/(mol·K)
+#[derive(Clone)]
+pub struct ResidualIsobaricHeatCapacityDataset {
+    inputs: Array2<f64>,
+    target: Array1<f64>,
+    name: Option<String>,
+}
+
+impl Dataset<1> for ResidualIsobaricHeatCapacityDataset {
+    type Record = ResidualIsobaricHeatCapacityRecord;
+
+    fn from_records(records: Vec<Self::Record>) -> Self {
+        let n = records.len();
+        let inputs = Array2::from_shape_fn((n, 2), |(i, j)| match j {
+            0 => records[i].temperature_k,
+            _ => records[i].pressure_pa,
+        });
+        let target = Array1::from_iter(records.iter().map(|r| r.cp_res_j_molk));
+        Self {
+            inputs,
+            target,
+            name: None,
+        }
+    }
+
+    fn inputs(&self) -> ArrayView2<'_, f64> {
+        self.inputs.view()
+    }
+
+    fn target(&self) -> ArrayView1<'_, f64> {
+        self.target.view()
+    }
+
+    fn name(&self) -> &str {
+        self.name
+            .as_deref()
+            .unwrap_or("residual isobaric heat capacity")
+    }
+
+    fn input_names() -> &'static [&'static str] {
+        &["temperature_k", "pressure_pa"]
+    }
+
+    fn target_name() -> &'static str {
+        "cp_res_j_molk"
+    }
+
+    fn call_model<T: ParametersAD<1>, const P: usize>(
+        names: [String; P],
+        parameters: ArrayView2<f64>,
+        inputs: ArrayView2<f64>,
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
+        T::residual_isobaric_heat_capacity_parallel(names, parameters, inputs)
+    }
+}
+
 /// Bubble point pressure record for binary mixtures.
 ///
 /// Expected column headers: `temperature_k`, `liquid_molefrac_1`,
@@ -491,6 +623,8 @@ impl_with_name!(
     VaporPressureDataset,
     LiquidDensityDataset,
     EquilibriumLiquidDensityDataset,
+    EnthalpyOfVaporizationDataset,
+    ResidualIsobaricHeatCapacityDataset,
     BubblePointDataset,
     DewPointDataset,
 );
@@ -504,6 +638,8 @@ pub enum PureDataset {
     VaporPressure(VaporPressureDataset),
     LiquidDensity(LiquidDensityDataset),
     EquilibriumLiquidDensity(EquilibriumLiquidDensityDataset),
+    EnthalpyOfVaporization(EnthalpyOfVaporizationDataset),
+    ResidualIsobaricHeatCapacity(ResidualIsobaricHeatCapacityDataset),
 }
 
 impl PureDataset {
@@ -512,6 +648,8 @@ impl PureDataset {
             Self::VaporPressure(d) => d.target(),
             Self::LiquidDensity(d) => d.target(),
             Self::EquilibriumLiquidDensity(d) => d.target(),
+            Self::EnthalpyOfVaporization(d) => d.target(),
+            Self::ResidualIsobaricHeatCapacity(d) => d.target(),
         }
     }
 
@@ -520,6 +658,8 @@ impl PureDataset {
             Self::VaporPressure(d) => d.name(),
             Self::LiquidDensity(d) => d.name(),
             Self::EquilibriumLiquidDensity(d) => d.name(),
+            Self::EnthalpyOfVaporization(d) => d.name(),
+            Self::ResidualIsobaricHeatCapacity(d) => d.name(),
         }
     }
 
@@ -528,6 +668,8 @@ impl PureDataset {
             Self::VaporPressure(d) => d.inputs(),
             Self::LiquidDensity(d) => d.inputs(),
             Self::EquilibriumLiquidDensity(d) => d.inputs(),
+            Self::EnthalpyOfVaporization(d) => d.inputs(),
+            Self::ResidualIsobaricHeatCapacity(d) => d.inputs(),
         }
     }
 
@@ -536,6 +678,10 @@ impl PureDataset {
             Self::VaporPressure(_) => VaporPressureDataset::input_names(),
             Self::LiquidDensity(_) => LiquidDensityDataset::input_names(),
             Self::EquilibriumLiquidDensity(_) => EquilibriumLiquidDensityDataset::input_names(),
+            Self::EnthalpyOfVaporization(_) => EquilibriumLiquidDensityDataset::input_names(),
+            Self::ResidualIsobaricHeatCapacity(_) => {
+                ResidualIsobaricHeatCapacityDataset::input_names()
+            }
         }
     }
 
@@ -544,6 +690,10 @@ impl PureDataset {
             Self::VaporPressure(_) => VaporPressureDataset::target_name(),
             Self::LiquidDensity(_) => LiquidDensityDataset::target_name(),
             Self::EquilibriumLiquidDensity(_) => EquilibriumLiquidDensityDataset::target_name(),
+            Self::EnthalpyOfVaporization(_) => EnthalpyOfVaporizationDataset::target_name(),
+            Self::ResidualIsobaricHeatCapacity(_) => {
+                ResidualIsobaricHeatCapacityDataset::target_name()
+            }
         }
     }
 
@@ -556,6 +706,8 @@ impl PureDataset {
             Self::VaporPressure(d) => d.compute::<T>(param_names, params),
             Self::LiquidDensity(d) => d.compute::<T>(param_names, params),
             Self::EquilibriumLiquidDensity(d) => d.compute::<T>(param_names, params),
+            Self::EnthalpyOfVaporization(d) => d.compute::<T>(param_names, params),
+            Self::ResidualIsobaricHeatCapacity(d) => d.compute::<T>(param_names, params),
         }
     }
 }

@@ -1,16 +1,16 @@
 #[cfg(feature = "rayon")]
 pub mod parameter_optimization;
 
-use crate::density_iteration::density_iteration;
 use crate::DensityInitialization::Liquid;
-use crate::{Composition, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
+use crate::density_iteration::density_iteration;
+use crate::{Composition, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual, State};
 use nalgebra::{Const, SVector, U1, U2};
 #[cfg(feature = "rayon")]
 use ndarray::{Array1, Array2, ArrayView2, Zip};
-use num_dual::{first_derivative, partial2, Derivative, DualNum, DualSVec, DualStruct};
-use quantity::{Density, Pressure, Temperature};
+use num_dual::{Derivative, DualNum, DualSVec, DualStruct, first_derivative, partial2};
+use quantity::{Density, MolarEnergy, MolarEntropy, Pressure, Temperature};
 #[cfg(feature = "rayon")]
-use quantity::{KELVIN, KILO, METER, MOL, PASCAL};
+use quantity::{JOULE, KELVIN, KILO, METER, MOL, PASCAL};
 
 type Gradient<const P: usize> = DualSVec<f64, f64, P>;
 
@@ -178,6 +178,58 @@ pub trait PropertiesAD {
         density_iteration(self, t, p, &x, Some(Liquid))
     }
 
+    /// Residual isobaric molar heat capacity of the liquid phase at the given
+    /// temperature and pressure.
+    fn residual_isobaric_heat_capacity<const P: usize>(
+        &self,
+        temperature: Temperature,
+        pressure: Pressure,
+    ) -> FeosResult<MolarEntropy<Gradient<P>>>
+    where
+        Self: Residual<U1, Gradient<P>>,
+    {
+        let x = Self::pure_molefracs();
+        let t = Temperature::from_inner(&temperature);
+        let p = Pressure::from_inner(&pressure);
+        let density = density_iteration(self, t, p, &x, Some(Liquid))?;
+        let state = State::new_pure(self, t, density)?;
+        Ok(state.residual_molar_isobaric_heat_capacity())
+    }
+
+    fn enthalpy_of_vaporization<const P: usize>(
+        &self,
+        temperature: Temperature,
+    ) -> FeosResult<MolarEnergy<Gradient<P>>>
+    where
+        Self: Residual<U1, Gradient<P>>,
+    {
+        let t = Temperature::from_inner(&temperature);
+        let (_, [vapor_density, liquid_density]) =
+            PhaseEquilibrium::pure_t(self, t, None, Default::default())?;
+
+        let v1 = liquid_density.into_reduced().recip();
+        let v2 = vapor_density.into_reduced().recip();
+        let x = Self::pure_molefracs();
+        let t = t.into_reduced();
+        let residual_entropy = |v| {
+            let (_a, s) = first_derivative(
+                partial2(
+                    |t, &v, x| self.lift().residual_helmholtz_energy(t, v, x),
+                    &v,
+                    &x,
+                ),
+                t,
+            );
+            -s
+        };
+
+        let s1 = residual_entropy(v1);
+        let s2 = residual_entropy(v2);
+
+        let dh = t * ((v2 / v1).ln() + s2 - s1);
+        Ok(MolarEnergy::from_reduced(dh))
+    }
+
     #[cfg(feature = "rayon")]
     fn vapor_pressure_parallel<const P: usize>(
         parameter_names: [String; P],
@@ -234,6 +286,46 @@ pub trait PropertiesAD {
             |eos: &Self::Lifted<Gradient<P>>, inp| {
                 eos.liquid_density(inp[0] * KELVIN, inp[1] * PASCAL)
                     .map(|d| d.convert_into(KILO * MOL / (METER * METER * METER)))
+            },
+        )
+    }
+
+    #[cfg(feature = "rayon")]
+    fn residual_isobaric_heat_capacity_parallel<const P: usize>(
+        parameter_names: [String; P],
+        parameters: ArrayView2<f64>,
+        input: ArrayView2<f64>,
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+    where
+        Self: ParametersAD<1>,
+    {
+        parallelize::<_, Self, _, _>(
+            parameter_names,
+            parameters,
+            input,
+            |eos: &Self::Lifted<Gradient<P>>, inp| {
+                eos.residual_isobaric_heat_capacity(inp[0] * KELVIN, inp[1] * PASCAL)
+                    .map(|cp| cp.convert_into(JOULE / (MOL * KELVIN)))
+            },
+        )
+    }
+
+    #[cfg(feature = "rayon")]
+    fn enthalpy_of_vaporization_parallel<const P: usize>(
+        parameter_names: [String; P],
+        parameters: ArrayView2<f64>,
+        input: ArrayView2<f64>,
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+    where
+        Self: ParametersAD<1>,
+    {
+        parallelize::<_, Self, _, _>(
+            parameter_names,
+            parameters,
+            input,
+            |eos: &Self::Lifted<Gradient<P>>, inp| {
+                eos.enthalpy_of_vaporization(inp[0] * KELVIN)
+                    .map(|dh| dh.convert_into(JOULE / MOL))
             },
         )
     }
