@@ -3,9 +3,11 @@ use std::collections::HashMap;
 use feos::pcsaft::{PcSaftBinary, PcSaftPure};
 use feos_core::parameter_optimization::{
     BinaryDataset, BubblePointDataset, BubblePointRecord, Dataset, DewPointDataset, DewPointRecord,
-    DynSolver, EquilibriumLiquidDensityDataset, EquilibriumLiquidDensityRecord, FitConfig,
-    FitResult, FittingError, LiquidDensityDataset, LiquidDensityRecord, LossFunction,
-    NonConvergenceStrategy, PureDataset, Regressor, VaporPressureDataset, VaporPressureRecord,
+    DynSolver, EnthalpyOfVaporizationDataset, EnthalpyOfVaporizationRecord,
+    EquilibriumLiquidDensityDataset, EquilibriumLiquidDensityRecord, FitConfig, FitResult,
+    FittingError, LiquidDensityDataset, LiquidDensityRecord, LossFunction, NonConvergenceStrategy,
+    PureDataset, Regressor, ResidualIsobaricHeatCapacityDataset,
+    ResidualIsobaricHeatCapacityRecord, VaporPressureDataset, VaporPressureRecord,
 };
 use ndarray::Array2;
 use numpy::{PyArray1, PyArray2, ToPyArray};
@@ -197,6 +199,94 @@ impl PyEquilibriumLiquidDensityDataset {
             })
             .collect();
         let mut inner = EquilibriumLiquidDensityDataset::from_records(records);
+        if let Some(n) = name {
+            inner = inner.with_name(n);
+        }
+        Ok(Self { inner })
+    }
+}
+
+py_dataset!(
+    PyEnthalpyOfVaporizationDataset,
+    EnthalpyOfVaporizationDataset,
+    "EnthalpyOfVaporizationDataset",
+    "temperature_k, dh_vap_j_mol"
+);
+
+#[pymethods]
+impl PyEnthalpyOfVaporizationDataset {
+    /// Construct from numpy arrays.
+    ///
+    /// Args:
+    ///     temperature_k (np.ndarray): Temperatures in K.
+    ///     dh_vap_j_mol (np.ndarray): Enthalpy of vaporization in J/mol.
+    ///     name (str, optional): Dataset name (must be unique within a solver).
+    #[new]
+    #[pyo3(signature = (temperature_k, dh_vap_j_mol, name=None))]
+    pub fn new(
+        temperature_k: Vec<f64>,
+        dh_vap_j_mol: Vec<f64>,
+        name: Option<&str>,
+    ) -> PyResult<Self> {
+        if temperature_k.len() != dh_vap_j_mol.len() {
+            return Err(PyValueError::new_err(
+                "temperature_k and dh_vap_j_mol must have the same length",
+            ));
+        }
+        let records = temperature_k
+            .into_iter()
+            .zip(dh_vap_j_mol)
+            .map(|(t, p)| EnthalpyOfVaporizationRecord {
+                temperature_k: t,
+                dh_vap_j_mol: p,
+            })
+            .collect();
+        let mut inner = EnthalpyOfVaporizationDataset::from_records(records);
+        if let Some(n) = name {
+            inner = inner.with_name(n);
+        }
+        Ok(Self { inner })
+    }
+}
+
+py_dataset!(
+    PyResidualIsobaricHeatCapacityDataset,
+    ResidualIsobaricHeatCapacityDataset,
+    "ResidualIsobaricHeatCapacityDataset",
+    "temperature_k, pressure_pa, cp_res_j_molk"
+);
+
+#[pymethods]
+impl PyResidualIsobaricHeatCapacityDataset {
+    /// Construct from numpy arrays.
+    ///
+    /// Args:
+    ///     temperature_k (np.ndarray): Temperatures in K.
+    ///     pressure_pa (np.ndarray): Pressures in Pa.
+    ///     cp_res_j_molk (np.ndarray): Residual isobaric molar heat capacities in J/(mol·K).
+    ///     name (str, optional): Dataset name (must be unique within a solver).
+    #[new]
+    #[pyo3(signature = (temperature_k, pressure_pa, cp_res_j_molk, name=None))]
+    pub fn new(
+        temperature_k: Vec<f64>,
+        pressure_pa: Vec<f64>,
+        cp_res_j_molk: Vec<f64>,
+        name: Option<&str>,
+    ) -> PyResult<Self> {
+        let n = temperature_k.len();
+        if pressure_pa.len() != n || cp_res_j_molk.len() != n {
+            return Err(PyValueError::new_err(
+                "all arrays must have the same length",
+            ));
+        }
+        let records = (0..n)
+            .map(|i| ResidualIsobaricHeatCapacityRecord {
+                temperature_k: temperature_k[i],
+                pressure_pa: pressure_pa[i],
+                cp_res_j_molk: cp_res_j_molk[i],
+            })
+            .collect();
+        let mut inner = ResidualIsobaricHeatCapacityDataset::from_records(records);
         if let Some(n) = name {
             inner = inner.with_name(n);
         }
@@ -914,10 +1004,15 @@ fn extract_pure_datasets(list: &[Bound<'_, PyAny>]) -> PyResult<Vec<PureDataset>
                 Ok(PureDataset::LiquidDensity(rho.inner.clone()))
             } else if let Ok(eq) = d.extract::<PyRef<PyEquilibriumLiquidDensityDataset>>() {
                 Ok(PureDataset::EquilibriumLiquidDensity(eq.inner.clone()))
+            } else if let Ok(eq) = d.extract::<PyRef<PyEnthalpyOfVaporizationDataset>>() {
+                Ok(PureDataset::EnthalpyOfVaporization(eq.inner.clone()))
+            } else if let Ok(cp) = d.extract::<PyRef<PyResidualIsobaricHeatCapacityDataset>>() {
+                Ok(PureDataset::ResidualIsobaricHeatCapacity(cp.inner.clone()))
             } else {
                 Err(PyTypeError::new_err(format!(
-                    "expected VaporPressureDataset, LiquidDensityDataset, or \
-                     EquilibriumLiquidDensityDataset; got {}",
+                    "expected VaporPressureDataset, LiquidDensityDataset, \
+                     EquilibriumLiquidDensityDataset, EnthalpyOfVaporizationDataset, or \
+                     ResidualIsobaricHeatCapacityDataset; got {}",
                     d.get_type().name()?
                 )))
             }

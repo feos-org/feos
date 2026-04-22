@@ -189,6 +189,14 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
             ad::equilibrium_liquid_density_derivatives,
             m
         )?)?;
+        m.add_function(wrap_pyfunction!(
+            ad::enthalpy_of_vaporization_derivatives,
+            m
+        )?)?;
+        m.add_function(wrap_pyfunction!(
+            ad::residual_isobaric_heat_capacity_derivatives,
+            m
+        )?)?;
         m.add_function(wrap_pyfunction!(ad::bubble_point_pressure_derivatives, m)?)?;
         m.add_function(wrap_pyfunction!(ad::dew_point_pressure_derivatives, m)?)?;
         m.add_class::<ad::PyEquationOfStateAD>()?;
@@ -197,6 +205,8 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_class::<ad::PyVaporPressureDataset>()?;
         m.add_class::<ad::PyLiquidDensityDataset>()?;
         m.add_class::<ad::PyEquilibriumLiquidDensityDataset>()?;
+        m.add_class::<ad::PyEnthalpyOfVaporizationDataset>()?;
+        m.add_class::<ad::PyResidualIsobaricHeatCapacityDataset>()?;
         m.add_class::<ad::PyBubblePointDataset>()?;
         m.add_class::<ad::PyDewPointDataset>()?;
 

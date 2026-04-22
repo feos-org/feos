@@ -6,9 +6,10 @@ use pyo3::prelude::*;
 
 pub mod solver;
 pub use solver::{
-    PyBinaryRegressor, PyBubblePointDataset, PyDewPointDataset, PyEquilibriumLiquidDensityDataset,
-    PyLiquidDensityDataset, PyLossFunction, PyNonConvergenceStrategy, PyPureRegressor,
-    PyFitConfig, PyFitResult, PyVaporPressureDataset,
+    PyBinaryRegressor, PyBubblePointDataset, PyDewPointDataset, PyEnthalpyOfVaporizationDataset,
+    PyEquilibriumLiquidDensityDataset, PyFitConfig, PyFitResult, PyLiquidDensityDataset,
+    PyLossFunction, PyNonConvergenceStrategy, PyPureRegressor, PyResidualIsobaricHeatCapacityDataset,
+    PyVaporPressureDataset,
 };
 
 #[pyclass(name = "EquationOfStateAD", eq, eq_int)]
@@ -142,6 +143,60 @@ pub fn equilibrium_liquid_density_derivatives<'py>(
     _equilibrium_liquid_density_derivatives(model, parameter_names, parameters, input)
 }
 
+/// Calculate enthalpy of vaporization and derivatives w.r.t. model parameters.
+///
+/// Parameters
+/// ----------
+/// model: EquationOfStateAD
+///     The equation of state to use.
+/// parameter_names: List[string]
+///     The name of the parameters for which derivatives are calculated.
+/// parameters: np.ndarray[float]
+///     The parameters for every data point.
+/// input: np.ndarray[float]
+///     The temperature (in K) for every data point.
+///
+/// Returns
+/// -------
+/// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]):
+///     The enthalpies of vaporization (in J/mol), gradients, and convergence status.
+#[pyfunction]
+pub fn enthalpy_of_vaporization_derivatives<'py>(
+    model: PyEquationOfStateAD,
+    parameter_names: &Bound<'py, PyAny>,
+    parameters: PyReadonlyArray2<f64>,
+    input: PyReadonlyArray2<f64>,
+) -> GradResult<'py> {
+    _enthalpy_of_vaporization_derivatives(model, parameter_names, parameters, input)
+}
+
+/// Calculate residual isobaric molar heat capacities (liquid phase) and derivatives w.r.t. model parameters.
+///
+/// Parameters
+/// ----------
+/// model: EquationOfStateAD
+///     The equation of state to use.
+/// parameter_names: List[string]
+///     The name of the parameters for which derivatives are calculated.
+/// parameters: np.ndarray[float]
+///     The parameters for every data point.
+/// input: np.ndarray[float]
+///     The temperature (in K) and pressure (in Pa) for every data point.
+///
+/// Returns
+/// -------
+/// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]):
+///     The residual isobaric heat capacities (in J/(mol·K)), gradients, and convergence status.
+#[pyfunction]
+pub fn residual_isobaric_heat_capacity_derivatives<'py>(
+    model: PyEquationOfStateAD,
+    parameter_names: &Bound<'py, PyAny>,
+    parameters: PyReadonlyArray2<f64>,
+    input: PyReadonlyArray2<f64>,
+) -> GradResult<'py> {
+    _residual_isobaric_heat_capacity_derivatives(model, parameter_names, parameters, input)
+}
+
 /// Calculate bubble point pressures of binary mixtures and derivatives w.r.t. model parameters.
 ///
 /// Parameters
@@ -255,7 +310,7 @@ macro_rules! impl_evaluate_gradients {
 
 impl_evaluate_gradients!(
     pure,
-    [vapor_pressure, boiling_temperature, liquid_density, equilibrium_liquid_density],
+    [vapor_pressure, boiling_temperature, liquid_density, equilibrium_liquid_density, enthalpy_of_vaporization, residual_isobaric_heat_capacity],
     {PcSaftNonAssoc: PcSaftPure<f64, 4>, PcSaftFull: PcSaftPure<f64, 8>}
 );
 
