@@ -700,7 +700,7 @@ mod tests_parameter_fit {
     #[test]
     fn test_boiling_temperature_derivatives_fit() -> FeosResult<()> {
         let pcsaft = pcsaft_non_assoc();
-        let pcsaft_ad = pcsaft.named_derivatives(["m", "sigma", "epsilon_k"]);
+        let pcsaft_ad = PcSaftPure::<f64, 4>::seed_derivatives(&pcsaft.0, ["m", "sigma", "epsilon_k"]);
         let pressure = BAR;
         let t = pcsaft_ad.boiling_temperature(pressure)?;
         let t = t.convert_into(KELVIN);
@@ -1076,7 +1076,11 @@ mod tests_parameter_fit {
     #[test]
     fn test_tp_flash() -> FeosResult<()> {
         let (pcsaft, _) = pcsaft_binary()?;
-        let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
+        let (params, mut kij) = pcsaft.0;
+        let mut flat_params: Vec<f64> = params[0].to_vec();
+        flat_params.extend_from_slice(&params[1]);
+        flat_params.push(kij);
+        let pcsaft_ad = PcSaftBinary::<f64, 8>::seed_derivatives(&flat_params, ["k_ij"]);
         let temperature = 500.0 * KELVIN;
         let pressure = 44.6 * BAR;
         let x = 0.5;
@@ -1096,8 +1100,6 @@ mod tests_parameter_fit {
 
         println!("{beta:.5}");
         println!("{grad:.5?}");
-
-        let (params, mut kij) = pcsaft.0;
         let h = 1e-7;
         kij += h;
         let pcsaft_h = PcSaftBinary::new(params, kij);
