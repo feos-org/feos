@@ -1,4 +1,4 @@
-use crate::eos::{parse_molefracs, PyEquationOfState};
+use crate::eos::{PyEquationOfState, parse_molefracs};
 use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
 use feos::hard_sphere::{FMTFunctional, FMTVersion};

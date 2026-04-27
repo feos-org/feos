@@ -39,7 +39,7 @@ impl PyEquationOfState {
             _ => {
                 return Err(PyErr::new::<PyValueError, _>(
                     r#"perturbation must be "BH", "WCA" or "WCA_B3""#.to_string(),
-                ))
+                ));
             }
         };
         let options = UVTheoryOptions {

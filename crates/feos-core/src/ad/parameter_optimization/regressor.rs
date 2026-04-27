@@ -3,17 +3,18 @@ use std::marker::PhantomData;
 
 use levenberg_marquardt::{LeastSquaresProblem, LevenbergMarquardt, MinimizationReport};
 use nalgebra::{DMatrix, DVector, Dyn, Owned};
-use ndarray::{Array1, Array2, s};
+use ndarray::{Array1, Array2, Zip, s};
 use thiserror::Error;
 
 use crate::ParametersAD;
 
 use super::dataset::{BinaryDataset, DatasetResult, PureDataset};
 use super::loss::LossFunction;
+use super::residual::ResidualFunction;
 
 /// Error kinds for parameter fitting and data handling.
 #[derive(Debug, Error)]
-pub enum FittingError {
+pub enum ParameterOptimizationError {
     #[error("at least one dataset must be provided")]
     EmptyDatasets,
 
@@ -51,6 +52,12 @@ pub enum FittingError {
          please assign a unique name to each dataset"
     )]
     DuplicateDatasetName { name: String },
+
+    #[error("weights length {got} does not match number of datasets {expected}")]
+    WeightsLengthMismatch { got: usize, expected: usize },
+
+    #[error("all dataset weights must be positive, got: {weights:?}")]
+    NonPositiveWeight { weights: Vec<f64> },
 }
 
 /// Variants for how to deal with non-converged calculations.
@@ -65,12 +72,6 @@ pub enum NonConvergenceStrategy {
     /// The Jacobian row is zero which creates a residual/Jacobian mismatch
     /// might be an issue for the trust region when convergence changes discontinuously.
     Penalty(f64),
-
-    /// Scale the penalty by `factor × max |r_rel|` of currently converged
-    /// points. Non-converged points always look proportionally worse than
-    /// the worst converged one. Falls back to `factor` when no points have
-    /// converged.
-    AdaptivePenalty(f64),
 }
 
 impl Default for NonConvergenceStrategy {
@@ -81,24 +82,22 @@ impl Default for NonConvergenceStrategy {
 
 /// Levenberg-Marquardt solver hyperparameters.
 #[derive(Debug, Clone)]
-pub struct FitConfig {
-    /// Terminate when the actual and predicted relative reductions in the
-    /// objective function are both ≤ `ftol`. Default: 1e-8.
+pub struct RegressorConfig {
+    /// Terminate when actual and predicted relative reductions in the
+    /// objective function are both <= `ftol`. Default: 1e-8.
     pub ftol: f64,
     /// Terminate when the relative change in parameters between
-    /// iterations is ≤ `xtol`. Default: 1e-8.
+    /// iterations is <= `xtol`. Default: 1e-8.
     pub xtol: f64,
     /// Terminate when the residual vector and every Jacobian column are nearly
-    /// orthogonal, i.e. the cosine of the angle between `r` and each `J[:,j]`
-    /// is ≤ `gtol`. This is a scale-invariant first-order optimality check.
-    /// Set to `0.0` to disable. Default: 1e-8.
+    /// orthogonal. Set to `0.0` to disable. Default: 1e-8.
     pub gtol: f64,
     /// Factor for the initial trust-region step bound.
-    /// Should lie in `[0.1, 100]`. Smaller values are more conservative and
-    /// prevent the large initial steps that can cause VLE solvers to diverge.
+    /// Should lie in `[0.1, 100]`. Small values prevent large
+    /// initial steps that can cause (e.g. VLE) solvers to diverge.
     /// Default: 0.1.
     pub stepbound: f64,
-    /// Maximum number of residual evaluations = `patience × (n_params + 1)`.
+    /// Maximum number of residual evaluations = `patience (n_params + 1)`.
     /// Default: 100.
     pub patience: usize,
     /// Rescale parameters internally using the running maximum of each
@@ -109,7 +108,7 @@ pub struct FitConfig {
     pub strategy: NonConvergenceStrategy,
 }
 
-impl Default for FitConfig {
+impl Default for RegressorConfig {
     fn default() -> Self {
         Self {
             ftol: 1e-8,
@@ -127,8 +126,8 @@ impl Default for FitConfig {
 ///
 /// For model evaluation against the stored data (predictions, per-dataset
 /// comparison, Fisher information), use [`Regressor::evaluate_datasets`] by
-/// passing [`FitResult::all_parameters`] back to the regressor.
-pub struct FitResult {
+/// passing [`RegressorResult::all_parameters`] back to the regressor.
+pub struct RegressorResult {
     /// Optimal physical parameters in canonical order.
     /// Includes fitted and non-fitted parameters.
     pub optimal_params: Vec<f64>,
@@ -155,7 +154,7 @@ pub struct FitResult {
     pub elapsed: std::time::Duration,
 }
 
-impl FitResult {
+impl RegressorResult {
     /// All parameters as `{name: value}`.
     ///
     /// Fitted parameters at their optimal values, all others at their initial values.
@@ -183,13 +182,35 @@ impl FitResult {
     }
 }
 
+pub struct DatasetCache {
+    /// Number of datapoints in this dataset.
+    pub datapoints: usize,
+    /// Relative weight assigned by the user for this dataset.
+    pub user_weight: f64,
+    /// Effective per-residual scale factor: `sqrt(user_weight / datapoints)`.
+    ///
+    /// Multiplying each residual by this value makes the dataset's contribution
+    /// to the LM objective equal to `user_weight * MSE`, so equal user weights
+    /// yield equal objective contributions regardless of dataset size.
+    pub dataset_weight: f64,
+    /// Predicted values for this dataset.
+    pub predicted: Array1<f64>,
+    /// Gradients of the model w.r.t. model parameters.
+    pub gradients: Array2<f64>,
+    /// Whether the optimization converged for each datapoint.
+    pub converged: Array1<bool>,
+    /// Residuals of the model for this dataset defined via `ResidualFunction`.
+    pub residuals: Array1<f64>,
+    /// Weight weight defined via `LossFunction`.
+    pub loss_w_sqrt: Array1<f64>,
+}
+
 /// Levenberg-Marquardt fitting problem.
 pub struct Regressor<T, D> {
     /// Collections of experimental data.
     pub(crate) datasets: Vec<D>,
-    /// A single weight per dataset applied
-    /// to all residuals and Jacobian entries for that set.
-    pub(crate) weights: Vec<f64>,
+    /// Caching for each dataset.
+    pub(crate) caches: Vec<DatasetCache>,
     /// Parameter names in canonical order.
     pub(crate) param_names: Vec<String>,
     /// Indices of parameters that are adjusted.
@@ -199,71 +220,79 @@ pub struct Regressor<T, D> {
     /// Scaling factor to switch between EoS input and
     /// optimizer input.
     pub(crate) normalization: Vec<f64>,
+    /// Residual function applied to predictions vs. targets.
+    pub(crate) residual_fn: ResidualFunction,
     /// Loss function applied to residuals.
-    pub(crate) loss: LossFunction,
+    pub(crate) loss_fn: LossFunction,
     /// Strategy for dealing with non-converged calculations.
     pub(crate) strategy: NonConvergenceStrategy,
     /// Parameter storage for the solver.
     pub(crate) params: DVector<f64>,
-    /// Cached predictions, i.e. EoS evaluations. Per dataset.
-    pub(crate) cached_predicted: Vec<Array1<f64>>,
-    /// Cached gradients of EoS evaluations w.r.t. EoS parameters.
-    /// Per Dataset.
-    pub(crate) cached_gradients: Vec<Array2<f64>>,
-    /// Cached convergence-status of each data point. Per Dataset.
-    pub(crate) cached_converged: Vec<Array1<bool>>,
-    /// Cached IRLS weight.
-    pub(crate) cached_loss_w_sqrt: Vec<Array1<f64>>,
-    /// Penalty for non-converged points, updated by `update_cache`.
-    /// For `Penalty(p)` this is always `p`; for `AdaptivePenalty(f)` it
-    /// tracks `f × max |r_rel|` over the most recent converged points.
-    pub(crate) cached_penalty: f64,
     pub(crate) _phantom: PhantomData<T>,
 }
 
 pub type PureRegressor<T> = Regressor<T, PureDataset>;
 pub type BinaryRegressor<T> = Regressor<T, BinaryDataset>;
 
-/// Empty placeholder needed by [`DynSolver::fit`] for mem::take.
+/// Empty placeholder needed by [`DynRegressor::fit`] for mem::take.
 impl<T, D> Default for Regressor<T, D> {
     fn default() -> Self {
         Self {
             datasets: Vec::new(),
-            weights: Vec::new(),
+            caches: Vec::new(),
             param_names: Vec::new(),
             fitted_indices: Vec::new(),
             base_params: Vec::new(),
             normalization: Vec::new(),
-            loss: LossFunction::default(),
+            residual_fn: ResidualFunction::RelativeDifference,
+            loss_fn: LossFunction::default(),
             strategy: NonConvergenceStrategy::default(),
             params: DVector::zeros(0),
-            cached_predicted: Vec::new(),
-            cached_gradients: Vec::new(),
-            cached_converged: Vec::new(),
-            cached_loss_w_sqrt: Vec::new(),
-            cached_penalty: 0.0,
             _phantom: PhantomData,
         }
     }
 }
 
 impl<T, D> Regressor<T, D> {
-    /// Set per-dataset weights (default 1.0 for all).
-    ///
-    /// Weights are not normalized in this function.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `weights.len()` does not match the number of datasets, or if
-    /// any weight is not positive.
-    pub fn with_weights(mut self, weights: Vec<f64>) -> Self {
-        assert_eq!(weights.len(), self.datasets.len());
-        assert!(
-            weights.iter().all(|&w| w > 0.0),
-            "all dataset weights must be positive, got: {weights:?}"
-        );
-        self.weights = weights;
+    /// Set the residual function (default: [`ResidualFunction::RelativeDifference`]).
+    pub fn with_residual_fn(mut self, residual_fn: ResidualFunction) -> Self {
+        self.residual_fn = residual_fn;
         self
+    }
+
+    /// Set per-dataset weights (default: 1.0 for all datasets).
+    ///
+    /// Each weight scales that dataset's contribution to the mean squared residual
+    /// in the objective. Two datasets with equal weights contribute equally to the
+    /// objective regardless of their number of data points.
+    ///
+    /// Weights are not normalized; only their ratios matter.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ParameterOptimizationError::WeightsLengthMismatch`] if `weights.len()` does not
+    /// match the number of datasets, or [`ParameterOptimizationError::NonPositiveWeight`] if any
+    /// weight is not positive.
+    pub fn with_weights(mut self, weights: Vec<f64>) -> Result<Self, ParameterOptimizationError> {
+        if weights.len() != self.datasets.len() {
+            return Err(ParameterOptimizationError::WeightsLengthMismatch {
+                got: weights.len(),
+                expected: self.datasets.len(),
+            });
+        }
+        if weights.iter().any(|&w| w <= 0.0) {
+            return Err(ParameterOptimizationError::NonPositiveWeight { weights });
+        }
+
+        // write weights to caches
+        self.caches
+            .iter_mut()
+            .zip(weights.iter())
+            .for_each(|(cache, &w)| {
+                cache.user_weight = w;
+                cache.dataset_weight = (w / cache.datapoints as f64).sqrt();
+            });
+        Ok(self)
     }
 
     /// Optimal physical parameters with non-fitted entries at their initial values.
@@ -279,12 +308,12 @@ impl<T, D> Regressor<T, D> {
     ///
     /// Non-converged entries are `NaN`; use [`Regressor::convergence_mask`] to filter.
     pub fn predicted(&self) -> Array1<f64> {
-        let n_total: usize = self.cached_predicted.iter().map(|p| p.len()).sum();
+        let n_total: usize = self.caches.iter().map(|c| c.datapoints).sum();
         let mut out = Array1::zeros(n_total);
         let mut offset = 0;
-        for pred in &self.cached_predicted {
-            let n = pred.len();
-            out.slice_mut(s![offset..offset + n]).assign(pred);
+        for c in &self.caches {
+            let n = c.datapoints;
+            out.slice_mut(s![offset..offset + n]).assign(&c.predicted);
             offset += n;
         }
         out
@@ -292,12 +321,12 @@ impl<T, D> Regressor<T, D> {
 
     /// Convergence mask across all datasets.
     pub fn convergence_mask(&self) -> Array1<bool> {
-        let n_total: usize = self.cached_converged.iter().map(|c| c.len()).sum();
+        let n_total: usize = self.caches.iter().map(|c| c.datapoints).sum();
         let mut out = Array1::from_elem(n_total, false);
         let mut offset = 0;
-        for conv in &self.cached_converged {
-            let n = conv.len();
-            out.slice_mut(s![offset..offset + n]).assign(conv);
+        for c in &self.caches {
+            let n = c.datapoints;
+            out.slice_mut(s![offset..offset + n]).assign(&c.converged);
             offset += n;
         }
         out
@@ -305,14 +334,14 @@ impl<T, D> Regressor<T, D> {
 
     /// Per-dataset `(n_converged, n_total)`.
     pub fn convergence_stats(&self) -> Vec<(usize, usize)> {
-        self.cached_converged
+        self.caches
             .iter()
-            .map(|conv| (conv.iter().filter(|&&c| c).count(), conv.len()))
+            .map(|c| (c.converged.iter().filter(|&&c| c).count(), c.datapoints))
             .collect()
     }
 }
 
-macro_rules! impl_solver {
+macro_rules! impl_regressor {
     ($n:literal, $dataset:ty) => {
         impl<T: ParametersAD<$n>> Regressor<T, $dataset> {
             /// Construct a new solver.
@@ -324,16 +353,16 @@ macro_rules! impl_solver {
                 datasets: Vec<$dataset>,
                 params: HashMap<String, f64>,
                 fit: &[&str],
-            ) -> Result<Self, FittingError> {
+            ) -> Result<Self, ParameterOptimizationError> {
                 if datasets.is_empty() {
-                    return Err(FittingError::EmptyDatasets);
+                    return Err(ParameterOptimizationError::EmptyDatasets);
                 }
 
                 // Reject duplicate dataset names
                 let mut seen_names = std::collections::HashSet::new();
                 for d in &datasets {
                     if !seen_names.insert(d.name().to_string()) {
-                        return Err(FittingError::DuplicateDatasetName {
+                        return Err(ParameterOptimizationError::DuplicateDatasetName {
                             name: d.name().to_string(),
                         });
                     }
@@ -347,18 +376,18 @@ macro_rules! impl_solver {
                 let mut fitted_indices = Vec::with_capacity(fit.len());
                 for &name in fit {
                     if fitted_indices.iter().any(|&prev| canonical[prev] == name) {
-                        return Err(FittingError::DuplicateParameter {
+                        return Err(ParameterOptimizationError::DuplicateParameter {
                             name: name.to_string(),
                         });
                     }
                     let i = canonical.iter().position(|&n| n == name).ok_or_else(|| {
-                        FittingError::UnknownParameter {
+                        ParameterOptimizationError::UnknownParameter {
                             name: name.to_string(),
                             valid: canonical.clone(),
                         }
                     })?;
                     if !differentiable.contains(&name) {
-                        return Err(FittingError::NonDifferentiableParameter {
+                        return Err(ParameterOptimizationError::NonDifferentiableParameter {
                             name: name.to_string(),
                             differentiable: differentiable.clone(),
                         });
@@ -369,17 +398,16 @@ macro_rules! impl_solver {
                 // Get values for all parameters in canonical order.
                 let mut full_params = Vec::with_capacity(canonical.len());
                 for &name in &canonical {
-                    let v = params
-                        .get(name)
-                        .ok_or_else(|| FittingError::MissingParameter {
+                    let v = params.get(name).ok_or_else(|| {
+                        ParameterOptimizationError::MissingParameter {
                             name: name.to_string(),
-                        })?;
+                        }
+                    })?;
                     full_params.push(*v);
                 }
 
                 let param_names: Vec<String> = fit.iter().map(|s| s.to_string()).collect();
                 let p = param_names.len();
-                let n_ds = datasets.len();
 
                 // We normalize parameters in optimizer state to be in the order of 1.
                 // Hence, scaling factors are the inital parameters.
@@ -390,27 +418,37 @@ macro_rules! impl_solver {
                 // since we divide for normalization.
                 for (j, &idx) in fitted_indices.iter().enumerate() {
                     if normalization[j] == 0.0 {
-                        return Err(FittingError::ZeroParameter {
+                        return Err(ParameterOptimizationError::ZeroParameter {
                             name: canonical[idx].to_string(),
                         });
                     }
                 }
 
+                let caches = datasets
+                    .iter()
+                    .map(|ds| DatasetCache {
+                        datapoints: ds.target().len(),
+                        user_weight: 1.0,
+                        dataset_weight: 1.0 / (ds.target().len() as f64).sqrt(),
+                        predicted: Array1::zeros(ds.target().len()),
+                        gradients: Array2::zeros((ds.target().len(), p)),
+                        converged: Array1::from_elem(ds.target().len(), false),
+                        residuals: Array1::zeros(ds.target().len()),
+                        loss_w_sqrt: Array1::zeros(ds.target().len()),
+                    })
+                    .collect();
+
                 let mut solver = Self {
                     datasets,
-                    weights: vec![1.0; n_ds],
                     param_names,
                     fitted_indices,
                     base_params: full_params,
                     normalization,
-                    loss: LossFunction::default(),
+                    residual_fn: ResidualFunction::RelativeDifference,
+                    loss_fn: LossFunction::default(),
                     strategy: NonConvergenceStrategy::default(),
                     params: DVector::from_element(p, 1.0f64),
-                    cached_predicted: vec![Array1::zeros(0); n_ds],
-                    cached_gradients: vec![Array2::zeros((0, p)); n_ds],
-                    cached_converged: vec![Array1::from_elem(0, false); n_ds],
-                    cached_loss_w_sqrt: vec![Array1::zeros(0); n_ds],
-                    cached_penalty: 0.0,
+                    caches,
                     _phantom: PhantomData,
                 };
                 solver.update_cache();
@@ -418,14 +456,13 @@ macro_rules! impl_solver {
             }
 
             /// Set the loss function.
-            pub fn with_loss(mut self, loss: LossFunction) -> Self {
-                self.loss = loss;
-                self.recompute_loss_weights();
+            pub fn with_loss(mut self, loss_fn: LossFunction) -> Self {
+                self.loss_fn = loss_fn;
                 self
             }
 
             /// Run Levenberg-Marquardt to convergence.
-            pub fn fit(mut self, config: FitConfig) -> (Self, MinimizationReport<f64>) {
+            pub fn fit(mut self, config: RegressorConfig) -> (Self, MinimizationReport<f64>) {
                 // overwrite strategy or nonconverging states
                 self.strategy = config.strategy.clone();
                 LevenbergMarquardt::new()
@@ -463,7 +500,7 @@ macro_rules! impl_solver {
             /// Evaluate each dataset individually and return structured
             /// per-dataset results.
             ///
-            /// Pass [`FitResult::all_parameters`] as `params` to inspect the
+            /// Pass [`RegressorResult::all_parameters`] as `params` to inspect the
             /// model at the fitted optimum.
             pub fn evaluate_datasets(&self, params: &[f64]) -> Vec<DatasetResult> {
                 self.datasets
@@ -504,9 +541,9 @@ macro_rules! impl_solver {
                     .collect()
             }
 
-            /// Extract [`FitResult`] from the current solver state and a [`MinimizationReport`].
-            pub fn to_result(&self, report: &MinimizationReport<f64>) -> FitResult {
-                FitResult {
+            /// Extract [`RegressorResult`] from the current solver state and a [`MinimizationReport`].
+            pub fn to_result(&self, report: &MinimizationReport<f64>) -> RegressorResult {
+                RegressorResult {
                     optimal_params: self.optimal_params(),
                     fitted_param_names: self.param_names.clone(),
                     all_param_names: T::parameter_names().iter().map(|s| s.to_string()).collect(),
@@ -521,7 +558,7 @@ macro_rules! impl_solver {
                 }
             }
 
-            /// Target values across all datasets in residual-vector order.
+            /// Target values across all datasets.
             pub fn target(&self) -> Array1<f64> {
                 let n_total: usize = self.datasets.iter().map(|d| d.target().len()).sum();
                 let mut out = Array1::zeros(n_total);
@@ -544,18 +581,18 @@ macro_rules! impl_solver {
             pub fn aad_per_dataset(&self) -> Vec<Option<f64>> {
                 self.datasets
                     .iter()
-                    .enumerate()
-                    .map(|(k, dataset)| {
-                        let exp = dataset.target();
-                        let pred = &self.cached_predicted[k];
-                        let conv = &self.cached_converged[k];
+                    .zip(self.caches.iter())
+                    .map(|(ds, c)| {
+                        let target = ds.target();
+                        let pred = &c.predicted;
+                        let conv = &c.converged;
                         let n_conv = conv.iter().filter(|&&c| c).count();
                         if n_conv == 0 {
                             return None;
                         }
                         Some(
                             pred.iter()
-                                .zip(exp.iter())
+                                .zip(target.iter())
                                 .zip(conv.iter())
                                 .filter(|(_, c)| **c)
                                 .map(|((p, e), _)| ((p - e) / e).abs())
@@ -567,88 +604,33 @@ macro_rules! impl_solver {
                     .collect()
             }
 
-            /// Unweighted relative Jacobian in physical parameter space
-            ///
-            /// Shape: `[n_converged, P]`
-            /// Row: `(1/exp_i) · ∂property_i/∂x_physical`
-            /// FIM: `J^T J`
-            ///
-            /// The Jacobian is in physical parameter space so that `J^T J` can
-            /// used without any rescaling. Includes converged points only.
-            /// The Jacobian used during LM iterations is scaled according to
-            /// parameter normalization and loss definition.
-            pub fn fim_jacobian(&self) -> Option<DMatrix<f64>> {
-                let n_conv: usize = self
-                    .cached_converged
-                    .iter()
-                    .flat_map(|c| c.iter())
-                    .filter(|&&c| c)
-                    .count();
-                if n_conv == 0 {
-                    return None;
-                }
-
-                let p = self.params.len();
-                let mut jac = DMatrix::zeros(n_conv, p);
-
-                let converged_pts: Vec<(usize, usize)> = self
-                    .datasets
-                    .iter()
-                    .enumerate()
-                    .flat_map(|(k, dataset)| {
-                        (0..dataset.target().len())
-                            .filter(move |&i| self.cached_converged[k][i])
-                            .map(move |i| (k, i))
-                    })
-                    .collect();
-
-                for j in 0..p {
-                    for (row, &(k, i)) in converged_pts.iter().enumerate() {
-                        let exp = self.datasets[k].target();
-                        jac[(row, j)] = self.cached_gradients[k][[i, j]] / exp[i];
-                    }
-                }
-                Some(jac)
-            }
-
-            /// Penalty value for non-converged points under the current strategy.
-            fn recompute_loss_weights(&mut self) {
-                for (k, dataset) in self.datasets.iter().enumerate() {
-                    let exp = dataset.target();
-                    let pred = &self.cached_predicted[k];
-                    let conv = &self.cached_converged[k];
-                    self.cached_loss_w_sqrt[k] = Array1::from_iter((0..exp.len()).map(|i| {
-                        if conv[i] {
-                            self.loss.irls_weight_sqrt((pred[i] - exp[i]) / exp[i])
-                        } else {
-                            0.0
-                        }
-                    }));
-                }
-            }
-
             fn residuals_impl(&self) -> Option<DVector<f64>> {
-                let n_total: usize = self.datasets.iter().map(|d| d.target().len()).sum();
+                let n_total: usize = self.caches.iter().map(|c| c.datapoints).sum();
                 if n_total == 0 {
                     return None;
                 }
 
+                let penalty = match self.strategy {
+                    NonConvergenceStrategy::Ignore => 0.0,
+                    NonConvergenceStrategy::Penalty(p) => p,
+                };
+
                 let mut out = DVector::zeros(n_total);
                 let mut offset = 0;
-                for (k, dataset) in self.datasets.iter().enumerate() {
-                    let exp = dataset.target();
-                    let pred = &self.cached_predicted[k];
-                    let conv = &self.cached_converged[k];
-                    let w_sqrt = &self.cached_loss_w_sqrt[k];
-                    let weight = self.weights[k];
-                    for i in 0..exp.len() {
+
+                for cache in self.caches.iter() {
+                    let dataset_weight = cache.dataset_weight;
+                    let conv = &cache.converged;
+                    let w_sqrt = &cache.loss_w_sqrt;
+
+                    for i in 0..cache.datapoints {
                         out[offset + i] = if conv[i] {
-                            weight * w_sqrt[i] * (pred[i] - exp[i]) / exp[i]
+                            dataset_weight * cache.residuals[i] * w_sqrt[i]
                         } else {
-                            weight * self.cached_penalty
+                            dataset_weight * penalty
                         };
                     }
-                    offset += exp.len();
+                    offset += cache.datapoints;
                 }
                 Some(out)
             }
@@ -656,7 +638,7 @@ macro_rules! impl_solver {
             /// Jacobian for LM iteration.
             ///
             /// Needs derivatives that account for
-            /// - using relative deviation
+            /// - the residual function
             /// - using normalized parameters
             /// - using (optional) non L2 loss
             /// - using weights for whole parameter sets.
@@ -670,39 +652,31 @@ macro_rules! impl_solver {
                 let mut jac = DMatrix::zeros(n_total, p);
                 let mut offset = 0;
 
-                // This part is a bit ugly
-                // We have to convert between ndarray and nalgebra memory layouts.
-                // Results from EoS calls: ndarray
-                // Format needed by LM: nalgebra
-                for (k, dataset) in self.datasets.iter().enumerate() {
-                    let exp = dataset.target();
-                    let conv = &self.cached_converged[k];
-                    let w_sqrt = &self.cached_loss_w_sqrt[k];
-                    let weight = self.weights[k];
-                    let grad = &self.cached_gradients[k];
-                    let n = exp.len();
+                for (dataset, cache) in self.datasets.iter().zip(self.caches.iter()) {
+                    let target = dataset.target();
+                    let conv = &cache.converged;
+                    let w_sqrt = &cache.loss_w_sqrt;
+                    let dataset_weight = cache.dataset_weight;
+                    let n = target.len();
+
+                    let mut grad = cache.gradients.clone();
+                    self.residual_fn.jacobian_transform(
+                        cache.predicted.view(),
+                        target,
+                        conv.view(),
+                        &mut grad,
+                    );
 
                     let mut jac_block = jac.rows_mut(offset, n);
-
-                    // Lenthy zip - but no additional allocations!
-                    let row_iter = exp
-                        .iter()
-                        .zip(conv.iter())
-                        .zip(w_sqrt.iter())
-                        .zip(grad.outer_iter())
-                        .zip(jac_block.row_iter_mut());
-
-                    for ((((&e, &c), &w), grad_row), mut jac_row) in row_iter {
-                        if !c {
+                    for i in 0..n {
+                        if !conv[i] {
                             continue;
                         }
-                        // factor covers:
-                        // - dataset weight
-                        // - division by experimental value
-                        // - irls weight (1.0 for L2 loss)
-                        let factor = weight * w / e;
-                        for (jac_val, &g) in jac_row.iter_mut().zip(grad_row.iter()) {
-                            *jac_val = factor * g;
+                        let total_weight = dataset_weight * w_sqrt[i];
+                        let grad_row = grad.row(i);
+                        let mut jac_row = jac_block.row_mut(i);
+                        for j in 0..p {
+                            jac_row[j] = total_weight * grad_row[j];
                         }
                     }
                     offset += n;
@@ -723,55 +697,38 @@ macro_rules! impl_solver {
             /// Using the cache, we only have to compute the residual and gradients once.
             /// Scaling factors and weights are applied in the residual and jacobian functions.
             fn update_cache(&mut self) {
-                // Compute physical parameters: x_physical[j] = x_opt[j] * normalization[j],
-                // embedded into the full M-dimensional parameter vector.
+                // precompute full parameter vector
                 let mut full_params = self.base_params.clone();
                 for (j, &idx) in self.fitted_indices.iter().enumerate() {
                     full_params[idx] = self.params[j] * self.normalization[j];
                 }
 
-                for (k, dataset) in self.datasets.iter().enumerate() {
-                    let (pred, grad, conv) = dataset.compute::<T>(&self.param_names, &full_params);
-                    let exp = dataset.target();
-                    self.cached_loss_w_sqrt[k] = Array1::from_iter((0..exp.len()).map(|i| {
-                        if conv[i] {
-                            self.loss.irls_weight_sqrt((pred[i] - exp[i]) / exp[i])
-                        } else {
-                            0.0
-                        }
-                    }));
-                    self.cached_predicted[k] = pred;
-                    self.cached_gradients[k] = grad;
-                    self.cached_converged[k] = conv;
-                }
+                let residual_fn = &self.residual_fn;
+                let loss_fn = &self.loss_fn;
 
-                // Update cached_penalty from the freshly computed predictions.
-                // For AdaptivePenalty this is a cheap O(n) scan over hot cache;
-                // for the other variants it is a direct read of the strategy.
-                self.cached_penalty = match &self.strategy {
-                    NonConvergenceStrategy::Ignore => 0.0,
-                    NonConvergenceStrategy::Penalty(p) => *p,
-                    NonConvergenceStrategy::AdaptivePenalty(factor) => {
-                        let mut max_r = 0.0f64;
-                        let mut any_converged = false;
-                        for (k, dataset) in self.datasets.iter().enumerate() {
-                            let exp = dataset.target();
-                            let pred = &self.cached_predicted[k];
-                            let conv = &self.cached_converged[k];
-                            for i in 0..exp.len() {
-                                if conv[i] {
-                                    any_converged = true;
-                                    max_r = max_r.max(((pred[i] - exp[i]) / exp[i]).abs());
-                                }
+                for (dataset, cache) in self.datasets.iter().zip(self.caches.iter_mut()) {
+                    let (pred, grad, conv) = dataset.compute::<T>(&self.param_names, &full_params);
+                    let target = dataset.target();
+
+                    Zip::from(&mut cache.residuals)
+                        .and(&mut cache.loss_w_sqrt)
+                        .and(target)
+                        .and(&pred)
+                        .and(&conv)
+                        .for_each(|r, w, &t, &p, &c| {
+                            if c {
+                                *r = residual_fn.residual(p, t);
+                                *w = loss_fn.irls_weight_sqrt(*r);
+                            } else {
+                                *r = 0.0;
+                                *w = 0.0;
                             }
-                        }
-                        if any_converged {
-                            max_r * factor
-                        } else {
-                            *factor
-                        }
-                    }
-                };
+                        });
+
+                    cache.predicted = pred;
+                    cache.gradients = grad;
+                    cache.converged = conv;
+                }
             }
         }
 
@@ -797,38 +754,37 @@ macro_rules! impl_solver {
     };
 }
 
-impl_solver!(1, PureDataset);
-impl_solver!(2, BinaryDataset);
+impl_regressor!(1, PureDataset);
+impl_regressor!(2, BinaryDataset);
 
-/// Object-safe interface for type-erased solvers.
+/// Object-safe interface for type-erased regressors.
 ///
-/// A `Box<dyn DynSolver>` can hold any concrete `Regressor<T, D>` without
-/// exposing the EoS type.
+/// A `Box<dyn DynRegressor>` can hold any `Regressor<T, D>`.
 ///
 /// This is useful when models are created at runtime (used in py-feos).
 ///
 /// # Example
 ///
 /// ```ignore
-/// let mut solver: Box<dyn DynSolver> = match model_name {
+/// let mut reg: Box<dyn DynRegressor> = match model_name {
 ///     "eos_1" => Box::new(PureRegressor::<Eos1>::new(ds, params, &fit)?),
 ///     "eos_2" => Box::new(PureRegressor::<Eos2>::new(ds, params, &fit)?),
 ///     _ => panic!("unknown model"),
 /// };
-/// let result = solver.fit(FitConfig::default(), None);
+/// let result = reg.fit(RegressorConfig::default(), None);
 /// println!("AAD: {:?}", result.aad_per_dataset);
 /// ```
-pub trait DynSolver: Send + Sync {
-    /// Evaluate all datasets at the given full physical parameters.
+pub trait DynRegressor: Send + Sync {
+    /// Evaluate all datasets at the given physical parameters.
     ///
     /// Returns `(predicted, gradients, converged)` concatenated across
     /// all datasets.  Gradients are w.r.t. the fitted parameters only.
     fn predict(&self, params: &[f64]) -> (Array1<f64>, Array2<f64>, Array1<bool>);
 
-    /// Run Levenberg-Marquardt optimisation and return a [`FitResult`].
+    /// Run Levenberg-Marquardt, return a [`RegressorResult`].
     ///
     /// Does not consume the solver. This is different from LM.
-    fn fit(&mut self, config: FitConfig, loss: Option<LossFunction>) -> FitResult;
+    fn fit(&mut self, config: RegressorConfig, loss: Option<LossFunction>) -> RegressorResult;
 
     /// Concatenated target values across all datasets.
     fn target(&self) -> Array1<f64>;
@@ -842,6 +798,13 @@ pub trait DynSolver: Send + Sync {
     /// Dataset names in order.
     fn dataset_names(&self) -> Vec<String>;
 
+    /// Current physical parameters in canonical order.
+    ///
+    /// Before [`fit`](Self::fit) is called this returns the initial values.
+    /// After fitting it returns the optimal values for the fitted parameters
+    /// and the initial values for the fixed ones.
+    fn optimal_params(&self) -> Vec<f64>;
+
     /// Evaluate each dataset at the given full parameters and return
     /// structured per-dataset results.
     ///
@@ -849,9 +812,9 @@ pub trait DynSolver: Send + Sync {
     fn evaluate_datasets(&self, params: &[f64]) -> Vec<DatasetResult>;
 }
 
-macro_rules! impl_dyn_solver {
+macro_rules! impl_dyn_regressor {
     ($n:literal, $dataset:ty) => {
-        impl<T> DynSolver for Regressor<T, $dataset>
+        impl<T> DynRegressor for Regressor<T, $dataset>
         where
             T: ParametersAD<$n> + Send + Sync + 'static,
         {
@@ -859,7 +822,11 @@ macro_rules! impl_dyn_solver {
                 self.predict(params)
             }
 
-            fn fit(&mut self, config: FitConfig, loss: Option<LossFunction>) -> FitResult {
+            fn fit(
+                &mut self,
+                config: RegressorConfig,
+                loss: Option<LossFunction>,
+            ) -> RegressorResult {
                 let mut solver = std::mem::take(self);
                 if let Some(l) = loss {
                     solver = solver.with_loss(l);
@@ -892,6 +859,10 @@ macro_rules! impl_dyn_solver {
                     .collect()
             }
 
+            fn optimal_params(&self) -> Vec<f64> {
+                self.optimal_params()
+            }
+
             fn evaluate_datasets(&self, params: &[f64]) -> Vec<DatasetResult> {
                 self.evaluate_datasets(params)
             }
@@ -899,5 +870,5 @@ macro_rules! impl_dyn_solver {
     };
 }
 
-impl_dyn_solver!(1, PureDataset);
-impl_dyn_solver!(2, BinaryDataset);
+impl_dyn_regressor!(1, PureDataset);
+impl_dyn_regressor!(2, BinaryDataset);

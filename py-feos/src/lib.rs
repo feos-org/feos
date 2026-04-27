@@ -213,8 +213,8 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
         // Regressor
         m.add_class::<ad::PyLossFunction>()?;
         m.add_class::<ad::PyNonConvergenceStrategy>()?;
-        m.add_class::<ad::PyFitConfig>()?;
-        m.add_class::<ad::PyFitResult>()?;
+        m.add_class::<ad::PyRegressorConfig>()?;
+        m.add_class::<ad::PyRegressorResult>()?;
         m.add_class::<ad::PyPureRegressor>()?;
         m.add_class::<ad::PyBinaryRegressor>()?;
     }

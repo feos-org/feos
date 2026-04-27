@@ -35,5 +35,5 @@ quantity = { workspace = true, features = ["approx"] }
 
 [features]
 default = []
-ndarray = ["dep:ndarray", "quantity/ndarray"]
-rayon = ["dep:rayon", "ndarray/rayon", "dep:csv"]
+ndarray = ["dep:ndarray", "quantity/ndarray", "dep:csv"]
+rayon = ["dep:rayon", "ndarray/rayon", "ndarray"]

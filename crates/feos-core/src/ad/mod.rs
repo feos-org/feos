@@ -1,15 +1,15 @@
-#[cfg(feature = "rayon")]
+#[cfg(feature = "ndarray")]
 pub mod parameter_optimization;
 
 use crate::DensityInitialization::Liquid;
 use crate::density_iteration::density_iteration;
 use crate::{Composition, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual, State};
 use nalgebra::{Const, SVector, U1, U2};
-#[cfg(feature = "rayon")]
+#[cfg(feature = "ndarray")]
 use ndarray::{Array1, Array2, ArrayView2, Zip};
 use num_dual::{Derivative, DualNum, DualSVec, DualStruct, first_derivative, partial2};
 use quantity::{Density, MolarEnergy, MolarEntropy, Pressure, Temperature};
-#[cfg(feature = "rayon")]
+#[cfg(feature = "ndarray")]
 use quantity::{JOULE, KELVIN, KILO, METER, MOL, PASCAL};
 
 type Gradient<const P: usize> = DualSVec<f64, f64, P>;
@@ -230,7 +230,7 @@ pub trait PropertiesAD {
         Ok(MolarEnergy::from_reduced(dh))
     }
 
-    #[cfg(feature = "rayon")]
+    #[cfg(feature = "ndarray")]
     fn vapor_pressure_parallel<const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
@@ -239,7 +239,7 @@ pub trait PropertiesAD {
     where
         Self: ParametersAD<1>,
     {
-        parallelize::<_, Self, _, _>(
+        vectorize::<_, Self, _, _>(
             parameter_names,
             parameters,
             input,
@@ -250,7 +250,7 @@ pub trait PropertiesAD {
         )
     }
 
-    #[cfg(feature = "rayon")]
+    #[cfg(feature = "ndarray")]
     fn boiling_temperature_parallel<const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
@@ -259,7 +259,7 @@ pub trait PropertiesAD {
     where
         Self: ParametersAD<1>,
     {
-        parallelize::<_, Self, _, _>(
+        vectorize::<_, Self, _, _>(
             parameter_names,
             parameters,
             input,
@@ -270,7 +270,7 @@ pub trait PropertiesAD {
         )
     }
 
-    #[cfg(feature = "rayon")]
+    #[cfg(feature = "ndarray")]
     fn liquid_density_parallel<const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
@@ -279,7 +279,7 @@ pub trait PropertiesAD {
     where
         Self: ParametersAD<1>,
     {
-        parallelize::<_, Self, _, _>(
+        vectorize::<_, Self, _, _>(
             parameter_names,
             parameters,
             input,
@@ -290,7 +290,7 @@ pub trait PropertiesAD {
         )
     }
 
-    #[cfg(feature = "rayon")]
+    #[cfg(feature = "ndarray")]
     fn residual_isobaric_heat_capacity_parallel<const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
@@ -299,7 +299,7 @@ pub trait PropertiesAD {
     where
         Self: ParametersAD<1>,
     {
-        parallelize::<_, Self, _, _>(
+        vectorize::<_, Self, _, _>(
             parameter_names,
             parameters,
             input,
@@ -310,7 +310,7 @@ pub trait PropertiesAD {
         )
     }
 
-    #[cfg(feature = "rayon")]
+    #[cfg(feature = "ndarray")]
     fn enthalpy_of_vaporization_parallel<const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
@@ -319,7 +319,7 @@ pub trait PropertiesAD {
     where
         Self: ParametersAD<1>,
     {
-        parallelize::<_, Self, _, _>(
+        vectorize::<_, Self, _, _>(
             parameter_names,
             parameters,
             input,
@@ -330,7 +330,7 @@ pub trait PropertiesAD {
         )
     }
 
-    #[cfg(feature = "rayon")]
+    #[cfg(feature = "ndarray")]
     fn equilibrium_liquid_density_parallel<const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
@@ -339,7 +339,7 @@ pub trait PropertiesAD {
     where
         Self: ParametersAD<1>,
     {
-        parallelize::<_, Self, _, _>(
+        vectorize::<_, Self, _, _>(
             parameter_names,
             parameters,
             input,
@@ -452,7 +452,7 @@ pub trait PropertiesAD {
         Ok(Pressure::from_reduced(p))
     }
 
-    #[cfg(feature = "rayon")]
+    #[cfg(feature = "ndarray")]
     fn bubble_point_pressure_parallel<const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
@@ -461,7 +461,7 @@ pub trait PropertiesAD {
     where
         Self: ParametersAD<2>,
     {
-        parallelize::<_, Self, _, _>(
+        vectorize::<_, Self, _, _>(
             parameter_names,
             parameters,
             input,
@@ -472,7 +472,7 @@ pub trait PropertiesAD {
         )
     }
 
-    #[cfg(feature = "rayon")]
+    #[cfg(feature = "ndarray")]
     fn dew_point_pressure_parallel<const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
@@ -481,7 +481,7 @@ pub trait PropertiesAD {
     where
         Self: ParametersAD<2>,
     {
-        parallelize::<_, Self, _, _>(
+        vectorize::<_, Self, _, _>(
             parameter_names,
             parameters,
             input,
@@ -495,8 +495,8 @@ pub trait PropertiesAD {
 
 impl<T> PropertiesAD for T {}
 
-#[cfg(feature = "rayon")]
-fn parallelize<F, E: ParametersAD<N>, const N: usize, const P: usize>(
+#[cfg(feature = "ndarray")]
+fn vectorize<F, E: ParametersAD<N>, const N: usize, const P: usize>(
     parameter_names: [String; P],
     parameters: ArrayView2<f64>,
     input: ArrayView2<f64>,
@@ -506,6 +506,8 @@ where
     F: Fn(&E::Lifted<Gradient<P>>, &[f64]) -> FeosResult<Gradient<P>> + Sync,
 {
     let parameter_names = parameter_names.each_ref().map(|s| s as &str);
+
+    #[cfg(feature = "rayon")]
     let value_dual = Zip::from(parameters.rows())
         .and(input.rows())
         .par_map_collect(|par, inp| {
@@ -514,6 +516,17 @@ where
             let eos = E::seed_derivatives(par, parameter_names);
             f(&eos, inp)
         });
+
+    #[cfg(not(feature = "rayon"))]
+    let value_dual = Zip::from(parameters.rows())
+        .and(input.rows())
+        .map_collect(|par, inp| {
+            let par = par.as_slice().expect("Parameter array is not contiguous!");
+            let inp = inp.as_slice().expect("Input array is not contiguous!");
+            let eos = E::seed_derivatives(par, parameter_names);
+            f(&eos, inp)
+        });
+
     let n = parameters.nrows();
     let status = value_dual.iter().map(|p| p.is_ok()).collect();
     let mut value = Array1::from_elem(n, f64::NAN);

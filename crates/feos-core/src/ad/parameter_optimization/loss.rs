@@ -1,13 +1,13 @@
-/// Loss function applied to the dimensionless relative residual
-/// `r = (calc − exp) / exp` during LM fitting.
+/// Loss function applied to the residual.
+///
+/// Functions are not directly applied to a given residual.
+/// Instead, they define the IRLS weight which is multiplied
+/// by the residual to obtain the loss.
 #[derive(Debug, Clone)]
 pub enum LossFunction {
     /// L2 loss (all weights are 1.0)
     L2,
     /// Huber loss with dimensionless threshold `delta`.
-    ///
-    /// Points with `|r_rel| ≤ delta` are treated as L2.
-    /// Beyond that, the effective residual is `sqrt(delta * |r_rel|)` (linear loss).
     Huber { delta: f64 },
 }
 
@@ -18,18 +18,22 @@ impl Default for LossFunction {
 }
 
 impl LossFunction {
-    /// IRLS weight `w = ρ'(r) / r`.
+    /// Iteratively reweighted least squares weight (inverse prefactor of the residual).
     ///
     /// - L2: 1.0
     /// - Huber: `min(delta / |r|, 1.0)`
+    #[inline(always)]
     pub fn irls_weight(&self, r: f64) -> f64 {
         match self {
+            // L2: weight is constant (1.0).
             LossFunction::L2 => 1.0,
+            // Huber: weight depends on current residual magnitude and delta.
             LossFunction::Huber { delta } => (delta / r.abs()).min(1.0),
         }
     }
 
     /// Square root of weight function.
+    #[inline(always)]
     pub fn irls_weight_sqrt(&self, r: f64) -> f64 {
         self.irls_weight(r).sqrt()
     }

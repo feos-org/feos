@@ -4,12 +4,12 @@ use numpy::{PyArray1, PyArray2, PyReadonlyArray2, ToPyArray};
 use paste::paste;
 use pyo3::prelude::*;
 
-pub mod solver;
-pub use solver::{
+pub mod regressor;
+pub use regressor::{
     PyBinaryRegressor, PyBubblePointDataset, PyDewPointDataset, PyEnthalpyOfVaporizationDataset,
-    PyEquilibriumLiquidDensityDataset, PyFitConfig, PyFitResult, PyLiquidDensityDataset,
-    PyLossFunction, PyNonConvergenceStrategy, PyPureRegressor, PyResidualIsobaricHeatCapacityDataset,
-    PyVaporPressureDataset,
+    PyEquilibriumLiquidDensityDataset, PyLiquidDensityDataset, PyLossFunction,
+    PyNonConvergenceStrategy, PyPureRegressor, PyRegressorConfig, PyRegressorResult,
+    PyResidualIsobaricHeatCapacityDataset, PyVaporPressureDataset,
 };
 
 #[pyclass(name = "EquationOfStateAD", eq, eq_int)]

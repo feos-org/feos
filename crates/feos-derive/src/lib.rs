@@ -8,7 +8,7 @@ use ideal_gas::expand_ideal_gas;
 use proc_macro::TokenStream;
 use residual::expand_residual;
 use subset::expand_subset;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 
 mod dft;
 mod functional_contribution;

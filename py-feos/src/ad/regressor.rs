@@ -3,14 +3,14 @@ use std::collections::HashMap;
 use feos::pcsaft::{PcSaftBinary, PcSaftPure};
 use feos_core::parameter_optimization::{
     BinaryDataset, BubblePointDataset, BubblePointRecord, Dataset, DewPointDataset, DewPointRecord,
-    DynSolver, EnthalpyOfVaporizationDataset, EnthalpyOfVaporizationRecord,
-    EquilibriumLiquidDensityDataset, EquilibriumLiquidDensityRecord, FitConfig, FitResult,
-    FittingError, LiquidDensityDataset, LiquidDensityRecord, LossFunction, NonConvergenceStrategy,
-    PureDataset, Regressor, ResidualIsobaricHeatCapacityDataset,
-    ResidualIsobaricHeatCapacityRecord, VaporPressureDataset, VaporPressureRecord,
+    DynRegressor, EnthalpyOfVaporizationDataset, EnthalpyOfVaporizationRecord,
+    EquilibriumLiquidDensityDataset, EquilibriumLiquidDensityRecord, ParameterOptimizationError,
+    LiquidDensityDataset, LiquidDensityRecord, LossFunction, NonConvergenceStrategy, PureDataset,
+    Regressor, RegressorConfig, RegressorResult, ResidualFunction,
+    ResidualIsobaricHeatCapacityDataset, ResidualIsobaricHeatCapacityRecord, VaporPressureDataset,
+    VaporPressureRecord,
 };
-use ndarray::Array2;
-use numpy::{PyArray1, PyArray2, ToPyArray};
+use numpy::{PyArray1, PyArray2, PyReadonlyArray1, ToPyArray};
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -36,8 +36,8 @@ macro_rules! py_dataset {
             ///
             /// Args:
             ///     path (str): Path to the CSV file.
-            ///     name (str, optional): Dataset name used in solver diagnostics
-            ///         and results. Must be unique within a solver; defaults to
+            ///     name (str, optional): Dataset name used in regressor diagnostics
+            ///         and results. Must be unique within a regressor; defaults to
             ///         the property name (e.g. `"vapor pressure"`).
             #[staticmethod]
             #[pyo3(signature = (path, name=None))]
@@ -89,23 +89,25 @@ impl PyVaporPressureDataset {
     /// Args:
     ///     temperature_k (np.ndarray): Temperatures in K.
     ///     vapor_pressure_pa (np.ndarray): Vapor pressures in Pa.
-    ///     name (str, optional): Dataset name (must be unique within a solver).
+    ///     name (str, optional): Dataset name (must be unique within a regressor).
     #[new]
     #[pyo3(signature = (temperature_k, vapor_pressure_pa, name=None))]
     pub fn new(
-        temperature_k: Vec<f64>,
-        vapor_pressure_pa: Vec<f64>,
+        temperature_k: PyReadonlyArray1<f64>,
+        vapor_pressure_pa: PyReadonlyArray1<f64>,
         name: Option<&str>,
     ) -> PyResult<Self> {
+        let temperature_k = temperature_k.as_array();
+        let vapor_pressure_pa = vapor_pressure_pa.as_array();
         if temperature_k.len() != vapor_pressure_pa.len() {
             return Err(PyValueError::new_err(
                 "temperature_k and vapor_pressure_pa must have the same length",
             ));
         }
         let records = temperature_k
-            .into_iter()
-            .zip(vapor_pressure_pa)
-            .map(|(t, p)| VaporPressureRecord {
+            .iter()
+            .zip(vapor_pressure_pa.iter())
+            .map(|(&t, &p)| VaporPressureRecord {
                 temperature_k: t,
                 vapor_pressure_pa: p,
             })
@@ -122,7 +124,7 @@ py_dataset!(
     PyLiquidDensityDataset,
     LiquidDensityDataset,
     "LiquidDensityDataset",
-    "temperature_k, pressure_pa, liquid_density_molm3"
+    "temperature_k, pressure_pa, liquid_density_kmol_m3"
 );
 
 #[pymethods]
@@ -132,27 +134,33 @@ impl PyLiquidDensityDataset {
     /// Args:
     ///     temperature_k (np.ndarray): Temperatures in K.
     ///     pressure_pa (np.ndarray): Pressures in Pa.
-    ///     liquid_density_molm3 (np.ndarray): Liquid molar densities in mol/m³.
-    ///     name (str, optional): Dataset name (must be unique within a solver).
+    ///     liquid_density_kmol_m3 (np.ndarray): Liquid molar densities in kmol/m³.
+    ///     name (str, optional): Dataset name (must be unique within a regressor).
     #[new]
-    #[pyo3(signature = (temperature_k, pressure_pa, liquid_density_molm3, name=None))]
+    #[pyo3(signature = (temperature_k, pressure_pa, liquid_density_kmol_m3, name=None))]
     pub fn new(
-        temperature_k: Vec<f64>,
-        pressure_pa: Vec<f64>,
-        liquid_density_molm3: Vec<f64>,
+        temperature_k: PyReadonlyArray1<f64>,
+        pressure_pa: PyReadonlyArray1<f64>,
+        liquid_density_kmol_m3: PyReadonlyArray1<f64>,
         name: Option<&str>,
     ) -> PyResult<Self> {
+        let temperature_k = temperature_k.as_array();
+        let pressure_pa = pressure_pa.as_array();
+        let liquid_density_kmol_m3 = liquid_density_kmol_m3.as_array();
         let n = temperature_k.len();
-        if pressure_pa.len() != n || liquid_density_molm3.len() != n {
+        if pressure_pa.len() != n || liquid_density_kmol_m3.len() != n {
             return Err(PyValueError::new_err(
                 "all arrays must have the same length",
             ));
         }
-        let records = (0..n)
-            .map(|i| LiquidDensityRecord {
-                temperature_k: temperature_k[i],
-                pressure_pa: pressure_pa[i],
-                liquid_density_molm3: liquid_density_molm3[i],
+        let records = temperature_k
+            .iter()
+            .zip(pressure_pa.iter())
+            .zip(liquid_density_kmol_m3.iter())
+            .map(|((&t, &p), &rho)| LiquidDensityRecord {
+                temperature_k: t,
+                pressure_pa: p,
+                liquid_density_kmol_m3: rho,
             })
             .collect();
         let mut inner = LiquidDensityDataset::from_records(records);
@@ -167,7 +175,7 @@ py_dataset!(
     PyEquilibriumLiquidDensityDataset,
     EquilibriumLiquidDensityDataset,
     "EquilibriumLiquidDensityDataset",
-    "temperature_k, liquid_density_molm3"
+    "temperature_k, liquid_density_kmol_m3"
 );
 
 #[pymethods]
@@ -176,26 +184,28 @@ impl PyEquilibriumLiquidDensityDataset {
     ///
     /// Args:
     ///     temperature_k (np.ndarray): Temperatures in K.
-    ///     liquid_density_molm3 (np.ndarray): Saturated liquid molar densities in mol/m³.
-    ///     name (str, optional): Dataset name (must be unique within a solver).
+    ///     liquid_density_kmol_m3 (np.ndarray): Saturated liquid molar densities in kmol/m³.
+    ///     name (str, optional): Dataset name (must be unique within a regressor).
     #[new]
-    #[pyo3(signature = (temperature_k, liquid_density_molm3, name=None))]
+    #[pyo3(signature = (temperature_k, liquid_density_kmol_m3, name=None))]
     pub fn new(
-        temperature_k: Vec<f64>,
-        liquid_density_molm3: Vec<f64>,
+        temperature_k: PyReadonlyArray1<f64>,
+        liquid_density_kmol_m3: PyReadonlyArray1<f64>,
         name: Option<&str>,
     ) -> PyResult<Self> {
-        if temperature_k.len() != liquid_density_molm3.len() {
+        let temperature_k = temperature_k.as_array();
+        let liquid_density_kmol_m3 = liquid_density_kmol_m3.as_array();
+        if temperature_k.len() != liquid_density_kmol_m3.len() {
             return Err(PyValueError::new_err(
-                "temperature_k and liquid_density_molm3 must have the same length",
+                "temperature_k and liquid_density_kmol_m3 must have the same length",
             ));
         }
         let records = temperature_k
-            .into_iter()
-            .zip(liquid_density_molm3)
-            .map(|(t, rho)| EquilibriumLiquidDensityRecord {
+            .iter()
+            .zip(liquid_density_kmol_m3.iter())
+            .map(|(&t, &rho)| EquilibriumLiquidDensityRecord {
                 temperature_k: t,
-                liquid_density_molm3: rho,
+                liquid_density_kmol_m3: rho,
             })
             .collect();
         let mut inner = EquilibriumLiquidDensityDataset::from_records(records);
@@ -220,23 +230,25 @@ impl PyEnthalpyOfVaporizationDataset {
     /// Args:
     ///     temperature_k (np.ndarray): Temperatures in K.
     ///     dh_vap_j_mol (np.ndarray): Enthalpy of vaporization in J/mol.
-    ///     name (str, optional): Dataset name (must be unique within a solver).
+    ///     name (str, optional): Dataset name (must be unique within a regressor).
     #[new]
     #[pyo3(signature = (temperature_k, dh_vap_j_mol, name=None))]
     pub fn new(
-        temperature_k: Vec<f64>,
-        dh_vap_j_mol: Vec<f64>,
+        temperature_k: PyReadonlyArray1<f64>,
+        dh_vap_j_mol: PyReadonlyArray1<f64>,
         name: Option<&str>,
     ) -> PyResult<Self> {
+        let temperature_k = temperature_k.as_array();
+        let dh_vap_j_mol = dh_vap_j_mol.as_array();
         if temperature_k.len() != dh_vap_j_mol.len() {
             return Err(PyValueError::new_err(
                 "temperature_k and dh_vap_j_mol must have the same length",
             ));
         }
         let records = temperature_k
-            .into_iter()
-            .zip(dh_vap_j_mol)
-            .map(|(t, p)| EnthalpyOfVaporizationRecord {
+            .iter()
+            .zip(dh_vap_j_mol.iter())
+            .map(|(&t, &p)| EnthalpyOfVaporizationRecord {
                 temperature_k: t,
                 dh_vap_j_mol: p,
             })
@@ -264,26 +276,32 @@ impl PyResidualIsobaricHeatCapacityDataset {
     ///     temperature_k (np.ndarray): Temperatures in K.
     ///     pressure_pa (np.ndarray): Pressures in Pa.
     ///     cp_res_j_molk (np.ndarray): Residual isobaric molar heat capacities in J/(mol·K).
-    ///     name (str, optional): Dataset name (must be unique within a solver).
+    ///     name (str, optional): Dataset name (must be unique within a regressor).
     #[new]
     #[pyo3(signature = (temperature_k, pressure_pa, cp_res_j_molk, name=None))]
     pub fn new(
-        temperature_k: Vec<f64>,
-        pressure_pa: Vec<f64>,
-        cp_res_j_molk: Vec<f64>,
+        temperature_k: PyReadonlyArray1<f64>,
+        pressure_pa: PyReadonlyArray1<f64>,
+        cp_res_j_molk: PyReadonlyArray1<f64>,
         name: Option<&str>,
     ) -> PyResult<Self> {
+        let temperature_k = temperature_k.as_array();
+        let pressure_pa = pressure_pa.as_array();
+        let cp_res_j_molk = cp_res_j_molk.as_array();
         let n = temperature_k.len();
         if pressure_pa.len() != n || cp_res_j_molk.len() != n {
             return Err(PyValueError::new_err(
                 "all arrays must have the same length",
             ));
         }
-        let records = (0..n)
-            .map(|i| ResidualIsobaricHeatCapacityRecord {
-                temperature_k: temperature_k[i],
-                pressure_pa: pressure_pa[i],
-                cp_res_j_molk: cp_res_j_molk[i],
+        let records = temperature_k
+            .iter()
+            .zip(pressure_pa.iter())
+            .zip(cp_res_j_molk.iter())
+            .map(|((&t, &p), &cp)| ResidualIsobaricHeatCapacityRecord {
+                temperature_k: t,
+                pressure_pa: p,
+                cp_res_j_molk: cp,
             })
             .collect();
         let mut inner = ResidualIsobaricHeatCapacityDataset::from_records(records);
@@ -310,26 +328,32 @@ impl PyBubblePointDataset {
     ///     liquid_molefrac_1 (np.ndarray): Liquid-phase mole fractions of component 1.
     ///     bubble_pressure_pa (np.ndarray): Bubble point pressures in Pa.
     ///         Also used as the initial VLE solver guess.
-    ///     name (str, optional): Dataset name (must be unique within a solver).
+    ///     name (str, optional): Dataset name (must be unique within a regressor).
     #[new]
     #[pyo3(signature = (temperature_k, liquid_molefrac_1, bubble_pressure_pa, name=None))]
     pub fn new(
-        temperature_k: Vec<f64>,
-        liquid_molefrac_1: Vec<f64>,
-        bubble_pressure_pa: Vec<f64>,
+        temperature_k: PyReadonlyArray1<f64>,
+        liquid_molefrac_1: PyReadonlyArray1<f64>,
+        bubble_pressure_pa: PyReadonlyArray1<f64>,
         name: Option<&str>,
     ) -> PyResult<Self> {
+        let temperature_k = temperature_k.as_array();
+        let liquid_molefrac_1 = liquid_molefrac_1.as_array();
+        let bubble_pressure_pa = bubble_pressure_pa.as_array();
         let n = temperature_k.len();
         if liquid_molefrac_1.len() != n || bubble_pressure_pa.len() != n {
             return Err(PyValueError::new_err(
                 "all arrays must have the same length",
             ));
         }
-        let records = (0..n)
-            .map(|i| BubblePointRecord {
-                temperature_k: temperature_k[i],
-                liquid_molefrac_1: liquid_molefrac_1[i],
-                bubble_pressure_pa: bubble_pressure_pa[i],
+        let records = temperature_k
+            .iter()
+            .zip(liquid_molefrac_1.iter())
+            .zip(bubble_pressure_pa.iter())
+            .map(|((&t, &x), &p)| BubblePointRecord {
+                temperature_k: t,
+                liquid_molefrac_1: x,
+                bubble_pressure_pa: p,
             })
             .collect();
         let mut inner = BubblePointDataset::from_records(records);
@@ -356,26 +380,32 @@ impl PyDewPointDataset {
     ///     vapor_molefrac_1 (np.ndarray): Vapor-phase mole fractions of component 1.
     ///     dew_pressure_pa (np.ndarray): Dew point pressures in Pa.
     ///         Also used as the initial VLE solver guess.
-    ///     name (str, optional): Dataset name (must be unique within a solver).
+    ///     name (str, optional): Dataset name (must be unique within a regressor).
     #[new]
     #[pyo3(signature = (temperature_k, vapor_molefrac_1, dew_pressure_pa, name=None))]
     pub fn new(
-        temperature_k: Vec<f64>,
-        vapor_molefrac_1: Vec<f64>,
-        dew_pressure_pa: Vec<f64>,
+        temperature_k: PyReadonlyArray1<f64>,
+        vapor_molefrac_1: PyReadonlyArray1<f64>,
+        dew_pressure_pa: PyReadonlyArray1<f64>,
         name: Option<&str>,
     ) -> PyResult<Self> {
+        let temperature_k = temperature_k.as_array();
+        let vapor_molefrac_1 = vapor_molefrac_1.as_array();
+        let dew_pressure_pa = dew_pressure_pa.as_array();
         let n = temperature_k.len();
         if vapor_molefrac_1.len() != n || dew_pressure_pa.len() != n {
             return Err(PyValueError::new_err(
                 "all arrays must have the same length",
             ));
         }
-        let records = (0..n)
-            .map(|i| DewPointRecord {
-                temperature_k: temperature_k[i],
-                vapor_molefrac_1: vapor_molefrac_1[i],
-                dew_pressure_pa: dew_pressure_pa[i],
+        let records = temperature_k
+            .iter()
+            .zip(vapor_molefrac_1.iter())
+            .zip(dew_pressure_pa.iter())
+            .map(|((&t, &y), &p)| DewPointRecord {
+                temperature_k: t,
+                vapor_molefrac_1: y,
+                dew_pressure_pa: p,
             })
             .collect();
         let mut inner = DewPointDataset::from_records(records);
@@ -438,8 +468,6 @@ impl PyLossFunction {
 ///     NonConvergenceStrategy.Ignore
 ///     >>> NonConvergenceStrategy.penalty(10.0)
 ///     NonConvergenceStrategy.Penalty(10.0)
-///     >>> NonConvergenceStrategy.adaptive_penalty(5.0)
-///     NonConvergenceStrategy.AdaptivePenalty(factor=5.0)
 #[pyclass(name = "NonConvergenceStrategy")]
 pub struct PyNonConvergenceStrategy {
     pub(crate) inner: NonConvergenceStrategy,
@@ -469,30 +497,11 @@ impl PyNonConvergenceStrategy {
         })
     }
 
-    /// Penalty scaled by `factor × max |r_rel|` over converged points.
-    ///
-    /// Falls back to `factor` when no points converged.
-    ///
-    /// Args:
-    ///     factor (float): Scaling factor, e.g. `5.0`.
-    #[staticmethod]
-    pub fn adaptive_penalty(factor: f64) -> PyResult<Self> {
-        if factor <= 0.0 {
-            return Err(PyValueError::new_err("factor must be > 0"));
-        }
-        Ok(Self {
-            inner: NonConvergenceStrategy::AdaptivePenalty(factor),
-        })
-    }
-
     pub fn __repr__(&self) -> String {
-        match &self.inner {
+        match self.inner {
             NonConvergenceStrategy::Ignore => "NonConvergenceStrategy.Ignore".to_string(),
             NonConvergenceStrategy::Penalty(v) => {
                 format!("NonConvergenceStrategy.Penalty({v})")
-            }
-            NonConvergenceStrategy::AdaptivePenalty(f) => {
-                format!("NonConvergenceStrategy.AdaptivePenalty(factor={f})")
             }
         }
     }
@@ -516,14 +525,14 @@ impl PyNonConvergenceStrategy {
 ///         norms. Default: True.
 ///     strategy (NonConvergenceStrategy, optional): How to treat non-converged
 ///         EoS evaluations. Default: ``NonConvergenceStrategy.penalty(10.0)``.
-#[pyclass(name = "FitConfig")]
+#[pyclass(name = "RegressorConfig")]
 #[derive(Clone)]
-pub struct PyFitConfig {
-    pub(crate) inner: FitConfig,
+pub struct PyRegressorConfig {
+    pub(crate) inner: RegressorConfig,
 }
 
 #[pymethods]
-impl PyFitConfig {
+impl PyRegressorConfig {
     #[new]
     #[pyo3(signature = (ftol=1e-8, xtol=1e-8, gtol=1e-8, stepbound=0.1, patience=100, scale_diag=true, strategy=None))]
     pub fn new(
@@ -536,7 +545,7 @@ impl PyFitConfig {
         strategy: Option<Bound<'_, PyNonConvergenceStrategy>>,
     ) -> Self {
         Self {
-            inner: FitConfig {
+            inner: RegressorConfig {
                 ftol,
                 xtol,
                 gtol,
@@ -583,7 +592,7 @@ impl PyFitConfig {
 
     pub fn __repr__(&self) -> String {
         format!(
-            "FitConfig(ftol={}, xtol={}, gtol={}, stepbound={}, patience={}, \
+            "RegressorConfig(ftol={}, xtol={}, gtol={}, stepbound={}, patience={}, \
              scale_diag={}, strategy={})",
             self.inner.ftol,
             self.inner.xtol,
@@ -615,13 +624,13 @@ impl PyFitConfig {
 ///     converged (bool): Whether LM reported successful convergence.
 ///     n_evaluations (int): Number of residual evaluations performed by LM.
 ///     objective_function (float): Final value of the LM objective.
-#[pyclass(name = "FitResult")]
-pub struct PyFitResult {
-    pub(crate) inner: FitResult,
+#[pyclass(name = "RegressorResult")]
+pub struct PyRegressorResult {
+    pub(crate) inner: RegressorResult,
 }
 
 #[pymethods]
-impl PyFitResult {
+impl PyRegressorResult {
     #[getter]
     pub fn optimal_params(&self) -> Vec<f64> {
         self.inner.optimal_params.clone()
@@ -671,7 +680,7 @@ impl PyFitResult {
 
     /// All parameters as `{name: value}`.
     ///
-    /// Fitted parameters at thei optimal values, all others at their initial values.
+    /// Fitted parameters at their optimal values, all others at their initial values.
     ///
     /// Note:
     ///
@@ -721,7 +730,7 @@ impl PyFitResult {
             })
             .collect();
         format!(
-            "FitResult(converged={}, n_eval={}, elapsed={:.1}ms, aad=[{}])",
+            "RegressorResult(converged={}, n_eval={}, elapsed={:.1}ms, aad=[{}])",
             self.inner.converged,
             self.inner.n_evaluations,
             self.inner.elapsed.as_secs_f64() * 1000.0,
@@ -730,7 +739,7 @@ impl PyFitResult {
     }
 }
 
-macro_rules! solver_methods {
+macro_rules! regressor_methods {
     ($py_type:ty, $display:expr) => {
         #[pymethods]
         impl $py_type {
@@ -777,8 +786,11 @@ macro_rules! solver_methods {
             /// - `"converged"` — boolean mask
             ///
             /// Args:
-            ///     params (dict[str, float]): All EOS parameters as returned by
-            ///         :attr:`FitResult.all_parameters`.
+            ///     params (dict[str, float], optional): All EOS parameters keyed by
+            ///         name, as returned by :attr:`RegressorResult.all_parameters`.
+            ///         If omitted, the regressor's current parameters are used — i.e.
+            ///         the optimal values after :meth:`fit`, or the initial values
+            ///         before fitting.
             ///
             /// Returns:
             ///     list[dict[str, np.ndarray]]: One dict per dataset, in the
@@ -786,24 +798,29 @@ macro_rules! solver_methods {
             ///
             /// Examples:
             ///     >>> result = regressor.fit()
-            ///     >>> ds = regressor.evaluate_datasets(result.all_parameters)
-            ///     >>> dfs = [pd.DataFrame(d) for d in ds] # one pandas.DataFrame per Dataset
+            ///     >>> ds = regressor.evaluate_datasets()           # uses fitted params
+            ///     >>> ds = regressor.evaluate_datasets(result.all_parameters)  # explicit
+            ///     >>> dfs = [pd.DataFrame(d) for d in ds]
+            #[pyo3(signature = (params=None))]
             pub fn evaluate_datasets<'py>(
                 &self,
                 py: Python<'py>,
-                params: HashMap<String, f64>,
+                params: Option<HashMap<String, f64>>,
             ) -> PyResult<Vec<Bound<'py, PyDict>>> {
-                // Build the full param vector in canonical order.
-                let names = self.inner.all_param_names();
-                let param_vec: Result<Vec<f64>, _> = names
-                    .iter()
-                    .map(|n| {
-                        params.get(n).copied().ok_or_else(|| {
-                            PyValueError::new_err(format!("missing parameter '{n}'"))
-                        })
-                    })
-                    .collect();
-                let param_vec = param_vec?;
+                let param_vec = match params {
+                    None => self.inner.optimal_params(),
+                    Some(map) => {
+                        let names = self.inner.all_param_names();
+                        names
+                            .iter()
+                            .map(|n| {
+                                map.get(n).copied().ok_or_else(|| {
+                                    PyValueError::new_err(format!("missing parameter '{n}'"))
+                                })
+                            })
+                            .collect::<PyResult<Vec<f64>>>()?
+                    }
+                };
 
                 let results = self.inner.evaluate_datasets(&param_vec);
 
@@ -830,22 +847,22 @@ macro_rules! solver_methods {
             /// Run Levenberg-Marquardt optimisation.
             ///
             /// Args:
-            ///     config (FitConfig, optional): Regressor hyperparameters
+            ///     config (RegressorConfig, optional): Regressor hyperparameters
             ///         (including non-convergence strategy).
             ///     loss (LossFunction, optional): Loss function applied to
             ///         relative residuals.
             ///
             /// Returns:
-            ///     FitResult
+            ///     RegressorResult
             #[pyo3(signature = (config=None, loss=None))]
             pub fn fit(
                 &mut self,
-                config: Option<PyFitConfig>,
+                config: Option<PyRegressorConfig>,
                 loss: Option<Bound<'_, PyLossFunction>>,
-            ) -> PyFitResult {
+            ) -> PyRegressorResult {
                 let config = config.map(|c| c.inner).unwrap_or_default();
                 let loss = loss.map(|l| l.borrow().inner.clone());
-                PyFitResult {
+                PyRegressorResult {
                     inner: self.inner.fit(config, loss),
                 }
             }
@@ -886,68 +903,132 @@ macro_rules! solver_methods {
     };
 }
 
-/// Levenberg-Marquardt solver for pure-component parameter fitting.
+fn validate_weights(weights: &[f64], n_datasets: usize) -> PyResult<()> {
+    if weights.len() != n_datasets {
+        return Err(PyValueError::new_err(format!(
+            "weights has length {} but there are {} datasets",
+            weights.len(),
+            n_datasets
+        )));
+    }
+    if weights.iter().any(|&w| w <= 0.0) {
+        return Err(PyValueError::new_err(
+            "all dataset weights must be positive",
+        ));
+    }
+    Ok(())
+}
+
+fn parse_residual_fn(s: &str) -> PyResult<ResidualFunction> {
+    match s {
+        "difference" => Ok(ResidualFunction::Difference),
+        "log_difference" => Ok(ResidualFunction::LogDifference),
+        "relative_difference" => Ok(ResidualFunction::RelativeDifference),
+        _ => Err(PyValueError::new_err(format!(
+            "unknown residual function '{s}'; valid: 'difference', 'log_difference', 'relative_difference'"
+        ))),
+    }
+}
+
+/// Levenberg-Marquardt regressor for pure-component parameter fitting.
 ///
 /// Args:
 ///     model (EquationOfStateAD): Equation of state to use.
 ///     datasets (list): One or more datasets for pure substance properties.
 ///     params (dict[str, float]): Initial values for all parameters keyed by name.
 ///     fit (list[str]): Names of the parameters to optimise.
+///     residual (str, optional): Residual function. Possible values are
+///         ``"relative_difference"`` (default), ``"log_difference"``, or ``"difference"``.
+///     weights (list[float], optional): Per-dataset weights, one per dataset.
+///         All weights must be positive. Default: 1.0 for every dataset.
 ///
 /// Examples:
 ///     >>> vp  = VaporPressureDataset.from_csv("vp.csv")
 ///     >>> rho = LiquidDensityDataset.from_csv("rho.csv")
-///     >>> solver = PureRegressor(
+///     >>> reg = PureRegressor(
 ///     ...     model=EquationOfStateAD.PcSaftNonAssoc,
 ///     ...     datasets=[vp, rho],
 ///     ...     params={"m": 2.5, "sigma": 3.4, "epsilon_k": 280.0, "mu": 0.0},
 ///     ...     fit=["sigma", "epsilon_k"],
+///     ...     weights=[1.0, 2.0],
 ///     ... )
-///     >>> result = solver.fit()
+///     >>> result = reg.fit()
 #[pyclass(name = "PureRegressor")]
 pub struct PyPureRegressor {
-    inner: Box<dyn DynSolver>,
+    inner: Box<dyn DynRegressor>,
 }
 
 #[pymethods]
 impl PyPureRegressor {
     #[new]
-    #[pyo3(signature = (model, datasets, params, fit))]
+    #[pyo3(signature = (model, datasets, params, fit, residual=None, weights=None))]
     pub fn new(
         model: PyEquationOfStateAD,
         datasets: Vec<Bound<'_, PyAny>>,
         params: HashMap<String, f64>,
         fit: Vec<String>,
+        residual: Option<&str>,
+        weights: Option<Vec<f64>>,
     ) -> PyResult<Self> {
         let ds = extract_pure_datasets(&datasets)?;
+        if let Some(ref w) = weights {
+            validate_weights(w, ds.len())?;
+        }
         let fit_strs: Vec<&str> = fit.iter().map(|s| s.as_str()).collect();
-        let inner: Box<dyn DynSolver> = match model {
-            PyEquationOfStateAD::PcSaftNonAssoc => Box::new(
-                Regressor::<PcSaftPure<f64, 4>, _>::new(ds, params, &fit_strs)
-                    .map_err(|e: FittingError| PyValueError::new_err(e.to_string()))?,
-            ),
-            PyEquationOfStateAD::PcSaftFull => Box::new(
-                Regressor::<PcSaftPure<f64, 8>, _>::new(ds, params, &fit_strs)
-                    .map_err(|e: FittingError| PyValueError::new_err(e.to_string()))?,
-            ),
+        let residual_fn = residual.map(parse_residual_fn).transpose()?;
+        let inner: Box<dyn DynRegressor> = match model {
+            PyEquationOfStateAD::PcSaftNonAssoc => {
+                let r = Regressor::<PcSaftPure<f64, 4>, _>::new(ds, params, &fit_strs)
+                    .map_err(|e: ParameterOptimizationError| PyValueError::new_err(e.to_string()))?;
+                let r = match residual_fn {
+                    Some(rf) => r.with_residual_fn(rf),
+                    None => r,
+                };
+                let r = match weights {
+                    Some(w) => r
+                        .with_weights(w)
+                        .map_err(|e: ParameterOptimizationError| PyValueError::new_err(e.to_string()))?,
+                    None => r,
+                };
+                Box::new(r)
+            }
+            PyEquationOfStateAD::PcSaftFull => {
+                let r = Regressor::<PcSaftPure<f64, 8>, _>::new(ds, params, &fit_strs)
+                    .map_err(|e: ParameterOptimizationError| PyValueError::new_err(e.to_string()))?;
+                let r = match residual_fn {
+                    Some(rf) => r.with_residual_fn(rf),
+                    None => r,
+                };
+                let r = match weights {
+                    Some(w) => r
+                        .with_weights(w)
+                        .map_err(|e: ParameterOptimizationError| PyValueError::new_err(e.to_string()))?,
+                    None => r,
+                };
+                Box::new(r)
+            }
         };
         Ok(Self { inner })
     }
 }
 
-solver_methods!(PyPureRegressor, "PureRegressor");
+regressor_methods!(PyPureRegressor, "PureRegressor");
 
-/// Levenberg-Marquardt solver for binary-mixture parameter fitting.
+/// Levenberg-Marquardt regressor for binary-mixture parameter fitting.
 ///
 /// Args:
 ///     model (EquationOfStateAD): Equation of state to use.
 ///     datasets (list): One or more datasets for mixture properties.
 ///     params (dict[str, float]): Initial values for all parameters keyed by name.
 ///     fit (list[str]): Names of the parameters to optimise.
+///     residual (str, optional): Residual function — ``"relative_difference"``
+///         (default), ``"log_difference"``, or ``"difference"``.
+///     weights (list[float], optional): Per-dataset weights, one per dataset.
+///         All weights must be positive. Default: 1.0 for every dataset.
 ///
 /// Examples:
 ///     >>> bp = BubblePointDataset.from_csv("bubble.csv")
-///     >>> solver = BinaryRegressor(
+///     >>> reg = BinaryRegressor(
 ///     ...     model=EquationOfStateAD.PcSaftNonAssoc,
 ///     ...     datasets=[bp],
 ///     ...     params={
@@ -957,39 +1038,67 @@ solver_methods!(PyPureRegressor, "PureRegressor");
 ///     ...     },
 ///     ...     fit=["k_ij"],
 ///     ... )
-///     >>> result = solver.fit()
+///     >>> result = reg.fit()
 #[pyclass(name = "BinaryRegressor")]
 pub struct PyBinaryRegressor {
-    inner: Box<dyn DynSolver>,
+    inner: Box<dyn DynRegressor>,
 }
 
 #[pymethods]
 impl PyBinaryRegressor {
     #[new]
-    #[pyo3(signature = (model, datasets, params, fit))]
+    #[pyo3(signature = (model, datasets, params, fit, residual=None, weights=None))]
     pub fn new(
         model: PyEquationOfStateAD,
         datasets: Vec<Bound<'_, PyAny>>,
         params: HashMap<String, f64>,
         fit: Vec<String>,
+        residual: Option<&str>,
+        weights: Option<Vec<f64>>,
     ) -> PyResult<Self> {
         let ds = extract_binary_datasets(&datasets)?;
+        if let Some(ref w) = weights {
+            validate_weights(w, ds.len())?;
+        }
         let fit_strs: Vec<&str> = fit.iter().map(|s| s.as_str()).collect();
-        let inner: Box<dyn DynSolver> = match model {
-            PyEquationOfStateAD::PcSaftNonAssoc => Box::new(
-                Regressor::<PcSaftBinary<f64, 4>, _>::new(ds, params, &fit_strs)
-                    .map_err(|e: FittingError| PyValueError::new_err(e.to_string()))?,
-            ),
-            PyEquationOfStateAD::PcSaftFull => Box::new(
-                Regressor::<PcSaftBinary<f64, 8>, _>::new(ds, params, &fit_strs)
-                    .map_err(|e: FittingError| PyValueError::new_err(e.to_string()))?,
-            ),
+        let residual_fn = residual.map(parse_residual_fn).transpose()?;
+        let inner: Box<dyn DynRegressor> = match model {
+            PyEquationOfStateAD::PcSaftNonAssoc => {
+                let r = Regressor::<PcSaftBinary<f64, 4>, _>::new(ds, params, &fit_strs)
+                    .map_err(|e: ParameterOptimizationError| PyValueError::new_err(e.to_string()))?;
+                let r = match residual_fn {
+                    Some(rf) => r.with_residual_fn(rf),
+                    None => r,
+                };
+                let r = match weights {
+                    Some(w) => r
+                        .with_weights(w)
+                        .map_err(|e: ParameterOptimizationError| PyValueError::new_err(e.to_string()))?,
+                    None => r,
+                };
+                Box::new(r)
+            }
+            PyEquationOfStateAD::PcSaftFull => {
+                let r = Regressor::<PcSaftBinary<f64, 8>, _>::new(ds, params, &fit_strs)
+                    .map_err(|e: ParameterOptimizationError| PyValueError::new_err(e.to_string()))?;
+                let r = match residual_fn {
+                    Some(rf) => r.with_residual_fn(rf),
+                    None => r,
+                };
+                let r = match weights {
+                    Some(w) => r
+                        .with_weights(w)
+                        .map_err(|e: ParameterOptimizationError| PyValueError::new_err(e.to_string()))?,
+                    None => r,
+                };
+                Box::new(r)
+            }
         };
         Ok(Self { inner })
     }
 }
 
-solver_methods!(PyBinaryRegressor, "BinaryRegressor");
+regressor_methods!(PyBinaryRegressor, "BinaryRegressor");
 
 /// Downcast a Python list to `Vec<PureDataset>`.
 fn extract_pure_datasets(list: &[Bound<'_, PyAny>]) -> PyResult<Vec<PureDataset>> {

@@ -1,6 +1,7 @@
 pub mod dataset;
 pub mod loss;
-pub mod solver;
+pub mod regressor;
+pub mod residual;
 
 pub use dataset::{
     BinaryDataset, BubblePointDataset, BubblePointRecord, Dataset, DatasetResult, DewPointDataset,
@@ -10,7 +11,8 @@ pub use dataset::{
     ResidualIsobaricHeatCapacityRecord, VaporPressureDataset, VaporPressureRecord,
 };
 pub use loss::LossFunction;
-pub use solver::{
-    BinaryRegressor, DynSolver, FitConfig, FitResult, FittingError, NonConvergenceStrategy,
-    PureRegressor, Regressor,
+pub use regressor::{
+    BinaryRegressor, DynRegressor, NonConvergenceStrategy, ParameterOptimizationError,
+    PureRegressor, Regressor, RegressorConfig, RegressorResult,
 };
+pub use residual::ResidualFunction;
