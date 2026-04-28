@@ -49,7 +49,7 @@ impl PyEquationOfState {
             _ => {
                 return Err(PyErr::new::<PyValueError, _>(
                     r#"epcsaft_variant must be "advanced" or "revised""#.to_string(),
-                ))
+                ));
             }
         };
 

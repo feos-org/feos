@@ -1,4 +1,4 @@
-use super::fragmentation::{fragment_molecule, PySmartsRecord};
+use super::fragmentation::{PySmartsRecord, fragment_molecule};
 use super::identifier::{PyIdentifier, PyIdentifierOption};
 use crate::error::PyFeosError;
 use feos_core::parameter::{ChemicalRecord, Identifier};

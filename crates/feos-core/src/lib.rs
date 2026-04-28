@@ -32,6 +32,8 @@ mod errors;
 pub mod parameter;
 mod phase_equilibria;
 mod state;
+#[cfg(feature = "ndarray")]
+pub use ad::parameter_optimization;
 pub use ad::{ParametersAD, PropertiesAD};
 pub use equation_of_state::{
     EntropyScaling, EquationOfState, IdealGas, IdealGasAD, Molarweight, NoResidual, Residual,

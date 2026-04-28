@@ -52,7 +52,7 @@ impl PyEquationOfState {
             _ => {
                 return Err(PyErr::new::<PyValueError, _>(
                     r#"dq_variant must be "dq35" or "dq44""#,
-                ))
+                ));
             }
         };
         let options = PcSaftOptions {
@@ -119,7 +119,7 @@ impl PyHelmholtzEnergyFunctional {
             _ => {
                 return Err(PyErr::new::<PyValueError, _>(
                     r#"dq_variant must be "dq35" or "dq44""#.to_string(),
-                ))
+                ));
             }
         };
         let options = PcSaftOptions {

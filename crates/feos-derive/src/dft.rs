@@ -1,4 +1,4 @@
-use crate::{implement, OPT_IMPLS};
+use crate::{OPT_IMPLS, implement};
 use quote::quote;
 use syn::DeriveInput;
 
