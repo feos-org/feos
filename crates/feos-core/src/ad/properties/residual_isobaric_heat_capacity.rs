@@ -1,6 +1,5 @@
 use crate::DensityInitialization::Liquid;
 use crate::ad::Gradient;
-use crate::ad::dataset::DatasetRecord;
 use crate::ad::{ParametersAD, vectorize, vectorize_ad};
 use crate::density_iteration::density_iteration;
 use crate::{FeosResult, ReferenceSystem, Residual, State};
@@ -8,30 +7,6 @@ use nalgebra::U1;
 use ndarray::{Array1, Array2, ArrayView2};
 use num_dual::DualStruct;
 use quantity::{JOULE, KELVIN, MOL, MolarEntropy, Moles, PASCAL, Pressure, Temperature};
-use serde::{Deserialize, Serialize};
-
-#[derive(Deserialize, Serialize)]
-pub struct ResidualIsobaricHeatCapacityRecord {
-    pub temperature_k: f64,
-    pub pressure_pa: f64,
-    pub cp_res_j_molk: f64,
-}
-
-impl DatasetRecord for ResidualIsobaricHeatCapacityRecord {
-    const N_INPUTS: usize = 2;
-
-    fn input(&self, column: usize) -> f64 {
-        match column {
-            0 => self.temperature_k,
-            1 => self.pressure_pa,
-            _ => unreachable!("invalid residual isobaric heat capacity input column"),
-        }
-    }
-
-    fn target(&self) -> f64 {
-        self.cp_res_j_molk
-    }
-}
 
 /// Residual isobaric molar heat capacity of the liquid phase at the given
 /// temperature and pressure.

@@ -8,8 +8,8 @@ use serde::de::DeserializeOwned;
 
 use crate::{ParametersAD, Residual};
 
-pub use binary::{BinaryDataset, BinaryProperty};
-pub use pure::{PureDataset, PureProperty};
+pub use binary::*;
+pub use pure::*;
 
 /// Shared numerical data for all datasets.
 struct DatasetData {

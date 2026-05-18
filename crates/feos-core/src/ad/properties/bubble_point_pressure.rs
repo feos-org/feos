@@ -1,37 +1,10 @@
 use crate::Contributions;
 use crate::ad::Gradient;
-use crate::ad::dataset::DatasetRecord;
 use crate::ad::{ParametersAD, vectorize, vectorize_ad};
 use crate::{Composition, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
 use nalgebra::{SVector, U2};
 use ndarray::{Array1, Array2, ArrayView2};
 use quantity::{KELVIN, PASCAL, Pressure, Temperature};
-use serde::{Deserialize, Serialize};
-
-/// The pressure column doubles as the initial guess passed to the VLE solver.
-#[derive(Deserialize, Serialize)]
-pub struct BubblePointRecord {
-    pub temperature_k: f64,
-    pub liquid_molefrac_1: f64,
-    pub bubble_pressure_pa: f64,
-}
-
-impl DatasetRecord for BubblePointRecord {
-    const N_INPUTS: usize = 3;
-
-    fn input(&self, column: usize) -> f64 {
-        match column {
-            0 => self.temperature_k,
-            1 => self.liquid_molefrac_1,
-            2 => self.bubble_pressure_pa,
-            _ => unreachable!("invalid bubble point input column"),
-        }
-    }
-
-    fn target(&self) -> f64 {
-        self.bubble_pressure_pa
-    }
-}
 
 pub fn bubble_point_pressure_ad<
     E: Residual<U2, Gradient<P>>,

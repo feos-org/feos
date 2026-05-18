@@ -1,11 +1,62 @@
 use std::{io, path::Path};
 
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
+use serde::{Deserialize, Serialize};
 
 use crate::ad::properties::*;
 use crate::{ParametersAD, Residual};
 
-use super::{Dataset, DatasetAD, DatasetStorage};
+use super::{Dataset, DatasetAD, DatasetRecord, DatasetStorage};
+
+/// The pressure column doubles as the initial guess passed to the VLE solver.
+#[derive(Deserialize, Serialize)]
+pub struct BubblePointRecord {
+    pub temperature_k: f64,
+    pub liquid_molefrac_1: f64,
+    pub bubble_pressure_pa: f64,
+}
+
+impl DatasetRecord for BubblePointRecord {
+    const N_INPUTS: usize = 3;
+
+    fn input(&self, column: usize) -> f64 {
+        match column {
+            0 => self.temperature_k,
+            1 => self.liquid_molefrac_1,
+            2 => self.bubble_pressure_pa,
+            _ => unreachable!("invalid bubble point input column"),
+        }
+    }
+
+    fn target(&self) -> f64 {
+        self.bubble_pressure_pa
+    }
+}
+
+/// The pressure column doubles as the initial guess passed to the VLE solver.
+#[derive(Deserialize, Serialize)]
+pub struct DewPointRecord {
+    pub temperature_k: f64,
+    pub vapor_molefrac_1: f64,
+    pub dew_pressure_pa: f64,
+}
+
+impl DatasetRecord for DewPointRecord {
+    const N_INPUTS: usize = 3;
+
+    fn input(&self, column: usize) -> f64 {
+        match column {
+            0 => self.temperature_k,
+            1 => self.vapor_molefrac_1,
+            2 => self.dew_pressure_pa,
+            _ => unreachable!("invalid dew point input column"),
+        }
+    }
+
+    fn target(&self) -> f64 {
+        self.dew_pressure_pa
+    }
+}
 
 /// Expand a list of binary-mixture property entries into:
 /// - the [`BinaryProperty`] enum, metadata and dispatch methods,

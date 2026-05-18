@@ -1,36 +1,9 @@
 use crate::ad::Gradient;
-use crate::ad::dataset::DatasetRecord;
 use crate::ad::{ParametersAD, vectorize, vectorize_ad};
 use crate::{Composition, Contributions, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
 use nalgebra::{SVector, U2};
 use ndarray::{Array1, Array2, ArrayView2};
 use quantity::{KELVIN, PASCAL, Pressure, Temperature};
-use serde::{Deserialize, Serialize};
-
-/// The pressure column doubles as the initial guess passed to the VLE solver.
-#[derive(Deserialize, Serialize)]
-pub struct DewPointRecord {
-    pub temperature_k: f64,
-    pub vapor_molefrac_1: f64,
-    pub dew_pressure_pa: f64,
-}
-
-impl DatasetRecord for DewPointRecord {
-    const N_INPUTS: usize = 3;
-
-    fn input(&self, column: usize) -> f64 {
-        match column {
-            0 => self.temperature_k,
-            1 => self.vapor_molefrac_1,
-            2 => self.dew_pressure_pa,
-            _ => unreachable!("invalid dew point input column"),
-        }
-    }
-
-    fn target(&self) -> f64 {
-        self.dew_pressure_pa
-    }
-}
 
 pub fn dew_point_pressure_ad<
     E: Residual<U2, Gradient<P>>,

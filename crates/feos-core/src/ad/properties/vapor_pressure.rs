@@ -1,30 +1,9 @@
 use crate::ad::Gradient;
-use crate::ad::dataset::DatasetRecord;
 use crate::ad::{ParametersAD, vectorize, vectorize_ad};
 use crate::{FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
 use nalgebra::U1;
 use ndarray::{Array1, Array2, ArrayView2};
-use quantity::{KELVIN, PASCAL};
-use quantity::{Pressure, Temperature};
-use serde::{Deserialize, Serialize};
-
-#[derive(Deserialize, Serialize)]
-pub struct VaporPressureRecord {
-    pub temperature_k: f64,
-    pub vapor_pressure_pa: f64,
-}
-
-impl DatasetRecord for VaporPressureRecord {
-    const N_INPUTS: usize = 1;
-
-    fn input(&self, _column: usize) -> f64 {
-        self.temperature_k
-    }
-
-    fn target(&self) -> f64 {
-        self.vapor_pressure_pa
-    }
-}
+use quantity::{KELVIN, PASCAL, Pressure, Temperature};
 
 pub fn vapor_pressure_ad<E: Residual<U1, Gradient<P>>, const P: usize>(
     eos: &E,

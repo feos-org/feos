@@ -1,11 +1,112 @@
 use std::{io, path::Path};
 
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
+use serde::{Deserialize, Serialize};
 
 use crate::ad::properties::*;
 use crate::{ParametersAD, Residual};
 
-use super::{Dataset, DatasetAD, DatasetStorage};
+use super::{Dataset, DatasetAD, DatasetRecord, DatasetStorage};
+
+#[derive(Deserialize, Serialize)]
+pub struct VaporPressureRecord {
+    pub temperature_k: f64,
+    pub vapor_pressure_pa: f64,
+}
+
+impl DatasetRecord for VaporPressureRecord {
+    const N_INPUTS: usize = 1;
+
+    fn input(&self, _column: usize) -> f64 {
+        self.temperature_k
+    }
+
+    fn target(&self) -> f64 {
+        self.vapor_pressure_pa
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct LiquidDensityRecord {
+    pub temperature_k: f64,
+    pub pressure_pa: f64,
+    pub liquid_density_kmol_m3: f64,
+}
+
+impl DatasetRecord for LiquidDensityRecord {
+    const N_INPUTS: usize = 2;
+
+    fn input(&self, column: usize) -> f64 {
+        match column {
+            0 => self.temperature_k,
+            1 => self.pressure_pa,
+            _ => unreachable!("invalid liquid density input column"),
+        }
+    }
+
+    fn target(&self) -> f64 {
+        self.liquid_density_kmol_m3
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct EquilibriumLiquidDensityRecord {
+    pub temperature_k: f64,
+    pub liquid_density_kmol_m3: f64,
+}
+
+impl DatasetRecord for EquilibriumLiquidDensityRecord {
+    const N_INPUTS: usize = 1;
+
+    fn input(&self, _column: usize) -> f64 {
+        self.temperature_k
+    }
+
+    fn target(&self) -> f64 {
+        self.liquid_density_kmol_m3
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct EnthalpyOfVaporizationRecord {
+    pub temperature_k: f64,
+    pub dh_vap_j_mol: f64,
+}
+
+impl DatasetRecord for EnthalpyOfVaporizationRecord {
+    const N_INPUTS: usize = 1;
+
+    fn input(&self, _column: usize) -> f64 {
+        self.temperature_k
+    }
+
+    fn target(&self) -> f64 {
+        self.dh_vap_j_mol
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct ResidualIsobaricHeatCapacityRecord {
+    pub temperature_k: f64,
+    pub pressure_pa: f64,
+    pub cp_res_j_molk: f64,
+}
+
+impl DatasetRecord for ResidualIsobaricHeatCapacityRecord {
+    const N_INPUTS: usize = 2;
+
+    fn input(&self, column: usize) -> f64 {
+        match column {
+            0 => self.temperature_k,
+            1 => self.pressure_pa,
+            _ => unreachable!("invalid residual isobaric heat capacity input column"),
+        }
+    }
+
+    fn target(&self) -> f64 {
+        self.cp_res_j_molk
+    }
+}
 
 /// Expand a list of pure-component property entries into:
 /// - the [`PureProperty`] enum, metadata and dispatch methods,

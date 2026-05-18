@@ -1,30 +1,10 @@
 use crate::ad::Gradient;
-use crate::ad::dataset::DatasetRecord;
 use crate::ad::{ParametersAD, vectorize, vectorize_ad};
 use crate::{FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
 use nalgebra::U1;
 use ndarray::{Array1, Array2, ArrayView2};
 use num_dual::{DualNum, DualStruct, first_derivative, partial2};
 use quantity::{JOULE, KELVIN, MOL, MolarEnergy, Temperature};
-use serde::{Deserialize, Serialize};
-
-#[derive(Deserialize, Serialize)]
-pub struct EnthalpyOfVaporizationRecord {
-    pub temperature_k: f64,
-    pub dh_vap_j_mol: f64,
-}
-
-impl DatasetRecord for EnthalpyOfVaporizationRecord {
-    const N_INPUTS: usize = 1;
-
-    fn input(&self, _column: usize) -> f64 {
-        self.temperature_k
-    }
-
-    fn target(&self) -> f64 {
-        self.dh_vap_j_mol
-    }
-}
 
 pub fn enthalpy_of_vaporization_ad<E: Residual<U1, Gradient<P>>, const P: usize>(
     eos: &E,

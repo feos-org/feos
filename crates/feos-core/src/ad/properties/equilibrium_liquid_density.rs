@@ -1,30 +1,10 @@
 use crate::ad::Gradient;
-use crate::ad::dataset::DatasetRecord;
 use crate::ad::{ParametersAD, vectorize, vectorize_ad};
 use crate::{FeosResult, PhaseEquilibrium, Residual};
 use nalgebra::U1;
 use ndarray::{Array1, Array2, ArrayView2};
 use num_dual::DualStruct;
 use quantity::{Density, KELVIN, KILO, METER, MOL, Pressure, Temperature};
-use serde::{Deserialize, Serialize};
-
-#[derive(Deserialize, Serialize)]
-pub struct EquilibriumLiquidDensityRecord {
-    pub temperature_k: f64,
-    pub liquid_density_kmol_m3: f64,
-}
-
-impl DatasetRecord for EquilibriumLiquidDensityRecord {
-    const N_INPUTS: usize = 1;
-
-    fn input(&self, _column: usize) -> f64 {
-        self.temperature_k
-    }
-
-    fn target(&self) -> f64 {
-        self.liquid_density_kmol_m3
-    }
-}
 
 pub fn equilibrium_liquid_density_ad<E: Residual<U1, Gradient<P>>, const P: usize>(
     eos: &E,

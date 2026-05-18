@@ -1,8 +1,7 @@
-use feos_core::dataset::{BinaryDataset, BinaryProperty, Dataset, PureDataset, PureProperty};
-use feos_core::properties::{
-    BubblePointRecord, DewPointRecord, EnthalpyOfVaporizationRecord,
-    EquilibriumLiquidDensityRecord, LiquidDensityRecord, ResidualIsobaricHeatCapacityRecord,
-    VaporPressureRecord,
+use feos_core::dataset::{
+    BinaryDataset, BinaryProperty, BubblePointRecord, Dataset, DewPointRecord,
+    EnthalpyOfVaporizationRecord, EquilibriumLiquidDensityRecord, LiquidDensityRecord, PureDataset,
+    PureProperty, ResidualIsobaricHeatCapacityRecord, VaporPressureRecord,
 };
 use ndarray::{Array2, ArrayView1};
 use numpy::{PyArray1, PyArray2, PyReadonlyArray1, ToPyArray};
@@ -21,11 +20,13 @@ fn evaluate_eos<'py, D: Dataset>(
     dataset: &D,
     eos: &Bound<'py, PyAny>,
 ) -> PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)> {
+    // Evaluate a single EoS.
     if let Ok(e) = eos.extract::<PyRef<PyEquationOfState>>() {
-        let (pred, ok) = dataset.evaluate(&e.0);
+        let (pred, status) = dataset.evaluate(&e.0);
         return Ok((pred.to_pyarray(py).into_any(), ok.to_pyarray(py).into_any()));
     }
 
+    // Construct a references to multiple EoSs.
     let eos_refs: Vec<PyRef<PyEquationOfState>> = eos.extract().map_err(|_| {
         PyTypeError::new_err(
             "expected an EquationOfState or a sequence of EquationOfState instances",
@@ -35,13 +36,19 @@ fn evaluate_eos<'py, D: Dataset>(
     let n_points = dataset.target().len();
     let n_eos = eos_refs.len();
     let mut pred = Array2::<f64>::from_elem((n_points, n_eos), f64::NAN);
-    let mut ok = Array2::<bool>::from_elem((n_points, n_eos), false);
+    let mut status = Array2::<bool>::from_elem((n_points, n_eos), false);
+
+    // Iterate through models > evaluate dataset > collect results as columns.
+    // Column index is EoS-index.
     for (j, e) in eos_refs.iter().enumerate() {
         let (p, c) = dataset.evaluate(&e.0);
         pred.column_mut(j).assign(&p);
-        ok.column_mut(j).assign(&c);
+        status.column_mut(j).assign(&c);
     }
-    Ok((pred.to_pyarray(py).into_any(), ok.to_pyarray(py).into_any()))
+    Ok((
+        pred.to_pyarray(py).into_any(),
+        status.to_pyarray(py).into_any(),
+    ))
 }
 
 fn ensure_same_len(arrays: &[(&str, usize)]) -> PyResult<usize> {
@@ -84,6 +91,9 @@ fn collect_records_3<R>(
         .map(|((&a, &b), &c)| f(a, b, c))
         .collect())
 }
+
+// Parser methods: map from str to enum
+// Preferred here to declutter enums/structs exported in feos.
 
 fn parse_pure_property(property: &str) -> PyResult<PureProperty> {
     match property {
@@ -330,11 +340,11 @@ impl PyPureDataset {
         self.inner.inputs().to_owned().to_pyarray(py)
     }
 
-    /// Evaluate the dataset's property for one or more equations of state (no gradients).
+    /// Evaluate the dataset's property for one or more equations of state.
     ///
     /// Args:
-    ///     eos: A single ``EquationOfState`` or a list of them. Each
-    ///         must describe a single component (``components() == 1``).
+    ///     eos: A single ``EquationOfState`` or a list of them.
+    ///         Each must describe a single substance.
     ///
     /// Returns:
     ///     ``(predicted, converged)``. For a single EoS, both are 1D arrays
