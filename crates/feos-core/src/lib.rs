@@ -32,8 +32,7 @@ mod errors;
 pub mod parameter;
 mod phase_equilibria;
 mod state;
-pub use ad::parameter_optimization;
-pub use ad::{ParametersAD, properties};
+pub use ad::{ParametersAD, dataset, properties};
 pub use equation_of_state::{
     EntropyScaling, EquationOfState, IdealGas, IdealGasAD, Molarweight, NoResidual, Residual,
     ResidualDyn, Subset, Total,

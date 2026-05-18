@@ -1,6 +1,6 @@
 use crate::Contributions;
 use crate::ad::Gradient;
-use crate::ad::parameter_optimization::dataset::DatasetRecord;
+use crate::ad::dataset::DatasetRecord;
 use crate::ad::{ParametersAD, vectorize, vectorize_ad};
 use crate::{Composition, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
 use nalgebra::{SVector, U2};

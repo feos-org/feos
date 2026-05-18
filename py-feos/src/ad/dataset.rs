@@ -1,7 +1,8 @@
-use feos_core::parameter_optimization::{
-    BinaryDataset, BinaryProperty, BubblePointRecord, Dataset, DewPointRecord,
-    EnthalpyOfVaporizationRecord, EquilibriumLiquidDensityRecord, LiquidDensityRecord, PureDataset,
-    PureProperty, ResidualIsobaricHeatCapacityRecord, VaporPressureRecord,
+use feos_core::dataset::{BinaryDataset, BinaryProperty, Dataset, PureDataset, PureProperty};
+use feos_core::properties::{
+    BubblePointRecord, DewPointRecord, EnthalpyOfVaporizationRecord,
+    EquilibriumLiquidDensityRecord, LiquidDensityRecord, ResidualIsobaricHeatCapacityRecord,
+    VaporPressureRecord,
 };
 use ndarray::{Array2, ArrayView1};
 use numpy::{PyArray1, PyArray2, PyReadonlyArray1, ToPyArray};
@@ -10,33 +11,33 @@ use pyo3::prelude::*;
 
 use crate::eos::PyEquationOfState;
 
-/// Run a `Dataset::evaluate` against a single model or a list of models.
+/// Run a `Dataset::evaluate` against a single equation of state or a list of them.
 ///
-/// If `models` extracts as a single `PyEquationOfState`, returns the
-/// `(predicted, converged)` arrays as 1D. If it extracts as a sequence of
-/// models, returns them stacked as 2D arrays with shape `[n_points, n_models]`.
-fn evaluate_models<'py, D: Dataset>(
+/// If `eos` extracts as a single `PyEquationOfState`, returns the
+/// `(predicted, converged)` arrays as 1D. If it extracts as a sequence,
+/// returns them stacked as 2D arrays with shape `[n_points, n_eos]`.
+fn evaluate_eos<'py, D: Dataset>(
     py: Python<'py>,
     dataset: &D,
-    models: &Bound<'py, PyAny>,
+    eos: &Bound<'py, PyAny>,
 ) -> PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)> {
-    if let Ok(model) = models.extract::<PyRef<PyEquationOfState>>() {
-        let (pred, ok) = dataset.evaluate(&model.0);
+    if let Ok(e) = eos.extract::<PyRef<PyEquationOfState>>() {
+        let (pred, ok) = dataset.evaluate(&e.0);
         return Ok((pred.to_pyarray(py).into_any(), ok.to_pyarray(py).into_any()));
     }
 
-    let model_refs: Vec<PyRef<PyEquationOfState>> = models.extract().map_err(|_| {
+    let eos_refs: Vec<PyRef<PyEquationOfState>> = eos.extract().map_err(|_| {
         PyTypeError::new_err(
             "expected an EquationOfState or a sequence of EquationOfState instances",
         )
     })?;
 
     let n_points = dataset.target().len();
-    let n_models = model_refs.len();
-    let mut pred = Array2::<f64>::from_elem((n_points, n_models), f64::NAN);
-    let mut ok = Array2::<bool>::from_elem((n_points, n_models), false);
-    for (j, model) in model_refs.iter().enumerate() {
-        let (p, c) = dataset.evaluate(&model.0);
+    let n_eos = eos_refs.len();
+    let mut pred = Array2::<f64>::from_elem((n_points, n_eos), f64::NAN);
+    let mut ok = Array2::<bool>::from_elem((n_points, n_eos), false);
+    for (j, e) in eos_refs.iter().enumerate() {
+        let (p, c) = dataset.evaluate(&e.0);
         pred.column_mut(j).assign(&p);
         ok.column_mut(j).assign(&c);
     }
@@ -329,24 +330,24 @@ impl PyPureDataset {
         self.inner.inputs().to_owned().to_pyarray(py)
     }
 
-    /// Evaluate the dataset's property for one or more models (no gradients).
+    /// Evaluate the dataset's property for one or more equations of state (no gradients).
     ///
     /// Args:
-    ///     models: A single ``EquationOfState`` or a list of them. Each
-    ///         model must describe a single component (``components() == 1``).
+    ///     eos: A single ``EquationOfState`` or a list of them. Each
+    ///         must describe a single component (``components() == 1``).
     ///
     /// Returns:
-    ///     ``(predicted, converged)``. For a single model, both are 1D arrays
-    ///     of length ``n_points``. For a list of ``n_models`` models, both are
-    ///     2D arrays of shape ``[n_points, n_models]``; column ``k``
-    ///     corresponds to ``models[k]``. Non-converged points are reported as
+    ///     ``(predicted, converged)``. For a single EoS, both are 1D arrays
+    ///     of length ``n_points``. For a list of ``n_eos`` EoS, both are
+    ///     2D arrays of shape ``[n_points, n_eos]``; column ``k``
+    ///     corresponds to ``eos[k]``. Non-converged points are reported as
     ///     ``NaN`` in ``predicted`` and ``False`` in ``converged``.
     pub fn evaluate<'py>(
         &self,
         py: Python<'py>,
-        models: &Bound<'py, PyAny>,
+        eos: &Bound<'py, PyAny>,
     ) -> PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)> {
-        evaluate_models(py, &self.inner, models)
+        evaluate_eos(py, &self.inner, eos)
     }
 
     pub fn __repr__(&self) -> String {
@@ -488,24 +489,24 @@ impl PyBinaryDataset {
         self.inner.target().to_owned().to_pyarray(py)
     }
 
-    /// Evaluate the dataset's property for one or more models (no gradients).
+    /// Evaluate the dataset's property for one or more equations of state (no gradients).
     ///
     /// Args:
-    ///     models: A single ``EquationOfState`` or a list of them. Each
-    ///         model must describe a binary system (``components() == 2``).
+    ///     eos: A single ``EquationOfState`` or a list of them. Each
+    ///         must describe a binary system (``components() == 2``).
     ///
     /// Returns:
-    ///     ``(predicted, converged)``. For a single model, both are 1D arrays
-    ///     of length ``n_points``. For a list of ``n_models`` models, both are
-    ///     2D arrays of shape ``[n_points, n_models]``; column ``k``
-    ///     corresponds to ``models[k]``. Non-converged points are reported as
+    ///     ``(predicted, converged)``. For a single EoS, both are 1D arrays
+    ///     of length ``n_points``. For a list of ``n_eos`` EoS, both are
+    ///     2D arrays of shape ``[n_points, n_eos]``; column ``k``
+    ///     corresponds to ``eos[k]``. Non-converged points are reported as
     ///     ``NaN`` in ``predicted`` and ``False`` in ``converged``.
     pub fn evaluate<'py>(
         &self,
         py: Python<'py>,
-        models: &Bound<'py, PyAny>,
+        eos: &Bound<'py, PyAny>,
     ) -> PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)> {
-        evaluate_models(py, &self.inner, models)
+        evaluate_eos(py, &self.inner, eos)
     }
 
     pub fn __repr__(&self) -> String {

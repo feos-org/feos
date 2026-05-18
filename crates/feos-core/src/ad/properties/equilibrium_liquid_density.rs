@@ -1,5 +1,5 @@
 use crate::ad::Gradient;
-use crate::ad::parameter_optimization::dataset::DatasetRecord;
+use crate::ad::dataset::DatasetRecord;
 use crate::ad::{ParametersAD, vectorize, vectorize_ad};
 use crate::{FeosResult, PhaseEquilibrium, Residual};
 use nalgebra::U1;

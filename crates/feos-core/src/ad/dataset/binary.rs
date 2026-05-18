@@ -2,18 +2,15 @@ use std::{io, path::Path};
 
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 
-use crate::ad::properties::{
-    BubblePointRecord, DewPointRecord, bubble_point_pressure_parallel,
-    bubble_point_pressure_parallel_ad, dew_point_pressure_parallel, dew_point_pressure_parallel_ad,
-};
+use crate::ad::properties::*;
 use crate::{ParametersAD, Residual};
 
 use super::{Dataset, DatasetAD, DatasetStorage};
 
 /// Expand a list of binary-mixture property entries into:
-/// - the [`BinaryProperty`] enum and its metadata + dispatch methods,
-/// - typed constructors on [`BinaryDataset`] (one per `constructor:` ident),
-/// - the [`BinaryDataset::from_csv`] / [`BinaryDataset::from_reader`] match arms.
+/// - the [`BinaryProperty`] enum, metadata and dispatch methods,
+/// - constructors,
+/// - [`BinaryDataset::from_csv`] and [`BinaryDataset::from_reader`] match arms.
 macro_rules! binary_properties {
     ($(
         $variant:ident {
@@ -26,7 +23,7 @@ macro_rules! binary_properties {
             constructor:  $ctor:ident,
         }
     ),* $(,)?) => {
-        /// Binary-mixture properties supported by the regressor.
+        /// Binary-mixture properties.
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         pub enum BinaryProperty {
             $($variant,)*
@@ -176,11 +173,8 @@ impl Dataset for BinaryDataset {
         self.target_name()
     }
 
-    fn evaluate<E>(&self, model: &E) -> (Array1<f64>, Array1<bool>)
-    where
-        E: Residual + Sync,
-    {
-        self.property.evaluate(model, self.inputs())
+    fn evaluate<E: Residual + Sync>(&self, eos: &E) -> (Array1<f64>, Array1<bool>) {
+        self.property.evaluate(eos, self.inputs())
     }
 }
 

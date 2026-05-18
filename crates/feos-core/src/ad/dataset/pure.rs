@@ -2,25 +2,19 @@ use std::{io, path::Path};
 
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 
-use crate::ad::properties::{
-    EnthalpyOfVaporizationRecord, EquilibriumLiquidDensityRecord, LiquidDensityRecord,
-    ResidualIsobaricHeatCapacityRecord, VaporPressureRecord, enthalpy_of_vaporization_parallel,
-    enthalpy_of_vaporization_parallel_ad, equilibrium_liquid_density_parallel,
-    equilibrium_liquid_density_parallel_ad, liquid_density_parallel, liquid_density_parallel_ad,
-    residual_isobaric_heat_capacity_parallel, residual_isobaric_heat_capacity_parallel_ad,
-    vapor_pressure_parallel, vapor_pressure_parallel_ad,
-};
+use crate::ad::properties::*;
 use crate::{ParametersAD, Residual};
 
 use super::{Dataset, DatasetAD, DatasetStorage};
 
 /// Expand a list of pure-component property entries into:
-/// - the [`PureProperty`] enum and its metadata + dispatch methods,
-/// - typed constructors on [`PureDataset`] (one per `constructor:` ident),
-/// - the [`PureDataset::from_csv`] / [`PureDataset::from_reader`] match arms.
+/// - the [`PureProperty`] enum, metadata and dispatch methods,
+/// - constructors,
+/// - [`PureDataset::from_csv`] and [`PureDataset::from_reader`].
 ///
-/// Adding a new property means writing the property file (record, `*_ad`,
-/// `*_parallel`, `*_parallel_ad`) and adding one entry here.
+/// Adding a new property:
+/// - write the property file (record, `*_ad`, `*_parallel`, `*_parallel_ad`)
+/// - add entry here.
 macro_rules! pure_properties {
     ($(
         $variant:ident {
@@ -63,9 +57,7 @@ macro_rules! pure_properties {
                 }
             }
 
-            fn evaluate<E>(self, eos: &E, inputs: ArrayView2<f64>) -> (Array1<f64>, Array1<bool>)
-            where
-                E: Residual + Sync,
+            fn evaluate<E: Residual + Sync>(self, eos: &E, inputs: ArrayView2<f64>) -> (Array1<f64>, Array1<bool>)
             {
                 match self {
                     $(Self::$variant => $eval_fn(eos, inputs),)*
@@ -210,11 +202,8 @@ impl Dataset for PureDataset {
         self.target_name()
     }
 
-    fn evaluate<E>(&self, model: &E) -> (Array1<f64>, Array1<bool>)
-    where
-        E: Residual + Sync,
-    {
-        self.property.evaluate(model, self.inputs())
+    fn evaluate<E: Residual + Sync>(&self, eos: &E) -> (Array1<f64>, Array1<bool>) {
+        self.property.evaluate(eos, self.inputs())
     }
 }
 

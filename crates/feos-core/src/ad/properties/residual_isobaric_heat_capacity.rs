@@ -1,6 +1,6 @@
 use crate::DensityInitialization::Liquid;
 use crate::ad::Gradient;
-use crate::ad::parameter_optimization::dataset::DatasetRecord;
+use crate::ad::dataset::DatasetRecord;
 use crate::ad::{ParametersAD, vectorize, vectorize_ad};
 use crate::density_iteration::density_iteration;
 use crate::{FeosResult, ReferenceSystem, Residual, State};

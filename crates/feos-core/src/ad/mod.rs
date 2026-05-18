@@ -1,4 +1,4 @@
-pub mod parameter_optimization;
+pub mod dataset;
 pub mod properties;
 
 use crate::{FeosResult, Residual};
