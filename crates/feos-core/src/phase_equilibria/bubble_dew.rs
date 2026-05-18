@@ -7,7 +7,6 @@ use crate::state::{
 use crate::{Composition, ReferenceSystem, Residual, SolverOptions, State, Verbosity};
 use nalgebra::allocator::Allocator;
 use nalgebra::{DMatrix, DVector, DefaultAllocator, Dim, Dyn, OVector, U1};
-#[cfg(feature = "ndarray")]
 use ndarray::Array1;
 use num_dual::linalg::LU;
 use num_dual::{DualNum, DualStruct, Gradients};
@@ -40,7 +39,6 @@ pub trait TemperatureOrPressure<D: DualNum<f64> + Copy = f64>: Copy {
     where
         DefaultAllocator: Allocator<N>;
 
-    #[cfg(feature = "ndarray")]
     fn linspace(
         &self,
         start: Self::Other,
@@ -75,7 +73,6 @@ impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D> for Temperature<D> {
         state.pressure(Contributions::Total)
     }
 
-    #[cfg(feature = "ndarray")]
     fn linspace(
         &self,
         start: Pressure<D>,
@@ -120,7 +117,6 @@ impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D>
         state.temperature
     }
 
-    #[cfg(feature = "ndarray")]
     fn linspace(
         &self,
         start: Temperature<D>,

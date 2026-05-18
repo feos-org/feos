@@ -103,7 +103,8 @@ impl HelmholtzEnergyFunctionalDyn for PcSaftFunctional {
     fn contributions<'a>(&'a self) -> impl Iterator<Item = PcSaftFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(4);
 
-        let assoc = YuWuAssociationFunctional::new(&self.params, &self.parameters, self.association);
+        let assoc =
+            YuWuAssociationFunctional::new(&self.params, &self.parameters, self.association);
 
         if matches!(
             self.fmt_version,

@@ -35,6 +35,7 @@ feos-dft = { workspace = true, optional = true }
 approx = { workspace = true }
 quantity = { workspace = true, features = ["approx"] }
 criterion = { workspace = true }
+mimalloc = "0.1"
 
 [features]
 default = []
@@ -73,6 +74,11 @@ required-features = ["pcsaft"]
 
 [[bench]]
 name = "dual_numbers"
+harness = false
+required-features = ["pcsaft"]
+
+[[bench]]
+name = "dual_static_vs_dynamic"
 harness = false
 required-features = ["pcsaft"]
 

@@ -38,7 +38,10 @@ fn test_ph_flash() -> FeosResult<()> {
     println!("{h}\n{}", vle.molar_enthalpy());
     assert_relative_eq!(h, vle.molar_enthalpy(), max_relative = 1e-10);
 
-    let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
+    let mut flat_params: Vec<f64> = params[0].to_vec();
+    flat_params.extend_from_slice(&params[1]);
+    flat_params.push(kij);
+    let pcsaft_ad = PcSaftBinary::<f64, 8>::seed_derivatives(&flat_params, ["k_ij"]);
     let joback_ad = joback.each_ref().map(|j| j.lift());
     let eos_ad = EquationOfState::new(joback_ad, pcsaft_ad);
     let vle_ad = PhaseEquilibrium::ph_flash(
@@ -105,7 +108,10 @@ fn test_ps_flash() -> FeosResult<()> {
     println!("{s}\n{}", vle.molar_entropy());
     assert_relative_eq!(s, vle.molar_entropy(), max_relative = 1e-10);
 
-    let pcsaft_ad = pcsaft.named_derivatives(["k_ij"]);
+    let mut flat_params: Vec<f64> = params[0].to_vec();
+    flat_params.extend_from_slice(&params[1]);
+    flat_params.push(kij);
+    let pcsaft_ad = PcSaftBinary::<f64, 8>::seed_derivatives(&flat_params, ["k_ij"]);
     let joback_ad = joback.each_ref().map(|j| j.lift());
     let eos_ad = EquationOfState::new(joback_ad, pcsaft_ad);
     let vle_ad = PhaseEquilibrium::ps_flash(

@@ -32,13 +32,13 @@ mod errors;
 pub mod parameter;
 mod phase_equilibria;
 mod state;
-pub use ad::{ParametersAD, PropertiesAD};
+pub use ad::parameter_optimization;
+pub use ad::{ParametersAD, properties};
 pub use equation_of_state::{
     EntropyScaling, EquationOfState, IdealGas, IdealGasAD, Molarweight, NoResidual, Residual,
     ResidualDyn, Subset, Total,
 };
 pub use errors::{FeosError, FeosResult};
-#[cfg(feature = "ndarray")]
 pub use phase_equilibria::{PhaseDiagram, PhaseDiagramHetero};
 pub use phase_equilibria::{PhaseEquilibrium, TemperatureOrPressure};
 pub use state::{Composition, Contributions, DensityInitialization, State, StateHD, StateVec};
