@@ -173,8 +173,8 @@ Check out the [benches](https://github.com/feos-org/feos/tree/main/crates/feos/b
 ## Developers
 
 This software is currently maintained by members of the groups of
+- Prof. Philipp Rehner, [Molecular Engineering Thermodynamics (MET), ETH Zurich](https://met.ethz.ch/)
 - Prof. Joachim Gross, [Institute of Thermodynamics and Thermal Process Engineering (ITT), University of Stuttgart](https://www.itt.uni-stuttgart.de/)
-- Prof. André Bardow, [Energy and Process Systems Engineering (EPSE), ETH Zurich](https://epse.ethz.ch/)
 
 ## Contributing
 
