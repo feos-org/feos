@@ -23,7 +23,10 @@ fn evaluate_eos<'py, D: Dataset>(
     // Evaluate a single EoS.
     if let Ok(e) = eos.extract::<PyRef<PyEquationOfState>>() {
         let (pred, status) = dataset.evaluate(&e.0);
-        return Ok((pred.to_pyarray(py).into_any(), ok.to_pyarray(py).into_any()));
+        return Ok((
+            pred.to_pyarray(py).into_any(),
+            status.to_pyarray(py).into_any(),
+        ));
     }
 
     // Construct a references to multiple EoSs.
