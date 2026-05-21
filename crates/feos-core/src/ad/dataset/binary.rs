@@ -5,6 +5,7 @@ use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use serde::{Deserialize, Serialize};
 
 use crate::Residual;
+use crate::ad::Gradient;
 use crate::ad::properties::{BubblePointPressure, DewPointPressure, PropertyAD};
 
 use super::{Dataset, DatasetAD, DatasetRecord, DatasetStorage, ParametersAD};
@@ -96,11 +97,14 @@ macro_rules! binary_properties {
             fn evaluate_ad<T: ParametersAD<U2>, const P: usize>(
                 self,
                 names: [String; P],
-                parameters: ArrayView2<f64>,
+                parameters: &[f64],
                 inputs: ArrayView2<f64>,
-            ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
+            ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+            where
+                T::Lifted<Gradient<P>>: Sync,
+            {
                 match self {
-                    $(Self::$variant => <$prop>::evaluate_parallel_ad::<T, P>(names, parameters, inputs),)*
+                    $(Self::$variant => <$prop>::evaluate_parallel_derivatives::<T, P>(names, parameters, inputs),)*
                 }
             }
 
@@ -231,9 +235,12 @@ impl DatasetAD<2> for BinaryDataset {
     fn evaluate_ad_const<T: ParametersAD<U2>, const P: usize>(
         &self,
         names: [String; P],
-        parameters: ArrayView2<f64>,
+        parameters: &[f64],
         inputs: ArrayView2<f64>,
-    ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+    where
+        T::Lifted<Gradient<P>>: Sync,
+    {
         self.property.evaluate_ad::<T, P>(names, parameters, inputs)
     }
 }

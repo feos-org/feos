@@ -183,7 +183,7 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     #[cfg(feature = "ad")]
     {
         m.add_class::<ad::PyEquationOfStateAD>()?;
-        m.add_class::<ad::PyPropertiesAD>()?;
+        m.add_class::<ad::PyPropertyAD>()?;
 
         // Datasets
         m.add_class::<ad::PyPureDataset>()?;

@@ -8,6 +8,7 @@ use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use serde::de::DeserializeOwned;
 
 use crate::Residual;
+use crate::ad::Gradient;
 
 use super::ParametersAD;
 
@@ -124,9 +125,11 @@ macro_rules! define_dataset_ad {
             fn evaluate_ad_const<T: ParametersAD<Const<N>>, const P: usize>(
                 &self,
                 names: [String; P],
-                parameters: ArrayView2<f64>,
+                parameters: &[f64],
                 inputs: ArrayView2<f64>,
-            ) -> (Array1<f64>, Array2<f64>, Array1<bool>);
+            ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+            where
+                T::Lifted<Gradient<P>>: Sync;
 
             /// Evaluate the property and its parameter gradients at the given parameters.
             ///
@@ -137,11 +140,11 @@ macro_rules! define_dataset_ad {
             fn evaluate_ad<T: ParametersAD<Const<N>>>(
                 &self,
                 param_names: &[String],
-                params: &[f64],
-            ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
-                let n = self.inputs().nrows();
-                let parameters = Array2::from_shape_fn((n, params.len()), |(_, j)| params[j]);
-
+                parameters: &[f64],
+            ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+            where
+                $(T::Lifted<Gradient<$p>>: Sync,)*
+            {
                 fn to_const<const P: usize>(names: &[String]) -> [String; P] {
                     names.to_vec().try_into().expect("parameter count mismatch")
                 }
@@ -150,7 +153,7 @@ macro_rules! define_dataset_ad {
                     $(
                         $p => self.evaluate_ad_const::<T, $p>(
                             to_const(param_names),
-                            parameters.view(),
+                            parameters,
                             self.inputs().view(),
                         ),
                     )+

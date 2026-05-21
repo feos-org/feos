@@ -6,7 +6,7 @@ use feos_core::ad::{
     ResidualIsobaricHeatCapacity, VaporPressure,
 };
 use nalgebra::{U1, U2};
-use numpy::{PyArray1, PyArray2, PyReadonlyArray2, ToPyArray};
+use numpy::{PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2, ToPyArray};
 use paste::paste;
 use pyo3::prelude::*;
 
@@ -42,11 +42,11 @@ type GradResult<'py> = (
     Bound<'py, PyArray1<bool>>,
 );
 
-#[pyclass(name = "Properties")]
-pub struct PyPropertiesAD;
+#[pyclass(name = "Property")]
+pub struct PyPropertyAD;
 
 #[pymethods]
-impl PyPropertiesAD {
+impl PyPropertyAD {
     /// Calculate vapor pressures in parallel.
     ///
     /// Parameters
@@ -89,7 +89,7 @@ impl PyPropertiesAD {
     pub fn vapor_pressure_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
-        parameters: PyReadonlyArray2<f64>,
+        parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _vapor_pressure_derivatives(model, parameter_names, parameters, input)
@@ -137,7 +137,7 @@ impl PyPropertiesAD {
     pub fn boiling_temperature_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
-        parameters: PyReadonlyArray2<f64>,
+        parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _boiling_temperature_derivatives(model, parameter_names, parameters, input)
@@ -185,7 +185,7 @@ impl PyPropertiesAD {
     pub fn liquid_density_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
-        parameters: PyReadonlyArray2<f64>,
+        parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _liquid_density_derivatives(model, parameter_names, parameters, input)
@@ -233,7 +233,7 @@ impl PyPropertiesAD {
     pub fn equilibrium_liquid_density_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
-        parameters: PyReadonlyArray2<f64>,
+        parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _equilibrium_liquid_density_derivatives(model, parameter_names, parameters, input)
@@ -283,7 +283,7 @@ impl PyPropertiesAD {
     pub fn enthalpy_of_vaporization_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
-        parameters: PyReadonlyArray2<f64>,
+        parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _enthalpy_of_vaporization_derivatives(model, parameter_names, parameters, input)
@@ -334,7 +334,7 @@ impl PyPropertiesAD {
     pub fn residual_isobaric_heat_capacity_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
-        parameters: PyReadonlyArray2<f64>,
+        parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _residual_isobaric_heat_capacity_derivatives(model, parameter_names, parameters, input)
@@ -384,7 +384,7 @@ impl PyPropertiesAD {
     pub fn bubble_point_pressure_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
-        parameters: PyReadonlyArray2<f64>,
+        parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _bubble_point_pressure_derivatives(model, parameter_names, parameters, input)
@@ -434,7 +434,7 @@ impl PyPropertiesAD {
     pub fn dew_point_pressure_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
-        parameters: PyReadonlyArray2<f64>,
+        parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _dew_point_pressure_derivatives(model, parameter_names, parameters, input)
@@ -448,7 +448,7 @@ macro_rules! expand_models {
         fn [<_ $prop _derivatives>]<'py>(
             model: PyEquationOfStateAD,
             parameter_names: &Bound<'py, PyAny>,
-            parameters: PyReadonlyArray2<f64>,
+            parameters: &Bound<'py, PyAny>,
             input: PyReadonlyArray2<f64>,
         ) -> GradResult<'py> {
             match <$enum>::from(model) {
@@ -472,7 +472,7 @@ macro_rules! impl_evaluate_gradients {
         expand_models!($enum, $prop, $($model: $type),*);
         fn $prop<'py, R: ParametersAD<$n>>(
             parameter_names: &Bound<'py, PyAny>,
-            parameters: PyReadonlyArray2<f64>,
+            parameters: &Bound<'py, PyAny>,
             input: PyReadonlyArray2<f64>,
         ) -> (
             Bound<'py, PyArray1<f64>>,
@@ -480,13 +480,27 @@ macro_rules! impl_evaluate_gradients {
             Bound<'py, PyArray1<bool>>,
         ) {
             let (value, grad, status) =
-            $(
-            if let Ok(p) = parameter_names.extract::<[String; $p]>() {
-                <$prop_type>::evaluate_parallel_ad::<R, $p>(p, parameters.as_array(), input.as_array())
-            } else)* if let Ok(p) = parameter_names.extract::<[String; $max]>() {
-                <$prop_type>::evaluate_parallel_ad::<R, $max>(p, parameters.as_array(), input.as_array())
+            if let Ok(pars) = parameters.extract::<PyReadonlyArray1<f64>>() {
+                let pars = pars.as_slice().expect("Parameter array is not contiguous!");
+                $(
+                if let Ok(p) = parameter_names.extract::<[String; $p]>() {
+                    <$prop_type>::evaluate_parallel_derivatives::<R, $p>(p, pars, input.as_array())
+                } else)* if let Ok(p) = parameter_names.extract::<[String; $max]>() {
+                    <$prop_type>::evaluate_parallel_derivatives::<R, $max>(p, pars, input.as_array())
+                } else {
+                    panic!("Gradients can only be evaluated for up to {} parameters!", $max)
+                }
+            } else if let Ok(pars) = parameters.extract::<PyReadonlyArray2<f64>>() {
+                $(
+                if let Ok(p) = parameter_names.extract::<[String; $p]>() {
+                    <$prop_type>::evaluate_parallel_derivatives_params::<R, $p>(p, pars.as_array(), input.as_array())
+                } else)* if let Ok(p) = parameter_names.extract::<[String; $max]>() {
+                    <$prop_type>::evaluate_parallel_derivatives_params::<R, $max>(p, pars.as_array(), input.as_array())
+                } else {
+                    panic!("Gradients can only be evaluated for up to {} parameters!", $max)
+                }
             } else {
-                panic!("Gradients can only be evaluated for up to {} parameters!", $max)
+                panic!("Argument `parameters` needs to be a 1D or 2D array!")
             };
             (
                 value.to_pyarray(parameter_names.py()),

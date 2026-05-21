@@ -89,7 +89,56 @@ where
     ///
     /// Return the property values, the gradients, and the success of the calculations.  
     #[cfg(feature = "ndarray")]
-    fn evaluate_parallel_ad<E: super::ParametersAD<N>, const P: usize>(
+    fn evaluate_parallel_derivatives<E: super::ParametersAD<N>, const P: usize>(
+        parameter_names: [String; P],
+        parameters: &[f64],
+        input: ArrayView2<f64>,
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+    where
+        E::Lifted<Gradient<P>>: Sync,
+    {
+        let parameter_names = parameter_names.each_ref().map(|s| s as &str);
+        let eos = E::seed_derivatives(parameters, parameter_names);
+
+        #[cfg(feature = "rayon")]
+        let value_dual = ndarray::Zip::from(input.rows()).par_map_collect(|inp| {
+            let inp = inp.as_slice().expect("Input array is not contiguous!");
+            Self::from(inp)
+                .evaluate_gradient(&eos)
+                .map(|d| d.convert_into(Self::REFERENCE))
+        });
+
+        #[cfg(not(feature = "rayon"))]
+        let value_dual = ndarray::Zip::from(input.rows()).map_collect(|inp| {
+            let inp = inp.as_slice().expect("Input array is not contiguous!");
+            Self::from(inp)
+                .evaluate_gradient(&eos)
+                .map(|d| d.convert_into(Self::REFERENCE))
+        });
+
+        let n = input.nrows();
+        let status = value_dual.iter().map(|p| p.is_ok()).collect();
+        let mut value = Array1::from_elem(n, f64::NAN);
+        let mut grad = Array2::zeros([n, P]);
+        for (i, result) in value_dual.into_iter().enumerate() {
+            if let Ok(p_dual) = result {
+                value[i] = p_dual.re;
+                let eps = p_dual
+                    .eps
+                    .unwrap_generic(nalgebra::Const::<P>, nalgebra::U1);
+                for (g, &e) in grad.row_mut(i).iter_mut().zip(eps.data.0[0].iter()) {
+                    *g = e;
+                }
+            }
+        }
+        (value, grad, status)
+    }
+
+    /// Evaluate the property and its gradients for all inputs and parameters in parallel.
+    ///
+    /// Return the property values, the gradients, and the success of the calculations.  
+    #[cfg(feature = "ndarray")]
+    fn evaluate_parallel_derivatives_params<E: super::ParametersAD<N>, const P: usize>(
         parameter_names: [String; P],
         parameters: ArrayView2<f64>,
         input: ArrayView2<f64>,
