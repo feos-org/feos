@@ -6,6 +6,7 @@ use feos_core::ad::{
     ResidualIsobaricHeatCapacity, VaporPressure,
 };
 use nalgebra::{U1, U2};
+use num_dual::DualSVec;
 use numpy::{PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2, ToPyArray};
 use paste::paste;
 use pyo3::prelude::*;
@@ -478,7 +479,11 @@ macro_rules! impl_evaluate_gradients {
             Bound<'py, PyArray1<f64>>,
             Bound<'py, PyArray2<f64>>,
             Bound<'py, PyArray1<bool>>,
-        ) {
+        )
+        where
+            $(R::Lifted<DualSVec<f64, f64, $p>>: Sync,)*
+            R::Lifted<DualSVec<f64, f64, $max>>: Sync
+        {
             let (value, grad, status) =
             if let Ok(pars) = parameters.extract::<PyReadonlyArray1<f64>>() {
                 let pars = pars.as_slice().expect("Parameter array is not contiguous!");
