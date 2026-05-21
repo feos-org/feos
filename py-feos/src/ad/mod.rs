@@ -1,3 +1,4 @@
+use crate::eos::PyEquationOfState;
 use feos::pcsaft::{PcSaftBinary, PcSaftPure};
 use feos_core::ad::{
     BoilingTemperature, BubblePointPressure, DewPointPressure, EnthalpyOfVaporization,
@@ -33,17 +34,41 @@ impl From<PyEquationOfStateAD> for BinaryModels {
     }
 }
 
+type EvalResult<'py> = (Bound<'py, PyArray1<f64>>, Bound<'py, PyArray1<bool>>);
+
 type GradResult<'py> = (
     Bound<'py, PyArray1<f64>>,
     Bound<'py, PyArray2<f64>>,
     Bound<'py, PyArray1<bool>>,
 );
 
-#[pyclass(name = "PropertiesAD")]
+#[pyclass(name = "Properties")]
 pub struct PyPropertiesAD;
 
 #[pymethods]
 impl PyPropertiesAD {
+    /// Calculate vapor pressures in parallel.
+    ///
+    /// Parameters
+    /// ----------
+    /// eos: EquationOfState
+    ///     The equation of state to use.
+    /// input: np.ndarray[float]
+    ///     The temperature (in K) for every data point.
+    ///
+    /// Returns
+    /// -------
+    /// (np.ndarray[float], np.ndarray[bool]): The vapor pressures (in Pa), and convergence status.
+    #[staticmethod]
+    pub fn vapor_pressure<'py>(
+        py: Python<'py>,
+        eos: &PyEquationOfState,
+        input: PyReadonlyArray2<f64>,
+    ) -> EvalResult<'py> {
+        let (value, status) = VaporPressure::evaluate_parallel(&eos.0, input.as_array());
+        (value.to_pyarray(py), status.to_pyarray(py))
+    }
+
     /// Calculate vapor pressures and derivatives w.r.t. model parameters.
     ///
     /// Parameters
@@ -61,13 +86,35 @@ impl PyPropertiesAD {
     /// -------
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]): The vapor pressures (in Pa), gradients, and convergence status.
     #[staticmethod]
-    pub fn vapor_pressure<'py>(
+    pub fn vapor_pressure_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
         parameters: PyReadonlyArray2<f64>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _vapor_pressure_derivatives(model, parameter_names, parameters, input)
+    }
+
+    /// Calculate boiling temperatures in parallel.
+    ///
+    /// Parameters
+    /// ----------
+    /// eos: EquationOfState
+    ///     The equation of state to use.
+    /// input: np.ndarray[float]
+    ///     The pressure (in Pa) for every data point.
+    ///
+    /// Returns
+    /// -------
+    /// (np.ndarray[float], np.ndarray[bool]): The boiling temperature (in K), and convergence status.
+    #[staticmethod]
+    pub fn boiling_temperature<'py>(
+        py: Python<'py>,
+        eos: &PyEquationOfState,
+        input: PyReadonlyArray2<f64>,
+    ) -> EvalResult<'py> {
+        let (value, status) = BoilingTemperature::evaluate_parallel(&eos.0, input.as_array());
+        (value.to_pyarray(py), status.to_pyarray(py))
     }
 
     /// Calculate boiling temperatures and derivatives w.r.t. model parameters.
@@ -87,13 +134,35 @@ impl PyPropertiesAD {
     /// -------
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]): The boiling temperature (in K), gradients, and convergence status.
     #[staticmethod]
-    pub fn boiling_temperature<'py>(
+    pub fn boiling_temperature_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
         parameters: PyReadonlyArray2<f64>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _boiling_temperature_derivatives(model, parameter_names, parameters, input)
+    }
+
+    /// Calculate liquid densities in parallel.
+    ///
+    /// Parameters
+    /// ----------
+    /// eos: EquationOfState
+    ///     The equation of state to use.
+    /// input: np.ndarray[float]
+    ///     The temperature (in K) and pressure (in Pa) for every data point.
+    ///
+    /// Returns
+    /// -------
+    /// (np.ndarray[float], np.ndarray[bool]): The liquid densities (in kmol/m³), and convergence status.
+    #[staticmethod]
+    pub fn liquid_density<'py>(
+        py: Python<'py>,
+        eos: &PyEquationOfState,
+        input: PyReadonlyArray2<f64>,
+    ) -> EvalResult<'py> {
+        let (value, status) = LiquidDensity::evaluate_parallel(&eos.0, input.as_array());
+        (value.to_pyarray(py), status.to_pyarray(py))
     }
 
     /// Calculate liquid densities and derivatives w.r.t. model parameters.
@@ -113,13 +182,35 @@ impl PyPropertiesAD {
     /// -------
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]): The liquid densities (in kmol/m³), gradients, and convergence status.
     #[staticmethod]
-    pub fn liquid_density<'py>(
+    pub fn liquid_density_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
         parameters: PyReadonlyArray2<f64>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _liquid_density_derivatives(model, parameter_names, parameters, input)
+    }
+
+    /// Calculate liquid densities at saturation in parallel.
+    ///
+    /// Parameters
+    /// ----------
+    /// eos: EquationOfState
+    ///     The equation of state to use.
+    /// input: np.ndarray[float]
+    ///     The temperature (in K) for every data point.
+    ///
+    /// Returns
+    /// -------
+    /// (np.ndarray[float], np.ndarray[bool]): The liquid densities (in kmol/m³), and convergence status.
+    #[staticmethod]
+    pub fn equilibrium_liquid_density<'py>(
+        py: Python<'py>,
+        eos: &PyEquationOfState,
+        input: PyReadonlyArray2<f64>,
+    ) -> EvalResult<'py> {
+        let (value, status) = EquilibriumLiquidDensity::evaluate_parallel(&eos.0, input.as_array());
+        (value.to_pyarray(py), status.to_pyarray(py))
     }
 
     /// Calculate liquid densities at saturation and derivatives w.r.t. model parameters.
@@ -139,13 +230,36 @@ impl PyPropertiesAD {
     /// -------
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]): The liquid densities (in kmol/m³), gradients, and convergence status.
     #[staticmethod]
-    pub fn equilibrium_liquid_density<'py>(
+    pub fn equilibrium_liquid_density_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
         parameters: PyReadonlyArray2<f64>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _equilibrium_liquid_density_derivatives(model, parameter_names, parameters, input)
+    }
+
+    /// Calculate enthalpy of vaporization in parallel.
+    ///
+    /// Parameters
+    /// ----------
+    /// eos: EquationOfState
+    ///     The equation of state to use.
+    /// input: np.ndarray[float]
+    ///     The temperature (in K) for every data point.
+    ///
+    /// Returns
+    /// -------
+    /// (np.ndarray[float], np.ndarray[bool]):
+    ///     The enthalpies of vaporization (in J/mol), and convergence status.
+    #[staticmethod]
+    pub fn enthalpy_of_vaporization<'py>(
+        py: Python<'py>,
+        eos: &PyEquationOfState,
+        input: PyReadonlyArray2<f64>,
+    ) -> EvalResult<'py> {
+        let (value, status) = EnthalpyOfVaporization::evaluate_parallel(&eos.0, input.as_array());
+        (value.to_pyarray(py), status.to_pyarray(py))
     }
 
     /// Calculate enthalpy of vaporization and derivatives w.r.t. model parameters.
@@ -166,13 +280,37 @@ impl PyPropertiesAD {
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]):
     ///     The enthalpies of vaporization (in J/mol), gradients, and convergence status.
     #[staticmethod]
-    pub fn enthalpy_of_vaporization<'py>(
+    pub fn enthalpy_of_vaporization_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
         parameters: PyReadonlyArray2<f64>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _enthalpy_of_vaporization_derivatives(model, parameter_names, parameters, input)
+    }
+
+    /// Calculate residual isobaric molar heat capacities (liquid phase) in parallel.
+    ///
+    /// Parameters
+    /// ----------
+    /// eos: EquationOfState
+    ///     The equation of state to use.
+    /// input: np.ndarray[float]
+    ///     The temperature (in K) and pressure (in Pa) for every data point.
+    ///
+    /// Returns
+    /// -------
+    /// (np.ndarray[float], np.ndarray[bool]):
+    ///     The residual isobaric heat capacities (in J/(mol·K)), and convergence status.
+    #[staticmethod]
+    pub fn residual_isobaric_heat_capacity<'py>(
+        py: Python<'py>,
+        eos: &PyEquationOfState,
+        input: PyReadonlyArray2<f64>,
+    ) -> EvalResult<'py> {
+        let (value, status) =
+            ResidualIsobaricHeatCapacity::evaluate_parallel(&eos.0, input.as_array());
+        (value.to_pyarray(py), status.to_pyarray(py))
     }
 
     /// Calculate residual isobaric molar heat capacities (liquid phase) and derivatives w.r.t. model parameters.
@@ -193,13 +331,36 @@ impl PyPropertiesAD {
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]):
     ///     The residual isobaric heat capacities (in J/(mol·K)), gradients, and convergence status.
     #[staticmethod]
-    pub fn residual_isobaric_heat_capacity<'py>(
+    pub fn residual_isobaric_heat_capacity_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
         parameters: PyReadonlyArray2<f64>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _residual_isobaric_heat_capacity_derivatives(model, parameter_names, parameters, input)
+    }
+
+    /// Calculate bubble point pressures of binary mixtures in parallel.
+    ///
+    /// Parameters
+    /// ----------
+    /// eos: EquationOfState
+    ///     The equation of state to use.
+    /// input: np.ndarray[float]
+    ///     The temperature (in K), composition of the first component, and an initial guess for the
+    ///     pressure (in Pa) for every data point.
+    ///
+    /// Returns
+    /// -------
+    /// (np.ndarray[float], np.ndarray[bool]): The bubble point pressures (in Pa), and convergence status.
+    #[staticmethod]
+    pub fn bubble_point_pressure<'py>(
+        py: Python<'py>,
+        eos: &PyEquationOfState,
+        input: PyReadonlyArray2<f64>,
+    ) -> EvalResult<'py> {
+        let (value, status) = BubblePointPressure::evaluate_parallel(&eos.0, input.as_array());
+        (value.to_pyarray(py), status.to_pyarray(py))
     }
 
     /// Calculate bubble point pressures of binary mixtures and derivatives w.r.t. model parameters.
@@ -220,13 +381,36 @@ impl PyPropertiesAD {
     /// -------
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]): The bubble point pressures (in Pa), gradients, and convergence status.
     #[staticmethod]
-    pub fn bubble_point_pressure<'py>(
+    pub fn bubble_point_pressure_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
         parameters: PyReadonlyArray2<f64>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
         _bubble_point_pressure_derivatives(model, parameter_names, parameters, input)
+    }
+
+    /// Calculate dew point pressures of binary mixtures in parallel.
+    ///
+    /// Parameters
+    /// ----------
+    /// eos: EquationOfState
+    ///     The equation of state to use.
+    /// input: np.ndarray[float]
+    ///     The temperature (in K), composition of the first component, and an initial guess for the
+    ///     pressure (in Pa) for every data point.
+    ///
+    /// Returns
+    /// -------
+    /// (np.ndarray[float], np.ndarray[bool]): The dew point pressures (in Pa), and convergence status.
+    #[staticmethod]
+    pub fn dew_point_pressure<'py>(
+        py: Python<'py>,
+        eos: &PyEquationOfState,
+        input: PyReadonlyArray2<f64>,
+    ) -> EvalResult<'py> {
+        let (value, status) = DewPointPressure::evaluate_parallel(&eos.0, input.as_array());
+        (value.to_pyarray(py), status.to_pyarray(py))
     }
 
     /// Calculate dew point pressures of binary mixtures and derivatives w.r.t. model parameters.
@@ -247,7 +431,7 @@ impl PyPropertiesAD {
     /// -------
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]): The dew point pressures (in Pa), gradients, and convergence status.
     #[staticmethod]
-    pub fn dew_point_pressure<'py>(
+    pub fn dew_point_pressure_derivatives<'py>(
         model: PyEquationOfStateAD,
         parameter_names: &Bound<'py, PyAny>,
         parameters: PyReadonlyArray2<f64>,
@@ -313,7 +497,6 @@ macro_rules! impl_evaluate_gradients {
     };
 }
 
-// [vapor_pressure: feos_core::ad::VaporPressure, boiling_temperature: feos_core::ad::BoilingTemperature, liquid_density, equilibrium_liquid_density, enthalpy_of_vaporization, residual_isobaric_heat_capacity],
 impl_evaluate_gradients!(
     pure,
     [vapor_pressure: VaporPressure, boiling_temperature: BoilingTemperature, liquid_density: LiquidDensity, equilibrium_liquid_density: EquilibriumLiquidDensity, enthalpy_of_vaporization: EnthalpyOfVaporization, residual_isobaric_heat_capacity: ResidualIsobaricHeatCapacity],
