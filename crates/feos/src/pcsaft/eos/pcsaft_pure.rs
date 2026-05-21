@@ -183,15 +183,6 @@ impl<D: DualNum<f64> + Copy> Residual<U1, D> for PcSaftPure<D, 4> {
     }
 }
 
-impl<D: DualNum<f64> + Copy, const N: usize> From<&[f64]> for PcSaftPure<D, N> {
-    fn from(parameters: &[f64]) -> Self {
-        let Ok(parameters): Result<[f64; N], _> = parameters.try_into() else {
-            panic!("This version of PC-SAFT requires exactly {N} parameters!")
-        };
-        Self(parameters.map(D::from))
-    }
-}
-
 impl ParametersAD<U1> for PcSaftPure<f64, 4> {
     fn build<D: DualNum<f64, Inner = f64> + Copy>(
         mut f: impl FnMut(&'static str, bool) -> D,

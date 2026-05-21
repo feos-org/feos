@@ -19,24 +19,6 @@ impl<D, const N: usize> PcSaftBinary<D, N> {
     }
 }
 
-impl<D: DualNum<f64> + Copy, const N: usize> From<&[f64]> for PcSaftBinary<D, N> {
-    fn from(parameters: &[f64]) -> Self {
-        if parameters.len() != 2 * N + 1 {
-            panic!(
-                "This version of PC-SAFT requires exactly {} parameters!",
-                2 * N + 1
-            )
-        }
-        let (Ok(p1), Ok(p2)): (Result<[f64; N], _>, Result<[f64; N], _>) =
-            (parameters[..N].try_into(), parameters[N..2 * N].try_into())
-        else {
-            unreachable!()
-        };
-        let kij = D::from(parameters[2 * N]);
-        Self::new([p1.map(D::from), p2.map(D::from)], kij)
-    }
-}
-
 impl ParametersAD<U2> for PcSaftBinary<f64, 4> {
     fn build<D: DualNum<f64, Inner = f64> + Copy>(
         mut f: impl FnMut(&'static str, bool) -> D,
