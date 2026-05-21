@@ -5,7 +5,7 @@ use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use serde::{Deserialize, Serialize};
 
 use crate::Residual;
-use crate::ad::properties::{BubblePointPressure, DewPointPressure, Property};
+use crate::ad::properties::{BubblePointPressure, DewPointPressure, PropertyAD};
 
 use super::{Dataset, DatasetAD, DatasetRecord, DatasetStorage, ParametersAD};
 

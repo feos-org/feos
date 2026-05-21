@@ -600,7 +600,7 @@ mod tests_parameter_fit {
     use feos_core::DensityInitialization::Liquid;
     use feos_core::ad::{
         BoilingTemperature, BubblePointPressure, DewPointPressure, EquilibriumLiquidDensity,
-        LiquidDensity, Property, VaporPressure,
+        LiquidDensity, PropertyAD, VaporPressure,
     };
     use feos_core::{Contributions, ReferenceSystem, SolverOptions};
     use feos_core::{FeosResult, PhaseEquilibrium, State, ad::ParametersAD};

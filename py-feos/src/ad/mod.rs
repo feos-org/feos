@@ -1,8 +1,8 @@
 use feos::pcsaft::{PcSaftBinary, PcSaftPure};
 use feos_core::ad::{
     BoilingTemperature, BubblePointPressure, DewPointPressure, EnthalpyOfVaporization,
-    EquilibriumLiquidDensity, LiquidDensity, ParametersAD, Property, ResidualIsobaricHeatCapacity,
-    VaporPressure,
+    EquilibriumLiquidDensity, LiquidDensity, ParametersAD, PropertyAD,
+    ResidualIsobaricHeatCapacity, VaporPressure,
 };
 use nalgebra::{U1, U2};
 use numpy::{PyArray1, PyArray2, PyReadonlyArray2, ToPyArray};
