@@ -35,7 +35,7 @@ feos-dft = { workspace = true, optional = true }
 approx = { workspace = true }
 quantity = { workspace = true, features = ["approx"] }
 criterion = { workspace = true }
-mimalloc = "0.1"
+mimalloc = { workspace = true }
 
 [features]
 default = []

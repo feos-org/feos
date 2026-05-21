@@ -43,6 +43,7 @@ approx = "0.5"
 criterion = "0.8"
 paste = "1.0"
 csv = "1.0"
+mimalloc = "0.1"
 
 feos-core = { version = "0.9", path = "crates/feos-core" }
 feos-dft = { version = "0.9", path = "crates/feos-dft" }
