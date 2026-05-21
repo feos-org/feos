@@ -1,4 +1,4 @@
-use super::Property;
+use super::PropertyAD;
 use crate::{FeosResult, PhaseEquilibrium, Residual};
 use nalgebra::allocator::Allocator;
 use nalgebra::{DefaultAllocator, U1};
@@ -14,7 +14,7 @@ impl<'a> From<&'a [f64]> for EnthalpyOfVaporization {
     }
 }
 
-impl<N: Gradients> Property<N> for EnthalpyOfVaporization
+impl<N: Gradients> PropertyAD<N> for EnthalpyOfVaporization
 where
     DefaultAllocator: Allocator<N> + Allocator<U1, N> + Allocator<N, N>,
 {

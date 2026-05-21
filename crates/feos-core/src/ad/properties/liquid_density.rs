@@ -1,4 +1,4 @@
-use super::Property;
+use super::PropertyAD;
 use crate::DensityInitialization::Liquid;
 use crate::density_iteration::density_iteration;
 use crate::{FeosResult, Residual};
@@ -16,7 +16,7 @@ impl<'a> From<&'a [f64]> for LiquidDensity {
     }
 }
 
-impl<N: Dim> Property<N> for LiquidDensity
+impl<N: Dim> PropertyAD<N> for LiquidDensity
 where
     DefaultAllocator: Allocator<N>,
 {

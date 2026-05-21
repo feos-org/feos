@@ -26,7 +26,7 @@ pub use vapor_pressure::VaporPressure;
 
 /// Properties that can be rapidly evaluated in parallel together with
 /// their gradients with respect to model parameters
-pub trait Property<N: Dim>: for<'a> From<&'a [f64]>
+pub trait PropertyAD<N: Dim>: for<'a> From<&'a [f64]>
 where
     DefaultAllocator: Allocator<N>,
 {

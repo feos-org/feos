@@ -1,4 +1,4 @@
-use super::Property;
+use super::PropertyAD;
 use crate::ad::Gradient;
 use crate::{FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
 use nalgebra::allocator::Allocator;
@@ -15,7 +15,7 @@ impl<'a> From<&'a [f64]> for VaporPressure {
     }
 }
 
-impl<N: Gradients> Property<N> for VaporPressure
+impl<N: Gradients> PropertyAD<N> for VaporPressure
 where
     DefaultAllocator: Allocator<N> + Allocator<U1, N> + Allocator<N, N>,
 {

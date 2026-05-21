@@ -1,4 +1,4 @@
-use super::Property;
+use super::PropertyAD;
 use crate::ad::Gradient;
 use crate::{Composition, Contributions, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
 use nalgebra::allocator::Allocator;
@@ -19,7 +19,7 @@ impl<'a> From<&'a [f64]> for DewPointPressure {
     }
 }
 
-impl<N: Gradients> Property<N> for DewPointPressure
+impl<N: Gradients> PropertyAD<N> for DewPointPressure
 where
     DefaultAllocator: Allocator<N> + Allocator<U1, N> + Allocator<N, N>,
     f64: Composition<f64, N>,

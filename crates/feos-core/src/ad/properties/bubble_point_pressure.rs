@@ -1,4 +1,4 @@
-use super::Property;
+use super::PropertyAD;
 use crate::Contributions;
 use crate::ad::Gradient;
 use crate::{Composition, FeosResult, PhaseEquilibrium, ReferenceSystem, Residual};
@@ -20,7 +20,7 @@ impl<'a> From<&'a [f64]> for BubblePointPressure {
     }
 }
 
-impl<N: Gradients> Property<N> for BubblePointPressure
+impl<N: Gradients> PropertyAD<N> for BubblePointPressure
 where
     DefaultAllocator: Allocator<N> + Allocator<U1, N> + Allocator<N, N>,
     f64: Composition<f64, N>,

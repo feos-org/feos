@@ -1,4 +1,4 @@
-use super::Property;
+use super::PropertyAD;
 use crate::DensityInitialization::Liquid;
 use crate::{FeosResult, Residual, State};
 use nalgebra::DefaultAllocator;
@@ -16,7 +16,7 @@ impl<'a> From<&'a [f64]> for ResidualIsobaricHeatCapacity {
     }
 }
 
-impl<N: Gradients> Property<N> for ResidualIsobaricHeatCapacity
+impl<N: Gradients> PropertyAD<N> for ResidualIsobaricHeatCapacity
 where
     DefaultAllocator: Allocator<N>,
 {
