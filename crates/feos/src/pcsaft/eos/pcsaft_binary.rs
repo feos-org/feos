@@ -1,6 +1,6 @@
 use super::dispersion::{A0, A1, A2, B0, B1, B2};
 use super::polar::{AD, BD, CD};
-use feos_core::{ParametersAD, Residual, StateHD};
+use feos_core::{Residual, StateHD, ad::ParametersAD};
 use nalgebra::{SVector, U2};
 use num_dual::{DualNum, DualVec, jacobian};
 use std::f64::consts::{FRAC_PI_6, PI};
@@ -37,7 +37,7 @@ impl<D: DualNum<f64> + Copy, const N: usize> From<&[f64]> for PcSaftBinary<D, N>
     }
 }
 
-impl ParametersAD<2> for PcSaftBinary<f64, 4> {
+impl ParametersAD<U2> for PcSaftBinary<f64, 4> {
     fn build<D: DualNum<f64, Inner = f64> + Copy>(
         mut f: impl FnMut(&'static str, bool) -> D,
     ) -> PcSaftBinary<D, 4> {
@@ -61,7 +61,7 @@ impl ParametersAD<2> for PcSaftBinary<f64, 4> {
     }
 }
 
-impl ParametersAD<2> for PcSaftBinary<f64, 8> {
+impl ParametersAD<U2> for PcSaftBinary<f64, 8> {
     fn build<D: DualNum<f64, Inner = f64> + Copy>(
         mut f: impl FnMut(&'static str, bool) -> D,
     ) -> PcSaftBinary<D, 8> {

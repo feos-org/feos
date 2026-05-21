@@ -1,12 +1,13 @@
 use std::{io, path::Path};
 
+use nalgebra::U1;
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use serde::{Deserialize, Serialize};
 
+use crate::Residual;
 use crate::ad::properties::*;
-use crate::{ParametersAD, Residual};
 
-use super::{Dataset, DatasetAD, DatasetRecord, DatasetStorage};
+use super::{Dataset, DatasetAD, DatasetRecord, DatasetStorage, ParametersAD};
 
 #[derive(Deserialize, Serialize)]
 pub struct VaporPressureRecord {
@@ -120,11 +121,10 @@ macro_rules! pure_properties {
     ($(
         $variant:ident {
             record:       $record:ty,
+            property:     $prop:ty,
             default_name: $default:expr,
             input_names:  $inputs:expr,
             target_name:  $target:expr,
-            ad_fn:        $ad_fn:ident,
-            eval_fn:      $eval_fn:ident,
             constructor:  $ctor:ident,
         }
     ),* $(,)?) => {
@@ -147,21 +147,21 @@ macro_rules! pure_properties {
                 match self { $(Self::$variant => $target,)* }
             }
 
-            fn evaluate_ad<T: ParametersAD<1>, const P: usize>(
+            fn evaluate_ad<T: ParametersAD<U1>, const P: usize>(
                 self,
                 names: [String; P],
                 parameters: ArrayView2<f64>,
                 inputs: ArrayView2<f64>,
             ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
                 match self {
-                    $(Self::$variant => $ad_fn::<T, P>(names, parameters, inputs),)*
+                    $(Self::$variant => <$prop>::evaluate_parallel_ad::<T, P>(names, parameters, inputs),)*
                 }
             }
 
             fn evaluate<E: Residual + Sync>(self, eos: &E, inputs: ArrayView2<f64>) -> (Array1<f64>, Array1<bool>)
             {
                 match self {
-                    $(Self::$variant => $eval_fn(eos, inputs),)*
+                    $(Self::$variant => <$prop>::evaluate_parallel(eos, inputs.view()),)*
                 }
             }
         }
@@ -199,53 +199,48 @@ macro_rules! pure_properties {
 pure_properties! {
     VaporPressure {
         record:       VaporPressureRecord,
+        property:     VaporPressure,
         default_name: "vapor pressure",
         input_names:  &["temperature_k"],
         target_name:  "vapor_pressure_pa",
-        ad_fn:        vapor_pressure_parallel_ad,
-        eval_fn:      vapor_pressure_parallel,
         constructor:  vapor_pressure,
     },
     LiquidDensity {
         record:       LiquidDensityRecord,
+        property:     LiquidDensity,
         default_name: "liquid density",
         input_names:  &["temperature_k", "pressure_pa"],
         target_name:  "liquid_density_kmol_m3",
-        ad_fn:        liquid_density_parallel_ad,
-        eval_fn:      liquid_density_parallel,
         constructor:  liquid_density,
     },
     EquilibriumLiquidDensity {
         record:       EquilibriumLiquidDensityRecord,
+        property:     EquilibriumLiquidDensity,
         default_name: "equilibrium liquid density",
         input_names:  &["temperature_k"],
         target_name:  "liquid_density_kmol_m3",
-        ad_fn:        equilibrium_liquid_density_parallel_ad,
-        eval_fn:      equilibrium_liquid_density_parallel,
         constructor:  equilibrium_liquid_density,
     },
     EnthalpyOfVaporization {
         record:       EnthalpyOfVaporizationRecord,
+        property:     EnthalpyOfVaporization,
         default_name: "enthalpy of vaporization",
         input_names:  &["temperature_k"],
         target_name:  "dh_vap_j_mol",
-        ad_fn:        enthalpy_of_vaporization_parallel_ad,
-        eval_fn:      enthalpy_of_vaporization_parallel,
         constructor:  enthalpy_of_vaporization,
     },
     ResidualIsobaricHeatCapacity {
         record:       ResidualIsobaricHeatCapacityRecord,
+        property:     ResidualIsobaricHeatCapacity,
         default_name: "residual isobaric heat capacity",
         input_names:  &["temperature_k", "pressure_pa"],
         target_name:  "cp_res_j_molk",
-        ad_fn:        residual_isobaric_heat_capacity_parallel_ad,
-        eval_fn:      residual_isobaric_heat_capacity_parallel,
         constructor:  residual_isobaric_heat_capacity,
     },
 }
 
 /// Pure-component dataset: shared data storage plus a property tag.
-#[derive(Clone)]
+// #[derive(Clone)]
 pub struct PureDataset {
     property: PureProperty,
     storage: DatasetStorage,
@@ -304,12 +299,12 @@ impl Dataset for PureDataset {
     }
 
     fn evaluate<E: Residual + Sync>(&self, eos: &E) -> (Array1<f64>, Array1<bool>) {
-        self.property.evaluate(eos, self.inputs())
+        self.property.evaluate(eos, self.inputs().view())
     }
 }
 
 impl DatasetAD<1> for PureDataset {
-    fn evaluate_ad_const<T: ParametersAD<1>, const P: usize>(
+    fn evaluate_ad_const<T: ParametersAD<U1>, const P: usize>(
         &self,
         names: [String; P],
         parameters: ArrayView2<f64>,

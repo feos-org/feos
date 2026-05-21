@@ -1,4 +1,4 @@
-use feos_core::dataset::{
+use feos_core::ad::{
     BinaryDataset, BinaryProperty, BubblePointRecord, Dataset, DewPointRecord,
     EnthalpyOfVaporizationRecord, EquilibriumLiquidDensityRecord, LiquidDensityRecord, PureDataset,
     PureProperty, ResidualIsobaricHeatCapacityRecord, VaporPressureRecord,

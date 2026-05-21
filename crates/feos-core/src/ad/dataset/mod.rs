@@ -3,10 +3,13 @@ mod pure;
 
 use std::{io, path::Path, sync::Arc};
 
+use nalgebra::Const;
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use serde::de::DeserializeOwned;
 
-use crate::{ParametersAD, Residual};
+use crate::Residual;
+
+use super::ParametersAD;
 
 pub use binary::*;
 pub use pure::*;
@@ -118,7 +121,7 @@ macro_rules! define_dataset_ad {
         /// for equations of state implementing [`ParametersAD<N>`].
         pub trait DatasetAD<const N: usize>: Dataset {
             /// Evaluate the property and its `P` parameter gradients.
-            fn evaluate_ad_const<T: ParametersAD<N>, const P: usize>(
+            fn evaluate_ad_const<T: ParametersAD<Const<N>>, const P: usize>(
                 &self,
                 names: [String; P],
                 parameters: ArrayView2<f64>,
@@ -131,7 +134,7 @@ macro_rules! define_dataset_ad {
             /// - `params`: the full parameter vector. Only entries listed in `param_names` are seeded.
             ///
             /// This function dispatches the const-P methods at run-time.
-            fn evaluate_ad<T: ParametersAD<N>>(
+            fn evaluate_ad<T: ParametersAD<Const<N>>>(
                 &self,
                 param_names: &[String],
                 params: &[f64],
@@ -148,7 +151,7 @@ macro_rules! define_dataset_ad {
                         $p => self.evaluate_ad_const::<T, $p>(
                             to_const(param_names),
                             parameters.view(),
-                            self.inputs(),
+                            self.inputs().view(),
                         ),
                     )+
                     p => unreachable!(

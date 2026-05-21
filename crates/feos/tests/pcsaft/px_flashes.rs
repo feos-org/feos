@@ -2,8 +2,8 @@ use approx::assert_relative_eq;
 use feos::ideal_gas::Joback;
 use feos::pcsaft::PcSaftBinary;
 use feos_core::{
-    Contributions, EquationOfState, FeosResult, IdealGasAD, ParametersAD, PhaseEquilibrium,
-    ReferenceSystem, SolverOptions, Verbosity,
+    Contributions, EquationOfState, FeosResult, IdealGasAD, PhaseEquilibrium, ReferenceSystem,
+    SolverOptions, Verbosity, ad::ParametersAD,
 };
 use nalgebra::U1;
 use num_dual::{DualStruct, DualVec};

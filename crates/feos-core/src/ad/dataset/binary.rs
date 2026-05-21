@@ -1,12 +1,13 @@
 use std::{io, path::Path};
 
+use nalgebra::U2;
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use serde::{Deserialize, Serialize};
 
-use crate::ad::properties::*;
-use crate::{ParametersAD, Residual};
+use crate::Residual;
+use crate::ad::properties::{BubblePointPressure, DewPointPressure, Property};
 
-use super::{Dataset, DatasetAD, DatasetRecord, DatasetStorage};
+use super::{Dataset, DatasetAD, DatasetRecord, DatasetStorage, ParametersAD};
 
 /// The pressure column doubles as the initial guess passed to the VLE solver.
 #[derive(Deserialize, Serialize)]
@@ -66,11 +67,10 @@ macro_rules! binary_properties {
     ($(
         $variant:ident {
             record:       $record:ty,
+            property:     $prop:ty,
             default_name: $default:expr,
             input_names:  $inputs:expr,
             target_name:  $target:expr,
-            ad_fn:        $ad_fn:ident,
-            eval_fn:      $eval_fn:ident,
             constructor:  $ctor:ident,
         }
     ),* $(,)?) => {
@@ -93,14 +93,14 @@ macro_rules! binary_properties {
                 match self { $(Self::$variant => $target,)* }
             }
 
-            fn evaluate_ad<T: ParametersAD<2>, const P: usize>(
+            fn evaluate_ad<T: ParametersAD<U2>, const P: usize>(
                 self,
                 names: [String; P],
                 parameters: ArrayView2<f64>,
                 inputs: ArrayView2<f64>,
             ) -> (Array1<f64>, Array2<f64>, Array1<bool>) {
                 match self {
-                    $(Self::$variant => $ad_fn::<T, P>(names, parameters, inputs),)*
+                    $(Self::$variant => <$prop>::evaluate_parallel_ad::<T, P>(names, parameters, inputs),)*
                 }
             }
 
@@ -109,7 +109,7 @@ macro_rules! binary_properties {
                 E: Residual + Sync,
             {
                 match self {
-                    $(Self::$variant => $eval_fn(eos, inputs),)*
+                    $(Self::$variant => <$prop>::evaluate_parallel(eos, inputs),)*
                 }
             }
         }
@@ -147,20 +147,18 @@ macro_rules! binary_properties {
 binary_properties! {
     BubblePointPressure {
         record:       BubblePointRecord,
+        property:     BubblePointPressure,
         default_name: "bubble point pressure",
         input_names:  &["temperature_k", "liquid_molefrac_1"],
         target_name:  "bubble_pressure_pa",
-        ad_fn:        bubble_point_pressure_parallel_ad,
-        eval_fn:      bubble_point_pressure_parallel,
         constructor:  bubble_point_pressure,
     },
     DewPointPressure {
         record:       DewPointRecord,
+        property:     DewPointPressure,
         default_name: "dew point pressure",
         input_names:  &["temperature_k", "vapor_molefrac_1"],
         target_name:  "dew_pressure_pa",
-        ad_fn:        dew_point_pressure_parallel_ad,
-        eval_fn:      dew_point_pressure_parallel,
         constructor:  dew_point_pressure,
     },
 }
@@ -230,7 +228,7 @@ impl Dataset for BinaryDataset {
 }
 
 impl DatasetAD<2> for BinaryDataset {
-    fn evaluate_ad_const<T: ParametersAD<2>, const P: usize>(
+    fn evaluate_ad_const<T: ParametersAD<U2>, const P: usize>(
         &self,
         names: [String; P],
         parameters: ArrayView2<f64>,

@@ -1,15 +1,21 @@
-pub mod dataset;
-pub mod properties;
-
-use crate::{FeosResult, Residual};
-use nalgebra::{Const, U1};
-use ndarray::{Array1, Array2, ArrayView2, Zip};
+use crate::Residual;
+use nalgebra::{Const, DefaultAllocator, Dim, U1, allocator::Allocator};
 use num_dual::{Derivative, DualNum, DualSVec};
+
+#[cfg(feature = "ndarray")]
+mod dataset;
+mod properties;
+#[cfg(feature = "ndarray")]
+pub use dataset::*;
+pub use properties::*;
 
 pub(crate) type Gradient<const P: usize> = DualSVec<f64, f64, P>;
 
 /// A model that can be evaluated with derivatives of its parameters.
-pub trait ParametersAD<const N: usize>: Residual<Const<N>> {
+pub trait ParametersAD<N: Dim>: Residual<N>
+where
+    DefaultAllocator: Allocator<N>,
+{
     /// Build the model by requesting each parameter by name.
     ///
     /// Call `f(name, differentiable)` for each parameter. The order of calls
@@ -59,86 +65,90 @@ pub trait ParametersAD<const N: usize>: Residual<Const<N>> {
             idx += 1;
             let mut d = Gradient::<P>::from(parameter_values[i]);
             if let Some(seed_idx) = derivative_names.iter().position(|&n| n == name) {
-                d.eps = Derivative::derivative_generic(Const::<P>, U1, seed_idx);
+                d.eps =
+                    Derivative::<_, _, Const<P>, _>::derivative_generic(Const::<P>, U1, seed_idx);
             }
             d
         })
     }
 }
 
-/// Evaluate a function and its gradients for a batch of parameters and inputs.
-pub(crate) fn vectorize_ad<F, E: ParametersAD<N>, const N: usize, const P: usize>(
-    parameter_names: [String; P],
-    parameters: ArrayView2<f64>,
-    input: ArrayView2<f64>,
-    f: F,
-) -> (Array1<f64>, Array2<f64>, Array1<bool>)
-where
-    F: Fn(&E::Lifted<Gradient<P>>, &[f64]) -> FeosResult<Gradient<P>> + Sync,
-{
-    let parameter_names = parameter_names.each_ref().map(|s| s as &str);
+// /// Evaluate a function and its gradients for a batch of parameters and inputs.
+// #[cfg(feature = "ndarray")]
+// pub(crate) fn vectorize_ad<F, E: ParametersAD<N>, N: Dim, const P: usize>(
+//     parameter_names: [String; P],
+//     parameters: ArrayView2<f64>,
+//     input: ArrayView2<f64>,
+//     f: F,
+// ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+// where
+//     DefaultAllocator: Allocator<N>,
+//     F: Fn(&E::Lifted<Gradient<P>>, &[f64]) -> FeosResult<Gradient<P>> + Sync,
+// {
+//     let parameter_names = parameter_names.each_ref().map(|s| s as &str);
 
-    #[cfg(feature = "rayon")]
-    let value_dual = Zip::from(parameters.rows())
-        .and(input.rows())
-        .par_map_collect(|par, inp| {
-            let par = par.as_slice().expect("Parameter array is not contiguous!");
-            let inp = inp.as_slice().expect("Input array is not contiguous!");
-            let eos = E::seed_derivatives(par, parameter_names);
-            f(&eos, inp)
-        });
+//     #[cfg(feature = "rayon")]
+//     let value_dual = Zip::from(parameters.rows())
+//         .and(input.rows())
+//         .par_map_collect(|par, inp| {
+//             let par = par.as_slice().expect("Parameter array is not contiguous!");
+//             let inp = inp.as_slice().expect("Input array is not contiguous!");
+//             let eos = E::seed_derivatives(par, parameter_names);
+//             f(&eos, inp)
+//         });
 
-    #[cfg(not(feature = "rayon"))]
-    let value_dual = Zip::from(parameters.rows())
-        .and(input.rows())
-        .map_collect(|par, inp| {
-            let par = par.as_slice().expect("Parameter array is not contiguous!");
-            let inp = inp.as_slice().expect("Input array is not contiguous!");
-            let eos = E::seed_derivatives(par, parameter_names);
-            f(&eos, inp)
-        });
+//     #[cfg(not(feature = "rayon"))]
+//     let value_dual = Zip::from(parameters.rows())
+//         .and(input.rows())
+//         .map_collect(|par, inp| {
+//             let par = par.as_slice().expect("Parameter array is not contiguous!");
+//             let inp = inp.as_slice().expect("Input array is not contiguous!");
+//             let eos = E::seed_derivatives(par, parameter_names);
+//             f(&eos, inp)
+//         });
 
-    let n = parameters.nrows();
-    let status = value_dual.iter().map(|p| p.is_ok()).collect();
-    let mut value = Array1::from_elem(n, f64::NAN);
-    let mut grad = Array2::zeros([n, P]);
-    for (i, result) in value_dual.into_iter().enumerate() {
-        if let Ok(p_dual) = result {
-            value[i] = p_dual.re;
-            let eps = p_dual.eps.unwrap_generic(Const::<P>, U1);
-            for (g, &e) in grad.row_mut(i).iter_mut().zip(eps.data.0[0].iter()) {
-                *g = e;
-            }
-        }
-    }
-    (value, grad, status)
-}
+//     let n = parameters.nrows();
+//     let status = value_dual.iter().map(|p| p.is_ok()).collect();
+//     let mut value = Array1::from_elem(n, f64::NAN);
+//     let mut grad = Array2::zeros([n, P]);
+//     for (i, result) in value_dual.into_iter().enumerate() {
+//         if let Ok(p_dual) = result {
+//             value[i] = p_dual.re;
+//             let eps = p_dual.eps.unwrap_generic(Const::<P>, U1);
+//             for (g, &e) in grad.row_mut(i).iter_mut().zip(eps.data.0[0].iter()) {
+//                 *g = e;
+//             }
+//         }
+//     }
+//     (value, grad, status)
+// }
 
-/// Evaluate a function for a batch of inputs using the same parameters for each sample.
-pub(crate) fn vectorize<F, E>(eos: &E, input: ArrayView2<f64>, f: F) -> (Array1<f64>, Array1<bool>)
-where
-    E: Sync,
-    F: Fn(&E, &[f64]) -> FeosResult<f64> + Sync,
-{
-    #[cfg(feature = "rayon")]
-    let values = Zip::from(input.rows()).par_map_collect(|inp| {
-        let inp = inp.as_slice().expect("Input array is not contiguous!");
-        f(eos, inp)
-    });
+// /// Evaluate a function for a batch of inputs using the same parameters for each sample.
+// #[cfg(feature = "ndarray")]
+// pub(crate) fn vectorize<F, E>(eos: &E, input: ArrayView2<f64>, f: F) -> (Array1<f64>, Array1<bool>)
+// where
+//     E: Sync,
+//     F: Fn(&E, &[f64]) -> FeosResult<f64> + Sync,
+// {
+//     #[cfg(feature = "rayon")]
+//     let values = Zip::from(input.rows()).par_map_collect(|inp| {
+//         let inp = inp.as_slice().expect("Input array is not contiguous!");
+//         f(eos, inp)
+//     });
 
-    #[cfg(not(feature = "rayon"))]
-    let values = Zip::from(input.rows()).map_collect(|inp| {
-        let inp = inp.as_slice().expect("Input array is not contiguous!");
-        f(eos, inp)
-    });
+//     #[cfg(not(feature = "rayon"))]
+//     let values = Zip::from(input.rows()).map_collect(|inp| {
+//         let inp = inp.as_slice().expect("Input array is not contiguous!");
+//         f(eos, inp)
+//     });
 
-    let n = input.nrows();
-    let status: Array1<bool> = values.iter().map(|r| r.is_ok()).collect();
-    let mut value = Array1::from_elem(n, f64::NAN);
-    for (i, result) in values.into_iter().enumerate() {
-        if let Ok(v) = result {
-            value[i] = v;
-        }
-    }
-    (value, status)
-}
+//     let n = input.nrows();
+//     let status: Array1<bool> = values.iter().map(|r| r.is_ok()).collect();
+//     let mut value = Array1::from_elem(n, f64::NAN);
+//     for (i, result) in values.into_iter().enumerate() {
+//         if let Ok(v) = result {
+//             value[i] = v;
+//         }
+//     }
+//     (value, status)
+// }

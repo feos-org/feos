@@ -19,13 +19,18 @@ mod tp_flash;
 
 mod px_flashes;
 
+#[cfg(feature = "ndarray")]
 mod phase_diagram_binary;
+#[cfg(feature = "ndarray")]
 mod phase_diagram_pure;
+#[cfg(feature = "ndarray")]
 mod phase_envelope;
 mod stability_analysis;
 
 pub use bubble_dew::TemperatureOrPressure;
+#[cfg(feature = "ndarray")]
 pub use phase_diagram_binary::PhaseDiagramHetero;
+#[cfg(feature = "ndarray")]
 pub use phase_diagram_pure::PhaseDiagram;
 
 /// A thermodynamic equilibrium state.

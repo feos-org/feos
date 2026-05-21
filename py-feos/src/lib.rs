@@ -182,24 +182,8 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // AD
     #[cfg(feature = "ad")]
     {
-        m.add_function(wrap_pyfunction!(ad::vapor_pressure_derivatives, m)?)?;
-        m.add_function(wrap_pyfunction!(ad::boiling_temperature_derivatives, m)?)?;
-        m.add_function(wrap_pyfunction!(ad::liquid_density_derivatives, m)?)?;
-        m.add_function(wrap_pyfunction!(
-            ad::equilibrium_liquid_density_derivatives,
-            m
-        )?)?;
-        m.add_function(wrap_pyfunction!(
-            ad::enthalpy_of_vaporization_derivatives,
-            m
-        )?)?;
-        m.add_function(wrap_pyfunction!(
-            ad::residual_isobaric_heat_capacity_derivatives,
-            m
-        )?)?;
-        m.add_function(wrap_pyfunction!(ad::bubble_point_pressure_derivatives, m)?)?;
-        m.add_function(wrap_pyfunction!(ad::dew_point_pressure_derivatives, m)?)?;
         m.add_class::<ad::PyEquationOfStateAD>()?;
+        m.add_class::<ad::PyPropertiesAD>()?;
 
         // Datasets
         m.add_class::<ad::PyPureDataset>()?;
