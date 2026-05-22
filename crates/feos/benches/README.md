@@ -7,11 +7,18 @@ For example, to run the benchmarks in `dual_numbers`, which uses PC-SAFT, use
 
 ```
 cargo bench --profile=release-lto --bench=dual_numbers
-``` 
+```
+
+The static-vs-dynamic vector dual benchmark uses mimalloc. Run it with LTO via
+
+```
+cargo bench --profile=release-lto --bench=dual_static_vs_dynamic --features=pcsaft
+```
 
 |Name|Description|
 |--|--|
 |`dual_numbers`|Helmholtz energy function evaluated using `StateHD` with different dual number types using the PC-SAFT equation of state.|
+|`dual_static_vs_dynamic`|PC-SAFT-like pure-component Helmholtz energy expression evaluated with static (`DualSVec64<P>`) and dynamic (`DualDVec64`) vector dual numbers.|
 |`dual_numbers_saftvrmie`|Helmholtz energy function evaluated using `StateHD` with different dual number types using the SAFT-VR-Mie equation of state.|
 |`state_properties`|Properties of `State`. Including state creation using the natural variables of the Helmholtz energy (no density iteration).|
 |`state_creation`|Different constructors of `State` and `PhaseEquilibrium` including critical point calculations. For pure substances and mixtures.|
