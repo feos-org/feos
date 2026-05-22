@@ -1,6 +1,6 @@
 use super::eos::GcPcSaftOptions;
 use super::record::GcPcSaftAssociationRecord;
-use crate::association::{Association, YuWuAssociationFunctional, AssociationStrength};
+use crate::association::{Association, AssociationStrength, YuWuAssociationFunctional};
 use crate::gc_pcsaft::GcPcSaftParameters;
 use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use feos_core::{FeosResult, Molarweight, ResidualDyn, StateHD, Subset};
@@ -108,7 +108,8 @@ impl HelmholtzEnergyFunctionalDyn for GcPcSaftFunctional {
     fn contributions<'a>(&'a self) -> impl Iterator<Item = GcPcSaftFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(4);
 
-        let assoc = YuWuAssociationFunctional::new(&self.params, &self.parameters, self.association);
+        let assoc =
+            YuWuAssociationFunctional::new(&self.params, &self.parameters, self.association);
 
         // Hard sphere contribution
         let hs = FMTContribution::new(&self.params, self.fmt_version);
