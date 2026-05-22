@@ -4,12 +4,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Breaking]
+### Added
+- Extended tp-flash algorithm to static numbers of components and enabled automatic differentiation for binary systems. [#336](https://github.com/feos-org/feos/pull/336)
+- Rewrote `PhaseEquilibrium::pure_p` to mirror `pure_t` and enabled automatic differentiation. [#337](https://github.com/feos-org/feos/pull/337)
+- Added `boiling_temperature` to the list of properties for parallel evaluations of gradients. [#337](https://github.com/feos-org/feos/pull/337)
+- Added the `Composition` trait to allow more flexibility in the creation of states and phase equilibria. [#330](https://github.com/feos-org/feos/pull/330)
+- Added `PhaseEquilibrium::ph_flash` and `PhaseEquilibrium::ps_flash`. [#338](https://github.com/feos-org/feos/pull/338)
+- Added getters for `vapor_phase_fraction`, `molar_enthalpy`, `molar_entropy`, `total_moles`, `enthalpy`, and `entropy` to `PhaseEquilibrium`. [#338](https://github.com/feos-org/feos/pull/338)
+- Added `PropertyAD` trait in `feos_core::ad` with one struct per property for uniform evaluation with or without parameter derivatives, including parallel variants. [#358](https://github.com/feos-org/feos/pull/358)
+- Added `feos_core::ad::dataset` module with `PureDataset` and `BinaryDataset` types, constructible from records, CSV files, or readers, for use in parameter fits. [#358](https://github.com/feos-org/feos/pull/358)
+- Exposed `Property`, `PureDataset`, and `BinaryDataset` in `py-feos`. [#358](https://github.com/feos-org/feos/pull/358)
+
+### Changed
+- Removed any assumptions about the total number of moles in a `State` or `PhaseEquilibrium`. Evaluating extensive properties now returns a `Result`. [#330](https://github.com/feos-org/feos/pull/330)
+- Redesigned the `IdealGas` trait and added `IdealGasAD` in analogy to `ResidualDyn` and `Residual`. [#330](https://github.com/feos-org/feos/pull/330)
+- Replaced the `PropertiesAD` blanket-impl trait with per-property `PropertyAD` types. [#358](https://github.com/feos-org/feos/pull/358)
+- Replaced `ParametersAD::named_derivatives` with a `build` constructor and `seed_derivatives(&values, names)`. [#358](https://github.com/feos-org/feos/pull/358)
+- Removed the per-property `*_derivatives` free functions in Python in favour of static methods on the new `Property` class. [#358](https://github.com/feos-org/feos/pull/358)
+
+### Removed
+- Removed the `StateBuilder` struct, because it is mostly obsolete with the addition of the `Composition` trait. [#330](https://github.com/feos-org/feos/pull/330)
+
+### Packaging
+- Updated `quantity` dependency to 0.13 and removed the `typenum` dependency. [#328](https://github.com/feos-org/feos/pull/328)
+- Added `csv` as a `feos-core` dependency for the new dataset module. [#358](https://github.com/feos-org/feos/pull/358)
+
 ## [Unreleased]
 
 ## [0.9.5] - 2026-04-14
 ### Added
 - Add Rayon global thread pool control via `FEOS_MAX_THREADS` and `set_num_threads()`/ `get_num_threads()` to Python. [#346](https://github.com/feos-org/feos/pull/346)
 - Added DIPPR107 parameterization for ideal gas heat capacities of Burkhardt et al. [#344](https://github.com/feos-org/feos/pull/344)
+- Implemented `IdealGasAD<D>` for `Dippr`. [#357](https://github.com/feos-org/feos/pull/357)
 
 ### Fixed
 - Fixed the calculation of temperature and pressure derivatives of dew and bubble points. [#347](https://github.com/feos-org/feos/pull/347)

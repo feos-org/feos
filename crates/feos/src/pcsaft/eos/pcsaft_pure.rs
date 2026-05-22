@@ -1,8 +1,8 @@
 use super::dispersion::{A0, A1, A2, B0, B1, B2};
 use super::polar::{AD, BD, CD};
-use feos_core::{ParametersAD, Residual, StateHD};
+use feos_core::{Residual, StateHD, ad::ParametersAD};
 use nalgebra::{SVector, U1};
-use num_dual::{DualNum, DualSVec64};
+use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_6, PI};
 
 const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
@@ -183,54 +183,41 @@ impl<D: DualNum<f64> + Copy> Residual<U1, D> for PcSaftPure<D, 4> {
     }
 }
 
-impl<D: DualNum<f64> + Copy, const N: usize> From<&[f64]> for PcSaftPure<D, N> {
-    fn from(parameters: &[f64]) -> Self {
-        let Ok(parameters): Result<[f64; N], _> = parameters.try_into() else {
-            panic!("This version of PC-SAFT requires exactly {N} parameters!")
-        };
-        Self(parameters.map(D::from))
+impl ParametersAD<U1> for PcSaftPure<f64, 4> {
+    fn build<D: DualNum<f64, Inner = f64> + Copy>(
+        mut f: impl FnMut(&'static str, bool) -> D,
+    ) -> PcSaftPure<D, 4> {
+        PcSaftPure([
+            f("m", true),
+            f("sigma", true),
+            f("epsilon_k", true),
+            f("mu", true),
+        ])
     }
 }
 
-impl ParametersAD<1> for PcSaftPure<f64, 4> {
-    fn index_parameters_mut<'a, const P: usize>(
-        eos: &'a mut Self::Lifted<DualSVec64<P>>,
-        index: &str,
-    ) -> &'a mut DualSVec64<P> {
-        match index {
-            "m" => &mut eos.0[0],
-            "sigma" => &mut eos.0[1],
-            "epsilon_k" => &mut eos.0[2],
-            "mu" => &mut eos.0[3],
-            _ => panic!("{index} is not a valid PC-SAFT parameter!"),
-        }
-    }
-}
-
-impl ParametersAD<1> for PcSaftPure<f64, 8> {
-    fn index_parameters_mut<'a, const P: usize>(
-        eos: &'a mut Self::Lifted<DualSVec64<P>>,
-        index: &str,
-    ) -> &'a mut DualSVec64<P> {
-        match index {
-            "m" => &mut eos.0[0],
-            "sigma" => &mut eos.0[1],
-            "epsilon_k" => &mut eos.0[2],
-            "mu" => &mut eos.0[3],
-            "kappa_ab" => &mut eos.0[4],
-            "epsilon_k_ab" => &mut eos.0[5],
-            "na" => &mut eos.0[6],
-            "nb" => &mut eos.0[7],
-            _ => panic!("{index} is not a valid PC-SAFT parameter!"),
-        }
+impl ParametersAD<U1> for PcSaftPure<f64, 8> {
+    fn build<D: DualNum<f64, Inner = f64> + Copy>(
+        mut f: impl FnMut(&'static str, bool) -> D,
+    ) -> PcSaftPure<D, 8> {
+        PcSaftPure([
+            f("m", true),
+            f("sigma", true),
+            f("epsilon_k", true),
+            f("mu", true),
+            f("kappa_ab", true),
+            f("epsilon_k_ab", true),
+            f("na", false),
+            f("nb", false),
+        ])
     }
 }
 
 #[cfg(test)]
 pub mod test {
-    use crate::pcsaft::PcSaftRecord;
     use super::super::{PcSaft, PcSaftAssociationRecord, PcSaftParameters};
     use super::*;
+    use crate::pcsaft::PcSaftRecord;
     use approx::assert_relative_eq;
     use feos_core::parameter::{AssociationRecord, PureRecord};
     use feos_core::{Contributions::Total, FeosResult, State};
@@ -278,7 +265,7 @@ pub mod test {
         let h_feos = state.residual_molar_enthalpy();
 
         let moles = vector![1.3] * KILO * MOL;
-        let state = State::new_nvt(&pcsaft, temperature, volume, &moles)?;
+        let state = State::new_nvt(&pcsaft, temperature, volume, moles)?;
         let a_ad = state.residual_molar_helmholtz_energy();
         let mu_ad = state.residual_chemical_potential();
         let p_ad = state.pressure(Total);

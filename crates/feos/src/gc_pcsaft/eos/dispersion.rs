@@ -129,13 +129,12 @@ mod test {
     use nalgebra::dvector;
     use num_dual::Dual64;
     use quantity::{METER, MOL, PASCAL, Pressure};
-    use typenum::P3;
 
     #[test]
     fn test_dispersion_propane() {
         let parameters = propane();
         let temperature = 300.0;
-        let volume = Dual64::from_re(METER.powi::<P3>().to_reduced()).derivative();
+        let volume = Dual64::from_re(METER.powi::<3>().to_reduced()).derivative();
         let moles = Dual64::from_re((1.5 * MOL).to_reduced());
         let molar_volume = volume / moles;
         let state = StateHD::new(
@@ -153,7 +152,7 @@ mod test {
     fn test_dispersion_propanol() {
         let parameters = GcPcSaftEosParameters::new(&propanol());
         let temperature = 300.0;
-        let volume = Dual64::from_re(METER.powi::<P3>().to_reduced()).derivative();
+        let volume = Dual64::from_re(METER.powi::<3>().to_reduced()).derivative();
         let moles = Dual64::from_re((1.5 * MOL).to_reduced());
         let molar_volume = volume / moles;
         let state = StateHD::new(

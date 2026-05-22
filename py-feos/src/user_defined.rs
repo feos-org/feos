@@ -14,7 +14,10 @@ impl PyIdealGas {
     pub fn new(obj: Bound<'_, PyAny>) -> PyResult<Self> {
         let attr = obj.hasattr("ln_lambda3")?;
         if !attr {
-            panic!("{}", "Python Class has to have a method 'ln_lambda3' with signature:\n\tdef ln_lambda3(self, temperature: HD) -> HD\nwhere 'HD' has to be any (hyper-) dual number.")
+            panic!(
+                "{}",
+                "Python Class has to have a method 'ln_lambda3' with signature:\n\tdef ln_lambda3(self, temperature: HD) -> HD\nwhere 'HD' has to be any (hyper-) dual number."
+            )
         }
         Ok(Self(obj.unbind()))
     }
@@ -57,23 +60,34 @@ impl PyResidual {
     pub fn new(obj: Bound<'_, PyAny>) -> PyResult<Self> {
         let attr = obj.hasattr("components")?;
         if !attr {
-            panic!("Python Class has to have a method 'components' with signature:\n\tdef signature(self) -> int")
+            panic!(
+                "Python Class has to have a method 'components' with signature:\n\tdef signature(self) -> int"
+            )
         }
         let attr = obj.hasattr("subset")?;
         if !attr {
-            panic!("Python Class has to have a method 'subset' with signature:\n\tdef subset(self, component_list: List[int]) -> Self")
+            panic!(
+                "Python Class has to have a method 'subset' with signature:\n\tdef subset(self, component_list: List[int]) -> Self"
+            )
         }
         let attr = obj.hasattr("molar_weight")?;
         if !attr {
-            panic!("Python Class has to have a method 'molar_weight' with signature:\n\tdef molar_weight(self) -> SIArray1\nwhere the size of the returned array has to be 'components'.")
+            panic!(
+                "Python Class has to have a method 'molar_weight' with signature:\n\tdef molar_weight(self) -> SIArray1\nwhere the size of the returned array has to be 'components'."
+            )
         }
         let attr = obj.hasattr("max_density")?;
         if !attr {
-            panic!("Python Class has to have a method 'max_density' with signature:\n\tdef max_density(self, moles: numpy.ndarray[float]) -> float\nwhere the size of the input array has to be 'components'.")
+            panic!(
+                "Python Class has to have a method 'max_density' with signature:\n\tdef max_density(self, moles: numpy.ndarray[float]) -> float\nwhere the size of the input array has to be 'components'."
+            )
         }
         let attr = obj.hasattr("helmholtz_energy")?;
         if !attr {
-            panic!("{}", "Python Class has to have a method 'helmholtz_energy' with signature:\n\tdef helmholtz_energy(self, state: StateHD) -> HD\nwhere 'HD' has to be any of {{float, Dual64, HyperDual64, HyperDualDual64, Dual3Dual64, Dual3_64}}.")
+            panic!(
+                "{}",
+                "Python Class has to have a method 'helmholtz_energy' with signature:\n\tdef helmholtz_energy(self, state: StateHD) -> HD\nwhere 'HD' has to be any of {{float, Dual64, HyperDual64, HyperDualDual64, Dual3Dual64, Dual3_64}}."
+            )
         }
         Ok(Self(obj.unbind()))
     }

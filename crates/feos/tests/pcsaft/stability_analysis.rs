@@ -1,7 +1,6 @@
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::IdentifierOption;
 use feos_core::{DensityInitialization, PhaseEquilibrium, SolverOptions, State};
-use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
 
@@ -18,7 +17,7 @@ fn test_stability_analysis() -> Result<(), Box<dyn Error>> {
         &&mix,
         300.0 * KELVIN,
         1.0 * BAR,
-        &(dvector![0.5, 0.5] * MOL),
+        0.5,
         Some(DensityInitialization::Liquid),
     )?;
     let options = SolverOptions {
@@ -38,7 +37,7 @@ fn test_stability_analysis() -> Result<(), Box<dyn Error>> {
     let vle = PhaseEquilibrium::bubble_point(
         &&mix,
         300.0 * KELVIN,
-        &dvector![0.5, 0.5],
+        0.5,
         Some(6.0 * BAR),
         None,
         (options, options),

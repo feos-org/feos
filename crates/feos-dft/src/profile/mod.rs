@@ -12,7 +12,6 @@ use num_dual::DualNum;
 use quantity::{_Volume, DEGREES, Density, Length, Moles, Quantity, Temperature, Volume};
 use std::ops::{Add, MulAssign};
 use std::sync::Arc;
-use typenum::Sum;
 
 mod properties;
 
@@ -233,7 +232,7 @@ where
             let mut bonds = bulk.eos.bond_integrals(t, &exp_dfdrho, convolver.as_ref());
             bonds *= &exp_dfdrho;
             let mut density = Array::zeros(external_potential.raw_dim());
-            let bulk_density = bulk.partial_density.to_reduced();
+            let bulk_density = bulk.partial_density().into_reduced();
             for (s, &c) in bulk.eos.component_index().iter().enumerate() {
                 density.index_axis_mut(Axis_nd(0), s).assign(
                     &(bonds.index_axis(Axis_nd(0), s).map(|is| is.min(1.0)) * bulk_density[c]),
@@ -304,7 +303,7 @@ where
     pub fn integrate<S: Data<Elem = f64>, U>(
         &self,
         profile: &Quantity<ArrayBase<S, D>, U>,
-    ) -> Quantity<f64, Sum<_Volume, U>>
+    ) -> Quantity<f64, <_Volume as Add<U>>::Output>
     where
         _Volume: Add<U>,
     {
@@ -322,7 +321,7 @@ where
     pub fn integrate_comp<S: Data<Elem = f64>, U>(
         &self,
         profile: &Quantity<ArrayBase<S, D::Larger>, U>,
-    ) -> Quantity<DVector<f64>, Sum<_Volume, U>>
+    ) -> Quantity<DVector<f64>, <_Volume as Add<U>>::Output>
     where
         _Volume: Add<U>,
     {
@@ -335,7 +334,7 @@ where
     pub fn integrate_segments<S: Data<Elem = f64>, U>(
         &self,
         profile: &Quantity<ArrayBase<S, D::Larger>, U>,
-    ) -> Quantity<DVector<f64>, Sum<_Volume, U>>
+    ) -> Quantity<DVector<f64>, <_Volume as Add<U>>::Output>
     where
         _Volume: Add<U>,
     {
@@ -374,7 +373,7 @@ where
     pub fn residual(&self, log: bool) -> FeosResult<(Array<f64, D::Larger>, Array1<f64>, f64)> {
         // Read from profile
         let density = self.density.to_reduced();
-        let partial_density = self.bulk.partial_density.to_reduced();
+        let partial_density = self.bulk.partial_density().into_reduced();
         let bulk_density = self
             .bulk
             .eos
@@ -485,7 +484,7 @@ where
         // Read from profile
         let component_index = self.bulk.eos.component_index().into_owned();
         let mut density = self.density.to_reduced();
-        let partial_density = self.bulk.partial_density.to_reduced();
+        let partial_density = self.bulk.partial_density().into_reduced();
         let mut bulk_density = component_index
             .iter()
             .map(|&i| partial_density[i])
@@ -496,13 +495,12 @@ where
 
         // Update profile
         self.density = Density::from_reduced(density);
-        let volume = Volume::from_reduced(1.0);
-        let mut moles = self.bulk.moles.clone();
+        let mut partial_density = self.bulk.partial_density();
         bulk_density
             .into_iter()
             .enumerate()
-            .for_each(|(i, r)| moles.set(component_index[i], Density::from_reduced(r) * volume));
-        self.bulk = State::new_nvt(&self.bulk.eos, self.bulk.temperature, volume, &moles)?;
+            .for_each(|(i, r)| partial_density.set(component_index[i], Density::from_reduced(r)));
+        self.bulk = State::new_density(&self.bulk.eos, self.bulk.temperature, partial_density)?;
 
         Ok(())
     }

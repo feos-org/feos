@@ -1,12 +1,13 @@
 //! Implementation of the ideal gas heat capacity (de Broglie wavelength)
 //! of [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 use feos_core::parameter::{FromSegments, Parameters};
-use feos_core::{FeosResult, IdealGas, ReferenceSystem};
+use feos_core::{FeosResult, IdealGas, IdealGasAD, ReferenceSystem};
 use nalgebra::DVector;
 use num_dual::*;
 use quantity::{MolarEntropy, Temperature};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::ops::Mul;
 
 /// Coefficients used in the Joback model.
 ///
@@ -96,9 +97,9 @@ impl Joback {
     }
 }
 
-impl<D: DualNum<f64> + Copy> IdealGas<D> for Joback<D> {
-    fn ln_lambda3<D2: DualNum<f64, Inner = D> + Copy>(&self, temperature: D2) -> D2 {
-        let [a, b, c, d, e] = self.0.each_ref().map(D2::from_inner);
+impl<D: DualNum<f64> + Copy> Joback<D> {
+    fn ln_lambda3<D2: DualNum<f64> + Copy + Mul<D, Output = D2>>(&self, temperature: D2) -> D2 {
+        let [a, b, c, d, e] = self.0;
         let t = temperature;
         let t2 = t * t;
         let t4 = t2 * t2;
@@ -114,6 +115,31 @@ impl<D: DualNum<f64> + Copy> IdealGas<D> for Joback<D> {
             + (t4 - T0_4) * e / 4.0
             + (t / T0).ln() * a;
         (h - t * s) / (t * RGAS) + f
+    }
+}
+
+impl IdealGas for Joback {
+    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
+        self.ln_lambda3(temperature)
+    }
+
+    fn ideal_gas_model(&self) -> &'static str {
+        "Ideal gas (Joback)"
+    }
+}
+
+impl<D: DualNum<f64> + Copy> IdealGasAD<D> for Joback<D> {
+    type Real = Joback;
+    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = Joback<D2>;
+    fn re(&self) -> Self::Real {
+        Joback(self.0.each_ref().map(D::re))
+    }
+    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+        Joback(self.0.each_ref().map(D2::from_inner))
+    }
+
+    fn ln_lambda3(&self, temperature: D) -> D {
+        self.ln_lambda3(temperature)
     }
 
     fn ideal_gas_model(&self) -> &'static str {
@@ -172,14 +198,11 @@ const KB: f64 = 1.38064852e-23;
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
-    use feos_core::{
-        Contributions, EquationOfState, State, StateBuilder,
-        parameter::{ChemicalRecord, GroupCount, Identifier, PureRecord, SegmentRecord},
-    };
+    use feos_core::parameter::{ChemicalRecord, GroupCount, Identifier, PureRecord, SegmentRecord};
+    use feos_core::{Contributions, EquationOfState, State};
     use nalgebra::dvector;
     use quantity::*;
     use std::collections::HashMap;
-    use typenum::P3;
 
     use super::*;
 
@@ -263,7 +286,7 @@ mod tests {
         let pr = PureRecord::new(Identifier::default(), 1.0, jr);
         let joback = Joback::new(JobackParameters::new_pure(pr)?);
         let eos = EquationOfState::ideal_gas(joback);
-        let state = State::new_pure(&&eos, 1000.0 * KELVIN, 1.0 * MOL / METER.powi::<P3>())?;
+        let state = State::new_pure(&&eos, 1000.0 * KELVIN, 1.0 * MOL / METER.powi::<3>())?;
         assert!(
             ((state.molar_isobaric_heat_capacity(Contributions::IdealGas)
                 / (JOULE / MOL / KELVIN))
@@ -294,13 +317,9 @@ mod tests {
         )?);
         let eos = EquationOfState::ideal_gas(joback.clone());
         let temperature = 300.0 * KELVIN;
-        let volume = METER.powi::<P3>();
+        let volume = METER.powi::<3>();
         let moles = &dvector![1.0, 3.0] * MOL;
-        let state = StateBuilder::new(&&eos)
-            .temperature(temperature)
-            .volume(volume)
-            .moles(&moles)
-            .build()?;
+        let state = State::new_nvt(&&eos, temperature, volume, moles)?;
         println!(
             "{} {}",
             Joback::molar_isobaric_heat_capacity(&joback, temperature, &state.molefracs)?,

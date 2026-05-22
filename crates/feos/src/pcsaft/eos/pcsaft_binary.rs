@@ -1,8 +1,8 @@
 use super::dispersion::{A0, A1, A2, B0, B1, B2};
 use super::polar::{AD, BD, CD};
-use feos_core::{ParametersAD, Residual, StateHD};
+use feos_core::{Residual, StateHD, ad::ParametersAD};
 use nalgebra::{SVector, U2};
-use num_dual::{DualNum, DualSVec64, DualVec, jacobian};
+use num_dual::{DualNum, DualVec, jacobian};
 use std::f64::consts::{FRAC_PI_6, PI};
 
 const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
@@ -19,45 +19,59 @@ impl<D, const N: usize> PcSaftBinary<D, N> {
     }
 }
 
-impl<D: DualNum<f64> + Copy, const N: usize> From<&[f64]> for PcSaftBinary<D, N> {
-    fn from(parameters: &[f64]) -> Self {
-        if parameters.len() != 2 * N + 1 {
-            panic!(
-                "This version of PC-SAFT requires exactly {} parameters!",
-                2 * N + 1
-            )
-        }
-        let (Ok(p1), Ok(p2)): (Result<[f64; N], _>, Result<[f64; N], _>) =
-            (parameters[..N].try_into(), parameters[N..2 * N].try_into())
-        else {
-            unreachable!()
-        };
-        let kij = D::from(parameters[2 * N]);
-        Self::new([p1.map(D::from), p2.map(D::from)], kij)
+impl ParametersAD<U2> for PcSaftBinary<f64, 4> {
+    fn build<D: DualNum<f64, Inner = f64> + Copy>(
+        mut f: impl FnMut(&'static str, bool) -> D,
+    ) -> PcSaftBinary<D, 4> {
+        PcSaftBinary::new(
+            [
+                [
+                    f("m1", true),
+                    f("sigma1", true),
+                    f("epsilon_k1", true),
+                    f("mu1", true),
+                ],
+                [
+                    f("m2", true),
+                    f("sigma2", true),
+                    f("epsilon_k2", true),
+                    f("mu2", true),
+                ],
+            ],
+            f("k_ij", true),
+        )
     }
 }
 
-impl ParametersAD<2> for PcSaftBinary<f64, 4> {
-    fn index_parameters_mut<'a, const P: usize>(
-        eos: &'a mut Self::Lifted<DualSVec64<P>>,
-        index: &str,
-    ) -> &'a mut DualSVec64<P> {
-        match index {
-            "k_ij" => &mut eos.0.1,
-            _ => panic!("{index} is not a valid binary PC-SAFT parameter!"),
-        }
-    }
-}
-
-impl ParametersAD<2> for PcSaftBinary<f64, 8> {
-    fn index_parameters_mut<'a, const P: usize>(
-        eos: &'a mut Self::Lifted<DualSVec64<P>>,
-        index: &str,
-    ) -> &'a mut DualSVec64<P> {
-        match index {
-            "k_ij" => &mut eos.0.1,
-            _ => panic!("{index} is not a valid binary PC-SAFT parameter!"),
-        }
+impl ParametersAD<U2> for PcSaftBinary<f64, 8> {
+    fn build<D: DualNum<f64, Inner = f64> + Copy>(
+        mut f: impl FnMut(&'static str, bool) -> D,
+    ) -> PcSaftBinary<D, 8> {
+        PcSaftBinary::new(
+            [
+                [
+                    f("m1", true),
+                    f("sigma1", true),
+                    f("epsilon_k1", true),
+                    f("mu1", true),
+                    f("kappa_ab1", true),
+                    f("epsilon_k_ab1", true),
+                    f("na1", false),
+                    f("nb1", false),
+                ],
+                [
+                    f("m2", true),
+                    f("sigma2", true),
+                    f("epsilon_k2", true),
+                    f("mu2", true),
+                    f("kappa_ab2", true),
+                    f("epsilon_k_ab2", true),
+                    f("na2", false),
+                    f("nb2", false),
+                ],
+            ],
+            f("k_ij", true),
+        )
     }
 }
 
@@ -557,7 +571,7 @@ pub mod test {
         let h_feos = state.residual_molar_enthalpy();
 
         let moles = vector![1.3, 2.5] * KILO * MOL;
-        let state = State::new_nvt(&pcsaft, temperature, volume, &moles)?;
+        let state = State::new_nvt(&pcsaft, temperature, volume, moles)?;
         let a_ad = state.residual_molar_helmholtz_energy();
         let mu_ad = state.residual_chemical_potential();
         let p_ad = state.pressure(Total);

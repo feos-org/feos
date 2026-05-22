@@ -1,5 +1,5 @@
 use feos_core::parameter::Parameters;
-use feos_core::{FeosResult, IdealGas};
+use feos_core::{FeosResult, IdealGas, IdealGasAD};
 use nalgebra::DVector;
 use num_dual::DualNum;
 use quantity::{JOULE, KELVIN, KILO, MOL, MolarEntropy, Temperature};
@@ -152,14 +152,35 @@ impl IdealGas for Dippr {
     }
 }
 
+impl<D: DualNum<f64> + Copy> IdealGasAD<D> for Dippr {
+    type Real = Self;
+
+    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = Self;
+
+    fn re(&self) -> Self::Real {
+        self.clone()
+    }
+
+    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+        self.clone()
+    }
+
+    fn ln_lambda3(&self, temperature: D) -> D {
+        IdealGas::ln_lambda3(self, temperature)
+    }
+
+    fn ideal_gas_model(&self) -> &'static str {
+        "Ideal gas (DIPPR)"
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
     use feos_core::parameter::{Identifier, PureRecord};
-    use feos_core::{Contributions, EquationOfState, StateBuilder};
+    use feos_core::{Contributions, EquationOfState, State};
     use num_dual::first_derivative;
     use quantity::*;
-    use typenum::P3;
 
     use super::*;
 
@@ -173,12 +194,8 @@ mod tests {
         let dippr = Dippr::new(DipprParameters::new_pure(record.clone())?);
         let eos = EquationOfState::ideal_gas(dippr.clone());
         let temperature = 300.0 * KELVIN;
-        let volume = METER.powi::<P3>();
-        let state = StateBuilder::new(&&eos)
-            .temperature(temperature)
-            .volume(volume)
-            .total_moles(MOL)
-            .build()?;
+        let volume = METER.powi::<3>();
+        let state = State::new_nvt(&&eos, temperature, volume, MOL)?;
 
         let t = temperature.convert_to(KELVIN);
         let c_p_direct = record.model_record.c_p(t);
@@ -217,12 +234,8 @@ mod tests {
         let dippr = Dippr::new(DipprParameters::new_pure(record.clone())?);
         let eos = EquationOfState::ideal_gas(dippr.clone());
         let temperature = 300.0 * KELVIN;
-        let volume = METER.powi::<P3>();
-        let state = StateBuilder::new(&&eos)
-            .temperature(temperature)
-            .volume(volume)
-            .total_moles(MOL)
-            .build()?;
+        let volume = METER.powi::<3>();
+        let state = State::new_nvt(&&eos, temperature, volume, MOL)?;
 
         let t = temperature.convert_to(KELVIN);
         let c_p_direct = record.model_record.c_p(t);
@@ -263,12 +276,8 @@ mod tests {
         let dippr = Dippr::new(DipprParameters::new_pure(record.clone())?);
         let eos = EquationOfState::ideal_gas(dippr.clone());
         let temperature = 20.0 * KELVIN;
-        let volume = METER.powi::<P3>();
-        let state = StateBuilder::new(&&eos)
-            .temperature(temperature)
-            .volume(volume)
-            .total_moles(MOL)
-            .build()?;
+        let volume = METER.powi::<3>();
+        let state = State::new_nvt(&&eos, temperature, volume, MOL)?;
 
         let t = temperature.convert_to(KELVIN);
         let c_p_direct = record.model_record.c_p(t);

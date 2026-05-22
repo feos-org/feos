@@ -85,10 +85,7 @@ where
     let t = Dual::from_re(temperature);
     let x = molefracs.map(Dual::from);
     let (a_res, da_res) = first_derivative(
-        |molar_volume| {
-            eos.lift()
-                .residual_molar_helmholtz_energy(t, molar_volume, &x)
-        },
+        |molar_volume| eos.lift().residual_helmholtz_energy(t, molar_volume, &x),
         molar_volume,
     );
     a_res - da_res * molar_volume + temperature * density.ln()
