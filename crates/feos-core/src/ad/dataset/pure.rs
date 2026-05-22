@@ -1,0 +1,434 @@
+use std::{io, path::Path};
+
+use nalgebra::U1;
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
+use serde::{Deserialize, Serialize};
+
+use crate::Residual;
+use crate::ad::Gradient;
+use crate::ad::properties::*;
+
+use super::{Dataset, DatasetAD, DatasetRecord, DatasetStorage, ParametersAD};
+
+#[derive(Deserialize, Serialize)]
+pub struct VaporPressureRecord {
+    pub temperature_k: f64,
+    pub vapor_pressure_pa: f64,
+}
+
+impl DatasetRecord for VaporPressureRecord {
+    const N_INPUTS: usize = 1;
+
+    fn input(&self, _column: usize) -> f64 {
+        self.temperature_k
+    }
+
+    fn target(&self) -> f64 {
+        self.vapor_pressure_pa
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct LiquidDensityRecord {
+    pub temperature_k: f64,
+    pub pressure_pa: f64,
+    pub liquid_density_kmol_m3: f64,
+}
+
+impl DatasetRecord for LiquidDensityRecord {
+    const N_INPUTS: usize = 2;
+
+    fn input(&self, column: usize) -> f64 {
+        match column {
+            0 => self.temperature_k,
+            1 => self.pressure_pa,
+            _ => unreachable!("invalid liquid density input column"),
+        }
+    }
+
+    fn target(&self) -> f64 {
+        self.liquid_density_kmol_m3
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct EquilibriumLiquidDensityRecord {
+    pub temperature_k: f64,
+    pub liquid_density_kmol_m3: f64,
+}
+
+impl DatasetRecord for EquilibriumLiquidDensityRecord {
+    const N_INPUTS: usize = 1;
+
+    fn input(&self, _column: usize) -> f64 {
+        self.temperature_k
+    }
+
+    fn target(&self) -> f64 {
+        self.liquid_density_kmol_m3
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct EnthalpyOfVaporizationRecord {
+    pub temperature_k: f64,
+    pub dh_vap_j_mol: f64,
+}
+
+impl DatasetRecord for EnthalpyOfVaporizationRecord {
+    const N_INPUTS: usize = 1;
+
+    fn input(&self, _column: usize) -> f64 {
+        self.temperature_k
+    }
+
+    fn target(&self) -> f64 {
+        self.dh_vap_j_mol
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct ResidualIsobaricHeatCapacityRecord {
+    pub temperature_k: f64,
+    pub pressure_pa: f64,
+    pub cp_res_j_molk: f64,
+}
+
+impl DatasetRecord for ResidualIsobaricHeatCapacityRecord {
+    const N_INPUTS: usize = 2;
+
+    fn input(&self, column: usize) -> f64 {
+        match column {
+            0 => self.temperature_k,
+            1 => self.pressure_pa,
+            _ => unreachable!("invalid residual isobaric heat capacity input column"),
+        }
+    }
+
+    fn target(&self) -> f64 {
+        self.cp_res_j_molk
+    }
+}
+
+/// Expand a list of pure-component property entries into:
+/// - the [`PureProperty`] enum, metadata and dispatch methods,
+/// - constructors,
+/// - [`PureDataset::from_csv`] and [`PureDataset::from_reader`].
+///
+/// Adding a new property:
+/// - write the property file (record, `*_ad`, `*_parallel`, `*_parallel_ad`)
+/// - add entry here.
+macro_rules! pure_properties {
+    ($(
+        $variant:ident {
+            record:       $record:ty,
+            property:     $prop:ty,
+            default_name: $default:expr,
+            input_names:  $inputs:expr,
+            target_name:  $target:expr,
+            constructor:  $ctor:ident,
+        }
+    ),* $(,)?) => {
+        /// Pure-component properties.
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        pub enum PureProperty {
+            $($variant,)*
+        }
+
+        impl PureProperty {
+            pub fn default_name(self) -> &'static str {
+                match self { $(Self::$variant => $default,)* }
+            }
+
+            pub fn input_names(self) -> &'static [&'static str] {
+                match self { $(Self::$variant => $inputs,)* }
+            }
+
+            pub fn target_name(self) -> &'static str {
+                match self { $(Self::$variant => $target,)* }
+            }
+
+            fn evaluate_ad<T: ParametersAD<U1>, const P: usize>(
+                self,
+                names: [String; P],
+                parameters: &[f64],
+                inputs: ArrayView2<f64>,
+            ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+            where T::Lifted<Gradient<P>>: Sync
+            {
+                match self {
+                    $(Self::$variant => <$prop>::evaluate_parallel_derivatives::<T, P>(names, parameters, inputs),)*
+                }
+            }
+
+            fn evaluate<E: Residual + Sync>(self, eos: &E, inputs: ArrayView2<f64>) -> (Array1<f64>, Array1<bool>)
+            {
+                match self {
+                    $(Self::$variant => <$prop>::evaluate_parallel(eos, inputs.view()),)*
+                }
+            }
+        }
+
+        impl PureDataset {
+            $(
+                pub fn $ctor(records: Vec<$record>) -> Self {
+                    Self {
+                        property: PureProperty::$variant,
+                        storage: DatasetStorage::from_records(records),
+                    }
+                }
+            )*
+
+            pub fn from_csv(property: PureProperty, path: &Path) -> Result<Self, csv::Error> {
+                let storage = match property {
+                    $(PureProperty::$variant => DatasetStorage::from_csv::<$record>(path)?,)*
+                };
+                Ok(Self { property, storage })
+            }
+
+            pub fn from_reader(
+                property: PureProperty,
+                reader: impl io::Read,
+            ) -> Result<Self, csv::Error> {
+                let storage = match property {
+                    $(PureProperty::$variant => DatasetStorage::from_reader::<$record>(reader)?,)*
+                };
+                Ok(Self { property, storage })
+            }
+        }
+    };
+}
+
+pure_properties! {
+    VaporPressure {
+        record:       VaporPressureRecord,
+        property:     VaporPressure,
+        default_name: "vapor pressure",
+        input_names:  &["temperature_k"],
+        target_name:  "vapor_pressure_pa",
+        constructor:  vapor_pressure,
+    },
+    LiquidDensity {
+        record:       LiquidDensityRecord,
+        property:     LiquidDensity,
+        default_name: "liquid density",
+        input_names:  &["temperature_k", "pressure_pa"],
+        target_name:  "liquid_density_kmol_m3",
+        constructor:  liquid_density,
+    },
+    EquilibriumLiquidDensity {
+        record:       EquilibriumLiquidDensityRecord,
+        property:     EquilibriumLiquidDensity,
+        default_name: "equilibrium liquid density",
+        input_names:  &["temperature_k"],
+        target_name:  "liquid_density_kmol_m3",
+        constructor:  equilibrium_liquid_density,
+    },
+    EnthalpyOfVaporization {
+        record:       EnthalpyOfVaporizationRecord,
+        property:     EnthalpyOfVaporization,
+        default_name: "enthalpy of vaporization",
+        input_names:  &["temperature_k"],
+        target_name:  "dh_vap_j_mol",
+        constructor:  enthalpy_of_vaporization,
+    },
+    ResidualIsobaricHeatCapacity {
+        record:       ResidualIsobaricHeatCapacityRecord,
+        property:     ResidualIsobaricHeatCapacity,
+        default_name: "residual isobaric heat capacity",
+        input_names:  &["temperature_k", "pressure_pa"],
+        target_name:  "cp_res_j_molk",
+        constructor:  residual_isobaric_heat_capacity,
+    },
+}
+
+/// Pure-component dataset: shared data storage plus a property tag.
+// #[derive(Clone)]
+pub struct PureDataset {
+    property: PureProperty,
+    storage: DatasetStorage,
+}
+
+impl PureDataset {
+    pub fn with_name(mut self, name: impl Into<String>) -> Self {
+        self.storage.set_name(name.into());
+        self
+    }
+
+    pub fn property(&self) -> PureProperty {
+        self.property
+    }
+
+    pub fn inputs(&self) -> ArrayView2<'_, f64> {
+        self.storage.inputs()
+    }
+
+    pub fn target(&self) -> ArrayView1<'_, f64> {
+        self.storage.target()
+    }
+
+    pub fn name(&self) -> &str {
+        self.storage.name().unwrap_or(self.property.default_name())
+    }
+
+    pub fn input_names(&self) -> &'static [&'static str] {
+        self.property.input_names()
+    }
+
+    pub fn target_name(&self) -> &'static str {
+        self.property.target_name()
+    }
+}
+
+impl Dataset for PureDataset {
+    fn inputs(&self) -> ArrayView2<'_, f64> {
+        self.inputs()
+    }
+
+    fn target(&self) -> ArrayView1<'_, f64> {
+        self.target()
+    }
+
+    fn name(&self) -> &str {
+        self.name()
+    }
+
+    fn input_names(&self) -> &'static [&'static str] {
+        self.input_names()
+    }
+
+    fn target_name(&self) -> &'static str {
+        self.target_name()
+    }
+
+    fn evaluate<E: Residual + Sync>(&self, eos: &E) -> (Array1<f64>, Array1<bool>) {
+        self.property.evaluate(eos, self.inputs().view())
+    }
+}
+
+impl DatasetAD<1> for PureDataset {
+    fn evaluate_ad_const<T: ParametersAD<U1>, const P: usize>(
+        &self,
+        names: [String; P],
+        parameters: &[f64],
+        inputs: ArrayView2<f64>,
+    ) -> (Array1<f64>, Array2<f64>, Array1<bool>)
+    where
+        T::Lifted<Gradient<P>>: Sync,
+    {
+        self.property.evaluate_ad::<T, P>(names, parameters, inputs)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    fn csv(s: &str) -> Cursor<&[u8]> {
+        Cursor::new(s.as_bytes())
+    }
+
+    #[test]
+    fn vapor_pressure_from_reader() {
+        let data = "\
+temperature_k,vapor_pressure_pa
+300.0,3540.0
+350.0,41682.0
+400.0,245600.0
+";
+        let ds = PureDataset::from_reader(PureProperty::VaporPressure, csv(data)).unwrap();
+
+        assert_eq!(ds.target().len(), 3);
+        assert_eq!(ds.inputs().nrows(), 3);
+        assert_eq!(ds.inputs().ncols(), 1);
+        assert_eq!(ds.inputs()[[0, 0]], 300.0);
+        assert_eq!(ds.inputs()[[1, 0]], 350.0);
+        assert_eq!(ds.inputs()[[2, 0]], 400.0);
+        assert_eq!(ds.target()[0], 3540.0);
+        assert_eq!(ds.target()[1], 41682.0);
+        assert_eq!(ds.target()[2], 245600.0);
+        assert_eq!(ds.name(), "vapor pressure");
+    }
+
+    #[test]
+    fn vapor_pressure_from_records() {
+        let records = vec![
+            VaporPressureRecord {
+                temperature_k: 300.0,
+                vapor_pressure_pa: 3540.0,
+            },
+            VaporPressureRecord {
+                temperature_k: 350.0,
+                vapor_pressure_pa: 41682.0,
+            },
+        ];
+        let ds = PureDataset::vapor_pressure(records);
+        assert_eq!(ds.inputs()[[0, 0]], 300.0);
+        assert_eq!(ds.target()[1], 41682.0);
+    }
+
+    #[test]
+    fn liquid_density_from_reader() {
+        let data = "\
+temperature_k,pressure_pa,liquid_density_kmol_m3
+300.0,101325.0,15.2
+320.0,200000.0,14.8
+";
+        let ds = PureDataset::from_reader(PureProperty::LiquidDensity, csv(data)).unwrap();
+
+        assert_eq!(ds.inputs().nrows(), 2);
+        assert_eq!(ds.inputs().ncols(), 2);
+        assert_eq!(ds.inputs()[[0, 0]], 300.0);
+        assert_eq!(ds.inputs()[[0, 1]], 101325.0);
+        assert_eq!(ds.inputs()[[1, 0]], 320.0);
+        assert_eq!(ds.inputs()[[1, 1]], 200000.0);
+        assert_eq!(ds.target()[0], 15.2);
+        assert_eq!(ds.target()[1], 14.8);
+        assert_eq!(ds.name(), "liquid density");
+    }
+
+    #[test]
+    fn liquid_density_from_records() {
+        let records = vec![LiquidDensityRecord {
+            temperature_k: 300.0,
+            pressure_pa: 101325.0,
+            liquid_density_kmol_m3: 15.2,
+        }];
+        let ds = PureDataset::liquid_density(records);
+        assert_eq!(ds.inputs()[[0, 1]], 101325.0);
+        assert_eq!(ds.target()[0], 15.2);
+    }
+
+    #[test]
+    fn equilibrium_liquid_density_from_reader() {
+        let data = "\
+temperature_k,liquid_density_kmol_m3
+290.0,15.5
+310.0,14.9
+330.0,14.1
+";
+        let ds =
+            PureDataset::from_reader(PureProperty::EquilibriumLiquidDensity, csv(data)).unwrap();
+
+        assert_eq!(ds.inputs().ncols(), 1);
+        assert_eq!(ds.inputs().nrows(), 3);
+        assert_eq!(ds.inputs()[[2, 0]], 330.0);
+        assert_eq!(ds.target()[2], 14.1);
+        assert_eq!(ds.name(), "equilibrium liquid density");
+    }
+
+    #[test]
+    fn missing_column_returns_error() {
+        let data = "temperature_k\n300.0\n";
+        let result = PureDataset::from_reader(PureProperty::VaporPressure, csv(data));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn wrong_type_returns_error() {
+        let data = "temperature_k,vapor_pressure_pa\n300.0,not_a_number\n";
+        let result = PureDataset::from_reader(PureProperty::VaporPressure, csv(data));
+        assert!(result.is_err());
+    }
+}

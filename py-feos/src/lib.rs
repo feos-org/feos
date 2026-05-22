@@ -179,25 +179,15 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Equation of state
     m.add_class::<eos::PyEquationOfState>()?;
 
-    // // Estimator
-    // m.add_class::<estimator::PyDataSet>()?;
-    // m.add_class::<estimator::PyEstimator>()?;
-    // m.add_class::<estimator::PyLoss>()?;
-    // m.add_class::<estimator::PyPhase>()?;
-
     // AD
     #[cfg(feature = "ad")]
     {
-        m.add_function(wrap_pyfunction!(ad::vapor_pressure_derivatives, m)?)?;
-        m.add_function(wrap_pyfunction!(ad::boiling_temperature_derivatives, m)?)?;
-        m.add_function(wrap_pyfunction!(ad::liquid_density_derivatives, m)?)?;
-        m.add_function(wrap_pyfunction!(
-            ad::equilibrium_liquid_density_derivatives,
-            m
-        )?)?;
-        m.add_function(wrap_pyfunction!(ad::bubble_point_pressure_derivatives, m)?)?;
-        m.add_function(wrap_pyfunction!(ad::dew_point_pressure_derivatives, m)?)?;
         m.add_class::<ad::PyEquationOfStateAD>()?;
+        m.add_class::<ad::PyPropertyAD>()?;
+
+        // Datasets
+        m.add_class::<ad::PyPureDataset>()?;
+        m.add_class::<ad::PyBinaryDataset>()?;
     }
 
     #[cfg(feature = "dft")]

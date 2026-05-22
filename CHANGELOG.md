@@ -12,16 +12,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `Composition` trait to allow more flexibility in the creation of states and phase equilibria. [#330](https://github.com/feos-org/feos/pull/330)
 - Added `PhaseEquilibrium::ph_flash` and `PhaseEquilibrium::ps_flash`. [#338](https://github.com/feos-org/feos/pull/338)
 - Added getters for `vapor_phase_fraction`, `molar_enthalpy`, `molar_entropy`, `total_moles`, `enthalpy`, and `entropy` to `PhaseEquilibrium`. [#338](https://github.com/feos-org/feos/pull/338)
+- Added `PropertyAD` trait in `feos_core::ad` with one struct per property for uniform evaluation with or without parameter derivatives, including parallel variants. [#358](https://github.com/feos-org/feos/pull/358)
+- Added `feos_core::ad::dataset` module with `PureDataset` and `BinaryDataset` types, constructible from records, CSV files, or readers, for use in parameter fits. [#358](https://github.com/feos-org/feos/pull/358)
+- Exposed `Property`, `PureDataset`, and `BinaryDataset` in `py-feos`. [#358](https://github.com/feos-org/feos/pull/358)
 
 ### Changed
 - Removed any assumptions about the total number of moles in a `State` or `PhaseEquilibrium`. Evaluating extensive properties now returns a `Result`. [#330](https://github.com/feos-org/feos/pull/330)
 - Redesigned the `IdealGas` trait and added `IdealGasAD` in analogy to `ResidualDyn` and `Residual`. [#330](https://github.com/feos-org/feos/pull/330)
+- Replaced the `PropertiesAD` blanket-impl trait with per-property `PropertyAD` types. [#358](https://github.com/feos-org/feos/pull/358)
+- Replaced `ParametersAD::named_derivatives` with a `build` constructor and `seed_derivatives(&values, names)`. [#358](https://github.com/feos-org/feos/pull/358)
+- Removed the per-property `*_derivatives` free functions in Python in favour of static methods on the new `Property` class. [#358](https://github.com/feos-org/feos/pull/358)
 
 ### Removed
 - Removed the `StateBuilder` struct, because it is mostly obsolete with the addition of the `Composition` trait. [#330](https://github.com/feos-org/feos/pull/330)
 
 ### Packaging
 - Updated `quantity` dependency to 0.13 and removed the `typenum` dependency. [#328](https://github.com/feos-org/feos/pull/328)
+- Added `csv` as a `feos-core` dependency for the new dataset module. [#358](https://github.com/feos-org/feos/pull/358)
 
 ## [Unreleased]
 ### Added
