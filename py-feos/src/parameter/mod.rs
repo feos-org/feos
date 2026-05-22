@@ -1,4 +1,5 @@
 use crate::error::PyFeosError;
+use feos_core::FeosError;
 use feos_core::parameter::*;
 use indexmap::IndexSet;
 use pyo3::prelude::*;
@@ -216,6 +217,42 @@ impl PyParameters {
             identifier_option.into(),
         )
         .map_err(PyFeosError::from)?;
+        Ok(Self {
+            pure_records,
+            binary_records,
+        })
+    }
+
+    /// Creates parameters from a database file.
+    ///
+    /// Parameters
+    /// ----------
+    /// substances : List[str]
+    ///     The substances to search.
+    /// path : str
+    ///     Path to database file.
+    /// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
+    ///     Identifier that is used to search substance.
+    #[staticmethod]
+    #[pyo3(
+        signature = (substances, path, identifier_option=PyIdentifierOption::Name),
+        text_signature = "(substances, path, identifier_option=IdentifierOption.Name)"
+    )]
+    fn from_database(
+        substances: Vec<String>,
+        path: String,
+        identifier_option: PyIdentifierOption,
+    ) -> PyResult<Self> {
+        let identifier_option = IdentifierOption::from(identifier_option);
+        let conn = rusqlite::Connection::open(path)
+            .map_err(FeosError::from)
+            .map_err(PyFeosError::from)?;
+
+        let pure_records = PureRecord::from_database(&substances, &conn, identifier_option)
+            .map_err(PyFeosError::from)?;
+        let binary_records = BinaryRecord::from_database(&substances, &conn, identifier_option)
+            .map_err(PyFeosError::from)?;
+
         Ok(Self {
             pure_records,
             binary_records,
@@ -488,6 +525,10 @@ impl PyParameters {
                     for &p in &params {
                         format_optional(o, model_record.get(p));
                     }
+                } else {
+                    for _ in &params {
+                        format_optional(o, None);
+                    }
                 }
                 if !r.association_sites.is_empty() {
                     let s = &r.association_sites[0];
@@ -557,6 +598,7 @@ impl PyGcParameters {
         .map_err(PyFeosError::from)?)
     }
 
+    #[cfg(feature = "gc_pcsaft")]
     pub fn try_convert_heterosegmented<P, B, A, C: GroupCount + Default>(
         self,
     ) -> PyResult<GcParameters<P, B, A, (), C>>

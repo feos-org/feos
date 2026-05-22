@@ -62,6 +62,9 @@ pub enum FeosError {
     #[cfg(feature = "ndarray")]
     #[error(transparent)]
     ShapeError(#[from] ndarray::ShapeError),
+    #[cfg(feature = "rusqlite")]
+    #[error(transparent)]
+    RusqLiteError(#[from] rusqlite::Error),
 }
 
 /// Convenience type for `Result<T, FeosError>`.
