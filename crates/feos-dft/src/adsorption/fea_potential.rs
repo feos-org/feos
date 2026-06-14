@@ -1,11 +1,12 @@
 use super::pore3d::{calculate_distance2, evaluate_lj_potential};
-use crate::profile::{CUTOFF_RADIUS, MAX_POTENTIAL};
 use crate::Geometry;
+use crate::profile::{CUTOFF_RADIUS, MAX_POTENTIAL};
 use feos_core::ReferenceSystem;
 use gauss_quad::GaussLegendre;
 use ndarray::{Array1, Array2, Zip};
 use quantity::Length;
 use std::f64::consts::PI;
+use std::num::NonZero;
 
 // Calculate free-energy average potential for given solid structure.
 #[expect(clippy::too_many_arguments)]
@@ -55,7 +56,9 @@ pub fn calculate_fea_potential(
         }
         Geometry::Spherical | Geometry::Cylindrical => {
             let (unscaled_nodes, unscaled_weights) =
-                GaussLegendre::new(n_grid[0]).unwrap().into_iter().unzip();
+                GaussLegendre::new(NonZero::new(n_grid[0]).unwrap())
+                    .into_iter()
+                    .unzip();
 
             let nodes = PI + Array1::from_vec(unscaled_nodes) * PI;
             let weights = Array1::from_vec(unscaled_weights) * PI;
@@ -80,7 +83,9 @@ pub fn calculate_fea_potential(
         }
         Geometry::Spherical => {
             let (unscaled_nodes, unscaled_weights) =
-                GaussLegendre::new(n_grid[1]).unwrap().into_iter().unzip();
+                GaussLegendre::new(NonZero::new(n_grid[1]).unwrap())
+                    .into_iter()
+                    .unzip();
 
             let nodes = PI / 2.0 + Array1::from_vec(unscaled_nodes) * PI / 2.0;
             let weights = Array1::from_vec(unscaled_weights) * PI / 2.0

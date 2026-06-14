@@ -15,12 +15,12 @@ name = "feos"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.27", features = [
+pyo3 = { version = "0.29", features = [
     "multiple-pymethods",
     "indexmap"
 ] }
-pythonize = "0.27"
-numpy = { version = "0.27" }
+pythonize = "0.29"
+numpy = { version = "0.29" }
 
 quantity = { workspace = true, features = ["python", "python_numpy"] }
 num-dual = { workspace = true, features = ["python_macro"] }
