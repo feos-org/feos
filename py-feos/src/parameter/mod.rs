@@ -22,7 +22,7 @@ pub(crate) use model_record::{PyBinaryRecord, PyPureRecord};
 pub(crate) use segment::{PyBinarySegmentRecord, PySegmentRecord};
 
 /// Set of parameters that fully characterizes a mixture.
-#[pyclass(name = "Parameters")]
+#[pyclass(name = "Parameters", from_py_object)]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PyParameters {
     pub pure_records: Vec<PureRecord<Value, Value>>,
@@ -521,7 +521,7 @@ impl PyParameters {
 
 /// Combination of chemical information and segment parameters that is used to
 /// parametrize a group-contribution model.
-#[pyclass(name = "GcParameters")]
+#[pyclass(name = "GcParameters", from_py_object)]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PyGcParameters {
     chemical_records: Vec<ChemicalRecord>,

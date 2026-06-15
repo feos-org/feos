@@ -19,7 +19,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 /// A thermodynamic two phase equilibrium state.
-#[pyclass(name = "PhaseEquilibrium")]
+#[pyclass(name = "PhaseEquilibrium", from_py_object)]
 #[derive(Clone)]
 pub struct PyPhaseEquilibrium(
     pub PhaseEquilibrium<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>, 2>,
@@ -582,7 +582,7 @@ impl PyPhaseEquilibrium {
 }
 
 /// A thermodynamic three phase equilibrium state.
-#[pyclass(name = "ThreePhaseEquilibrium")]
+#[pyclass(name = "ThreePhaseEquilibrium", from_py_object)]
 #[derive(Clone)]
 struct PyThreePhaseEquilibrium(
     PhaseEquilibrium<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>, 3>,

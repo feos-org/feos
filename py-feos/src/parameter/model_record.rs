@@ -15,7 +15,7 @@ use serde_json::Value;
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(from = "PureRecord<Value, Value>")]
 #[serde(into = "PureRecord<Value, Value>")]
-#[pyclass(name = "PureRecord")]
+#[pyclass(name = "PureRecord", from_py_object)]
 pub struct PyPureRecord {
     #[pyo3(get)]
     pub identifier: PyIdentifier,
@@ -128,7 +128,7 @@ impl PyPureRecord {
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(from = "BinaryRecord<Identifier, Value, Value>")]
 #[serde(into = "BinaryRecord<Identifier, Value, Value>")]
-#[pyclass(name = "BinaryRecord")]
+#[pyclass(name = "BinaryRecord", from_py_object)]
 pub struct PyBinaryRecord {
     #[pyo3(get)]
     pub id1: PyIdentifier,

@@ -23,7 +23,7 @@ type InvP<T> = Quantity<T, <_Pressure as Neg>::Output>;
 
 /// Possible contributions that can be computed.
 #[derive(Clone, Copy, PartialEq)]
-#[pyclass(name = "Contributions", eq, eq_int)]
+#[pyclass(name = "Contributions", eq, eq_int, from_py_object)]
 pub enum PyContributions {
     /// Only compute the ideal gas contribution
     IdealGas,
@@ -94,7 +94,7 @@ impl From<PyContributions> for Contributions {
 /// ------
 /// Error
 ///     When the state cannot be created using the combination of input.
-#[pyclass(name = "State")]
+#[pyclass(name = "State", from_py_object)]
 #[derive(Clone)]
 pub struct PyState(pub State<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>);
 
