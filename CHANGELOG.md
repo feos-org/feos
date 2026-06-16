@@ -29,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Packaging
 - Updated `quantity` dependency to 0.13 and removed the `typenum` dependency. [#328](https://github.com/feos-org/feos/pull/328)
 - Added `csv` as a `feos-core` dependency for the new dataset module. [#358](https://github.com/feos-org/feos/pull/358)
+- Updated `pyo3`, `pythonize` and `numpy` dependencies to 0.29. [#360](https://github.com/feos-org/feos/pull/360)
+- Updated `quantity` and `num-dual` dependencies to 0.14. [#360](https://github.com/feos-org/feos/pull/360)
+- Updated `nalgebra` dependency to 0.35. [#360](https://github.com/feos-org/feos/pull/360)
+- Updated `gauss-quad` dependency to 0.3. [#360](https://github.com/feos-org/feos/pull/360)
 
 ## [Unreleased]
 ### Added
