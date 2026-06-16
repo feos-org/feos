@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `PropertyAD` trait in `feos_core::ad` with one struct per property for uniform evaluation with or without parameter derivatives, including parallel variants. [#358](https://github.com/feos-org/feos/pull/358)
 - Added `feos_core::ad::dataset` module with `PureDataset` and `BinaryDataset` types, constructible from records, CSV files, or readers, for use in parameter fits. [#358](https://github.com/feos-org/feos/pull/358)
 - Exposed `Property`, `PureDataset`, and `BinaryDataset` in `py-feos`. [#358](https://github.com/feos-org/feos/pull/358)
+- Implemented `IdealGasAD<D>` for `Dippr`. [#357](https://github.com/feos-org/feos/pull/357)
 
 ### Changed
 - Removed any assumptions about the total number of moles in a `State` or `PhaseEquilibrium`. Evaluating extensive properties now returns a `Result`. [#330](https://github.com/feos-org/feos/pull/330)
@@ -29,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Packaging
 - Updated `quantity` dependency to 0.13 and removed the `typenum` dependency. [#328](https://github.com/feos-org/feos/pull/328)
 - Added `csv` as a `feos-core` dependency for the new dataset module. [#358](https://github.com/feos-org/feos/pull/358)
+- Updated `pyo3`, `pythonize` and `numpy` dependencies to 0.29. [#360](https://github.com/feos-org/feos/pull/360)
+- Updated `quantity` and `num-dual` dependencies to 0.14. [#360](https://github.com/feos-org/feos/pull/360)
+- Updated `nalgebra` dependency to 0.35. [#360](https://github.com/feos-org/feos/pull/360)
+- Updated `gauss-quad` dependency to 0.3. [#360](https://github.com/feos-org/feos/pull/360)
 
 ## [Unreleased]
 
@@ -44,7 +49,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add Rayon global thread pool control via `FEOS_MAX_THREADS` and `set_num_threads()`/ `get_num_threads()` to Python. [#346](https://github.com/feos-org/feos/pull/346)
 - Added DIPPR107 parameterization for ideal gas heat capacities of Burkhardt et al. [#344](https://github.com/feos-org/feos/pull/344)
-- Implemented `IdealGasAD<D>` for `Dippr`. [#357](https://github.com/feos-org/feos/pull/357)
 
 ### Fixed
 - Fixed the calculation of temperature and pressure derivatives of dew and bubble points. [#347](https://github.com/feos-org/feos/pull/347)

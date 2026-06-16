@@ -14,7 +14,7 @@ use pyo3::prelude::*;
 pub mod dataset;
 pub use dataset::{PyBinaryDataset, PyPureDataset};
 
-#[pyclass(name = "EquationOfStateAD", eq, eq_int)]
+#[pyclass(name = "EquationOfStateAD", eq, eq_int, from_py_object)]
 #[derive(Clone, Copy, PartialEq)]
 pub enum PyEquationOfStateAD {
     PcSaftNonAssoc,
