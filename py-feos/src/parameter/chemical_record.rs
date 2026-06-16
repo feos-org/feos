@@ -1,4 +1,4 @@
-use super::fragmentation::{fragment_molecule, PySmartsRecord};
+use super::fragmentation::{PySmartsRecord, fragment_molecule};
 use super::identifier::{PyIdentifier, PyIdentifierOption};
 use crate::error::PyFeosError;
 use feos_core::parameter::{ChemicalRecord, Identifier};
@@ -7,7 +7,7 @@ use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// Information about segments and bonds of a molecule.
-#[pyclass(name = "ChemicalRecord")]
+#[pyclass(name = "ChemicalRecord", from_py_object)]
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub(crate) struct PyChemicalRecord(ChemicalRecord);
 

@@ -176,7 +176,7 @@ macro_rules! impl_residual {
 
 macro_rules! state {
     ($py_state_id:ident, $py_hd_id:ident, $hd_ty:ty) => {
-        #[pyclass]
+        #[pyclass(from_py_object)]
         #[derive(Clone)]
         struct $py_state_id(StateHD<$hd_ty>);
 
@@ -233,7 +233,7 @@ macro_rules! state {
 
 macro_rules! dual_number {
     ($py_hd_id:ident, $hd_ty:ty, $py_field_ty:ty) => {
-        #[pyclass]
+        #[pyclass(from_py_object)]
         #[derive(Clone)]
         struct $py_hd_id($hd_ty);
         impl_dual_num!($py_hd_id, $hd_ty, $py_field_ty);

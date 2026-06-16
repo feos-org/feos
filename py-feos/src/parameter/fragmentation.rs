@@ -9,7 +9,7 @@ use crate::error::PyFeosError;
 
 /// SMARTS code, required to fragmentize molecules into segments.
 #[derive(Clone, Serialize, Deserialize)]
-#[pyclass(name = "SmartsRecord")]
+#[pyclass(name = "SmartsRecord", from_py_object)]
 pub(crate) struct PySmartsRecord {
     group: String,
     smarts: String,
