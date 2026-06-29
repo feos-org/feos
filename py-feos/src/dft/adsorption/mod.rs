@@ -5,7 +5,9 @@ use crate::error::PyFeosError;
 use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
 use feos_core::EquationOfState;
-use feos_dft::adsorption::{Adsorption, Adsorption1D, Adsorption3D};
+use feos_dft::adsorption::{Adsorption, Adsorption1D};
+#[cfg(feature = "rayon")]
+use feos_dft::adsorption::Adsorption3D;
 use nalgebra::DMatrix;
 use ndarray::*;
 use numpy::*;
@@ -17,13 +19,16 @@ mod external_potential;
 mod pore;
 
 pub use external_potential::PyExternalPotential;
-pub use pore::{PyPore1D, PyPore2D, PyPore3D, PyPoreProfile1D, PyPoreProfile3D};
+pub use pore::{PyPore1D, PyPore2D, PyPoreProfile1D};
+#[cfg(feature = "rayon")]
+pub use pore::{PyPore3D, PyPoreProfile3D};
 
 /// Container structure for adsorption isotherms in 1D pores.
 #[pyclass(name = "Adsorption1D")]
 pub struct PyAdsorption1D(Adsorption1D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>);
 
 /// Container structure for adsorption isotherms in 3D pores.
+#[cfg(feature = "rayon")]
 #[pyclass(name = "Adsorption3D")]
 pub struct PyAdsorption3D(Adsorption3D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>);
 
@@ -270,4 +275,5 @@ macro_rules! impl_adsorption_isotherm {
 }
 
 impl_adsorption_isotherm!(PyAdsorption1D, PyPore1D, PyPoreProfile1D);
+#[cfg(feature = "rayon")]
 impl_adsorption_isotherm!(PyAdsorption3D, PyPore3D, PyPoreProfile3D);

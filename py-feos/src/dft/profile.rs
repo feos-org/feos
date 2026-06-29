@@ -243,6 +243,8 @@ macro_rules! impl_2d_profile {
     };
 }
 
+// Only used by rayon-gated 3D profiles (PoreProfile3D, SolvationProfile).
+#[cfg(feature = "rayon")]
 macro_rules! impl_3d_profile {
     ($struct:ident, $ax1:ident, $ax2:ident, $ax3:ident) => {
         impl_profile!(
@@ -270,4 +272,6 @@ macro_rules! impl_3d_profile {
     };
 }
 
-pub(crate) use {impl_1d_profile, impl_2d_profile, impl_3d_profile, impl_profile};
+pub(crate) use {impl_1d_profile, impl_2d_profile, impl_profile};
+#[cfg(feature = "rayon")]
+pub(crate) use impl_3d_profile;

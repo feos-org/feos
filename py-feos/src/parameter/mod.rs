@@ -1,4 +1,5 @@
 use crate::error::PyFeosError;
+#[cfg(feature = "sqlite")]
 use feos_core::FeosError;
 use feos_core::parameter::*;
 use indexmap::IndexSet;
@@ -236,6 +237,7 @@ impl PyParameters {
     ///     Path to database file.
     /// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
     ///     Identifier that is used to search substance.
+    #[cfg(feature = "sqlite")]
     #[staticmethod]
     #[pyo3(
         signature = (substances, path, identifier_option=PyIdentifierOption::Name),

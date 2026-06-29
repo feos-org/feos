@@ -36,16 +36,24 @@ indexmap = { workspace = true }
 rayon = { workspace = true, optional = true }
 itertools = { workspace = true }
 paste = { workspace = true }
-rusqlite = { workspace = true, features = ["bundled"]}
+# Optional: the `bundled` sqlite is C compiled to wasm and its build script
+# uses the unstable `cfg_select` feature, which the pinned-stable emscripten
+# toolchain rejects. Gated behind the `sqlite` feature, off for the wasm build.
+rusqlite = { workspace = true, features = ["bundled"], optional = true }
 
 feos = { workspace = true }
-feos-core = { workspace = true, features = ["ndarray", "rusqlite"] }
+feos-core = { workspace = true, features = ["ndarray"] }
 feos-derive = { workspace = true }
 feos-dft = { workspace = true, optional = true }
 
 [features]
 default = []
-dft = ["feos/dft", "feos-dft", "petgraph", "rayon"]
+# `dft` no longer pulls in `rayon`: the wasm32-unknown-emscripten target has no
+# pthreads, so the emscripten wheel is built without the `rayon` feature. The
+# rayon-gated 3D-FFT DFT classes (Pore3D/PoreProfile3D/Adsorption3D,
+# SolvationProfile, PairCorrelation) are cfg-gated out of that build. Native
+# builds re-enable everything via `all_models` (which lists `rayon` below).
+dft = ["feos/dft", "feos-dft", "petgraph"]
 pcsaft = ["feos/pcsaft"]
 epcsaft = ["feos/epcsaft"]
 gc_pcsaft = ["feos/gc_pcsaft"]
@@ -55,6 +63,8 @@ saftvrqmie = ["feos/saftvrqmie"]
 saftvrmie = ["feos/saftvrmie"]
 multiparameter = ["feos/multiparameter"]
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
+# Loading parameters from a sqlite database; omitted from the wasm build.
+sqlite = ["dep:rusqlite", "feos-core/rusqlite"]
 ad = ["feos-core/rayon", "feos/pcsaft"]
 all_models = [
     "dft",
@@ -66,7 +76,9 @@ all_models = [
     "saftvrqmie",
     "saftvrmie",
     "multiparameter",
-    "ad"
+    "ad",
+    "rayon",
+    "sqlite"
 ]
 
 [dev-dependencies]

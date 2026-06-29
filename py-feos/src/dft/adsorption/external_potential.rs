@@ -1,8 +1,11 @@
 use feos_dft::adsorption::ExternalPotential;
+// Only the rayon-gated `FreeEnergyAveraged` constructor uses these.
+#[cfg(feature = "rayon")]
 use ndarray::Array2;
 use numpy::PyArray1;
 use numpy::prelude::*;
 use pyo3::prelude::*;
+#[cfg(feature = "rayon")]
 use quantity::Length;
 
 /// A collection of external potentials.
@@ -227,6 +230,9 @@ impl PyExternalPotential {
     /// -------
     /// ExternalPotential
     ///
+    // The free-energy-averaged potential is rayon-gated in feos-dft (3D FFT),
+    // so it is absent from the threadless wasm/emscripten build.
+    #[cfg(feature = "rayon")]
     #[staticmethod]
     #[pyo3(
         text_signature = "(coordinates, sigma_ss, epsilon_k_ss, pore_center, system_size, n_grid, cutoff_radius=None)",

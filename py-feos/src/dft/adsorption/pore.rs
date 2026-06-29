@@ -266,17 +266,24 @@ impl PyPore2D {
 /// -------
 /// Pore3D
 ///
+// Pore3D/PoreProfile3D wrap feos_dft types that only exist with `rayon`
+// (3D FFT). Gated out of the threadless wasm32-unknown-emscripten build.
+#[cfg(feature = "rayon")]
 #[pyclass(name = "Pore3D")]
 pub struct PyPore3D(pub Pore3D);
 
+#[cfg(feature = "rayon")]
 #[pyclass(name = "PoreProfile3D")]
 pub struct PyPoreProfile3D(
     pub PoreProfile3D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
 );
 
+#[cfg(feature = "rayon")]
 impl_3d_profile!(PyPoreProfile3D, get_x, get_y, get_z);
+#[cfg(feature = "rayon")]
 impl_pore_profile!(PyPoreProfile3D);
 
+#[cfg(feature = "rayon")]
 #[pymethods]
 impl PyPore3D {
     #[new]

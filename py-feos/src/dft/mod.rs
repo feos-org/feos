@@ -12,13 +12,17 @@ use std::sync::Arc;
 mod adsorption;
 mod interface;
 mod profile;
+// `solvation` wraps feos_dft::solvation, which only exists with `rayon`.
+#[cfg(feature = "rayon")]
 mod solvation;
 mod solver;
 
-pub(crate) use adsorption::{
-    PyAdsorption1D, PyAdsorption3D, PyExternalPotential, PyPore1D, PyPore2D, PyPore3D,
-};
+pub(crate) use adsorption::{PyAdsorption1D, PyExternalPotential, PyPore1D, PyPore2D};
+// 3D pore / adsorption bindings wrap rayon-gated feos_dft types.
+#[cfg(feature = "rayon")]
+pub(crate) use adsorption::{PyAdsorption3D, PyPore3D};
 pub(crate) use interface::{PyPlanarInterface, PySurfaceTensionDiagram};
+#[cfg(feature = "rayon")]
 pub(crate) use solvation::{PyPairCorrelation, PySolvationProfile};
 pub(crate) use solver::{PyDFTSolver, PyDFTSolverLog};
 
