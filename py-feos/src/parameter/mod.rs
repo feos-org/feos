@@ -48,10 +48,13 @@ impl PyParameters {
             .map(|r| {
                 // Explicitly parse model record
                 // Needed for returning error if parsing fails instead of returning None
-                let model_record = match r.model_record {
-                    Some(v) => Some(serde_json::from_value::<B>(v)?),
-                    None => None,
-                };
+                let model_record = r
+                    .model_record
+                    // A missing BIP is parsed as Some(Object {}) rather than None, so this case has
+                    // to be handled explicitly
+                    .filter(|v| !matches!(v.as_object(), Some(o) if o.is_empty()))
+                    .map(serde_json::from_value::<B>)
+                    .transpose()?;
 
                 let association_sites = r
                     .association_sites
