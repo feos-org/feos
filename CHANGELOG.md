@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.9.6] - 2026-07-03
 ### Fixed 
 - Fixed `PhaseDiagram.binary_vle()` panicking during search for VLLE (tried to access unallocated element). [#361] (https://github.com/feos-org/feos/pull/362)
 - Fixed reading binary association parameters from JSON. [#363](https://github.com/feos-org/feos/pull/363)
