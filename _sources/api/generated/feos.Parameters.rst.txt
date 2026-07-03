@@ -19,6 +19,7 @@ feos.Parameters
       :toctree: ./
    
       ~Parameters.__init__
+      ~Parameters.from_database
       ~Parameters.from_json
       ~Parameters.from_multiple_json
       ~Parameters.from_records
