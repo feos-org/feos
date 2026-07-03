@@ -257,7 +257,7 @@ fn check_for_vlle<E: Residual + Subset, TP: TemperatureOrPressure>(
             }
             if y[j] < y[i] {
                 // intersection found!
-                let (xj, yj, pj) = if j == n - 2 {
+                let (xj, yj, pj) = if j >= n - 2 {
                     // Use Henry constant of component 2
                     let k_inf = (states[n - 1].liquid().ln_phi() - states[n - 1].vapor().ln_phi())
                         .map(f64::exp)[1];
