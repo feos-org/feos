@@ -1,3 +1,4 @@
+//! Automatic differentiation with respect to model parameters.
 use crate::Residual;
 use nalgebra::{Const, DefaultAllocator, Dim, U1, allocator::Allocator};
 use num_dual::{Derivative, DualNum, DualSVec};

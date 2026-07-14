@@ -263,6 +263,7 @@ impl_dual_state_helmholtz_energy!(
 );
 impl_dual_state_helmholtz_energy!(PyStateHD, PyHyperDual64, HyperDual64, f64);
 impl_dual_state_helmholtz_energy!(PyStateD2, PyDual2_64, Dual2_64, f64);
+impl_dual_state_helmholtz_energy!(PyStateD2Vec2, PyDual2SVec64_2, Dual2SVec64<2>, f64);
 impl_dual_state_helmholtz_energy!(PyStateD3, PyDual3_64, Dual3_64, f64);
 impl_dual_state_helmholtz_energy!(PyStateHDD, PyHyperDualDual64, HyperDual<Dual64, f64>, PyDual64);
 dual_number!(PyDualVec2, DualSVec64<2>, f64);
@@ -334,6 +335,7 @@ impl_residual!(
     Dual<DualSVec64<3>, f64>;
     PyStateHD, PyHyperDual64, HyperDual64;
     PyStateD2, PyDual2_64, Dual2_64;
+    PyStateD2Vec2, PyDual2SVec64_2, Dual2SVec64<2>;
     PyStateD3, PyDual3_64, Dual3_64;
     PyStateHDD, PyHyperDualDual64, HyperDual<Dual64, f64>;
     PyStateHDDVec2,

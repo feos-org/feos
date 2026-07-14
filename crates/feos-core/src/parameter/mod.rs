@@ -31,6 +31,7 @@ pub use model_record::{
     SegmentRecord,
 };
 
+/// Parameters for one specific pure component or segment/group.
 #[derive(Clone)]
 pub struct PureParameters<M, C> {
     pub identifier: String,
@@ -65,6 +66,7 @@ impl<M: Clone, C> PureParameters<M, C> {
     }
 }
 
+/// Parameters for one specific binary interaction.
 #[derive(Clone, Copy)]
 pub struct BinaryParameters<B, C> {
     pub id1: usize,
@@ -84,6 +86,10 @@ impl<B, C> BinaryParameters<B, C> {
     }
 }
 
+/// The most general representation of model parameters.
+///
+/// All parameter structs are type aliases of this struct.
+/// See [Parameters], [GcParameters] and [IdealGasParameters].
 pub struct GenericParameters<P, B, A, Bo, C, Data> {
     pub pure: Vec<PureParameters<P, C>>,
     pub binary: Vec<BinaryParameters<B, ()>>,
@@ -93,8 +99,10 @@ pub struct GenericParameters<P, B, A, Bo, C, Data> {
     data: Data,
 }
 
+/// Representation of component-specific parameters (no bonds, no counts).
 pub type Parameters<P, B, A> =
     GenericParameters<P, B, A, (), (), (Vec<PureRecord<P, A>>, Vec<BinaryRecord<usize, B, A>>)>;
+/// Representation of group-specific parameters.
 pub type GcParameters<P, B, A, Bo, C> = GenericParameters<
     P,
     B,
@@ -108,6 +116,7 @@ pub type GcParameters<P, B, A, Bo, C> = GenericParameters<
         Vec<BinarySegmentRecord<Bo, ()>>,
     ),
 >;
+/// Representation of parameters for ideal gas models (no association, no binary interactions).
 pub type IdealGasParameters<I> = Parameters<I, (), ()>;
 
 impl<P, B, A, Bo, C, Data> GenericParameters<P, B, A, Bo, C, Data> {
