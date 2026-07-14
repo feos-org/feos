@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Breaking]
+## [Unreleased]
+
+## [0.10.0] - XXXX-XX-XX
 ### Added
 - Extended tp-flash algorithm to static numbers of components and enabled automatic differentiation for binary systems. [#336](https://github.com/feos-org/feos/pull/336)
 - Rewrote `PhaseEquilibrium::pure_p` to mirror `pure_t` and enabled automatic differentiation. [#337](https://github.com/feos-org/feos/pull/337)
@@ -16,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `feos_core::ad::dataset` module with `PureDataset` and `BinaryDataset` types, constructible from records, CSV files, or readers, for use in parameter fits. [#358](https://github.com/feos-org/feos/pull/358)
 - Exposed `Property`, `PureDataset`, and `BinaryDataset` in `py-feos`. [#358](https://github.com/feos-org/feos/pull/358)
 - Implemented `IdealGasAD<D>` for `Dippr`. [#357](https://github.com/feos-org/feos/pull/357)
+- Added `PhaseEquilibrium::binary_azeotrope` that quickly finds azeotropes in binary mixtures for a given temperature or pressure. [#365](https://github.com/feos-org/feos/pull/365)
 
 ### Changed
 - Removed any assumptions about the total number of moles in a `State` or `PhaseEquilibrium`. Evaluating extensive properties now returns a `Result`. [#330](https://github.com/feos-org/feos/pull/330)
@@ -34,8 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `quantity` and `num-dual` dependencies to 0.14. [#360](https://github.com/feos-org/feos/pull/360)
 - Updated `nalgebra` dependency to 0.35. [#360](https://github.com/feos-org/feos/pull/360)
 - Updated `gauss-quad` dependency to 0.3. [#360](https://github.com/feos-org/feos/pull/360)
-
-## [Unreleased]
+- Update `itertools` dependency to 0.15.
 
 ## [0.9.6] - 2026-07-03
 ### Added
