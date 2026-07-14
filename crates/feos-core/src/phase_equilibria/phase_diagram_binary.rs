@@ -6,6 +6,7 @@ use crate::{ReferenceSystem, Residual, SolverOptions, Subset};
 use nalgebra::{DVector, dvector, matrix, stack, vector};
 use ndarray::{Array1, s};
 use num_dual::linalg::LU;
+use num_dual::{Dual64, DualNum, first_derivative, partial, partial2};
 use quantity::{Density, Moles, Pressure, RGAS, Temperature};
 
 const DEFAULT_POINTS: usize = 51;
@@ -770,5 +771,150 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
         Err(FeosError::NotConverged(String::from(
             "PhaseEquilibrium::heteroazeotrope_p",
         )))
+    }
+}
+
+/// # Azeotrope detection
+impl<E: Residual + Subset> PhaseEquilibrium<E, 2> {
+    /// Calculate the azeotropic state in a binary system. If no azeotrope is
+    /// expected, the function returns `None`.
+    pub fn binary_azeotrope<TP: TemperatureOrPressure>(
+        eos: &E,
+        temperature_or_pressure: TP,
+    ) -> FeosResult<Option<Self>> {
+        // determine the VLEs of both pure components
+        let vle = Self::vle_pure_comps(eos, temperature_or_pressure);
+
+        // check that there are exactly two components
+        let mut iter = vle.into_iter();
+        let (Some(vle1), Some(vle2), None) = (iter.next(), iter.next(), iter.next()) else {
+            return Err(FeosError::IncompatibleComponents(eos.components(), 2));
+        };
+
+        // check that both pure components are subcritical (or converge)
+        let (Some(vle1), Some(vle2)) = (vle1, vle2) else {
+            return Err(FeosError::SuperCritical);
+        };
+
+        // calculate the Henry coefficient and vapor pressures of both binary end systems
+        let henry1 =
+            State::henrys_law_constant(eos, vle1.liquid().temperature, &vle1.liquid().molefracs)?
+                [0];
+        let psat1 = vle1.liquid().pressure(Contributions::Total);
+        let henry2 =
+            State::henrys_law_constant(eos, vle2.liquid().temperature, &vle2.liquid().molefracs)?
+                [0];
+        let psat2 = vle2.liquid().pressure(Contributions::Total);
+
+        // calculate the relative volatility at both ends of the phase diagram
+        // logarithms of alpha values are used so that the algorithm behaves exactly the same
+        // when the two components are flipped
+        let ln_alpha1 = henry2.convert_into(psat2).ln();
+        let ln_alpha2 = psat1.convert_into(henry1).ln();
+
+        // check whether we expect an azeotrope (technically only a necessary criterion)
+        if ln_alpha1 * ln_alpha2 > 0.0 {
+            return Ok(None);
+        }
+
+        // estimate the azeotropic composition from a straight line in ln(alpha(x))
+        let x0 = -ln_alpha1 / (ln_alpha2 - ln_alpha1);
+
+        // solve for the azeotropic composition and return the corresponding VLE state
+        let (temperature, pressure, iterate_t) = temperature_or_pressure.temperature_pressure(None);
+        (if iterate_t {
+            Self::iterate_azeotrope_t(eos, temperature.unwrap(), x0, 10, 1e-10)
+        } else {
+            let t_init = vle1.liquid().temperature.min(vle2.liquid().temperature);
+            Self::iterate_azeotrope_p(eos, pressure.unwrap(), x0, t_init, 10, 1e-10)
+        })
+        .map(Some)
+    }
+
+    fn iterate_azeotrope_t(
+        eos: &E,
+        temperature: Temperature,
+        x0: f64,
+        max_iter: usize,
+        tol: f64,
+    ) -> FeosResult<Self> {
+        let x = Self::azeotrope_newton(
+            partial(
+                |x: Dual64, &t: &Temperature<_>| {
+                    PhaseEquilibrium::bubble_point(
+                        &eos.lift(),
+                        t,
+                        &dvector![x, -x + 1.0],
+                        None,
+                        None,
+                        Default::default(),
+                    )
+                    .map(|vle| {
+                        (vle.vapor().molefracs[0]
+                            / vle.liquid().molefracs[0]
+                            / (vle.vapor().molefracs[1] / vle.liquid().molefracs[1]))
+                            .ln()
+                    })
+                },
+                &temperature,
+            ),
+            x0,
+            max_iter,
+            tol,
+        )?;
+        PhaseEquilibrium::bubble_point(eos, temperature, x, None, None, Default::default())
+    }
+
+    fn iterate_azeotrope_p(
+        eos: &E,
+        pressure: Pressure,
+        x0: f64,
+        t_init: Temperature,
+        max_iter: usize,
+        tol: f64,
+    ) -> FeosResult<Self> {
+        let x = Self::azeotrope_newton(
+            partial2(
+                |x: Dual64, &p: &Pressure<_>, &t_init| {
+                    PhaseEquilibrium::bubble_point(
+                        &eos.lift(),
+                        p,
+                        &dvector![x, -x + 1.0],
+                        Some(t_init),
+                        None,
+                        Default::default(),
+                    )
+                    .map(|vle| {
+                        (vle.vapor().molefracs[0]
+                            / vle.liquid().molefracs[0]
+                            / (vle.vapor().molefracs[1] / vle.liquid().molefracs[1]))
+                            .ln()
+                    })
+                },
+                &pressure,
+                &t_init,
+            ),
+            x0,
+            max_iter,
+            tol,
+        )?;
+        PhaseEquilibrium::bubble_point(eos, pressure, x, Some(t_init), None, Default::default())
+    }
+
+    fn azeotrope_newton<F: Fn(Dual64) -> FeosResult<Dual64>>(
+        f: F,
+        x0: f64,
+        max_iter: usize,
+        tol: f64,
+    ) -> FeosResult<f64> {
+        let mut x = x0;
+        for _ in 0..max_iter {
+            let (f, df) = first_derivative(&f, x)?;
+            x -= f / df;
+            if f.abs() < tol {
+                return Ok(x);
+            }
+        }
+        Err(FeosError::NotConverged("binary_azeotrope".into()))
     }
 }
