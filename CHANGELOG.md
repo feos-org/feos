@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [0.9.6] - 2026-07-03
+### Added
+- Added parameter import from SQL using the `rusqlite` dependency. [#352](https://github.com/feos-org/feos/pull/352)
+
 ### Fixed 
 - Fixed `PhaseDiagram.binary_vle()` panicking during search for VLLE (tried to access unallocated element). [#362](https://github.com/feos-org/feos/pull/362)
 - Fixed reading binary association parameters from JSON. [#363](https://github.com/feos-org/feos/pull/363)
