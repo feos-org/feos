@@ -46,15 +46,15 @@ impl<A> AssociationRecord<A> {
 /// Binary association parameters.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BinaryAssociationRecord<A> {
-    // Identifier of the association site on the first molecule.
+    /// Identifier of the association site on the first molecule.
     #[serde(skip_serializing_if = "String::is_empty")]
     #[serde(default)]
     pub id1: String,
-    // Identifier of the association site on the second molecule.
+    /// Identifier of the association site on the second molecule.
     #[serde(skip_serializing_if = "String::is_empty")]
     #[serde(default)]
     pub id2: String,
-    // Binary association parameters
+    /// Binary association parameters
     #[serde(flatten)]
     pub parameters: A,
 }
@@ -73,10 +73,14 @@ impl<A> BinaryAssociationRecord<A> {
     }
 }
 
+/// The definition of an individual association site.
 #[derive(Clone, Debug)]
 pub struct AssociationSite {
+    /// The index of the component (or group) that the association site is on.
     pub assoc_comp: usize,
+    /// The identifier of the site (if there are multiple sites on one component/group).
     pub id: String,
+    /// The multplicity of the association site (NA/NB/NC).
     pub n: f64,
 }
 
@@ -86,6 +90,8 @@ impl AssociationSite {
     }
 }
 
+/// The combining rule for association parameters that is used as fallback
+/// if no binary association parameters are available.
 pub trait CombiningRule<P> {
     fn combining_rule(comp_i: &P, comp_j: &P, parameters_i: &Self, parameters_j: &Self) -> Self;
 }

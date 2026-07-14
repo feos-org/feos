@@ -122,6 +122,11 @@ impl std::fmt::Display for ChemicalRecord {
         write!(f, "\n\tbonds={:?}\n)", self.bonds)
     }
 }
+
+/// The type that is used to account for the multiplicity of groups.
+///
+/// In practice `f64` for group-based models and `()` for segment-based
+/// models.
 pub trait GroupCount: Copy {
     #[expect(clippy::type_complexity)]
     fn into_groups(

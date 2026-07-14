@@ -529,7 +529,7 @@ impl PyState {
     /// -------
     /// SIArray1
     #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
-    fn dp_dni(&self, contributions: PyContributions) -> Pressure<DVector<f64>> {
+    fn n_dp_dni(&self, contributions: PyContributions) -> Pressure<DVector<f64>> {
         self.0.n_dp_dni(contributions.into())
     }
 
