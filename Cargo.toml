@@ -4,7 +4,7 @@ members = ["crates/*", "py-feos"]
 default-members = ["crates/feos"]
 
 [workspace.package]
-version = "0.9.6"
+version = "0.10.0"
 edition = "2024"
 authors = [
     "Gernot Bauer <bauer@itt.uni-stuttgart.de>",
@@ -45,10 +45,10 @@ paste = "1.0"
 rusqlite = "0.40"
 csv = "1.0"
 
-feos-core = { version = "0.9", path = "crates/feos-core" }
-feos-dft = { version = "0.9", path = "crates/feos-dft" }
-feos-derive = { version = "0.9", path = "crates/feos-derive" }
-feos = { version = "0.9", path = "crates/feos" }
+feos-core = { version = "0.10", path = "crates/feos-core" }
+feos-dft = { version = "0.10", path = "crates/feos-dft" }
+feos-derive = { version = "0.10", path = "crates/feos-derive" }
+feos = { version = "0.10", path = "crates/feos" }
 
 [profile.release-lto]
 inherits = "release"
