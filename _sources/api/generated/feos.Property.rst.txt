@@ -1,0 +1,43 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Property
+=============
+
+.. currentmodule:: feos
+
+.. autoclass:: Property
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Property.__init__
+      ~Property.boiling_temperature
+      ~Property.boiling_temperature_derivatives
+      ~Property.bubble_point_pressure
+      ~Property.bubble_point_pressure_derivatives
+      ~Property.dew_point_pressure
+      ~Property.dew_point_pressure_derivatives
+      ~Property.enthalpy_of_vaporization
+      ~Property.enthalpy_of_vaporization_derivatives
+      ~Property.equilibrium_liquid_density
+      ~Property.equilibrium_liquid_density_derivatives
+      ~Property.liquid_density
+      ~Property.liquid_density_derivatives
+      ~Property.residual_isobaric_heat_capacity
+      ~Property.residual_isobaric_heat_capacity_derivatives
+      ~Property.vapor_pressure
+      ~Property.vapor_pressure_derivatives
+   
+   
+
+   
+   
+   

@@ -70,20 +70,20 @@ Due to different language paradigms, $\text{FeO}_\text{s}$ handles the ideal gas
 | Partial derivative of pressure w.r.t. volume | $\left(\frac{\partial p}{\partial V}\right)_{T,n_i}$ |  no | yes |
 | Partial derivative of pressure w.r.t. density | $\left(\frac{\partial p}{\partial \rho}\right)_{T,n_i}$ |  no | yes |
 | Partial derivative of pressure w.r.t. temperature | $\left(\frac{\partial p}{\partial T}\right)_{V,n_i}$ |  no | yes |
-| Partial derivative of pressure w.r.t. moles | $\left(\frac{\partial p}{\partial n_i}\right)_{T,V,n_j}$ |  no | yes |
+| Partial derivative of pressure w.r.t. moles | $n\left(\frac{\partial p}{\partial n_i}\right)_{T,V,n_j}$ |  no | yes |
 | Second partial derivative of pressure w.r.t. volume | $\left(\frac{\partial^2 p}{\partial V^2}\right)_{T,n_i}$ |  no | yes |
 | Second partial derivative of pressure w.r.t. density | $\left(\frac{\partial^2 p}{\partial \rho^2}\right)_{T,n_i}$ |  no | yes |
 | Partial molar volume $v_i$ | $\left(\frac{\partial V}{\partial n_i}\right)_{T,p,n_j}$ |  no | no |
 | Chemical potential $\mu_i$ | $\left(\frac{\partial A}{\partial n_i}\right)_{T,V,n_j}$ |  yes | yes |
 | Partial derivative of chemical potential w.r.t. temperature | $\left(\frac{\partial\mu_i}{\partial T}\right)_{V,n_i}$ |  yes | yes |
-| Partial derivative of chemical potential w.r.t. moles | $\left(\frac{\partial\mu_i}{\partial n_j}\right)_{V,n_k}$ |  no | yes |
+| Partial derivative of chemical potential w.r.t. moles | $n\left(\frac{\partial\mu_i}{\partial n_j}\right)_{V,n_k}$ |  no | yes |
 | Logarithmic fugacity coefficient $\ln\varphi_i$ | $\beta\mu_i^\mathrm{res}\left(T,p,\lbrace n_i\rbrace\right)$ | no | no |
 | Pure component logarithmic fugacity coefficient $\ln\varphi_i^\mathrm{pure}$ | $\lim_{x_i\to 1}\ln\varphi_i$ | no | no |
 | Logarithmic (symmetric) activity coefficient $\ln\gamma_i$ | $\ln\left(\frac{\varphi_i}{\varphi_i^\mathrm{pure}}\right)$ | no | no |
 | Henry's law constant $H_{i,s}$ | $\lim_{x_i\to 0}\frac{y_ip}{x_i}=p_s^\mathrm{sat}\frac{\varphi_i^{\infty,\mathrm{L}}}{\varphi_i^{\infty,\mathrm{V}}}$ | no | no |
 | Partial derivative of the logarithmic fugacity coefficient w.r.t. temperature | $\left(\frac{\partial\ln\varphi_i}{\partial T}\right)_{p,n_i}$ | no | no |
 | Partial derivative of the logarithmic fugacity coefficient w.r.t. pressure | $\left(\frac{\partial\ln\varphi_i}{\partial p}\right)_{T,n_i}=\frac{v_i^\mathrm{res,p}}{RT}$ | no | no |
-| Partial derivative of the logarithmic fugacity coefficient w.r.t. moles |  $\left(\frac{\partial\ln\varphi_i}{\partial n_j}\right)_{T,p,n_k}$ | no | no |
+| Partial derivative of the logarithmic fugacity coefficient w.r.t. moles |  $n\left(\frac{\partial\ln\varphi_i}{\partial n_j}\right)_{T,p,n_k}$ | no | no |
 | Thermodynamic factor $\Gamma_{ij}$ | $\delta_{ij}+x_i\left(\frac{\partial\ln\varphi_i}{\partial x_j}\right)_{T,p,\Sigma}$ | no | no |
 | Molar isochoric heat capacity $c_v$ | $\left(\frac{\partial u}{\partial T}\right)_{V,n_i}$ |  yes | yes |
 | Partial derivative of the molar isochoric heat capacity w.r.t. temperature | $\left(\frac{\partial c_V}{\partial T}\right)_{V,n_i}$ |  yes | yes |

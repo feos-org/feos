@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Property.bubble\_point\_pressure
+=====================================
+
+.. currentmodule:: feos
+
+.. automethod:: Property.bubble_point_pressure

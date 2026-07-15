@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="feos.ExternalPotential.FreeEnergyAveraged" href="feos.ExternalPotential.FreeEnergyAveraged.html"><link rel="prev" title="feos.ExternalPotential.CustomSteele" href="feos.ExternalPotential.CustomSteele.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>feos.ExternalPotential.DoubleWell - FeOs v0.9.6</title>
+        <title>feos.ExternalPotential.DoubleWell - FeOs v0.10.0</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">FeOs v0.9.6</div></a>
+      <a href="../../index.html"><div class="brand">FeOs v0.10.0</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -185,7 +185,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
   
-  <span class="sidebar-brand-text">FeOs v0.9.6</span>
+  <span class="sidebar-brand-text">FeOs v0.10.0</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -222,6 +222,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_critical_point_pure.html">Critical point of a pure substance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_p_sat_t_boil.html">Vapor pressure and boiling temperature of a pure substance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_phase_equilibrium_pure.html">Phase equilibrium of a pure substance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_phase_equilibrium_flash.html">Tp-flash</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_phase_equilibrium_flash.html#ph-flash">ph-flash</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_phase_diagram_pure.html">Phase diagram of a pure substance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_automatic_differentiation.html">Phase equilibria including derivatives</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_surface_tension_pure.html">Surface tension of a pure substance</a></li>
@@ -351,12 +353,9 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.State.dc_v_dt.html">feos.State.dc_v_dt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.diffusion.html">feos.State.diffusion</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.diffusion_reference.html">feos.State.diffusion_reference</a></li>
-<li class="toctree-l4"><a class="reference internal" href="feos.State.dln_phi_dnj.html">feos.State.dln_phi_dnj</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.dln_phi_dp.html">feos.State.dln_phi_dp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.dln_phi_dt.html">feos.State.dln_phi_dt</a></li>
-<li class="toctree-l4"><a class="reference internal" href="feos.State.dmu_dni.html">feos.State.dmu_dni</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.dmu_dt.html">feos.State.dmu_dt</a></li>
-<li class="toctree-l4"><a class="reference internal" href="feos.State.dp_dni.html">feos.State.dp_dni</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.dp_drho.html">feos.State.dp_drho</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.dp_dt.html">feos.State.dp_dt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.dp_dv.html">feos.State.dp_dv</a></li>
@@ -390,6 +389,9 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.State.molar_internal_energy.html">feos.State.molar_internal_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.molar_isobaric_heat_capacity.html">feos.State.molar_isobaric_heat_capacity</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.molar_isochoric_heat_capacity.html">feos.State.molar_isochoric_heat_capacity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.State.n_dln_phi_dnj.html">feos.State.n_dln_phi_dnj</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.State.n_dmu_dni.html">feos.State.n_dmu_dni</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.State.n_dp_dni.html">feos.State.n_dp_dni</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.partial_molar_enthalpy.html">feos.State.partial_molar_enthalpy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.partial_molar_entropy.html">feos.State.partial_molar_entropy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.partial_molar_volume.html">feos.State.partial_molar_volume</a></li>
@@ -429,10 +431,13 @@
 </li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="feos.PhaseEquilibrium.html">feos.PhaseEquilibrium</a><input aria-label="Toggle navigation of feos.PhaseEquilibrium" class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" role="switch" type="checkbox"/><label for="toctree-checkbox-24"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.__init__.html">feos.PhaseEquilibrium.__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.binary_azeotrope.html">feos.PhaseEquilibrium.binary_azeotrope</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.boiling_temperature.html">feos.PhaseEquilibrium.boiling_temperature</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.bubble_point.html">feos.PhaseEquilibrium.bubble_point</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.dew_point.html">feos.PhaseEquilibrium.dew_point</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.heteroazeotrope.html">feos.PhaseEquilibrium.heteroazeotrope</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.ph_flash.html">feos.PhaseEquilibrium.ph_flash</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.ps_flash.html">feos.PhaseEquilibrium.ps_flash</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.pure.html">feos.PhaseEquilibrium.pure</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.tp_flash.html">feos.PhaseEquilibrium.tp_flash</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.vapor_pressure.html">feos.PhaseEquilibrium.vapor_pressure</a></li>
@@ -562,14 +567,29 @@
 </ul>
 </li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../ad.html">Automatic differentiation</a><input aria-label="Toggle navigation of Automatic differentiation" class="toctree-checkbox" id="toctree-checkbox-41" name="toctree-checkbox-41" role="switch" type="checkbox"/><label for="toctree-checkbox-41"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="feos.vapor_pressure_derivatives.html">feos.vapor_pressure_derivatives</a></li>
-<li class="toctree-l3"><a class="reference internal" href="feos.liquid_density_derivatives.html">feos.liquid_density_derivatives</a></li>
-<li class="toctree-l3"><a class="reference internal" href="feos.equilibrium_liquid_density_derivatives.html">feos.equilibrium_liquid_density_derivatives</a></li>
-<li class="toctree-l3"><a class="reference internal" href="feos.bubble_point_pressure_derivatives.html">feos.bubble_point_pressure_derivatives</a></li>
-<li class="toctree-l3"><a class="reference internal" href="feos.dew_point_pressure_derivatives.html">feos.dew_point_pressure_derivatives</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="feos.Property.html">feos.Property</a><input aria-label="Toggle navigation of feos.Property" class="toctree-checkbox" id="toctree-checkbox-42" name="toctree-checkbox-42" role="switch" type="checkbox"/><label for="toctree-checkbox-42"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.__init__.html">feos.Property.__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.boiling_temperature.html">feos.Property.boiling_temperature</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.boiling_temperature_derivatives.html">feos.Property.boiling_temperature_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.bubble_point_pressure.html">feos.Property.bubble_point_pressure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.bubble_point_pressure_derivatives.html">feos.Property.bubble_point_pressure_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.dew_point_pressure.html">feos.Property.dew_point_pressure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.dew_point_pressure_derivatives.html">feos.Property.dew_point_pressure_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.enthalpy_of_vaporization.html">feos.Property.enthalpy_of_vaporization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.enthalpy_of_vaporization_derivatives.html">feos.Property.enthalpy_of_vaporization_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.equilibrium_liquid_density.html">feos.Property.equilibrium_liquid_density</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.equilibrium_liquid_density_derivatives.html">feos.Property.equilibrium_liquid_density_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.liquid_density.html">feos.Property.liquid_density</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.liquid_density_derivatives.html">feos.Property.liquid_density_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.residual_isobaric_heat_capacity.html">feos.Property.residual_isobaric_heat_capacity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.residual_isobaric_heat_capacity_derivatives.html">feos.Property.residual_isobaric_heat_capacity_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.vapor_pressure.html">feos.Property.vapor_pressure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.vapor_pressure_derivatives.html">feos.Property.vapor_pressure_derivatives</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../thread_pool.html">Global thread pool</a><input aria-label="Toggle navigation of Global thread pool" class="toctree-checkbox" id="toctree-checkbox-42" name="toctree-checkbox-42" role="switch" type="checkbox"/><label for="toctree-checkbox-42"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../thread_pool.html">Global thread pool</a><input aria-label="Toggle navigation of Global thread pool" class="toctree-checkbox" id="toctree-checkbox-43" name="toctree-checkbox-43" role="switch" type="checkbox"/><label for="toctree-checkbox-43"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="feos.set_num_threads.html">feos.set_num_threads</a></li>
 <li class="toctree-l3"><a class="reference internal" href="feos.get_num_threads.html">feos.get_num_threads</a></li>
 </ul>
@@ -583,12 +603,12 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Theory</span></p>
 <ul>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/eos/index.html">Equations of state</a><input aria-label="Toggle navigation of Equations of state" class="toctree-checkbox" id="toctree-checkbox-43" name="toctree-checkbox-43" role="switch" type="checkbox"/><label for="toctree-checkbox-43"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/eos/index.html">Equations of state</a><input aria-label="Toggle navigation of Equations of state" class="toctree-checkbox" id="toctree-checkbox-44" name="toctree-checkbox-44" role="switch" type="checkbox"/><label for="toctree-checkbox-44"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/eos/properties.html">Properties</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/eos/critical_points.html">Stability and critical points</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/dft/index.html">Classical density functional theory</a><input aria-label="Toggle navigation of Classical density functional theory" class="toctree-checkbox" id="toctree-checkbox-44" name="toctree-checkbox-44" role="switch" type="checkbox"/><label for="toctree-checkbox-44"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/dft/index.html">Classical density functional theory</a><input aria-label="Toggle navigation of Classical density functional theory" class="toctree-checkbox" id="toctree-checkbox-45" name="toctree-checkbox-45" role="switch" type="checkbox"/><label for="toctree-checkbox-45"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/euler_lagrange_equation.html">Euler-Lagrange equation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/functional_derivatives.html">Functional derivatives</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/solver.html">DFT solvers</a></li>
@@ -598,7 +618,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/pdgt.html">Predictive density gradient theory</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/models/index.html">Models</a><input aria-label="Toggle navigation of Models" class="toctree-checkbox" id="toctree-checkbox-45" name="toctree-checkbox-45" role="switch" type="checkbox"/><label for="toctree-checkbox-45"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/models/index.html">Models</a><input aria-label="Toggle navigation of Models" class="toctree-checkbox" id="toctree-checkbox-46" name="toctree-checkbox-46" role="switch" type="checkbox"/><label for="toctree-checkbox-46"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/models/hard_spheres.html">Hard spheres</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/models/association.html">Association</a></li>
 </ul>

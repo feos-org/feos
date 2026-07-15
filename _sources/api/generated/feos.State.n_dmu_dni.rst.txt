@@ -3,9 +3,9 @@
     </div>
     <div class=col-md-9 content>
 
-feos.State.dln\_phi\_dnj
-========================
+feos.State.n\_dmu\_dni
+======================
 
 .. currentmodule:: feos
 
-.. automethod:: State.dln_phi_dnj
+.. automethod:: State.n_dmu_dni

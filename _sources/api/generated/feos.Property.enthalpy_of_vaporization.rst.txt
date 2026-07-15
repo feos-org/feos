@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Property.enthalpy\_of\_vaporization
+========================================
+
+.. currentmodule:: feos
+
+.. automethod:: Property.enthalpy_of_vaporization

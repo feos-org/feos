@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="feos.State.__init__" href="feos.State.__init__.html"><link rel="prev" title="feos.Verbosity.__init__" href="feos.Verbosity.__init__.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>feos.State - FeOs v0.9.6</title>
+        <title>feos.State - FeOs v0.10.0</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">FeOs v0.9.6</div></a>
+      <a href="../../index.html"><div class="brand">FeOs v0.10.0</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -185,7 +185,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
   
-  <span class="sidebar-brand-text">FeOs v0.9.6</span>
+  <span class="sidebar-brand-text">FeOs v0.10.0</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -222,6 +222,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_critical_point_pure.html">Critical point of a pure substance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_p_sat_t_boil.html">Vapor pressure and boiling temperature of a pure substance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_phase_equilibrium_pure.html">Phase equilibrium of a pure substance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_phase_equilibrium_flash.html">Tp-flash</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_phase_equilibrium_flash.html#ph-flash">ph-flash</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_phase_diagram_pure.html">Phase diagram of a pure substance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_automatic_differentiation.html">Phase equilibria including derivatives</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_surface_tension_pure.html">Surface tension of a pure substance</a></li>
@@ -351,12 +353,9 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.State.dc_v_dt.html">feos.State.dc_v_dt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.diffusion.html">feos.State.diffusion</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.diffusion_reference.html">feos.State.diffusion_reference</a></li>
-<li class="toctree-l4"><a class="reference internal" href="feos.State.dln_phi_dnj.html">feos.State.dln_phi_dnj</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.dln_phi_dp.html">feos.State.dln_phi_dp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.dln_phi_dt.html">feos.State.dln_phi_dt</a></li>
-<li class="toctree-l4"><a class="reference internal" href="feos.State.dmu_dni.html">feos.State.dmu_dni</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.dmu_dt.html">feos.State.dmu_dt</a></li>
-<li class="toctree-l4"><a class="reference internal" href="feos.State.dp_dni.html">feos.State.dp_dni</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.dp_drho.html">feos.State.dp_drho</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.dp_dt.html">feos.State.dp_dt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.dp_dv.html">feos.State.dp_dv</a></li>
@@ -390,6 +389,9 @@
 <li class="toctree-l4"><a class="reference internal" href="feos.State.molar_internal_energy.html">feos.State.molar_internal_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.molar_isobaric_heat_capacity.html">feos.State.molar_isobaric_heat_capacity</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.molar_isochoric_heat_capacity.html">feos.State.molar_isochoric_heat_capacity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.State.n_dln_phi_dnj.html">feos.State.n_dln_phi_dnj</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.State.n_dmu_dni.html">feos.State.n_dmu_dni</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.State.n_dp_dni.html">feos.State.n_dp_dni</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.partial_molar_enthalpy.html">feos.State.partial_molar_enthalpy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.partial_molar_entropy.html">feos.State.partial_molar_entropy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.State.partial_molar_volume.html">feos.State.partial_molar_volume</a></li>
@@ -429,10 +431,13 @@
 </li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="feos.PhaseEquilibrium.html">feos.PhaseEquilibrium</a><input aria-label="Toggle navigation of feos.PhaseEquilibrium" class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" role="switch" type="checkbox"/><label for="toctree-checkbox-24"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.__init__.html">feos.PhaseEquilibrium.__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.binary_azeotrope.html">feos.PhaseEquilibrium.binary_azeotrope</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.boiling_temperature.html">feos.PhaseEquilibrium.boiling_temperature</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.bubble_point.html">feos.PhaseEquilibrium.bubble_point</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.dew_point.html">feos.PhaseEquilibrium.dew_point</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.heteroazeotrope.html">feos.PhaseEquilibrium.heteroazeotrope</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.ph_flash.html">feos.PhaseEquilibrium.ph_flash</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.ps_flash.html">feos.PhaseEquilibrium.ps_flash</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.pure.html">feos.PhaseEquilibrium.pure</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.tp_flash.html">feos.PhaseEquilibrium.tp_flash</a></li>
 <li class="toctree-l4"><a class="reference internal" href="feos.PhaseEquilibrium.vapor_pressure.html">feos.PhaseEquilibrium.vapor_pressure</a></li>
@@ -562,14 +567,29 @@
 </ul>
 </li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../ad.html">Automatic differentiation</a><input aria-label="Toggle navigation of Automatic differentiation" class="toctree-checkbox" id="toctree-checkbox-41" name="toctree-checkbox-41" role="switch" type="checkbox"/><label for="toctree-checkbox-41"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="feos.vapor_pressure_derivatives.html">feos.vapor_pressure_derivatives</a></li>
-<li class="toctree-l3"><a class="reference internal" href="feos.liquid_density_derivatives.html">feos.liquid_density_derivatives</a></li>
-<li class="toctree-l3"><a class="reference internal" href="feos.equilibrium_liquid_density_derivatives.html">feos.equilibrium_liquid_density_derivatives</a></li>
-<li class="toctree-l3"><a class="reference internal" href="feos.bubble_point_pressure_derivatives.html">feos.bubble_point_pressure_derivatives</a></li>
-<li class="toctree-l3"><a class="reference internal" href="feos.dew_point_pressure_derivatives.html">feos.dew_point_pressure_derivatives</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="feos.Property.html">feos.Property</a><input aria-label="Toggle navigation of feos.Property" class="toctree-checkbox" id="toctree-checkbox-42" name="toctree-checkbox-42" role="switch" type="checkbox"/><label for="toctree-checkbox-42"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.__init__.html">feos.Property.__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.boiling_temperature.html">feos.Property.boiling_temperature</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.boiling_temperature_derivatives.html">feos.Property.boiling_temperature_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.bubble_point_pressure.html">feos.Property.bubble_point_pressure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.bubble_point_pressure_derivatives.html">feos.Property.bubble_point_pressure_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.dew_point_pressure.html">feos.Property.dew_point_pressure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.dew_point_pressure_derivatives.html">feos.Property.dew_point_pressure_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.enthalpy_of_vaporization.html">feos.Property.enthalpy_of_vaporization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.enthalpy_of_vaporization_derivatives.html">feos.Property.enthalpy_of_vaporization_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.equilibrium_liquid_density.html">feos.Property.equilibrium_liquid_density</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.equilibrium_liquid_density_derivatives.html">feos.Property.equilibrium_liquid_density_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.liquid_density.html">feos.Property.liquid_density</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.liquid_density_derivatives.html">feos.Property.liquid_density_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.residual_isobaric_heat_capacity.html">feos.Property.residual_isobaric_heat_capacity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.residual_isobaric_heat_capacity_derivatives.html">feos.Property.residual_isobaric_heat_capacity_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.vapor_pressure.html">feos.Property.vapor_pressure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="feos.Property.vapor_pressure_derivatives.html">feos.Property.vapor_pressure_derivatives</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../thread_pool.html">Global thread pool</a><input aria-label="Toggle navigation of Global thread pool" class="toctree-checkbox" id="toctree-checkbox-42" name="toctree-checkbox-42" role="switch" type="checkbox"/><label for="toctree-checkbox-42"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../thread_pool.html">Global thread pool</a><input aria-label="Toggle navigation of Global thread pool" class="toctree-checkbox" id="toctree-checkbox-43" name="toctree-checkbox-43" role="switch" type="checkbox"/><label for="toctree-checkbox-43"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="feos.set_num_threads.html">feos.set_num_threads</a></li>
 <li class="toctree-l3"><a class="reference internal" href="feos.get_num_threads.html">feos.get_num_threads</a></li>
 </ul>
@@ -583,12 +603,12 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Theory</span></p>
 <ul>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/eos/index.html">Equations of state</a><input aria-label="Toggle navigation of Equations of state" class="toctree-checkbox" id="toctree-checkbox-43" name="toctree-checkbox-43" role="switch" type="checkbox"/><label for="toctree-checkbox-43"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/eos/index.html">Equations of state</a><input aria-label="Toggle navigation of Equations of state" class="toctree-checkbox" id="toctree-checkbox-44" name="toctree-checkbox-44" role="switch" type="checkbox"/><label for="toctree-checkbox-44"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/eos/properties.html">Properties</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/eos/critical_points.html">Stability and critical points</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/dft/index.html">Classical density functional theory</a><input aria-label="Toggle navigation of Classical density functional theory" class="toctree-checkbox" id="toctree-checkbox-44" name="toctree-checkbox-44" role="switch" type="checkbox"/><label for="toctree-checkbox-44"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/dft/index.html">Classical density functional theory</a><input aria-label="Toggle navigation of Classical density functional theory" class="toctree-checkbox" id="toctree-checkbox-45" name="toctree-checkbox-45" role="switch" type="checkbox"/><label for="toctree-checkbox-45"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/euler_lagrange_equation.html">Euler-Lagrange equation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/functional_derivatives.html">Functional derivatives</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/solver.html">DFT solvers</a></li>
@@ -598,7 +618,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/pdgt.html">Predictive density gradient theory</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/models/index.html">Models</a><input aria-label="Toggle navigation of Models" class="toctree-checkbox" id="toctree-checkbox-45" name="toctree-checkbox-45" role="switch" type="checkbox"/><label for="toctree-checkbox-45"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/models/index.html">Models</a><input aria-label="Toggle navigation of Models" class="toctree-checkbox" id="toctree-checkbox-46" name="toctree-checkbox-46" role="switch" type="checkbox"/><label for="toctree-checkbox-46"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/models/hard_spheres.html">Hard spheres</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/models/association.html">Association</a></li>
 </ul>
@@ -646,7 +666,7 @@
 <h1>feos.State<a class="headerlink" href="#feos-state" title="Link to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="feos.State">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">feos.</span></span><span class="sig-name descname"><span class="pre">State</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">partial_density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_moles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molefracs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molar_enthalpy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molar_entropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molar_internal_energy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density_initialization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_temperature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#feos.State" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">feos.</span></span><span class="sig-name descname"><span class="pre">State</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">composition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molar_enthalpy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molar_entropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molar_internal_energy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density_initialization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_temperature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#feos.State" title="Link to this definition">¶</a></dt>
 <dd><p>A thermodynamic state at given conditions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -655,10 +675,7 @@
 <li><p><strong>temperature</strong> (<em>SINumber</em><em>, </em><em>optional</em>) – Temperature.</p></li>
 <li><p><strong>volume</strong> (<em>SINumber</em><em>, </em><em>optional</em>) – Volume.</p></li>
 <li><p><strong>density</strong> (<em>SINumber</em><em>, </em><em>optional</em>) – Molar density.</p></li>
-<li><p><strong>partial_density</strong> (<em>SIArray1</em><em>, </em><em>optional</em>) – Partial molar densities.</p></li>
-<li><p><strong>total_moles</strong> (<em>SINumber</em><em>, </em><em>optional</em>) – Total amount of substance (of a mixture).</p></li>
-<li><p><strong>moles</strong> (<em>SIArray1</em><em>, </em><em>optional</em>) – Amount of substance for each component.</p></li>
-<li><p><strong>molefracs</strong> (<em>numpy.ndarray</em><em>[</em><em>float</em><em>]</em>) – Molar fraction of each component.</p></li>
+<li><p><strong>composition</strong> (<em>float</em><em> | </em><em>SINumber</em><em> | </em><em>numpy.ndarray</em><em>[</em><em>float</em><em>] </em><em>| </em><em>SIArray1</em><em> | </em><em>list</em><em>[</em><em>float</em><em>]</em><em>, </em><em>optional</em>) – Composition of the mixture.</p></li>
 <li><p><strong>pressure</strong> (<em>SINumber</em><em>, </em><em>optional</em>) – Pressure.</p></li>
 <li><p><strong>molar_enthalpy</strong> (<em>SINumber</em><em>, </em><em>optional</em>) – Molar enthalpy.</p></li>
 <li><p><strong>molar_entropy</strong> (<em>SINumber</em><em>, </em><em>optional</em>) – Molar entropy.</p></li>
@@ -697,7 +714,7 @@ when the state is specified with pressure and molar entropy or enthalpy.</p></li
 <tr class="row-even"><td><p><a class="reference internal" href="feos.State.compressibility.html#feos.State.compressibility" title="feos.State.compressibility"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compressibility</span></code></a>(contributions)</p></td>
 <td><p>Return compressibility.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.critical_point.html#feos.State.critical_point" title="feos.State.critical_point"><code class="xref py py-obj docutils literal notranslate"><span class="pre">critical_point</span></code></a>(eos[, molefracs, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.critical_point.html#feos.State.critical_point" title="feos.State.critical_point"><code class="xref py py-obj docutils literal notranslate"><span class="pre">critical_point</span></code></a>(eos[, composition, ...])</p></td>
 <td><p>Create a thermodynamic state at critical conditions.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="feos.State.critical_point_binary.html#feos.State.critical_point_binary" title="feos.State.critical_point_binary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">critical_point_binary</span></code></a>(eos, ...[, ...])</p></td>
@@ -721,122 +738,122 @@ when the state is specified with pressure and molar entropy or enthalpy.</p></li
 <tr class="row-even"><td><p><a class="reference internal" href="feos.State.diffusion_reference.html#feos.State.diffusion_reference" title="feos.State.diffusion_reference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">diffusion_reference</span></code></a>()</p></td>
 <td><p>Return reference diffusion for entropy scaling.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.dln_phi_dnj.html#feos.State.dln_phi_dnj" title="feos.State.dln_phi_dnj"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dln_phi_dnj</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.dln_phi_dp.html#feos.State.dln_phi_dp" title="feos.State.dln_phi_dp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dln_phi_dp</span></code></a>()</p></td>
 <td><p>Return derivative of logarithmic fugacity coefficient w.r.t.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.dln_phi_dp.html#feos.State.dln_phi_dp" title="feos.State.dln_phi_dp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dln_phi_dp</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.dln_phi_dt.html#feos.State.dln_phi_dt" title="feos.State.dln_phi_dt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dln_phi_dt</span></code></a>()</p></td>
 <td><p>Return derivative of logarithmic fugacity coefficient w.r.t.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.dln_phi_dt.html#feos.State.dln_phi_dt" title="feos.State.dln_phi_dt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dln_phi_dt</span></code></a>()</p></td>
-<td><p>Return derivative of logarithmic fugacity coefficient w.r.t.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.dmu_dni.html#feos.State.dmu_dni" title="feos.State.dmu_dni"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dmu_dni</span></code></a>(contributions)</p></td>
-<td><p>Return derivative of chemical potential w.r.t amount of substance.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="feos.State.dmu_dt.html#feos.State.dmu_dt" title="feos.State.dmu_dt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dmu_dt</span></code></a>(contributions)</p></td>
 <td><p>Return derivative of chemical potential w.r.t temperature.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.dp_dni.html#feos.State.dp_dni" title="feos.State.dp_dni"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dp_dni</span></code></a>(contributions)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.dp_drho.html#feos.State.dp_drho" title="feos.State.dp_drho"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dp_drho</span></code></a>(contributions)</p></td>
 <td><p>Return partial derivative of pressure w.r.t.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.dp_drho.html#feos.State.dp_drho" title="feos.State.dp_drho"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dp_drho</span></code></a>(contributions)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.dp_dt.html#feos.State.dp_dt" title="feos.State.dp_dt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dp_dt</span></code></a>(contributions)</p></td>
 <td><p>Return partial derivative of pressure w.r.t.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.dp_dt.html#feos.State.dp_dt" title="feos.State.dp_dt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dp_dt</span></code></a>(contributions)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.dp_dv.html#feos.State.dp_dv" title="feos.State.dp_dv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dp_dv</span></code></a>(contributions)</p></td>
 <td><p>Return partial derivative of pressure w.r.t.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.dp_dv.html#feos.State.dp_dv" title="feos.State.dp_dv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dp_dv</span></code></a>(contributions)</p></td>
-<td><p>Return partial derivative of pressure w.r.t.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.ds_dt.html#feos.State.ds_dt" title="feos.State.ds_dt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ds_dt</span></code></a>(contributions)</p></td>
+<td><p>Return derivative of molar entropy with respect to temperature.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.ds_dt.html#feos.State.ds_dt" title="feos.State.ds_dt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ds_dt</span></code></a>(contributions)</p></td>
-<td><p>Return derivative of entropy with respect to temperature.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.enthalpy.html#feos.State.enthalpy" title="feos.State.enthalpy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">enthalpy</span></code></a>(contributions)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.enthalpy.html#feos.State.enthalpy" title="feos.State.enthalpy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">enthalpy</span></code></a>(contributions)</p></td>
 <td><p>Return enthalpy.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.entropy.html#feos.State.entropy" title="feos.State.entropy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">entropy</span></code></a>(contributions)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.entropy.html#feos.State.entropy" title="feos.State.entropy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">entropy</span></code></a>(contributions)</p></td>
 <td><p>Return entropy.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.gibbs_energy.html#feos.State.gibbs_energy" title="feos.State.gibbs_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gibbs_energy</span></code></a>(contributions)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.gibbs_energy.html#feos.State.gibbs_energy" title="feos.State.gibbs_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gibbs_energy</span></code></a>(contributions)</p></td>
 <td><p>Return Gibbs energy.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.grueneisen_parameter.html#feos.State.grueneisen_parameter" title="feos.State.grueneisen_parameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">grueneisen_parameter</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.grueneisen_parameter.html#feos.State.grueneisen_parameter" title="feos.State.grueneisen_parameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">grueneisen_parameter</span></code></a>()</p></td>
 <td><p>Return Grueneisen parameter.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.helmholtz_energy.html#feos.State.helmholtz_energy" title="feos.State.helmholtz_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">helmholtz_energy</span></code></a>(contributions)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.helmholtz_energy.html#feos.State.helmholtz_energy" title="feos.State.helmholtz_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">helmholtz_energy</span></code></a>(contributions)</p></td>
 <td><p>Return Helmholtz energy.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.henrys_law_constant.html#feos.State.henrys_law_constant" title="feos.State.henrys_law_constant"><code class="xref py py-obj docutils literal notranslate"><span class="pre">henrys_law_constant</span></code></a>(eos, temperature, molefracs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.henrys_law_constant.html#feos.State.henrys_law_constant" title="feos.State.henrys_law_constant"><code class="xref py py-obj docutils literal notranslate"><span class="pre">henrys_law_constant</span></code></a>(eos, temperature, molefracs)</p></td>
 <td><p>Return Henry's law constant of every solute (x_i=0) for a given solvent (x_i&gt;0).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.henrys_law_constant_binary.html#feos.State.henrys_law_constant_binary" title="feos.State.henrys_law_constant_binary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">henrys_law_constant_binary</span></code></a>(eos, temperature)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.henrys_law_constant_binary.html#feos.State.henrys_law_constant_binary" title="feos.State.henrys_law_constant_binary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">henrys_law_constant_binary</span></code></a>(eos, temperature)</p></td>
 <td><p>Return Henry's law constant of a binary system, assuming the first component is the solute and the second component is the solvent.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.internal_energy.html#feos.State.internal_energy" title="feos.State.internal_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">internal_energy</span></code></a>(contributions)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.internal_energy.html#feos.State.internal_energy" title="feos.State.internal_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">internal_energy</span></code></a>(contributions)</p></td>
 <td><p>Return internal energy.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.is_stable.html#feos.State.is_stable" title="feos.State.is_stable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_stable</span></code></a>([tol, verbosity])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.is_stable.html#feos.State.is_stable" title="feos.State.is_stable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_stable</span></code></a>([tol, verbosity])</p></td>
 <td><p>Performs a stability analysis and returns whether the state is stable</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.isenthalpic_compressibility.html#feos.State.isenthalpic_compressibility" title="feos.State.isenthalpic_compressibility"><code class="xref py py-obj docutils literal notranslate"><span class="pre">isenthalpic_compressibility</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.isenthalpic_compressibility.html#feos.State.isenthalpic_compressibility" title="feos.State.isenthalpic_compressibility"><code class="xref py py-obj docutils literal notranslate"><span class="pre">isenthalpic_compressibility</span></code></a>()</p></td>
 <td><p>Return isenthalpic compressibility coefficient.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.isentropic_compressibility.html#feos.State.isentropic_compressibility" title="feos.State.isentropic_compressibility"><code class="xref py py-obj docutils literal notranslate"><span class="pre">isentropic_compressibility</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.isentropic_compressibility.html#feos.State.isentropic_compressibility" title="feos.State.isentropic_compressibility"><code class="xref py py-obj docutils literal notranslate"><span class="pre">isentropic_compressibility</span></code></a>()</p></td>
 <td><p>Return isentropy compressibility coefficient.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.isothermal_compressibility.html#feos.State.isothermal_compressibility" title="feos.State.isothermal_compressibility"><code class="xref py py-obj docutils literal notranslate"><span class="pre">isothermal_compressibility</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.isothermal_compressibility.html#feos.State.isothermal_compressibility" title="feos.State.isothermal_compressibility"><code class="xref py py-obj docutils literal notranslate"><span class="pre">isothermal_compressibility</span></code></a>()</p></td>
 <td><p>Return isothermal compressibility coefficient.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.joule_thomson.html#feos.State.joule_thomson" title="feos.State.joule_thomson"><code class="xref py py-obj docutils literal notranslate"><span class="pre">joule_thomson</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.joule_thomson.html#feos.State.joule_thomson" title="feos.State.joule_thomson"><code class="xref py py-obj docutils literal notranslate"><span class="pre">joule_thomson</span></code></a>()</p></td>
 <td><p>Return Joule Thomson coefficient.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.ln_diffusion_reduced.html#feos.State.ln_diffusion_reduced" title="feos.State.ln_diffusion_reduced"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ln_diffusion_reduced</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.ln_diffusion_reduced.html#feos.State.ln_diffusion_reduced" title="feos.State.ln_diffusion_reduced"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ln_diffusion_reduced</span></code></a>()</p></td>
 <td><p>Return logarithmic reduced diffusion.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.ln_phi.html#feos.State.ln_phi" title="feos.State.ln_phi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ln_phi</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.ln_phi.html#feos.State.ln_phi" title="feos.State.ln_phi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ln_phi</span></code></a>()</p></td>
 <td><p>Return logarithmic fugacity coefficient.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.ln_phi_pure_liquid.html#feos.State.ln_phi_pure_liquid" title="feos.State.ln_phi_pure_liquid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ln_phi_pure_liquid</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.ln_phi_pure_liquid.html#feos.State.ln_phi_pure_liquid" title="feos.State.ln_phi_pure_liquid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ln_phi_pure_liquid</span></code></a>()</p></td>
 <td><p>Return logarithmic fugacity coefficient of all components treated as pure substance at mixture temperature and pressure.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.ln_symmetric_activity_coefficient.html#feos.State.ln_symmetric_activity_coefficient" title="feos.State.ln_symmetric_activity_coefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ln_symmetric_activity_coefficient</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.ln_symmetric_activity_coefficient.html#feos.State.ln_symmetric_activity_coefficient" title="feos.State.ln_symmetric_activity_coefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ln_symmetric_activity_coefficient</span></code></a>()</p></td>
 <td><p>Return logarithmic symmetric activity coefficient.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.ln_thermal_conductivity_reduced.html#feos.State.ln_thermal_conductivity_reduced" title="feos.State.ln_thermal_conductivity_reduced"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ln_thermal_conductivity_reduced</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.ln_thermal_conductivity_reduced.html#feos.State.ln_thermal_conductivity_reduced" title="feos.State.ln_thermal_conductivity_reduced"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ln_thermal_conductivity_reduced</span></code></a>()</p></td>
 <td><p>Return logarithmic reduced thermal conductivity.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.ln_viscosity_reduced.html#feos.State.ln_viscosity_reduced" title="feos.State.ln_viscosity_reduced"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ln_viscosity_reduced</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.ln_viscosity_reduced.html#feos.State.ln_viscosity_reduced" title="feos.State.ln_viscosity_reduced"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ln_viscosity_reduced</span></code></a>()</p></td>
 <td><p>Return logarithmic reduced viscosity.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.mass.html#feos.State.mass" title="feos.State.mass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mass</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.mass.html#feos.State.mass" title="feos.State.mass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mass</span></code></a>()</p></td>
 <td><p>Returns mass of each component in the system.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.mass_density.html#feos.State.mass_density" title="feos.State.mass_density"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mass_density</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.mass_density.html#feos.State.mass_density" title="feos.State.mass_density"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mass_density</span></code></a>()</p></td>
 <td><p>Returns system's mass density.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.massfracs.html#feos.State.massfracs" title="feos.State.massfracs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">massfracs</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.massfracs.html#feos.State.massfracs" title="feos.State.massfracs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">massfracs</span></code></a>()</p></td>
 <td><p>Returns mass fractions for each component.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.molar_enthalpy.html#feos.State.molar_enthalpy" title="feos.State.molar_enthalpy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molar_enthalpy</span></code></a>(contributions)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.molar_enthalpy.html#feos.State.molar_enthalpy" title="feos.State.molar_enthalpy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molar_enthalpy</span></code></a>(contributions)</p></td>
 <td><p>Return molar enthalpy.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.molar_entropy.html#feos.State.molar_entropy" title="feos.State.molar_entropy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molar_entropy</span></code></a>(contributions)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.molar_entropy.html#feos.State.molar_entropy" title="feos.State.molar_entropy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molar_entropy</span></code></a>(contributions)</p></td>
 <td><p>Return molar entropy.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.molar_gibbs_energy.html#feos.State.molar_gibbs_energy" title="feos.State.molar_gibbs_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molar_gibbs_energy</span></code></a>(contributions)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.molar_gibbs_energy.html#feos.State.molar_gibbs_energy" title="feos.State.molar_gibbs_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molar_gibbs_energy</span></code></a>(contributions)</p></td>
 <td><p>Return molar Gibbs energy.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.molar_helmholtz_energy.html#feos.State.molar_helmholtz_energy" title="feos.State.molar_helmholtz_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molar_helmholtz_energy</span></code></a>(contributions)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.molar_helmholtz_energy.html#feos.State.molar_helmholtz_energy" title="feos.State.molar_helmholtz_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molar_helmholtz_energy</span></code></a>(contributions)</p></td>
 <td><p>Return molar Helmholtz energy.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.molar_internal_energy.html#feos.State.molar_internal_energy" title="feos.State.molar_internal_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molar_internal_energy</span></code></a>(contributions)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.molar_internal_energy.html#feos.State.molar_internal_energy" title="feos.State.molar_internal_energy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molar_internal_energy</span></code></a>(contributions)</p></td>
 <td><p>Return molar internal energy.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.molar_isobaric_heat_capacity.html#feos.State.molar_isobaric_heat_capacity" title="feos.State.molar_isobaric_heat_capacity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molar_isobaric_heat_capacity</span></code></a>(contributions)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.molar_isobaric_heat_capacity.html#feos.State.molar_isobaric_heat_capacity" title="feos.State.molar_isobaric_heat_capacity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molar_isobaric_heat_capacity</span></code></a>(contributions)</p></td>
 <td><p>Return molar isobaric heat capacity.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.molar_isochoric_heat_capacity.html#feos.State.molar_isochoric_heat_capacity" title="feos.State.molar_isochoric_heat_capacity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molar_isochoric_heat_capacity</span></code></a>(contributions)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.molar_isochoric_heat_capacity.html#feos.State.molar_isochoric_heat_capacity" title="feos.State.molar_isochoric_heat_capacity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molar_isochoric_heat_capacity</span></code></a>(contributions)</p></td>
 <td><p>Return molar isochoric heat capacity.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.n_dln_phi_dnj.html#feos.State.n_dln_phi_dnj" title="feos.State.n_dln_phi_dnj"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_dln_phi_dnj</span></code></a>()</p></td>
+<td><p>Return derivative of logarithmic fugacity coefficient w.r.t.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.n_dmu_dni.html#feos.State.n_dmu_dni" title="feos.State.n_dmu_dni"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_dmu_dni</span></code></a>(contributions)</p></td>
+<td><p>Return derivative of chemical potential w.r.t amount of substance.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="feos.State.n_dp_dni.html#feos.State.n_dp_dni" title="feos.State.n_dp_dni"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_dp_dni</span></code></a>(contributions)</p></td>
+<td><p>Return partial derivative of pressure w.r.t.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="feos.State.partial_molar_enthalpy.html#feos.State.partial_molar_enthalpy" title="feos.State.partial_molar_enthalpy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">partial_molar_enthalpy</span></code></a>()</p></td>
 <td><p>Return partial molar enthalpy of each component.</p></td>
@@ -880,7 +897,7 @@ when the state is specified with pressure and molar entropy or enthalpy.</p></li
 <tr class="row-odd"><td><p><a class="reference internal" href="feos.State.speed_of_sound.html#feos.State.speed_of_sound" title="feos.State.speed_of_sound"><code class="xref py py-obj docutils literal notranslate"><span class="pre">speed_of_sound</span></code></a>()</p></td>
 <td><p>Return speed of sound.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="feos.State.spinodal.html#feos.State.spinodal" title="feos.State.spinodal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spinodal</span></code></a>(eos, temperature[, molefracs, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="feos.State.spinodal.html#feos.State.spinodal" title="feos.State.spinodal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spinodal</span></code></a>(eos, temperature[, composition, ...])</p></td>
 <td><p>Calculate spinodal states for a given temperature and composition.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="feos.State.stability_analysis.html#feos.State.stability_analysis" title="feos.State.stability_analysis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stability_analysis</span></code></a>([tol, verbosity])</p></td>

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Property.residual\_isobaric\_heat\_capacity
+================================================
+
+.. currentmodule:: feos
+
+.. automethod:: Property.residual_isobaric_heat_capacity

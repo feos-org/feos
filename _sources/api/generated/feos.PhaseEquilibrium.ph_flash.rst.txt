@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PhaseEquilibrium.ph\_flash
+===============================
+
+.. currentmodule:: feos
+
+.. automethod:: PhaseEquilibrium.ph_flash

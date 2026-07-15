@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PhaseEquilibrium.binary\_azeotrope
+=======================================
+
+.. currentmodule:: feos
+
+.. automethod:: PhaseEquilibrium.binary_azeotrope

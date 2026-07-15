@@ -30,12 +30,9 @@ feos.State
       ~State.dc_v_dt
       ~State.diffusion
       ~State.diffusion_reference
-      ~State.dln_phi_dnj
       ~State.dln_phi_dp
       ~State.dln_phi_dt
-      ~State.dmu_dni
       ~State.dmu_dt
-      ~State.dp_dni
       ~State.dp_drho
       ~State.dp_dt
       ~State.dp_dv
@@ -69,6 +66,9 @@ feos.State
       ~State.molar_internal_energy
       ~State.molar_isobaric_heat_capacity
       ~State.molar_isochoric_heat_capacity
+      ~State.n_dln_phi_dnj
+      ~State.n_dmu_dni
+      ~State.n_dp_dni
       ~State.partial_molar_enthalpy
       ~State.partial_molar_entropy
       ~State.partial_molar_volume

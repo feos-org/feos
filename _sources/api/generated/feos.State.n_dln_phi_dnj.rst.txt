@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.State.n\_dln\_phi\_dnj
+===========================
+
+.. currentmodule:: feos
+
+.. automethod:: State.n_dln_phi_dnj

@@ -19,10 +19,13 @@ feos.PhaseEquilibrium
       :toctree: ./
    
       ~PhaseEquilibrium.__init__
+      ~PhaseEquilibrium.binary_azeotrope
       ~PhaseEquilibrium.boiling_temperature
       ~PhaseEquilibrium.bubble_point
       ~PhaseEquilibrium.dew_point
       ~PhaseEquilibrium.heteroazeotrope
+      ~PhaseEquilibrium.ph_flash
+      ~PhaseEquilibrium.ps_flash
       ~PhaseEquilibrium.pure
       ~PhaseEquilibrium.tp_flash
       ~PhaseEquilibrium.vapor_pressure
@@ -36,7 +39,13 @@ feos.PhaseEquilibrium
 
    .. autosummary::
    
+      ~PhaseEquilibrium.enthalpy
+      ~PhaseEquilibrium.entropy
       ~PhaseEquilibrium.liquid
+      ~PhaseEquilibrium.molar_enthalpy
+      ~PhaseEquilibrium.molar_entropy
+      ~PhaseEquilibrium.total_moles
       ~PhaseEquilibrium.vapor
+      ~PhaseEquilibrium.vapor_phase_fraction
    
    

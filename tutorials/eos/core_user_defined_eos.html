@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="Density functional theory" href="../dft/index.html"><link rel="prev" title="Entropy scaling of pure substances" href="pcsaft_entropy_scaling.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Implementing an equation of state in python - FeOs v0.9.6</title>
+        <title>Implementing an equation of state in python - FeOs v0.10.0</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -165,7 +165,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">FeOs v0.9.6</div></a>
+      <a href="../../index.html"><div class="brand">FeOs v0.10.0</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -186,7 +186,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
   
-  <span class="sidebar-brand-text">FeOs v0.9.6</span>
+  <span class="sidebar-brand-text">FeOs v0.10.0</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -223,6 +223,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_critical_point_pure.html">Critical point of a pure substance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_p_sat_t_boil.html">Vapor pressure and boiling temperature of a pure substance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_phase_equilibrium_pure.html">Phase equilibrium of a pure substance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_phase_equilibrium_flash.html">Tp-flash</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_phase_equilibrium_flash.html#ph-flash">ph-flash</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_phase_diagram_pure.html">Phase diagram of a pure substance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_automatic_differentiation.html">Phase equilibria including derivatives</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../recipes/recipes_surface_tension_pure.html">Surface tension of a pure substance</a></li>
@@ -352,12 +354,9 @@
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.dc_v_dt.html">feos.State.dc_v_dt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.diffusion.html">feos.State.diffusion</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.diffusion_reference.html">feos.State.diffusion_reference</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.dln_phi_dnj.html">feos.State.dln_phi_dnj</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.dln_phi_dp.html">feos.State.dln_phi_dp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.dln_phi_dt.html">feos.State.dln_phi_dt</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.dmu_dni.html">feos.State.dmu_dni</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.dmu_dt.html">feos.State.dmu_dt</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.dp_dni.html">feos.State.dp_dni</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.dp_drho.html">feos.State.dp_drho</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.dp_dt.html">feos.State.dp_dt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.dp_dv.html">feos.State.dp_dv</a></li>
@@ -391,6 +390,9 @@
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.molar_internal_energy.html">feos.State.molar_internal_energy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.molar_isobaric_heat_capacity.html">feos.State.molar_isobaric_heat_capacity</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.molar_isochoric_heat_capacity.html">feos.State.molar_isochoric_heat_capacity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.n_dln_phi_dnj.html">feos.State.n_dln_phi_dnj</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.n_dmu_dni.html">feos.State.n_dmu_dni</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.n_dp_dni.html">feos.State.n_dp_dni</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.partial_molar_enthalpy.html">feos.State.partial_molar_enthalpy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.partial_molar_entropy.html">feos.State.partial_molar_entropy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.State.partial_molar_volume.html">feos.State.partial_molar_volume</a></li>
@@ -430,10 +432,13 @@
 </li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../api/generated/feos.PhaseEquilibrium.html">feos.PhaseEquilibrium</a><input aria-label="Toggle navigation of feos.PhaseEquilibrium" class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" role="switch" type="checkbox"/><label for="toctree-checkbox-24"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.PhaseEquilibrium.__init__.html">feos.PhaseEquilibrium.__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.PhaseEquilibrium.binary_azeotrope.html">feos.PhaseEquilibrium.binary_azeotrope</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.PhaseEquilibrium.boiling_temperature.html">feos.PhaseEquilibrium.boiling_temperature</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.PhaseEquilibrium.bubble_point.html">feos.PhaseEquilibrium.bubble_point</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.PhaseEquilibrium.dew_point.html">feos.PhaseEquilibrium.dew_point</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.PhaseEquilibrium.heteroazeotrope.html">feos.PhaseEquilibrium.heteroazeotrope</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.PhaseEquilibrium.ph_flash.html">feos.PhaseEquilibrium.ph_flash</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.PhaseEquilibrium.ps_flash.html">feos.PhaseEquilibrium.ps_flash</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.PhaseEquilibrium.pure.html">feos.PhaseEquilibrium.pure</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.PhaseEquilibrium.tp_flash.html">feos.PhaseEquilibrium.tp_flash</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.PhaseEquilibrium.vapor_pressure.html">feos.PhaseEquilibrium.vapor_pressure</a></li>
@@ -563,14 +568,29 @@
 </ul>
 </li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../api/ad.html">Automatic differentiation</a><input aria-label="Toggle navigation of Automatic differentiation" class="toctree-checkbox" id="toctree-checkbox-41" name="toctree-checkbox-41" role="switch" type="checkbox"/><label for="toctree-checkbox-41"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../../api/generated/feos.vapor_pressure_derivatives.html">feos.vapor_pressure_derivatives</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../api/generated/feos.liquid_density_derivatives.html">feos.liquid_density_derivatives</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../api/generated/feos.equilibrium_liquid_density_derivatives.html">feos.equilibrium_liquid_density_derivatives</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../api/generated/feos.bubble_point_pressure_derivatives.html">feos.bubble_point_pressure_derivatives</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../api/generated/feos.dew_point_pressure_derivatives.html">feos.dew_point_pressure_derivatives</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../api/generated/feos.Property.html">feos.Property</a><input aria-label="Toggle navigation of feos.Property" class="toctree-checkbox" id="toctree-checkbox-42" name="toctree-checkbox-42" role="switch" type="checkbox"/><label for="toctree-checkbox-42"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.__init__.html">feos.Property.__init__</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.boiling_temperature.html">feos.Property.boiling_temperature</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.boiling_temperature_derivatives.html">feos.Property.boiling_temperature_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.bubble_point_pressure.html">feos.Property.bubble_point_pressure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.bubble_point_pressure_derivatives.html">feos.Property.bubble_point_pressure_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.dew_point_pressure.html">feos.Property.dew_point_pressure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.dew_point_pressure_derivatives.html">feos.Property.dew_point_pressure_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.enthalpy_of_vaporization.html">feos.Property.enthalpy_of_vaporization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.enthalpy_of_vaporization_derivatives.html">feos.Property.enthalpy_of_vaporization_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.equilibrium_liquid_density.html">feos.Property.equilibrium_liquid_density</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.equilibrium_liquid_density_derivatives.html">feos.Property.equilibrium_liquid_density_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.liquid_density.html">feos.Property.liquid_density</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.liquid_density_derivatives.html">feos.Property.liquid_density_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.residual_isobaric_heat_capacity.html">feos.Property.residual_isobaric_heat_capacity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.residual_isobaric_heat_capacity_derivatives.html">feos.Property.residual_isobaric_heat_capacity_derivatives</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.vapor_pressure.html">feos.Property.vapor_pressure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/generated/feos.Property.vapor_pressure_derivatives.html">feos.Property.vapor_pressure_derivatives</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../../api/thread_pool.html">Global thread pool</a><input aria-label="Toggle navigation of Global thread pool" class="toctree-checkbox" id="toctree-checkbox-42" name="toctree-checkbox-42" role="switch" type="checkbox"/><label for="toctree-checkbox-42"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../api/thread_pool.html">Global thread pool</a><input aria-label="Toggle navigation of Global thread pool" class="toctree-checkbox" id="toctree-checkbox-43" name="toctree-checkbox-43" role="switch" type="checkbox"/><label for="toctree-checkbox-43"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../api/generated/feos.set_num_threads.html">feos.set_num_threads</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../api/generated/feos.get_num_threads.html">feos.get_num_threads</a></li>
 </ul>
@@ -584,12 +604,12 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Theory</span></p>
 <ul>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/eos/index.html">Equations of state</a><input aria-label="Toggle navigation of Equations of state" class="toctree-checkbox" id="toctree-checkbox-43" name="toctree-checkbox-43" role="switch" type="checkbox"/><label for="toctree-checkbox-43"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/eos/index.html">Equations of state</a><input aria-label="Toggle navigation of Equations of state" class="toctree-checkbox" id="toctree-checkbox-44" name="toctree-checkbox-44" role="switch" type="checkbox"/><label for="toctree-checkbox-44"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/eos/properties.html">Properties</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/eos/critical_points.html">Stability and critical points</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/dft/index.html">Classical density functional theory</a><input aria-label="Toggle navigation of Classical density functional theory" class="toctree-checkbox" id="toctree-checkbox-44" name="toctree-checkbox-44" role="switch" type="checkbox"/><label for="toctree-checkbox-44"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/dft/index.html">Classical density functional theory</a><input aria-label="Toggle navigation of Classical density functional theory" class="toctree-checkbox" id="toctree-checkbox-45" name="toctree-checkbox-45" role="switch" type="checkbox"/><label for="toctree-checkbox-45"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/euler_lagrange_equation.html">Euler-Lagrange equation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/functional_derivatives.html">Functional derivatives</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/solver.html">DFT solvers</a></li>
@@ -599,7 +619,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../theory/dft/pdgt.html">Predictive density gradient theory</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/models/index.html">Models</a><input aria-label="Toggle navigation of Models" class="toctree-checkbox" id="toctree-checkbox-45" name="toctree-checkbox-45" role="switch" type="checkbox"/><label for="toctree-checkbox-45"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../theory/models/index.html">Models</a><input aria-label="Toggle navigation of Models" class="toctree-checkbox" id="toctree-checkbox-46" name="toctree-checkbox-46" role="switch" type="checkbox"/><label for="toctree-checkbox-46"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/models/hard_spheres.html">Hard spheres</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../theory/models/association.html">Association</a></li>
 </ul>
@@ -840,7 +860,7 @@
 </div>
 <section id="Thermodynamic-state:-the-State-object">
 <h3>Thermodynamic state: the <code class="docutils literal notranslate"><span class="pre">State</span></code> object<a class="headerlink" href="#Thermodynamic-state:-the-State-object" title="Link to this heading">¶</a></h3>
-<p>Before we can compute a property, we create a <code class="docutils literal notranslate"><span class="pre">State</span></code> object. This can be done in several ways depending on what control variables we need. If no total amount of substance is defined, it is set to <span class="math notranslate nohighlight">\(n = \frac{1}{N_{AV}}\)</span>. For possible input combinations, you can inspect the signature of the constructor using <code class="docutils literal notranslate"><span class="pre">State?</span></code>.</p>
+<p>Before we can compute a property, we create a <code class="docutils literal notranslate"><span class="pre">State</span></code> object. This can be done in several ways depending on what variables are specified. If no total amount of substance is defined, the state can only be used to calculate intesive properties. For possible input combinations, you can inspect the signature of the constructor using <code class="docutils literal notranslate"><span class="pre">State?</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -860,10 +880,7 @@ feos.State(
     temperature=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
     volume=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
     density=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
-    partial_density=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
-    total_moles=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
-    moles=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
-    molefracs=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
+    composition=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
     pressure=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
     molar_enthalpy=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
     molar_entropy=<span class="ansi-bold" style="color: rgb(0,135,0)">None</span>,
@@ -884,14 +901,8 @@ volume : SINumber, optional
     Volume.
 density : SINumber, optional
     Molar density.
-partial_density : SIArray1, optional
-    Partial molar densities.
-total_moles : SINumber, optional
-    Total amount of substance (of a mixture).
-moles : SIArray1, optional
-    Amount of substance for each component.
-molefracs : numpy.ndarray[float]
-    Molar fraction of each component.
+composition : float | SINumber | numpy.ndarray[float] | SIArray1 | list[float], optional
+    Composition of the mixture.
 pressure : SINumber, optional
     Pressure.
 molar_enthalpy : SINumber, optional
@@ -926,9 +937,8 @@ Error
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># If no amount of substance is given, it is set to 1/NAV.</span>
-<span class="n">s</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">300</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span> <span class="n">pressure</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">)</span>
-<span class="n">s</span><span class="o">.</span><span class="n">total_moles</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">300</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span> <span class="n">pressure</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">)</span>
+<span class="n">s</span><span class="o">.</span><span class="n">density</span>
 </pre></div>
 </div>
 </div>
@@ -939,20 +949,17 @@ Error
 <div class="output_area docutils container">
 <div class="math-wrapper docutils container">
 <div class="math notranslate nohighlight">
-$1.6605\times10^{-24}\,\mathrm{ mol}$</div></div>
+$40.755\,\mathrm{\frac{ mol}{m^{3}}}$</div></div>
 </div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s_pt</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">State</span><span class="p">(</span>
-    <span class="n">eos</span><span class="p">,</span>
-    <span class="n">temperature</span><span class="o">=</span><span class="mi">300</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span>
-    <span class="n">pressure</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">,</span>
-    <span class="n">total_moles</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">MOL</span>
-<span class="p">)</span>
-<span class="n">s_pt</span><span class="o">.</span><span class="n">total_moles</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The `composition` argument is used to specify the composition AND total amount based on the unit of the argument.</span>
+<span class="c1"># With the total amount specified, extensive properties can be evaluated.</span>
+<span class="n">s_pt</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">300</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span> <span class="n">pressure</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">,</span> <span class="n">composition</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">MOL</span><span class="p">)</span>
+<span class="n">s_pt</span><span class="o">.</span><span class="n">total_moles</span><span class="p">,</span> <span class="n">s_pt</span><span class="o">.</span><span class="n">helmholtz_energy</span><span class="p">(</span><span class="n">feos</span><span class="o">.</span><span class="n">Contributions</span><span class="o">.</span><span class="n">Residual</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -961,10 +968,9 @@ $1.6605\times10^{-24}\,\mathrm{ mol}$</div></div>
 </pre></div>
 </div>
 <div class="output_area docutils container">
-<div class="math-wrapper docutils container">
-<div class="math notranslate nohighlight">
-$1\,\mathrm{ mol}$</div></div>
-</div>
+<div class="highlight"><pre>
+(1  mol, -40.78921616151256  J)
+</pre></div></div>
 </div>
 </section>
 </section>
@@ -1111,7 +1117,7 @@ pressure   :  4.249677749116937 MPa
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Heat of vaporization:  14.782343503305126 kJ/mol
+Heat of vaporization:  14.782343503305128 kJ/mol
 for T = 300 K
 and p = 9.95 bar
 </pre></div></div>
@@ -1133,8 +1139,8 @@ and p = 9.95 bar
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-vapor pressure      (T = 300 K): 994.7761635610095 kPa
-boiling temperature (p = 3 bar): 247.84035574956758 K
+vapor pressure      (T = 300 K): 994.7761635610082 kPa
+boiling temperature (p = 3 bar): 247.84035574956755 K
 </pre></div></div>
 </div>
 <section id="Phase-Diagram">
@@ -1449,8 +1455,7 @@ Notes
     <span class="n">eos</span><span class="p">,</span>
     <span class="n">temperature</span><span class="o">=</span><span class="mi">300</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">,</span>
     <span class="n">pressure</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">,</span>
-    <span class="n">molefracs</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]),</span>
-    <span class="n">total_moles</span><span class="o">=</span><span class="n">si</span><span class="o">.</span><span class="n">MOL</span>
+    <span class="n">composition</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]),</span>
 <span class="p">)</span>
 <span class="n">s</span>
 </pre></div>
@@ -1501,7 +1506,7 @@ array([ -93.60749754, -120.5269973 ]) J/mol
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="o">.</span><span class="n">dmu_dni</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">KILO</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">JOULE</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="o">.</span><span class="n">n_dmu_dni</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">KILO</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">JOULE</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1520,7 +1525,7 @@ array([[ 4.90721995, -0.10487987],
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s_cp</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="n">molefracs</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]))</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">s_cp</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">State</span><span class="o">.</span><span class="n">critical_point</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span> <span class="n">composition</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]))</span>
 <span class="n">s_cp</span>
 </pre></div>
 </div>
@@ -1690,7 +1695,7 @@ array([[ 4.90721995, -0.10487987],
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Critical point for pure substance
-Python implementation is slower by a factor of 24.
+Python implementation is slower by a factor of 23.
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
@@ -1718,7 +1723,7 @@ Python implementation is slower by a factor of 24.
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Phase diagram for pure substance
-Python implementation is slower by a factor of 80.
+Python implementation is slower by a factor of 85.
 </pre></div></div>
 </div>
 </section>
