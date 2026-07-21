@@ -890,7 +890,7 @@ mod tests_parameter_fit {
         let pcsaft_ad =
             PcSaftBinary::<f64, 8>::seed_derivatives(&flat_binary_params(&pcsaft), ["k_ij"]);
         let pressure = Pressure::from_reduced(DualVec::from(45. * BAR.into_reduced()));
-        let t_init = Temperature::from_reduced(DualVec::from(500.0));
+        let t_init = Temperature::from_reduced(500.0);
         let x = DualVec::from(0.5);
         let t = PhaseEquilibrium::bubble_point(
             &pcsaft_ad,
@@ -939,7 +939,7 @@ mod tests_parameter_fit {
         let pcsaft_ad =
             PcSaftBinary::<f64, 8>::seed_derivatives(&flat_binary_params(&pcsaft), ["k_ij"]);
         let pressure = Pressure::from_reduced(DualVec::from(45. * BAR.into_reduced()));
-        let t_init = Temperature::from_reduced(DualVec::from(500.0));
+        let t_init = Temperature::from_reduced(500.0);
         let x = DualVec::from(0.5);
         let t = PhaseEquilibrium::dew_point(
             &pcsaft_ad,
