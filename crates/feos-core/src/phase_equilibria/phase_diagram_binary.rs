@@ -97,7 +97,7 @@ impl<E: Residual + Subset> PhaseDiagram<E, 2> {
         if !bubble {
             states = states.into_iter().rev().collect();
         }
-        let states = check_for_vlle(temperature_or_pressure, states, npoints, bubble_dew_options);
+        let states = check_for_vlle(temperature_or_pressure, states, npoints, bubble_dew_options)?;
         Ok(Self { states })
     }
 
@@ -236,7 +236,7 @@ fn check_for_vlle<E: Residual + Subset, TP: TemperatureOrPressure>(
     states: Vec<PhaseEquilibrium<E, 2>>,
     npoints: usize,
     bubble_dew_options: (SolverOptions, SolverOptions),
-) -> Vec<PhaseEquilibrium<E, 2>> {
+) -> FeosResult<Vec<PhaseEquilibrium<E, 2>>> {
     let n = states.len();
     let p: Vec<_> = states
         .iter()
@@ -290,7 +290,7 @@ fn check_for_vlle<E: Residual + Subset, TP: TemperatureOrPressure>(
                 let a = matrix![yi[1] - yi[0], yj[0] - yj[1];
                                 (pi[1] - pi[0]).into_reduced(), (pj[0] - pj[1]).into_reduced()];
                 let b = vector![yj[0] - yi[0], (pj[0] - pi[0]).into_reduced()];
-                let [[r, s]] = LU::new(a).unwrap().solve(&b).data.0;
+                let [[r, s]] = LU::new(a)?.solve(&b).data.0;
                 let (xi, xj, p) = (
                     xi[0] + r * (xi[1] - xi[0]),
                     xj[0] + s * (xj[1] - xj[0]),
@@ -304,17 +304,17 @@ fn check_for_vlle<E: Residual + Subset, TP: TemperatureOrPressure>(
                     Default::default(),
                     bubble_dew_options,
                 ) else {
-                    return states;
+                    return Ok(states);
                 };
                 let x_hetero = (vlle.liquid1().molefracs[0], vlle.liquid2().molefracs[0]);
-                return PhaseDiagram::binary_vle(
+                return Ok(PhaseDiagram::binary_vle(
                     &states[0].liquid().eos,
                     tp,
                     Some(npoints),
                     Some(x_hetero),
                     bubble_dew_options,
                 )
-                .map_or(states, |dia| dia.states);
+                .map_or(states, |dia| dia.states));
             }
         }
     } else if let Some(p) = tp.pressure()
@@ -368,7 +368,7 @@ fn check_for_vlle<E: Residual + Subset, TP: TemperatureOrPressure>(
                 let a = matrix![yi[1] - yi[0], yj[0] - yj[1];
                                 (ti[1] - ti[0]).into_reduced(), (tj[0] - tj[1]).into_reduced()];
                 let b = vector![yj[0] - yi[0], (tj[0] - ti[0]).into_reduced()];
-                let [[r, s]] = LU::new(a).unwrap().solve(&b).data.0;
+                let [[r, s]] = LU::new(a)?.solve(&b).data.0;
                 let (xi, xj, t) = (
                     xi[0] + r * (xi[1] - xi[0]),
                     xj[0] + s * (xj[1] - xj[0]),
@@ -382,21 +382,21 @@ fn check_for_vlle<E: Residual + Subset, TP: TemperatureOrPressure>(
                     Default::default(),
                     bubble_dew_options,
                 ) else {
-                    return states;
+                    return Ok(states);
                 };
                 let x_hetero = (vlle.liquid1().molefracs[0], vlle.liquid2().molefracs[0]);
-                return PhaseDiagram::binary_vle(
+                return Ok(PhaseDiagram::binary_vle(
                     &states[0].liquid().eos,
                     tp,
                     Some(npoints),
                     Some(x_hetero),
                     bubble_dew_options,
                 )
-                .map_or(states, |dia| dia.states);
+                .map_or(states, |dia| dia.states));
             }
         }
     }
-    states
+    Ok(states)
 }
 
 /// Phase diagram (Txy or pxy) for a system with heteroazeotropic phase behavior.
@@ -508,7 +508,10 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
         if iterate_p {
             PhaseEquilibrium::heteroazeotrope_t(
                 eos,
-                temperature.unwrap(),
+                temperature.ok_or(FeosError::Error(
+                    "Temperature information is expected for heteroazeotrope calculation."
+                        .to_string(),
+                ))?,
                 x_init,
                 pressure,
                 options,
@@ -517,7 +520,9 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
         } else {
             PhaseEquilibrium::heteroazeotrope_p(
                 eos,
-                pressure.unwrap(),
+                pressure.ok_or(FeosError::Error(
+                    "Pressure information is expected for heteroazeotrope calculation.".to_string(),
+                ))?,
                 x_init,
                 temperature,
                 options,
