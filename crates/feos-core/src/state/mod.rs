@@ -6,7 +6,7 @@
 //! * the volume
 //!
 //! Internally, all properties are computed using such states as input.
-use crate::density_iteration::{_density_iteration, density_iteration};
+use crate::density_iteration::density_iteration;
 use crate::equation_of_state::Residual;
 use crate::errors::{FeosError, FeosResult};
 use crate::{ReferenceSystem, Total};
