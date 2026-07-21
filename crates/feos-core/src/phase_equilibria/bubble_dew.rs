@@ -230,7 +230,9 @@ where
         let molefracs_spec_re = molefracs_spec.map(|x| x.re());
         let (v1, rho2) = if iterate_p {
             // temperature is specified
-            let temperature_re = temperature_re.as_mut().unwrap();
+            let temperature_re = temperature_re.as_mut().ok_or(FeosError::Error(
+                "Temperature information is expected for bubble/dew calculation.".to_string(),
+            ))?;
 
             // First use given initial pressure if applicable
             if let Some(p) = pressure_re.as_mut() {
@@ -253,11 +255,11 @@ where
                     bubble,
                 )
                 .and_then(|(p, x)| {
-                    pressure_re = Some(p);
+                    let p = pressure_re.insert(p);
                     PhaseEquilibrium::iterate_bubble_dew(
                         &eos_re,
                         temperature_re,
-                        pressure_re.as_mut().unwrap(),
+                        p,
                         &molefracs_spec_re,
                         molefracs_init.or(Some(&x)),
                         bubble,
@@ -274,11 +276,11 @@ where
                         &molefracs_spec_re,
                     )
                     .and_then(|p| {
-                        pressure_re = Some(p);
+                        let p = pressure_re.insert(p);
                         PhaseEquilibrium::iterate_bubble_dew(
                             &eos_re,
                             temperature_re,
-                            pressure_re.as_mut().unwrap(),
+                            p,
                             &molefracs_spec_re,
                             molefracs_init,
                             bubble,
@@ -290,9 +292,14 @@ where
             }
         } else {
             // pressure is specified
-            let pressure_re = pressure_re.as_mut().unwrap();
+            let pressure_re = pressure_re.as_mut().ok_or(FeosError::Error(
+                "Pressure information is expected for bubble/dew calculation.".to_string(),
+            ))?;
 
-            let temperature_re = temperature_re.as_mut().expect("An initial temperature is required for the calculation of bubble/dew points at given pressure!");
+            let temperature_re = temperature_re
+                .as_mut()
+                .ok_or(FeosError::Error(
+                    "An initial temperature is required for the calculation of bubble/dew points at given pressure.".to_string()))?;
             PhaseEquilibrium::iterate_bubble_dew(
                 &eos.re(),
                 temperature_re,
@@ -306,6 +313,7 @@ where
         };
 
         // implicit differentiation
+        // unwraps here are safe
         let (mut t, mut p) = if iterate_p {
             (
                 temperature.unwrap().into_reduced(),
@@ -329,7 +337,7 @@ where
                     &mut molar_volume,
                     &mut rho2,
                     Verbosity::None,
-                )
+                )?
             } else {
                 Self::newton_step_p(
                     eos,
@@ -339,7 +347,7 @@ where
                     &mut molar_volume,
                     &mut rho2,
                     Verbosity::None,
-                )
+                )?
             };
         }
         let state1 = State::new(
@@ -372,7 +380,7 @@ where
         molar_volume: &mut D,
         partial_density_other_phase: &mut OVector<D, N>,
         verbosity: Verbosity,
-    ) -> f64 {
+    ) -> FeosResult<f64> {
         // calculate properties
         let (p_1, mu_res_1, dp_1, dmu_1) = eos.dmu_drho(temperature, partial_density_other_phase);
         let (p_2, mu_res_2, dp_2, dmu_2) = eos.dmu_dv(temperature, *molar_volume, molefracs);
@@ -409,7 +417,7 @@ where
         });
 
         // calculate Newton step
-        let dx = LU::<_, _, Dyn>::new(jac).unwrap().solve(&f);
+        let dx = LU::<_, _, Dyn>::new(jac)?.solve(&f);
 
         // apply Newton step
         for i in 0..n {
@@ -430,7 +438,7 @@ where
             x.as_slice(),
             true,
         );
-        error
+        Ok(error)
     }
 
     fn newton_step_p(
@@ -441,7 +449,7 @@ where
         molar_volume: &mut D,
         partial_density_other_phase: &mut OVector<D, N>,
         verbosity: Verbosity,
-    ) -> f64 {
+    ) -> FeosResult<f64> {
         // calculate properties
         let (p_1, mu_res_1, dp_1, dmu_1) = eos.dmu_drho(*temperature, partial_density_other_phase);
         let (p_2, mu_res_2, dp_2, dmu_2) = eos.dmu_dv(*temperature, *molar_volume, molefracs);
@@ -485,7 +493,7 @@ where
         });
 
         // calculate Newton step
-        let dx = LU::<_, _, Dyn>::new(jac).unwrap().solve(&f);
+        let dx = LU::<_, _, Dyn>::new(jac)?.solve(&f);
 
         // apply Newton step
         for i in 0..n {
@@ -506,7 +514,7 @@ where
             x.as_slice(),
             true,
         );
-        error
+        Ok(error)
     }
 }
 
@@ -598,7 +606,7 @@ where
                         &mut molar_volume,
                         &mut rho2,
                         options_outer.verbosity,
-                    )
+                    )?
                 } else {
                     Self::newton_step_p(
                         &state1.eos,
@@ -608,7 +616,7 @@ where
                         &mut molar_volume,
                         &mut rho2,
                         options_outer.verbosity,
-                    )
+                    )?
                 };
                 *temperature = Temperature::from_reduced(t);
                 *pressure = Pressure::from_reduced(p);
