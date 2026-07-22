@@ -12,8 +12,6 @@ use std::sync::Arc;
 mod adsorption;
 mod interface;
 mod profile;
-// `solvation` wraps feos_dft::solvation, which only exists with `rayon`.
-#[cfg(feature = "rayon")]
 mod solvation;
 mod solver;
 
@@ -22,8 +20,9 @@ pub(crate) use adsorption::{PyAdsorption1D, PyExternalPotential, PyPore1D, PyPor
 #[cfg(feature = "rayon")]
 pub(crate) use adsorption::{PyAdsorption3D, PyPore3D};
 pub(crate) use interface::{PyPlanarInterface, PySurfaceTensionDiagram};
+pub(crate) use solvation::PyPairCorrelation;
 #[cfg(feature = "rayon")]
-pub(crate) use solvation::{PyPairCorrelation, PySolvationProfile};
+pub(crate) use solvation::PySolvationProfile;
 pub(crate) use solver::{PyDFTSolver, PyDFTSolverLog};
 
 /// Geometries of individual axes.

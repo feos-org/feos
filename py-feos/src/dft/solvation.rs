@@ -1,10 +1,14 @@
-use super::profile::{impl_1d_profile, impl_3d_profile, impl_profile};
+#[cfg(feature = "rayon")]
+use super::profile::impl_3d_profile;
+use super::profile::{impl_1d_profile, impl_profile};
 use super::{PyDFTSolver, PyDFTSolverLog};
 use crate::residual::ResidualModel;
 use crate::state::{PyContributions, PyState};
 use crate::{error::PyFeosError, ideal_gas::IdealGasModel};
 use feos_core::{EquationOfState, ReferenceSystem};
-use feos_dft::solvation::{PairCorrelation, SolvationProfile};
+use feos_dft::solvation::PairCorrelation;
+#[cfg(feature = "rayon")]
+use feos_dft::solvation::SolvationProfile;
 use nalgebra::{DMatrix, DVector};
 use ndarray::*;
 use numpy::*;
@@ -37,13 +41,16 @@ use std::sync::Arc;
 /// -------
 /// SolvationProfile
 ///
+#[cfg(feature = "rayon")]
 #[pyclass(name = "SolvationProfile")]
 pub struct PySolvationProfile(
     SolvationProfile<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
 );
 
+#[cfg(feature = "rayon")]
 impl_3d_profile!(PySolvationProfile, get_x, get_y, get_z);
 
+#[cfg(feature = "rayon")]
 #[pymethods]
 impl PySolvationProfile {
     #[new]
