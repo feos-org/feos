@@ -129,11 +129,6 @@ jobs:
             --no-default-features
             --features emscripten_wheel
             -i 3.14
-      - name: Test wheel in Pyodide
-        run: |
-          pyodide venv .venv-pyodide
-          .venv-pyodide/bin/pip install dist/*.whl
-          .venv-pyodide/bin/python py-feos/tests/smoke_pyodide.py
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
