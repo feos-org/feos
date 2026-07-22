@@ -136,7 +136,7 @@ cd py-feos
 maturin develop --release
 ```
 
-which uses the `python` and `all_models` feature as specified in the `pyproject.toml` file.
+which uses the `wheel` feature collection specified in the `pyproject.toml` file.
 
 Alternatively, you can specify the models or features that you want to include in the python package explicitly, e.g.
 
@@ -152,7 +152,8 @@ To build wheels including link-time optimization (LTO), use
 maturin build --profile="release-lto"
 ```
 
-which will use the `python` and `all_models` features specified in the `pyproject.toml` file.
+which will use the `wheel` feature collection specified in the `pyproject.toml` file. 
+The `emscripten_wheel` collection provides the same models and AD support for Pyodide while omitting incompatible features (such as Rayon, SQLite, and the Rayon-dependent 3D DFT classes).
 Use the following command to build a wheel with specific features:
 
 ```

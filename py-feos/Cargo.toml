@@ -36,9 +36,7 @@ indexmap = { workspace = true }
 rayon = { workspace = true, optional = true }
 itertools = { workspace = true }
 paste = { workspace = true }
-# Optional: the `bundled` sqlite is C compiled to wasm and its build script
-# uses the unstable `cfg_select` feature, which the pinned-stable emscripten
-# toolchain rejects. Gated behind the `sqlite` feature, off for the wasm build.
+# Gated behind the `sqlite` feature, off for the wasm build.
 rusqlite = { workspace = true, features = ["bundled"], optional = true }
 
 feos = { workspace = true }
@@ -48,11 +46,6 @@ feos-dft = { workspace = true, optional = true }
 
 [features]
 default = []
-# `dft` no longer pulls in `rayon`: the wasm32-unknown-emscripten target has no
-# pthreads, so the emscripten wheel is built without the `rayon` feature. The
-# rayon-gated 3D-FFT DFT classes (Pore3D/PoreProfile3D/Adsorption3D,
-# SolvationProfile, PairCorrelation) are cfg-gated out of that build. Native
-# builds re-enable everything via `all_models` (which lists `rayon` below).
 dft = ["feos/dft", "feos-dft", "petgraph"]
 pcsaft = ["feos/pcsaft"]
 epcsaft = ["feos/epcsaft"]
@@ -62,10 +55,12 @@ pets = ["feos/pets"]
 saftvrqmie = ["feos/saftvrqmie"]
 saftvrmie = ["feos/saftvrmie"]
 multiparameter = ["feos/multiparameter"]
+# All parallelism is gated behind this feature. Not active for emscripten wheel.
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
-# Loading parameters from a sqlite database; omitted from the wasm build.
+# Loading parameters from a sqlite database. Not active for emscripten wheel.
 sqlite = ["dep:rusqlite", "feos-core/rusqlite"]
-ad = ["feos-core/rayon", "feos/pcsaft"]
+ad = ["feos/pcsaft"]
+# EoS and DFT model implementations.
 all_models = [
     "dft",
     "pcsaft",
@@ -75,10 +70,23 @@ all_models = [
     "pets",
     "saftvrqmie",
     "saftvrmie",
-    "multiparameter",
+    "multiparameter"
+]
+# Features for native Python wheel, including parallelism.
+wheel = [
+    "pyo3/extension-module",
+    "pyo3/abi3-py310",
+    "all_models",
     "ad",
     "rayon",
     "sqlite"
+]
+# Features for threadless, portable wheel for Pyodide.
+emscripten_wheel = [
+    "pyo3/extension-module",
+    "pyo3/abi3-py310",
+    "all_models",
+    "ad"
 ]
 
 [dev-dependencies]
