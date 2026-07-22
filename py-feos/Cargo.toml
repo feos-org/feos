@@ -36,8 +36,6 @@ indexmap = { workspace = true }
 rayon = { workspace = true, optional = true }
 itertools = { workspace = true }
 paste = { workspace = true }
-# Gated behind the `sqlite` feature, off for the wasm build.
-rusqlite = { workspace = true, features = ["bundled"], optional = true }
 
 feos = { workspace = true }
 feos-core = { workspace = true, features = ["ndarray"] }
@@ -58,7 +56,7 @@ multiparameter = ["feos/multiparameter"]
 # All parallelism is gated behind this feature. Not active for emscripten wheel.
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 # Loading parameters from a sqlite database. Not active for emscripten wheel.
-sqlite = ["dep:rusqlite", "feos-core/rusqlite"]
+sqlite = ["feos-core/rusqlite"]
 ad = ["feos/pcsaft"]
 # EoS and DFT model implementations.
 all_models = [

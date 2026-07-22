@@ -6,6 +6,26 @@ use rusqlite::{Connection, ToSql, params_from_iter};
 use serde::de::DeserializeOwned;
 use std::path::Path;
 
+/// Load pure and binary parameter records from a SQLite database.
+#[allow(clippy::type_complexity, clippy::allow_attributes)]
+pub fn records_from_database<P, B, A, F, S>(
+    substances: &[S],
+    file: F,
+    identifier_option: IdentifierOption,
+) -> FeosResult<(Vec<PureRecord<P, A>>, Vec<BinaryRecord<usize, B, A>>)>
+where
+    F: AsRef<Path>,
+    S: ToSql,
+    P: DeserializeOwned,
+    B: DeserializeOwned,
+    A: DeserializeOwned,
+{
+    let conn = Connection::open(file)?;
+    let pure_records = PureRecord::from_database(substances, &conn, identifier_option)?;
+    let binary_records = BinaryRecord::from_database(substances, &conn, identifier_option)?;
+    Ok((pure_records, binary_records))
+}
+
 impl<P: Clone, B: Clone, A: CombiningRule<P> + Clone> Parameters<P, B, A> {
     pub fn from_database<F, S>(
         substances: &[S],
@@ -19,9 +39,8 @@ impl<P: Clone, B: Clone, A: CombiningRule<P> + Clone> Parameters<P, B, A> {
         B: DeserializeOwned + Clone,
         A: DeserializeOwned + Clone,
     {
-        let conn = Connection::open(file)?;
-        let pure_records = PureRecord::from_database(substances, &conn, identifier_option)?;
-        let binary_records = BinaryRecord::from_database(substances, &conn, identifier_option)?;
+        let (pure_records, binary_records) =
+            records_from_database(substances, file, identifier_option)?;
         Self::new(pure_records, binary_records)
     }
 }
