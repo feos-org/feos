@@ -205,7 +205,7 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_class::<dft::PyExternalPotential>()?;
         m.add_class::<dft::PyPore1D>()?;
         m.add_class::<dft::PyPore2D>()?;
-        // 3D-FFT classes need `rayon`; absent in the wasm/emscripten build.
+
         #[cfg(feature = "rayon")]
         {
             m.add_class::<dft::PyAdsorption3D>()?;
@@ -216,12 +216,9 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_class::<dft::PySurfaceTensionDiagram>()?;
         m.add_class::<dft::PyPlanarInterface>()?;
 
-        // Solvation (rayon-only)
+        m.add_class::<dft::PyPairCorrelation>()?;
         #[cfg(feature = "rayon")]
-        {
-            m.add_class::<dft::PyPairCorrelation>()?;
-            m.add_class::<dft::PySolvationProfile>()?;
-        }
+        m.add_class::<dft::PySolvationProfile>()?;
     }
     Ok(())
 }
