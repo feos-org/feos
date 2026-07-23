@@ -203,6 +203,7 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
         // Adsorption
         m.add_class::<dft::PyAdsorption1D>()?;
         m.add_class::<dft::PyExternalPotential>()?;
+        m.add_class::<dft::PyPoreSpecification>()?;
         m.add_class::<dft::PyPore1D>()?;
         m.add_class::<dft::PyPore2D>()?;
 

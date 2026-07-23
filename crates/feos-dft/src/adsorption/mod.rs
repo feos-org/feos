@@ -17,7 +17,7 @@ mod fea_potential;
 mod pore;
 mod pore2d;
 pub use external_potential::{ExternalPotential, FluidParameters};
-pub use pore::{HenryCoefficient, Pore1D, PoreProfile, PoreProfile1D, PoreSpecification};
+pub use pore::{HenryCoefficient, Pore, Pore1D, PoreProfile, PoreProfile1D, PoreSpecification};
 pub use pore2d::{Pore2D, PoreProfile2D};
 
 #[cfg(feature = "rayon")]
@@ -54,7 +54,7 @@ where
     }
 
     /// Calculate an adsorption isotherm (starting at low pressure)
-    pub fn adsorption_isotherm<S: PoreSpecification<D>, X: Composition<f64, Dyn> + Clone>(
+    pub fn adsorption_isotherm<S: Pore<D>, X: Composition<f64, Dyn> + Clone>(
         functional: &F,
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
@@ -74,7 +74,7 @@ where
     }
 
     /// Calculate an desorption isotherm (starting at high pressure)
-    pub fn desorption_isotherm<S: PoreSpecification<D>, X: Composition<f64, Dyn> + Clone>(
+    pub fn desorption_isotherm<S: Pore<D>, X: Composition<f64, Dyn> + Clone>(
         functional: &F,
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
@@ -99,7 +99,7 @@ where
     }
 
     /// Calculate an equilibrium isotherm
-    pub fn equilibrium_isotherm<S: PoreSpecification<D>, X: Composition<f64, Dyn> + Clone>(
+    pub fn equilibrium_isotherm<S: Pore<D>, X: Composition<f64, Dyn> + Clone>(
         functional: &F,
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
@@ -182,7 +182,7 @@ where
         }
     }
 
-    fn isotherm<S: PoreSpecification<D>, X: Composition<f64, Dyn> + Clone>(
+    fn isotherm<S: Pore<D>, X: Composition<f64, Dyn> + Clone>(
         functional: &F,
         temperature: Temperature,
         pressure: &Pressure<Array1<f64>>,
@@ -210,7 +210,10 @@ where
                 _ => unreachable!(),
             };
         }
-        let profile = pore.initialize(&bulk, None, None)?.solve(solver)?.profile;
+        let profile = pore
+            .initialize(&bulk, None, None, PoreSpecification::ChemicalPotential)?
+            .solve(solver)?
+            .profile;
         let external_potential = Some(&profile.external_potential);
         let mut old_density = Some(&profile.density);
 
@@ -229,8 +232,18 @@ where
                     .clone();
             }
 
-            let p = pore.initialize(&bulk, old_density, external_potential)?;
-            let p2 = pore.initialize(&bulk, None, external_potential)?;
+            let p = pore.initialize(
+                &bulk,
+                old_density,
+                external_potential,
+                PoreSpecification::ChemicalPotential,
+            )?;
+            let p2 = pore.initialize(
+                &bulk,
+                None,
+                external_potential,
+                PoreSpecification::ChemicalPotential,
+            )?;
             profiles.push(p.solve(solver).or_else(|_| p2.solve(solver)));
 
             old_density = if let Some(Ok(l)) = profiles.last() {
@@ -245,7 +258,7 @@ where
 
     /// Calculate the phase transition from an empty to a filled pore.
     #[expect(clippy::too_many_arguments)]
-    pub fn phase_equilibrium<S: PoreSpecification<D>, X: Composition<f64, Dyn> + Clone>(
+    pub fn phase_equilibrium<S: Pore<D>, X: Composition<f64, Dyn> + Clone>(
         functional: &F,
         temperature: Temperature,
         p_min: Pressure,
@@ -261,8 +274,17 @@ where
         let bulk_init = State::new_npt(functional, temperature, p_max, x.clone(), Some(Liquid))?;
         let liquid_bulk = State::new_npt(functional, temperature, p_max, x.clone(), Some(Vapor))?;
 
-        let mut vapor = pore.initialize(&vapor_bulk, None, None)?.solve(solver)?;
-        let mut liquid = pore.initialize(&bulk_init, None, None)?.solve(solver)?;
+        let mut vapor = pore
+            .initialize(
+                &vapor_bulk,
+                None,
+                None,
+                PoreSpecification::ChemicalPotential,
+            )?
+            .solve(solver)?;
+        let mut liquid = pore
+            .initialize(&bulk_init, None, None, PoreSpecification::ChemicalPotential)?
+            .solve(solver)?;
 
         // calculate initial value for bulk density
         let n_dp_drho_v = (vapor.profile.moles() * vapor_bulk.dp_drho(Contributions::Total)).sum();
