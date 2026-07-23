@@ -8,8 +8,8 @@ jobs:
   linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: 3.14
       - name: Build Wheels
@@ -21,7 +21,7 @@ jobs:
             --manifest-path py-feos/Cargo.toml
             --out dist
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheel-linux-x86_64
           path: dist
@@ -29,8 +29,8 @@ jobs:
   macos-x86_64:
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: 3.14
           architecture: x64
@@ -43,15 +43,15 @@ jobs:
             --manifest-path py-feos/Cargo.toml
             --out dist
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheel-macos-x86_64
           path: dist
   macos-aarch64:
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: 3.14
           architecture: arm64
@@ -64,7 +64,7 @@ jobs:
             --manifest-path py-feos/Cargo.toml
             --out dist
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheel-aarch64-apple-darwin
           path: dist
@@ -74,8 +74,8 @@ jobs:
       matrix:
         target: [x64, x86]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: 3.14
           architecture: ${{ matrix.target }}
@@ -88,22 +88,65 @@ jobs:
             --manifest-path py-feos/Cargo.toml
             --out dist
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheel-${{ matrix.target }}
           path: dist
 
+  emscripten:
+    # Pyodide 314.x uses Python 3.14, Emscripten 5.0.3, and Rust 1.93.0.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: 3.14
+      - name: Install pyodide-build
+        run: pip install "pyodide-build>=0.35,<0.36"
+      - name: Get Pyodide configuration
+        id: pyodide-config
+        run: |
+          pyodide xbuildenv install
+          echo "rust-toolchain=$(pyodide config get rust_toolchain)" >> "$GITHUB_OUTPUT"
+          echo "emscripten-version=$(pyodide config get emscripten_version)" >> "$GITHUB_OUTPUT"
+          echo "pyodide-abi-version=$(pyodide config get pyodide_abi_version)" >> "$GITHUB_OUTPUT"
+          echo "rustflags=$(pyodide config get rustflags)" >> "$GITHUB_OUTPUT"
+      - uses: emscripten-core/setup-emsdk@v16
+        with:
+          version: ${{ steps.pyodide-config.outputs.emscripten-version }}
+      - name: Build wheel
+        uses: PyO3/maturin-action@v1
+        env:
+          CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_RUSTFLAGS: ${{ steps.pyodide-config.outputs.rustflags }}
+          MATURIN_PYEMSCRIPTEN_PLATFORM_VERSION: ${{ steps.pyodide-config.outputs.pyodide-abi-version }}
+        with:
+          target: wasm32-unknown-emscripten
+          rust-toolchain: ${{ steps.pyodide-config.outputs.rust-toolchain }}
+          args: >
+            --profile release-lto
+            --manifest-path py-feos/Cargo.toml
+            --out dist
+            --no-default-features
+            --features emscripten_wheel
+            -i 3.14
+      - name: Upload wheels
+        uses: actions/upload-artifact@v7
+        with:
+          name: wheel-emscripten-wasm32
+          path: dist
+          if-no-files-found: error
+
   deploy-pypi:
     name: Publish wheels to PyPI and TestPyPI
     runs-on: ubuntu-latest
-    needs: [linux, windows, macos-x86_64, macos-aarch64]
+    needs: [linux, windows, macos-x86_64, macos-aarch64, emscripten]
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: wheel-*
           path: wheels
           merge-multiple: true
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: 3.14
       - name: Publish to PyPi
@@ -118,6 +161,6 @@ jobs:
     name: Release crates.io
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo publish --workspace --exclude py_feos --token ${{ secrets.CRATES_IO_TOKEN }}

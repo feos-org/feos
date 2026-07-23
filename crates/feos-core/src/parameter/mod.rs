@@ -25,6 +25,8 @@ pub use association::{
     CombiningRule,
 };
 pub use chemical_record::{ChemicalRecord, GroupCount};
+#[cfg(feature = "rusqlite")]
+pub use database::records_from_database;
 pub use identifier::{Identifier, IdentifierOption};
 pub use model_record::{
     BinaryRecord, BinarySegmentRecord, FromSegments, FromSegmentsBinary, PureRecord, Record,

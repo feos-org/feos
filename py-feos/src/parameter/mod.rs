@@ -1,5 +1,4 @@
 use crate::error::PyFeosError;
-use feos_core::FeosError;
 use feos_core::parameter::*;
 use indexmap::IndexSet;
 use pyo3::prelude::*;
@@ -236,6 +235,7 @@ impl PyParameters {
     ///     Path to database file.
     /// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
     ///     Identifier that is used to search substance.
+    #[cfg(feature = "sqlite")]
     #[staticmethod]
     #[pyo3(
         signature = (substances, path, identifier_option=PyIdentifierOption::Name),
@@ -245,16 +245,9 @@ impl PyParameters {
         substances: Vec<String>,
         path: String,
         identifier_option: PyIdentifierOption,
-    ) -> PyResult<Self> {
-        let identifier_option = IdentifierOption::from(identifier_option);
-        let conn = rusqlite::Connection::open(path)
-            .map_err(FeosError::from)
-            .map_err(PyFeosError::from)?;
-
-        let pure_records = PureRecord::from_database(&substances, &conn, identifier_option)
-            .map_err(PyFeosError::from)?;
-        let binary_records = BinaryRecord::from_database(&substances, &conn, identifier_option)
-            .map_err(PyFeosError::from)?;
+    ) -> Result<Self, PyFeosError> {
+        let (pure_records, binary_records) =
+            records_from_database(&substances, path, IdentifierOption::from(identifier_option))?;
 
         Ok(Self {
             pure_records,

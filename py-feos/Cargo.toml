@@ -36,16 +36,15 @@ indexmap = { workspace = true }
 rayon = { workspace = true, optional = true }
 itertools = { workspace = true }
 paste = { workspace = true }
-rusqlite = { workspace = true, features = ["bundled"]}
 
 feos = { workspace = true }
-feos-core = { workspace = true, features = ["ndarray", "rusqlite"] }
+feos-core = { workspace = true, features = ["ndarray"] }
 feos-derive = { workspace = true }
 feos-dft = { workspace = true, optional = true }
 
 [features]
 default = []
-dft = ["feos/dft", "feos-dft", "petgraph", "rayon"]
+dft = ["feos/dft", "feos-dft", "petgraph"]
 pcsaft = ["feos/pcsaft"]
 epcsaft = ["feos/epcsaft"]
 gc_pcsaft = ["feos/gc_pcsaft"]
@@ -54,8 +53,12 @@ pets = ["feos/pets"]
 saftvrqmie = ["feos/saftvrqmie"]
 saftvrmie = ["feos/saftvrmie"]
 multiparameter = ["feos/multiparameter"]
+# All parallelism is gated behind this feature. Not active for emscripten wheel.
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
-ad = ["feos-core/rayon", "feos/pcsaft"]
+# Loading parameters from a sqlite database. Not active for emscripten wheel.
+sqlite = ["feos-core/rusqlite"]
+ad = ["feos/pcsaft"]
+# EoS and DFT model implementations.
 all_models = [
     "dft",
     "pcsaft",
@@ -65,7 +68,22 @@ all_models = [
     "pets",
     "saftvrqmie",
     "saftvrmie",
-    "multiparameter",
+    "multiparameter"
+]
+# Features for native Python wheel, including parallelism.
+wheel = [
+    "pyo3/extension-module",
+    "pyo3/abi3-py310",
+    "all_models",
+    "ad",
+    "rayon",
+    "sqlite"
+]
+# Features for threadless, portable wheel for Pyodide.
+emscripten_wheel = [
+    "pyo3/extension-module",
+    "pyo3/abi3-py310",
+    "all_models",
     "ad"
 ]
 

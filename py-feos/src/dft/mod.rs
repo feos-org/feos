@@ -15,11 +15,14 @@ mod profile;
 mod solvation;
 mod solver;
 
-pub(crate) use adsorption::{
-    PyAdsorption1D, PyAdsorption3D, PyExternalPotential, PyPore1D, PyPore2D, PyPore3D,
-};
+pub(crate) use adsorption::{PyAdsorption1D, PyExternalPotential, PyPore1D, PyPore2D};
+// 3D pore / adsorption bindings wrap rayon-gated feos_dft types.
+#[cfg(feature = "rayon")]
+pub(crate) use adsorption::{PyAdsorption3D, PyPore3D};
 pub(crate) use interface::{PyPlanarInterface, PySurfaceTensionDiagram};
-pub(crate) use solvation::{PyPairCorrelation, PySolvationProfile};
+pub(crate) use solvation::PyPairCorrelation;
+#[cfg(feature = "rayon")]
+pub(crate) use solvation::PySolvationProfile;
 pub(crate) use solver::{PyDFTSolver, PyDFTSolverLog};
 
 /// Geometries of individual axes.
