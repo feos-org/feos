@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Changed data type of initial temperatures or pressure for phase equilibrium calculations (`TemperatureOrPressure::Other`) from `D` to `f64`. [#369](https://github.com/feos-org/feos/pull/369)
 - Reworked DFT solution algorithms slightly for the cases in which additional specifications are given. [#371](https://github.com/feos-org/feos/pull/371)
+- External potentials are passed and returned as quantities (energies) instead of reduced units. [#372](https://github.com/feos-org/feos/pull/372)
 
 ### Removed
 - Removed the `DFTSpecification` trait in favor of only using the `DFTSpecification` enum (renamed from `DFTSpecifications`). [#371](https://github.com/feos-org/feos/pull/371)

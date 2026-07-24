@@ -139,7 +139,7 @@ fn impl_pair_potential(
     }
     Ok(quote! {
         impl feos_dft::solvation::PairPotential for #ident {
-            fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> ndarray::Array2<f64> {
+            fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> quantity::Energy<ndarray::Array2<f64>> {
                 match self {
                     #(#pair_potential,)*
                 }
