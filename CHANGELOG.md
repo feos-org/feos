@@ -5,8 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Breaking]
+### Added
+- Added `PoreSpecification` enum to specify the state of the fluid in the pore (currently chemical potential or moles). [#371](https://github.com/feos-org/feos/pull/371)
+
 ### Changed
 - Changed data type of initial temperatures or pressure for phase equilibrium calculations (`TemperatureOrPressure::Other`) from `D` to `f64`. [#369](https://github.com/feos-org/feos/pull/369)
+- Reworked DFT solution algorithms slightly for the cases in which additional specifications are given. [#371](https://github.com/feos-org/feos/pull/371)
+
+### Removed
+- Removed the `DFTSpecification` trait in favor of only using the `DFTSpecification` enum (renamed from `DFTSpecifications`). [#371](https://github.com/feos-org/feos/pull/371)
 
 ## [Unreleased]
 

@@ -56,6 +56,29 @@ macro_rules! impl_pore_profile {
     };
 }
 
+/// Different ways that the thermodynamic state of the fluid in the pore
+/// can be specified.
+#[pyclass(name = "PoreSpecification", from_py_object)]
+#[derive(Clone)]
+pub struct PyPoreSpecification(PoreSpecification);
+
+#[pymethods]
+impl PyPoreSpecification {
+    /// Specify the chemical potential (via the bulk state).
+    #[classattr]
+    #[expect(non_snake_case)]
+    fn ChemicalPotential() -> Self {
+        Self(PoreSpecification::ChemicalPotential)
+    }
+
+    /// Specify the amount of moles of every component.
+    #[staticmethod]
+    #[expect(non_snake_case)]
+    fn Moles(moles: Moles<Array1<f64>>) -> Self {
+        Self(PoreSpecification::Moles(moles))
+    }
+}
+
 /// Parameters required to specify a 1D pore.
 ///
 /// Parameters
@@ -120,17 +143,23 @@ impl PyPore1D {
     ///     The external potential in the pore. Used to
     ///     save computation time in the case of costly
     ///     evaluations of external potentials.
+    /// specification : PoreSpecification
+    ///     The external constraint that specifies the state
+    ///     in the pore.
     ///
     /// Returns
     /// -------
     /// PoreProfile1D
-    #[pyo3(text_signature = "($self, bulk, density=None, external_potential=None)")]
-    #[pyo3(signature = (bulk, density=None, external_potential=None))]
+    #[pyo3(
+        text_signature = "($self, bulk, density=None, external_potential=None, specification=PoreSpecification.ChemicalPotential)"
+    )]
+    #[pyo3(signature = (bulk, density=None, external_potential=None, specification=PyPoreSpecification::ChemicalPotential()))]
     fn initialize(
         &self,
         bulk: &PyState,
         density: Option<Density<Array2<f64>>>,
         external_potential: Option<&Bound<'_, PyArray2<f64>>>,
+        specification: PyPoreSpecification,
     ) -> PyResult<PyPoreProfile1D> {
         Ok(PyPoreProfile1D(
             self.0
@@ -138,6 +167,7 @@ impl PyPore1D {
                     &bulk.0,
                     density.as_ref(),
                     external_potential.map(|e| e.to_owned_array()).as_ref(),
+                    specification.0,
                 )
                 .map_err(PyFeosError::from)?,
         ))
@@ -210,17 +240,23 @@ impl PyPore2D {
     ///     The external potential in the pore. Used to
     ///     save computation time in the case of costly
     ///     evaluations of external potentials.
+    /// specification : PoreSpecification
+    ///     The external constraint that specifies the state
+    ///     in the pore.
     ///
     /// Returns
     /// -------
     /// PoreProfile2D
-    #[pyo3(text_signature = "($self, bulk, density=None, external_potential=None)")]
-    #[pyo3(signature = (bulk, density=None, external_potential=None))]
+    #[pyo3(
+        text_signature = "($self, bulk, density=None, external_potential=None, specification=PoreSpecification.ChemicalPotential)"
+    )]
+    #[pyo3(signature = (bulk, density=None, external_potential=None, specification=PyPoreSpecification::ChemicalPotential()))]
     fn initialize(
         &self,
         bulk: &PyState,
         density: Option<Density<Array3<f64>>>,
         external_potential: Option<&Bound<'_, PyArray3<f64>>>,
+        specification: PyPoreSpecification,
     ) -> PyResult<PyPoreProfile2D> {
         Ok(PyPoreProfile2D(
             self.0
@@ -228,6 +264,7 @@ impl PyPore2D {
                     &bulk.0,
                     density.as_ref(),
                     external_potential.map(|e| e.to_owned_array()).as_ref(),
+                    specification.0,
                 )
                 .map_err(PyFeosError::from)?,
         ))
@@ -326,17 +363,23 @@ impl PyPore3D {
     ///     The external potential in the pore. Used to
     ///     save computation time in the case of costly
     ///     evaluations of external potentials.
+    /// specification : PoreSpecification
+    ///     The external constraint that specifies the state
+    ///     in the pore.
     ///
     /// Returns
     /// -------
     /// PoreProfile3D
-    #[pyo3(text_signature = "($self, bulk, density=None, external_potential=None)")]
-    #[pyo3(signature = (bulk, density=None, external_potential=None))]
+    #[pyo3(
+        text_signature = "($self, bulk, density=None, external_potential=None, specification=PoreSpecification.ChemicalPotential)"
+    )]
+    #[pyo3(signature = (bulk, density=None, external_potential=None, specification=PyPoreSpecification::ChemicalPotential()))]
     fn initialize(
         &self,
         bulk: &PyState,
         density: Option<Density<Array4<f64>>>,
         external_potential: Option<&Bound<'_, PyArray4<f64>>>,
+        specification: PyPoreSpecification,
     ) -> PyResult<PyPoreProfile3D> {
         Ok(PyPoreProfile3D(
             self.0
@@ -344,6 +387,7 @@ impl PyPore3D {
                     &bulk.0,
                     density.as_ref(),
                     external_potential.map(|e| e.to_owned_array()).as_ref(),
+                    specification.0,
                 )
                 .map_err(PyFeosError::from)?,
         ))
