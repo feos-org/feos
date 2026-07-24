@@ -266,8 +266,8 @@ where
 
         for k in 0..picard.max_iter {
             // calculate residual
-            let (res, res_bulk, res_norm, _, _) =
-                self.euler_lagrange_equation(&*rho, &*rho_bulk, picard.log)?;
+            let (res, _, res_norm, _, _) =
+                self.euler_lagrange_equation(&*rho, rho_bulk, picard.log)?;
             log.add_residual(solver, k, res_norm);
 
             // check for convergence
@@ -284,10 +284,8 @@ where
             // update solution
             if picard.log {
                 *rho *= &(&res * damping_coefficient).mapv(f64::exp);
-                *rho_bulk *= &(&res_bulk * damping_coefficient).mapv(f64::exp);
             } else {
                 *rho += &(&res * damping_coefficient);
-                *rho_bulk += &(&res_bulk * damping_coefficient);
             }
         }
         Ok((false, picard.max_iter))
@@ -297,7 +295,7 @@ where
         &self,
         rho: &Array<f64, D::Larger>,
         delta_rho: &Array<f64, D::Larger>,
-        rho_bulk: &Array1<f64>,
+        rho_bulk: &mut Array1<f64>,
         res0: f64,
         logarithm: bool,
     ) -> FeosResult<f64> {
@@ -384,8 +382,8 @@ where
             let m = resm.len() + 1;
 
             // calculate residual
-            let (res, res_bulk, res_norm, _, _) =
-                self.euler_lagrange_equation(&*rho, &*rho_bulk, anderson.log)?;
+            let (res, _, res_norm, _, _) =
+                self.euler_lagrange_equation(&*rho, rho_bulk, anderson.log)?;
             log.add_residual(solver, k, res_norm);
 
             // check for convergence
@@ -394,19 +392,19 @@ where
             }
 
             // save residual and x value
-            resm.push_back((res, res_bulk, res_norm));
+            resm.push_back((res, res_norm));
             if anderson.log {
-                rhom.push_back((rho.mapv(f64::ln), rho_bulk.mapv(f64::ln)));
+                rhom.push_back(rho.mapv(f64::ln));
             } else {
-                rhom.push_back((rho.clone(), rho_bulk.clone()));
+                rhom.push_back(rho.clone());
             }
 
             // calculate alpha
             r = DMatrix::from_fn(m + 1, m + 1, |i, j| match (i == m, j == m) {
                 (false, false) => {
-                    let (resi, resi_bulk, _) = &resm[i];
-                    let (resj, resj_bulk, _) = &resm[j];
-                    (resi * resj).sum() + (resi_bulk * resj_bulk).sum()
+                    let (resi, _) = &resm[i];
+                    let (resj, _) = &resm[j];
+                    (resi * resj).sum()
                 }
                 (true, true) => 0.0,
                 _ => 1.0,
@@ -418,20 +416,15 @@ where
 
             // update solution
             rho.fill(0.0);
-            rho_bulk.fill(0.0);
             for i in 0..m {
-                let (rhoi, rhoi_bulk) = &rhom[i];
-                let (resi, resi_bulk, _) = &resm[i];
+                let rhoi = &rhom[i];
+                let (resi, _) = &resm[i];
                 *rho += &(alpha[i] * (rhoi + &(anderson.damping_coefficient * resi)));
-                *rho_bulk +=
-                    &(alpha[i] * (rhoi_bulk + &(anderson.damping_coefficient * resi_bulk)));
             }
             if anderson.log {
                 rho.mapv_inplace(f64::exp);
-                rho_bulk.mapv_inplace(f64::exp);
             } else {
                 rho.mapv_inplace(f64::abs);
-                rho_bulk.mapv_inplace(f64::abs);
             }
         }
         Ok((false, anderson.max_iter))
@@ -476,7 +469,6 @@ where
             let lhs = if newton.log { &*rho * res } else { res };
             *rho += &Self::gmres(rhs, &lhs, newton.max_iter_gmres, newton.tol * 1e-2, log)?;
             rho.mapv_inplace(f64::abs);
-            rho_bulk.mapv_inplace(f64::abs);
         }
 
         Ok((false, newton.max_iter))
