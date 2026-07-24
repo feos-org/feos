@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-07-24
+### Fixed
+- Fixed some `unwrap`s in VLE routines. [#367](https://github.com/feos-org/feos/pull/367)
+
+### Packaging
+- Updated github action workflows to include pyodide/emscripten wheels. [#368](https://github.com/feos-org/feos/pull/368)
+
 ## [0.10.0] - 2026-07-15
 ### Added
 - Extended tp-flash algorithm to static numbers of components and enabled automatic differentiation for binary systems. [#336](https://github.com/feos-org/feos/pull/336)
