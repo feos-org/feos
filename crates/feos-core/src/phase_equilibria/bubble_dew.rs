@@ -31,10 +31,7 @@ pub trait TemperatureOrPressure<D: DualNum<f64> + Copy = f64>: Copy {
     fn temperature(&self) -> Option<Temperature<D>>;
     fn pressure(&self) -> Option<Pressure<D>>;
 
-    fn temperature_pressure(
-        &self,
-        tp_init: Option<Self::Other>,
-    ) -> (Option<Temperature<D>>, Option<Pressure<D>>, bool);
+    fn specification(&self, tp_init: Option<Self::Other>) -> TemperatureOrPressureSpecification<D>;
 
     fn from_state<E: Residual<N, D>, N: Gradients>(state: &State<E, N, D>) -> Self::Other
     where
@@ -50,7 +47,7 @@ pub trait TemperatureOrPressure<D: DualNum<f64> + Copy = f64>: Copy {
 }
 
 impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D> for Temperature<D> {
-    type Other = Pressure<D>;
+    type Other = Pressure;
     const IDENTIFIER: &'static str = "temperature";
 
     fn temperature(&self) -> Option<Temperature<D>> {
@@ -61,30 +58,27 @@ impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D> for Temperature<D> {
         None
     }
 
-    fn temperature_pressure(
-        &self,
-        tp_init: Option<Self::Other>,
-    ) -> (Option<Temperature<D>>, Option<Pressure<D>>, bool) {
-        (Some(*self), tp_init, true)
+    fn specification(&self, tp_init: Option<Self::Other>) -> TemperatureOrPressureSpecification<D> {
+        TemperatureOrPressureSpecification::Temperature(*self, tp_init)
     }
 
     fn from_state<E: Residual<N, D>, N: Gradients>(state: &State<E, N, D>) -> Self::Other
     where
         DefaultAllocator: Allocator<N>,
     {
-        state.pressure(Contributions::Total)
+        state.pressure(Contributions::Total).re()
     }
 
     #[cfg(feature = "ndarray")]
     fn linspace(
         &self,
-        start: Pressure<D>,
-        end: Pressure<D>,
+        start: Pressure,
+        end: Pressure,
         n: usize,
     ) -> (Temperature<Array1<f64>>, Pressure<Array1<f64>>) {
         (
             Temperature::linspace(self.re(), self.re(), n),
-            Pressure::linspace(start.re(), end.re(), n),
+            Pressure::linspace(start, end, n),
         )
     }
 }
@@ -95,7 +89,7 @@ impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D> for Temperature<D> {
 impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D>
     for Quantity<D, SIUnit<-2, -1, 1, 0, 0, 0, 0>>
 {
-    type Other = Temperature<D>;
+    type Other = Temperature;
     const IDENTIFIER: &'static str = "pressure";
 
     fn temperature(&self) -> Option<Temperature<D>> {
@@ -106,31 +100,40 @@ impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D>
         Some(*self)
     }
 
-    fn temperature_pressure(
-        &self,
-        tp_init: Option<Self::Other>,
-    ) -> (Option<Temperature<D>>, Option<Pressure<D>>, bool) {
-        (tp_init, Some(*self), false)
+    fn specification(&self, tp_init: Option<Self::Other>) -> TemperatureOrPressureSpecification<D> {
+        TemperatureOrPressureSpecification::Pressure(*self, tp_init)
     }
 
     fn from_state<E: Residual<N, D>, N: Dim>(state: &State<E, N, D>) -> Self::Other
     where
         DefaultAllocator: Allocator<N>,
     {
-        state.temperature
+        state.temperature.re()
     }
 
     #[cfg(feature = "ndarray")]
     fn linspace(
         &self,
-        start: Temperature<D>,
-        end: Temperature<D>,
+        start: Temperature,
+        end: Temperature,
         n: usize,
     ) -> (Temperature<Array1<f64>>, Pressure<Array1<f64>>) {
         (
-            Temperature::linspace(start.re(), end.re(), n),
+            Temperature::linspace(start, end, n),
             Pressure::linspace(self.re(), self.re(), n),
         )
+    }
+}
+
+/// Specification and initial value for a phase equilibrium calculation.
+pub enum TemperatureOrPressureSpecification<D> {
+    Temperature(Temperature<D>, Option<Pressure>),
+    Pressure(Pressure<D>, Option<Temperature>),
+}
+
+impl<D> TemperatureOrPressureSpecification<D> {
+    fn is_temperature(&self) -> bool {
+        matches!(self, Self::Temperature(_, _))
     }
 }
 
@@ -197,134 +200,113 @@ where
             }
             Ok(vle)
         } else {
-            let (temperature, pressure, iterate_p) =
-                temperature_or_pressure.temperature_pressure(tp_init);
             Self::bubble_dew_point_tp(
                 eos,
-                temperature,
-                pressure,
+                temperature_or_pressure,
+                tp_init,
                 vapor_molefracs,
                 liquid_molefracs,
                 bubble,
-                iterate_p,
                 options,
             )
         }
     }
 
-    #[expect(clippy::too_many_arguments)]
-    fn bubble_dew_point_tp<X: Composition<D, N>>(
+    fn bubble_dew_point_tp<TP: TemperatureOrPressure<D>, X: Composition<D, N>>(
         eos: &E,
-        temperature: Option<Temperature<D>>,
-        pressure: Option<Pressure<D>>,
+        temperature_or_pressure: TP,
+        tp_init: Option<TP::Other>,
         composition: X,
         molefracs_init: Option<&OVector<f64, N>>,
         bubble: bool,
-        iterate_p: bool,
         options: (SolverOptions, SolverOptions),
     ) -> FeosResult<Self> {
         let eos_re = eos.re();
-        let mut temperature_re = temperature.map(|t| t.re());
-        let mut pressure_re = pressure.map(|p| p.re());
+        let iterate_p = temperature_or_pressure
+            .specification(tp_init)
+            .is_temperature();
         let (molefracs_spec, total_moles) = composition.into_molefracs(eos)?;
         let molefracs_spec_re = molefracs_spec.map(|x| x.re());
-        let (v1, rho2) = if iterate_p {
-            // temperature is specified
-            let temperature_re = temperature_re.as_mut().ok_or(FeosError::Error(
-                "Temperature information is expected for bubble/dew calculation.".to_string(),
-            ))?;
+        let (mut t, mut p, v1, rho2) = match temperature_or_pressure.specification(tp_init) {
+            TemperatureOrPressureSpecification::Temperature(t, mut p) => {
+                // First use given initial pressure if applicable
+                let (p, v1, rho2) = if let Some(p) = p.as_mut() {
+                    let (v1, rho2) = PhaseEquilibrium::iterate_bubble_dew(
+                        &eos_re,
+                        &mut t.re(),
+                        p,
+                        &molefracs_spec_re,
+                        molefracs_init,
+                        bubble,
+                        iterate_p,
+                        options,
+                    )?;
+                    (*p, v1, rho2)
+                } else {
+                    let x2 = PhaseEquilibrium::starting_pressure_ideal_gas(
+                        &eos_re,
+                        t.re(),
+                        &molefracs_spec_re,
+                        bubble,
+                    )
+                    .and_then(|(mut p, x)| {
+                        let (v1, rho2) = PhaseEquilibrium::iterate_bubble_dew(
+                            &eos_re,
+                            &mut t.re(),
+                            &mut p,
+                            &molefracs_spec_re,
+                            molefracs_init.or(Some(&x)),
+                            bubble,
+                            iterate_p,
+                            options,
+                        )?;
+                        Ok((p, v1, rho2))
+                    });
 
-            // First use given initial pressure if applicable
-            if let Some(p) = pressure_re.as_mut() {
-                PhaseEquilibrium::iterate_bubble_dew(
-                    &eos_re,
-                    temperature_re,
-                    p,
+                    // Finally use the spinodal to initialize the calculation
+                    x2.or_else(|_| {
+                        PhaseEquilibrium::starting_pressure_spinodal(
+                            &eos_re,
+                            t.re(),
+                            &molefracs_spec_re,
+                        )
+                        .and_then(|mut p| {
+                            let (v1, rho2) = PhaseEquilibrium::iterate_bubble_dew(
+                                &eos_re,
+                                &mut t.re(),
+                                &mut p,
+                                &molefracs_spec_re,
+                                molefracs_init,
+                                bubble,
+                                iterate_p,
+                                options,
+                            )?;
+                            Ok((p, v1, rho2))
+                        })
+                    })?
+                };
+                (t.into_reduced(), D::from(p.into_reduced()), v1, rho2)
+            }
+            TemperatureOrPressureSpecification::Pressure(p, mut t) => {
+                let mut pressure_re = p.re();
+                let t = t.as_mut()
+                .ok_or(FeosError::Error(
+                    "An initial temperature is required for the calculation of bubble/dew points at given pressure.".to_string()))?;
+                let (v1, rho2) = PhaseEquilibrium::iterate_bubble_dew(
+                    &eos.re(),
+                    t,
+                    &mut pressure_re,
                     &molefracs_spec_re,
                     molefracs_init,
                     bubble,
                     iterate_p,
                     options,
-                )?
-            } else {
-                // Next try to initialize with an ideal gas assumption
-                let x2 = PhaseEquilibrium::starting_pressure_ideal_gas(
-                    &eos_re,
-                    *temperature_re,
-                    &molefracs_spec_re,
-                    bubble,
-                )
-                .and_then(|(p, x)| {
-                    let p = pressure_re.insert(p);
-                    PhaseEquilibrium::iterate_bubble_dew(
-                        &eos_re,
-                        temperature_re,
-                        p,
-                        &molefracs_spec_re,
-                        molefracs_init.or(Some(&x)),
-                        bubble,
-                        iterate_p,
-                        options,
-                    )
-                });
-
-                // Finally use the spinodal to initialize the calculation
-                x2.or_else(|_| {
-                    PhaseEquilibrium::starting_pressure_spinodal(
-                        &eos_re,
-                        *temperature_re,
-                        &molefracs_spec_re,
-                    )
-                    .and_then(|p| {
-                        let p = pressure_re.insert(p);
-                        PhaseEquilibrium::iterate_bubble_dew(
-                            &eos_re,
-                            temperature_re,
-                            p,
-                            &molefracs_spec_re,
-                            molefracs_init,
-                            bubble,
-                            iterate_p,
-                            options,
-                        )
-                    })
-                })?
+                )?;
+                (D::from(t.into_reduced()), p.into_reduced(), v1, rho2)
             }
-        } else {
-            // pressure is specified
-            let pressure_re = pressure_re.as_mut().ok_or(FeosError::Error(
-                "Pressure information is expected for bubble/dew calculation.".to_string(),
-            ))?;
-
-            let temperature_re = temperature_re
-                .as_mut()
-                .ok_or(FeosError::Error(
-                    "An initial temperature is required for the calculation of bubble/dew points at given pressure.".to_string()))?;
-            PhaseEquilibrium::iterate_bubble_dew(
-                &eos.re(),
-                temperature_re,
-                pressure_re,
-                &molefracs_spec_re,
-                molefracs_init,
-                bubble,
-                iterate_p,
-                options,
-            )?
         };
 
         // implicit differentiation
-        // unwraps here are safe
-        let (mut t, mut p) = if iterate_p {
-            (
-                temperature.unwrap().into_reduced(),
-                D::from(pressure_re.unwrap().into_reduced()),
-            )
-        } else {
-            (
-                D::from(temperature_re.unwrap().into_reduced()),
-                pressure.unwrap().into_reduced(),
-            )
-        };
         let mut molar_volume = D::from(v1);
         let mut rho2 = rho2.map(D::from);
         for _ in 0..D::NDERIV {
