@@ -19,6 +19,6 @@ pub use functional::{HelmholtzEnergyFunctional, HelmholtzEnergyFunctionalDyn, Mo
 pub use functional_contribution::FunctionalContribution;
 pub use geometry::{Axis, Geometry, Grid};
 pub use pdgt::PdgtFunctionalProperties;
-pub use profile::{DFTProfile, DFTSpecification, DFTSpecifications};
+pub use profile::{DFTProfile, DFTSpecification};
 pub use solver::{DFTSolver, DFTSolverLog};
 pub use weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};

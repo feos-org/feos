@@ -22,19 +22,10 @@ pub(crate) const CUTOFF_RADIUS: f64 = 14.0;
 /// General specifications for the chemical potential in a DFT calculation.
 ///
 /// In the most basic case, the chemical potential is specified in a DFT calculation,
-/// for more general systems, this trait provides the possibility to declare additional
+/// for more general systems, this enum provides the possibility to declare additional
 /// equations for the calculation of the chemical potential during the iteration.
-pub trait DFTSpecification<D: Dimension, F>: Send + Sync {
-    fn calculate_bulk_density(
-        &self,
-        profile: &DFTProfile<D, F>,
-        bulk_density: &Array1<f64>,
-        z: &Array1<f64>,
-    ) -> FeosResult<Array1<f64>>;
-}
-
-/// Common specifications for the grand potentials in a DFT calculation.
-pub enum DFTSpecifications {
+#[derive(Clone)]
+pub enum DFTSpecification {
     /// DFT with specified chemical potential.
     ChemicalPotential,
     /// DFT with specified number of particles.
@@ -42,57 +33,21 @@ pub enum DFTSpecifications {
     /// The solution is still a grand canonical density profile, but the chemical
     /// potentials are iterated together with the density profile to obtain a result
     /// with the specified number of particles.
-    Moles { moles: Array1<f64> },
+    Moles(Array1<f64>),
     /// DFT with specified total number of moles.
-    TotalMoles { total_moles: f64 },
+    TotalMoles(f64),
 }
 
-impl DFTSpecifications {
-    /// Calculate the number of particles from the profile.
-    ///
-    /// Call this after initializing the density profile to keep the number of
-    /// particles constant in systems, where the number itself is difficult to obtain.
-    pub fn moles_from_profile<D: Dimension, F: HelmholtzEnergyFunctional>(
-        profile: &DFTProfile<D, F>,
-    ) -> Self
-    where
-        D::Larger: Dimension<Smaller = D>,
-    {
-        let rho = profile.density.to_reduced();
-        Self::Moles {
-            moles: profile.integrate_reduced_comp(&rho),
-        }
-    }
-
-    /// Calculate the number of particles from the profile.
-    ///
-    /// Call this after initializing the density profile to keep the total number of
-    /// particles constant in systems, e.g. to fix the equimolar dividing surface.
-    pub fn total_moles_from_profile<D: Dimension, F: HelmholtzEnergyFunctional>(
-        profile: &DFTProfile<D, F>,
-    ) -> Self
-    where
-        D::Larger: Dimension<Smaller = D>,
-    {
-        let rho = profile.density.to_reduced();
-        let moles = profile.integrate_reduced_comp(&rho).sum();
-        Self::TotalMoles { total_moles: moles }
-    }
-}
-
-impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTSpecification<D, F> for DFTSpecifications {
+impl DFTSpecification {
     fn calculate_bulk_density(
         &self,
-        _profile: &DFTProfile<D, F>,
         bulk_density: &Array1<f64>,
         z: &Array1<f64>,
     ) -> FeosResult<Array1<f64>> {
         Ok(match self {
             Self::ChemicalPotential => bulk_density.clone(),
-            Self::Moles { moles } => moles / z,
-            Self::TotalMoles { total_moles } => {
-                bulk_density * *total_moles / (bulk_density * z).sum()
-            }
+            Self::Moles(moles) => moles / z,
+            Self::TotalMoles(total_moles) => bulk_density * *total_moles / (bulk_density * z).sum(),
         })
     }
 }
@@ -104,7 +59,7 @@ pub struct DFTProfile<D: Dimension, F> {
     pub convolver: Arc<dyn Convolver<f64, D>>,
     pub temperature: Temperature,
     pub density: Density<Array<f64, D::Larger>>,
-    pub specification: Arc<dyn DFTSpecification<D, F>>,
+    pub specification: DFTSpecification,
     pub external_potential: Array<f64, D::Larger>,
     pub bulk: State<F>,
     pub solver_log: Option<DFTSolverLog>,
@@ -246,12 +201,27 @@ where
             convolver,
             temperature: bulk.temperature,
             density,
-            specification: Arc::new(DFTSpecifications::ChemicalPotential),
+            specification: DFTSpecification::ChemicalPotential,
             external_potential,
             bulk: bulk.clone(),
             solver_log: None,
             lanczos,
         }
+    }
+
+    /// Set a constraint to fix the number of particles of every component based on
+    /// the current density profile.
+    pub fn fix_moles(&mut self) {
+        let moles = self.integrate_reduced_comp(&self.density.to_reduced());
+        self.specification = DFTSpecification::Moles(moles);
+    }
+
+    /// Set a constraint to fix the total number of particles based on
+    /// the current density profile.
+    pub fn fix_total_moles(&mut self) {
+        let rho = self.density.to_reduced();
+        let moles = self.integrate_reduced_comp(&rho).sum();
+        self.specification = DFTSpecification::TotalMoles(moles);
     }
 }
 
@@ -374,7 +344,7 @@ where
         // Read from profile
         let density = self.density.to_reduced();
         let partial_density = self.bulk.partial_density().into_reduced();
-        let bulk_density = self
+        let mut bulk_density = self
             .bulk
             .eos
             .component_index()
@@ -383,7 +353,7 @@ where
             .collect();
 
         let (res, res_bulk, res_norm, _, _) =
-            self.euler_lagrange_equation(&density, &bulk_density, log)?;
+            self.euler_lagrange_equation(&density, &mut bulk_density, log)?;
         Ok((res, res_bulk, res_norm))
     }
 
@@ -391,7 +361,7 @@ where
     pub(crate) fn euler_lagrange_equation(
         &self,
         density: &Array<f64, D::Larger>,
-        bulk_density: &Array1<f64>,
+        bulk_density: &mut Array1<f64>,
         log: bool,
     ) -> FeosResult<(
         Array<f64, D::Larger>,
@@ -436,6 +406,14 @@ where
             .bond_integrals(temperature, &exp_dfdrho, self.convolver.as_ref());
         let mut rho_projected = &exp_dfdrho * bonds;
 
+        // calculate bulk density based on the given specification
+        let res_bulk = &*bulk_density
+            - self.specification.calculate_bulk_density(
+                bulk_density,
+                &self.integrate_reduced_comp(&rho_projected),
+            )?;
+        *bulk_density -= &res_bulk;
+
         // multiply bulk density
         rho_projected
             .outer_iter_mut()
@@ -457,18 +435,9 @@ where
             .filter(|&(_, &p)| p + f64::EPSILON >= MAX_POTENTIAL)
             .for_each(|(r, _)| *r = 0.0);
 
-        // additional residuals for the calculation of the bulk densities
-        let z = self.integrate_reduced_comp(&rho_projected);
-        let res_bulk = bulk_density
-            - self
-                .specification
-                .calculate_bulk_density(self, bulk_density, &z)?;
-
         // calculate the norm of the residual
-        let res_norm = ((density - &rho_projected).mapv(|x| x * x).sum()
-            + res_bulk.mapv(|x| x * x).sum())
-        .sqrt()
-            / ((res.len() + res_bulk.len()) as f64).sqrt();
+        let res_norm =
+            (density - &rho_projected).mapv(|x| x * x).sum().sqrt() / (res.len() as f64).sqrt();
 
         if res_norm.is_finite() {
             Ok((res, res_bulk, res_norm, exp_dfdrho, rho_projected))
@@ -501,7 +470,6 @@ where
             .enumerate()
             .for_each(|(i, r)| partial_density.set(component_index[i], Density::from_reduced(r)));
         self.bulk = State::new_density(&self.bulk.eos, self.bulk.temperature, partial_density)?;
-
         Ok(())
     }
 }
