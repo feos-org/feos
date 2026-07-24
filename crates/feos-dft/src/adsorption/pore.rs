@@ -3,7 +3,7 @@ use crate::convolver::ConvolverFFT;
 use crate::functional::{HelmholtzEnergyFunctional, HelmholtzEnergyFunctionalDyn, MoleculeShape};
 use crate::functional_contribution::FunctionalContribution;
 use crate::geometry::{Axis, Geometry, Grid};
-use crate::profile::{DFTProfile, MAX_POTENTIAL};
+use crate::profile::DFTProfile;
 use crate::solver::DFTSolver;
 use crate::{DFTSpecification, WeightFunctionInfo};
 use feos_core::{Contributions, FeosResult, ReferenceSystem, ResidualDyn, State, StateHD};
@@ -69,7 +69,7 @@ pub trait Pore<D: Dimension> {
         &self,
         bulk: &State<F>,
         density: Option<&Density<Array<f64, D::Larger>>>,
-        external_potential: Option<&Array<f64, D::Larger>>,
+        external_potential: Option<&Energy<Array<f64, D::Larger>>>,
         specification: PoreSpecification,
     ) -> FeosResult<PoreProfile<D, F>>;
 
@@ -110,7 +110,7 @@ where
     pub fn new(
         grid: Grid,
         bulk: &State<F>,
-        external_potential: Option<Array<f64, D::Larger>>,
+        external_potential: Option<Energy<Array<f64, D::Larger>>>,
         density: Option<&Density<Array<f64, D::Larger>>>,
         specification: PoreSpecification,
     ) -> Self {
@@ -217,7 +217,7 @@ impl Pore<Ix1> for Pore1D {
         &self,
         bulk: &State<F>,
         density: Option<&Density<Array2<f64>>>,
-        external_potential: Option<&Array2<f64>>,
+        external_potential: Option<&Energy<Array2<f64>>>,
         specification: PoreSpecification,
     ) -> FeosResult<PoreProfile1D<F>> {
         let dft: &F = &bulk.eos;
@@ -247,7 +247,6 @@ impl Pore<Ix1> for Pore1D {
                     &self.potential,
                     dft,
                     &axis,
-                    self.potential_cutoff,
                 )
             },
             |e| e.clone(),
@@ -272,9 +271,7 @@ fn external_potential_1d<P: HelmholtzEnergyFunctional + FluidParameters>(
     potential: &ExternalPotential,
     fluid_parameters: &P,
     axis: &Axis,
-    potential_cutoff: Option<f64>,
-) -> Array2<f64> {
-    let potential_cutoff = potential_cutoff.unwrap_or(MAX_POTENTIAL);
+) -> Energy<Array2<f64>> {
     let effective_pore_size = match axis.geometry {
         Geometry::Spherical => pore_width.to_reduced(),
         Geometry::Cylindrical => pore_width.to_reduced(),
@@ -305,21 +302,16 @@ fn external_potential_1d<P: HelmholtzEnergyFunctional + FluidParameters>(
             fluid_parameters,
             t,
         ),
-    } / t;
+    };
 
     for (i, &z) in axis.grid.iter().enumerate() {
         if z > effective_pore_size {
             external_potential
                 .index_axis_mut(Axis_nd(1), i)
-                .fill(potential_cutoff);
+                .fill(f64::INFINITY);
         }
     }
-    external_potential.map_inplace(|x| {
-        if *x > potential_cutoff {
-            *x = potential_cutoff
-        }
-    });
-    external_potential
+    Energy::from_reduced(external_potential)
 }
 
 const EPSILON_HE: f64 = 10.9;

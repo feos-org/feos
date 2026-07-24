@@ -1,12 +1,12 @@
-use super::pore::{PoreProfile, Pore};
+use super::pore::{Pore, PoreProfile};
 use crate::adsorption::{FluidParameters, PoreSpecification};
 use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::{Axis, Grid};
-use crate::profile::{CUTOFF_RADIUS, MAX_POTENTIAL};
+use crate::profile::CUTOFF_RADIUS;
 use feos_core::{FeosError, FeosResult, ReferenceSystem, State};
 use ndarray::Zip;
 use ndarray::prelude::*;
-use quantity::{Angle, DEGREES, Density, Length};
+use quantity::{Angle, DEGREES, Density, Energy, Length};
 
 /// Parameters required to specify a 3D pore.
 pub struct Pore3D {
@@ -16,12 +16,10 @@ pub struct Pore3D {
     coordinates: Length<Array2<f64>>,
     sigma_ss: Array1<f64>,
     epsilon_k_ss: Array1<f64>,
-    potential_cutoff: Option<f64>,
     cutoff_radius: Option<Length>,
 }
 
 impl Pore3D {
-    #[expect(clippy::too_many_arguments)]
     pub fn new(
         system_size: [Length; 3],
         n_grid: [usize; 3],
@@ -29,7 +27,6 @@ impl Pore3D {
         sigma_ss: Array1<f64>,
         epsilon_k_ss: Array1<f64>,
         angles: Option<[Angle; 3]>,
-        potential_cutoff: Option<f64>,
         cutoff_radius: Option<Length>,
     ) -> Self {
         Self {
@@ -39,7 +36,6 @@ impl Pore3D {
             coordinates,
             sigma_ss,
             epsilon_k_ss,
-            potential_cutoff,
             cutoff_radius,
         }
     }
@@ -53,7 +49,7 @@ impl Pore<Ix3> for Pore3D {
         &self,
         bulk: &State<F>,
         density: Option<&Density<Array4<f64>>>,
-        external_potential: Option<&Array4<f64>>,
+        external_potential: Option<&Energy<Array4<f64>>>,
         specification: PoreSpecification,
     ) -> FeosResult<PoreProfile3D<F>> {
         let dft: &F = &bulk.eos;
@@ -64,9 +60,6 @@ impl Pore<Ix3> for Pore3D {
         let z = Axis::new_cartesian(self.n_grid[2], self.system_size[2], None);
 
         let coordinates = self.coordinates.to_reduced();
-
-        // temperature
-        let t = bulk.temperature.to_reduced();
 
         // For non-orthorombic unit cells, the external potential has to be
         // provided at the moment
@@ -87,8 +80,6 @@ impl Pore<Ix3> for Pore3D {
                     &self.sigma_ss,
                     &self.epsilon_k_ss,
                     self.cutoff_radius,
-                    self.potential_cutoff,
-                    t,
                 )
             },
             |e| Ok(e.clone()),
@@ -105,7 +96,6 @@ impl Pore<Ix3> for Pore3D {
     }
 }
 
-#[expect(clippy::too_many_arguments)]
 pub fn external_potential_3d<F: HelmholtzEnergyFunctional + FluidParameters>(
     functional: &F,
     axis: [&Axis; 3],
@@ -114,9 +104,7 @@ pub fn external_potential_3d<F: HelmholtzEnergyFunctional + FluidParameters>(
     sigma_ss: &Array1<f64>,
     epsilon_ss: &Array1<f64>,
     cutoff_radius: Option<Length>,
-    potential_cutoff: Option<f64>,
-    reduced_temperature: f64,
-) -> FeosResult<Array4<f64>> {
+) -> FeosResult<Energy<Array4<f64>>> {
     // allocate external potential
     let m = functional.m();
     let mut external_potential = Array4::zeros((
@@ -167,17 +155,9 @@ pub fn external_potential_3d<F: HelmholtzEnergyFunctional + FluidParameters>(
                 )
             })
             .sum::<f64>()
-            / reduced_temperature
     });
 
-    let potential_cutoff = potential_cutoff.unwrap_or(MAX_POTENTIAL);
-    external_potential.map_inplace(|x| {
-        if *x > potential_cutoff {
-            *x = potential_cutoff
-        }
-    });
-
-    Ok(external_potential)
+    Ok(Energy::from_reduced(external_potential))
 }
 
 /// Evaluate LJ12-6 potential between solid site "alpha" and fluid segment
