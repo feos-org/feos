@@ -8,6 +8,7 @@ use feos_dft::{
 use nalgebra::DVector;
 use ndarray::*;
 use num_dual::DualNum;
+use quantity::Energy;
 use std::f64::consts::PI;
 
 use super::{HardSphereProperties, MonomerShape};
@@ -352,15 +353,15 @@ impl HelmholtzEnergyFunctionalDyn for FMTFunctional {
 }
 
 impl PairPotential for FMTFunctional {
-    fn pair_potential(&self, i: usize, r: &Array1<f64>, _: f64) -> Array2<f64> {
+    fn pair_potential(&self, i: usize, r: &Array1<f64>, _: f64) -> Energy<Array2<f64>> {
         let s = &self.properties.sigma;
-        Array::from_shape_fn((s.len(), r.len()), |(j, k)| {
+        Energy::new(Array::from_shape_fn((s.len(), r.len()), |(j, k)| {
             if r[k] > 0.5 * (s[i] + s[j]) {
                 0.0
             } else {
                 f64::INFINITY
             }
-        })
+        }))
     }
 }
 

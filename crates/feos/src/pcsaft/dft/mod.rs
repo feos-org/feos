@@ -3,7 +3,7 @@ use super::parameters::PcSaftPars;
 use crate::association::{Association, YuWuAssociationFunctional};
 use crate::hard_sphere::{FMTContribution, FMTVersion};
 use crate::pcsaft::eos::PcSaftOptions;
-use feos_core::{FeosResult, Molarweight, ResidualDyn, StateHD, Subset};
+use feos_core::{FeosResult, Molarweight, ReferenceSystem, ResidualDyn, StateHD, Subset};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
@@ -14,7 +14,7 @@ use nalgebra::DVector;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use num_traits::One;
-use quantity::MolarWeight;
+use quantity::{Energy, MolarWeight};
 use std::f64::consts::FRAC_PI_6;
 
 mod dispersion;
@@ -164,13 +164,16 @@ impl FluidParameters for PcSaftFunctional {
 }
 
 impl PairPotential for PcSaftFunctional {
-    fn pair_potential(&self, i: usize, r: &Array1<f64>, _: f64) -> Array2<f64> {
+    fn pair_potential(&self, i: usize, r: &Array1<f64>, _: f64) -> Energy<Array2<f64>> {
         let sigma_ij = &self.params.sigma_ij;
         let eps_ij_4 = 4.0 * &self.params.epsilon_k_ij;
-        Array2::from_shape_fn((self.params.m.len(), r.len()), |(j, k)| {
-            let att = (sigma_ij[(i, j)] / r[k]).powi(6);
-            eps_ij_4[(i, j)] * att * (att - 1.0)
-        })
+        Energy::from_reduced(Array2::from_shape_fn(
+            (self.params.m.len(), r.len()),
+            |(j, k)| {
+                let att = (sigma_ij[(i, j)] / r[k]).powi(6);
+                eps_ij_4[(i, j)] * att * (att - 1.0)
+            },
+        ))
     }
 }
 

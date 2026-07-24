@@ -2,7 +2,7 @@ use super::{FluidParameters, Pore, PoreProfile};
 use crate::{Axis, Grid, HelmholtzEnergyFunctional, adsorption::pore::PoreSpecification};
 use feos_core::{FeosResult, State};
 use ndarray::{Array3, Ix2};
-use quantity::{Angle, Density, Length};
+use quantity::{Angle, Density, Energy, Length};
 
 pub struct Pore2D {
     system_size: [Length<f64>; 2],
@@ -27,7 +27,7 @@ impl Pore<Ix2> for Pore2D {
         &self,
         bulk: &State<F>,
         density: Option<&Density<Array3<f64>>>,
-        external_potential: Option<&Array3<f64>>,
+        external_potential: Option<&Energy<Array3<f64>>>,
         specification: PoreSpecification,
     ) -> FeosResult<PoreProfile<Ix2, F>> {
         // generate grid
