@@ -3,7 +3,7 @@ use super::eos::PetsOptions;
 use super::parameters::PetsParameters;
 use crate::hard_sphere::{FMTContribution, FMTVersion};
 use dispersion::AttractiveFunctional;
-use feos_core::FeosResult;
+use feos_core::{FeosResult, ReferenceSystem};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
@@ -12,6 +12,7 @@ use nalgebra::DVector;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use pure_pets_functional::*;
+use quantity::Energy;
 
 mod dispersion;
 mod pure_pets_functional;
@@ -75,18 +76,21 @@ impl FluidParameters for Pets {
 }
 
 impl PairPotential for Pets {
-    fn pair_potential(&self, i: usize, r: &Array1<f64>, _: f64) -> Array2<f64> {
+    fn pair_potential(&self, i: usize, r: &Array1<f64>, _: f64) -> Energy<Array2<f64>> {
         let eps_ij_4 = 4.0 * self.epsilon_k_ij.clone();
         let shift_ij = &eps_ij_4 * (2.5.powi(-12) - 2.5.powi(-6));
         let rc_ij = 2.5 * &self.sigma_ij;
-        Array2::from_shape_fn((self.sigma.len(), r.len()), |(j, k)| {
-            if r[k] > rc_ij[(i, j)] {
-                0.0
-            } else {
-                let att = (self.sigma_ij[(i, j)] / r[k]).powi(6);
-                eps_ij_4[(i, j)] * att * (att - 1.0) - shift_ij[(i, j)]
-            }
-        })
+        Energy::from_reduced(Array2::from_shape_fn(
+            (self.sigma.len(), r.len()),
+            |(j, k)| {
+                if r[k] > rc_ij[(i, j)] {
+                    0.0
+                } else {
+                    let att = (self.sigma_ij[(i, j)] / r[k]).powi(6);
+                    eps_ij_4[(i, j)] * att * (att - 1.0) - shift_ij[(i, j)]
+                }
+            },
+        ))
     }
 }
 

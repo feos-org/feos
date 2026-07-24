@@ -9,13 +9,15 @@ use ndarray::{
     RemoveAxis,
 };
 use num_dual::DualNum;
-use quantity::{_Volume, DEGREES, Density, Length, Moles, Quantity, Temperature, Volume};
+use quantity::{
+    _Volume, DEGREES, Density, Energy, Entropy, Length, Moles, Quantity, Temperature, Volume,
+};
 use std::ops::{Add, MulAssign};
 use std::sync::Arc;
 
 mod properties;
 
-pub(crate) const MAX_POTENTIAL: f64 = 50.0;
+const MAX_POTENTIAL: f64 = 50.0;
 #[cfg(feature = "rayon")]
 pub(crate) const CUTOFF_RADIUS: f64 = 14.0;
 
@@ -161,7 +163,7 @@ where
     pub fn new(
         grid: Grid,
         bulk: &State<F>,
-        external_potential: Option<Array<f64, D::Larger>>,
+        external_potential: Option<Energy<Array<f64, D::Larger>>>,
         density: Option<&Density<Array<f64, D::Larger>>>,
         lanczos: Option<i32>,
     ) -> Self {
@@ -171,13 +173,24 @@ where
         let convolver = ConvolverFFT::plan(&grid, &weight_functions, lanczos);
 
         // initialize external potential
-        let external_potential = external_potential.unwrap_or_else(|| {
-            let mut n_grid = vec![bulk.eos.component_index().len()];
-            grid.axes()
-                .iter()
-                .for_each(|&ax| n_grid.push(ax.grid.len()));
-            Array::zeros(n_grid).into_dimensionality().unwrap()
-        });
+        let external_potential = external_potential.map_or_else(
+            || {
+                let mut n_grid = vec![bulk.eos.component_index().len()];
+                grid.axes()
+                    .iter()
+                    .for_each(|&ax| n_grid.push(ax.grid.len()));
+                Array::zeros(n_grid).into_dimensionality().unwrap()
+            },
+            |e| {
+                let mut external_potential = e.into_reduced() / t;
+                external_potential.map_inplace(|x| {
+                    if *x > MAX_POTENTIAL {
+                        *x = MAX_POTENTIAL
+                    }
+                });
+                external_potential
+            },
+        );
 
         // initialize density
         let density = if let Some(density) = density {
@@ -222,6 +235,11 @@ where
         let rho = self.density.to_reduced();
         let moles = self.integrate_reduced_comp(&rho).sum();
         self.specification = DFTSpecification::TotalMoles(moles);
+    }
+
+    /// Return the external potential in SI units.
+    pub fn external_potential(&self) -> Energy<Array<f64, D::Larger>> {
+        Entropy::from_reduced(self.external_potential.clone()) * self.temperature
     }
 }
 

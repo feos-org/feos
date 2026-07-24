@@ -74,8 +74,8 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_external_potential<'py>(&self, py: Python<'py>) -> Bound<'py, $py_arr2<f64>> {
-                self.0.profile.external_potential.view().to_pyarray(py)
+            fn get_external_potential(&self) -> Energy<$si_arr2<f64>> {
+                self.0.profile.external_potential().clone()
             }
 
             #[getter]
@@ -272,6 +272,6 @@ macro_rules! impl_3d_profile {
     };
 }
 
-pub(crate) use {impl_1d_profile, impl_2d_profile, impl_profile};
 #[cfg(feature = "rayon")]
 pub(crate) use impl_3d_profile;
+pub(crate) use {impl_1d_profile, impl_2d_profile, impl_profile};

@@ -55,10 +55,9 @@ impl_3d_profile!(PySolvationProfile, get_x, get_y, get_z);
 impl PySolvationProfile {
     #[new]
     #[pyo3(
-        text_signature = "(bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None, potential_cutoff=None)"
+        text_signature = "(bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None)"
     )]
-    #[pyo3(signature = (bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None, potential_cutoff=None))]
-    #[expect(clippy::too_many_arguments)]
+    #[pyo3(signature = (bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None))]
     fn new<'py>(
         bulk: &PyState,
         n_grid: [usize; 3],
@@ -67,7 +66,6 @@ impl PySolvationProfile {
         epsilon_k: &Bound<'py, PyArray1<f64>>,
         system_size: Option<[Length; 3]>,
         cutoff_radius: Option<Length>,
-        potential_cutoff: Option<f64>,
     ) -> PyResult<Self> {
         Ok(Self(
             SolvationProfile::new(
@@ -78,7 +76,6 @@ impl PySolvationProfile {
                 epsilon_k.to_owned_array(),
                 system_size,
                 cutoff_radius,
-                potential_cutoff,
             )
             .map_err(PyFeosError::from)?,
         ))
