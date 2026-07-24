@@ -214,7 +214,7 @@ where
             .initialize(&bulk, None, None, PoreSpecification::ChemicalPotential)?
             .solve(solver)?
             .profile;
-        let external_potential = Some(&profile.external_potential);
+        let external_potential = Some(&profile.external_potential());
         let mut old_density = Some(&profile.density);
 
         for i in 0..pressure.len() {

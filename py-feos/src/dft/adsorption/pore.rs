@@ -139,7 +139,7 @@ impl PyPore1D {
     ///     The bulk state in equilibrium with the pore.
     /// density : SIArray2, optional
     ///     Initial values for the density profile.
-    /// external_potential : numpy.ndarray[float], optional
+    /// external_potential : SIArray2, optional
     ///     The external potential in the pore. Used to
     ///     save computation time in the case of costly
     ///     evaluations of external potentials.
@@ -158,7 +158,7 @@ impl PyPore1D {
         &self,
         bulk: &PyState,
         density: Option<Density<Array2<f64>>>,
-        external_potential: Option<&Bound<'_, PyArray2<f64>>>,
+        external_potential: Option<Energy<Array2<f64>>>,
         specification: PyPoreSpecification,
     ) -> PyResult<PyPoreProfile1D> {
         Ok(PyPoreProfile1D(
@@ -166,7 +166,7 @@ impl PyPore1D {
                 .initialize(
                     &bulk.0,
                     density.as_ref(),
-                    external_potential.map(|e| e.to_owned_array()).as_ref(),
+                    external_potential.as_ref(),
                     specification.0,
                 )
                 .map_err(PyFeosError::from)?,
@@ -236,7 +236,7 @@ impl PyPore2D {
     ///     The bulk state in equilibrium with the pore.
     /// density : SIArray3, optional
     ///     Initial values for the density profile.
-    /// external_potential : numpy.ndarray[float], optional
+    /// external_potential : SIArray3, optional
     ///     The external potential in the pore. Used to
     ///     save computation time in the case of costly
     ///     evaluations of external potentials.
@@ -255,7 +255,7 @@ impl PyPore2D {
         &self,
         bulk: &PyState,
         density: Option<Density<Array3<f64>>>,
-        external_potential: Option<&Bound<'_, PyArray3<f64>>>,
+        external_potential: Option<Energy<Array3<f64>>>,
         specification: PyPoreSpecification,
     ) -> PyResult<PyPoreProfile2D> {
         Ok(PyPoreProfile2D(
@@ -263,7 +263,7 @@ impl PyPore2D {
                 .initialize(
                     &bulk.0,
                     density.as_ref(),
-                    external_potential.map(|e| e.to_owned_array()).as_ref(),
+                    external_potential.as_ref(),
                     specification.0,
                 )
                 .map_err(PyFeosError::from)?,
@@ -325,10 +325,9 @@ impl_pore_profile!(PyPoreProfile3D);
 impl PyPore3D {
     #[new]
     #[pyo3(
-        text_signature = "(system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, angles=None, potential_cutoff=None, cutoff_radius=None)"
+        text_signature = "(system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, angles=None, cutoff_radius=None)"
     )]
-    #[pyo3(signature = (system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, angles=None, potential_cutoff=None, cutoff_radius=None))]
-    #[expect(clippy::too_many_arguments)]
+    #[pyo3(signature = (system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, angles=None, cutoff_radius=None))]
     fn new(
         system_size: [Length; 3],
         n_grid: [usize; 3],
@@ -336,7 +335,6 @@ impl PyPore3D {
         sigma_ss: &Bound<'_, PyArray1<f64>>,
         epsilon_k_ss: &Bound<'_, PyArray1<f64>>,
         angles: Option<[Angle; 3]>,
-        potential_cutoff: Option<f64>,
         cutoff_radius: Option<Length>,
     ) -> Self {
         Self(Pore3D::new(
@@ -346,7 +344,6 @@ impl PyPore3D {
             sigma_ss.to_owned_array(),
             epsilon_k_ss.to_owned_array(),
             angles,
-            potential_cutoff,
             cutoff_radius,
         ))
     }
@@ -359,7 +356,7 @@ impl PyPore3D {
     ///     The bulk state in equilibrium with the pore.
     /// density : SIArray4, optional
     ///     Initial values for the density profile.
-    /// external_potential : numpy.ndarray[float], optional
+    /// external_potential : SIArray4, optional
     ///     The external potential in the pore. Used to
     ///     save computation time in the case of costly
     ///     evaluations of external potentials.
@@ -378,7 +375,7 @@ impl PyPore3D {
         &self,
         bulk: &PyState,
         density: Option<Density<Array4<f64>>>,
-        external_potential: Option<&Bound<'_, PyArray4<f64>>>,
+        external_potential: Option<Energy<Array4<f64>>>,
         specification: PyPoreSpecification,
     ) -> PyResult<PyPoreProfile3D> {
         Ok(PyPoreProfile3D(
@@ -386,7 +383,7 @@ impl PyPore3D {
                 .initialize(
                     &bulk.0,
                     density.as_ref(),
-                    external_potential.map(|e| e.to_owned_array()).as_ref(),
+                    external_potential.as_ref(),
                     specification.0,
                 )
                 .map_err(PyFeosError::from)?,
