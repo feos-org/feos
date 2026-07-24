@@ -1,4 +1,3 @@
-use crate::WeightFunctionInfo;
 use crate::adsorption::{ExternalPotential, FluidParameters};
 use crate::convolver::ConvolverFFT;
 use crate::functional::{HelmholtzEnergyFunctional, HelmholtzEnergyFunctionalDyn, MoleculeShape};
@@ -6,6 +5,7 @@ use crate::functional_contribution::FunctionalContribution;
 use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, MAX_POTENTIAL};
 use crate::solver::DFTSolver;
+use crate::{DFTSpecification, WeightFunctionInfo};
 use feos_core::{Contributions, FeosResult, ReferenceSystem, ResidualDyn, State, StateHD};
 use nalgebra::{DVector, dvector};
 use ndarray::prelude::*;
@@ -13,8 +13,8 @@ use ndarray::{Axis as Axis_nd, RemoveAxis};
 use num_dual::linalg::LU;
 use num_dual::{Dual64, DualNum};
 use quantity::{
-    _Moles, _Pressure, Density, Dimensionless, Energy, KELVIN, Length, MolarEnergy, Quantity, RGAS,
-    Temperature, Volume,
+    _Moles, _Pressure, Density, Dimensionless, Energy, KELVIN, Length, MolarEnergy, Moles,
+    Quantity, RGAS, Temperature, Volume,
 };
 use rustdct::DctNum;
 use std::ops::Sub;
@@ -52,14 +52,25 @@ impl Pore1D {
     }
 }
 
+/// Different ways that the thermodynamic state of the fluid in the pore
+/// can be specified.
+#[derive(Clone)]
+pub enum PoreSpecification {
+    /// Specify the chemical potential (via the bulk state).
+    ChemicalPotential,
+    /// Specify the amount of moles of every component.
+    Moles(Moles<Array1<f64>>),
+}
+
 /// Trait for the generic implementation of adsorption applications.
-pub trait PoreSpecification<D: Dimension> {
+pub trait Pore<D: Dimension> {
     /// Initialize a new single pore.
     fn initialize<F: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
         bulk: &State<F>,
         density: Option<&Density<Array<f64, D::Larger>>>,
         external_potential: Option<&Array<f64, D::Larger>>,
+        specification: PoreSpecification,
     ) -> FeosResult<PoreProfile<D, F>>;
 
     /// Return the pore volume using Helium at 298 K as reference.
@@ -68,7 +79,7 @@ pub trait PoreSpecification<D: Dimension> {
         D::Larger: Dimension<Smaller = D>,
     {
         let bulk = State::new_pure(&&Helium, 298.0 * KELVIN, Density::from_reduced(1.0))?;
-        let pore = self.initialize(&bulk, None, None)?;
+        let pore = self.initialize(&bulk, None, None, PoreSpecification::ChemicalPotential)?;
         let pot = Dimensionless::from_reduced(
             pore.profile
                 .external_potential
@@ -96,6 +107,27 @@ where
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
+    pub fn new(
+        grid: Grid,
+        bulk: &State<F>,
+        external_potential: Option<Array<f64, D::Larger>>,
+        density: Option<&Density<Array<f64, D::Larger>>>,
+        specification: PoreSpecification,
+    ) -> Self {
+        let mut profile = DFTProfile::new(grid, bulk, external_potential, density, Some(1));
+
+        // fix the number of particles
+        if let PoreSpecification::Moles(moles) = specification {
+            profile.specification = DFTSpecification::Moles(moles.to_reduced())
+        }
+
+        Self {
+            profile,
+            grand_potential: None,
+            interfacial_tension: None,
+        }
+    }
+
     pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> FeosResult<()> {
         // Solve the profile
         self.profile.solve(solver, debug)?;
@@ -180,12 +212,13 @@ where
     }
 }
 
-impl PoreSpecification<Ix1> for Pore1D {
+impl Pore<Ix1> for Pore1D {
     fn initialize<F: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
         bulk: &State<F>,
         density: Option<&Density<Array2<f64>>>,
         external_potential: Option<&Array2<f64>>,
+        specification: PoreSpecification,
     ) -> FeosResult<PoreProfile1D<F>> {
         let dft: &F = &bulk.eos;
         let n_grid = self.n_grid.unwrap_or(DEFAULT_GRID_POINTS);
@@ -223,11 +256,13 @@ impl PoreSpecification<Ix1> for Pore1D {
         // initialize grid
         let grid = Grid::new_1d(axis);
 
-        Ok(PoreProfile {
-            profile: DFTProfile::new(grid, bulk, Some(external_potential), density, Some(1)),
-            grand_potential: None,
-            interfacial_tension: None,
-        })
+        Ok(PoreProfile::new(
+            grid,
+            bulk,
+            Some(external_potential),
+            density,
+            specification,
+        ))
     }
 }
 

@@ -5,9 +5,9 @@ use crate::error::PyFeosError;
 use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
 use feos_core::EquationOfState;
-use feos_dft::adsorption::{Adsorption, Adsorption1D};
 #[cfg(feature = "rayon")]
 use feos_dft::adsorption::Adsorption3D;
+use feos_dft::adsorption::{Adsorption, Adsorption1D};
 use nalgebra::DMatrix;
 use ndarray::*;
 use numpy::*;
@@ -19,7 +19,7 @@ mod external_potential;
 mod pore;
 
 pub use external_potential::PyExternalPotential;
-pub use pore::{PyPore1D, PyPore2D, PyPoreProfile1D};
+pub use pore::{PyPore1D, PyPore2D, PyPoreProfile1D, PyPoreSpecification};
 #[cfg(feature = "rayon")]
 pub use pore::{PyPore3D, PyPoreProfile3D};
 
