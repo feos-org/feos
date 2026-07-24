@@ -1,8 +1,8 @@
-use super::pore::{PoreProfile, PoreSpecification};
-use crate::adsorption::FluidParameters;
+use super::pore::{PoreProfile, Pore};
+use crate::adsorption::{FluidParameters, PoreSpecification};
 use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::{Axis, Grid};
-use crate::profile::{CUTOFF_RADIUS, DFTProfile, MAX_POTENTIAL};
+use crate::profile::{CUTOFF_RADIUS, MAX_POTENTIAL};
 use feos_core::{FeosError, FeosResult, ReferenceSystem, State};
 use ndarray::Zip;
 use ndarray::prelude::*;
@@ -48,12 +48,13 @@ impl Pore3D {
 /// Density profile and properties of a 3D confined system.
 pub type PoreProfile3D<F> = PoreProfile<Ix3, F>;
 
-impl PoreSpecification<Ix3> for Pore3D {
+impl Pore<Ix3> for Pore3D {
     fn initialize<F: HelmholtzEnergyFunctional + FluidParameters>(
         &self,
         bulk: &State<F>,
         density: Option<&Density<Array4<f64>>>,
         external_potential: Option<&Array4<f64>>,
+        specification: PoreSpecification,
     ) -> FeosResult<PoreProfile3D<F>> {
         let dft: &F = &bulk.eos;
 
@@ -94,11 +95,13 @@ impl PoreSpecification<Ix3> for Pore3D {
         )?;
         let grid = Grid::Periodical3(x, y, z, self.angles.unwrap_or([90.0 * DEGREES; 3]));
 
-        Ok(PoreProfile {
-            profile: DFTProfile::new(grid, bulk, Some(external_potential), density, Some(1)),
-            grand_potential: None,
-            interfacial_tension: None,
-        })
+        Ok(PoreProfile::new(
+            grid,
+            bulk,
+            Some(external_potential),
+            density,
+            specification,
+        ))
     }
 }
 
