@@ -1,6 +1,6 @@
 use super::pore3d::{calculate_distance2, evaluate_lj_potential};
 use crate::Geometry;
-use crate::profile::{CUTOFF_RADIUS, MAX_POTENTIAL};
+use crate::profile::CUTOFF_RADIUS;
 use feos_core::ReferenceSystem;
 use gauss_quad::GaussLegendre;
 use ndarray::{Array1, Array2, Zip};
@@ -131,7 +131,7 @@ pub fn calculate_fea_potential(
                         ) / temperature
                     })
                     .sum();
-                potential_2d[[i1, i2]] = (-potential_sum.min(MAX_POTENTIAL)).exp();
+                potential_2d[[i1, i2]] = (-potential_sum).exp();
             }
         }
         *f = (potential_2d * &weights).sum();
