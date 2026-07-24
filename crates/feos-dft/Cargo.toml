@@ -23,11 +23,10 @@ rustdct = { workspace = true }
 rustfft = { workspace = true }
 num-traits = { workspace = true }
 libm = { workspace = true }
-gauss-quad = { workspace = true, optional = true }
 petgraph = { workspace = true }
 
 feos-core = { workspace = true }
 
 [features]
 default = []
-rayon = ["gauss-quad", "ndarray/rayon"]
+rayon = ["ndarray/rayon"]

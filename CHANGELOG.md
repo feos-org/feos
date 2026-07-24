@@ -7,14 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Breaking]
 ### Added
 - Added `PoreSpecification` enum to specify the state of the fluid in the pore (currently chemical potential or moles). [#371](https://github.com/feos-org/feos/pull/371)
+- Added the `Grid` and `PoreProfile` classes as an entry points to DFT in various coordinate systems in Python. [#376](https://github.com/feos-org/feos/pull/376)
 
 ### Changed
 - Changed data type of initial temperatures or pressure for phase equilibrium calculations (`TemperatureOrPressure::Other`) from `D` to `f64`. [#369](https://github.com/feos-org/feos/pull/369)
 - Reworked DFT solution algorithms slightly for the cases in which additional specifications are given. [#371](https://github.com/feos-org/feos/pull/371)
 - External potentials are passed and returned as quantities (energies) instead of reduced units. [#372](https://github.com/feos-org/feos/pull/372)
+- Merged the `Adsorption1D` and `Adsorption3D` classes in Python into `Adsorption` using dynamically dimensioned arrays. [#376](https://github.com/feos-org/feos/pull/376)
 
 ### Removed
 - Removed the `DFTSpecification` trait in favor of only using the `DFTSpecification` enum (renamed from `DFTSpecifications`). [#371](https://github.com/feos-org/feos/pull/371)
+- Removed the `Pore2D` and `Pore3D` interfaces including the (limited) calculation of external potentials for complex pore grometries. [#376](https://github.com/feos-org/feos/pull/376)
+- Removed the free energy-averaged external (FEA) potential. [#376](https://github.com/feos-org/feos/pull/376)
+
+### Packaging
+- Removed the `gauss-quad` dependency which was only used in the FEA potential calculation. [#376](https://github.com/feos-org/feos/pull/376)
 
 ## [Unreleased]
 
