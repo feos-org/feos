@@ -11,6 +11,7 @@ use petgraph::graph::{Graph, UnGraph};
 use petgraph::visit::EdgeRef;
 use std::borrow::Cow;
 use std::ops::{Deref, MulAssign};
+use std::time::{Duration, Instant};
 
 impl<I: Clone, F: HelmholtzEnergyFunctionalDyn> HelmholtzEnergyFunctionalDyn
     for EquationOfState<Vec<I>, F>
@@ -112,17 +113,23 @@ pub trait HelmholtzEnergyFunctional: Residual {
 
     /// Calculate the (residual) intrinsic functional derivative $\frac{\delta\mathcal{\beta F}}{\delta\rho_i(\mathbf{r})}$.
     #[expect(clippy::type_complexity)]
-    fn functional_derivative<D, N: DualNum<Primitive = f64> + Copy>(
+    fn functional_derivative<D, N: DualNumCopy<Primitive = f64>>(
         &self,
         temperature: N,
         density: &Array<N, D::Larger>,
         convolver: &dyn Convolver<N, D>,
-    ) -> FeosResult<(Array<N, D>, Array<N, D::Larger>)>
+    ) -> FeosResult<(Array<N, D>, Array<N, D::Larger>, [Duration; 3])>
     where
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,
     {
+        // calculate weighted densities
+        let start = Instant::now();
         let weighted_densities = convolver.weighted_densities(density);
+        let t_wd = start.elapsed();
+
+        // calculate partial derivatives
+        let start = Instant::now();
         let contributions = self.contributions();
         let mut partial_derivatives = Vec::new();
         let mut helmholtz_energy_density = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
@@ -140,9 +147,17 @@ pub trait HelmholtzEnergyFunctional: Residual {
             partial_derivatives.push(pd);
             helmholtz_energy_density += &phi;
         }
+        let t_pd = start.elapsed();
+
+        // calculate functional derivative
+        let start = Instant::now();
+        let functional_derivative = convolver.functional_derivative(&partial_derivatives);
+        let t_fd = start.elapsed();
+
         Ok((
             helmholtz_energy_density,
-            convolver.functional_derivative(&partial_derivatives),
+            functional_derivative,
+            [t_wd, t_pd, t_fd],
         ))
     }
 

@@ -160,6 +160,10 @@ pub struct DFTSolverLog {
     residual: Vec<f64>,
     time: Vec<Duration>,
     solver: Vec<&'static str>,
+    pub time_weighted_densities: Duration,
+    pub time_partial_derivatives: Duration,
+    pub time_functional_derivative: Duration,
+    time_euler_lagrange_equation: Duration,
 }
 
 impl DFTSolverLog {
@@ -174,10 +178,20 @@ impl DFTSolverLog {
             residual: Vec::new(),
             time: Vec::new(),
             solver: Vec::new(),
+            time_weighted_densities: Duration::ZERO,
+            time_partial_derivatives: Duration::ZERO,
+            time_functional_derivative: Duration::ZERO,
+            time_euler_lagrange_equation: Duration::ZERO,
         }
     }
 
-    fn add_residual(&mut self, solver: &'static str, iteration: usize, residual: f64) {
+    fn add_residual(
+        &mut self,
+        solver: &'static str,
+        iteration: usize,
+        residual: f64,
+        [t_wd, t_pd, t_fd, t_el]: [Duration; 4],
+    ) {
         if iteration == 0 {
             log_iter!(self.verbosity, "{:-<59}", "");
         }
@@ -193,6 +207,10 @@ impl DFTSolverLog {
             time.as_secs_f64() * SECOND,
             residual,
         );
+        self.time_weighted_densities += t_wd;
+        self.time_partial_derivatives += t_pd;
+        self.time_functional_derivative += t_fd;
+        self.time_euler_lagrange_equation += t_el;
     }
 
     pub fn residual(&self) -> ArrayView1<'_, f64> {
@@ -208,7 +226,7 @@ impl DFTSolverLog {
     }
 }
 
-impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTProfile<D, F>
+impl<D: Dimension + 'static, F: HelmholtzEnergyFunctional> DFTProfile<D, F>
 where
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
@@ -262,8 +280,9 @@ where
 
         for k in 0..picard.max_iter {
             // calculate residual
-            let (res, res_norm, _, _) = self.euler_lagrange_equation(&*rho, picard.log)?;
-            log.add_residual(solver, k, res_norm);
+            let (res, res_norm, _, _, _, timings) =
+                self.euler_lagrange_equation(&*rho, picard.log)?;
+            log.add_residual(solver, k, res_norm, timings);
 
             // check for convergence
             if res_norm < picard.tol {
@@ -304,7 +323,8 @@ where
             } else {
                 rho + alpha * delta_rho
             };
-            let Ok((_, res2, _, _)) = self.euler_lagrange_equation(&rho_new, logarithm) else {
+            let Ok((_, res2, _, _, _, _)) = self.euler_lagrange_equation(&rho_new, logarithm)
+            else {
                 continue;
             };
             if res2 > res0 {
@@ -317,7 +337,8 @@ where
             } else {
                 rho + 0.5 * alpha * delta_rho
             };
-            let Ok((_, res1, _, _)) = self.euler_lagrange_equation(&rho_new, logarithm) else {
+            let Ok((_, res1, _, _, _, _)) = self.euler_lagrange_equation(&rho_new, logarithm)
+            else {
                 continue;
             };
 
@@ -370,8 +391,9 @@ where
             let m = resm.len() + 1;
 
             // calculate residual
-            let (res, res_norm, _, _) = self.euler_lagrange_equation(&*rho, anderson.log)?;
-            log.add_residual(solver, k, res_norm);
+            let (res, res_norm, _, _, _, timings) =
+                self.euler_lagrange_equation(&*rho, anderson.log)?;
+            log.add_residual(solver, k, res_norm, timings);
 
             // check for convergence
             if res_norm < anderson.tol {
@@ -426,9 +448,9 @@ where
         let solver = if newton.log { "Newton (log)" } else { "Newton" };
         for k in 0..newton.max_iter {
             // calculate initial residual
-            let (res, res_norm, exp_dfdrho, rho_p) =
+            let (res, res_norm, exp_dfdrho, z, rho_p, timings) =
                 self.euler_lagrange_equation(rho, newton.log)?;
-            log.add_residual(solver, k, res_norm);
+            log.add_residual(solver, k, res_norm, timings);
 
             // check convergence
             if res_norm < newton.tol {
@@ -447,8 +469,19 @@ where
                     .zip(self.bulk.eos.m().iter())
                     .for_each(|(mut q, &m)| q /= m);
                 let delta_i = self.delta_bond_integrals(&exp_dfdrho, &delta_functional_derivative);
+                let mut delta_exp_dfdrho = delta_functional_derivative - delta_i;
+                let delta_z = -self.integrate_reduced_comp(&(&delta_exp_dfdrho * &exp_dfdrho));
+
+                let delta_fugacity = self.specification.delta_fugacity(&z, &delta_z);
+                delta_exp_dfdrho
+                    .outer_iter_mut()
+                    .zip(delta_fugacity.iter())
+                    .for_each(|(mut z, &f)| {
+                        z -= f;
+                    });
+
                 let rho = if newton.log { &*rho } else { &rho_p };
-                delta_rho + (delta_functional_derivative - delta_i) * rho
+                delta_rho + delta_exp_dfdrho * rho
             };
 
             // update solution
@@ -479,7 +512,7 @@ where
 
         gamma[0] = (r0 * r0).sum().sqrt();
         v.push(r0 / gamma[0]);
-        log.add_residual("GMRES", 0, gamma[0]);
+        log.add_residual("GMRES", 0, gamma[0], [Duration::ZERO; 4]);
 
         let mut iter = 0;
         for j in 0..max_iter {
@@ -515,7 +548,7 @@ where
             gamma[j] *= c[j + 1];
 
             // check for convergence
-            log.add_residual("GMRES", j + 1, gamma[j + 1].abs());
+            log.add_residual("GMRES", j + 1, gamma[j + 1].abs(), [Duration::ZERO; 4]);
             if gamma[j + 1].abs() >= tol && j + 1 < max_iter {
                 v.push(q / h[(j + 1, j)]);
                 iter += 1;

@@ -16,7 +16,7 @@ features = ["rayon"]
 
 [dependencies]
 quantity = { workspace = true, features = ["ndarray"] }
-num-dual = { workspace = true }
+num-dual = { workspace = true, features = ["ndarray"] }
 ndarray = { workspace = true }
 nalgebra = { workspace = true }
 rustdct = { workspace = true }

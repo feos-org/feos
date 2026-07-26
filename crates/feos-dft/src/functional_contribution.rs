@@ -1,9 +1,16 @@
 use crate::weight_functions::WeightFunctionInfo;
 use feos_core::{FeosResult, StateHD};
 use ndarray::RemoveAxis;
+#[cfg(feature = "rayon")]
+use ndarray::parallel::prelude::*;
 use ndarray::prelude::*;
 use num_dual::*;
 use num_traits::Zero;
+
+// The chunk size is specifically chosen to be the default amount of grid points in a 1D density
+// profile to switch to parallel evaluation only for 2D and 3D profiles.
+#[cfg(feature = "rayon")]
+const CHUNK_SIZE: usize = 2048;
 
 /// Individual functional contribution that can be evaluated using generalized (hyper) dual numbers.
 pub trait FunctionalContribution: Sync + Send {
@@ -31,6 +38,36 @@ pub trait FunctionalContribution: Sync + Send {
         weighted_densities: ArrayView2<N>,
     ) -> FeosResult<Array1<N>>;
 
+    fn helmholtz_energy_density_parallel<N: DualNumCopy<Primitive = f64>>(
+        &self,
+        temperature: N,
+        weighted_densities: ArrayView2<N>,
+    ) -> FeosResult<Array1<N>> {
+        #[cfg(feature = "rayon")]
+        {
+            let n = weighted_densities.shape()[1];
+            if n > CHUNK_SIZE {
+                let mut phi = Array::zeros(n);
+                let mut phi_view = phi.view_mut();
+                let wd_iter = weighted_densities
+                    .axis_chunks_iter(Axis(1), CHUNK_SIZE)
+                    .into_par_iter();
+                let phi_iter = phi_view
+                    .axis_chunks_iter_mut(Axis(0), CHUNK_SIZE)
+                    .into_par_iter();
+                wd_iter.zip(phi_iter).try_for_each(|(wd, mut phi)| {
+                    self.helmholtz_energy_density_parallel(temperature, wd.view())
+                        .map(|p| phi.assign(&p))
+                })?;
+                Ok(phi)
+            } else {
+                self.helmholtz_energy_density(temperature, weighted_densities)
+            }
+        }
+        #[cfg(not(feature = "rayon"))]
+        self.helmholtz_energy_density(temperature, weighted_densities)
+    }
+
     fn bulk_helmholtz_energy_density<N: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &StateHD<N>,
@@ -52,7 +89,7 @@ pub trait FunctionalContribution: Sync + Send {
             .unwrap()[0]
     }
 
-    fn first_partial_derivatives<N: DualNum<Primitive = f64> + Copy>(
+    fn first_partial_derivatives<N: DualNumCopy<Primitive = f64>>(
         &self,
         temperature: N,
         weighted_densities: Array2<N>,
@@ -66,7 +103,7 @@ pub trait FunctionalContribution: Sync + Send {
         for i in 0..wd.shape()[0] {
             wd.index_axis_mut(Axis(0), i)
                 .map_inplace(|x| x.eps = N::one());
-            phi = self.helmholtz_energy_density(t, wd.view())?;
+            phi = self.helmholtz_energy_density_parallel(t, wd.view())?;
             first_partial_derivative
                 .index_axis_mut(Axis(0), i)
                 .assign(&phi.mapv(|p| p.eps));
@@ -93,7 +130,7 @@ pub trait FunctionalContribution: Sync + Send {
             wd.index_axis_mut(Axis(0), i).map_inplace(|x| x.eps1 = 1.0);
             for j in 0..=i {
                 wd.index_axis_mut(Axis(0), j).map_inplace(|x| x.eps2 = 1.0);
-                phi = self.helmholtz_energy_density(t, wd.view())?;
+                phi = self.helmholtz_energy_density_parallel(t, wd.view())?;
                 let p = phi.mapv(|p| p.eps1eps2);
                 second_partial_derivative
                     .index_axis_mut(Axis(0), i)

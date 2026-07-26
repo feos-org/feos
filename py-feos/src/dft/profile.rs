@@ -114,7 +114,7 @@ macro_rules! impl_profile {
                 &self,
                 py: Python<'py>,
             ) -> PyResult<Bound<'py, PyArrayDyn<f64>>> {
-                Ok(self.0.profile.functional_derivative().map_err(PyFeosError::from)?.view().into_dyn().to_pyarray(py))
+                Ok(self.0.profile.functional_derivative().map_err(PyFeosError::from)?.1.view().into_dyn().to_pyarray(py))
             }
 
             /// Calculate the entropy density of the inhomogeneous system.

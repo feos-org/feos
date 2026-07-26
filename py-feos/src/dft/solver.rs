@@ -3,7 +3,7 @@ use feos_dft::{DFTSolver, DFTSolverLog};
 use ndarray::Array1;
 use numpy::{PyArray1, ToPyArray};
 use pyo3::prelude::*;
-use quantity::Time;
+use quantity::{SECOND, Time};
 
 /// Settings for the DFT solver.
 ///
@@ -179,5 +179,20 @@ impl PyDFTSolverLog {
     #[getter]
     fn get_solver(&self) -> Vec<&'static str> {
         self.0.solver().to_vec()
+    }
+
+    #[getter]
+    fn get_time_weighted_densities(&self) -> Time {
+        self.0.time_weighted_densities.as_secs_f64() * SECOND
+    }
+
+    #[getter]
+    fn get_time_partial_derivatives(&self) -> Time {
+        self.0.time_partial_derivatives.as_secs_f64() * SECOND
+    }
+
+    #[getter]
+    fn get_time_functional_derivative(&self) -> Time {
+        self.0.time_functional_derivative.as_secs_f64() * SECOND
     }
 }

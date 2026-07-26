@@ -12,6 +12,7 @@ use quantity::{
 };
 use std::ops::{AddAssign, Div};
 use std::sync::Arc;
+use std::time::Duration;
 
 type DrhoDmu<D: Dimension> =
     <Density<Array<f64, <D::Larger as Dimension>::Larger>> as Div<MolarEnergy>>::Output;
@@ -30,7 +31,7 @@ where
         // Calculate residual Helmholtz energy density and functional derivative
         let t = self.temperature.to_reduced();
         let rho = self.density.to_reduced();
-        let (mut f, dfdrho) =
+        let (mut f, dfdrho, _) =
             self.bulk
                 .eos
                 .functional_derivative(t, &rho, self.convolver.as_ref())?;
@@ -59,13 +60,15 @@ where
     }
 
     /// Calculate the (residual) intrinsic functional derivative $\frac{\delta\mathcal{F}}{\delta\rho_i(\mathbf{r})}$.
-    pub fn functional_derivative(&self) -> FeosResult<Array<f64, D::Larger>> {
-        let (_, dfdrho) = self.bulk.eos.functional_derivative(
+    #[expect(clippy::type_complexity)]
+    pub fn functional_derivative(
+        &self,
+    ) -> FeosResult<(Array<f64, D>, Array<f64, D::Larger>, [Duration; 3])> {
+        self.bulk.eos.functional_derivative(
             self.temperature.to_reduced(),
             &self.density.to_reduced(),
             self.convolver.as_ref(),
-        )?;
-        Ok(dfdrho)
+        )
     }
 }
 
@@ -299,7 +302,7 @@ where
     fn density_derivative(&self, lhs: &Array<f64, D::Larger>) -> FeosResult<Array<f64, D::Larger>> {
         let rho = self.density.to_reduced();
         let second_partial_derivatives = self.second_partial_derivatives(&rho)?;
-        let (_, _, exp_dfdrho, _) = self.euler_lagrange_equation(&rho, false)?;
+        let (_, _, exp_dfdrho, _, _, _) = self.euler_lagrange_equation(&rho, false)?;
 
         let rhs = |x: &_| {
             let delta_functional_derivative =
@@ -384,7 +387,7 @@ where
             .collect();
         let convolver: Arc<dyn Convolver<_, D>> =
             ConvolverFFT::plan(&self.grid, &weight_functions, self.lanczos);
-        let (_, mut dfdrho) =
+        let (_, mut dfdrho, _) =
             self.bulk
                 .eos
                 .functional_derivative(t_dual, &rho_dual, convolver.as_ref())?;
@@ -403,7 +406,7 @@ where
             .collect();
         let rho_bulk_dual = rho_bulk.mapv(Dual64::from);
         let bulk_convolver = PeriodicConvolver::<_, Ix0>::new_0d(&weight_functions);
-        let (_, dfdrho_bulk) =
+        let (_, dfdrho_bulk, _) =
             self.bulk
                 .eos
                 .functional_derivative(t_dual, &rho_bulk_dual, bulk_convolver.as_ref())?;
