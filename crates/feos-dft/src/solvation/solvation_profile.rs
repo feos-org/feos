@@ -1,12 +1,14 @@
 use crate::adsorption::FluidParameters;
 use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::{Axis, Grid};
-use crate::profile::{CUTOFF_RADIUS, DFTProfile};
+use crate::profile::DFTProfile;
 use crate::solver::DFTSolver;
 use feos_core::{Contributions, FeosResult, ReferenceSystem, State};
 use ndarray::Zip;
 use ndarray::prelude::*;
 use quantity::{Energy, Length, MolarEnergy, Moles};
+
+const CUTOFF_RADIUS: f64 = 14.0;
 
 /// Density profile and properties of a solute in a inhomogeneous bulk fluid.
 pub struct SolvationProfile<F: HelmholtzEnergyFunctional> {
@@ -88,7 +90,7 @@ impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
         let grid = Grid::Cartesian3(x, y, z);
 
         Ok(Self {
-            profile: DFTProfile::new(grid, bulk, Some(external_potential), None, Some(1)),
+            profile: DFTProfile::new(grid, bulk, Some(&external_potential), None, Some(1)),
             grand_potential: None,
             solvation_free_energy: None,
         })

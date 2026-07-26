@@ -16,11 +16,8 @@ mod solvation;
 mod solver;
 
 pub(crate) use adsorption::{
-    PyAdsorption1D, PyExternalPotential, PyPore1D, PyPore2D, PyPoreSpecification,
+    PyAdsorption, PyExternalPotential, PyGrid, PyPore1D, PyPoreProfile, PyPoreSpecification,
 };
-// 3D pore / adsorption bindings wrap rayon-gated feos_dft types.
-#[cfg(feature = "rayon")]
-pub(crate) use adsorption::{PyAdsorption3D, PyPore3D};
 pub(crate) use interface::{PyPlanarInterface, PySurfaceTensionDiagram};
 pub(crate) use solvation::PyPairCorrelation;
 #[cfg(feature = "rayon")]

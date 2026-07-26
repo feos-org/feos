@@ -37,11 +37,11 @@ impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
 
         // calculate external potential
         let t = bulk.temperature.to_reduced();
-        let external_potential = dft.pair_potential(test_particle, &axis.grid, t) / t;
+        let external_potential = dft.pair_potential(test_particle, &axis.grid, t);
         let grid = Grid::Spherical(axis);
 
         Self {
-            profile: DFTProfile::new(grid, bulk, Some(external_potential), None, Some(1)),
+            profile: DFTProfile::new(grid, bulk, Some(&external_potential), None, Some(1)),
             pair_correlation_function: None,
             self_solvation_free_energy: None,
             structure_factor: None,

@@ -1,7 +1,5 @@
 macro_rules! impl_profile {
-    ($struct:ident, $arr:ident, $arr2:ident, $si_arr:ident, $si_arr2:ident, $py_arr2:ident, [$([$ind:expr, $ax:ident]),+]$(, $si_arr3:ident)?) => {
-
-
+    ($struct:ident) => {
         #[pymethods]
         impl $struct {
             /// Calculate the residual for the given profile.
@@ -20,9 +18,9 @@ macro_rules! impl_profile {
                 &self,
                 log: bool,
                 py: Python<'py>,
-            ) -> PyResult<(Bound<'py, $arr2<f64>>, Bound<'py, PyArray1<f64>>, f64)> {
+            ) -> PyResult<(Bound<'py, PyArrayDyn<f64>>, Bound<'py, PyArray1<f64>>, f64)> {
                 let (res_rho, res_mu, res_norm) = self.0.profile.residual(log).map_err(PyFeosError::from)?;
-                Ok((res_rho.view().to_pyarray(py), res_mu.view().to_pyarray(py), res_norm))
+                Ok((res_rho.view().into_dyn().to_pyarray(py), res_mu.view().to_pyarray(py), res_norm))
             }
 
             /// Solve the profile in-place. A non-default solver can be provided
@@ -47,11 +45,25 @@ macro_rules! impl_profile {
                 Ok(slf)
             }
 
-            $(
             #[getter]
-            fn $ax(&self) -> Length<Array1<f64>> {
-                Length::from_reduced(self.0.profile.grid.grids()[$ind].clone())
-            })+
+            fn get_axes(&self) -> Vec<Length<Array1<f64>>>{
+                self.0.profile.axes()
+            }
+
+            #[getter]
+            fn get_edges(&self) -> Vec<Length<Array1<f64>>> {
+                self.0.profile.edges()
+            }
+
+            #[getter]
+            fn get_grid<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+                let mut grid = self.0.profile.grid.mesh();
+                if grid.len() == 1 {
+                    grid.pop().unwrap().into_pyobject(py)
+                } else {
+                    grid.into_pyobject(py)
+                }
+            }
 
             #[getter]
             fn get_temperature(&self) -> Temperature {
@@ -59,8 +71,8 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_density(&self) -> Density<$si_arr2<f64>> {
-                self.0.profile.density.clone()
+            fn get_density(&self) -> Density<ArrayD<f64>> {
+                self.0.profile.density.clone().into_dyn()
             }
 
             #[getter]
@@ -74,8 +86,8 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_external_potential(&self) -> Energy<$si_arr2<f64>> {
-                self.0.profile.external_potential().clone()
+            fn get_external_potential(&self) -> Energy<ArrayD<f64>> {
+                self.0.profile.external_potential().clone().into_dyn()
             }
 
             #[getter]
@@ -92,17 +104,17 @@ macro_rules! impl_profile {
             fn get_weighted_densities<'py>(
                 &self,
                 py: Python<'py>,
-            ) -> PyResult<Vec<Bound<'py, $arr2<f64>>>> {
+            ) -> PyResult<Vec<Bound<'py, PyArrayDyn<f64>>>> {
                 let n = self.0.profile.weighted_densities().map_err(PyFeosError::from)?;
-                Ok(n.into_iter().map(|n| n.view().to_pyarray(py)).collect())
+                Ok(n.into_iter().map(|n| n.view().into_dyn().to_pyarray(py)).collect())
             }
 
             #[getter]
             fn get_functional_derivative<'py>(
                 &self,
                 py: Python<'py>,
-            ) -> PyResult<Bound<'py, $arr2<f64>>> {
-                Ok(self.0.profile.functional_derivative().map_err(PyFeosError::from)?.view().to_pyarray(py))
+            ) -> PyResult<Bound<'py, PyArrayDyn<f64>>> {
+                Ok(self.0.profile.functional_derivative().map_err(PyFeosError::from)?.view().into_dyn().to_pyarray(py))
             }
 
             /// Calculate the entropy density of the inhomogeneous system.
@@ -120,8 +132,8 @@ macro_rules! impl_profile {
             fn entropy_density(
                 &mut self,
                 contributions: PyContributions,
-            ) -> PyResult<<Entropy<$si_arr<f64>> as std::ops::Div<Volume>>::Output> {
-                Ok(self.0.profile.entropy_density(contributions.into()).map_err(PyFeosError::from)?)
+            ) -> PyResult<<Entropy<ArrayD<f64>> as std::ops::Div<Volume>>::Output> {
+                Ok(self.0.profile.entropy_density(contributions.into()).map_err(PyFeosError::from)?.into_dyn())
             }
 
             /// Calculate the entropy of the inhomogeneous system.
@@ -163,15 +175,14 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_grand_potential_density(&self) -> PyResult<Pressure<$si_arr<f64>>> {
-                Ok(self.0.profile.grand_potential_density().map_err(PyFeosError::from)?)
+            fn get_grand_potential_density(&self) -> PyResult<Pressure<ArrayD<f64>>> {
+                Ok(self.0.profile.grand_potential_density().map_err(PyFeosError::from)?.into_dyn())
             }
-            $(
-                #[getter]
-                fn get_drho_dmu(&self) -> PyResult<<Density<$si_arr3<f64>> as std::ops::Div<MolarEnergy>>::Output> {
-                    Ok(self.0.profile.drho_dmu().map_err(PyFeosError::from)?)
-                }
-            )?
+
+            #[getter]
+            fn get_drho_dmu(&self) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<MolarEnergy>>::Output> {
+                Ok(self.0.profile.drho_dmu().map_err(PyFeosError::from)?.into_dyn())
+            }
 
             #[getter]
             fn get_dn_dmu(&self) -> PyResult<<Moles<DMatrix<f64>> as std::ops::Div<MolarEnergy>>::Output> {
@@ -179,8 +190,8 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_drho_dp(&self) -> PyResult<<Density<$si_arr2<f64>> as std::ops::Div<Pressure>>::Output> {
-                Ok(self.0.profile.drho_dp().map_err(PyFeosError::from)?)
+            fn get_drho_dp(&self) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Pressure>>::Output> {
+                Ok(self.0.profile.drho_dp().map_err(PyFeosError::from)?.into_dyn())
             }
 
             #[getter]
@@ -189,8 +200,8 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_drho_dt(&self) -> PyResult<<Density<$si_arr2<f64>> as std::ops::Div<Temperature>>::Output> {
-                Ok(self.0.profile.drho_dt().map_err(PyFeosError::from)?)
+            fn get_drho_dt(&self) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Temperature>>::Output> {
+                Ok(self.0.profile.drho_dt().map_err(PyFeosError::from)?.into_dyn())
             }
 
             #[getter]
@@ -201,77 +212,4 @@ macro_rules! impl_profile {
     };
 }
 
-macro_rules! impl_1d_profile {
-    ($struct:ident, [$($ax:ident),+]) => {
-        impl_profile!(
-            $struct,
-            PyArray1,
-            PyArray2,
-            Array1,
-            Array2,
-            PyArray2,
-            [$([0, $ax]),+],
-            Array3
-        );
-    };
-}
-
-macro_rules! impl_2d_profile {
-    ($struct:ident, $ax1:ident, $ax2:ident) => {
-        impl_profile!(
-            $struct,
-            PyArray2,
-            PyArray3,
-            Array2,
-            Array3,
-            PyArray3,
-            [[0, $ax1], [1, $ax2]]
-        );
-
-        #[pymethods]
-        impl $struct {
-            #[getter]
-            fn get_edges(&self) -> [Length<Array1<f64>>; 2] {
-                self.0.profile.edges()
-            }
-
-            #[getter]
-            fn get_meshgrid(&self) -> [Length<Array2<f64>>; 2] {
-                self.0.profile.meshgrid()
-            }
-        }
-    };
-}
-
-// Only used by rayon-gated 3D profiles (PoreProfile3D, SolvationProfile).
-#[cfg(feature = "rayon")]
-macro_rules! impl_3d_profile {
-    ($struct:ident, $ax1:ident, $ax2:ident, $ax3:ident) => {
-        impl_profile!(
-            $struct,
-            PyArray3,
-            PyArray4,
-            Array3,
-            Array4,
-            PyArray4,
-            [[0, $ax1], [1, $ax2], [2, $ax3]]
-        );
-
-        #[pymethods]
-        impl $struct {
-            #[getter]
-            fn get_edges(&self) -> [Length<Array1<f64>>; 3] {
-                self.0.profile.edges()
-            }
-
-            #[getter]
-            fn get_meshgrid(&self) -> [Length<Array3<f64>>; 3] {
-                self.0.profile.meshgrid()
-            }
-        }
-    };
-}
-
-#[cfg(feature = "rayon")]
-pub(crate) use impl_3d_profile;
-pub(crate) use {impl_1d_profile, impl_2d_profile, impl_profile};
+pub(crate) use impl_profile;

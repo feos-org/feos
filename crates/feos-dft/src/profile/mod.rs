@@ -4,22 +4,15 @@ use crate::geometry::Grid;
 use crate::solver::{DFTSolver, DFTSolverLog};
 use feos_core::{FeosError, FeosResult, ReferenceSystem, State};
 use nalgebra::{DVector, Dyn, U1};
-use ndarray::{
-    Array, Array1, Array2, Array3, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix1, Ix2, Ix3,
-    RemoveAxis,
-};
+use ndarray::{Array, Array1, ArrayBase, Axis as Axis_nd, Data, Dimension, RemoveAxis};
 use num_dual::DualNum;
-use quantity::{
-    _Volume, DEGREES, Density, Energy, Entropy, Length, Moles, Quantity, Temperature, Volume,
-};
+use quantity::{_Volume, Density, Energy, Entropy, Length, Moles, Quantity, Temperature, Volume};
 use std::ops::{Add, MulAssign};
 use std::sync::Arc;
 
 mod properties;
 
 const MAX_POTENTIAL: f64 = 50.0;
-#[cfg(feature = "rayon")]
-pub(crate) const CUTOFF_RADIUS: f64 = 14.0;
 
 /// General specifications for the chemical potential in a DFT calculation.
 ///
@@ -68,83 +61,22 @@ pub struct DFTProfile<D: Dimension, F> {
     pub lanczos: Option<i32>,
 }
 
-impl<F> DFTProfile<Ix1, F> {
-    pub fn r(&self) -> Length<Array1<f64>> {
-        Length::from_reduced(self.grid.grids()[0].to_owned())
+impl<D: Dimension, F> DFTProfile<D, F> {
+    pub fn axes(&self) -> Vec<Length<Array1<f64>>> {
+        self.grid
+            .grids()
+            .into_iter()
+            .cloned()
+            .map(Length::from_reduced)
+            .collect()
     }
 
-    pub fn z(&self) -> Length<Array1<f64>> {
-        Length::from_reduced(self.grid.grids()[0].to_owned())
-    }
-}
-
-impl<F> DFTProfile<Ix2, F> {
-    pub fn edges(&self) -> [Length<Array1<f64>>; 2] {
-        [
-            Length::from_reduced(self.grid.axes()[0].edges.to_owned()),
-            Length::from_reduced(self.grid.axes()[1].edges.to_owned()),
-        ]
-    }
-
-    pub fn meshgrid(&self) -> [Length<Array2<f64>>; 2] {
-        let (u, v, alpha) = match &self.grid {
-            Grid::Cartesian2(u, v) => (u, v, 90.0 * DEGREES),
-            Grid::Periodical2(u, v, alpha) => (u, v, *alpha),
-            _ => unreachable!(),
-        };
-        let u_grid = Array::from_shape_fn([u.grid.len(), v.grid.len()], |(i, _)| u.grid[i]);
-        let v_grid = Array::from_shape_fn([u.grid.len(), v.grid.len()], |(_, j)| v.grid[j]);
-        let x = Length::from_reduced(u_grid + &v_grid * alpha.cos());
-        let y = Length::from_reduced(v_grid * alpha.sin());
-        [x, y]
-    }
-
-    pub fn r(&self) -> Length<Array1<f64>> {
-        Length::from_reduced(self.grid.grids()[0].to_owned())
-    }
-
-    pub fn z(&self) -> Length<Array1<f64>> {
-        Length::from_reduced(self.grid.grids()[1].to_owned())
-    }
-}
-
-impl<F> DFTProfile<Ix3, F> {
-    pub fn edges(&self) -> [Length<Array1<f64>>; 3] {
-        [
-            Length::from_reduced(self.grid.axes()[0].edges.to_owned()),
-            Length::from_reduced(self.grid.axes()[1].edges.to_owned()),
-            Length::from_reduced(self.grid.axes()[2].edges.to_owned()),
-        ]
-    }
-
-    pub fn meshgrid(&self) -> [Length<Array3<f64>>; 3] {
-        let (u, v, w, [alpha, beta, gamma]) = match &self.grid {
-            Grid::Cartesian3(u, v, w) => (u, v, w, [90.0 * DEGREES; 3]),
-            Grid::Periodical3(u, v, w, angles) => (u, v, w, *angles),
-            _ => unreachable!(),
-        };
-        let shape = [u.grid.len(), v.grid.len(), w.grid.len()];
-        let u_grid = Array::from_shape_fn(shape, |(i, _, _)| u.grid[i]);
-        let v_grid = Array::from_shape_fn(shape, |(_, j, _)| v.grid[j]);
-        let w_grid = Array::from_shape_fn(shape, |(_, _, k)| w.grid[k]);
-        let xi = (alpha.cos() - gamma.cos() * beta.cos()) / gamma.sin();
-        let zeta = (1.0_f64 - beta.cos().powi(2) - xi * xi).sqrt();
-        let x = Length::from_reduced(u_grid + &v_grid * gamma.cos() + &w_grid * beta.cos());
-        let y = Length::from_reduced(v_grid * gamma.sin() + &w_grid * xi);
-        let z = Length::from_reduced(w_grid * zeta);
-        [x, y, z]
-    }
-
-    pub fn x(&self) -> Length<Array1<f64>> {
-        Length::from_reduced(self.grid.grids()[0].to_owned())
-    }
-
-    pub fn y(&self) -> Length<Array1<f64>> {
-        Length::from_reduced(self.grid.grids()[1].to_owned())
-    }
-
-    pub fn z(&self) -> Length<Array1<f64>> {
-        Length::from_reduced(self.grid.grids()[2].to_owned())
+    pub fn edges(&self) -> Vec<Length<Array1<f64>>> {
+        self.grid
+            .axes()
+            .into_iter()
+            .map(|a| Length::from_reduced(a.edges.clone()))
+            .collect()
     }
 }
 
@@ -163,7 +95,7 @@ where
     pub fn new(
         grid: Grid,
         bulk: &State<F>,
-        external_potential: Option<Energy<Array<f64, D::Larger>>>,
+        external_potential: Option<&Energy<Array<f64, D::Larger>>>,
         density: Option<&Density<Array<f64, D::Larger>>>,
         lanczos: Option<i32>,
     ) -> Self {
@@ -182,7 +114,7 @@ where
                 Array::zeros(n_grid).into_dimensionality().unwrap()
             },
             |e| {
-                let mut external_potential = e.into_reduced() / t;
+                let mut external_potential = e.to_reduced() / t;
                 external_potential.map_inplace(|x| {
                     if *x > MAX_POTENTIAL {
                         *x = MAX_POTENTIAL
@@ -193,21 +125,22 @@ where
         );
 
         // initialize density
-        let density = if let Some(density) = density {
-            density.to_owned()
-        } else {
-            let exp_dfdrho = (-&external_potential).mapv(f64::exp);
-            let mut bonds = bulk.eos.bond_integrals(t, &exp_dfdrho, convolver.as_ref());
-            bonds *= &exp_dfdrho;
-            let mut density = Array::zeros(external_potential.raw_dim());
-            let bulk_density = bulk.partial_density().into_reduced();
-            for (s, &c) in bulk.eos.component_index().iter().enumerate() {
-                density.index_axis_mut(Axis_nd(0), s).assign(
-                    &(bonds.index_axis(Axis_nd(0), s).map(|is| is.min(1.0)) * bulk_density[c]),
-                );
-            }
-            Density::from_reduced(density)
-        };
+        let density = density.map_or_else(
+            || {
+                let exp_dfdrho = (-&external_potential).mapv(f64::exp);
+                let mut bonds = bulk.eos.bond_integrals(t, &exp_dfdrho, convolver.as_ref());
+                bonds *= &exp_dfdrho;
+                let mut density = Array::zeros(external_potential.raw_dim());
+                let bulk_density = bulk.partial_density().into_reduced();
+                for (s, &c) in bulk.eos.component_index().iter().enumerate() {
+                    density.index_axis_mut(Axis_nd(0), s).assign(
+                        &(bonds.index_axis(Axis_nd(0), s).map(|is| is.min(1.0)) * bulk_density[c]),
+                    );
+                }
+                Density::from_reduced(density)
+            },
+            Clone::clone,
+        );
 
         Self {
             grid,
