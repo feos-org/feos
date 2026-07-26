@@ -201,17 +201,12 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_class::<dft::PyDFTSolverLog>()?;
 
         // Adsorption
-        m.add_class::<dft::PyAdsorption1D>()?;
+        m.add_class::<dft::PyAdsorption>()?;
         m.add_class::<dft::PyExternalPotential>()?;
         m.add_class::<dft::PyPoreSpecification>()?;
         m.add_class::<dft::PyPore1D>()?;
-        m.add_class::<dft::PyPore2D>()?;
-
-        #[cfg(feature = "rayon")]
-        {
-            m.add_class::<dft::PyAdsorption3D>()?;
-            m.add_class::<dft::PyPore3D>()?;
-        }
+        m.add_class::<dft::PyPoreProfile>()?;
+        m.add_class::<dft::PyGrid>()?;
 
         // Interface
         m.add_class::<dft::PySurfaceTensionDiagram>()?;
