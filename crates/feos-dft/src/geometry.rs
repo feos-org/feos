@@ -1,7 +1,11 @@
 use feos_core::ReferenceSystem;
-use ndarray::{Array1, Array2, Array3, ArrayD};
+use ndarray::{
+    Array, Array1, Array2, Array3, ArrayBase, ArrayD, Axis as Axis_nd, Data, Dimension, RemoveAxis,
+};
+use num_dual::DualNum;
 use quantity::{Angle, DEGREES, Length, Quantity};
 use std::f64::consts::{FRAC_PI_3, PI};
+use std::ops::MulAssign;
 
 /// Grids with up to three dimensions.
 #[derive(Clone)]
@@ -89,6 +93,33 @@ impl Grid {
             Grid::Cartesian3(u, v, w) => mesh_3d(u, v, w, [90.0 * DEGREES; 3]),
             Grid::Periodical3(u, v, w, angles) => mesh_3d(u, v, w, *angles),
         }
+    }
+
+    pub fn integrate_reduced<D: Dimension, N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        mut profile: Array<N, D>,
+    ) -> N {
+        let (integration_weights, functional_determinant) = self.integration_weights();
+
+        for (i, w) in integration_weights.into_iter().enumerate() {
+            for mut l in profile.lanes_mut(Axis_nd(i)) {
+                l.mul_assign(&w.mapv(N::from));
+            }
+        }
+        profile.sum() * functional_determinant
+    }
+
+    pub fn integrate_reduced_comp<
+        D: Dimension + RemoveAxis,
+        S: Data<Elem = N>,
+        N: DualNum<Primitive = f64> + Copy,
+    >(
+        &self,
+        profile: &ArrayBase<S, D>,
+    ) -> Array1<N> {
+        Array1::from_shape_fn(profile.shape()[0], |i| {
+            self.integrate_reduced(profile.index_axis(Axis_nd(0), i).to_owned())
+        })
     }
 }
 
