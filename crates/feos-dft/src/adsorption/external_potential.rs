@@ -1,13 +1,7 @@
-#[cfg(feature = "rayon")]
-use crate::adsorption::fea_potential::calculate_fea_potential;
 use crate::functional::HelmholtzEnergyFunctional;
-#[cfg(feature = "rayon")]
-use crate::geometry::Geometry;
 use libm::tgamma;
 use nalgebra::DVector;
 use ndarray::{Array1, Array2, Axis as Axis_nd};
-#[cfg(feature = "rayon")]
-use quantity::Length;
 use std::f64::consts::PI;
 use std::ops::Deref;
 
@@ -52,20 +46,6 @@ pub enum ExternalPotential {
         epsilon2_k_ss: f64,
         rho_s: f64,
     },
-    /// Free-energy averaged potential:
-    #[cfg(feature = "rayon")]
-    FreeEnergyAveraged {
-        coordinates: Length<Array2<f64>>,
-        sigma_ss: Array1<f64>,
-        epsilon_k_ss: Array1<f64>,
-        pore_center: [f64; 3],
-        system_size: [Length; 3],
-        n_grid: [usize; 2],
-        cutoff_radius: Option<f64>,
-    },
-
-    /// Custom potential
-    Custom(Array2<f64>),
 }
 
 /// Parameters of the fluid required to evaluate the external potential.
@@ -89,12 +69,7 @@ impl ExternalPotential {
         &self,
         z_grid: &Array1<f64>,
         fluid_parameters: &P,
-        #[cfg_attr(not(feature = "rayon"), expect(unused_variables))] temperature: f64,
     ) -> Array2<f64> {
-        if let ExternalPotential::Custom(potential) = self {
-            return potential.clone();
-        }
-
         // Allocate external potential
         let m = fluid_parameters.m();
         let mut ext_pot = Array2::zeros((m.len(), z_grid.len()));
@@ -197,36 +172,6 @@ impl ExternalPotential {
                             * (2.0 * (sigma_sf[i] / z_grid).mapv(|x| x.powi(9))
                                 - 15.0 * (sigma_sf[i] / z_grid).mapv(|x| x.powi(3))))
                 }
-                #[cfg(feature = "rayon")]
-                Self::FreeEnergyAveraged {
-                    coordinates,
-                    sigma_ss,
-                    epsilon_k_ss,
-                    pore_center,
-                    system_size,
-                    n_grid,
-                    cutoff_radius,
-                } => {
-                    // combining rules
-                    let epsilon_k_sf =
-                        (fluid_parameters.epsilon_k_ff()[i] * epsilon_k_ss).map(|e| e.sqrt());
-                    let sigma_sf = (fluid_parameters.sigma_ff()[i] + sigma_ss) * 0.5;
-
-                    calculate_fea_potential(
-                        z_grid,
-                        mi,
-                        coordinates,
-                        sigma_sf,
-                        epsilon_k_sf,
-                        pore_center,
-                        system_size,
-                        n_grid,
-                        temperature,
-                        Geometry::Cartesian,
-                        *cutoff_radius,
-                    )
-                }
-                _ => unreachable!(),
             });
         }
         ext_pot
@@ -238,12 +183,7 @@ impl ExternalPotential {
         r_grid: &Array1<f64>,
         pore_size: f64,
         fluid_parameters: &P,
-        #[cfg_attr(not(feature = "rayon"), expect(unused_variables))] temperature: f64,
     ) -> Array2<f64> {
-        if let ExternalPotential::Custom(potential) = self {
-            return potential.clone();
-        }
-
         // Allocate external potential
         let m = fluid_parameters.m();
         let mut ext_pot = Array2::zeros((m.len(), r_grid.len()));
@@ -363,36 +303,6 @@ impl ExternalPotential {
                             * sigma_sf[i].powi(3)
                             * *rho_s)
                 }
-                #[cfg(feature = "rayon")]
-                Self::FreeEnergyAveraged {
-                    coordinates,
-                    sigma_ss,
-                    epsilon_k_ss,
-                    pore_center,
-                    system_size,
-                    n_grid,
-                    cutoff_radius,
-                } => {
-                    // combining rules
-                    let epsilon_k_sf =
-                        (fluid_parameters.epsilon_k_ff()[i] * epsilon_k_ss).map(|e| e.sqrt());
-                    let sigma_sf = (fluid_parameters.sigma_ff()[i] + sigma_ss) * 0.5;
-
-                    calculate_fea_potential(
-                        r_grid,
-                        mi,
-                        coordinates,
-                        sigma_sf,
-                        epsilon_k_sf,
-                        pore_center,
-                        system_size,
-                        n_grid,
-                        temperature,
-                        Geometry::Cylindrical,
-                        *cutoff_radius,
-                    )
-                }
-                _ => unreachable!(),
             });
         }
         ext_pot
@@ -404,12 +314,7 @@ impl ExternalPotential {
         r_grid: &Array1<f64>,
         pore_size: f64,
         fluid_parameters: &P,
-        #[cfg_attr(not(feature = "rayon"), expect(unused_variables))] temperature: f64,
     ) -> Array2<f64> {
-        if let ExternalPotential::Custom(potential) = self {
-            return potential.clone();
-        }
-
         // Allocate external potential
         let m = fluid_parameters.m();
         let mut ext_pot = Array2::zeros((m.len(), r_grid.len()));
@@ -553,36 +458,6 @@ impl ExternalPotential {
                             * (2.0 / 5.0 * sum_n(10, r_grid, sigma_sf[i], pore_size)
                                 - sum_n(4, r_grid, sigma_sf[i], pore_size)))
                 }
-                #[cfg(feature = "rayon")]
-                Self::FreeEnergyAveraged {
-                    coordinates,
-                    sigma_ss,
-                    epsilon_k_ss,
-                    pore_center,
-                    system_size,
-                    n_grid,
-                    cutoff_radius,
-                } => {
-                    // combining rules
-                    let epsilon_k_sf =
-                        (fluid_parameters.epsilon_k_ff()[i] * epsilon_k_ss).map(|e| e.sqrt());
-                    let sigma_sf = (fluid_parameters.sigma_ff()[i] + sigma_ss) * 0.5;
-
-                    calculate_fea_potential(
-                        r_grid,
-                        mi,
-                        coordinates,
-                        sigma_sf,
-                        epsilon_k_sf,
-                        pore_center,
-                        system_size,
-                        n_grid,
-                        temperature,
-                        Geometry::Spherical,
-                        *cutoff_radius,
-                    )
-                }
-                _ => unreachable!(),
             });
         }
         ext_pot
