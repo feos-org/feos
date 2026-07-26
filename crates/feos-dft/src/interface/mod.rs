@@ -58,7 +58,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         let grid = Grid::Cartesian1(Axis::new_cartesian(n_grid, l_grid, None));
 
         Self {
-            profile: DFTProfile::new(grid, vle.vapor(), None, None, None),
+            profile: DFTProfile::new(grid, vle.vapor(), None, None),
             vle: vle.clone(),
             surface_tension: None,
             equimolar_radius: None,

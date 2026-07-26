@@ -24,6 +24,7 @@ rustfft = { workspace = true }
 num-traits = { workspace = true }
 libm = { workspace = true }
 petgraph = { workspace = true }
+indexmap = { workspace = true }
 
 feos-core = { workspace = true }
 

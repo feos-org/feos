@@ -175,7 +175,7 @@ impl PyPoreProfile {
     }
 
     #[getter]
-    fn get_partial_molar_enthalpy_of_adsorption(&self) -> PyResult<MolarEnergy<DVector<f64>>> {
+    fn get_partial_molar_enthalpy_of_adsorption(&mut self) -> PyResult<MolarEnergy<DVector<f64>>> {
         Ok(self
             .0
             .partial_molar_enthalpy_of_adsorption()
@@ -183,7 +183,7 @@ impl PyPoreProfile {
     }
 
     #[getter]
-    fn get_enthalpy_of_adsorption(&self) -> PyResult<MolarEnergy> {
+    fn get_enthalpy_of_adsorption(&mut self) -> PyResult<MolarEnergy> {
         Ok(self.0.enthalpy_of_adsorption().map_err(PyFeosError::from)?)
     }
 

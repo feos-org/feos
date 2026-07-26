@@ -93,8 +93,9 @@ where
     pub fn plan(
         grid: &Grid,
         weight_functions: &[WeightFunctionInfo<T>],
-        lanczos: Option<i32>,
     ) -> Arc<dyn Convolver<T, D>> {
+        // For consistency, we always use an exponent of 1.
+        let lanczos = Some(1);
         match grid {
             Grid::Bulk => PeriodicConvolver::new_0d(weight_functions),
             Grid::Polar(r) => CurvilinearConvolver::new(r, &[], weight_functions, lanczos),

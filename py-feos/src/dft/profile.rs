@@ -15,7 +15,7 @@ macro_rules! impl_profile {
             ///
             #[pyo3(signature = (log=false), text_signature = "($self, log=False)")]
             fn residual<'py>(
-                &self,
+                &mut self,
                 log: bool,
                 py: Python<'py>,
             ) -> PyResult<(Bound<'py, PyArrayDyn<f64>>, f64)> {
@@ -67,7 +67,7 @@ macro_rules! impl_profile {
 
             #[getter]
             fn get_temperature(&self) -> Temperature {
-                self.0.profile.temperature
+                self.0.profile.bulk.temperature
             }
 
             #[getter]
@@ -96,8 +96,8 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_solver_log(&self) -> Option<PyDFTSolverLog> {
-                self.0.profile.solver_log.clone().map(PyDFTSolverLog)
+            fn get_solver_log(&self) -> PyDFTSolverLog {
+                PyDFTSolverLog(self.0.profile.solver_log.clone())
             }
 
             #[getter]
@@ -114,7 +114,7 @@ macro_rules! impl_profile {
                 &self,
                 py: Python<'py>,
             ) -> PyResult<Bound<'py, PyArrayDyn<f64>>> {
-                Ok(self.0.profile.functional_derivative().map_err(PyFeosError::from)?.view().into_dyn().to_pyarray(py))
+                Ok(self.0.profile.functional_derivative().map_err(PyFeosError::from)?.1.view().into_dyn().to_pyarray(py))
             }
 
             /// Calculate the entropy density of the inhomogeneous system.
@@ -180,32 +180,32 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_drho_dmu(&self) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<MolarEnergy>>::Output> {
+            fn get_drho_dmu(&mut self) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<MolarEnergy>>::Output> {
                 Ok(self.0.profile.drho_dmu().map_err(PyFeosError::from)?.into_dyn())
             }
 
             #[getter]
-            fn get_dn_dmu(&self) -> PyResult<<Moles<DMatrix<f64>> as std::ops::Div<MolarEnergy>>::Output> {
+            fn get_dn_dmu(&mut self) -> PyResult<<Moles<DMatrix<f64>> as std::ops::Div<MolarEnergy>>::Output> {
                 Ok(self.0.profile.dn_dmu().map_err(PyFeosError::from)?)
             }
 
             #[getter]
-            fn get_drho_dp(&self) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Pressure>>::Output> {
+            fn get_drho_dp(&mut self) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Pressure>>::Output> {
                 Ok(self.0.profile.drho_dp().map_err(PyFeosError::from)?.into_dyn())
             }
 
             #[getter]
-            fn get_dn_dp(&self) -> PyResult<<Moles<DVector<f64>> as std::ops::Div<Pressure>>::Output> {
+            fn get_dn_dp(&mut self) -> PyResult<<Moles<DVector<f64>> as std::ops::Div<Pressure>>::Output> {
                 Ok(self.0.profile.dn_dp().map_err(PyFeosError::from)?)
             }
 
             #[getter]
-            fn get_drho_dt(&self) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Temperature>>::Output> {
+            fn get_drho_dt(&mut self) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Temperature>>::Output> {
                 Ok(self.0.profile.drho_dt().map_err(PyFeosError::from)?.into_dyn())
             }
 
             #[getter]
-            fn get_dn_dt(&self) -> PyResult<<Moles<DVector<f64>> as std::ops::Div<Temperature>>::Output> {
+            fn get_dn_dt(&mut self) -> PyResult<<Moles<DVector<f64>> as std::ops::Div<Temperature>>::Output> {
                 Ok(self.0.profile.dn_dt().map_err(PyFeosError::from)?)
             }
         }
