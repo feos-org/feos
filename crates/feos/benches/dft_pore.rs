@@ -3,9 +3,7 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use feos::core::parameter::IdentifierOption;
 use feos::core::{PhaseEquilibrium, State};
-use feos::dft::adsorption::{
-    ExternalPotential, Pore, Pore1D, PoreSpecification::ChemicalPotential,
-};
+use feos::dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification::ChemicalPotential};
 use feos::dft::{DFTSolver, Geometry};
 use feos::gc_pcsaft::{GcPcSaftFunctional, GcPcSaftParameters};
 use feos::hard_sphere::{FMTFunctional, FMTVersion};
@@ -18,16 +16,16 @@ fn fmt(c: &mut Criterion) {
 
     let func = &FMTFunctional::new(dvector![1.0], FMTVersion::WhiteBear);
     let pore = Pore1D::new(
+        &func,
         Geometry::Cartesian,
         10.0 * ANGSTROM,
         ExternalPotential::HardWall { sigma_ss: 1.0 },
-        None,
         None,
     );
     let bulk = State::new_pure(&func, KELVIN, 0.75 / NAV / ANGSTROM.powi::<3>()).unwrap();
     group.bench_function("liquid", |b| {
         b.iter(|| {
-            pore.initialize(&bulk, None, None, ChemicalPotential)
+            pore.initialize(&bulk, None, ChemicalPotential)
                 .unwrap()
                 .solve(None)
         })
@@ -45,6 +43,7 @@ fn pcsaft(c: &mut Criterion) {
     .unwrap();
     let func = &PcSaftFunctional::new(parameters);
     let pore = Pore1D::new(
+        &func,
         Geometry::Cartesian,
         20.0 * ANGSTROM,
         ExternalPotential::LJ93 {
@@ -53,13 +52,12 @@ fn pcsaft(c: &mut Criterion) {
             rho_s: 0.08,
         },
         None,
-        None,
     );
     let vle = PhaseEquilibrium::pure(&func, 300.0 * KELVIN, None, Default::default()).unwrap();
     let bulk = vle.liquid();
     group.bench_function("butane_liquid", |b| {
         b.iter(|| {
-            pore.initialize(bulk, None, None, ChemicalPotential)
+            pore.initialize(bulk, None, ChemicalPotential)
                 .unwrap()
                 .solve(None)
         })
@@ -67,7 +65,7 @@ fn pcsaft(c: &mut Criterion) {
     let bulk = State::new_pure(&func, 300.0 * KELVIN, vle.vapor().density * 0.2).unwrap();
     group.bench_function("butane_vapor", |b| {
         b.iter(|| {
-            pore.initialize(&bulk, None, None, ChemicalPotential)
+            pore.initialize(&bulk, None, ChemicalPotential)
                 .unwrap()
                 .solve(None)
         })
@@ -87,7 +85,7 @@ fn pcsaft(c: &mut Criterion) {
     let bulk = vle.liquid();
     group.bench_function("butane_pentane_liquid", |b| {
         b.iter(|| {
-            pore.initialize(bulk, None, None, ChemicalPotential)
+            pore.initialize(bulk, None, ChemicalPotential)
                 .unwrap()
                 .solve(None)
         })
@@ -96,7 +94,7 @@ fn pcsaft(c: &mut Criterion) {
         State::new_density(&func, 300.0 * KELVIN, vle.vapor().partial_density() * 0.2).unwrap();
     group.bench_function("butane_pentane_vapor", |b| {
         b.iter(|| {
-            pore.initialize(&bulk, None, None, ChemicalPotential)
+            pore.initialize(&bulk, None, ChemicalPotential)
                 .unwrap()
                 .solve(None)
         })
@@ -115,8 +113,9 @@ fn gc_pcsaft(c: &mut Criterion) {
         IdentifierOption::Name,
     )
     .unwrap();
-    let func = GcPcSaftFunctional::new(parameters);
+    let func = &GcPcSaftFunctional::new(parameters);
     let pore = Pore1D::new(
+        &func,
         Geometry::Cartesian,
         20.0 * ANGSTROM,
         ExternalPotential::LJ93 {
@@ -125,16 +124,15 @@ fn gc_pcsaft(c: &mut Criterion) {
             rho_s: 0.08,
         },
         None,
-        None,
     );
-    let vle = PhaseEquilibrium::pure(&&func, 300.0 * KELVIN, None, Default::default()).unwrap();
+    let vle = PhaseEquilibrium::pure(&func, 300.0 * KELVIN, None, Default::default()).unwrap();
     let bulk = vle.liquid();
     let solver = DFTSolver::new(None)
         .picard_iteration(None, None, Some(1e-5), None)
         .anderson_mixing(None, None, None, None, None);
     group.bench_function("butane_liquid", |b| {
         b.iter(|| {
-            pore.initialize(bulk, None, None, ChemicalPotential)
+            pore.initialize(bulk, None, ChemicalPotential)
                 .unwrap()
                 .solve(Some(&solver))
         })
