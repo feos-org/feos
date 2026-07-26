@@ -394,13 +394,13 @@ where
         })
     }
 
-    pub fn partial_molar_enthalpy_of_adsorption(&self) -> MolarEnergy<DMatrix<f64>> {
+    pub fn partial_molar_enthalpy_of_adsorption(&mut self) -> MolarEnergy<DMatrix<f64>> {
         let h_ads: Vec<_> = self
             .profiles
-            .iter()
+            .iter_mut()
             .map(|p| {
                 match p
-                    .as_ref()
+                    .as_mut()
                     .ok()
                     .and_then(|p| p.partial_molar_enthalpy_of_adsorption().ok())
                 {
@@ -414,10 +414,10 @@ where
         MolarEnergy::from_fn(self.components, self.profiles.len(), |j, i| h_ads[i].get(j))
     }
 
-    pub fn enthalpy_of_adsorption(&self) -> MolarEnergy<Array1<f64>> {
+    pub fn enthalpy_of_adsorption(&mut self) -> MolarEnergy<Array1<f64>> {
         MolarEnergy::from_shape_fn(self.profiles.len(), |i| {
             match self.profiles[i]
-                .as_ref()
+                .as_mut()
                 .ok()
                 .and_then(|p| p.enthalpy_of_adsorption().ok())
             {
