@@ -1,11 +1,9 @@
-#[cfg(feature = "rayon")]
-use super::profile::impl_3d_profile;
-use super::profile::{impl_1d_profile, impl_profile};
+use super::profile::impl_profile;
 use super::{PyDFTSolver, PyDFTSolverLog};
 use crate::residual::ResidualModel;
 use crate::state::{PyContributions, PyState};
 use crate::{error::PyFeosError, ideal_gas::IdealGasModel};
-use feos_core::{EquationOfState, ReferenceSystem};
+use feos_core::EquationOfState;
 use feos_dft::solvation::PairCorrelation;
 #[cfg(feature = "rayon")]
 use feos_dft::solvation::SolvationProfile;
@@ -48,7 +46,7 @@ pub struct PySolvationProfile(
 );
 
 #[cfg(feature = "rayon")]
-impl_3d_profile!(PySolvationProfile, get_x, get_y, get_z);
+impl_profile!(PySolvationProfile);
 
 #[cfg(feature = "rayon")]
 #[pymethods]
@@ -114,7 +112,7 @@ pub struct PyPairCorrelation(
     PairCorrelation<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
 );
 
-impl_1d_profile!(PyPairCorrelation, [get_r]);
+impl_profile!(PyPairCorrelation);
 
 #[pymethods]
 impl PyPairCorrelation {
