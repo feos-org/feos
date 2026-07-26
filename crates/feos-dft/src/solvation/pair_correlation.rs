@@ -41,7 +41,7 @@ impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
         let grid = Grid::Spherical(axis);
 
         Self {
-            profile: DFTProfile::new(grid, bulk, Some(&external_potential), None, Some(1)),
+            profile: DFTProfile::new(grid, bulk, Some(&external_potential), None),
             pair_correlation_function: None,
             self_solvation_free_energy: None,
             structure_factor: None,

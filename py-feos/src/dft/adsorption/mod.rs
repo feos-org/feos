@@ -283,12 +283,12 @@ impl PyAdsorption {
     }
 
     #[getter]
-    fn get_partial_molar_enthalpy_of_adsorption(&self) -> MolarEnergy<DMatrix<f64>> {
+    fn get_partial_molar_enthalpy_of_adsorption(&mut self) -> MolarEnergy<DMatrix<f64>> {
         self.0.partial_molar_enthalpy_of_adsorption()
     }
 
     #[getter]
-    fn get_enthalpy_of_adsorption(&self) -> MolarEnergy<Array1<f64>> {
+    fn get_enthalpy_of_adsorption(&mut self) -> MolarEnergy<Array1<f64>> {
         self.0.enthalpy_of_adsorption()
     }
 }

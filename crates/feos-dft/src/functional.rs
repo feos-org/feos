@@ -1,8 +1,8 @@
 use crate::convolver::Convolver;
-use crate::functional_contribution::*;
 use crate::ideal_chain_contribution::IdealChainContribution;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
-use feos_core::{EquationOfState, FeosResult, Residual, ResidualDyn, StateHD};
+use crate::{DFTSolverLog, functional_contribution::*};
+use feos_core::{EquationOfState, FeosError, FeosResult, Residual, ResidualDyn, StateHD};
 use nalgebra::{DVector, dvector};
 use ndarray::*;
 use num_dual::*;
@@ -10,7 +10,7 @@ use petgraph::Directed;
 use petgraph::graph::{Graph, UnGraph};
 use petgraph::visit::EdgeRef;
 use std::borrow::Cow;
-use std::ops::{Deref, MulAssign};
+use std::ops::{AddAssign, Deref, MulAssign};
 
 impl<I: Clone, F: HelmholtzEnergyFunctionalDyn> HelmholtzEnergyFunctionalDyn
     for EquationOfState<Vec<I>, F>
@@ -112,38 +112,87 @@ pub trait HelmholtzEnergyFunctional: Residual {
 
     /// Calculate the (residual) intrinsic functional derivative $\frac{\delta\mathcal{\beta F}}{\delta\rho_i(\mathbf{r})}$.
     #[expect(clippy::type_complexity)]
-    fn functional_derivative<D, N: DualNum<Primitive = f64> + Copy>(
+    fn functional_derivative<D, N: DualNumCopy<Primitive = f64>>(
         &self,
         temperature: N,
         density: &Array<N, D::Larger>,
         convolver: &dyn Convolver<N, D>,
+        solver_log: &mut DFTSolverLog,
     ) -> FeosResult<(Array<N, D>, Array<N, D::Larger>)>
     where
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,
     {
-        let weighted_densities = convolver.weighted_densities(density);
+        // calculate weighted densities
+        let weighted_densities = solver_log.time_function("weighted densities", || {
+            convolver.weighted_densities(density)
+        });
+
+        // calculate partial derivatives
         let contributions = self.contributions();
         let mut partial_derivatives = Vec::new();
         let mut helmholtz_energy_density = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
-        for (c, wd) in contributions.into_iter().zip(weighted_densities) {
+        solver_log.time_function("partial derivatives", || {
+            for (c, wd) in contributions.into_iter().zip(weighted_densities) {
+                let nwd = wd.shape()[0];
+                let ngrid = wd.len() / nwd;
+                let mut phi = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
+                let mut pd = Array::zeros(wd.raw_dim());
+                c.first_partial_derivatives(
+                    temperature,
+                    wd.into_shape_with_order((nwd, ngrid)).unwrap(),
+                    phi.view_mut().into_shape_with_order(ngrid).unwrap(),
+                    pd.view_mut().into_shape_with_order((nwd, ngrid)).unwrap(),
+                )?;
+                partial_derivatives.push(pd);
+                helmholtz_energy_density += &phi;
+            }
+            Ok::<_, FeosError>(())
+        })?;
+
+        // calculate functional derivative
+        let functional_derivative = solver_log.time_function("functional derivative", || {
+            convolver.functional_derivative(&partial_derivatives)
+        });
+
+        Ok((helmholtz_energy_density, functional_derivative))
+    }
+
+    fn second_partial_derivatives<D>(
+        &self,
+        temperature: f64,
+        density: &Array<f64, D::Larger>,
+        convolver: &dyn Convolver<f64, D>,
+    ) -> FeosResult<Vec<Array<f64, <D::Larger as Dimension>::Larger>>>
+    where
+        D: Dimension,
+        D::Larger: Dimension<Smaller = D>,
+    {
+        let contributions = self.contributions();
+
+        let weighted_densities = convolver.weighted_densities(density);
+
+        let mut second_partial_derivatives = Vec::new();
+        for (c, wd) in contributions.into_iter().zip(&weighted_densities) {
             let nwd = wd.shape()[0];
             let ngrid = wd.len() / nwd;
             let mut phi = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
             let mut pd = Array::zeros(wd.raw_dim());
-            c.first_partial_derivatives(
+            let dim = wd.shape();
+            let dim: Vec<_> = std::iter::once(&nwd).chain(dim).cloned().collect();
+            let mut pd2 = Array::zeros(dim).into_dimensionality().unwrap();
+            c.second_partial_derivatives(
                 temperature,
-                wd.into_shape_with_order((nwd, ngrid)).unwrap(),
+                wd.view().into_shape_with_order((nwd, ngrid)).unwrap(),
                 phi.view_mut().into_shape_with_order(ngrid).unwrap(),
                 pd.view_mut().into_shape_with_order((nwd, ngrid)).unwrap(),
+                pd2.view_mut()
+                    .into_shape_with_order((nwd, nwd, ngrid))
+                    .unwrap(),
             )?;
-            partial_derivatives.push(pd);
-            helmholtz_energy_density += &phi;
+            second_partial_derivatives.push(pd2);
         }
-        Ok((
-            helmholtz_energy_density,
-            convolver.functional_derivative(&partial_derivatives),
-        ))
+        Ok(second_partial_derivatives)
     }
 
     /// Calculate the bond integrals $I_{\alpha\alpha'}(\mathbf{r})$
@@ -226,6 +275,106 @@ pub trait HelmholtzEnergyFunctional: Residual {
         }
 
         i
+    }
+
+    fn delta_bond_integrals<D>(
+        &self,
+        temperature: f64,
+        exponential: &Array<f64, D::Larger>,
+        delta_functional_derivative: &Array<f64, D::Larger>,
+        convolver: &dyn Convolver<f64, D>,
+    ) -> Array<f64, D::Larger>
+    where
+        D: Dimension,
+        D::Larger: Dimension<Smaller = D>,
+    {
+        // calculate weight functions
+        let bond_lengths = self.bond_lengths(temperature).into_edge_type();
+        let mut bond_weight_functions = bond_lengths.map(
+            |_, _| (),
+            |_, &l| WeightFunction::new_scaled(dvector![l], WeightFunctionShape::Delta),
+        );
+        for n in bond_lengths.node_indices() {
+            for e in bond_lengths.edges(n) {
+                bond_weight_functions.add_edge(
+                    e.target(),
+                    e.source(),
+                    WeightFunction::new_scaled(dvector![*e.weight()], WeightFunctionShape::Delta),
+                );
+            }
+        }
+
+        let mut i_graph: Graph<_, Option<Array<f64, D>>, Directed> =
+            bond_weight_functions.map(|_, _| (), |_, _| None);
+        let mut delta_i_graph: Graph<_, Option<Array<f64, D>>, Directed> =
+            bond_weight_functions.map(|_, _| (), |_, _| None);
+
+        let bonds = i_graph.edge_count();
+        let mut calc = 0;
+
+        // go through the whole graph until every bond has been calculated
+        while calc < bonds {
+            let mut edge_id = None;
+            let mut i1 = None;
+            let mut delta_i1 = None;
+
+            // find the first bond that can be calculated
+            'nodes: for node in i_graph.node_indices() {
+                for edge in i_graph.edges(node) {
+                    // skip already calculated bonds
+                    if edge.weight().is_some() {
+                        continue;
+                    }
+
+                    // if all bonds from the neighboring segment are calculated calculate the bond
+                    let edges = i_graph
+                        .edges(edge.target())
+                        .filter(|e| e.target().index() != node.index());
+                    let delta_edges = delta_i_graph
+                        .edges(edge.target())
+                        .filter(|e| e.target().index() != node.index());
+                    if edges.clone().all(|e| e.weight().is_some()) {
+                        edge_id = Some(edge.id());
+                        let i0 = edges.fold(
+                            exponential
+                                .index_axis(Axis(0), edge.target().index())
+                                .to_owned(),
+                            |acc: Array<f64, _>, e| acc * e.weight().as_ref().unwrap(),
+                        );
+                        let delta_i0 = delta_edges.fold(
+                            -&delta_functional_derivative
+                                .index_axis(Axis(0), edge.target().index()),
+                            |acc: Array<f64, _>, delta_e| acc + delta_e.weight().as_ref().unwrap(),
+                        ) * &i0;
+                        i1 = Some(convolver.convolve(i0, &bond_weight_functions[edge.id()]));
+                        delta_i1 = Some(
+                            (convolver.convolve(delta_i0, &bond_weight_functions[edge.id()])
+                                / i1.as_ref().unwrap())
+                            .mapv(|x| if x.is_finite() { x } else { 0.0 }),
+                        );
+                        break 'nodes;
+                    }
+                }
+            }
+            if let Some(edge_id) = edge_id {
+                i_graph[edge_id] = i1;
+                delta_i_graph[edge_id] = delta_i1;
+                calc += 1;
+            } else {
+                panic!("Cycle in molecular structure detected!")
+            }
+        }
+
+        let mut delta_i = Array::zeros(exponential.raw_dim());
+        for node in delta_i_graph.node_indices() {
+            for edge in delta_i_graph.edges(node) {
+                delta_i
+                    .index_axis_mut(Axis(0), node.index())
+                    .add_assign(edge.weight().as_ref().unwrap());
+            }
+        }
+
+        delta_i
     }
 
     fn evaluate_bulk<D: DualNum<Primitive = f64> + Copy>(

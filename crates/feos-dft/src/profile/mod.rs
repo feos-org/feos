@@ -6,7 +6,7 @@ use feos_core::{FeosError, FeosResult, ReferenceSystem, State};
 use nalgebra::{DVector, Dyn, U1};
 use ndarray::{Array, Array1, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix0, arr1};
 use num_dual::DualNum;
-use quantity::{_Volume, Density, Energy, Entropy, Length, Moles, Quantity, Temperature, Volume};
+use quantity::{_Volume, Density, Energy, Entropy, Length, Moles, Quantity, Volume};
 use std::ops::{Add, MulAssign};
 use std::sync::Arc;
 
@@ -65,9 +65,15 @@ impl DFTSpecification {
             .collect();
         let bulk_convolver =
             PeriodicConvolver::<_, Ix0>::new_0d(&state.eos.weight_functions(temperature));
+        let mut solver_log = DFTSolverLog::new();
         let (_, dfdrho_bulk) = state
             .eos
-            .functional_derivative(temperature, &bulk_density, bulk_convolver.as_ref())
+            .functional_derivative(
+                temperature,
+                &bulk_density,
+                bulk_convolver.as_ref(),
+                &mut solver_log,
+            )
             .unwrap();
         let exp_dfdrho = (dfdrho_bulk / m).mapv(f64::exp);
         let bonds = state
@@ -83,13 +89,11 @@ impl DFTSpecification {
 pub struct DFTProfile<D: Dimension, F> {
     pub grid: Grid,
     pub convolver: Arc<dyn Convolver<f64, D>>,
-    pub temperature: Temperature,
     pub density: Density<Array<f64, D::Larger>>,
     pub specification: DFTSpecification,
     pub external_potential: Array<f64, D::Larger>,
     pub bulk: State<F>,
-    pub solver_log: Option<DFTSolverLog>,
-    pub lanczos: Option<i32>,
+    pub solver_log: DFTSolverLog,
 }
 
 impl<D: Dimension, F> DFTProfile<D, F> {
@@ -127,12 +131,11 @@ where
         bulk: &State<F>,
         external_potential: Option<&Energy<Array<f64, D::Larger>>>,
         density: Option<&Density<Array<f64, D::Larger>>>,
-        lanczos: Option<i32>,
     ) -> Self {
         // initialize convolver
         let t = bulk.temperature.to_reduced();
         let weight_functions = bulk.eos.weight_functions(t);
-        let convolver = ConvolverFFT::plan(&grid, &weight_functions, lanczos);
+        let convolver = ConvolverFFT::plan(&grid, &weight_functions);
 
         // initialize external potential
         let external_potential = external_potential.map_or_else(
@@ -175,20 +178,18 @@ where
         Self {
             grid,
             convolver,
-            temperature: bulk.temperature,
             density,
             specification: DFTSpecification::from_state(bulk),
             external_potential,
             bulk: bulk.clone(),
-            solver_log: None,
-            lanczos,
+            solver_log: DFTSolverLog::new(),
         }
     }
 
     /// Set a constraint to fix the number of particles of every component based on
     /// the current density profile.
     pub fn fix_moles(&mut self) {
-        let moles = self.integrate_reduced_comp(&self.density.to_reduced());
+        let moles = self.grid.integrate_reduced_comp(&self.density.to_reduced());
         self.specification = DFTSpecification::Moles(moles);
     }
 
@@ -196,7 +197,7 @@ where
     /// the current density profile.
     pub fn fix_total_moles(&mut self) {
         let rho = self.density.to_reduced();
-        let moles = self.integrate_reduced_comp(&rho).sum();
+        let moles = self.grid.integrate_reduced_comp(&rho).sum();
         let DFTSpecification::ChemicalPotential(fugacity) =
             DFTSpecification::from_state(&self.bulk)
         else {
@@ -207,7 +208,7 @@ where
 
     /// Return the external potential in SI units.
     pub fn external_potential(&self) -> Energy<Array<f64, D::Larger>> {
-        Entropy::from_reduced(self.external_potential.clone()) * self.temperature
+        Entropy::from_reduced(self.external_potential.clone()) * self.bulk.temperature
     }
 }
 
@@ -215,26 +216,6 @@ impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTProfile<D, F>
 where
     D::Larger: Dimension<Smaller = D>,
 {
-    fn integrate_reduced<N: DualNum<Primitive = f64> + Copy>(&self, mut profile: Array<N, D>) -> N {
-        let (integration_weights, functional_determinant) = self.grid.integration_weights();
-
-        for (i, w) in integration_weights.into_iter().enumerate() {
-            for mut l in profile.lanes_mut(Axis_nd(i)) {
-                l.mul_assign(&w.mapv(N::from));
-            }
-        }
-        profile.sum() * functional_determinant
-    }
-
-    pub(crate) fn integrate_reduced_comp<S: Data<Elem = N>, N: DualNum<Primitive = f64> + Copy>(
-        &self,
-        profile: &ArrayBase<S, D::Larger>,
-    ) -> Array1<N> {
-        Array1::from_shape_fn(profile.shape()[0], |i| {
-            self.integrate_reduced(profile.index_axis(Axis_nd(0), i).to_owned())
-        })
-    }
-
     pub(crate) fn integrate_reduced_segments<
         S: Data<Elem = N>,
         N: DualNum<Primitive = f64> + Copy,
@@ -242,7 +223,7 @@ where
         &self,
         profile: &ArrayBase<S, D::Larger>,
     ) -> DVector<N> {
-        let integral = self.integrate_reduced_comp(profile);
+        let integral = self.grid.integrate_reduced_comp(profile);
         let mut integral_comp = DVector::zeros(self.bulk.eos.components());
         for (i, &j) in self.bulk.eos.component_index().iter().enumerate() {
             integral_comp[j] = integral[i];
@@ -316,7 +297,7 @@ where
     }
 }
 
-impl<D: Dimension, F> DFTProfile<D, F>
+impl<D: Dimension + 'static, F> DFTProfile<D, F>
 where
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
@@ -328,15 +309,15 @@ where
             .weighted_densities(&self.density.to_reduced()))
     }
 
-    pub fn residual(&self, log: bool) -> FeosResult<(Array<f64, D::Larger>, f64)> {
+    pub fn residual(&mut self, log: bool) -> FeosResult<(Array<f64, D::Larger>, f64)> {
         let density = self.density.to_reduced();
         let (res, res_norm, _, _, _) = self.euler_lagrange_equation(&density, log)?;
         Ok((res, res_norm))
     }
 
     #[expect(clippy::type_complexity)]
-    fn fugacity(
-        &self,
+    pub(crate) fn fugacity(
+        &mut self,
         density: &Array<f64, D::Larger>,
     ) -> FeosResult<(
         Array<f64, D::Larger>,
@@ -345,13 +326,15 @@ where
         Array1<f64>,
     )> {
         // calculate reduced temperature
-        let temperature = self.temperature.to_reduced();
+        let temperature = self.bulk.temperature.to_reduced();
 
         // calculate intrinsic functional derivative
-        let (_, mut dfdrho) =
-            self.bulk
-                .eos
-                .functional_derivative(temperature, density, self.convolver.as_ref())?;
+        let (_, mut dfdrho) = self.bulk.eos.functional_derivative(
+            temperature,
+            density,
+            self.convolver.as_ref(),
+            &mut self.solver_log,
+        )?;
 
         // calculate total functional derivative
         dfdrho += &self.external_potential;
@@ -368,7 +351,7 @@ where
             .eos
             .bond_integrals(temperature, &exp_dfdrho, self.convolver.as_ref());
         let mut rho_projected = &exp_dfdrho * bonds;
-        let z = self.integrate_reduced_comp(&rho_projected);
+        let z = self.grid.integrate_reduced_comp(&rho_projected);
 
         // calculate fugacity based on the given specification
         let fugacity = self.specification.calculate_fugacity(&z);
@@ -386,7 +369,7 @@ where
 
     #[expect(clippy::type_complexity)]
     pub(crate) fn euler_lagrange_equation(
-        &self,
+        &mut self,
         density: &Array<f64, D::Larger>,
         log: bool,
     ) -> FeosResult<(
@@ -436,8 +419,7 @@ where
         // Update bulk state
         if !matches!(self.specification, DFTSpecification::ChemicalPotential(_)) {
             // solve a bulk profile with the Newton solver
-            let mut bulk_profile =
-                DFTProfile::<Ix0, _>::new(Grid::Bulk, &self.bulk, None, None, None);
+            let mut bulk_profile = DFTProfile::<Ix0, _>::new(Grid::Bulk, &self.bulk, None, None);
             let (_, _, _, fugacity) = self.fugacity(&density)?;
             bulk_profile.specification = DFTSpecification::ChemicalPotential(fugacity);
             let solver = DFTSolver::new(None).newton(None, None, None, None);
