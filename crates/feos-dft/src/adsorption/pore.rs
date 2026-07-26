@@ -123,7 +123,7 @@ where
         density: Option<&Density<Array<f64, D::Larger>>>,
         specification: PoreSpecification,
     ) -> Self {
-        let mut profile = DFTProfile::new(grid, bulk, Some(external_potential), density, Some(1));
+        let mut profile = DFTProfile::new(grid, bulk, Some(external_potential), density);
 
         // fix the number of particles
         match specification {
@@ -169,17 +169,19 @@ where
         self
     }
 
-    pub fn partial_molar_enthalpy_of_adsorption(&self) -> FeosResult<MolarEnergy<DVector<f64>>> {
+    pub fn partial_molar_enthalpy_of_adsorption(
+        &mut self,
+    ) -> FeosResult<MolarEnergy<DVector<f64>>> {
         let a = self.profile.dn_dmu()?;
         let a_unit = a.get2(0, 0);
-        let b = -self.profile.temperature * self.profile.dn_dt()?;
+        let b = -self.profile.bulk.temperature * self.profile.dn_dt()?;
         let b_unit = b.get(0);
 
         let h_ads = LU::new((a / a_unit).into_value())?.solve(&(b / b_unit).into_value());
         Ok(&h_ads * b_unit / a_unit)
     }
 
-    pub fn enthalpy_of_adsorption(&self) -> FeosResult<MolarEnergy> {
+    pub fn enthalpy_of_adsorption(&mut self) -> FeosResult<MolarEnergy> {
         Ok(self
             .partial_molar_enthalpy_of_adsorption()?
             .dot(&Dimensionless::new(self.profile.bulk.molefracs.clone())))
@@ -195,7 +197,7 @@ where
             )
         };
         let pot = (self.profile.external_potential.mapv(N::from)
-            * self.profile.temperature.to_reduced())
+            * self.profile.bulk.temperature.to_reduced())
         .mapv(|v| v / temperature);
         let exp_pot = pot.mapv(|v| (-v).exp());
         let functional_contributions = self.profile.bulk.eos.contributions();
@@ -203,8 +205,7 @@ where
             .into_iter()
             .map(|c| c.weight_functions(temperature))
             .collect();
-        let convolver =
-            ConvolverFFT::<_, D>::plan(&self.profile.grid, &weight_functions, self.profile.lanczos);
+        let convolver = ConvolverFFT::<_, D>::plan(&self.profile.grid, &weight_functions);
         let bonds = self
             .profile
             .bulk
@@ -214,17 +215,17 @@ where
     }
 
     pub fn henry_coefficients(&self) -> HenryCoefficient<DVector<f64>> {
-        let t = self.profile.temperature.to_reduced();
-        Volume::from_reduced(self._henry_coefficients(t)) / (RGAS * self.profile.temperature)
+        let t = self.profile.bulk.temperature.to_reduced();
+        Volume::from_reduced(self._henry_coefficients(t)) / (RGAS * self.profile.bulk.temperature)
     }
 
     pub fn ideal_gas_enthalpy_of_adsorption(&self) -> MolarEnergy<DVector<f64>> {
-        let t = Dual64::from(self.profile.temperature.to_reduced()).derivative();
+        let t = Dual64::from(self.profile.bulk.temperature.to_reduced()).derivative();
         let h_dual = self._henry_coefficients(t);
         let h = h_dual.map(|h| h.re);
         let dh = h_dual.map(|h| h.eps);
-        let t = self.profile.temperature.to_reduced();
-        RGAS * self.profile.temperature
+        let t = self.profile.bulk.temperature.to_reduced();
+        RGAS * self.profile.bulk.temperature
             * Dimensionless::from_reduced((&h - t * dh).component_div(&h))
     }
 
@@ -232,20 +233,17 @@ where
         // initialize convolver
         let t = self.profile.bulk.temperature.to_reduced();
         let weight_functions = self.profile.bulk.eos.weight_functions(t);
-        let convolver =
-            ConvolverFFT::plan(&self.profile.grid, &weight_functions, self.profile.lanczos);
+        let convolver = ConvolverFFT::plan(&self.profile.grid, &weight_functions);
 
         PoreProfile {
             profile: DFTProfile {
                 grid: self.profile.grid,
                 convolver,
-                temperature: self.profile.temperature,
                 density: self.profile.density.into_dyn(),
                 specification: self.profile.specification,
                 external_potential: self.profile.external_potential.into_dyn(),
                 bulk: self.profile.bulk,
                 solver_log: self.profile.solver_log,
-                lanczos: self.profile.lanczos,
             },
             grand_potential: self.grand_potential,
             interfacial_tension: self.interfacial_tension,

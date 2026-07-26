@@ -1,5 +1,6 @@
 use crate::PyVerbosity;
 use feos_dft::{DFTSolver, DFTSolverLog};
+use indexmap::IndexMap;
 use ndarray::Array1;
 use numpy::{PyArray1, ToPyArray};
 use pyo3::prelude::*;
@@ -179,5 +180,18 @@ impl PyDFTSolverLog {
     #[getter]
     fn get_solver(&self) -> Vec<&'static str> {
         self.0.solver().to_vec()
+    }
+
+    #[getter]
+    fn get_profile(&self) -> IndexMap<&'static str, Time> {
+        self.0.profile()
+    }
+
+    fn __repr__(&self) -> String {
+        self.0.to_string()
+    }
+
+    fn _repr_html_(&self) -> String {
+        format!("<pre>{}</pre>", self.0)
     }
 }

@@ -90,7 +90,7 @@ impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
         let grid = Grid::Cartesian3(x, y, z);
 
         Ok(Self {
-            profile: DFTProfile::new(grid, bulk, Some(&external_potential), None, Some(1)),
+            profile: DFTProfile::new(grid, bulk, Some(&external_potential), None),
             grand_potential: None,
             solvation_free_energy: None,
         })
