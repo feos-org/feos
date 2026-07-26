@@ -4,7 +4,7 @@ use approx::assert_relative_eq;
 use feos::gc_pcsaft::{GcPcSaft, GcPcSaftFunctional, GcPcSaftParameters};
 use feos_core::parameter::{ChemicalRecord, Identifier, IdentifierOption, SegmentRecord};
 use feos_core::{PhaseEquilibrium, State, Verbosity};
-use feos_dft::adsorption::{ExternalPotential, Pore, Pore1D, PoreSpecification};
+use feos_dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
 use feos_dft::interface::PlanarInterface;
 use feos_dft::{DFTSolver, Geometry};
 use nalgebra::dvector;
@@ -218,6 +218,7 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
         .anderson_mixing(None, None, None, None, None);
     let bulk = State::new_npt(&func, t, 5.0 * BAR, (), None)?;
     Pore1D::new(
+        &func,
         Geometry::Cartesian,
         20.0 * ANGSTROM,
         ExternalPotential::LJ93 {
@@ -226,9 +227,8 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
             rho_s: 0.08,
         },
         None,
-        None,
     )
-    .initialize(&bulk, None, None, PoreSpecification::ChemicalPotential)
+    .initialize(&bulk, None, PoreSpecification::ChemicalPotential)
     .unwrap()
     .solve(Some(&solver))?;
     Ok(())
