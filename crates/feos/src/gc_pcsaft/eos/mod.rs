@@ -77,7 +77,7 @@ impl ResidualDyn for GcPcSaft {
         self.parameters.molar_weight.len()
     }
 
-    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+    fn compute_max_density<D: DualNum<Primitive = f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
         let p = &self.params;
         let molefracs_segments = DVector::from(p.component_index.clone()).map(|i| molefracs[i]);
         (p.m.component_mul(&p.sigma.map(|v| v.powi(3)))
@@ -88,7 +88,7 @@ impl ResidualDyn for GcPcSaft {
             * self.options.max_eta
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &feos_core::StateHD<D>,
     ) -> Vec<(&'static str, D)> {

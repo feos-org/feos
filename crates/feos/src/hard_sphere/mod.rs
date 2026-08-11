@@ -27,10 +27,10 @@ pub enum MonomerShape<'a, D> {
 /// Properties of (generalized) hard sphere systems.
 pub trait HardSphereProperties {
     /// The [MonomerShape] used in the model.
-    fn monomer_shape<D: DualNum<f64> + Copy>(&self, temperature: D) -> MonomerShape<'_, D>;
+    fn monomer_shape<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> MonomerShape<'_, D>;
 
     /// The temperature dependent hard-sphere diameters of every segment.
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D>;
+    fn hs_diameter<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DVector<D>;
 
     /// For every segment, the index of the component that it is on.
     fn component_index(&self) -> Cow<'_, [usize]> {
@@ -44,7 +44,7 @@ pub trait HardSphereProperties {
     }
 
     /// The geometry coefficients $C_{k,\alpha}$ for every segment.
-    fn geometry_coefficients<D: DualNum<f64> + Copy>(&self, temperature: D) -> [DVector<D>; 4] {
+    fn geometry_coefficients<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> [DVector<D>; 4] {
         match self.monomer_shape(temperature) {
             MonomerShape::Spherical(n) => {
                 let m = DVector::from_element(n, D::from(1.0));
@@ -56,7 +56,7 @@ pub trait HardSphereProperties {
     }
 
     /// The packing fractions $\zeta_k$.
-    fn zeta<D: DualNum<f64> + Copy, const N: usize>(
+    fn zeta<D: DualNum<Primitive = f64> + Copy, const N: usize>(
         &self,
         temperature: D,
         partial_density: &DVector<D>,
@@ -94,7 +94,7 @@ impl HardSphere {
     /// Returns the Helmholtz energy, packing fractions, and temperature dependent diameters without redundant calculations.
     #[inline]
     pub fn helmholtz_energy_density_and_properties<
-        D: DualNum<f64> + Copy,
+        D: DualNum<Primitive = f64> + Copy,
         P: HardSphereProperties,
     >(
         &self,
@@ -126,7 +126,7 @@ impl HardSphere {
     }
 
     #[inline]
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy, P: HardSphereProperties>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy, P: HardSphereProperties>(
         &self,
         parameters: &P,
         state: &StateHD<D>,

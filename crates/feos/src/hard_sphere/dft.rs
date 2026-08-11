@@ -83,7 +83,7 @@ impl<'p, P: HardSphereProperties + Send + Sync> FunctionalContribution for FMTCo
         }
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let r = self.properties.hs_diameter(temperature) * N::from(0.5);
         let [c0, c1, c2, c3] = self.properties.geometry_coefficients(temperature);
         match (self.version, r.len()) {
@@ -183,7 +183,7 @@ impl<'p, P: HardSphereProperties + Send + Sync> FunctionalContribution for FMTCo
         }
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density<N: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
@@ -285,7 +285,7 @@ impl HardSphereProperties for HardSphereParameters {
         MonomerShape::Spherical(self.sigma.len())
     }
 
-    fn hs_diameter<N: DualNum<f64>>(&self, _: N) -> DVector<N> {
+    fn hs_diameter<N: DualNum<Primitive = f64>>(&self, _: N) -> DVector<N> {
         self.sigma.map(N::from)
     }
 }
@@ -323,11 +323,11 @@ impl ResidualDyn for FMTFunctional {
         self.properties.sigma.len()
     }
 
-    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+    fn compute_max_density<D: DualNum<Primitive = f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
         molefracs.dot(&self.properties.sigma.map(D::from)).recip() * 1.2
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(&'static str, D)> {
