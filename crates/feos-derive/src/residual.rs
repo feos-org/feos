@@ -56,12 +56,12 @@ fn impl_residual(
                     #(#components,)*
                 }
             }
-            fn compute_max_density<D: DualNum<f64> + Copy>(&self, moles: &DVector<D>) -> D {
+            fn compute_max_density<D: DualNum<Primitive = f64> + Copy>(&self, moles: &DVector<D>) -> D {
                 match self {
                     #(#compute_max_density,)*
                 }
             }
-            fn for_each_contribution<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>, f: impl FnMut(&'static str, D)) {
+            fn for_each_contribution<D: DualNum<Primitive = f64> + Copy>(&self, state: &StateHD<D>, f: impl FnMut(&'static str, D)) {
                 match self {
                     #(#for_each_contribution,)*
                 }

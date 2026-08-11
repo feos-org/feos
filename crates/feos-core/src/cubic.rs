@@ -121,11 +121,11 @@ impl ResidualDyn for PengRobinson {
         self.tc.len()
     }
 
-    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+    fn compute_max_density<D: DualNum<Primitive = f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
         D::from(0.9) / molefracs.dot(&self.b.map(D::from))
     }
 
-    fn for_each_contribution<D: DualNum<f64> + Copy>(
+    fn for_each_contribution<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &StateHD<D>,
         mut f: impl FnMut(&'static str, D),

@@ -124,7 +124,7 @@ impl MeanSegmentNumbers {
     }
 }
 
-fn pair_integral_ij<D: DualNum<f64> + Copy>(
+fn pair_integral_ij<D: DualNum<Primitive = f64> + Copy>(
     mij1: f64,
     mij2: f64,
     etas: &[D],
@@ -141,7 +141,7 @@ fn pair_integral_ij<D: DualNum<f64> + Copy>(
         .sum()
 }
 
-fn triplet_integral_ijk<D: DualNum<f64> + Copy>(
+fn triplet_integral_ijk<D: DualNum<Primitive = f64> + Copy>(
     mijk1: f64,
     mijk2: f64,
     etas: &[D],
@@ -152,7 +152,7 @@ fn triplet_integral_ijk<D: DualNum<f64> + Copy>(
         .sum()
 }
 
-fn triplet_integral_ijk_dq<D: DualNum<f64> + Copy>(mijk: f64, etas: &[D], c: &[[f64; 2]]) -> D {
+fn triplet_integral_ijk_dq<D: DualNum<Primitive = f64> + Copy>(mijk: f64, etas: &[D], c: &[[f64; 2]]) -> D {
     (0..c.len())
         .map(|i| etas[i] * (c[i][0] + mijk * c[i][1]))
         .sum()
@@ -216,7 +216,7 @@ impl Dipole {
 
     /// `eta` is the packing fraction $\zeta_3$, shared with the other contributions.
     #[inline]
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,
@@ -314,7 +314,7 @@ impl Quadrupole {
 
     /// `eta` is the packing fraction $\zeta_3$, shared with the other contributions.
     #[inline]
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,
@@ -462,7 +462,7 @@ impl DipoleQuadrupole {
 
     /// `eta` is the packing fraction $\zeta_3$, shared with the other contributions.
     #[inline]
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,

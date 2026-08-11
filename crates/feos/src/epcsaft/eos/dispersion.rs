@@ -62,7 +62,7 @@ pub const B2: [f64; 7] = [
 pub const T_REF: f64 = 298.15;
 
 impl ElectrolytePcSaftPars {
-    pub fn k_ij_t<D: DualNum<f64> + Copy>(&self, temperature: D) -> DMatrix<D> {
+    pub fn k_ij_t<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DMatrix<D> {
         let n = self.m.len();
 
         let mut k_ij_t = DMatrix::zeros(n, n);
@@ -79,7 +79,7 @@ impl ElectrolytePcSaftPars {
         k_ij_t
     }
 
-    pub fn epsilon_k_ij_t<D: DualNum<f64> + Copy>(&self, temperature: D) -> DMatrix<D> {
+    pub fn epsilon_k_ij_t<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DMatrix<D> {
         let k_ij_t = self.k_ij_t(temperature);
         let n = self.m.len();
 
@@ -97,7 +97,7 @@ impl ElectrolytePcSaftPars {
 pub struct Dispersion;
 
 impl Dispersion {
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &ElectrolytePcSaftPars,
         state: &StateHD<D>,

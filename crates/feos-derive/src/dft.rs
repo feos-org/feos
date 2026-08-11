@@ -67,7 +67,7 @@ pub(crate) fn impl_helmholtz_energy_functional(
                     #(#contributions,)*
                 }
             }
-            fn bond_lengths<N: DualNum<f64> + Copy>(&self, temperature: N) -> petgraph::graph::UnGraph<(), N> {
+            fn bond_lengths<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> petgraph::graph::UnGraph<(), N> {
                 match self {
                     #(#bond_lengths,)*
                     _ => petgraph::Graph::with_capacity(0, 0),

@@ -23,7 +23,7 @@ const MAX_LNPSTEP: f64 = 0.1;
 const NEWTON_TOL: f64 = 1e-3;
 
 /// Trait that enables functions to be generic over their input unit.
-pub trait TemperatureOrPressure<D: DualNum<f64> + Copy = f64>: Copy {
+pub trait TemperatureOrPressure<D: DualNum<Primitive = f64> + Copy = f64>: Copy {
     type Other: Copy;
 
     const IDENTIFIER: &'static str;
@@ -46,7 +46,7 @@ pub trait TemperatureOrPressure<D: DualNum<f64> + Copy = f64>: Copy {
     ) -> (Temperature<Array1<f64>>, Pressure<Array1<f64>>);
 }
 
-impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D> for Temperature<D> {
+impl<D: DualNum<Primitive = f64> + Copy> TemperatureOrPressure<D> for Temperature<D> {
     type Other = Pressure;
     const IDENTIFIER: &'static str = "temperature";
 
@@ -86,7 +86,7 @@ impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D> for Temperature<D> {
 // For some inexplicable reason this does not compile if the `Pressure` type is
 // used instead of the explicit unit. Maybe the type is too complicated for the
 // compiler?
-impl<D: DualNum<f64> + Copy> TemperatureOrPressure<D>
+impl<D: DualNum<Primitive = f64> + Copy> TemperatureOrPressure<D>
     for Quantity<D, SIUnit<-2, -1, 1, 0, 0, 0, 0>>
 {
     type Other = Temperature;
@@ -138,7 +138,8 @@ impl<D> TemperatureOrPressureSpecification<D> {
 }
 
 /// # Bubble and dew point calculations
-impl<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, N, D>
+impl<E: Residual<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy>
+    PhaseEquilibrium<E, 2, N, D>
 where
     DefaultAllocator: Allocator<N> + Allocator<N, N> + Allocator<U1, N>,
 {
@@ -399,7 +400,7 @@ where
         });
 
         // calculate Newton step
-        let dx = LU::<_, _, Dyn>::new(jac)?.solve(&f);
+        let dx = LU::<_, Dyn>::new(jac)?.solve(&f);
 
         // apply Newton step
         for i in 0..n {
@@ -475,7 +476,7 @@ where
         });
 
         // calculate Newton step
-        let dx = LU::<_, _, Dyn>::new(jac)?.solve(&f);
+        let dx = LU::<_, Dyn>::new(jac)?.solve(&f);
 
         // apply Newton step
         for i in 0..n {

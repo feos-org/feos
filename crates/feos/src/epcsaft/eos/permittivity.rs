@@ -20,11 +20,11 @@ pub enum PermittivityRecord {
 }
 
 #[derive(Clone)]
-pub struct Permittivity<D: DualNum<f64>> {
+pub struct Permittivity<D: DualNum<Primitive = f64>> {
     pub permittivity: D,
 }
 
-impl<D: DualNum<f64> + Copy> Permittivity<D> {
+impl<D: DualNum<Primitive = f64> + Copy> Permittivity<D> {
     pub fn new(
         state: &StateHD<D>,
         parameters: &ElectrolytePcSaftPars,
