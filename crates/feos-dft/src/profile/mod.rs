@@ -180,7 +180,7 @@ impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTProfile<D, F>
 where
     D::Larger: Dimension<Smaller = D>,
 {
-    fn integrate_reduced<N: DualNum<f64> + Copy>(&self, mut profile: Array<N, D>) -> N {
+    fn integrate_reduced<N: DualNum<Primitive = f64> + Copy>(&self, mut profile: Array<N, D>) -> N {
         let (integration_weights, functional_determinant) = self.grid.integration_weights();
 
         for (i, w) in integration_weights.into_iter().enumerate() {
@@ -191,7 +191,7 @@ where
         profile.sum() * functional_determinant
     }
 
-    fn integrate_reduced_comp<S: Data<Elem = N>, N: DualNum<f64> + Copy>(
+    fn integrate_reduced_comp<S: Data<Elem = N>, N: DualNum<Primitive = f64> + Copy>(
         &self,
         profile: &ArrayBase<S, D::Larger>,
     ) -> Array1<N> {
@@ -200,7 +200,10 @@ where
         })
     }
 
-    pub(crate) fn integrate_reduced_segments<S: Data<Elem = N>, N: DualNum<f64> + Copy>(
+    pub(crate) fn integrate_reduced_segments<
+        S: Data<Elem = N>,
+        N: DualNum<Primitive = f64> + Copy,
+    >(
         &self,
         profile: &ArrayBase<S, D::Larger>,
     ) -> DVector<N> {

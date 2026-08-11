@@ -97,7 +97,7 @@ impl ResidualDyn for ElectrolytePcSaft {
         self.parameters.pure.len()
     }
 
-    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+    fn compute_max_density<D: DualNum<Primitive = f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
         let msigma3 = self
             .params
             .m
@@ -105,7 +105,7 @@ impl ResidualDyn for ElectrolytePcSaft {
         (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
     }
 
-    fn for_each_contribution<D: DualNum<f64> + Copy>(
+    fn for_each_contribution<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &StateHD<D>,
         mut f: impl FnMut(&'static str, D),

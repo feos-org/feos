@@ -62,7 +62,7 @@ pub struct Dispersion;
 
 impl Dispersion {
     /// `eta` is the packing fraction $\zeta_3$, shared with the other contributions.
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,

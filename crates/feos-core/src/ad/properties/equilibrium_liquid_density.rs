@@ -21,7 +21,7 @@ where
     type Unit = _Density;
     const REFERENCE: Density = Density::new(1000.0);
 
-    fn evaluate<E: Residual<N, D>, D: DualNum<f64, Inner = f64> + Copy>(
+    fn evaluate<E: Residual<N, D>, D: DualNum<Primitive = f64, Inner = f64> + Copy>(
         &self,
         eos: &E,
     ) -> FeosResult<Density<D>> {

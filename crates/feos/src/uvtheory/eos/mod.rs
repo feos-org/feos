@@ -70,12 +70,12 @@ impl ResidualDyn for UVTheory {
         self.parameters.pure.len()
     }
 
-    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+    fn compute_max_density<D: DualNum<Primitive = f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
         let sigma3 = self.params.sigma.map(|v| v.powi(3));
         (sigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
     }
 
-    fn for_each_contribution<D: DualNum<f64> + Copy>(
+    fn for_each_contribution<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &feos_core::StateHD<D>,
         mut f: impl FnMut(&'static str, D),

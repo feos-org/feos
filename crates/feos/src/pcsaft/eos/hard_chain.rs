@@ -9,7 +9,7 @@ impl HardChain {
     /// `diameter` and `zeta` are the hard-sphere diameters and packing
     /// fractions, shared with the other contributions.
     #[inline]
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,
