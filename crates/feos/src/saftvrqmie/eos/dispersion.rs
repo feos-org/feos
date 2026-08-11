@@ -31,11 +31,11 @@ const PHI: [[f64; 7]; 6] = [
     ],
 ];
 
-pub struct Alpha<D: DualNum<f64>> {
+pub struct Alpha<D: DualNum<Primitive = f64>> {
     alpha_ij: DMatrix<D>,
 }
 
-impl<D: DualNum<f64> + Copy> Alpha<D> {
+impl<D: DualNum<Primitive = f64> + Copy> Alpha<D> {
     pub fn new(
         parameters: &SaftVRQMiePars,
         sigma_eff_ij: &DMatrix<D>,
@@ -90,7 +90,7 @@ impl<D: DualNum<f64> + Copy> Alpha<D> {
 pub struct Dispersion;
 
 impl Dispersion {
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &SaftVRQMiePars,
         state: &StateHD<D>,
@@ -148,7 +148,7 @@ impl Dispersion {
 
 #[cfg(feature = "dft")]
 #[expect(clippy::too_many_arguments)]
-pub fn dispersion_energy_density<D: DualNum<f64> + Copy>(
+pub fn dispersion_energy_density<D: DualNum<Primitive = f64> + Copy>(
     parameters: &SaftVRQMiePars,
     d_hs_ij: &DMatrix<D>,
     s_eff_ij: &DMatrix<D>,
@@ -184,7 +184,7 @@ pub fn dispersion_energy_density<D: DualNum<f64> + Copy>(
     rho_s * (a1 * inv_t + a2 * inv_t.powi(2) + a3 * inv_t.powi(3))
 }
 
-fn zeta_saft_vrq_mie<D: DualNum<f64> + Copy>(
+fn zeta_saft_vrq_mie<D: DualNum<Primitive = f64> + Copy>(
     m: &DVector<f64>,
     x_s: &DVector<D>,
     diameter: &DMatrix<D>,
@@ -199,7 +199,7 @@ fn zeta_saft_vrq_mie<D: DualNum<f64> + Copy>(
     zeta * FRAC_PI_6 * rho_s
 }
 
-fn first_order_perturbation<D: DualNum<f64> + Copy>(
+fn first_order_perturbation<D: DualNum<Primitive = f64> + Copy>(
     parameters: &SaftVRQMiePars,
     x_s: &DVector<D>,
     zeta: D,
@@ -239,7 +239,7 @@ fn first_order_perturbation<D: DualNum<f64> + Copy>(
 }
 
 #[expect(clippy::too_many_arguments)]
-fn first_order_perturbation_ij<D: DualNum<f64> + Copy>(
+fn first_order_perturbation_ij<D: DualNum<Primitive = f64> + Copy>(
     lambda_a: f64,
     lambda_r: f64,
     epsilon_k: f64,
@@ -271,7 +271,7 @@ fn first_order_perturbation_ij<D: DualNum<f64> + Copy>(
     a1_ij * c
 }
 
-fn eta_eff<D: DualNum<f64> + Copy>(lambda: f64, zeta: D) -> D {
+fn eta_eff<D: DualNum<Primitive = f64> + Copy>(lambda: f64, zeta: D) -> D {
     let inv_lambda = DVector::from(vec![
         1.0,
         1.0 / lambda,
@@ -287,16 +287,16 @@ fn eta_eff<D: DualNum<f64> + Copy>(lambda: f64, zeta: D) -> D {
     zeta * (zeta * (zeta * (zeta * c[3] + c[2]) + c[1]) + c[0])
 }
 
-fn sutherland<D: DualNum<f64> + Copy>(lambda: f64, epsilon_k: f64, zeta: D, x0: D) -> D {
+fn sutherland<D: DualNum<Primitive = f64> + Copy>(lambda: f64, epsilon_k: f64, zeta: D, x0: D) -> D {
     let ef = eta_eff(lambda, zeta);
     (-ef * 0.5 + 1.0) * -12.0 * x0.powf(lambda) * epsilon_k / (lambda - 3.0) / (-ef + 1.0).powi(3)
 }
 
-fn ilambda<D: DualNum<f64>>(lambda: f64, x0: D) -> D {
+fn ilambda<D: DualNum<Primitive = f64>>(lambda: f64, x0: D) -> D {
     -(x0.powf(3.0 - lambda) - 1.0) / (lambda - 3.0)
 }
 
-fn jlambda<D: DualNum<f64>>(lambda: f64, x0: D) -> D {
+fn jlambda<D: DualNum<Primitive = f64>>(lambda: f64, x0: D) -> D {
     -(x0.powf(4.0 - lambda) * (lambda - 3.0) - x0.powf(3.0 - lambda) * (lambda - 4.0) - 1.0)
         / ((lambda - 3.0) * (lambda - 4.0))
 }
@@ -305,7 +305,7 @@ fn jlambda<D: DualNum<f64>>(lambda: f64, x0: D) -> D {
 /// B is divided by the packing fraction
 ///
 /// \author Morten Hammer, February 2018
-fn b<D: DualNum<f64> + Copy>(lambda: f64, epsilon_k: f64, zeta: D, x0: D, x0_eff: D) -> D {
+fn b<D: DualNum<Primitive = f64> + Copy>(lambda: f64, epsilon_k: f64, zeta: D, x0: D, x0_eff: D) -> D {
     let ilambda = ilambda(lambda, x0_eff);
     let jlambda = jlambda(lambda, x0_eff);
     let denum = (-zeta + 1.0).powi(3);
@@ -316,7 +316,7 @@ fn b<D: DualNum<f64> + Copy>(lambda: f64, epsilon_k: f64, zeta: D, x0: D, x0_eff
 }
 
 #[inline]
-fn combine_sutherland_and_b<D: DualNum<f64> + Copy>(
+fn combine_sutherland_and_b<D: DualNum<Primitive = f64> + Copy>(
     lambda: f64,
     epsilon_k: f64,
     zeta: D,
@@ -329,7 +329,7 @@ fn combine_sutherland_and_b<D: DualNum<f64> + Copy>(
 }
 
 #[expect(clippy::too_many_arguments)]
-fn second_order_perturbation<D: DualNum<f64> + Copy>(
+fn second_order_perturbation<D: DualNum<Primitive = f64> + Copy>(
     parameters: &SaftVRQMiePars,
     alpha: &Alpha<D>,
     x_s: &DVector<D>,
@@ -390,7 +390,7 @@ fn quantum_prefactor_second_order(lambda: f64) -> f64 {
 }
 
 #[expect(clippy::too_many_arguments)]
-fn second_order_perturbation_ij<D: DualNum<f64> + Copy>(
+fn second_order_perturbation_ij<D: DualNum<Primitive = f64> + Copy>(
     lambda_a: f64,
     lambda_r: f64,
     epsilon_k: f64,
@@ -452,7 +452,7 @@ fn second_order_perturbation_ij<D: DualNum<f64> + Copy>(
     a2_ij * 0.5 * epsilon_k * c.powi(2)
 }
 
-fn third_order_perturbation<D: DualNum<f64> + Copy>(
+fn third_order_perturbation<D: DualNum<Primitive = f64> + Copy>(
     parameters: &SaftVRQMiePars,
     alpha: &Alpha<D>,
     x_s: &DVector<D>,
@@ -471,7 +471,7 @@ fn third_order_perturbation<D: DualNum<f64> + Copy>(
     a3
 }
 
-fn third_order_perturbation_ij<D: DualNum<f64> + Copy>(
+fn third_order_perturbation_ij<D: DualNum<Primitive = f64> + Copy>(
     i: usize,
     j: usize,
     epsilon_k_eff: D,

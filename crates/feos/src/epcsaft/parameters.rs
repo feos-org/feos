@@ -160,7 +160,7 @@ pub struct ElectrolytePcSaftPars {
 }
 
 impl ElectrolytePcSaftPars {
-    pub fn sigma_t<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+    pub fn sigma_t<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DVector<D> {
         let mut sigma_t = DVector::from_fn(self.sigma.len(), |i, _| D::from(self.sigma[i]));
 
         if let Some(i) = self.water_sigma_t_comp {
@@ -171,7 +171,7 @@ impl ElectrolytePcSaftPars {
         sigma_t
     }
 
-    pub fn sigma_ij_t<D: DualNum<f64> + Copy>(&self, temperature: D) -> DMatrix<D> {
+    pub fn sigma_ij_t<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DMatrix<D> {
         let diameter = self.sigma_t(temperature);
         let n = diameter.len();
 
@@ -357,11 +357,11 @@ impl ElectrolytePcSaftPars {
 }
 
 impl HardSphereProperties for ElectrolytePcSaftPars {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
+    fn monomer_shape<N: DualNum<Primitive = f64>>(&self, _: N) -> MonomerShape<'_, N> {
         MonomerShape::NonSpherical(self.m.map(N::from))
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+    fn hs_diameter<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DVector<D> {
         let sigma_t = self.sigma_t(temperature);
 
         let ti = temperature.recip() * -3.0;
@@ -379,7 +379,7 @@ impl HardSphereProperties for ElectrolytePcSaftPars {
 impl AssociationStrength for ElectrolytePcSaftPars {
     type Record = ElectrolytePcSaftAssociationRecord;
 
-    fn association_strength_ij<D: DualNum<f64> + Copy>(
+    fn association_strength_ij<D: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: D,
         comp_i: usize,
