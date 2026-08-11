@@ -12,7 +12,7 @@ type InvP<T> = Quantity<T, <_Pressure as Neg>::Output>;
 type POverT<T> = Quantity<T, <_Pressure as Sub<_Temperature>>::Output>;
 
 /// # State properties
-impl<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy> State<E, N, D>
+impl<E: Residual<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy> State<E, N, D>
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -480,7 +480,7 @@ impl<E: Residual> State<E> {
     }
 }
 
-impl<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy> State<E, N, D>
+impl<E: Residual<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy> State<E, N, D>
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -585,7 +585,7 @@ where
     }
 }
 
-impl<E: Residual<N, D> + Molarweight<N, D>, N: Gradients, D: DualNum<f64> + Copy> State<E, N, D>
+impl<E: Residual<N, D> + Molarweight<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy> State<E, N, D>
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -628,7 +628,7 @@ where
 ///
 /// These properties are available for equations of state
 /// that implement the [EntropyScaling] trait.
-impl<E: Residual<N, D> + EntropyScaling<N, D>, N: Gradients, D: DualNum<f64> + Copy> State<E, N, D>
+impl<E: Residual<N, D> + EntropyScaling<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy> State<E, N, D>
 where
     DefaultAllocator: Allocator<N>,
 {

@@ -24,7 +24,7 @@ pub const B: [f64; 7] = [
 ];
 
 impl Pets {
-    pub fn dispersion_helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn dispersion_helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> D {

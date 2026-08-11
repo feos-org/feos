@@ -60,11 +60,11 @@ impl HelmholtzEnergyFunctionalDyn for SaftVRQMie {
 }
 
 impl HardSphereProperties for SaftVRQMiePars {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
+    fn monomer_shape<N: DualNum<Primitive = f64>>(&self, _: N) -> MonomerShape<'_, N> {
         MonomerShape::Spherical(self.m.len())
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+    fn hs_diameter<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DVector<D> {
         self.hs_diameter(temperature)
     }
 }

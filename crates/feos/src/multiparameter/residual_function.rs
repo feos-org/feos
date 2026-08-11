@@ -118,7 +118,7 @@ pub enum ResidualFunction {
 }
 
 impl ResidualFunction {
-    pub fn evaluate<D: DualNum<f64> + Copy>(&self, delta: D, tau: D) -> D {
+    pub fn evaluate<D: DualNum<Primitive = f64> + Copy>(&self, delta: D, tau: D) -> D {
         match *self {
             ResidualFunction::ResidualHelmholtzPower { d, l, n, t } => {
                 let mut pre = delta.powi(d) * tau.powf(t) * n;

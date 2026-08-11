@@ -22,8 +22,8 @@ keywords = [
 categories = ["science"]
 
 [workspace.dependencies]
-quantity = "0.14"
-num-dual = "0.14"
+quantity = "0.15"
+num-dual = "0.15"
 ndarray = "0.17"
 nalgebra = "0.35"
 thiserror = "2.0"

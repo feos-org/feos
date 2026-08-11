@@ -80,13 +80,13 @@ impl ResidualDyn for PcSaftFunctional {
         self.parameters.pure.len()
     }
 
-    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+    fn compute_max_density<D: DualNum<Primitive = f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
         let p = &self.params;
         let msigma3 = p.m.zip_map(&p.sigma, |m, s| m * s.powi(3));
         (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(&'static str, D)> {

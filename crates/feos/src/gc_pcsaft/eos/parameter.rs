@@ -110,12 +110,12 @@ impl GcPcSaftEosParameters {
 }
 
 impl HardSphereProperties for GcPcSaftEosParameters {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
+    fn monomer_shape<N: DualNum<Primitive = f64>>(&self, _: N) -> MonomerShape<'_, N> {
         let m = self.m.map(N::from);
         MonomerShape::Heterosegmented([m.clone(), m.clone(), m.clone(), m], &self.component_index)
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+    fn hs_diameter<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DVector<D> {
         let ti = temperature.recip() * -3.0;
         DVector::from_fn(self.sigma.len(), |i, _| {
             -((ti * self.epsilon_k[i]).exp() * 0.12 - 1.0) * self.sigma[i]
@@ -126,7 +126,7 @@ impl HardSphereProperties for GcPcSaftEosParameters {
 impl AssociationStrength for GcPcSaftEosParameters {
     type Record = GcPcSaftAssociationRecord;
 
-    fn association_strength_ij<D: DualNum<f64> + Copy>(
+    fn association_strength_ij<D: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: D,
         comp_i: usize,

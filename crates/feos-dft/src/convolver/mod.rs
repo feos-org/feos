@@ -40,7 +40,7 @@ pub(crate) struct BulkConvolver<T> {
     weight_constants: Vec<Array2<T>>,
 }
 
-impl<T: DualNum<f64> + Copy + Send + Sync> BulkConvolver<T> {
+impl<T: DualNum<Primitive = f64> + Copy + Send + Sync> BulkConvolver<T> {
     #[expect(clippy::new_ret_no_self)]
     pub(crate) fn new(weight_functions: Vec<WeightFunctionInfo<T>>) -> Arc<dyn Convolver<T, Ix0>> {
         let weight_constants = weight_functions
@@ -51,7 +51,7 @@ impl<T: DualNum<f64> + Copy + Send + Sync> BulkConvolver<T> {
     }
 }
 
-impl<T: DualNum<f64> + Copy + Send + Sync> Convolver<T, Ix0> for BulkConvolver<T>
+impl<T: DualNum<Primitive = f64> + Copy + Send + Sync> Convolver<T, Ix0> for BulkConvolver<T>
 where
     Array2<T>: Dot<Array1<T>, Output = Array1<T>>,
 {
@@ -127,7 +127,7 @@ pub struct ConvolverFFT<T, D: Dimension> {
 
 impl<T, D: Dimension + RemoveAxis + 'static> ConvolverFFT<T, D>
 where
-    T: DctNum + DualNum<f64>,
+    T: DctNum + DualNum<Primitive = f64>,
     D::Larger: Dimension<Smaller = D>,
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
@@ -159,7 +159,7 @@ where
 
 impl<T, D: Dimension + 'static> ConvolverFFT<T, D>
 where
-    T: DctNum + DualNum<f64>,
+    T: DctNum + DualNum<Primitive = f64>,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
@@ -278,7 +278,7 @@ where
 
 impl<T, D: Dimension> ConvolverFFT<T, D>
 where
-    T: DctNum + DualNum<f64>,
+    T: DctNum + DualNum<Primitive = f64>,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
@@ -370,7 +370,7 @@ where
 
 impl<T, D: Dimension> Convolver<T, D> for ConvolverFFT<T, D>
 where
-    T: DctNum + DualNum<f64>,
+    T: DctNum + DualNum<Primitive = f64>,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
@@ -555,7 +555,7 @@ struct CurvilinearConvolver<T, D> {
 
 impl<T, D: Dimension + RemoveAxis + 'static> CurvilinearConvolver<T, D>
 where
-    T: DctNum + DualNum<f64>,
+    T: DctNum + DualNum<Primitive = f64>,
     D::Larger: Dimension<Smaller = D>,
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
@@ -576,7 +576,7 @@ where
 
 impl<T, D: Dimension + RemoveAxis> Convolver<T, D> for CurvilinearConvolver<T, D>
 where
-    T: DctNum + DualNum<f64>,
+    T: DctNum + DualNum<Primitive = f64>,
     D::Smaller: Dimension<Larger = D>,
     D::Larger: Dimension<Smaller = D>,
 {

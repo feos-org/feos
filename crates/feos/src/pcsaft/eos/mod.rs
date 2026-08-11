@@ -88,7 +88,7 @@ impl ResidualDyn for PcSaft {
         self.parameters.pure.len()
     }
 
-    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+    fn compute_max_density<D: DualNum<Primitive = f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
         let msigma3 = self
             .params
             .m
@@ -96,7 +96,7 @@ impl ResidualDyn for PcSaft {
         (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(&'static str, D)> {
@@ -167,11 +167,11 @@ impl Molarweight for PcSaft {
 }
 
 impl HardSphereProperties for PcSaftPars {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
+    fn monomer_shape<N: DualNum<Primitive = f64>>(&self, _: N) -> MonomerShape<'_, N> {
         MonomerShape::NonSpherical(self.m.map(N::from))
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+    fn hs_diameter<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DVector<D> {
         let ti = temperature.recip() * -3.0;
         DVector::from_fn(self.sigma.len(), |i, _| {
             -((ti * self.epsilon_k[i]).exp() * 0.12 - 1.0) * self.sigma[i]
@@ -182,7 +182,7 @@ impl HardSphereProperties for PcSaftPars {
 impl AssociationStrength for PcSaftPars {
     type Record = PcSaftAssociationRecord;
 
-    fn association_strength_ij<D: DualNum<f64> + Copy>(
+    fn association_strength_ij<D: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: D,
         comp_i: usize,

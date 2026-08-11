@@ -28,7 +28,7 @@ impl<I: Clone, F: HelmholtzEnergyFunctionalDyn> HelmholtzEnergyFunctionalDyn
         self.residual.molecule_shape()
     }
 
-    fn bond_lengths<N: DualNum<f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
+    fn bond_lengths<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
         self.residual.bond_lengths(temperature)
     }
 }
@@ -58,7 +58,7 @@ pub trait HelmholtzEnergyFunctionalDyn: ResidualDyn {
     fn molecule_shape(&self) -> MoleculeShape<'_>;
 
     /// Overwrite this, if the functional consists of heterosegmented chains.
-    fn bond_lengths<N: DualNum<f64> + Copy>(&self, _temperature: N) -> UnGraph<(), N> {
+    fn bond_lengths<N: DualNum<Primitive = f64> + Copy>(&self, _temperature: N) -> UnGraph<(), N> {
         Graph::with_capacity(0, 0)
     }
 }
@@ -76,7 +76,7 @@ pub trait HelmholtzEnergyFunctional: Residual {
     fn molecule_shape(&self) -> MoleculeShape<'_>;
 
     /// Overwrite this, if the functional consists of heterosegmented chains.
-    fn bond_lengths<N: DualNum<f64> + Copy>(&self, _temperature: N) -> UnGraph<(), N> {
+    fn bond_lengths<N: DualNum<Primitive = f64> + Copy>(&self, _temperature: N) -> UnGraph<(), N> {
         Graph::with_capacity(0, 0)
     }
 
@@ -112,7 +112,7 @@ pub trait HelmholtzEnergyFunctional: Residual {
 
     /// Calculate the (residual) intrinsic functional derivative $\frac{\delta\mathcal{\beta F}}{\delta\rho_i(\mathbf{r})}$.
     #[expect(clippy::type_complexity)]
-    fn functional_derivative<D, N: DualNum<f64> + Copy>(
+    fn functional_derivative<D, N: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: N,
         density: &Array<N, D::Larger>,
@@ -147,7 +147,7 @@ pub trait HelmholtzEnergyFunctional: Residual {
     }
 
     /// Calculate the bond integrals $I_{\alpha\alpha'}(\mathbf{r})$
-    fn bond_integrals<D, N: DualNum<f64> + Copy>(
+    fn bond_integrals<D, N: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: N,
         exponential: &Array<N, D::Larger>,
@@ -228,7 +228,10 @@ pub trait HelmholtzEnergyFunctional: Residual {
         i
     }
 
-    fn evaluate_bulk<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> Vec<(&'static str, D)> {
+    fn evaluate_bulk<D: DualNum<Primitive = f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+    ) -> Vec<(&'static str, D)> {
         let mut res: Vec<_> = self
             .contributions()
             .map(|c| (c.name(), c.bulk_helmholtz_energy_density(state)))
@@ -258,7 +261,7 @@ impl<C: Deref<Target = F> + Clone, F: HelmholtzEnergyFunctionalDyn + ResidualDyn
         F::molecule_shape(self.deref())
     }
 
-    fn bond_lengths<N: DualNum<f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
+    fn bond_lengths<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
         F::bond_lengths(self.deref(), temperature)
     }
 }
