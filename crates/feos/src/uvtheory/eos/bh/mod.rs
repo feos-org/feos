@@ -12,7 +12,7 @@ mod reference_perturbation;
 pub struct BarkerHenderson;
 
 impl BarkerHenderson {
-    pub fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
+    pub fn residual_helmholtz_energy_contributions<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &UVTheoryPars,
         state: &StateHD<D>,

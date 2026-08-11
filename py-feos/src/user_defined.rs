@@ -30,7 +30,7 @@ macro_rules! impl_ideal_gas {
                 "Ideal gas (Python)"
             }
 
-            fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
+            fn ln_lambda3<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> D {
                 let mut result = D::zero();
 
                 $(
@@ -103,7 +103,7 @@ macro_rules! impl_residual {
                 })
             }
 
-            fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+            fn compute_max_density<D: DualNum<Primitive = f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
                 let mut rho = D::zero();
 
                 $(
@@ -123,7 +123,7 @@ macro_rules! impl_residual {
                 panic!("compute_max_density: input data type not understood")
             }
 
-            fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy + >(
+            fn reduced_helmholtz_energy_density_contributions<D: DualNum<Primitive = f64> + Copy + >(
                     &self,
                     state: &StateHD<D>,
                 ) -> Vec<(&'static str, D)> {
@@ -250,7 +250,7 @@ macro_rules! impl_dual_state_helmholtz_energy {
 // No definition of dual number necessary for f64
 state!(PyStateF, f64, f64);
 
-dual_number!(PyReal64, Real<f64, f64>, f64);
+dual_number!(PyReal64, Real<f64>, f64);
 
 impl_dual_state_helmholtz_energy!(PyStateD, PyDual64, Dual64, f64);
 
@@ -258,73 +258,63 @@ dual_number!(PyDualVec3, DualSVec64<3>, f64);
 impl_dual_state_helmholtz_energy!(
     PyStateDualDualVec3,
     PyDualDualVec3,
-    Dual<DualSVec64<3>, f64>,
+    Dual<DualSVec64<3>>,
     PyDualVec3
 );
 impl_dual_state_helmholtz_energy!(PyStateHD, PyHyperDual64, HyperDual64, f64);
 impl_dual_state_helmholtz_energy!(PyStateD2, PyDual2_64, Dual2_64, f64);
 impl_dual_state_helmholtz_energy!(PyStateD2Vec2, PyDual2SVec64_2, Dual2SVec64<2>, f64);
 impl_dual_state_helmholtz_energy!(PyStateD3, PyDual3_64, Dual3_64, f64);
-impl_dual_state_helmholtz_energy!(PyStateHDD, PyHyperDualDual64, HyperDual<Dual64, f64>, PyDual64);
+impl_dual_state_helmholtz_energy!(PyStateHDD, PyHyperDualDual64, HyperDual<Dual64>, PyDual64);
 dual_number!(PyDualVec2, DualSVec64<2>, f64);
 impl_dual_state_helmholtz_energy!(
     PyStateHDDVec2,
     PyHyperDualVec2,
-    HyperDual<DualSVec64<2>, f64>,
+    HyperDual<DualSVec64<2>>,
     PyDualVec2
 );
 impl_dual_state_helmholtz_energy!(
     PyStateHDDVec3,
     PyHyperDualVec3,
-    HyperDual<DualSVec64<3>, f64>,
+    HyperDual<DualSVec64<3>>,
     PyDualVec3
 );
-impl_dual_state_helmholtz_energy!(
-    PyStateD2D,
-    PyDual2Dual64,
-    Dual2<Dual64, f64>,
-    PyDual64
-);
-impl_dual_state_helmholtz_energy!(
-    PyStateD3D,
-    PyDual3Dual64,
-    Dual3<Dual64, f64>,
-    PyDual64
-);
+impl_dual_state_helmholtz_energy!(PyStateD2D, PyDual2Dual64, Dual2<Dual64>, PyDual64);
+impl_dual_state_helmholtz_energy!(PyStateD3D, PyDual3Dual64, Dual3<Dual64>, PyDual64);
 impl_dual_state_helmholtz_energy!(
     PyStateD3DVec2,
     PyDual3DualVec2,
-    Dual3<DualSVec64<2>, f64>,
+    Dual3<DualSVec64<2>>,
     PyDualVec2
 );
 impl_dual_state_helmholtz_energy!(
     PyStateD3DVec3,
     PyDual3DualVec3,
-    Dual3<DualSVec64<3>, f64>,
+    Dual3<DualSVec64<3>>,
     PyDualVec3
 );
 
 impl_ideal_gas!(
-    PyReal64, Real<f64, f64>;
+    PyReal64, Real<f64>;
     PyDual64, Dual64;
     PyDualDualVec3,
-    Dual<DualSVec64<3>, f64>;
+    Dual<DualSVec64<3>>;
     PyHyperDual64, HyperDual64;
     PyDual2_64, Dual2_64;
     PyDual3_64, Dual3_64;
-    PyHyperDualDual64, HyperDual<Dual64, f64>;
+    PyHyperDualDual64, HyperDual<Dual64>;
     PyHyperDualVec2,
-    HyperDual<DualSVec64<2>, f64>;
+    HyperDual<DualSVec64<2>>;
     PyHyperDualVec3,
-    HyperDual<DualSVec64<3>, f64>;
+    HyperDual<DualSVec64<3>>;
     PyDual2Dual64,
-    Dual2<Dual64, f64>;
+    Dual2<Dual64>;
     PyDual3Dual64,
-    Dual3<Dual64, f64>;
+    Dual3<Dual64>;
     PyDual3DualVec2,
-    Dual3<DualSVec64<2>, f64>;
+    Dual3<DualSVec64<2>>;
     PyDual3DualVec3,
-    Dual3<DualSVec64<3>, f64>
+    Dual3<DualSVec64<3>>
 );
 
 impl_residual!(
@@ -332,28 +322,28 @@ impl_residual!(
     PyStateD, PyDual64, Dual64;
     PyStateDualDualVec3,
     PyDualDualVec3,
-    Dual<DualSVec64<3>, f64>;
+    Dual<DualSVec64<3>>;
     PyStateHD, PyHyperDual64, HyperDual64;
     PyStateD2, PyDual2_64, Dual2_64;
     PyStateD2Vec2, PyDual2SVec64_2, Dual2SVec64<2>;
     PyStateD3, PyDual3_64, Dual3_64;
-    PyStateHDD, PyHyperDualDual64, HyperDual<Dual64, f64>;
+    PyStateHDD, PyHyperDualDual64, HyperDual<Dual64>;
     PyStateHDDVec2,
     PyHyperDualVec2,
-    HyperDual<DualSVec64<2>, f64>;
+    HyperDual<DualSVec64<2>>;
     PyStateHDDVec3,
     PyHyperDualVec3,
-    HyperDual<DualSVec64<3>, f64>;
+    HyperDual<DualSVec64<3>>;
     PyStateD2D,
     PyDual2Dual64,
-    Dual2<Dual64, f64>;
+    Dual2<Dual64>;
     PyStateD3D,
     PyDual3Dual64,
-    Dual3<Dual64, f64>;
+    Dual3<Dual64>;
     PyStateD3DVec2,
     PyDual3DualVec2,
-    Dual3<DualSVec64<2>, f64>;
+    Dual3<DualSVec64<2>>;
     PyStateD3DVec3,
     PyDual3DualVec3,
-    Dual3<DualSVec64<3>, f64>
+    Dual3<DualSVec64<3>>
 );

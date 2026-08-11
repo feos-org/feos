@@ -7,7 +7,7 @@ pub struct HardChain;
 
 impl HardChain {
     #[inline]
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,

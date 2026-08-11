@@ -49,7 +49,7 @@ pub(super) const WCA_CONSTANTS_ETA_B_UVB3: [[f64; 2]; 3] = [
 
 /// Dimensionless Hard-sphere diameter according to Weeks-Chandler-Andersen division.
 impl WeeksChandlerAndersen {
-    pub fn diameter_wca<D: DualNum<f64> + Copy>(
+    pub fn diameter_wca<D: DualNum<Primitive = f64> + Copy>(
         parameters: &UVTheoryPars,
         temperature: D,
     ) -> DVector<D> {
@@ -73,7 +73,7 @@ impl WeeksChandlerAndersen {
     }
 }
 
-pub(super) fn dimensionless_diameter_q_wca<D: DualNum<f64> + Copy>(
+pub(super) fn dimensionless_diameter_q_wca<D: DualNum<Primitive = f64> + Copy>(
     t_x: D,
     rep_x: D,
     att_x: D,
@@ -103,7 +103,7 @@ pub(super) fn dimensionless_diameter_q_wca<D: DualNum<f64> + Copy>(
         * rs
 }
 
-pub(super) fn packing_fraction<D: DualNum<f64> + Copy>(
+pub(super) fn packing_fraction<D: DualNum<Primitive = f64> + Copy>(
     partial_density: &DVector<D>,
     diameter: &DVector<D>,
 ) -> D {
@@ -113,7 +113,7 @@ pub(super) fn packing_fraction<D: DualNum<f64> + Copy>(
 }
 
 #[inline]
-pub(super) fn dimensionless_length_scale<D: DualNum<f64> + Copy>(
+pub(super) fn dimensionless_length_scale<D: DualNum<Primitive = f64> + Copy>(
     parameters: &UVTheoryPars,
     temperature: D,
 ) -> DVector<D> {
@@ -133,7 +133,7 @@ pub(super) fn dimensionless_length_scale<D: DualNum<f64> + Copy>(
 }
 
 #[inline]
-pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
+pub(super) fn packing_fraction_b<D: DualNum<Primitive = f64> + Copy>(
     parameters: &UVTheoryPars,
     eta: D,
     temperature: D,
@@ -155,7 +155,7 @@ pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
     })
 }
 
-pub(super) fn packing_fraction_b_uvb3<D: DualNum<f64> + Copy>(
+pub(super) fn packing_fraction_b_uvb3<D: DualNum<Primitive = f64> + Copy>(
     parameters: &UVTheoryPars,
     eta: D,
     temperature: D,
@@ -177,7 +177,7 @@ pub(super) fn packing_fraction_b_uvb3<D: DualNum<f64> + Copy>(
     })
 }
 
-pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
+pub(super) fn packing_fraction_a<D: DualNum<Primitive = f64> + Copy>(
     parameters: &UVTheoryPars,
     eta: D,
     temperature: D,
@@ -206,7 +206,7 @@ pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
     })
 }
 
-pub(super) fn packing_fraction_a_uvb3<D: DualNum<f64> + Copy>(
+pub(super) fn packing_fraction_a_uvb3<D: DualNum<Primitive = f64> + Copy>(
     parameters: &UVTheoryPars,
     eta: D,
     temperature: D,

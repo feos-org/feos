@@ -22,7 +22,7 @@ where
     type Unit = _Pressure;
     const REFERENCE: Pressure = PASCAL;
 
-    fn evaluate<E: Residual<N, D>, D: DualNum<f64, Inner = f64> + Copy>(
+    fn evaluate<E: Residual<N, D>, D: DualNum<Primitive = f64, Inner = f64> + Copy>(
         &self,
         eos: &E,
     ) -> FeosResult<Pressure<D>> {

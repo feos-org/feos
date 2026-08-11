@@ -78,7 +78,7 @@ impl ResidualDyn for GcPcSaftFunctional {
         self.parameters.molar_weight.len()
     }
 
-    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+    fn compute_max_density<D: DualNum<Primitive = f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
         let p = &self.params;
         let msigma3 = p.m.zip_map(&p.sigma, |m, s| m * s.powi(3) * m);
         let molefracs_segments: DVector<_> = p
@@ -90,7 +90,7 @@ impl ResidualDyn for GcPcSaftFunctional {
         (msigma3.map(D::from).dot(&molefracs_segments) * FRAC_PI_6).recip() * self.options.max_eta
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(&'static str, D)> {
@@ -131,7 +131,7 @@ impl HelmholtzEnergyFunctionalDyn for GcPcSaftFunctional {
         contributions.into_iter()
     }
 
-    fn bond_lengths<N: DualNum<f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
+    fn bond_lengths<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
         // temperature dependent segment diameter
         let d = self.params.hs_diameter(temperature);
 
@@ -154,12 +154,12 @@ impl Molarweight for GcPcSaftFunctional {
 }
 
 impl HardSphereProperties for GcPcSaftFunctionalParameters {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
+    fn monomer_shape<N: DualNum<Primitive = f64>>(&self, _: N) -> MonomerShape<'_, N> {
         let m = self.m.map(N::from);
         MonomerShape::Heterosegmented([m.clone(), m.clone(), m.clone(), m], &self.component_index)
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+    fn hs_diameter<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DVector<D> {
         let ti = temperature.recip() * -3.0;
         DVector::from_fn(self.sigma.len(), |i, _| {
             -((ti * self.epsilon_k[i]).exp() * 0.12 - 1.0) * self.sigma[i]
@@ -170,7 +170,7 @@ impl HardSphereProperties for GcPcSaftFunctionalParameters {
 impl AssociationStrength for GcPcSaftFunctionalParameters {
     type Record = GcPcSaftAssociationRecord;
 
-    fn association_strength_ij<D: DualNum<f64> + Copy>(
+    fn association_strength_ij<D: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: D,
         comp_i: usize,

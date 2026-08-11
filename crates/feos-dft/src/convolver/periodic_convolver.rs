@@ -26,7 +26,7 @@ pub struct PeriodicConvolver<T, D: Dimension> {
 
 impl<T, D: Dimension + 'static> PeriodicConvolver<T, D>
 where
-    T: FftNum + DualNum<f64>,
+    T: FftNum + DualNum<Primitive = f64>,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
@@ -223,7 +223,7 @@ impl<T: FftNum, D: Dimension> PeriodicConvolver<T, D> {
 
 impl<T, D: Dimension> Convolver<T, D> for PeriodicConvolver<T, D>
 where
-    T: FftNum + DualNum<f64>,
+    T: FftNum + DualNum<Primitive = f64>,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {

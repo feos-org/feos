@@ -184,7 +184,10 @@ where
             .dot(&Dimensionless::new(self.profile.bulk.molefracs.clone())))
     }
 
-    fn _henry_coefficients<N: DualNum<f64> + Copy + DctNum>(&self, temperature: N) -> DVector<N> {
+    fn _henry_coefficients<N: DualNum<Primitive = f64> + Copy + DctNum>(
+        &self,
+        temperature: N,
+    ) -> DVector<N> {
         if self.profile.bulk.eos.m().iter().any(|&m| m != 1.0) {
             panic!(
                 "Henry coefficients can only be calculated for spherical and heterosegmented molecules!"
@@ -302,11 +305,11 @@ impl ResidualDyn for Helium {
     fn components(&self) -> usize {
         1
     }
-    fn compute_max_density<D: DualNum<f64> + Copy>(&self, _: &DVector<D>) -> D {
+    fn compute_max_density<D: DualNum<Primitive = f64> + Copy>(&self, _: &DVector<D>) -> D {
         D::from(1.0)
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(&'static str, D)> {
@@ -342,11 +345,11 @@ impl FluidParameters for &Helium {
 struct HeliumContribution;
 
 impl FunctionalContribution for HeliumContribution {
-    fn weight_functions<N: DualNum<f64> + Copy>(&self, _: N) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, _: N) -> WeightFunctionInfo<N> {
         unreachable!()
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density<N: DualNum<Primitive = f64> + Copy>(
         &self,
         _: N,
         _: ArrayView2<N>,

@@ -82,7 +82,7 @@ where
         convolver: &dyn Convolver<N, D>,
     ) -> FeosResult<Array<N, D>>
     where
-        N: DualNum<f64> + Copy,
+        N: DualNum<Primitive = f64> + Copy,
     {
         let density_dual = density.mapv(N::from);
         let weighted_densities = convolver.weighted_densities(&density_dual);

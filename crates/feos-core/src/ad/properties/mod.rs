@@ -34,7 +34,7 @@ where
     const REFERENCE: Quantity<f64, Self::Unit>;
 
     /// Evaluate the property for an arbitrary derivative.
-    fn evaluate<E: Residual<N, D>, D: DualNum<f64, Inner = f64> + Copy>(
+    fn evaluate<E: Residual<N, D>, D: DualNum<Primitive = f64, Inner = f64> + Copy>(
         &self,
         eos: &E,
     ) -> FeosResult<Quantity<D, Self::Unit>>;
