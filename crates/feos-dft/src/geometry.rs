@@ -6,7 +6,9 @@ use std::f64::consts::{FRAC_PI_3, PI};
 /// Grids with up to three dimensions.
 #[derive(Clone)]
 pub enum Grid {
+    Bulk,
     Cartesian1(Axis),
+    Periodical1(Axis),
     Cartesian2(Axis, Axis),
     Periodical2(Axis, Axis, Angle),
     Cartesian3(Axis, Axis, Axis),
@@ -27,7 +29,8 @@ impl Grid {
 
     pub fn axes(&self) -> Vec<&Axis> {
         match self {
-            Self::Cartesian1(x) => vec![x],
+            Self::Bulk => vec![],
+            Self::Cartesian1(x) | Self::Periodical1(x) => vec![x],
             Self::Cartesian2(x, y) | Self::Periodical2(x, y, _) => vec![x, y],
             Self::Cartesian3(x, y, z) | Self::Periodical3(x, y, z, _) => vec![x, y, z],
             Self::Spherical(r) | Self::Polar(r) => vec![r],
@@ -37,7 +40,8 @@ impl Grid {
 
     pub fn axes_mut(&mut self) -> Vec<&mut Axis> {
         match self {
-            Self::Cartesian1(x) => vec![x],
+            Self::Bulk => vec![],
+            Self::Cartesian1(x) | Self::Periodical1(x) => vec![x],
             Self::Cartesian2(x, y) | Self::Periodical2(x, y, _) => vec![x, y],
             Self::Cartesian3(x, y, z) | Self::Periodical3(x, y, z, _) => vec![x, y, z],
             Self::Spherical(r) | Self::Polar(r) => vec![r],
@@ -72,7 +76,11 @@ impl Grid {
 
     pub fn mesh(&self) -> Vec<Length<ArrayD<f64>>> {
         match self {
-            Grid::Cartesian1(ax) | Grid::Spherical(ax) | Grid::Polar(ax) => {
+            Self::Bulk => vec![],
+            Grid::Cartesian1(ax)
+            | Self::Periodical1(ax)
+            | Grid::Spherical(ax)
+            | Grid::Polar(ax) => {
                 vec![Length::from_reduced(ax.grid.clone()).into_dyn()]
             }
             Grid::Cartesian2(u, v) => mesh_2d(u, v, 90.0 * DEGREES),
