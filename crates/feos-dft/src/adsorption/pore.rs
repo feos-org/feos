@@ -162,6 +162,7 @@ where
     }
 
     pub fn update_bulk(mut self, bulk: &State<F>) -> Self {
+        self.profile.specification = DFTSpecification::from_state(bulk);
         self.profile.bulk = bulk.clone();
         self.grand_potential = None;
         self.interfacial_tension = None;
