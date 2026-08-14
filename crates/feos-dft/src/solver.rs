@@ -216,7 +216,6 @@ where
     pub(crate) fn call_solver(
         &mut self,
         rho: &mut Array<f64, D::Larger>,
-        rho_bulk: &mut Array1<f64>,
         solver: &DFTSolver,
         debug: bool,
     ) -> FeosResult<()> {
@@ -225,13 +224,11 @@ where
         let mut log = DFTSolverLog::new(solver.verbosity);
         for algorithm in &solver.algorithms {
             let (conv, iter) = match algorithm {
-                DFTAlgorithm::PicardIteration(picard) => {
-                    self.solve_picard(*picard, rho, rho_bulk, &mut log)
-                }
+                DFTAlgorithm::PicardIteration(picard) => self.solve_picard(*picard, rho, &mut log),
                 DFTAlgorithm::AndersonMixing(anderson) => {
-                    self.solve_anderson(*anderson, rho, rho_bulk, &mut log)
+                    self.solve_anderson(*anderson, rho, &mut log)
                 }
-                DFTAlgorithm::Newton(newton) => self.solve_newton(*newton, rho, rho_bulk, &mut log),
+                DFTAlgorithm::Newton(newton) => self.solve_newton(*newton, rho, &mut log),
             }?;
             converged = conv;
             iterations += iter;
@@ -255,7 +252,6 @@ where
         &self,
         picard: PicardIteration,
         rho: &mut Array<f64, D::Larger>,
-        rho_bulk: &mut Array1<f64>,
         log: &mut DFTSolverLog,
     ) -> FeosResult<(bool, usize)> {
         let solver = if picard.log {
@@ -266,8 +262,7 @@ where
 
         for k in 0..picard.max_iter {
             // calculate residual
-            let (res, _, res_norm, _, _) =
-                self.euler_lagrange_equation(&*rho, rho_bulk, picard.log)?;
+            let (res, res_norm, _, _) = self.euler_lagrange_equation(&*rho, picard.log)?;
             log.add_residual(solver, k, res_norm);
 
             // check for convergence
@@ -276,10 +271,9 @@ where
             }
 
             // apply line search or constant damping
-            let damping_coefficient = picard.damping_coefficient.map_or_else(
-                || self.line_search(rho, &res, rho_bulk, res_norm, picard.log),
-                Ok,
-            )?;
+            let damping_coefficient = picard
+                .damping_coefficient
+                .map_or_else(|| self.line_search(rho, &res, res_norm, picard.log), Ok)?;
 
             // update solution
             if picard.log {
@@ -295,7 +289,6 @@ where
         &self,
         rho: &Array<f64, D::Larger>,
         delta_rho: &Array<f64, D::Larger>,
-        rho_bulk: &mut Array1<f64>,
         res0: f64,
         logarithm: bool,
     ) -> FeosResult<f64> {
@@ -311,9 +304,7 @@ where
             } else {
                 rho + alpha * delta_rho
             };
-            let Ok((_, _, res2, _, _)) =
-                self.euler_lagrange_equation(&rho_new, rho_bulk, logarithm)
-            else {
+            let Ok((_, res2, _, _)) = self.euler_lagrange_equation(&rho_new, logarithm) else {
                 continue;
             };
             if res2 > res0 {
@@ -326,9 +317,7 @@ where
             } else {
                 rho + 0.5 * alpha * delta_rho
             };
-            let Ok((_, _, res1, _, _)) =
-                self.euler_lagrange_equation(&rho_new, rho_bulk, logarithm)
-            else {
+            let Ok((_, res1, _, _)) = self.euler_lagrange_equation(&rho_new, logarithm) else {
                 continue;
             };
 
@@ -359,7 +348,6 @@ where
         &self,
         anderson: AndersonMixing,
         rho: &mut Array<f64, D::Larger>,
-        rho_bulk: &mut Array1<f64>,
         log: &mut DFTSolverLog,
     ) -> FeosResult<(bool, usize)> {
         let solver = if anderson.log {
@@ -382,8 +370,7 @@ where
             let m = resm.len() + 1;
 
             // calculate residual
-            let (res, _, res_norm, _, _) =
-                self.euler_lagrange_equation(&*rho, rho_bulk, anderson.log)?;
+            let (res, res_norm, _, _) = self.euler_lagrange_equation(&*rho, anderson.log)?;
             log.add_residual(solver, k, res_norm);
 
             // check for convergence
@@ -434,14 +421,13 @@ where
         &self,
         newton: Newton,
         rho: &mut Array<f64, D::Larger>,
-        rho_bulk: &mut Array1<f64>,
         log: &mut DFTSolverLog,
     ) -> FeosResult<(bool, usize)> {
         let solver = if newton.log { "Newton (log)" } else { "Newton" };
         for k in 0..newton.max_iter {
             // calculate initial residual
-            let (res, _, res_norm, exp_dfdrho, rho_p) =
-                self.euler_lagrange_equation(rho, rho_bulk, newton.log)?;
+            let (res, res_norm, exp_dfdrho, rho_p) =
+                self.euler_lagrange_equation(rho, newton.log)?;
             log.add_residual(solver, k, res_norm);
 
             // check convergence
