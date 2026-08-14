@@ -30286,7 +30286,8 @@
             "iupac_name": "propan-1-ol",
             "smiles": "CCCO",
             "inchi": "InChI=1S/C3H8O/c1-2-3-4/h4H,2-3H2,1H3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -42813,7 +42814,8 @@
             "iupac_name": "1,2-dimethoxyethane",
             "smiles": "COCCOC",
             "inchi": "InChI=1S/C4H10O2/c1-5-3-4-6-2/h3-4H2,1-2H3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -44733,7 +44735,8 @@
             "iupac_name": "1,2,3,4,5,6-hexadeuteriobenzene",
             "smiles": "[2H]c1c([2H])c([2H])c([2H])c([2H])c1[2H]",
             "inchi": "InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H/i1D,2D,3D,4D,5D,6D"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -50341,7 +50344,8 @@
             "iupac_name": "tetrafluoromethane",
             "smiles": "FC(F)(F)F",
             "inchi": "InChI=1S/CF4/c2-1(3,4)5"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -51751,7 +51755,8 @@
             "iupac_name": "1-bromopropane",
             "smiles": "CCCBr",
             "inchi": "InChI=1S/C3H7Br/c1-2-3-4/h2-3H2,1H3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -64001,7 +64006,8 @@
             "iupac_name": "furan-2,5-dione",
             "smiles": "O=C1C=CC(=O)O1",
             "inchi": "InChI=1S/C4H2O3/c5-3-1-2-4(6)7-3/h1-2H"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -69098,7 +69104,8 @@
             "iupac_name": "2-methyloxirane",
             "smiles": "CC1CO1",
             "inchi": "InChI=1S/C3H6O/c1-3-2-4-3/h3H,2H2,1H3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -71153,7 +71160,8 @@
             "iupac_name": "pentane-2,4-dione",
             "smiles": "CC(=O)CC(C)=O",
             "inchi": "InChI=1S/C5H8O2/c1-4(6)3-5(2)7/h3H2,1-2H3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -71203,7 +71211,8 @@
             "iupac_name": "2,2,2-trichloroacetaldehyde",
             "smiles": "O=CC(Cl)(Cl)Cl",
             "inchi": "InChI=1S/C2HCl3O/c3-2(4,5)1-6/h1H"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -72680,7 +72689,8 @@
             "name": "carbon disulfide",
             "smiles": "S=C=S",
             "inchi": "InChI=1S/CS2/c2-1-3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -73818,7 +73828,8 @@
             "iupac_name": "2-methylpent-2-ene",
             "smiles": "CCC=C(C)C",
             "inchi": "InChI=1S/C6H12/c1-4-5-6(2)3/h5H,4H2,1-3H3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -81858,7 +81869,8 @@
             "iupac_name": "3-methylbut-1-ene",
             "smiles": "C=CC(C)C",
             "inchi": "InChI=1S/C5H10/c1-4-5(2)3/h4-5H,1H2,2-3H3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -86224,7 +86236,8 @@
             "iupac_name": "2-methylhexane",
             "smiles": "CCCCC(C)C",
             "inchi": "InChI=1S/C7H16/c1-4-5-6-7(2)3/h7H,4-6H2,1-3H3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -97322,7 +97335,8 @@
             "iupac_name": "propanal",
             "smiles": "CCC=O",
             "inchi": "InChI=1S/C3H6O/c1-2-3-4/h3H,2H2,1H3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -100931,7 +100945,8 @@
             "iupac_name": "1,3-xylene",
             "smiles": "Cc1cccc(C)c1",
             "inchi": "InChI=1S/C8H10/c1-7-4-3-5-8(2)6-7/h3-6H,1-2H3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -104976,7 +104991,8 @@
             "iupac_name": "3-methylthiophene",
             "smiles": "Cc1ccsc1",
             "inchi": "InChI=1S/C5H6S/c1-5-2-3-6-4-5/h2-4H,1H3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -105281,7 +105297,8 @@
             "iupac_name": "cumene",
             "smiles": "CC(C)c1ccccc1",
             "inchi": "InChI=1S/C9H12/c1-8(2)9-6-4-3-5-7-9/h3-8H,1-2H3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -106334,7 +106351,8 @@
             "iupac_name": "triethyl phosphite",
             "smiles": "CCOP(OCC)OCC",
             "inchi": "InChI=1S/C6H15O3P/c1-4-7-10(8-5-2)9-6-3/h4-6H2,1-3H3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -121361,7 +121379,8 @@
             "iupac_name": "pentyl acetate",
             "smiles": "CCCCCOC(C)=O",
             "inchi": "InChI=1S/C7H14O2/c1-3-4-5-6-9-7(2)8/h3-6H2,1-2H3"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -137170,7 +137189,8 @@
             "iupac_name": "2,3,3,3-tetrafluoroprop-1-ene",
             "smiles": "C=C(F)C(F)(F)F",
             "inchi": "InChI=1S/C3H2F4/c1-2(4)3(5,6)7/h1H2"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
@@ -137492,7 +137512,8 @@
             "iupac_name": "difluoromethoxy(trifluoro)methane",
             "smiles": "FC(F)OC(F)(F)F",
             "inchi": "InChI=1S/C2HF5O/c3-1(4)8-2(5,6)7/h1H"
-        }
+        },
+        "k_ij": 0.0
     },
     {
         "id1": {
