@@ -28,6 +28,13 @@ impl PyGrid {
         Self(Grid::Cartesian1(x))
     }
 
+    /// Generate a 1D Cartesian grid with periodic boundary conditions on both sides.
+    #[staticmethod]
+    pub fn periodical_1d(n_points: usize, length: Length) -> Self {
+        let x = AxisDFT::new_cartesian(n_points, length, None);
+        Self(Grid::Periodical1(x))
+    }
+
     /// Generate a polar grid with radial axis.
     #[staticmethod]
     pub fn polar(n_points: usize, length: Length) -> Self {

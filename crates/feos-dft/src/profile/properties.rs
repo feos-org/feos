@@ -1,11 +1,11 @@
 #![allow(type_alias_bounds)]
 use super::DFTProfile;
-use crate::convolver::{BulkConvolver, Convolver};
+use crate::convolver::{Convolver, PeriodicConvolver};
 use crate::functional_contribution::FunctionalContribution;
 use crate::{ConvolverFFT, DFTSolverLog, HelmholtzEnergyFunctional, WeightFunctionInfo};
 use feos_core::{Contributions, FeosResult, ReferenceSystem, Total, Verbosity};
 use nalgebra::{DMatrix, DVector};
-use ndarray::{Array, Array1, Axis, Dimension, RemoveAxis};
+use ndarray::{Array, Array1, Axis, Dimension, Ix0, RemoveAxis};
 use num_dual::{Dual64, DualNum};
 use quantity::{
     Density, Energy, Entropy, EntropyDensity, MolarEnergy, Moles, Pressure, Quantity, Temperature,
@@ -298,17 +298,8 @@ where
 {
     fn density_derivative(&self, lhs: &Array<f64, D::Larger>) -> FeosResult<Array<f64, D::Larger>> {
         let rho = self.density.to_reduced();
-        let partial_density = self.bulk.partial_density().into_reduced();
-        let mut rho_bulk = self
-            .bulk
-            .eos
-            .component_index()
-            .iter()
-            .map(|&i| partial_density[i])
-            .collect();
-
         let second_partial_derivatives = self.second_partial_derivatives(&rho)?;
-        let (_, _, _, exp_dfdrho, _) = self.euler_lagrange_equation(&rho, &mut rho_bulk, false)?;
+        let (_, _, exp_dfdrho, _) = self.euler_lagrange_equation(&rho, false)?;
 
         let rhs = |x: &_| {
             let delta_functional_derivative =
@@ -411,7 +402,7 @@ where
             .map(|&i| partial_density[i])
             .collect();
         let rho_bulk_dual = rho_bulk.mapv(Dual64::from);
-        let bulk_convolver = BulkConvolver::new(weight_functions);
+        let bulk_convolver = PeriodicConvolver::<_, Ix0>::new_0d(&weight_functions);
         let (_, dfdrho_bulk) =
             self.bulk
                 .eos
