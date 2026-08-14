@@ -18,9 +18,9 @@ macro_rules! impl_profile {
                 &self,
                 log: bool,
                 py: Python<'py>,
-            ) -> PyResult<(Bound<'py, PyArrayDyn<f64>>, Bound<'py, PyArray1<f64>>, f64)> {
-                let (res_rho, res_mu, res_norm) = self.0.profile.residual(log).map_err(PyFeosError::from)?;
-                Ok((res_rho.view().into_dyn().to_pyarray(py), res_mu.view().to_pyarray(py), res_norm))
+            ) -> PyResult<(Bound<'py, PyArrayDyn<f64>>, f64)> {
+                let (res_rho, res_norm) = self.0.profile.residual(log).map_err(PyFeosError::from)?;
+                Ok((res_rho.view().into_dyn().to_pyarray(py), res_norm))
             }
 
             /// Solve the profile in-place. A non-default solver can be provided
