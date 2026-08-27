@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="Equations of state" href="../eos/index.html"><link rel="prev" title="Working with SI-units" href="core_working_with_units.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>On Dual Numbers in FeOs - FeOs v0.10.0</title>
+        <title>On Dual Numbers in FeOs - FeOs v0.10.1</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -165,7 +165,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">FeOs v0.10.0</div></a>
+      <a href="../../index.html"><div class="brand">FeOs v0.10.1</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -186,7 +186,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
   
-  <span class="sidebar-brand-text">FeOs v0.10.0</span>
+  <span class="sidebar-brand-text">FeOs v0.10.1</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -695,7 +695,7 @@ types of the thermodynamic state that enters the Helmholtz energy computation.</
 
 <span class="k">class</span><span class="w"> </span><span class="nc">PyPengRobinson</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">critical_temperature</span><span class="p">,</span> <span class="n">critical_pressure</span><span class="p">,</span> <span class="n">acentric_factor</span><span class="p">,</span> <span class="n">molar_weight</span><span class="p">,</span> <span class="n">delta_ij</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Peng-Robinson Equation of State</span>
+<span class="w">        </span><span class="sd">"""Peng-Robinson Equation of State</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -714,10 +714,10 @@ types of the thermodynamic state that enters the Helmholtz energy computation.</
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        ValueError: if the input values have incompatible sizes.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">critical_temperature</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">critical_temperature</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">critical_pressure</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">acentric_factor</span><span class="p">))))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input parameters must all have the same lenght.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Input parameters must all have the same lenght."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">tc</span> <span class="o">=</span> <span class="p">(</span><span class="n">critical_temperature</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
@@ -736,7 +736,7 @@ types of the thermodynamic state that enters the Helmholtz energy computation.</
         <span class="bp">self</span><span class="o">.</span><span class="n">delta_ij</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">))</span> <span class="k">if</span> <span class="n">delta_ij</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">delta_ij</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">helmholtz_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return Helmholtz energy.</span>
+<span class="w">        </span><span class="sd">"""Return Helmholtz energy.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -747,7 +747,7 @@ types of the thermodynamic state that enters the Helmholtz energy computation.</
 <span class="sd">        -------</span>
 <span class="sd">        helmholtz_energy: float | any dual number</span>
 <span class="sd">            The return type depends on the input types.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">molefracs</span>
         <span class="n">tr</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">tc</span> <span class="o">*</span> <span class="n">state</span><span class="o">.</span><span class="n">temperature</span>
         <span class="n">ak</span> <span class="o">=</span> <span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">tr</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">kappa</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_r</span>
@@ -765,19 +765,19 @@ types of the thermodynamic state that enters the Helmholtz energy computation.</
 
         <span class="c1"># some print statements to inspect data types</span>
         <span class="nb">print</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;data type  : &quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">temperature</span><span class="p">))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;temperature: &quot;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">temperature</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;molefracs  : &quot;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">molefracs</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;density    : &quot;</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;A/kT       : &quot;</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"data type  : "</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">temperature</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"temperature: "</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">temperature</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"molefracs  : "</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">molefracs</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"density    : "</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"A/kT       : "</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">a</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">components</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of components.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Number of components."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">subset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return new equation of state containing a subset of all components.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Return new equation of state containing a subset of all components."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="n">pc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
@@ -800,7 +800,7 @@ types of the thermodynamic state that enters the Helmholtz energy computation.</
 
 <span class="k">class</span><span class="w"> </span><span class="nc">PyPerfectGas</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dummy implementation for an ideal gas with constant heat capacity&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Dummy implementation for an ideal gas with constant heat capacity"""</span>
         <span class="k">pass</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">ln_lambda3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temperature</span><span class="p">):</span>

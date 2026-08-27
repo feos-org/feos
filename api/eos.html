@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="feos.EquationOfState" href="generated/feos.EquationOfState.html"><link rel="prev" title="feos.SmartsRecord.to_json_str" href="generated/feos.SmartsRecord.to_json_str.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Equations of state - FeOs v0.10.0</title>
+        <title>Equations of state - FeOs v0.10.1</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">FeOs v0.10.0</div></a>
+      <a href="../index.html"><div class="brand">FeOs v0.10.1</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -185,7 +185,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
-  <span class="sidebar-brand-text">FeOs v0.10.0</span>
+  <span class="sidebar-brand-text">FeOs v0.10.1</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -720,12 +720,12 @@ The <code class="docutils literal notranslate"><span class="pre">State</span></c
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">feos</span>
 
 <span class="n">pc_saft_parameters</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">Parameters</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span>
-    <span class="p">[</span><span class="s1">&#39;methane&#39;</span><span class="p">,</span> <span class="s1">&#39;ethane&#39;</span><span class="p">],</span> 
-    <span class="s1">&#39;pc_saft_parameters.json&#39;</span>
+    <span class="p">[</span><span class="s1">'methane'</span><span class="p">,</span> <span class="s1">'ethane'</span><span class="p">],</span> 
+    <span class="s1">'pc_saft_parameters.json'</span>
 <span class="p">)</span>
 <span class="n">dippr_parameters</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">Parameters</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span>
-    <span class="p">[</span><span class="s1">&#39;methane&#39;</span><span class="p">,</span> <span class="s1">&#39;ethane&#39;</span><span class="p">],</span> 
-    <span class="s1">&#39;dippr_parameters.json&#39;</span>
+    <span class="p">[</span><span class="s1">'methane'</span><span class="p">,</span> <span class="s1">'ethane'</span><span class="p">],</span> 
+    <span class="s1">'dippr_parameters.json'</span>
 <span class="p">)</span>
 <span class="n">eos</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">EquationOfState</span><span class="o">.</span><span class="n">pcsaft</span><span class="p">(</span><span class="n">pc_saft_parameters</span><span class="p">)</span><span class="o">.</span><span class="n">dippr</span><span class="p">(</span><span class="n">dippr_parameters</span><span class="p">)</span>
 </pre></div>
@@ -736,14 +736,14 @@ The <code class="docutils literal notranslate"><span class="pre">State</span></c
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">feos</span>
 
 <span class="n">pc_saft_parameters</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">Parameters</span><span class="o">.</span><span class="n">from_json_smiles</span><span class="p">(</span>
-    <span class="p">[</span><span class="s1">&#39;CCC&#39;</span><span class="p">,</span> <span class="s1">&#39;CCCC&#39;</span><span class="p">],</span>
-    <span class="s1">&#39;smarts.json&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;pcsaft_group_parameters.json&#39;</span>
+    <span class="p">[</span><span class="s1">'CCC'</span><span class="p">,</span> <span class="s1">'CCCC'</span><span class="p">],</span>
+    <span class="s1">'smarts.json'</span><span class="p">,</span>
+    <span class="s1">'pcsaft_group_parameters.json'</span>
 <span class="p">)</span>
 <span class="n">joback_parameters</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">Parameters</span><span class="o">.</span><span class="n">from_json_smiles</span><span class="p">(</span>
-    <span class="p">[</span><span class="s1">&#39;CCC&#39;</span><span class="p">,</span> <span class="s1">&#39;CCCC&#39;</span><span class="p">],</span>
-    <span class="s1">&#39;smarts.json&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;joback_parameters.json&#39;</span>
+    <span class="p">[</span><span class="s1">'CCC'</span><span class="p">,</span> <span class="s1">'CCCC'</span><span class="p">],</span>
+    <span class="s1">'smarts.json'</span><span class="p">,</span>
+    <span class="s1">'joback_parameters.json'</span>
 <span class="p">)</span>
 <span class="n">eos</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">EquationOfState</span><span class="o">.</span><span class="n">pcsaft</span><span class="p">(</span><span class="n">pc_saft_parameters</span><span class="p">)</span><span class="o">.</span><span class="n">joback</span><span class="p">(</span><span class="n">joback_parameters</span><span class="p">)</span>
 </pre></div>

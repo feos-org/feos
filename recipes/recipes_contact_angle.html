@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="API" href="../api/index.html"><link rel="prev" title="Surface tension diagram of a pure substance" href="recipes_surface_tension_diagram_pure.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Calculation of contact angles with cDFT - FeOs v0.10.0</title>
+        <title>Calculation of contact angles with cDFT - FeOs v0.10.1</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -165,7 +165,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">FeOs v0.10.0</div></a>
+      <a href="../index.html"><div class="brand">FeOs v0.10.1</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -186,7 +186,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
-  <span class="sidebar-brand-text">FeOs v0.10.0</span>
+  <span class="sidebar-brand-text">FeOs v0.10.1</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -673,7 +673,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="c1"># set up fluid model</span>
-<span class="n">parameters</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">Parameters</span><span class="o">.</span><span class="n">from_json</span><span class="p">([</span><span class="s2">&quot;methanol&quot;</span><span class="p">],</span> <span class="s2">&quot;../../parameters/pcsaft/esper2023.json&quot;</span><span class="p">)</span>
+<span class="n">parameters</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">Parameters</span><span class="o">.</span><span class="n">from_json</span><span class="p">([</span><span class="s2">"methanol"</span><span class="p">],</span> <span class="s2">"../../parameters/pcsaft/esper2023.json"</span><span class="p">)</span>
 <span class="n">functional</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">HelmholtzEnergyFunctional</span><span class="o">.</span><span class="n">pcsaft</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
 
 <span class="c1"># set up surface</span>
@@ -699,7 +699,7 @@
 <span class="n">vle_profile</span> <span class="o">=</span> <span class="n">feos</span><span class="o">.</span><span class="n">PlanarInterface</span><span class="o">.</span><span class="n">from_pdgt</span><span class="p">(</span><span class="n">vle</span><span class="p">,</span> <span class="mi">2048</span><span class="p">)</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
 <span class="n">gamma_vl</span> <span class="o">=</span> <span class="n">vle_profile</span><span class="o">.</span><span class="n">surface_tension</span>
 
-<span class="c1"># calculate the contact angle from Young&#39;s equation</span>
+<span class="c1"># calculate the contact angle from Young's equation</span>
 <span class="n">np</span><span class="o">.</span><span class="n">acos</span><span class="p">((</span><span class="n">gamma_sv</span><span class="o">-</span><span class="n">gamma_sl</span><span class="p">)</span><span class="o">/</span><span class="n">gamma_vl</span><span class="p">)</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">RADIANS</span>
 </pre></div>
 </div>

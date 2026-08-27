@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Thermodynamic States - FeOs v0.10.0</title>
+        <title>Thermodynamic States - FeOs v0.10.1</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">FeOs v0.10.0</div></a>
+      <a href="../../index.html"><div class="brand">FeOs v0.10.1</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -185,7 +185,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
   
-  <span class="sidebar-brand-text">FeOs v0.10.0</span>
+  <span class="sidebar-brand-text">FeOs v0.10.1</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -782,7 +782,7 @@ Looking at the signature of the Helmholtz energy function, we see that it takes 
 <p>This can be done “by hand”, placing the state variables of <code class="docutils literal notranslate"><span class="pre">State</span></code> as real parts of our dual numbers in <code class="docutils literal notranslate"><span class="pre">StateHD</span></code>.
 This can conveniently be done using <em>reduced</em> variables.
 Next, we have to modify the non-real part of the temperature dual number since we want to compute the partial derivative with respect to temperature which is done by setting the dual part of the temperature to unity.</p>
-<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// &quot;state&quot; is our State struct we already constructed.</span>
+<div class="highlight-rust notranslate"><div class="highlight"><pre><span></span><span class="c1">// "state" is our State struct we already constructed.</span>
 
 <span class="c1">// create an array of dual numbers from array of f64</span>
 <span class="kd">let</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">state</span><span class="p">.</span><span class="n">reduced_moles</span><span class="p">.</span><span class="n">mapv</span><span class="p">(</span><span class="n">Dual64</span><span class="p">::</span><span class="n">from</span><span class="p">);</span>

@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="On Dual Numbers in FeOs" href="core_dual_numbers.html"><link rel="prev" title="Utility" href="index.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Working with SI-units - FeOs v0.10.0</title>
+        <title>Working with SI-units - FeOs v0.10.1</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -165,7 +165,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">FeOs v0.10.0</div></a>
+      <a href="../../index.html"><div class="brand">FeOs v0.10.1</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -186,7 +186,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
   
-  <span class="sidebar-brand-text">FeOs v0.10.0</span>
+  <span class="sidebar-brand-text">FeOs v0.10.1</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -689,8 +689,8 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">temperature</span> <span class="o">=</span> <span class="mf">300.15</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;temperature : </span><span class="si">{</span><span class="n">temperature</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data type   : </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"temperature : </span><span class="si">{</span><span class="n">temperature</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"data type   : </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">temperature</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -731,7 +731,7 @@ $1\,\mathrm{kg}$</div></div>
 <span class="n">p</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">BAR</span>
 <span class="n">n</span> <span class="o">=</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span>
 <span class="n">v</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">RGAS</span> <span class="o">*</span> <span class="n">t</span> <span class="o">/</span> <span class="n">p</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;v = </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"v = </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -750,8 +750,8 @@ v = 0.07486757864516083 m³
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># temperature in Celsius</span>
 <span class="n">t_c</span> <span class="o">=</span> <span class="n">t</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">CELSIUS</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;t = </span><span class="si">{</span><span class="n">t_c</span><span class="si">:</span><span class="s2">3.2f</span><span class="si">}</span><span class="s2"> °C&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data type = </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">t_c</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"t = </span><span class="si">{</span><span class="n">t_c</span><span class="si">:</span><span class="s2">3.2f</span><span class="si">}</span><span class="s2"> °C"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"data type = </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">t_c</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -779,23 +779,23 @@ data type = &lt;class &#39;float&#39;&gt;
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># addition</span>
 <span class="n">pressure</span> <span class="o">=</span> <span class="mf">2.5</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">BAR</span> <span class="o">+</span> <span class="mi">15_000</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">PASCAL</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;pressure          :&#39;</span><span class="p">,</span> <span class="n">pressure</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'pressure          :'</span><span class="p">,</span> <span class="n">pressure</span><span class="p">)</span>
 
 <span class="c1"># subtraction</span>
 <span class="n">temperature</span> <span class="o">=</span> <span class="mf">543.15</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span> <span class="o">-</span> <span class="mf">230.0</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">CELSIUS</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;temperature       :&#39;</span><span class="p">,</span> <span class="n">temperature</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'temperature       :'</span><span class="p">,</span> <span class="n">temperature</span><span class="p">)</span>
 
 <span class="c1"># division</span>
 <span class="n">velocity</span> <span class="o">=</span> <span class="mi">360_000</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">METER</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">HOUR</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;velocity          :&#39;</span><span class="p">,</span> <span class="n">velocity</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'velocity          :'</span><span class="p">,</span> <span class="n">velocity</span><span class="p">)</span>
 
 <span class="c1"># division as transformation to target unit</span>
 <span class="n">v_cm_minute</span> <span class="o">=</span> <span class="n">velocity</span> <span class="o">/</span> <span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">CENTI</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">METER</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">MINUTE</span><span class="p">)</span> <span class="c1"># this is a floating point number</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;velocity (cm/min) : </span><span class="si">{</span><span class="n">v_cm_minute</span><span class="si">:</span><span class="s1">8.1f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'velocity (cm/min) : </span><span class="si">{</span><span class="n">v_cm_minute</span><span class="si">:</span><span class="s1">8.1f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 
 <span class="c1"># power</span>
 <span class="n">acceleration</span> <span class="o">=</span> <span class="mf">9.81</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">METER</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">SECOND</span><span class="o">**</span><span class="mi">2</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;acceleration      :&#39;</span><span class="p">,</span> <span class="n">acceleration</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'acceleration      :'</span><span class="p">,</span> <span class="n">acceleration</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -818,11 +818,11 @@ acceleration      : 9.81 m s^-2
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># square root</span>
 <span class="n">speed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">METER</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">SECOND</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;speed             :&#39;</span><span class="p">,</span> <span class="n">speed</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'speed             :'</span><span class="p">,</span> <span class="n">speed</span><span class="p">)</span>
 
 <span class="c1"># cubic root</span>
 <span class="n">box_length</span> <span class="o">=</span> <span class="p">(</span><span class="mi">27_000</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">ANGSTROM</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">cbrt</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;length            :&#39;</span><span class="p">,</span> <span class="n">box_length</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'length            :'</span><span class="p">,</span> <span class="n">box_length</span><span class="p">)</span>
 
 <span class="c1"># both numpy and methods of SINumbers work</span>
 <span class="k">assert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">METER</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">SECOND</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">METER</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">SECOND</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">())</span>
@@ -848,7 +848,7 @@ length            : 3 nm
 <span class="k">try</span><span class="p">:</span>
     <span class="n">sqrt</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">METER</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">SECOND</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR:&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"ERROR:"</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -891,17 +891,17 @@ ERROR: must be real number, not si_units._core.SIObject
 
 <span class="k">def</span><span class="w"> </span><span class="nf">ideal_gas_pressure</span><span class="p">(</span><span class="n">density</span><span class="p">,</span> <span class="n">temperature</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">density</span><span class="o">.</span><span class="n">has_unit</span><span class="p">(</span><span class="n">MOL_M3</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please provide the molar density, e.g. in units of mol/m³.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Please provide the molar density, e.g. in units of mol/m³."</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">density</span> <span class="o">*</span> <span class="n">temperature</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">RGAS</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">p1</span> <span class="o">=</span> <span class="n">ideal_gas_pressure</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">KILO</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">MOL</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">METER</span><span class="o">**</span><span class="mi">3</span><span class="p">,</span> <span class="mi">350</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;p1 = &#39;</span><span class="p">,</span> <span class="n">p1</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'p1 = '</span><span class="p">,</span> <span class="n">p1</span><span class="p">)</span>
     <span class="n">p2</span> <span class="o">=</span> <span class="n">ideal_gas_pressure</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">KILOGRAM</span> <span class="o">/</span> <span class="n">si</span><span class="o">.</span><span class="n">METER</span><span class="o">**</span><span class="mi">3</span><span class="p">,</span> <span class="mi">350</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">KELVIN</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;p2 = &#39;</span><span class="p">,</span> <span class="n">p2</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'p2 = '</span><span class="p">,</span> <span class="n">p2</span><span class="p">)</span>
 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR:&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"ERROR:"</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -923,8 +923,8 @@ ERROR: Please provide the molar density, e.g. in units of mol/m³.
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">BAR</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pressures = </span><span class="si">{</span><span class="n">ps</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data type = </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"pressures = </span><span class="si">{</span><span class="n">ps</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"data type = </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -961,8 +961,8 @@ data type = &lt;class &#39;si_units._core.SIObject&#39;&gt;
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ps_np</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">BAR</span>
 <span class="n">ps_si</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">si</span><span class="o">.</span><span class="n">BAR</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pressures (numpy) = </span><span class="si">{</span><span class="n">ps_np</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pressures (si)    = </span><span class="si">{</span><span class="n">ps_si</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"pressures (numpy) = </span><span class="si">{</span><span class="n">ps_np</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"pressures (si)    = </span><span class="si">{</span><span class="n">ps_si</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -981,8 +981,8 @@ pressures (si)    = array([100000., 125000., 150000., 175000., 200000.]) Pa
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ps_mpa</span> <span class="o">=</span> <span class="n">ps_np</span> <span class="o">/</span> <span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">MEGA</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">PASCAL</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pressures = </span><span class="si">{</span><span class="n">ps_mpa</span><span class="si">}</span><span class="s2"> MPa&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data type = </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">ps_mpa</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"pressures = </span><span class="si">{</span><span class="n">ps_mpa</span><span class="si">}</span><span class="s2"> MPa"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"data type = </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">ps_mpa</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1006,13 +1006,13 @@ data type = &lt;class &#39;numpy.ndarray&#39;&gt;
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The seven constants that inform the base units</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Hyperfine transition frequency of Cs:&#39;</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">DVCS</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Speed of light                      :&#39;</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">CLIGHT</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Planck constant                     :&#39;</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">PLANCK</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Elementary charge                   :&#39;</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">QE</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Boltzmann constant                  :&#39;</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">KB</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Avogradro constant                  :&#39;</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">NAV</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Luminous efficacy                   :&#39;</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">KCD</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Hyperfine transition frequency of Cs:'</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">DVCS</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Speed of light                      :'</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">CLIGHT</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Planck constant                     :'</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">PLANCK</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Elementary charge                   :'</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">QE</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Boltzmann constant                  :'</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">KB</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Avogradro constant                  :'</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">NAV</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Luminous efficacy                   :'</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">KCD</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1035,8 +1035,8 @@ Luminous efficacy                   : 683 lm/W
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Derived constants</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Gravitational constant:&#39;</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">G</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Ideal gas constant    :&#39;</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">RGAS</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Gravitational constant:'</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">G</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Ideal gas constant    :'</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">RGAS</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

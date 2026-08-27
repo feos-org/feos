@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="feos.Property" href="generated/feos.Property.html"><link rel="prev" title="feos.DFTSolver.picard_iteration" href="generated/feos.DFTSolver.picard_iteration.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Automatic differentiation - FeOs v0.10.0</title>
+        <title>Automatic differentiation - FeOs v0.10.1</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">FeOs v0.10.0</div></a>
+      <a href="../index.html"><div class="brand">FeOs v0.10.1</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -185,7 +185,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
-  <span class="sidebar-brand-text">FeOs v0.10.0</span>
+  <span class="sidebar-brand-text">FeOs v0.10.1</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -760,7 +760,7 @@ This section refers specifically to automatic (implicit) differentiation of phas
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="n">n</span> <span class="o">=</span> <span class="mi">10_000_000</span>
-<span class="n">fit_params</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;m&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">,</span> <span class="s2">&quot;epsilon_k&quot;</span><span class="p">]</span>
+<span class="n">fit_params</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"m"</span><span class="p">,</span> <span class="s2">"sigma"</span><span class="p">,</span> <span class="s2">"epsilon_k"</span><span class="p">]</span>
 
 <span class="c1"># order: m, sigma, epsilon_k, mu</span>
 <span class="n">parameters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">3.4</span><span class="p">,</span> <span class="mf">230.0</span><span class="p">,</span> <span class="mf">2.3</span><span class="p">]]</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>
@@ -778,7 +778,7 @@ This section refers specifically to automatic (implicit) differentiation of phas
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="n">n</span> <span class="o">=</span> <span class="mi">100_000</span>
-<span class="n">fit_params</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;k_ij&quot;</span><span class="p">]</span>
+<span class="n">fit_params</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"k_ij"</span><span class="p">]</span>
 <span class="n">parameters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span>
     <span class="c1"># Substance 1: m, sigma, epsilon_k, mu, kappa_ab, epsilon_k_ab, na, nb</span>
     <span class="mf">1.5</span><span class="p">,</span> <span class="mf">3.4</span><span class="p">,</span> <span class="mf">230.0</span><span class="p">,</span> <span class="mf">2.3</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">1200.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> 
