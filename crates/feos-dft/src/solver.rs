@@ -262,7 +262,7 @@ where
 
         for k in 0..picard.max_iter {
             // calculate residual
-            let (res, res_norm, _, _) = self.euler_lagrange_equation(&*rho, picard.log)?;
+            let (res, res_norm, _, _, _) = self.euler_lagrange_equation(&*rho, picard.log)?;
             log.add_residual(solver, k, res_norm);
 
             // check for convergence
@@ -304,7 +304,7 @@ where
             } else {
                 rho + alpha * delta_rho
             };
-            let Ok((_, res2, _, _)) = self.euler_lagrange_equation(&rho_new, logarithm) else {
+            let Ok((_, res2, _, _, _)) = self.euler_lagrange_equation(&rho_new, logarithm) else {
                 continue;
             };
             if res2 > res0 {
@@ -317,7 +317,7 @@ where
             } else {
                 rho + 0.5 * alpha * delta_rho
             };
-            let Ok((_, res1, _, _)) = self.euler_lagrange_equation(&rho_new, logarithm) else {
+            let Ok((_, res1, _, _, _)) = self.euler_lagrange_equation(&rho_new, logarithm) else {
                 continue;
             };
 
@@ -370,7 +370,7 @@ where
             let m = resm.len() + 1;
 
             // calculate residual
-            let (res, res_norm, _, _) = self.euler_lagrange_equation(&*rho, anderson.log)?;
+            let (res, res_norm, _, _, _) = self.euler_lagrange_equation(&*rho, anderson.log)?;
             log.add_residual(solver, k, res_norm);
 
             // check for convergence
@@ -426,7 +426,7 @@ where
         let solver = if newton.log { "Newton (log)" } else { "Newton" };
         for k in 0..newton.max_iter {
             // calculate initial residual
-            let (res, res_norm, exp_dfdrho, rho_p) =
+            let (res, res_norm, exp_dfdrho, z, rho_p) =
                 self.euler_lagrange_equation(rho, newton.log)?;
             log.add_residual(solver, k, res_norm);
 
@@ -447,8 +447,19 @@ where
                     .zip(self.bulk.eos.m().iter())
                     .for_each(|(mut q, &m)| q /= m);
                 let delta_i = self.delta_bond_integrals(&exp_dfdrho, &delta_functional_derivative);
+                let mut delta_exp_dfdrho = delta_functional_derivative - delta_i;
+                let delta_z = -self.integrate_reduced_comp(&(&delta_exp_dfdrho * &exp_dfdrho));
+
+                let delta_fugacity = self.specification.delta_fugacity(&z, &delta_z);
+                delta_exp_dfdrho
+                    .outer_iter_mut()
+                    .zip(delta_fugacity.iter())
+                    .for_each(|(mut z, &f)| {
+                        z -= f;
+                    });
+
                 let rho = if newton.log { &*rho } else { &rho_p };
-                delta_rho + (delta_functional_derivative - delta_i) * rho
+                delta_rho + delta_exp_dfdrho * rho
             };
 
             // update solution

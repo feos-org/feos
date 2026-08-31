@@ -299,7 +299,7 @@ where
     fn density_derivative(&self, lhs: &Array<f64, D::Larger>) -> FeosResult<Array<f64, D::Larger>> {
         let rho = self.density.to_reduced();
         let second_partial_derivatives = self.second_partial_derivatives(&rho)?;
-        let (_, _, exp_dfdrho, _) = self.euler_lagrange_equation(&rho, false)?;
+        let (_, _, exp_dfdrho, _, _) = self.euler_lagrange_equation(&rho, false)?;
 
         let rhs = |x: &_| {
             let delta_functional_derivative =
