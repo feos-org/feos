@@ -34,14 +34,24 @@ pub enum DFTSpecification {
 }
 
 impl DFTSpecification {
-    fn calculate_fugacity(&self, z: &Array1<f64>) -> FeosResult<Array1<f64>> {
-        Ok(match self {
+    fn calculate_fugacity(&self, z: &Array1<f64>) -> Array1<f64> {
+        match self {
             Self::ChemicalPotential(fugacity) => fugacity.clone(),
             Self::Moles(moles) => moles / z,
             Self::TotalMoles(total_moles, fugacity) => {
                 fugacity * *total_moles / (fugacity * z).sum()
             }
-        })
+        }
+    }
+
+    pub(crate) fn delta_fugacity(&self, z: &Array1<f64>, delta_z: &Array1<f64>) -> Array1<f64> {
+        match self {
+            Self::ChemicalPotential(fugacity) => Array1::zeros(fugacity.len()),
+            Self::Moles(_) => -delta_z / z,
+            Self::TotalMoles(_, fugacity) => {
+                -(fugacity * delta_z).sum() / (fugacity * z).sum() * Array1::ones(fugacity.len())
+            }
+        }
     }
 
     pub fn from_state<F: HelmholtzEnergyFunctional>(state: &State<F>) -> Self {
@@ -216,7 +226,7 @@ where
         profile.sum() * functional_determinant
     }
 
-    fn integrate_reduced_comp<S: Data<Elem = N>, N: DualNum<Primitive = f64> + Copy>(
+    pub(crate) fn integrate_reduced_comp<S: Data<Elem = N>, N: DualNum<Primitive = f64> + Copy>(
         &self,
         profile: &ArrayBase<S, D::Larger>,
     ) -> Array1<N> {
@@ -320,7 +330,7 @@ where
 
     pub fn residual(&self, log: bool) -> FeosResult<(Array<f64, D::Larger>, f64)> {
         let density = self.density.to_reduced();
-        let (res, res_norm, _, _) = self.euler_lagrange_equation(&density, log)?;
+        let (res, res_norm, _, _, _) = self.euler_lagrange_equation(&density, log)?;
         Ok((res, res_norm))
     }
 
@@ -328,7 +338,12 @@ where
     fn fugacity(
         &self,
         density: &Array<f64, D::Larger>,
-    ) -> FeosResult<(Array<f64, D::Larger>, Array<f64, D::Larger>, Array1<f64>)> {
+    ) -> FeosResult<(
+        Array<f64, D::Larger>,
+        Array1<f64>,
+        Array<f64, D::Larger>,
+        Array1<f64>,
+    )> {
         // calculate reduced temperature
         let temperature = self.temperature.to_reduced();
 
@@ -352,14 +367,21 @@ where
             .bulk
             .eos
             .bond_integrals(temperature, &exp_dfdrho, self.convolver.as_ref());
-        let z = &exp_dfdrho * bonds;
+        let mut rho_projected = &exp_dfdrho * bonds;
+        let z = self.integrate_reduced_comp(&rho_projected);
 
         // calculate fugacity based on the given specification
-        let fugacity = self
-            .specification
-            .calculate_fugacity(&self.integrate_reduced_comp(&z))?;
+        let fugacity = self.specification.calculate_fugacity(&z);
 
-        Ok((exp_dfdrho, z, fugacity))
+        // multiply fugacity
+        rho_projected
+            .outer_iter_mut()
+            .zip(fugacity.iter())
+            .for_each(|(mut x, &f)| {
+                x *= f;
+            });
+
+        Ok((exp_dfdrho, z, rho_projected, fugacity))
     }
 
     #[expect(clippy::type_complexity)]
@@ -371,18 +393,11 @@ where
         Array<f64, D::Larger>,
         f64,
         Array<f64, D::Larger>,
+        Array1<f64>,
         Array<f64, D::Larger>,
     )> {
         // calculate functional derivatives and fugacity
-        let (exp_dfdrho, mut rho_projected, fugacity) = self.fugacity(density)?;
-
-        // multiply fugacity
-        rho_projected
-            .outer_iter_mut()
-            .zip(fugacity.iter())
-            .for_each(|(mut x, &f)| {
-                x *= f;
-            });
+        let (exp_dfdrho, z, rho_projected, _) = self.fugacity(density)?;
 
         // calculate residual
         let mut res = if log {
@@ -402,7 +417,7 @@ where
             (density - &rho_projected).mapv(|x| x * x).sum().sqrt() / (res.len() as f64).sqrt();
 
         if res_norm.is_finite() {
-            Ok((res, res_norm, exp_dfdrho, rho_projected))
+            Ok((res, res_norm, exp_dfdrho, z, rho_projected))
         } else {
             Err(FeosError::IterationFailed("Euler-Lagrange equation".into()))
         }
@@ -423,7 +438,7 @@ where
             // solve a bulk profile with the Newton solver
             let mut bulk_profile =
                 DFTProfile::<Ix0, _>::new(Grid::Bulk, &self.bulk, None, None, None);
-            let (_, _, fugacity) = self.fugacity(&density)?;
+            let (_, _, _, fugacity) = self.fugacity(&density)?;
             bulk_profile.specification = DFTSpecification::ChemicalPotential(fugacity);
             let solver = DFTSolver::new(None).newton(None, None, None, None);
             bulk_profile.solve(Some(&solver), false)?;
