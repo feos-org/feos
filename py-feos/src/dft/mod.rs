@@ -15,10 +15,9 @@ mod profile;
 mod solvation;
 mod solver;
 
-pub(crate) use adsorption::{PyAdsorption1D, PyExternalPotential, PyPore1D, PyPore2D};
-// 3D pore / adsorption bindings wrap rayon-gated feos_dft types.
-#[cfg(feature = "rayon")]
-pub(crate) use adsorption::{PyAdsorption3D, PyPore3D};
+pub(crate) use adsorption::{
+    PyAdsorption, PyExternalPotential, PyGrid, PyPore1D, PyPoreProfile, PyPoreSpecification,
+};
 pub(crate) use interface::{PyPlanarInterface, PySurfaceTensionDiagram};
 pub(crate) use solvation::PyPairCorrelation;
 #[cfg(feature = "rayon")]
@@ -117,24 +116,3 @@ impl PyHelmholtzEnergyFunctional {
         ))))
     }
 }
-
-// #[pymodule]
-// pub fn dft(m: &Bound<'_, PyModule>) -> PyResult<()> {
-//     m.add_class::<PyFMTVersion>()?;
-//     m.add_class::<PyHelmholtzEnergyFunctional>()?;
-
-//     m.add_class::<PyPlanarInterface>()?;
-//     m.add_class::<PyGeometry>()?;
-//     m.add_class::<PyPore1D>()?;
-//     m.add_class::<PyPore2D>()?;
-//     m.add_class::<PyPore3D>()?;
-//     m.add_class::<PyPairCorrelation>()?;
-//     m.add_class::<PyExternalPotential>()?;
-//     m.add_class::<PyAdsorption1D>()?;
-//     m.add_class::<PyAdsorption3D>()?;
-//     m.add_class::<PySurfaceTensionDiagram>()?;
-//     m.add_class::<PyDFTSolver>()?;
-//     m.add_class::<PySolvationProfile>()?;
-
-//     Ok(())
-// }

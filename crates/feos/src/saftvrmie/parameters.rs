@@ -170,7 +170,7 @@ impl SaftVRMiePars {
 
 impl SaftVRMiePars {
     #[inline]
-    pub fn hs_diameter_ij<D: DualNum<f64> + Copy>(
+    pub fn hs_diameter_ij<D: DualNum<Primitive = f64> + Copy>(
         &self,
         i: usize,
         j: usize,
@@ -197,7 +197,7 @@ impl SaftVRMiePars {
 ///
 /// Method of Aasen et al.
 /// Using starting value proposed in Clapeyron.jl (Andrés Riedemann)
-fn lower_integratal_limit<D: DualNum<f64> + Copy>(la: f64, lr: f64, c_eps_t: D) -> D {
+fn lower_integratal_limit<D: DualNum<Primitive = f64> + Copy>(la: f64, lr: f64, c_eps_t: D) -> D {
     // initial value from repulsive contribution
     let k = (-c_eps_t.recip() * f64::EPSILON.ln()).ln();
     let mut r = (-k / lr).exp();
@@ -219,7 +219,7 @@ fn lower_integratal_limit<D: DualNum<f64> + Copy>(la: f64, lr: f64, c_eps_t: D) 
 /// f is the function to find the root of.
 /// Here, f = -beta u_mie(r) - ln(EPS)
 #[inline]
-fn mie_potential_halley<D: DualNum<f64> + Copy>(r: D, la: f64, lr: f64, c_eps_t: D) -> [D; 3] {
+fn mie_potential_halley<D: DualNum<Primitive = f64> + Copy>(r: D, la: f64, lr: f64, c_eps_t: D) -> [D; 3] {
     let ri = r.recip();
     let plr = ri.powf(lr);
     let pla = ri.powf(la);
@@ -237,17 +237,17 @@ fn mie_potential_halley<D: DualNum<f64> + Copy>(r: D, la: f64, lr: f64, c_eps_t:
 
 /// Dimensionless Mie potential (divided by kT)
 #[inline]
-fn beta_u_mie<D: DualNum<f64> + Copy>(r: D, la: f64, lr: f64, sigma: f64, c_eps_t: D) -> D {
+fn beta_u_mie<D: DualNum<Primitive = f64> + Copy>(r: D, la: f64, lr: f64, sigma: f64, c_eps_t: D) -> D {
     let ri = r.recip() * sigma;
     (ri.powf(lr) - ri.powf(la)) * c_eps_t
 }
 
 impl HardSphereProperties for SaftVRMiePars {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
+    fn monomer_shape<N: DualNum<Primitive = f64>>(&self, _: N) -> MonomerShape<'_, N> {
         MonomerShape::NonSpherical(self.m.map(N::from))
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+    fn hs_diameter<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DVector<D> {
         let t_inv = temperature.recip();
         DVector::from_fn(self.m.len(), |i, _| self.hs_diameter_ij(i, i, t_inv))
     }

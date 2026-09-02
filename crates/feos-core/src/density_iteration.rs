@@ -6,7 +6,7 @@ use nalgebra::{DefaultAllocator, Dim, OVector};
 use num_dual::{Dual, DualNum, first_derivative};
 use quantity::{Density, Pressure, Temperature};
 
-pub fn density_iteration<E: Residual<N, D>, N: Dim, D: DualNum<f64> + Copy>(
+pub fn density_iteration<E: Residual<N, D>, N: Dim, D: DualNum<Primitive = f64> + Copy>(
     eos: &E,
     temperature: Temperature<D>,
     pressure: Pressure<D>,

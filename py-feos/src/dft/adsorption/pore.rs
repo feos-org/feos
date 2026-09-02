@@ -1,12 +1,13 @@
 use super::PyExternalPotential;
 use crate::dft::profile::*;
 use crate::dft::{PyDFTSolver, PyDFTSolverLog, PyGeometry};
+use crate::eos::PyEquationOfState;
 use crate::error::PyFeosError;
 use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
 use crate::state::{PyContributions, PyState};
 use feos_core::{EquationOfState, ReferenceSystem};
-use feos_dft::adsorption::*;
+use feos_dft::{Axis as AxisDFT, Grid, adsorption::*};
 use nalgebra::{DMatrix, DVector};
 use ndarray::*;
 use numpy::*;
@@ -14,46 +15,219 @@ use pyo3::prelude::*;
 use quantity::*;
 use std::sync::Arc;
 
-macro_rules! impl_pore_profile {
-    ($py_profile:ty) => {
-        #[pymethods]
-        impl $py_profile {
-            #[getter]
-            fn get_grand_potential(&self) -> Option<Energy> {
-                self.0.grand_potential
-            }
+#[pyclass(name = "Grid", from_py_object)]
+#[derive(Clone)]
+pub struct PyGrid(pub Grid);
 
-            #[getter]
-            fn get_interfacial_tension(&self) -> Option<Energy> {
-                self.0.interfacial_tension
-            }
+#[pymethods]
+impl PyGrid {
+    /// Generate a 1D Cartesian grid with mirror boundary conditions on both sides.
+    #[staticmethod]
+    pub fn cartesian_1d(n_points: usize, length: Length) -> Self {
+        let x = AxisDFT::new_cartesian(n_points, length, None);
+        Self(Grid::Cartesian1(x))
+    }
 
-            #[getter]
-            fn get_partial_molar_enthalpy_of_adsorption(
-                &self,
-            ) -> PyResult<MolarEnergy<DVector<f64>>> {
-                Ok(self
-                    .0
-                    .partial_molar_enthalpy_of_adsorption()
-                    .map_err(PyFeosError::from)?)
-            }
+    /// Generate a 1D Cartesian grid with periodic boundary conditions on both sides.
+    #[staticmethod]
+    pub fn periodical_1d(n_points: usize, length: Length) -> Self {
+        let x = AxisDFT::new_cartesian(n_points, length, None);
+        Self(Grid::Periodical1(x))
+    }
 
-            #[getter]
-            fn get_enthalpy_of_adsorption(&self) -> PyResult<MolarEnergy> {
-                Ok(self.0.enthalpy_of_adsorption().map_err(PyFeosError::from)?)
-            }
+    /// Generate a polar grid with radial axis.
+    #[staticmethod]
+    pub fn polar(n_points: usize, length: Length) -> Self {
+        let x = AxisDFT::new_polar(n_points, length);
+        Self(Grid::Polar(x))
+    }
 
-            #[getter]
-            fn get_henry_coefficients(&self) -> HenryCoefficient<DVector<f64>> {
-                self.0.henry_coefficients()
-            }
+    /// Generate a spherical grid with radial axis.
+    #[staticmethod]
+    pub fn spherical(n_points: usize, length: Length) -> Self {
+        let x = AxisDFT::new_spherical(n_points, length);
+        Self(Grid::Spherical(x))
+    }
 
-            #[getter]
-            fn get_ideal_gas_enthalpy_of_adsorption(&self) -> MolarEnergy<DVector<f64>> {
-                self.0.ideal_gas_enthalpy_of_adsorption()
-            }
-        }
-    };
+    /// Generate a 2D Cartesian grid with mirror boundary conditions on all sides.
+    #[staticmethod]
+    pub fn cartesian_2d(n_points: [usize; 2], length: [Length; 2]) -> Self {
+        let [n_x, n_y] = n_points;
+        let [l_x, l_y] = length;
+        let x = AxisDFT::new_cartesian(n_x, l_x, None);
+        let y = AxisDFT::new_cartesian(n_y, l_y, None);
+        Self(Grid::Cartesian2(x, y))
+    }
+
+    /// Generate a 2D Cartesian (possibly oblique) grid with periodic boundary conditions on all sides.
+    #[staticmethod]
+    pub fn periodical_2d(n_points: [usize; 2], length: [Length; 2], alpha: Angle) -> Self {
+        let [n_x, n_y] = n_points;
+        let [l_x, l_y] = length;
+        let x = AxisDFT::new_cartesian(n_x, l_x, None);
+        let y = AxisDFT::new_cartesian(n_y, l_y, None);
+        Self(Grid::Periodical2(x, y, alpha))
+    }
+
+    /// Generate a cylindrical grid with axes (in this order) r and z.
+    #[staticmethod]
+    pub fn cylindrical(n_points: [usize; 2], length: [Length; 2]) -> Self {
+        let [n_r, n_z] = n_points;
+        let [l_r, l_z] = length;
+        let r = AxisDFT::new_polar(n_r, l_r);
+        let z = AxisDFT::new_cartesian(n_z, l_z, None);
+        Self(Grid::Cylindrical { r, z })
+    }
+
+    /// Generate a 3D Cartesian grid with mirror boundary conditions on all sides.
+    #[staticmethod]
+    pub fn cartesian_3d(n_points: [usize; 3], length: [Length; 3]) -> Self {
+        let [n_x, n_y, n_z] = n_points;
+        let [l_x, l_y, l_z] = length;
+        let x = AxisDFT::new_cartesian(n_x, l_x, None);
+        let y = AxisDFT::new_cartesian(n_y, l_y, None);
+        let z = AxisDFT::new_cartesian(n_z, l_z, None);
+        Self(Grid::Cartesian3(x, y, z))
+    }
+
+    /// Generate a 3D Cartesian (possibly oblique) grid with periodic boundary conditions on all sides.
+    #[staticmethod]
+    pub fn periodical_3d(n_points: [usize; 3], length: [Length; 3], angles: [Angle; 3]) -> Self {
+        let [n_x, n_y, n_z] = n_points;
+        let [l_x, l_y, l_z] = length;
+        let x = AxisDFT::new_cartesian(n_x, l_x, None);
+        let y = AxisDFT::new_cartesian(n_y, l_y, None);
+        let z = AxisDFT::new_cartesian(n_z, l_z, None);
+        Self(Grid::Periodical3(x, y, z, angles))
+    }
+
+    #[getter]
+    pub fn get_axes(&self) -> Vec<Length<Array1<f64>>> {
+        self.0
+            .grids()
+            .into_iter()
+            .map(|ax| Length::from_reduced(ax.clone()))
+            .collect()
+    }
+
+    #[getter]
+    pub fn get_grid(&self) -> Vec<Length<ArrayD<f64>>> {
+        self.0.mesh()
+    }
+}
+
+/// The base class for studying adsorption phenomena.
+///
+/// Parameters
+/// ----------
+/// grid : Grid
+///     The grid on which the density is calculated.
+/// bulk : State
+///     The (initial) bulk state in equilibrium with the pore.
+/// external_potential : SIArray
+///     The external potential used to model wall-fluid interactions.
+/// density : SIArray, optional
+///     The initial density distribution.
+/// specification : PoreSpecification
+///     The external constraint that specifies the state
+///     in the pore.
+///
+/// Returns
+/// -------
+/// PoreProfile
+///
+#[pyclass(name = "PoreProfile")]
+pub struct PyPoreProfile(
+    pub PoreProfile<IxDyn, Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
+);
+
+#[pymethods]
+impl PyPoreProfile {
+    #[new]
+    #[pyo3(
+        text_signature = "(grid, bulk, external_potential, density=None, specification=PyPoreSpecification.ChemicalPotential)"
+    )]
+    #[pyo3(signature = (grid, bulk, external_potential, density=None, specification=PyPoreSpecification::ChemicalPotential()))]
+    fn new(
+        grid: PyGrid,
+        bulk: &PyState,
+        external_potential: Energy<ArrayD<f64>>,
+        density: Option<Density<ArrayD<f64>>>,
+        specification: PyPoreSpecification,
+    ) -> Self {
+        Self(PoreProfile::new(
+            grid.0,
+            &bulk.0,
+            &external_potential,
+            density.as_ref(),
+            specification.0,
+        ))
+    }
+
+    #[getter]
+    fn get_grand_potential(&self) -> Option<Energy> {
+        self.0.grand_potential
+    }
+
+    #[getter]
+    fn get_interfacial_tension(&self) -> Option<Energy> {
+        self.0.interfacial_tension
+    }
+
+    #[getter]
+    fn get_partial_molar_enthalpy_of_adsorption(&mut self) -> PyResult<MolarEnergy<DVector<f64>>> {
+        Ok(self
+            .0
+            .partial_molar_enthalpy_of_adsorption()
+            .map_err(PyFeosError::from)?)
+    }
+
+    #[getter]
+    fn get_enthalpy_of_adsorption(&mut self) -> PyResult<MolarEnergy> {
+        Ok(self.0.enthalpy_of_adsorption().map_err(PyFeosError::from)?)
+    }
+
+    #[getter]
+    fn get_henry_coefficients(&self) -> HenryCoefficient<DVector<f64>> {
+        self.0.henry_coefficients()
+    }
+
+    #[getter]
+    fn get_ideal_gas_enthalpy_of_adsorption(&self) -> MolarEnergy<DVector<f64>> {
+        self.0.ideal_gas_enthalpy_of_adsorption()
+    }
+}
+
+impl_profile!(PyPoreProfile);
+
+/// Different ways that the thermodynamic state of the fluid in the pore
+/// can be specified.
+#[pyclass(name = "PoreSpecification", from_py_object)]
+#[derive(Clone)]
+pub struct PyPoreSpecification(PoreSpecification);
+
+#[pymethods]
+impl PyPoreSpecification {
+    /// Specify the chemical potential (via the bulk state).
+    #[classattr]
+    #[expect(non_snake_case)]
+    fn ChemicalPotential() -> Self {
+        Self(PoreSpecification::ChemicalPotential)
+    }
+
+    /// Specify the amount of moles of every component.
+    #[staticmethod]
+    #[expect(non_snake_case)]
+    fn Moles(moles: Moles<Array1<f64>>) -> Self {
+        Self(PoreSpecification::Moles(moles))
+    }
+
+    /// Fix the amount of moles of every component based on the initial density profile.
+    #[classattr]
+    #[expect(non_snake_case)]
+    fn FixedMoles() -> Self {
+        Self(PoreSpecification::FixedMoles)
+    }
 }
 
 /// Parameters required to specify a 1D pore.
@@ -79,32 +253,24 @@ macro_rules! impl_pore_profile {
 #[pyclass(name = "Pore1D")]
 pub struct PyPore1D(pub Pore1D);
 
-#[pyclass(name = "PoreProfile1D")]
-pub struct PyPoreProfile1D(
-    pub PoreProfile1D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
-);
-
-impl_1d_profile!(PyPoreProfile1D, [get_r, get_z]);
-impl_pore_profile!(PyPoreProfile1D);
-
 #[pymethods]
 impl PyPore1D {
     #[new]
-    #[pyo3(text_signature = "(geometry, pore_size, potential, n_grid=None, potential_cutoff=None)")]
-    #[pyo3(signature = (geometry, pore_size, potential, n_grid=None, potential_cutoff=None))]
+    #[pyo3(text_signature = "(functional, geometry, pore_size, external_potential, n_grid=None)")]
+    #[pyo3(signature = (functional, geometry, pore_size, external_potential, n_grid=None))]
     fn new(
+        functional: &PyEquationOfState,
         geometry: PyGeometry,
         pore_size: Length,
-        potential: PyExternalPotential,
+        external_potential: PyExternalPotential,
         n_grid: Option<usize>,
-        potential_cutoff: Option<f64>,
     ) -> PyResult<Self> {
         Ok(Self(Pore1D::new(
+            &functional.0,
             geometry.into(),
             pore_size,
-            potential.0,
+            external_potential.0,
             n_grid,
-            potential_cutoff,
         )))
     }
 
@@ -116,36 +282,29 @@ impl PyPore1D {
     ///     The bulk state in equilibrium with the pore.
     /// density : SIArray2, optional
     ///     Initial values for the density profile.
-    /// external_potential : numpy.ndarray[float], optional
-    ///     The external potential in the pore. Used to
-    ///     save computation time in the case of costly
-    ///     evaluations of external potentials.
+    /// specification : PoreSpecification
+    ///     The external constraint that specifies the state
+    ///     in the pore.
     ///
     /// Returns
     /// -------
     /// PoreProfile1D
-    #[pyo3(text_signature = "($self, bulk, density=None, external_potential=None)")]
-    #[pyo3(signature = (bulk, density=None, external_potential=None))]
+    #[pyo3(
+        text_signature = "($self, bulk, density=None, specification=PoreSpecification.ChemicalPotential)"
+    )]
+    #[pyo3(signature = (bulk, density=None, specification=PyPoreSpecification::ChemicalPotential()))]
     fn initialize(
         &self,
         bulk: &PyState,
         density: Option<Density<Array2<f64>>>,
-        external_potential: Option<&Bound<'_, PyArray2<f64>>>,
-    ) -> PyResult<PyPoreProfile1D> {
-        Ok(PyPoreProfile1D(
+        specification: PyPoreSpecification,
+    ) -> PyResult<PyPoreProfile> {
+        Ok(PyPoreProfile(
             self.0
-                .initialize(
-                    &bulk.0,
-                    density.as_ref(),
-                    external_potential.map(|e| e.to_owned_array()).as_ref(),
-                )
-                .map_err(PyFeosError::from)?,
+                .initialize(&bulk.0, density.as_ref(), specification.0)
+                .map_err(PyFeosError::from)?
+                .into_dyn(),
         ))
-    }
-
-    #[getter]
-    fn get_geometry(&self) -> PyGeometry {
-        self.0.geometry.into()
     }
 
     #[getter]
@@ -154,199 +313,13 @@ impl PyPore1D {
     }
 
     #[getter]
-    fn get_potential(&self) -> PyExternalPotential {
-        PyExternalPotential(self.0.potential.clone())
+    fn get_external_potential(&self) -> Energy<Array2<f64>> {
+        self.0.external_potential.clone()
     }
 
     #[getter]
-    fn get_n_grid(&self) -> Option<usize> {
-        self.0.n_grid
-    }
-
-    #[getter]
-    fn get_potential_cutoff(&self) -> Option<f64> {
-        self.0.potential_cutoff
-    }
-
-    /// The pore volume using Helium at 298 K as reference.
-    #[getter]
-    fn get_pore_volume(&self) -> PyResult<Volume> {
-        Ok(self.0.pore_volume().map_err(PyFeosError::from)?)
-    }
-}
-
-#[pyclass(name = "Pore2D")]
-pub struct PyPore2D(pub Pore2D);
-
-#[pyclass(name = "PoreProfile2D")]
-pub struct PyPoreProfile2D(
-    pub PoreProfile2D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
-);
-
-impl_2d_profile!(PyPoreProfile2D, get_x, get_y);
-impl_pore_profile!(PyPoreProfile2D);
-
-#[pymethods]
-impl PyPore2D {
-    #[new]
-    #[pyo3(text_signature = "(system_size, angle, n_grid)")]
-    fn new(system_size: [Length; 2], angle: Angle, n_grid: [usize; 2]) -> PyResult<Self> {
-        Ok(Self(Pore2D::new(
-            [system_size[0], system_size[1]],
-            angle,
-            n_grid,
-        )))
-    }
-
-    /// Initialize the pore for the given bulk state.
-    ///
-    /// Parameters
-    /// ----------
-    /// bulk : State
-    ///     The bulk state in equilibrium with the pore.
-    /// density : SIArray3, optional
-    ///     Initial values for the density profile.
-    /// external_potential : numpy.ndarray[float], optional
-    ///     The external potential in the pore. Used to
-    ///     save computation time in the case of costly
-    ///     evaluations of external potentials.
-    ///
-    /// Returns
-    /// -------
-    /// PoreProfile2D
-    #[pyo3(text_signature = "($self, bulk, density=None, external_potential=None)")]
-    #[pyo3(signature = (bulk, density=None, external_potential=None))]
-    fn initialize(
-        &self,
-        bulk: &PyState,
-        density: Option<Density<Array3<f64>>>,
-        external_potential: Option<&Bound<'_, PyArray3<f64>>>,
-    ) -> PyResult<PyPoreProfile2D> {
-        Ok(PyPoreProfile2D(
-            self.0
-                .initialize(
-                    &bulk.0,
-                    density.as_ref(),
-                    external_potential.map(|e| e.to_owned_array()).as_ref(),
-                )
-                .map_err(PyFeosError::from)?,
-        ))
-    }
-
-    /// The pore volume using Helium at 298 K as reference.
-    #[getter]
-    fn get_pore_volume(&self) -> PyResult<Volume> {
-        Ok(self.0.pore_volume().map_err(PyFeosError::from)?)
-    }
-}
-
-/// Parameters required to specify a 3D pore.
-///
-/// Parameters
-/// ----------
-/// system_size : [SINumber; 3]
-///     The size of the unit cell.
-/// n_grid : [int; 3]
-///     The number of grid points in each direction.
-/// coordinates : numpy.ndarray[float]
-///     The positions of all interaction sites in the solid.
-/// sigma_ss : numpy.ndarray[float]
-///     The size parameters of all interaction sites.
-/// epsilon_k_ss : numpy.ndarray[float]
-///     The energy parameter of all interaction sites.
-/// angles : [Angle; 3], optional
-///     The angles of the unit cell or `None` if the unit cell
-///     is orthorombic
-/// potential_cutoff: float, optional
-///     Maximum value for the external potential.
-/// cutoff_radius: SINumber, optional
-///     The cutoff radius for the calculation of solid-fluid interactions.
-///
-/// Returns
-/// -------
-/// Pore3D
-///
-// Pore3D/PoreProfile3D wrap feos_dft types that only exist with `rayon`
-// (3D FFT). Gated out of the threadless wasm32-unknown-emscripten build.
-#[cfg(feature = "rayon")]
-#[pyclass(name = "Pore3D")]
-pub struct PyPore3D(pub Pore3D);
-
-#[cfg(feature = "rayon")]
-#[pyclass(name = "PoreProfile3D")]
-pub struct PyPoreProfile3D(
-    pub PoreProfile3D<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
-);
-
-#[cfg(feature = "rayon")]
-impl_3d_profile!(PyPoreProfile3D, get_x, get_y, get_z);
-#[cfg(feature = "rayon")]
-impl_pore_profile!(PyPoreProfile3D);
-
-#[cfg(feature = "rayon")]
-#[pymethods]
-impl PyPore3D {
-    #[new]
-    #[pyo3(
-        text_signature = "(system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, angles=None, potential_cutoff=None, cutoff_radius=None)"
-    )]
-    #[pyo3(signature = (system_size, n_grid, coordinates, sigma_ss, epsilon_k_ss, angles=None, potential_cutoff=None, cutoff_radius=None))]
-    #[expect(clippy::too_many_arguments)]
-    fn new(
-        system_size: [Length; 3],
-        n_grid: [usize; 3],
-        coordinates: Length<Array2<f64>>,
-        sigma_ss: &Bound<'_, PyArray1<f64>>,
-        epsilon_k_ss: &Bound<'_, PyArray1<f64>>,
-        angles: Option<[Angle; 3]>,
-        potential_cutoff: Option<f64>,
-        cutoff_radius: Option<Length>,
-    ) -> Self {
-        Self(Pore3D::new(
-            system_size,
-            n_grid,
-            coordinates,
-            sigma_ss.to_owned_array(),
-            epsilon_k_ss.to_owned_array(),
-            angles,
-            potential_cutoff,
-            cutoff_radius,
-        ))
-    }
-
-    /// Initialize the pore for the given bulk state.
-    ///
-    /// Parameters
-    /// ----------
-    /// bulk : State
-    ///     The bulk state in equilibrium with the pore.
-    /// density : SIArray4, optional
-    ///     Initial values for the density profile.
-    /// external_potential : numpy.ndarray[float], optional
-    ///     The external potential in the pore. Used to
-    ///     save computation time in the case of costly
-    ///     evaluations of external potentials.
-    ///
-    /// Returns
-    /// -------
-    /// PoreProfile3D
-    #[pyo3(text_signature = "($self, bulk, density=None, external_potential=None)")]
-    #[pyo3(signature = (bulk, density=None, external_potential=None))]
-    fn initialize(
-        &self,
-        bulk: &PyState,
-        density: Option<Density<Array4<f64>>>,
-        external_potential: Option<&Bound<'_, PyArray4<f64>>>,
-    ) -> PyResult<PyPoreProfile3D> {
-        Ok(PyPoreProfile3D(
-            self.0
-                .initialize(
-                    &bulk.0,
-                    density.as_ref(),
-                    external_potential.map(|e| e.to_owned_array()).as_ref(),
-                )
-                .map_err(PyFeosError::from)?,
-        ))
+    fn get_grid(&self) -> PyGrid {
+        PyGrid(self.0.grid.clone())
     }
 
     /// The pore volume using Helium at 298 K as reference.

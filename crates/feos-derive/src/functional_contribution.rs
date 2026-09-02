@@ -56,17 +56,17 @@ fn impl_functional_contribution(
                     #(#name,)*
                 }
             }
-            fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> feos_dft::WeightFunctionInfo<N> {
+            fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> feos_dft::WeightFunctionInfo<N> {
                 match self {
                     #(#weight_functions,)*
                 }
             }
-            fn weight_functions_pdgt<N: DualNum<f64> + Copy>(&self, temperature: N) -> feos_dft::WeightFunctionInfo<N> {
+            fn weight_functions_pdgt<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> feos_dft::WeightFunctionInfo<N> {
                 match self {
                     #(#weight_functions_pdgt,)*
                 }
             }
-            fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
+            fn helmholtz_energy_density<N: DualNum<Primitive = f64> + Copy>(
                 &self,
                 temperature: N,
                 weighted_densities: ndarray::ArrayView2<N>,

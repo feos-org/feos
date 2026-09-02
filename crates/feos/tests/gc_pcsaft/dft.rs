@@ -218,6 +218,7 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
         .anderson_mixing(None, None, None, None, None);
     let bulk = State::new_npt(&func, t, 5.0 * BAR, (), None)?;
     Pore1D::new(
+        &func,
         Geometry::Cartesian,
         20.0 * ANGSTROM,
         ExternalPotential::LJ93 {
@@ -226,9 +227,8 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
             rho_s: 0.08,
         },
         None,
-        None,
     )
-    .initialize(&bulk, None, None)
+    .initialize(&bulk, None, PoreSpecification::ChemicalPotential)
     .unwrap()
     .solve(Some(&solver))?;
     Ok(())

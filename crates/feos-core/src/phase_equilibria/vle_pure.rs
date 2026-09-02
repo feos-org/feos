@@ -14,7 +14,8 @@ const MAX_ITER_PURE: usize = 50;
 const TOL_PURE: f64 = 1e-12;
 
 /// # Pure component phase equilibria
-impl<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, N, D>
+impl<E: Residual<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy>
+    PhaseEquilibrium<E, 2, N, D>
 where
     DefaultAllocator: Allocator<N> + Allocator<U1, N> + Allocator<N, N>,
 {
@@ -238,7 +239,8 @@ where
     Ok((p, [rho_v, rho_l]))
 }
 
-impl<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, N, D>
+impl<E: Residual<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy>
+    PhaseEquilibrium<E, 2, N, D>
 where
     DefaultAllocator: Allocator<N> + Allocator<U1, N> + Allocator<N, N>,
 {
@@ -447,7 +449,7 @@ where
     // both phases have the same temperature
     for _ in 0..20 {
         let h_s = |t, v| {
-            let (a_res, da_res) = gradient::<_, _, _, U2, _>(
+            let (a_res, da_res) = gradient::<_, _, U2, _>(
                 partial(
                     |t_v: SVector<_, _>, x| {
                         let [[t, v]] = t_v.data.0;

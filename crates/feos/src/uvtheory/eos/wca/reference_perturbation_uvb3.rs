@@ -13,7 +13,7 @@ pub(super) struct ReferencePerturbationB3;
 
 impl ReferencePerturbationB3 {
     /// Helmholtz energy for perturbation reference (Mayer-f), eq. 29
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &UVTheoryPars,
         state: &StateHD<D>,

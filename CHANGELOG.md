@@ -4,16 +4,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Breaking]
+### Added
+- Added `PoreSpecification` enum to specify the state of the fluid in the pore (currently chemical potential or moles). [#371](https://github.com/feos-org/feos/pull/371)
+- Added the `Grid` and `PoreProfile` classes as an entry points to DFT in various coordinate systems in Python. [#376](https://github.com/feos-org/feos/pull/376)
+- `PoreProfile.solver_log` now stores a timing profile of the different solver steps. [#385](https://github.com/feos-org/feos/pull/385)
+
+### Changed
+- Changed data type of initial temperatures or pressure for phase equilibrium calculations (`TemperatureOrPressure::Other`) from `D` to `f64`. [#369](https://github.com/feos-org/feos/pull/369)
+- Reworked DFT solution algorithms slightly for the cases in which additional specifications are given. [#371](https://github.com/feos-org/feos/pull/371)
+- External potentials are passed and returned as quantities (energies) instead of reduced units. [#372](https://github.com/feos-org/feos/pull/372)
+- Merged the `Adsorption1D` and `Adsorption3D` classes in Python into `Adsorption` using dynamically dimensioned arrays. [#376](https://github.com/feos-org/feos/pull/376)
+- If the `rayon` feature is activated (default for the released Python wheels), the evaluation of the helmholtz energy density and its derivatives will now be run in parallel. The number of CPUs can be set via the global rayon threadpool (see changelog for `0.9.5`) [#385](https://github.com/feos-org/feos/pull/385)
+
+### Removed
+- Removed the `DFTSpecification` trait in favor of only using the `DFTSpecification` enum (renamed from `DFTSpecifications`). [#371](https://github.com/feos-org/feos/pull/371)
+- Removed the `Pore2D` and `Pore3D` interfaces including the (limited) calculation of external potentials for complex pore grometries. [#376](https://github.com/feos-org/feos/pull/376)
+- Removed the free energy-averaged external (FEA) potential. [#376](https://github.com/feos-org/feos/pull/376)
+
+### Fixed
+- The Newton solver for cDFT now correctly handles specifications other than the chemical potential. [#384](https://github.com/feos-org/feos/pull/384)
+
+### Packaging
+- Removed the `gauss-quad` dependency which was only used in the FEA potential calculation. [#376](https://github.com/feos-org/feos/pull/376)
+- Updated `quantity` and `num-dual` dependencies to 0.15. [#380](https://github.com/feos-org/feos/pull/380)
+
 ## [Unreleased]
 
-## [0.10.1] - 2026-07-24
+## [0.10.1](https://github.com/feos-org/feos/releases/tag/v0.10.1) - 2026-07-24
 ### Fixed
 - Fixed some `unwrap`s in VLE routines. [#367](https://github.com/feos-org/feos/pull/367)
 
 ### Packaging
 - Updated github action workflows to include pyodide/emscripten wheels. [#368](https://github.com/feos-org/feos/pull/368)
 
-## [0.10.0] - 2026-07-15
+## [0.10.0](https://github.com/feos-org/feos/releases/tag/v0.10.0) - 2026-07-15
 ### Added
 - Extended tp-flash algorithm to static numbers of components and enabled automatic differentiation for binary systems. [#336](https://github.com/feos-org/feos/pull/336)
 - Rewrote `PhaseEquilibrium::pure_p` to mirror `pure_t` and enabled automatic differentiation. [#337](https://github.com/feos-org/feos/pull/337)
@@ -46,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `gauss-quad` dependency to 0.3. [#360](https://github.com/feos-org/feos/pull/360)
 - Update `itertools` dependency to 0.15.
 
-## [0.9.6] - 2026-07-03
+## [0.9.6](https://github.com/feos-org/feos/releases/tag/v0.9.6) - 2026-07-03
 ### Added
 - Added parameter import from SQL using the `rusqlite` dependency. [#352](https://github.com/feos-org/feos/pull/352)
 
@@ -54,7 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `PhaseDiagram.binary_vle()` panicking during search for VLLE (tried to access unallocated element). [#362](https://github.com/feos-org/feos/pull/362)
 - Fixed reading binary association parameters from JSON. [#363](https://github.com/feos-org/feos/pull/363)
 
-## [0.9.5] - 2026-04-14
+## [0.9.5](https://github.com/feos-org/feos/releases/tag/v0.9.5) - 2026-04-14
 ### Added
 - Add Rayon global thread pool control via `FEOS_MAX_THREADS` and `set_num_threads()`/ `get_num_threads()` to Python. [#346](https://github.com/feos-org/feos/pull/346)
 - Added DIPPR107 parameterization for ideal gas heat capacities of Burkhardt et al. [#344](https://github.com/feos-org/feos/pull/344)
@@ -63,14 +88,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed the calculation of temperature and pressure derivatives of dew and bubble points. [#347](https://github.com/feos-org/feos/pull/347)
 - Fixed the implementation of binary interaction parameters in ePC-SAFT. [#353](https://github.com/feos-org/feos/pull/353)
 
-## [0.9.4] - 2026-03-09
+## [0.9.4](https://github.com/feos-org/feos/releases/tag/v0.9.4) - 2026-03-09
 ### Changed
 - Automatically detect VLLEs in `BinaryPhaseDiagram`. [#341](https://github.com/feos-org/feos/pull/341)
 
 ### Fixed
 - Fixed the sign of the isothermal compressibility. [#342](https://github.com/feos-org/feos/pull/342)
 
-## [0.9.3] - 2026-01-26
+## [0.9.3](https://github.com/feos-org/feos/releases/tag/v0.9.3) - 2026-01-26
 ### Added
 - Added `py-feos` tests to GitHub Actions and moved `pyo3/extension-module` feature to `pyproject.toml`. [#334](https://github.com/feos-org/feos/pull/334)
 
@@ -78,17 +103,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `None` transformation when binary parameters are provided to `PyParameters` to properly raise errors. [#334](https://github.com/feos-org/feos/pull/334)
 - Fixed the calculation of critical points and tp-flashes when one or more of the mixture components have zero composition. [#331](https://github.com/feos-org/feos/pull/331)
 
-## [0.9.2] - 2025-12-11
+## [0.9.2](https://github.com/feos-org/feos/releases/tag/v0.9.2) - 2025-12-11
 ### Fixed
 - Fixed calculation of enthalpies of adsorption for mixtures. [#329](https://github.com/feos-org/feos/pull/329)
 - Updated to `ndarray` 0.17 and `num-dual`0.13 to fix a broken dependency resolution. [#327](https://github.com/feos-org/feos/pull/327)
 - Fixed calculation of parameter combination in entropy scaling for mixtures in `viscosity_correlation`, `diffusion_correlation`, `thermal_conductivity_correlation`. [#323](https://github.com/feos-org/feos/pull/323)
 
-## [0.9.1] - 2025-11-24
+## [0.9.1](https://github.com/feos-org/feos/releases/tag/v0.9.1) - 2025-11-24
 ### Fixed
 - Fixed a wrong Jacobian entry in `heteroazeotrope_t`. (Thanks to @ImagineBaggins for reporting the issue) [#320](https://github.com/feos-org/feos/pull/320)
 
-## [0.9.0] - 2025-11-08
+## [0.9.0](https://github.com/feos-org/feos/releases/tag/v0.9.0) - 2025-11-08
 ### Added
 - Integrated the functionalities of [`feos-ad`](https://github.com/feos-org/feos-ad). [#289](https://github.com/feos-org/feos/pull/289)
     - In Rust: Full access to arbitrary derivatives of properties and phase equilibria with respect to model parameters. See, e.g., [`feos-campd`](https://github.com/feos-org/feos-campd) for an application to molecular design.
@@ -110,7 +135,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `numpy`, `PyO3` and `pythonize` dependencies to 0.27.
 - Updated `nalgebra` dependency to 0.34.
 
-## [0.8.0] - 2024-12-28
+## [0.8.0](https://github.com/feos-org/feos/releases/tag/v0.8.0) - 2024-12-28
 ### Fixed
 - Fixed the handling of association records in combination with induced association in PC-SAFT [#264](https://github.com/feos-org/feos/pull/264)
 
@@ -119,7 +144,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `num-dual` dependency to 0.11. [#262](https://github.com/feos-org/feos/pull/262)
 - Updated `numpy` and `PyO3` dependencies to 0.23. [#262](https://github.com/feos-org/feos/pull/262)
 
-## [0.7.0] - 2024-05-21
+## [0.7.0](https://github.com/feos-org/feos/releases/tag/v0.7.0) - 2024-05-21
 ### Added
 - Added SAFT-VR Mie equation of state. [#237](https://github.com/feos-org/feos/pull/237)
 - Added ePC-SAFT equation of state. [#229](https://github.com/feos-org/feos/pull/229)
@@ -140,10 +165,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `num-dual` dependency to 0.9. [#238](https://github.com/feos-org/feos/pull/238)
 - Updated `numpy` and `PyO3` dependencies to 0.21. [#238](https://github.com/feos-org/feos/pull/238)
 
-## [0.6.1] - 2024-01-11
+## [0.6.1](https://github.com/feos-org/feos/releases/tag/v0.6.1) - 2024-01-11
 - Python only: Release the changes introduced in `feos-core` 0.6.1.
 
-## [0.6.0] - 2023-12-19
+## [0.6.0](https://github.com/feos-org/feos/releases/tag/v0.6.0) - 2023-12-19
 ### Added
 - Added `EquationOfState.ideal_gas()` to initialize an equation of state that only consists of an ideal gas contribution. [#204](https://github.com/feos-org/feos/pull/204)
 - Added `PureRecord`, `SegmentRecord`, `Identifier`, and `IdentifierOption` to `feos.ideal_gas`. [#205](https://github.com/feos-org/feos/pull/205)
@@ -154,10 +179,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Split `feos.ideal_gas` into `feos.joback` and `feos.dippr`. [#204](https://github.com/feos-org/feos/pull/204)
 
-## [0.5.1] - 2023-11-23
+## [0.5.1](https://github.com/feos-org/feos/releases/tag/v0.5.1) - 2023-11-23
 - Python only: Release the changes introduced in `feos-core` 0.5.1.
 
-## [0.5.0] - 2023-10-20
+## [0.5.0](https://github.com/feos-org/feos/releases/tag/v0.5.0) - 2023-10-20
 ### Added
 - Added `IdealGasModel` enum that collects all implementors of the `IdealGas` trait. [#158](https://github.com/feos-org/feos/pull/158)
 - Added `feos.ideal_gas` module in Python from which (currently) `Joback` and `JobackParameters` are available. [#158](https://github.com/feos-org/feos/pull/158)
@@ -178,20 +203,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `num-dual` dependency to 0.8. [#137](https://github.com/feos-org/feos/pull/137)
 - Updated `numpy` and `PyO3` dependencies to 0.20.
 
-## [0.4.3] - 2023-03-20
+## [0.4.3](https://github.com/feos-org/feos/releases/tag/v0.4.3) - 2023-03-20
 - Python only: Release the changes introduced in `feos-core` 0.4.2.
 
-## [0.4.2] - 2023-03-20
+## [0.4.2](https://github.com/feos-org/feos/releases/tag/v0.4.2) - 2023-03-20
 - Python only: Release the changes introduced in `feos-core` 0.4.1 and `feos-dft` 0.4.1.
 
-## [0.4.1] - 2023-01-28
+## [0.4.1](https://github.com/feos-org/feos/releases/tag/v0.4.1) - 2023-01-28
 ### Changed
 - Replaced some slow array operations to make calculations with multiple associating molecules significantly faster. [#129](https://github.com/feos-org/feos/pull/129)
 
 ### Fixed
 - Fixed a regression introduced in [#108](https://github.com/feos-org/feos/pull/108) that lead to incorrect results for the 3B association scheme. [#129](https://github.com/feos-org/feos/pull/129)
 
-## [0.4.0] - 2023-01-27
+## [0.4.0](https://github.com/feos-org/feos/releases/tag/v0.4.0) - 2023-01-27
 ### Added
 - Added SAFT-VRQ Mie equation of state and Helmholtz energy functional for first order Feynman-Hibbs corrected Mie fluids. [#79](https://github.com/feos-org/feos/pull/79)
 - Added `estimator` module to documentation. [#86](https://github.com/feos-org/feos/pull/86)
@@ -215,14 +240,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed incorrect indexing that lead to panics in the polar contribution of gc-PC-SAFT. [#104](https://github.com/feos-org/feos/pull/104)
 - `VaporPressure` now returns an empty array instead of crashing. [#124](https://github.com/feos-org/feos/pull/124)
 
-## [0.3.0] - 2022-09-14
+## [0.3.0](https://github.com/feos-org/feos/releases/tag/v0.3.0) - 2022-09-14
 - Major restructuring of the entire `feos` project. All individual models are reunited in the `feos` crate. `feos-core` and `feos-dft` still live as individual crates within the `feos` workspace.
 
-## [0.2.1] - 2022-05-13
+## [0.2.1](https://github.com/feos-org/feos/releases/tag/v0.2.1) - 2022-05-13
 ### Fixed
 - Fixed a bug due to which the default ideal gas contribution was used for every equation of state. [#17](https://github.com/feos-org/feos/pull/17)
 
-## [0.2.0] - 2022-05-10
+## [0.2.0](https://github.com/feos-org/feos/releases/tag/v0.2.0) - 2022-05-10
 ### Added
 - Added [gc-PC-SAFT](https://github.com/feos-org/feos-gc-pcsaft) equation of state and Helmholtz energy functional.
 - Added [PeTS](https://github.com/feos-org/feos-pets) equation of state and Helmholtz energy functional.
@@ -237,7 +262,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated [`feos-dft`](https://github.com/feos-org/feos-dft/blob/main/CHANGELOG.md) to 0.2.0.
 - Updated [`feos-pcsaft`](https://github.com/feos-org/feos-pcsaft/blob/main/CHANGELOG.md) to 0.2.0.
 
-## [0.1.1] - 2022-02-23
+## [0.1.1](https://github.com/feos-org/feos/releases/tag/v0.1.1) - 2022-02-23
 ### Added
 - Added `pyproject.toml`. [#8](https://github.com/feos-org/feos/pull/8)
 - Fixed modules of `SI` classes to make them pickleable. [#8](https://github.com/feos-org/feos/pull/8)
@@ -246,6 +271,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated [`feos-core`](https://github.com/feos-org/feos-core/blob/main/CHANGELOG.md) to 0.1.5.
 - Updated [`feos-dft`](https://github.com/feos-org/feos-dft/blob/main/CHANGELOG.md) to 0.1.3.
 
-## [0.1.0] - 2022-01-14
+## [0.1.0](https://github.com/feos-org/feos/releases/tag/v0.1.0) - 2022-01-14
 ### Added
 - Initial release

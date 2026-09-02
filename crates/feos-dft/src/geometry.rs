@@ -1,12 +1,18 @@
 use feos_core::ReferenceSystem;
-use ndarray::{Array1, Array2};
-use quantity::{Angle, Length, Quantity};
+use ndarray::{
+    Array, Array1, Array2, Array3, ArrayBase, ArrayD, Axis as Axis_nd, Data, Dimension, RemoveAxis,
+};
+use num_dual::DualNum;
+use quantity::{Angle, DEGREES, Length, Quantity};
 use std::f64::consts::{FRAC_PI_3, PI};
+use std::ops::MulAssign;
 
 /// Grids with up to three dimensions.
 #[derive(Clone)]
 pub enum Grid {
+    Bulk,
     Cartesian1(Axis),
+    Periodical1(Axis),
     Cartesian2(Axis, Axis),
     Periodical2(Axis, Axis, Angle),
     Cartesian3(Axis, Axis, Axis),
@@ -27,7 +33,8 @@ impl Grid {
 
     pub fn axes(&self) -> Vec<&Axis> {
         match self {
-            Self::Cartesian1(x) => vec![x],
+            Self::Bulk => vec![],
+            Self::Cartesian1(x) | Self::Periodical1(x) => vec![x],
             Self::Cartesian2(x, y) | Self::Periodical2(x, y, _) => vec![x, y],
             Self::Cartesian3(x, y, z) | Self::Periodical3(x, y, z, _) => vec![x, y, z],
             Self::Spherical(r) | Self::Polar(r) => vec![r],
@@ -37,7 +44,8 @@ impl Grid {
 
     pub fn axes_mut(&mut self) -> Vec<&mut Axis> {
         match self {
-            Self::Cartesian1(x) => vec![x],
+            Self::Bulk => vec![],
+            Self::Cartesian1(x) | Self::Periodical1(x) => vec![x],
             Self::Cartesian2(x, y) | Self::Periodical2(x, y, _) => vec![x, y],
             Self::Cartesian3(x, y, z) | Self::Periodical3(x, y, z, _) => vec![x, y, z],
             Self::Spherical(r) | Self::Polar(r) => vec![r],
@@ -69,6 +77,76 @@ impl Grid {
             _ => 1.0,
         }
     }
+
+    pub fn mesh(&self) -> Vec<Length<ArrayD<f64>>> {
+        match self {
+            Self::Bulk => vec![],
+            Grid::Cartesian1(ax)
+            | Self::Periodical1(ax)
+            | Grid::Spherical(ax)
+            | Grid::Polar(ax) => {
+                vec![Length::from_reduced(ax.grid.clone()).into_dyn()]
+            }
+            Grid::Cartesian2(u, v) => mesh_2d(u, v, 90.0 * DEGREES),
+            Grid::Periodical2(u, v, alpha) => mesh_2d(u, v, *alpha),
+            Grid::Cylindrical { r, z } => mesh_2d(r, z, 90.0 * DEGREES),
+            Grid::Cartesian3(u, v, w) => mesh_3d(u, v, w, [90.0 * DEGREES; 3]),
+            Grid::Periodical3(u, v, w, angles) => mesh_3d(u, v, w, *angles),
+        }
+    }
+
+    pub fn integrate_reduced<D: Dimension, N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        mut profile: Array<N, D>,
+    ) -> N {
+        let (integration_weights, functional_determinant) = self.integration_weights();
+
+        for (i, w) in integration_weights.into_iter().enumerate() {
+            for mut l in profile.lanes_mut(Axis_nd(i)) {
+                l.mul_assign(&w.mapv(N::from));
+            }
+        }
+        profile.sum() * functional_determinant
+    }
+
+    pub fn integrate_reduced_comp<
+        D: Dimension + RemoveAxis,
+        S: Data<Elem = N>,
+        N: DualNum<Primitive = f64> + Copy,
+    >(
+        &self,
+        profile: &ArrayBase<S, D>,
+    ) -> Array1<N> {
+        Array1::from_shape_fn(profile.shape()[0], |i| {
+            self.integrate_reduced(profile.index_axis(Axis_nd(0), i).to_owned())
+        })
+    }
+}
+
+fn mesh_2d(u: &Axis, v: &Axis, alpha: Angle) -> Vec<Length<ArrayD<f64>>> {
+    let u_grid = Array2::from_shape_fn([u.grid.len(), v.grid.len()], |(i, _)| u.grid[i]);
+    let v_grid = Array2::from_shape_fn([u.grid.len(), v.grid.len()], |(_, j)| v.grid[j]);
+    let x = Length::from_reduced(u_grid + &v_grid * alpha.cos());
+    let y = Length::from_reduced(v_grid * alpha.sin());
+    vec![x.into_dyn(), y.into_dyn()]
+}
+
+fn mesh_3d(
+    u: &Axis,
+    v: &Axis,
+    w: &Axis,
+    [alpha, beta, gamma]: [Angle; 3],
+) -> Vec<Length<ArrayD<f64>>> {
+    let shape = [u.grid.len(), v.grid.len(), w.grid.len()];
+    let u_grid = Array3::from_shape_fn(shape, |(i, _, _)| u.grid[i]);
+    let v_grid = Array3::from_shape_fn(shape, |(_, j, _)| v.grid[j]);
+    let w_grid = Array3::from_shape_fn(shape, |(_, _, k)| w.grid[k]);
+    let xi = (alpha.cos() - gamma.cos() * beta.cos()) / gamma.sin();
+    let zeta = (1.0_f64 - beta.cos().powi(2) - xi * xi).sqrt();
+    let x = Length::from_reduced(u_grid + &v_grid * gamma.cos() + &w_grid * beta.cos());
+    let y = Length::from_reduced(v_grid * gamma.sin() + &w_grid * xi);
+    let z = Length::from_reduced(w_grid * zeta);
+    vec![x.into_dyn(), y.into_dyn(), z.into_dyn()]
 }
 
 /// Geometries of individual axes.
