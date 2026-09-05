@@ -148,7 +148,7 @@ where
             let (_, _, d2pdrho2) = eos.p_dpdrho_d2pdrho2(temperature, rho, molefracs);
 
             if rho > 0.85 * maxdensity {
-                let (sp_p, sp_rho) =
+                let (sp_p, sp_rho, _) =
                     _pressure_spinodal(eos, temperature, initial_density, molefracs)?;
                 rho = sp_rho;
                 error = sp_p - pressure;
@@ -166,7 +166,7 @@ where
                     rho = (rho * 1.1).min(maxdensity)
                 }
             } else if error.is_sign_positive() && d2pdrho2.is_sign_positive() {
-                let (sp_p, sp_rho) =
+                let (sp_p, sp_rho, _) =
                     _pressure_spinodal(eos, temperature, initial_density, molefracs)?;
                 rho = sp_rho;
                 error = sp_p - pressure;
@@ -176,7 +176,7 @@ where
                     rho = (rho * 1.1).min(maxdensity)
                 }
             } else if error.is_sign_negative() && d2pdrho2.is_sign_negative() {
-                let (sp_p, sp_rho) =
+                let (sp_p, sp_rho, _) =
                     _pressure_spinodal(eos, temperature, initial_density, molefracs)?;
                 rho = sp_rho;
                 error = sp_p - pressure;
@@ -241,12 +241,42 @@ pub(crate) fn _pressure_spinodal<E: Residual<N>, N: Dim>(
     temperature: f64,
     rho_init: f64,
     molefracs: &OVector<f64, N>,
-) -> FeosResult<(f64, f64)>
+) -> FeosResult<(f64, f64, f64)>
 where
     DefaultAllocator: Allocator<N>,
 {
-    let (p, rho, _) = _pressure_spinodal_curvature(eos, temperature, rho_init, molefracs)?;
-    Ok((p, rho))
+    let maxiter = 30;
+    let tol = 1e-8;
+
+    let maxdensity = eos.compute_max_density(molefracs);
+    let mut rho = rho_init;
+
+    if rho <= 0.0 {
+        return Err(FeosError::InvalidState(
+            String::from("pressure spinodal"),
+            String::from("density"),
+            rho,
+        ));
+    }
+
+    for _ in 0..maxiter {
+        let (p, dpdrho, d2pdrho2) = eos.p_dpdrho_d2pdrho2(temperature, rho, molefracs);
+        if dpdrho.abs() < tol {
+            return Ok((p, rho, d2pdrho2));
+        }
+        let mut delta_rho = -dpdrho / d2pdrho2;
+        // Check failure mode: d2pdrho2 is zero which makes delta_rho infinite.
+        if !delta_rho.is_finite() {
+            return Err(FeosError::NotConverged("pressure_spinodal".to_owned()));
+        }
+        if delta_rho.abs() > 0.05 * maxdensity {
+            delta_rho = 0.05 * maxdensity * delta_rho.signum()
+        }
+        delta_rho = delta_rho.max(-rho * 0.95); // prevent stepping to rho < 0.0
+        delta_rho = delta_rho.min(maxdensity - rho); // prevent stepping to rho > maxdensity
+        rho += delta_rho;
+    }
+    Err(FeosError::NotConverged("pressure_spinodal".to_owned()))
 }
 
 /// Spinodal of the requested branch (liquid or vapor). Returns `(p, rho)`.
@@ -271,7 +301,7 @@ where
             )));
         }
     };
-    let (p, rho, d2pdrho2) = _pressure_spinodal_curvature(eos, temperature, rho_init, molefracs)?;
+    let (p, rho, d2pdrho2) = _pressure_spinodal(eos, temperature, rho_init, molefracs)?;
     let (on_branch, name) = match branch {
         Liquid => (d2pdrho2 > 0.0, "liquid"),
         Vapor => (d2pdrho2 < 0.0, "vapor"),
@@ -284,49 +314,4 @@ where
             "pressure_spinodal: iteration converged to the wrong branch (requested {name} spinodal)"
         )))
     }
-}
-
-/// Spinodal closest to `rho_init`. Returns `(p, rho, d2p/drho2)`.
-fn _pressure_spinodal_curvature<E: Residual<N>, N: Dim>(
-    eos: &E,
-    temperature: f64,
-    rho_init: f64,
-    molefracs: &OVector<f64, N>,
-) -> FeosResult<(f64, f64, f64)>
-where
-    DefaultAllocator: Allocator<N>,
-{
-    let maxiter = 30;
-    let tol_dpdrho = 1e-10;
-
-    let maxdensity = eos.compute_max_density(molefracs);
-    let mut rho = rho_init;
-
-    if rho <= 0.0 {
-        return Err(FeosError::InvalidState(
-            String::from("pressure spinodal"),
-            String::from("density"),
-            rho,
-        ));
-    }
-
-    for _ in 0..maxiter {
-        let (p, dpdrho, d2pdrho2) = eos.p_dpdrho_d2pdrho2(temperature, rho, molefracs);
-        // Scale tolerance by temperature (unit of derivative).
-        if dpdrho.abs() < tol_dpdrho * temperature {
-            return Ok((p, rho, d2pdrho2));
-        }
-        let mut delta_rho = -dpdrho / d2pdrho2;
-        // Check failure mode: d2pdrho2 is zero which makes delta_rho infinite.
-        if !delta_rho.is_finite() {
-            return Err(FeosError::NotConverged("pressure_spinodal".to_owned()));
-        }
-        if delta_rho.abs() > 0.05 * maxdensity {
-            delta_rho = 0.05 * maxdensity * delta_rho.signum()
-        }
-        delta_rho = delta_rho.max(-rho * 0.95); // prevent stepping to rho < 0.0
-        delta_rho = delta_rho.min(maxdensity - rho); // prevent stepping to rho > maxdensity
-        rho += delta_rho;
-    }
-    Err(FeosError::NotConverged("pressure_spinodal".to_owned()))
 }
