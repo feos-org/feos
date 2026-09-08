@@ -299,7 +299,7 @@ fn association<D: DualNum<f64> + Copy>(
         );
 
         let [g1, g2] = g.data.0[0];
-        let [[j11, j12], [j21, j22]] = j.data.0;
+        let [[j11, j21], [j12, j22]] = j.data.0;
         let det = j11 * j22 - j12 * j21;
 
         let delta_xa1 = (j22 * g1 - j12 * g2) / det;
@@ -526,9 +526,9 @@ pub mod test {
     };
     use approx::assert_relative_eq;
     use feos_core::parameter::{AssociationRecord, PureRecord};
-    use feos_core::{Contributions::Total, FeosResult, State};
+    use feos_core::{Contributions::Total, DensityInitialization, FeosResult, State};
     use nalgebra::{dvector, vector};
-    use quantity::{KELVIN, KILO, METER, MOL};
+    use quantity::{BAR, KELVIN, KILO, METER, MOL};
 
     pub fn pcsaft_binary() -> FeosResult<(PcSaftBinary<f64, 8>, PcSaft)> {
         let params = [
@@ -560,7 +560,7 @@ pub mod test {
         let (pcsaft, eos) = pcsaft_binary()?;
 
         let temperature = 300.0 * KELVIN;
-        let volume = 2.3 * METER * METER * METER;
+        let volume = 0.3 * METER * METER * METER;
         let moles = dvector![1.3, 2.5] * KILO * MOL;
 
         let state = State::new_nvt(&&eos, temperature, volume, &moles)?;
@@ -589,6 +589,9 @@ pub mod test {
         println!("\nChemical potential:\n{}", mu_feos.get(0));
         println!("{}", mu_ad.get(0));
         assert_relative_eq!(mu_feos.get(0), mu_ad.get(0), max_relative = 1e-14);
+        println!("{}", mu_feos.get(1));
+        println!("{}", mu_ad.get(1));
+        assert_relative_eq!(mu_feos.get(1), mu_ad.get(1), max_relative = 1e-14);
 
         println!("\nPressure:\n{p_feos}");
         println!("{p_ad}");
@@ -602,6 +605,207 @@ pub mod test {
         println!("{h_ad}");
         assert_relative_eq!(h_feos, h_ad, max_relative = 1e-14);
 
+        Ok(())
+    }
+
+    /// Two identical associating components: the chemical potentials must be equal.
+    #[test]
+    fn test_pcsaft_binary_identical_assoc() -> FeosResult<()> {
+        // Pure parameters: parameters/pcsaft/esper2023.json
+        let methanol = [
+            2.25965, 2.83016, 183.58634, 0.0, 0.08716, 2465.13545, 1.0, 1.0,
+        ];
+        let params = [methanol, methanol];
+        let kij = 0.0;
+        let records = params.map(|p| {
+            PureRecord::with_association(
+                Default::default(),
+                0.0,
+                PcSaftRecord::new(p[0], p[1], p[2], p[3], 0.0, None, None, None),
+                vec![AssociationRecord::new(
+                    Some(PcSaftAssociationRecord::new(p[4], p[5])),
+                    p[6],
+                    p[7],
+                    0.0,
+                )],
+            )
+        });
+        let params_generic =
+            PcSaftParameters::new_binary(records, Some(PcSaftBinaryRecord::new(kij)), vec![])?;
+        let eos_generic = PcSaft::new(params_generic);
+        let eos_explicit = PcSaftBinary::new(params, kij);
+
+        let temperature = 330.0 * KELVIN;
+        let volume = 1.0 / 24.0 * METER * METER * METER;
+        let x = [0.7, 0.3];
+
+        let state = State::new_nvt(
+            &&eos_generic,
+            temperature,
+            volume,
+            &dvector![x[0], x[1]] * KILO * MOL,
+        )?;
+        let mu_feos = state.residual_chemical_potential();
+        let a_feos = state.residual_molar_helmholtz_energy();
+        let state = State::new_nvt(
+            &eos_explicit,
+            temperature,
+            volume,
+            vector![x[0], x[1]] * KILO * MOL,
+        )?;
+        let mu_ad = state.residual_chemical_potential();
+        let a_ad = state.residual_molar_helmholtz_energy();
+
+        println!("a     generic {a_feos}  specific {a_ad}");
+        println!(
+            "mu[0] generic {}  specific {}",
+            mu_feos.get(0),
+            mu_ad.get(0)
+        );
+        println!(
+            "mu[1] generic {}  specific {}",
+            mu_feos.get(1),
+            mu_ad.get(1)
+        );
+        assert_relative_eq!(a_feos, a_ad, max_relative = 1e-12);
+        assert_relative_eq!(mu_feos.get(0), mu_feos.get(1), max_relative = 1e-12);
+        assert_relative_eq!(mu_ad.get(0), mu_ad.get(1), max_relative = 1e-12);
+        assert_relative_eq!(mu_feos.get(0), mu_ad.get(0), max_relative = 1e-12);
+        assert_relative_eq!(mu_feos.get(1), mu_ad.get(1), max_relative = 1e-12);
+
+        // second derivatives (pressure derivatives) go through the association Newton too
+        let state_feos = State::new_nvt(
+            &&eos_generic,
+            temperature,
+            volume,
+            &dvector![x[0], x[1]] * KILO * MOL,
+        )?;
+        let p_feos = state_feos.pressure(Total);
+        let p_ad = state.pressure(Total);
+        println!("p     generic {p_feos}  specific {p_ad}");
+        assert_relative_eq!(p_feos, p_ad, max_relative = 1e-12);
+        let dpdv_feos = state_feos.dp_dv(Total);
+        let dpdv_ad = state.dp_dv(Total);
+        println!("dp/dv generic {:?}  specific {:?}", dpdv_feos, dpdv_ad);
+        assert_relative_eq!(dpdv_feos, dpdv_ad, max_relative = 1e-12);
+        let dmu_feos = state_feos.dmu_res_dt();
+        let dmu_ad = state.dmu_res_dt();
+        println!(
+            "dmu/dT generic {} {}  specific {} {}",
+            dmu_feos.get(0),
+            dmu_feos.get(1),
+            dmu_ad.get(0),
+            dmu_ad.get(1)
+        );
+        assert_relative_eq!(dmu_feos.get(0), dmu_ad.get(0), max_relative = 1e-12);
+        assert_relative_eq!(dmu_feos.get(1), dmu_ad.get(1), max_relative = 1e-12);
+        Ok(())
+    }
+
+    /// Two different, strongly associating components (methanol + water) with
+    /// a nonzero k_ij at liquid density, compared against the general PC-SAFT.
+    ///
+    /// Pure parameters: parameters/pcsaft/esper2023.json
+    /// Binary parameter: parameters/pcsaft/rehner2023_binary.json
+    #[test]
+    fn test_pcsaft_binary_methanol_water() -> FeosResult<()> {
+        let methanol = [
+            2.25965, 2.83016, 183.58634, 0.0, 0.08716, 2465.13545, 1.0, 1.0,
+        ];
+        let water = [
+            2.36948, 2.15072, 230.71557, 0.0, 0.35319, 2195.10176, 1.0, 1.0,
+        ];
+        let params = [methanol, water];
+        let kij = -0.0159473671673194;
+        let records = params.map(|p| {
+            PureRecord::with_association(
+                Default::default(),
+                0.0,
+                PcSaftRecord::new(p[0], p[1], p[2], p[3], 0.0, None, None, None),
+                vec![AssociationRecord::new(
+                    Some(PcSaftAssociationRecord::new(p[4], p[5])),
+                    p[6],
+                    p[7],
+                    0.0,
+                )],
+            )
+        });
+        let params_generic =
+            PcSaftParameters::new_binary(records, Some(PcSaftBinaryRecord::new(kij)), vec![])?;
+        let generic = PcSaft::new(params_generic);
+        let specific = PcSaftBinary::new(params, kij);
+
+        let temperature = 320.0 * KELVIN;
+
+        for x1 in [0.1, 0.5, 0.9] {
+            let x = [x1, 1.0 - x1];
+            // liquid at 1 bar according to the general PC-SAFT
+            let state_generic = State::new_npt(
+                &&generic,
+                temperature,
+                BAR,
+                &dvector![x[0], x[1]] * KILO * MOL,
+                Some(DensityInitialization::Liquid),
+            )?;
+            let volume = state_generic.volume()?;
+            let state_specific = State::new_nvt(
+                &specific,
+                temperature,
+                volume,
+                vector![x[0], x[1]] * KILO * MOL,
+            )?;
+
+            let a_generic = state_generic.residual_molar_helmholtz_energy();
+            let a_specific = state_specific.residual_molar_helmholtz_energy();
+            let mu_generic = state_generic.residual_chemical_potential();
+            let mu_specific = state_specific.residual_chemical_potential();
+            let p_generic = state_generic.pressure(Total);
+            let p_specific = state_specific.pressure(Total);
+            let dpdv_generic = state_generic.dp_dv(Total);
+            let dpdv_specific = state_specific.dp_dv(Total);
+            let dmu_generic = state_generic.dmu_res_dt();
+            let dmu_specific = state_specific.dmu_res_dt();
+
+            println!("x1 = {x1}");
+            println!("  a      generic {a_generic}  specific {a_specific}");
+            println!(
+                "  mu[0]  generic {}  specific {}",
+                mu_generic.get(0),
+                mu_specific.get(0)
+            );
+            println!(
+                "  mu[1]  generic {}  specific {}",
+                mu_generic.get(1),
+                mu_specific.get(1)
+            );
+            println!("  p      generic {p_generic}  specific {p_specific}");
+            println!(
+                "  dp/dv  generic {:?}  specific {:?}",
+                dpdv_generic, dpdv_specific
+            );
+            println!(
+                "  dmu/dT generic {} {}  specific {} {}",
+                dmu_generic.get(0),
+                dmu_generic.get(1),
+                dmu_specific.get(0),
+                dmu_specific.get(1)
+            );
+            assert_relative_eq!(a_generic, a_specific, max_relative = 1e-12);
+            assert_relative_eq!(mu_generic.get(0), mu_specific.get(0), max_relative = 1e-12);
+            assert_relative_eq!(mu_generic.get(1), mu_specific.get(1), max_relative = 1e-12);
+            assert_relative_eq!(p_generic, p_specific, max_relative = 1e-9); // requires small tol
+            assert_relative_eq!(dpdv_generic, dpdv_specific, max_relative = 1e-12);
+            assert_relative_eq!(
+                dmu_generic.get(0),
+                dmu_specific.get(0),
+                max_relative = 1e-12
+            );
+            assert_relative_eq!(
+                dmu_generic.get(1),
+                dmu_specific.get(1),
+                max_relative = 1e-12
+            );
+        }
         Ok(())
     }
 }

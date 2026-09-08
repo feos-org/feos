@@ -119,9 +119,8 @@ where
     }
 
     let maxiter = 50;
-    let mut iterations = 0;
+    let mut converged = false;
     'iteration: for k in 0..maxiter {
-        iterations += 1;
         let (_, mut p, mut dp_drho) = eos.p_dpdrho(temperature, rho, molefracs);
 
         // attempt to correct for poor initial density rho_init
@@ -149,7 +148,7 @@ where
             let (_, _, d2pdrho2) = eos.p_dpdrho_d2pdrho2(temperature, rho, molefracs);
 
             if rho > 0.85 * maxdensity {
-                let (sp_p, sp_rho) =
+                let (sp_p, sp_rho, _) =
                     _pressure_spinodal(eos, temperature, initial_density, molefracs)?;
                 rho = sp_rho;
                 error = sp_p - pressure;
@@ -167,7 +166,7 @@ where
                     rho = (rho * 1.1).min(maxdensity)
                 }
             } else if error.is_sign_positive() && d2pdrho2.is_sign_positive() {
-                let (sp_p, sp_rho) =
+                let (sp_p, sp_rho, _) =
                     _pressure_spinodal(eos, temperature, initial_density, molefracs)?;
                 rho = sp_rho;
                 error = sp_p - pressure;
@@ -177,7 +176,7 @@ where
                     rho = (rho * 1.1).min(maxdensity)
                 }
             } else if error.is_sign_negative() && d2pdrho2.is_sign_negative() {
-                let (sp_p, sp_rho) =
+                let (sp_p, sp_rho, _) =
                     _pressure_spinodal(eos, temperature, initial_density, molefracs)?;
                 rho = sp_rho;
                 error = sp_p - pressure;
@@ -187,9 +186,9 @@ where
                     rho *= 0.8
                 }
             } else if error.is_sign_negative() && d2pdrho2.is_sign_positive() {
-                let (_, rho_l) = _pressure_spinodal(eos, temperature, 0.8 * maxdensity, molefracs)?;
+                let (_, rho_l) = _pressure_spinodal_branch(eos, temperature, molefracs, Liquid)?;
                 let (sp_v_p, rho_v) =
-                    _pressure_spinodal(eos, temperature, 0.001 * maxdensity, molefracs)?;
+                    _pressure_spinodal_branch(eos, temperature, molefracs, Vapor)?;
                 error = sp_v_p - pressure;
                 if error.is_sign_positive()
                     && (initial_density - rho_v).abs() < (initial_density - rho_l).abs()
@@ -199,9 +198,9 @@ where
                     rho = (rho_l * 1.1).min(maxdensity)
                 }
             } else if error.is_sign_positive() && d2pdrho2.is_sign_negative() {
-                let (_, rho_l) = _pressure_spinodal(eos, temperature, 0.8 * maxdensity, molefracs)?;
+                let (_, rho_l) = _pressure_spinodal_branch(eos, temperature, molefracs, Liquid)?;
                 let (sp_v_p, rho_v) =
-                    _pressure_spinodal(eos, temperature, 0.001 * maxdensity, molefracs)?;
+                    _pressure_spinodal_branch(eos, temperature, molefracs, Vapor)?;
                 error = sp_v_p - pressure;
                 if error.is_sign_negative()
                     && (initial_density - rho_v).abs() > (initial_density - rho_l).abs()
@@ -221,27 +220,33 @@ where
         // Newton step
         rho += delta_rho;
         if error.abs() < f64::max(abstol, rho * reltol) {
+            converged = true;
             break 'iteration;
         }
     }
-    if iterations == maxiter + 1 {
-        Err(FeosError::NotConverged("density_iteration".to_owned()))
-    } else {
+    if converged {
         Ok(rho)
+    } else {
+        Err(FeosError::NotConverged("density_iteration".to_owned()))
     }
 }
 
+/// Spinodal (dp/drho = 0) closest to `rho_init`. Returns `(p, rho)`.
+///
+/// Which spinodal is found depends on the initial density.
+/// If vapor/liquid branch is required, [`_pressure_spinodal_branch`]
+/// can be used, which verifies the result.
 pub(crate) fn _pressure_spinodal<E: Residual<N>, N: Dim>(
     eos: &E,
     temperature: f64,
     rho_init: f64,
     molefracs: &OVector<f64, N>,
-) -> FeosResult<(f64, f64)>
+) -> FeosResult<(f64, f64, f64)>
 where
     DefaultAllocator: Allocator<N>,
 {
     let maxiter = 30;
-    let abstol = 1e-8;
+    let tol = 1e-8;
 
     let maxdensity = eos.compute_max_density(molefracs);
     let mut rho = rho_init;
@@ -256,18 +261,57 @@ where
 
     for _ in 0..maxiter {
         let (p, dpdrho, d2pdrho2) = eos.p_dpdrho_d2pdrho2(temperature, rho, molefracs);
-
+        if dpdrho.abs() < tol {
+            return Ok((p, rho, d2pdrho2));
+        }
         let mut delta_rho = -dpdrho / d2pdrho2;
+        // Check failure mode: d2pdrho2 is zero which makes delta_rho infinite.
+        if !delta_rho.is_finite() {
+            return Err(FeosError::NotConverged("pressure_spinodal".to_owned()));
+        }
         if delta_rho.abs() > 0.05 * maxdensity {
             delta_rho = 0.05 * maxdensity * delta_rho.signum()
         }
         delta_rho = delta_rho.max(-rho * 0.95); // prevent stepping to rho < 0.0
         delta_rho = delta_rho.min(maxdensity - rho); // prevent stepping to rho > maxdensity
         rho += delta_rho;
-
-        if dpdrho.abs() < abstol {
-            return Ok((p, rho));
-        }
     }
     Err(FeosError::NotConverged("pressure_spinodal".to_owned()))
+}
+
+/// Spinodal of the requested branch (liquid or vapor). Returns `(p, rho)`.
+///
+/// Errors if the iteration converged to the other branch.
+pub(crate) fn _pressure_spinodal_branch<E: Residual<N>, N: Dim>(
+    eos: &E,
+    temperature: f64,
+    molefracs: &OVector<f64, N>,
+    branch: DensityInitialization<f64>,
+) -> FeosResult<(f64, f64)>
+where
+    DefaultAllocator: Allocator<N>,
+{
+    let maxdensity = eos.compute_max_density(molefracs);
+    let rho_init = match branch {
+        Liquid => 0.8 * maxdensity,
+        Vapor => 0.001 * maxdensity,
+        InitialDensity(_) => {
+            return Err(FeosError::Error(String::from(
+                "`_pressure_spinodal_branch`: branch must be Liquid or Vapor",
+            )));
+        }
+    };
+    let (p, rho, d2pdrho2) = _pressure_spinodal(eos, temperature, rho_init, molefracs)?;
+    let (on_branch, name) = match branch {
+        Liquid => (d2pdrho2 > 0.0, "liquid"),
+        Vapor => (d2pdrho2 < 0.0, "vapor"),
+        InitialDensity(_) => unreachable!(),
+    };
+    if on_branch {
+        Ok((p, rho))
+    } else {
+        Err(FeosError::UndeterminedState(format!(
+            "pressure_spinodal: iteration converged to the wrong branch (requested {name} spinodal)"
+        )))
+    }
 }

@@ -1,5 +1,5 @@
 use super::{PhaseEquilibrium, TRIVIAL_REL_DEVIATION};
-use crate::density_iteration::{_density_iteration, _pressure_spinodal};
+use crate::density_iteration::{_density_iteration, _pressure_spinodal_branch};
 use crate::equation_of_state::{Residual, Subset};
 use crate::errors::{FeosError, FeosResult};
 use crate::state::{Contributions, DensityInitialization, State};
@@ -228,10 +228,9 @@ where
     DefaultAllocator: Allocator<N>,
 {
     let x = E::pure_molefracs();
-    let maxdensity = eos.compute_max_density(&x);
     let t = temperature.into_reduced();
-    let (p_l, _) = _pressure_spinodal(eos, t, 0.8 * maxdensity, &x)?;
-    let (p_v, _) = _pressure_spinodal(eos, t, 0.001 * maxdensity, &x)?;
+    let (p_l, _) = _pressure_spinodal_branch(eos, t, &x, DensityInitialization::Liquid)?;
+    let (p_v, _) = _pressure_spinodal_branch(eos, t, &x, DensityInitialization::Vapor)?;
     let p = 0.5 * (0.0_f64.max(p_l) + p_v);
     let rho_l = _density_iteration(eos, t, p, &x, DensityInitialization::Liquid)?;
     let rho_v = _density_iteration(eos, t, p, &x, DensityInitialization::Vapor)?;
