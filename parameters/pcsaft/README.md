@@ -6,14 +6,26 @@ The files named according to the pattern `NameYear.json` correspond to published
 For most applications, we recommend using the recent parametrization by [Esper et al.](https://doi.org/10.1021/acs.iecr.3c02255) together with binary interaction parameters from [Rehner et al.](https://doi.org/10.1007/s10765-023-03290-3) In Python reading parameters from the two JSON files is done by
 
 ```python
-from feos.pcsaft import PcSaftParameters
+from feos.pcsaft import Parameters
 
-params = PcSaftParameters.from_json(
+params = Parameters.from_json(
     ["acetone", "hexane"], 
     "esper2023.json", 
     "rehner2023_binary.json"
 )
 ```
+
+For mixtures that lack binary interaction parameters in [Rehner et al.](https://doi.org/10.1007/s10765-023-03290-3), the predicted interaction parameters by [Hemprich et al.]() might be a good starting point. Because of the number of mixtures (> 1 M) they are not stored as JSON file, but rather as sqlite database.
+
+```python
+from feos.pcsaft import Parameters
+
+params = Parameters.from_json(
+    ["acetone", "hexane"], 
+    "hemprich2026.db"
+)
+```
+
 For some applications (e.g., aqueous systems) more specialized parametrizations are required. See below for a full list of PC(P)-SAFT pure-component parameter sets available in the repository.
 
 ## Individual Parameters
@@ -33,7 +45,7 @@ For some applications (e.g., aqueous systems) more specialized parametrizations 
 ## Group-Contribution (GC) Methods
 Parameters can also be constructed from group-contribution methods. In Python only and if you have [`rdkit`](https://pypi.org/project/rdkit/) installed in your environment, you can generate parameters directly from a SMILES code:
 ```Python
-PcSaftParameters.from_json_smiles(
+GcParameters.from_json_smiles(
     ["CCC(C)=O"], 
     "sauer2014_smarts.json", 
     "sauer2014_homo.json"
@@ -41,7 +53,7 @@ PcSaftParameters.from_json_smiles(
 ```
 or
 ```Python
-PcSaftParameters.from_json_smiles(
+GcParameters.from_json_smiles(
     [Identifier(name="2-butanone", smiles="CCC(C)=O")], 
     "sauer2014_smarts.json", 
     "sauer2014_homo.json"
