@@ -67,7 +67,7 @@ macro_rules! impl_profile {
 
             #[getter]
             fn get_temperature(&self) -> Temperature {
-                self.0.profile.bulk.temperature
+                self.0.profile.temperature
             }
 
             #[getter]
@@ -88,11 +88,6 @@ macro_rules! impl_profile {
             #[getter]
             fn get_external_potential(&self) -> Energy<ArrayD<f64>> {
                 self.0.profile.external_potential().clone().into_dyn()
-            }
-
-            #[getter]
-            fn get_bulk(&self) -> PyState {
-                PyState(self.0.profile.bulk.clone())
             }
 
             #[getter]
@@ -189,24 +184,20 @@ macro_rules! impl_profile {
                 Ok(self.0.profile.dn_dmu().map_err(PyFeosError::from)?)
             }
 
-            #[getter]
-            fn get_drho_dp(&mut self) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Pressure>>::Output> {
-                Ok(self.0.profile.drho_dp().map_err(PyFeosError::from)?.into_dyn())
+            fn drho_dp(&mut self, bulk: &PyState) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Pressure>>::Output> {
+                Ok(self.0.profile.drho_dp(&bulk.0).map_err(PyFeosError::from)?.into_dyn())
             }
 
-            #[getter]
-            fn get_dn_dp(&mut self) -> PyResult<<Moles<DVector<f64>> as std::ops::Div<Pressure>>::Output> {
-                Ok(self.0.profile.dn_dp().map_err(PyFeosError::from)?)
+            fn dn_dp(&mut self, bulk: &PyState) -> PyResult<<Moles<DVector<f64>> as std::ops::Div<Pressure>>::Output> {
+                Ok(self.0.profile.dn_dp(&bulk.0).map_err(PyFeosError::from)?)
             }
 
-            #[getter]
-            fn get_drho_dt(&mut self) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Temperature>>::Output> {
-                Ok(self.0.profile.drho_dt().map_err(PyFeosError::from)?.into_dyn())
+            fn drho_dt(&mut self, bulk: &PyState) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Temperature>>::Output> {
+                Ok(self.0.profile.drho_dt(&bulk.0).map_err(PyFeosError::from)?.into_dyn())
             }
 
-            #[getter]
-            fn get_dn_dt(&mut self) -> PyResult<<Moles<DVector<f64>> as std::ops::Div<Temperature>>::Output> {
-                Ok(self.0.profile.dn_dt().map_err(PyFeosError::from)?)
+            fn dn_dt(&mut self, bulk: &PyState) -> PyResult<<Moles<DVector<f64>> as std::ops::Div<Temperature>>::Output> {
+                Ok(self.0.profile.dn_dt(&bulk.0).map_err(PyFeosError::from)?)
             }
         }
     };

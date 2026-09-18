@@ -179,6 +179,15 @@ pub struct Axis {
 }
 
 impl Axis {
+    /// Create a new axis for the given geometry.
+    pub fn new(points: usize, length: Length, geometry: Geometry) -> Self {
+        match geometry {
+            Geometry::Cartesian => Self::new_cartesian(points, length, None),
+            Geometry::Cylindrical => Self::new_polar(points, length),
+            Geometry::Spherical => Self::new_spherical(points, length),
+        }
+    }
+
     /// Create a new (equidistant) cartesian axis.
     ///
     /// The potential_offset is required to make sure that particles
@@ -258,6 +267,15 @@ impl Axis {
             integration_weights,
             potential_offset: 0.0,
         }
+    }
+
+    pub fn shift(&mut self, x0: Length) {
+        if !matches!(self.geometry, Geometry::Cartesian) {
+            panic!("Cannot shift cylindrical or spherical axes!");
+        }
+        let x0 = x0.into_reduced();
+        self.grid -= x0;
+        self.edges -= x0;
     }
 
     /// Returns the total length of the axis.

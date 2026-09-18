@@ -31,7 +31,7 @@ Implementations of Helmholtz energy functionals for DFT.
 .. autosummary::
     :toctree: generated/
 
-    PlanarInterface
+    Interface
     SurfaceTensionDiagram
 ```
 
